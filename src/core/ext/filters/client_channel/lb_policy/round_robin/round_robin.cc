@@ -82,7 +82,8 @@ static size_t get_next_ready_subchannel_index_locked(
     gpr_log(GPR_INFO,
             "[RR %p] getting next ready subchannel (out of %lu), "
             "last_ready_subchannel_index=%lu",
-            (void*)p, static_cast<unsigned long>(p->subchannel_list->num_subchannels),
+            (void*)p,
+            static_cast<unsigned long>(p->subchannel_list->num_subchannels),
             static_cast<unsigned long>(p->last_ready_subchannel_index));
   }
   for (size_t i = 0; i < p->subchannel_list->num_subchannels; ++i) {
@@ -334,7 +335,8 @@ static void update_lb_connectivity_status_locked(grpc_lb_subchannel_data* sd,
    *           subchannel_list->num_subchannels.
    */
   grpc_lb_subchannel_list* subchannel_list = sd->subchannel_list;
-  round_robin_lb_policy* p = reinterpret_cast<round_robin_lb_policy*>(subchannel_list->policy);
+  round_robin_lb_policy* p =
+      reinterpret_cast<round_robin_lb_policy*>(subchannel_list->policy);
   GPR_ASSERT(sd->curr_connectivity_state != GRPC_CHANNEL_IDLE);
   if (subchannel_list->num_ready > 0) {
     /* 1) READY */
@@ -426,7 +428,8 @@ static void rr_connectivity_changed_locked(void* arg, grpc_error* error) {
         if (grpc_lb_round_robin_trace.enabled()) {
           const unsigned long num_subchannels =
               p->subchannel_list != nullptr
-                  ? static_cast<unsigned long>(p->subchannel_list->num_subchannels)
+                  ? static_cast<unsigned long>(
+                        p->subchannel_list->num_subchannels)
                   : 0;
           gpr_log(GPR_DEBUG,
                   "[RR %p] phasing out subchannel list %p (size %lu) in favor "
@@ -467,7 +470,8 @@ static void rr_connectivity_changed_locked(void* arg, grpc_error* error) {
                   "[RR %p] Fulfilling pending pick. Target <-- subchannel %p "
                   "(subchannel_list %p, index %lu)",
                   (void*)p, (void*)selected->subchannel,
-                  (void*)p->subchannel_list, static_cast<unsigned long>(next_ready_index));
+                  (void*)p->subchannel_list,
+                  static_cast<unsigned long>(next_ready_index));
         }
         GRPC_CLOSURE_SCHED(pick->on_complete, GRPC_ERROR_NONE);
       }
@@ -537,7 +541,8 @@ static void rr_update_locked(grpc_lb_policy* policy,
     }
     return;
   }
-  grpc_lb_addresses* addresses = static_cast<grpc_lb_addresses*>(arg->value.pointer.p);
+  grpc_lb_addresses* addresses =
+      static_cast<grpc_lb_addresses*>(arg->value.pointer.p);
   if (grpc_lb_round_robin_trace.enabled()) {
     gpr_log(GPR_DEBUG, "[RR %p] received update with %" PRIuPTR " addresses", p,
             addresses->num_addresses);
@@ -643,7 +648,8 @@ static void round_robin_factory_unref(grpc_lb_policy_factory* factory) {}
 static grpc_lb_policy* round_robin_create(grpc_lb_policy_factory* factory,
                                           grpc_lb_policy_args* args) {
   GPR_ASSERT(args->client_channel_factory != nullptr);
-  round_robin_lb_policy* p = static_cast<round_robin_lb_policy*>(gpr_zalloc(sizeof(*p)));
+  round_robin_lb_policy* p =
+      static_cast<round_robin_lb_policy*>(gpr_zalloc(sizeof(*p)));
   grpc_lb_policy_init(&p->base, &round_robin_lb_policy_vtable, args->combiner);
   grpc_subchannel_index_ref();
   grpc_connectivity_state_init(&p->state_tracker, GRPC_CHANNEL_IDLE,

@@ -45,12 +45,12 @@ static void maybe_embiggen(grpc_slice_buffer* sb) {
       sb->capacity = GROW(sb->capacity);
       GPR_ASSERT(sb->capacity > slice_count);
       if (sb->base_slices == sb->inlined) {
-        sb->base_slices =
-            static_cast<grpc_slice*>(gpr_malloc(sb->capacity * sizeof(grpc_slice)));
+        sb->base_slices = static_cast<grpc_slice*>(
+            gpr_malloc(sb->capacity * sizeof(grpc_slice)));
         memcpy(sb->base_slices, sb->inlined, slice_count * sizeof(grpc_slice));
       } else {
-        sb->base_slices = static_cast<grpc_slice*>(gpr_realloc(
-            sb->base_slices, sb->capacity * sizeof(grpc_slice)));
+        sb->base_slices = static_cast<grpc_slice*>(
+            gpr_realloc(sb->base_slices, sb->capacity * sizeof(grpc_slice)));
       }
 
       sb->slices = sb->base_slices + slice_offset;
@@ -89,7 +89,8 @@ uint8_t* grpc_slice_buffer_tiny_add(grpc_slice_buffer* sb, size_t n) {
   if ((back->data.inlined.length + n) > sizeof(back->data.inlined.bytes))
     goto add_new;
   out = back->data.inlined.bytes + back->data.inlined.length;
-  back->data.inlined.length = static_cast<uint8_t>(back->data.inlined.length + n);
+  back->data.inlined.length =
+      static_cast<uint8_t>(back->data.inlined.length + n);
   return out;
 
 add_new:
@@ -125,8 +126,8 @@ void grpc_slice_buffer_add(grpc_slice_buffer* sb, grpc_slice s) {
           GRPC_SLICE_INLINED_SIZE) {
         memcpy(back->data.inlined.bytes + back->data.inlined.length,
                s.data.inlined.bytes, s.data.inlined.length);
-        back->data.inlined.length =
-            static_cast<uint8_t>(back->data.inlined.length + s.data.inlined.length);
+        back->data.inlined.length = static_cast<uint8_t>(
+            back->data.inlined.length + s.data.inlined.length);
       } else {
         size_t cp1 = GRPC_SLICE_INLINED_SIZE - back->data.inlined.length;
         memcpy(back->data.inlined.bytes + back->data.inlined.length,
@@ -136,7 +137,8 @@ void grpc_slice_buffer_add(grpc_slice_buffer* sb, grpc_slice s) {
         back = &sb->slices[n];
         sb->count = n + 1;
         back->refcount = nullptr;
-        back->data.inlined.length = static_cast<uint8_t>(s.data.inlined.length - cp1);
+        back->data.inlined.length =
+            static_cast<uint8_t>(s.data.inlined.length - cp1);
         memcpy(back->data.inlined.bytes, s.data.inlined.bytes + cp1,
                s.data.inlined.length - cp1);
       }

@@ -226,7 +226,8 @@ static void finish_send_message(grpc_call_element* elem) {
       const char* algo_name;
       const size_t before_size = calld->slices.length;
       const size_t after_size = tmp.length;
-      const float savings_ratio = 1.0f - static_cast<float>(after_size) / static_cast<float>(before_size);
+      const float savings_ratio = 1.0f - static_cast<float>(after_size) /
+                                             static_cast<float>(before_size);
       GPR_ASSERT(grpc_message_compression_algorithm_name(
           calld->message_compression_algorithm, &algo_name));
       gpr_log(GPR_DEBUG,
@@ -291,8 +292,8 @@ static grpc_error* pull_slice_from_send_message(call_data* calld) {
 static void continue_reading_send_message(grpc_call_element* elem) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   while (grpc_byte_stream_next(
-      calld->send_message_batch->payload->send_message.send_message, ~static_cast<size_t>(0),
-      &calld->on_send_message_next_done)) {
+      calld->send_message_batch->payload->send_message.send_message,
+      ~static_cast<size_t>(0), &calld->on_send_message_next_done)) {
     grpc_error* error = pull_slice_from_send_message(calld);
     if (error != GRPC_ERROR_NONE) {
       // Closure callback; does not take ownership of error.

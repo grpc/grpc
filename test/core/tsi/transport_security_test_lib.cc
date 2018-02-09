@@ -144,8 +144,9 @@ static void maybe_append_unused_bytes(handshaker_args* args) {
   tsi_test_fixture* fixture = args->fixture;
   if (fixture->test_unused_bytes && !args->appended_unused_bytes) {
     args->appended_unused_bytes = true;
-    send_bytes_to_peer(fixture, reinterpret_cast<const unsigned char*>(TSI_TEST_UNUSED_BYTES),
-                       strlen(TSI_TEST_UNUSED_BYTES), args->is_client);
+    send_bytes_to_peer(
+        fixture, reinterpret_cast<const unsigned char*>(TSI_TEST_UNUSED_BYTES),
+        strlen(TSI_TEST_UNUSED_BYTES), args->is_client);
     if (fixture->client_result != nullptr &&
         fixture->server_result == nullptr) {
       fixture->has_client_finished_first = true;

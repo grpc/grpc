@@ -271,9 +271,10 @@ class TransportFlowControl final : public TransportFlowControlBase {
   // See comment above announced_stream_total_over_incoming_window_ for the
   // logic behind this decision.
   int64_t target_window() const override {
-    return static_cast<uint32_t>GPR_MIN((int64_t)((1u << 31) - 1),
-                             announced_stream_total_over_incoming_window_ +
-                                 target_initial_window_size_);
+    return static_cast<uint32_t> GPR_MIN(
+        (int64_t)((1u << 31) - 1),
+        announced_stream_total_over_incoming_window_ +
+            target_initial_window_size_);
   }
 
   const grpc_chttp2_transport* transport() const { return t_; }

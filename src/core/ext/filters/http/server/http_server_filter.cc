@@ -224,10 +224,11 @@ static grpc_error* server_filter_incoming_metadata(grpc_call_element* elem,
 
       /* decode payload from query and add to the slice buffer to be returned */
       const int k_url_safe = 1;
-      grpc_slice_buffer_add(&calld->read_slice_buffer,
-                            grpc_base64_decode_with_len(
-                                reinterpret_cast<const char*>GRPC_SLICE_START_PTR(query_slice),
-                                GRPC_SLICE_LENGTH(query_slice), k_url_safe));
+      grpc_slice_buffer_add(
+          &calld->read_slice_buffer,
+          grpc_base64_decode_with_len(
+              reinterpret_cast<const char*> GRPC_SLICE_START_PTR(query_slice),
+              GRPC_SLICE_LENGTH(query_slice), k_url_safe));
       grpc_slice_buffer_stream_init(&calld->read_stream,
                                     &calld->read_slice_buffer, 0);
       calld->seen_path_with_query = true;
@@ -277,9 +278,10 @@ static void hs_on_complete(void* user_data, grpc_error* err) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   /* Call recv_message_ready if we got the payload via the path field */
   if (calld->seen_path_with_query && calld->recv_message_ready != nullptr) {
-    *calld->pp_recv_message = calld->payload_bin_delivered
-                                  ? nullptr
-                                  : reinterpret_cast<grpc_byte_stream*>(&calld->read_stream);
+    *calld->pp_recv_message =
+        calld->payload_bin_delivered
+            ? nullptr
+            : reinterpret_cast<grpc_byte_stream*>(&calld->read_stream);
     // Re-enter call combiner for recv_message_ready, since the surface
     // code will release the call combiner for each callback it receives.
     GRPC_CALL_COMBINER_START(calld->call_combiner, calld->recv_message_ready,

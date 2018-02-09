@@ -181,7 +181,8 @@ static void test_no_op_with_start(void) {
 static void test_no_op_with_port(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_resolved_address resolved_addr;
-  struct sockaddr_in* addr = reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
+  struct sockaddr_in* addr =
+      reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
   grpc_tcp_server* s;
   GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(nullptr, nullptr, &s));
   LOG_TEST("test_no_op_with_port");
@@ -200,7 +201,8 @@ static void test_no_op_with_port(void) {
 static void test_no_op_with_port_and_start(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_resolved_address resolved_addr;
-  struct sockaddr_in* addr = reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
+  struct sockaddr_in* addr =
+      reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
   grpc_tcp_server* s;
   GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(nullptr, nullptr, &s));
   LOG_TEST("test_no_op_with_port_and_start");
@@ -237,7 +239,8 @@ static grpc_error* tcp_connect(const test_addr* remote,
     return GRPC_OS_ERROR(errno, "Failed to create socket");
   }
   gpr_log(GPR_DEBUG, "start connect to %s", remote->str);
-  if (connect(clifd, remote_addr, static_cast<socklen_t>(remote->addr.len)) != 0) {
+  if (connect(clifd, remote_addr, static_cast<socklen_t>(remote->addr.len)) !=
+      0) {
     gpr_mu_unlock(g_mu);
     close(clifd);
     return GRPC_OS_ERROR(errno, "connect");

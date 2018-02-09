@@ -196,8 +196,8 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(state.call, ops, static_cast<size_t>(op - ops), tag(1),
-                                nullptr);
+  error = grpc_call_start_batch(state.call, ops, static_cast<size_t>(op - ops),
+                                tag(1), nullptr);
 
   GPR_ASSERT(GRPC_CALL_OK == error);
 

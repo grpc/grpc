@@ -86,8 +86,8 @@ static grpc_subchannel_args* get_secure_naming_subchannel_args(
     if (target_uri->path[0] != '\0') {  // "path" may be empty
       const grpc_slice key = grpc_slice_from_static_string(
           target_uri->path[0] == '/' ? target_uri->path + 1 : target_uri->path);
-      const char* value =
-          static_cast<const char*>(grpc_slice_hash_table_get(targets_info, key));
+      const char* value = static_cast<const char*>(
+          grpc_slice_hash_table_get(targets_info, key));
       if (value != nullptr) target_name_to_check = gpr_strdup(value);
       grpc_slice_unref_internal(key);
     }
@@ -148,7 +148,8 @@ static grpc_subchannel* client_channel_factory_create_subchannel(
   grpc_connector* connector = grpc_chttp2_connector_create();
   grpc_subchannel* s = grpc_subchannel_create(connector, subchannel_args);
   grpc_connector_unref(connector);
-  grpc_channel_args_destroy(const_cast<grpc_channel_args*>(subchannel_args->args));
+  grpc_channel_args_destroy(
+      const_cast<grpc_channel_args*>(subchannel_args->args));
   gpr_free(subchannel_args);
   return s;
 }

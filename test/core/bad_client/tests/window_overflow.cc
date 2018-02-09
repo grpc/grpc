@@ -78,7 +78,8 @@ int main(int argc, char** argv) {
   for (i = 0; i < NUM_FRAMES; i++) {
     uint8_t hdr[9] = {static_cast<uint8_t>(FRAME_SIZE >> 16),
                       static_cast<uint8_t>(FRAME_SIZE >> 8),
-                      static_cast<uint8_t>FRAME_SIZE,
+                      static_cast<uint8_t>
+                          FRAME_SIZE,
                       0,
                       0,
                       0,

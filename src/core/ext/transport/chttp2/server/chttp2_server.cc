@@ -79,7 +79,8 @@ static void server_connection_state_unref(
 }
 
 static void on_timeout(void* arg, grpc_error* error) {
-  server_connection_state* connection_state = static_cast<server_connection_state*>(arg);
+  server_connection_state* connection_state =
+      static_cast<server_connection_state*>(arg);
   // Note that we may be called with GRPC_ERROR_NONE when the timer fires
   // or with an error indicating that the timer system is being shut down.
   if (error != GRPC_ERROR_CANCELLED) {
@@ -92,7 +93,8 @@ static void on_timeout(void* arg, grpc_error* error) {
 }
 
 static void on_receive_settings(void* arg, grpc_error* error) {
-  server_connection_state* connection_state = static_cast<server_connection_state*>(arg);
+  server_connection_state* connection_state =
+      static_cast<server_connection_state*>(arg);
   if (error == GRPC_ERROR_NONE) {
     grpc_timer_cancel(&connection_state->timer);
   }
@@ -132,7 +134,8 @@ static void on_handshake_done(void* arg, grpc_error* error) {
           connection_state->accepting_pollset, args->args);
       // Use notify_on_receive_settings callback to enforce the
       // handshake deadline.
-      connection_state->transport = reinterpret_cast<grpc_chttp2_transport*>(transport);
+      connection_state->transport =
+          reinterpret_cast<grpc_chttp2_transport*>(transport);
       gpr_ref(&connection_state->refs);
       GRPC_CLOSURE_INIT(&connection_state->on_receive_settings,
                         on_receive_settings, connection_state,
@@ -177,7 +180,8 @@ static void on_accept(void* arg, grpc_endpoint* tcp,
   gpr_mu_unlock(&state->mu);
   grpc_tcp_server_ref(state->tcp_server);
   server_connection_state* connection_state =
-      static_cast<server_connection_state*>(gpr_zalloc(sizeof(*connection_state)));
+      static_cast<server_connection_state*>(
+          gpr_zalloc(sizeof(*connection_state)));
   gpr_ref_init(&connection_state->refs, 1);
   connection_state->svr_state = state;
   connection_state->accepting_pollset = accepting_pollset;

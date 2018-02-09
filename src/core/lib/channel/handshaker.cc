@@ -81,8 +81,8 @@ struct grpc_handshake_manager {
 };
 
 grpc_handshake_manager* grpc_handshake_manager_create() {
-  grpc_handshake_manager* mgr =
-      static_cast<grpc_handshake_manager*>(gpr_zalloc(sizeof(grpc_handshake_manager)));
+  grpc_handshake_manager* mgr = static_cast<grpc_handshake_manager*>(
+      gpr_zalloc(sizeof(grpc_handshake_manager)));
   gpr_mu_init(&mgr->mu);
   gpr_ref_init(&mgr->refs, 1);
   return mgr;
@@ -233,8 +233,8 @@ void grpc_handshake_manager_do_handshake(
   mgr->args.endpoint = endpoint;
   mgr->args.args = grpc_channel_args_copy(channel_args);
   mgr->args.user_data = user_data;
-  mgr->args.read_buffer =
-      static_cast<grpc_slice_buffer*>(gpr_malloc(sizeof(*mgr->args.read_buffer)));
+  mgr->args.read_buffer = static_cast<grpc_slice_buffer*>(
+      gpr_malloc(sizeof(*mgr->args.read_buffer)));
   grpc_slice_buffer_init(mgr->args.read_buffer);
   // Initialize state needed for calling handshakers.
   mgr->acceptor = acceptor;

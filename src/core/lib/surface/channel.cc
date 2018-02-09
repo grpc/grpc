@@ -190,17 +190,20 @@ size_t grpc_channel_get_call_size_estimate(grpc_channel* channel) {
          (which is common) - which tends to help most allocators reuse memory
       2. a small amount of allowed growth over the estimate without hitting
          the arena size doubling case, reducing overall memory usage */
-  return (static_cast<size_t>gpr_atm_no_barrier_load(&channel->call_size_estimate) +
+  return (static_cast<size_t> gpr_atm_no_barrier_load(
+              &channel->call_size_estimate) +
           2 * ROUND_UP_SIZE) &
          ~static_cast<size_t>(ROUND_UP_SIZE - 1);
 }
 
 void grpc_channel_update_call_size_estimate(grpc_channel* channel,
                                             size_t size) {
-  size_t cur = static_cast<size_t>gpr_atm_no_barrier_load(&channel->call_size_estimate);
+  size_t cur =
+      static_cast<size_t> gpr_atm_no_barrier_load(&channel->call_size_estimate);
   if (cur < size) {
     /* size grew: update estimate */
-    gpr_atm_no_barrier_cas(&channel->call_size_estimate, static_cast<gpr_atm>(cur),
+    gpr_atm_no_barrier_cas(&channel->call_size_estimate,
+                           static_cast<gpr_atm>(cur),
                            static_cast<gpr_atm>(size));
     /* if we lose: never mind, something else will likely update soon enough */
   } else if (cur == size) {
@@ -297,7 +300,8 @@ grpc_call* grpc_channel_create_pollset_set_call(
 
 void* grpc_channel_register_call(grpc_channel* channel, const char* method,
                                  const char* host, void* reserved) {
-  registered_call* rc = static_cast<registered_call*>(gpr_malloc(sizeof(registered_call)));
+  registered_call* rc =
+      static_cast<registered_call*>(gpr_malloc(sizeof(registered_call)));
   GRPC_API_TRACE(
       "grpc_channel_register_call(channel=%p, method=%s, host=%s, reserved=%p)",
       4, (channel, method, host, reserved));

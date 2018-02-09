@@ -179,8 +179,10 @@ static void json_writer_escape_string(grpc_json_writer* writer,
          * That range is exactly 20 bits.
          */
         utf32 -= 0x10000;
-        json_writer_escape_utf16(writer, static_cast<uint16_t>(0xd800 | (utf32 >> 10)));
-        json_writer_escape_utf16(writer, static_cast<uint16_t>(0xdc00 | (utf32 & 0x3ff)));
+        json_writer_escape_utf16(writer,
+                                 static_cast<uint16_t>(0xd800 | (utf32 >> 10)));
+        json_writer_escape_utf16(
+            writer, static_cast<uint16_t>(0xdc00 | (utf32 & 0x3ff)));
       } else {
         json_writer_escape_utf16(writer, static_cast<uint16_t>(utf32));
       }

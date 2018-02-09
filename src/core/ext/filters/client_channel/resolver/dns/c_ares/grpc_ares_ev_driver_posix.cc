@@ -124,7 +124,8 @@ static void fd_node_shutdown(fd_node* fdn) {
 
 grpc_error* grpc_ares_ev_driver_create(grpc_ares_ev_driver** ev_driver,
                                        grpc_pollset_set* pollset_set) {
-  *ev_driver = static_cast<grpc_ares_ev_driver*>(gpr_malloc(sizeof(grpc_ares_ev_driver)));
+  *ev_driver = static_cast<grpc_ares_ev_driver*>(
+      gpr_malloc(sizeof(grpc_ares_ev_driver)));
   int status = ares_init(&(*ev_driver)->channel);
   gpr_log(GPR_DEBUG, "grpc_ares_ev_driver_create");
   if (status != ARES_SUCCESS) {

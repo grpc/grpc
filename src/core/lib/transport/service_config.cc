@@ -209,8 +209,8 @@ grpc_slice_hash_table* grpc_service_config_create_method_config_table(
         num_entries += count;
       }
       // Populate method config table entries.
-      entries = static_cast<grpc_slice_hash_table_entry*>(gpr_malloc(
-          num_entries * sizeof(grpc_slice_hash_table_entry)));
+      entries = static_cast<grpc_slice_hash_table_entry*>(
+          gpr_malloc(num_entries * sizeof(grpc_slice_hash_table_entry)));
       size_t idx = 0;
       for (grpc_json* method = field->child; method != nullptr;
            method = method->next) {

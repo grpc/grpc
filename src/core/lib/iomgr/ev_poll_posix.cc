@@ -835,8 +835,8 @@ static void pollset_add_fd(grpc_pollset* pollset, grpc_fd* fd) {
   if (pollset->fd_count == pollset->fd_capacity) {
     pollset->fd_capacity =
         GPR_MAX(pollset->fd_capacity + 8, pollset->fd_count * 3 / 2);
-    pollset->fds = static_cast<grpc_fd**>(gpr_realloc(
-        pollset->fds, sizeof(grpc_fd*) * pollset->fd_capacity));
+    pollset->fds = static_cast<grpc_fd**>(
+        gpr_realloc(pollset->fds, sizeof(grpc_fd*) * pollset->fd_capacity));
   }
   pollset->fds[pollset->fd_count++] = fd;
   GRPC_FD_REF(fd, "multipoller");
@@ -889,8 +889,8 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
     worker.wakeup_fd = pollset->local_wakeup_cache;
     pollset->local_wakeup_cache = worker.wakeup_fd->next;
   } else {
-    worker.wakeup_fd =
-        static_cast<grpc_cached_wakeup_fd*>(gpr_malloc(sizeof(*worker.wakeup_fd)));
+    worker.wakeup_fd = static_cast<grpc_cached_wakeup_fd*>(
+        gpr_malloc(sizeof(*worker.wakeup_fd)));
     error = grpc_wakeup_fd_init(&worker.wakeup_fd->fd);
     if (error != GRPC_ERROR_NONE) {
       GRPC_LOG_IF_ERROR("pollset_work", GRPC_ERROR_REF(error));
@@ -946,7 +946,8 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
         const size_t watch_size = sizeof(*watchers) * (pollset->fd_count + 2);
         void* buf = gpr_malloc(pfd_size + watch_size);
         pfds = static_cast<struct pollfd*>(buf);
-        watchers = static_cast<grpc_fd_watcher*>((void*)(static_cast<char*>(buf) + pfd_size));
+        watchers = static_cast<grpc_fd_watcher*>(
+            (void*)(static_cast<char*>(buf) + pfd_size));
       }
 
       fd_count = 0;
@@ -972,8 +973,8 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
 
       for (i = 1; i < pfd_count; i++) {
         grpc_fd* fd = watchers[i].fd;
-        pfds[i].events = static_cast<short>(fd_begin_poll(fd, pollset, &worker, POLLIN,
-                                              POLLOUT, &watchers[i]));
+        pfds[i].events = static_cast<short>(
+            fd_begin_poll(fd, pollset, &worker, POLLIN, POLLOUT, &watchers[i]));
         GRPC_FD_UNREF(fd, "multipoller_start");
       }
 
@@ -1222,9 +1223,9 @@ static void pollset_set_add_pollset_set(grpc_pollset_set* bag,
   gpr_mu_lock(&bag->mu);
   if (bag->pollset_set_count == bag->pollset_set_capacity) {
     bag->pollset_set_capacity = GPR_MAX(8, 2 * bag->pollset_set_capacity);
-    bag->pollset_sets = static_cast<grpc_pollset_set**>(gpr_realloc(
-        bag->pollset_sets,
-        bag->pollset_set_capacity * sizeof(*bag->pollset_sets)));
+    bag->pollset_sets = static_cast<grpc_pollset_set**>(
+        gpr_realloc(bag->pollset_sets,
+                    bag->pollset_set_capacity * sizeof(*bag->pollset_sets)));
   }
   bag->pollset_sets[bag->pollset_set_count++] = item;
   for (i = 0, j = 0; i < bag->fd_count; i++) {
@@ -1259,8 +1260,9 @@ static void pollset_set_add_fd(grpc_pollset_set* pollset_set, grpc_fd* fd) {
   gpr_mu_lock(&pollset_set->mu);
   if (pollset_set->fd_count == pollset_set->fd_capacity) {
     pollset_set->fd_capacity = GPR_MAX(8, 2 * pollset_set->fd_capacity);
-    pollset_set->fds = static_cast<grpc_fd**>(gpr_realloc(
-        pollset_set->fds, pollset_set->fd_capacity * sizeof(*pollset_set->fds)));
+    pollset_set->fds = static_cast<grpc_fd**>(
+        gpr_realloc(pollset_set->fds,
+                    pollset_set->fd_capacity * sizeof(*pollset_set->fds)));
   }
   GRPC_FD_REF(fd, "pollset_set");
   pollset_set->fds[pollset_set->fd_count++] = fd;
@@ -1316,8 +1318,8 @@ static void init_result(poll_args* pargs) {
   gpr_ref_init(&pargs->result->refcount, 1);
   pargs->result->watchers = nullptr;
   pargs->result->watchcount = 0;
-  pargs->result->fds =
-      static_cast<struct pollfd*>(gpr_malloc(sizeof(struct pollfd) * pargs->nfds));
+  pargs->result->fds = static_cast<struct pollfd*>(
+      gpr_malloc(sizeof(struct pollfd) * pargs->nfds));
   memcpy(pargs->result->fds, pargs->fds, sizeof(struct pollfd) * pargs->nfds);
   pargs->result->nfds = pargs->nfds;
   pargs->result->retval = 0;
@@ -1356,7 +1358,8 @@ static poll_args* get_poller_locked(struct pollfd* fds, nfds_t count) {
     return pargs;
   }
 
-  poll_args* pargs = static_cast<poll_args*>(gpr_malloc(sizeof(struct poll_args)));
+  poll_args* pargs =
+      static_cast<poll_args*>(gpr_malloc(sizeof(struct poll_args)));
   gpr_cv_init(&pargs->trigger);
   pargs->fds = fds;
   pargs->nfds = count;
@@ -1514,7 +1517,8 @@ static int cvfd_poll(struct pollfd* fds, nfds_t nfds, int timeout) {
   gpr_cv pollcv_cv;
   gpr_cv_init(&pollcv_cv);
   pollcv->cv = &pollcv_cv;
-  grpc_cv_node* fd_cvs = static_cast<grpc_cv_node*>(gpr_malloc(nfds * sizeof(grpc_cv_node)));
+  grpc_cv_node* fd_cvs =
+      static_cast<grpc_cv_node*>(gpr_malloc(nfds * sizeof(grpc_cv_node)));
 
   for (i = 0; i < nfds; i++) {
     fds[i].revents = 0;
@@ -1546,8 +1550,8 @@ static int cvfd_poll(struct pollfd* fds, nfds_t nfds, int timeout) {
 
   res = 0;
   if (!skip_poll && nsockfds > 0) {
-    struct pollfd* pollfds =
-        static_cast<struct pollfd*>(gpr_malloc(sizeof(struct pollfd) * nsockfds));
+    struct pollfd* pollfds = static_cast<struct pollfd*>(
+        gpr_malloc(sizeof(struct pollfd) * nsockfds));
     idx = 0;
     for (i = 0; i < nfds; i++) {
       if (fds[i].fd >= 0) {
@@ -1610,8 +1614,8 @@ static void global_cv_fd_table_init() {
   gpr_cv_init(&g_cvfds.shutdown_cv);
   gpr_ref_init(&g_cvfds.pollcount, 1);
   g_cvfds.size = CV_DEFAULT_TABLE_SIZE;
-  g_cvfds.cvfds =
-      static_cast<grpc_fd_node*>(gpr_malloc(sizeof(grpc_fd_node) * CV_DEFAULT_TABLE_SIZE));
+  g_cvfds.cvfds = static_cast<grpc_fd_node*>(
+      gpr_malloc(sizeof(grpc_fd_node) * CV_DEFAULT_TABLE_SIZE));
   g_cvfds.free_fds = nullptr;
   thread_grace = gpr_time_from_millis(POLLCV_THREAD_GRACE_MS, GPR_TIMESPAN);
   for (int i = 0; i < CV_DEFAULT_TABLE_SIZE; i++) {
@@ -1628,7 +1632,8 @@ static void global_cv_fd_table_init() {
   poll_cache.size = 32;
   poll_cache.count = 0;
   poll_cache.free_pollers = nullptr;
-  poll_cache.active_pollers = static_cast<poll_args**>(gpr_malloc(sizeof(void*) * 32));
+  poll_cache.active_pollers =
+      static_cast<poll_args**>(gpr_malloc(sizeof(void*) * 32));
   for (unsigned int i = 0; i < poll_cache.size; i++) {
     poll_cache.active_pollers[i] = nullptr;
   }

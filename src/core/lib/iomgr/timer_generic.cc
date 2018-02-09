@@ -240,9 +240,10 @@ void grpc_timer_list_init() {
   uint32_t i;
 
   g_num_shards = GPR_MIN(1, 2 * gpr_cpu_num_cores());
-  g_shards = static_cast<timer_shard*>(gpr_zalloc(g_num_shards * sizeof(*g_shards)));
-  g_shard_queue =
-      static_cast<timer_shard**>(gpr_zalloc(g_num_shards * sizeof(*g_shard_queue)));
+  g_shards =
+      static_cast<timer_shard*>(gpr_zalloc(g_num_shards * sizeof(*g_shards)));
+  g_shard_queue = static_cast<timer_shard**>(
+      gpr_zalloc(g_num_shards * sizeof(*g_shard_queue)));
 
   g_shared_mutables.initialized = true;
   g_shared_mutables.checker_mu = GPR_SPINLOCK_INITIALIZER;
@@ -359,8 +360,8 @@ void grpc_timer_init(grpc_timer* timer, grpc_millis deadline,
     return;
   }
 
-  grpc_time_averaged_stats_add_sample(&shard->stats,
-                                      static_cast<double>(deadline - now) / 1000.0);
+  grpc_time_averaged_stats_add_sample(
+      &shard->stats, static_cast<double>(deadline - now) / 1000.0);
 
   ADD_TO_HASH_TABLE(timer);
 

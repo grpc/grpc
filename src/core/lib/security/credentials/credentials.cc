@@ -40,8 +40,8 @@
 grpc_credentials_metadata_request* grpc_credentials_metadata_request_create(
     grpc_call_credentials* creds) {
   grpc_credentials_metadata_request* r =
-      static_cast<grpc_credentials_metadata_request*>(gpr_zalloc(
-          sizeof(grpc_credentials_metadata_request)));
+      static_cast<grpc_credentials_metadata_request*>(
+          gpr_zalloc(sizeof(grpc_credentials_metadata_request)));
   r->creds = grpc_call_credentials_ref(creds);
   return r;
 }
@@ -149,7 +149,8 @@ static void credentials_pointer_arg_destroy(void* p) {
 }
 
 static void* credentials_pointer_arg_copy(void* p) {
-  return grpc_channel_credentials_ref(static_cast<grpc_channel_credentials*>(p));
+  return grpc_channel_credentials_ref(
+      static_cast<grpc_channel_credentials*>(p));
 }
 
 static int credentials_pointer_cmp(void* a, void* b) { return GPR_ICMP(a, b); }

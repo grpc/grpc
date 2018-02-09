@@ -360,7 +360,8 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
             GRPC_MDVALUE(args->add_initial_metadata[i]));
       }
     }
-    call->send_extra_metadata_count = static_cast<int>(args->add_initial_metadata_count);
+    call->send_extra_metadata_count =
+        static_cast<int>(args->add_initial_metadata_count);
   } else {
     GPR_ASSERT(args->add_initial_metadata_count == 0);
     call->send_extra_metadata_count = 0;
@@ -608,7 +609,8 @@ grpc_call_error grpc_call_cancel(grpc_call* call, void* reserved) {
 // the filter stack.
 static void execute_batch_in_call_combiner(void* arg, grpc_error* ignored) {
   GPR_TIMER_SCOPE("execute_batch", 0);
-  grpc_transport_stream_op_batch* batch = static_cast<grpc_transport_stream_op_batch*>(arg);
+  grpc_transport_stream_op_batch* batch =
+      static_cast<grpc_transport_stream_op_batch*>(arg);
   grpc_call* call = static_cast<grpc_call*>(batch->handler_private.extra_arg);
   grpc_call_element* elem = CALL_ELEM_FROM_CALL(call, 0);
   GRPC_CALL_LOG_OP(GPR_INFO, elem, batch);
@@ -991,8 +993,9 @@ static uint32_t decode_status(grpc_mdelem md) {
     if (!grpc_parse_slice_to_uint32(GRPC_MDVALUE(md), &status)) {
       status = GRPC_STATUS_UNKNOWN; /* could not parse status code */
     }
-    grpc_mdelem_set_user_data(md, destroy_status,
-                              (void*)static_cast<intptr_t>(status + STATUS_OFFSET));
+    grpc_mdelem_set_user_data(
+        md, destroy_status,
+        (void*)static_cast<intptr_t>(status + STATUS_OFFSET));
   }
   return status;
 }
@@ -1040,8 +1043,8 @@ static void publish_app_metadata(grpc_call* call, grpc_metadata_batch* b,
   if (dest->count + b->list.count > dest->capacity) {
     dest->capacity =
         GPR_MAX(dest->capacity + b->list.count, dest->capacity * 3 / 2);
-    dest->metadata = static_cast<grpc_metadata*>(gpr_realloc(
-        dest->metadata, sizeof(grpc_metadata) * dest->capacity));
+    dest->metadata = static_cast<grpc_metadata*>(
+        gpr_realloc(dest->metadata, sizeof(grpc_metadata) * dest->capacity));
   }
   for (grpc_linked_mdelem* l = b->list.head; l != nullptr; l = l->next) {
     mdusr = &dest->metadata[dest->count++];
@@ -1170,8 +1173,8 @@ static batch_control* allocate_batch_control(grpc_call* call,
   int slot = batch_slot_for_op(ops[0].op);
   batch_control** pslot = &call->active_batches[slot];
   if (*pslot == nullptr) {
-    *pslot =
-        static_cast<batch_control*>(gpr_arena_alloc(call->arena, sizeof(batch_control)));
+    *pslot = static_cast<batch_control*>(
+        gpr_arena_alloc(call->arena, sizeof(batch_control)));
   }
   batch_control* bctl = *pslot;
   if (bctl->call != nullptr) {
@@ -1192,7 +1195,7 @@ static void finish_batch_completion(void* user_data,
 }
 
 static grpc_error* consolidate_batch_errors(batch_control* bctl) {
-  size_t n = static_cast<size_t>gpr_atm_acq_load(&bctl->num_errors);
+  size_t n = static_cast<size_t> gpr_atm_acq_load(&bctl->num_errors);
   if (n == 0) {
     return GRPC_ERROR_NONE;
   } else if (n == 1) {
@@ -1584,9 +1587,10 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
   if (nops == 0) {
     if (!is_notify_tag_closure) {
       GPR_ASSERT(grpc_cq_begin_op(call->cq, notify_tag));
-      grpc_cq_end_op(
-          call->cq, notify_tag, GRPC_ERROR_NONE, free_no_op_completion, nullptr,
-          static_cast<grpc_cq_completion*>(gpr_malloc(sizeof(grpc_cq_completion))));
+      grpc_cq_end_op(call->cq, notify_tag, GRPC_ERROR_NONE,
+                     free_no_op_completion, nullptr,
+                     static_cast<grpc_cq_completion*>(
+                         gpr_malloc(sizeof(grpc_cq_completion))));
     } else {
       GRPC_CLOSURE_SCHED((grpc_closure*)notify_tag, GRPC_ERROR_NONE);
     }
@@ -1662,7 +1666,8 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         if (!prepare_application_metadata(
                 call, static_cast<int>(op->data.send_initial_metadata.count),
                 op->data.send_initial_metadata.metadata, 0, call->is_client,
-                &call->compression_md, static_cast<int>(additional_metadata_count))) {
+                &call->compression_md,
+                static_cast<int>(additional_metadata_count))) {
           error = GRPC_CALL_ERROR_INVALID_METADATA;
           goto done_with_error;
         }
@@ -1779,7 +1784,8 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         }
         if (!prepare_application_metadata(
                 call,
-                static_cast<int>(op->data.send_status_from_server.trailing_metadata_count),
+                static_cast<int>(
+                    op->data.send_status_from_server.trailing_metadata_count),
                 op->data.send_status_from_server.trailing_metadata, 1, 1,
                 nullptr, 0)) {
           for (int n = 0; n < call->send_extra_metadata_count; n++) {

@@ -365,15 +365,17 @@ int64_t grpc_test_slowdown_factor() {
 gpr_timespec grpc_timeout_seconds_to_deadline(int64_t time_s) {
   return gpr_time_add(
       gpr_now(GPR_CLOCK_MONOTONIC),
-      gpr_time_from_millis(grpc_test_slowdown_factor() * static_cast<int64_t>(1e3) * time_s,
-                           GPR_TIMESPAN));
+      gpr_time_from_millis(
+          grpc_test_slowdown_factor() * static_cast<int64_t>(1e3) * time_s,
+          GPR_TIMESPAN));
 }
 
 gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms) {
   return gpr_time_add(
       gpr_now(GPR_CLOCK_MONOTONIC),
-      gpr_time_from_micros(grpc_test_slowdown_factor() * static_cast<int64_t>(1e3) * time_ms,
-                           GPR_TIMESPAN));
+      gpr_time_from_micros(
+          grpc_test_slowdown_factor() * static_cast<int64_t>(1e3) * time_ms,
+          GPR_TIMESPAN));
 }
 
 void grpc_test_init(int argc, char** argv) {

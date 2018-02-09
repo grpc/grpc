@@ -77,7 +77,8 @@ static void my_resolve_address(const char* addr, const char* default_port,
     (*addrs)->addrs = static_cast<grpc_resolved_address*>(
         gpr_malloc(sizeof(*(*addrs)->addrs)));
     memset((*addrs)->addrs, 0, sizeof(*(*addrs)->addrs));
-    struct sockaddr_in* sa = reinterpret_cast<struct sockaddr_in*>((*addrs)->addrs[0].addr);
+    struct sockaddr_in* sa =
+        reinterpret_cast<struct sockaddr_in*>((*addrs)->addrs[0].addr);
     sa->sin_family = AF_INET;
     sa->sin_addr.s_addr = htonl(0x7f000001);
     sa->sin_port = htons(static_cast<uint16_t>(g_resolve_port));

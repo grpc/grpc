@@ -285,7 +285,7 @@ static void max_idle_timer_cb(void* arg, grpc_error* error) {
           GRPC_CHANNEL_STACK_REF(chand->channel_stack,
                                  "max_age max_idle_timer");
           grpc_timer_init(&chand->max_idle_timer,
-                          static_cast<grpc_millis>gpr_atm_no_barrier_load(
+                          static_cast<grpc_millis> gpr_atm_no_barrier_load(
                               &chand->last_enter_idle_time_millis) +
                               chand->max_connection_idle,
                           &chand->max_idle_timer_cb);
@@ -384,7 +384,7 @@ add_random_max_connection_age_jitter_and_convert_to_grpc_millis(int value) {
   double result = multiplier * value;
   /* INT_MAX - 0.5 converts the value to float, so that result will not be
      cast to int implicitly before the comparison. */
-  return result > (static_cast<double>GRPC_MILLIS_INF_FUTURE) - 0.5
+  return result > (static_cast<double> GRPC_MILLIS_INF_FUTURE) - 0.5
              ? GRPC_MILLIS_INF_FUTURE
              : static_cast<grpc_millis>(result);
 }

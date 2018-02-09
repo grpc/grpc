@@ -89,7 +89,8 @@ grpc_slice grpc_httpcli_format_post_request(const grpc_httpcli_request* request,
     if (!has_content_type) {
       gpr_strvec_add(&out, gpr_strdup("Content-Type: text/plain\r\n"));
     }
-    gpr_asprintf(&tmp, "Content-Length: %lu\r\n", static_cast<unsigned long>(body_size));
+    gpr_asprintf(&tmp, "Content-Length: %lu\r\n",
+                 static_cast<unsigned long>(body_size));
     gpr_strvec_add(&out, tmp);
   }
   gpr_strvec_add(&out, gpr_strdup("\r\n"));

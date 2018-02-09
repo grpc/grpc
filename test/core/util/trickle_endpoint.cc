@@ -152,7 +152,8 @@ static const grpc_endpoint_vtable vtable = {te_read,
 
 grpc_endpoint* grpc_trickle_endpoint_create(grpc_endpoint* wrap,
                                             double bytes_per_second) {
-  trickle_endpoint* te = static_cast<trickle_endpoint*>(gpr_malloc(sizeof(*te)));
+  trickle_endpoint* te =
+      static_cast<trickle_endpoint*>(gpr_malloc(sizeof(*te)));
   te->base.vtable = &vtable;
   te->wrapped = wrap;
   te->bytes_per_second = bytes_per_second;

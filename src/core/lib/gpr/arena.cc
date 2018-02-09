@@ -71,18 +71,20 @@ size_t gpr_arena_destroy(gpr_arena* arena) {
 
 void* gpr_arena_alloc(gpr_arena* arena, size_t size) {
   size = ROUND_UP_TO_ALIGNMENT_SIZE(size);
-  size_t start =
-      static_cast<size_t>(gpr_atm_no_barrier_fetch_add(&arena->size_so_far, size));
+  size_t start = static_cast<size_t>(
+      gpr_atm_no_barrier_fetch_add(&arena->size_so_far, size));
   zone* z = &arena->initial_zone;
   while (start > z->size_end) {
     zone* next_z = (zone*)gpr_atm_acq_load(&z->next_atm);
     if (next_z == nullptr) {
-      size_t next_z_size = static_cast<size_t>gpr_atm_no_barrier_load(&arena->size_so_far);
-      next_z = static_cast<zone*>(zalloc_aligned(ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(zone)) +
-                                     next_z_size));
+      size_t next_z_size =
+          static_cast<size_t> gpr_atm_no_barrier_load(&arena->size_so_far);
+      next_z = static_cast<zone*>(zalloc_aligned(
+          ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(zone)) + next_z_size));
       next_z->size_begin = z->size_end;
       next_z->size_end = z->size_end + next_z_size;
-      if (!gpr_atm_rel_cas(&z->next_atm, static_cast<gpr_atm>(NULL), (gpr_atm)next_z)) {
+      if (!gpr_atm_rel_cas(&z->next_atm, static_cast<gpr_atm>(NULL),
+                           (gpr_atm)next_z)) {
         gpr_free_aligned(next_z);
         next_z = (zone*)gpr_atm_acq_load(&z->next_atm);
       }
@@ -95,7 +97,9 @@ void* gpr_arena_alloc(gpr_arena* arena, size_t size) {
   GPR_ASSERT(start >= z->size_begin);
   GPR_ASSERT(start + size <= z->size_end);
   char* ptr = (z == &arena->initial_zone)
-                  ? reinterpret_cast<char*>(arena) + ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(gpr_arena))
-                  : reinterpret_cast<char*>(z) + ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(zone));
+                  ? reinterpret_cast<char*>(arena) +
+                        ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(gpr_arena))
+                  : reinterpret_cast<char*>(z) +
+                        ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(zone));
   return ptr + start - z->size_begin;
 }

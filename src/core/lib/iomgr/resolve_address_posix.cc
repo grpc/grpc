@@ -114,14 +114,14 @@ static grpc_error* blocking_resolve_address_impl(
   }
 
   /* Success path: set addrs non-NULL, fill it in */
-  *addresses =
-      static_cast<grpc_resolved_addresses*>(gpr_malloc(sizeof(grpc_resolved_addresses)));
+  *addresses = static_cast<grpc_resolved_addresses*>(
+      gpr_malloc(sizeof(grpc_resolved_addresses)));
   (*addresses)->naddrs = 0;
   for (resp = result; resp != nullptr; resp = resp->ai_next) {
     (*addresses)->naddrs++;
   }
-  (*addresses)->addrs = static_cast<grpc_resolved_address*>(gpr_malloc(
-      sizeof(grpc_resolved_address) * (*addresses)->naddrs));
+  (*addresses)->addrs = static_cast<grpc_resolved_address*>(
+      gpr_malloc(sizeof(grpc_resolved_address) * (*addresses)->naddrs));
   i = 0;
   for (resp = result; resp != nullptr; resp = resp->ai_next) {
     memcpy(&(*addresses)->addrs[i].addr, resp->ai_addr, resp->ai_addrlen);

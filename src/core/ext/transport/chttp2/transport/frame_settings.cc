@@ -110,7 +110,8 @@ grpc_error* grpc_chttp2_settings_parser_begin_frame(
 grpc_error* grpc_chttp2_settings_parser_parse(void* p, grpc_chttp2_transport* t,
                                               grpc_chttp2_stream* s,
                                               grpc_slice slice, int is_last) {
-  grpc_chttp2_settings_parser* parser = static_cast<grpc_chttp2_settings_parser*>(p);
+  grpc_chttp2_settings_parser* parser =
+      static_cast<grpc_chttp2_settings_parser*>(p);
   const uint8_t* cur = GRPC_SLICE_START_PTR(slice);
   const uint8_t* end = GRPC_SLICE_END_PTR(slice);
   char* msg;
@@ -211,8 +212,8 @@ grpc_error* grpc_chttp2_settings_parser_parse(void* p, grpc_chttp2_transport* t,
           }
           if (id == GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE &&
               parser->incoming_settings[id] != parser->value) {
-            t->initial_window_update +=
-                static_cast<int64_t>(parser->value) - parser->incoming_settings[id];
+            t->initial_window_update += static_cast<int64_t>(parser->value) -
+                                        parser->incoming_settings[id];
             if (grpc_http_trace.enabled() || grpc_flowctl_trace.enabled()) {
               gpr_log(GPR_DEBUG, "%p[%s] adding %d for initial_window change",
                       t, t->is_client ? "cli" : "svr",

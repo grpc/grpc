@@ -104,8 +104,9 @@ grpc_error* grpc_channel_stack_init(
   GRPC_STREAM_REF_INIT(&stack->refcount, initial_refs, destroy, destroy_arg,
                        name);
   elems = CHANNEL_ELEMS_FROM_STACK(stack);
-  user_data = (reinterpret_cast<char*>(elems)) + ROUND_UP_TO_ALIGNMENT_SIZE(
-                                   filter_count * sizeof(grpc_channel_element));
+  user_data =
+      (reinterpret_cast<char*>(elems)) +
+      ROUND_UP_TO_ALIGNMENT_SIZE(filter_count * sizeof(grpc_channel_element));
 
   /* init per-filter data */
   grpc_error* first_error = GRPC_ERROR_NONE;
@@ -243,11 +244,13 @@ void grpc_channel_next_op(grpc_channel_element* elem, grpc_transport_op* op) {
 
 grpc_channel_stack* grpc_channel_stack_from_top_element(
     grpc_channel_element* elem) {
-  return reinterpret_cast<grpc_channel_stack*>(reinterpret_cast<char*>(elem)-ROUND_UP_TO_ALIGNMENT_SIZE(
-      sizeof(grpc_channel_stack)));
+  return reinterpret_cast<grpc_channel_stack*>(
+      reinterpret_cast<char*>(elem) -
+      ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_channel_stack)));
 }
 
 grpc_call_stack* grpc_call_stack_from_top_element(grpc_call_element* elem) {
-  return reinterpret_cast<grpc_call_stack*>(reinterpret_cast<char*>(elem)-ROUND_UP_TO_ALIGNMENT_SIZE(
-      sizeof(grpc_call_stack)));
+  return reinterpret_cast<grpc_call_stack*>(
+      reinterpret_cast<char*>(elem) -
+      ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call_stack)));
 }

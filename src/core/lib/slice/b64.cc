@@ -128,13 +128,15 @@ grpc_slice grpc_base64_decode(const char* b64, int url_safe) {
 
 static void decode_one_char(const unsigned char* codes, unsigned char* result,
                             size_t* result_offset) {
-  uint32_t packed = (static_cast<uint32_t>(codes[0]) << 2) | (static_cast<uint32_t>(codes[1]) >> 4);
+  uint32_t packed = (static_cast<uint32_t>(codes[0]) << 2) |
+                    (static_cast<uint32_t>(codes[1]) >> 4);
   result[(*result_offset)++] = static_cast<unsigned char>(packed);
 }
 
 static void decode_two_chars(const unsigned char* codes, unsigned char* result,
                              size_t* result_offset) {
-  uint32_t packed = (static_cast<uint32_t>(codes[0]) << 10) | (static_cast<uint32_t>(codes[1]) << 4) |
+  uint32_t packed = (static_cast<uint32_t>(codes[0]) << 10) |
+                    (static_cast<uint32_t>(codes[1]) << 4) |
                     (static_cast<uint32_t>(codes[2]) >> 2);
   result[(*result_offset)++] = static_cast<unsigned char>(packed >> 8);
   result[(*result_offset)++] = static_cast<unsigned char>(packed);
@@ -175,7 +177,8 @@ static int decode_group(const unsigned char* codes, size_t num_codes,
     decode_two_chars(codes, result, result_offset);
   } else {
     /* No padding. */
-    uint32_t packed = (static_cast<uint32_t>(codes[0]) << 18) | (static_cast<uint32_t>(codes[1]) << 12) |
+    uint32_t packed = (static_cast<uint32_t>(codes[0]) << 18) |
+                      (static_cast<uint32_t>(codes[1]) << 12) |
                       (static_cast<uint32_t>(codes[2]) << 6) | codes[3];
     result[(*result_offset)++] = static_cast<unsigned char>(packed >> 16);
     result[(*result_offset)++] = static_cast<unsigned char>(packed >> 8);

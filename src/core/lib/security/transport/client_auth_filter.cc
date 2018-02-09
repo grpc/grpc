@@ -93,7 +93,8 @@ static void add_error(grpc_error** combined, grpc_error* error) {
 }
 
 static void on_credentials_metadata(void* arg, grpc_error* input_error) {
-  grpc_transport_stream_op_batch* batch = static_cast<grpc_transport_stream_op_batch*>(arg);
+  grpc_transport_stream_op_batch* batch =
+      static_cast<grpc_transport_stream_op_batch*>(arg);
   grpc_call_element* elem =
       static_cast<grpc_call_element*>(batch->handler_private.extra_arg);
   call_data* calld = static_cast<call_data*>(elem->call_data);
@@ -173,9 +174,8 @@ static void send_security_metadata(grpc_call_element* elem,
   call_data* calld = static_cast<call_data*>(elem->call_data);
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   grpc_client_security_context* ctx =
-      static_cast<grpc_client_security_context*>(batch->payload
-          ->context[GRPC_CONTEXT_SECURITY]
-          .value);
+      static_cast<grpc_client_security_context*>(
+          batch->payload->context[GRPC_CONTEXT_SECURITY].value);
   grpc_call_credentials* channel_call_creds =
       chand->security_connector->request_metadata_creds;
   int call_creds_has_md = (ctx != nullptr) && (ctx->creds != nullptr);
@@ -231,7 +231,8 @@ static void send_security_metadata(grpc_call_element* elem,
 }
 
 static void on_host_checked(void* arg, grpc_error* error) {
-  grpc_transport_stream_op_batch* batch = static_cast<grpc_transport_stream_op_batch*>(arg);
+  grpc_transport_stream_op_batch* batch =
+      static_cast<grpc_transport_stream_op_batch*>(arg);
   grpc_call_element* elem =
       static_cast<grpc_call_element*>(batch->handler_private.extra_arg);
   call_data* calld = static_cast<call_data*>(elem->call_data);
@@ -283,9 +284,8 @@ static void auth_start_transport_stream_op_batch(
           grpc_client_security_context_destroy;
     }
     grpc_client_security_context* sec_ctx =
-        static_cast<grpc_client_security_context*>(batch->payload
-            ->context[GRPC_CONTEXT_SECURITY]
-            .value);
+        static_cast<grpc_client_security_context*>(
+            batch->payload->context[GRPC_CONTEXT_SECURITY].value);
     GRPC_AUTH_CONTEXT_UNREF(sec_ctx->auth_context, "client auth filter");
     sec_ctx->auth_context =
         GRPC_AUTH_CONTEXT_REF(chand->auth_context, "client_auth_filter");
@@ -400,8 +400,8 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
 
   /* initialize members */
   chand->security_connector =
-      reinterpret_cast<grpc_channel_security_connector*>(GRPC_SECURITY_CONNECTOR_REF(
-          sc, "client_auth_filter"));
+      reinterpret_cast<grpc_channel_security_connector*>(
+          GRPC_SECURITY_CONNECTOR_REF(sc, "client_auth_filter"));
   chand->auth_context =
       GRPC_AUTH_CONTEXT_REF(auth_context, "client_auth_filter");
   return GRPC_ERROR_NONE;

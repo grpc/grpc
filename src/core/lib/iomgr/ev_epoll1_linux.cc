@@ -458,8 +458,8 @@ static grpc_error* pollset_global_init(void) {
     return GRPC_OS_ERROR(errno, "epoll_ctl");
   }
   g_num_neighborhoods = GPR_CLAMP(gpr_cpu_num_cores(), 1, MAX_NEIGHBORHOODS);
-  g_neighborhoods = static_cast<pollset_neighborhood*>(gpr_zalloc(sizeof(*g_neighborhoods) *
-                                                      g_num_neighborhoods));
+  g_neighborhoods = static_cast<pollset_neighborhood*>(
+      gpr_zalloc(sizeof(*g_neighborhoods) * g_num_neighborhoods));
   for (size_t i = 0; i < g_num_neighborhoods; i++) {
     gpr_mu_init(&g_neighborhoods[i].mu);
   }

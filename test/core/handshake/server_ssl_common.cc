@@ -78,9 +78,12 @@ static void server_thread(void* arg) {
                                grpc_load_file(SSL_CERT_PATH, 1, &cert_slice)));
   GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
                                grpc_load_file(SSL_KEY_PATH, 1, &key_slice)));
-  const char* ca_cert = reinterpret_cast<const char*>GRPC_SLICE_START_PTR(ca_slice);
-  pem_key_cert_pair.private_key = reinterpret_cast<const char*>GRPC_SLICE_START_PTR(key_slice);
-  pem_key_cert_pair.cert_chain = reinterpret_cast<const char*>GRPC_SLICE_START_PTR(cert_slice);
+  const char* ca_cert =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
+  pem_key_cert_pair.private_key =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
+  pem_key_cert_pair.cert_chain =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
   grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
       ca_cert, &pem_key_cert_pair, 1, 0, nullptr);
 
@@ -217,8 +220,8 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
     unsigned int alpn_selected_len;
     SSL_get0_alpn_selected(ssl, &alpn_selected, &alpn_selected_len);
     if (strlen(alpn_expected) != alpn_selected_len ||
-        strncmp(reinterpret_cast<const char*>(alpn_selected), alpn_expected, alpn_selected_len) !=
-            0) {
+        strncmp(reinterpret_cast<const char*>(alpn_selected), alpn_expected,
+                alpn_selected_len) != 0) {
       gpr_log(GPR_ERROR, "Unexpected ALPN protocol preference");
       success = false;
     }

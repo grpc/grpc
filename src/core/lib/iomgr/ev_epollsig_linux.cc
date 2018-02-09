@@ -368,8 +368,8 @@ static void polling_island_add_fds_locked(polling_island* pi, grpc_fd** fds,
 
     if (pi->fd_cnt == pi->fd_capacity) {
       pi->fd_capacity = GPR_MAX(pi->fd_capacity + 8, pi->fd_cnt * 3 / 2);
-      pi->fds =
-          static_cast<grpc_fd**>(gpr_realloc(pi->fds, sizeof(grpc_fd*) * pi->fd_capacity));
+      pi->fds = static_cast<grpc_fd**>(
+          gpr_realloc(pi->fds, sizeof(grpc_fd*) * pi->fd_capacity));
     }
 
     pi->fds[pi->fd_cnt++] = fds[i];
@@ -976,7 +976,8 @@ static grpc_error* pollset_worker_kick(grpc_pollset_worker* worker) {
   grpc_error* err = GRPC_ERROR_NONE;
 
   /* Kick the worker only if it was not already kicked */
-  if (gpr_atm_no_barrier_cas(&worker->is_kicked, static_cast<gpr_atm>(0), static_cast<gpr_atm>(1))) {
+  if (gpr_atm_no_barrier_cas(&worker->is_kicked, static_cast<gpr_atm>(0),
+                             static_cast<gpr_atm>(1))) {
     GRPC_POLLING_TRACE(
         "pollset_worker_kick: Kicking worker: %p (thread id: %ld)",
         (void*)worker, (long int)worker->pt_id);
@@ -1538,7 +1539,8 @@ static void pollset_add_fd(grpc_pollset* pollset, grpc_fd* fd) {
  */
 
 static grpc_pollset_set* pollset_set_create(void) {
-  grpc_pollset_set* pss = static_cast<grpc_pollset_set*>(gpr_malloc(sizeof(*pss)));
+  grpc_pollset_set* pss =
+      static_cast<grpc_pollset_set*>(gpr_malloc(sizeof(*pss)));
   gpr_mu_init(&pss->po.mu);
   pss->po.pi = nullptr;
 #ifndef NDEBUG

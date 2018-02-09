@@ -110,8 +110,8 @@ static void grpc_ares_request_unref(grpc_ares_request* r) {
 static grpc_ares_hostbyname_request* create_hostbyname_request(
     grpc_ares_request* parent_request, char* host, uint16_t port,
     bool is_balancer) {
-  grpc_ares_hostbyname_request* hr = static_cast<grpc_ares_hostbyname_request*>(gpr_zalloc(
-      sizeof(grpc_ares_hostbyname_request)));
+  grpc_ares_hostbyname_request* hr = static_cast<grpc_ares_hostbyname_request*>(
+      gpr_zalloc(sizeof(grpc_ares_hostbyname_request)));
   hr->parent_request = parent_request;
   hr->host = gpr_strdup(host);
   hr->port = port;
@@ -128,7 +128,8 @@ static void destroy_hostbyname_request(grpc_ares_hostbyname_request* hr) {
 
 static void on_hostbyname_done_cb(void* arg, int status, int timeouts,
                                   struct hostent* hostent) {
-  grpc_ares_hostbyname_request* hr = static_cast<grpc_ares_hostbyname_request*>(arg);
+  grpc_ares_hostbyname_request* hr =
+      static_cast<grpc_ares_hostbyname_request*>(arg);
   grpc_ares_request* r = hr->parent_request;
   gpr_mu_lock(&r->mu);
   if (status == ARES_SUCCESS) {
@@ -144,9 +145,9 @@ static void on_hostbyname_done_cb(void* arg, int status, int timeouts,
     for (i = 0; hostent->h_addr_list[i] != nullptr; i++) {
     }
     (*lb_addresses)->num_addresses += i;
-    (*lb_addresses)->addresses = static_cast<grpc_lb_address*>(gpr_realloc(
-        (*lb_addresses)->addresses,
-        sizeof(grpc_lb_address) * (*lb_addresses)->num_addresses));
+    (*lb_addresses)->addresses = static_cast<grpc_lb_address*>(
+        gpr_realloc((*lb_addresses)->addresses,
+                    sizeof(grpc_lb_address) * (*lb_addresses)->num_addresses));
     for (i = prev_naddr; i < (*lb_addresses)->num_addresses; i++) {
       switch (hostent->h_addrtype) {
         case AF_INET6: {
@@ -279,13 +280,15 @@ static void on_txt_done_cb(void* arg, int status, int timeouts,
   // Found a service config record.
   if (result != nullptr) {
     size_t service_config_len = result->length - prefix_len;
-    *r->service_config_json_out = static_cast<char*>(gpr_malloc(service_config_len + 1));
+    *r->service_config_json_out =
+        static_cast<char*>(gpr_malloc(service_config_len + 1));
     memcpy(*r->service_config_json_out, result->txt + prefix_len,
            service_config_len);
     for (result = result->next; result != nullptr && !result->record_start;
          result = result->next) {
-      *r->service_config_json_out = static_cast<char*>(gpr_realloc(
-          *r->service_config_json_out, service_config_len + result->length + 1));
+      *r->service_config_json_out = static_cast<char*>(
+          gpr_realloc(*r->service_config_json_out,
+                      service_config_len + result->length + 1));
       memcpy(*r->service_config_json_out + service_config_len, result->txt,
              result->length);
       service_config_len += result->length;
@@ -372,7 +375,8 @@ static grpc_ares_request* grpc_dns_lookup_ares_impl(
     } else if (grpc_parse_ipv6_hostport(dns_server, &addr,
                                         false /* log_errors */)) {
       r->dns_server_addr.family = AF_INET6;
-      struct sockaddr_in6* in6 = reinterpret_cast<struct sockaddr_in6*>(addr.addr);
+      struct sockaddr_in6* in6 =
+          reinterpret_cast<struct sockaddr_in6*>(addr.addr);
       memcpy(&r->dns_server_addr.addr.addr6, &in6->sin6_addr,
              sizeof(struct in6_addr));
       r->dns_server_addr.tcp_port = grpc_sockaddr_get_port(&addr);
@@ -492,11 +496,12 @@ static void on_dns_lookup_done_cb(void* arg, grpc_error* error) {
   if (r->lb_addrs == nullptr || r->lb_addrs->num_addresses == 0) {
     *resolved_addresses = nullptr;
   } else {
-    *resolved_addresses =
-        static_cast<grpc_resolved_addresses*>(gpr_zalloc(sizeof(grpc_resolved_addresses)));
+    *resolved_addresses = static_cast<grpc_resolved_addresses*>(
+        gpr_zalloc(sizeof(grpc_resolved_addresses)));
     (*resolved_addresses)->naddrs = r->lb_addrs->num_addresses;
-    (*resolved_addresses)->addrs = static_cast<grpc_resolved_address*>(gpr_zalloc(
-        sizeof(grpc_resolved_address) * (*resolved_addresses)->naddrs));
+    (*resolved_addresses)->addrs =
+        static_cast<grpc_resolved_address*>(gpr_zalloc(
+            sizeof(grpc_resolved_address) * (*resolved_addresses)->naddrs));
     for (size_t i = 0; i < (*resolved_addresses)->naddrs; i++) {
       GPR_ASSERT(!r->lb_addrs->addresses[i].is_balancer);
       memcpy(&(*resolved_addresses)->addrs[i],
@@ -514,8 +519,8 @@ static void grpc_resolve_address_ares_impl(const char* name,
                                            grpc_closure* on_done,
                                            grpc_resolved_addresses** addrs) {
   grpc_resolve_address_ares_request* r =
-      static_cast<grpc_resolve_address_ares_request*>(gpr_zalloc(
-          sizeof(grpc_resolve_address_ares_request)));
+      static_cast<grpc_resolve_address_ares_request*>(
+          gpr_zalloc(sizeof(grpc_resolve_address_ares_request)));
   r->addrs_out = addrs;
   r->on_resolve_address_done = on_done;
   GRPC_CLOSURE_INIT(&r->on_dns_lookup_done, on_dns_lookup_done_cb, r,

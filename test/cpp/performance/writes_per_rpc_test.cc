@@ -230,7 +230,8 @@ static double UnaryPingPong(int request_size, int response_size) {
   }
 
   double writes_per_iteration =
-      static_cast<double>(fixture->writes_performed()) / static_cast<double>(kIterations);
+      static_cast<double>(fixture->writes_performed()) /
+      static_cast<double>(kIterations);
 
   fixture.reset();
   server_env[0]->~ServerEnv();

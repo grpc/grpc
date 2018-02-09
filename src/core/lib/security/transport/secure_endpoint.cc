@@ -205,7 +205,8 @@ static void on_read(void* user_data, grpc_error* error) {
           ep->read_buffer,
           grpc_slice_split_head(
               &ep->read_staging_buffer,
-              static_cast<size_t>(cur - GRPC_SLICE_START_PTR(ep->read_staging_buffer))));
+              static_cast<size_t>(
+                  cur - GRPC_SLICE_START_PTR(ep->read_staging_buffer))));
     }
   }
 
@@ -324,8 +325,8 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
             &ep->output_buffer,
             grpc_slice_split_head(
                 &ep->write_staging_buffer,
-                static_cast<size_t>(cur -
-                         GRPC_SLICE_START_PTR(ep->write_staging_buffer))));
+                static_cast<size_t>(
+                    cur - GRPC_SLICE_START_PTR(ep->write_staging_buffer))));
       }
     }
   }
@@ -403,7 +404,8 @@ grpc_endpoint* grpc_secure_endpoint_create(
     grpc_endpoint* transport, grpc_slice* leftover_slices,
     size_t leftover_nslices) {
   size_t i;
-  secure_endpoint* ep = static_cast<secure_endpoint*>(gpr_malloc(sizeof(secure_endpoint)));
+  secure_endpoint* ep =
+      static_cast<secure_endpoint*>(gpr_malloc(sizeof(secure_endpoint)));
   ep->base.vtable = &vtable;
   ep->wrapped_ep = transport;
   ep->protector = protector;

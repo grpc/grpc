@@ -84,7 +84,8 @@ static void request_call_unary(int call_idx) {
 }
 
 static void send_initial_metadata_unary(void* tag) {
-  grpc_metadata_array_init(&(*static_cast<fling_call*>(tag)).initial_metadata_send);
+  grpc_metadata_array_init(
+      &(*static_cast<fling_call*>(tag)).initial_metadata_send);
   metadata_ops[0].op = GRPC_OP_SEND_INITIAL_METADATA;
   metadata_ops[0].data.send_initial_metadata.count = 0;
 
@@ -111,7 +112,8 @@ static void send_snapshot(void* tag, struct grpc_memory_counters* snapshot) {
   grpc_slice snapshot_slice =
       grpc_slice_new(snapshot, sizeof(*snapshot), gpr_free);
   payload_buffer = grpc_raw_byte_buffer_create(&snapshot_slice, 1);
-  grpc_metadata_array_init(&(*static_cast<fling_call*>(tag)).initial_metadata_send);
+  grpc_metadata_array_init(
+      &(*static_cast<fling_call*>(tag)).initial_metadata_send);
 
   op = snapshot_ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -204,7 +206,8 @@ int main(int argc, char** argv) {
   addr = addr_buf = nullptr;
 
   // initialize call instances
-  for (int i = 0; i < static_cast<int>(sizeof(calls) / sizeof(fling_call)); i++) {
+  for (int i = 0; i < static_cast<int>(sizeof(calls) / sizeof(fling_call));
+       i++) {
     grpc_call_details_init(&calls[i].call_details);
     calls[i].state = FLING_SERVER_NEW_REQUEST;
   }
@@ -281,7 +284,8 @@ int main(int argc, char** argv) {
             grpc_metadata_array_destroy(&s->request_metadata_recv);
             break;
           case FLING_SERVER_BATCH_SEND_STATUS_FLING_CALL:
-            for (int k = 0; k < static_cast<int>(sizeof(calls) / sizeof(fling_call));
+            for (int k = 0;
+                 k < static_cast<int>(sizeof(calls) / sizeof(fling_call));
                  ++k) {
               if (calls[k].state == FLING_SERVER_WAIT_FOR_DESTROY) {
                 calls[k].state = FLING_SERVER_SEND_STATUS_FLING_CALL;

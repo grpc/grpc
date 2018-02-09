@@ -52,7 +52,7 @@ static bool gzip_flate(grpc_stream_compression_context_gzip* ctx,
     ctx->zs.next_out = GRPC_SLICE_START_PTR(slice_out);
     while (ctx->zs.avail_out > 0 && in->length > 0 && !eoc) {
       grpc_slice slice = grpc_slice_buffer_take_first(in);
-      ctx->zs.avail_in = static_cast<uInt>GRPC_SLICE_LENGTH(slice);
+      ctx->zs.avail_in = static_cast<uInt> GRPC_SLICE_LENGTH(slice);
       ctx->zs.next_in = GRPC_SLICE_START_PTR(slice);
       r = ctx->flate(&ctx->zs, Z_NO_FLUSH);
       if (r < 0 && r != Z_BUF_ERROR) {
@@ -184,8 +184,8 @@ grpc_stream_compression_context_create_gzip(
   GPR_ASSERT(method == GRPC_STREAM_COMPRESSION_GZIP_COMPRESS ||
              method == GRPC_STREAM_COMPRESSION_GZIP_DECOMPRESS);
   grpc_stream_compression_context_gzip* gzip_ctx =
-      static_cast<grpc_stream_compression_context_gzip*>(gpr_zalloc(
-          sizeof(grpc_stream_compression_context_gzip)));
+      static_cast<grpc_stream_compression_context_gzip*>(
+          gpr_zalloc(sizeof(grpc_stream_compression_context_gzip)));
   int r;
   if (gzip_ctx == nullptr) {
     return nullptr;

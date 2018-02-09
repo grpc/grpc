@@ -93,7 +93,8 @@ grpc_channel_args* grpc_channel_args_copy_and_add_and_remove(
     dst->args = nullptr;
     return dst;
   }
-  dst->args = static_cast<grpc_arg*>(gpr_malloc(sizeof(grpc_arg) * dst->num_args));
+  dst->args =
+      static_cast<grpc_arg*>(gpr_malloc(sizeof(grpc_arg) * dst->num_args));
   // Copy args from src that are not being removed.
   size_t dst_idx = 0;
   if (src != nullptr) {
@@ -118,7 +119,8 @@ grpc_channel_args* grpc_channel_args_copy(const grpc_channel_args* src) {
 grpc_channel_args* grpc_channel_args_union(const grpc_channel_args* a,
                                            const grpc_channel_args* b) {
   const size_t max_out = (a->num_args + b->num_args);
-  grpc_arg* uniques = static_cast<grpc_arg*>(gpr_malloc(sizeof(*uniques) * max_out));
+  grpc_arg* uniques =
+      static_cast<grpc_arg*>(gpr_malloc(sizeof(*uniques) * max_out));
   for (size_t i = 0; i < a->num_args; ++i) uniques[i] = a->args[i];
 
   size_t uniques_idx = a->num_args;
@@ -169,7 +171,8 @@ static int cmp_key_stable(const void* ap, const void* bp) {
 }
 
 grpc_channel_args* grpc_channel_args_normalize(const grpc_channel_args* a) {
-  grpc_arg** args = static_cast<grpc_arg**>(gpr_malloc(sizeof(grpc_arg*) * a->num_args));
+  grpc_arg** args =
+      static_cast<grpc_arg**>(gpr_malloc(sizeof(grpc_arg*) * a->num_args));
   for (size_t i = 0; i < a->num_args; i++) {
     args[i] = &a->args[i];
   }

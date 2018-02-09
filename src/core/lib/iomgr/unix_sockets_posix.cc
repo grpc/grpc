@@ -51,11 +51,11 @@ grpc_error* grpc_resolve_unix_domain_address(const char* name,
     gpr_free(err_msg);
     return err;
   }
-  *addrs =
-      static_cast<grpc_resolved_addresses*>(gpr_malloc(sizeof(grpc_resolved_addresses)));
+  *addrs = static_cast<grpc_resolved_addresses*>(
+      gpr_malloc(sizeof(grpc_resolved_addresses)));
   (*addrs)->naddrs = 1;
-  (*addrs)->addrs =
-      static_cast<grpc_resolved_address*>(gpr_malloc(sizeof(grpc_resolved_address)));
+  (*addrs)->addrs = static_cast<grpc_resolved_address*>(
+      gpr_malloc(sizeof(grpc_resolved_address)));
   un = reinterpret_cast<struct sockaddr_un*>((*addrs)->addrs->addr);
   un->sun_family = AF_UNIX;
   strncpy(un->sun_path, name, sizeof(un->sun_path));
@@ -64,17 +64,20 @@ grpc_error* grpc_resolve_unix_domain_address(const char* name,
 }
 
 int grpc_is_unix_socket(const grpc_resolved_address* resolved_addr) {
-  const struct sockaddr* addr = reinterpret_cast<const struct sockaddr*>(resolved_addr->addr);
+  const struct sockaddr* addr =
+      reinterpret_cast<const struct sockaddr*>(resolved_addr->addr);
   return addr->sa_family == AF_UNIX;
 }
 
 void grpc_unlink_if_unix_domain_socket(
     const grpc_resolved_address* resolved_addr) {
-  const struct sockaddr* addr = reinterpret_cast<const struct sockaddr*>(resolved_addr->addr);
+  const struct sockaddr* addr =
+      reinterpret_cast<const struct sockaddr*>(resolved_addr->addr);
   if (addr->sa_family != AF_UNIX) {
     return;
   }
-  struct sockaddr_un* un = reinterpret_cast<struct sockaddr_un*>(const_cast<char*>(resolved_addr->addr));
+  struct sockaddr_un* un = reinterpret_cast<struct sockaddr_un*>(
+      const_cast<char*>(resolved_addr->addr));
   struct stat st;
 
   if (stat(un->sun_path, &st) == 0 && (st.st_mode & S_IFMT) == S_IFSOCK) {
@@ -84,7 +87,8 @@ void grpc_unlink_if_unix_domain_socket(
 
 char* grpc_sockaddr_to_uri_unix_if_possible(
     const grpc_resolved_address* resolved_addr) {
-  const struct sockaddr* addr = reinterpret_cast<const struct sockaddr*>(resolved_addr->addr);
+  const struct sockaddr* addr =
+      reinterpret_cast<const struct sockaddr*>(resolved_addr->addr);
   if (addr->sa_family != AF_UNIX) {
     return nullptr;
   }

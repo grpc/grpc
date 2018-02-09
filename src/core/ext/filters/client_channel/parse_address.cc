@@ -40,7 +40,8 @@ bool grpc_parse_unix(const grpc_uri* uri,
     gpr_log(GPR_ERROR, "Expected 'unix' scheme, got '%s'", uri->scheme);
     return false;
   }
-  struct sockaddr_un* un = reinterpret_cast<struct sockaddr_un*>(resolved_addr->addr);
+  struct sockaddr_un* un =
+      reinterpret_cast<struct sockaddr_un*>(resolved_addr->addr);
   const size_t maxlen = sizeof(un->sun_path);
   const size_t path_len = strnlen(uri->path, maxlen);
   if (path_len == maxlen) return false;

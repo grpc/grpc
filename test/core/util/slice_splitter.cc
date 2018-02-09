@@ -45,8 +45,8 @@ void grpc_split_slices(grpc_slice_split_mode mode, grpc_slice* src_slices,
   switch (mode) {
     case GRPC_SLICE_SPLIT_IDENTITY:
       *dst_slice_count = src_slice_count;
-      *dst_slices =
-          static_cast<grpc_slice*>(gpr_malloc(sizeof(grpc_slice) * src_slice_count));
+      *dst_slices = static_cast<grpc_slice*>(
+          gpr_malloc(sizeof(grpc_slice) * src_slice_count));
       for (i = 0; i < src_slice_count; i++) {
         (*dst_slices)[i] = src_slices[i];
         grpc_slice_ref((*dst_slices)[i]);
@@ -74,7 +74,8 @@ void grpc_split_slices(grpc_slice_split_mode mode, grpc_slice* src_slices,
         length += GRPC_SLICE_LENGTH(src_slices[i]);
       }
       *dst_slice_count = length;
-      *dst_slices = static_cast<grpc_slice*>(gpr_malloc(sizeof(grpc_slice) * length));
+      *dst_slices =
+          static_cast<grpc_slice*>(gpr_malloc(sizeof(grpc_slice) * length));
       length = 0;
       for (i = 0; i < src_slice_count; i++) {
         for (j = 0; j < GRPC_SLICE_LENGTH(src_slices[i]); j++) {

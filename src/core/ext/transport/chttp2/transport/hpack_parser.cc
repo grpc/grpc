@@ -757,7 +757,8 @@ static grpc_error* finish_indexed_field(grpc_chttp2_hpack_parser* p,
     return grpc_error_set_int(
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                "Invalid HPACK index received"),
-                           GRPC_ERROR_INT_INDEX, static_cast<intptr_t>(p->index)),
+                           GRPC_ERROR_INT_INDEX,
+                           static_cast<intptr_t>(p->index)),
         GRPC_ERROR_INT_SIZE, static_cast<intptr_t>(p->table.num_ents));
   }
   GRPC_MDELEM_REF(md);
@@ -1227,9 +1228,10 @@ static void append_bytes(grpc_chttp2_hpack_parser_string* str,
   if (length == 0) return;
   if (length + str->data.copied.length > str->data.copied.capacity) {
     GPR_ASSERT(str->data.copied.length + length <= UINT32_MAX);
-    str->data.copied.capacity = static_cast<uint32_t>(str->data.copied.length + length);
-    str->data.copied.str =
-        static_cast<char*>(gpr_realloc(str->data.copied.str, str->data.copied.capacity));
+    str->data.copied.capacity =
+        static_cast<uint32_t>(str->data.copied.length + length);
+    str->data.copied.str = static_cast<char*>(
+        gpr_realloc(str->data.copied.str, str->data.copied.capacity));
   }
   memcpy(str->data.copied.str + str->data.copied.length, data, length);
   GPR_ASSERT(length <= UINT32_MAX - str->data.copied.length);
@@ -1448,7 +1450,8 @@ static grpc_error* begin_parse_string(grpc_chttp2_hpack_parser* p,
                                       const uint8_t* cur, const uint8_t* end,
                                       uint8_t binary,
                                       grpc_chttp2_hpack_parser_string* str) {
-  if (!p->huff && binary == NOT_BINARY && (end - cur) >= static_cast<intptr_t>(p->strlen) &&
+  if (!p->huff && binary == NOT_BINARY &&
+      (end - cur) >= static_cast<intptr_t>(p->strlen) &&
       p->current_slice_refcount != nullptr) {
     GRPC_STATS_INC_HPACK_RECV_UNCOMPRESSED();
     str->copied = false;
@@ -1503,7 +1506,8 @@ static grpc_error* is_binary_indexed_header(grpc_chttp2_hpack_parser* p,
     return grpc_error_set_int(
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                "Invalid HPACK index received"),
-                           GRPC_ERROR_INT_INDEX, static_cast<intptr_t>(p->index)),
+                           GRPC_ERROR_INT_INDEX,
+                           static_cast<intptr_t>(p->index)),
         GRPC_ERROR_INT_SIZE, static_cast<intptr_t>(p->table.num_ents));
   }
   *is = grpc_is_binary_header(GRPC_MDKEY(elem));
@@ -1618,7 +1622,8 @@ grpc_error* grpc_chttp2_header_parser_parse(void* hpack_parser,
                                             grpc_chttp2_stream* s,
                                             grpc_slice slice, int is_last) {
   GPR_TIMER_SCOPE("grpc_chttp2_hpack_parser_parse", 0);
-  grpc_chttp2_hpack_parser* parser = static_cast<grpc_chttp2_hpack_parser*>(hpack_parser);
+  grpc_chttp2_hpack_parser* parser =
+      static_cast<grpc_chttp2_hpack_parser*>(hpack_parser);
   if (s != nullptr) {
     s->stats.incoming.header_bytes += GRPC_SLICE_LENGTH(slice);
   }

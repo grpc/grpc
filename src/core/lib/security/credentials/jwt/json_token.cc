@@ -219,7 +219,8 @@ static char* dot_concat_and_free_strings(char* str1, char* str2) {
   size_t str1_len = strlen(str1);
   size_t str2_len = strlen(str2);
   size_t result_len = str1_len + 1 /* dot */ + str2_len;
-  char* result = static_cast<char*>(gpr_malloc(result_len + 1 /* NULL terminated */));
+  char* result =
+      static_cast<char*>(gpr_malloc(result_len + 1 /* NULL terminated */));
   char* current = result;
   memcpy(current, str1, str1_len);
   current += str1_len;

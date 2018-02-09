@@ -128,8 +128,8 @@ void test_connect(const char* server_host, const char* client_host, int port,
     grpc_slice_buffer uri_parts;
     char** hosts_with_port;
 
-    uri_slice =
-        grpc_slice_new(const_cast<char*>(client_host), strlen(client_host), do_nothing);
+    uri_slice = grpc_slice_new(const_cast<char*>(client_host),
+                               strlen(client_host), do_nothing);
     grpc_slice_buffer_init(&uri_parts);
     grpc_slice_split(uri_slice, ",", &uri_parts);
     hosts_with_port =
@@ -199,7 +199,8 @@ void test_connect(const char* server_host, const char* client_host, int port,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1), nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   if (expect_ok) {
@@ -227,8 +228,8 @@ void test_connect(const char* server_host, const char* client_host, int port,
     op->data.recv_close_on_server.cancelled = &was_cancelled;
     op->flags = 0;
     op++;
-    error =
-        grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102), nullptr);
+    error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                  tag(102), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
     CQ_EXPECT_COMPLETION(cqv, tag(102), 1);

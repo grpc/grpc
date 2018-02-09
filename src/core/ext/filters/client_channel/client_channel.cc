@@ -260,7 +260,8 @@ static void set_channel_connectivity_state_locked(channel_data* chand,
 }
 
 static void on_lb_policy_state_changed_locked(void* arg, grpc_error* error) {
-  lb_policy_connectivity_watcher* w = static_cast<lb_policy_connectivity_watcher*>(arg);
+  lb_policy_connectivity_watcher* w =
+      static_cast<lb_policy_connectivity_watcher*>(arg);
   /* check if the notification is for the latest policy */
   if (w->lb_policy == w->chand->lb_policy) {
     if (grpc_client_channel_trace.enabled()) {
@@ -353,7 +354,8 @@ static void parse_retry_throttle_params(const grpc_json* field, void* arg) {
                                        &whole_value)) {
           return;
         }
-        milli_token_ratio = static_cast<int>((whole_value * multiplier) + decimal_value);
+        milli_token_ratio =
+            static_cast<int>((whole_value * multiplier) + decimal_value);
         if (milli_token_ratio <= 0) return;
       }
     }
@@ -364,7 +366,8 @@ static void parse_retry_throttle_params(const grpc_json* field, void* arg) {
 }
 
 static void request_reresolution_locked(void* arg, grpc_error* error) {
-  reresolution_request_args* args = static_cast<reresolution_request_args*>(arg);
+  reresolution_request_args* args =
+      static_cast<reresolution_request_args*>(arg);
   channel_data* chand = args->chand;
   // If this invocation is for a stale LB policy, treat it as an LB shutdown
   // signal.
@@ -458,7 +461,8 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
                   lb_policy_name);
         } else {
           reresolution_request_args* args =
-              static_cast<reresolution_request_args*>(gpr_zalloc(sizeof(*args)));
+              static_cast<reresolution_request_args*>(
+                  gpr_zalloc(sizeof(*args)));
           args->chand = chand;
           args->lb_policy = new_lb_policy;
           GRPC_CLOSURE_INIT(&args->closure, request_reresolution_locked, args,
@@ -973,8 +977,8 @@ static void apply_service_config_to_call_locked(grpc_call_element* elem) {
         grpc_server_retry_throttle_data_ref(chand->retry_throttle_data);
   }
   if (chand->method_params_table != nullptr) {
-    calld->method_params = static_cast<method_parameters*>(grpc_method_config_table_get(
-        chand->method_params_table, calld->path));
+    calld->method_params = static_cast<method_parameters*>(
+        grpc_method_config_table_get(chand->method_params_table, calld->path));
     if (calld->method_params != nullptr) {
       method_parameters_ref(calld->method_params);
       // If the deadline from the service config is shorter than the one
@@ -1161,7 +1165,8 @@ typedef struct {
 // holding the call combiner.
 static void pick_after_resolver_result_cancel_locked(void* arg,
                                                      grpc_error* error) {
-  pick_after_resolver_result_args* args = static_cast<pick_after_resolver_result_args*>(arg);
+  pick_after_resolver_result_args* args =
+      static_cast<pick_after_resolver_result_args*>(arg);
   if (args->finished) {
     gpr_free(args);
     return;
@@ -1195,7 +1200,8 @@ static void pick_after_resolver_result_start_locked(grpc_call_element* elem);
 
 static void pick_after_resolver_result_done_locked(void* arg,
                                                    grpc_error* error) {
-  pick_after_resolver_result_args* args = static_cast<pick_after_resolver_result_args*>(arg);
+  pick_after_resolver_result_args* args =
+      static_cast<pick_after_resolver_result_args*>(arg);
   if (args->finished) {
     /* cancelled, do nothing */
     if (grpc_client_channel_trace.enabled()) {
@@ -1595,7 +1601,8 @@ int grpc_client_channel_num_external_connectivity_watchers(
 }
 
 static void on_external_watch_complete_locked(void* arg, grpc_error* error) {
-  external_connectivity_watcher* w = static_cast<external_connectivity_watcher*>(arg);
+  external_connectivity_watcher* w =
+      static_cast<external_connectivity_watcher*>(arg);
   grpc_closure* follow_up = w->on_complete;
   grpc_polling_entity_del_from_pollset_set(&w->pollent,
                                            w->chand->interested_parties);
@@ -1608,7 +1615,8 @@ static void on_external_watch_complete_locked(void* arg, grpc_error* error) {
 
 static void watch_connectivity_state_locked(void* arg,
                                             grpc_error* error_ignored) {
-  external_connectivity_watcher* w = static_cast<external_connectivity_watcher*>(arg);
+  external_connectivity_watcher* w =
+      static_cast<external_connectivity_watcher*>(arg);
   external_connectivity_watcher* found = nullptr;
   if (w->state != nullptr) {
     external_connectivity_watcher_list_append(w->chand, w);

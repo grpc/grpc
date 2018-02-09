@@ -54,8 +54,8 @@ static void on_jwt_verification_done(void* user_data,
   if (sync->success) {
     char* claims_str;
     GPR_ASSERT(claims != nullptr);
-    claims_str =
-        grpc_json_dump_to_string(const_cast<grpc_json*>(grpc_jwt_claims_json(claims)), 2);
+    claims_str = grpc_json_dump_to_string(
+        const_cast<grpc_json*>(grpc_jwt_claims_json(claims)), 2);
     printf("Claims: \n\n%s\n", claims_str);
     gpr_free(claims_str);
     grpc_jwt_claims_destroy(claims);

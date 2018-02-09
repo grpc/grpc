@@ -419,8 +419,8 @@ static const grpc_slice_refcount_vtable ru_slice_vtable = {
 
 static grpc_slice ru_slice_create(grpc_resource_user* resource_user,
                                   size_t size) {
-  ru_slice_refcount* rc =
-      static_cast<ru_slice_refcount*>(gpr_malloc(sizeof(ru_slice_refcount) + size));
+  ru_slice_refcount* rc = static_cast<ru_slice_refcount*>(
+      gpr_malloc(sizeof(ru_slice_refcount) + size));
   rc->base.vtable = &ru_slice_vtable;
   rc->base.sub_refcount = &rc->base;
   gpr_ref_init(&rc->refs, 1);
@@ -659,7 +659,8 @@ void grpc_resource_quota_resize(grpc_resource_quota* resource_quota,
 }
 
 size_t grpc_resource_quota_peek_size(grpc_resource_quota* resource_quota) {
-  return static_cast<size_t>gpr_atm_no_barrier_load(&resource_quota->last_size);
+  return static_cast<size_t> gpr_atm_no_barrier_load(
+      &resource_quota->last_size);
 }
 
 /*******************************************************************************
@@ -672,7 +673,8 @@ grpc_resource_quota* grpc_resource_quota_from_channel_args(
     if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
       if (channel_args->args[i].type == GRPC_ARG_POINTER) {
         return grpc_resource_quota_ref_internal(
-            static_cast<grpc_resource_quota*>(channel_args->args[i].value.pointer.p));
+            static_cast<grpc_resource_quota*>(
+                channel_args->args[i].value.pointer.p));
       } else {
         gpr_log(GPR_DEBUG, GRPC_ARG_RESOURCE_QUOTA " should be a pointer");
       }

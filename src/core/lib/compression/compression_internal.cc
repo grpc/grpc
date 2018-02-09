@@ -190,7 +190,8 @@ grpc_message_compression_algorithm grpc_message_compression_algorithm_for_level(
   GRPC_API_TRACE("grpc_message_compression_algorithm_for_level(level=%d)", 1,
                  ((int)level));
   if (level > GRPC_COMPRESS_LEVEL_HIGH) {
-    gpr_log(GPR_ERROR, "Unknown message compression level %d.", static_cast<int>(level));
+    gpr_log(GPR_ERROR, "Unknown message compression level %d.",
+            static_cast<int>(level));
     abort();
   }
 

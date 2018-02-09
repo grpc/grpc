@@ -78,8 +78,8 @@ static void* refcounted_message_size_limits_create_from_json(
     }
   }
   refcounted_message_size_limits* value =
-      static_cast<refcounted_message_size_limits*>(gpr_malloc(
-          sizeof(refcounted_message_size_limits)));
+      static_cast<refcounted_message_size_limits*>(
+          gpr_malloc(sizeof(refcounted_message_size_limits)));
   gpr_ref_init(&value->refs, 1);
   value->limits.max_send_size = max_request_message_bytes;
   value->limits.max_recv_size = max_response_message_bytes;
@@ -113,7 +113,8 @@ static void recv_message_ready(void* user_data, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   if (*calld->recv_message != nullptr && calld->limits.max_recv_size >= 0 &&
-      (*calld->recv_message)->length > static_cast<size_t>(calld->limits.max_recv_size)) {
+      (*calld->recv_message)->length >
+          static_cast<size_t>(calld->limits.max_recv_size)) {
     char* message_string;
     gpr_asprintf(&message_string,
                  "Received message larger than max (%u vs. %d)",
@@ -183,8 +184,9 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
   calld->limits = chand->limits;
   if (chand->method_limit_table != nullptr) {
     refcounted_message_size_limits* limits =
-        static_cast<refcounted_message_size_limits*>(grpc_method_config_table_get(
-            chand->method_limit_table, args->path));
+        static_cast<refcounted_message_size_limits*>(
+            grpc_method_config_table_get(chand->method_limit_table,
+                                         args->path));
     if (limits != nullptr) {
       if (limits->limits.max_send_size >= 0 &&
           (limits->limits.max_send_size < calld->limits.max_send_size ||

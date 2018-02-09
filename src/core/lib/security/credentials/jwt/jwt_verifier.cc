@@ -82,8 +82,9 @@ static grpc_json* parse_json_part_from_jwt(const char* str, size_t len,
     gpr_log(GPR_ERROR, "Invalid base64.");
     return nullptr;
   }
-  json = grpc_json_parse_string_with_len(reinterpret_cast<char*>GRPC_SLICE_START_PTR(*buffer),
-                                         GRPC_SLICE_LENGTH(*buffer));
+  json = grpc_json_parse_string_with_len(
+      reinterpret_cast<char*> GRPC_SLICE_START_PTR(*buffer),
+      GRPC_SLICE_LENGTH(*buffer));
   if (json == nullptr) {
     grpc_slice_unref_internal(*buffer);
     gpr_log(GPR_ERROR, "JSON parsing error.");
@@ -347,7 +348,8 @@ static verifier_cb_ctx* verifier_cb_ctx_create(
     const char* signed_jwt, size_t signed_jwt_len, void* user_data,
     grpc_jwt_verification_done_cb cb) {
   grpc_core::ExecCtx exec_ctx;
-  verifier_cb_ctx* ctx = static_cast<verifier_cb_ctx*>(gpr_zalloc(sizeof(verifier_cb_ctx)));
+  verifier_cb_ctx* ctx =
+      static_cast<verifier_cb_ctx*>(gpr_zalloc(sizeof(verifier_cb_ctx)));
   ctx->verifier = verifier;
   ctx->pollent = grpc_polling_entity_create_from_pollset(pollset);
   ctx->header = header;
@@ -754,8 +756,8 @@ const char* grpc_jwt_issuer_email_domain(const char* issuer) {
   if (dot == nullptr || dot == email_domain) return email_domain;
   GPR_ASSERT(dot > email_domain);
   /* There may be a subdomain, we just want the domain. */
-  dot = static_cast<const char*>(gpr_memrchr((void*)email_domain, '.',
-                                 static_cast<size_t>(dot - email_domain)));
+  dot = static_cast<const char*>(gpr_memrchr(
+      (void*)email_domain, '.', static_cast<size_t>(dot - email_domain)));
   if (dot == nullptr) return email_domain;
   return dot + 1;
 }
@@ -861,7 +863,8 @@ void grpc_jwt_verifier_verify(grpc_jwt_verifier* verifier,
              cb != nullptr);
   dot = strchr(cur, '.');
   if (dot == nullptr) goto error;
-  json = parse_json_part_from_jwt(cur, static_cast<size_t>(dot - cur), &header_buffer);
+  json = parse_json_part_from_jwt(cur, static_cast<size_t>(dot - cur),
+                                  &header_buffer);
   if (json == nullptr) goto error;
   header = jose_header_from_json(json, header_buffer);
   if (header == nullptr) goto error;
@@ -869,7 +872,8 @@ void grpc_jwt_verifier_verify(grpc_jwt_verifier* verifier,
   cur = dot + 1;
   dot = strchr(cur, '.');
   if (dot == nullptr) goto error;
-  json = parse_json_part_from_jwt(cur, static_cast<size_t>(dot - cur), &claims_buffer);
+  json = parse_json_part_from_jwt(cur, static_cast<size_t>(dot - cur),
+                                  &claims_buffer);
   if (json == nullptr) goto error;
   claims = grpc_jwt_claims_from_json(json, claims_buffer);
   if (claims == nullptr) goto error;
@@ -898,8 +902,8 @@ grpc_jwt_verifier* grpc_jwt_verifier_create(
 
   /* We know at least of one mapping. */
   v->allocated_mappings = 1 + num_mappings;
-  v->mappings = static_cast<email_key_mapping*>(gpr_malloc(v->allocated_mappings *
-                                               sizeof(email_key_mapping)));
+  v->mappings = static_cast<email_key_mapping*>(
+      gpr_malloc(v->allocated_mappings * sizeof(email_key_mapping)));
   verifier_put_mapping(v, GRPC_GOOGLE_SERVICE_ACCOUNTS_EMAIL_DOMAIN,
                        GRPC_GOOGLE_SERVICE_ACCOUNTS_KEY_URL_PREFIX);
   /* User-Provided mappings. */

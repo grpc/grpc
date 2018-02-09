@@ -112,7 +112,8 @@ static void handle_unary_method(void) {
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
 
-  error = grpc_call_start_batch(call, unary_ops, static_cast<size_t>(op - unary_ops),
+  error = grpc_call_start_batch(call, unary_ops,
+                                static_cast<size_t>(op - unary_ops),
                                 tag(FLING_SERVER_BATCH_OPS_FOR_UNARY), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 }

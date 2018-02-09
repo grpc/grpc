@@ -187,7 +187,8 @@ static void request_for_disabled_algorithm(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1), nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(101), true);
@@ -205,7 +206,8 @@ static void request_for_disabled_algorithm(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102), nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), false);
@@ -216,7 +218,8 @@ static void request_for_disabled_algorithm(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(103), nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(103),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(103), true);
@@ -345,7 +348,8 @@ static void request_with_payload_template(
     op->flags = client_send_flags_bitmask;
     op->reserved = nullptr;
     op++;
-    error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(2), nullptr);
+    error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(2),
+                                  nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
     CQ_EXPECT_COMPLETION(cqv, tag(2), true);
   }
@@ -374,7 +378,8 @@ static void request_with_payload_template(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1), nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error =
@@ -414,7 +419,8 @@ static void request_with_payload_template(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(101), nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(101),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   for (int i = 0; i < 2; i++) {
@@ -429,8 +435,8 @@ static void request_with_payload_template(
       op->flags = client_send_flags_bitmask;
       op->reserved = nullptr;
       op++;
-      error =
-          grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(2), nullptr);
+      error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
+                                    tag(2), nullptr);
       GPR_ASSERT(GRPC_CALL_OK == error);
       CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
     }
@@ -442,8 +448,8 @@ static void request_with_payload_template(
     op->flags = 0;
     op->reserved = nullptr;
     op++;
-    error =
-        grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102), nullptr);
+    error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                  tag(102), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
     CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
@@ -459,8 +465,8 @@ static void request_with_payload_template(
     op->flags = 0;
     op->reserved = nullptr;
     op++;
-    error =
-        grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(103), nullptr);
+    error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                  tag(103), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
     memset(ops, 0, sizeof(ops));
@@ -470,7 +476,8 @@ static void request_with_payload_template(
     op->flags = 0;
     op->reserved = nullptr;
     op++;
-    error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(3), nullptr);
+    error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(3),
+                                  nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
     CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
@@ -495,7 +502,8 @@ static void request_with_payload_template(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(4), nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(4),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -508,7 +516,8 @@ static void request_with_payload_template(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(104), nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(104),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);

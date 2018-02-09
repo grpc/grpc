@@ -33,7 +33,8 @@ grpc_lb_addresses* grpc_lb_addresses_create(
   addresses->num_addresses = num_addresses;
   addresses->user_data_vtable = user_data_vtable;
   const size_t addresses_size = sizeof(grpc_lb_address) * num_addresses;
-  addresses->addresses = static_cast<grpc_lb_address*>(gpr_zalloc(addresses_size));
+  addresses->addresses =
+      static_cast<grpc_lb_address*>(gpr_zalloc(addresses_size));
   return addresses;
 }
 

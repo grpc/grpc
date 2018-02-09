@@ -70,9 +70,9 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
   // Get stats object from context and take a ref.
   GPR_ASSERT(args->context != nullptr);
   if (args->context[GRPC_GRPCLB_CLIENT_STATS].value != nullptr) {
-    calld->client_stats = grpc_grpclb_client_stats_ref(
-        static_cast<grpc_grpclb_client_stats*>(args->context[GRPC_GRPCLB_CLIENT_STATS]
-            .value));
+    calld->client_stats =
+        grpc_grpclb_client_stats_ref(static_cast<grpc_grpclb_client_stats*>(
+            args->context[GRPC_GRPCLB_CLIENT_STATS].value));
     // Record call started.
     grpc_grpclb_client_stats_add_call_started(calld->client_stats);
   }

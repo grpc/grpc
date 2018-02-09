@@ -94,8 +94,8 @@ void grpc_executor_set_threading(bool threading) {
     g_max_threads = GPR_MAX(1, 2 * gpr_cpu_num_cores());
     gpr_atm_no_barrier_store(&g_cur_threads, 1);
     gpr_tls_init(&g_this_thread_state);
-    g_thread_state =
-        static_cast<thread_state*>(gpr_zalloc(sizeof(thread_state) * g_max_threads));
+    g_thread_state = static_cast<thread_state*>(
+        gpr_zalloc(sizeof(thread_state) * g_max_threads));
     for (size_t i = 0; i < g_max_threads; i++) {
       gpr_mu_init(&g_thread_state[i].mu);
       gpr_cv_init(&g_thread_state[i].cv);
@@ -170,7 +170,8 @@ static void executor_thread(void* arg) {
     ts->elems = GRPC_CLOSURE_LIST_INIT;
     gpr_mu_unlock(&ts->mu);
     if (executor_trace.enabled()) {
-      gpr_log(GPR_DEBUG, "EXECUTOR[%d]: execute", static_cast<int>(ts - g_thread_state));
+      gpr_log(GPR_DEBUG, "EXECUTOR[%d]: execute",
+              static_cast<int>(ts - g_thread_state));
     }
 
     grpc_core::ExecCtx::Get()->InvalidateNow();
@@ -188,7 +189,8 @@ static void executor_push(grpc_closure* closure, grpc_error* error,
   }
   do {
     retry_push = false;
-    size_t cur_thread_count = static_cast<size_t>gpr_atm_no_barrier_load(&g_cur_threads);
+    size_t cur_thread_count =
+        static_cast<size_t> gpr_atm_no_barrier_load(&g_cur_threads);
     if (cur_thread_count == 0) {
       if (executor_trace.enabled()) {
 #ifndef NDEBUG
@@ -255,7 +257,8 @@ static void executor_push(grpc_closure* closure, grpc_error* error,
       break;
     }
     if (try_new_thread && gpr_spinlock_trylock(&g_adding_thread_lock)) {
-      cur_thread_count = static_cast<size_t>gpr_atm_no_barrier_load(&g_cur_threads);
+      cur_thread_count =
+          static_cast<size_t> gpr_atm_no_barrier_load(&g_cur_threads);
       if (cur_thread_count < g_max_threads) {
         gpr_atm_no_barrier_store(&g_cur_threads, cur_thread_count + 1);
 

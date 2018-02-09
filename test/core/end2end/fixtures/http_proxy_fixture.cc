@@ -458,7 +458,8 @@ static void on_accept(void* arg, grpc_endpoint* endpoint,
   gpr_free(acceptor);
   grpc_end2end_http_proxy* proxy = static_cast<grpc_end2end_http_proxy*>(arg);
   // Instantiate proxy_connection.
-  proxy_connection* conn = static_cast<proxy_connection*>(gpr_zalloc(sizeof(*conn)));
+  proxy_connection* conn =
+      static_cast<proxy_connection*>(gpr_zalloc(sizeof(*conn)));
   gpr_ref(&proxy->users);
   conn->client_endpoint = endpoint;
   conn->proxy = proxy;
@@ -533,7 +534,8 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   // Bind to port.
   grpc_resolved_address resolved_addr;
-  struct sockaddr_in* addr = reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
+  struct sockaddr_in* addr =
+      reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   addr->sin_family = AF_INET;
   grpc_sockaddr_set_port(&resolved_addr, proxy_port);

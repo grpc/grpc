@@ -208,8 +208,8 @@ static grpc_error* fill_in_metadata(inproc_stream* s,
   grpc_error* error = GRPC_ERROR_NONE;
   for (grpc_linked_mdelem* elem = metadata->list.head;
        (elem != nullptr) && (error == GRPC_ERROR_NONE); elem = elem->next) {
-    grpc_linked_mdelem* nelem =
-        static_cast<grpc_linked_mdelem*>(gpr_arena_alloc(s->arena, sizeof(*nelem)));
+    grpc_linked_mdelem* nelem = static_cast<grpc_linked_mdelem*>(
+        gpr_arena_alloc(s->arena, sizeof(*nelem)));
     nelem->md =
         grpc_mdelem_from_slices(grpc_slice_intern(GRPC_MDKEY(elem->md)),
                                 grpc_slice_intern(GRPC_MDVALUE(elem->md)));
@@ -425,13 +425,13 @@ static void fail_helper_locked(inproc_stream* s, grpc_error* error) {
       // since it expects that as well as no error yet
       grpc_metadata_batch fake_md;
       grpc_metadata_batch_init(&fake_md);
-      grpc_linked_mdelem* path_md =
-          static_cast<grpc_linked_mdelem*>(gpr_arena_alloc(s->arena, sizeof(*path_md)));
+      grpc_linked_mdelem* path_md = static_cast<grpc_linked_mdelem*>(
+          gpr_arena_alloc(s->arena, sizeof(*path_md)));
       path_md->md = grpc_mdelem_from_slices(g_fake_path_key, g_fake_path_value);
       GPR_ASSERT(grpc_metadata_batch_link_tail(&fake_md, path_md) ==
                  GRPC_ERROR_NONE);
-      grpc_linked_mdelem* auth_md =
-          static_cast<grpc_linked_mdelem*>(gpr_arena_alloc(s->arena, sizeof(*auth_md)));
+      grpc_linked_mdelem* auth_md = static_cast<grpc_linked_mdelem*>(
+          gpr_arena_alloc(s->arena, sizeof(*auth_md)));
       auth_md->md = grpc_mdelem_from_slices(g_fake_auth_key, g_fake_auth_value);
       GPR_ASSERT(grpc_metadata_batch_link_tail(&fake_md, auth_md) ==
                  GRPC_ERROR_NONE);
@@ -1151,8 +1151,10 @@ static void inproc_transports_create(grpc_transport** server_transport,
                                      grpc_transport** client_transport,
                                      const grpc_channel_args* client_args) {
   INPROC_LOG(GPR_DEBUG, "inproc_transports_create");
-  inproc_transport* st = static_cast<inproc_transport*>(gpr_zalloc(sizeof(*st)));
-  inproc_transport* ct = static_cast<inproc_transport*>(gpr_zalloc(sizeof(*ct)));
+  inproc_transport* st =
+      static_cast<inproc_transport*>(gpr_zalloc(sizeof(*st)));
+  inproc_transport* ct =
+      static_cast<inproc_transport*>(gpr_zalloc(sizeof(*ct)));
   // Share one lock between both sides since both sides get affected
   st->mu = ct->mu = static_cast<shared_mu*>(gpr_malloc(sizeof(*st->mu)));
   gpr_mu_init(&st->mu->mu);

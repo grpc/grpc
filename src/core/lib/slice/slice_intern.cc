@@ -98,15 +98,18 @@ static void interned_slice_unref(void* p) {
 }
 
 static void interned_slice_sub_ref(void* p) {
-  interned_slice_ref((static_cast<char*>(p)) - offsetof(interned_slice_refcount, sub));
+  interned_slice_ref((static_cast<char*>(p)) -
+                     offsetof(interned_slice_refcount, sub));
 }
 
 static void interned_slice_sub_unref(void* p) {
-  interned_slice_unref((static_cast<char*>(p)) - offsetof(interned_slice_refcount, sub));
+  interned_slice_unref((static_cast<char*>(p)) -
+                       offsetof(interned_slice_refcount, sub));
 }
 
 static uint32_t interned_slice_hash(grpc_slice slice) {
-  interned_slice_refcount* s = reinterpret_cast<interned_slice_refcount*>(slice.refcount);
+  interned_slice_refcount* s =
+      reinterpret_cast<interned_slice_refcount*>(slice.refcount);
   return s->hash;
 }
 
@@ -129,8 +132,8 @@ static void grow_shard(slice_shard* shard) {
   interned_slice_refcount** strtab;
   interned_slice_refcount *s, *next;
 
-  strtab = static_cast<interned_slice_refcount**>(gpr_zalloc(
-      sizeof(interned_slice_refcount*) * capacity));
+  strtab = static_cast<interned_slice_refcount**>(
+      gpr_zalloc(sizeof(interned_slice_refcount*) * capacity));
 
   for (i = 0; i < shard->capacity; i++) {
     for (s = shard->strs[i]; s; s = next) {
@@ -237,8 +240,8 @@ grpc_slice grpc_slice_intern(grpc_slice slice) {
 
   /* not found: create a new string */
   /* string data goes after the internal_string header */
-  s = static_cast<interned_slice_refcount*>(gpr_malloc(sizeof(*s) +
-                                           GRPC_SLICE_LENGTH(slice)));
+  s = static_cast<interned_slice_refcount*>(
+      gpr_malloc(sizeof(*s) + GRPC_SLICE_LENGTH(slice)));
   gpr_atm_rel_store(&s->refcnt, 1);
   s->length = GRPC_SLICE_LENGTH(slice);
   s->hash = hash;
@@ -275,8 +278,8 @@ void grpc_slice_intern_init(void) {
     gpr_mu_init(&shard->mu);
     shard->count = 0;
     shard->capacity = INITIAL_SHARD_CAPACITY;
-    shard->strs = static_cast<interned_slice_refcount**>(gpr_zalloc(sizeof(*shard->strs) *
-                                                        shard->capacity));
+    shard->strs = static_cast<interned_slice_refcount**>(
+        gpr_zalloc(sizeof(*shard->strs) * shard->capacity));
   }
   for (size_t i = 0; i < GPR_ARRAY_SIZE(static_metadata_hash); i++) {
     static_metadata_hash[i].hash = 0;

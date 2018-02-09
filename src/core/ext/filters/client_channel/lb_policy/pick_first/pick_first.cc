@@ -348,7 +348,8 @@ static void pf_update_locked(grpc_lb_policy* policy,
 
 static void pf_connectivity_changed_locked(void* arg, grpc_error* error) {
   grpc_lb_subchannel_data* sd = static_cast<grpc_lb_subchannel_data*>(arg);
-  pick_first_lb_policy* p = reinterpret_cast<pick_first_lb_policy*>(sd->subchannel_list->policy);
+  pick_first_lb_policy* p =
+      reinterpret_cast<pick_first_lb_policy*>(sd->subchannel_list->policy);
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_DEBUG,
             "Pick First %p connectivity changed for subchannel %p (%" PRIuPTR
@@ -547,7 +548,8 @@ static void pick_first_factory_unref(grpc_lb_policy_factory* factory) {}
 static grpc_lb_policy* create_pick_first(grpc_lb_policy_factory* factory,
                                          grpc_lb_policy_args* args) {
   GPR_ASSERT(args->client_channel_factory != nullptr);
-  pick_first_lb_policy* p = static_cast<pick_first_lb_policy*>(gpr_zalloc(sizeof(*p)));
+  pick_first_lb_policy* p =
+      static_cast<pick_first_lb_policy*>(gpr_zalloc(sizeof(*p)));
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_DEBUG, "Pick First %p created.", (void*)p);
   }

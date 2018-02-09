@@ -192,11 +192,12 @@ grpc_slice grpc_chttp2_base64_decode_with_length(grpc_slice input,
   }
 
   if (output_length > input_length / 4 * 3 + tail_xtra[input_length % 4]) {
-    gpr_log(GPR_ERROR,
-            "Base64 decoding failed, output_length %d is longer "
-            "than the max possible output length %d.\n",
-            static_cast<int>(output_length),
-            static_cast<int>(input_length / 4 * 3 + tail_xtra[input_length % 4]));
+    gpr_log(
+        GPR_ERROR,
+        "Base64 decoding failed, output_length %d is longer "
+        "than the max possible output length %d.\n",
+        static_cast<int>(output_length),
+        static_cast<int>(input_length / 4 * 3 + tail_xtra[input_length % 4]));
     grpc_slice_unref_internal(output);
     return grpc_empty_slice();
   }

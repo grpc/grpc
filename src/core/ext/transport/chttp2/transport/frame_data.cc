@@ -51,9 +51,9 @@ grpc_error* grpc_chttp2_data_parser_begin_frame(grpc_chttp2_data_parser* parser,
   if (flags & ~GRPC_CHTTP2_DATA_FLAG_END_STREAM) {
     char* msg;
     gpr_asprintf(&msg, "unsupported data flags: 0x%02x", flags);
-    grpc_error* err =
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg),
-                           GRPC_ERROR_INT_STREAM_ID, static_cast<intptr_t>(stream_id));
+    grpc_error* err = grpc_error_set_int(
+        GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg), GRPC_ERROR_INT_STREAM_ID,
+        static_cast<intptr_t>(stream_id));
     gpr_free(msg);
     return err;
   }
@@ -208,8 +208,8 @@ grpc_error* grpc_deframe_unprocessed_incoming_frames(
 
         if (cur != end) {
           grpc_slice_buffer_undo_take_first(
-              slices,
-              grpc_slice_sub(slice, static_cast<size_t>(cur - beg), static_cast<size_t>(end - beg)));
+              slices, grpc_slice_sub(slice, static_cast<size_t>(cur - beg),
+                                     static_cast<size_t>(end - beg)));
         }
         grpc_slice_unref_internal(slice);
         return GRPC_ERROR_NONE;
@@ -223,11 +223,12 @@ grpc_error* grpc_deframe_unprocessed_incoming_frames(
         uint32_t remaining = static_cast<uint32_t>(end - cur);
         if (remaining == p->frame_size) {
           s->stats.incoming.data_bytes += remaining;
-          if (GRPC_ERROR_NONE != (error = grpc_chttp2_incoming_byte_stream_push(
-                                      p->parsing_frame,
-                                      grpc_slice_sub(slice, static_cast<size_t>(cur - beg),
-                                                     static_cast<size_t>(end - beg)),
-                                      slice_out))) {
+          if (GRPC_ERROR_NONE !=
+              (error = grpc_chttp2_incoming_byte_stream_push(
+                   p->parsing_frame,
+                   grpc_slice_sub(slice, static_cast<size_t>(cur - beg),
+                                  static_cast<size_t>(end - beg)),
+                   slice_out))) {
             grpc_slice_unref_internal(slice);
             return error;
           }
@@ -243,11 +244,12 @@ grpc_error* grpc_deframe_unprocessed_incoming_frames(
           return GRPC_ERROR_NONE;
         } else if (remaining < p->frame_size) {
           s->stats.incoming.data_bytes += remaining;
-          if (GRPC_ERROR_NONE != (error = grpc_chttp2_incoming_byte_stream_push(
-                                      p->parsing_frame,
-                                      grpc_slice_sub(slice, static_cast<size_t>(cur - beg),
-                                                     static_cast<size_t>(end - beg)),
-                                      slice_out))) {
+          if (GRPC_ERROR_NONE !=
+              (error = grpc_chttp2_incoming_byte_stream_push(
+                   p->parsing_frame,
+                   grpc_slice_sub(slice, static_cast<size_t>(cur - beg),
+                                  static_cast<size_t>(end - beg)),
+                   slice_out))) {
             return error;
           }
           p->frame_size -= remaining;
@@ -259,8 +261,9 @@ grpc_error* grpc_deframe_unprocessed_incoming_frames(
           if (GRPC_ERROR_NONE !=
               (grpc_chttp2_incoming_byte_stream_push(
                   p->parsing_frame,
-                  grpc_slice_sub(slice, static_cast<size_t>(cur - beg),
-                                 static_cast<size_t>(cur + p->frame_size - beg)),
+                  grpc_slice_sub(
+                      slice, static_cast<size_t>(cur - beg),
+                      static_cast<size_t>(cur + p->frame_size - beg)),
                   slice_out))) {
             grpc_slice_unref_internal(slice);
             return error;
@@ -275,8 +278,8 @@ grpc_error* grpc_deframe_unprocessed_incoming_frames(
           p->state = GRPC_CHTTP2_DATA_FH_0;
           cur += p->frame_size;
           grpc_slice_buffer_undo_take_first(
-              slices,
-              grpc_slice_sub(slice, static_cast<size_t>(cur - beg), static_cast<size_t>(end - beg)));
+              slices, grpc_slice_sub(slice, static_cast<size_t>(cur - beg),
+                                     static_cast<size_t>(end - beg)));
           grpc_slice_unref_internal(slice);
           return GRPC_ERROR_NONE;
         }

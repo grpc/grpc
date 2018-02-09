@@ -184,10 +184,11 @@ TransportFlowControl::TransportFlowControl(const grpc_chttp2_transport* t,
 
 uint32_t TransportFlowControl::MaybeSendUpdate(bool writing_anyway) {
   FlowControlTrace trace("t updt sent", this, nullptr);
-  const uint32_t target_announced_window = static_cast<const uint32_t>(target_window());
+  const uint32_t target_announced_window =
+      static_cast<const uint32_t>(target_window());
   if ((writing_anyway || announced_window_ <= target_announced_window / 2) &&
       announced_window_ != target_announced_window) {
-    const uint32_t announce = static_cast<uint32_t>GPR_CLAMP(
+    const uint32_t announce = static_cast<uint32_t> GPR_CLAMP(
         target_announced_window - announced_window_, 0, UINT32_MAX);
     announced_window_ += announce;
     return announce;
@@ -261,7 +262,7 @@ grpc_error* StreamFlowControl::RecvData(int64_t incoming_frame_size) {
 uint32_t StreamFlowControl::MaybeSendUpdate() {
   FlowControlTrace trace("s updt sent", tfc_, this);
   if (local_window_delta_ > announced_window_delta_) {
-    uint32_t announce = static_cast<uint32_t>GPR_CLAMP(
+    uint32_t announce = static_cast<uint32_t> GPR_CLAMP(
         local_window_delta_ - announced_window_delta_, 0, UINT32_MAX);
     UpdateAnnouncedWindowDelta(tfc_, announce);
     return announce;
@@ -337,8 +338,8 @@ double TransportFlowControl::SmoothLogBdp(double value) {
 
 FlowControlAction::Urgency TransportFlowControl::DeltaUrgency(
     int64_t value, grpc_chttp2_setting_id setting_id) {
-  int64_t delta =
-      value - static_cast<int64_t>(t_->settings[GRPC_LOCAL_SETTINGS][setting_id]);
+  int64_t delta = value - static_cast<int64_t>(
+                              t_->settings[GRPC_LOCAL_SETTINGS][setting_id]);
   // TODO(ncteisen): tune this
   if (delta != 0 && (delta <= -value / 5 || delta >= value / 5)) {
     return FlowControlAction::Urgency::QUEUE_UPDATE;
@@ -357,7 +358,8 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
     const double target = pow(2, SmoothLogBdp(TargetLogBdp()));
 
     // Though initial window 'could' drop to 0, we keep the floor at 128
-    target_initial_window_size_ = static_cast<int32_t>GPR_CLAMP(target, 128, INT32_MAX);
+    target_initial_window_size_ =
+        static_cast<int32_t> GPR_CLAMP(target, 128, INT32_MAX);
 
     action.set_send_initial_window_update(
         DeltaUrgency(target_initial_window_size_,
@@ -367,12 +369,13 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
     // get bandwidth estimate and update max_frame accordingly.
     double bw_dbl = bdp_estimator_.EstimateBandwidth();
     // we target the max of BDP or bandwidth in microseconds.
-    int32_t frame_size = static_cast<int32_t>GPR_CLAMP(
+    int32_t frame_size = static_cast<int32_t> GPR_CLAMP(
         GPR_MAX((int32_t)GPR_CLAMP(bw_dbl, 0, INT_MAX) / 1000,
                 target_initial_window_size_),
         16384, 16777215);
     action.set_send_max_frame_size_update(
-        DeltaUrgency(static_cast<int64_t>(frame_size), GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE),
+        DeltaUrgency(static_cast<int64_t>(frame_size),
+                     GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE),
         frame_size);
   }
   return UpdateAction(action);

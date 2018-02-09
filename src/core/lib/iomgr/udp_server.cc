@@ -139,7 +139,8 @@ static grpc_socket_factory* get_socket_factory(const grpc_channel_args* args) {
 }
 
 grpc_udp_server* grpc_udp_server_create(const grpc_channel_args* args) {
-  grpc_udp_server* s = static_cast<grpc_udp_server*>(gpr_malloc(sizeof(grpc_udp_server)));
+  grpc_udp_server* s =
+      static_cast<grpc_udp_server*>(gpr_malloc(sizeof(grpc_udp_server)));
   gpr_mu_init(&s->mu);
   s->socket_factory = get_socket_factory(args);
   if (s->socket_factory) {
@@ -156,7 +157,8 @@ grpc_udp_server* grpc_udp_server_create(const grpc_channel_args* args) {
 }
 
 static void shutdown_fd(void* args, grpc_error* error) {
-  struct shutdown_fd_args* shutdown_args = static_cast<struct shutdown_fd_args*>(args);
+  struct shutdown_fd_args* shutdown_args =
+      static_cast<struct shutdown_fd_args*>(args);
   grpc_udp_listener* sp = shutdown_args->sp;
   gpr_log(GPR_DEBUG, "shutdown fd %d", sp->fd);
   gpr_mu_lock(shutdown_args->server_mu);
@@ -279,7 +281,10 @@ static int bind_socket(grpc_socket_factory* socket_factory, int sockfd,
                        const grpc_resolved_address* addr) {
   return (socket_factory != nullptr)
              ? grpc_socket_factory_bind(socket_factory, sockfd, addr)
-             : bind(sockfd, reinterpret_cast<struct sockaddr*>(const_cast<char*>(addr->addr)), static_cast<socklen_t>(addr->len));
+             : bind(sockfd,
+                    reinterpret_cast<struct sockaddr*>(
+                        const_cast<char*>(addr->addr)),
+                    static_cast<socklen_t>(addr->len));
 }
 
 /* Prepare a recently-created socket for listening. */
@@ -287,7 +292,8 @@ static int prepare_socket(grpc_socket_factory* socket_factory, int fd,
                           const grpc_resolved_address* addr, int rcv_buf_size,
                           int snd_buf_size) {
   grpc_resolved_address sockname_temp;
-  struct sockaddr* addr_ptr = reinterpret_cast<struct sockaddr*>(const_cast<char*>(addr->addr));
+  struct sockaddr* addr_ptr =
+      reinterpret_cast<struct sockaddr*>(const_cast<char*>(addr->addr));
 
   if (fd < 0) {
     goto error;
@@ -530,12 +536,14 @@ int grpc_udp_server_add_port(grpc_udp_server* s,
   if (grpc_sockaddr_get_port(addr) == 0) {
     for (sp = s->head; sp; sp = sp->next) {
       sockname_temp.len = sizeof(struct sockaddr_storage);
-      if (0 == getsockname(sp->fd, reinterpret_cast<struct sockaddr*>(sockname_temp.addr),
-                           reinterpret_cast<socklen_t*>(&sockname_temp.len))) {
+      if (0 ==
+          getsockname(sp->fd,
+                      reinterpret_cast<struct sockaddr*>(sockname_temp.addr),
+                      reinterpret_cast<socklen_t*>(&sockname_temp.len))) {
         port = grpc_sockaddr_get_port(&sockname_temp);
         if (port > 0) {
-          allocated_addr =
-              static_cast<grpc_resolved_address*>(gpr_malloc(sizeof(grpc_resolved_address)));
+          allocated_addr = static_cast<grpc_resolved_address*>(
+              gpr_malloc(sizeof(grpc_resolved_address)));
           memcpy(allocated_addr, addr, sizeof(grpc_resolved_address));
           grpc_sockaddr_set_port(allocated_addr, port);
           addr = allocated_addr;

@@ -189,7 +189,8 @@ static grpc_error* pull_slice_from_send_message(call_data* calld) {
 // and on_send_message_next_done() will be invoked when it is complete.
 static grpc_error* read_all_available_send_message_data(call_data* calld) {
   while (grpc_byte_stream_next(&calld->send_message_caching_stream.base,
-                               ~static_cast<size_t>(0), &calld->on_send_message_next_done)) {
+                               ~static_cast<size_t>(0),
+                               &calld->on_send_message_next_done)) {
     grpc_error* error = pull_slice_from_send_message(calld);
     if (error != GRPC_ERROR_NONE) return error;
     if (calld->send_message_bytes_read ==
@@ -224,7 +225,8 @@ static void on_send_message_next_done(void* arg, grpc_error* error) {
 }
 
 static char* slice_buffer_to_string(grpc_slice_buffer* slice_buffer) {
-  char* payload_bytes = static_cast<char*>(gpr_malloc(slice_buffer->length + 1));
+  char* payload_bytes =
+      static_cast<char*>(gpr_malloc(slice_buffer->length + 1));
   size_t offset = 0;
   for (size_t i = 0; i < slice_buffer->count; ++i) {
     memcpy(payload_bytes + offset,
@@ -253,8 +255,10 @@ static grpc_error* update_path_for_get(grpc_call_element* elem,
       false /* multi_line */);
   grpc_slice path_with_query_slice = GRPC_SLICE_MALLOC(estimated_len);
   /* memcopy individual pieces into this slice */
-  char* write_ptr = reinterpret_cast<char*>GRPC_SLICE_START_PTR(path_with_query_slice);
-  char* original_path = reinterpret_cast<char*>GRPC_SLICE_START_PTR(path_slice);
+  char* write_ptr =
+      reinterpret_cast<char*> GRPC_SLICE_START_PTR(path_with_query_slice);
+  char* original_path =
+      reinterpret_cast<char*> GRPC_SLICE_START_PTR(path_slice);
   memcpy(write_ptr, original_path, GRPC_SLICE_LENGTH(path_slice));
   write_ptr += GRPC_SLICE_LENGTH(path_slice);
   *write_ptr++ = '?';
@@ -265,7 +269,7 @@ static grpc_error* update_path_for_get(grpc_call_element* elem,
                           true /* url_safe */, false /* multi_line */);
   gpr_free(payload_bytes);
   /* remove trailing unused memory and add trailing 0 to terminate string */
-  char* t = reinterpret_cast<char*>GRPC_SLICE_START_PTR(path_with_query_slice);
+  char* t = reinterpret_cast<char*> GRPC_SLICE_START_PTR(path_with_query_slice);
   /* safe to use strlen since base64_encode will always add '\0' */
   path_with_query_slice =
       grpc_slice_sub_no_ref(path_with_query_slice, 0, strlen(t));

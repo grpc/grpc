@@ -47,7 +47,8 @@ static void yield_call_combiner(void* arg, grpc_error* ignored) {
 // synchronized.
 static void send_cancel_op_in_call_combiner(void* arg, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
-  grpc_deadline_state* deadline_state = static_cast<grpc_deadline_state*>(elem->call_data);
+  grpc_deadline_state* deadline_state =
+      static_cast<grpc_deadline_state*>(elem->call_data);
   grpc_transport_stream_op_batch* batch = grpc_make_transport_stream_op(
       GRPC_CLOSURE_INIT(&deadline_state->timer_callback, yield_call_combiner,
                         deadline_state, grpc_schedule_on_exec_ctx));
@@ -59,7 +60,8 @@ static void send_cancel_op_in_call_combiner(void* arg, grpc_error* error) {
 // Timer callback.
 static void timer_callback(void* arg, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
-  grpc_deadline_state* deadline_state = static_cast<grpc_deadline_state*>(elem->call_data);
+  grpc_deadline_state* deadline_state =
+      static_cast<grpc_deadline_state*>(elem->call_data);
   if (error != GRPC_ERROR_CANCELLED) {
     error = grpc_error_set_int(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Deadline Exceeded"),
@@ -85,7 +87,8 @@ static void start_timer_if_needed(grpc_call_element* elem,
   if (deadline == GRPC_MILLIS_INF_FUTURE) {
     return;
   }
-  grpc_deadline_state* deadline_state = static_cast<grpc_deadline_state*>(elem->call_data);
+  grpc_deadline_state* deadline_state =
+      static_cast<grpc_deadline_state*>(elem->call_data);
   grpc_closure* closure = nullptr;
   switch (deadline_state->timer_state) {
     case GRPC_DEADLINE_STATE_PENDING:
@@ -173,7 +176,8 @@ void grpc_deadline_state_init(grpc_call_element* elem,
                               grpc_call_stack* call_stack,
                               grpc_call_combiner* call_combiner,
                               grpc_millis deadline) {
-  grpc_deadline_state* deadline_state = static_cast<grpc_deadline_state*>(elem->call_data);
+  grpc_deadline_state* deadline_state =
+      static_cast<grpc_deadline_state*>(elem->call_data);
   deadline_state->call_stack = call_stack;
   deadline_state->call_combiner = call_combiner;
   // Deadline will always be infinite on servers, so the timer will only be
@@ -187,7 +191,8 @@ void grpc_deadline_state_init(grpc_call_element* elem,
     // create a closure to start the timer, and we schedule that closure
     // to be run after call stack initialization is done.
     struct start_timer_after_init_state* state =
-        static_cast<struct start_timer_after_init_state*>(gpr_zalloc(sizeof(*state)));
+        static_cast<struct start_timer_after_init_state*>(
+            gpr_zalloc(sizeof(*state)));
     state->elem = elem;
     state->deadline = deadline;
     GRPC_CLOSURE_INIT(&state->closure, start_timer_after_init, state,
@@ -197,20 +202,23 @@ void grpc_deadline_state_init(grpc_call_element* elem,
 }
 
 void grpc_deadline_state_destroy(grpc_call_element* elem) {
-  grpc_deadline_state* deadline_state = static_cast<grpc_deadline_state*>(elem->call_data);
+  grpc_deadline_state* deadline_state =
+      static_cast<grpc_deadline_state*>(elem->call_data);
   cancel_timer_if_needed(deadline_state);
 }
 
 void grpc_deadline_state_reset(grpc_call_element* elem,
                                grpc_millis new_deadline) {
-  grpc_deadline_state* deadline_state = static_cast<grpc_deadline_state*>(elem->call_data);
+  grpc_deadline_state* deadline_state =
+      static_cast<grpc_deadline_state*>(elem->call_data);
   cancel_timer_if_needed(deadline_state);
   start_timer_if_needed(elem, new_deadline);
 }
 
 void grpc_deadline_state_client_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
-  grpc_deadline_state* deadline_state = static_cast<grpc_deadline_state*>(elem->call_data);
+  grpc_deadline_state* deadline_state =
+      static_cast<grpc_deadline_state*>(elem->call_data);
   if (op->cancel_stream) {
     cancel_timer_if_needed(deadline_state);
   } else {
@@ -360,7 +368,8 @@ static bool maybe_add_deadline_filter(grpc_channel_stack_builder* builder,
   return grpc_deadline_checking_enabled(
              grpc_channel_stack_builder_get_channel_arguments(builder))
              ? grpc_channel_stack_builder_prepend_filter(
-                   builder, static_cast<const grpc_channel_filter*>(arg), nullptr, nullptr)
+                   builder, static_cast<const grpc_channel_filter*>(arg),
+                   nullptr, nullptr)
              : true;
 }
 

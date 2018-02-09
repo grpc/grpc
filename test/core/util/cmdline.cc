@@ -287,7 +287,8 @@ static int normal_state(gpr_cmdline* cl, char* str) {
     eq = strchr(str, '=');
     if (eq != nullptr) {
       /* copy the string into a temp buffer and extract the name */
-      tmp = arg_name = static_cast<char*>(gpr_malloc(static_cast<size_t>(eq - str + 1)));
+      tmp = arg_name =
+          static_cast<char*>(gpr_malloc(static_cast<size_t>(eq - str + 1)));
       memcpy(arg_name, str, static_cast<size_t>(eq - str));
       arg_name[eq - str] = 0;
     } else {

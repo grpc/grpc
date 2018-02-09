@@ -132,7 +132,8 @@ static size_t count_slices(grpc_slice* slices, size_t nslices,
 }
 
 static void read_cb(void* user_data, grpc_error* error) {
-  struct read_socket_state* state = static_cast<struct read_socket_state*>(user_data);
+  struct read_socket_state* state =
+      static_cast<struct read_socket_state*>(user_data);
   size_t read_bytes;
   int current_data;
 
@@ -172,7 +173,8 @@ static void read_test(size_t num_bytes, size_t slice_size) {
 
   grpc_arg a[1];
   a[0].key = const_cast<char*>(GRPC_ARG_TCP_READ_CHUNK_SIZE);
-  a[0].type = GRPC_ARG_INTEGER, a[0].value.integer = static_cast<int>(slice_size);
+  a[0].type = GRPC_ARG_INTEGER,
+  a[0].value.integer = static_cast<int>(slice_size);
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
   ep = grpc_tcp_create(grpc_fd_create(sv[1], "read_test"), &args, "test");
   grpc_endpoint_add_to_pollset(ep, g_pollset);
@@ -262,7 +264,8 @@ struct write_socket_state {
 static grpc_slice* allocate_blocks(size_t num_bytes, size_t slice_size,
                                    size_t* num_blocks, uint8_t* current_data) {
   size_t nslices = num_bytes / slice_size + (num_bytes % slice_size ? 1u : 0u);
-  grpc_slice* slices = static_cast<grpc_slice*>(gpr_malloc(sizeof(grpc_slice) * nslices));
+  grpc_slice* slices =
+      static_cast<grpc_slice*>(gpr_malloc(sizeof(grpc_slice) * nslices));
   size_t num_bytes_left = num_bytes;
   unsigned i, j;
   unsigned char* buf;
@@ -284,7 +287,8 @@ static grpc_slice* allocate_blocks(size_t num_bytes, size_t slice_size,
 
 static void write_done(void* user_data /* write_socket_state */,
                        grpc_error* error) {
-  struct write_socket_state* state = static_cast<struct write_socket_state*>(user_data);
+  struct write_socket_state* state =
+      static_cast<struct write_socket_state*>(user_data);
   gpr_log(GPR_INFO, "Write done callback called");
   gpr_mu_lock(g_mu);
   gpr_log(GPR_INFO, "Signalling write done");
@@ -358,7 +362,8 @@ static void write_test(size_t num_bytes, size_t slice_size) {
 
   grpc_arg a[1];
   a[0].key = const_cast<char*>(GRPC_ARG_TCP_READ_CHUNK_SIZE);
-  a[0].type = GRPC_ARG_INTEGER, a[0].value.integer = static_cast<int>(slice_size);
+  a[0].type = GRPC_ARG_INTEGER,
+  a[0].value.integer = static_cast<int>(slice_size);
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
   ep = grpc_tcp_create(grpc_fd_create(sv[1], "write_test"), &args, "test");
   grpc_endpoint_add_to_pollset(ep, g_pollset);

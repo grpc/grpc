@@ -138,5 +138,6 @@ int grpc_http2_decode_timeout(grpc_slice text, grpc_millis* timeout) {
       return 0;
   }
   p++;
-  return is_all_whitespace(reinterpret_cast<const char*>(p), reinterpret_cast<const char*>(end));
+  return is_all_whitespace(reinterpret_cast<const char*>(p),
+                           reinterpret_cast<const char*>(end));
 }

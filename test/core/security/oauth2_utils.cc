@@ -73,7 +73,8 @@ char* grpc_test_fetch_oauth2_token_with_credentials(
   grpc_closure do_nothing_closure;
   grpc_auth_metadata_context null_ctx = {"", "", nullptr, nullptr};
 
-  grpc_pollset* pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+  grpc_pollset* pollset =
+      static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(pollset, &request.mu);
   request.pops = grpc_polling_entity_create_from_pollset(pollset);
   request.is_done = false;

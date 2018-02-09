@@ -80,7 +80,8 @@ grpc_end2end_proxy* grpc_end2end_proxy_create(const grpc_end2end_proxy_def* def,
   int proxy_port = grpc_pick_unused_port_or_die();
   int server_port = grpc_pick_unused_port_or_die();
 
-  grpc_end2end_proxy* proxy = static_cast<grpc_end2end_proxy*>(gpr_malloc(sizeof(*proxy)));
+  grpc_end2end_proxy* proxy =
+      static_cast<grpc_end2end_proxy*>(gpr_malloc(sizeof(*proxy)));
   memset(proxy, 0, sizeof(*proxy));
 
   gpr_join_host_port(&proxy->proxy_port, "localhost", proxy_port);

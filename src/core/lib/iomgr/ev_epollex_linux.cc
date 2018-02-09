@@ -479,7 +479,7 @@ static pollable* pollable_ref(pollable* p) {
 #else
 static pollable* pollable_ref(pollable* p, int line, const char* reason) {
   if (grpc_trace_pollable_refcount.enabled()) {
-    int r = static_cast<int>gpr_atm_no_barrier_load(&p->refs.count);
+    int r = static_cast<int> gpr_atm_no_barrier_load(&p->refs.count);
     gpr_log(__FILE__, line, GPR_LOG_SEVERITY_DEBUG,
             "POLLABLE:%p   ref %d->%d %s", p, r, r + 1, reason);
   }
@@ -494,7 +494,7 @@ static void pollable_unref(pollable* p) {
 static void pollable_unref(pollable* p, int line, const char* reason) {
   if (p == nullptr) return;
   if (grpc_trace_pollable_refcount.enabled()) {
-    int r = static_cast<int>gpr_atm_no_barrier_load(&p->refs.count);
+    int r = static_cast<int> gpr_atm_no_barrier_load(&p->refs.count);
     gpr_log(__FILE__, line, GPR_LOG_SEVERITY_DEBUG,
             "POLLABLE:%p unref %d->%d %s", p, r, r - 1, reason);
   }
@@ -516,7 +516,8 @@ static grpc_error* pollable_add_fd(pollable* p, grpc_fd* fd) {
   }
 
   struct epoll_event ev_fd;
-  ev_fd.events = static_cast<uint32_t>(EPOLLET | EPOLLIN | EPOLLOUT | EPOLLEXCLUSIVE);
+  ev_fd.events =
+      static_cast<uint32_t>(EPOLLET | EPOLLIN | EPOLLOUT | EPOLLEXCLUSIVE);
   ev_fd.data.ptr = fd;
   if (epoll_ctl(epfd, EPOLL_CTL_ADD, fd->fd, &ev_fd) != 0) {
     switch (errno) {
@@ -768,7 +769,8 @@ static grpc_error* pollable_process_events(grpc_pollset* pollset,
       }
       append_error(&error,
                    grpc_wakeup_fd_consume_wakeup(
-                       (grpc_wakeup_fd*)((~static_cast<intptr_t>(1)) & (intptr_t)data_ptr)),
+                       (grpc_wakeup_fd*)((~static_cast<intptr_t>(1)) &
+                                         (intptr_t)data_ptr)),
                    err_desc);
     } else {
       grpc_fd* fd = static_cast<grpc_fd*>(data_ptr);
@@ -1170,7 +1172,8 @@ static grpc_pollset_set* pss_lock_adam(grpc_pollset_set* pss) {
 }
 
 static grpc_pollset_set* pollset_set_create(void) {
-  grpc_pollset_set* pss = static_cast<grpc_pollset_set*>(gpr_zalloc(sizeof(*pss)));
+  grpc_pollset_set* pss =
+      static_cast<grpc_pollset_set*>(gpr_zalloc(sizeof(*pss)));
   gpr_mu_init(&pss->mu);
   gpr_ref_init(&pss->refs, 1);
   return pss;
@@ -1210,8 +1213,8 @@ static void pollset_set_add_fd(grpc_pollset_set* pss, grpc_fd* fd) {
   }
   if (pss->fd_count == pss->fd_capacity) {
     pss->fd_capacity = GPR_MAX(pss->fd_capacity * 2, 8);
-    pss->fds =
-        static_cast<grpc_fd**>(gpr_realloc(pss->fds, pss->fd_capacity * sizeof(*pss->fds)));
+    pss->fds = static_cast<grpc_fd**>(
+        gpr_realloc(pss->fds, pss->fd_capacity * sizeof(*pss->fds)));
   }
   REF_BY(fd, 2, "pollset_set");
   pss->fds[pss->fd_count++] = fd;
@@ -1373,7 +1376,8 @@ static void pollset_set_add_pollset_set(grpc_pollset_set* a,
   b->parent = a;
   if (a->fd_capacity < a->fd_count + b->fd_count) {
     a->fd_capacity = GPR_MAX(2 * a->fd_capacity, a->fd_count + b->fd_count);
-    a->fds = static_cast<grpc_fd**>(gpr_realloc(a->fds, a->fd_capacity * sizeof(*a->fds)));
+    a->fds = static_cast<grpc_fd**>(
+        gpr_realloc(a->fds, a->fd_capacity * sizeof(*a->fds)));
   }
   size_t initial_a_fd_count = a->fd_count;
   a->fd_count = 0;
@@ -1390,8 +1394,8 @@ static void pollset_set_add_pollset_set(grpc_pollset_set* a,
   if (a->pollset_capacity < a->pollset_count + b->pollset_count) {
     a->pollset_capacity =
         GPR_MAX(2 * a->pollset_capacity, a->pollset_count + b->pollset_count);
-    a->pollsets = static_cast<grpc_pollset**>(gpr_realloc(
-        a->pollsets, a->pollset_capacity * sizeof(*a->pollsets)));
+    a->pollsets = static_cast<grpc_pollset**>(
+        gpr_realloc(a->pollsets, a->pollset_capacity * sizeof(*a->pollsets)));
   }
   if (b->pollset_count > 0) {
     memcpy(a->pollsets + a->pollset_count, b->pollsets,

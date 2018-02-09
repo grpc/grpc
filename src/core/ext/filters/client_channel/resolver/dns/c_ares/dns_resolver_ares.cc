@@ -312,7 +312,8 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
           if (lb_policy_name != nullptr) {
             args_to_remove[num_args_to_remove++] = GRPC_ARG_LB_POLICY_NAME;
             new_args[num_args_to_add++] = grpc_channel_arg_string_create(
-                (char*)GRPC_ARG_LB_POLICY_NAME, const_cast<char*>(lb_policy_name));
+                (char*)GRPC_ARG_LB_POLICY_NAME,
+                const_cast<char*>(lb_policy_name));
           }
         }
       }

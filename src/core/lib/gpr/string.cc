@@ -243,7 +243,8 @@ void gpr_strvec_destroy(gpr_strvec* sv) {
 void gpr_strvec_add(gpr_strvec* sv, char* str) {
   if (sv->count == sv->capacity) {
     sv->capacity = GPR_MAX(sv->capacity + 8, sv->capacity * 2);
-    sv->strs = static_cast<char**>(gpr_realloc(sv->strs, sizeof(char*) * sv->capacity));
+    sv->strs = static_cast<char**>(
+        gpr_realloc(sv->strs, sizeof(char*) * sv->capacity));
   }
   sv->strs[sv->count++] = str;
 }
@@ -265,7 +266,8 @@ int gpr_stricmp(const char* a, const char* b) {
 
 static void add_string_to_split(const char* beg, const char* end, char*** strs,
                                 size_t* nstrs, size_t* capstrs) {
-  char* out = static_cast<char*>(gpr_malloc(static_cast<size_t>(end - beg) + 1));
+  char* out =
+      static_cast<char*>(gpr_malloc(static_cast<size_t>(end - beg) + 1));
   memcpy(out, beg, static_cast<size_t>(end - beg));
   out[end - beg] = 0;
   if (*nstrs == *capstrs) {

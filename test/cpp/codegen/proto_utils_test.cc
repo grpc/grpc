@@ -130,7 +130,7 @@ void BufferWriterTest(int block_size, int total_size, int backup_size) {
 }
 
 TEST(WriterTest, TinyBlockTinyBackup) {
-  for (int i = 2; i < static_cast<int>GRPC_SLICE_INLINED_SIZE; i++) {
+  for (int i = 2; i < static_cast<int> GRPC_SLICE_INLINED_SIZE; i++) {
     BufferWriterTest(i, 256, 1);
   }
 }

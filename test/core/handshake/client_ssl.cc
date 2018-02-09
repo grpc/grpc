@@ -82,7 +82,8 @@ static int create_socket(int* out_port) {
   }
 
   addr_len = sizeof(addr);
-  if (getsockname(s, reinterpret_cast<struct sockaddr*>(&addr), &addr_len) != 0 ||
+  if (getsockname(s, reinterpret_cast<struct sockaddr*>(&addr), &addr_len) !=
+          0 ||
       addr_len > sizeof(addr)) {
     perror("getsockname");
     gpr_log(GPR_ERROR, "%s", "Unable to get socket local address");
@@ -175,7 +176,8 @@ static void server_thread(void* arg) {
   gpr_log(GPR_INFO, "Server listening");
   struct sockaddr_in addr;
   socklen_t len = sizeof(addr);
-  const int client = accept(sock, reinterpret_cast<struct sockaddr*>(&addr), &len);
+  const int client =
+      accept(sock, reinterpret_cast<struct sockaddr*>(&addr), &len);
   if (client < 0) {
     perror("Unable to accept");
     abort();
@@ -243,9 +245,12 @@ static bool client_ssl_test(char* server_alpn_preferred) {
                                grpc_load_file(SSL_CERT_PATH, 1, &cert_slice)));
   GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
                                grpc_load_file(SSL_KEY_PATH, 1, &key_slice)));
-  const char* ca_cert = reinterpret_cast<const char*>GRPC_SLICE_START_PTR(ca_slice);
-  pem_key_cert_pair.private_key = reinterpret_cast<const char*>GRPC_SLICE_START_PTR(key_slice);
-  pem_key_cert_pair.cert_chain = reinterpret_cast<const char*>GRPC_SLICE_START_PTR(cert_slice);
+  const char* ca_cert =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
+  pem_key_cert_pair.private_key =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
+  pem_key_cert_pair.cert_chain =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
   grpc_channel_credentials* ssl_creds =
       grpc_ssl_credentials_create(ca_cert, &pem_key_cert_pair, nullptr);
 

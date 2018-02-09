@@ -32,8 +32,9 @@ static void targets_info_destroy(void* p) {
   grpc_slice_hash_table_unref(static_cast<grpc_slice_hash_table*>(p));
 }
 static int targets_info_cmp(void* a, void* b) {
-  return grpc_slice_hash_table_cmp(static_cast<const grpc_slice_hash_table*>(a),
-                                   static_cast<const grpc_slice_hash_table*>(b));
+  return grpc_slice_hash_table_cmp(
+      static_cast<const grpc_slice_hash_table*>(a),
+      static_cast<const grpc_slice_hash_table*>(b));
 }
 static const grpc_arg_pointer_vtable server_to_balancer_names_vtable = {
     targets_info_copy, targets_info_destroy, targets_info_cmp};
@@ -51,7 +52,8 @@ grpc_slice_hash_table* grpc_lb_targets_info_find_in_args(
       grpc_channel_args_find(args, GRPC_ARG_LB_SECURE_NAMING_MAP);
   if (targets_info_arg != nullptr) {
     GPR_ASSERT(targets_info_arg->type == GRPC_ARG_POINTER);
-    return static_cast<grpc_slice_hash_table*>(targets_info_arg->value.pointer.p);
+    return static_cast<grpc_slice_hash_table*>(
+        targets_info_arg->value.pointer.p);
   }
   return nullptr;
 }

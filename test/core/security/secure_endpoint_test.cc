@@ -106,7 +106,8 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
       buffer_size -= protected_buffer_size_to_send;
     } while (still_pending_size > 0);
     encrypted_leftover = grpc_slice_from_copied_buffer(
-        reinterpret_cast<const char*>(encrypted_buffer), total_buffer_size - buffer_size);
+        reinterpret_cast<const char*>(encrypted_buffer),
+        total_buffer_size - buffer_size);
     f.client_ep = grpc_secure_endpoint_create(
         fake_read_protector, fake_read_zero_copy_protector, tcp.client,
         &encrypted_leftover, 1);
@@ -165,7 +166,9 @@ static grpc_endpoint_test_config configs[] = {
      clean_up},
 };
 
-static void inc_call_ctr(void* arg, grpc_error* error) { ++*static_cast<int*>(arg); }
+static void inc_call_ctr(void* arg, grpc_error* error) {
+  ++*static_cast<int*>(arg);
+}
 
 static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
   grpc_endpoint_test_fixture f = config.create_fixture(slice_size);

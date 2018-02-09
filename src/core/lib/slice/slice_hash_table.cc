@@ -67,7 +67,8 @@ grpc_slice_hash_table* grpc_slice_hash_table_create(
   // Keep load factor low to improve performance of lookups.
   table->size = num_entries * 2;
   const size_t entry_size = sizeof(grpc_slice_hash_table_entry) * table->size;
-  table->entries = static_cast<grpc_slice_hash_table_entry*>(gpr_zalloc(entry_size));
+  table->entries =
+      static_cast<grpc_slice_hash_table_entry*>(gpr_zalloc(entry_size));
   for (size_t i = 0; i < num_entries; ++i) {
     grpc_slice_hash_table_entry* entry = &entries[i];
     grpc_slice_hash_table_add(table, entry->key, entry->value);

@@ -76,8 +76,8 @@ static void on_connect(void* arg, grpc_endpoint* tcp,
     } else {
       if (last_colon == nullptr) {
         gpr_log(GPR_ERROR, "peer does not contain a ':'");
-      } else if (strncmp(server->peer, peer, static_cast<size_t>(last_colon - peer)) !=
-                 0) {
+      } else if (strncmp(server->peer, peer,
+                         static_cast<size_t>(last_colon - peer)) != 0) {
         gpr_log(GPR_ERROR, "mismatched peer! %s vs %s", server->peer, peer);
       }
       gpr_free(peer);

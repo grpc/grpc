@@ -218,7 +218,8 @@ static void probe_ipv6_once(void) {
     memset(&addr, 0, sizeof(addr));
     addr.sin6_family = AF_INET6;
     addr.sin6_addr.s6_addr[15] = 1; /* [::1]:0 */
-    if (bind(fd, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) == 0) {
+    if (bind(fd, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) ==
+        0) {
       g_ipv6_loopback_available = 1;
     } else {
       gpr_log(GPR_INFO,
@@ -278,7 +279,8 @@ static int create_socket(grpc_socket_factory* factory, int domain, int type,
 grpc_error* grpc_create_dualstack_socket_using_factory(
     grpc_socket_factory* factory, const grpc_resolved_address* resolved_addr,
     int type, int protocol, grpc_dualstack_mode* dsmode, int* newfd) {
-  const struct sockaddr* addr = reinterpret_cast<const struct sockaddr*>(resolved_addr->addr);
+  const struct sockaddr* addr =
+      reinterpret_cast<const struct sockaddr*>(resolved_addr->addr);
   int family = addr->sa_family;
   if (family == AF_INET6) {
     if (grpc_ipv6_loopback_available()) {

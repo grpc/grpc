@@ -417,8 +417,10 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader* reader) {
             } else {
               return GRPC_JSON_PARSE_ERROR;
             }
-            reader->unicode_char = static_cast<uint16_t>(reader->unicode_char << 4);
-            reader->unicode_char = static_cast<uint16_t>(reader->unicode_char | c);
+            reader->unicode_char =
+                static_cast<uint16_t>(reader->unicode_char << 4);
+            reader->unicode_char =
+                static_cast<uint16_t>(reader->unicode_char | c);
 
             switch (reader->state) {
               case GRPC_JSON_STATE_STRING_ESCAPE_U1:

@@ -192,7 +192,9 @@ static grpc_byte_buffer* read_message(input_stream* inp) {
   return out;
 }
 
-static int read_int(input_stream* inp) { return static_cast<int>(read_uint32(inp)); }
+static int read_int(input_stream* inp) {
+  return static_cast<int>(read_uint32(inp));
+}
 
 static grpc_channel_args* read_args(input_stream* inp) {
   size_t n = next_byte(inp);
@@ -532,7 +534,9 @@ static void assert_success_and_decrement(void* counter, bool success) {
   --*static_cast<int*>(counter);
 }
 
-static void decrement(void* counter, bool success) { --*static_cast<int*>(counter); }
+static void decrement(void* counter, bool success) {
+  --*static_cast<int*>(counter);
+}
 
 typedef struct connectivity_watch {
   int* counter;

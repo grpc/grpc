@@ -123,8 +123,8 @@ grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
     gpr_log(GPR_ERROR, "Invalid input for jwt credentials creation");
     return nullptr;
   }
-  c = static_cast<grpc_service_account_jwt_access_credentials*>(gpr_zalloc(
-      sizeof(grpc_service_account_jwt_access_credentials)));
+  c = static_cast<grpc_service_account_jwt_access_credentials*>(
+      gpr_zalloc(sizeof(grpc_service_account_jwt_access_credentials)));
   c->base.type = GRPC_CALL_CREDENTIALS_TYPE_JWT;
   gpr_ref_init(&c->base.refcount, 1);
   c->base.vtable = &jwt_vtable;

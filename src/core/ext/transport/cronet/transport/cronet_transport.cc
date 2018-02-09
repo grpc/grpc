@@ -284,7 +284,8 @@ static void maybe_flush_read(stream_obj* s) {
       CRONET_LOG(GPR_DEBUG, "%p: Flush read", s);
       s->state.flush_read = true;
       null_and_maybe_free_read_buffer(s);
-      s->state.rs.read_buffer = static_cast<char*>(gpr_malloc(GRPC_FLUSH_READ_SIZE));
+      s->state.rs.read_buffer =
+          static_cast<char*>(gpr_malloc(GRPC_FLUSH_READ_SIZE));
       if (!s->state.pending_read_from_cronet) {
         CRONET_LOG(GPR_DEBUG, "bidirectional_stream_read(%p)", s->cbs);
         bidirectional_stream_read(s->cbs, s->state.rs.read_buffer,
@@ -309,8 +310,8 @@ static void add_to_storage(struct stream_obj* s,
   struct op_storage* storage = &s->storage;
   /* add new op at the beginning of the linked list. The memory is freed
   in remove_from_storage */
-  struct op_and_state* new_op =
-      static_cast<struct op_and_state*>(gpr_malloc(sizeof(struct op_and_state)));
+  struct op_and_state* new_op = static_cast<struct op_and_state*>(
+      gpr_malloc(sizeof(struct op_and_state)));
   memcpy(&new_op->op, op, sizeof(grpc_transport_stream_op_batch));
   memset(&new_op->state, 0, sizeof(new_op->state));
   new_op->s = s;
@@ -671,7 +672,8 @@ static void create_grpc_frame(grpc_slice_buffer* write_slice_buffer,
   size_t length = GRPC_SLICE_LENGTH(slice);
   *p_write_buffer_size = length + GRPC_HEADER_SIZE_IN_BYTES;
   /* This is freed in the on_write_completed callback */
-  char* write_buffer = static_cast<char*>(gpr_malloc(length + GRPC_HEADER_SIZE_IN_BYTES));
+  char* write_buffer =
+      static_cast<char*>(gpr_malloc(length + GRPC_HEADER_SIZE_IN_BYTES));
   *pp_write_buffer = write_buffer;
   uint8_t* p = reinterpret_cast<uint8_t*>(write_buffer);
   /* Append 5 byte header */
@@ -1151,14 +1153,14 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
           stream_state->rs.remaining_bytes == 0) {
         /* Start a read operation for data */
         stream_state->rs.length_field_received = true;
-        parse_grpc_header(reinterpret_cast<const uint8_t*>(stream_state->rs.read_buffer),
-                          &stream_state->rs.length_field,
-                          &stream_state->rs.compressed);
+        parse_grpc_header(
+            reinterpret_cast<const uint8_t*>(stream_state->rs.read_buffer),
+            &stream_state->rs.length_field, &stream_state->rs.compressed);
         CRONET_LOG(GPR_DEBUG, "length field = %d",
                    stream_state->rs.length_field);
         if (stream_state->rs.length_field > 0) {
-          stream_state->rs.read_buffer =
-              static_cast<char*>(gpr_malloc(static_cast<size_t>(stream_state->rs.length_field)));
+          stream_state->rs.read_buffer = static_cast<char*>(
+              gpr_malloc(static_cast<size_t>(stream_state->rs.length_field)));
           GPR_ASSERT(stream_state->rs.read_buffer);
           stream_state->rs.remaining_bytes = stream_state->rs.length_field;
           stream_state->rs.received_bytes = 0;
@@ -1181,7 +1183,8 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
           if (stream_state->rs.compressed) {
             stream_state->rs.sbs.base.flags |= GRPC_WRITE_INTERNAL_COMPRESS;
           }
-          *(reinterpret_cast<grpc_byte_buffer**>(stream_op->payload->recv_message.recv_message)) =
+          *(reinterpret_cast<grpc_byte_buffer**>(
+              stream_op->payload->recv_message.recv_message)) =
               reinterpret_cast<grpc_byte_buffer*>(&stream_state->rs.sbs);
           GRPC_CLOSURE_SCHED(
               stream_op->payload->recv_message.recv_message_ready,
@@ -1237,7 +1240,8 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
       if (stream_state->rs.compressed) {
         stream_state->rs.sbs.base.flags = GRPC_WRITE_INTERNAL_COMPRESS;
       }
-      *(reinterpret_cast<grpc_byte_buffer**>(stream_op->payload->recv_message.recv_message)) =
+      *(reinterpret_cast<grpc_byte_buffer**>(
+          stream_op->payload->recv_message.recv_message)) =
           reinterpret_cast<grpc_byte_buffer*>(&stream_state->rs.sbs);
       GRPC_CLOSURE_SCHED(stream_op->payload->recv_message.recv_message_ready,
                          GRPC_ERROR_NONE);
@@ -1417,8 +1421,8 @@ static const grpc_transport_vtable grpc_cronet_vtable = {
 grpc_transport* grpc_create_cronet_transport(void* engine, const char* target,
                                              const grpc_channel_args* args,
                                              void* reserved) {
-  grpc_cronet_transport* ct =
-      static_cast<grpc_cronet_transport*>(gpr_malloc(sizeof(grpc_cronet_transport)));
+  grpc_cronet_transport* ct = static_cast<grpc_cronet_transport*>(
+      gpr_malloc(sizeof(grpc_cronet_transport)));
   if (!ct) {
     goto error;
   }

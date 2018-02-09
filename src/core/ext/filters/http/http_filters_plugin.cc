@@ -58,7 +58,8 @@ static bool maybe_add_required_filter(grpc_channel_stack_builder* builder,
                                       void* arg) {
   return is_building_http_like_transport(builder)
              ? grpc_channel_stack_builder_prepend_filter(
-                   builder, static_cast<const grpc_channel_filter*>(arg), nullptr, nullptr)
+                   builder, static_cast<const grpc_channel_filter*>(arg),
+                   nullptr, nullptr)
              : true;
 }
 

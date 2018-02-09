@@ -173,8 +173,8 @@ static const grpc_slice_refcount_vtable new_with_len_vtable = {
 grpc_slice grpc_slice_new_with_len(void* p, size_t len,
                                    void (*destroy)(void*, size_t)) {
   grpc_slice slice;
-  new_with_len_slice_refcount* rc = static_cast<new_with_len_slice_refcount*>(gpr_malloc(
-      sizeof(new_with_len_slice_refcount)));
+  new_with_len_slice_refcount* rc = static_cast<new_with_len_slice_refcount*>(
+      gpr_malloc(sizeof(new_with_len_slice_refcount)));
   gpr_ref_init(&rc->refs, 1);
   rc->rc.vtable = &new_with_len_vtable;
   rc->rc.sub_refcount = &rc->rc;
@@ -232,8 +232,8 @@ grpc_slice grpc_slice_malloc_large(size_t length) {
      refcount is a malloc_refcount
      bytes is an array of bytes of the requested length
      Both parts are placed in the same allocation returned from gpr_malloc */
-  malloc_refcount* rc =
-      static_cast<malloc_refcount*>(gpr_malloc(sizeof(malloc_refcount) + length));
+  malloc_refcount* rc = static_cast<malloc_refcount*>(
+      gpr_malloc(sizeof(malloc_refcount) + length));
 
   /* Initial refcount on rc is 1 - and it's up to the caller to release
      this reference. */
@@ -314,7 +314,8 @@ grpc_slice grpc_slice_split_tail_maybe_ref(grpc_slice* source, size_t split,
     /* inlined data, copy it out */
     GPR_ASSERT(source->data.inlined.length >= split);
     tail.refcount = nullptr;
-    tail.data.inlined.length = static_cast<uint8_t>(source->data.inlined.length - split);
+    tail.data.inlined.length =
+        static_cast<uint8_t>(source->data.inlined.length - split);
     memcpy(tail.data.inlined.bytes, source->data.inlined.bytes + split,
            tail.data.inlined.length);
     source->data.inlined.length = static_cast<uint8_t>(split);
@@ -443,15 +444,15 @@ int grpc_slice_buf_start_eq(grpc_slice a, const void* b, size_t len) {
 }
 
 int grpc_slice_rchr(grpc_slice s, char c) {
-  const char* b = reinterpret_cast<const char*>GRPC_SLICE_START_PTR(s);
+  const char* b = reinterpret_cast<const char*> GRPC_SLICE_START_PTR(s);
   int i;
-  for (i = static_cast<int>GRPC_SLICE_LENGTH(s) - 1; i != -1 && b[i] != c; i--)
+  for (i = static_cast<int> GRPC_SLICE_LENGTH(s) - 1; i != -1 && b[i] != c; i--)
     ;
   return i;
 }
 
 int grpc_slice_chr(grpc_slice s, char c) {
-  const char* b = reinterpret_cast<const char*>GRPC_SLICE_START_PTR(s);
+  const char* b = reinterpret_cast<const char*> GRPC_SLICE_START_PTR(s);
   const char* p = static_cast<const char*>(memchr(b, c, GRPC_SLICE_LENGTH(s)));
   return p == nullptr ? -1 : static_cast<int>(p - b);
 }
@@ -466,7 +467,8 @@ int grpc_slice_slice(grpc_slice haystack, grpc_slice needle) {
   if (haystack_len < needle_len) return -1;
   if (haystack_len == needle_len)
     return grpc_slice_eq(haystack, needle) ? 0 : -1;
-  if (needle_len == 1) return grpc_slice_chr(haystack, static_cast<char>(*needle_bytes));
+  if (needle_len == 1)
+    return grpc_slice_chr(haystack, static_cast<char>(*needle_bytes));
 
   const uint8_t* last = haystack_bytes + haystack_len - needle_len;
   for (const uint8_t* cur = haystack_bytes; cur != last; ++cur) {

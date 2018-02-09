@@ -60,8 +60,8 @@ static bool decode_serverlist(pb_istream_t* stream, const pb_field_t* field,
 }
 
 grpc_grpclb_request* grpc_grpclb_request_create(const char* lb_service_name) {
-  grpc_grpclb_request* req =
-      static_cast<grpc_grpclb_request*>(gpr_malloc(sizeof(grpc_grpclb_request)));
+  grpc_grpclb_request* req = static_cast<grpc_grpclb_request*>(
+      gpr_malloc(sizeof(grpc_grpclb_request)));
   req->has_client_stats = false;
   req->has_initial_request = true;
   req->initial_request.has_name = true;
@@ -107,8 +107,8 @@ static bool encode_drops(pb_ostream_t* stream, const pb_field_t* field,
 
 grpc_grpclb_request* grpc_grpclb_load_report_request_create_locked(
     grpc_grpclb_client_stats* client_stats) {
-  grpc_grpclb_request* req =
-      static_cast<grpc_grpclb_request*>(gpr_zalloc(sizeof(grpc_grpclb_request)));
+  grpc_grpclb_request* req = static_cast<grpc_grpclb_request*>(
+      gpr_zalloc(sizeof(grpc_grpclb_request)));
   req->has_client_stats = true;
   req->client_stats.has_timestamp = true;
   populate_timestamp(gpr_now(GPR_CLOCK_REALTIME), &req->client_stats.timestamp);
@@ -123,8 +123,8 @@ grpc_grpclb_request* grpc_grpclb_load_report_request_create_locked(
       &req->client_stats.num_calls_finished,
       &req->client_stats.num_calls_finished_with_client_failed_to_send,
       &req->client_stats.num_calls_finished_known_received,
-      reinterpret_cast<grpc_grpclb_dropped_call_counts**>(&req->client_stats
-          .calls_finished_with_drop.arg));
+      reinterpret_cast<grpc_grpclb_dropped_call_counts**>(
+          &req->client_stats.calls_finished_with_drop.arg));
   return req;
 }
 
@@ -148,7 +148,8 @@ grpc_slice grpc_grpclb_request_encode(const grpc_grpclb_request* request) {
 void grpc_grpclb_request_destroy(grpc_grpclb_request* request) {
   if (request->has_client_stats) {
     grpc_grpclb_dropped_call_counts* drop_entries =
-        static_cast<grpc_grpclb_dropped_call_counts*>(request->client_stats.calls_finished_with_drop.arg);
+        static_cast<grpc_grpclb_dropped_call_counts*>(
+            request->client_stats.calls_finished_with_drop.arg);
     grpc_grpclb_dropped_call_counts_destroy(drop_entries);
   }
   gpr_free(request);
@@ -170,8 +171,8 @@ grpc_grpclb_initial_response* grpc_grpclb_initial_response_parse(
   if (!res.has_initial_response) return nullptr;
 
   grpc_grpclb_initial_response* initial_res =
-      static_cast<grpc_grpclb_initial_response*>(gpr_malloc(
-          sizeof(grpc_grpclb_initial_response)));
+      static_cast<grpc_grpclb_initial_response*>(
+          gpr_malloc(sizeof(grpc_grpclb_initial_response)));
   memcpy(initial_res, &res.initial_response,
          sizeof(grpc_grpclb_initial_response));
 
@@ -184,8 +185,8 @@ grpc_grpclb_serverlist* grpc_grpclb_response_parse_serverlist(
       pb_istream_from_buffer(GRPC_SLICE_START_PTR(encoded_grpc_grpclb_response),
                              GRPC_SLICE_LENGTH(encoded_grpc_grpclb_response));
   pb_istream_t stream_at_start = stream;
-  grpc_grpclb_serverlist* sl =
-      static_cast<grpc_grpclb_serverlist*>(gpr_zalloc(sizeof(grpc_grpclb_serverlist)));
+  grpc_grpclb_serverlist* sl = static_cast<grpc_grpclb_serverlist*>(
+      gpr_zalloc(sizeof(grpc_grpclb_serverlist)));
   grpc_grpclb_response res;
   memset(&res, 0, sizeof(grpc_grpclb_response));
   // First pass: count number of servers.
@@ -199,8 +200,8 @@ grpc_grpclb_serverlist* grpc_grpclb_response_parse_serverlist(
   }
   // Second pass: populate servers.
   if (sl->num_servers > 0) {
-    sl->servers = static_cast<grpc_grpclb_server**>(gpr_zalloc(sizeof(grpc_grpclb_server*) *
-                                                   sl->num_servers));
+    sl->servers = static_cast<grpc_grpclb_server**>(
+        gpr_zalloc(sizeof(grpc_grpclb_server*) * sl->num_servers));
     decode_serverlist_arg decode_arg;
     memset(&decode_arg, 0, sizeof(decode_arg));
     decode_arg.serverlist = sl;
@@ -230,14 +231,14 @@ void grpc_grpclb_destroy_serverlist(grpc_grpclb_serverlist* serverlist) {
 
 grpc_grpclb_serverlist* grpc_grpclb_serverlist_copy(
     const grpc_grpclb_serverlist* sl) {
-  grpc_grpclb_serverlist* copy =
-      static_cast<grpc_grpclb_serverlist*>(gpr_zalloc(sizeof(grpc_grpclb_serverlist)));
+  grpc_grpclb_serverlist* copy = static_cast<grpc_grpclb_serverlist*>(
+      gpr_zalloc(sizeof(grpc_grpclb_serverlist)));
   copy->num_servers = sl->num_servers;
-  copy->servers = static_cast<grpc_grpclb_server**>(gpr_malloc(sizeof(grpc_grpclb_server*) *
-                                                   sl->num_servers));
+  copy->servers = static_cast<grpc_grpclb_server**>(
+      gpr_malloc(sizeof(grpc_grpclb_server*) * sl->num_servers));
   for (size_t i = 0; i < sl->num_servers; i++) {
-    copy->servers[i] =
-        static_cast<grpc_grpclb_server*>(gpr_malloc(sizeof(grpc_grpclb_server)));
+    copy->servers[i] = static_cast<grpc_grpclb_server*>(
+        gpr_malloc(sizeof(grpc_grpclb_server)));
     memcpy(copy->servers[i], sl->servers[i], sizeof(grpc_grpclb_server));
   }
   return copy;

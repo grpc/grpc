@@ -165,8 +165,8 @@ static void drop_uncovered(grpc_tcp* tcp) {
   gpr_atm old_count =
       gpr_atm_no_barrier_fetch_add(&g_uncovered_notifications_pending, -1);
   if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "BACKUP_POLLER:%p uncover cnt %d->%d", p, static_cast<int>(old_count),
-            static_cast<int>(old_count) - 1);
+    gpr_log(GPR_DEBUG, "BACKUP_POLLER:%p uncover cnt %d->%d", p,
+            static_cast<int>(old_count), static_cast<int>(old_count) - 1);
   }
   GPR_ASSERT(old_count != 1);
 }
@@ -176,12 +176,13 @@ static void cover_self(grpc_tcp* tcp) {
   gpr_atm old_count =
       gpr_atm_no_barrier_fetch_add(&g_uncovered_notifications_pending, 2);
   if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "BACKUP_POLLER: cover cnt %d->%d", static_cast<int>(old_count),
-            2 + static_cast<int>(old_count));
+    gpr_log(GPR_DEBUG, "BACKUP_POLLER: cover cnt %d->%d",
+            static_cast<int>(old_count), 2 + static_cast<int>(old_count));
   }
   if (old_count == 0) {
     GRPC_STATS_INC_TCP_BACKUP_POLLERS_CREATED();
-    p = static_cast<backup_poller*>(gpr_zalloc(sizeof(*p) + grpc_pollset_size()));
+    p = static_cast<backup_poller*>(
+        gpr_zalloc(sizeof(*p) + grpc_pollset_size()));
     if (grpc_tcp_trace.enabled()) {
       gpr_log(GPR_DEBUG, "BACKUP_POLLER:%p create", p);
     }
@@ -257,8 +258,8 @@ static size_t get_target_read_size(grpc_tcp* tcp) {
   double pressure = grpc_resource_quota_get_memory_pressure(rq);
   double target =
       tcp->target_length * (pressure > 0.8 ? (1.0 - pressure) / 0.2 : 1.0);
-  size_t sz = ((static_cast<size_t>GPR_CLAMP(target, tcp->min_read_chunk_size,
-                                  tcp->max_read_chunk_size)) +
+  size_t sz = ((static_cast<size_t> GPR_CLAMP(target, tcp->min_read_chunk_size,
+                                              tcp->max_read_chunk_size)) +
                255) &
               ~static_cast<size_t>(255);
   /* don't use more than 1/16th of the overall resource quota for a single read
@@ -733,27 +734,25 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
     for (size_t i = 0; i < channel_args->num_args; i++) {
       if (0 ==
           strcmp(channel_args->args[i].key, GRPC_ARG_TCP_READ_CHUNK_SIZE)) {
-        grpc_integer_options options = {tcp_read_chunk_size, 1,
-                                        MAX_CHUNK_SIZE};
+        grpc_integer_options options = {tcp_read_chunk_size, 1, MAX_CHUNK_SIZE};
         tcp_read_chunk_size =
             grpc_channel_arg_get_integer(&channel_args->args[i], options);
       } else if (0 == strcmp(channel_args->args[i].key,
                              GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE)) {
-        grpc_integer_options options = {tcp_read_chunk_size, 1,
-                                        MAX_CHUNK_SIZE};
+        grpc_integer_options options = {tcp_read_chunk_size, 1, MAX_CHUNK_SIZE};
         tcp_min_read_chunk_size =
             grpc_channel_arg_get_integer(&channel_args->args[i], options);
       } else if (0 == strcmp(channel_args->args[i].key,
                              GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE)) {
-        grpc_integer_options options = {tcp_read_chunk_size, 1,
-                                        MAX_CHUNK_SIZE};
+        grpc_integer_options options = {tcp_read_chunk_size, 1, MAX_CHUNK_SIZE};
         tcp_max_read_chunk_size =
             grpc_channel_arg_get_integer(&channel_args->args[i], options);
       } else if (0 ==
                  strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
         grpc_resource_quota_unref_internal(resource_quota);
-        resource_quota = grpc_resource_quota_ref_internal(
-            static_cast<grpc_resource_quota*>(channel_args->args[i].value.pointer.p));
+        resource_quota =
+            grpc_resource_quota_ref_internal(static_cast<grpc_resource_quota*>(
+                channel_args->args[i].value.pointer.p));
       }
     }
   }

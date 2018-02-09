@@ -109,7 +109,9 @@ static int test_socket_factory_bind(grpc_socket_factory* factory, int sockfd,
                                     const grpc_resolved_address* addr) {
   test_socket_factory* f = reinterpret_cast<test_socket_factory*>(factory);
   f->number_of_bind_calls++;
-  return bind(sockfd, reinterpret_cast<struct sockaddr*>(const_cast<char*>(addr->addr)), static_cast<socklen_t>(addr->len));
+  return bind(sockfd,
+              reinterpret_cast<struct sockaddr*>(const_cast<char*>(addr->addr)),
+              static_cast<socklen_t>(addr->len));
 }
 
 static int test_socket_factory_compare(grpc_socket_factory* a,
@@ -173,7 +175,8 @@ static void test_no_op_with_port(void) {
   g_number_of_orphan_calls = 0;
   grpc_core::ExecCtx exec_ctx;
   grpc_resolved_address resolved_addr;
-  struct sockaddr_in* addr = reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
+  struct sockaddr_in* addr =
+      reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
   grpc_udp_server* s = grpc_udp_server_create(nullptr);
   LOG_TEST("test_no_op_with_port");
 
@@ -196,7 +199,8 @@ static void test_no_op_with_port_and_socket_factory(void) {
   g_number_of_orphan_calls = 0;
   grpc_core::ExecCtx exec_ctx;
   grpc_resolved_address resolved_addr;
-  struct sockaddr_in* addr = reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
+  struct sockaddr_in* addr =
+      reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
 
   test_socket_factory* socket_factory = test_socket_factory_create();
   grpc_arg socket_factory_arg =
@@ -231,7 +235,8 @@ static void test_no_op_with_port_and_start(void) {
   g_number_of_orphan_calls = 0;
   grpc_core::ExecCtx exec_ctx;
   grpc_resolved_address resolved_addr;
-  struct sockaddr_in* addr = reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
+  struct sockaddr_in* addr =
+      reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
   grpc_udp_server* s = grpc_udp_server_create(nullptr);
   LOG_TEST("test_no_op_with_port_and_start");
 
@@ -256,7 +261,8 @@ static void test_receive(int number_of_clients) {
   grpc_pollset_init(g_pollset, &g_mu);
   grpc_core::ExecCtx exec_ctx;
   grpc_resolved_address resolved_addr;
-  struct sockaddr_storage* addr = reinterpret_cast<struct sockaddr_storage*>(resolved_addr.addr);
+  struct sockaddr_storage* addr =
+      reinterpret_cast<struct sockaddr_storage*>(resolved_addr.addr);
   int clifd, svrfd;
   grpc_udp_server* s = grpc_udp_server_create(nullptr);
   int i;

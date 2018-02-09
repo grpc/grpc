@@ -227,8 +227,8 @@ void grpc_channel_watch_connectivity_state(
   w->channel = channel;
   w->error = nullptr;
 
-  watcher_timer_init_arg* wa =
-      static_cast<watcher_timer_init_arg*>(gpr_malloc(sizeof(watcher_timer_init_arg)));
+  watcher_timer_init_arg* wa = static_cast<watcher_timer_init_arg*>(
+      gpr_malloc(sizeof(watcher_timer_init_arg)));
   wa->w = w;
   wa->deadline = deadline;
   GRPC_CLOSURE_INIT(&w->watcher_timer_init, watcher_timer_init, wa,

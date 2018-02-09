@@ -241,8 +241,9 @@ static void disconnect(grpc_subchannel* c) {
 void grpc_subchannel_unref(grpc_subchannel* c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   gpr_atm old_refs;
   // add a weak ref and subtract a strong ref (atomically)
-  old_refs = ref_mutate(c, static_cast<gpr_atm>(1) - static_cast<gpr_atm>(1 << INTERNAL_REF_BITS),
-                        1 REF_MUTATE_PURPOSE("STRONG_UNREF"));
+  old_refs = ref_mutate(
+      c, static_cast<gpr_atm>(1) - static_cast<gpr_atm>(1 << INTERNAL_REF_BITS),
+      1 REF_MUTATE_PURPOSE("STRONG_UNREF"));
   if ((old_refs & STRONG_REF_MASK) == (1 << INTERNAL_REF_BITS)) {
     disconnect(c);
   }
@@ -252,7 +253,8 @@ void grpc_subchannel_unref(grpc_subchannel* c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
 void grpc_subchannel_weak_unref(
     grpc_subchannel* c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   gpr_atm old_refs;
-  old_refs = ref_mutate(c, -static_cast<gpr_atm>(1), 1 REF_MUTATE_PURPOSE("WEAK_UNREF"));
+  old_refs = ref_mutate(c, -static_cast<gpr_atm>(1),
+                        1 REF_MUTATE_PURPOSE("WEAK_UNREF"));
   if (old_refs == 1) {
     GRPC_CLOSURE_SCHED(
         GRPC_CLOSURE_CREATE(subchannel_destroy, c, grpc_schedule_on_exec_ctx),
@@ -325,8 +327,8 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
   grpc_connector_ref(c->connector);
   c->num_filters = args->filter_count;
   if (c->num_filters > 0) {
-    c->filters = static_cast<const grpc_channel_filter**>(gpr_malloc(
-        sizeof(grpc_channel_filter*) * c->num_filters));
+    c->filters = static_cast<const grpc_channel_filter**>(
+        gpr_malloc(sizeof(grpc_channel_filter*) * c->num_filters));
     memcpy((void*)c->filters, args->filters,
            sizeof(grpc_channel_filter*) * c->num_filters);
   } else {
@@ -570,7 +572,8 @@ static bool publish_transport_locked(grpc_subchannel* c) {
   }
   grpc_channel_stack* stk;
   grpc_error* error = grpc_channel_stack_builder_finish(
-      builder, 0, 1, connection_destroy, nullptr, reinterpret_cast<void**>(&stk));
+      builder, 0, 1, connection_destroy, nullptr,
+      reinterpret_cast<void**>(&stk));
   if (error != GRPC_ERROR_NONE) {
     grpc_transport_destroy(c->connecting_result.transport);
     gpr_log(GPR_ERROR, "error initializing subchannel stack: %s",
@@ -581,8 +584,8 @@ static bool publish_transport_locked(grpc_subchannel* c) {
   memset(&c->connecting_result, 0, sizeof(c->connecting_result));
 
   /* initialize state watcher */
-  state_watcher* connected_subchannel_watcher =
-      static_cast<state_watcher*>(gpr_zalloc(sizeof(*connected_subchannel_watcher)));
+  state_watcher* connected_subchannel_watcher = static_cast<state_watcher*>(
+      gpr_zalloc(sizeof(*connected_subchannel_watcher)));
   connected_subchannel_watcher->subchannel = c;
   connected_subchannel_watcher->connectivity_state = GRPC_CHANNEL_READY;
   GRPC_CLOSURE_INIT(&connected_subchannel_watcher->closure,

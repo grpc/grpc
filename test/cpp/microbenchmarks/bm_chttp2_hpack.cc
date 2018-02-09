@@ -777,7 +777,8 @@ static void OnHeaderNew(void* user_data, grpc_mdelem md) {
       if (GRPC_MDELEM_IS_INTERNED(md)) {
         /* not already parsed: parse it now, and store the
          * result away */
-        cached_timeout = static_cast<grpc_millis*>(gpr_malloc(sizeof(grpc_millis)));
+        cached_timeout =
+            static_cast<grpc_millis*>(gpr_malloc(sizeof(grpc_millis)));
         *cached_timeout = timeout;
         grpc_mdelem_set_user_data(md, free_timeout, cached_timeout);
       }

@@ -498,7 +498,8 @@ grpc_channel_security_connector* grpc_fake_channel_security_connector_create(
     grpc_call_credentials* request_metadata_creds, const char* target,
     const grpc_channel_args* args) {
   grpc_fake_channel_security_connector* c =
-      static_cast<grpc_fake_channel_security_connector*>(gpr_zalloc(sizeof(*c)));
+      static_cast<grpc_fake_channel_security_connector*>(
+          gpr_zalloc(sizeof(*c)));
   gpr_ref_init(&c->base.base.refcount, 1);
   c->base.base.url_scheme = GRPC_FAKE_SECURITY_URL_SCHEME;
   c->base.base.vtable = &fake_channel_vtable;
@@ -518,8 +519,8 @@ grpc_channel_security_connector* grpc_fake_channel_security_connector_create(
 grpc_server_security_connector* grpc_fake_server_security_connector_create(
     grpc_server_credentials* server_creds) {
   grpc_server_security_connector* c =
-      static_cast<grpc_server_security_connector*>(gpr_zalloc(
-          sizeof(grpc_server_security_connector)));
+      static_cast<grpc_server_security_connector*>(
+          gpr_zalloc(sizeof(grpc_server_security_connector)));
   gpr_ref_init(&c->base.refcount, 1);
   c->base.vtable = &fake_server_vtable;
   c->base.url_scheme = GRPC_FAKE_SECURITY_URL_SCHEME;
@@ -597,8 +598,8 @@ static void ssl_channel_add_handshakers(grpc_channel_security_connector* sc,
 static const char** fill_alpn_protocol_strings(size_t* num_alpn_protocols) {
   GPR_ASSERT(num_alpn_protocols != nullptr);
   *num_alpn_protocols = grpc_chttp2_num_alpn_versions();
-  const char** alpn_protocol_strings =
-      static_cast<const char**>(gpr_malloc(sizeof(const char*) * (*num_alpn_protocols)));
+  const char** alpn_protocol_strings = static_cast<const char**>(
+      gpr_malloc(sizeof(const char*) * (*num_alpn_protocols)));
   for (size_t i = 0; i < *num_alpn_protocols; i++) {
     alpn_protocol_strings[i] = grpc_chttp2_get_alpn_version_index(i);
   }
@@ -632,8 +633,8 @@ static bool try_replace_server_handshaker_factory(
       cert_pairs, config->num_key_cert_pairs, config->pem_root_certs,
       get_tsi_client_certificate_request_type(
           server_creds->config.client_certificate_request),
-      ssl_cipher_suites(), alpn_protocol_strings, static_cast<uint16_t>(num_alpn_protocols),
-      &new_handshaker_factory);
+      ssl_cipher_suites(), alpn_protocol_strings,
+      static_cast<uint16_t>(num_alpn_protocols), &new_handshaker_factory);
   gpr_free(cert_pairs);
   gpr_free((void*)alpn_protocol_strings);
 
@@ -850,8 +851,8 @@ tsi_peer tsi_shallow_peer_from_ssl_auth_context(
   while (grpc_auth_property_iterator_next(&it) != nullptr) max_num_props++;
 
   if (max_num_props > 0) {
-    peer.properties = static_cast<tsi_peer_property*>(gpr_malloc(max_num_props *
-                                                     sizeof(tsi_peer_property)));
+    peer.properties = static_cast<tsi_peer_property*>(
+        gpr_malloc(max_num_props * sizeof(tsi_peer_property)));
     it = grpc_auth_context_property_iterator(auth_context);
     while ((prop = grpc_auth_property_iterator_next(&it)) != nullptr) {
       if (strcmp(prop->name, GRPC_X509_SAN_PROPERTY_NAME) == 0) {
@@ -963,7 +964,8 @@ const char* grpc_get_default_ssl_roots(void) {
   gpr_once_init(&once, init_default_pem_root_certs);
   return GRPC_SLICE_IS_EMPTY(default_pem_root_certs)
              ? nullptr
-             : reinterpret_cast<const char*>GRPC_SLICE_START_PTR(default_pem_root_certs);
+             : reinterpret_cast<const char*>
+                   GRPC_SLICE_START_PTR(default_pem_root_certs);
 }
 
 grpc_security_status grpc_ssl_channel_security_connector_create(
@@ -994,8 +996,8 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
     pem_root_certs = config->pem_root_certs;
   }
 
-  c = static_cast<grpc_ssl_channel_security_connector*>(gpr_zalloc(
-      sizeof(grpc_ssl_channel_security_connector)));
+  c = static_cast<grpc_ssl_channel_security_connector*>(
+      gpr_zalloc(sizeof(grpc_ssl_channel_security_connector)));
 
   gpr_ref_init(&c->base.base.refcount, 1);
   c->base.base.vtable = &ssl_channel_vtable;
@@ -1017,8 +1019,8 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
                       config->pem_key_cert_pair->cert_chain != nullptr;
   result = tsi_create_ssl_client_handshaker_factory(
       has_key_cert_pair ? config->pem_key_cert_pair : nullptr, pem_root_certs,
-      ssl_cipher_suites(), alpn_protocol_strings, static_cast<uint16_t>(num_alpn_protocols),
-      &c->client_handshaker_factory);
+      ssl_cipher_suites(), alpn_protocol_strings,
+      static_cast<uint16_t>(num_alpn_protocols), &c->client_handshaker_factory);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
             tsi_result_to_string(result));
@@ -1039,8 +1041,8 @@ static grpc_ssl_server_security_connector*
 grpc_ssl_server_security_connector_initialize(
     grpc_server_credentials* server_creds) {
   grpc_ssl_server_security_connector* c =
-      static_cast<grpc_ssl_server_security_connector*>(gpr_zalloc(
-          sizeof(grpc_ssl_server_security_connector)));
+      static_cast<grpc_ssl_server_security_connector*>(
+          gpr_zalloc(sizeof(grpc_ssl_server_security_connector)));
   gpr_ref_init(&c->base.base.refcount, 1);
   c->base.base.url_scheme = GRPC_SSL_URL_SCHEME;
   c->base.base.vtable = &ssl_server_vtable;
@@ -1078,7 +1080,8 @@ grpc_security_status grpc_ssl_server_security_connector_create(
         get_tsi_client_certificate_request_type(
             server_credentials->config.client_certificate_request),
         ssl_cipher_suites(), alpn_protocol_strings,
-        static_cast<uint16_t>(num_alpn_protocols), &c->server_handshaker_factory);
+        static_cast<uint16_t>(num_alpn_protocols),
+        &c->server_handshaker_factory);
     gpr_free((void*)alpn_protocol_strings);
     if (result != TSI_OK) {
       gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",

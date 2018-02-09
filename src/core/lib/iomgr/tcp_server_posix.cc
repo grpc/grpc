@@ -72,7 +72,8 @@ grpc_error* grpc_tcp_server_create(grpc_closure* shutdown_complete,
                                    grpc_tcp_server** server) {
   gpr_once_init(&check_init, init);
 
-  grpc_tcp_server* s = static_cast<grpc_tcp_server*>(gpr_zalloc(sizeof(grpc_tcp_server)));
+  grpc_tcp_server* s =
+      static_cast<grpc_tcp_server*>(gpr_zalloc(sizeof(grpc_tcp_server)));
   s->so_reuseport = has_so_reuseport;
   s->expand_wildcard_addrs = false;
   for (size_t i = 0; i < (args == nullptr ? 0 : args->num_args); i++) {
@@ -410,8 +411,10 @@ grpc_error* grpc_tcp_server_add_port(grpc_tcp_server* s,
   if (requested_port == 0) {
     for (sp = s->head; sp; sp = sp->next) {
       sockname_temp.len = sizeof(struct sockaddr_storage);
-      if (0 == getsockname(sp->fd, reinterpret_cast<struct sockaddr*>(&sockname_temp.addr),
-                           reinterpret_cast<socklen_t*>(&sockname_temp.len))) {
+      if (0 ==
+          getsockname(sp->fd,
+                      reinterpret_cast<struct sockaddr*>(&sockname_temp.addr),
+                      reinterpret_cast<socklen_t*>(&sockname_temp.len))) {
         int used_port = grpc_sockaddr_get_port(&sockname_temp);
         if (used_port > 0) {
           memcpy(&sockname_temp, addr, sizeof(grpc_resolved_address));

@@ -54,7 +54,8 @@ void test_tcp_server_init(test_tcp_server* server,
 
 void test_tcp_server_start(test_tcp_server* server, int port) {
   grpc_resolved_address resolved_addr;
-  struct sockaddr_in* addr = reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
+  struct sockaddr_in* addr =
+      reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
   int port_added;
   grpc_core::ExecCtx exec_ctx;
 

@@ -241,8 +241,8 @@ static void channel_broadcaster_init(grpc_server* s, channel_broadcaster* cb) {
     count++;
   }
   cb->num_channels = count;
-  cb->channels =
-      static_cast<grpc_channel**>(gpr_malloc(sizeof(*cb->channels) * cb->num_channels));
+  cb->channels = static_cast<grpc_channel**>(
+      gpr_malloc(sizeof(*cb->channels) * cb->num_channels));
   count = 0;
   for (c = s->root_channel_data.next; c != &s->root_channel_data; c = c->next) {
     cb->channels[count++] = c->channel;
@@ -256,7 +256,8 @@ struct shutdown_cleanup_args {
 };
 
 static void shutdown_cleanup(void* arg, grpc_error* error) {
-  struct shutdown_cleanup_args* a = static_cast<struct shutdown_cleanup_args*>(arg);
+  struct shutdown_cleanup_args* a =
+      static_cast<struct shutdown_cleanup_args*>(arg);
   grpc_slice_unref_internal(a->slice);
   gpr_free(a);
 }
@@ -304,8 +305,8 @@ static void channel_broadcaster_shutdown(channel_broadcaster* cb,
 static void request_matcher_init(request_matcher* rm, grpc_server* server) {
   memset(rm, 0, sizeof(*rm));
   rm->server = server;
-  rm->requests_per_cq = static_cast<gpr_locked_mpscq*>(gpr_malloc(
-      sizeof(*rm->requests_per_cq) * server->cq_count));
+  rm->requests_per_cq = static_cast<gpr_locked_mpscq*>(
+      gpr_malloc(sizeof(*rm->requests_per_cq) * server->cq_count));
   for (size_t i = 0; i < server->cq_count; i++) {
     gpr_locked_mpscq_init(&rm->requests_per_cq[i]);
   }
@@ -320,7 +321,8 @@ static void request_matcher_destroy(request_matcher* rm) {
 }
 
 static void kill_zombie(void* elem, grpc_error* error) {
-  grpc_call_unref(grpc_call_from_top_element(static_cast<grpc_call_element*>(elem)));
+  grpc_call_unref(
+      grpc_call_from_top_element(static_cast<grpc_call_element*>(elem)));
 }
 
 static void request_matcher_zombify_all_pending_calls(request_matcher* rm) {
@@ -341,8 +343,8 @@ static void request_matcher_kill_requests(grpc_server* server,
                                           grpc_error* error) {
   requested_call* rc;
   for (size_t i = 0; i < server->cq_count; i++) {
-    while ((rc = reinterpret_cast<requested_call*>(gpr_locked_mpscq_pop(
-                &rm->requests_per_cq[i]))) != nullptr) {
+    while ((rc = reinterpret_cast<requested_call*>(
+                gpr_locked_mpscq_pop(&rm->requests_per_cq[i]))) != nullptr) {
       fail_call(server, i, rc, GRPC_ERROR_REF(error));
     }
   }
@@ -487,8 +489,8 @@ static void publish_new_rpc(void* arg, grpc_error* error) {
 
   for (size_t i = 0; i < server->cq_count; i++) {
     size_t cq_idx = (chand->cq_idx + i) % server->cq_count;
-    requested_call* rc =
-        reinterpret_cast<requested_call*>(gpr_locked_mpscq_try_pop(&rm->requests_per_cq[cq_idx]));
+    requested_call* rc = reinterpret_cast<requested_call*>(
+        gpr_locked_mpscq_try_pop(&rm->requests_per_cq[cq_idx]));
     if (rc == nullptr) {
       continue;
     } else {
@@ -509,8 +511,8 @@ static void publish_new_rpc(void* arg, grpc_error* error) {
   // added to the pending list.
   for (size_t i = 0; i < server->cq_count; i++) {
     size_t cq_idx = (chand->cq_idx + i) % server->cq_count;
-    requested_call* rc =
-        reinterpret_cast<requested_call*>(gpr_locked_mpscq_pop(&rm->requests_per_cq[cq_idx]));
+    requested_call* rc = reinterpret_cast<requested_call*>(
+        gpr_locked_mpscq_pop(&rm->requests_per_cq[cq_idx]));
     if (rc == nullptr) {
       continue;
     } else {
@@ -939,7 +941,8 @@ void grpc_server_register_completion_queue(grpc_server* server,
 grpc_server* grpc_server_create(const grpc_channel_args* args, void* reserved) {
   GRPC_API_TRACE("grpc_server_create(%p, %p)", 2, (args, reserved));
 
-  grpc_server* server = static_cast<grpc_server*>(gpr_zalloc(sizeof(grpc_server)));
+  grpc_server* server =
+      static_cast<grpc_server*>(gpr_zalloc(sizeof(grpc_server)));
 
   gpr_mu_init(&server->mu_global);
   gpr_mu_init(&server->mu_call);
@@ -1020,8 +1023,8 @@ void grpc_server_start(grpc_server* server) {
 
   server->started = true;
   server->pollset_count = 0;
-  server->pollsets =
-      static_cast<grpc_pollset**>(gpr_malloc(sizeof(grpc_pollset*) * server->cq_count));
+  server->pollsets = static_cast<grpc_pollset**>(
+      gpr_malloc(sizeof(grpc_pollset*) * server->cq_count));
   for (i = 0; i < server->cq_count; i++) {
     if (grpc_cq_can_listen(server->cqs[i])) {
       server->pollsets[server->pollset_count++] =
@@ -1063,9 +1066,9 @@ void grpc_server_setup_transport(grpc_server* s, grpc_transport* transport,
   grpc_transport_op* op = nullptr;
 
   channel = grpc_channel_create(nullptr, args, GRPC_SERVER_CHANNEL, transport);
-  chand = static_cast<channel_data*>(grpc_channel_stack_element(
-              grpc_channel_get_channel_stack(channel), 0)
-              ->channel_data);
+  chand = static_cast<channel_data*>(
+      grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0)
+          ->channel_data);
   chand->server = s;
   server_ref(s);
   chand->channel = channel;
@@ -1089,7 +1092,8 @@ void grpc_server_setup_transport(grpc_server* s, grpc_transport* transport,
   if (num_registered_methods > 0) {
     slots = 2 * num_registered_methods;
     alloc = sizeof(channel_registered_method) * slots;
-    chand->registered_methods = static_cast<channel_registered_method*>(gpr_zalloc(alloc));
+    chand->registered_methods =
+        static_cast<channel_registered_method*>(gpr_zalloc(alloc));
     for (rm = s->registered_methods; rm; rm = rm->next) {
       grpc_slice host;
       bool has_host;
@@ -1176,13 +1180,14 @@ void grpc_server_shutdown_and_notify(grpc_server* server,
   GPR_ASSERT(grpc_cq_begin_op(cq, tag));
   if (server->shutdown_published) {
     grpc_cq_end_op(cq, tag, GRPC_ERROR_NONE, done_published_shutdown, nullptr,
-                   static_cast<grpc_cq_completion*>(gpr_malloc(sizeof(grpc_cq_completion))));
+                   static_cast<grpc_cq_completion*>(
+                       gpr_malloc(sizeof(grpc_cq_completion))));
     gpr_mu_unlock(&server->mu_global);
     return;
   }
-  server->shutdown_tags = static_cast<shutdown_tag*>(gpr_realloc(
-      server->shutdown_tags,
-      sizeof(shutdown_tag) * (server->num_shutdown_tags + 1)));
+  server->shutdown_tags = static_cast<shutdown_tag*>(
+      gpr_realloc(server->shutdown_tags,
+                  sizeof(shutdown_tag) * (server->num_shutdown_tags + 1)));
   sdt = &server->shutdown_tags[server->num_shutdown_tags++];
   sdt->tag = tag;
   sdt->cq = cq;
@@ -1289,7 +1294,8 @@ static grpc_call_error queue_call_request(grpc_server* server, size_t cq_idx,
        matching calls */
     gpr_mu_lock(&server->mu_call);
     while ((calld = rm->pending_head) != nullptr) {
-      rc = reinterpret_cast<requested_call*>(gpr_locked_mpscq_pop(&rm->requests_per_cq[cq_idx]));
+      rc = reinterpret_cast<requested_call*>(
+          gpr_locked_mpscq_pop(&rm->requests_per_cq[cq_idx]));
       if (rc == nullptr) break;
       rm->pending_head = calld->pending_next;
       gpr_mu_unlock(&server->mu_call);

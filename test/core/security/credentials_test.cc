@@ -873,9 +873,11 @@ static void test_google_default_creds_auth_key(void) {
   set_google_default_creds_env_var_with_file_contents(
       "json_key_google_default_creds", json_key);
   gpr_free(json_key);
-  creds = reinterpret_cast<grpc_composite_channel_credentials*>(grpc_google_default_credentials_create());
+  creds = reinterpret_cast<grpc_composite_channel_credentials*>(
+      grpc_google_default_credentials_create());
   GPR_ASSERT(creds != nullptr);
-  jwt = reinterpret_cast<grpc_service_account_jwt_access_credentials*>(creds->call_creds);
+  jwt = reinterpret_cast<grpc_service_account_jwt_access_credentials*>(
+      creds->call_creds);
   GPR_ASSERT(
       strcmp(jwt->key.client_id,
              "777-abaslkan11hlb6nmim3bpspl31ud.apps.googleusercontent.com") ==
@@ -891,9 +893,11 @@ static void test_google_default_creds_refresh_token(void) {
   grpc_flush_cached_google_default_credentials();
   set_google_default_creds_env_var_with_file_contents(
       "refresh_token_google_default_creds", test_refresh_token_str);
-  creds = reinterpret_cast<grpc_composite_channel_credentials*>(grpc_google_default_credentials_create());
+  creds = reinterpret_cast<grpc_composite_channel_credentials*>(
+      grpc_google_default_credentials_create());
   GPR_ASSERT(creds != nullptr);
-  refresh = reinterpret_cast<grpc_google_refresh_token_credentials*>(creds->call_creds);
+  refresh = reinterpret_cast<grpc_google_refresh_token_credentials*>(
+      creds->call_creds);
   GPR_ASSERT(strcmp(refresh->refresh_token.client_id,
                     "32555999999.apps.googleusercontent.com") == 0);
   grpc_channel_credentials_unref(&creds->base);
@@ -936,7 +940,8 @@ static void test_google_default_creds_gce(void) {
       default_creds_gce_detection_httpcli_get_success_override,
       httpcli_post_should_not_be_called);
   grpc_composite_channel_credentials* creds =
-      reinterpret_cast<grpc_composite_channel_credentials*>(grpc_google_default_credentials_create());
+      reinterpret_cast<grpc_composite_channel_credentials*>(
+          grpc_google_default_credentials_create());
 
   /* Verify that the default creds actually embeds a GCE creds. */
   GPR_ASSERT(creds != nullptr);

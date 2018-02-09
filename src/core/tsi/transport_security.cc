@@ -316,8 +316,8 @@ tsi_result tsi_construct_string_peer_property(const char* name,
 tsi_result tsi_construct_peer(size_t property_count, tsi_peer* peer) {
   memset(peer, 0, sizeof(tsi_peer));
   if (property_count > 0) {
-    peer->properties = static_cast<tsi_peer_property*>(gpr_zalloc(
-        property_count * sizeof(tsi_peer_property)));
+    peer->properties = static_cast<tsi_peer_property*>(
+        gpr_zalloc(property_count * sizeof(tsi_peer_property)));
     peer->property_count = property_count;
   }
   return TSI_OK;

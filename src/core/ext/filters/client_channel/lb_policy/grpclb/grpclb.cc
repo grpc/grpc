@@ -320,7 +320,8 @@ static void glb_lb_call_data_ref(glb_lb_call_data* lb_calld,
     const gpr_atm count = gpr_atm_acq_load(&lb_calld->refs.count);
     gpr_log(GPR_DEBUG, "[%s %p] lb_calld %p REF %lu->%lu (%s)",
             grpc_lb_glb_trace.name(), lb_calld->glb_policy, lb_calld,
-            static_cast<unsigned long>(count - 1), static_cast<unsigned long>(count), reason);
+            static_cast<unsigned long>(count - 1),
+            static_cast<unsigned long>(count), reason);
   }
 }
 
@@ -331,7 +332,8 @@ static void glb_lb_call_data_unref(glb_lb_call_data* lb_calld,
     const gpr_atm count = gpr_atm_acq_load(&lb_calld->refs.count);
     gpr_log(GPR_DEBUG, "[%s %p] lb_calld %p UNREF %lu->%lu (%s)",
             grpc_lb_glb_trace.name(), lb_calld->glb_policy, lb_calld,
-            static_cast<unsigned long>(count + 1), static_cast<unsigned long>(count), reason);
+            static_cast<unsigned long>(count + 1),
+            static_cast<unsigned long>(count), reason);
   }
   if (done) {
     GPR_ASSERT(lb_calld->lb_call != nullptr);
@@ -493,13 +495,15 @@ static void parse_server(const grpc_grpclb_server* server,
   const grpc_grpclb_ip_address* ip = &server->ip_address;
   if (ip->size == 4) {
     addr->len = sizeof(struct sockaddr_in);
-    struct sockaddr_in* addr4 = reinterpret_cast<struct sockaddr_in*>(&addr->addr);
+    struct sockaddr_in* addr4 =
+        reinterpret_cast<struct sockaddr_in*>(&addr->addr);
     addr4->sin_family = AF_INET;
     memcpy(&addr4->sin_addr, ip->bytes, ip->size);
     addr4->sin_port = netorder_port;
   } else if (ip->size == 16) {
     addr->len = sizeof(struct sockaddr_in6);
-    struct sockaddr_in6* addr6 = reinterpret_cast<struct sockaddr_in6*>(&addr->addr);
+    struct sockaddr_in6* addr6 =
+        reinterpret_cast<struct sockaddr_in6*>(&addr->addr);
     addr6->sin6_family = AF_INET6;
     memcpy(&addr6->sin6_addr, ip->bytes, ip->size);
     addr6->sin6_port = netorder_port;
@@ -716,7 +720,8 @@ static grpc_lb_policy_args* lb_policy_args_create(glb_lb_policy* glb_policy) {
     addresses = grpc_lb_addresses_copy(glb_policy->fallback_backend_addresses);
   }
   GPR_ASSERT(addresses != nullptr);
-  grpc_lb_policy_args* args = static_cast<grpc_lb_policy_args*>(gpr_zalloc(sizeof(*args)));
+  grpc_lb_policy_args* args =
+      static_cast<grpc_lb_policy_args*>(gpr_zalloc(sizeof(*args)));
   args->client_channel_factory = glb_policy->cc_factory;
   args->combiner = glb_policy->base.combiner;
   // Replace the LB addresses in the channel args that we pass down to
@@ -887,8 +892,8 @@ static grpc_channel_args* build_lb_channel_args(
   grpc_lb_addresses* lb_addresses =
       grpc_lb_addresses_create(num_grpclb_addrs, nullptr);
   grpc_slice_hash_table_entry* targets_info_entries =
-      static_cast<grpc_slice_hash_table_entry*>(gpr_zalloc(sizeof(*targets_info_entries) *
-                                               num_grpclb_addrs));
+      static_cast<grpc_slice_hash_table_entry*>(
+          gpr_zalloc(sizeof(*targets_info_entries) * num_grpclb_addrs));
 
   size_t lb_addresses_idx = 0;
   for (size_t i = 0; i < addresses->num_addresses; ++i) {
@@ -1257,7 +1262,8 @@ static void client_load_report_done_locked(void* arg, grpc_error* error) {
 
 static bool load_report_counters_are_zero(grpc_grpclb_request* request) {
   grpc_grpclb_dropped_call_counts* drop_entries =
-      static_cast<grpc_grpclb_dropped_call_counts*>(request->client_stats.calls_finished_with_drop.arg);
+      static_cast<grpc_grpclb_dropped_call_counts*>(
+          request->client_stats.calls_finished_with_drop.arg);
   return request->client_stats.num_calls_started == 0 &&
          request->client_stats.num_calls_finished == 0 &&
          request->client_stats.num_calls_finished_with_client_failed_to_send ==
@@ -1338,7 +1344,8 @@ static glb_lb_call_data* lb_call_data_create_locked(glb_lb_policy* glb_policy) {
       glb_policy->lb_call_timeout_ms == 0
           ? GRPC_MILLIS_INF_FUTURE
           : grpc_core::ExecCtx::Get()->Now() + glb_policy->lb_call_timeout_ms;
-  glb_lb_call_data* lb_calld = static_cast<glb_lb_call_data*>(gpr_zalloc(sizeof(*lb_calld)));
+  glb_lb_call_data* lb_calld =
+      static_cast<glb_lb_call_data*>(gpr_zalloc(sizeof(*lb_calld)));
   lb_calld->lb_call = grpc_channel_create_pollset_set_call(
       glb_policy->lb_channel, nullptr, GRPC_PROPAGATE_DEFAULTS,
       glb_policy->base.interested_parties,
@@ -1809,14 +1816,16 @@ static grpc_lb_policy* glb_create(grpc_lb_policy_factory* factory,
   if (arg == nullptr || arg->type != GRPC_ARG_POINTER) {
     return nullptr;
   }
-  grpc_lb_addresses* addresses = static_cast<grpc_lb_addresses*>(arg->value.pointer.p);
+  grpc_lb_addresses* addresses =
+      static_cast<grpc_lb_addresses*>(arg->value.pointer.p);
   size_t num_grpclb_addrs = 0;
   for (size_t i = 0; i < addresses->num_addresses; ++i) {
     if (addresses->addresses[i].is_balancer) ++num_grpclb_addrs;
   }
   if (num_grpclb_addrs == 0) return nullptr;
 
-  glb_lb_policy* glb_policy = static_cast<glb_lb_policy*>(gpr_zalloc(sizeof(*glb_policy)));
+  glb_lb_policy* glb_policy =
+      static_cast<glb_lb_policy*>(gpr_zalloc(sizeof(*glb_policy)));
 
   /* Get server name. */
   arg = grpc_channel_args_find(args->args, GRPC_ARG_SERVER_URI);
@@ -1920,7 +1929,8 @@ static bool maybe_add_client_load_reporting_filter(
   if (channel_arg != nullptr && channel_arg->type == GRPC_ARG_STRING &&
       strcmp(channel_arg->value.string, "grpclb") == 0) {
     return grpc_channel_stack_builder_append_filter(
-        builder, static_cast<const grpc_channel_filter*>(arg), nullptr, nullptr);
+        builder, static_cast<const grpc_channel_filter*>(arg), nullptr,
+        nullptr);
   }
   return true;
 }

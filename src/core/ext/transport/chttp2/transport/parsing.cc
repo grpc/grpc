@@ -88,15 +88,16 @@ grpc_error* grpc_chttp2_perform_read(grpc_chttp2_transport* t,
               "Connect string mismatch: expected '%c' (%d) got '%c' (%d) "
               "at byte %d",
               GRPC_CHTTP2_CLIENT_CONNECT_STRING[t->deframe_state],
-              static_cast<int>(static_cast<uint8_t>(GRPC_CHTTP2_CLIENT_CONNECT_STRING[t->deframe_state])),
+              static_cast<int>(static_cast<uint8_t>(
+                  GRPC_CHTTP2_CLIENT_CONNECT_STRING[t->deframe_state])),
               *cur, static_cast<int>(*cur), t->deframe_state);
           err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
           gpr_free(msg);
           return err;
         }
         ++cur;
-        t->deframe_state =
-            static_cast<grpc_chttp2_deframe_transport_state>(1 + static_cast<int>(t->deframe_state));
+        t->deframe_state = static_cast<grpc_chttp2_deframe_transport_state>(
+            1 + static_cast<int>(t->deframe_state));
       }
       if (cur == end) {
         return GRPC_ERROR_NONE;
@@ -206,11 +207,11 @@ grpc_error* grpc_chttp2_perform_read(grpc_chttp2_transport* t,
     case GRPC_DTS_FRAME:
       GPR_ASSERT(cur < end);
       if (static_cast<uint32_t>(end - cur) == t->incoming_frame_size) {
-        err =
-            parse_frame_slice(t,
-                              grpc_slice_sub_no_ref(slice, static_cast<size_t>(cur - beg),
-                                                    static_cast<size_t>(end - beg)),
-                              1);
+        err = parse_frame_slice(
+            t,
+            grpc_slice_sub_no_ref(slice, static_cast<size_t>(cur - beg),
+                                  static_cast<size_t>(end - beg)),
+            1);
         if (err != GRPC_ERROR_NONE) {
           return err;
         }
@@ -231,11 +232,11 @@ grpc_error* grpc_chttp2_perform_read(grpc_chttp2_transport* t,
         t->incoming_stream = nullptr;
         goto dts_fh_0; /* loop */
       } else {
-        err =
-            parse_frame_slice(t,
-                              grpc_slice_sub_no_ref(slice, static_cast<size_t>(cur - beg),
-                                                    static_cast<size_t>(end - beg)),
-                              0);
+        err = parse_frame_slice(
+            t,
+            grpc_slice_sub_no_ref(slice, static_cast<size_t>(cur - beg),
+                                  static_cast<size_t>(end - beg)),
+            0);
         if (err != GRPC_ERROR_NONE) {
           return err;
         }
@@ -429,7 +430,8 @@ static void on_initial_header(void* tp, grpc_mdelem md) {
       }
       if (GRPC_MDELEM_IS_INTERNED(md)) {
         /* store the result */
-        cached_timeout = static_cast<grpc_millis*>(gpr_malloc(sizeof(grpc_millis)));
+        cached_timeout =
+            static_cast<grpc_millis*>(gpr_malloc(sizeof(grpc_millis)));
         *cached_timeout = timeout;
         grpc_mdelem_set_user_data(md, free_timeout, cached_timeout);
       }

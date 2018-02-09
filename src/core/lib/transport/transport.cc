@@ -239,7 +239,8 @@ static void destroy_made_transport_op(void* arg, grpc_error* error) {
 }
 
 grpc_transport_op* grpc_make_transport_op(grpc_closure* on_complete) {
-  made_transport_op* op = static_cast<made_transport_op*>(gpr_malloc(sizeof(*op)));
+  made_transport_op* op =
+      static_cast<made_transport_op*>(gpr_malloc(sizeof(*op)));
   GRPC_CLOSURE_INIT(&op->outer_on_complete, destroy_made_transport_op, op,
                     grpc_schedule_on_exec_ctx);
   op->inner_on_complete = on_complete;

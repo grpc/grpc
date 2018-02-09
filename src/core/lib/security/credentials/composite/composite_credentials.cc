@@ -40,7 +40,8 @@ typedef struct {
 } grpc_composite_call_credentials_metadata_context;
 
 static void composite_call_destruct(grpc_call_credentials* creds) {
-  grpc_composite_call_credentials* c = reinterpret_cast<grpc_composite_call_credentials*>(creds);
+  grpc_composite_call_credentials* c =
+      reinterpret_cast<grpc_composite_call_credentials*>(creds);
   for (size_t i = 0; i < c->inner.num_creds; i++) {
     grpc_call_credentials_unref(c->inner.creds_array[i]);
   }
@@ -75,10 +76,11 @@ static bool composite_call_get_request_metadata(
     grpc_auth_metadata_context auth_md_context,
     grpc_credentials_mdelem_array* md_array, grpc_closure* on_request_metadata,
     grpc_error** error) {
-  grpc_composite_call_credentials* c = reinterpret_cast<grpc_composite_call_credentials*>(creds);
+  grpc_composite_call_credentials* c =
+      reinterpret_cast<grpc_composite_call_credentials*>(creds);
   grpc_composite_call_credentials_metadata_context* ctx;
-  ctx = static_cast<grpc_composite_call_credentials_metadata_context*>(gpr_zalloc(
-      sizeof(grpc_composite_call_credentials_metadata_context)));
+  ctx = static_cast<grpc_composite_call_credentials_metadata_context*>(
+      gpr_zalloc(sizeof(grpc_composite_call_credentials_metadata_context)));
   ctx->composite_creds = c;
   ctx->pollent = pollent;
   ctx->auth_md_context = auth_md_context;
@@ -106,7 +108,8 @@ static bool composite_call_get_request_metadata(
 static void composite_call_cancel_get_request_metadata(
     grpc_call_credentials* creds, grpc_credentials_mdelem_array* md_array,
     grpc_error* error) {
-  grpc_composite_call_credentials* c = reinterpret_cast<grpc_composite_call_credentials*>(creds);
+  grpc_composite_call_credentials* c =
+      reinterpret_cast<grpc_composite_call_credentials*>(creds);
   for (size_t i = 0; i < c->inner.num_creds; ++i) {
     grpc_call_credentials_cancel_get_request_metadata(
         c->inner.creds_array[i], md_array, GRPC_ERROR_REF(error));
@@ -145,8 +148,8 @@ grpc_call_credentials* grpc_composite_call_credentials_create(
   GPR_ASSERT(reserved == nullptr);
   GPR_ASSERT(creds1 != nullptr);
   GPR_ASSERT(creds2 != nullptr);
-  c = static_cast<grpc_composite_call_credentials*>(gpr_zalloc(
-      sizeof(grpc_composite_call_credentials)));
+  c = static_cast<grpc_composite_call_credentials*>(
+      gpr_zalloc(sizeof(grpc_composite_call_credentials)));
   c->base.type = GRPC_CALL_CREDENTIALS_TYPE_COMPOSITE;
   c->base.vtable = &composite_call_credentials_vtable;
   gpr_ref_init(&c->base.refcount, 1);

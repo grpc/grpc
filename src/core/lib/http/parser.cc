@@ -88,7 +88,8 @@ static grpc_error* handle_request_line(grpc_http_parser* parser) {
   if (cur == end)
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "No method on HTTP request line");
-  parser->http.request->method = buf2str(beg, static_cast<size_t>(cur - beg - 1));
+  parser->http.request->method =
+      buf2str(beg, static_cast<size_t>(cur - beg - 1));
 
   beg = cur;
   while (cur != end && *cur++ != ' ')
@@ -182,7 +183,8 @@ static grpc_error* add_header(grpc_http_parser* parser) {
     cur++;
   }
   GPR_ASSERT((size_t)(end - cur) >= parser->cur_line_end_length);
-  hdr.value = buf2str(cur, static_cast<size_t>(end - cur) - parser->cur_line_end_length);
+  hdr.value = buf2str(
+      cur, static_cast<size_t>(end - cur) - parser->cur_line_end_length);
 
   switch (parser->type) {
     case GRPC_HTTP_RESPONSE:
@@ -198,8 +200,8 @@ static grpc_error* add_header(grpc_http_parser* parser) {
   if (*hdr_count == parser->hdr_capacity) {
     parser->hdr_capacity =
         GPR_MAX(parser->hdr_capacity + 1, parser->hdr_capacity * 3 / 2);
-    *hdrs = static_cast<grpc_http_header*>(gpr_realloc(
-        *hdrs, parser->hdr_capacity * sizeof(**hdrs)));
+    *hdrs = static_cast<grpc_http_header*>(
+        gpr_realloc(*hdrs, parser->hdr_capacity * sizeof(**hdrs)));
   }
   (*hdrs)[(*hdr_count)++] = hdr;
 
@@ -257,7 +259,8 @@ static grpc_error* addbyte_body(grpc_http_parser* parser, uint8_t byte) {
 
   if (*body_length == parser->body_capacity) {
     parser->body_capacity = GPR_MAX(8, parser->body_capacity * 3 / 2);
-    *body = static_cast<char*>(gpr_realloc((void*)*body, parser->body_capacity));
+    *body =
+        static_cast<char*>(gpr_realloc((void*)*body, parser->body_capacity));
   }
   (*body)[*body_length] = static_cast<char>(byte);
   (*body_length)++;
