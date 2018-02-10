@@ -347,9 +347,9 @@ static void update_lb_connectivity_status_locked(grpc_lb_subchannel_data* sd,
   } else if (subchannel_list->num_transient_failures ==
              subchannel_list->num_subchannels) {
     /* 3) TRANSIENT_FAILURE */
-    grpc_connectivity_state_set(
-        &p->state_tracker, GRPC_CHANNEL_TRANSIENT_FAILURE,
-        GRPC_ERROR_REF(error), "rr_exhausted_subchannels");
+    grpc_connectivity_state_set(&p->state_tracker,
+                                GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                GRPC_ERROR_REF(error), "rr_transient_failure");
   }
   GRPC_ERROR_UNREF(error);
 }
