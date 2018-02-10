@@ -35,14 +35,14 @@ static grpc_error* channel_init_func(grpc_channel_element* elem,
   GPR_ASSERT(args->channel_args->args[0].value.integer == 42);
   GPR_ASSERT(args->is_first);
   GPR_ASSERT(args->is_last);
-  *(int*)(elem->channel_data) = 0;
+  *static_cast<int*>(elem->channel_data) = 0;
   return GRPC_ERROR_NONE;
 }
 
 static grpc_error* call_init_func(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
-  ++*(int*)(elem->channel_data);
-  *(int*)(elem->call_data) = 0;
+  ++*static_cast<int*>(elem->channel_data);
+  *static_cast<int*>(elem->call_data) = 0;
   return GRPC_ERROR_NONE;
 }
 
@@ -51,16 +51,16 @@ static void channel_destroy_func(grpc_channel_element* elem) {}
 static void call_destroy_func(grpc_call_element* elem,
                               const grpc_call_final_info* final_info,
                               grpc_closure* ignored) {
-  ++*(int*)(elem->channel_data);
+  ++*static_cast<int*>(elem->channel_data);
 }
 
 static void call_func(grpc_call_element* elem,
                       grpc_transport_stream_op_batch* op) {
-  ++*(int*)(elem->call_data);
+  ++*static_cast<int*>(elem->call_data);
 }
 
 static void channel_func(grpc_channel_element* elem, grpc_transport_op* op) {
-  ++*(int*)(elem->channel_data);
+  ++*static_cast<int*>(elem->channel_data);
 }
 
 static void free_channel(void* arg, grpc_error* error) {
@@ -111,7 +111,7 @@ static void test_create_channel_stack(void) {
                           &chan_args, nullptr, "test", channel_stack);
   GPR_ASSERT(channel_stack->count == 1);
   channel_elem = grpc_channel_stack_element(channel_stack, 0);
-  channel_data = (int*)channel_elem->channel_data;
+  channel_data = static_cast<int*>(channel_elem->channel_data);
   GPR_ASSERT(*channel_data == 0);
 
   call_stack =
@@ -133,7 +133,7 @@ static void test_create_channel_stack(void) {
   call_elem = grpc_call_stack_element(call_stack, 0);
   GPR_ASSERT(call_elem->filter == channel_elem->filter);
   GPR_ASSERT(call_elem->channel_data == channel_elem->channel_data);
-  call_data = (int*)call_elem->call_data;
+  call_data = static_cast<int*>(call_elem->call_data);
   GPR_ASSERT(*call_data == 0);
   GPR_ASSERT(*channel_data == 1);
 

@@ -72,7 +72,7 @@ std::vector<FilterRecord>* channel_filters;
 namespace {
 
 bool MaybeAddFilter(grpc_channel_stack_builder* builder, void* arg) {
-  const FilterRecord& filter = *(FilterRecord*)arg;
+  const FilterRecord& filter = *static_cast<FilterRecord*>(arg);
   if (filter.include_filter) {
     const grpc_channel_args* args =
         grpc_channel_stack_builder_get_channel_arguments(builder);

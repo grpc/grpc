@@ -43,7 +43,7 @@ static bool is_building_http_like_transport(
 static bool maybe_add_optional_filter(grpc_channel_stack_builder* builder,
                                       void* arg) {
   if (!is_building_http_like_transport(builder)) return true;
-  optional_filter* filtarg = (optional_filter*)arg;
+  optional_filter* filtarg = static_cast<optional_filter*>(arg);
   const grpc_channel_args* channel_args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
   bool enable = grpc_channel_arg_get_bool(
@@ -58,7 +58,8 @@ static bool maybe_add_required_filter(grpc_channel_stack_builder* builder,
                                       void* arg) {
   return is_building_http_like_transport(builder)
              ? grpc_channel_stack_builder_prepend_filter(
-                   builder, (const grpc_channel_filter*)arg, nullptr, nullptr)
+                   builder, static_cast<const grpc_channel_filter*>(arg),
+                   nullptr, nullptr)
              : true;
 }
 

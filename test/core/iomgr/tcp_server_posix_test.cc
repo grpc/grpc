@@ -181,7 +181,8 @@ static void test_no_op_with_start(void) {
 static void test_no_op_with_port(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_resolved_address resolved_addr;
-  struct sockaddr_in* addr = (struct sockaddr_in*)resolved_addr.addr;
+  struct sockaddr_in* addr =
+      reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
   grpc_tcp_server* s;
   GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(nullptr, nullptr, &s));
   LOG_TEST("test_no_op_with_port");
@@ -200,7 +201,8 @@ static void test_no_op_with_port(void) {
 static void test_no_op_with_port_and_start(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_resolved_address resolved_addr;
-  struct sockaddr_in* addr = (struct sockaddr_in*)resolved_addr.addr;
+  struct sockaddr_in* addr =
+      reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
   grpc_tcp_server* s;
   GPR_ASSERT(GRPC_ERROR_NONE == grpc_tcp_server_create(nullptr, nullptr, &s));
   LOG_TEST("test_no_op_with_port_and_start");
@@ -225,7 +227,7 @@ static grpc_error* tcp_connect(const test_addr* remote,
   int clifd;
   int nconnects_before;
   const struct sockaddr* remote_addr =
-      (const struct sockaddr*)remote->addr.addr;
+      reinterpret_cast<const struct sockaddr*>(remote->addr.addr);
 
   gpr_log(GPR_INFO, "Connecting to %s", remote->str);
   gpr_mu_lock(g_mu);
@@ -237,7 +239,8 @@ static grpc_error* tcp_connect(const test_addr* remote,
     return GRPC_OS_ERROR(errno, "Failed to create socket");
   }
   gpr_log(GPR_DEBUG, "start connect to %s", remote->str);
-  if (connect(clifd, remote_addr, (socklen_t)remote->addr.len) != 0) {
+  if (connect(clifd, remote_addr, static_cast<socklen_t>(remote->addr.len)) !=
+      0) {
     gpr_mu_unlock(g_mu);
     close(clifd);
     return GRPC_OS_ERROR(errno, "connect");
@@ -286,9 +289,9 @@ static void test_connect(size_t num_connects,
   grpc_resolved_address resolved_addr;
   grpc_resolved_address resolved_addr1;
   struct sockaddr_storage* const addr =
-      (struct sockaddr_storage*)resolved_addr.addr;
+      reinterpret_cast<struct sockaddr_storage*>(resolved_addr.addr);
   struct sockaddr_storage* const addr1 =
-      (struct sockaddr_storage*)resolved_addr1.addr;
+      reinterpret_cast<struct sockaddr_storage*>(resolved_addr1.addr);
   unsigned svr_fd_count;
   int port;
   int svr_port;
@@ -305,8 +308,9 @@ static void test_connect(size_t num_connects,
   LOG_TEST("test_connect");
   gpr_log(GPR_INFO,
           "clients=%lu, num chan args=%lu, remote IP=%s, test_dst_addrs=%d",
-          (unsigned long)num_connects,
-          (unsigned long)(channel_args != nullptr ? channel_args->num_args : 0),
+          static_cast<unsigned long>(num_connects),
+          static_cast<unsigned long>(
+              channel_args != nullptr ? channel_args->num_args : 0),
           dst_addrs != nullptr ? "<specific>" : "::", test_dst_addrs);
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   memset(&resolved_addr1, 0, sizeof(resolved_addr1));

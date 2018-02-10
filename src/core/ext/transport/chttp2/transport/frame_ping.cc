@@ -40,14 +40,14 @@ grpc_slice grpc_chttp2_ping_create(uint8_t ack, uint64_t opaque_8bytes) {
   *p++ = 0;
   *p++ = 0;
   *p++ = 0;
-  *p++ = (uint8_t)(opaque_8bytes >> 56);
-  *p++ = (uint8_t)(opaque_8bytes >> 48);
-  *p++ = (uint8_t)(opaque_8bytes >> 40);
-  *p++ = (uint8_t)(opaque_8bytes >> 32);
-  *p++ = (uint8_t)(opaque_8bytes >> 24);
-  *p++ = (uint8_t)(opaque_8bytes >> 16);
-  *p++ = (uint8_t)(opaque_8bytes >> 8);
-  *p++ = (uint8_t)(opaque_8bytes);
+  *p++ = static_cast<uint8_t>(opaque_8bytes >> 56);
+  *p++ = static_cast<uint8_t>(opaque_8bytes >> 48);
+  *p++ = static_cast<uint8_t>(opaque_8bytes >> 40);
+  *p++ = static_cast<uint8_t>(opaque_8bytes >> 32);
+  *p++ = static_cast<uint8_t>(opaque_8bytes >> 24);
+  *p++ = static_cast<uint8_t>(opaque_8bytes >> 16);
+  *p++ = static_cast<uint8_t>(opaque_8bytes >> 8);
+  *p++ = static_cast<uint8_t>(opaque_8bytes);
 
   return slice;
 }
@@ -75,10 +75,10 @@ grpc_error* grpc_chttp2_ping_parser_parse(void* parser,
   uint8_t* const beg = GRPC_SLICE_START_PTR(slice);
   uint8_t* const end = GRPC_SLICE_END_PTR(slice);
   uint8_t* cur = beg;
-  grpc_chttp2_ping_parser* p = (grpc_chttp2_ping_parser*)parser;
+  grpc_chttp2_ping_parser* p = static_cast<grpc_chttp2_ping_parser*>(parser);
 
   while (p->byte != 8 && cur != end) {
-    p->opaque_8bytes |= (((uint64_t)*cur) << (56 - 8 * p->byte));
+    p->opaque_8bytes |= ((static_cast<uint64_t>(*cur)) << (56 - 8 * p->byte));
     cur++;
     p->byte++;
   }
@@ -112,8 +112,8 @@ grpc_error* grpc_chttp2_ping_parser_parse(void* parser,
       if (!g_disable_ping_ack) {
         if (t->ping_ack_count == t->ping_ack_capacity) {
           t->ping_ack_capacity = GPR_MAX(t->ping_ack_capacity * 3 / 2, 3);
-          t->ping_acks = (uint64_t*)gpr_realloc(
-              t->ping_acks, t->ping_ack_capacity * sizeof(*t->ping_acks));
+          t->ping_acks = static_cast<uint64_t*>(gpr_realloc(
+              t->ping_acks, t->ping_ack_capacity * sizeof(*t->ping_acks)));
         }
         t->ping_acks[t->ping_ack_count++] = p->opaque_8bytes;
         grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_PING_RESPONSE);

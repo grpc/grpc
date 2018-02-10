@@ -207,7 +207,7 @@ static void test_claims_success(void) {
   grpc_jwt_claims* claims;
   grpc_slice s = grpc_slice_from_copied_string(claims_without_time_constraint);
   grpc_json* json = grpc_json_parse_string_with_len(
-      (char*)GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s));
+      reinterpret_cast<char*> GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s));
   GPR_ASSERT(json != nullptr);
   grpc_core::ExecCtx exec_ctx;
   claims = grpc_jwt_claims_from_json(json, s);
@@ -226,7 +226,7 @@ static void test_expired_claims_failure(void) {
   grpc_jwt_claims* claims;
   grpc_slice s = grpc_slice_from_copied_string(expired_claims);
   grpc_json* json = grpc_json_parse_string_with_len(
-      (char*)GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s));
+      reinterpret_cast<char*> GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s));
   gpr_timespec exp_iat = {100, 0, GPR_CLOCK_REALTIME};
   gpr_timespec exp_exp = {120, 0, GPR_CLOCK_REALTIME};
   gpr_timespec exp_nbf = {60, 0, GPR_CLOCK_REALTIME};
@@ -251,7 +251,7 @@ static void test_expired_claims_failure(void) {
 static void test_invalid_claims_failure(void) {
   grpc_slice s = grpc_slice_from_copied_string(invalid_claims);
   grpc_json* json = grpc_json_parse_string_with_len(
-      (char*)GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s));
+      reinterpret_cast<char*> GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s));
   grpc_core::ExecCtx exec_ctx;
   GPR_ASSERT(grpc_jwt_claims_from_json(json, s) == nullptr);
 }
@@ -260,7 +260,7 @@ static void test_bad_audience_claims_failure(void) {
   grpc_jwt_claims* claims;
   grpc_slice s = grpc_slice_from_copied_string(claims_without_time_constraint);
   grpc_json* json = grpc_json_parse_string_with_len(
-      (char*)GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s));
+      reinterpret_cast<char*> GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s));
   GPR_ASSERT(json != nullptr);
   grpc_core::ExecCtx exec_ctx;
   claims = grpc_jwt_claims_from_json(json, s);
@@ -274,7 +274,7 @@ static void test_bad_subject_claims_failure(void) {
   grpc_jwt_claims* claims;
   grpc_slice s = grpc_slice_from_copied_string(claims_with_bad_subject);
   grpc_json* json = grpc_json_parse_string_with_len(
-      (char*)GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s));
+      reinterpret_cast<char*> GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s));
   GPR_ASSERT(json != nullptr);
   grpc_core::ExecCtx exec_ctx;
   claims = grpc_jwt_claims_from_json(json, s);

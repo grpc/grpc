@@ -53,21 +53,22 @@ static gpr_timespec g_start_time;
 
 static gpr_atm timespec_to_atm_round_down(gpr_timespec ts) {
   ts = gpr_time_sub(ts, g_start_time);
-  double x =
-      GPR_MS_PER_SEC * (double)ts.tv_sec + (double)ts.tv_nsec / GPR_NS_PER_MS;
+  double x = GPR_MS_PER_SEC * static_cast<double>(ts.tv_sec) +
+             static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS;
   if (x < 0) return 0;
   if (x > GPR_ATM_MAX) return GPR_ATM_MAX;
-  return (gpr_atm)x;
+  return static_cast<gpr_atm>(x);
 }
 
 static gpr_atm timespec_to_atm_round_up(gpr_timespec ts) {
   ts = gpr_time_sub(ts, g_start_time);
-  double x = GPR_MS_PER_SEC * (double)ts.tv_sec +
-             (double)ts.tv_nsec / GPR_NS_PER_MS +
-             (double)(GPR_NS_PER_SEC - 1) / (double)GPR_NS_PER_SEC;
+  double x = GPR_MS_PER_SEC * static_cast<double>(ts.tv_sec) +
+             static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS +
+             static_cast<double>(GPR_NS_PER_SEC - 1) /
+                 static_cast<double>(GPR_NS_PER_SEC);
   if (x < 0) return 0;
   if (x > GPR_ATM_MAX) return GPR_ATM_MAX;
-  return (gpr_atm)x;
+  return static_cast<gpr_atm>(x);
 }
 
 gpr_timespec grpc_millis_to_timespec(grpc_millis millis,

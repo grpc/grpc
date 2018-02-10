@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
   gpr_subprocess *svr, *cli;
   /* figure out where we are */
   if (lslash) {
-    memcpy(root, me, (size_t)(lslash - me));
+    memcpy(root, me, static_cast<size_t>(lslash - me));
     root[lslash - me] = 0;
   } else {
     strcpy(root, ".");

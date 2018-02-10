@@ -42,8 +42,8 @@ static void verification_test(hash_func hash, uint32_t expected) {
      the seed */
 
   for (i = 0; i < 256; i++) {
-    key[i] = (uint8_t)i;
-    hashes[i] = hash(key, i, (uint32_t)(256u - i));
+    key[i] = static_cast<uint8_t>(i);
+    hashes[i] = hash(key, i, static_cast<uint32_t>(256u - i));
   }
 
   /* Then hash the result array */

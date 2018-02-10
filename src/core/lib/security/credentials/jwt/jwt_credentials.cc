@@ -42,7 +42,7 @@ static void jwt_reset_cache(grpc_service_account_jwt_access_credentials* c) {
 
 static void jwt_destruct(grpc_call_credentials* creds) {
   grpc_service_account_jwt_access_credentials* c =
-      (grpc_service_account_jwt_access_credentials*)creds;
+      reinterpret_cast<grpc_service_account_jwt_access_credentials*>(creds);
   grpc_auth_json_key_destruct(&c->key);
   jwt_reset_cache(c);
   gpr_mu_destroy(&c->cache_mu);
@@ -55,7 +55,7 @@ static bool jwt_get_request_metadata(grpc_call_credentials* creds,
                                      grpc_closure* on_request_metadata,
                                      grpc_error** error) {
   grpc_service_account_jwt_access_credentials* c =
-      (grpc_service_account_jwt_access_credentials*)creds;
+      reinterpret_cast<grpc_service_account_jwt_access_credentials*>(creds);
   gpr_timespec refresh_threshold = gpr_time_from_seconds(
       GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS, GPR_TIMESPAN);
 
@@ -123,8 +123,8 @@ grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
     gpr_log(GPR_ERROR, "Invalid input for jwt credentials creation");
     return nullptr;
   }
-  c = (grpc_service_account_jwt_access_credentials*)gpr_zalloc(
-      sizeof(grpc_service_account_jwt_access_credentials));
+  c = static_cast<grpc_service_account_jwt_access_credentials*>(
+      gpr_zalloc(sizeof(grpc_service_account_jwt_access_credentials)));
   c->base.type = GRPC_CALL_CREDENTIALS_TYPE_JWT;
   gpr_ref_init(&c->base.refcount, 1);
   c->base.vtable = &jwt_vtable;
@@ -133,7 +133,7 @@ grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
   if (gpr_time_cmp(token_lifetime, max_token_lifetime) > 0) {
     gpr_log(GPR_INFO,
             "Cropping token lifetime to maximum allowed value (%d secs).",
-            (int)max_token_lifetime.tv_sec);
+            static_cast<int>(max_token_lifetime.tv_sec));
     token_lifetime = grpc_max_auth_token_lifetime();
   }
   c->jwt_lifetime = token_lifetime;
@@ -154,7 +154,7 @@ static char* redact_private_key(const char* json_key) {
   while (current) {
     if (current->type == GRPC_JSON_STRING &&
         strcmp(current->key, "private_key") == 0) {
-      current->value = (char*)redacted;
+      current->value = const_cast<char*>(redacted);
       break;
     }
     current = current->next;
@@ -177,7 +177,7 @@ grpc_call_credentials* grpc_service_account_jwt_access_credentials_create(
             ", tv_nsec: %d, clock_type: %d }, "
             "reserved=%p)",
             clean_json, token_lifetime.tv_sec, token_lifetime.tv_nsec,
-            (int)token_lifetime.clock_type, reserved);
+            static_cast<int>(token_lifetime.clock_type), reserved);
     gpr_free(clean_json);
   }
   GPR_ASSERT(reserved == nullptr);

@@ -85,7 +85,7 @@ grpc_channel* grpc_channel_create_with_builder(
   }
   grpc_error* error = grpc_channel_stack_builder_finish(
       builder, sizeof(grpc_channel), 1, destroy_channel, nullptr,
-      (void**)&channel);
+      reinterpret_cast<void**>(&channel));
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "channel stack builder failed: %s",
             grpc_error_string(error));
@@ -157,7 +157,7 @@ grpc_channel* grpc_channel_create_with_builder(
                strcmp(args->args[i].key,
                       GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET)) {
       channel->compression_options.enabled_algorithms_bitset =
-          (uint32_t)args->args[i].value.integer |
+          static_cast<uint32_t>(args->args[i].value.integer) |
           0x1; /* always support no compression */
     }
   }
@@ -190,26 +190,29 @@ size_t grpc_channel_get_call_size_estimate(grpc_channel* channel) {
          (which is common) - which tends to help most allocators reuse memory
       2. a small amount of allowed growth over the estimate without hitting
          the arena size doubling case, reducing overall memory usage */
-  return ((size_t)gpr_atm_no_barrier_load(&channel->call_size_estimate) +
+  return (static_cast<size_t>(
+              gpr_atm_no_barrier_load(&channel->call_size_estimate)) +
           2 * ROUND_UP_SIZE) &
-         ~(size_t)(ROUND_UP_SIZE - 1);
+         ~static_cast<size_t>(ROUND_UP_SIZE - 1);
 }
 
 void grpc_channel_update_call_size_estimate(grpc_channel* channel,
                                             size_t size) {
-  size_t cur = (size_t)gpr_atm_no_barrier_load(&channel->call_size_estimate);
+  size_t cur = static_cast<size_t>(
+      gpr_atm_no_barrier_load(&channel->call_size_estimate));
   if (cur < size) {
     /* size grew: update estimate */
-    gpr_atm_no_barrier_cas(&channel->call_size_estimate, (gpr_atm)cur,
-                           (gpr_atm)size);
+    gpr_atm_no_barrier_cas(&channel->call_size_estimate,
+                           static_cast<gpr_atm>(cur),
+                           static_cast<gpr_atm>(size));
     /* if we lose: never mind, something else will likely update soon enough */
   } else if (cur == size) {
     /* no change: holding pattern */
   } else if (cur > 0) {
     /* size shrank: decrease estimate */
     gpr_atm_no_barrier_cas(
-        &channel->call_size_estimate, (gpr_atm)cur,
-        (gpr_atm)(GPR_MIN(cur - 1, (255 * cur + size) / 256)));
+        &channel->call_size_estimate, static_cast<gpr_atm>(cur),
+        static_cast<gpr_atm>(GPR_MIN(cur - 1, (255 * cur + size) / 256)));
     /* if we lose: never mind, something else will likely update soon enough */
   }
 }
@@ -297,7 +300,8 @@ grpc_call* grpc_channel_create_pollset_set_call(
 
 void* grpc_channel_register_call(grpc_channel* channel, const char* method,
                                  const char* host, void* reserved) {
-  registered_call* rc = (registered_call*)gpr_malloc(sizeof(registered_call));
+  registered_call* rc =
+      static_cast<registered_call*>(gpr_malloc(sizeof(registered_call)));
   GRPC_API_TRACE(
       "grpc_channel_register_call(channel=%p, method=%s, host=%s, reserved=%p)",
       4, (channel, method, host, reserved));
@@ -324,7 +328,7 @@ grpc_call* grpc_channel_create_registered_call(
     grpc_channel* channel, grpc_call* parent_call, uint32_t propagation_mask,
     grpc_completion_queue* completion_queue, void* registered_call_handle,
     gpr_timespec deadline, void* reserved) {
-  registered_call* rc = (registered_call*)registered_call_handle;
+  registered_call* rc = static_cast<registered_call*>(registered_call_handle);
   GRPC_API_TRACE(
       "grpc_channel_create_registered_call("
       "channel=%p, parent_call=%p, propagation_mask=%x, completion_queue=%p, "
@@ -362,7 +366,7 @@ void grpc_channel_internal_unref(grpc_channel* c REF_ARG) {
 }
 
 static void destroy_channel(void* arg, grpc_error* error) {
-  grpc_channel* channel = (grpc_channel*)arg;
+  grpc_channel* channel = static_cast<grpc_channel*>(arg);
   grpc_channel_stack_destroy(CHANNEL_STACK_FROM_CHANNEL(channel));
   while (channel->registered_calls) {
     registered_call* rc = channel->registered_calls;

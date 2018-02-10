@@ -34,7 +34,8 @@ static void test(const uint8_t* data, size_t size, const uint8_t* dict) {
   struct grpc_memory_counters counters;
   grpc_init();
   grpc_memory_counters_init();
-  grpc_slice input = grpc_slice_from_copied_buffer((const char*)data, size);
+  grpc_slice input =
+      grpc_slice_from_copied_buffer(reinterpret_cast<const char*>(data), size);
   grpc_slice output = grpc_percent_encode_slice(input, dict);
   grpc_slice decoded_output;
   // encoder must always produce decodable output

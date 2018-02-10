@@ -340,7 +340,7 @@ static uint32_t elems_phash(uint32_t i) {
   uint32_t y = i / 99;
   uint32_t h = x;
   if (y < GPR_ARRAY_SIZE(elems_r)) {
-    uint32_t delta = (uint32_t)elems_r[y];
+    uint32_t delta = static_cast<uint32_t>(elems_r[y]);
     h += delta;
   }
   return h;
@@ -371,7 +371,7 @@ static const uint8_t elem_idxs[] = {
 
 grpc_mdelem grpc_static_mdelem_for_static_strings(int a, int b) {
   if (a == -1 || b == -1) return GRPC_MDNULL;
-  uint32_t k = (uint32_t)(a * 101 + b);
+  uint32_t k = static_cast<uint32_t>(a * 101 + b);
   uint32_t h = elems_phash(k);
   return h < GPR_ARRAY_SIZE(elem_keys) && elem_keys[h] == k &&
                  elem_idxs[h] != 255

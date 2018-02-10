@@ -95,7 +95,7 @@ static grpc_core::OrphanablePtr<grpc_core::Resolver> create_resolver(
 }
 
 static void on_done(void* ev, grpc_error* error) {
-  gpr_event_set((gpr_event*)ev, (void*)1);
+  gpr_event_set(static_cast<gpr_event*>(ev), (void*)1);
 }
 
 // interleave waiting for an event with a timer check

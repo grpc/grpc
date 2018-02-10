@@ -65,8 +65,8 @@ static grpc_metadata_array metadata_batch_to_md_array(
     grpc_slice value = GRPC_MDVALUE(md);
     if (result.count == result.capacity) {
       result.capacity = GPR_MAX(result.capacity + 8, result.capacity * 2);
-      result.metadata = (grpc_metadata*)gpr_realloc(
-          result.metadata, result.capacity * sizeof(grpc_metadata));
+      result.metadata = static_cast<grpc_metadata*>(gpr_realloc(
+          result.metadata, result.capacity * sizeof(grpc_metadata)));
     }
     usr_md = &result.metadata[result.count++];
     usr_md->key = grpc_slice_ref_internal(key);
@@ -77,8 +77,8 @@ static grpc_metadata_array metadata_batch_to_md_array(
 
 static grpc_filtered_mdelem remove_consumed_md(void* user_data,
                                                grpc_mdelem md) {
-  grpc_call_element* elem = (grpc_call_element*)user_data;
-  call_data* calld = (call_data*)elem->call_data;
+  grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
+  call_data* calld = static_cast<call_data*>(elem->call_data);
   size_t i;
   for (i = 0; i < calld->num_consumed_md; i++) {
     const grpc_metadata* consumed_md = &calld->consumed_md[i];
@@ -95,7 +95,7 @@ static void on_md_processing_done_inner(grpc_call_element* elem,
                                         const grpc_metadata* response_md,
                                         size_t num_response_md,
                                         grpc_error* error) {
-  call_data* calld = (call_data*)elem->call_data;
+  call_data* calld = static_cast<call_data*>(elem->call_data);
   grpc_transport_stream_op_batch* batch = calld->recv_initial_metadata_batch;
   /* TODO(jboeuf): Implement support for response_md. */
   if (response_md != nullptr && num_response_md > 0) {
@@ -118,12 +118,12 @@ static void on_md_processing_done(
     void* user_data, const grpc_metadata* consumed_md, size_t num_consumed_md,
     const grpc_metadata* response_md, size_t num_response_md,
     grpc_status_code status, const char* error_details) {
-  grpc_call_element* elem = (grpc_call_element*)user_data;
-  call_data* calld = (call_data*)elem->call_data;
+  grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
+  call_data* calld = static_cast<call_data*>(elem->call_data);
   grpc_core::ExecCtx exec_ctx;
   // If the call was not cancelled while we were in flight, process the result.
-  if (gpr_atm_full_cas(&calld->state, (gpr_atm)STATE_INIT,
-                       (gpr_atm)STATE_DONE)) {
+  if (gpr_atm_full_cas(&calld->state, static_cast<gpr_atm>(STATE_INIT),
+                       static_cast<gpr_atm>(STATE_DONE))) {
     grpc_error* error = GRPC_ERROR_NONE;
     if (status != GRPC_STATUS_OK) {
       if (error_details == nullptr) {
@@ -146,12 +146,12 @@ static void on_md_processing_done(
 }
 
 static void cancel_call(void* arg, grpc_error* error) {
-  grpc_call_element* elem = (grpc_call_element*)arg;
-  call_data* calld = (call_data*)elem->call_data;
+  grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
+  call_data* calld = static_cast<call_data*>(elem->call_data);
   // If the result was not already processed, invoke the callback now.
   if (error != GRPC_ERROR_NONE &&
-      gpr_atm_full_cas(&calld->state, (gpr_atm)STATE_INIT,
-                       (gpr_atm)STATE_CANCELLED)) {
+      gpr_atm_full_cas(&calld->state, static_cast<gpr_atm>(STATE_INIT),
+                       static_cast<gpr_atm>(STATE_CANCELLED))) {
     on_md_processing_done_inner(elem, nullptr, 0, nullptr, 0,
                                 GRPC_ERROR_REF(error));
   }
@@ -159,9 +159,9 @@ static void cancel_call(void* arg, grpc_error* error) {
 }
 
 static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
-  grpc_call_element* elem = (grpc_call_element*)arg;
-  channel_data* chand = (channel_data*)elem->channel_data;
-  call_data* calld = (call_data*)elem->call_data;
+  grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
+  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
+  call_data* calld = static_cast<call_data*>(elem->call_data);
   grpc_transport_stream_op_batch* batch = calld->recv_initial_metadata_batch;
   if (error == GRPC_ERROR_NONE) {
     if (chand->creds != nullptr && chand->creds->processor.process != nullptr) {
@@ -187,7 +187,7 @@ static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
 
 static void auth_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
-  call_data* calld = (call_data*)elem->call_data;
+  call_data* calld = static_cast<call_data*>(elem->call_data);
   if (batch->recv_initial_metadata) {
     // Inject our callback.
     calld->recv_initial_metadata_batch = batch;
@@ -202,8 +202,8 @@ static void auth_start_transport_stream_op_batch(
 /* Constructor for call_data */
 static grpc_error* init_call_elem(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
-  call_data* calld = (call_data*)elem->call_data;
-  channel_data* chand = (channel_data*)elem->channel_data;
+  call_data* calld = static_cast<call_data*>(elem->call_data);
+  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   calld->call_combiner = args->call_combiner;
   calld->owning_call = args->call_stack;
   GRPC_CLOSURE_INIT(&calld->recv_initial_metadata_ready,
@@ -234,7 +234,7 @@ static void destroy_call_elem(grpc_call_element* elem,
 static grpc_error* init_channel_elem(grpc_channel_element* elem,
                                      grpc_channel_element_args* args) {
   GPR_ASSERT(!args->is_last);
-  channel_data* chand = (channel_data*)elem->channel_data;
+  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   grpc_auth_context* auth_context =
       grpc_find_auth_context_in_args(args->channel_args);
   GPR_ASSERT(auth_context != nullptr);
@@ -248,7 +248,7 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
 
 /* Destructor for channel data */
 static void destroy_channel_elem(grpc_channel_element* elem) {
-  channel_data* chand = (channel_data*)elem->channel_data;
+  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   GRPC_AUTH_CONTEXT_UNREF(chand->auth_context, "server_auth_filter");
   grpc_server_credentials_unref(chand->creds);
 }

@@ -70,7 +70,7 @@ static uint32_t max_static_metadata_hash_probe;
 static uint32_t static_metadata_hash_values[GRPC_STATIC_MDSTR_COUNT];
 
 static void interned_slice_ref(void* p) {
-  interned_slice_refcount* s = (interned_slice_refcount*)p;
+  interned_slice_refcount* s = static_cast<interned_slice_refcount*>(p);
   GPR_ASSERT(gpr_atm_no_barrier_fetch_add(&s->refcnt, 1) > 0);
 }
 
@@ -91,22 +91,25 @@ static void interned_slice_destroy(interned_slice_refcount* s) {
 }
 
 static void interned_slice_unref(void* p) {
-  interned_slice_refcount* s = (interned_slice_refcount*)p;
+  interned_slice_refcount* s = static_cast<interned_slice_refcount*>(p);
   if (1 == gpr_atm_full_fetch_add(&s->refcnt, -1)) {
     interned_slice_destroy(s);
   }
 }
 
 static void interned_slice_sub_ref(void* p) {
-  interned_slice_ref(((char*)p) - offsetof(interned_slice_refcount, sub));
+  interned_slice_ref((static_cast<char*>(p)) -
+                     offsetof(interned_slice_refcount, sub));
 }
 
 static void interned_slice_sub_unref(void* p) {
-  interned_slice_unref(((char*)p) - offsetof(interned_slice_refcount, sub));
+  interned_slice_unref((static_cast<char*>(p)) -
+                       offsetof(interned_slice_refcount, sub));
 }
 
 static uint32_t interned_slice_hash(grpc_slice slice) {
-  interned_slice_refcount* s = (interned_slice_refcount*)slice.refcount;
+  interned_slice_refcount* s =
+      reinterpret_cast<interned_slice_refcount*>(slice.refcount);
   return s->hash;
 }
 
@@ -129,8 +132,8 @@ static void grow_shard(slice_shard* shard) {
   interned_slice_refcount** strtab;
   interned_slice_refcount *s, *next;
 
-  strtab = (interned_slice_refcount**)gpr_zalloc(
-      sizeof(interned_slice_refcount*) * capacity);
+  strtab = static_cast<interned_slice_refcount**>(
+      gpr_zalloc(sizeof(interned_slice_refcount*) * capacity));
 
   for (i = 0; i < shard->capacity; i++) {
     for (s = shard->strs[i]; s; s = next) {
@@ -148,7 +151,7 @@ static void grow_shard(slice_shard* shard) {
 static grpc_slice materialize(interned_slice_refcount* s) {
   grpc_slice slice;
   slice.refcount = &s->base;
-  slice.data.refcounted.bytes = (uint8_t*)(s + 1);
+  slice.data.refcounted.bytes = reinterpret_cast<uint8_t*>(s + 1);
   slice.data.refcounted.length = s->length;
   return slice;
 }
@@ -237,8 +240,8 @@ grpc_slice grpc_slice_intern(grpc_slice slice) {
 
   /* not found: create a new string */
   /* string data goes after the internal_string header */
-  s = (interned_slice_refcount*)gpr_malloc(sizeof(*s) +
-                                           GRPC_SLICE_LENGTH(slice));
+  s = static_cast<interned_slice_refcount*>(
+      gpr_malloc(sizeof(*s) + GRPC_SLICE_LENGTH(slice)));
   gpr_atm_rel_store(&s->refcnt, 1);
   s->length = GRPC_SLICE_LENGTH(slice);
   s->hash = hash;
@@ -268,15 +271,15 @@ void grpc_test_only_set_slice_hash_seed(uint32_t seed) {
 
 void grpc_slice_intern_init(void) {
   if (!g_forced_hash_seed) {
-    g_hash_seed = (uint32_t)gpr_now(GPR_CLOCK_REALTIME).tv_nsec;
+    g_hash_seed = static_cast<uint32_t>(gpr_now(GPR_CLOCK_REALTIME).tv_nsec);
   }
   for (size_t i = 0; i < SHARD_COUNT; i++) {
     slice_shard* shard = &g_shards[i];
     gpr_mu_init(&shard->mu);
     shard->count = 0;
     shard->capacity = INITIAL_SHARD_CAPACITY;
-    shard->strs = (interned_slice_refcount**)gpr_zalloc(sizeof(*shard->strs) *
-                                                        shard->capacity);
+    shard->strs = static_cast<interned_slice_refcount**>(
+        gpr_zalloc(sizeof(*shard->strs) * shard->capacity));
   }
   for (size_t i = 0; i < GPR_ARRAY_SIZE(static_metadata_hash); i++) {
     static_metadata_hash[i].hash = 0;
@@ -291,9 +294,9 @@ void grpc_slice_intern_init(void) {
                     GPR_ARRAY_SIZE(static_metadata_hash);
       if (static_metadata_hash[slot].idx == GRPC_STATIC_MDSTR_COUNT) {
         static_metadata_hash[slot].hash = static_metadata_hash_values[i];
-        static_metadata_hash[slot].idx = (uint32_t)i;
+        static_metadata_hash[slot].idx = static_cast<uint32_t>(i);
         if (j > max_static_metadata_hash_probe) {
-          max_static_metadata_hash_probe = (uint32_t)j;
+          max_static_metadata_hash_probe = static_cast<uint32_t>(j);
         }
         break;
       }

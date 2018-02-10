@@ -140,7 +140,7 @@ static grpc_httpcli_response http_response(int status, const char* body) {
   grpc_httpcli_response response;
   memset(&response, 0, sizeof(grpc_httpcli_response));
   response.status = status;
-  response.body = gpr_strdup((char*)body);
+  response.body = gpr_strdup(const_cast<char*>(body));
   response.body_length = strlen(body);
   return response;
 }
@@ -324,7 +324,7 @@ static void check_metadata(const expected_md* expected,
 }
 
 static void check_request_metadata(void* arg, grpc_error* error) {
-  request_metadata_state* state = (request_metadata_state*)arg;
+  request_metadata_state* state = static_cast<request_metadata_state*>(arg);
   gpr_log(GPR_INFO, "expected_error: %s",
           grpc_error_string(state->expected_error));
   gpr_log(GPR_INFO, "actual_error: %s", grpc_error_string(error));
@@ -754,7 +754,7 @@ static grpc_service_account_jwt_access_credentials* creds_as_jwt(
     grpc_call_credentials* creds) {
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(strcmp(creds->type, GRPC_CALL_CREDENTIALS_TYPE_JWT) == 0);
-  return (grpc_service_account_jwt_access_credentials*)creds;
+  return reinterpret_cast<grpc_service_account_jwt_access_credentials*>(creds);
 }
 
 static void test_jwt_creds_lifetime(void) {
@@ -873,10 +873,11 @@ static void test_google_default_creds_auth_key(void) {
   set_google_default_creds_env_var_with_file_contents(
       "json_key_google_default_creds", json_key);
   gpr_free(json_key);
-  creds = (grpc_composite_channel_credentials*)
-      grpc_google_default_credentials_create();
+  creds = reinterpret_cast<grpc_composite_channel_credentials*>(
+      grpc_google_default_credentials_create());
   GPR_ASSERT(creds != nullptr);
-  jwt = (grpc_service_account_jwt_access_credentials*)creds->call_creds;
+  jwt = reinterpret_cast<grpc_service_account_jwt_access_credentials*>(
+      creds->call_creds);
   GPR_ASSERT(
       strcmp(jwt->key.client_id,
              "777-abaslkan11hlb6nmim3bpspl31ud.apps.googleusercontent.com") ==
@@ -892,10 +893,11 @@ static void test_google_default_creds_refresh_token(void) {
   grpc_flush_cached_google_default_credentials();
   set_google_default_creds_env_var_with_file_contents(
       "refresh_token_google_default_creds", test_refresh_token_str);
-  creds = (grpc_composite_channel_credentials*)
-      grpc_google_default_credentials_create();
+  creds = reinterpret_cast<grpc_composite_channel_credentials*>(
+      grpc_google_default_credentials_create());
   GPR_ASSERT(creds != nullptr);
-  refresh = (grpc_google_refresh_token_credentials*)creds->call_creds;
+  refresh = reinterpret_cast<grpc_google_refresh_token_credentials*>(
+      creds->call_creds);
   GPR_ASSERT(strcmp(refresh->refresh_token.client_id,
                     "32555999999.apps.googleusercontent.com") == 0);
   grpc_channel_credentials_unref(&creds->base);
@@ -938,8 +940,8 @@ static void test_google_default_creds_gce(void) {
       default_creds_gce_detection_httpcli_get_success_override,
       httpcli_post_should_not_be_called);
   grpc_composite_channel_credentials* creds =
-      (grpc_composite_channel_credentials*)
-          grpc_google_default_credentials_create();
+      reinterpret_cast<grpc_composite_channel_credentials*>(
+          grpc_google_default_credentials_create());
 
   /* Verify that the default creds actually embeds a GCE creds. */
   GPR_ASSERT(creds != nullptr);
@@ -1018,7 +1020,7 @@ static int plugin_get_metadata_success(
   GPR_ASSERT(context.reserved == nullptr);
   GPR_ASSERT(GPR_ARRAY_SIZE(plugin_md) <
              GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX);
-  plugin_state* s = (plugin_state*)state;
+  plugin_state* s = static_cast<plugin_state*>(state);
   *s = PLUGIN_GET_METADATA_CALLED_STATE;
   for (size_t i = 0; i < GPR_ARRAY_SIZE(plugin_md); ++i) {
     memset(&creds_md[i], 0, sizeof(grpc_metadata));
@@ -1041,7 +1043,7 @@ static int plugin_get_metadata_failure(
   GPR_ASSERT(strcmp(context.method_name, test_method) == 0);
   GPR_ASSERT(context.channel_auth_context == nullptr);
   GPR_ASSERT(context.reserved == nullptr);
-  plugin_state* s = (plugin_state*)state;
+  plugin_state* s = static_cast<plugin_state*>(state);
   *s = PLUGIN_GET_METADATA_CALLED_STATE;
   *status = GRPC_STATUS_UNAUTHENTICATED;
   *error_details = gpr_strdup(plugin_error_details);
@@ -1049,7 +1051,7 @@ static int plugin_get_metadata_failure(
 }
 
 static void plugin_destroy(void* state) {
-  plugin_state* s = (plugin_state*)state;
+  plugin_state* s = static_cast<plugin_state*>(state);
   *s = PLUGIN_DESTROY_CALLED_STATE;
 }
 
