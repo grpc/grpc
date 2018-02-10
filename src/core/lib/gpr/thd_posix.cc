@@ -26,12 +26,12 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
-#include <grpc/support/useful.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "src/core/lib/gpr/fork.h"
+#include "src/core/lib/gpr/useful.h"
 
 static gpr_mu g_mu;
 static gpr_cv g_cv;

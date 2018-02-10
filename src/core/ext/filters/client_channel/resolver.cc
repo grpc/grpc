@@ -22,58 +22,12 @@
 grpc_core::DebugOnlyTraceFlag grpc_trace_resolver_refcount(false,
                                                            "resolver_refcount");
 
-void grpc_resolver_init(grpc_resolver* resolver,
-                        const grpc_resolver_vtable* vtable,
-                        grpc_combiner* combiner) {
-  resolver->vtable = vtable;
-  resolver->combiner = GRPC_COMBINER_REF(combiner, "resolver");
-  gpr_ref_init(&resolver->refs, 1);
-}
+namespace grpc_core {
 
-#ifndef NDEBUG
-void grpc_resolver_ref(grpc_resolver* resolver, const char* file, int line,
-                       const char* reason) {
-  if (grpc_trace_resolver_refcount.enabled()) {
-    gpr_atm old_refs = gpr_atm_no_barrier_load(&resolver->refs.count);
-    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-            "RESOLVER:%p   ref %" PRIdPTR " -> %" PRIdPTR " %s", resolver,
-            old_refs, old_refs + 1, reason);
-  }
-#else
-void grpc_resolver_ref(grpc_resolver* resolver) {
-#endif
-  gpr_ref(&resolver->refs);
-}
+Resolver::Resolver(grpc_combiner* combiner)
+    : InternallyRefCountedWithTracing(&grpc_trace_resolver_refcount),
+      combiner_(GRPC_COMBINER_REF(combiner, "resolver")) {}
 
-#ifndef NDEBUG
-void grpc_resolver_unref(grpc_resolver* resolver, const char* file, int line,
-                         const char* reason) {
-  if (grpc_trace_resolver_refcount.enabled()) {
-    gpr_atm old_refs = gpr_atm_no_barrier_load(&resolver->refs.count);
-    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-            "RESOLVER:%p unref %" PRIdPTR " -> %" PRIdPTR " %s", resolver,
-            old_refs, old_refs - 1, reason);
-  }
-#else
-void grpc_resolver_unref(grpc_resolver* resolver) {
-#endif
-  if (gpr_unref(&resolver->refs)) {
-    grpc_combiner* combiner = resolver->combiner;
-    resolver->vtable->destroy(resolver);
-    GRPC_COMBINER_UNREF(combiner, "resolver");
-  }
-}
+Resolver::~Resolver() { GRPC_COMBINER_UNREF(combiner_, "resolver"); }
 
-void grpc_resolver_shutdown_locked(grpc_resolver* resolver) {
-  resolver->vtable->shutdown_locked(resolver);
-}
-
-void grpc_resolver_channel_saw_error_locked(grpc_resolver* resolver) {
-  resolver->vtable->channel_saw_error_locked(resolver);
-}
-
-void grpc_resolver_next_locked(grpc_resolver* resolver,
-                               grpc_channel_args** result,
-                               grpc_closure* on_complete) {
-  resolver->vtable->next_locked(resolver, result, on_complete);
-}
+}  // namespace grpc_core

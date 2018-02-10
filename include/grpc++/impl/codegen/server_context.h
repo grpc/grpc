@@ -151,6 +151,10 @@ class ServerContext {
   /// The only exception is that if the serverhandler is already returning an
   /// error status code, it is ok to not return Status::CANCELLED even if
   /// TryCancel() was called.
+  ///
+  /// Note that TryCancel() does not change any of the tags that are pending
+  /// on the completion queue. All pending tags will still be delivered
+  /// (though their ok result may reflect the effect of cancellation).
   void TryCancel() const;
 
   /// Return a collection of initial metadata key-value pairs sent from the

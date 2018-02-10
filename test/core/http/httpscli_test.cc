@@ -25,11 +25,12 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/subprocess.h>
 #include <grpc/support/sync.h>
+
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "test/core/util/port.h"
+#include "test/core/util/subprocess.h"
 #include "test/core/util/test_config.h"
 
 static int g_done = 0;

@@ -21,8 +21,8 @@
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
-#include <grpc/support/useful.h>
 
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_metadata;

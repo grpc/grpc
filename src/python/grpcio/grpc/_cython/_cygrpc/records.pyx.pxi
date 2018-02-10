@@ -112,8 +112,8 @@ class OperationType:
 
 class CompressionAlgorithm:
   none = GRPC_COMPRESS_NONE
-  deflate = GRPC_COMPRESS_MESSAGE_DEFLATE
-  gzip = GRPC_COMPRESS_MESSAGE_GZIP
+  deflate = GRPC_COMPRESS_DEFLATE
+  gzip = GRPC_COMPRESS_GZIP
 
 
 class CompressionLevel:

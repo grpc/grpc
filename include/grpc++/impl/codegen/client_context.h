@@ -304,7 +304,10 @@ class ClientContext {
   /// Flag whether the initial metadata should be \a corked
   ///
   /// If \a corked is true, then the initial metadata will be coalesced with the
-  /// write of first message in the stream.
+  /// write of first message in the stream. As a result, any tag set for the
+  /// initial metadata operation (starting a client-streaming or bidi-streaming
+  /// RPC) will not actually be sent to the completion queue or delivered
+  /// via Next.
   ///
   /// \param corked The flag indicating whether the initial metadata is to be
   /// corked or not.
@@ -332,6 +335,10 @@ class ClientContext {
   /// already finished, it may still return success.
   ///
   /// There is no guarantee the call will be cancelled.
+  ///
+  /// Note that TryCancel() does not change any of the tags that are pending
+  /// on the completion queue. All pending tags will still be delivered
+  /// (though their ok result may reflect the effect of cancellation).
   void TryCancel();
 
   /// Global Callbacks

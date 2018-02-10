@@ -19,7 +19,6 @@
 #include "src/core/lib/surface/channel_init.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/useful.h>
 
 typedef struct stage_slot {
   grpc_channel_init_stage fn;

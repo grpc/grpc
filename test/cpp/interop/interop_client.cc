@@ -28,7 +28,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
-#include <grpc/support/useful.h>
 
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/proto/grpc/testing/empty.pb.h"
@@ -189,7 +188,7 @@ bool InteropClient::PerformLargeUnary(SimpleRequest* request,
   request->mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
   if (request->has_expect_compressed()) {
     if (request->expect_compressed().value()) {
-      context.set_compression_algorithm(GRPC_COMPRESS_MESSAGE_GZIP);
+      context.set_compression_algorithm(GRPC_COMPRESS_GZIP);
     } else {
       context.set_compression_algorithm(GRPC_COMPRESS_NONE);
     }
@@ -497,7 +496,7 @@ bool InteropClient::DoClientCompressedStreaming() {
   StreamingInputCallRequest request;
   StreamingInputCallResponse response;
 
-  context.set_compression_algorithm(GRPC_COMPRESS_MESSAGE_GZIP);
+  context.set_compression_algorithm(GRPC_COMPRESS_GZIP);
   std::unique_ptr<ClientWriter<StreamingInputCallRequest>> stream(
       serviceStub_.Get()->StreamingInputCall(&context, &response));
 
