@@ -165,8 +165,10 @@ def grpc_sh_binary(name, srcs, data = []):
 
 def grpc_py_binary(name, srcs, data = [], deps = []):
   if name == "test_dns_server":
-    # TODO: allow running test_dns_server in oss bazel test suite
-    deps = []
+    deps = _get_external_deps([
+      "twisted",
+      "yaml",
+    ])
   native.py_binary(
     name = name,
     srcs = srcs,
