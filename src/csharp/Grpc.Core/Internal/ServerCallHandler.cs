@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Grpc.Core.Interceptors;
 using Grpc.Core.Internal;
 using Grpc.Core.Logging;
 using Grpc.Core.Utils;
@@ -32,7 +33,12 @@ namespace Grpc.Core.Internal
         Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq);
     }
 
-    internal class UnaryServerCallHandler<TRequest, TResponse> : IServerCallHandler
+    internal interface IInterceptableCallHandler
+    {
+        IServerCallHandler Intercept(Interceptor interceptor);
+    }
+
+    internal class UnaryServerCallHandler<TRequest, TResponse> : IServerCallHandler, IInterceptableCallHandler
         where TRequest : class
         where TResponse : class
     {
@@ -74,7 +80,7 @@ namespace Grpc.Core.Internal
             {
                 if (!(e is RpcException))
                 {
-                    Logger.Warning(e, "Exception occured in handler.");
+                    Logger.Warning(e, "Exception occured in handler or interceptors.");
                 }
                 status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
             }
@@ -89,9 +95,14 @@ namespace Grpc.Core.Internal
             }
             await finishedTask.ConfigureAwait(false);
         }
+
+        IServerCallHandler IInterceptableCallHandler.Intercept(Interceptor interceptor)
+        {
+            return new UnaryServerCallHandler<TRequest, TResponse>(method, (request, context) => interceptor.UnaryServerHandler(request, context, handler));
+        }
     }
 
-    internal class ServerStreamingServerCallHandler<TRequest, TResponse> : IServerCallHandler
+    internal class ServerStreamingServerCallHandler<TRequest, TResponse> : IServerCallHandler, IInterceptableCallHandler
         where TRequest : class
         where TResponse : class
     {
@@ -131,7 +142,7 @@ namespace Grpc.Core.Internal
             {
                 if (!(e is RpcException))
                 {
-                    Logger.Warning(e, "Exception occured in handler.");
+                    Logger.Warning(e, "Exception occured in handler or interceptors.");
                 }
                 status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
             }
@@ -147,9 +158,14 @@ namespace Grpc.Core.Internal
             }
             await finishedTask.ConfigureAwait(false);
         }
+
+        IServerCallHandler IInterceptableCallHandler.Intercept(Interceptor interceptor)
+        {
+            return new ServerStreamingServerCallHandler<TRequest, TResponse>(method, (request, responseStream, context) => interceptor.ServerStreamingServerHandler(request, responseStream, context, handler));
+        }
     }
 
-    internal class ClientStreamingServerCallHandler<TRequest, TResponse> : IServerCallHandler
+    internal class ClientStreamingServerCallHandler<TRequest, TResponse> : IServerCallHandler, IInterceptableCallHandler
         where TRequest : class
         where TResponse : class
     {
@@ -189,7 +205,7 @@ namespace Grpc.Core.Internal
             {
                 if (!(e is RpcException))
                 {
-                    Logger.Warning(e, "Exception occured in handler.");
+                    Logger.Warning(e, "Exception occured in handler or interceptor.");
                 }
                 status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
             }
@@ -205,9 +221,14 @@ namespace Grpc.Core.Internal
             }
             await finishedTask.ConfigureAwait(false);
         }
+
+        IServerCallHandler IInterceptableCallHandler.Intercept(Interceptor interceptor)
+        {
+            return new ClientStreamingServerCallHandler<TRequest, TResponse>(method, (requestStream, context) => interceptor.ClientStreamingServerHandler(requestStream, context, handler));
+        }
     }
 
-    internal class DuplexStreamingServerCallHandler<TRequest, TResponse> : IServerCallHandler
+    internal class DuplexStreamingServerCallHandler<TRequest, TResponse> : IServerCallHandler, IInterceptableCallHandler
         where TRequest : class
         where TResponse : class
     {
@@ -245,7 +266,7 @@ namespace Grpc.Core.Internal
             {
                 if (!(e is RpcException))
                 {
-                    Logger.Warning(e, "Exception occured in handler.");
+                    Logger.Warning(e, "Exception occured in handler or interceptor.");
                 }
                 status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
             }
@@ -259,6 +280,11 @@ namespace Grpc.Core.Internal
                 throw;
             }
             await finishedTask.ConfigureAwait(false);
+        }
+
+        IServerCallHandler IInterceptableCallHandler.Intercept(Interceptor interceptor)
+        {
+            return new DuplexStreamingServerCallHandler<TRequest, TResponse>(method, (requestStream, responseStream, context) => interceptor.DuplexStreamingServerHandler(requestStream, responseStream, context, handler));
         }
     }
 
