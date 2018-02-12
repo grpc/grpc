@@ -101,6 +101,42 @@ namespace Grpc.Core.Interceptors
             }
         }
 
+        private class MetadataInterceptor : GenericInterceptor
+        {
+            readonly Func<Metadata, Metadata> interceptor;
+
+            /// <summary>
+            /// Creates a new instance of MetadataInterceptor given the specified interceptor function.
+            /// </summary>
+            public MetadataInterceptor(Func<Metadata, Metadata> interceptor)
+            {
+                this.interceptor = GrpcPreconditions.CheckNotNull(interceptor, "interceptor");
+            }
+
+            protected override ClientCallArbitrator<TRequest, TResponse> InterceptCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context, bool clientStreaming, bool serverStreaming, TRequest request)
+            {
+                return new ClientCallArbitrator<TRequest, TResponse>
+                {
+                    Context = new ClientInterceptorContext<TRequest, TResponse>(context.Method, context.Host, context.Options.WithHeaders(interceptor(context.Options.Headers)))
+                };
+            }
+        }
+
+        /// <summary>
+        /// Returns a <see cref="Grpc.Core.CallInvoker" /> instance that intercepts
+        /// the invoker with the given interceptor.
+        /// </summary>
+        /// <param name="invoker">The underlying invoker to intercept.</param>
+        /// <param name="interceptor">
+        /// An interceptor delegate that takes the request metadata to be sent with an outgoing call
+        /// and returns a <see cref="Grpc.Core.Metadata" /> instance that will replace the existing
+        /// invocation metadata.
+        /// </param>
+        public static CallInvoker Intercept(this CallInvoker invoker, Func<Metadata, Metadata> interceptor)
+        {
+            return new InterceptingCallInvoker(invoker, new MetadataInterceptor(interceptor));
+        }
+
         /// <summary>
         /// Returns a <see cref="Grpc.Core.CallInvoker" /> instance that intercepts
         /// the invoker with the given interceptor.

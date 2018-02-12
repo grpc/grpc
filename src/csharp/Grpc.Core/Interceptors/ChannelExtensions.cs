@@ -50,5 +50,20 @@ namespace Grpc.Core.Interceptors
         {
             return new DefaultCallInvoker(channel).Intercept(interceptors);
         }
+
+        /// <summary>
+        /// Returns a <see cref="Grpc.Core.CallInvoker" /> instance that intercepts
+        /// the invoker with the given interceptor.
+        /// </summary>
+        /// <param name="channel">The channel to intercept.</param>
+        /// <param name="interceptor">
+        /// An interceptor delegate that takes the request metadata to be sent with an outgoing call
+        /// and returns a <see cref="Grpc.Core.Metadata" /> instance that will replace the existing
+        /// invocation metadata.
+        /// </param>
+        public static CallInvoker Intercept(this Channel channel, Func<Metadata, Metadata> interceptor)
+        {
+            return new DefaultCallInvoker(channel).Intercept(interceptor);
+        }
     }
 }
