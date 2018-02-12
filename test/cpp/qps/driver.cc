@@ -108,7 +108,8 @@ static double ServerIdleCpuTime(ServerStats s) { return s.idle_cpu_time(); }
 static int Cores(int n) { return n; }
 
 // Postprocess ScenarioResult and populate result summary.
-static void postprocess_scenario_result(ScenarioResult* result) {
+static void postprocess_scenario_result(ScenarioResult* result,
+                                        int attempted_qps) {
   Histogram histogram;
   histogram.MergeProto(result->latencies());
 
@@ -116,6 +117,7 @@ static void postprocess_scenario_result(ScenarioResult* result) {
   auto qps = histogram.Count() / time_estimate;
   auto qps_per_server_core = qps / sum(result->server_cores(), Cores);
 
+  result->mutable_summary()->set_attempted_qps(attempted_qps);
   result->mutable_summary()->set_qps(qps);
   result->mutable_summary()->set_qps_per_server_core(qps_per_server_core);
   result->mutable_summary()->set_latency_50(histogram.Percentile(50));
@@ -517,7 +519,12 @@ std::unique_ptr<ScenarioResult> RunScenario(
   if (g_inproc_servers != nullptr) {
     delete g_inproc_servers;
   }
-  postprocess_scenario_result(result.get());
+
+  const auto& load = result_client_config.load_params();
+  int attempted_qps = load.load_case() == LoadParams::kPoisson
+                          ? load.poisson().offered_load() * num_clients
+                          : -1;
+  postprocess_scenario_result(result.get(), attempted_qps);
   return result;
 }
 
