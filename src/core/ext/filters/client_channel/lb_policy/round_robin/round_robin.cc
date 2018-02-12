@@ -56,17 +56,17 @@ class RoundRobin : public LoadBalancingPolicy {
 
   void UpdateLocked(const grpc_channel_args& args) override;
   bool PickLocked(PickState* pick) override;
-  void PingOneLocked(grpc_closure* on_initiate, grpc_closure* on_ack) override;
   void CancelPickLocked(PickState* pick, grpc_error* error) override;
-  void CancelPicksLocked(uint32_t initial_metadata_flags_mask,
-                         uint32_t initial_metadata_flags_eq,
-                         grpc_error* error) override;
-  void ExitIdleLocked() override;
+  void CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
+                                 uint32_t initial_metadata_flags_eq,
+                                 grpc_error* error) override;
   void NotifyOnStateChangeLocked(grpc_connectivity_state* state,
                                  grpc_closure* closure) override;
   grpc_connectivity_state CheckConnectivityLocked(
       grpc_error** connectivity_error) override;
   void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) override;
+  void PingOneLocked(grpc_closure* on_initiate, grpc_closure* on_ack) override;
+  void ExitIdleLocked() override;
 
  private:
   ~RoundRobin();
@@ -249,9 +249,9 @@ void RoundRobin::CancelPickLocked(PickState* pick, grpc_error* error) {
   GRPC_ERROR_UNREF(error);
 }
 
-void RoundRobin::CancelPicksLocked(uint32_t initial_metadata_flags_mask,
-                                   uint32_t initial_metadata_flags_eq,
-                                   grpc_error* error) {
+void RoundRobin::CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
+                                           uint32_t initial_metadata_flags_eq,
+                                           grpc_error* error) {
   PickState* pick = pending_picks_;
   pending_picks_ = nullptr;
   while (pick != nullptr) {

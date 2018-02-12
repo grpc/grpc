@@ -65,7 +65,7 @@ class LoadBalancingPolicy
     /// grpc_lb_policy_cancel_picks() and \a GRPC_INITIAL_METADATA_* in
     /// grpc_types.h.
     uint32_t initial_metadata_flags;
-    /// Storage for LB token in \a initial_metadata, or NULL if not used.
+    /// Storage for LB token in \a initial_metadata, or nullptr if not used.
     grpc_linked_mdelem lb_token_mdelem_storage;
     /// Closure to run when pick is complete, if not completed synchronously.
     grpc_closure* on_complete;
@@ -76,7 +76,7 @@ class LoadBalancingPolicy
     /// needed.
     grpc_call_context_element subchannel_call_context[GRPC_CONTEXT_COUNT];
     /// Upon success, \a *user_data will be set to whatever opaque information
-    /// may need to be propagated from the LB policy, or NULL if not needed.
+    /// may need to be propagated from the LB policy, or nullptr if not needed.
     void** user_data;
     /// Next pointer.  For internal use by LB policy.
     PickState* next;
@@ -99,11 +99,6 @@ class LoadBalancingPolicy
   /// complete with its error argument set to indicate success or failure.
   virtual bool PickLocked(PickState* pick) GRPC_ABSTRACT;
 
-  /// Performs a connected subchannel ping (\see grpc_connected_subchannel_ping)
-  /// against one of the connected subchannels managed by the policy.
-  virtual void PingOneLocked(grpc_closure* on_initiate,
-                             grpc_closure* on_ack) GRPC_ABSTRACT;
-
   /// Cancels \a pick.
   /// The \a on_complete callback of the pending pick will be invoked with
   /// \a pick->connected_subchannel set to null.
@@ -114,12 +109,9 @@ class LoadBalancingPolicy
   /// given in the call to \a grpc_lb_policy_pick_locked()) matches
   /// \a initial_metadata_flags_eq when ANDed with
   /// \a initial_metadata_flags_mask.
-  virtual void CancelPicksLocked(uint32_t initial_metadata_flags_mask,
-                                 uint32_t initial_metadata_flags_eq,
-                                 grpc_error* error) GRPC_ABSTRACT;
-
-  /// Tries to enter a READY connectivity state.
-  virtual void ExitIdleLocked() GRPC_ABSTRACT;
+  virtual void CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
+                                         uint32_t initial_metadata_flags_eq,
+                                         grpc_error* error) GRPC_ABSTRACT;
 
   /// Calls \a closure when the connectivity state of the policy changes
   /// from \a *state.  Updates \a *state with the new state of the policy.
@@ -134,6 +126,17 @@ class LoadBalancingPolicy
   /// Hands off pending picks to \a new_policy.
   virtual void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy)
       GRPC_ABSTRACT;
+
+  /// Performs a connected subchannel ping via \a ConnectedSubchannel::Ping()
+  /// against one of the connected subchannels managed by the policy.
+  /// Note: This is intended only for use in tests.
+  virtual void PingOneLocked(grpc_closure* on_initiate,
+                             grpc_closure* on_ack) GRPC_ABSTRACT;
+
+  /// Tries to enter a READY connectivity state.
+  /// TODO(roth): As part of restructuring how we handle IDLE state,
+  /// consider whether this method is still needed.
+  virtual void ExitIdleLocked() GRPC_ABSTRACT;
 
   void Orphan() override {
     // Invoke ShutdownLocked() inside of the combiner.

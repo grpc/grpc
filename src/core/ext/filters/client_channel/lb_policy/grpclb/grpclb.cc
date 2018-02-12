@@ -120,17 +120,17 @@ class GrpcLb : public LoadBalancingPolicy {
 
   void UpdateLocked(const grpc_channel_args& args) override;
   bool PickLocked(PickState* pick) override;
-  void PingOneLocked(grpc_closure* on_initiate, grpc_closure* on_ack) override;
   void CancelPickLocked(PickState* pick, grpc_error* error) override;
-  void CancelPicksLocked(uint32_t initial_metadata_flags_mask,
-                         uint32_t initial_metadata_flags_eq,
-                         grpc_error* error) override;
-  void ExitIdleLocked() override;
+  void CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
+                                 uint32_t initial_metadata_flags_eq,
+                                 grpc_error* error) override;
   void NotifyOnStateChangeLocked(grpc_connectivity_state* state,
                                  grpc_closure* closure) override;
   grpc_connectivity_state CheckConnectivityLocked(
       grpc_error** connectivity_error) override;
   void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) override;
+  void PingOneLocked(grpc_closure* on_initiate, grpc_closure* on_ack) override;
+  void ExitIdleLocked() override;
 
  private:
   /// Linked list of pending pick requests. It stores all information needed to
@@ -1162,9 +1162,9 @@ void GrpcLb::CancelPickLocked(PickState* pick, grpc_error* error) {
 //   level (grpclb), inside the pending_picks_ list. To cancel these,
 //   we invoke the completion closure and set the pick's connected
 //   subchannel to nullptr right here.
-void GrpcLb::CancelPicksLocked(uint32_t initial_metadata_flags_mask,
-                               uint32_t initial_metadata_flags_eq,
-                               grpc_error* error) {
+void GrpcLb::CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
+                                       uint32_t initial_metadata_flags_eq,
+                                       grpc_error* error) {
   PendingPick* pp = pending_picks_;
   pending_picks_ = nullptr;
   while (pp != nullptr) {
@@ -1182,9 +1182,9 @@ void GrpcLb::CancelPicksLocked(uint32_t initial_metadata_flags_mask,
     pp = next;
   }
   if (rr_policy_ != nullptr) {
-    rr_policy_->CancelPicksLocked(initial_metadata_flags_mask,
-                                  initial_metadata_flags_eq,
-                                  GRPC_ERROR_REF(error));
+    rr_policy_->CancelMatchingPicksLocked(initial_metadata_flags_mask,
+                                          initial_metadata_flags_eq,
+                                          GRPC_ERROR_REF(error));
   }
   GRPC_ERROR_UNREF(error);
 }

@@ -241,13 +241,13 @@ static void set_channel_connectivity_state_locked(channel_data* chand,
   if (chand->lb_policy != nullptr) {
     if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
       /* cancel picks with wait_for_ready=false */
-      chand->lb_policy->CancelPicksLocked(
+      chand->lb_policy->CancelMatchingPicksLocked(
           /* mask= */ GRPC_INITIAL_METADATA_WAIT_FOR_READY,
           /* check= */ 0, GRPC_ERROR_REF(error));
     } else if (state == GRPC_CHANNEL_SHUTDOWN) {
       /* cancel all picks */
-      chand->lb_policy->CancelPicksLocked(/* mask= */ 0, /* check= */ 0,
-                                          GRPC_ERROR_REF(error));
+      chand->lb_policy->CancelMatchingPicksLocked(/* mask= */ 0, /* check= */ 0,
+                                                  GRPC_ERROR_REF(error));
     }
   }
   if (grpc_client_channel_trace.enabled()) {
