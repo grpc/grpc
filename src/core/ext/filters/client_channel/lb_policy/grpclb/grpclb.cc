@@ -1404,9 +1404,8 @@ void GrpcLb::StartBalancerCallRetryTimerLocked() {
   // with the callback.
   auto self = Ref(DEBUG_LOCATION, "on_balancer_call_retry_timer");
   self.release();
-  GRPC_CLOSURE_INIT(&lb_on_call_retry_,
-                    &GrpcLb::OnBalancerCallRetryTimerLocked, this,
-                    grpc_combiner_scheduler(combiner()));
+  GRPC_CLOSURE_INIT(&lb_on_call_retry_, &GrpcLb::OnBalancerCallRetryTimerLocked,
+                    this, grpc_combiner_scheduler(combiner()));
   retry_timer_callback_pending_ = true;
   grpc_timer_init(&lb_call_retry_timer_, next_try, &lb_on_call_retry_);
 }
