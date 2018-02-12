@@ -1096,7 +1096,7 @@ TEST_F(UpdatesTest, ReresolveDeadBalancer) {
   SetNextResolution(addresses);
   addresses.clear();
   addresses.emplace_back(AddressData{balancer_servers_[1].port_, true, ""});
-  SetNextResolutionUponError(addresses);
+  SetNextReresolutionResponse(addresses);
   const std::vector<int> first_backend{GetBackendPorts()[0]};
   const std::vector<int> second_backend{GetBackendPorts()[1]};
 
@@ -1178,14 +1178,12 @@ TEST_F(UpdatesTest, ReresolveDeadBackend) {
   addresses.emplace_back(AddressData{balancer_servers_[0].port_, true, ""});
   addresses.emplace_back(AddressData{backend_servers_[0].port_, false, ""});
   SetNextResolution(addresses);
-  // The re-resolution result will contain a balancer address.
+  // The re-resolution result will contain the addresses of the same balancer
+  // and a new fallback backend.
   addresses.clear();
-  addresses.emplace_back(AddressData{balancer_servers_[1].port_, true, ""});
-  SetNextResolutionUponError(addresses);
-  const std::vector<int> second_backend{backend_servers_[1].port_};
-
-  ScheduleResponseForBalancer(
-      1, BalancerServiceImpl::BuildResponseForBackends(second_backend, {}), 0);
+  addresses.emplace_back(AddressData{balancer_servers_[0].port_, true, ""});
+  addresses.emplace_back(AddressData{backend_servers_[1].port_, false, ""});
+  SetNextReresolutionResponse(addresses);
 
   // Start servers and send 10 RPCs per server.
   gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
@@ -1198,22 +1196,6 @@ TEST_F(UpdatesTest, ReresolveDeadBackend) {
   gpr_log(GPR_INFO, "********** ABOUT TO KILL BACKEND 0 *************");
   if (backends_[0]->Shutdown()) backend_servers_[0].Shutdown();
   gpr_log(GPR_INFO, "********** KILLED BACKEND 0 *************");
-
-  balancers_[0]->NotifyDoneWithServerlists();
-  balancers_[1]->NotifyDoneWithServerlists();
-  balancers_[2]->NotifyDoneWithServerlists();
-  // Balancer 0 got a single request.
-  EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
-  // but didn't send any response.
-  EXPECT_EQ(0U, balancer_servers_[0].service_->response_count());
-  // Balancer 1 may have received a request if re-resolution is done quickly
-  // enough.
-  EXPECT_GE(balancer_servers_[1].service_->request_count(), 0U);
-  EXPECT_GE(balancer_servers_[1].service_->response_count(), 0U);
-  EXPECT_LE(balancer_servers_[1].service_->request_count(), 1U);
-  EXPECT_LE(balancer_servers_[1].service_->response_count(), 1U);
-  EXPECT_EQ(0U, balancer_servers_[2].service_->request_count());
-  EXPECT_EQ(0U, balancer_servers_[2].service_->response_count());
 
   // Wait until re-resolution has finished, as signaled by the second backend
   // receiving a request.
@@ -1230,8 +1212,8 @@ TEST_F(UpdatesTest, ReresolveDeadBackend) {
   balancers_[2]->NotifyDoneWithServerlists();
   EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
   EXPECT_EQ(0U, balancer_servers_[0].service_->response_count());
-  EXPECT_EQ(1U, balancer_servers_[1].service_->request_count());
-  EXPECT_EQ(1U, balancer_servers_[1].service_->response_count());
+  EXPECT_EQ(0U, balancer_servers_[1].service_->request_count());
+  EXPECT_EQ(0U, balancer_servers_[1].service_->response_count());
   EXPECT_EQ(0U, balancer_servers_[2].service_->request_count());
   EXPECT_EQ(0U, balancer_servers_[2].service_->response_count());
 }
