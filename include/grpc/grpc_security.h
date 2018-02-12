@@ -300,7 +300,13 @@ GRPCAPI grpc_call_credentials* grpc_metadata_credentials_create_from_plugin(
 
 /** --- Secure channel creation. --- */
 
-/** Creates a secure channel using the passed-in credentials. */
+/** Creates a secure channel using the passed-in credentials. Additional
+    channel level configuration MAY be provided by grpc_channel_args, though
+    the expectation is that most clients will want to simply pass NULL. The
+    user data in 'args' need only live through the invocation of this function.
+    However, if any args of the 'pointer' type are passed, then the referenced
+    vtable must be maintained by the caller until grpc_channel_destroy
+    terminates. See grpc_channel_args definition for more on this. */
 GRPCAPI grpc_channel* grpc_secure_channel_create(
     grpc_channel_credentials* creds, const char* target,
     const grpc_channel_args* args, void* reserved);
