@@ -1178,8 +1178,10 @@ TEST_F(UpdatesTest, ReresolveDeadBackend) {
   addresses.emplace_back(AddressData{balancer_servers_[0].port_, true, ""});
   addresses.emplace_back(AddressData{backend_servers_[0].port_, false, ""});
   SetNextResolution(addresses);
-  // The re-resolution result will contain a new fallback backend address.
+  // The re-resolution result will contain the addresses of the same balancer
+  // and a new fallback backend.
   addresses.clear();
+  addresses.emplace_back(AddressData{balancer_servers_[0].port_, true, ""});
   addresses.emplace_back(AddressData{backend_servers_[1].port_, false, ""});
   SetNextReresolutionResponse(addresses);
 
