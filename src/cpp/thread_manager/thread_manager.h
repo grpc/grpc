@@ -32,6 +32,7 @@ namespace grpc {
 class ThreadManager {
  public:
   explicit ThreadManager(int min_pollers, int max_pollers);
+  explicit ThreadManager(int min_pollers, int max_pollers, int max_threads);
   virtual ~ThreadManager();
 
   // Initializes and Starts the Rpc Manager threads
@@ -128,6 +129,9 @@ class ThreadManager {
   // The total number of threads (includes threads includes the threads that are
   // currently polling i.e num_pollers_)
   int num_threads_;
+
+  // The maximum number of threads (i.e the upper limit of num_threads_)
+  int max_threads_;
 
   std::mutex list_mu_;
   std::list<WorkerThread*> completed_threads_;

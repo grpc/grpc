@@ -116,6 +116,9 @@ ServerBuilder& ServerBuilder::SetSyncServerOption(
     case MAX_POLLERS:
       sync_server_settings_.max_pollers = val;
       break;
+    case MAX_THREADS:
+      sync_server_settings_.max_threads = val;
+      break;
     case CQ_TIMEOUT_MSEC:
       sync_server_settings_.cq_timeout_msec = val;
       break;
@@ -262,6 +265,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   std::unique_ptr<Server> server(new Server(
       max_receive_message_size_, &args, sync_server_cqs,
       sync_server_settings_.min_pollers, sync_server_settings_.max_pollers,
+      sync_server_settings_.max_threads,
       sync_server_settings_.cq_timeout_msec));
 
   if (has_sync_methods) {
