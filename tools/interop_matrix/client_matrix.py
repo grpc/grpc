@@ -18,11 +18,11 @@
 
 def get_github_repo(lang):
     return {
-        'go': 'git@github.com:grpc/grpc-go.git',
-        'java': 'git@github.com:grpc/grpc-java.git',
-        'node': 'git@github.com:grpc/grpc-node.git',
+        'go': 'https://github.com:grpc/grpc-go.git',
+        'java': 'https://github.com:grpc/grpc-java.git',
+        'node': 'https://github.com:grpc/grpc-node.git',
         # all other languages use the grpc.git repo.
-    }.get(lang, 'git@github.com:grpc/grpc.git')
+    }.get(lang, 'https://github.com/grpc/grpc.git')
 
 
 def get_release_tags(lang):
@@ -79,6 +79,9 @@ LANG_RELEASE_MATRIX = {
         },
         {
             'v1.8.0': None
+        },
+        {
+            'v1.9.1': None
         },
     ],
     'go': [
@@ -167,6 +170,9 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.8.1': None  # first python 1.8 release is 1.8.1
         },
+        {
+            'v1.9.1': None
+        },
     ],
     'node': [
         {
@@ -219,6 +225,9 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.8.0': None
         },
+        {
+            'v1.9.1': None
+        },
     ],
     'php': [
         {
@@ -245,6 +254,9 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.8.0': None
         },
+        {
+            'v1.9.1': None
+        },
     ],
     'csharp': [
         #{'v1.0.1': None},
@@ -268,6 +280,9 @@ LANG_RELEASE_MATRIX = {
         },
         {
             'v1.8.0': None
+        },
+        {
+            'v1.9.1': None
         },
     ],
 }
