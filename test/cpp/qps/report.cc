@@ -36,6 +36,12 @@ void CompositeReporter::add(std::unique_ptr<Reporter> reporter) {
   reporters_.emplace_back(std::move(reporter));
 }
 
+void CompositeReporter::ReportAttemptedQPS(const ScenarioResult& result) {
+  for (size_t i = 0; i < reporters_.size(); ++i) {
+    reporters_[i]->ReportAttemptedQPS(result);
+  }
+}
+
 void CompositeReporter::ReportQPS(const ScenarioResult& result) {
   for (size_t i = 0; i < reporters_.size(); ++i) {
     reporters_[i]->ReportQPS(result);
@@ -118,6 +124,10 @@ void GprLogReporter::ReportCoreStats(const char* name, int idx,
   }
 }
 
+void GprLogReporter::ReportAttemptedQPS(const ScenarioResult& result) {
+  gpr_log(GPR_INFO, "Attempted QPS: %.1f", result.summary().attempted_qps());
+}
+
 void GprLogReporter::ReportQPSPerCore(const ScenarioResult& result) {
   gpr_log(GPR_INFO, "QPS: %.1f (%.1f/server core)", result.summary().qps(),
           result.summary().qps_per_server_core());
@@ -171,6 +181,10 @@ void JsonReporter::ReportQPS(const ScenarioResult& result) {
   output_file.close();
 }
 
+void JsonReporter::ReportAttemptedQPS(const ScenarioResult& result) {
+  // NOP - all reporting is handled by ReportQPS.
+}
+
 void JsonReporter::ReportQPSPerCore(const ScenarioResult& result) {
   // NOP - all reporting is handled by ReportQPS.
 }
@@ -209,6 +223,10 @@ void RpcReporter::ReportQPS(const ScenarioResult& result) {
     gpr_log(GPR_ERROR, "RpcReporter report RPC: code: %d. message: %s",
             status.error_code(), status.error_message().c_str());
   }
+}
+
+void RpcReporter::ReportAttemptedQPS(const ScenarioResult& result) {
+  // NOP - all reporting is handled by ReportQPS.
 }
 
 void RpcReporter::ReportQPSPerCore(const ScenarioResult& result) {

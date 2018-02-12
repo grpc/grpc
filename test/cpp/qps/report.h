@@ -46,6 +46,9 @@ class Reporter {
    * Names are constants, set at construction time. */
   string name() const { return name_; }
 
+  /** Reports Attempted QPS for the given \a result. */
+  virtual void ReportAttemptedQPS(const ScenarioResult& result) = 0;
+
   /** Reports QPS for the given \a result. */
   virtual void ReportQPS(const ScenarioResult& result) = 0;
 
@@ -79,6 +82,7 @@ class CompositeReporter : public Reporter {
   /** Adds a \a reporter to the composite. */
   void add(std::unique_ptr<Reporter> reporter);
 
+  void ReportAttemptedQPS(const ScenarioResult& result) override;
   void ReportQPS(const ScenarioResult& result) override;
   void ReportQPSPerCore(const ScenarioResult& result) override;
   void ReportLatency(const ScenarioResult& result) override;
@@ -97,6 +101,7 @@ class GprLogReporter : public Reporter {
   GprLogReporter(const string& name) : Reporter(name) {}
 
  private:
+  void ReportAttemptedQPS(const ScenarioResult& result) override;
   void ReportQPS(const ScenarioResult& result) override;
   void ReportQPSPerCore(const ScenarioResult& result) override;
   void ReportLatency(const ScenarioResult& result) override;
@@ -116,6 +121,7 @@ class JsonReporter : public Reporter {
       : Reporter(name), report_file_(report_file) {}
 
  private:
+  void ReportAttemptedQPS(const ScenarioResult& result) override;
   void ReportQPS(const ScenarioResult& result) override;
   void ReportQPSPerCore(const ScenarioResult& result) override;
   void ReportLatency(const ScenarioResult& result) override;
@@ -133,6 +139,7 @@ class RpcReporter : public Reporter {
       : Reporter(name), stub_(ReportQpsScenarioService::NewStub(channel)) {}
 
  private:
+  void ReportAttemptedQPS(const ScenarioResult& result) override;
   void ReportQPS(const ScenarioResult& result) override;
   void ReportQPSPerCore(const ScenarioResult& result) override;
   void ReportLatency(const ScenarioResult& result) override;
