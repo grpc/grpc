@@ -32,26 +32,20 @@ namespace Grpc.Core.Interceptors.Tests
 {
     public class ClientInterceptorTest
     {
-        private class AddHeaderClientInterceptor : Interceptor
+        private class AddHeaderClientInterceptor : GenericInterceptor
         {
             readonly Metadata.Entry header;
             public AddHeaderClientInterceptor(string key, string value)
             {
                 this.header = new Metadata.Entry(key, value);
             }
-            public override TResponse BlockingUnaryCall<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context, BlockingUnaryCallContinuation<TRequest, TResponse> continuation)
+            protected override ClientCallArbitrator<TRequest, TResponse> InterceptCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context, bool clientStreaming, bool serverStreaming, TRequest request)
             {
                 context.Options.Headers.Add(this.header);
-                return continuation(request, context);
+                return new ClientCallArbitrator<TRequest, TResponse> { Context = context };
             }
 
-            public Metadata.Entry Header
-            {
-                get
-                {
-                    return this.header;
-                }
-            }
+            public Metadata.Entry Header => this.header;
         }
 
         const string Host = "127.0.0.1";
