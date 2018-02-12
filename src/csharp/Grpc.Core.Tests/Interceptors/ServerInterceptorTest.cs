@@ -34,7 +34,7 @@ namespace Grpc.Core.Interceptors.Tests
     {
         const string Host = "127.0.0.1";
 
-        private class AddRequestHeaderServerInterceptor : Interceptor
+        private class AddRequestHeaderServerInterceptor : GenericInterceptor
         {
             readonly Metadata.Entry header;
 
@@ -43,10 +43,10 @@ namespace Grpc.Core.Interceptors.Tests
                 this.header = new Metadata.Entry(key, value);
             }
 
-            public override async Task<TResponse> UnaryServerHandler<TRequest, TResponse>(TRequest request, ServerCallContext context, UnaryServerMethod<TRequest, TResponse> continuation)
+            protected override Task<ServerCallArbitrator<TRequest, TResponse>> InterceptHandler<TRequest, TResponse>(ServerCallContext context, bool clientStreaming, bool serverStreaming, TRequest request)
             {
                 context.RequestHeaders.Add(header);
-                return await continuation(request, context).ConfigureAwait(false);
+                return Task.FromResult<ServerCallArbitrator<TRequest, TResponse>>(null);
             }
 
             public Metadata.Entry Header
