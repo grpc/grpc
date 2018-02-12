@@ -20,10 +20,10 @@
 
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/thd.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "src/core/lib/gpr/thd.h"
 #include "src/core/lib/gpr/tls.h"
 #include "test/core/util/test_config.h"
 

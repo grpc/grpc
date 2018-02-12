@@ -22,11 +22,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/thd.h>
 #include <inttypes.h>
 #include <string.h>
 
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/thd.h"
 #include "src/core/lib/gpr/useful.h"
 #include "test/core/util/test_config.h"
 

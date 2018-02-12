@@ -21,7 +21,7 @@
 
 #include "src/core/lib/iomgr/iomgr_internal.h"
 
-#include <grpc/support/thd.h>
+#include <grpc/support/thd_id.h>
 
 /* The thread ID of the thread on which grpc was initialized. Used to verify
  * that all calls into libuv are made on that same thread */

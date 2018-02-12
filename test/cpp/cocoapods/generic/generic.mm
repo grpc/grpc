@@ -30,9 +30,9 @@
 #include <grpc++/server_context.h>
 #include <grpc++/support/slice.h>
 #include <grpc/grpc.h>
-#include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gpr/thd.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 

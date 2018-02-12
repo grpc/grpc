@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2018 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,27 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_GPR_THD_INTERNAL_H
-#define GRPC_CORE_LIB_GPR_THD_INTERNAL_H
+#ifndef GRPC_SUPPORT_THD_ID_H
+#define GRPC_SUPPORT_THD_ID_H
+/** Thread interface for GPR.
 
-#include <grpc/support/time.h>
+   Types
+        gpr_thd_id        a unique opaque identifier for a thread.
+ */
 
-/* Internal interfaces between modules within the gpr support library.  */
-void gpr_thd_init();
+#include <grpc/support/port_platform.h>
 
-/* Wait for all outstanding threads to finish, up to deadline */
-int gpr_await_threads(gpr_timespec deadline);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#endif /* GRPC_CORE_LIB_GPR_THD_INTERNAL_H */
+typedef uintptr_t gpr_thd_id;
+
+/** Returns the identifier of the current thread. */
+GPRAPI gpr_thd_id gpr_thd_currentid(void);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* GRPC_SUPPORT_THD_ID_H */

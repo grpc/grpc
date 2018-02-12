@@ -38,7 +38,7 @@
 #include <grpc/support/log_windows.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/thd.h>
+#include <grpc/support/thd_id.h>
 #include <grpc/support/time.h>
 
 typedef int(*grpc_compression_algorithm_is_message_type)(grpc_compression_algorithm algorithm);
@@ -677,30 +677,9 @@ extern gpr_stats_inc_type gpr_stats_inc_import;
 typedef intptr_t(*gpr_stats_read_type)(const gpr_stats_counter* c);
 extern gpr_stats_read_type gpr_stats_read_import;
 #define gpr_stats_read gpr_stats_read_import
-typedef int(*gpr_thd_new_type)(gpr_thd_id* t, const char* thd_name, void (*thd_body)(void* arg), void* arg, const gpr_thd_options* options);
-extern gpr_thd_new_type gpr_thd_new_import;
-#define gpr_thd_new gpr_thd_new_import
-typedef gpr_thd_options(*gpr_thd_options_default_type)(void);
-extern gpr_thd_options_default_type gpr_thd_options_default_import;
-#define gpr_thd_options_default gpr_thd_options_default_import
-typedef void(*gpr_thd_options_set_detached_type)(gpr_thd_options* options);
-extern gpr_thd_options_set_detached_type gpr_thd_options_set_detached_import;
-#define gpr_thd_options_set_detached gpr_thd_options_set_detached_import
-typedef void(*gpr_thd_options_set_joinable_type)(gpr_thd_options* options);
-extern gpr_thd_options_set_joinable_type gpr_thd_options_set_joinable_import;
-#define gpr_thd_options_set_joinable gpr_thd_options_set_joinable_import
-typedef int(*gpr_thd_options_is_detached_type)(const gpr_thd_options* options);
-extern gpr_thd_options_is_detached_type gpr_thd_options_is_detached_import;
-#define gpr_thd_options_is_detached gpr_thd_options_is_detached_import
-typedef int(*gpr_thd_options_is_joinable_type)(const gpr_thd_options* options);
-extern gpr_thd_options_is_joinable_type gpr_thd_options_is_joinable_import;
-#define gpr_thd_options_is_joinable gpr_thd_options_is_joinable_import
 typedef gpr_thd_id(*gpr_thd_currentid_type)(void);
 extern gpr_thd_currentid_type gpr_thd_currentid_import;
 #define gpr_thd_currentid gpr_thd_currentid_import
-typedef void(*gpr_thd_join_type)(gpr_thd_id t);
-extern gpr_thd_join_type gpr_thd_join_import;
-#define gpr_thd_join gpr_thd_join_import
 typedef gpr_timespec(*gpr_time_0_type)(gpr_clock_type type);
 extern gpr_time_0_type gpr_time_0_import;
 #define gpr_time_0 gpr_time_0_import
