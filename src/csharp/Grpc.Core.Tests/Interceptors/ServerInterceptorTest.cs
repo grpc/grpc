@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core;
@@ -74,6 +75,43 @@ namespace Grpc.Core.Interceptors.Tests
             server.Start();
             var channel = helper.GetChannel();
             Assert.AreEqual("PASS", Calls.BlockingUnaryCall(helper.CreateUnaryCall(), ""));
+        }
+
+        private class ArbitraryActionInterceptor : GenericInterceptor
+        {
+            readonly Action action;
+
+
+            public ArbitraryActionInterceptor(Action action)
+            {
+                this.action = action;
+            }
+
+            protected override Task<ServerCallArbitrator<TRequest, TResponse>> InterceptHandler<TRequest, TResponse>(ServerCallContext context, bool clientStreaming, bool serverStreaming, TRequest request)
+            {
+                action();
+                return Task.FromResult<ServerCallArbitrator<TRequest, TResponse>>(null);
+            }
+        }
+
+        [Test]
+        public void VerifyInterceptorOrdering()
+        {
+            var helper = new MockServiceHelper(Host);
+            helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
+            {
+                return Task.FromResult("PASS");
+            });
+            var stringBuilder = new StringBuilder();
+            helper.ServiceDefinition = helper.ServiceDefinition
+                .Intercept(new ArbitraryActionInterceptor(() => stringBuilder.Append("A")))
+                .Intercept(new ArbitraryActionInterceptor(() => stringBuilder.Append("B")))
+                .Intercept(new ArbitraryActionInterceptor(() => stringBuilder.Append("C")));
+            var server = helper.GetServer();
+            server.Start();
+            var channel = helper.GetChannel();
+            Assert.AreEqual("PASS", Calls.BlockingUnaryCall(helper.CreateUnaryCall(), ""));
+            Assert.AreEqual("CBA", stringBuilder.ToString());
         }
     }
 }
