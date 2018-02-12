@@ -252,7 +252,7 @@ class GrpcLb : public LoadBalancingPolicy {
   void StartBalancerCallLocked();
   static void OnFallbackTimerLocked(void* arg, grpc_error* error);
   void StartBalancerCallRetryTimerLocked();
-  static void OnRetryTimerLocked(void* arg, grpc_error* error);
+  static void OnBalancerCallRetryTimerLocked(void* arg, grpc_error* error);
   static void OnBalancerChannelConnectivityChangedLocked(void* arg,
                                                          grpc_error* error);
 
@@ -270,7 +270,7 @@ class GrpcLb : public LoadBalancingPolicy {
   grpc_channel_args* CreateRRPolicyArgsLocked();
   void CreateRRLocked(const Args& args);
   bool PickFromInternalRRLocked(bool force_async, PendingPick* pp);
-  void UpdateConnectivityStateLocked(grpc_error* rr_state_error);
+  void UpdateConnectivityStateFromRRPolicyLocked(grpc_error* rr_state_error);
   static void OnRRConnectivityChangedLocked(void* arg, grpc_error* error);
   static void OnRRRequestReresolutionLocked(void* arg, grpc_error* error);
 
@@ -891,6 +891,7 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
             lb_calld->lb_call_, grpc_error_string(error));
     gpr_free(status_details);
   }
+  grpclb_policy->TryReresolutionLocked(&grpc_lb_glb_trace, GRPC_ERROR_NONE);
   // If this lb_calld is still in use, this call ended because of a failure so
   // we want to retry connecting. Otherwise, we have deliberately ended this
   // call and no further action is required.
@@ -1341,7 +1342,7 @@ void GrpcLb::StartPickingLocked() {
     // TODO(roth): We currently track this ref manually.  Once the
     // ClosureRef API is ready, we should pass the RefCountedPtr<> along
     // with the callback.
-    auto self = Ref(DEBUG_LOCATION, "grpclb_fallback_timer");
+    auto self = Ref(DEBUG_LOCATION, "on_fallback_timer");
     self.release();
     GRPC_CLOSURE_INIT(&lb_on_fallback_, &GrpcLb::OnFallbackTimerLocked, this,
                       grpc_combiner_scheduler(combiner()));
@@ -1381,7 +1382,7 @@ void GrpcLb::OnFallbackTimerLocked(void* arg, grpc_error* error) {
     GPR_ASSERT(grpclb_policy->fallback_backend_addresses_ != nullptr);
     grpclb_policy->CreateOrUpdateRRPolicyLocked();
   }
-  grpclb_policy->Unref(DEBUG_LOCATION, "grpclb_fallback_timer");
+  grpclb_policy->Unref(DEBUG_LOCATION, "on_fallback_timer");
 }
 
 void GrpcLb::StartBalancerCallRetryTimerLocked() {
@@ -1401,15 +1402,16 @@ void GrpcLb::StartBalancerCallRetryTimerLocked() {
   // TODO(roth): We currently track this ref manually.  Once the
   // ClosureRef API is ready, we should pass the RefCountedPtr<> along
   // with the callback.
-  auto self = Ref(DEBUG_LOCATION, "grpclb_retry_timer");
+  auto self = Ref(DEBUG_LOCATION, "on_balancer_call_retry_timer");
   self.release();
-  GRPC_CLOSURE_INIT(&lb_on_call_retry_, &GrpcLb::OnRetryTimerLocked, this,
+  GRPC_CLOSURE_INIT(&lb_on_call_retry_,
+                    &GrpcLb::OnBalancerCallRetryTimerLocked, this,
                     grpc_combiner_scheduler(combiner()));
   retry_timer_callback_pending_ = true;
   grpc_timer_init(&lb_call_retry_timer_, next_try, &lb_on_call_retry_);
 }
 
-void GrpcLb::OnRetryTimerLocked(void* arg, grpc_error* error) {
+void GrpcLb::OnBalancerCallRetryTimerLocked(void* arg, grpc_error* error) {
   GrpcLb* grpclb_policy = reinterpret_cast<GrpcLb*>(arg);
   grpclb_policy->retry_timer_callback_pending_ = false;
   if (!grpclb_policy->shutting_down_ && error == GRPC_ERROR_NONE &&
@@ -1420,7 +1422,7 @@ void GrpcLb::OnRetryTimerLocked(void* arg, grpc_error* error) {
     }
     grpclb_policy->StartBalancerCallLocked();
   }
-  grpclb_policy->Unref(DEBUG_LOCATION, "grpclb_retry_timer");
+  grpclb_policy->Unref(DEBUG_LOCATION, "on_balancer_call_retry_timer");
 }
 
 // Invoked as part of the update process. It continues watching the LB channel
@@ -1628,13 +1630,13 @@ void GrpcLb::CreateRRLocked(const Args& args) {
   }
   // TODO(roth): We currently track this ref manually.  Once the new
   // ClosureRef API is done, pass the RefCountedPtr<> along with the closure.
-  auto self = Ref(DEBUG_LOCATION, "rr_on_reresolution_requested");
+  auto self = Ref(DEBUG_LOCATION, "on_rr_reresolution_requested");
   self.release();
   rr_policy_->SetReresolutionClosureLocked(&on_rr_request_reresolution_);
   grpc_error* rr_state_error = nullptr;
   rr_connectivity_state_ = rr_policy_->CheckConnectivityLocked(&rr_state_error);
   // Connectivity state is a function of the RR policy updated/created.
-  UpdateConnectivityStateLocked(rr_state_error);
+  UpdateConnectivityStateFromRRPolicyLocked(rr_state_error);
   // Add the gRPC LB's interested_parties pollset_set to that of the newly
   // created RR policy. This will make the RR policy progress upon activity on
   // gRPC LB, which in turn is tied to the application's call.
@@ -1643,7 +1645,7 @@ void GrpcLb::CreateRRLocked(const Args& args) {
   // Subscribe to changes to the connectivity of the new RR.
   // TODO(roth): We currently track this ref manually.  Once the new
   // ClosureRef API is done, pass the RefCountedPtr<> along with the closure.
-  self = Ref(DEBUG_LOCATION, "glb_rr_connectivity_cb");
+  self = Ref(DEBUG_LOCATION, "on_rr_connectivity_changed");
   self.release();
   rr_policy_->NotifyOnStateChangeLocked(&rr_connectivity_state_,
                                         &on_rr_connectivity_changed_);
@@ -1723,7 +1725,7 @@ void GrpcLb::CreateOrUpdateRRPolicyLocked() {
 void GrpcLb::OnRRRequestReresolutionLocked(void* arg, grpc_error* error) {
   GrpcLb* grpclb_policy = reinterpret_cast<GrpcLb*>(arg);
   if (grpclb_policy->shutting_down_ || error != GRPC_ERROR_NONE) {
-    grpclb_policy->Unref(DEBUG_LOCATION, "rr_on_reresolution_requested");
+    grpclb_policy->Unref(DEBUG_LOCATION, "on_rr_reresolution_requested");
     return;
   }
   if (grpc_lb_glb_trace.enabled()) {
@@ -1745,7 +1747,8 @@ void GrpcLb::OnRRRequestReresolutionLocked(void* arg, grpc_error* error) {
       &grpclb_policy->on_rr_request_reresolution_);
 }
 
-void GrpcLb::UpdateConnectivityStateLocked(grpc_error* rr_state_error) {
+void GrpcLb::UpdateConnectivityStateFromRRPolicyLocked(
+    grpc_error* rr_state_error) {
   const grpc_connectivity_state curr_glb_state =
       grpc_connectivity_state_check(&state_tracker_);
   /* The new connectivity status is a function of the previous one and the new
@@ -1802,20 +1805,12 @@ void GrpcLb::UpdateConnectivityStateLocked(grpc_error* rr_state_error) {
 void GrpcLb::OnRRConnectivityChangedLocked(void* arg, grpc_error* error) {
   GrpcLb* grpclb_policy = reinterpret_cast<GrpcLb*>(arg);
   if (grpclb_policy->shutting_down_) {
-    grpclb_policy->Unref(DEBUG_LOCATION, "glb_rr_connectivity_cb");
+    grpclb_policy->Unref(DEBUG_LOCATION, "on_rr_connectivity_changed");
     return;
   }
-  if (grpclb_policy->rr_connectivity_state_ == GRPC_CHANNEL_SHUTDOWN) {
-    // An RR policy that has transitioned into the SHUTDOWN connectivity state
-    // should not be considered for picks or updates: the SHUTDOWN state is a
-    // sink, policies can't transition back from it.
-    grpclb_policy->rr_policy_.reset();
-    grpclb_policy->Unref(DEBUG_LOCATION, "glb_rr_connectivity_cb");
-    return;
-  }
-  // rr state != SHUTDOWN && !grpclb_policy->shutting_down_: biz as usual.
-  grpclb_policy->UpdateConnectivityStateLocked(GRPC_ERROR_REF(error));
-  // Resubscribe. Reuse the "glb_rr_connectivity_cb" ref.
+  grpclb_policy->UpdateConnectivityStateFromRRPolicyLocked(
+      GRPC_ERROR_REF(error));
+  // Resubscribe. Reuse the "on_rr_connectivity_changed" ref.
   grpclb_policy->rr_policy_->NotifyOnStateChangeLocked(
       &grpclb_policy->rr_connectivity_state_,
       &grpclb_policy->on_rr_connectivity_changed_);
