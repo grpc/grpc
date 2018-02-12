@@ -60,16 +60,16 @@ void grpc_socket_mutator_unref(grpc_socket_mutator* mutator) {
 }
 
 static void* socket_mutator_arg_copy(void* p) {
-  return grpc_socket_mutator_ref((grpc_socket_mutator*)p);
+  return grpc_socket_mutator_ref(static_cast<grpc_socket_mutator*>(p));
 }
 
 static void socket_mutator_arg_destroy(void* p) {
-  grpc_socket_mutator_unref((grpc_socket_mutator*)p);
+  grpc_socket_mutator_unref(static_cast<grpc_socket_mutator*>(p));
 }
 
 static int socket_mutator_cmp(void* a, void* b) {
-  return grpc_socket_mutator_compare((grpc_socket_mutator*)a,
-                                     (grpc_socket_mutator*)b);
+  return grpc_socket_mutator_compare(static_cast<grpc_socket_mutator*>(a),
+                                     static_cast<grpc_socket_mutator*>(b));
 }
 
 static const grpc_arg_pointer_vtable socket_mutator_arg_vtable = {

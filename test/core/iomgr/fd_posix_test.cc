@@ -78,7 +78,7 @@ static void create_test_socket(int port, int* socket_fd,
   sin->sin_family = AF_INET;
   sin->sin_addr.s_addr = htonl(0x7f000001);
   GPR_ASSERT(port >= 0 && port < 65536);
-  sin->sin_port = htons((uint16_t)port);
+  sin->sin_port = htons(static_cast<uint16_t>(port));
 }
 
 /* Dummy gRPC callback */
@@ -196,7 +196,8 @@ static void listen_cb(void* arg, /*=sv_arg*/
     return;
   }
 
-  fd = accept(grpc_fd_wrapped_fd(listen_em_fd), (struct sockaddr*)&ss, &slen);
+  fd = accept(grpc_fd_wrapped_fd(listen_em_fd),
+              reinterpret_cast<struct sockaddr*>(&ss), &slen);
   GPR_ASSERT(fd >= 0);
   GPR_ASSERT(fd < FD_SETSIZE);
   flags = fcntl(fd, F_GETFL, 0);
@@ -335,7 +336,8 @@ static void client_start(client* cl, int port) {
   int fd;
   struct sockaddr_in sin;
   create_test_socket(port, &fd, &sin);
-  if (connect(fd, (struct sockaddr*)&sin, sizeof(sin)) == -1) {
+  if (connect(fd, reinterpret_cast<struct sockaddr*>(&sin), sizeof(sin)) ==
+      -1) {
     if (errno == EINPROGRESS) {
       struct pollfd pfd;
       pfd.fd = fd;

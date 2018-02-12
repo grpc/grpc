@@ -281,7 +281,7 @@ static grpc_fd* fd_create(int fd, const char* name) {
   gpr_mu_unlock(&fd_freelist_mu);
 
   if (new_fd == nullptr) {
-    new_fd = (grpc_fd*)gpr_malloc(sizeof(grpc_fd));
+    new_fd = static_cast<grpc_fd*>(gpr_malloc(sizeof(grpc_fd)));
     new_fd->read_closure.Init();
     new_fd->write_closure.Init();
   }
@@ -304,7 +304,7 @@ static grpc_fd* fd_create(int fd, const char* name) {
   gpr_free(fd_name);
 
   struct epoll_event ev;
-  ev.events = (uint32_t)(EPOLLIN | EPOLLOUT | EPOLLET);
+  ev.events = static_cast<uint32_t>(EPOLLIN | EPOLLOUT | EPOLLET);
   ev.data.ptr = new_fd;
   if (epoll_ctl(g_epoll_set.epfd, EPOLL_CTL_ADD, fd, &ev) != 0) {
     gpr_log(GPR_ERROR, "epoll_ctl failed: %s", strerror(errno));
@@ -440,7 +440,7 @@ static worker_remove_result worker_remove(grpc_pollset* pollset,
 }
 
 static size_t choose_neighborhood(void) {
-  return (size_t)gpr_cpu_current_cpu() % g_num_neighborhoods;
+  return static_cast<size_t>(gpr_cpu_current_cpu()) % g_num_neighborhoods;
 }
 
 static grpc_error* pollset_global_init(void) {
@@ -451,15 +451,15 @@ static grpc_error* pollset_global_init(void) {
   grpc_error* err = grpc_wakeup_fd_init(&global_wakeup_fd);
   if (err != GRPC_ERROR_NONE) return err;
   struct epoll_event ev;
-  ev.events = (uint32_t)(EPOLLIN | EPOLLET);
+  ev.events = static_cast<uint32_t>(EPOLLIN | EPOLLET);
   ev.data.ptr = &global_wakeup_fd;
   if (epoll_ctl(g_epoll_set.epfd, EPOLL_CTL_ADD, global_wakeup_fd.read_fd,
                 &ev) != 0) {
     return GRPC_OS_ERROR(errno, "epoll_ctl");
   }
   g_num_neighborhoods = GPR_CLAMP(gpr_cpu_num_cores(), 1, MAX_NEIGHBORHOODS);
-  g_neighborhoods = (pollset_neighborhood*)gpr_zalloc(sizeof(*g_neighborhoods) *
-                                                      g_num_neighborhoods);
+  g_neighborhoods = static_cast<pollset_neighborhood*>(
+      gpr_zalloc(sizeof(*g_neighborhoods) * g_num_neighborhoods));
   for (size_t i = 0; i < g_num_neighborhoods; i++) {
     gpr_mu_init(&g_neighborhoods[i].mu);
   }
@@ -579,7 +579,7 @@ static int poll_deadline_to_millis_timeout(grpc_millis millis) {
   } else if (delta < 0) {
     return 0;
   } else {
-    return (int)delta;
+    return static_cast<int>(delta);
   }
 }
 
@@ -609,7 +609,7 @@ static grpc_error* process_epoll_events(grpc_pollset* pollset) {
       append_error(&error, grpc_wakeup_fd_consume_wakeup(&global_wakeup_fd),
                    err_desc);
     } else {
-      grpc_fd* fd = (grpc_fd*)(data_ptr);
+      grpc_fd* fd = static_cast<grpc_fd*>(data_ptr);
       bool cancel = (ev->events & (EPOLLERR | EPOLLHUP)) != 0;
       bool read_ev = (ev->events & (EPOLLIN | EPOLLPRI)) != 0;
       bool write_ev = (ev->events & EPOLLOUT) != 0;
@@ -881,7 +881,7 @@ static void end_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
     } else {
       gpr_atm_no_barrier_store(&g_active_poller, 0);
       size_t poller_neighborhood_idx =
-          (size_t)(pollset->neighborhood - g_neighborhoods);
+          static_cast<size_t>(pollset->neighborhood - g_neighborhoods);
       gpr_mu_unlock(&pollset->mu);
       bool found_worker = false;
       bool scan_state[MAX_NEIGHBORHOODS];
@@ -1150,7 +1150,7 @@ static void pollset_add_fd(grpc_pollset* pollset, grpc_fd* fd) {}
  */
 
 static grpc_pollset_set* pollset_set_create(void) {
-  return (grpc_pollset_set*)((intptr_t)0xdeafbeef);
+  return (grpc_pollset_set*)(static_cast<intptr_t>(0xdeafbeef));
 }
 
 static void pollset_set_destroy(grpc_pollset_set* pss) {}

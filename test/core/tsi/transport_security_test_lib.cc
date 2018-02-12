@@ -144,8 +144,9 @@ static void maybe_append_unused_bytes(handshaker_args* args) {
   tsi_test_fixture* fixture = args->fixture;
   if (fixture->test_unused_bytes && !args->appended_unused_bytes) {
     args->appended_unused_bytes = true;
-    send_bytes_to_peer(fixture, (const unsigned char*)TSI_TEST_UNUSED_BYTES,
-                       strlen(TSI_TEST_UNUSED_BYTES), args->is_client);
+    send_bytes_to_peer(
+        fixture, reinterpret_cast<const unsigned char*>(TSI_TEST_UNUSED_BYTES),
+        strlen(TSI_TEST_UNUSED_BYTES), args->is_client);
     if (fixture->client_result != nullptr &&
         fixture->server_result == nullptr) {
       fixture->has_client_finished_first = true;
@@ -288,7 +289,7 @@ grpc_error* on_handshake_next_done(tsi_result result, void* user_data,
                                    const unsigned char* bytes_to_send,
                                    size_t bytes_to_send_size,
                                    tsi_handshaker_result* handshaker_result) {
-  handshaker_args* args = (handshaker_args*)user_data;
+  handshaker_args* args = static_cast<handshaker_args*>(user_data);
   GPR_ASSERT(args != nullptr);
   GPR_ASSERT(args->fixture != nullptr);
   tsi_test_fixture* fixture = args->fixture;
@@ -327,7 +328,7 @@ grpc_error* on_handshake_next_done(tsi_result result, void* user_data,
 static void on_handshake_next_done_wrapper(
     tsi_result result, void* user_data, const unsigned char* bytes_to_send,
     size_t bytes_to_send_size, tsi_handshaker_result* handshaker_result) {
-  handshaker_args* args = (handshaker_args*)user_data;
+  handshaker_args* args = static_cast<handshaker_args*>(user_data);
   args->error = on_handshake_next_done(result, user_data, bytes_to_send,
                                        bytes_to_send_size, handshaker_result);
 }
@@ -471,7 +472,7 @@ static unsigned char* generate_random_message(size_t size) {
   unsigned char* output =
       static_cast<unsigned char*>(gpr_zalloc(sizeof(unsigned char) * size));
   for (i = 0; i < size - 1; ++i) {
-    output[i] = chars[rand() % (int)(sizeof(chars) - 1)];
+    output[i] = chars[rand() % static_cast<int>(sizeof(chars) - 1)];
   }
   return output;
 }

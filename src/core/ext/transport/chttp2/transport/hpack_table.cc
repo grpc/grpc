@@ -173,7 +173,8 @@ void grpc_chttp2_hptbl_init(grpc_chttp2_hptbl* tbl) {
       GRPC_CHTTP2_INITIAL_HPACK_TABLE_SIZE;
   tbl->max_entries = tbl->cap_entries =
       entries_for_bytes(tbl->current_table_bytes);
-  tbl->ents = (grpc_mdelem*)gpr_malloc(sizeof(*tbl->ents) * tbl->cap_entries);
+  tbl->ents = static_cast<grpc_mdelem*>(
+      gpr_malloc(sizeof(*tbl->ents) * tbl->cap_entries));
   memset(tbl->ents, 0, sizeof(*tbl->ents) * tbl->cap_entries);
   for (i = 1; i <= GRPC_CHTTP2_LAST_STATIC_ENTRY; i++) {
     tbl->static_ents[i - 1] = grpc_mdelem_from_slices(
@@ -218,14 +219,15 @@ static void evict1(grpc_chttp2_hptbl* tbl) {
                       GRPC_SLICE_LENGTH(GRPC_MDVALUE(first_ent)) +
                       GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD;
   GPR_ASSERT(elem_bytes <= tbl->mem_used);
-  tbl->mem_used -= (uint32_t)elem_bytes;
+  tbl->mem_used -= static_cast<uint32_t>(elem_bytes);
   tbl->first_ent = ((tbl->first_ent + 1) % tbl->cap_entries);
   tbl->num_ents--;
   GRPC_MDELEM_UNREF(first_ent);
 }
 
 static void rebuild_ents(grpc_chttp2_hptbl* tbl, uint32_t new_cap) {
-  grpc_mdelem* ents = (grpc_mdelem*)gpr_malloc(sizeof(*ents) * new_cap);
+  grpc_mdelem* ents =
+      static_cast<grpc_mdelem*>(gpr_malloc(sizeof(*ents) * new_cap));
   uint32_t i;
 
   for (i = 0; i < tbl->num_ents; i++) {
@@ -320,7 +322,8 @@ grpc_error* grpc_chttp2_hptbl_add(grpc_chttp2_hptbl* tbl, grpc_mdelem md) {
   }
 
   /* evict entries to ensure no overflow */
-  while (elem_bytes > (size_t)tbl->current_table_bytes - tbl->mem_used) {
+  while (elem_bytes >
+         static_cast<size_t>(tbl->current_table_bytes) - tbl->mem_used) {
     evict1(tbl);
   }
 
@@ -330,7 +333,7 @@ grpc_error* grpc_chttp2_hptbl_add(grpc_chttp2_hptbl* tbl, grpc_mdelem md) {
 
   /* update accounting values */
   tbl->num_ents++;
-  tbl->mem_used += (uint32_t)elem_bytes;
+  tbl->mem_used += static_cast<uint32_t>(elem_bytes);
   return GRPC_ERROR_NONE;
 }
 
@@ -350,8 +353,8 @@ grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find(
 
   /* Scan the dynamic table */
   for (i = 0; i < tbl->num_ents; i++) {
-    uint32_t idx =
-        (uint32_t)(tbl->num_ents - i + GRPC_CHTTP2_LAST_STATIC_ENTRY);
+    uint32_t idx = static_cast<uint32_t>(tbl->num_ents - i +
+                                         GRPC_CHTTP2_LAST_STATIC_ENTRY);
     grpc_mdelem ent = tbl->ents[(tbl->first_ent + i) % tbl->cap_entries];
     if (!grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDKEY(ent))) continue;
     r.index = idx;

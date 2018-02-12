@@ -217,7 +217,7 @@ static double UnaryPingPong(int request_size, int response_size) {
     for (int i = (1 << 3) | (1 << 4); i != 0;) {
       GPR_ASSERT(fixture->cq()->Next(&t, &ok));
       GPR_ASSERT(ok);
-      int tagnum = (int)reinterpret_cast<intptr_t>(t);
+      int tagnum = static_cast<int>(reinterpret_cast<intptr_t>(t));
       GPR_ASSERT(i & (1 << tagnum));
       i -= 1 << tagnum;
     }
@@ -230,7 +230,8 @@ static double UnaryPingPong(int request_size, int response_size) {
   }
 
   double writes_per_iteration =
-      (double)fixture->writes_performed() / (double)kIterations;
+      static_cast<double>(fixture->writes_performed()) /
+      static_cast<double>(kIterations);
 
   fixture.reset();
   server_env[0]->~ServerEnv();

@@ -349,7 +349,7 @@ static void polling_island_add_fds_locked(polling_island* pi, grpc_fd** fds,
 #endif /* defined(GRPC_TSAN) */
 
   for (i = 0; i < fd_count; i++) {
-    ev.events = (uint32_t)(EPOLLIN | EPOLLOUT | EPOLLET);
+    ev.events = static_cast<uint32_t>(EPOLLIN | EPOLLOUT | EPOLLET);
     ev.data.ptr = fds[i];
     err = epoll_ctl(pi->epoll_fd, EPOLL_CTL_ADD, fds[i]->fd, &ev);
 
@@ -368,8 +368,8 @@ static void polling_island_add_fds_locked(polling_island* pi, grpc_fd** fds,
 
     if (pi->fd_cnt == pi->fd_capacity) {
       pi->fd_capacity = GPR_MAX(pi->fd_capacity + 8, pi->fd_cnt * 3 / 2);
-      pi->fds =
-          (grpc_fd**)gpr_realloc(pi->fds, sizeof(grpc_fd*) * pi->fd_capacity);
+      pi->fds = static_cast<grpc_fd**>(
+          gpr_realloc(pi->fds, sizeof(grpc_fd*) * pi->fd_capacity));
     }
 
     pi->fds[pi->fd_cnt++] = fds[i];
@@ -388,7 +388,7 @@ static void polling_island_add_wakeup_fd_locked(polling_island* pi,
   char* err_msg;
   const char* err_desc = "polling_island_add_wakeup_fd";
 
-  ev.events = (uint32_t)(EPOLLIN | EPOLLET);
+  ev.events = static_cast<uint32_t>(EPOLLIN | EPOLLET);
   ev.data.ptr = wakeup_fd;
   err = epoll_ctl(pi->epoll_fd, EPOLL_CTL_ADD,
                   GRPC_WAKEUP_FD_GET_READ_FD(wakeup_fd), &ev);
@@ -471,7 +471,7 @@ static polling_island* polling_island_create(grpc_fd* initial_fd,
 
   *error = GRPC_ERROR_NONE;
 
-  pi = (polling_island*)gpr_malloc(sizeof(*pi));
+  pi = static_cast<polling_island*>(gpr_malloc(sizeof(*pi)));
   gpr_mu_init(&pi->mu);
   pi->fd_cnt = 0;
   pi->fd_capacity = 0;
@@ -815,7 +815,7 @@ static grpc_fd* fd_create(int fd, const char* name) {
   gpr_mu_unlock(&fd_freelist_mu);
 
   if (new_fd == nullptr) {
-    new_fd = (grpc_fd*)gpr_malloc(sizeof(grpc_fd));
+    new_fd = static_cast<grpc_fd*>(gpr_malloc(sizeof(grpc_fd)));
     gpr_mu_init(&new_fd->po.mu);
     new_fd->read_closure.Init();
     new_fd->write_closure.Init();
@@ -976,7 +976,8 @@ static grpc_error* pollset_worker_kick(grpc_pollset_worker* worker) {
   grpc_error* err = GRPC_ERROR_NONE;
 
   /* Kick the worker only if it was not already kicked */
-  if (gpr_atm_no_barrier_cas(&worker->is_kicked, (gpr_atm)0, (gpr_atm)1)) {
+  if (gpr_atm_no_barrier_cas(&worker->is_kicked, static_cast<gpr_atm>(0),
+                             static_cast<gpr_atm>(1))) {
     GRPC_POLLING_TRACE(
         "pollset_worker_kick: Kicking worker: %p (thread id: %ld)",
         (void*)worker, (long int)worker->pt_id);
@@ -1096,7 +1097,7 @@ static int poll_deadline_to_millis_timeout(grpc_millis millis) {
   else if (delta < 0)
     return 0;
   else
-    return (int)delta;
+    return static_cast<int>(delta);
 }
 
 static void fd_become_readable(grpc_fd* fd, grpc_pollset* notifier) {
@@ -1251,7 +1252,7 @@ static void pollset_work_and_unlock(grpc_pollset* pollset,
          to the function pollset_work_and_unlock() will pick up the correct
          epoll_fd */
     } else {
-      grpc_fd* fd = (grpc_fd*)data_ptr;
+      grpc_fd* fd = static_cast<grpc_fd*>(data_ptr);
       int cancel = ep_ev[i].events & (EPOLLERR | EPOLLHUP);
       int read_ev = ep_ev[i].events & (EPOLLIN | EPOLLPRI);
       int write_ev = ep_ev[i].events & EPOLLOUT;
@@ -1538,7 +1539,8 @@ static void pollset_add_fd(grpc_pollset* pollset, grpc_fd* fd) {
  */
 
 static grpc_pollset_set* pollset_set_create(void) {
-  grpc_pollset_set* pss = (grpc_pollset_set*)gpr_malloc(sizeof(*pss));
+  grpc_pollset_set* pss =
+      static_cast<grpc_pollset_set*>(gpr_malloc(sizeof(*pss)));
   gpr_mu_init(&pss->po.mu);
   pss->po.pi = nullptr;
 #ifndef NDEBUG
@@ -1607,8 +1609,8 @@ void* grpc_pollset_get_polling_island(grpc_pollset* ps) {
 }
 
 bool grpc_are_polling_islands_equal(void* p, void* q) {
-  polling_island* p1 = (polling_island*)p;
-  polling_island* p2 = (polling_island*)q;
+  polling_island* p1 = static_cast<polling_island*>(p);
+  polling_island* p2 = static_cast<polling_island*>(q);
 
   /* Note: polling_island_lock_pair() may change p1 and p2 to point to the
      latest polling islands in their respective linked lists */

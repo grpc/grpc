@@ -36,7 +36,7 @@ uint32_t gpr_murmur_hash3(const void* key, size_t len, uint32_t seed) {
   const uint32_t c1 = 0xcc9e2d51;
   const uint32_t c2 = 0x1b873593;
 
-  const uint8_t* keyptr = (const uint8_t*)key;
+  const uint8_t* keyptr = static_cast<const uint8_t*>(key);
   const size_t bsize = sizeof(k1);
   const size_t nblocks = len / bsize;
 
@@ -58,10 +58,10 @@ uint32_t gpr_murmur_hash3(const void* key, size_t len, uint32_t seed) {
   /* tail */
   switch (len & 3) {
     case 3:
-      k1 ^= ((uint32_t)keyptr[2]) << 16;
+      k1 ^= (static_cast<uint32_t>(keyptr[2])) << 16;
     /* fallthrough */
     case 2:
-      k1 ^= ((uint32_t)keyptr[1]) << 8;
+      k1 ^= (static_cast<uint32_t>(keyptr[1])) << 8;
     /* fallthrough */
     case 1:
       k1 ^= keyptr[0];
@@ -72,7 +72,7 @@ uint32_t gpr_murmur_hash3(const void* key, size_t len, uint32_t seed) {
   };
 
   /* finalization */
-  h1 ^= (uint32_t)len;
+  h1 ^= static_cast<uint32_t>(len);
   FMIX32(h1);
   return h1;
 }

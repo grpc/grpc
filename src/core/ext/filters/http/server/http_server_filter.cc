@@ -95,7 +95,7 @@ static void add_error(const char* error_name, grpc_error** cumulative,
 
 static grpc_error* server_filter_incoming_metadata(grpc_call_element* elem,
                                                    grpc_metadata_batch* b) {
-  call_data* calld = (call_data*)elem->call_data;
+  call_data* calld = static_cast<call_data*>(elem->call_data);
   grpc_error* error = GRPC_ERROR_NONE;
   static const char* error_name = "Failed processing incoming headers";
 
@@ -204,7 +204,7 @@ static grpc_error* server_filter_incoming_metadata(grpc_call_element* elem,
      * query parameter which is base64 encoded request payload. */
     const char k_query_separator = '?';
     grpc_slice path_slice = GRPC_MDVALUE(b->idx.named.path->md);
-    uint8_t* path_ptr = (uint8_t*)GRPC_SLICE_START_PTR(path_slice);
+    uint8_t* path_ptr = GRPC_SLICE_START_PTR(path_slice);
     size_t path_length = GRPC_SLICE_LENGTH(path_slice);
     /* offset of the character '?' */
     size_t offset = 0;
@@ -224,10 +224,11 @@ static grpc_error* server_filter_incoming_metadata(grpc_call_element* elem,
 
       /* decode payload from query and add to the slice buffer to be returned */
       const int k_url_safe = 1;
-      grpc_slice_buffer_add(&calld->read_slice_buffer,
-                            grpc_base64_decode_with_len(
-                                (const char*)GRPC_SLICE_START_PTR(query_slice),
-                                GRPC_SLICE_LENGTH(query_slice), k_url_safe));
+      grpc_slice_buffer_add(
+          &calld->read_slice_buffer,
+          grpc_base64_decode_with_len(
+              reinterpret_cast<const char*> GRPC_SLICE_START_PTR(query_slice),
+              GRPC_SLICE_LENGTH(query_slice), k_url_safe));
       grpc_slice_buffer_stream_init(&calld->read_stream,
                                     &calld->read_slice_buffer, 0);
       calld->seen_path_with_query = true;
@@ -262,8 +263,8 @@ static grpc_error* server_filter_incoming_metadata(grpc_call_element* elem,
 }
 
 static void hs_on_recv(void* user_data, grpc_error* err) {
-  grpc_call_element* elem = (grpc_call_element*)user_data;
-  call_data* calld = (call_data*)elem->call_data;
+  grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
+  call_data* calld = static_cast<call_data*>(elem->call_data);
   if (err == GRPC_ERROR_NONE) {
     err = server_filter_incoming_metadata(elem, calld->recv_initial_metadata);
   } else {
@@ -273,13 +274,14 @@ static void hs_on_recv(void* user_data, grpc_error* err) {
 }
 
 static void hs_on_complete(void* user_data, grpc_error* err) {
-  grpc_call_element* elem = (grpc_call_element*)user_data;
-  call_data* calld = (call_data*)elem->call_data;
+  grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
+  call_data* calld = static_cast<call_data*>(elem->call_data);
   /* Call recv_message_ready if we got the payload via the path field */
   if (calld->seen_path_with_query && calld->recv_message_ready != nullptr) {
-    *calld->pp_recv_message = calld->payload_bin_delivered
-                                  ? nullptr
-                                  : (grpc_byte_stream*)&calld->read_stream;
+    *calld->pp_recv_message =
+        calld->payload_bin_delivered
+            ? nullptr
+            : reinterpret_cast<grpc_byte_stream*>(&calld->read_stream);
     // Re-enter call combiner for recv_message_ready, since the surface
     // code will release the call combiner for each callback it receives.
     GRPC_CALL_COMBINER_START(calld->call_combiner, calld->recv_message_ready,
@@ -292,8 +294,8 @@ static void hs_on_complete(void* user_data, grpc_error* err) {
 }
 
 static void hs_recv_message_ready(void* user_data, grpc_error* err) {
-  grpc_call_element* elem = (grpc_call_element*)user_data;
-  call_data* calld = (call_data*)elem->call_data;
+  grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
+  call_data* calld = static_cast<call_data*>(elem->call_data);
   if (calld->seen_path_with_query) {
     // Do nothing. This is probably a GET request, and payload will be
     // returned in hs_on_complete callback.
@@ -309,7 +311,7 @@ static void hs_recv_message_ready(void* user_data, grpc_error* err) {
 static grpc_error* hs_mutate_op(grpc_call_element* elem,
                                 grpc_transport_stream_op_batch* op) {
   /* grab pointers to our data from the call element */
-  call_data* calld = (call_data*)elem->call_data;
+  call_data* calld = static_cast<call_data*>(elem->call_data);
 
   if (op->send_initial_metadata) {
     grpc_error* error = GRPC_ERROR_NONE;
@@ -368,7 +370,7 @@ static grpc_error* hs_mutate_op(grpc_call_element* elem,
 static void hs_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
   GPR_TIMER_SCOPE("hs_start_transport_stream_op_batch", 0);
-  call_data* calld = (call_data*)elem->call_data;
+  call_data* calld = static_cast<call_data*>(elem->call_data);
   grpc_error* error = hs_mutate_op(elem, op);
   if (error != GRPC_ERROR_NONE) {
     grpc_transport_stream_op_batch_finish_with_failure(op, error,
@@ -382,7 +384,7 @@ static void hs_start_transport_stream_op_batch(
 static grpc_error* init_call_elem(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
   /* grab pointers to our data from the call element */
-  call_data* calld = (call_data*)elem->call_data;
+  call_data* calld = static_cast<call_data*>(elem->call_data);
   /* initialize members */
   calld->call_combiner = args->call_combiner;
   GRPC_CLOSURE_INIT(&calld->hs_on_recv, hs_on_recv, elem,
@@ -399,7 +401,7 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
 static void destroy_call_elem(grpc_call_element* elem,
                               const grpc_call_final_info* final_info,
                               grpc_closure* ignored) {
-  call_data* calld = (call_data*)elem->call_data;
+  call_data* calld = static_cast<call_data*>(elem->call_data);
   grpc_slice_buffer_destroy_internal(&calld->read_slice_buffer);
 }
 

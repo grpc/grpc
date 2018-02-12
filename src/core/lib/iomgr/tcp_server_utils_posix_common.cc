@@ -56,7 +56,7 @@ static void init_max_accept_queue_size(void) {
     char* end;
     long i = strtol(buf, &end, 10);
     if (i > 0 && i <= INT_MAX && end && *end == '\n') {
-      n = (int)i;
+      n = static_cast<int>(i);
     }
   }
   fclose(fp);
@@ -93,7 +93,7 @@ static grpc_error* add_socket_to_server(grpc_tcp_server* s, int fd,
     gpr_mu_lock(&s->mu);
     s->nports++;
     GPR_ASSERT(!s->on_accept_cb && "must add ports before starting server");
-    sp = (grpc_tcp_listener*)gpr_malloc(sizeof(grpc_tcp_listener));
+    sp = static_cast<grpc_tcp_listener*>(gpr_malloc(sizeof(grpc_tcp_listener)));
     sp->next = nullptr;
     if (s->head == nullptr) {
       s->head = sp;
@@ -169,7 +169,9 @@ grpc_error* grpc_tcp_server_prepare_socket(int fd,
   if (err != GRPC_ERROR_NONE) goto error;
 
   GPR_ASSERT(addr->len < ~(socklen_t)0);
-  if (bind(fd, (struct sockaddr*)addr->addr, (socklen_t)addr->len) < 0) {
+  if (bind(fd,
+           reinterpret_cast<struct sockaddr*>(const_cast<char*>(addr->addr)),
+           static_cast<socklen_t>(addr->len)) < 0) {
     err = GRPC_OS_ERROR(errno, "bind");
     goto error;
   }
@@ -181,8 +183,8 @@ grpc_error* grpc_tcp_server_prepare_socket(int fd,
 
   sockname_temp.len = sizeof(struct sockaddr_storage);
 
-  if (getsockname(fd, (struct sockaddr*)sockname_temp.addr,
-                  (socklen_t*)&sockname_temp.len) < 0) {
+  if (getsockname(fd, reinterpret_cast<struct sockaddr*>(sockname_temp.addr),
+                  reinterpret_cast<socklen_t*>(&sockname_temp.len)) < 0) {
     err = GRPC_OS_ERROR(errno, "getsockname");
     goto error;
   }

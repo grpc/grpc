@@ -84,7 +84,7 @@ int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu, gpr_timespec abs_deadline) {
 #else
     abs_deadline = gpr_convert_clock_type(abs_deadline, GPR_CLOCK_REALTIME);
 #endif  // GPR_LINUX
-    abs_deadline_ts.tv_sec = (time_t)abs_deadline.tv_sec;
+    abs_deadline_ts.tv_sec = static_cast<time_t>(abs_deadline.tv_sec);
     abs_deadline_ts.tv_nsec = abs_deadline.tv_nsec;
     err = pthread_cond_timedwait(cv, mu, &abs_deadline_ts);
   }

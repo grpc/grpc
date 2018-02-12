@@ -28,7 +28,8 @@
 #include <grpc/support/sync.h>
 
 static void iam_destruct(grpc_call_credentials* creds) {
-  grpc_google_iam_credentials* c = (grpc_google_iam_credentials*)creds;
+  grpc_google_iam_credentials* c =
+      reinterpret_cast<grpc_google_iam_credentials*>(creds);
   grpc_credentials_mdelem_array_destroy(&c->md_array);
 }
 
@@ -38,7 +39,8 @@ static bool iam_get_request_metadata(grpc_call_credentials* creds,
                                      grpc_credentials_mdelem_array* md_array,
                                      grpc_closure* on_request_metadata,
                                      grpc_error** error) {
-  grpc_google_iam_credentials* c = (grpc_google_iam_credentials*)creds;
+  grpc_google_iam_credentials* c =
+      reinterpret_cast<grpc_google_iam_credentials*>(creds);
   grpc_credentials_mdelem_array_append(md_array, &c->md_array);
   return true;
 }
@@ -63,7 +65,7 @@ grpc_call_credentials* grpc_google_iam_credentials_create(
   GPR_ASSERT(token != nullptr);
   GPR_ASSERT(authority_selector != nullptr);
   grpc_google_iam_credentials* c =
-      (grpc_google_iam_credentials*)gpr_zalloc(sizeof(*c));
+      static_cast<grpc_google_iam_credentials*>(gpr_zalloc(sizeof(*c)));
   c->base.type = GRPC_CALL_CREDENTIALS_TYPE_IAM;
   c->base.vtable = &iam_vtable;
   gpr_ref_init(&c->base.refcount, 1);

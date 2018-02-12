@@ -52,8 +52,9 @@ gpr_subprocess* gpr_subprocess_create(int argc, const char** argv) {
   if (pid == -1) {
     return nullptr;
   } else if (pid == 0) {
-    exec_args = (char**)gpr_malloc(((size_t)argc + 1) * sizeof(char*));
-    memcpy(exec_args, argv, (size_t)argc * sizeof(char*));
+    exec_args = static_cast<char**>(
+        gpr_malloc((static_cast<size_t>(argc) + 1) * sizeof(char*)));
+    memcpy(exec_args, argv, static_cast<size_t>(argc) * sizeof(char*));
     exec_args[argc] = nullptr;
     execv(exec_args[0], exec_args);
     /* if we reach here, an error has occurred */
@@ -61,7 +62,7 @@ gpr_subprocess* gpr_subprocess_create(int argc, const char** argv) {
     _exit(1);
     return nullptr;
   } else {
-    r = (gpr_subprocess*)gpr_zalloc(sizeof(gpr_subprocess));
+    r = static_cast<gpr_subprocess*>(gpr_zalloc(sizeof(gpr_subprocess)));
     r->pid = pid;
     return r;
   }

@@ -139,8 +139,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
     }
   }
 
-  void SetNextResolution(const std::vector<int>& ports) {
-    grpc_core::ExecCtx exec_ctx;
+  grpc_channel_args* BuildFakeResults(const std::vector<int>& ports) {
     grpc_lb_addresses* addresses =
         grpc_lb_addresses_create(ports.size(), nullptr);
     for (size_t i = 0; i < ports.size(); ++i) {
@@ -154,31 +153,26 @@ class ClientLbEnd2endTest : public ::testing::Test {
       grpc_uri_destroy(lb_uri);
       gpr_free(lb_uri_str);
     }
-    grpc_arg fake_addresses = grpc_lb_addresses_create_channel_arg(addresses);
-    grpc_channel_args fake_result = {1, &fake_addresses};
-    response_generator_->SetResponse(&fake_result);
+    const grpc_arg fake_addresses =
+        grpc_lb_addresses_create_channel_arg(addresses);
+    grpc_channel_args* fake_results =
+        grpc_channel_args_copy_and_add(nullptr, &fake_addresses, 1);
     grpc_lb_addresses_destroy(addresses);
+    return fake_results;
+  }
+
+  void SetNextResolution(const std::vector<int>& ports) {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_channel_args* fake_results = BuildFakeResults(ports);
+    response_generator_->SetResponse(fake_results);
+    grpc_channel_args_destroy(fake_results);
   }
 
   void SetNextResolutionUponError(const std::vector<int>& ports) {
     grpc_core::ExecCtx exec_ctx;
-    grpc_lb_addresses* addresses =
-        grpc_lb_addresses_create(ports.size(), nullptr);
-    for (size_t i = 0; i < ports.size(); ++i) {
-      char* lb_uri_str;
-      gpr_asprintf(&lb_uri_str, "ipv4:127.0.0.1:%d", ports[i]);
-      grpc_uri* lb_uri = grpc_uri_parse(lb_uri_str, true);
-      GPR_ASSERT(lb_uri != nullptr);
-      grpc_lb_addresses_set_address_from_uri(addresses, i, lb_uri,
-                                             false /* is balancer */,
-                                             "" /* balancer name */, nullptr);
-      grpc_uri_destroy(lb_uri);
-      gpr_free(lb_uri_str);
-    }
-    grpc_arg fake_addresses = grpc_lb_addresses_create_channel_arg(addresses);
-    grpc_channel_args fake_result = {1, &fake_addresses};
-    response_generator_->SetReresolutionResponse(&fake_result);
-    grpc_lb_addresses_destroy(addresses);
+    grpc_channel_args* fake_results = BuildFakeResults(ports);
+    response_generator_->SetReresolutionResponse(fake_results);
+    grpc_channel_args_destroy(fake_results);
   }
 
   std::vector<int> GetServersPorts() {
@@ -756,9 +750,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinSingleReconnect) {
   // Client request still succeed. May need retrying if RR had returned a pick
   // before noticing the change in the server's connectivity.
   while (!SendRpc(stub)) {
-    ;  // Retry until success.
-  }
-  gpr_log(GPR_INFO, "------------------------------------------------------");
+  }  // Retry until success.
   // Send a bunch of RPCs that should succeed.
   for (int i = 0; i < 10 * kNumServers; ++i) {
     CheckRpcSendOk(stub, DEBUG_LOCATION);

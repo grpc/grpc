@@ -54,5 +54,6 @@ grpc_stream* grpc_transport_stream_from_call(grpc_call* call) {
 }
 
 grpc_chttp2_stream* grpc_chttp2_stream_from_call(grpc_call* call) {
-  return (grpc_chttp2_stream*)grpc_transport_stream_from_call(call);
+  return reinterpret_cast<grpc_chttp2_stream*>(
+      grpc_transport_stream_from_call(call));
 }

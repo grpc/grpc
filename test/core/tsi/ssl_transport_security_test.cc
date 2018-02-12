@@ -81,7 +81,8 @@ typedef struct ssl_tsi_test_fixture {
 } ssl_tsi_test_fixture;
 
 static void ssl_test_setup_handshakers(tsi_test_fixture* fixture) {
-  ssl_tsi_test_fixture* ssl_fixture = (ssl_tsi_test_fixture*)fixture;
+  ssl_tsi_test_fixture* ssl_fixture =
+      reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
   GPR_ASSERT(ssl_fixture != nullptr);
   GPR_ASSERT(ssl_fixture->key_cert_lib != nullptr);
   GPR_ASSERT(ssl_fixture->alpn_lib != nullptr);
@@ -244,7 +245,8 @@ static void check_client_peer(ssl_tsi_test_fixture* ssl_fixture,
 }
 
 static void ssl_test_check_handshaker_peers(tsi_test_fixture* fixture) {
-  ssl_tsi_test_fixture* ssl_fixture = (ssl_tsi_test_fixture*)fixture;
+  ssl_tsi_test_fixture* ssl_fixture =
+      reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
   GPR_ASSERT(ssl_fixture != nullptr);
   GPR_ASSERT(ssl_fixture->key_cert_lib != nullptr);
   ssl_key_cert_lib* key_cert_lib = ssl_fixture->key_cert_lib;
@@ -281,7 +283,8 @@ static void ssl_test_pem_key_cert_pair_destroy(tsi_ssl_pem_key_cert_pair kp) {
 }
 
 static void ssl_test_destruct(tsi_test_fixture* fixture) {
-  ssl_tsi_test_fixture* ssl_fixture = (ssl_tsi_test_fixture*)fixture;
+  ssl_tsi_test_fixture* ssl_fixture =
+      reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
   if (ssl_fixture == nullptr) {
     return;
   }
@@ -425,7 +428,8 @@ void ssl_tsi_test_do_handshake() {
 
 void ssl_tsi_test_do_handshake_with_client_authentication() {
   tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
-  ssl_tsi_test_fixture* ssl_fixture = (ssl_tsi_test_fixture*)fixture;
+  ssl_tsi_test_fixture* ssl_fixture =
+      reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
   ssl_fixture->force_client_auth = true;
   tsi_test_do_handshake(fixture);
   tsi_test_fixture_destroy(fixture);
@@ -434,7 +438,8 @@ void ssl_tsi_test_do_handshake_with_client_authentication() {
 void ssl_tsi_test_do_handshake_with_server_name_indication_exact_domain() {
   /* server1 cert contains "waterzooi.test.google.be" in SAN. */
   tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
-  ssl_tsi_test_fixture* ssl_fixture = (ssl_tsi_test_fixture*)fixture;
+  ssl_tsi_test_fixture* ssl_fixture =
+      reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
   ssl_fixture->server_name_indication =
       const_cast<char*>("waterzooi.test.google.be");
   tsi_test_do_handshake(fixture);
@@ -444,7 +449,8 @@ void ssl_tsi_test_do_handshake_with_server_name_indication_exact_domain() {
 void ssl_tsi_test_do_handshake_with_server_name_indication_wild_star_domain() {
   /* server1 cert contains "*.test.google.fr" in SAN. */
   tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
-  ssl_tsi_test_fixture* ssl_fixture = (ssl_tsi_test_fixture*)fixture;
+  ssl_tsi_test_fixture* ssl_fixture =
+      reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
   ssl_fixture->server_name_indication =
       const_cast<char*>("juju.test.google.fr");
   tsi_test_do_handshake(fixture);
@@ -453,7 +459,8 @@ void ssl_tsi_test_do_handshake_with_server_name_indication_wild_star_domain() {
 
 void ssl_tsi_test_do_handshake_with_bad_server_cert() {
   tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
-  ssl_tsi_test_fixture* ssl_fixture = (ssl_tsi_test_fixture*)fixture;
+  ssl_tsi_test_fixture* ssl_fixture =
+      reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
   ssl_fixture->key_cert_lib->use_bad_server_cert = true;
   tsi_test_do_handshake(fixture);
   tsi_test_fixture_destroy(fixture);
@@ -461,7 +468,8 @@ void ssl_tsi_test_do_handshake_with_bad_server_cert() {
 
 void ssl_tsi_test_do_handshake_with_bad_client_cert() {
   tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
-  ssl_tsi_test_fixture* ssl_fixture = (ssl_tsi_test_fixture*)fixture;
+  ssl_tsi_test_fixture* ssl_fixture =
+      reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
   ssl_fixture->key_cert_lib->use_bad_client_cert = true;
   ssl_fixture->force_client_auth = true;
   tsi_test_do_handshake(fixture);
@@ -470,7 +478,8 @@ void ssl_tsi_test_do_handshake_with_bad_client_cert() {
 
 void ssl_tsi_test_do_handshake_alpn_client_no_server() {
   tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
-  ssl_tsi_test_fixture* ssl_fixture = (ssl_tsi_test_fixture*)fixture;
+  ssl_tsi_test_fixture* ssl_fixture =
+      reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
   ssl_fixture->alpn_lib->alpn_mode = ALPN_CLIENT_NO_SERVER;
   tsi_test_do_handshake(fixture);
   tsi_test_fixture_destroy(fixture);
@@ -478,7 +487,8 @@ void ssl_tsi_test_do_handshake_alpn_client_no_server() {
 
 void ssl_tsi_test_do_handshake_alpn_server_no_client() {
   tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
-  ssl_tsi_test_fixture* ssl_fixture = (ssl_tsi_test_fixture*)fixture;
+  ssl_tsi_test_fixture* ssl_fixture =
+      reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
   ssl_fixture->alpn_lib->alpn_mode = ALPN_SERVER_NO_CLIENT;
   tsi_test_do_handshake(fixture);
   tsi_test_fixture_destroy(fixture);
@@ -486,7 +496,8 @@ void ssl_tsi_test_do_handshake_alpn_server_no_client() {
 
 void ssl_tsi_test_do_handshake_alpn_client_server_mismatch() {
   tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
-  ssl_tsi_test_fixture* ssl_fixture = (ssl_tsi_test_fixture*)fixture;
+  ssl_tsi_test_fixture* ssl_fixture =
+      reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
   ssl_fixture->alpn_lib->alpn_mode = ALPN_CLIENT_SERVER_MISMATCH;
   tsi_test_do_handshake(fixture);
   tsi_test_fixture_destroy(fixture);
@@ -494,7 +505,8 @@ void ssl_tsi_test_do_handshake_alpn_client_server_mismatch() {
 
 void ssl_tsi_test_do_handshake_alpn_client_server_ok() {
   tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
-  ssl_tsi_test_fixture* ssl_fixture = (ssl_tsi_test_fixture*)fixture;
+  ssl_tsi_test_fixture* ssl_fixture =
+      reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
   ssl_fixture->alpn_lib->alpn_mode = ALPN_CLIENT_SERVER_OK;
   tsi_test_do_handshake(fixture);
   tsi_test_fixture_destroy(fixture);
@@ -511,7 +523,8 @@ void ssl_tsi_test_do_round_trip_for_all_configs() {
       v <<= 1;
     }
     tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
-    ssl_tsi_test_fixture* ssl_fixture = (ssl_tsi_test_fixture*)fixture;
+    ssl_tsi_test_fixture* ssl_fixture =
+        reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
     tsi_test_frame_protector_config_destroy(ssl_fixture->base.config);
     ssl_fixture->base.config = tsi_test_frame_protector_config_create(
         bit_array[0], bit_array[1], bit_array[2], bit_array[3], bit_array[4],
@@ -531,7 +544,8 @@ void ssl_tsi_test_do_round_trip_odd_buffer_size() {
         for (size_t ind4 = 0; ind4 < size; ind4++) {
           for (size_t ind5 = 0; ind5 < size; ind5++) {
             tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
-            ssl_tsi_test_fixture* ssl_fixture = (ssl_tsi_test_fixture*)fixture;
+            ssl_tsi_test_fixture* ssl_fixture =
+                reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
             tsi_test_frame_protector_config_set_buffer_size(
                 ssl_fixture->base.config, odd_sizes[ind1], odd_sizes[ind2],
                 odd_sizes[ind3], odd_sizes[ind4], odd_sizes[ind5]);
@@ -571,7 +585,7 @@ void test_tsi_ssl_client_handshaker_factory_refcounting() {
 
   handshaker_factory_destructor_called = false;
   original_vtable = tsi_ssl_handshaker_factory_swap_vtable(
-      (tsi_ssl_handshaker_factory*)client_handshaker_factory,
+      reinterpret_cast<tsi_ssl_handshaker_factory*>(client_handshaker_factory),
       &test_handshaker_factory_vtable);
 
   tsi_handshaker* handshaker[3];
@@ -615,7 +629,7 @@ void test_tsi_ssl_server_handshaker_factory_refcounting() {
 
   handshaker_factory_destructor_called = false;
   original_vtable = tsi_ssl_handshaker_factory_swap_vtable(
-      (tsi_ssl_handshaker_factory*)server_handshaker_factory,
+      reinterpret_cast<tsi_ssl_handshaker_factory*>(server_handshaker_factory),
       &test_handshaker_factory_vtable);
 
   for (i = 0; i < 3; ++i) {

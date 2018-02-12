@@ -67,7 +67,8 @@ const grpc_handshaker_vtable readahead_handshaker_vtable = {
     readahead_handshaker_do_handshake};
 
 static grpc_handshaker* readahead_handshaker_create() {
-  grpc_handshaker* h = (grpc_handshaker*)gpr_zalloc(sizeof(grpc_handshaker));
+  grpc_handshaker* h =
+      static_cast<grpc_handshaker*>(gpr_zalloc(sizeof(grpc_handshaker)));
   grpc_handshaker_init(&readahead_handshaker_vtable, h);
   return h;
 }

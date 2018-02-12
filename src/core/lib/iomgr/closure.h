@@ -143,7 +143,7 @@ typedef struct {
 } wrapped_closure;
 
 inline void closure_wrapper(void* arg, grpc_error* error) {
-  wrapped_closure* wc = (wrapped_closure*)arg;
+  wrapped_closure* wc = static_cast<wrapped_closure*>(arg);
   grpc_iomgr_cb_func cb = wc->cb;
   void* cb_arg = wc->cb_arg;
   gpr_free(wc);
@@ -161,7 +161,7 @@ inline grpc_closure* grpc_closure_create(grpc_iomgr_cb_func cb, void* cb_arg,
                                          grpc_closure_scheduler* scheduler) {
 #endif
   closure_impl::wrapped_closure* wc =
-      (closure_impl::wrapped_closure*)gpr_malloc(sizeof(*wc));
+      static_cast<closure_impl::wrapped_closure*>(gpr_malloc(sizeof(*wc)));
   wc->cb = cb;
   wc->cb_arg = cb_arg;
 #ifndef NDEBUG

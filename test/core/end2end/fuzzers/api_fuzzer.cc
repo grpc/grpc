@@ -93,7 +93,7 @@ static char* read_string(input_stream* inp, bool* special) {
       cap = GPR_MAX(3 * cap / 2, cap + 8);
       str = static_cast<char*>(gpr_realloc(str, cap));
     }
-    c = (char)next_byte(inp);
+    c = static_cast<char>(next_byte(inp));
     str[sz++] = c;
   } while (c != 0 && c != 1);
   if (special != nullptr) {
@@ -116,7 +116,7 @@ static void read_buffer(input_stream* inp, char** buffer, size_t* length,
   }
   *buffer = static_cast<char*>(gpr_malloc(*length));
   for (size_t i = 0; i < *length; i++) {
-    (*buffer)[i] = (char)next_byte(inp);
+    (*buffer)[i] = static_cast<char>(next_byte(inp));
   }
 }
 
@@ -192,7 +192,9 @@ static grpc_byte_buffer* read_message(input_stream* inp) {
   return out;
 }
 
-static int read_int(input_stream* inp) { return (int)read_uint32(inp); }
+static int read_int(input_stream* inp) {
+  return static_cast<int>(read_uint32(inp));
+}
 
 static grpc_channel_args* read_args(input_stream* inp) {
   size_t n = next_byte(inp);
@@ -529,10 +531,12 @@ static validator* create_validator(void (*validate)(void* arg, bool success),
 
 static void assert_success_and_decrement(void* counter, bool success) {
   GPR_ASSERT(success);
-  --*(int*)counter;
+  --*static_cast<int*>(counter);
 }
 
-static void decrement(void* counter, bool success) { --*(int*)counter; }
+static void decrement(void* counter, bool success) {
+  --*static_cast<int*>(counter);
+}
 
 typedef struct connectivity_watch {
   int* counter;
