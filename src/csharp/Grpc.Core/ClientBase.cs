@@ -16,6 +16,8 @@
 
 #endregion
 
+using System;
+using Grpc.Core.Interceptors;
 using Grpc.Core.Internal;
 using Grpc.Core.Utils;
 
@@ -147,6 +149,64 @@ namespace Grpc.Core
         /// </summary>
         protected internal class ClientBaseConfiguration
         {
+            private class ClientHeaderInterceptor : Interceptor
+            {
+                readonly Func<IMethod, string, CallOptions, Tuple<string, CallOptions>> interceptor;
+
+                /// <summary>
+                /// Creates a new instance of ClientHeaderInterceptor given the specified header interceptor function.
+                /// </summary>
+                public ClientHeaderInterceptor(Func<IMethod, string, CallOptions, Tuple<string, CallOptions>> interceptor)
+                {
+                    this.interceptor = GrpcPreconditions.CheckNotNull(interceptor, "interceptor");
+                }
+
+                /// <summary>
+                /// Intercepts a blocking invocation of a simple remote call.
+                /// </summary>
+                public override TResponse BlockingUnaryCall<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context, BlockingUnaryCallContinuation<TRequest, TResponse> continuation)
+                {
+                    var newHeaders = interceptor(context.Method, context.Host, context.Options);
+                    return continuation(request, new ClientInterceptorContext<TRequest, TResponse>(context.Method, newHeaders.Item1, newHeaders.Item2));
+                }
+
+                /// <summary>
+                /// Intercepts an asynchronous invocation of a simple remote call.
+                /// </summary>
+                public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context, AsyncUnaryCallContinuation<TRequest, TResponse> continuation)
+                {
+                    var newHeaders = interceptor(context.Method, context.Host, context.Options);
+                    return continuation(request, new ClientInterceptorContext<TRequest, TResponse>(context.Method, newHeaders.Item1, newHeaders.Item2));
+                }
+
+                /// <summary>
+                /// Intercepts an asynchronous invocation of a streaming remote call.
+                /// </summary>
+                public override AsyncServerStreamingCall<TResponse> AsyncServerStreamingCall<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context, AsyncServerStreamingCallContinuation<TRequest, TResponse> continuation)
+                {
+                    var newHeaders = interceptor(context.Method, context.Host, context.Options);
+                    return continuation(request, new ClientInterceptorContext<TRequest, TResponse>(context.Method, newHeaders.Item1, newHeaders.Item2));
+                }
+
+                /// <summary>
+                /// Intercepts an asynchronous invocation of a client streaming call.
+                /// </summary>
+                public override AsyncClientStreamingCall<TRequest, TResponse> AsyncClientStreamingCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context, AsyncClientStreamingCallContinuation<TRequest, TResponse> continuation)
+                {
+                    var newHeaders = interceptor(context.Method, context.Host, context.Options);
+                    return continuation(new ClientInterceptorContext<TRequest, TResponse>(context.Method, newHeaders.Item1, newHeaders.Item2));
+                }
+
+                /// <summary>
+                /// Intercepts an asynchronous invocation of a duplex streaming call.
+                /// </summary>
+                public override AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context, AsyncDuplexStreamingCallContinuation<TRequest, TResponse> continuation)
+                {
+                    var newHeaders = interceptor(context.Method, context.Host, context.Options);
+                    return continuation(new ClientInterceptorContext<TRequest, TResponse>(context.Method, newHeaders.Item1, newHeaders.Item2));
+                }
+            }
+
             readonly CallInvoker undecoratedCallInvoker;
             readonly string host;
 
@@ -158,7 +218,7 @@ namespace Grpc.Core
 
             internal CallInvoker CreateDecoratedCallInvoker()
             {
-                return new InterceptingCallInvoker(undecoratedCallInvoker, hostInterceptor: (h) => host);
+                return undecoratedCallInvoker.Intercept(new ClientHeaderInterceptor((method, host, options) => Tuple.Create(this.host, options)));
             }
 
             internal ClientBaseConfiguration WithHost(string host)
