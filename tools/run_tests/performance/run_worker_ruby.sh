@@ -16,6 +16,6 @@
 source ~/.rvm/scripts/rvm
 set -ex
 
-cd $(dirname $0)/../../..
+cd "$(dirname "$0")/../../.."
 
-ruby src/ruby/qps/worker.rb $@
+ruby src/ruby/qps/worker.rb "$@"

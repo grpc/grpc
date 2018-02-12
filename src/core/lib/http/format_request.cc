@@ -25,7 +25,6 @@
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/useful.h>
 #include "src/core/lib/gpr/string.h"
 
 static void fill_common_header(const grpc_httpcli_request* request,
@@ -90,7 +89,8 @@ grpc_slice grpc_httpcli_format_post_request(const grpc_httpcli_request* request,
     if (!has_content_type) {
       gpr_strvec_add(&out, gpr_strdup("Content-Type: text/plain\r\n"));
     }
-    gpr_asprintf(&tmp, "Content-Length: %lu\r\n", (unsigned long)body_size);
+    gpr_asprintf(&tmp, "Content-Length: %lu\r\n",
+                 static_cast<unsigned long>(body_size));
     gpr_strvec_add(&out, tmp);
   }
   gpr_strvec_add(&out, gpr_strdup("\r\n"));
@@ -98,7 +98,7 @@ grpc_slice grpc_httpcli_format_post_request(const grpc_httpcli_request* request,
   gpr_strvec_destroy(&out);
 
   if (body_bytes) {
-    tmp = (char*)gpr_realloc(tmp, out_len + body_size);
+    tmp = static_cast<char*>(gpr_realloc(tmp, out_len + body_size));
     memcpy(tmp + out_len, body_bytes, body_size);
     out_len += body_size;
   }

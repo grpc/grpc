@@ -27,6 +27,7 @@
 #include "src/core/ext/filters/http/message_compress/message_compress_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/compression/algorithm_metadata.h"
+#include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/compression/message_compress.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/profiling/timers.h"
@@ -53,7 +54,7 @@ struct call_data {
   grpc_linked_mdelem accept_stream_encoding_storage;
   /** Compression algorithm we'll try to use. It may be given by incoming
    * metadata, or by the channel's default compression settings. */
-  grpc_compression_algorithm compression_algorithm;
+  grpc_message_compression_algorithm message_compression_algorithm;
   initial_metadata_state send_initial_metadata_state;
   grpc_error* cancel_error;
   grpc_closure start_send_message_batch_in_call_combiner;
@@ -68,15 +69,10 @@ struct call_data {
 struct channel_data {
   /** The default, channel-level, compression algorithm */
   grpc_compression_algorithm default_compression_algorithm;
-  /** Bitset of enabled algorithms */
+  /** Bitset of enabled compression algorithms */
   uint32_t enabled_algorithms_bitset;
   /** Supported compression algorithms */
-  uint32_t supported_compression_algorithms;
-
-  /** The default, channel-level, stream compression algorithm */
-  grpc_stream_compression_algorithm default_stream_compression_algorithm;
-  /** Bitset of enabled stream compression algorithms */
-  uint32_t enabled_stream_compression_algorithms_bitset;
+  uint32_t supported_message_compression_algorithms;
   /** Supported stream compression algorithms */
   uint32_t supported_stream_compression_algorithms;
 };
@@ -84,14 +80,14 @@ struct channel_data {
 
 static bool skip_compression(grpc_call_element* elem, uint32_t flags,
                              bool has_compression_algorithm) {
-  call_data* calld = (call_data*)elem->call_data;
-  channel_data* channeld = (channel_data*)elem->channel_data;
+  call_data* calld = static_cast<call_data*>(elem->call_data);
+  channel_data* channeld = static_cast<channel_data*>(elem->channel_data);
 
   if (flags & (GRPC_WRITE_NO_COMPRESS | GRPC_WRITE_INTERNAL_COMPRESS)) {
     return true;
   }
   if (has_compression_algorithm) {
-    if (calld->compression_algorithm == GRPC_COMPRESS_NONE) {
+    if (calld->message_compression_algorithm == GRPC_MESSAGE_COMPRESS_NONE) {
       return true;
     }
     return false; /* we have an actual call-specific algorithm */
@@ -107,73 +103,56 @@ static grpc_error* process_send_initial_metadata(
 static grpc_error* process_send_initial_metadata(
     grpc_call_element* elem, grpc_metadata_batch* initial_metadata,
     bool* has_compression_algorithm) {
-  call_data* calld = (call_data*)elem->call_data;
-  channel_data* channeld = (channel_data*)elem->channel_data;
+  call_data* calld = static_cast<call_data*>(elem->call_data);
+  channel_data* channeld = static_cast<channel_data*>(elem->channel_data);
   *has_compression_algorithm = false;
+  grpc_compression_algorithm compression_algorithm;
   grpc_stream_compression_algorithm stream_compression_algorithm =
       GRPC_STREAM_COMPRESS_NONE;
-  if (initial_metadata->idx.named.grpc_internal_stream_encoding_request !=
-      nullptr) {
-    grpc_mdelem md =
-        initial_metadata->idx.named.grpc_internal_stream_encoding_request->md;
-    if (!grpc_stream_compression_algorithm_parse(
-            GRPC_MDVALUE(md), &stream_compression_algorithm)) {
-      char* val = grpc_slice_to_c_string(GRPC_MDVALUE(md));
-      gpr_log(GPR_ERROR,
-              "Invalid stream compression algorithm: '%s' (unknown). Ignoring.",
-              val);
-      gpr_free(val);
-      stream_compression_algorithm = GRPC_STREAM_COMPRESS_NONE;
-    }
-    if (!GPR_BITGET(channeld->enabled_stream_compression_algorithms_bitset,
-                    stream_compression_algorithm)) {
-      char* val = grpc_slice_to_c_string(GRPC_MDVALUE(md));
-      gpr_log(
-          GPR_ERROR,
-          "Invalid stream compression algorithm: '%s' (previously disabled). "
-          "Ignoring.",
-          val);
-      gpr_free(val);
-      stream_compression_algorithm = GRPC_STREAM_COMPRESS_NONE;
-    }
-    *has_compression_algorithm = true;
-    grpc_metadata_batch_remove(
-        initial_metadata,
-        initial_metadata->idx.named.grpc_internal_stream_encoding_request);
-    /* Disable message-wise compression */
-    calld->compression_algorithm = GRPC_COMPRESS_NONE;
-    if (initial_metadata->idx.named.grpc_internal_encoding_request != nullptr) {
-      grpc_metadata_batch_remove(
-          initial_metadata,
-          initial_metadata->idx.named.grpc_internal_encoding_request);
-    }
-  } else if (initial_metadata->idx.named.grpc_internal_encoding_request !=
-             nullptr) {
+  if (initial_metadata->idx.named.grpc_internal_encoding_request != nullptr) {
     grpc_mdelem md =
         initial_metadata->idx.named.grpc_internal_encoding_request->md;
     if (!grpc_compression_algorithm_parse(GRPC_MDVALUE(md),
-                                          &calld->compression_algorithm)) {
+                                          &compression_algorithm)) {
       char* val = grpc_slice_to_c_string(GRPC_MDVALUE(md));
       gpr_log(GPR_ERROR,
               "Invalid compression algorithm: '%s' (unknown). Ignoring.", val);
       gpr_free(val);
-      calld->compression_algorithm = GRPC_COMPRESS_NONE;
+      calld->message_compression_algorithm = GRPC_MESSAGE_COMPRESS_NONE;
+      stream_compression_algorithm = GRPC_STREAM_COMPRESS_NONE;
+    }
+    if (!GPR_BITGET(channeld->enabled_algorithms_bitset,
+                    compression_algorithm)) {
+      char* val = grpc_slice_to_c_string(GRPC_MDVALUE(md));
+      gpr_log(GPR_ERROR,
+              "Invalid compression algorithm: '%s' (previously disabled). "
+              "Ignoring.",
+              val);
+      gpr_free(val);
+      calld->message_compression_algorithm = GRPC_MESSAGE_COMPRESS_NONE;
+      stream_compression_algorithm = GRPC_STREAM_COMPRESS_NONE;
     }
     *has_compression_algorithm = true;
     grpc_metadata_batch_remove(
         initial_metadata,
         initial_metadata->idx.named.grpc_internal_encoding_request);
+    calld->message_compression_algorithm =
+        grpc_compression_algorithm_to_message_compression_algorithm(
+            compression_algorithm);
+    stream_compression_algorithm =
+        grpc_compression_algorithm_to_stream_compression_algorithm(
+            compression_algorithm);
   } else {
     /* If no algorithm was found in the metadata and we aren't
      * exceptionally skipping compression, fall back to the channel
      * default */
-    if (channeld->default_stream_compression_algorithm !=
-        GRPC_STREAM_COMPRESS_NONE) {
+    if (channeld->default_compression_algorithm != GRPC_COMPRESS_NONE) {
+      calld->message_compression_algorithm =
+          grpc_compression_algorithm_to_message_compression_algorithm(
+              channeld->default_compression_algorithm);
       stream_compression_algorithm =
-          channeld->default_stream_compression_algorithm;
-      calld->compression_algorithm = GRPC_COMPRESS_NONE;
-    } else {
-      calld->compression_algorithm = channeld->default_compression_algorithm;
+          grpc_compression_algorithm_to_stream_compression_algorithm(
+              channeld->default_compression_algorithm);
     }
     *has_compression_algorithm = true;
   }
@@ -184,10 +163,12 @@ static grpc_error* process_send_initial_metadata(
     error = grpc_metadata_batch_add_tail(
         initial_metadata, &calld->stream_compression_algorithm_storage,
         grpc_stream_compression_encoding_mdelem(stream_compression_algorithm));
-  } else if (calld->compression_algorithm != GRPC_COMPRESS_NONE) {
+  } else if (calld->message_compression_algorithm !=
+             GRPC_MESSAGE_COMPRESS_NONE) {
     error = grpc_metadata_batch_add_tail(
         initial_metadata, &calld->compression_algorithm_storage,
-        grpc_compression_encoding_mdelem(calld->compression_algorithm));
+        grpc_message_compression_encoding_mdelem(
+            calld->message_compression_algorithm));
   }
 
   if (error != GRPC_ERROR_NONE) return error;
@@ -196,11 +177,12 @@ static grpc_error* process_send_initial_metadata(
   error = grpc_metadata_batch_add_tail(
       initial_metadata, &calld->accept_encoding_storage,
       GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(
-          channeld->supported_compression_algorithms));
+          channeld->supported_message_compression_algorithms));
 
   if (error != GRPC_ERROR_NONE) return error;
 
-  /* Do not overwrite accept-encoding header if it already presents. */
+  /* Do not overwrite accept-encoding header if it already presents (e.g. added
+   * by some proxy). */
   if (!initial_metadata->idx.named.accept_encoding) {
     error = grpc_metadata_batch_add_tail(
         initial_metadata, &calld->accept_stream_encoding_storage,
@@ -212,15 +194,15 @@ static grpc_error* process_send_initial_metadata(
 }
 
 static void send_message_on_complete(void* arg, grpc_error* error) {
-  grpc_call_element* elem = (grpc_call_element*)arg;
-  call_data* calld = (call_data*)elem->call_data;
+  grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
+  call_data* calld = static_cast<call_data*>(elem->call_data);
   grpc_slice_buffer_reset_and_unref_internal(&calld->slices);
   GRPC_CLOSURE_RUN(calld->original_send_message_on_complete,
                    GRPC_ERROR_REF(error));
 }
 
 static void send_message_batch_continue(grpc_call_element* elem) {
-  call_data* calld = (call_data*)elem->call_data;
+  call_data* calld = static_cast<call_data*>(elem->call_data);
   // Note: The call to grpc_call_next_op() results in yielding the
   // call combiner, so we need to clear calld->send_message_batch
   // before we do that.
@@ -231,22 +213,23 @@ static void send_message_batch_continue(grpc_call_element* elem) {
 }
 
 static void finish_send_message(grpc_call_element* elem) {
-  call_data* calld = (call_data*)elem->call_data;
+  call_data* calld = static_cast<call_data*>(elem->call_data);
   // Compress the data if appropriate.
   grpc_slice_buffer tmp;
   grpc_slice_buffer_init(&tmp);
   uint32_t send_flags =
       calld->send_message_batch->payload->send_message.send_message->flags;
-  bool did_compress =
-      grpc_msg_compress(calld->compression_algorithm, &calld->slices, &tmp);
+  bool did_compress = grpc_msg_compress(calld->message_compression_algorithm,
+                                        &calld->slices, &tmp);
   if (did_compress) {
     if (grpc_compression_trace.enabled()) {
       const char* algo_name;
       const size_t before_size = calld->slices.length;
       const size_t after_size = tmp.length;
-      const float savings_ratio = 1.0f - (float)after_size / (float)before_size;
-      GPR_ASSERT(grpc_compression_algorithm_name(calld->compression_algorithm,
-                                                 &algo_name));
+      const float savings_ratio = 1.0f - static_cast<float>(after_size) /
+                                             static_cast<float>(before_size);
+      GPR_ASSERT(grpc_message_compression_algorithm_name(
+          calld->message_compression_algorithm, &algo_name));
       gpr_log(GPR_DEBUG,
               "Compressed[%s] %" PRIuPTR " bytes vs. %" PRIuPTR
               " bytes (%.2f%% savings)",
@@ -257,8 +240,8 @@ static void finish_send_message(grpc_call_element* elem) {
   } else {
     if (grpc_compression_trace.enabled()) {
       const char* algo_name;
-      GPR_ASSERT(grpc_compression_algorithm_name(calld->compression_algorithm,
-                                                 &algo_name));
+      GPR_ASSERT(grpc_message_compression_algorithm_name(
+          calld->message_compression_algorithm, &algo_name));
       gpr_log(GPR_DEBUG,
               "Algorithm '%s' enabled but decided not to compress. Input size: "
               "%" PRIuPTR,
@@ -282,7 +265,7 @@ static void finish_send_message(grpc_call_element* elem) {
 
 static void fail_send_message_batch_in_call_combiner(void* arg,
                                                      grpc_error* error) {
-  call_data* calld = (call_data*)arg;
+  call_data* calld = static_cast<call_data*>(arg);
   if (calld->send_message_batch != nullptr) {
     grpc_transport_stream_op_batch_finish_with_failure(
         calld->send_message_batch, GRPC_ERROR_REF(error), calld->call_combiner);
@@ -307,10 +290,10 @@ static grpc_error* pull_slice_from_send_message(call_data* calld) {
 // an async call to grpc_byte_stream_next() has been started, which will
 // eventually result in calling on_send_message_next_done().
 static void continue_reading_send_message(grpc_call_element* elem) {
-  call_data* calld = (call_data*)elem->call_data;
+  call_data* calld = static_cast<call_data*>(elem->call_data);
   while (grpc_byte_stream_next(
-      calld->send_message_batch->payload->send_message.send_message, ~(size_t)0,
-      &calld->on_send_message_next_done)) {
+      calld->send_message_batch->payload->send_message.send_message,
+      ~static_cast<size_t>(0), &calld->on_send_message_next_done)) {
     grpc_error* error = pull_slice_from_send_message(calld);
     if (error != GRPC_ERROR_NONE) {
       // Closure callback; does not take ownership of error.
@@ -328,8 +311,8 @@ static void continue_reading_send_message(grpc_call_element* elem) {
 
 // Async callback for grpc_byte_stream_next().
 static void on_send_message_next_done(void* arg, grpc_error* error) {
-  grpc_call_element* elem = (grpc_call_element*)arg;
-  call_data* calld = (call_data*)elem->call_data;
+  grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
+  call_data* calld = static_cast<call_data*>(elem->call_data);
   if (error != GRPC_ERROR_NONE) {
     // Closure callback; does not take ownership of error.
     fail_send_message_batch_in_call_combiner(calld, error);
@@ -351,8 +334,8 @@ static void on_send_message_next_done(void* arg, grpc_error* error) {
 }
 
 static void start_send_message_batch(void* arg, grpc_error* unused) {
-  grpc_call_element* elem = (grpc_call_element*)arg;
-  call_data* calld = (call_data*)elem->call_data;
+  grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
+  call_data* calld = static_cast<call_data*>(elem->call_data);
   if (skip_compression(
           elem,
           calld->send_message_batch->payload->send_message.send_message->flags,
@@ -365,8 +348,8 @@ static void start_send_message_batch(void* arg, grpc_error* unused) {
 
 static void compress_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
-  call_data* calld = (call_data*)elem->call_data;
-  GPR_TIMER_BEGIN("compress_start_transport_stream_op_batch", 0);
+  GPR_TIMER_SCOPE("compress_start_transport_stream_op_batch", 0);
+  call_data* calld = static_cast<call_data*>(elem->call_data);
   // Handle cancel_stream.
   if (batch->cancel_stream) {
     GRPC_ERROR_UNREF(calld->cancel_error);
@@ -381,6 +364,7 @@ static void compress_start_transport_stream_op_batch(
             GRPC_ERROR_REF(calld->cancel_error), "failing send_message op");
       } else {
         grpc_byte_stream_shutdown(
+
             calld->send_message_batch->payload->send_message.send_message,
             GRPC_ERROR_REF(calld->cancel_error));
       }
@@ -388,7 +372,7 @@ static void compress_start_transport_stream_op_batch(
   } else if (calld->cancel_error != GRPC_ERROR_NONE) {
     grpc_transport_stream_op_batch_finish_with_failure(
         batch, GRPC_ERROR_REF(calld->cancel_error), calld->call_combiner);
-    goto done;
+    return;
   }
   // Handle send_initial_metadata.
   if (batch->send_initial_metadata) {
@@ -400,7 +384,7 @@ static void compress_start_transport_stream_op_batch(
     if (error != GRPC_ERROR_NONE) {
       grpc_transport_stream_op_batch_finish_with_failure(batch, error,
                                                          calld->call_combiner);
-      goto done;
+      return;
     }
     calld->send_initial_metadata_state = has_compression_algorithm
                                              ? HAS_COMPRESSION_ALGORITHM
@@ -429,21 +413,19 @@ static void compress_start_transport_stream_op_batch(
       GRPC_CALL_COMBINER_STOP(
           calld->call_combiner,
           "send_message batch pending send_initial_metadata");
-      goto done;
+      return;
     }
     start_send_message_batch(elem, GRPC_ERROR_NONE);
   } else {
     // Pass control down the stack.
     grpc_call_next_op(elem, batch);
   }
-done:
-  GPR_TIMER_END("compress_start_transport_stream_op_batch", 0);
 }
 
 /* Constructor for call_data */
 static grpc_error* init_call_elem(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
-  call_data* calld = (call_data*)elem->call_data;
+  call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->call_combiner = args->call_combiner;
   calld->cancel_error = GRPC_ERROR_NONE;
   grpc_slice_buffer_init(&calld->slices);
@@ -460,7 +442,7 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
 static void destroy_call_elem(grpc_call_element* elem,
                               const grpc_call_final_info* final_info,
                               grpc_closure* ignored) {
-  call_data* calld = (call_data*)elem->call_data;
+  call_data* calld = static_cast<call_data*>(elem->call_data);
   grpc_slice_buffer_destroy_internal(&calld->slices);
   GRPC_ERROR_UNREF(calld->cancel_error);
 }
@@ -468,14 +450,13 @@ static void destroy_call_elem(grpc_call_element* elem,
 /* Constructor for channel_data */
 static grpc_error* init_channel_elem(grpc_channel_element* elem,
                                      grpc_channel_element_args* args) {
-  channel_data* channeld = (channel_data*)elem->channel_data;
+  channel_data* channeld = static_cast<channel_data*>(elem->channel_data);
 
-  /* Configuration for message compression */
   channeld->enabled_algorithms_bitset =
       grpc_channel_args_compression_algorithm_get_states(args->channel_args);
-
   channeld->default_compression_algorithm =
       grpc_channel_args_get_compression_algorithm(args->channel_args);
+
   /* Make sure the default isn't disabled. */
   if (!GPR_BITGET(channeld->enabled_algorithms_bitset,
                   channeld->default_compression_algorithm)) {
@@ -485,31 +466,18 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
     channeld->default_compression_algorithm = GRPC_COMPRESS_NONE;
   }
 
-  channeld->supported_compression_algorithms =
+  uint32_t supported_compression_algorithms =
       (((1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1) &
        channeld->enabled_algorithms_bitset) |
       1u;
 
-  /* Configuration for stream compression */
-  channeld->enabled_stream_compression_algorithms_bitset =
-      grpc_channel_args_stream_compression_algorithm_get_states(
-          args->channel_args);
-
-  channeld->default_stream_compression_algorithm =
-      grpc_channel_args_get_stream_compression_algorithm(args->channel_args);
-
-  if (!GPR_BITGET(channeld->enabled_stream_compression_algorithms_bitset,
-                  channeld->default_stream_compression_algorithm)) {
-    gpr_log(GPR_DEBUG,
-            "stream compression algorithm %d not enabled: switching to none",
-            channeld->default_stream_compression_algorithm);
-    channeld->default_stream_compression_algorithm = GRPC_STREAM_COMPRESS_NONE;
-  }
+  channeld->supported_message_compression_algorithms =
+      grpc_compression_bitset_to_message_bitset(
+          supported_compression_algorithms);
 
   channeld->supported_stream_compression_algorithms =
-      (((1u << GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT) - 1) &
-       channeld->enabled_stream_compression_algorithms_bitset) |
-      1u;
+      grpc_compression_bitset_to_stream_bitset(
+          supported_compression_algorithms);
 
   GPR_ASSERT(!args->is_last);
   return GRPC_ERROR_NONE;

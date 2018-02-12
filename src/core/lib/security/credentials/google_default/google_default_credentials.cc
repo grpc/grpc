@@ -60,7 +60,8 @@ typedef struct {
 
 static void on_compute_engine_detection_http_response(void* user_data,
                                                       grpc_error* error) {
-  compute_engine_detector* detector = (compute_engine_detector*)user_data;
+  compute_engine_detector* detector =
+      static_cast<compute_engine_detector*>(user_data);
   if (error == GRPC_ERROR_NONE && detector->response.status == 200 &&
       detector->response.hdr_count > 0) {
     /* Internet providers can return a generic response to all requests, so
@@ -85,7 +86,7 @@ static void on_compute_engine_detection_http_response(void* user_data,
 }
 
 static void destroy_pollset(void* p, grpc_error* e) {
-  grpc_pollset_destroy((grpc_pollset*)p);
+  grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 
 static int is_stack_running_on_compute_engine() {
@@ -98,7 +99,8 @@ static int is_stack_running_on_compute_engine() {
      on compute engine. */
   grpc_millis max_detection_delay = GPR_MS_PER_SEC;
 
-  grpc_pollset* pollset = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
+  grpc_pollset* pollset =
+      static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(pollset, &g_polling_mu);
   detector.pollent = grpc_polling_entity_create_from_pollset(pollset);
   detector.is_done = 0;
@@ -171,7 +173,8 @@ static grpc_error* create_default_creds_from_path(
     goto end;
   }
   json = grpc_json_parse_string_with_len(
-      (char*)GRPC_SLICE_START_PTR(creds_data), GRPC_SLICE_LENGTH(creds_data));
+      reinterpret_cast<char*> GRPC_SLICE_START_PTR(creds_data),
+      GRPC_SLICE_LENGTH(creds_data));
   if (json == nullptr) {
     error = grpc_error_set_str(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to parse JSON"),

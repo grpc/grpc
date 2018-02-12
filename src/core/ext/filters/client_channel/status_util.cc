@@ -18,7 +18,7 @@
 
 #include "src/core/ext/filters/client_channel/status_util.h"
 
-#include <grpc/support/useful.h>
+#include "src/core/lib/gpr/useful.h"
 
 typedef struct {
   const char* str;

@@ -29,10 +29,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/tls.h>
-#include <grpc/support/useful.h>
+
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/spinlock.h"
+#include "src/core/lib/gpr/tls.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/time_averaged_stats.h"
 #include "src/core/lib/iomgr/timer_heap.h"
 
@@ -239,9 +240,10 @@ void grpc_timer_list_init() {
   uint32_t i;
 
   g_num_shards = GPR_MIN(1, 2 * gpr_cpu_num_cores());
-  g_shards = (timer_shard*)gpr_zalloc(g_num_shards * sizeof(*g_shards));
-  g_shard_queue =
-      (timer_shard**)gpr_zalloc(g_num_shards * sizeof(*g_shard_queue));
+  g_shards =
+      static_cast<timer_shard*>(gpr_zalloc(g_num_shards * sizeof(*g_shards)));
+  g_shard_queue = static_cast<timer_shard**>(
+      gpr_zalloc(g_num_shards * sizeof(*g_shard_queue)));
 
   g_shared_mutables.initialized = true;
   g_shared_mutables.checker_mu = GPR_SPINLOCK_INITIALIZER;
@@ -358,8 +360,8 @@ void grpc_timer_init(grpc_timer* timer, grpc_millis deadline,
     return;
   }
 
-  grpc_time_averaged_stats_add_sample(&shard->stats,
-                                      (double)(deadline - now) / 1000.0);
+  grpc_time_averaged_stats_add_sample(
+      &shard->stats, static_cast<double>(deadline - now) / 1000.0);
 
   ADD_TO_HASH_TABLE(timer);
 
@@ -373,7 +375,7 @@ void grpc_timer_init(grpc_timer* timer, grpc_millis deadline,
     gpr_log(GPR_DEBUG,
             "  .. add to shard %d with queue_deadline_cap=%" PRIdPTR
             " => is_first_timer=%s",
-            (int)(shard - g_shards), shard->queue_deadline_cap,
+            static_cast<int>(shard - g_shards), shard->queue_deadline_cap,
             is_first_timer ? "true" : "false");
   }
   gpr_mu_unlock(&shard->mu);
@@ -460,11 +462,11 @@ static int refill_heap(timer_shard* shard, gpr_atm now) {
   /* Compute the new cap and put all timers under it into the queue: */
   shard->queue_deadline_cap =
       saturating_add(GPR_MAX(now, shard->queue_deadline_cap),
-                     (gpr_atm)(deadline_delta * 1000.0));
+                     static_cast<gpr_atm>(deadline_delta * 1000.0));
 
   if (grpc_timer_check_trace.enabled()) {
     gpr_log(GPR_DEBUG, "  .. shard[%d]->queue_deadline_cap --> %" PRIdPTR,
-            (int)(shard - g_shards), shard->queue_deadline_cap);
+            static_cast<int>(shard - g_shards), shard->queue_deadline_cap);
   }
   for (timer = shard->list.next; timer != &shard->list; timer = next) {
     next = timer->next;
@@ -489,7 +491,7 @@ static grpc_timer* pop_one(timer_shard* shard, gpr_atm now) {
   for (;;) {
     if (grpc_timer_check_trace.enabled()) {
       gpr_log(GPR_DEBUG, "  .. shard[%d]: heap_empty=%s",
-              (int)(shard - g_shards),
+              static_cast<int>(shard - g_shards),
               grpc_timer_heap_is_empty(&shard->heap) ? "true" : "false");
     }
     if (grpc_timer_heap_is_empty(&shard->heap)) {
@@ -529,7 +531,7 @@ static size_t pop_timers(timer_shard* shard, gpr_atm now,
   gpr_mu_unlock(&shard->mu);
   if (grpc_timer_check_trace.enabled()) {
     gpr_log(GPR_DEBUG, "  .. shard[%d] popped %" PRIdPTR,
-            (int)(shard - g_shards), n);
+            static_cast<int>(shard - g_shards), n);
   }
   return n;
 }
@@ -552,7 +554,7 @@ static grpc_timer_check_result run_some_expired_timers(gpr_atm now,
 
     if (grpc_timer_check_trace.enabled()) {
       gpr_log(GPR_DEBUG, "  .. shard[%d]->min_deadline = %" PRIdPTR,
-              (int)(g_shard_queue[0] - g_shards),
+              static_cast<int>(g_shard_queue[0] - g_shards),
               g_shard_queue[0]->min_deadline);
     }
 
@@ -572,7 +574,7 @@ static grpc_timer_check_result run_some_expired_timers(gpr_atm now,
                 "  .. result --> %d"
                 ", shard[%d]->min_deadline %" PRIdPTR " --> %" PRIdPTR
                 ", now=%" PRIdPTR,
-                result, (int)(g_shard_queue[0] - g_shards),
+                result, static_cast<int>(g_shard_queue[0] - g_shards),
                 g_shard_queue[0]->min_deadline, new_min_deadline, now);
       }
 

@@ -24,8 +24,8 @@
 #include <grpc++/server_context.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
 
+#include "src/core/lib/gpr/host_port.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 #include "test/cpp/qps/server.h"
 #include "test/cpp/qps/usage_timer.h"

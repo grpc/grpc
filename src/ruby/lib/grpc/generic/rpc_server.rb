@@ -244,9 +244,9 @@ module GRPC
         fail 'Cannot stop before starting' if @running_state == :not_started
         return if @running_state != :running
         transition_running_state(:stopping)
+        deadline = from_relative_time(@poll_period)
+        @server.shutdown_and_notify(deadline)
       end
-      deadline = from_relative_time(@poll_period)
-      @server.close(deadline)
       @pool.stop
     end
 
@@ -416,8 +416,11 @@ module GRPC
         end
       end
       # @running_state should be :stopping here
-      @run_mutex.synchronize { transition_running_state(:stopped) }
-      GRPC.logger.info("stopped: #{self}")
+      @run_mutex.synchronize do
+        transition_running_state(:stopped)
+        GRPC.logger.info("stopped: #{self}")
+        @server.close
+      end
     end
 
     def new_active_server_call(an_rpc)

@@ -142,18 +142,24 @@ class EndpointPairFixture {
 
 class InProcessCHTTP2 : public EndpointPairFixture {
  public:
-  InProcessCHTTP2(Service* service)
-      : EndpointPairFixture(service, MakeEndpoints()) {}
+  InProcessCHTTP2(Service* service, grpc_passthru_endpoint_stats* stats)
+      : EndpointPairFixture(service, MakeEndpoints(stats)), stats_(stats) {}
 
-  int writes_performed() const { return stats_.num_writes; }
+  virtual ~InProcessCHTTP2() {
+    if (stats_ != nullptr) {
+      grpc_passthru_endpoint_stats_destroy(stats_);
+    }
+  }
+
+  int writes_performed() const { return stats_->num_writes; }
 
  private:
-  grpc_passthru_endpoint_stats stats_;
+  grpc_passthru_endpoint_stats* stats_;
 
-  grpc_endpoint_pair MakeEndpoints() {
+  static grpc_endpoint_pair MakeEndpoints(grpc_passthru_endpoint_stats* stats) {
     grpc_endpoint_pair p;
     grpc_passthru_endpoint_create(&p.client, &p.server, initialize_stuff.rq(),
-                                  &stats_);
+                                  stats);
     return p;
   }
 };
@@ -162,7 +168,8 @@ static double UnaryPingPong(int request_size, int response_size) {
   const int kIterations = 10000;
 
   EchoTestService::AsyncService service;
-  std::unique_ptr<InProcessCHTTP2> fixture(new InProcessCHTTP2(&service));
+  std::unique_ptr<InProcessCHTTP2> fixture(
+      new InProcessCHTTP2(&service, grpc_passthru_endpoint_stats_create()));
   EchoRequest send_request;
   EchoResponse send_response;
   EchoResponse recv_response;
@@ -210,7 +217,7 @@ static double UnaryPingPong(int request_size, int response_size) {
     for (int i = (1 << 3) | (1 << 4); i != 0;) {
       GPR_ASSERT(fixture->cq()->Next(&t, &ok));
       GPR_ASSERT(ok);
-      int tagnum = (int)reinterpret_cast<intptr_t>(t);
+      int tagnum = static_cast<int>(reinterpret_cast<intptr_t>(t));
       GPR_ASSERT(i & (1 << tagnum));
       i -= 1 << tagnum;
     }
@@ -223,7 +230,8 @@ static double UnaryPingPong(int request_size, int response_size) {
   }
 
   double writes_per_iteration =
-      (double)fixture->writes_performed() / (double)kIterations;
+      static_cast<double>(fixture->writes_performed()) /
+      static_cast<double>(kIterations);
 
   fixture.reset();
   server_env[0]->~ServerEnv();

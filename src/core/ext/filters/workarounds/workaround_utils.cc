@@ -27,14 +27,14 @@ static void destroy_user_agent_md(void* user_agent_md) {
 
 grpc_workaround_user_agent_md* grpc_parse_user_agent(grpc_mdelem md) {
   grpc_workaround_user_agent_md* user_agent_md =
-      (grpc_workaround_user_agent_md*)grpc_mdelem_get_user_data(
-          md, destroy_user_agent_md);
+      static_cast<grpc_workaround_user_agent_md*>(
+          grpc_mdelem_get_user_data(md, destroy_user_agent_md));
 
   if (nullptr != user_agent_md) {
     return user_agent_md;
   }
-  user_agent_md = (grpc_workaround_user_agent_md*)gpr_malloc(
-      sizeof(grpc_workaround_user_agent_md));
+  user_agent_md = static_cast<grpc_workaround_user_agent_md*>(
+      gpr_malloc(sizeof(grpc_workaround_user_agent_md)));
   for (int i = 0; i < GRPC_MAX_WORKAROUND_ID; i++) {
     if (ua_parser[i]) {
       user_agent_md->workaround_active[i] = ua_parser[i](md);

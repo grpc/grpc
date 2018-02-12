@@ -23,7 +23,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/useful.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
@@ -124,7 +123,7 @@ static void do_read(internal_request* req) {
 }
 
 static void on_read(void* user_data, grpc_error* error) {
-  internal_request* req = (internal_request*)user_data;
+  internal_request* req = static_cast<internal_request*>(user_data);
   size_t i;
 
   for (i = 0; i < req->incoming.count; i++) {
@@ -151,7 +150,7 @@ static void on_read(void* user_data, grpc_error* error) {
 static void on_written(internal_request* req) { do_read(req); }
 
 static void done_write(void* arg, grpc_error* error) {
-  internal_request* req = (internal_request*)arg;
+  internal_request* req = static_cast<internal_request*>(arg);
   if (error == GRPC_ERROR_NONE) {
     on_written(req);
   } else {
@@ -166,7 +165,7 @@ static void start_write(internal_request* req) {
 }
 
 static void on_handshake_done(void* arg, grpc_endpoint* ep) {
-  internal_request* req = (internal_request*)arg;
+  internal_request* req = static_cast<internal_request*>(arg);
 
   if (!ep) {
     next_address(req, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -179,7 +178,7 @@ static void on_handshake_done(void* arg, grpc_endpoint* ep) {
 }
 
 static void on_connected(void* arg, grpc_error* error) {
-  internal_request* req = (internal_request*)arg;
+  internal_request* req = static_cast<internal_request*>(arg);
 
   if (!req->ep) {
     next_address(req, GRPC_ERROR_REF(error));
@@ -213,7 +212,7 @@ static void next_address(internal_request* req, grpc_error* error) {
 }
 
 static void on_resolved(void* arg, grpc_error* error) {
-  internal_request* req = (internal_request*)arg;
+  internal_request* req = static_cast<internal_request*>(arg);
   if (error != GRPC_ERROR_NONE) {
     finish(req, GRPC_ERROR_REF(error));
     return;
@@ -230,7 +229,7 @@ static void internal_request_begin(grpc_httpcli_context* context,
                                    grpc_httpcli_response* response,
                                    const char* name, grpc_slice request_text) {
   internal_request* req =
-      (internal_request*)gpr_malloc(sizeof(internal_request));
+      static_cast<internal_request*>(gpr_malloc(sizeof(internal_request)));
   memset(req, 0, sizeof(*req));
   req->request_text = request_text;
   grpc_http_parser_init(&req->parser, GRPC_HTTP_RESPONSE, response);

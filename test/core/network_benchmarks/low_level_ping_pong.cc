@@ -35,13 +35,14 @@
 #include <sys/socket.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/cmdline.h>
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
 #include <grpc/support/time.h>
-#include <grpc/support/useful.h>
+
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "test/core/util/cmdline.h"
 #include "test/core/util/histogram.h"
 
 typedef struct fd_pair {
@@ -83,7 +84,7 @@ static int read_bytes(int fd, char* buf, size_t read_size, int spin) {
         return -1;
       }
     } else {
-      bytes_read += (size_t)err;
+      bytes_read += static_cast<size_t>(err);
     }
   } while (bytes_read < read_size);
   return 0;
@@ -126,7 +127,7 @@ static int poll_read_bytes(int fd, char* buf, size_t read_size, int spin) {
       gpr_log(GPR_ERROR, "Read failed: %s", strerror(errno));
       return -1;
     }
-    bytes_read += (size_t)err2;
+    bytes_read += static_cast<size_t>(err2);
   } while (bytes_read < read_size);
   return 0;
 }
@@ -165,7 +166,7 @@ static int epoll_read_bytes(struct thread_args* args, char* buf, int spin) {
             read(args->fds.read_fd, buf + bytes_read, read_size - bytes_read);
       } while (err2 < 0 && errno == EINTR);
       if (errno == EAGAIN) break;
-      bytes_read += (size_t)err2;
+      bytes_read += static_cast<size_t>(err2);
       /* TODO(klempner): This should really be doing an extra call after we are
          done to ensure we see an EAGAIN */
     } while (bytes_read < read_size);
@@ -202,7 +203,7 @@ static int blocking_write_bytes(struct thread_args* args, char* buf) {
         return -1;
       }
     } else {
-      bytes_written += (size_t)err;
+      bytes_written += static_cast<size_t>(err);
     }
   } while (bytes_written < write_size);
   return 0;
@@ -287,7 +288,7 @@ static void print_histogram(grpc_histogram* histogram) {
 
 static double now(void) {
   gpr_timespec tv = gpr_now(GPR_CLOCK_REALTIME);
-  return 1e9 * (double)tv.tv_sec + (double)tv.tv_nsec;
+  return 1e9 * static_cast<double>(tv.tv_sec) + static_cast<double>(tv.tv_nsec);
 }
 
 static void client_thread(thread_args* args) {
@@ -419,7 +420,7 @@ static int create_sockets_tcp(fd_pair* client_fds, fd_pair* server_fds) {
   int server_fd = -1;
 
   struct sockaddr_in port;
-  struct sockaddr* sa_port = (struct sockaddr*)&port;
+  struct sockaddr* sa_port = reinterpret_cast<struct sockaddr*>(&port);
 
   port.sin_family = AF_INET;
   port.sin_port = 0;
@@ -651,7 +652,7 @@ int main(int argc, char** argv) {
 
   if (read_strategy == nullptr) {
     gpr_log(GPR_INFO, "No strategy specified, running all benchmarks");
-    return run_all_benchmarks((size_t)msg_size);
+    return run_all_benchmarks(static_cast<size_t>(msg_size));
   }
 
   if (socket_type == nullptr) {
@@ -678,12 +679,12 @@ int main(int argc, char** argv) {
   client_args->read_bytes = strategy->read_strategy;
   client_args->write_bytes = blocking_write_bytes;
   client_args->setup = strategy->setup;
-  client_args->msg_size = (size_t)msg_size;
+  client_args->msg_size = static_cast<size_t>(msg_size);
   client_args->strategy_name = read_strategy;
   server_args->read_bytes = strategy->read_strategy;
   server_args->write_bytes = blocking_write_bytes;
   server_args->setup = strategy->setup;
-  server_args->msg_size = (size_t)msg_size;
+  server_args->msg_size = static_cast<size_t>(msg_size);
   server_args->strategy_name = read_strategy;
 
   error = run_benchmark(socket_type, client_args, server_args);

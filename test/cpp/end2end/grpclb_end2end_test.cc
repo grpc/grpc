@@ -35,6 +35,7 @@
 
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 
 #include "test/core/util/port.h"
@@ -220,30 +221,31 @@ class BalancerServiceImpl : public BalancerService {
 
     if (client_load_reporting_interval_seconds_ > 0) {
       request.Clear();
-      stream->Read(&request);
-      gpr_log(GPR_INFO, "LB[%p]: recv client load report msg: '%s'", this,
-              request.DebugString().c_str());
-      GPR_ASSERT(request.has_client_stats());
-      // We need to acquire the lock here in order to prevent the notify_one
-      // below from firing before its corresponding wait is executed.
-      std::lock_guard<std::mutex> lock(mu_);
-      client_stats_.num_calls_started +=
-          request.client_stats().num_calls_started();
-      client_stats_.num_calls_finished +=
-          request.client_stats().num_calls_finished();
-      client_stats_.num_calls_finished_with_client_failed_to_send +=
-          request.client_stats()
-              .num_calls_finished_with_client_failed_to_send();
-      client_stats_.num_calls_finished_known_received +=
-          request.client_stats().num_calls_finished_known_received();
-      for (const auto& drop_token_count :
-           request.client_stats().calls_finished_with_drop()) {
-        client_stats_
-            .drop_token_counts[drop_token_count.load_balance_token()] +=
-            drop_token_count.num_calls();
+      if (stream->Read(&request)) {
+        gpr_log(GPR_INFO, "LB[%p]: recv client load report msg: '%s'", this,
+                request.DebugString().c_str());
+        GPR_ASSERT(request.has_client_stats());
+        // We need to acquire the lock here in order to prevent the notify_one
+        // below from firing before its corresponding wait is executed.
+        std::lock_guard<std::mutex> lock(mu_);
+        client_stats_.num_calls_started +=
+            request.client_stats().num_calls_started();
+        client_stats_.num_calls_finished +=
+            request.client_stats().num_calls_finished();
+        client_stats_.num_calls_finished_with_client_failed_to_send +=
+            request.client_stats()
+                .num_calls_finished_with_client_failed_to_send();
+        client_stats_.num_calls_finished_known_received +=
+            request.client_stats().num_calls_finished_known_received();
+        for (const auto& drop_token_count :
+             request.client_stats().calls_finished_with_drop()) {
+          client_stats_
+              .drop_token_counts[drop_token_count.load_balance_token()] +=
+              drop_token_count.num_calls();
+        }
+        load_report_ready_ = true;
+        load_report_cond_.notify_one();
       }
-      load_report_ready_ = true;
-      load_report_cond_.notify_one();
     }
   done:
     gpr_log(GPR_INFO, "LB[%p]: done", this);
@@ -338,7 +340,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
   }
 
   void SetUp() override {
-    response_generator_ = grpc_fake_resolver_response_generator_create();
+    response_generator_ =
+        grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
     // Start the backends.
     for (size_t i = 0; i < num_backends_; ++i) {
       backends_.emplace_back(new BackendServiceImpl());
@@ -362,7 +365,6 @@ class GrpclbEnd2endTest : public ::testing::Test {
     for (size_t i = 0; i < balancers_.size(); ++i) {
       if (balancers_[i]->Shutdown()) balancer_servers_[i].Shutdown();
     }
-    grpc_fake_resolver_response_generator_unref(response_generator_);
   }
 
   void SetNextResolutionAllBalancers() {
@@ -377,7 +379,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     ChannelArguments args;
     args.SetGrpclbFallbackTimeout(fallback_timeout);
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
-                    response_generator_);
+                    response_generator_.get());
     std::ostringstream uri;
     uri << "fake:///servername_not_used";
     channel_ =
@@ -453,8 +455,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpc::string balancer_name;
   };
 
-  void SetNextResolution(const std::vector<AddressData>& address_data) {
-    grpc_core::ExecCtx exec_ctx;
+  grpc_lb_addresses* CreateLbAddressesFromAddressDataList(
+      const std::vector<AddressData>& address_data) {
     grpc_lb_addresses* addresses =
         grpc_lb_addresses_create(address_data.size(), nullptr);
     for (size_t i = 0; i < address_data.size(); ++i) {
@@ -468,10 +470,27 @@ class GrpclbEnd2endTest : public ::testing::Test {
       grpc_uri_destroy(lb_uri);
       gpr_free(lb_uri_str);
     }
+    return addresses;
+  }
+
+  void SetNextResolution(const std::vector<AddressData>& address_data) {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_lb_addresses* addresses =
+        CreateLbAddressesFromAddressDataList(address_data);
     grpc_arg fake_addresses = grpc_lb_addresses_create_channel_arg(addresses);
     grpc_channel_args fake_result = {1, &fake_addresses};
-    grpc_fake_resolver_response_generator_set_response(response_generator_,
-                                                       &fake_result);
+    response_generator_->SetResponse(&fake_result);
+    grpc_lb_addresses_destroy(addresses);
+  }
+
+  void SetNextReresolutionResponse(
+      const std::vector<AddressData>& address_data) {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_lb_addresses* addresses =
+        CreateLbAddressesFromAddressDataList(address_data);
+    grpc_arg fake_addresses = grpc_lb_addresses_create_channel_arg(addresses);
+    grpc_channel_args fake_result = {1, &fake_addresses};
+    response_generator_->SetReresolutionResponse(&fake_result);
     grpc_lb_addresses_destroy(addresses);
   }
 
@@ -573,7 +592,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
   std::vector<std::unique_ptr<BalancerServiceImpl>> balancers_;
   std::vector<ServerThread<BackendService>> backend_servers_;
   std::vector<ServerThread<BalancerService>> balancer_servers_;
-  grpc_fake_resolver_response_generator* response_generator_;
+  grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
+      response_generator_;
   const grpc::string kRequestMessage_ = "Live long and prosper.";
 };
 

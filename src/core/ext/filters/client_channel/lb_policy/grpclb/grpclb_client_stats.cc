@@ -24,7 +24,6 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/useful.h>
 
 #include "src/core/lib/channel/channel_args.h"
 
@@ -43,7 +42,7 @@ struct grpc_grpclb_client_stats {
 
 grpc_grpclb_client_stats* grpc_grpclb_client_stats_create() {
   grpc_grpclb_client_stats* client_stats =
-      (grpc_grpclb_client_stats*)gpr_zalloc(sizeof(*client_stats));
+      static_cast<grpc_grpclb_client_stats*>(gpr_zalloc(sizeof(*client_stats)));
   gpr_ref_init(&client_stats->refs, 1);
   return client_stats;
 }
@@ -89,8 +88,8 @@ void grpc_grpclb_client_stats_add_call_dropped_locked(
   // Record the drop.
   if (client_stats->drop_token_counts == nullptr) {
     client_stats->drop_token_counts =
-        (grpc_grpclb_dropped_call_counts*)gpr_zalloc(
-            sizeof(grpc_grpclb_dropped_call_counts));
+        static_cast<grpc_grpclb_dropped_call_counts*>(
+            gpr_zalloc(sizeof(grpc_grpclb_dropped_call_counts)));
   }
   grpc_grpclb_dropped_call_counts* drop_token_counts =
       client_stats->drop_token_counts;
@@ -105,9 +104,9 @@ void grpc_grpclb_client_stats_add_call_dropped_locked(
   while (new_num_entries < drop_token_counts->num_entries + 1) {
     new_num_entries *= 2;
   }
-  drop_token_counts->token_counts = (grpc_grpclb_drop_token_count*)gpr_realloc(
-      drop_token_counts->token_counts,
-      new_num_entries * sizeof(grpc_grpclb_drop_token_count));
+  drop_token_counts->token_counts = static_cast<grpc_grpclb_drop_token_count*>(
+      gpr_realloc(drop_token_counts->token_counts,
+                  new_num_entries * sizeof(grpc_grpclb_drop_token_count)));
   grpc_grpclb_drop_token_count* new_entry =
       &drop_token_counts->token_counts[drop_token_counts->num_entries++];
   new_entry->token = gpr_strdup(token);
@@ -115,7 +114,7 @@ void grpc_grpclb_client_stats_add_call_dropped_locked(
 }
 
 static void atomic_get_and_reset_counter(int64_t* value, gpr_atm* counter) {
-  *value = (int64_t)gpr_atm_acq_load(counter);
+  *value = static_cast<int64_t>(gpr_atm_acq_load(counter));
   gpr_atm_full_fetch_add(counter, (gpr_atm)(-*value));
 }
 

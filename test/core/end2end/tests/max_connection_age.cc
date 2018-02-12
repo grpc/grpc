@@ -24,8 +24,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
-#include <grpc/support/useful.h>
 
+#include "src/core/lib/gpr/useful.h"
 #include "test/core/end2end/cq_verifier.h"
 
 #define MAX_CONNECTION_AGE_MS 500
@@ -145,7 +145,8 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error =
@@ -156,7 +157,8 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
   cq_verify(cqv);
 
   gpr_timespec expect_shutdown_time = grpc_timeout_milliseconds_to_deadline(
-      (int)(MAX_CONNECTION_AGE_MS * MAX_CONNECTION_AGE_JITTER_MULTIPLIER) +
+      static_cast<int>(MAX_CONNECTION_AGE_MS *
+                       MAX_CONNECTION_AGE_JITTER_MULTIPLIER) +
       MAX_CONNECTION_AGE_GRACE_MS + IMMEDIATE_SHUTDOWN_GRACE_TIME_MS);
 
   /* Wait for the channel to reach its max age */
@@ -190,7 +192,8 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(102), true);
   cq_verify(cqv);
@@ -288,7 +291,8 @@ static void test_max_age_gracefully_close(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error =
@@ -325,7 +329,8 @@ static void test_max_age_gracefully_close(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), true);

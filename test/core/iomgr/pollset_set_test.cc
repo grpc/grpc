@@ -27,8 +27,8 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/useful.h>
 
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "test/core/util/test_config.h"
@@ -103,7 +103,7 @@ typedef struct test_fd {
 } test_fd;
 
 void on_readable(void* tfd, grpc_error* error) {
-  ((test_fd*)tfd)->is_on_readable_called = true;
+  (static_cast<test_fd*>(tfd))->is_on_readable_called = true;
 }
 
 static void reset_test_fd(test_fd* tfd) {

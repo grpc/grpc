@@ -40,7 +40,7 @@ typedef struct {
 
 static void httpcli_ssl_destroy(grpc_security_connector* sc) {
   grpc_httpcli_ssl_channel_security_connector* c =
-      (grpc_httpcli_ssl_channel_security_connector*)sc;
+      reinterpret_cast<grpc_httpcli_ssl_channel_security_connector*>(sc);
   if (c->handshaker_factory != nullptr) {
     tsi_ssl_client_handshaker_factory_unref(c->handshaker_factory);
     c->handshaker_factory = nullptr;
@@ -52,7 +52,7 @@ static void httpcli_ssl_destroy(grpc_security_connector* sc) {
 static void httpcli_ssl_add_handshakers(grpc_channel_security_connector* sc,
                                         grpc_handshake_manager* handshake_mgr) {
   grpc_httpcli_ssl_channel_security_connector* c =
-      (grpc_httpcli_ssl_channel_security_connector*)sc;
+      reinterpret_cast<grpc_httpcli_ssl_channel_security_connector*>(sc);
   tsi_handshaker* handshaker = nullptr;
   if (c->handshaker_factory != nullptr) {
     tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
@@ -71,7 +71,7 @@ static void httpcli_ssl_check_peer(grpc_security_connector* sc, tsi_peer peer,
                                    grpc_auth_context** auth_context,
                                    grpc_closure* on_peer_checked) {
   grpc_httpcli_ssl_channel_security_connector* c =
-      (grpc_httpcli_ssl_channel_security_connector*)sc;
+      reinterpret_cast<grpc_httpcli_ssl_channel_security_connector*>(sc);
   grpc_error* error = GRPC_ERROR_NONE;
 
   /* Check the peer name. */
@@ -90,9 +90,9 @@ static void httpcli_ssl_check_peer(grpc_security_connector* sc, tsi_peer peer,
 static int httpcli_ssl_cmp(grpc_security_connector* sc1,
                            grpc_security_connector* sc2) {
   grpc_httpcli_ssl_channel_security_connector* c1 =
-      (grpc_httpcli_ssl_channel_security_connector*)sc1;
+      reinterpret_cast<grpc_httpcli_ssl_channel_security_connector*>(sc1);
   grpc_httpcli_ssl_channel_security_connector* c2 =
-      (grpc_httpcli_ssl_channel_security_connector*)sc2;
+      reinterpret_cast<grpc_httpcli_ssl_channel_security_connector*>(sc2);
   return strcmp(c1->secure_peer_name, c2->secure_peer_name);
 }
 
@@ -111,8 +111,8 @@ static grpc_security_status httpcli_ssl_channel_security_connector_create(
     return GRPC_SECURITY_ERROR;
   }
 
-  c = (grpc_httpcli_ssl_channel_security_connector*)gpr_zalloc(
-      sizeof(grpc_httpcli_ssl_channel_security_connector));
+  c = static_cast<grpc_httpcli_ssl_channel_security_connector*>(
+      gpr_zalloc(sizeof(grpc_httpcli_ssl_channel_security_connector)));
 
   gpr_ref_init(&c->base.base.refcount, 1);
   c->base.base.vtable = &httpcli_ssl_vtable;
@@ -146,8 +146,8 @@ typedef struct {
 } on_done_closure;
 
 static void on_handshake_done(void* arg, grpc_error* error) {
-  grpc_handshaker_args* args = (grpc_handshaker_args*)arg;
-  on_done_closure* c = (on_done_closure*)args->user_data;
+  grpc_handshaker_args* args = static_cast<grpc_handshaker_args*>(arg);
+  on_done_closure* c = static_cast<on_done_closure*>(args->user_data);
   if (error != GRPC_ERROR_NONE) {
     const char* msg = grpc_error_string(error);
     gpr_log(GPR_ERROR, "Secure transport setup failed: %s", msg);
@@ -166,7 +166,7 @@ static void on_handshake_done(void* arg, grpc_error* error) {
 static void ssl_handshake(void* arg, grpc_endpoint* tcp, const char* host,
                           grpc_millis deadline,
                           void (*on_done)(void* arg, grpc_endpoint* endpoint)) {
-  on_done_closure* c = (on_done_closure*)gpr_malloc(sizeof(*c));
+  on_done_closure* c = static_cast<on_done_closure*>(gpr_malloc(sizeof(*c)));
   const char* pem_root_certs = grpc_get_default_ssl_roots();
   if (pem_root_certs == nullptr) {
     gpr_log(GPR_ERROR, "Could not get default pem root certs.");

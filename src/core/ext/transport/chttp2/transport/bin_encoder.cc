@@ -53,7 +53,7 @@ grpc_slice grpc_chttp2_base64_encode(grpc_slice input) {
   size_t output_length = input_triplets * 4 + tail_xtra[tail_case];
   grpc_slice output = GRPC_SLICE_MALLOC(output_length);
   uint8_t* in = GRPC_SLICE_START_PTR(input);
-  char* out = (char*)GRPC_SLICE_START_PTR(output);
+  char* out = reinterpret_cast<char*> GRPC_SLICE_START_PTR(output);
   size_t i;
 
   /* encode full triplets */
@@ -115,7 +115,7 @@ grpc_slice grpc_chttp2_huffman_compress(grpc_slice input) {
 
     while (temp_length > 8) {
       temp_length -= 8;
-      *out++ = (uint8_t)(temp >> temp_length);
+      *out++ = static_cast<uint8_t>(temp >> temp_length);
     }
   }
 
@@ -124,8 +124,9 @@ grpc_slice grpc_chttp2_huffman_compress(grpc_slice input) {
      * expanded form due to the "integral promotion" performed (see section
      * 3.2.1.1 of the C89 draft standard). A cast to the smaller container type
      * is then required to avoid the compiler warning */
-    *out++ = (uint8_t)((uint8_t)(temp << (8u - temp_length)) |
-                       (uint8_t)(0xffu >> temp_length));
+    *out++ =
+        static_cast<uint8_t>(static_cast<uint8_t>(temp << (8u - temp_length)) |
+                             static_cast<uint8_t>(0xffu >> temp_length));
   }
 
   GPR_ASSERT(out == GRPC_SLICE_END_PTR(output));
@@ -142,7 +143,7 @@ typedef struct {
 static void enc_flush_some(huff_out* out) {
   while (out->temp_length > 8) {
     out->temp_length -= 8;
-    *out->out++ = (uint8_t)(out->temp >> out->temp_length);
+    *out->out++ = static_cast<uint8_t>(out->temp >> out->temp_length);
   }
 }
 
@@ -150,8 +151,9 @@ static void enc_add2(huff_out* out, uint8_t a, uint8_t b) {
   b64_huff_sym sa = huff_alphabet[a];
   b64_huff_sym sb = huff_alphabet[b];
   out->temp = (out->temp << (sa.length + sb.length)) |
-              ((uint32_t)sa.bits << sb.length) | sb.bits;
-  out->temp_length += (uint32_t)sa.length + (uint32_t)sb.length;
+              (static_cast<uint32_t>(sa.bits) << sb.length) | sb.bits;
+  out->temp_length +=
+      static_cast<uint32_t>(sa.length) + static_cast<uint32_t>(sb.length);
   enc_flush_some(out);
 }
 
@@ -181,11 +183,11 @@ grpc_slice grpc_chttp2_base64_encode_and_huffman_compress(grpc_slice input) {
 
   /* encode full triplets */
   for (i = 0; i < input_triplets; i++) {
-    const uint8_t low_to_high = (uint8_t)((in[0] & 0x3) << 4);
+    const uint8_t low_to_high = static_cast<uint8_t>((in[0] & 0x3) << 4);
     const uint8_t high_to_low = in[1] >> 4;
     enc_add2(&out, in[0] >> 2, low_to_high | high_to_low);
 
-    const uint8_t a = (uint8_t)((in[1] & 0xf) << 2);
+    const uint8_t a = static_cast<uint8_t>((in[1] & 0xf) << 2);
     const uint8_t b = (in[2] >> 6);
     enc_add2(&out, a | b, in[2] & 0x3f);
     in += 3;
@@ -196,14 +198,14 @@ grpc_slice grpc_chttp2_base64_encode_and_huffman_compress(grpc_slice input) {
     case 0:
       break;
     case 1:
-      enc_add2(&out, in[0] >> 2, (uint8_t)((in[0] & 0x3) << 4));
+      enc_add2(&out, in[0] >> 2, static_cast<uint8_t>((in[0] & 0x3) << 4));
       in += 1;
       break;
     case 2: {
-      const uint8_t low_to_high = (uint8_t)((in[0] & 0x3) << 4);
+      const uint8_t low_to_high = static_cast<uint8_t>((in[0] & 0x3) << 4);
       const uint8_t high_to_low = in[1] >> 4;
       enc_add2(&out, in[0] >> 2, low_to_high | high_to_low);
-      enc_add1(&out, (uint8_t)((in[1] & 0xf) << 2));
+      enc_add1(&out, static_cast<uint8_t>((in[1] & 0xf) << 2));
       in += 2;
       break;
     }
@@ -214,8 +216,9 @@ grpc_slice grpc_chttp2_base64_encode_and_huffman_compress(grpc_slice input) {
      * expanded form due to the "integral promotion" performed (see section
      * 3.2.1.1 of the C89 draft standard). A cast to the smaller container type
      * is then required to avoid the compiler warning */
-    *out.out++ = (uint8_t)((uint8_t)(out.temp << (8u - out.temp_length)) |
-                           (uint8_t)(0xffu >> out.temp_length));
+    *out.out++ = static_cast<uint8_t>(
+        static_cast<uint8_t>(out.temp << (8u - out.temp_length)) |
+        static_cast<uint8_t>(0xffu >> out.temp_length));
   }
 
   GPR_ASSERT(out.out <= GRPC_SLICE_END_PTR(output));

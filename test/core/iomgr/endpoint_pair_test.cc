@@ -21,7 +21,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include <grpc/support/useful.h>
+
+#include "src/core/lib/gpr/useful.h"
 #include "test/core/iomgr/endpoint_tests.h"
 #include "test/core/util/test_config.h"
 
@@ -37,7 +38,7 @@ static grpc_endpoint_test_fixture create_fixture_endpoint_pair(
   grpc_arg a[1];
   a[0].key = const_cast<char*>(GRPC_ARG_TCP_READ_CHUNK_SIZE);
   a[0].type = GRPC_ARG_INTEGER;
-  a[0].value.integer = (int)slice_size;
+  a[0].value.integer = static_cast<int>(slice_size);
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
   grpc_endpoint_pair p = grpc_iomgr_create_endpoint_pair("test", &args);
 

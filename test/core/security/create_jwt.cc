@@ -24,8 +24,9 @@
 
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/cmdline.h>
 #include <grpc/support/log.h>
+
+#include "test/core/util/cmdline.h"
 
 void create_jwt(const char* json_key_file_path, const char* service_url,
                 const char* scope) {
@@ -35,7 +36,7 @@ void create_jwt(const char* json_key_file_path, const char* service_url,
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "load_file", grpc_load_file(json_key_file_path, 1, &json_key_data)));
   key = grpc_auth_json_key_create_from_string(
-      (const char*)GRPC_SLICE_START_PTR(json_key_data));
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(json_key_data));
   grpc_slice_unref(json_key_data);
   if (!grpc_auth_json_key_is_valid(&key)) {
     fprintf(stderr, "Could not parse json key.\n");

@@ -22,7 +22,7 @@ from tests.unit.framework.common import test_constants
 
 
 def _channel_and_completion_queue():
-    channel = cygrpc.Channel(b'localhost:54321', cygrpc.ChannelArgs(()))
+    channel = cygrpc.Channel(b'localhost:54321', ())
     completion_queue = cygrpc.CompletionQueue()
     return channel, completion_queue
 

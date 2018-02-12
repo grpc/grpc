@@ -74,7 +74,7 @@ bool parse_duration(grpc_json* field, grpc_millis* duration) {
       gpr_free(buf);
       return false;
     }
-    int num_digits = (int)strlen(decimal_point + 1);
+    int num_digits = static_cast<int>(strlen(decimal_point + 1));
     if (num_digits > 9) {  // We don't accept greater precision than nanos.
       gpr_free(buf);
       return false;
@@ -173,7 +173,8 @@ void* method_parameters_create_from_json(const grpc_json* json,
       if (!parse_retry_policy(field, retry_policy)) goto error;
     }
   }
-  value = (method_parameters*)gpr_malloc(sizeof(method_parameters));
+  value =
+      static_cast<method_parameters*>(gpr_malloc(sizeof(method_parameters)));
   gpr_ref_init(&value->refs, 1);
   value->timeout = timeout;
   value->wait_for_ready = wait_for_ready;

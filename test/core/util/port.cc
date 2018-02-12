@@ -75,8 +75,8 @@ static void chose_port(int port) {
     atexit(free_chosen_ports);
   }
   num_chosen_ports++;
-  chosen_ports =
-      (int*)gpr_realloc(chosen_ports, sizeof(int) * num_chosen_ports);
+  chosen_ports = static_cast<int*>(
+      gpr_realloc(chosen_ports, sizeof(int) * num_chosen_ports));
   chosen_ports[num_chosen_ports - 1] = port;
 }
 

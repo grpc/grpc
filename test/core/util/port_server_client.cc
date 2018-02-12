@@ -41,13 +41,14 @@ typedef struct freereq {
 } freereq;
 
 static void destroy_pops_and_shutdown(void* p, grpc_error* error) {
-  grpc_pollset* pollset = grpc_polling_entity_pollset((grpc_polling_entity*)p);
+  grpc_pollset* pollset =
+      grpc_polling_entity_pollset(static_cast<grpc_polling_entity*>(p));
   grpc_pollset_destroy(pollset);
   gpr_free(pollset);
 }
 
 static void freed_port_from_server(void* arg, grpc_error* error) {
-  freereq* pr = (freereq*)arg;
+  freereq* pr = static_cast<freereq*>(arg);
   gpr_mu_lock(pr->mu);
   pr->done = 1;
   GRPC_LOG_IF_ERROR(
@@ -71,7 +72,8 @@ void grpc_free_port_using_server(int port) {
   memset(&req, 0, sizeof(req));
   memset(&rsp, 0, sizeof(rsp));
 
-  grpc_pollset* pollset = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
+  grpc_pollset* pollset =
+      static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(pollset, &pr.mu);
   pr.pops = grpc_polling_entity_create_from_pollset(pollset);
   shutdown_closure = GRPC_CLOSURE_CREATE(destroy_pops_and_shutdown, &pr.pops,
@@ -127,7 +129,7 @@ typedef struct portreq {
 static void got_port_from_server(void* arg, grpc_error* error) {
   size_t i;
   int port = 0;
-  portreq* pr = (portreq*)arg;
+  portreq* pr = static_cast<portreq*>(arg);
   int failed = 0;
   grpc_httpcli_response* response = &pr->response;
 
@@ -158,7 +160,8 @@ static void got_port_from_server(void* arg, grpc_error* error) {
     gpr_sleep_until(gpr_time_add(
         gpr_now(GPR_CLOCK_REALTIME),
         gpr_time_from_millis(
-            (int64_t)(1000.0 * (1 + pow(1.3, pr->retries) * rand() / RAND_MAX)),
+            static_cast<int64_t>(
+                1000.0 * (1 + pow(1.3, pr->retries) * rand() / RAND_MAX)),
             GPR_TIMESPAN)));
     pr->retries++;
     req.host = pr->server;
@@ -201,7 +204,8 @@ int grpc_pick_port_using_server(void) {
     grpc_core::ExecCtx exec_ctx;
     memset(&pr, 0, sizeof(pr));
     memset(&req, 0, sizeof(req));
-    grpc_pollset* pollset = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
+    grpc_pollset* pollset =
+        static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
     grpc_pollset_init(pollset, &pr.mu);
     pr.pops = grpc_polling_entity_create_from_pollset(pollset);
     shutdown_closure = GRPC_CLOSURE_CREATE(destroy_pops_and_shutdown, &pr.pops,

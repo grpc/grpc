@@ -22,14 +22,15 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/subprocess.h>
+
 #include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
+#include "test/core/util/subprocess.h"
 #include "test/core/util/test_config.h"
 
 static void* tag(intptr_t t) { return (void*)t; }
@@ -126,7 +127,7 @@ int main(int argc, char** argv) {
   gpr_subprocess* svr;
   /* figure out where we are */
   if (lslash) {
-    memcpy(root, me, (size_t)(lslash - me));
+    memcpy(root, me, static_cast<size_t>(lslash - me));
     root[lslash - me] = 0;
   } else {
     strcpy(root, ".");
@@ -138,7 +139,7 @@ int main(int argc, char** argv) {
   tmp = lunder - 1;
   while (*tmp != '_') tmp--;
   tmp++;
-  memcpy(test, tmp, (size_t)(lunder - tmp));
+  memcpy(test, tmp, static_cast<size_t>(lunder - tmp));
   /* start the server */
   gpr_asprintf(&args[0], "%s/bad_ssl_%s_server%s", root, test,
                gpr_subprocess_binary_extension());

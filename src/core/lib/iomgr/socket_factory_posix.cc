@@ -21,11 +21,11 @@
 #ifdef GRPC_POSIX_SOCKET
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/socket_factory_posix.h"
 
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/useful.h>
 
 void grpc_socket_factory_init(grpc_socket_factory* factory,
                               const grpc_socket_factory_vtable* vtable) {
@@ -69,16 +69,16 @@ void grpc_socket_factory_unref(grpc_socket_factory* factory) {
 }
 
 static void* socket_factory_arg_copy(void* p) {
-  return grpc_socket_factory_ref((grpc_socket_factory*)p);
+  return grpc_socket_factory_ref(static_cast<grpc_socket_factory*>(p));
 }
 
 static void socket_factory_arg_destroy(void* p) {
-  grpc_socket_factory_unref((grpc_socket_factory*)p);
+  grpc_socket_factory_unref(static_cast<grpc_socket_factory*>(p));
 }
 
 static int socket_factory_cmp(void* a, void* b) {
-  return grpc_socket_factory_compare((grpc_socket_factory*)a,
-                                     (grpc_socket_factory*)b);
+  return grpc_socket_factory_compare(static_cast<grpc_socket_factory*>(a),
+                                     static_cast<grpc_socket_factory*>(b));
 }
 
 static const grpc_arg_pointer_vtable socket_factory_arg_vtable = {

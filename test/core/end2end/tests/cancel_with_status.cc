@@ -27,7 +27,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
-#include <grpc/support/useful.h>
 #include "src/core/lib/gpr/string.h"
 #include "test/core/end2end/cq_verifier.h"
 

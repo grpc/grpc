@@ -44,7 +44,8 @@ DEFINE_bool(
 DEFINE_string(test_bin_name, "",
               "Name, without the preceding path, of the test binary");
 
-DEFINE_string(grpc_test_directory_relative_to_test_srcdir, "/__main__",
+DEFINE_string(grpc_test_directory_relative_to_test_srcdir,
+              "/com_github_grpc_grpc",
               "This flag only applies if runner_under_bazel is true. This "
               "flag is ignored if runner_under_bazel is false. "
               "Directory of the <repo-root>/test directory relative to bazel's "

@@ -143,7 +143,7 @@ typedef struct {
 } wrapped_closure;
 
 inline void closure_wrapper(void* arg, grpc_error* error) {
-  wrapped_closure* wc = (wrapped_closure*)arg;
+  wrapped_closure* wc = static_cast<wrapped_closure*>(arg);
   grpc_iomgr_cb_func cb = wc->cb;
   void* cb_arg = wc->cb_arg;
   gpr_free(wc);
@@ -161,7 +161,7 @@ inline grpc_closure* grpc_closure_create(grpc_iomgr_cb_func cb, void* cb_arg,
                                          grpc_closure_scheduler* scheduler) {
 #endif
   closure_impl::wrapped_closure* wc =
-      (closure_impl::wrapped_closure*)gpr_malloc(sizeof(*wc));
+      static_cast<closure_impl::wrapped_closure*>(gpr_malloc(sizeof(*wc)));
   wc->cb = cb;
   wc->cb_arg = cb_arg;
 #ifndef NDEBUG
@@ -247,7 +247,7 @@ inline void grpc_closure_run(const char* file, int line, grpc_closure* c,
 #else
 inline void grpc_closure_run(grpc_closure* c, grpc_error* error) {
 #endif
-  GPR_TIMER_BEGIN("grpc_closure_run", 0);
+  GPR_TIMER_SCOPE("grpc_closure_run", 0);
   if (c != nullptr) {
 #ifndef NDEBUG
     c->file_initiated = file;
@@ -259,7 +259,6 @@ inline void grpc_closure_run(grpc_closure* c, grpc_error* error) {
   } else {
     GRPC_ERROR_UNREF(error);
   }
-  GPR_TIMER_END("grpc_closure_run", 0);
 }
 
 /** Run a closure directly. Caller ensures that no locks are being held above.
@@ -278,7 +277,7 @@ inline void grpc_closure_sched(const char* file, int line, grpc_closure* c,
 #else
 inline void grpc_closure_sched(grpc_closure* c, grpc_error* error) {
 #endif
-  GPR_TIMER_BEGIN("grpc_closure_sched", 0);
+  GPR_TIMER_SCOPE("grpc_closure_sched", 0);
   if (c != nullptr) {
 #ifndef NDEBUG
     if (c->scheduled) {
@@ -299,7 +298,6 @@ inline void grpc_closure_sched(grpc_closure* c, grpc_error* error) {
   } else {
     GRPC_ERROR_UNREF(error);
   }
-  GPR_TIMER_END("grpc_closure_sched", 0);
 }
 
 /** Schedule a closure to be run. Does not need to be run from a safe point. */

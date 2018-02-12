@@ -42,7 +42,7 @@ namespace testing {
 
 namespace {
 
-void* tag(int i) { return (void*)(intptr_t)i; }
+void* tag(int i) { return (void*)static_cast<intptr_t>(i); }
 
 bool VerifyReturnSuccess(CompletionQueue* cq, int i) {
   void* got_tag;

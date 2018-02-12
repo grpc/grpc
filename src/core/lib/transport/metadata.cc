@@ -118,8 +118,8 @@ void grpc_mdctx_global_init(void) {
     shard->count = 0;
     gpr_atm_no_barrier_store(&shard->free_estimate, 0);
     shard->capacity = INITIAL_SHARD_CAPACITY;
-    shard->elems = (interned_metadata**)gpr_zalloc(sizeof(*shard->elems) *
-                                                   shard->capacity);
+    shard->elems = static_cast<interned_metadata**>(
+        gpr_zalloc(sizeof(*shard->elems) * shard->capacity));
   }
 }
 
@@ -166,12 +166,13 @@ static void ref_md_locked(mdtab_shard* shard,
 }
 
 static void gc_mdtab(mdtab_shard* shard) {
+  GPR_TIMER_SCOPE("gc_mdtab", 0);
+
   size_t i;
   interned_metadata** prev_next;
   interned_metadata *md, *next;
   gpr_atm num_freed = 0;
 
-  GPR_TIMER_BEGIN("gc_mdtab", 0);
   for (i = 0; i < shard->capacity; i++) {
     prev_next = &shard->elems[i];
     for (md = shard->elems[i]; md; md = next) {
@@ -194,20 +195,19 @@ static void gc_mdtab(mdtab_shard* shard) {
     }
   }
   gpr_atm_no_barrier_fetch_add(&shard->free_estimate, -num_freed);
-  GPR_TIMER_END("gc_mdtab", 0);
 }
 
 static void grow_mdtab(mdtab_shard* shard) {
+  GPR_TIMER_SCOPE("grow_mdtab", 0);
+
   size_t capacity = shard->capacity * 2;
   size_t i;
   interned_metadata** mdtab;
   interned_metadata *md, *next;
   uint32_t hash;
 
-  GPR_TIMER_BEGIN("grow_mdtab", 0);
-
-  mdtab =
-      (interned_metadata**)gpr_zalloc(sizeof(interned_metadata*) * capacity);
+  mdtab = static_cast<interned_metadata**>(
+      gpr_zalloc(sizeof(interned_metadata*) * capacity));
 
   for (i = 0; i < shard->capacity; i++) {
     for (md = shard->elems[i]; md; md = next) {
@@ -220,17 +220,14 @@ static void grow_mdtab(mdtab_shard* shard) {
       mdtab[idx] = md;
     }
   }
-
   gpr_free(shard->elems);
   shard->elems = mdtab;
   shard->capacity = capacity;
-
-  GPR_TIMER_END("grow_mdtab", 0);
 }
 
 static void rehash_mdtab(mdtab_shard* shard) {
   if (gpr_atm_no_barrier_load(&shard->free_estimate) >
-      (gpr_atm)(shard->capacity / 4)) {
+      static_cast<gpr_atm>(shard->capacity / 4)) {
     gc_mdtab(shard);
   } else {
     grow_mdtab(shard);
@@ -247,7 +244,7 @@ grpc_mdelem grpc_mdelem_create(
     }
 
     allocated_metadata* allocated =
-        (allocated_metadata*)gpr_malloc(sizeof(*allocated));
+        static_cast<allocated_metadata*>(gpr_malloc(sizeof(*allocated)));
     allocated->key = grpc_slice_ref_internal(key);
     allocated->value = grpc_slice_ref_internal(value);
     gpr_atm_rel_store(&allocated->refcnt, 1);
@@ -280,7 +277,7 @@ grpc_mdelem grpc_mdelem_create(
   mdtab_shard* shard = &g_shards[SHARD_IDX(hash)];
   size_t idx;
 
-  GPR_TIMER_BEGIN("grpc_mdelem_from_metadata_strings", 0);
+  GPR_TIMER_SCOPE("grpc_mdelem_from_metadata_strings", 0);
 
   gpr_mu_lock(&shard->mu);
 
@@ -290,13 +287,12 @@ grpc_mdelem grpc_mdelem_create(
     if (grpc_slice_eq(key, md->key) && grpc_slice_eq(value, md->value)) {
       REF_MD_LOCKED(shard, md);
       gpr_mu_unlock(&shard->mu);
-      GPR_TIMER_END("grpc_mdelem_from_metadata_strings", 0);
       return GRPC_MAKE_MDELEM(md, GRPC_MDELEM_STORAGE_INTERNED);
     }
   }
 
   /* not found: create a new pair */
-  md = (interned_metadata*)gpr_malloc(sizeof(interned_metadata));
+  md = static_cast<interned_metadata*>(gpr_malloc(sizeof(interned_metadata)));
   gpr_atm_rel_store(&md->refcnt, 1);
   md->key = grpc_slice_ref_internal(key);
   md->value = grpc_slice_ref_internal(value);
@@ -323,8 +319,6 @@ grpc_mdelem grpc_mdelem_create(
 
   gpr_mu_unlock(&shard->mu);
 
-  GPR_TIMER_END("grpc_mdelem_from_metadata_strings", 0);
-
   return GRPC_MAKE_MDELEM(md, GRPC_MDELEM_STORAGE_INTERNED);
 }
 
@@ -341,8 +335,9 @@ grpc_mdelem grpc_mdelem_from_grpc_metadata(grpc_metadata* metadata) {
       grpc_slice_maybe_static_intern(metadata->key, &changed);
   grpc_slice value_slice =
       grpc_slice_maybe_static_intern(metadata->value, &changed);
-  return grpc_mdelem_create(key_slice, value_slice,
-                            changed ? nullptr : (grpc_mdelem_data*)metadata);
+  return grpc_mdelem_create(
+      key_slice, value_slice,
+      changed ? nullptr : reinterpret_cast<grpc_mdelem_data*>(metadata));
 }
 
 static size_t get_base64_encoded_size(size_t raw_length) {
@@ -369,7 +364,8 @@ grpc_mdelem grpc_mdelem_ref(grpc_mdelem gmd DEBUG_ARGS) {
     case GRPC_MDELEM_STORAGE_STATIC:
       break;
     case GRPC_MDELEM_STORAGE_INTERNED: {
-      interned_metadata* md = (interned_metadata*)GRPC_MDELEM_DATA(gmd);
+      interned_metadata* md =
+          reinterpret_cast<interned_metadata*> GRPC_MDELEM_DATA(gmd);
 #ifndef NDEBUG
       if (grpc_trace_metadata.enabled()) {
         char* key_str = grpc_slice_to_c_string(md->key);
@@ -391,7 +387,8 @@ grpc_mdelem grpc_mdelem_ref(grpc_mdelem gmd DEBUG_ARGS) {
       break;
     }
     case GRPC_MDELEM_STORAGE_ALLOCATED: {
-      allocated_metadata* md = (allocated_metadata*)GRPC_MDELEM_DATA(gmd);
+      allocated_metadata* md =
+          reinterpret_cast<allocated_metadata*> GRPC_MDELEM_DATA(gmd);
 #ifndef NDEBUG
       if (grpc_trace_metadata.enabled()) {
         char* key_str = grpc_slice_to_c_string(md->key);
@@ -421,7 +418,8 @@ void grpc_mdelem_unref(grpc_mdelem gmd DEBUG_ARGS) {
     case GRPC_MDELEM_STORAGE_STATIC:
       break;
     case GRPC_MDELEM_STORAGE_INTERNED: {
-      interned_metadata* md = (interned_metadata*)GRPC_MDELEM_DATA(gmd);
+      interned_metadata* md =
+          reinterpret_cast<interned_metadata*> GRPC_MDELEM_DATA(gmd);
 #ifndef NDEBUG
       if (grpc_trace_metadata.enabled()) {
         char* key_str = grpc_slice_to_c_string(md->key);
@@ -447,7 +445,8 @@ void grpc_mdelem_unref(grpc_mdelem gmd DEBUG_ARGS) {
       break;
     }
     case GRPC_MDELEM_STORAGE_ALLOCATED: {
-      allocated_metadata* md = (allocated_metadata*)GRPC_MDELEM_DATA(gmd);
+      allocated_metadata* md =
+          reinterpret_cast<allocated_metadata*> GRPC_MDELEM_DATA(gmd);
 #ifndef NDEBUG
       if (grpc_trace_metadata.enabled()) {
         char* key_str = grpc_slice_to_c_string(md->key);
@@ -481,7 +480,8 @@ void* grpc_mdelem_get_user_data(grpc_mdelem md, void (*destroy_func)(void*)) {
       return (void*)grpc_static_mdelem_user_data[GRPC_MDELEM_DATA(md) -
                                                  grpc_static_mdelem_table];
     case GRPC_MDELEM_STORAGE_INTERNED: {
-      interned_metadata* im = (interned_metadata*)GRPC_MDELEM_DATA(md);
+      interned_metadata* im =
+          reinterpret_cast<interned_metadata*> GRPC_MDELEM_DATA(md);
       void* result;
       if (gpr_atm_acq_load(&im->destroy_user_data) == (gpr_atm)destroy_func) {
         return (void*)gpr_atm_no_barrier_load(&im->user_data);
@@ -506,7 +506,8 @@ void* grpc_mdelem_set_user_data(grpc_mdelem md, void (*destroy_func)(void*),
       return (void*)grpc_static_mdelem_user_data[GRPC_MDELEM_DATA(md) -
                                                  grpc_static_mdelem_table];
     case GRPC_MDELEM_STORAGE_INTERNED: {
-      interned_metadata* im = (interned_metadata*)GRPC_MDELEM_DATA(md);
+      interned_metadata* im =
+          reinterpret_cast<interned_metadata*> GRPC_MDELEM_DATA(md);
       GPR_ASSERT(!is_mdelem_static(md));
       GPR_ASSERT((user_data == nullptr) == (destroy_func == nullptr));
       gpr_mu_lock(&im->mu_user_data);

@@ -24,7 +24,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/useful.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
@@ -32,9 +31,9 @@
 #include "src/core/lib/transport/http2_errors.h"
 
 static uint8_t* fill_header(uint8_t* out, uint32_t length, uint8_t flags) {
-  *out++ = (uint8_t)(length >> 16);
-  *out++ = (uint8_t)(length >> 8);
-  *out++ = (uint8_t)(length);
+  *out++ = static_cast<uint8_t>(length >> 16);
+  *out++ = static_cast<uint8_t>(length >> 8);
+  *out++ = static_cast<uint8_t>(length);
   *out++ = GRPC_CHTTP2_FRAME_SETTINGS;
   *out++ = flags;
   *out++ = 0;
@@ -61,12 +60,12 @@ grpc_slice grpc_chttp2_settings_create(uint32_t* old_settings,
 
   for (i = 0; i < count; i++) {
     if (new_settings[i] != old_settings[i] || (force_mask & (1u << i)) != 0) {
-      *p++ = (uint8_t)(grpc_setting_id_to_wire_id[i] >> 8);
-      *p++ = (uint8_t)(grpc_setting_id_to_wire_id[i]);
-      *p++ = (uint8_t)(new_settings[i] >> 24);
-      *p++ = (uint8_t)(new_settings[i] >> 16);
-      *p++ = (uint8_t)(new_settings[i] >> 8);
-      *p++ = (uint8_t)(new_settings[i]);
+      *p++ = static_cast<uint8_t>(grpc_setting_id_to_wire_id[i] >> 8);
+      *p++ = static_cast<uint8_t>(grpc_setting_id_to_wire_id[i]);
+      *p++ = static_cast<uint8_t>(new_settings[i] >> 24);
+      *p++ = static_cast<uint8_t>(new_settings[i] >> 16);
+      *p++ = static_cast<uint8_t>(new_settings[i] >> 8);
+      *p++ = static_cast<uint8_t>(new_settings[i]);
       old_settings[i] = new_settings[i];
     }
   }
@@ -111,7 +110,8 @@ grpc_error* grpc_chttp2_settings_parser_begin_frame(
 grpc_error* grpc_chttp2_settings_parser_parse(void* p, grpc_chttp2_transport* t,
                                               grpc_chttp2_stream* s,
                                               grpc_slice slice, int is_last) {
-  grpc_chttp2_settings_parser* parser = (grpc_chttp2_settings_parser*)p;
+  grpc_chttp2_settings_parser* parser =
+      static_cast<grpc_chttp2_settings_parser*>(p);
   const uint8_t* cur = GRPC_SLICE_START_PTR(slice);
   const uint8_t* end = GRPC_SLICE_END_PTR(slice);
   char* msg;
@@ -138,7 +138,7 @@ grpc_error* grpc_chttp2_settings_parser_parse(void* p, grpc_chttp2_transport* t,
           }
           return GRPC_ERROR_NONE;
         }
-        parser->id = (uint16_t)(((uint16_t)*cur) << 8);
+        parser->id = static_cast<uint16_t>((static_cast<uint16_t>(*cur)) << 8);
         cur++;
       /* fallthrough */
       case GRPC_CHTTP2_SPS_ID1:
@@ -146,7 +146,7 @@ grpc_error* grpc_chttp2_settings_parser_parse(void* p, grpc_chttp2_transport* t,
           parser->state = GRPC_CHTTP2_SPS_ID1;
           return GRPC_ERROR_NONE;
         }
-        parser->id = (uint16_t)(parser->id | (*cur));
+        parser->id = static_cast<uint16_t>(parser->id | (*cur));
         cur++;
       /* fallthrough */
       case GRPC_CHTTP2_SPS_VAL0:
@@ -154,7 +154,7 @@ grpc_error* grpc_chttp2_settings_parser_parse(void* p, grpc_chttp2_transport* t,
           parser->state = GRPC_CHTTP2_SPS_VAL0;
           return GRPC_ERROR_NONE;
         }
-        parser->value = ((uint32_t)*cur) << 24;
+        parser->value = (static_cast<uint32_t>(*cur)) << 24;
         cur++;
       /* fallthrough */
       case GRPC_CHTTP2_SPS_VAL1:
@@ -162,7 +162,7 @@ grpc_error* grpc_chttp2_settings_parser_parse(void* p, grpc_chttp2_transport* t,
           parser->state = GRPC_CHTTP2_SPS_VAL1;
           return GRPC_ERROR_NONE;
         }
-        parser->value |= ((uint32_t)*cur) << 16;
+        parser->value |= (static_cast<uint32_t>(*cur)) << 16;
         cur++;
       /* fallthrough */
       case GRPC_CHTTP2_SPS_VAL2:
@@ -170,7 +170,7 @@ grpc_error* grpc_chttp2_settings_parser_parse(void* p, grpc_chttp2_transport* t,
           parser->state = GRPC_CHTTP2_SPS_VAL2;
           return GRPC_ERROR_NONE;
         }
-        parser->value |= ((uint32_t)*cur) << 8;
+        parser->value |= (static_cast<uint32_t>(*cur)) << 8;
         cur++;
       /* fallthrough */
       case GRPC_CHTTP2_SPS_VAL3:
@@ -212,12 +212,12 @@ grpc_error* grpc_chttp2_settings_parser_parse(void* p, grpc_chttp2_transport* t,
           }
           if (id == GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE &&
               parser->incoming_settings[id] != parser->value) {
-            t->initial_window_update +=
-                (int64_t)parser->value - parser->incoming_settings[id];
+            t->initial_window_update += static_cast<int64_t>(parser->value) -
+                                        parser->incoming_settings[id];
             if (grpc_http_trace.enabled() || grpc_flowctl_trace.enabled()) {
               gpr_log(GPR_DEBUG, "%p[%s] adding %d for initial_window change",
                       t, t->is_client ? "cli" : "svr",
-                      (int)t->initial_window_update);
+                      static_cast<int>(t->initial_window_update));
             }
           }
           parser->incoming_settings[id] = parser->value;

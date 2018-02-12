@@ -39,7 +39,8 @@ static void test_grpc_parse_unix(const char* uri_text, const char* pathname) {
   grpc_resolved_address addr;
 
   GPR_ASSERT(1 == grpc_parse_unix(uri, &addr));
-  struct sockaddr_un* addr_un = (struct sockaddr_un*)addr.addr;
+  struct sockaddr_un* addr_un =
+      reinterpret_cast<struct sockaddr_un*>(addr.addr);
   GPR_ASSERT(AF_UNIX == addr_un->sun_family);
   GPR_ASSERT(0 == strcmp(addr_un->sun_path, pathname));
 
@@ -60,7 +61,8 @@ static void test_grpc_parse_ipv4(const char* uri_text, const char* host,
   char ntop_buf[INET_ADDRSTRLEN];
 
   GPR_ASSERT(1 == grpc_parse_ipv4(uri, &addr));
-  struct sockaddr_in* addr_in = (struct sockaddr_in*)addr.addr;
+  struct sockaddr_in* addr_in =
+      reinterpret_cast<struct sockaddr_in*>(addr.addr);
   GPR_ASSERT(AF_INET == addr_in->sin_family);
   GPR_ASSERT(nullptr != grpc_inet_ntop(AF_INET, &addr_in->sin_addr, ntop_buf,
                                        sizeof(ntop_buf)));
@@ -78,7 +80,8 @@ static void test_grpc_parse_ipv6(const char* uri_text, const char* host,
   char ntop_buf[INET6_ADDRSTRLEN];
 
   GPR_ASSERT(1 == grpc_parse_ipv6(uri, &addr));
-  struct sockaddr_in6* addr_in6 = (struct sockaddr_in6*)addr.addr;
+  struct sockaddr_in6* addr_in6 =
+      reinterpret_cast<struct sockaddr_in6*>(addr.addr);
   GPR_ASSERT(AF_INET6 == addr_in6->sin6_family);
   GPR_ASSERT(nullptr != grpc_inet_ntop(AF_INET6, &addr_in6->sin6_addr, ntop_buf,
                                        sizeof(ntop_buf)));

@@ -19,9 +19,8 @@ set -e
 ROOT="$(dirname "$0")/../../.."
 
 DIRS=(
-    'tools/run_tests/artifacts'
-    'tools/run_tests/helper_scripts'
-    'tools/run_tests/sanity'
+    'test'
+    'tools/run_tests'
 )
 
 for dir in "${DIRS[@]}"; do

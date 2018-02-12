@@ -88,11 +88,11 @@ static void add(const char* beg, const char* end, char*** ss, size_t* ns) {
   char* s;
   size_t len;
   GPR_ASSERT(end >= beg);
-  len = (size_t)(end - beg);
-  s = (char*)gpr_malloc(len + 1);
+  len = static_cast<size_t>(end - beg);
+  s = static_cast<char*>(gpr_malloc(len + 1));
   memcpy(s, beg, len);
   s[len] = 0;
-  *ss = (char**)gpr_realloc(*ss, sizeof(char**) * np);
+  *ss = static_cast<char**>(gpr_realloc(*ss, sizeof(char**) * np));
   (*ss)[n] = s;
   *ns = np;
 }

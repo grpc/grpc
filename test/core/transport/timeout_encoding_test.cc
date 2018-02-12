@@ -24,9 +24,10 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/useful.h>
+
 #include "src/core/lib/gpr/murmur_hash.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/useful.h"
 #include "test/core/util/test_config.h"
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
@@ -102,20 +103,22 @@ void decode_suite(char ext, grpc_millis (*answer)(int64_t x)) {
 }
 
 static grpc_millis millis_from_nanos(int64_t x) {
-  return (grpc_millis)(x / GPR_NS_PER_MS + (x % GPR_NS_PER_MS != 0));
+  return static_cast<grpc_millis>(x / GPR_NS_PER_MS + (x % GPR_NS_PER_MS != 0));
 }
 static grpc_millis millis_from_micros(int64_t x) {
-  return (grpc_millis)(x / GPR_US_PER_MS + (x % GPR_US_PER_MS != 0));
+  return static_cast<grpc_millis>(x / GPR_US_PER_MS + (x % GPR_US_PER_MS != 0));
 }
-static grpc_millis millis_from_millis(int64_t x) { return (grpc_millis)x; }
+static grpc_millis millis_from_millis(int64_t x) {
+  return static_cast<grpc_millis>(x);
+}
 static grpc_millis millis_from_seconds(int64_t x) {
-  return (grpc_millis)(x * GPR_MS_PER_SEC);
+  return static_cast<grpc_millis>(x * GPR_MS_PER_SEC);
 }
 static grpc_millis millis_from_minutes(int64_t x) {
-  return (grpc_millis)(x * 60 * GPR_MS_PER_SEC);
+  return static_cast<grpc_millis>(x * 60 * GPR_MS_PER_SEC);
 }
 static grpc_millis millis_from_hours(int64_t x) {
-  return (grpc_millis)(x * 3600 * GPR_MS_PER_SEC);
+  return static_cast<grpc_millis>(x * 3600 * GPR_MS_PER_SEC);
 }
 
 void test_decoding(void) {

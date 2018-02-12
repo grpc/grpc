@@ -36,6 +36,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 
 #include "test/core/util/port.h"
@@ -230,8 +231,7 @@ class ClientChannelStressTest {
     }
     grpc_arg fake_addresses = grpc_lb_addresses_create_channel_arg(addresses);
     grpc_channel_args fake_result = {1, &fake_addresses};
-    grpc_fake_resolver_response_generator_set_response(response_generator_,
-                                                       &fake_result);
+    response_generator_->SetResponse(&fake_result);
     grpc_lb_addresses_destroy(addresses);
   }
 
@@ -253,9 +253,10 @@ class ClientChannelStressTest {
 
   void CreateStub() {
     ChannelArguments args;
-    response_generator_ = grpc_fake_resolver_response_generator_create();
+    response_generator_ =
+        grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
-                    response_generator_);
+                    response_generator_.get());
     std::ostringstream uri;
     uri << "fake:///servername_not_used";
     channel_ =
@@ -298,7 +299,6 @@ class ClientChannelStressTest {
     for (size_t i = 0; i < backends_.size(); ++i) {
       backend_servers_[i].Shutdown();
     }
-    grpc_fake_resolver_response_generator_unref(response_generator_);
   }
 
   std::atomic_bool shutdown_{false};
@@ -310,7 +310,8 @@ class ClientChannelStressTest {
   std::vector<std::unique_ptr<BalancerServiceImpl>> balancers_;
   std::vector<ServerThread<BackendServiceImpl>> backend_servers_;
   std::vector<ServerThread<BalancerServiceImpl>> balancer_servers_;
-  grpc_fake_resolver_response_generator* response_generator_;
+  grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
+      response_generator_;
   std::vector<std::thread> client_threads_;
 };
 

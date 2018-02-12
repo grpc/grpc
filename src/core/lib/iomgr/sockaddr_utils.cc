@@ -23,11 +23,11 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
@@ -39,13 +39,15 @@ static const uint8_t kV4MappedPrefix[] = {0, 0, 0, 0, 0,    0,
 int grpc_sockaddr_is_v4mapped(const grpc_resolved_address* resolved_addr,
                               grpc_resolved_address* resolved_addr4_out) {
   GPR_ASSERT(resolved_addr != resolved_addr4_out);
-  const struct sockaddr* addr = (const struct sockaddr*)resolved_addr->addr;
+  const struct sockaddr* addr =
+      reinterpret_cast<const struct sockaddr*>(resolved_addr->addr);
   struct sockaddr_in* addr4_out =
       resolved_addr4_out == nullptr
           ? nullptr
-          : (struct sockaddr_in*)resolved_addr4_out->addr;
+          : reinterpret_cast<struct sockaddr_in*>(resolved_addr4_out->addr);
   if (addr->sa_family == AF_INET6) {
-    const struct sockaddr_in6* addr6 = (const struct sockaddr_in6*)addr;
+    const struct sockaddr_in6* addr6 =
+        reinterpret_cast<const struct sockaddr_in6*>(addr);
     if (memcmp(addr6->sin6_addr.s6_addr, kV4MappedPrefix,
                sizeof(kV4MappedPrefix)) == 0) {
       if (resolved_addr4_out != nullptr) {
@@ -66,11 +68,13 @@ int grpc_sockaddr_is_v4mapped(const grpc_resolved_address* resolved_addr,
 int grpc_sockaddr_to_v4mapped(const grpc_resolved_address* resolved_addr,
                               grpc_resolved_address* resolved_addr6_out) {
   GPR_ASSERT(resolved_addr != resolved_addr6_out);
-  const struct sockaddr* addr = (const struct sockaddr*)resolved_addr->addr;
+  const struct sockaddr* addr =
+      reinterpret_cast<const struct sockaddr*>(resolved_addr->addr);
   struct sockaddr_in6* addr6_out =
-      (struct sockaddr_in6*)resolved_addr6_out->addr;
+      reinterpret_cast<struct sockaddr_in6*>(resolved_addr6_out->addr);
   if (addr->sa_family == AF_INET) {
-    const struct sockaddr_in* addr4 = (const struct sockaddr_in*)addr;
+    const struct sockaddr_in* addr4 =
+        reinterpret_cast<const struct sockaddr_in*>(addr);
     memset(resolved_addr6_out, 0, sizeof(*resolved_addr6_out));
     addr6_out->sin6_family = AF_INET6;
     memcpy(&addr6_out->sin6_addr.s6_addr[0], kV4MappedPrefix, 12);
@@ -89,10 +93,11 @@ int grpc_sockaddr_is_wildcard(const grpc_resolved_address* resolved_addr,
   if (grpc_sockaddr_is_v4mapped(resolved_addr, &addr4_normalized)) {
     resolved_addr = &addr4_normalized;
   }
-  addr = (const struct sockaddr*)resolved_addr->addr;
+  addr = reinterpret_cast<const struct sockaddr*>(resolved_addr->addr);
   if (addr->sa_family == AF_INET) {
     /* Check for 0.0.0.0 */
-    const struct sockaddr_in* addr4 = (const struct sockaddr_in*)addr;
+    const struct sockaddr_in* addr4 =
+        reinterpret_cast<const struct sockaddr_in*>(addr);
     if (addr4->sin_addr.s_addr != 0) {
       return 0;
     }
@@ -100,7 +105,8 @@ int grpc_sockaddr_is_wildcard(const grpc_resolved_address* resolved_addr,
     return 1;
   } else if (addr->sa_family == AF_INET6) {
     /* Check for :: */
-    const struct sockaddr_in6* addr6 = (const struct sockaddr_in6*)addr;
+    const struct sockaddr_in6* addr6 =
+        reinterpret_cast<const struct sockaddr_in6*>(addr);
     int i;
     for (i = 0; i < 16; i++) {
       if (addr6->sin6_addr.s6_addr[i] != 0) {
@@ -122,21 +128,23 @@ void grpc_sockaddr_make_wildcards(int port, grpc_resolved_address* wild4_out,
 
 void grpc_sockaddr_make_wildcard4(int port,
                                   grpc_resolved_address* resolved_wild_out) {
-  struct sockaddr_in* wild_out = (struct sockaddr_in*)resolved_wild_out->addr;
+  struct sockaddr_in* wild_out =
+      reinterpret_cast<struct sockaddr_in*>(resolved_wild_out->addr);
   GPR_ASSERT(port >= 0 && port < 65536);
   memset(resolved_wild_out, 0, sizeof(*resolved_wild_out));
   wild_out->sin_family = AF_INET;
-  wild_out->sin_port = htons((uint16_t)port);
+  wild_out->sin_port = htons(static_cast<uint16_t>(port));
   resolved_wild_out->len = sizeof(struct sockaddr_in);
 }
 
 void grpc_sockaddr_make_wildcard6(int port,
                                   grpc_resolved_address* resolved_wild_out) {
-  struct sockaddr_in6* wild_out = (struct sockaddr_in6*)resolved_wild_out->addr;
+  struct sockaddr_in6* wild_out =
+      reinterpret_cast<struct sockaddr_in6*>(resolved_wild_out->addr);
   GPR_ASSERT(port >= 0 && port < 65536);
   memset(resolved_wild_out, 0, sizeof(*resolved_wild_out));
   wild_out->sin6_family = AF_INET6;
-  wild_out->sin6_port = htons((uint16_t)port);
+  wild_out->sin6_port = htons(static_cast<uint16_t>(port));
   resolved_wild_out->len = sizeof(struct sockaddr_in6);
 }
 
@@ -156,13 +164,15 @@ int grpc_sockaddr_to_string(char** out,
   if (normalize && grpc_sockaddr_is_v4mapped(resolved_addr, &addr_normalized)) {
     resolved_addr = &addr_normalized;
   }
-  addr = (const struct sockaddr*)resolved_addr->addr;
+  addr = reinterpret_cast<const struct sockaddr*>(resolved_addr->addr);
   if (addr->sa_family == AF_INET) {
-    const struct sockaddr_in* addr4 = (const struct sockaddr_in*)addr;
+    const struct sockaddr_in* addr4 =
+        reinterpret_cast<const struct sockaddr_in*>(addr);
     ip = &addr4->sin_addr;
     port = ntohs(addr4->sin_port);
   } else if (addr->sa_family == AF_INET6) {
-    const struct sockaddr_in6* addr6 = (const struct sockaddr_in6*)addr;
+    const struct sockaddr_in6* addr6 =
+        reinterpret_cast<const struct sockaddr_in6*>(addr);
     ip = &addr6->sin6_addr;
     port = ntohs(addr6->sin6_port);
     sin6_scope_id = addr6->sin6_scope_id;
@@ -208,7 +218,8 @@ char* grpc_sockaddr_to_uri(const grpc_resolved_address* resolved_addr) {
 
 const char* grpc_sockaddr_get_uri_scheme(
     const grpc_resolved_address* resolved_addr) {
-  const struct sockaddr* addr = (const struct sockaddr*)resolved_addr->addr;
+  const struct sockaddr* addr =
+      reinterpret_cast<const struct sockaddr*>(resolved_addr->addr);
   switch (addr->sa_family) {
     case AF_INET:
       return "ipv4";
@@ -221,12 +232,14 @@ const char* grpc_sockaddr_get_uri_scheme(
 }
 
 int grpc_sockaddr_get_family(const grpc_resolved_address* resolved_addr) {
-  const struct sockaddr* addr = (const struct sockaddr*)resolved_addr->addr;
+  const struct sockaddr* addr =
+      reinterpret_cast<const struct sockaddr*>(resolved_addr->addr);
   return addr->sa_family;
 }
 
 int grpc_sockaddr_get_port(const grpc_resolved_address* resolved_addr) {
-  const struct sockaddr* addr = (const struct sockaddr*)resolved_addr->addr;
+  const struct sockaddr* addr =
+      reinterpret_cast<const struct sockaddr*>(resolved_addr->addr);
   switch (addr->sa_family) {
     case AF_INET:
       return ntohs(((struct sockaddr_in*)addr)->sin_port);
@@ -244,15 +257,18 @@ int grpc_sockaddr_get_port(const grpc_resolved_address* resolved_addr) {
 
 int grpc_sockaddr_set_port(const grpc_resolved_address* resolved_addr,
                            int port) {
-  const struct sockaddr* addr = (const struct sockaddr*)resolved_addr->addr;
+  const struct sockaddr* addr =
+      reinterpret_cast<const struct sockaddr*>(resolved_addr->addr);
   switch (addr->sa_family) {
     case AF_INET:
       GPR_ASSERT(port >= 0 && port < 65536);
-      ((struct sockaddr_in*)addr)->sin_port = htons((uint16_t)port);
+      ((struct sockaddr_in*)addr)->sin_port =
+          htons(static_cast<uint16_t>(port));
       return 1;
     case AF_INET6:
       GPR_ASSERT(port >= 0 && port < 65536);
-      ((struct sockaddr_in6*)addr)->sin6_port = htons((uint16_t)port);
+      ((struct sockaddr_in6*)addr)->sin6_port =
+          htons(static_cast<uint16_t>(port));
       return 1;
     default:
       gpr_log(GPR_ERROR, "Unknown socket family %d in grpc_sockaddr_set_port",

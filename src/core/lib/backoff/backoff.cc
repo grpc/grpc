@@ -20,7 +20,7 @@
 
 #include <algorithm>
 
-#include <grpc/support/useful.h>
+#include "src/core/lib/gpr/useful.h"
 
 namespace grpc_core {
 
@@ -55,13 +55,14 @@ grpc_millis BackOff::NextAttemptTime() {
     initial_ = false;
     return current_backoff_ + grpc_core::ExecCtx::Get()->Now();
   }
-  current_backoff_ =
-      (grpc_millis)(std::min(current_backoff_ * options_.multiplier(),
-                             (double)options_.max_backoff()));
+  current_backoff_ = static_cast<grpc_millis>(
+      std::min(current_backoff_ * options_.multiplier(),
+               static_cast<double>(options_.max_backoff())));
   const double jitter = generate_uniform_random_number_between(
       &rng_state_, -options_.jitter() * current_backoff_,
       options_.jitter() * current_backoff_);
-  const grpc_millis next_timeout = (grpc_millis)(current_backoff_ + jitter);
+  const grpc_millis next_timeout =
+      static_cast<grpc_millis>(current_backoff_ + jitter);
   return next_timeout + grpc_core::ExecCtx::Get()->Now();
 }
 

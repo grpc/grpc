@@ -45,7 +45,8 @@ const char* gpr_log_severity_string(gpr_log_severity severity) {
 
 void gpr_log_message(const char* file, int line, gpr_log_severity severity,
                      const char* message) {
-  if ((gpr_atm)severity < gpr_atm_no_barrier_load(&g_min_severity_to_print)) {
+  if (static_cast<gpr_atm>(severity) <
+      gpr_atm_no_barrier_load(&g_min_severity_to_print)) {
     return;
   }
 
@@ -70,11 +71,11 @@ void gpr_log_verbosity_init() {
   gpr_atm min_severity_to_print = GPR_LOG_SEVERITY_ERROR;
   if (verbosity != nullptr) {
     if (gpr_stricmp(verbosity, "DEBUG") == 0) {
-      min_severity_to_print = (gpr_atm)GPR_LOG_SEVERITY_DEBUG;
+      min_severity_to_print = static_cast<gpr_atm>(GPR_LOG_SEVERITY_DEBUG);
     } else if (gpr_stricmp(verbosity, "INFO") == 0) {
-      min_severity_to_print = (gpr_atm)GPR_LOG_SEVERITY_INFO;
+      min_severity_to_print = static_cast<gpr_atm>(GPR_LOG_SEVERITY_INFO);
     } else if (gpr_stricmp(verbosity, "ERROR") == 0) {
-      min_severity_to_print = (gpr_atm)GPR_LOG_SEVERITY_ERROR;
+      min_severity_to_print = static_cast<gpr_atm>(GPR_LOG_SEVERITY_ERROR);
     }
     gpr_free(verbosity);
   }

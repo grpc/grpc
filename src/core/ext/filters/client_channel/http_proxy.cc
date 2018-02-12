@@ -22,7 +22,6 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
@@ -31,6 +30,7 @@
 #include "src/core/ext/filters/client_channel/uri_parser.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/b64.h"
 
@@ -115,6 +115,7 @@ static bool proxy_mapper_map_name(grpc_proxy_mapper* mapper,
               "unable to split host and port, not checking no_proxy list for "
               "host '%s'",
               server_uri);
+      gpr_free(no_proxy_str);
     } else {
       size_t uri_len = strlen(server_host);
       char** no_proxy_hosts;
@@ -139,6 +140,7 @@ static bool proxy_mapper_map_name(grpc_proxy_mapper* mapper,
       gpr_free(no_proxy_hosts);
       gpr_free(server_host);
       gpr_free(server_port);
+      gpr_free(no_proxy_str);
       if (!use_proxy) goto no_use_proxy;
     }
   }

@@ -24,7 +24,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
-#include <grpc/support/useful.h>
+
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/ext/filters/http/message_compress/message_compress_filter.h"

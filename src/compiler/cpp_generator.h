@@ -54,6 +54,8 @@ struct Parameters {
   bool generate_mock_code;
   // Google Mock search path, when non-empty, local includes will be used.
   grpc::string gmock_search_path;
+  // *EXPERIMENTAL* Additional include files in grpc.pb.h
+  std::vector<grpc::string> additional_header_includes;
 };
 
 // Return the prologue of the generated header file.

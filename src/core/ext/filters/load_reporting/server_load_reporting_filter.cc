@@ -57,8 +57,8 @@ struct channel_data {
 }  // namespace
 
 static void on_initial_md_ready(void* user_data, grpc_error* err) {
-  grpc_call_element* elem = (grpc_call_element*)user_data;
-  call_data* calld = (call_data*)elem->call_data;
+  grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
+  call_data* calld = static_cast<call_data*>(elem->call_data);
 
   if (err == GRPC_ERROR_NONE) {
     if (calld->recv_initial_metadata->idx.named.path != nullptr) {
@@ -88,7 +88,7 @@ static void on_initial_md_ready(void* user_data, grpc_error* err) {
 /* Constructor for call_data */
 static grpc_error* init_call_elem(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
-  call_data* calld = (call_data*)elem->call_data;
+  call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->id = (intptr_t)args->call_stack;
   GRPC_CLOSURE_INIT(&calld->on_initial_md_ready, on_initial_md_ready, elem,
                     grpc_schedule_on_exec_ctx);
@@ -111,7 +111,7 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
 static void destroy_call_elem(grpc_call_element* elem,
                               const grpc_call_final_info* final_info,
                               grpc_closure* ignored) {
-  call_data* calld = (call_data*)elem->call_data;
+  call_data* calld = static_cast<call_data*>(elem->call_data);
 
   /* TODO(dgq): do something with the data
   channel_data *chand = elem->channel_data;
@@ -140,7 +140,7 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
                                      grpc_channel_element_args* args) {
   GPR_ASSERT(!args->is_last);
 
-  channel_data* chand = (channel_data*)elem->channel_data;
+  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   chand->id = (intptr_t)args->channel_stack;
 
   /* TODO(dgq): do something with the data
@@ -173,8 +173,8 @@ static void destroy_channel_elem(grpc_channel_element* elem) {
 
 static grpc_filtered_mdelem lr_trailing_md_filter(void* user_data,
                                                   grpc_mdelem md) {
-  grpc_call_element* elem = (grpc_call_element*)user_data;
-  call_data* calld = (call_data*)elem->call_data;
+  grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
+  call_data* calld = static_cast<call_data*>(elem->call_data);
   if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_LB_COST_BIN)) {
     calld->trailing_md_string = GRPC_MDVALUE(md);
     return GRPC_FILTERED_REMOVE();
@@ -184,8 +184,8 @@ static grpc_filtered_mdelem lr_trailing_md_filter(void* user_data,
 
 static void lr_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
-  GPR_TIMER_BEGIN("lr_start_transport_stream_op_batch", 0);
-  call_data* calld = (call_data*)elem->call_data;
+  GPR_TIMER_SCOPE("lr_start_transport_stream_op_batch", 0);
+  call_data* calld = static_cast<call_data*>(elem->call_data);
 
   if (op->recv_initial_metadata) {
     /* substitute our callback for the higher callback */
@@ -204,8 +204,6 @@ static void lr_start_transport_stream_op_batch(
             "LR trailing metadata filtering error"));
   }
   grpc_call_next_op(elem, op);
-
-  GPR_TIMER_END("lr_start_transport_stream_op_batch", 0);
 }
 
 const grpc_channel_filter grpc_server_load_reporting_filter = {

@@ -21,13 +21,12 @@
 #include <grpc/impl/codegen/port_platform.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/useful.h>
 
 #include "src/core/ext/transport/chttp2/transport/incoming_metadata.h"
 #include "src/core/ext/transport/cronet/transport/cronet_transport.h"
+#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -285,7 +284,8 @@ static void maybe_flush_read(stream_obj* s) {
       CRONET_LOG(GPR_DEBUG, "%p: Flush read", s);
       s->state.flush_read = true;
       null_and_maybe_free_read_buffer(s);
-      s->state.rs.read_buffer = (char*)gpr_malloc(GRPC_FLUSH_READ_SIZE);
+      s->state.rs.read_buffer =
+          static_cast<char*>(gpr_malloc(GRPC_FLUSH_READ_SIZE));
       if (!s->state.pending_read_from_cronet) {
         CRONET_LOG(GPR_DEBUG, "bidirectional_stream_read(%p)", s->cbs);
         bidirectional_stream_read(s->cbs, s->state.rs.read_buffer,
@@ -310,8 +310,8 @@ static void add_to_storage(struct stream_obj* s,
   struct op_storage* storage = &s->storage;
   /* add new op at the beginning of the linked list. The memory is freed
   in remove_from_storage */
-  struct op_and_state* new_op =
-      (struct op_and_state*)gpr_malloc(sizeof(struct op_and_state));
+  struct op_and_state* new_op = static_cast<struct op_and_state*>(
+      gpr_malloc(sizeof(struct op_and_state)));
   memcpy(&new_op->op, op, sizeof(grpc_transport_stream_op_batch));
   memset(&new_op->state, 0, sizeof(new_op->state));
   new_op->s = s;
@@ -400,7 +400,7 @@ static void on_failed(bidirectional_stream* stream, int net_error) {
   gpr_log(GPR_ERROR, "on_failed(%p, %d)", stream, net_error);
   grpc_core::ExecCtx exec_ctx;
 
-  stream_obj* s = (stream_obj*)stream->annotation;
+  stream_obj* s = static_cast<stream_obj*>(stream->annotation);
   gpr_mu_lock(&s->mu);
   bidirectional_stream_destroy(s->cbs);
   s->state.state_callback_received[OP_FAILED] = true;
@@ -426,7 +426,7 @@ static void on_canceled(bidirectional_stream* stream) {
   CRONET_LOG(GPR_DEBUG, "on_canceled(%p)", stream);
   grpc_core::ExecCtx exec_ctx;
 
-  stream_obj* s = (stream_obj*)stream->annotation;
+  stream_obj* s = static_cast<stream_obj*>(stream->annotation);
   gpr_mu_lock(&s->mu);
   bidirectional_stream_destroy(s->cbs);
   s->state.state_callback_received[OP_CANCELED] = true;
@@ -452,7 +452,7 @@ static void on_succeeded(bidirectional_stream* stream) {
   CRONET_LOG(GPR_DEBUG, "on_succeeded(%p)", stream);
   grpc_core::ExecCtx exec_ctx;
 
-  stream_obj* s = (stream_obj*)stream->annotation;
+  stream_obj* s = static_cast<stream_obj*>(stream->annotation);
   gpr_mu_lock(&s->mu);
   bidirectional_stream_destroy(s->cbs);
   s->state.state_callback_received[OP_SUCCEEDED] = true;
@@ -469,8 +469,8 @@ static void on_succeeded(bidirectional_stream* stream) {
 static void on_stream_ready(bidirectional_stream* stream) {
   CRONET_LOG(GPR_DEBUG, "W: on_stream_ready(%p)", stream);
   grpc_core::ExecCtx exec_ctx;
-  stream_obj* s = (stream_obj*)stream->annotation;
-  grpc_cronet_transport* t = (grpc_cronet_transport*)s->curr_ct;
+  stream_obj* s = static_cast<stream_obj*>(stream->annotation);
+  grpc_cronet_transport* t = s->curr_ct;
   gpr_mu_lock(&s->mu);
   s->state.state_op_done[OP_SEND_INITIAL_METADATA] = true;
   s->state.state_callback_received[OP_SEND_INITIAL_METADATA] = true;
@@ -501,7 +501,7 @@ static void on_response_headers_received(
   grpc_core::ExecCtx exec_ctx;
   CRONET_LOG(GPR_DEBUG, "R: on_response_headers_received(%p, %p, %s)", stream,
              headers, negotiated_protocol);
-  stream_obj* s = (stream_obj*)stream->annotation;
+  stream_obj* s = static_cast<stream_obj*>(stream->annotation);
 
   /* Identify if this is a header or a trailer (in a trailer-only response case)
    */
@@ -551,7 +551,7 @@ static void on_response_headers_received(
 */
 static void on_write_completed(bidirectional_stream* stream, const char* data) {
   grpc_core::ExecCtx exec_ctx;
-  stream_obj* s = (stream_obj*)stream->annotation;
+  stream_obj* s = static_cast<stream_obj*>(stream->annotation);
   CRONET_LOG(GPR_DEBUG, "W: on_write_completed(%p, %s)", stream, data);
   gpr_mu_lock(&s->mu);
   if (s->state.ws.write_buffer) {
@@ -569,7 +569,7 @@ static void on_write_completed(bidirectional_stream* stream, const char* data) {
 static void on_read_completed(bidirectional_stream* stream, char* data,
                               int count) {
   grpc_core::ExecCtx exec_ctx;
-  stream_obj* s = (stream_obj*)stream->annotation;
+  stream_obj* s = static_cast<stream_obj*>(stream->annotation);
   CRONET_LOG(GPR_DEBUG, "R: on_read_completed(%p, %p, %d)", stream, data,
              count);
   gpr_mu_lock(&s->mu);
@@ -613,8 +613,8 @@ static void on_response_trailers_received(
   grpc_core::ExecCtx exec_ctx;
   CRONET_LOG(GPR_DEBUG, "R: on_response_trailers_received(%p,%p)", stream,
              trailers);
-  stream_obj* s = (stream_obj*)stream->annotation;
-  grpc_cronet_transport* t = (grpc_cronet_transport*)s->curr_ct;
+  stream_obj* s = static_cast<stream_obj*>(stream->annotation);
+  grpc_cronet_transport* t = s->curr_ct;
   gpr_mu_lock(&s->mu);
   memset(&s->state.rs.trailing_metadata, 0,
          sizeof(s->state.rs.trailing_metadata));
@@ -672,17 +672,18 @@ static void create_grpc_frame(grpc_slice_buffer* write_slice_buffer,
   size_t length = GRPC_SLICE_LENGTH(slice);
   *p_write_buffer_size = length + GRPC_HEADER_SIZE_IN_BYTES;
   /* This is freed in the on_write_completed callback */
-  char* write_buffer = (char*)gpr_malloc(length + GRPC_HEADER_SIZE_IN_BYTES);
+  char* write_buffer =
+      static_cast<char*>(gpr_malloc(length + GRPC_HEADER_SIZE_IN_BYTES));
   *pp_write_buffer = write_buffer;
-  uint8_t* p = (uint8_t*)write_buffer;
+  uint8_t* p = reinterpret_cast<uint8_t*>(write_buffer);
   /* Append 5 byte header */
   /* Compressed flag */
-  *p++ = (uint8_t)((flags & GRPC_WRITE_INTERNAL_COMPRESS) ? 1 : 0);
+  *p++ = static_cast<uint8_t>((flags & GRPC_WRITE_INTERNAL_COMPRESS) ? 1 : 0);
   /* Message length */
-  *p++ = (uint8_t)(length >> 24);
-  *p++ = (uint8_t)(length >> 16);
-  *p++ = (uint8_t)(length >> 8);
-  *p++ = (uint8_t)(length);
+  *p++ = static_cast<uint8_t>(length >> 24);
+  *p++ = static_cast<uint8_t>(length >> 16);
+  *p++ = static_cast<uint8_t>(length >> 8);
+  *p++ = static_cast<uint8_t>(length);
   /* append actual data */
   memcpy(p, GRPC_SLICE_START_PTR(slice), length);
   grpc_slice_unref_internal(slice);
@@ -705,8 +706,8 @@ static void convert_metadata_to_cronet_headers(
   /* Allocate enough memory. It is freed in the on_stream_ready callback
    */
   bidirectional_stream_header* headers =
-      (bidirectional_stream_header*)gpr_malloc(
-          sizeof(bidirectional_stream_header) * num_headers_available);
+      static_cast<bidirectional_stream_header*>(gpr_malloc(
+          sizeof(bidirectional_stream_header) * num_headers_available));
   *pp_headers = headers;
 
   /* Walk the linked list again, this time copying the header fields.
@@ -754,7 +755,7 @@ static void convert_metadata_to_cronet_headers(
       break;
     }
   }
-  *p_num_headers = (size_t)num_headers;
+  *p_num_headers = num_headers;
 }
 
 static void parse_grpc_header(const uint8_t* data, int* length,
@@ -763,10 +764,10 @@ static void parse_grpc_header(const uint8_t* data, int* length,
   const uint8_t* p = data + 1;
   *compressed = ((c & 0x01) == 0x01);
   *length = 0;
-  *length |= ((uint8_t)*p++) << 24;
-  *length |= ((uint8_t)*p++) << 16;
-  *length |= ((uint8_t)*p++) << 8;
-  *length |= ((uint8_t)*p++);
+  *length |= (*p++) << 24;
+  *length |= (*p++) << 16;
+  *length |= (*p++) << 8;
+  *length |= (*p++);
 }
 
 static bool header_has_authority(grpc_linked_mdelem* head) {
@@ -969,7 +970,7 @@ static bool op_can_be_run(grpc_transport_stream_op_batch* curr_op,
 static enum e_op_result execute_stream_op(struct op_and_state* oas) {
   grpc_transport_stream_op_batch* stream_op = &oas->op;
   struct stream_obj* s = oas->s;
-  grpc_cronet_transport* t = (grpc_cronet_transport*)s->curr_ct;
+  grpc_cronet_transport* t = s->curr_ct;
   struct op_state* stream_state = &s->state;
   enum e_op_result result = NO_ACTION_POSSIBLE;
   if (stream_op->send_initial_metadata &&
@@ -1051,7 +1052,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
                    stream_state->ws.write_buffer);
         stream_state->state_callback_received[OP_SEND_MESSAGE] = false;
         bidirectional_stream_write(s->cbs, stream_state->ws.write_buffer,
-                                   (int)write_buffer_size, false);
+                                   static_cast<int>(write_buffer_size), false);
         grpc_slice_buffer_destroy_internal(&write_slice_buffer);
         if (t->use_packet_coalescing) {
           if (!stream_op->send_trailing_metadata) {
@@ -1152,14 +1153,14 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
           stream_state->rs.remaining_bytes == 0) {
         /* Start a read operation for data */
         stream_state->rs.length_field_received = true;
-        parse_grpc_header((const uint8_t*)stream_state->rs.read_buffer,
-                          &stream_state->rs.length_field,
-                          &stream_state->rs.compressed);
+        parse_grpc_header(
+            reinterpret_cast<const uint8_t*>(stream_state->rs.read_buffer),
+            &stream_state->rs.length_field, &stream_state->rs.compressed);
         CRONET_LOG(GPR_DEBUG, "length field = %d",
                    stream_state->rs.length_field);
         if (stream_state->rs.length_field > 0) {
-          stream_state->rs.read_buffer =
-              (char*)gpr_malloc((size_t)stream_state->rs.length_field);
+          stream_state->rs.read_buffer = static_cast<char*>(
+              gpr_malloc(static_cast<size_t>(stream_state->rs.length_field)));
           GPR_ASSERT(stream_state->rs.read_buffer);
           stream_state->rs.remaining_bytes = stream_state->rs.length_field;
           stream_state->rs.received_bytes = 0;
@@ -1182,8 +1183,9 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
           if (stream_state->rs.compressed) {
             stream_state->rs.sbs.base.flags |= GRPC_WRITE_INTERNAL_COMPRESS;
           }
-          *((grpc_byte_buffer**)stream_op->payload->recv_message.recv_message) =
-              (grpc_byte_buffer*)&stream_state->rs.sbs;
+          *(reinterpret_cast<grpc_byte_buffer**>(
+              stream_op->payload->recv_message.recv_message)) =
+              reinterpret_cast<grpc_byte_buffer*>(&stream_state->rs.sbs);
           GRPC_CLOSURE_SCHED(
               stream_op->payload->recv_message.recv_message_ready,
               GRPC_ERROR_NONE);
@@ -1226,7 +1228,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
           GRPC_SLICE_MALLOC((uint32_t)stream_state->rs.length_field);
       uint8_t* dst_p = GRPC_SLICE_START_PTR(read_data_slice);
       memcpy(dst_p, stream_state->rs.read_buffer,
-             (size_t)stream_state->rs.length_field);
+             static_cast<size_t>(stream_state->rs.length_field));
       null_and_maybe_free_read_buffer(s);
       /* Clean up read_slice_buffer in case there is unread data. */
       grpc_slice_buffer_destroy_internal(&stream_state->rs.read_slice_buffer);
@@ -1238,8 +1240,9 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
       if (stream_state->rs.compressed) {
         stream_state->rs.sbs.base.flags = GRPC_WRITE_INTERNAL_COMPRESS;
       }
-      *((grpc_byte_buffer**)stream_op->payload->recv_message.recv_message) =
-          (grpc_byte_buffer*)&stream_state->rs.sbs;
+      *(reinterpret_cast<grpc_byte_buffer**>(
+          stream_op->payload->recv_message.recv_message)) =
+          reinterpret_cast<grpc_byte_buffer*>(&stream_state->rs.sbs);
       GRPC_CLOSURE_SCHED(stream_op->payload->recv_message.recv_message_ready,
                          GRPC_ERROR_NONE);
       stream_state->state_op_done[OP_RECV_MESSAGE] = true;
@@ -1326,7 +1329,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
 static int init_stream(grpc_transport* gt, grpc_stream* gs,
                        grpc_stream_refcount* refcount, const void* server_data,
                        gpr_arena* arena) {
-  stream_obj* s = (stream_obj*)gs;
+  stream_obj* s = reinterpret_cast<stream_obj*>(gs);
 
   s->refcount = refcount;
   GRPC_CRONET_STREAM_REF(s, "cronet transport");
@@ -1349,7 +1352,7 @@ static int init_stream(grpc_transport* gt, grpc_stream* gs,
   s->state.pending_read_from_cronet = false;
 
   s->curr_gs = gs;
-  s->curr_ct = (grpc_cronet_transport*)gt;
+  s->curr_ct = reinterpret_cast<grpc_cronet_transport*>(gt);
   s->arena = arena;
 
   gpr_mu_init(&s->mu);
@@ -1382,14 +1385,14 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
     GRPC_CLOSURE_SCHED(op->on_complete, GRPC_ERROR_CANCELLED);
     return;
   }
-  stream_obj* s = (stream_obj*)gs;
+  stream_obj* s = reinterpret_cast<stream_obj*>(gs);
   add_to_storage(s, op);
   execute_from_storage(s);
 }
 
 static void destroy_stream(grpc_transport* gt, grpc_stream* gs,
                            grpc_closure* then_schedule_closure) {
-  stream_obj* s = (stream_obj*)gs;
+  stream_obj* s = reinterpret_cast<stream_obj*>(gs);
   null_and_maybe_free_read_buffer(s);
   /* Clean up read_slice_buffer in case there is unread data. */
   grpc_slice_buffer_destroy_internal(&s->state.rs.read_slice_buffer);
@@ -1418,14 +1421,14 @@ static const grpc_transport_vtable grpc_cronet_vtable = {
 grpc_transport* grpc_create_cronet_transport(void* engine, const char* target,
                                              const grpc_channel_args* args,
                                              void* reserved) {
-  grpc_cronet_transport* ct =
-      (grpc_cronet_transport*)gpr_malloc(sizeof(grpc_cronet_transport));
+  grpc_cronet_transport* ct = static_cast<grpc_cronet_transport*>(
+      gpr_malloc(sizeof(grpc_cronet_transport)));
   if (!ct) {
     goto error;
   }
   ct->base.vtable = &grpc_cronet_vtable;
-  ct->engine = (stream_engine*)engine;
-  ct->host = (char*)gpr_malloc(strlen(target) + 1);
+  ct->engine = static_cast<stream_engine*>(engine);
+  ct->host = static_cast<char*>(gpr_malloc(strlen(target) + 1));
   if (!ct->host) {
     goto error;
   }

@@ -133,7 +133,10 @@ static void read_compressed_slice(grpc_compression_algorithm algorithm,
   grpc_slice_buffer_add(&sliceb_in, input_slice); /* takes ownership */
   {
     grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(grpc_msg_compress(algorithm, &sliceb_in, &sliceb_out));
+    GPR_ASSERT(grpc_msg_compress(
+
+        grpc_compression_algorithm_to_message_compression_algorithm(algorithm),
+        &sliceb_in, &sliceb_out));
   }
 
   buffer = grpc_raw_compressed_byte_buffer_create(sliceb_out.slices,
@@ -202,8 +205,8 @@ static void test_readall(void) {
 
   LOG_TEST("test_readall");
 
-  memset(lotsa_as, 'a', 512);
-  memset(lotsa_bs, 'b', 1024);
+  memset(lotsa_as, 'a', 512 * sizeof(lotsa_as[0]));
+  memset(lotsa_bs, 'b', 1024 * sizeof(lotsa_bs[0]));
   /* use slices large enough to overflow inlining */
   slices[0] = grpc_slice_malloc(512);
   memcpy(GRPC_SLICE_START_PTR(slices[0]), lotsa_as, 512);
@@ -237,8 +240,8 @@ static void test_byte_buffer_copy(void) {
 
   LOG_TEST("test_byte_buffer_copy");
 
-  memset(lotsa_as, 'a', 512);
-  memset(lotsa_bs, 'b', 1024);
+  memset(lotsa_as, 'a', 512 * sizeof(lotsa_as[0]));
+  memset(lotsa_bs, 'b', 1024 * sizeof(lotsa_bs[0]));
   /* use slices large enough to overflow inlining */
   slices[0] = grpc_slice_malloc(512);
   memcpy(GRPC_SLICE_START_PTR(slices[0]), lotsa_as, 512);
@@ -265,7 +268,6 @@ static void test_byte_buffer_copy(void) {
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
-  grpc_init();
   test_read_one_slice();
   test_read_one_slice_malloc();
   test_read_none_compressed_slice();
@@ -275,6 +277,5 @@ int main(int argc, char** argv) {
   test_byte_buffer_from_reader();
   test_byte_buffer_copy();
   test_readall();
-  grpc_shutdown();
   return 0;
 }

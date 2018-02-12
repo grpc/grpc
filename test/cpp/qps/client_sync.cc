@@ -30,10 +30,10 @@
 #include <grpc++/server_builder.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 #include "test/cpp/qps/client.h"
@@ -402,6 +402,7 @@ class SynchronousStreamingBothWaysClient final
 };
 
 std::unique_ptr<Client> CreateSynchronousClient(const ClientConfig& config) {
+  GPR_ASSERT(!config.use_coalesce_api());  // not supported yet.
   switch (config.rpc_type()) {
     case UNARY:
       return std::unique_ptr<Client>(new SynchronousUnaryClient(config));

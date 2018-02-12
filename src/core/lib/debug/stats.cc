@@ -23,17 +23,17 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/useful.h>
 
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/useful.h"
 
 grpc_stats_data* grpc_stats_per_cpu_storage = nullptr;
 static size_t g_num_cores;
 
 void grpc_stats_init(void) {
   g_num_cores = GPR_MAX(1, gpr_cpu_num_cores());
-  grpc_stats_per_cpu_storage =
-      (grpc_stats_data*)gpr_zalloc(sizeof(grpc_stats_data) * g_num_cores);
+  grpc_stats_per_cpu_storage = static_cast<grpc_stats_data*>(
+      gpr_zalloc(sizeof(grpc_stats_data) * g_num_cores));
 }
 
 void grpc_stats_shutdown(void) { gpr_free(grpc_stats_per_cpu_storage); }
@@ -76,14 +76,15 @@ int grpc_stats_histo_find_bucket_slow(int value, const int* table,
       table_size = step;
     }
   }
-  return (int)(table - start) - 1;
+  return static_cast<int>(table - start) - 1;
 }
 
 size_t grpc_stats_histo_count(const grpc_stats_data* stats,
                               grpc_stats_histograms histogram) {
   size_t sum = 0;
   for (int i = 0; i < grpc_stats_histo_buckets[histogram]; i++) {
-    sum += (size_t)stats->histograms[grpc_stats_histo_start[histogram] + i];
+    sum += static_cast<size_t>(
+        stats->histograms[grpc_stats_histo_start[histogram] + i]);
   }
   return sum;
 }
@@ -100,7 +101,7 @@ static double threshold_for_count_below(const gpr_atm* bucket_counts,
   /* find the lowest bucket that gets us above count_below */
   count_so_far = 0.0;
   for (lower_idx = 0; lower_idx < num_buckets; lower_idx++) {
-    count_so_far += (double)bucket_counts[lower_idx];
+    count_so_far += static_cast<double>(bucket_counts[lower_idx]);
     if (count_so_far >= count_below) {
       break;
     }
@@ -121,7 +122,7 @@ static double threshold_for_count_below(const gpr_atm* bucket_counts,
     upper_bound = bucket_boundaries[lower_idx + 1];
     return upper_bound - (upper_bound - lower_bound) *
                              (count_so_far - count_below) /
-                             (double)bucket_counts[lower_idx];
+                             static_cast<double>(bucket_counts[lower_idx]);
   }
 }
 
@@ -133,7 +134,8 @@ double grpc_stats_histo_percentile(const grpc_stats_data* stats,
   return threshold_for_count_below(
       stats->histograms + grpc_stats_histo_start[histogram],
       grpc_stats_histo_bucket_boundaries[histogram],
-      grpc_stats_histo_buckets[histogram], (double)count * percentile / 100.0);
+      grpc_stats_histo_buckets[histogram],
+      static_cast<double>(count) * percentile / 100.0);
 }
 
 char* grpc_stats_data_as_json(const grpc_stats_data* data) {

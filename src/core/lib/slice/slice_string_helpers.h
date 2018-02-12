@@ -35,6 +35,12 @@ char* grpc_dump_slice(grpc_slice slice, uint32_t flags);
  * should be a properly initialized instance. */
 void grpc_slice_split(grpc_slice str, const char* sep, grpc_slice_buffer* dst);
 
+/** Split \a str by the separator \a sep and remove the leading and trailing
+ * spaces of each resulting token. Results are stored in \a dst, which should be
+ * a properly initialized instance. */
+void grpc_slice_split_without_space(grpc_slice str, const char* sep,
+                                    grpc_slice_buffer* dst);
+
 bool grpc_parse_slice_to_uint32(grpc_slice str, uint32_t* result);
 
 #endif /* GRPC_CORE_LIB_SLICE_SLICE_STRING_HELPERS_H */

@@ -34,7 +34,7 @@ static int buffers_are_equal(const unsigned char* buf1,
   for (i = 0; i < size; i++) {
     if (buf1[i] != buf2[i]) {
       gpr_log(GPR_ERROR, "buf1 and buf2 differ: buf1[%d] = %x vs buf2[%d] = %x",
-              (int)i, buf1[i], (int)i, buf2[i]);
+              static_cast<int>(i), buf1[i], static_cast<int>(i), buf2[i]);
       return 0;
     }
   }
@@ -61,7 +61,7 @@ static void test_full_range_encode_decode_b64(int url_safe, int multiline) {
   size_t i;
   char* b64;
   grpc_slice orig_decoded;
-  for (i = 0; i < sizeof(orig); i++) orig[i] = (uint8_t)i;
+  for (i = 0; i < sizeof(orig); i++) orig[i] = static_cast<uint8_t>(i);
 
   /* Try all the different paddings. */
   for (i = 0; i < 3; i++) {
@@ -114,7 +114,7 @@ static void test_url_safe_unsafe_mismatch_failure(void) {
   char* b64;
   grpc_slice orig_decoded;
   int url_safe = 1;
-  for (i = 0; i < sizeof(orig); i++) orig[i] = (uint8_t)i;
+  for (i = 0; i < sizeof(orig); i++) orig[i] = static_cast<uint8_t>(i);
 
   grpc_core::ExecCtx exec_ctx;
   b64 = grpc_base64_encode(orig, sizeof(orig), url_safe, 0);

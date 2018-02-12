@@ -96,13 +96,11 @@ class RpcTest(object):
 
     def setUp(self):
         self.server_completion_queue = cygrpc.CompletionQueue()
-        self.server = cygrpc.Server(
-            cygrpc.ChannelArgs([cygrpc.ChannelArg(b'grpc.so_reuseport', 0)]))
+        self.server = cygrpc.Server([(b'grpc.so_reuseport', 0)])
         self.server.register_completion_queue(self.server_completion_queue)
         port = self.server.add_http2_port(b'[::]:0')
         self.server.start()
-        self.channel = cygrpc.Channel('localhost:{}'.format(port).encode(),
-                                      cygrpc.ChannelArgs([]))
+        self.channel = cygrpc.Channel('localhost:{}'.format(port).encode(), [])
 
         self._server_shutdown_tag = 'server_shutdown_tag'
         self.server_condition = threading.Condition()

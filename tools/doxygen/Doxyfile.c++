@@ -909,15 +909,11 @@ include/grpc/support/atm.h \
 include/grpc/support/atm_gcc_atomic.h \
 include/grpc/support/atm_gcc_sync.h \
 include/grpc/support/atm_windows.h \
-include/grpc/support/avl.h \
-include/grpc/support/cmdline.h \
 include/grpc/support/cpu.h \
-include/grpc/support/host_port.h \
 include/grpc/support/log.h \
 include/grpc/support/log_windows.h \
 include/grpc/support/port_platform.h \
 include/grpc/support/string_util.h \
-include/grpc/support/subprocess.h \
 include/grpc/support/sync.h \
 include/grpc/support/sync_custom.h \
 include/grpc/support/sync_generic.h \
@@ -925,11 +921,6 @@ include/grpc/support/sync_posix.h \
 include/grpc/support/sync_windows.h \
 include/grpc/support/thd.h \
 include/grpc/support/time.h \
-include/grpc/support/tls.h \
-include/grpc/support/tls_gcc.h \
-include/grpc/support/tls_msvc.h \
-include/grpc/support/tls_pthread.h \
-include/grpc/support/useful.h \
 include/grpc/support/workaround_list.h
 
 # This tag can be used to specify the character encoding of the source files

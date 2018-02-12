@@ -40,24 +40,13 @@ namespace grpc_core {
 // ANY METHOD ADDED HERE MUST COMPLY WITH THE INTERFACE IN THE absl
 // IMPLEMENTATION!
 //
-// TODO(ctiller, nnoble, roth): Replace this with absl::InlinedVector
-// once we integrate absl into the gRPC build system in a usable way.
+// TODO(nnoble, roth): Replace this with absl::InlinedVector once we
+// integrate absl into the gRPC build system in a usable way.
 template <typename T, size_t N>
 class InlinedVector {
  public:
-  InlinedVector() {}
-  ~InlinedVector() {
-    for (size_t i = 0; i < size_ && i < N; ++i) {
-      T& value = *reinterpret_cast<T*>(inline_ + i);
-      value.~T();
-    }
-    if (size_ > N) {  // Avoid subtracting two signed values.
-      for (size_t i = 0; i < size_ - N; ++i) {
-        dynamic_[i].~T();
-      }
-    }
-    gpr_free(dynamic_);
-  }
+  InlinedVector() { init_data(); }
+  ~InlinedVector() { destroy_elements(); }
 
   // For now, we do not support copying.
   InlinedVector(const InlinedVector&) = delete;
@@ -67,6 +56,15 @@ class InlinedVector {
     assert(offset < size_);
     if (offset < N) {
       return *reinterpret_cast<T*>(inline_ + offset);
+    } else {
+      return dynamic_[offset - N];
+    }
+  }
+
+  const T& operator[](size_t offset) const {
+    assert(offset < size_);
+    if (offset < N) {
+      return *reinterpret_cast<const T*>(inline_ + offset);
     } else {
       return dynamic_[offset - N];
     }
@@ -100,11 +98,35 @@ class InlinedVector {
 
   size_t size() const { return size_; }
 
+  void clear() {
+    destroy_elements();
+    init_data();
+  }
+
  private:
+  void init_data() {
+    dynamic_ = nullptr;
+    size_ = 0;
+    dynamic_capacity_ = 0;
+  }
+
+  void destroy_elements() {
+    for (size_t i = 0; i < size_ && i < N; ++i) {
+      T& value = *reinterpret_cast<T*>(inline_ + i);
+      value.~T();
+    }
+    if (size_ > N) {  // Avoid subtracting two signed values.
+      for (size_t i = 0; i < size_ - N; ++i) {
+        dynamic_[i].~T();
+      }
+    }
+    gpr_free(dynamic_);
+  }
+
   typename std::aligned_storage<sizeof(T)>::type inline_[N];
-  T* dynamic_ = nullptr;
-  size_t size_ = 0;
-  size_t dynamic_capacity_ = 0;
+  T* dynamic_;
+  size_t size_;
+  size_t dynamic_capacity_;
 };
 
 }  // namespace grpc_core

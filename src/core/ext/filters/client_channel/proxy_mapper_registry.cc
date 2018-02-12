@@ -34,8 +34,8 @@ typedef struct {
 static void grpc_proxy_mapper_list_register(grpc_proxy_mapper_list* list,
                                             bool at_start,
                                             grpc_proxy_mapper* mapper) {
-  list->list = (grpc_proxy_mapper**)gpr_realloc(
-      list->list, (list->num_mappers + 1) * sizeof(grpc_proxy_mapper*));
+  list->list = static_cast<grpc_proxy_mapper**>(gpr_realloc(
+      list->list, (list->num_mappers + 1) * sizeof(grpc_proxy_mapper*)));
   if (at_start) {
     memmove(list->list + 1, list->list,
             sizeof(grpc_proxy_mapper*) * list->num_mappers);

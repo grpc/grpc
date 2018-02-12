@@ -22,8 +22,8 @@ void grpc_http_filters_init(void);
 void grpc_http_filters_shutdown(void);
 void grpc_chttp2_plugin_init(void);
 void grpc_chttp2_plugin_shutdown(void);
-void grpc_tsi_gts_init(void);
-void grpc_tsi_gts_shutdown(void);
+void grpc_tsi_alts_init(void);
+void grpc_tsi_alts_shutdown(void);
 void grpc_deadline_filter_init(void);
 void grpc_deadline_filter_shutdown(void);
 void grpc_client_channel_init(void);
@@ -58,8 +58,8 @@ void grpc_register_built_in_plugins(void) {
                        grpc_http_filters_shutdown);
   grpc_register_plugin(grpc_chttp2_plugin_init,
                        grpc_chttp2_plugin_shutdown);
-  grpc_register_plugin(grpc_tsi_gts_init,
-                       grpc_tsi_gts_shutdown);
+  grpc_register_plugin(grpc_tsi_alts_init,
+                       grpc_tsi_alts_shutdown);
   grpc_register_plugin(grpc_deadline_filter_init,
                        grpc_deadline_filter_shutdown);
   grpc_register_plugin(grpc_client_channel_init,

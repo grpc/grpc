@@ -59,7 +59,8 @@ static tsi_result adapter_result_get_unused_bytes(
 }
 
 static void adapter_result_destroy(tsi_handshaker_result* self) {
-  tsi_adapter_handshaker_result* impl = (tsi_adapter_handshaker_result*)self;
+  tsi_adapter_handshaker_result* impl =
+      reinterpret_cast<tsi_adapter_handshaker_result*>(self);
   tsi_handshaker_destroy(impl->wrapped);
   gpr_free(impl->unused_bytes);
   gpr_free(self);
@@ -82,12 +83,13 @@ static tsi_result tsi_adapter_create_handshaker_result(
     return TSI_INVALID_ARGUMENT;
   }
   tsi_adapter_handshaker_result* impl =
-      (tsi_adapter_handshaker_result*)gpr_zalloc(sizeof(*impl));
+      static_cast<tsi_adapter_handshaker_result*>(gpr_zalloc(sizeof(*impl)));
   impl->base.vtable = &result_vtable;
   impl->wrapped = wrapped;
   impl->unused_bytes_size = unused_bytes_size;
   if (unused_bytes_size > 0) {
-    impl->unused_bytes = (unsigned char*)gpr_malloc(unused_bytes_size);
+    impl->unused_bytes =
+        static_cast<unsigned char*>(gpr_malloc(unused_bytes_size));
     memcpy(impl->unused_bytes, unused_bytes, unused_bytes_size);
   } else {
     impl->unused_bytes = nullptr;
@@ -137,7 +139,8 @@ static tsi_result adapter_create_frame_protector(
 }
 
 static void adapter_destroy(tsi_handshaker* self) {
-  tsi_adapter_handshaker* impl = (tsi_adapter_handshaker*)self;
+  tsi_adapter_handshaker* impl =
+      reinterpret_cast<tsi_adapter_handshaker*>(self);
   tsi_handshaker_destroy(impl->wrapped);
   gpr_free(impl->adapter_buffer);
   gpr_free(self);
@@ -156,7 +159,8 @@ static tsi_result adapter_next(
   }
 
   /* If there are received bytes, process them first.  */
-  tsi_adapter_handshaker* impl = (tsi_adapter_handshaker*)self;
+  tsi_adapter_handshaker* impl =
+      reinterpret_cast<tsi_adapter_handshaker*>(self);
   tsi_result status = TSI_OK;
   size_t bytes_consumed = received_bytes_size;
   if (received_bytes_size > 0) {
@@ -174,8 +178,8 @@ static tsi_result adapter_next(
     offset += to_send_size;
     if (status == TSI_INCOMPLETE_DATA) {
       impl->adapter_buffer_size *= 2;
-      impl->adapter_buffer = (unsigned char*)gpr_realloc(
-          impl->adapter_buffer, impl->adapter_buffer_size);
+      impl->adapter_buffer = static_cast<unsigned char*>(
+          gpr_realloc(impl->adapter_buffer, impl->adapter_buffer_size));
     }
   } while (status == TSI_INCOMPLETE_DATA);
   if (status != TSI_OK) return status;
@@ -212,16 +216,18 @@ static const tsi_handshaker_vtable handshaker_vtable = {
 tsi_handshaker* tsi_create_adapter_handshaker(tsi_handshaker* wrapped) {
   GPR_ASSERT(wrapped != nullptr);
   tsi_adapter_handshaker* impl =
-      (tsi_adapter_handshaker*)gpr_zalloc(sizeof(*impl));
+      static_cast<tsi_adapter_handshaker*>(gpr_zalloc(sizeof(*impl)));
   impl->base.vtable = &handshaker_vtable;
   impl->wrapped = wrapped;
   impl->adapter_buffer_size = TSI_ADAPTER_INITIAL_BUFFER_SIZE;
-  impl->adapter_buffer = (unsigned char*)gpr_malloc(impl->adapter_buffer_size);
+  impl->adapter_buffer =
+      static_cast<unsigned char*>(gpr_malloc(impl->adapter_buffer_size));
   return &impl->base;
 }
 
 tsi_handshaker* tsi_adapter_handshaker_get_wrapped(tsi_handshaker* adapter) {
   if (adapter == nullptr) return nullptr;
-  tsi_adapter_handshaker* impl = (tsi_adapter_handshaker*)adapter;
+  tsi_adapter_handshaker* impl =
+      reinterpret_cast<tsi_adapter_handshaker*>(adapter);
   return impl->wrapped;
 }

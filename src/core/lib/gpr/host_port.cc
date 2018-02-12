@@ -16,13 +16,14 @@
  *
  */
 
-#include <grpc/support/host_port.h>
+#include "src/core/lib/gpr/host_port.h"
 
 #include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+
 #include "src/core/lib/gpr/string.h"
 
 int gpr_join_host_port(char** out, const char* host, int port) {
@@ -61,7 +62,7 @@ int gpr_split_host_port(const char* name, char** host, char** port) {
       return 0;
     }
     host_start = name + 1;
-    host_len = (size_t)(rbracket - host_start);
+    host_len = static_cast<size_t>(rbracket - host_start);
     if (memchr(host_start, ':', host_len) == nullptr) {
       /* Require all bracketed hosts to contain a colon, because a hostname or
          IPv4 address should never use brackets. */
@@ -72,7 +73,7 @@ int gpr_split_host_port(const char* name, char** host, char** port) {
     if (colon != nullptr && strchr(colon + 1, ':') == nullptr) {
       /* Exactly 1 colon.  Split into host:port. */
       host_start = name;
-      host_len = (size_t)(colon - name);
+      host_len = static_cast<size_t>(colon - name);
       port_start = colon + 1;
     } else {
       /* 0 or 2+ colons.  Bare hostname or IPv6 litearal. */
@@ -83,7 +84,7 @@ int gpr_split_host_port(const char* name, char** host, char** port) {
   }
 
   /* Allocate return values. */
-  *host = (char*)gpr_malloc(host_len + 1);
+  *host = static_cast<char*>(gpr_malloc(host_len + 1));
   memcpy(*host, host_start, host_len);
   (*host)[host_len] = '\0';
 

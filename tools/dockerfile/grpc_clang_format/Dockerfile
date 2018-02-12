@@ -23,4 +23,9 @@ RUN ln -s /clang+llvm-5.0.0-linux-x86_64-ubuntu14.04/bin/clang-tidy /usr/local/b
 ENV CLANG_TIDY=clang-tidy
 
 ADD clang_format_all_the_things.sh /
+
+# When running locally, we'll be impersonating the current user, so we need
+# to make the script runnable by everyone.
+RUN chmod a+rx /clang_format_all_the_things.sh
+
 CMD ["echo 'Run with tools/distrib/clang_format_code.sh'"]

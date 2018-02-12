@@ -19,7 +19,7 @@ refer to these documents
 ## Linux
 
 ```sh
- $ [sudo] apt-get install build-essential autoconf libtool
+ $ [sudo] apt-get install build-essential autoconf libtool pkg-config
 ```
 
 If you plan to build from source and run tests, install the following as well:
@@ -70,6 +70,12 @@ automatically try and compile the `protoc` in third_party if you cloned the
 repository recursively and it detects that you don't already have it
 installed.
 
+If it hasn't been installed, you can run the following commands to install it.
+
+```sh
+$ cd grpc/third_party/protobuf
+$ sudo make install   # 'make' should have been run by core grpc
+```
 
 # Build from Source
 

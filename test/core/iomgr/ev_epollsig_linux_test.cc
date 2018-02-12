@@ -30,8 +30,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/thd.h>
-#include <grpc/support/useful.h>
 
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "test/core/util/test_config.h"
 
@@ -98,7 +98,7 @@ static void test_pollset_init(test_pollset* pollsets, int num_pollsets) {
 }
 
 static void destroy_pollset(void* p, grpc_error* error) {
-  grpc_pollset_destroy((grpc_pollset*)p);
+  grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 
 static void test_pollset_cleanup(test_pollset* pollsets, int num_pollsets) {

@@ -117,9 +117,9 @@ int main(int argc, char** argv) {
 
   addbuf(prefix, sizeof(prefix) - 1);
   for (i = 0; i < NUM_FRAMES; i++) {
-    uint8_t hdr[9] = {(uint8_t)(FRAME_SIZE >> 16),
-                      (uint8_t)(FRAME_SIZE >> 8),
-                      (uint8_t)FRAME_SIZE,
+    uint8_t hdr[9] = {static_cast<uint8_t>(FRAME_SIZE >> 16),
+                      static_cast<uint8_t>(FRAME_SIZE >> 8),
+                      static_cast<uint8_t>(FRAME_SIZE),
                       0,
                       0,
                       0,
@@ -131,7 +131,8 @@ int main(int argc, char** argv) {
     addbuf(hdr, sizeof(hdr));
     addbuf(msg, FRAME_SIZE);
   }
-  grpc_run_bad_client_test(verifier, nullptr, g_buffer, g_count, 0);
+  grpc_bad_client_arg bca = {nullptr, nullptr, g_buffer, g_count};
+  grpc_run_bad_client_test(verifier, &bca, 1, 0);
   gpr_free(g_buffer);
   grpc_shutdown();
 
