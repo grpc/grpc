@@ -26,6 +26,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <algorithm>
+
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -2815,8 +2817,8 @@ static grpc_error* incoming_byte_stream_pull(grpc_byte_stream* byte_stream,
       }
       if (!grpc_stream_decompress(s->stream_decompression_ctx,
                                   &s->unprocessed_incoming_frames_buffer,
-                                  &s->decompressed_data_buffer, MAX_SIZE_T, nullptr,
-                                  MAX_SIZE_T, &end_of_context)) {
+                                  &s->decompressed_data_buffer, MAX_SIZE_T,
+                                  nullptr, MAX_SIZE_T, &end_of_context)) {
         error =
             GRPC_ERROR_CREATE_FROM_STATIC_STRING("Stream decompression error.");
         return error;
@@ -3125,4 +3127,157 @@ void grpc_chttp2_transport_start_reading(
   }
   t->notify_on_receive_settings = notify_on_receive_settings;
   GRPC_CLOSURE_SCHED(&t->read_action_locked, GRPC_ERROR_NONE);
+}
+
+grpc_chttp2_stream_compression_context_manager*
+grpc_chttp2_stream_compression_context_manager_create(
+    grpc_stream_compression_method stream_compression_method) {
+  GPR_ASSERT(
+      stream_compression_method == GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS ||
+      stream_compression_method == GRPC_STREAM_COMPRESSION_GZIP_COMPRESS);
+
+  grpc_chttp2_stream_compression_context_manager* ctx_manager =
+      (grpc_chttp2_stream_compression_context_manager*)gpr_malloc(
+          sizeof(grpc_chttp2_stream_compression_context_manager));
+  ctx_manager->stream_compression_method = stream_compression_method;
+  ctx_manager->stream_compression_ctx = nullptr;
+  ctx_manager->head = ctx_manager->tail = nullptr;
+  ctx_manager->total_size = 0;
+
+  return ctx_manager;
+}
+
+void grpc_chttp2_stream_compression_context_manager_destroy(
+    grpc_chttp2_stream_compression_context_manager* ctx_manager) {
+  if (ctx_manager) {
+    if (ctx_manager->stream_compression_ctx) {
+      grpc_stream_compression_context_destroy(
+          ctx_manager->stream_compression_ctx);
+    }
+    while (ctx_manager->head) {
+      linked_compression_block* p = ctx_manager->head;
+      ctx_manager->head = p->next;
+      gpr_free(p);
+    }
+    gpr_free(ctx_manager);
+  }
+}
+
+void grpc_chttp2_stream_compression_context_manager_add_block(
+    grpc_chttp2_stream_compression_context_manager* ctx_manager,
+    size_t block_size, const compression_block_options& options) {
+  if (block_size == 0) {
+    return;
+  }
+  if (ctx_manager->tail == nullptr) {
+    ctx_manager->head = ctx_manager->tail =
+        (linked_compression_block*)gpr_malloc(sizeof(linked_compression_block));
+    ctx_manager->tail->next = ctx_manager->tail->prev = nullptr;
+    ctx_manager->tail->size = block_size;
+    ctx_manager->tail->options = options;
+  } else if (ctx_manager->tail->options == options) {
+    ctx_manager->tail->size += block_size;
+  } else {
+    linked_compression_block* curr_tail = ctx_manager->tail;
+    ctx_manager->tail =
+        (linked_compression_block*)gpr_malloc(sizeof(linked_compression_block));
+    ctx_manager->tail->next = nullptr;
+    ctx_manager->tail->prev = curr_tail;
+    curr_tail->next = ctx_manager->tail;
+
+    ctx_manager->tail->size = block_size;
+    ctx_manager->tail->options = options;
+  }
+
+  ctx_manager->total_size += block_size;
+}
+
+void grpc_chttp2_stream_compression_context_manager_remove_block(
+    grpc_chttp2_stream_compression_context_manager* ctx_manager,
+    size_t block_size) {
+  while (block_size > 0 && ctx_manager->head != nullptr) {
+    size_t remove_size = std::min(block_size, ctx_manager->head->size);
+    ctx_manager->head->size -= remove_size;
+    block_size -= remove_size;
+    ctx_manager->total_size -= remove_size;
+    if (ctx_manager->head->size == 0) {
+      linked_compression_block* curr_head = ctx_manager->head;
+      ctx_manager->head = curr_head->next;
+      gpr_free(curr_head);
+      if (ctx_manager->head) {
+        ctx_manager->head->prev = nullptr;
+      } else {
+        ctx_manager->tail = nullptr;
+      }
+    }
+  }
+}
+
+bool grpc_chttp2_stream_compression_context_manager_compress(
+    grpc_chttp2_stream_compression_context_manager* ctx_manager,
+    grpc_slice_buffer* in, grpc_slice_buffer* out,
+    grpc_stream_compression_flush flush) {
+  GPR_ASSERT(in->length == ctx_manager->total_size);
+  if (in->length == 0 && flush != GRPC_STREAM_COMPRESSION_FLUSH_NONE &&
+      ctx_manager->stream_compression_ctx != nullptr) {
+    if (false == grpc_stream_compress(ctx_manager->stream_compression_ctx, in,
+                                      out, MAX_SIZE_T, nullptr, MAX_SIZE_T,
+                                      flush)) {
+      gpr_log(GPR_ERROR, "Stream compression failed.");
+      return false;
+    }
+    if (flush == GRPC_STREAM_COMPRESSION_FLUSH_FINISH) {
+      grpc_stream_compression_context_destroy(
+          ctx_manager->stream_compression_ctx);
+      ctx_manager->stream_compression_ctx = nullptr;
+    }
+    return true;
+  }
+
+  while (in->length > 0) {
+    if (ctx_manager->stream_compression_ctx != nullptr &&
+        ctx_manager->current_options != ctx_manager->head->options) {
+      if (false == grpc_stream_compress(ctx_manager->stream_compression_ctx, in,
+                                        out, 0, nullptr, MAX_SIZE_T,
+                                        GRPC_STREAM_COMPRESSION_FLUSH_FINISH)) {
+        gpr_log(GPR_ERROR, "Stream compression failed.");
+        return false;
+      }
+      grpc_stream_compression_context_destroy(
+          ctx_manager->stream_compression_ctx);
+      ctx_manager->stream_compression_ctx = nullptr;
+    }
+    if (ctx_manager->stream_compression_ctx == nullptr) {
+      ctx_manager->stream_compression_ctx =
+          grpc_stream_compression_context_create(
+              ctx_manager->stream_compression_method
+              //, ctx_manager->head->options->no_compression
+          );
+      if (ctx_manager == nullptr) {
+        gpr_log(GPR_ERROR, "Unable to create stream compression context");
+        return false;
+      }
+      ctx_manager->current_options = ctx_manager->head->options;
+    }
+
+    GPR_ASSERT(in->length >= ctx_manager->head->size);
+    grpc_stream_compression_flush use_flush =
+        ctx_manager->head->next == nullptr
+            ? flush
+            : GRPC_STREAM_COMPRESSION_FLUSH_FINISH;
+    if (!grpc_stream_compress(ctx_manager->stream_compression_ctx, in, out,
+                              ctx_manager->head->size, nullptr, MAX_SIZE_T,
+                              use_flush)) {
+      gpr_log(GPR_ERROR, "Stream compression error");
+      return false;
+    }
+    if (use_flush == GRPC_STREAM_COMPRESSION_FLUSH_FINISH) {
+      grpc_stream_compression_context_destroy(
+          ctx_manager->stream_compression_ctx);
+      ctx_manager->stream_compression_ctx = nullptr;
+    }
+    grpc_chttp2_stream_compression_context_manager_remove_block(
+        ctx_manager, ctx_manager->head->size);
+  }
+  return true;
 }

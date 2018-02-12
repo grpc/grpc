@@ -48,13 +48,13 @@ static bool gzip_flate(grpc_stream_compression_context_gzip* ctx,
   bool eoc = false;
   size_t original_max_output_size = max_output_size;
   while (max_output_size > 0 &&
-         ((in->length > 0 && max_input_size > 0) || flush) && !eoc) {
+         ((max_input_size > 0 && in->length > 0) || flush) && !eoc) {
     size_t slice_size = max_output_size < OUTPUT_BLOCK_SIZE ? max_output_size
                                                             : OUTPUT_BLOCK_SIZE;
     grpc_slice slice_out = GRPC_SLICE_MALLOC(slice_size);
     ctx->zs.avail_out = static_cast<uInt>(slice_size);
     ctx->zs.next_out = GRPC_SLICE_START_PTR(slice_out);
-    while (ctx->zs.avail_out > 0 && in->length > 0 && max_input_size > 0 &&
+    while (ctx->zs.avail_out > 0 && max_input_size > 0 && in->length > 0 &&
            !eoc) {
       grpc_slice slice = grpc_slice_buffer_take_first(in);
       ctx->zs.avail_in =
@@ -82,7 +82,7 @@ static bool gzip_flate(grpc_stream_compression_context_gzip* ctx,
       grpc_slice_unref_internal(slice);
     }
     if (flush != 0 && ctx->zs.avail_out > 0 && !eoc) {
-      GPR_ASSERT(in->length == 0 || max_input_size == 0);
+      GPR_ASSERT(max_input_size == 0 || in->length == 0);
       GPR_ASSERT(ctx->zs.avail_in == 0);
       r = ctx->flate(&ctx->zs, flush);
       if (flush == Z_SYNC_FLUSH) {

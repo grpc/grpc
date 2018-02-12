@@ -366,8 +366,8 @@ class DataSendContext {
     s_->uncompressed_data_size = s_->flow_controlled_buffer.length;
     if (!grpc_stream_compress(s_->stream_compression_ctx,
                               &s_->flow_controlled_buffer,
-                              &s_->compressed_data_buffer, MAX_SIZE_T, nullptr, MAX_SIZE_T,
-                              GRPC_STREAM_COMPRESSION_FLUSH_SYNC)) {
+                              &s_->compressed_data_buffer, MAX_SIZE_T, nullptr,
+                              MAX_SIZE_T, GRPC_STREAM_COMPRESSION_FLUSH_SYNC)) {
       gpr_log(GPR_ERROR, "Stream compression failed.");
     }
   }

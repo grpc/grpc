@@ -233,6 +233,34 @@ typedef enum {
   GRPC_CHTTP2_KEEPALIVE_STATE_DISABLED,
 } grpc_chttp2_keepalive_state;
 
+typedef struct compression_block_options {
+  bool no_compression;
+
+  bool operator==(const compression_block_options& rhs) const {
+    return rhs.no_compression == no_compression;
+  }
+  bool operator!=(const compression_block_options& rhs) const {
+    return !operator==(rhs);
+  }
+} compression_block_options;
+
+typedef struct linked_compression_block {
+  linked_compression_block* next;
+  linked_compression_block* prev;
+  size_t size;
+  compression_block_options options;
+
+} linked_compression_block;
+
+typedef struct stream_compression_context_manager {
+  grpc_stream_compression_context* stream_compression_ctx;
+  grpc_stream_compression_method stream_compression_method;
+  compression_block_options current_options;
+  linked_compression_block* head;
+  linked_compression_block* tail;
+  size_t total_size;
+} grpc_chttp2_stream_compression_context_manager;
+
 struct grpc_chttp2_transport {
   grpc_transport base; /* must be first */
   gpr_refcount refs;
@@ -759,5 +787,25 @@ void grpc_chttp2_fail_pending_writes(grpc_chttp2_transport* t,
     initialization */
 void grpc_chttp2_config_default_keepalive_args(grpc_channel_args* args,
                                                bool is_client);
+
+grpc_chttp2_stream_compression_context_manager*
+grpc_chttp2_stream_compression_context_manager_create(
+    grpc_stream_compression_method stream_compression_method);
+
+void grpc_chttp2_stream_compression_context_manager_destroy(
+    grpc_chttp2_stream_compression_context_manager* ctx_manager);
+
+void grpc_chttp2_stream_compression_context_manager_add_block(
+    grpc_chttp2_stream_compression_context_manager* ctx_manager,
+    size_t block_size, const compression_block_options& options);
+
+void grpc_chttp2_stream_compression_context_manager_remove_block(
+    grpc_chttp2_stream_compression_context_manager* ctx_manager,
+    size_t block_size);
+
+bool grpc_chttp2_stream_compression_context_manager_compress(
+    grpc_chttp2_stream_compression_context_manager* ctx_manager,
+    grpc_slice_buffer* in, grpc_slice_buffer* out,
+    grpc_stream_compression_flush flush);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H */
