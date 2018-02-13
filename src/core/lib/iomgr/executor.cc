@@ -102,10 +102,8 @@ void grpc_executor_set_threading(bool threading) {
       g_thread_state[i].elems = GRPC_CLOSURE_LIST_INIT;
     }
 
-    gpr_thd_options opt = gpr_thd_options_default();
-    gpr_thd_options_set_joinable(&opt);
     gpr_thd_new(&g_thread_state[0].id, "grpc_executor", executor_thread,
-                &g_thread_state[0], &opt);
+                &g_thread_state[0]);
   } else {
     if (cur_threads == 0) return;
     for (size_t i = 0; i < g_max_threads; i++) {
@@ -262,10 +260,8 @@ static void executor_push(grpc_closure* closure, grpc_error* error,
       if (cur_thread_count < g_max_threads) {
         gpr_atm_no_barrier_store(&g_cur_threads, cur_thread_count + 1);
 
-        gpr_thd_options opt = gpr_thd_options_default();
-        gpr_thd_options_set_joinable(&opt);
         gpr_thd_new(&g_thread_state[cur_thread_count].id, "gpr_executor",
-                    executor_thread, &g_thread_state[cur_thread_count], &opt);
+                    executor_thread, &g_thread_state[cur_thread_count]);
       }
       gpr_spinlock_unlock(&g_adding_thread_lock);
     }

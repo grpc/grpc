@@ -124,7 +124,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gpr/sync.cc )
   s.files += %w( src/core/lib/gpr/sync_posix.cc )
   s.files += %w( src/core/lib/gpr/sync_windows.cc )
-  s.files += %w( src/core/lib/gpr/thd.cc )
   s.files += %w( src/core/lib/gpr/thd_posix.cc )
   s.files += %w( src/core/lib/gpr/thd_windows.cc )
   s.files += %w( src/core/lib/gpr/time.cc )

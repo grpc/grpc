@@ -28,38 +28,15 @@
 #include <grpc/support/thd_id.h>
 #include <grpc/support/time.h>
 
-/** Thread creation options. */
-typedef struct {
-  int flags; /** Opaque field. Get and set with accessors below. */
-} gpr_thd_options;
-
 /** Create a new thread running (*thd_body)(arg) and place its thread identifier
    in *t, and return true.  If there are insufficient resources, return false.
    thd_name is the name of the thread for identification purposes on platforms
    that support thread naming.
-   If options==NULL, default options are used.
-   The thread is immediately runnable, and exits when (*thd_body)() returns.  */
+   The thread must be joined. */
 int gpr_thd_new(gpr_thd_id* t, const char* thd_name,
-                void (*thd_body)(void* arg), void* arg,
-                const gpr_thd_options* options);
+                void (*thd_body)(void* arg), void* arg);
 
-/** Return a gpr_thd_options struct with all fields set to defaults. */
-gpr_thd_options gpr_thd_options_default(void);
-
-/** Set the thread to become detached on startup - this is the default. */
-void gpr_thd_options_set_detached(gpr_thd_options* options);
-
-/** Set the thread to become joinable - mutually exclusive with detached. */
-void gpr_thd_options_set_joinable(gpr_thd_options* options);
-
-/** Returns non-zero if the option detached is set. */
-int gpr_thd_options_is_detached(const gpr_thd_options* options);
-
-/** Returns non-zero if the option joinable is set. */
-int gpr_thd_options_is_joinable(const gpr_thd_options* options);
-
-/** Blocks until the specified thread properly terminates.
-   Calling this on a detached thread has unpredictable results. */
+/** Blocks until the specified thread properly terminates. */
 void gpr_thd_join(gpr_thd_id t);
 
 /* Internal interfaces between modules within the gpr support library.  */

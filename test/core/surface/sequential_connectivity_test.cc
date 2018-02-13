@@ -68,9 +68,7 @@ static void run_test(const test_fixture* fixture) {
 
   server_thread_args sta = {server, server_cq};
   gpr_thd_id server_thread;
-  gpr_thd_options thdopt = gpr_thd_options_default();
-  gpr_thd_options_set_joinable(&thdopt);
-  gpr_thd_new(&server_thread, "grpc_server", server_thread_func, &sta, &thdopt);
+  gpr_thd_new(&server_thread, "grpc_server", server_thread_func, &sta);
 
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   grpc_channel* channels[NUM_CONNECTIONS];

@@ -220,11 +220,11 @@ void grpc_run_bad_client_test(
   /* Check a ground truth */
   GPR_ASSERT(grpc_server_has_open_connections(a.server));
 
-  gpr_thd_id id;
+  gpr_thd_id server_validator_id;
   gpr_event_init(&a.done_thd);
   a.validator = server_validator;
   /* Start validator */
-  gpr_thd_new(&id, "grpc_bad_client", thd_func, &a, nullptr);
+  gpr_thd_new(&server_validator_id, "grpc_bad_client", thd_func, &a);
   for (int i = 0; i < num_args; i++) {
     grpc_run_client_side_validator(&args[i], i == (num_args - 1) ? flags : 0,
                                    &sfd, client_cq);
@@ -234,6 +234,7 @@ void grpc_run_bad_client_test(
 
   /* Shutdown. */
   shutdown_client(&sfd.client);
+  gpr_thd_join(server_validator_id);
 
   shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
   grpc_server_shutdown_and_notify(a.server, shutdown_cq, nullptr);

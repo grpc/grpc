@@ -50,7 +50,6 @@ static void test_connectivity(grpc_end2end_test_config config) {
   grpc_connectivity_state state;
   cq_verifier* cqv = cq_verifier_create(f.cq);
   child_events ce;
-  gpr_thd_options thdopt = gpr_thd_options_default();
   gpr_thd_id thdid;
 
   grpc_channel_args client_args;
@@ -67,9 +66,7 @@ static void test_connectivity(grpc_end2end_test_config config) {
   ce.channel = f.client;
   ce.cq = f.cq;
   gpr_event_init(&ce.started);
-  gpr_thd_options_set_joinable(&thdopt);
-  GPR_ASSERT(
-      gpr_thd_new(&thdid, "grpc_connectivity", child_thread, &ce, &thdopt));
+  GPR_ASSERT(gpr_thd_new(&thdid, "grpc_connectivity", child_thread, &ce));
 
   gpr_event_wait(&ce.started, gpr_inf_future(GPR_CLOCK_MONOTONIC));
 

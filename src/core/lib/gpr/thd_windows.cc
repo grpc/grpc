@@ -40,15 +40,14 @@
 struct thd_info {
   void (*body)(void* arg); /* body of a thread */
   void* arg;               /* argument to a thread */
-  HANDLE join_event;       /* if joinable, the join event */
-  int joinable;            /* true if not detached */
+  HANDLE join_event;       /* the join event */
 };
 
 static thread_local struct thd_info* g_thd_info;
 
 /* Destroys a thread info */
 static void destroy_thread(struct thd_info* t) {
-  if (t->joinable) CloseHandle(t->join_event);
+  CloseHandle(t->join_event);
   gpr_free(t);
 }
 
@@ -58,32 +57,22 @@ void gpr_thd_init(void) {}
 static DWORD WINAPI thread_body(void* v) {
   g_thd_info = (struct thd_info*)v;
   g_thd_info->body(g_thd_info->arg);
-  if (g_thd_info->joinable) {
-    BOOL ret = SetEvent(g_thd_info->join_event);
-    GPR_ASSERT(ret);
-  } else {
-    destroy_thread(g_thd_info);
-  }
+  BOOL ret = SetEvent(g_thd_info->join_event);
+  GPR_ASSERT(ret);
   return 0;
 }
 
 int gpr_thd_new(gpr_thd_id* t, const char* thd_name,
-                void (*thd_body)(void* arg), void* arg,
-                const gpr_thd_options* options) {
+                void (*thd_body)(void* arg), void* arg) {
   HANDLE handle;
   struct thd_info* info = (struct thd_info*)gpr_malloc(sizeof(*info));
   info->body = thd_body;
   info->arg = arg;
   *t = 0;
-  if (gpr_thd_options_is_joinable(options)) {
-    info->joinable = 1;
-    info->join_event = CreateEvent(NULL, FALSE, FALSE, NULL);
-    if (info->join_event == NULL) {
-      gpr_free(info);
-      return 0;
-    }
-  } else {
-    info->joinable = 0;
+  info->join_event = CreateEvent(NULL, FALSE, FALSE, NULL);
+  if (info->join_event == NULL) {
+    gpr_free(info);
+    return 0;
   }
   handle = CreateThread(NULL, 64 * 1024, thread_body, info, 0, NULL);
   if (handle == NULL) {

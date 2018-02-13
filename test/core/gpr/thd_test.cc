@@ -38,7 +38,7 @@ struct test {
 };
 
 /* A Thread body.   Decrement t->n, and if is becomes zero, set t->done. */
-static void thd_body(void* v) {
+static void thd_body1(void* v) {
   struct test* t = static_cast<struct test*>(v);
   gpr_mu_lock(&t->mu);
   t->n--;
@@ -49,45 +49,38 @@ static void thd_body(void* v) {
   gpr_mu_unlock(&t->mu);
 }
 
-static void thd_body_joinable(void* v) {}
-
-/* Test thread options work as expected */
-static void test_options(void) {
-  gpr_thd_options options = gpr_thd_options_default();
-  GPR_ASSERT(!gpr_thd_options_is_joinable(&options));
-  GPR_ASSERT(gpr_thd_options_is_detached(&options));
-  gpr_thd_options_set_joinable(&options);
-  GPR_ASSERT(gpr_thd_options_is_joinable(&options));
-  GPR_ASSERT(!gpr_thd_options_is_detached(&options));
-  gpr_thd_options_set_detached(&options);
-  GPR_ASSERT(!gpr_thd_options_is_joinable(&options));
-  GPR_ASSERT(gpr_thd_options_is_detached(&options));
-}
-
-/* Test that we can create a number of threads and wait for them. */
-static void test(void) {
+/* Test that we can create a number of threads, wait for them, and join them. */
+static void test1(void) {
   int i;
-  gpr_thd_id thd;
   gpr_thd_id thds[NUM_THREADS];
   struct test t;
-  gpr_thd_options options = gpr_thd_options_default();
   gpr_mu_init(&t.mu);
   gpr_cv_init(&t.done_cv);
   t.n = NUM_THREADS;
   t.is_done = 0;
   for (i = 0; i < NUM_THREADS; i++) {
-    GPR_ASSERT(gpr_thd_new(&thd, "grpc_thread_test", &thd_body, &t, nullptr));
+    GPR_ASSERT(gpr_thd_new(&thds[i], "grpc_thread_body1_test", &thd_body1, &t));
   }
   gpr_mu_lock(&t.mu);
   while (!t.is_done) {
     gpr_cv_wait(&t.done_cv, &t.mu, gpr_inf_future(GPR_CLOCK_REALTIME));
   }
   gpr_mu_unlock(&t.mu);
-  GPR_ASSERT(t.n == 0);
-  gpr_thd_options_set_joinable(&options);
   for (i = 0; i < NUM_THREADS; i++) {
-    GPR_ASSERT(gpr_thd_new(&thds[i], "grpc_joinable_thread_test",
-                           &thd_body_joinable, nullptr, &options));
+    gpr_thd_join(thds[i]);
+  }
+  GPR_ASSERT(t.n == 0);
+}
+
+static void thd_body2(void* v) {}
+
+/* Test that we can create a number of threads and join them. */
+static void test2(void) {
+  int i;
+  gpr_thd_id thds[NUM_THREADS];
+  for (i = 0; i < NUM_THREADS; i++) {
+    GPR_ASSERT(
+        gpr_thd_new(&thds[i], "grpc_thread_body2_test", &thd_body2, nullptr));
   }
   for (i = 0; i < NUM_THREADS; i++) {
     gpr_thd_join(thds[i]);
@@ -98,7 +91,7 @@ static void test(void) {
 
 int main(int argc, char* argv[]) {
   grpc_test_init(argc, argv);
-  test_options();
-  test();
+  test1();
+  test2();
   return 0;
 }

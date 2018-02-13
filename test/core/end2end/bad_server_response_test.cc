@@ -253,15 +253,17 @@ static void actually_poll_server(void* arg) {
   gpr_free(pa);
 }
 
-static void poll_server_until_read_done(test_tcp_server* server,
-                                        gpr_event* signal_when_done) {
+static gpr_thd_id poll_server_until_read_done(test_tcp_server* server,
+
+                                              gpr_event* signal_when_done) {
   gpr_atm_rel_store(&state.done_atm, 0);
   state.write_done = 0;
   gpr_thd_id id;
   poll_args* pa = static_cast<poll_args*>(gpr_malloc(sizeof(*pa)));
   pa->server = server;
   pa->signal_when_done = signal_when_done;
-  gpr_thd_new(&id, "grpc_poll_server", actually_poll_server, pa, nullptr);
+  gpr_thd_new(&id, "grpc_poll_server", actually_poll_server, pa);
+  return id;
 }
 
 static void run_test(const char* response_payload,
@@ -281,9 +283,10 @@ static void run_test(const char* response_payload,
   state.response_payload_length = response_payload_length;
 
   /* poll server until sending out the response */
-  poll_server_until_read_done(&test_server, &ev);
+  gpr_thd_id id = poll_server_until_read_done(&test_server, &ev);
   start_rpc(server_port, expected_status, expected_detail);
   gpr_event_wait(&ev, gpr_inf_future(GPR_CLOCK_REALTIME));
+  gpr_thd_join(id);
 
   /* clean up */
   grpc_endpoint_shutdown(state.tcp,

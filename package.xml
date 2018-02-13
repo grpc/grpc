@@ -131,7 +131,6 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/sync.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/sync_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/sync_windows.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/thd.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/thd_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/thd_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/time.cc" role="src" />

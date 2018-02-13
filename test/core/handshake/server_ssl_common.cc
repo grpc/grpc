@@ -138,11 +138,8 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
   gpr_event_init(&client_handshake_complete);
 
   // Launch the gRPC server thread.
-  gpr_thd_options thdopt = gpr_thd_options_default();
   gpr_thd_id thdid;
-  gpr_thd_options_set_joinable(&thdopt);
-  GPR_ASSERT(
-      gpr_thd_new(&thdid, "grpc_ssl_test", server_thread, &port, &thdopt));
+  GPR_ASSERT(gpr_thd_new(&thdid, "grpc_ssl_test", server_thread, &port));
 
   SSL_load_error_strings();
   OpenSSL_add_ssl_algorithms();

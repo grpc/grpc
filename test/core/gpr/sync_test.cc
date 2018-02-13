@@ -134,6 +134,7 @@ int queue_remove(queue* q, int* head, gpr_timespec abs_deadline) {
 /* Tests for gpr_mu and gpr_cv, and the queue example. */
 struct test {
   int threads; /* number of threads */
+  gpr_thd_id* thread_ids;
 
   int64_t iterations; /* number of iterations per thread */
   int64_t counter;
@@ -160,6 +161,8 @@ struct test {
 static struct test* test_new(int threads, int64_t iterations, int incr_step) {
   struct test* m = static_cast<struct test*>(gpr_malloc(sizeof(*m)));
   m->threads = threads;
+  m->thread_ids =
+      static_cast<gpr_thd_id*>(gpr_malloc(sizeof(*m->thread_ids) * threads));
   m->iterations = iterations;
   m->counter = 0;
   m->thread_count = 0;
@@ -182,15 +185,15 @@ static void test_destroy(struct test* m) {
   gpr_cv_destroy(&m->cv);
   gpr_cv_destroy(&m->done_cv);
   queue_destroy(&m->q);
+  gpr_free(m->thread_ids);
   gpr_free(m);
 }
 
 /* Create m->threads threads, each running (*body)(m) */
 static void test_create_threads(struct test* m, void (*body)(void* arg)) {
-  gpr_thd_id id;
   int i;
   for (i = 0; i != m->threads; i++) {
-    GPR_ASSERT(gpr_thd_new(&id, "grpc_create_threads", body, m, nullptr));
+    GPR_ASSERT(gpr_thd_new(&m->thread_ids[i], "grpc_create_threads", body, m));
   }
 }
 
@@ -201,6 +204,9 @@ static void test_wait(struct test* m) {
     gpr_cv_wait(&m->done_cv, &m->mu, gpr_inf_future(GPR_CLOCK_MONOTONIC));
   }
   gpr_mu_unlock(&m->mu);
+  for (int i = 0; i != m->threads; i++) {
+    gpr_thd_join(m->thread_ids[i]);
+  }
 }
 
 /* Get an integer thread id in the raneg 0..threads-1 */
@@ -245,13 +251,16 @@ static void test(const char* name, void (*body)(void* m),
     fprintf(stderr, " %ld", static_cast<long>(iterations));
     fflush(stderr);
     m = test_new(10, iterations, incr_step);
+    gpr_thd_id extra_id;
     if (extra != nullptr) {
-      gpr_thd_id id;
-      GPR_ASSERT(gpr_thd_new(&id, name, extra, m, nullptr));
+      GPR_ASSERT(gpr_thd_new(&extra_id, name, extra, m));
       m->done++; /* one more thread to wait for */
     }
     test_create_threads(m, body);
     test_wait(m);
+    if (extra != nullptr) {
+      gpr_thd_join(extra_id);
+    }
     if (m->counter != m->threads * m->iterations * m->incr_step) {
       fprintf(stderr, "counter %ld  threads %d  iterations %ld\n",
               static_cast<long>(m->counter), m->threads,

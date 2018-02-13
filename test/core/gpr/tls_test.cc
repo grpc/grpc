@@ -46,7 +46,6 @@ static void thd_body(void* arg) {
 /* ------------------------------------------------- */
 
 int main(int argc, char* argv[]) {
-  gpr_thd_options opt = gpr_thd_options_default();
   int i;
   gpr_thd_id threads[NUM_THREADS];
 
@@ -54,10 +53,8 @@ int main(int argc, char* argv[]) {
 
   gpr_tls_init(&test_var);
 
-  gpr_thd_options_set_joinable(&opt);
-
   for (i = 0; i < NUM_THREADS; i++) {
-    gpr_thd_new(&threads[i], "grpc_tls_test", thd_body, nullptr, &opt);
+    gpr_thd_new(&threads[i], "grpc_tls_test", thd_body, nullptr);
   }
   for (i = 0; i < NUM_THREADS; i++) {
     gpr_thd_join(threads[i]);

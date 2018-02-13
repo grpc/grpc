@@ -65,7 +65,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gpr/sync.cc \
     src/core/lib/gpr/sync_posix.cc \
     src/core/lib/gpr/sync_windows.cc \
-    src/core/lib/gpr/thd.cc \
     src/core/lib/gpr/thd_posix.cc \
     src/core/lib/gpr/thd_windows.cc \
     src/core/lib/gpr/time.cc \

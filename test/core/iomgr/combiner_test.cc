@@ -100,13 +100,11 @@ static void test_execute_many(void) {
   gpr_thd_id thds[100];
   thd_args ta[GPR_ARRAY_SIZE(thds)];
   for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
-    gpr_thd_options options = gpr_thd_options_default();
-    gpr_thd_options_set_joinable(&options);
     ta[i].ctr = 0;
     ta[i].lock = lock;
     gpr_event_init(&ta[i].done);
-    GPR_ASSERT(gpr_thd_new(&thds[i], "grpc_execute_many", execute_many_loop,
-                           &ta[i], &options));
+    GPR_ASSERT(
+        gpr_thd_new(&thds[i], "grpc_execute_many", execute_many_loop, &ta[i]));
   }
   for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
     GPR_ASSERT(gpr_event_wait(&ta[i].done,

@@ -72,8 +72,7 @@ static void* thread_body(void* v) {
 }
 
 int gpr_thd_new(gpr_thd_id* t, const char* thd_name,
-                void (*thd_body)(void* arg), void* arg,
-                const gpr_thd_options* options) {
+                void (*thd_body)(void* arg), void* arg) {
   int thread_started;
   pthread_attr_t attr;
   pthread_t p;
@@ -87,15 +86,12 @@ int gpr_thd_new(gpr_thd_id* t, const char* thd_name,
   inc_thd_count();
 
   GPR_ASSERT(pthread_attr_init(&attr) == 0);
-  if (gpr_thd_options_is_detached(options)) {
-    GPR_ASSERT(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) ==
-               0);
-  } else {
-    GPR_ASSERT(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE) ==
-               0);
-  }
+  GPR_ASSERT(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE) == 0);
+
   thread_started = (pthread_create(&p, &attr, &thread_body, a) == 0);
+
   GPR_ASSERT(pthread_attr_destroy(&attr) == 0);
+
   if (!thread_started) {
     /* don't use gpr_free, as this was allocated using malloc (see above) */
     free(a);

@@ -76,7 +76,6 @@ static void request_call(grpc_end2end_proxy* proxy);
 grpc_end2end_proxy* grpc_end2end_proxy_create(const grpc_end2end_proxy_def* def,
                                               grpc_channel_args* client_args,
                                               grpc_channel_args* server_args) {
-  gpr_thd_options opt = gpr_thd_options_default();
   int proxy_port = grpc_pick_unused_port_or_die();
   int server_port = grpc_pick_unused_port_or_die();
 
@@ -98,9 +97,8 @@ grpc_end2end_proxy* grpc_end2end_proxy_create(const grpc_end2end_proxy_def* def,
   grpc_server_start(proxy->server);
 
   grpc_call_details_init(&proxy->new_call_details);
-  gpr_thd_options_set_joinable(&opt);
   GPR_ASSERT(
-      gpr_thd_new(&proxy->thd, "grpc_end2end_proxy", thread_main, proxy, &opt));
+      gpr_thd_new(&proxy->thd, "grpc_end2end_proxy", thread_main, proxy));
 
   request_call(proxy);
 
