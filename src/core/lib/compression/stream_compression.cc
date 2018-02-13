@@ -42,14 +42,16 @@ bool grpc_stream_decompress(grpc_stream_compression_context* ctx,
 }
 
 grpc_stream_compression_context* grpc_stream_compression_context_create(
-    grpc_stream_compression_method method) {
+    grpc_stream_compression_method method, bool no_compress) {
   switch (method) {
     case GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS:
     case GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS:
-      return grpc_stream_compression_identity_vtable.context_create(method);
+      return grpc_stream_compression_identity_vtable.context_create(
+          method, no_compress);
     case GRPC_STREAM_COMPRESSION_GZIP_COMPRESS:
     case GRPC_STREAM_COMPRESSION_GZIP_DECOMPRESS:
-      return grpc_stream_compression_gzip_vtable.context_create(method);
+      return grpc_stream_compression_gzip_vtable.context_create(method,
+                                                                no_compress);
     default:
       gpr_log(GPR_ERROR, "Unknown stream compression method: %d", method);
       return nullptr;

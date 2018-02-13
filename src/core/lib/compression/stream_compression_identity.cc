@@ -79,7 +79,7 @@ static bool grpc_stream_decompress_identity(
 
 static grpc_stream_compression_context*
 grpc_stream_compression_context_create_identity(
-    grpc_stream_compression_method method) {
+    grpc_stream_compression_method method, bool no_compress) {
   GPR_ASSERT(method == GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS ||
              method == GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS);
   /* No context needed in this case. Use fake context instead. */

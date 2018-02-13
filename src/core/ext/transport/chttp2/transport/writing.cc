@@ -360,8 +360,8 @@ class DataSendContext {
 
   void CompressMoreBytes() {
     if (s_->stream_compression_ctx == nullptr) {
-      s_->stream_compression_ctx =
-          grpc_stream_compression_context_create(s_->stream_compression_method);
+      s_->stream_compression_ctx = grpc_stream_compression_context_create(
+          s_->stream_compression_method, false);
     }
     s_->uncompressed_data_size = s_->flow_controlled_buffer.length;
     if (!grpc_stream_compress(s_->stream_compression_ctx,

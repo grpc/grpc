@@ -1828,7 +1828,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
           if (!s->stream_decompression_ctx) {
             s->stream_decompression_ctx =
                 grpc_stream_compression_context_create(
-                    s->stream_decompression_method);
+                    s->stream_decompression_method, false);
           }
           if (!grpc_stream_decompress(
                   s->stream_decompression_ctx,
@@ -1902,7 +1902,7 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
       bool end_of_context;
       if (!s->stream_decompression_ctx) {
         s->stream_decompression_ctx = grpc_stream_compression_context_create(
-            s->stream_decompression_method);
+            s->stream_decompression_method, false);
       }
       if (!grpc_stream_decompress(
               s->stream_decompression_ctx, &s->frame_storage,
@@ -2813,7 +2813,7 @@ static grpc_error* incoming_byte_stream_pull(grpc_byte_stream* byte_stream,
       bool end_of_context;
       if (!s->stream_decompression_ctx) {
         s->stream_decompression_ctx = grpc_stream_compression_context_create(
-            s->stream_decompression_method);
+            s->stream_decompression_method, false);
       }
       if (!grpc_stream_decompress(s->stream_decompression_ctx,
                                   &s->unprocessed_incoming_frames_buffer,
@@ -3250,9 +3250,8 @@ bool grpc_chttp2_stream_compression_context_manager_compress(
     if (ctx_manager->stream_compression_ctx == nullptr) {
       ctx_manager->stream_compression_ctx =
           grpc_stream_compression_context_create(
-              ctx_manager->stream_compression_method
-              //, ctx_manager->head->options->no_compression
-          );
+              ctx_manager->stream_compression_method,
+              ctx_manager->head->options.no_compression);
       if (ctx_manager == nullptr) {
         gpr_log(GPR_ERROR, "Unable to create stream compression context");
         return false;

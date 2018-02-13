@@ -187,7 +187,7 @@ static bool grpc_stream_decompress_gzip(
 
 static grpc_stream_compression_context*
 grpc_stream_compression_context_create_gzip(
-    grpc_stream_compression_method method) {
+    grpc_stream_compression_method method, bool no_compress) {
   GPR_ASSERT(method == GRPC_STREAM_COMPRESSION_GZIP_COMPRESS ||
              method == GRPC_STREAM_COMPRESSION_GZIP_DECOMPRESS);
   grpc_stream_compression_context_gzip* gzip_ctx =
@@ -201,8 +201,9 @@ grpc_stream_compression_context_create_gzip(
     r = inflateInit2(&gzip_ctx->zs, 0x1F);
     gzip_ctx->flate = inflate;
   } else {
-    r = deflateInit2(&gzip_ctx->zs, Z_DEFAULT_COMPRESSION, Z_DEFLATED, 0x1F, 8,
-                     Z_DEFAULT_STRATEGY);
+    r = deflateInit2(&gzip_ctx->zs,
+                     no_compress ? Z_NO_COMPRESSION : Z_DEFAULT_COMPRESSION,
+                     Z_DEFLATED, 0x1F, 8, Z_DEFAULT_STRATEGY);
     gzip_ctx->flate = deflate;
   }
   if (r != Z_OK) {

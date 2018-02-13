@@ -58,7 +58,7 @@ struct grpc_stream_compression_vtable {
                      size_t max_input_size, size_t* output_size,
                      size_t max_output_size, bool* end_of_context);
   grpc_stream_compression_context* (*context_create)(
-      grpc_stream_compression_method method);
+      grpc_stream_compression_method method, bool no_compress);
   void (*context_destroy)(grpc_stream_compression_context* ctx);
 };
 
@@ -94,12 +94,12 @@ bool grpc_stream_decompress(grpc_stream_compression_context* ctx,
                             size_t max_output_size, bool* end_of_context);
 
 /**
- * Creates a stream compression context. \a pending_bytes_buffer is the input
- * buffer for compression/decompression operations. \a method specifies whether
- * the context is for compression or decompression.
+ * Creates a stream compression context. \a method specifies whether
+ * the context is for compression or decompression. \a no_compression specifies
+ * whether to create a compression context that does not actually compress.
  */
 grpc_stream_compression_context* grpc_stream_compression_context_create(
-    grpc_stream_compression_method method);
+    grpc_stream_compression_method method, bool no_compress);
 
 /**
  * Destroys a stream compression context.
