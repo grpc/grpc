@@ -81,10 +81,11 @@ sudo pip install virtualenv
 # is not available on Ubuntu 16.10, so install from source
 curl -O https://www.python.org/ftp/python/3.4.6/Python-3.4.6.tgz
 tar xzvf Python-3.4.6.tgz
-cd Python-3.4.6
+(
+cd Python-3.4.6 || exit
 ./configure --enable-shared --prefix=/usr/local LDFLAGS="-Wl,--rpath=/usr/local/lib"
 sudo make altinstall
-cd ..
+)
 rm Python-3.4.6.tgz
 
 curl -O https://bootstrap.pypa.io/get-pip.py
@@ -95,6 +96,8 @@ sudo pip install google-api-python-client
 # Node dependencies (nvm has to be installed under user kbuilder)
 touch .profile
 curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.25.4/install.sh | bash
+# silence shellcheck as it cannot follow the following `source` path statically:
+# shellcheck disable=SC1090
 source ~/.nvm/nvm.sh
 nvm install 0.12 && npm config set cache /tmp/npm-cache
 nvm install 4 && npm config set cache /tmp/npm-cache
@@ -130,6 +133,8 @@ sudo apt-get update && sudo apt-get install -y libicu55
 # Ruby dependencies
 gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
 curl -sSL https://get.rvm.io | bash -s stable --ruby
+# silence shellcheck as it cannot follow the following `source` path statically:
+# shellcheck disable=SC1090
 source ~/.rvm/scripts/rvm
 
 git clone https://github.com/rbenv/rbenv.git ~/.rbenv
@@ -168,7 +173,7 @@ sudo ln -s /usr/local/go/bin/go /usr/bin/go
 rm go$GO_VERSION.$OS-$ARCH.tar.gz
 
 # Install perf, to profile benchmarks. (need to get the right linux-tools-<> for kernel version)
-sudo apt-get install -y linux-tools-common linux-tools-generic linux-tools-`uname -r`
+sudo apt-get install -y linux-tools-common linux-tools-generic "linux-tools-$(uname -r)"
 # see http://unix.stackexchange.com/questions/14227/do-i-need-root-admin-permissions-to-run-userspace-perf-tool-perf-events-ar
 echo 0 | sudo tee /proc/sys/kernel/perf_event_paranoid
 # see http://stackoverflow.com/questions/21284906/perf-couldnt-record-kernel-reference-relocation-symbol
@@ -186,7 +191,9 @@ git clone -v https://github.com/brendangregg/FlameGraph ~/FlameGraph
 sudo apt-get install -y python-scipy python-numpy
 
 # Add pubkey of Kokoro driver VM to allow SSH
-cat kokoro_performance.pub | sudo tee --append ~kbuilder/.ssh/authorized_keys
+# silence false-positive shellcheck warning ("< redirect does not affect sudo")
+# shellcheck disable=SC2024
+sudo tee --append ~kbuilder/.ssh/authorized_keys < kokoro_performance.pub
 
 # Restart for VM to pick up kernel update
 echo 'Successfully initialized the linux worker, going for reboot in 10 seconds'
