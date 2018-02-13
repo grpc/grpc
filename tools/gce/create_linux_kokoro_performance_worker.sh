@@ -17,7 +17,7 @@
 
 set -ex
 
-cd $(dirname $0)
+cd "$(dirname "$0")"
 
 CLOUD_PROJECT=grpc-testing
 ZONE=us-central1-b  # this zone allows 32core machines
@@ -25,7 +25,7 @@ ZONE=us-central1-b  # this zone allows 32core machines
 INSTANCE_NAME="${1:-grpc-kokoro-performance-server1}"
 MACHINE_TYPE=n1-standard-32
 
-gcloud compute instances create $INSTANCE_NAME \
+gcloud compute instances create "$INSTANCE_NAME" \
     --project="$CLOUD_PROJECT" \
     --zone "$ZONE" \
     --machine-type $MACHINE_TYPE \
@@ -41,9 +41,9 @@ sleep 60
 gcloud compute copy-files \
     --project="$CLOUD_PROJECT" \
     --zone "$ZONE" \
-    kokoro_performance.pub linux_kokoro_performance_worker_init.sh kbuilder@${INSTANCE_NAME}:~
+    kokoro_performance.pub linux_kokoro_performance_worker_init.sh "kbuilder@${INSTANCE_NAME}":~
 
 gcloud compute ssh \
     --project="$CLOUD_PROJECT" \
     --zone "$ZONE" \
-    kbuilder@${INSTANCE_NAME} --command "./linux_kokoro_performance_worker_init.sh"
+    "kbuilder@${INSTANCE_NAME}" --command "./linux_kokoro_performance_worker_init.sh"
