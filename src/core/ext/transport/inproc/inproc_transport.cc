@@ -506,6 +506,14 @@ static void fail_helper_locked(inproc_stream* s, grpc_error* error) {
   GRPC_ERROR_UNREF(error);
 }
 
+// TODO(vpai): It should not be necessary to drain the incoming byte
+// stream and create a new one; instead, we should simply pass the byte
+// stream from the sender directly to the receiver as-is.
+//
+// Note that fixing this will also avoid the assumption in this code
+// that the incoming byte stream's next() call will always return
+// synchronously.  That assumption is true today but may not always be
+// true in the future.
 static void message_transfer_locked(inproc_stream* sender,
                                     inproc_stream* receiver) {
   size_t remaining =
@@ -532,6 +540,8 @@ static void message_transfer_locked(inproc_stream* sender,
     remaining -= GRPC_SLICE_LENGTH(message_slice);
     grpc_slice_buffer_add(&receiver->recv_message, message_slice);
   } while (remaining > 0);
+  grpc_byte_stream_destroy(
+      sender->send_message_op->payload->send_message.send_message);
 
   grpc_slice_buffer_stream_init(&receiver->recv_stream, &receiver->recv_message,
                                 0);

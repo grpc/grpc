@@ -52,7 +52,6 @@ struct call_data {
   grpc_closure* recv_message_ready;
   grpc_closure* on_complete;
   grpc_byte_stream** pp_recv_message;
-  grpc_slice_buffer read_slice_buffer;
   grpc_slice_buffer_stream read_stream;
 
   /** Receive closures are chained: we inject this closure as the on_done_recv
@@ -224,13 +223,15 @@ static grpc_error* server_filter_incoming_metadata(grpc_call_element* elem,
 
       /* decode payload from query and add to the slice buffer to be returned */
       const int k_url_safe = 1;
+      grpc_slice_buffer read_slice_buffer;
+      grpc_slice_buffer_init(&read_slice_buffer);
       grpc_slice_buffer_add(
-          &calld->read_slice_buffer,
+          &read_slice_buffer,
           grpc_base64_decode_with_len(
               reinterpret_cast<const char*> GRPC_SLICE_START_PTR(query_slice),
               GRPC_SLICE_LENGTH(query_slice), k_url_safe));
-      grpc_slice_buffer_stream_init(&calld->read_stream,
-                                    &calld->read_slice_buffer, 0);
+      grpc_slice_buffer_stream_init(&calld->read_stream, &read_slice_buffer, 0);
+      grpc_slice_buffer_destroy_internal(&read_slice_buffer);
       calld->seen_path_with_query = true;
       grpc_slice_unref_internal(query_slice);
     } else {
@@ -393,7 +394,6 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
                     grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&calld->hs_recv_message_ready, hs_recv_message_ready, elem,
                     grpc_schedule_on_exec_ctx);
-  grpc_slice_buffer_init(&calld->read_slice_buffer);
   return GRPC_ERROR_NONE;
 }
 
@@ -402,7 +402,9 @@ static void destroy_call_elem(grpc_call_element* elem,
                               const grpc_call_final_info* final_info,
                               grpc_closure* ignored) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
-  grpc_slice_buffer_destroy_internal(&calld->read_slice_buffer);
+  if (calld->seen_path_with_query && !calld->payload_bin_delivered) {
+    grpc_byte_stream_destroy(&calld->read_stream.base);
+  }
 }
 
 /* Constructor for channel_data */
