@@ -81,7 +81,7 @@ void grpc_byte_stream_destroy(grpc_byte_stream* byte_stream);
 
 typedef struct grpc_slice_buffer_stream {
   grpc_byte_stream base;
-  grpc_slice_buffer* backing_buffer;
+  grpc_slice_buffer backing_buffer;
   size_t cursor;
   grpc_error* shutdown_error;
 } grpc_slice_buffer_stream;
