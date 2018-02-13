@@ -554,6 +554,15 @@ static void request_with_payload_template(
   config.tear_down_data(&f);
 }
 
+static void test_invoke_request_with_exceptionally_uncompressed_payload(
+    grpc_end2end_test_config config) {
+  request_with_payload_template(
+      config, "test_invoke_request_with_exceptionally_uncompressed_payload",
+      GRPC_WRITE_NO_COMPRESS, GRPC_COMPRESS_STREAM_GZIP, GRPC_COMPRESS_STREAM_GZIP,
+      GRPC_COMPRESS_NONE, GRPC_COMPRESS_STREAM_GZIP, nullptr, false,
+      /* ignored */ GRPC_COMPRESS_LEVEL_NONE, false, false, GRPC_COMPRESS_NONE);
+}
+
 static void test_invoke_request_with_compressed_payload(
     grpc_end2end_test_config config) {
   request_with_payload_template(
@@ -617,6 +626,7 @@ static void test_invoke_request_with_disabled_algorithm(
 }
 
 void stream_compression_compressed_payload(grpc_end2end_test_config config) {
+  test_invoke_request_with_exceptionally_uncompressed_payload(config);
   test_invoke_request_with_compressed_payload(config);
   test_invoke_request_with_send_message_before_initial_metadata(config);
   test_invoke_request_with_compressed_payload_md_override(config);

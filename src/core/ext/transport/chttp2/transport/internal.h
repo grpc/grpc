@@ -575,8 +575,8 @@ struct grpc_chttp2_stream {
   grpc_stream_compression_method stream_decompression_method;
   /** Stream compression decompress context */
   grpc_stream_compression_context* stream_decompression_ctx;
-  /** Stream compression compress context */
-  grpc_stream_compression_context* stream_compression_ctx;
+  /** Stream compression compress context manager */
+  grpc_chttp2_stream_compression_context_manager* compression_ctx_manager;
 
   /** Buffer storing data that is compressed but not sent */
   grpc_slice_buffer compressed_data_buffer;

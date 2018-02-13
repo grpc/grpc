@@ -758,10 +758,8 @@ static void destroy_stream(grpc_transport* gt, grpc_stream* gs,
   grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(gt);
   grpc_chttp2_stream* s = reinterpret_cast<grpc_chttp2_stream*>(gs);
 
-  if (s->stream_compression_ctx != nullptr) {
-    grpc_stream_compression_context_destroy(s->stream_compression_ctx);
-    s->stream_compression_ctx = nullptr;
-  }
+  grpc_chttp2_stream_compression_context_manager_destroy(
+      s->compression_ctx_manager);
   if (s->stream_decompression_ctx != nullptr) {
     grpc_stream_compression_context_destroy(s->stream_decompression_ctx);
     s->stream_decompression_ctx = nullptr;
@@ -1394,6 +1392,9 @@ static void perform_stream_op_locked(void* stream_op,
             true, &s->stream_compression_method) == 0) {
       s->stream_compression_method = GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS;
     }
+    s->compression_ctx_manager =
+        grpc_chttp2_stream_compression_context_manager_create(
+            s->stream_compression_method);
 
     s->send_initial_metadata_finished = add_closure_barrier(on_complete);
     s->send_initial_metadata =
@@ -1496,10 +1497,12 @@ static void perform_stream_op_locked(void* stream_op,
       frame_hdr[4] = static_cast<uint8_t>(len);
       s->fetching_send_message = op_payload->send_message.send_message;
       s->fetched_send_message_length = 0;
-      s->next_message_end_offset =
-          s->flow_controlled_bytes_written +
-          static_cast<int64_t>(s->flow_controlled_buffer.length) +
-          static_cast<int64_t>(len);
+      s->next_message_end_offset = s->flow_controlled_bytes_written +
+                                   static_cast<int64_t>s->flow_controlled_buffer.length +
+                                   static_cast<int64_t>len;
+      grpc_chttp2_stream_compression_context_manager_add_block(
+          s->compression_ctx_manager, len + GRPC_HEADER_SIZE_IN_BYTES,
+          {((flags & GRPC_WRITE_NO_COMPRESS) != 0)});
       if (flags & GRPC_WRITE_BUFFER_HINT) {
         s->next_message_end_offset -= t->write_buffer_size;
         s->write_buffering = true;
@@ -3217,7 +3220,7 @@ bool grpc_chttp2_stream_compression_context_manager_compress(
     grpc_chttp2_stream_compression_context_manager* ctx_manager,
     grpc_slice_buffer* in, grpc_slice_buffer* out,
     grpc_stream_compression_flush flush) {
-  GPR_ASSERT(in->length == ctx_manager->total_size);
+  GPR_ASSERT(in->length <= ctx_manager->total_size);
   if (in->length == 0 && flush != GRPC_STREAM_COMPRESSION_FLUSH_NONE &&
       ctx_manager->stream_compression_ctx != nullptr) {
     if (false == grpc_stream_compress(ctx_manager->stream_compression_ctx, in,
