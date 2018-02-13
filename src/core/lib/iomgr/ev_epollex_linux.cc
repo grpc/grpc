@@ -799,6 +799,7 @@ static grpc_error* pollable_process_events(grpc_pollset* pollset,
 static void pollset_destroy(grpc_pollset* pollset) {
   POLLABLE_UNREF(pollset->active_pollable, "pollset");
   pollset->active_pollable = nullptr;
+  gpr_mu_destroy(&pollset->mu);
 }
 
 static grpc_error* pollable_epoll(pollable* p, grpc_millis deadline) {

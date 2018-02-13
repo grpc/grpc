@@ -2945,7 +2945,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
     include/grpc/support/sync_windows.h \
-    include/grpc/support/thd.h \
+    include/grpc/support/thd_id.h \
     include/grpc/support/time.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
@@ -3903,7 +3903,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
     include/grpc/support/sync_windows.h \
-    include/grpc/support/thd.h \
+    include/grpc/support/thd_id.h \
     include/grpc/support/time.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
@@ -4186,7 +4186,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
     include/grpc/support/sync_windows.h \
-    include/grpc/support/thd.h \
+    include/grpc/support/thd_id.h \
     include/grpc/support/time.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
@@ -4712,7 +4712,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
     include/grpc/support/sync_windows.h \
-    include/grpc/support/thd.h \
+    include/grpc/support/thd_id.h \
     include/grpc/support/time.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
@@ -5192,7 +5192,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
     include/grpc/support/sync_windows.h \
-    include/grpc/support/thd.h \
+    include/grpc/support/thd_id.h \
     include/grpc/support/time.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
@@ -5902,7 +5902,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
     include/grpc/support/sync_windows.h \
-    include/grpc/support/thd.h \
+    include/grpc/support/thd_id.h \
     include/grpc/support/time.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
