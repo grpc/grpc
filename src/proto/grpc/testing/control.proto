@@ -214,8 +214,6 @@ message Scenarios {
 // once the scenario has finished.
 message ScenarioResultSummary
 {
-  // Requested QPS for fixed load tests.
-  double attempted_qps = 19;
   // Total number of operations per second over all clients.
   double qps = 1;
   // QPS per one server core.
@@ -250,6 +248,9 @@ message ScenarioResultSummary
   // Queries per CPU-sec over all servers or clients
   double server_queries_per_cpu_sec = 17;
   double client_queries_per_cpu_sec = 18;
+
+  // Requested QPS for fixed load tests.
+  double attempted_qps = 19;
 }
 
 // Results of a single benchmark scenario.
