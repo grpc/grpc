@@ -29,7 +29,7 @@ namespace grpc_core {
 
 class TraceEvent;
 
-class ChannelTracer : public RefCounted {
+class ChannelTracer : public RefCounted<ChannelTracer> {
  public:
   ChannelTracer(size_t max_nodes);
   ~ChannelTracer();

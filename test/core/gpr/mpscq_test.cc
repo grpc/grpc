@@ -24,7 +24,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd.h>
-#include <grpc/support/useful.h>
+
+#include "src/core/lib/gpr/useful.h"
 #include "test/core/util/test_config.h"
 
 typedef struct test_node {
@@ -48,7 +49,7 @@ static void test_serial(void) {
     gpr_mpscq_push(&q, &new_node(i, nullptr)->node);
   }
   for (size_t i = 0; i < 10000000; i++) {
-    test_node* n = (test_node*)gpr_mpscq_pop(&q);
+    test_node* n = reinterpret_cast<test_node*>(gpr_mpscq_pop(&q));
     GPR_ASSERT(n);
     GPR_ASSERT(n->i == i);
     gpr_free(n);
@@ -96,7 +97,7 @@ static void test_mt(void) {
     while ((n = gpr_mpscq_pop(&q)) == nullptr) {
       spins++;
     }
-    test_node* tn = (test_node*)n;
+    test_node* tn = reinterpret_cast<test_node*>(n);
     GPR_ASSERT(*tn->ctr == tn->i - 1);
     *tn->ctr = tn->i;
     if (tn->i == THREAD_ITERATIONS) num_done++;
@@ -133,7 +134,7 @@ static void pull_thread(void* arg) {
     while ((n = gpr_mpscq_pop(pa->q)) == nullptr) {
       pa->spins++;
     }
-    test_node* tn = (test_node*)n;
+    test_node* tn = reinterpret_cast<test_node*>(n);
     GPR_ASSERT(*tn->ctr == tn->i - 1);
     *tn->ctr = tn->i;
     if (tn->i == THREAD_ITERATIONS) pa->num_done++;

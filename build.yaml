@@ -12,7 +12,7 @@ settings:
   '#08': Use "-preN" suffixes to identify pre-release versions
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
-  core_version: 5.0.0-dev
+  core_version: 6.0.0-dev
   g_stands_for: glamorous
   version: 1.10.0-dev
 filegroups:
@@ -24,13 +24,18 @@ filegroups:
   uses:
   - grpc_base
   - nanopb
+- name: cmdline
+  headers:
+  - test/core/util/cmdline.h
+  src:
+  - test/core/util/cmdline.cc
+  uses:
+  - gpr_base_headers
 - name: gpr_base
   src:
   - src/core/lib/gpr/alloc.cc
   - src/core/lib/gpr/arena.cc
   - src/core/lib/gpr/atm.cc
-  - src/core/lib/gpr/avl.cc
-  - src/core/lib/gpr/cmdline.cc
   - src/core/lib/gpr/cpu_iphone.cc
   - src/core/lib/gpr/cpu_linux.cc
   - src/core/lib/gpr/cpu_posix.cc
@@ -51,8 +56,6 @@ filegroups:
   - src/core/lib/gpr/string_posix.cc
   - src/core/lib/gpr/string_util_windows.cc
   - src/core/lib/gpr/string_windows.cc
-  - src/core/lib/gpr/subprocess_posix.cc
-  - src/core/lib/gpr/subprocess_windows.cc
   - src/core/lib/gpr/sync.cc
   - src/core/lib/gpr/sync_posix.cc
   - src/core/lib/gpr/sync_windows.cc
@@ -79,15 +82,11 @@ filegroups:
   - include/grpc/support/atm_gcc_atomic.h
   - include/grpc/support/atm_gcc_sync.h
   - include/grpc/support/atm_windows.h
-  - include/grpc/support/avl.h
-  - include/grpc/support/cmdline.h
   - include/grpc/support/cpu.h
-  - include/grpc/support/host_port.h
   - include/grpc/support/log.h
   - include/grpc/support/log_windows.h
   - include/grpc/support/port_platform.h
   - include/grpc/support/string_util.h
-  - include/grpc/support/subprocess.h
   - include/grpc/support/sync.h
   - include/grpc/support/sync_custom.h
   - include/grpc/support/sync_generic.h
@@ -95,15 +94,11 @@ filegroups:
   - include/grpc/support/sync_windows.h
   - include/grpc/support/thd.h
   - include/grpc/support/time.h
-  - include/grpc/support/tls.h
-  - include/grpc/support/tls_gcc.h
-  - include/grpc/support/tls_msvc.h
-  - include/grpc/support/tls_pthread.h
-  - include/grpc/support/useful.h
   headers:
   - src/core/lib/gpr/arena.h
   - src/core/lib/gpr/env.h
   - src/core/lib/gpr/fork.h
+  - src/core/lib/gpr/host_port.h
   - src/core/lib/gpr/mpscq.h
   - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/spinlock.h
@@ -111,7 +106,12 @@ filegroups:
   - src/core/lib/gpr/string_windows.h
   - src/core/lib/gpr/thd_internal.h
   - src/core/lib/gpr/time_precise.h
+  - src/core/lib/gpr/tls.h
+  - src/core/lib/gpr/tls_gcc.h
+  - src/core/lib/gpr/tls_msvc.h
+  - src/core/lib/gpr/tls_pthread.h
   - src/core/lib/gpr/tmpfile.h
+  - src/core/lib/gpr/useful.h
   - src/core/lib/gprpp/abstract.h
   - src/core/lib/gprpp/atomic.h
   - src/core/lib/gprpp/atomic_with_atm.h
@@ -150,6 +150,7 @@ filegroups:
   - grpc++_codegen_base
 - name: grpc_base
   src:
+  - src/core/lib/avl/avl.cc
   - src/core/lib/backoff/backoff.cc
   - src/core/lib/channel/channel_args.cc
   - src/core/lib/channel/channel_stack.cc
@@ -162,7 +163,6 @@ filegroups:
   - src/core/lib/channel/object_registry.cc
   - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
-  - src/core/lib/compression/compression_ruby.cc
   - src/core/lib/compression/message_compress.cc
   - src/core/lib/compression/stream_compression.cc
   - src/core/lib/compression/stream_compression_gzip.cc
@@ -255,7 +255,6 @@ filegroups:
   - src/core/lib/slice/slice_hash_table.cc
   - src/core/lib/slice/slice_intern.cc
   - src/core/lib/slice/slice_string_helpers.cc
-  - src/core/lib/surface/alarm.cc
   - src/core/lib/surface/api_trace.cc
   - src/core/lib/surface/byte_buffer.cc
   - src/core/lib/surface/byte_buffer_reader.cc
@@ -299,7 +298,6 @@ filegroups:
   - include/grpc/byte_buffer.h
   - include/grpc/byte_buffer_reader.h
   - include/grpc/compression.h
-  - include/grpc/compression_ruby.h
   - include/grpc/fork.h
   - include/grpc/grpc.h
   - include/grpc/grpc_posix.h
@@ -310,6 +308,7 @@ filegroups:
   - include/grpc/status.h
   - include/grpc/support/workaround_list.h
   headers:
+  - src/core/lib/avl/avl.h
   - src/core/lib/backoff/backoff.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_stack.h
@@ -409,7 +408,6 @@ filegroups:
   - src/core/lib/slice/slice_hash_table.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_string_helpers.h
-  - src/core/lib/surface/alarm_internal.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
@@ -479,7 +477,6 @@ filegroups:
   - src/core/ext/filters/client_channel/proxy_mapper.cc
   - src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   - src/core/ext/filters/client_channel/resolver.cc
-  - src/core/ext/filters/client_channel/resolver_factory.cc
   - src/core/ext/filters/client_channel/resolver_registry.cc
   - src/core/ext/filters/client_channel/retry_throttle.cc
   - src/core/ext/filters/client_channel/subchannel.cc
@@ -730,6 +727,7 @@ filegroups:
   - test/core/util/port.h
   - test/core/util/port_server_client.h
   - test/core/util/slice_splitter.h
+  - test/core/util/subprocess.h
   - test/core/util/tracer_util.h
   - test/core/util/trickle_endpoint.h
   src:
@@ -750,12 +748,15 @@ filegroups:
   - test/core/util/port_isolated_runtime_environment.cc
   - test/core/util/port_server_client.cc
   - test/core/util/slice_splitter.cc
+  - test/core/util/subprocess_posix.cc
+  - test/core/util/subprocess_windows.cc
   - test/core/util/tracer_util.cc
   - test/core/util/trickle_endpoint.cc
   deps:
   - gpr_test_util
   - gpr
   uses:
+  - cmdline
   - grpc_base
   - grpc_client_channel
   - grpc_transport_chttp2
@@ -1084,6 +1085,7 @@ filegroups:
   - src/cpp/client/create_channel_posix.cc
   - src/cpp/client/credentials_cc.cc
   - src/cpp/client/generic_stub.cc
+  - src/cpp/common/alarm.cc
   - src/cpp/common/channel_arguments.cc
   - src/cpp/common/channel_filter.cc
   - src/cpp/common/completion_queue_cc.cc
@@ -1342,7 +1344,7 @@ libs:
 - name: grpc++_core_stats
   build: private
   language: c++
-  public_headers:
+  headers:
   - src/cpp/util/core_stats.h
   src:
   - src/proto/grpc/core/stats.proto
@@ -1716,17 +1718,6 @@ libs:
   - winsock
   - global
 targets:
-- name: alarm_test
-  cpu_cost: 0.1
-  build: test
-  language: c
-  src:
-  - test/core/surface/alarm_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
 - name: algorithm_test
   build: test
   language: c
@@ -1779,6 +1770,16 @@ targets:
   deps:
   - gpr_test_util
   - gpr
+  uses_polling: false
+- name: avl_test
+  build: test
+  language: c
+  src:
+  - test/core/avl/avl_test.cc
+  deps:
+  - gpr_test_util
+  - gpr
+  - grpc
   uses_polling: false
 - name: bad_server_response_test
   build: test
@@ -1887,6 +1888,16 @@ targets:
   - test/core/end2end/fuzzers/client_fuzzer_corpus
   dict: test/core/end2end/fuzzers/hpack.dictionary
   maxlen: 2048
+- name: cmdline_test
+  build: test
+  language: c
+  src:
+  - test/core/util/cmdline_test.cc
+  deps:
+  - gpr
+  - gpr_test_util
+  - grpc_test_util
+  uses_polling: false
 - name: combiner_test
   cpu_cost: 10
   build: test
@@ -1946,6 +1957,16 @@ targets:
   - gpr
   exclude_iomgrs:
   - uv
+- name: dns_resolver_cooldown_test
+  build: test
+  language: c
+  src:
+  - test/core/client_channel/resolvers/dns_resolver_cooldown_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: dns_resolver_test
   build: test
   language: c
@@ -2138,24 +2159,6 @@ targets:
   - mac
   - linux
   - posix
-- name: gpr_avl_test
-  build: test
-  language: c
-  src:
-  - test/core/gpr/avl_test.cc
-  deps:
-  - gpr_test_util
-  - gpr
-  uses_polling: false
-- name: gpr_cmdline_test
-  build: test
-  language: c
-  src:
-  - test/core/gpr/cmdline_test.cc
-  deps:
-  - gpr_test_util
-  - gpr
-  uses_polling: false
 - name: gpr_cpu_test
   cpu_cost: 30
   build: test
@@ -2385,6 +2388,8 @@ targets:
   deps:
   - grpc
   - gpr
+  filegroups:
+  - cmdline
   secure: true
   uses_polling: false
 - name: grpc_credentials_test
@@ -2453,6 +2458,8 @@ targets:
   deps:
   - grpc
   - gpr
+  filegroups:
+  - cmdline
   uses_polling: false
 - name: grpc_security_connector_test
   build: test
@@ -2482,6 +2489,8 @@ targets:
   deps:
   - grpc
   - gpr
+  filegroups:
+  - cmdline
   uses_polling: false
 - name: handshake_client
   build: test
@@ -2696,7 +2705,9 @@ targets:
   src:
   - test/core/json/json_rewrite.cc
   deps:
+  - grpc_test_util
   - grpc
+  - gpr_test_util
   - gpr
   uses_polling: false
 - name: json_rewrite_test
@@ -2742,19 +2753,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: lb_policies_test
-  cpu_cost: 0.1
-  build: test
-  run: false
-  language: c
-  src:
-  - test/core/client_channel/lb_policies_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  uses_polling: false
 - name: load_file_test
   build: test
   language: c
@@ -3428,12 +3426,12 @@ targets:
   - mac
   - linux
   - posix
-- name: alarm_cpp_test
+- name: alarm_test
   gtest: true
   build: test
   language: c++
   src:
-  - test/cpp/common/alarm_cpp_test.cc
+  - test/cpp/common/alarm_test.cc
   deps:
   - grpc++_test_util_unsecure
   - grpc_test_util_unsecure
@@ -4431,6 +4429,19 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: nonblocking_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/end2end/nonblocking_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: noop-benchmark
   build: test
   language: c++
@@ -5080,6 +5091,7 @@ defaults:
       $(NO_W_EXTRA_SEMI)
     CPPFLAGS: -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM
       -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+    CXXFLAGS: -fno-rtti -fno-exceptions
   global:
     COREFLAGS: -fno-rtti -fno-exceptions
     CPPFLAGS: -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1

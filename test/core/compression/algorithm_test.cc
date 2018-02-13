@@ -23,13 +23,12 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/useful.h>
 
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "test/core/util/test_config.h"
 
-const uint32_t message_prefix_length = 8;
+const uint32_t message_prefix_length = 0;
 const uint32_t stream_prefix_length = 7;
 static void test_algorithm_mesh(void) {
   int i;

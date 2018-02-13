@@ -30,7 +30,7 @@
 namespace grpc {
 namespace testing {
 namespace {
-void* tag(int i) { return (void*)(intptr_t)i; }
+void* tag(int i) { return (void*)static_cast<intptr_t>(i); }
 }  // namespace
 
 Status CliCall::Call(std::shared_ptr<grpc::Channel> channel,
@@ -60,7 +60,8 @@ CliCall::CliCall(std::shared_ptr<grpc::Channel> channel,
       ctx_.AddMetadata(iter->first, iter->second);
     }
   }
-  call_ = stub_->Call(&ctx_, method, &cq_, tag(1));
+  call_ = stub_->PrepareCall(&ctx_, method, &cq_);
+  call_->StartCall(tag(1));
   void* got_tag;
   bool ok;
   cq_.Next(&got_tag, &ok);

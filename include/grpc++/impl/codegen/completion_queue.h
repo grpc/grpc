@@ -111,11 +111,82 @@ class CompletionQueue : private GrpcLibraryCodegen {
 
   /// Tri-state return for AsyncNext: SHUTDOWN, GOT_EVENT, TIMEOUT.
   enum NextStatus {
-    SHUTDOWN,   ///< The completion queue has been shutdown.
+    SHUTDOWN,   ///< The completion queue has been shutdown and fully-drained
     GOT_EVENT,  ///< Got a new event; \a tag will be filled in with its
                 ///< associated value; \a ok indicating its success.
     TIMEOUT     ///< deadline was reached.
   };
+
+  /// Read from the queue, blocking until an event is available or the queue is
+  /// shutting down.
+  ///
+  /// \param tag[out] Updated to point to the read event's tag.
+  /// \param ok[out] true if read a successful event, false otherwise.
+  ///
+  /// Note that each tag sent to the completion queue (through RPC operations
+  /// or alarms) will be delivered out of the completion queue by a call to
+  /// Next (or a related method), regardless of whether the operation succeeded
+  /// or not. Success here means that this operation completed in the normal
+  /// valid manner.
+  ///
+  /// Server-side RPC request: \a ok indicates that the RPC has indeed
+  /// been started. If it is false, the server has been Shutdown
+  /// before this particular call got matched to an incoming RPC.
+  ///
+  /// Client-side StartCall/RPC invocation: \a ok indicates that the RPC is
+  /// going to go to the wire. If it is false, it not going to the wire. This
+  /// would happen if the channel is either permanently broken or
+  /// transiently broken but with the fail-fast option. (Note that async unary
+  /// RPCs don't post a CQ tag at this point, nor do client-streaming
+  /// or bidi-streaming RPCs that have the initial metadata corked option set.)
+  ///
+  /// Client-side Write, Client-side WritesDone, Server-side Write,
+  /// Server-side Finish, Server-side SendInitialMetadata (which is
+  /// typically included in Write or Finish when not done explicitly):
+  /// \a ok means that the data/metadata/status/etc is going to go to the
+  /// wire. If it is false, it not going to the wire because the call
+  /// is already dead (i.e., canceled, deadline expired, other side
+  /// dropped the channel, etc).
+  ///
+  /// Client-side Read, Server-side Read, Client-side
+  /// RecvInitialMetadata (which is typically included in Read if not
+  /// done explicitly): \a ok indicates whether there is a valid message
+  /// that got read. If not, you know that there are certainly no more
+  /// messages that can ever be read from this stream. For the client-side
+  /// operations, this only happens because the call is dead. For the
+  /// server-sider operation, though, this could happen because the client
+  /// has done a WritesDone already.
+  ///
+  /// Client-side Finish: \a ok should always be true
+  ///
+  /// Server-side AsyncNotifyWhenDone: \a ok should always be true
+  ///
+  /// Alarm: \a ok is true if it expired, false if it was canceled
+  ///
+  /// \return true if got an event, false if the queue is fully drained and
+  ///         shut down.
+  bool Next(void** tag, bool* ok) {
+    return (AsyncNextInternal(tag, ok,
+                              g_core_codegen_interface->gpr_inf_future(
+                                  GPR_CLOCK_REALTIME)) != SHUTDOWN);
+  }
+
+  /// Read from the queue, blocking up to \a deadline (or the queue's shutdown).
+  /// Both \a tag and \a ok are updated upon success (if an event is available
+  /// within the \a deadline).  A \a tag points to an arbitrary location usually
+  /// employed to uniquely identify an event.
+  ///
+  /// \param tag[out] Upon sucess, updated to point to the event's tag.
+  /// \param ok[out] Upon sucess, true if a successful event, false otherwise
+  ///        See documentation for CompletionQueue::Next for explanation of ok
+  /// \param deadline[in] How long to block in wait for an event.
+  ///
+  /// \return The type of event read.
+  template <typename T>
+  NextStatus AsyncNext(void** tag, bool* ok, const T& deadline) {
+    TimePoint<T> deadline_tp(deadline);
+    return AsyncNextInternal(tag, ok, deadline_tp.raw_time());
+  }
 
   /// EXPERIMENTAL
   /// First executes \a F, then reads from the queue, blocking up to
@@ -141,44 +212,16 @@ class CompletionQueue : private GrpcLibraryCodegen {
     }
   }
 
-  /// Read from the queue, blocking up to \a deadline (or the queue's shutdown).
-  /// Both \a tag and \a ok are updated upon success (if an event is available
-  /// within the \a deadline).  A \a tag points to an arbitrary location usually
-  /// employed to uniquely identify an event.
-  ///
-  /// \param tag[out] Upon sucess, updated to point to the event's tag.
-  /// \param ok[out] Upon sucess, true if read a regular event, false otherwise.
-  /// \param deadline[in] How long to block in wait for an event.
-  ///
-  /// \return The type of event read.
-  template <typename T>
-  NextStatus AsyncNext(void** tag, bool* ok, const T& deadline) {
-    TimePoint<T> deadline_tp(deadline);
-    return AsyncNextInternal(tag, ok, deadline_tp.raw_time());
-  }
-
-  /// Read from the queue, blocking until an event is available or the queue is
-  /// shutting down.
-  ///
-  /// \param tag[out] Updated to point to the read event's tag.
-  /// \param ok[out] true if read a regular event, false otherwise.
-  ///
-  /// \return true if read a regular event, false if the queue is shutting down.
-  bool Next(void** tag, bool* ok) {
-    return (AsyncNextInternal(tag, ok,
-                              g_core_codegen_interface->gpr_inf_future(
-                                  GPR_CLOCK_REALTIME)) != SHUTDOWN);
-  }
-
   /// Request the shutdown of the queue.
   ///
   /// \warning This method must be called at some point if this completion queue
-  /// is accessed with Next or AsyncNext. Once invoked, \a Next
-  /// will start to return false and \a AsyncNext will return \a
-  /// NextStatus::SHUTDOWN. Only once either one of these methods does that
-  /// (that is, once the queue has been \em drained) can an instance of this
-  /// class be destroyed. Also note that applications must ensure that
-  /// no work is enqueued on this completion queue after this method is called.
+  /// is accessed with Next or AsyncNext. \a Next will not return false
+  /// until this method has been called and all pending tags have been drained.
+  /// (Likewise for \a AsyncNext returning \a NextStatus::SHUTDOWN .)
+  /// Only once either one of these methods does that (that is, once the queue
+  /// has been \em drained) can an instance of this class be destroyed.
+  /// Also note that applications must ensure that no work is enqueued on this
+  /// completion queue after this method is called.
   void Shutdown();
 
   /// Returns a \em raw pointer to the underlying \a grpc_completion_queue

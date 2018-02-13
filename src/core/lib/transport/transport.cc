@@ -101,7 +101,7 @@ grpc_slice grpc_slice_from_stream_owned_buffer(grpc_stream_refcount* refcount,
   slice_stream_ref(&refcount->slice_refcount);
   grpc_slice res;
   res.refcount = &refcount->slice_refcount;
-  res.data.refcounted.bytes = (uint8_t*)buffer;
+  res.data.refcounted.bytes = static_cast<uint8_t*>(buffer);
   res.data.refcounted.length = length;
   return res;
 }
@@ -233,13 +233,14 @@ typedef struct {
 } made_transport_op;
 
 static void destroy_made_transport_op(void* arg, grpc_error* error) {
-  made_transport_op* op = (made_transport_op*)arg;
+  made_transport_op* op = static_cast<made_transport_op*>(arg);
   GRPC_CLOSURE_SCHED(op->inner_on_complete, GRPC_ERROR_REF(error));
   gpr_free(op);
 }
 
 grpc_transport_op* grpc_make_transport_op(grpc_closure* on_complete) {
-  made_transport_op* op = (made_transport_op*)gpr_malloc(sizeof(*op));
+  made_transport_op* op =
+      static_cast<made_transport_op*>(gpr_malloc(sizeof(*op)));
   GRPC_CLOSURE_INIT(&op->outer_on_complete, destroy_made_transport_op, op,
                     grpc_schedule_on_exec_ctx);
   op->inner_on_complete = on_complete;
@@ -256,7 +257,7 @@ typedef struct {
 } made_transport_stream_op;
 
 static void destroy_made_transport_stream_op(void* arg, grpc_error* error) {
-  made_transport_stream_op* op = (made_transport_stream_op*)arg;
+  made_transport_stream_op* op = static_cast<made_transport_stream_op*>(arg);
   grpc_closure* c = op->inner_on_complete;
   gpr_free(op);
   GRPC_CLOSURE_RUN(c, GRPC_ERROR_REF(error));
@@ -265,7 +266,7 @@ static void destroy_made_transport_stream_op(void* arg, grpc_error* error) {
 grpc_transport_stream_op_batch* grpc_make_transport_stream_op(
     grpc_closure* on_complete) {
   made_transport_stream_op* op =
-      (made_transport_stream_op*)gpr_zalloc(sizeof(*op));
+      static_cast<made_transport_stream_op*>(gpr_zalloc(sizeof(*op)));
   op->op.payload = &op->payload;
   GRPC_CLOSURE_INIT(&op->outer_on_complete, destroy_made_transport_stream_op,
                     op, grpc_schedule_on_exec_ctx);

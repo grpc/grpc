@@ -51,7 +51,7 @@ typedef struct {
 } pick_first_lb_policy;
 
 static void pf_destroy(grpc_lb_policy* pol) {
-  pick_first_lb_policy* p = (pick_first_lb_policy*)pol;
+  pick_first_lb_policy* p = reinterpret_cast<pick_first_lb_policy*>(pol);
   GPR_ASSERT(p->subchannel_list == nullptr);
   GPR_ASSERT(p->latest_pending_subchannel_list == nullptr);
   GPR_ASSERT(p->pending_picks == nullptr);
@@ -65,7 +65,7 @@ static void pf_destroy(grpc_lb_policy* pol) {
 
 static void pf_shutdown_locked(grpc_lb_policy* pol,
                                grpc_lb_policy* new_policy) {
-  pick_first_lb_policy* p = (pick_first_lb_policy*)pol;
+  pick_first_lb_policy* p = reinterpret_cast<pick_first_lb_policy*>(pol);
   grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel shutdown");
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_DEBUG, "Pick First %p Shutting down", p);
@@ -105,7 +105,7 @@ static void pf_shutdown_locked(grpc_lb_policy* pol,
 static void pf_cancel_pick_locked(grpc_lb_policy* pol,
                                   grpc_lb_policy_pick_state* pick,
                                   grpc_error* error) {
-  pick_first_lb_policy* p = (pick_first_lb_policy*)pol;
+  pick_first_lb_policy* p = reinterpret_cast<pick_first_lb_policy*>(pol);
   grpc_lb_policy_pick_state* pp = p->pending_picks;
   p->pending_picks = nullptr;
   while (pp != nullptr) {
@@ -128,7 +128,7 @@ static void pf_cancel_picks_locked(grpc_lb_policy* pol,
                                    uint32_t initial_metadata_flags_mask,
                                    uint32_t initial_metadata_flags_eq,
                                    grpc_error* error) {
-  pick_first_lb_policy* p = (pick_first_lb_policy*)pol;
+  pick_first_lb_policy* p = reinterpret_cast<pick_first_lb_policy*>(pol);
   grpc_lb_policy_pick_state* pick = p->pending_picks;
   p->pending_picks = nullptr;
   while (pick != nullptr) {
@@ -165,7 +165,7 @@ static void start_picking_locked(pick_first_lb_policy* p) {
 }
 
 static void pf_exit_idle_locked(grpc_lb_policy* pol) {
-  pick_first_lb_policy* p = (pick_first_lb_policy*)pol;
+  pick_first_lb_policy* p = reinterpret_cast<pick_first_lb_policy*>(pol);
   if (!p->started_picking) {
     start_picking_locked(p);
   }
@@ -173,7 +173,7 @@ static void pf_exit_idle_locked(grpc_lb_policy* pol) {
 
 static int pf_pick_locked(grpc_lb_policy* pol,
                           grpc_lb_policy_pick_state* pick) {
-  pick_first_lb_policy* p = (pick_first_lb_policy*)pol;
+  pick_first_lb_policy* p = reinterpret_cast<pick_first_lb_policy*>(pol);
   // If we have a selected subchannel already, return synchronously.
   if (p->selected != nullptr) {
     pick->connected_subchannel = p->selected->connected_subchannel;
@@ -200,21 +200,21 @@ static void destroy_unselected_subchannels_locked(pick_first_lb_policy* p) {
 
 static grpc_connectivity_state pf_check_connectivity_locked(
     grpc_lb_policy* pol, grpc_error** error) {
-  pick_first_lb_policy* p = (pick_first_lb_policy*)pol;
+  pick_first_lb_policy* p = reinterpret_cast<pick_first_lb_policy*>(pol);
   return grpc_connectivity_state_get(&p->state_tracker, error);
 }
 
 static void pf_notify_on_state_change_locked(grpc_lb_policy* pol,
                                              grpc_connectivity_state* current,
                                              grpc_closure* notify) {
-  pick_first_lb_policy* p = (pick_first_lb_policy*)pol;
+  pick_first_lb_policy* p = reinterpret_cast<pick_first_lb_policy*>(pol);
   grpc_connectivity_state_notify_on_state_change(&p->state_tracker, current,
                                                  notify);
 }
 
 static void pf_ping_one_locked(grpc_lb_policy* pol, grpc_closure* on_initiate,
                                grpc_closure* on_ack) {
-  pick_first_lb_policy* p = (pick_first_lb_policy*)pol;
+  pick_first_lb_policy* p = reinterpret_cast<pick_first_lb_policy*>(pol);
   if (p->selected) {
     p->selected->connected_subchannel->Ping(on_initiate, on_ack);
   } else {
@@ -229,7 +229,7 @@ static void pf_connectivity_changed_locked(void* arg, grpc_error* error);
 
 static void pf_update_locked(grpc_lb_policy* policy,
                              const grpc_lb_policy_args* args) {
-  pick_first_lb_policy* p = (pick_first_lb_policy*)policy;
+  pick_first_lb_policy* p = reinterpret_cast<pick_first_lb_policy*>(policy);
   const grpc_arg* arg =
       grpc_channel_args_find(args->args, GRPC_ARG_LB_ADDRESSES);
   if (arg == nullptr || arg->type != GRPC_ARG_POINTER) {
@@ -249,10 +249,10 @@ static void pf_update_locked(grpc_lb_policy* policy,
     return;
   }
   const grpc_lb_addresses* addresses =
-      (const grpc_lb_addresses*)arg->value.pointer.p;
+      static_cast<const grpc_lb_addresses*>(arg->value.pointer.p);
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_INFO, "Pick First %p received update with %lu addresses",
-            (void*)p, (unsigned long)addresses->num_addresses);
+            (void*)p, static_cast<unsigned long>(addresses->num_addresses));
   }
   grpc_lb_subchannel_list* subchannel_list = grpc_lb_subchannel_list_create(
       &p->base, &grpc_lb_pick_first_trace, addresses, args,
@@ -347,8 +347,9 @@ static void pf_update_locked(grpc_lb_policy* policy,
 }
 
 static void pf_connectivity_changed_locked(void* arg, grpc_error* error) {
-  grpc_lb_subchannel_data* sd = (grpc_lb_subchannel_data*)arg;
-  pick_first_lb_policy* p = (pick_first_lb_policy*)sd->subchannel_list->policy;
+  grpc_lb_subchannel_data* sd = static_cast<grpc_lb_subchannel_data*>(arg);
+  pick_first_lb_policy* p =
+      reinterpret_cast<pick_first_lb_policy*>(sd->subchannel_list->policy);
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_DEBUG,
             "Pick First %p connectivity changed for subchannel %p (%" PRIuPTR
@@ -519,14 +520,6 @@ static void pf_connectivity_changed_locked(void* arg, grpc_error* error) {
   }
 }
 
-static void pf_set_reresolve_closure_locked(
-    grpc_lb_policy* policy, grpc_closure* request_reresolution) {
-  pick_first_lb_policy* p = (pick_first_lb_policy*)policy;
-  GPR_ASSERT(!p->shutdown);
-  GPR_ASSERT(policy->request_reresolution == nullptr);
-  policy->request_reresolution = request_reresolution;
-}
-
 static const grpc_lb_policy_vtable pick_first_lb_policy_vtable = {
     pf_destroy,
     pf_shutdown_locked,
@@ -537,8 +530,7 @@ static const grpc_lb_policy_vtable pick_first_lb_policy_vtable = {
     pf_exit_idle_locked,
     pf_check_connectivity_locked,
     pf_notify_on_state_change_locked,
-    pf_update_locked,
-    pf_set_reresolve_closure_locked};
+    pf_update_locked};
 
 static void pick_first_factory_ref(grpc_lb_policy_factory* factory) {}
 
@@ -547,7 +539,8 @@ static void pick_first_factory_unref(grpc_lb_policy_factory* factory) {}
 static grpc_lb_policy* create_pick_first(grpc_lb_policy_factory* factory,
                                          grpc_lb_policy_args* args) {
   GPR_ASSERT(args->client_channel_factory != nullptr);
-  pick_first_lb_policy* p = (pick_first_lb_policy*)gpr_zalloc(sizeof(*p));
+  pick_first_lb_policy* p =
+      static_cast<pick_first_lb_policy*>(gpr_zalloc(sizeof(*p)));
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_DEBUG, "Pick First %p created.", (void*)p);
   }

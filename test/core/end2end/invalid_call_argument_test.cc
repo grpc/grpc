@@ -23,9 +23,9 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gpr/host_port.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -209,7 +209,7 @@ static void test_too_many_metadata() {
 
   op = g_state.ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = (size_t)INT_MAX + 1;
+  op->data.send_initial_metadata.count = static_cast<size_t>(INT_MAX) + 1;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
@@ -499,7 +499,7 @@ static void test_too_many_trailing_metadata() {
   op = g_state.ops;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count =
-      (size_t)INT_MAX + 1;
+      static_cast<size_t>(INT_MAX) + 1;
   op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
   grpc_slice status_details = grpc_slice_from_static_string("xyz");
   op->data.send_status_from_server.status_details = &status_details;

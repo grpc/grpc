@@ -27,7 +27,9 @@ static void* fake_malloc(size_t size) { return (void*)size; }
 
 static void* fake_realloc(void* addr, size_t size) { return (void*)size; }
 
-static void fake_free(void* addr) { *((intptr_t*)addr) = (intptr_t)0xdeadd00d; }
+static void fake_free(void* addr) {
+  *(static_cast<intptr_t*>(addr)) = static_cast<intptr_t>(0xdeadd00d);
+}
 
 static void test_custom_allocs() {
   const gpr_allocation_functions default_fns = gpr_get_allocation_functions();

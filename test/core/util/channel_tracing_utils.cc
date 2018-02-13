@@ -20,8 +20,8 @@
 #include <string.h>
 
 #include <grpc/support/log.h>
-#include <grpc/support/useful.h>
 #include "src/core/lib/channel/channel_tracer.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/json/json.h"
 
 static grpc_json* get_json_child(grpc_json* parent, const char* key) {

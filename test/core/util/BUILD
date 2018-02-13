@@ -52,6 +52,7 @@ grpc_cc_library(
     name = "grpc_test_util_base",
     srcs = [
         "channel_tracing_utils.cc",
+        "cmdline.cc",
         "grpc_profiler.cc",
         "histogram.cc",
         "mock_endpoint.cc",
@@ -62,12 +63,15 @@ grpc_cc_library(
         "port_server_client.cc",
         "reconnect_server.cc",
         "slice_splitter.cc",
+        "subprocess_posix.cc",
+        "subprocess_windows.cc",
         "test_tcp_server.cc",
         "tracer_util.cc",
         "trickle_endpoint.cc",
     ],
     hdrs = [
         "channel_tracing_utils.h",
+        "cmdline.h",
         "grpc_profiler.h",
         "histogram.h",
         "mock_endpoint.h",
@@ -76,6 +80,7 @@ grpc_cc_library(
         "port.h",
         "port_server_client.h",
         "reconnect_server.h",
+        "subprocess.h",
         "slice_splitter.h",
         "test_tcp_server.h",
         "tracer_util.h",
@@ -110,6 +115,16 @@ grpc_cc_library(
     deps = [
         ":grpc_test_util_base",
         "//:grpc_unsecure",
+    ],
+)
+
+grpc_cc_test(
+    name = "cmdline_test",
+    srcs = ["cmdline_test.cc"],
+    language = "C++",
+    deps = [
+        ":grpc_test_util",
+        "//:gpr",
     ],
 )
 

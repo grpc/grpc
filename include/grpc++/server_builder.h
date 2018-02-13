@@ -30,7 +30,6 @@
 #include <grpc++/support/config.h>
 #include <grpc/compression.h>
 #include <grpc/support/cpu.h>
-#include <grpc/support/useful.h>
 #include <grpc/support/workaround_list.h>
 
 struct grpc_resource_quota;

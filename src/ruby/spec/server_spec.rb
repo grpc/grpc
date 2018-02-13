@@ -36,45 +36,60 @@ describe Server do
 
     it 'fails if the server is closed' do
       s = new_core_server_for_testing(nil)
+      s.shutdown_and_notify(nil)
       s.close
       expect { s.start }.to raise_error(RuntimeError)
     end
   end
 
-  describe '#destroy' do
+  describe '#shutdown_and_notify and #destroy' do
     it 'destroys a server ok' do
       s = start_a_server
-      blk = proc { s.destroy }
+      blk = proc do
+        s.shutdown_and_notify(nil)
+        s.destroy
+      end
       expect(&blk).to_not raise_error
     end
 
     it 'can be called more than once without error' do
       s = start_a_server
       begin
-        blk = proc { s.destroy }
+        blk = proc do
+          s.shutdown_and_notify(nil)
+          s.destroy
+        end
         expect(&blk).to_not raise_error
         blk.call
         expect(&blk).to_not raise_error
       ensure
+        s.shutdown_and_notify(nil)
         s.close
       end
     end
   end
 
-  describe '#close' do
+  describe '#shutdown_and_notify and #close' do
     it 'closes a server ok' do
       s = start_a_server
       begin
-        blk = proc { s.close }
+        blk = proc do
+          s.shutdown_and_notify(nil)
+          s.close
+        end
         expect(&blk).to_not raise_error
       ensure
-        s.close(@cq)
+        s.shutdown_and_notify(nil)
+        s.close
       end
     end
 
     it 'can be called more than once without error' do
       s = start_a_server
-      blk = proc { s.close }
+      blk = proc do
+        s.shutdown_and_notify(nil)
+        s.close
+      end
       expect(&blk).to_not raise_error
       blk.call
       expect(&blk).to_not raise_error
@@ -87,6 +102,7 @@ describe Server do
         blk = proc do
           s = new_core_server_for_testing(nil)
           s.add_http2_port('localhost:0', :this_port_is_insecure)
+          s.shutdown_and_notify(nil)
           s.close
         end
         expect(&blk).to_not raise_error
@@ -94,6 +110,7 @@ describe Server do
 
       it 'fails if the server is closed' do
         s = new_core_server_for_testing(nil)
+        s.shutdown_and_notify(nil)
         s.close
         blk = proc do
           s.add_http2_port('localhost:0', :this_port_is_insecure)
@@ -108,6 +125,7 @@ describe Server do
         blk = proc do
           s = new_core_server_for_testing(nil)
           s.add_http2_port('localhost:0', cert)
+          s.shutdown_and_notify(nil)
           s.close
         end
         expect(&blk).to_not raise_error
@@ -115,6 +133,7 @@ describe Server do
 
       it 'fails if the server is closed' do
         s = new_core_server_for_testing(nil)
+        s.shutdown_and_notify(nil)
         s.close
         blk = proc { s.add_http2_port('localhost:0', cert) }
         expect(&blk).to raise_error(RuntimeError)

@@ -265,7 +265,7 @@ class CommonStressTestAsyncServer : public BaseClass {
       service_.RequestEcho(contexts_[i].srv_ctx.get(),
                            &contexts_[i].recv_request,
                            contexts_[i].response_writer.get(), cq_.get(),
-                           cq_.get(), (void*)(intptr_t)i);
+                           cq_.get(), (void*)static_cast<intptr_t>(i));
     }
   }
   struct Context {

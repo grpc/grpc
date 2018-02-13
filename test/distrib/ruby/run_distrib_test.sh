@@ -15,20 +15,22 @@
 
 set -ex
 
-cd $(dirname $0)
+cd "$(dirname "$0")"
 
 ARCH=$1
 PLATFORM=$2
 # Create an indexed local gem source with gRPC gems to test
 GEM_SOURCE=../../../gem_source
-mkdir -p ${GEM_SOURCE}/gems
-cp $EXTERNAL_GIT_ROOT/input_artifacts/grpc-*$ARCH-$PLATFORM.gem ${GEM_SOURCE}/gems
-if [[ "$(ls ${GEM_SOURCE}/gems | grep grpc | wc -l)" != 1 ]]; then
+mkdir -p "${GEM_SOURCE}/gems"
+cp "$EXTERNAL_GIT_ROOT"/input_artifacts/grpc-*"$ARCH-$PLATFORM".gem "${GEM_SOURCE}/gems"
+# TODO: rewrite the following line to be shellcheck-compliant
+# shellcheck disable=SC2010
+if [[ "$(ls "${GEM_SOURCE}/gems" | grep -c grpc)" != 1 ]]; then
   echo "Sanity check failed. Copied over more than one grpc gem into the gem source directory."
   exit 1
 fi;
 gem install builder
-gem generate_index --directory ${GEM_SOURCE}
+gem generate_index --directory "${GEM_SOURCE}"
 
 bundle install
 

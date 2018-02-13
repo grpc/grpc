@@ -74,6 +74,7 @@ grpc_cc_library(
     deps = [
         "//:grpc++",
         "//test/core/end2end:ssl_test_data",
+        "//test/core/util:grpc_test_util",
     ],
     external_deps = [
         "protobuf",
@@ -86,6 +87,7 @@ grpc_cc_library(
     hdrs = GRPCXX_TESTUTIL_HDRS,
     deps = [
         "//:grpc++_unsecure",
+        "//test/core/util:grpc_test_util",
     ],
     external_deps = [
         "protobuf",
@@ -140,6 +142,10 @@ grpc_cc_test(
     srcs = [
         "grpc_tool_test.cc",
     ],
+    data = [
+        "//src/proto/grpc/testing:echo.proto",
+        "//src/proto/grpc/testing:echo_messages.proto"
+    ],       
     deps = [
         ":grpc_cli_libs",
 	":test_util",

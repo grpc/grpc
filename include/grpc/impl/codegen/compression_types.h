@@ -55,8 +55,9 @@ extern "C" {
 /** The various compression algorithms supported by gRPC */
 typedef enum {
   GRPC_COMPRESS_NONE = 0,
-  GRPC_COMPRESS_MESSAGE_DEFLATE,
-  GRPC_COMPRESS_MESSAGE_GZIP,
+  GRPC_COMPRESS_DEFLATE,
+  GRPC_COMPRESS_GZIP,
+  /* EXPERIMENTAL: Stream compression is currently experimental. */
   GRPC_COMPRESS_STREAM_GZIP,
   /* TODO(ctiller): snappy */
   GRPC_COMPRESS_ALGORITHMS_COUNT

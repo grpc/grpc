@@ -31,6 +31,7 @@
 #include <grpc/grpc.h>
 #include <gtest/gtest.h>
 
+#include "src/core/lib/gpr/env.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.pb.h"
 #include "test/core/util/port.h"
@@ -87,6 +88,7 @@ DECLARE_bool(l);
 DECLARE_bool(batch);
 DECLARE_string(metadata);
 DECLARE_string(protofiles);
+DECLARE_string(proto_path);
 
 namespace {
 
@@ -707,6 +709,10 @@ TEST_F(GrpcToolTest, CallCommandWithBadMetadata) {
   const char* argv[] = {"grpc_cli", "call", "localhost:10000", "Echo",
                         "message: 'Hello'"};
   FLAGS_protofiles = "src/proto/grpc/testing/echo.proto";
+  char* test_srcdir = gpr_getenv("TEST_SRCDIR");
+  if (test_srcdir != nullptr) {
+    FLAGS_proto_path = test_srcdir + std::string("/com_github_grpc_grpc");
+  }
 
   {
     std::stringstream output_stream;

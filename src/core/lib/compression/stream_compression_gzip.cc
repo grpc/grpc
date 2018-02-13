@@ -48,11 +48,11 @@ static bool gzip_flate(grpc_stream_compression_context_gzip* ctx,
     size_t slice_size = max_output_size < OUTPUT_BLOCK_SIZE ? max_output_size
                                                             : OUTPUT_BLOCK_SIZE;
     grpc_slice slice_out = GRPC_SLICE_MALLOC(slice_size);
-    ctx->zs.avail_out = (uInt)slice_size;
+    ctx->zs.avail_out = static_cast<uInt>(slice_size);
     ctx->zs.next_out = GRPC_SLICE_START_PTR(slice_out);
     while (ctx->zs.avail_out > 0 && in->length > 0 && !eoc) {
       grpc_slice slice = grpc_slice_buffer_take_first(in);
-      ctx->zs.avail_in = (uInt)GRPC_SLICE_LENGTH(slice);
+      ctx->zs.avail_in = static_cast<uInt> GRPC_SLICE_LENGTH(slice);
       ctx->zs.next_in = GRPC_SLICE_START_PTR(slice);
       r = ctx->flate(&ctx->zs, Z_NO_FLUSH);
       if (r < 0 && r != Z_BUF_ERROR) {
@@ -142,7 +142,7 @@ static bool grpc_stream_compress_gzip(grpc_stream_compression_context* ctx,
     return false;
   }
   grpc_stream_compression_context_gzip* gzip_ctx =
-      (grpc_stream_compression_context_gzip*)ctx;
+      reinterpret_cast<grpc_stream_compression_context_gzip*>(ctx);
   GPR_ASSERT(gzip_ctx->flate == deflate);
   int gzip_flush;
   switch (flush) {
@@ -172,7 +172,7 @@ static bool grpc_stream_decompress_gzip(grpc_stream_compression_context* ctx,
     return false;
   }
   grpc_stream_compression_context_gzip* gzip_ctx =
-      (grpc_stream_compression_context_gzip*)ctx;
+      reinterpret_cast<grpc_stream_compression_context_gzip*>(ctx);
   GPR_ASSERT(gzip_ctx->flate == inflate);
   return gzip_flate(gzip_ctx, in, out, output_size, max_output_size,
                     Z_SYNC_FLUSH, end_of_context);
@@ -184,8 +184,8 @@ grpc_stream_compression_context_create_gzip(
   GPR_ASSERT(method == GRPC_STREAM_COMPRESSION_GZIP_COMPRESS ||
              method == GRPC_STREAM_COMPRESSION_GZIP_DECOMPRESS);
   grpc_stream_compression_context_gzip* gzip_ctx =
-      (grpc_stream_compression_context_gzip*)gpr_zalloc(
-          sizeof(grpc_stream_compression_context_gzip));
+      static_cast<grpc_stream_compression_context_gzip*>(
+          gpr_zalloc(sizeof(grpc_stream_compression_context_gzip)));
   int r;
   if (gzip_ctx == nullptr) {
     return nullptr;
@@ -204,7 +204,7 @@ grpc_stream_compression_context_create_gzip(
   }
 
   gzip_ctx->base.vtable = &grpc_stream_compression_gzip_vtable;
-  return (grpc_stream_compression_context*)gzip_ctx;
+  return reinterpret_cast<grpc_stream_compression_context*>(gzip_ctx);
 }
 
 static void grpc_stream_compression_context_destroy_gzip(
@@ -213,7 +213,7 @@ static void grpc_stream_compression_context_destroy_gzip(
     return;
   }
   grpc_stream_compression_context_gzip* gzip_ctx =
-      (grpc_stream_compression_context_gzip*)ctx;
+      reinterpret_cast<grpc_stream_compression_context_gzip*>(ctx);
   if (gzip_ctx->flate == inflate) {
     inflateEnd(&gzip_ctx->zs);
   } else {

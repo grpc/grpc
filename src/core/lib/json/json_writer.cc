@@ -52,7 +52,7 @@ static void json_writer_output_indent(grpc_json_writer* writer) {
       "                "
       "                ";
 
-  unsigned spaces = (unsigned)(writer->depth * writer->indent);
+  unsigned spaces = static_cast<unsigned>(writer->depth * writer->indent);
 
   if (writer->indent == 0) return;
 
@@ -64,7 +64,7 @@ static void json_writer_output_indent(grpc_json_writer* writer) {
   while (spaces >= (sizeof(spacesstr) - 1)) {
     json_writer_output_string_with_len(writer, spacesstr,
                                        sizeof(spacesstr) - 1);
-    spaces -= (unsigned)(sizeof(spacesstr) - 1);
+    spaces -= static_cast<unsigned>(sizeof(spacesstr) - 1);
   }
 
   if (spaces == 0) return;
@@ -100,12 +100,12 @@ static void json_writer_escape_string(grpc_json_writer* writer,
   json_writer_output_char(writer, '"');
 
   for (;;) {
-    uint8_t c = (uint8_t)*string++;
+    uint8_t c = static_cast<uint8_t>(*string++);
     if (c == 0) {
       break;
     } else if ((c >= 32) && (c <= 126)) {
       if ((c == '\\') || (c == '"')) json_writer_output_char(writer, '\\');
-      json_writer_output_char(writer, (char)c);
+      json_writer_output_char(writer, static_cast<char>(c));
     } else if ((c < 32) || (c == 127)) {
       switch (c) {
         case '\b':
@@ -146,7 +146,7 @@ static void json_writer_escape_string(grpc_json_writer* writer,
       }
       for (i = 0; i < extra; i++) {
         utf32 <<= 6;
-        c = (uint8_t)(*string++);
+        c = static_cast<uint8_t>(*string++);
         /* Breaks out and bail on any invalid UTF-8 sequence, including \0. */
         if ((c & 0xc0) != 0x80) {
           valid = 0;
@@ -179,10 +179,12 @@ static void json_writer_escape_string(grpc_json_writer* writer,
          * That range is exactly 20 bits.
          */
         utf32 -= 0x10000;
-        json_writer_escape_utf16(writer, (uint16_t)(0xd800 | (utf32 >> 10)));
-        json_writer_escape_utf16(writer, (uint16_t)(0xdc00 | (utf32 & 0x3ff)));
+        json_writer_escape_utf16(writer,
+                                 static_cast<uint16_t>(0xd800 | (utf32 >> 10)));
+        json_writer_escape_utf16(
+            writer, static_cast<uint16_t>(0xdc00 | (utf32 & 0x3ff)));
       } else {
-        json_writer_escape_utf16(writer, (uint16_t)utf32);
+        json_writer_escape_utf16(writer, static_cast<uint16_t>(utf32));
       }
     }
   }

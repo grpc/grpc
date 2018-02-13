@@ -48,7 +48,7 @@ static int create_socket(int port) {
   struct sockaddr_in addr;
 
   addr.sin_family = AF_INET;
-  addr.sin_port = htons((uint16_t)port);
+  addr.sin_port = htons(static_cast<uint16_t>(port));
   addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
   s = socket(AF_INET, SOCK_STREAM, 0);
@@ -57,7 +57,7 @@ static int create_socket(int port) {
     return -1;
   }
 
-  if (connect(s, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+  if (connect(s, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) < 0) {
     perror("Unable to connect");
     return -1;
   }
@@ -67,7 +67,7 @@ static int create_socket(int port) {
 
 // Simple gRPC server. This listens until client_handshake_complete occurs.
 static void server_thread(void* arg) {
-  const int port = *(int*)arg;
+  const int port = *static_cast<int*>(arg);
 
   // Load key pair and establish server SSL credentials.
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
@@ -78,9 +78,12 @@ static void server_thread(void* arg) {
                                grpc_load_file(SSL_CERT_PATH, 1, &cert_slice)));
   GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
                                grpc_load_file(SSL_KEY_PATH, 1, &key_slice)));
-  const char* ca_cert = (const char*)GRPC_SLICE_START_PTR(ca_slice);
-  pem_key_cert_pair.private_key = (const char*)GRPC_SLICE_START_PTR(key_slice);
-  pem_key_cert_pair.cert_chain = (const char*)GRPC_SLICE_START_PTR(cert_slice);
+  const char* ca_cert =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
+  pem_key_cert_pair.private_key =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
+  pem_key_cert_pair.cert_chain =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
   grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(
       ca_cert, &pem_key_cert_pair, 1, 0, nullptr);
 
@@ -176,13 +179,13 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
   // wire format, see documentation for SSL_CTX_set_alpn_protos.
   unsigned int alpn_protos_len = alpn_list_len;
   for (unsigned int i = 0; i < alpn_list_len; ++i) {
-    alpn_protos_len += (unsigned int)strlen(alpn_list[i]);
+    alpn_protos_len += static_cast<unsigned int>(strlen(alpn_list[i]));
   }
   unsigned char* alpn_protos =
       static_cast<unsigned char*>(gpr_malloc(alpn_protos_len));
   unsigned char* p = alpn_protos;
   for (unsigned int i = 0; i < alpn_list_len; ++i) {
-    const uint8_t len = (uint8_t)strlen(alpn_list[i]);
+    const uint8_t len = static_cast<uint8_t>(strlen(alpn_list[i]));
     *p++ = len;
     memcpy(p, alpn_list[i], len);
     p += len;
@@ -217,8 +220,8 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
     unsigned int alpn_selected_len;
     SSL_get0_alpn_selected(ssl, &alpn_selected, &alpn_selected_len);
     if (strlen(alpn_expected) != alpn_selected_len ||
-        strncmp((const char*)alpn_selected, alpn_expected, alpn_selected_len) !=
-            0) {
+        strncmp(reinterpret_cast<const char*>(alpn_selected), alpn_expected,
+                alpn_selected_len) != 0) {
       gpr_log(GPR_ERROR, "Unexpected ALPN protocol preference");
       success = false;
     }

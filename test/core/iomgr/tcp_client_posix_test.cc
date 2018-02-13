@@ -78,7 +78,8 @@ static void must_fail(void* arg, grpc_error* error) {
 
 void test_succeeds(void) {
   grpc_resolved_address resolved_addr;
-  struct sockaddr_in* addr = (struct sockaddr_in*)resolved_addr.addr;
+  struct sockaddr_in* addr =
+      reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
   int svr_fd;
   int r;
   int connections_complete_before;
@@ -112,7 +113,8 @@ void test_succeeds(void) {
   /* await the connection */
   do {
     resolved_addr.len = sizeof(addr);
-    r = accept(svr_fd, (struct sockaddr*)addr, (socklen_t*)&resolved_addr.len);
+    r = accept(svr_fd, reinterpret_cast<struct sockaddr*>(addr),
+               reinterpret_cast<socklen_t*>(&resolved_addr.len));
   } while (r == -1 && errno == EINTR);
   GPR_ASSERT(r >= 0);
   close(r);
@@ -136,7 +138,8 @@ void test_succeeds(void) {
 
 void test_fails(void) {
   grpc_resolved_address resolved_addr;
-  struct sockaddr_in* addr = (struct sockaddr_in*)resolved_addr.addr;
+  struct sockaddr_in* addr =
+      reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
   int connections_complete_before;
   grpc_closure done;
   grpc_core::ExecCtx exec_ctx;

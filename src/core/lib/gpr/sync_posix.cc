@@ -43,23 +43,19 @@ void gpr_mu_lock(gpr_mu* mu) {
 #ifdef GPR_LOW_LEVEL_COUNTERS
   GPR_ATM_INC_COUNTER(gpr_mu_locks);
 #endif
-  GPR_TIMER_BEGIN("gpr_mu_lock", 0);
+  GPR_TIMER_SCOPE("gpr_mu_lock", 0);
   GPR_ASSERT(pthread_mutex_lock(mu) == 0);
-  GPR_TIMER_END("gpr_mu_lock", 0);
 }
 
 void gpr_mu_unlock(gpr_mu* mu) {
-  GPR_TIMER_BEGIN("gpr_mu_unlock", 0);
+  GPR_TIMER_SCOPE("gpr_mu_unlock", 0);
   GPR_ASSERT(pthread_mutex_unlock(mu) == 0);
-  GPR_TIMER_END("gpr_mu_unlock", 0);
 }
 
 int gpr_mu_trylock(gpr_mu* mu) {
-  int err;
-  GPR_TIMER_BEGIN("gpr_mu_trylock", 0);
-  err = pthread_mutex_trylock(mu);
+  GPR_TIMER_SCOPE("gpr_mu_trylock", 0);
+  int err = pthread_mutex_trylock(mu);
   GPR_ASSERT(err == 0 || err == EBUSY);
-  GPR_TIMER_END("gpr_mu_trylock", 0);
   return err == 0;
 }
 
@@ -88,7 +84,7 @@ int gpr_cv_wait(gpr_cv* cv, gpr_mu* mu, gpr_timespec abs_deadline) {
 #else
     abs_deadline = gpr_convert_clock_type(abs_deadline, GPR_CLOCK_REALTIME);
 #endif  // GPR_LINUX
-    abs_deadline_ts.tv_sec = (time_t)abs_deadline.tv_sec;
+    abs_deadline_ts.tv_sec = static_cast<time_t>(abs_deadline.tv_sec);
     abs_deadline_ts.tv_nsec = abs_deadline.tv_nsec;
     err = pthread_cond_timedwait(cv, mu, &abs_deadline_ts);
   }

@@ -26,10 +26,10 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/useful.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/useful.h"
 
 static grpc_arg copy_arg(const grpc_arg* src) {
   grpc_arg dst;
@@ -87,13 +87,14 @@ grpc_channel_args* grpc_channel_args_copy_and_add_and_remove(
   }
   // Create result.
   grpc_channel_args* dst =
-      (grpc_channel_args*)gpr_malloc(sizeof(grpc_channel_args));
+      static_cast<grpc_channel_args*>(gpr_malloc(sizeof(grpc_channel_args)));
   dst->num_args = num_args_to_copy + num_to_add;
   if (dst->num_args == 0) {
     dst->args = nullptr;
     return dst;
   }
-  dst->args = (grpc_arg*)gpr_malloc(sizeof(grpc_arg) * dst->num_args);
+  dst->args =
+      static_cast<grpc_arg*>(gpr_malloc(sizeof(grpc_arg) * dst->num_args));
   // Copy args from src that are not being removed.
   size_t dst_idx = 0;
   if (src != nullptr) {
@@ -118,7 +119,8 @@ grpc_channel_args* grpc_channel_args_copy(const grpc_channel_args* src) {
 grpc_channel_args* grpc_channel_args_union(const grpc_channel_args* a,
                                            const grpc_channel_args* b) {
   const size_t max_out = (a->num_args + b->num_args);
-  grpc_arg* uniques = (grpc_arg*)gpr_malloc(sizeof(*uniques) * max_out);
+  grpc_arg* uniques =
+      static_cast<grpc_arg*>(gpr_malloc(sizeof(*uniques) * max_out));
   for (size_t i = 0; i < a->num_args; ++i) uniques[i] = a->args[i];
 
   size_t uniques_idx = a->num_args;
@@ -161,15 +163,16 @@ static int cmp_arg(const grpc_arg* a, const grpc_arg* b) {
 /* stabilizing comparison function: since channel_args ordering matters for
  * keys with the same name, we need to preserve that ordering */
 static int cmp_key_stable(const void* ap, const void* bp) {
-  const grpc_arg* const* a = (const grpc_arg* const*)ap;
-  const grpc_arg* const* b = (const grpc_arg* const*)bp;
+  const grpc_arg* const* a = static_cast<const grpc_arg* const*>(ap);
+  const grpc_arg* const* b = static_cast<const grpc_arg* const*>(bp);
   int c = strcmp((*a)->key, (*b)->key);
   if (c == 0) c = GPR_ICMP(*a, *b);
   return c;
 }
 
 grpc_channel_args* grpc_channel_args_normalize(const grpc_channel_args* a) {
-  grpc_arg** args = (grpc_arg**)gpr_malloc(sizeof(grpc_arg*) * a->num_args);
+  grpc_arg** args =
+      static_cast<grpc_arg**>(gpr_malloc(sizeof(grpc_arg*) * a->num_args));
   for (size_t i = 0; i < a->num_args; i++) {
     args[i] = &a->args[i];
   }
@@ -177,9 +180,9 @@ grpc_channel_args* grpc_channel_args_normalize(const grpc_channel_args* a) {
     qsort(args, a->num_args, sizeof(grpc_arg*), cmp_key_stable);
 
   grpc_channel_args* b =
-      (grpc_channel_args*)gpr_malloc(sizeof(grpc_channel_args));
+      static_cast<grpc_channel_args*>(gpr_malloc(sizeof(grpc_channel_args)));
   b->num_args = a->num_args;
-  b->args = (grpc_arg*)gpr_malloc(sizeof(grpc_arg) * b->num_args);
+  b->args = static_cast<grpc_arg*>(gpr_malloc(sizeof(grpc_arg) * b->num_args));
   for (size_t i = 0; i < a->num_args; i++) {
     b->args[i] = copy_arg(args[i]);
   }
@@ -215,7 +218,7 @@ grpc_compression_algorithm grpc_channel_args_get_compression_algorithm(
   for (i = 0; i < a->num_args; ++i) {
     if (a->args[i].type == GRPC_ARG_INTEGER &&
         !strcmp(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM, a->args[i].key)) {
-      return (grpc_compression_algorithm)a->args[i].value.integer;
+      return static_cast<grpc_compression_algorithm>(a->args[i].value.integer);
       break;
     }
   }
@@ -296,7 +299,7 @@ uint32_t grpc_channel_args_compression_algorithm_get_states(
     const grpc_channel_args* a) {
   int* states_arg;
   if (find_compression_algorithm_states_bitset(a, &states_arg)) {
-    return (uint32_t)*states_arg;
+    return static_cast<uint32_t>(*states_arg);
   } else {
     return (1u << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1; /* All algs. enabled */
   }

@@ -23,9 +23,10 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
-#include <grpc/support/avl.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
+
+#include "src/core/lib/avl/avl.h"
 
 //
 // server_retry_throttle_data
@@ -58,9 +59,10 @@ bool grpc_server_retry_throttle_data_record_failure(
   // First, check if we are stale and need to be replaced.
   get_replacement_throttle_data_if_needed(&throttle_data);
   // We decrement milli_tokens by 1000 (1 token) for each failure.
-  const int new_value = (int)gpr_atm_no_barrier_clamped_add(
-      &throttle_data->milli_tokens, (gpr_atm)-1000, (gpr_atm)0,
-      (gpr_atm)throttle_data->max_milli_tokens);
+  const int new_value = static_cast<int>(gpr_atm_no_barrier_clamped_add(
+      &throttle_data->milli_tokens, static_cast<gpr_atm>(-1000),
+      static_cast<gpr_atm>(0),
+      static_cast<gpr_atm>(throttle_data->max_milli_tokens)));
   // Retries are allowed as long as the new value is above the threshold
   // (max_milli_tokens / 2).
   return new_value > throttle_data->max_milli_tokens / 2;
@@ -72,8 +74,10 @@ void grpc_server_retry_throttle_data_record_success(
   get_replacement_throttle_data_if_needed(&throttle_data);
   // We increment milli_tokens by milli_token_ratio for each success.
   gpr_atm_no_barrier_clamped_add(
-      &throttle_data->milli_tokens, (gpr_atm)throttle_data->milli_token_ratio,
-      (gpr_atm)0, (gpr_atm)throttle_data->max_milli_tokens);
+      &throttle_data->milli_tokens,
+      static_cast<gpr_atm>(throttle_data->milli_token_ratio),
+      static_cast<gpr_atm>(0),
+      static_cast<gpr_atm>(throttle_data->max_milli_tokens));
 }
 
 grpc_server_retry_throttle_data* grpc_server_retry_throttle_data_ref(
@@ -99,7 +103,8 @@ static grpc_server_retry_throttle_data* grpc_server_retry_throttle_data_create(
     int max_milli_tokens, int milli_token_ratio,
     grpc_server_retry_throttle_data* old_throttle_data) {
   grpc_server_retry_throttle_data* throttle_data =
-      (grpc_server_retry_throttle_data*)gpr_malloc(sizeof(*throttle_data));
+      static_cast<grpc_server_retry_throttle_data*>(
+          gpr_malloc(sizeof(*throttle_data)));
   memset(throttle_data, 0, sizeof(*throttle_data));
   gpr_ref_init(&throttle_data->refs, 1);
   throttle_data->max_milli_tokens = max_milli_tokens;
@@ -111,9 +116,9 @@ static grpc_server_retry_throttle_data* grpc_server_retry_throttle_data_create(
   // we will start out doing the same thing on the new one.
   if (old_throttle_data != nullptr) {
     double token_fraction =
-        (int)gpr_atm_acq_load(&old_throttle_data->milli_tokens) /
-        (double)old_throttle_data->max_milli_tokens;
-    initial_milli_tokens = (int)(token_fraction * max_milli_tokens);
+        static_cast<int>(gpr_atm_acq_load(&old_throttle_data->milli_tokens)) /
+        static_cast<double>(old_throttle_data->max_milli_tokens);
+    initial_milli_tokens = static_cast<int>(token_fraction * max_milli_tokens);
   }
   gpr_atm_rel_store(&throttle_data->milli_tokens,
                     (gpr_atm)initial_milli_tokens);
@@ -131,28 +136,28 @@ static grpc_server_retry_throttle_data* grpc_server_retry_throttle_data_create(
 //
 
 static void* copy_server_name(void* key, void* unused) {
-  return gpr_strdup((const char*)key);
+  return gpr_strdup(static_cast<const char*>(key));
 }
 
 static long compare_server_name(void* key1, void* key2, void* unused) {
-  return strcmp((const char*)key1, (const char*)key2);
+  return strcmp(static_cast<const char*>(key1), static_cast<const char*>(key2));
 }
 
 static void destroy_server_retry_throttle_data(void* value, void* unused) {
   grpc_server_retry_throttle_data* throttle_data =
-      (grpc_server_retry_throttle_data*)value;
+      static_cast<grpc_server_retry_throttle_data*>(value);
   grpc_server_retry_throttle_data_unref(throttle_data);
 }
 
 static void* copy_server_retry_throttle_data(void* value, void* unused) {
   grpc_server_retry_throttle_data* throttle_data =
-      (grpc_server_retry_throttle_data*)value;
+      static_cast<grpc_server_retry_throttle_data*>(value);
   return grpc_server_retry_throttle_data_ref(throttle_data);
 }
 
 static void destroy_server_name(void* key, void* unused) { gpr_free(key); }
 
-static const gpr_avl_vtable avl_vtable = {
+static const grpc_avl_vtable avl_vtable = {
     destroy_server_name, copy_server_name, compare_server_name,
     destroy_server_retry_throttle_data, copy_server_retry_throttle_data};
 
@@ -161,29 +166,30 @@ static const gpr_avl_vtable avl_vtable = {
 //
 
 static gpr_mu g_mu;
-static gpr_avl g_avl;
+static grpc_avl g_avl;
 
 void grpc_retry_throttle_map_init() {
   gpr_mu_init(&g_mu);
-  g_avl = gpr_avl_create(&avl_vtable);
+  g_avl = grpc_avl_create(&avl_vtable);
 }
 
 void grpc_retry_throttle_map_shutdown() {
   gpr_mu_destroy(&g_mu);
-  gpr_avl_unref(g_avl, nullptr);
+  grpc_avl_unref(g_avl, nullptr);
 }
 
 grpc_server_retry_throttle_data* grpc_retry_throttle_map_get_data_for_server(
     const char* server_name, int max_milli_tokens, int milli_token_ratio) {
   gpr_mu_lock(&g_mu);
   grpc_server_retry_throttle_data* throttle_data =
-      (grpc_server_retry_throttle_data*)gpr_avl_get(g_avl, (char*)server_name,
-                                                    nullptr);
+      static_cast<grpc_server_retry_throttle_data*>(
+          grpc_avl_get(g_avl, const_cast<char*>(server_name), nullptr));
   if (throttle_data == nullptr) {
     // Entry not found.  Create a new one.
     throttle_data = grpc_server_retry_throttle_data_create(
         max_milli_tokens, milli_token_ratio, nullptr);
-    g_avl = gpr_avl_add(g_avl, (char*)server_name, throttle_data, nullptr);
+    g_avl = grpc_avl_add(g_avl, const_cast<char*>(server_name), throttle_data,
+                         nullptr);
   } else {
     if (throttle_data->max_milli_tokens != max_milli_tokens ||
         throttle_data->milli_token_ratio != milli_token_ratio) {
@@ -191,7 +197,8 @@ grpc_server_retry_throttle_data* grpc_retry_throttle_map_get_data_for_server(
       // the original one.
       throttle_data = grpc_server_retry_throttle_data_create(
           max_milli_tokens, milli_token_ratio, throttle_data);
-      g_avl = gpr_avl_add(g_avl, (char*)server_name, throttle_data, nullptr);
+      g_avl = grpc_avl_add(g_avl, const_cast<char*>(server_name), throttle_data,
+                           nullptr);
     } else {
       // Entry found.  Increase refcount.
       grpc_server_retry_throttle_data_ref(throttle_data);

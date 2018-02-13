@@ -26,9 +26,10 @@
 #endif
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+
+#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
@@ -39,7 +40,8 @@ bool grpc_parse_unix(const grpc_uri* uri,
     gpr_log(GPR_ERROR, "Expected 'unix' scheme, got '%s'", uri->scheme);
     return false;
   }
-  struct sockaddr_un* un = (struct sockaddr_un*)resolved_addr->addr;
+  struct sockaddr_un* un =
+      reinterpret_cast<struct sockaddr_un*>(resolved_addr->addr);
   const size_t maxlen = sizeof(un->sun_path);
   const size_t path_len = strnlen(uri->path, maxlen);
   if (path_len == maxlen) return false;
@@ -68,7 +70,7 @@ bool grpc_parse_ipv4_hostport(const char* hostport, grpc_resolved_address* addr,
   // Parse IP address.
   memset(addr, 0, sizeof(*addr));
   addr->len = sizeof(struct sockaddr_in);
-  struct sockaddr_in* in = (struct sockaddr_in*)addr->addr;
+  struct sockaddr_in* in = reinterpret_cast<struct sockaddr_in*>(addr->addr);
   in->sin_family = AF_INET;
   if (inet_pton(AF_INET, host, &in->sin_addr) == 0) {
     if (log_errors) gpr_log(GPR_ERROR, "invalid ipv4 address: '%s'", host);
@@ -84,7 +86,7 @@ bool grpc_parse_ipv4_hostport(const char* hostport, grpc_resolved_address* addr,
     if (log_errors) gpr_log(GPR_ERROR, "invalid ipv4 port: '%s'", port);
     goto done;
   }
-  in->sin_port = htons((uint16_t)port_num);
+  in->sin_port = htons(static_cast<uint16_t>(port_num));
   success = true;
 done:
   gpr_free(host);
@@ -114,14 +116,14 @@ bool grpc_parse_ipv6_hostport(const char* hostport, grpc_resolved_address* addr,
   // Parse IP address.
   memset(addr, 0, sizeof(*addr));
   addr->len = sizeof(struct sockaddr_in6);
-  struct sockaddr_in6* in6 = (struct sockaddr_in6*)addr->addr;
+  struct sockaddr_in6* in6 = reinterpret_cast<struct sockaddr_in6*>(addr->addr);
   in6->sin6_family = AF_INET6;
   // Handle the RFC6874 syntax for IPv6 zone identifiers.
-  char* host_end = (char*)gpr_memrchr(host, '%', strlen(host));
+  char* host_end = static_cast<char*>(gpr_memrchr(host, '%', strlen(host)));
   if (host_end != nullptr) {
     GPR_ASSERT(host_end >= host);
     char host_without_scope[INET6_ADDRSTRLEN];
-    size_t host_without_scope_len = (size_t)(host_end - host);
+    size_t host_without_scope_len = static_cast<size_t>(host_end - host);
     uint32_t sin6_scope_id = 0;
     strncpy(host_without_scope, host, host_without_scope_len);
     host_without_scope[host_without_scope_len] = '\0';
@@ -153,7 +155,7 @@ bool grpc_parse_ipv6_hostport(const char* hostport, grpc_resolved_address* addr,
     if (log_errors) gpr_log(GPR_ERROR, "invalid ipv6 port: '%s'", port);
     goto done;
   }
-  in6->sin6_port = htons((uint16_t)port_num);
+  in6->sin6_port = htons(static_cast<uint16_t>(port_num));
   success = true;
 done:
   gpr_free(host);

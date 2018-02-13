@@ -22,8 +22,8 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
-#include <grpc/support/tls.h>
 
+#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/iomgr/closure.h"
 
 typedef gpr_atm grpc_millis;

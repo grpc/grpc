@@ -19,6 +19,7 @@ set -e
 ROOT="$(dirname "$0")/../../.."
 
 DIRS=(
+    'test'
     'tools/run_tests'
 )
 

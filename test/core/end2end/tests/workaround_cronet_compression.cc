@@ -28,7 +28,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
-#include <grpc/support/useful.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/surface/call.h"
@@ -192,7 +191,8 @@ static void request_with_payload_template(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error =
@@ -207,9 +207,9 @@ static void request_with_payload_template(
   GPR_ASSERT(GPR_BITGET(grpc_call_test_only_get_encodings_accepted_by_peer(s),
                         GRPC_COMPRESS_NONE) != 0);
   GPR_ASSERT(GPR_BITGET(grpc_call_test_only_get_encodings_accepted_by_peer(s),
-                        GRPC_COMPRESS_MESSAGE_DEFLATE) != 0);
+                        GRPC_COMPRESS_DEFLATE) != 0);
   GPR_ASSERT(GPR_BITGET(grpc_call_test_only_get_encodings_accepted_by_peer(s),
-                        GRPC_COMPRESS_MESSAGE_GZIP) != 0);
+                        GRPC_COMPRESS_GZIP) != 0);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -228,7 +228,8 @@ static void request_with_payload_template(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(101), nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(101),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   for (int i = 0; i < 2; i++) {
@@ -247,7 +248,8 @@ static void request_with_payload_template(
     op->flags = 0;
     op->reserved = nullptr;
     op++;
-    error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(2), nullptr);
+    error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(2),
+                                  nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
     memset(ops, 0, sizeof(ops));
@@ -257,8 +259,8 @@ static void request_with_payload_template(
     op->flags = 0;
     op->reserved = nullptr;
     op++;
-    error =
-        grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), nullptr);
+    error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                  tag(102), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
     CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
     cq_verify(cqv);
@@ -275,8 +277,8 @@ static void request_with_payload_template(
     op->flags = 0;
     op->reserved = nullptr;
     op++;
-    error =
-        grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), nullptr);
+    error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                  tag(103), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
     CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
     CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
@@ -309,7 +311,8 @@ static void request_with_payload_template(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(3), nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(3),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -322,7 +325,8 @@ static void request_with_payload_template(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(104), nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(104),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
@@ -365,16 +369,16 @@ typedef struct workaround_cronet_compression_config {
 } workaround_cronet_compression_config;
 
 static workaround_cronet_compression_config workaround_configs[] = {
-    {nullptr, GRPC_COMPRESS_MESSAGE_GZIP},
+    {nullptr, GRPC_COMPRESS_GZIP},
     {const_cast<char*>(
          "grpc-objc/1.3.0-dev grpc-c/3.0.0-dev (ios; cronet_http; gentle)"),
      GRPC_COMPRESS_NONE},
     {const_cast<char*>(
          "grpc-objc/1.3.0-dev grpc-c/3.0.0-dev (ios; chttp2; gentle)"),
-     GRPC_COMPRESS_MESSAGE_GZIP},
+     GRPC_COMPRESS_GZIP},
     {const_cast<char*>(
          "grpc-objc/1.4.0 grpc-c/3.0.0-dev (ios; cronet_http; gentle)"),
-     GRPC_COMPRESS_MESSAGE_GZIP}};
+     GRPC_COMPRESS_GZIP}};
 static const size_t workaround_configs_num =
     sizeof(workaround_configs) / sizeof(*workaround_configs);
 
@@ -383,8 +387,7 @@ static void test_workaround_cronet_compression(
   for (uint32_t i = 0; i < workaround_configs_num; i++) {
     request_with_payload_template(
         config, "test_invoke_request_with_compressed_payload", 0,
-        GRPC_COMPRESS_MESSAGE_GZIP, GRPC_COMPRESS_MESSAGE_GZIP,
-        GRPC_COMPRESS_MESSAGE_GZIP,
+        GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP, GRPC_COMPRESS_GZIP,
         workaround_configs[i].expected_algorithm_from_server, nullptr, false,
         /* ignored */ GRPC_COMPRESS_LEVEL_NONE,
         workaround_configs[i].user_agent_override);

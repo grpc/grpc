@@ -23,11 +23,11 @@
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/cmdline.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/security/credentials/jwt/jwt_verifier.h"
+#include "test/core/util/cmdline.h"
 
 typedef struct {
   grpc_pollset* pollset;
@@ -54,8 +54,8 @@ static void on_jwt_verification_done(void* user_data,
   if (sync->success) {
     char* claims_str;
     GPR_ASSERT(claims != nullptr);
-    claims_str =
-        grpc_json_dump_to_string((grpc_json*)grpc_jwt_claims_json(claims), 2);
+    claims_str = grpc_json_dump_to_string(
+        const_cast<grpc_json*>(grpc_jwt_claims_json(claims)), 2);
     printf("Claims: \n\n%s\n", claims_str);
     gpr_free(claims_str);
     grpc_jwt_claims_destroy(claims);

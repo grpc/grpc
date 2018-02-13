@@ -37,7 +37,7 @@ static struct timespec timespec_from_gpr(gpr_timespec gts) {
     /* fine to assert, as this is only used in gpr_sleep_until */
     GPR_ASSERT(gts.tv_sec <= INT32_MAX && gts.tv_sec >= INT32_MIN);
   }
-  rv.tv_sec = (time_t)gts.tv_sec;
+  rv.tv_sec = static_cast<time_t>(gts.tv_sec);
   rv.tv_nsec = gts.tv_nsec;
   return rv;
 }
@@ -52,7 +52,7 @@ static gpr_timespec gpr_from_timespec(struct timespec ts,
    */
   gpr_timespec rv;
   rv.tv_sec = ts.tv_sec;
-  rv.tv_nsec = (int32_t)ts.tv_nsec;
+  rv.tv_nsec = static_cast<int32_t>(ts.tv_nsec);
   rv.clock_type = clock_type;
   return rv;
 }

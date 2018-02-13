@@ -60,14 +60,15 @@ grpc_slice_hash_table* grpc_slice_hash_table_create(
     size_t num_entries, grpc_slice_hash_table_entry* entries,
     void (*destroy_value)(void* value), int (*value_cmp)(void* a, void* b)) {
   grpc_slice_hash_table* table =
-      (grpc_slice_hash_table*)gpr_zalloc(sizeof(*table));
+      static_cast<grpc_slice_hash_table*>(gpr_zalloc(sizeof(*table)));
   gpr_ref_init(&table->refs, 1);
   table->destroy_value = destroy_value;
   table->value_cmp = value_cmp;
   // Keep load factor low to improve performance of lookups.
   table->size = num_entries * 2;
   const size_t entry_size = sizeof(grpc_slice_hash_table_entry) * table->size;
-  table->entries = (grpc_slice_hash_table_entry*)gpr_zalloc(entry_size);
+  table->entries =
+      static_cast<grpc_slice_hash_table_entry*>(gpr_zalloc(entry_size));
   for (size_t i = 0; i < num_entries; ++i) {
     grpc_slice_hash_table_entry* entry = &entries[i];
     grpc_slice_hash_table_add(table, entry->key, entry->value);

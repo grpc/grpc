@@ -28,7 +28,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
-#include <grpc/support/useful.h>
 
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/proto/grpc/testing/empty.pb.h"
@@ -189,7 +188,7 @@ bool InteropClient::PerformLargeUnary(SimpleRequest* request,
   request->mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
   if (request->has_expect_compressed()) {
     if (request->expect_compressed().value()) {
-      context.set_compression_algorithm(GRPC_COMPRESS_MESSAGE_GZIP);
+      context.set_compression_algorithm(GRPC_COMPRESS_GZIP);
     } else {
       context.set_compression_algorithm(GRPC_COMPRESS_NONE);
     }
@@ -497,7 +496,7 @@ bool InteropClient::DoClientCompressedStreaming() {
   StreamingInputCallRequest request;
   StreamingInputCallResponse response;
 
-  context.set_compression_algorithm(GRPC_COMPRESS_MESSAGE_GZIP);
+  context.set_compression_algorithm(GRPC_COMPRESS_GZIP);
   std::unique_ptr<ClientWriter<StreamingInputCallRequest>> stream(
       serviceStub_.Get()->StreamingInputCall(&context, &response));
 
@@ -876,7 +875,8 @@ bool InteropClient::DoCacheableUnary() {
 
   // Create request with current timestamp
   gpr_timespec ts = gpr_now(GPR_CLOCK_PRECISE);
-  std::string timestamp = std::to_string((long long unsigned)ts.tv_nsec);
+  std::string timestamp =
+      std::to_string(static_cast<long long unsigned>(ts.tv_nsec));
   SimpleRequest request;
   request.mutable_payload()->set_body(timestamp.c_str(), timestamp.size());
 
@@ -915,7 +915,7 @@ bool InteropClient::DoCacheableUnary() {
   // Request 3
   // Modify the request body so it will not get a cache hit
   ts = gpr_now(GPR_CLOCK_PRECISE);
-  timestamp = std::to_string((long long unsigned)ts.tv_nsec);
+  timestamp = std::to_string(static_cast<long long unsigned>(ts.tv_nsec));
   SimpleRequest request1;
   request1.mutable_payload()->set_body(timestamp.c_str(), timestamp.size());
   ClientContext context3;

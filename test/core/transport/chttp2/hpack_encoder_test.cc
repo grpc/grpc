@@ -152,10 +152,10 @@ static void test_basic_headers() {
 }
 
 static void encode_int_to_str(int i, char* p) {
-  p[0] = (char)('a' + i % 26);
+  p[0] = static_cast<char>('a' + i % 26);
   i /= 26;
   GPR_ASSERT(i < 26);
-  p[1] = (char)('a' + i);
+  p[1] = static_cast<char>('a' + i);
   p[2] = 0;
 }
 

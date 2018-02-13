@@ -201,7 +201,8 @@ class TransportStreamOpBatch {
   }
 
   census_context* get_census_context() const {
-    return (census_context*)op_->payload->context[GRPC_CONTEXT_TRACING].value;
+    return static_cast<census_context*>(
+        op_->payload->context[GRPC_CONTEXT_TRACING].value);
   }
 
  private:

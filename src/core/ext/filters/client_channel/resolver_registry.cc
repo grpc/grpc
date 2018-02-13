@@ -24,133 +24,153 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#define MAX_RESOLVERS 10
-#define DEFAULT_RESOLVER_PREFIX_MAX_LENGTH 32
+namespace grpc_core {
 
-static grpc_resolver_factory* g_all_of_the_resolvers[MAX_RESOLVERS];
-static int g_number_of_resolvers = 0;
+namespace {
 
-static char g_default_resolver_prefix[DEFAULT_RESOLVER_PREFIX_MAX_LENGTH] =
-    "dns:///";
+class RegistryState {
+ public:
+  RegistryState() : default_prefix_(gpr_strdup("dns:///")) {}
 
-void grpc_resolver_registry_init() {}
-
-void grpc_resolver_registry_shutdown(void) {
-  for (int i = 0; i < g_number_of_resolvers; i++) {
-    grpc_resolver_factory_unref(g_all_of_the_resolvers[i]);
+  void SetDefaultPrefix(const char* default_resolver_prefix) {
+    GPR_ASSERT(default_resolver_prefix != nullptr);
+    GPR_ASSERT(*default_resolver_prefix != '\0');
+    default_prefix_.reset(gpr_strdup(default_resolver_prefix));
   }
-  // FIXME(ctiller): this should live in grpc_resolver_registry_init,
-  // however that would have the client_channel plugin call this AFTER we start
-  // registering resolvers from third party plugins, and so they'd never show
-  // up.
-  // We likely need some kind of dependency system for plugins.... what form
-  // that takes is TBD.
-  g_number_of_resolvers = 0;
-}
 
-void grpc_resolver_registry_set_default_prefix(
-    const char* default_resolver_prefix) {
-  const size_t len = strlen(default_resolver_prefix);
-  GPR_ASSERT(len < DEFAULT_RESOLVER_PREFIX_MAX_LENGTH &&
-             "default resolver prefix too long");
-  GPR_ASSERT(len > 0 && "default resolver prefix can't be empty");
-  // By the previous assert, default_resolver_prefix is safe to be copied with a
-  // plain strcpy.
-  strcpy(g_default_resolver_prefix, default_resolver_prefix);
-}
-
-void grpc_register_resolver_type(grpc_resolver_factory* factory) {
-  int i;
-  for (i = 0; i < g_number_of_resolvers; i++) {
-    GPR_ASSERT(0 != strcmp(factory->vtable->scheme,
-                           g_all_of_the_resolvers[i]->vtable->scheme));
-  }
-  GPR_ASSERT(g_number_of_resolvers != MAX_RESOLVERS);
-  grpc_resolver_factory_ref(factory);
-  g_all_of_the_resolvers[g_number_of_resolvers++] = factory;
-}
-
-static grpc_resolver_factory* lookup_factory(const char* name) {
-  int i;
-
-  for (i = 0; i < g_number_of_resolvers; i++) {
-    if (0 == strcmp(name, g_all_of_the_resolvers[i]->vtable->scheme)) {
-      return g_all_of_the_resolvers[i];
+  void RegisterResolverFactory(UniquePtr<ResolverFactory> factory) {
+    for (size_t i = 0; i < factories_.size(); ++i) {
+      GPR_ASSERT(strcmp(factories_[i]->scheme(), factory->scheme()) != 0);
     }
+    factories_.push_back(std::move(factory));
   }
-  return nullptr;
-}
 
-grpc_resolver_factory* grpc_resolver_factory_lookup(const char* name) {
-  grpc_resolver_factory* f = lookup_factory(name);
-  if (f) grpc_resolver_factory_ref(f);
-  return f;
-}
+  ResolverFactory* LookupResolverFactory(const char* scheme) const {
+    for (size_t i = 0; i < factories_.size(); ++i) {
+      if (strcmp(scheme, factories_[i]->scheme()) == 0) {
+        return factories_[i].get();
+      }
+    }
+    return nullptr;
+  }
 
-static grpc_resolver_factory* lookup_factory_by_uri(grpc_uri* uri) {
-  if (!uri) return nullptr;
-  return lookup_factory(uri->scheme);
-}
-
-static grpc_resolver_factory* resolve_factory(const char* target,
-                                              grpc_uri** uri,
-                                              char** canonical_target) {
-  grpc_resolver_factory* factory = nullptr;
-
-  GPR_ASSERT(uri != nullptr);
-  *uri = grpc_uri_parse(target, 1);
-  factory = lookup_factory_by_uri(*uri);
-  if (factory == nullptr) {
-    grpc_uri_destroy(*uri);
-    gpr_asprintf(canonical_target, "%s%s", g_default_resolver_prefix, target);
-    *uri = grpc_uri_parse(*canonical_target, 1);
-    factory = lookup_factory_by_uri(*uri);
+  // Returns the factory for the scheme of \a target.  If \a target does
+  // not parse as a URI, prepends \a default_prefix_ and tries again.
+  // If URI parsing is successful (in either attempt), sets \a uri to
+  // point to the parsed URI.
+  // If \a default_prefix_ needs to be prepended, sets \a canonical_target
+  // to the canonical target string.
+  ResolverFactory* FindResolverFactory(const char* target, grpc_uri** uri,
+                                       char** canonical_target) const {
+    GPR_ASSERT(uri != nullptr);
+    *uri = grpc_uri_parse(target, 1);
+    ResolverFactory* factory =
+        *uri == nullptr ? nullptr : LookupResolverFactory((*uri)->scheme);
     if (factory == nullptr) {
-      grpc_uri_destroy(grpc_uri_parse(target, 0));
-      grpc_uri_destroy(grpc_uri_parse(*canonical_target, 0));
-      gpr_log(GPR_ERROR, "don't know how to resolve '%s' or '%s'", target,
-              *canonical_target);
+      grpc_uri_destroy(*uri);
+      gpr_asprintf(canonical_target, "%s%s", default_prefix_.get(), target);
+      *uri = grpc_uri_parse(*canonical_target, 1);
+      factory =
+          *uri == nullptr ? nullptr : LookupResolverFactory((*uri)->scheme);
+      if (factory == nullptr) {
+        grpc_uri_destroy(grpc_uri_parse(target, 0));
+        grpc_uri_destroy(grpc_uri_parse(*canonical_target, 0));
+        gpr_log(GPR_ERROR, "don't know how to resolve '%s' or '%s'", target,
+                *canonical_target);
+      }
     }
+    return factory;
   }
-  return factory;
+
+ private:
+  // We currently support 10 factories without doing additional
+  // allocation.  This number could be raised if there is a case where
+  // more factories are needed and the additional allocations are
+  // hurting performance (which is unlikely, since these allocations
+  // only occur at gRPC initialization time).
+  InlinedVector<UniquePtr<ResolverFactory>, 10> factories_;
+  UniquePtr<char> default_prefix_;
+};
+
+static RegistryState* g_state = nullptr;
+
+}  // namespace
+
+//
+// ResolverRegistry::Builder
+//
+
+void ResolverRegistry::Builder::InitRegistry() {
+  if (g_state == nullptr) g_state = New<RegistryState>();
 }
 
-grpc_resolver* grpc_resolver_create(const char* target,
-                                    const grpc_channel_args* args,
-                                    grpc_pollset_set* pollset_set,
-                                    grpc_combiner* combiner) {
+void ResolverRegistry::Builder::ShutdownRegistry() {
+  Delete(g_state);
+  g_state = nullptr;
+}
+
+void ResolverRegistry::Builder::SetDefaultPrefix(
+    const char* default_resolver_prefix) {
+  InitRegistry();
+  g_state->SetDefaultPrefix(default_resolver_prefix);
+}
+
+void ResolverRegistry::Builder::RegisterResolverFactory(
+    UniquePtr<ResolverFactory> factory) {
+  InitRegistry();
+  g_state->RegisterResolverFactory(std::move(factory));
+}
+
+//
+// ResolverRegistry
+//
+
+ResolverFactory* ResolverRegistry::LookupResolverFactory(const char* scheme) {
+  GPR_ASSERT(g_state != nullptr);
+  return g_state->LookupResolverFactory(scheme);
+}
+
+OrphanablePtr<Resolver> ResolverRegistry::CreateResolver(
+    const char* target, const grpc_channel_args* args,
+    grpc_pollset_set* pollset_set, grpc_combiner* combiner) {
+  GPR_ASSERT(g_state != nullptr);
   grpc_uri* uri = nullptr;
   char* canonical_target = nullptr;
-  grpc_resolver_factory* factory =
-      resolve_factory(target, &uri, &canonical_target);
-  grpc_resolver* resolver;
-  grpc_resolver_args resolver_args;
-  memset(&resolver_args, 0, sizeof(resolver_args));
+  ResolverFactory* factory =
+      g_state->FindResolverFactory(target, &uri, &canonical_target);
+  ResolverArgs resolver_args;
   resolver_args.uri = uri;
   resolver_args.args = args;
   resolver_args.pollset_set = pollset_set;
   resolver_args.combiner = combiner;
-  resolver = grpc_resolver_factory_create_resolver(factory, &resolver_args);
+  OrphanablePtr<Resolver> resolver =
+      factory == nullptr ? nullptr : factory->CreateResolver(resolver_args);
   grpc_uri_destroy(uri);
   gpr_free(canonical_target);
   return resolver;
 }
 
-char* grpc_get_default_authority(const char* target) {
+UniquePtr<char> ResolverRegistry::GetDefaultAuthority(const char* target) {
+  GPR_ASSERT(g_state != nullptr);
   grpc_uri* uri = nullptr;
   char* canonical_target = nullptr;
-  grpc_resolver_factory* factory =
-      resolve_factory(target, &uri, &canonical_target);
-  char* authority = grpc_resolver_factory_get_default_authority(factory, uri);
+  ResolverFactory* factory =
+      g_state->FindResolverFactory(target, &uri, &canonical_target);
+  UniquePtr<char> authority =
+      factory == nullptr ? nullptr : factory->GetDefaultAuthority(uri);
   grpc_uri_destroy(uri);
   gpr_free(canonical_target);
   return authority;
 }
 
-char* grpc_resolver_factory_add_default_prefix_if_needed(const char* target) {
+UniquePtr<char> ResolverRegistry::AddDefaultPrefixIfNeeded(const char* target) {
+  GPR_ASSERT(g_state != nullptr);
   grpc_uri* uri = nullptr;
   char* canonical_target = nullptr;
-  resolve_factory(target, &uri, &canonical_target);
+  g_state->FindResolverFactory(target, &uri, &canonical_target);
   grpc_uri_destroy(uri);
-  return canonical_target == nullptr ? gpr_strdup(target) : canonical_target;
+  return UniquePtr<char>(canonical_target == nullptr ? gpr_strdup(target)
+                                                     : canonical_target);
 }
+
+}  // namespace grpc_core

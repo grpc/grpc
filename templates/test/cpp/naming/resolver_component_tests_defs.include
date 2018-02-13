@@ -18,10 +18,10 @@
 set -ex
 
 # all command args required in this set order
-FLAGS_test_bin_path=`echo "$1" | grep '\--test_bin_path=' | cut -d "=" -f 2`
-FLAGS_dns_server_bin_path=`echo "$2" | grep '\--dns_server_bin_path=' | cut -d "=" -f 2`
-FLAGS_records_config_path=`echo "$3" | grep '\--records_config_path=' | cut -d "=" -f 2`
-FLAGS_test_dns_server_port=`echo "$4" | grep '\--test_dns_server_port=' | cut -d "=" -f 2`
+FLAGS_test_bin_path=$(echo "$1" | grep '\--test_bin_path=' | cut -d "=" -f 2)
+FLAGS_dns_server_bin_path=$(echo "$2" | grep '\--dns_server_bin_path=' | cut -d "=" -f 2)
+FLAGS_records_config_path=$(echo "$3" | grep '\--records_config_path=' | cut -d "=" -f 2)
+FLAGS_test_dns_server_port=$(echo "$4" | grep '\--test_dns_server_port=' | cut -d "=" -f 2)
 
 for cmd_arg in "$FLAGS_test_bin_path" "$FLAGS_dns_server_bin_path" "$FLAGS_records_config_path" "$FLAGS_test_dns_server_port"; do
   if [[ "$cmd_arg" == "" ]]; then
@@ -34,7 +34,7 @@ if [[ "$GRPC_DNS_RESOLVER" != "" && "$GRPC_DNS_RESOLVER" != ares ]]; then
 fi
 export GRPC_DNS_RESOLVER=ares
 
-"$FLAGS_dns_server_bin_path" --records_config_path="$FLAGS_records_config_path" --port="$FLAGS_test_dns_server_port" 2>&1 > /dev/null &
+"$FLAGS_dns_server_bin_path" --records_config_path="$FLAGS_records_config_path" --port="$FLAGS_test_dns_server_port" > /dev/null 2>&1 &
 DNS_SERVER_PID=$!
 echo "Local DNS server started. PID: $DNS_SERVER_PID"
 
@@ -53,15 +53,15 @@ done
 
 if [[ $RETRY == 1 ]]; then
   echo "FAILED TO START LOCAL DNS SERVER"
-  kill -SIGTERM $DNS_SERVER_PID
+  kill -SIGTERM "$DNS_SERVER_PID"
   wait
   exit 1
 fi
 
 function terminate_all {
   echo "Received signal. Terminating $! and $DNS_SERVER_PID"
-  kill -SIGTERM $! || true
-  kill -SIGTERM $DNS_SERVER_PID || true
+  kill -SIGTERM "$!" || true
+  kill -SIGTERM "$DNS_SERVER_PID" || true
   wait
   exit 1
 }
@@ -83,10 +83,10 @@ $FLAGS_test_bin_path \\
 
   --expected_lb_policy='${test['expected_lb_policy']}' \\
 
-  --local_dns_server_address=127.0.0.1:$FLAGS_test_dns_server_port &
-wait $! || EXIT_CODE=1
+  --local_dns_server_address="127.0.0.1:$FLAGS_test_dns_server_port" &
+wait "$!" || EXIT_CODE=1
 
 % endfor
-kill -SIGTERM $DNS_SERVER_PID || true
+kill -SIGTERM "$DNS_SERVER_PID" || true
 wait
 exit $EXIT_CODE</%def>

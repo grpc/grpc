@@ -25,7 +25,8 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/useful.h>
+
+#include "src/core/lib/gpr/useful.h"
 
 /* Adjusts a heap so as to move a hole at position i closer to the root,
    until a suitable position is found for element t. Then, copies t into that
@@ -34,7 +35,7 @@
    its argument. */
 static void adjust_upwards(grpc_timer** first, uint32_t i, grpc_timer* t) {
   while (i > 0) {
-    uint32_t parent = (uint32_t)(((int)i - 1) / 2);
+    uint32_t parent = static_cast<uint32_t>((static_cast<int>(i) - 1) / 2);
     if (first[parent]->deadline <= t->deadline) break;
     first[i] = first[parent];
     first[i]->heap_index = i;
@@ -73,14 +74,14 @@ static void maybe_shrink(grpc_timer_heap* heap) {
   if (heap->timer_count >= 8 &&
       heap->timer_count <= heap->timer_capacity / SHRINK_FULLNESS_FACTOR / 2) {
     heap->timer_capacity = heap->timer_count * SHRINK_FULLNESS_FACTOR;
-    heap->timers = (grpc_timer**)gpr_realloc(
-        heap->timers, heap->timer_capacity * sizeof(grpc_timer*));
+    heap->timers = static_cast<grpc_timer**>(
+        gpr_realloc(heap->timers, heap->timer_capacity * sizeof(grpc_timer*)));
   }
 }
 
 static void note_changed_priority(grpc_timer_heap* heap, grpc_timer* timer) {
   uint32_t i = timer->heap_index;
-  uint32_t parent = (uint32_t)(((int)i - 1) / 2);
+  uint32_t parent = static_cast<uint32_t>((static_cast<int>(i) - 1) / 2);
   if (heap->timers[parent]->deadline > timer->deadline) {
     adjust_upwards(heap->timers, i, timer);
   } else {
@@ -98,8 +99,8 @@ int grpc_timer_heap_add(grpc_timer_heap* heap, grpc_timer* timer) {
   if (heap->timer_count == heap->timer_capacity) {
     heap->timer_capacity =
         GPR_MAX(heap->timer_capacity + 1, heap->timer_capacity * 3 / 2);
-    heap->timers = (grpc_timer**)gpr_realloc(
-        heap->timers, heap->timer_capacity * sizeof(grpc_timer*));
+    heap->timers = static_cast<grpc_timer**>(
+        gpr_realloc(heap->timers, heap->timer_capacity * sizeof(grpc_timer*)));
   }
   timer->heap_index = heap->timer_count;
   adjust_upwards(heap->timers, heap->timer_count, timer);

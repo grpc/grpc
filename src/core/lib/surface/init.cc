@@ -43,7 +43,6 @@
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/surface/alarm_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -76,12 +75,12 @@ static void do_basic_init(void) {
 
 static bool append_filter(grpc_channel_stack_builder* builder, void* arg) {
   return grpc_channel_stack_builder_append_filter(
-      builder, (const grpc_channel_filter*)arg, nullptr, nullptr);
+      builder, static_cast<const grpc_channel_filter*>(arg), nullptr, nullptr);
 }
 
 static bool prepend_filter(grpc_channel_stack_builder* builder, void* arg) {
   return grpc_channel_stack_builder_prepend_filter(
-      builder, (const grpc_channel_filter*)arg, nullptr, nullptr);
+      builder, static_cast<const grpc_channel_filter*>(arg), nullptr, nullptr);
 }
 
 static void register_builtin_channel_init() {
@@ -164,9 +163,9 @@ void grpc_shutdown(void) {
     {
       grpc_core::ExecCtx exec_ctx(0);
       {
-        grpc_executor_shutdown();
         grpc_timer_manager_set_threading(
             false);  // shutdown timer_manager thread
+        grpc_executor_shutdown();
         for (i = g_number_of_plugins; i >= 0; i--) {
           if (g_all_of_the_plugins[i].destroy != nullptr) {
             g_all_of_the_plugins[i].destroy();

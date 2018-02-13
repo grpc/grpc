@@ -38,4 +38,9 @@ RUN pip install virtualenv
 RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.0.post1 six==1.10.0 twisted==17.5.0
 
 ADD clang_tidy_all_the_things.sh /
+
+# When running locally, we'll be impersonating the current user, so we need
+# to make the script runnable by everyone.
+RUN chmod a+rx /clang_tidy_all_the_things.sh
+
 CMD ["echo 'Run with tools/distrib/clang_tidy_code.sh'"]

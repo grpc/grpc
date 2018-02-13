@@ -557,8 +557,8 @@ cdef extern from "grpc/compression.h":
 
   ctypedef enum grpc_compression_algorithm:
     GRPC_COMPRESS_NONE
-    GRPC_COMPRESS_MESSAGE_DEFLATE
-    GRPC_COMPRESS_MESSAGE_GZIP
+    GRPC_COMPRESS_DEFLATE
+    GRPC_COMPRESS_GZIP
     GRPC_COMPRESS_STREAM_GZIP
     GRPC_COMPRESS_ALGORITHMS_COUNT
 

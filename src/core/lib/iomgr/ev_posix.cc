@@ -27,10 +27,10 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/useful.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
 #include "src/core/lib/iomgr/ev_epollex_linux.h"
 #include "src/core/lib/iomgr/ev_epollsig_linux.h"
@@ -39,6 +39,18 @@
 grpc_core::TraceFlag grpc_polling_trace(false,
                                         "polling"); /* Disabled by default */
 grpc_core::DebugOnlyTraceFlag grpc_trace_fd_refcount(false, "fd_refcount");
+grpc_core::DebugOnlyTraceFlag grpc_polling_api_trace(false, "polling_api");
+
+#ifndef NDEBUG
+
+// Polling API trace only enabled in debug builds
+#define GRPC_POLLING_API_TRACE(format, ...)                   \
+  if (grpc_polling_api_trace.enabled()) {                     \
+    gpr_log(GPR_DEBUG, "(polling-api) " format, __VA_ARGS__); \
+  }
+#else
+#define GRPC_POLLING_API_TRACE(...)
+#endif
 
 /** Default poll() function - a pointer so that it can be overridden by some
  *  tests */
@@ -96,11 +108,11 @@ static void add(const char* beg, const char* end, char*** ss, size_t* ns) {
   char* s;
   size_t len;
   GPR_ASSERT(end >= beg);
-  len = (size_t)(end - beg);
-  s = (char*)gpr_malloc(len + 1);
+  len = static_cast<size_t>(end - beg);
+  s = static_cast<char*>(gpr_malloc(len + 1));
   memcpy(s, beg, len);
   s[len] = 0;
-  *ss = (char**)gpr_realloc(*ss, sizeof(char**) * np);
+  *ss = static_cast<char**>(gpr_realloc(*ss, sizeof(char**) * np));
   (*ss)[n] = s;
   *ns = np;
 }
@@ -177,6 +189,7 @@ void grpc_event_engine_shutdown(void) {
 }
 
 grpc_fd* grpc_fd_create(int fd, const char* name) {
+  GRPC_POLLING_API_TRACE("fd_create(%d, %s)", fd, name);
   return g_event_engine->fd_create(fd, name);
 }
 
@@ -186,10 +199,14 @@ int grpc_fd_wrapped_fd(grpc_fd* fd) {
 
 void grpc_fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
                     bool already_closed, const char* reason) {
+  GRPC_POLLING_API_TRACE("fd_orphan(%d, %p, %p, %d, %s)",
+                         grpc_fd_wrapped_fd(fd), on_done, release_fd,
+                         already_closed, reason);
   g_event_engine->fd_orphan(fd, on_done, release_fd, already_closed, reason);
 }
 
 void grpc_fd_shutdown(grpc_fd* fd, grpc_error* why) {
+  GRPC_POLLING_API_TRACE("fd_shutdown(%d)", grpc_fd_wrapped_fd(fd));
   g_event_engine->fd_shutdown(fd, why);
 }
 
@@ -208,65 +225,89 @@ void grpc_fd_notify_on_write(grpc_fd* fd, grpc_closure* closure) {
 size_t grpc_pollset_size(void) { return g_event_engine->pollset_size; }
 
 void grpc_pollset_init(grpc_pollset* pollset, gpr_mu** mu) {
+  GRPC_POLLING_API_TRACE("pollset_init(%p)", pollset);
   g_event_engine->pollset_init(pollset, mu);
 }
 
 void grpc_pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
+  GRPC_POLLING_API_TRACE("pollset_shutdown(%p)", pollset);
   g_event_engine->pollset_shutdown(pollset, closure);
 }
 
 void grpc_pollset_destroy(grpc_pollset* pollset) {
+  GRPC_POLLING_API_TRACE("pollset_destroy(%p)", pollset);
   g_event_engine->pollset_destroy(pollset);
 }
 
 grpc_error* grpc_pollset_work(grpc_pollset* pollset,
                               grpc_pollset_worker** worker,
                               grpc_millis deadline) {
-  return g_event_engine->pollset_work(pollset, worker, deadline);
+  GRPC_POLLING_API_TRACE("pollset_work(%p, %" PRIdPTR ") begin", pollset,
+                         deadline);
+  grpc_error* err = g_event_engine->pollset_work(pollset, worker, deadline);
+  GRPC_POLLING_API_TRACE("pollset_work(%p, %" PRIdPTR ") end", pollset,
+                         deadline);
+  return err;
 }
 
 grpc_error* grpc_pollset_kick(grpc_pollset* pollset,
                               grpc_pollset_worker* specific_worker) {
+  GRPC_POLLING_API_TRACE("pollset_kick(%p, %p)", pollset, specific_worker);
   return g_event_engine->pollset_kick(pollset, specific_worker);
 }
 
 void grpc_pollset_add_fd(grpc_pollset* pollset, struct grpc_fd* fd) {
+  GRPC_POLLING_API_TRACE("pollset_add_fd(%p, %d)", pollset,
+                         grpc_fd_wrapped_fd(fd));
   g_event_engine->pollset_add_fd(pollset, fd);
 }
 
 grpc_pollset_set* grpc_pollset_set_create(void) {
-  return g_event_engine->pollset_set_create();
+  grpc_pollset_set* pss = g_event_engine->pollset_set_create();
+  GRPC_POLLING_API_TRACE("pollset_set_create(%p)", pss);
+  return pss;
 }
 
 void grpc_pollset_set_destroy(grpc_pollset_set* pollset_set) {
+  GRPC_POLLING_API_TRACE("pollset_set_destroy(%p)", pollset_set);
   g_event_engine->pollset_set_destroy(pollset_set);
 }
 
 void grpc_pollset_set_add_pollset(grpc_pollset_set* pollset_set,
                                   grpc_pollset* pollset) {
+  GRPC_POLLING_API_TRACE("pollset_set_add_pollset(%p, %p)", pollset_set,
+                         pollset);
   g_event_engine->pollset_set_add_pollset(pollset_set, pollset);
 }
 
 void grpc_pollset_set_del_pollset(grpc_pollset_set* pollset_set,
                                   grpc_pollset* pollset) {
+  GRPC_POLLING_API_TRACE("pollset_set_del_pollset(%p, %p)", pollset_set,
+                         pollset);
   g_event_engine->pollset_set_del_pollset(pollset_set, pollset);
 }
 
 void grpc_pollset_set_add_pollset_set(grpc_pollset_set* bag,
                                       grpc_pollset_set* item) {
+  GRPC_POLLING_API_TRACE("pollset_set_add_pollset_set(%p, %p)", bag, item);
   g_event_engine->pollset_set_add_pollset_set(bag, item);
 }
 
 void grpc_pollset_set_del_pollset_set(grpc_pollset_set* bag,
                                       grpc_pollset_set* item) {
+  GRPC_POLLING_API_TRACE("pollset_set_del_pollset_set(%p, %p)", bag, item);
   g_event_engine->pollset_set_del_pollset_set(bag, item);
 }
 
 void grpc_pollset_set_add_fd(grpc_pollset_set* pollset_set, grpc_fd* fd) {
+  GRPC_POLLING_API_TRACE("pollset_set_add_fd(%p, %d)", pollset_set,
+                         grpc_fd_wrapped_fd(fd));
   g_event_engine->pollset_set_add_fd(pollset_set, fd);
 }
 
 void grpc_pollset_set_del_fd(grpc_pollset_set* pollset_set, grpc_fd* fd) {
+  GRPC_POLLING_API_TRACE("pollset_set_del_fd(%p, %d)", pollset_set,
+                         grpc_fd_wrapped_fd(fd));
   g_event_engine->pollset_set_del_fd(pollset_set, fd);
 }
 

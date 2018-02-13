@@ -23,8 +23,8 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/useful.h>
 
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 /* grow a buffer; requires GRPC_SLICE_BUFFER_INLINE_ELEMENTS > 1 */
@@ -32,7 +32,7 @@
 
 static void maybe_embiggen(grpc_slice_buffer* sb) {
   /* How far away from sb->base_slices is sb->slices pointer */
-  size_t slice_offset = (size_t)(sb->slices - sb->base_slices);
+  size_t slice_offset = static_cast<size_t>(sb->slices - sb->base_slices);
   size_t slice_count = sb->count + slice_offset;
 
   if (slice_count == sb->capacity) {
@@ -45,12 +45,12 @@ static void maybe_embiggen(grpc_slice_buffer* sb) {
       sb->capacity = GROW(sb->capacity);
       GPR_ASSERT(sb->capacity > slice_count);
       if (sb->base_slices == sb->inlined) {
-        sb->base_slices =
-            (grpc_slice*)gpr_malloc(sb->capacity * sizeof(grpc_slice));
+        sb->base_slices = static_cast<grpc_slice*>(
+            gpr_malloc(sb->capacity * sizeof(grpc_slice)));
         memcpy(sb->base_slices, sb->inlined, slice_count * sizeof(grpc_slice));
       } else {
-        sb->base_slices = (grpc_slice*)gpr_realloc(
-            sb->base_slices, sb->capacity * sizeof(grpc_slice));
+        sb->base_slices = static_cast<grpc_slice*>(
+            gpr_realloc(sb->base_slices, sb->capacity * sizeof(grpc_slice)));
       }
 
       sb->slices = sb->base_slices + slice_offset;
@@ -89,7 +89,8 @@ uint8_t* grpc_slice_buffer_tiny_add(grpc_slice_buffer* sb, size_t n) {
   if ((back->data.inlined.length + n) > sizeof(back->data.inlined.bytes))
     goto add_new;
   out = back->data.inlined.bytes + back->data.inlined.length;
-  back->data.inlined.length = (uint8_t)(back->data.inlined.length + n);
+  back->data.inlined.length =
+      static_cast<uint8_t>(back->data.inlined.length + n);
   return out;
 
 add_new:
@@ -97,7 +98,7 @@ add_new:
   back = &sb->slices[sb->count];
   sb->count++;
   back->refcount = nullptr;
-  back->data.inlined.length = (uint8_t)n;
+  back->data.inlined.length = static_cast<uint8_t>(n);
   return back->data.inlined.bytes;
 }
 
@@ -125,8 +126,8 @@ void grpc_slice_buffer_add(grpc_slice_buffer* sb, grpc_slice s) {
           GRPC_SLICE_INLINED_SIZE) {
         memcpy(back->data.inlined.bytes + back->data.inlined.length,
                s.data.inlined.bytes, s.data.inlined.length);
-        back->data.inlined.length =
-            (uint8_t)(back->data.inlined.length + s.data.inlined.length);
+        back->data.inlined.length = static_cast<uint8_t>(
+            back->data.inlined.length + s.data.inlined.length);
       } else {
         size_t cp1 = GRPC_SLICE_INLINED_SIZE - back->data.inlined.length;
         memcpy(back->data.inlined.bytes + back->data.inlined.length,
@@ -136,7 +137,8 @@ void grpc_slice_buffer_add(grpc_slice_buffer* sb, grpc_slice s) {
         back = &sb->slices[n];
         sb->count = n + 1;
         back->refcount = nullptr;
-        back->data.inlined.length = (uint8_t)(s.data.inlined.length - cp1);
+        back->data.inlined.length =
+            static_cast<uint8_t>(s.data.inlined.length - cp1);
         memcpy(back->data.inlined.bytes, s.data.inlined.bytes + cp1,
                s.data.inlined.length - cp1);
       }
@@ -177,8 +179,8 @@ void grpc_slice_buffer_reset_and_unref(grpc_slice_buffer* sb) {
 }
 
 void grpc_slice_buffer_swap(grpc_slice_buffer* a, grpc_slice_buffer* b) {
-  size_t a_offset = (size_t)(a->slices - a->base_slices);
-  size_t b_offset = (size_t)(b->slices - b->base_slices);
+  size_t a_offset = static_cast<size_t>(a->slices - a->base_slices);
+  size_t b_offset = static_cast<size_t>(b->slices - b->base_slices);
 
   size_t a_count = a->count + a_offset;
   size_t b_count = b->count + b_offset;
@@ -287,7 +289,7 @@ void grpc_slice_buffer_move_first_no_ref(grpc_slice_buffer* src, size_t n,
 
 void grpc_slice_buffer_move_first_into_buffer(grpc_slice_buffer* src, size_t n,
                                               void* dst) {
-  char* dstp = (char*)dst;
+  char* dstp = static_cast<char*>(dst);
   GPR_ASSERT(src->length >= n);
 
   while (n > 0) {

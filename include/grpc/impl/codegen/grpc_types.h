@@ -239,6 +239,9 @@ typedef struct {
 /** The time between the first and second connection attempts, in ms */
 #define GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS \
   "grpc.initial_reconnect_backoff_ms"
+/** Minimum amount of time between DNS resolutions, in ms */
+#define GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS \
+  "grpc.dns_min_time_between_resolutions_ms"
 /** The timeout used on servers for finishing handshaking on an incoming
     connection.  Defaults to 120 seconds. */
 #define GRPC_ARG_SERVER_HANDSHAKE_TIMEOUT_MS "grpc.server_handshake_timeout_ms"
@@ -296,7 +299,7 @@ typedef struct {
 #define GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS "grpc.grpclb_call_timeout_ms"
 /* Timeout in milliseconds to wait for the serverlist from the grpclb load
    balancer before using fallback backend addresses from the resolver.
-   If 0, fallback will never be used. */
+   If 0, fallback will never be used. Default value is 10000. */
 #define GRPC_ARG_GRPCLB_FALLBACK_TIMEOUT_MS "grpc.grpclb_fallback_timeout_ms"
 /** If non-zero, grpc server's cronet compression workaround will be enabled */
 #define GRPC_ARG_WORKAROUND_CRONET_COMPRESSION \
