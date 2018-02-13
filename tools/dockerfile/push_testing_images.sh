@@ -29,6 +29,7 @@ cd -
 
 DOCKERHUB_ORGANIZATION=grpctesting
 
+echo "Uploading images to dockerhub..."
 for DOCKERFILE_DIR in tools/dockerfile/test/* tools/dockerfile/grpc_artifact_* tools/dockerfile/interoptest/* tools/dockerfile/distribtest/cpp_jessie_x64 third_party/rake-compiler-dock
 do
   # Generate image name based on Dockerfile checksum. That works well as long
@@ -47,3 +48,10 @@ do
   # "docker login" needs to be run in advance
   docker push ${DOCKERHUB_ORGANIZATION}/${DOCKER_IMAGE_NAME}
 done
+
+echo "Uploading foundry tests image to GCR..."
+DOCKERFILE_DIR=tools/dockerfile/grpc_foundry_tests
+GCR_PROJECT_ID=grpc-testing
+DOCKER_IMAGE_NAME="gcr.io/$GCR_PROJECT_ID/$(basename $DOCKERFILE_DIR)_$(sha1sum $DOCKERFILE_DIR/Dockerfile | cut -f1 -d\ )"
+docker build -t ${DOCKER_IMAGE_NAME} ${DOCKERFILE_DIR}
+gcloud docker -- push ${DOCKER_IMAGE_NAME}
