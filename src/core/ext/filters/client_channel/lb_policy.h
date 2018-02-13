@@ -61,8 +61,8 @@ class LoadBalancingPolicy
   struct PickState {
     /// Initial metadata associated with the picking call.
     grpc_metadata_batch* initial_metadata;
-    /// Bitmask used for selective cancelling. See \a
-    /// grpc_lb_policy_cancel_picks() and \a GRPC_INITIAL_METADATA_* in
+    /// Bitmask used for selective cancelling. See
+    /// \a CancelMatchingPicksLocked() and \a GRPC_INITIAL_METADATA_* in
     /// grpc_types.h.
     uint32_t initial_metadata_flags;
     /// Storage for LB token in \a initial_metadata, or nullptr if not used.
@@ -77,6 +77,8 @@ class LoadBalancingPolicy
     grpc_call_context_element subchannel_call_context[GRPC_CONTEXT_COUNT];
     /// Upon success, \a *user_data will be set to whatever opaque information
     /// may need to be propagated from the LB policy, or nullptr if not needed.
+    // TODO(roth): As part of revamping our metadata APIs, try to find a
+    // way to clean this up and C++-ify it.
     void** user_data;
     /// Next pointer.  For internal use by LB policy.
     PickState* next;
@@ -106,15 +108,16 @@ class LoadBalancingPolicy
                                 grpc_error* error) GRPC_ABSTRACT;
 
   /// Cancels all pending picks for which their \a initial_metadata_flags (as
-  /// given in the call to \a grpc_lb_policy_pick_locked()) matches
+  /// given in the call to \a PickLocked()) matches
   /// \a initial_metadata_flags_eq when ANDed with
   /// \a initial_metadata_flags_mask.
   virtual void CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
                                          uint32_t initial_metadata_flags_eq,
                                          grpc_error* error) GRPC_ABSTRACT;
 
-  /// Calls \a closure when the connectivity state of the policy changes
-  /// from \a *state.  Updates \a *state with the new state of the policy.
+  /// Requests a notification when the connectivity state of the policy
+  /// changes from \a *state.  When that happens, sets \a *state to the
+  /// new state and schedules \a closure.
   virtual void NotifyOnStateChangeLocked(grpc_connectivity_state* state,
                                          grpc_closure* closure) GRPC_ABSTRACT;
 
@@ -139,7 +142,7 @@ class LoadBalancingPolicy
   virtual void ExitIdleLocked() GRPC_ABSTRACT;
 
   void Orphan() override {
-    // Invoke ShutdownLocked() inside of the combiner.
+    // Invoke ShutdownAndUnrefLocked() inside of the combiner.
     GRPC_CLOSURE_SCHED(
         GRPC_CLOSURE_CREATE(&LoadBalancingPolicy::ShutdownAndUnrefLocked, this,
                             grpc_combiner_scheduler(combiner_)),

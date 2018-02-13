@@ -27,7 +27,7 @@
 #include "src/core/ext/filters/client_channel/uri_parser.h"
 
 //
-// LB address representation
+// representation of an LB address
 //
 
 // Channel arg key for grpc_lb_addresses.
@@ -38,6 +38,8 @@
  * gRPC LB policy. Note that no all LB policies support \a user_data as input.
  * Those who don't will simply ignore it and will correspondingly return NULL in
  * their namesake pick() output argument. */
+// TODO(roth): Once we figure out a better way of handling user_data in
+// LB policies, convert these structs to C++ classes.
 typedef struct grpc_lb_address {
   grpc_resolved_address address;
   bool is_balancer;
@@ -106,7 +108,7 @@ namespace grpc_core {
 
 class LoadBalancingPolicyFactory {
  public:
-  /// Returns a new resolver instance.
+  /// Returns a new LB policy instance.
   virtual OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       const LoadBalancingPolicy::Args& args) const GRPC_ABSTRACT;
 
