@@ -36,7 +36,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/thd.h>
+#include <grpc/support/thd_id.h>
 
 extern "C" {
 #include <openssl/bio.h>

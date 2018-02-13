@@ -23,10 +23,10 @@
 #include <pthread.h>
 
 #include <grpc/support/log.h>
-#include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/thd.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr_posix.h"
 

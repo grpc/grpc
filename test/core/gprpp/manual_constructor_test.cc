@@ -22,10 +22,11 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/thd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <cstring>
+
+#include "src/core/lib/gpr/thd.h"
 #include "src/core/lib/gprpp/abstract.h"
 #include "test/core/util/test_config.h"
 

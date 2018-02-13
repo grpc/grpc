@@ -16,24 +16,17 @@
  *
  */
 
-#ifndef GRPC_SUPPORT_THD_H
-#define GRPC_SUPPORT_THD_H
-/** Thread interface for GPR.
+#ifndef GRPC_CORE_LIB_GPR_THD_H
+#define GRPC_CORE_LIB_GPR_THD_H
+/** Internal thread interface for GPR.
 
    Types
-        gpr_thd_id        a thread identifier.
-                          (Currently no calls take a thread identifier.
-                          It exists for future extensibility.)
         gpr_thd_options   options used when creating a thread
  */
 
 #include <grpc/support/port_platform.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-typedef uintptr_t gpr_thd_id;
+#include <grpc/support/thd_id.h>
+#include <grpc/support/time.h>
 
 /** Thread creation options. */
 typedef struct {
@@ -46,34 +39,33 @@ typedef struct {
    that support thread naming.
    If options==NULL, default options are used.
    The thread is immediately runnable, and exits when (*thd_body)() returns.  */
-GPRAPI int gpr_thd_new(gpr_thd_id* t, const char* thd_name,
-                       void (*thd_body)(void* arg), void* arg,
-                       const gpr_thd_options* options);
+int gpr_thd_new(gpr_thd_id* t, const char* thd_name,
+                void (*thd_body)(void* arg), void* arg,
+                const gpr_thd_options* options);
 
 /** Return a gpr_thd_options struct with all fields set to defaults. */
-GPRAPI gpr_thd_options gpr_thd_options_default(void);
+gpr_thd_options gpr_thd_options_default(void);
 
 /** Set the thread to become detached on startup - this is the default. */
-GPRAPI void gpr_thd_options_set_detached(gpr_thd_options* options);
+void gpr_thd_options_set_detached(gpr_thd_options* options);
 
 /** Set the thread to become joinable - mutually exclusive with detached. */
-GPRAPI void gpr_thd_options_set_joinable(gpr_thd_options* options);
+void gpr_thd_options_set_joinable(gpr_thd_options* options);
 
 /** Returns non-zero if the option detached is set. */
-GPRAPI int gpr_thd_options_is_detached(const gpr_thd_options* options);
+int gpr_thd_options_is_detached(const gpr_thd_options* options);
 
 /** Returns non-zero if the option joinable is set. */
-GPRAPI int gpr_thd_options_is_joinable(const gpr_thd_options* options);
-
-/** Returns the identifier of the current thread. */
-GPRAPI gpr_thd_id gpr_thd_currentid(void);
+int gpr_thd_options_is_joinable(const gpr_thd_options* options);
 
 /** Blocks until the specified thread properly terminates.
    Calling this on a detached thread has unpredictable results. */
-GPRAPI void gpr_thd_join(gpr_thd_id t);
+void gpr_thd_join(gpr_thd_id t);
 
-#ifdef __cplusplus
-}
-#endif
+/* Internal interfaces between modules within the gpr support library.  */
+void gpr_thd_init();
 
-#endif /* GRPC_SUPPORT_THD_H */
+/* Wait for all outstanding threads to finish, up to deadline */
+int gpr_await_threads(gpr_timespec deadline);
+
+#endif /* GRPC_CORE_LIB_GPR_THD_H */

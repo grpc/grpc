@@ -211,14 +211,7 @@ EXPORTS
     gpr_stats_init
     gpr_stats_inc
     gpr_stats_read
-    gpr_thd_new
-    gpr_thd_options_default
-    gpr_thd_options_set_detached
-    gpr_thd_options_set_joinable
-    gpr_thd_options_is_detached
-    gpr_thd_options_is_joinable
     gpr_thd_currentid
-    gpr_thd_join
     gpr_time_0
     gpr_inf_future
     gpr_inf_past

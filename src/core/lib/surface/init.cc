@@ -32,7 +32,7 @@
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/fork.h"
-#include "src/core/lib/gpr/thd_internal.h"
+#include "src/core/lib/gpr/thd.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/combiner.h"

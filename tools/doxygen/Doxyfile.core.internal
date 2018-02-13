@@ -859,7 +859,7 @@ include/grpc/support/sync_custom.h \
 include/grpc/support/sync_generic.h \
 include/grpc/support/sync_posix.h \
 include/grpc/support/sync_windows.h \
-include/grpc/support/thd.h \
+include/grpc/support/thd_id.h \
 include/grpc/support/time.h \
 include/grpc/support/workaround_list.h \
 src/core/README.md \
@@ -1095,7 +1095,7 @@ src/core/lib/gpr/sync.cc \
 src/core/lib/gpr/sync_posix.cc \
 src/core/lib/gpr/sync_windows.cc \
 src/core/lib/gpr/thd.cc \
-src/core/lib/gpr/thd_internal.h \
+src/core/lib/gpr/thd.h \
 src/core/lib/gpr/thd_posix.cc \
 src/core/lib/gpr/thd_windows.cc \
 src/core/lib/gpr/time.cc \

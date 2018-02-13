@@ -20,6 +20,8 @@
 
 #ifdef GRPC_UV
 
+#include <grpc/support/thd_id.h>
+
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_uv.h"
