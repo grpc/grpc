@@ -86,6 +86,7 @@ static std::unique_ptr<ScenarioResult> RunAndReport(const Scenario& scenario,
   result->mutable_scenario()->CopyFrom(scenario);
 
   GetReporter()->ReportQPS(*result);
+  GetReporter()->ReportAttemptedQPS(*result);
   GetReporter()->ReportQPSPerCore(*result);
   GetReporter()->ReportLatency(*result);
   GetReporter()->ReportTimes(*result);

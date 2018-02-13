@@ -248,6 +248,9 @@ message ScenarioResultSummary
   // Queries per CPU-sec over all servers or clients
   double server_queries_per_cpu_sec = 17;
   double client_queries_per_cpu_sec = 18;
+
+  // Requested QPS for fixed load tests.
+  double attempted_qps = 19;
 }
 
 // Results of a single benchmark scenario.
