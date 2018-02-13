@@ -20,8 +20,8 @@
 
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/thd.h>
 
+#include "src/core/lib/gpr/thd.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/profiling/timers.h"
 

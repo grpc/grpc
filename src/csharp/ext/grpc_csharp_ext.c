@@ -16,8 +16,6 @@
  *
  */
 
-#include "src/core/lib/gpr/string.h"
-
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -26,7 +24,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/thd.h>
+#include <grpc/support/thd_id.h>
 
 #include <string.h>
 

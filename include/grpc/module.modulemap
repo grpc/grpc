@@ -11,7 +11,7 @@ framework module grpc {
   header "support/string_util.h"
   header "support/sync.h"
   header "support/sync_generic.h"
-  header "support/thd.h"
+  header "support/thd_id.h"
   header "support/time.h"
   header "impl/codegen/atm.h"
   header "impl/codegen/fork.h"

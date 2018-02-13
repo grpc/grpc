@@ -76,7 +76,7 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/support/sync_generic.h",
     "include/grpc/support/sync_posix.h",
     "include/grpc/support/sync_windows.h",
-    "include/grpc/support/thd.h",
+    "include/grpc/support/thd_id.h",
     "include/grpc/support/time.h",
 ]
 
@@ -494,7 +494,7 @@ grpc_cc_library(
         "src/core/lib/gpr/spinlock.h",
         "src/core/lib/gpr/string.h",
         "src/core/lib/gpr/string_windows.h",
-        "src/core/lib/gpr/thd_internal.h",
+        "src/core/lib/gpr/thd.h",
         "src/core/lib/gpr/time_precise.h",
         "src/core/lib/gpr/tls.h",
         "src/core/lib/gpr/tls_gcc.h",

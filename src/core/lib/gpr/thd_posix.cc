@@ -22,10 +22,12 @@
 
 #ifdef GPR_POSIX_SYNC
 
+#include "src/core/lib/gpr/thd.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/thd.h>
+#include <grpc/support/thd_id.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
