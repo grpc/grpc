@@ -18,7 +18,9 @@
 
 #ifndef GRPC_SUPPORT_THD_ID_H
 #define GRPC_SUPPORT_THD_ID_H
-/** Thread interface for GPR.
+/** Thread ID interface for GPR.
+
+   Used by some wrapped languages for logging purposes.
 
    Types
         gpr_thd_id        a unique opaque identifier for a thread.
