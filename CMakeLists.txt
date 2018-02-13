@@ -224,6 +224,7 @@ add_dependencies(buildtests_c chttp2_stream_map_test)
 add_dependencies(buildtests_c chttp2_varint_test)
 add_dependencies(buildtests_c cmdline_test)
 add_dependencies(buildtests_c combiner_test)
+add_dependencies(buildtests_c compression_context_manager_test)
 add_dependencies(buildtests_c compression_test)
 add_dependencies(buildtests_c concurrent_connectivity_test)
 add_dependencies(buildtests_c connection_refused_test)
@@ -5144,6 +5145,33 @@ target_include_directories(combiner_test
 )
 
 target_link_libraries(combiner_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(compression_context_manager_test
+  test/core/compression/compression_context_manager.cc
+)
+
+
+target_include_directories(compression_context_manager_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+)
+
+target_link_libraries(compression_context_manager_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc

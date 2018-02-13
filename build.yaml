@@ -1903,6 +1903,17 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: compression_context_manager_test
+  build: test
+  language: c
+  src:
+  - test/core/compression/compression_context_manager.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses_polling: false
 - name: compression_test
   build: test
   language: c

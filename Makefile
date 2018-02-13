@@ -968,6 +968,7 @@ chttp2_varint_test: $(BINDIR)/$(CONFIG)/chttp2_varint_test
 client_fuzzer: $(BINDIR)/$(CONFIG)/client_fuzzer
 cmdline_test: $(BINDIR)/$(CONFIG)/cmdline_test
 combiner_test: $(BINDIR)/$(CONFIG)/combiner_test
+compression_context_manager_test: $(BINDIR)/$(CONFIG)/compression_context_manager_test
 compression_test: $(BINDIR)/$(CONFIG)/compression_test
 concurrent_connectivity_test: $(BINDIR)/$(CONFIG)/concurrent_connectivity_test
 connection_refused_test: $(BINDIR)/$(CONFIG)/connection_refused_test
@@ -1384,6 +1385,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/chttp2_varint_test \
   $(BINDIR)/$(CONFIG)/cmdline_test \
   $(BINDIR)/$(CONFIG)/combiner_test \
+  $(BINDIR)/$(CONFIG)/compression_context_manager_test \
   $(BINDIR)/$(CONFIG)/compression_test \
   $(BINDIR)/$(CONFIG)/concurrent_connectivity_test \
   $(BINDIR)/$(CONFIG)/connection_refused_test \
@@ -1837,6 +1839,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/cmdline_test || ( echo test cmdline_test failed ; exit 1 )
 	$(E) "[RUN]     Testing combiner_test"
 	$(Q) $(BINDIR)/$(CONFIG)/combiner_test || ( echo test combiner_test failed ; exit 1 )
+	$(E) "[RUN]     Testing compression_context_manager_test"
+	$(Q) $(BINDIR)/$(CONFIG)/compression_context_manager_test || ( echo test compression_context_manager_test failed ; exit 1 )
 	$(E) "[RUN]     Testing compression_test"
 	$(Q) $(BINDIR)/$(CONFIG)/compression_test || ( echo test compression_test failed ; exit 1 )
 	$(E) "[RUN]     Testing concurrent_connectivity_test"
@@ -9820,6 +9824,38 @@ deps_combiner_test: $(COMBINER_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(COMBINER_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+COMPRESSION_CONTEXT_MANAGER_TEST_SRC = \
+    test/core/compression/compression_context_manager.cc \
+
+COMPRESSION_CONTEXT_MANAGER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(COMPRESSION_CONTEXT_MANAGER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/compression_context_manager_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/compression_context_manager_test: $(COMPRESSION_CONTEXT_MANAGER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(COMPRESSION_CONTEXT_MANAGER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/compression_context_manager_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/compression/compression_context_manager.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_compression_context_manager_test: $(COMPRESSION_CONTEXT_MANAGER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(COMPRESSION_CONTEXT_MANAGER_TEST_OBJS:.o=.dep)
 endif
 endif
 
