@@ -1187,9 +1187,8 @@ static subchannel_batch_data* batch_data_create(grpc_call_element* elem,
       static_cast<subchannel_call_retry_state*>(
           grpc_connected_subchannel_call_get_parent_data(
               calld->subchannel_call));
-  subchannel_batch_data* batch_data =
-      static_cast<subchannel_batch_data*>(gpr_arena_alloc(
-          calld->arena, sizeof(*batch_data)));
+  subchannel_batch_data* batch_data = static_cast<subchannel_batch_data*>(
+      gpr_arena_alloc(calld->arena, sizeof(*batch_data)));
   batch_data->elem = elem;
   batch_data->subchannel_call =
       GRPC_SUBCHANNEL_CALL_REF(calld->subchannel_call, "batch_data_create");
