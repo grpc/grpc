@@ -58,7 +58,7 @@ static bool gzip_flate(grpc_stream_compression_context_gzip* ctx,
            !eoc) {
       grpc_slice slice = grpc_slice_buffer_take_first(in);
       ctx->zs.avail_in =
-          static_cast<uInt>std::min(GRPC_SLICE_LENGTH(slice), max_input_size);
+          static_cast<uInt> std::min(GRPC_SLICE_LENGTH(slice), max_input_size);
       ctx->zs.next_in = GRPC_SLICE_START_PTR(slice);
       size_t slice_usage_offset = ctx->zs.avail_in;
 

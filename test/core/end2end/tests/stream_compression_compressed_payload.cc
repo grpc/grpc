@@ -558,8 +558,9 @@ static void test_invoke_request_with_exceptionally_uncompressed_payload(
     grpc_end2end_test_config config) {
   request_with_payload_template(
       config, "test_invoke_request_with_exceptionally_uncompressed_payload",
-      GRPC_WRITE_NO_COMPRESS, GRPC_COMPRESS_STREAM_GZIP, GRPC_COMPRESS_STREAM_GZIP,
-      GRPC_COMPRESS_NONE, GRPC_COMPRESS_STREAM_GZIP, nullptr, false,
+      GRPC_WRITE_NO_COMPRESS, GRPC_COMPRESS_STREAM_GZIP,
+      GRPC_COMPRESS_STREAM_GZIP, GRPC_COMPRESS_NONE, GRPC_COMPRESS_STREAM_GZIP,
+      nullptr, false,
       /* ignored */ GRPC_COMPRESS_LEVEL_NONE, false, false, GRPC_COMPRESS_NONE);
 }
 
