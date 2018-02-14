@@ -1473,6 +1473,7 @@ static void perform_stream_op_locked(void* stream_op,
       // streaming call might send another message before getting a
       // recv_message failure, breaking out of its loop, and then
       // starting recv_trailing_metadata.
+      grpc_byte_stream_destroy(op->payload->send_message.send_message);
       grpc_chttp2_complete_closure_step(
           t, s, &s->fetching_send_message_finished,
           t->is_client && s->received_trailing_metadata
@@ -2092,7 +2093,10 @@ void grpc_chttp2_fail_pending_writes(grpc_chttp2_transport* t,
                                     GRPC_ERROR_REF(error),
                                     "send_trailing_metadata_finished");
 
-  s->fetching_send_message = nullptr;
+  if (s->fetching_send_message != nullptr) {
+    grpc_byte_stream_destroy(s->fetching_send_message);
+    s->fetching_send_message = nullptr;
+  }
   grpc_chttp2_complete_closure_step(t, s, &s->fetching_send_message_finished,
                                     GRPC_ERROR_REF(error),
                                     "fetching_send_message_finished");
