@@ -255,7 +255,6 @@ static void http_connect_handshaker_do_handshake(
   const grpc_arg* arg =
       grpc_channel_args_find(args->args, GRPC_ARG_HTTP_CONNECT_SERVER);
   if (arg == nullptr || arg->type != GRPC_ARG_STRING) {
-    gpr_log(GPR_INFO, "HTTP CONNECT channel arg not found or invalid");
     // Set shutdown to true so that subsequent calls to
     // http_connect_handshaker_shutdown() do nothing.
     gpr_mu_lock(&handshaker->mu);
@@ -264,7 +263,6 @@ static void http_connect_handshaker_do_handshake(
     GRPC_CLOSURE_SCHED(on_handshake_done, GRPC_ERROR_NONE);
     return;
   }
-  GPR_ASSERT(arg->type == GRPC_ARG_STRING);
   char* server_name = arg->value.string;
   // Get headers from channel args.
   arg = grpc_channel_args_find(args->args, GRPC_ARG_HTTP_CONNECT_HEADERS);
