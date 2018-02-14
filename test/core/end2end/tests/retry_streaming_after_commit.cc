@@ -236,8 +236,6 @@ static void test_retry_streaming_after_commit(grpc_end2end_test_config config) {
   error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   CQ_EXPECT_COMPLETION(cqv, tag(103), true);
-  cq_verify(cqv);
-
   // Client receives initial metadata and a message.
   CQ_EXPECT_COMPLETION(cqv, tag(2), true);
   cq_verify(cqv);
