@@ -1067,9 +1067,14 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
                   &g_active_call->recv_initial_metadata;
               break;
             case GRPC_OP_RECV_MESSAGE:
-              op->op = GRPC_OP_RECV_MESSAGE;
-              has_ops |= 1 << GRPC_OP_RECV_MESSAGE;
-              op->data.recv_message.recv_message = &g_active_call->recv_message;
+              if (g_active_call->done_flags & DONE_FLAG_CALL_CLOSED) {
+                ok = false;
+              } else {
+                op->op = GRPC_OP_RECV_MESSAGE;
+                has_ops |= 1 << GRPC_OP_RECV_MESSAGE;
+                op->data.recv_message.recv_message =
+                    &g_active_call->recv_message;
+              }
               break;
             case GRPC_OP_RECV_STATUS_ON_CLIENT:
               op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
