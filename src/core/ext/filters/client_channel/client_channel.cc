@@ -987,8 +987,9 @@ static void retry_commit(grpc_call_element* elem,
   for (size_t i = 0; i < retry_state->completed_send_message_count; ++i) {
     if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG,
-              "chand=%p calld=%p: destroying calld->send_messages[%"
-              PRIuPTR "]", chand, calld, i);
+              "chand=%p calld=%p: destroying calld->send_messages[%" PRIuPTR
+              "]",
+              chand, calld, i);
     }
     grpc_byte_stream_cache_destroy(calld->send_messages[i]);
   }
@@ -1731,9 +1732,9 @@ static void free_cached_send_op_data_for_completed_batch(
   if (batch_data->batch.send_message) {
     if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG,
-              "chand=%p calld=%p: destroying calld->send_messages[%"
-              PRIuPTR "]", chand, calld,
-              retry_state->completed_send_message_count - 1);
+              "chand=%p calld=%p: destroying calld->send_messages[%" PRIuPTR
+              "]",
+              chand, calld, retry_state->completed_send_message_count - 1);
     }
     grpc_byte_stream_cache_destroy(
         calld->send_messages[retry_state->completed_send_message_count - 1]);
@@ -1852,14 +1853,14 @@ static void add_closures_to_fail_unstarted_pending_batches(
     if (pending_batch_is_unstarted(pending, calld, retry_state)) {
       if (grpc_client_channel_trace.enabled()) {
         gpr_log(GPR_DEBUG,
-                "chand=%p calld=%p: failing unstarted pending batch at index %"
-                PRIuPTR, chand, calld, i);
+                "chand=%p calld=%p: failing unstarted pending batch at index "
+                "%" PRIuPTR,
+                chand, calld, i);
       }
       if (pending->batch->recv_initial_metadata) {
         closure_to_execute* closure = &closures[(*num_closures)++];
-        closure->closure =
-            pending->batch->payload->recv_initial_metadata
-                .recv_initial_metadata_ready;
+        closure->closure = pending->batch->payload->recv_initial_metadata
+                               .recv_initial_metadata_ready;
         closure->error = GRPC_ERROR_REF(error);
         closure->reason =
             "failing recv_initial_metadata_ready for pending batch";
@@ -2362,8 +2363,8 @@ static void start_retriable_subchannel_batches(void* arg, grpc_error* ignored) {
       if (grpc_client_channel_trace.enabled()) {
         char* batch_str = grpc_transport_stream_op_batch_string(batches[i]);
         gpr_log(GPR_DEBUG,
-                "chand=%p calld=%p: starting batch in call combiner: %s",
-                chand, calld, batch_str);
+                "chand=%p calld=%p: starting batch in call combiner: %s", chand,
+                calld, batch_str);
         gpr_free(batch_str);
       }
       batches[i]->handler_private.extra_arg = calld->subchannel_call;
