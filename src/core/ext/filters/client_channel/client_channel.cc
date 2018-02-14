@@ -475,8 +475,7 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
       // Find service config.
       channel_arg = grpc_channel_args_find(chand->resolver_result,
                                            GRPC_ARG_SERVICE_CONFIG);
-      if (channel_arg != nullptr) {
-        GPR_ASSERT(channel_arg->type == GRPC_ARG_STRING);
+      if (channel_arg != nullptr && channel_arg->type == GRPC_ARG_STRING) {
         service_config_json = gpr_strdup(channel_arg->value.string);
         grpc_service_config* service_config =
             grpc_service_config_create(service_config_json);
