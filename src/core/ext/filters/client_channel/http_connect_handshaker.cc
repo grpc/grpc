@@ -254,7 +254,8 @@ static void http_connect_handshaker_do_handshake(
   // If not found, invoke on_handshake_done without doing anything.
   const grpc_arg* arg =
       grpc_channel_args_find(args->args, GRPC_ARG_HTTP_CONNECT_SERVER);
-  if (arg == nullptr) {
+  if (arg == nullptr || arg->type != GRPC_ARG_STRING) {
+    gpr_log(GPR_INFO, "HTTP CONNECT channel arg not found or invalid");
     // Set shutdown to true so that subsequent calls to
     // http_connect_handshaker_shutdown() do nothing.
     gpr_mu_lock(&handshaker->mu);
