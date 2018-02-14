@@ -354,6 +354,15 @@ int grpc_channel_arg_get_integer(const grpc_arg* arg,
   return arg->value.integer;
 }
 
+char* grpc_channel_arg_get_string(const grpc_arg* arg) {
+  if (arg == nullptr) return nullptr;
+  if (arg->type != GRPC_ARG_STRING) {
+    gpr_log(GPR_ERROR, "%s ignored: it must be an string", arg->key);
+    return nullptr;
+  }
+  return arg->value.string;
+}
+
 bool grpc_channel_arg_get_bool(const grpc_arg* arg, bool default_value) {
   if (arg == nullptr) return default_value;
   if (arg->type != GRPC_ARG_INTEGER) {
