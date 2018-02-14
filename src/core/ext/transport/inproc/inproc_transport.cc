@@ -480,6 +480,8 @@ static void fail_helper_locked(inproc_stream* s, grpc_error* error) {
     s->recv_message_op = nullptr;
   }
   if (s->send_message_op) {
+    grpc_byte_stream_destroy(
+        s->send_message_op->payload->send_message.send_message);
     complete_if_batch_end_locked(
         s, error, s->send_message_op,
         "fail_helper scheduling send-message-on-complete");
@@ -602,6 +604,8 @@ static void op_state_machine(void* arg, grpc_error* error) {
                (s->trailing_md_sent || other->recv_trailing_md_op)) {
       // A server send will never be matched if the client is waiting
       // for trailing metadata already
+      grpc_byte_stream_destroy(
+          s->send_message_op->payload->send_message.send_message);
       complete_if_batch_end_locked(
           s, GRPC_ERROR_NONE, s->send_message_op,
           "op_state_machine scheduling send-message-on-complete");
@@ -738,6 +742,8 @@ static void op_state_machine(void* arg, grpc_error* error) {
     if ((s->trailing_md_sent || s->t->is_client) && s->send_message_op) {
       // Nothing further will try to receive from this stream, so finish off
       // any outstanding send_message op
+      grpc_byte_stream_destroy(
+          s->send_message_op->payload->send_message.send_message);
       complete_if_batch_end_locked(
           s, new_err, s->send_message_op,
           "op_state_machine scheduling send-message-on-complete");
@@ -795,6 +801,8 @@ static void op_state_machine(void* arg, grpc_error* error) {
       s->send_message_op) {
     // Nothing further will try to receive from this stream, so finish off
     // any outstanding send_message op
+    grpc_byte_stream_destroy(
+        s->send_message_op->payload->send_message.send_message);
     complete_if_batch_end_locked(
         s, new_err, s->send_message_op,
         "op_state_machine scheduling send-message-on-complete");
