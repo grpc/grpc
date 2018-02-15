@@ -22,7 +22,7 @@
 
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/transport/security_connector.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/memory_counters.h"
 #include "test/core/util/mock_endpoint.h"
