@@ -228,8 +228,8 @@ static size_t infer_length_after_decode(const grpc_slice& slice) {
   size_t tail_case = len % 4;
   if (tail_case == 1) {
     gpr_log(GPR_ERROR,
-            "Base64 decoding failed. Input has a length of %zu (withou "
-            "padding), which is invalid.\n",
+            "Base64 decoding failed. Input has a length of %zu (without"
+            " padding), which is invalid.\n",
             len);
     tail_case = 0;
   }
