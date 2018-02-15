@@ -18,9 +18,9 @@
 
 def get_github_repo(lang):
     return {
-        'go': 'https://github.com:grpc/grpc-go.git',
-        'java': 'https://github.com:grpc/grpc-java.git',
-        'node': 'https://github.com:grpc/grpc-node.git',
+        'go': 'https://github.com/grpc/grpc-go.git',
+        'java': 'https://github.com/grpc/grpc-java.git',
+        'node': 'https://github.com/grpc/grpc-node.git',
         # all other languages use the grpc.git repo.
     }.get(lang, 'https://github.com/grpc/grpc.git')
 
