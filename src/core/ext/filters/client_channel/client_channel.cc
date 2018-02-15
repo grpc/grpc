@@ -402,13 +402,9 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
   if (chand->resolver_result != nullptr) {
     if (chand->resolver != nullptr) {
       // Find LB policy name.
-      const char* lb_policy_name = nullptr;
       const grpc_arg* channel_arg = grpc_channel_args_find(
           chand->resolver_result, GRPC_ARG_LB_POLICY_NAME);
-      if (channel_arg != nullptr) {
-        GPR_ASSERT(channel_arg->type == GRPC_ARG_STRING);
-        lb_policy_name = channel_arg->value.string;
-      }
+      const char* lb_policy_name = grpc_channel_arg_get_string(channel_arg);
       // Special case: If at least one balancer address is present, we use
       // the grpclb policy, regardless of what the resolver actually specified.
       channel_arg =
@@ -475,16 +471,17 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
       // Find service config.
       channel_arg = grpc_channel_args_find(chand->resolver_result,
                                            GRPC_ARG_SERVICE_CONFIG);
-      if (channel_arg != nullptr && channel_arg->type == GRPC_ARG_STRING) {
-        service_config_json = gpr_strdup(channel_arg->value.string);
+      service_config_json =
+          gpr_strdup(grpc_channel_arg_get_string(channel_arg));
+      if (service_config_json != nullptr) {
         grpc_service_config* service_config =
             grpc_service_config_create(service_config_json);
         if (service_config != nullptr) {
           channel_arg = grpc_channel_args_find(chand->resolver_result,
                                                GRPC_ARG_SERVER_URI);
-          GPR_ASSERT(channel_arg != nullptr);
-          GPR_ASSERT(channel_arg->type == GRPC_ARG_STRING);
-          grpc_uri* uri = grpc_uri_parse(channel_arg->value.string, true);
+          const char* server_uri = grpc_channel_arg_get_string(channel_arg);
+          GPR_ASSERT(server_uri != nullptr);
+          grpc_uri* uri = grpc_uri_parse(server_uri, true);
           GPR_ASSERT(uri->path[0] != '\0');
           service_config_parsing_state parsing_state;
           memset(&parsing_state, 0, sizeof(parsing_state));
