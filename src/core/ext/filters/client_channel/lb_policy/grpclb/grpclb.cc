@@ -1829,9 +1829,9 @@ static grpc_lb_policy* glb_create(grpc_lb_policy_factory* factory,
 
   /* Get server name. */
   arg = grpc_channel_args_find(args->args, GRPC_ARG_SERVER_URI);
-  GPR_ASSERT(arg != nullptr);
-  GPR_ASSERT(arg->type == GRPC_ARG_STRING);
-  grpc_uri* uri = grpc_uri_parse(arg->value.string, true);
+  const char* server_uri = grpc_channel_arg_get_string(arg);
+  GPR_ASSERT(server_uri != nullptr);
+  grpc_uri* uri = grpc_uri_parse(server_uri, true);
   GPR_ASSERT(uri->path[0] != '\0');
   glb_policy->server_name =
       gpr_strdup(uri->path[0] == '/' ? uri->path + 1 : uri->path);

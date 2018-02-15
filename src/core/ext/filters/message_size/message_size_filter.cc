@@ -249,10 +249,10 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
   // Get method config table from channel args.
   const grpc_arg* channel_arg =
       grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVICE_CONFIG);
-  if (channel_arg != nullptr) {
-    GPR_ASSERT(channel_arg->type == GRPC_ARG_STRING);
+  const char* service_config_str = grpc_channel_arg_get_string(channel_arg);
+  if (service_config_str != nullptr) {
     grpc_service_config* service_config =
-        grpc_service_config_create(channel_arg->value.string);
+        grpc_service_config_create(service_config_str);
     if (service_config != nullptr) {
       chand->method_limit_table =
           grpc_service_config_create_method_config_table(
