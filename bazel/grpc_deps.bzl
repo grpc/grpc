@@ -127,3 +127,57 @@ def grpc_deps():
             ],
             sha256 = "ed829b5eea8af1f405f4cc3d6ecfc3b1365bb7843171036030a31b5127002311",
         )
+
+# TODO: move some dependencies from "grpc_deps" here?
+def grpc_test_only_deps():
+    """Internal, not intended for use by packages that are consuming grpc.
+       Loads dependencies that are only needed to run grpc library's tests."""
+    native.bind(
+        name = "twisted",
+        actual = "@com_github_twisted_twisted//:twisted",
+    )
+
+    native.bind(
+        name = "yaml",
+        actual = "@com_github_yaml_pyyaml//:yaml",
+    )
+
+    if "com_github_twisted_twisted" not in native.existing_rules():
+        native.new_http_archive(
+            name = "com_github_twisted_twisted",
+            strip_prefix = "twisted-twisted-17.5.0",
+            url = "https://github.com/twisted/twisted/archive/twisted-17.5.0.zip",
+            build_file = "@com_github_grpc_grpc//third_party:twisted.BUILD",
+        )
+
+    if "com_github_yaml_pyyaml" not in native.existing_rules():
+        native.new_http_archive(
+            name = "com_github_yaml_pyyaml",
+            strip_prefix = "pyyaml-3.12",
+            url = "https://github.com/yaml/pyyaml/archive/3.12.zip",
+            build_file = "@com_github_grpc_grpc//third_party:yaml.BUILD",
+        )
+
+    if "com_github_twisted_incremental" not in native.existing_rules():
+        native.new_http_archive(
+            name = "com_github_twisted_incremental",
+            strip_prefix = "incremental-incremental-17.5.0",
+            url = "https://github.com/twisted/incremental/archive/incremental-17.5.0.zip",
+            build_file = "@com_github_grpc_grpc//third_party:incremental.BUILD",
+        )
+
+    if "com_github_zopefoundation_zope_interface" not in native.existing_rules():
+        native.new_http_archive(
+            name = "com_github_zopefoundation_zope_interface",
+            strip_prefix = "zope.interface-4.4.3",
+            url = "https://github.com/zopefoundation/zope.interface/archive/4.4.3.zip",
+            build_file = "@com_github_grpc_grpc//third_party:zope_interface.BUILD",
+        )
+
+    if "com_github_twisted_constantly" not in native.existing_rules():
+        native.new_http_archive(
+            name = "com_github_twisted_constantly",
+            strip_prefix = "constantly-15.1.0",
+            url = "https://github.com/twisted/constantly/archive/15.1.0.zip",
+            build_file = "@com_github_grpc_grpc//third_party:constantly.BUILD",
+        )
