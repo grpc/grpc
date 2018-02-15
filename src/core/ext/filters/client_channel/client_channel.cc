@@ -402,7 +402,6 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
   if (chand->resolver_result != nullptr) {
     if (chand->resolver != nullptr) {
       // Find LB policy name.
-      const char* lb_policy_name = nullptr;
       const grpc_arg* channel_arg = grpc_channel_args_find(
           chand->resolver_result, GRPC_ARG_LB_POLICY_NAME);
       const char* lb_policy_name = grpc_channel_arg_get_string(channel_arg);
