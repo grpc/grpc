@@ -99,7 +99,7 @@ bool grpc_stream_decompress(grpc_stream_compression_context* ctx,
  * whether to create a compression context that does not actually compress.
  */
 grpc_stream_compression_context* grpc_stream_compression_context_create(
-    grpc_stream_compression_method method, bool no_compress);
+    grpc_stream_compression_method method, bool no_compress = false);
 
 /**
  * Destroys a stream compression context.

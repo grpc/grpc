@@ -1499,8 +1499,8 @@ static void perform_stream_op_locked(void* stream_op,
       s->fetched_send_message_length = 0;
       s->next_message_end_offset =
           s->flow_controlled_bytes_written +
-          static_cast<int64_t> s->flow_controlled_buffer.length +
-          static_cast<int64_t> len;
+          static_cast<int64_t>(s->flow_controlled_buffer.length) +
+          static_cast<int64_t>(len);
       grpc_chttp2_stream_compression_context_manager_add_block(
           s->compression_ctx_manager, len + GRPC_HEADER_SIZE_IN_BYTES,
           {((flags & GRPC_WRITE_NO_COMPRESS) != 0)});
