@@ -508,7 +508,7 @@ static void fail_helper_locked(inproc_stream* s, grpc_error* error) {
   GRPC_ERROR_UNREF(error);
 }
 
-// TODO(vpai): It should not be necessary to drain the incoming byte
+// TODO(vjpai): It should not be necessary to drain the incoming byte
 // stream and create a new one; instead, we should simply pass the byte
 // stream from the sender directly to the receiver as-is.
 //
