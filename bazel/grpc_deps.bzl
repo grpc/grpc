@@ -90,8 +90,8 @@ def grpc_deps():
     if "com_github_gflags_gflags" not in native.existing_rules():
         native.http_archive(
             name = "com_github_gflags_gflags",
-            strip_prefix = "gflags-30dbc81fb5ffdc98ea9b14b1918bfe4e8779b26e",
-            url = "https://github.com/gflags/gflags/archive/30dbc81fb5ffdc98ea9b14b1918bfe4e8779b26e.tar.gz",
+            strip_prefix = "gflags-77592648e3f3be87d6c7123eb81cbad75f9aef5a",
+            url = "https://github.com/gflags/gflags/archive/77592648e3f3be87d6c7123eb81cbad75f9aef5a.tar.gz",
         )
 
     if "com_github_google_benchmark" not in native.existing_rules():
