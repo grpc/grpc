@@ -29,5 +29,11 @@ sudo service docker restart
 
 # Download Docker images from DockerHub
 export DOCKERHUB_ORGANIZATION=grpctesting
+# Set name of GCR docker image used for foundry tests
+FOUNDRY_DOCKERFILE_SHA1="$(sha1sum tools/dockerfile/grpc_foundry_tests/Dockerfile | cut -f1 -d\ )"
+GCR_PROJECT_ID=grpc-testing
+export GRPC_FOUNDRY_TESTS_DOCKER_IMAGE="gcr.io/$GCR_PROJECT_ID/grpc_foundry_tests_$FOUNDRY_DOCKERFILE_SHA1"
+unset FOUNDRY_DOCKERFILE_SHA1
+unset GCR_PROJECT_ID
 
 git submodule update --init
