@@ -29,7 +29,7 @@
 namespace grpc {
 
 /// Implementation of the core codegen interface.
-class CoreCodegen final : public CoreCodegenInterface {
+class CoreCodegen : public CoreCodegenInterface {
  private:
   virtual const grpc_completion_queue_factory*
   grpc_completion_queue_factory_lookup(

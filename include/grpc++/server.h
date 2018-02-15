@@ -49,7 +49,7 @@ class ServerInitializer;
 ///
 /// Use a \a grpc::ServerBuilder to create, configure, and start
 /// \a Server instances.
-class Server final : public ServerInterface, private GrpcLibraryCodegen {
+class Server : public ServerInterface, private GrpcLibraryCodegen {
  public:
   ~Server();
 

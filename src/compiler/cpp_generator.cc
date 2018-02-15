@@ -616,7 +616,7 @@ void PrintHeaderServerMethodAsync(grpc_generator::Printer* printer,
         "// disable synchronous version of this method\n"
         "::grpc::Status $Method$("
         "::grpc::ServerContext* context, const $Request$* request, "
-        "$Response$* response) final override {\n"
+        "$Response$* response) override {\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
@@ -638,7 +638,7 @@ void PrintHeaderServerMethodAsync(grpc_generator::Printer* printer,
         "::grpc::Status $Method$("
         "::grpc::ServerContext* context, "
         "::grpc::ServerReader< $Request$>* reader, "
-        "$Response$* response) final override {\n"
+        "$Response$* response) override {\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
@@ -659,7 +659,7 @@ void PrintHeaderServerMethodAsync(grpc_generator::Printer* printer,
         "// disable synchronous version of this method\n"
         "::grpc::Status $Method$("
         "::grpc::ServerContext* context, const $Request$* request, "
-        "::grpc::ServerWriter< $Response$>* writer) final override "
+        "::grpc::ServerWriter< $Response$>* writer) override "
         "{\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
@@ -683,7 +683,7 @@ void PrintHeaderServerMethodAsync(grpc_generator::Printer* printer,
         "::grpc::Status $Method$("
         "::grpc::ServerContext* context, "
         "::grpc::ServerReaderWriter< $Response$, $Request$>* stream) "
-        "final override {\n"
+        "override {\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
@@ -738,7 +738,7 @@ void PrintHeaderServerMethodStreamedUnary(
         "// disable regular version of this method\n"
         "::grpc::Status $Method$("
         "::grpc::ServerContext* context, const $Request$* request, "
-        "$Response$* response) final override {\n"
+        "$Response$* response) override {\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
@@ -790,7 +790,7 @@ void PrintHeaderServerMethodSplitStreaming(
         "// disable regular version of this method\n"
         "::grpc::Status $Method$("
         "::grpc::ServerContext* context, const $Request$* request, "
-        "::grpc::ServerWriter< $Response$>* writer) final override "
+        "::grpc::ServerWriter< $Response$>* writer) override "
         "{\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
@@ -835,7 +835,7 @@ void PrintHeaderServerMethodGeneric(
         "// disable synchronous version of this method\n"
         "::grpc::Status $Method$("
         "::grpc::ServerContext* context, const $Request$* request, "
-        "$Response$* response) final override {\n"
+        "$Response$* response) override {\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
@@ -846,7 +846,7 @@ void PrintHeaderServerMethodGeneric(
         "::grpc::Status $Method$("
         "::grpc::ServerContext* context, "
         "::grpc::ServerReader< $Request$>* reader, "
-        "$Response$* response) final override {\n"
+        "$Response$* response) override {\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
@@ -856,7 +856,7 @@ void PrintHeaderServerMethodGeneric(
         "// disable synchronous version of this method\n"
         "::grpc::Status $Method$("
         "::grpc::ServerContext* context, const $Request$* request, "
-        "::grpc::ServerWriter< $Response$>* writer) final override "
+        "::grpc::ServerWriter< $Response$>* writer) override "
         "{\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
@@ -868,7 +868,7 @@ void PrintHeaderServerMethodGeneric(
         "::grpc::Status $Method$("
         "::grpc::ServerContext* context, "
         "::grpc::ServerReaderWriter< $Response$, $Request$>* stream) "
-        "final override {\n"
+        "override {\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
@@ -884,7 +884,7 @@ void PrintHeaderService(grpc_generator::Printer* printer,
 
   printer->Print(service->GetLeadingComments("//").c_str());
   printer->Print(*vars,
-                 "class $Service$ final {\n"
+                 "class $Service$ {\n"
                  " public:\n");
   printer->Indent();
 
@@ -916,7 +916,7 @@ void PrintHeaderService(grpc_generator::Printer* printer,
   printer->Outdent();
   printer->Print("};\n");
   printer->Print(
-      "class Stub final : public StubInterface"
+      "class Stub : public StubInterface"
       " {\n public:\n");
   printer->Indent();
   printer->Print(

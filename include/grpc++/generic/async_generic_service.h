@@ -29,7 +29,7 @@ namespace grpc {
 typedef ServerAsyncReaderWriter<ByteBuffer, ByteBuffer>
     GenericServerAsyncReaderWriter;
 
-class GenericServerContext final : public ServerContext {
+class GenericServerContext : public ServerContext {
  public:
   const grpc::string& method() const { return method_; }
   const grpc::string& host() const { return host_; }
@@ -59,7 +59,7 @@ class GenericServerContext final : public ServerContext {
 //
 // When tag is retrieved from cq->Next(), context.method() can be used to look
 // at the method and the RPC can be handled accordingly.
-class AsyncGenericService final {
+class AsyncGenericService {
  public:
   AsyncGenericService() : server_(nullptr) {}
 

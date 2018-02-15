@@ -27,7 +27,7 @@
 
 namespace grpc {
 
-class ProtoServerReflection final
+class ProtoServerReflection
     : public reflection::v1alpha::ServerReflection::Service {
  public:
   ProtoServerReflection();

@@ -29,7 +29,7 @@ namespace grpc {
 
 // Default implementation of HealthCheckServiceInterface. Server will create and
 // own it.
-class DefaultHealthCheckService final : public HealthCheckServiceInterface {
+class DefaultHealthCheckService : public HealthCheckServiceInterface {
  public:
   // The service impl to register with the server.
   class HealthCheckServiceImpl : public Service {

@@ -37,7 +37,7 @@ namespace grpc {
 
 // CompletionOp
 
-class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
+class ServerContext::CompletionOp : public internal::CallOpSetInterface {
  public:
   // initial refs: one in the server context, one in the cq
   CompletionOp()

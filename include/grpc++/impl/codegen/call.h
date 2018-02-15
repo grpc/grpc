@@ -376,7 +376,7 @@ class DeserializeFunc {
 };
 
 template <class R>
-class DeserializeFuncType final : public DeserializeFunc {
+class DeserializeFuncType : public DeserializeFunc {
  public:
   DeserializeFuncType(R* message) : message_(message) {}
   Status Deserialize(ByteBuffer* buf) override {
@@ -672,7 +672,7 @@ class SneakyCallOpSet : public CallOpSet<Op1, Op2, Op3, Op4, Op5, Op6> {
 };
 
 /// Straightforward wrapping of the C call object
-class Call final {
+class Call {
  public:
   /** call is owned by the caller */
   Call(grpc_call* call, CallHook* call_hook, CompletionQueue* cq)

@@ -28,7 +28,7 @@
 
 namespace grpc {
 
-class SecureChannelCredentials final : public ChannelCredentials {
+class SecureChannelCredentials : public ChannelCredentials {
  public:
   explicit SecureChannelCredentials(grpc_channel_credentials* c_creds);
   ~SecureChannelCredentials() { grpc_channel_credentials_release(c_creds_); }
@@ -42,7 +42,7 @@ class SecureChannelCredentials final : public ChannelCredentials {
   grpc_channel_credentials* const c_creds_;
 };
 
-class SecureCallCredentials final : public CallCredentials {
+class SecureCallCredentials : public CallCredentials {
  public:
   explicit SecureCallCredentials(grpc_call_credentials* c_creds);
   ~SecureCallCredentials() { grpc_call_credentials_release(c_creds_); }
@@ -55,7 +55,7 @@ class SecureCallCredentials final : public CallCredentials {
   grpc_call_credentials* const c_creds_;
 };
 
-class MetadataCredentialsPluginWrapper final : private GrpcLibraryCodegen {
+class MetadataCredentialsPluginWrapper : private GrpcLibraryCodegen {
  public:
   static void Destroy(void* wrapper);
   static int GetMetadata(

@@ -22,7 +22,7 @@ namespace grpc {
 
 std::unique_ptr<ServerBuilderOption> MakeChannelArgumentOption(
     const grpc::string& name, const grpc::string& value) {
-  class StringOption final : public ServerBuilderOption {
+  class StringOption : public ServerBuilderOption {
    public:
     StringOption(const grpc::string& name, const grpc::string& value)
         : name_(name), value_(value) {}
@@ -42,7 +42,7 @@ std::unique_ptr<ServerBuilderOption> MakeChannelArgumentOption(
 
 std::unique_ptr<ServerBuilderOption> MakeChannelArgumentOption(
     const grpc::string& name, int value) {
-  class IntOption final : public ServerBuilderOption {
+  class IntOption : public ServerBuilderOption {
    public:
     IntOption(const grpc::string& name, int value)
         : name_(name), value_(value) {}

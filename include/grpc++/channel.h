@@ -31,7 +31,7 @@ struct grpc_channel;
 
 namespace grpc {
 /// Channels represent a connection to an endpoint. Created by \a CreateChannel.
-class Channel final : public ChannelInterface,
+class Channel : public ChannelInterface,
                       public internal::CallHook,
                       public std::enable_shared_from_this<Channel>,
                       private GrpcLibraryCodegen {
