@@ -63,9 +63,7 @@ static grpc_subchannel_args* get_secure_naming_subchannel_args(
   // To which address are we connecting? By default, use the server URI.
   const grpc_arg* server_uri_arg =
       grpc_channel_args_find(args->args, GRPC_ARG_SERVER_URI);
-  GPR_ASSERT(server_uri_arg != nullptr);
-  GPR_ASSERT(server_uri_arg->type == GRPC_ARG_STRING);
-  const char* server_uri_str = server_uri_arg->value.string;
+  const char* server_uri_str = grpc_channel_arg_get_string(server_uri_arg);
   GPR_ASSERT(server_uri_str != nullptr);
   grpc_uri* server_uri =
       grpc_uri_parse(server_uri_str, true /* supress errors */);

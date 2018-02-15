@@ -580,6 +580,7 @@ typedef struct call_state {
   grpc_slice recv_status_details;
   int cancelled;
   int pending_ops;
+  bool sent_initial_metadata;
   grpc_call_details call_details;
   grpc_byte_buffer* send_message;
   // starts at 0, individual flags from DONE_FLAG_xxx are set
@@ -1026,11 +1027,16 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
               ok = false;
               break;
             case GRPC_OP_SEND_INITIAL_METADATA:
-              op->op = GRPC_OP_SEND_INITIAL_METADATA;
-              has_ops |= 1 << GRPC_OP_SEND_INITIAL_METADATA;
-              read_metadata(&inp, &op->data.send_initial_metadata.count,
-                            &op->data.send_initial_metadata.metadata,
-                            g_active_call);
+              if (g_active_call->sent_initial_metadata) {
+                ok = false;
+              } else {
+                g_active_call->sent_initial_metadata = true;
+                op->op = GRPC_OP_SEND_INITIAL_METADATA;
+                has_ops |= 1 << GRPC_OP_SEND_INITIAL_METADATA;
+                read_metadata(&inp, &op->data.send_initial_metadata.count,
+                              &op->data.send_initial_metadata.metadata,
+                              g_active_call);
+              }
               break;
             case GRPC_OP_SEND_MESSAGE:
               op->op = GRPC_OP_SEND_MESSAGE;
@@ -1067,9 +1073,14 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
                   &g_active_call->recv_initial_metadata;
               break;
             case GRPC_OP_RECV_MESSAGE:
-              op->op = GRPC_OP_RECV_MESSAGE;
-              has_ops |= 1 << GRPC_OP_RECV_MESSAGE;
-              op->data.recv_message.recv_message = &g_active_call->recv_message;
+              if (g_active_call->done_flags & DONE_FLAG_CALL_CLOSED) {
+                ok = false;
+              } else {
+                op->op = GRPC_OP_RECV_MESSAGE;
+                has_ops |= 1 << GRPC_OP_RECV_MESSAGE;
+                op->data.recv_message.recv_message =
+                    &g_active_call->recv_message;
+              }
               break;
             case GRPC_OP_RECV_STATUS_ON_CLIENT:
               op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
