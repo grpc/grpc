@@ -574,11 +574,11 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
         GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
             "Got resolver result after disconnection", &error, 1),
         "resolver_gone");
-    GRPC_CHANNEL_STACK_UNREF(chand->owning_stack, "resolver");
     grpc_closure_list_fail_all(&chand->waiting_for_resolver_result_closures,
                                GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                                    "Channel disconnected", &error, 1));
     GRPC_CLOSURE_LIST_SCHED(&chand->waiting_for_resolver_result_closures);
+    GRPC_CHANNEL_STACK_UNREF(chand->owning_stack, "resolver");
   } else {  // Not shutting down.
     grpc_connectivity_state state = GRPC_CHANNEL_TRANSIENT_FAILURE;
     grpc_error* state_error =
