@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016 gRPC authors.
+ * Copyright 2018 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,13 @@
  *
  */
 
+// DEPRECATED: The headers in include/grpc++ are deprecated. Please include the
+// headers in include/grpcpp instead. This header exists only for backwards
+// compatibility.
+
 #ifndef GRPCXX_IMPL_CODEGEN_CONFIG_H
 #define GRPCXX_IMPL_CODEGEN_CONFIG_H
 
-#ifndef GRPC_CUSTOM_STRING
-#include <string>
-#define GRPC_CUSTOM_STRING std::string
-#endif
-
-/// The following macros are deprecated and appear only for users
-/// with PB files generated using gRPC 1.0.x plugins. They should
-/// not be used in new code
-#define GRPC_OVERRIDE override  // deprecated
-#define GRPC_FINAL final        // deprecated
-
-namespace grpc {
-
-typedef GRPC_CUSTOM_STRING string;
-
-using std::to_string;
-
-}  // namespace grpc
+#include <grpcpp/impl/codegen/config.h>
 
 #endif  // GRPCXX_IMPL_CODEGEN_CONFIG_H

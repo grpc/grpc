@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016 gRPC authors.
+ * Copyright 2018 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,40 +16,13 @@
  *
  */
 
+// DEPRECATED: The headers in include/grpc++ are deprecated. Please include the
+// headers in include/grpcpp instead. This header exists only for backwards
+// compatibility.
+
 #ifndef GRPCXX_IMPL_SERVER_INITIALIZER_H
 #define GRPCXX_IMPL_SERVER_INITIALIZER_H
 
-#include <memory>
-#include <vector>
-
-#include <grpc++/server.h>
-
-namespace grpc {
-
-class Server;
-class Service;
-
-class ServerInitializer {
- public:
-  ServerInitializer(Server* server) : server_(server) {}
-
-  bool RegisterService(std::shared_ptr<Service> service) {
-    if (!server_->RegisterService(nullptr, service.get())) {
-      return false;
-    }
-    default_services_.push_back(service);
-    return true;
-  }
-
-  const std::vector<grpc::string>* GetServiceList() {
-    return &server_->services_;
-  }
-
- private:
-  Server* server_;
-  std::vector<std::shared_ptr<Service> > default_services_;
-};
-
-}  // namespace grpc
+#include <grpcpp/impl/server_initializer.h>
 
 #endif  // GRPCXX_IMPL_SERVER_INITIALIZER_H

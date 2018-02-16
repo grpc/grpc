@@ -16,9 +16,9 @@
  *
  */
 
-#include <grpc++/support/config.h>
-#include <grpc++/support/time.h>
 #include <grpc/support/time.h>
+#include <grpcpp/support/config.h>
+#include <grpcpp/support/time.h>
 
 using std::chrono::duration_cast;
 using std::chrono::high_resolution_clock;
