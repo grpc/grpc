@@ -1141,7 +1141,10 @@ TEST_F(UpdatesTest, ReresolveDeadBackend) {
 }
 
 // TODO(juanlishen): Should be removed when the first response is always the
-// initial response.
+// initial response. Currently, if client load reporting is not enabled, the
+// balancer doesn't send initial response. When the backend shuts down, an
+// unexpected re-resolution will happen. This test configuration is a workaround
+// for test ReresolveDeadBalancer.
 class UpdatesWithClientLoadReportingTest : public GrpclbEnd2endTest {
  public:
   UpdatesWithClientLoadReportingTest() : GrpclbEnd2endTest(4, 3, 2) {}
