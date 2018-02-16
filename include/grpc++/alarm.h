@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2018 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,72 +16,13 @@
  *
  */
 
-/// An Alarm posts the user provided tag to its associated completion queue upon
-/// expiry or cancellation.
+// DEPRECATED: The headers in include/grpc++ are deprecated. Please include the
+// headers in include/grpcpp instead. This header exists only for backwards
+// compatibility.
+
 #ifndef GRPCXX_ALARM_H
 #define GRPCXX_ALARM_H
 
-#include <grpc++/impl/codegen/completion_queue.h>
-#include <grpc++/impl/codegen/completion_queue_tag.h>
-#include <grpc++/impl/codegen/grpc_library.h>
-#include <grpc++/impl/codegen/time.h>
-#include <grpc++/impl/grpc_library.h>
-#include <grpc/grpc.h>
-
-namespace grpc {
-
-/// A thin wrapper around \a grpc_alarm (see / \a / src/core/surface/alarm.h).
-class Alarm : private GrpcLibraryCodegen {
- public:
-  /// Create an unset completion queue alarm
-  Alarm();
-
-  /// Destroy the given completion queue alarm, cancelling it in the process.
-  ~Alarm();
-
-  /// DEPRECATED: Create and set a completion queue alarm instance associated to
-  /// \a cq.
-  /// This form is deprecated because it is inherently racy.
-  /// \internal We rely on the presence of \a cq for grpc initialization. If \a
-  /// cq were ever to be removed, a reference to a static
-  /// internal::GrpcLibraryInitializer instance would need to be introduced
-  /// here. \endinternal.
-  template <typename T>
-  Alarm(CompletionQueue* cq, const T& deadline, void* tag) : Alarm() {
-    SetInternal(cq, TimePoint<T>(deadline).raw_time(), tag);
-  }
-
-  /// Trigger an alarm instance on completion queue \a cq at the specified time.
-  /// Once the alarm expires (at \a deadline) or it's cancelled (see \a Cancel),
-  /// an event with tag \a tag will be added to \a cq. If the alarm expired, the
-  /// event's success bit will be true, false otherwise (ie, upon cancellation).
-  template <typename T>
-  void Set(CompletionQueue* cq, const T& deadline, void* tag) {
-    SetInternal(cq, TimePoint<T>(deadline).raw_time(), tag);
-  }
-
-  /// Alarms aren't copyable.
-  Alarm(const Alarm&) = delete;
-  Alarm& operator=(const Alarm&) = delete;
-
-  /// Alarms are movable.
-  Alarm(Alarm&& rhs) : alarm_(rhs.alarm_) { rhs.alarm_ = nullptr; }
-  Alarm& operator=(Alarm&& rhs) {
-    alarm_ = rhs.alarm_;
-    rhs.alarm_ = nullptr;
-    return *this;
-  }
-
-  /// Cancel a completion queue alarm. Calling this function over an alarm that
-  /// has already fired has no effect.
-  void Cancel();
-
- private:
-  void SetInternal(CompletionQueue* cq, gpr_timespec deadline, void* tag);
-
-  internal::CompletionQueueTag* alarm_;
-};
-
-}  // namespace grpc
+#include <grpcpp/alarm.h>
 
 #endif  // GRPCXX_ALARM_H
