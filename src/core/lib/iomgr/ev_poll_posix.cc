@@ -256,17 +256,14 @@ typedef struct poll_args {
   gpr_thd_id poller_thd;
   gpr_cv trigger;
   int trigger_set;
+  gpr_cv harvest;
+  gpr_cv join;
   struct pollfd* fds;
   nfds_t nfds;
   poll_result* result;
   struct poll_args* next;
   struct poll_args* prev;
 } poll_args;
-
-typedef struct poller_dead {
-  gpr_thd_id poller_thd;
-  struct poller_dead* next;
-} poller_dead;
 
 // This is a 2-tiered cache, we mantain a hash table
 // of active poll calls, so we can wait on the result
@@ -280,6 +277,7 @@ typedef struct poll_hash_table {
   unsigned int count;
 } poll_hash_table;
 
+// TODO(kpayson64): Eliminate use of global non-POD variables
 poll_hash_table poll_cache;
 grpc_cv_fd_table g_cvfds;
 
@@ -1369,6 +1367,8 @@ static poll_args* get_poller_locked(struct pollfd* fds, nfds_t count) {
   poll_args* pargs =
       static_cast<poll_args*>(gpr_malloc(sizeof(struct poll_args)));
   gpr_cv_init(&pargs->trigger);
+  gpr_cv_init(&pargs->harvest);
+  gpr_cv_init(&pargs->join);
   pargs->fds = fds;
   pargs->nfds = count;
   pargs->next = nullptr;
@@ -1455,6 +1455,13 @@ static void cache_harvest_locked() {
   while (poll_cache.dead_pollers) {
     poll_args* args = poll_cache.dead_pollers;
     poll_cache.dead_pollers = poll_cache.dead_pollers->next;
+    // Keep the list consistent in case new dead pollers get added when we
+    // release the lock below to wait on joining
+    if (poll_cache.dead_pollers) {
+      poll_cache.dead_pollers->prev = nullptr;
+    }
+    gpr_cv_signal(&args->harvest);
+    gpr_cv_wait(&args->join, &g_cvfds.mu, gpr_inf_future(GPR_CLOCK_MONOTONIC));
     gpr_thd_join(args->poller_thd);
     gpr_free(args);
   }
@@ -1521,6 +1528,9 @@ static void run_poll(void* args) {
   if (gpr_unref(&g_cvfds.pollcount)) {
     gpr_cv_signal(&g_cvfds.shutdown_cv);
   }
+  gpr_cv_wait(&pargs->harvest, &g_cvfds.mu,
+              gpr_inf_future(GPR_CLOCK_MONOTONIC));
+  gpr_cv_signal(&pargs->join);
   gpr_mu_unlock(&g_cvfds.mu);
 }
 
