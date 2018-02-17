@@ -18,13 +18,15 @@
 
 /* Test of gpr thread support. */
 
-#include "src/core/lib/gpr/thd.h"
+#include "src/core/lib/gprpp/thd.h"
+
+#include <new>
+#include <stdio.h>
+#include <stdlib.h>
 
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 #include "test/core/util/test_config.h"
 
@@ -51,23 +53,23 @@ static void thd_body1(void* v) {
 
 /* Test that we can create a number of threads, wait for them, and join them. */
 static void test1(void) {
-  int i;
-  gpr_thd_id thds[NUM_THREADS];
+  grpc_core::Thread thds[NUM_THREADS];
   struct test t;
   gpr_mu_init(&t.mu);
   gpr_cv_init(&t.done_cv);
   t.n = NUM_THREADS;
   t.is_done = 0;
-  for (i = 0; i < NUM_THREADS; i++) {
-    GPR_ASSERT(gpr_thd_new(&thds[i], "grpc_thread_body1_test", &thd_body1, &t));
+  for (auto& th: thds) {
+    new (&th) grpc_core::Thread("grpc_thread_body1_test", &thd_body1, &t);
+    th.Start();
   }
   gpr_mu_lock(&t.mu);
   while (!t.is_done) {
     gpr_cv_wait(&t.done_cv, &t.mu, gpr_inf_future(GPR_CLOCK_REALTIME));
   }
   gpr_mu_unlock(&t.mu);
-  for (i = 0; i < NUM_THREADS; i++) {
-    gpr_thd_join(thds[i]);
+  for (auto& th: thds) {
+    th.Join();
   }
   GPR_ASSERT(t.n == 0);
 }
@@ -76,14 +78,16 @@ static void thd_body2(void* v) {}
 
 /* Test that we can create a number of threads and join them. */
 static void test2(void) {
-  int i;
-  gpr_thd_id thds[NUM_THREADS];
-  for (i = 0; i < NUM_THREADS; i++) {
-    GPR_ASSERT(
-        gpr_thd_new(&thds[i], "grpc_thread_body2_test", &thd_body2, nullptr));
+  grpc_core::Thread thds[NUM_THREADS];
+  for (auto& th: thds) {
+    bool ok;
+    new (&th) grpc_core::Thread("grpc_thread_body2_test", &thd_body2,
+				nullptr, &ok);
+    GPR_ASSERT(ok);
+    th.Start();
   }
-  for (i = 0; i < NUM_THREADS; i++) {
-    gpr_thd_join(thds[i]);
+  for (auto& th: thds) {
+    th.Join();
   }
 }
 

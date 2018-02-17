@@ -22,6 +22,7 @@
    headers. Therefore, sockaddr.h must always be included first */
 #include "src/core/lib/iomgr/sockaddr.h"
 
+#include <new>
 #include <memory.h>
 #include <stdio.h>
 
@@ -30,7 +31,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/thd.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -172,21 +173,22 @@ int run_concurrent_connectivity_test() {
 
   grpc_init();
 
-  gpr_thd_id threads[NUM_THREADS];
-  gpr_thd_id server;
-
-  char* localhost = gpr_strdup("localhost:54321");
-
   /* First round, no server */
+  {
   gpr_log(GPR_DEBUG, "Wave 1");
-  for (size_t i = 0; i < NUM_THREADS; ++i) {
-    gpr_thd_new(&threads[i], "grpc_wave_1", create_loop_destroy, localhost);
+  char* localhost = gpr_strdup("localhost:54321");
+  grpc_core::Thread threads[NUM_THREADS];
+  for (auto& th : threads) {
+    new (&th) grpc_core::Thread("grpc_wave_1", create_loop_destroy, localhost);
+    th.Start();
   }
-  for (size_t i = 0; i < NUM_THREADS; ++i) {
-    gpr_thd_join(threads[i]);
+  for (auto& th : threads) {
+    th.Join();
   }
   gpr_free(localhost);
+  }
 
+  {
   /* Second round, actual grpc server */
   gpr_log(GPR_DEBUG, "Wave 2");
   int port = grpc_pick_unused_port_or_die();
@@ -196,43 +198,52 @@ int run_concurrent_connectivity_test() {
   args.cq = grpc_completion_queue_create_for_next(nullptr);
   grpc_server_register_completion_queue(args.server, args.cq, nullptr);
   grpc_server_start(args.server);
-  gpr_thd_new(&server, "grpc_wave_2_server", server_thread, &args);
+  grpc_core::Thread server2("grpc_wave_2_server", server_thread, &args);
+  server2.Start();
 
-  for (size_t i = 0; i < NUM_THREADS; ++i) {
-    gpr_thd_new(&threads[i], "grpc_wave_2", create_loop_destroy, args.addr);
-  }
-  for (size_t i = 0; i < NUM_THREADS; ++i) {
-    gpr_thd_join(threads[i]);
+  grpc_core::Thread threads[NUM_THREADS];
+  for (auto& th : threads) {
+    new (&th) grpc_core::Thread("grpc_wave_2", create_loop_destroy, args.addr);
+    th.Start();
+  } 
+  for (auto& th : threads) {
+    th.Join();
   }
   grpc_server_shutdown_and_notify(args.server, args.cq, tag(0xd1e));
 
-  gpr_thd_join(server);
+  server2.Join();
   grpc_server_destroy(args.server);
   grpc_completion_queue_destroy(args.cq);
   gpr_free(args.addr);
+  }
 
+  {
   /* Third round, bogus tcp server */
   gpr_log(GPR_DEBUG, "Wave 3");
   args.pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(args.pollset, &args.mu);
   gpr_event_init(&args.ready);
-  gpr_thd_new(&server, "grpc_wave_3_server", bad_server_thread, &args);
+  grpc_core::Thread server3("grpc_wave_3_server", bad_server_thread, &args);
+  server3.Start();
   gpr_event_wait(&args.ready, gpr_inf_future(GPR_CLOCK_MONOTONIC));
 
-  for (size_t i = 0; i < NUM_THREADS; ++i) {
-    gpr_thd_new(&threads[i], "grpc_wave_3", create_loop_destroy, args.addr);
+  grpc_core::Thread threads[NUM_THREADS];
+  for (auto& th : threads) {
+    new (&th) grpc_core::Thread("grpc_wave_3", create_loop_destroy, args.addr);
+    th.Start();
   }
-  for (size_t i = 0; i < NUM_THREADS; ++i) {
-    gpr_thd_join(threads[i]);
+  for (auto& th : threads) {
+    th.Join();
   }
 
   gpr_atm_rel_store(&args.stop, 1);
-  gpr_thd_join(server);
+  server3.Join();
   {
     grpc_core::ExecCtx exec_ctx;
     grpc_pollset_shutdown(
         args.pollset, GRPC_CLOSURE_CREATE(done_pollset_shutdown, args.pollset,
                                           grpc_schedule_on_exec_ctx));
+  }
   }
 
   grpc_shutdown();
@@ -272,16 +283,17 @@ void watches_with_short_timeouts(void* addr) {
 int run_concurrent_watches_with_short_timeouts_test() {
   grpc_init();
 
-  gpr_thd_id threads[NUM_THREADS];
+  grpc_core::Thread threads[NUM_THREADS];
 
   char* localhost = gpr_strdup("localhost:54321");
 
-  for (size_t i = 0; i < NUM_THREADS; ++i) {
-    gpr_thd_new(&threads[i], "grpc_short_watches", watches_with_short_timeouts,
-                localhost);
+  for (auto& th : threads) {
+    new (&th) grpc_core::Thread("grpc_short_watches",
+				watches_with_short_timeouts, localhost);
+    th.Start();
   }
-  for (size_t i = 0; i < NUM_THREADS; ++i) {
-    gpr_thd_join(threads[i]);
+  for (auto& th : threads) {
+    th.Join();
   }
   gpr_free(localhost);
 

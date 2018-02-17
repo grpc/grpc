@@ -22,7 +22,7 @@
 
 #ifdef GPR_WINDOWS
 
-#include "src/core/lib/gpr/thd.h"
+#include "src/core/lib/gprpp/thd.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

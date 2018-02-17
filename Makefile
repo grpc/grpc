@@ -2899,8 +2899,6 @@ LIBGPR_SRC = \
     src/core/lib/gpr/sync.cc \
     src/core/lib/gpr/sync_posix.cc \
     src/core/lib/gpr/sync_windows.cc \
-    src/core/lib/gpr/thd_posix.cc \
-    src/core/lib/gpr/thd_windows.cc \
     src/core/lib/gpr/time.cc \
     src/core/lib/gpr/time_posix.cc \
     src/core/lib/gpr/time_precise.cc \
@@ -2910,6 +2908,8 @@ LIBGPR_SRC = \
     src/core/lib/gpr/tmpfile_posix.cc \
     src/core/lib/gpr/tmpfile_windows.cc \
     src/core/lib/gpr/wrap_memcpy.cc \
+    src/core/lib/gprpp/thd_posix.cc \
+    src/core/lib/gprpp/thd_windows.cc \
     src/core/lib/profiling/basic_timers.cc \
     src/core/lib/profiling/stap_timers.cc \
 
@@ -11014,7 +11014,7 @@ endif
 
 
 GPR_THD_TEST_SRC = \
-    test/core/gpr/thd_test.cc \
+    test/core/gprpp/thd_test.cc \
 
 GPR_THD_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_THD_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11034,7 +11034,7 @@ $(BINDIR)/$(CONFIG)/gpr_thd_test: $(GPR_THD_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgp
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/gpr/thd_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/gprpp/thd_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_gpr_thd_test: $(GPR_THD_TEST_OBJS:.o=.dep)
 

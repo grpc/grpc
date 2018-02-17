@@ -18,6 +18,7 @@
 
 #include "test/core/end2end/fixtures/proxy.h"
 
+#include <new>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -25,12 +26,12 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/gpr/host_port.h"
-#include "src/core/lib/gpr/thd.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gpr/useful.h"
 #include "test/core/util/port.h"
 
 struct grpc_end2end_proxy {
-  gpr_thd_id thd;
+  grpc_core::Thread thd;
   char* proxy_port;
   char* server_port;
   grpc_completion_queue* cq;
@@ -97,8 +98,8 @@ grpc_end2end_proxy* grpc_end2end_proxy_create(const grpc_end2end_proxy_def* def,
   grpc_server_start(proxy->server);
 
   grpc_call_details_init(&proxy->new_call_details);
-  GPR_ASSERT(
-      gpr_thd_new(&proxy->thd, "grpc_end2end_proxy", thread_main, proxy));
+  new (&proxy->thd) grpc_core::Thread("grpc_end2end_proxy", thread_main, proxy);
+  proxy->thd.Start();
 
   request_call(proxy);
 
@@ -121,7 +122,8 @@ static void shutdown_complete(void* arg, int success) {
 void grpc_end2end_proxy_destroy(grpc_end2end_proxy* proxy) {
   grpc_server_shutdown_and_notify(proxy->server, proxy->cq,
                                   new_closure(shutdown_complete, proxy));
-  gpr_thd_join(proxy->thd);
+  proxy->thd.Join();
+  proxy->thd.~Thread();
   gpr_free(proxy->proxy_port);
   gpr_free(proxy->server_port);
   grpc_server_destroy(proxy->server);

@@ -22,6 +22,7 @@
 
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 
+#include <new>
 #include <assert.h>
 #include <errno.h>
 #include <limits.h>
@@ -36,7 +37,7 @@
 
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/murmur_hash.h"
-#include "src/core/lib/gpr/thd.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/block_annotate.h"
@@ -253,7 +254,7 @@ typedef struct poll_result {
 } poll_result;
 
 typedef struct poll_args {
-  gpr_thd_id poller_thd;
+  grpc_core::Thread poller_thd;
   gpr_cv trigger;
   int trigger_set;
   gpr_cv harvest;
@@ -1377,7 +1378,8 @@ static poll_args* get_poller_locked(struct pollfd* fds, nfds_t count) {
   init_result(pargs);
   cache_poller_locked(pargs);
   gpr_ref(&g_cvfds.pollcount);
-  GPR_ASSERT(gpr_thd_new(&pargs->poller_thd, "grpc_poller", &run_poll, pargs));
+  new (&pargs->poller_thd) grpc_core::Thread("grpc_poller", &run_poll, pargs);
+  pargs->poller_thd.Start();
   return pargs;
 }
 
@@ -1462,7 +1464,8 @@ static void cache_harvest_locked() {
     }
     gpr_cv_signal(&args->harvest);
     gpr_cv_wait(&args->join, &g_cvfds.mu, gpr_inf_future(GPR_CLOCK_MONOTONIC));
-    gpr_thd_join(args->poller_thd);
+    args->poller_thd.Join();
+    args->poller_thd.~Thread();
     gpr_free(args);
   }
 }

@@ -18,6 +18,7 @@
 
 #include "src/core/lib/iomgr/executor.h"
 
+#include <new>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -27,7 +28,7 @@
 
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/spinlock.h"
-#include "src/core/lib/gpr/thd.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -41,7 +42,7 @@ typedef struct {
   size_t depth;
   bool shutdown;
   bool queued_long_job;
-  gpr_thd_id id;
+  grpc_core::Thread thd;
 } thread_state;
 
 static thread_state* g_thread_state;
@@ -99,11 +100,14 @@ void grpc_executor_set_threading(bool threading) {
     for (size_t i = 0; i < g_max_threads; i++) {
       gpr_mu_init(&g_thread_state[i].mu);
       gpr_cv_init(&g_thread_state[i].cv);
+      new (&g_thread_state[i].thd) grpc_core::Thread();
       g_thread_state[i].elems = GRPC_CLOSURE_LIST_INIT;
     }
 
-    gpr_thd_new(&g_thread_state[0].id, "grpc_executor", executor_thread,
-                &g_thread_state[0]);
+    new (&g_thread_state[0].thd) grpc_core::Thread("grpc_executor",
+						   executor_thread,
+						   &g_thread_state[0]);
+    g_thread_state[0].thd.Start();
   } else {
     if (cur_threads == 0) return;
     for (size_t i = 0; i < g_max_threads; i++) {
@@ -117,10 +121,11 @@ void grpc_executor_set_threading(bool threading) {
     gpr_spinlock_lock(&g_adding_thread_lock);
     gpr_spinlock_unlock(&g_adding_thread_lock);
     for (gpr_atm i = 0; i < g_cur_threads; i++) {
-      gpr_thd_join(g_thread_state[i].id);
+      g_thread_state[i].thd.Join();
     }
     gpr_atm_no_barrier_store(&g_cur_threads, 0);
     for (size_t i = 0; i < g_max_threads; i++) {
+      g_thread_state[i].thd.~Thread();
       gpr_mu_destroy(&g_thread_state[i].mu);
       gpr_cv_destroy(&g_thread_state[i].cv);
       run_closures(g_thread_state[i].elems);
@@ -260,8 +265,10 @@ static void executor_push(grpc_closure* closure, grpc_error* error,
       if (cur_thread_count < g_max_threads) {
         gpr_atm_no_barrier_store(&g_cur_threads, cur_thread_count + 1);
 
-        gpr_thd_new(&g_thread_state[cur_thread_count].id, "gpr_executor",
-                    executor_thread, &g_thread_state[cur_thread_count]);
+	new (&g_thread_state[cur_thread_count].thd)
+	  grpc_core::Thread("grpc_executor", executor_thread,
+			    &g_thread_state[cur_thread_count]);
+	g_thread_state[cur_thread_count].thd.Start();
       }
       gpr_spinlock_unlock(&g_adding_thread_lock);
     }

@@ -31,7 +31,7 @@
 
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/thd.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/executor.h"
