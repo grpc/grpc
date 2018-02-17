@@ -18,11 +18,8 @@
 
 #ifndef GRPC_CORE_LIB_GPR_THD_H
 #define GRPC_CORE_LIB_GPR_THD_H
-/** Internal thread interface for GPR.
 
-   Types
-        gpr_thd_options   options used when creating a thread
- */
+/** Internal thread interface */
 
 #include <grpc/support/port_platform.h>
 #include <grpc/support/thd_id.h>
