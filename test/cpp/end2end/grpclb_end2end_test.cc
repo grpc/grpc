@@ -58,6 +58,8 @@
 // - Test handling of creation of faulty RR instance by having the LB return a
 //   serverlist with non-existent backends after having initially returned a
 //   valid one.
+// - test using secure credentials and make sure we don't send call
+//   credentials to the balancer
 //
 // Findings from end to end testing to be covered here:
 // - Handling of LB servers restart, including reconnection after backing-off
