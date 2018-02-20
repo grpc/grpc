@@ -75,8 +75,8 @@ void dec_thd_count() {
 }  // namespace
 
 Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
-		 bool* success):
-  real_(true), alive_(false), started_(false), joined_(false) {
+               bool* success)
+    : real_(true), alive_(false), started_(false), joined_(false) {
   gpr_mu_init(&mu_);
   gpr_cv_init(&ready_);
   pthread_attr_t attr;
@@ -94,36 +94,42 @@ Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
   GPR_ASSERT(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE) == 0);
 
   pthread_t p;
-  alive_ = (pthread_create(&p, &attr, [](void *v) -> void* {
-	thd_arg a = *static_cast<thd_arg*>(v);
-	free(v);
-	if (a.name != nullptr) {
+  alive_ = (pthread_create(&p, &attr,
+                           [](void* v) -> void* {
+                             thd_arg a = *static_cast<thd_arg*>(v);
+                             free(v);
+                             if (a.name != nullptr) {
 #if GPR_APPLE_PTHREAD_NAME
-	  /* Apple supports 64 characters, and will truncate if it's longer. */
-	  pthread_setname_np(a.name);
+                               /* Apple supports 64 characters, and will
+                                * truncate if it's longer. */
+                               pthread_setname_np(a.name);
 #elif GPR_LINUX_PTHREAD_NAME
-	  /* Linux supports 16 characters max, and will error if it's longer. */
-	  char buf[16];
-	  size_t buf_len = GPR_ARRAY_SIZE(buf) - 1;
-	  strncpy(buf, a.name, buf_len);
-	  buf[buf_len] = '\0';
-	  pthread_setname_np(pthread_self(), buf);
+                               /* Linux supports 16 characters max, and will
+                                * error if it's longer. */
+                               char buf[16];
+                               size_t buf_len = GPR_ARRAY_SIZE(buf) - 1;
+                               strncpy(buf, a.name, buf_len);
+                               buf[buf_len] = '\0';
+                               pthread_setname_np(pthread_self(), buf);
 #endif  // GPR_APPLE_PTHREAD_NAME
-	}
+                             }
 
-	gpr_mu_lock(&a.thread->mu_);
-	if (!a.thread->started_) {
-	  gpr_cv_wait(&a.thread->ready_, &a.thread->mu_,
-		      gpr_inf_future(GPR_CLOCK_MONOTONIC));
-	}
-	gpr_mu_unlock(&a.thread->mu_);
-	
-	(*a.body)(a.arg);
-	dec_thd_count();
-	return nullptr;	
-      }, a) == 0);
+                             gpr_mu_lock(&a.thread->mu_);
+                             if (!a.thread->started_) {
+                               gpr_cv_wait(&a.thread->ready_, &a.thread->mu_,
+                                           gpr_inf_future(GPR_CLOCK_MONOTONIC));
+                             }
+                             gpr_mu_unlock(&a.thread->mu_);
 
-  if (success != nullptr) { *success = alive_; }
+                             (*a.body)(a.arg);
+                             dec_thd_count();
+                             return nullptr;
+                           },
+                           a) == 0);
+
+  if (success != nullptr) {
+    *success = alive_;
+  }
 
   id_ = reinterpret_cast<gpr_thd_id>(p);
   GPR_ASSERT(pthread_attr_destroy(&attr) == 0);

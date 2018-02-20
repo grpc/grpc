@@ -23,9 +23,9 @@
 
 #include <grpc/support/cpu.h>
 
-#include <new>
 #include <stdio.h>
 #include <string.h>
+#include <new>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -115,7 +115,7 @@ static void cpu_test(void) {
 
   uint32_t nthreads = ct.ncores * 3;
   grpc_core::Thread* thd =
-    static_cast<grpc_core::Thread*>(gpr_malloc(sizeof(*thd)*nthreads));
+      static_cast<grpc_core::Thread*>(gpr_malloc(sizeof(*thd) * nthreads));
 
   for (i = 0; i < nthreads; i++) {
     new (&thd[i]) grpc_core::Thread("grpc_cpu_test", &worker_thread, &ct);

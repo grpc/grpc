@@ -18,15 +18,15 @@
 
 #include "src/core/lib/gpr/mpscq.h"
 
-#include <new>
 #include <stdlib.h>
+#include <new>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "test/core/util/test_config.h"
 
 typedef struct test_node {
@@ -167,12 +167,12 @@ static void test_mt_multipop(void) {
   pa.start = &start;
   gpr_mu_init(&pa.mu);
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pull_thds); i++) {
-    new (&pull_thds[i]) grpc_core::Thread("grpc_multipop_pull",
-					  pull_thread, &pa);
+    new (&pull_thds[i])
+        grpc_core::Thread("grpc_multipop_pull", pull_thread, &pa);
     pull_thds[i].Start();
   }
   gpr_event_set(&start, (void*)1);
-  for (auto& pth: pull_thds) {
+  for (auto& pth : pull_thds) {
     pth.Join();
   }
   gpr_log(GPR_DEBUG, "spins: %" PRIdPTR, pa.spins);

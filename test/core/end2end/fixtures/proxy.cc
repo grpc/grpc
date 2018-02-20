@@ -18,16 +18,16 @@
 
 #include "test/core/end2end/fixtures/proxy.h"
 
-#include <new>
 #include <string.h>
+#include <new>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/gpr/host_port.h"
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "test/core/util/port.h"
 
 struct grpc_end2end_proxy {

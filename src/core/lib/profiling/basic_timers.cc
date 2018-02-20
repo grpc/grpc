@@ -202,8 +202,8 @@ void gpr_timers_set_log_filename(const char* filename) {
 }
 
 static void init_output() {
-  g_writing_thread = new grpc_core::Thread("timer_output_thread",
-					   writing_thread, nullptr);
+  g_writing_thread =
+      new grpc_core::Thread("timer_output_thread", writing_thread, nullptr);
   atexit(finish_writing);
 }
 

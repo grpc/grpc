@@ -18,9 +18,9 @@
 
 #include "src/core/lib/iomgr/resolve_address.h"
 
-#include <new>
 #include <string.h>
 #include <sys/un.h>
+#include <new>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -28,8 +28,8 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "test/core/util/test_config.h"

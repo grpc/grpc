@@ -30,8 +30,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "test/core/util/test_config.h"
 
