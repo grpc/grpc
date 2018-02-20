@@ -22,6 +22,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
+#include <inttypes.h>
+
 #include <memory>
 
 #include "src/core/lib/debug/trace.h"

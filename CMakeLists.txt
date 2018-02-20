@@ -881,7 +881,6 @@ add_library(grpc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_hash_table.cc
   src/core/lib/slice/slice_intern.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/api_trace.cc
@@ -960,11 +959,11 @@ add_library(grpc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/ssl/ssl_credentials.cc
   src/core/lib/security/transport/client_auth_filter.cc
-  src/core/lib/security/transport/lb_targets_info.cc
   src/core/lib/security/transport/secure_endpoint.cc
   src/core/lib/security/transport/security_connector.cc
   src/core/lib/security/transport/security_handshaker.cc
   src/core/lib/security/transport/server_auth_filter.cc
+  src/core/lib/security/transport/target_authority_table.cc
   src/core/lib/security/transport/tsi_error.cc
   src/core/lib/security/util/json_util.cc
   src/core/lib/surface/init_secure.cc
@@ -987,6 +986,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy.cc
   src/core/ext/filters/client_channel/lb_policy_factory.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
+  src/core/ext/filters/client_channel/method_params.cc
   src/core/ext/filters/client_channel/parse_address.cc
   src/core/ext/filters/client_channel/proxy_mapper.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
@@ -1221,7 +1221,6 @@ add_library(grpc_cronet
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_hash_table.cc
   src/core/lib/slice/slice_intern.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/api_trace.cc
@@ -1298,6 +1297,7 @@ add_library(grpc_cronet
   src/core/ext/filters/client_channel/lb_policy.cc
   src/core/ext/filters/client_channel/lb_policy_factory.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
+  src/core/ext/filters/client_channel/method_params.cc
   src/core/ext/filters/client_channel/parse_address.cc
   src/core/ext/filters/client_channel/proxy_mapper.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
@@ -1324,11 +1324,11 @@ add_library(grpc_cronet
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/ssl/ssl_credentials.cc
   src/core/lib/security/transport/client_auth_filter.cc
-  src/core/lib/security/transport/lb_targets_info.cc
   src/core/lib/security/transport/secure_endpoint.cc
   src/core/lib/security/transport/security_connector.cc
   src/core/lib/security/transport/security_handshaker.cc
   src/core/lib/security/transport/server_auth_filter.cc
+  src/core/lib/security/transport/target_authority_table.cc
   src/core/lib/security/transport/tsi_error.cc
   src/core/lib/security/util/json_util.cc
   src/core/lib/surface/init_secure.cc
@@ -1547,7 +1547,6 @@ add_library(grpc_test_util
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_hash_table.cc
   src/core/lib/slice/slice_intern.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/api_trace.cc
@@ -1593,6 +1592,7 @@ add_library(grpc_test_util
   src/core/ext/filters/client_channel/lb_policy.cc
   src/core/ext/filters/client_channel/lb_policy_factory.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
+  src/core/ext/filters/client_channel/method_params.cc
   src/core/ext/filters/client_channel/parse_address.cc
   src/core/ext/filters/client_channel/proxy_mapper.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
@@ -1834,7 +1834,6 @@ add_library(grpc_test_util_unsecure
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_hash_table.cc
   src/core/lib/slice/slice_intern.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/api_trace.cc
@@ -1880,6 +1879,7 @@ add_library(grpc_test_util_unsecure
   src/core/ext/filters/client_channel/lb_policy.cc
   src/core/ext/filters/client_channel/lb_policy_factory.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
+  src/core/ext/filters/client_channel/method_params.cc
   src/core/ext/filters/client_channel/parse_address.cc
   src/core/ext/filters/client_channel/proxy_mapper.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
@@ -2101,7 +2101,6 @@ add_library(grpc_unsecure
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_hash_table.cc
   src/core/lib/slice/slice_intern.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/api_trace.cc
@@ -2180,6 +2179,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/lb_policy.cc
   src/core/ext/filters/client_channel/lb_policy_factory.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
+  src/core/ext/filters/client_channel/method_params.cc
   src/core/ext/filters/client_channel/parse_address.cc
   src/core/ext/filters/client_channel/proxy_mapper.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
@@ -2900,7 +2900,6 @@ add_library(grpc++_cronet
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_hash_table.cc
   src/core/lib/slice/slice_intern.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/api_trace.cc
@@ -2951,6 +2950,7 @@ add_library(grpc++_cronet
   src/core/ext/filters/client_channel/lb_policy.cc
   src/core/ext/filters/client_channel/lb_policy_factory.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
+  src/core/ext/filters/client_channel/method_params.cc
   src/core/ext/filters/client_channel/parse_address.cc
   src/core/ext/filters/client_channel/proxy_mapper.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
