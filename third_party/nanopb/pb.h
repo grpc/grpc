@@ -22,7 +22,7 @@
 /* #define PB_MAX_REQUIRED_FIELDS 256 */
 
 /* Add support for tag numbers > 255 and fields larger than 255 bytes. */
-/* #define PB_FIELD_16BIT 1 */
+#define PB_FIELD_16BIT 1
 
 /* Add support for tag numbers > 65536 and fields larger than 65536 bytes. */
 /* #define PB_FIELD_32BIT 1 */
