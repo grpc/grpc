@@ -20,9 +20,9 @@
 
 #include <grpc/support/sync.h>
 
-#include <new>
 #include <stdio.h>
 #include <stdlib.h>
+#include <new>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -164,8 +164,8 @@ struct test {
 static struct test* test_new(int nthreads, int64_t iterations, int incr_step) {
   struct test* m = static_cast<struct test*>(gpr_malloc(sizeof(*m)));
   m->nthreads = nthreads;
-  m->threads =
-    static_cast<grpc_core::Thread*>(gpr_malloc(sizeof(*m->threads) * nthreads));
+  m->threads = static_cast<grpc_core::Thread*>(
+      gpr_malloc(sizeof(*m->threads) * nthreads));
   m->iterations = iterations;
   m->counter = 0;
   m->thread_count = 0;

@@ -24,8 +24,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "test/core/util/test_config.h"
 
@@ -96,8 +96,8 @@ static void test_too_many_plucks(void) {
     }
     thread_states[i].cc = cc;
     thread_states[i].tag = tags[i];
-    new (&threads[i]) grpc_core::Thread("grpc_pluck_test", pluck_one,
-					thread_states + i);
+    new (&threads[i])
+        grpc_core::Thread("grpc_pluck_test", pluck_one, thread_states + i);
     threads[i].Start();
   }
 
@@ -221,8 +221,7 @@ static void test_threading(size_t producers, size_t consumers) {
           "test_threading", producers, consumers);
 
   /* start all threads: they will wait for phase1 */
-  grpc_core::Thread* threads =
-    reinterpret_cast<grpc_core::Thread*>(
+  grpc_core::Thread* threads = reinterpret_cast<grpc_core::Thread*>(
       gpr_malloc(sizeof(*threads) * (producers + consumers)));
   for (i = 0; i < producers + consumers; i++) {
     gpr_event_init(&options[i].on_started);
@@ -236,9 +235,8 @@ static void test_threading(size_t producers, size_t consumers) {
 
     bool ok;
     new (&threads[i]) grpc_core::Thread(
-	 i < producers ? "grpc_producer" : "grpc_consumer",
-	 i < producers ? producer_thread : consumer_thread,
-	 options + i, &ok);
+        i < producers ? "grpc_producer" : "grpc_consumer",
+        i < producers ? producer_thread : consumer_thread, options + i, &ok);
     GPR_ASSERT(ok);
     threads[i].Start();
     gpr_event_wait(&options[i].on_started, ten_seconds_time());

@@ -35,10 +35,10 @@ class Thread {
   /// Default constructor only to allow use in structs that lack constructors
   /// Does not produce a validly-constructed thread; must later
   /// use placement new to construct a real thread. Does not init mu_ and cv_
-  Thread(): real_(false), alive_(false), started_(false), joined_(false) {}
+  Thread() : real_(false), alive_(false), started_(false), joined_(false) {}
 
   Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
-	 bool* success = nullptr);
+         bool* success = nullptr);
   ~Thread() {
     if (!alive_) {
       // This thread never existed, so nothing to do
@@ -63,6 +63,7 @@ class Thread {
 
   static void Init();
   static bool AwaitAll(gpr_timespec deadline);
+
  private:
   gpr_mu mu_;
   gpr_cv ready_;

@@ -22,9 +22,9 @@
    headers. Therefore, sockaddr.h must always be included first */
 #include "src/core/lib/iomgr/sockaddr.h"
 
-#include <new>
 #include <memory.h>
 #include <stdio.h>
+#include <new>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -175,75 +175,78 @@ int run_concurrent_connectivity_test() {
 
   /* First round, no server */
   {
-  gpr_log(GPR_DEBUG, "Wave 1");
-  char* localhost = gpr_strdup("localhost:54321");
-  grpc_core::Thread threads[NUM_THREADS];
-  for (auto& th : threads) {
-    new (&th) grpc_core::Thread("grpc_wave_1", create_loop_destroy, localhost);
-    th.Start();
-  }
-  for (auto& th : threads) {
-    th.Join();
-  }
-  gpr_free(localhost);
-  }
-
-  {
-  /* Second round, actual grpc server */
-  gpr_log(GPR_DEBUG, "Wave 2");
-  int port = grpc_pick_unused_port_or_die();
-  gpr_asprintf(&args.addr, "localhost:%d", port);
-  args.server = grpc_server_create(nullptr, nullptr);
-  grpc_server_add_insecure_http2_port(args.server, args.addr);
-  args.cq = grpc_completion_queue_create_for_next(nullptr);
-  grpc_server_register_completion_queue(args.server, args.cq, nullptr);
-  grpc_server_start(args.server);
-  grpc_core::Thread server2("grpc_wave_2_server", server_thread, &args);
-  server2.Start();
-
-  grpc_core::Thread threads[NUM_THREADS];
-  for (auto& th : threads) {
-    new (&th) grpc_core::Thread("grpc_wave_2", create_loop_destroy, args.addr);
-    th.Start();
-  } 
-  for (auto& th : threads) {
-    th.Join();
-  }
-  grpc_server_shutdown_and_notify(args.server, args.cq, tag(0xd1e));
-
-  server2.Join();
-  grpc_server_destroy(args.server);
-  grpc_completion_queue_destroy(args.cq);
-  gpr_free(args.addr);
+    gpr_log(GPR_DEBUG, "Wave 1");
+    char* localhost = gpr_strdup("localhost:54321");
+    grpc_core::Thread threads[NUM_THREADS];
+    for (auto& th : threads) {
+      new (&th)
+          grpc_core::Thread("grpc_wave_1", create_loop_destroy, localhost);
+      th.Start();
+    }
+    for (auto& th : threads) {
+      th.Join();
+    }
+    gpr_free(localhost);
   }
 
   {
-  /* Third round, bogus tcp server */
-  gpr_log(GPR_DEBUG, "Wave 3");
-  args.pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
-  grpc_pollset_init(args.pollset, &args.mu);
-  gpr_event_init(&args.ready);
-  grpc_core::Thread server3("grpc_wave_3_server", bad_server_thread, &args);
-  server3.Start();
-  gpr_event_wait(&args.ready, gpr_inf_future(GPR_CLOCK_MONOTONIC));
+    /* Second round, actual grpc server */
+    gpr_log(GPR_DEBUG, "Wave 2");
+    int port = grpc_pick_unused_port_or_die();
+    gpr_asprintf(&args.addr, "localhost:%d", port);
+    args.server = grpc_server_create(nullptr, nullptr);
+    grpc_server_add_insecure_http2_port(args.server, args.addr);
+    args.cq = grpc_completion_queue_create_for_next(nullptr);
+    grpc_server_register_completion_queue(args.server, args.cq, nullptr);
+    grpc_server_start(args.server);
+    grpc_core::Thread server2("grpc_wave_2_server", server_thread, &args);
+    server2.Start();
 
-  grpc_core::Thread threads[NUM_THREADS];
-  for (auto& th : threads) {
-    new (&th) grpc_core::Thread("grpc_wave_3", create_loop_destroy, args.addr);
-    th.Start();
-  }
-  for (auto& th : threads) {
-    th.Join();
+    grpc_core::Thread threads[NUM_THREADS];
+    for (auto& th : threads) {
+      new (&th)
+          grpc_core::Thread("grpc_wave_2", create_loop_destroy, args.addr);
+      th.Start();
+    }
+    for (auto& th : threads) {
+      th.Join();
+    }
+    grpc_server_shutdown_and_notify(args.server, args.cq, tag(0xd1e));
+
+    server2.Join();
+    grpc_server_destroy(args.server);
+    grpc_completion_queue_destroy(args.cq);
+    gpr_free(args.addr);
   }
 
-  gpr_atm_rel_store(&args.stop, 1);
-  server3.Join();
   {
-    grpc_core::ExecCtx exec_ctx;
-    grpc_pollset_shutdown(
-        args.pollset, GRPC_CLOSURE_CREATE(done_pollset_shutdown, args.pollset,
-                                          grpc_schedule_on_exec_ctx));
-  }
+    /* Third round, bogus tcp server */
+    gpr_log(GPR_DEBUG, "Wave 3");
+    args.pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+    grpc_pollset_init(args.pollset, &args.mu);
+    gpr_event_init(&args.ready);
+    grpc_core::Thread server3("grpc_wave_3_server", bad_server_thread, &args);
+    server3.Start();
+    gpr_event_wait(&args.ready, gpr_inf_future(GPR_CLOCK_MONOTONIC));
+
+    grpc_core::Thread threads[NUM_THREADS];
+    for (auto& th : threads) {
+      new (&th)
+          grpc_core::Thread("grpc_wave_3", create_loop_destroy, args.addr);
+      th.Start();
+    }
+    for (auto& th : threads) {
+      th.Join();
+    }
+
+    gpr_atm_rel_store(&args.stop, 1);
+    server3.Join();
+    {
+      grpc_core::ExecCtx exec_ctx;
+      grpc_pollset_shutdown(
+          args.pollset, GRPC_CLOSURE_CREATE(done_pollset_shutdown, args.pollset,
+                                            grpc_schedule_on_exec_ctx));
+    }
   }
 
   grpc_shutdown();
@@ -289,7 +292,7 @@ int run_concurrent_watches_with_short_timeouts_test() {
 
   for (auto& th : threads) {
     new (&th) grpc_core::Thread("grpc_short_watches",
-				watches_with_short_timeouts, localhost);
+                                watches_with_short_timeouts, localhost);
     th.Start();
   }
   for (auto& th : threads) {

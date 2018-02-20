@@ -18,8 +18,8 @@
 
 #include "src/core/lib/iomgr/executor.h"
 
-#include <new>
 #include <string.h>
+#include <new>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
@@ -28,9 +28,9 @@
 
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/spinlock.h"
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 #define MAX_DEPTH 2
@@ -104,9 +104,8 @@ void grpc_executor_set_threading(bool threading) {
       g_thread_state[i].elems = GRPC_CLOSURE_LIST_INIT;
     }
 
-    new (&g_thread_state[0].thd) grpc_core::Thread("grpc_executor",
-						   executor_thread,
-						   &g_thread_state[0]);
+    new (&g_thread_state[0].thd)
+        grpc_core::Thread("grpc_executor", executor_thread, &g_thread_state[0]);
     g_thread_state[0].thd.Start();
   } else {
     if (cur_threads == 0) return;
@@ -265,10 +264,10 @@ static void executor_push(grpc_closure* closure, grpc_error* error,
       if (cur_thread_count < g_max_threads) {
         gpr_atm_no_barrier_store(&g_cur_threads, cur_thread_count + 1);
 
-	new (&g_thread_state[cur_thread_count].thd)
-	  grpc_core::Thread("grpc_executor", executor_thread,
-			    &g_thread_state[cur_thread_count]);
-	g_thread_state[cur_thread_count].thd.Start();
+        new (&g_thread_state[cur_thread_count].thd)
+            grpc_core::Thread("grpc_executor", executor_thread,
+                              &g_thread_state[cur_thread_count]);
+        g_thread_state[cur_thread_count].thd.Start();
       }
       gpr_spinlock_unlock(&g_adding_thread_lock);
     }
