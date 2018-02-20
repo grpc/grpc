@@ -94,7 +94,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
 }
 
 // Tests that we honor server push-back delay.
-// - 2 retry attempt allowed for ABORTED status
+// - 2 retries allowed for ABORTED status
 // - first attempt gets ABORTED with a long delay
 // - second attempt succeeds
 static void test_retry_server_pushback_delay(grpc_end2end_test_config config) {

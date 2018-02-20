@@ -93,8 +93,10 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-// Tests that we don't retry when retries are disabled.
-// - 1 retry attempt allowed for ABORTED status
+// Tests that we don't retry when retries are disabled via the
+// GRPC_ARG_ENABLE_RETRIES channel arg, even when there is retry
+// configuration in the service config.
+// - 1 retry allowed for ABORTED status
 // - first attempt returns ABORTED but does not retry
 static void test_retry_disabled(grpc_end2end_test_config config) {
   grpc_call* c;

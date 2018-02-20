@@ -94,7 +94,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
 }
 
 // Tests that we don't retry when disabled by server push-back.
-// - 2 retry attempt allowed for ABORTED status
+// - 2 retries allowed for ABORTED status
 // - first attempt gets ABORTED
 // - second attempt gets ABORTED but server push back disables retrying
 static void test_retry_server_pushback_disabled(

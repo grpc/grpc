@@ -95,7 +95,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
 
 // Tests that we don't make any further attempts after we exceed the
 // max buffer size.
-// - 1 retry attempt allowed for ABORTED status
+// - 1 retry allowed for ABORTED status
 // - buffer size set to 2 bytes
 // - client sends a 3-byte message
 // - first attempt gets ABORTED but is not retried

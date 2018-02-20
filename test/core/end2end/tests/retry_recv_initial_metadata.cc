@@ -94,7 +94,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
 }
 
 // Tests that receiving initial metadata commits the call.
-// - 1 retry attempt allowed for ABORTED status
+// - 1 retry allowed for ABORTED status
 // - first attempt receives initial metadata before trailing metadata,
 //   so no retry is done even though status was ABORTED
 static void test_retry_recv_initial_metadata(grpc_end2end_test_config config) {

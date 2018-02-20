@@ -94,7 +94,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
 }
 
 // Tests that receiving a message commits the call.
-// - 1 retry attempt allowed for ABORTED status
+// - 1 retry allowed for ABORTED status
 // - first attempt receives a message and therefore does not retry even
 //   though the final status is ABORTED
 static void test_retry_recv_message(grpc_end2end_test_config config) {

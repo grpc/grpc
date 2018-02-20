@@ -151,6 +151,7 @@ END2END_TESTS = {
     # TODO(roth): Remove proxyable=False for all retry tests once we
     # have a way for the proxy to propagate the fact that trailing
     # metadata is available when initial metadata is returned.
+    # See https://github.com/grpc/grpc/issues/14467 for context.
     'retry': default_test_options._replace(cpu_cost=LOWCPU,
                                            needs_client_channel=True,
                                            proxyable=False),

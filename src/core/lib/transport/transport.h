@@ -158,6 +158,8 @@ struct grpc_transport_stream_op_batch_payload {
     // Note: This pointer may be used by the transport after the
     // send_initial_metadata op is completed.  It must remain valid
     // until the call is destroyed.
+    // Note: When a transport sets this, it must free the previous
+    // value, if any.
     gpr_atm* peer_string;
   } send_initial_metadata;
 
@@ -191,6 +193,8 @@ struct grpc_transport_stream_op_batch_payload {
     // Note: This pointer may be used by the transport after the
     // recv_initial_metadata op is completed.  It must remain valid
     // until the call is destroyed.
+    // Note: When a transport sets this, it must free the previous
+    // value, if any.
     gpr_atm* peer_string;
   } recv_initial_metadata;
 

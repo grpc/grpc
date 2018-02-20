@@ -94,7 +94,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
 }
 
 // Tests that we don't retry for non-retryable status codes.
-// - 1 retry attempt allowed for ABORTED status
+// - 1 retry allowed for ABORTED status
 // - first attempt gets INVALID_ARGUMENT, so no retry is done
 static void test_retry_non_retriable_status(grpc_end2end_test_config config) {
   grpc_call* c;

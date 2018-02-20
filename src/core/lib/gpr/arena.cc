@@ -24,6 +24,10 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 
+// Uncomment this to use a simple arena that simply allocates the
+// requested amount of memory for each call to gpr_arena_alloc().  This
+// effectively eliminates the efficiency gain of using an arena, but it
+// may be useful for debugging purposes.
 //#define SIMPLE_ARENA_FOR_DEBUGGING
 
 #ifdef SIMPLE_ARENA_FOR_DEBUGGING

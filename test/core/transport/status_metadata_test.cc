@@ -46,6 +46,13 @@ TEST(GetStatusCodeFromMetadata, Other) {
   GRPC_MDELEM_UNREF(status_md);
 }
 
+TEST(GetStatusCodeFromMetadata, Unparseable) {
+  grpc_mdelem status_md = grpc_mdelem_from_slices(
+      GRPC_MDSTR_GRPC_STATUS, grpc_slice_from_static_string("NaN"));
+  EXPECT_EQ(GRPC_STATUS_UNKNOWN, grpc_get_status_code_from_metadata(status_md));
+  GRPC_MDELEM_UNREF(status_md);
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {

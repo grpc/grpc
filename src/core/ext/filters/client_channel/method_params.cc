@@ -58,7 +58,8 @@ bool parse_wait_for_ready(grpc_json* field,
 }
 
 // Parses a JSON field of the form generated for a google.proto.Duration
-// proto message.
+// proto message, as per:
+//   https://developers.google.com/protocol-buffers/docs/proto3#json
 bool parse_duration(grpc_json* field, grpc_millis* duration) {
   if (field->type != GRPC_JSON_STRING) return false;
   size_t len = strlen(field->value);
@@ -101,7 +102,7 @@ bool parse_retry_policy(grpc_json* field, retry_policy_params* retry_policy) {
       retry_policy->max_attempts = gpr_parse_nonnegative_int(sub_field->value);
       if (retry_policy->max_attempts <= 1) return false;
       if (retry_policy->max_attempts > MAX_MAX_RETRY_ATTEMPTS) {
-        gpr_log(GPR_INFO,
+        gpr_log(GPR_ERROR,
                 "service config: clamped retryPolicy.maxAttempts at %d",
                 MAX_MAX_RETRY_ATTEMPTS);
         retry_policy->max_attempts = MAX_MAX_RETRY_ATTEMPTS;
