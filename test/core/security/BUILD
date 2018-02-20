@@ -136,3 +136,30 @@ grpc_cc_binary(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "check_gcp_environment_test",
+    srcs = ["check_gcp_environment_test.cc"],
+    language = "C++",
+    deps = [
+        "//:grpc",
+    ],
+)
+
+grpc_cc_test(
+    name = "grpc_alts_credentials_options_test",
+    srcs = ["grpc_alts_credentials_options_test.cc"],
+    language = "C++",
+    deps = [
+        "//:grpc",
+    ],
+)
+
+grpc_cc_test(
+    name = "alts_security_connector_test",
+    srcs = ["alts_security_connector_test.cc"],
+    language = "C++",
+    deps = [
+        "//:grpc",
+    ],
+)
