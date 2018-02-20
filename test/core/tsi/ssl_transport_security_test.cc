@@ -681,15 +681,12 @@ int main(int argc, char** argv) {
   ssl_tsi_test_do_handshake_with_server_name_indication_wild_star_domain();
   ssl_tsi_test_do_handshake_with_bad_server_cert();
   ssl_tsi_test_do_handshake_with_bad_client_cert();
-  // TODO: BoringSSL and OpenSSL have different behaviors on handling mismatched
-  // ALPN. Re-enable this test if we can detect in the runtime which SSL library
-  // is used.
-  // ssl_tsi_test_do_handshake_alpn_client_no_server();
+#ifdef OPENSSL_IS_BORINGSSL
+  // BoringSSL and OpenSSL have different behaviors on mismatched ALPN.
+  ssl_tsi_test_do_handshake_alpn_client_no_server();
+  ssl_tsi_test_do_handshake_alpn_client_server_mismatch();
+#endif
   ssl_tsi_test_do_handshake_alpn_server_no_client();
-  // TODO: BoringSSL and OpenSSL have different behaviors on handling mismatched
-  // ALPN. Re-enable this test if we can detect in the runtime which SSL library
-  // is used.
-  // ssl_tsi_test_do_handshake_alpn_client_server_mismatch();
   ssl_tsi_test_do_handshake_alpn_client_server_ok();
   ssl_tsi_test_do_round_trip_for_all_configs();
   ssl_tsi_test_do_round_trip_odd_buffer_size();
