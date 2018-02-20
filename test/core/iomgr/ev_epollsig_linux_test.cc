@@ -259,9 +259,10 @@ static void test_threading(void) {
   shared.pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(shared.pollset, &shared.mu);
 
-  gpr_thd_id thds[10];
-  for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
-    gpr_thd_new(&thds[i], "test_thread", test_threading_loop, &shared);
+  grpc_core::Thread thds[10];
+  for (auto& th: thds) {
+    new (&th) grpc_core::Thread("test_thread", test_threading_loop, &shared);
+    th.Start();
   }
   grpc_wakeup_fd fd;
   GPR_ASSERT(GRPC_LOG_IF_ERROR("wakeup_fd_init", grpc_wakeup_fd_init(&fd)));
@@ -278,8 +279,8 @@ static void test_threading(void) {
   }
   GPR_ASSERT(GRPC_LOG_IF_ERROR("wakeup_first",
                                grpc_wakeup_fd_wakeup(shared.wakeup_fd)));
-  for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
-    gpr_thd_join(thds[i]);
+  for (auto& th: thds) {
+    th.Join();
   }
   fd.read_fd = 0;
   grpc_wakeup_fd_destroy(&fd);
