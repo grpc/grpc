@@ -26,21 +26,20 @@
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/uri_parser.h"
 
+//
+// representation of an LB address
+//
+
 // Channel arg key for grpc_lb_addresses.
 #define GRPC_ARG_LB_ADDRESSES "grpc.lb_addresses"
-
-typedef struct grpc_lb_policy_factory grpc_lb_policy_factory;
-typedef struct grpc_lb_policy_factory_vtable grpc_lb_policy_factory_vtable;
-
-struct grpc_lb_policy_factory {
-  const grpc_lb_policy_factory_vtable* vtable;
-};
 
 /** A resolved address alongside any LB related information associated with it.
  * \a user_data, if not NULL, contains opaque data meant to be consumed by the
  * gRPC LB policy. Note that no all LB policies support \a user_data as input.
  * Those who don't will simply ignore it and will correspondingly return NULL in
  * their namesake pick() output argument. */
+// TODO(roth): Once we figure out a better way of handling user_data in
+// LB policies, convert these structs to C++ classes.
 typedef struct grpc_lb_address {
   grpc_resolved_address address;
   bool is_balancer;
@@ -101,30 +100,27 @@ grpc_arg grpc_lb_addresses_create_channel_arg(
 grpc_lb_addresses* grpc_lb_addresses_find_channel_arg(
     const grpc_channel_args* channel_args);
 
-/** Arguments passed to LB policies. */
-struct grpc_lb_policy_args {
-  grpc_client_channel_factory* client_channel_factory;
-  grpc_channel_args* args;
-  grpc_combiner* combiner;
+//
+// LB policy factory
+//
+
+namespace grpc_core {
+
+class LoadBalancingPolicyFactory {
+ public:
+  /// Returns a new LB policy instance.
+  virtual OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
+      const LoadBalancingPolicy::Args& args) const GRPC_ABSTRACT;
+
+  /// Returns the LB policy name that this factory provides.
+  /// Caller does NOT take ownership of result.
+  virtual const char* name() const GRPC_ABSTRACT;
+
+  virtual ~LoadBalancingPolicyFactory() {}
+
+  GRPC_ABSTRACT_BASE_CLASS
 };
 
-struct grpc_lb_policy_factory_vtable {
-  void (*ref)(grpc_lb_policy_factory* factory);
-  void (*unref)(grpc_lb_policy_factory* factory);
-
-  /** Implementation of grpc_lb_policy_factory_create_lb_policy */
-  grpc_lb_policy* (*create_lb_policy)(grpc_lb_policy_factory* factory,
-                                      grpc_lb_policy_args* args);
-
-  /** Name for the LB policy this factory implements */
-  const char* name;
-};
-
-void grpc_lb_policy_factory_ref(grpc_lb_policy_factory* factory);
-void grpc_lb_policy_factory_unref(grpc_lb_policy_factory* factory);
-
-/** Create a lb_policy instance. */
-grpc_lb_policy* grpc_lb_policy_factory_create_lb_policy(
-    grpc_lb_policy_factory* factory, grpc_lb_policy_args* args);
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_FACTORY_H */
