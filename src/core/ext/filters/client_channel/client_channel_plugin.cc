@@ -63,7 +63,7 @@ static bool set_default_host_if_unset(grpc_channel_stack_builder* builder,
 }
 
 void grpc_client_channel_init(void) {
-  grpc_lb_policy_registry_init();
+  grpc_core::LoadBalancingPolicyRegistry::Builder::InitRegistry();
   grpc_core::ResolverRegistry::Builder::InitRegistry();
   grpc_retry_throttle_map_init();
   grpc_proxy_mapper_registry_init();
@@ -83,5 +83,5 @@ void grpc_client_channel_shutdown(void) {
   grpc_proxy_mapper_registry_shutdown();
   grpc_retry_throttle_map_shutdown();
   grpc_core::ResolverRegistry::Builder::ShutdownRegistry();
-  grpc_lb_policy_registry_shutdown();
+  grpc_core::LoadBalancingPolicyRegistry::Builder::ShutdownRegistry();
 }

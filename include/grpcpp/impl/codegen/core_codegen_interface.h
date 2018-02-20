@@ -36,6 +36,8 @@ namespace grpc {
 /// \warning This interface should be considered internal and private.
 class CoreCodegenInterface {
  public:
+  virtual ~CoreCodegenInterface() = default;
+
   /// Upon a failed assertion, log the error.
   virtual void assert_fail(const char* failed_assertion, const char* file,
                            int line) = 0;

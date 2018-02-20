@@ -71,6 +71,7 @@ gpr_mpscq_node* gpr_mpscq_pop_and_check_end(gpr_mpscq* q, bool* empty) {
   gpr_mpscq_push(q, &q->stub);
   next = (gpr_mpscq_node*)gpr_atm_acq_load(&tail->next);
   if (next != nullptr) {
+    *empty = false;
     q->tail = next;
     return tail;
   }
