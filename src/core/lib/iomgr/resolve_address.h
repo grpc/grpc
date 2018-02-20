@@ -20,6 +20,7 @@
 #define GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H
 
 #include <stddef.h>
+#include <sys/socket.h>
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 
@@ -27,7 +28,7 @@
 
 typedef struct {
   char addr[GRPC_MAX_SOCKADDR_SIZE];
-  size_t len;
+  socklen_t len;
 } grpc_resolved_address;
 
 typedef struct {
