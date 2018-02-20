@@ -22,6 +22,7 @@
 #include "src/core/lib/iomgr/ev_epollsig_linux.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 
+#include <new>
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
@@ -260,7 +261,7 @@ static void test_threading(void) {
   grpc_pollset_init(shared.pollset, &shared.mu);
 
   grpc_core::Thread thds[10];
-  for (auto& th: thds) {
+  for (auto& th : thds) {
     new (&th) grpc_core::Thread("test_thread", test_threading_loop, &shared);
     th.Start();
   }
@@ -279,7 +280,7 @@ static void test_threading(void) {
   }
   GPR_ASSERT(GRPC_LOG_IF_ERROR("wakeup_first",
                                grpc_wakeup_fd_wakeup(shared.wakeup_fd)));
-  for (auto& th: thds) {
+  for (auto& th : thds) {
     th.Join();
   }
   fd.read_fd = 0;

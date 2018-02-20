@@ -94,3 +94,13 @@ grpc_cc_test(
         "gtest",
     ],
 )
+
+grpc_cc_test(
+    name = "thd_test",
+    srcs = ["thd_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//test/core/util:gpr_test_util",
+    ],
+)

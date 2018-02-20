@@ -119,16 +119,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "thd_test",
-    srcs = ["thd_test.cc"],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//test/core/util:gpr_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "time_test",
     srcs = ["time_test.cc"],
     language = "C++",
