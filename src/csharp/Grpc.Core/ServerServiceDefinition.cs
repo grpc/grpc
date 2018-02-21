@@ -54,6 +54,12 @@ namespace Grpc.Core
         /// This is an EXPERIMENTAL API.
         /// </summary>
         /// <param name="interceptor">The interceptor to register on service.</param>
+        /// <remarks>
+        /// Multiple interceptors can be added on top of each other by chaining them
+        /// like "service.Intercept(c).Intercept(b).Intercept(a)".  Note that
+        /// in this case, the last interceptor added will be the first to take control,
+        /// i.e. "a" will run before "b" before "c".
+        /// </remarks>
         public ServerServiceDefinition Intercept(Interceptor interceptor)
         {
             GrpcPreconditions.CheckNotNull(interceptor, "interceptor");
