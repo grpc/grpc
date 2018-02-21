@@ -31,8 +31,10 @@
 
 #if defined(_MSC_VER)
 #define thread_local __declspec(thread)
+#define WIN_LAMBDA
 #elif defined(__GNUC__)
 #define thread_local __thread
+#define WIN_LAMBDA WINAPI
 #else
 #error "Unknown compiler - please file a bug report"
 #endif
@@ -81,7 +83,7 @@ Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
     alive_ = false;
   } else {
     handle = CreateThread(nullptr, 64 * 1024,
-                          [](void* v) -> DWORD {
+                          [](void* v) WIN_LAMBDA -> DWORD {
                             g_thd_info = static_cast<thd_info*>(v);
                             gpr_mu_lock(&g_thd_info->thread->mu_);
                             if (!g_thd_info->thread->started_) {
