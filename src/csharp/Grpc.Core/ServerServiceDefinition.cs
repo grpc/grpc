@@ -35,7 +35,7 @@ namespace Grpc.Core
     {
         readonly ReadOnlyDictionary<string, IServerCallHandler> callHandlers;
 
-        private ServerServiceDefinition(Dictionary<string, IServerCallHandler> callHandlers)
+        internal ServerServiceDefinition(Dictionary<string, IServerCallHandler> callHandlers)
         {
             this.callHandlers = new ReadOnlyDictionary<string, IServerCallHandler>(callHandlers);
         }
@@ -46,34 +46,6 @@ namespace Grpc.Core
             {
                 return this.callHandlers;
             }
-        }
-
-        /// <summary>
-        /// Returns a <see cref="Grpc.Core.ServerServiceDefinition" /> instance that
-        /// intercepts calls to the underlying service handler via the given interceptor.
-        /// This is an EXPERIMENTAL API.
-        /// </summary>
-        /// <param name="interceptor">The interceptor to register on service.</param>
-        /// <remarks>
-        /// Multiple interceptors can be added on top of each other by chaining them
-        /// like "service.Intercept(c).Intercept(b).Intercept(a)".  Note that
-        /// in this case, the last interceptor added will be the first to take control,
-        /// i.e. "a" will run before "b" before "c".
-        /// </remarks>
-        public ServerServiceDefinition Intercept(Interceptor interceptor)
-        {
-            GrpcPreconditions.CheckNotNull(interceptor, "interceptor");
-            return new ServerServiceDefinition(CallHandlers.ToDictionary(
-                x => x.Key, x =>
-                {
-                    var value = x.Value;
-                    var interceptable = value as IInterceptableCallHandler;
-                    if (interceptable == null)
-                    {
-                        return value;
-                    }
-                    return interceptable.Intercept(interceptor);
-                }));
         }
 
         /// <summary>

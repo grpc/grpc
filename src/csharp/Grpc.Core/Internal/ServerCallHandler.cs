@@ -31,14 +31,10 @@ namespace Grpc.Core.Internal
     internal interface IServerCallHandler
     {
         Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq);
-    }
-
-    internal interface IInterceptableCallHandler
-    {
         IServerCallHandler Intercept(Interceptor interceptor);
     }
 
-    internal class UnaryServerCallHandler<TRequest, TResponse> : IServerCallHandler, IInterceptableCallHandler
+    internal class UnaryServerCallHandler<TRequest, TResponse> : IServerCallHandler
         where TRequest : class
         where TResponse : class
     {
@@ -96,13 +92,13 @@ namespace Grpc.Core.Internal
             await finishedTask.ConfigureAwait(false);
         }
 
-        IServerCallHandler IInterceptableCallHandler.Intercept(Interceptor interceptor)
+        public IServerCallHandler Intercept(Interceptor interceptor)
         {
             return new UnaryServerCallHandler<TRequest, TResponse>(method, (request, context) => interceptor.UnaryServerHandler(request, context, handler));
         }
     }
 
-    internal class ServerStreamingServerCallHandler<TRequest, TResponse> : IServerCallHandler, IInterceptableCallHandler
+    internal class ServerStreamingServerCallHandler<TRequest, TResponse> : IServerCallHandler
         where TRequest : class
         where TResponse : class
     {
@@ -159,13 +155,13 @@ namespace Grpc.Core.Internal
             await finishedTask.ConfigureAwait(false);
         }
 
-        IServerCallHandler IInterceptableCallHandler.Intercept(Interceptor interceptor)
+        public IServerCallHandler Intercept(Interceptor interceptor)
         {
             return new ServerStreamingServerCallHandler<TRequest, TResponse>(method, (request, responseStream, context) => interceptor.ServerStreamingServerHandler(request, responseStream, context, handler));
         }
     }
 
-    internal class ClientStreamingServerCallHandler<TRequest, TResponse> : IServerCallHandler, IInterceptableCallHandler
+    internal class ClientStreamingServerCallHandler<TRequest, TResponse> : IServerCallHandler
         where TRequest : class
         where TResponse : class
     {
@@ -222,13 +218,13 @@ namespace Grpc.Core.Internal
             await finishedTask.ConfigureAwait(false);
         }
 
-        IServerCallHandler IInterceptableCallHandler.Intercept(Interceptor interceptor)
+        public IServerCallHandler Intercept(Interceptor interceptor)
         {
             return new ClientStreamingServerCallHandler<TRequest, TResponse>(method, (requestStream, context) => interceptor.ClientStreamingServerHandler(requestStream, context, handler));
         }
     }
 
-    internal class DuplexStreamingServerCallHandler<TRequest, TResponse> : IServerCallHandler, IInterceptableCallHandler
+    internal class DuplexStreamingServerCallHandler<TRequest, TResponse> : IServerCallHandler
         where TRequest : class
         where TResponse : class
     {
@@ -282,7 +278,7 @@ namespace Grpc.Core.Internal
             await finishedTask.ConfigureAwait(false);
         }
 
-        IServerCallHandler IInterceptableCallHandler.Intercept(Interceptor interceptor)
+        public IServerCallHandler Intercept(Interceptor interceptor)
         {
             return new DuplexStreamingServerCallHandler<TRequest, TResponse>(method, (requestStream, responseStream, context) => interceptor.DuplexStreamingServerHandler(requestStream, responseStream, context, handler));
         }
@@ -313,6 +309,11 @@ namespace Grpc.Core.Internal
         public Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
         {
             return callHandlerImpl.HandleCall(newRpc, cq);
+        }
+
+        public IServerCallHandler Intercept(Interceptor interceptor)
+        {
+            return this;  // Do not intercept unimplemented services
         }
     }
 
