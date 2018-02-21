@@ -66,6 +66,9 @@ grpc_core::TraceFlag grpc_client_channel_trace(false, "client_channel");
 
 struct external_connectivity_watcher;
 
+typedef grpc_core::SliceHashTable<
+    grpc_core::RefCountedPtr<ClientChannelMethodParams>> MethodParamsTable;
+
 typedef struct client_channel_channel_data {
   /** resolver for this channel */
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver;
@@ -83,9 +86,7 @@ typedef struct client_channel_channel_data {
   /** retry throttle data */
   grpc_server_retry_throttle_data* retry_throttle_data;
   /** maps method names to method_parameters structs */
-  grpc_core::RefCountedPtr<grpc_core::SliceHashTable<
-      grpc_core::RefCountedPtr<ClientChannelMethodParams>>>
-      method_params_table;
+  grpc_core::RefCountedPtr<MethodParamsTable> method_params_table;
   /** incoming resolver result - set by resolver.next() */
   grpc_channel_args* resolver_result;
   /** a list of closures that are all waiting for resolver result to come in */
@@ -301,9 +302,7 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
   grpc_core::OrphanablePtr<grpc_core::LoadBalancingPolicy> new_lb_policy;
   char* service_config_json = nullptr;
   grpc_server_retry_throttle_data* retry_throttle_data = nullptr;
-  grpc_core::RefCountedPtr<grpc_core::SliceHashTable<
-      grpc_core::RefCountedPtr<ClientChannelMethodParams>>>
-      method_params_table;
+  grpc_core::RefCountedPtr<MethodParamsTable> method_params_table;
   if (chand->resolver_result != nullptr) {
     if (chand->resolver != nullptr) {
       // Find LB policy name.

@@ -3148,17 +3148,6 @@ targets:
   - gpr_test_util
   - gpr
   uses_polling: false
-- name: slice_hash_table_test
-  build: test
-  language: c
-  src:
-  - test/core/slice/slice_hash_table_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  uses_polling: false
 - name: slice_string_helpers_test
   build: test
   language: c
@@ -4828,6 +4817,18 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: slice_hash_table_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/slice/slice_hash_table_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses_polling: false
 - name: stats_test
   gtest: true
   build: test
