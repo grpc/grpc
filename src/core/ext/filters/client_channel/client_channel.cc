@@ -67,7 +67,8 @@ grpc_core::TraceFlag grpc_client_channel_trace(false, "client_channel");
 struct external_connectivity_watcher;
 
 typedef grpc_core::SliceHashTable<
-    grpc_core::RefCountedPtr<ClientChannelMethodParams>> MethodParamsTable;
+    grpc_core::RefCountedPtr<ClientChannelMethodParams>>
+    MethodParamsTable;
 
 typedef struct client_channel_channel_data {
   /** resolver for this channel */
