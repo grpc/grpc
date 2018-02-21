@@ -44,10 +44,10 @@ namespace Grpc.Core.Interceptors.Tests
                 this.header = new Metadata.Entry(key, value);
             }
 
-            protected override Task<ServerCallArbitrator<TRequest, TResponse>> InterceptHandler<TRequest, TResponse>(ServerCallContext context, bool clientStreaming, bool serverStreaming, TRequest request)
+            protected override Task<ServerCallHooks<TRequest, TResponse>> InterceptHandler<TRequest, TResponse>(ServerCallContext context, bool clientStreaming, bool serverStreaming, TRequest request)
             {
                 context.RequestHeaders.Add(header);
-                return Task.FromResult<ServerCallArbitrator<TRequest, TResponse>>(null);
+                return Task.FromResult<ServerCallHooks<TRequest, TResponse>>(null);
             }
 
             public Metadata.Entry Header
@@ -87,10 +87,10 @@ namespace Grpc.Core.Interceptors.Tests
                 this.action = action;
             }
 
-            protected override Task<ServerCallArbitrator<TRequest, TResponse>> InterceptHandler<TRequest, TResponse>(ServerCallContext context, bool clientStreaming, bool serverStreaming, TRequest request)
+            protected override Task<ServerCallHooks<TRequest, TResponse>> InterceptHandler<TRequest, TResponse>(ServerCallContext context, bool clientStreaming, bool serverStreaming, TRequest request)
             {
                 action();
-                return Task.FromResult<ServerCallArbitrator<TRequest, TResponse>>(null);
+                return Task.FromResult<ServerCallHooks<TRequest, TResponse>>(null);
             }
         }
 

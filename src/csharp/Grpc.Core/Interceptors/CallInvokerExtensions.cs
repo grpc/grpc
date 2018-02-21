@@ -113,11 +113,12 @@ namespace Grpc.Core.Interceptors
                 this.interceptor = GrpcPreconditions.CheckNotNull(interceptor, "interceptor");
             }
 
-            protected override ClientCallArbitrator<TRequest, TResponse> InterceptCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context, bool clientStreaming, bool serverStreaming, TRequest request)
+            protected override ClientCallHooks<TRequest, TResponse> InterceptCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context, bool clientStreaming, bool serverStreaming, TRequest request)
             {
-                return new ClientCallArbitrator<TRequest, TResponse>
+                var metadata = context.Options.Headers ?? new Metadata();
+                return new ClientCallHooks<TRequest, TResponse>
                 {
-                    Context = new ClientInterceptorContext<TRequest, TResponse>(context.Method, context.Host, context.Options.WithHeaders(interceptor(context.Options.Headers)))
+                    ContextOverride = new ClientInterceptorContext<TRequest, TResponse>(context.Method, context.Host, context.Options.WithHeaders(interceptor(metadata))),
                 };
             }
         }

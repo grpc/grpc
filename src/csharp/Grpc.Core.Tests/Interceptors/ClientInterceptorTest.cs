@@ -71,17 +71,14 @@ namespace Grpc.Core.Interceptors.Tests
             var stringBuilder = new StringBuilder();
             var callInvoker = helper.GetChannel().Intercept(metadata =>
             {
-                metadata = metadata ?? new Metadata();
                 stringBuilder.Append("interceptor1");
                 return metadata;
             }).Intercept(metadata =>
             {
-                metadata = metadata ?? new Metadata();
                 stringBuilder.Append("interceptor2");
                 return metadata;
             }).Intercept(metadata =>
             {
-                metadata = metadata ?? new Metadata();
                 stringBuilder.Append("interceptor3");
                 return metadata;
             });
@@ -91,14 +88,14 @@ namespace Grpc.Core.Interceptors.Tests
 
         private class CountingInterceptor : GenericInterceptor
         {
-            protected override ClientCallArbitrator<TRequest, TResponse> InterceptCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context, bool clientStreaming, bool serverStreaming, TRequest request)
+            protected override ClientCallHooks<TRequest, TResponse> InterceptCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context, bool clientStreaming, bool serverStreaming, TRequest request)
             {
                 if (!clientStreaming)
                 {
                     return null;
                 }
                 int counter = 0;
-                return new ClientCallArbitrator<TRequest, TResponse>
+                return new ClientCallHooks<TRequest, TResponse>
                 {
                     OnRequestMessage = m => { counter++; return m; },
                     OnUnaryResponse = x => (TResponse)(object)counter.ToString()  // Cast to object first is needed to satisfy the type-checker
@@ -112,14 +109,14 @@ namespace Grpc.Core.Interceptors.Tests
             var helper = new MockServiceHelper(Host);
             helper.ClientStreamingHandler = new ClientStreamingServerMethod<string, string>(async (requestStream, context) =>
             {
-                string result = "";
-                await requestStream.ForEachAsync((request) =>
+                var stringBuilder = new StringBuilder();
+                await requestStream.ForEachAsync(request =>
                 {
-                    result += request;
+                    stringBuilder.Append(request);
                     return TaskUtils.CompletedTask;
                 });
                 await Task.Delay(100);
-                return result;
+                return stringBuilder.ToString();
             });
 
             var callInvoker = helper.GetChannel().Intercept(new CountingInterceptor());

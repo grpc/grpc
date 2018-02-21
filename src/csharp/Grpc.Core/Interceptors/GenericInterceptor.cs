@@ -27,27 +27,27 @@ namespace Grpc.Core.Interceptors
     /// Provides a base class for generic interceptor implementations that raises
     /// events and hooks to control the RPC lifecycle.
     /// </summary>
-    public abstract class GenericInterceptor : Interceptor
+    internal abstract class GenericInterceptor : Interceptor
     {
         /// <summary>
         /// Provides hooks through which an invocation should be intercepted.
         /// </summary>
-        public sealed class ClientCallArbitrator<TRequest, TResponse>
+        public sealed class ClientCallHooks<TRequest, TResponse>
             where TRequest : class
             where TResponse : class
         {
-            internal ClientCallArbitrator<TRequest, TResponse> Freeze()
+            internal ClientCallHooks<TRequest, TResponse> Freeze()
             {
-                return (ClientCallArbitrator<TRequest, TResponse>)MemberwiseClone();
+                return (ClientCallHooks<TRequest, TResponse>)MemberwiseClone();
             }
             /// <summary>
             /// Override the context for the outgoing invocation.
             /// </summary>
-            public ClientInterceptorContext<TRequest, TResponse> Context { get; set; }
+            public ClientInterceptorContext<TRequest, TResponse>? ContextOverride { get; set; }
             /// <summary>
             /// Override the request for the outgoing invocation for non-client-streaming invocations.
             /// </summary>
-            public TRequest UnaryRequest { get; set; }
+            public TRequest UnaryRequestOverride { get; set; }
             /// <summary>
             /// Delegate that intercepts a response from a non-server-streaming invocation and optionally overrides it.
             /// </summary>
@@ -73,7 +73,7 @@ namespace Grpc.Core.Interceptors
         /// <summary>
         /// Intercepts an outgoing call from the client side.
         /// Derived classes that intend to intercept outgoing invocations from the client side should
-        /// override this and return the appropriate hooks in the form of a ClientCallArbitrator instance.
+        /// override this and return the appropriate hooks in the form of a ClientCallHooks instance.
         /// </summary>
         /// <param name="context">The context of the outgoing invocation.</param>
         /// <param name="clientStreaming">True if the invocation is client-streaming.</param>
@@ -82,10 +82,10 @@ namespace Grpc.Core.Interceptors
         /// <typeparam name="TRequest">Request message type for the current invocation.</typeparam>
         /// <typeparam name="TResponse">Response message type for the current invocation.</typeparam>
         /// <returns>
-        /// The derived class should return an instance of ClientCallArbitrator to control the trajectory
+        /// The derived class should return an instance of ClientCallHooks to control the trajectory
         /// as they see fit, or null if it does not intend to pursue the invocation any further.
         /// </returns>
-        protected virtual ClientCallArbitrator<TRequest, TResponse> InterceptCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context, bool clientStreaming, bool serverStreaming, TRequest request)
+        protected virtual ClientCallHooks<TRequest, TResponse> InterceptCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context, bool clientStreaming, bool serverStreaming, TRequest request)
             where TRequest : class
             where TResponse : class
         {
@@ -95,18 +95,18 @@ namespace Grpc.Core.Interceptors
         /// <summary>
         /// Provides hooks through which a server-side handler should be intercepted.
         /// </summary>
-        public sealed class ServerCallArbitrator<TRequest, TResponse>
+        public sealed class ServerCallHooks<TRequest, TResponse>
             where TRequest : class
             where TResponse : class
         {
-            internal ServerCallArbitrator<TRequest, TResponse> Freeze()
+            internal ServerCallHooks<TRequest, TResponse> Freeze()
             {
-                return (ServerCallArbitrator<TRequest, TResponse>)MemberwiseClone();
+                return (ServerCallHooks<TRequest, TResponse>)MemberwiseClone();
             }
             /// <summary>
             /// Override the request for the outgoing invocation for non-client-streaming invocations.
             /// </summary>
-            public TRequest UnaryRequest { get; set; }
+            public TRequest UnaryRequestOverride { get; set; }
             /// <summary>
             /// Delegate that intercepts a response from a non-server-streaming invocation and optionally overrides it.
             /// </summary>
@@ -132,7 +132,7 @@ namespace Grpc.Core.Interceptors
         /// <summary>
         /// Intercepts an incoming service handler invocation on the server side.
         /// Derived classes that intend to intercept incoming handlers on the server side should
-        /// override this and return the appropriate hooks in the form of a ServerCallArbitrator instance.
+        /// override this and return the appropriate hooks in the form of a ServerCallHooks instance.
         /// </summary>
         /// <param name="context">The context of the incoming invocation.</param>
         /// <param name="clientStreaming">True if the invocation is client-streaming.</param>
@@ -141,14 +141,14 @@ namespace Grpc.Core.Interceptors
         /// <typeparam name="TRequest">Request message type for the current invocation.</typeparam>
         /// <typeparam name="TResponse">Response message type for the current invocation.</typeparam>
         /// <returns>
-        /// The derived class should return an instance of ServerCallArbitrator to control the trajectory
+        /// The derived class should return an instance of ServerCallHooks to control the trajectory
         /// as they see fit, or null if it does not intend to pursue the invocation any further.
         /// </returns>
-        protected virtual Task<ServerCallArbitrator<TRequest, TResponse>> InterceptHandler<TRequest, TResponse>(ServerCallContext context, bool clientStreaming, bool serverStreaming, TRequest request)
+        protected virtual Task<ServerCallHooks<TRequest, TResponse>> InterceptHandler<TRequest, TResponse>(ServerCallContext context, bool clientStreaming, bool serverStreaming, TRequest request)
             where TRequest : class
             where TResponse : class
         {
-            return Task.FromResult<ServerCallArbitrator<TRequest, TResponse>>(null);
+            return Task.FromResult<ServerCallHooks<TRequest, TResponse>>(null);
         }
 
         /// <summary>
@@ -156,13 +156,13 @@ namespace Grpc.Core.Interceptors
         /// </summary>
         public override TResponse BlockingUnaryCall<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context, BlockingUnaryCallContinuation<TRequest, TResponse> continuation)
         {
-            var arbitrator = InterceptCall(context, false, false, request)?.Freeze();
-            context = arbitrator?.Context ?? context;
-            request = arbitrator?.UnaryRequest ?? request;
+            var hooks = InterceptCall(context, false, false, request)?.Freeze();
+            context = hooks?.ContextOverride ?? context;
+            request = hooks?.UnaryRequestOverride ?? request;
             var response = continuation(request, context);
-            if (arbitrator?.OnUnaryResponse != null)
+            if (hooks?.OnUnaryResponse != null)
             {
-                response = arbitrator.OnUnaryResponse(response);
+                response = hooks.OnUnaryResponse(response);
             }
             return response;
         }
@@ -172,13 +172,13 @@ namespace Grpc.Core.Interceptors
         /// </summary>
         public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context, AsyncUnaryCallContinuation<TRequest, TResponse> continuation)
         {
-            var arbitrator = InterceptCall(context, false, false, request)?.Freeze();
-            context = arbitrator?.Context ?? context;
-            request = arbitrator?.UnaryRequest ?? request;
+            var hooks = InterceptCall(context, false, false, request)?.Freeze();
+            context = hooks?.ContextOverride ?? context;
+            request = hooks?.UnaryRequestOverride ?? request;
             var response = continuation(request, context);
-            if (arbitrator?.OnUnaryResponse != null)
+            if (hooks?.OnUnaryResponse != null)
             {
-                response = new AsyncUnaryCall<TResponse>(response.ResponseAsync.ContinueWith(unaryResponse => arbitrator.OnUnaryResponse(unaryResponse.Result)),
+                response = new AsyncUnaryCall<TResponse>(response.ResponseAsync.ContinueWith(unaryResponse => hooks.OnUnaryResponse(unaryResponse.Result)),
                     response.ResponseHeadersAsync, response.GetStatus, response.GetTrailers, response.Dispose);
             }
             return response;
@@ -189,14 +189,14 @@ namespace Grpc.Core.Interceptors
         /// </summary>
         public override AsyncServerStreamingCall<TResponse> AsyncServerStreamingCall<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context, AsyncServerStreamingCallContinuation<TRequest, TResponse> continuation)
         {
-            var arbitrator = InterceptCall(context, false, true, request)?.Freeze();
-            context = arbitrator?.Context ?? context;
-            request = arbitrator?.UnaryRequest ?? request;
+            var hooks = InterceptCall(context, false, true, request)?.Freeze();
+            context = hooks?.ContextOverride ?? context;
+            request = hooks?.UnaryRequestOverride ?? request;
             var response = continuation(request, context);
-            if (arbitrator?.OnResponseMessage != null || arbitrator?.OnResponseStreamEnd != null)
+            if (hooks?.OnResponseMessage != null || hooks?.OnResponseStreamEnd != null)
             {
                 response = new AsyncServerStreamingCall<TResponse>(
-                    new WrappedAsyncStreamReader<TResponse>(response.ResponseStream, arbitrator.OnResponseMessage, arbitrator.OnResponseStreamEnd),
+                    new WrappedAsyncStreamReader<TResponse>(response.ResponseStream, hooks.OnResponseMessage, hooks.OnResponseStreamEnd),
                     response.ResponseHeadersAsync, response.GetStatus, response.GetTrailers, response.Dispose);
             }
             return response;
@@ -207,20 +207,20 @@ namespace Grpc.Core.Interceptors
         /// </summary>
         public override AsyncClientStreamingCall<TRequest, TResponse> AsyncClientStreamingCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context, AsyncClientStreamingCallContinuation<TRequest, TResponse> continuation)
         {
-            var arbitrator = InterceptCall(context, true, false, null)?.Freeze();
-            context = arbitrator?.Context ?? context;
+            var hooks = InterceptCall(context, true, false, null)?.Freeze();
+            context = hooks?.ContextOverride ?? context;
             var response = continuation(context);
-            if (arbitrator?.OnRequestMessage != null || arbitrator?.OnResponseStreamEnd != null || arbitrator?.OnUnaryResponse != null)
+            if (hooks?.OnRequestMessage != null || hooks?.OnResponseStreamEnd != null || hooks?.OnUnaryResponse != null)
             {
                 var requestStream = response.RequestStream;
-                if (arbitrator?.OnRequestMessage != null || arbitrator?.OnRequestStreamEnd != null)
+                if (hooks?.OnRequestMessage != null || hooks?.OnRequestStreamEnd != null)
                 {
-                    requestStream = new WrappedClientStreamWriter<TRequest>(response.RequestStream, arbitrator.OnRequestMessage, arbitrator.OnRequestStreamEnd);
+                    requestStream = new WrappedClientStreamWriter<TRequest>(response.RequestStream, hooks.OnRequestMessage, hooks.OnRequestStreamEnd);
                 }
                 var responseAsync = response.ResponseAsync;
-                if (arbitrator?.OnUnaryResponse != null)
+                if (hooks?.OnUnaryResponse != null)
                 {
-                    responseAsync = response.ResponseAsync.ContinueWith(unaryResponse => arbitrator.OnUnaryResponse(unaryResponse.Result));
+                    responseAsync = response.ResponseAsync.ContinueWith(unaryResponse => hooks.OnUnaryResponse(unaryResponse.Result));
                 }
                 response = new AsyncClientStreamingCall<TRequest, TResponse>(requestStream, responseAsync, response.ResponseHeadersAsync, response.GetStatus, response.GetTrailers, response.Dispose);
             }
@@ -232,20 +232,20 @@ namespace Grpc.Core.Interceptors
         /// </summary>
         public override AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context, AsyncDuplexStreamingCallContinuation<TRequest, TResponse> continuation)
         {
-            var arbitrator = InterceptCall(context, true, true, null)?.Freeze();
-            context = arbitrator?.Context ?? context;
+            var hooks = InterceptCall(context, true, true, null)?.Freeze();
+            context = hooks?.ContextOverride ?? context;
             var response = continuation(context);
-            if (arbitrator?.OnRequestMessage != null || arbitrator?.OnRequestStreamEnd != null || arbitrator?.OnResponseMessage != null || arbitrator?.OnResponseStreamEnd != null)
+            if (hooks?.OnRequestMessage != null || hooks?.OnRequestStreamEnd != null || hooks?.OnResponseMessage != null || hooks?.OnResponseStreamEnd != null)
             {
                 var requestStream = response.RequestStream;
-                if (arbitrator?.OnRequestMessage != null || arbitrator?.OnRequestStreamEnd != null)
+                if (hooks?.OnRequestMessage != null || hooks?.OnRequestStreamEnd != null)
                 {
-                    requestStream = new WrappedClientStreamWriter<TRequest>(response.RequestStream, arbitrator.OnRequestMessage, arbitrator.OnRequestStreamEnd);
+                    requestStream = new WrappedClientStreamWriter<TRequest>(response.RequestStream, hooks.OnRequestMessage, hooks.OnRequestStreamEnd);
                 }
                 var responseStream = response.ResponseStream;
-                if (arbitrator?.OnResponseMessage != null || arbitrator?.OnResponseStreamEnd != null)
+                if (hooks?.OnResponseMessage != null || hooks?.OnResponseStreamEnd != null)
                 {
-                    responseStream = new WrappedAsyncStreamReader<TResponse>(response.ResponseStream, arbitrator.OnResponseMessage, arbitrator.OnResponseStreamEnd);
+                    responseStream = new WrappedAsyncStreamReader<TResponse>(response.ResponseStream, hooks.OnResponseMessage, hooks.OnResponseStreamEnd);
                 }
                 response = new AsyncDuplexStreamingCall<TRequest, TResponse>(requestStream, responseStream, response.ResponseHeadersAsync, response.GetStatus, response.GetTrailers, response.Dispose);
             }
@@ -259,14 +259,14 @@ namespace Grpc.Core.Interceptors
         /// <typeparam name="TResponse">Response message type for this method.</typeparam>
         public override async Task<TResponse> UnaryServerHandler<TRequest, TResponse>(TRequest request, ServerCallContext context, UnaryServerMethod<TRequest, TResponse> continuation)
         {
-            var arbitrator = (await InterceptHandler<TRequest, TResponse>(context, false, false, request))?.Freeze();
-            request = arbitrator?.UnaryRequest ?? request;
+            var hooks = (await InterceptHandler<TRequest, TResponse>(context, false, false, request))?.Freeze();
+            request = hooks?.UnaryRequestOverride ?? request;
             var response = await continuation(request, context);
-            if (arbitrator?.OnUnaryResponse != null)
+            if (hooks?.OnUnaryResponse != null)
             {
-                response = arbitrator.OnUnaryResponse(response);
+                response = hooks.OnUnaryResponse(response);
             }
-            arbitrator?.OnHandlerEnd();
+            hooks?.OnHandlerEnd();
             return response;
         }
 
@@ -277,17 +277,17 @@ namespace Grpc.Core.Interceptors
         /// <typeparam name="TResponse">Response message type for this method.</typeparam>
         public override async Task<TResponse> ClientStreamingServerHandler<TRequest, TResponse>(IAsyncStreamReader<TRequest> requestStream, ServerCallContext context, ClientStreamingServerMethod<TRequest, TResponse> continuation)
         {
-            var arbitrator = (await InterceptHandler<TRequest, TResponse>(context, true, false, null))?.Freeze();
-            if (arbitrator?.OnRequestMessage != null || arbitrator?.OnRequestStreamEnd != null)
+            var hooks = (await InterceptHandler<TRequest, TResponse>(context, true, false, null))?.Freeze();
+            if (hooks?.OnRequestMessage != null || hooks?.OnRequestStreamEnd != null)
             {
-                requestStream = new WrappedAsyncStreamReader<TRequest>(requestStream, arbitrator.OnRequestMessage, arbitrator.OnRequestStreamEnd);
+                requestStream = new WrappedAsyncStreamReader<TRequest>(requestStream, hooks.OnRequestMessage, hooks.OnRequestStreamEnd);
             }
             var response = await continuation(requestStream, context);
-            if (arbitrator?.OnUnaryResponse != null)
+            if (hooks?.OnUnaryResponse != null)
             {
-                response = arbitrator.OnUnaryResponse(response);
+                response = hooks.OnUnaryResponse(response);
             }
-            arbitrator?.OnHandlerEnd();
+            hooks?.OnHandlerEnd();
             return response;
         }
 
@@ -298,14 +298,14 @@ namespace Grpc.Core.Interceptors
         /// <typeparam name="TResponse">Response message type for this method.</typeparam>
         public override async Task ServerStreamingServerHandler<TRequest, TResponse>(TRequest request, IServerStreamWriter<TResponse> responseStream, ServerCallContext context, ServerStreamingServerMethod<TRequest, TResponse> continuation)
         {
-            var arbitrator = (await InterceptHandler<TRequest, TResponse>(context, false, true, request))?.Freeze();
-            request = arbitrator?.UnaryRequest ?? request;
-            if (arbitrator?.OnResponseMessage != null)
+            var hooks = (await InterceptHandler<TRequest, TResponse>(context, false, true, request))?.Freeze();
+            request = hooks?.UnaryRequestOverride ?? request;
+            if (hooks?.OnResponseMessage != null)
             {
-                responseStream = new WrappedAsyncStreamWriter<TResponse>(responseStream, arbitrator.OnResponseMessage);
+                responseStream = new WrappedAsyncStreamWriter<TResponse>(responseStream, hooks.OnResponseMessage);
             }
             await continuation(request, responseStream, context);
-            arbitrator?.OnHandlerEnd();
+            hooks?.OnHandlerEnd();
         }
 
         /// <summary>
@@ -315,17 +315,17 @@ namespace Grpc.Core.Interceptors
         /// <typeparam name="TResponse">Response message type for this method.</typeparam>
         public override async Task DuplexStreamingServerHandler<TRequest, TResponse>(IAsyncStreamReader<TRequest> requestStream, IServerStreamWriter<TResponse> responseStream, ServerCallContext context, DuplexStreamingServerMethod<TRequest, TResponse> continuation)
         {
-            var arbitrator = (await InterceptHandler<TRequest, TResponse>(context, true, true, null))?.Freeze();
-            if (arbitrator?.OnRequestMessage != null || arbitrator?.OnRequestStreamEnd != null)
+            var hooks = (await InterceptHandler<TRequest, TResponse>(context, true, true, null))?.Freeze();
+            if (hooks?.OnRequestMessage != null || hooks?.OnRequestStreamEnd != null)
             {
-                requestStream = new WrappedAsyncStreamReader<TRequest>(requestStream, arbitrator.OnRequestMessage, arbitrator.OnRequestStreamEnd);
+                requestStream = new WrappedAsyncStreamReader<TRequest>(requestStream, hooks.OnRequestMessage, hooks.OnRequestStreamEnd);
             }
-            if (arbitrator?.OnResponseMessage != null)
+            if (hooks?.OnResponseMessage != null)
             {
-                responseStream = new WrappedAsyncStreamWriter<TResponse>(responseStream, arbitrator.OnResponseMessage);
+                responseStream = new WrappedAsyncStreamWriter<TResponse>(responseStream, hooks.OnResponseMessage);
             }
             await continuation(requestStream, responseStream, context);
-            arbitrator?.OnHandlerEnd();
+            hooks?.OnHandlerEnd();
         }
 
         private class WrappedAsyncStreamReader<T> : IAsyncStreamReader<T>
