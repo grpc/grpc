@@ -29,6 +29,16 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "arena_test",
+    srcs = ["arena_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//test/core/util:gpr_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "cpu_test",
     srcs = ["cpu_test.cc"],
     language = "C++",
