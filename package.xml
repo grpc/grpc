@@ -216,10 +216,10 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/oauth2/oauth2_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/plugin/plugin_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/ssl/ssl_credentials.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/security_connector/security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/auth_filters.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/lb_targets_info.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/secure_endpoint.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/transport/security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/security_handshaker.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/tsi_error.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/util/json_util.h" role="src" />
@@ -578,10 +578,10 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/oauth2/oauth2_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/plugin/plugin_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/ssl/ssl_credentials.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/security_connector/security_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/client_auth_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/lb_targets_info.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/secure_endpoint.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/transport/security_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/security_handshaker.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/server_auth_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/tsi_error.cc" role="src" />
