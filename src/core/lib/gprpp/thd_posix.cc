@@ -131,7 +131,7 @@ Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
     *success = alive_;
   }
 
-  id_ = reinterpret_cast<gpr_thd_id>(p);
+  id_ = gpr_thd_id(p);
   GPR_ASSERT(pthread_attr_destroy(&attr) == 0);
 
   if (!alive_) {
@@ -143,7 +143,7 @@ Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
 
 void Thread::Join() {
   if (alive_) {
-    pthread_join(reinterpret_cast<pthread_t>(id_), nullptr);
+    pthread_join(pthread_t(id_), nullptr);
   }
   joined_ = true;
 }
