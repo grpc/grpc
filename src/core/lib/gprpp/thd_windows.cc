@@ -112,6 +112,27 @@ Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
   }
 }
 
+Thread::~Thread() {
+  if (!alive_) {
+    // This thread never existed, so nothing to do
+  } else {
+    GPR_ASSERT(joined_);
+  }
+  if (real_) {
+    gpr_mu_destroy(&mu_);
+    gpr_cv_destroy(&ready_);
+  }
+}
+
+void Thread::Start() {
+  gpr_mu_lock(&mu_);
+  if (alive_) {
+    started_ = true;
+    gpr_cv_signal(&ready_);
+  }
+  gpr_mu_unlock(&mu_);
+}
+
 void Thread::Join() {
   if (alive_) {
     thd_info* info = (thd_info*)id_;
