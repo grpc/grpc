@@ -23,6 +23,7 @@
 #include <grpc/support/sync.h>
 
 #include <inttypes.h>
+#include <string.h>
 
 #include <memory>
 
