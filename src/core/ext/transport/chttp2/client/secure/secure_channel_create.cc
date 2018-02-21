@@ -31,7 +31,7 @@
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/transport/security_connector.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/security/transport/target_authority_table.h"
 #include "src/core/lib/slice/slice_hash_table.h"
 #include "src/core/lib/slice/slice_internal.h"

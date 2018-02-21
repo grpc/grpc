@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_CONNECTOR_H
-#define GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_CONNECTOR_H
+#ifndef GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SECURITY_CONNECTOR_H
+#define GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SECURITY_CONNECTOR_H
 
 #include <stdbool.h>
 
@@ -246,4 +246,4 @@ tsi_peer tsi_shallow_peer_from_ssl_auth_context(
     const grpc_auth_context* auth_context);
 void tsi_shallow_peer_destruct(tsi_peer* peer);
 
-#endif /* GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURITY_CONNECTOR_H */
+#endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SECURITY_CONNECTOR_H */

@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+POLLERS = ['epollex', 'epollsig', 'epoll1', 'poll', 'poll-cv']
+
 load("//bazel:grpc_build_system.bzl", "grpc_sh_test", "grpc_cc_binary", "grpc_cc_library")
 
 """Generates the appropriate build.json data for all the end2end tests."""
@@ -219,9 +221,14 @@ def grpc_end2end_tests():
     for t, topt in END2END_TESTS.items():
       #print(compatible(fopt, topt), f, t, fopt, topt)
       if not compatible(fopt, topt): continue
-      grpc_sh_test(
-        name = '%s_test@%s' % (f, t),
-        srcs = ['end2end_test.sh'],
-        args = ['$(location %s_test)' % f, t],
-        data = [':%s_test' % f],
-      )
+      for poller in POLLERS:
+        native.sh_test(
+          name = '%s_test@%s@poller=%s' % (f, t, poller),
+          data = [':%s_test' % f],
+          srcs = ['end2end_test.sh'],
+          args = [
+            '$(location %s_test)' % f, 
+            t,
+            poller,
+          ],
+        )

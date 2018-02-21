@@ -15,15 +15,15 @@
  *
  */
 
-#include <grpc++/alarm.h>
+#include <grpcpp/alarm.h>
 
 #include <memory>
 
-#include <grpc++/completion_queue.h>
-#include <grpc++/impl/grpc_library.h>
-#include <grpc++/support/time.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
+#include <grpcpp/completion_queue.h>
+#include <grpcpp/impl/grpc_library.h>
+#include <grpcpp/support/time.h>
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/surface/completion_queue.h"
