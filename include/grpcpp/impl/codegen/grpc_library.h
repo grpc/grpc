@@ -25,6 +25,7 @@ namespace grpc {
 
 class GrpcLibraryInterface {
  public:
+  virtual ~GrpcLibraryInterface() = default;
   virtual void init() = 0;
   virtual void shutdown() = 0;
 };

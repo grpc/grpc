@@ -175,7 +175,7 @@ typedef struct client_channel_channel_data {
   /** combiner protecting all variables below in this data structure */
   grpc_combiner* combiner;
   /** currently active load balancer */
-  grpc_lb_policy* lb_policy;
+  grpc_core::OrphanablePtr<grpc_core::LoadBalancingPolicy> lb_policy;
   /** retry throttle data */
   grpc_server_retry_throttle_data* retry_throttle_data;
   /** maps method names to method_parameters structs */
@@ -212,7 +212,7 @@ typedef struct {
   channel_data* chand;
   /** used as an identifier, don't dereference it because the LB policy may be
    * non-existing when the callback is run */
-  grpc_lb_policy* lb_policy;
+  grpc_core::LoadBalancingPolicy* lb_policy;
   grpc_closure closure;
 } reresolution_request_args;
 
@@ -223,11 +223,11 @@ typedef struct {
   channel_data* chand;
   grpc_closure on_changed;
   grpc_connectivity_state state;
-  grpc_lb_policy* lb_policy;
+  grpc_core::LoadBalancingPolicy* lb_policy;
 } lb_policy_connectivity_watcher;
 
 static void watch_lb_policy_locked(channel_data* chand,
-                                   grpc_lb_policy* lb_policy,
+                                   grpc_core::LoadBalancingPolicy* lb_policy,
                                    grpc_connectivity_state current_state);
 
 static void set_channel_connectivity_state_locked(channel_data* chand,
@@ -241,15 +241,13 @@ static void set_channel_connectivity_state_locked(channel_data* chand,
   if (chand->lb_policy != nullptr) {
     if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
       /* cancel picks with wait_for_ready=false */
-      grpc_lb_policy_cancel_picks_locked(
-          chand->lb_policy,
+      chand->lb_policy->CancelMatchingPicksLocked(
           /* mask= */ GRPC_INITIAL_METADATA_WAIT_FOR_READY,
           /* check= */ 0, GRPC_ERROR_REF(error));
     } else if (state == GRPC_CHANNEL_SHUTDOWN) {
       /* cancel all picks */
-      grpc_lb_policy_cancel_picks_locked(chand->lb_policy,
-                                         /* mask= */ 0, /* check= */ 0,
-                                         GRPC_ERROR_REF(error));
+      chand->lb_policy->CancelMatchingPicksLocked(/* mask= */ 0, /* check= */ 0,
+                                                  GRPC_ERROR_REF(error));
     }
   }
   if (grpc_client_channel_trace.enabled()) {
@@ -263,7 +261,7 @@ static void on_lb_policy_state_changed_locked(void* arg, grpc_error* error) {
   lb_policy_connectivity_watcher* w =
       static_cast<lb_policy_connectivity_watcher*>(arg);
   /* check if the notification is for the latest policy */
-  if (w->lb_policy == w->chand->lb_policy) {
+  if (w->lb_policy == w->chand->lb_policy.get()) {
     if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG, "chand=%p: lb_policy=%p state changed to %s", w->chand,
               w->lb_policy, grpc_connectivity_state_name(w->state));
@@ -279,7 +277,7 @@ static void on_lb_policy_state_changed_locked(void* arg, grpc_error* error) {
 }
 
 static void watch_lb_policy_locked(channel_data* chand,
-                                   grpc_lb_policy* lb_policy,
+                                   grpc_core::LoadBalancingPolicy* lb_policy,
                                    grpc_connectivity_state current_state) {
   lb_policy_connectivity_watcher* w =
       static_cast<lb_policy_connectivity_watcher*>(gpr_malloc(sizeof(*w)));
@@ -289,8 +287,7 @@ static void watch_lb_policy_locked(channel_data* chand,
                     grpc_combiner_scheduler(chand->combiner));
   w->state = current_state;
   w->lb_policy = lb_policy;
-  grpc_lb_policy_notify_on_state_change_locked(lb_policy, &w->state,
-                                               &w->on_changed);
+  lb_policy->NotifyOnStateChangeLocked(&w->state, &w->on_changed);
 }
 
 static void start_resolving_locked(channel_data* chand) {
@@ -371,7 +368,7 @@ static void request_reresolution_locked(void* arg, grpc_error* error) {
   channel_data* chand = args->chand;
   // If this invocation is for a stale LB policy, treat it as an LB shutdown
   // signal.
-  if (args->lb_policy != chand->lb_policy || error != GRPC_ERROR_NONE ||
+  if (args->lb_policy != chand->lb_policy.get() || error != GRPC_ERROR_NONE ||
       chand->resolver == nullptr) {
     GRPC_CHANNEL_STACK_UNREF(chand->owning_stack, "re-resolution");
     gpr_free(args);
@@ -382,7 +379,7 @@ static void request_reresolution_locked(void* arg, grpc_error* error) {
   }
   chand->resolver->RequestReresolutionLocked();
   // Give back the closure to the LB policy.
-  grpc_lb_policy_set_reresolve_closure_locked(chand->lb_policy, &args->closure);
+  chand->lb_policy->SetReresolutionClosureLocked(&args->closure);
 }
 
 static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
@@ -393,9 +390,10 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
   }
   // Extract the following fields from the resolver result, if non-NULL.
   bool lb_policy_updated = false;
+  bool lb_policy_created = false;
   char* lb_policy_name_dup = nullptr;
   bool lb_policy_name_changed = false;
-  grpc_lb_policy* new_lb_policy = nullptr;
+  grpc_core::OrphanablePtr<grpc_core::LoadBalancingPolicy> new_lb_policy;
   char* service_config_json = nullptr;
   grpc_server_retry_throttle_data* retry_throttle_data = nullptr;
   grpc_slice_hash_table* method_params_table = nullptr;
@@ -433,10 +431,7 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
       // Use pick_first if nothing was specified and we didn't select grpclb
       // above.
       if (lb_policy_name == nullptr) lb_policy_name = "pick_first";
-      grpc_lb_policy_args lb_policy_args;
-      lb_policy_args.args = chand->resolver_result;
-      lb_policy_args.client_channel_factory = chand->client_channel_factory;
-      lb_policy_args.combiner = chand->combiner;
+
       // Check to see if we're already using the right LB policy.
       // Note: It's safe to use chand->info_lb_policy_name here without
       // taking a lock on chand->info_mu, because this function is the
@@ -448,10 +443,17 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
       if (chand->lb_policy != nullptr && !lb_policy_name_changed) {
         // Continue using the same LB policy.  Update with new addresses.
         lb_policy_updated = true;
-        grpc_lb_policy_update_locked(chand->lb_policy, &lb_policy_args);
+        chand->lb_policy->UpdateLocked(*chand->resolver_result);
       } else {
         // Instantiate new LB policy.
-        new_lb_policy = grpc_lb_policy_create(lb_policy_name, &lb_policy_args);
+        lb_policy_created = true;
+        grpc_core::LoadBalancingPolicy::Args lb_policy_args;
+        lb_policy_args.combiner = chand->combiner;
+        lb_policy_args.client_channel_factory = chand->client_channel_factory;
+        lb_policy_args.args = chand->resolver_result;
+        new_lb_policy =
+            grpc_core::LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
+                lb_policy_name, lb_policy_args);
         if (new_lb_policy == nullptr) {
           gpr_log(GPR_ERROR, "could not create LB policy \"%s\"",
                   lb_policy_name);
@@ -460,12 +462,11 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
               static_cast<reresolution_request_args*>(
                   gpr_zalloc(sizeof(*args)));
           args->chand = chand;
-          args->lb_policy = new_lb_policy;
+          args->lb_policy = new_lb_policy.get();
           GRPC_CLOSURE_INIT(&args->closure, request_reresolution_locked, args,
                             grpc_combiner_scheduler(chand->combiner));
           GRPC_CHANNEL_STACK_REF(chand->owning_stack, "re-resolution");
-          grpc_lb_policy_set_reresolve_closure_locked(new_lb_policy,
-                                                      &args->closure);
+          new_lb_policy->SetReresolutionClosureLocked(&args->closure);
         }
       }
       // Find service config.
@@ -548,14 +549,14 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
     if (chand->lb_policy != nullptr) {
       if (grpc_client_channel_trace.enabled()) {
         gpr_log(GPR_DEBUG, "chand=%p: unreffing lb_policy=%p", chand,
-                chand->lb_policy);
+                chand->lb_policy.get());
       }
-      grpc_pollset_set_del_pollset_set(chand->lb_policy->interested_parties,
+      grpc_pollset_set_del_pollset_set(chand->lb_policy->interested_parties(),
                                        chand->interested_parties);
-      grpc_lb_policy_shutdown_locked(chand->lb_policy, new_lb_policy);
-      GRPC_LB_POLICY_UNREF(chand->lb_policy, "channel");
+      chand->lb_policy->HandOffPendingPicksLocked(new_lb_policy.get());
+      chand->lb_policy.reset();
     }
-    chand->lb_policy = new_lb_policy;
+    chand->lb_policy = std::move(new_lb_policy);
   }
   // Now that we've swapped out the relevant fields of chand, check for
   // error or shutdown.
@@ -583,21 +584,20 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
     grpc_connectivity_state state = GRPC_CHANNEL_TRANSIENT_FAILURE;
     grpc_error* state_error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("No load balancing policy");
-    if (new_lb_policy != nullptr) {
+    if (lb_policy_created) {
       if (grpc_client_channel_trace.enabled()) {
         gpr_log(GPR_DEBUG, "chand=%p: initializing new LB policy", chand);
       }
       GRPC_ERROR_UNREF(state_error);
-      state =
-          grpc_lb_policy_check_connectivity_locked(new_lb_policy, &state_error);
-      grpc_pollset_set_add_pollset_set(new_lb_policy->interested_parties,
+      state = chand->lb_policy->CheckConnectivityLocked(&state_error);
+      grpc_pollset_set_add_pollset_set(chand->lb_policy->interested_parties(),
                                        chand->interested_parties);
       GRPC_CLOSURE_LIST_SCHED(&chand->waiting_for_resolver_result_closures);
       if (chand->exit_idle_when_lb_policy_arrives) {
-        grpc_lb_policy_exit_idle_locked(new_lb_policy);
+        chand->lb_policy->ExitIdleLocked();
         chand->exit_idle_when_lb_policy_arrives = false;
       }
-      watch_lb_policy_locked(chand, new_lb_policy, state);
+      watch_lb_policy_locked(chand, chand->lb_policy.get(), state);
     }
     if (!lb_policy_updated) {
       set_channel_connectivity_state_locked(
@@ -632,8 +632,8 @@ static void start_transport_op_locked(void* arg, grpc_error* error_ignored) {
           op->send_ping.on_ack,
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("Ping with no load balancing"));
     } else {
-      grpc_lb_policy_ping_one_locked(
-          chand->lb_policy, op->send_ping.on_initiate, op->send_ping.on_ack);
+      chand->lb_policy->PingOneLocked(op->send_ping.on_initiate,
+                                      op->send_ping.on_ack);
       op->bind_pollset = nullptr;
     }
     op->send_ping.on_initiate = nullptr;
@@ -652,11 +652,9 @@ static void start_transport_op_locked(void* arg, grpc_error* error_ignored) {
         GRPC_CLOSURE_LIST_SCHED(&chand->waiting_for_resolver_result_closures);
       }
       if (chand->lb_policy != nullptr) {
-        grpc_pollset_set_del_pollset_set(chand->lb_policy->interested_parties,
+        grpc_pollset_set_del_pollset_set(chand->lb_policy->interested_parties(),
                                          chand->interested_parties);
-        grpc_lb_policy_shutdown_locked(chand->lb_policy, nullptr);
-        GRPC_LB_POLICY_UNREF(chand->lb_policy, "channel");
-        chand->lb_policy = nullptr;
+        chand->lb_policy.reset();
       }
     }
     GRPC_ERROR_UNREF(op->disconnect_with_error);
@@ -786,10 +784,9 @@ static void cc_destroy_channel_elem(grpc_channel_element* elem) {
     grpc_client_channel_factory_unref(chand->client_channel_factory);
   }
   if (chand->lb_policy != nullptr) {
-    grpc_pollset_set_del_pollset_set(chand->lb_policy->interested_parties,
+    grpc_pollset_set_del_pollset_set(chand->lb_policy->interested_parties(),
                                      chand->interested_parties);
-    grpc_lb_policy_shutdown_locked(chand->lb_policy, nullptr);
-    GRPC_LB_POLICY_UNREF(chand->lb_policy, "channel");
+    chand->lb_policy.reset();
   }
   gpr_free(chand->info_lb_policy_name);
   gpr_free(chand->info_service_config_json);
@@ -849,7 +846,7 @@ typedef struct client_channel_call_data {
   grpc_subchannel_call* subchannel_call;
   grpc_error* error;
 
-  grpc_lb_policy_pick_state pick;
+  grpc_core::LoadBalancingPolicy::PickState pick;
   grpc_closure lb_pick_closure;
   grpc_closure lb_pick_cancel_closure;
 
@@ -1070,15 +1067,14 @@ static void pick_callback_cancel_locked(void* arg, grpc_error* error) {
   if (error != GRPC_ERROR_NONE && chand->lb_policy != nullptr) {
     if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: cancelling pick from LB policy %p",
-              chand, calld, chand->lb_policy);
+              chand, calld, chand->lb_policy.get());
     }
-    grpc_lb_policy_cancel_pick_locked(chand->lb_policy, &calld->pick,
-                                      GRPC_ERROR_REF(error));
+    chand->lb_policy->CancelPickLocked(&calld->pick, GRPC_ERROR_REF(error));
   }
   GRPC_CALL_STACK_UNREF(calld->owning_call, "pick_callback_cancel");
 }
 
-// Callback invoked by grpc_lb_policy_pick_locked() for async picks.
+// Callback invoked by LoadBalancingPolicy::PickLocked() for async picks.
 // Unrefs the LB policy and invokes async_pick_done_locked().
 static void pick_callback_done_locked(void* arg, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
@@ -1092,15 +1088,14 @@ static void pick_callback_done_locked(void* arg, grpc_error* error) {
   GRPC_CALL_STACK_UNREF(calld->owning_call, "pick_callback");
 }
 
-// Takes a ref to chand->lb_policy and calls grpc_lb_policy_pick_locked().
-// If the pick was completed synchronously, unrefs the LB policy and
-// returns true.
+// Starts a pick on chand->lb_policy.
+// Returns true if pick is completed synchronously.
 static bool pick_callback_start_locked(grpc_call_element* elem) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG, "chand=%p calld=%p: starting pick on lb_policy=%p",
-            chand, calld, chand->lb_policy);
+            chand, calld, chand->lb_policy.get());
   }
   apply_service_config_to_call_locked(elem);
   // If the application explicitly set wait_for_ready, use that.
@@ -1130,10 +1125,9 @@ static bool pick_callback_start_locked(grpc_call_element* elem) {
                     grpc_combiner_scheduler(chand->combiner));
   calld->pick.on_complete = &calld->lb_pick_closure;
   GRPC_CALL_STACK_REF(calld->owning_call, "pick_callback");
-  const bool pick_done =
-      grpc_lb_policy_pick_locked(chand->lb_policy, &calld->pick);
+  const bool pick_done = chand->lb_policy->PickLocked(&calld->pick);
   if (pick_done) {
-    /* synchronous grpc_lb_policy_pick call. Unref the LB policy. */
+    // Pick completed synchronously.
     if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: pick completed synchronously",
               chand, calld);
@@ -1498,7 +1492,7 @@ const grpc_channel_filter grpc_client_channel_filter = {
 static void try_to_connect_locked(void* arg, grpc_error* error_ignored) {
   channel_data* chand = static_cast<channel_data*>(arg);
   if (chand->lb_policy != nullptr) {
-    grpc_lb_policy_exit_idle_locked(chand->lb_policy);
+    chand->lb_policy->ExitIdleLocked();
   } else {
     chand->exit_idle_when_lb_policy_arrives = true;
     if (!chand->started_resolving && chand->resolver != nullptr) {
