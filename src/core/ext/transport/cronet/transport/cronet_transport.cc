@@ -216,26 +216,6 @@ void grpc_cronet_stream_unref(stream_obj* s) { grpc_stream_unref(s->refcount); }
 
 static enum e_op_result execute_stream_op(struct op_and_state* oas);
 
-static const size_t tail_xtra[4] = {0, 0, 1, 2};
-
-static size_t infer_length_after_decode(const grpc_slice& slice) {
-  size_t len = GRPC_SLICE_LENGTH(slice);
-  const uint8_t* bytes = GRPC_SLICE_START_PTR(slice);
-  while (len > 0 && bytes[len - 1] == '=') {
-    len--;
-  }
-  size_t tuples = len / 4;
-  size_t tail_case = len % 4;
-  if (tail_case == 1) {
-    gpr_log(GPR_ERROR,
-            "Base64 decoding failed. Input has a length of %zu (without"
-            " padding), which is invalid.\n",
-            len);
-    tail_case = 0;
-  }
-  return tuples * 3 + tail_xtra[tail_case];
-}
-
 /*
   Utility function to translate enum into string for printing
 */
@@ -427,7 +407,7 @@ static void convert_cronet_array_to_metadata(
     if (grpc_is_binary_header(key)) {
       value = grpc_slice_from_static_string(header_array->headers[i].value);
       value = grpc_slice_intern(grpc_chttp2_base64_decode_with_length(
-          value, infer_length_after_decode(value)));
+          value, grpc_base64_infer_length_after_decode(value)));
     } else {
       value = grpc_slice_intern(
           grpc_slice_from_static_string(header_array->headers[i].value));
