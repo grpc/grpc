@@ -29,7 +29,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/thd.h>
+
+#include "src/core/lib/gpr/thd.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -67,7 +68,8 @@ const grpc_handshaker_vtable readahead_handshaker_vtable = {
     readahead_handshaker_do_handshake};
 
 static grpc_handshaker* readahead_handshaker_create() {
-  grpc_handshaker* h = (grpc_handshaker*)gpr_zalloc(sizeof(grpc_handshaker));
+  grpc_handshaker* h =
+      static_cast<grpc_handshaker*>(gpr_zalloc(sizeof(grpc_handshaker)));
   grpc_handshaker_init(&readahead_handshaker_vtable, h);
   return h;
 }

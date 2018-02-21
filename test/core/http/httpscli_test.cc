@@ -157,14 +157,14 @@ int main(int argc, char** argv) {
   char* root;
   if (lslash != nullptr) {
     /* Hack for bazel target */
-    if ((unsigned)(lslash - me) >= (sizeof("http") - 1) &&
+    if (static_cast<unsigned>(lslash - me) >= (sizeof("http") - 1) &&
         strncmp(me + (lslash - me) - sizeof("http") + 1, "http",
                 sizeof("http") - 1) == 0) {
       lslash = me + (lslash - me) - sizeof("http");
     }
     root = static_cast<char*>(
-        gpr_malloc((size_t)(lslash - me + sizeof("/../.."))));
-    memcpy(root, me, (size_t)(lslash - me));
+        gpr_malloc(static_cast<size_t>(lslash - me + sizeof("/../.."))));
+    memcpy(root, me, static_cast<size_t>(lslash - me));
     memcpy(root + (lslash - me), "/../..", sizeof("/../.."));
   } else {
     root = gpr_strdup(".");

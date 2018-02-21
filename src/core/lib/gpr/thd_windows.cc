@@ -22,9 +22,11 @@
 
 #ifdef GPR_WINDOWS
 
+#include "src/core/lib/gpr/thd.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/thd.h>
+#include <grpc/support/thd_id.h>
 #include <string.h>
 
 #if defined(_MSC_VER)

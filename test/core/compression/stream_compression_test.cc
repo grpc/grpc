@@ -29,7 +29,7 @@ static void generate_random_payload(char* payload, size_t size) {
   size_t i;
   static const char chars[] = "abcdefghijklmnopqrstuvwxyz1234567890";
   for (i = 0; i < size - 1; ++i) {
-    payload[i] = chars[rand() % (int)(sizeof(chars) - 1)];
+    payload[i] = chars[rand() % static_cast<int>(sizeof(chars) - 1)];
   }
   payload[size - 1] = '\0';
 }
@@ -43,8 +43,10 @@ static bool slice_buffer_equals_string(grpc_slice_buffer* buf,
   size_t pointer = 0;
   for (i = 0; i < buf->count; i++) {
     size_t slice_len = GRPC_SLICE_LENGTH(buf->slices[i]);
-    if (0 != strncmp(str + pointer, (char*)GRPC_SLICE_START_PTR(buf->slices[i]),
-                     slice_len)) {
+    if (0 !=
+        strncmp(str + pointer,
+                reinterpret_cast<char*> GRPC_SLICE_START_PTR(buf->slices[i]),
+                slice_len)) {
       return false;
     }
     pointer += slice_len;
@@ -112,7 +114,7 @@ test_stream_compression_simple_compress_decompress_with_output_size_constraint()
   GPR_ASSERT(output_size == max_output_size);
   GPR_ASSERT(end_of_context == false);
   grpc_slice slice_recv = grpc_slice_buffer_take_first(&sink);
-  char* str_recv = (char*)GRPC_SLICE_START_PTR(slice_recv);
+  char* str_recv = reinterpret_cast<char*> GRPC_SLICE_START_PTR(slice_recv);
   GPR_ASSERT(GRPC_SLICE_LENGTH(slice_recv) == max_output_size);
   GPR_ASSERT(0 == strncmp(test_str, str_recv, max_output_size));
   grpc_slice_unref(slice_recv);

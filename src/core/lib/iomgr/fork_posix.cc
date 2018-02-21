@@ -24,12 +24,10 @@
 
 #include <grpc/fork.h>
 #include <grpc/support/log.h>
-#include <grpc/support/thd.h>
-#include <grpc/support/useful.h>
 
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/fork.h"
-#include "src/core/lib/gpr/thd_internal.h"
+#include "src/core/lib/gpr/thd.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer_manager.h"

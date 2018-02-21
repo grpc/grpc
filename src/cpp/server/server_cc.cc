@@ -15,27 +15,27 @@
  *
  */
 
-#include <grpc++/server.h>
+#include <grpcpp/server.h>
 
 #include <cstdlib>
 #include <sstream>
 #include <utility>
 
-#include <grpc++/completion_queue.h>
-#include <grpc++/generic/async_generic_service.h>
-#include <grpc++/impl/codegen/async_unary_call.h>
-#include <grpc++/impl/codegen/completion_queue_tag.h>
-#include <grpc++/impl/grpc_library.h>
-#include <grpc++/impl/method_handler_impl.h>
-#include <grpc++/impl/rpc_service_method.h>
-#include <grpc++/impl/server_initializer.h>
-#include <grpc++/impl/service_type.h>
-#include <grpc++/security/server_credentials.h>
-#include <grpc++/server_context.h>
-#include <grpc++/support/time.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpcpp/completion_queue.h>
+#include <grpcpp/generic/async_generic_service.h>
+#include <grpcpp/impl/codegen/async_unary_call.h>
+#include <grpcpp/impl/codegen/completion_queue_tag.h>
+#include <grpcpp/impl/grpc_library.h>
+#include <grpcpp/impl/method_handler_impl.h>
+#include <grpcpp/impl/rpc_service_method.h>
+#include <grpcpp/impl/server_initializer.h>
+#include <grpcpp/impl/service_type.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/server_context.h>
+#include <grpcpp/support/time.h>
 
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/profiling/timers.h"

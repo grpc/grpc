@@ -24,7 +24,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/useful.h>
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
@@ -57,7 +57,7 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
   grpc_arg a[1];
   a[0].key = const_cast<char*>(GRPC_ARG_TCP_READ_CHUNK_SIZE);
   a[0].type = GRPC_ARG_INTEGER;
-  a[0].value.integer = (int)slice_size;
+  a[0].value.integer = static_cast<int>(slice_size);
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
   tcp = grpc_iomgr_create_endpoint_pair("fixture", &args);
   grpc_endpoint_add_to_pollset(tcp.client, g_pollset);
@@ -73,7 +73,7 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
     size_t still_pending_size;
     size_t total_buffer_size = 8192;
     size_t buffer_size = total_buffer_size;
-    uint8_t* encrypted_buffer = (uint8_t*)gpr_malloc(buffer_size);
+    uint8_t* encrypted_buffer = static_cast<uint8_t*>(gpr_malloc(buffer_size));
     uint8_t* cur = encrypted_buffer;
     grpc_slice encrypted_leftover;
     for (i = 0; i < leftover_nslices; i++) {
@@ -106,7 +106,8 @@ static grpc_endpoint_test_fixture secure_endpoint_create_fixture_tcp_socketpair(
       buffer_size -= protected_buffer_size_to_send;
     } while (still_pending_size > 0);
     encrypted_leftover = grpc_slice_from_copied_buffer(
-        (const char*)encrypted_buffer, total_buffer_size - buffer_size);
+        reinterpret_cast<const char*>(encrypted_buffer),
+        total_buffer_size - buffer_size);
     f.client_ep = grpc_secure_endpoint_create(
         fake_read_protector, fake_read_zero_copy_protector, tcp.client,
         &encrypted_leftover, 1);
@@ -165,7 +166,9 @@ static grpc_endpoint_test_config configs[] = {
      clean_up},
 };
 
-static void inc_call_ctr(void* arg, grpc_error* error) { ++*(int*)arg; }
+static void inc_call_ctr(void* arg, grpc_error* error) {
+  ++*static_cast<int*>(arg);
+}
 
 static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
   grpc_endpoint_test_fixture f = config.create_fixture(slice_size);
@@ -200,7 +203,7 @@ static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
 }
 
 static void destroy_pollset(void* p, grpc_error* error) {
-  grpc_pollset_destroy((grpc_pollset*)p);
+  grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 
 int main(int argc, char** argv) {
@@ -210,7 +213,7 @@ int main(int argc, char** argv) {
 
   {
     grpc_core::ExecCtx exec_ctx;
-    g_pollset = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
+    g_pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
     grpc_pollset_init(g_pollset, &g_mu);
     grpc_endpoint_tests(configs[0], g_pollset, g_mu);
     grpc_endpoint_tests(configs[1], g_pollset, g_mu);

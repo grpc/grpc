@@ -59,8 +59,8 @@ static grpc_server_credentials_vtable
 
 grpc_channel_credentials* grpc_fake_transport_security_credentials_create(
     void) {
-  grpc_channel_credentials* c =
-      (grpc_channel_credentials*)gpr_zalloc(sizeof(grpc_channel_credentials));
+  grpc_channel_credentials* c = static_cast<grpc_channel_credentials*>(
+      gpr_zalloc(sizeof(grpc_channel_credentials)));
   c->type = GRPC_CHANNEL_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY;
   c->vtable = &fake_transport_security_credentials_vtable;
   gpr_ref_init(&c->refcount, 1);
@@ -69,8 +69,8 @@ grpc_channel_credentials* grpc_fake_transport_security_credentials_create(
 
 grpc_server_credentials* grpc_fake_transport_security_server_credentials_create(
     void) {
-  grpc_server_credentials* c =
-      (grpc_server_credentials*)gpr_malloc(sizeof(grpc_server_credentials));
+  grpc_server_credentials* c = static_cast<grpc_server_credentials*>(
+      gpr_malloc(sizeof(grpc_server_credentials)));
   memset(c, 0, sizeof(grpc_server_credentials));
   c->type = GRPC_CHANNEL_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY;
   gpr_ref_init(&c->refcount, 1);
@@ -87,17 +87,14 @@ const char* grpc_fake_transport_get_expected_targets(
     const grpc_channel_args* args) {
   const grpc_arg* expected_target_arg =
       grpc_channel_args_find(args, GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS);
-  if (expected_target_arg != nullptr &&
-      expected_target_arg->type == GRPC_ARG_STRING) {
-    return expected_target_arg->value.string;
-  }
-  return nullptr;
+  return grpc_channel_arg_get_string(expected_target_arg);
 }
 
 /* -- Metadata-only test credentials. -- */
 
 static void md_only_test_destruct(grpc_call_credentials* creds) {
-  grpc_md_only_test_credentials* c = (grpc_md_only_test_credentials*)creds;
+  grpc_md_only_test_credentials* c =
+      reinterpret_cast<grpc_md_only_test_credentials*>(creds);
   GRPC_MDELEM_UNREF(c->md);
 }
 
@@ -105,7 +102,8 @@ static bool md_only_test_get_request_metadata(
     grpc_call_credentials* creds, grpc_polling_entity* pollent,
     grpc_auth_metadata_context context, grpc_credentials_mdelem_array* md_array,
     grpc_closure* on_request_metadata, grpc_error** error) {
-  grpc_md_only_test_credentials* c = (grpc_md_only_test_credentials*)creds;
+  grpc_md_only_test_credentials* c =
+      reinterpret_cast<grpc_md_only_test_credentials*>(creds);
   grpc_credentials_mdelem_array_add(md_array, c->md);
   if (c->is_async) {
     GRPC_CLOSURE_SCHED(on_request_metadata, GRPC_ERROR_NONE);
@@ -126,8 +124,9 @@ static grpc_call_credentials_vtable md_only_test_vtable = {
 
 grpc_call_credentials* grpc_md_only_test_credentials_create(
     const char* md_key, const char* md_value, bool is_async) {
-  grpc_md_only_test_credentials* c = (grpc_md_only_test_credentials*)gpr_zalloc(
-      sizeof(grpc_md_only_test_credentials));
+  grpc_md_only_test_credentials* c =
+      static_cast<grpc_md_only_test_credentials*>(
+          gpr_zalloc(sizeof(grpc_md_only_test_credentials)));
   c->base.type = GRPC_CALL_CREDENTIALS_TYPE_OAUTH2;
   c->base.vtable = &md_only_test_vtable;
   gpr_ref_init(&c->base.refcount, 1);

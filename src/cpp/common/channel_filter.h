@@ -19,9 +19,9 @@
 #ifndef GRPCXX_CHANNEL_FILTER_H
 #define GRPCXX_CHANNEL_FILTER_H
 
-#include <grpc++/impl/codegen/config.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
+#include <grpcpp/impl/codegen/config.h>
 
 #include <functional>
 #include <vector>
@@ -201,7 +201,8 @@ class TransportStreamOpBatch {
   }
 
   census_context* get_census_context() const {
-    return (census_context*)op_->payload->context[GRPC_CONTEXT_TRACING].value;
+    return static_cast<census_context*>(
+        op_->payload->context[GRPC_CONTEXT_TRACING].value);
   }
 
  private:

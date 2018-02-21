@@ -81,8 +81,8 @@ struct grpc_handshake_manager {
 };
 
 grpc_handshake_manager* grpc_handshake_manager_create() {
-  grpc_handshake_manager* mgr =
-      (grpc_handshake_manager*)gpr_zalloc(sizeof(grpc_handshake_manager));
+  grpc_handshake_manager* mgr = static_cast<grpc_handshake_manager*>(
+      gpr_zalloc(sizeof(grpc_handshake_manager)));
   gpr_mu_init(&mgr->mu);
   gpr_ref_init(&mgr->refs, 1);
   return mgr;
@@ -135,8 +135,8 @@ void grpc_handshake_manager_add(grpc_handshake_manager* mgr,
     realloc_count = mgr->count * 2;
   }
   if (realloc_count > 0) {
-    mgr->handshakers = (grpc_handshaker**)gpr_realloc(
-        mgr->handshakers, realloc_count * sizeof(grpc_handshaker*));
+    mgr->handshakers = static_cast<grpc_handshaker**>(gpr_realloc(
+        mgr->handshakers, realloc_count * sizeof(grpc_handshaker*)));
   }
   mgr->handshakers[mgr->count++] = handshaker;
   gpr_mu_unlock(&mgr->mu);
@@ -197,7 +197,7 @@ static bool call_next_handshaker_locked(grpc_handshake_manager* mgr,
 // A function used as the handshaker-done callback when chaining
 // handshakers together.
 static void call_next_handshaker(void* arg, grpc_error* error) {
-  grpc_handshake_manager* mgr = (grpc_handshake_manager*)arg;
+  grpc_handshake_manager* mgr = static_cast<grpc_handshake_manager*>(arg);
   gpr_mu_lock(&mgr->mu);
   bool done = call_next_handshaker_locked(mgr, GRPC_ERROR_REF(error));
   gpr_mu_unlock(&mgr->mu);
@@ -211,7 +211,7 @@ static void call_next_handshaker(void* arg, grpc_error* error) {
 
 // Callback invoked when deadline is exceeded.
 static void on_timeout(void* arg, grpc_error* error) {
-  grpc_handshake_manager* mgr = (grpc_handshake_manager*)arg;
+  grpc_handshake_manager* mgr = static_cast<grpc_handshake_manager*>(arg);
   if (error == GRPC_ERROR_NONE) {  // Timer fired, rather than being cancelled.
     grpc_handshake_manager_shutdown(
         mgr, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Handshake timed out"));
@@ -233,8 +233,8 @@ void grpc_handshake_manager_do_handshake(
   mgr->args.endpoint = endpoint;
   mgr->args.args = grpc_channel_args_copy(channel_args);
   mgr->args.user_data = user_data;
-  mgr->args.read_buffer =
-      (grpc_slice_buffer*)gpr_malloc(sizeof(*mgr->args.read_buffer));
+  mgr->args.read_buffer = static_cast<grpc_slice_buffer*>(
+      gpr_malloc(sizeof(*mgr->args.read_buffer)));
   grpc_slice_buffer_init(mgr->args.read_buffer);
   // Initialize state needed for calling handshakers.
   mgr->acceptor = acceptor;

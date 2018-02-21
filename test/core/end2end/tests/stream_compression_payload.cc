@@ -26,7 +26,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include <grpc/support/useful.h>
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/surface/call.h"
 #include "test/core/end2end/cq_verifier.h"
@@ -94,9 +93,9 @@ static grpc_slice generate_random_slice() {
   static const char chars[] = "abcdefghijklmnopqrstuvwxyz1234567890";
   char* output;
   const size_t output_size = 1024 * 1024;
-  output = (char*)gpr_malloc(output_size);
+  output = static_cast<char*>(gpr_malloc(output_size));
   for (i = 0; i < output_size - 1; ++i) {
-    output[i] = chars[rand() % (int)(sizeof(chars) - 1)];
+    output[i] = chars[rand() % static_cast<int>(sizeof(chars) - 1)];
   }
   output[output_size - 1] = '\0';
   grpc_slice out = grpc_slice_from_copied_string(output);
@@ -178,7 +177,8 @@ static void request_response_with_payload(grpc_end2end_test_config config,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error =
@@ -200,7 +200,8 @@ static void request_response_with_payload(grpc_end2end_test_config config,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
@@ -226,7 +227,8 @@ static void request_response_with_payload(grpc_end2end_test_config config,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(103),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(103), 1);

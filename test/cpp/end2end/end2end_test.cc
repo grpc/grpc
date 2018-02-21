@@ -32,10 +32,10 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/thd.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -347,7 +347,8 @@ static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs,
   for (int i = 0; i < num_rpcs; ++i) {
     ClientContext context;
     if (with_binary_metadata) {
-      char bytes[8] = {'\0', '\1', '\2', '\3', '\4', '\5', '\6', (char)i};
+      char bytes[8] = {'\0', '\1', '\2', '\3',
+                       '\4', '\5', '\6', static_cast<char>(i)};
       context.AddMetadata("custom-bin", grpc::string(bytes, 8));
     }
     context.set_compression_algorithm(GRPC_COMPRESS_GZIP);

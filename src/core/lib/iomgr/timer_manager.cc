@@ -21,11 +21,11 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
-#include <grpc/support/thd.h>
 
 #include <inttypes.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/thd.h"
 #include "src/core/lib/iomgr/timer.h"
 
 typedef struct completed_thread {
@@ -86,7 +86,8 @@ static void start_timer_thread_and_unlock(void) {
   }
   gpr_thd_options opt = gpr_thd_options_default();
   gpr_thd_options_set_joinable(&opt);
-  completed_thread* ct = (completed_thread*)gpr_malloc(sizeof(*ct));
+  completed_thread* ct =
+      static_cast<completed_thread*>(gpr_malloc(sizeof(*ct)));
   // The call to gpr_thd_new() has to be under the same lock used by
   // gc_completed_threads(), particularly due to ct->t, which is written here
   // (internally by gpr_thd_new) and read there. Otherwise it's possible for ct
@@ -276,7 +277,7 @@ static void timer_thread(void* completed_thread_ptr) {
   grpc_core::ExecCtx exec_ctx(0);
   timer_main_loop();
 
-  timer_thread_cleanup((completed_thread*)completed_thread_ptr);
+  timer_thread_cleanup(static_cast<completed_thread*>(completed_thread_ptr));
 }
 
 static void start_threads(void) {

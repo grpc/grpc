@@ -22,16 +22,18 @@
 
 #ifdef GPR_POSIX_SYNC
 
+#include "src/core/lib/gpr/thd.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/thd.h>
-#include <grpc/support/useful.h>
+#include <grpc/support/thd_id.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "src/core/lib/gpr/fork.h"
+#include "src/core/lib/gpr/useful.h"
 
 static gpr_mu g_mu;
 static gpr_cv g_cv;
@@ -49,7 +51,7 @@ static void dec_thd_count();
 
 /* Body of every thread started via gpr_thd_new. */
 static void* thread_body(void* v) {
-  struct thd_arg a = *(struct thd_arg*)v;
+  struct thd_arg a = *static_cast<struct thd_arg*>(v);
   free(v);
   if (a.name != nullptr) {
 #if GPR_APPLE_PTHREAD_NAME
@@ -77,7 +79,7 @@ int gpr_thd_new(gpr_thd_id* t, const char* thd_name,
   pthread_t p;
   /* don't use gpr_malloc as we may cause an infinite recursion with
    * the profiling code */
-  struct thd_arg* a = (struct thd_arg*)malloc(sizeof(*a));
+  struct thd_arg* a = static_cast<struct thd_arg*>(malloc(sizeof(*a)));
   GPR_ASSERT(a != nullptr);
   a->body = thd_body;
   a->arg = arg;

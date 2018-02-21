@@ -16,20 +16,20 @@
  *
  */
 
-#include <grpc++/server_context.h>
+#include <grpcpp/server_context.h>
 
 #include <algorithm>
 #include <mutex>
 #include <utility>
 
-#include <grpc++/completion_queue.h>
-#include <grpc++/impl/call.h>
-#include <grpc++/support/time.h>
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/load_reporting.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpcpp/completion_queue.h>
+#include <grpcpp/impl/call.h>
+#include <grpcpp/support/time.h>
 
 #include "src/core/lib/surface/call.h"
 

@@ -17,9 +17,9 @@
  */
 #include <memory>
 
-#include <grpc++/security/auth_context.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpcpp/security/auth_context.h>
 #include "src/cpp/common/secure_auth_context.h"
 
 namespace grpc {

@@ -20,10 +20,10 @@
 #include <string.h>
 
 #include <grpc/compression.h>
-#include <grpc/support/useful.h>
 
 #include "src/core/lib/compression/algorithm_metadata.h"
 #include "src/core/lib/compression/compression_internal.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/static_metadata.h"
 
@@ -190,7 +190,8 @@ grpc_message_compression_algorithm grpc_message_compression_algorithm_for_level(
   GRPC_API_TRACE("grpc_message_compression_algorithm_for_level(level=%d)", 1,
                  ((int)level));
   if (level > GRPC_COMPRESS_LEVEL_HIGH) {
-    gpr_log(GPR_ERROR, "Unknown message compression level %d.", (int)level);
+    gpr_log(GPR_ERROR, "Unknown message compression level %d.",
+            static_cast<int>(level));
     abort();
   }
 

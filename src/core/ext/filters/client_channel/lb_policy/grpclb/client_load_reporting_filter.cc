@@ -48,7 +48,7 @@ struct call_data {
 }  // namespace
 
 static void on_complete_for_send(void* arg, grpc_error* error) {
-  call_data* calld = (call_data*)arg;
+  call_data* calld = static_cast<call_data*>(arg);
   if (error == GRPC_ERROR_NONE) {
     calld->send_initial_metadata_succeeded = true;
   }
@@ -56,7 +56,7 @@ static void on_complete_for_send(void* arg, grpc_error* error) {
 }
 
 static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
-  call_data* calld = (call_data*)arg;
+  call_data* calld = static_cast<call_data*>(arg);
   if (error == GRPC_ERROR_NONE) {
     calld->recv_initial_metadata_succeeded = true;
   }
@@ -66,13 +66,13 @@ static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
 
 static grpc_error* init_call_elem(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
-  call_data* calld = (call_data*)elem->call_data;
+  call_data* calld = static_cast<call_data*>(elem->call_data);
   // Get stats object from context and take a ref.
   GPR_ASSERT(args->context != nullptr);
   if (args->context[GRPC_GRPCLB_CLIENT_STATS].value != nullptr) {
-    calld->client_stats = grpc_grpclb_client_stats_ref(
-        (grpc_grpclb_client_stats*)args->context[GRPC_GRPCLB_CLIENT_STATS]
-            .value);
+    calld->client_stats =
+        grpc_grpclb_client_stats_ref(static_cast<grpc_grpclb_client_stats*>(
+            args->context[GRPC_GRPCLB_CLIENT_STATS].value));
     // Record call started.
     grpc_grpclb_client_stats_add_call_started(calld->client_stats);
   }
@@ -82,7 +82,7 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
 static void destroy_call_elem(grpc_call_element* elem,
                               const grpc_call_final_info* final_info,
                               grpc_closure* ignored) {
-  call_data* calld = (call_data*)elem->call_data;
+  call_data* calld = static_cast<call_data*>(elem->call_data);
   if (calld->client_stats != nullptr) {
     // Record call finished, optionally setting client_failed_to_send and
     // received.
@@ -97,7 +97,7 @@ static void destroy_call_elem(grpc_call_element* elem,
 
 static void start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
-  call_data* calld = (call_data*)elem->call_data;
+  call_data* calld = static_cast<call_data*>(elem->call_data);
   GPR_TIMER_SCOPE("clr_start_transport_stream_op_batch", 0);
   if (calld->client_stats != nullptr) {
     // Intercept send_initial_metadata.

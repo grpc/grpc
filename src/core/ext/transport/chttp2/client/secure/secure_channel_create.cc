@@ -30,8 +30,8 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/security/transport/lb_targets_info.h"
-#include "src/core/lib/security/transport/security_connector.h"
 #include "src/core/lib/slice/slice_hash_table.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -63,9 +63,7 @@ static grpc_subchannel_args* get_secure_naming_subchannel_args(
   // To which address are we connecting? By default, use the server URI.
   const grpc_arg* server_uri_arg =
       grpc_channel_args_find(args->args, GRPC_ARG_SERVER_URI);
-  GPR_ASSERT(server_uri_arg != nullptr);
-  GPR_ASSERT(server_uri_arg->type == GRPC_ARG_STRING);
-  const char* server_uri_str = server_uri_arg->value.string;
+  const char* server_uri_str = grpc_channel_arg_get_string(server_uri_arg);
   GPR_ASSERT(server_uri_str != nullptr);
   grpc_uri* server_uri =
       grpc_uri_parse(server_uri_str, true /* supress errors */);
@@ -86,8 +84,8 @@ static grpc_subchannel_args* get_secure_naming_subchannel_args(
     if (target_uri->path[0] != '\0') {  // "path" may be empty
       const grpc_slice key = grpc_slice_from_static_string(
           target_uri->path[0] == '/' ? target_uri->path + 1 : target_uri->path);
-      const char* value =
-          (const char*)grpc_slice_hash_table_get(targets_info, key);
+      const char* value = static_cast<const char*>(
+          grpc_slice_hash_table_get(targets_info, key));
       if (value != nullptr) target_name_to_check = gpr_strdup(value);
       grpc_slice_unref_internal(key);
     }
@@ -129,7 +127,7 @@ static grpc_subchannel_args* get_secure_naming_subchannel_args(
     grpc_channel_args_destroy(new_args_from_connector);
   }
   grpc_subchannel_args* final_sc_args =
-      (grpc_subchannel_args*)gpr_malloc(sizeof(*final_sc_args));
+      static_cast<grpc_subchannel_args*>(gpr_malloc(sizeof(*final_sc_args)));
   memcpy(final_sc_args, args, sizeof(*args));
   final_sc_args->args = new_args;
   return final_sc_args;
@@ -148,7 +146,8 @@ static grpc_subchannel* client_channel_factory_create_subchannel(
   grpc_connector* connector = grpc_chttp2_connector_create();
   grpc_subchannel* s = grpc_subchannel_create(connector, subchannel_args);
   grpc_connector_unref(connector);
-  grpc_channel_args_destroy((grpc_channel_args*)subchannel_args->args);
+  grpc_channel_args_destroy(
+      const_cast<grpc_channel_args*>(subchannel_args->args));
   gpr_free(subchannel_args);
   return s;
 }

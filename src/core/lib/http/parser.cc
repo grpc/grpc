@@ -23,12 +23,13 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/useful.h>
+
+#include "src/core/lib/gpr/useful.h"
 
 grpc_core::TraceFlag grpc_http1_trace(false, "http1");
 
 static char* buf2str(void* buffer, size_t length) {
-  char* out = (char*)gpr_malloc(length + 1);
+  char* out = static_cast<char*>(gpr_malloc(length + 1));
   memcpy(out, buffer, length);
   out[length] = 0;
   return out;
@@ -87,14 +88,15 @@ static grpc_error* handle_request_line(grpc_http_parser* parser) {
   if (cur == end)
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "No method on HTTP request line");
-  parser->http.request->method = buf2str(beg, (size_t)(cur - beg - 1));
+  parser->http.request->method =
+      buf2str(beg, static_cast<size_t>(cur - beg - 1));
 
   beg = cur;
   while (cur != end && *cur++ != ' ')
     ;
   if (cur == end)
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No path on HTTP request line");
-  parser->http.request->path = buf2str(beg, (size_t)(cur - beg - 1));
+  parser->http.request->path = buf2str(beg, static_cast<size_t>(cur - beg - 1));
 
   if (cur == end || *cur++ != 'H')
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected 'H'");
@@ -106,12 +108,12 @@ static grpc_error* handle_request_line(grpc_http_parser* parser) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected 'P'");
   if (cur == end || *cur++ != '/')
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected '/'");
-  vers_major = (uint8_t)(*cur++ - '1' + 1);
+  vers_major = static_cast<uint8_t>(*cur++ - '1' + 1);
   ++cur;
   if (cur == end)
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "End of line in HTTP version string");
-  vers_minor = (uint8_t)(*cur++ - '1' + 1);
+  vers_minor = static_cast<uint8_t>(*cur++ - '1' + 1);
 
   if (vers_major == 1) {
     if (vers_minor == 0) {
@@ -174,14 +176,15 @@ static grpc_error* add_header(grpc_http_parser* parser) {
     goto done;
   }
   GPR_ASSERT(cur >= beg);
-  hdr.key = buf2str(beg, (size_t)(cur - beg));
+  hdr.key = buf2str(beg, static_cast<size_t>(cur - beg));
   cur++; /* skip : */
 
   while (cur != end && (*cur == ' ' || *cur == '\t')) {
     cur++;
   }
   GPR_ASSERT((size_t)(end - cur) >= parser->cur_line_end_length);
-  hdr.value = buf2str(cur, (size_t)(end - cur) - parser->cur_line_end_length);
+  hdr.value = buf2str(
+      cur, static_cast<size_t>(end - cur) - parser->cur_line_end_length);
 
   switch (parser->type) {
     case GRPC_HTTP_RESPONSE:
@@ -197,8 +200,8 @@ static grpc_error* add_header(grpc_http_parser* parser) {
   if (*hdr_count == parser->hdr_capacity) {
     parser->hdr_capacity =
         GPR_MAX(parser->hdr_capacity + 1, parser->hdr_capacity * 3 / 2);
-    *hdrs = (grpc_http_header*)gpr_realloc(
-        *hdrs, parser->hdr_capacity * sizeof(**hdrs));
+    *hdrs = static_cast<grpc_http_header*>(
+        gpr_realloc(*hdrs, parser->hdr_capacity * sizeof(**hdrs)));
   }
   (*hdrs)[(*hdr_count)++] = hdr;
 
@@ -256,9 +259,10 @@ static grpc_error* addbyte_body(grpc_http_parser* parser, uint8_t byte) {
 
   if (*body_length == parser->body_capacity) {
     parser->body_capacity = GPR_MAX(8, parser->body_capacity * 3 / 2);
-    *body = (char*)gpr_realloc((void*)*body, parser->body_capacity);
+    *body =
+        static_cast<char*>(gpr_realloc((void*)*body, parser->body_capacity));
   }
-  (*body)[*body_length] = (char)byte;
+  (*body)[*body_length] = static_cast<char>(byte);
   (*body_length)++;
 
   return GRPC_ERROR_NONE;

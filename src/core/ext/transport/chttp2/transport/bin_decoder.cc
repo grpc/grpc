@@ -57,7 +57,7 @@ static bool input_is_valid(uint8_t* input_ptr, size_t length) {
       gpr_log(GPR_ERROR,
               "Base64 decoding failed, invalid character '%c' in base64 "
               "input.\n",
-              (char)(*input_ptr));
+              static_cast<char>(*input_ptr));
       return false;
     }
   }
@@ -94,7 +94,7 @@ bool grpc_base64_decode_partial(struct grpc_base64_decode_context* ctx) {
   }
 
   // Process the tail of input data
-  input_tail = (size_t)(ctx->input_end - ctx->input_cur);
+  input_tail = static_cast<size_t>(ctx->input_end - ctx->input_cur);
   if (input_tail == 4) {
     // Process the input data with pad chars
     if (ctx->input_cur[3] == '=') {
@@ -141,7 +141,7 @@ grpc_slice grpc_chttp2_base64_decode(grpc_slice input) {
             "Base64 decoding failed, input of "
             "grpc_chttp2_base64_decode has a length of %d, which is not a "
             "multiple of 4.\n",
-            (int)input_length);
+            static_cast<int>(input_length));
     return grpc_empty_slice();
   }
 
@@ -186,17 +186,18 @@ grpc_slice grpc_chttp2_base64_decode_with_length(grpc_slice input,
             "Base64 decoding failed, input of "
             "grpc_chttp2_base64_decode_with_length has a length of %d, which "
             "has a tail of 1 byte.\n",
-            (int)input_length);
+            static_cast<int>(input_length));
     grpc_slice_unref_internal(output);
     return grpc_empty_slice();
   }
 
   if (output_length > input_length / 4 * 3 + tail_xtra[input_length % 4]) {
-    gpr_log(GPR_ERROR,
-            "Base64 decoding failed, output_length %d is longer "
-            "than the max possible output length %d.\n",
-            (int)output_length,
-            (int)(input_length / 4 * 3 + tail_xtra[input_length % 4]));
+    gpr_log(
+        GPR_ERROR,
+        "Base64 decoding failed, output_length %d is longer "
+        "than the max possible output length %d.\n",
+        static_cast<int>(output_length),
+        static_cast<int>(input_length / 4 * 3 + tail_xtra[input_length % 4]));
     grpc_slice_unref_internal(output);
     return grpc_empty_slice();
   }

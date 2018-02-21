@@ -25,7 +25,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include <grpc/support/useful.h>
+
 #include "test/core/end2end/cq_verifier.h"
 
 static void* tag(intptr_t t) { return (void*)t; }
@@ -91,9 +91,9 @@ static grpc_slice generate_random_slice() {
   static const char chars[] = "abcdefghijklmnopqrstuvwxyz1234567890";
   char* output;
   const size_t output_size = 1024 * 1024;
-  output = (char*)gpr_malloc(output_size);
+  output = static_cast<char*>(gpr_malloc(output_size));
   for (i = 0; i < output_size - 1; ++i) {
-    output[i] = chars[rand() % (int)(sizeof(chars) - 1)];
+    output[i] = chars[rand() % static_cast<int>(sizeof(chars) - 1)];
   }
   output[output_size - 1] = '\0';
   grpc_slice out = grpc_slice_from_copied_string(output);
@@ -132,25 +132,29 @@ void resource_quota_server(grpc_end2end_test_config config) {
   grpc_slice request_payload_slice = generate_random_slice();
 
   grpc_call** client_calls =
-      (grpc_call**)malloc(sizeof(grpc_call*) * NUM_CALLS);
+      static_cast<grpc_call**>(malloc(sizeof(grpc_call*) * NUM_CALLS));
   grpc_call** server_calls =
-      (grpc_call**)malloc(sizeof(grpc_call*) * NUM_CALLS);
+      static_cast<grpc_call**>(malloc(sizeof(grpc_call*) * NUM_CALLS));
   grpc_metadata_array* initial_metadata_recv =
-      (grpc_metadata_array*)malloc(sizeof(grpc_metadata_array) * NUM_CALLS);
+      static_cast<grpc_metadata_array*>(
+          malloc(sizeof(grpc_metadata_array) * NUM_CALLS));
   grpc_metadata_array* trailing_metadata_recv =
-      (grpc_metadata_array*)malloc(sizeof(grpc_metadata_array) * NUM_CALLS);
+      static_cast<grpc_metadata_array*>(
+          malloc(sizeof(grpc_metadata_array) * NUM_CALLS));
   grpc_metadata_array* request_metadata_recv =
-      (grpc_metadata_array*)malloc(sizeof(grpc_metadata_array) * NUM_CALLS);
-  grpc_call_details* call_details =
-      (grpc_call_details*)malloc(sizeof(grpc_call_details) * NUM_CALLS);
-  grpc_status_code* status =
-      (grpc_status_code*)malloc(sizeof(grpc_status_code) * NUM_CALLS);
-  grpc_slice* details = (grpc_slice*)malloc(sizeof(grpc_slice) * NUM_CALLS);
-  grpc_byte_buffer** request_payload =
-      (grpc_byte_buffer**)malloc(sizeof(grpc_byte_buffer*) * NUM_CALLS);
-  grpc_byte_buffer** request_payload_recv =
-      (grpc_byte_buffer**)malloc(sizeof(grpc_byte_buffer*) * NUM_CALLS);
-  int* was_cancelled = (int*)malloc(sizeof(int) * NUM_CALLS);
+      static_cast<grpc_metadata_array*>(
+          malloc(sizeof(grpc_metadata_array) * NUM_CALLS));
+  grpc_call_details* call_details = static_cast<grpc_call_details*>(
+      malloc(sizeof(grpc_call_details) * NUM_CALLS));
+  grpc_status_code* status = static_cast<grpc_status_code*>(
+      malloc(sizeof(grpc_status_code) * NUM_CALLS));
+  grpc_slice* details =
+      static_cast<grpc_slice*>(malloc(sizeof(grpc_slice) * NUM_CALLS));
+  grpc_byte_buffer** request_payload = static_cast<grpc_byte_buffer**>(
+      malloc(sizeof(grpc_byte_buffer*) * NUM_CALLS));
+  grpc_byte_buffer** request_payload_recv = static_cast<grpc_byte_buffer**>(
+      malloc(sizeof(grpc_byte_buffer*) * NUM_CALLS));
+  int* was_cancelled = static_cast<int*>(malloc(sizeof(int) * NUM_CALLS));
   grpc_call_error error;
   int pending_client_calls = 0;
   int pending_server_start_calls = 0;
@@ -220,7 +224,8 @@ void resource_quota_server(grpc_end2end_test_config config) {
     op->flags = 0;
     op->reserved = nullptr;
     op++;
-    error = grpc_call_start_batch(client_calls[i], ops, (size_t)(op - ops),
+    error = grpc_call_start_batch(client_calls[i], ops,
+                                  static_cast<size_t>(op - ops),
                                   tag(CLIENT_BASE_TAG + i), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
@@ -234,7 +239,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
         grpc_completion_queue_next(f.cq, n_seconds_from_now(60), nullptr);
     GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
 
-    int ev_tag = (int)(intptr_t)ev.tag;
+    int ev_tag = static_cast<int>((intptr_t)ev.tag);
     if (ev_tag < CLIENT_BASE_TAG) {
       abort(); /* illegal tag */
     } else if (ev_tag < SERVER_START_BASE_TAG) {
@@ -285,9 +290,9 @@ void resource_quota_server(grpc_end2end_test_config config) {
       op->flags = 0;
       op->reserved = nullptr;
       op++;
-      error =
-          grpc_call_start_batch(server_calls[call_id], ops, (size_t)(op - ops),
-                                tag(SERVER_RECV_BASE_TAG + call_id), nullptr);
+      error = grpc_call_start_batch(
+          server_calls[call_id], ops, static_cast<size_t>(op - ops),
+          tag(SERVER_RECV_BASE_TAG + call_id), nullptr);
       GPR_ASSERT(GRPC_CALL_OK == error);
 
       GPR_ASSERT(pending_server_start_calls > 0);
@@ -326,9 +331,9 @@ void resource_quota_server(grpc_end2end_test_config config) {
       op->flags = 0;
       op->reserved = nullptr;
       op++;
-      error =
-          grpc_call_start_batch(server_calls[call_id], ops, (size_t)(op - ops),
-                                tag(SERVER_END_BASE_TAG + call_id), nullptr);
+      error = grpc_call_start_batch(
+          server_calls[call_id], ops, static_cast<size_t>(op - ops),
+          tag(SERVER_END_BASE_TAG + call_id), nullptr);
       GPR_ASSERT(GRPC_CALL_OK == error);
 
       GPR_ASSERT(pending_server_recv_calls > 0);

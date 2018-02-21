@@ -23,8 +23,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/thd.h>
-#include <grpc/support/useful.h>
+
 #include <grpc/support/workaround_list.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
@@ -32,6 +31,7 @@
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/gpr/host_port.h"
+#include "src/core/lib/gpr/thd.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
 #include "test/core/util/port.h"

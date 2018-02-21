@@ -33,13 +33,12 @@
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/avl.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/thd.h>
+#include <grpc/support/thd_id.h>
 #include <grpc/support/time.h>
 
 typedef int(*grpc_compression_algorithm_is_message_type)(grpc_compression_algorithm algorithm);
@@ -573,30 +572,6 @@ extern gpr_set_allocation_functions_type gpr_set_allocation_functions_import;
 typedef gpr_allocation_functions(*gpr_get_allocation_functions_type)(void);
 extern gpr_get_allocation_functions_type gpr_get_allocation_functions_import;
 #define gpr_get_allocation_functions gpr_get_allocation_functions_import
-typedef gpr_avl(*gpr_avl_create_type)(const gpr_avl_vtable* vtable);
-extern gpr_avl_create_type gpr_avl_create_import;
-#define gpr_avl_create gpr_avl_create_import
-typedef gpr_avl(*gpr_avl_ref_type)(gpr_avl avl, void* user_data);
-extern gpr_avl_ref_type gpr_avl_ref_import;
-#define gpr_avl_ref gpr_avl_ref_import
-typedef void(*gpr_avl_unref_type)(gpr_avl avl, void* user_data);
-extern gpr_avl_unref_type gpr_avl_unref_import;
-#define gpr_avl_unref gpr_avl_unref_import
-typedef gpr_avl(*gpr_avl_add_type)(gpr_avl avl, void* key, void* value, void* user_data);
-extern gpr_avl_add_type gpr_avl_add_import;
-#define gpr_avl_add gpr_avl_add_import
-typedef gpr_avl(*gpr_avl_remove_type)(gpr_avl avl, void* key, void* user_data);
-extern gpr_avl_remove_type gpr_avl_remove_import;
-#define gpr_avl_remove gpr_avl_remove_import
-typedef void*(*gpr_avl_get_type)(gpr_avl avl, void* key, void* user_data);
-extern gpr_avl_get_type gpr_avl_get_import;
-#define gpr_avl_get gpr_avl_get_import
-typedef int(*gpr_avl_maybe_get_type)(gpr_avl avl, void* key, void** value, void* user_data);
-extern gpr_avl_maybe_get_type gpr_avl_maybe_get_import;
-#define gpr_avl_maybe_get gpr_avl_maybe_get_import
-typedef int(*gpr_avl_is_empty_type)(gpr_avl avl);
-extern gpr_avl_is_empty_type gpr_avl_is_empty_import;
-#define gpr_avl_is_empty gpr_avl_is_empty_import
 typedef unsigned(*gpr_cpu_num_cores_type)(void);
 extern gpr_cpu_num_cores_type gpr_cpu_num_cores_import;
 #define gpr_cpu_num_cores gpr_cpu_num_cores_import
@@ -702,30 +677,9 @@ extern gpr_stats_inc_type gpr_stats_inc_import;
 typedef intptr_t(*gpr_stats_read_type)(const gpr_stats_counter* c);
 extern gpr_stats_read_type gpr_stats_read_import;
 #define gpr_stats_read gpr_stats_read_import
-typedef int(*gpr_thd_new_type)(gpr_thd_id* t, const char* thd_name, void (*thd_body)(void* arg), void* arg, const gpr_thd_options* options);
-extern gpr_thd_new_type gpr_thd_new_import;
-#define gpr_thd_new gpr_thd_new_import
-typedef gpr_thd_options(*gpr_thd_options_default_type)(void);
-extern gpr_thd_options_default_type gpr_thd_options_default_import;
-#define gpr_thd_options_default gpr_thd_options_default_import
-typedef void(*gpr_thd_options_set_detached_type)(gpr_thd_options* options);
-extern gpr_thd_options_set_detached_type gpr_thd_options_set_detached_import;
-#define gpr_thd_options_set_detached gpr_thd_options_set_detached_import
-typedef void(*gpr_thd_options_set_joinable_type)(gpr_thd_options* options);
-extern gpr_thd_options_set_joinable_type gpr_thd_options_set_joinable_import;
-#define gpr_thd_options_set_joinable gpr_thd_options_set_joinable_import
-typedef int(*gpr_thd_options_is_detached_type)(const gpr_thd_options* options);
-extern gpr_thd_options_is_detached_type gpr_thd_options_is_detached_import;
-#define gpr_thd_options_is_detached gpr_thd_options_is_detached_import
-typedef int(*gpr_thd_options_is_joinable_type)(const gpr_thd_options* options);
-extern gpr_thd_options_is_joinable_type gpr_thd_options_is_joinable_import;
-#define gpr_thd_options_is_joinable gpr_thd_options_is_joinable_import
 typedef gpr_thd_id(*gpr_thd_currentid_type)(void);
 extern gpr_thd_currentid_type gpr_thd_currentid_import;
 #define gpr_thd_currentid gpr_thd_currentid_import
-typedef void(*gpr_thd_join_type)(gpr_thd_id t);
-extern gpr_thd_join_type gpr_thd_join_import;
-#define gpr_thd_join gpr_thd_join_import
 typedef gpr_timespec(*gpr_time_0_type)(gpr_clock_type type);
 extern gpr_time_0_type gpr_time_0_import;
 #define gpr_time_0 gpr_time_0_import

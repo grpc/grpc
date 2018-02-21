@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2018 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,46 +16,13 @@
  *
  */
 
+// DEPRECATED: The headers in include/grpc++ are deprecated. Please include the
+// headers in include/grpcpp instead. This header exists only for backwards
+// compatibility.
+
 #ifndef GRPCXX_IMPL_CODEGEN_RPC_METHOD_H
 #define GRPCXX_IMPL_CODEGEN_RPC_METHOD_H
 
-#include <memory>
-
-#include <grpc++/impl/codegen/channel_interface.h>
-
-namespace grpc {
-namespace internal {
-/// Descriptor of an RPC method
-class RpcMethod {
- public:
-  enum RpcType {
-    NORMAL_RPC = 0,
-    CLIENT_STREAMING,  // request streaming
-    SERVER_STREAMING,  // response streaming
-    BIDI_STREAMING
-  };
-
-  RpcMethod(const char* name, RpcType type)
-      : name_(name), method_type_(type), channel_tag_(NULL) {}
-
-  RpcMethod(const char* name, RpcType type,
-            const std::shared_ptr<ChannelInterface>& channel)
-      : name_(name),
-        method_type_(type),
-        channel_tag_(channel->RegisterMethod(name)) {}
-
-  const char* name() const { return name_; }
-  RpcType method_type() const { return method_type_; }
-  void SetMethodType(RpcType type) { method_type_ = type; }
-  void* channel_tag() const { return channel_tag_; }
-
- private:
-  const char* const name_;
-  RpcType method_type_;
-  void* const channel_tag_;
-};
-
-}  // namespace internal
-}  // namespace grpc
+#include <grpcpp/impl/codegen/rpc_method.h>
 
 #endif  // GRPCXX_IMPL_CODEGEN_RPC_METHOD_H

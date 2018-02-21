@@ -25,12 +25,12 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <stdio.h>
 #include <string.h>
 
 #include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/thd.h"
 
 typedef enum { BEGIN = '{', END = '}', MARK = '.' } marker_type;
 

@@ -42,14 +42,14 @@ typedef struct {
 
 static void* refcounted_message_size_limits_ref(void* value) {
   refcounted_message_size_limits* limits =
-      (refcounted_message_size_limits*)value;
+      static_cast<refcounted_message_size_limits*>(value);
   gpr_ref(&limits->refs);
   return value;
 }
 
 static void refcounted_message_size_limits_unref(void* value) {
   refcounted_message_size_limits* limits =
-      (refcounted_message_size_limits*)value;
+      static_cast<refcounted_message_size_limits*>(value);
   if (gpr_unref(&limits->refs)) {
     gpr_free(value);
   }
@@ -78,8 +78,8 @@ static void* refcounted_message_size_limits_create_from_json(
     }
   }
   refcounted_message_size_limits* value =
-      (refcounted_message_size_limits*)gpr_malloc(
-          sizeof(refcounted_message_size_limits));
+      static_cast<refcounted_message_size_limits*>(
+          gpr_malloc(sizeof(refcounted_message_size_limits)));
   gpr_ref_init(&value->refs, 1);
   value->limits.max_send_size = max_request_message_bytes;
   value->limits.max_recv_size = max_response_message_bytes;
@@ -110,10 +110,11 @@ struct channel_data {
 // Callback invoked when we receive a message.  Here we check the max
 // receive message size.
 static void recv_message_ready(void* user_data, grpc_error* error) {
-  grpc_call_element* elem = (grpc_call_element*)user_data;
-  call_data* calld = (call_data*)elem->call_data;
+  grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
+  call_data* calld = static_cast<call_data*>(elem->call_data);
   if (*calld->recv_message != nullptr && calld->limits.max_recv_size >= 0 &&
-      (*calld->recv_message)->length > (size_t)calld->limits.max_recv_size) {
+      (*calld->recv_message)->length >
+          static_cast<size_t>(calld->limits.max_recv_size)) {
     char* message_string;
     gpr_asprintf(&message_string,
                  "Received message larger than max (%u vs. %d)",
@@ -138,11 +139,11 @@ static void recv_message_ready(void* user_data, grpc_error* error) {
 // Start transport stream op.
 static void start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
-  call_data* calld = (call_data*)elem->call_data;
+  call_data* calld = static_cast<call_data*>(elem->call_data);
   // Check max send message size.
   if (op->send_message && calld->limits.max_send_size >= 0 &&
       op->payload->send_message.send_message->length >
-          (size_t)calld->limits.max_send_size) {
+          static_cast<size_t>(calld->limits.max_send_size)) {
     char* message_string;
     gpr_asprintf(&message_string, "Sent message larger than max (%u vs. %d)",
                  op->payload->send_message.send_message->length,
@@ -170,8 +171,8 @@ static void start_transport_stream_op_batch(
 // Constructor for call_data.
 static grpc_error* init_call_elem(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
-  channel_data* chand = (channel_data*)elem->channel_data;
-  call_data* calld = (call_data*)elem->call_data;
+  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
+  call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->call_combiner = args->call_combiner;
   calld->next_recv_message_ready = nullptr;
   GRPC_CLOSURE_INIT(&calld->recv_message_ready, recv_message_ready, elem,
@@ -183,8 +184,9 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
   calld->limits = chand->limits;
   if (chand->method_limit_table != nullptr) {
     refcounted_message_size_limits* limits =
-        (refcounted_message_size_limits*)grpc_method_config_table_get(
-            chand->method_limit_table, args->path);
+        static_cast<refcounted_message_size_limits*>(
+            grpc_method_config_table_get(chand->method_limit_table,
+                                         args->path));
     if (limits != nullptr) {
       if (limits->limits.max_send_size >= 0 &&
           (limits->limits.max_send_size < calld->limits.max_send_size ||
@@ -242,15 +244,15 @@ message_size_limits get_message_size_limits(
 static grpc_error* init_channel_elem(grpc_channel_element* elem,
                                      grpc_channel_element_args* args) {
   GPR_ASSERT(!args->is_last);
-  channel_data* chand = (channel_data*)elem->channel_data;
+  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   chand->limits = get_message_size_limits(args->channel_args);
   // Get method config table from channel args.
   const grpc_arg* channel_arg =
       grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVICE_CONFIG);
-  if (channel_arg != nullptr) {
-    GPR_ASSERT(channel_arg->type == GRPC_ARG_STRING);
+  const char* service_config_str = grpc_channel_arg_get_string(channel_arg);
+  if (service_config_str != nullptr) {
     grpc_service_config* service_config =
-        grpc_service_config_create(channel_arg->value.string);
+        grpc_service_config_create(service_config_str);
     if (service_config != nullptr) {
       chand->method_limit_table =
           grpc_service_config_create_method_config_table(
@@ -265,7 +267,7 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
 
 // Destructor for channel_data.
 static void destroy_channel_elem(grpc_channel_element* elem) {
-  channel_data* chand = (channel_data*)elem->channel_data;
+  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   grpc_slice_hash_table_unref(chand->method_limit_table);
 }
 

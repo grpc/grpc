@@ -27,10 +27,10 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/useful.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
 #include "src/core/lib/iomgr/ev_epollex_linux.h"
 #include "src/core/lib/iomgr/ev_epollsig_linux.h"
@@ -108,11 +108,11 @@ static void add(const char* beg, const char* end, char*** ss, size_t* ns) {
   char* s;
   size_t len;
   GPR_ASSERT(end >= beg);
-  len = (size_t)(end - beg);
-  s = (char*)gpr_malloc(len + 1);
+  len = static_cast<size_t>(end - beg);
+  s = static_cast<char*>(gpr_malloc(len + 1));
   memcpy(s, beg, len);
   s[len] = 0;
-  *ss = (char**)gpr_realloc(*ss, sizeof(char**) * np);
+  *ss = static_cast<char**>(gpr_realloc(*ss, sizeof(char**) * np));
   (*ss)[n] = s;
   *ns = np;
 }

@@ -21,7 +21,7 @@
 
 #include <memory>
 
-#include <grpc++/security/server_credentials.h>
+#include <grpcpp/security/server_credentials.h>
 
 #include <grpc/grpc_security.h>
 

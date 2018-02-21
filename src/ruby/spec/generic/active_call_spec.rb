@@ -48,7 +48,8 @@ describe GRPC::ActiveCall do
   end
 
   after(:each) do
-    @server.close(deadline)
+    @server.shutdown_and_notify(deadline)
+    @server.close
   end
 
   describe 'restricted view methods' do

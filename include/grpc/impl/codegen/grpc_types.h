@@ -119,8 +119,13 @@ typedef struct {
     These configuration options are modelled as key-value pairs as defined
     by grpc_arg; keys are strings to allow easy backwards-compatible extension
     by arbitrary parties. All evaluation is performed at channel creation
-    time (i.e. the values in this structure need only live through the
+    time (i.e. the keys and values in this structure need only live through the
     creation invocation).
+
+    However, if one of the args has grpc_arg_type==GRPC_ARG_POINTER, then the
+    grpc_arg_pointer_vtable must live until the channel args are done being
+    used by core (i.e. when the object for use with which they were passed
+    is destroyed).
 
     See the description of the \ref grpc_arg_keys "available args" for more
     details. */
@@ -296,7 +301,7 @@ typedef struct {
 #define GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS "grpc.grpclb_call_timeout_ms"
 /* Timeout in milliseconds to wait for the serverlist from the grpclb load
    balancer before using fallback backend addresses from the resolver.
-   If 0, fallback will never be used. */
+   If 0, fallback will never be used. Default value is 10000. */
 #define GRPC_ARG_GRPCLB_FALLBACK_TIMEOUT_MS "grpc.grpclb_fallback_timeout_ms"
 /** If non-zero, grpc server's cronet compression workaround will be enabled */
 #define GRPC_ARG_WORKAROUND_CRONET_COMPRESSION \

@@ -26,13 +26,13 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/useful.h>
 
 #ifdef GPR_WINDOWS
 #include <grpc/support/log_windows.h>
 #endif
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/error_internal.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -148,7 +148,8 @@ grpc_error* grpc_error_ref(grpc_error* err) {
 static void unref_errs(grpc_error* err) {
   uint8_t slot = err->first_err;
   while (slot != UINT8_MAX) {
-    grpc_linked_error* lerr = (grpc_linked_error*)(err->arena + slot);
+    grpc_linked_error* lerr =
+        reinterpret_cast<grpc_linked_error*>(err->arena + slot);
     GRPC_ERROR_UNREF(lerr->err);
     GPR_ASSERT(err->last_err == slot ? lerr->next == UINT8_MAX
                                      : lerr->next != UINT8_MAX);
@@ -162,7 +163,7 @@ static void unref_strs(grpc_error* err) {
   for (size_t which = 0; which < GRPC_ERROR_STR_MAX; ++which) {
     uint8_t slot = err->strs[which];
     if (slot != UINT8_MAX) {
-      unref_slice(*(grpc_slice*)(err->arena + slot));
+      unref_slice(*reinterpret_cast<grpc_slice*>(err->arena + slot));
     }
   }
 }
@@ -198,18 +199,18 @@ void grpc_error_unref(grpc_error* err) {
 
 static uint8_t get_placement(grpc_error** err, size_t size) {
   GPR_ASSERT(*err);
-  uint8_t slots = (uint8_t)(size / sizeof(intptr_t));
+  uint8_t slots = static_cast<uint8_t>(size / sizeof(intptr_t));
   if ((*err)->arena_size + slots > (*err)->arena_capacity) {
-    (*err)->arena_capacity =
-        (uint8_t)GPR_MIN(UINT8_MAX - 1, (3 * (*err)->arena_capacity / 2));
+    (*err)->arena_capacity = static_cast<uint8_t> GPR_MIN(
+        UINT8_MAX - 1, (3 * (*err)->arena_capacity / 2));
     if ((*err)->arena_size + slots > (*err)->arena_capacity) {
       return UINT8_MAX;
     }
 #ifndef NDEBUG
     grpc_error* orig = *err;
 #endif
-    *err = (grpc_error*)gpr_realloc(
-        *err, sizeof(grpc_error) + (*err)->arena_capacity * sizeof(intptr_t));
+    *err = static_cast<grpc_error*>(gpr_realloc(
+        *err, sizeof(grpc_error) + (*err)->arena_capacity * sizeof(intptr_t)));
 #ifndef NDEBUG
     if (grpc_trace_error_refcount.enabled()) {
       if (*err != orig) {
@@ -219,7 +220,7 @@ static uint8_t get_placement(grpc_error** err, size_t size) {
 #endif
   }
   uint8_t placement = (*err)->arena_size;
-  (*err)->arena_size = (uint8_t)((*err)->arena_size + slots);
+  (*err)->arena_size = static_cast<uint8_t>((*err)->arena_size + slots);
   return placement;
 }
 
@@ -251,7 +252,7 @@ static void internal_set_str(grpc_error** err, grpc_error_strs which,
       return;
     }
   } else {
-    unref_slice(*(grpc_slice*)((*err)->arena + slot));
+    unref_slice(*reinterpret_cast<grpc_slice*>((*err)->arena + slot));
   }
   (*err)->strs[which] = slot;
   memcpy((*err)->arena + slot, &value, sizeof(value));
@@ -291,7 +292,7 @@ static void internal_add_error(grpc_error** err, grpc_error* new_err) {
   } else {
     GPR_ASSERT((*err)->last_err != UINT8_MAX);
     grpc_linked_error* old_last =
-        (grpc_linked_error*)((*err)->arena + (*err)->last_err);
+        reinterpret_cast<grpc_linked_error*>((*err)->arena + (*err)->last_err);
     old_last->next = slot;
     (*err)->last_err = slot;
   }
@@ -315,11 +316,12 @@ grpc_error* grpc_error_create(const char* file, int line, grpc_slice desc,
                               grpc_error** referencing,
                               size_t num_referencing) {
   GPR_TIMER_SCOPE("grpc_error_create", 0);
-  uint8_t initial_arena_capacity = (uint8_t)(
+  uint8_t initial_arena_capacity = static_cast<uint8_t>(
       DEFAULT_ERROR_CAPACITY +
-      (uint8_t)(num_referencing * SLOTS_PER_LINKED_ERROR) + SURPLUS_CAPACITY);
-  grpc_error* err = (grpc_error*)gpr_malloc(
-      sizeof(*err) + initial_arena_capacity * sizeof(intptr_t));
+      static_cast<uint8_t>(num_referencing * SLOTS_PER_LINKED_ERROR) +
+      SURPLUS_CAPACITY);
+  grpc_error* err = static_cast<grpc_error*>(
+      gpr_malloc(sizeof(*err) + initial_arena_capacity * sizeof(intptr_t)));
   if (err == nullptr) {  // TODO(ctiller): make gpr_malloc return NULL
     return GRPC_ERROR_OOM;
   }
@@ -362,7 +364,8 @@ static void ref_strs(grpc_error* err) {
   for (size_t i = 0; i < GRPC_ERROR_STR_MAX; ++i) {
     uint8_t slot = err->strs[i];
     if (slot != UINT8_MAX) {
-      grpc_slice_ref_internal(*(grpc_slice*)(err->arena + slot));
+      grpc_slice_ref_internal(
+          *reinterpret_cast<grpc_slice*>(err->arena + slot));
     }
   }
 }
@@ -370,7 +373,8 @@ static void ref_strs(grpc_error* err) {
 static void ref_errs(grpc_error* err) {
   uint8_t slot = err->first_err;
   while (slot != UINT8_MAX) {
-    grpc_linked_error* lerr = (grpc_linked_error*)(err->arena + slot);
+    grpc_linked_error* lerr =
+        reinterpret_cast<grpc_linked_error*>(err->arena + slot);
     GRPC_ERROR_REF(lerr->err);
     slot = lerr->next;
   }
@@ -399,11 +403,12 @@ static grpc_error* copy_error_and_unref(grpc_error* in) {
     uint8_t new_arena_capacity = in->arena_capacity;
     // the returned err will be added to, so we ensure this is room to avoid
     // unneeded allocations.
-    if (in->arena_capacity - in->arena_size < (uint8_t)SLOTS_PER_STR) {
-      new_arena_capacity = (uint8_t)(3 * new_arena_capacity / 2);
+    if (in->arena_capacity - in->arena_size <
+        static_cast<uint8_t> SLOTS_PER_STR) {
+      new_arena_capacity = static_cast<uint8_t>(3 * new_arena_capacity / 2);
     }
-    out = (grpc_error*)gpr_malloc(sizeof(*in) +
-                                  new_arena_capacity * sizeof(intptr_t));
+    out = static_cast<grpc_error*>(
+        gpr_malloc(sizeof(*in) + new_arena_capacity * sizeof(intptr_t)));
 #ifndef NDEBUG
     if (grpc_trace_error_refcount.enabled()) {
       gpr_log(GPR_DEBUG, "%p create copying %p", out, in);
@@ -487,7 +492,7 @@ bool grpc_error_get_str(grpc_error* err, grpc_error_strs which,
   }
   uint8_t slot = err->strs[which];
   if (slot != UINT8_MAX) {
-    *str = *(grpc_slice*)(err->arena + slot);
+    *str = *reinterpret_cast<grpc_slice*>(err->arena + slot);
     return true;
   } else {
     return false;
@@ -519,7 +524,7 @@ typedef struct {
 static void append_chr(char c, char** s, size_t* sz, size_t* cap) {
   if (*sz == *cap) {
     *cap = GPR_MAX(8, 3 * *cap / 2);
-    *s = (char*)gpr_realloc(*s, *cap);
+    *s = static_cast<char*>(gpr_realloc(*s, *cap));
   }
   (*s)[(*sz)++] = c;
 }
@@ -562,7 +567,7 @@ static void append_esc_str(const uint8_t* str, size_t len, char** s, size_t* sz,
           break;
       }
     } else {
-      append_chr((char)*str, s, sz, cap);
+      append_chr(static_cast<char>(*str), s, sz, cap);
     }
   }
   append_chr('"', s, sz, cap);
@@ -571,8 +576,8 @@ static void append_esc_str(const uint8_t* str, size_t len, char** s, size_t* sz,
 static void append_kv(kv_pairs* kvs, char* key, char* value) {
   if (kvs->num_kvs == kvs->cap_kvs) {
     kvs->cap_kvs = GPR_MAX(3 * kvs->cap_kvs / 2, 4);
-    kvs->kvs =
-        (kv_pair*)gpr_realloc(kvs->kvs, sizeof(*kvs->kvs) * kvs->cap_kvs);
+    kvs->kvs = static_cast<kv_pair*>(
+        gpr_realloc(kvs->kvs, sizeof(*kvs->kvs) * kvs->cap_kvs));
   }
   kvs->kvs[kvs->num_kvs].key = key;
   kvs->kvs[kvs->num_kvs].value = value;
@@ -593,7 +598,7 @@ static void collect_ints_kvs(grpc_error* err, kv_pairs* kvs) {
   for (size_t which = 0; which < GRPC_ERROR_INT_MAX; ++which) {
     uint8_t slot = err->ints[which];
     if (slot != UINT8_MAX) {
-      append_kv(kvs, key_int((grpc_error_ints)which),
+      append_kv(kvs, key_int(static_cast<grpc_error_ints>(which)),
                 fmt_int(err->arena[slot]));
     }
   }
@@ -617,8 +622,8 @@ static void collect_strs_kvs(grpc_error* err, kv_pairs* kvs) {
   for (size_t which = 0; which < GRPC_ERROR_STR_MAX; ++which) {
     uint8_t slot = err->strs[which];
     if (slot != UINT8_MAX) {
-      append_kv(kvs, key_str((grpc_error_strs)which),
-                fmt_str(*(grpc_slice*)(err->arena + slot)));
+      append_kv(kvs, key_str(static_cast<grpc_error_strs>(which)),
+                fmt_str(*reinterpret_cast<grpc_slice*>(err->arena + slot)));
     }
   }
 }
@@ -652,8 +657,8 @@ static void collect_times_kvs(grpc_error* err, kv_pairs* kvs) {
   for (size_t which = 0; which < GRPC_ERROR_TIME_MAX; ++which) {
     uint8_t slot = err->times[which];
     if (slot != UINT8_MAX) {
-      append_kv(kvs, key_time((grpc_error_times)which),
-                fmt_time(*(gpr_timespec*)(err->arena + slot)));
+      append_kv(kvs, key_time(static_cast<grpc_error_times>(which)),
+                fmt_time(*reinterpret_cast<gpr_timespec*>(err->arena + slot)));
     }
   }
 }
@@ -662,7 +667,8 @@ static void add_errs(grpc_error* err, char** s, size_t* sz, size_t* cap) {
   uint8_t slot = err->first_err;
   bool first = true;
   while (slot != UINT8_MAX) {
-    grpc_linked_error* lerr = (grpc_linked_error*)(err->arena + slot);
+    grpc_linked_error* lerr =
+        reinterpret_cast<grpc_linked_error*>(err->arena + slot);
     if (!first) append_chr(',', s, sz, cap);
     first = false;
     const char* e = grpc_error_string(lerr->err);
@@ -685,8 +691,8 @@ static char* errs_string(grpc_error* err) {
 }
 
 static int cmp_kvs(const void* a, const void* b) {
-  const kv_pair* ka = (const kv_pair*)a;
-  const kv_pair* kb = (const kv_pair*)b;
+  const kv_pair* ka = static_cast<const kv_pair*>(a);
+  const kv_pair* kb = static_cast<const kv_pair*>(b);
   return strcmp(ka->key, kb->key);
 }
 
@@ -698,8 +704,8 @@ static char* finish_kvs(kv_pairs* kvs) {
   append_chr('{', &s, &sz, &cap);
   for (size_t i = 0; i < kvs->num_kvs; i++) {
     if (i != 0) append_chr(',', &s, &sz, &cap);
-    append_esc_str((const uint8_t*)kvs->kvs[i].key, strlen(kvs->kvs[i].key), &s,
-                   &sz, &cap);
+    append_esc_str(reinterpret_cast<const uint8_t*>(kvs->kvs[i].key),
+                   strlen(kvs->kvs[i].key), &s, &sz, &cap);
     gpr_free(kvs->kvs[i].key);
     append_chr(':', &s, &sz, &cap);
     append_str(kvs->kvs[i].value, &s, &sz, &cap);
@@ -720,7 +726,7 @@ const char* grpc_error_string(grpc_error* err) {
 
   void* p = (void*)gpr_atm_acq_load(&err->atomics.error_string);
   if (p != nullptr) {
-    return (const char*)p;
+    return static_cast<const char*>(p);
   }
 
   kv_pairs kvs;

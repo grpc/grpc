@@ -960,6 +960,7 @@ alloc_test: $(BINDIR)/$(CONFIG)/alloc_test
 alpn_test: $(BINDIR)/$(CONFIG)/alpn_test
 api_fuzzer: $(BINDIR)/$(CONFIG)/api_fuzzer
 arena_test: $(BINDIR)/$(CONFIG)/arena_test
+avl_test: $(BINDIR)/$(CONFIG)/avl_test
 bad_server_response_test: $(BINDIR)/$(CONFIG)/bad_server_response_test
 bin_decoder_test: $(BINDIR)/$(CONFIG)/bin_decoder_test
 bin_encoder_test: $(BINDIR)/$(CONFIG)/bin_encoder_test
@@ -991,7 +992,6 @@ fling_server: $(BINDIR)/$(CONFIG)/fling_server
 fling_stream_test: $(BINDIR)/$(CONFIG)/fling_stream_test
 fling_test: $(BINDIR)/$(CONFIG)/fling_test
 goaway_server_test: $(BINDIR)/$(CONFIG)/goaway_server_test
-gpr_avl_test: $(BINDIR)/$(CONFIG)/gpr_avl_test
 gpr_cpu_test: $(BINDIR)/$(CONFIG)/gpr_cpu_test
 gpr_env_test: $(BINDIR)/$(CONFIG)/gpr_env_test
 gpr_host_port_test: $(BINDIR)/$(CONFIG)/gpr_host_port_test
@@ -1150,7 +1150,6 @@ grpc_ruby_plugin: $(BINDIR)/$(CONFIG)/grpc_ruby_plugin
 grpc_tool_test: $(BINDIR)/$(CONFIG)/grpc_tool_test
 grpclb_api_test: $(BINDIR)/$(CONFIG)/grpclb_api_test
 grpclb_end2end_test: $(BINDIR)/$(CONFIG)/grpclb_end2end_test
-grpclb_test: $(BINDIR)/$(CONFIG)/grpclb_test
 h2_ssl_cert_test: $(BINDIR)/$(CONFIG)/h2_ssl_cert_test
 health_service_end2end_test: $(BINDIR)/$(CONFIG)/health_service_end2end_test
 http2_client: $(BINDIR)/$(CONFIG)/http2_client
@@ -1164,6 +1163,7 @@ json_run_localhost: $(BINDIR)/$(CONFIG)/json_run_localhost
 memory_test: $(BINDIR)/$(CONFIG)/memory_test
 metrics_client: $(BINDIR)/$(CONFIG)/metrics_client
 mock_test: $(BINDIR)/$(CONFIG)/mock_test
+nonblocking_test: $(BINDIR)/$(CONFIG)/nonblocking_test
 noop-benchmark: $(BINDIR)/$(CONFIG)/noop-benchmark
 orphanable_test: $(BINDIR)/$(CONFIG)/orphanable_test
 proto_server_reflection_test: $(BINDIR)/$(CONFIG)/proto_server_reflection_test
@@ -1379,6 +1379,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/alloc_test \
   $(BINDIR)/$(CONFIG)/alpn_test \
   $(BINDIR)/$(CONFIG)/arena_test \
+  $(BINDIR)/$(CONFIG)/avl_test \
   $(BINDIR)/$(CONFIG)/bad_server_response_test \
   $(BINDIR)/$(CONFIG)/bin_decoder_test \
   $(BINDIR)/$(CONFIG)/bin_encoder_test \
@@ -1408,7 +1409,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/fling_stream_test \
   $(BINDIR)/$(CONFIG)/fling_test \
   $(BINDIR)/$(CONFIG)/goaway_server_test \
-  $(BINDIR)/$(CONFIG)/gpr_avl_test \
   $(BINDIR)/$(CONFIG)/gpr_cpu_test \
   $(BINDIR)/$(CONFIG)/gpr_env_test \
   $(BINDIR)/$(CONFIG)/gpr_host_port_test \
@@ -1610,7 +1610,6 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/grpc_tool_test \
   $(BINDIR)/$(CONFIG)/grpclb_api_test \
   $(BINDIR)/$(CONFIG)/grpclb_end2end_test \
-  $(BINDIR)/$(CONFIG)/grpclb_test \
   $(BINDIR)/$(CONFIG)/h2_ssl_cert_test \
   $(BINDIR)/$(CONFIG)/health_service_end2end_test \
   $(BINDIR)/$(CONFIG)/http2_client \
@@ -1624,6 +1623,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/memory_test \
   $(BINDIR)/$(CONFIG)/metrics_client \
   $(BINDIR)/$(CONFIG)/mock_test \
+  $(BINDIR)/$(CONFIG)/nonblocking_test \
   $(BINDIR)/$(CONFIG)/noop-benchmark \
   $(BINDIR)/$(CONFIG)/orphanable_test \
   $(BINDIR)/$(CONFIG)/proto_server_reflection_test \
@@ -1756,7 +1756,6 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/grpc_tool_test \
   $(BINDIR)/$(CONFIG)/grpclb_api_test \
   $(BINDIR)/$(CONFIG)/grpclb_end2end_test \
-  $(BINDIR)/$(CONFIG)/grpclb_test \
   $(BINDIR)/$(CONFIG)/h2_ssl_cert_test \
   $(BINDIR)/$(CONFIG)/health_service_end2end_test \
   $(BINDIR)/$(CONFIG)/http2_client \
@@ -1770,6 +1769,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/memory_test \
   $(BINDIR)/$(CONFIG)/metrics_client \
   $(BINDIR)/$(CONFIG)/mock_test \
+  $(BINDIR)/$(CONFIG)/nonblocking_test \
   $(BINDIR)/$(CONFIG)/noop-benchmark \
   $(BINDIR)/$(CONFIG)/orphanable_test \
   $(BINDIR)/$(CONFIG)/proto_server_reflection_test \
@@ -1823,6 +1823,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/alpn_test || ( echo test alpn_test failed ; exit 1 )
 	$(E) "[RUN]     Testing arena_test"
 	$(Q) $(BINDIR)/$(CONFIG)/arena_test || ( echo test arena_test failed ; exit 1 )
+	$(E) "[RUN]     Testing avl_test"
+	$(Q) $(BINDIR)/$(CONFIG)/avl_test || ( echo test avl_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bad_server_response_test"
 	$(Q) $(BINDIR)/$(CONFIG)/bad_server_response_test || ( echo test bad_server_response_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bin_decoder_test"
@@ -1877,8 +1879,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/fling_test || ( echo test fling_test failed ; exit 1 )
 	$(E) "[RUN]     Testing goaway_server_test"
 	$(Q) $(BINDIR)/$(CONFIG)/goaway_server_test || ( echo test goaway_server_test failed ; exit 1 )
-	$(E) "[RUN]     Testing gpr_avl_test"
-	$(Q) $(BINDIR)/$(CONFIG)/gpr_avl_test || ( echo test gpr_avl_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_cpu_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_cpu_test || ( echo test gpr_cpu_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_env_test"
@@ -2171,8 +2171,6 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/grpclb_api_test || ( echo test grpclb_api_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpclb_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpclb_end2end_test || ( echo test grpclb_end2end_test failed ; exit 1 )
-	$(E) "[RUN]     Testing grpclb_test"
-	$(Q) $(BINDIR)/$(CONFIG)/grpclb_test || ( echo test grpclb_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_ssl_cert_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_cert_test || ( echo test h2_ssl_cert_test failed ; exit 1 )
 	$(E) "[RUN]     Testing health_service_end2end_test"
@@ -2187,6 +2185,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/memory_test || ( echo test memory_test failed ; exit 1 )
 	$(E) "[RUN]     Testing mock_test"
 	$(Q) $(BINDIR)/$(CONFIG)/mock_test || ( echo test mock_test failed ; exit 1 )
+	$(E) "[RUN]     Testing nonblocking_test"
+	$(Q) $(BINDIR)/$(CONFIG)/nonblocking_test || ( echo test nonblocking_test failed ; exit 1 )
 	$(E) "[RUN]     Testing noop-benchmark"
 	$(Q) $(BINDIR)/$(CONFIG)/noop-benchmark || ( echo test noop-benchmark failed ; exit 1 )
 	$(E) "[RUN]     Testing orphanable_test"
@@ -2878,6 +2878,11 @@ install-plugins: $(PROTOC_PLUGINS)
 	$(Q) $(INSTALL) -d $(prefix)/bin
 	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_ruby_plugin $(prefix)/bin/grpc_ruby_plugin
 
+install-grpc-cli: grpc_cli
+	$(E) "[INSTALL] Installing grpc cli"
+	$(Q) $(INSTALL) -d $(prefix)/bin
+	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_cli $(prefix)/bin/grpc_cli
+
 install-pkg-config_c: pc_c pc_c_unsecure
 	$(E) "[INSTALL] Installing C pkg-config files"
 	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
@@ -2951,7 +2956,6 @@ LIBGPR_SRC = \
     src/core/lib/gpr/alloc.cc \
     src/core/lib/gpr/arena.cc \
     src/core/lib/gpr/atm.cc \
-    src/core/lib/gpr/avl.cc \
     src/core/lib/gpr/cpu_iphone.cc \
     src/core/lib/gpr/cpu_linux.cc \
     src/core/lib/gpr/cpu_posix.cc \
@@ -2996,7 +3000,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/atm_gcc_atomic.h \
     include/grpc/support/atm_gcc_sync.h \
     include/grpc/support/atm_windows.h \
-    include/grpc/support/avl.h \
     include/grpc/support/cpu.h \
     include/grpc/support/log.h \
     include/grpc/support/log_windows.h \
@@ -3007,9 +3010,8 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
     include/grpc/support/sync_windows.h \
-    include/grpc/support/thd.h \
+    include/grpc/support/thd_id.h \
     include/grpc/support/time.h \
-    include/grpc/support/useful.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
@@ -3088,6 +3090,7 @@ endif
 
 LIBGRPC_SRC = \
     src/core/lib/surface/init.cc \
+    src/core/lib/avl/avl.cc \
     src/core/lib/backoff/backoff.cc \
     src/core/lib/channel/channel_args.cc \
     src/core/lib/channel/channel_stack.cc \
@@ -3265,10 +3268,10 @@ LIBGRPC_SRC = \
     src/core/lib/security/credentials/oauth2/oauth2_credentials.cc \
     src/core/lib/security/credentials/plugin/plugin_credentials.cc \
     src/core/lib/security/credentials/ssl/ssl_credentials.cc \
+    src/core/lib/security/security_connector/security_connector.cc \
     src/core/lib/security/transport/client_auth_filter.cc \
     src/core/lib/security/transport/lb_targets_info.cc \
     src/core/lib/security/transport/secure_endpoint.cc \
-    src/core/lib/security/transport/security_connector.cc \
     src/core/lib/security/transport/security_handshaker.cc \
     src/core/lib/security/transport/server_auth_filter.cc \
     src/core/lib/security/transport/tsi_error.cc \
@@ -3429,6 +3432,7 @@ endif
 
 LIBGRPC_CRONET_SRC = \
     src/core/lib/surface/init.cc \
+    src/core/lib/avl/avl.cc \
     src/core/lib/backoff/backoff.cc \
     src/core/lib/channel/channel_args.cc \
     src/core/lib/channel/channel_stack.cc \
@@ -3630,10 +3634,10 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/security/credentials/oauth2/oauth2_credentials.cc \
     src/core/lib/security/credentials/plugin/plugin_credentials.cc \
     src/core/lib/security/credentials/ssl/ssl_credentials.cc \
+    src/core/lib/security/security_connector/security_connector.cc \
     src/core/lib/security/transport/client_auth_filter.cc \
     src/core/lib/security/transport/lb_targets_info.cc \
     src/core/lib/security/transport/secure_endpoint.cc \
-    src/core/lib/security/transport/security_connector.cc \
     src/core/lib/security/transport/security_handshaker.cc \
     src/core/lib/security/transport/server_auth_filter.cc \
     src/core/lib/security/transport/tsi_error.cc \
@@ -3755,6 +3759,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/util/tracer_util.cc \
     test/core/util/trickle_endpoint.cc \
     test/core/util/cmdline.cc \
+    src/core/lib/avl/avl.cc \
     src/core/lib/backoff/backoff.cc \
     src/core/lib/channel/channel_args.cc \
     src/core/lib/channel/channel_stack.cc \
@@ -3944,7 +3949,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/atm_gcc_atomic.h \
     include/grpc/support/atm_gcc_sync.h \
     include/grpc/support/atm_windows.h \
-    include/grpc/support/avl.h \
     include/grpc/support/cpu.h \
     include/grpc/support/log.h \
     include/grpc/support/log_windows.h \
@@ -3955,9 +3959,8 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
     include/grpc/support/sync_windows.h \
-    include/grpc/support/thd.h \
+    include/grpc/support/thd_id.h \
     include/grpc/support/time.h \
-    include/grpc/support/useful.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
@@ -4036,6 +4039,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     test/core/util/tracer_util.cc \
     test/core/util/trickle_endpoint.cc \
     test/core/util/cmdline.cc \
+    src/core/lib/avl/avl.cc \
     src/core/lib/backoff/backoff.cc \
     src/core/lib/channel/channel_args.cc \
     src/core/lib/channel/channel_stack.cc \
@@ -4225,7 +4229,6 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/atm_gcc_atomic.h \
     include/grpc/support/atm_gcc_sync.h \
     include/grpc/support/atm_windows.h \
-    include/grpc/support/avl.h \
     include/grpc/support/cpu.h \
     include/grpc/support/log.h \
     include/grpc/support/log_windows.h \
@@ -4236,9 +4239,8 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
     include/grpc/support/sync_windows.h \
-    include/grpc/support/thd.h \
+    include/grpc/support/thd_id.h \
     include/grpc/support/time.h \
-    include/grpc/support/useful.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
@@ -4284,6 +4286,7 @@ endif
 LIBGRPC_UNSECURE_SRC = \
     src/core/lib/surface/init.cc \
     src/core/lib/surface/init_unsecure.cc \
+    src/core/lib/avl/avl.cc \
     src/core/lib/backoff/backoff.cc \
     src/core/lib/channel/channel_args.cc \
     src/core/lib/channel/channel_stack.cc \
@@ -4744,12 +4747,56 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/support/stub_options.h \
     include/grpc++/support/sync_stream.h \
     include/grpc++/support/time.h \
+    include/grpcpp/alarm.h \
+    include/grpcpp/channel.h \
+    include/grpcpp/client_context.h \
+    include/grpcpp/completion_queue.h \
+    include/grpcpp/create_channel.h \
+    include/grpcpp/create_channel_posix.h \
+    include/grpcpp/ext/health_check_service_server_builder_option.h \
+    include/grpcpp/generic/async_generic_service.h \
+    include/grpcpp/generic/generic_stub.h \
+    include/grpcpp/grpcpp.h \
+    include/grpcpp/health_check_service_interface.h \
+    include/grpcpp/impl/call.h \
+    include/grpcpp/impl/channel_argument_option.h \
+    include/grpcpp/impl/client_unary_call.h \
+    include/grpcpp/impl/codegen/core_codegen.h \
+    include/grpcpp/impl/grpc_library.h \
+    include/grpcpp/impl/method_handler_impl.h \
+    include/grpcpp/impl/rpc_method.h \
+    include/grpcpp/impl/rpc_service_method.h \
+    include/grpcpp/impl/serialization_traits.h \
+    include/grpcpp/impl/server_builder_option.h \
+    include/grpcpp/impl/server_builder_plugin.h \
+    include/grpcpp/impl/server_initializer.h \
+    include/grpcpp/impl/service_type.h \
+    include/grpcpp/resource_quota.h \
+    include/grpcpp/security/auth_context.h \
+    include/grpcpp/security/auth_metadata_processor.h \
+    include/grpcpp/security/credentials.h \
+    include/grpcpp/security/server_credentials.h \
+    include/grpcpp/server.h \
+    include/grpcpp/server_builder.h \
+    include/grpcpp/server_context.h \
+    include/grpcpp/server_posix.h \
+    include/grpcpp/support/async_stream.h \
+    include/grpcpp/support/async_unary_call.h \
+    include/grpcpp/support/byte_buffer.h \
+    include/grpcpp/support/channel_arguments.h \
+    include/grpcpp/support/config.h \
+    include/grpcpp/support/slice.h \
+    include/grpcpp/support/status.h \
+    include/grpcpp/support/status_code_enum.h \
+    include/grpcpp/support/string_ref.h \
+    include/grpcpp/support/stub_options.h \
+    include/grpcpp/support/sync_stream.h \
+    include/grpcpp/support/time.h \
     include/grpc/support/alloc.h \
     include/grpc/support/atm.h \
     include/grpc/support/atm_gcc_atomic.h \
     include/grpc/support/atm_gcc_sync.h \
     include/grpc/support/atm_windows.h \
-    include/grpc/support/avl.h \
     include/grpc/support/cpu.h \
     include/grpc/support/log.h \
     include/grpc/support/log_windows.h \
@@ -4760,9 +4807,8 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
     include/grpc/support/sync_windows.h \
-    include/grpc/support/thd.h \
+    include/grpc/support/thd_id.h \
     include/grpc/support/time.h \
-    include/grpc/support/useful.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
@@ -4826,8 +4872,40 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/stub_options.h \
     include/grpc++/impl/codegen/sync_stream.h \
     include/grpc++/impl/codegen/time.h \
+    include/grpcpp/impl/codegen/async_stream.h \
+    include/grpcpp/impl/codegen/async_unary_call.h \
+    include/grpcpp/impl/codegen/byte_buffer.h \
+    include/grpcpp/impl/codegen/call.h \
+    include/grpcpp/impl/codegen/call_hook.h \
+    include/grpcpp/impl/codegen/channel_interface.h \
+    include/grpcpp/impl/codegen/client_context.h \
+    include/grpcpp/impl/codegen/client_unary_call.h \
+    include/grpcpp/impl/codegen/completion_queue.h \
+    include/grpcpp/impl/codegen/completion_queue_tag.h \
+    include/grpcpp/impl/codegen/config.h \
+    include/grpcpp/impl/codegen/core_codegen_interface.h \
+    include/grpcpp/impl/codegen/create_auth_context.h \
+    include/grpcpp/impl/codegen/grpc_library.h \
+    include/grpcpp/impl/codegen/metadata_map.h \
+    include/grpcpp/impl/codegen/method_handler_impl.h \
+    include/grpcpp/impl/codegen/rpc_method.h \
+    include/grpcpp/impl/codegen/rpc_service_method.h \
+    include/grpcpp/impl/codegen/security/auth_context.h \
+    include/grpcpp/impl/codegen/serialization_traits.h \
+    include/grpcpp/impl/codegen/server_context.h \
+    include/grpcpp/impl/codegen/server_interface.h \
+    include/grpcpp/impl/codegen/service_type.h \
+    include/grpcpp/impl/codegen/slice.h \
+    include/grpcpp/impl/codegen/status.h \
+    include/grpcpp/impl/codegen/status_code_enum.h \
+    include/grpcpp/impl/codegen/string_ref.h \
+    include/grpcpp/impl/codegen/stub_options.h \
+    include/grpcpp/impl/codegen/sync_stream.h \
+    include/grpcpp/impl/codegen/time.h \
     include/grpc++/impl/codegen/proto_utils.h \
+    include/grpcpp/impl/codegen/proto_utils.h \
     include/grpc++/impl/codegen/config_protobuf.h \
+    include/grpcpp/impl/codegen/config_protobuf.h \
 
 LIBGRPC++_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_SRC))))
 
@@ -5008,6 +5086,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/ext/transport/chttp2/transport/stream_map.cc \
     src/core/ext/transport/chttp2/transport/varint.cc \
     src/core/ext/transport/chttp2/transport/writing.cc \
+    src/core/lib/avl/avl.cc \
     src/core/lib/backoff/backoff.cc \
     src/core/lib/channel/channel_args.cc \
     src/core/lib/channel/channel_stack.cc \
@@ -5222,12 +5301,56 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/support/stub_options.h \
     include/grpc++/support/sync_stream.h \
     include/grpc++/support/time.h \
+    include/grpcpp/alarm.h \
+    include/grpcpp/channel.h \
+    include/grpcpp/client_context.h \
+    include/grpcpp/completion_queue.h \
+    include/grpcpp/create_channel.h \
+    include/grpcpp/create_channel_posix.h \
+    include/grpcpp/ext/health_check_service_server_builder_option.h \
+    include/grpcpp/generic/async_generic_service.h \
+    include/grpcpp/generic/generic_stub.h \
+    include/grpcpp/grpcpp.h \
+    include/grpcpp/health_check_service_interface.h \
+    include/grpcpp/impl/call.h \
+    include/grpcpp/impl/channel_argument_option.h \
+    include/grpcpp/impl/client_unary_call.h \
+    include/grpcpp/impl/codegen/core_codegen.h \
+    include/grpcpp/impl/grpc_library.h \
+    include/grpcpp/impl/method_handler_impl.h \
+    include/grpcpp/impl/rpc_method.h \
+    include/grpcpp/impl/rpc_service_method.h \
+    include/grpcpp/impl/serialization_traits.h \
+    include/grpcpp/impl/server_builder_option.h \
+    include/grpcpp/impl/server_builder_plugin.h \
+    include/grpcpp/impl/server_initializer.h \
+    include/grpcpp/impl/service_type.h \
+    include/grpcpp/resource_quota.h \
+    include/grpcpp/security/auth_context.h \
+    include/grpcpp/security/auth_metadata_processor.h \
+    include/grpcpp/security/credentials.h \
+    include/grpcpp/security/server_credentials.h \
+    include/grpcpp/server.h \
+    include/grpcpp/server_builder.h \
+    include/grpcpp/server_context.h \
+    include/grpcpp/server_posix.h \
+    include/grpcpp/support/async_stream.h \
+    include/grpcpp/support/async_unary_call.h \
+    include/grpcpp/support/byte_buffer.h \
+    include/grpcpp/support/channel_arguments.h \
+    include/grpcpp/support/config.h \
+    include/grpcpp/support/slice.h \
+    include/grpcpp/support/status.h \
+    include/grpcpp/support/status_code_enum.h \
+    include/grpcpp/support/string_ref.h \
+    include/grpcpp/support/stub_options.h \
+    include/grpcpp/support/sync_stream.h \
+    include/grpcpp/support/time.h \
     include/grpc/support/alloc.h \
     include/grpc/support/atm.h \
     include/grpc/support/atm_gcc_atomic.h \
     include/grpc/support/atm_gcc_sync.h \
     include/grpc/support/atm_windows.h \
-    include/grpc/support/avl.h \
     include/grpc/support/cpu.h \
     include/grpc/support/log.h \
     include/grpc/support/log_windows.h \
@@ -5238,9 +5361,8 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
     include/grpc/support/sync_windows.h \
-    include/grpc/support/thd.h \
+    include/grpc/support/thd_id.h \
     include/grpc/support/time.h \
-    include/grpc/support/useful.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
@@ -5304,6 +5426,36 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/stub_options.h \
     include/grpc++/impl/codegen/sync_stream.h \
     include/grpc++/impl/codegen/time.h \
+    include/grpcpp/impl/codegen/async_stream.h \
+    include/grpcpp/impl/codegen/async_unary_call.h \
+    include/grpcpp/impl/codegen/byte_buffer.h \
+    include/grpcpp/impl/codegen/call.h \
+    include/grpcpp/impl/codegen/call_hook.h \
+    include/grpcpp/impl/codegen/channel_interface.h \
+    include/grpcpp/impl/codegen/client_context.h \
+    include/grpcpp/impl/codegen/client_unary_call.h \
+    include/grpcpp/impl/codegen/completion_queue.h \
+    include/grpcpp/impl/codegen/completion_queue_tag.h \
+    include/grpcpp/impl/codegen/config.h \
+    include/grpcpp/impl/codegen/core_codegen_interface.h \
+    include/grpcpp/impl/codegen/create_auth_context.h \
+    include/grpcpp/impl/codegen/grpc_library.h \
+    include/grpcpp/impl/codegen/metadata_map.h \
+    include/grpcpp/impl/codegen/method_handler_impl.h \
+    include/grpcpp/impl/codegen/rpc_method.h \
+    include/grpcpp/impl/codegen/rpc_service_method.h \
+    include/grpcpp/impl/codegen/security/auth_context.h \
+    include/grpcpp/impl/codegen/serialization_traits.h \
+    include/grpcpp/impl/codegen/server_context.h \
+    include/grpcpp/impl/codegen/server_interface.h \
+    include/grpcpp/impl/codegen/service_type.h \
+    include/grpcpp/impl/codegen/slice.h \
+    include/grpcpp/impl/codegen/status.h \
+    include/grpcpp/impl/codegen/status_code_enum.h \
+    include/grpcpp/impl/codegen/string_ref.h \
+    include/grpcpp/impl/codegen/stub_options.h \
+    include/grpcpp/impl/codegen/sync_stream.h \
+    include/grpcpp/impl/codegen/time.h \
     include/grpc/census.h \
 
 LIBGRPC++_CRONET_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_CRONET_SRC))))
@@ -5375,6 +5527,7 @@ LIBGRPC++_ERROR_DETAILS_SRC = \
 
 PUBLIC_HEADERS_CXX += \
     include/grpc++/support/error_details.h \
+    include/grpcpp/support/error_details.h \
 
 LIBGRPC++_ERROR_DETAILS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_ERROR_DETAILS_SRC))))
 
@@ -5446,6 +5599,7 @@ LIBGRPC++_PROTO_REFLECTION_DESC_DB_SRC = \
 
 PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/config_protobuf.h \
+    include/grpcpp/impl/codegen/config_protobuf.h \
 
 LIBGRPC++_PROTO_REFLECTION_DESC_DB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_PROTO_REFLECTION_DESC_DB_SRC))))
 
@@ -5499,6 +5653,7 @@ LIBGRPC++_REFLECTION_SRC = \
 
 PUBLIC_HEADERS_CXX += \
     include/grpc++/ext/proto_server_reflection_plugin.h \
+    include/grpcpp/ext/proto_server_reflection_plugin.h \
 
 LIBGRPC++_REFLECTION_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_REFLECTION_SRC))))
 
@@ -5658,6 +5813,36 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/stub_options.h \
     include/grpc++/impl/codegen/sync_stream.h \
     include/grpc++/impl/codegen/time.h \
+    include/grpcpp/impl/codegen/async_stream.h \
+    include/grpcpp/impl/codegen/async_unary_call.h \
+    include/grpcpp/impl/codegen/byte_buffer.h \
+    include/grpcpp/impl/codegen/call.h \
+    include/grpcpp/impl/codegen/call_hook.h \
+    include/grpcpp/impl/codegen/channel_interface.h \
+    include/grpcpp/impl/codegen/client_context.h \
+    include/grpcpp/impl/codegen/client_unary_call.h \
+    include/grpcpp/impl/codegen/completion_queue.h \
+    include/grpcpp/impl/codegen/completion_queue_tag.h \
+    include/grpcpp/impl/codegen/config.h \
+    include/grpcpp/impl/codegen/core_codegen_interface.h \
+    include/grpcpp/impl/codegen/create_auth_context.h \
+    include/grpcpp/impl/codegen/grpc_library.h \
+    include/grpcpp/impl/codegen/metadata_map.h \
+    include/grpcpp/impl/codegen/method_handler_impl.h \
+    include/grpcpp/impl/codegen/rpc_method.h \
+    include/grpcpp/impl/codegen/rpc_service_method.h \
+    include/grpcpp/impl/codegen/security/auth_context.h \
+    include/grpcpp/impl/codegen/serialization_traits.h \
+    include/grpcpp/impl/codegen/server_context.h \
+    include/grpcpp/impl/codegen/server_interface.h \
+    include/grpcpp/impl/codegen/service_type.h \
+    include/grpcpp/impl/codegen/slice.h \
+    include/grpcpp/impl/codegen/status.h \
+    include/grpcpp/impl/codegen/status_code_enum.h \
+    include/grpcpp/impl/codegen/string_ref.h \
+    include/grpcpp/impl/codegen/stub_options.h \
+    include/grpcpp/impl/codegen/sync_stream.h \
+    include/grpcpp/impl/codegen/time.h \
     include/grpc/impl/codegen/byte_buffer.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
@@ -5680,7 +5865,9 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
     include/grpc++/impl/codegen/proto_utils.h \
+    include/grpcpp/impl/codegen/proto_utils.h \
     include/grpc++/impl/codegen/config_protobuf.h \
+    include/grpcpp/impl/codegen/config_protobuf.h \
 
 LIBGRPC++_TEST_UTIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_TEST_UTIL_SRC))))
 
@@ -5775,6 +5962,36 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/stub_options.h \
     include/grpc++/impl/codegen/sync_stream.h \
     include/grpc++/impl/codegen/time.h \
+    include/grpcpp/impl/codegen/async_stream.h \
+    include/grpcpp/impl/codegen/async_unary_call.h \
+    include/grpcpp/impl/codegen/byte_buffer.h \
+    include/grpcpp/impl/codegen/call.h \
+    include/grpcpp/impl/codegen/call_hook.h \
+    include/grpcpp/impl/codegen/channel_interface.h \
+    include/grpcpp/impl/codegen/client_context.h \
+    include/grpcpp/impl/codegen/client_unary_call.h \
+    include/grpcpp/impl/codegen/completion_queue.h \
+    include/grpcpp/impl/codegen/completion_queue_tag.h \
+    include/grpcpp/impl/codegen/config.h \
+    include/grpcpp/impl/codegen/core_codegen_interface.h \
+    include/grpcpp/impl/codegen/create_auth_context.h \
+    include/grpcpp/impl/codegen/grpc_library.h \
+    include/grpcpp/impl/codegen/metadata_map.h \
+    include/grpcpp/impl/codegen/method_handler_impl.h \
+    include/grpcpp/impl/codegen/rpc_method.h \
+    include/grpcpp/impl/codegen/rpc_service_method.h \
+    include/grpcpp/impl/codegen/security/auth_context.h \
+    include/grpcpp/impl/codegen/serialization_traits.h \
+    include/grpcpp/impl/codegen/server_context.h \
+    include/grpcpp/impl/codegen/server_interface.h \
+    include/grpcpp/impl/codegen/service_type.h \
+    include/grpcpp/impl/codegen/slice.h \
+    include/grpcpp/impl/codegen/status.h \
+    include/grpcpp/impl/codegen/status_code_enum.h \
+    include/grpcpp/impl/codegen/string_ref.h \
+    include/grpcpp/impl/codegen/stub_options.h \
+    include/grpcpp/impl/codegen/sync_stream.h \
+    include/grpcpp/impl/codegen/time.h \
     include/grpc/impl/codegen/byte_buffer.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
@@ -5797,7 +6014,9 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
     include/grpc++/impl/codegen/proto_utils.h \
+    include/grpcpp/impl/codegen/proto_utils.h \
     include/grpc++/impl/codegen/config_protobuf.h \
+    include/grpcpp/impl/codegen/config_protobuf.h \
 
 LIBGRPC++_TEST_UTIL_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_TEST_UTIL_UNSECURE_SRC))))
 
@@ -5934,12 +6153,56 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/support/stub_options.h \
     include/grpc++/support/sync_stream.h \
     include/grpc++/support/time.h \
+    include/grpcpp/alarm.h \
+    include/grpcpp/channel.h \
+    include/grpcpp/client_context.h \
+    include/grpcpp/completion_queue.h \
+    include/grpcpp/create_channel.h \
+    include/grpcpp/create_channel_posix.h \
+    include/grpcpp/ext/health_check_service_server_builder_option.h \
+    include/grpcpp/generic/async_generic_service.h \
+    include/grpcpp/generic/generic_stub.h \
+    include/grpcpp/grpcpp.h \
+    include/grpcpp/health_check_service_interface.h \
+    include/grpcpp/impl/call.h \
+    include/grpcpp/impl/channel_argument_option.h \
+    include/grpcpp/impl/client_unary_call.h \
+    include/grpcpp/impl/codegen/core_codegen.h \
+    include/grpcpp/impl/grpc_library.h \
+    include/grpcpp/impl/method_handler_impl.h \
+    include/grpcpp/impl/rpc_method.h \
+    include/grpcpp/impl/rpc_service_method.h \
+    include/grpcpp/impl/serialization_traits.h \
+    include/grpcpp/impl/server_builder_option.h \
+    include/grpcpp/impl/server_builder_plugin.h \
+    include/grpcpp/impl/server_initializer.h \
+    include/grpcpp/impl/service_type.h \
+    include/grpcpp/resource_quota.h \
+    include/grpcpp/security/auth_context.h \
+    include/grpcpp/security/auth_metadata_processor.h \
+    include/grpcpp/security/credentials.h \
+    include/grpcpp/security/server_credentials.h \
+    include/grpcpp/server.h \
+    include/grpcpp/server_builder.h \
+    include/grpcpp/server_context.h \
+    include/grpcpp/server_posix.h \
+    include/grpcpp/support/async_stream.h \
+    include/grpcpp/support/async_unary_call.h \
+    include/grpcpp/support/byte_buffer.h \
+    include/grpcpp/support/channel_arguments.h \
+    include/grpcpp/support/config.h \
+    include/grpcpp/support/slice.h \
+    include/grpcpp/support/status.h \
+    include/grpcpp/support/status_code_enum.h \
+    include/grpcpp/support/string_ref.h \
+    include/grpcpp/support/stub_options.h \
+    include/grpcpp/support/sync_stream.h \
+    include/grpcpp/support/time.h \
     include/grpc/support/alloc.h \
     include/grpc/support/atm.h \
     include/grpc/support/atm_gcc_atomic.h \
     include/grpc/support/atm_gcc_sync.h \
     include/grpc/support/atm_windows.h \
-    include/grpc/support/avl.h \
     include/grpc/support/cpu.h \
     include/grpc/support/log.h \
     include/grpc/support/log_windows.h \
@@ -5950,9 +6213,8 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
     include/grpc/support/sync_windows.h \
-    include/grpc/support/thd.h \
+    include/grpc/support/thd_id.h \
     include/grpc/support/time.h \
-    include/grpc/support/useful.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
@@ -6016,6 +6278,36 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/stub_options.h \
     include/grpc++/impl/codegen/sync_stream.h \
     include/grpc++/impl/codegen/time.h \
+    include/grpcpp/impl/codegen/async_stream.h \
+    include/grpcpp/impl/codegen/async_unary_call.h \
+    include/grpcpp/impl/codegen/byte_buffer.h \
+    include/grpcpp/impl/codegen/call.h \
+    include/grpcpp/impl/codegen/call_hook.h \
+    include/grpcpp/impl/codegen/channel_interface.h \
+    include/grpcpp/impl/codegen/client_context.h \
+    include/grpcpp/impl/codegen/client_unary_call.h \
+    include/grpcpp/impl/codegen/completion_queue.h \
+    include/grpcpp/impl/codegen/completion_queue_tag.h \
+    include/grpcpp/impl/codegen/config.h \
+    include/grpcpp/impl/codegen/core_codegen_interface.h \
+    include/grpcpp/impl/codegen/create_auth_context.h \
+    include/grpcpp/impl/codegen/grpc_library.h \
+    include/grpcpp/impl/codegen/metadata_map.h \
+    include/grpcpp/impl/codegen/method_handler_impl.h \
+    include/grpcpp/impl/codegen/rpc_method.h \
+    include/grpcpp/impl/codegen/rpc_service_method.h \
+    include/grpcpp/impl/codegen/security/auth_context.h \
+    include/grpcpp/impl/codegen/serialization_traits.h \
+    include/grpcpp/impl/codegen/server_context.h \
+    include/grpcpp/impl/codegen/server_interface.h \
+    include/grpcpp/impl/codegen/service_type.h \
+    include/grpcpp/impl/codegen/slice.h \
+    include/grpcpp/impl/codegen/status.h \
+    include/grpcpp/impl/codegen/status_code_enum.h \
+    include/grpcpp/impl/codegen/string_ref.h \
+    include/grpcpp/impl/codegen/stub_options.h \
+    include/grpcpp/impl/codegen/sync_stream.h \
+    include/grpcpp/impl/codegen/time.h \
 
 LIBGRPC++_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_UNSECURE_SRC))))
 
@@ -6126,6 +6418,7 @@ LIBGRPC_CLI_LIBS_SRC = \
 
 PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/config_protobuf.h \
+    include/grpcpp/impl/codegen/config_protobuf.h \
 
 LIBGRPC_CLI_LIBS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_CLI_LIBS_SRC))))
 
@@ -6187,6 +6480,7 @@ LIBGRPC_PLUGIN_SUPPORT_SRC = \
 
 PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/config_protobuf.h \
+    include/grpcpp/impl/codegen/config_protobuf.h \
 
 LIBGRPC_PLUGIN_SUPPORT_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_PLUGIN_SUPPORT_SRC))))
 
@@ -9485,6 +9779,38 @@ endif
 endif
 
 
+AVL_TEST_SRC = \
+    test/core/avl/avl_test.cc \
+
+AVL_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(AVL_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/avl_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/avl_test: $(AVL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(AVL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/avl_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/avl/avl_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+deps_avl_test: $(AVL_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(AVL_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 BAD_SERVER_RESPONSE_TEST_SRC = \
     test/core/end2end/bad_server_response_test.cc \
 
@@ -10476,38 +10802,6 @@ deps_goaway_server_test: $(GOAWAY_SERVER_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(GOAWAY_SERVER_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-GPR_AVL_TEST_SRC = \
-    test/core/gpr/avl_test.cc \
-
-GPR_AVL_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_AVL_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/gpr_avl_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/gpr_avl_test: $(GPR_AVL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_AVL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gpr_avl_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/gpr/avl_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_gpr_avl_test: $(GPR_AVL_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(GPR_AVL_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -16140,53 +16434,6 @@ endif
 $(OBJDIR)/$(CONFIG)/test/cpp/end2end/grpclb_end2end_test.o: $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
 
 
-GRPCLB_TEST_SRC = \
-    $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc \
-    test/cpp/grpclb/grpclb_test.cc \
-
-GRPCLB_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPCLB_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/grpclb_test: openssl_dep_error
-
-else
-
-
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
-
-$(BINDIR)/$(CONFIG)/grpclb_test: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/grpclb_test: $(PROTOBUF_DEP) $(GRPCLB_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(GRPCLB_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/grpclb_test
-
-endif
-
-endif
-
-$(OBJDIR)/$(CONFIG)/src/proto/grpc/lb/v1/load_balancer.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-$(OBJDIR)/$(CONFIG)/test/cpp/grpclb/grpclb_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_grpclb_test: $(GRPCLB_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(GRPCLB_TEST_OBJS:.o=.dep)
-endif
-endif
-$(OBJDIR)/$(CONFIG)/test/cpp/grpclb/grpclb_test.o: $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
-
-
 H2_SSL_CERT_TEST_SRC = \
     test/core/end2end/h2_ssl_cert_test.cc \
 
@@ -16710,6 +16957,49 @@ deps_mock_test: $(MOCK_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(MOCK_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+NONBLOCKING_TEST_SRC = \
+    test/cpp/end2end/nonblocking_test.cc \
+
+NONBLOCKING_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(NONBLOCKING_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/nonblocking_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/nonblocking_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/nonblocking_test: $(PROTOBUF_DEP) $(NONBLOCKING_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(NONBLOCKING_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/nonblocking_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/nonblocking_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_nonblocking_test: $(NONBLOCKING_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(NONBLOCKING_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -22090,10 +22380,10 @@ src/core/lib/security/credentials/jwt/jwt_verifier.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/oauth2/oauth2_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/plugin/plugin_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/ssl/ssl_credentials.cc: $(OPENSSL_DEP)
+src/core/lib/security/security_connector/security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/security/transport/client_auth_filter.cc: $(OPENSSL_DEP)
 src/core/lib/security/transport/lb_targets_info.cc: $(OPENSSL_DEP)
 src/core/lib/security/transport/secure_endpoint.cc: $(OPENSSL_DEP)
-src/core/lib/security/transport/security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/security/transport/security_handshaker.cc: $(OPENSSL_DEP)
 src/core/lib/security/transport/server_auth_filter.cc: $(OPENSSL_DEP)
 src/core/lib/security/transport/tsi_error.cc: $(OPENSSL_DEP)

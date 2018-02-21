@@ -32,7 +32,7 @@
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/fork.h"
-#include "src/core/lib/gpr/thd_internal.h"
+#include "src/core/lib/gpr/thd.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/combiner.h"
@@ -74,12 +74,12 @@ static void do_basic_init(void) {
 
 static bool append_filter(grpc_channel_stack_builder* builder, void* arg) {
   return grpc_channel_stack_builder_append_filter(
-      builder, (const grpc_channel_filter*)arg, nullptr, nullptr);
+      builder, static_cast<const grpc_channel_filter*>(arg), nullptr, nullptr);
 }
 
 static bool prepend_filter(grpc_channel_stack_builder* builder, void* arg) {
   return grpc_channel_stack_builder_prepend_filter(
-      builder, (const grpc_channel_filter*)arg, nullptr, nullptr);
+      builder, static_cast<const grpc_channel_filter*>(arg), nullptr, nullptr);
 }
 
 static void register_builtin_channel_init() {

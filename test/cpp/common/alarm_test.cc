@@ -35,8 +35,8 @@ TEST(AlarmTest, RegularExpiry) {
 
   void* output_tag;
   bool ok;
-  const CompletionQueue::NextStatus status = cq.AsyncNext(
-      (void**)&output_tag, &ok, grpc_timeout_seconds_to_deadline(2));
+  const CompletionQueue::NextStatus status =
+      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(2));
 
   EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
   EXPECT_TRUE(ok);
@@ -56,8 +56,8 @@ TEST(AlarmTest, MultithreadedRegularExpiry) {
   });
 
   std::thread t2([&cq, &ok, &output_tag, &status] {
-    status = cq.AsyncNext((void**)&output_tag, &ok,
-                          grpc_timeout_seconds_to_deadline(2));
+    status =
+        cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(2));
   });
 
   t1.join();
@@ -74,8 +74,8 @@ TEST(AlarmTest, DeprecatedRegularExpiry) {
 
   void* output_tag;
   bool ok;
-  const CompletionQueue::NextStatus status = cq.AsyncNext(
-      (void**)&output_tag, &ok, grpc_timeout_seconds_to_deadline(2));
+  const CompletionQueue::NextStatus status =
+      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(2));
 
   EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
   EXPECT_TRUE(ok);
@@ -90,8 +90,8 @@ TEST(AlarmTest, MoveConstructor) {
   Alarm second(std::move(first));
   void* output_tag;
   bool ok;
-  const CompletionQueue::NextStatus status = cq.AsyncNext(
-      (void**)&output_tag, &ok, grpc_timeout_seconds_to_deadline(2));
+  const CompletionQueue::NextStatus status =
+      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(2));
   EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
   EXPECT_TRUE(ok);
   EXPECT_EQ(junk, output_tag);
@@ -107,8 +107,8 @@ TEST(AlarmTest, MoveAssignment) {
 
   void* output_tag;
   bool ok;
-  const CompletionQueue::NextStatus status = cq.AsyncNext(
-      (void**)&output_tag, &ok, grpc_timeout_seconds_to_deadline(2));
+  const CompletionQueue::NextStatus status =
+      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(2));
 
   EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
   EXPECT_TRUE(ok);
@@ -125,8 +125,8 @@ TEST(AlarmTest, RegularExpiryChrono) {
 
   void* output_tag;
   bool ok;
-  const CompletionQueue::NextStatus status = cq.AsyncNext(
-      (void**)&output_tag, &ok, grpc_timeout_seconds_to_deadline(2));
+  const CompletionQueue::NextStatus status =
+      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(2));
 
   EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
   EXPECT_TRUE(ok);
@@ -141,8 +141,8 @@ TEST(AlarmTest, ZeroExpiry) {
 
   void* output_tag;
   bool ok;
-  const CompletionQueue::NextStatus status = cq.AsyncNext(
-      (void**)&output_tag, &ok, grpc_timeout_seconds_to_deadline(1));
+  const CompletionQueue::NextStatus status =
+      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(1));
 
   EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
   EXPECT_TRUE(ok);
@@ -157,8 +157,8 @@ TEST(AlarmTest, NegativeExpiry) {
 
   void* output_tag;
   bool ok;
-  const CompletionQueue::NextStatus status = cq.AsyncNext(
-      (void**)&output_tag, &ok, grpc_timeout_seconds_to_deadline(1));
+  const CompletionQueue::NextStatus status =
+      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(1));
 
   EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
   EXPECT_TRUE(ok);
@@ -174,8 +174,8 @@ TEST(AlarmTest, Cancellation) {
 
   void* output_tag;
   bool ok;
-  const CompletionQueue::NextStatus status = cq.AsyncNext(
-      (void**)&output_tag, &ok, grpc_timeout_seconds_to_deadline(1));
+  const CompletionQueue::NextStatus status =
+      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(1));
 
   EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
   EXPECT_FALSE(ok);
@@ -192,8 +192,8 @@ TEST(AlarmTest, SetDestruction) {
 
   void* output_tag;
   bool ok;
-  const CompletionQueue::NextStatus status = cq.AsyncNext(
-      (void**)&output_tag, &ok, grpc_timeout_seconds_to_deadline(1));
+  const CompletionQueue::NextStatus status =
+      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(1));
 
   EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
   EXPECT_FALSE(ok);

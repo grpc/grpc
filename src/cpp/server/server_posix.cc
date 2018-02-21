@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc++/server_posix.h>
+#include <grpcpp/server_posix.h>
 
 #include <grpc/grpc_posix.h>
 

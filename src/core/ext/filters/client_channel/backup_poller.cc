@@ -80,7 +80,7 @@ static void backup_poller_shutdown_unref(backup_poller* p) {
 }
 
 static void done_poller(void* arg, grpc_error* error) {
-  backup_poller_shutdown_unref((backup_poller*)arg);
+  backup_poller_shutdown_unref(static_cast<backup_poller*>(arg));
 }
 
 static void g_poller_unref() {
@@ -102,7 +102,7 @@ static void g_poller_unref() {
 }
 
 static void run_poller(void* arg, grpc_error* error) {
-  backup_poller* p = (backup_poller*)arg;
+  backup_poller* p = static_cast<backup_poller*>(arg);
   if (error != GRPC_ERROR_NONE) {
     if (error != GRPC_ERROR_CANCELLED) {
       GRPC_LOG_IF_ERROR("run_poller", GRPC_ERROR_REF(error));
@@ -133,8 +133,9 @@ void grpc_client_channel_start_backup_polling(
   }
   gpr_mu_lock(&g_poller_mu);
   if (g_poller == nullptr) {
-    g_poller = (backup_poller*)gpr_zalloc(sizeof(backup_poller));
-    g_poller->pollset = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
+    g_poller = static_cast<backup_poller*>(gpr_zalloc(sizeof(backup_poller)));
+    g_poller->pollset =
+        static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
     g_poller->shutting_down = false;
     grpc_pollset_init(g_poller->pollset, &g_poller->pollset_mu);
     gpr_ref_init(&g_poller->refs, 0);

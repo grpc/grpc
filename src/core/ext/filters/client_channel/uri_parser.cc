@@ -45,7 +45,7 @@ static grpc_uri* bad_uri(const char* uri_text, size_t pos, const char* section,
     gpr_log(GPR_ERROR, "%s%s'", line_prefix, uri_text);
     gpr_free(line_prefix);
 
-    line_prefix = (char*)gpr_malloc(pfx_len + 1);
+    line_prefix = static_cast<char*>(gpr_malloc(pfx_len + 1));
     memset(line_prefix, ' ', pfx_len);
     line_prefix[pfx_len] = 0;
     gpr_log(GPR_ERROR, "%s^ here", line_prefix);
@@ -159,7 +159,7 @@ static void parse_query_parts(grpc_uri* uri) {
   gpr_string_split(uri->query, QUERY_PARTS_SEPARATOR, &uri->query_parts,
                    &uri->num_query_parts);
   uri->query_parts_values =
-      (char**)gpr_malloc(uri->num_query_parts * sizeof(char**));
+      static_cast<char**>(gpr_malloc(uri->num_query_parts * sizeof(char**)));
   for (size_t i = 0; i < uri->num_query_parts; i++) {
     char** query_param_parts;
     size_t num_query_param_parts;
@@ -271,7 +271,7 @@ grpc_uri* grpc_uri_parse(const char* uri_text, bool suppress_errors) {
     fragment_end = i;
   }
 
-  uri = (grpc_uri*)gpr_zalloc(sizeof(*uri));
+  uri = static_cast<grpc_uri*>(gpr_zalloc(sizeof(*uri)));
   uri->scheme = decode_and_copy_component(uri_text, scheme_begin, scheme_end);
   uri->authority =
       decode_and_copy_component(uri_text, authority_begin, authority_end);

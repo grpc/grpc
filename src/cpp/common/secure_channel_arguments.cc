@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc++/support/channel_arguments.h>
+#include <grpcpp/support/channel_arguments.h>
 
 #include <grpc/grpc_security.h>
 #include "src/core/lib/channel/channel_args.h"

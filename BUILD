@@ -53,6 +53,16 @@ config_setting(
     values = {"define": "GRPC_PORT_ISOLATED_RUNTIME=1"},
 )
 
+config_setting(
+    name = "windows",
+    values = { "cpu": "x64_windows" },
+)
+
+config_setting(
+    name = "windows_msvc",
+    values = {"cpu": "x64_windows_msvc"},
+)
+
 # This should be updated along with build.yaml
 g_stands_for = "glamorous"
 
@@ -66,7 +76,6 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/support/atm_gcc_atomic.h",
     "include/grpc/support/atm_gcc_sync.h",
     "include/grpc/support/atm_windows.h",
-    "include/grpc/support/avl.h",
     "include/grpc/support/cpu.h",
     "include/grpc/support/log.h",
     "include/grpc/support/log_windows.h",
@@ -77,9 +86,8 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/support/sync_generic.h",
     "include/grpc/support/sync_posix.h",
     "include/grpc/support/sync_windows.h",
-    "include/grpc/support/thd.h",
+    "include/grpc/support/thd_id.h",
     "include/grpc/support/time.h",
-    "include/grpc/support/useful.h",
 ]
 
 GRPC_PUBLIC_HDRS = [
@@ -197,6 +205,53 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpc++/support/stub_options.h",
     "include/grpc++/support/sync_stream.h",
     "include/grpc++/support/time.h",
+    "include/grpcpp/alarm.h",
+    "include/grpcpp/channel.h",
+    "include/grpcpp/client_context.h",
+    "include/grpcpp/completion_queue.h",
+    "include/grpcpp/create_channel.h",
+    "include/grpcpp/create_channel_posix.h",
+    "include/grpcpp/ext/health_check_service_server_builder_option.h",
+    "include/grpcpp/generic/async_generic_service.h",
+    "include/grpcpp/generic/generic_stub.h",
+    "include/grpcpp/grpcpp.h",
+    "include/grpcpp/health_check_service_interface.h",
+    "include/grpcpp/impl/call.h",
+    "include/grpcpp/impl/channel_argument_option.h",
+    "include/grpcpp/impl/client_unary_call.h",
+    "include/grpcpp/impl/codegen/core_codegen.h",
+    "include/grpcpp/impl/grpc_library.h",
+    "include/grpcpp/impl/method_handler_impl.h",
+    "include/grpcpp/impl/rpc_method.h",
+    "include/grpcpp/impl/rpc_service_method.h",
+    "include/grpcpp/impl/serialization_traits.h",
+    "include/grpcpp/impl/server_builder_option.h",
+    "include/grpcpp/impl/server_builder_plugin.h",
+    "include/grpcpp/impl/server_initializer.h",
+    "include/grpcpp/impl/service_type.h",
+    "include/grpcpp/impl/sync_cxx11.h",
+    "include/grpcpp/impl/sync_no_cxx11.h",
+    "include/grpcpp/resource_quota.h",
+    "include/grpcpp/security/auth_context.h",
+    "include/grpcpp/security/auth_metadata_processor.h",
+    "include/grpcpp/security/credentials.h",
+    "include/grpcpp/security/server_credentials.h",
+    "include/grpcpp/server.h",
+    "include/grpcpp/server_builder.h",
+    "include/grpcpp/server_context.h",
+    "include/grpcpp/server_posix.h",
+    "include/grpcpp/support/async_stream.h",
+    "include/grpcpp/support/async_unary_call.h",
+    "include/grpcpp/support/byte_buffer.h",
+    "include/grpcpp/support/channel_arguments.h",
+    "include/grpcpp/support/config.h",
+    "include/grpcpp/support/slice.h",
+    "include/grpcpp/support/status.h",
+    "include/grpcpp/support/status_code_enum.h",
+    "include/grpcpp/support/string_ref.h",
+    "include/grpcpp/support/stub_options.h",
+    "include/grpcpp/support/sync_stream.h",
+    "include/grpcpp/support/time.h",
 ]
 
 grpc_cc_library(
@@ -319,6 +374,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "include/grpc++/support/error_details.h",
+        "include/grpcpp/support/error_details.h",
     ],
     language = "c++",
     standalone = True,
@@ -445,12 +501,9 @@ grpc_cc_library(
 grpc_cc_library(
     name = "gpr_base",
     srcs = [
-        "src/core/lib/profiling/basic_timers.cc",
-        "src/core/lib/profiling/stap_timers.cc",
         "src/core/lib/gpr/alloc.cc",
         "src/core/lib/gpr/arena.cc",
         "src/core/lib/gpr/atm.cc",
-        "src/core/lib/gpr/avl.cc",
         "src/core/lib/gpr/cpu_iphone.cc",
         "src/core/lib/gpr/cpu_linux.cc",
         "src/core/lib/gpr/cpu_posix.cc",
@@ -486,9 +539,10 @@ grpc_cc_library(
         "src/core/lib/gpr/tmpfile_posix.cc",
         "src/core/lib/gpr/tmpfile_windows.cc",
         "src/core/lib/gpr/wrap_memcpy.cc",
+        "src/core/lib/profiling/basic_timers.cc",
+        "src/core/lib/profiling/stap_timers.cc",
     ],
     hdrs = [
-        "src/core/lib/profiling/timers.h",
         "src/core/lib/gpr/arena.h",
         "src/core/lib/gpr/env.h",
         "src/core/lib/gpr/fork.h",
@@ -498,13 +552,15 @@ grpc_cc_library(
         "src/core/lib/gpr/spinlock.h",
         "src/core/lib/gpr/string.h",
         "src/core/lib/gpr/string_windows.h",
-        "src/core/lib/gpr/thd_internal.h",
+        "src/core/lib/gpr/thd.h",
         "src/core/lib/gpr/time_precise.h",
         "src/core/lib/gpr/tls.h",
         "src/core/lib/gpr/tls_gcc.h",
         "src/core/lib/gpr/tls_msvc.h",
         "src/core/lib/gpr/tls_pthread.h",
         "src/core/lib/gpr/tmpfile.h",
+        "src/core/lib/gpr/useful.h",
+        "src/core/lib/profiling/timers.h",
     ],
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
@@ -557,13 +613,13 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "atomic",
-    language = "c++",
-    public_hdrs = [
-        "src/core/lib/gprpp/atomic.h",
-    ],
     hdrs = [
         "src/core/lib/gprpp/atomic_with_atm.h",
         "src/core/lib/gprpp/atomic_with_std.h",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/gprpp/atomic.h",
     ],
     deps = [
         "gpr",
@@ -593,9 +649,9 @@ grpc_cc_library(
     public_hdrs = ["src/core/lib/gprpp/orphanable.h"],
     deps = [
         "debug_location",
-        "ref_counted_ptr",
         "gpr++_base",
         "grpc_trace",
+        "ref_counted_ptr",
     ],
 )
 
@@ -605,9 +661,9 @@ grpc_cc_library(
     public_hdrs = ["src/core/lib/gprpp/ref_counted.h"],
     deps = [
         "debug_location",
-        "ref_counted_ptr",
         "gpr++_base",
         "grpc_trace",
+        "ref_counted_ptr",
     ],
 )
 
@@ -623,6 +679,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_base_c",
     srcs = [
+        "src/core/lib/avl/avl.cc",
         "src/core/lib/backoff/backoff.cc",
         "src/core/lib/channel/channel_args.cc",
         "src/core/lib/channel/channel_stack.cc",
@@ -757,6 +814,7 @@ grpc_cc_library(
         "src/core/lib/transport/transport_op_string.cc",
     ],
     hdrs = [
+        "src/core/lib/avl/avl.h",
         "src/core/lib/backoff/backoff.h",
         "src/core/lib/channel/channel_args.h",
         "src/core/lib/channel/channel_stack.h",
@@ -883,8 +941,8 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
     deps = [
-        "gpr_base",
         "gpr++_base",
+        "gpr_base",
         "grpc_codegen",
         "grpc_trace",
     ],
@@ -974,13 +1032,13 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "gpr_base",
+        "grpc_base",
+        "grpc_deadline_filter",
         "inlined_vector",
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
-        "gpr_base",
-        "grpc_base",
-        "grpc_deadline_filter",
     ],
 )
 
@@ -1090,7 +1148,6 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h",
@@ -1119,7 +1176,6 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h",
@@ -1271,10 +1327,10 @@ grpc_cc_library(
         "src/core/lib/security/credentials/oauth2/oauth2_credentials.cc",
         "src/core/lib/security/credentials/plugin/plugin_credentials.cc",
         "src/core/lib/security/credentials/ssl/ssl_credentials.cc",
+        "src/core/lib/security/security_connector/security_connector.cc",
         "src/core/lib/security/transport/client_auth_filter.cc",
         "src/core/lib/security/transport/lb_targets_info.cc",
         "src/core/lib/security/transport/secure_endpoint.cc",
-        "src/core/lib/security/transport/security_connector.cc",
         "src/core/lib/security/transport/security_handshaker.cc",
         "src/core/lib/security/transport/server_auth_filter.cc",
         "src/core/lib/security/transport/tsi_error.cc",
@@ -1294,10 +1350,10 @@ grpc_cc_library(
         "src/core/lib/security/credentials/oauth2/oauth2_credentials.h",
         "src/core/lib/security/credentials/plugin/plugin_credentials.h",
         "src/core/lib/security/credentials/ssl/ssl_credentials.h",
+        "src/core/lib/security/security_connector/security_connector.h",
         "src/core/lib/security/transport/auth_filters.h",
         "src/core/lib/security/transport/lb_targets_info.h",
         "src/core/lib/security/transport/secure_endpoint.h",
-        "src/core/lib/security/transport/security_connector.h",
         "src/core/lib/security/transport/security_handshaker.h",
         "src/core/lib/security/transport/tsi_error.h",
         "src/core/lib/security/util/json_util.h",
@@ -1610,6 +1666,36 @@ grpc_cc_library(
         "include/grpc++/impl/codegen/stub_options.h",
         "include/grpc++/impl/codegen/sync_stream.h",
         "include/grpc++/impl/codegen/time.h",
+        "include/grpcpp/impl/codegen/async_stream.h",
+        "include/grpcpp/impl/codegen/async_unary_call.h",
+        "include/grpcpp/impl/codegen/byte_buffer.h",
+        "include/grpcpp/impl/codegen/call.h",
+        "include/grpcpp/impl/codegen/call_hook.h",
+        "include/grpcpp/impl/codegen/channel_interface.h",
+        "include/grpcpp/impl/codegen/client_context.h",
+        "include/grpcpp/impl/codegen/client_unary_call.h",
+        "include/grpcpp/impl/codegen/completion_queue.h",
+        "include/grpcpp/impl/codegen/completion_queue_tag.h",
+        "include/grpcpp/impl/codegen/config.h",
+        "include/grpcpp/impl/codegen/core_codegen_interface.h",
+        "include/grpcpp/impl/codegen/create_auth_context.h",
+        "include/grpcpp/impl/codegen/grpc_library.h",
+        "include/grpcpp/impl/codegen/metadata_map.h",
+        "include/grpcpp/impl/codegen/method_handler_impl.h",
+        "include/grpcpp/impl/codegen/rpc_method.h",
+        "include/grpcpp/impl/codegen/rpc_service_method.h",
+        "include/grpcpp/impl/codegen/security/auth_context.h",
+        "include/grpcpp/impl/codegen/serialization_traits.h",
+        "include/grpcpp/impl/codegen/server_context.h",
+        "include/grpcpp/impl/codegen/server_interface.h",
+        "include/grpcpp/impl/codegen/service_type.h",
+        "include/grpcpp/impl/codegen/slice.h",
+        "include/grpcpp/impl/codegen/status.h",
+        "include/grpcpp/impl/codegen/status_code_enum.h",
+        "include/grpcpp/impl/codegen/string_ref.h",
+        "include/grpcpp/impl/codegen/stub_options.h",
+        "include/grpcpp/impl/codegen/sync_stream.h",
+        "include/grpcpp/impl/codegen/time.h",
     ],
     deps = [
         "grpc_codegen",
@@ -1632,6 +1718,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = [
         "include/grpc++/impl/codegen/proto_utils.h",
+        "include/grpcpp/impl/codegen/proto_utils.h",
     ],
     deps = [
         "grpc++_codegen_base",
@@ -1647,6 +1734,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = [
         "include/grpc++/impl/codegen/config_protobuf.h",
+        "include/grpcpp/impl/codegen/config_protobuf.h",
     ],
 )
 
@@ -1662,6 +1750,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = [
         "include/grpc++/ext/proto_server_reflection_plugin.h",
+        "include/grpcpp/ext/proto_server_reflection_plugin.h",
     ],
     deps = [
         ":grpc++",
@@ -1675,6 +1764,8 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpc++/test/mock_stream.h",
         "include/grpc++/test/server_context_test_spouse.h",
+        "include/grpcpp/test/mock_stream.h",
+        "include/grpcpp/test/server_context_test_spouse.h",
     ],
     deps = [
         ":grpc++",

@@ -28,7 +28,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
 
 static void* tag(intptr_t t) { return (void*)t; }
@@ -149,7 +148,8 @@ static void test(grpc_end2end_test_config config, bool request_status_early) {
     op->data.recv_status_on_client.status_details = &details;
     op++;
   }
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
@@ -166,7 +166,8 @@ static void test(grpc_end2end_test_config config, bool request_status_early) {
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message.send_message = response_payload1;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
@@ -180,7 +181,8 @@ static void test(grpc_end2end_test_config config, bool request_status_early) {
   op->op = GRPC_OP_SEND_MESSAGE;
   op->data.send_message.send_message = response_payload2;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(103),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
@@ -191,7 +193,8 @@ static void test(grpc_end2end_test_config config, bool request_status_early) {
     op->op = GRPC_OP_RECV_MESSAGE;
     op->data.recv_message.recv_message = &response_payload2_recv;
     op++;
-    error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(2), nullptr);
+    error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(2),
+                                  nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
     CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
@@ -209,7 +212,8 @@ static void test(grpc_end2end_test_config config, bool request_status_early) {
   grpc_slice status_details = grpc_slice_from_static_string("xyz");
   op->data.send_status_from_server.status_details = &status_details;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(104), nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(104),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(104), 1);
@@ -226,7 +230,8 @@ static void test(grpc_end2end_test_config config, bool request_status_early) {
     op->data.recv_status_on_client.status = &status;
     op->data.recv_status_on_client.status_details = &details;
     op++;
-    error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(3), nullptr);
+    error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(3),
+                                  nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
     CQ_EXPECT_COMPLETION(cqv, tag(3), 1);

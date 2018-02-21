@@ -20,6 +20,7 @@ ROOT="$(dirname "$0")/../../.."
 
 DIRS=(
     'test'
+    'tools/gce'
     'tools/run_tests'
 )
 

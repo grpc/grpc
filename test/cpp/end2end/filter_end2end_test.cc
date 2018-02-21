@@ -31,9 +31,9 @@
 #include <grpc++/support/config.h>
 #include <grpc++/support/slice.h>
 #include <grpc/grpc.h>
-#include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gpr/thd.h"
 #include "src/cpp/common/channel_filter.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -50,7 +50,7 @@ namespace grpc {
 namespace testing {
 namespace {
 
-void* tag(int i) { return (void*)(intptr_t)i; }
+void* tag(int i) { return (void*)static_cast<intptr_t>(i); }
 
 void verify_ok(CompletionQueue* cq, int i, bool expect_ok) {
   bool ok;

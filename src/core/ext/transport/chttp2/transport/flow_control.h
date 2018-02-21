@@ -22,8 +22,8 @@
 #include <grpc/support/port_platform.h>
 #include <stdint.h>
 
-#include <grpc/support/useful.h>
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/transport/bdp_estimator.h"
@@ -44,7 +44,7 @@ namespace grpc_core {
 namespace chttp2 {
 
 static constexpr uint32_t kDefaultWindow = 65535;
-static constexpr int64_t kMaxWindow = (int64_t)((1u << 31) - 1);
+static constexpr int64_t kMaxWindow = static_cast<int64_t>((1u << 31) - 1);
 // TODO(ncteisen): Tune this
 static constexpr uint32_t kFrameSize = 1024 * 1024;
 
@@ -271,9 +271,10 @@ class TransportFlowControl final : public TransportFlowControlBase {
   // See comment above announced_stream_total_over_incoming_window_ for the
   // logic behind this decision.
   int64_t target_window() const override {
-    return (uint32_t)GPR_MIN((int64_t)((1u << 31) - 1),
-                             announced_stream_total_over_incoming_window_ +
-                                 target_initial_window_size_);
+    return static_cast<uint32_t> GPR_MIN(
+        (int64_t)((1u << 31) - 1),
+        announced_stream_total_over_incoming_window_ +
+            target_initial_window_size_);
   }
 
   const grpc_chttp2_transport* transport() const { return t_; }

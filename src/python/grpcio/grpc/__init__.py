@@ -173,7 +173,8 @@ class Future(six.with_metaclass(abc.ABCMeta)):
         """Adds a function to be called at completion of the computation.
 
         The callback will be passed this Future object describing the outcome
-        of the computation.
+        of the computation.  Callbacks will be invoked after the future is
+        terimated, whether successfully or not.
 
         If the computation has already completed, the callback will be called
         immediately.

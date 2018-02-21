@@ -23,7 +23,8 @@
 
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include <grpc/support/useful.h>
+
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/profiling/timers.h"
 #include "test/core/util/cmdline.h"
 #include "test/core/util/grpc_profiler.h"
@@ -126,7 +127,7 @@ static void step_ping_pong_stream(void) {
 
 static double now(void) {
   gpr_timespec tv = gpr_now(GPR_CLOCK_REALTIME);
-  return 1e9 * (double)tv.tv_sec + tv.tv_nsec;
+  return 1e9 * static_cast<double>(tv.tv_sec) + tv.tv_nsec;
 }
 
 typedef struct {
@@ -194,7 +195,8 @@ int main(int argc, char** argv) {
 
   channel = grpc_insecure_channel_create(target, nullptr, nullptr);
   cq = grpc_completion_queue_create_for_next(nullptr);
-  the_buffer = grpc_raw_byte_buffer_create(&slice, (size_t)payload_size);
+  the_buffer =
+      grpc_raw_byte_buffer_create(&slice, static_cast<size_t>(payload_size));
   histogram = grpc_histogram_create(0.01, 60e9);
 
   sc.init();

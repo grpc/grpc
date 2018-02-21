@@ -24,7 +24,7 @@ grpc_fuzzer(
     name = "ssl_server_fuzzer",
     srcs = ["ssl_server_fuzzer.cc"],
     language = "C++",
-    corpus = "corpus",
+    corpus = "corpus/ssl_server_corpus",
     deps = [
         "//:gpr",
         "//:grpc",

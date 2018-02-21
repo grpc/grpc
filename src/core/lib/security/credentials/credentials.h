@@ -27,7 +27,7 @@
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/security/transport/security_connector.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
 
 struct grpc_http_response;
 

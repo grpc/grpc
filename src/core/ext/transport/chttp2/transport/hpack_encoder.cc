@@ -28,7 +28,6 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/useful.h>
 
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_table.h"
@@ -79,15 +78,15 @@ typedef struct {
 static void fill_header(uint8_t* p, uint8_t type, uint32_t id, size_t len,
                         uint8_t flags) {
   GPR_ASSERT(len < 16777316);
-  *p++ = (uint8_t)(len >> 16);
-  *p++ = (uint8_t)(len >> 8);
-  *p++ = (uint8_t)(len);
+  *p++ = static_cast<uint8_t>(len >> 16);
+  *p++ = static_cast<uint8_t>(len >> 8);
+  *p++ = static_cast<uint8_t>(len);
   *p++ = type;
   *p++ = flags;
-  *p++ = (uint8_t)(id >> 24);
-  *p++ = (uint8_t)(id >> 16);
-  *p++ = (uint8_t)(id >> 8);
-  *p++ = (uint8_t)(id);
+  *p++ = static_cast<uint8_t>(id >> 24);
+  *p++ = static_cast<uint8_t>(id >> 16);
+  *p++ = static_cast<uint8_t>(id >> 8);
+  *p++ = static_cast<uint8_t>(id);
 }
 
 /* finish a frame - fill in the previously reserved header */
@@ -99,8 +98,9 @@ static void finish_frame(framer_state* st, int is_header_boundary,
   fill_header(
       GRPC_SLICE_START_PTR(st->output->slices[st->header_idx]), type,
       st->stream_id, st->output->length - st->output_length_at_start_of_frame,
-      (uint8_t)((is_last_in_stream ? GRPC_CHTTP2_DATA_FLAG_END_STREAM : 0) |
-                (is_header_boundary ? GRPC_CHTTP2_DATA_FLAG_END_HEADERS : 0)));
+      static_cast<uint8_t>(
+          (is_last_in_stream ? GRPC_CHTTP2_DATA_FLAG_END_STREAM : 0) |
+          (is_header_boundary ? GRPC_CHTTP2_DATA_FLAG_END_HEADERS : 0)));
   st->stats->framing_bytes += 9;
   st->is_first_frame = 0;
 }
@@ -170,9 +170,9 @@ static void evict_entry(grpc_chttp2_hpack_compressor* c) {
   GPR_ASSERT(c->table_size >=
              c->table_elem_size[c->tail_remote_index % c->cap_table_elems]);
   GPR_ASSERT(c->table_elems > 0);
-  c->table_size =
-      (uint16_t)(c->table_size -
-                 c->table_elem_size[c->tail_remote_index % c->cap_table_elems]);
+  c->table_size = static_cast<uint16_t>(
+      c->table_size -
+      c->table_elem_size[c->tail_remote_index % c->cap_table_elems]);
   c->table_elems--;
 }
 
@@ -198,8 +198,9 @@ static uint32_t prepare_space_for_new_elem(grpc_chttp2_hpack_compressor* c,
     evict_entry(c);
   }
   GPR_ASSERT(c->table_elems < c->max_table_size);
-  c->table_elem_size[new_index % c->cap_table_elems] = (uint16_t)elem_size;
-  c->table_size = (uint16_t)(c->table_size + elem_size);
+  c->table_elem_size[new_index % c->cap_table_elems] =
+      static_cast<uint16_t>(elem_size);
+  c->table_size = static_cast<uint16_t>(c->table_size + elem_size);
   c->table_elems++;
 
   return new_index;
@@ -395,9 +396,9 @@ static void emit_lithdr_incidx_v(grpc_chttp2_hpack_compressor* c,
   GPR_ASSERT(unused_index == 0);
   GRPC_STATS_INC_HPACK_SEND_LITHDR_INCIDX_V();
   GRPC_STATS_INC_HPACK_SEND_UNCOMPRESSED();
-  uint32_t len_key = (uint32_t)GRPC_SLICE_LENGTH(GRPC_MDKEY(elem));
+  uint32_t len_key = static_cast<uint32_t> GRPC_SLICE_LENGTH(GRPC_MDKEY(elem));
   wire_value value = get_wire_value(elem, st->use_true_binary_metadata);
-  uint32_t len_val = (uint32_t)wire_value_length(value);
+  uint32_t len_val = static_cast<uint32_t>(wire_value_length(value));
   uint32_t len_key_len = GRPC_CHTTP2_VARINT_LENGTH(len_key, 1);
   uint32_t len_val_len = GRPC_CHTTP2_VARINT_LENGTH(len_val, 1);
   GPR_ASSERT(len_key <= UINT32_MAX);
@@ -417,9 +418,9 @@ static void emit_lithdr_noidx_v(grpc_chttp2_hpack_compressor* c,
   GPR_ASSERT(unused_index == 0);
   GRPC_STATS_INC_HPACK_SEND_LITHDR_NOTIDX_V();
   GRPC_STATS_INC_HPACK_SEND_UNCOMPRESSED();
-  uint32_t len_key = (uint32_t)GRPC_SLICE_LENGTH(GRPC_MDKEY(elem));
+  uint32_t len_key = static_cast<uint32_t> GRPC_SLICE_LENGTH(GRPC_MDKEY(elem));
   wire_value value = get_wire_value(elem, st->use_true_binary_metadata);
-  uint32_t len_val = (uint32_t)wire_value_length(value);
+  uint32_t len_val = static_cast<uint32_t>(wire_value_length(value));
   uint32_t len_key_len = GRPC_CHTTP2_VARINT_LENGTH(len_key, 1);
   uint32_t len_val_len = GRPC_CHTTP2_VARINT_LENGTH(len_val, 1);
   GPR_ASSERT(len_key <= UINT32_MAX);
@@ -584,8 +585,8 @@ void grpc_chttp2_hpack_compressor_init(grpc_chttp2_hpack_compressor* c) {
   c->cap_table_elems = elems_for_bytes(c->max_table_size);
   c->max_table_elems = c->cap_table_elems;
   c->max_usable_size = GRPC_CHTTP2_HPACKC_INITIAL_TABLE_SIZE;
-  c->table_elem_size =
-      (uint16_t*)gpr_malloc(sizeof(*c->table_elem_size) * c->cap_table_elems);
+  c->table_elem_size = static_cast<uint16_t*>(
+      gpr_malloc(sizeof(*c->table_elem_size) * c->cap_table_elems));
   memset(c->table_elem_size, 0,
          sizeof(*c->table_elem_size) * c->cap_table_elems);
   for (size_t i = 0; i < GPR_ARRAY_SIZE(c->entries_keys); i++) {
@@ -613,7 +614,7 @@ void grpc_chttp2_hpack_compressor_set_max_usable_size(
 
 static void rebuild_elems(grpc_chttp2_hpack_compressor* c, uint32_t new_cap) {
   uint16_t* table_elem_size =
-      (uint16_t*)gpr_malloc(sizeof(*table_elem_size) * new_cap);
+      static_cast<uint16_t*>(gpr_malloc(sizeof(*table_elem_size) * new_cap));
   uint32_t i;
 
   memset(table_elem_size, 0, sizeof(*table_elem_size) * new_cap);

@@ -119,7 +119,8 @@ static void handshake_failed_locked(http_connect_handshaker* handshaker,
 
 // Callback invoked when finished writing HTTP CONNECT request.
 static void on_write_done(void* arg, grpc_error* error) {
-  http_connect_handshaker* handshaker = (http_connect_handshaker*)arg;
+  http_connect_handshaker* handshaker =
+      static_cast<http_connect_handshaker*>(arg);
   gpr_mu_lock(&handshaker->mu);
   if (error != GRPC_ERROR_NONE || handshaker->shutdown) {
     // If the write failed or we're shutting down, clean up and invoke the
@@ -139,7 +140,8 @@ static void on_write_done(void* arg, grpc_error* error) {
 
 // Callback invoked for reading HTTP CONNECT response.
 static void on_read_done(void* arg, grpc_error* error) {
-  http_connect_handshaker* handshaker = (http_connect_handshaker*)arg;
+  http_connect_handshaker* handshaker =
+      static_cast<http_connect_handshaker*>(arg);
   gpr_mu_lock(&handshaker->mu);
   if (error != GRPC_ERROR_NONE || handshaker->shutdown) {
     // If the read failed or we're shutting down, clean up and invoke the
@@ -224,13 +226,15 @@ done:
 //
 
 static void http_connect_handshaker_destroy(grpc_handshaker* handshaker_in) {
-  http_connect_handshaker* handshaker = (http_connect_handshaker*)handshaker_in;
+  http_connect_handshaker* handshaker =
+      reinterpret_cast<http_connect_handshaker*>(handshaker_in);
   http_connect_handshaker_unref(handshaker);
 }
 
 static void http_connect_handshaker_shutdown(grpc_handshaker* handshaker_in,
                                              grpc_error* why) {
-  http_connect_handshaker* handshaker = (http_connect_handshaker*)handshaker_in;
+  http_connect_handshaker* handshaker =
+      reinterpret_cast<http_connect_handshaker*>(handshaker_in);
   gpr_mu_lock(&handshaker->mu);
   if (!handshaker->shutdown) {
     handshaker->shutdown = true;
@@ -244,12 +248,14 @@ static void http_connect_handshaker_shutdown(grpc_handshaker* handshaker_in,
 static void http_connect_handshaker_do_handshake(
     grpc_handshaker* handshaker_in, grpc_tcp_server_acceptor* acceptor,
     grpc_closure* on_handshake_done, grpc_handshaker_args* args) {
-  http_connect_handshaker* handshaker = (http_connect_handshaker*)handshaker_in;
+  http_connect_handshaker* handshaker =
+      reinterpret_cast<http_connect_handshaker*>(handshaker_in);
   // Check for HTTP CONNECT channel arg.
   // If not found, invoke on_handshake_done without doing anything.
   const grpc_arg* arg =
       grpc_channel_args_find(args->args, GRPC_ARG_HTTP_CONNECT_SERVER);
-  if (arg == nullptr) {
+  char* server_name = grpc_channel_arg_get_string(arg);
+  if (server_name == nullptr) {
     // Set shutdown to true so that subsequent calls to
     // http_connect_handshaker_shutdown() do nothing.
     gpr_mu_lock(&handshaker->mu);
@@ -258,20 +264,18 @@ static void http_connect_handshaker_do_handshake(
     GRPC_CLOSURE_SCHED(on_handshake_done, GRPC_ERROR_NONE);
     return;
   }
-  GPR_ASSERT(arg->type == GRPC_ARG_STRING);
-  char* server_name = arg->value.string;
   // Get headers from channel args.
   arg = grpc_channel_args_find(args->args, GRPC_ARG_HTTP_CONNECT_HEADERS);
+  char* arg_header_string = grpc_channel_arg_get_string(arg);
   grpc_http_header* headers = nullptr;
   size_t num_headers = 0;
   char** header_strings = nullptr;
   size_t num_header_strings = 0;
-  if (arg != nullptr) {
-    GPR_ASSERT(arg->type == GRPC_ARG_STRING);
-    gpr_string_split(arg->value.string, "\n", &header_strings,
+  if (arg_header_string != nullptr) {
+    gpr_string_split(arg_header_string, "\n", &header_strings,
                      &num_header_strings);
-    headers = (grpc_http_header*)gpr_malloc(sizeof(grpc_http_header) *
-                                            num_header_strings);
+    headers = static_cast<grpc_http_header*>(
+        gpr_malloc(sizeof(grpc_http_header) * num_header_strings));
     for (size_t i = 0; i < num_header_strings; ++i) {
       char* sep = strchr(header_strings[i], ':');
       if (sep == nullptr) {
@@ -324,7 +328,7 @@ static const grpc_handshaker_vtable http_connect_handshaker_vtable = {
 
 static grpc_handshaker* grpc_http_connect_handshaker_create() {
   http_connect_handshaker* handshaker =
-      (http_connect_handshaker*)gpr_malloc(sizeof(*handshaker));
+      static_cast<http_connect_handshaker*>(gpr_malloc(sizeof(*handshaker)));
   memset(handshaker, 0, sizeof(*handshaker));
   grpc_handshaker_init(&http_connect_handshaker_vtable, &handshaker->base);
   gpr_mu_init(&handshaker->mu);

@@ -18,7 +18,7 @@ some configuration as environment variables that can be set.
 * GRPC_SSL_CIPHER_SUITES
   A colon separated list of cipher suites to use with OpenSSL
   Defaults to:
-    ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES256-GCM-SHA384
+    ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384
 
 * GRPC_DEFAULT_SSL_ROOTS_FILE_PATH
   PEM file to load SSL roots from

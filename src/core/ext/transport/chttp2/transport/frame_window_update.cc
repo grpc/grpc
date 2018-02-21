@@ -37,14 +37,14 @@ grpc_slice grpc_chttp2_window_update_create(
   *p++ = 4;
   *p++ = GRPC_CHTTP2_FRAME_WINDOW_UPDATE;
   *p++ = 0;
-  *p++ = (uint8_t)(id >> 24);
-  *p++ = (uint8_t)(id >> 16);
-  *p++ = (uint8_t)(id >> 8);
-  *p++ = (uint8_t)(id);
-  *p++ = (uint8_t)(window_update >> 24);
-  *p++ = (uint8_t)(window_update >> 16);
-  *p++ = (uint8_t)(window_update >> 8);
-  *p++ = (uint8_t)(window_update);
+  *p++ = static_cast<uint8_t>(id >> 24);
+  *p++ = static_cast<uint8_t>(id >> 16);
+  *p++ = static_cast<uint8_t>(id >> 8);
+  *p++ = static_cast<uint8_t>(id);
+  *p++ = static_cast<uint8_t>(window_update >> 24);
+  *p++ = static_cast<uint8_t>(window_update >> 16);
+  *p++ = static_cast<uint8_t>(window_update >> 8);
+  *p++ = static_cast<uint8_t>(window_update);
 
   return slice;
 }
@@ -73,16 +73,16 @@ grpc_error* grpc_chttp2_window_update_parser_parse(void* parser,
   uint8_t* const end = GRPC_SLICE_END_PTR(slice);
   uint8_t* cur = beg;
   grpc_chttp2_window_update_parser* p =
-      (grpc_chttp2_window_update_parser*)parser;
+      static_cast<grpc_chttp2_window_update_parser*>(parser);
 
   while (p->byte != 4 && cur != end) {
-    p->amount |= ((uint32_t)*cur) << (8 * (3 - p->byte));
+    p->amount |= (static_cast<uint32_t>(*cur)) << (8 * (3 - p->byte));
     cur++;
     p->byte++;
   }
 
   if (s != nullptr) {
-    s->stats.incoming.framing_bytes += (uint32_t)(end - cur);
+    s->stats.incoming.framing_bytes += static_cast<uint32_t>(end - cur);
   }
 
   if (p->byte == 4) {

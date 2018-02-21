@@ -16,8 +16,8 @@
  *
  */
 
-#include <grpc++/support/slice.h>
 #include <grpc/slice.h>
+#include <grpcpp/support/slice.h>
 
 namespace grpc {
 

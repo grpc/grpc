@@ -40,7 +40,7 @@ typedef struct {
 } oauth2_request;
 
 static void on_oauth2_response(void* arg, grpc_error* error) {
-  oauth2_request* request = (oauth2_request*)arg;
+  oauth2_request* request = static_cast<oauth2_request*>(arg);
   char* token = nullptr;
   grpc_slice token_slice;
   if (error != GRPC_ERROR_NONE) {
@@ -48,7 +48,7 @@ static void on_oauth2_response(void* arg, grpc_error* error) {
   } else {
     GPR_ASSERT(request->md_array.size == 1);
     token_slice = GRPC_MDVALUE(request->md_array.md[0]);
-    token = (char*)gpr_malloc(GRPC_SLICE_LENGTH(token_slice) + 1);
+    token = static_cast<char*>(gpr_malloc(GRPC_SLICE_LENGTH(token_slice) + 1));
     memcpy(token, GRPC_SLICE_START_PTR(token_slice),
            GRPC_SLICE_LENGTH(token_slice));
     token[GRPC_SLICE_LENGTH(token_slice)] = '\0';
@@ -73,7 +73,8 @@ char* grpc_test_fetch_oauth2_token_with_credentials(
   grpc_closure do_nothing_closure;
   grpc_auth_metadata_context null_ctx = {"", "", nullptr, nullptr};
 
-  grpc_pollset* pollset = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
+  grpc_pollset* pollset =
+      static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(pollset, &request.mu);
   request.pops = grpc_polling_entity_create_from_pollset(pollset);
   request.is_done = false;

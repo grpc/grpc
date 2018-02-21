@@ -20,10 +20,10 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/thd.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/host_port.h"
+#include "src/core/lib/gpr/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"

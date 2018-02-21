@@ -218,7 +218,7 @@ static grpc_json* parse_json_part_from_jwt(const char* str, size_t len,
   slice = grpc_base64_decode(b64, 1);
   GPR_ASSERT(!GRPC_SLICE_IS_EMPTY(slice));
   decoded = static_cast<char*>(gpr_malloc(GRPC_SLICE_LENGTH(slice) + 1));
-  strncpy(decoded, (const char*)GRPC_SLICE_START_PTR(slice),
+  strncpy(decoded, reinterpret_cast<const char*> GRPC_SLICE_START_PTR(slice),
           GRPC_SLICE_LENGTH(slice));
   decoded[GRPC_SLICE_LENGTH(slice)] = '\0';
   json = grpc_json_parse_string(decoded);
@@ -385,21 +385,21 @@ static void test_jwt_encode_and_sign(
   char* jwt = jwt_encode_and_sign_func(&json_key);
   const char* dot = strchr(jwt, '.');
   GPR_ASSERT(dot != nullptr);
-  parsed_header =
-      parse_json_part_from_jwt(jwt, (size_t)(dot - jwt), &scratchpad);
+  parsed_header = parse_json_part_from_jwt(jwt, static_cast<size_t>(dot - jwt),
+                                           &scratchpad);
   GPR_ASSERT(parsed_header != nullptr);
   check_jwt_header(parsed_header);
-  offset = (size_t)(dot - jwt) + 1;
+  offset = static_cast<size_t>(dot - jwt) + 1;
   grpc_json_destroy(parsed_header);
   gpr_free(scratchpad);
 
   dot = strchr(jwt + offset, '.');
   GPR_ASSERT(dot != nullptr);
   parsed_claim = parse_json_part_from_jwt(
-      jwt + offset, (size_t)(dot - (jwt + offset)), &scratchpad);
+      jwt + offset, static_cast<size_t>(dot - (jwt + offset)), &scratchpad);
   GPR_ASSERT(parsed_claim != nullptr);
   check_jwt_claim_func(parsed_claim);
-  offset = (size_t)(dot - jwt) + 1;
+  offset = static_cast<size_t>(dot - jwt) + 1;
   grpc_json_destroy(parsed_claim);
   gpr_free(scratchpad);
 

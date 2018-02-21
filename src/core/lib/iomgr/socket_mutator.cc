@@ -18,11 +18,11 @@
 
 #include "src/core/lib/iomgr/socket_mutator.h"
 
-#include "src/core/lib/channel/channel_args.h"
-
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/useful.h>
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/useful.h"
 
 void grpc_socket_mutator_init(grpc_socket_mutator* mutator,
                               const grpc_socket_mutator_vtable* vtable) {
@@ -60,16 +60,16 @@ void grpc_socket_mutator_unref(grpc_socket_mutator* mutator) {
 }
 
 static void* socket_mutator_arg_copy(void* p) {
-  return grpc_socket_mutator_ref((grpc_socket_mutator*)p);
+  return grpc_socket_mutator_ref(static_cast<grpc_socket_mutator*>(p));
 }
 
 static void socket_mutator_arg_destroy(void* p) {
-  grpc_socket_mutator_unref((grpc_socket_mutator*)p);
+  grpc_socket_mutator_unref(static_cast<grpc_socket_mutator*>(p));
 }
 
 static int socket_mutator_cmp(void* a, void* b) {
-  return grpc_socket_mutator_compare((grpc_socket_mutator*)a,
-                                     (grpc_socket_mutator*)b);
+  return grpc_socket_mutator_compare(static_cast<grpc_socket_mutator*>(a),
+                                     static_cast<grpc_socket_mutator*>(b));
 }
 
 static const grpc_arg_pointer_vtable socket_mutator_arg_vtable = {
