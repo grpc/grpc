@@ -160,7 +160,7 @@ if "win32" in sys.platform:
 
 DEFINE_MACROS = (
     ('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600),
-    ('GPR_BACKWARDS_COMPATIBILITY_MODE', 1),)
+    ('GPR_BACKWARDS_COMPATIBILITY_MODE', 1), ('PB_FIELD_16BIT', 1))
 if "win32" in sys.platform:
   # TODO(zyc): Re-enble c-ares on x64 and x86 windows after fixing the
   # ares_library_init compilation issue

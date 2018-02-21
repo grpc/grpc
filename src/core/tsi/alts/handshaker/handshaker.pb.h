@@ -32,6 +32,7 @@
 extern "C" {
 #endif
 
+  
 /* Enum definitions */
 typedef enum _grpc_gcp_HandshakeProtocol {
   grpc_gcp_HandshakeProtocol_HANDSHAKE_PROTOCOL_UNSPECIFIED = 0,
