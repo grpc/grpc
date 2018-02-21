@@ -37,60 +37,90 @@
 #error "Unknown compiler - please file a bug report"
 #endif
 
+namespace {
 struct thd_info {
+  grpc_core::Thread* thread;
   void (*body)(void* arg); /* body of a thread */
   void* arg;               /* argument to a thread */
   HANDLE join_event;       /* the join event */
 };
 
-static thread_local struct thd_info* g_thd_info;
+thread_local struct thd_info* g_thd_info;
 
 /* Destroys a thread info */
-static void destroy_thread(struct thd_info* t) {
+void destroy_thread(struct thd_info* t) {
   CloseHandle(t->join_event);
   gpr_free(t);
 }
+}  // namespace
 
-void gpr_thd_init(void) {}
+namespace grpc_core {
 
-/* Body of every thread started via gpr_thd_new. */
-static DWORD WINAPI thread_body(void* v) {
-  g_thd_info = (struct thd_info*)v;
-  g_thd_info->body(g_thd_info->arg);
-  BOOL ret = SetEvent(g_thd_info->join_event);
-  GPR_ASSERT(ret);
-  return 0;
+void Thread::Init() {}
+
+bool Thread::AwaitAll(gpr_timespec deadline) {
+  // TODO: Consider adding this if needed
+  return false;
 }
 
-int gpr_thd_new(gpr_thd_id* t, const char* thd_name,
-                void (*thd_body)(void* arg), void* arg) {
+Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
+               bool* success)
+    : real_(true), alive_(false), started_(false), joined_(false) {
+  gpr_mu_init(&mu_);
+  gpr_cv_init(&ready_);
+
   HANDLE handle;
   struct thd_info* info = (struct thd_info*)gpr_malloc(sizeof(*info));
+  info->thread = this;
   info->body = thd_body;
   info->arg = arg;
-  *t = 0;
-  info->join_event = CreateEvent(NULL, FALSE, FALSE, NULL);
-  if (info->join_event == NULL) {
+
+  info->join_event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+  if (info->join_event == nullptr) {
     gpr_free(info);
-    return 0;
-  }
-  handle = CreateThread(NULL, 64 * 1024, thread_body, info, 0, NULL);
-  if (handle == NULL) {
-    destroy_thread(info);
+    alive_ = false;
   } else {
-    *t = (gpr_thd_id)info;
-    CloseHandle(handle);
+    handle = CreateThread(nullptr, 64 * 1024,
+                          [](void* v) -> DWORD {
+                            g_thd_info = static_cast<thd_info*>(v);
+                            gpr_mu_lock(&g_thd_info->thread->mu_);
+                            if (!g_thd_info->thread->started_) {
+                              gpr_cv_wait(&g_thd_info->thread->ready_,
+                                          &g_thd_info->thread->mu_,
+                                          gpr_inf_future(GPR_CLOCK_MONOTONIC));
+                            }
+                            gpr_mu_unlock(&g_thd_info->thread->mu_);
+                            g_thd_info->body(g_thd_info->arg);
+                            BOOL ret = SetEvent(g_thd_info->join_event);
+                            GPR_ASSERT(ret);
+                            return 0;
+                          },
+                          info, 0, nullptr);
+    if (handle == nullptr) {
+      destroy_thread(info);
+      alive_ = false;
+    } else {
+      id_ = (gpr_thd_id)info;
+      CloseHandle(handle);
+      alive_ = true;
+    }
   }
-  return handle != NULL;
+  if (success != nullptr) {
+    *success = alive_;
+  }
 }
+
+void Thread::Join() {
+  if (alive_) {
+    thd_info* info = (thd_info*)id_;
+    DWORD ret = WaitForSingleObject(info->join_event, INFINITE);
+    GPR_ASSERT(ret == WAIT_OBJECT_0);
+    destroy_thread(info);
+  }
+  joined_ = true;
+}
+}  // namespace grpc_core
 
 gpr_thd_id gpr_thd_currentid(void) { return (gpr_thd_id)g_thd_info; }
-
-void gpr_thd_join(gpr_thd_id t) {
-  struct thd_info* info = (struct thd_info*)t;
-  DWORD ret = WaitForSingleObject(info->join_event, INFINITE);
-  GPR_ASSERT(ret == WAIT_OBJECT_0);
-  destroy_thread(info);
-}
 
 #endif /* GPR_WINDOWS */
