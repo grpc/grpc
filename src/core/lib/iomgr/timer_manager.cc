@@ -19,6 +19,7 @@
 #include "src/core/lib/iomgr/timer_manager.h"
 
 #include <inttypes.h>
+#include <string.h>
 #include <new>
 
 #include <grpc/support/alloc.h>
