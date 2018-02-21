@@ -23,7 +23,6 @@
 #include <grpc/support/sync.h>
 
 #include <inttypes.h>
-#include <string.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/abstract.h"
