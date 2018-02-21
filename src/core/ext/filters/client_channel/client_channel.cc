@@ -446,7 +446,6 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
         chand->lb_policy->UpdateLocked(*chand->resolver_result);
       } else {
         // Instantiate new LB policy.
-        lb_policy_created = true;
         grpc_core::LoadBalancingPolicy::Args lb_policy_args;
         lb_policy_args.combiner = chand->combiner;
         lb_policy_args.client_channel_factory = chand->client_channel_factory;
@@ -458,6 +457,7 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
           gpr_log(GPR_ERROR, "could not create LB policy \"%s\"",
                   lb_policy_name);
         } else {
+          lb_policy_created = true;
           reresolution_request_args* args =
               static_cast<reresolution_request_args*>(
                   gpr_zalloc(sizeof(*args)));
