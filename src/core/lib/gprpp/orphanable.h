@@ -32,10 +32,6 @@
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 
-#ifndef PRIdPTR
-#error "PRIdPTR not defined"
-#endif
-
 namespace grpc_core {
 
 // A base class for orphanable objects, which have one external owner
