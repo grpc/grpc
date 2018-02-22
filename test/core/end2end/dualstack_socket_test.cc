@@ -166,7 +166,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
   } else {
     /* Give up faster when failure is expected.
        BUG: Setting this to 1000 reveals a memory leak (b/18608927). */
-    deadline = grpc_timeout_milliseconds_to_deadline(3000);
+    deadline = grpc_timeout_milliseconds_to_deadline(8000);
   }
 
   /* Send a trivial request. */
