@@ -170,4 +170,22 @@ for path_file in expected_files:
 
     os.remove(path_file_expected)
 
+check_extensions = [".h", ".cc", ".c", ".m"]
+
+for root, dirs, files in os.walk('src'):
+    for filename in files:
+        path_file = os.path.join(root, filename)
+        for ext in check_extensions:
+            if path_file.endswith(ext):
+                try:
+                    with open(path_file, "r") as fi:
+                        content = fi.read()
+                        if '#include <grpc++/' in content:
+                            print(
+                                'Failed: invalid include of deprecated headers in include/grpc++ in %s'
+                                % path_file)
+                            errors += 1
+                except IOError:
+                    pass
+
 sys.exit(errors)
