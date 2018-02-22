@@ -85,9 +85,9 @@ static grpc_subchannel_args* get_secure_naming_subchannel_args(
     if (target_uri->path[0] != '\0') {  // "path" may be empty
       const grpc_slice key = grpc_slice_from_static_string(
           target_uri->path[0] == '/' ? target_uri->path + 1 : target_uri->path);
-      const grpc_core::UniquePtr<char>& value =
+      const grpc_core::UniquePtr<char>* value =
           target_authority_table->Get(key);
-      if (value != nullptr) authority.reset(gpr_strdup(value.get()));
+      if (value != nullptr) authority.reset(gpr_strdup(value->get()));
       grpc_slice_unref_internal(key);
     }
     grpc_uri_destroy(target_uri);

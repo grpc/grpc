@@ -55,8 +55,8 @@ class SliceHashTable : public RefCounted<SliceHashTable<T>> {
 
   /// Creates a new hash table of containing \a entries, which is an array
   /// of length \a num_entries.  Takes ownership of all keys and values in \a
-  /// entries.  If not NULL, \a value_cmp will be used to compare values in
-  /// the context of \a Cmp(). If NULL, raw pointer (\a GPR_ICMP) comparison
+  /// entries.  If not null, \a value_cmp will be used to compare values in
+  /// the context of \a Cmp(). If null, raw pointer (\a GPR_ICMP) comparison
   /// will be used.
   static RefCountedPtr<SliceHashTable> Create(size_t num_entries,
                                               Entry* entries,
@@ -64,7 +64,7 @@ class SliceHashTable : public RefCounted<SliceHashTable<T>> {
 
   /// Returns the value from the table associated with \a key.
   /// Returns null if \a key is not found.
-  const T& Get(const grpc_slice key) const;
+  const T* Get(const grpc_slice key) const;
 
   /// Compares \a a vs. \a b.
   /// A table is considered "smaller" (resp. "greater") if:
@@ -93,7 +93,6 @@ class SliceHashTable : public RefCounted<SliceHashTable<T>> {
   const size_t size_;
   size_t max_num_probes_;
   Entry* entries_;
-  T empty_value_;
 };
 
 //
@@ -152,7 +151,7 @@ void SliceHashTable<T>::Add(grpc_slice key, T& value) {
 }
 
 template <typename T>
-const T& SliceHashTable<T>::Get(const grpc_slice key) const {
+const T* SliceHashTable<T>::Get(const grpc_slice key) const {
   const size_t hash = grpc_slice_hash(key);
   // We cap the number of probes at the max number recorded when
   // populating the table.
@@ -160,10 +159,10 @@ const T& SliceHashTable<T>::Get(const grpc_slice key) const {
     const size_t idx = (hash + offset) % size_;
     if (IsEmpty(&entries_[idx])) break;
     if (grpc_slice_eq(entries_[idx].key, key)) {
-      return entries_[idx].value;
+      return &entries_[idx].value;
     }
   }
-  return empty_value_;  // Not found.
+  return nullptr;  // Not found.
 }
 
 template <typename T>

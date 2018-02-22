@@ -222,7 +222,7 @@ ServiceConfig::CreateMethodConfigTable(CreateValue<T> create_value) {
 template <typename T>
 RefCountedPtr<T> ServiceConfig::MethodConfigTableLookup(
     const SliceHashTable<RefCountedPtr<T>>& table, grpc_slice path) {
-  RefCountedPtr<T> value = table.Get(path);
+  const RefCountedPtr<T>* value = table.Get(path);
   // If we didn't find a match for the path, try looking for a wildcard
   // entry (i.e., change "/service/method" to "/service/*").
   if (value == nullptr) {
@@ -239,7 +239,7 @@ RefCountedPtr<T> ServiceConfig::MethodConfigTableLookup(
     grpc_slice_unref_internal(wildcard_path);
     gpr_free(path_str);
   }
-  return value;
+  return RefCountedPtr<T>(*value);
 }
 
 }  // namespace grpc_core
