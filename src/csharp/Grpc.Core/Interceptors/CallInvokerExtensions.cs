@@ -64,7 +64,7 @@ namespace Grpc.Core.Interceptors
         /// </remarks>
         public static CallInvoker Intercept(this CallInvoker invoker, params Interceptor[] interceptors)
         {
-            GrpcPreconditions.CheckNotNull(invoker, nameof(invoker);
+            GrpcPreconditions.CheckNotNull(invoker, nameof(invoker));
             GrpcPreconditions.CheckNotNull(interceptors, nameof(interceptors));
 
             foreach (var interceptor in interceptors.Reverse())
@@ -95,7 +95,7 @@ namespace Grpc.Core.Interceptors
             return new InterceptingCallInvoker(invoker, new MetadataInterceptor(interceptor));
         }
 
-        private class MetadataInterceptor : GenericInterceptor
+        private class MetadataInterceptor : Interceptor
         {
             readonly Func<Metadata, Metadata> interceptor;
 
@@ -107,13 +107,37 @@ namespace Grpc.Core.Interceptors
                 this.interceptor = GrpcPreconditions.CheckNotNull(interceptor, nameof(interceptor));
             }
 
-            protected override ClientCallHooks<TRequest, TResponse> InterceptCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context, bool clientStreaming, bool serverStreaming, TRequest request)
+            private ClientInterceptorContext<TRequest, TResponse> GetNewContext<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context)
+                where TRequest : class
+                where TResponse : class
             {
                 var metadata = context.Options.Headers ?? new Metadata();
-                return new ClientCallHooks<TRequest, TResponse>
-                {
-                    ContextOverride = new ClientInterceptorContext<TRequest, TResponse>(context.Method, context.Host, context.Options.WithHeaders(interceptor(metadata))),
-                };
+                return new ClientInterceptorContext<TRequest, TResponse>(context.Method, context.Host, context.Options.WithHeaders(interceptor(metadata)));
+            }
+
+            public override TResponse BlockingUnaryCall<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context, BlockingUnaryCallContinuation<TRequest, TResponse> continuation)
+            {
+                return continuation(request, GetNewContext(context));
+            }
+
+            public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context, AsyncUnaryCallContinuation<TRequest, TResponse> continuation)
+            {
+                return continuation(request, GetNewContext(context));
+            }
+
+            public override AsyncServerStreamingCall<TResponse> AsyncServerStreamingCall<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context, AsyncServerStreamingCallContinuation<TRequest, TResponse> continuation)
+            {
+                return continuation(request, GetNewContext(context));
+            }
+
+            public override AsyncClientStreamingCall<TRequest, TResponse> AsyncClientStreamingCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context, AsyncClientStreamingCallContinuation<TRequest, TResponse> continuation)
+            {
+                return continuation(GetNewContext(context));
+            }
+
+            public override AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context, AsyncDuplexStreamingCallContinuation<TRequest, TResponse> continuation)
+            {
+                return continuation(GetNewContext(context));
             }
         }
     }

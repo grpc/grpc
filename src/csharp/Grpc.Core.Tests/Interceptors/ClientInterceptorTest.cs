@@ -58,22 +58,6 @@ namespace Grpc.Core.Interceptors.Tests
             Assert.AreEqual("PASS", callInvoker.BlockingUnaryCall(new Method<string, string>(MethodType.Unary, MockServiceHelper.ServiceName, "Unary", Marshallers.StringMarshaller, Marshallers.StringMarshaller), Host, new CallOptions(), ""));
         }
 
-        private class CallbackInterceptor : GenericInterceptor
-        {
-            readonly Action callback;
-
-            public CallbackInterceptor(Action callback)
-            {
-                this.callback = callback;
-            }
-
-            protected override ClientCallHooks<TRequest, TResponse> InterceptCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context, bool clientStreaming, bool serverStreaming, TRequest request)
-            {
-                callback();
-                return null;
-            }
-        }
-
         [Test]
         public void CheckInterceptorOrderInClientInterceptors()
         {
@@ -118,23 +102,6 @@ namespace Grpc.Core.Interceptors.Tests
             Assert.Throws<ArgumentNullException>(() => helper.GetChannel().Intercept(default(Interceptor[])));
         }
 
-        private class CountingInterceptor : GenericInterceptor
-        {
-            protected override ClientCallHooks<TRequest, TResponse> InterceptCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context, bool clientStreaming, bool serverStreaming, TRequest request)
-            {
-                if (!clientStreaming)
-                {
-                    return null;
-                }
-                int counter = 0;
-                return new ClientCallHooks<TRequest, TResponse>
-                {
-                    OnRequestMessage = m => { counter++; return m; },
-                    OnUnaryResponse = x => (TResponse)(object)counter.ToString()  // Cast to object first is needed to satisfy the type-checker
-                };
-            }
-        }
-
         [Test]
         public async Task CountNumberOfRequestsInClientInterceptors()
         {
@@ -151,7 +118,7 @@ namespace Grpc.Core.Interceptors.Tests
                 return stringBuilder.ToString();
             });
 
-            var callInvoker = helper.GetChannel().Intercept(new CountingInterceptor());
+            var callInvoker = helper.GetChannel().Intercept(new ClientStreamingCountingInterceptor());
 
             var server = helper.GetServer();
             server.Start();
@@ -161,6 +128,101 @@ namespace Grpc.Core.Interceptors.Tests
 
             Assert.AreEqual(StatusCode.OK, call.GetStatus().StatusCode);
             Assert.IsNotNull(call.GetTrailers());
+        }
+
+        private class CallbackInterceptor : Interceptor
+        {
+            readonly Action callback;
+
+            public CallbackInterceptor(Action callback)
+            {
+                this.callback = GrpcPreconditions.CheckNotNull(callback, nameof(callback));
+            }
+
+            public override TResponse BlockingUnaryCall<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context, BlockingUnaryCallContinuation<TRequest, TResponse> continuation)
+            {
+                callback();
+                return continuation(request, context);
+            }
+
+            public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context, AsyncUnaryCallContinuation<TRequest, TResponse> continuation)
+            {
+                callback();
+                return continuation(request, context);
+            }
+
+            public override AsyncServerStreamingCall<TResponse> AsyncServerStreamingCall<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context, AsyncServerStreamingCallContinuation<TRequest, TResponse> continuation)
+            {
+                callback();
+                return continuation(request, context);
+            }
+
+            public override AsyncClientStreamingCall<TRequest, TResponse> AsyncClientStreamingCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context, AsyncClientStreamingCallContinuation<TRequest, TResponse> continuation)
+            {
+                callback();
+                return continuation(context);
+            }
+
+            public override AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context, AsyncDuplexStreamingCallContinuation<TRequest, TResponse> continuation)
+            {
+                callback();
+                return continuation(context);
+            }
+        }
+
+        private class ClientStreamingCountingInterceptor : Interceptor
+        {
+            public override AsyncClientStreamingCall<TRequest, TResponse> AsyncClientStreamingCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context, AsyncClientStreamingCallContinuation<TRequest, TResponse> continuation)
+            {
+                var response = continuation(context);
+                int counter = 0;
+                var requestStream = new WrappedClientStreamWriter<TRequest>(response.RequestStream,
+                    message => { counter++; return message; }, null);
+                var responseAsync = response.ResponseAsync.ContinueWith(
+                    unaryResponse => (TResponse)(object)counter.ToString()  // Cast to object first is needed to satisfy the type-checker    
+                );
+                return new AsyncClientStreamingCall<TRequest, TResponse>(requestStream, responseAsync, response.ResponseHeadersAsync, response.GetStatus, response.GetTrailers, response.Dispose);
+            }
+        }
+
+        private class WrappedClientStreamWriter<T> : IClientStreamWriter<T>
+        {
+            readonly IClientStreamWriter<T> writer;
+            readonly Func<T, T> onMessage;
+            readonly Action onResponseStreamEnd;
+            public WrappedClientStreamWriter(IClientStreamWriter<T> writer, Func<T, T> onMessage, Action onResponseStreamEnd)
+            {
+                this.writer = writer;
+                this.onMessage = onMessage;
+                this.onResponseStreamEnd = onResponseStreamEnd;
+            }
+            public Task CompleteAsync()
+            {
+                if (onResponseStreamEnd != null)
+                {
+                    return writer.CompleteAsync().ContinueWith(x => onResponseStreamEnd());
+                }
+                return writer.CompleteAsync();
+            }
+            public Task WriteAsync(T message)
+            {
+                if (onMessage != null)
+                {
+                    message = onMessage(message);
+                }
+                return writer.WriteAsync(message);
+            }
+            public WriteOptions WriteOptions
+            {
+                get
+                {
+                    return writer.WriteOptions;
+                }
+                set
+                {
+                    writer.WriteOptions = value;
+                }
+            }
         }
     }
 }
