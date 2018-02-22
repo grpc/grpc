@@ -890,7 +890,10 @@ TEST_F(UpdatesTest, UpdateBalancers) {
   ScheduleResponseForBalancer(
       1, BalancerServiceImpl::BuildResponseForBackends(second_backend, {}), 0);
 
-  // Start servers and send 10 RPCs per server.
+  // Wait until the first backend is ready.
+  WaitForBackend(0);
+
+  // Send 10 requests.
   gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
   CheckRpcSendOk(10);
   gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
@@ -952,7 +955,10 @@ TEST_F(UpdatesTest, UpdateBalancersRepeated) {
   ScheduleResponseForBalancer(
       1, BalancerServiceImpl::BuildResponseForBackends(second_backend, {}), 0);
 
-  // Start servers and send 10 RPCs per server.
+  // Wait until the first backend is ready.
+  WaitForBackend(0);
+
+  // Send 10 requests.
   gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
   CheckRpcSendOk(10);
   gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
