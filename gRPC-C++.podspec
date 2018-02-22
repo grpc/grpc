@@ -69,6 +69,8 @@ Pod::Spec.new do |s|
 
   s.default_subspecs = 'Interface', 'Implementation'
 
+  s.header_mappings_dir = 'include/grpcpp'
+
   s.subspec 'Interface' do |ss|
     ss.header_mappings_dir = 'include/grpcpp'
 
