@@ -28,6 +28,7 @@
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/tcp_server.h"
+#include "src/core/tsi/ssl_session_cache.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 
@@ -212,7 +213,9 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
     grpc_channel_credentials* channel_creds,
     grpc_call_credentials* request_metadata_creds,
     const grpc_ssl_config* config, const char* target_name,
-    const char* overridden_target_name, grpc_channel_security_connector** sc);
+    const char* overridden_target_name,
+    grpc_core::RefCountedPtr<grpc_core::SslSessionLRUCache> ssl_session_cache,
+    grpc_channel_security_connector** sc);
 
 /* Gets the default ssl roots. Returns NULL if not found. */
 const char* grpc_get_default_ssl_roots(void);

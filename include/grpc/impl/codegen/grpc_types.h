@@ -258,6 +258,10 @@ typedef struct {
     secure channel is an SSL channel). If this parameter is specified and the
     underlying is not an SSL channel, it will just be ignored. */
 #define GRPC_SSL_TARGET_NAME_OVERRIDE_ARG "grpc.ssl_target_name_override"
+/** If non-zero, a pointer to a session cache (a pointer of type
+    grpc_ssl_session_cache*). (use grpc_ssl_session_cache_arg_vtable() to fetch
+    an appropriate pointer arg vtable) */
+#define GRPC_SSL_SESSION_CACHE_ARG "grpc.ssl_session_cache"
 /** Maximum metadata size, in bytes. Note this limit applies to the max sum of
     all metadata key-value entries in a batch of headers. */
 #define GRPC_ARG_MAX_METADATA_SIZE "grpc.max_metadata_size"
