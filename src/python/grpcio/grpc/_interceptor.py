@@ -24,6 +24,7 @@ class _ServicePipeline(object):
     def __init__(self, interceptors):
         self.interceptors = tuple(interceptors)
 
+
     def _continuation(self, thunk, index):
         return lambda context: self._intercept_at(thunk, index, context)
 
