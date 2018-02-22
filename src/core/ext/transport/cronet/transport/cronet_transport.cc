@@ -407,7 +407,7 @@ static void convert_cronet_array_to_metadata(
     if (grpc_is_binary_header(key)) {
       value = grpc_slice_from_static_string(header_array->headers[i].value);
       value = grpc_slice_intern(grpc_chttp2_base64_decode_with_length(
-          value, grpc_base64_infer_length_after_decode(value)));
+          value, grpc_chttp2_base64_infer_length_after_decode(value)));
     } else {
       value = grpc_slice_intern(
           grpc_slice_from_static_string(header_array->headers[i].value));
