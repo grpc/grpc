@@ -33,8 +33,7 @@
 /// (https://en.wikipedia.org/wiki/Open_addressing) with linear
 /// probing (https://en.wikipedia.org/wiki/Linear_probing).
 ///
-/// The keys are \a grpc_slice objects.  The values are arbitrary pointers
-/// with a common destroy function.
+/// The keys are \a grpc_slice objects.  The values can be any type.
 ///
 /// Hash tables are intentionally immutable, to avoid the need for locking.
 
@@ -44,6 +43,7 @@ template <typename T>
 class SliceHashTable : public RefCounted<SliceHashTable<T>> {
  public:
   struct Entry {
+    bool is_set;
     grpc_slice key;
     T value;  // Must not be null.
   };
@@ -64,7 +64,7 @@ class SliceHashTable : public RefCounted<SliceHashTable<T>> {
 
   /// Returns the value from the table associated with \a key.
   /// Returns null if \a key is not found.
-  const T* Get(const grpc_slice key) const;
+  const T* Get(const grpc_slice& key) const;
 
   /// Compares \a a vs. \a b.
   /// A table is considered "smaller" (resp. "greater") if:
@@ -81,8 +81,6 @@ class SliceHashTable : public RefCounted<SliceHashTable<T>> {
 
   SliceHashTable(size_t num_entries, Entry* entries, ValueCmp value_cmp);
   virtual ~SliceHashTable();
-
-  static bool IsEmpty(Entry* entry) { return entry->value == T(); }
 
   void Add(grpc_slice key, T& value);
 
@@ -123,10 +121,10 @@ SliceHashTable<T>::SliceHashTable(size_t num_entries, Entry* entries,
 template <typename T>
 SliceHashTable<T>::~SliceHashTable() {
   for (size_t i = 0; i < size_; ++i) {
-    Entry* entry = &entries_[i];
-    if (!IsEmpty(entry)) {
-      grpc_slice_unref_internal(entry->key);
-      entry->value.~T();
+    Entry& entry = entries_[i];
+    if (entry.is_set) {
+      grpc_slice_unref_internal(entry.key);
+      entry.value.~T();
     }
   }
   gpr_free(entries_);
@@ -134,11 +132,11 @@ SliceHashTable<T>::~SliceHashTable() {
 
 template <typename T>
 void SliceHashTable<T>::Add(grpc_slice key, T& value) {
-  GPR_ASSERT(value != nullptr);
   const size_t hash = grpc_slice_hash(key);
   for (size_t offset = 0; offset < size_; ++offset) {
     const size_t idx = (hash + offset) % size_;
-    if (IsEmpty(&entries_[idx])) {
+    if (!entries_[idx].is_set) {
+      entries_[idx].is_set = true;
       entries_[idx].key = key;
       entries_[idx].value = std::move(value);
       // Keep track of the maximum number of probes needed, since this
@@ -151,13 +149,13 @@ void SliceHashTable<T>::Add(grpc_slice key, T& value) {
 }
 
 template <typename T>
-const T* SliceHashTable<T>::Get(const grpc_slice key) const {
+const T* SliceHashTable<T>::Get(const grpc_slice& key) const {
   const size_t hash = grpc_slice_hash(key);
   // We cap the number of probes at the max number recorded when
   // populating the table.
   for (size_t offset = 0; offset <= max_num_probes_; ++offset) {
     const size_t idx = (hash + offset) % size_;
-    if (IsEmpty(&entries_[idx])) break;
+    if (!entries_[idx].is_set) break;
     if (grpc_slice_eq(entries_[idx].key, key)) {
       return &entries_[idx].value;
     }
@@ -179,12 +177,12 @@ int SliceHashTable<T>::Cmp(const SliceHashTable& a, const SliceHashTable& b) {
   if (a.size_ > b.size_) return 1;
   // Compare rows.
   for (size_t i = 0; i < a.size_; ++i) {
-    if (IsEmpty(&a.entries_[i])) {
-      if (!IsEmpty(&b.entries_[i])) {
+    if (!a.entries_[i].is_set) {
+      if (b.entries_[i].is_set) {
         return -1;  // a empty but b non-empty
       }
       continue;  // both empty, no need to check key or value
-    } else if (IsEmpty(&b.entries_[i])) {
+    } else if (!b.entries_[i].is_set) {
       return 1;  // a non-empty but b empty
     }
     // neither entry is empty
