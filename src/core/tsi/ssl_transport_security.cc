@@ -35,6 +35,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd_id.h>
 
@@ -47,6 +48,8 @@ extern "C" {
 #include <openssl/x509v3.h>
 }
 
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/tsi/ssl_session_cache.h"
 #include "src/core/tsi/ssl_types.h"
 #include "src/core/tsi/transport_security.h"
 
@@ -116,6 +119,7 @@ static gpr_mu* openssl_mutexes = nullptr;
 static void openssl_locking_cb(int mode, int type, const char* file,
                                int line) GRPC_UNUSED;
 static unsigned long openssl_thread_id_cb(void) GRPC_UNUSED;
+static unsigned char kSslSessionIdContext[] = {'g', 'r', 'p', 'c'};
 
 static void openssl_locking_cb(int mode, int type, const char* file, int line) {
   if (mode & CRYPTO_LOCK) {
@@ -144,6 +148,7 @@ static void init_openssl(void) {
   }
   CRYPTO_set_locking_callback(openssl_locking_cb);
   CRYPTO_set_id_callback(openssl_thread_id_cb);
+  grpc_core::SslSessionLRUCache::InitSslExIndex();
 }
 
 /* --- Ssl utils. ---*/
@@ -1015,25 +1020,34 @@ static tsi_result ssl_handshaker_extract_peer(tsi_handshaker* self,
     SSL_get0_next_proto_negotiated(impl->ssl, &alpn_selected,
                                    &alpn_selected_len);
   }
+
+  // 1 is for session reused property.
+  size_t new_property_count = peer->property_count + 1;
+  if (alpn_selected != nullptr) new_property_count++;
+  tsi_peer_property* new_properties = static_cast<tsi_peer_property*>(
+      gpr_zalloc(sizeof(*new_properties) * new_property_count));
+  for (size_t i = 0; i < peer->property_count; i++) {
+    new_properties[i] = peer->properties[i];
+  }
+  if (peer->properties != nullptr) gpr_free(peer->properties);
+  peer->properties = new_properties;
+
   if (alpn_selected != nullptr) {
-    size_t i;
-    tsi_peer_property* new_properties = static_cast<tsi_peer_property*>(
-        gpr_zalloc(sizeof(*new_properties) * (peer->property_count + 1)));
-    for (i = 0; i < peer->property_count; i++) {
-      new_properties[i] = peer->properties[i];
-    }
     result = tsi_construct_string_peer_property(
         TSI_SSL_ALPN_SELECTED_PROTOCOL,
         reinterpret_cast<const char*>(alpn_selected), alpn_selected_len,
-        &new_properties[peer->property_count]);
-    if (result != TSI_OK) {
-      gpr_free(new_properties);
-      return result;
-    }
-    if (peer->properties != nullptr) gpr_free(peer->properties);
+        &peer->properties[peer->property_count]);
+    if (result != TSI_OK) return result;
     peer->property_count++;
-    peer->properties = new_properties;
   }
+
+  const char* session_reused = SSL_session_reused(impl->ssl) ? "true" : "false";
+  result = tsi_construct_string_peer_property(
+      TSI_SSL_SESSION_REUSED_PEER_PROPERTY, session_reused,
+      strlen(session_reused) + 1, &peer->properties[peer->property_count]);
+  if (result != TSI_OK) return result;
+  peer->property_count++;
+
   return result;
 }
 
@@ -1139,6 +1153,7 @@ static tsi_result create_tsi_ssl_handshaker(SSL_CTX* ctx, int is_client,
         return TSI_INTERNAL_ERROR;
       }
     }
+    grpc_core::SslSessionLRUCache::ResumeSession(ssl);
     ssl_result = SSL_do_handshake(ssl);
     ssl_result = SSL_get_error(ssl, ssl_result);
     if (ssl_result != SSL_ERROR_WANT_READ) {
@@ -1366,6 +1381,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
     const tsi_ssl_pem_key_cert_pair* pem_key_cert_pair,
     const char* pem_root_certs, const char* cipher_suites,
     const char** alpn_protocols, uint16_t num_alpn_protocols,
+    tsi_ssl_session_cache* ssl_session_cache,
     tsi_ssl_client_handshaker_factory** factory) {
   SSL_CTX* ssl_context = nullptr;
   tsi_ssl_client_handshaker_factory* impl = nullptr;
@@ -1381,6 +1397,10 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
   if (ssl_context == nullptr) {
     gpr_log(GPR_ERROR, "Could not create ssl context.");
     return TSI_INVALID_ARGUMENT;
+  }
+
+  if (ssl_session_cache) {
+    grpc_core::SslSessionLRUCache::InitContext(ssl_session_cache, ssl_context);
   }
 
   impl = static_cast<tsi_ssl_client_handshaker_factory*>(
@@ -1443,12 +1463,14 @@ tsi_result tsi_create_ssl_server_handshaker_factory(
     size_t num_key_cert_pairs, const char* pem_client_root_certs,
     int force_client_auth, const char* cipher_suites,
     const char** alpn_protocols, uint16_t num_alpn_protocols,
+    const char* session_ticket_key, size_t session_ticket_key_size,
     tsi_ssl_server_handshaker_factory** factory) {
   return tsi_create_ssl_server_handshaker_factory_ex(
       pem_key_cert_pairs, num_key_cert_pairs, pem_client_root_certs,
       force_client_auth ? TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
                         : TSI_DONT_REQUEST_CLIENT_CERTIFICATE,
-      cipher_suites, alpn_protocols, num_alpn_protocols, factory);
+      cipher_suites, alpn_protocols, num_alpn_protocols, session_ticket_key,
+      session_ticket_key_size, factory);
 }
 
 tsi_result tsi_create_ssl_server_handshaker_factory_ex(
@@ -1456,7 +1478,9 @@ tsi_result tsi_create_ssl_server_handshaker_factory_ex(
     size_t num_key_cert_pairs, const char* pem_client_root_certs,
     tsi_client_certificate_request_type client_certificate_request,
     const char* cipher_suites, const char** alpn_protocols,
-    uint16_t num_alpn_protocols, tsi_ssl_server_handshaker_factory** factory) {
+    uint16_t num_alpn_protocols, const char* session_ticket_key,
+    size_t session_ticket_key_size,
+    tsi_ssl_server_handshaker_factory** factory) {
   tsi_ssl_server_handshaker_factory* impl = nullptr;
   tsi_result result = TSI_OK;
   size_t i = 0;
@@ -1506,6 +1530,28 @@ tsi_result tsi_create_ssl_server_handshaker_factory_ex(
       result = populate_ssl_context(impl->ssl_contexts[i],
                                     &pem_key_cert_pairs[i], cipher_suites);
       if (result != TSI_OK) break;
+
+      // TODO(elessar): Provide ability to disable session ticket keys.
+
+      // Allow client cache sessions (it's needed for OpenSSL only).
+      int set_sid_ctx_result = SSL_CTX_set_session_id_context(
+          impl->ssl_contexts[i], kSslSessionIdContext,
+          GPR_ARRAY_SIZE(kSslSessionIdContext));
+      if (set_sid_ctx_result == 0) {
+        gpr_log(GPR_ERROR, "Failed to set session id context.");
+        result = TSI_INTERNAL_ERROR;
+        break;
+      }
+
+      if (session_ticket_key != nullptr) {
+        if (SSL_CTX_set_tlsext_ticket_keys(
+                impl->ssl_contexts[i], const_cast<char*>(session_ticket_key),
+                session_ticket_key_size) == 0) {
+          gpr_log(GPR_ERROR, "Invalid STEK size.");
+          result = TSI_INVALID_ARGUMENT;
+          break;
+        }
+      }
 
       if (pem_client_root_certs != nullptr) {
         STACK_OF(X509_NAME)* root_names = nullptr;

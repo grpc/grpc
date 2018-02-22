@@ -195,6 +195,8 @@ typedef struct {
   char* pem_root_certs;
 } grpc_ssl_config;
 
+struct grpc_ssl_session_cache;
+
 /* Creates an SSL channel_security_connector.
    - request_metadata_creds is the credentials object which metadata
      will be sent with each request. This parameter can be NULL.
@@ -212,7 +214,9 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
     grpc_channel_credentials* channel_creds,
     grpc_call_credentials* request_metadata_creds,
     const grpc_ssl_config* config, const char* target_name,
-    const char* overridden_target_name, grpc_channel_security_connector** sc);
+    const char* overridden_target_name,
+    grpc_ssl_session_cache* ssl_session_cache,
+    grpc_channel_security_connector** sc);
 
 /* Gets the default ssl roots. Returns NULL if not found. */
 const char* grpc_get_default_ssl_roots(void);

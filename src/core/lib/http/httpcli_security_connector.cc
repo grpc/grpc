@@ -122,7 +122,8 @@ static grpc_security_status httpcli_ssl_channel_security_connector_create(
     c->secure_peer_name = gpr_strdup(secure_peer_name);
   }
   result = tsi_create_ssl_client_handshaker_factory(
-      nullptr, pem_root_certs, nullptr, nullptr, 0, &c->handshaker_factory);
+      nullptr, pem_root_certs, nullptr, nullptr, 0, nullptr,
+      &c->handshaker_factory);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
             tsi_result_to_string(result));

@@ -163,3 +163,20 @@ grpc_cc_test(
 )
 
 grpc_end2end_tests()
+
+grpc_cc_test(
+    name = "h2_ssl_session_reuse_test",
+    srcs = ["h2_ssl_session_reuse_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        ':end2end_tests',
+        '//:gpr',
+        '//:grpc',
+        '//:tsi',
+        '//test/core/util:gpr_test_util',
+        '//test/core/util:grpc_test_util',
+    ],
+)
