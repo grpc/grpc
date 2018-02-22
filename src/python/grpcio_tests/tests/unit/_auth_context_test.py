@@ -102,7 +102,8 @@ class AuthContextTest(unittest.TestCase):
         self.assertIsNone(auth_data[_ID])
         self.assertIsNone(auth_data[_ID_KEY])
         self.assertDictEqual({
-            'transport_security_type': [b'ssl']
+            'transport_security_type': [b'ssl'],
+            'ssl_session_reused': [b'false'],
         }, auth_data[_AUTH_CTX])
 
     def testSecureClientCert(self):
