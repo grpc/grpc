@@ -50,13 +50,7 @@ namespace Grpc.Core.Interceptors.Tests
                 return Task.FromResult<ServerCallHooks<TRequest, TResponse>>(null);
             }
 
-            public Metadata.Entry Header
-            {
-                get
-                {
-                    return header;
-                }
-            }
+            public Metadata.Entry Header => header;
         }
 
         [Test]
@@ -81,7 +75,6 @@ namespace Grpc.Core.Interceptors.Tests
         {
             readonly Action action;
 
-
             public ArbitraryActionInterceptor(Action action)
             {
                 this.action = action;
@@ -105,13 +98,30 @@ namespace Grpc.Core.Interceptors.Tests
             var stringBuilder = new StringBuilder();
             helper.ServiceDefinition = helper.ServiceDefinition
                 .Intercept(new ArbitraryActionInterceptor(() => stringBuilder.Append("A")))
-                .Intercept(new ArbitraryActionInterceptor(() => stringBuilder.Append("B")))
+                .Intercept(new ArbitraryActionInterceptor(() => stringBuilder.Append("B1")),
+                    new ArbitraryActionInterceptor(() => stringBuilder.Append("B2")),
+                    new ArbitraryActionInterceptor(() => stringBuilder.Append("B3")))
                 .Intercept(new ArbitraryActionInterceptor(() => stringBuilder.Append("C")));
             var server = helper.GetServer();
             server.Start();
             var channel = helper.GetChannel();
             Assert.AreEqual("PASS", Calls.BlockingUnaryCall(helper.CreateUnaryCall(), ""));
-            Assert.AreEqual("CBA", stringBuilder.ToString());
+            Assert.AreEqual("CB1B2B3A", stringBuilder.ToString());
+        }
+
+        [Test]
+        public void CheckNullInterceptorRegistrationFails()
+        {
+            var helper = new MockServiceHelper(Host);
+            helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
+            {
+                return Task.FromResult("PASS");
+            });
+            var sd = helper.ServiceDefinition;
+            Assert.Throws<ArgumentNullException>(() => sd.Intercept(default(Interceptor)));
+            Assert.Throws<ArgumentNullException>(() => sd.Intercept(new[]{default(Interceptor)}));
+            Assert.Throws<ArgumentNullException>(() => sd.Intercept(new[]{new ArbitraryActionInterceptor(()=>{}), null}));
+            Assert.Throws<ArgumentNullException>(() => sd.Intercept(default(Interceptor[])));
         }
     }
 }

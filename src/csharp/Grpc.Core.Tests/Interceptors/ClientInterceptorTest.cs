@@ -58,6 +58,22 @@ namespace Grpc.Core.Interceptors.Tests
             Assert.AreEqual("PASS", callInvoker.BlockingUnaryCall(new Method<string, string>(MethodType.Unary, MockServiceHelper.ServiceName, "Unary", Marshallers.StringMarshaller, Marshallers.StringMarshaller), Host, new CallOptions(), ""));
         }
 
+        private class CallbackInterceptor : GenericInterceptor
+        {
+            readonly Action callback;
+
+            public CallbackInterceptor(Action callback)
+            {
+                this.callback = callback;
+            }
+
+            protected override ClientCallHooks<TRequest, TResponse> InterceptCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context, bool clientStreaming, bool serverStreaming, TRequest request)
+            {
+                callback();
+                return null;
+            }
+        }
+
         [Test]
         public void CheckInterceptorOrderInClientInterceptors()
         {
@@ -69,11 +85,13 @@ namespace Grpc.Core.Interceptors.Tests
             var server = helper.GetServer();
             server.Start();
             var stringBuilder = new StringBuilder();
-            var callInvoker = helper.GetChannel().Intercept(metadata =>
-            {
+            var callInvoker = helper.GetChannel().Intercept(metadata => {
                 stringBuilder.Append("interceptor1");
                 return metadata;
-            }).Intercept(metadata =>
+            }).Intercept(new CallbackInterceptor(() => stringBuilder.Append("array1")),
+                new CallbackInterceptor(() => stringBuilder.Append("array2")),
+                new CallbackInterceptor(() => stringBuilder.Append("array3")))
+            .Intercept(metadata =>
             {
                 stringBuilder.Append("interceptor2");
                 return metadata;
@@ -83,7 +101,21 @@ namespace Grpc.Core.Interceptors.Tests
                 return metadata;
             });
             Assert.AreEqual("PASS", callInvoker.BlockingUnaryCall(new Method<string, string>(MethodType.Unary, MockServiceHelper.ServiceName, "Unary", Marshallers.StringMarshaller, Marshallers.StringMarshaller), Host, new CallOptions(), ""));
-            Assert.AreEqual("interceptor3interceptor2interceptor1", stringBuilder.ToString());
+            Assert.AreEqual("interceptor3interceptor2array1array2array3interceptor1", stringBuilder.ToString());
+        }
+
+        [Test]
+        public void CheckNullInterceptorRegistrationFails()
+        {
+            var helper = new MockServiceHelper(Host);
+            helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
+            {
+                return Task.FromResult("PASS");
+            });
+            Assert.Throws<ArgumentNullException>(() => helper.GetChannel().Intercept(default(Interceptor)));
+            Assert.Throws<ArgumentNullException>(() => helper.GetChannel().Intercept(new[]{default(Interceptor)}));
+            Assert.Throws<ArgumentNullException>(() => helper.GetChannel().Intercept(new[]{new CallbackInterceptor(()=>{}), null}));
+            Assert.Throws<ArgumentNullException>(() => helper.GetChannel().Intercept(default(Interceptor[])));
         }
 
         private class CountingInterceptor : GenericInterceptor
