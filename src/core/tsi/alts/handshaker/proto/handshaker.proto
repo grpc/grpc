@@ -14,6 +14,8 @@
 
 syntax = "proto3";
 
+import "~/grpc-alts/grpc/src/core/tsi/alts/handshaker/proto/transport_security_common.proto";
+
 package grpc.gcp;
 
 option java_package = "io.grpc.alts";
@@ -90,6 +92,9 @@ message StartClientHandshakeReq {
   // to verify that the peer authenticated identity is indeed authorized to run
   // the target name.
   string target_name = 8;
+
+  // (Optional) RPC protocol versions supported by the client.
+  RpcProtocolVersions rpc_versions = 9;
 }
 
 message ServerHandshakeParameters {
@@ -126,6 +131,8 @@ message StartServerHandshakeReq {
   // port number, and network protocool.
   Endpoint remote_endpoint = 5;
 
+  // (Optional) RPC protocol versions supported by the server.
+  RpcProtocolVersions rpc_versions = 6;
 }
 
 message NextHandshakeMessageReq {
@@ -171,6 +178,8 @@ message HandshakerResult {
   // post-handshake messages in the future.
   bool keep_channel_open = 6;
 
+  // The RPC protocol versions supported by the peer.
+  RpcProtocolVersions peer_rpc_versions = 7;
 }
 
 message HandshakerStatus {

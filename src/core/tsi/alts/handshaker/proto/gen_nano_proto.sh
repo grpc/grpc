@@ -90,10 +90,11 @@ echo "$PROTO_NAME.proto no_unions:true" >> "$OPTIONS"
 echo "grpc.gcp.StartServerHandshakeReq.handshake_parameters max_count:3" >> "$OPTIONS"
 
 cd $TMP_DIR
+cp ~/grpc-alts/grpc/src/core/tsi/alts/handshaker/proto/transport_security_common.proto .
 
 # run protoc to generate *pb.h/c.
 protoc \
-  --plugin=protoc-gen-nanopb="generator/protoc-gen-nanopb" \
+  --proto_path=. --plugin=protoc-gen-nanopb="generator/protoc-gen-nanopb" \
   --nanopb_out='-T -L#include\ \"third_party/nanopb/pb.h\"'":$OUTPUT_DIR" \
   "$PROTO_NAME.proto"
 
