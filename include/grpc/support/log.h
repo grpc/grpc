@@ -19,11 +19,10 @@
 #ifndef GRPC_SUPPORT_LOG_H
 #define GRPC_SUPPORT_LOG_H
 
+#include <grpc/impl/codegen/port_platform.h>
 #include <inttypes.h>
 #include <stdarg.h>
 #include <stdlib.h> /* for abort() */
-
-#include <grpc/impl/codegen/port_platform.h>
 
 #ifdef __cplusplus
 extern "C" {
