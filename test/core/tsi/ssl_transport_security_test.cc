@@ -76,6 +76,10 @@ typedef struct ssl_tsi_test_fixture {
   ssl_alpn_lib* alpn_lib;
   bool force_client_auth;
   char* server_name_indication;
+  grpc_core::SslSessionLRUCache* session_cache;
+  bool session_reused;
+  const char* session_ticket_key;
+  size_t session_ticket_key_size;
   tsi_ssl_server_handshaker_factory* server_handshaker_factory;
   tsi_ssl_client_handshaker_factory* client_handshaker_factory;
 } ssl_tsi_test_fixture;
@@ -103,9 +107,14 @@ static void ssl_test_setup_handshakers(tsi_test_fixture* fixture) {
     client_alpn_protocols = alpn_lib->client_alpn_protocols;
     num_client_alpn_protocols = alpn_lib->num_client_alpn_protocols;
   }
+  grpc_core::RefCountedPtr<grpc_core::SslSessionLRUCache> session_cache;
+  if (ssl_fixture->session_cache) {
+    session_cache = ssl_fixture->session_cache->Ref();
+  }
   GPR_ASSERT(tsi_create_ssl_client_handshaker_factory(
                  client_key_cert_pair, key_cert_lib->root_cert, nullptr,
                  (const char**)client_alpn_protocols, num_client_alpn_protocols,
+                 std::move(session_cache),
                  &ssl_fixture->client_handshaker_factory) == TSI_OK);
   /* Create server handshaker factory. */
   char** server_alpn_protocols = nullptr;
@@ -128,7 +137,8 @@ static void ssl_test_setup_handshakers(tsi_test_fixture* fixture) {
                      : key_cert_lib->server_num_key_cert_pairs,
                  key_cert_lib->root_cert, ssl_fixture->force_client_auth,
                  nullptr, (const char**)server_alpn_protocols,
-                 num_server_alpn_protocols,
+                 num_server_alpn_protocols, ssl_fixture->session_ticket_key,
+                 ssl_fixture->session_ticket_key_size,
                  &ssl_fixture->server_handshaker_factory) == TSI_OK);
   /* Create server and client handshakers. */
   tsi_handshaker* client_handshaker = nullptr;
@@ -174,6 +184,18 @@ check_basic_authenticated_peer_and_get_common_name(const tsi_peer* peer) {
       peer, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY);
   GPR_ASSERT(property != nullptr);
   return property;
+}
+
+static void check_session_reusage(ssl_tsi_test_fixture* ssl_fixture,
+                                  tsi_peer* peer) {
+  const tsi_peer_property* session_reused =
+      tsi_peer_get_property_by_name(peer, TSI_SSL_SESSION_REUSED_PEER_PROPERTY);
+  GPR_ASSERT(session_reused != nullptr);
+  if (ssl_fixture->session_reused) {
+    GPR_ASSERT(strcmp(session_reused->value.data, "true") == 0);
+  } else {
+    GPR_ASSERT(strcmp(session_reused->value.data, "false") == 0);
+  }
 }
 
 void check_server0_peer(tsi_peer* peer) {
@@ -233,7 +255,7 @@ static void check_client_peer(ssl_tsi_test_fixture* ssl_fixture,
   ssl_alpn_lib* alpn_lib = ssl_fixture->alpn_lib;
   if (!ssl_fixture->force_client_auth) {
     GPR_ASSERT(peer->property_count ==
-               (alpn_lib->alpn_mode == ALPN_CLIENT_SERVER_OK ? 1 : 0));
+               (alpn_lib->alpn_mode == ALPN_CLIENT_SERVER_OK ? 2 : 1));
   } else {
     const tsi_peer_property* property =
         check_basic_authenticated_peer_and_get_common_name(peer);
@@ -257,8 +279,8 @@ static void ssl_test_check_handshaker_peers(tsi_test_fixture* fixture) {
   if (expect_success) {
     GPR_ASSERT(tsi_handshaker_result_extract_peer(
                    ssl_fixture->base.client_result, &peer) == TSI_OK);
+    check_session_reusage(ssl_fixture, &peer);
     check_alpn(ssl_fixture, &peer);
-
     if (ssl_fixture->server_name_indication != nullptr) {
       check_server1_peer(&peer);
     } else {
@@ -270,6 +292,7 @@ static void ssl_test_check_handshaker_peers(tsi_test_fixture* fixture) {
   if (expect_success) {
     GPR_ASSERT(tsi_handshaker_result_extract_peer(
                    ssl_fixture->base.server_result, &peer) == TSI_OK);
+    check_session_reusage(ssl_fixture, &peer);
     check_alpn(ssl_fixture, &peer);
     check_client_peer(ssl_fixture, &peer);
   } else {
@@ -402,6 +425,10 @@ static tsi_test_fixture* ssl_tsi_test_fixture_create() {
   ssl_fixture->alpn_lib = alpn_lib;
   ssl_fixture->base.vtable = &vtable;
   ssl_fixture->server_name_indication = nullptr;
+  ssl_fixture->session_cache = nullptr;
+  ssl_fixture->session_reused = false;
+  ssl_fixture->session_ticket_key = nullptr;
+  ssl_fixture->session_ticket_key_size = 0;
   ssl_fixture->force_client_auth = false;
   return &ssl_fixture->base;
 }
@@ -558,6 +585,42 @@ void ssl_tsi_test_do_round_trip_odd_buffer_size() {
   }
 }
 
+void ssl_tsi_test_do_handshake_session_cache() {
+  grpc_core::RefCountedPtr<grpc_core::SslSessionLRUCache> session_cache =
+      grpc_core::SslSessionLRUCache::Create(16);
+
+  char session_ticket_key[48];
+
+  auto do_handshake = [&session_ticket_key,
+                       &session_cache](bool session_reused) {
+    tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
+    ssl_tsi_test_fixture* ssl_fixture =
+        reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
+    ssl_fixture->server_name_indication =
+        const_cast<char*>("waterzooi.test.google.be");
+    ssl_fixture->session_ticket_key = session_ticket_key;
+    ssl_fixture->session_ticket_key_size = 48;
+    ssl_fixture->session_cache = session_cache.get();
+    ssl_fixture->session_reused = session_reused;
+    tsi_test_do_round_trip(&ssl_fixture->base);
+    tsi_test_fixture_destroy(fixture);
+  };
+
+  memset(session_ticket_key, 'a', 48);
+  do_handshake(false);
+  do_handshake(true);
+  do_handshake(true);
+
+  // Changing session_ticket_key on server invalidates ticket.
+  memset(session_ticket_key, 'b', 48);
+  do_handshake(false);
+  do_handshake(true);
+
+  memset(session_ticket_key, 'c', 48);
+  do_handshake(false);
+  do_handshake(true);
+}
+
 static const tsi_ssl_handshaker_factory_vtable* original_vtable;
 static bool handshaker_factory_destructor_called;
 
@@ -580,7 +643,7 @@ void test_tsi_ssl_client_handshaker_factory_refcounting() {
 
   tsi_ssl_client_handshaker_factory* client_handshaker_factory;
   GPR_ASSERT(tsi_create_ssl_client_handshaker_factory(
-                 nullptr, cert_chain, nullptr, nullptr, 0,
+                 nullptr, cert_chain, nullptr, nullptr, 0, nullptr,
                  &client_handshaker_factory) == TSI_OK);
 
   handshaker_factory_destructor_called = false;
@@ -624,7 +687,7 @@ void test_tsi_ssl_server_handshaker_factory_refcounting() {
       load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "server0.key");
 
   GPR_ASSERT(tsi_create_ssl_server_handshaker_factory(
-                 &cert_pair, 1, cert_chain, 0, nullptr, nullptr, 0,
+                 &cert_pair, 1, cert_chain, 0, nullptr, nullptr, 0, nullptr, 0,
                  &server_handshaker_factory) == TSI_OK);
 
   handshaker_factory_destructor_called = false;
@@ -659,7 +722,7 @@ void test_tsi_ssl_client_handshaker_factory_bad_params() {
 
   tsi_ssl_client_handshaker_factory* client_handshaker_factory;
   GPR_ASSERT(tsi_create_ssl_client_handshaker_factory(
-                 nullptr, cert_chain, nullptr, nullptr, 0,
+                 nullptr, cert_chain, nullptr, nullptr, 0, nullptr,
                  &client_handshaker_factory) == TSI_INVALID_ARGUMENT);
   tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory);
 }
@@ -673,6 +736,7 @@ void ssl_tsi_test_handshaker_factory_internals() {
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
+
   ssl_tsi_test_do_handshake_tiny_handshake_buffer();
   ssl_tsi_test_do_handshake_small_handshake_buffer();
   ssl_tsi_test_do_handshake();
@@ -688,6 +752,7 @@ int main(int argc, char** argv) {
 #endif
   ssl_tsi_test_do_handshake_alpn_server_no_client();
   ssl_tsi_test_do_handshake_alpn_client_server_ok();
+  ssl_tsi_test_do_handshake_session_cache();
   ssl_tsi_test_do_round_trip_for_all_configs();
   ssl_tsi_test_do_round_trip_odd_buffer_size();
   ssl_tsi_test_handshaker_factory_internals();

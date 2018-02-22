@@ -542,6 +542,47 @@ grpc_server_security_connector* grpc_fake_server_security_connector_create(
 
 /* --- Ssl implementation. --- */
 
+grpc_ssl_session_cache* grpc_ssl_session_cache_create_lru(size_t capacity) {
+  grpc_core::SslSessionLRUCache* cache =
+      grpc_core::New<grpc_core::SslSessionLRUCache>(capacity);
+  return reinterpret_cast<grpc_ssl_session_cache*>(cache);
+}
+
+void grpc_ssl_session_cache_destroy(grpc_ssl_session_cache* cache) {
+  grpc_core::SslSessionLRUCache* tsi_cache =
+      reinterpret_cast<grpc_core::SslSessionLRUCache*>(cache);
+  tsi_cache->Unref();
+}
+
+static void* grpc_ssl_session_cache_arg_copy(void* p) {
+  grpc_core::SslSessionLRUCache* cache =
+      reinterpret_cast<grpc_core::SslSessionLRUCache*>(p);
+  // destroy call below will unref the pointer.
+  cache->Ref().release();
+  return p;
+}
+
+static void grpc_ssl_session_cache_arg_destroy(void* p) {
+  grpc_core::SslSessionLRUCache* cache =
+      reinterpret_cast<grpc_core::SslSessionLRUCache*>(p);
+  cache->Unref();
+}
+
+static int grpc_ssl_session_cache_arg_cmp(void* p, void* q) {
+  return GPR_ICMP(p, q);
+}
+
+grpc_arg grpc_ssl_session_cache_create_channel_arg(
+    grpc_ssl_session_cache* cache) {
+  static const grpc_arg_pointer_vtable vtable = {
+      grpc_ssl_session_cache_arg_copy,
+      grpc_ssl_session_cache_arg_destroy,
+      grpc_ssl_session_cache_arg_cmp,
+  };
+  return grpc_channel_arg_pointer_create(
+      const_cast<char*>(GRPC_SSL_SESSION_CACHE_ARG), cache, &vtable);
+}
+
 typedef struct {
   grpc_channel_security_connector base;
   tsi_ssl_client_handshaker_factory* client_handshaker_factory;
@@ -645,7 +686,8 @@ static bool try_replace_server_handshaker_factory(
       get_tsi_client_certificate_request_type(
           server_creds->config.client_certificate_request),
       ssl_cipher_suites(), alpn_protocol_strings,
-      static_cast<uint16_t>(num_alpn_protocols), &new_handshaker_factory);
+      static_cast<uint16_t>(num_alpn_protocols), nullptr, 0,
+      &new_handshaker_factory);
   gpr_free(cert_pairs);
   gpr_free((void*)alpn_protocol_strings);
 
@@ -759,6 +801,9 @@ grpc_auth_context* tsi_ssl_peer_to_auth_context(const tsi_peer* peer) {
                                      prop->value.data, prop->value.length);
     } else if (strcmp(prop->name, TSI_X509_PEM_CERT_PROPERTY) == 0) {
       grpc_auth_context_add_property(ctx, GRPC_X509_PEM_CERT_PROPERTY_NAME,
+                                     prop->value.data, prop->value.length);
+    } else if (strcmp(prop->name, TSI_SSL_SESSION_REUSED_PEER_PROPERTY) == 0) {
+      grpc_auth_context_add_property(ctx, GRPC_SSL_SESSION_REUSED_PROPERTY,
                                      prop->value.data, prop->value.length);
     }
   }
@@ -983,7 +1028,9 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
     grpc_channel_credentials* channel_creds,
     grpc_call_credentials* request_metadata_creds,
     const grpc_ssl_config* config, const char* target_name,
-    const char* overridden_target_name, grpc_channel_security_connector** sc) {
+    const char* overridden_target_name,
+    grpc_core::RefCountedPtr<grpc_core::SslSessionLRUCache> ssl_session_cache,
+    grpc_channel_security_connector** sc) {
   size_t num_alpn_protocols = 0;
   const char** alpn_protocol_strings =
       fill_alpn_protocol_strings(&num_alpn_protocols);
@@ -1031,7 +1078,8 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
   result = tsi_create_ssl_client_handshaker_factory(
       has_key_cert_pair ? config->pem_key_cert_pair : nullptr, pem_root_certs,
       ssl_cipher_suites(), alpn_protocol_strings,
-      static_cast<uint16_t>(num_alpn_protocols), &c->client_handshaker_factory);
+      static_cast<uint16_t>(num_alpn_protocols), std::move(ssl_session_cache),
+      &c->client_handshaker_factory);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
             tsi_result_to_string(result));
@@ -1091,7 +1139,7 @@ grpc_security_status grpc_ssl_server_security_connector_create(
         get_tsi_client_certificate_request_type(
             server_credentials->config.client_certificate_request),
         ssl_cipher_suites(), alpn_protocol_strings,
-        static_cast<uint16_t>(num_alpn_protocols),
+        static_cast<uint16_t>(num_alpn_protocols), nullptr, 0,
         &c->server_handshaker_factory);
     gpr_free((void*)alpn_protocol_strings);
     if (result != TSI_OK) {
