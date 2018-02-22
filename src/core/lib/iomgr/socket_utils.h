@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_IOMGR_SOCKET_UTILS_H
 #define GRPC_CORE_LIB_IOMGR_SOCKET_UTILS_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stddef.h>
 
 /* A wrapper for inet_ntop on POSIX systems and InetNtop on Windows systems */

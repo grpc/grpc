@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_LOAD_BALANCER_API_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_LOAD_BALANCER_API_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/slice_buffer.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h"

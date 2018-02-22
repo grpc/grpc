@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_GPR_ENV_H
 #define GRPC_CORE_LIB_GPR_ENV_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stdio.h>
 
 /* Env utility functions */

@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/transport/chttp2/server/chttp2_server.h"
 
 #include <grpc/grpc.h>

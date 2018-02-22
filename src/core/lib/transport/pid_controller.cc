@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/transport/pid_controller.h"
 
 #include "src/core/lib/gpr/useful.h"

@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include <string.h>
 
 #include <grpc/load_reporting.h>

@@ -19,12 +19,13 @@
 #ifndef GRPC_CORE_LIB_SLICE_SLICE_STRING_HELPERS_H
 #define GRPC_CORE_LIB_SLICE_SLICE_STRING_HELPERS_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stdbool.h>
 #include <stddef.h>
 
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
-#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/gpr/string.h"
 

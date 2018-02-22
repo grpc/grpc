@@ -19,8 +19,9 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_H
 
-#include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
+
+#include <grpc/slice.h>
 
 #include "src/core/lib/iomgr/error.h"
 

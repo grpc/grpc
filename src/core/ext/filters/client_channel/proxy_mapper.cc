@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/filters/client_channel/proxy_mapper.h"
 
 void grpc_proxy_mapper_init(const grpc_proxy_mapper_vtable* vtable,

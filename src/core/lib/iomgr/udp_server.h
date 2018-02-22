@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_IOMGR_UDP_SERVER_H
 #define GRPC_CORE_LIB_IOMGR_UDP_SERVER_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/resolve_address.h"

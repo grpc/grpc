@@ -29,6 +29,8 @@
    otherwise specified.
 */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/ev_posix.h"

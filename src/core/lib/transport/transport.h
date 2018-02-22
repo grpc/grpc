@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_TRANSPORT_H
 #define GRPC_CORE_LIB_TRANSPORT_TRANSPORT_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stddef.h>
 
 #include "src/core/lib/channel/context.h"

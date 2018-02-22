@@ -16,9 +16,11 @@
  *
  */
 
-#include "src/core/ext/transport/chttp2/transport/bin_decoder.h"
+#include <grpc/support/port_platform.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include "src/core/ext/transport/chttp2/transport/bin_decoder.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"

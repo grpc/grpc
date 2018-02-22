@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_TSI_FAKE_TRANSPORT_SECURITY_H
 #define GRPC_CORE_TSI_FAKE_TRANSPORT_SECURITY_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/tsi/transport_security_interface.h"
 
 /* Value for the TSI_CERTIFICATE_TYPE_PEER_PROPERTY property for FAKE certs. */

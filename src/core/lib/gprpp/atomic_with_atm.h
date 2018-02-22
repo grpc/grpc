@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_GPRPP_ATOMIC_WITH_ATM_H
 #define GRPC_CORE_LIB_GPRPP_ATOMIC_WITH_ATM_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/support/atm.h>
 
 namespace grpc_core {

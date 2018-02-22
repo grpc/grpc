@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_TSI_ALTS_TRANSPORT_SECURITY_H
 #define GRPC_CORE_TSI_ALTS_TRANSPORT_SECURITY_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/sync.h>
 

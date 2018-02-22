@@ -18,6 +18,8 @@
 
 /* Platform-independent features for gpr threads. */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/gpr/thd.h"
 
 #include <string.h>

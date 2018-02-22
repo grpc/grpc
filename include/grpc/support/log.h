@@ -20,6 +20,7 @@
 #define GRPC_SUPPORT_LOG_H
 
 #include <grpc/impl/codegen/port_platform.h>
+
 #include <inttypes.h>
 #include <stdarg.h>
 #include <stdlib.h> /* for abort() */

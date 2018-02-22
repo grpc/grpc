@@ -16,13 +16,14 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"

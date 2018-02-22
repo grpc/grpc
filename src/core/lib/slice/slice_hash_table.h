@@ -17,6 +17,8 @@
 #ifndef GRPC_CORE_LIB_SLICE_SLICE_HASH_TABLE_H
 #define GRPC_CORE_LIB_SLICE_SLICE_HASH_TABLE_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/transport/metadata.h"
 
 /** Hash table implementation.

@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_SECURITY_TRANSPORT_LB_TARGETS_INFO_H
 #define GRPC_CORE_LIB_SECURITY_TRANSPORT_LB_TARGETS_INFO_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/slice/slice_hash_table.h"
 
 /** Return a channel argument containing \a targets_info. */
