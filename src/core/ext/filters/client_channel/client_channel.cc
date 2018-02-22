@@ -894,7 +894,9 @@ typedef struct client_channel_call_data {
   method_parameters* method_params;
 
   grpc_subchannel_call* subchannel_call;
-  grpc_error* error;
+
+  // Set when we get a cancel_stream op.
+  grpc_error* cancel_error;
 
   grpc_core::LoadBalancingPolicy::PickState pick;
   grpc_closure pick_closure;
@@ -1071,6 +1073,7 @@ static void fail_pending_batch_in_call_combiner(void* arg, grpc_error* error) {
   grpc_transport_stream_op_batch* batch =
       static_cast<grpc_transport_stream_op_batch*>(arg);
   call_data* calld = static_cast<call_data*>(batch->handler_private.extra_arg);
+  // Note: This will release the call combiner.
   grpc_transport_stream_op_batch_finish_with_failure(
       batch, GRPC_ERROR_REF(error), calld->call_combiner);
 }
@@ -1114,6 +1117,7 @@ static void pending_batches_fail(grpc_call_element* elem, grpc_error* error,
   }
   if (yield_call_combiner) {
     if (num_batches > 0) {
+      // Note: This will release the call combiner.
       grpc_transport_stream_op_batch_finish_with_failure(
           batches[0], GRPC_ERROR_REF(error), calld->call_combiner);
     } else {
@@ -1130,6 +1134,7 @@ static void resume_pending_batch_in_call_combiner(void* arg,
       static_cast<grpc_transport_stream_op_batch*>(arg);
   grpc_subchannel_call* subchannel_call =
       static_cast<grpc_subchannel_call*>(batch->handler_private.extra_arg);
+  // Note: This will release the call combiner.
   grpc_subchannel_call_process_op(subchannel_call, batch);
 }
 
@@ -1174,6 +1179,7 @@ static void pending_batches_resume(grpc_call_element* elem) {
                              "pending_batches_resume");
   }
   GPR_ASSERT(num_batches > 0);
+  // Note: This will release the call combiner.
   grpc_subchannel_call_process_op(calld->subchannel_call, batches[0]);
 }
 
@@ -1414,7 +1420,7 @@ static bool maybe_retry(grpc_call_element* elem,
     return false;
   }
   // If the call was cancelled from the surface, don't retry.
-  if (calld->error != GRPC_ERROR_NONE) {
+  if (calld->cancel_error != GRPC_ERROR_NONE) {
     if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG,
               "chand=%p calld=%p: call cancelled from surface, not retrying",
@@ -2007,20 +2013,27 @@ static void on_complete(void* arg, grpc_error* error) {
   }
 }
 
+// Helper function used to start a subchannel batch in the call combiner.
 static void start_batch_in_call_combiner(void* arg, grpc_error* ignored) {
   grpc_transport_stream_op_batch* batch =
       static_cast<grpc_transport_stream_op_batch*>(arg);
   grpc_subchannel_call* subchannel_call =
       static_cast<grpc_subchannel_call*>(batch->handler_private.extra_arg);
+  // Note: This will release the call combiner.
   grpc_subchannel_call_process_op(subchannel_call, batch);
 }
 
 static const grpc_slice* g_retry_count_strings[] = {
     &GRPC_MDSTR_1, &GRPC_MDSTR_2, &GRPC_MDSTR_3, &GRPC_MDSTR_4};
 
+// Adds retriable send_initial_metadata op to batch_data.
 static void add_retriable_send_initial_metadata_op(
     call_data* calld, subchannel_call_retry_state* retry_state,
     subchannel_batch_data* batch_data) {
+  // We need to make a copy of the metadata batch for each attempt, since
+  // the filters in the subchannel stack may modify this batch, and we don't
+  // want those modifications to be passed forward to subsequent attempts.
+  //
   // If we've already completed one or more attempts, add the
   // grpc-retry-attempts header.
   batch_data->send_initial_metadata_storage =
@@ -2062,6 +2075,7 @@ static void add_retriable_send_initial_metadata_op(
       calld->peer_string;
 }
 
+// Adds retriable send_message op to batch_data.
 static void add_retriable_send_message_op(
     grpc_call_element* elem, subchannel_call_retry_state* retry_state,
     subchannel_batch_data* batch_data) {
@@ -2078,12 +2092,16 @@ static void add_retriable_send_message_op(
   grpc_caching_byte_stream_init(&batch_data->send_message, cache);
   batch_data->batch.send_message = true;
   batch_data->batch.payload->send_message.send_message =
-      (grpc_byte_stream*)&batch_data->send_message;
+      &batch_data->send_message.base;
 }
 
+// Adds retriable send_trailing_metadata op to batch_data.
 static void add_retriable_send_trailing_metadata_op(
     call_data* calld, subchannel_call_retry_state* retry_state,
     subchannel_batch_data* batch_data) {
+  // We need to make a copy of the metadata batch for each attempt, since
+  // the filters in the subchannel stack may modify this batch, and we don't
+  // want those modifications to be passed forward to subsequent attempts.
   batch_data->send_trailing_metadata_storage =
       static_cast<grpc_linked_mdelem*>(gpr_arena_alloc(
           calld->arena, sizeof(grpc_linked_mdelem) *
@@ -2097,6 +2115,7 @@ static void add_retriable_send_trailing_metadata_op(
       &batch_data->send_trailing_metadata;
 }
 
+// Adds retriable recv_initial_metadata op to batch_data.
 static void add_retriable_recv_initial_metadata_op(
     call_data* calld, subchannel_call_retry_state* retry_state,
     subchannel_batch_data* batch_data) {
@@ -2114,6 +2133,7 @@ static void add_retriable_recv_initial_metadata_op(
       &batch_data->recv_initial_metadata_ready;
 }
 
+// Adds retriable recv_message op to batch_data.
 static void add_retriable_recv_message_op(
     call_data* calld, subchannel_call_retry_state* retry_state,
     subchannel_batch_data* batch_data) {
@@ -2127,6 +2147,7 @@ static void add_retriable_recv_message_op(
       &batch_data->recv_message_ready;
 }
 
+// Adds retriable recv_trailing_metadata op to batch_data.
 static void add_retriable_recv_trailing_metadata_op(
     call_data* calld, subchannel_call_retry_state* retry_state,
     subchannel_batch_data* batch_data) {
@@ -2140,6 +2161,10 @@ static void add_retriable_recv_trailing_metadata_op(
       &batch_data->collect_stats;
 }
 
+// Helper function used to start a recv_trailing_metadata batch.  This
+// is used in the case where a recv_initial_metadata or recv_message
+// op fails in a way that we know the call is over but when the application
+// has not yet started its own recv_trailing_metadata op.
 static void start_internal_recv_trailing_metadata(grpc_call_element* elem) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
@@ -2155,6 +2180,7 @@ static void start_internal_recv_trailing_metadata(grpc_call_element* elem) {
               calld->subchannel_call));
   subchannel_batch_data* batch_data = batch_data_create(elem, 1);
   add_retriable_recv_trailing_metadata_op(calld, retry_state, batch_data);
+  // Note: This will release the call combiner.
   grpc_subchannel_call_process_op(calld->subchannel_call, &batch_data->batch);
 }
 
@@ -2374,6 +2400,7 @@ static void start_retriable_subchannel_batches(void* arg, grpc_error* ignored) {
               batch_str);
       gpr_free(batch_str);
     }
+    // Note: This will release the call combiner.
     grpc_subchannel_call_process_op(calld->subchannel_call, batches[0]);
   }
 }
@@ -2781,13 +2808,14 @@ static void cc_start_transport_stream_op_batch(
     grpc_deadline_state_client_start_transport_stream_op_batch(elem, batch);
   }
   // If we've previously been cancelled, immediately fail any new batches.
-  if (calld->error != GRPC_ERROR_NONE) {
+  if (calld->cancel_error != GRPC_ERROR_NONE) {
     if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: failing batch with error: %s",
-              chand, calld, grpc_error_string(calld->error));
+              chand, calld, grpc_error_string(calld->cancel_error));
     }
+    // Note: This will release the call combiner.
     grpc_transport_stream_op_batch_finish_with_failure(
-        batch, GRPC_ERROR_REF(calld->error), calld->call_combiner);
+        batch, GRPC_ERROR_REF(calld->cancel_error), calld->call_combiner);
     return;
   }
   // Handle cancellation.
@@ -2797,21 +2825,24 @@ static void cc_start_transport_stream_op_batch(
     // cancelled before any batches are passed down (e.g., if the deadline
     // is in the past when the call starts), we can return the right
     // error to the caller when the first batch does get passed down.
-    GRPC_ERROR_UNREF(calld->error);
-    calld->error = GRPC_ERROR_REF(batch->payload->cancel_stream.cancel_error);
+    GRPC_ERROR_UNREF(calld->cancel_error);
+    calld->cancel_error =
+        GRPC_ERROR_REF(batch->payload->cancel_stream.cancel_error);
     if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: recording cancel_error=%s", chand,
-              calld, grpc_error_string(calld->error));
+              calld, grpc_error_string(calld->cancel_error));
     }
     // If we do not have a subchannel call (i.e., a pick has not yet
     // been started), fail all pending batches.  Otherwise, send the
     // cancellation down to the subchannel call.
     if (calld->subchannel_call == nullptr) {
-      pending_batches_fail(elem, GRPC_ERROR_REF(calld->error),
+      pending_batches_fail(elem, GRPC_ERROR_REF(calld->cancel_error),
                            false /* yield_call_combiner */);
+      // Note: This will release the call combiner.
       grpc_transport_stream_op_batch_finish_with_failure(
-          batch, GRPC_ERROR_REF(calld->error), calld->call_combiner);
+          batch, GRPC_ERROR_REF(calld->cancel_error), calld->call_combiner);
     } else {
+      // Note: This will release the call combiner.
       grpc_subchannel_call_process_op(calld->subchannel_call, batch);
     }
     return;
@@ -2888,7 +2919,7 @@ static void cc_destroy_call_elem(grpc_call_element* elem,
   if (calld->method_params != nullptr) {
     method_parameters_unref(calld->method_params);
   }
-  GRPC_ERROR_UNREF(calld->error);
+  GRPC_ERROR_UNREF(calld->cancel_error);
   if (calld->subchannel_call != nullptr) {
     grpc_subchannel_call_set_cleanup_closure(calld->subchannel_call,
                                              then_schedule_closure);
