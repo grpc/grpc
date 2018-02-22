@@ -44,8 +44,8 @@ namespace Grpc.Core.Interceptors
         /// </remarks>
         public static ServerServiceDefinition Intercept(this ServerServiceDefinition serverServiceDefinition, Interceptor interceptor)
         {
-            GrpcPreconditions.CheckNotNull(serverServiceDefinition, "serverServiceDefinition");
-            GrpcPreconditions.CheckNotNull(interceptor, "interceptor");
+            GrpcPreconditions.CheckNotNull(serverServiceDefinition, nameof(serverServiceDefinition));
+            GrpcPreconditions.CheckNotNull(interceptor, nameof(interceptor));
             return new ServerServiceDefinition(serverServiceDefinition.CallHandlers.ToDictionary(x => x.Key, x => x.Value.Intercept(interceptor)));
         }
 
@@ -68,8 +68,8 @@ namespace Grpc.Core.Interceptors
         /// </remarks>
         public static ServerServiceDefinition Intercept(this ServerServiceDefinition serverServiceDefinition, params Interceptor[] interceptors)
         {
-            GrpcPreconditions.CheckNotNull(serverServiceDefinition, "serverServiceDefinition");
-            GrpcPreconditions.CheckNotNull(interceptors, "interceptors");
+            GrpcPreconditions.CheckNotNull(serverServiceDefinition, nameof(serverServiceDefinition));
+            GrpcPreconditions.CheckNotNull(interceptors, nameof(interceptors));
 
             foreach (var interceptor in interceptors.Reverse())
             {

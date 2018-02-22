@@ -76,9 +76,7 @@ namespace Grpc.Core.Interceptors
         /// invocation metadata.
         /// </param>
         /// <remarks>
-        /// Multiple interceptors can be added on top of each other by calling
-        /// "channel.Intercept(a, b, c)".  The order of invocation will be "a", "b", and then "c".
-        /// Interceptors can be later added to an existing intercepted channel, effectively
+        /// Multiple interceptors can be added on top of each other by
         /// building a chain like "channel.Intercept(c).Intercept(b).Intercept(a)".  Note that
         /// in this case, the last interceptor added will be the first to take control.
         /// </remarks>

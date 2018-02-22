@@ -64,8 +64,8 @@ namespace Grpc.Core.Interceptors
         /// </remarks>
         public static CallInvoker Intercept(this CallInvoker invoker, params Interceptor[] interceptors)
         {
-            GrpcPreconditions.CheckNotNull(invoker, "invoker");
-            GrpcPreconditions.CheckNotNull(interceptors, "interceptors");
+            GrpcPreconditions.CheckNotNull(invoker, nameof(invoker);
+            GrpcPreconditions.CheckNotNull(interceptors, nameof(interceptors));
 
             foreach (var interceptor in interceptors.Reverse())
             {
@@ -104,7 +104,7 @@ namespace Grpc.Core.Interceptors
             /// </summary>
             public MetadataInterceptor(Func<Metadata, Metadata> interceptor)
             {
-                this.interceptor = GrpcPreconditions.CheckNotNull(interceptor, "interceptor");
+                this.interceptor = GrpcPreconditions.CheckNotNull(interceptor, nameof(interceptor));
             }
 
             protected override ClientCallHooks<TRequest, TResponse> InterceptCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context, bool clientStreaming, bool serverStreaming, TRequest request)

@@ -76,7 +76,7 @@ namespace Grpc.Core.Internal
             {
                 if (!(e is RpcException))
                 {
-                    Logger.Warning(e, "Exception occured in handler or interceptors.");
+                    Logger.Warning(e, "Exception occurred in the handler or an interceptor.");
                 }
                 status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
             }
@@ -138,7 +138,7 @@ namespace Grpc.Core.Internal
             {
                 if (!(e is RpcException))
                 {
-                    Logger.Warning(e, "Exception occured in handler or interceptors.");
+                    Logger.Warning(e, "Exception occurred in the handler or an interceptor.");
                 }
                 status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
             }
@@ -201,7 +201,7 @@ namespace Grpc.Core.Internal
             {
                 if (!(e is RpcException))
                 {
-                    Logger.Warning(e, "Exception occured in handler or interceptor.");
+                    Logger.Warning(e, "Exception occurred in the handler or an interceptor.");
                 }
                 status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
             }
@@ -262,7 +262,7 @@ namespace Grpc.Core.Internal
             {
                 if (!(e is RpcException))
                 {
-                    Logger.Warning(e, "Exception occured in handler or interceptor.");
+                    Logger.Warning(e, "Exception occurred in the handler or an interceptor.");
                 }
                 status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
             }
@@ -313,7 +313,7 @@ namespace Grpc.Core.Internal
 
         public IServerCallHandler Intercept(Interceptor interceptor)
         {
-            return this;  // Do not intercept unimplemented services
+            return this;  // Do not intercept unimplemented methods.
         }
     }
 

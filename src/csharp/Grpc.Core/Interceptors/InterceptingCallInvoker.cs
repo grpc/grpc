@@ -36,8 +36,8 @@ namespace Grpc.Core.Interceptors
         /// </summary>
         public InterceptingCallInvoker(CallInvoker invoker, Interceptor interceptor)
         {
-            this.invoker = GrpcPreconditions.CheckNotNull(invoker, "invoker");
-            this.interceptor = GrpcPreconditions.CheckNotNull(interceptor, "interceptor");
+            this.invoker = GrpcPreconditions.CheckNotNull(invoker, nameof(invoker));
+            this.interceptor = GrpcPreconditions.CheckNotNull(interceptor, nameof(interceptor));
         }
 
         /// <summary>

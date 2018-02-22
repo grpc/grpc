@@ -46,20 +46,20 @@ namespace Grpc.Core.Interceptors
         }
 
         /// <summary>
-        /// Gets or sets the <see cref="Grpc.Core.Method{TRequest, TResponse}"/> instance
+        /// Gets the <see cref="Grpc.Core.Method{TRequest, TResponse}"/> instance
         /// representing the method to be invoked.
         /// </summary>
-        public Method<TRequest, TResponse> Method { get; set; }
+        public Method<TRequest, TResponse> Method { get; }
 
         /// <summary>
-        /// Gets or sets the host that the currect invocation will be dispatched to.
+        /// Gets the host that the currect invocation will be dispatched to.
         /// </summary>
-        public string Host { get; set; }
+        public string Host { get; }
 
         /// <summary>
-        /// Gets or sets the <see cref="Grpc.Core.CallOptions"/> structure representing the
+        /// Gets the <see cref="Grpc.Core.CallOptions"/> structure representing the
         /// call options associated with the current invocation.
         /// </summary>
-        public CallOptions Options { get; set; }
+        public CallOptions Options { get; }
     }
 }
