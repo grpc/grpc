@@ -964,10 +964,8 @@ static size_t get_batch_index(grpc_transport_stream_op_batch* batch) {
   GPR_UNREACHABLE_CODE(return (size_t)-1);
 }
 
-// Cleans up retry state.  Called when the RPC is committed (i.e., we will
-// not attempt any more retries).
-static void retry_commit(grpc_call_element* elem,
-                         subchannel_call_retry_state* retry_state) {
+// Commits the call so that no further retry attempts will be performed.
+static void retry_commit(grpc_call_element* elem) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   if (calld->retry_committed) return;
@@ -975,7 +973,14 @@ static void retry_commit(grpc_call_element* elem,
   if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG, "chand=%p calld=%p: committing retries", chand, calld);
   }
-  if (retry_state == nullptr) return;
+}
+
+// Frees cached send ops that have already been completed after
+// committing the call.
+static void free_cached_send_op_data_after_commit(
+    grpc_call_element* elem, subchannel_call_retry_state* retry_state) {
+  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
+  call_data* calld = static_cast<call_data*>(elem->call_data);
   if (retry_state->completed_send_initial_metadata) {
     grpc_metadata_batch_destroy(&calld->send_initial_metadata);
   }
@@ -989,6 +994,31 @@ static void retry_commit(grpc_call_element* elem,
     grpc_byte_stream_cache_destroy(calld->send_messages[i]);
   }
   if (retry_state->completed_send_trailing_metadata) {
+    grpc_metadata_batch_destroy(&calld->send_trailing_metadata);
+  }
+}
+
+// Frees cached send ops that were completed by the completed batch in
+// batch_data.  Used when batches are completed after the call is committed.
+static void free_cached_send_op_data_for_completed_batch(
+    grpc_call_element* elem, subchannel_batch_data* batch_data,
+    subchannel_call_retry_state* retry_state) {
+  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
+  call_data* calld = static_cast<call_data*>(elem->call_data);
+  if (batch_data->batch.send_initial_metadata) {
+    grpc_metadata_batch_destroy(&calld->send_initial_metadata);
+  }
+  if (batch_data->batch.send_message) {
+    if (grpc_client_channel_trace.enabled()) {
+      gpr_log(GPR_DEBUG,
+              "chand=%p calld=%p: destroying calld->send_messages[%" PRIuPTR
+              "]",
+              chand, calld, retry_state->completed_send_message_count - 1);
+    }
+    grpc_byte_stream_cache_destroy(
+        calld->send_messages[retry_state->completed_send_message_count - 1]);
+  }
+  if (batch_data->batch.send_trailing_metadata) {
     grpc_metadata_batch_destroy(&calld->send_trailing_metadata);
   }
 }
@@ -1032,13 +1062,14 @@ static void pending_batches_add(grpc_call_element* elem,
                 "chand=%p calld=%p: exceeded retry buffer size, committing",
                 chand, calld);
       }
-      subchannel_call_retry_state* retry_state =
-          calld->subchannel_call == nullptr
-              ? nullptr
-              : (subchannel_call_retry_state*)
+      retry_commit(elem);
+      if (calld->subchannel_call != nullptr) {
+        subchannel_call_retry_state* retry_state =
+            static_cast<subchannel_call_retry_state*>(
                     grpc_connected_subchannel_call_get_parent_data(
-                        calld->subchannel_call);
-      retry_commit(elem, retry_state);
+                        calld->subchannel_call));
+        free_cached_send_op_data_after_commit(elem, retry_state);
+      }
       // If we are not going to retry and have not yet started, pretend
       // retries are disabled so that we don't bother with retry overhead.
       if (calld->num_attempts_completed == 0) {
@@ -1539,7 +1570,8 @@ static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
     return;
   }
   // Received valid initial metadata, so commit the call.
-  retry_commit(elem, retry_state);
+  retry_commit(elem);
+  free_cached_send_op_data_after_commit(elem, retry_state);
   // Manually invoking a callback function; it does not take ownership of error.
   invoke_recv_initial_metadata_callback(batch_data, error);
   GRPC_ERROR_UNREF(error);
@@ -1621,7 +1653,8 @@ static void recv_message_ready(void* arg, grpc_error* error) {
     return;
   }
   // Received a valid message, so commit the call.
-  retry_commit(elem, retry_state);
+  retry_commit(elem);
+  free_cached_send_op_data_after_commit(elem, retry_state);
   // Manually invoking a callback function; it does not take ownership of error.
   invoke_recv_message_callback(batch_data, error);
   GRPC_ERROR_UNREF(error);
@@ -1717,29 +1750,6 @@ static void update_retry_state_for_completed_batch(
   }
   if (batch_data->batch.recv_trailing_metadata) {
     retry_state->completed_recv_trailing_metadata = true;
-  }
-}
-
-static void free_cached_send_op_data_for_completed_batch(
-    grpc_call_element* elem, subchannel_batch_data* batch_data,
-    subchannel_call_retry_state* retry_state) {
-  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  if (batch_data->batch.send_initial_metadata) {
-    grpc_metadata_batch_destroy(&calld->send_initial_metadata);
-  }
-  if (batch_data->batch.send_message) {
-    if (grpc_client_channel_trace.enabled()) {
-      gpr_log(GPR_DEBUG,
-              "chand=%p calld=%p: destroying calld->send_messages[%" PRIuPTR
-              "]",
-              chand, calld, retry_state->completed_send_message_count - 1);
-    }
-    grpc_byte_stream_cache_destroy(
-        calld->send_messages[retry_state->completed_send_message_count - 1]);
-  }
-  if (batch_data->batch.send_trailing_metadata) {
-    grpc_metadata_batch_destroy(&calld->send_trailing_metadata);
   }
 }
 
