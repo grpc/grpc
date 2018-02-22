@@ -16,11 +16,15 @@
  *
  */
 
-// Set the log config object to be passed to channels as channel arg.
-// The setting is only effective to channels created after setLogConfig.
 #import "GRPCCall.h"
 
 @interface GRPCCall (MobileLog)
+// Set the object to be passed down along channel stack with channel arg
+// GRPC_ARG_MOBILE_LOG_CONFIG. The setting may be used by custom channel
+// filters for metrics logging.
 + (void)setLogConfig:(id)logConfig;
+
+// Obtain the object to be passed down along channel stack with channel arg
+// GRPC_ARG_MOBILE_LOG_CONFIG.
 + (id)logConfig;
 @end
