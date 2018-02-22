@@ -73,6 +73,8 @@ static const char* error_int_name(grpc_error_ints key) {
       return "limit";
     case GRPC_ERROR_INT_OCCURRED_DURING_WRITE:
       return "occurred_during_write";
+    case GRPC_ERROR_INT_SERVER_VISIBILITY:
+      return "grpc_error_int_server_visibility";
     case GRPC_ERROR_INT_MAX:
       GPR_UNREACHABLE_CODE(return "unknown");
   }

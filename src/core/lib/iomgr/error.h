@@ -38,6 +38,12 @@ typedef struct grpc_error grpc_error;
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_error_refcount;
 
 typedef enum {
+  GRPC_ERROR_SERVER_VISIBILITY_STATE_SEEN_BY_SERVER_APPLICATION,
+  GRPC_ERROR_SERVER_VISIBILITY_STATE_SEEN_BY_SERVER_GRPC_LIBRARY,
+  GRPC_ERROR_SERVER_VISIBILITY_STATE_NEVER_LEFT_CLIENT
+} grpc_error_server_visibility_state;
+
+typedef enum {
   /// 'errno' from the operating system
   GRPC_ERROR_INT_ERRNO,
   /// __LINE__ from the call site creating the error
@@ -70,7 +76,8 @@ typedef enum {
   GRPC_ERROR_INT_LIMIT,
   /// chttp2: did the error occur while a write was in progress
   GRPC_ERROR_INT_OCCURRED_DURING_WRITE,
-
+  /// chttp2: must be one of grpc_error_server_visibility_state
+  GRPC_ERROR_INT_SERVER_VISIBILITY,
   /// Must always be last
   GRPC_ERROR_INT_MAX,
 } grpc_error_ints;
