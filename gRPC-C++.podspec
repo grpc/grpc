@@ -24,7 +24,7 @@ Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
   # version = '1.10.0-dev'
-  version = '0.0.1'
+  version = '0.0.2'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -42,8 +42,14 @@ Pod::Spec.new do |s|
   s.osx.deployment_target = '10.9'
   s.requires_arc = false
 
-  # Add include prefix `grpc++` (i.e. `#include <grpc++/xxx.h>`).
-  s.header_dir = 'grpc++'
+  name = 'grpcpp'
+  # Use `grpcpp` as framework name so that `#include <grpcpp/xxx.h>` works when built as
+  # framework.
+  s.module_name = name
+
+  # Add include prefix `grpcpp` so that `#include <grpcpp/xxx.h>` works when built as static
+  # library.
+  s.header_dir = name
 
   s.pod_target_xcconfig = {
     'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(PODS_TARGET_SRCROOT)/include"',
@@ -63,55 +69,12 @@ Pod::Spec.new do |s|
 
   s.default_subspecs = 'Interface', 'Implementation'
 
-  s.subspec 'Interface' do |ss|
-    ss.header_mappings_dir = 'include/grpc++'
+  s.header_mappings_dir = 'include/grpcpp'
 
-    ss.source_files = 'include/grpc++/alarm.h',
-                      'include/grpc++/channel.h',
-                      'include/grpc++/client_context.h',
-                      'include/grpc++/completion_queue.h',
-                      'include/grpc++/create_channel.h',
-                      'include/grpc++/create_channel_posix.h',
-                      'include/grpc++/ext/health_check_service_server_builder_option.h',
-                      'include/grpc++/generic/async_generic_service.h',
-                      'include/grpc++/generic/generic_stub.h',
-                      'include/grpc++/grpc++.h',
-                      'include/grpc++/health_check_service_interface.h',
-                      'include/grpc++/impl/call.h',
-                      'include/grpc++/impl/channel_argument_option.h',
-                      'include/grpc++/impl/client_unary_call.h',
-                      'include/grpc++/impl/codegen/core_codegen.h',
-                      'include/grpc++/impl/grpc_library.h',
-                      'include/grpc++/impl/method_handler_impl.h',
-                      'include/grpc++/impl/rpc_method.h',
-                      'include/grpc++/impl/rpc_service_method.h',
-                      'include/grpc++/impl/serialization_traits.h',
-                      'include/grpc++/impl/server_builder_option.h',
-                      'include/grpc++/impl/server_builder_plugin.h',
-                      'include/grpc++/impl/server_initializer.h',
-                      'include/grpc++/impl/service_type.h',
-                      'include/grpc++/resource_quota.h',
-                      'include/grpc++/security/auth_context.h',
-                      'include/grpc++/security/auth_metadata_processor.h',
-                      'include/grpc++/security/credentials.h',
-                      'include/grpc++/security/server_credentials.h',
-                      'include/grpc++/server.h',
-                      'include/grpc++/server_builder.h',
-                      'include/grpc++/server_context.h',
-                      'include/grpc++/server_posix.h',
-                      'include/grpc++/support/async_stream.h',
-                      'include/grpc++/support/async_unary_call.h',
-                      'include/grpc++/support/byte_buffer.h',
-                      'include/grpc++/support/channel_arguments.h',
-                      'include/grpc++/support/config.h',
-                      'include/grpc++/support/slice.h',
-                      'include/grpc++/support/status.h',
-                      'include/grpc++/support/status_code_enum.h',
-                      'include/grpc++/support/string_ref.h',
-                      'include/grpc++/support/stub_options.h',
-                      'include/grpc++/support/sync_stream.h',
-                      'include/grpc++/support/time.h',
-                      'include/grpcpp/alarm.h',
+  s.subspec 'Interface' do |ss|
+    ss.header_mappings_dir = 'include/grpcpp'
+
+    ss.source_files = 'include/grpcpp/alarm.h',
                       'include/grpcpp/channel.h',
                       'include/grpcpp/client_context.h',
                       'include/grpcpp/completion_queue.h',
@@ -156,36 +119,6 @@ Pod::Spec.new do |s|
                       'include/grpcpp/support/stub_options.h',
                       'include/grpcpp/support/sync_stream.h',
                       'include/grpcpp/support/time.h',
-                      'include/grpc++/impl/codegen/async_stream.h',
-                      'include/grpc++/impl/codegen/async_unary_call.h',
-                      'include/grpc++/impl/codegen/byte_buffer.h',
-                      'include/grpc++/impl/codegen/call.h',
-                      'include/grpc++/impl/codegen/call_hook.h',
-                      'include/grpc++/impl/codegen/channel_interface.h',
-                      'include/grpc++/impl/codegen/client_context.h',
-                      'include/grpc++/impl/codegen/client_unary_call.h',
-                      'include/grpc++/impl/codegen/completion_queue.h',
-                      'include/grpc++/impl/codegen/completion_queue_tag.h',
-                      'include/grpc++/impl/codegen/config.h',
-                      'include/grpc++/impl/codegen/core_codegen_interface.h',
-                      'include/grpc++/impl/codegen/create_auth_context.h',
-                      'include/grpc++/impl/codegen/grpc_library.h',
-                      'include/grpc++/impl/codegen/metadata_map.h',
-                      'include/grpc++/impl/codegen/method_handler_impl.h',
-                      'include/grpc++/impl/codegen/rpc_method.h',
-                      'include/grpc++/impl/codegen/rpc_service_method.h',
-                      'include/grpc++/impl/codegen/security/auth_context.h',
-                      'include/grpc++/impl/codegen/serialization_traits.h',
-                      'include/grpc++/impl/codegen/server_context.h',
-                      'include/grpc++/impl/codegen/server_interface.h',
-                      'include/grpc++/impl/codegen/service_type.h',
-                      'include/grpc++/impl/codegen/slice.h',
-                      'include/grpc++/impl/codegen/status.h',
-                      'include/grpc++/impl/codegen/status_code_enum.h',
-                      'include/grpc++/impl/codegen/string_ref.h',
-                      'include/grpc++/impl/codegen/stub_options.h',
-                      'include/grpc++/impl/codegen/sync_stream.h',
-                      'include/grpc++/impl/codegen/time.h',
                       'include/grpcpp/impl/codegen/async_stream.h',
                       'include/grpcpp/impl/codegen/async_unary_call.h',
                       'include/grpcpp/impl/codegen/byte_buffer.h',
@@ -224,8 +157,7 @@ Pod::Spec.new do |s|
     ss.dependency 'gRPC-Core', grpc_version
     ss.dependency 'nanopb', '~> 0.3'
 
-    ss.source_files = 'include/grpc++/impl/codegen/core_codegen.h',
-                      'include/grpcpp/impl/codegen/core_codegen.h',
+    ss.source_files = 'include/grpcpp/impl/codegen/core_codegen.h',
                       'src/cpp/client/secure_credentials.h',
                       'src/cpp/common/secure_auth_context.h',
                       'src/cpp/server/secure_server_credentials.h',
@@ -519,8 +451,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h',
                       'src/core/ext/filters/workarounds/workaround_utils.h'
 
-    ss.private_header_files = 'include/grpc++/impl/codegen/core_codegen.h',
-                              'include/grpcpp/impl/codegen/core_codegen.h',
+    ss.private_header_files = 'include/grpcpp/impl/codegen/core_codegen.h',
                               'src/cpp/client/secure_credentials.h',
                               'src/cpp/common/secure_auth_context.h',
                               'src/cpp/server/secure_server_credentials.h',
@@ -682,113 +613,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/transport/transport_impl.h',
                               'src/core/lib/debug/trace.h',
                               'src/core/ext/transport/inproc/inproc_transport.h'
-  end
-
-  s.subspec 'Tests' do |ss|
-    ss.header_mappings_dir = '.'
-
-    ss.dependency "#{s.name}/Interface", version
-    ss.dependency "#{s.name}/Implementation", version
-    ss.dependency "gRPC-Core/Tests", grpc_version
-
-    ss.source_files = 'test/cpp/util/create_test_channel.cc',
-                      'test/cpp/util/string_ref_helper.cc',
-                      'test/cpp/util/subprocess.cc',
-                      'test/cpp/util/test_credentials_provider.cc',
-                      'test/cpp/util/create_test_channel.h',
-                      'test/cpp/util/string_ref_helper.h',
-                      'test/cpp/util/subprocess.h',
-                      'test/cpp/util/test_credentials_provider.h',
-                      'test/core/util/test_config.h',
-                      'test/core/end2end/data/ssl_test_data.h',
-                      'test/core/security/oauth2_utils.h',
-                      'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h',
-                      'test/core/end2end/cq_verifier.h',
-                      'test/core/end2end/fixtures/http_proxy_fixture.h',
-                      'test/core/end2end/fixtures/proxy.h',
-                      'test/core/iomgr/endpoint_tests.h',
-                      'test/core/util/debugger_macros.h',
-                      'test/core/util/grpc_profiler.h',
-                      'test/core/util/histogram.h',
-                      'test/core/util/memory_counters.h',
-                      'test/core/util/mock_endpoint.h',
-                      'test/core/util/parse_hexstring.h',
-                      'test/core/util/passthru_endpoint.h',
-                      'test/core/util/port.h',
-                      'test/core/util/port_server_client.h',
-                      'test/core/util/slice_splitter.h',
-                      'test/core/util/subprocess.h',
-                      'test/core/util/tracer_util.h',
-                      'test/core/util/trickle_endpoint.h',
-                      'test/core/util/cmdline.h',
-                      'src/core/lib/gpr/arena.h',
-                      'src/core/lib/gpr/env.h',
-                      'src/core/lib/gpr/fork.h',
-                      'src/core/lib/gpr/host_port.h',
-                      'src/core/lib/gpr/mpscq.h',
-                      'src/core/lib/gpr/murmur_hash.h',
-                      'src/core/lib/gpr/spinlock.h',
-                      'src/core/lib/gpr/string.h',
-                      'src/core/lib/gpr/string_windows.h',
-                      'src/core/lib/gpr/time_precise.h',
-                      'src/core/lib/gpr/tls.h',
-                      'src/core/lib/gpr/tls_gcc.h',
-                      'src/core/lib/gpr/tls_msvc.h',
-                      'src/core/lib/gpr/tls_pthread.h',
-                      'src/core/lib/gpr/tmpfile.h',
-                      'src/core/lib/gpr/useful.h',
-                      'src/core/lib/gprpp/abstract.h',
-                      'src/core/lib/gprpp/atomic.h',
-                      'src/core/lib/gprpp/atomic_with_atm.h',
-                      'src/core/lib/gprpp/atomic_with_std.h',
-                      'src/core/lib/gprpp/manual_constructor.h',
-                      'src/core/lib/gprpp/memory.h',
-                      'src/core/lib/gprpp/thd.h',
-                      'src/core/lib/profiling/timers.h',
-                      'src/core/ext/filters/client_channel/backup_poller.h',
-                      'src/core/ext/filters/client_channel/client_channel.h',
-                      'src/core/ext/filters/client_channel/client_channel_factory.h',
-                      'src/core/ext/filters/client_channel/connector.h',
-                      'src/core/ext/filters/client_channel/http_connect_handshaker.h',
-                      'src/core/ext/filters/client_channel/http_proxy.h',
-                      'src/core/ext/filters/client_channel/lb_policy.h',
-                      'src/core/ext/filters/client_channel/lb_policy_factory.h',
-                      'src/core/ext/filters/client_channel/lb_policy_registry.h',
-                      'src/core/ext/filters/client_channel/parse_address.h',
-                      'src/core/ext/filters/client_channel/proxy_mapper.h',
-                      'src/core/ext/filters/client_channel/proxy_mapper_registry.h',
-                      'src/core/ext/filters/client_channel/resolver.h',
-                      'src/core/ext/filters/client_channel/resolver_factory.h',
-                      'src/core/ext/filters/client_channel/resolver_registry.h',
-                      'src/core/ext/filters/client_channel/retry_throttle.h',
-                      'src/core/ext/filters/client_channel/subchannel.h',
-                      'src/core/ext/filters/client_channel/subchannel_index.h',
-                      'src/core/ext/filters/client_channel/uri_parser.h',
-                      'src/core/ext/filters/deadline/deadline_filter.h',
-                      'src/core/ext/transport/chttp2/transport/bin_decoder.h',
-                      'src/core/ext/transport/chttp2/transport/bin_encoder.h',
-                      'src/core/ext/transport/chttp2/transport/chttp2_transport.h',
-                      'src/core/ext/transport/chttp2/transport/flow_control.h',
-                      'src/core/ext/transport/chttp2/transport/frame.h',
-                      'src/core/ext/transport/chttp2/transport/frame_data.h',
-                      'src/core/ext/transport/chttp2/transport/frame_goaway.h',
-                      'src/core/ext/transport/chttp2/transport/frame_ping.h',
-                      'src/core/ext/transport/chttp2/transport/frame_rst_stream.h',
-                      'src/core/ext/transport/chttp2/transport/frame_settings.h',
-                      'src/core/ext/transport/chttp2/transport/frame_window_update.h',
-                      'src/core/ext/transport/chttp2/transport/hpack_encoder.h',
-                      'src/core/ext/transport/chttp2/transport/hpack_parser.h',
-                      'src/core/ext/transport/chttp2/transport/hpack_table.h',
-                      'src/core/ext/transport/chttp2/transport/http2_settings.h',
-                      'src/core/ext/transport/chttp2/transport/huffsyms.h',
-                      'src/core/ext/transport/chttp2/transport/incoming_metadata.h',
-                      'src/core/ext/transport/chttp2/transport/internal.h',
-                      'src/core/ext/transport/chttp2/transport/stream_map.h',
-                      'src/core/ext/transport/chttp2/transport/varint.h',
-                      'src/core/ext/transport/chttp2/alpn/alpn.h',
-                      'src/core/ext/filters/http/client/http_client_filter.h',
-                      'src/core/ext/filters/http/message_compress/message_compress_filter.h',
-                      'src/core/ext/filters/http/server/http_server_filter.h'
   end
 
   s.prepare_command = <<-END_OF_COMMAND
