@@ -37,7 +37,7 @@ bool grpc_is_epollexclusive_available(void) {
   int fd = epoll_create1(EPOLL_CLOEXEC);
   if (fd < 0) {
     if (!logged_why_not) {
-      gpr_log(GPR_ERROR,
+      gpr_log(GPR_DEBUG,
               "epoll_create1 failed with error: %d. Not using epollex polling "
               "engine.",
               fd);
@@ -48,7 +48,7 @@ bool grpc_is_epollexclusive_available(void) {
   int evfd = eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
   if (evfd < 0) {
     if (!logged_why_not) {
-      gpr_log(GPR_ERROR,
+      gpr_log(GPR_DEBUG,
               "eventfd failed with error: %d. Not using epollex polling "
               "engine.",
               fd);
@@ -80,7 +80,7 @@ bool grpc_is_epollexclusive_available(void) {
     }
   } else {
     if (!logged_why_not) {
-      gpr_log(GPR_ERROR,
+      gpr_log(GPR_DEBUG,
               "epoll_ctl with EPOLLEXCLUSIVE | EPOLLONESHOT succeeded. This is "
               "evidence of no EPOLLEXCLUSIVE support. Not using "
               "epollex polling engine.");

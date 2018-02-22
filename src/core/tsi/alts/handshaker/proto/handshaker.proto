@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-import "~/grpc-alts/grpc/src/core/tsi/alts/handshaker/proto/transport_security_common.proto";
+import "transport_security_common.proto";
 
 package grpc.gcp;
 

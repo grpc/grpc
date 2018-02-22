@@ -91,10 +91,10 @@ echo "grpc.gcp.StartServerHandshakeReq.handshake_parameters max_count:3" >> "$OP
 
 cd $TMP_DIR
 cp ~/grpc-alts/grpc/src/core/tsi/alts/handshaker/proto/transport_security_common.proto .
-
+cd ~/grpc-alts/grpc/src/core/tsi/alts/handshaker/proto
 # run protoc to generate *pb.h/c.
 protoc \
-  --proto_path=. --plugin=protoc-gen-nanopb="generator/protoc-gen-nanopb" \
+  --plugin=protoc-gen-nanopb="/tmp/nanopb-0.3.8-linux-x86/generator/protoc-gen-nanopb" \
   --nanopb_out='-T -L#include\ \"third_party/nanopb/pb.h\"'":$OUTPUT_DIR" \
   "$PROTO_NAME.proto"
 

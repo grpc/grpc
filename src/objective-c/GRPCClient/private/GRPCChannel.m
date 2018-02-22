@@ -188,8 +188,7 @@ static grpc_channel_args *BuildChannelArgs(NSDictionary *dictionary) {
   if (timeout < 0) {
     timeout = 0;
   }
-  grpc_slice host_slice;
-  memset(&host_slice, 0, sizeof(host_slice));
+  grpc_slice host_slice = grpc_empty_slice();
   if (serverName) {
     host_slice = grpc_slice_from_copied_string(serverName.UTF8String);
   }
