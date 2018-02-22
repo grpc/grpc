@@ -75,6 +75,32 @@ static bool input_is_valid(uint8_t* input_ptr, size_t length) {
 #define COMPOSE_OUTPUT_BYTE_2(input_ptr) \
   (uint8_t)((decode_table[input_ptr[2]] << 6) | decode_table[input_ptr[3]])
 
+// By RFC 4648, if the length of the encoded string without padding is 4n+r,
+// the length of decoded string is: 1) 3n if r = 0, 2) 3n + 1 if r = 2, 3, or
+// 3) invalid if r = 1.
+size_t grpc_chttp2_base64_infer_length_after_decode(const grpc_slice& slice) {
+  size_t len = GRPC_SLICE_LENGTH(slice);
+  const uint8_t* bytes = GRPC_SLICE_START_PTR(slice);
+  while (len > 0 && bytes[len - 1] == '=') {
+    len--;
+  }
+  if (GRPC_SLICE_LENGTH(slice) - len > 2) {
+    gpr_log(GPR_ERROR,
+            "Base64 decoding failed. Input has more than 2 paddings.");
+    return 0;
+  }
+  size_t tuples = len / 4;
+  size_t tail_case = len % 4;
+  if (tail_case == 1) {
+    gpr_log(GPR_ERROR,
+            "Base64 decoding failed. Input has a length of %zu (without"
+            " padding), which is invalid.\n",
+            len);
+    return 0;
+  }
+  return tuples * 3 + tail_xtra[tail_case];
+}
+
 bool grpc_base64_decode_partial(struct grpc_base64_decode_context* ctx) {
   size_t input_tail;
 
