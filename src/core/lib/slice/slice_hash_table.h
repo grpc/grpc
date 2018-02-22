@@ -53,7 +53,7 @@ class SliceHashTable : public RefCounted<SliceHashTable<T>> {
   // grpc_channel_args is redesigned to require that keys are unique.
   typedef int (*ValueCmp)(const T&, const T&);
 
-  /// Creates a new hash table of containing \a entries, which is an array
+  /// Creates a new hash table containing \a entries, which is an array
   /// of length \a num_entries.  Takes ownership of all keys and values in \a
   /// entries.  If not null, \a value_cmp will be used to compare values in
   /// the context of \a Cmp(). If null, raw pointer (\a GPR_ICMP) comparison
