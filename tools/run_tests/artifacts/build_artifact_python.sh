@@ -26,6 +26,9 @@ export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
 mkdir -p "${ARTIFACTS_OUT}"
 ARTIFACT_DIR="$PWD/${ARTIFACTS_OUT}"
 
+# clean up .git directories from the source distribution tree
+find . -name ".git" -type d -exec rm -fr {} \; || true
+
 # Build the source distribution first because MANIFEST.in cannot override
 # exclusion of built shared objects among package resources (for some
 # inexplicable reason).
