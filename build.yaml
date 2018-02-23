@@ -1,3 +1,5 @@
+'#1': This file describes the list of targets and dependencies.
+'#2': It is used among other things to generate all of our project files.
 '#3': Please refer to the templates directory for more information.
 settings:
   '#01': The public version number of the library.
@@ -77,6 +79,9 @@ filegroups:
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
   src:
   - src/core/lib/security/credentials/alts/check_gcp_environment.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
@@ -724,8 +729,8 @@ filegroups:
   - src/core/lib/security/credentials/oauth2/oauth2_credentials.h
   - src/core/lib/security/credentials/plugin/plugin_credentials.h
   - src/core/lib/security/credentials/ssl/ssl_credentials.h
+  - src/core/lib/security/security_connector/alts_security_connector.h
   - src/core/lib/security/security_connector/security_connector.h
-  - src/core/lib/security/transport/alts/alts_security_connector.h
   - src/core/lib/security/transport/auth_filters.h
   - src/core/lib/security/transport/lb_targets_info.h
   - src/core/lib/security/transport/secure_endpoint.h
@@ -749,8 +754,8 @@ filegroups:
   - src/core/lib/security/credentials/oauth2/oauth2_credentials.cc
   - src/core/lib/security/credentials/plugin/plugin_credentials.cc
   - src/core/lib/security/credentials/ssl/ssl_credentials.cc
+  - src/core/lib/security/security_connector/alts_security_connector.cc
   - src/core/lib/security/security_connector/security_connector.cc
-  - src/core/lib/security/transport/alts/alts_security_connector.cc
   - src/core/lib/security/transport/client_auth_filter.cc
   - src/core/lib/security/transport/lb_targets_info.cc
   - src/core/lib/security/transport/secure_endpoint.cc
@@ -4099,11 +4104,19 @@ targets:
   - grpc
   - gpr
   uses_polling: false
-- name: check_gcp_environment_test
+- name: check_gcp_environment_linux_test
   build: test
   language: c++
   src:
-  - test/core/security/check_gcp_environment_test.cc
+  - test/core/security/check_gcp_environment_linux_test.cc
+  deps:
+  - grpc
+  - gpr
+- name: check_gcp_environment_windows_test
+  build: test
+  language: c++
+  src:
+  - test/core/security/check_gcp_environment_windows_test.cc
   deps:
   - grpc
   - gpr

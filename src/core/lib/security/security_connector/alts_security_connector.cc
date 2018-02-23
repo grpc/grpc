@@ -16,7 +16,7 @@
  *
  */
 
-#include "src/core/lib/security/transport/alts/alts_security_connector.h"
+#include "src/core/lib/security/security_connector/alts_security_connector.h"
 
 #include <stdbool.h>
 #include <string.h>
@@ -98,6 +98,9 @@ static void alts_set_rpc_protocol_versions(
                                          GRPC_PROTOCOL_VERSION_MIN_MINOR);
 }
 
+namespace grpc_core {
+namespace internal {
+
 grpc_security_status grpc_alts_auth_context_from_tsi_peer(
     const tsi_peer* peer, grpc_auth_context** ctx) {
   if (peer == nullptr || ctx == nullptr) {
@@ -106,7 +109,6 @@ grpc_security_status grpc_alts_auth_context_from_tsi_peer(
     return GRPC_SECURITY_ERROR;
   }
   *ctx = nullptr;
-
   /* Validate certificate type. */
   const tsi_peer_property* cert_type_prop =
       tsi_peer_get_property_by_name(peer, TSI_CERTIFICATE_TYPE_PEER_PROPERTY);
@@ -146,7 +148,6 @@ grpc_security_status grpc_alts_auth_context_from_tsi_peer(
   grpc_auth_context_add_cstring_property(
       *ctx, GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
       GRPC_ALTS_TRANSPORT_SECURITY_TYPE);
-
   size_t i = 0;
   for (i = 0; i < peer->property_count; i++) {
     const tsi_peer_property* tsi_prop = &peer->properties[i];
@@ -168,11 +169,15 @@ grpc_security_status grpc_alts_auth_context_from_tsi_peer(
   return GRPC_SECURITY_OK;
 }
 
+}  // namespace internal
+}  // namespace grpc_core
+
 static void alts_check_peer(grpc_security_connector* sc, tsi_peer peer,
                             grpc_auth_context** auth_context,
                             grpc_closure* on_peer_checked) {
   grpc_security_status status;
-  status = grpc_alts_auth_context_from_tsi_peer(&peer, auth_context);
+  status = grpc_core::internal::grpc_alts_auth_context_from_tsi_peer(
+      &peer, auth_context);
   tsi_peer_destruct(&peer);
   grpc_error* error =
       status == GRPC_SECURITY_OK

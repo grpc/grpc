@@ -175,7 +175,6 @@ bool alts_read_frame_bytes(alts_frame_reader* reader,
       *bytes_size = bytes_processed;
       return true;
     }
-
     size_t frame_length = load_32_le(reader->header_buffer);
     if (frame_length < kFrameMessageTypeFieldSize ||
         frame_length > kFrameMaxSize) {

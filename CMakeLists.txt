@@ -526,7 +526,8 @@ add_dependencies(buildtests_cxx bm_pollset)
 endif()
 add_dependencies(buildtests_cxx channel_arguments_test)
 add_dependencies(buildtests_cxx channel_filter_test)
-add_dependencies(buildtests_cxx check_gcp_environment_test)
+add_dependencies(buildtests_cxx check_gcp_environment_linux_test)
+add_dependencies(buildtests_cxx check_gcp_environment_windows_test)
 add_dependencies(buildtests_cxx chttp2_settings_timeout_test)
 add_dependencies(buildtests_cxx cli_call_test)
 add_dependencies(buildtests_cxx client_channel_stress_test)
@@ -976,8 +977,8 @@ add_library(grpc
   src/core/lib/security/credentials/oauth2/oauth2_credentials.cc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/ssl/ssl_credentials.cc
+  src/core/lib/security/security_connector/alts_security_connector.cc
   src/core/lib/security/security_connector/security_connector.cc
-  src/core/lib/security/transport/alts/alts_security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/lb_targets_info.cc
   src/core/lib/security/transport/secure_endpoint.cc
@@ -1004,6 +1005,9 @@ add_library(grpc
   src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
   src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
   src/core/lib/security/credentials/alts/check_gcp_environment.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
   src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
   src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
   src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
@@ -1369,8 +1373,8 @@ add_library(grpc_cronet
   src/core/lib/security/credentials/oauth2/oauth2_credentials.cc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/ssl/ssl_credentials.cc
+  src/core/lib/security/security_connector/alts_security_connector.cc
   src/core/lib/security/security_connector/security_connector.cc
-  src/core/lib/security/transport/alts/alts_security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/lb_targets_info.cc
   src/core/lib/security/transport/secure_endpoint.cc
@@ -1397,6 +1401,9 @@ add_library(grpc_cronet
   src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
   src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
   src/core/lib/security/credentials/alts/check_gcp_environment.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
   src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
   src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
   src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
@@ -9997,14 +10004,14 @@ target_link_libraries(channel_filter_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(check_gcp_environment_test
-  test/core/security/check_gcp_environment_test.cc
+add_executable(check_gcp_environment_linux_test
+  test/core/security/check_gcp_environment_linux_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
-target_include_directories(check_gcp_environment_test
+target_include_directories(check_gcp_environment_linux_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
@@ -10020,7 +10027,41 @@ target_include_directories(check_gcp_environment_test
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(check_gcp_environment_test
+target_link_libraries(check_gcp_environment_linux_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(check_gcp_environment_windows_test
+  test/core/security/check_gcp_environment_windows_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(check_gcp_environment_windows_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(check_gcp_environment_windows_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc

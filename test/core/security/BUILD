@@ -138,8 +138,17 @@ grpc_cc_binary(
 )
 
 grpc_cc_test(
-    name = "check_gcp_environment_test",
-    srcs = ["check_gcp_environment_test.cc"],
+    name = "check_gcp_environment_linux_test",
+    srcs = ["check_gcp_environment_linux_test.cc"],
+    language = "C++",
+    deps = [
+        "//:grpc",
+    ],
+)
+
+grpc_cc_test(
+    name = "check_gcp_environment_windows_test",
+    srcs = ["check_gcp_environment_windows_test.cc"],
     language = "C++",
     deps = [
         "//:grpc",

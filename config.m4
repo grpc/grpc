@@ -259,8 +259,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/credentials/oauth2/oauth2_credentials.cc \
     src/core/lib/security/credentials/plugin/plugin_credentials.cc \
     src/core/lib/security/credentials/ssl/ssl_credentials.cc \
+    src/core/lib/security/security_connector/alts_security_connector.cc \
     src/core/lib/security/security_connector/security_connector.cc \
-    src/core/lib/security/transport/alts/alts_security_connector.cc \
     src/core/lib/security/transport/client_auth_filter.cc \
     src/core/lib/security/transport/lb_targets_info.cc \
     src/core/lib/security/transport/secure_endpoint.cc \
@@ -287,6 +287,9 @@ if test "$PHP_GRPC" != "no"; then
     src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc \
     src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc \
     src/core/lib/security/credentials/alts/check_gcp_environment.cc \
+    src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc \
+    src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc \
+    src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc \
     src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc \
     src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc \
     src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc \
@@ -673,7 +676,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/ssl)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/security_connector)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/transport)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/transport/alts)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/util)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/slice)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/surface)

@@ -24,10 +24,12 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/security/transport/alts/alts_security_connector.h"
+#include "src/core/lib/security/security_connector/alts_security_connector.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 #include "src/core/tsi/transport_security.h"
+
+using grpc_core::internal::grpc_alts_auth_context_from_tsi_peer;
 
 /* This file contains unit tests of grpc_alts_auth_context_from_tsi_peer(). */
 static void test_invalid_input_failure() {

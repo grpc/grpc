@@ -443,6 +443,9 @@ void alts_tsi_handshaker_handle_response(alts_tsi_handshaker* handshaker,
      bytes_to_send_size, result);
 }
 
+namespace grpc_core {
+namespace internal {
+
 bool alts_tsi_handshaker_get_has_sent_start_message_for_testing(
     alts_tsi_handshaker* handshaker) {
   GPR_ASSERT(handshaker != nullptr);
@@ -473,3 +476,6 @@ void alts_tsi_handshaker_set_client_for_testing(
   alts_handshaker_client_destroy(handshaker->client);
   handshaker->client = client;
 }
+
+}  // namespace internal
+}  // namespace grpc_core

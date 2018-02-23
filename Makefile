@@ -1128,7 +1128,8 @@ bm_metadata: $(BINDIR)/$(CONFIG)/bm_metadata
 bm_pollset: $(BINDIR)/$(CONFIG)/bm_pollset
 channel_arguments_test: $(BINDIR)/$(CONFIG)/channel_arguments_test
 channel_filter_test: $(BINDIR)/$(CONFIG)/channel_filter_test
-check_gcp_environment_test: $(BINDIR)/$(CONFIG)/check_gcp_environment_test
+check_gcp_environment_linux_test: $(BINDIR)/$(CONFIG)/check_gcp_environment_linux_test
+check_gcp_environment_windows_test: $(BINDIR)/$(CONFIG)/check_gcp_environment_windows_test
 chttp2_settings_timeout_test: $(BINDIR)/$(CONFIG)/chttp2_settings_timeout_test
 cli_call_test: $(BINDIR)/$(CONFIG)/cli_call_test
 client_channel_stress_test: $(BINDIR)/$(CONFIG)/client_channel_stress_test
@@ -1609,7 +1610,8 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/bm_pollset \
   $(BINDIR)/$(CONFIG)/channel_arguments_test \
   $(BINDIR)/$(CONFIG)/channel_filter_test \
-  $(BINDIR)/$(CONFIG)/check_gcp_environment_test \
+  $(BINDIR)/$(CONFIG)/check_gcp_environment_linux_test \
+  $(BINDIR)/$(CONFIG)/check_gcp_environment_windows_test \
   $(BINDIR)/$(CONFIG)/chttp2_settings_timeout_test \
   $(BINDIR)/$(CONFIG)/cli_call_test \
   $(BINDIR)/$(CONFIG)/client_channel_stress_test \
@@ -1769,7 +1771,8 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/bm_pollset \
   $(BINDIR)/$(CONFIG)/channel_arguments_test \
   $(BINDIR)/$(CONFIG)/channel_filter_test \
-  $(BINDIR)/$(CONFIG)/check_gcp_environment_test \
+  $(BINDIR)/$(CONFIG)/check_gcp_environment_linux_test \
+  $(BINDIR)/$(CONFIG)/check_gcp_environment_windows_test \
   $(BINDIR)/$(CONFIG)/chttp2_settings_timeout_test \
   $(BINDIR)/$(CONFIG)/cli_call_test \
   $(BINDIR)/$(CONFIG)/client_channel_stress_test \
@@ -2192,8 +2195,10 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/channel_arguments_test || ( echo test channel_arguments_test failed ; exit 1 )
 	$(E) "[RUN]     Testing channel_filter_test"
 	$(Q) $(BINDIR)/$(CONFIG)/channel_filter_test || ( echo test channel_filter_test failed ; exit 1 )
-	$(E) "[RUN]     Testing check_gcp_environment_test"
-	$(Q) $(BINDIR)/$(CONFIG)/check_gcp_environment_test || ( echo test check_gcp_environment_test failed ; exit 1 )
+	$(E) "[RUN]     Testing check_gcp_environment_linux_test"
+	$(Q) $(BINDIR)/$(CONFIG)/check_gcp_environment_linux_test || ( echo test check_gcp_environment_linux_test failed ; exit 1 )
+	$(E) "[RUN]     Testing check_gcp_environment_windows_test"
+	$(Q) $(BINDIR)/$(CONFIG)/check_gcp_environment_windows_test || ( echo test check_gcp_environment_windows_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_settings_timeout_test"
 	$(Q) $(BINDIR)/$(CONFIG)/chttp2_settings_timeout_test || ( echo test chttp2_settings_timeout_test failed ; exit 1 )
 	$(E) "[RUN]     Testing cli_call_test"
@@ -3274,8 +3279,8 @@ LIBGRPC_SRC = \
     src/core/lib/security/credentials/oauth2/oauth2_credentials.cc \
     src/core/lib/security/credentials/plugin/plugin_credentials.cc \
     src/core/lib/security/credentials/ssl/ssl_credentials.cc \
+    src/core/lib/security/security_connector/alts_security_connector.cc \
     src/core/lib/security/security_connector/security_connector.cc \
-    src/core/lib/security/transport/alts/alts_security_connector.cc \
     src/core/lib/security/transport/client_auth_filter.cc \
     src/core/lib/security/transport/lb_targets_info.cc \
     src/core/lib/security/transport/secure_endpoint.cc \
@@ -3302,6 +3307,9 @@ LIBGRPC_SRC = \
     src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc \
     src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc \
     src/core/lib/security/credentials/alts/check_gcp_environment.cc \
+    src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc \
+    src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc \
+    src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc \
     src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc \
     src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc \
     src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc \
@@ -3672,8 +3680,8 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/security/credentials/oauth2/oauth2_credentials.cc \
     src/core/lib/security/credentials/plugin/plugin_credentials.cc \
     src/core/lib/security/credentials/ssl/ssl_credentials.cc \
+    src/core/lib/security/security_connector/alts_security_connector.cc \
     src/core/lib/security/security_connector/security_connector.cc \
-    src/core/lib/security/transport/alts/alts_security_connector.cc \
     src/core/lib/security/transport/client_auth_filter.cc \
     src/core/lib/security/transport/lb_targets_info.cc \
     src/core/lib/security/transport/secure_endpoint.cc \
@@ -3700,6 +3708,9 @@ LIBGRPC_CRONET_SRC = \
     src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc \
     src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc \
     src/core/lib/security/credentials/alts/check_gcp_environment.cc \
+    src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc \
+    src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc \
+    src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc \
     src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc \
     src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc \
     src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc \
@@ -15848,15 +15859,15 @@ endif
 endif
 
 
-CHECK_GCP_ENVIRONMENT_TEST_SRC = \
-    test/core/security/check_gcp_environment_test.cc \
+CHECK_GCP_ENVIRONMENT_LINUX_TEST_SRC = \
+    test/core/security/check_gcp_environment_linux_test.cc \
 
-CHECK_GCP_ENVIRONMENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHECK_GCP_ENVIRONMENT_TEST_SRC))))
+CHECK_GCP_ENVIRONMENT_LINUX_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHECK_GCP_ENVIRONMENT_LINUX_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/check_gcp_environment_test: openssl_dep_error
+$(BINDIR)/$(CONFIG)/check_gcp_environment_linux_test: openssl_dep_error
 
 else
 
@@ -15867,26 +15878,69 @@ ifeq ($(NO_PROTOBUF),true)
 
 # You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
 
-$(BINDIR)/$(CONFIG)/check_gcp_environment_test: protobuf_dep_error
+$(BINDIR)/$(CONFIG)/check_gcp_environment_linux_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/check_gcp_environment_test: $(PROTOBUF_DEP) $(CHECK_GCP_ENVIRONMENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/check_gcp_environment_linux_test: $(PROTOBUF_DEP) $(CHECK_GCP_ENVIRONMENT_LINUX_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(CHECK_GCP_ENVIRONMENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/check_gcp_environment_test
+	$(Q) $(LDXX) $(LDFLAGS) $(CHECK_GCP_ENVIRONMENT_LINUX_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/check_gcp_environment_linux_test
 
 endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/security/check_gcp_environment_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/security/check_gcp_environment_linux_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-deps_check_gcp_environment_test: $(CHECK_GCP_ENVIRONMENT_TEST_OBJS:.o=.dep)
+deps_check_gcp_environment_linux_test: $(CHECK_GCP_ENVIRONMENT_LINUX_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(CHECK_GCP_ENVIRONMENT_TEST_OBJS:.o=.dep)
+-include $(CHECK_GCP_ENVIRONMENT_LINUX_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHECK_GCP_ENVIRONMENT_WINDOWS_TEST_SRC = \
+    test/core/security/check_gcp_environment_windows_test.cc \
+
+CHECK_GCP_ENVIRONMENT_WINDOWS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHECK_GCP_ENVIRONMENT_WINDOWS_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/check_gcp_environment_windows_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/check_gcp_environment_windows_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/check_gcp_environment_windows_test: $(PROTOBUF_DEP) $(CHECK_GCP_ENVIRONMENT_WINDOWS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(CHECK_GCP_ENVIRONMENT_WINDOWS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/check_gcp_environment_windows_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/security/check_gcp_environment_windows_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_check_gcp_environment_windows_test: $(CHECK_GCP_ENVIRONMENT_WINDOWS_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHECK_GCP_ENVIRONMENT_WINDOWS_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -23095,6 +23149,9 @@ src/core/lib/http/httpcli_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/security/context/security_context.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/alts_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/check_gcp_environment.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc: $(OPENSSL_DEP)
@@ -23111,8 +23168,8 @@ src/core/lib/security/credentials/jwt/jwt_verifier.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/oauth2/oauth2_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/plugin/plugin_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/ssl/ssl_credentials.cc: $(OPENSSL_DEP)
+src/core/lib/security/security_connector/alts_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/security/security_connector/security_connector.cc: $(OPENSSL_DEP)
-src/core/lib/security/transport/alts/alts_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/security/transport/client_auth_filter.cc: $(OPENSSL_DEP)
 src/core/lib/security/transport/lb_targets_info.cc: $(OPENSSL_DEP)
 src/core/lib/security/transport/secure_endpoint.cc: $(OPENSSL_DEP)

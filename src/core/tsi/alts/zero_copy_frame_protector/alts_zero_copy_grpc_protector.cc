@@ -125,7 +125,6 @@ static tsi_result create_alts_grpc_record_protocol(
   }
   size_t overflow_limit = is_rekey ? kAltsRecordProtocolRekeyFrameLimit
                                    : kAltsRecordProtocolFrameLimit;
-
   /* Creates alts_grpc_record_protocol with AEAD crypter ownership transferred.
    */
   tsi_result result =

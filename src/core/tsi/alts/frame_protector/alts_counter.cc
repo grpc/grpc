@@ -83,7 +83,6 @@ grpc_status_code alts_counter_increment(alts_counter* crypter_counter,
       break;
     }
   }
-
   /**
    * If the lower overflow_size bytes are all zero, the counter has overflowed.
    */

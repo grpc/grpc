@@ -46,14 +46,14 @@ static tsi_result make_grpc_call(alts_handshaker_client* client,
   GPR_ASSERT(client != nullptr && event != nullptr);
   alts_grpc_handshaker_client* grpc_client =
       reinterpret_cast<alts_grpc_handshaker_client*>(client);
-  grpc_op ops[kHandshakerClientOpNum] = {};
+  grpc_op ops[kHandshakerClientOpNum];
+  memset(ops, 0, sizeof(ops));
   grpc_op* op = ops;
   if (is_start) {
     op->op = GRPC_OP_SEND_INITIAL_METADATA;
     op->data.send_initial_metadata.count = 0;
     op++;
     GPR_ASSERT(op - ops <= kHandshakerClientOpNum);
-
     op->op = GRPC_OP_RECV_INITIAL_METADATA;
     op->data.recv_initial_metadata.recv_initial_metadata =
         &event->initial_metadata;
@@ -64,13 +64,11 @@ static tsi_result make_grpc_call(alts_handshaker_client* client,
   op->data.send_message.send_message = event->send_buffer;
   op++;
   GPR_ASSERT(op - ops <= kHandshakerClientOpNum);
-
   op->op = GRPC_OP_RECV_MESSAGE;
   op->data.recv_message.recv_message = &event->recv_buffer;
   op++;
   GPR_ASSERT(op - ops <= kHandshakerClientOpNum);
   GPR_ASSERT(grpc_client->grpc_caller != nullptr);
-
   if (grpc_client->grpc_caller(grpc_client->call, ops,
                                static_cast<size_t>(op - ops),
                                (void*)event) != GRPC_CALL_OK) {
@@ -257,14 +255,19 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
   return &client->base;
 }
 
+namespace grpc_core {
+namespace internal {
+
 void alts_handshaker_client_set_grpc_caller_for_testing(
     alts_handshaker_client* client, alts_grpc_caller caller) {
   GPR_ASSERT(client != nullptr && caller != nullptr);
   alts_grpc_handshaker_client* grpc_client =
       reinterpret_cast<alts_grpc_handshaker_client*>(client);
-
   grpc_client->grpc_caller = caller;
 }
+
+}  // namespace internal
+}  // namespace grpc_core
 
 tsi_result alts_handshaker_client_start_client(alts_handshaker_client* client,
                                                alts_tsi_event* event) {

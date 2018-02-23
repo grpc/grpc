@@ -53,7 +53,14 @@ grpc_security_status grpc_alts_channel_security_connector_create(
 grpc_security_status grpc_alts_server_security_connector_create(
     grpc_server_credentials* server_creds, grpc_server_security_connector** sc);
 
+namespace grpc_core {
+namespace internal {
+
 /* Exposed only for testing. */
 grpc_security_status grpc_alts_auth_context_from_tsi_peer(
     const tsi_peer* peer, grpc_auth_context** ctx);
+
+}  // namespace internal
+}  // namespace grpc_core
+
 #endif /* GRPC_CORE_LIB_SECURITY_TRANSPORT_ALTS_ALTS_SECURITY_CONNECTOR_H */

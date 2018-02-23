@@ -272,7 +272,6 @@ static grpc_status_code gsec_aes_gcm_aead_crypter_encrypt_iovec(
     return GRPC_STATUS_INVALID_ARGUMENT;
   }
   *ciphertext_bytes_written = 0;
-
   // rekey if required
   if (aes_gcm_rekey_if_required(aes_gcm_crypter, nonce, error_details) !=
       GRPC_STATUS_OK) {
@@ -286,14 +285,12 @@ static grpc_status_code gsec_aes_gcm_aead_crypter_encrypt_iovec(
                        nonce);
     nonce_aead = nonce_masked;
   }
-
   // init openssl context
   if (!EVP_EncryptInit_ex(aes_gcm_crypter->ctx, nullptr, nullptr, nullptr,
                           nonce_aead)) {
     aes_gcm_format_errors("Initializing nonce failed", error_details);
     return GRPC_STATUS_INTERNAL;
   }
-
   // process aad
   size_t i;
   for (i = 0; i < aad_vec_length; i++) {
@@ -316,19 +313,16 @@ static grpc_status_code gsec_aes_gcm_aead_crypter_encrypt_iovec(
       return GRPC_STATUS_INTERNAL;
     }
   }
-
   uint8_t* ciphertext = static_cast<uint8_t*>(ciphertext_vec.iov_base);
   size_t ciphertext_length = ciphertext_vec.iov_len;
   if (ciphertext == nullptr) {
     aes_gcm_format_errors("ciphertext is nullptr.", error_details);
     return GRPC_STATUS_INVALID_ARGUMENT;
   }
-
   // process plaintext
   for (i = 0; i < plaintext_vec_length; i++) {
     const uint8_t* plaintext = static_cast<uint8_t*>(plaintext_vec[i].iov_base);
     size_t plaintext_length = plaintext_vec[i].iov_len;
-
     if (plaintext == nullptr) {
       if (plaintext_length == 0) {
         continue;
@@ -418,7 +412,6 @@ static grpc_status_code gsec_aes_gcm_aead_crypter_decrypt_iovec(
   for (i = 0; i < ciphertext_vec_length; i++) {
     total_ciphertext_length += ciphertext_vec[i].iov_len;
   }
-
   if (total_ciphertext_length < kAesGcmTagLength) {
     aes_gcm_format_errors("ciphertext is too small to hold a tag.",
                           error_details);
@@ -429,7 +422,6 @@ static grpc_status_code gsec_aes_gcm_aead_crypter_decrypt_iovec(
     return GRPC_STATUS_INVALID_ARGUMENT;
   }
   *plaintext_bytes_written = 0;
-
   // rekey if required
   if (aes_gcm_rekey_if_required(aes_gcm_crypter, nonce, error_details) !=
       GRPC_STATUS_OK) {
@@ -444,14 +436,12 @@ static grpc_status_code gsec_aes_gcm_aead_crypter_decrypt_iovec(
                        nonce);
     nonce_aead = nonce_masked;
   }
-
   // init openssl context
   if (!EVP_DecryptInit_ex(aes_gcm_crypter->ctx, nullptr, nullptr, nullptr,
                           nonce_aead)) {
     aes_gcm_format_errors("Initializing nonce failed.", error_details);
     return GRPC_STATUS_INTERNAL;
   }
-
   // process aad
   for (i = 0; i < aad_vec_length; i++) {
     const uint8_t* aad = static_cast<uint8_t*>(aad_vec[i].iov_base);
@@ -473,7 +463,6 @@ static grpc_status_code gsec_aes_gcm_aead_crypter_decrypt_iovec(
       return GRPC_STATUS_INTERNAL;
     }
   }
-
   // process ciphertext
   uint8_t* plaintext = static_cast<uint8_t*>(plaintext_vec.iov_base);
   size_t plaintext_length = plaintext_vec.iov_len;
@@ -483,7 +472,6 @@ static grpc_status_code gsec_aes_gcm_aead_crypter_decrypt_iovec(
         error_details);
     return GRPC_STATUS_INVALID_ARGUMENT;
   }
-
   const uint8_t* ciphertext = nullptr;
   size_t ciphertext_length = 0;
   for (i = 0;

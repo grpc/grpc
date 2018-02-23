@@ -3062,9 +3062,24 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
-    "name": "check_gcp_environment_test", 
+    "name": "check_gcp_environment_linux_test", 
     "src": [
-      "test/core/security/check_gcp_environment_test.cc"
+      "test/core/security/check_gcp_environment_linux_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "check_gcp_environment_windows_test", 
+    "src": [
+      "test/core/security/check_gcp_environment_windows_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -8542,6 +8557,9 @@
     "src": [
       "src/core/lib/security/credentials/alts/check_gcp_environment.cc", 
       "src/core/lib/security/credentials/alts/check_gcp_environment.h", 
+      "src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc", 
+      "src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc", 
+      "src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc", 
       "src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc", 
       "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc", 
       "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h", 
@@ -9658,8 +9676,8 @@
       "src/core/lib/security/credentials/oauth2/oauth2_credentials.h", 
       "src/core/lib/security/credentials/plugin/plugin_credentials.h", 
       "src/core/lib/security/credentials/ssl/ssl_credentials.h", 
+      "src/core/lib/security/security_connector/alts_security_connector.h", 
       "src/core/lib/security/security_connector/security_connector.h", 
-      "src/core/lib/security/transport/alts/alts_security_connector.h", 
       "src/core/lib/security/transport/auth_filters.h", 
       "src/core/lib/security/transport/lb_targets_info.h", 
       "src/core/lib/security/transport/secure_endpoint.h", 
@@ -9701,10 +9719,10 @@
       "src/core/lib/security/credentials/plugin/plugin_credentials.h", 
       "src/core/lib/security/credentials/ssl/ssl_credentials.cc", 
       "src/core/lib/security/credentials/ssl/ssl_credentials.h", 
+      "src/core/lib/security/security_connector/alts_security_connector.cc", 
+      "src/core/lib/security/security_connector/alts_security_connector.h", 
       "src/core/lib/security/security_connector/security_connector.cc", 
       "src/core/lib/security/security_connector/security_connector.h", 
-      "src/core/lib/security/transport/alts/alts_security_connector.cc", 
-      "src/core/lib/security/transport/alts/alts_security_connector.h", 
       "src/core/lib/security/transport/auth_filters.h", 
       "src/core/lib/security/transport/client_auth_filter.cc", 
       "src/core/lib/security/transport/lb_targets_info.cc", 

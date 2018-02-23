@@ -45,8 +45,8 @@ typedef struct grpc_alts_server_credentials {
  *
  * It returns the created ALTS channel credential object.
  */
-// grpc_channel_credentials* grpc_alts_credentials_create(
-//    const grpc_alts_credentials_options* options);
+grpc_channel_credentials* grpc_alts_credentials_create(
+    const grpc_alts_credentials_options* options);
 
 /**
  * This method creates an ALTS server credential object.
@@ -55,8 +55,8 @@ typedef struct grpc_alts_server_credentials {
  *
  * It returns the created ALTS server credential object.
  */
-// grpc_server_credentials* grpc_alts_server_credentials_create(
-//    const grpc_alts_credentials_options* options);
+grpc_server_credentials* grpc_alts_server_credentials_create(
+    const grpc_alts_credentials_options* options);
 
 /**
  * This method creates an ALTS channel credential object with customized
@@ -96,16 +96,5 @@ grpc_channel_credentials* grpc_alts_credentials_create_customized(
 grpc_server_credentials* grpc_alts_server_credentials_create_customized(
     const grpc_alts_credentials_options* options,
     const char* handshaker_service_url, bool enable_untrusted_alts);
-
-/**
- * This method checks if the system is running on GCP.
- *
- * - product_name_file: name of file containing GCE residency information.
- *
- * It returns true if the system running on GCP and false otherwise.
- *
- * Exposed for testing only.
- */
-bool is_on_gcp(const char* product_name_file);
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_ALTS_ALTS_CREDENTIALS_H */

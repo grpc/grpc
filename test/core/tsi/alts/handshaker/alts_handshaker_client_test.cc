@@ -37,6 +37,8 @@ const size_t kMaxRpcVersionMinor = 2;
 const size_t kMinRpcVersionMajor = 2;
 const size_t kMinRpcVersionMinor = 1;
 
+using grpc_core::internal::alts_handshaker_client_set_grpc_caller_for_testing;
+
 typedef struct alts_handshaker_client_test_config {
   grpc_channel* channel;
   grpc_completion_queue* cq;

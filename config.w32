@@ -236,8 +236,8 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\security\\credentials\\oauth2\\oauth2_credentials.cc " +
     "src\\core\\lib\\security\\credentials\\plugin\\plugin_credentials.cc " +
     "src\\core\\lib\\security\\credentials\\ssl\\ssl_credentials.cc " +
+    "src\\core\\lib\\security\\security_connector\\alts_security_connector.cc " +
     "src\\core\\lib\\security\\security_connector\\security_connector.cc " +
-    "src\\core\\lib\\security\\transport\\alts\\alts_security_connector.cc " +
     "src\\core\\lib\\security\\transport\\client_auth_filter.cc " +
     "src\\core\\lib\\security\\transport\\lb_targets_info.cc " +
     "src\\core\\lib\\security\\transport\\secure_endpoint.cc " +
@@ -264,6 +264,9 @@ if (PHP_GRPC != "no") {
     "src\\core\\tsi\\alts\\zero_copy_frame_protector\\alts_iovec_record_protocol.cc " +
     "src\\core\\tsi\\alts\\zero_copy_frame_protector\\alts_zero_copy_grpc_protector.cc " +
     "src\\core\\lib\\security\\credentials\\alts\\check_gcp_environment.cc " +
+    "src\\core\\lib\\security\\credentials\\alts\\check_gcp_environment_linux.cc " +
+    "src\\core\\lib\\security\\credentials\\alts\\check_gcp_environment_no_op.cc " +
+    "src\\core\\lib\\security\\credentials\\alts\\check_gcp_environment_windows.cc " +
     "src\\core\\lib\\security\\credentials\\alts\\grpc_alts_credentials_client_options.cc " +
     "src\\core\\lib\\security\\credentials\\alts\\grpc_alts_credentials_options.cc " +
     "src\\core\\lib\\security\\credentials\\alts\\grpc_alts_credentials_server_options.cc " +
@@ -686,7 +689,6 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\credentials\\ssl");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\security_connector");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\transport");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\transport\\alts");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security\\util");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\slice");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\surface");

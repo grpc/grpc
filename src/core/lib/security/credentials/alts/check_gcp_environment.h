@@ -19,19 +19,37 @@
 #ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_ALTS_CHECK_GCP_ENVIRONMENT_H
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_ALTS_CHECK_GCP_ENVIRONMENT_H
 
+#define GRPC_ALTS_EXPECT_NAME_GOOGLE "Google"
+#define GRPC_ALTS_EXPECT_NAME_GCE "Google Compute Engine"
+
+namespace grpc_core {
+namespace internal {
+
+/**
+ * This method is a helper function that reads a file containing system bios
+ * data. Exposed for testing only.
+ *
+ * - bios_file: a file containing BIOS data used to determine GCE tenancy
+ *   information.
+ *
+ * It returns a buffer containing the data read from the file.
+ */
+char* read_bios_file(const char* bios_file);
+
 /**
  * This method checks if system BIOS data contains Google-specific phrases.
  * Exposed for testing only.
  *
- * - bios_data_file: a file containing BIOS data used to determine GCE tenancy
- *   information.
- * - is_linux: a boolean flag indicating if the API is invoked on a Linux
- *   platform or not.
+ * - bios_data: a buffer containing system BIOS data.
  *
  * It returns true if the BIOS data contains Google-specific phrases, and false
  * otherwise.
  */
-bool check_bios_data(const char* bios_data_file, bool is_linux);
+bool check_bios_data(const char* bios_data);
+
+}  // namespace internal
+}  // namespace grpc_core
+
 /**
  * This method checks if a VM (Windows or Linux) is running within Google
  * compute Engine (GCE) or not. It returns true if the VM is running in GCE and

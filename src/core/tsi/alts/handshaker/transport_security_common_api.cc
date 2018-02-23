@@ -170,7 +170,6 @@ bool grpc_gcp_rpc_protocol_versions_check(
                                             &peer_versions->max_rpc_version) > 0
           ? &peer_versions->max_rpc_version
           : &local_versions->max_rpc_version;
-
   /* min_common_version is MAX(local.min, peer.min) */
   const grpc_gcp_rpc_protocol_versions_version* min_common_version =
       grpc_gcp_rpc_protocol_version_compare(&local_versions->min_rpc_version,

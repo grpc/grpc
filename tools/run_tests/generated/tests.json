@@ -3688,7 +3688,31 @@
     "flaky": false, 
     "gtest": false, 
     "language": "c++", 
-    "name": "check_gcp_environment_test", 
+    "name": "check_gcp_environment_linux_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "uses_polling": true
+  }, 
+  {
+    "args": [], 
+    "benchmark": false, 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c++", 
+    "name": "check_gcp_environment_windows_test", 
     "platforms": [
       "linux", 
       "mac", 

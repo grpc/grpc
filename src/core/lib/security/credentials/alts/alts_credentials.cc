@@ -27,7 +27,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
-#include "src/core/lib/security/transport/alts/alts_security_connector.h"
+#include "src/core/lib/security/security_connector/alts_security_connector.h"
 
 #define GRPC_CREDENTIALS_TYPE_ALTS "Alts"
 #define GRPC_ALTS_HANDSHAKER_SERVICE_URL "metadata.google.internal:8080"
@@ -60,10 +60,11 @@ static grpc_security_status alts_server_create_security_connector(
   return grpc_alts_server_security_connector_create(creds, sc);
 }
 
-static grpc_channel_credentials_vtable alts_credentials_vtable = {
-    alts_credentials_destruct, alts_create_security_connector, nullptr};
+static const grpc_channel_credentials_vtable alts_credentials_vtable = {
+    alts_credentials_destruct, alts_create_security_connector,
+    /*duplicate_without_call_credentials=*/nullptr};
 
-static grpc_server_credentials_vtable alts_server_credentials_vtable = {
+static const grpc_server_credentials_vtable alts_server_credentials_vtable = {
     alts_server_credentials_destruct, alts_server_create_security_connector};
 
 grpc_channel_credentials* grpc_alts_credentials_create_customized(

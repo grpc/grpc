@@ -119,11 +119,17 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
     grpc_channel* channel, grpc_completion_queue* queue,
     const char* handshaker_service_url);
 
+namespace grpc_core {
+namespace internal {
+
 /**
  * Unsafe, use for testing only. It allows the caller to change the way that
  * GRPC calls are made to the handshaker service.
  */
 void alts_handshaker_client_set_grpc_caller_for_testing(
     alts_handshaker_client* client, alts_grpc_caller caller);
+
+}  // namespace internal
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_TSI_ALTS_HANDSHAKER_ALTS_HANDSHAKER_CLIENT_H */
