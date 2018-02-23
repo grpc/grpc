@@ -944,34 +944,62 @@ typedef struct client_channel_call_data {
   grpc_metadata_batch send_trailing_metadata;
 } call_data;
 
-grpc_subchannel_call* grpc_client_channel_get_subchannel_call(
-    grpc_call_element* elem) {
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  return calld->subchannel_call;
-}
-
+// Forward declarations.
+static void retry_commit(grpc_call_element* elem);
+static void start_internal_recv_trailing_metadata(grpc_call_element* elem);
+static void on_complete(void* arg, grpc_error* error);
 static void start_retriable_subchannel_batches(void* arg, grpc_error* ignored);
+static void pick_after_resolver_result_start_locked(grpc_call_element* elem);
+static void start_pick_locked(void* arg, grpc_error* ignored);
 
-static size_t get_batch_index(grpc_transport_stream_op_batch* batch) {
-  // Note: It is important the send_initial_metadata be the first entry
-  // here, since the code in pick_subchannel_locked() assumes it will be.
-  if (batch->send_initial_metadata) return 0;
-  if (batch->send_message) return 1;
-  if (batch->send_trailing_metadata) return 2;
-  if (batch->recv_initial_metadata) return 3;
-  if (batch->recv_message) return 4;
-  if (batch->recv_trailing_metadata) return 5;
-  GPR_UNREACHABLE_CODE(return (size_t)-1);
-}
+//
+// send op data caching
+//
 
-// Commits the call so that no further retry attempts will be performed.
-static void retry_commit(grpc_call_element* elem) {
-  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  if (calld->retry_committed) return;
-  calld->retry_committed = true;
-  if (grpc_client_channel_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "chand=%p calld=%p: committing retries", chand, calld);
+// Caches data for send ops so that it can be retried later, if not
+// already cached.
+static void maybe_cache_send_ops_for_batch(call_data* calld,
+                                           pending_batch* pending) {
+  if (pending->send_ops_cached) return;
+  pending->send_ops_cached = true;
+  grpc_transport_stream_op_batch* batch = pending->batch;
+  // Save a copy of metadata for send_initial_metadata ops.
+  if (batch->send_initial_metadata) {
+    calld->seen_send_initial_metadata = true;
+    GPR_ASSERT(calld->send_initial_metadata_storage == nullptr);
+    grpc_metadata_batch* send_initial_metadata =
+        batch->payload->send_initial_metadata.send_initial_metadata;
+    calld->send_initial_metadata_storage = (grpc_linked_mdelem*)gpr_arena_alloc(
+        calld->arena,
+        sizeof(grpc_linked_mdelem) * send_initial_metadata->list.count);
+    grpc_metadata_batch_copy(send_initial_metadata,
+                             &calld->send_initial_metadata,
+                             calld->send_initial_metadata_storage);
+    calld->send_initial_metadata_flags =
+        batch->payload->send_initial_metadata.send_initial_metadata_flags;
+    calld->peer_string = batch->payload->send_initial_metadata.peer_string;
+  }
+  // Set up cache for send_message ops.
+  if (batch->send_message) {
+    grpc_byte_stream_cache* cache = (grpc_byte_stream_cache*)gpr_arena_alloc(
+        calld->arena, sizeof(grpc_byte_stream_cache));
+    grpc_byte_stream_cache_init(cache,
+                                batch->payload->send_message.send_message);
+    calld->send_messages.push_back(cache);
+  }
+  // Save metadata batch for send_trailing_metadata ops.
+  if (batch->send_trailing_metadata) {
+    calld->seen_send_trailing_metadata = true;
+    GPR_ASSERT(calld->send_trailing_metadata_storage == nullptr);
+    grpc_metadata_batch* send_trailing_metadata =
+        batch->payload->send_trailing_metadata.send_trailing_metadata;
+    calld->send_trailing_metadata_storage =
+        (grpc_linked_mdelem*)gpr_arena_alloc(
+            calld->arena,
+            sizeof(grpc_linked_mdelem) * send_trailing_metadata->list.count);
+    grpc_metadata_batch_copy(send_trailing_metadata,
+                             &calld->send_trailing_metadata,
+                             calld->send_trailing_metadata_storage);
   }
 }
 
@@ -1021,6 +1049,23 @@ static void free_cached_send_op_data_for_completed_batch(
   if (batch_data->batch.send_trailing_metadata) {
     grpc_metadata_batch_destroy(&calld->send_trailing_metadata);
   }
+}
+
+//
+// pending_batches management
+//
+
+// Returns the index into calld->pending_batches to be used for batch.
+static size_t get_batch_index(grpc_transport_stream_op_batch* batch) {
+  // Note: It is important the send_initial_metadata be the first entry
+  // here, since the code in pick_subchannel_locked() assumes it will be.
+  if (batch->send_initial_metadata) return 0;
+  if (batch->send_message) return 1;
+  if (batch->send_trailing_metadata) return 2;
+  if (batch->recv_initial_metadata) return 3;
+  if (batch->recv_message) return 4;
+  if (batch->recv_trailing_metadata) return 5;
+  GPR_UNREACHABLE_CODE(return (size_t)-1);
 }
 
 // This is called via the call combiner, so access to calld is synchronized.
@@ -1214,49 +1259,6 @@ static void pending_batches_resume(grpc_call_element* elem) {
   grpc_subchannel_call_process_op(calld->subchannel_call, batches[0]);
 }
 
-static void on_complete(void* arg, grpc_error* error);
-
-static subchannel_batch_data* batch_data_create(grpc_call_element* elem,
-                                                int refcount) {
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  subchannel_call_retry_state* retry_state =
-      static_cast<subchannel_call_retry_state*>(
-          grpc_connected_subchannel_call_get_parent_data(
-              calld->subchannel_call));
-  subchannel_batch_data* batch_data = static_cast<subchannel_batch_data*>(
-      gpr_arena_alloc(calld->arena, sizeof(*batch_data)));
-  batch_data->elem = elem;
-  batch_data->subchannel_call =
-      GRPC_SUBCHANNEL_CALL_REF(calld->subchannel_call, "batch_data_create");
-  batch_data->batch.payload = &retry_state->batch_payload;
-  gpr_ref_init(&batch_data->refs, refcount);
-  GRPC_CLOSURE_INIT(&batch_data->on_complete, on_complete, batch_data,
-                    grpc_schedule_on_exec_ctx);
-  batch_data->batch.on_complete = &batch_data->on_complete;
-  GRPC_CALL_STACK_REF(calld->owning_call, "batch_data");
-  return batch_data;
-}
-
-static void batch_data_unref(subchannel_batch_data* batch_data) {
-  if (gpr_unref(&batch_data->refs)) {
-    if (batch_data->send_initial_metadata_storage != nullptr) {
-      grpc_metadata_batch_destroy(&batch_data->send_initial_metadata);
-    }
-    if (batch_data->send_trailing_metadata_storage != nullptr) {
-      grpc_metadata_batch_destroy(&batch_data->send_trailing_metadata);
-    }
-    if (batch_data->batch.recv_initial_metadata) {
-      grpc_metadata_batch_destroy(&batch_data->recv_initial_metadata);
-    }
-    if (batch_data->batch.recv_trailing_metadata) {
-      grpc_metadata_batch_destroy(&batch_data->recv_trailing_metadata);
-    }
-    GRPC_SUBCHANNEL_CALL_UNREF(batch_data->subchannel_call, "batch_data_unref");
-    call_data* calld = static_cast<call_data*>(batch_data->elem->call_data);
-    GRPC_CALL_STACK_UNREF(calld->owning_call, "batch_data");
-  }
-}
-
 static void maybe_clear_pending_batch(grpc_call_element* elem,
                                       pending_batch* pending) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
@@ -1278,55 +1280,92 @@ static void maybe_clear_pending_batch(grpc_call_element* elem,
   }
 }
 
-// Caches data for send ops so that it can be retried later, if not
-// already cached.
-static void maybe_cache_send_ops_for_batch(call_data* calld,
-                                           pending_batch* pending) {
-  if (pending->send_ops_cached) return;
-  pending->send_ops_cached = true;
-  grpc_transport_stream_op_batch* batch = pending->batch;
-  // Save a copy of metadata for send_initial_metadata ops.
-  if (batch->send_initial_metadata) {
-    calld->seen_send_initial_metadata = true;
-    GPR_ASSERT(calld->send_initial_metadata_storage == nullptr);
-    grpc_metadata_batch* send_initial_metadata =
-        batch->payload->send_initial_metadata.send_initial_metadata;
-    calld->send_initial_metadata_storage = (grpc_linked_mdelem*)gpr_arena_alloc(
-        calld->arena,
-        sizeof(grpc_linked_mdelem) * send_initial_metadata->list.count);
-    grpc_metadata_batch_copy(send_initial_metadata,
-                             &calld->send_initial_metadata,
-                             calld->send_initial_metadata_storage);
-    calld->send_initial_metadata_flags =
-        batch->payload->send_initial_metadata.send_initial_metadata_flags;
-    calld->peer_string = batch->payload->send_initial_metadata.peer_string;
+// Returns true if all ops in the pending batch have been completed.
+static bool pending_batch_is_completed(
+    pending_batch* pending, call_data* calld,
+    subchannel_call_retry_state* retry_state) {
+  if (pending->batch == nullptr || pending->batch->on_complete == nullptr) {
+    return false;
   }
-  // Set up cache for send_message ops.
-  if (batch->send_message) {
-    grpc_byte_stream_cache* cache = (grpc_byte_stream_cache*)gpr_arena_alloc(
-        calld->arena, sizeof(grpc_byte_stream_cache));
-    grpc_byte_stream_cache_init(cache,
-                                batch->payload->send_message.send_message);
-    calld->send_messages.push_back(cache);
+  if (pending->batch->send_initial_metadata &&
+      !retry_state->completed_send_initial_metadata) {
+    return false;
   }
-  // Save metadata batch for send_trailing_metadata ops.
-  if (batch->send_trailing_metadata) {
-    calld->seen_send_trailing_metadata = true;
-    GPR_ASSERT(calld->send_trailing_metadata_storage == nullptr);
-    grpc_metadata_batch* send_trailing_metadata =
-        batch->payload->send_trailing_metadata.send_trailing_metadata;
-    calld->send_trailing_metadata_storage =
-        (grpc_linked_mdelem*)gpr_arena_alloc(
-            calld->arena,
-            sizeof(grpc_linked_mdelem) * send_trailing_metadata->list.count);
-    grpc_metadata_batch_copy(send_trailing_metadata,
-                             &calld->send_trailing_metadata,
-                             calld->send_trailing_metadata_storage);
+  if (pending->batch->send_message &&
+      retry_state->completed_send_message_count < calld->send_messages.size()) {
+    return false;
+  }
+  if (pending->batch->send_trailing_metadata &&
+      !retry_state->completed_send_trailing_metadata) {
+    return false;
+  }
+  if (pending->batch->recv_initial_metadata &&
+      !retry_state->completed_recv_initial_metadata) {
+    return false;
+  }
+  if (pending->batch->recv_message &&
+      retry_state->completed_recv_message_count <
+          retry_state->started_recv_message_count) {
+    return false;
+  }
+  if (pending->batch->recv_trailing_metadata &&
+      !retry_state->completed_recv_trailing_metadata) {
+    return false;
+  }
+  return true;
+}
+
+// Returns true if any op in the batch was not yet started.
+static bool pending_batch_is_unstarted(
+    pending_batch* pending, call_data* calld,
+    subchannel_call_retry_state* retry_state) {
+  if (pending->batch == nullptr || pending->batch->on_complete == nullptr) {
+    return false;
+  }
+  if (pending->batch->send_initial_metadata &&
+      !retry_state->started_send_initial_metadata) {
+    return true;
+  }
+  if (pending->batch->send_message &&
+      retry_state->started_send_message_count < calld->send_messages.size()) {
+    return true;
+  }
+  if (pending->batch->send_trailing_metadata &&
+      !retry_state->started_send_trailing_metadata) {
+    return true;
+  }
+  if (pending->batch->recv_initial_metadata &&
+      !retry_state->started_recv_initial_metadata) {
+    return true;
+  }
+  if (pending->batch->recv_message &&
+      retry_state->completed_recv_message_count ==
+          retry_state->started_recv_message_count) {
+    return true;
+  }
+  if (pending->batch->recv_trailing_metadata &&
+      !retry_state->started_recv_trailing_metadata) {
+    return true;
+  }
+  return false;
+}
+
+//
+// retry code
+//
+
+// Commits the call so that no further retry attempts will be performed.
+static void retry_commit(grpc_call_element* elem) {
+  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
+  call_data* calld = static_cast<call_data*>(elem->call_data);
+  if (calld->retry_committed) return;
+  calld->retry_committed = true;
+  if (grpc_client_channel_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "chand=%p calld=%p: committing retries", chand, calld);
   }
 }
 
-static void start_pick_locked(void* arg, grpc_error* ignored);
-
+// Starts a retry after appropriate back-off.
 static void do_retry(grpc_call_element* elem,
                      subchannel_call_retry_state* retry_state,
                      grpc_millis server_pushback_ms) {
@@ -1484,8 +1523,56 @@ static bool maybe_retry(grpc_call_element* elem,
   return true;
 }
 
-static void start_internal_recv_trailing_metadata(grpc_call_element* elem);
+//
+// subchannel_batch_data
+//
 
+static subchannel_batch_data* batch_data_create(grpc_call_element* elem,
+                                                int refcount) {
+  call_data* calld = static_cast<call_data*>(elem->call_data);
+  subchannel_call_retry_state* retry_state =
+      static_cast<subchannel_call_retry_state*>(
+          grpc_connected_subchannel_call_get_parent_data(
+              calld->subchannel_call));
+  subchannel_batch_data* batch_data = static_cast<subchannel_batch_data*>(
+      gpr_arena_alloc(calld->arena, sizeof(*batch_data)));
+  batch_data->elem = elem;
+  batch_data->subchannel_call =
+      GRPC_SUBCHANNEL_CALL_REF(calld->subchannel_call, "batch_data_create");
+  batch_data->batch.payload = &retry_state->batch_payload;
+  gpr_ref_init(&batch_data->refs, refcount);
+  GRPC_CLOSURE_INIT(&batch_data->on_complete, on_complete, batch_data,
+                    grpc_schedule_on_exec_ctx);
+  batch_data->batch.on_complete = &batch_data->on_complete;
+  GRPC_CALL_STACK_REF(calld->owning_call, "batch_data");
+  return batch_data;
+}
+
+static void batch_data_unref(subchannel_batch_data* batch_data) {
+  if (gpr_unref(&batch_data->refs)) {
+    if (batch_data->send_initial_metadata_storage != nullptr) {
+      grpc_metadata_batch_destroy(&batch_data->send_initial_metadata);
+    }
+    if (batch_data->send_trailing_metadata_storage != nullptr) {
+      grpc_metadata_batch_destroy(&batch_data->send_trailing_metadata);
+    }
+    if (batch_data->batch.recv_initial_metadata) {
+      grpc_metadata_batch_destroy(&batch_data->recv_initial_metadata);
+    }
+    if (batch_data->batch.recv_trailing_metadata) {
+      grpc_metadata_batch_destroy(&batch_data->recv_trailing_metadata);
+    }
+    GRPC_SUBCHANNEL_CALL_UNREF(batch_data->subchannel_call, "batch_data_unref");
+    call_data* calld = static_cast<call_data*>(batch_data->elem->call_data);
+    GRPC_CALL_STACK_UNREF(calld->owning_call, "batch_data");
+  }
+}
+
+//
+// recv_initial_metadata callback handling
+//
+
+// Invokes recv_initial_metadata_ready for a subchannel batch.
 static void invoke_recv_initial_metadata_callback(void* arg,
                                                   grpc_error* error) {
   subchannel_batch_data* batch_data = static_cast<subchannel_batch_data*>(arg);
@@ -1577,6 +1664,11 @@ static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
   GRPC_ERROR_UNREF(error);
 }
 
+//
+// recv_message callback handling
+//
+
+// Invokes recv_message_ready for a subchannel batch.
 static void invoke_recv_message_callback(void* arg, grpc_error* error) {
   subchannel_batch_data* batch_data = static_cast<subchannel_batch_data*>(arg);
   channel_data* chand =
@@ -1660,76 +1752,11 @@ static void recv_message_ready(void* arg, grpc_error* error) {
   GRPC_ERROR_UNREF(error);
 }
 
-// Returns true if all pending ops in the pending batch have been completed.
-static bool pending_batch_is_completed(
-    pending_batch* pending, call_data* calld,
-    subchannel_call_retry_state* retry_state) {
-  if (pending->batch == nullptr || pending->batch->on_complete == nullptr) {
-    return false;
-  }
-  if (pending->batch->send_initial_metadata &&
-      !retry_state->completed_send_initial_metadata) {
-    return false;
-  }
-  if (pending->batch->send_message &&
-      retry_state->completed_send_message_count < calld->send_messages.size()) {
-    return false;
-  }
-  if (pending->batch->send_trailing_metadata &&
-      !retry_state->completed_send_trailing_metadata) {
-    return false;
-  }
-  if (pending->batch->recv_initial_metadata &&
-      !retry_state->completed_recv_initial_metadata) {
-    return false;
-  }
-  if (pending->batch->recv_message &&
-      retry_state->completed_recv_message_count <
-          retry_state->started_recv_message_count) {
-    return false;
-  }
-  if (pending->batch->recv_trailing_metadata &&
-      !retry_state->completed_recv_trailing_metadata) {
-    return false;
-  }
-  return true;
-}
+//
+// on_complete callback handling
+//
 
-// Returns true if any op in the batch was not yet started.
-static bool pending_batch_is_unstarted(
-    pending_batch* pending, call_data* calld,
-    subchannel_call_retry_state* retry_state) {
-  if (pending->batch == nullptr || pending->batch->on_complete == nullptr) {
-    return false;
-  }
-  if (pending->batch->send_initial_metadata &&
-      !retry_state->started_send_initial_metadata) {
-    return true;
-  }
-  if (pending->batch->send_message &&
-      retry_state->started_send_message_count < calld->send_messages.size()) {
-    return true;
-  }
-  if (pending->batch->send_trailing_metadata &&
-      !retry_state->started_send_trailing_metadata) {
-    return true;
-  }
-  if (pending->batch->recv_initial_metadata &&
-      !retry_state->started_recv_initial_metadata) {
-    return true;
-  }
-  if (pending->batch->recv_message &&
-      retry_state->completed_recv_message_count ==
-          retry_state->started_recv_message_count) {
-    return true;
-  }
-  if (pending->batch->recv_trailing_metadata &&
-      !retry_state->started_recv_trailing_metadata) {
-    return true;
-  }
-  return false;
-}
-
+// Updates retry_state to reflect the ops completed in batch_data.
 static void update_retry_state_for_completed_batch(
     subchannel_batch_data* batch_data,
     subchannel_call_retry_state* retry_state) {
@@ -1753,12 +1780,15 @@ static void update_retry_state_for_completed_batch(
   }
 }
 
+// Represents a closure that needs to run as a result of a completed batch.
 typedef struct {
   grpc_closure* closure;
   grpc_error* error;
   const char* reason;
 } closure_to_execute;
 
+// Adds any necessary closures for deferred recv_initial_metadata and
+// recv_message callbacks to closures, updating *num_closures as needed.
 static void add_closures_for_deferred_recv_callbacks(
     subchannel_batch_data* batch_data, subchannel_call_retry_state* retry_state,
     closure_to_execute* closures, size_t* num_closures) {
@@ -1783,6 +1813,9 @@ static void add_closures_for_deferred_recv_callbacks(
   }
 }
 
+// If there are any cached ops to replay or pending ops to start on the
+// subchannel call, adds a closure to closures to invoke
+// start_retriable_subchannel_batches(), updating *num_closures as needed.
 static void add_closures_for_replay_or_pending_send_ops(
     grpc_call_element* elem, subchannel_batch_data* batch_data,
     subchannel_call_retry_state* retry_state, closure_to_execute* closures,
@@ -1821,6 +1854,8 @@ static void add_closures_for_replay_or_pending_send_ops(
   }
 }
 
+// For any pending batch completed in batch_data, adds the necessary
+// completion closures to closures, updating *num_closures as needed.
 static void add_closures_for_completed_pending_batches(
     grpc_call_element* elem, subchannel_batch_data* batch_data,
     subchannel_call_retry_state* retry_state, grpc_error* error,
@@ -1852,6 +1887,9 @@ static void add_closures_for_completed_pending_batches(
   GRPC_ERROR_UNREF(error);
 }
 
+// For any pending batch containing an op that has not yet been started,
+// adds the pending batch's completion closures to closures, updating
+// *num_closures as needed.
 static void add_closures_to_fail_unstarted_pending_batches(
     grpc_call_element* elem, subchannel_call_retry_state* retry_state,
     grpc_error* error, closure_to_execute* closures, size_t* num_closures) {
@@ -2023,6 +2061,10 @@ static void on_complete(void* arg, grpc_error* error) {
   }
 }
 
+//
+// subchannel batch construction
+//
+
 // Helper function used to start a subchannel batch in the call combiner.
 static void start_batch_in_call_combiner(void* arg, grpc_error* ignored) {
   grpc_transport_stream_op_batch* batch =
@@ -2033,13 +2075,13 @@ static void start_batch_in_call_combiner(void* arg, grpc_error* ignored) {
   grpc_subchannel_call_process_op(subchannel_call, batch);
 }
 
-static const grpc_slice* g_retry_count_strings[] = {
-    &GRPC_MDSTR_1, &GRPC_MDSTR_2, &GRPC_MDSTR_3, &GRPC_MDSTR_4};
-
 // Adds retriable send_initial_metadata op to batch_data.
 static void add_retriable_send_initial_metadata_op(
     call_data* calld, subchannel_call_retry_state* retry_state,
     subchannel_batch_data* batch_data) {
+  // Maps the number of retries to the corresponding metadata value slice.
+  static const grpc_slice* retry_count_strings[] = {
+      &GRPC_MDSTR_1, &GRPC_MDSTR_2, &GRPC_MDSTR_3, &GRPC_MDSTR_4};
   // We need to make a copy of the metadata batch for each attempt, since
   // the filters in the subchannel stack may modify this batch, and we don't
   // want those modifications to be passed forward to subsequent attempts.
@@ -2063,7 +2105,7 @@ static void add_retriable_send_initial_metadata_op(
   if (calld->num_attempts_completed > 0) {
     grpc_mdelem retry_md = grpc_mdelem_from_slices(
         GRPC_MDSTR_GRPC_PREVIOUS_RPC_ATTEMPTS,
-        *g_retry_count_strings[calld->num_attempts_completed - 1]);
+        *retry_count_strings[calld->num_attempts_completed - 1]);
     grpc_error* error = grpc_metadata_batch_add_tail(
         &batch_data->send_initial_metadata,
         &batch_data->send_initial_metadata_storage[calld->send_initial_metadata
@@ -2194,6 +2236,9 @@ static void start_internal_recv_trailing_metadata(grpc_call_element* elem) {
   grpc_subchannel_call_process_op(calld->subchannel_call, &batch_data->batch);
 }
 
+// If there are any cached send ops that need to be replayed on the
+// current subchannel call, creates and returns a new subchannel batch
+// to replay those ops.  Otherwise, returns nullptr.
 static subchannel_batch_data* maybe_create_subchannel_batch_for_replay(
     grpc_call_element* elem, subchannel_call_retry_state* retry_state) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
@@ -2253,6 +2298,8 @@ static subchannel_batch_data* maybe_create_subchannel_batch_for_replay(
   return replay_batch_data;
 }
 
+// Adds subchannel batches for pending batches to batches, updating
+// *num_batches as needed.
 static void add_subchannel_batches_for_pending_batches(
     grpc_call_element* elem, subchannel_call_retry_state* retry_state,
     grpc_transport_stream_op_batch** batches, size_t* num_batches) {
@@ -2345,6 +2392,8 @@ static void add_subchannel_batches_for_pending_batches(
   }
 }
 
+// Constructs and starts whatever subchannel batches are needed on the
+// subchannel call.
 static void start_retriable_subchannel_batches(void* arg, grpc_error* ignored) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
@@ -2415,45 +2464,9 @@ static void start_retriable_subchannel_batches(void* arg, grpc_error* ignored) {
   }
 }
 
-// Applies service config to the call.  Must be invoked once we know
-// that the resolver has returned results to the channel.
-static void apply_service_config_to_call_locked(grpc_call_element* elem) {
-  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  if (grpc_client_channel_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "chand=%p calld=%p: applying service config to call",
-            chand, calld);
-  }
-  if (chand->retry_throttle_data != nullptr) {
-    calld->retry_throttle_data =
-        grpc_server_retry_throttle_data_ref(chand->retry_throttle_data);
-  }
-  if (chand->method_params_table != nullptr) {
-    calld->method_params = static_cast<method_parameters*>(
-        grpc_method_config_table_get(chand->method_params_table, calld->path));
-    if (calld->method_params != nullptr) {
-      method_parameters_ref(calld->method_params);
-      // If the deadline from the service config is shorter than the one
-      // from the client API, reset the deadline timer.
-      if (chand->deadline_checking_enabled &&
-          calld->method_params->timeout != 0) {
-        const grpc_millis per_method_deadline =
-            grpc_timespec_to_millis_round_up(calld->call_start_time) +
-            calld->method_params->timeout;
-        if (per_method_deadline < calld->deadline) {
-          calld->deadline = per_method_deadline;
-          grpc_deadline_state_reset(elem, calld->deadline);
-        }
-      }
-    }
-  }
-  // If no retry policy, disable retries.
-  // TODO(roth): Remove this when adding support for transparent retries.
-  if (calld->method_params == nullptr ||
-      calld->method_params->retry_policy == nullptr) {
-    calld->enable_retries = false;
-  }
-}
+//
+// LB pick
+//
 
 static void create_subchannel_call(grpc_call_element* elem, grpc_error* error) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
@@ -2580,6 +2593,46 @@ static void pick_callback_done_locked(void* arg, grpc_error* error) {
   GRPC_CALL_STACK_UNREF(calld->owning_call, "pick_callback");
 }
 
+// Applies service config to the call.  Must be invoked once we know
+// that the resolver has returned results to the channel.
+static void apply_service_config_to_call_locked(grpc_call_element* elem) {
+  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
+  call_data* calld = static_cast<call_data*>(elem->call_data);
+  if (grpc_client_channel_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "chand=%p calld=%p: applying service config to call",
+            chand, calld);
+  }
+  if (chand->retry_throttle_data != nullptr) {
+    calld->retry_throttle_data =
+        grpc_server_retry_throttle_data_ref(chand->retry_throttle_data);
+  }
+  if (chand->method_params_table != nullptr) {
+    calld->method_params = static_cast<method_parameters*>(
+        grpc_method_config_table_get(chand->method_params_table, calld->path));
+    if (calld->method_params != nullptr) {
+      method_parameters_ref(calld->method_params);
+      // If the deadline from the service config is shorter than the one
+      // from the client API, reset the deadline timer.
+      if (chand->deadline_checking_enabled &&
+          calld->method_params->timeout != 0) {
+        const grpc_millis per_method_deadline =
+            grpc_timespec_to_millis_round_up(calld->call_start_time) +
+            calld->method_params->timeout;
+        if (per_method_deadline < calld->deadline) {
+          calld->deadline = per_method_deadline;
+          grpc_deadline_state_reset(elem, calld->deadline);
+        }
+      }
+    }
+  }
+  // If no retry policy, disable retries.
+  // TODO(roth): Remove this when adding support for transparent retries.
+  if (calld->method_params == nullptr ||
+      calld->method_params->retry_policy == nullptr) {
+    calld->enable_retries = false;
+  }
+}
+
 // Starts a pick on chand->lb_policy.
 // Returns true if pick is completed synchronously.
 static bool pick_callback_start_locked(grpc_call_element* elem) {
@@ -2688,8 +2741,6 @@ static void pick_after_resolver_result_cancel_locked(void* arg,
   async_pick_done_locked(elem, GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                                    "Pick cancelled", &error, 1));
 }
-
-static void pick_after_resolver_result_start_locked(grpc_call_element* elem);
 
 static void pick_after_resolver_result_done_locked(void* arg,
                                                    grpc_error* error) {
@@ -2808,6 +2859,10 @@ static void start_pick_locked(void* arg, grpc_error* ignored) {
   grpc_polling_entity_add_to_pollset_set(calld->pollent,
                                          chand->interested_parties);
 }
+
+//
+// filter call vtable functions
+//
 
 static void cc_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
@@ -3138,4 +3193,10 @@ void grpc_client_channel_watch_connectivity_state(
       GRPC_CLOSURE_INIT(&w->my_closure, watch_connectivity_state_locked, w,
                         grpc_combiner_scheduler(chand->combiner)),
       GRPC_ERROR_NONE);
+}
+
+grpc_subchannel_call* grpc_client_channel_get_subchannel_call(
+    grpc_call_element* elem) {
+  call_data* calld = static_cast<call_data*>(elem->call_data);
+  return calld->subchannel_call;
 }
