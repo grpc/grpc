@@ -314,6 +314,9 @@ typedef struct {
     Defaults to "blend". In the current implementation "blend" is equivalent to
     "latency". */
 #define GRPC_ARG_OPTIMIZATION_TARGET "grpc.optimization_target"
+/** Channel arg that carries the bridged objective c object for custom metrics
+ * logging filter. */
+#define GRPC_ARG_MOBILE_LOG_CONFIG "grpc.mobile_log_config"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
