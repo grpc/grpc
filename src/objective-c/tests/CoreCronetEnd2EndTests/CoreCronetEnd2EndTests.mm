@@ -224,8 +224,7 @@ static char *roots_filename;
 }
 
 - (void)testBinaryMetadata {
-  // NOT SUPPORTED
-  //[self testIndividualCase:(char *)"binary_metadata"];
+  [self testIndividualCase:(char *)"binary_metadata"];
 }
 
 - (void)testCallCreds {

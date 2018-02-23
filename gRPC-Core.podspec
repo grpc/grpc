@@ -22,7 +22,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.10.0-dev'
+  version = '1.11.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -283,10 +283,10 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/credentials/oauth2/oauth2_credentials.h',
                       'src/core/lib/security/credentials/plugin/plugin_credentials.h',
                       'src/core/lib/security/credentials/ssl/ssl_credentials.h',
+                      'src/core/lib/security/security_connector/security_connector.h',
                       'src/core/lib/security/transport/auth_filters.h',
                       'src/core/lib/security/transport/lb_targets_info.h',
                       'src/core/lib/security/transport/secure_endpoint.h',
-                      'src/core/lib/security/transport/security_connector.h',
                       'src/core/lib/security/transport/security_handshaker.h',
                       'src/core/lib/security/transport/tsi_error.h',
                       'src/core/lib/security/util/json_util.h',
@@ -645,10 +645,10 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/credentials/oauth2/oauth2_credentials.cc',
                       'src/core/lib/security/credentials/plugin/plugin_credentials.cc',
                       'src/core/lib/security/credentials/ssl/ssl_credentials.cc',
+                      'src/core/lib/security/security_connector/security_connector.cc',
                       'src/core/lib/security/transport/client_auth_filter.cc',
                       'src/core/lib/security/transport/lb_targets_info.cc',
                       'src/core/lib/security/transport/secure_endpoint.cc',
-                      'src/core/lib/security/transport/security_connector.cc',
                       'src/core/lib/security/transport/security_handshaker.cc',
                       'src/core/lib/security/transport/server_auth_filter.cc',
                       'src/core/lib/security/transport/tsi_error.cc',
@@ -777,10 +777,10 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/credentials/oauth2/oauth2_credentials.h',
                               'src/core/lib/security/credentials/plugin/plugin_credentials.h',
                               'src/core/lib/security/credentials/ssl/ssl_credentials.h',
+                              'src/core/lib/security/security_connector/security_connector.h',
                               'src/core/lib/security/transport/auth_filters.h',
                               'src/core/lib/security/transport/lb_targets_info.h',
                               'src/core/lib/security/transport/secure_endpoint.h',
-                              'src/core/lib/security/transport/security_connector.h',
                               'src/core/lib/security/transport/security_handshaker.h',
                               'src/core/lib/security/transport/tsi_error.h',
                               'src/core/lib/security/util/json_util.h',

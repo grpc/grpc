@@ -24,7 +24,7 @@ grpc_fuzzer(
     name = "ssl_server_fuzzer",
     srcs = ["ssl_server_fuzzer.cc"],
     language = "C++",
-    corpus = "corpus",
+    corpus = "corpus/ssl_server_corpus",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -65,6 +65,31 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "json_token_test",
+    srcs = ["json_token_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "jwt_verifier_test",
+    srcs = ["jwt_verifier_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
 
 grpc_cc_test(
     name = "secure_endpoint_test",
