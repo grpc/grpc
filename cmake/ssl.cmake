@@ -35,6 +35,10 @@ elseif("${gRPC_SSL_PROVIDER}" STREQUAL "package")
   # We expect to locate OpenSSL using the built-in cmake module as the openssl
   # project itself does not provide installation support in its CMakeLists.txt
   # See https://cmake.org/cmake/help/v3.6/module/FindOpenSSL.html
+  if (APPLE AND (NOT OPENSSL_ROOT_DIR))
+    message(STATUS "Set OPENSSL_ROOT_DIR to /usr/local/opt/openssl on Apple platform")
+    set (OPENSSL_ROOT_DIR "/usr/local/opt/openssl")
+  endif ()
   find_package(OpenSSL REQUIRED)
   
   if(TARGET OpenSSL::SSL)
