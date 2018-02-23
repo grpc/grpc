@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_IOMGR_RESOURCE_QUOTA_H
 #define GRPC_CORE_LIB_IOMGR_RESOURCE_QUOTA_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/grpc.h>
 
 #include "src/core/lib/debug/trace.h"

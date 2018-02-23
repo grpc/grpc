@@ -14,6 +14,8 @@
 // limitations under the License.
 //
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/slice/slice_hash_table.h"
 
 #include <stdbool.h>

@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 
 uint32_t grpc_chttp2_hpack_varint_length(uint32_t tail_value) {

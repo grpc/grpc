@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_TSI_TRANSPORT_SECURITY_H
 #define GRPC_CORE_TSI_TRANSPORT_SECURITY_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stdbool.h>
 
 #include "src/core/lib/debug/trace.h"

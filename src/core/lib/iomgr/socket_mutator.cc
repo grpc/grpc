@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/socket_mutator.h"
 
 #include <grpc/impl/codegen/grpc_types.h>

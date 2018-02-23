@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_COMPRESSION_MESSAGE_COMPRESS_H
 #define GRPC_CORE_LIB_COMPRESSION_MESSAGE_COMPRESS_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/slice_buffer.h>
 
 #include "src/core/lib/compression/compression_internal.h"

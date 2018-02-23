@@ -19,6 +19,8 @@
 #ifndef GRPC_FORK_H
 #define GRPC_FORK_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/impl/codegen/fork.h>
 
 #endif /* GRPC_FORK_H */

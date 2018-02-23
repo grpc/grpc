@@ -16,12 +16,14 @@
  *
  */
 
-#include "src/core/ext/transport/inproc/inproc_transport.h"
+#include <grpc/support/port_platform.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 #include <string.h>
+#include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"

@@ -14,6 +14,8 @@
 // limitations under the License.
 //
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/filters/deadline/deadline_filter.h"
 
 #include <stdbool.h>

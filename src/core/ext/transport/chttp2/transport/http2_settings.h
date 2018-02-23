@@ -21,6 +21,8 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_SETTINGS_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_SETTINGS_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stdbool.h>
 #include <stdint.h>
 

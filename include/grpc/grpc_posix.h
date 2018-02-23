@@ -19,8 +19,9 @@
 #ifndef GRPC_GRPC_POSIX_H
 #define GRPC_GRPC_POSIX_H
 
-#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/port_platform.h>
+
+#include <grpc/impl/codegen/grpc_types.h>
 
 #include <stddef.h>
 

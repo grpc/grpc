@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CRONET_TRANSPORT_CRONET_TRANSPORT_H
 #define GRPC_CORE_EXT_TRANSPORT_CRONET_TRANSPORT_CRONET_TRANSPORT_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/transport/transport.h"
 
 grpc_transport* grpc_create_cronet_transport(void* engine, const char* target,

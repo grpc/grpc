@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/security/transport/security_handshaker.h"
 
 #include <stdbool.h>

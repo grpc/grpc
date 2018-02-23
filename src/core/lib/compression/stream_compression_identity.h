@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_COMPRESSION_STREAM_COMPRESSION_IDENTITY_H
 #define GRPC_CORE_LIB_COMPRESSION_STREAM_COMPRESSION_IDENTITY_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/compression/stream_compression.h"
 
 extern const grpc_stream_compression_vtable

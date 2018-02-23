@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_ERROR_UTILS_H
 #define GRPC_CORE_LIB_TRANSPORT_ERROR_UTILS_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/http2_errors.h"

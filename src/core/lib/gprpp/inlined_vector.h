@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_GPRPP_INLINED_VECTOR_H
 #define GRPC_CORE_LIB_GPRPP_INLINED_VECTOR_H
 
+#include <grpc/support/port_platform.h>
+
 #include <cassert>
 
 #include "src/core/lib/gprpp/memory.h"

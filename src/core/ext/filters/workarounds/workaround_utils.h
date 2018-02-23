@@ -17,6 +17,8 @@
 #ifndef GRPC_CORE_EXT_FILTERS_WORKAROUNDS_WORKAROUND_UTILS_H
 #define GRPC_CORE_EXT_FILTERS_WORKAROUNDS_WORKAROUND_UTILS_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/support/workaround_list.h>
 
 #include "src/core/lib/transport/metadata.h"

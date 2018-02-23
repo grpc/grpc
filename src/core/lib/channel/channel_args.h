@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H
 #define GRPC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include "src/core/lib/iomgr/socket_mutator.h"
