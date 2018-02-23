@@ -43,9 +43,9 @@ template <typename T>
 class SliceHashTable : public RefCounted<SliceHashTable<T>> {
  public:
   struct Entry {
-    bool is_set;
     grpc_slice key;
-    T value;  // Must not be null.
+    T value;
+    bool is_set;
   };
 
   // Function for comparing values.
