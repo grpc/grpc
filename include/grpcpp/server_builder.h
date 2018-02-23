@@ -52,7 +52,7 @@ class ServerBuilderPluginTest;
 class ServerBuilder {
  public:
   ServerBuilder();
-  ~ServerBuilder();
+  virtual ~ServerBuilder();
 
   //////////////////////////////////////////////////////////////////////////////
   // Primary API's
@@ -65,7 +65,7 @@ class ServerBuilder {
   ///     traffic (via AddListeningPort)
   ///  3. [for async api only] completion queues have been added via
   ///     AddCompletionQueue
-  std::unique_ptr<Server> BuildAndStart();
+  virtual std::unique_ptr<Server> BuildAndStart();
 
   /// Register a service. This call does not take ownership of the service.
   /// The service must exist for the lifetime of the \a Server instance returned
@@ -210,14 +210,28 @@ class ServerBuilder {
   /// doc/workarounds.md.
   ServerBuilder& EnableWorkaround(grpc_workaround_list id);
 
- private:
-  friend class ::grpc::testing::ServerBuilderPluginTest;
-
+ protected:
   struct Port {
     grpc::string addr;
     std::shared_ptr<ServerCredentials> creds;
     int* selected_port;
   };
+
+  typedef std::unique_ptr<grpc::string> HostString;
+  struct NamedService {
+    explicit NamedService(Service* s) : service(s) {}
+    NamedService(const grpc::string& h, Service* s)
+        : host(new grpc::string(h)), service(s) {}
+    HostString host;
+    Service* service;
+  };
+
+  std::vector<std::unique_ptr<ServerBuilderOption>> options_;
+  std::vector<std::unique_ptr<NamedService>> services_;
+  std::vector<Port> ports_;
+
+ private:
+  friend class ::grpc::testing::ServerBuilderPluginTest;
 
   struct SyncServerSettings {
     SyncServerSettings()
@@ -238,20 +252,8 @@ class ServerBuilder {
     int cq_timeout_msec;
   };
 
-  typedef std::unique_ptr<grpc::string> HostString;
-  struct NamedService {
-    explicit NamedService(Service* s) : service(s) {}
-    NamedService(const grpc::string& h, Service* s)
-        : host(new grpc::string(h)), service(s) {}
-    HostString host;
-    Service* service;
-  };
-
   int max_receive_message_size_;
   int max_send_message_size_;
-  std::vector<std::unique_ptr<ServerBuilderOption>> options_;
-  std::vector<std::unique_ptr<NamedService>> services_;
-  std::vector<Port> ports_;
 
   SyncServerSettings sync_server_settings_;
 

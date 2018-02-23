@@ -49,7 +49,7 @@ class ServerInitializer;
 ///
 /// Use a \a grpc::ServerBuilder to create, configure, and start
 /// \a Server instances.
-class Server final : public ServerInterface, private GrpcLibraryCodegen {
+class Server : public ServerInterface, private GrpcLibraryCodegen {
  public:
   ~Server();
 
@@ -98,24 +98,26 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
   /// Establish a channel for in-process communication
   std::shared_ptr<Channel> InProcessChannel(const ChannelArguments& args);
 
- private:
-  friend class AsyncGenericService;
-  friend class ServerBuilder;
-  friend class ServerInitializer;
+protected:
+  /// Register a service. This call does not take ownership of the service.
+  /// The service must exist for the lifetime of the Server instance.
+  bool RegisterService(const grpc::string* host, Service* service) override;
 
-  class SyncRequest;
-  class AsyncRequest;
-  class ShutdownRequest;
-
-  /// SyncRequestThreadManager is an implementation of ThreadManager. This class
-  /// is responsible for polling for incoming RPCs and calling the RPC handlers.
-  /// This is only used in case of a Sync server (i.e a server exposing a sync
-  /// interface)
-  class SyncRequestThreadManager;
-
-  class UnimplementedAsyncRequestContext;
-  class UnimplementedAsyncRequest;
-  class UnimplementedAsyncResponse;
+  /// Try binding the server to the given \a addr endpoint
+  /// (port, and optionally including IP address to bind to).
+  ///
+  /// It can be invoked multiple times. Should be used before
+  /// starting the server.
+  ///
+  /// \param addr The address to try to bind to the server (eg, localhost:1234,
+  /// 192.168.1.1:31416, [::1]:27182, etc.).
+  /// \param creds The credentials associated with the server.
+  ///
+  /// \return bound port number on success, 0 on failure.
+  ///
+  /// \warning It is an error to call this method on an already started server.
+  int AddListeningPort(const grpc::string& addr,
+                       ServerCredentials* creds) override;
 
   /// Server constructors. To be used by \a ServerBuilder only.
   ///
@@ -143,30 +145,6 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
              sync_server_cqs,
          int min_pollers, int max_pollers, int sync_cq_timeout_msec);
 
-  /// Register a service. This call does not take ownership of the service.
-  /// The service must exist for the lifetime of the Server instance.
-  bool RegisterService(const grpc::string* host, Service* service) override;
-
-  /// Register a generic service. This call does not take ownership of the
-  /// service. The service must exist for the lifetime of the Server instance.
-  void RegisterAsyncGenericService(AsyncGenericService* service) override;
-
-  /// Try binding the server to the given \a addr endpoint
-  /// (port, and optionally including IP address to bind to).
-  ///
-  /// It can be invoked multiple times. Should be used before
-  /// starting the server.
-  ///
-  /// \param addr The address to try to bind to the server (eg, localhost:1234,
-  /// 192.168.1.1:31416, [::1]:27182, etc.).
-  /// \param creds The credentials associated with the server.
-  ///
-  /// \return bound port number on success, 0 on failure.
-  ///
-  /// \warning It is an error to call this method on an already started server.
-  int AddListeningPort(const grpc::string& addr,
-                       ServerCredentials* creds) override;
-
   /// Start the server.
   ///
   /// \param cqs Completion queues for handling asynchronous services. The
@@ -174,6 +152,35 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
   /// destroyed.
   /// \param num_cqs How many completion queues does \a cqs hold.
   void Start(ServerCompletionQueue** cqs, size_t num_cqs) override;
+
+  // Pointer to the wrapped grpc_server.
+  grpc_server* server_;
+
+  // Server status
+  bool started_;
+
+ private:
+  friend class AsyncGenericService;
+  friend class ServerBuilder;
+  friend class ServerInitializer;
+
+  class SyncRequest;
+  class AsyncRequest;
+  class ShutdownRequest;
+
+  /// SyncRequestThreadManager is an implementation of ThreadManager. This class
+  /// is responsible for polling for incoming RPCs and calling the RPC handlers.
+  /// This is only used in case of a Sync server (i.e a server exposing a sync
+  /// interface)
+  class SyncRequestThreadManager;
+
+  class UnimplementedAsyncRequestContext;
+  class UnimplementedAsyncRequest;
+  class UnimplementedAsyncResponse;
+
+  /// Register a generic service. This call does not take ownership of the
+  /// service. The service must exist for the lifetime of the Server instance.
+  void RegisterAsyncGenericService(AsyncGenericService* service) override;
 
   void PerformOpsOnCall(internal::CallOpSetInterface* ops,
                         internal::Call* call) override;
@@ -200,9 +207,8 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
   /// the \a sync_server_cqs)
   std::vector<std::unique_ptr<SyncRequestThreadManager>> sync_req_mgrs_;
 
-  // Sever status
+  // Server status
   std::mutex mu_;
-  bool started_;
   bool shutdown_;
   bool shutdown_notified_;  // Was notify called on the shutdown_cv_
 
@@ -212,9 +218,6 @@ class Server final : public ServerInterface, private GrpcLibraryCodegen {
 
   std::vector<grpc::string> services_;
   bool has_generic_service_;
-
-  // Pointer to the wrapped grpc_server.
-  grpc_server* server_;
 
   std::unique_ptr<ServerInitializer> server_initializer_;
 

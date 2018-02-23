@@ -165,7 +165,7 @@ class CompletionQueue : private GrpcLibraryCodegen {
   ///
   /// \return true if got an event, false if the queue is fully drained and
   ///         shut down.
-  bool Next(void** tag, bool* ok) {
+  virtual bool Next(void** tag, bool* ok) {
     return (AsyncNextInternal(tag, ok,
                               g_core_codegen_interface->gpr_inf_future(
                                   GPR_CLOCK_REALTIME)) != SHUTDOWN);
@@ -365,9 +365,7 @@ class ServerCompletionQueue : public CompletionQueue {
  public:
   bool IsFrequentlyPolled() { return polling_type_ != GRPC_CQ_NON_LISTENING; }
 
- private:
-  grpc_cq_polling_type polling_type_;
-  friend class ServerBuilder;
+ protected:
   /// \param is_frequently_polled Informs the GRPC library about whether the
   /// server completion queue would be actively polled (by calling Next() or
   /// AsyncNext()). By default all server completion queues are assumed to be
@@ -376,6 +374,10 @@ class ServerCompletionQueue : public CompletionQueue {
       : CompletionQueue(grpc_completion_queue_attributes{
             GRPC_CQ_CURRENT_VERSION, GRPC_CQ_NEXT, polling_type}),
         polling_type_(polling_type) {}
+
+ private:
+  grpc_cq_polling_type polling_type_;
+  friend class ServerBuilder;
 };
 
 }  // namespace grpc
