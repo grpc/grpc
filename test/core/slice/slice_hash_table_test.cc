@@ -45,9 +45,9 @@ void CheckValues(const std::vector<TestEntry>& input,
                  const TestHashTable& table) {
   for (const TestEntry& expected : input) {
     grpc_slice key = grpc_slice_from_static_string(expected.key);
-    const UniquePtr<char>& actual = table.Get(key);
+    const UniquePtr<char>* actual = table.Get(key);
     ASSERT_NE(actual, nullptr);
-    EXPECT_STREQ(expected.value, actual.get());
+    EXPECT_STREQ(expected.value, actual->get());
     grpc_slice_unref(key);
   }
 }
