@@ -64,11 +64,11 @@ config_setting(
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "glamorous"
+g_stands_for = "gorgeous"
 
 core_version = "6.0.0-dev"
 
-version = "1.10.0-dev"
+version = "1.11.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
