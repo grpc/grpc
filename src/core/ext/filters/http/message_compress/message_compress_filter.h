@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_MESSAGE_COMPRESS_FILTER_H
 #define GRPC_CORE_EXT_FILTERS_HTTP_MESSAGE_COMPRESS_MESSAGE_COMPRESS_FILTER_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/impl/codegen/compression_types.h>
 
 #include "src/core/lib/channel/channel_stack.h"

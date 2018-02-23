@@ -17,6 +17,8 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_SERVICE_CONFIG_H
 #define GRPC_CORE_LIB_TRANSPORT_SERVICE_CONFIG_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/json/json.h"

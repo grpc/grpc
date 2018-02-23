@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
 
 #include <string.h>

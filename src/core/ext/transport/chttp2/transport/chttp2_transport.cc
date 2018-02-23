@@ -16,9 +16,9 @@
  *
  */
 
-#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-
 #include <grpc/support/port_platform.h>
+
+#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 
 #include <inttypes.h>
 #include <limits.h>

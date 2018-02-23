@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/byte_buffer_reader.h>
 #include <string.h>
 

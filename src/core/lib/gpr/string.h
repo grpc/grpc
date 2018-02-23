@@ -19,10 +19,10 @@
 #ifndef GRPC_CORE_LIB_GPR_STRING_H
 #define GRPC_CORE_LIB_GPR_STRING_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stdbool.h>
 #include <stddef.h>
-
-#include <grpc/support/port_platform.h>
 
 /* String utility functions */
 

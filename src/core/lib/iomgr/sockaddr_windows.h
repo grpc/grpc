@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_IOMGR_SOCKADDR_WINDOWS_H
 #define GRPC_CORE_LIB_IOMGR_SOCKADDR_WINDOWS_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_WINSOCK_SOCKET

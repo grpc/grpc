@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_IOMGR_POLLING_ENTITY_H
 #define GRPC_CORE_LIB_IOMGR_POLLING_ENTITY_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 

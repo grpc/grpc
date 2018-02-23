@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_BYTE_STREAM_H
 #define GRPC_CORE_LIB_TRANSPORT_BYTE_STREAM_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/slice_buffer.h>
 #include "src/core/lib/iomgr/exec_ctx.h"
 

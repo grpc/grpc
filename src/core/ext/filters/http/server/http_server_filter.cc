@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 
 #include <grpc/support/alloc.h>

@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/endpoint.h"
 
 void grpc_endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
