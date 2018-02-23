@@ -96,6 +96,19 @@ void grpc_transport_move_one_way_stats(grpc_transport_one_way_stats* from,
 void grpc_transport_move_stats(grpc_transport_stream_stats* from,
                                grpc_transport_stream_stats* to);
 
+// This struct (which is present in both grpc_transport_stream_op_batch
+// and grpc_transport_op_batch) is a convenience to allow filters or
+// transports to schedule a closure related to a particular batch without
+// having to allocate memory.  The general pattern is to initialize the
+// closure with the callback arg set to the batch and extra_arg set to
+// whatever state is associated with the handler (e.g., the call element
+// or the transport stream object).
+//
+// Note that this can only be used by the current handler of a given
+// batch on the way down the stack (i.e., whichever filter or transport is
+// currently handling the batch).  Once a filter or transport passes control
+// of the batch to the next handler, it cannot depend on the contents of
+// this struct anymore, because the next handler may reuse it.
 typedef struct {
   void* extra_arg;
   grpc_closure closure;
