@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_IOMGR_SOCKET_UTILS_POSIX_H
 #define GRPC_CORE_LIB_IOMGR_SOCKET_UTILS_POSIX_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/resolve_address.h"
 
 #include <sys/socket.h>

@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_IOMGR_TIMER_H
 #define GRPC_CORE_LIB_IOMGR_TIMER_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_UV
@@ -27,7 +29,6 @@
 #include "src/core/lib/iomgr/timer_generic.h"
 #endif /* GRPC_UV */
 
-#include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"

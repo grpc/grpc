@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_BIN_DECODER_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_BIN_DECODER_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/slice.h>
 #include <stdbool.h>
 

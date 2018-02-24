@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_IOMGR_ENDPOINT_H
 #define GRPC_CORE_LIB_IOMGR_ENDPOINT_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/time.h>

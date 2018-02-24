@@ -21,6 +21,8 @@
 
 // manually construct a region of memory with some type
 
+#include <grpc/support/port_platform.h>
+
 #include <stddef.h>
 #include <stdlib.h>
 #include <new>

@@ -19,6 +19,8 @@
 #ifndef GRPC_SUPPORT_SYNC_CUSTOM_H
 #define GRPC_SUPPORT_SYNC_CUSTOM_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/impl/codegen/sync_custom.h>
 
 #endif /* GRPC_SUPPORT_SYNC_CUSTOM_H */

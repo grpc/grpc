@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"

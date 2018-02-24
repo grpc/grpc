@@ -19,8 +19,9 @@
 #ifndef GRPC_CORE_LIB_DEBUG_TRACE_H
 #define GRPC_CORE_LIB_DEBUG_TRACE_H
 
-#include <grpc/support/atm.h>
 #include <grpc/support/port_platform.h>
+
+#include <grpc/support/atm.h>
 #include <stdbool.h>
 
 void grpc_tracer_init(const char* env_var_name);

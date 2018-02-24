@@ -16,9 +16,9 @@
  *
  */
 
-#include "src/core/tsi/ssl_transport_security.h"
-
 #include <grpc/support/port_platform.h>
+
+#include "src/core/tsi/ssl_transport_security.h"
 
 #include <limits.h>
 #include <string.h>

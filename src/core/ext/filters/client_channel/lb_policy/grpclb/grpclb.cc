@@ -58,6 +58,8 @@
 // using that endpoint. Because of various transitive includes in uv.h,
 // including windows.h on Windows, uv.h must be included before other system
 // headers. Therefore, sockaddr.h must always be included first.
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/sockaddr.h"
 
 #include <inttypes.h>
@@ -918,20 +920,31 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
 // helper code for creating balancer channel
 //
 
-// Helper function to construct a target info entry.
-grpc_slice_hash_table_entry BalancerEntryCreate(const char* address,
-                                                const char* balancer_name) {
-  grpc_slice_hash_table_entry entry;
-  entry.key = grpc_slice_from_copied_string(address);
-  entry.value = gpr_strdup(balancer_name);
-  return entry;
-}
-
-// Comparison function used for slice_hash_table vtable.
-int BalancerNameCmp(void* a, void* b) {
-  const char* a_str = static_cast<const char*>(a);
-  const char* b_str = static_cast<const char*>(b);
-  return strcmp(a_str, b_str);
+grpc_lb_addresses* ExtractBalancerAddresses(
+    const grpc_lb_addresses* addresses) {
+  size_t num_grpclb_addrs = 0;
+  for (size_t i = 0; i < addresses->num_addresses; ++i) {
+    if (addresses->addresses[i].is_balancer) ++num_grpclb_addrs;
+  }
+  // There must be at least one balancer address, or else the
+  // client_channel would not have chosen this LB policy.
+  GPR_ASSERT(num_grpclb_addrs > 0);
+  grpc_lb_addresses* lb_addresses =
+      grpc_lb_addresses_create(num_grpclb_addrs, nullptr);
+  size_t lb_addresses_idx = 0;
+  for (size_t i = 0; i < addresses->num_addresses; ++i) {
+    if (!addresses->addresses[i].is_balancer) continue;
+    if (addresses->addresses[i].user_data != nullptr) {
+      gpr_log(GPR_ERROR,
+              "This LB policy doesn't support user data. It will be ignored");
+    }
+    grpc_lb_addresses_set_address(
+        lb_addresses, lb_addresses_idx++, addresses->addresses[i].address.addr,
+        addresses->addresses[i].address.len, false /* is balancer */,
+        addresses->addresses[i].balancer_name, nullptr /* user data */);
+  }
+  GPR_ASSERT(num_grpclb_addrs == lb_addresses_idx);
+  return lb_addresses;
 }
 
 /* Returns the channel args for the LB channel, used to create a bidirectional
@@ -946,51 +959,50 @@ grpc_channel_args* BuildBalancerChannelArgs(
     const grpc_lb_addresses* addresses,
     FakeResolverResponseGenerator* response_generator,
     const grpc_channel_args* args) {
-  size_t num_grpclb_addrs = 0;
-  for (size_t i = 0; i < addresses->num_addresses; ++i) {
-    if (addresses->addresses[i].is_balancer) ++num_grpclb_addrs;
-  }
-  // There must be at least one balancer address, or else the
-  // client_channel would not have chosen this LB policy.
-  GPR_ASSERT(num_grpclb_addrs > 0);
-  grpc_lb_addresses* lb_addresses =
-      grpc_lb_addresses_create(num_grpclb_addrs, nullptr);
-  grpc_slice_hash_table_entry* targets_info_entries =
-      (grpc_slice_hash_table_entry*)gpr_zalloc(sizeof(*targets_info_entries) *
-                                               num_grpclb_addrs);
-  size_t lb_addresses_idx = 0;
-  for (size_t i = 0; i < addresses->num_addresses; ++i) {
-    if (!addresses->addresses[i].is_balancer) continue;
-    if (addresses->addresses[i].user_data != nullptr) {
-      gpr_log(GPR_ERROR,
-              "This LB policy doesn't support user data. It will be ignored");
-    }
-    char* addr_str;
-    GPR_ASSERT(grpc_sockaddr_to_string(
-                   &addr_str, &addresses->addresses[i].address, true) > 0);
-    targets_info_entries[lb_addresses_idx] =
-        BalancerEntryCreate(addr_str, addresses->addresses[i].balancer_name);
-    gpr_free(addr_str);
-    grpc_lb_addresses_set_address(
-        lb_addresses, lb_addresses_idx++, addresses->addresses[i].address.addr,
-        addresses->addresses[i].address.len, false /* is balancer */,
-        addresses->addresses[i].balancer_name, nullptr /* user data */);
-  }
-  GPR_ASSERT(num_grpclb_addrs == lb_addresses_idx);
-  grpc_slice_hash_table* targets_info = grpc_slice_hash_table_create(
-      num_grpclb_addrs, targets_info_entries, gpr_free, BalancerNameCmp);
-  gpr_free(targets_info_entries);
-  grpc_channel_args* lb_channel_args =
-      grpc_lb_policy_grpclb_build_lb_channel_args(targets_info,
-                                                  response_generator, args);
-  grpc_arg lb_channel_addresses_arg =
-      grpc_lb_addresses_create_channel_arg(lb_addresses);
-  grpc_channel_args* result = grpc_channel_args_copy_and_add(
-      lb_channel_args, &lb_channel_addresses_arg, 1);
-  grpc_slice_hash_table_unref(targets_info);
-  grpc_channel_args_destroy(lb_channel_args);
+  grpc_lb_addresses* lb_addresses = ExtractBalancerAddresses(addresses);
+  // Channel args to remove.
+  static const char* args_to_remove[] = {
+      // LB policy name, since we want to use the default (pick_first) in
+      // the LB channel.
+      GRPC_ARG_LB_POLICY_NAME,
+      // The channel arg for the server URI, since that will be different for
+      // the LB channel than for the parent channel.  The client channel
+      // factory will re-add this arg with the right value.
+      GRPC_ARG_SERVER_URI,
+      // The resolved addresses, which will be generated by the name resolver
+      // used in the LB channel.  Note that the LB channel will use the fake
+      // resolver, so this won't actually generate a query to DNS (or some
+      // other name service).  However, the addresses returned by the fake
+      // resolver will have is_balancer=false, whereas our own addresses have
+      // is_balancer=true.  We need the LB channel to return addresses with
+      // is_balancer=false so that it does not wind up recursively using the
+      // grpclb LB policy, as per the special case logic in client_channel.c.
+      GRPC_ARG_LB_ADDRESSES,
+      // The fake resolver response generator, because we are replacing it
+      // with the one from the grpclb policy, used to propagate updates to
+      // the LB channel.
+      GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
+  };
+  // Channel args to add.
+  const grpc_arg args_to_add[] = {
+      // New LB addresses.
+      // Note that we pass these in both when creating the LB channel
+      // and via the fake resolver.  The latter is what actually gets used.
+      grpc_lb_addresses_create_channel_arg(lb_addresses),
+      // The fake resolver response generator, which we use to inject
+      // address updates into the LB channel.
+      grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
+          response_generator),
+  };
+  // Construct channel args.
+  grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
+      args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), args_to_add,
+      GPR_ARRAY_SIZE(args_to_add));
+  // Make any necessary modifications for security.
+  new_args = grpc_lb_policy_grpclb_modify_lb_channel_args(new_args);
+  // Clean up.
   grpc_lb_addresses_destroy(lb_addresses);
-  return result;
+  return new_args;
 }
 
 //
@@ -1292,8 +1304,9 @@ void GrpcLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
   if (lb_channel_ == nullptr) {
     char* uri_str;
     gpr_asprintf(&uri_str, "fake:///%s", server_name_);
-    lb_channel_ = grpc_lb_policy_grpclb_create_lb_channel(
-        uri_str, client_channel_factory(), lb_channel_args);
+    lb_channel_ = grpc_client_channel_factory_create_channel(
+        client_channel_factory(), uri_str,
+        GRPC_CLIENT_CHANNEL_TYPE_LOAD_BALANCING, lb_channel_args);
     GPR_ASSERT(lb_channel_ != nullptr);
     gpr_free(uri_str);
   }

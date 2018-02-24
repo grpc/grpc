@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_GPRPP_ORPHANABLE_H
 #define GRPC_CORE_LIB_GPRPP_ORPHANABLE_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
