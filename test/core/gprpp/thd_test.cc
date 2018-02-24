@@ -30,7 +30,7 @@
 
 #include "test/core/util/test_config.h"
 
-#define NUM_THREADS 300
+#define NUM_THREADS 100
 
 struct test {
   gpr_mu mu;

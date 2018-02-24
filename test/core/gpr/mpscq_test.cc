@@ -146,8 +146,8 @@ static void test_mt_multipop(void) {
   gpr_log(GPR_DEBUG, "test_mt_multipop");
   gpr_event start;
   gpr_event_init(&start);
-  grpc_core::Thread thds[100];
-  grpc_core::Thread pull_thds[100];
+  grpc_core::Thread thds[50];
+  grpc_core::Thread pull_thds[50];
   thd_args ta[GPR_ARRAY_SIZE(thds)];
   gpr_mpscq q;
   gpr_mpscq_init(&q);
