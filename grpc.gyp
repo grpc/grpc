@@ -64,11 +64,11 @@
     ],
     'cflags_c': [
       '-Werror',
-      '-std=c99','-DPB_FIELD_16BIT'
+      '-std=c99',
     ],
     'cflags_cc': [
       '-Werror',
-      '-std=c++11','-DPB_FIELD_16BIT'
+      '-std=c++11',
     ],
     'include_dirs': [
       '.',
@@ -148,7 +148,7 @@
             '-Wno-deprecated-declarations',
             '-stdlib=libc++',
             '-std=c++11',
-            '-Wno-error=deprecated-declarations','-DPB_FIELD_16BIT'
+            '-Wno-error=deprecated-declarations',
           ],
         },
       }]
