@@ -76,7 +76,7 @@
       'include',
     ],
     'defines': [
-      'GRPC_ARES=0',
+      'GRPC_ARES=0','PB_FIELD_16BIT=1',
     ],
     'dependencies': [
       '<(openssl_gyp_target)',
