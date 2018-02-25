@@ -67,7 +67,9 @@ class Grpc(object):
             ),
             'headers': sorted(
               map_dir(f)
-              for f in files['ssl_headers'] + files['ssl_internal_headers'] + files['crypto_headers'] + files['crypto_internal_headers']
+              # We want to include files['fips_fragments'], but not build them as objects.
+              # See https://boringssl-review.googlesource.com/c/boringssl/+/16946
+              for f in files['ssl_headers'] + files['ssl_internal_headers'] + files['crypto_headers'] + files['crypto_internal_headers'] + files['fips_fragments']
             ),
             'boringssl': True,
             'defaults': 'boringssl',
