@@ -23,6 +23,7 @@
 #ifdef GPR_WINDOWS
 
 #include <shellapi.h>
+#include <stdio.h>
 #include <tchar.h>
 #include <windows.h>
 
@@ -33,6 +34,8 @@
 #define GRPC_ALTS_WINDOWS_CHECK_COMMAND_ARGS \
   "(Get-WmiObject -Class Win32_BIOS).Manufacturer"
 #define GRPC_ALTS_WINDOWS_CHECK_BIOS_FILE "windows_bios.data"
+
+const size_t kBiosDataBufferSize = 256;
 
 static int compute_engine_detection_done = 0;
 static bool is_on_compute_engine = false;
