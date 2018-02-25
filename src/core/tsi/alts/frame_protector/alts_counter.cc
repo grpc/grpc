@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/tsi/alts/frame_protector/alts_counter.h"
 
 #include <string.h>

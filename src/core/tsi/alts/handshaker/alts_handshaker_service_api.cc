@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/tsi/alts/handshaker/alts_handshaker_service_api.h"
 
 #include <stdio.h>

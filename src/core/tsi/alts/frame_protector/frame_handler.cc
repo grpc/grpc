@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/tsi/alts/frame_protector/frame_handler.h"
 
 #include <limits.h>

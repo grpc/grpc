@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_TSI_ALTS_HANDSHAKER_ALTS_TSI_EVENT_H
 #define GRPC_CORE_TSI_ALTS_HANDSHAKER_ALTS_TSI_EVENT_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 

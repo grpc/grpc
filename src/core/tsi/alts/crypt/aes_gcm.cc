@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/tsi/alts/crypt/gsec.h"
 
 #include <openssl/bio.h>

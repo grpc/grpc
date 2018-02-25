@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_TSI_ALTS_FRAME_PROTECTOR_ALTS_RECORD_PROTOCOL_CRYPTER_COMMON_H
 #define GRPC_CORE_TSI_ALTS_FRAME_PROTECTOR_ALTS_RECORD_PROTOCOL_CRYPTER_COMMON_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/grpc.h>
 
 #include "src/core/tsi/alts/frame_protector/alts_counter.h"

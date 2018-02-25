@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_TSI_ALTS_HANDSHAKER_TRANSPORT_SECURITY_COMMON_API_H
 #define GRPC_CORE_TSI_ALTS_HANDSHAKER_TRANSPORT_SECURITY_COMMON_API_H
 
+#include <grpc/support/port_platform.h>
+
 #include "third_party/nanopb/pb_decode.h"
 #include "third_party/nanopb/pb_encode.h"
 

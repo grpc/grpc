@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/tsi/alts/handshaker/transport_security_common_api.h"
 
 bool grpc_gcp_rpc_protocol_versions_set_max(

@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_TSI_ALTS_HANDSHAKER_ALTS_TSI_HANDSHAKER_H
 #define GRPC_CORE_TSI_ALTS_HANDSHAKER_ALTS_TSI_HANDSHAKER_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/grpc.h>
 
 #include "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h"

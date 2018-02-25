@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_TSI_ALTS_CRYPT_GSEC_H
 #define GRPC_CORE_TSI_ALTS_CRYPT_GSEC_H
 
+#include <grpc/support/port_platform.h>
+
 #include <assert.h>
 #include <stdint.h>
 #include <stdlib.h>

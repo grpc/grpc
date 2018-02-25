@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h"
 
 #include <grpc/support/alloc.h>

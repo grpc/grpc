@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_TSI_ALTS_HANDSHAKER_ALTS_HANDSHAKER_SERVICE_API_H
 #define GRPC_CORE_TSI_ALTS_HANDSHAKER_ALTS_HANDSHAKER_SERVICE_API_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.h"
 
 /**
