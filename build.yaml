@@ -5399,9 +5399,9 @@ defaults:
       -Wno-deprecated-declarations
     LDFLAGS: -g
   nanopb:
-    CFLAGS: -D PB_FIELD_16BIT
-    CPPFLAGS: -D PB_FIELD_16BIT
-    CXXFLAGS: -D PB_FIELD_16BIT
+    CFLAGS: -DPB_FIELD_16BIT
+    CPPFLAGS: -DPB_FIELD_16BIT
+    CXXFLAGS: -DPB_FIELD_16BIT
   zlib:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration
       -Wno-implicit-fallthrough $(W_NO_SHIFT_NEGATIVE_VALUE) -fvisibility=hidden

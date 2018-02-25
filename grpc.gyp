@@ -64,11 +64,11 @@
     ],
     'cflags_c': [
       '-Werror',
-      '-std=c99'
+      '-std=c99','-DPB_FIELD_16BIT'
     ],
     'cflags_cc': [
       '-Werror',
-      '-std=c++11'
+      '-std=c++11','-DPB_FIELD_16BIT'
     ],
     'include_dirs': [
       '.',
@@ -76,7 +76,7 @@
       'include',
     ],
     'defines': [
-      'GRPC_ARES=0','PB_FIELD_16BIT=1',
+      'GRPC_ARES=0',
     ],
     'dependencies': [
       '<(openssl_gyp_target)',
@@ -148,7 +148,7 @@
             '-Wno-deprecated-declarations',
             '-stdlib=libc++',
             '-std=c++11',
-            '-Wno-error=deprecated-declarations'
+            '-Wno-error=deprecated-declarations','-DPB_FIELD_16BIT'
           ],
         },
       }]
