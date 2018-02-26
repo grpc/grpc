@@ -165,11 +165,7 @@ class CompletionQueue : private GrpcLibraryCodegen {
   ///
   /// \return true if got an event, false if the queue is fully drained and
   ///         shut down.
-  virtual bool Next(void** tag, bool* ok) {
-    return (AsyncNextInternal(tag, ok,
-                              g_core_codegen_interface->gpr_inf_future(
-                                  GPR_CLOCK_REALTIME)) != SHUTDOWN);
-  }
+  virtual bool Next(void** tag, bool* ok);
 
   /// Read from the queue, blocking up to \a deadline (or the queue's shutdown).
   /// Both \a tag and \a ok are updated upon success (if an event is available
