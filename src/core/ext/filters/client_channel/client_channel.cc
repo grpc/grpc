@@ -1111,8 +1111,8 @@ static void pending_batches_add(grpc_call_element* elem,
       if (calld->subchannel_call != nullptr) {
         subchannel_call_retry_state* retry_state =
             static_cast<subchannel_call_retry_state*>(
-                    grpc_connected_subchannel_call_get_parent_data(
-                        calld->subchannel_call));
+                grpc_connected_subchannel_call_get_parent_data(
+                    calld->subchannel_call));
         free_cached_send_op_data_after_commit(elem, retry_state);
       }
       // If we are not going to retry and have not yet started, pretend
