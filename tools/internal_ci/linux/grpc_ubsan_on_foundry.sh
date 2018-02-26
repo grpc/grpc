@@ -50,7 +50,7 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
   --strategy=Closure=remote  \
   --genrule_strategy=remote  \
   --experimental_strict_action_env=true \
-  --experimental_remote_platform_override='properties:{name:"container-image" value:"docker://gcr.io/asci-toolchain/nosla-debian8-clang-fl@sha256:496193842f61c9494be68bd624e47c74d706cabf19a693c4653ffe96a97e43e3" }' \
+  --experimental_remote_platform_override='properties:{name:"container-image" value:"docker://gcr.io/asci-toolchain/nosla-debian8-clang-fl@sha256:b2d946c1ddc20af250fe85cf98bd648ac5519131659f7c36e64184b433175a33" }' \
   --crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/experimental/debian8_clang/0.3.0/bazel_0.10.0/ubsan:ubsan_experimental_toolchain \
   --define GRPC_PORT_ISOLATED_RUNTIME=1 \
   --copt=-gmlt \
