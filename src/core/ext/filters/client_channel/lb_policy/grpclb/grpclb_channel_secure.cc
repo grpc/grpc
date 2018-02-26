@@ -30,46 +30,40 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/transport/lb_targets_info.h"
+#include "src/core/lib/security/transport/target_authority_table.h"
 #include "src/core/lib/slice/slice_internal.h"
 
-static void destroy_balancer_name(void* balancer_name) {
-  gpr_free(balancer_name);
+namespace grpc_core {
+namespace {
+
+int BalancerNameCmp(const grpc_core::UniquePtr<char>& a,
+                    const grpc_core::UniquePtr<char>& b) {
+  return strcmp(a.get(), b.get());
 }
 
-static grpc_slice_hash_table_entry targets_info_entry_create(
-    const char* address, const char* balancer_name) {
-  grpc_slice_hash_table_entry entry;
-  entry.key = grpc_slice_from_copied_string(address);
-  entry.value = gpr_strdup(balancer_name);
-  return entry;
-}
-
-static int balancer_name_cmp_fn(void* a, void* b) {
-  const char* a_str = static_cast<const char*>(a);
-  const char* b_str = static_cast<const char*>(b);
-  return strcmp(a_str, b_str);
-}
-
-static grpc_slice_hash_table* build_targets_info_table(
+RefCountedPtr<TargetAuthorityTable> CreateTargetAuthorityTable(
     grpc_lb_addresses* addresses) {
-  grpc_slice_hash_table_entry* targets_info_entries =
-      static_cast<grpc_slice_hash_table_entry*>(
-          gpr_zalloc(sizeof(*targets_info_entries) * addresses->num_addresses));
+  TargetAuthorityTable::Entry* target_authority_entries =
+      static_cast<TargetAuthorityTable::Entry*>(gpr_zalloc(
+          sizeof(*target_authority_entries) * addresses->num_addresses));
   for (size_t i = 0; i < addresses->num_addresses; ++i) {
     char* addr_str;
     GPR_ASSERT(grpc_sockaddr_to_string(
                    &addr_str, &addresses->addresses[i].address, true) > 0);
-    targets_info_entries[i] = targets_info_entry_create(
-        addr_str, addresses->addresses[i].balancer_name);
+    target_authority_entries[i].key = grpc_slice_from_copied_string(addr_str);
+    target_authority_entries[i].value.reset(
+        gpr_strdup(addresses->addresses[i].balancer_name));
     gpr_free(addr_str);
   }
-  grpc_slice_hash_table* targets_info = grpc_slice_hash_table_create(
-      addresses->num_addresses, targets_info_entries, destroy_balancer_name,
-      balancer_name_cmp_fn);
-  gpr_free(targets_info_entries);
-  return targets_info;
+  RefCountedPtr<TargetAuthorityTable> target_authority_table =
+      TargetAuthorityTable::Create(addresses->num_addresses,
+                                   target_authority_entries, BalancerNameCmp);
+  gpr_free(target_authority_entries);
+  return target_authority_table;
 }
+
+}  // namespace
+}  // namespace grpc_core
 
 grpc_channel_args* grpc_lb_policy_grpclb_modify_lb_channel_args(
     grpc_channel_args* args) {
@@ -83,9 +77,11 @@ grpc_channel_args* grpc_lb_policy_grpclb_modify_lb_channel_args(
   GPR_ASSERT(arg->type == GRPC_ARG_POINTER);
   grpc_lb_addresses* addresses =
       static_cast<grpc_lb_addresses*>(arg->value.pointer.p);
-  grpc_slice_hash_table* targets_info = build_targets_info_table(addresses);
+  grpc_core::RefCountedPtr<grpc_core::TargetAuthorityTable>
+      target_authority_table = grpc_core::CreateTargetAuthorityTable(addresses);
   args_to_add[num_args_to_add++] =
-      grpc_lb_targets_info_create_channel_arg(targets_info);
+      grpc_core::CreateTargetAuthorityTableChannelArg(
+          target_authority_table.get());
   // Substitute the channel credentials with a version without call
   // credentials: the load balancer is not necessarily trusted to handle
   // bearer token credentials.
@@ -105,7 +101,6 @@ grpc_channel_args* grpc_lb_policy_grpclb_modify_lb_channel_args(
       args, args_to_remove, num_args_to_remove, args_to_add, num_args_to_add);
   // Clean up.
   grpc_channel_args_destroy(args);
-  grpc_slice_hash_table_unref(targets_info);
   if (creds_sans_call_creds != nullptr) {
     grpc_channel_credentials_unref(creds_sans_call_creds);
   }
