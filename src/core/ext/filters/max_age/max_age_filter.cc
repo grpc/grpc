@@ -370,6 +370,9 @@ static void channel_connectivity_changed(void* arg, grpc_error* error) {
        max_idle_timer, and prevent max_idle_timer from being started in the
        future. */
     increase_call_count(chand);
+    if (gpr_atm_acq_load(&chand->idle_state) == MAX_IDLE_STATE_SEEN_EXIT_IDLE) {
+      grpc_timer_cancel(&chand->max_idle_timer);
+    }
   }
 }
 
