@@ -17,8 +17,15 @@
  */
 
 #include <gtest/gtest.h>
+#include <grpcpp/impl/codegen/completion_queue.h>
 
 namespace grpc {
+
+// Unused implementation for the virtual "Next" method.
+bool CompletionQueue::Next(void** tag, bool* ok) {
+  return false;
+}
+
 namespace {
 
 class CodegenTestMinimal : public ::testing::Test {};
