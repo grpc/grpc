@@ -35,4 +35,5 @@ bool is_running_on_gcp() {
 
 }  // namespace internal
 }  // namespace grpc_core
+
 #endif  // !defined(LINUX) && !defined(GPR_WINDOWS)

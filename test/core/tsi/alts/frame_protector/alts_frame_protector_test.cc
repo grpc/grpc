@@ -28,8 +28,6 @@
 #include "test/core/tsi/transport_security_test_lib.h"
 
 const size_t kChannelSize = 32768;
-const size_t kNumOfArguments = 7;
-const size_t kNumOfCombinations = 128;
 
 static void alts_test_do_round_trip_check_frames(
     tsi_test_frame_protector_fixture* fixture, const uint8_t* key,
