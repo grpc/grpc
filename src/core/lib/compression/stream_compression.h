@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_COMPRESSION_STREAM_COMPRESSION_H
 #define GRPC_CORE_LIB_COMPRESSION_STREAM_COMPRESSION_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stdbool.h>
 
 #include <grpc/slice_buffer.h>

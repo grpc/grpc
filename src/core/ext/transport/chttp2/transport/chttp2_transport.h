@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CHTTP2_TRANSPORT_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CHTTP2_TRANSPORT_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/transport/transport.h"

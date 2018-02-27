@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_IOMGR_SOCKADDR_UTILS_H
 #define GRPC_CORE_LIB_IOMGR_SOCKADDR_UTILS_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/resolve_address.h"
 
 /* Returns true if addr is an IPv4-mapped IPv6 address within the

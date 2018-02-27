@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_GPR_TIME_PRECISE_H
 #define GRPC_CORE_LIB_GPR_TIME_PRECISE_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/support/time.h>
 
 void gpr_precise_clock_init(void);

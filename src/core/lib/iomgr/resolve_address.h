@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H
 #define GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stddef.h>
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"

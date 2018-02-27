@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include <assert.h>
 #include <limits.h>
 #include <stdio.h>

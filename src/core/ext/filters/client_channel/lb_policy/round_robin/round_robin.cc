@@ -24,6 +24,8 @@
  * updates. Note however that updates will start picking from the beginning of
  * the updated list. */
 
+#include <grpc/support/port_platform.h>
+
 #include <string.h>
 
 #include <grpc/support/alloc.h>

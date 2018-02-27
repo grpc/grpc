@@ -16,85 +16,93 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
+#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h"
+
+#include <string.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
-#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/transport/lb_targets_info.h"
+#include "src/core/lib/security/transport/target_authority_table.h"
 #include "src/core/lib/slice/slice_internal.h"
 
-grpc_channel* grpc_lb_policy_grpclb_create_lb_channel(
-    const char* lb_service_target_addresses,
-    grpc_client_channel_factory* client_channel_factory,
+namespace grpc_core {
+namespace {
+
+int BalancerNameCmp(const grpc_core::UniquePtr<char>& a,
+                    const grpc_core::UniquePtr<char>& b) {
+  return strcmp(a.get(), b.get());
+}
+
+RefCountedPtr<TargetAuthorityTable> CreateTargetAuthorityTable(
+    grpc_lb_addresses* addresses) {
+  TargetAuthorityTable::Entry* target_authority_entries =
+      static_cast<TargetAuthorityTable::Entry*>(gpr_zalloc(
+          sizeof(*target_authority_entries) * addresses->num_addresses));
+  for (size_t i = 0; i < addresses->num_addresses; ++i) {
+    char* addr_str;
+    GPR_ASSERT(grpc_sockaddr_to_string(
+                   &addr_str, &addresses->addresses[i].address, true) > 0);
+    target_authority_entries[i].key = grpc_slice_from_copied_string(addr_str);
+    target_authority_entries[i].value.reset(
+        gpr_strdup(addresses->addresses[i].balancer_name));
+    gpr_free(addr_str);
+  }
+  RefCountedPtr<TargetAuthorityTable> target_authority_table =
+      TargetAuthorityTable::Create(addresses->num_addresses,
+                                   target_authority_entries, BalancerNameCmp);
+  gpr_free(target_authority_entries);
+  return target_authority_table;
+}
+
+}  // namespace
+}  // namespace grpc_core
+
+grpc_channel_args* grpc_lb_policy_grpclb_modify_lb_channel_args(
     grpc_channel_args* args) {
-  grpc_channel_args* new_args = args;
+  const char* args_to_remove[1];
+  size_t num_args_to_remove = 0;
+  grpc_arg args_to_add[2];
+  size_t num_args_to_add = 0;
+  // Add arg for targets info table.
+  const grpc_arg* arg = grpc_channel_args_find(args, GRPC_ARG_LB_ADDRESSES);
+  GPR_ASSERT(arg != nullptr);
+  GPR_ASSERT(arg->type == GRPC_ARG_POINTER);
+  grpc_lb_addresses* addresses =
+      static_cast<grpc_lb_addresses*>(arg->value.pointer.p);
+  grpc_core::RefCountedPtr<grpc_core::TargetAuthorityTable>
+      target_authority_table = grpc_core::CreateTargetAuthorityTable(addresses);
+  args_to_add[num_args_to_add++] =
+      grpc_core::CreateTargetAuthorityTableChannelArg(
+          target_authority_table.get());
+  // Substitute the channel credentials with a version without call
+  // credentials: the load balancer is not necessarily trusted to handle
+  // bearer token credentials.
   grpc_channel_credentials* channel_credentials =
       grpc_channel_credentials_find_in_args(args);
+  grpc_channel_credentials* creds_sans_call_creds = nullptr;
   if (channel_credentials != nullptr) {
-    /* Substitute the channel credentials with a version without call
-     * credentials: the load balancer is not necessarily trusted to handle
-     * bearer token credentials */
-    static const char* keys_to_remove[] = {GRPC_ARG_CHANNEL_CREDENTIALS};
-    grpc_channel_credentials* creds_sans_call_creds =
+    creds_sans_call_creds =
         grpc_channel_credentials_duplicate_without_call_credentials(
             channel_credentials);
     GPR_ASSERT(creds_sans_call_creds != nullptr);
-    grpc_arg args_to_add[] = {
-        grpc_channel_credentials_to_arg(creds_sans_call_creds)};
-    /* Create the new set of channel args */
-    new_args = grpc_channel_args_copy_and_add_and_remove(
-        args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove), args_to_add,
-        GPR_ARRAY_SIZE(args_to_add));
+    args_to_remove[num_args_to_remove++] = GRPC_ARG_CHANNEL_CREDENTIALS;
+    args_to_add[num_args_to_add++] =
+        grpc_channel_credentials_to_arg(creds_sans_call_creds);
+  }
+  grpc_channel_args* result = grpc_channel_args_copy_and_add_and_remove(
+      args, args_to_remove, num_args_to_remove, args_to_add, num_args_to_add);
+  // Clean up.
+  grpc_channel_args_destroy(args);
+  if (creds_sans_call_creds != nullptr) {
     grpc_channel_credentials_unref(creds_sans_call_creds);
   }
-  grpc_channel* lb_channel = grpc_client_channel_factory_create_channel(
-      client_channel_factory, lb_service_target_addresses,
-      GRPC_CLIENT_CHANNEL_TYPE_LOAD_BALANCING, new_args);
-  if (channel_credentials != nullptr) {
-    grpc_channel_args_destroy(new_args);
-  }
-  return lb_channel;
-}
-
-grpc_channel_args* grpc_lb_policy_grpclb_build_lb_channel_args(
-    grpc_slice_hash_table* targets_info,
-    grpc_core::FakeResolverResponseGenerator* response_generator,
-    const grpc_channel_args* args) {
-  const grpc_arg to_add[] = {
-      grpc_lb_targets_info_create_channel_arg(targets_info),
-      grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
-          response_generator)};
-  /* We remove:
-   *
-   * - The channel arg for the LB policy name, since we want to use the default
-   *   (pick_first) in this case.
-   *
-   * - The channel arg for the resolved addresses, since that will be generated
-   *   by the name resolver used in the LB channel.  Note that the LB channel
-   *   will use the fake resolver, so this won't actually generate a query
-   *   to DNS (or some other name service).  However, the addresses returned by
-   *   the fake resolver will have is_balancer=false, whereas our own
-   *   addresses have is_balancer=true.  We need the LB channel to return
-   *   addresses with is_balancer=false so that it does not wind up recursively
-   *   using the grpclb LB policy, as per the special case logic in
-   *   client_channel.c.
-   *
-   * - The channel arg for the server URI, since that will be different for the
-   *   LB channel than for the parent channel (the client channel factory will
-   *   re-add this arg with the right value).
-   *
-   * - The fake resolver generator, because we are replacing it with the one
-   *   from the grpclb policy, used to propagate updates to the LB channel. */
-  static const char* keys_to_remove[] = {
-      GRPC_ARG_LB_POLICY_NAME, GRPC_ARG_LB_ADDRESSES, GRPC_ARG_SERVER_URI,
-      GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR};
-  /* Add the targets info table to be used for secure naming */
-  return grpc_channel_args_copy_and_add_and_remove(
-      args, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove), to_add,
-      GPR_ARRAY_SIZE(to_add));
+  return result;
 }

@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_PARSE_ADDRESS_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_PARSE_ADDRESS_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stddef.h>
 
 #include "src/core/ext/filters/client_channel/uri_parser.h"

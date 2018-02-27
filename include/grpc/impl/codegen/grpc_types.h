@@ -322,6 +322,9 @@ typedef struct {
 #define GRPC_ARG_ENABLE_RETRIES "grpc.enable_retries"
 /** Per-RPC retry buffer size, in bytes. Default is 256 KiB. */
 #define GRPC_ARG_PER_RPC_RETRY_BUFFER_SIZE "grpc.per_rpc_retry_buffer_size"
+/** Channel arg that carries the bridged objective c object for custom metrics
+ * logging filter. */
+#define GRPC_ARG_MOBILE_LOG_CONFIG "grpc.mobile_log_config"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a

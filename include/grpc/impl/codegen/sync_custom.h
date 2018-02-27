@@ -19,6 +19,8 @@
 #ifndef GRPC_IMPL_CODEGEN_SYNC_CUSTOM_H
 #define GRPC_IMPL_CODEGEN_SYNC_CUSTOM_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <grpc/impl/codegen/sync_generic.h>
 
 /* Users defining GPR_CUSTOM_SYNC need to define the following macros. */

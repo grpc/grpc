@@ -21,6 +21,7 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #import <GRPCClient/GRPCCall.h>
+#import <GRPCClient/GRPCCall+MobileLog.h>
 #ifdef GRPC_COMPILE_WITH_CRONET
 #import <GRPCClient/GRPCCall+ChannelArg.h>
 #import <GRPCClient/GRPCCall+Cronet.h>
@@ -229,6 +230,11 @@ static GRPCConnectivityMonitor *connectivityMonitor = nil;
   if (_compressAlgorithm != GRPC_COMPRESS_NONE) {
     args[@GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM] =
         [NSNumber numberWithInt:_compressAlgorithm];
+  }
+
+  id logConfig = [GRPCCall logConfig];
+  if (logConfig != nil) {
+    args[@GRPC_ARG_MOBILE_LOG_CONFIG] = logConfig;
   }
 
   return args;

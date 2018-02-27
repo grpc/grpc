@@ -20,6 +20,8 @@
    using that endpoint. Because of various transitive includes in uv.h,
    including windows.h on Windows, uv.h must be included before other system
    headers. Therefore, sockaddr.h must always be included first */
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/sockaddr.h"
 
 #include <grpc/slice.h>

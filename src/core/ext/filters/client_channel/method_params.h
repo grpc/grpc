@@ -19,43 +19,54 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_METHOD_PARAMS_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_METHOD_PARAMS_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/filters/client_channel/status_util.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/exec_ctx.h"  // for grpc_millis
 #include "src/core/lib/json/json.h"
 
 namespace grpc_core {
 namespace internal {
 
-typedef enum {
-  WAIT_FOR_READY_UNSET = 0,  // zero so it can be default initialized
-  WAIT_FOR_READY_FALSE,
-  WAIT_FOR_READY_TRUE
-} wait_for_ready_value;
+class ClientChannelMethodParams : public RefCounted<ClientChannelMethodParams> {
+ public:
+  enum WaitForReady {
+    WAIT_FOR_READY_UNSET = 0,
+    WAIT_FOR_READY_FALSE,
+    WAIT_FOR_READY_TRUE
+  };
 
-typedef struct {
-  int max_attempts;
-  grpc_millis initial_backoff;
-  grpc_millis max_backoff;
-  float backoff_multiplier;
-  StatusCodeSet retryable_status_codes;
-} retry_policy_params;
+  struct RetryPolicy {
+    int max_attempts = 0;
+    grpc_millis initial_backoff = 0;
+    grpc_millis max_backoff = 0;
+    float backoff_multiplier = 0;
+    StatusCodeSet retryable_status_codes;
+  };
 
-typedef struct {
-  gpr_refcount refs;
-  grpc_millis timeout;
-  wait_for_ready_value wait_for_ready;
-  retry_policy_params* retry_policy;
-} method_parameters;
+  /// Creates a method_parameters object from \a json.
+  /// Intended for use with ServiceConfig::CreateMethodConfigTable().
+  static RefCountedPtr<ClientChannelMethodParams> CreateFromJson(
+      const grpc_json* json);
 
-method_parameters* method_parameters_ref(method_parameters* method_params);
+  grpc_millis timeout() const { return timeout_; }
+  WaitForReady wait_for_ready() const { return wait_for_ready_; }
+  const RetryPolicy* retry_policy() const { return retry_policy_.get(); }
 
-void method_parameters_unref(method_parameters* method_params);
+ private:
+  // So New() can call our private ctor.
+  template <typename T, typename... Args>
+  friend T* grpc_core::New(Args&&... args);
 
-/// Creates a method_parameters object from \a json.
-/// \a user_data points to a bool indicating whether retries are enabled.
-/// Intended for use with grpc_service_config_create_method_config_table().
-void* method_parameters_create_from_json(const grpc_json* json,
-                                         void* user_data);
+  ClientChannelMethodParams() {}
+  virtual ~ClientChannelMethodParams() {}
+
+  grpc_millis timeout_ = 0;
+  WaitForReady wait_for_ready_ = WAIT_FOR_READY_UNSET;
+  UniquePtr<RetryPolicy> retry_policy_;
+};
 
 }  // namespace internal
 }  // namespace grpc_core

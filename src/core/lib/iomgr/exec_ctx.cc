@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 #include <grpc/support/log.h>

@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifndef GRPC_POSIX_FORK
