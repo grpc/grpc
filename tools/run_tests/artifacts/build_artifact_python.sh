@@ -35,6 +35,34 @@ ${SETARCH_CMD} "${PYTHON}" setup.py sdist
 # https://bitbucket.org/pypa/wheel/issues/99/cannot-exclude-directory
 ${SETARCH_CMD} "${PYTHON}" setup.py bdist_wheel
 
+GRPCIO_STRIP_TEMPDIR=$(mktemp -d)
+GRPCIO_TAR_GZ_LIST=( dist/grpcio-*.tar.gz )
+GRPCIO_TAR_GZ=${GRPCIO_TAR_GZ_LIST[0]}
+GRPCIO_STRIPPED_TAR_GZ=$(mktemp -t "XXXXXXXXXX.tar.gz")
+
+clean_non_source_files() {
+( cd "$1"
+  find . -type f \
+    | grep -v '\.c$' | grep -v '\.cc$' | grep -v '\.cpp$' \
+    | grep -v '\.h$' | grep -v '\.hh$' \
+    | grep -v '\.s$' | grep -v '\.py$' \
+    | while read -r file; do
+      rm -f "$file" || true
+    done
+  find . -type d -empty -delete
+)
+}
+
+tar xzf "${GRPCIO_TAR_GZ}" -C "${GRPCIO_STRIP_TEMPDIR}"
+( cd "${GRPCIO_STRIP_TEMPDIR}"
+  find . -type d -name .git -exec rm -fr {} \; || true
+  for dir in */third_party/*; do
+    clean_non_source_files "${dir}" || true
+  done
+  tar czf "${GRPCIO_STRIPPED_TAR_GZ}" -- *
+)
+mv "${GRPCIO_STRIPPED_TAR_GZ}" "${GRPCIO_TAR_GZ}"
+
 # Build gRPC tools package distribution
 "${PYTHON}" tools/distrib/python/make_grpcio_tools.py
 
