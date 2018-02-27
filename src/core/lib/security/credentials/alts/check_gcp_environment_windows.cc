@@ -36,12 +36,12 @@ static bool g_is_on_compute_engine = false;
 static gpr_mu g_mu;
 static gpr_once g_once = GPR_ONCE_INIT;
 
-constexpr char kExpectNameGoogle[] = "Google";
-constexpr char kWindowsCheckCommand[] = "powershell.exe";
-constexpr char kWindowsCheckCommandArgs[] =
+const char kExpectNameGoogle[] = "Google";
+const char kWindowsCheckCommand[] = "powershell.exe";
+const char kWindowsCheckCommandArgs[] =
     "(Get-WmiObject -Class Win32_BIOS).Manufacturer";
-constexpr char kWindowsCheckBiosFile[] = "windows_bios.data";
-constexpr size_t kBiosDataBufferSize = 256;
+const char kWindowsCheckBiosFile[] = "windows_bios.data";
+const size_t kBiosDataBufferSize = 256;
 
 namespace grpc_core {
 namespace internal {

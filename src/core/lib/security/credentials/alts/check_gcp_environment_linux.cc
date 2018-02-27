@@ -32,9 +32,9 @@ static bool g_is_on_compute_engine = false;
 static gpr_mu g_mu;
 static gpr_once g_once = GPR_ONCE_INIT;
 
-constexpr char kExpectNameGoogle[] = "Google";
-constexpr char kExpectNameGce[] = "Google Compute Engine";
-constexpr char kProductNameFile[] = "/sys/class/dmi/id/product_name";
+const char kExpectNameGoogle[] = "Google";
+const char kExpectNameGce[] = "Google Compute Engine";
+const char kProductNameFile[] = "/sys/class/dmi/id/product_name";
 
 namespace grpc_core {
 namespace internal {

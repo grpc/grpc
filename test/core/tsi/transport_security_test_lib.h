@@ -35,8 +35,8 @@
 #define TSI_TEST_DEFAULT_CHANNEL_SIZE 32768
 #define TSI_TEST_BIG_MESSAGE_SIZE 17000
 #define TSI_TEST_SMALL_MESSAGE_SIZE 10
-#define TSI_TEST_NUM_OF_ARGUMENTS 8
-#define TSI_TEST_NUM_OF_COMBINATIONS 256
+#define TSI_TEST_NUM_OF_ARGUMENTS 7
+#define TSI_TEST_NUM_OF_COMBINATIONS 128
 #define TSI_TEST_UNUSED_BYTES "HELLO GOOGLE"
 
 /* ---  tsi_test_fixture object ---
@@ -160,8 +160,7 @@ tsi_test_frame_protector_config* tsi_test_frame_protector_config_create(
     bool use_default_protected_buffer_size, bool use_default_client_message,
     bool use_default_server_message,
     bool use_default_client_max_output_protected_frame_size,
-    bool use_default_server_max_output_protected_frame_size,
-    bool use_default_handshake_buffer_size);
+    bool use_default_server_max_output_protected_frame_size);
 
 /* This method sets different buffer and frame sizes of a
    tsi_test_frame_protector_config instance with user provided values. */

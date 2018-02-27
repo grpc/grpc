@@ -365,12 +365,12 @@ static void alts_test_do_round_trip(tsi_test_frame_protector_fixture* fixture,
 /* Run all combinations of different arguments of test config. */
 static void alts_test_do_round_trip_all(bool rekey) {
   unsigned int* bit_array = static_cast<unsigned int*>(
-      gpr_malloc(sizeof(unsigned int) * kNumOfArguments));
-  unsigned int mask = 1U << (kNumOfArguments - 1);
+      gpr_malloc(sizeof(unsigned int) * TSI_TEST_NUM_OF_ARGUMENTS));
+  unsigned int mask = 1U << (TSI_TEST_NUM_OF_ARGUMENTS - 1);
   unsigned int val = 0, ind = 0;
-  for (val = 0; val < kNumOfCombinations; val++) {
+  for (val = 0; val < TSI_TEST_NUM_OF_COMBINATIONS; val++) {
     unsigned int v = val;
-    for (ind = 0; ind < kNumOfArguments; ind++) {
+    for (ind = 0; ind < TSI_TEST_NUM_OF_ARGUMENTS; ind++) {
       bit_array[ind] = (v & mask) ? 1 : 0;
       v <<= 1;
     }
@@ -379,7 +379,7 @@ static void alts_test_do_round_trip_all(bool rekey) {
     tsi_test_frame_protector_config_destroy(fixture->config);
     fixture->config = tsi_test_frame_protector_config_create(
         bit_array[0], bit_array[1], bit_array[2], bit_array[3], bit_array[4],
-        bit_array[5], bit_array[6], bit_array[7]);
+        bit_array[5], bit_array[6]);
     alts_test_do_round_trip(fixture, rekey);
     tsi_test_frame_protector_fixture_destroy(fixture);
   }

@@ -509,8 +509,7 @@ tsi_test_frame_protector_config* tsi_test_frame_protector_config_create(
     bool use_default_protected_buffer_size, bool use_default_client_message,
     bool use_default_server_message,
     bool use_default_client_max_output_protected_frame_size,
-    bool use_default_server_max_output_protected_frame_size,
-    bool use_default_handshake_buffer_size) {
+    bool use_default_server_max_output_protected_frame_size) {
   tsi_test_frame_protector_config* config =
       static_cast<tsi_test_frame_protector_config*>(
           gpr_zalloc(sizeof(*config)));
@@ -611,7 +610,7 @@ static void tsi_test_channel_destroy(tsi_test_channel* channel) {
 
 void tsi_test_fixture_init(tsi_test_fixture* fixture) {
   fixture->config = tsi_test_frame_protector_config_create(
-      true, true, true, true, true, true, true, true);
+      true, true, true, true, true, true, true);
   fixture->handshake_buffer_size = TSI_TEST_DEFAULT_BUFFER_SIZE;
   fixture->channel = tsi_test_channel_create();
   fixture->test_unused_bytes = true;
@@ -644,7 +643,7 @@ tsi_test_frame_protector_fixture* tsi_test_frame_protector_fixture_create() {
       static_cast<tsi_test_frame_protector_fixture*>(
           gpr_zalloc(sizeof(*fixture)));
   fixture->config = tsi_test_frame_protector_config_create(
-      true, true, true, true, true, true, true, true);
+      true, true, true, true, true, true, true);
   fixture->channel = tsi_test_channel_create();
   return fixture;
 }
