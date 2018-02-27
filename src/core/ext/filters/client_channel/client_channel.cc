@@ -1346,7 +1346,9 @@ static void retry_commit(grpc_call_element* elem,
   if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG, "chand=%p calld=%p: committing retries", chand, calld);
   }
-  free_cached_send_op_data_after_commit(elem, retry_state);
+  if (retry_state != nullptr) {
+    free_cached_send_op_data_after_commit(elem, retry_state);
+  }
 }
 
 // Starts a retry after appropriate back-off.
