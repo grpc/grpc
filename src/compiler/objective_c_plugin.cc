@@ -29,54 +29,12 @@
 using ::google::protobuf::compiler::objectivec::
     IsProtobufLibraryBundledProtoFile;
 using ::google::protobuf::compiler::objectivec::ProtobufLibraryFrameworkName;
+using ::grpc_objective_c_generator::LocalImport;
+using ::grpc_objective_c_generator::PreprocIfElse;
+using ::grpc_objective_c_generator::PreprocIfNot;
+using ::grpc_objective_c_generator::SystemImport;
 
 namespace {
-
-inline ::grpc::string LocalImport(const ::grpc::string &import) {
-  return ::grpc::string("#import \"" + import + "\"\n");
-}
-
-inline ::grpc::string SystemImport(const ::grpc::string &import) {
-  return ::grpc::string("#import <" + import + ">\n");
-}
-
-// Preprocessor condition flags.
-using PreprocConditionFlag = uint32_t;
-constexpr PreprocConditionFlag kInvertCondition = 0b0001;
-constexpr PreprocConditionFlag kCheckIfDefined  = 0b0010;
-
-// Convenience flag set.
-constexpr PreprocConditionFlag kIfNotOrNotDefined =
-    kInvertCondition | kCheckIfDefined;
-
-inline ::grpc::string PreprocConditional(::grpc::string symbol,
-                                         PreprocConditionFlag flags) {
-  if (flags & kCheckIfDefined) {
-    return (flags & kInvertCondition)
-        ? "!defined(" + symbol + ") || !" + symbol
-        : "defined(" + symbol + ") && " + symbol;
-  } else {
-    return (flags & kInvertCondition)
-        ? "!" + symbol
-        : symbol;
-  }
-}
-
-inline ::grpc::string PreprocIf(const ::grpc::string& symbol,
-                                const ::grpc::string& if_true,
-                                PreprocConditionFlag flags = 0) {
-  ::grpc::string condition = PreprocConditional(symbol, flags);
-  return ::grpc::string("#if " + condition + "\n" + if_true + "#endif\n");
-}
-
-inline ::grpc::string PreprocIfElse(const ::grpc::string& symbol,
-                                    const ::grpc::string& if_true,
-                                    const ::grpc::string& if_false,
-                                    PreprocConditionFlag flags = 0) {
-  ::grpc::string condition = PreprocConditional(symbol, flags);
-  return ::grpc::string("#if " + condition + "\n" +
-                        if_true + "#else\n" + if_false + "#endif\n");
-}
 
 inline ::grpc::string ImportProtoHeaders(
     const grpc::protobuf::FileDescriptor* dep,
@@ -97,9 +55,9 @@ inline ::grpc::string ImportProtoHeaders(
       "GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS";
   return PreprocIfElse(kFrameworkImportsCondition,
                        indent + SystemImport(framework_header),
-                       indent + LocalImport(header),
-                       kCheckIfDefined);
+                       indent + LocalImport(header));
 }
+
 
 }  // namespace
 
@@ -122,10 +80,6 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     static const ::grpc::string kProtocolOnly = "GPB_GRPC_PROTOCOL_ONLY";
     static const ::grpc::string kForwardDeclare =
         "GPB_GRPC_FORWARD_DECLARE_MESSAGE_PROTO";
-
-    auto OmitIf = [](const ::grpc::string& s, const ::grpc::string& v) {
-      return PreprocIf(s, v, kInvertCondition | kCheckIfDefined);
-    };
 
     ::grpc::string file_name =
         google::protobuf::compiler::objectivec::FilePath(file);
@@ -164,14 +118,14 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       }
 
       Write(context, file_name + ".pbrpc.h",
-            OmitIf(kForwardDeclare, imports) + "\n" +
-            OmitIf(kProtocolOnly, system_imports) + "\n" +
-            PreprocIfElse(kForwardDeclare, class_declarations, class_imports,
-                          kCheckIfDefined) + "\n" +
+            PreprocIfNot(kForwardDeclare, imports) + "\n" +
+            PreprocIfNot(kProtocolOnly, system_imports) + "\n" +
+            PreprocIfElse(kForwardDeclare, class_declarations,
+                          class_imports) + "\n" +
             forward_declarations + "\n" +
             kNonNullBegin + "\n" +
             protocols + "\n" +
-            OmitIf(kProtocolOnly, interfaces) + "\n" +
+            PreprocIfNot(kProtocolOnly, interfaces) + "\n" +
             kNonNullEnd + "\n");
     }
 
@@ -196,7 +150,7 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       }
 
       Write(context, file_name + ".pbrpc.m",
-            OmitIf(kProtocolOnly,
+            PreprocIfNot(kProtocolOnly,
                    imports + "\n" + class_imports + "\n" + definitions));
     }
 
