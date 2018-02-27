@@ -19,6 +19,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <new>
+
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -45,44 +47,49 @@ class SliceWeakHashTable : public RefCounted<SliceWeakHashTable<T>> {
     bool is_set;
   };
 
-  /// Creates a new table of at most \a max_size entries.
-  static RefCountedPtr<SliceWeakHashTable> Create(size_t max_size) {
-    return MakeRefCounted<SliceWeakHashTable<T>>(max_size);
+  /// Creates a new table of at most \a size entries.
+  static RefCountedPtr<SliceWeakHashTable> Create(size_t size) {
+    return MakeRefCounted<SliceWeakHashTable<T>>(size);
   }
 
-  /// Add a mapping from \a key to \a value, taking ownership of both. This
-  /// operation will always succeed.  / It may discard older entries.
+  /// Add a mapping from \a key to \a value, taking ownership of \a key. This
+  /// operation will always succeed. It may discard older entries.
   void Add(grpc_slice key, T value) {
-    const size_t idx = grpc_slice_hash(key) % max_size_;
+    const size_t idx = grpc_slice_hash(key) % size_;
     Entry* entry = &entries_[idx];
     if (entry->is_set) grpc_slice_unref_internal(entry->key);
-    entries_[idx].key = grpc_slice_ref(key);
+    entries_[idx].key = key;
     entries_[idx].value = std::move(value);
     entries_[idx].is_set = true;
     return;
   }
 
-  /// Update the contents for \a key to \a value if present; do nothing
-  /// otherwise. Takes ownership of \a value if applicable.
-  void Update(const grpc_slice key, T value) {
-    T* curr_value = GetInternal(key);
-    if (curr_value != nullptr) *curr_value = std::move(value);
-  }
-
   /// Returns the value from the table associated with / \a key or null if not
   /// found.
-  const T* Get(const grpc_slice key) const { return GetInternal(key); }
+  const T* Get(const grpc_slice key) const {
+    const size_t idx = grpc_slice_hash(key) % size_;
+    if (!entries_[idx].is_set) return nullptr;
+    if (grpc_slice_eq(entries_[idx].key, key)) return &entries_[idx].value;
+    return nullptr;
+  }
 
  private:
   // So New() can call our private ctor.
   template <typename T2, typename... Args>
   friend T2* New(Args&&... args);
 
-  SliceWeakHashTable(size_t max_size) : max_size_(max_size) {
-    entries_ = static_cast<Entry*>(gpr_zalloc(sizeof(Entry) * max_size_));
+  SliceWeakHashTable(size_t size) : size_(size) {
+    // TODO(dgq): replace the following with a call to the array version of our
+    // own New operator.
+    entries_ = static_cast<Entry*>(
+        alignof(Entry) > kAllignmentForDefaultAllocationInBytes
+            ? gpr_malloc_aligned(sizeof(Entry) * size_, alignof(Entry))
+            : gpr_malloc(sizeof(Entry) * size_));
+    for (size_t i = 0; i < size_; ++i) new (&entries_[i]) Entry();
   }
+
   ~SliceWeakHashTable() {
-    for (size_t i = 0; i < max_size_; ++i) {
+    for (size_t i = 0; i < size_; ++i) {
       Entry* entry = &entries_[i];
       if (entry->is_set) {
         grpc_slice_unref_internal(entry->key);
@@ -92,14 +99,7 @@ class SliceWeakHashTable : public RefCounted<SliceWeakHashTable<T>> {
     gpr_free(entries_);
   }
 
-  T* GetInternal(const grpc_slice key) const {
-    const size_t idx = grpc_slice_hash(key) % max_size_;
-    if (!entries_[idx].is_set) return nullptr;
-    if (grpc_slice_eq(entries_[idx].key, key)) return &entries_[idx].value;
-    return nullptr;
-  }
-
-  const size_t max_size_;
+  const size_t size_;
   Entry* entries_;
 };
 

@@ -34,11 +34,19 @@
 namespace grpc_core {
 namespace {
 
+grpc_slice BuildRefCountedKey(const char* key_str) {
+  const size_t key_length = strlen(key_str);
+  grpc_slice key = grpc_slice_malloc_large(key_length);
+  memcpy(GRPC_SLICE_START_PTR(key), key_str, key_length);
+  return key;
+}
+
 TEST(SliceWeakHashTable, Basic) {
   auto table = SliceWeakHashTable<UniquePtr<char>>::Create(10);
   // Single key-value insertion.
-  grpc_slice key = grpc_slice_from_copied_string("key");
+  grpc_slice key = BuildRefCountedKey("key");
   table->Add(key, UniquePtr<char>(gpr_strdup("value")));
+  grpc_slice_ref(key);  // Get doesn't own.
   ASSERT_NE(table->Get(key), nullptr);
   ASSERT_STREQ(table->Get(key)->get(), "value");
   grpc_slice_unref(key);
@@ -46,41 +54,16 @@ TEST(SliceWeakHashTable, Basic) {
   ASSERT_EQ(table->Get(grpc_slice_from_static_string("unknown_key")), nullptr);
 }
 
-TEST(SliceWeakHashTable, LongKeys) {
-  auto table = SliceWeakHashTable<UniquePtr<char>>::Create(10);
-  // Single key-value insertion.
-  grpc_slice long_key = grpc_slice_malloc_large(64);
-  const char key_str[] = "this key is long and won't be inlined";
-  memcpy(GRPC_SLICE_START_PTR(long_key), key_str, GPR_ARRAY_SIZE(key_str));
-  table->Add(long_key, UniquePtr<char>(gpr_strdup("value")));
-  ASSERT_NE(table->Get(long_key), nullptr);
-  ASSERT_STREQ(table->Get(long_key)->get(), "value");
-  grpc_slice_unref(long_key);
-  // Unknown key.
-  ASSERT_EQ(table->Get(grpc_slice_from_static_string("unknown_key")), nullptr);
-}
-
-TEST(SliceWeakHashTable, Update) {
-  auto table = SliceWeakHashTable<int>::Create(10);
-  grpc_slice key = grpc_slice_from_copied_string("key");
-  // Updates for non-existing keys are no-ops.
-  table->Update(key, 12345);
-  ASSERT_EQ(table->Get(key), nullptr);
-  // But updates over existing ones work.
-  table->Add(key, 31416);
-  ASSERT_NE(table->Get(key), nullptr);
-  table->Update(key, 27182);
-  ASSERT_EQ(*table->Get(key), 27182);
-  grpc_slice_unref(key);
-}
-
-TEST(SliceWeakHashTable, Get) {
-  const auto& table = SliceWeakHashTable<int>::Create(10);
-  grpc_slice key = grpc_slice_from_copied_string("key");
-  table->Add(key, 31416);
-  ASSERT_NE(table->Get(key), nullptr);
-  const auto* value = table->Get(key);
-  ASSERT_EQ(*value, 31416);
+TEST(SliceWeakHashTable, ValueTypeConstructor) {
+  struct Value {
+    Value() : a(123) {}
+    int a;
+  };
+  auto table = SliceWeakHashTable<Value>::Create(1);
+  grpc_slice key = BuildRefCountedKey("key");
+  table->Add(key, Value());
+  grpc_slice_ref(key);  // Get doesn't own.
+  ASSERT_EQ(table->Get(key)->a, 123);
   grpc_slice_unref(key);
 }
 
@@ -91,18 +74,17 @@ TEST(SliceWeakHashTable, ForceOverload) {
   for (int i = 0; i < kTableSize * 2; ++i) {
     std::ostringstream oss;
     oss << "key-" << i;
-    grpc_slice key = grpc_slice_from_copied_string(oss.str().c_str());
+    grpc_slice key = BuildRefCountedKey(oss.str().c_str());
     oss.clear();
     oss << "value-" << i;
     table->Add(key, UniquePtr<char>(gpr_strdup(oss.str().c_str())));
-    grpc_slice_unref(key);
   }
   // Verify that some will have been replaced.
   int num_missing = 0;
   for (int i = 0; i < kTableSize * 2; ++i) {
     std::ostringstream oss;
     oss << "key-" << i;
-    grpc_slice key = grpc_slice_from_copied_string(oss.str().c_str());
+    grpc_slice key = BuildRefCountedKey(oss.str().c_str());
     if (table->Get(key) == nullptr) num_missing++;
     grpc_slice_unref(key);
   }
