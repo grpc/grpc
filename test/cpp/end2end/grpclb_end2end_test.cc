@@ -80,9 +80,9 @@
 
 using std::chrono::system_clock;
 
+using grpc::lb::v1::LoadBalancer;
 using grpc::lb::v1::LoadBalanceRequest;
 using grpc::lb::v1::LoadBalanceResponse;
-using grpc::lb::v1::LoadBalancer;
 
 namespace grpc {
 namespace testing {
@@ -673,6 +673,20 @@ TEST_F(SingleBalancerTest, SecureNaming) {
   EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
   // Check LB policy name for the channel.
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
+}
+
+TEST_F(SingleBalancerTest, SecureNamingDeathTest) {
+  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
+  // Make sure that we blow up (via abort() from the security connector) when
+  // the name from the balancer doesn't match expectations.
+  ASSERT_DEATH(
+      {
+        ResetStub(0, kApplicationTargetName_ + ";lb");
+        SetNextResolution(
+            {AddressData{balancer_servers_[0].port_, true, "woops"}});
+        channel_->WaitForConnected(grpc_timeout_seconds_to_deadline(1));
+      },
+      "");
 }
 
 TEST_F(SingleBalancerTest, InitiallyEmptyServerlist) {
