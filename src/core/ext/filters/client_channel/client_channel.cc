@@ -945,7 +945,8 @@ typedef struct client_channel_call_data {
 } call_data;
 
 // Forward declarations.
-static void retry_commit(grpc_call_element* elem);
+static void retry_commit(grpc_call_element* elem,
+                         subchannel_call_retry_state* retry_state);
 static void start_internal_recv_trailing_metadata(grpc_call_element* elem);
 static void on_complete(void* arg, grpc_error* error);
 static void start_retriable_subchannel_batches(void* arg, grpc_error* ignored);
@@ -1107,14 +1108,13 @@ static void pending_batches_add(grpc_call_element* elem,
                 "chand=%p calld=%p: exceeded retry buffer size, committing",
                 chand, calld);
       }
-      retry_commit(elem);
-      if (calld->subchannel_call != nullptr) {
-        subchannel_call_retry_state* retry_state =
-            static_cast<subchannel_call_retry_state*>(
-                grpc_connected_subchannel_call_get_parent_data(
-                    calld->subchannel_call));
-        free_cached_send_op_data_after_commit(elem, retry_state);
-      }
+      subchannel_call_retry_state* retry_state =
+          calld->subchannel_call == nullptr
+              ? nullptr
+              : static_cast<subchannel_call_retry_state*>(
+                    grpc_connected_subchannel_call_get_parent_data(
+                        calld->subchannel_call));
+      retry_commit(elem, retry_state);
       // If we are not going to retry and have not yet started, pretend
       // retries are disabled so that we don't bother with retry overhead.
       if (calld->num_attempts_completed == 0) {
@@ -1355,7 +1355,8 @@ static bool pending_batch_is_unstarted(
 //
 
 // Commits the call so that no further retry attempts will be performed.
-static void retry_commit(grpc_call_element* elem) {
+static void retry_commit(grpc_call_element* elem,
+                         subchannel_call_retry_state* retry_state) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   if (calld->retry_committed) return;
@@ -1363,6 +1364,7 @@ static void retry_commit(grpc_call_element* elem) {
   if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG, "chand=%p calld=%p: committing retries", chand, calld);
   }
+  free_cached_send_op_data_after_commit(elem, retry_state);
 }
 
 // Starts a retry after appropriate back-off.
@@ -1657,8 +1659,7 @@ static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
     return;
   }
   // Received valid initial metadata, so commit the call.
-  retry_commit(elem);
-  free_cached_send_op_data_after_commit(elem, retry_state);
+  retry_commit(elem, retry_state);
   // Manually invoking a callback function; it does not take ownership of error.
   invoke_recv_initial_metadata_callback(batch_data, error);
   GRPC_ERROR_UNREF(error);
@@ -1745,8 +1746,7 @@ static void recv_message_ready(void* arg, grpc_error* error) {
     return;
   }
   // Received a valid message, so commit the call.
-  retry_commit(elem);
-  free_cached_send_op_data_after_commit(elem, retry_state);
+  retry_commit(elem, retry_state);
   // Manually invoking a callback function; it does not take ownership of error.
   invoke_recv_message_callback(batch_data, error);
   GRPC_ERROR_UNREF(error);
