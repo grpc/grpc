@@ -77,7 +77,7 @@ inline ::grpc::string PreprocIfElse(const ::grpc::string& symbol,
 inline ::grpc::string PreprocIfNotElse(const ::grpc::string& symbol,
                                        const ::grpc::string& if_true,
                                        const ::grpc::string& if_false) {
-  return ::grpc::string("#if " + PreprocConditional(symbol, false) + "\n" +
+  return ::grpc::string("#if " + PreprocConditional(symbol, true) + "\n" +
                         if_true + "#else\n" + if_false + "#endif\n");
 }
 
