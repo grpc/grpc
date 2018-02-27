@@ -32,7 +32,7 @@ module GRPC
       # * timish == 0 => TimeConsts.ZERO
       #
       # @param timeish [Number|TimeSpec]
-      # @return timeish [Number|TimeSpec]
+      # @return [Number|TimeSpec]
       def from_relative_time(timeish)
         if timeish.is_a? TimeSpec
           timeish

@@ -204,7 +204,7 @@ module GRPC
     # * connect_md_proc:
     # when non-nil is a proc for determining metadata to to send back the client
     # on receiving an invocation req.  The proc signature is:
-    # {key: val, ..} func(method_name, {key: val, ...})
+    #   {key: val, ..} func(method_name, {key: val, ...})
     #
     # * server_args:
     # A server arguments hash to be passed down to the underlying core server
@@ -283,7 +283,7 @@ module GRPC
     # If run has not been called, this returns immediately.
     #
     # @param timeout [Numeric] number of seconds to wait
-    # @result [true, false] true if the server is running, false otherwise
+    # @return [true, false] true if the server is running, false otherwise
     def wait_till_running(timeout = nil)
       @run_mutex.synchronize do
         @run_cond.wait(@run_mutex, timeout) if @running_state == :not_started
