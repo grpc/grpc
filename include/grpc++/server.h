@@ -57,7 +57,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   ///
   /// \warning The server must be either shutting down or some other thread must
   /// call \a Shutdown for this function to ever return.
-  void Wait() override;
+  virtual void Wait() override;
 
   /// Global callbacks are a set of hooks that are called when server
   /// events occur.  \a SetGlobalCallbacks method is used to register
@@ -88,15 +88,15 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   static void SetGlobalCallbacks(GlobalCallbacks* callbacks);
 
   // Returns a \em raw pointer to the underlying \a grpc_server instance.
-  grpc_server* c_server();
+  virtual grpc_server* c_server();
 
   /// Returns the health check service.
-  HealthCheckServiceInterface* GetHealthCheckService() const {
+  virtual HealthCheckServiceInterface* GetHealthCheckService() const {
     return health_check_service_.get();
   }
 
   /// Establish a channel for in-process communication
-  std::shared_ptr<Channel> InProcessChannel(const ChannelArguments& args);
+  virtual std::shared_ptr<Channel> InProcessChannel(const ChannelArguments& args);
 
  private:
   friend class AsyncGenericService;
@@ -145,11 +145,11 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
 
   /// Register a service. This call does not take ownership of the service.
   /// The service must exist for the lifetime of the Server instance.
-  bool RegisterService(const grpc::string* host, Service* service) override;
+  virtual bool RegisterService(const grpc::string* host, Service* service) override;
 
   /// Register a generic service. This call does not take ownership of the
   /// service. The service must exist for the lifetime of the Server instance.
-  void RegisterAsyncGenericService(AsyncGenericService* service) override;
+  virtual void RegisterAsyncGenericService(AsyncGenericService* service) override;
 
   /// Try binding the server to the given \a addr endpoint
   /// (port, and optionally including IP address to bind to).
@@ -164,7 +164,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   /// \return bound port number on success, 0 on failure.
   ///
   /// \warning It is an error to call this method on an already started server.
-  int AddListeningPort(const grpc::string& addr,
+  virtual int AddListeningPort(const grpc::string& addr,
                        ServerCredentials* creds) override;
 
   /// Start the server.
@@ -173,20 +173,20 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   /// caller is required to keep all completion queues live until the server is
   /// destroyed.
   /// \param num_cqs How many completion queues does \a cqs hold.
-  void Start(ServerCompletionQueue** cqs, size_t num_cqs) override;
+  virtual void Start(ServerCompletionQueue** cqs, size_t num_cqs) override;
 
-  void PerformOpsOnCall(internal::CallOpSetInterface* ops,
+  virtual void PerformOpsOnCall(internal::CallOpSetInterface* ops,
                         internal::Call* call) override;
 
-  void ShutdownInternal(gpr_timespec deadline) override;
+  virtual void ShutdownInternal(gpr_timespec deadline) override;
 
-  int max_receive_message_size() const override {
+  virtual int max_receive_message_size() const override {
     return max_receive_message_size_;
   };
 
-  grpc_server* server() override { return server_; };
+  virtual grpc_server* server() override { return server_; };
 
-  ServerInitializer* initializer();
+  virtual ServerInitializer* initializer();
 
   const int max_receive_message_size_;
 

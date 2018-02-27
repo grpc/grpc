@@ -31,8 +31,8 @@ namespace grpc {
 namespace internal {
 class GrpcLibrary : public GrpcLibraryInterface {
  public:
-  void init() override { grpc_init(); }
-  void shutdown() override { grpc_shutdown(); }
+  virtual void init() override { grpc_init(); }
+  virtual void shutdown() override { grpc_shutdown(); }
 };
 
 static GrpcLibrary g_gli;
@@ -52,7 +52,7 @@ class GrpcLibraryInitializer {
 
   /// A no-op method to force the linker to reference this class, which will
   /// take care of initializing and shutting down the gRPC runtime.
-  int summon() { return 0; }
+  virtual int summon() { return 0; }
 };
 
 }  // namespace internal

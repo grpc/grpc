@@ -110,7 +110,7 @@ class ClientAsyncResponseReader
   // there are no tests catching the compiler warning.
   static void operator delete(void*, void*) { assert(0); }
 
-  void StartCall() override {
+  virtual void StartCall() override {
     assert(!started_);
     started_ = true;
     StartCallInternal();
@@ -122,7 +122,7 @@ class ClientAsyncResponseReader
   /// Side effect:
   ///   - the \a ClientContext associated with this call is updated with
   ///     possible initial and trailing metadata sent from the server.
-  void ReadInitialMetadata(void* tag) override {
+  virtual void ReadInitialMetadata(void* tag) override {
     assert(started_);
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
@@ -136,7 +136,7 @@ class ClientAsyncResponseReader
   /// Side effect:
   ///   - the \a ClientContext associated with this call is updated with
   ///     possible initial and trailing metadata sent from the server.
-  void Finish(R* msg, Status* status, void* tag) override {
+  virtual void Finish(R* msg, Status* status, void* tag) override {
     assert(started_);
     finish_buf.set_output_tag(tag);
     if (!context_->initial_metadata_received_) {
@@ -165,7 +165,7 @@ class ClientAsyncResponseReader
     if (start) StartCallInternal();
   }
 
-  void StartCallInternal() {
+  virtual void StartCallInternal() {
     init_buf.SendInitialMetadata(context_->send_initial_metadata_,
                                  context_->initial_metadata_flags());
     call_.PerformOps(&init_buf);
@@ -203,7 +203,7 @@ class ServerAsyncResponseWriter
   ///   be taken from the \a ServerContext associated with the call.
   ///
   /// \param[in] tag Tag identifying this request.
-  void SendInitialMetadata(void* tag) override {
+  virtual void SendInitialMetadata(void* tag) override {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
     meta_buf_.set_output_tag(tag);
@@ -231,7 +231,7 @@ class ServerAsyncResponseWriter
   /// Note: if \a status has a non-OK code, then \a msg will not be sent,
   /// and the client will receive only the status with possible trailing
   /// metadata.
-  void Finish(const W& msg, const Status& status, void* tag) {
+  virtual void Finish(const W& msg, const Status& status, void* tag) {
     finish_buf_.set_output_tag(tag);
     if (!ctx_->sent_initial_metadata_) {
       finish_buf_.SendInitialMetadata(ctx_->initial_metadata_,
@@ -263,7 +263,7 @@ class ServerAsyncResponseWriter
   /// Side effect:
   ///   - also sends initial metadata if not already sent (using the
   ///     \a ServerContext associated with this call).
-  void FinishWithError(const Status& status, void* tag) {
+  virtual void FinishWithError(const Status& status, void* tag) {
     GPR_CODEGEN_ASSERT(!status.ok());
     finish_buf_.set_output_tag(tag);
     if (!ctx_->sent_initial_metadata_) {

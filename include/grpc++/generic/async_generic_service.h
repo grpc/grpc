@@ -31,8 +31,8 @@ typedef ServerAsyncReaderWriter<ByteBuffer, ByteBuffer>
 
 class GenericServerContext : public ServerContext {
  public:
-  const grpc::string& method() const { return method_; }
-  const grpc::string& host() const { return host_; }
+  virtual const grpc::string& method() const { return method_; }
+  virtual const grpc::string& host() const { return host_; }
 
  private:
   friend class Server;
@@ -63,7 +63,7 @@ class AsyncGenericService {
  public:
   AsyncGenericService() : server_(nullptr) {}
 
-  void RequestCall(GenericServerContext* ctx,
+  virtual void RequestCall(GenericServerContext* ctx,
                    GenericServerAsyncReaderWriter* reader_writer,
                    CompletionQueue* call_cq,
                    ServerCompletionQueue* notification_cq, void* tag);

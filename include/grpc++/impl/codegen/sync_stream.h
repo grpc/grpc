@@ -121,7 +121,7 @@ class WriterInterface {
   /// \param msg The message to be written to the stream.
   ///
   /// \return \a true on success, \a false when the stream has been closed.
-  inline bool Write(const W& msg) { return Write(msg, WriteOptions()); }
+  virtual inline bool Write(const W& msg) { return Write(msg, WriteOptions()); }
 
   /// Write \a msg and coalesce it with the writing of trailing metadata, using
   /// WriteOptions \a options.
@@ -137,7 +137,7 @@ class WriterInterface {
   ///
   /// \param[in] msg The message to be written to the stream.
   /// \param[in] options The WriteOptions to be used to write this message.
-  void WriteLast(const W& msg, WriteOptions options) {
+  virtual void WriteLast(const W& msg, WriteOptions options) {
     Write(msg, options.set_last_message());
   }
 };
@@ -182,7 +182,7 @@ class ClientReader : public ClientReaderInterface<R> {
   ///   Once complete, the initial metadata read from
   ///   the server will be accessable through the \a ClientContext used to
   ///   construct this object.
-  void WaitForInitialMetadata() override {
+  virtual void WaitForInitialMetadata() override {
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
     ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata>
@@ -192,7 +192,7 @@ class ClientReader : public ClientReaderInterface<R> {
     cq_.Pluck(&ops);  /// status ignored
   }
 
-  bool NextMessageSize(uint32_t* sz) override {
+  virtual bool NextMessageSize(uint32_t* sz) override {
     *sz = call_.max_receive_message_size();
     return true;
   }
@@ -202,7 +202,7 @@ class ClientReader : public ClientReaderInterface<R> {
   ///   This also receives initial metadata from the server, if not
   ///   already received (if initial metadata is received, it can be then
   ///   accessed through the \a ClientContext associated with this call).
-  bool Read(R* msg) override {
+  virtual bool Read(R* msg) override {
     ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata,
                                 ::grpc::internal::CallOpRecvMessage<R>>
         ops;
@@ -219,7 +219,7 @@ class ClientReader : public ClientReaderInterface<R> {
   /// Side effect:
   ///   The \a ClientContext associated with this call is updated with
   ///   possible metadata received from the server.
-  Status Finish() override {
+  virtual Status Finish() override {
     ::grpc::internal::CallOpSet<::grpc::internal::CallOpClientRecvStatus> ops;
     Status status;
     ops.ClientRecvStatus(context_, &status);
@@ -299,7 +299,7 @@ class ClientWriter : public ClientWriterInterface<W> {
   //  Side effect:
   ///   Once complete, the initial metadata read from the server will be
   ///   accessable through the \a ClientContext used to construct this object.
-  void WaitForInitialMetadata() {
+  virtual void WaitForInitialMetadata() {
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
     ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata>
@@ -316,7 +316,7 @@ class ClientWriter : public ClientWriterInterface<W> {
   ///   Also sends initial metadata if not already sent (using the
   ///   \a ClientContext associated with this call).
   using ::grpc::internal::WriterInterface<W>::Write;
-  bool Write(const W& msg, WriteOptions options) override {
+  virtual bool Write(const W& msg, WriteOptions options) override {
     ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
                                 ::grpc::internal::CallOpSendMessage,
                                 ::grpc::internal::CallOpClientSendClose>
@@ -339,7 +339,7 @@ class ClientWriter : public ClientWriterInterface<W> {
     return cq_.Pluck(&ops);
   }
 
-  bool WritesDone() override {
+  virtual bool WritesDone() override {
     ::grpc::internal::CallOpSet<::grpc::internal::CallOpClientSendClose> ops;
     ops.ClientSendClose();
     call_.PerformOps(&ops);
@@ -352,7 +352,7 @@ class ClientWriter : public ClientWriterInterface<W> {
   ///   - Attempts to fill in the \a response parameter passed
   ///     to the constructor of this instance with the response
   ///     message from the server.
-  Status Finish() override {
+  virtual Status Finish() override {
     Status status;
     if (!context_->initial_metadata_received_) {
       finish_ops_.RecvInitialMetadata(context_);
@@ -450,7 +450,7 @@ class ClientReaderWriter : public ClientReaderWriterInterface<W, R> {
   ///
   /// Once complete, the initial metadata read from the server will be
   /// accessable through the \a ClientContext used to construct this object.
-  void WaitForInitialMetadata() override {
+  virtual void WaitForInitialMetadata() override {
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
     ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata>
@@ -460,7 +460,7 @@ class ClientReaderWriter : public ClientReaderWriterInterface<W, R> {
     cq_.Pluck(&ops);  // status ignored
   }
 
-  bool NextMessageSize(uint32_t* sz) override {
+  virtual bool NextMessageSize(uint32_t* sz) override {
     *sz = call_.max_receive_message_size();
     return true;
   }
@@ -469,7 +469,7 @@ class ClientReaderWriter : public ClientReaderWriterInterface<W, R> {
   /// Side effect:
   ///   Also receives initial metadata if not already received (updates the \a
   ///   ClientContext associated with this call in that case).
-  bool Read(R* msg) override {
+  virtual bool Read(R* msg) override {
     ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata,
                                 ::grpc::internal::CallOpRecvMessage<R>>
         ops;
@@ -487,7 +487,7 @@ class ClientReaderWriter : public ClientReaderWriterInterface<W, R> {
   ///   Also sends initial metadata if not already sent (using the
   ///   \a ClientContext associated with this call to fill in values).
   using ::grpc::internal::WriterInterface<W>::Write;
-  bool Write(const W& msg, WriteOptions options) override {
+  virtual bool Write(const W& msg, WriteOptions options) override {
     ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
                                 ::grpc::internal::CallOpSendMessage,
                                 ::grpc::internal::CallOpClientSendClose>
@@ -510,7 +510,7 @@ class ClientReaderWriter : public ClientReaderWriterInterface<W, R> {
     return cq_.Pluck(&ops);
   }
 
-  bool WritesDone() override {
+  virtual bool WritesDone() override {
     ::grpc::internal::CallOpSet<::grpc::internal::CallOpClientSendClose> ops;
     ops.ClientSendClose();
     call_.PerformOps(&ops);
@@ -522,7 +522,7 @@ class ClientReaderWriter : public ClientReaderWriterInterface<W, R> {
   /// Side effect:
   ///   - the \a ClientContext associated with this call is updated with
   ///     possible trailing metadata sent from the server.
-  Status Finish() override {
+  virtual Status Finish() override {
     ::grpc::internal::CallOpSet<::grpc::internal::CallOpRecvInitialMetadata,
                                 ::grpc::internal::CallOpClientRecvStatus>
         ops;
@@ -579,7 +579,7 @@ class ServerReader : public ServerReaderInterface<R> {
   /// See the \a ServerStreamingInterface.SendInitialMetadata method
   /// for semantics. Note that initial metadata will be affected by the
   /// \a ServerContext associated with this call.
-  void SendInitialMetadata() override {
+  virtual void SendInitialMetadata() override {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
     internal::CallOpSet<internal::CallOpSendInitialMetadata> ops;
@@ -593,12 +593,12 @@ class ServerReader : public ServerReaderInterface<R> {
     call_->cq()->Pluck(&ops);
   }
 
-  bool NextMessageSize(uint32_t* sz) override {
+  virtual bool NextMessageSize(uint32_t* sz) override {
     *sz = call_->max_receive_message_size();
     return true;
   }
 
-  bool Read(R* msg) override {
+  virtual bool Read(R* msg) override {
     internal::CallOpSet<internal::CallOpRecvMessage<R>> ops;
     ops.RecvMessage(msg);
     call_->PerformOps(&ops);
@@ -631,7 +631,7 @@ class ServerWriter : public ServerWriterInterface<W> {
   /// for semantics.
   /// Note that initial metadata will be affected by the
   /// \a ServerContext associated with this call.
-  void SendInitialMetadata() override {
+  virtual void SendInitialMetadata() override {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
     internal::CallOpSet<internal::CallOpSendInitialMetadata> ops;
@@ -651,7 +651,7 @@ class ServerWriter : public ServerWriterInterface<W> {
   ///   Also sends initial metadata if not already sent (using the
   ///   \a ClientContext associated with this call to fill in values).
   using internal::WriterInterface<W>::Write;
-  bool Write(const W& msg, WriteOptions options) override {
+  virtual bool Write(const W& msg, WriteOptions options) override {
     if (options.is_last_message()) {
       options.set_buffer_hint();
     }
@@ -704,7 +704,7 @@ class ServerReaderWriterBody {
   ServerReaderWriterBody(Call* call, ServerContext* ctx)
       : call_(call), ctx_(ctx) {}
 
-  void SendInitialMetadata() {
+  virtual void SendInitialMetadata() {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
     CallOpSet<CallOpSendInitialMetadata> ops;
@@ -718,19 +718,19 @@ class ServerReaderWriterBody {
     call_->cq()->Pluck(&ops);
   }
 
-  bool NextMessageSize(uint32_t* sz) {
+  virtual bool NextMessageSize(uint32_t* sz) {
     *sz = call_->max_receive_message_size();
     return true;
   }
 
-  bool Read(R* msg) {
+  virtual bool Read(R* msg) {
     CallOpSet<CallOpRecvMessage<R>> ops;
     ops.RecvMessage(msg);
     call_->PerformOps(&ops);
     return call_->cq()->Pluck(&ops) && ops.got_message;
   }
 
-  bool Write(const W& msg, WriteOptions options) {
+  virtual bool Write(const W& msg, WriteOptions options) {
     if (options.is_last_message()) {
       options.set_buffer_hint();
     }
@@ -774,13 +774,13 @@ class ServerReaderWriter : public ServerReaderWriterInterface<W, R> {
   /// See the \a ServerStreamingInterface.SendInitialMetadata method
   /// for semantics. Note that initial metadata will be affected by the
   /// \a ServerContext associated with this call.
-  void SendInitialMetadata() override { body_.SendInitialMetadata(); }
+  virtual void SendInitialMetadata() override { body_.SendInitialMetadata(); }
 
-  bool NextMessageSize(uint32_t* sz) override {
+  virtual bool NextMessageSize(uint32_t* sz) override {
     return body_.NextMessageSize(sz);
   }
 
-  bool Read(R* msg) override { return body_.Read(msg); }
+  virtual bool Read(R* msg) override { return body_.Read(msg); }
 
   /// See the \a WriterInterface.Write(const W& msg, WriteOptions options)
   /// method for semantics.
@@ -788,7 +788,7 @@ class ServerReaderWriter : public ServerReaderWriterInterface<W, R> {
   ///   Also sends initial metadata if not already sent (using the \a
   ///   ServerContext associated with this call).
   using internal::WriterInterface<W>::Write;
-  bool Write(const W& msg, WriteOptions options) override {
+  virtual bool Write(const W& msg, WriteOptions options) override {
     return body_.Write(msg, options);
   }
 
@@ -817,10 +817,10 @@ class ServerUnaryStreamer
   /// Implicit input parameter:
   ///    - the \a ServerContext associated with this call will be used for
   ///      sending initial metadata.
-  void SendInitialMetadata() override { body_.SendInitialMetadata(); }
+  virtual void SendInitialMetadata() override { body_.SendInitialMetadata(); }
 
   /// Get an upper bound on the request message size from the client.
-  bool NextMessageSize(uint32_t* sz) override {
+  virtual bool NextMessageSize(uint32_t* sz) override {
     return body_.NextMessageSize(sz);
   }
 
@@ -834,7 +834,7 @@ class ServerUnaryStreamer
   ///
   /// \param[out] msg Where to eventually store the read message.
   /// \param[in] tag The tag identifying the operation.
-  bool Read(RequestType* request) override {
+  virtual bool Read(RequestType* request) override {
     if (read_done_) {
       return false;
     }
@@ -850,7 +850,7 @@ class ServerUnaryStreamer
   ///
   /// \return \a true on success, \a false when the stream has been closed.
   using internal::WriterInterface<ResponseType>::Write;
-  bool Write(const ResponseType& response, WriteOptions options) override {
+  virtual bool Write(const ResponseType& response, WriteOptions options) override {
     if (write_done_ || !read_done_) {
       return false;
     }
@@ -882,10 +882,10 @@ class ServerSplitStreamer
   /// Implicit input parameter:
   ///    - the \a ServerContext associated with this call will be used for
   ///      sending initial metadata.
-  void SendInitialMetadata() override { body_.SendInitialMetadata(); }
+  virtual void SendInitialMetadata() override { body_.SendInitialMetadata(); }
 
   /// Get an upper bound on the request message size from the client.
-  bool NextMessageSize(uint32_t* sz) override {
+  virtual bool NextMessageSize(uint32_t* sz) override {
     return body_.NextMessageSize(sz);
   }
 
@@ -899,7 +899,7 @@ class ServerSplitStreamer
   ///
   /// \param[out] msg Where to eventually store the read message.
   /// \param[in] tag The tag identifying the operation.
-  bool Read(RequestType* request) override {
+  virtual bool Read(RequestType* request) override {
     if (read_done_) {
       return false;
     }
@@ -915,7 +915,7 @@ class ServerSplitStreamer
   ///
   /// \return \a true on success, \a false when the stream has been closed.
   using internal::WriterInterface<ResponseType>::Write;
-  bool Write(const ResponseType& response, WriteOptions options) override {
+  virtual bool Write(const ResponseType& response, WriteOptions options) override {
     return read_done_ && body_.Write(response, options);
   }
 

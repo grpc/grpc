@@ -87,15 +87,15 @@ class WriteOptions {
       : flags_(other.flags_), last_message_(other.last_message_) {}
 
   /// Clear all flags.
-  inline void Clear() { flags_ = 0; }
+  virtual inline void Clear() { flags_ = 0; }
 
   /// Returns raw flags bitset.
-  inline uint32_t flags() const { return flags_; }
+  virtual inline uint32_t flags() const { return flags_; }
 
   /// Sets flag for the disabling of compression for the next message write.
   ///
   /// \sa GRPC_WRITE_NO_COMPRESS
-  inline WriteOptions& set_no_compression() {
+  virtual inline WriteOptions& set_no_compression() {
     SetBit(GRPC_WRITE_NO_COMPRESS);
     return *this;
   }
@@ -103,7 +103,7 @@ class WriteOptions {
   /// Clears flag for the disabling of compression for the next message write.
   ///
   /// \sa GRPC_WRITE_NO_COMPRESS
-  inline WriteOptions& clear_no_compression() {
+  virtual inline WriteOptions& clear_no_compression() {
     ClearBit(GRPC_WRITE_NO_COMPRESS);
     return *this;
   }
@@ -112,7 +112,7 @@ class WriteOptions {
   /// message write is forcefully disabled.
   ///
   /// \sa GRPC_WRITE_NO_COMPRESS
-  inline bool get_no_compression() const {
+  virtual inline bool get_no_compression() const {
     return GetBit(GRPC_WRITE_NO_COMPRESS);
   }
 
@@ -120,7 +120,7 @@ class WriteOptions {
   /// the wire immediately.
   ///
   /// \sa GRPC_WRITE_BUFFER_HINT
-  inline WriteOptions& set_buffer_hint() {
+  virtual inline WriteOptions& set_buffer_hint() {
     SetBit(GRPC_WRITE_BUFFER_HINT);
     return *this;
   }
@@ -129,7 +129,7 @@ class WriteOptions {
   /// on the wire immediately.
   ///
   /// \sa GRPC_WRITE_BUFFER_HINT
-  inline WriteOptions& clear_buffer_hint() {
+  virtual inline WriteOptions& clear_buffer_hint() {
     ClearBit(GRPC_WRITE_BUFFER_HINT);
     return *this;
   }
@@ -142,12 +142,12 @@ class WriteOptions {
 
   /// corked bit: aliases set_buffer_hint currently, with the intent that
   /// set_buffer_hint will be removed in the future
-  inline WriteOptions& set_corked() {
+  virtual inline WriteOptions& set_corked() {
     SetBit(GRPC_WRITE_BUFFER_HINT);
     return *this;
   }
 
-  inline WriteOptions& clear_corked() {
+  virtual inline WriteOptions& clear_corked() {
     ClearBit(GRPC_WRITE_BUFFER_HINT);
     return *this;
   }
@@ -159,21 +159,21 @@ class WriteOptions {
   /// in a single step
   /// server-side:  hold the Write until the service handler returns (sync api)
   /// or until Finish is called (async api)
-  inline WriteOptions& set_last_message() {
+  virtual inline WriteOptions& set_last_message() {
     last_message_ = true;
     return *this;
   }
 
   /// Clears flag indicating that this is the last message in a stream,
   /// disabling coalescing.
-  inline WriteOptions& clear_last_message() {
+  virtual inline WriteOptions& clear_last_message() {
     last_message_ = false;
     return *this;
   }
 
   /// Guarantee that all bytes have been written to the wire before completing
   /// this write (usually writes are completed when they pass flow control)
-  inline WriteOptions& set_write_through() {
+  virtual inline WriteOptions& set_write_through() {
     SetBit(GRPC_WRITE_THROUGH);
     return *this;
   }
@@ -218,7 +218,7 @@ class CallOpSendInitialMetadata {
     maybe_compression_level_.is_set = false;
   }
 
-  void SendInitialMetadata(
+  virtual void SendInitialMetadata(
       const std::multimap<grpc::string, grpc::string>& metadata,
       uint32_t flags) {
     maybe_compression_level_.is_set = false;
@@ -228,13 +228,13 @@ class CallOpSendInitialMetadata {
         FillMetadataArray(metadata, &initial_metadata_count_, "");
   }
 
-  void set_compression_level(grpc_compression_level level) {
+  virtual void set_compression_level(grpc_compression_level level) {
     maybe_compression_level_.is_set = true;
     maybe_compression_level_.level = level;
   }
 
  protected:
-  void AddOp(grpc_op* ops, size_t* nops) {
+  virtual void AddOp(grpc_op* ops, size_t* nops) {
     if (!send_) return;
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -249,7 +249,7 @@ class CallOpSendInitialMetadata {
           maybe_compression_level_.level;
     }
   }
-  void FinishOp(bool* status) {
+  virtual void FinishOp(bool* status) {
     if (!send_) return;
     g_core_codegen_interface->gpr_free(initial_metadata_);
     send_ = false;
@@ -279,7 +279,7 @@ class CallOpSendMessage {
   Status SendMessage(const M& message) GRPC_MUST_USE_RESULT;
 
  protected:
-  void AddOp(grpc_op* ops, size_t* nops) {
+  virtual void AddOp(grpc_op* ops, size_t* nops) {
     if (!send_buf_.Valid()) return;
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_SEND_MESSAGE;
@@ -333,7 +333,7 @@ class CallOpRecvMessage {
   bool got_message;
 
  protected:
-  void AddOp(grpc_op* ops, size_t* nops) {
+  virtual void AddOp(grpc_op* ops, size_t* nops) {
     if (message_ == nullptr) return;
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_RECV_MESSAGE;
@@ -342,7 +342,7 @@ class CallOpRecvMessage {
     op->data.recv_message.recv_message = recv_buf_.c_buffer_ptr();
   }
 
-  void FinishOp(bool* status) {
+  virtual void FinishOp(bool* status) {
     if (message_ == nullptr) return;
     if (recv_buf_.Valid()) {
       if (*status) {
@@ -408,7 +408,7 @@ class CallOpGenericRecvMessage {
   bool got_message;
 
  protected:
-  void AddOp(grpc_op* ops, size_t* nops) {
+  virtual void AddOp(grpc_op* ops, size_t* nops) {
     if (!deserialize_) return;
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_RECV_MESSAGE;
@@ -417,7 +417,7 @@ class CallOpGenericRecvMessage {
     op->data.recv_message.recv_message = recv_buf_.c_buffer_ptr();
   }
 
-  void FinishOp(bool* status) {
+  virtual void FinishOp(bool* status) {
     if (!deserialize_) return;
     if (recv_buf_.Valid()) {
       if (*status) {
@@ -450,7 +450,7 @@ class CallOpClientSendClose {
   void ClientSendClose() { send_ = true; }
 
  protected:
-  void AddOp(grpc_op* ops, size_t* nops) {
+  virtual void AddOp(grpc_op* ops, size_t* nops) {
     if (!send_) return;
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
@@ -467,7 +467,7 @@ class CallOpServerSendStatus {
  public:
   CallOpServerSendStatus() : send_status_available_(false) {}
 
-  void ServerSendStatus(
+  virtual void ServerSendStatus(
       const std::multimap<grpc::string, grpc::string>& trailing_metadata,
       const Status& status) {
     send_error_details_ = status.error_details();
@@ -479,7 +479,7 @@ class CallOpServerSendStatus {
   }
 
  protected:
-  void AddOp(grpc_op* ops, size_t* nops) {
+  virtual void AddOp(grpc_op* ops, size_t* nops) {
     if (!send_status_available_) return;
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
@@ -494,7 +494,7 @@ class CallOpServerSendStatus {
     op->reserved = NULL;
   }
 
-  void FinishOp(bool* status) {
+  virtual void FinishOp(bool* status) {
     if (!send_status_available_) return;
     g_core_codegen_interface->gpr_free(trailing_metadata_);
     send_status_available_ = false;
@@ -514,13 +514,13 @@ class CallOpRecvInitialMetadata {
  public:
   CallOpRecvInitialMetadata() : metadata_map_(nullptr) {}
 
-  void RecvInitialMetadata(ClientContext* context) {
+  virtual void RecvInitialMetadata(ClientContext* context) {
     context->initial_metadata_received_ = true;
     metadata_map_ = &context->recv_initial_metadata_;
   }
 
  protected:
-  void AddOp(grpc_op* ops, size_t* nops) {
+  virtual void AddOp(grpc_op* ops, size_t* nops) {
     if (metadata_map_ == nullptr) return;
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_RECV_INITIAL_METADATA;
@@ -529,7 +529,7 @@ class CallOpRecvInitialMetadata {
     op->reserved = NULL;
   }
 
-  void FinishOp(bool* status) {
+  virtual void FinishOp(bool* status) {
     if (metadata_map_ == nullptr) return;
     metadata_map_->FillMap();
     metadata_map_ = nullptr;
@@ -544,7 +544,7 @@ class CallOpClientRecvStatus {
   CallOpClientRecvStatus()
       : recv_status_(nullptr), debug_error_string_(nullptr) {}
 
-  void ClientRecvStatus(ClientContext* context, Status* status) {
+  virtual void ClientRecvStatus(ClientContext* context, Status* status) {
     client_context_ = context;
     metadata_map_ = &client_context_->trailing_metadata_;
     recv_status_ = status;
@@ -552,7 +552,7 @@ class CallOpClientRecvStatus {
   }
 
  protected:
-  void AddOp(grpc_op* ops, size_t* nops) {
+  virtual void AddOp(grpc_op* ops, size_t* nops) {
     if (recv_status_ == nullptr) return;
     grpc_op* op = &ops[(*nops)++];
     op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
@@ -564,7 +564,7 @@ class CallOpClientRecvStatus {
     op->reserved = NULL;
   }
 
-  void FinishOp(bool* status) {
+  virtual void FinishOp(bool* status) {
     if (recv_status_ == nullptr) return;
     metadata_map_->FillMap();
     grpc::string binary_error_details;
@@ -625,7 +625,7 @@ class CallOpSet : public CallOpSetInterface,
                   public Op6 {
  public:
   CallOpSet() : return_tag_(this), call_(nullptr) {}
-  void FillOps(grpc_call* call, grpc_op* ops, size_t* nops) override {
+  virtual void FillOps(grpc_call* call, grpc_op* ops, size_t* nops) override {
     this->Op1::AddOp(ops, nops);
     this->Op2::AddOp(ops, nops);
     this->Op3::AddOp(ops, nops);
@@ -636,7 +636,7 @@ class CallOpSet : public CallOpSetInterface,
     call_ = call;
   }
 
-  bool FinalizeResult(void** tag, bool* status) override {
+  virtual bool FinalizeResult(void** tag, bool* status) override {
     this->Op1::FinishOp(status);
     this->Op2::FinishOp(status);
     this->Op3::FinishOp(status);
@@ -665,7 +665,7 @@ template <class Op1 = CallNoOp<1>, class Op2 = CallNoOp<2>,
           class Op5 = CallNoOp<5>, class Op6 = CallNoOp<6>>
 class SneakyCallOpSet : public CallOpSet<Op1, Op2, Op3, Op4, Op5, Op6> {
  public:
-  bool FinalizeResult(void** tag, bool* status) override {
+  virtual bool FinalizeResult(void** tag, bool* status) override {
     typedef CallOpSet<Op1, Op2, Op3, Op4, Op5, Op6> Base;
     return Base::FinalizeResult(tag, status) && false;
   }
@@ -688,7 +688,7 @@ class Call {
         call_(call),
         max_receive_message_size_(max_receive_message_size) {}
 
-  void PerformOps(CallOpSetInterface* ops) {
+  virtual void PerformOps(CallOpSetInterface* ops) {
     call_hook_->PerformOpsOnCall(ops, this);
   }
 

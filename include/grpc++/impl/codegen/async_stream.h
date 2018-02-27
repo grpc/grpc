@@ -195,7 +195,7 @@ class ClientAsyncReader : public ClientAsyncReaderInterface<R> {
     assert(size == sizeof(ClientAsyncReader));
   }
 
-  void StartCall(void* tag) override {
+  virtual void StartCall(void* tag) override {
     assert(!started_);
     started_ = true;
     StartCallInternal(tag);
@@ -209,7 +209,7 @@ class ClientAsyncReader : public ClientAsyncReaderInterface<R> {
   ///     the \a ClientContext associated with this call is updated, and the
   ///     calling code can access the received metadata through the
   ///     \a ClientContext.
-  void ReadInitialMetadata(void* tag) override {
+  virtual void ReadInitialMetadata(void* tag) override {
     assert(started_);
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
@@ -218,7 +218,7 @@ class ClientAsyncReader : public ClientAsyncReaderInterface<R> {
     call_.PerformOps(&meta_ops_);
   }
 
-  void Read(R* msg, void* tag) override {
+  virtual void Read(R* msg, void* tag) override {
     assert(started_);
     read_ops_.set_output_tag(tag);
     if (!context_->initial_metadata_received_) {
@@ -233,7 +233,7 @@ class ClientAsyncReader : public ClientAsyncReaderInterface<R> {
   /// Side effect:
   ///   - the \a ClientContext associated with this call is updated with
   ///     possible initial and trailing metadata received from the server.
-  void Finish(Status* status, void* tag) override {
+  virtual void Finish(Status* status, void* tag) override {
     assert(started_);
     finish_ops_.set_output_tag(tag);
     if (!context_->initial_metadata_received_) {
@@ -259,7 +259,7 @@ class ClientAsyncReader : public ClientAsyncReaderInterface<R> {
     }
   }
 
-  void StartCallInternal(void* tag) {
+  virtual void StartCallInternal(void* tag) {
     init_ops_.SendInitialMetadata(context_->send_initial_metadata_,
                                   context_->initial_metadata_flags());
     init_ops_.set_output_tag(tag);
@@ -336,7 +336,7 @@ class ClientAsyncWriter : public ClientAsyncWriterInterface<W> {
     assert(size == sizeof(ClientAsyncWriter));
   }
 
-  void StartCall(void* tag) override {
+  virtual void StartCall(void* tag) override {
     assert(!started_);
     started_ = true;
     StartCallInternal(tag);
@@ -349,7 +349,7 @@ class ClientAsyncWriter : public ClientAsyncWriterInterface<W> {
   ///   - upon receiving initial metadata from the server, the \a ClientContext
   ///     associated with this call is updated, and the calling code can access
   ///     the received metadata through the \a ClientContext.
-  void ReadInitialMetadata(void* tag) override {
+  virtual void ReadInitialMetadata(void* tag) override {
     assert(started_);
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
@@ -358,7 +358,7 @@ class ClientAsyncWriter : public ClientAsyncWriterInterface<W> {
     call_.PerformOps(&meta_ops_);
   }
 
-  void Write(const W& msg, void* tag) override {
+  virtual void Write(const W& msg, void* tag) override {
     assert(started_);
     write_ops_.set_output_tag(tag);
     // TODO(ctiller): don't assert
@@ -366,7 +366,7 @@ class ClientAsyncWriter : public ClientAsyncWriterInterface<W> {
     call_.PerformOps(&write_ops_);
   }
 
-  void Write(const W& msg, WriteOptions options, void* tag) override {
+  virtual void Write(const W& msg, WriteOptions options, void* tag) override {
     assert(started_);
     write_ops_.set_output_tag(tag);
     if (options.is_last_message()) {
@@ -378,7 +378,7 @@ class ClientAsyncWriter : public ClientAsyncWriterInterface<W> {
     call_.PerformOps(&write_ops_);
   }
 
-  void WritesDone(void* tag) override {
+  virtual void WritesDone(void* tag) override {
     assert(started_);
     write_ops_.set_output_tag(tag);
     write_ops_.ClientSendClose();
@@ -392,7 +392,7 @@ class ClientAsyncWriter : public ClientAsyncWriterInterface<W> {
   ///     possible initial and trailing metadata received from the server.
   ///   - attempts to fill in the \a response parameter passed to this class's
   ///     constructor with the server's response message.
-  void Finish(Status* status, void* tag) override {
+  virtual void Finish(Status* status, void* tag) override {
     assert(started_);
     finish_ops_.set_output_tag(tag);
     if (!context_->initial_metadata_received_) {
@@ -417,7 +417,7 @@ class ClientAsyncWriter : public ClientAsyncWriterInterface<W> {
     }
   }
 
-  void StartCallInternal(void* tag) {
+  virtual void StartCallInternal(void* tag) {
     write_ops_.SendInitialMetadata(context_->send_initial_metadata_,
                                    context_->initial_metadata_flags());
     // if corked bit is set in context, we just keep the initial metadata
@@ -496,7 +496,7 @@ class ClientAsyncReaderWriter
     assert(size == sizeof(ClientAsyncReaderWriter));
   }
 
-  void StartCall(void* tag) override {
+  virtual void StartCall(void* tag) override {
     assert(!started_);
     started_ = true;
     StartCallInternal(tag);
@@ -509,7 +509,7 @@ class ClientAsyncReaderWriter
   ///   - upon receiving initial metadata from the server, the \a ClientContext
   ///     is updated with it, and then the receiving initial metadata can
   ///     be accessed through this \a ClientContext.
-  void ReadInitialMetadata(void* tag) override {
+  virtual void ReadInitialMetadata(void* tag) override {
     assert(started_);
     GPR_CODEGEN_ASSERT(!context_->initial_metadata_received_);
 
@@ -518,7 +518,7 @@ class ClientAsyncReaderWriter
     call_.PerformOps(&meta_ops_);
   }
 
-  void Read(R* msg, void* tag) override {
+  virtual void Read(R* msg, void* tag) override {
     assert(started_);
     read_ops_.set_output_tag(tag);
     if (!context_->initial_metadata_received_) {
@@ -528,7 +528,7 @@ class ClientAsyncReaderWriter
     call_.PerformOps(&read_ops_);
   }
 
-  void Write(const W& msg, void* tag) override {
+  virtual void Write(const W& msg, void* tag) override {
     assert(started_);
     write_ops_.set_output_tag(tag);
     // TODO(ctiller): don't assert
@@ -536,7 +536,7 @@ class ClientAsyncReaderWriter
     call_.PerformOps(&write_ops_);
   }
 
-  void Write(const W& msg, WriteOptions options, void* tag) override {
+  virtual void Write(const W& msg, WriteOptions options, void* tag) override {
     assert(started_);
     write_ops_.set_output_tag(tag);
     if (options.is_last_message()) {
@@ -548,7 +548,7 @@ class ClientAsyncReaderWriter
     call_.PerformOps(&write_ops_);
   }
 
-  void WritesDone(void* tag) override {
+  virtual void WritesDone(void* tag) override {
     assert(started_);
     write_ops_.set_output_tag(tag);
     write_ops_.ClientSendClose();
@@ -559,7 +559,7 @@ class ClientAsyncReaderWriter
   /// Side effect
   ///   - the \a ClientContext associated with this call is updated with
   ///     possible initial and trailing metadata sent from the server.
-  void Finish(Status* status, void* tag) override {
+  virtual void Finish(Status* status, void* tag) override {
     assert(started_);
     finish_ops_.set_output_tag(tag);
     if (!context_->initial_metadata_received_) {
@@ -581,7 +581,7 @@ class ClientAsyncReaderWriter
     }
   }
 
-  void StartCallInternal(void* tag) {
+  virtual void StartCallInternal(void* tag) {
     write_ops_.SendInitialMetadata(context_->send_initial_metadata_,
                                    context_->initial_metadata_flags());
     // if corked bit is set in context, we just keep the initial metadata
@@ -670,7 +670,7 @@ class ServerAsyncReader : public ServerAsyncReaderInterface<W, R> {
   /// Implicit input parameter:
   ///   - The initial metadata that will be sent to the client from this op will
   ///     be taken from the \a ServerContext associated with the call.
-  void SendInitialMetadata(void* tag) override {
+  virtual void SendInitialMetadata(void* tag) override {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
     meta_ops_.set_output_tag(tag);
@@ -683,7 +683,7 @@ class ServerAsyncReader : public ServerAsyncReaderInterface<W, R> {
     call_.PerformOps(&meta_ops_);
   }
 
-  void Read(R* msg, void* tag) override {
+  virtual void Read(R* msg, void* tag) override {
     read_ops_.set_output_tag(tag);
     read_ops_.RecvMessage(msg);
     call_.PerformOps(&read_ops_);
@@ -697,7 +697,7 @@ class ServerAsyncReader : public ServerAsyncReaderInterface<W, R> {
   ///     initial and trailing metadata.
   ///
   /// Note: \a msg is not sent if \a status has a non-OK code.
-  void Finish(const W& msg, const Status& status, void* tag) override {
+  virtual void Finish(const W& msg, const Status& status, void* tag) override {
     finish_ops_.set_output_tag(tag);
     if (!ctx_->sent_initial_metadata_) {
       finish_ops_.SendInitialMetadata(ctx_->initial_metadata_,
@@ -723,7 +723,7 @@ class ServerAsyncReader : public ServerAsyncReaderInterface<W, R> {
   ///   - also sends initial metadata if not alreay sent.
   ///   - uses the \a ServerContext associated with this call to send possible
   ///     initial and trailing metadata.
-  void FinishWithError(const Status& status, void* tag) override {
+  virtual void FinishWithError(const Status& status, void* tag) override {
     GPR_CODEGEN_ASSERT(!status.ok());
     finish_ops_.set_output_tag(tag);
     if (!ctx_->sent_initial_metadata_) {
@@ -807,7 +807,7 @@ class ServerAsyncWriter : public ServerAsyncWriterInterface<W> {
   ///     be taken from the \a ServerContext associated with the call.
   ///
   /// \param[in] tag Tag identifying this request.
-  void SendInitialMetadata(void* tag) override {
+  virtual void SendInitialMetadata(void* tag) override {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
     meta_ops_.set_output_tag(tag);
@@ -820,7 +820,7 @@ class ServerAsyncWriter : public ServerAsyncWriterInterface<W> {
     call_.PerformOps(&meta_ops_);
   }
 
-  void Write(const W& msg, void* tag) override {
+  virtual void Write(const W& msg, void* tag) override {
     write_ops_.set_output_tag(tag);
     EnsureInitialMetadataSent(&write_ops_);
     // TODO(ctiller): don't assert
@@ -828,7 +828,7 @@ class ServerAsyncWriter : public ServerAsyncWriterInterface<W> {
     call_.PerformOps(&write_ops_);
   }
 
-  void Write(const W& msg, WriteOptions options, void* tag) override {
+  virtual void Write(const W& msg, WriteOptions options, void* tag) override {
     write_ops_.set_output_tag(tag);
     if (options.is_last_message()) {
       options.set_buffer_hint();
@@ -847,7 +847,7 @@ class ServerAsyncWriter : public ServerAsyncWriterInterface<W> {
   ///     for sending trailing (and initial) metadata to the client.
   ///
   /// Note: \a status must have an OK code.
-  void WriteAndFinish(const W& msg, WriteOptions options, const Status& status,
+  virtual void WriteAndFinish(const W& msg, WriteOptions options, const Status& status,
                       void* tag) override {
     write_ops_.set_output_tag(tag);
     EnsureInitialMetadataSent(&write_ops_);
@@ -865,7 +865,7 @@ class ServerAsyncWriter : public ServerAsyncWriterInterface<W> {
   ///
   /// Note: there are no restrictions are the code of
   /// \a status,it may be non-OK
-  void Finish(const Status& status, void* tag) override {
+  virtual void Finish(const Status& status, void* tag) override {
     finish_ops_.set_output_tag(tag);
     EnsureInitialMetadataSent(&finish_ops_);
     finish_ops_.ServerSendStatus(ctx_->trailing_metadata_, status);
@@ -961,7 +961,7 @@ class ServerAsyncReaderWriter
   ///     be taken from the \a ServerContext associated with the call.
   ///
   /// \param[in] tag Tag identifying this request.
-  void SendInitialMetadata(void* tag) override {
+  virtual void SendInitialMetadata(void* tag) override {
     GPR_CODEGEN_ASSERT(!ctx_->sent_initial_metadata_);
 
     meta_ops_.set_output_tag(tag);
@@ -974,13 +974,13 @@ class ServerAsyncReaderWriter
     call_.PerformOps(&meta_ops_);
   }
 
-  void Read(R* msg, void* tag) override {
+  virtual void Read(R* msg, void* tag) override {
     read_ops_.set_output_tag(tag);
     read_ops_.RecvMessage(msg);
     call_.PerformOps(&read_ops_);
   }
 
-  void Write(const W& msg, void* tag) override {
+  virtual void Write(const W& msg, void* tag) override {
     write_ops_.set_output_tag(tag);
     EnsureInitialMetadataSent(&write_ops_);
     // TODO(ctiller): don't assert
@@ -988,7 +988,7 @@ class ServerAsyncReaderWriter
     call_.PerformOps(&write_ops_);
   }
 
-  void Write(const W& msg, WriteOptions options, void* tag) override {
+  virtual void Write(const W& msg, WriteOptions options, void* tag) override {
     write_ops_.set_output_tag(tag);
     if (options.is_last_message()) {
       options.set_buffer_hint();
@@ -1006,7 +1006,7 @@ class ServerAsyncReaderWriter
   ///     for sending trailing (and initial) metadata to the client.
   ///
   /// Note: \a status must have an OK code.
-  void WriteAndFinish(const W& msg, WriteOptions options, const Status& status,
+  virtual void WriteAndFinish(const W& msg, WriteOptions options, const Status& status,
                       void* tag) override {
     write_ops_.set_output_tag(tag);
     EnsureInitialMetadataSent(&write_ops_);
@@ -1024,7 +1024,7 @@ class ServerAsyncReaderWriter
   ///
   /// Note: there are no restrictions are the code of \a status,
   /// it may be non-OK
-  void Finish(const Status& status, void* tag) override {
+  virtual void Finish(const Status& status, void* tag) override {
     finish_ops_.set_output_tag(tag);
     EnsureInitialMetadataSent(&finish_ops_);
 
