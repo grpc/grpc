@@ -30,7 +30,11 @@
 namespace grpc {
 namespace testing {
 namespace {
-void* tag(int i) { return (void*)static_cast<intptr_t>(i); }
+void* const kTagStartCall = (void*)static_cast<intptr_t>(1);
+void* const kTagWrite = (void*)static_cast<intptr_t>(2);
+void* const kTagRead = (void*)static_cast<intptr_t>(3);
+void* const kTagWritesDone = (void*)static_cast<intptr_t>(4);
+void* const kTagFinish = (void*)static_cast<intptr_t>(5);
 }  // namespace
 
 Status CliCall::Call(std::shared_ptr<grpc::Channel> channel,
@@ -61,11 +65,14 @@ CliCall::CliCall(std::shared_ptr<grpc::Channel> channel,
     }
   }
   call_ = stub_->PrepareCall(&ctx_, method, &cq_);
-  call_->StartCall(tag(1));
+  call_->StartCall(kTagStartCall);
   void* got_tag;
   bool ok;
   cq_.Next(&got_tag, &ok);
-  GPR_ASSERT(ok);
+  if (!ok) {
+    gpr_log(GPR_ERROR, "StartCall() failed, the channel may be broken.");
+    exit(1);
+  }
 }
 
 CliCall::~CliCall() {
@@ -80,9 +87,14 @@ void CliCall::Write(const grpc::string& request) {
   gpr_slice s = gpr_slice_from_copied_buffer(request.data(), request.size());
   grpc::Slice req_slice(s, grpc::Slice::STEAL_REF);
   grpc::ByteBuffer send_buffer(&req_slice, 1);
-  call_->Write(send_buffer, tag(2));
+  call_->Write(send_buffer, kTagWrite);
   cq_.Next(&got_tag, &ok);
-  GPR_ASSERT(ok);
+  if (!ok) {
+    gpr_log(GPR_ERROR,
+            "Write() failed, the call may already be dead (i.e., canceled, "
+            "deadline expired, server dropped the channel, etc).");
+    exit(1);
+  }
 }
 
 bool CliCall::Read(grpc::string* response,
@@ -91,7 +103,7 @@ bool CliCall::Read(grpc::string* response,
   bool ok;
 
   grpc::ByteBuffer recv_buffer;
-  call_->Read(&recv_buffer, tag(3));
+  call_->Read(&recv_buffer, kTagRead);
 
   if (!cq_.Next(&got_tag, &ok) || !ok) {
     return false;
@@ -114,9 +126,14 @@ void CliCall::WritesDone() {
   void* got_tag;
   bool ok;
 
-  call_->WritesDone(tag(4));
+  call_->WritesDone(kTagWritesDone);
   cq_.Next(&got_tag, &ok);
-  GPR_ASSERT(ok);
+  if (!ok) {
+    gpr_log(GPR_ERROR,
+            "WritesDone() failed, the call may already be dead (i.e., "
+            "canceled, deadline expired, server dropped the channel, etc).");
+    exit(1);
+  }
 }
 
 void CliCall::WriteAndWait(const grpc::string& request) {
@@ -124,7 +141,7 @@ void CliCall::WriteAndWait(const grpc::string& request) {
   grpc::ByteBuffer send_buffer(&req_slice, 1);
 
   gpr_mu_lock(&write_mu_);
-  call_->Write(send_buffer, tag(2));
+  call_->Write(send_buffer, kTagWrite);
   write_done_ = false;
   while (!write_done_) {
     gpr_cv_wait(&write_cv_, &write_mu_, gpr_inf_future(GPR_CLOCK_MONOTONIC));
@@ -134,7 +151,7 @@ void CliCall::WriteAndWait(const grpc::string& request) {
 
 void CliCall::WritesDoneAndWait() {
   gpr_mu_lock(&write_mu_);
-  call_->WritesDone(tag(4));
+  call_->WritesDone(kTagWritesDone);
   write_done_ = false;
   while (!write_done_) {
     gpr_cv_wait(&write_cv_, &write_mu_, gpr_inf_future(GPR_CLOCK_MONOTONIC));
@@ -149,18 +166,23 @@ bool CliCall::ReadAndMaybeNotifyWrite(
   bool ok;
   grpc::ByteBuffer recv_buffer;
 
-  call_->Read(&recv_buffer, tag(3));
+  call_->Read(&recv_buffer, kTagRead);
   bool cq_result = cq_.Next(&got_tag, &ok);
 
-  while (got_tag != tag(3)) {
+  while (got_tag != kTagRead) {
     gpr_mu_lock(&write_mu_);
     write_done_ = true;
     gpr_cv_signal(&write_cv_);
     gpr_mu_unlock(&write_mu_);
 
     cq_result = cq_.Next(&got_tag, &ok);
-    if (got_tag == tag(2)) {
-      GPR_ASSERT(ok);
+    if (got_tag == kTagWrite) {
+      if (!ok) {
+        gpr_log(GPR_ERROR,
+                "Write() failed, the call may already be dead (i.e., canceled, "
+                "deadline expired, server dropped the channel, etc).");
+        exit(1);
+      }
     }
   }
 
@@ -171,7 +193,7 @@ bool CliCall::ReadAndMaybeNotifyWrite(
       gpr_mu_lock(&write_mu_);
       if (!write_done_) {
         cq_.Next(&got_tag, &ok);
-        GPR_ASSERT(got_tag != tag(2));
+        GPR_ASSERT(got_tag != kTagWrite);
         write_done_ = true;
         gpr_cv_signal(&write_cv_);
       }
@@ -198,9 +220,12 @@ Status CliCall::Finish(IncomingMetadataContainer* server_trailing_metadata) {
   bool ok;
   grpc::Status status;
 
-  call_->Finish(&status, tag(5));
+  call_->Finish(&status, kTagFinish);
   cq_.Next(&got_tag, &ok);
-  GPR_ASSERT(ok);
+  if (!ok) {
+    gpr_log(GPR_ERROR, "Finish() failed, this should never happen.");
+    exit(1);
+  }
   if (server_trailing_metadata) {
     *server_trailing_metadata = ctx_.GetServerTrailingMetadata();
   }
