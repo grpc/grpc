@@ -32,9 +32,6 @@
 
 /* -- Fake transport security credentials. -- */
 
-#define GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS \
-  "grpc.fake_security.expected_targets"
-
 static grpc_security_status fake_transport_security_create_security_connector(
     grpc_channel_credentials* c, grpc_call_credentials* call_creds,
     const char* target, const grpc_channel_args* args,
