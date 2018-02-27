@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_STATUS_UTIL_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_STATUS_UTIL_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/status.h>
 
 #include <stdbool.h>
