@@ -16,7 +16,7 @@
  *
  */
 
-#include "src/core/lib/slice/weak_slice_hash_table.h"
+#include "src/core/lib/slice/slice_weak_hash_table.h"
 
 #include <cstring>
 #include <sstream>
@@ -27,16 +27,15 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
 namespace {
 
-typedef WeakSliceHashTable<UniquePtr<char>> TestHashTable;
-
-TEST(WeakSliceHashTable, Basic) {
-  auto table = WeakSliceHashTable<UniquePtr<char>>::Create(10);
+TEST(SliceWeakHashTable, Basic) {
+  auto table = SliceWeakHashTable<UniquePtr<char>>::Create(10);
   // Single key-value insertion.
   grpc_slice key = grpc_slice_from_copied_string("key");
   table->Add(key, UniquePtr<char>(gpr_strdup("value")));
@@ -47,19 +46,47 @@ TEST(WeakSliceHashTable, Basic) {
   ASSERT_EQ(table->Get(grpc_slice_from_static_string("unknown_key")), nullptr);
 }
 
-TEST(WeakSliceHashTable, MutableGet) {
-  auto table = WeakSliceHashTable<int>::Create(10);
+TEST(SliceWeakHashTable, LongKeys) {
+  auto table = SliceWeakHashTable<UniquePtr<char>>::Create(10);
+  // Single key-value insertion.
+  grpc_slice long_key = grpc_slice_malloc_large(64);
+  const char key_str[] = "this key is long and won't be inlined";
+  memcpy(GRPC_SLICE_START_PTR(long_key), key_str, GPR_ARRAY_SIZE(key_str));
+  table->Add(long_key, UniquePtr<char>(gpr_strdup("value")));
+  ASSERT_NE(table->Get(long_key), nullptr);
+  ASSERT_STREQ(table->Get(long_key)->get(), "value");
+  grpc_slice_unref(long_key);
+  // Unknown key.
+  ASSERT_EQ(table->Get(grpc_slice_from_static_string("unknown_key")), nullptr);
+}
+
+TEST(SliceWeakHashTable, Update) {
+  auto table = SliceWeakHashTable<int>::Create(10);
   grpc_slice key = grpc_slice_from_copied_string("key");
+  // Updates for non-existing keys are no-ops.
+  table->Update(key, 12345);
+  ASSERT_EQ(table->Get(key), nullptr);
+  // But updates over existing ones work.
   table->Add(key, 31416);
   ASSERT_NE(table->Get(key), nullptr);
-  *table->Get(key) = 27182;
+  table->Update(key, 27182);
   ASSERT_EQ(*table->Get(key), 27182);
   grpc_slice_unref(key);
 }
 
-TEST(WeakSliceHashTable, ForceOverload) {
+TEST(SliceWeakHashTable, Get) {
+  const auto& table = SliceWeakHashTable<int>::Create(10);
+  grpc_slice key = grpc_slice_from_copied_string("key");
+  table->Add(key, 31416);
+  ASSERT_NE(table->Get(key), nullptr);
+  const auto* value = table->Get(key);
+  ASSERT_EQ(*value, 31416);
+  grpc_slice_unref(key);
+}
+
+TEST(SliceWeakHashTable, ForceOverload) {
   constexpr int kTableSize = 10;
-  auto table = WeakSliceHashTable<UniquePtr<char>>::Create(kTableSize);
+  auto table = SliceWeakHashTable<UniquePtr<char>>::Create(kTableSize);
   // Insert a multiple of the maximum size table.
   for (int i = 0; i < kTableSize * 2; ++i) {
     std::ostringstream oss;

@@ -1181,6 +1181,7 @@ server_crash_test_client: $(BINDIR)/$(CONFIG)/server_crash_test_client
 server_early_return_test: $(BINDIR)/$(CONFIG)/server_early_return_test
 server_request_call_test: $(BINDIR)/$(CONFIG)/server_request_call_test
 shutdown_test: $(BINDIR)/$(CONFIG)/shutdown_test
+slice_weak_hash_table_test: $(BINDIR)/$(CONFIG)/slice_weak_hash_table_test
 stats_test: $(BINDIR)/$(CONFIG)/stats_test
 status_test: $(BINDIR)/$(CONFIG)/status_test
 streaming_throughput_test: $(BINDIR)/$(CONFIG)/streaming_throughput_test
@@ -1188,7 +1189,6 @@ stress_test: $(BINDIR)/$(CONFIG)/stress_test
 thread_manager_test: $(BINDIR)/$(CONFIG)/thread_manager_test
 thread_stress_test: $(BINDIR)/$(CONFIG)/thread_stress_test
 transport_pid_controller_test: $(BINDIR)/$(CONFIG)/transport_pid_controller_test
-weak_slice_hash_table_test: $(BINDIR)/$(CONFIG)/weak_slice_hash_table_test
 writes_per_rpc_test: $(BINDIR)/$(CONFIG)/writes_per_rpc_test
 public_headers_must_be_c89: $(BINDIR)/$(CONFIG)/public_headers_must_be_c89
 gen_hpack_tables: $(BINDIR)/$(CONFIG)/gen_hpack_tables
@@ -1640,6 +1640,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/server_early_return_test \
   $(BINDIR)/$(CONFIG)/server_request_call_test \
   $(BINDIR)/$(CONFIG)/shutdown_test \
+  $(BINDIR)/$(CONFIG)/slice_weak_hash_table_test \
   $(BINDIR)/$(CONFIG)/stats_test \
   $(BINDIR)/$(CONFIG)/status_test \
   $(BINDIR)/$(CONFIG)/streaming_throughput_test \
@@ -1647,7 +1648,6 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/thread_manager_test \
   $(BINDIR)/$(CONFIG)/thread_stress_test \
   $(BINDIR)/$(CONFIG)/transport_pid_controller_test \
-  $(BINDIR)/$(CONFIG)/weak_slice_hash_table_test \
   $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
   $(BINDIR)/$(CONFIG)/boringssl_crypto_test_data \
   $(BINDIR)/$(CONFIG)/boringssl_asn1_test \
@@ -1785,6 +1785,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/server_early_return_test \
   $(BINDIR)/$(CONFIG)/server_request_call_test \
   $(BINDIR)/$(CONFIG)/shutdown_test \
+  $(BINDIR)/$(CONFIG)/slice_weak_hash_table_test \
   $(BINDIR)/$(CONFIG)/stats_test \
   $(BINDIR)/$(CONFIG)/status_test \
   $(BINDIR)/$(CONFIG)/streaming_throughput_test \
@@ -1792,7 +1793,6 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/thread_manager_test \
   $(BINDIR)/$(CONFIG)/thread_stress_test \
   $(BINDIR)/$(CONFIG)/transport_pid_controller_test \
-  $(BINDIR)/$(CONFIG)/weak_slice_hash_table_test \
   $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
   $(BINDIR)/$(CONFIG)/resolver_component_test_unsecure \
   $(BINDIR)/$(CONFIG)/resolver_component_test \
@@ -2211,6 +2211,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/server_request_call_test || ( echo test server_request_call_test failed ; exit 1 )
 	$(E) "[RUN]     Testing shutdown_test"
 	$(Q) $(BINDIR)/$(CONFIG)/shutdown_test || ( echo test shutdown_test failed ; exit 1 )
+	$(E) "[RUN]     Testing slice_weak_hash_table_test"
+	$(Q) $(BINDIR)/$(CONFIG)/slice_weak_hash_table_test || ( echo test slice_weak_hash_table_test failed ; exit 1 )
 	$(E) "[RUN]     Testing stats_test"
 	$(Q) $(BINDIR)/$(CONFIG)/stats_test || ( echo test stats_test failed ; exit 1 )
 	$(E) "[RUN]     Testing status_test"
@@ -2223,8 +2225,6 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/thread_stress_test || ( echo test thread_stress_test failed ; exit 1 )
 	$(E) "[RUN]     Testing transport_pid_controller_test"
 	$(Q) $(BINDIR)/$(CONFIG)/transport_pid_controller_test || ( echo test transport_pid_controller_test failed ; exit 1 )
-	$(E) "[RUN]     Testing weak_slice_hash_table_test"
-	$(Q) $(BINDIR)/$(CONFIG)/weak_slice_hash_table_test || ( echo test weak_slice_hash_table_test failed ; exit 1 )
 	$(E) "[RUN]     Testing writes_per_rpc_test"
 	$(Q) $(BINDIR)/$(CONFIG)/writes_per_rpc_test || ( echo test writes_per_rpc_test failed ; exit 1 )
 	$(E) "[RUN]     Testing resolver_component_tests_runner_invoker_unsecure"
@@ -17915,6 +17915,49 @@ endif
 endif
 
 
+SLICE_WEAK_HASH_TABLE_TEST_SRC = \
+    test/core/slice/slice_weak_hash_table_test.cc \
+
+SLICE_WEAK_HASH_TABLE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SLICE_WEAK_HASH_TABLE_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/slice_weak_hash_table_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/slice_weak_hash_table_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/slice_weak_hash_table_test: $(PROTOBUF_DEP) $(SLICE_WEAK_HASH_TABLE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(SLICE_WEAK_HASH_TABLE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/slice_weak_hash_table_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/slice/slice_weak_hash_table_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_slice_weak_hash_table_test: $(SLICE_WEAK_HASH_TABLE_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SLICE_WEAK_HASH_TABLE_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 STATS_TEST_SRC = \
     test/core/debug/stats_test.cc \
 
@@ -18237,49 +18280,6 @@ deps_transport_pid_controller_test: $(TRANSPORT_PID_CONTROLLER_TEST_OBJS:.o=.dep
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(TRANSPORT_PID_CONTROLLER_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-WEAK_SLICE_HASH_TABLE_TEST_SRC = \
-    test/core/slice/weak_slice_hash_table_test.cc \
-
-WEAK_SLICE_HASH_TABLE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(WEAK_SLICE_HASH_TABLE_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/weak_slice_hash_table_test: openssl_dep_error
-
-else
-
-
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
-
-$(BINDIR)/$(CONFIG)/weak_slice_hash_table_test: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/weak_slice_hash_table_test: $(PROTOBUF_DEP) $(WEAK_SLICE_HASH_TABLE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(WEAK_SLICE_HASH_TABLE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/weak_slice_hash_table_test
-
-endif
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/slice/weak_slice_hash_table_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_weak_slice_hash_table_test: $(WEAK_SLICE_HASH_TABLE_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(WEAK_SLICE_HASH_TABLE_TEST_OBJS:.o=.dep)
 endif
 endif
 
