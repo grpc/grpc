@@ -87,6 +87,9 @@ grpc_cc_test(
     srcs = ["slice_hash_table_test.cc"],
     deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
     language = "C++",
+    external_deps = [
+        "gtest",
+    ],
 )
 
 grpc_cc_test(

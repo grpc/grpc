@@ -33,6 +33,7 @@
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
+#include "src/core/ext/filters/client_channel/method_params.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
@@ -53,114 +54,21 @@
 #include "src/core/lib/transport/service_config.h"
 #include "src/core/lib/transport/static_metadata.h"
 
+using grpc_core::internal::ClientChannelMethodParams;
+
 /* Client channel implementation */
 
 grpc_core::TraceFlag grpc_client_channel_trace(false, "client_channel");
 
 /*************************************************************************
- * METHOD-CONFIG TABLE
+ * CHANNEL-WIDE FUNCTIONS
  */
-
-typedef enum {
-  /* zero so it can be default initialized */
-  WAIT_FOR_READY_UNSET = 0,
-  WAIT_FOR_READY_FALSE,
-  WAIT_FOR_READY_TRUE
-} wait_for_ready_value;
-
-typedef struct {
-  gpr_refcount refs;
-  grpc_millis timeout;
-  wait_for_ready_value wait_for_ready;
-} method_parameters;
-
-static method_parameters* method_parameters_ref(
-    method_parameters* method_params) {
-  gpr_ref(&method_params->refs);
-  return method_params;
-}
-
-static void method_parameters_unref(method_parameters* method_params) {
-  if (gpr_unref(&method_params->refs)) {
-    gpr_free(method_params);
-  }
-}
-
-// Wrappers to pass to grpc_service_config_create_method_config_table().
-static void* method_parameters_ref_wrapper(void* value) {
-  return method_parameters_ref(static_cast<method_parameters*>(value));
-}
-static void method_parameters_unref_wrapper(void* value) {
-  method_parameters_unref(static_cast<method_parameters*>(value));
-}
-
-static bool parse_wait_for_ready(grpc_json* field,
-                                 wait_for_ready_value* wait_for_ready) {
-  if (field->type != GRPC_JSON_TRUE && field->type != GRPC_JSON_FALSE) {
-    return false;
-  }
-  *wait_for_ready = field->type == GRPC_JSON_TRUE ? WAIT_FOR_READY_TRUE
-                                                  : WAIT_FOR_READY_FALSE;
-  return true;
-}
-
-static bool parse_timeout(grpc_json* field, grpc_millis* timeout) {
-  if (field->type != GRPC_JSON_STRING) return false;
-  size_t len = strlen(field->value);
-  if (field->value[len - 1] != 's') return false;
-  char* buf = gpr_strdup(field->value);
-  buf[len - 1] = '\0';  // Remove trailing 's'.
-  char* decimal_point = strchr(buf, '.');
-  int nanos = 0;
-  if (decimal_point != nullptr) {
-    *decimal_point = '\0';
-    nanos = gpr_parse_nonnegative_int(decimal_point + 1);
-    if (nanos == -1) {
-      gpr_free(buf);
-      return false;
-    }
-    int num_digits = static_cast<int>(strlen(decimal_point + 1));
-    if (num_digits > 9) {  // We don't accept greater precision than nanos.
-      gpr_free(buf);
-      return false;
-    }
-    for (int i = 0; i < (9 - num_digits); ++i) {
-      nanos *= 10;
-    }
-  }
-  int seconds = decimal_point == buf ? 0 : gpr_parse_nonnegative_int(buf);
-  gpr_free(buf);
-  if (seconds == -1) return false;
-  *timeout = seconds * GPR_MS_PER_SEC + nanos / GPR_NS_PER_MS;
-  return true;
-}
-
-static void* method_parameters_create_from_json(const grpc_json* json) {
-  wait_for_ready_value wait_for_ready = WAIT_FOR_READY_UNSET;
-  grpc_millis timeout = 0;
-  for (grpc_json* field = json->child; field != nullptr; field = field->next) {
-    if (field->key == nullptr) continue;
-    if (strcmp(field->key, "waitForReady") == 0) {
-      if (wait_for_ready != WAIT_FOR_READY_UNSET) return nullptr;  // Duplicate.
-      if (!parse_wait_for_ready(field, &wait_for_ready)) return nullptr;
-    } else if (strcmp(field->key, "timeout") == 0) {
-      if (timeout > 0) return nullptr;  // Duplicate.
-      if (!parse_timeout(field, &timeout)) return nullptr;
-    }
-  }
-  method_parameters* value =
-      static_cast<method_parameters*>(gpr_malloc(sizeof(method_parameters)));
-  gpr_ref_init(&value->refs, 1);
-  value->timeout = timeout;
-  value->wait_for_ready = wait_for_ready;
-  return value;
-}
 
 struct external_connectivity_watcher;
 
-/*************************************************************************
- * CHANNEL-WIDE FUNCTIONS
- */
+typedef grpc_core::SliceHashTable<
+    grpc_core::RefCountedPtr<ClientChannelMethodParams>>
+    MethodParamsTable;
 
 typedef struct client_channel_channel_data {
   /** resolver for this channel */
@@ -179,7 +87,7 @@ typedef struct client_channel_channel_data {
   /** retry throttle data */
   grpc_server_retry_throttle_data* retry_throttle_data;
   /** maps method names to method_parameters structs */
-  grpc_slice_hash_table* method_params_table;
+  grpc_core::RefCountedPtr<MethodParamsTable> method_params_table;
   /** incoming resolver result - set by resolver.next() */
   grpc_channel_args* resolver_result;
   /** a list of closures that are all waiting for resolver result to come in */
@@ -306,9 +214,8 @@ typedef struct {
   grpc_server_retry_throttle_data* retry_throttle_data;
 } service_config_parsing_state;
 
-static void parse_retry_throttle_params(const grpc_json* field, void* arg) {
-  service_config_parsing_state* parsing_state =
-      static_cast<service_config_parsing_state*>(arg);
+static void parse_retry_throttle_params(
+    const grpc_json* field, service_config_parsing_state* parsing_state) {
   if (strcmp(field->key, "retryThrottling") == 0) {
     if (parsing_state->retry_throttle_data != nullptr) return;  // Duplicate.
     if (field->type != GRPC_JSON_OBJECT) return;
@@ -396,7 +303,7 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
   grpc_core::OrphanablePtr<grpc_core::LoadBalancingPolicy> new_lb_policy;
   char* service_config_json = nullptr;
   grpc_server_retry_throttle_data* retry_throttle_data = nullptr;
-  grpc_slice_hash_table* method_params_table = nullptr;
+  grpc_core::RefCountedPtr<MethodParamsTable> method_params_table;
   if (chand->resolver_result != nullptr) {
     if (chand->resolver != nullptr) {
       // Find LB policy name.
@@ -475,8 +382,8 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
       service_config_json =
           gpr_strdup(grpc_channel_arg_get_string(channel_arg));
       if (service_config_json != nullptr) {
-        grpc_service_config* service_config =
-            grpc_service_config_create(service_config_json);
+        grpc_core::UniquePtr<grpc_core::ServiceConfig> service_config =
+            grpc_core::ServiceConfig::Create(service_config_json);
         if (service_config != nullptr) {
           channel_arg = grpc_channel_args_find(chand->resolver_result,
                                                GRPC_ARG_SERVER_URI);
@@ -488,14 +395,12 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
           memset(&parsing_state, 0, sizeof(parsing_state));
           parsing_state.server_name =
               uri->path[0] == '/' ? uri->path + 1 : uri->path;
-          grpc_service_config_parse_global_params(
-              service_config, parse_retry_throttle_params, &parsing_state);
+          service_config->ParseGlobalParams(parse_retry_throttle_params,
+                                            &parsing_state);
           grpc_uri_destroy(uri);
           retry_throttle_data = parsing_state.retry_throttle_data;
-          method_params_table = grpc_service_config_create_method_config_table(
-              service_config, method_parameters_create_from_json,
-              method_parameters_ref_wrapper, method_parameters_unref_wrapper);
-          grpc_service_config_destroy(service_config);
+          method_params_table = service_config->CreateMethodConfigTable(
+              ClientChannelMethodParams::CreateFromJson);
         }
       }
       // Before we clean up, save a copy of lb_policy_name, since it might
@@ -534,10 +439,7 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
   }
   chand->retry_throttle_data = retry_throttle_data;
   // Swap out the method params table.
-  if (chand->method_params_table != nullptr) {
-    grpc_slice_hash_table_unref(chand->method_params_table);
-  }
-  chand->method_params_table = method_params_table;
+  chand->method_params_table = std::move(method_params_table);
   // If we have a new LB policy or are shutting down (in which case
   // new_lb_policy will be NULL), swap out the LB policy, unreffing the old one
   // and removing its fds from chand->interested_parties. Note that we do NOT do
@@ -794,7 +696,7 @@ static void cc_destroy_channel_elem(grpc_channel_element* elem) {
     grpc_server_retry_throttle_data_unref(chand->retry_throttle_data);
   }
   if (chand->method_params_table != nullptr) {
-    grpc_slice_hash_table_unref(chand->method_params_table);
+    chand->method_params_table.reset();
   }
   grpc_client_channel_stop_backup_polling(chand->interested_parties);
   grpc_connectivity_state_destroy(&chand->state_tracker);
@@ -841,7 +743,7 @@ typedef struct client_channel_call_data {
   grpc_call_combiner* call_combiner;
 
   grpc_server_retry_throttle_data* retry_throttle_data;
-  method_parameters* method_params;
+  grpc_core::RefCountedPtr<ClientChannelMethodParams> method_params;
 
   grpc_subchannel_call* subchannel_call;
   grpc_error* error;
@@ -970,17 +872,16 @@ static void apply_service_config_to_call_locked(grpc_call_element* elem) {
         grpc_server_retry_throttle_data_ref(chand->retry_throttle_data);
   }
   if (chand->method_params_table != nullptr) {
-    calld->method_params = static_cast<method_parameters*>(
-        grpc_method_config_table_get(chand->method_params_table, calld->path));
+    calld->method_params = grpc_core::ServiceConfig::MethodConfigTableLookup(
+        *chand->method_params_table, calld->path);
     if (calld->method_params != nullptr) {
-      method_parameters_ref(calld->method_params);
       // If the deadline from the service config is shorter than the one
       // from the client API, reset the deadline timer.
       if (chand->deadline_checking_enabled &&
-          calld->method_params->timeout != 0) {
+          calld->method_params->timeout() != 0) {
         const grpc_millis per_method_deadline =
             grpc_timespec_to_millis_round_up(calld->call_start_time) +
-            calld->method_params->timeout;
+            calld->method_params->timeout();
         if (per_method_deadline < calld->deadline) {
           calld->deadline = per_method_deadline;
           grpc_deadline_state_reset(elem, calld->deadline);
@@ -1109,9 +1010,11 @@ static bool pick_callback_start_locked(grpc_call_element* elem) {
       GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET;
   const bool wait_for_ready_set_from_service_config =
       calld->method_params != nullptr &&
-      calld->method_params->wait_for_ready != WAIT_FOR_READY_UNSET;
+      calld->method_params->wait_for_ready() !=
+          ClientChannelMethodParams::WAIT_FOR_READY_UNSET;
   if (!wait_for_ready_set_from_api && wait_for_ready_set_from_service_config) {
-    if (calld->method_params->wait_for_ready == WAIT_FOR_READY_TRUE) {
+    if (calld->method_params->wait_for_ready() ==
+        ClientChannelMethodParams::WAIT_FOR_READY_TRUE) {
       initial_metadata_flags |= GRPC_INITIAL_METADATA_WAIT_FOR_READY;
     } else {
       initial_metadata_flags &= ~GRPC_INITIAL_METADATA_WAIT_FOR_READY;
@@ -1441,9 +1344,7 @@ static void cc_destroy_call_elem(grpc_call_element* elem,
     grpc_deadline_state_destroy(elem);
   }
   grpc_slice_unref_internal(calld->path);
-  if (calld->method_params != nullptr) {
-    method_parameters_unref(calld->method_params);
-  }
+  calld->method_params.reset();
   GRPC_ERROR_UNREF(calld->error);
   if (calld->subchannel_call != nullptr) {
     grpc_subchannel_call_set_cleanup_closure(calld->subchannel_call,
