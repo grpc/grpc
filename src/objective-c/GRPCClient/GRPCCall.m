@@ -108,6 +108,9 @@ static NSString * const kBearerPrefix = @"Bearer ";
   // The dispatch queue to be used for enqueuing responses to user. Defaulted to the main dispatch
   // queue
   dispatch_queue_t _responseQueue;
+
+  // Whether the call is finished. If it is, should not call finishWithError again.
+  BOOL _finished;
 }
 
 @synthesize state = _state;
@@ -214,13 +217,27 @@ static NSString * const kBearerPrefix = @"Bearer ";
 }
 
 - (void)cancel {
-  [self finishWithError:[NSError errorWithDomain:kGRPCErrorDomain
-                                            code:GRPCErrorCodeCancelled
-                                        userInfo:@{NSLocalizedDescriptionKey: @"Canceled by app"}]];
+  [self maybeFinishWithError:[NSError errorWithDomain:kGRPCErrorDomain
+                                                 code:GRPCErrorCodeCancelled
+                                             userInfo:@{NSLocalizedDescriptionKey: @"Canceled by app"}]];
+
   if (!self.isWaitingForToken) {
     [self cancelCall];
   } else {
     self.isWaitingForToken = NO;
+  }
+}
+
+- (void)maybeFinishWithError:(NSError *)errorOrNil {
+  BOOL toFinish = NO;
+  @synchronized(self) {
+    if (_finished == NO) {
+      _finished = YES;
+      toFinish = YES;
+    }
+  }
+  if (toFinish == YES) {
+    [self finishWithError:errorOrNil];
   }
 }
 
@@ -268,9 +285,9 @@ static NSString * const kBearerPrefix = @"Bearer ";
         // don't want to throw, because the app shouldn't crash for a behavior
         // that's on the hands of any server to have. Instead we finish and ask
         // the server to cancel.
-        [strongSelf finishWithError:[NSError errorWithDomain:kGRPCErrorDomain
-                                                        code:GRPCErrorCodeResourceExhausted
-                                                    userInfo:@{NSLocalizedDescriptionKey: @"Client does not have enough memory to hold the server response."}]];
+        [strongSelf maybeFinishWithError:[NSError errorWithDomain:kGRPCErrorDomain
+                                                             code:GRPCErrorCodeResourceExhausted
+                                                         userInfo:@{NSLocalizedDescriptionKey: @"Client does not have enough memory to hold the server response."}]];
         [strongSelf cancelCall];
         return;
       }
@@ -340,9 +357,9 @@ static NSString * const kBearerPrefix = @"Bearer ";
     [self writeMessage:value withErrorHandler:^{
       __strong GRPCCall *strongSelf = weakSelf;
       if (strongSelf != nil) {
-        [strongSelf finishWithError:[NSError errorWithDomain:kGRPCErrorDomain
-                                                        code:GRPCErrorCodeInternal
-                                                    userInfo:nil]];
+        [strongSelf maybeFinishWithError:[NSError errorWithDomain:kGRPCErrorDomain
+                                                             code:GRPCErrorCodeInternal
+                                                         userInfo:nil]];
         // Wrapped call must be canceled when error is reported to upper layers
         [strongSelf cancelCall];
       }
@@ -371,9 +388,9 @@ static NSString * const kBearerPrefix = @"Bearer ";
       __weak GRPCCall *weakSelf = self;
       [self finishRequestWithErrorHandler:^{
         __strong GRPCCall *strongSelf = weakSelf;
-        [strongSelf finishWithError:[NSError errorWithDomain:kGRPCErrorDomain
-                                                        code:GRPCErrorCodeInternal
-                                                    userInfo:nil]];
+        [strongSelf maybeFinishWithError:[NSError errorWithDomain:kGRPCErrorDomain
+                                                             code:GRPCErrorCodeInternal
+                                                         userInfo:nil]];
         // Wrapped call must be canceled when error is reported to upper layers
         [strongSelf cancelCall];
       }];
@@ -426,7 +443,7 @@ static NSString * const kBearerPrefix = @"Bearer ";
         }
         error = [NSError errorWithDomain:error.domain code:error.code userInfo:userInfo];
       }
-      [strongSelf finishWithError:error];
+      [strongSelf maybeFinishWithError:error];
     }
   }];
   // Now that the RPC has been initiated, request writes can start.
