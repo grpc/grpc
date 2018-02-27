@@ -27,15 +27,10 @@
 namespace grpc_core {
 namespace internal {
 
-bool check_bios_data(const char* bios_data_file) { return false; }
-
-}  // namespace internal
-}  // namespace grpc_core
-
 bool is_running_on_gcp() {
   gpr_log(GPR_ERROR,
           "Platforms other than Linux and Windows are not supported");
-  return grpc_core::internal::check_bios_data(nullptr);
+  return false;
 }
 
 #endif  // !defined(LINUX) && !defined(GPR_WINDOWS)

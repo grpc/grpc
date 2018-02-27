@@ -18,16 +18,6 @@ licenses(["notice"])  # Apache v2
 
 grpc_package(name = "frame_protector")
 
-grpc_cc_library(
-    name = "alts_frame_protector_test_lib",
-    srcs = ["alts_frame_protector_test_lib.cc"],
-    hdrs = ["alts_frame_protector_test_lib.h"],
-    deps = [
-        "//:grpc",
-        "//test/core/tsi/alts/crypt:alts_crypt_test_util",
-    ],
-)
-
 grpc_cc_test(
     name = "alts_counter_test",
     srcs = ["alts_counter_test.cc"],
@@ -53,9 +43,9 @@ grpc_cc_test(
     srcs = ["alts_frame_protector_test.cc"],
     language = "C++",
     deps = [
-        ":alts_frame_protector_test_lib",
         "//:grpc",
         "//test/core/tsi/alts/crypt:alts_crypt_test_util",
+        "//test/core/tsi:transport_security_test_lib",
     ],
 )
 

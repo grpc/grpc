@@ -17,11 +17,98 @@
  */
 
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
-#include "test/core/tsi/alts/frame_protector/alts_frame_protector_test_lib.h"
+#include <stdbool.h>
 
+#include "src/core/tsi/alts/crypt/gsec.h"
+#include "src/core/tsi/alts/frame_protector/alts_frame_protector.h"
+#include "src/core/tsi/transport_security_interface.h"
+#include "test/core/tsi/alts/crypt/gsec_test_util.h"
+#include "test/core/tsi/transport_security_test_lib.h"
+
+const size_t kChannelSize = 32768;
 const size_t kNumOfArguments = 7;
 const size_t kNumOfCombinations = 128;
+
+static void alts_test_do_round_trip_check_frames(
+    tsi_test_frame_protector_fixture* fixture, const uint8_t* key,
+    const size_t key_size, bool rekey, const uint8_t* client_message,
+    const size_t client_message_size, const uint8_t* client_expected_frames,
+    const size_t client_frame_size, const uint8_t* server_message,
+    const size_t server_message_size, const uint8_t* server_expected_frames,
+    const size_t server_frame_size) {
+  GPR_ASSERT(fixture != nullptr);
+  GPR_ASSERT(fixture->config != nullptr);
+  tsi_frame_protector* client_frame_protector = nullptr;
+  tsi_frame_protector* server_frame_protector = nullptr;
+  tsi_test_frame_protector_config* config = fixture->config;
+  tsi_test_channel* channel = fixture->channel;
+  /* Create a client frame protector. */
+  size_t client_max_output_protected_frame_size =
+      config->client_max_output_protected_frame_size;
+  GPR_ASSERT(
+      alts_create_frame_protector(key, key_size, /*is_client=*/true, rekey,
+                                  client_max_output_protected_frame_size == 0
+                                      ? nullptr
+                                      : &client_max_output_protected_frame_size,
+                                  &client_frame_protector) == TSI_OK);
+  /* Create a server frame protector. */
+  size_t server_max_output_protected_frame_size =
+      config->server_max_output_protected_frame_size;
+  GPR_ASSERT(
+      alts_create_frame_protector(key, key_size, /*is_client=*/false, rekey,
+                                  server_max_output_protected_frame_size == 0
+                                      ? nullptr
+                                      : &server_max_output_protected_frame_size,
+                                  &server_frame_protector) == TSI_OK);
+  tsi_test_frame_protector_fixture_init(fixture, client_frame_protector,
+                                        server_frame_protector);
+  /* Client sends a message to server. */
+  uint8_t* saved_client_message = config->client_message;
+  config->client_message = const_cast<uint8_t*>(client_message);
+  config->client_message_size = client_message_size;
+  send_message_to_peer(config, channel, client_frame_protector,
+                       /*is_client=*/true);
+  /* Verify if the generated frame is the same as the expected. */
+  GPR_ASSERT(channel->bytes_written_to_server_channel == client_frame_size);
+  GPR_ASSERT(memcmp(client_expected_frames, channel->server_channel,
+                    client_frame_size) == 0);
+  unsigned char* server_received_message =
+      static_cast<unsigned char*>(gpr_malloc(kChannelSize));
+  size_t server_received_message_size = 0;
+  receive_message_from_peer(config, channel, server_frame_protector,
+                            server_received_message,
+                            &server_received_message_size, /*is_client=*/false);
+  GPR_ASSERT(config->client_message_size == server_received_message_size);
+  GPR_ASSERT(memcmp(config->client_message, server_received_message,
+                    server_received_message_size) == 0);
+  /* Server sends a message to client. */
+  uint8_t* saved_server_message = config->server_message;
+  config->server_message = const_cast<uint8_t*>(server_message);
+  config->server_message_size = server_message_size;
+  send_message_to_peer(config, channel, server_frame_protector,
+                       /*is_client=*/false);
+  /* Verify if the generated frame is the same as the expected. */
+  GPR_ASSERT(channel->bytes_written_to_client_channel == server_frame_size);
+  GPR_ASSERT(memcmp(server_expected_frames, channel->client_channel,
+                    server_frame_size) == 0);
+  unsigned char* client_received_message =
+      static_cast<unsigned char*>(gpr_malloc(kChannelSize));
+  size_t client_received_message_size = 0;
+  receive_message_from_peer(config, channel, client_frame_protector,
+                            client_received_message,
+                            &client_received_message_size,
+                            /*is_client=*/true);
+  GPR_ASSERT(config->server_message_size == client_received_message_size);
+  GPR_ASSERT(memcmp(config->server_message, client_received_message,
+                    client_received_message_size) == 0);
+  config->client_message = saved_client_message;
+  config->server_message = saved_server_message;
+  /* Destroy server and client frame protectors. */
+  gpr_free(server_received_message);
+  gpr_free(client_received_message);
+}
 
 static void alts_test_do_round_trip_vector_tests() {
   const uint8_t key[] = {0xfe, 0xff, 0xe9, 0x92, 0x86, 0x65, 0x73, 0x1c,
@@ -40,10 +127,8 @@ static void alts_test_do_round_trip_vector_tests() {
       0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c,
       0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
       0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f, 0x30};
-
   const size_t small_message_size = sizeof(small_message) / sizeof(uint8_t);
   const size_t large_message_size = sizeof(large_message) / sizeof(uint8_t);
-
   /* Test small client message and large server message. */
   const uint8_t client_expected_frame1[] = {
       0x1f, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x09, 0xd8, 0xd5, 0x92,
@@ -67,15 +152,14 @@ static void alts_test_do_round_trip_vector_tests() {
       sizeof(client_expected_frame1) / sizeof(uint8_t);
   const size_t server_frame_size1 =
       sizeof(server_expected_frame1) / sizeof(uint8_t);
-  alts_test_config* config =
-      alts_test_create_config(true, true, true, true, true, true, true);
+  tsi_test_frame_protector_fixture* fixture =
+      tsi_test_frame_protector_fixture_create();
   alts_test_do_round_trip_check_frames(
-      config, key, kAes128GcmKeyLength, /*rekey=*/false,
+      fixture, key, kAes128GcmKeyLength, /*rekey=*/false,
       reinterpret_cast<const uint8_t*>(small_message), small_message_size,
       client_expected_frame1, client_frame_size1, large_message,
       large_message_size, server_expected_frame1, server_frame_size1);
-  alts_test_destroy_config(config);
-
+  tsi_test_frame_protector_fixture_destroy(fixture);
   /**
    * Test large client message, small server message, and small
    * message_buffer_allocated_size.
@@ -102,14 +186,13 @@ static void alts_test_do_round_trip_vector_tests() {
       sizeof(client_expected_frame2) / sizeof(uint8_t);
   const size_t server_frame_size2 =
       sizeof(server_expected_frame2) / sizeof(uint8_t);
-  config = alts_test_create_config(true, false, true, true, true, true, true);
+  fixture = tsi_test_frame_protector_fixture_create();
   alts_test_do_round_trip_check_frames(
-      config, key, kAes128GcmKeyLength, /*rekey=*/false, large_message,
+      fixture, key, kAes128GcmKeyLength, /*rekey=*/false, large_message,
       large_message_size, client_expected_frame2, client_frame_size2,
       reinterpret_cast<const uint8_t*>(small_message), small_message_size,
       server_expected_frame2, server_frame_size2);
-  alts_test_destroy_config(config);
-
+  tsi_test_frame_protector_fixture_destroy(fixture);
   /**
    * Test large client message, small server message, and small
    * protected_buffer_size.
@@ -136,14 +219,13 @@ static void alts_test_do_round_trip_vector_tests() {
       sizeof(client_expected_frame3) / sizeof(uint8_t);
   const size_t server_frame_size3 =
       sizeof(server_expected_frame3) / sizeof(uint8_t);
-  config = alts_test_create_config(true, true, false, true, true, true, true);
+  fixture = tsi_test_frame_protector_fixture_create();
   alts_test_do_round_trip_check_frames(
-      config, key, kAes128GcmKeyLength, /*rekey=*/false, large_message,
+      fixture, key, kAes128GcmKeyLength, /*rekey=*/false, large_message,
       large_message_size, client_expected_frame3, client_frame_size3,
       reinterpret_cast<const uint8_t*>(small_message), small_message_size,
       server_expected_frame3, server_frame_size3);
-  alts_test_destroy_config(config);
-
+  tsi_test_frame_protector_fixture_destroy(fixture);
   /**
    * Test large client message, small server message, and small
    * read_buffer_allocated_size.
@@ -170,14 +252,13 @@ static void alts_test_do_round_trip_vector_tests() {
       sizeof(client_expected_frame4) / sizeof(uint8_t);
   const size_t server_frame_size4 =
       sizeof(server_expected_frame4) / sizeof(uint8_t);
-  config = alts_test_create_config(false, true, true, true, true, true, true);
+  fixture = tsi_test_frame_protector_fixture_create();
   alts_test_do_round_trip_check_frames(
-      config, key, kAes128GcmKeyLength, /*rekey=*/false, large_message,
+      fixture, key, kAes128GcmKeyLength, /*rekey=*/false, large_message,
       large_message_size, client_expected_frame4, client_frame_size4,
       reinterpret_cast<const uint8_t*>(small_message), small_message_size,
       server_expected_frame4, server_frame_size4);
-  alts_test_destroy_config(config);
-
+  tsi_test_frame_protector_fixture_destroy(fixture);
   /**
    * Test large client message, small server message, and small
    * client_max_output_protected_frame_size.
@@ -204,14 +285,13 @@ static void alts_test_do_round_trip_vector_tests() {
       sizeof(client_expected_frame5) / sizeof(uint8_t);
   const size_t server_frame_size5 =
       sizeof(server_expected_frame5) / sizeof(uint8_t);
-  config = alts_test_create_config(true, true, true, true, true, false, true);
+  fixture = tsi_test_frame_protector_fixture_create();
   alts_test_do_round_trip_check_frames(
-      config, key, kAes128GcmKeyLength, /*rekey=*/false, large_message,
+      fixture, key, kAes128GcmKeyLength, /*rekey=*/false, large_message,
       large_message_size, client_expected_frame5, client_frame_size5,
       reinterpret_cast<const uint8_t*>(small_message), small_message_size,
       server_expected_frame5, server_frame_size5);
-  alts_test_destroy_config(config);
-
+  tsi_test_frame_protector_fixture_destroy(fixture);
   /**
    * Test small client message, large server message, and small
    * server_max_output_protected_frame_size.
@@ -238,37 +318,48 @@ static void alts_test_do_round_trip_vector_tests() {
       sizeof(client_expected_frame6) / sizeof(uint8_t);
   const size_t server_frame_size6 =
       sizeof(server_expected_frame6) / sizeof(uint8_t);
-  config = alts_test_create_config(true, true, true, true, true, true, false);
+  fixture = tsi_test_frame_protector_fixture_create();
   alts_test_do_round_trip_check_frames(
-      config, key, kAes128GcmKeyLength, /*rekey=*/false,
+      fixture, key, kAes128GcmKeyLength, /*rekey=*/false,
       reinterpret_cast<const uint8_t*>(small_message), small_message_size,
       client_expected_frame6, client_frame_size6, large_message,
       large_message_size, server_expected_frame6, server_frame_size6);
-  alts_test_destroy_config(config);
+  tsi_test_frame_protector_fixture_destroy(fixture);
 }
 
-/* Run a round trip test with odd buffer sizes. */
-static void alts_test_do_round_trip_odd_buffer_size(bool rekey) {
-  size_t odd_sizes[] = {1025, 2051, 4103, 8207, 16409};
-  size_t size = sizeof(odd_sizes) / sizeof(size_t);
-  size_t ind1 = 0, ind2 = 0, ind3 = 0, ind4 = 0, ind5 = 0;
-  for (ind1 = 0; ind1 < size; ind1++) {
-    for (ind2 = 0; ind2 < size; ind2++) {
-      for (ind3 = 0; ind3 < size; ind3++) {
-        for (ind4 = 0; ind4 < size; ind4++) {
-          for (ind5 = 0; ind5 < size; ind5++) {
-            alts_test_config* config = alts_test_create_config(
-                true, true, true, true, false, true, true);
-            alts_test_set_config(config, odd_sizes[ind1], odd_sizes[ind2],
-                                 odd_sizes[ind3], odd_sizes[ind4],
-                                 odd_sizes[ind5]);
-            alts_test_do_round_trip(config, rekey);
-            alts_test_destroy_config(config);
-          }
-        }
-      }
-    }
-  }
+static void alts_test_do_round_trip(tsi_test_frame_protector_fixture* fixture,
+                                    bool rekey) {
+  GPR_ASSERT(fixture != nullptr);
+  GPR_ASSERT(fixture->config != nullptr);
+  tsi_frame_protector* client_frame_protector = nullptr;
+  tsi_frame_protector* server_frame_protector = nullptr;
+  tsi_test_frame_protector_config* config = fixture->config;
+  /* Create a key to be used by both client and server. */
+  uint8_t* key = nullptr;
+  size_t key_length = rekey ? kAes128GcmRekeyKeyLength : kAes128GcmKeyLength;
+  gsec_test_random_array(&key, key_length);
+  /* Create a client frame protector. */
+  size_t client_max_output_protected_frame_size =
+      config->client_max_output_protected_frame_size;
+  GPR_ASSERT(
+      alts_create_frame_protector(key, key_length, /*is_client=*/true, rekey,
+                                  client_max_output_protected_frame_size == 0
+                                      ? nullptr
+                                      : &client_max_output_protected_frame_size,
+                                  &client_frame_protector) == TSI_OK);
+  /* Create a server frame protector. */
+  size_t server_max_output_protected_frame_size =
+      config->server_max_output_protected_frame_size;
+  GPR_ASSERT(
+      alts_create_frame_protector(key, key_length, /*is_client=*/false, rekey,
+                                  server_max_output_protected_frame_size == 0
+                                      ? nullptr
+                                      : &server_max_output_protected_frame_size,
+                                  &server_frame_protector) == TSI_OK);
+  tsi_test_frame_protector_fixture_init(fixture, client_frame_protector,
+                                        server_frame_protector);
+  tsi_do_round_trip_no_handshake(fixture);
+  gpr_free(key);
 }
 
 /* Run all combinations of different arguments of test config. */
@@ -283,23 +374,20 @@ static void alts_test_do_round_trip_all(bool rekey) {
       bit_array[ind] = (v & mask) ? 1 : 0;
       v <<= 1;
     }
-    alts_test_config* config = alts_test_create_config(
+    tsi_test_frame_protector_fixture* fixture =
+        tsi_test_frame_protector_fixture_create();
+    tsi_test_frame_protector_config_destroy(fixture->config);
+    fixture->config = tsi_test_frame_protector_config_create(
         bit_array[0], bit_array[1], bit_array[2], bit_array[3], bit_array[4],
-        bit_array[5], bit_array[6]);
-    alts_test_do_round_trip(config, rekey);
-    alts_test_destroy_config(config);
+        bit_array[5], bit_array[6], bit_array[7]);
+    alts_test_do_round_trip(fixture, rekey);
+    tsi_test_frame_protector_fixture_destroy(fixture);
   }
   gpr_free(bit_array);
 }
 
 int main(int argc, char** argv) {
-  alts_test_do_ping_pong(/*rekey=*/false);
-  alts_test_do_ping_pong(/*rekey=*/true);
   alts_test_do_round_trip_vector_tests();
-  alts_test_do_round_trip_odd_buffer_size(/*rekey=*/false);
-  alts_test_do_round_trip_odd_buffer_size(/*rekey=*/true);
-  alts_test_do_round_trip_all(/*rekey=*/false);
-  alts_test_do_round_trip_all(/*rekey=*/true);
   alts_test_do_round_trip_all(/*rekey=*/false);
   alts_test_do_round_trip_all(/*rekey=*/true);
   return 0;

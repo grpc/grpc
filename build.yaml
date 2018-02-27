@@ -3640,15 +3640,14 @@ targets:
 - name: alts_frame_protector_test
   build: test
   language: c++
-  headers:
-  - test/core/tsi/alts/frame_protector/alts_frame_protector_test_lib.h
   src:
   - test/core/tsi/alts/frame_protector/alts_frame_protector_test.cc
-  - test/core/tsi/alts/frame_protector/alts_frame_protector_test_lib.cc
   deps:
   - alts_test_util
   - gpr
   - grpc
+  filegroups:
+  - transport_security_test_lib
 - name: alts_grpc_record_protocol_test
   build: test
   language: c++

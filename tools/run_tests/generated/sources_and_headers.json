@@ -2501,18 +2501,15 @@
     "deps": [
       "alts_test_util", 
       "gpr", 
-      "grpc"
+      "grpc", 
+      "transport_security_test_lib"
     ], 
-    "headers": [
-      "test/core/tsi/alts/frame_protector/alts_frame_protector_test_lib.h"
-    ], 
+    "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "alts_frame_protector_test", 
     "src": [
-      "test/core/tsi/alts/frame_protector/alts_frame_protector_test.cc", 
-      "test/core/tsi/alts/frame_protector/alts_frame_protector_test_lib.cc", 
-      "test/core/tsi/alts/frame_protector/alts_frame_protector_test_lib.h"
+      "test/core/tsi/alts/frame_protector/alts_frame_protector_test.cc"
     ], 
     "third_party": false, 
     "type": "target"

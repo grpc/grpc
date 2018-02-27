@@ -8884,7 +8884,7 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(alts_frame_protector_test
   test/core/tsi/alts/frame_protector/alts_frame_protector_test.cc
-  test/core/tsi/alts/frame_protector/alts_frame_protector_test_lib.cc
+  test/core/tsi/transport_security_test_lib.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
