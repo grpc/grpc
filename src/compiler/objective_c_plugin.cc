@@ -107,14 +107,6 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
  public:
   ObjectiveCGrpcGenerator() {}
   virtual ~ObjectiveCGrpcGenerator() {}
-
- private:
-  static const ::grpc::string kNonNullBegin = "NS_ASSUME_NONNULL_BEGIN\n";
-  static const ::grpc::string kNonNullEnd = "NS_ASSUME_NONNULL_END\n";
-  static const ::grpc::string kProtocolOnly = "GPB_GRPC_PROTOCOL_ONLY";
-  static const ::grpc::string kForwardDeclare =
-      "GPB_GRPC_FORWARD_DECLARE_MESSAGE_PROTO";
-
  public:
   virtual bool Generate(const grpc::protobuf::FileDescriptor* file,
                         const ::grpc::string& parameter,
@@ -124,6 +116,12 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       // No services.  Do nothing.
       return true;
     }
+
+    static const ::grpc::string kNonNullBegin = "NS_ASSUME_NONNULL_BEGIN\n";
+    static const ::grpc::string kNonNullEnd = "NS_ASSUME_NONNULL_END\n";
+    static const ::grpc::string kProtocolOnly = "GPB_GRPC_PROTOCOL_ONLY";
+    static const ::grpc::string kForwardDeclare =
+        "GPB_GRPC_FORWARD_DECLARE_MESSAGE_PROTO";
 
     auto OmitIf = [](const ::grpc::string& s, const ::grpc::string& v) {
       return PreprocIf(s, v, kInvertCondition | kCheckIfDefined);
