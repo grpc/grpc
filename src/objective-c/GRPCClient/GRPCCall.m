@@ -343,6 +343,8 @@ static NSString * const kBearerPrefix = @"Bearer ";
         [strongSelf finishWithError:[NSError errorWithDomain:kGRPCErrorDomain
                                                         code:GRPCErrorCodeInternal
                                                     userInfo:nil]];
+        // Wrapped call must be canceled when error is reported to upper layers
+        [strongSelf cancelCall];
       }
     }];
   });
@@ -372,6 +374,8 @@ static NSString * const kBearerPrefix = @"Bearer ";
         [strongSelf finishWithError:[NSError errorWithDomain:kGRPCErrorDomain
                                                         code:GRPCErrorCodeInternal
                                                     userInfo:nil]];
+        // Wrapped call must be canceled when error is reported to upper layers
+        [strongSelf cancelCall];
       }];
     });
   }
