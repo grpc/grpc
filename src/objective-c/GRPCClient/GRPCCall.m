@@ -209,6 +209,8 @@ static NSString * const kBearerPrefix = @"Bearer ";
   } else {
     [_responseWriteable enqueueSuccessfulCompletion];
   }
+
+  [GRPCConnectivityMonitor unregisterObserver:self];
 }
 
 - (void)cancelCall {
@@ -473,16 +475,8 @@ static NSString * const kBearerPrefix = @"Bearer ";
     // TODO(jcanizales): Check this on init.
     [NSException raise:NSInvalidArgumentException format:@"host of %@ is nil", _host];
   }
-  _connectivityMonitor = [GRPCConnectivityMonitor monitorWithHost:host];
-  __weak typeof(self) weakSelf = self;
-  void (^handler)(void) = ^{
-    typeof(self) strongSelf = weakSelf;
-    [strongSelf finishWithError:[NSError errorWithDomain:kGRPCErrorDomain
-                                                    code:GRPCErrorCodeUnavailable
-                                                userInfo:@{ NSLocalizedDescriptionKey : @"Connectivity lost." }]];
-  };
-  [_connectivityMonitor handleLossWithHandler:handler
-                      wifiStatusChangeHandler:nil];
+  [GRPCConnectivityMonitor registerObserver:self
+                                   selector:@selector(connectivityChanged:)];
 }
 
 - (void)startWithWriteable:(id<GRXWriteable>)writeable {
@@ -544,6 +538,14 @@ static NSString * const kBearerPrefix = @"Bearer ";
         return;
     }
   }
+}
+
+- (void)connectivityChanged:(NSNotification *)note {
+  [self maybeFinishWithError:[NSError errorWithDomain:kGRPCErrorDomain
+                                                 code:GRPCErrorCodeUnavailable
+                                             userInfo:@{ NSLocalizedDescriptionKey : @"Connectivity lost." }]];
+  // Cancel underlying call upon this notification
+  [self cancelCall];
 }
 
 @end
