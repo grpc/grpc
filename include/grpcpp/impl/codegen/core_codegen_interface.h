@@ -81,6 +81,8 @@ class CoreCodegenInterface {
 
   virtual grpc_byte_buffer* grpc_byte_buffer_copy(grpc_byte_buffer* bb) = 0;
   virtual void grpc_byte_buffer_destroy(grpc_byte_buffer* bb) = 0;
+  virtual size_t grpc_byte_buffer_length(grpc_byte_buffer* bb)
+      GRPC_MUST_USE_RESULT = 0;
 
   virtual int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader* reader,
                                            grpc_byte_buffer* buffer)
@@ -95,6 +97,9 @@ class CoreCodegenInterface {
   virtual grpc_slice grpc_slice_new_with_user_data(void* p, size_t len,
                                                    void (*destroy)(void*),
                                                    void* user_data) = 0;
+  virtual grpc_slice grpc_slice_new_with_len(void* p, size_t len,
+                                             void (*destroy)(void*,
+                                                             size_t)) = 0;
   virtual grpc_call_error grpc_call_cancel_with_status(grpc_call* call,
                                                        grpc_status_code status,
                                                        const char* description,
