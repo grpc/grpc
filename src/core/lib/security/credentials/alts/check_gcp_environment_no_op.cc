@@ -24,16 +24,10 @@
 
 #include <grpc/support/log.h>
 
-namespace grpc_core {
-namespace internal {
-
 bool is_running_on_gcp() {
   gpr_log(GPR_ERROR,
           "Platforms other than Linux and Windows are not supported");
   return false;
 }
-
-}  // namespace internal
-}  // namespace grpc_core
 
 #endif  // !defined(LINUX) && !defined(GPR_WINDOWS)

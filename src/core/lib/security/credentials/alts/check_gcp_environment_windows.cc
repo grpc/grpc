@@ -31,25 +31,26 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
+#define GRPC_ALTS_EXPECT_NAME_GOOGLE "Google"
+#define GRPC_ALTS_WINDOWS_CHECK_COMMAND "powershell.exe"
+#define GRPC_ALTS_WINDOWS_CHECK_COMMAND_ARGS \
+  "(Get-WmiObject -Class Win32_BIOS).Manufacturer"
+#define GRPC_ALTS_WINDOWS_CHECK_BIOS_FILE "windows_bios.data"
+
+const size_t kBiosDataBufferSize = 256;
+
 static bool g_compute_engine_detection_done = false;
 static bool g_is_on_compute_engine = false;
 static gpr_mu g_mu;
 static gpr_once g_once = GPR_ONCE_INIT;
-
-const char kExpectNameGoogle[] = "Google";
-const char kWindowsCheckCommand[] = "powershell.exe";
-const char kWindowsCheckCommandArgs[] =
-    "(Get-WmiObject -Class Win32_BIOS).Manufacturer";
-const char kWindowsCheckBiosFile[] = "windows_bios.data";
-const size_t kBiosDataBufferSize = 256;
 
 namespace grpc_core {
 namespace internal {
 
 bool check_bios_data(const char* bios_data_file) {
   char* bios_data = read_bios_file(bios_data_file);
-  bool result = !strcmp(bios_data, kExpectNameGoogle);
-  remove(kWindowsCheckBiosFile);
+  bool result = !strcmp(bios_data, GRPC_ALTS_EXPECT_NAME_GOOGLE);
+  remove(GRPC_ALTS_WINDOWS_CHECK_BIOS_FILE);
   gpr_free(bios_data);
   return result;
 }
@@ -64,7 +65,7 @@ static bool run_powershell() {
   sa.nLength = sizeof(sa);
   sa.lpSecurityDescriptor = NULL;
   sa.bInheritHandle = TRUE;
-  HANDLE h = CreateFile(_T(kWindowsCheckBiosFile), GENERIC_WRITE,
+  HANDLE h = CreateFile(_T(GRPC_ALTS_WINDOWS_CHECK_BIOS_FILE), GENERIC_WRITE,
                         FILE_SHARE_WRITE | FILE_SHARE_READ, &sa, OPEN_ALWAYS,
                         FILE_ATTRIBUTE_NORMAL, NULL);
   if (h == INVALID_HANDLE_VALUE) {
@@ -82,8 +83,9 @@ static bool run_powershell() {
   si.hStdError = h;
   si.hStdOutput = h;
   TCHAR cmd[kBiosDataBufferSize];
-  _sntprintf(cmd, kBiosDataBufferSize, _T("%s %s"), _T(kWindowsCheckCommand),
-             _T(kWindowsCheckCommandArgs));
+  _sntprintf(cmd, kBiosDataBufferSize, _T("%s %s"),
+             _T(GRPC_ALTS_WINDOWS_CHECK_COMMAND),
+             _T(GRPC_ALTS_WINDOWS_CHECK_COMMAND_ARGS));
   if (!CreateProcess(NULL, cmd, NULL, NULL, TRUE, flags, NULL, NULL, &si,
                      &pi)) {
     gpr_log(GPR_ERROR, "CreateProcess failed (%d).\n", GetLastError());
@@ -104,8 +106,8 @@ bool is_running_on_gcp() {
     return g_is_on_compute_engine;
   }
   g_compute_engine_detection_done = true;
-  bool result = run_powershell() &&
-                grpc_core::internal::check_bios_data(kWindowsCheckBiosFile);
+  bool result = run_powershell() && grpc_core::internal::check_bios_data(
+                                        GRPC_ALTS_WINDOWS_CHECK_BIOS_FILE);
   g_is_on_compute_engine = result;
   gpr_mu_unlock(&g_mu);
   return result;

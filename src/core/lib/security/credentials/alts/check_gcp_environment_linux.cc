@@ -27,22 +27,22 @@
 
 #include <string.h>
 
+#define GRPC_ALTS_EXPECT_NAME_GOOGLE "Google"
+#define GRPC_ALTS_EXPECT_NAME_GCE "Google Compute Engine"
+#define GRPC_ALTS_PRODUCT_NAME_FILE "/sys/class/dmi/id/product_name"
+
 static bool g_compute_engine_detection_done = false;
 static bool g_is_on_compute_engine = false;
 static gpr_mu g_mu;
 static gpr_once g_once = GPR_ONCE_INIT;
-
-const char kExpectNameGoogle[] = "Google";
-const char kExpectNameGce[] = "Google Compute Engine";
-const char kProductNameFile[] = "/sys/class/dmi/id/product_name";
 
 namespace grpc_core {
 namespace internal {
 
 bool check_bios_data(const char* bios_data_file) {
   char* bios_data = read_bios_file(bios_data_file);
-  bool result = (!strcmp(bios_data, kExpectNameGoogle)) ||
-                (!strcmp(bios_data, kExpectNameGce));
+  bool result = (!strcmp(bios_data, GRPC_ALTS_EXPECT_NAME_GOOGLE)) ||
+                (!strcmp(bios_data, GRPC_ALTS_EXPECT_NAME_GCE));
   gpr_free(bios_data);
   return result;
 }
@@ -60,7 +60,8 @@ bool is_running_on_gcp() {
     return g_is_on_compute_engine;
   }
   g_compute_engine_detection_done = true;
-  bool result = grpc_core::internal::check_bios_data(kProductNameFile);
+  bool result =
+      grpc_core::internal::check_bios_data(GRPC_ALTS_PRODUCT_NAME_FILE);
   g_is_on_compute_engine = result;
   gpr_mu_unlock(&g_mu);
   return result;
