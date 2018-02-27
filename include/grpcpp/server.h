@@ -98,7 +98,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   /// Establish a channel for in-process communication
   std::shared_ptr<Channel> InProcessChannel(const ChannelArguments& args);
 
-protected:
+ protected:
   /// Register a service. This call does not take ownership of the service.
   /// The service must exist for the lifetime of the Server instance.
   bool RegisterService(const grpc::string* host, Service* service) override;
