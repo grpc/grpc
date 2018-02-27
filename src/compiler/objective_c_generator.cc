@@ -249,8 +249,9 @@ void PrintMethodImplementations(Printer* printer,
   printer.Print(vars,
                 "@interface $service_class$ :"
                 " GRPCProtoService<$service_class$>\n");
-  printer.Print("- (instancetype)initWithHost:(NSString *)host"
-                " NS_DESIGNATED_INITIALIZER;\n");
+  printer.Print(
+      "- (instancetype)initWithHost:(NSString *)host"
+      " NS_DESIGNATED_INITIALIZER;\n");
   printer.Print("+ (instancetype)serviceWithHost:(NSString *)host;\n");
   printer.Print("@end\n");
 
@@ -279,18 +280,20 @@ void PrintMethodImplementations(Printer* printer,
                   "  return self;\n"
                   "}\n\n");
 
-    printer.Print("// Override superclass initializer to disallow different"
-                  " package and service names.\n"
-                  "- (instancetype)initWithHost:(NSString *)host\n"
-                  "                 packageName:(NSString *)packageName\n"
-                  "                 serviceName:(NSString *)serviceName {\n"
-                  "  return [self initWithHost:host];\n"
-                  "}\n\n");
+    printer.Print(
+        "// Override superclass initializer to disallow different"
+        " package and service names.\n"
+        "- (instancetype)initWithHost:(NSString *)host\n"
+        "                 packageName:(NSString *)packageName\n"
+        "                 serviceName:(NSString *)serviceName {\n"
+        "  return [self initWithHost:host];\n"
+        "}\n\n");
 
-    printer.Print("#pragma mark - Class Methods\n\n"
-                  "+ (instancetype)serviceWithHost:(NSString *)host {\n"
-                  "  return [[self alloc] initWithHost:host];\n"
-                  "}\n\n");
+    printer.Print(
+        "#pragma mark - Class Methods\n\n"
+        "+ (instancetype)serviceWithHost:(NSString *)host {\n"
+        "  return [[self alloc] initWithHost:host];\n"
+        "}\n\n");
 
     printer.Print("#pragma mark - Method Implementations\n\n");
 

@@ -41,18 +41,17 @@ inline string ServiceClassName(const ServiceDescriptor* service) {
   return prefix + service->name();
 }
 
-inline ::grpc::string LocalImport(const ::grpc::string &import) {
+inline ::grpc::string LocalImport(const ::grpc::string& import) {
   return ::grpc::string("#import \"" + import + "\"\n");
 }
 
-inline ::grpc::string SystemImport(const ::grpc::string &import) {
+inline ::grpc::string SystemImport(const ::grpc::string& import) {
   return ::grpc::string("#import <" + import + ">\n");
 }
 
 inline ::grpc::string PreprocConditional(::grpc::string symbol, bool invert) {
-  return invert
-      ? "!defined(" + symbol + ") || !" + symbol
-      : "defined(" + symbol + ") && " + symbol;
+  return invert ? "!defined(" + symbol + ") || !" + symbol
+                : "defined(" + symbol + ") && " + symbol;
 }
 
 inline ::grpc::string PreprocIf(const ::grpc::string& symbol,

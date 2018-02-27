@@ -37,8 +37,7 @@ using ::grpc_objective_c_generator::SystemImport;
 namespace {
 
 inline ::grpc::string ImportProtoHeaders(
-    const grpc::protobuf::FileDescriptor* dep,
-    const char *indent) {
+    const grpc::protobuf::FileDescriptor* dep, const char* indent) {
   ::grpc::string header = grpc_objective_c_generator::MessageHeaderName(dep);
 
   if (!IsProtobufLibraryBundledProtoFile(dep)) {
@@ -58,13 +57,13 @@ inline ::grpc::string ImportProtoHeaders(
                        indent + LocalImport(header));
 }
 
-
 }  // namespace
 
 class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
  public:
   ObjectiveCGrpcGenerator() {}
   virtual ~ObjectiveCGrpcGenerator() {}
+
  public:
   virtual bool Generate(const grpc::protobuf::FileDescriptor* file,
                         const ::grpc::string& parameter,
@@ -89,11 +88,10 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
 
       ::grpc::string imports = LocalImport(file_name + ".pbobjc.h");
 
-      ::grpc::string system_imports =
-                    SystemImport("ProtoRPC/ProtoService.h") +
-                    SystemImport("ProtoRPC/ProtoRPC.h") +
-                    SystemImport("RxLibrary/GRXWriteable.h") +
-                    SystemImport("RxLibrary/GRXWriter.h");
+      ::grpc::string system_imports = SystemImport("ProtoRPC/ProtoService.h") +
+                                      SystemImport("ProtoRPC/ProtoRPC.h") +
+                                      SystemImport("RxLibrary/GRXWriteable.h") +
+                                      SystemImport("RxLibrary/GRXWriter.h");
 
       ::grpc::string forward_declarations = "@class GRPCProtoCall;\n\n";
 
@@ -119,24 +117,21 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
 
       Write(context, file_name + ".pbrpc.h",
             PreprocIfNot(kForwardDeclare, imports) + "\n" +
-            PreprocIfNot(kProtocolOnly, system_imports) + "\n" +
-            PreprocIfElse(kForwardDeclare, class_declarations,
-                          class_imports) + "\n" +
-            forward_declarations + "\n" +
-            kNonNullBegin + "\n" +
-            protocols + "\n" +
-            PreprocIfNot(kProtocolOnly, interfaces) + "\n" +
-            kNonNullEnd + "\n");
+                PreprocIfNot(kProtocolOnly, system_imports) + "\n" +
+                PreprocIfElse(kForwardDeclare, class_declarations,
+                              class_imports) +
+                "\n" + forward_declarations + "\n" + kNonNullBegin + "\n" +
+                protocols + "\n" + PreprocIfNot(kProtocolOnly, interfaces) +
+                "\n" + kNonNullEnd + "\n");
     }
 
     {
       // Generate .pbrpc.m
 
-      ::grpc::string imports =
-          LocalImport(file_name + ".pbrpc.h") +
-          LocalImport(file_name + ".pbobjc.h") +
-          SystemImport("ProtoRPC/ProtoRPC.h") +
-          SystemImport("RxLibrary/GRXWriter+Immediate.h");
+      ::grpc::string imports = LocalImport(file_name + ".pbrpc.h") +
+                               LocalImport(file_name + ".pbobjc.h") +
+                               SystemImport("ProtoRPC/ProtoRPC.h") +
+                               SystemImport("RxLibrary/GRXWriter+Immediate.h");
 
       ::grpc::string class_imports;
       for (int i = 0; i < file->dependency_count(); i++) {
@@ -151,7 +146,7 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
 
       Write(context, file_name + ".pbrpc.m",
             PreprocIfNot(kProtocolOnly,
-                   imports + "\n" + class_imports + "\n" + definitions));
+                         imports + "\n" + class_imports + "\n" + definitions));
     }
 
     return true;
