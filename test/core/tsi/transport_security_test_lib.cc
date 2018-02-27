@@ -578,7 +578,9 @@ void tsi_test_frame_protector_config_set_buffer_size(
 
 void tsi_test_frame_protector_config_destroy(
     tsi_test_frame_protector_config* config) {
-  GPR_ASSERT(config != nullptr);
+  if (config == nullptr) {
+    return;
+  }
   gpr_free(config->client_message);
   gpr_free(config->server_message);
   gpr_free(config);
@@ -599,6 +601,9 @@ static tsi_test_channel* tsi_test_channel_create() {
 }
 
 static void tsi_test_channel_destroy(tsi_test_channel* channel) {
+  if (channel == nullptr) {
+    return;
+  }
   gpr_free(channel->client_channel);
   gpr_free(channel->server_channel);
   gpr_free(channel);
