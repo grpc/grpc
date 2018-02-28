@@ -95,6 +95,9 @@ grpc_cc_test(
 grpc_cc_test(
     name = "slice_hash_table_test",
     srcs = ["slice_hash_table_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
     deps = [
         "//:gpr",
@@ -107,6 +110,9 @@ grpc_cc_test(
 grpc_cc_test(
     name = "slice_weak_hash_table_test",
     srcs = ["slice_weak_hash_table_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
     deps = [
         "//:gpr",

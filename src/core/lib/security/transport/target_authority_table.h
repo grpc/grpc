@@ -16,19 +16,25 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SECURITY_TRANSPORT_LB_TARGETS_INFO_H
-#define GRPC_CORE_LIB_SECURITY_TRANSPORT_LB_TARGETS_INFO_H
+#ifndef GRPC_CORE_LIB_SECURITY_TRANSPORT_TARGET_AUTHORITY_TABLE_H
+#define GRPC_CORE_LIB_SECURITY_TRANSPORT_TARGET_AUTHORITY_TABLE_H
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/slice/slice_hash_table.h"
 
-/** Return a channel argument containing \a targets_info. */
-grpc_arg grpc_lb_targets_info_create_channel_arg(
-    grpc_slice_hash_table* targets_info);
+namespace grpc_core {
 
-/** Return the instance of targets info in \a args or NULL */
-grpc_slice_hash_table* grpc_lb_targets_info_find_in_args(
+/// A hash table mapping target addresses to authorities.
+typedef SliceHashTable<UniquePtr<char>> TargetAuthorityTable;
+
+/// Returns a channel argument containing \a table.
+grpc_arg CreateTargetAuthorityTableChannelArg(TargetAuthorityTable* table);
+
+/// Returns the target authority table from \a args or nullptr.
+TargetAuthorityTable* FindTargetAuthorityTableInArgs(
     const grpc_channel_args* args);
 
-#endif /* GRPC_CORE_LIB_SECURITY_TRANSPORT_LB_TARGETS_INFO_H */
+}  // namespace grpc_core
+
+#endif /* GRPC_CORE_LIB_SECURITY_TRANSPORT_TARGET_AUTHORITY_TABLE_H */

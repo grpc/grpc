@@ -451,8 +451,10 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
       out->Print(
           "public virtual $response$ $methodname$($request$ request, "
           "grpc::Metadata "
-          "headers = null, DateTime? deadline = null, CancellationToken "
-          "cancellationToken = default(CancellationToken))\n",
+          "headers = null, global::System.DateTime? deadline = null, "
+          "global::System.Threading.CancellationToken "
+          "cancellationToken = "
+          "default(global::System.Threading.CancellationToken))\n",
           "methodname", method->name(), "request",
           GetClassName(method->input_type()), "response",
           GetClassName(method->output_type()));
@@ -492,8 +494,10 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
     out->Print(
         "public virtual $returntype$ "
         "$methodname$($request_maybe$grpc::Metadata "
-        "headers = null, DateTime? deadline = null, CancellationToken "
-        "cancellationToken = default(CancellationToken))\n",
+        "headers = null, global::System.DateTime? deadline = null, "
+        "global::System.Threading.CancellationToken "
+        "cancellationToken = "
+        "default(global::System.Threading.CancellationToken))\n",
         "methodname", method_name, "request_maybe",
         GetMethodRequestParamMaybe(method), "returntype",
         GetMethodReturnTypeClient(method));
@@ -675,9 +679,6 @@ grpc::string GetServices(const FileDescriptor* file, bool generate_client,
     out.Print("#pragma warning disable 1591\n");
     out.Print("#region Designer generated code\n");
     out.Print("\n");
-    out.Print("using System;\n");
-    out.Print("using System.Threading;\n");
-    out.Print("using System.Threading.Tasks;\n");
     out.Print("using grpc = global::Grpc.Core;\n");
     out.Print("\n");
 
