@@ -624,6 +624,9 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error* error) {
   grpc_chttp2_stream* s;
 
   while (grpc_chttp2_list_pop_writing_stream(t, &s)) {
+    if (s->sent_initial_metadata && error != GRPC_ERROR_NONE) {
+      s->bytes_written_on_wire = true;
+    }
     if (s->sending_bytes != 0) {
       update_list(t, s, static_cast<int64_t>(s->sending_bytes),
                   &s->on_write_finished_cbs, &s->flow_controlled_bytes_written,

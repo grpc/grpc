@@ -1209,6 +1209,20 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
         grpc_error_add_child(closure->error_data.error, error);
   }
   if (closure->next_data.scratch < CLOSURE_BARRIER_FIRST_REF_BIT) {
+    if (t->is_client) {
+      if (s->sent_initial_metadata && !s->bytes_written_on_wire) {
+        grpc_error* top_level_error = grpc_error_set_int(
+            grpc_error_set_int(
+                GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                    "Request did not leave client"),
+                GRPC_ERROR_INT_SERVER_VISIBILITY,
+                static_cast<int>(
+                    GRPC_ERROR_SERVER_VISIBILITY_STATE_NEVER_LEFT_CLIENT)),
+            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+        closure->error_data.error =
+            grpc_error_add_child(top_level_error, closure->error_data.error);
+      }
+    }
     if (closure->next_data.scratch & CLOSURE_BARRIER_STATS_BIT) {
       grpc_transport_move_stats(&s->stats, s->collecting_stats);
       s->collecting_stats = nullptr;
@@ -2135,7 +2149,9 @@ void grpc_chttp2_mark_stream_closed(grpc_chttp2_transport* t,
       /* Purge streams waiting on concurrency still waiting for id assignment */
       grpc_chttp2_list_remove_waiting_for_concurrency(t, s);
     }
-    if (overall_error != GRPC_ERROR_NONE) {
+    // we create a fake status if only if there is a chance that the server
+    // has seen some of the bytes we are sending.
+    if (overall_error != GRPC_ERROR_NONE && s->bytes_written_on_wire) {
       grpc_chttp2_fake_status(t, s, overall_error);
     }
   }

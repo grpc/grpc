@@ -21,6 +21,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <unistd.h>
+
 #include <grpc/byte_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -45,28 +47,10 @@ static void drain_cq(grpc_completion_queue* cq) {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void shutdown_server(grpc_end2end_test_fixture* f) {
-  if (!f->server) return;
-  grpc_server_destroy(f->server);
-  f->server = NULL;
-}
-
 static void shutdown_client(grpc_end2end_test_fixture* f) {
   if (!f->client) return;
   grpc_channel_destroy(f->client);
   f->client = NULL;
-}
-
-static void end_test(grpc_end2end_test_fixture* f) {
-  shutdown_server(f);
-  shutdown_client(f);
-
-  grpc_completion_queue_shutdown(f->cq);
-  drain_cq(f->cq);
-  grpc_completion_queue_destroy(f->cq);
-
-  /* Note: shutdown_cq was unused in this test */
-  grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
 static void do_one_request_and_shutdown_server(grpc_end2end_test_config config,
@@ -233,8 +217,11 @@ static void do_first_rpc_after_restarting_server(
   cq_verify(cqv);
 
   GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
-  gpr_log(GPR_ERROR, "%s", error_string);
-  GPR_ASSERT(0 == grpc_slice_str_cmp(details, "Endpoint read failed"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(details, "Request did not leave client"));
+  // Ensure that the internal error propagated the correct bit that signals that
+  // this RPC never actually made it to the wire.
+  GPR_ASSERT(nullptr !=
+             strstr(error_string, "\"grpc_error_int_server_visibility\":2"));
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);
@@ -266,10 +253,18 @@ static void auto_reconnect_channel_test(grpc_end2end_test_config config) {
      I assume that when transparent retried are in, they will implicitly test
      this functionality */
   do_first_rpc_after_restarting_server(config, &f, cqv);
+  grpc_server_shutdown_and_notify(f.server, f.cq, tag(1001));
+  CQ_EXPECT_COMPLETION(cqv, tag(1001), 1);
+  cq_verify(cqv);
 
   cq_verifier_destroy(cqv);
 
-  end_test(&f);
+  shutdown_client(&f);
+  grpc_completion_queue_shutdown(f.cq);
+  drain_cq(f.cq);
+  grpc_completion_queue_destroy(f.cq);
+  grpc_completion_queue_destroy(f.shutdown_cq);
+
   config.tear_down_data(&f);
 }
 

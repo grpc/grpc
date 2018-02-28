@@ -527,6 +527,7 @@ struct grpc_chttp2_stream {
 
   bool sent_initial_metadata;
   bool sent_trailing_metadata;
+  bool bytes_written_on_wire;
 
   grpc_core::PolymorphicManualConstructor<
       grpc_core::chttp2::StreamFlowControlBase,
