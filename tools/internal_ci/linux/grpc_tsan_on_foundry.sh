@@ -22,11 +22,11 @@ set -ex
 mkdir -p ${KOKORO_KEYSTORE_DIR}
 cp ${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json ${KOKORO_KEYSTORE_DIR}/4321_grpc-testing-service
 
-mkdir -p /tmpfs/tmp/bazel-canary
-ln -f "${KOKORO_GFILE_DIR}/bazel-canary" /tmpfs/tmp/bazel-canary/bazel
+temp_dir = mktemp -d
+ln -f "${KOKORO_GFILE_DIR}/bazel-canary" ${temp_dir}/bazel
 chmod 755 "${KOKORO_GFILE_DIR}/bazel-canary"
-export PATH="/tmpfs/tmp/bazel-canary:${PATH}"
-# This should show /tmpfs/tmp/bazel-canary/bazel
+export PATH="${temp_dir}:${PATH}"
+# This should show ${temp_dir}/bazel
 which bazel
 chmod +x "${KOKORO_GFILE_DIR}/bazel_wrapper.py"
 
