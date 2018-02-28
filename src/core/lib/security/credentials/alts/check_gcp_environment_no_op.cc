@@ -18,9 +18,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
-
 #if !defined(GPR_LINUX) && !defined(GPR_WINDOWS)
+
+#include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 
 #include <grpc/support/log.h>
 

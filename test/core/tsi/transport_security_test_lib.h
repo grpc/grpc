@@ -203,16 +203,15 @@ void tsi_test_frame_protector_fixture_destroy(
 
 /* This method performs a protect opeation on raw data and sends the result to
    peer. */
-void send_message_to_peer(tsi_test_frame_protector_config* config,
-                          tsi_test_channel* channel,
-                          tsi_frame_protector* protector, bool is_client);
+void tsi_test_frame_protector_send_message_to_peer(
+    tsi_test_frame_protector_config* config, tsi_test_channel* channel,
+    tsi_frame_protector* protector, bool is_client);
 
 /* This method receives message from peer and unprotects it. */
-void receive_message_from_peer(tsi_test_frame_protector_config* config,
-                               tsi_test_channel* channel,
-                               tsi_frame_protector* protector,
-                               unsigned char* message, size_t* bytes_received,
-                               bool is_client);
+void tsi_test_frame_protector_receive_message_from_peer(
+    tsi_test_frame_protector_config* config, tsi_test_channel* channel,
+    tsi_frame_protector* protector, unsigned char* message,
+    size_t* bytes_received, bool is_client);
 
 /* This method performs a full TSI handshake between a client and a server.
    Note that the test library will implement the new TSI handshaker API to
@@ -226,6 +225,7 @@ void tsi_test_do_handshake(tsi_test_fixture* fixture);
 void tsi_test_do_round_trip(tsi_test_fixture* fixture);
 
 /* This method performs the above round trip test without doing handshakes. */
-void tsi_do_round_trip_no_handshake(tsi_test_frame_protector_fixture* fixture);
+void tsi_test_frame_protector_do_round_trip_no_handshake(
+    tsi_test_frame_protector_fixture* fixture);
 
 #endif  // GRPC_TEST_CORE_TSI_TRANSPORT_SECURITY_TEST_LIB_H_

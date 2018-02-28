@@ -18,9 +18,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
-
 #ifdef GPR_LINUX
+
+#include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/sync.h>
@@ -55,16 +55,13 @@ static void init_mu(void) { gpr_mu_init(&g_mu); }
 bool is_running_on_gcp() {
   gpr_once_init(&g_once, init_mu);
   gpr_mu_lock(&g_mu);
-  if (g_compute_engine_detection_done) {
-    gpr_mu_unlock(&g_mu);
-    return g_is_on_compute_engine;
+  if (!g_compute_engine_detection_done) {
+    g_is_on_compute_engine =
+        grpc_core::internal::check_bios_data(GRPC_ALTS_PRODUCT_NAME_FILE);
+    g_compute_engine_detection_done = true;
   }
-  g_compute_engine_detection_done = true;
-  bool result =
-      grpc_core::internal::check_bios_data(GRPC_ALTS_PRODUCT_NAME_FILE);
-  g_is_on_compute_engine = result;
   gpr_mu_unlock(&g_mu);
-  return result;
+  return g_is_on_compute_engine;
 }
 
 #endif  // GPR_LINUX

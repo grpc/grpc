@@ -30,7 +30,7 @@
  * This method creates an ALTS channel security connector.
  *
  * - channel_creds: channel credential instance.
- * - request_metadata: credential object which metadata will be sent with each
+ * - request_metadata_creds: credential object which will be sent with each
  *   request. This parameter can be nullptr.
  * - target_name: the name of the endpoint that the channel is connecting to.
  * - sc: address of ALTS channel security connector instance to be returned from

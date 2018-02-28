@@ -55,7 +55,7 @@ typedef struct alts_handshaker_client_vtable {
 } alts_handshaker_client_vtable;
 
 struct alts_handshaker_client {
-  const struct alts_handshaker_client_vtable* vtable;
+  const alts_handshaker_client_vtable* vtable;
 };
 
 /**

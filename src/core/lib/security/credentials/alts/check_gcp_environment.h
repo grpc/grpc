@@ -53,4 +53,5 @@ bool check_bios_data(const char* bios_data);
  * false otherwise.
  */
 bool is_running_on_gcp();
+
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_ALTS_CHECK_GCP_ENVIRONMENT_H */

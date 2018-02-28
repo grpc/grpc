@@ -27,8 +27,8 @@
 
 /**
  * Main interface for ALTS credentials options. The options will contain
- * information that will be passed from grpc to TSI layer such as rpc protocol
- * versions. ALTS client (channel) and server credentials will have its own
+ * information that will be passed from grpc to TSI layer such as RPC protocol
+ * versions. ALTS client (channel) and server credentials will have their own
  * implementation of this interface. The APIs listed in this header are
  * thread-compatible.
  */

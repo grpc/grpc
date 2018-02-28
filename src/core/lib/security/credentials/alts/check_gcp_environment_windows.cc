@@ -18,9 +18,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
-
 #ifdef GPR_WINDOWS
+
+#include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 
 #include <shellapi.h>
 #include <stdio.h>
@@ -101,16 +101,14 @@ static bool run_powershell() {
 bool is_running_on_gcp() {
   gpr_once_init(&g_once, init_mu);
   gpr_mu_lock(&g_mu);
-  if (g_compute_engine_detection_done) {
-    gpr_mu_unlock(&g_mu);
-    return g_is_on_compute_engine;
+  if (!g_compute_engine_detection_done) {
+    g_is_on_compute_engine =
+        run_powershell() &&
+        grpc_core::internal::check_bios_data(GRPC_ALTS_WINDOWS_CHECK_BIOS_FILE);
+    g_compute_engine_detection_done = true;
   }
-  g_compute_engine_detection_done = true;
-  bool result = run_powershell() && grpc_core::internal::check_bios_data(
-                                        GRPC_ALTS_WINDOWS_CHECK_BIOS_FILE);
-  g_is_on_compute_engine = result;
   gpr_mu_unlock(&g_mu);
-  return result;
+  return g_is_on_compute_engine;
 }
 
 #endif  // GPR_WINDOWS

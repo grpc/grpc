@@ -184,9 +184,9 @@ static void receive_bytes_from_peer(tsi_test_channel* test_channel,
   *bytes_read += to_read;
 }
 
-void send_message_to_peer(tsi_test_frame_protector_config* config,
-                          tsi_test_channel* channel,
-                          tsi_frame_protector* protector, bool is_client) {
+void tsi_test_frame_protector_send_message_to_peer(
+    tsi_test_frame_protector_config* config, tsi_test_channel* channel,
+    tsi_frame_protector* protector, bool is_client) {
   /* Initialization. */
   GPR_ASSERT(config != nullptr);
   GPR_ASSERT(channel != nullptr);
@@ -233,11 +233,10 @@ void send_message_to_peer(tsi_test_frame_protector_config* config,
   gpr_free(protected_buffer);
 }
 
-void receive_message_from_peer(tsi_test_frame_protector_config* config,
-                               tsi_test_channel* channel,
-                               tsi_frame_protector* protector,
-                               unsigned char* message, size_t* bytes_received,
-                               bool is_client) {
+void tsi_test_frame_protector_receive_message_from_peer(
+    tsi_test_frame_protector_config* config, tsi_test_channel* channel,
+    tsi_frame_protector* protector, unsigned char* message,
+    size_t* bytes_received, bool is_client) {
   /* Initialization. */
   GPR_ASSERT(config != nullptr);
   GPR_ASSERT(channel != nullptr);
@@ -425,24 +424,24 @@ static void tsi_test_do_ping_pong(tsi_test_frame_protector_config* config,
   GPR_ASSERT(client_frame_protector != nullptr);
   GPR_ASSERT(server_frame_protector != nullptr);
   /* Client sends a message to server. */
-  send_message_to_peer(config, channel, client_frame_protector,
-                       true /* is_client */);
+  tsi_test_frame_protector_send_message_to_peer(
+      config, channel, client_frame_protector, true /* is_client */);
   unsigned char* server_received_message =
       static_cast<unsigned char*>(gpr_zalloc(TSI_TEST_DEFAULT_CHANNEL_SIZE));
   size_t server_received_message_size = 0;
-  receive_message_from_peer(
+  tsi_test_frame_protector_receive_message_from_peer(
       config, channel, server_frame_protector, server_received_message,
       &server_received_message_size, false /* is_client */);
   GPR_ASSERT(config->client_message_size == server_received_message_size);
   GPR_ASSERT(memcmp(config->client_message, server_received_message,
                     server_received_message_size) == 0);
   /* Server sends a message to client. */
-  send_message_to_peer(config, channel, server_frame_protector,
-                       false /* is_client */);
+  tsi_test_frame_protector_send_message_to_peer(
+      config, channel, server_frame_protector, false /* is_client */);
   unsigned char* client_received_message =
       static_cast<unsigned char*>(gpr_zalloc(TSI_TEST_DEFAULT_CHANNEL_SIZE));
   size_t client_received_message_size = 0;
-  receive_message_from_peer(
+  tsi_test_frame_protector_receive_message_from_peer(
       config, channel, client_frame_protector, client_received_message,
       &client_received_message_size, true /* is_client */);
   GPR_ASSERT(config->server_message_size == client_received_message_size);
@@ -452,7 +451,8 @@ static void tsi_test_do_ping_pong(tsi_test_frame_protector_config* config,
   gpr_free(client_received_message);
 }
 
-void tsi_do_round_trip_no_handshake(tsi_test_frame_protector_fixture* fixture) {
+void tsi_test_frame_protector_do_round_trip_no_handshake(
+    tsi_test_frame_protector_fixture* fixture) {
   GPR_ASSERT(fixture != nullptr);
   tsi_test_do_ping_pong(fixture->config, fixture->channel,
                         fixture->client_frame_protector,

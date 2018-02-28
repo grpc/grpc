@@ -66,8 +66,9 @@ static void alts_test_do_round_trip_check_frames(
   uint8_t* saved_client_message = config->client_message;
   config->client_message = const_cast<uint8_t*>(client_message);
   config->client_message_size = client_message_size;
-  send_message_to_peer(config, channel, client_frame_protector,
-                       /*is_client=*/true);
+  tsi_test_frame_protector_send_message_to_peer(config, channel,
+                                                client_frame_protector,
+                                                /*is_client=*/true);
   /* Verify if the generated frame is the same as the expected. */
   GPR_ASSERT(channel->bytes_written_to_server_channel == client_frame_size);
   GPR_ASSERT(memcmp(client_expected_frames, channel->server_channel,
@@ -75,9 +76,9 @@ static void alts_test_do_round_trip_check_frames(
   unsigned char* server_received_message =
       static_cast<unsigned char*>(gpr_malloc(kChannelSize));
   size_t server_received_message_size = 0;
-  receive_message_from_peer(config, channel, server_frame_protector,
-                            server_received_message,
-                            &server_received_message_size, /*is_client=*/false);
+  tsi_test_frame_protector_receive_message_from_peer(
+      config, channel, server_frame_protector, server_received_message,
+      &server_received_message_size, /*is_client=*/false);
   GPR_ASSERT(config->client_message_size == server_received_message_size);
   GPR_ASSERT(memcmp(config->client_message, server_received_message,
                     server_received_message_size) == 0);
@@ -85,8 +86,9 @@ static void alts_test_do_round_trip_check_frames(
   uint8_t* saved_server_message = config->server_message;
   config->server_message = const_cast<uint8_t*>(server_message);
   config->server_message_size = server_message_size;
-  send_message_to_peer(config, channel, server_frame_protector,
-                       /*is_client=*/false);
+  tsi_test_frame_protector_send_message_to_peer(config, channel,
+                                                server_frame_protector,
+                                                /*is_client=*/false);
   /* Verify if the generated frame is the same as the expected. */
   GPR_ASSERT(channel->bytes_written_to_client_channel == server_frame_size);
   GPR_ASSERT(memcmp(server_expected_frames, channel->client_channel,
@@ -94,10 +96,10 @@ static void alts_test_do_round_trip_check_frames(
   unsigned char* client_received_message =
       static_cast<unsigned char*>(gpr_malloc(kChannelSize));
   size_t client_received_message_size = 0;
-  receive_message_from_peer(config, channel, client_frame_protector,
-                            client_received_message,
-                            &client_received_message_size,
-                            /*is_client=*/true);
+  tsi_test_frame_protector_receive_message_from_peer(
+      config, channel, client_frame_protector, client_received_message,
+      &client_received_message_size,
+      /*is_client=*/true);
   GPR_ASSERT(config->server_message_size == client_received_message_size);
   GPR_ASSERT(memcmp(config->server_message, client_received_message,
                     client_received_message_size) == 0);
@@ -356,7 +358,7 @@ static void alts_test_do_round_trip(tsi_test_frame_protector_fixture* fixture,
                                   &server_frame_protector) == TSI_OK);
   tsi_test_frame_protector_fixture_init(fixture, client_frame_protector,
                                         server_frame_protector);
-  tsi_do_round_trip_no_handshake(fixture);
+  tsi_test_frame_protector_do_round_trip_no_handshake(fixture);
   gpr_free(key);
 }
 
