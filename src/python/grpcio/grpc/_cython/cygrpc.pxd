@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# distutils: language=c++
+
 include "_cygrpc/grpc.pxi"
 
 include "_cygrpc/arguments.pxd.pxi"

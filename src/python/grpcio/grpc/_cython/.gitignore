@@ -1,3 +1,4 @@
+cygrpc.cpp
 cygrpc.c
 *.a
 *.so

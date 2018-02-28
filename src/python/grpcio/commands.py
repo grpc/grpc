@@ -235,6 +235,7 @@ def try_cythonize(extensions, linetracing=False, mandatory=True):
         cython_compiler_directives['linetrace'] = True
     return Cython.Build.cythonize(
         extensions,
+        language="c++",
         include_path=[
             include_dir
             for extension in extensions
@@ -253,30 +254,6 @@ class BuildExt(build_ext.build_ext):
     LINK_OPTIONS = {}
 
     def build_extensions(self):
-        if "darwin" in sys.platform:
-            config = os.environ.get('CONFIG', 'opt')
-            target_path = os.path.abspath(
-                os.path.join(
-                    os.path.dirname(os.path.realpath(__file__)), '..', '..',
-                    '..', 'libs', config))
-            targets = [
-                os.path.join(target_path, 'libboringssl.a'),
-                os.path.join(target_path, 'libares.a'),
-                os.path.join(target_path, 'libgpr.a'),
-                os.path.join(target_path, 'libgrpc.a')
-            ]
-            make_process = subprocess.Popen(
-                ['make'] + targets,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE)
-            make_out, make_err = make_process.communicate()
-            if make_out and make_process.returncode != 0:
-                sys.stdout.write(str(make_out) + '\n')
-            if make_err:
-                sys.stderr.write(str(make_err) + '\n')
-            if make_process.returncode != 0:
-                raise Exception("make command failed!")
-
         compiler = self.compiler.compiler_type
         if compiler in BuildExt.C_OPTIONS:
             for extension in self.extensions:
