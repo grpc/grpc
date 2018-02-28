@@ -210,6 +210,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/transport/service_config.cc \
     src/core/lib/transport/static_metadata.cc \
     src/core/lib/transport/status_conversion.cc \
+    src/core/lib/transport/status_metadata.cc \
     src/core/lib/transport/timeout_encoding.cc \
     src/core/lib/transport/transport.cc \
     src/core/lib/transport/transport_op_string.cc \
@@ -292,6 +293,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/resolver.cc \
     src/core/ext/filters/client_channel/resolver_registry.cc \
     src/core/ext/filters/client_channel/retry_throttle.cc \
+    src/core/ext/filters/client_channel/status_util.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_index.cc \
     src/core/ext/filters/client_channel/uri_parser.cc \

@@ -929,6 +929,8 @@ src/core/ext/filters/client_channel/resolver_registry.cc \
 src/core/ext/filters/client_channel/resolver_registry.h \
 src/core/ext/filters/client_channel/retry_throttle.cc \
 src/core/ext/filters/client_channel/retry_throttle.h \
+src/core/ext/filters/client_channel/status_util.cc \
+src/core/ext/filters/client_channel/status_util.h \
 src/core/ext/filters/client_channel/subchannel.cc \
 src/core/ext/filters/client_channel/subchannel.h \
 src/core/ext/filters/client_channel/subchannel_index.cc \
@@ -1389,6 +1391,8 @@ src/core/lib/transport/static_metadata.cc \
 src/core/lib/transport/static_metadata.h \
 src/core/lib/transport/status_conversion.cc \
 src/core/lib/transport/status_conversion.h \
+src/core/lib/transport/status_metadata.cc \
+src/core/lib/transport/status_metadata.h \
 src/core/lib/transport/timeout_encoding.cc \
 src/core/lib/transport/timeout_encoding.h \
 src/core/lib/transport/transport.cc \

@@ -40,7 +40,7 @@ struct grpc_server_retry_throttle_data {
   int milli_token_ratio;
   gpr_atm milli_tokens;
   // A pointer to the replacement for this grpc_server_retry_throttle_data
-  // entry.  If non-NULL, then this entry is stale and must not be used.
+  // entry.  If non-nullptr, then this entry is stale and must not be used.
   // We hold a reference to the replacement.
   gpr_atm replacement;
 };
@@ -58,6 +58,7 @@ static void get_replacement_throttle_data_if_needed(
 
 bool grpc_server_retry_throttle_data_record_failure(
     grpc_server_retry_throttle_data* throttle_data) {
+  if (throttle_data == nullptr) return true;
   // First, check if we are stale and need to be replaced.
   get_replacement_throttle_data_if_needed(&throttle_data);
   // We decrement milli_tokens by 1000 (1 token) for each failure.
@@ -72,6 +73,7 @@ bool grpc_server_retry_throttle_data_record_failure(
 
 void grpc_server_retry_throttle_data_record_success(
     grpc_server_retry_throttle_data* throttle_data) {
+  if (throttle_data == nullptr) return;
   // First, check if we are stale and need to be replaced.
   get_replacement_throttle_data_if_needed(&throttle_data);
   // We increment milli_tokens by milli_token_ratio for each success.
