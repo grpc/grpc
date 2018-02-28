@@ -18,7 +18,6 @@ set -ex
 # A temporary solution to give Kokoro credentials. 
 # The file name 4321_grpc-testing-service needs to match auth_credential in 
 # the build config.
-# TODO: Use keystore.
 mkdir -p ${KOKORO_KEYSTORE_DIR}
 cp ${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json ${KOKORO_KEYSTORE_DIR}/4321_grpc-testing-service
 
@@ -35,6 +34,7 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
+# TODO(adelez): implement size for test targets and change test_timeout back
 "${KOKORO_GFILE_DIR}/bazel_wrapper.py" \
   --host_jvm_args=-Dbazel.DigestFunction=SHA256 \
   test --jobs="50" \
@@ -50,15 +50,8 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
   --strategy=Closure=remote  \
   --genrule_strategy=remote  \
   --experimental_strict_action_env=true \
-  --experimental_remote_platform_override='properties:{name:"container-image" value:"docker://gcr.io/asci-toolchain/nosla-debian8-clang-msan@sha256:8f381d55c0456fb65821c90ada902c2584977e03a1eaca8fba8ce77e644c775b" }' \
+  --experimental_remote_platform_override='properties:{name:"container-image" value:"docker://gcr.io/cloud-marketplace/google/rbe-debian8@sha256:b2d946c1ddc20af250fe85cf98bd648ac5519131659f7c36e64184b433175a33" }' \
+  --crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/debian8_clang/0.3.0/bazel_0.10.0:toolchain \
   --define GRPC_PORT_ISOLATED_RUNTIME=1 \
-  --copt=-gmlt \
-  --strip=never \
-  --cxxopt=--stdlib=libc++ \
-  --copt=-fsanitize=memory \ 
-  --linkopt=-fsanitize=memory \
-  --copt=-fsanitize-memory-track-origins \
-  --action_env=LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH \
-  --host_crosstool_top=@bazel_toolchains//configs/debian8_clang/0.3.0/bazel_0.10.0:toolchain \
-  --crosstool_top=@bazel_toolchains//configs/experimental/debian8_clang/0.3.0/bazel_0.10.0/msan:msan_experimental_toolchain \
+  $1 \
   -- //test/...
