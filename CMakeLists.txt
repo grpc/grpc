@@ -2438,10 +2438,14 @@ set(grpc++_source_files
 )
 
 if (gRPC_BUILD_SHARED)
-add_library(grpc++ SHARED ${grpc++_source_files})
-target_compile_definitions(grpc++ PRIVATE -DGRPCXX_USE_DLL)
+  add_library(grpc++ SHARED ${grpc++_source_files})
+  target_compile_definitions(grpc++ PRIVATE -DGRPCXX_USE_DLL)
 else (gRPC_BUILD_SHARED)
-add_library(grpc++ ${grpc++_source_files})
+  if(WIN32 AND MSVC)
+    add_library(grpc++ STATIC ${grpc++_source_files})
+  else (WIN32 AND MSVC)
+    add_library(grpc++ ${grpc++_source_files})
+  endif (WIN32 AND MSVC)
 endif (gRPC_BUILD_SHARED)
 
 if(WIN32 AND MSVC)
@@ -3237,6 +3241,8 @@ if (gRPC_INSTALL)
   )
 endif()
 
+# grpc++_error_details do not compiled with dynamic libprotoc library.
+if (NOT gRPC_BUILD_SHARED)
 
 add_library(grpc++_error_details
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/status/status.pb.cc
@@ -3300,6 +3306,8 @@ if (gRPC_INSTALL)
   )
 endif()
 
+endif (NOT gRPC_BUILD_SHARED)
+
 if (gRPC_BUILD_TESTS)
 
 add_library(grpc++_proto_reflection_desc_db
@@ -3360,6 +3368,9 @@ foreach(_hdr
 endforeach()
 
 endif (gRPC_BUILD_TESTS)
+
+# grpc++_reflection do not compiled with dynamic libprotoc library.
+if (NOT gRPC_BUILD_SHARED)
 
 add_library(grpc++_reflection
   src/cpp/ext/proto_server_reflection.cc
@@ -3423,6 +3434,8 @@ if (gRPC_INSTALL)
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
 endif()
+
+endif (NOT gRPC_BUILD_SHARED)
 
 if (gRPC_BUILD_TESTS)
 
@@ -10268,6 +10281,10 @@ if (gRPC_INSTALL)
   )
 endif()
 
+# CSharp do not compiled with dynamic libprotoc library.
+# Remove this if..endif when libprotoc updated to new version.
+# In new libprotoc version its fixed.
+if (NOT gRPC_BUILD_SHARED)
 
 add_executable(grpc_csharp_plugin
   src/compiler/csharp_plugin.cc
@@ -10302,6 +10319,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
+endif (NOT gRPC_BUILD_SHARED)
 
 add_executable(grpc_node_plugin
   src/compiler/node_plugin.cc
@@ -10370,6 +10388,10 @@ if (gRPC_INSTALL)
   )
 endif()
 
+# PHP plugin do not compiled with dynamic libprotoc library.
+# Remove this if..endif when libprotoc updated to new version.
+# In new libprotoc version its fixed.
+if (NOT gRPC_BUILD_SHARED)
 
 add_executable(grpc_php_plugin
   src/compiler/php_plugin.cc
@@ -10404,6 +10426,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
+endif (NOT gRPC_BUILD_SHARED)
 
 add_executable(grpc_python_plugin
   src/compiler/python_plugin.cc
