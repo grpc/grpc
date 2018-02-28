@@ -92,7 +92,7 @@ class TestGrpcUdpHandler : public GrpcUdpHandler {
   }
 
   void OnFdAboutToOrphan(grpc_closure* orphan_fd_closure,
-                                 void* user_data) override {
+                         void* user_data) override {
     gpr_log(GPR_INFO, "gRPC FD about to be orphaned: %d",
             grpc_fd_wrapped_fd(emfd()));
     GRPC_CLOSURE_SCHED(orphan_fd_closure, GRPC_ERROR_NONE);
@@ -252,7 +252,7 @@ static void test_no_op_with_port_and_socket_factory(void) {
 
   grpc_socket_factory_unref(&socket_factory->base);
 
-/* The server haven't start listening, so no udp handler to be notified. */
+  /* The server haven't start listening, so no udp handler to be notified. */
   GPR_ASSERT(g_number_of_orphan_calls == 0);
   shutdown_and_destroy_pollset();
 }

@@ -278,7 +278,7 @@ static void deactivated_all_ports(grpc_udp_server* s) {
   GPR_ASSERT(s->shutdown);
 
   if (s->listeners.size() == 0) {
-       gpr_mu_unlock(&s->mu);
+    gpr_mu_unlock(&s->mu);
     finish_shutdown(s);
     return;
   }
