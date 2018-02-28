@@ -37,6 +37,7 @@ set(gRPC_INSTALL_CMAKEDIR "lib/cmake/${PACKAGE_NAME}" CACHE STRING "Installation
 
 # Options
 option(gRPC_BUILD_TESTS "Build tests" OFF)
+option(gRPC_BUILD_SHARED "Build grpc++ as shared library including grpc and gpr libraries." OFF)
 
 set(gRPC_INSTALL_default ON)
 if (NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
@@ -89,7 +90,11 @@ endif()
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
 if (MSVC)
-  include(cmake/msvc_static_runtime.cmake)
+  if (gRPC_BUILD_SHARED)
+    include(cmake/msvc_dynamic_runtime.cmake)
+  else (gRPC_BUILD_SHARED)
+    include(cmake/msvc_static_runtime.cmake)
+  endif (gRPC_BUILD_SHARED)
   add_definitions(-D_WIN32_WINNT=0x600 -D_SCL_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS)
   # needed to compile protobuf
   add_definitions(/wd4065 /wd4506)
@@ -2384,7 +2389,7 @@ target_link_libraries(test_tcp_server
 
 endif (gRPC_BUILD_TESTS)
 
-add_library(grpc++
+set(grpc++_source_files
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
   src/cpp/common/auth_property_iterator.cc
@@ -2429,6 +2434,13 @@ add_library(grpc++
   src/cpp/util/time_cc.cc
   src/cpp/codegen/codegen_init.cc
 )
+
+if (gRPC_BUILD_SHARED)
+add_library(grpc++ SHARED ${grpc++_source_files})
+target_compile_definitions(grpc++ PRIVATE -DGRPCXX_USE_DLL)
+else (gRPC_BUILD_SHARED)
+add_library(grpc++ ${grpc++_source_files})
+endif (gRPC_BUILD_SHARED)
 
 if(WIN32 AND MSVC)
   set_target_properties(grpc++ PROPERTIES COMPILE_PDB_NAME "grpc++"
