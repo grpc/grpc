@@ -19,7 +19,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <new>
+#include <array>
 
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -38,8 +38,8 @@
 
 namespace grpc_core {
 
-template <typename T>
-class SliceWeakHashTable : public RefCounted<SliceWeakHashTable<T>> {
+template <typename T, size_t Size>
+class SliceWeakHashTable : public RefCounted<SliceWeakHashTable<T, Size>> {
  public:
   struct Entry {
     grpc_slice key;
@@ -48,26 +48,26 @@ class SliceWeakHashTable : public RefCounted<SliceWeakHashTable<T>> {
   };
 
   /// Creates a new table of at most \a size entries.
-  static RefCountedPtr<SliceWeakHashTable> Create(size_t size) {
-    return MakeRefCounted<SliceWeakHashTable<T>>(size);
+  static RefCountedPtr<SliceWeakHashTable> Create() {
+    return MakeRefCounted<SliceWeakHashTable<T, Size>>();
   }
 
   /// Add a mapping from \a key to \a value, taking ownership of \a key. This
   /// operation will always succeed. It may discard older entries.
   void Add(grpc_slice key, T value) {
-    const size_t idx = grpc_slice_hash(key) % size_;
+    const size_t idx = grpc_slice_hash(key) % Size;
     Entry* entry = &entries_[idx];
     if (entry->is_set) grpc_slice_unref_internal(entry->key);
-    entries_[idx].key = key;
-    entries_[idx].value = std::move(value);
-    entries_[idx].is_set = true;
+    entry->key = key;
+    entry->value = std::move(value);
+    entry->is_set = true;
     return;
   }
 
   /// Returns the value from the table associated with / \a key or null if not
   /// found.
   const T* Get(const grpc_slice key) const {
-    const size_t idx = grpc_slice_hash(key) % size_;
+    const size_t idx = grpc_slice_hash(key) % Size;
     if (!entries_[idx].is_set) return nullptr;
     if (grpc_slice_eq(entries_[idx].key, key)) return &entries_[idx].value;
     return nullptr;
@@ -78,29 +78,15 @@ class SliceWeakHashTable : public RefCounted<SliceWeakHashTable<T>> {
   template <typename T2, typename... Args>
   friend T2* New(Args&&... args);
 
-  SliceWeakHashTable(size_t size) : size_(size) {
-    // TODO(dgq): replace the following with a call to the array version of our
-    // own New operator.
-    entries_ = static_cast<Entry*>(
-        alignof(Entry) > kAllignmentForDefaultAllocationInBytes
-            ? gpr_malloc_aligned(sizeof(Entry) * size_, alignof(Entry))
-            : gpr_malloc(sizeof(Entry) * size_));
-    for (size_t i = 0; i < size_; ++i) new (&entries_[i]) Entry();
-  }
+  SliceWeakHashTable() {}
 
   ~SliceWeakHashTable() {
-    for (size_t i = 0; i < size_; ++i) {
-      Entry* entry = &entries_[i];
-      if (entry->is_set) {
-        grpc_slice_unref_internal(entry->key);
-        entry->value.~T();
-      }
+    for (size_t i = 0; i < Size; ++i) {
+      if (entries_[i].is_set) grpc_slice_unref_internal(entries_[i].key);
     }
-    gpr_free(entries_);
   }
 
-  const size_t size_;
-  Entry* entries_;
+  std::array<Entry, Size> entries_{};
 };
 
 }  // namespace grpc_core
