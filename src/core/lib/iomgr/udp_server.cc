@@ -123,7 +123,7 @@ class GrpcUdpListener {
   // connections.
   grpc_closure orphan_fd_closure_;
   grpc_closure destroyed_closure_;
-   // To be scheduled on another thread to actually read/write.
+  // To be scheduled on another thread to actually read/write.
   grpc_closure do_read_closure_;
   grpc_closure do_write_closure_;
   grpc_closure notify_on_write_closure_;
@@ -159,9 +159,7 @@ GrpcUdpListener::GrpcUdpListener(grpc_udp_server* server, int fd,
   gpr_mu_init(&mutex_);
 }
 
-GrpcUdpListener::~GrpcUdpListener() {
-  gpr_mu_destroy(&mutex_);
-}
+GrpcUdpListener::~GrpcUdpListener() { gpr_mu_destroy(&mutex_); }
 
 /* the overall server */
 struct grpc_udp_server {
@@ -239,7 +237,6 @@ void GrpcUdpListener::shutdown_fd(void* args, grpc_error* error) {
   gpr_mu_unlock(sp->mutex());
 }
 
-
 static void finish_shutdown(grpc_udp_server* s) {
   if (s->shutdown_complete != nullptr) {
     GRPC_CLOSURE_SCHED(s->shutdown_complete, GRPC_ERROR_NONE);
@@ -248,7 +245,7 @@ static void finish_shutdown(grpc_udp_server* s) {
   gpr_mu_destroy(&s->mu);
 
   gpr_log(GPR_DEBUG, "Destroy all listeners.");
-  for(size_t i = 0; i < s->listeners.size(); ++i) {
+  for (size_t i = 0; i < s->listeners.size(); ++i) {
     s->listeners[i].OnDestroy();
   }
 
@@ -257,7 +254,6 @@ static void finish_shutdown(grpc_udp_server* s) {
   }
 
   grpc_core::Delete(s);
-
 }
 
 static void destroyed_port(void* server, grpc_error* error) {
@@ -658,7 +654,7 @@ void grpc_udp_server_start(grpc_udp_server* s, grpc_pollset** pollsets,
   s->pollsets = pollsets;
   s->user_data = user_data;
 
-  for(size_t i = 0; i < s->listeners.size(); ++i) {
+  for (size_t i = 0; i < s->listeners.size(); ++i) {
     s->listeners[i].StartListening(pollsets, pollset_count, s->handler_factory);
   }
 

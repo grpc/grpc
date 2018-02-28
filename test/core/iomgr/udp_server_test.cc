@@ -82,7 +82,7 @@ class TestGrpcUdpHandler : public GrpcUdpHandler {
   }
 
   void OnCanWrite(void* user_data,
-                     grpc_closure* notify_on_write_closure) override {
+                  grpc_closure* notify_on_write_closure) override {
     gpr_mu_lock(g_mu);
     g_number_of_writes++;
 
@@ -115,7 +115,6 @@ class TestGrpcUdpHandlerFactory : public GrpcUdpHandlerFactory {
   void DestroyUdpHandler(GrpcUdpHandler* handler) override {
     gpr_log(GPR_INFO, "Destroy handler");
     grpc_core::Delete(reinterpret_cast<TestGrpcUdpHandler*>(handler));
-
   }
 };
 
@@ -253,7 +252,7 @@ static void test_no_op_with_port_and_socket_factory(void) {
 
   grpc_socket_factory_unref(&socket_factory->base);
 
- /* The server haven't start listening, so no udp handler to be notified. */
+/* The server haven't start listening, so no udp handler to be notified. */
   GPR_ASSERT(g_number_of_orphan_calls == 0);
   shutdown_and_destroy_pollset();
 }
