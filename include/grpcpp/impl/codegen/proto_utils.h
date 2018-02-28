@@ -28,10 +28,11 @@
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/serialization_traits.h>
 #include <grpcpp/impl/codegen/status.h>
+#include <grpcpp/export.h>
 
 namespace grpc {
 
-extern CoreCodegenInterface* g_core_codegen_interface;
+extern GRPCXX_EXPORT CoreCodegenInterface* g_core_codegen_interface;
 
 namespace internal {
 
@@ -39,7 +40,7 @@ class GrpcBufferWriterPeer;
 
 const int kGrpcBufferWriterMaxBufferLength = 1024 * 1024;
 
-class GrpcBufferWriter : public ::grpc::protobuf::io::ZeroCopyOutputStream {
+class  GrpcBufferWriter : public ::grpc::protobuf::io::ZeroCopyOutputStream {
  public:
   GrpcBufferWriter(grpc_byte_buffer** bp, int block_size, int total_size)
       : block_size_(block_size),

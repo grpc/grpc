@@ -92,6 +92,8 @@ set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 if (MSVC)
   if (gRPC_BUILD_SHARED)
     include(cmake/msvc_dynamic_runtime.cmake)
+    # need to build shared lib
+    add_definitions(/wd4091)
   else (gRPC_BUILD_SHARED)
     include(cmake/msvc_static_runtime.cmake)
   endif (gRPC_BUILD_SHARED)
