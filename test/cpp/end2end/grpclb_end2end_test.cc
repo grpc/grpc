@@ -37,6 +37,10 @@
 #include "src/core/lib/gpr/thd.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/cpp/server/secure_server_credentials.h"
+
+#include "src/cpp/client/secure_credentials.h"
 
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -380,15 +384,21 @@ class GrpclbEnd2endTest : public ::testing::Test {
     SetNextResolution(addresses);
   }
 
-  void ResetStub(int fallback_timeout = 0) {
+  void ResetStub(int fallback_timeout = 0, grpc::string expected_targets = "") {
     ChannelArguments args;
     args.SetGrpclbFallbackTimeout(fallback_timeout);
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator_.get());
+    if (!expected_targets.empty()) {
+      args.SetString(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS, expected_targets);
+    }
     std::ostringstream uri;
-    uri << "fake:///servername_not_used";
-    channel_ =
-        CreateCustomChannel(uri.str(), InsecureChannelCredentials(), args);
+    uri << "fake:///" << kApplicationTargetName_;
+    // TODO(dgq): templatize tests to run everything using both secure and
+    // insecure channel credentials.
+    std::shared_ptr<ChannelCredentials> creds(new SecureChannelCredentials(
+        grpc_fake_transport_security_credentials_create()));
+    channel_ = CreateCustomChannel(uri.str(), creds, args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
@@ -566,8 +576,9 @@ class GrpclbEnd2endTest : public ::testing::Test {
       std::ostringstream server_address;
       server_address << server_host << ":" << port_;
       ServerBuilder builder;
-      builder.AddListeningPort(server_address.str(),
-                               InsecureServerCredentials());
+      std::shared_ptr<ServerCredentials> creds(new SecureServerCredentials(
+          grpc_fake_transport_security_server_credentials_create()));
+      builder.AddListeningPort(server_address.str(), creds);
       builder.RegisterService(service_);
       server_ = builder.BuildAndStart();
       cond->notify_one();
@@ -600,6 +611,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
       response_generator_;
   const grpc::string kRequestMessage_ = "Live long and prosper.";
+  const grpc::string kApplicationTargetName_ = "application_target_name";
 };
 
 class SingleBalancerTest : public GrpclbEnd2endTest {
@@ -633,6 +645,48 @@ TEST_F(SingleBalancerTest, Vanilla) {
 
   // Check LB policy name for the channel.
   EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
+}
+
+TEST_F(SingleBalancerTest, SecureNaming) {
+  ResetStub(0, kApplicationTargetName_ + ";lb");
+  SetNextResolution({AddressData{balancer_servers_[0].port_, true, "lb"}});
+  const size_t kNumRpcsPerAddress = 100;
+  ScheduleResponseForBalancer(
+      0, BalancerServiceImpl::BuildResponseForBackends(GetBackendPorts(), {}),
+      0);
+  // Make sure that trying to connect works without a call.
+  channel_->GetState(true /* try_to_connect */);
+  // We need to wait for all backends to come online.
+  WaitForAllBackends();
+  // Send kNumRpcsPerAddress RPCs per server.
+  CheckRpcSendOk(kNumRpcsPerAddress * num_backends_);
+
+  // Each backend should have gotten 100 requests.
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    EXPECT_EQ(kNumRpcsPerAddress,
+              backend_servers_[i].service_->request_count());
+  }
+  balancers_[0]->NotifyDoneWithServerlists();
+  // The balancer got a single request.
+  EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
+  // and sent a single response.
+  EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
+  // Check LB policy name for the channel.
+  EXPECT_EQ("grpclb", channel_->GetLoadBalancingPolicyName());
+}
+
+TEST_F(SingleBalancerTest, SecureNamingDeathTest) {
+  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
+  // Make sure that we blow up (via abort() from the security connector) when
+  // the name from the balancer doesn't match expectations.
+  ASSERT_DEATH(
+      {
+        ResetStub(0, kApplicationTargetName_ + ";lb");
+        SetNextResolution(
+            {AddressData{balancer_servers_[0].port_, true, "woops"}});
+        channel_->WaitForConnected(grpc_timeout_seconds_to_deadline(1));
+      },
+      "");
 }
 
 TEST_F(SingleBalancerTest, InitiallyEmptyServerlist) {
