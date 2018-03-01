@@ -25,6 +25,7 @@
 #include <grpcpp/impl/codegen/serialization_traits.h>
 #include <grpcpp/impl/codegen/server_interface.h>
 #include <grpcpp/impl/codegen/status.h>
+#include <grpcpp/export.h>
 
 namespace grpc {
 
@@ -36,7 +37,7 @@ class ServerContext;
 
 namespace internal {
 class Call;
-class ServerAsyncStreamingInterface {
+class GRPCXX_EXPORT ServerAsyncStreamingInterface {
  public:
   virtual ~ServerAsyncStreamingInterface() {}
 
@@ -57,10 +58,10 @@ class ServerAsyncStreamingInterface {
 /// Desriptor of an RPC service and its various RPC methods
 class Service {
  public:
-  Service() : server_(nullptr) {}
-  virtual ~Service() {}
+  GRPCXX_EXPORT Service() : server_(nullptr) {}
+  GRPCXX_EXPORT virtual ~Service() {}
 
-  bool has_async_methods() const {
+  GRPCXX_EXPORT bool has_async_methods() const {
     for (auto it = methods_.begin(); it != methods_.end(); ++it) {
       if (*it && (*it)->handler() == nullptr) {
         return true;
@@ -69,7 +70,7 @@ class Service {
     return false;
   }
 
-  bool has_synchronous_methods() const {
+  GRPCXX_EXPORT bool has_synchronous_methods() const {
     for (auto it = methods_.begin(); it != methods_.end(); ++it) {
       if (*it && (*it)->handler() != nullptr) {
         return true;
@@ -78,7 +79,7 @@ class Service {
     return false;
   }
 
-  bool has_generic_methods() const {
+  GRPCXX_EXPORT bool has_generic_methods() const {
     for (auto it = methods_.begin(); it != methods_.end(); ++it) {
       if (it->get() == nullptr) {
         return true;
@@ -96,7 +97,7 @@ class Service {
     server_->RequestAsyncCall(methods_[index].get(), context, stream, call_cq,
                               notification_cq, tag, request);
   }
-  void RequestAsyncClientStreaming(
+  GRPCXX_EXPORT void RequestAsyncClientStreaming(
       int index, ServerContext* context,
       internal::ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
       ServerCompletionQueue* notification_cq, void* tag) {
@@ -111,7 +112,7 @@ class Service {
     server_->RequestAsyncCall(methods_[index].get(), context, stream, call_cq,
                               notification_cq, tag, request);
   }
-  void RequestAsyncBidiStreaming(
+  GRPCXX_EXPORT void RequestAsyncBidiStreaming(
       int index, ServerContext* context,
       internal::ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
       ServerCompletionQueue* notification_cq, void* tag) {
@@ -119,11 +120,11 @@ class Service {
                               notification_cq, tag);
   }
 
-  void AddMethod(internal::RpcServiceMethod* method) {
+  GRPCXX_EXPORT void AddMethod(internal::RpcServiceMethod* method) {
     methods_.emplace_back(method);
   }
 
-  void MarkMethodAsync(int index) {
+  GRPCXX_EXPORT void MarkMethodAsync(int index) {
     GPR_CODEGEN_ASSERT(
         methods_[index].get() != nullptr &&
         "Cannot mark the method as 'async' because it has already been "
@@ -131,7 +132,7 @@ class Service {
     methods_[index]->ResetHandler();
   }
 
-  void MarkMethodGeneric(int index) {
+  GRPCXX_EXPORT void MarkMethodGeneric(int index) {
     GPR_CODEGEN_ASSERT(
         methods_[index]->handler() != nullptr &&
         "Cannot mark the method as 'generic' because it has already been "
@@ -139,7 +140,7 @@ class Service {
     methods_[index].reset();
   }
 
-  void MarkMethodStreamed(int index, internal::MethodHandler* streamed_method) {
+  GRPCXX_EXPORT void MarkMethodStreamed(int index, internal::MethodHandler* streamed_method) {
     GPR_CODEGEN_ASSERT(methods_[index] && methods_[index]->handler() &&
                        "Cannot mark an async or generic method Streamed");
     methods_[index]->SetHandler(streamed_method);

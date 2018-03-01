@@ -29,13 +29,14 @@
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/rpc_method.h>
 #include <grpcpp/impl/codegen/status.h>
+#include <grpcpp/export.h>
 
 namespace grpc {
 class ServerContext;
 
 namespace internal {
 /// Base class for running an RPC handler.
-class MethodHandler {
+class GRPCXX_EXPORT MethodHandler {
  public:
   virtual ~MethodHandler() {}
   struct HandlerParameter {
@@ -53,7 +54,7 @@ class MethodHandler {
 };
 
 /// Server side rpc method class
-class RpcServiceMethod : public RpcMethod {
+class GRPCXX_EXPORT RpcServiceMethod : public RpcMethod {
  public:
   /// Takes ownership of the handler
   RpcServiceMethod(const char* name, RpcMethod::RpcType type,

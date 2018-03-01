@@ -92,7 +92,7 @@ extern GRPCXX_EXPORT CoreCodegenInterface* g_core_codegen_interface;
 /// src/core/lib/surface/completion_queue.h).
 /// See \ref doc/cpp/perf_notes.md for notes on best practices for high
 /// performance servers.
-class CompletionQueue : private GrpcLibraryCodegen {
+class GRPCXX_EXPORT CompletionQueue : private GrpcLibraryCodegen {
  public:
   /// Default constructor. Implicitly creates a \a grpc_completion_queue
   /// instance.
@@ -362,7 +362,7 @@ class CompletionQueue : private GrpcLibraryCodegen {
 
 /// A specific type of completion queue used by the processing of notifications
 /// by servers. Instantiated by \a ServerBuilder.
-class ServerCompletionQueue : public CompletionQueue {
+class GRPCXX_EXPORT ServerCompletionQueue : public CompletionQueue {
  public:
   bool IsFrequentlyPolled() { return polling_type_ != GRPC_CQ_NON_LISTENING; }
 

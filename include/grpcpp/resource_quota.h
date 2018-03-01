@@ -23,6 +23,7 @@ struct grpc_resource_quota;
 
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
+#include <grpcpp/export.h>
 
 namespace grpc {
 
@@ -31,7 +32,7 @@ namespace grpc {
 /// or a client channel (via \a ChannelArguments).
 /// gRPC will attempt to keep memory used by all attached entities
 /// below the ResourceQuota bound.
-class ResourceQuota final : private GrpcLibraryCodegen {
+class GRPCXX_EXPORT ResourceQuota final : private GrpcLibraryCodegen {
  public:
   /// \param name - a unique name for this ResourceQuota.
   explicit ResourceQuota(const grpc::string& name);

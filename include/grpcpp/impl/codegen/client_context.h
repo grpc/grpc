@@ -92,7 +92,7 @@ class ServerContext;
 /// ClientContext.
 ///
 /// \see ClientContext::FromServerContext
-class PropagationOptions {
+class GRPCXX_EXPORT PropagationOptions {
  public:
   PropagationOptions() : propagate_(GRPC_PROPAGATE_DEFAULTS) {}
 

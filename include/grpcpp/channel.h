@@ -26,12 +26,13 @@
 #include <grpcpp/impl/codegen/channel_interface.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
+#include <grpcpp/export.h>
 
 struct grpc_channel;
 
 namespace grpc {
 /// Channels represent a connection to an endpoint. Created by \a CreateChannel.
-class Channel final : public ChannelInterface,
+class GRPCXX_EXPORT Channel final : public ChannelInterface,
                       public internal::CallHook,
                       public std::enable_shared_from_this<Channel>,
                       private GrpcLibraryCodegen {

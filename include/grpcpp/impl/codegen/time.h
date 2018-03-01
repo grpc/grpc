@@ -23,6 +23,7 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpcpp/impl/codegen/config.h>
+#include <grpcpp/export.h>
 
 namespace grpc {
 
@@ -64,13 +65,13 @@ class TimePoint<gpr_timespec> {
 namespace grpc {
 
 // from and to should be absolute time.
-void Timepoint2Timespec(const std::chrono::system_clock::time_point& from,
+GRPCXX_EXPORT void Timepoint2Timespec(const std::chrono::system_clock::time_point& from,
                         gpr_timespec* to);
-void TimepointHR2Timespec(
+GRPCXX_EXPORT void TimepointHR2Timespec(
     const std::chrono::high_resolution_clock::time_point& from,
     gpr_timespec* to);
 
-std::chrono::system_clock::time_point Timespec2Timepoint(gpr_timespec t);
+GRPCXX_EXPORT std::chrono::system_clock::time_point Timespec2Timepoint(gpr_timespec t);
 
 template <>
 class TimePoint<std::chrono::system_clock::time_point> {

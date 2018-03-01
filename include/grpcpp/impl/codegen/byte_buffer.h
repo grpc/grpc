@@ -26,6 +26,7 @@
 #include <grpcpp/impl/codegen/serialization_traits.h>
 #include <grpcpp/impl/codegen/slice.h>
 #include <grpcpp/impl/codegen/status.h>
+#include <grpcpp/export.h>
 
 #include <vector>
 
@@ -45,7 +46,7 @@ template <class R>
 class DeserializeFuncType;
 }  // namespace internal
 /// A sequence of bytes.
-class ByteBuffer final {
+class GRPCXX_EXPORT ByteBuffer final {
  public:
   /// Constuct an empty buffer.
   ByteBuffer() : buffer_(nullptr) {}

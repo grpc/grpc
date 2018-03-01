@@ -55,7 +55,7 @@ class GRPCXX_EXPORT ServerCredentials {
 };
 
 /// Options to create ServerCredentials with SSL
-struct SslServerCredentialsOptions {
+struct GRPCXX_EXPORT SslServerCredentialsOptions {
   /// \warning Deprecated
   SslServerCredentialsOptions()
       : force_client_auth(false),

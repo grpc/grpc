@@ -22,6 +22,7 @@
 #include <memory>
 
 #include <grpcpp/support/config.h>
+#include <grpcpp/export.h>
 
 namespace grpc {
 
@@ -32,7 +33,7 @@ class ChannelArguments;
 /// This interface is meant for internal usage only. Implementations of this
 /// interface should add themselves to a \a ServerBuilder instance through the
 /// \a InternalAddPluginFactory method.
-class ServerBuilderPlugin {
+class GRPCXX_EXPORT ServerBuilderPlugin {
  public:
   virtual ~ServerBuilderPlugin() {}
   virtual grpc::string name() = 0;

@@ -25,6 +25,7 @@
 #include <grpcpp/impl/codegen/server_context.h>
 #include <grpcpp/impl/codegen/service_type.h>
 #include <grpcpp/impl/codegen/status.h>
+#include <grpcpp/export.h>
 
 namespace grpc {
 
@@ -32,7 +33,7 @@ class CompletionQueue;
 
 namespace internal {
 /// Common interface for all client side asynchronous streaming.
-class ClientAsyncStreamingInterface {
+class GRPCXX_EXPORT ClientAsyncStreamingInterface {
  public:
   virtual ~ClientAsyncStreamingInterface() {}
 

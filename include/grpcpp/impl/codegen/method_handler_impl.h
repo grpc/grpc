@@ -23,6 +23,7 @@
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/rpc_service_method.h>
 #include <grpcpp/impl/codegen/sync_stream.h>
+#include <grpcpp/export.h>
 
 namespace grpc {
 
@@ -272,7 +273,7 @@ class SplitServerStreamingHandler
 };
 
 /// Handle unknown method by returning UNIMPLEMENTED error.
-class UnknownMethodHandler : public MethodHandler {
+class GRPCXX_EXPORT UnknownMethodHandler : public MethodHandler {
  public:
   template <class T>
   static void FillOps(ServerContext* context, T* ops) {

@@ -22,6 +22,7 @@
 #include <grpcpp/support/async_stream.h>
 #include <grpcpp/support/async_unary_call.h>
 #include <grpcpp/support/byte_buffer.h>
+#include <grpcpp/export.h>
 
 namespace grpc {
 
@@ -32,7 +33,7 @@ typedef ClientAsyncResponseReader<ByteBuffer> GenericClientAsyncResponseReader;
 
 /// Generic stubs provide a type-unsafe interface to call gRPC methods
 /// by name.
-class GenericStub final {
+class GRPCXX_EXPORT GenericStub final {
  public:
   explicit GenericStub(std::shared_ptr<ChannelInterface> channel)
       : channel_(channel) {}
