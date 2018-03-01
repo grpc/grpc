@@ -2439,7 +2439,7 @@ set(grpc++_source_files
 
 if (gRPC_BUILD_SHARED)
   add_library(grpc++ SHARED ${grpc++_source_files})
-  target_compile_definitions(grpc++ PRIVATE -DGRPCXX_USE_DLL)
+  target_compile_definitions(grpc++ PRIVATE -DGRPC_USE_DLLS)
 else (gRPC_BUILD_SHARED)
   if(WIN32 AND MSVC)
     add_library(grpc++ STATIC ${grpc++_source_files})

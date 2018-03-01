@@ -1,9 +1,9 @@
-#ifdef GRPCXX_USE_DLL
+#ifdef GRPC_USE_DLLS
   #ifdef grpc___EXPORTS
     #define GRPCXX_EXPORT __declspec(dllexport)
   #else //grpc___EXPORTS
     #define GRPCXX_EXPORT __declspec(dllimport)
   #endif //grpc___EXPORTS
-#else //GRPCXX_USE_DLL
+#else //GRPC_USE_DLLS
   #define GRPCXX_EXPORT
-#endif //GRPCXX_USE_DLL
+#endif //GRPC_USE_DLLS

@@ -144,6 +144,8 @@ When you need to build dynamic libraties (dll), use ```gRPC_BUILD_SHARED``` opti
 > cmake .. -G "Visual Studio 14 2015" -DCMAKE_BUILD_TYPE=Release -DgRPC_BUILD_SHARED=ON
 ```
 
+If you using grpc++ as dynamic library (dll), do not forgot add ```GRPC_USE_DLLS``` and ```PROTOBUF_USE_DLLS``` preprocessor definition to your project. 
+
 
 #### cmake: Using Ninja (faster build, supports boringssl's assembly optimizations).
 Please note that when using Ninja, you'll still need Visual C++ (part of Visual Studio)
