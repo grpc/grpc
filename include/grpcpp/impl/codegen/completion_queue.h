@@ -38,6 +38,7 @@
 #include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/time.h>
+#include <grpcpp/export.h>
 
 struct grpc_completion_queue;
 
@@ -85,7 +86,7 @@ template <class InputMessage, class OutputMessage>
 class BlockingUnaryCallImpl;
 }  // namespace internal
 
-extern CoreCodegenInterface* g_core_codegen_interface;
+extern GRPCXX_EXPORT CoreCodegenInterface* g_core_codegen_interface;
 
 /// A thin wrapper around \ref grpc_completion_queue (see \ref
 /// src/core/lib/surface/completion_queue.h).
