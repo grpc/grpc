@@ -29,7 +29,7 @@
 
 const size_t kBiosDataBufferSize = 256;
 
-static char* trim(char* src) {
+static char* trim(const char* src) {
   if (src == nullptr) {
     return nullptr;
   }
