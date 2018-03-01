@@ -50,11 +50,11 @@ address_sorting_cc_library(
         "address_sorting_windows.c",
     ],
     hdrs = [
-        "address_sorting.h",
+        "include/address_sorting/address_sorting.h",
         "address_sorting_internal.h",
     ],
     copts = ["-std=c99"],
     includes = [
-        ".",
+        "include",
     ],
 )

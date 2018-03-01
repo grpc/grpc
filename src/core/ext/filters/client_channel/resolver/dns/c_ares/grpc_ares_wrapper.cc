@@ -33,7 +33,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include <address_sorting.h>
+#include <address_sorting/address_sorting.h>
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/lib/gpr/host_port.h"
@@ -141,6 +141,12 @@ void grpc_cares_wrapper_address_sorting_sort(grpc_lb_addresses* lb_addrs) {
   if (grpc_trace_cares_address_sorting.enabled()) {
     log_address_sorting_list(lb_addrs, "output");
   }
+}
+
+/* Allow tests to access grpc_ares_wrapper_address_sorting_sort */
+void grpc_cares_wrapper_test_only_address_sorting_sort(
+    grpc_lb_addresses* lb_addrs) {
+  grpc_cares_wrapper_address_sorting_sort(lb_addrs);
 }
 
 static void grpc_ares_request_unref(grpc_ares_request* r) {
