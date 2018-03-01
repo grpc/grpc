@@ -33,6 +33,7 @@ template <typename T>
 class RefCountedPtr {
  public:
   RefCountedPtr() {}
+  RefCountedPtr(std::nullptr_t) {}
 
   // If value is non-null, we take ownership of a ref to it.
   explicit RefCountedPtr(T* value) { value_ = value; }

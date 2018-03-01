@@ -39,9 +39,9 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
-#include "src/core/lib/security/transport/lb_targets_info.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
+#include "src/core/lib/security/transport/target_authority_table.h"
 #include "src/core/tsi/fake_transport_security.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security_adapter.h"
@@ -463,6 +463,15 @@ static bool fake_channel_check_call_host(grpc_channel_security_connector* sc,
                                          grpc_auth_context* auth_context,
                                          grpc_closure* on_call_host_checked,
                                          grpc_error** error) {
+  grpc_fake_channel_security_connector* c =
+      reinterpret_cast<grpc_fake_channel_security_connector*>(sc);
+  if (c->is_lb_channel) {
+    // TODO(dgq): verify that the host (ie, authority header) matches that of
+    // the LB, as opposed to that of the backends.
+  } else {
+    // TODO(dgq): verify that the host (ie, authority header) matches that of
+    // the backend, not the LB's.
+  }
   return true;
 }
 
@@ -514,7 +523,7 @@ grpc_channel_security_connector* grpc_fake_channel_security_connector_create(
   c->target = gpr_strdup(target);
   const char* expected_targets = grpc_fake_transport_get_expected_targets(args);
   c->expected_targets = gpr_strdup(expected_targets);
-  c->is_lb_channel = (grpc_lb_targets_info_find_in_args(args) != nullptr);
+  c->is_lb_channel = grpc_core::FindTargetAuthorityTableInArgs(args) != nullptr;
   return &c->base;
 }
 

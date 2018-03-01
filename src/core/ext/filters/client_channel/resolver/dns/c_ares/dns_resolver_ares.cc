@@ -295,7 +295,7 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
     size_t num_args_to_add = 0;
     new_args[num_args_to_add++] =
         grpc_lb_addresses_create_channel_arg(r->lb_addresses_);
-    grpc_service_config* service_config = nullptr;
+    grpc_core::UniquePtr<grpc_core::ServiceConfig> service_config;
     char* service_config_string = nullptr;
     if (r->service_config_json_ != nullptr) {
       service_config_string = ChooseServiceConfig(r->service_config_json_);
@@ -306,10 +306,11 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
         args_to_remove[num_args_to_remove++] = GRPC_ARG_SERVICE_CONFIG;
         new_args[num_args_to_add++] = grpc_channel_arg_string_create(
             (char*)GRPC_ARG_SERVICE_CONFIG, service_config_string);
-        service_config = grpc_service_config_create(service_config_string);
+        service_config =
+            grpc_core::ServiceConfig::Create(service_config_string);
         if (service_config != nullptr) {
           const char* lb_policy_name =
-              grpc_service_config_get_lb_policy_name(service_config);
+              service_config->GetLoadBalancingPolicyName();
           if (lb_policy_name != nullptr) {
             args_to_remove[num_args_to_remove++] = GRPC_ARG_LB_POLICY_NAME;
             new_args[num_args_to_add++] = grpc_channel_arg_string_create(
@@ -322,7 +323,6 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
     result = grpc_channel_args_copy_and_add_and_remove(
         r->channel_args_, args_to_remove, num_args_to_remove, new_args,
         num_args_to_add);
-    if (service_config != nullptr) grpc_service_config_destroy(service_config);
     gpr_free(service_config_string);
     grpc_lb_addresses_destroy(r->lb_addresses_);
     // Reset backoff state so that we start from the beginning when the
