@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/census.h>
 #include <grpc/grpc.h>
 #include "src/core/lib/surface/api_trace.h"

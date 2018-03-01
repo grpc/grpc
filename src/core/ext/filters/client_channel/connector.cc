@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/filters/client_channel/connector.h"
 
 grpc_connector* grpc_connector_ref(grpc_connector* connector) {

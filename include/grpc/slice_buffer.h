@@ -19,6 +19,8 @@
 #ifndef GRPC_SLICE_BUFFER_H
 #define GRPC_SLICE_BUFFER_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/slice.h>
 
 #ifdef __cplusplus

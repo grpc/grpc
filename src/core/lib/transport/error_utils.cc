@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/transport/error_utils.h"
 
 #include <grpc/support/string_util.h>

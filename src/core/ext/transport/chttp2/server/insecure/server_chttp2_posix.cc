@@ -16,10 +16,11 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
 #include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 

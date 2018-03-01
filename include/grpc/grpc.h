@@ -19,6 +19,8 @@
 #ifndef GRPC_GRPC_H
 #define GRPC_GRPC_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/status.h>
 
 #include <grpc/byte_buffer.h>

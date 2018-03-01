@@ -16,17 +16,18 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SECURITY_TRANSPORT_LB_TARGETS_INFO_H
-#define GRPC_CORE_LIB_SECURITY_TRANSPORT_LB_TARGETS_INFO_H
+#import "GRPCCall+MobileLog.h"
 
-#include "src/core/lib/slice/slice_hash_table.h"
+static id globalLogConfig = nil;
 
-/** Return a channel argument containing \a targets_info. */
-grpc_arg grpc_lb_targets_info_create_channel_arg(
-    grpc_slice_hash_table* targets_info);
+@implementation GRPCCall (MobileLog)
 
-/** Return the instance of targets info in \a args or NULL */
-grpc_slice_hash_table* grpc_lb_targets_info_find_in_args(
-    const grpc_channel_args* args);
++ (void)setLogConfig:(id)logConfig {
+  globalLogConfig = logConfig;
+}
 
-#endif /* GRPC_CORE_LIB_SECURITY_TRANSPORT_LB_TARGETS_INFO_H */
++ (id)logConfig {
+  return globalLogConfig;
+}
+
+@end

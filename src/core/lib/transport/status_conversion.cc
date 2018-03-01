@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/transport/status_conversion.h"
 
 grpc_http2_error_code grpc_status_to_http2_error(grpc_status_code status) {

@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 
 #include <string.h>
@@ -29,9 +31,6 @@
 #include "src/core/lib/iomgr/executor.h"
 
 /* -- Fake transport security credentials. -- */
-
-#define GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS \
-  "grpc.fake_security.expected_targets"
 
 static grpc_security_status fake_transport_security_create_security_connector(
     grpc_channel_credentials* c, grpc_call_credentials* call_creds,

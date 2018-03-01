@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/gpr/arena.h"
 
 #include <string.h>
@@ -23,6 +25,49 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
+
+// Uncomment this to use a simple arena that simply allocates the
+// requested amount of memory for each call to gpr_arena_alloc().  This
+// effectively eliminates the efficiency gain of using an arena, but it
+// may be useful for debugging purposes.
+//#define SIMPLE_ARENA_FOR_DEBUGGING
+
+#ifdef SIMPLE_ARENA_FOR_DEBUGGING
+
+#include <grpc/support/sync.h>
+
+struct gpr_arena {
+  gpr_mu mu;
+  void** ptrs;
+  size_t num_ptrs;
+};
+
+gpr_arena* gpr_arena_create(size_t ignored_initial_size) {
+  gpr_arena* arena = (gpr_arena*)gpr_zalloc(sizeof(*arena));
+  gpr_mu_init(&arena->mu);
+  return arena;
+}
+
+size_t gpr_arena_destroy(gpr_arena* arena) {
+  gpr_mu_destroy(&arena->mu);
+  for (size_t i = 0; i < arena->num_ptrs; ++i) {
+    gpr_free(arena->ptrs[i]);
+  }
+  gpr_free(arena->ptrs);
+  gpr_free(arena);
+  return 1;  // Value doesn't matter, since it won't be used.
+}
+
+void* gpr_arena_alloc(gpr_arena* arena, size_t size) {
+  gpr_mu_lock(&arena->mu);
+  arena->ptrs =
+      (void**)gpr_realloc(arena->ptrs, sizeof(void*) * (arena->num_ptrs + 1));
+  void* retval = arena->ptrs[arena->num_ptrs++] = gpr_zalloc(size);
+  gpr_mu_unlock(&arena->mu);
+  return retval;
+}
+
+#else  // SIMPLE_ARENA_FOR_DEBUGGING
 
 // TODO(roth): We currently assume that all callers need alignment of 16
 // bytes, which may be wrong in some cases.  As part of converting the
@@ -103,3 +148,5 @@ void* gpr_arena_alloc(gpr_arena* arena, size_t size) {
                         ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(zone));
   return ptr + start - z->size_begin;
 }
+
+#endif  // SIMPLE_ARENA_FOR_DEBUGGING

@@ -19,7 +19,12 @@
 #ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_FAKE_FAKE_CREDENTIALS_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/security/credentials/credentials.h"
+
+#define GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS \
+  "grpc.fake_security.expected_targets"
 
 /* -- Fake transport security credentials. -- */
 

@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_TIMEOUT_ENCODING_H
 #define GRPC_CORE_LIB_TRANSPORT_TIMEOUT_ENCODING_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/slice.h>
 #include <grpc/support/time.h>
 

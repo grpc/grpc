@@ -15,11 +15,13 @@
  *
  */
 
-#include "src/core/ext/filters/http/client/http_client_filter.h"
+#include <grpc/support/port_platform.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <string.h>
+#include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/b64.h"

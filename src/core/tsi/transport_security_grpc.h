@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_TSI_TRANSPORT_SECURITY_GRPC_H
 #define GRPC_CORE_TSI_TRANSPORT_SECURITY_GRPC_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/slice_buffer.h>
 #include "src/core/tsi/transport_security.h"
 

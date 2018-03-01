@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_IOMGR_SOCKADDR_POSIX_H
 #define GRPC_CORE_LIB_IOMGR_SOCKADDR_POSIX_H
 
+#include <grpc/support/port_platform.h>
+
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <netinet/in.h>

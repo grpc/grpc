@@ -16,14 +16,17 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include <string.h>
 
-#include <grpc/impl/codegen/port_platform.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/transport/chttp2/transport/bin_decoder.h"
+#include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/incoming_metadata.h"
 #include "src/core/ext/transport/cronet/transport/cronet_transport.h"
 #include "src/core/lib/gpr/host_port.h"
@@ -393,6 +396,29 @@ static void execute_from_storage(stream_obj* s) {
   gpr_mu_unlock(&s->mu);
 }
 
+static void convert_cronet_array_to_metadata(
+    const bidirectional_stream_header_array* header_array,
+    grpc_chttp2_incoming_metadata_buffer* mds) {
+  for (size_t i = 0; i < header_array->count; i++) {
+    CRONET_LOG(GPR_DEBUG, "header key=%s, value=%s",
+               header_array->headers[i].key, header_array->headers[i].value);
+    grpc_slice key = grpc_slice_intern(
+        grpc_slice_from_static_string(header_array->headers[i].key));
+    grpc_slice value;
+    if (grpc_is_binary_header(key)) {
+      value = grpc_slice_from_static_string(header_array->headers[i].value);
+      value = grpc_slice_intern(grpc_chttp2_base64_decode_with_length(
+          value, grpc_chttp2_base64_infer_length_after_decode(value)));
+    } else {
+      value = grpc_slice_intern(
+          grpc_slice_from_static_string(header_array->headers[i].value));
+    }
+    GRPC_LOG_IF_ERROR("convert_cronet_array_to_metadata",
+                      grpc_chttp2_incoming_metadata_buffer_add(
+                          mds, grpc_mdelem_from_slices(key, value)));
+  }
+}
+
 /*
   Cronet callback
 */
@@ -517,16 +543,7 @@ static void on_response_headers_received(
          sizeof(s->state.rs.initial_metadata));
   grpc_chttp2_incoming_metadata_buffer_init(&s->state.rs.initial_metadata,
                                             s->arena);
-  for (size_t i = 0; i < headers->count; i++) {
-    GRPC_LOG_IF_ERROR("on_response_headers_received",
-                      grpc_chttp2_incoming_metadata_buffer_add(
-                          &s->state.rs.initial_metadata,
-                          grpc_mdelem_from_slices(
-                              grpc_slice_intern(grpc_slice_from_static_string(
-                                  headers->headers[i].key)),
-                              grpc_slice_intern(grpc_slice_from_static_string(
-                                  headers->headers[i].value)))));
-  }
+  convert_cronet_array_to_metadata(headers, &s->state.rs.initial_metadata);
   s->state.state_callback_received[OP_RECV_INITIAL_METADATA] = true;
   if (!(s->state.state_op_done[OP_CANCEL_ERROR] ||
         s->state.state_callback_received[OP_FAILED])) {
@@ -621,18 +638,11 @@ static void on_response_trailers_received(
   s->state.rs.trailing_metadata_valid = false;
   grpc_chttp2_incoming_metadata_buffer_init(&s->state.rs.trailing_metadata,
                                             s->arena);
-  for (size_t i = 0; i < trailers->count; i++) {
-    CRONET_LOG(GPR_DEBUG, "trailer key=%s, value=%s", trailers->headers[i].key,
-               trailers->headers[i].value);
-    GRPC_LOG_IF_ERROR("on_response_trailers_received",
-                      grpc_chttp2_incoming_metadata_buffer_add(
-                          &s->state.rs.trailing_metadata,
-                          grpc_mdelem_from_slices(
-                              grpc_slice_intern(grpc_slice_from_static_string(
-                                  trailers->headers[i].key)),
-                              grpc_slice_intern(grpc_slice_from_static_string(
-                                  trailers->headers[i].value)))));
+  convert_cronet_array_to_metadata(trailers, &s->state.rs.trailing_metadata);
+  if (trailers->count > 0) {
     s->state.rs.trailing_metadata_valid = true;
+  }
+  for (size_t i = 0; i < trailers->count; i++) {
     if (0 == strcmp(trailers->headers[i].key, "grpc-status") &&
         0 != strcmp(trailers->headers[i].value, "0")) {
       s->state.fail_state = true;
@@ -721,7 +731,14 @@ static void convert_metadata_to_cronet_headers(
     grpc_mdelem mdelem = curr->md;
     curr = curr->next;
     char* key = grpc_slice_to_c_string(GRPC_MDKEY(mdelem));
-    char* value = grpc_slice_to_c_string(GRPC_MDVALUE(mdelem));
+    char* value;
+    if (grpc_is_binary_header(GRPC_MDKEY(mdelem))) {
+      grpc_slice wire_value = grpc_chttp2_base64_encode(GRPC_MDVALUE(mdelem));
+      value = grpc_slice_to_c_string(wire_value);
+      grpc_slice_unref(wire_value);
+    } else {
+      value = grpc_slice_to_c_string(GRPC_MDVALUE(mdelem));
+    }
     if (grpc_slice_eq(GRPC_MDKEY(mdelem), GRPC_MDSTR_SCHEME) ||
         grpc_slice_eq(GRPC_MDKEY(mdelem), GRPC_MDSTR_AUTHORITY)) {
       /* Cronet populates these fields on its own */
