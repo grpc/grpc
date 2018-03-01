@@ -52,8 +52,9 @@ class GrpcUdpHandler {
   // scheduled when the socket becomes blocked next time.
   virtual void OnCanWrite(void* user_data,
                           grpc_closure* notify_on_write_closure) GRPC_ABSTRACT;
-  // Called before the gRPC FD is orphaned. After return of this method, the
-  // associated fd will be closed.
+  // Called before the gRPC FD is orphaned. Notify udp server to continue
+  // orphaning fd by scheduling the given closure, afterwards the associated fd
+  // will be closed.
   virtual void OnFdAboutToOrphan(grpc_closure* orphan_fd_closure,
                                  void* user_data) GRPC_ABSTRACT;
 
