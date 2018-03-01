@@ -26,6 +26,7 @@
 #include <grpcpp/security/auth_context.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
+#include <grpcpp/export.h>
 
 struct grpc_call;
 
@@ -42,7 +43,7 @@ class SecureCallCredentials;
 /// for all the calls on that channel.
 ///
 /// \see https://grpc.io/docs/guides/auth.html
-class ChannelCredentials : private GrpcLibraryCodegen {
+class GRPCXX_EXPORT ChannelCredentials : private GrpcLibraryCodegen {
  public:
   ChannelCredentials();
   ~ChannelCredentials();

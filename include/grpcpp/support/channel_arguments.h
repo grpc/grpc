@@ -25,6 +25,7 @@
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpcpp/support/config.h>
+#include <grpcpp/export.h>
 
 namespace grpc {
 namespace testing {
@@ -36,7 +37,7 @@ class ResourceQuota;
 /// Options for channel creation. The user can use generic setters to pass
 /// key value pairs down to C channel creation code. For gRPC related options,
 /// concrete setters are provided.
-class ChannelArguments {
+GRPCXX_EXPORT class ChannelArguments {
  public:
   ChannelArguments();
   ~ChannelArguments();

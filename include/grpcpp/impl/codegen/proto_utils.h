@@ -28,10 +28,11 @@
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/serialization_traits.h>
 #include <grpcpp/impl/codegen/status.h>
+#include <grpcpp/export.h>
 
 namespace grpc {
 
-extern CoreCodegenInterface* g_core_codegen_interface;
+extern GRPCXX_EXPORT CoreCodegenInterface* g_core_codegen_interface;
 
 namespace internal {
 
