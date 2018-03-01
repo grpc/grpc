@@ -50,11 +50,15 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
   --strategy=Closure=remote  \
   --genrule_strategy=remote  \
   --experimental_strict_action_env=true \
-  --experimental_remote_platform_override='properties:{name:"container-image" value:"docker://gcr.io/cloud-marketplace/google/rbe-debian8@sha256:b2d946c1ddc20af250fe85cf98bd648ac5519131659f7c36e64184b433175a33" }' \
+  --experimental_remote_platform_override='properties:{name:"container-image" value:"docker://gcr.io/asci-toolchain/nosla-debian8-clang-msan@sha256:8f381d55c0456fb65821c90ada902c2584977e03a1eaca8fba8ce77e644c775b" }' \
   --define GRPC_PORT_ISOLATED_RUNTIME=1 \
   --copt=-gmlt \
   --strip=never \
-  --copt=-fsanitize=undefined \
-  --linkopt=-fsanitize=undefined \
-  --crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/experimental/debian8_clang/0.3.0/bazel_0.10.0/ubsan:ubsan_experimental_toolchain \
+  --cxxopt=--stdlib=libc++ \
+  --copt=-fsanitize=memory \ 
+  --linkopt=-fsanitize=memory \
+  --copt=-fsanitize-memory-track-origins \
+  --action_env=LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH \
+  --host_crosstool_top=@bazel_toolchains//configs/debian8_clang/0.3.0/bazel_0.10.0:toolchain \
+  --crosstool_top=@bazel_toolchains//configs/experimental/debian8_clang/0.3.0/bazel_0.10.0/msan:msan_experimental_toolchain \
   -- //test/...

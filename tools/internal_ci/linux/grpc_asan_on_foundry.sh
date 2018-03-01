@@ -13,5 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-EXTRA_FLAGS="-c opt"
+EXTRA_FLAGS="--copt=-gmlt --strip=never --copt=-fsanitize=address --linkopt=-fsanitize=address"
 github/grpc/tools/internal_ci/linux/grpc_bazel_on_foundry_base.sh "${EXTRA_FLAGS}"
+
