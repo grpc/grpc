@@ -338,6 +338,8 @@ CPPFLAGS += -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSAT
 COREFLAGS += -fno-rtti -fno-exceptions
 LDFLAGS += -g
 
+DEFINES += PB_FIELD_16BIT
+
 CPPFLAGS += $(CPPFLAGS_$(CONFIG))
 CFLAGS += $(CFLAGS_$(CONFIG))
 CXXFLAGS += $(CXXFLAGS_$(CONFIG))
@@ -3423,9 +3425,6 @@ PUBLIC_HEADERS_C += \
 
 LIBGRPC_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_SRC))))
 
-$(LIBGRPC_OBJS): CPPFLAGS += -DPB_FIELD_16BIT
-$(LIBGRPC_OBJS): CXXFLAGS += -DPB_FIELD_16BIT
-$(LIBGRPC_OBJS): CFLAGS += -DPB_FIELD_16BIT
 
 ifeq ($(NO_SECURE),true)
 

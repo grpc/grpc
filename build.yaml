@@ -1316,7 +1316,6 @@ libs:
   src:
   - src/core/lib/surface/init.cc
   baselib: true
-  defaults: nanopb
   deps_linkage: static
   dll: true
   filegroups:
@@ -5399,10 +5398,6 @@ defaults:
     CPPFLAGS: -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1
       -Wno-deprecated-declarations
     LDFLAGS: -g
-  nanopb:
-    CFLAGS: -DPB_FIELD_16BIT
-    CPPFLAGS: -DPB_FIELD_16BIT
-    CXXFLAGS: -DPB_FIELD_16BIT
   zlib:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration
       -Wno-implicit-fallthrough $(W_NO_SHIFT_NEGATIVE_VALUE) -fvisibility=hidden
