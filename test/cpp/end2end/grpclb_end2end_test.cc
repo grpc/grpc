@@ -384,7 +384,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
     SetNextResolution(addresses);
   }
 
-  void ResetStub(int fallback_timeout = 0, grpc::string expected_targets = "") {
+  void ResetStub(int fallback_timeout = 0,
+                 const grpc::string& expected_targets = "") {
     ChannelArguments args;
     args.SetGrpclbFallbackTimeout(fallback_timeout);
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
@@ -459,7 +460,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
 
   void WaitForBackend(size_t backend_idx) {
     do {
-      SendRpc();
+      (void)SendRpc();
     } while (backends_[backend_idx]->request_count() == 0);
     ResetBackendCounters();
   }
