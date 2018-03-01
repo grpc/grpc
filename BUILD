@@ -55,7 +55,7 @@ config_setting(
 
 config_setting(
     name = "windows",
-    values = { "cpu": "x64_windows" },
+    values = {"cpu": "x64_windows"},
 )
 
 config_setting(
@@ -808,6 +808,7 @@ grpc_cc_library(
         "src/core/lib/transport/service_config.cc",
         "src/core/lib/transport/static_metadata.cc",
         "src/core/lib/transport/status_conversion.cc",
+        "src/core/lib/transport/status_metadata.cc",
         "src/core/lib/transport/timeout_encoding.cc",
         "src/core/lib/transport/transport.cc",
         "src/core/lib/transport/transport_op_string.cc",
@@ -906,6 +907,7 @@ grpc_cc_library(
         "src/core/lib/slice/slice_hash_table.h",
         "src/core/lib/slice/slice_internal.h",
         "src/core/lib/slice/slice_string_helpers.h",
+        "src/core/lib/slice/slice_weak_hash_table.h",
         "src/core/lib/surface/api_trace.h",
         "src/core/lib/surface/call.h",
         "src/core/lib/surface/call_test_only.h",
@@ -930,6 +932,7 @@ grpc_cc_library(
         "src/core/lib/transport/service_config.h",
         "src/core/lib/transport/static_metadata.h",
         "src/core/lib/transport/status_conversion.h",
+        "src/core/lib/transport/status_metadata.h",
         "src/core/lib/transport/timeout_encoding.h",
         "src/core/lib/transport/transport.h",
         "src/core/lib/transport/transport_impl.h",
@@ -1008,6 +1011,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/resolver.cc",
         "src/core/ext/filters/client_channel/resolver_registry.cc",
         "src/core/ext/filters/client_channel/retry_throttle.cc",
+        "src/core/ext/filters/client_channel/status_util.cc",
         "src/core/ext/filters/client_channel/subchannel.cc",
         "src/core/ext/filters/client_channel/subchannel_index.cc",
         "src/core/ext/filters/client_channel/uri_parser.cc",
@@ -1030,6 +1034,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/resolver_factory.h",
         "src/core/ext/filters/client_channel/resolver_registry.h",
         "src/core/ext/filters/client_channel/retry_throttle.h",
+        "src/core/ext/filters/client_channel/status_util.h",
         "src/core/ext/filters/client_channel/subchannel.h",
         "src/core/ext/filters/client_channel/subchannel_index.h",
         "src/core/ext/filters/client_channel/uri_parser.h",

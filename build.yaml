@@ -358,6 +358,7 @@ filegroups:
   - src/core/lib/transport/service_config.cc
   - src/core/lib/transport/static_metadata.cc
   - src/core/lib/transport/status_conversion.cc
+  - src/core/lib/transport/status_metadata.cc
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/lib/transport/transport.cc
   - src/core/lib/transport/transport_op_string.cc
@@ -481,6 +482,7 @@ filegroups:
   - src/core/lib/slice/slice_hash_table.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/slice/slice_weak_hash_table.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
@@ -505,6 +507,7 @@ filegroups:
   - src/core/lib/transport/service_config.h
   - src/core/lib/transport/static_metadata.h
   - src/core/lib/transport/status_conversion.h
+  - src/core/lib/transport/status_metadata.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_impl.h
@@ -532,6 +535,7 @@ filegroups:
   - src/core/ext/filters/client_channel/resolver_factory.h
   - src/core/ext/filters/client_channel/resolver_registry.h
   - src/core/ext/filters/client_channel/retry_throttle.h
+  - src/core/ext/filters/client_channel/status_util.h
   - src/core/ext/filters/client_channel/subchannel.h
   - src/core/ext/filters/client_channel/subchannel_index.h
   - src/core/ext/filters/client_channel/uri_parser.h
@@ -554,6 +558,7 @@ filegroups:
   - src/core/ext/filters/client_channel/resolver.cc
   - src/core/ext/filters/client_channel/resolver_registry.cc
   - src/core/ext/filters/client_channel/retry_throttle.cc
+  - src/core/ext/filters/client_channel/status_util.cc
   - src/core/ext/filters/client_channel/subchannel.cc
   - src/core/ext/filters/client_channel/subchannel_index.cc
   - src/core/ext/filters/client_channel/uri_parser.cc
@@ -5067,6 +5072,18 @@ targets:
   - gpr_test_util
   - gpr
   uses_polling: false
+- name: slice_weak_hash_table_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/slice/slice_weak_hash_table_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses_polling: false
 - name: stats_test
   gtest: true
   build: test
@@ -5083,6 +5100,15 @@ targets:
   - tsan
   timeout_seconds: 1200
   uses_polling: false
+- name: status_metadata_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/transport/status_metadata_test.cc
+  deps:
+  - grpc
+  uses_polling: false
 - name: status_test
   build: test
   language: c++
@@ -5094,6 +5120,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
+- name: status_util_test
+  gtest: true
+  cpu_cost: 0.1
+  build: test
+  language: c++
+  src:
+  - test/core/client_channel/status_util_test.cc
+  deps:
+  - grpc
   uses_polling: false
 - name: streaming_throughput_test
   gtest: true

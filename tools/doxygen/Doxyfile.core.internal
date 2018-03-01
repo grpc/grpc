@@ -929,6 +929,8 @@ src/core/ext/filters/client_channel/resolver_registry.cc \
 src/core/ext/filters/client_channel/resolver_registry.h \
 src/core/ext/filters/client_channel/retry_throttle.cc \
 src/core/ext/filters/client_channel/retry_throttle.h \
+src/core/ext/filters/client_channel/status_util.cc \
+src/core/ext/filters/client_channel/status_util.h \
 src/core/ext/filters/client_channel/subchannel.cc \
 src/core/ext/filters/client_channel/subchannel.h \
 src/core/ext/filters/client_channel/subchannel_index.cc \
@@ -1346,6 +1348,7 @@ src/core/lib/slice/slice_intern.cc \
 src/core/lib/slice/slice_internal.h \
 src/core/lib/slice/slice_string_helpers.cc \
 src/core/lib/slice/slice_string_helpers.h \
+src/core/lib/slice/slice_weak_hash_table.h \
 src/core/lib/surface/README.md \
 src/core/lib/surface/api_trace.cc \
 src/core/lib/surface/api_trace.h \
@@ -1402,6 +1405,8 @@ src/core/lib/transport/static_metadata.cc \
 src/core/lib/transport/static_metadata.h \
 src/core/lib/transport/status_conversion.cc \
 src/core/lib/transport/status_conversion.h \
+src/core/lib/transport/status_metadata.cc \
+src/core/lib/transport/status_metadata.h \
 src/core/lib/transport/timeout_encoding.cc \
 src/core/lib/transport/timeout_encoding.h \
 src/core/lib/transport/transport.cc \
