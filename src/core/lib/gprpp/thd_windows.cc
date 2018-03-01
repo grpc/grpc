@@ -52,28 +52,22 @@ struct thd_info {
 
 thread_local struct thd_info* g_thd_info;
 
-/* Destroys a thread info */
-void destroy_thread(struct thd_info* t) {
-  CloseHandle(t->join_event);
-  gpr_free(t);
-}
-
 class ThreadInternalsWindows
     : public grpc_core::internal::ThreadInternalsInterface {
  public:
-  ThreadInternalsWindows(void (*thd_body)(void* arg), void* arg,
-                         bool* success) {
+  ThreadInternalsWindows(void (*thd_body)(void* arg), void* arg, bool* success)
+      : started_(false) {
     gpr_mu_init(&mu_);
     gpr_cv_init(&ready_);
 
     HANDLE handle;
     info_ = (struct thd_info*)gpr_malloc(sizeof(*info_));
-    info->thread = this;
-    info->body = thd_body;
-    info->arg = arg;
+    info_->thread = this;
+    info_->body = thd_body;
+    info_->arg = arg;
 
-    info->join_event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-    if (info->join_event == nullptr) {
+    info_->join_event = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    if (info_->join_event == nullptr) {
       gpr_free(info_);
       *success = false;
     } else {
@@ -92,10 +86,10 @@ class ThreadInternalsWindows
             GPR_ASSERT(ret);
             return 0;
           },
-          info, 0, nullptr);
+          info_, 0, nullptr);
       if (handle == nullptr) {
-        destroy_thread(info_);
-        *success_ = false;
+        destroy_thread();
+        *success = false;
       } else {
         CloseHandle(handle);
         *success = true;
@@ -118,10 +112,15 @@ class ThreadInternalsWindows
   void Join() override {
     DWORD ret = WaitForSingleObject(info_->join_event, INFINITE);
     GPR_ASSERT(ret == WAIT_OBJECT_0);
-    destroy_thread(info_);
+    destroy_thread();
   }
 
  private:
+  void destroy_thread() {
+    CloseHandle(info_->join_event);
+    gpr_free(info_);
+  }
+
   gpr_mu mu_;
   gpr_cv ready_;
   bool started_;
@@ -141,7 +140,7 @@ bool Thread::AwaitAll(gpr_timespec deadline) {
 
 Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
                bool* success) {
-  bool outcome;
+  bool outcome = false;
   impl_ = grpc_core::New<ThreadInternalsWindows>(thd_body, arg, &outcome);
   if (outcome) {
     state_ = ALIVE;

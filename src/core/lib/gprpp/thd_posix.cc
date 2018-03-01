@@ -165,7 +165,7 @@ class ThreadInternalsPosix
 
 Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
                bool* success) {
-  bool outcome;
+  bool outcome = false;
   impl_ =
       grpc_core::New<ThreadInternalsPosix>(thd_name, thd_body, arg, &outcome);
   if (outcome) {
