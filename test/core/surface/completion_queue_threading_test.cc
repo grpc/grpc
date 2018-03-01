@@ -18,8 +18,6 @@
 
 #include "src/core/lib/surface/completion_queue.h"
 
-#include <new>
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
@@ -96,7 +94,7 @@ static void test_too_many_plucks(void) {
     }
     thread_states[i].cc = cc;
     thread_states[i].tag = tags[i];
-    new (&threads[i])
+    threads[i] =
         grpc_core::Thread("grpc_pluck_test", pluck_one, thread_states + i);
     threads[i].Start();
   }
@@ -234,7 +232,7 @@ static void test_threading(size_t producers, size_t consumers) {
     options[i].id = optid++;
 
     bool ok;
-    new (&threads[i]) grpc_core::Thread(
+    threads[i] = grpc_core::Thread(
         i < producers ? "grpc_producer" : "grpc_consumer",
         i < producers ? producer_thread : consumer_thread, options + i, &ok);
     GPR_ASSERT(ok);
@@ -273,7 +271,6 @@ static void test_threading(size_t producers, size_t consumers) {
 
   for (i = 0; i < producers + consumers; i++) {
     threads[i].Join();
-    threads[i].~Thread();
   }
   gpr_free(threads);
 

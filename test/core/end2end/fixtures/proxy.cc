@@ -19,7 +19,6 @@
 #include "test/core/end2end/fixtures/proxy.h"
 
 #include <string.h>
-#include <new>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -98,7 +97,7 @@ grpc_end2end_proxy* grpc_end2end_proxy_create(const grpc_end2end_proxy_def* def,
   grpc_server_start(proxy->server);
 
   grpc_call_details_init(&proxy->new_call_details);
-  new (&proxy->thd) grpc_core::Thread("grpc_end2end_proxy", thread_main, proxy);
+  proxy->thd = grpc_core::Thread("grpc_end2end_proxy", thread_main, proxy);
   proxy->thd.Start();
 
   request_call(proxy);
@@ -123,7 +122,6 @@ void grpc_end2end_proxy_destroy(grpc_end2end_proxy* proxy) {
   grpc_server_shutdown_and_notify(proxy->server, proxy->cq,
                                   new_closure(shutdown_complete, proxy));
   proxy->thd.Join();
-  proxy->thd.~Thread();
   gpr_free(proxy->proxy_port);
   gpr_free(proxy->server_port);
   grpc_server_destroy(proxy->server);

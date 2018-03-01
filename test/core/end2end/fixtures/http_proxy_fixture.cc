@@ -21,7 +21,6 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 
 #include <string.h>
-#include <new>
 
 #include <grpc/grpc.h>
 #include <grpc/slice_buffer.h>
@@ -551,7 +550,7 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   grpc_tcp_server_start(proxy->server, &proxy->pollset, 1, on_accept, proxy);
 
   // Start proxy thread.
-  new (&proxy->thd) grpc_core::Thread("grpc_http_proxy", thread_main, proxy);
+  proxy->thd = grpc_core::Thread("grpc_http_proxy", thread_main, proxy);
   proxy->thd.Start();
   return proxy;
 }
@@ -566,7 +565,6 @@ void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy) {
   gpr_unref(&proxy->users);  // Signal proxy thread to shutdown.
   grpc_core::ExecCtx exec_ctx;
   proxy->thd.Join();
-  proxy->thd.~Thread();
   grpc_tcp_server_shutdown_listeners(proxy->server);
   grpc_tcp_server_unref(proxy->server);
   gpr_free(proxy->proxy_name);

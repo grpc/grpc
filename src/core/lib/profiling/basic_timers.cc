@@ -183,7 +183,7 @@ static void finish_writing(void) {
   pthread_cond_signal(&g_cv);
   pthread_mutex_unlock(&g_mu);
   g_writing_thread->Join();
-  delete g_writing_thread;
+  grpc_core::Delete(g_writing_thread);
 
   gpr_log(GPR_INFO, "flushing logs");
 
@@ -202,8 +202,8 @@ void gpr_timers_set_log_filename(const char* filename) {
 }
 
 static void init_output() {
-  g_writing_thread =
-      new grpc_core::Thread("timer_output_thread", writing_thread, nullptr);
+  g_writing_thread = grpc_core::New<grpc_core::Thread>("timer_output_thread",
+                                                       writing_thread, nullptr);
   atexit(finish_writing);
 }
 

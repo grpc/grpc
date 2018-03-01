@@ -25,7 +25,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <new>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -118,7 +117,7 @@ static void cpu_test(void) {
       static_cast<grpc_core::Thread*>(gpr_malloc(sizeof(*thd) * nthreads));
 
   for (i = 0; i < nthreads; i++) {
-    new (&thd[i]) grpc_core::Thread("grpc_cpu_test", &worker_thread, &ct);
+    thd[i] = grpc_core::Thread("grpc_cpu_test", &worker_thread, &ct);
     thd[i].Start();
   }
   gpr_mu_lock(&ct.mu);
@@ -128,7 +127,6 @@ static void cpu_test(void) {
   gpr_mu_unlock(&ct.mu);
   for (i = 0; i < nthreads; i++) {
     thd[i].Join();
-    thd[i].~Thread();
   }
   gpr_free(thd);
   fprintf(stderr, "Saw cores [");

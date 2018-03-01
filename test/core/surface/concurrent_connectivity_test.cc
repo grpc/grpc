@@ -24,7 +24,6 @@
 
 #include <memory.h>
 #include <stdio.h>
-#include <new>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -179,8 +178,7 @@ int run_concurrent_connectivity_test() {
     char* localhost = gpr_strdup("localhost:54321");
     grpc_core::Thread threads[NUM_THREADS];
     for (auto& th : threads) {
-      new (&th)
-          grpc_core::Thread("grpc_wave_1", create_loop_destroy, localhost);
+      th = grpc_core::Thread("grpc_wave_1", create_loop_destroy, localhost);
       th.Start();
     }
     for (auto& th : threads) {
@@ -204,8 +202,7 @@ int run_concurrent_connectivity_test() {
 
     grpc_core::Thread threads[NUM_THREADS];
     for (auto& th : threads) {
-      new (&th)
-          grpc_core::Thread("grpc_wave_2", create_loop_destroy, args.addr);
+      th = grpc_core::Thread("grpc_wave_2", create_loop_destroy, args.addr);
       th.Start();
     }
     for (auto& th : threads) {
@@ -231,8 +228,7 @@ int run_concurrent_connectivity_test() {
 
     grpc_core::Thread threads[NUM_THREADS];
     for (auto& th : threads) {
-      new (&th)
-          grpc_core::Thread("grpc_wave_3", create_loop_destroy, args.addr);
+      th = grpc_core::Thread("grpc_wave_3", create_loop_destroy, args.addr);
       th.Start();
     }
     for (auto& th : threads) {
@@ -291,8 +287,8 @@ int run_concurrent_watches_with_short_timeouts_test() {
   char* localhost = gpr_strdup("localhost:54321");
 
   for (auto& th : threads) {
-    new (&th) grpc_core::Thread("grpc_short_watches",
-                                watches_with_short_timeouts, localhost);
+    th = grpc_core::Thread("grpc_short_watches", watches_with_short_timeouts,
+                           localhost);
     th.Start();
   }
   for (auto& th : threads) {

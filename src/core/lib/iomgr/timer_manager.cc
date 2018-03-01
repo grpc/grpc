@@ -19,7 +19,6 @@
 #include <grpc/support/port_platform.h>
 
 #include <inttypes.h>
-#include <new>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -69,7 +68,6 @@ static void gc_completed_threads(void) {
     gpr_mu_unlock(&g_mu);
     while (to_gc != nullptr) {
       to_gc->thd.Join();
-      to_gc->thd.~Thread();
       completed_thread* next = to_gc->next;
       gpr_free(to_gc);
       to_gc = next;
@@ -88,7 +86,7 @@ static void start_timer_thread_and_unlock(void) {
   }
   completed_thread* ct =
       static_cast<completed_thread*>(gpr_malloc(sizeof(*ct)));
-  new (&ct->thd) grpc_core::Thread("grpc_global_timer", timer_thread, ct);
+  ct->thd = grpc_core::Thread("grpc_global_timer", timer_thread, ct);
   ct->thd.Start();
 }
 

@@ -21,7 +21,6 @@
 #include "src/core/lib/iomgr/executor.h"
 
 #include <string.h>
-#include <new>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
@@ -102,11 +101,11 @@ void grpc_executor_set_threading(bool threading) {
     for (size_t i = 0; i < g_max_threads; i++) {
       gpr_mu_init(&g_thread_state[i].mu);
       gpr_cv_init(&g_thread_state[i].cv);
-      new (&g_thread_state[i].thd) grpc_core::Thread();
+      g_thread_state[i].thd = grpc_core::Thread();
       g_thread_state[i].elems = GRPC_CLOSURE_LIST_INIT;
     }
 
-    new (&g_thread_state[0].thd)
+    g_thread_state[0].thd =
         grpc_core::Thread("grpc_executor", executor_thread, &g_thread_state[0]);
     g_thread_state[0].thd.Start();
   } else {
@@ -126,7 +125,6 @@ void grpc_executor_set_threading(bool threading) {
     }
     gpr_atm_no_barrier_store(&g_cur_threads, 0);
     for (size_t i = 0; i < g_max_threads; i++) {
-      g_thread_state[i].thd.~Thread();
       gpr_mu_destroy(&g_thread_state[i].mu);
       gpr_cv_destroy(&g_thread_state[i].cv);
       run_closures(g_thread_state[i].elems);
@@ -266,7 +264,7 @@ static void executor_push(grpc_closure* closure, grpc_error* error,
       if (cur_thread_count < g_max_threads) {
         gpr_atm_no_barrier_store(&g_cur_threads, cur_thread_count + 1);
 
-        new (&g_thread_state[cur_thread_count].thd)
+        g_thread_state[cur_thread_count].thd =
             grpc_core::Thread("grpc_executor", executor_thread,
                               &g_thread_state[cur_thread_count]);
         g_thread_state[cur_thread_count].thd.Start();

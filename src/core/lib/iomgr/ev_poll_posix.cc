@@ -31,7 +31,6 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include <new>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -259,7 +258,9 @@ typedef struct poll_args {
   grpc_core::Thread poller_thd;
   gpr_cv trigger;
   int trigger_set;
+  bool harvestable;
   gpr_cv harvest;
+  bool joinable;
   gpr_cv join;
   struct pollfd* fds;
   nfds_t nfds;
@@ -1372,6 +1373,8 @@ static poll_args* get_poller_locked(struct pollfd* fds, nfds_t count) {
   gpr_cv_init(&pargs->trigger);
   gpr_cv_init(&pargs->harvest);
   gpr_cv_init(&pargs->join);
+  pargs->harvestable = false;
+  pargs->joinable = false;
   pargs->fds = fds;
   pargs->nfds = count;
   pargs->next = nullptr;
@@ -1380,7 +1383,7 @@ static poll_args* get_poller_locked(struct pollfd* fds, nfds_t count) {
   init_result(pargs);
   cache_poller_locked(pargs);
   gpr_ref(&g_cvfds.pollcount);
-  new (&pargs->poller_thd) grpc_core::Thread("grpc_poller", &run_poll, pargs);
+  pargs->poller_thd = grpc_core::Thread("grpc_poller", &run_poll, pargs);
   pargs->poller_thd.Start();
   return pargs;
 }
@@ -1464,10 +1467,13 @@ static void cache_harvest_locked() {
     if (poll_cache.dead_pollers) {
       poll_cache.dead_pollers->prev = nullptr;
     }
+    args->harvestable = true;
     gpr_cv_signal(&args->harvest);
-    gpr_cv_wait(&args->join, &g_cvfds.mu, gpr_inf_future(GPR_CLOCK_MONOTONIC));
+    while (!args->joinable) {
+      gpr_cv_wait(&args->join, &g_cvfds.mu,
+                  gpr_inf_future(GPR_CLOCK_MONOTONIC));
+    }
     args->poller_thd.Join();
-    args->poller_thd.~Thread();
     gpr_free(args);
   }
 }
@@ -1533,8 +1539,11 @@ static void run_poll(void* args) {
   if (gpr_unref(&g_cvfds.pollcount)) {
     gpr_cv_signal(&g_cvfds.shutdown_cv);
   }
-  gpr_cv_wait(&pargs->harvest, &g_cvfds.mu,
-              gpr_inf_future(GPR_CLOCK_MONOTONIC));
+  while (!pargs->harvestable) {
+    gpr_cv_wait(&pargs->harvest, &g_cvfds.mu,
+                gpr_inf_future(GPR_CLOCK_MONOTONIC));
+  }
+  pargs->joinable = true;
   gpr_cv_signal(&pargs->join);
   gpr_mu_unlock(&g_cvfds.mu);
 }

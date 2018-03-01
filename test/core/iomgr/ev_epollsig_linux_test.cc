@@ -25,7 +25,6 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
-#include <new>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -262,7 +261,7 @@ static void test_threading(void) {
 
   grpc_core::Thread thds[10];
   for (auto& th : thds) {
-    new (&th) grpc_core::Thread("test_thread", test_threading_loop, &shared);
+    th = grpc_core::Thread("test_thread", test_threading_loop, &shared);
     th.Start();
   }
   grpc_wakeup_fd fd;

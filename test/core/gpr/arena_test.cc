@@ -20,7 +20,6 @@
 
 #include <inttypes.h>
 #include <string.h>
-#include <new>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -102,7 +101,7 @@ static void concurrent_test(void) {
   grpc_core::Thread thds[CONCURRENT_TEST_THREADS];
 
   for (int i = 0; i < CONCURRENT_TEST_THREADS; i++) {
-    new (&thds[i])
+    thds[i] =
         grpc_core::Thread("grpc_concurrent_test", concurrent_test_body, &args);
     thds[i].Start();
   }

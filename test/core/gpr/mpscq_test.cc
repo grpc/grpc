@@ -19,7 +19,6 @@
 #include "src/core/lib/gpr/mpscq.h"
 
 #include <stdlib.h>
-#include <new>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -85,7 +84,7 @@ static void test_mt(void) {
     ta[i].ctr = 0;
     ta[i].q = &q;
     ta[i].start = &start;
-    new (&thds[i]) grpc_core::Thread("grpc_mt_test", test_thread, &ta[i]);
+    thds[i] = grpc_core::Thread("grpc_mt_test", test_thread, &ta[i]);
     thds[i].Start();
   }
   size_t num_done = 0;
@@ -155,7 +154,7 @@ static void test_mt_multipop(void) {
     ta[i].ctr = 0;
     ta[i].q = &q;
     ta[i].start = &start;
-    new (&thds[i]) grpc_core::Thread("grpc_multipop_test", test_thread, &ta[i]);
+    thds[i] = grpc_core::Thread("grpc_multipop_test", test_thread, &ta[i]);
     thds[i].Start();
   }
   pull_args pa;
@@ -167,8 +166,7 @@ static void test_mt_multipop(void) {
   pa.start = &start;
   gpr_mu_init(&pa.mu);
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pull_thds); i++) {
-    new (&pull_thds[i])
-        grpc_core::Thread("grpc_multipop_pull", pull_thread, &pa);
+    pull_thds[i] = grpc_core::Thread("grpc_multipop_pull", pull_thread, &pa);
     pull_thds[i].Start();
   }
   gpr_event_set(&start, (void*)1);

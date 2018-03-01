@@ -57,7 +57,6 @@ void grpc_tsi_alts_shutdown() {
     grpc_completion_queue_destroy(g_alts_resource.cq);
     grpc_channel_destroy(g_alts_resource.channel);
     g_alts_resource.thread.Join();
-    g_alts_resource.thread.~Thread();
   }
   gpr_cv_destroy(&g_alts_resource.cv);
   gpr_mu_destroy(&g_alts_resource.mu);

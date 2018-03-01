@@ -22,7 +22,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <new>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -69,7 +68,7 @@ static void test_destroy(struct test* m) {
 static void test_create_threads(struct test* m, void (*body)(void* arg)) {
   int i;
   for (i = 0; i != m->thread_count; i++) {
-    new (&m->threads[i]) grpc_core::Thread("grpc_create_threads", body, m);
+    m->threads[i] = grpc_core::Thread("grpc_create_threads", body, m);
     m->threads[i].Start();
   }
 }
@@ -79,7 +78,6 @@ static void test_wait(struct test* m) {
   int i;
   for (i = 0; i != m->thread_count; i++) {
     m->threads[i].Join();
-    m->threads[i].~Thread();
   }
 }
 

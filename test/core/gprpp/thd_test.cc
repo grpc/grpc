@@ -22,7 +22,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <new>
 
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -60,7 +59,7 @@ static void test1(void) {
   t.n = NUM_THREADS;
   t.is_done = 0;
   for (auto& th : thds) {
-    new (&th) grpc_core::Thread("grpc_thread_body1_test", &thd_body1, &t);
+    th = grpc_core::Thread("grpc_thread_body1_test", &thd_body1, &t);
     th.Start();
   }
   gpr_mu_lock(&t.mu);
@@ -81,8 +80,7 @@ static void test2(void) {
   grpc_core::Thread thds[NUM_THREADS];
   for (auto& th : thds) {
     bool ok;
-    new (&th)
-        grpc_core::Thread("grpc_thread_body2_test", &thd_body2, nullptr, &ok);
+    th = grpc_core::Thread("grpc_thread_body2_test", &thd_body2, nullptr, &ok);
     GPR_ASSERT(ok);
     th.Start();
   }

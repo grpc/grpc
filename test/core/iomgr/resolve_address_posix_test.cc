@@ -20,7 +20,6 @@
 
 #include <string.h>
 #include <sys/un.h>
-#include <new>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -106,7 +105,7 @@ static void actually_poll(void* argsp) {
 
 static void poll_pollset_until_request_done(args_struct* args) {
   gpr_atm_rel_store(&args->done_atm, 0);
-  new (&args->thd) grpc_core::Thread("grpc_poll_pollset", actually_poll, args);
+  args->thd = grpc_core::Thread("grpc_poll_pollset", actually_poll, args);
   args->thd.Start();
 }
 

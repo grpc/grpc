@@ -22,7 +22,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <new>
 
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
@@ -56,7 +55,7 @@ int main(int argc, char* argv[]) {
   gpr_tls_init(&test_var);
 
   for (auto& th : threads) {
-    new (&th) grpc_core::Thread("grpc_tls_test", thd_body, nullptr);
+    th = grpc_core::Thread("grpc_tls_test", thd_body, nullptr);
     th.Start();
   }
   for (auto& th : threads) {
