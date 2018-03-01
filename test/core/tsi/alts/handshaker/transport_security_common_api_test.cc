@@ -146,8 +146,8 @@ static void test_check_success() {
                  (const grpc_gcp_rpc_protocol_versions*)&v1,
                  (const grpc_gcp_rpc_protocol_versions*)&v2,
                  &highest_common_version) == 1);
-  GPR_ASSERT(grpc_gcp_rpc_protocol_version_compare(&highest_common_version,
-                                                   &v1.max_rpc_version) == 0);
+  GPR_ASSERT(grpc_core::internal::grpc_gcp_rpc_protocol_version_compare(
+                 &highest_common_version, &v1.max_rpc_version) == 0);
 
   /* test inequality. */
   GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_max(&v1, kMaxRpcVersionMajor,
@@ -162,8 +162,8 @@ static void test_check_success() {
                  (const grpc_gcp_rpc_protocol_versions*)&v1,
                  (const grpc_gcp_rpc_protocol_versions*)&v2,
                  &highest_common_version) == 1);
-  GPR_ASSERT(grpc_gcp_rpc_protocol_version_compare(&highest_common_version,
-                                                   &v2.max_rpc_version) == 0);
+  GPR_ASSERT(grpc_core::internal::grpc_gcp_rpc_protocol_version_compare(
+                 &highest_common_version, &v2.max_rpc_version) == 0);
 }
 
 static void test_check_failure() {

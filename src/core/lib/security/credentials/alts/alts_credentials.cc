@@ -20,8 +20,7 @@
 
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"
 
-#include <stdio.h>
-#include <string.h>
+#include <cstring>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -72,7 +71,7 @@ static const grpc_server_credentials_vtable alts_server_credentials_vtable = {
 grpc_channel_credentials* grpc_alts_credentials_create_customized(
     const grpc_alts_credentials_options* options,
     const char* handshaker_service_url, bool enable_untrusted_alts) {
-  if (!enable_untrusted_alts && !is_running_on_gcp()) {
+  if (!enable_untrusted_alts && !grpc_alts_is_running_on_gcp()) {
     return nullptr;
   }
   auto creds = static_cast<grpc_alts_credentials*>(
@@ -91,7 +90,7 @@ grpc_channel_credentials* grpc_alts_credentials_create_customized(
 grpc_server_credentials* grpc_alts_server_credentials_create_customized(
     const grpc_alts_credentials_options* options,
     const char* handshaker_service_url, bool enable_untrusted_alts) {
-  if (!enable_untrusted_alts && !is_running_on_gcp()) {
+  if (!enable_untrusted_alts && !grpc_alts_is_running_on_gcp()) {
     return nullptr;
   }
   auto creds = static_cast<grpc_alts_server_credentials*>(

@@ -34,13 +34,13 @@ static char* trim(char* src) {
     return nullptr;
   }
   char* des = nullptr;
-  int start = 0, end = static_cast<int>(strlen(src)) - 1;
+  size_t start = 0, end = strlen(src) - 1;
   /* find the last character that is not a whitespace. */
-  while (end >= 0 && isspace(src[end])) {
+  while (end != 0 && isspace(src[end])) {
     end--;
   }
   /* find the first character that is not a whitespace. */
-  while ((size_t)start < strlen(src) && isspace(src[start])) {
+  while (start < strlen(src) && isspace(src[start])) {
     start++;
   }
   if (start <= end) {

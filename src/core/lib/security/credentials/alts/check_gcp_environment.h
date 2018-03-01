@@ -52,6 +52,6 @@ bool check_bios_data(const char* bios_data);
  * compute Engine (GCE) or not. It returns true if the VM is running in GCE and
  * false otherwise.
  */
-bool is_running_on_gcp();
+bool grpc_alts_is_running_on_gcp();
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_ALTS_CHECK_GCP_ENVIRONMENT_H */

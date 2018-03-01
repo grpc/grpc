@@ -217,8 +217,8 @@ bool grpc_gcp_handshaker_req_set_remote_endpoint(
  *
  * - req: an ALTS handshake request.
  * - in_bytes: a buffer containing bytes taken from out_frames of the peer's
- * ALTS handshake response. It is possible that the peer's out_frames are split
- *   into multiple handshake request messages.
+ *   ALTS handshake response. It is possible that the peer's out_frames are
+ * split into multiple handshake request messages.
  * - size: size of in_bytes buffer.
  *
  * The method returns true on success and false otherwise.

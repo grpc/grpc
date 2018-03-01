@@ -142,6 +142,9 @@ bool grpc_gcp_rpc_protocol_versions_copy(
   return true;
 }
 
+namespace grpc_core {
+namespace internal {
+
 int grpc_gcp_rpc_protocol_version_compare(
     const grpc_gcp_rpc_protocol_versions_version* v1,
     const grpc_gcp_rpc_protocol_versions_version* v2) {
@@ -156,6 +159,9 @@ int grpc_gcp_rpc_protocol_version_compare(
   return 0;
 }
 
+}  // namespace internal
+}  // namespace grpc_core
+
 bool grpc_gcp_rpc_protocol_versions_check(
     const grpc_gcp_rpc_protocol_versions* local_versions,
     const grpc_gcp_rpc_protocol_versions* peer_versions,
@@ -168,18 +174,18 @@ bool grpc_gcp_rpc_protocol_versions_check(
   }
   /* max_common_version is MIN(local.max, peer.max) */
   const grpc_gcp_rpc_protocol_versions_version* max_common_version =
-      grpc_gcp_rpc_protocol_version_compare(&local_versions->max_rpc_version,
-                                            &peer_versions->max_rpc_version) > 0
+      grpc_core::internal::grpc_gcp_rpc_protocol_version_compare(
+          &local_versions->max_rpc_version, &peer_versions->max_rpc_version) > 0
           ? &peer_versions->max_rpc_version
           : &local_versions->max_rpc_version;
   /* min_common_version is MAX(local.min, peer.min) */
   const grpc_gcp_rpc_protocol_versions_version* min_common_version =
-      grpc_gcp_rpc_protocol_version_compare(&local_versions->min_rpc_version,
-                                            &peer_versions->min_rpc_version) > 0
+      grpc_core::internal::grpc_gcp_rpc_protocol_version_compare(
+          &local_versions->min_rpc_version, &peer_versions->min_rpc_version) > 0
           ? &local_versions->min_rpc_version
           : &peer_versions->min_rpc_version;
-  bool result = grpc_gcp_rpc_protocol_version_compare(max_common_version,
-                                                      min_common_version) >= 0
+  bool result = grpc_core::internal::grpc_gcp_rpc_protocol_version_compare(
+                    max_common_version, min_common_version) >= 0
                     ? true
                     : false;
   if (result && highest_common_version != nullptr) {

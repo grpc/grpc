@@ -144,6 +144,9 @@ bool grpc_gcp_rpc_protocol_versions_check(
     const grpc_gcp_rpc_protocol_versions* peer_versions,
     grpc_gcp_rpc_protocol_versions_version* highest_common_version);
 
+namespace grpc_core {
+namespace internal {
+
 /**
  * Exposed for testing only.
  * The method returns 0 if v1 = v2,
@@ -153,5 +156,8 @@ bool grpc_gcp_rpc_protocol_versions_check(
 int grpc_gcp_rpc_protocol_version_compare(
     const grpc_gcp_rpc_protocol_versions_version* v1,
     const grpc_gcp_rpc_protocol_versions_version* v2);
+
+}  // namespace internal
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_TSI_ALTS_HANDSHAKER_TRANSPORT_SECURITY_COMMON_API_H */

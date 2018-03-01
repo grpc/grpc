@@ -98,7 +98,7 @@ static bool run_powershell() {
   return true;
 }
 
-bool is_running_on_gcp() {
+bool grpc_alts_is_running_on_gcp() {
   gpr_once_init(&g_once, init_mu);
   gpr_mu_lock(&g_mu);
   if (!g_compute_engine_detection_done) {
