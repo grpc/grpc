@@ -593,7 +593,7 @@
   ADDRESS_SORTING_DEP = $(LIBDIR)/$(CONFIG)/libaddress_sorting.a
   ADDRESS_SORTING_MERGE_OBJS = $(LIBADDRESS_SORTING_OBJS)
   ADDRESS_SORTING_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libaddress_sorting.a
-  CPPFLAGS := -Ithird_party/address_sorting $(CPPFLAGS)
+  CPPFLAGS := -Ithird_party/address_sorting/include $(CPPFLAGS)
 
   ifeq ($(EMBED_CARES),true)
   CARES_DEP = $(LIBDIR)/$(CONFIG)/libares.a

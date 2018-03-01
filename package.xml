@@ -51,8 +51,8 @@
     <file baseinstalldir="/" name="src/php/ext/grpc/server_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/timeval.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/version.h" role="src" />
-    <file baseinstalldir="/" name="third_party/address_sorting/address_sorting.h" role="src" />
     <file baseinstalldir="/" name="third_party/address_sorting/address_sorting_internal.h" role="src" />
+    <file baseinstalldir="/" name="third_party/address_sorting/include/address_sorting/address_sorting.h" role="src" />
     <file baseinstalldir="/" name="third_party/address_sorting/address_sorting.c" role="src" />
     <file baseinstalldir="/" name="third_party/address_sorting/address_sorting_posix.c" role="src" />
     <file baseinstalldir="/" name="third_party/address_sorting/address_sorting_windows.c" role="src" />

@@ -1316,8 +1316,8 @@ libs:
   build: all
   language: c
   headers:
-  - third_party/address_sorting/address_sorting.h
   - third_party/address_sorting/address_sorting_internal.h
+  - third_party/address_sorting/include/address_sorting/address_sorting.h
   src:
   - third_party/address_sorting/address_sorting.c
   - third_party/address_sorting/address_sorting_posix.c

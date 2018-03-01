@@ -12,5 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set(_gRPC_ADDRESS_SORTING_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/address_sorting")
+set(_gRPC_ADDRESS_SORTING_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/address_sorting/include")
 set(_gRPC_ADDRESS_SORTING_LIBRARIES address_sorting)

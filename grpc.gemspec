@@ -44,8 +44,8 @@ Gem::Specification.new do |s|
 
   s.extensions = %w(src/ruby/ext/grpc/extconf.rb)
 
-  s.files += %w( third_party/address_sorting/address_sorting.h )
   s.files += %w( third_party/address_sorting/address_sorting_internal.h )
+  s.files += %w( third_party/address_sorting/include/address_sorting/address_sorting.h )
   s.files += %w( third_party/address_sorting/address_sorting.c )
   s.files += %w( third_party/address_sorting/address_sorting_posix.c )
   s.files += %w( third_party/address_sorting/address_sorting_windows.c )

@@ -61,7 +61,8 @@
 #endif
 
 #include <stdbool.h>
-#include "address_sorting.h"
+
+#include <address_sorting/address_sorting.h>
 
 address_sorting_source_addr_factory*
 address_sorting_create_source_addr_factory_for_current_platform();

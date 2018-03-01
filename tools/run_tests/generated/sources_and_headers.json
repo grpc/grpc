@@ -6620,8 +6620,8 @@
   {
     "deps": [], 
     "headers": [
-      "third_party/address_sorting/address_sorting.h", 
-      "third_party/address_sorting/address_sorting_internal.h"
+      "third_party/address_sorting/address_sorting_internal.h", 
+      "third_party/address_sorting/include/address_sorting/address_sorting.h"
     ], 
     "is_filegroup": false, 
     "language": "c", 
