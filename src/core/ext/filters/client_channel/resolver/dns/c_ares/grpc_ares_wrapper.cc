@@ -143,6 +143,12 @@ void grpc_cares_wrapper_address_sorting_sort(grpc_lb_addresses* lb_addrs) {
   }
 }
 
+/* Allow tests to access grpc_ares_wrapper_address_sorting_sort */
+void grpc_cares_wrapper_test_only_address_sorting_sort(
+    grpc_lb_addresses* lb_addrs) {
+  grpc_cares_wrapper_address_sorting_sort(lb_addrs);
+}
+
 static void grpc_ares_request_unref(grpc_ares_request* r) {
   /* If there are no pending queries, invoke on_done callback and destroy the
      request */
