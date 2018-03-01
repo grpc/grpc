@@ -55,7 +55,7 @@ config_setting(
 
 config_setting(
     name = "windows",
-    values = { "cpu": "x64_windows" },
+    values = {"cpu": "x64_windows"},
 )
 
 config_setting(
@@ -906,6 +906,7 @@ grpc_cc_library(
         "src/core/lib/slice/slice_hash_table.h",
         "src/core/lib/slice/slice_internal.h",
         "src/core/lib/slice/slice_string_helpers.h",
+        "src/core/lib/slice/slice_weak_hash_table.h",
         "src/core/lib/surface/api_trace.h",
         "src/core/lib/surface/call.h",
         "src/core/lib/surface/call_test_only.h",
