@@ -3318,9 +3318,10 @@ LIBGRPC_SRC = \
     src/core/tsi/alts/handshaker/alts_handshaker_service_api.cc \
     src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.cc \
     src/core/tsi/alts/handshaker/alts_tsi_utils.cc \
+    src/core/tsi/alts/handshaker/transport_security_common_api.cc \
+    src/core/tsi/alts/handshaker/altscontext.pb.c \
     src/core/tsi/alts/handshaker/handshaker.pb.c \
     src/core/tsi/alts/handshaker/transport_security_common.pb.c \
-    src/core/tsi/alts/handshaker/transport_security_common_api.cc \
     third_party/nanopb/pb_common.c \
     third_party/nanopb/pb_decode.c \
     third_party/nanopb/pb_encode.c \
@@ -3717,9 +3718,10 @@ LIBGRPC_CRONET_SRC = \
     src/core/tsi/alts/handshaker/alts_handshaker_service_api.cc \
     src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.cc \
     src/core/tsi/alts/handshaker/alts_tsi_utils.cc \
+    src/core/tsi/alts/handshaker/transport_security_common_api.cc \
+    src/core/tsi/alts/handshaker/altscontext.pb.c \
     src/core/tsi/alts/handshaker/handshaker.pb.c \
     src/core/tsi/alts/handshaker/transport_security_common.pb.c \
-    src/core/tsi/alts/handshaker/transport_security_common_api.cc \
     third_party/nanopb/pb_common.c \
     third_party/nanopb/pb_decode.c \
     third_party/nanopb/pb_encode.c \
@@ -23206,6 +23208,7 @@ src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.cc: $(OPENSSL_DEP)
 src/core/tsi/alts/handshaker/alts_tsi_event.cc: $(OPENSSL_DEP)
 src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc: $(OPENSSL_DEP)
 src/core/tsi/alts/handshaker/alts_tsi_utils.cc: $(OPENSSL_DEP)
+src/core/tsi/alts/handshaker/altscontext.pb.c: $(OPENSSL_DEP)
 src/core/tsi/alts/handshaker/handshaker.pb.c: $(OPENSSL_DEP)
 src/core/tsi/alts/handshaker/transport_security_common.pb.c: $(OPENSSL_DEP)
 src/core/tsi/alts/handshaker/transport_security_common_api.cc: $(OPENSSL_DEP)

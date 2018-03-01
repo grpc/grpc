@@ -70,6 +70,10 @@ readonly HANDSHAKER_GRPC_OUTPUT_PATH='src/core/tsi/alts/handshaker'
   src/core/tsi/alts/handshaker/proto/transport_security_common.proto \
   "$NANOPB_ALTS_TMP_OUTPUT" \
   "$HANDSHAKER_GRPC_OUTPUT_PATH"
+./tools/codegen/core/gen_nano_proto.sh \
+  src/core/tsi/alts/handshaker/proto/altscontext.proto \
+  "$NANOPB_ALTS_TMP_OUTPUT" \
+  "$HANDSHAKER_GRPC_OUTPUT_PATH"
 
 # compare outputs to checked compiled code
 for NANOPB_OUTPUT_FILE in $NANOPB_ALTS_TMP_OUTPUT/*.pb.*; do

@@ -8507,6 +8507,7 @@
       "nanopb"
     ], 
     "headers": [
+      "src/core/tsi/alts/handshaker/altscontext.pb.h", 
       "src/core/tsi/alts/handshaker/handshaker.pb.h", 
       "src/core/tsi/alts/handshaker/transport_security_common.pb.h"
     ], 
@@ -8514,6 +8515,8 @@
     "language": "c", 
     "name": "alts_proto", 
     "src": [
+      "src/core/tsi/alts/handshaker/altscontext.pb.c", 
+      "src/core/tsi/alts/handshaker/altscontext.pb.h", 
       "src/core/tsi/alts/handshaker/handshaker.pb.c", 
       "src/core/tsi/alts/handshaker/handshaker.pb.h", 
       "src/core/tsi/alts/handshaker/transport_security_common.pb.c", 
@@ -8604,8 +8607,6 @@
       "src/core/tsi/alts/handshaker/alts_handshaker_service_api.h", 
       "src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.h", 
       "src/core/tsi/alts/handshaker/alts_tsi_utils.h", 
-      "src/core/tsi/alts/handshaker/handshaker.pb.h", 
-      "src/core/tsi/alts/handshaker/transport_security_common.pb.h", 
       "src/core/tsi/alts/handshaker/transport_security_common_api.h"
     ], 
     "is_filegroup": true, 
@@ -8627,10 +8628,6 @@
       "src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.h", 
       "src/core/tsi/alts/handshaker/alts_tsi_utils.cc", 
       "src/core/tsi/alts/handshaker/alts_tsi_utils.h", 
-      "src/core/tsi/alts/handshaker/handshaker.pb.c", 
-      "src/core/tsi/alts/handshaker/handshaker.pb.h", 
-      "src/core/tsi/alts/handshaker/transport_security_common.pb.c", 
-      "src/core/tsi/alts/handshaker/transport_security_common.pb.h", 
       "src/core/tsi/alts/handshaker/transport_security_common_api.cc", 
       "src/core/tsi/alts/handshaker/transport_security_common_api.h"
     ], 

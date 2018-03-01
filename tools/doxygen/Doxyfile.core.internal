@@ -1438,6 +1438,8 @@ src/core/tsi/alts/handshaker/alts_tsi_handshaker.h \
 src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h \
 src/core/tsi/alts/handshaker/alts_tsi_utils.cc \
 src/core/tsi/alts/handshaker/alts_tsi_utils.h \
+src/core/tsi/alts/handshaker/altscontext.pb.c \
+src/core/tsi/alts/handshaker/altscontext.pb.h \
 src/core/tsi/alts/handshaker/handshaker.pb.c \
 src/core/tsi/alts/handshaker/handshaker.pb.h \
 src/core/tsi/alts/handshaker/transport_security_common.pb.c \

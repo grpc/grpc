@@ -246,9 +246,10 @@
     <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_handshaker_service_api.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_tsi_utils.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/transport_security_common_api.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/altscontext.pb.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/handshaker.pb.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/transport_security_common.pb.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/transport_security_common_api.h" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb.h" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_common.h" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_decode.h" role="src" />
@@ -642,9 +643,10 @@
     <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_handshaker_service_api.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_tsi_utils.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/transport_security_common_api.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/altscontext.pb.c" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/handshaker.pb.c" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/transport_security_common.pb.c" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/transport_security_common_api.cc" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_common.c" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_decode.c" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_encode.c" role="src" />

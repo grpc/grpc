@@ -1638,10 +1638,12 @@ grpc_cc_library(
 grpc_cc_library(
     name = "alts_proto",
     srcs = [
+        "src/core/tsi/alts/handshaker/altscontext.pb.c",
         "src/core/tsi/alts/handshaker/handshaker.pb.c",
         "src/core/tsi/alts/handshaker/transport_security_common.pb.c",
     ],
     hdrs = [
+        "src/core/tsi/alts/handshaker/altscontext.pb.h",
         "src/core/tsi/alts/handshaker/handshaker.pb.h",
         "src/core/tsi/alts/handshaker/transport_security_common.pb.h",
     ],

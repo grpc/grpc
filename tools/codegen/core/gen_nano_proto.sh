@@ -81,7 +81,7 @@ readonly PROTO_BASENAME=$(basename $INPUT_PROTO .proto)
 sed -i "s:$PROTO_BASENAME.pb.h:${GRPC_OUTPUT_DIR}/$PROTO_BASENAME.pb.h:g" \
   "$OUTPUT_DIR/$PROTO_BASENAME.pb.c"
 
-if [ $PROTO_BASENAME == "handshaker" ]; then
+if [ $PROTO_BASENAME == "handshaker" ] || [ $PROTO_BASENAME == "altscontext" ]; then
   sed -i "s:transport_security_common.pb.h:${GRPC_OUTPUT_DIR}/transport_security_common.pb.h:g" \
     "$OUTPUT_DIR/$PROTO_BASENAME.pb.h"
 fi
