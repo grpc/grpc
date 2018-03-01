@@ -19,6 +19,7 @@ import threading
 from grpc.framework.foundation import stream
 
 _NO_VALUE = object()
+_LOGGER = logging.getLogger(__name__)
 
 
 class TransformingConsumer(stream.Consumer):
@@ -103,7 +104,7 @@ class ThreadSwitchingConsumer(stream.Consumer):
                 else:
                     sink.consume(value)
             except Exception as e:  # pylint:disable=broad-except
-                logging.exception(e)
+                _LOGGER.exception(e)
 
             with self._lock:
                 if terminate:
