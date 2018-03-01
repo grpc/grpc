@@ -163,8 +163,12 @@ static grpc_channel_args *BuildChannelArgs(NSDictionary *dictionary) {
 - (void)dealloc {
   // TODO(jcanizales): Be sure to add a test with a server that closes the connection prematurely,
   // as in the past that made this call to crash.
-  grpc_channel_destroy(_unmanagedChannel);
-  FreeChannelArgs(_channelArgs);
+  if (_unmanagedChannel != nil) {
+    grpc_channel_destroy(_unmanagedChannel);
+  }
+  if (_channelArgs != nil) {
+    FreeChannelArgs(_channelArgs);
+  }
 }
 
 #ifdef GRPC_COMPILE_WITH_CRONET
