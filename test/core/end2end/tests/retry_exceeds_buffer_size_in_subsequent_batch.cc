@@ -109,9 +109,11 @@ static void test_retry_exceeds_buffer_size_in_subsequent_batch(
   grpc_metadata_array trailing_metadata_recv;
   grpc_metadata_array request_metadata_recv;
   grpc_call_details call_details;
-  char buf[102401];
-  memset(buf, 'a', sizeof(buf) - 1);
-  buf[sizeof(buf) - 1] = '\0';
+  const size_t buf_size = 102401;
+  char* buf = static_cast<char*>(gpr_malloc(buf_size * sizeof(*buf)));
+  memset(buf, 'a', buf_size - 1);
+  buf[buf_size - 1] = '\0';
+  // TODO(markdroth): buf is not a static string, so fix the next line
   grpc_slice request_payload_slice = grpc_slice_from_static_string(buf);
   grpc_slice response_payload_slice = grpc_slice_from_static_string("bar");
   grpc_byte_buffer* request_payload =
@@ -265,6 +267,7 @@ static void test_retry_exceeds_buffer_size_in_subsequent_batch(
 
   end_test(&f);
   config.tear_down_data(&f);
+  gpr_free(buf);
 }
 
 void retry_exceeds_buffer_size_in_subsequent_batch(
