@@ -55,10 +55,10 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
   --copt=-gmlt \
   --strip=never \
   --cxxopt=--stdlib=libc++ \
-  --copt=-fsanitize=memory \ 
+  --copt=-fsanitize=memory \
   --linkopt=-fsanitize=memory \
   --copt=-fsanitize-memory-track-origins \
   --action_env=LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH \
-  --host_crosstool_top=@bazel_toolchains//configs/debian8_clang/0.3.0/bazel_0.10.0:toolchain \
-  --crosstool_top=@bazel_toolchains//configs/experimental/debian8_clang/0.3.0/bazel_0.10.0/msan:msan_experimental_toolchain \
+  --host_crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/debian8_clang/0.3.0/bazel_0.10.0:toolchain \
+  --crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/experimental/debian8_clang/0.3.0/bazel_0.10.0/msan:msan_experimental_toolchain \
   -- //test/...
