@@ -20,6 +20,6 @@ var searchData=
   ['asyncgenericservice',['AsyncGenericService',['../classgrpc_1_1_async_generic_service.html#a8e7ae6f6010c1a6a0c98a7a252001315',1,'grpc::AsyncGenericService']]],
   ['asyncnext',['AsyncNext',['../classgrpc_1_1_completion_queue.html#a290ddf3d96e6d1d5886580e60b0602b4',1,'grpc::CompletionQueue']]],
   ['asyncnotifywhendone',['AsyncNotifyWhenDone',['../classgrpc_1_1_server_context.html#aafcb8e430e3d81bcd3f0a88701a19fba',1,'grpc::ServerContext']]],
-  ['auth_5fcontext',['auth_context',['../classgrpc_1_1_client_context.html#a02f279bf74e26d7c32d0b18dc73dccea',1,'grpc::ClientContext::auth_context()'],['../classgrpc_1_1_server_context.html#a2a8657d382cee53d670208d640383e8e',1,'grpc::ServerContext::auth_context()']]],
+  ['auth_5fcontext',['auth_context',['../classgrpc_1_1_client_context.html#a2809213279d7d1c55d4a9ecfd5d8fd87',1,'grpc::ClientContext::auth_context()'],['../classgrpc_1_1_server_context.html#a4fab4435aac1be0a92e246507e4167ce',1,'grpc::ServerContext::auth_context()']]],
   ['authpropertyiterator',['AuthPropertyIterator',['../classgrpc_1_1_auth_property_iterator.html#a2885e02ba1b9caad818a1bcdf648d949',1,'grpc::AuthPropertyIterator::AuthPropertyIterator()'],['../classgrpc_1_1_auth_property_iterator.html#aee44bb7255a99611cf490532b7e110d5',1,'grpc::AuthPropertyIterator::AuthPropertyIterator(const grpc_auth_property *property, const grpc_auth_property_iterator *iter)']]]
 ];
