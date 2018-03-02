@@ -67,7 +67,7 @@ struct grpc_channel {
   gpr_mu registered_call_mu;
   registered_call* registered_calls;
 
-  grpc_core::RefCountedPtr<grpc_core::ChannelTracer> tracer;
+  grpc_core::RefCountedPtr<grpc_core::ChannelTrace> tracer;
 
   char* target;
 };
@@ -170,8 +170,8 @@ grpc_channel* grpc_channel_create_with_builder(
       channel->compression_options.enabled_algorithms_bitset =
           static_cast<uint32_t>(args->args[i].value.integer) |
           0x1; /* always support no compression */
-    } else if (0 ==
-               strcmp(args->args[i].key, GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE)) {
+    } else if (0 == strcmp(args->args[i].key,
+                           GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE)) {
       GPR_ASSERT(channel_tracer_max_nodes == 0);
       // max_nodes defaults to 10, clamped between 0 and 100.
       const grpc_integer_options options = {10, 0, 100};
@@ -181,10 +181,11 @@ grpc_channel* grpc_channel_create_with_builder(
   }
 
   grpc_channel_args_destroy(args);
-  channel->tracer = grpc_core::MakeRefCounted<grpc_core::ChannelTracer>(
+  channel->tracer = grpc_core::MakeRefCounted<grpc_core::ChannelTrace>(
       channel_tracer_max_nodes);
-  channel->tracer->AddTrace(grpc_slice_from_static_string("Channel created"),
-                            GRPC_ERROR_NONE, GRPC_CHANNEL_IDLE);
+  channel->tracer->AddTraceEvent(
+      grpc_slice_from_static_string("Channel created"), GRPC_ERROR_NONE,
+      GRPC_CHANNEL_IDLE);
   return channel;
 }
 

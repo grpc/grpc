@@ -136,7 +136,7 @@ struct grpc_subchannel {
   /** our alarm */
   grpc_timer alarm;
 
-  grpc_core::RefCountedPtr<grpc_core::ChannelTracer> tracer;
+  grpc_core::RefCountedPtr<grpc_core::ChannelTrace> tracer;
 };
 
 struct grpc_subchannel_call {

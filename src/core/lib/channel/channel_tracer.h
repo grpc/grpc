@@ -29,24 +29,24 @@ namespace grpc_core {
 
 class TraceEvent;
 
-class ChannelTracer : public RefCounted<ChannelTracer> {
+class ChannelTrace : public RefCounted<ChannelTrace> {
  public:
-  ChannelTracer(size_t max_nodes);
-  ~ChannelTracer();
+  ChannelTrace(size_t max_events);
+  ~ChannelTrace();
 
-  /* returns the tracers uuid */
+  /* returns the tracer's uuid */
   intptr_t GetUuid();
 
-  /* Adds a new trace node to the tracing object */
-  void AddTrace(grpc_slice data, grpc_error* error,
-                grpc_connectivity_state connectivity_state);
+  /* Adds a new trace event to the tracing object */
+  void AddTraceEvent(grpc_slice data, grpc_error* error,
+                     grpc_connectivity_state connectivity_state);
 
-  /* Adds a new trace node to the tracing object. This trace node refers to a
+  /* Adds a new trace event to the tracing object. This trace event refers to a
      an event on a child of the channel. For example this could log when a
      particular subchannel becomes connected */
-  void AddTrace(grpc_slice data, grpc_error* error,
-                grpc_connectivity_state connectivity_state,
-                RefCountedPtr<ChannelTracer> referenced_tracer);
+  void AddTraceEvent(grpc_slice data, grpc_error* error,
+                     grpc_connectivity_state connectivity_state,
+                     RefCountedPtr<ChannelTrace> referenced_tracer);
 
   /* Returns the tracing data rendered as a grpc json string.
      The string is owned by the caller and must be freed. If recursive
@@ -59,14 +59,13 @@ class ChannelTracer : public RefCounted<ChannelTracer> {
   static char* GetChannelTraceFromUuid(intptr_t uuid, bool recursive);
 
  private:
+  // Internal helper to add and link in a trace event
+  void AddTraceEventHelper(TraceEvent* new_trace_event);
 
-  // Internal helper to add and link in a tracenode
-  void AddTraceEventNode(TraceEvent* new_trace_node);
-
-  friend class ChannelTracerRenderer;
+  friend class ChannelTraceRenderer;
   gpr_mu tracer_mu_;
   intptr_t channel_uuid_;
-  uint64_t num_nodes_logged_;
+  uint64_t num_events_logged_;
   uint64_t num_children_seen_;
   size_t list_size_;
   size_t max_list_size_;

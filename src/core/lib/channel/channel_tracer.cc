@@ -40,7 +40,7 @@ class TraceEvent {
  public:
   TraceEvent(grpc_slice data, grpc_error* error,
              grpc_connectivity_state connectivity_state,
-             RefCountedPtr<ChannelTracer> referenced_tracer)
+             RefCountedPtr<ChannelTrace> referenced_tracer)
       : data_(data),
         error_(error),
         connectivity_state_(connectivity_state),
@@ -66,34 +66,34 @@ class TraceEvent {
   }
 
  private:
-  friend class ChannelTracer;
-  friend class ChannelTracerRenderer;
+  friend class ChannelTrace;
+  friend class ChannelTraceRenderer;
   grpc_slice data_;
   grpc_error* error_;
   gpr_timespec time_created_;
   grpc_connectivity_state connectivity_state_;
   TraceEvent* next_;
-  // the tracer object for the (sub)channel that this trace node refers to.
-  RefCountedPtr<ChannelTracer> referenced_tracer_;
+  // the tracer object for the (sub)channel that this trace event refers to.
+  RefCountedPtr<ChannelTrace> referenced_tracer_;
 };
 
-ChannelTracer::ChannelTracer(size_t max_nodes)
+ChannelTrace::ChannelTrace(size_t max_events)
     : channel_uuid_(-1),
-      num_nodes_logged_(0),
+      num_events_logged_(0),
       num_children_seen_(0),
       list_size_(0),
-      max_list_size_(max_nodes),
+      max_list_size_(max_events),
       head_trace_(nullptr),
       tail_trace_(nullptr) {
-  if (max_list_size_ == 0) return;  // tracing is disabled if max_nodes == 0
+  if (max_list_size_ == 0) return;  // tracing is disabled if max_events == 0
   gpr_mu_init(&tracer_mu_);
   channel_uuid_ = grpc_object_registry_register_object(
       this, GRPC_OBJECT_REGISTRY_CHANNEL_TRACER);
   time_created_ = gpr_now(GPR_CLOCK_REALTIME);
 }
 
-ChannelTracer::~ChannelTracer() {
-  if (max_list_size_ == 0) return;  // tracing is disabled if max_nodes == 0
+ChannelTrace::~ChannelTrace() {
+  if (max_list_size_ == 0) return;  // tracing is disabled if max_events == 0
   TraceEvent* it = head_trace_;
   while (it != nullptr) {
     TraceEvent* to_free = it;
@@ -103,17 +103,17 @@ ChannelTracer::~ChannelTracer() {
   gpr_mu_destroy(&tracer_mu_);
 }
 
-intptr_t ChannelTracer::GetUuid() { return channel_uuid_; }
+intptr_t ChannelTrace::GetUuid() { return channel_uuid_; }
 
-void ChannelTracer::AddTraceEventNode(TraceEvent* new_trace_node) {
-  ++num_nodes_logged_;
-  // first node case
+void ChannelTrace::AddTraceEventHelper(TraceEvent* new_trace_event) {
+  ++num_events_logged_;
+  // first event case
   if (head_trace_ == nullptr) {
-    head_trace_ = tail_trace_ = new_trace_node;
+    head_trace_ = tail_trace_ = new_trace_event;
   }
-  // regular node add case
+  // regular event add case
   else {
-    tail_trace_->next_ = new_trace_node;
+    tail_trace_->next_ = new_trace_event;
     tail_trace_ = tail_trace_->next_;
   }
   ++list_size_;
@@ -126,19 +126,20 @@ void ChannelTracer::AddTraceEventNode(TraceEvent* new_trace_node) {
   }
 }
 
-void ChannelTracer::AddTrace(grpc_slice data, grpc_error* error,
-                             grpc_connectivity_state connectivity_state,
-                             RefCountedPtr<ChannelTracer> referenced_tracer) {
-  if (max_list_size_ == 0) return;  // tracing is disabled if max_nodes == 0
+void ChannelTrace::AddTraceEvent(
+    grpc_slice data, grpc_error* error,
+    grpc_connectivity_state connectivity_state,
+    RefCountedPtr<ChannelTrace> referenced_tracer) {
+  if (max_list_size_ == 0) return;  // tracing is disabled if max_events == 0
   ++num_children_seen_;
-  // create and fill up the new node
-  AddTraceEventNode(
-      New<TraceEvent>(data, error, connectivity_state, std::move(referenced_tracer)));
+  // create and fill up the new event
+  AddTraceEventHelper(New<TraceEvent>(data, error, connectivity_state,
+                                      std::move(referenced_tracer)));
 }
 
-void ChannelTracer::AddTrace(grpc_slice data, grpc_error* error,
-                             grpc_connectivity_state connectivity_state) {
-  AddTraceEventNode(New<TraceEvent>(data, error, connectivity_state));
+void ChannelTrace::AddTraceEvent(grpc_slice data, grpc_error* error,
+                                 grpc_connectivity_state connectivity_state) {
+  AddTraceEventHelper(New<TraceEvent>(data, error, connectivity_state));
 }
 
 namespace {
@@ -153,13 +154,13 @@ char* fmt_time(gpr_timespec tm) {
   return full_time_str;
 }
 
-} // anonymous namespace 
+}  // anonymous namespace
 
-class ChannelTracerRenderer {
+class ChannelTraceRenderer {
  public:
   // If recursive==true, then the entire tree of trace will be rendered.
   // If not, then only the top level data will be.
-  ChannelTracerRenderer(ChannelTracer* tracer, bool recursive)
+  ChannelTraceRenderer(ChannelTrace* tracer, bool recursive)
       : current_tracer_(tracer),
         recursive_(recursive),
         seen_tracers_(nullptr),
@@ -180,16 +181,16 @@ class ChannelTracerRenderer {
  private:
   // tracks that a tracer has already been rendered to avoid infinite
   // recursion.
-  void AddSeenTracer(ChannelTracer* newly_seen) {
+  void AddSeenTracer(ChannelTrace* newly_seen) {
     if (size_ >= cap_) {
       cap_ = GPR_MAX(5 * sizeof(newly_seen), 3 * cap_ / 2);
-      seen_tracers_ = (ChannelTracer**)gpr_realloc(seen_tracers_, cap_);
+      seen_tracers_ = (ChannelTrace**)gpr_realloc(seen_tracers_, cap_);
     }
     seen_tracers_[size_++] = newly_seen;
   }
 
   // Checks if a tracer has already been seen.
-  bool TracerAlreadySeen(ChannelTracer* tracer) {
+  bool TracerAlreadySeen(ChannelTrace* tracer) {
     for (size_t i = 0; i < size_; ++i) {
       if (seen_tracers_[i] == tracer) return true;
     }
@@ -211,19 +212,19 @@ class ChannelTracerRenderer {
   }
 
   // Fills up the channelData object. If children is not null, it will
-  // recursively populate each referenced child as it passes that node.
+  // recursively populate each referenced child as it passes that event.
   void PopulateChannelData(grpc_json* channel_data, grpc_json* children) {
     grpc_json* child = nullptr;
     char* uuid_str;
     gpr_asprintf(&uuid_str, "%" PRIdPTR, current_tracer_->channel_uuid_);
     child = grpc_json_create_child(child, channel_data, "uuid", uuid_str,
                                    GRPC_JSON_NUMBER, true);
-    char* num_nodes_logged_str;
-    gpr_asprintf(&num_nodes_logged_str, "%" PRId64,
-                 current_tracer_->num_nodes_logged_);
+    char* num_events_logged_str;
+    gpr_asprintf(&num_events_logged_str, "%" PRId64,
+                 current_tracer_->num_events_logged_);
     child =
         grpc_json_create_child(child, channel_data, "numNodesLogged",
-                               num_nodes_logged_str, GRPC_JSON_NUMBER, true);
+                               num_events_logged_str, GRPC_JSON_NUMBER, true);
     child = grpc_json_create_child(child, channel_data, "startTime",
                                    fmt_time(current_tracer_->time_created_),
                                    GRPC_JSON_STRING, true);
@@ -278,7 +279,7 @@ class ChannelTracerRenderer {
         grpc_json* referenced_tracer = grpc_json_create_child(
             nullptr, children, nullptr, nullptr, GRPC_JSON_OBJECT, false);
         AddSeenTracer(node->referenced_tracer_.get());
-        ChannelTracer* saved = current_tracer_;
+        ChannelTrace* saved = current_tracer_;
         current_tracer_ = node->referenced_tracer_.get();
         RecursivelyPopulateJson(referenced_tracer);
         current_tracer_ = saved;
@@ -287,30 +288,31 @@ class ChannelTracerRenderer {
   }
 
   // Tracks the current tracer we are rendering as we walk the tree of tracers.
-  ChannelTracer* current_tracer_;
+  ChannelTrace* current_tracer_;
 
   // If true, we will render the data of all of this tracer's children.
   bool recursive_;
 
   // These members are used to track tracers we have already rendered. This is
   // a dynamically growing array that is deallocated when the rendering is done.
-  ChannelTracer** seen_tracers_;
+  ChannelTrace** seen_tracers_;
   size_t size_;
   size_t cap_;
 };
 
-char* ChannelTracer::RenderTrace(bool recursive) {
-  if (!max_list_size_) return nullptr;  // tracing is disabled if max_nodes == 0
-  ChannelTracerRenderer renderer(this, recursive);
+char* ChannelTrace::RenderTrace(bool recursive) {
+  if (!max_list_size_)
+    return nullptr;  // tracing is disabled if max_events == 0
+  ChannelTraceRenderer renderer(this, recursive);
   return renderer.Run();
 }
 
-char* ChannelTracer::GetChannelTraceFromUuid(intptr_t uuid, bool recursive) {
+char* ChannelTrace::GetChannelTraceFromUuid(intptr_t uuid, bool recursive) {
   void* object;
   grpc_object_registry_type type =
       grpc_object_registry_get_object(uuid, &object);
   GPR_ASSERT(type == GRPC_OBJECT_REGISTRY_CHANNEL_TRACER);
-  return static_cast<ChannelTracer*>(object)->RenderTrace(recursive);
+  return static_cast<ChannelTrace*>(object)->RenderTrace(recursive);
 }
 
 }  // namespace grpc_core
