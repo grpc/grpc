@@ -24,7 +24,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(PACKAGE_NAME      "grpc")
-set(PACKAGE_VERSION   "1.10.0-dev")
+set(PACKAGE_VERSION   "1.11.0-dev")
 set(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
@@ -345,7 +345,6 @@ add_dependencies(buildtests_c sequential_connectivity_test)
 add_dependencies(buildtests_c server_chttp2_test)
 add_dependencies(buildtests_c server_test)
 add_dependencies(buildtests_c slice_buffer_test)
-add_dependencies(buildtests_c slice_hash_table_test)
 add_dependencies(buildtests_c slice_string_helpers_test)
 add_dependencies(buildtests_c slice_test)
 add_dependencies(buildtests_c sockaddr_resolver_test)
@@ -539,7 +538,6 @@ add_dependencies(buildtests_cxx grpc_cli)
 add_dependencies(buildtests_cxx grpc_tool_test)
 add_dependencies(buildtests_cxx grpclb_api_test)
 add_dependencies(buildtests_cxx grpclb_end2end_test)
-add_dependencies(buildtests_cxx grpclb_test)
 add_dependencies(buildtests_cxx h2_ssl_cert_test)
 add_dependencies(buildtests_cxx health_service_end2end_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -596,8 +594,12 @@ add_dependencies(buildtests_cxx server_crash_test_client)
 add_dependencies(buildtests_cxx server_early_return_test)
 add_dependencies(buildtests_cxx server_request_call_test)
 add_dependencies(buildtests_cxx shutdown_test)
+add_dependencies(buildtests_cxx slice_hash_table_test)
+add_dependencies(buildtests_cxx slice_weak_hash_table_test)
 add_dependencies(buildtests_cxx stats_test)
+add_dependencies(buildtests_cxx status_metadata_test)
 add_dependencies(buildtests_cxx status_test)
+add_dependencies(buildtests_cxx status_util_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx streaming_throughput_test)
 endif()
@@ -712,7 +714,7 @@ foreach(_hdr
   include/grpc/support/sync_generic.h
   include/grpc/support/sync_posix.h
   include/grpc/support/sync_windows.h
-  include/grpc/support/thd.h
+  include/grpc/support/thd_id.h
   include/grpc/support/time.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
@@ -885,7 +887,6 @@ add_library(grpc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_hash_table.cc
   src/core/lib/slice/slice_intern.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/api_trace.cc
@@ -916,6 +917,7 @@ add_library(grpc
   src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
   src/core/lib/transport/status_conversion.cc
+  src/core/lib/transport/status_metadata.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
@@ -963,12 +965,12 @@ add_library(grpc
   src/core/lib/security/credentials/oauth2/oauth2_credentials.cc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/ssl/ssl_credentials.cc
+  src/core/lib/security/security_connector/security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
-  src/core/lib/security/transport/lb_targets_info.cc
   src/core/lib/security/transport/secure_endpoint.cc
-  src/core/lib/security/transport/security_connector.cc
   src/core/lib/security/transport/security_handshaker.cc
   src/core/lib/security/transport/server_auth_filter.cc
+  src/core/lib/security/transport/target_authority_table.cc
   src/core/lib/security/transport/tsi_error.cc
   src/core/lib/security/util/json_util.cc
   src/core/lib/surface/init_secure.cc
@@ -991,12 +993,14 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy.cc
   src/core/ext/filters/client_channel/lb_policy_factory.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
+  src/core/ext/filters/client_channel/method_params.cc
   src/core/ext/filters/client_channel/parse_address.cc
   src/core/ext/filters/client_channel/proxy_mapper.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
+  src/core/ext/filters/client_channel/status_util.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
@@ -1227,7 +1231,6 @@ add_library(grpc_cronet
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_hash_table.cc
   src/core/lib/slice/slice_intern.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/api_trace.cc
@@ -1258,6 +1261,7 @@ add_library(grpc_cronet
   src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
   src/core/lib/transport/status_conversion.cc
+  src/core/lib/transport/status_metadata.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
@@ -1304,12 +1308,14 @@ add_library(grpc_cronet
   src/core/ext/filters/client_channel/lb_policy.cc
   src/core/ext/filters/client_channel/lb_policy_factory.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
+  src/core/ext/filters/client_channel/method_params.cc
   src/core/ext/filters/client_channel/parse_address.cc
   src/core/ext/filters/client_channel/proxy_mapper.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
+  src/core/ext/filters/client_channel/status_util.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
@@ -1329,12 +1335,12 @@ add_library(grpc_cronet
   src/core/lib/security/credentials/oauth2/oauth2_credentials.cc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/ssl/ssl_credentials.cc
+  src/core/lib/security/security_connector/security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
-  src/core/lib/security/transport/lb_targets_info.cc
   src/core/lib/security/transport/secure_endpoint.cc
-  src/core/lib/security/transport/security_connector.cc
   src/core/lib/security/transport/security_handshaker.cc
   src/core/lib/security/transport/server_auth_filter.cc
+  src/core/lib/security/transport/target_authority_table.cc
   src/core/lib/security/transport/tsi_error.cc
   src/core/lib/security/util/json_util.cc
   src/core/lib/surface/init_secure.cc
@@ -1556,7 +1562,6 @@ add_library(grpc_test_util
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_hash_table.cc
   src/core/lib/slice/slice_intern.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/api_trace.cc
@@ -1587,6 +1592,7 @@ add_library(grpc_test_util
   src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
   src/core/lib/transport/status_conversion.cc
+  src/core/lib/transport/status_metadata.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
@@ -1602,12 +1608,14 @@ add_library(grpc_test_util
   src/core/ext/filters/client_channel/lb_policy.cc
   src/core/ext/filters/client_channel/lb_policy_factory.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
+  src/core/ext/filters/client_channel/method_params.cc
   src/core/ext/filters/client_channel/parse_address.cc
   src/core/ext/filters/client_channel/proxy_mapper.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
+  src/core/ext/filters/client_channel/status_util.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
@@ -1687,7 +1695,7 @@ foreach(_hdr
   include/grpc/support/sync_generic.h
   include/grpc/support/sync_posix.h
   include/grpc/support/sync_windows.h
-  include/grpc/support/thd.h
+  include/grpc/support/thd_id.h
   include/grpc/support/time.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
@@ -1846,7 +1854,6 @@ add_library(grpc_test_util_unsecure
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_hash_table.cc
   src/core/lib/slice/slice_intern.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/api_trace.cc
@@ -1877,6 +1884,7 @@ add_library(grpc_test_util_unsecure
   src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
   src/core/lib/transport/status_conversion.cc
+  src/core/lib/transport/status_metadata.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
@@ -1892,12 +1900,14 @@ add_library(grpc_test_util_unsecure
   src/core/ext/filters/client_channel/lb_policy.cc
   src/core/ext/filters/client_channel/lb_policy_factory.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
+  src/core/ext/filters/client_channel/method_params.cc
   src/core/ext/filters/client_channel/parse_address.cc
   src/core/ext/filters/client_channel/proxy_mapper.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
+  src/core/ext/filters/client_channel/status_util.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
@@ -1977,7 +1987,7 @@ foreach(_hdr
   include/grpc/support/sync_generic.h
   include/grpc/support/sync_posix.h
   include/grpc/support/sync_windows.h
-  include/grpc/support/thd.h
+  include/grpc/support/thd_id.h
   include/grpc/support/time.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
@@ -2115,7 +2125,6 @@ add_library(grpc_unsecure
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_hash_table.cc
   src/core/lib/slice/slice_intern.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/api_trace.cc
@@ -2146,6 +2155,7 @@ add_library(grpc_unsecure
   src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
   src/core/lib/transport/status_conversion.cc
+  src/core/lib/transport/status_metadata.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
@@ -2194,12 +2204,14 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/lb_policy.cc
   src/core/ext/filters/client_channel/lb_policy_factory.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
+  src/core/ext/filters/client_channel/method_params.cc
   src/core/ext/filters/client_channel/parse_address.cc
   src/core/ext/filters/client_channel/proxy_mapper.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
+  src/core/ext/filters/client_channel/status_util.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
@@ -2523,6 +2535,51 @@ foreach(_hdr
   include/grpc++/support/stub_options.h
   include/grpc++/support/sync_stream.h
   include/grpc++/support/time.h
+  include/grpcpp/alarm.h
+  include/grpcpp/channel.h
+  include/grpcpp/client_context.h
+  include/grpcpp/completion_queue.h
+  include/grpcpp/create_channel.h
+  include/grpcpp/create_channel_posix.h
+  include/grpcpp/ext/health_check_service_server_builder_option.h
+  include/grpcpp/generic/async_generic_service.h
+  include/grpcpp/generic/generic_stub.h
+  include/grpcpp/grpcpp.h
+  include/grpcpp/health_check_service_interface.h
+  include/grpcpp/impl/call.h
+  include/grpcpp/impl/channel_argument_option.h
+  include/grpcpp/impl/client_unary_call.h
+  include/grpcpp/impl/codegen/core_codegen.h
+  include/grpcpp/impl/grpc_library.h
+  include/grpcpp/impl/method_handler_impl.h
+  include/grpcpp/impl/rpc_method.h
+  include/grpcpp/impl/rpc_service_method.h
+  include/grpcpp/impl/serialization_traits.h
+  include/grpcpp/impl/server_builder_option.h
+  include/grpcpp/impl/server_builder_plugin.h
+  include/grpcpp/impl/server_initializer.h
+  include/grpcpp/impl/service_type.h
+  include/grpcpp/resource_quota.h
+  include/grpcpp/security/auth_context.h
+  include/grpcpp/security/auth_metadata_processor.h
+  include/grpcpp/security/credentials.h
+  include/grpcpp/security/server_credentials.h
+  include/grpcpp/server.h
+  include/grpcpp/server_builder.h
+  include/grpcpp/server_context.h
+  include/grpcpp/server_posix.h
+  include/grpcpp/support/async_stream.h
+  include/grpcpp/support/async_unary_call.h
+  include/grpcpp/support/byte_buffer.h
+  include/grpcpp/support/channel_arguments.h
+  include/grpcpp/support/config.h
+  include/grpcpp/support/slice.h
+  include/grpcpp/support/status.h
+  include/grpcpp/support/status_code_enum.h
+  include/grpcpp/support/string_ref.h
+  include/grpcpp/support/stub_options.h
+  include/grpcpp/support/sync_stream.h
+  include/grpcpp/support/time.h
   include/grpc/support/alloc.h
   include/grpc/support/atm.h
   include/grpc/support/atm_gcc_atomic.h
@@ -2538,7 +2595,7 @@ foreach(_hdr
   include/grpc/support/sync_generic.h
   include/grpc/support/sync_posix.h
   include/grpc/support/sync_windows.h
-  include/grpc/support/thd.h
+  include/grpc/support/thd_id.h
   include/grpc/support/time.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
@@ -2603,8 +2660,40 @@ foreach(_hdr
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
   include/grpc++/impl/codegen/time.h
+  include/grpcpp/impl/codegen/async_stream.h
+  include/grpcpp/impl/codegen/async_unary_call.h
+  include/grpcpp/impl/codegen/byte_buffer.h
+  include/grpcpp/impl/codegen/call.h
+  include/grpcpp/impl/codegen/call_hook.h
+  include/grpcpp/impl/codegen/channel_interface.h
+  include/grpcpp/impl/codegen/client_context.h
+  include/grpcpp/impl/codegen/client_unary_call.h
+  include/grpcpp/impl/codegen/completion_queue.h
+  include/grpcpp/impl/codegen/completion_queue_tag.h
+  include/grpcpp/impl/codegen/config.h
+  include/grpcpp/impl/codegen/core_codegen_interface.h
+  include/grpcpp/impl/codegen/create_auth_context.h
+  include/grpcpp/impl/codegen/grpc_library.h
+  include/grpcpp/impl/codegen/metadata_map.h
+  include/grpcpp/impl/codegen/method_handler_impl.h
+  include/grpcpp/impl/codegen/rpc_method.h
+  include/grpcpp/impl/codegen/rpc_service_method.h
+  include/grpcpp/impl/codegen/security/auth_context.h
+  include/grpcpp/impl/codegen/serialization_traits.h
+  include/grpcpp/impl/codegen/server_context.h
+  include/grpcpp/impl/codegen/server_interface.h
+  include/grpcpp/impl/codegen/service_type.h
+  include/grpcpp/impl/codegen/slice.h
+  include/grpcpp/impl/codegen/status.h
+  include/grpcpp/impl/codegen/status_code_enum.h
+  include/grpcpp/impl/codegen/string_ref.h
+  include/grpcpp/impl/codegen/stub_options.h
+  include/grpcpp/impl/codegen/sync_stream.h
+  include/grpcpp/impl/codegen/time.h
   include/grpc++/impl/codegen/proto_utils.h
+  include/grpcpp/impl/codegen/proto_utils.h
   include/grpc++/impl/codegen/config_protobuf.h
+  include/grpcpp/impl/codegen/config_protobuf.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -2839,7 +2928,6 @@ add_library(grpc++_cronet
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_hash_table.cc
   src/core/lib/slice/slice_intern.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/api_trace.cc
@@ -2870,6 +2958,7 @@ add_library(grpc++_cronet
   src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
   src/core/lib/transport/status_conversion.cc
+  src/core/lib/transport/status_metadata.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
@@ -2890,12 +2979,14 @@ add_library(grpc++_cronet
   src/core/ext/filters/client_channel/lb_policy.cc
   src/core/ext/filters/client_channel/lb_policy_factory.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
+  src/core/ext/filters/client_channel/method_params.cc
   src/core/ext/filters/client_channel/parse_address.cc
   src/core/ext/filters/client_channel/proxy_mapper.cc
   src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
+  src/core/ext/filters/client_channel/status_util.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
@@ -2989,6 +3080,51 @@ foreach(_hdr
   include/grpc++/support/stub_options.h
   include/grpc++/support/sync_stream.h
   include/grpc++/support/time.h
+  include/grpcpp/alarm.h
+  include/grpcpp/channel.h
+  include/grpcpp/client_context.h
+  include/grpcpp/completion_queue.h
+  include/grpcpp/create_channel.h
+  include/grpcpp/create_channel_posix.h
+  include/grpcpp/ext/health_check_service_server_builder_option.h
+  include/grpcpp/generic/async_generic_service.h
+  include/grpcpp/generic/generic_stub.h
+  include/grpcpp/grpcpp.h
+  include/grpcpp/health_check_service_interface.h
+  include/grpcpp/impl/call.h
+  include/grpcpp/impl/channel_argument_option.h
+  include/grpcpp/impl/client_unary_call.h
+  include/grpcpp/impl/codegen/core_codegen.h
+  include/grpcpp/impl/grpc_library.h
+  include/grpcpp/impl/method_handler_impl.h
+  include/grpcpp/impl/rpc_method.h
+  include/grpcpp/impl/rpc_service_method.h
+  include/grpcpp/impl/serialization_traits.h
+  include/grpcpp/impl/server_builder_option.h
+  include/grpcpp/impl/server_builder_plugin.h
+  include/grpcpp/impl/server_initializer.h
+  include/grpcpp/impl/service_type.h
+  include/grpcpp/resource_quota.h
+  include/grpcpp/security/auth_context.h
+  include/grpcpp/security/auth_metadata_processor.h
+  include/grpcpp/security/credentials.h
+  include/grpcpp/security/server_credentials.h
+  include/grpcpp/server.h
+  include/grpcpp/server_builder.h
+  include/grpcpp/server_context.h
+  include/grpcpp/server_posix.h
+  include/grpcpp/support/async_stream.h
+  include/grpcpp/support/async_unary_call.h
+  include/grpcpp/support/byte_buffer.h
+  include/grpcpp/support/channel_arguments.h
+  include/grpcpp/support/config.h
+  include/grpcpp/support/slice.h
+  include/grpcpp/support/status.h
+  include/grpcpp/support/status_code_enum.h
+  include/grpcpp/support/string_ref.h
+  include/grpcpp/support/stub_options.h
+  include/grpcpp/support/sync_stream.h
+  include/grpcpp/support/time.h
   include/grpc/support/alloc.h
   include/grpc/support/atm.h
   include/grpc/support/atm_gcc_atomic.h
@@ -3004,7 +3140,7 @@ foreach(_hdr
   include/grpc/support/sync_generic.h
   include/grpc/support/sync_posix.h
   include/grpc/support/sync_windows.h
-  include/grpc/support/thd.h
+  include/grpc/support/thd_id.h
   include/grpc/support/time.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
@@ -3069,6 +3205,36 @@ foreach(_hdr
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
   include/grpc++/impl/codegen/time.h
+  include/grpcpp/impl/codegen/async_stream.h
+  include/grpcpp/impl/codegen/async_unary_call.h
+  include/grpcpp/impl/codegen/byte_buffer.h
+  include/grpcpp/impl/codegen/call.h
+  include/grpcpp/impl/codegen/call_hook.h
+  include/grpcpp/impl/codegen/channel_interface.h
+  include/grpcpp/impl/codegen/client_context.h
+  include/grpcpp/impl/codegen/client_unary_call.h
+  include/grpcpp/impl/codegen/completion_queue.h
+  include/grpcpp/impl/codegen/completion_queue_tag.h
+  include/grpcpp/impl/codegen/config.h
+  include/grpcpp/impl/codegen/core_codegen_interface.h
+  include/grpcpp/impl/codegen/create_auth_context.h
+  include/grpcpp/impl/codegen/grpc_library.h
+  include/grpcpp/impl/codegen/metadata_map.h
+  include/grpcpp/impl/codegen/method_handler_impl.h
+  include/grpcpp/impl/codegen/rpc_method.h
+  include/grpcpp/impl/codegen/rpc_service_method.h
+  include/grpcpp/impl/codegen/security/auth_context.h
+  include/grpcpp/impl/codegen/serialization_traits.h
+  include/grpcpp/impl/codegen/server_context.h
+  include/grpcpp/impl/codegen/server_interface.h
+  include/grpcpp/impl/codegen/service_type.h
+  include/grpcpp/impl/codegen/slice.h
+  include/grpcpp/impl/codegen/status.h
+  include/grpcpp/impl/codegen/status_code_enum.h
+  include/grpcpp/impl/codegen/string_ref.h
+  include/grpcpp/impl/codegen/stub_options.h
+  include/grpcpp/impl/codegen/sync_stream.h
+  include/grpcpp/impl/codegen/time.h
   include/grpc/census.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
@@ -3132,6 +3298,7 @@ target_link_libraries(grpc++_error_details
 
 foreach(_hdr
   include/grpc++/support/error_details.h
+  include/grpcpp/support/error_details.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -3199,6 +3366,7 @@ target_link_libraries(grpc++_proto_reflection_desc_db
 
 foreach(_hdr
   include/grpc++/impl/codegen/config_protobuf.h
+  include/grpcpp/impl/codegen/config_protobuf.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -3254,6 +3422,7 @@ target_link_libraries(grpc++_reflection
 
 foreach(_hdr
   include/grpc++/ext/proto_server_reflection_plugin.h
+  include/grpcpp/ext/proto_server_reflection_plugin.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -3420,6 +3589,36 @@ foreach(_hdr
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
   include/grpc++/impl/codegen/time.h
+  include/grpcpp/impl/codegen/async_stream.h
+  include/grpcpp/impl/codegen/async_unary_call.h
+  include/grpcpp/impl/codegen/byte_buffer.h
+  include/grpcpp/impl/codegen/call.h
+  include/grpcpp/impl/codegen/call_hook.h
+  include/grpcpp/impl/codegen/channel_interface.h
+  include/grpcpp/impl/codegen/client_context.h
+  include/grpcpp/impl/codegen/client_unary_call.h
+  include/grpcpp/impl/codegen/completion_queue.h
+  include/grpcpp/impl/codegen/completion_queue_tag.h
+  include/grpcpp/impl/codegen/config.h
+  include/grpcpp/impl/codegen/core_codegen_interface.h
+  include/grpcpp/impl/codegen/create_auth_context.h
+  include/grpcpp/impl/codegen/grpc_library.h
+  include/grpcpp/impl/codegen/metadata_map.h
+  include/grpcpp/impl/codegen/method_handler_impl.h
+  include/grpcpp/impl/codegen/rpc_method.h
+  include/grpcpp/impl/codegen/rpc_service_method.h
+  include/grpcpp/impl/codegen/security/auth_context.h
+  include/grpcpp/impl/codegen/serialization_traits.h
+  include/grpcpp/impl/codegen/server_context.h
+  include/grpcpp/impl/codegen/server_interface.h
+  include/grpcpp/impl/codegen/service_type.h
+  include/grpcpp/impl/codegen/slice.h
+  include/grpcpp/impl/codegen/status.h
+  include/grpcpp/impl/codegen/status_code_enum.h
+  include/grpcpp/impl/codegen/string_ref.h
+  include/grpcpp/impl/codegen/stub_options.h
+  include/grpcpp/impl/codegen/sync_stream.h
+  include/grpcpp/impl/codegen/time.h
   include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
@@ -3442,7 +3641,9 @@ foreach(_hdr
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
   include/grpc++/impl/codegen/proto_utils.h
+  include/grpcpp/impl/codegen/proto_utils.h
   include/grpc++/impl/codegen/config_protobuf.h
+  include/grpcpp/impl/codegen/config_protobuf.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -3558,6 +3759,36 @@ foreach(_hdr
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
   include/grpc++/impl/codegen/time.h
+  include/grpcpp/impl/codegen/async_stream.h
+  include/grpcpp/impl/codegen/async_unary_call.h
+  include/grpcpp/impl/codegen/byte_buffer.h
+  include/grpcpp/impl/codegen/call.h
+  include/grpcpp/impl/codegen/call_hook.h
+  include/grpcpp/impl/codegen/channel_interface.h
+  include/grpcpp/impl/codegen/client_context.h
+  include/grpcpp/impl/codegen/client_unary_call.h
+  include/grpcpp/impl/codegen/completion_queue.h
+  include/grpcpp/impl/codegen/completion_queue_tag.h
+  include/grpcpp/impl/codegen/config.h
+  include/grpcpp/impl/codegen/core_codegen_interface.h
+  include/grpcpp/impl/codegen/create_auth_context.h
+  include/grpcpp/impl/codegen/grpc_library.h
+  include/grpcpp/impl/codegen/metadata_map.h
+  include/grpcpp/impl/codegen/method_handler_impl.h
+  include/grpcpp/impl/codegen/rpc_method.h
+  include/grpcpp/impl/codegen/rpc_service_method.h
+  include/grpcpp/impl/codegen/security/auth_context.h
+  include/grpcpp/impl/codegen/serialization_traits.h
+  include/grpcpp/impl/codegen/server_context.h
+  include/grpcpp/impl/codegen/server_interface.h
+  include/grpcpp/impl/codegen/service_type.h
+  include/grpcpp/impl/codegen/slice.h
+  include/grpcpp/impl/codegen/status.h
+  include/grpcpp/impl/codegen/status_code_enum.h
+  include/grpcpp/impl/codegen/string_ref.h
+  include/grpcpp/impl/codegen/stub_options.h
+  include/grpcpp/impl/codegen/sync_stream.h
+  include/grpcpp/impl/codegen/time.h
   include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
   include/grpc/impl/codegen/compression_types.h
@@ -3580,7 +3811,9 @@ foreach(_hdr
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
   include/grpc++/impl/codegen/proto_utils.h
+  include/grpcpp/impl/codegen/proto_utils.h
   include/grpc++/impl/codegen/config_protobuf.h
+  include/grpcpp/impl/codegen/config_protobuf.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -3710,6 +3943,51 @@ foreach(_hdr
   include/grpc++/support/stub_options.h
   include/grpc++/support/sync_stream.h
   include/grpc++/support/time.h
+  include/grpcpp/alarm.h
+  include/grpcpp/channel.h
+  include/grpcpp/client_context.h
+  include/grpcpp/completion_queue.h
+  include/grpcpp/create_channel.h
+  include/grpcpp/create_channel_posix.h
+  include/grpcpp/ext/health_check_service_server_builder_option.h
+  include/grpcpp/generic/async_generic_service.h
+  include/grpcpp/generic/generic_stub.h
+  include/grpcpp/grpcpp.h
+  include/grpcpp/health_check_service_interface.h
+  include/grpcpp/impl/call.h
+  include/grpcpp/impl/channel_argument_option.h
+  include/grpcpp/impl/client_unary_call.h
+  include/grpcpp/impl/codegen/core_codegen.h
+  include/grpcpp/impl/grpc_library.h
+  include/grpcpp/impl/method_handler_impl.h
+  include/grpcpp/impl/rpc_method.h
+  include/grpcpp/impl/rpc_service_method.h
+  include/grpcpp/impl/serialization_traits.h
+  include/grpcpp/impl/server_builder_option.h
+  include/grpcpp/impl/server_builder_plugin.h
+  include/grpcpp/impl/server_initializer.h
+  include/grpcpp/impl/service_type.h
+  include/grpcpp/resource_quota.h
+  include/grpcpp/security/auth_context.h
+  include/grpcpp/security/auth_metadata_processor.h
+  include/grpcpp/security/credentials.h
+  include/grpcpp/security/server_credentials.h
+  include/grpcpp/server.h
+  include/grpcpp/server_builder.h
+  include/grpcpp/server_context.h
+  include/grpcpp/server_posix.h
+  include/grpcpp/support/async_stream.h
+  include/grpcpp/support/async_unary_call.h
+  include/grpcpp/support/byte_buffer.h
+  include/grpcpp/support/channel_arguments.h
+  include/grpcpp/support/config.h
+  include/grpcpp/support/slice.h
+  include/grpcpp/support/status.h
+  include/grpcpp/support/status_code_enum.h
+  include/grpcpp/support/string_ref.h
+  include/grpcpp/support/stub_options.h
+  include/grpcpp/support/sync_stream.h
+  include/grpcpp/support/time.h
   include/grpc/support/alloc.h
   include/grpc/support/atm.h
   include/grpc/support/atm_gcc_atomic.h
@@ -3725,7 +4003,7 @@ foreach(_hdr
   include/grpc/support/sync_generic.h
   include/grpc/support/sync_posix.h
   include/grpc/support/sync_windows.h
-  include/grpc/support/thd.h
+  include/grpc/support/thd_id.h
   include/grpc/support/time.h
   include/grpc/impl/codegen/atm.h
   include/grpc/impl/codegen/atm_gcc_atomic.h
@@ -3790,6 +4068,36 @@ foreach(_hdr
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
   include/grpc++/impl/codegen/time.h
+  include/grpcpp/impl/codegen/async_stream.h
+  include/grpcpp/impl/codegen/async_unary_call.h
+  include/grpcpp/impl/codegen/byte_buffer.h
+  include/grpcpp/impl/codegen/call.h
+  include/grpcpp/impl/codegen/call_hook.h
+  include/grpcpp/impl/codegen/channel_interface.h
+  include/grpcpp/impl/codegen/client_context.h
+  include/grpcpp/impl/codegen/client_unary_call.h
+  include/grpcpp/impl/codegen/completion_queue.h
+  include/grpcpp/impl/codegen/completion_queue_tag.h
+  include/grpcpp/impl/codegen/config.h
+  include/grpcpp/impl/codegen/core_codegen_interface.h
+  include/grpcpp/impl/codegen/create_auth_context.h
+  include/grpcpp/impl/codegen/grpc_library.h
+  include/grpcpp/impl/codegen/metadata_map.h
+  include/grpcpp/impl/codegen/method_handler_impl.h
+  include/grpcpp/impl/codegen/rpc_method.h
+  include/grpcpp/impl/codegen/rpc_service_method.h
+  include/grpcpp/impl/codegen/security/auth_context.h
+  include/grpcpp/impl/codegen/serialization_traits.h
+  include/grpcpp/impl/codegen/server_context.h
+  include/grpcpp/impl/codegen/server_interface.h
+  include/grpcpp/impl/codegen/service_type.h
+  include/grpcpp/impl/codegen/slice.h
+  include/grpcpp/impl/codegen/status.h
+  include/grpcpp/impl/codegen/status_code_enum.h
+  include/grpcpp/impl/codegen/string_ref.h
+  include/grpcpp/impl/codegen/stub_options.h
+  include/grpcpp/impl/codegen/sync_stream.h
+  include/grpcpp/impl/codegen/time.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -3908,6 +4216,7 @@ target_link_libraries(grpc_cli_libs
 
 foreach(_hdr
   include/grpc++/impl/codegen/config_protobuf.h
+  include/grpcpp/impl/codegen/config_protobuf.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -3960,6 +4269,7 @@ target_link_libraries(grpc_plugin_support
 
 foreach(_hdr
   include/grpc++/impl/codegen/config_protobuf.h
+  include/grpcpp/impl/codegen/config_protobuf.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -4588,6 +4898,21 @@ add_library(end2end_tests
   test/core/end2end/tests/request_with_flags.cc
   test/core/end2end/tests/request_with_payload.cc
   test/core/end2end/tests/resource_quota_server.cc
+  test/core/end2end/tests/retry.cc
+  test/core/end2end/tests/retry_cancellation.cc
+  test/core/end2end/tests/retry_disabled.cc
+  test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
+  test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
+  test/core/end2end/tests/retry_non_retriable_status.cc
+  test/core/end2end/tests/retry_recv_initial_metadata.cc
+  test/core/end2end/tests/retry_recv_message.cc
+  test/core/end2end/tests/retry_server_pushback_delay.cc
+  test/core/end2end/tests/retry_server_pushback_disabled.cc
+  test/core/end2end/tests/retry_streaming.cc
+  test/core/end2end/tests/retry_streaming_after_commit.cc
+  test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
+  test/core/end2end/tests/retry_throttled.cc
+  test/core/end2end/tests/retry_too_many_attempts.cc
   test/core/end2end/tests/server_finishes_request.cc
   test/core/end2end/tests/shutdown_finishes_calls.cc
   test/core/end2end/tests/shutdown_finishes_tags.cc
@@ -4688,6 +5013,21 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/request_with_flags.cc
   test/core/end2end/tests/request_with_payload.cc
   test/core/end2end/tests/resource_quota_server.cc
+  test/core/end2end/tests/retry.cc
+  test/core/end2end/tests/retry_cancellation.cc
+  test/core/end2end/tests/retry_disabled.cc
+  test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
+  test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
+  test/core/end2end/tests/retry_non_retriable_status.cc
+  test/core/end2end/tests/retry_recv_initial_metadata.cc
+  test/core/end2end/tests/retry_recv_message.cc
+  test/core/end2end/tests/retry_server_pushback_delay.cc
+  test/core/end2end/tests/retry_server_pushback_disabled.cc
+  test/core/end2end/tests/retry_streaming.cc
+  test/core/end2end/tests/retry_streaming_after_commit.cc
+  test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
+  test/core/end2end/tests/retry_throttled.cc
+  test/core/end2end/tests/retry_too_many_attempts.cc
   test/core/end2end/tests/server_finishes_request.cc
   test/core/end2end/tests/shutdown_finishes_calls.cc
   test/core/end2end/tests/shutdown_finishes_tags.cc
@@ -7627,33 +7967,6 @@ target_link_libraries(slice_buffer_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(slice_hash_table_test
-  test/core/slice/slice_hash_table_test.cc
-)
-
-
-target_include_directories(slice_hash_table_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-)
-
-target_link_libraries(slice_hash_table_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
 add_executable(slice_string_helpers_test
   test/core/slice/slice_string_helpers_test.cc
 )
@@ -10377,51 +10690,6 @@ target_link_libraries(grpclb_end2end_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(grpclb_test
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.h
-  test/cpp/grpclb/grpclb_test.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/lb/v1/load_balancer.proto
-)
-
-target_include_directories(grpclb_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE third_party/googletest/googletest/include
-  PRIVATE third_party/googletest/googletest
-  PRIVATE third_party/googletest/googlemock/include
-  PRIVATE third_party/googletest/googlemock
-  PRIVATE ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(grpclb_test
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr_test_util
-  gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
 add_executable(h2_ssl_cert_test
   test/core/end2end/h2_ssl_cert_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -11896,6 +12164,78 @@ target_link_libraries(shutdown_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(slice_hash_table_test
+  test/core/slice/slice_hash_table_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(slice_hash_table_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(slice_hash_table_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(slice_weak_hash_table_test
+  test/core/slice/slice_weak_hash_table_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(slice_weak_hash_table_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(slice_weak_hash_table_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(stats_test
   test/core/debug/stats_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -11933,6 +12273,39 @@ target_link_libraries(stats_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(status_metadata_test
+  test/core/transport/status_metadata_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(status_metadata_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(status_metadata_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(status_test
   test/cpp/util/status_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -11964,6 +12337,39 @@ target_link_libraries(status_test
   grpc
   gpr_test_util
   gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(status_util_test
+  test/core/client_channel/status_util_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(status_util_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(status_util_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 

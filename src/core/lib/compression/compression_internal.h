@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_COMPRESSION_COMPRESSION_INTERNAL_H
 #define GRPC_CORE_LIB_COMPRESSION_COMPRESSION_INTERNAL_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/impl/codegen/compression_types.h>
 
 #ifdef __cplusplus

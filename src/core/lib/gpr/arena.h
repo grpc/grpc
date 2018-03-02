@@ -25,6 +25,8 @@
 #ifndef GRPC_CORE_LIB_GPR_ARENA_H
 #define GRPC_CORE_LIB_GPR_ARENA_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stddef.h>
 
 typedef struct gpr_arena gpr_arena;

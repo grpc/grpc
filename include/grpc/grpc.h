@@ -19,6 +19,8 @@
 #ifndef GRPC_GRPC_H
 #define GRPC_GRPC_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/status.h>
 
 #include <grpc/byte_buffer.h>
@@ -269,9 +271,11 @@ GRPCAPI void grpc_channel_get_info(grpc_channel* channel,
 
 /** Create a client channel to 'target'. Additional channel level configuration
     MAY be provided by grpc_channel_args, though the expectation is that most
-    clients will want to simply pass NULL. See grpc_channel_args definition for
-    more on this. The data in 'args' need only live through the invocation of
-    this function. */
+    clients will want to simply pass NULL. The user data in 'args' need only
+    live through the invocation of this function. However, if any args of the
+    'pointer' type are passed, then the referenced vtable must be maintained
+    by the caller until grpc_channel_destroy terminates. See grpc_channel_args
+    definition for more on this. */
 GRPCAPI grpc_channel* grpc_insecure_channel_create(
     const char* target, const grpc_channel_args* args, void* reserved);
 
@@ -364,8 +368,11 @@ GRPCAPI grpc_call_error grpc_server_request_registered_call(
 
 /** Create a server. Additional configuration for each incoming channel can
     be specified with args. If no additional configuration is needed, args can
-    be NULL. See grpc_channel_args for more. The data in 'args' need only live
-    through the invocation of this function. */
+    be NULL. The user data in 'args' need only live through the invocation of
+    this function. However, if any args of the 'pointer' type are passed, then
+    the referenced vtable must be maintained by the caller until
+    grpc_server_destroy terminates. See grpc_channel_args definition for more
+    on this. */
 GRPCAPI grpc_server* grpc_server_create(const grpc_channel_args* args,
                                         void* reserved);
 

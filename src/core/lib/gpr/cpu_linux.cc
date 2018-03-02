@@ -45,7 +45,7 @@ static void init_num_cpus() {
 #endif
   /* This must be signed. sysconf returns -1 when the number cannot be
      determined */
-  ncpus = static_cast<int>(sysconf(_SC_NPROCESSORS_ONLN));
+  ncpus = static_cast<int>(sysconf(_SC_NPROCESSORS_CONF));
   if (ncpus < 1) {
     gpr_log(GPR_ERROR, "Cannot determine number of CPUs: assuming 1");
     ncpus = 1;

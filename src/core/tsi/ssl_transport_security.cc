@@ -16,9 +16,9 @@
  *
  */
 
-#include "src/core/tsi/ssl_transport_security.h"
-
 #include <grpc/support/port_platform.h>
+
+#include "src/core/tsi/ssl_transport_security.h"
 
 #include <limits.h>
 #include <string.h>
@@ -36,7 +36,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/thd.h>
+#include <grpc/support/thd_id.h>
 
 extern "C" {
 #include <openssl/bio.h>

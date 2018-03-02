@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/filters/client_channel/subchannel.h"
 
 #include <inttypes.h>
@@ -662,7 +664,6 @@ static void on_subchannel_connected(void* arg, grpc_error* error) {
 static void subchannel_call_destroy(void* call, grpc_error* error) {
   GPR_TIMER_SCOPE("grpc_subchannel_call_unref.destroy", 0);
   grpc_subchannel_call* c = static_cast<grpc_subchannel_call*>(call);
-  GPR_ASSERT(c->schedule_closure_after_destroy != nullptr);
   grpc_core::ConnectedSubchannel* connection = c->connection;
   grpc_call_stack_destroy(SUBCHANNEL_CALL_TO_CALL_STACK(c), nullptr,
                           c->schedule_closure_after_destroy);
@@ -676,9 +677,10 @@ void grpc_subchannel_call_set_cleanup_closure(grpc_subchannel_call* call,
   call->schedule_closure_after_destroy = closure;
 }
 
-void grpc_subchannel_call_ref(
+grpc_subchannel_call* grpc_subchannel_call_ref(
     grpc_subchannel_call* c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   GRPC_CALL_STACK_REF(SUBCHANNEL_CALL_TO_CALL_STACK(c), REF_REASON);
+  return c;
 }
 
 void grpc_subchannel_call_unref(
@@ -708,6 +710,13 @@ const grpc_subchannel_key* grpc_subchannel_get_key(
   return subchannel->key;
 }
 
+void* grpc_connected_subchannel_call_get_parent_data(
+    grpc_subchannel_call* subchannel_call) {
+  grpc_channel_stack* chanstk = subchannel_call->connection->channel_stack();
+  return (char*)subchannel_call + sizeof(grpc_subchannel_call) +
+         chanstk->call_stack_size;
+}
+
 grpc_call_stack* grpc_subchannel_call_get_call_stack(
     grpc_subchannel_call* subchannel_call) {
   return SUBCHANNEL_CALL_TO_CALL_STACK(subchannel_call);
@@ -733,9 +742,9 @@ void grpc_get_subchannel_address_arg(const grpc_channel_args* args,
 const char* grpc_get_subchannel_address_uri_arg(const grpc_channel_args* args) {
   const grpc_arg* addr_arg =
       grpc_channel_args_find(args, GRPC_ARG_SUBCHANNEL_ADDRESS);
-  GPR_ASSERT(addr_arg != nullptr);  // Should have been set by LB policy.
-  GPR_ASSERT(addr_arg->type == GRPC_ARG_STRING);
-  return addr_arg->value.string;
+  const char* addr_str = grpc_channel_arg_get_string(addr_arg);
+  GPR_ASSERT(addr_str != nullptr);  // Should have been set by LB policy.
+  return addr_str;
 }
 
 grpc_arg grpc_create_subchannel_address_arg(const grpc_resolved_address* addr) {
@@ -779,8 +788,8 @@ void ConnectedSubchannel::Ping(grpc_closure* on_initiate,
 grpc_error* ConnectedSubchannel::CreateCall(const CallArgs& args,
                                             grpc_subchannel_call** call) {
   *call = static_cast<grpc_subchannel_call*>(gpr_arena_alloc(
-      args.arena,
-      sizeof(grpc_subchannel_call) + channel_stack_->call_stack_size));
+      args.arena, sizeof(grpc_subchannel_call) +
+                      channel_stack_->call_stack_size + args.parent_data_size));
   grpc_call_stack* callstk = SUBCHANNEL_CALL_TO_CALL_STACK(*call);
   RefCountedPtr<ConnectedSubchannel> connection =
       Ref(DEBUG_LOCATION, "subchannel_call");

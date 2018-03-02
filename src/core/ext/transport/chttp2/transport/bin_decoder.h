@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_BIN_DECODER_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_BIN_DECODER_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/slice.h>
 #include <stdbool.h>
 
@@ -47,5 +49,8 @@ grpc_slice grpc_chttp2_base64_decode(grpc_slice input);
    decoding is failed. */
 grpc_slice grpc_chttp2_base64_decode_with_length(grpc_slice input,
                                                  size_t output_length);
+
+/* Infer the length of decoded data from encoded data. */
+size_t grpc_chttp2_base64_infer_length_after_decode(const grpc_slice& slice);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_BIN_DECODER_H */

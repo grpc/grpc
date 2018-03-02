@@ -16,16 +16,17 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/timer_manager.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/thd.h>
 
 #include <inttypes.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/thd.h"
 #include "src/core/lib/iomgr/timer.h"
 
 typedef struct completed_thread {

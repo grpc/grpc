@@ -14,6 +14,8 @@
 // limitations under the License.
 //
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 
 #include <limits.h>
@@ -27,6 +29,8 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/service_config.h"
 
@@ -35,27 +39,29 @@ typedef struct {
   int max_recv_size;
 } message_size_limits;
 
-typedef struct {
-  gpr_refcount refs;
-  message_size_limits limits;
-} refcounted_message_size_limits;
+namespace grpc_core {
+namespace {
 
-static void* refcounted_message_size_limits_ref(void* value) {
-  refcounted_message_size_limits* limits =
-      static_cast<refcounted_message_size_limits*>(value);
-  gpr_ref(&limits->refs);
-  return value;
-}
+class MessageSizeLimits : public RefCounted<MessageSizeLimits> {
+ public:
+  static RefCountedPtr<MessageSizeLimits> CreateFromJson(const grpc_json* json);
 
-static void refcounted_message_size_limits_unref(void* value) {
-  refcounted_message_size_limits* limits =
-      static_cast<refcounted_message_size_limits*>(value);
-  if (gpr_unref(&limits->refs)) {
-    gpr_free(value);
+  const message_size_limits& limits() const { return limits_; }
+
+ private:
+  // So New() can call our private ctor.
+  template <typename T, typename... Args>
+  friend T* grpc_core::New(Args&&... args);
+
+  MessageSizeLimits(int max_send_size, int max_recv_size) {
+    limits_.max_send_size = max_send_size;
+    limits_.max_recv_size = max_recv_size;
   }
-}
 
-static void* refcounted_message_size_limits_create_from_json(
+  message_size_limits limits_;
+};
+
+RefCountedPtr<MessageSizeLimits> MessageSizeLimits::CreateFromJson(
     const grpc_json* json) {
   int max_request_message_bytes = -1;
   int max_response_message_bytes = -1;
@@ -77,16 +83,15 @@ static void* refcounted_message_size_limits_create_from_json(
       if (max_response_message_bytes == -1) return nullptr;
     }
   }
-  refcounted_message_size_limits* value =
-      static_cast<refcounted_message_size_limits*>(
-          gpr_malloc(sizeof(refcounted_message_size_limits)));
-  gpr_ref_init(&value->refs, 1);
-  value->limits.max_send_size = max_request_message_bytes;
-  value->limits.max_recv_size = max_response_message_bytes;
-  return value;
+  return MakeRefCounted<MessageSizeLimits>(max_request_message_bytes,
+                                           max_response_message_bytes);
 }
 
+}  // namespace
+}  // namespace grpc_core
+
 namespace {
+
 struct call_data {
   grpc_call_combiner* call_combiner;
   message_size_limits limits;
@@ -103,8 +108,11 @@ struct call_data {
 struct channel_data {
   message_size_limits limits;
   // Maps path names to refcounted_message_size_limits structs.
-  grpc_slice_hash_table* method_limit_table;
+  grpc_core::RefCountedPtr<grpc_core::SliceHashTable<
+      grpc_core::RefCountedPtr<grpc_core::MessageSizeLimits>>>
+      method_limit_table;
 };
+
 }  // namespace
 
 // Callback invoked when we receive a message.  Here we check the max
@@ -183,20 +191,19 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
   // size to the receive limit.
   calld->limits = chand->limits;
   if (chand->method_limit_table != nullptr) {
-    refcounted_message_size_limits* limits =
-        static_cast<refcounted_message_size_limits*>(
-            grpc_method_config_table_get(chand->method_limit_table,
-                                         args->path));
+    grpc_core::RefCountedPtr<grpc_core::MessageSizeLimits> limits =
+        grpc_core::ServiceConfig::MethodConfigTableLookup(
+            *chand->method_limit_table, args->path);
     if (limits != nullptr) {
-      if (limits->limits.max_send_size >= 0 &&
-          (limits->limits.max_send_size < calld->limits.max_send_size ||
+      if (limits->limits().max_send_size >= 0 &&
+          (limits->limits().max_send_size < calld->limits.max_send_size ||
            calld->limits.max_send_size < 0)) {
-        calld->limits.max_send_size = limits->limits.max_send_size;
+        calld->limits.max_send_size = limits->limits().max_send_size;
       }
-      if (limits->limits.max_recv_size >= 0 &&
-          (limits->limits.max_recv_size < calld->limits.max_recv_size ||
+      if (limits->limits().max_recv_size >= 0 &&
+          (limits->limits().max_recv_size < calld->limits.max_recv_size ||
            calld->limits.max_recv_size < 0)) {
-        calld->limits.max_recv_size = limits->limits.max_recv_size;
+        calld->limits.max_recv_size = limits->limits().max_recv_size;
       }
     }
   }
@@ -249,17 +256,13 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
   // Get method config table from channel args.
   const grpc_arg* channel_arg =
       grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVICE_CONFIG);
-  if (channel_arg != nullptr) {
-    GPR_ASSERT(channel_arg->type == GRPC_ARG_STRING);
-    grpc_service_config* service_config =
-        grpc_service_config_create(channel_arg->value.string);
+  const char* service_config_str = grpc_channel_arg_get_string(channel_arg);
+  if (service_config_str != nullptr) {
+    grpc_core::UniquePtr<grpc_core::ServiceConfig> service_config =
+        grpc_core::ServiceConfig::Create(service_config_str);
     if (service_config != nullptr) {
-      chand->method_limit_table =
-          grpc_service_config_create_method_config_table(
-              service_config, refcounted_message_size_limits_create_from_json,
-              refcounted_message_size_limits_ref,
-              refcounted_message_size_limits_unref);
-      grpc_service_config_destroy(service_config);
+      chand->method_limit_table = service_config->CreateMethodConfigTable(
+          grpc_core::MessageSizeLimits::CreateFromJson);
     }
   }
   return GRPC_ERROR_NONE;
@@ -268,7 +271,7 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
 // Destructor for channel_data.
 static void destroy_channel_elem(grpc_channel_element* elem) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  grpc_slice_hash_table_unref(chand->method_limit_table);
+  chand->method_limit_table.reset();
 }
 
 const grpc_channel_filter grpc_message_size_filter = {

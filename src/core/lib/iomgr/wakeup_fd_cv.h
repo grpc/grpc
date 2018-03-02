@@ -33,6 +33,8 @@
 #ifndef GRPC_CORE_LIB_IOMGR_WAKEUP_FD_CV_H
 #define GRPC_CORE_LIB_IOMGR_WAKEUP_FD_CV_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/iomgr/ev_posix.h"

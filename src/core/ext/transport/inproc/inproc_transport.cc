@@ -16,12 +16,14 @@
  *
  */
 
-#include "src/core/ext/transport/inproc/inproc_transport.h"
+#include <grpc/support/port_platform.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 #include <string.h>
+#include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -480,6 +482,8 @@ static void fail_helper_locked(inproc_stream* s, grpc_error* error) {
     s->recv_message_op = nullptr;
   }
   if (s->send_message_op) {
+    grpc_byte_stream_destroy(
+        s->send_message_op->payload->send_message.send_message);
     complete_if_batch_end_locked(
         s, error, s->send_message_op,
         "fail_helper scheduling send-message-on-complete");
@@ -506,6 +510,14 @@ static void fail_helper_locked(inproc_stream* s, grpc_error* error) {
   GRPC_ERROR_UNREF(error);
 }
 
+// TODO(vjpai): It should not be necessary to drain the incoming byte
+// stream and create a new one; instead, we should simply pass the byte
+// stream from the sender directly to the receiver as-is.
+//
+// Note that fixing this will also avoid the assumption in this code
+// that the incoming byte stream's next() call will always return
+// synchronously.  That assumption is true today but may not always be
+// true in the future.
 static void message_transfer_locked(inproc_stream* sender,
                                     inproc_stream* receiver) {
   size_t remaining =
@@ -532,6 +544,8 @@ static void message_transfer_locked(inproc_stream* sender,
     remaining -= GRPC_SLICE_LENGTH(message_slice);
     grpc_slice_buffer_add(&receiver->recv_message, message_slice);
   } while (remaining > 0);
+  grpc_byte_stream_destroy(
+      sender->send_message_op->payload->send_message.send_message);
 
   grpc_slice_buffer_stream_init(&receiver->recv_stream, &receiver->recv_message,
                                 0);
@@ -592,6 +606,8 @@ static void op_state_machine(void* arg, grpc_error* error) {
                (s->trailing_md_sent || other->recv_trailing_md_op)) {
       // A server send will never be matched if the client is waiting
       // for trailing metadata already
+      grpc_byte_stream_destroy(
+          s->send_message_op->payload->send_message.send_message);
       complete_if_batch_end_locked(
           s, GRPC_ERROR_NONE, s->send_message_op,
           "op_state_machine scheduling send-message-on-complete");
@@ -728,6 +744,8 @@ static void op_state_machine(void* arg, grpc_error* error) {
     if ((s->trailing_md_sent || s->t->is_client) && s->send_message_op) {
       // Nothing further will try to receive from this stream, so finish off
       // any outstanding send_message op
+      grpc_byte_stream_destroy(
+          s->send_message_op->payload->send_message.send_message);
       complete_if_batch_end_locked(
           s, new_err, s->send_message_op,
           "op_state_machine scheduling send-message-on-complete");
@@ -785,6 +803,8 @@ static void op_state_machine(void* arg, grpc_error* error) {
       s->send_message_op) {
     // Nothing further will try to receive from this stream, so finish off
     // any outstanding send_message op
+    grpc_byte_stream_destroy(
+        s->send_message_op->payload->send_message.send_message);
     complete_if_batch_end_locked(
         s, new_err, s->send_message_op,
         "op_state_machine scheduling send-message-on-complete");

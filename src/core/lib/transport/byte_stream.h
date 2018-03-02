@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_BYTE_STREAM_H
 #define GRPC_CORE_LIB_TRANSPORT_BYTE_STREAM_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/slice_buffer.h>
 #include "src/core/lib/iomgr/exec_ctx.h"
 
@@ -81,7 +83,7 @@ void grpc_byte_stream_destroy(grpc_byte_stream* byte_stream);
 
 typedef struct grpc_slice_buffer_stream {
   grpc_byte_stream base;
-  grpc_slice_buffer* backing_buffer;
+  grpc_slice_buffer backing_buffer;
   size_t cursor;
   grpc_error* shutdown_error;
 } grpc_slice_buffer_stream;

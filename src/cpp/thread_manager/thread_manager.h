@@ -25,7 +25,7 @@
 #include <mutex>
 #include <thread>
 
-#include <grpc++/support/config.h>
+#include <grpcpp/support/config.h>
 
 namespace grpc {
 

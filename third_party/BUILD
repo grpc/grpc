@@ -3,4 +3,9 @@ exports_files([
     "gtest.BUILD",
     "objective_c/Cronet/bidirectional_stream_c.h",
     "zlib.BUILD",
+    "twisted.BUILD",
+    "yaml.BUILD",
+    "incremental.BUILD",
+    "zope_interface.BUILD",
+    "constantly.BUILD",
 ])

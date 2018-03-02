@@ -30,6 +30,7 @@ if("${gRPC_CARES_PROVIDER}" STREQUAL "module")
     set(gRPC_INSTALL FALSE)
   endif()
 elseif("${gRPC_CARES_PROVIDER}" STREQUAL "package")
+  # Use "CONFIG" as there is no built-in cmake module for c-ares.
   find_package(c-ares REQUIRED CONFIG)
   if(TARGET c-ares::cares)
     set(_gRPC_CARES_LIBRARIES c-ares::cares)

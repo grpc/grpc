@@ -20,6 +20,8 @@
 #define GRPC_CORE_LIB_GPR_TLS_MSVC_H
 
 /** Thread local storage based on ms visual c compiler primitives.
+#include <grpc/support/port_platform.h>
+
    #include tls.h to use this - and see that file for documentation */
 
 struct gpr_msvc_thread_local {

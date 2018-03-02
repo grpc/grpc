@@ -16,8 +16,10 @@
  *
  */
 
-#include "src/core/ext/transport/chttp2/alpn/alpn.h"
+#include <grpc/support/port_platform.h>
+
 #include <grpc/support/log.h>
+#include "src/core/ext/transport/chttp2/alpn/alpn.h"
 
 #include "src/core/lib/gpr/useful.h"
 

@@ -53,7 +53,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/sync_custom.h>
 #include <grpc/support/sync_generic.h>
-#include <grpc/support/thd.h>
+#include <grpc/support/thd_id.h>
 #include <grpc/support/time.h>
 #include <grpc/support/workaround_list.h>
 
@@ -268,14 +268,7 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) gpr_stats_init);
   printf("%lx", (unsigned long) gpr_stats_inc);
   printf("%lx", (unsigned long) gpr_stats_read);
-  printf("%lx", (unsigned long) gpr_thd_new);
-  printf("%lx", (unsigned long) gpr_thd_options_default);
-  printf("%lx", (unsigned long) gpr_thd_options_set_detached);
-  printf("%lx", (unsigned long) gpr_thd_options_set_joinable);
-  printf("%lx", (unsigned long) gpr_thd_options_is_detached);
-  printf("%lx", (unsigned long) gpr_thd_options_is_joinable);
   printf("%lx", (unsigned long) gpr_thd_currentid);
-  printf("%lx", (unsigned long) gpr_thd_join);
   printf("%lx", (unsigned long) gpr_time_0);
   printf("%lx", (unsigned long) gpr_inf_future);
   printf("%lx", (unsigned long) gpr_inf_past);

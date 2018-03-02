@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_SUBCHANNEL_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/filters/client_channel/connector.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/arena.h"
@@ -79,6 +81,7 @@ class ConnectedSubchannel : public RefCountedWithTracing<ConnectedSubchannel> {
     gpr_arena* arena;
     grpc_call_context_element* context;
     grpc_call_combiner* call_combiner;
+    size_t parent_data_size;
   };
 
   explicit ConnectedSubchannel(grpc_channel_stack* channel_stack);
@@ -107,10 +110,16 @@ grpc_subchannel* grpc_subchannel_weak_ref(
     grpc_subchannel* channel GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 void grpc_subchannel_weak_unref(
     grpc_subchannel* channel GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
-void grpc_subchannel_call_ref(
+grpc_subchannel_call* grpc_subchannel_call_ref(
     grpc_subchannel_call* call GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 void grpc_subchannel_call_unref(
     grpc_subchannel_call* call GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+
+/** Returns a pointer to the parent data associated with \a subchannel_call.
+    The data will be of the size specified in \a parent_data_size
+    field of the args passed to \a grpc_connected_subchannel_create_call(). */
+void* grpc_connected_subchannel_call_get_parent_data(
+    grpc_subchannel_call* subchannel_call);
 
 /** poll the current connectivity state of a channel */
 grpc_connectivity_state grpc_subchannel_check_connectivity(

@@ -19,9 +19,11 @@
 #ifndef GRPC_CORE_LIB_IOMGR_IOMGR_UV_H
 #define GRPC_CORE_LIB_IOMGR_IOMGR_UV_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/iomgr_internal.h"
 
-#include <grpc/support/thd.h>
+#include <grpc/support/thd_id.h>
 
 /* The thread ID of the thread on which grpc was initialized. Used to verify
  * that all calls into libuv are made on that same thread */

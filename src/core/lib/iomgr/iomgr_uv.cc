@@ -16,9 +16,13 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_UV
+
+#include <grpc/support/thd_id.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/executor.h"

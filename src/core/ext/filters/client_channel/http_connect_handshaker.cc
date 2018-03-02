@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 
 #include <string.h>
@@ -254,7 +256,8 @@ static void http_connect_handshaker_do_handshake(
   // If not found, invoke on_handshake_done without doing anything.
   const grpc_arg* arg =
       grpc_channel_args_find(args->args, GRPC_ARG_HTTP_CONNECT_SERVER);
-  if (arg == nullptr) {
+  char* server_name = grpc_channel_arg_get_string(arg);
+  if (server_name == nullptr) {
     // Set shutdown to true so that subsequent calls to
     // http_connect_handshaker_shutdown() do nothing.
     gpr_mu_lock(&handshaker->mu);
@@ -263,17 +266,15 @@ static void http_connect_handshaker_do_handshake(
     GRPC_CLOSURE_SCHED(on_handshake_done, GRPC_ERROR_NONE);
     return;
   }
-  GPR_ASSERT(arg->type == GRPC_ARG_STRING);
-  char* server_name = arg->value.string;
   // Get headers from channel args.
   arg = grpc_channel_args_find(args->args, GRPC_ARG_HTTP_CONNECT_HEADERS);
+  char* arg_header_string = grpc_channel_arg_get_string(arg);
   grpc_http_header* headers = nullptr;
   size_t num_headers = 0;
   char** header_strings = nullptr;
   size_t num_header_strings = 0;
-  if (arg != nullptr) {
-    GPR_ASSERT(arg->type == GRPC_ARG_STRING);
-    gpr_string_split(arg->value.string, "\n", &header_strings,
+  if (arg_header_string != nullptr) {
+    gpr_string_split(arg_header_string, "\n", &header_strings,
                      &num_header_strings);
     headers = static_cast<grpc_http_header*>(
         gpr_malloc(sizeof(grpc_http_header) * num_header_strings));

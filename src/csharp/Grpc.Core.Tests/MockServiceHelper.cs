@@ -37,7 +37,6 @@ namespace Grpc.Core.Tests
         public const string ServiceName = "tests.Test";
 
         readonly string host;
-        readonly ServerServiceDefinition serviceDefinition;
         readonly IEnumerable<ChannelOption> channelOptions;
 
         readonly Method<string, string> unaryMethod;
@@ -87,7 +86,7 @@ namespace Grpc.Core.Tests
                 marshaller,
                 marshaller);
 
-            serviceDefinition = ServerServiceDefinition.CreateBuilder()
+            ServiceDefinition = ServerServiceDefinition.CreateBuilder()
                 .AddMethod(unaryMethod, (request, context) => unaryHandler(request, context))
                 .AddMethod(clientStreamingMethod, (requestStream, context) => clientStreamingHandler(requestStream, context))
                 .AddMethod(serverStreamingMethod, (request, responseStream, context) => serverStreamingHandler(request, responseStream, context))
@@ -131,7 +130,7 @@ namespace Grpc.Core.Tests
                 // Disable SO_REUSEPORT to prevent https://github.com/grpc/grpc/issues/10755
                 server = new Server(new[] { new ChannelOption(ChannelOptions.SoReuseport, 0) })
                 {
-                    Services = { serviceDefinition },
+                    Services = { ServiceDefinition },
                     Ports = { { Host, ServerPort.PickUnused, ServerCredentials.Insecure } }
                 };
             }
@@ -178,13 +177,7 @@ namespace Grpc.Core.Tests
             }
         }
 
-        public ServerServiceDefinition ServiceDefinition
-        {
-            get
-            {
-                return this.serviceDefinition;
-            }
-        }
+        public ServerServiceDefinition ServiceDefinition { get; set; }
       
         public UnaryServerMethod<string, string> UnaryHandler
         {

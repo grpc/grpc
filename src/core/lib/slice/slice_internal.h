@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_SLICE_SLICE_INTERNAL_H
 #define GRPC_CORE_LIB_SLICE_SLICE_INTERNAL_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 

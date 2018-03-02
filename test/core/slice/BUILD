@@ -23,8 +23,8 @@ load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 grpc_fuzzer(
     name = "percent_encode_fuzzer",
     srcs = ["percent_encode_fuzzer.cc"],
-    language = "C++",
     corpus = "percent_encode_corpus",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -35,8 +35,8 @@ grpc_fuzzer(
 grpc_fuzzer(
     name = "percent_decode_fuzzer",
     srcs = ["percent_decode_fuzzer.cc"],
-    language = "C++",
     corpus = "percent_decode_corpus",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -59,8 +59,13 @@ grpc_cc_test(
 grpc_cc_test(
     name = "slice_test",
     srcs = ["slice_test.cc"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
     language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
 grpc_cc_test(
@@ -78,15 +83,43 @@ grpc_cc_test(
 grpc_cc_test(
     name = "slice_buffer_test",
     srcs = ["slice_buffer_test.cc"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
     language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
 grpc_cc_test(
     name = "slice_hash_table_test",
     srcs = ["slice_hash_table_test.cc"],
-    deps = ["//:grpc", "//test/core/util:grpc_test_util", "//:gpr", "//test/core/util:gpr_test_util"],
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "slice_weak_hash_table_test",
+    srcs = ["slice_weak_hash_table_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
 grpc_cc_test(

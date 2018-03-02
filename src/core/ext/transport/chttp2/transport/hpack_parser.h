@@ -19,9 +19,10 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stddef.h>
 
-#include <grpc/support/port_platform.h>
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_table.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

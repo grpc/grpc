@@ -119,8 +119,13 @@ typedef struct {
     These configuration options are modelled as key-value pairs as defined
     by grpc_arg; keys are strings to allow easy backwards-compatible extension
     by arbitrary parties. All evaluation is performed at channel creation
-    time (i.e. the values in this structure need only live through the
+    time (i.e. the keys and values in this structure need only live through the
     creation invocation).
+
+    However, if one of the args has grpc_arg_type==GRPC_ARG_POINTER, then the
+    grpc_arg_pointer_vtable must live until the channel args are done being
+    used by core (i.e. when the object for use with which they were passed
+    is destroyed).
 
     See the description of the \ref grpc_arg_keys "available args" for more
     details. */
@@ -312,6 +317,17 @@ typedef struct {
     Defaults to "blend". In the current implementation "blend" is equivalent to
     "latency". */
 #define GRPC_ARG_OPTIMIZATION_TARGET "grpc.optimization_target"
+/** If set to zero, disables retry behavior. Otherwise, transparent retries
+    are enabled for all RPCs, and configurable retries are enabled when they
+    are configured via the service config. For details, see:
+      https://github.com/grpc/proposal/blob/master/A6-client-retries.md
+ */
+#define GRPC_ARG_ENABLE_RETRIES "grpc.enable_retries"
+/** Per-RPC retry buffer size, in bytes. Default is 256 KiB. */
+#define GRPC_ARG_PER_RPC_RETRY_BUFFER_SIZE "grpc.per_rpc_retry_buffer_size"
+/** Channel arg that carries the bridged objective c object for custom metrics
+ * logging filter. */
+#define GRPC_ARG_MOBILE_LOG_CONFIG "grpc.mobile_log_config"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
@@ -549,6 +565,8 @@ typedef struct grpc_op {
     } recv_initial_metadata;
     /** ownership of the byte buffer is moved to the caller; the caller must
         call grpc_byte_buffer_destroy on this value, or reuse it in a future op.
+        The returned byte buffer will be NULL if trailing metadata was
+        received instead of a message.
        */
     struct grpc_op_recv_message {
       struct grpc_byte_buffer** recv_message;

@@ -31,6 +31,10 @@ if("${gRPC_SSL_PROVIDER}" STREQUAL "module")
     set(gRPC_INSTALL FALSE)
   endif()
 elseif("${gRPC_SSL_PROVIDER}" STREQUAL "package")
+  # OpenSSL installation directory can be configured by setting OPENSSL_ROOT_DIR
+  # We expect to locate OpenSSL using the built-in cmake module as the openssl
+  # project itself does not provide installation support in its CMakeLists.txt
+  # See https://cmake.org/cmake/help/v3.6/module/FindOpenSSL.html
   find_package(OpenSSL REQUIRED)
   
   if(TARGET OpenSSL::SSL)

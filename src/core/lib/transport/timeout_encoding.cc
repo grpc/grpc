@@ -16,12 +16,13 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/transport/timeout_encoding.h"
 
 #include <stdio.h>
 #include <string.h>
 
-#include <grpc/support/port_platform.h>
 #include "src/core/lib/gpr/string.h"
 
 static int64_t round_up(int64_t x, int64_t divisor) {

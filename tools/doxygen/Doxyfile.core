@@ -859,7 +859,7 @@ include/grpc/support/sync_custom.h \
 include/grpc/support/sync_generic.h \
 include/grpc/support/sync_posix.h \
 include/grpc/support/sync_windows.h \
-include/grpc/support/thd.h \
+include/grpc/support/thd_id.h \
 include/grpc/support/time.h \
 include/grpc/support/workaround_list.h
 

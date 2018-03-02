@@ -16,9 +16,9 @@
  *
  */
 
-#include <string.h>
-
 #include <grpc/support/port_platform.h>
+
+#include <string.h>
 
 #include "src/core/lib/json/json_writer.h"
 

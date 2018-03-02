@@ -16,9 +16,9 @@
  *
  */
 
-#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-
 #include <grpc/support/port_platform.h>
+
+#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 
 #include <inttypes.h>
 #include <limits.h>
@@ -1456,8 +1456,10 @@ static void perform_stream_op_locked(void* stream_op,
       }
     }
     if (op_payload->send_initial_metadata.peer_string != nullptr) {
-      gpr_atm_rel_store(op_payload->send_initial_metadata.peer_string,
-                        (gpr_atm)gpr_strdup(t->peer_string));
+      char* old_peer_string = (char*)gpr_atm_full_xchg(
+          op_payload->send_initial_metadata.peer_string,
+          (gpr_atm)gpr_strdup(t->peer_string));
+      gpr_free(old_peer_string);
     }
   }
 
@@ -1473,6 +1475,7 @@ static void perform_stream_op_locked(void* stream_op,
       // streaming call might send another message before getting a
       // recv_message failure, breaking out of its loop, and then
       // starting recv_trailing_metadata.
+      grpc_byte_stream_destroy(op->payload->send_message.send_message);
       grpc_chttp2_complete_closure_step(
           t, s, &s->fetching_send_message_finished,
           t->is_client && s->received_trailing_metadata
@@ -1570,8 +1573,10 @@ static void perform_stream_op_locked(void* stream_op,
     s->trailing_metadata_available =
         op_payload->recv_initial_metadata.trailing_metadata_available;
     if (op_payload->recv_initial_metadata.peer_string != nullptr) {
-      gpr_atm_rel_store(op_payload->recv_initial_metadata.peer_string,
-                        (gpr_atm)gpr_strdup(t->peer_string));
+      char* old_peer_string = (char*)gpr_atm_full_xchg(
+          op_payload->recv_initial_metadata.peer_string,
+          (gpr_atm)gpr_strdup(t->peer_string));
+      gpr_free(old_peer_string);
     }
     grpc_chttp2_maybe_complete_recv_initial_metadata(t, s);
   }
@@ -2092,7 +2097,10 @@ void grpc_chttp2_fail_pending_writes(grpc_chttp2_transport* t,
                                     GRPC_ERROR_REF(error),
                                     "send_trailing_metadata_finished");
 
-  s->fetching_send_message = nullptr;
+  if (s->fetching_send_message != nullptr) {
+    grpc_byte_stream_destroy(s->fetching_send_message);
+    s->fetching_send_message = nullptr;
+  }
   grpc_chttp2_complete_closure_step(t, s, &s->fetching_send_message_finished,
                                     GRPC_ERROR_REF(error),
                                     "fetching_send_message_finished");

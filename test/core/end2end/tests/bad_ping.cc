@@ -23,9 +23,9 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gpr/thd.h"
 #include "src/core/lib/gpr/useful.h"
 #include "test/core/end2end/cq_verifier.h"
 

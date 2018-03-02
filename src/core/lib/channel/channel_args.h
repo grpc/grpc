@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H
 #define GRPC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include "src/core/lib/iomgr/socket_mutator.h"
@@ -108,6 +110,11 @@ typedef struct grpc_integer_options {
 /** Returns the value of \a arg, subject to the contraints in \a options. */
 int grpc_channel_arg_get_integer(const grpc_arg* arg,
                                  const grpc_integer_options options);
+
+/** Returns the value of \a arg if \a arg is of type GRPC_ARG_STRING.
+    Otherwise, emits a warning log, and returns nullptr.
+    If arg is nullptr, returns nullptr, and does not emit a warning. */
+char* grpc_channel_arg_get_string(const grpc_arg* arg);
 
 bool grpc_channel_arg_get_bool(const grpc_arg* arg, bool default_value);
 

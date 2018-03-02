@@ -29,11 +29,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/thd.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/thd.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/combiner.h"
@@ -413,12 +413,13 @@ static void on_read_request_done(void* arg, grpc_error* error) {
   // If proxy auth is being used, check if the header is present and as expected
   const grpc_arg* proxy_auth_arg = grpc_channel_args_find(
       conn->proxy->channel_args, GRPC_ARG_HTTP_PROXY_AUTH_CREDS);
-  if (proxy_auth_arg != nullptr && proxy_auth_arg->type == GRPC_ARG_STRING) {
+  char* proxy_auth_str = grpc_channel_arg_get_string(proxy_auth_arg);
+  if (proxy_auth_str != nullptr) {
     bool client_authenticated = false;
     for (size_t i = 0; i < conn->http_request.hdr_count; i++) {
       if (strcmp(conn->http_request.hdrs[i].key, "Proxy-Authorization") == 0) {
         client_authenticated = proxy_auth_header_matches(
-            conn->http_request.hdrs[i].value, proxy_auth_arg->value.string);
+            conn->http_request.hdrs[i].value, proxy_auth_str);
         break;
       }
     }

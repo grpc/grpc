@@ -21,6 +21,8 @@
 
 /* Lock free event notification for file descriptors */
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/support/atm.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"

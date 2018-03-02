@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/gprpp/abstract.h"

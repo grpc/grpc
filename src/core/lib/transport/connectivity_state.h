@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_CONNECTIVITY_STATE_H
 #define GRPC_CORE_LIB_TRANSPORT_CONNECTIVITY_STATE_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/grpc.h>
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

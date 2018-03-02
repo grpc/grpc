@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/tsi/transport_security.h"
 
 #include <grpc/support/alloc.h>

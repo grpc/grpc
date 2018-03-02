@@ -19,6 +19,9 @@
 #ifndef GRPC_CORE_LIB_JSON_JSON_H
 #define GRPC_CORE_LIB_JSON_JSON_H
 
+
+#include <grpc/support/port_platform.h>
+
 #include <stdbool.h>
 #include <stdlib.h>
 
