@@ -14,3 +14,4 @@ future), and the corresponding version numbers that used them:
 - 1.8 'g' stands for 'generous'
 - 1.9 'g' stands for 'glossy'
 - 1.10 'g' stands for 'glamorous'
+- 1.11 'g' stands for 'gorgeous'
