@@ -189,8 +189,8 @@ grpc_channel* grpc_channel_create_with_builder(
   return channel;
 }
 
-char* grpc_channel_get_trace(grpc_channel* channel, int recursive) {
-  return channel->tracer->RenderTrace(recursive);
+char* grpc_channel_get_trace(grpc_channel* channel) {
+  return channel->tracer->RenderTrace();
 }
 
 intptr_t grpc_channel_get_uuid(grpc_channel* channel) {
