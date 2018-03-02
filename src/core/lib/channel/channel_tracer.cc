@@ -307,12 +307,4 @@ char* ChannelTrace::RenderTrace(bool recursive) {
   return renderer.Run();
 }
 
-char* ChannelTrace::GetChannelTraceFromUuid(intptr_t uuid, bool recursive) {
-  void* object;
-  grpc_object_registry_type type =
-      grpc_object_registry_get_object(uuid, &object);
-  GPR_ASSERT(type == GRPC_OBJECT_REGISTRY_CHANNEL_TRACER);
-  return static_cast<ChannelTrace*>(object)->RenderTrace(recursive);
-}
-
 }  // namespace grpc_core

@@ -43,7 +43,9 @@ class ChannelTrace : public RefCounted<ChannelTrace> {
 
   /* Adds a new trace event to the tracing object. This trace event refers to a
      an event on a child of the channel. For example this could log when a
-     particular subchannel becomes connected */
+     particular subchannel becomes connected.
+     TODO(ncteisen): Once channelz is implemented, the events should reference
+     the channelz object, not the channel trace. */
   void AddTraceEvent(grpc_slice data, grpc_error* error,
                      grpc_connectivity_state connectivity_state,
                      RefCountedPtr<ChannelTrace> referenced_tracer);
@@ -53,10 +55,6 @@ class ChannelTrace : public RefCounted<ChannelTrace> {
      is true, then the string will include the recursive trace for all
      subtracing objects. */
   char* RenderTrace(bool recursive);
-
-  /* util functions that perform the uuid -> tracer step for you, and then
-     returns the trace for the uuid given. */
-  static char* GetChannelTraceFromUuid(intptr_t uuid, bool recursive);
 
  private:
   // Internal helper to add and link in a trace event
