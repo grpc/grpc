@@ -59,8 +59,6 @@ class ChannelTracer : public RefCounted<ChannelTracer> {
   static char* GetChannelTraceFromUuid(intptr_t uuid, bool recursive);
 
  private:
-  // Internal helper that frees a TraceEvent.
-  void FreeNode(TraceEvent* node);
 
   // Internal helper to add and link in a tracenode
   void AddTraceEventNode(TraceEvent* new_trace_node);

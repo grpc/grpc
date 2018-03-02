@@ -45,7 +45,7 @@ class TraceEvent {
         error_(error),
         connectivity_state_(connectivity_state),
         next_(nullptr),
-        referenced_tracer_(referenced_tracer) {
+        referenced_tracer_(std::move(referenced_tracer)) {
     time_created_ = gpr_now(GPR_CLOCK_REALTIME);
   }
 
@@ -57,6 +57,12 @@ class TraceEvent {
         next_(nullptr),
         referenced_tracer_(nullptr) {
     time_created_ = gpr_now(GPR_CLOCK_REALTIME);
+  }
+
+  ~TraceEvent() {
+    GRPC_ERROR_UNREF(error_);
+    referenced_tracer_.reset();
+    grpc_slice_unref_internal(data_);
   }
 
  private:
@@ -79,27 +85,20 @@ ChannelTracer::ChannelTracer(size_t max_nodes)
       max_list_size_(max_nodes),
       head_trace_(nullptr),
       tail_trace_(nullptr) {
-  if (!max_list_size_) return;  // tracing is disabled if max_nodes == 0
+  if (max_list_size_ == 0) return;  // tracing is disabled if max_nodes == 0
   gpr_mu_init(&tracer_mu_);
   channel_uuid_ = grpc_object_registry_register_object(
       this, GRPC_OBJECT_REGISTRY_CHANNEL_TRACER);
   time_created_ = gpr_now(GPR_CLOCK_REALTIME);
 }
 
-void ChannelTracer::FreeNode(TraceEvent* node) {
-  GRPC_ERROR_UNREF(node->error_);
-  node->referenced_tracer_.reset(nullptr);
-  grpc_slice_unref_internal(node->data_);
-  gpr_free(node);
-}
-
 ChannelTracer::~ChannelTracer() {
-  if (!max_list_size_) return;  // tracing is disabled if max_nodes == 0
+  if (max_list_size_ == 0) return;  // tracing is disabled if max_nodes == 0
   TraceEvent* it = head_trace_;
   while (it != nullptr) {
     TraceEvent* to_free = it;
     it = it->next_;
-    FreeNode(to_free);
+    gpr_free(to_free);
   }
   gpr_mu_destroy(&tracer_mu_);
 }
@@ -122,7 +121,7 @@ void ChannelTracer::AddTraceEventNode(TraceEvent* new_trace_node) {
   if (list_size_ > max_list_size_) {
     TraceEvent* to_free = head_trace_;
     head_trace_ = head_trace_->next_;
-    FreeNode(to_free);
+    gpr_free(to_free);
     --list_size_;
   }
 }
@@ -130,11 +129,11 @@ void ChannelTracer::AddTraceEventNode(TraceEvent* new_trace_node) {
 void ChannelTracer::AddTrace(grpc_slice data, grpc_error* error,
                              grpc_connectivity_state connectivity_state,
                              RefCountedPtr<ChannelTracer> referenced_tracer) {
-  if (!max_list_size_) return;  // tracing is disabled if max_nodes == 0
+  if (max_list_size_ == 0) return;  // tracing is disabled if max_nodes == 0
   ++num_children_seen_;
   // create and fill up the new node
   AddTraceEventNode(
-      New<TraceEvent>(data, error, connectivity_state, referenced_tracer));
+      New<TraceEvent>(data, error, connectivity_state, std::move(referenced_tracer)));
 }
 
 void ChannelTracer::AddTrace(grpc_slice data, grpc_error* error,
@@ -142,8 +141,10 @@ void ChannelTracer::AddTrace(grpc_slice data, grpc_error* error,
   AddTraceEventNode(New<TraceEvent>(data, error, connectivity_state));
 }
 
+namespace {
+
 // returns an allocated string that represents tm according to RFC-3339.
-static char* fmt_time(gpr_timespec tm) {
+char* fmt_time(gpr_timespec tm) {
   char buffer[35];
   struct tm* tm_info = localtime((const time_t*)&tm.tv_sec);
   strftime(buffer, sizeof(buffer), "%Y-%m-%dT%H:%M:%S", tm_info);
@@ -152,36 +153,7 @@ static char* fmt_time(gpr_timespec tm) {
   return full_time_str;
 }
 
-// Helper class that is responsible for walking the tree of ChannelTracer
-// objects and rendering the trace as JSON according to:
-// https://github.com/grpc/proposal/pull/7
-
-// The rendered JSON should be of this format:
-// {
-//   "channelData": {
-//     "uuid": string,
-//     "numNodesLogged": number,
-//     "startTime": timestamp string,
-//     "nodes": [
-//       {
-//         "data": string,
-//         "error": string,
-//         "time": timestamp string,
-//         // can only be one of the states in connectivity_state.h
-//         "state": enum string,
-//         // uuid of referenced subchannel.
-//         // Optional, only present if this event refers to a child object.
-//         // and example of a referenced child would be a trace event for a
-//         // subchannel being created.
-//         "child_uuid": string
-//       },
-//     ]
-//   },
-//   // Optional, only present if this channel has children
-//   "childData": [
-//     // List of child data, which is of the exact same format as the
-//   ]
-// }
+} // anonymous namespace 
 
 class ChannelTracerRenderer {
  public:
@@ -242,7 +214,6 @@ class ChannelTracerRenderer {
   // recursively populate each referenced child as it passes that node.
   void PopulateChannelData(grpc_json* channel_data, grpc_json* children) {
     grpc_json* child = nullptr;
-
     char* uuid_str;
     gpr_asprintf(&uuid_str, "%" PRIdPTR, current_tracer_->channel_uuid_);
     child = grpc_json_create_child(child, channel_data, "uuid", uuid_str,

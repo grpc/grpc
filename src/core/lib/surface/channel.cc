@@ -171,7 +171,7 @@ grpc_channel* grpc_channel_create_with_builder(
           static_cast<uint32_t>(args->args[i].value.integer) |
           0x1; /* always support no compression */
     } else if (0 ==
-               strcmp(args->args[i].key, GRPC_ARG_CHANNEL_TRACING_MAX_NODES)) {
+               strcmp(args->args[i].key, GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE)) {
       GPR_ASSERT(channel_tracer_max_nodes == 0);
       // max_nodes defaults to 10, clamped between 0 and 100.
       const grpc_integer_options options = {10, 0, 100};
