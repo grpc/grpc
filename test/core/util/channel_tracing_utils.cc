@@ -45,8 +45,9 @@ void validate_json_array_size(grpc_json* json, const char* key,
   GPR_ASSERT(count == expected_size);
 }
 
-void validate_channel_data(grpc_json* json, size_t num_nodes_logged_expected,
-                           size_t actual_num_nodes_expected) {
+void validate_channel_trace_data(grpc_json* json,
+                                 size_t num_nodes_logged_expected,
+                                 size_t actual_num_nodes_expected) {
   GPR_ASSERT(json);
   grpc_json* channel_data = get_json_child(json, "channelData");
   grpc_json* num_nodes_logged_json =

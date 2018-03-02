@@ -18,6 +18,7 @@
 
 #include "src/core/lib/channel/object_registry.h"
 #include "src/core/lib/avl/avl.h"
+#include "src/core/lib/gpr/useful.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -25,7 +26,7 @@
 // file global lock and avl.
 static gpr_mu g_mu;
 static grpc_avl g_avl;
-static intptr_t g_uuid = 0;
+static gpr_atm g_uuid = 0;
 
 typedef struct {
   void* object;
@@ -37,7 +38,7 @@ typedef struct {
 static void destroy_intptr(void* not_used, void* user_data) {}
 static void* copy_intptr(void* key, void* user_data) { return key; }
 static long compare_intptr(void* key1, void* key2, void* user_data) {
-  return (intptr_t)key1 - (intptr_t)key2;
+  return GPR_ICMP(key1, key2);
 }
 
 static void destroy_tracker(void* tracker, void* user_data) {

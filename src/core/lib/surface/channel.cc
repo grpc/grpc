@@ -173,8 +173,8 @@ grpc_channel* grpc_channel_create_with_builder(
     } else if (0 == strcmp(args->args[i].key,
                            GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE)) {
       GPR_ASSERT(channel_tracer_max_nodes == 0);
-      // max_nodes defaults to 10, clamped between 0 and 100.
-      const grpc_integer_options options = {10, 0, 100};
+      // max_nodes defaults to 0 (which is off), clamped between 0 and 100.
+      const grpc_integer_options options = {0, 0, 100};
       channel_tracer_max_nodes =
           (size_t)grpc_channel_arg_get_integer(&args->args[i], options);
     }
@@ -405,7 +405,7 @@ static void destroy_channel(void* arg, grpc_error* error) {
     GRPC_MDELEM_UNREF(rc->authority);
     gpr_free(rc);
   }
-  channel->tracer.reset(nullptr);
+  channel->tracer.reset();
   GRPC_MDELEM_UNREF(channel->default_authority);
   gpr_mu_destroy(&channel->registered_call_mu);
   gpr_free(channel->target);

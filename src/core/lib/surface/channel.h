@@ -60,14 +60,6 @@ grpc_mdelem grpc_channel_get_reffed_status_elem(grpc_channel* channel,
 size_t grpc_channel_get_call_size_estimate(grpc_channel* channel);
 void grpc_channel_update_call_size_estimate(grpc_channel* channel, size_t size);
 
-// Returns the JSON formatted channel trace for this channel. If recursive
-// is true, it will render all of the trace for this channel's subchannels.
-char* grpc_channel_get_trace(grpc_channel* channel, bool recursive);
-
-// Returns the channel uuid, which can be used to look up its trace at a
-// later time.
-intptr_t grpc_channel_get_uuid(grpc_channel* channel);
-
 #ifndef NDEBUG
 void grpc_channel_internal_ref(grpc_channel* channel, const char* reason);
 void grpc_channel_internal_unref(grpc_channel* channel, const char* reason);

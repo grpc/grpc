@@ -21,7 +21,10 @@
 
 #include <stdint.h>
 
-// Different types that may be stored in the general object registry
+// TODO(ncteisen): convert this file to C++
+
+// Different types that may be stored in the general object registry. For now,
+// the only use case is channel tracers, but the design has been left general.
 typedef enum {
   // Used to hold uuid -> ChannelTracer mappings to allow for the trace data
   // to be looked up by uuid, rather then have to walk the entire tree of
@@ -34,9 +37,13 @@ typedef enum {
 void grpc_object_registry_init();
 void grpc_object_registry_shutdown();
 
+// globally registers the object. Returns its unique uuid
 intptr_t grpc_object_registry_register_object(void* object,
                                               grpc_object_registry_type type);
+// globally unregisters the object that is associated to uuid.
 void grpc_object_registry_unregister_object(intptr_t uuid);
+// if object with uuid has previously been registered, stores it in *object.
+// if not, returns GRPC_OBJECT_REGISTRY_UNKNOWN and sets *object unchanged.
 grpc_object_registry_type grpc_object_registry_get_object(intptr_t uuid,
                                                           void** object);
 
