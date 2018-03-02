@@ -313,9 +313,7 @@ class BalancerServiceImpl : public BalancerService {
                     int delay_ms) {
     gpr_log(GPR_INFO, "LB[%p]: sleeping for %d ms...", this, delay_ms);
     if (delay_ms > 0) {
-      gpr_sleep_until(
-          gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                       gpr_time_from_millis(delay_ms, GPR_TIMESPAN)));
+      gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(delay_ms));
     }
     gpr_log(GPR_INFO, "LB[%p]: Woke up! Sending response '%s'", this,
             response.DebugString().c_str());
@@ -536,10 +534,10 @@ class GrpclbEnd2endTest : public ::testing::Test {
     return status;
   }
 
-  void CheckRpcSendOk(const size_t times = 1) {
+  void CheckRpcSendOk(const size_t times = 1, const int timeout_ms = 1000) {
     for (size_t i = 0; i < times; ++i) {
       EchoResponse response;
-      const Status status = SendRpc(&response);
+      const Status status = SendRpc(&response, timeout_ms);
       EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
                                << " message=" << status.error_message();
       EXPECT_EQ(response.message(), kRequestMessage_);
@@ -693,8 +691,7 @@ TEST_F(SingleBalancerTest, SecureNamingDeathTest) {
 TEST_F(SingleBalancerTest, InitiallyEmptyServerlist) {
   SetNextResolutionAllBalancers();
   const int kServerlistDelayMs = 500 * grpc_test_slowdown_factor();
-  const int kCallDeadlineMs = 1000 * grpc_test_slowdown_factor();
-
+  const int kCallDeadlineMs = kServerlistDelayMs * 2;
   // First response is an empty serverlist, sent right away.
   ScheduleResponseForBalancer(0, LoadBalanceResponse(), 0);
   // Send non-empty serverlist only after kServerlistDelayMs
@@ -704,20 +701,15 @@ TEST_F(SingleBalancerTest, InitiallyEmptyServerlist) {
 
   const auto t0 = system_clock::now();
   // Client will block: LB will initially send empty serverlist.
-  CheckRpcSendOk(num_backends_);
+  CheckRpcSendOk(1, kCallDeadlineMs);
   const auto ellapsed_ms =
       std::chrono::duration_cast<std::chrono::milliseconds>(
           system_clock::now() - t0);
   // but eventually, the LB sends a serverlist update that allows the call to
   // proceed. The call delay must be larger than the delay in sending the
-  // populated serverlist but under the call's deadline.
+  // populated serverlist but under the call's deadline (which is enforced by
+  // the call's deadline).
   EXPECT_GT(ellapsed_ms.count(), kServerlistDelayMs);
-  EXPECT_LT(ellapsed_ms.count(), kCallDeadlineMs);
-
-  // Each backend should have gotten 1 request.
-  for (size_t i = 0; i < backends_.size(); ++i) {
-    EXPECT_EQ(1U, backend_servers_[i].service_->request_count());
-  }
   balancers_[0]->NotifyDoneWithServerlists();
   // The balancer got a single request.
   EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
