@@ -46,17 +46,16 @@ void validate_json_array_size(grpc_json* json, const char* key,
 }
 
 void validate_channel_trace_data(grpc_json* json,
-                                 size_t num_nodes_logged_expected,
-                                 size_t actual_num_nodes_expected) {
+                                 size_t num_events_logged_expected,
+                                 size_t actual_num_events_expected) {
   GPR_ASSERT(json);
-  grpc_json* channel_data = get_json_child(json, "channelData");
-  grpc_json* num_nodes_logged_json =
-      get_json_child(channel_data, "numNodesLogged");
-  GPR_ASSERT(num_nodes_logged_json);
-  grpc_json* start_time = get_json_child(channel_data, "startTime");
+  grpc_json* num_events_logged_json =
+      get_json_child(json, "num_events_logged");
+  GPR_ASSERT(num_events_logged_json);
+  grpc_json* start_time = get_json_child(json, "creation_time");
   GPR_ASSERT(start_time);
-  size_t num_nodes_logged =
-      (size_t)strtol(num_nodes_logged_json->value, nullptr, 0);
-  GPR_ASSERT(num_nodes_logged == num_nodes_logged_expected);
-  validate_json_array_size(channel_data, "nodes", actual_num_nodes_expected);
+  size_t num_events_logged =
+      (size_t)strtol(num_events_logged_json->value, nullptr, 0);
+  GPR_ASSERT(num_events_logged == num_events_logged_expected);
+  validate_json_array_size(json, "events", actual_num_events_expected);
 }

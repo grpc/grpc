@@ -42,13 +42,13 @@ static void add_simple_trace_event(RefCountedPtr<ChannelTrace> tracer) {
 
 // checks for the existence of all the required members of the tracer.
 static void validate_tracer(RefCountedPtr<ChannelTrace> tracer,
-                            size_t expected_num_nodes_logged,
+                            size_t expected_num_event_logged,
                             size_t max_nodes) {
   if (!max_nodes) return;
-  char* json_str = tracer->RenderTrace(true);
+  char* json_str = tracer->RenderTrace();
   grpc_json* json = grpc_json_parse_string(json_str);
-  validate_channel_trace_data(json, expected_num_nodes_logged,
-                              GPR_MIN(expected_num_nodes_logged, max_nodes));
+  validate_channel_trace_data(json, expected_num_event_logged,
+                              GPR_MIN(expected_num_event_logged, max_nodes));
   grpc_json_destroy(json);
   gpr_free(json_str);
 }
@@ -57,26 +57,16 @@ static void validate_tracer_data_matches_uuid_lookup(
     RefCountedPtr<ChannelTrace> tracer) {
   intptr_t uuid = tracer->GetUuid();
   if (uuid == -1) return;  // Doesn't make sense to lookup if tracing disabled
-  char* tracer_json_str = tracer->RenderTrace(true);
+  char* tracer_json_str = tracer->RenderTrace();
   void* object;
   grpc_object_registry_type type =
       grpc_object_registry_get_object(uuid, &object);
   GPR_ASSERT(type == GRPC_OBJECT_REGISTRY_CHANNEL_TRACER);
   char* uuid_lookup_json_str =
-      static_cast<ChannelTrace*>(object)->RenderTrace(true);
+      static_cast<ChannelTrace*>(object)->RenderTrace();
   GPR_ASSERT(strcmp(tracer_json_str, uuid_lookup_json_str) == 0);
   gpr_free(tracer_json_str);
   gpr_free(uuid_lookup_json_str);
-}
-
-// ensures the tracer has the correct number of children tracers.
-static void validate_children(RefCountedPtr<ChannelTrace> tracer,
-                              size_t expected_num_children) {
-  char* json_str = tracer->RenderTrace(true);
-  grpc_json* json = grpc_json_parse_string(json_str);
-  validate_json_array_size(json, "childData", expected_num_children);
-  grpc_json_destroy(json);
-  gpr_free(json_str);
 }
 
 // Tests basic ChannelTrace functionality like construction, adding trace, and
@@ -182,27 +172,22 @@ static void test_nesting() {
   RefCountedPtr<ChannelTrace> sc1 = MakeRefCounted<ChannelTrace>(5);
   tracer->AddTraceEvent(grpc_slice_from_static_string("subchannel one created"),
                         GRPC_ERROR_NONE, GRPC_CHANNEL_IDLE, sc1);
-  // channel has only one subchannel right here.
-  validate_children(tracer, 1);
   add_simple_trace_event(sc1);
   RefCountedPtr<ChannelTrace> conn1 = MakeRefCounted<ChannelTrace>(5);
   // nesting one level deeper.
   sc1->AddTraceEvent(grpc_slice_from_static_string("connection one created"),
                      GRPC_ERROR_NONE, GRPC_CHANNEL_IDLE, conn1);
-  validate_children(sc1, 1);
   add_simple_trace_event(conn1);
   add_simple_trace_event(tracer);
   add_simple_trace_event(tracer);
   RefCountedPtr<ChannelTrace> sc2 = MakeRefCounted<ChannelTrace>(5);
   tracer->AddTraceEvent(grpc_slice_from_static_string("subchannel two created"),
                         GRPC_ERROR_NONE, GRPC_CHANNEL_IDLE, sc2);
-  validate_children(tracer, 2);
   // this trace should not get added to the parents children since it is already
   // present in the tracer.
   tracer->AddTraceEvent(
       grpc_slice_from_static_string("subchannel one inactive"), GRPC_ERROR_NONE,
       GRPC_CHANNEL_IDLE, sc1);
-  validate_children(tracer, 2);
   add_simple_trace_event(tracer);
   tracer.reset(nullptr);
   sc1.reset(nullptr);
