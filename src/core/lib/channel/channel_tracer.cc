@@ -100,7 +100,7 @@ ChannelTrace::~ChannelTrace() {
   while (it != nullptr) {
     TraceEvent* to_free = it;
     it = it->next_;
-    gpr_free(to_free);
+    Delete<TraceEvent>(to_free);
   }
   gpr_mu_destroy(&tracer_mu_);
 }
@@ -123,7 +123,7 @@ void ChannelTrace::AddTraceEventHelper(TraceEvent* new_trace_event) {
   if (list_size_ > max_list_size_) {
     TraceEvent* to_free = head_trace_;
     head_trace_ = head_trace_->next_;
-    gpr_free(to_free);
+    Delete<TraceEvent>(to_free);
     --list_size_;
   }
 }
