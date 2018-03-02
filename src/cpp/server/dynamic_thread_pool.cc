@@ -19,20 +19,24 @@
 #include "src/cpp/server/dynamic_thread_pool.h"
 
 #include <mutex>
-#include <thread>
 
 #include <grpc/support/log.h>
+
+#include "src/core/lib/gprpp/thd.h"
 
 namespace grpc {
 
 DynamicThreadPool::DynamicThread::DynamicThread(DynamicThreadPool* pool)
     : pool_(pool),
-      thd_(new std::thread(&DynamicThreadPool::DynamicThread::ThreadFunc,
-                           this)) {}
-DynamicThreadPool::DynamicThread::~DynamicThread() {
-  thd_->join();
-  thd_.reset();
+      thd_("dynamic thread pool thread",
+           [](void* th) {
+             reinterpret_cast<DynamicThreadPool::DynamicThread*>(th)
+                 ->ThreadFunc();
+           },
+           this) {
+  thd_.Start();
 }
+DynamicThreadPool::DynamicThread::~DynamicThread() { thd_.Join(); }
 
 void DynamicThreadPool::DynamicThread::ThreadFunc() {
   pool_->ThreadFunc();

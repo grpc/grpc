@@ -65,9 +65,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gpr/sync.cc \
     src/core/lib/gpr/sync_posix.cc \
     src/core/lib/gpr/sync_windows.cc \
-    src/core/lib/gpr/thd.cc \
-    src/core/lib/gpr/thd_posix.cc \
-    src/core/lib/gpr/thd_windows.cc \
     src/core/lib/gpr/time.cc \
     src/core/lib/gpr/time_posix.cc \
     src/core/lib/gpr/time_precise.cc \
@@ -77,6 +74,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gpr/tmpfile_posix.cc \
     src/core/lib/gpr/tmpfile_windows.cc \
     src/core/lib/gpr/wrap_memcpy.cc \
+    src/core/lib/gprpp/thd_posix.cc \
+    src/core/lib/gprpp/thd_windows.cc \
     src/core/lib/profiling/basic_timers.cc \
     src/core/lib/profiling/stap_timers.cc \
     src/core/lib/surface/init.cc \
@@ -629,6 +628,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/compression)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/debug)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gpr)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/gprpp)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/http)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/json)

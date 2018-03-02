@@ -659,9 +659,6 @@ add_library(gpr
   src/core/lib/gpr/sync.cc
   src/core/lib/gpr/sync_posix.cc
   src/core/lib/gpr/sync_windows.cc
-  src/core/lib/gpr/thd.cc
-  src/core/lib/gpr/thd_posix.cc
-  src/core/lib/gpr/thd_windows.cc
   src/core/lib/gpr/time.cc
   src/core/lib/gpr/time_posix.cc
   src/core/lib/gpr/time_precise.cc
@@ -671,6 +668,8 @@ add_library(gpr
   src/core/lib/gpr/tmpfile_posix.cc
   src/core/lib/gpr/tmpfile_windows.cc
   src/core/lib/gpr/wrap_memcpy.cc
+  src/core/lib/gprpp/thd_posix.cc
+  src/core/lib/gprpp/thd_windows.cc
   src/core/lib/profiling/basic_timers.cc
   src/core/lib/profiling/stap_timers.cc
 )
@@ -6284,7 +6283,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_thd_test
-  test/core/gpr/thd_test.cc
+  test/core/gprpp/thd_test.cc
 )
 
 

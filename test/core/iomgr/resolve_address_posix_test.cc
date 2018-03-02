@@ -27,8 +27,8 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/thd.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "test/core/util/test_config.h"
@@ -38,6 +38,7 @@ static gpr_timespec test_deadline(void) {
 }
 
 typedef struct args_struct {
+  grpc_core::Thread thd;
   gpr_event ev;
   grpc_resolved_addresses* addrs;
   gpr_atm done_atm;
@@ -59,6 +60,9 @@ void args_init(args_struct* args) {
 
 void args_finish(args_struct* args) {
   GPR_ASSERT(gpr_event_wait(&args->ev, test_deadline()));
+  args->thd.Join();
+  // Don't need to explicitly destruct args->thd since
+  // args is actually going to be destructed, not just freed
   grpc_resolved_addresses_destroy(args->addrs);
   grpc_pollset_set_del_pollset(args->pollset_set, args->pollset);
   grpc_pollset_set_destroy(args->pollset_set);
@@ -101,8 +105,8 @@ static void actually_poll(void* argsp) {
 
 static void poll_pollset_until_request_done(args_struct* args) {
   gpr_atm_rel_store(&args->done_atm, 0);
-  gpr_thd_id id;
-  gpr_thd_new(&id, "grpc_poll_pollset", actually_poll, args, nullptr);
+  args->thd = grpc_core::Thread("grpc_poll_pollset", actually_poll, args);
+  args->thd.Start();
 }
 
 static void must_succeed(void* argsp, grpc_error* err) {

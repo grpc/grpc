@@ -32,7 +32,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/gpr/thd.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -138,11 +138,10 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
   gpr_event_init(&client_handshake_complete);
 
   // Launch the gRPC server thread.
-  gpr_thd_options thdopt = gpr_thd_options_default();
-  gpr_thd_id thdid;
-  gpr_thd_options_set_joinable(&thdopt);
-  GPR_ASSERT(
-      gpr_thd_new(&thdid, "grpc_ssl_test", server_thread, &port, &thdopt));
+  bool ok;
+  grpc_core::Thread thd("grpc_ssl_test", server_thread, &port, &ok);
+  GPR_ASSERT(ok);
+  thd.Start();
 
   SSL_load_error_strings();
   OpenSSL_add_ssl_algorithms();
@@ -235,7 +234,7 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
   EVP_cleanup();
   close(sock);
 
-  gpr_thd_join(thdid);
+  thd.Join();
 
   grpc_shutdown();
 

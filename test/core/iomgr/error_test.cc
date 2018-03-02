@@ -24,7 +24,6 @@
 
 #include <string.h>
 
-#include "src/core/lib/gpr/thd.h"
 #include "test/core/util/test_config.h"
 
 static void test_set_get_int() {
