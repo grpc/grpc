@@ -1,18 +1,11 @@
 var searchData=
 [
   ['gpr_5fallocation_5ffunctions',['gpr_allocation_functions',['../structgpr__allocation__functions.html',1,'']]],
-  ['gpr_5favl',['gpr_avl',['../structgpr__avl.html',1,'']]],
-  ['gpr_5favl_5fnode',['gpr_avl_node',['../structgpr__avl__node.html',1,'']]],
-  ['gpr_5favl_5fvtable',['gpr_avl_vtable',['../structgpr__avl__vtable.html',1,'']]],
   ['gpr_5fevent',['gpr_event',['../structgpr__event.html',1,'']]],
-  ['gpr_5fgcc_5fthread_5flocal',['gpr_gcc_thread_local',['../structgpr__gcc__thread__local.html',1,'']]],
   ['gpr_5flog_5ffunc_5fargs',['gpr_log_func_args',['../structgpr__log__func__args.html',1,'']]],
-  ['gpr_5fmsvc_5fthread_5flocal',['gpr_msvc_thread_local',['../structgpr__msvc__thread__local.html',1,'']]],
   ['gpr_5fmu',['gpr_mu',['../structgpr__mu.html',1,'']]],
-  ['gpr_5fpthread_5fthread_5flocal',['gpr_pthread_thread_local',['../structgpr__pthread__thread__local.html',1,'']]],
   ['gpr_5frefcount',['gpr_refcount',['../structgpr__refcount.html',1,'']]],
   ['gpr_5fstats_5fcounter',['gpr_stats_counter',['../structgpr__stats__counter.html',1,'']]],
-  ['gpr_5fthd_5foptions',['gpr_thd_options',['../structgpr__thd__options.html',1,'']]],
   ['gpr_5ftimespec',['gpr_timespec',['../structgpr__timespec.html',1,'']]],
   ['grpc_5farg',['grpc_arg',['../structgrpc__arg.html',1,'']]],
   ['grpc_5farg_5fpointer',['grpc_arg_pointer',['../structgrpc__arg_1_1grpc__arg__value_1_1grpc__arg__pointer.html',1,'grpc_arg::grpc_arg_value']]],
@@ -46,7 +39,6 @@ var searchData=
   ['grpc_5fop_5frecv_5fstatus_5fon_5fclient',['grpc_op_recv_status_on_client',['../structgrpc__op_1_1grpc__op__data_1_1grpc__op__recv__status__on__client.html',1,'grpc_op::grpc_op_data']]],
   ['grpc_5fop_5fsend_5finitial_5fmetadata',['grpc_op_send_initial_metadata',['../structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__initial__metadata.html',1,'grpc_op::grpc_op_data']]],
   ['grpc_5fop_5fsend_5finitial_5fmetadata_5fmaybe_5fcompression_5flevel',['grpc_op_send_initial_metadata_maybe_compression_level',['../structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__initial__metadata_1_1grpc__op__send__initialaea3b3a42c7d59f33d8b29d9f8d06219.html',1,'grpc_op::grpc_op_data::grpc_op_send_initial_metadata']]],
-  ['grpc_5fop_5fsend_5finitial_5fmetadata_5fmaybe_5fstream_5fcompression_5flevel',['grpc_op_send_initial_metadata_maybe_stream_compression_level',['../structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__initial__metadata_1_1grpc__op__send__initial84a8b7c8eb97c0b2b7caa20e8cb5dcdf.html',1,'grpc_op::grpc_op_data::grpc_op_send_initial_metadata']]],
   ['grpc_5fop_5fsend_5fmessage',['grpc_op_send_message',['../structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__message.html',1,'grpc_op::grpc_op_data']]],
   ['grpc_5fop_5fsend_5fstatus_5ffrom_5fserver',['grpc_op_send_status_from_server',['../structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__status__from__server.html',1,'grpc_op::grpc_op_data']]],
   ['grpc_5fslice',['grpc_slice',['../structgrpc__slice.html',1,'']]],
@@ -56,7 +48,5 @@ var searchData=
   ['grpc_5fslice_5frefcount',['grpc_slice_refcount',['../structgrpc__slice__refcount.html',1,'']]],
   ['grpc_5fslice_5frefcount_5fvtable',['grpc_slice_refcount_vtable',['../structgrpc__slice__refcount__vtable.html',1,'']]],
   ['grpc_5fslice_5frefcounted',['grpc_slice_refcounted',['../structgrpc__slice_1_1grpc__slice__data_1_1grpc__slice__refcounted.html',1,'grpc_slice::grpc_slice_data']]],
-  ['grpc_5fssl_5fpem_5fkey_5fcert_5fpair',['grpc_ssl_pem_key_cert_pair',['../structgrpc__ssl__pem__key__cert__pair.html',1,'']]],
-  ['grpc_5fstream_5fcompression_5foptions_5fdefault_5falgorithm',['grpc_stream_compression_options_default_algorithm',['../structgrpc__compression__options_1_1grpc__stream__compression__options__default__algorithm.html',1,'grpc_compression_options']]],
-  ['grpc_5fstream_5fcompression_5foptions_5fdefault_5flevel',['grpc_stream_compression_options_default_level',['../structgrpc__compression__options_1_1grpc__stream__compression__options__default__level.html',1,'grpc_compression_options']]]
+  ['grpc_5fssl_5fpem_5fkey_5fcert_5fpair',['grpc_ssl_pem_key_cert_pair',['../structgrpc__ssl__pem__key__cert__pair.html',1,'']]]
 ];

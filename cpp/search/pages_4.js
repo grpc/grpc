@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['grpc_20c_2b_2b_20api',['gRPC C++ API',['../index.html',1,'']]],
+  ['grpc_20core',['GRPC Core',['../index.html',1,'']]],
   ['grpc_20c_20style_20guide',['GRPC C STYLE GUIDE',['../md_doc_c-style-guide.html',1,'']]],
   ['grpc_20command_20line_20tool',['gRPC command line tool',['../md_doc_command_line_tool.html',1,'']]],
   ['grpc_20compression',['gRPC Compression',['../md_doc_compression.html',1,'']]],

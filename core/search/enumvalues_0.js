@@ -41,6 +41,7 @@ var searchData=
   ['grpc_5fcompress_5flevel_5fmed',['GRPC_COMPRESS_LEVEL_MED',['../compression__types_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7a4319a32cdd0b59a7ecc977f8612214ce',1,'compression_types.h']]],
   ['grpc_5fcompress_5flevel_5fnone',['GRPC_COMPRESS_LEVEL_NONE',['../compression__types_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7ab67efe04f58b0939b963e51a5b8f772c',1,'compression_types.h']]],
   ['grpc_5fcompress_5fnone',['GRPC_COMPRESS_NONE',['../compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9a3135cac7e854adb16358c53e97df9cd8',1,'compression_types.h']]],
+  ['grpc_5fcompress_5fstream_5fgzip',['GRPC_COMPRESS_STREAM_GZIP',['../compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9a362a7cdbb0fca8cb945be79685531e62',1,'compression_types.h']]],
   ['grpc_5fcq_5fdefault_5fpolling',['GRPC_CQ_DEFAULT_POLLING',['../grpc__types_8h.html#a6f3d3ec662c2a8ac669c98163d511343afc366f1bf1fc412fafd97557bc0160c8',1,'grpc_types.h']]],
   ['grpc_5fcq_5fnext',['GRPC_CQ_NEXT',['../grpc__types_8h.html#a1d6272e15d32381a9ffa027cefd60bf8a3fccd6237614f711bfc1999438ed2676',1,'grpc_types.h']]],
   ['grpc_5fcq_5fnon_5flistening',['GRPC_CQ_NON_LISTENING',['../grpc__types_8h.html#a6f3d3ec662c2a8ac669c98163d511343aa291aea150282f3a2366437d8fc93b11',1,'grpc_types.h']]],
@@ -92,13 +93,5 @@ var searchData=
   ['grpc_5fstatus_5funavailable',['GRPC_STATUS_UNAVAILABLE',['../impl_2codegen_2status_8h.html#a35ab2a68917eb836de84cb23253108ebaad91b67998cb5df7bc6821e362189e79',1,'status.h']]],
   ['grpc_5fstatus_5funimplemented',['GRPC_STATUS_UNIMPLEMENTED',['../impl_2codegen_2status_8h.html#a35ab2a68917eb836de84cb23253108eba6912537b4dfd1030f50ff2f5448f1bc2',1,'status.h']]],
   ['grpc_5fstatus_5funknown',['GRPC_STATUS_UNKNOWN',['../impl_2codegen_2status_8h.html#a35ab2a68917eb836de84cb23253108eba5f02c0e431162618ab422d27fd39dd08',1,'status.h']]],
-  ['grpc_5fstream_5fcompress_5falgorithms_5fcount',['GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT',['../compression__types_8h.html#a5f02e953ca5bdabd545b3386ad242073afa3f710b83a3a6e2055a88a52337af10',1,'compression_types.h']]],
-  ['grpc_5fstream_5fcompress_5fgzip',['GRPC_STREAM_COMPRESS_GZIP',['../compression__types_8h.html#a5f02e953ca5bdabd545b3386ad242073a1c421fa9f6640f07fa9041e9ae10d254',1,'compression_types.h']]],
-  ['grpc_5fstream_5fcompress_5flevel_5fcount',['GRPC_STREAM_COMPRESS_LEVEL_COUNT',['../compression__types_8h.html#a80e5bae1e06466c4b0a9ff0c8469b266a22906945a38af67acd4d8ea90570717f',1,'compression_types.h']]],
-  ['grpc_5fstream_5fcompress_5flevel_5fhigh',['GRPC_STREAM_COMPRESS_LEVEL_HIGH',['../compression__types_8h.html#a80e5bae1e06466c4b0a9ff0c8469b266af9322f09d46927104b8779931ec6a59b',1,'compression_types.h']]],
-  ['grpc_5fstream_5fcompress_5flevel_5flow',['GRPC_STREAM_COMPRESS_LEVEL_LOW',['../compression__types_8h.html#a80e5bae1e06466c4b0a9ff0c8469b266a23a8ee63a9804df92d34cc185a90babd',1,'compression_types.h']]],
-  ['grpc_5fstream_5fcompress_5flevel_5fmed',['GRPC_STREAM_COMPRESS_LEVEL_MED',['../compression__types_8h.html#a80e5bae1e06466c4b0a9ff0c8469b266a64966743ba306122eaf189c7d4668110',1,'compression_types.h']]],
-  ['grpc_5fstream_5fcompress_5flevel_5fnone',['GRPC_STREAM_COMPRESS_LEVEL_NONE',['../compression__types_8h.html#a80e5bae1e06466c4b0a9ff0c8469b266a91a5ffa728d1b59eb79b22c3c06f28a8',1,'compression_types.h']]],
-  ['grpc_5fstream_5fcompress_5fnone',['GRPC_STREAM_COMPRESS_NONE',['../compression__types_8h.html#a5f02e953ca5bdabd545b3386ad242073aefedc7a0e5d3f1011325d6be6fd3cbed',1,'compression_types.h']]],
   ['grpc_5fworkaround_5fid_5fcronet_5fcompression',['GRPC_WORKAROUND_ID_CRONET_COMPRESSION',['../workaround__list_8h.html#ade8be35fce7415c7234ac22d8b9ad9d2ad5634536a70e6bf3b14550dd26a66033',1,'workaround_list.h']]]
 ];

@@ -2,9 +2,8 @@ var searchData=
 [
   ['pending_5fapi_5fcleanups',['pending_api_cleanups',['../md_doc_cpp_pending_api_cleanups.html',1,'']]],
   ['p',['p',['../structgrpc__arg_1_1grpc__arg__value_1_1grpc__arg__pointer.html#ae710895cf375541f68bcf2c46940c63e',1,'grpc_arg::grpc_arg_value::grpc_arg_pointer']]],
-  ['payloadasyncrequest',['PayloadAsyncRequest',['../classgrpc_1_1_server_interface_1_1_payload_async_request.html#abc1f39238fa414c05b01a359bea2ce58',1,'grpc::ServerInterface::PayloadAsyncRequest']]],
-  ['payloadasyncrequest',['PayloadAsyncRequest',['../classgrpc_1_1_server_interface_1_1_payload_async_request.html',1,'grpc::ServerInterface']]],
-  ['peer',['peer',['../classgrpc_1_1_client_context.html#a905d667d96613e022cd83c13dbedb4c3',1,'grpc::ClientContext::peer()'],['../classgrpc_1_1_server_context.html#a5ef7910ccd61514eafa7087519bb17bb',1,'grpc::ServerContext::peer()']]],
+  ['payloadasyncrequest',['PayloadAsyncRequest',['../classgrpc_1_1_server_interface_1_1_payload_async_request.html',1,'grpc::ServerInterface::PayloadAsyncRequest&lt; Message &gt;'],['../classgrpc_1_1_server_interface_1_1_payload_async_request.html#abc1f39238fa414c05b01a359bea2ce58',1,'grpc::ServerInterface::PayloadAsyncRequest::PayloadAsyncRequest()']]],
+  ['peer',['peer',['../classgrpc_1_1_client_context.html#ad1f00ff321b1c2823d5e2f61cb0852ca',1,'grpc::ClientContext::peer()'],['../classgrpc_1_1_server_context.html#a3cfef289aae820e074d88429ee0d41c4',1,'grpc::ServerContext::peer()']]],
   ['pem_5fcert_5fchain',['pem_cert_chain',['../structgrpc_1_1_ssl_credentials_options.html#a01015d8ec7dbf49f2ac3cd21f21d383b',1,'grpc::SslCredentialsOptions']]],
   ['pem_5fkey_5fcert_5fpairs',['pem_key_cert_pairs',['../structgrpc_1_1_ssl_server_credentials_options.html#a3a042e846edd3d1e2f24e846e36c694d',1,'grpc::SslServerCredentialsOptions']]],
   ['pem_5fprivate_5fkey',['pem_private_key',['../structgrpc_1_1_ssl_credentials_options.html#a5b661f8daf02db7283774e0fb9a8979e',1,'grpc::SslCredentialsOptions']]],
@@ -16,8 +15,7 @@ var searchData=
   ['performopsoncall',['PerformOpsOnCall',['../classgrpc_1_1internal_1_1_call_hook.html#a1c14655572215f6256fa0dfee7f138bc',1,'grpc::internal::CallHook::PerformOpsOnCall()'],['../classgrpc_1_1_server_interface.html#a490b5a44ccd2d419db19d5c336c93680',1,'grpc::ServerInterface::PerformOpsOnCall()']]],
   ['permission_5fdenied',['PERMISSION_DENIED',['../namespacegrpc.html#aff1730578c90160528f6a8d67ef5c43ba671e44044d68f82be37c8ec3b0a9c449',1,'grpc']]],
   ['pointer',['pointer',['../uniongrpc__arg_1_1grpc__arg__value.html#aed77f552b492a65ec44d848589b57570',1,'grpc_arg::grpc_arg_value']]],
-  ['port_5fplatform_2eh',['port_platform.h',['../impl_2codegen_2port__platform_8h.html',1,'']]],
-  ['port_5fplatform_2eh',['port_platform.h',['../support_2port__platform_8h.html',1,'']]],
+  ['port_5fplatform_2eh',['port_platform.h',['../impl_2codegen_2port__platform_8h.html',1,'(Global Namespace)'],['../support_2port__platform_8h.html',1,'(Global Namespace)']]],
   ['postsynchronousrequest',['PostSynchronousRequest',['../classgrpc_1_1_server_1_1_global_callbacks.html#a3a20848314924c94c349508e970138e9',1,'grpc::Server::GlobalCallbacks']]],
   ['preparecall',['PrepareCall',['../classgrpc_1_1_generic_stub.html#ae1d079fa84bb70e895fe1a62ac8c0a43',1,'grpc::GenericStub']]],
   ['prepareunarycall',['PrepareUnaryCall',['../classgrpc_1_1_generic_stub.html#a7d7371d16df0f556b4d6d1e5366aebd7',1,'grpc::GenericStub']]],
@@ -26,9 +24,8 @@ var searchData=
   ['private_5fkey',['private_key',['../structgrpc_1_1_ssl_server_credentials_options_1_1_pem_key_cert_pair.html#ad9fa2a2083a40127d264e61cca637050',1,'grpc::SslServerCredentialsOptions::PemKeyCertPair']]],
   ['process',['Process',['../classgrpc_1_1_auth_metadata_processor.html#adc0db66aa261c59bd29f81c53f466303',1,'grpc::AuthMetadataProcessor']]],
   ['propagation_5fbits_2eh',['propagation_bits.h',['../propagation__bits_8h.html',1,'']]],
-  ['propagationoptions',['PropagationOptions',['../classgrpc_1_1_propagation_options.html',1,'grpc']]],
-  ['propagationoptions',['PropagationOptions',['../classgrpc_1_1_propagation_options.html#a450cdedbc72cbda17cb8d93f31c0f878',1,'grpc::PropagationOptions']]],
-  ['proto_5futils_2eh',['proto_utils.h',['../proto__utils_8h.html',1,'']]],
+  ['propagationoptions',['PropagationOptions',['../classgrpc_1_1_propagation_options.html',1,'grpc::PropagationOptions'],['../classgrpc_1_1_propagation_options.html#a450cdedbc72cbda17cb8d93f31c0f878',1,'grpc::PropagationOptions::PropagationOptions()']]],
+  ['proto_5futils_2eh',['proto_utils.h',['../grpc_09_09_2impl_2codegen_2proto__utils_8h.html',1,'(Global Namespace)'],['../grpcpp_2impl_2codegen_2proto__utils_8h.html',1,'(Global Namespace)']]],
   ['protocol_2dhttp2_2emd',['PROTOCOL-HTTP2.md',['../_p_r_o_t_o_c_o_l-_h_t_t_p2_8md.html',1,'']]],
   ['protocol_2dweb_2emd',['PROTOCOL-WEB.md',['../_p_r_o_t_o_c_o_l-_w_e_b_8md.html',1,'']]]
 ];

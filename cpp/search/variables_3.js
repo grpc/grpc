@@ -4,10 +4,6 @@ var searchData=
   ['deadline',['deadline',['../structgrpc__call__details.html#a6b72caadcf800d975987de18012f0f15',1,'grpc_call_details']]],
   ['default_5falgorithm',['default_algorithm',['../structgrpc__compression__options.html#a438ec959f43629585f3a05ea946b8603',1,'grpc_compression_options']]],
   ['default_5flevel',['default_level',['../structgrpc__compression__options.html#a13e56a1d6b97fe62dbc431891d8248a7',1,'grpc_compression_options']]],
-  ['default_5fstream_5fcompression_5falgorithm',['default_stream_compression_algorithm',['../structgrpc__compression__options.html#a52bb2a9610ae290ad896de47554adb83',1,'grpc_compression_options']]],
-  ['default_5fstream_5fcompression_5flevel',['default_stream_compression_level',['../structgrpc__compression__options.html#afbc5198e3a092c2dfd093a9242261559',1,'grpc_compression_options']]],
   ['delete_5fon_5ffinalize_5f',['delete_on_finalize_',['../classgrpc_1_1_server_interface_1_1_base_async_request.html#a4d7982938885fca52a1c4547208f40b8',1,'grpc::ServerInterface::BaseAsyncRequest']]],
-  ['destroy',['destroy',['../structgrpc__arg__pointer__vtable.html#a504afcbbf0bc2d13718dd786d6b65e55',1,'grpc_arg_pointer_vtable']]],
-  ['destroy_5fkey',['destroy_key',['../structgpr__avl__vtable.html#ad3ca97e89b38b01177ca5ffd77c366d7',1,'gpr_avl_vtable']]],
-  ['destroy_5fvalue',['destroy_value',['../structgpr__avl__vtable.html#aaaf0cee2aa90353bd8f2281389af5242',1,'gpr_avl_vtable']]]
+  ['destroy',['destroy',['../structgrpc__arg__pointer__vtable.html#a40604c374509e651a2f3c74b6dd81961',1,'grpc_arg_pointer_vtable']]]
 ];
