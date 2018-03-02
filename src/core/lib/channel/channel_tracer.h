@@ -29,8 +29,6 @@
 
 namespace grpc_core {
 
-class TraceEvent;
-
 class ChannelTrace : public RefCounted<ChannelTrace> {
  public:
   ChannelTrace(size_t max_events);
@@ -59,6 +57,47 @@ class ChannelTrace : public RefCounted<ChannelTrace> {
   char* RenderTrace(bool recursive);
 
  private:
+  // Private class to encapsulate all the data and bookkeeping needed for a
+  // a trace event.
+  class TraceEvent {
+   public:
+    TraceEvent(grpc_slice data, grpc_error* error,
+               grpc_connectivity_state connectivity_state,
+               RefCountedPtr<ChannelTrace> referenced_tracer)
+        : data_(data),
+          error_(error),
+          connectivity_state_(connectivity_state),
+          next_(nullptr),
+          referenced_tracer_(std::move(referenced_tracer)) {
+      time_created_ = gpr_now(GPR_CLOCK_REALTIME);
+    }
+
+    TraceEvent(grpc_slice data, grpc_error* error,
+               grpc_connectivity_state connectivity_state)
+        : data_(data),
+          error_(error),
+          connectivity_state_(connectivity_state),
+          next_(nullptr),
+          referenced_tracer_(nullptr) {
+      time_created_ = gpr_now(GPR_CLOCK_REALTIME);
+    }
+
+    ~TraceEvent();
+
+    TraceEvent* next() { return next_; }
+    void set_next(TraceEvent* next) { next_ = next; }
+
+   private:
+    friend class ChannelTraceRenderer;
+    grpc_slice data_;
+    grpc_error* error_;
+    gpr_timespec time_created_;
+    grpc_connectivity_state connectivity_state_;
+    TraceEvent* next_;
+    // the tracer object for the (sub)channel that this trace event refers to.
+    RefCountedPtr<ChannelTrace> referenced_tracer_;
+  };  // TraceEvent
+
   // Internal helper to add and link in a trace event
   void AddTraceEventHelper(TraceEvent* new_trace_event);
 
