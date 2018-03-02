@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_CHANNEL_CHANNEL_TRACER_H
 #define GRPC_CORE_LIB_CHANNEL_CHANNEL_TRACER_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <grpc/grpc.h>
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
