@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_CHANNEL_OBJECT_REGISTRY_H
 #define GRPC_CORE_LIB_CHANNEL_OBJECT_REGISTRY_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <stdint.h>
 
 // TODO(ncteisen): convert this file to C++

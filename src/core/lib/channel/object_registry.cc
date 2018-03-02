@@ -16,8 +16,10 @@
  *
  */
 
-#include "src/core/lib/channel/object_registry.h"
+#include <grpc/impl/codegen/port_platform.h>
+
 #include "src/core/lib/avl/avl.h"
+#include "src/core/lib/channel/object_registry.h"
 #include "src/core/lib/gpr/useful.h"
 
 #include <grpc/support/alloc.h>
