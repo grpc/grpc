@@ -161,6 +161,11 @@ static NSString * const kBearerPrefix = @"Bearer ";
     [NSException raise:NSInvalidArgumentException
                 format:@"The requests writer can't be already started."];
   }
+  NSString *check_host = [NSURL URLWithString:[@"https://" stringByAppendingString:host]].host;
+  if (!check_host) {
+    [NSException raise:NSInvalidArgumentException format:@"host of %@ is nil", host];
+  }
+
   if ((self = [super init])) {
     _host = [host copy];
     _path = [path copy];
@@ -469,12 +474,6 @@ static NSString * const kBearerPrefix = @"Bearer ";
   [self sendHeaders:_requestHeaders];
   [self invokeCall];
 
-  // TODO(jcanizales): Extract this logic somewhere common.
-  NSString *host = [NSURL URLWithString:[@"https://" stringByAppendingString:_host]].host;
-  if (!host) {
-    // TODO(jcanizales): Check this on init.
-    [NSException raise:NSInvalidArgumentException format:@"host of %@ is nil", _host];
-  }
   [GRPCConnectivityMonitor registerObserver:self
                                    selector:@selector(connectivityChanged:)];
 }
