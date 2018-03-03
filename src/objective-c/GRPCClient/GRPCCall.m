@@ -163,7 +163,9 @@ static NSString * const kBearerPrefix = @"Bearer ";
   }
   NSString *check_host = [NSURL URLWithString:[@"https://" stringByAppendingString:host]].host;
   if (!check_host) {
-    [NSException raise:NSInvalidArgumentException format:@"host of %@ is nil", host];
+    if (host.length == 0) {
+      [NSException raise:NSInvalidArgumentException format:@"host of %@ is nil or empty", host];
+    }
   }
 
   if ((self = [super init])) {
