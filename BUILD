@@ -527,9 +527,6 @@ grpc_cc_library(
         "src/core/lib/gpr/sync.cc",
         "src/core/lib/gpr/sync_posix.cc",
         "src/core/lib/gpr/sync_windows.cc",
-        "src/core/lib/gpr/thd.cc",
-        "src/core/lib/gpr/thd_posix.cc",
-        "src/core/lib/gpr/thd_windows.cc",
         "src/core/lib/gpr/time.cc",
         "src/core/lib/gpr/time_posix.cc",
         "src/core/lib/gpr/time_precise.cc",
@@ -539,6 +536,8 @@ grpc_cc_library(
         "src/core/lib/gpr/tmpfile_posix.cc",
         "src/core/lib/gpr/tmpfile_windows.cc",
         "src/core/lib/gpr/wrap_memcpy.cc",
+        "src/core/lib/gprpp/thd_posix.cc",
+        "src/core/lib/gprpp/thd_windows.cc",
         "src/core/lib/profiling/basic_timers.cc",
         "src/core/lib/profiling/stap_timers.cc",
     ],
@@ -552,7 +551,6 @@ grpc_cc_library(
         "src/core/lib/gpr/spinlock.h",
         "src/core/lib/gpr/string.h",
         "src/core/lib/gpr/string_windows.h",
-        "src/core/lib/gpr/thd.h",
         "src/core/lib/gpr/time_precise.h",
         "src/core/lib/gpr/tls.h",
         "src/core/lib/gpr/tls_gcc.h",
@@ -560,6 +558,10 @@ grpc_cc_library(
         "src/core/lib/gpr/tls_pthread.h",
         "src/core/lib/gpr/tmpfile.h",
         "src/core/lib/gpr/useful.h",
+        "src/core/lib/gprpp/abstract.h",
+        "src/core/lib/gprpp/manual_constructor.h",
+        "src/core/lib/gprpp/memory.h",
+        "src/core/lib/gprpp/thd.h",
         "src/core/lib/profiling/timers.h",
     ],
     language = "c++",
@@ -602,16 +604,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "gpr++_base",
-    language = "c++",
-    public_hdrs = [
-        "src/core/lib/gprpp/abstract.h",
-        "src/core/lib/gprpp/manual_constructor.h",
-        "src/core/lib/gprpp/memory.h",
-    ],
-)
-
-grpc_cc_library(
     name = "atomic",
     hdrs = [
         "src/core/lib/gprpp/atomic_with_atm.h",
@@ -633,7 +625,7 @@ grpc_cc_library(
         "src/core/lib/gprpp/inlined_vector.h",
     ],
     deps = [
-        "gpr++_base",
+        "gpr_base",
     ],
 )
 
@@ -649,7 +641,7 @@ grpc_cc_library(
     public_hdrs = ["src/core/lib/gprpp/orphanable.h"],
     deps = [
         "debug_location",
-        "gpr++_base",
+        "gpr_base",
         "grpc_trace",
         "ref_counted_ptr",
     ],
@@ -661,7 +653,7 @@ grpc_cc_library(
     public_hdrs = ["src/core/lib/gprpp/ref_counted.h"],
     deps = [
         "debug_location",
-        "gpr++_base",
+        "gpr_base",
         "grpc_trace",
         "ref_counted_ptr",
     ],
@@ -672,7 +664,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/ref_counted_ptr.h"],
     deps = [
-        "gpr++_base",
+        "gpr_base",
     ],
 )
 
@@ -947,13 +939,12 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
     deps = [
-        "gpr++_base",
         "gpr_base",
         "grpc_codegen",
         "grpc_trace",
+        "inlined_vector",
         "ref_counted",
         "ref_counted_ptr",
-        "inlined_vector",
     ],
 )
 
@@ -1429,7 +1420,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "gpr++_base",
+        "gpr_base",
         "grpc_base",
         "grpc_http_filters",
         "grpc_transport_chttp2_alpn",

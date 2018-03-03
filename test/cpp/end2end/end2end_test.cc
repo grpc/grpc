@@ -35,7 +35,6 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/thd.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"

@@ -18,17 +18,18 @@
 
 /* Test of gpr thread support. */
 
-#include "src/core/lib/gpr/thd.h"
+#include "src/core/lib/gprpp/thd.h"
+
+#include <stdio.h>
+#include <stdlib.h>
 
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 #include "test/core/util/test_config.h"
 
-#define NUM_THREADS 300
+#define NUM_THREADS 100
 
 struct test {
   gpr_mu mu;
@@ -38,7 +39,7 @@ struct test {
 };
 
 /* A Thread body.   Decrement t->n, and if is becomes zero, set t->done. */
-static void thd_body(void* v) {
+static void thd_body1(void* v) {
   struct test* t = static_cast<struct test*>(v);
   gpr_mu_lock(&t->mu);
   t->n--;
@@ -49,48 +50,42 @@ static void thd_body(void* v) {
   gpr_mu_unlock(&t->mu);
 }
 
-static void thd_body_joinable(void* v) {}
-
-/* Test thread options work as expected */
-static void test_options(void) {
-  gpr_thd_options options = gpr_thd_options_default();
-  GPR_ASSERT(!gpr_thd_options_is_joinable(&options));
-  GPR_ASSERT(gpr_thd_options_is_detached(&options));
-  gpr_thd_options_set_joinable(&options);
-  GPR_ASSERT(gpr_thd_options_is_joinable(&options));
-  GPR_ASSERT(!gpr_thd_options_is_detached(&options));
-  gpr_thd_options_set_detached(&options);
-  GPR_ASSERT(!gpr_thd_options_is_joinable(&options));
-  GPR_ASSERT(gpr_thd_options_is_detached(&options));
-}
-
-/* Test that we can create a number of threads and wait for them. */
-static void test(void) {
-  int i;
-  gpr_thd_id thd;
-  gpr_thd_id thds[NUM_THREADS];
+/* Test that we can create a number of threads, wait for them, and join them. */
+static void test1(void) {
+  grpc_core::Thread thds[NUM_THREADS];
   struct test t;
-  gpr_thd_options options = gpr_thd_options_default();
   gpr_mu_init(&t.mu);
   gpr_cv_init(&t.done_cv);
   t.n = NUM_THREADS;
   t.is_done = 0;
-  for (i = 0; i < NUM_THREADS; i++) {
-    GPR_ASSERT(gpr_thd_new(&thd, "grpc_thread_test", &thd_body, &t, nullptr));
+  for (auto& th : thds) {
+    th = grpc_core::Thread("grpc_thread_body1_test", &thd_body1, &t);
+    th.Start();
   }
   gpr_mu_lock(&t.mu);
   while (!t.is_done) {
     gpr_cv_wait(&t.done_cv, &t.mu, gpr_inf_future(GPR_CLOCK_REALTIME));
   }
   gpr_mu_unlock(&t.mu);
-  GPR_ASSERT(t.n == 0);
-  gpr_thd_options_set_joinable(&options);
-  for (i = 0; i < NUM_THREADS; i++) {
-    GPR_ASSERT(gpr_thd_new(&thds[i], "grpc_joinable_thread_test",
-                           &thd_body_joinable, nullptr, &options));
+  for (auto& th : thds) {
+    th.Join();
   }
-  for (i = 0; i < NUM_THREADS; i++) {
-    gpr_thd_join(thds[i]);
+  GPR_ASSERT(t.n == 0);
+}
+
+static void thd_body2(void* v) {}
+
+/* Test that we can create a number of threads and join them. */
+static void test2(void) {
+  grpc_core::Thread thds[NUM_THREADS];
+  for (auto& th : thds) {
+    bool ok;
+    th = grpc_core::Thread("grpc_thread_body2_test", &thd_body2, nullptr, &ok);
+    GPR_ASSERT(ok);
+    th.Start();
+  }
+  for (auto& th : thds) {
+    th.Join();
   }
 }
 
@@ -98,7 +93,7 @@ static void test(void) {
 
 int main(int argc, char* argv[]) {
   grpc_test_init(argc, argv);
-  test_options();
-  test();
+  test1();
+  test2();
   return 0;
 }
