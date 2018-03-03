@@ -42,6 +42,7 @@ class ThreadInternalsInterface {
   virtual void Join() GRPC_ABSTRACT;
   GRPC_ABSTRACT_BASE_CLASS
 };
+
 }  // namespace internal
 
 class Thread {
@@ -98,9 +99,9 @@ class Thread {
       GPR_ASSERT(state_ == FAILED);
     }
   };
+
   void Join() {
     if (impl_ != nullptr) {
-      GPR_ASSERT(state_ == STARTED);
       impl_->Join();
       grpc_core::Delete(impl_);
       state_ = DONE;
