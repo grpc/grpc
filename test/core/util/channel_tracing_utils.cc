@@ -49,8 +49,7 @@ void validate_channel_trace_data(grpc_json* json,
                                  size_t num_events_logged_expected,
                                  size_t actual_num_events_expected) {
   GPR_ASSERT(json);
-  grpc_json* num_events_logged_json =
-      get_json_child(json, "num_events_logged");
+  grpc_json* num_events_logged_json = get_json_child(json, "num_events_logged");
   GPR_ASSERT(num_events_logged_json);
   grpc_json* start_time = get_json_child(json, "creation_time");
   GPR_ASSERT(start_time);
