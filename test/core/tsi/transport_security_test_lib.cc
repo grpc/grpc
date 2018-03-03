@@ -24,7 +24,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/thd.h"
 #include "src/core/lib/security/transport/tsi_error.h"
 #include "test/core/tsi/transport_security_test_lib.h"
 

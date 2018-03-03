@@ -18,16 +18,17 @@
 
 #include "src/core/lib/gpr/arena.h"
 
+#include <inttypes.h>
+#include <string.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
-#include <inttypes.h>
-#include <string.h>
 
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/thd.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "test/core/util/test_config.h"
 
 static void test_noop(void) { gpr_arena_destroy(gpr_arena_create(1)); }
@@ -97,19 +98,18 @@ static void concurrent_test(void) {
   gpr_event_init(&args.ev_start);
   args.arena = gpr_arena_create(1024);
 
-  gpr_thd_id thds[CONCURRENT_TEST_THREADS];
+  grpc_core::Thread thds[CONCURRENT_TEST_THREADS];
 
   for (int i = 0; i < CONCURRENT_TEST_THREADS; i++) {
-    gpr_thd_options opt = gpr_thd_options_default();
-    gpr_thd_options_set_joinable(&opt);
-    gpr_thd_new(&thds[i], "grpc_concurrent_test", concurrent_test_body, &args,
-                &opt);
+    thds[i] =
+        grpc_core::Thread("grpc_concurrent_test", concurrent_test_body, &args);
+    thds[i].Start();
   }
 
   gpr_event_set(&args.ev_start, (void*)1);
 
-  for (int i = 0; i < CONCURRENT_TEST_THREADS; i++) {
-    gpr_thd_join(thds[i]);
+  for (auto& th : thds) {
+    th.Join();
   }
 
   gpr_arena_destroy(args.arena);

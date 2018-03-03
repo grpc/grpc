@@ -23,7 +23,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/host_port.h"
-#include "src/core/lib/gpr/thd.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
@@ -67,10 +67,8 @@ static void run_test(const test_fixture* fixture) {
   grpc_server_start(server);
 
   server_thread_args sta = {server, server_cq};
-  gpr_thd_id server_thread;
-  gpr_thd_options thdopt = gpr_thd_options_default();
-  gpr_thd_options_set_joinable(&thdopt);
-  gpr_thd_new(&server_thread, "grpc_server", server_thread_func, &sta, &thdopt);
+  grpc_core::Thread server_thread("grpc_server", server_thread_func, &sta);
+  server_thread.Start();
 
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   grpc_channel* channels[NUM_CONNECTIONS];
@@ -95,7 +93,7 @@ static void run_test(const test_fixture* fixture) {
   }
 
   grpc_server_shutdown_and_notify(server, server_cq, nullptr);
-  gpr_thd_join(server_thread);
+  server_thread.Join();
 
   grpc_completion_queue_shutdown(server_cq);
   grpc_completion_queue_shutdown(cq);
