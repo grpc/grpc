@@ -78,11 +78,7 @@ static NSMutableDictionary *kHostCache;
         gpr_free(chost);
         return nil;
       }
-    } else {
-      caddr = chost;
-    }
-    address = [[NSString alloc] initWithCString:caddr encoding:NSUTF8StringEncoding];
-    if (caddr != chost) {
+      address = [[NSString alloc] initWithCString:caddr encoding:NSUTF8StringEncoding];
       gpr_free(caddr);
     }
     gpr_free(chost);
