@@ -69,7 +69,7 @@ static NSMutableDictionary *kHostCache;
     // NSURL failed to parse the address. It probably has a `%` in it (denoting IPv6 zone-id).
     // Connectivity monitor happens per host.
     char *chost = NULL, *cport = NULL;
-    if (gpr_split_host_port(address.UTF8String, &chost, &cport)) {
+    if (!gpr_split_host_port(address.UTF8String, &chost, &cport)) {
       return nil;
     }
     char *caddr = NULL;
