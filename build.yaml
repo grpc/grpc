@@ -5128,11 +5128,11 @@ configs:
     DEFINES: NDEBUG
     LDFLAGS: -rdynamic
   noexcept:
-    CPPFLAGS: -O2
+    CPPFLAGS: -O2 -Wframe-larger-than=16384
     CXXFLAGS: -fno-exceptions
     DEFINES: NDEBUG
   opt:
-    CPPFLAGS: -O2
+    CPPFLAGS: -O2 -Wframe-larger-than=16384
     DEFINES: NDEBUG
   stapprof:
     CPPFLAGS: -O2 -DGRPC_STAP_PROFILER

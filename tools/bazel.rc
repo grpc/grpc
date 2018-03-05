@@ -1,5 +1,6 @@
 build --client_env=CC=clang
 build --copt -DGRPC_BAZEL_BUILD
+build --copt -Wframe-larger-than=16384
 
 build:asan --strip=never
 build:asan --copt -fsanitize-coverage=edge
