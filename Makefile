@@ -821,6 +821,9 @@ endif
 LIBS_PROTOBUF = protobuf
 LIBS_PROTOC = protoc protobuf
 
+ifneq ($(LDFLAGS_PROTOBUF_PKG_CONFIG),)
+HOST_LDLIBS_PROTOC += $(shell $(PKG_CONFIG) --libs-only-L protobuf | sed s/L/Wl,-rpath,/)
+endif
 HOST_LDLIBS_PROTOC += $(addprefix -l, $(LIBS_PROTOC))
 
 ifeq ($(PROTOBUF_PKG_CONFIG),true)
