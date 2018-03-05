@@ -22,8 +22,10 @@ FLAGS_test_bin_path=$(echo "$1" | grep '\--test_bin_path=' | cut -d "=" -f 2)
 FLAGS_dns_server_bin_path=$(echo "$2" | grep '\--dns_server_bin_path=' | cut -d "=" -f 2)
 FLAGS_records_config_path=$(echo "$3" | grep '\--records_config_path=' | cut -d "=" -f 2)
 FLAGS_test_dns_server_port=$(echo "$4" | grep '\--test_dns_server_port=' | cut -d "=" -f 2)
+FLAGS_test_dns_resolver_bin_path=$(echo "$5" | grep '\--test_dns_resolver_bin_path=' | cut -d "=" -f 2)
+FLAGS_test_tcp_connect_bin_path=$(echo "$6" | grep '\--test_tcp_connect_bin_path=' | cut -d "=" -f 2)
 
-for cmd_arg in "$FLAGS_test_bin_path" "$FLAGS_dns_server_bin_path" "$FLAGS_records_config_path" "$FLAGS_test_dns_server_port"; do
+for cmd_arg in "$FLAGS_test_bin_path" "$FLAGS_dns_server_bin_path" "$FLAGS_records_config_path" "$FLAGS_test_dns_server_port" "$FLAGS_test_dns_resolver_bin_path" "$FLAGS_test_tcp_connect_bin_path"; do
   if [[ "$cmd_arg" == "" ]]; then
     echo "Missing a CMD arg" && exit 1
   fi
@@ -41,10 +43,10 @@ echo "Local DNS server started. PID: $DNS_SERVER_PID"
 # Health check local DNS server TCP and UDP ports
 for ((i=0;i<30;i++));
 do
-  echo "Retry health-check DNS query to local DNS server over tcp and udp"
+  echo "Retry health-check local DNS server by attempting a DNS query and TCP handshake"
   RETRY=0
-  dig A health-check-local-dns-server-is-alive.resolver-tests.grpctestingexp. @localhost -p "$FLAGS_test_dns_server_port" +tries=1 +timeout=1 | grep '123.123.123.123' || RETRY=1
-  dig A health-check-local-dns-server-is-alive.resolver-tests.grpctestingexp. @localhost -p "$FLAGS_test_dns_server_port" +tries=1 +timeout=1 +tcp | grep '123.123.123.123' || RETRY=1
+  $FLAGS_test_dns_resolver_bin_path -s 127.0.0.1 -p "$FLAGS_test_dns_server_port" -n health-check-local-dns-server-is-alive.resolver-tests.grpctestingexp. -t 1 | grep '123.123.123.123' || RETRY=1
+  $FLAGS_test_tcp_connect_bin_path -s 127.0.0.1 -p "$FLAGS_test_dns_server_port" -t 1 || RETRY=1
   if [[ "$RETRY" == 0 ]]; then
     break
   fi;

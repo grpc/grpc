@@ -47,4 +47,19 @@ grpc_py_binary(
   ]
 )
 
+grpc_py_binary(
+  name = "test_dns_resolver",
+  srcs = ["test_dns_resolver.py"],
+  testonly = True,
+  external_deps = [
+      "twisted",
+  ]
+)
+
+grpc_py_binary(
+  name = "test_tcp_connect",
+  srcs = ["test_tcp_connect.py"],
+  testonly = True,
+)
+
 generate_resolver_component_tests()
