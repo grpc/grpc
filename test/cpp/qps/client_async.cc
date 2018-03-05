@@ -50,9 +50,9 @@ class ClientRpcContext {
   // next state, return false if done. Collect stats when appropriate
   virtual bool RunNextState(bool, HistogramEntry* entry) = 0;
   virtual void StartNewClone(CompletionQueue* cq) = 0;
-  static void* tag(ClientRpcContext* c) { return reinterpret_cast<void*>(c); }
+  static void* tag(ClientRpcContext* c) { return static_cast<void*>(c); }
   static ClientRpcContext* detag(void* t) {
-    return reinterpret_cast<ClientRpcContext*>(t);
+    return static_cast<ClientRpcContext*>(t);
   }
 
   virtual void Start(CompletionQueue* cq, const ClientConfig& config) = 0;

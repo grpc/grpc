@@ -191,7 +191,7 @@ class GrpcLb : public LoadBalancingPolicy {
     ~BalancerCallState();
 
     GrpcLb* grpclb_policy() const {
-      return reinterpret_cast<GrpcLb*>(grpclb_policy_.get());
+      return static_cast<GrpcLb*>(grpclb_policy_.get());
     }
 
     void ScheduleNextClientLoadReportLocked();
@@ -651,7 +651,7 @@ void GrpcLb::BalancerCallState::ScheduleNextClientLoadReportLocked() {
 
 void GrpcLb::BalancerCallState::MaybeSendClientLoadReportLocked(
     void* arg, grpc_error* error) {
-  BalancerCallState* lb_calld = reinterpret_cast<BalancerCallState*>(arg);
+  BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   GrpcLb* grpclb_policy = lb_calld->grpclb_policy();
   lb_calld->client_load_report_timer_callback_pending_ = false;
   if (error != GRPC_ERROR_NONE || lb_calld != grpclb_policy->lb_calld_.get()) {
@@ -721,7 +721,7 @@ void GrpcLb::BalancerCallState::SendClientLoadReportLocked() {
 
 void GrpcLb::BalancerCallState::ClientLoadReportDoneLocked(void* arg,
                                                            grpc_error* error) {
-  BalancerCallState* lb_calld = reinterpret_cast<BalancerCallState*>(arg);
+  BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   GrpcLb* grpclb_policy = lb_calld->grpclb_policy();
   grpc_byte_buffer_destroy(lb_calld->send_message_payload_);
   lb_calld->send_message_payload_ = nullptr;
@@ -734,7 +734,7 @@ void GrpcLb::BalancerCallState::ClientLoadReportDoneLocked(void* arg,
 
 void GrpcLb::BalancerCallState::OnInitialRequestSentLocked(void* arg,
                                                            grpc_error* error) {
-  BalancerCallState* lb_calld = reinterpret_cast<BalancerCallState*>(arg);
+  BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   grpc_byte_buffer_destroy(lb_calld->send_message_payload_);
   lb_calld->send_message_payload_ = nullptr;
   // If we attempted to send a client load report before the initial request was
@@ -749,7 +749,7 @@ void GrpcLb::BalancerCallState::OnInitialRequestSentLocked(void* arg,
 
 void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
     void* arg, grpc_error* error) {
-  BalancerCallState* lb_calld = reinterpret_cast<BalancerCallState*>(arg);
+  BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   GrpcLb* grpclb_policy = lb_calld->grpclb_policy();
   // Empty payload means the LB call was cancelled.
   if (lb_calld != grpclb_policy->lb_calld_.get() ||
@@ -882,7 +882,7 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
 
 void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
     void* arg, grpc_error* error) {
-  BalancerCallState* lb_calld = reinterpret_cast<BalancerCallState*>(arg);
+  BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   GrpcLb* grpclb_policy = lb_calld->grpclb_policy();
   GPR_ASSERT(lb_calld->lb_call_ != nullptr);
   if (grpc_lb_glb_trace.enabled()) {
@@ -1283,7 +1283,7 @@ void GrpcLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
     return;
   }
   const grpc_lb_addresses* addresses =
-      reinterpret_cast<const grpc_lb_addresses*>(arg->value.pointer.p);
+      static_cast<const grpc_lb_addresses*>(arg->value.pointer.p);
   // Update fallback address list.
   if (fallback_backend_addresses_ != nullptr) {
     grpc_lb_addresses_destroy(fallback_backend_addresses_);
@@ -1426,7 +1426,7 @@ void GrpcLb::StartBalancerCallRetryTimerLocked() {
 }
 
 void GrpcLb::OnBalancerCallRetryTimerLocked(void* arg, grpc_error* error) {
-  GrpcLb* grpclb_policy = reinterpret_cast<GrpcLb*>(arg);
+  GrpcLb* grpclb_policy = static_cast<GrpcLb*>(arg);
   grpclb_policy->retry_timer_callback_pending_ = false;
   if (!grpclb_policy->shutting_down_ && error == GRPC_ERROR_NONE &&
       grpclb_policy->lb_calld_ == nullptr) {
@@ -1503,8 +1503,7 @@ grpc_error* AddLbTokenToInitialMetadata(
 
 // Destroy function used when embedding client stats in call context.
 void DestroyClientStats(void* arg) {
-  grpc_grpclb_client_stats_unref(
-      reinterpret_cast<grpc_grpclb_client_stats*>(arg));
+  grpc_grpclb_client_stats_unref(static_cast<grpc_grpclb_client_stats*>(arg));
 }
 
 void GrpcLb::PendingPickSetMetadataAndContext(PendingPick* pp) {
@@ -1540,7 +1539,7 @@ void GrpcLb::PendingPickSetMetadataAndContext(PendingPick* pp) {
  * reference to its associated round robin instance. We wrap this closure in
  * order to unref the round robin instance upon its invocation */
 void GrpcLb::OnPendingPickComplete(void* arg, grpc_error* error) {
-  PendingPick* pp = reinterpret_cast<PendingPick*>(arg);
+  PendingPick* pp = static_cast<PendingPick*>(arg);
   PendingPickSetMetadataAndContext(pp);
   GRPC_CLOSURE_SCHED(pp->original_on_complete, GRPC_ERROR_REF(error));
   Delete(pp);
@@ -1739,7 +1738,7 @@ void GrpcLb::CreateOrUpdateRoundRobinPolicyLocked() {
 
 void GrpcLb::OnRoundRobinRequestReresolutionLocked(void* arg,
                                                    grpc_error* error) {
-  GrpcLb* grpclb_policy = reinterpret_cast<GrpcLb*>(arg);
+  GrpcLb* grpclb_policy = static_cast<GrpcLb*>(arg);
   if (grpclb_policy->shutting_down_ || error != GRPC_ERROR_NONE) {
     grpclb_policy->Unref(DEBUG_LOCATION, "on_rr_reresolution_requested");
     return;
@@ -1820,7 +1819,7 @@ void GrpcLb::UpdateConnectivityStateFromRoundRobinPolicyLocked(
 
 void GrpcLb::OnRoundRobinConnectivityChangedLocked(void* arg,
                                                    grpc_error* error) {
-  GrpcLb* grpclb_policy = reinterpret_cast<GrpcLb*>(arg);
+  GrpcLb* grpclb_policy = static_cast<GrpcLb*>(arg);
   if (grpclb_policy->shutting_down_) {
     grpclb_policy->Unref(DEBUG_LOCATION, "on_rr_connectivity_changed");
     return;
@@ -1848,7 +1847,7 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
       return nullptr;
     }
     grpc_lb_addresses* addresses =
-        reinterpret_cast<grpc_lb_addresses*>(arg->value.pointer.p);
+        static_cast<grpc_lb_addresses*>(arg->value.pointer.p);
     size_t num_grpclb_addrs = 0;
     for (size_t i = 0; i < addresses->num_addresses; ++i) {
       if (addresses->addresses[i].is_balancer) ++num_grpclb_addrs;
