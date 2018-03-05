@@ -18,19 +18,7 @@ FROM quay.io/pypa/manylinux1_x86_64
 
 # Update the package manager
 RUN yum update -y
-
-#############################################################
-# Update Git to allow cloning submodules with --reference arg
-RUN yum remove -y git
 RUN yum install -y curl-devel expat-devel gettext-devel linux-headers openssl-devel zlib-devel gcc
-RUN cd /usr/src && \
-  curl -O -L https://kernel.org/pub/software/scm/git/git-2.0.5.tar.gz && \
-  tar xzf git-2.0.5.tar.gz
-RUN cd /usr/src/git-2.0.5 && \
-  make prefix=/usr/local/git all && \
-  make prefix=/usr/local/git install
-ENV PATH /usr/local/git/bin:$PATH
-RUN source /etc/bashrc
 
 ###################################
 # Install Python build requirements
