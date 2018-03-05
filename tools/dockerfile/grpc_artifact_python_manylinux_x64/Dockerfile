@@ -18,6 +18,7 @@ FROM quay.io/pypa/manylinux1_x86_64
 
 # Update the package manager
 RUN yum update -y
+RUN yum install -y curl-devel expat-devel gettext-devel linux-headers openssl-devel zlib-devel gcc
 
 ###################################
 # Install Python build requirements
