@@ -18,13 +18,15 @@
 
 /* Test of gpr thread local storage support. */
 
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
+#include "src/core/lib/gpr/tls.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "src/core/lib/gpr/thd.h"
-#include "src/core/lib/gpr/tls.h"
+#include <grpc/support/log.h>
+#include <grpc/support/sync.h>
+
+#include "src/core/lib/gprpp/thd.h"
 #include "test/core/util/test_config.h"
 
 #define NUM_THREADS 100
@@ -46,21 +48,18 @@ static void thd_body(void* arg) {
 /* ------------------------------------------------- */
 
 int main(int argc, char* argv[]) {
-  gpr_thd_options opt = gpr_thd_options_default();
-  int i;
-  gpr_thd_id threads[NUM_THREADS];
+  grpc_core::Thread threads[NUM_THREADS];
 
   grpc_test_init(argc, argv);
 
   gpr_tls_init(&test_var);
 
-  gpr_thd_options_set_joinable(&opt);
-
-  for (i = 0; i < NUM_THREADS; i++) {
-    gpr_thd_new(&threads[i], "grpc_tls_test", thd_body, nullptr, &opt);
+  for (auto& th : threads) {
+    th = grpc_core::Thread("grpc_tls_test", thd_body, nullptr);
+    th.Start();
   }
-  for (i = 0; i < NUM_THREADS; i++) {
-    gpr_thd_join(threads[i]);
+  for (auto& th : threads) {
+    th.Join();
   }
 
   gpr_tls_destroy(&test_var);

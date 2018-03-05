@@ -16,24 +16,26 @@
  *
  */
 
-/* Test of gpr synchronization support. */
+/* Test of gpr spin-lock support. */
 
 #include "src/core/lib/gpr/spinlock.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
-#include <stdio.h>
-#include <stdlib.h>
 
-#include "src/core/lib/gpr/thd.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "test/core/util/test_config.h"
 
 /* ------------------------------------------------- */
 /* Tests for gpr_spinlock. */
 struct test {
   int thread_count; /* number of threads */
-  gpr_thd_id* threads;
+  grpc_core::Thread* threads;
 
   int64_t iterations; /* number of iterations per thread */
   int64_t counter;
@@ -46,7 +48,7 @@ struct test {
 static struct test* test_new(int threads, int64_t iterations, int incr_step) {
   struct test* m = static_cast<struct test*>(gpr_malloc(sizeof(*m)));
   m->thread_count = threads;
-  m->threads = static_cast<gpr_thd_id*>(
+  m->threads = static_cast<grpc_core::Thread*>(
       gpr_malloc(sizeof(*m->threads) * static_cast<size_t>(threads)));
   m->iterations = iterations;
   m->counter = 0;
@@ -66,10 +68,8 @@ static void test_destroy(struct test* m) {
 static void test_create_threads(struct test* m, void (*body)(void* arg)) {
   int i;
   for (i = 0; i != m->thread_count; i++) {
-    gpr_thd_options opt = gpr_thd_options_default();
-    gpr_thd_options_set_joinable(&opt);
-    GPR_ASSERT(
-        gpr_thd_new(&m->threads[i], "grpc_create_threads", body, m, &opt));
+    m->threads[i] = grpc_core::Thread("grpc_create_threads", body, m);
+    m->threads[i].Start();
   }
 }
 
@@ -77,7 +77,7 @@ static void test_create_threads(struct test* m, void (*body)(void* arg)) {
 static void test_wait(struct test* m) {
   int i;
   for (i = 0; i != m->thread_count; i++) {
-    gpr_thd_join(m->threads[i]);
+    m->threads[i].Join();
   }
 }
 

@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/client_channel/status_util.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"  // for grpc_millis
@@ -37,6 +38,14 @@ class ClientChannelMethodParams : public RefCounted<ClientChannelMethodParams> {
     WAIT_FOR_READY_TRUE
   };
 
+  struct RetryPolicy {
+    int max_attempts = 0;
+    grpc_millis initial_backoff = 0;
+    grpc_millis max_backoff = 0;
+    float backoff_multiplier = 0;
+    StatusCodeSet retryable_status_codes;
+  };
+
   /// Creates a method_parameters object from \a json.
   /// Intended for use with ServiceConfig::CreateMethodConfigTable().
   static RefCountedPtr<ClientChannelMethodParams> CreateFromJson(
@@ -44,6 +53,7 @@ class ClientChannelMethodParams : public RefCounted<ClientChannelMethodParams> {
 
   grpc_millis timeout() const { return timeout_; }
   WaitForReady wait_for_ready() const { return wait_for_ready_; }
+  const RetryPolicy* retry_policy() const { return retry_policy_.get(); }
 
  private:
   // So New() can call our private ctor.
@@ -55,6 +65,7 @@ class ClientChannelMethodParams : public RefCounted<ClientChannelMethodParams> {
 
   grpc_millis timeout_ = 0;
   WaitForReady wait_for_ready_ = WAIT_FOR_READY_UNSET;
+  UniquePtr<RetryPolicy> retry_policy_;
 };
 
 }  // namespace internal

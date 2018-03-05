@@ -24,8 +24,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/gpr/thd.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "test/core/util/test_config.h"
 
 typedef struct test_node {
@@ -76,18 +76,16 @@ static void test_mt(void) {
   gpr_log(GPR_DEBUG, "test_mt");
   gpr_event start;
   gpr_event_init(&start);
-  gpr_thd_id thds[100];
+  grpc_core::Thread thds[100];
   thd_args ta[GPR_ARRAY_SIZE(thds)];
   gpr_mpscq q;
   gpr_mpscq_init(&q);
   for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
-    gpr_thd_options options = gpr_thd_options_default();
-    gpr_thd_options_set_joinable(&options);
     ta[i].ctr = 0;
     ta[i].q = &q;
     ta[i].start = &start;
-    GPR_ASSERT(
-        gpr_thd_new(&thds[i], "grpc_mt_test", test_thread, &ta[i], &options));
+    thds[i] = grpc_core::Thread("grpc_mt_test", test_thread, &ta[i]);
+    thds[i].Start();
   }
   size_t num_done = 0;
   size_t spins = 0;
@@ -104,8 +102,8 @@ static void test_mt(void) {
     gpr_free(tn);
   }
   gpr_log(GPR_DEBUG, "spins: %" PRIdPTR, spins);
-  for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
-    gpr_thd_join(thds[i]);
+  for (auto& th : thds) {
+    th.Join();
   }
   gpr_mpscq_destroy(&q);
 }
@@ -147,19 +145,17 @@ static void test_mt_multipop(void) {
   gpr_log(GPR_DEBUG, "test_mt_multipop");
   gpr_event start;
   gpr_event_init(&start);
-  gpr_thd_id thds[100];
-  gpr_thd_id pull_thds[100];
+  grpc_core::Thread thds[50];
+  grpc_core::Thread pull_thds[50];
   thd_args ta[GPR_ARRAY_SIZE(thds)];
   gpr_mpscq q;
   gpr_mpscq_init(&q);
   for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
-    gpr_thd_options options = gpr_thd_options_default();
-    gpr_thd_options_set_joinable(&options);
     ta[i].ctr = 0;
     ta[i].q = &q;
     ta[i].start = &start;
-    GPR_ASSERT(gpr_thd_new(&thds[i], "grpc_multipop_test", test_thread, &ta[i],
-                           &options));
+    thds[i] = grpc_core::Thread("grpc_multipop_test", test_thread, &ta[i]);
+    thds[i].Start();
   }
   pull_args pa;
   pa.ta = ta;
@@ -170,18 +166,16 @@ static void test_mt_multipop(void) {
   pa.start = &start;
   gpr_mu_init(&pa.mu);
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pull_thds); i++) {
-    gpr_thd_options options = gpr_thd_options_default();
-    gpr_thd_options_set_joinable(&options);
-    GPR_ASSERT(gpr_thd_new(&pull_thds[i], "grpc_multipop_pull", pull_thread,
-                           &pa, &options));
+    pull_thds[i] = grpc_core::Thread("grpc_multipop_pull", pull_thread, &pa);
+    pull_thds[i].Start();
   }
   gpr_event_set(&start, (void*)1);
-  for (size_t i = 0; i < GPR_ARRAY_SIZE(pull_thds); i++) {
-    gpr_thd_join(pull_thds[i]);
+  for (auto& pth : pull_thds) {
+    pth.Join();
   }
   gpr_log(GPR_DEBUG, "spins: %" PRIdPTR, pa.spins);
-  for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
-    gpr_thd_join(thds[i]);
+  for (auto& th : thds) {
+    th.Join();
   }
   gpr_mpscq_destroy(&q);
 }

@@ -90,7 +90,6 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/spinlock.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/string.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/string_windows.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/thd.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/time_precise.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/tls.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/tls_gcc.h" role="src" />
@@ -104,6 +103,7 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/atomic_with_std.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/manual_constructor.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/memory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/thd.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/timers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/alloc.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/arena.cc" role="src" />
@@ -131,9 +131,6 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/sync.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/sync_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/sync_windows.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/thd.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/thd_posix.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/thd_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/time.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/time_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/time_precise.cc" role="src" />
@@ -143,6 +140,8 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/tmpfile_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/tmpfile_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/wrap_memcpy.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/thd_posix.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/thd_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/basic_timers.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/stap_timers.cc" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/byte_buffer.h" role="src" />
@@ -249,6 +248,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_throttle.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/status_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_index.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/uri_parser.h" role="src" />
@@ -353,6 +353,7 @@
     <file baseinstalldir="/" name="src/core/lib/slice/slice_hash_table.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/slice/slice_string_helpers.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/slice/slice_weak_hash_table.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/api_trace.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/call.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/call_test_only.h" role="src" />
@@ -377,6 +378,7 @@
     <file baseinstalldir="/" name="src/core/lib/transport/service_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/static_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/status_conversion.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/status_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/timeout_encoding.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport_impl.h" role="src" />
@@ -531,6 +533,7 @@
     <file baseinstalldir="/" name="src/core/lib/transport/service_config.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/static_metadata.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/status_conversion.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/transport/status_metadata.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/timeout_encoding.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport_op_string.cc" role="src" />
@@ -613,6 +616,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_throttle.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/status_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_index.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/uri_parser.cc" role="src" />

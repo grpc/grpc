@@ -38,6 +38,7 @@ set(gRPC_INSTALL_CMAKEDIR "lib/cmake/${PACKAGE_NAME}" CACHE STRING "Installation
 # Options
 option(gRPC_BUILD_TESTS "Build tests" OFF)
 option(gRPC_BUILD_SHARED "Build grpc++ as shared library including grpc and gpr libraries." OFF)
+option(gRPC_BUILD_CODEGEN "Build codegen" ON)
 
 set(gRPC_INSTALL_default ON)
 if (NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
@@ -79,6 +80,8 @@ if(UNIX)
     set(_gRPC_PLATFORM_LINUX ON)
   elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(_gRPC_PLATFORM_MAC ON)
+  elseif(${CMAKE_SYSTEM_NAME} MATCHES "Android")
+    set(_gRPC_PLATFORM_ANDROID ON)
   else()
     set(_gRPC_PLATFORM_POSIX ON)
   endif()
@@ -127,6 +130,8 @@ endif()
 
 if(_gRPC_PLATFORM_MAC)
   set(_gRPC_ALLTARGETS_LIBRARIES ${CMAKE_DL_LIBS} m pthread)
+elseif(_gRPC_PLATFORM_ANDROID)
+  set(_gRPC_ALLTARGETS_LIBRARIES ${CMAKE_DL_LIBS} m)
 elseif(UNIX)
   set(_gRPC_ALLTARGETS_LIBRARIES ${CMAKE_DL_LIBS} rt m pthread)
 endif()
@@ -601,8 +606,11 @@ add_dependencies(buildtests_cxx server_early_return_test)
 add_dependencies(buildtests_cxx server_request_call_test)
 add_dependencies(buildtests_cxx shutdown_test)
 add_dependencies(buildtests_cxx slice_hash_table_test)
+add_dependencies(buildtests_cxx slice_weak_hash_table_test)
 add_dependencies(buildtests_cxx stats_test)
+add_dependencies(buildtests_cxx status_metadata_test)
 add_dependencies(buildtests_cxx status_test)
+add_dependencies(buildtests_cxx status_util_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx streaming_throughput_test)
 endif()
@@ -658,9 +666,6 @@ add_library(gpr
   src/core/lib/gpr/sync.cc
   src/core/lib/gpr/sync_posix.cc
   src/core/lib/gpr/sync_windows.cc
-  src/core/lib/gpr/thd.cc
-  src/core/lib/gpr/thd_posix.cc
-  src/core/lib/gpr/thd_windows.cc
   src/core/lib/gpr/time.cc
   src/core/lib/gpr/time_posix.cc
   src/core/lib/gpr/time_precise.cc
@@ -670,6 +675,8 @@ add_library(gpr
   src/core/lib/gpr/tmpfile_posix.cc
   src/core/lib/gpr/tmpfile_windows.cc
   src/core/lib/gpr/wrap_memcpy.cc
+  src/core/lib/gprpp/thd_posix.cc
+  src/core/lib/gprpp/thd_windows.cc
   src/core/lib/profiling/basic_timers.cc
   src/core/lib/profiling/stap_timers.cc
 )
@@ -700,6 +707,12 @@ target_include_directories(gpr
 target_link_libraries(gpr
   ${_gRPC_ALLTARGETS_LIBRARIES}
 )
+if (_gRPC_PLATFORM_ANDROID)
+  target_link_libraries(gpr
+    android
+    log
+  )
+endif (_gRPC_PLATFORM_ANDROID)
 
 foreach(_hdr
   include/grpc/support/alloc.h
@@ -918,6 +931,7 @@ add_library(grpc
   src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
   src/core/lib/transport/status_conversion.cc
+  src/core/lib/transport/status_metadata.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
@@ -1000,6 +1014,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
+  src/core/ext/filters/client_channel/status_util.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
@@ -1258,6 +1273,7 @@ add_library(grpc_cronet
   src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
   src/core/lib/transport/status_conversion.cc
+  src/core/lib/transport/status_metadata.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
@@ -1311,6 +1327,7 @@ add_library(grpc_cronet
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
+  src/core/ext/filters/client_channel/status_util.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
@@ -1584,6 +1601,7 @@ add_library(grpc_test_util
   src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
   src/core/lib/transport/status_conversion.cc
+  src/core/lib/transport/status_metadata.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
@@ -1606,6 +1624,7 @@ add_library(grpc_test_util
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
+  src/core/ext/filters/client_channel/status_util.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
@@ -1871,6 +1890,7 @@ add_library(grpc_test_util_unsecure
   src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
   src/core/lib/transport/status_conversion.cc
+  src/core/lib/transport/status_metadata.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
@@ -1893,6 +1913,7 @@ add_library(grpc_test_util_unsecure
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
+  src/core/ext/filters/client_channel/status_util.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
@@ -2138,6 +2159,7 @@ add_library(grpc_unsecure
   src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
   src/core/lib/transport/status_conversion.cc
+  src/core/lib/transport/status_metadata.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
@@ -2193,6 +2215,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
+  src/core/ext/filters/client_channel/status_util.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
@@ -2705,6 +2728,7 @@ endif()
 
 if (gRPC_BUILD_TESTS)
 
+if (gRPC_BUILD_CODEGEN)
 add_library(grpc++_core_stats
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/core/stats.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/core/stats.grpc.pb.cc
@@ -2750,6 +2774,7 @@ target_link_libraries(grpc++_core_stats
   grpc++
 )
 
+endif (gRPC_BUILD_CODEGEN)
 
 endif (gRPC_BUILD_TESTS)
 
@@ -2948,6 +2973,7 @@ add_library(grpc++_cronet
   src/core/lib/transport/service_config.cc
   src/core/lib/transport/static_metadata.cc
   src/core/lib/transport/status_conversion.cc
+  src/core/lib/transport/status_metadata.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
@@ -2975,6 +3001,7 @@ add_library(grpc++_cronet
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
+  src/core/ext/filters/client_channel/status_util.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
@@ -3244,6 +3271,7 @@ endif()
 # grpc++_error_details do not compiled with dynamic libprotoc library.
 if (NOT gRPC_BUILD_SHARED)
 
+if (gRPC_BUILD_CODEGEN)
 add_library(grpc++_error_details
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/status/status.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/status/status.grpc.pb.cc
@@ -3296,6 +3324,7 @@ foreach(_hdr
     DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
   )
 endforeach()
+endif (gRPC_BUILD_CODEGEN)
 
 
 if (gRPC_INSTALL)
@@ -3310,6 +3339,7 @@ endif (NOT gRPC_BUILD_SHARED)
 
 if (gRPC_BUILD_TESTS)
 
+if (gRPC_BUILD_CODEGEN)
 add_library(grpc++_proto_reflection_desc_db
   test/cpp/util/proto_reflection_descriptor_database.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
@@ -3366,11 +3396,14 @@ foreach(_hdr
     DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
   )
 endforeach()
+endif (gRPC_BUILD_CODEGEN)
 
 endif (gRPC_BUILD_TESTS)
 
 # grpc++_reflection do not compiled with dynamic libprotoc library.
 if (NOT gRPC_BUILD_SHARED)
+
+if (gRPC_BUILD_CODEGEN)
 
 add_library(grpc++_reflection
   src/cpp/ext/proto_server_reflection.cc
@@ -3425,6 +3458,7 @@ foreach(_hdr
     DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
   )
 endforeach()
+endif (gRPC_BUILD_CODEGEN)
 
 
 if (gRPC_INSTALL)
@@ -3480,6 +3514,7 @@ target_link_libraries(grpc++_test_config
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+if (gRPC_BUILD_CODEGEN)
 add_library(grpc++_test_util
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.grpc.pb.cc
@@ -3648,10 +3683,12 @@ foreach(_hdr
     DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
   )
 endforeach()
+endif (gRPC_BUILD_CODEGEN)
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+if (gRPC_BUILD_CODEGEN)
 add_library(grpc++_test_util_unsecure
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.grpc.pb.cc
@@ -3818,6 +3855,7 @@ foreach(_hdr
     DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
   )
 endforeach()
+endif (gRPC_BUILD_CODEGEN)
 
 endif (gRPC_BUILD_TESTS)
 
@@ -4160,6 +4198,7 @@ target_link_libraries(grpc_benchmark
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+if (gRPC_BUILD_CODEGEN)
 add_library(grpc_cli_libs
   test/cpp/util/cli_call.cc
   test/cpp/util/cli_credentials.cc
@@ -4221,6 +4260,7 @@ foreach(_hdr
     DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
   )
 endforeach()
+endif (gRPC_BUILD_CODEGEN)
 
 endif (gRPC_BUILD_TESTS)
 
@@ -4286,6 +4326,7 @@ endif()
 
 if (gRPC_BUILD_TESTS)
 
+if (gRPC_BUILD_CODEGEN)
 add_library(http2_client_main
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.cc
@@ -4349,10 +4390,12 @@ target_link_libraries(http2_client_main
   grpc++_test_config
 )
 
+endif (gRPC_BUILD_CODEGEN)
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+if (gRPC_BUILD_CODEGEN)
 add_library(interop_client_helper
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.cc
@@ -4402,10 +4445,12 @@ target_link_libraries(interop_client_helper
   gpr
 )
 
+endif (gRPC_BUILD_CODEGEN)
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+if (gRPC_BUILD_CODEGEN)
 add_library(interop_client_main
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.cc
@@ -4473,6 +4518,7 @@ target_link_libraries(interop_client_main
   grpc++_test_config
 )
 
+endif (gRPC_BUILD_CODEGEN)
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -4523,6 +4569,7 @@ target_link_libraries(interop_server_helper
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+if (gRPC_BUILD_CODEGEN)
 add_library(interop_server_lib
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.cc
@@ -4589,6 +4636,7 @@ target_link_libraries(interop_server_lib
   grpc++_test_config
 )
 
+endif (gRPC_BUILD_CODEGEN)
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -4635,6 +4683,7 @@ target_link_libraries(interop_server_main
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+if (gRPC_BUILD_CODEGEN)
 add_library(qps
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.cc
@@ -4721,6 +4770,7 @@ target_link_libraries(qps
   grpc
 )
 
+endif (gRPC_BUILD_CODEGEN)
 
 endif (gRPC_BUILD_TESTS)
 
@@ -4895,6 +4945,21 @@ add_library(end2end_tests
   test/core/end2end/tests/request_with_flags.cc
   test/core/end2end/tests/request_with_payload.cc
   test/core/end2end/tests/resource_quota_server.cc
+  test/core/end2end/tests/retry.cc
+  test/core/end2end/tests/retry_cancellation.cc
+  test/core/end2end/tests/retry_disabled.cc
+  test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
+  test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
+  test/core/end2end/tests/retry_non_retriable_status.cc
+  test/core/end2end/tests/retry_recv_initial_metadata.cc
+  test/core/end2end/tests/retry_recv_message.cc
+  test/core/end2end/tests/retry_server_pushback_delay.cc
+  test/core/end2end/tests/retry_server_pushback_disabled.cc
+  test/core/end2end/tests/retry_streaming.cc
+  test/core/end2end/tests/retry_streaming_after_commit.cc
+  test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
+  test/core/end2end/tests/retry_throttled.cc
+  test/core/end2end/tests/retry_too_many_attempts.cc
   test/core/end2end/tests/server_finishes_request.cc
   test/core/end2end/tests/shutdown_finishes_calls.cc
   test/core/end2end/tests/shutdown_finishes_tags.cc
@@ -4995,6 +5060,21 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/request_with_flags.cc
   test/core/end2end/tests/request_with_payload.cc
   test/core/end2end/tests/resource_quota_server.cc
+  test/core/end2end/tests/retry.cc
+  test/core/end2end/tests/retry_cancellation.cc
+  test/core/end2end/tests/retry_disabled.cc
+  test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
+  test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
+  test/core/end2end/tests/retry_non_retriable_status.cc
+  test/core/end2end/tests/retry_recv_initial_metadata.cc
+  test/core/end2end/tests/retry_recv_message.cc
+  test/core/end2end/tests/retry_server_pushback_delay.cc
+  test/core/end2end/tests/retry_server_pushback_disabled.cc
+  test/core/end2end/tests/retry_streaming.cc
+  test/core/end2end/tests/retry_streaming_after_commit.cc
+  test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
+  test/core/end2end/tests/retry_throttled.cc
+  test/core/end2end/tests/retry_too_many_attempts.cc
   test/core/end2end/tests/server_finishes_request.cc
   test/core/end2end/tests/shutdown_finishes_calls.cc
   test/core/end2end/tests/shutdown_finishes_tags.cc
@@ -6231,7 +6311,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(gpr_thd_test
-  test/core/gpr/thd_test.cc
+  test/core/gprpp/thd_test.cc
 )
 
 
@@ -10247,6 +10327,7 @@ target_link_libraries(grpc_cli
 )
 
 endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_CODEGEN)
 
 add_executable(grpc_cpp_plugin
   src/compiler/cpp_plugin.cc
@@ -10281,10 +10362,14 @@ if (gRPC_INSTALL)
   )
 endif()
 
+endif (gRPC_BUILD_CODEGEN)
+
 # CSharp do not compiled with dynamic libprotoc library.
 # Remove this if..endif when libprotoc updated to new version.
 # In new libprotoc version its fixed.
 if (NOT gRPC_BUILD_SHARED)
+
+if (gRPC_BUILD_CODEGEN)
 
 add_executable(grpc_csharp_plugin
   src/compiler/csharp_plugin.cc
@@ -10319,7 +10404,12 @@ if (gRPC_INSTALL)
   )
 endif()
 
+
+endif (gRPC_BUILD_CODEGEN)
+
 endif (NOT gRPC_BUILD_SHARED)
+
+if (gRPC_BUILD_CODEGEN)
 
 add_executable(grpc_node_plugin
   src/compiler/node_plugin.cc
@@ -10354,6 +10444,8 @@ if (gRPC_INSTALL)
   )
 endif()
 
+endif (gRPC_BUILD_CODEGEN)
+if (gRPC_BUILD_CODEGEN)
 
 add_executable(grpc_objective_c_plugin
   src/compiler/objective_c_plugin.cc
@@ -10388,10 +10480,14 @@ if (gRPC_INSTALL)
   )
 endif()
 
+endif (gRPC_BUILD_CODEGEN)
+
 # PHP plugin do not compiled with dynamic libprotoc library.
 # Remove this if..endif when libprotoc updated to new version.
 # In new libprotoc version its fixed.
 if (NOT gRPC_BUILD_SHARED)
+
+if (gRPC_BUILD_CODEGEN)
 
 add_executable(grpc_php_plugin
   src/compiler/php_plugin.cc
@@ -10426,7 +10522,11 @@ if (gRPC_INSTALL)
   )
 endif()
 
+endif (gRPC_BUILD_CODEGEN)
+
 endif (NOT gRPC_BUILD_SHARED)
+
+if (gRPC_BUILD_CODEGEN)
 
 add_executable(grpc_python_plugin
   src/compiler/python_plugin.cc
@@ -10461,6 +10561,8 @@ if (gRPC_INSTALL)
   )
 endif()
 
+endif (gRPC_BUILD_CODEGEN)
+if (gRPC_BUILD_CODEGEN)
 
 add_executable(grpc_ruby_plugin
   src/compiler/ruby_plugin.cc
@@ -10495,6 +10597,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
+endif (gRPC_BUILD_CODEGEN)
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_tool_test
@@ -12150,6 +12253,42 @@ target_link_libraries(slice_hash_table_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(slice_weak_hash_table_test
+  test/core/slice/slice_weak_hash_table_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(slice_weak_hash_table_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(slice_weak_hash_table_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(stats_test
   test/core/debug/stats_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -12187,6 +12326,39 @@ target_link_libraries(stats_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(status_metadata_test
+  test/core/transport/status_metadata_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(status_metadata_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(status_metadata_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(status_test
   test/cpp/util/status_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -12218,6 +12390,39 @@ target_link_libraries(status_test
   grpc
   gpr_test_util
   gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(status_util_test
+  test/core/client_channel/status_util_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(status_util_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(status_util_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
