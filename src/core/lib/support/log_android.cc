@@ -63,7 +63,9 @@ extern "C" void gpr_default_log(gpr_log_func_args* args) {
 
   asprintf(&output, "%s:%d] %s", display_file, args->line, args->message);
 
-  __android_log_write(severity_to_log_priority(args->severity), "GRPC", output);
+  // Do not write to Android b/c of compiler error in Unity
+  // The rewritten GRPC core native log redirector does not need this anyways.
+  // __android_log_write(severity_to_log_priority(args->severity), "GRPC", output);
 
   /* allocated by asprintf => use free, not gpr_free */
   free(output);

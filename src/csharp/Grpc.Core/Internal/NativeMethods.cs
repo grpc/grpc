@@ -20,12 +20,15 @@ using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
 
 using Grpc.Core.Logging;
 using Grpc.Core.Utils;
+using Omni.Logging;
+using Omni.Utils;
 
 namespace Grpc.Core.Internal
 {
@@ -156,120 +159,495 @@ namespace Grpc.Core.Internal
 
         #endregion
 
-        public NativeMethods(UnmanagedLibrary library)
-        {
-            this.grpcsharp_init = GetMethodDelegate<Delegates.grpcsharp_init_delegate>(library);
-            this.grpcsharp_shutdown = GetMethodDelegate<Delegates.grpcsharp_shutdown_delegate>(library);
-            this.grpcsharp_version_string = GetMethodDelegate<Delegates.grpcsharp_version_string_delegate>(library);
+        public NativeMethods(UnmanagedLibrary library) {
+            this.grpcsharp_init = GetMethod<Delegates.grpcsharp_init_delegate>(
+              LibBridgeExt.grpcsharp_init,
+              LibBridgeInternal.grpcsharp_init,
+              library
+            );
+            this.grpcsharp_shutdown = GetMethod<Delegates.grpcsharp_shutdown_delegate>(
+              LibBridgeExt.grpcsharp_shutdown,
+              LibBridgeInternal.grpcsharp_shutdown,
+              library
+            );
+            this.grpcsharp_version_string = GetMethod<Delegates.grpcsharp_version_string_delegate>(
+              LibBridgeExt.grpcsharp_version_string,
+              LibBridgeInternal.grpcsharp_version_string,
+              library
+            );
 
-            this.grpcsharp_batch_context_create = GetMethodDelegate<Delegates.grpcsharp_batch_context_create_delegate>(library);
-            this.grpcsharp_batch_context_recv_initial_metadata = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_initial_metadata_delegate>(library);
-            this.grpcsharp_batch_context_recv_message_length = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_message_length_delegate>(library);
-            this.grpcsharp_batch_context_recv_message_to_buffer = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_message_to_buffer_delegate>(library);
-            this.grpcsharp_batch_context_recv_status_on_client_status = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_status_on_client_status_delegate>(library);
-            this.grpcsharp_batch_context_recv_status_on_client_details = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_status_on_client_details_delegate>(library);
-            this.grpcsharp_batch_context_recv_status_on_client_trailing_metadata = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_status_on_client_trailing_metadata_delegate>(library);
-            this.grpcsharp_batch_context_recv_close_on_server_cancelled = GetMethodDelegate<Delegates.grpcsharp_batch_context_recv_close_on_server_cancelled_delegate>(library);
-            this.grpcsharp_batch_context_reset = GetMethodDelegate<Delegates.grpcsharp_batch_context_reset_delegate>(library);
-            this.grpcsharp_batch_context_destroy = GetMethodDelegate<Delegates.grpcsharp_batch_context_destroy_delegate>(library);
+            this.grpcsharp_batch_context_create = GetMethod<Delegates.grpcsharp_batch_context_create_delegate>(
+              LibBridgeExt.grpcsharp_batch_context_create,
+              LibBridgeInternal.grpcsharp_batch_context_create,
+              library
+            );
+            this.grpcsharp_batch_context_recv_initial_metadata = GetMethod<Delegates.grpcsharp_batch_context_recv_initial_metadata_delegate>(
+              LibBridgeExt.grpcsharp_batch_context_recv_initial_metadata,
+              LibBridgeInternal.grpcsharp_batch_context_recv_initial_metadata,
+              library
+            );
+            this.grpcsharp_batch_context_recv_message_length = GetMethod<Delegates.grpcsharp_batch_context_recv_message_length_delegate>(
+              LibBridgeExt.grpcsharp_batch_context_recv_message_length,
+              LibBridgeInternal.grpcsharp_batch_context_recv_message_length,
+              library
+            );
+            this.grpcsharp_batch_context_recv_message_to_buffer = GetMethod<Delegates.grpcsharp_batch_context_recv_message_to_buffer_delegate>(
+              LibBridgeExt.grpcsharp_batch_context_recv_message_to_buffer,
+              LibBridgeInternal.grpcsharp_batch_context_recv_message_to_buffer,
+              library
+            );
+            this.grpcsharp_batch_context_recv_status_on_client_status = GetMethod<Delegates.grpcsharp_batch_context_recv_status_on_client_status_delegate>(
+              LibBridgeExt.grpcsharp_batch_context_recv_status_on_client_status,
+              LibBridgeInternal.grpcsharp_batch_context_recv_status_on_client_status,
+              library
+            );
+            this.grpcsharp_batch_context_recv_status_on_client_details = GetMethod<Delegates.grpcsharp_batch_context_recv_status_on_client_details_delegate>(
+              LibBridgeExt.grpcsharp_batch_context_recv_status_on_client_details,
+              LibBridgeInternal.grpcsharp_batch_context_recv_status_on_client_details,
+              library
+            );
+            this.grpcsharp_batch_context_recv_status_on_client_trailing_metadata = GetMethod<Delegates.grpcsharp_batch_context_recv_status_on_client_trailing_metadata_delegate>(
+              LibBridgeExt.grpcsharp_batch_context_recv_status_on_client_trailing_metadata,
+              LibBridgeInternal.grpcsharp_batch_context_recv_status_on_client_trailing_metadata,
+              library
+            );
+            this.grpcsharp_batch_context_recv_close_on_server_cancelled = GetMethod<Delegates.grpcsharp_batch_context_recv_close_on_server_cancelled_delegate>(
+              LibBridgeExt.grpcsharp_batch_context_recv_close_on_server_cancelled,
+              LibBridgeInternal.grpcsharp_batch_context_recv_close_on_server_cancelled,
+              library
+            );
+            this.grpcsharp_batch_context_reset = GetMethod<Delegates.grpcsharp_batch_context_reset_delegate>(
+              LibBridgeExt.grpcsharp_batch_context_reset,
+              LibBridgeInternal.grpcsharp_batch_context_reset,
+              library
+            );
+            this.grpcsharp_batch_context_destroy = GetMethod<Delegates.grpcsharp_batch_context_destroy_delegate>(
+              LibBridgeExt.grpcsharp_batch_context_destroy,
+              LibBridgeInternal.grpcsharp_batch_context_destroy,
+              library
+            );
 
-            this.grpcsharp_request_call_context_create = GetMethodDelegate<Delegates.grpcsharp_request_call_context_create_delegate>(library);
-            this.grpcsharp_request_call_context_call = GetMethodDelegate<Delegates.grpcsharp_request_call_context_call_delegate>(library);
-            this.grpcsharp_request_call_context_method = GetMethodDelegate<Delegates.grpcsharp_request_call_context_method_delegate>(library);
-            this.grpcsharp_request_call_context_host = GetMethodDelegate<Delegates.grpcsharp_request_call_context_host_delegate>(library);
-            this.grpcsharp_request_call_context_deadline = GetMethodDelegate<Delegates.grpcsharp_request_call_context_deadline_delegate>(library);
-            this.grpcsharp_request_call_context_request_metadata = GetMethodDelegate<Delegates.grpcsharp_request_call_context_request_metadata_delegate>(library);
-            this.grpcsharp_request_call_context_destroy = GetMethodDelegate<Delegates.grpcsharp_request_call_context_destroy_delegate>(library);
+            this.grpcsharp_request_call_context_create = GetMethod<Delegates.grpcsharp_request_call_context_create_delegate>(
+              LibBridgeExt.grpcsharp_request_call_context_create,
+              LibBridgeInternal.grpcsharp_request_call_context_create,
+              library
+            );
+            this.grpcsharp_request_call_context_call = GetMethod<Delegates.grpcsharp_request_call_context_call_delegate>(
+              LibBridgeExt.grpcsharp_request_call_context_call,
+              LibBridgeInternal.grpcsharp_request_call_context_call,
+              library
+            );
+            this.grpcsharp_request_call_context_method = GetMethod<Delegates.grpcsharp_request_call_context_method_delegate>(
+              LibBridgeExt.grpcsharp_request_call_context_method,
+              LibBridgeInternal.grpcsharp_request_call_context_method,
+              library
+            );
+            this.grpcsharp_request_call_context_host = GetMethod<Delegates.grpcsharp_request_call_context_host_delegate>(
+              LibBridgeExt.grpcsharp_request_call_context_host,
+              LibBridgeInternal.grpcsharp_request_call_context_host,
+              library
+            );
+            this.grpcsharp_request_call_context_deadline = GetMethod<Delegates.grpcsharp_request_call_context_deadline_delegate>(
+              LibBridgeExt.grpcsharp_request_call_context_deadline,
+              LibBridgeInternal.grpcsharp_request_call_context_deadline,
+              library
+            );
+            this.grpcsharp_request_call_context_request_metadata = GetMethod<Delegates.grpcsharp_request_call_context_request_metadata_delegate>(
+              LibBridgeExt.grpcsharp_request_call_context_request_metadata,
+              LibBridgeInternal.grpcsharp_request_call_context_request_metadata,
+              library
+            );
+            this.grpcsharp_request_call_context_destroy = GetMethod<Delegates.grpcsharp_request_call_context_destroy_delegate>(
+              LibBridgeExt.grpcsharp_request_call_context_destroy,
+              LibBridgeInternal.grpcsharp_request_call_context_destroy,
+              library
+            );
 
-            this.grpcsharp_composite_call_credentials_create = GetMethodDelegate<Delegates.grpcsharp_composite_call_credentials_create_delegate>(library);
-            this.grpcsharp_call_credentials_release = GetMethodDelegate<Delegates.grpcsharp_call_credentials_release_delegate>(library);
+            this.grpcsharp_composite_call_credentials_create = GetMethod<Delegates.grpcsharp_composite_call_credentials_create_delegate>(
+              LibBridgeExt.grpcsharp_composite_call_credentials_create,
+              LibBridgeInternal.grpcsharp_composite_call_credentials_create,
+              library
+            );
+            this.grpcsharp_call_credentials_release = GetMethod<Delegates.grpcsharp_call_credentials_release_delegate>(
+              LibBridgeExt.grpcsharp_call_credentials_release,
+              LibBridgeInternal.grpcsharp_call_credentials_release,
+              library
+            );
 
-            this.grpcsharp_call_cancel = GetMethodDelegate<Delegates.grpcsharp_call_cancel_delegate>(library);
-            this.grpcsharp_call_cancel_with_status = GetMethodDelegate<Delegates.grpcsharp_call_cancel_with_status_delegate>(library);
-            this.grpcsharp_call_start_unary = GetMethodDelegate<Delegates.grpcsharp_call_start_unary_delegate>(library);
-            this.grpcsharp_call_start_client_streaming = GetMethodDelegate<Delegates.grpcsharp_call_start_client_streaming_delegate>(library);
-            this.grpcsharp_call_start_server_streaming = GetMethodDelegate<Delegates.grpcsharp_call_start_server_streaming_delegate>(library);
-            this.grpcsharp_call_start_duplex_streaming = GetMethodDelegate<Delegates.grpcsharp_call_start_duplex_streaming_delegate>(library);
-            this.grpcsharp_call_send_message = GetMethodDelegate<Delegates.grpcsharp_call_send_message_delegate>(library);
-            this.grpcsharp_call_send_close_from_client = GetMethodDelegate<Delegates.grpcsharp_call_send_close_from_client_delegate>(library);
-            this.grpcsharp_call_send_status_from_server = GetMethodDelegate<Delegates.grpcsharp_call_send_status_from_server_delegate>(library);
-            this.grpcsharp_call_recv_message = GetMethodDelegate<Delegates.grpcsharp_call_recv_message_delegate>(library);
-            this.grpcsharp_call_recv_initial_metadata = GetMethodDelegate<Delegates.grpcsharp_call_recv_initial_metadata_delegate>(library);
-            this.grpcsharp_call_start_serverside = GetMethodDelegate<Delegates.grpcsharp_call_start_serverside_delegate>(library);
-            this.grpcsharp_call_send_initial_metadata = GetMethodDelegate<Delegates.grpcsharp_call_send_initial_metadata_delegate>(library);
-            this.grpcsharp_call_set_credentials = GetMethodDelegate<Delegates.grpcsharp_call_set_credentials_delegate>(library);
-            this.grpcsharp_call_get_peer = GetMethodDelegate<Delegates.grpcsharp_call_get_peer_delegate>(library);
-            this.grpcsharp_call_destroy = GetMethodDelegate<Delegates.grpcsharp_call_destroy_delegate>(library);
+            this.grpcsharp_call_cancel = GetMethod<Delegates.grpcsharp_call_cancel_delegate>(
+              LibBridgeExt.grpcsharp_call_cancel,
+              LibBridgeInternal.grpcsharp_call_cancel,
+              library
+            );
+            this.grpcsharp_call_cancel_with_status = GetMethod<Delegates.grpcsharp_call_cancel_with_status_delegate>(
+              LibBridgeExt.grpcsharp_call_cancel_with_status,
+              LibBridgeInternal.grpcsharp_call_cancel_with_status,
+              library
+            );
+            this.grpcsharp_call_start_unary = GetMethod<Delegates.grpcsharp_call_start_unary_delegate>(
+              LibBridgeExt.grpcsharp_call_start_unary,
+              LibBridgeInternal.grpcsharp_call_start_unary,
+              library
+            );
+            this.grpcsharp_call_start_client_streaming = GetMethod<Delegates.grpcsharp_call_start_client_streaming_delegate>(
+              LibBridgeExt.grpcsharp_call_start_client_streaming,
+              LibBridgeInternal.grpcsharp_call_start_client_streaming,
+              library
+            );
+            this.grpcsharp_call_start_server_streaming = GetMethod<Delegates.grpcsharp_call_start_server_streaming_delegate>(
+              LibBridgeExt.grpcsharp_call_start_server_streaming,
+              LibBridgeInternal.grpcsharp_call_start_server_streaming,
+              library
+            );
+            this.grpcsharp_call_start_duplex_streaming = GetMethod<Delegates.grpcsharp_call_start_duplex_streaming_delegate>(
+              LibBridgeExt.grpcsharp_call_start_duplex_streaming,
+              LibBridgeInternal.grpcsharp_call_start_duplex_streaming,
+              library
+            );
+            this.grpcsharp_call_send_message = GetMethod<Delegates.grpcsharp_call_send_message_delegate>(
+              LibBridgeExt.grpcsharp_call_send_message,
+              LibBridgeInternal.grpcsharp_call_send_message,
+              library
+            );
+            this.grpcsharp_call_send_close_from_client = GetMethod<Delegates.grpcsharp_call_send_close_from_client_delegate>(
+              LibBridgeExt.grpcsharp_call_send_close_from_client,
+              LibBridgeInternal.grpcsharp_call_send_close_from_client,
+              library
+            );
+            this.grpcsharp_call_send_status_from_server = GetMethod<Delegates.grpcsharp_call_send_status_from_server_delegate>(
+              LibBridgeExt.grpcsharp_call_send_status_from_server,
+              LibBridgeInternal.grpcsharp_call_send_status_from_server,
+              library
+            );
+            this.grpcsharp_call_recv_message = GetMethod<Delegates.grpcsharp_call_recv_message_delegate>(
+              LibBridgeExt.grpcsharp_call_recv_message,
+              LibBridgeInternal.grpcsharp_call_recv_message,
+              library
+            );
+            this.grpcsharp_call_recv_initial_metadata = GetMethod<Delegates.grpcsharp_call_recv_initial_metadata_delegate>(
+              LibBridgeExt.grpcsharp_call_recv_initial_metadata,
+              LibBridgeInternal.grpcsharp_call_recv_initial_metadata,
+              library
+            );
+            this.grpcsharp_call_start_serverside = GetMethod<Delegates.grpcsharp_call_start_serverside_delegate>(
+              LibBridgeExt.grpcsharp_call_start_serverside,
+              LibBridgeInternal.grpcsharp_call_start_serverside,
+              library
+            );
+            this.grpcsharp_call_send_initial_metadata = GetMethod<Delegates.grpcsharp_call_send_initial_metadata_delegate>(
+              LibBridgeExt.grpcsharp_call_send_initial_metadata,
+              LibBridgeInternal.grpcsharp_call_send_initial_metadata,
+              library
+            );
+            this.grpcsharp_call_set_credentials = GetMethod<Delegates.grpcsharp_call_set_credentials_delegate>(
+              LibBridgeExt.grpcsharp_call_set_credentials,
+              LibBridgeInternal.grpcsharp_call_set_credentials,
+              library
+            );
+            this.grpcsharp_call_get_peer = GetMethod<Delegates.grpcsharp_call_get_peer_delegate>(
+              LibBridgeExt.grpcsharp_call_get_peer,
+              LibBridgeInternal.grpcsharp_call_get_peer,
+              library
+            );
+            this.grpcsharp_call_destroy = GetMethod<Delegates.grpcsharp_call_destroy_delegate>(
+              LibBridgeExt.grpcsharp_call_destroy,
+              LibBridgeInternal.grpcsharp_call_destroy,
+              library
+            );
 
-            this.grpcsharp_channel_args_create = GetMethodDelegate<Delegates.grpcsharp_channel_args_create_delegate>(library);
-            this.grpcsharp_channel_args_set_string = GetMethodDelegate<Delegates.grpcsharp_channel_args_set_string_delegate>(library);
-            this.grpcsharp_channel_args_set_integer = GetMethodDelegate<Delegates.grpcsharp_channel_args_set_integer_delegate>(library);
-            this.grpcsharp_channel_args_destroy = GetMethodDelegate<Delegates.grpcsharp_channel_args_destroy_delegate>(library);
+            this.grpcsharp_channel_args_create = GetMethod<Delegates.grpcsharp_channel_args_create_delegate>(
+              LibBridgeExt.grpcsharp_channel_args_create,
+              LibBridgeInternal.grpcsharp_channel_args_create,
+              library
+            );
+            this.grpcsharp_channel_args_set_string = GetMethod<Delegates.grpcsharp_channel_args_set_string_delegate>(
+              LibBridgeExt.grpcsharp_channel_args_set_string,
+              LibBridgeInternal.grpcsharp_channel_args_set_string,
+              library
+            );
+            this.grpcsharp_channel_args_set_integer = GetMethod<Delegates.grpcsharp_channel_args_set_integer_delegate>(
+              LibBridgeExt.grpcsharp_channel_args_set_integer,
+              LibBridgeInternal.grpcsharp_channel_args_set_integer,
+              library
+            );
+            this.grpcsharp_channel_args_destroy = GetMethod<Delegates.grpcsharp_channel_args_destroy_delegate>(
+              LibBridgeExt.grpcsharp_channel_args_destroy,
+              LibBridgeInternal.grpcsharp_channel_args_destroy,
+              library
+            );
 
-            this.grpcsharp_override_default_ssl_roots = GetMethodDelegate<Delegates.grpcsharp_override_default_ssl_roots>(library);
-            this.grpcsharp_ssl_credentials_create = GetMethodDelegate<Delegates.grpcsharp_ssl_credentials_create_delegate>(library);
-            this.grpcsharp_composite_channel_credentials_create = GetMethodDelegate<Delegates.grpcsharp_composite_channel_credentials_create_delegate>(library);
-            this.grpcsharp_channel_credentials_release = GetMethodDelegate<Delegates.grpcsharp_channel_credentials_release_delegate>(library);
+            this.grpcsharp_override_default_ssl_roots = GetMethod<Delegates.grpcsharp_override_default_ssl_roots>(
+              LibBridgeExt.grpcsharp_override_default_ssl_roots,
+              LibBridgeInternal.grpcsharp_override_default_ssl_roots,
+              library
+            );
+            this.grpcsharp_ssl_credentials_create = GetMethod<Delegates.grpcsharp_ssl_credentials_create_delegate>(
+              LibBridgeExt.grpcsharp_ssl_credentials_create,
+              LibBridgeInternal.grpcsharp_ssl_credentials_create,
+              library
+            );
+            this.grpcsharp_composite_channel_credentials_create = GetMethod<Delegates.grpcsharp_composite_channel_credentials_create_delegate>(
+              LibBridgeExt.grpcsharp_composite_channel_credentials_create,
+              LibBridgeInternal.grpcsharp_composite_channel_credentials_create,
+              library
+            );
+            this.grpcsharp_channel_credentials_release = GetMethod<Delegates.grpcsharp_channel_credentials_release_delegate>(
+              LibBridgeExt.grpcsharp_channel_credentials_release,
+              LibBridgeInternal.grpcsharp_channel_credentials_release,
+              library
+            );
 
-            this.grpcsharp_insecure_channel_create = GetMethodDelegate<Delegates.grpcsharp_insecure_channel_create_delegate>(library);
-            this.grpcsharp_secure_channel_create = GetMethodDelegate<Delegates.grpcsharp_secure_channel_create_delegate>(library);
-            this.grpcsharp_channel_create_call = GetMethodDelegate<Delegates.grpcsharp_channel_create_call_delegate>(library);
-            this.grpcsharp_channel_check_connectivity_state = GetMethodDelegate<Delegates.grpcsharp_channel_check_connectivity_state_delegate>(library);
-            this.grpcsharp_channel_watch_connectivity_state = GetMethodDelegate<Delegates.grpcsharp_channel_watch_connectivity_state_delegate>(library);
-            this.grpcsharp_channel_get_target = GetMethodDelegate<Delegates.grpcsharp_channel_get_target_delegate>(library);
-            this.grpcsharp_channel_destroy = GetMethodDelegate<Delegates.grpcsharp_channel_destroy_delegate>(library);
+            this.grpcsharp_insecure_channel_create = GetMethod<Delegates.grpcsharp_insecure_channel_create_delegate>(
+              LibBridgeExt.grpcsharp_insecure_channel_create,
+              LibBridgeInternal.grpcsharp_insecure_channel_create,
+              library
+            );
+            this.grpcsharp_secure_channel_create = GetMethod<Delegates.grpcsharp_secure_channel_create_delegate>(
+              LibBridgeExt.grpcsharp_secure_channel_create,
+              LibBridgeInternal.grpcsharp_secure_channel_create,
+              library
+            );
+            this.grpcsharp_channel_create_call = GetMethod<Delegates.grpcsharp_channel_create_call_delegate>(
+              LibBridgeExt.grpcsharp_channel_create_call,
+              LibBridgeInternal.grpcsharp_channel_create_call,
+              library
+            );
+            this.grpcsharp_channel_check_connectivity_state = GetMethod<Delegates.grpcsharp_channel_check_connectivity_state_delegate>(
+              LibBridgeExt.grpcsharp_channel_check_connectivity_state,
+              LibBridgeInternal.grpcsharp_channel_check_connectivity_state,
+              library
+            );
+            this.grpcsharp_channel_watch_connectivity_state = GetMethod<Delegates.grpcsharp_channel_watch_connectivity_state_delegate>(
+              LibBridgeExt.grpcsharp_channel_watch_connectivity_state,
+              LibBridgeInternal.grpcsharp_channel_watch_connectivity_state,
+              library
+            );
+            this.grpcsharp_channel_get_target = GetMethod<Delegates.grpcsharp_channel_get_target_delegate>(
+              LibBridgeExt.grpcsharp_channel_get_target,
+              LibBridgeInternal.grpcsharp_channel_get_target,
+              library
+            );
+            this.grpcsharp_channel_destroy = GetMethod<Delegates.grpcsharp_channel_destroy_delegate>(
+              LibBridgeExt.grpcsharp_channel_destroy,
+              LibBridgeInternal.grpcsharp_channel_destroy,
+              library
+            );
 
-            this.grpcsharp_sizeof_grpc_event = GetMethodDelegate<Delegates.grpcsharp_sizeof_grpc_event_delegate>(library);
+            this.grpcsharp_sizeof_grpc_event = GetMethod<Delegates.grpcsharp_sizeof_grpc_event_delegate>(
+              LibBridgeExt.grpcsharp_sizeof_grpc_event,
+              LibBridgeInternal.grpcsharp_sizeof_grpc_event,
+              library
+            );
 
-            this.grpcsharp_completion_queue_create_async = GetMethodDelegate<Delegates.grpcsharp_completion_queue_create_async_delegate>(library);
-            this.grpcsharp_completion_queue_create_sync = GetMethodDelegate<Delegates.grpcsharp_completion_queue_create_sync_delegate>(library);
-            this.grpcsharp_completion_queue_shutdown = GetMethodDelegate<Delegates.grpcsharp_completion_queue_shutdown_delegate>(library);
-            this.grpcsharp_completion_queue_next = GetMethodDelegate<Delegates.grpcsharp_completion_queue_next_delegate>(library);
-            this.grpcsharp_completion_queue_pluck = GetMethodDelegate<Delegates.grpcsharp_completion_queue_pluck_delegate>(library);
-            this.grpcsharp_completion_queue_destroy = GetMethodDelegate<Delegates.grpcsharp_completion_queue_destroy_delegate>(library);
+            this.grpcsharp_completion_queue_create_async = GetMethod<Delegates.grpcsharp_completion_queue_create_async_delegate>(
+              LibBridgeExt.grpcsharp_completion_queue_create_async,
+              LibBridgeInternal.grpcsharp_completion_queue_create_async,
+              library
+            );
+            this.grpcsharp_completion_queue_create_sync = GetMethod<Delegates.grpcsharp_completion_queue_create_sync_delegate>(
+              LibBridgeExt.grpcsharp_completion_queue_create_sync,
+              LibBridgeInternal.grpcsharp_completion_queue_create_sync,
+              library
+            );
+            this.grpcsharp_completion_queue_shutdown = GetMethod<Delegates.grpcsharp_completion_queue_shutdown_delegate>(
+              LibBridgeExt.grpcsharp_completion_queue_shutdown,
+              LibBridgeInternal.grpcsharp_completion_queue_shutdown,
+              library
+            );
+            this.grpcsharp_completion_queue_next = GetMethod<Delegates.grpcsharp_completion_queue_next_delegate>(
+              LibBridgeExt.grpcsharp_completion_queue_next,
+              LibBridgeInternal.grpcsharp_completion_queue_next,
+              library
+            );
+            this.grpcsharp_completion_queue_pluck = GetMethod<Delegates.grpcsharp_completion_queue_pluck_delegate>(
+              LibBridgeExt.grpcsharp_completion_queue_pluck,
+              LibBridgeInternal.grpcsharp_completion_queue_pluck,
+              library
+            );
+            this.grpcsharp_completion_queue_destroy = GetMethod<Delegates.grpcsharp_completion_queue_destroy_delegate>(
+              LibBridgeExt.grpcsharp_completion_queue_destroy,
+              LibBridgeInternal.grpcsharp_completion_queue_destroy,
+              library
+            );
 
-            this.gprsharp_free = GetMethodDelegate<Delegates.gprsharp_free_delegate>(library);
+            this.gprsharp_free = GetMethod<Delegates.gprsharp_free_delegate>(
+              LibBridgeExt.gprsharp_free,
+              LibBridgeInternal.gprsharp_free,
+              library
+            );
 
-            this.grpcsharp_metadata_array_create = GetMethodDelegate<Delegates.grpcsharp_metadata_array_create_delegate>(library);
-            this.grpcsharp_metadata_array_add = GetMethodDelegate<Delegates.grpcsharp_metadata_array_add_delegate>(library);
-            this.grpcsharp_metadata_array_count = GetMethodDelegate<Delegates.grpcsharp_metadata_array_count_delegate>(library);
-            this.grpcsharp_metadata_array_get_key = GetMethodDelegate<Delegates.grpcsharp_metadata_array_get_key_delegate>(library);
-            this.grpcsharp_metadata_array_get_value = GetMethodDelegate<Delegates.grpcsharp_metadata_array_get_value_delegate>(library);
-            this.grpcsharp_metadata_array_destroy_full = GetMethodDelegate<Delegates.grpcsharp_metadata_array_destroy_full_delegate>(library);
+            this.grpcsharp_metadata_array_create = GetMethod<Delegates.grpcsharp_metadata_array_create_delegate>(
+              LibBridgeExt.grpcsharp_metadata_array_create,
+              LibBridgeInternal.grpcsharp_metadata_array_create,
+              library
+            );
+            this.grpcsharp_metadata_array_add = GetMethod<Delegates.grpcsharp_metadata_array_add_delegate>(
+              LibBridgeExt.grpcsharp_metadata_array_add,
+              LibBridgeInternal.grpcsharp_metadata_array_add,
+              library
+            );
+            this.grpcsharp_metadata_array_count = GetMethod<Delegates.grpcsharp_metadata_array_count_delegate>(
+              LibBridgeExt.grpcsharp_metadata_array_count,
+              LibBridgeInternal.grpcsharp_metadata_array_count,
+              library
+            );
+            this.grpcsharp_metadata_array_get_key = GetMethod<Delegates.grpcsharp_metadata_array_get_key_delegate>(
+              LibBridgeExt.grpcsharp_metadata_array_get_key,
+              LibBridgeInternal.grpcsharp_metadata_array_get_key,
+              library
+            );
+            this.grpcsharp_metadata_array_get_value = GetMethod<Delegates.grpcsharp_metadata_array_get_value_delegate>(
+              LibBridgeExt.grpcsharp_metadata_array_get_value,
+              LibBridgeInternal.grpcsharp_metadata_array_get_value,
+              library
+            );
+            this.grpcsharp_metadata_array_destroy_full = GetMethod<Delegates.grpcsharp_metadata_array_destroy_full_delegate>(
+              LibBridgeExt.grpcsharp_metadata_array_destroy_full,
+              LibBridgeInternal.grpcsharp_metadata_array_destroy_full,
+              library
+            );
 
-            this.grpcsharp_redirect_log = GetMethodDelegate<Delegates.grpcsharp_redirect_log_delegate>(library);
+            this.grpcsharp_redirect_log = GetMethod<Delegates.grpcsharp_redirect_log_delegate>(
+              LibBridgeExt.grpcsharp_redirect_log,
+              LibBridgeInternal.grpcsharp_redirect_log,
+              library
+            );
 
-            this.grpcsharp_metadata_credentials_create_from_plugin = GetMethodDelegate<Delegates.grpcsharp_metadata_credentials_create_from_plugin_delegate>(library);
-            this.grpcsharp_metadata_credentials_notify_from_plugin = GetMethodDelegate<Delegates.grpcsharp_metadata_credentials_notify_from_plugin_delegate>(library);
+            this.grpcsharp_metadata_credentials_create_from_plugin = GetMethod<Delegates.grpcsharp_metadata_credentials_create_from_plugin_delegate>(
+              LibBridgeExt.grpcsharp_metadata_credentials_create_from_plugin,
+              LibBridgeInternal.grpcsharp_metadata_credentials_create_from_plugin,
+              library
+            );
+            this.grpcsharp_metadata_credentials_notify_from_plugin = GetMethod<Delegates.grpcsharp_metadata_credentials_notify_from_plugin_delegate>(
+              LibBridgeExt.grpcsharp_metadata_credentials_notify_from_plugin,
+              LibBridgeInternal.grpcsharp_metadata_credentials_notify_from_plugin,
+              library
+            );
 
-            this.grpcsharp_ssl_server_credentials_create = GetMethodDelegate<Delegates.grpcsharp_ssl_server_credentials_create_delegate>(library);
-            this.grpcsharp_server_credentials_release = GetMethodDelegate<Delegates.grpcsharp_server_credentials_release_delegate>(library);
+            this.grpcsharp_ssl_server_credentials_create = GetMethod<Delegates.grpcsharp_ssl_server_credentials_create_delegate>(
+              LibBridgeExt.grpcsharp_ssl_server_credentials_create,
+              LibBridgeInternal.grpcsharp_ssl_server_credentials_create,
+              library
+            );
+            this.grpcsharp_server_credentials_release = GetMethod<Delegates.grpcsharp_server_credentials_release_delegate>(
+              LibBridgeExt.grpcsharp_server_credentials_release,
+              LibBridgeInternal.grpcsharp_server_credentials_release,
+              library
+            );
 
-            this.grpcsharp_server_create = GetMethodDelegate<Delegates.grpcsharp_server_create_delegate>(library);
-            this.grpcsharp_server_register_completion_queue = GetMethodDelegate<Delegates.grpcsharp_server_register_completion_queue_delegate>(library);
-            this.grpcsharp_server_add_insecure_http2_port = GetMethodDelegate<Delegates.grpcsharp_server_add_insecure_http2_port_delegate>(library);
-            this.grpcsharp_server_add_secure_http2_port = GetMethodDelegate<Delegates.grpcsharp_server_add_secure_http2_port_delegate>(library);
-            this.grpcsharp_server_start = GetMethodDelegate<Delegates.grpcsharp_server_start_delegate>(library);
-            this.grpcsharp_server_request_call = GetMethodDelegate<Delegates.grpcsharp_server_request_call_delegate>(library);
-            this.grpcsharp_server_cancel_all_calls = GetMethodDelegate<Delegates.grpcsharp_server_cancel_all_calls_delegate>(library);
-            this.grpcsharp_server_shutdown_and_notify_callback = GetMethodDelegate<Delegates.grpcsharp_server_shutdown_and_notify_callback_delegate>(library);
-            this.grpcsharp_server_destroy = GetMethodDelegate<Delegates.grpcsharp_server_destroy_delegate>(library);
+            this.grpcsharp_server_create = GetMethod<Delegates.grpcsharp_server_create_delegate>(
+              LibBridgeExt.grpcsharp_server_create,
+              LibBridgeInternal.grpcsharp_server_create,
+              library
+            );
+            this.grpcsharp_server_register_completion_queue = GetMethod<Delegates.grpcsharp_server_register_completion_queue_delegate>(
+              LibBridgeExt.grpcsharp_server_register_completion_queue,
+              LibBridgeInternal.grpcsharp_server_register_completion_queue,
+              library
+            );
+            this.grpcsharp_server_add_insecure_http2_port = GetMethod<Delegates.grpcsharp_server_add_insecure_http2_port_delegate>(
+              LibBridgeExt.grpcsharp_server_add_insecure_http2_port,
+              LibBridgeInternal.grpcsharp_server_add_insecure_http2_port,
+              library
+            );
+            this.grpcsharp_server_add_secure_http2_port = GetMethod<Delegates.grpcsharp_server_add_secure_http2_port_delegate>(
+              LibBridgeExt.grpcsharp_server_add_secure_http2_port,
+              LibBridgeInternal.grpcsharp_server_add_secure_http2_port,
+              library
+            );
+            this.grpcsharp_server_start = GetMethod<Delegates.grpcsharp_server_start_delegate>(
+              LibBridgeExt.grpcsharp_server_start,
+              LibBridgeInternal.grpcsharp_server_start,
+              library
+            );
+            this.grpcsharp_server_request_call = GetMethod<Delegates.grpcsharp_server_request_call_delegate>(
+              LibBridgeExt.grpcsharp_server_request_call,
+              LibBridgeInternal.grpcsharp_server_request_call,
+              library
+            );
+            this.grpcsharp_server_cancel_all_calls = GetMethod<Delegates.grpcsharp_server_cancel_all_calls_delegate>(
+              LibBridgeExt.grpcsharp_server_cancel_all_calls,
+              LibBridgeInternal.grpcsharp_server_cancel_all_calls,
+              library
+            );
+            this.grpcsharp_server_shutdown_and_notify_callback = GetMethod<Delegates.grpcsharp_server_shutdown_and_notify_callback_delegate>(
+              LibBridgeExt.grpcsharp_server_shutdown_and_notify_callback,
+              LibBridgeInternal.grpcsharp_server_shutdown_and_notify_callback,
+              library
+            );
+            this.grpcsharp_server_destroy = GetMethod<Delegates.grpcsharp_server_destroy_delegate>(
+              LibBridgeExt.grpcsharp_server_destroy,
+              LibBridgeInternal.grpcsharp_server_destroy,
+              library
+            );
 
-            this.grpcsharp_call_auth_context = GetMethodDelegate<Delegates.grpcsharp_call_auth_context_delegate>(library);
-            this.grpcsharp_auth_context_peer_identity_property_name = GetMethodDelegate<Delegates.grpcsharp_auth_context_peer_identity_property_name_delegate>(library);
-            this.grpcsharp_auth_context_property_iterator = GetMethodDelegate<Delegates.grpcsharp_auth_context_property_iterator_delegate>(library);
-            this.grpcsharp_auth_property_iterator_next = GetMethodDelegate<Delegates.grpcsharp_auth_property_iterator_next_delegate>(library);
-            this.grpcsharp_auth_context_release = GetMethodDelegate<Delegates.grpcsharp_auth_context_release_delegate>(library);
+            this.grpcsharp_call_auth_context = GetMethod<Delegates.grpcsharp_call_auth_context_delegate>(
+              LibBridgeExt.grpcsharp_call_auth_context,
+              LibBridgeInternal.grpcsharp_call_auth_context,
+              library
+            );
+            this.grpcsharp_auth_context_peer_identity_property_name = GetMethod<Delegates.grpcsharp_auth_context_peer_identity_property_name_delegate>(
+              LibBridgeExt.grpcsharp_auth_context_peer_identity_property_name,
+              LibBridgeInternal.grpcsharp_auth_context_peer_identity_property_name,
+              library
+            );
+            this.grpcsharp_auth_context_property_iterator = GetMethod<Delegates.grpcsharp_auth_context_property_iterator_delegate>(
+              LibBridgeExt.grpcsharp_auth_context_property_iterator,
+              LibBridgeInternal.grpcsharp_auth_context_property_iterator,
+              library
+            );
+            this.grpcsharp_auth_property_iterator_next = GetMethod<Delegates.grpcsharp_auth_property_iterator_next_delegate>(
+              LibBridgeExt.grpcsharp_auth_property_iterator_next,
+              LibBridgeInternal.grpcsharp_auth_property_iterator_next,
+              library
+            );
+            this.grpcsharp_auth_context_release = GetMethod<Delegates.grpcsharp_auth_context_release_delegate>(
+              LibBridgeExt.grpcsharp_auth_context_release,
+              LibBridgeInternal.grpcsharp_auth_context_release,
+              library
+            );
 
-            this.gprsharp_now = GetMethodDelegate<Delegates.gprsharp_now_delegate>(library);
-            this.gprsharp_inf_future = GetMethodDelegate<Delegates.gprsharp_inf_future_delegate>(library);
-            this.gprsharp_inf_past = GetMethodDelegate<Delegates.gprsharp_inf_past_delegate>(library);
-            this.gprsharp_convert_clock_type = GetMethodDelegate<Delegates.gprsharp_convert_clock_type_delegate>(library);
-            this.gprsharp_sizeof_timespec = GetMethodDelegate<Delegates.gprsharp_sizeof_timespec_delegate>(library);
+            this.gprsharp_now = GetMethod<Delegates.gprsharp_now_delegate>(
+              LibBridgeExt.gprsharp_now,
+              LibBridgeInternal.gprsharp_now,
+              library
+            );
+            this.gprsharp_inf_future = GetMethod<Delegates.gprsharp_inf_future_delegate>(
+              LibBridgeExt.gprsharp_inf_future,
+              LibBridgeInternal.gprsharp_inf_future,
+              library
+            );
+            this.gprsharp_inf_past = GetMethod<Delegates.gprsharp_inf_past_delegate>(
+              LibBridgeExt.gprsharp_inf_past,
+              LibBridgeInternal.gprsharp_inf_past,
+              library
+            );
+            this.gprsharp_convert_clock_type = GetMethod<Delegates.gprsharp_convert_clock_type_delegate>(
+              LibBridgeExt.gprsharp_convert_clock_type,
+              LibBridgeInternal.gprsharp_convert_clock_type,
+              library
+            );
+            this.gprsharp_sizeof_timespec = GetMethod<Delegates.gprsharp_sizeof_timespec_delegate>(
+              LibBridgeExt.gprsharp_sizeof_timespec,
+              LibBridgeInternal.gprsharp_sizeof_timespec,
+              library
+            );
 
-            this.grpcsharp_test_callback = GetMethodDelegate<Delegates.grpcsharp_test_callback_delegate>(library);
-            this.grpcsharp_test_nop = GetMethodDelegate<Delegates.grpcsharp_test_nop_delegate>(library);
-            this.grpcsharp_test_override_method = GetMethodDelegate<Delegates.grpcsharp_test_override_method_delegate>(library);
+            this.grpcsharp_test_callback = GetMethod<Delegates.grpcsharp_test_callback_delegate>(
+              LibBridgeExt.grpcsharp_test_callback,
+              LibBridgeInternal.grpcsharp_test_callback,
+              library
+            );
+            this.grpcsharp_test_nop = GetMethod<Delegates.grpcsharp_test_nop_delegate>(
+              LibBridgeExt.grpcsharp_test_nop,
+              LibBridgeInternal.grpcsharp_test_nop,
+              library
+            );
+            this.grpcsharp_test_override_method = GetMethod<Delegates.grpcsharp_test_override_method_delegate>(
+              LibBridgeExt.grpcsharp_test_override_method,
+              LibBridgeInternal.grpcsharp_test_override_method,
+              library
+            );
         }
 
         /// <summary>
@@ -280,9 +658,22 @@ namespace Grpc.Core.Internal
             return NativeExtension.Get().NativeMethods;
         }
 
+        /// <summary>
+        /// Instead of loading from the UnmanagedLibrary, if the flag is set,
+        /// </summary>
+        public static T GetMethod<T>(
+            T extMethod, T internalMethod, UnmanagedLibrary library
+        ) where T : class {
+            switch (LibBridge.type) {
+                case LibBridgeType.Ext: return extMethod;
+                case LibBridgeType.Internal: return internalMethod;
+                case LibBridgeType.UnmanagedLibrary: return GetMethodDelegate<T>(library);
+                default: return GetMethodDelegate<T>(library);
+            }
+        }
+
         static T GetMethodDelegate<T>(UnmanagedLibrary library)
-            where T : class
-        {
+            where T : class {
             var methodName = RemoveStringSuffix(typeof(T).Name, "_delegate");
             return library.GetNativeMethodDelegate<T>(methodName);
         }

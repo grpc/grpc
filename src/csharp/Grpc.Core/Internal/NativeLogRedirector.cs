@@ -22,6 +22,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Omni.Logging;
 
 namespace Grpc.Core.Internal
 {
@@ -51,38 +52,41 @@ namespace Grpc.Core.Internal
             }
         }
 
+        [AOT.MonoPInvokeCallback(typeof(GprLogDelegate))]
         private static void HandleWrite(IntPtr fileStringPtr, int line, ulong threadId, IntPtr severityStringPtr, IntPtr msgPtr)
         {
             try
             {
-                var logger = GrpcEnvironment.Logger;
+                /* var logger = GrpcEnvironment.Logger;*/
                 string severityString = Marshal.PtrToStringAnsi(severityStringPtr);
                 string message = string.Format("{0} {1}:{2}: {3}",
                     threadId,
-                    Marshal.PtrToStringAnsi(fileStringPtr), 
-                    line, 
+                    Marshal.PtrToStringAnsi(fileStringPtr),
+                    line,
                     Marshal.PtrToStringAnsi(msgPtr));
-                
+
                 switch (severityString)
                 {
                     case "D":
-                        logger.Debug(message);
+                        // logger.Debug(message);
+                        Logz.LogDebug(message, "GRPC");
                         break;
                     case "I":
-                        logger.Info(message);
+                        Logz.Log(message, "GRPC");
+                        // logger.Info(message);
                         break;
                     case "E":
-                        logger.Error(message);
+                        Logz.LogError(message, "GRPC");
+                        // logger.Error(message);
                         break;
                     default:
                         // severity not recognized, default to error.
-                        logger.Error(message);
+                        Logz.LogError(message, "GRPC");
                         break;
                 }
             }
-            catch (Exception e)
-            {
-                Console.WriteLine("Caught exception in native callback " + e);
+            catch (Exception e) {
+                Logz.LogException(e, "GRPC");
             }
         }
     }
