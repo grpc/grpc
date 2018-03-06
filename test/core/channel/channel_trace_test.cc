@@ -25,7 +25,7 @@
 #include <gtest/gtest.h>
 
 #include "src/core/lib/channel/channel_trace.h"
-#include "src/core/lib/channel/object_registry.h"
+#include "src/core/lib/channel/channel_trace_registry.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
@@ -43,8 +43,7 @@ static void add_simple_trace_event(RefCountedPtr<ChannelTrace> tracer) {
 
 // checks for the existence of all the required members of the tracer.
 static void validate_trace(RefCountedPtr<ChannelTrace> tracer,
-                            size_t expected_num_event_logged,
-                            size_t max_nodes) {
+                           size_t expected_num_event_logged, size_t max_nodes) {
   if (!max_nodes) return;
   char* json_str = tracer->RenderTrace();
   grpc_json* json = grpc_json_parse_string(json_str);
@@ -59,12 +58,9 @@ static void validate_trace_data_matches_uuid_lookup(
   intptr_t uuid = tracer->GetUuid();
   if (uuid == -1) return;  // Doesn't make sense to lookup if tracing disabled
   char* tracer_json_str = tracer->RenderTrace();
-  void* object;
-  grpc_object_registry_type type =
-      grpc_object_registry_get_object(uuid, &object);
-  GPR_ASSERT(type == GRPC_OBJECT_REGISTRY_CHANNEL_TRACER);
-  char* uuid_lookup_json_str =
-      static_cast<ChannelTrace*>(object)->RenderTrace();
+  ChannelTrace* uuid_lookup =
+      grpc_channel_trace_registry_get_channel_trace(uuid);
+  char* uuid_lookup_json_str = uuid_lookup->RenderTrace();
   GPR_ASSERT(strcmp(tracer_json_str, uuid_lookup_json_str) == 0);
   gpr_free(tracer_json_str);
   gpr_free(uuid_lookup_json_str);
