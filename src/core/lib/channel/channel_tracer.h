@@ -38,7 +38,7 @@ class ChannelTrace : public RefCounted<ChannelTrace> {
   ~ChannelTrace();
 
   // returns the tracer's uuid
-  intptr_t GetUuid();
+  intptr_t GetUuid() const;
 
   // Adds a new trace event to the tracing object
   void AddTraceEvent(grpc_slice data, grpc_error* error,
@@ -57,7 +57,7 @@ class ChannelTrace : public RefCounted<ChannelTrace> {
 
   // Returns the tracing data rendered as a grpc json string.
   // The string is owned by the caller and must be freed.
-  char* RenderTrace();
+  char* RenderTrace() const;
 
  private:
   // Private class to encapsulate all the data and bookkeeping needed for a
@@ -69,41 +69,27 @@ class ChannelTrace : public RefCounted<ChannelTrace> {
     // overall channelz object, not just the ChannelTrace object
     TraceEvent(grpc_slice data, grpc_error* error,
                grpc_connectivity_state connectivity_state,
-               RefCountedPtr<ChannelTrace> referenced_tracer)
-        : data_(data),
-          error_(error),
-          connectivity_state_(connectivity_state),
-          next_(nullptr),
-          referenced_tracer_(std::move(referenced_tracer)) {
-      time_created_ = gpr_now(GPR_CLOCK_REALTIME);
-    }
+               RefCountedPtr<ChannelTrace> referenced_tracer);
 
     // Constructor for a TraceEvent that does not reverence a different
     // channel.
     TraceEvent(grpc_slice data, grpc_error* error,
-               grpc_connectivity_state connectivity_state)
-        : data_(data),
-          error_(error),
-          connectivity_state_(connectivity_state),
-          next_(nullptr),
-          referenced_tracer_(nullptr) {
-      time_created_ = gpr_now(GPR_CLOCK_REALTIME);
-    }
+               grpc_connectivity_state connectivity_state);
 
     ~TraceEvent();
 
     // Renders the data inside of this TraceEvent into a json object. This is
     // used by the ChannelTrace, when it is rendering itself.
-    void RenderTraceEvent(grpc_json* json);
+    void RenderTraceEvent(grpc_json* json) const;
 
     // set and get for the next_ pointer.
-    TraceEvent* next() { return next_; }
+    TraceEvent* next() const { return next_; }
     void set_next(TraceEvent* next) { next_ = next; }
 
    private:
     grpc_slice data_;
     grpc_error* error_;
-    gpr_timespec time_created_;
+    gpr_timespec timestamp_;
     grpc_connectivity_state connectivity_state_;
     TraceEvent* next_;
     // the tracer object for the (sub)channel that this trace event refers to.

@@ -40,6 +40,27 @@
 
 namespace grpc_core {
 
+ChannelTrace::TraceEvent::TraceEvent(
+    grpc_slice data, grpc_error* error,
+    grpc_connectivity_state connectivity_state,
+    RefCountedPtr<ChannelTrace> referenced_tracer)
+    : data_(data),
+      error_(error),
+      timestamp_(grpc_millis_to_timespec(grpc_core::ExecCtx::Get()->Now(),
+                                         GPR_CLOCK_REALTIME)),
+      connectivity_state_(connectivity_state),
+      next_(nullptr),
+      referenced_tracer_(std::move(referenced_tracer)) {}
+
+ChannelTrace::TraceEvent::TraceEvent(grpc_slice data, grpc_error* error,
+                                     grpc_connectivity_state connectivity_state)
+    : data_(data),
+      error_(error),
+      timestamp_(grpc_millis_to_timespec(grpc_core::ExecCtx::Get()->Now(),
+                                         GPR_CLOCK_REALTIME)),
+      connectivity_state_(connectivity_state),
+      next_(nullptr) {}
+
 ChannelTrace::TraceEvent::~TraceEvent() {
   GRPC_ERROR_UNREF(error_);
   grpc_slice_unref_internal(data_);
@@ -72,7 +93,7 @@ ChannelTrace::~ChannelTrace() {
   gpr_mu_destroy(&tracer_mu_);
 }
 
-intptr_t ChannelTrace::GetUuid() { return channel_uuid_; }
+intptr_t ChannelTrace::GetUuid() const { return channel_uuid_; }
 
 void ChannelTrace::AddTraceEventHelper(TraceEvent* new_trace_event) {
   ++num_events_logged_;
@@ -125,7 +146,7 @@ char* fmt_time(gpr_timespec tm) {
 
 }  // anonymous namespace
 
-void ChannelTrace::TraceEvent::RenderTraceEvent(grpc_json* json) {
+void ChannelTrace::TraceEvent::RenderTraceEvent(grpc_json* json) const {
   grpc_json* json_iterator = nullptr;
   json_iterator = grpc_json_create_child(json_iterator, json, "description",
                                          grpc_slice_to_c_string(data_),
@@ -150,7 +171,7 @@ void ChannelTrace::TraceEvent::RenderTraceEvent(grpc_json* json) {
   }
   json_iterator =
       grpc_json_create_child(json_iterator, json, "timestamp",
-                             fmt_time(time_created_), GRPC_JSON_STRING, true);
+                             fmt_time(timestamp_), GRPC_JSON_STRING, true);
   json_iterator =
       grpc_json_create_child(json_iterator, json, "state",
                              grpc_connectivity_state_name(connectivity_state_),
@@ -163,7 +184,7 @@ void ChannelTrace::TraceEvent::RenderTraceEvent(grpc_json* json) {
   }
 }
 
-char* ChannelTrace::RenderTrace() {
+char* ChannelTrace::RenderTrace() const {
   if (!max_list_size_)
     return nullptr;  // tracing is disabled if max_events == 0
   grpc_json* json = grpc_json_create(GRPC_JSON_OBJECT);

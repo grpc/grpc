@@ -21,6 +21,7 @@
 #include "src/core/lib/surface/channel.h"
 
 #include <inttypes.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -173,8 +174,8 @@ grpc_channel* grpc_channel_create_with_builder(
     } else if (0 == strcmp(args->args[i].key,
                            GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE)) {
       GPR_ASSERT(channel_tracer_max_nodes == 0);
-      // max_nodes defaults to 0 (which is off), clamped between 0 and 100.
-      const grpc_integer_options options = {0, 0, 100};
+      // max_nodes defaults to 0 (which is off), clamped between 0 and INT_MAX
+      const grpc_integer_options options = {0, 0, INT_MAX};
       channel_tracer_max_nodes =
           (size_t)grpc_channel_arg_get_integer(&args->args[i], options);
     }

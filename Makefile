@@ -1006,7 +1006,6 @@ grpc_byte_buffer_reader_test: $(BINDIR)/$(CONFIG)/grpc_byte_buffer_reader_test
 grpc_channel_args_test: $(BINDIR)/$(CONFIG)/grpc_channel_args_test
 grpc_channel_stack_builder_test: $(BINDIR)/$(CONFIG)/grpc_channel_stack_builder_test
 grpc_channel_stack_test: $(BINDIR)/$(CONFIG)/grpc_channel_stack_test
-grpc_channel_tracer_test: $(BINDIR)/$(CONFIG)/grpc_channel_tracer_test
 grpc_completion_queue_test: $(BINDIR)/$(CONFIG)/grpc_completion_queue_test
 grpc_completion_queue_threading_test: $(BINDIR)/$(CONFIG)/grpc_completion_queue_threading_test
 grpc_create_jwt: $(BINDIR)/$(CONFIG)/grpc_create_jwt
@@ -1115,6 +1114,7 @@ bm_metadata: $(BINDIR)/$(CONFIG)/bm_metadata
 bm_pollset: $(BINDIR)/$(CONFIG)/bm_pollset
 channel_arguments_test: $(BINDIR)/$(CONFIG)/channel_arguments_test
 channel_filter_test: $(BINDIR)/$(CONFIG)/channel_filter_test
+channel_tracer_test: $(BINDIR)/$(CONFIG)/channel_tracer_test
 chttp2_settings_timeout_test: $(BINDIR)/$(CONFIG)/chttp2_settings_timeout_test
 cli_call_test: $(BINDIR)/$(CONFIG)/cli_call_test
 client_channel_stress_test: $(BINDIR)/$(CONFIG)/client_channel_stress_test
@@ -1425,7 +1425,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/grpc_channel_args_test \
   $(BINDIR)/$(CONFIG)/grpc_channel_stack_builder_test \
   $(BINDIR)/$(CONFIG)/grpc_channel_stack_test \
-  $(BINDIR)/$(CONFIG)/grpc_channel_tracer_test \
   $(BINDIR)/$(CONFIG)/grpc_completion_queue_test \
   $(BINDIR)/$(CONFIG)/grpc_completion_queue_threading_test \
   $(BINDIR)/$(CONFIG)/grpc_credentials_test \
@@ -1584,6 +1583,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/bm_pollset \
   $(BINDIR)/$(CONFIG)/channel_arguments_test \
   $(BINDIR)/$(CONFIG)/channel_filter_test \
+  $(BINDIR)/$(CONFIG)/channel_tracer_test \
   $(BINDIR)/$(CONFIG)/chttp2_settings_timeout_test \
   $(BINDIR)/$(CONFIG)/cli_call_test \
   $(BINDIR)/$(CONFIG)/client_channel_stress_test \
@@ -1732,6 +1732,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/bm_pollset \
   $(BINDIR)/$(CONFIG)/channel_arguments_test \
   $(BINDIR)/$(CONFIG)/channel_filter_test \
+  $(BINDIR)/$(CONFIG)/channel_tracer_test \
   $(BINDIR)/$(CONFIG)/chttp2_settings_timeout_test \
   $(BINDIR)/$(CONFIG)/cli_call_test \
   $(BINDIR)/$(CONFIG)/client_channel_stress_test \
@@ -1918,8 +1919,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_channel_stack_builder_test || ( echo test grpc_channel_stack_builder_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_channel_stack_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_channel_stack_test || ( echo test grpc_channel_stack_test failed ; exit 1 )
-	$(E) "[RUN]     Testing grpc_channel_tracer_test"
-	$(Q) $(BINDIR)/$(CONFIG)/grpc_channel_tracer_test || ( echo test grpc_channel_tracer_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_completion_queue_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_completion_queue_test || ( echo test grpc_completion_queue_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_completion_queue_threading_test"
@@ -2130,6 +2129,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/channel_arguments_test || ( echo test channel_arguments_test failed ; exit 1 )
 	$(E) "[RUN]     Testing channel_filter_test"
 	$(Q) $(BINDIR)/$(CONFIG)/channel_filter_test || ( echo test channel_filter_test failed ; exit 1 )
+	$(E) "[RUN]     Testing channel_tracer_test"
+	$(Q) $(BINDIR)/$(CONFIG)/channel_tracer_test || ( echo test channel_tracer_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_settings_timeout_test"
 	$(Q) $(BINDIR)/$(CONFIG)/chttp2_settings_timeout_test || ( echo test chttp2_settings_timeout_test failed ; exit 1 )
 	$(E) "[RUN]     Testing cli_call_test"
@@ -11414,38 +11415,6 @@ endif
 endif
 
 
-GRPC_CHANNEL_TRACER_TEST_SRC = \
-    test/core/channel/channel_tracer_test.cc \
-
-GRPC_CHANNEL_TRACER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_CHANNEL_TRACER_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/grpc_channel_tracer_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/grpc_channel_tracer_test: $(GRPC_CHANNEL_TRACER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GRPC_CHANNEL_TRACER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/grpc_channel_tracer_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/channel/channel_tracer_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_grpc_channel_tracer_test: $(GRPC_CHANNEL_TRACER_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(GRPC_CHANNEL_TRACER_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 GRPC_COMPLETION_QUEUE_TEST_SRC = \
     test/core/surface/completion_queue_test.cc \
 
@@ -15161,6 +15130,49 @@ deps_channel_filter_test: $(CHANNEL_FILTER_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(CHANNEL_FILTER_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHANNEL_TRACER_TEST_SRC = \
+    test/core/channel/channel_tracer_test.cc \
+
+CHANNEL_TRACER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHANNEL_TRACER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/channel_tracer_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/channel_tracer_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/channel_tracer_test: $(PROTOBUF_DEP) $(CHANNEL_TRACER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(CHANNEL_TRACER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/channel_tracer_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/channel/channel_tracer_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_channel_tracer_test: $(CHANNEL_TRACER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHANNEL_TRACER_TEST_OBJS:.o=.dep)
 endif
 endif
 

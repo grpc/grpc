@@ -22,6 +22,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include <gtest/gtest.h>
+
 #include "src/core/lib/channel/channel_tracer.h"
 #include "src/core/lib/channel/object_registry.h"
 #include "src/core/lib/gpr/useful.h"
@@ -30,9 +32,8 @@
 #include "test/core/util/channel_tracing_utils.h"
 #include "test/core/util/test_config.h"
 
-using grpc_core::ChannelTrace;
-using grpc_core::MakeRefCounted;
-using grpc_core::RefCountedPtr;
+namespace grpc_core {
+namespace testing {
 
 static void add_simple_trace_event(RefCountedPtr<ChannelTrace> tracer) {
   tracer->AddTraceEvent(grpc_slice_from_static_string("simple trace"),
@@ -99,7 +100,7 @@ static void test_basic_channel_tracing(size_t max_nodes) {
 
 // Calls basic test with various values for max_nodes (including 0, which turns
 // the tracer off).
-static void test_basic_channel_sizing() {
+TEST(ChannelTracerTest, BasicTest) {
   test_basic_channel_tracing(0);
   test_basic_channel_tracing(1);
   test_basic_channel_tracing(2);
@@ -152,7 +153,7 @@ static void test_complex_channel_tracing(size_t max_nodes) {
 }
 
 // Calls the complex test with a sweep of sizes for max_nodes.
-static void test_complex_channel_sizing() {
+TEST(ChannelTracerTest, ComplexTest) {
   test_complex_channel_tracing(0);
   test_complex_channel_tracing(1);
   test_complex_channel_tracing(2);
@@ -164,7 +165,7 @@ static void test_complex_channel_sizing() {
 // Test a case in which the parent channel has subchannels and the subchannels
 // have connections. Ensures that everything lives as long as it should then
 // gets deleted.
-static void test_nesting() {
+TEST(ChannelTracerTest, TestNesting) {
   grpc_core::ExecCtx exec_ctx;
   RefCountedPtr<ChannelTrace> tracer = MakeRefCounted<ChannelTrace>(10);
   add_simple_trace_event(tracer);
@@ -195,14 +196,14 @@ static void test_nesting() {
   conn1.reset(nullptr);
 }
 
+}  // namespace testing
+}  // namespace grpc_core
+
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
-  test_basic_channel_tracing(5);
-  test_basic_channel_sizing();
-  test_complex_channel_tracing(5);
-  test_complex_channel_sizing();
-  test_nesting();
+  ::testing::InitGoogleTest(&argc, argv);
+  int ret = RUN_ALL_TESTS();
   grpc_shutdown();
-  return 0;
+  return ret;
 }

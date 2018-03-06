@@ -2432,17 +2432,6 @@ targets:
   - gpr_test_util
   - gpr
   uses_polling: false
-- name: grpc_channel_tracer_test
-  build: test
-  language: c
-  src:
-  - test/core/channel/channel_tracer_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  uses_polling: false
 - name: grpc_completion_queue_test
   build: test
   language: c
@@ -3895,6 +3884,21 @@ targets:
   - grpc++
   - grpc
   - gpr
+  uses_polling: false
+- name: channel_tracer_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/channel/channel_tracer_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses:
+  - grpc++_test
   uses_polling: false
 - name: chttp2_settings_timeout_test
   gtest: true
