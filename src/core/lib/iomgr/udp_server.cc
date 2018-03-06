@@ -427,7 +427,7 @@ error:
 
 // static
 void GrpcUdpListener::do_read(void* arg, grpc_error* error) {
-  GrpcUdpListener* sp = reinterpret_cast<GrpcUdpListener*>(arg);
+  GrpcUdpListener* sp = static_cast<GrpcUdpListener*>(arg);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   /* TODO: the reason we hold server->mu here is merely to prevent fd
    * shutdown while we are reading. However, it blocks do_write(). Switch to
@@ -484,7 +484,7 @@ void GrpcUdpListener::OnRead(grpc_error* error, void* do_read_arg) {
 // static
 // Wrapper of grpc_fd_notify_on_write() with a grpc_closure callback interface.
 void GrpcUdpListener::fd_notify_on_write_wrapper(void* arg, grpc_error* error) {
-  GrpcUdpListener* sp = reinterpret_cast<GrpcUdpListener*>(arg);
+  GrpcUdpListener* sp = static_cast<GrpcUdpListener*>(arg);
   gpr_mu_lock(sp->mutex());
   if (!sp->notify_on_write_armed_) {
     grpc_fd_notify_on_write(sp->emfd_, &sp->write_closure_);
@@ -495,7 +495,7 @@ void GrpcUdpListener::fd_notify_on_write_wrapper(void* arg, grpc_error* error) {
 
 // static
 void GrpcUdpListener::do_write(void* arg, grpc_error* error) {
-  GrpcUdpListener* sp = reinterpret_cast<GrpcUdpListener*>(arg);
+  GrpcUdpListener* sp = static_cast<GrpcUdpListener*>(arg);
   gpr_mu_lock(sp->mutex());
   if (sp->already_shutdown_) {
     // If fd has been shutdown, don't write any more and re-arm notification.
