@@ -20,7 +20,7 @@
 #include <string.h>
 
 #include <grpc/support/log.h>
-#include "src/core/lib/channel/channel_tracer.h"
+#include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/json/json.h"
 

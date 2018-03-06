@@ -517,7 +517,7 @@ add_dependencies(buildtests_cxx bm_pollset)
 endif()
 add_dependencies(buildtests_cxx channel_arguments_test)
 add_dependencies(buildtests_cxx channel_filter_test)
-add_dependencies(buildtests_cxx channel_tracer_test)
+add_dependencies(buildtests_cxx channel_trace_test)
 add_dependencies(buildtests_cxx chttp2_settings_timeout_test)
 add_dependencies(buildtests_cxx cli_call_test)
 add_dependencies(buildtests_cxx client_channel_stress_test)
@@ -800,7 +800,7 @@ add_library(grpc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
-  src/core/lib/channel/channel_tracer.cc
+  src/core/lib/channel/channel_trace.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
@@ -1144,7 +1144,7 @@ add_library(grpc_cronet
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
-  src/core/lib/channel/channel_tracer.cc
+  src/core/lib/channel/channel_trace.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
@@ -1475,7 +1475,7 @@ add_library(grpc_test_util
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
-  src/core/lib/channel/channel_tracer.cc
+  src/core/lib/channel/channel_trace.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
@@ -1767,7 +1767,7 @@ add_library(grpc_test_util_unsecure
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
-  src/core/lib/channel/channel_tracer.cc
+  src/core/lib/channel/channel_trace.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
@@ -2038,7 +2038,7 @@ add_library(grpc_unsecure
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
-  src/core/lib/channel/channel_tracer.cc
+  src/core/lib/channel/channel_trace.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
@@ -2843,7 +2843,7 @@ add_library(grpc++_cronet
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
-  src/core/lib/channel/channel_tracer.cc
+  src/core/lib/channel/channel_trace.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
@@ -9485,14 +9485,14 @@ target_link_libraries(channel_filter_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(channel_tracer_test
-  test/core/channel/channel_tracer_test.cc
+add_executable(channel_trace_test
+  test/core/channel/channel_trace_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 
-target_include_directories(channel_tracer_test
+target_include_directories(channel_trace_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
@@ -9508,7 +9508,7 @@ target_include_directories(channel_tracer_test
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(channel_tracer_test
+target_link_libraries(channel_trace_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util

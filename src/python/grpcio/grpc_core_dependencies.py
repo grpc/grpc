@@ -60,7 +60,7 @@ CORE_SOURCE_FILES = [
     'src/core/lib/channel/channel_args.cc',
     'src/core/lib/channel/channel_stack.cc',
     'src/core/lib/channel/channel_stack_builder.cc',
-    'src/core/lib/channel/channel_tracer.cc',
+    'src/core/lib/channel/channel_trace.cc',
     'src/core/lib/channel/connected_channel.cc',
     'src/core/lib/channel/handshaker.cc',
     'src/core/lib/channel/handshaker_factory.cc',

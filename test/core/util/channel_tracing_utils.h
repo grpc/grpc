@@ -19,8 +19,6 @@
 #ifndef GRPC_TEST_CORE_UTIL_CHANNEL_TRACING_UTILS_H
 #define GRPC_TEST_CORE_UTIL_CHANNEL_TRACING_UTILS_H
 
-#include "src/core/lib/channel/channel_tracer.h"
-
 void validate_json_array_size(grpc_json* json, const char* key,
                               size_t expected_size);
 

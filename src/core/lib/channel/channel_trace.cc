@@ -18,7 +18,7 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
-#include "src/core/lib/channel/channel_tracer.h"
+#include "src/core/lib/channel/channel_trace.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
