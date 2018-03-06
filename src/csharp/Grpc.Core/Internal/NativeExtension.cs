@@ -37,7 +37,7 @@ namespace Grpc.Core.Internal
 
         private NativeExtension()
         {
-            this.nativeMethods = new NativeMethods(Load());
+            this.nativeMethods = LoadNativeMethods();
             
             // Redirect the native logs as the very first thing after loading the native extension
             // to make sure we don't lose any logs.
@@ -77,7 +77,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Detects which configuration of native extension to load and load it.
         /// </summary>
-        private static UnmanagedLibrary Load()
+        private static UnmanagedLibrary LoadUnmanagedLibrary()
         {
             // TODO: allow customizing path to native extension (possibly through exposing a GrpcEnvironment property).
             // See https://github.com/grpc/grpc/pull/7303 for one option.
@@ -96,9 +96,26 @@ namespace Grpc.Core.Internal
             var netCorePublishedAppStylePath = Path.Combine(assemblyDirectory, runtimesDirectory, GetNativeLibraryFilename());
             var netCoreAppStylePath = Path.Combine(assemblyDirectory, "../..", runtimesDirectory, GetNativeLibraryFilename());
 
-            // Look for all native library in all possible locations in given order.
+            // Look for the native library in all possible locations in given order.
             string[] paths = new[] { classicPath, netCorePublishedAppStylePath, netCoreAppStylePath};
             return new UnmanagedLibrary(paths);
+        }
+
+        /// <summary>
+        /// Loads native extension and return native methods delegates.
+        /// </summary>
+        private static NativeMethods LoadNativeMethods()
+        {
+            return PlatformApis.IsUnity ? LoadNativeMethodsUnity() : new NativeMethods(LoadUnmanagedLibrary());
+        }
+
+        /// <summary>
+        /// Return native method delegates when running on Unity platform.
+        /// </summary>
+        private static NativeMethods LoadNativeMethodsUnity()
+        {
+            // TODO(jtattermusch): use NativeMethods.DllImportsFromStaticLib for iOS.
+            return new NativeMethods(new NativeMethods.DllImportsFromSharedLib());
         }
 
         private static string GetAssemblyPath()
