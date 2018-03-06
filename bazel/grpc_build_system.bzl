@@ -170,17 +170,13 @@ def grpc_sh_binary(name, srcs, data = []):
     srcs = srcs,
     data = data)
 
-def grpc_py_binary(name, srcs, data = [], deps = []):
-  if name == "test_dns_server":
-    deps = _get_external_deps([
-      "twisted",
-      "yaml",
-    ])
+def grpc_py_binary(name, srcs, data = [], deps = [], external_deps = [], testonly = False):
   native.py_binary(
     name = name,
     srcs = srcs,
     data = data,
-    deps = deps)
+    deps = deps + _get_external_deps(external_deps)
+  )
 
 def grpc_package(name, visibility = "private", features = []):
   if visibility == "tests":
