@@ -3696,7 +3696,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     test/core/end2end/fixtures/http_proxy_fixture.cc \
     test/core/end2end/fixtures/proxy.cc \
     test/core/iomgr/endpoint_tests.cc \
-    test/core/util/channel_tracing_utils.cc \
     test/core/util/debugger_macros.cc \
     test/core/util/grpc_profiler.cc \
     test/core/util/histogram.cc \
@@ -3981,7 +3980,6 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     test/core/end2end/fixtures/http_proxy_fixture.cc \
     test/core/end2end/fixtures/proxy.cc \
     test/core/iomgr/endpoint_tests.cc \
-    test/core/util/channel_tracing_utils.cc \
     test/core/util/debugger_macros.cc \
     test/core/util/grpc_profiler.cc \
     test/core/util/histogram.cc \

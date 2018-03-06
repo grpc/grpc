@@ -19,22 +19,57 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <gtest/gtest.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-
-#include <gtest/gtest.h>
 
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channel_trace_registry.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/json/json.h"
 
-#include "test/core/util/channel_tracing_utils.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
 namespace testing {
 namespace {
+
+grpc_json* GetJsonChild(grpc_json* parent, const char* key) {
+  EXPECT_NE(parent, nullptr);
+  for (grpc_json* child = parent->child; child != nullptr;
+       child = child->next) {
+    if (child->key != nullptr && strcmp(child->key, key) == 0) return child;
+  }
+  return nullptr;
+}
+
+void ValidateJsonArraySize(grpc_json* json, const char* key,
+                              size_t expected_size) {
+  grpc_json* arr = GetJsonChild(json, key);
+  ASSERT_NE(arr, nullptr);
+  ASSERT_EQ(arr->type, GRPC_JSON_ARRAY);
+  size_t count = 0;
+  for (grpc_json* child = arr->child; child != nullptr; child = child->next) {
+    ++count;
+  }
+  ASSERT_EQ(count, expected_size);
+}
+
+void ValidateChannelTraceData(grpc_json* json,
+                                 size_t num_events_logged_expected,
+                                 size_t actual_num_events_expected) {
+  ASSERT_NE(json, nullptr);
+  grpc_json* num_events_logged_json = GetJsonChild(json, "num_events_logged");
+  ASSERT_NE(num_events_logged_json, nullptr);
+  grpc_json* start_time = GetJsonChild(json, "creation_time");
+  ASSERT_NE(start_time, nullptr);
+  size_t num_events_logged =
+      (size_t)strtol(num_events_logged_json->value, nullptr, 0);
+  ASSERT_EQ(num_events_logged, num_events_logged_expected);
+  ValidateJsonArraySize(json, "events", actual_num_events_expected);
+}
 
 void AddSimpleTrace(RefCountedPtr<ChannelTrace> tracer) {
   tracer->AddTraceEvent(grpc_slice_from_static_string("simple trace"),
@@ -48,7 +83,7 @@ void ValidateChannelTrace(RefCountedPtr<ChannelTrace> tracer,
   if (!max_nodes) return;
   char* json_str = tracer->RenderTrace();
   grpc_json* json = grpc_json_parse_string(json_str);
-  validate_channel_trace_data(json, expected_num_event_logged,
+  ValidateChannelTraceData(json, expected_num_event_logged,
                               GPR_MIN(expected_num_event_logged, max_nodes));
   grpc_json_destroy(json);
   gpr_free(json_str);
@@ -61,16 +96,20 @@ void ValidateTraceDataMatchedUuidLookup(RefCountedPtr<ChannelTrace> tracer) {
   ChannelTrace* uuid_lookup =
       grpc_channel_trace_registry_get_channel_trace(uuid);
   char* uuid_lookup_json_str = uuid_lookup->RenderTrace();
-  GPR_ASSERT(strcmp(tracer_json_str, uuid_lookup_json_str) == 0);
+  EXPECT_EQ(strcmp(tracer_json_str, uuid_lookup_json_str), 0);
   gpr_free(tracer_json_str);
   gpr_free(uuid_lookup_json_str);
 }
 
+}  // anonymous namespace
+
+class ChannelTracerTest : public ::testing::TestWithParam<size_t> {};
+
 // Tests basic ChannelTrace functionality like construction, adding trace, and
 // lookups by uuid.
-void TestBasicChannelTrace(size_t max_nodes) {
+TEST_P(ChannelTracerTest, BasicTest) {
   grpc_core::ExecCtx exec_ctx;
-  RefCountedPtr<ChannelTrace> tracer = MakeRefCounted<ChannelTrace>(max_nodes);
+  RefCountedPtr<ChannelTrace> tracer = MakeRefCounted<ChannelTrace>(GetParam());
   AddSimpleTrace(tracer);
   AddSimpleTrace(tracer);
   ValidateTraceDataMatchedUuidLookup(tracer);
@@ -81,15 +120,15 @@ void TestBasicChannelTrace(size_t max_nodes) {
       GRPC_CHANNEL_IDLE);
   tracer->AddTraceEvent(grpc_slice_from_static_string("trace four"),
                         GRPC_ERROR_NONE, GRPC_CHANNEL_SHUTDOWN);
-  ValidateChannelTrace(tracer, 4, max_nodes);
+  ValidateChannelTrace(tracer, 4, GetParam());
   AddSimpleTrace(tracer);
   AddSimpleTrace(tracer);
-  ValidateChannelTrace(tracer, 6, max_nodes);
+  ValidateChannelTrace(tracer, 6, GetParam());
   AddSimpleTrace(tracer);
   AddSimpleTrace(tracer);
   AddSimpleTrace(tracer);
   AddSimpleTrace(tracer);
-  ValidateChannelTrace(tracer, 10, max_nodes);
+  ValidateChannelTrace(tracer, 10, GetParam());
   ValidateTraceDataMatchedUuidLookup(tracer);
   tracer.reset(nullptr);
 }
@@ -97,34 +136,34 @@ void TestBasicChannelTrace(size_t max_nodes) {
 // Tests more complex functionality, like a parent channel tracking
 // subchannles. This exercises the ref/unref patterns since the parent tracer
 // and this function will both hold refs to the subchannel.
-void TestComplexChannelTrace(size_t max_nodes) {
+TEST_P(ChannelTracerTest, ComplexTest) {
   grpc_core::ExecCtx exec_ctx;
-  RefCountedPtr<ChannelTrace> tracer = MakeRefCounted<ChannelTrace>(max_nodes);
+  RefCountedPtr<ChannelTrace> tracer = MakeRefCounted<ChannelTrace>(GetParam());
   AddSimpleTrace(tracer);
   AddSimpleTrace(tracer);
-  RefCountedPtr<ChannelTrace> sc1 = MakeRefCounted<ChannelTrace>(max_nodes);
+  RefCountedPtr<ChannelTrace> sc1 = MakeRefCounted<ChannelTrace>(GetParam());
   tracer->AddTraceEvent(grpc_slice_from_static_string("subchannel one created"),
                         GRPC_ERROR_NONE, GRPC_CHANNEL_IDLE, sc1);
-  ValidateChannelTrace(tracer, 3, max_nodes);
+  ValidateChannelTrace(tracer, 3, GetParam());
   AddSimpleTrace(sc1);
   AddSimpleTrace(sc1);
   AddSimpleTrace(sc1);
-  ValidateChannelTrace(sc1, 3, max_nodes);
+  ValidateChannelTrace(sc1, 3, GetParam());
   AddSimpleTrace(sc1);
   AddSimpleTrace(sc1);
   AddSimpleTrace(sc1);
-  ValidateChannelTrace(sc1, 6, max_nodes);
+  ValidateChannelTrace(sc1, 6, GetParam());
   AddSimpleTrace(tracer);
   AddSimpleTrace(tracer);
-  ValidateChannelTrace(tracer, 5, max_nodes);
+  ValidateChannelTrace(tracer, 5, GetParam());
   ValidateTraceDataMatchedUuidLookup(tracer);
-  RefCountedPtr<ChannelTrace> sc2 = MakeRefCounted<ChannelTrace>(max_nodes);
+  RefCountedPtr<ChannelTrace> sc2 = MakeRefCounted<ChannelTrace>(GetParam());
   tracer->AddTraceEvent(grpc_slice_from_static_string("subchannel two created"),
                         GRPC_ERROR_NONE, GRPC_CHANNEL_IDLE, sc2);
   tracer->AddTraceEvent(
       grpc_slice_from_static_string("subchannel one inactive"), GRPC_ERROR_NONE,
       GRPC_CHANNEL_IDLE, sc1);
-  ValidateChannelTrace(tracer, 7, max_nodes);
+  ValidateChannelTrace(tracer, 7, GetParam());
   AddSimpleTrace(tracer);
   AddSimpleTrace(tracer);
   AddSimpleTrace(tracer);
@@ -137,49 +176,26 @@ void TestComplexChannelTrace(size_t max_nodes) {
   sc2.reset(nullptr);
 }
 
-}  // anonymous namespace
-
-// Calls basic test with various values for max_nodes (including 0, which turns
-// the tracer off).
-TEST(ChannelTracerTest, BasicTest) {
-  TestBasicChannelTrace(0);
-  TestBasicChannelTrace(1);
-  TestBasicChannelTrace(2);
-  TestBasicChannelTrace(6);
-  TestBasicChannelTrace(10);
-  TestBasicChannelTrace(15);
-}
-
-// Calls the complex test with a sweep of sizes for max_nodes.
-TEST(ChannelTracerTest, ComplexTest) {
-  TestComplexChannelTrace(0);
-  TestComplexChannelTrace(1);
-  TestComplexChannelTrace(2);
-  TestComplexChannelTrace(6);
-  TestComplexChannelTrace(10);
-  TestComplexChannelTrace(15);
-}
-
 // Test a case in which the parent channel has subchannels and the subchannels
 // have connections. Ensures that everything lives as long as it should then
 // gets deleted.
-TEST(ChannelTracerTest, TestNesting) {
+TEST_P(ChannelTracerTest, TestNesting) {
   grpc_core::ExecCtx exec_ctx;
-  RefCountedPtr<ChannelTrace> tracer = MakeRefCounted<ChannelTrace>(10);
+  RefCountedPtr<ChannelTrace> tracer = MakeRefCounted<ChannelTrace>(GetParam());
   AddSimpleTrace(tracer);
   AddSimpleTrace(tracer);
-  RefCountedPtr<ChannelTrace> sc1 = MakeRefCounted<ChannelTrace>(5);
+  RefCountedPtr<ChannelTrace> sc1 = MakeRefCounted<ChannelTrace>(GetParam());
   tracer->AddTraceEvent(grpc_slice_from_static_string("subchannel one created"),
                         GRPC_ERROR_NONE, GRPC_CHANNEL_IDLE, sc1);
   AddSimpleTrace(sc1);
-  RefCountedPtr<ChannelTrace> conn1 = MakeRefCounted<ChannelTrace>(5);
+  RefCountedPtr<ChannelTrace> conn1 = MakeRefCounted<ChannelTrace>(GetParam());
   // nesting one level deeper.
   sc1->AddTraceEvent(grpc_slice_from_static_string("connection one created"),
                      GRPC_ERROR_NONE, GRPC_CHANNEL_IDLE, conn1);
   AddSimpleTrace(conn1);
   AddSimpleTrace(tracer);
   AddSimpleTrace(tracer);
-  RefCountedPtr<ChannelTrace> sc2 = MakeRefCounted<ChannelTrace>(5);
+  RefCountedPtr<ChannelTrace> sc2 = MakeRefCounted<ChannelTrace>(GetParam());
   tracer->AddTraceEvent(grpc_slice_from_static_string("subchannel two created"),
                         GRPC_ERROR_NONE, GRPC_CHANNEL_IDLE, sc2);
   // this trace should not get added to the parents children since it is already
@@ -193,6 +209,9 @@ TEST(ChannelTracerTest, TestNesting) {
   sc2.reset(nullptr);
   conn1.reset(nullptr);
 }
+
+INSTANTIATE_TEST_CASE_P(ChannelTracerTestSweep, ChannelTracerTest,
+                        ::testing::Values(0, 1, 2, 6, 10, 15));
 
 }  // namespace testing
 }  // namespace grpc_core

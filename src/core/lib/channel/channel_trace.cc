@@ -152,8 +152,6 @@ void ChannelTrace::TraceEvent::RenderTraceEvent(grpc_json* json) const {
   json_iterator = grpc_json_create_child(json_iterator, json, "description",
                                          grpc_slice_to_c_string(data_),
                                          GRPC_JSON_STRING, true);
-  // TODO(ncteisen): Either format this as google.rpc.Status here, or ensure
-  // it is done in the layers above core.
   if (error_ != GRPC_ERROR_NONE) {
     grpc_status_code code;
     grpc_slice message;

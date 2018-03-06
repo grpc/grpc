@@ -51,7 +51,6 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_test_util_base",
     srcs = [
-        "channel_tracing_utils.cc",
         "cmdline.cc",
         "grpc_profiler.cc",
         "histogram.cc",
@@ -70,7 +69,6 @@ grpc_cc_library(
         "trickle_endpoint.cc",
     ],
     hdrs = [
-        "channel_tracing_utils.h",
         "cmdline.h",
         "grpc_profiler.h",
         "histogram.h",

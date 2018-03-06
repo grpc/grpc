@@ -1453,7 +1453,6 @@ add_library(grpc_test_util
   test/core/end2end/fixtures/http_proxy_fixture.cc
   test/core/end2end/fixtures/proxy.cc
   test/core/iomgr/endpoint_tests.cc
-  test/core/util/channel_tracing_utils.cc
   test/core/util/debugger_macros.cc
   test/core/util/grpc_profiler.cc
   test/core/util/histogram.cc
@@ -1745,7 +1744,6 @@ add_library(grpc_test_util_unsecure
   test/core/end2end/fixtures/http_proxy_fixture.cc
   test/core/end2end/fixtures/proxy.cc
   test/core/iomgr/endpoint_tests.cc
-  test/core/util/channel_tracing_utils.cc
   test/core/util/debugger_macros.cc
   test/core/util/grpc_profiler.cc
   test/core/util/histogram.cc
