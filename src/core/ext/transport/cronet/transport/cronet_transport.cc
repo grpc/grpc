@@ -1042,7 +1042,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
       grpc_slice slice;
       grpc_slice_buffer_init(&write_slice_buffer);
       if (1 != stream_op->payload->send_message.send_message->Next(
-                   stream_op->payload->send_message.send_message->length,
+                   stream_op->payload->send_message.send_message->length(),
                    nullptr)) {
         /* Should never reach here */
         GPR_ASSERT(false);
@@ -1060,9 +1060,10 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
       }
       if (write_slice_buffer.count > 0) {
         size_t write_buffer_size;
-        create_grpc_frame(&write_slice_buffer, &stream_state->ws.write_buffer,
-                          &write_buffer_size,
-                          stream_op->payload->send_message.send_message->flags);
+        create_grpc_frame(
+            &write_slice_buffer, &stream_state->ws.write_buffer,
+            &write_buffer_size,
+            stream_op->payload->send_message.send_message->flags());
         CRONET_LOG(GPR_DEBUG, "bidirectional_stream_write (%p, %p)", s->cbs,
                    stream_state->ws.write_buffer);
         stream_state->state_callback_received[OP_SEND_MESSAGE] = false;
@@ -1198,9 +1199,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
             flags |= GRPC_WRITE_INTERNAL_COMPRESS;
           }
           stream_state->rs.sbs.Init(&stream_state->rs.read_slice_buffer, flags);
-          *(reinterpret_cast<grpc_byte_buffer**>(
-              stream_op->payload->recv_message.recv_message)) =
-              reinterpret_cast<grpc_byte_buffer*>(stream_state->rs.sbs.get());
+          stream_op->payload->recv_message->reset(stream_state->rs.sbs.get());
           GRPC_CLOSURE_SCHED(
               stream_op->payload->recv_message.recv_message_ready,
               GRPC_ERROR_NONE);
@@ -1255,9 +1254,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
         flags = GRPC_WRITE_INTERNAL_COMPRESS;
       }
       stream_state->rs.sbs.Init(&stream_state->rs.read_slice_buffer, flags);
-      *(reinterpret_cast<grpc_byte_buffer**>(
-          stream_op->payload->recv_message.recv_message)) =
-          reinterpret_cast<grpc_byte_buffer*>(stream_state->rs.sbs.get());
+      stream_op->payload->recv_message->reset(stream_state->rs.sbs.get());
       GRPC_CLOSURE_SCHED(stream_op->payload->recv_message.recv_message_ready,
                          GRPC_ERROR_NONE);
       stream_state->state_op_done[OP_RECV_MESSAGE] = true;
