@@ -939,6 +939,7 @@ grpc_cc_library(
         "grpc_codegen",
         "grpc_trace",
         "inlined_vector",
+        "orphanable",
         "ref_counted",
         "ref_counted_ptr",
     ],
