@@ -24,7 +24,6 @@ grpc_cc_test(
     language = "C++",
     deps = [
         "//:gpr",
-        "//:gpr++_base",
         "//test/core/util:gpr_test_util",
     ],
 )
@@ -37,7 +36,7 @@ grpc_cc_test(
     ],
     language = "C++",
     deps = [
-        "//:gpr++_base",
+        "//:gpr_base",
         "//test/core/util:gpr_test_util",
     ],
 )
@@ -58,39 +57,49 @@ grpc_cc_test(
 grpc_cc_test(
     name = "orphanable_test",
     srcs = ["orphanable_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
     deps = [
         "//:orphanable",
         "//test/core/util:gpr_test_util",
-    ],
-    external_deps = [
-        "gtest",
     ],
 )
 
 grpc_cc_test(
     name = "ref_counted_test",
     srcs = ["ref_counted_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
     deps = [
         "//:ref_counted",
         "//test/core/util:gpr_test_util",
-    ],
-    external_deps = [
-        "gtest",
     ],
 )
 
 grpc_cc_test(
     name = "ref_counted_ptr_test",
     srcs = ["ref_counted_ptr_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
     deps = [
         "//:ref_counted",
         "//:ref_counted_ptr",
         "//test/core/util:gpr_test_util",
     ],
-    external_deps = [
-        "gtest",
+)
+
+grpc_cc_test(
+    name = "thd_test",
+    srcs = ["thd_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//test/core/util:gpr_test_util",
     ],
 )

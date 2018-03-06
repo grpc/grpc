@@ -37,12 +37,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 static NSMutableDictionary *kHostCache;
 
-// This connectivity monitor flushes the host cache when connectivity status
-// changes or when connection switch between Wifi and Cellular data, so that a
-// new call will use a new channel. Otherwise, a new call will still use the
-// cached channel which is no longer available and will cause gRPC to hang.
-static GRPCConnectivityMonitor *connectivityMonitor = nil;
-
 @implementation GRPCHost {
   // TODO(mlumish): Investigate whether caching channels with strong links is a good idea.
   GRPCChannel *_channel;
@@ -90,17 +84,7 @@ static GRPCConnectivityMonitor *connectivityMonitor = nil;
       kHostCache[address] = self;
       _compressAlgorithm = GRPC_COMPRESS_NONE;
     }
-    // Keep a single monitor to flush the cache if the connectivity status changes
-    // Thread safety guarded by @synchronized(kHostCache)
-    if (!connectivityMonitor) {
-      connectivityMonitor =
-      [GRPCConnectivityMonitor monitorWithHost:hostURL.host];
-      void (^handler)(void) = ^{
-        [GRPCHost flushChannelCache];
-      };
-      [connectivityMonitor handleLossWithHandler:handler
-                         wifiStatusChangeHandler:handler];
-    }
+    [GRPCConnectivityMonitor registerObserver:self selector:@selector(connectivityChange:)];
   }
   return self;
 }
@@ -279,6 +263,13 @@ static GRPCConnectivityMonitor *connectivityMonitor = nil;
   @synchronized(self) {
     _channel = nil;
   }
+}
+
+// Flushes the host cache when connectivity status changes or when connection switch between Wifi
+// and Cellular data, so that a new call will use a new channel. Otherwise, a new call will still
+// use the cached channel which is no longer available and will cause gRPC to hang.
+- (void)connectivityChange:(NSNotification *)note {
+  [GRPCHost flushChannelCache];
 }
 
 @end

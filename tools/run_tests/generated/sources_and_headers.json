@@ -764,7 +764,7 @@
     "language": "c", 
     "name": "gpr_thd_test", 
     "src": [
-      "test/core/gpr/thd_test.cc"
+      "test/core/gprpp/thd_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4175,6 +4175,23 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "slice_weak_hash_table_test", 
+    "src": [
+      "test/core/slice/slice_weak_hash_table_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
       "grpc++_test_util", 
       "grpc_test_util"
     ], 
@@ -4184,6 +4201,20 @@
     "name": "stats_test", 
     "src": [
       "test/core/debug/stats_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "grpc"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "status_metadata_test", 
+    "src": [
+      "test/core/transport/status_metadata_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -4202,6 +4233,20 @@
     "name": "status_test", 
     "src": [
       "test/cpp/util/status_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "grpc"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "status_util_test", 
+    "src": [
+      "test/core/client_channel/status_util_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -8111,6 +8156,21 @@
       "test/core/end2end/tests/request_with_flags.cc", 
       "test/core/end2end/tests/request_with_payload.cc", 
       "test/core/end2end/tests/resource_quota_server.cc", 
+      "test/core/end2end/tests/retry.cc", 
+      "test/core/end2end/tests/retry_cancellation.cc", 
+      "test/core/end2end/tests/retry_disabled.cc", 
+      "test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc", 
+      "test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc", 
+      "test/core/end2end/tests/retry_non_retriable_status.cc", 
+      "test/core/end2end/tests/retry_recv_initial_metadata.cc", 
+      "test/core/end2end/tests/retry_recv_message.cc", 
+      "test/core/end2end/tests/retry_server_pushback_delay.cc", 
+      "test/core/end2end/tests/retry_server_pushback_disabled.cc", 
+      "test/core/end2end/tests/retry_streaming.cc", 
+      "test/core/end2end/tests/retry_streaming_after_commit.cc", 
+      "test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc", 
+      "test/core/end2end/tests/retry_throttled.cc", 
+      "test/core/end2end/tests/retry_too_many_attempts.cc", 
       "test/core/end2end/tests/server_finishes_request.cc", 
       "test/core/end2end/tests/shutdown_finishes_calls.cc", 
       "test/core/end2end/tests/shutdown_finishes_tags.cc", 
@@ -8193,6 +8253,21 @@
       "test/core/end2end/tests/request_with_flags.cc", 
       "test/core/end2end/tests/request_with_payload.cc", 
       "test/core/end2end/tests/resource_quota_server.cc", 
+      "test/core/end2end/tests/retry.cc", 
+      "test/core/end2end/tests/retry_cancellation.cc", 
+      "test/core/end2end/tests/retry_disabled.cc", 
+      "test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc", 
+      "test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc", 
+      "test/core/end2end/tests/retry_non_retriable_status.cc", 
+      "test/core/end2end/tests/retry_recv_initial_metadata.cc", 
+      "test/core/end2end/tests/retry_recv_message.cc", 
+      "test/core/end2end/tests/retry_server_pushback_delay.cc", 
+      "test/core/end2end/tests/retry_server_pushback_disabled.cc", 
+      "test/core/end2end/tests/retry_streaming.cc", 
+      "test/core/end2end/tests/retry_streaming_after_commit.cc", 
+      "test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc", 
+      "test/core/end2end/tests/retry_throttled.cc", 
+      "test/core/end2end/tests/retry_too_many_attempts.cc", 
       "test/core/end2end/tests/server_finishes_request.cc", 
       "test/core/end2end/tests/shutdown_finishes_calls.cc", 
       "test/core/end2end/tests/shutdown_finishes_tags.cc", 
@@ -8283,9 +8358,6 @@
       "src/core/lib/gpr/sync.cc", 
       "src/core/lib/gpr/sync_posix.cc", 
       "src/core/lib/gpr/sync_windows.cc", 
-      "src/core/lib/gpr/thd.cc", 
-      "src/core/lib/gpr/thd_posix.cc", 
-      "src/core/lib/gpr/thd_windows.cc", 
       "src/core/lib/gpr/time.cc", 
       "src/core/lib/gpr/time_posix.cc", 
       "src/core/lib/gpr/time_precise.cc", 
@@ -8295,6 +8367,8 @@
       "src/core/lib/gpr/tmpfile_posix.cc", 
       "src/core/lib/gpr/tmpfile_windows.cc", 
       "src/core/lib/gpr/wrap_memcpy.cc", 
+      "src/core/lib/gprpp/thd_posix.cc", 
+      "src/core/lib/gprpp/thd_windows.cc", 
       "src/core/lib/profiling/basic_timers.cc", 
       "src/core/lib/profiling/stap_timers.cc"
     ], 
@@ -8332,7 +8406,6 @@
       "src/core/lib/gpr/spinlock.h", 
       "src/core/lib/gpr/string.h", 
       "src/core/lib/gpr/string_windows.h", 
-      "src/core/lib/gpr/thd.h", 
       "src/core/lib/gpr/time_precise.h", 
       "src/core/lib/gpr/tls.h", 
       "src/core/lib/gpr/tls_gcc.h", 
@@ -8346,6 +8419,7 @@
       "src/core/lib/gprpp/atomic_with_std.h", 
       "src/core/lib/gprpp/manual_constructor.h", 
       "src/core/lib/gprpp/memory.h", 
+      "src/core/lib/gprpp/thd.h", 
       "src/core/lib/profiling/timers.h"
     ], 
     "is_filegroup": true, 
@@ -8378,7 +8452,6 @@
       "src/core/lib/gpr/spinlock.h", 
       "src/core/lib/gpr/string.h", 
       "src/core/lib/gpr/string_windows.h", 
-      "src/core/lib/gpr/thd.h", 
       "src/core/lib/gpr/time_precise.h", 
       "src/core/lib/gpr/tls.h", 
       "src/core/lib/gpr/tls_gcc.h", 
@@ -8392,6 +8465,7 @@
       "src/core/lib/gprpp/atomic_with_std.h", 
       "src/core/lib/gprpp/manual_constructor.h", 
       "src/core/lib/gprpp/memory.h", 
+      "src/core/lib/gprpp/thd.h", 
       "src/core/lib/profiling/timers.h"
     ], 
     "third_party": false, 
@@ -8607,6 +8681,7 @@
       "src/core/lib/transport/service_config.cc", 
       "src/core/lib/transport/static_metadata.cc", 
       "src/core/lib/transport/status_conversion.cc", 
+      "src/core/lib/transport/status_metadata.cc", 
       "src/core/lib/transport/timeout_encoding.cc", 
       "src/core/lib/transport/transport.cc", 
       "src/core/lib/transport/transport_op_string.cc"
@@ -8731,6 +8806,7 @@
       "src/core/lib/slice/slice_hash_table.h", 
       "src/core/lib/slice/slice_internal.h", 
       "src/core/lib/slice/slice_string_helpers.h", 
+      "src/core/lib/slice/slice_weak_hash_table.h", 
       "src/core/lib/surface/api_trace.h", 
       "src/core/lib/surface/call.h", 
       "src/core/lib/surface/call_test_only.h", 
@@ -8755,6 +8831,7 @@
       "src/core/lib/transport/service_config.h", 
       "src/core/lib/transport/static_metadata.h", 
       "src/core/lib/transport/status_conversion.h", 
+      "src/core/lib/transport/status_metadata.h", 
       "src/core/lib/transport/timeout_encoding.h", 
       "src/core/lib/transport/transport.h", 
       "src/core/lib/transport/transport_impl.h"
@@ -8873,6 +8950,7 @@
       "src/core/lib/slice/slice_hash_table.h", 
       "src/core/lib/slice/slice_internal.h", 
       "src/core/lib/slice/slice_string_helpers.h", 
+      "src/core/lib/slice/slice_weak_hash_table.h", 
       "src/core/lib/surface/api_trace.h", 
       "src/core/lib/surface/call.h", 
       "src/core/lib/surface/call_test_only.h", 
@@ -8897,6 +8975,7 @@
       "src/core/lib/transport/service_config.h", 
       "src/core/lib/transport/static_metadata.h", 
       "src/core/lib/transport/status_conversion.h", 
+      "src/core/lib/transport/status_metadata.h", 
       "src/core/lib/transport/timeout_encoding.h", 
       "src/core/lib/transport/transport.h", 
       "src/core/lib/transport/transport_impl.h"
@@ -8928,6 +9007,7 @@
       "src/core/ext/filters/client_channel/resolver_factory.h", 
       "src/core/ext/filters/client_channel/resolver_registry.h", 
       "src/core/ext/filters/client_channel/retry_throttle.h", 
+      "src/core/ext/filters/client_channel/status_util.h", 
       "src/core/ext/filters/client_channel/subchannel.h", 
       "src/core/ext/filters/client_channel/subchannel_index.h", 
       "src/core/ext/filters/client_channel/uri_parser.h"
@@ -8971,6 +9051,8 @@
       "src/core/ext/filters/client_channel/resolver_registry.h", 
       "src/core/ext/filters/client_channel/retry_throttle.cc", 
       "src/core/ext/filters/client_channel/retry_throttle.h", 
+      "src/core/ext/filters/client_channel/status_util.cc", 
+      "src/core/ext/filters/client_channel/status_util.h", 
       "src/core/ext/filters/client_channel/subchannel.cc", 
       "src/core/ext/filters/client_channel/subchannel.h", 
       "src/core/ext/filters/client_channel/subchannel_index.cc", 

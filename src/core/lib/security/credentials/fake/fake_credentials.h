@@ -23,6 +23,9 @@
 
 #include "src/core/lib/security/credentials/credentials.h"
 
+#define GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS \
+  "grpc.fake_security.expected_targets"
+
 /* -- Fake transport security credentials. -- */
 
 /* Creates a fake transport security credentials object for testing. */

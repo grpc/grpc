@@ -31,7 +31,8 @@
 
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/thd.h"
+#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -253,15 +254,17 @@ static void actually_poll_server(void* arg) {
   gpr_free(pa);
 }
 
-static void poll_server_until_read_done(test_tcp_server* server,
-                                        gpr_event* signal_when_done) {
+static grpc_core::Thread* poll_server_until_read_done(
+    test_tcp_server* server, gpr_event* signal_when_done) {
   gpr_atm_rel_store(&state.done_atm, 0);
   state.write_done = 0;
-  gpr_thd_id id;
   poll_args* pa = static_cast<poll_args*>(gpr_malloc(sizeof(*pa)));
   pa->server = server;
   pa->signal_when_done = signal_when_done;
-  gpr_thd_new(&id, "grpc_poll_server", actually_poll_server, pa, nullptr);
+  auto* th = grpc_core::New<grpc_core::Thread>("grpc_poll_server",
+                                               actually_poll_server, pa);
+  th->Start();
+  return th;
 }
 
 static void run_test(const char* response_payload,
@@ -281,9 +284,11 @@ static void run_test(const char* response_payload,
   state.response_payload_length = response_payload_length;
 
   /* poll server until sending out the response */
-  poll_server_until_read_done(&test_server, &ev);
+  grpc_core::UniquePtr<grpc_core::Thread> thdptr(
+      poll_server_until_read_done(&test_server, &ev));
   start_rpc(server_port, expected_status, expected_detail);
   gpr_event_wait(&ev, gpr_inf_future(GPR_CLOCK_REALTIME));
+  thdptr->Join();
 
   /* clean up */
   grpc_endpoint_shutdown(state.tcp,

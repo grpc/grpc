@@ -137,4 +137,13 @@ void grpc_metadata_batch_assert_ok(grpc_metadata_batch* comd);
   } while (0)
 #endif
 
+/// Copies \a src to \a dst.  \a storage must point to an array of
+/// \a grpc_linked_mdelem structs of at least the same size as \a src.
+void grpc_metadata_batch_copy(grpc_metadata_batch* src,
+                              grpc_metadata_batch* dst,
+                              grpc_linked_mdelem* storage);
+
+void grpc_metadata_batch_move(grpc_metadata_batch* src,
+                              grpc_metadata_batch* dst);
+
 #endif /* GRPC_CORE_LIB_TRANSPORT_METADATA_BATCH_H */

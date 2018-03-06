@@ -26,7 +26,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/compression/message_compress.h"
-#include "src/core/lib/gpr/thd.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 
