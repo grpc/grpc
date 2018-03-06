@@ -265,7 +265,6 @@ class Chttp2IncomingByteStream : public ByteStream {
     grpc_closure* on_complete;
   } next_action_;
   grpc_closure destroy_action_;
-  grpc_closure finished_action_;
 };
 
 }  // namespace grpc_core
