@@ -122,7 +122,7 @@ struct read_state {
   bool read_stream_closed;
 
   /* vars for holding data destined for the application */
-  struct grpc_slice_buffer_stream sbs;
+  grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream> sbs;
   grpc_slice_buffer read_slice_buffer;
 
   /* vars for trailing metadata */
@@ -1041,16 +1041,14 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
       grpc_slice_buffer write_slice_buffer;
       grpc_slice slice;
       grpc_slice_buffer_init(&write_slice_buffer);
-      if (1 != grpc_byte_stream_next(
-                   stream_op->payload->send_message.send_message,
+      if (1 != stream_op->payload->send_message.send_message->Next(
                    stream_op->payload->send_message.send_message->length,
                    nullptr)) {
         /* Should never reach here */
         GPR_ASSERT(false);
       }
       if (GRPC_ERROR_NONE !=
-          grpc_byte_stream_pull(stream_op->payload->send_message.send_message,
-                                &slice)) {
+          stream_op->payload->send_message.send_message->Pull(&slice)) {
         /* Should never reach here */
         GPR_ASSERT(false);
       }
@@ -1195,14 +1193,14 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
           grpc_slice_buffer_destroy_internal(
               &stream_state->rs.read_slice_buffer);
           grpc_slice_buffer_init(&stream_state->rs.read_slice_buffer);
-          grpc_slice_buffer_stream_init(&stream_state->rs.sbs,
-                                        &stream_state->rs.read_slice_buffer, 0);
+          uint32_t flags = 0;
           if (stream_state->rs.compressed) {
-            stream_state->rs.sbs.base.flags |= GRPC_WRITE_INTERNAL_COMPRESS;
+            flags |= GRPC_WRITE_INTERNAL_COMPRESS;
           }
+          stream_state->rs.sbs.Init(&stream_state->rs.read_slice_buffer, flags);
           *(reinterpret_cast<grpc_byte_buffer**>(
               stream_op->payload->recv_message.recv_message)) =
-              reinterpret_cast<grpc_byte_buffer*>(&stream_state->rs.sbs);
+              reinterpret_cast<grpc_byte_buffer*>(stream_state->rs.sbs.get());
           GRPC_CLOSURE_SCHED(
               stream_op->payload->recv_message.recv_message_ready,
               GRPC_ERROR_NONE);
@@ -1252,14 +1250,14 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
       grpc_slice_buffer_init(&stream_state->rs.read_slice_buffer);
       grpc_slice_buffer_add(&stream_state->rs.read_slice_buffer,
                             read_data_slice);
-      grpc_slice_buffer_stream_init(&stream_state->rs.sbs,
-                                    &stream_state->rs.read_slice_buffer, 0);
+      uint32_t flags = 0;
       if (stream_state->rs.compressed) {
-        stream_state->rs.sbs.base.flags = GRPC_WRITE_INTERNAL_COMPRESS;
+        flags = GRPC_WRITE_INTERNAL_COMPRESS;
       }
+      stream_state->rs.sbs.Init(&stream_state->rs.read_slice_buffer, flags);
       *(reinterpret_cast<grpc_byte_buffer**>(
           stream_op->payload->recv_message.recv_message)) =
-          reinterpret_cast<grpc_byte_buffer*>(&stream_state->rs.sbs);
+          reinterpret_cast<grpc_byte_buffer*>(stream_state->rs.sbs.get());
       GRPC_CLOSURE_SCHED(stream_op->payload->recv_message.recv_message_ready,
                          GRPC_ERROR_NONE);
       stream_state->state_op_done[OP_RECV_MESSAGE] = true;

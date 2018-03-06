@@ -76,8 +76,8 @@ char* grpc_transport_stream_op_batch_string(
   if (op->send_message) {
     gpr_strvec_add(&b, gpr_strdup(" "));
     gpr_asprintf(&tmp, "SEND_MESSAGE:flags=0x%08x:len=%d",
-                 op->payload->send_message.send_message->flags,
-                 op->payload->send_message.send_message->length);
+                 op->payload->send_message.send_message->flags(),
+                 op->payload->send_message.send_message->length());
     gpr_strvec_add(&b, tmp);
   }
 
