@@ -398,12 +398,12 @@ static void BM_TransportStreamSend(benchmark::State& state) {
     memset(&op, 0, sizeof(op));
     op.payload = &op_payload;
   };
-  grpc_slice_buffer_stream send_stream;
   grpc_slice_buffer send_buffer;
   grpc_slice_buffer_init(&send_buffer);
   grpc_slice_buffer_add(&send_buffer, gpr_slice_malloc(state.range(0)));
   memset(GRPC_SLICE_START_PTR(send_buffer.slices[0]), 0,
          GRPC_SLICE_LENGTH(send_buffer.slices[0]));
+  grpc_core::SliceBufferByteStream send_stream(&send_buffer, 0);
 
   grpc_metadata_batch b;
   grpc_metadata_batch_init(&b);
@@ -427,11 +427,10 @@ static void BM_TransportStreamSend(benchmark::State& state) {
     // force outgoing window to be yuge
     s->chttp2_stream()->flow_control->TestOnlyForceHugeWindow();
     f.chttp2_transport()->flow_control->TestOnlyForceHugeWindow();
-    grpc_slice_buffer_stream_init(&send_stream, &send_buffer, 0);
     reset_op();
     op.on_complete = c.get();
     op.send_message = true;
-    op.payload->send_message.send_message = &send_stream.base;
+    op.payload->send_message.send_message.reset(&send_stream);
     s->Op(&op);
   });
 
@@ -524,7 +523,7 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
   grpc_transport_stream_op_batch_payload op_payload;
   memset(&op_payload, 0, sizeof(op_payload));
   grpc_transport_stream_op_batch op;
-  grpc_byte_stream* recv_stream;
+  grpc_core::OrphanablePtr<grpc_core::ByteStream> recv_stream;
   grpc_slice incoming_data = CreateIncomingDataSlice(state.range(0), 16384);
 
   auto reset_op = [&]() {
@@ -579,21 +578,20 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
 
   drain = MakeClosure([&](grpc_error* error) {
     do {
-      if (received == recv_stream->length) {
-        grpc_byte_stream_destroy(recv_stream);
+      if (received == recv_stream->length()) {
+        recv_stream.reset();
         GRPC_CLOSURE_SCHED(c.get(), GRPC_ERROR_NONE);
         return;
       }
-    } while (grpc_byte_stream_next(recv_stream, recv_stream->length - received,
-                                   drain_continue.get()) &&
-             GRPC_ERROR_NONE ==
-                 grpc_byte_stream_pull(recv_stream, &recv_slice) &&
+    } while (recv_stream->Next(recv_stream->length() - received,
+                               drain_continue.get()) &&
+             GRPC_ERROR_NONE == recv_stream->Pull(&recv_slice) &&
              (received += GRPC_SLICE_LENGTH(recv_slice),
               grpc_slice_unref_internal(recv_slice), true));
   });
 
   drain_continue = MakeClosure([&](grpc_error* error) {
-    grpc_byte_stream_pull(recv_stream, &recv_slice);
+    recv_stream->Pull(&recv_slice);
     received += GRPC_SLICE_LENGTH(recv_slice);
     grpc_slice_unref_internal(recv_slice);
     GRPC_CLOSURE_RUN(drain.get(), GRPC_ERROR_NONE);
