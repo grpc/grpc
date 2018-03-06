@@ -31,6 +31,7 @@
 #include "src/core/ext/transport/cronet/transport/cronet_transport.h"
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
