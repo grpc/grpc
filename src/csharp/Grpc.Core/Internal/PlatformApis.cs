@@ -36,6 +36,7 @@ namespace Grpc.Core.Internal
         static readonly bool isWindows;
         static readonly bool isMono;
         static readonly bool isNetCore;
+        static readonly bool isUnity;
 
         static PlatformApis()
         {
@@ -54,6 +55,7 @@ namespace Grpc.Core.Internal
             isNetCore = false;
 #endif
             isMono = Type.GetType("Mono.Runtime") != null;
+            isUnity = Type.GetType("UnityEngine.Application, UnityEngine") != null;
         }
 
         public static bool IsLinux
@@ -74,6 +76,14 @@ namespace Grpc.Core.Internal
         public static bool IsMono
         {
             get { return isMono; }
+        }
+
+        /// <summary>
+        /// true if running on Unity platform.
+        /// </summary>
+        public static bool IsUnity
+        {
+            get { return isUnity; }
         }
 
         /// <summary>
