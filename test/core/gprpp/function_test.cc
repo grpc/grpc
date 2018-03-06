@@ -16,7 +16,7 @@
  *
  */
 
-#include "src/core/lib/support/function.h"
+#include "src/core/lib/gprpp/function.h"
 #include "test/core/util/test_config.h"
 
 #include <stdio.h>

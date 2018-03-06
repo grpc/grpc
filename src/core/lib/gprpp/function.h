@@ -16,14 +16,14 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_SUPPORT_FUNCTION_H
-#define GRPC_CORE_LIB_SUPPORT_FUNCTION_H
+#ifndef GRPC_CORE_LIB_GPRPP_FUNCTION_H
+#define GRPC_CORE_LIB_GPRPP_FUNCTION_H
 
 #include <stddef.h>
 #include <string.h>
 #include <type_traits>
 #include <utility>
-#include "src/core/lib/support/memory.h"
+#include "src/core/lib/gprpp/memory.h"
 
 namespace grpc_core {
 
@@ -290,4 +290,4 @@ class TrivialInplaceFunction<R(Args...), kInplaceStorage> {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_SUPPORT_FUNCTION_H */
+#endif /* GRPC_CORE_LIB_GPRPP_FUNCTION_H */
