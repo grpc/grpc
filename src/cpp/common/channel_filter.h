@@ -182,20 +182,22 @@ class TransportStreamOpBatch {
     op_->payload->recv_initial_metadata.recv_initial_metadata_ready = closure;
   }
 
-  grpc_byte_stream* send_message() const {
-    return op_->send_message ? op_->payload->send_message.send_message
+  grpc_core::OrphanablePtr<grpc_core::ByteStream>* send_message() const {
+    return op_->send_message ? &op_->payload->send_message.send_message
                              : nullptr;
   }
-  void set_send_message(grpc_byte_stream* send_message) {
+  void set_send_message(
+      grpc_core::OrphanablePtr<grpc_core::ByteStream> send_message) {
     op_->send_message = true;
-    op_->payload->send_message.send_message = send_message;
+    op_->payload->send_message.send_message = std::move(send_message);
   }
 
-  grpc_byte_stream** recv_message() const {
+  grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message() const {
     return op_->recv_message ? op_->payload->recv_message.recv_message
                              : nullptr;
   }
-  void set_recv_message(grpc_byte_stream** recv_message) {
+  void set_recv_message(
+      grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message) {
     op_->recv_message = true;
     op_->payload->recv_message.recv_message = recv_message;
   }
