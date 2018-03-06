@@ -1200,7 +1200,8 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
             flags |= GRPC_WRITE_INTERNAL_COMPRESS;
           }
           stream_state->rs.sbs.Init(&stream_state->rs.read_slice_buffer, flags);
-          stream_op->payload->recv_message->reset(stream_state->rs.sbs.get());
+          stream_op->payload->recv_message.recv_message->reset(
+              stream_state->rs.sbs.get());
           GRPC_CLOSURE_SCHED(
               stream_op->payload->recv_message.recv_message_ready,
               GRPC_ERROR_NONE);
@@ -1255,7 +1256,8 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
         flags = GRPC_WRITE_INTERNAL_COMPRESS;
       }
       stream_state->rs.sbs.Init(&stream_state->rs.read_slice_buffer, flags);
-      stream_op->payload->recv_message->reset(stream_state->rs.sbs.get());
+      stream_op->payload->recv_message.recv_message->reset(
+          stream_state->rs.sbs.get());
       GRPC_CLOSURE_SCHED(stream_op->payload->recv_message.recv_message_ready,
                          GRPC_ERROR_NONE);
       stream_state->state_op_done[OP_RECV_MESSAGE] = true;
