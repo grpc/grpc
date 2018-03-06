@@ -18,7 +18,7 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
-#include "src/core/lib/channel/channel_tracer.h"
+#include "src/core/lib/channel/channel_trace.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -129,6 +129,7 @@ void ChannelTrace::AddTraceEvent(
 
 void ChannelTrace::AddTraceEvent(grpc_slice data, grpc_error* error,
                                  grpc_connectivity_state connectivity_state) {
+  if (max_list_size_ == 0) return;  // tracing is disabled if max_events == 0
   AddTraceEventHelper(New<TraceEvent>(data, error, connectivity_state));
 }
 

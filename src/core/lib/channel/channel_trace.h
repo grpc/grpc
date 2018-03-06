@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_CHANNEL_CHANNEL_TRACER_H
-#define GRPC_CORE_LIB_CHANNEL_CHANNEL_TRACER_H
+#ifndef GRPC_CORE_LIB_CHANNEL_CHANNEL_TRACE_H
+#define GRPC_CORE_LIB_CHANNEL_CHANNEL_TRACE_H
 
 #include <grpc/impl/codegen/port_platform.h>
 
@@ -112,4 +112,4 @@ class ChannelTrace : public RefCounted<ChannelTrace> {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_CHANNEL_CHANNEL_TRACER_H */
+#endif /* GRPC_CORE_LIB_CHANNEL_CHANNEL_TRACE_H */

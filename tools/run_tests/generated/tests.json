@@ -3352,7 +3352,7 @@
     "flaky": false, 
     "gtest": true, 
     "language": "c++", 
-    "name": "channel_tracer_test", 
+    "name": "channel_trace_test", 
     "platforms": [
       "linux", 
       "mac", 

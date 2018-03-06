@@ -67,12 +67,16 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "channel_tracer_test",
-    srcs = ["channel_tracer_test.cc"],
+    name = "channel_trace_test",
+    srcs = ["channel_trace_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:grpc++",
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
