@@ -806,6 +806,7 @@ add_library(grpc
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
   src/core/lib/channel/handshaker_registry.cc
+  src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
@@ -1010,7 +1011,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
-  src/core/ext/filters/client_channel/status_util.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
@@ -1150,6 +1150,7 @@ add_library(grpc_cronet
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
   src/core/lib/channel/handshaker_registry.cc
+  src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
@@ -1325,7 +1326,6 @@ add_library(grpc_cronet
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
-  src/core/ext/filters/client_channel/status_util.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
@@ -1481,6 +1481,7 @@ add_library(grpc_test_util
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
   src/core/lib/channel/handshaker_registry.cc
+  src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
@@ -1625,7 +1626,6 @@ add_library(grpc_test_util
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
-  src/core/ext/filters/client_channel/status_util.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
@@ -1773,6 +1773,7 @@ add_library(grpc_test_util_unsecure
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
   src/core/lib/channel/handshaker_registry.cc
+  src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
@@ -1917,7 +1918,6 @@ add_library(grpc_test_util_unsecure
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
-  src/core/ext/filters/client_channel/status_util.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
@@ -2044,6 +2044,7 @@ add_library(grpc_unsecure
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
   src/core/lib/channel/handshaker_registry.cc
+  src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
@@ -2221,7 +2222,6 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
-  src/core/ext/filters/client_channel/status_util.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
@@ -2849,6 +2849,7 @@ add_library(grpc++_cronet
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
   src/core/lib/channel/handshaker_registry.cc
+  src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
@@ -2998,7 +2999,6 @@ add_library(grpc++_cronet
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
-  src/core/ext/filters/client_channel/status_util.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
@@ -12402,7 +12402,7 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(status_util_test
-  test/core/client_channel/status_util_test.cc
+  test/core/channel/status_util_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )

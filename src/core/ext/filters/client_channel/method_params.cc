@@ -26,7 +26,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/method_params.h"
-#include "src/core/ext/filters/client_channel/status_util.h"
+#include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
 

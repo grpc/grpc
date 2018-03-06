@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_STATUS_UTIL_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_STATUS_UTIL_H
+#ifndef GRPC_LIB_CHANNEL_STATUS_UTILS_H
+#define GRPC_LIB_CHANNEL_STATUS_UTILS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -55,4 +55,4 @@ class StatusCodeSet {
 }  // namespace internal
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_STATUS_UTIL_H */
+#endif /* GRPC_LIB_CHANNEL_STATUS_UTILS_H */

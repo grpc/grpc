@@ -27,8 +27,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "src/core/ext/filters/client_channel/status_util.h"
 #include "src/core/lib/channel/channel_trace_registry.h"
+#include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/memory.h"

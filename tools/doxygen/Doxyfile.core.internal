@@ -929,8 +929,6 @@ src/core/ext/filters/client_channel/resolver_registry.cc \
 src/core/ext/filters/client_channel/resolver_registry.h \
 src/core/ext/filters/client_channel/retry_throttle.cc \
 src/core/ext/filters/client_channel/retry_throttle.h \
-src/core/ext/filters/client_channel/status_util.cc \
-src/core/ext/filters/client_channel/status_util.h \
 src/core/ext/filters/client_channel/subchannel.cc \
 src/core/ext/filters/client_channel/subchannel.h \
 src/core/ext/filters/client_channel/subchannel_index.cc \
@@ -1047,6 +1045,8 @@ src/core/lib/channel/handshaker_factory.cc \
 src/core/lib/channel/handshaker_factory.h \
 src/core/lib/channel/handshaker_registry.cc \
 src/core/lib/channel/handshaker_registry.h \
+src/core/lib/channel/status_util.cc \
+src/core/lib/channel/status_util.h \
 src/core/lib/compression/algorithm_metadata.h \
 src/core/lib/compression/compression.cc \
 src/core/lib/compression/compression_internal.cc \

@@ -69,9 +69,6 @@ grpc_cc_test(
 grpc_cc_test(
     name = "channel_trace_test",
     srcs = ["channel_trace_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
     language = "C++",
     deps = [
         "//:gpr",
@@ -79,5 +76,20 @@ grpc_cc_test(
         "//:grpc++",
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+)
+
+grpc_cc_test(
+    name = "status_util_test",
+    srcs = ["status_util_test.cc"],
+    language = "C++",
+    deps = [
+        "//:grpc",
+    ],
+    external_deps = [
+        "gtest",
     ],
 )
