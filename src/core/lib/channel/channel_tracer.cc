@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "src/core/ext/filters/client_channel/status_util.h"
 #include "src/core/lib/channel/object_registry.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
@@ -35,12 +36,12 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
 
 ChannelTrace::TraceEvent::~TraceEvent() {
   GRPC_ERROR_UNREF(error_);
-  referenced_tracer_.reset();
   grpc_slice_unref_internal(data_);
 }
 
@@ -56,7 +57,8 @@ ChannelTrace::ChannelTrace(size_t max_events)
   gpr_mu_init(&tracer_mu_);
   channel_uuid_ = grpc_object_registry_register_object(
       this, GRPC_OBJECT_REGISTRY_CHANNEL_TRACER);
-  time_created_ = gpr_now(GPR_CLOCK_REALTIME);
+  time_created_ = grpc_millis_to_timespec(grpc_core::ExecCtx::Get()->Now(),
+                                          GPR_CLOCK_REALTIME);
 }
 
 ChannelTrace::~ChannelTrace() {
@@ -131,9 +133,20 @@ void ChannelTrace::TraceEvent::RenderTraceEvent(grpc_json* json) {
   // TODO(ncteisen): Either format this as google.rpc.Status here, or ensure
   // it is done in the layers above core.
   if (error_ != GRPC_ERROR_NONE) {
-    json_iterator = grpc_json_create_child(
-        json_iterator, json, "status", gpr_strdup(grpc_error_string(error_)),
-        GRPC_JSON_STRING, true);
+    grpc_status_code code;
+    grpc_slice message;
+    grpc_error_get_status(error_, GRPC_MILLIS_INF_FUTURE, &code, &message,
+                          nullptr, nullptr);
+    grpc_json* status = grpc_json_create_child(
+        json_iterator, json, "status", nullptr, GRPC_JSON_OBJECT, false);
+    json_iterator = grpc_json_create_child(nullptr, status, "code",
+                                           grpc_status_code_to_string(code),
+                                           GRPC_JSON_STRING, false);
+    grpc_json_create_child(json_iterator, status, "message",
+                           grpc_slice_to_c_string(message), GRPC_JSON_STRING,
+                           true);
+    grpc_slice_unref_internal(message);
+    json_iterator = status;
   }
   json_iterator =
       grpc_json_create_child(json_iterator, json, "timestamp",
