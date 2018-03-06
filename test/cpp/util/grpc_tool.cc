@@ -747,6 +747,8 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
       }
     }
     Status status = call.Finish(&server_trailing_metadata);
+    PrintMetadata(server_trailing_metadata,
+                  "Received trailing metadata from server:");
     if (status.ok()) {
       fprintf(stderr, "Rpc succeeded with OK status\n");
       return true;

@@ -234,6 +234,11 @@ static void test_fake_resolver() {
                             grpc_timeout_milliseconds_to_deadline(100)) ==
              nullptr);
   // Clean up.
+  // Note: Need to explicitly unref the resolver and flush the exec_ctx
+  // to make sure that the final resolver callback (with error set to
+  // "Resolver Shutdown") is invoked before on_res_arg goes out of scope.
+  resolver.reset();
+  grpc_core::ExecCtx::Get()->Flush();
   GRPC_COMBINER_UNREF(combiner, "test_fake_resolver");
 }
 
