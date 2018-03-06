@@ -77,6 +77,7 @@ static grpc_subchannel_args* get_secure_naming_subchannel_args(
   const grpc_core::TargetAuthorityTable* target_authority_table =
       grpc_core::FindTargetAuthorityTableInArgs(args->args);
   grpc_core::UniquePtr<char> authority;
+  bool authority_from_table = false;
   if (target_authority_table != nullptr) {
     // Find the authority for the target.
     const char* target_uri_str =
@@ -90,6 +91,7 @@ static grpc_subchannel_args* get_secure_naming_subchannel_args(
       const grpc_core::UniquePtr<char>* value =
           target_authority_table->Get(key);
       if (value != nullptr) authority.reset(gpr_strdup(value->get()));
+      authority_from_table = true;
       grpc_slice_unref_internal(key);
     }
     grpc_uri_destroy(target_uri);
@@ -116,10 +118,19 @@ static grpc_subchannel_args* get_secure_naming_subchannel_args(
   }
   grpc_arg new_security_connector_arg =
       grpc_security_connector_to_arg(&subchannel_security_connector->base);
-
-  grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
+  grpc_arg args_to_add[2] = {new_security_connector_arg};
+  size_t num_args_to_add = 1;
+  if (authority_from_table) {
+    // If the authority comes from the target authority table, propagate it, to
+    // be picked up by the client auth filter and passed to the security
+    // connector for call validation.
+    args_to_add[num_args_to_add++] = grpc_channel_arg_string_create(
+        const_cast<char*>(GRPC_ARG_SECURE_AUTHORITY), authority.get());
+  }
+  const grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
       new_args_from_connector != nullptr ? new_args_from_connector : args->args,
-      &new_security_connector_arg, 1);
+      args_to_add, num_args_to_add);
+
   GRPC_SECURITY_CONNECTOR_UNREF(&subchannel_security_connector->base,
                                 "lb_channel_create");
   if (new_args_from_connector != nullptr) {

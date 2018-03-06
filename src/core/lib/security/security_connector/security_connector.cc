@@ -465,12 +465,9 @@ static bool fake_channel_check_call_host(grpc_channel_security_connector* sc,
                                          grpc_error** error) {
   grpc_fake_channel_security_connector* c =
       reinterpret_cast<grpc_fake_channel_security_connector*>(sc);
-  if (c->is_lb_channel) {
-    // TODO(dgq): verify that the host (ie, authority header) matches that of
-    // the LB, as opposed to that of the backends.
-  } else {
-    // TODO(dgq): verify that the host (ie, authority header) matches that of
-    // the backend, not the LB's.
+  if (strcmp(host, c->target) != 0) {
+    gpr_log(GPR_ERROR, "Authority (host) '%s' != Target '%s'", host, c->target);
+    abort();
   }
   return true;
 }

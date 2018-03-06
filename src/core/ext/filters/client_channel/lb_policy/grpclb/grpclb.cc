@@ -504,8 +504,6 @@ GrpcLb::BalancerCallState::BalancerCallState(
   // the polling entities from client_channel.
   GPR_ASSERT(grpclb_policy()->server_name_ != nullptr);
   GPR_ASSERT(grpclb_policy()->server_name_[0] != '\0');
-  grpc_slice host =
-      grpc_slice_from_copied_string(grpclb_policy()->server_name_);
   grpc_millis deadline =
       grpclb_policy()->lb_call_timeout_ms_ == 0
           ? GRPC_MILLIS_INF_FUTURE
@@ -514,8 +512,7 @@ GrpcLb::BalancerCallState::BalancerCallState(
       grpclb_policy()->lb_channel_, nullptr, GRPC_PROPAGATE_DEFAULTS,
       grpclb_policy_->interested_parties(),
       GRPC_MDSTR_SLASH_GRPC_DOT_LB_DOT_V1_DOT_LOADBALANCER_SLASH_BALANCELOAD,
-      &host, deadline, nullptr);
-  grpc_slice_unref_internal(host);
+      nullptr, deadline, nullptr);
   // Init the LB call request payload.
   grpc_grpclb_request* request =
       grpc_grpclb_request_create(grpclb_policy()->server_name_);

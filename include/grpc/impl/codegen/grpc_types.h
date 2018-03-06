@@ -231,6 +231,8 @@ typedef struct {
 /** Default authority to pass if none specified on call construction. A string.
  * */
 #define GRPC_ARG_DEFAULT_AUTHORITY "grpc.default_authority"
+/** If set, the authority to use in secure subchannel connections. */
+#define GRPC_ARG_SECURE_AUTHORITY "grpc.secure_authority"
 /** Primary user agent: goes at the start of the user-agent metadata
     sent on each request. A string. */
 #define GRPC_ARG_PRIMARY_USER_AGENT_STRING "grpc.primary_user_agent"

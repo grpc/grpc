@@ -26,6 +26,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/profiling/timers.h"
@@ -66,6 +67,7 @@ struct call_data {
 struct channel_data {
   grpc_channel_security_connector* security_connector;
   grpc_auth_context* auth_context;
+  char* secure_authority;
 };
 }  // namespace
 
@@ -319,7 +321,11 @@ static void auth_start_transport_stream_op_batch(
       GRPC_CALL_STACK_REF(calld->owning_call, "check_call_host");
       GRPC_CLOSURE_INIT(&calld->async_result_closure, on_host_checked, batch,
                         grpc_schedule_on_exec_ctx);
-      char* call_host = grpc_slice_to_c_string(calld->host);
+      // Use the (sub)channel's secure authority value if present. Otherwise,
+      // fallback to the value found in the metadata.
+      char* call_host = chand->secure_authority != nullptr
+                            ? gpr_strdup(chand->secure_authority)
+                            : grpc_slice_to_c_string(calld->host);
       grpc_error* error = GRPC_ERROR_NONE;
       if (grpc_channel_security_connector_check_call_host(
               chand->security_connector, call_host, chand->auth_context,
@@ -394,7 +400,13 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
 
   /* grab pointers to our data from the channel element */
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-
+  // If we find an explicit authority value in the (sub)channel args, use it.
+  const grpc_arg* secure_authority =
+      grpc_channel_args_find(args->channel_args, GRPC_ARG_SECURE_AUTHORITY);
+  if (secure_authority != nullptr) {
+    chand->secure_authority =
+        gpr_strdup(grpc_channel_arg_get_string(secure_authority));
+  }
   /* The first and the last filters tend to be implemented differently to
      handle the case that there's no 'next' filter to call on the up or down
      path */
@@ -417,6 +429,7 @@ static void destroy_channel_elem(grpc_channel_element* elem) {
   if (sc != nullptr) {
     GRPC_SECURITY_CONNECTOR_UNREF(&sc->base, "client_auth_filter");
   }
+  gpr_free(chand->secure_authority);
   GRPC_AUTH_CONTEXT_UNREF(chand->auth_context, "client_auth_filter");
 }
 
