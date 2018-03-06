@@ -1145,6 +1145,7 @@ grpc_tool_test: $(BINDIR)/$(CONFIG)/grpc_tool_test
 grpclb_api_test: $(BINDIR)/$(CONFIG)/grpclb_api_test
 grpclb_end2end_test: $(BINDIR)/$(CONFIG)/grpclb_end2end_test
 h2_ssl_cert_test: $(BINDIR)/$(CONFIG)/h2_ssl_cert_test
+h2_ssl_session_reuse_test: $(BINDIR)/$(CONFIG)/h2_ssl_session_reuse_test
 health_service_end2end_test: $(BINDIR)/$(CONFIG)/health_service_end2end_test
 http2_client: $(BINDIR)/$(CONFIG)/http2_client
 hybrid_end2end_test: $(BINDIR)/$(CONFIG)/hybrid_end2end_test
@@ -1606,6 +1607,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/grpclb_api_test \
   $(BINDIR)/$(CONFIG)/grpclb_end2end_test \
   $(BINDIR)/$(CONFIG)/h2_ssl_cert_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_session_reuse_test \
   $(BINDIR)/$(CONFIG)/health_service_end2end_test \
   $(BINDIR)/$(CONFIG)/http2_client \
   $(BINDIR)/$(CONFIG)/hybrid_end2end_test \
@@ -1754,6 +1756,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/grpclb_api_test \
   $(BINDIR)/$(CONFIG)/grpclb_end2end_test \
   $(BINDIR)/$(CONFIG)/h2_ssl_cert_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_session_reuse_test \
   $(BINDIR)/$(CONFIG)/health_service_end2end_test \
   $(BINDIR)/$(CONFIG)/http2_client \
   $(BINDIR)/$(CONFIG)/hybrid_end2end_test \
@@ -2170,6 +2173,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/grpclb_end2end_test || ( echo test grpclb_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_ssl_cert_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_cert_test || ( echo test h2_ssl_cert_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_ssl_session_reuse_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_session_reuse_test || ( echo test h2_ssl_session_reuse_test failed ; exit 1 )
 	$(E) "[RUN]     Testing health_service_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/health_service_end2end_test || ( echo test health_service_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing inlined_vector_test"
@@ -3219,6 +3224,7 @@ LIBGRPC_SRC = \
     src/core/lib/surface/init_secure.cc \
     src/core/tsi/alts_transport_security.cc \
     src/core/tsi/fake_transport_security.cc \
+    src/core/tsi/ssl_session_cache.cc \
     src/core/tsi/ssl_transport_security.cc \
     src/core/tsi/transport_security_grpc.cc \
     src/core/tsi/transport_security.cc \
@@ -3589,6 +3595,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/surface/init_secure.cc \
     src/core/tsi/alts_transport_security.cc \
     src/core/tsi/fake_transport_security.cc \
+    src/core/tsi/ssl_session_cache.cc \
     src/core/tsi/ssl_transport_security.cc \
     src/core/tsi/transport_security_grpc.cc \
     src/core/tsi/transport_security.cc \
@@ -16427,6 +16434,49 @@ endif
 endif
 
 
+H2_SSL_SESSION_REUSE_TEST_SRC = \
+    test/core/end2end/h2_ssl_session_reuse_test.cc \
+
+H2_SSL_SESSION_REUSE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SSL_SESSION_REUSE_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_ssl_session_reuse_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/h2_ssl_session_reuse_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_ssl_session_reuse_test: $(PROTOBUF_DEP) $(H2_SSL_SESSION_REUSE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(H2_SSL_SESSION_REUSE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/h2_ssl_session_reuse_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_session_reuse_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_ssl_session_reuse_test: $(H2_SSL_SESSION_REUSE_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(H2_SSL_SESSION_REUSE_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 HEALTH_SERVICE_END2END_TEST_SRC = \
     test/cpp/end2end/health_service_end2end_test.cc \
 
@@ -22429,6 +22479,7 @@ src/core/plugin_registry/grpc_cronet_plugin_registry.cc: $(OPENSSL_DEP)
 src/core/plugin_registry/grpc_plugin_registry.cc: $(OPENSSL_DEP)
 src/core/tsi/alts_transport_security.cc: $(OPENSSL_DEP)
 src/core/tsi/fake_transport_security.cc: $(OPENSSL_DEP)
+src/core/tsi/ssl_session_cache.cc: $(OPENSSL_DEP)
 src/core/tsi/ssl_transport_security.cc: $(OPENSSL_DEP)
 src/core/tsi/transport_security.cc: $(OPENSSL_DEP)
 src/core/tsi/transport_security_adapter.cc: $(OPENSSL_DEP)

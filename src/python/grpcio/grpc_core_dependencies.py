@@ -244,6 +244,7 @@ CORE_SOURCE_FILES = [
     'src/core/lib/surface/init_secure.cc',
     'src/core/tsi/alts_transport_security.cc',
     'src/core/tsi/fake_transport_security.cc',
+    'src/core/tsi/ssl_session_cache.cc',
     'src/core/tsi/ssl_transport_security.cc',
     'src/core/tsi/transport_security_grpc.cc',
     'src/core/tsi/transport_security.cc',
