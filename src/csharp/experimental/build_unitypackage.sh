@@ -24,20 +24,9 @@ dotnet restore Grpc.sln
 mkdir -p GrpcUnity
 dotnet build --configuration Release --framework net45 Grpc.Core --output ../GrpcUnity
 
-#ThirdParty:
-#Google.Protobuf:
+#TODO: add ThirdParty/Grpc.Core:
 # - assembly
+# - native libraries (mac dylib need to be renamed to grpc_csharp_ext.bundle)
 
-#Grpc.Core:
-# - assembly
-# - native libraries....
-
-#Grpc.Tools:
-# - assembly
-
-#System.Interactive.Async:
-# - assembly
-
-# TODO: copy libraries to build...
-
-# TODO: rename mac dylib to: grpc_csharp_ext.bundle
+#TODO: add ThirdParty/Grpc.Tools:
+# - protoc and grpc plugin
