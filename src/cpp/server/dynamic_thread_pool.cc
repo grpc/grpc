@@ -30,8 +30,7 @@ DynamicThreadPool::DynamicThread::DynamicThread(DynamicThreadPool* pool)
     : pool_(pool),
       thd_("dynamic thread pool thread",
            [](void* th) {
-             reinterpret_cast<DynamicThreadPool::DynamicThread*>(th)
-                 ->ThreadFunc();
+             static_cast<DynamicThreadPool::DynamicThread*>(th)->ThreadFunc();
            },
            this) {
   thd_.Start();

@@ -33,9 +33,7 @@ ThreadManager::WorkerThread::WorkerThread(ThreadManager* thd_mgr)
   // ~WorkerThread().
   thd_ = grpc_core::Thread(
       "sync server thread",
-      [](void* th) {
-        reinterpret_cast<ThreadManager::WorkerThread*>(th)->Run();
-      },
+      [](void* th) { static_cast<ThreadManager::WorkerThread*>(th)->Run(); },
       this);
   thd_.Start();
 }

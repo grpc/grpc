@@ -168,7 +168,7 @@ std::shared_ptr<CallCredentials> CompositeCallCredentials(
 void MetadataCredentialsPluginWrapper::Destroy(void* wrapper) {
   if (wrapper == nullptr) return;
   MetadataCredentialsPluginWrapper* w =
-      reinterpret_cast<MetadataCredentialsPluginWrapper*>(wrapper);
+      static_cast<MetadataCredentialsPluginWrapper*>(wrapper);
   delete w;
 }
 
@@ -180,7 +180,7 @@ int MetadataCredentialsPluginWrapper::GetMetadata(
     const char** error_details) {
   GPR_ASSERT(wrapper);
   MetadataCredentialsPluginWrapper* w =
-      reinterpret_cast<MetadataCredentialsPluginWrapper*>(wrapper);
+      static_cast<MetadataCredentialsPluginWrapper*>(wrapper);
   if (!w->plugin_) {
     *num_creds_md = 0;
     *status = GRPC_STATUS_OK;
