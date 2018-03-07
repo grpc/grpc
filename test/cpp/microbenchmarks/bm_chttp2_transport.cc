@@ -398,13 +398,13 @@ static void BM_TransportStreamSend(benchmark::State& state) {
     memset(&op, 0, sizeof(op));
     op.payload = &op_payload;
   };
-  grpc_slice_buffer send_buffer;
-  grpc_slice_buffer_init(&send_buffer);
-  grpc_slice_buffer_add(&send_buffer, gpr_slice_malloc(state.range(0)));
-  memset(GRPC_SLICE_START_PTR(send_buffer.slices[0]), 0,
-         GRPC_SLICE_LENGTH(send_buffer.slices[0]));
-  grpc_core::SliceBufferByteStream send_stream(&send_buffer, 0);
-
+  // Create the send_message payload slice.
+  // Note: We use grpc_slice_malloc_large() instead of grpc_slice_malloc()
+  // to force the slice to be refcounted, so that it remains alive when it
+  // is unreffed after each send_message op.
+  grpc_slice send_slice = grpc_slice_malloc_large(state.range(0));
+  memset(GRPC_SLICE_START_PTR(send_slice), 0, GRPC_SLICE_LENGTH(send_slice));
+  grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream> send_stream;
   grpc_metadata_batch b;
   grpc_metadata_batch_init(&b);
   b.deadline = GRPC_MILLIS_INF_FUTURE;
@@ -424,13 +424,18 @@ static void BM_TransportStreamSend(benchmark::State& state) {
       gpr_event_set(bm_done, (void*)1);
       return;
     }
+    grpc_slice_buffer send_buffer;
+    grpc_slice_buffer_init(&send_buffer);
+    grpc_slice_buffer_add(&send_buffer, grpc_slice_ref(send_slice));
+    send_stream.Init(&send_buffer, 0);
+    grpc_slice_buffer_destroy(&send_buffer);
     // force outgoing window to be yuge
     s->chttp2_stream()->flow_control->TestOnlyForceHugeWindow();
     f.chttp2_transport()->flow_control->TestOnlyForceHugeWindow();
     reset_op();
     op.on_complete = c.get();
     op.send_message = true;
-    op.payload->send_message.send_message.reset(&send_stream);
+    op.payload->send_message.send_message.reset(send_stream.get());
     s->Op(&op);
   });
 
@@ -453,7 +458,7 @@ static void BM_TransportStreamSend(benchmark::State& state) {
   s.reset();
   track_counters.Finish(state);
   grpc_metadata_batch_destroy(&b);
-  grpc_slice_buffer_destroy(&send_buffer);
+  grpc_slice_unref(send_slice);
 }
 BENCHMARK(BM_TransportStreamSend)->Range(0, 128 * 1024 * 1024);
 
