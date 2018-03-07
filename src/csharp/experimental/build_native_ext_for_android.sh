@@ -36,4 +36,4 @@ cmake ../.. \
   -DRUN_HAVE_STEADY_CLOCK=0 \
   -DCMAKE_BUILD_TYPE=Release
 
-make grpc_csharp_ext
+make -j4 grpc_csharp_ext
