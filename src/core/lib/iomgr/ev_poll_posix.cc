@@ -876,7 +876,6 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
                                 grpc_pollset_worker** worker_hdl,
                                 grpc_millis deadline) {
   GPR_TIMER_SCOPE("pollset_work", 0);
-
   grpc_pollset_worker worker;
   if (worker_hdl) *worker_hdl = &worker;
   grpc_error* error = GRPC_ERROR_NONE;
@@ -927,7 +926,8 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
   gpr_tls_set(&g_current_thread_poller, (intptr_t)pollset);
   while (keep_polling) {
     keep_polling = 0;
-    if (!pollset->kicked_without_pollers) {
+    if (!pollset->kicked_without_pollers ||
+        deadline <= grpc_core::ExecCtx::Get()->Now()) {
       if (!added_worker) {
         push_front_worker(pollset, &worker);
         added_worker = 1;
