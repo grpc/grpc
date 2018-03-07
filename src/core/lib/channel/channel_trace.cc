@@ -134,14 +134,49 @@ void ChannelTrace::AddTraceEventReferencingSubchannel(
 
 namespace {
 
-// returns an allocated string that represents tm according to RFC-3339.
+// returns an allocated string that represents tm according to RFC-3339, and,
+// more specifically, follows:
+// https://developers.google.com/protocol-buffers/docs/proto3#json
+//
+// "Uses RFC 3339, where generated output will always be Z-normalized and uses
+// 0, 3, 6 or 9 fractional digits."
 char* fmt_time(gpr_timespec tm) {
-  char buffer[35];
+  char time_buffer[35];
+  char ns_buffer[11];  // '.' + 9 digits of precision
   struct tm* tm_info = localtime((const time_t*)&tm.tv_sec);
-  strftime(buffer, sizeof(buffer), "%Y-%m-%dT%H:%M:%S", tm_info);
+  strftime(time_buffer, sizeof(time_buffer), "%Y-%m-%dT%H:%M:%S", tm_info);
+  snprintf(ns_buffer, 11, ".%09d", tm.tv_nsec);
+  // This loop trims off trailing zeros by inserting a null character that the
+  // right point. We iterate in chunks of three because we want 0, 3, 6, or 9
+  // fractional digits.
+  for (int i = 7; i >= 1; i -= 3) {
+    if (ns_buffer[i] == '0' && ns_buffer[i + 1] == '0' &&
+        ns_buffer[i + 2] == '0') {
+      ns_buffer[i] = 0;
+      // Specially case in which all fractional digits were 0.
+      if (i == 1) {
+        ns_buffer[0] = 0;
+      }
+    } else {
+      break;
+    }
+  }
   char* full_time_str;
-  gpr_asprintf(&full_time_str, "%s.%09dZ", buffer, tm.tv_nsec);
+  gpr_asprintf(&full_time_str, "%s%sZ", time_buffer, ns_buffer);
   return full_time_str;
+}
+
+const char* severity_string(ChannelTrace::Severity severity) {
+  switch (severity) {
+    case ChannelTrace::Severity::Info:
+      return "INFO";
+    case ChannelTrace::Severity::Warning:
+      return "WARNING";
+    case ChannelTrace::Severity::Error:
+      return "ERROR";
+    default:
+      GPR_UNREACHABLE_CODE(return "UNKNOWN");
+  }
 }
 
 }  // anonymous namespace
@@ -151,10 +186,9 @@ void ChannelTrace::TraceEvent::RenderTraceEvent(grpc_json* json) const {
   json_iterator = grpc_json_create_child(json_iterator, json, "description",
                                          grpc_slice_to_c_string(data_),
                                          GRPC_JSON_STRING, true);
-  char* trace_level_str;
-  gpr_asprintf(&trace_level_str, "%d", static_cast<int32_t>(severity_));
-  json_iterator = grpc_json_create_child(
-      json_iterator, json, "severity", trace_level_str, GRPC_JSON_NUMBER, true);
+  json_iterator = grpc_json_create_child(json_iterator, json, "severity",
+                                         severity_string(severity_),
+                                         GRPC_JSON_STRING, false);
   json_iterator =
       grpc_json_create_child(json_iterator, json, "timestamp",
                              fmt_time(timestamp_), GRPC_JSON_STRING, true);

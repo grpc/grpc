@@ -33,6 +33,11 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/channel_trace_proto_helper.h"
 
+// remove me
+#include <grpc/support/string_util.h>
+#include <stdlib.h>
+#include <string.h>
+
 namespace grpc_core {
 namespace testing {
 namespace {

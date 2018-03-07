@@ -109,10 +109,15 @@ message ChannelData {
 message ChannelTraceEvent {
   // High level description of the event.
   string description = 1;
-  // the severity of the trace event. Options are INFO, WARNING, and ERROR,
-  // which are represented by the values 1, 2, and 3, respectively. Any other
-  // value will be treated as ERROR.
-  int32 severity = 2;
+  // The supported severity levels of trace events.
+  enum Severity {
+    UNKNOWN = 0;
+    INFO = 1;
+    WARNING = 2;
+    ERROR = 3;
+  }
+  // the severity of the trace event
+  Severity severity = 2;
   // When this event occurred.
   google.protobuf.Timestamp timestamp = 3;
   // ref of referenced channel or subchannel.
