@@ -43,14 +43,15 @@ namespace grpc_core {
 ChannelTrace::TraceEvent::TraceEvent(
     grpc_slice data, grpc_error* error,
     grpc_connectivity_state connectivity_state,
-    RefCountedPtr<ChannelTrace> referenced_tracer)
+    RefCountedPtr<ChannelTrace> referenced_tracer, ReferencedType type)
     : data_(data),
       error_(error),
       timestamp_(grpc_millis_to_timespec(grpc_core::ExecCtx::Get()->Now(),
                                          GPR_CLOCK_REALTIME)),
       connectivity_state_(connectivity_state),
       next_(nullptr),
-      referenced_tracer_(std::move(referenced_tracer)) {}
+      referenced_tracer_(std::move(referenced_tracer)),
+      referenced_type_(type) {}
 
 ChannelTrace::TraceEvent::TraceEvent(grpc_slice data, grpc_error* error,
                                      grpc_connectivity_state connectivity_state)
@@ -69,7 +70,6 @@ ChannelTrace::TraceEvent::~TraceEvent() {
 ChannelTrace::ChannelTrace(size_t max_events)
     : channel_uuid_(-1),
       num_events_logged_(0),
-      num_children_seen_(0),
       list_size_(0),
       max_list_size_(max_events),
       head_trace_(nullptr),
@@ -116,15 +116,25 @@ void ChannelTrace::AddTraceEventHelper(TraceEvent* new_trace_event) {
   }
 }
 
-void ChannelTrace::AddTraceEvent(
+void ChannelTrace::AddTraceEventReferencingChannel(
     grpc_slice data, grpc_error* error,
     grpc_connectivity_state connectivity_state,
     RefCountedPtr<ChannelTrace> referenced_tracer) {
   if (max_list_size_ == 0) return;  // tracing is disabled if max_events == 0
-  ++num_children_seen_;
   // create and fill up the new event
   AddTraceEventHelper(New<TraceEvent>(data, error, connectivity_state,
-                                      std::move(referenced_tracer)));
+                                      std::move(referenced_tracer), Channel));
+}
+
+void ChannelTrace::AddTraceEventReferencingSubchannel(
+    grpc_slice data, grpc_error* error,
+    grpc_connectivity_state connectivity_state,
+    RefCountedPtr<ChannelTrace> referenced_tracer) {
+  if (max_list_size_ == 0) return;  // tracing is disabled if max_events == 0
+  // create and fill up the new event
+  AddTraceEventHelper(New<TraceEvent>(data, error, connectivity_state,
+                                      std::move(referenced_tracer),
+                                      Subchannel));
 }
 
 void ChannelTrace::AddTraceEvent(grpc_slice data, grpc_error* error,
@@ -178,8 +188,15 @@ void ChannelTrace::TraceEvent::RenderTraceEvent(grpc_json* json) const {
   if (referenced_tracer_ != nullptr) {
     char* uuid_str;
     gpr_asprintf(&uuid_str, "%" PRIdPTR, referenced_tracer_->channel_uuid_);
-    json_iterator = grpc_json_create_child(json_iterator, json, "child_ref",
-                                           uuid_str, GRPC_JSON_NUMBER, true);
+    grpc_json* child_ref = grpc_json_create_child(
+        json_iterator, json,
+        (referenced_type_ == Channel) ? "channelRef" : "subchannelRef",
+        nullptr, GRPC_JSON_OBJECT, false);
+    json_iterator = grpc_json_create_child(
+        nullptr, child_ref,
+        (referenced_type_ == Channel) ? "channelId" : "subchannelId",
+        uuid_str, GRPC_JSON_STRING, true);
+    json_iterator = child_ref;
   }
 }
 
@@ -191,10 +208,10 @@ char* ChannelTrace::RenderTrace() const {
   gpr_asprintf(&num_events_logged_str, "%" PRId64, num_events_logged_);
   grpc_json* json_iterator = nullptr;
   json_iterator =
-      grpc_json_create_child(json_iterator, json, "num_events_logged",
-                             num_events_logged_str, GRPC_JSON_NUMBER, true);
+      grpc_json_create_child(json_iterator, json, "numEventsLogged",
+                             num_events_logged_str, GRPC_JSON_STRING, true);
   json_iterator =
-      grpc_json_create_child(json_iterator, json, "creation_time",
+      grpc_json_create_child(json_iterator, json, "creationTime",
                              fmt_time(time_created_), GRPC_JSON_STRING, true);
   grpc_json* events = grpc_json_create_child(json_iterator, json, "events",
                                              nullptr, GRPC_JSON_ARRAY, false);

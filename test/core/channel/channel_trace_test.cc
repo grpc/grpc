@@ -142,7 +142,7 @@ TEST_P(ChannelTracerTest, ComplexTest) {
   AddSimpleTrace(tracer);
   AddSimpleTrace(tracer);
   RefCountedPtr<ChannelTrace> sc1 = MakeRefCounted<ChannelTrace>(GetParam());
-  tracer->AddTraceEvent(grpc_slice_from_static_string("subchannel one created"),
+  tracer->AddTraceEventReferencingSubchannel(grpc_slice_from_static_string("subchannel one created"),
                         GRPC_ERROR_NONE, GRPC_CHANNEL_IDLE, sc1);
   ValidateChannelTrace(tracer, 3, GetParam());
   AddSimpleTrace(sc1);
@@ -158,9 +158,9 @@ TEST_P(ChannelTracerTest, ComplexTest) {
   ValidateChannelTrace(tracer, 5, GetParam());
   ValidateTraceDataMatchedUuidLookup(tracer);
   RefCountedPtr<ChannelTrace> sc2 = MakeRefCounted<ChannelTrace>(GetParam());
-  tracer->AddTraceEvent(grpc_slice_from_static_string("subchannel two created"),
+  tracer->AddTraceEventReferencingChannel(grpc_slice_from_static_string("LB channel two created"),
                         GRPC_ERROR_NONE, GRPC_CHANNEL_IDLE, sc2);
-  tracer->AddTraceEvent(
+  tracer->AddTraceEventReferencingSubchannel(
       grpc_slice_from_static_string("subchannel one inactive"), GRPC_ERROR_NONE,
       GRPC_CHANNEL_IDLE, sc1);
   ValidateChannelTrace(tracer, 7, GetParam());
@@ -185,22 +185,22 @@ TEST_P(ChannelTracerTest, TestNesting) {
   AddSimpleTrace(tracer);
   AddSimpleTrace(tracer);
   RefCountedPtr<ChannelTrace> sc1 = MakeRefCounted<ChannelTrace>(GetParam());
-  tracer->AddTraceEvent(grpc_slice_from_static_string("subchannel one created"),
+  tracer->AddTraceEventReferencingChannel(grpc_slice_from_static_string("subchannel one created"),
                         GRPC_ERROR_NONE, GRPC_CHANNEL_IDLE, sc1);
   AddSimpleTrace(sc1);
   RefCountedPtr<ChannelTrace> conn1 = MakeRefCounted<ChannelTrace>(GetParam());
   // nesting one level deeper.
-  sc1->AddTraceEvent(grpc_slice_from_static_string("connection one created"),
+  sc1->AddTraceEventReferencingSubchannel(grpc_slice_from_static_string("connection one created"),
                      GRPC_ERROR_NONE, GRPC_CHANNEL_IDLE, conn1);
   AddSimpleTrace(conn1);
   AddSimpleTrace(tracer);
   AddSimpleTrace(tracer);
   RefCountedPtr<ChannelTrace> sc2 = MakeRefCounted<ChannelTrace>(GetParam());
-  tracer->AddTraceEvent(grpc_slice_from_static_string("subchannel two created"),
+  tracer->AddTraceEventReferencingSubchannel(grpc_slice_from_static_string("subchannel two created"),
                         GRPC_ERROR_NONE, GRPC_CHANNEL_IDLE, sc2);
   // this trace should not get added to the parents children since it is already
   // present in the tracer.
-  tracer->AddTraceEvent(
+  tracer->AddTraceEventReferencingChannel(
       grpc_slice_from_static_string("subchannel one inactive"), GRPC_ERROR_NONE,
       GRPC_CHANNEL_IDLE, sc1);
   AddSimpleTrace(tracer);

@@ -51,15 +51,21 @@ class ChannelTrace : public RefCounted<ChannelTrace> {
 
   // TODO(ncteisen): Once channelz is implemented, the events should reference
   // the overall channelz object, not just the ChannelTrace object.
-  void AddTraceEvent(grpc_slice data, grpc_error* error,
-                     grpc_connectivity_state connectivity_state,
-                     RefCountedPtr<ChannelTrace> referenced_tracer);
+  void AddTraceEventReferencingChannel(
+      grpc_slice data, grpc_error* error,
+      grpc_connectivity_state connectivity_state,
+      RefCountedPtr<ChannelTrace> referenced_tracer);
+  void AddTraceEventReferencingSubchannel(
+      grpc_slice data, grpc_error* error,
+      grpc_connectivity_state connectivity_state,
+      RefCountedPtr<ChannelTrace> referenced_tracer);
 
   // Returns the tracing data rendered as a grpc json string.
   // The string is owned by the caller and must be freed.
   char* RenderTrace() const;
 
  private:
+  enum ReferencedType { Channel, Subchannel };
   // Private class to encapsulate all the data and bookkeeping needed for a
   // a trace event.
   class TraceEvent {
@@ -69,7 +75,8 @@ class ChannelTrace : public RefCounted<ChannelTrace> {
     // overall channelz object, not just the ChannelTrace object
     TraceEvent(grpc_slice data, grpc_error* error,
                grpc_connectivity_state connectivity_state,
-               RefCountedPtr<ChannelTrace> referenced_tracer);
+               RefCountedPtr<ChannelTrace> referenced_tracer,
+               ReferencedType type);
 
     // Constructor for a TraceEvent that does not reverence a different
     // channel.
@@ -94,6 +101,9 @@ class ChannelTrace : public RefCounted<ChannelTrace> {
     TraceEvent* next_;
     // the tracer object for the (sub)channel that this trace event refers to.
     RefCountedPtr<ChannelTrace> referenced_tracer_;
+    // the type that the referenced tracer points to. Unused if this trace
+    // does not point to any channel or subchannel
+    ReferencedType referenced_type_;
   };  // TraceEvent
 
   // Internal helper to add and link in a trace event
@@ -102,7 +112,6 @@ class ChannelTrace : public RefCounted<ChannelTrace> {
   gpr_mu tracer_mu_;
   intptr_t channel_uuid_;
   uint64_t num_events_logged_;
-  uint64_t num_children_seen_;
   size_t list_size_;
   size_t max_list_size_;
   TraceEvent* head_trace_;

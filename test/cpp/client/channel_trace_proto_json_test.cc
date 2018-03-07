@@ -50,24 +50,32 @@ TEST(ChannelTraceTest, ProtoJsonTest) {
   RefCountedPtr<ChannelTrace> tracer = MakeRefCounted<ChannelTrace>(10);
   AddSimpleTrace(tracer);
   AddSimpleTrace(tracer);
-  tracer->AddTraceEvent(
-      grpc_slice_from_static_string("trace three"),
-      grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"),
-                         GRPC_ERROR_INT_HTTP2_ERROR, 2),
-      GRPC_CHANNEL_IDLE);
-  tracer->AddTraceEvent(grpc_slice_from_static_string("trace four"),
-                        GRPC_ERROR_NONE, GRPC_CHANNEL_SHUTDOWN);
-  std::string json_str = tracer->RenderTrace();
-  gpr_log(GPR_ERROR, "%s", json_str.c_str());
+  RefCountedPtr<ChannelTrace> sc1 = MakeRefCounted<ChannelTrace>(10);
+  tracer->AddTraceEventReferencingSubchannel(grpc_slice_from_static_string("subchannel one created"),
+                        GRPC_ERROR_NONE, GRPC_CHANNEL_IDLE, sc1);
+  AddSimpleTrace(sc1);
+  AddSimpleTrace(sc1);
+  AddSimpleTrace(sc1);
+  RefCountedPtr<ChannelTrace> sc2 = MakeRefCounted<ChannelTrace>(10);
+  tracer->AddTraceEventReferencingChannel(grpc_slice_from_static_string("LB channel two created"),
+                        GRPC_ERROR_NONE, GRPC_CHANNEL_IDLE, sc2);
+  tracer->AddTraceEventReferencingSubchannel(
+      grpc_slice_from_static_string("subchannel one inactive"), GRPC_ERROR_NONE,
+      GRPC_CHANNEL_IDLE, sc1);
+  std::string tracer_json_str = tracer->RenderTrace();
+  gpr_log(GPR_ERROR, "%s", tracer_json_str.c_str());
   grpc::channelz::ChannelTrace channel_trace;
   google::protobuf::util::JsonParseOptions options;
   options.ignore_unknown_fields = true;
   ASSERT_EQ(google::protobuf::util::JsonStringToMessage(
-                json_str, &channel_trace, options),
+                tracer_json_str, &channel_trace, options),
             google::protobuf::util::Status::OK);
-  std::string str;
-  google::protobuf::TextFormat::PrintToString(channel_trace, &str);
-  gpr_log(GPR_ERROR, "%s", str.c_str());
+  std::string proto_json_str;
+  ASSERT_EQ(google::protobuf::util::MessageToJsonString(channel_trace, &proto_json_str),  google::protobuf::util::Status::OK);
+  gpr_log(GPR_ERROR, "%s", proto_json_str.c_str());
+  tracer.reset(nullptr);
+  sc1.reset(nullptr);
+  sc2.reset(nullptr);
 }
 
 }  // namespace testing
