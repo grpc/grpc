@@ -118,6 +118,7 @@ if EXTRA_ENV_COMPILE_ARGS is None:
     EXTRA_ENV_COMPILE_ARGS += ' -std=c++11 -std=gnu99 -fvisibility=hidden -fno-wrapv -fno-exceptions'
   elif "darwin" in sys.platform:
     EXTRA_ENV_COMPILE_ARGS += ' -fvisibility=hidden -fno-wrapv -fno-exceptions'
+EXTRA_ENV_COMPILE_ARGS += ' -DPB_FIELD_16BIT'	
 
 if EXTRA_ENV_LINK_ARGS is None:
   EXTRA_ENV_LINK_ARGS = ''
@@ -160,7 +161,7 @@ if "win32" in sys.platform:
 
 DEFINE_MACROS = (
     ('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600),
-    ('GPR_BACKWARDS_COMPATIBILITY_MODE', 1),)
+    ('GPR_BACKWARDS_COMPATIBILITY_MODE', 1))
 if "win32" in sys.platform:
   # TODO(zyc): Re-enble c-ares on x64 and x86 windows after fixing the
   # ares_library_init compilation issue
