@@ -37,10 +37,11 @@ grpc_sh_binary(
 grpc_py_binary(
   name = "test_dns_server",
   srcs = ["test_dns_server.py"],
+  testonly = True,
   data = [
       "resolver_test_record_groups.yaml",
   ],
-  deps = [
+  external_deps = [
       "twisted",
       "yaml",
   ]
