@@ -38,9 +38,7 @@ using grpc_core::RefCountedPtr;
 namespace {
 
 void AddSimpleTrace(RefCountedPtr<ChannelTrace> tracer) {
-  tracer->AddTraceEvent(grpc_slice_from_static_string("simple trace"),
-                        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"),
-                        GRPC_CHANNEL_READY);
+  tracer->AddTraceEvent(grpc_slice_from_static_string("simple trace"));
 }
 
 }  // namespace
@@ -51,28 +49,35 @@ TEST(ChannelTraceTest, ProtoJsonTest) {
   AddSimpleTrace(tracer);
   AddSimpleTrace(tracer);
   RefCountedPtr<ChannelTrace> sc1 = MakeRefCounted<ChannelTrace>(10);
-  tracer->AddTraceEventReferencingSubchannel(grpc_slice_from_static_string("subchannel one created"),
-                        GRPC_ERROR_NONE, GRPC_CHANNEL_IDLE, sc1);
+  tracer->AddTraceEventReferencingSubchannel(
+      grpc_slice_from_static_string("subchannel one created"), sc1);
   AddSimpleTrace(sc1);
   AddSimpleTrace(sc1);
   AddSimpleTrace(sc1);
   RefCountedPtr<ChannelTrace> sc2 = MakeRefCounted<ChannelTrace>(10);
-  tracer->AddTraceEventReferencingChannel(grpc_slice_from_static_string("LB channel two created"),
-                        GRPC_ERROR_NONE, GRPC_CHANNEL_IDLE, sc2);
+  tracer->AddTraceEventReferencingChannel(
+      grpc_slice_from_static_string("LB channel two created"), sc2);
   tracer->AddTraceEventReferencingSubchannel(
-      grpc_slice_from_static_string("subchannel one inactive"), GRPC_ERROR_NONE,
-      GRPC_CHANNEL_IDLE, sc1);
+      grpc_slice_from_static_string("subchannel one inactive"), sc1);
   std::string tracer_json_str = tracer->RenderTrace();
-  gpr_log(GPR_ERROR, "%s", tracer_json_str.c_str());
   grpc::channelz::ChannelTrace channel_trace;
   google::protobuf::util::JsonParseOptions options;
-  options.ignore_unknown_fields = true;
+  // If the following line is failing, then uncomment the last line of the
+  // comment, and uncomment the lines that print the two strings. You can
+  // then compare the output, and determine what fields are missing.
+  //
+  // options.ignore_unknown_fields = true;
   ASSERT_EQ(google::protobuf::util::JsonStringToMessage(
                 tracer_json_str, &channel_trace, options),
             google::protobuf::util::Status::OK);
   std::string proto_json_str;
-  ASSERT_EQ(google::protobuf::util::MessageToJsonString(channel_trace, &proto_json_str),  google::protobuf::util::Status::OK);
-  gpr_log(GPR_ERROR, "%s", proto_json_str.c_str());
+  ASSERT_EQ(google::protobuf::util::MessageToJsonString(channel_trace,
+                                                        &proto_json_str),
+            google::protobuf::util::Status::OK);
+  // uncomment these to compare the the json strings.
+  // gpr_log(GPR_ERROR, "tracer json: %s", tracer_json_str.c_str());
+  // gpr_log(GPR_ERROR, "proto  json: %s", proto_json_str.c_str());
+  ASSERT_EQ(tracer_json_str, proto_json_str);
   tracer.reset(nullptr);
   sc1.reset(nullptr);
   sc2.reset(nullptr);

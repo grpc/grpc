@@ -41,31 +41,22 @@
 namespace grpc_core {
 
 ChannelTrace::TraceEvent::TraceEvent(
-    grpc_slice data, grpc_error* error,
-    grpc_connectivity_state connectivity_state,
-    RefCountedPtr<ChannelTrace> referenced_tracer, ReferencedType type)
+    grpc_slice data, RefCountedPtr<ChannelTrace> referenced_tracer,
+    ReferencedType type)
     : data_(data),
-      error_(error),
       timestamp_(grpc_millis_to_timespec(grpc_core::ExecCtx::Get()->Now(),
                                          GPR_CLOCK_REALTIME)),
-      connectivity_state_(connectivity_state),
       next_(nullptr),
       referenced_tracer_(std::move(referenced_tracer)),
       referenced_type_(type) {}
 
-ChannelTrace::TraceEvent::TraceEvent(grpc_slice data, grpc_error* error,
-                                     grpc_connectivity_state connectivity_state)
+ChannelTrace::TraceEvent::TraceEvent(grpc_slice data)
     : data_(data),
-      error_(error),
       timestamp_(grpc_millis_to_timespec(grpc_core::ExecCtx::Get()->Now(),
                                          GPR_CLOCK_REALTIME)),
-      connectivity_state_(connectivity_state),
       next_(nullptr) {}
 
-ChannelTrace::TraceEvent::~TraceEvent() {
-  GRPC_ERROR_UNREF(error_);
-  grpc_slice_unref_internal(data_);
-}
+ChannelTrace::TraceEvent::~TraceEvent() { grpc_slice_unref_internal(data_); }
 
 ChannelTrace::ChannelTrace(size_t max_events)
     : channel_uuid_(-1),
@@ -117,30 +108,24 @@ void ChannelTrace::AddTraceEventHelper(TraceEvent* new_trace_event) {
 }
 
 void ChannelTrace::AddTraceEventReferencingChannel(
-    grpc_slice data, grpc_error* error,
-    grpc_connectivity_state connectivity_state,
-    RefCountedPtr<ChannelTrace> referenced_tracer) {
+    grpc_slice data, RefCountedPtr<ChannelTrace> referenced_tracer) {
   if (max_list_size_ == 0) return;  // tracing is disabled if max_events == 0
   // create and fill up the new event
-  AddTraceEventHelper(New<TraceEvent>(data, error, connectivity_state,
-                                      std::move(referenced_tracer), Channel));
+  AddTraceEventHelper(
+      New<TraceEvent>(data, std::move(referenced_tracer), Channel));
 }
 
 void ChannelTrace::AddTraceEventReferencingSubchannel(
-    grpc_slice data, grpc_error* error,
-    grpc_connectivity_state connectivity_state,
-    RefCountedPtr<ChannelTrace> referenced_tracer) {
+    grpc_slice data, RefCountedPtr<ChannelTrace> referenced_tracer) {
   if (max_list_size_ == 0) return;  // tracing is disabled if max_events == 0
   // create and fill up the new event
-  AddTraceEventHelper(New<TraceEvent>(data, error, connectivity_state,
-                                      std::move(referenced_tracer),
-                                      Subchannel));
+  AddTraceEventHelper(
+      New<TraceEvent>(data, std::move(referenced_tracer), Subchannel));
 }
 
-void ChannelTrace::AddTraceEvent(grpc_slice data, grpc_error* error,
-                                 grpc_connectivity_state connectivity_state) {
+void ChannelTrace::AddTraceEvent(grpc_slice data) {
   if (max_list_size_ == 0) return;  // tracing is disabled if max_events == 0
-  AddTraceEventHelper(New<TraceEvent>(data, error, connectivity_state));
+  AddTraceEventHelper(New<TraceEvent>(data));
 }
 
 namespace {
@@ -162,40 +147,20 @@ void ChannelTrace::TraceEvent::RenderTraceEvent(grpc_json* json) const {
   json_iterator = grpc_json_create_child(json_iterator, json, "description",
                                          grpc_slice_to_c_string(data_),
                                          GRPC_JSON_STRING, true);
-  if (error_ != GRPC_ERROR_NONE) {
-    grpc_status_code code;
-    grpc_slice message;
-    grpc_error_get_status(error_, GRPC_MILLIS_INF_FUTURE, &code, &message,
-                          nullptr, nullptr);
-    grpc_json* status = grpc_json_create_child(
-        json_iterator, json, "status", nullptr, GRPC_JSON_OBJECT, false);
-    json_iterator = grpc_json_create_child(nullptr, status, "code",
-                                           grpc_status_code_to_string(code),
-                                           GRPC_JSON_STRING, false);
-    grpc_json_create_child(json_iterator, status, "message",
-                           grpc_slice_to_c_string(message), GRPC_JSON_STRING,
-                           true);
-    grpc_slice_unref_internal(message);
-    json_iterator = status;
-  }
   json_iterator =
       grpc_json_create_child(json_iterator, json, "timestamp",
                              fmt_time(timestamp_), GRPC_JSON_STRING, true);
-  json_iterator =
-      grpc_json_create_child(json_iterator, json, "state",
-                             grpc_connectivity_state_name(connectivity_state_),
-                             GRPC_JSON_STRING, false);
   if (referenced_tracer_ != nullptr) {
     char* uuid_str;
     gpr_asprintf(&uuid_str, "%" PRIdPTR, referenced_tracer_->channel_uuid_);
     grpc_json* child_ref = grpc_json_create_child(
         json_iterator, json,
-        (referenced_type_ == Channel) ? "channelRef" : "subchannelRef",
-        nullptr, GRPC_JSON_OBJECT, false);
+        (referenced_type_ == Channel) ? "channelRef" : "subchannelRef", nullptr,
+        GRPC_JSON_OBJECT, false);
     json_iterator = grpc_json_create_child(
         nullptr, child_ref,
-        (referenced_type_ == Channel) ? "channelId" : "subchannelId",
-        uuid_str, GRPC_JSON_STRING, true);
+        (referenced_type_ == Channel) ? "channelId" : "subchannelId", uuid_str,
+        GRPC_JSON_STRING, true);
     json_iterator = child_ref;
   }
 }

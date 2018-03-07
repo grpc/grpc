@@ -41,8 +41,7 @@ class ChannelTrace : public RefCounted<ChannelTrace> {
   intptr_t GetUuid() const;
 
   // Adds a new trace event to the tracing object
-  void AddTraceEvent(grpc_slice data, grpc_error* error,
-                     grpc_connectivity_state connectivity_state);
+  void AddTraceEvent(grpc_slice data);
 
   // Adds a new trace event to the tracing object. This trace event refers to a
   // an event on a child of the channel. For example, if this channel has
@@ -52,13 +51,9 @@ class ChannelTrace : public RefCounted<ChannelTrace> {
   // TODO(ncteisen): Once channelz is implemented, the events should reference
   // the overall channelz object, not just the ChannelTrace object.
   void AddTraceEventReferencingChannel(
-      grpc_slice data, grpc_error* error,
-      grpc_connectivity_state connectivity_state,
-      RefCountedPtr<ChannelTrace> referenced_tracer);
+      grpc_slice data, RefCountedPtr<ChannelTrace> referenced_tracer);
   void AddTraceEventReferencingSubchannel(
-      grpc_slice data, grpc_error* error,
-      grpc_connectivity_state connectivity_state,
-      RefCountedPtr<ChannelTrace> referenced_tracer);
+      grpc_slice data, RefCountedPtr<ChannelTrace> referenced_tracer);
 
   // Returns the tracing data rendered as a grpc json string.
   // The string is owned by the caller and must be freed.
@@ -73,15 +68,12 @@ class ChannelTrace : public RefCounted<ChannelTrace> {
     // Constructor for a TraceEvent that references a different channel.
     // TODO(ncteisen): once channelz is implemented, this should reference the
     // overall channelz object, not just the ChannelTrace object
-    TraceEvent(grpc_slice data, grpc_error* error,
-               grpc_connectivity_state connectivity_state,
-               RefCountedPtr<ChannelTrace> referenced_tracer,
+    TraceEvent(grpc_slice data, RefCountedPtr<ChannelTrace> referenced_tracer,
                ReferencedType type);
 
     // Constructor for a TraceEvent that does not reverence a different
     // channel.
-    TraceEvent(grpc_slice data, grpc_error* error,
-               grpc_connectivity_state connectivity_state);
+    TraceEvent(grpc_slice data);
 
     ~TraceEvent();
 
@@ -95,9 +87,7 @@ class ChannelTrace : public RefCounted<ChannelTrace> {
 
    private:
     grpc_slice data_;
-    grpc_error* error_;
     gpr_timespec timestamp_;
-    grpc_connectivity_state connectivity_state_;
     TraceEvent* next_;
     // the tracer object for the (sub)channel that this trace event refers to.
     RefCountedPtr<ChannelTrace> referenced_tracer_;
