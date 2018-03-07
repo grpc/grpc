@@ -393,8 +393,8 @@ void PickFirst::UpdateLocked(const grpc_channel_args& args) {
 }
 
 void PickFirst::OnConnectivityChangedLocked(void* arg, grpc_error* error) {
-  grpc_lb_subchannel_data* sd = reinterpret_cast<grpc_lb_subchannel_data*>(arg);
-  PickFirst* p = reinterpret_cast<PickFirst*>(sd->subchannel_list->policy);
+  grpc_lb_subchannel_data* sd = static_cast<grpc_lb_subchannel_data*>(arg);
+  PickFirst* p = static_cast<PickFirst*>(sd->subchannel_list->policy);
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_DEBUG,
             "Pick First %p connectivity changed for subchannel %p (%" PRIuPTR

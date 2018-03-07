@@ -240,11 +240,9 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
    private:
     std::mutex mu_;
   };
-  static void* tag(ServerRpcContext* func) {
-    return reinterpret_cast<void*>(func);
-  }
+  static void* tag(ServerRpcContext* func) { return static_cast<void*>(func); }
   static ServerRpcContext* detag(void* tag) {
-    return reinterpret_cast<ServerRpcContext*>(tag);
+    return static_cast<ServerRpcContext*>(tag);
   }
 
   class ServerRpcContextUnaryImpl final : public ServerRpcContext {
