@@ -2831,31 +2831,9 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
-      "grpc++_test_util", 
-      "grpc_test_util"
-    ], 
-    "headers": [
-      "src/proto/grpc/channelz/channelz.grpc.pb.h", 
-      "src/proto/grpc/channelz/channelz.pb.h", 
-      "src/proto/grpc/channelz/channelz_mock.grpc.pb.h"
-    ], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "channel_trace_proto_json_test", 
-    "src": [
-      "test/cpp/client/channel_trace_proto_json_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
       "grpc++_channelz_proto", 
       "grpc++_test", 
+      "grpc++_test_util", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -6730,6 +6708,7 @@
       "src/proto/grpc/testing/echo_mock.grpc.pb.h", 
       "test/cpp/end2end/test_service_impl.h", 
       "test/cpp/util/byte_buffer_proto_helper.h", 
+      "test/cpp/util/channel_trace_proto_helper.h", 
       "test/cpp/util/create_test_channel.h", 
       "test/cpp/util/string_ref_helper.h", 
       "test/cpp/util/subprocess.h", 
@@ -6743,6 +6722,8 @@
       "test/cpp/end2end/test_service_impl.h", 
       "test/cpp/util/byte_buffer_proto_helper.cc", 
       "test/cpp/util/byte_buffer_proto_helper.h", 
+      "test/cpp/util/channel_trace_proto_helper.cc", 
+      "test/cpp/util/channel_trace_proto_helper.h", 
       "test/cpp/util/create_test_channel.cc", 
       "test/cpp/util/create_test_channel.h", 
       "test/cpp/util/string_ref_helper.cc", 

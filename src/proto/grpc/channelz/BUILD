@@ -21,4 +21,6 @@ grpc_package(name = "channelz", visibility = "public")
 grpc_proto_library(
     name = "channelz_proto",
     srcs = ["channelz.proto"],
+    has_services = True,
+    well_known_protos = True,
 )

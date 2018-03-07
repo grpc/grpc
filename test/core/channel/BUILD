@@ -76,6 +76,7 @@ grpc_cc_test(
         "//:grpc++",
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
+        "//test/cpp/util:channel_trace_proto_helper",
     ],
     external_deps = [
         "gtest",

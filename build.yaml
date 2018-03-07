@@ -1514,6 +1514,7 @@ libs:
   headers:
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/util/byte_buffer_proto_helper.h
+  - test/cpp/util/channel_trace_proto_helper.h
   - test/cpp/util/create_test_channel.h
   - test/cpp/util/string_ref_helper.h
   - test/cpp/util/subprocess.h
@@ -1525,6 +1526,7 @@ libs:
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/util/byte_buffer_proto_helper.cc
+  - test/cpp/util/channel_trace_proto_helper.cc
   - test/cpp/util/create_test_channel.cc
   - test/cpp/util/string_ref_helper.cc
   - test/cpp/util/subprocess.cc
@@ -3887,20 +3889,6 @@ targets:
   - grpc
   - gpr
   uses_polling: false
-- name: channel_trace_proto_json_test
-  gtest: true
-  build: test
-  language: c++
-  src:
-  - src/proto/grpc/channelz/channelz.proto
-  - test/cpp/client/channel_trace_proto_json_test.cc
-  deps:
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr_test_util
-  - gpr
 - name: channel_trace_test
   gtest: true
   build: test
@@ -3909,6 +3897,7 @@ targets:
   - test/core/channel/channel_trace_test.cc
   deps:
   - grpc_test_util
+  - grpc++_test_util
   - grpc++
   - grpc
   - gpr_test_util

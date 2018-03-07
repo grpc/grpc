@@ -1313,6 +1313,7 @@
         'src/proto/grpc/testing/duplicate/echo_duplicate.proto',
         'test/cpp/end2end/test_service_impl.cc',
         'test/cpp/util/byte_buffer_proto_helper.cc',
+        'test/cpp/util/channel_trace_proto_helper.cc',
         'test/cpp/util/create_test_channel.cc',
         'test/cpp/util/string_ref_helper.cc',
         'test/cpp/util/subprocess.cc',

@@ -16,7 +16,7 @@
  *
  */
 
-#include <memory>
+#include "test/cpp/util/channel_trace_proto_helper.h"
 
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/util/json_util.h>
@@ -24,42 +24,13 @@
 #include <grpc/grpc.h>
 #include <gtest/gtest.h>
 
-#include "src/core/lib/channel/channel_trace.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/proto/grpc/channelz/channelz.pb.h"
 
 namespace grpc {
 namespace testing {
 
-using grpc_core::ChannelTrace;
-using grpc_core::MakeRefCounted;
-using grpc_core::RefCountedPtr;
-
-namespace {
-
-void AddSimpleTrace(RefCountedPtr<ChannelTrace> tracer) {
-  tracer->AddTraceEvent(grpc_slice_from_static_string("simple trace"));
-}
-
-}  // namespace
-
-TEST(ChannelTraceTest, ProtoJsonTest) {
-  grpc_core::ExecCtx exec_ctx;
-  RefCountedPtr<ChannelTrace> tracer = MakeRefCounted<ChannelTrace>(10);
-  AddSimpleTrace(tracer);
-  AddSimpleTrace(tracer);
-  RefCountedPtr<ChannelTrace> sc1 = MakeRefCounted<ChannelTrace>(10);
-  tracer->AddTraceEventReferencingSubchannel(
-      grpc_slice_from_static_string("subchannel one created"), sc1);
-  AddSimpleTrace(sc1);
-  AddSimpleTrace(sc1);
-  AddSimpleTrace(sc1);
-  RefCountedPtr<ChannelTrace> sc2 = MakeRefCounted<ChannelTrace>(10);
-  tracer->AddTraceEventReferencingChannel(
-      grpc_slice_from_static_string("LB channel two created"), sc2);
-  tracer->AddTraceEventReferencingSubchannel(
-      grpc_slice_from_static_string("subchannel one inactive"), sc1);
-  std::string tracer_json_str = tracer->RenderTrace();
+void ValidateChannelTraceProtoJsonTranslation(char* tracer_json_c_str) {
+  std::string tracer_json_str(tracer_json_c_str);
   grpc::channelz::ChannelTrace channel_trace;
   google::protobuf::util::JsonParseOptions options;
   // If the following line is failing, then uncomment the last line of the
@@ -78,18 +49,7 @@ TEST(ChannelTraceTest, ProtoJsonTest) {
   // gpr_log(GPR_ERROR, "tracer json: %s", tracer_json_str.c_str());
   // gpr_log(GPR_ERROR, "proto  json: %s", proto_json_str.c_str());
   ASSERT_EQ(tracer_json_str, proto_json_str);
-  tracer.reset(nullptr);
-  sc1.reset(nullptr);
-  sc2.reset(nullptr);
 }
 
 }  // namespace testing
 }  // namespace grpc
-
-int main(int argc, char** argv) {
-  grpc_init();
-  ::testing::InitGoogleTest(&argc, argv);
-  int ret = RUN_ALL_TESTS();
-  grpc_shutdown();
-  return ret;
-}
