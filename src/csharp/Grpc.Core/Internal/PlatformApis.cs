@@ -23,6 +23,7 @@ using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
 {
@@ -97,6 +98,18 @@ namespace Grpc.Core.Internal
         public static bool Is64Bit
         {
             get { return IntPtr.Size == 8; }
+        }
+
+        /// <summary>
+        /// Returns <c>UnityEngine.Application.platform</c> as a string.
+        /// See https://docs.unity3d.com/ScriptReference/Application-platform.html for possible values.
+        /// Value is obtained via reflection to avoid compile-time dependency on Unity.
+        /// This method should only be called if <c>IsUnity</c> is <c>true</c>.
+        /// </summary>
+        public static string GetUnityRuntimePlatform()
+        {
+            GrpcPreconditions.CheckState(IsUnity, "Not running on Unity.");
+            return Type.GetType("UnityEngine.Application, UnityEngine").GetProperty("platform").GetValue(null).ToString();
         }
 
         [DllImport("libc")]

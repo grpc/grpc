@@ -114,8 +114,14 @@ namespace Grpc.Core.Internal
         /// </summary>
         private static NativeMethods LoadNativeMethodsUnity()
         {
-            // TODO(jtattermusch): use NativeMethods.DllImportsFromStaticLib for iOS.
-            return new NativeMethods(new NativeMethods.DllImportsFromSharedLib());
+            switch (PlatformApis.GetUnityRuntimePlatform())
+            {
+                case "IPhonePlayer":
+                    return new NativeMethods(new NativeMethods.DllImportsFromStaticLib());
+                default:
+                    // most other platforms load unity plugins as a shared library
+                    return new NativeMethods(new NativeMethods.DllImportsFromSharedLib());
+            }
         }
 
         private static string GetAssemblyPath()
