@@ -22,6 +22,7 @@
 #include <google/protobuf/util/json_util.h>
 
 #include <grpc/grpc.h>
+#include <grpc/support/log.h>
 #include <gtest/gtest.h>
 
 #include "src/proto/grpc/channelz/channelz.pb.h"
@@ -32,14 +33,14 @@ namespace testing {
 void ValidateChannelTraceProtoJsonTranslation(char* tracer_json_c_str) {
   std::string tracer_json_str(tracer_json_c_str);
   grpc::channelz::ChannelTrace channel_trace;
-  google::protobuf::util::JsonParseOptions options;
+  google::protobuf::util::JsonParseOptions parse_options;
   // If the following line is failing, then uncomment the last line of the
   // comment, and uncomment the lines that print the two strings. You can
   // then compare the output, and determine what fields are missing.
   //
   // options.ignore_unknown_fields = true;
   ASSERT_EQ(google::protobuf::util::JsonStringToMessage(
-                tracer_json_str, &channel_trace, options),
+                tracer_json_str, &channel_trace, parse_options),
             google::protobuf::util::Status::OK);
   std::string proto_json_str;
   ASSERT_EQ(google::protobuf::util::MessageToJsonString(channel_trace,

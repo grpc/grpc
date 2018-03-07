@@ -184,6 +184,7 @@ grpc_channel* grpc_channel_create_with_builder(
   channel->tracer = grpc_core::MakeRefCounted<grpc_core::ChannelTrace>(
       channel_tracer_max_nodes);
   channel->tracer->AddTraceEvent(
+      grpc_core::ChannelTrace::Severity::Info,
       grpc_slice_from_static_string("Channel created"));
   return channel;
 }

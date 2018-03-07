@@ -41,17 +41,19 @@
 namespace grpc_core {
 
 ChannelTrace::TraceEvent::TraceEvent(
-    grpc_slice data, RefCountedPtr<ChannelTrace> referenced_tracer,
-    ReferencedType type)
-    : data_(data),
+    Severity severity, grpc_slice data,
+    RefCountedPtr<ChannelTrace> referenced_tracer, ReferencedType type)
+    : severity_(severity),
+      data_(data),
       timestamp_(grpc_millis_to_timespec(grpc_core::ExecCtx::Get()->Now(),
                                          GPR_CLOCK_REALTIME)),
       next_(nullptr),
       referenced_tracer_(std::move(referenced_tracer)),
       referenced_type_(type) {}
 
-ChannelTrace::TraceEvent::TraceEvent(grpc_slice data)
-    : data_(data),
+ChannelTrace::TraceEvent::TraceEvent(Severity severity, grpc_slice data)
+    : severity_(severity),
+      data_(data),
       timestamp_(grpc_millis_to_timespec(grpc_core::ExecCtx::Get()->Now(),
                                          GPR_CLOCK_REALTIME)),
       next_(nullptr) {}
@@ -107,25 +109,27 @@ void ChannelTrace::AddTraceEventHelper(TraceEvent* new_trace_event) {
   }
 }
 
+void ChannelTrace::AddTraceEvent(Severity severity, grpc_slice data) {
+  if (max_list_size_ == 0) return;  // tracing is disabled if max_events == 0
+  AddTraceEventHelper(New<TraceEvent>(severity, data));
+}
+
 void ChannelTrace::AddTraceEventReferencingChannel(
-    grpc_slice data, RefCountedPtr<ChannelTrace> referenced_tracer) {
+    Severity severity, grpc_slice data,
+    RefCountedPtr<ChannelTrace> referenced_tracer) {
   if (max_list_size_ == 0) return;  // tracing is disabled if max_events == 0
   // create and fill up the new event
   AddTraceEventHelper(
-      New<TraceEvent>(data, std::move(referenced_tracer), Channel));
+      New<TraceEvent>(severity, data, std::move(referenced_tracer), Channel));
 }
 
 void ChannelTrace::AddTraceEventReferencingSubchannel(
-    grpc_slice data, RefCountedPtr<ChannelTrace> referenced_tracer) {
+    Severity severity, grpc_slice data,
+    RefCountedPtr<ChannelTrace> referenced_tracer) {
   if (max_list_size_ == 0) return;  // tracing is disabled if max_events == 0
   // create and fill up the new event
-  AddTraceEventHelper(
-      New<TraceEvent>(data, std::move(referenced_tracer), Subchannel));
-}
-
-void ChannelTrace::AddTraceEvent(grpc_slice data) {
-  if (max_list_size_ == 0) return;  // tracing is disabled if max_events == 0
-  AddTraceEventHelper(New<TraceEvent>(data));
+  AddTraceEventHelper(New<TraceEvent>(
+      severity, data, std::move(referenced_tracer), Subchannel));
 }
 
 namespace {
@@ -147,6 +151,10 @@ void ChannelTrace::TraceEvent::RenderTraceEvent(grpc_json* json) const {
   json_iterator = grpc_json_create_child(json_iterator, json, "description",
                                          grpc_slice_to_c_string(data_),
                                          GRPC_JSON_STRING, true);
+  char* trace_level_str;
+  gpr_asprintf(&trace_level_str, "%d", static_cast<int32_t>(severity_));
+  json_iterator = grpc_json_create_child(
+      json_iterator, json, "severity", trace_level_str, GRPC_JSON_NUMBER, true);
   json_iterator =
       grpc_json_create_child(json_iterator, json, "timestamp",
                              fmt_time(timestamp_), GRPC_JSON_STRING, true);

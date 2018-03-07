@@ -98,7 +98,7 @@ message ChannelTraceEvent {
   // the severity of the trace event. Options are INFO, WARNING, and ERROR,
   // which are represented by the values 1, 2, and 3, respectively. Any other
   // value will be treated as ERROR.
-  int32 trace_level = 2;
+  int32 severity = 2;
   // When this event occurred.
   google.protobuf.Timestamp timestamp = 3;
   // ref of referenced channel or subchannel.
