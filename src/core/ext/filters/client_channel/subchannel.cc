@@ -37,7 +37,6 @@
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_trace.h"
-#include "src/core/lib/channel/channel_trace_registry.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -135,8 +134,6 @@ struct grpc_subchannel {
   bool backoff_begun;
   /** our alarm */
   grpc_timer alarm;
-
-  grpc_core::RefCountedPtr<grpc_core::ChannelTrace> tracer;
 };
 
 struct grpc_subchannel_call {

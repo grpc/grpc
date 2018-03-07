@@ -103,8 +103,6 @@ grpc_cc_library(
     ],
 )
 
-
-
 grpc_cc_library(
     name = "grpc_test_util_unsecure",
     srcs = [],
