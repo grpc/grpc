@@ -32,6 +32,7 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal static class PlatformApis
     {
+        const string UnityEngineApplicationClassName = "UnityEngine.Application, UnityEngine";
         static readonly bool isLinux;
         static readonly bool isMacOSX;
         static readonly bool isWindows;
@@ -56,7 +57,7 @@ namespace Grpc.Core.Internal
             isNetCore = false;
 #endif
             isMono = Type.GetType("Mono.Runtime") != null;
-            isUnity = Type.GetType("UnityEngine.Application, UnityEngine") != null;
+            isUnity = Type.GetType(UnityEngineApplicationClassName) != null;
         }
 
         public static bool IsLinux
@@ -109,7 +110,11 @@ namespace Grpc.Core.Internal
         public static string GetUnityRuntimePlatform()
         {
             GrpcPreconditions.CheckState(IsUnity, "Not running on Unity.");
-            return Type.GetType("UnityEngine.Application, UnityEngine").GetProperty("platform").GetValue(null).ToString();
+#if NETSTANDARD1_5
+            return Type.GetType(UnityEngineApplicationClassName).GetTypeInfo().GetProperty("platform").GetValue(null).ToString();
+#else
+            return Type.GetType(UnityEngineApplicationClassName).GetProperty("platform").GetValue(null).ToString();
+#endif
         }
 
         [DllImport("libc")]
