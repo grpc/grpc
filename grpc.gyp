@@ -1307,6 +1307,7 @@
         'grpc',
       ],
       'sources': [
+        'src/proto/grpc/channelz/channelz.proto',
         'src/proto/grpc/health/v1/health.proto',
         'src/proto/grpc/testing/echo_messages.proto',
         'src/proto/grpc/testing/echo.proto',

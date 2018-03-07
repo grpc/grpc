@@ -6694,6 +6694,9 @@
       "grpc_test_util"
     ], 
     "headers": [
+      "src/proto/grpc/channelz/channelz.grpc.pb.h", 
+      "src/proto/grpc/channelz/channelz.pb.h", 
+      "src/proto/grpc/channelz/channelz_mock.grpc.pb.h", 
       "src/proto/grpc/health/v1/health.grpc.pb.h", 
       "src/proto/grpc/health/v1/health.pb.h", 
       "src/proto/grpc/health/v1/health_mock.grpc.pb.h", 

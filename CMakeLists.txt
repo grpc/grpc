@@ -3501,6 +3501,10 @@ if (gRPC_BUILD_TESTS)
 
 if (gRPC_BUILD_CODEGEN)
 add_library(grpc++_test_util
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.h
@@ -3539,6 +3543,9 @@ if(WIN32 AND MSVC)
   endif()
 endif()
 
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/channelz/channelz.proto
+)
 protobuf_generate_grpc_cpp(
   src/proto/grpc/health/v1/health.proto
 )
