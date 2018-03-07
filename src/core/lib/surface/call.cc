@@ -1676,8 +1676,7 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         stream_op->send_message = true;
         call->sending_message = true;
         call->sending_stream.Init(
-            &op->data.send_message.send_message->data.raw.slice_buffer,
-            flags);
+            &op->data.send_message.send_message->data.raw.slice_buffer, flags);
         stream_op_payload->send_message.send_message.reset(
             call->sending_stream.get());
         break;
@@ -1807,8 +1806,7 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         call->receiving_message = true;
         stream_op->recv_message = true;
         call->receiving_buffer = op->data.recv_message.recv_message;
-        stream_op_payload->recv_message.recv_message =
-            &call->receiving_stream;
+        stream_op_payload->recv_message.recv_message = &call->receiving_stream;
         GRPC_CLOSURE_INIT(&call->receiving_stream_ready,
                           receiving_stream_ready_in_call_combiner, bctl,
                           grpc_schedule_on_exec_ctx);

@@ -966,8 +966,8 @@ static void maybe_cache_send_ops_for_batch(call_data* calld,
   // Set up cache for send_message ops.
   if (batch->send_message) {
     grpc_core::ByteStreamCache* cache =
-        static_cast<grpc_core::ByteStreamCache*>(gpr_arena_alloc(
-            calld->arena, sizeof(grpc_core::ByteStreamCache)));
+        static_cast<grpc_core::ByteStreamCache*>(
+            gpr_arena_alloc(calld->arena, sizeof(grpc_core::ByteStreamCache)));
     new (cache) grpc_core::ByteStreamCache(
         std::move(batch->payload->send_message.send_message));
     calld->send_messages.push_back(cache);

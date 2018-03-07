@@ -45,8 +45,8 @@ class ByteStream : public Orphanable {
   //
   // max_size_hint can be set as a hint as to the maximum number
   // of bytes that would be acceptable to read.
-  virtual bool Next(size_t max_size_hint, grpc_closure* on_complete)
-      GRPC_ABSTRACT;
+  virtual bool Next(size_t max_size_hint,
+                    grpc_closure* on_complete) GRPC_ABSTRACT;
 
   // Returns the next slice in the byte stream when it is available, as
   // indicated by Next().

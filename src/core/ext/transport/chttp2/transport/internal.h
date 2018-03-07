@@ -247,7 +247,7 @@ class Chttp2IncomingByteStream : public ByteStream {
   static void OrphanLocked(void* arg, grpc_error* error_ignored);
 
   grpc_chttp2_transport* transport_;  // Immutable.
-  grpc_chttp2_stream* stream_;  // Immutable.
+  grpc_chttp2_stream* stream_;        // Immutable.
 
   gpr_refcount refs_;
 

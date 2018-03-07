@@ -2728,7 +2728,7 @@ Chttp2IncomingByteStream::Chttp2IncomingByteStream(
     grpc_chttp2_transport* transport, grpc_chttp2_stream* stream,
     uint32_t frame_size, uint32_t flags)
     : ByteStream(frame_size, flags),
-      transport_(transport), 
+      transport_(transport),
       stream_(stream),
       remaining_bytes_(frame_size) {
   gpr_ref_init(&refs_, 2);
@@ -2762,9 +2762,7 @@ void Chttp2IncomingByteStream::Unref() {
   }
 }
 
-void Chttp2IncomingByteStream::Ref() {
-  gpr_ref(&refs_);
-}
+void Chttp2IncomingByteStream::Ref() { gpr_ref(&refs_); }
 
 void Chttp2IncomingByteStream::NextLocked(void* arg,
                                           grpc_error* error_ignored) {

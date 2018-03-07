@@ -192,7 +192,7 @@ static grpc_error* pull_slice_from_send_message(call_data* calld) {
 // and on_send_message_next_done() will be invoked when it is complete.
 static grpc_error* read_all_available_send_message_data(call_data* calld) {
   while (calld->send_message_caching_stream->Next(
-             ~static_cast<size_t>(0), &calld->on_send_message_next_done)) {
+      ~static_cast<size_t>(0), &calld->on_send_message_next_done)) {
     grpc_error* error = pull_slice_from_send_message(calld);
     if (error != GRPC_ERROR_NONE) return error;
     if (calld->send_message_bytes_read ==

@@ -23,8 +23,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <string.h>
-#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/b64.h"
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -283,10 +283,9 @@ static void hs_on_complete(void* user_data, grpc_error* err) {
   /* Call recv_message_ready if we got the payload via the path field */
   if (calld->seen_path_with_query && calld->recv_message_ready != nullptr) {
     calld->pp_recv_message->reset(
-        calld->payload_bin_delivered
-            ? nullptr
-            : reinterpret_cast<grpc_core::ByteStream*>(
-                  calld->read_stream.get()));
+        calld->payload_bin_delivered ? nullptr
+                                     : reinterpret_cast<grpc_core::ByteStream*>(
+                                           calld->read_stream.get()));
     // Re-enter call combiner for recv_message_ready, since the surface
     // code will release the call combiner for each callback it receives.
     GRPC_CALL_COMBINER_START(calld->call_combiner, calld->recv_message_ready,
