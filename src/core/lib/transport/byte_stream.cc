@@ -36,7 +36,7 @@ namespace grpc_core {
 
 SliceBufferByteStream::SliceBufferByteStream(grpc_slice_buffer* slice_buffer,
                                              uint32_t flags)
-    : ByteStream(slice_buffer->length, flags) {
+    : ByteStream(static_cast<uint32_t>(slice_buffer->length), flags) {
   GPR_ASSERT(slice_buffer->length <= UINT32_MAX);
   grpc_slice_buffer_init(&backing_buffer_);
   grpc_slice_buffer_swap(slice_buffer, &backing_buffer_);
