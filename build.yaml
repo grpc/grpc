@@ -974,6 +974,10 @@ filegroups:
   secure: true
   uses:
   - grpc_trace
+- name: grpc++_channelz_proto
+  language: c++
+  src:
+  - src/proto/grpc/channelz/channelz.proto
 - name: grpc++_codegen_base
   language: c++
   public_headers:
@@ -3883,6 +3887,20 @@ targets:
   - grpc
   - gpr
   uses_polling: false
+- name: channel_trace_proto_json_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - src/proto/grpc/channelz/channelz.proto
+  - test/cpp/client/channel_trace_proto_json_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: channel_trace_test
   gtest: true
   build: test
@@ -3895,6 +3913,8 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  filegroups:
+  - grpc++_channelz_proto
   uses:
   - grpc++_test
   uses_polling: false

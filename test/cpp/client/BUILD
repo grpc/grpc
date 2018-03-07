@@ -19,6 +19,19 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_p
 grpc_package(name = "test/cpp/client")
 
 grpc_cc_test(
+    name = "channel_trace_proto_json_test",
+    srcs = ["channel_trace_proto_json_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+    ],
+)
+
+grpc_cc_test(
     name = "credentials_test",
     srcs = ["credentials_test.cc"],
     external_deps = [

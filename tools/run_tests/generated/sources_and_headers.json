@@ -2831,6 +2831,30 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "src/proto/grpc/channelz/channelz.grpc.pb.h", 
+      "src/proto/grpc/channelz/channelz.pb.h", 
+      "src/proto/grpc/channelz/channelz_mock.grpc.pb.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "channel_trace_proto_json_test", 
+    "src": [
+      "test/cpp/client/channel_trace_proto_json_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_channelz_proto", 
       "grpc++_test", 
       "grpc_test_util"
     ], 
@@ -10006,6 +10030,20 @@
       "src/core/tsi/transport_security_adapter.h", 
       "src/core/tsi/transport_security_interface.h"
     ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
+      "src/proto/grpc/channelz/channelz.grpc.pb.h", 
+      "src/proto/grpc/channelz/channelz.pb.h", 
+      "src/proto/grpc/channelz/channelz_mock.grpc.pb.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c++", 
+    "name": "grpc++_channelz_proto", 
+    "src": [], 
     "third_party": false, 
     "type": "filegroup"
   }, 

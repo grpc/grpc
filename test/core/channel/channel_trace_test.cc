@@ -46,7 +46,7 @@ grpc_json* GetJsonChild(grpc_json* parent, const char* key) {
 }
 
 void ValidateJsonArraySize(grpc_json* json, const char* key,
-                              size_t expected_size) {
+                           size_t expected_size) {
   grpc_json* arr = GetJsonChild(json, key);
   ASSERT_NE(arr, nullptr);
   ASSERT_EQ(arr->type, GRPC_JSON_ARRAY);
@@ -58,8 +58,8 @@ void ValidateJsonArraySize(grpc_json* json, const char* key,
 }
 
 void ValidateChannelTraceData(grpc_json* json,
-                                 size_t num_events_logged_expected,
-                                 size_t actual_num_events_expected) {
+                              size_t num_events_logged_expected,
+                              size_t actual_num_events_expected) {
   ASSERT_NE(json, nullptr);
   grpc_json* num_events_logged_json = GetJsonChild(json, "num_events_logged");
   ASSERT_NE(num_events_logged_json, nullptr);
@@ -84,7 +84,7 @@ void ValidateChannelTrace(RefCountedPtr<ChannelTrace> tracer,
   char* json_str = tracer->RenderTrace();
   grpc_json* json = grpc_json_parse_string(json_str);
   ValidateChannelTraceData(json, expected_num_event_logged,
-                              GPR_MIN(expected_num_event_logged, max_nodes));
+                           GPR_MIN(expected_num_event_logged, max_nodes));
   grpc_json_destroy(json);
   gpr_free(json_str);
 }
