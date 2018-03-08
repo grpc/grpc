@@ -108,40 +108,8 @@ grpc_channel* grpc_channel_create_with_builder(
 
   grpc_compression_options_init(&channel->compression_options);
   for (size_t i = 0; i < args->num_args; i++) {
-    if (0 == strcmp(args->args[i].key, GRPC_ARG_DEFAULT_AUTHORITY)) {
-      if (args->args[i].type != GRPC_ARG_STRING) {
-        gpr_log(GPR_ERROR, "%s ignored: it must be a string",
-                GRPC_ARG_DEFAULT_AUTHORITY);
-      } else {
-        if (!GRPC_MDISNULL(channel->default_authority)) {
-          /* setting this takes precedence over anything else */
-          GRPC_MDELEM_UNREF(channel->default_authority);
-        }
-        channel->default_authority = grpc_mdelem_from_slices(
-            GRPC_MDSTR_AUTHORITY,
-            grpc_slice_intern(
-                grpc_slice_from_static_string(args->args[i].value.string)));
-      }
-    } else if (0 ==
-               strcmp(args->args[i].key, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)) {
-      if (args->args[i].type != GRPC_ARG_STRING) {
-        gpr_log(GPR_ERROR, "%s ignored: it must be a string",
-                GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
-      } else {
-        if (!GRPC_MDISNULL(channel->default_authority)) {
-          /* other ways of setting this (notably ssl) take precedence */
-          gpr_log(GPR_ERROR,
-                  "%s ignored: default host already set some other way",
-                  GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
-        } else {
-          channel->default_authority = grpc_mdelem_from_slices(
-              GRPC_MDSTR_AUTHORITY,
-              grpc_slice_intern(
-                  grpc_slice_from_static_string(args->args[i].value.string)));
-        }
-      }
-    } else if (0 == strcmp(args->args[i].key,
-                           GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL)) {
+    if (0 ==
+        strcmp(args->args[i].key, GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL)) {
       channel->compression_options.default_level.is_set = true;
       channel->compression_options.default_level.level =
           static_cast<grpc_compression_level>(grpc_channel_arg_get_integer(

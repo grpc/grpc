@@ -3164,6 +3164,7 @@ LIBGRPC_SRC = \
     src/core/lib/channel/channel_args.cc \
     src/core/lib/channel/channel_stack.cc \
     src/core/lib/channel/channel_stack_builder.cc \
+    src/core/lib/channel/client_authority_filter.cc \
     src/core/lib/channel/connected_channel.cc \
     src/core/lib/channel/handshaker.cc \
     src/core/lib/channel/handshaker_factory.cc \
@@ -3541,6 +3542,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/channel/channel_args.cc \
     src/core/lib/channel/channel_stack.cc \
     src/core/lib/channel/channel_stack_builder.cc \
+    src/core/lib/channel/client_authority_filter.cc \
     src/core/lib/channel/connected_channel.cc \
     src/core/lib/channel/handshaker.cc \
     src/core/lib/channel/handshaker_factory.cc \
@@ -3908,6 +3910,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/channel/channel_args.cc \
     src/core/lib/channel/channel_stack.cc \
     src/core/lib/channel/channel_stack_builder.cc \
+    src/core/lib/channel/client_authority_filter.cc \
     src/core/lib/channel/connected_channel.cc \
     src/core/lib/channel/handshaker.cc \
     src/core/lib/channel/handshaker_factory.cc \
@@ -4190,6 +4193,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/channel/channel_args.cc \
     src/core/lib/channel/channel_stack.cc \
     src/core/lib/channel/channel_stack_builder.cc \
+    src/core/lib/channel/client_authority_filter.cc \
     src/core/lib/channel/connected_channel.cc \
     src/core/lib/channel/handshaker.cc \
     src/core/lib/channel/handshaker_factory.cc \
@@ -4439,6 +4443,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/channel/channel_args.cc \
     src/core/lib/channel/channel_stack.cc \
     src/core/lib/channel/channel_stack_builder.cc \
+    src/core/lib/channel/client_authority_filter.cc \
     src/core/lib/channel/connected_channel.cc \
     src/core/lib/channel/handshaker.cc \
     src/core/lib/channel/handshaker_factory.cc \
@@ -5241,6 +5246,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/channel/channel_args.cc \
     src/core/lib/channel/channel_stack.cc \
     src/core/lib/channel/channel_stack_builder.cc \
+    src/core/lib/channel/client_authority_filter.cc \
     src/core/lib/channel/connected_channel.cc \
     src/core/lib/channel/handshaker.cc \
     src/core/lib/channel/handshaker_factory.cc \

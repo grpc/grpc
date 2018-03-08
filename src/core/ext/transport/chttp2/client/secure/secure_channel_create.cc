@@ -76,6 +76,8 @@ static grpc_subchannel_args* get_secure_naming_subchannel_args(
       server_uri->path[0] == '/' ? server_uri->path + 1 : server_uri->path;
   const grpc_core::TargetAuthorityTable* target_authority_table =
       grpc_core::FindTargetAuthorityTableInArgs(args->args);
+  grpc_arg args_to_add[2];
+  size_t num_args_to_add = 0;
   grpc_core::UniquePtr<char> authority;
   if (target_authority_table != nullptr) {
     // Find the authority for the target.
@@ -100,6 +102,13 @@ static grpc_subchannel_args* get_secure_naming_subchannel_args(
   if (authority == nullptr) {
     authority.reset(gpr_strdup(server_uri_path));
   }
+  if (grpc_channel_args_find(args->args, GRPC_ARG_DEFAULT_AUTHORITY) ==
+      nullptr) {
+    // If the channel args don't already contain GRPC_ARG_DEFAULT_AUTHORITY, add
+    // the arg, setting it to the value just obtained.
+    args_to_add[num_args_to_add++] = grpc_channel_arg_string_create(
+        const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), authority.get());
+  }
   grpc_uri_destroy(server_uri);
   grpc_channel_security_connector* subchannel_security_connector = nullptr;
   // Create the security connector using the credentials and target name.
@@ -114,12 +123,13 @@ static grpc_subchannel_args* get_secure_naming_subchannel_args(
             authority.get());
     return nullptr;
   }
-  grpc_arg new_security_connector_arg =
+  args_to_add[num_args_to_add++] =
       grpc_security_connector_to_arg(&subchannel_security_connector->base);
 
   grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
       new_args_from_connector != nullptr ? new_args_from_connector : args->args,
-      &new_security_connector_arg, 1);
+      args_to_add, num_args_to_add);
+
   GRPC_SECURITY_CONNECTOR_UNREF(&subchannel_security_connector->base,
                                 "lb_channel_create");
   if (new_args_from_connector != nullptr) {
