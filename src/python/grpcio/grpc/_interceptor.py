@@ -218,9 +218,9 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             except Exception as exception:  # pylint:disable=broad-except
                 return _LocalFailure(exception, sys.exc_info()[2])
 
-        call_future = self._interceptor.intercept_unary_unary(
+        call = self._interceptor.intercept_unary_unary(
             continuation, client_call_details, request)
-        return call_future.result(), call_future
+        return call.result(), call
 
     def future(self, request, timeout=None, metadata=None, credentials=None):
         client_call_details = _ClientCallDetails(self._method, timeout,
@@ -281,24 +281,37 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
                  timeout=None,
                  metadata=None,
                  credentials=None):
-        call_future = self.future(
+        response, ignored_call = self.with_call(
             request_iterator,
             timeout=timeout,
             metadata=metadata,
             credentials=credentials)
-        return call_future.result()
+        return response
 
     def with_call(self,
                   request_iterator,
                   timeout=None,
                   metadata=None,
                   credentials=None):
-        call_future = self.future(
-            request_iterator,
-            timeout=timeout,
-            metadata=metadata,
-            credentials=credentials)
-        return call_future.result(), call_future
+        client_call_details = _ClientCallDetails(self._method, timeout,
+                                                 metadata, credentials)
+
+        def continuation(new_details, request_iterator):
+            new_method, new_timeout, new_metadata, new_credentials = (
+                _unwrap_client_call_details(new_details, client_call_details))
+            try:
+                response, call = self._thunk(new_method).with_call(
+                    request_iterator,
+                    timeout=new_timeout,
+                    metadata=new_metadata,
+                    credentials=new_credentials)
+                return _UnaryOutcome(response, call)
+            except Exception as exception:  # pylint:disable=broad-except
+                return _LocalFailure(exception, sys.exc_info()[2])
+
+        call = self._interceptor.intercept_stream_unary(
+            continuation, client_call_details, request_iterator)
+        return call.result(), call
 
     def future(self,
                request_iterator,
