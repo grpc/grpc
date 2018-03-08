@@ -174,6 +174,7 @@ def grpc_py_binary(name, srcs, data = [], deps = [], external_deps = [], testonl
   native.py_binary(
     name = name,
     srcs = srcs,
+    testonly = testonly,
     data = data,
     deps = deps + _get_external_deps(external_deps)
   )
