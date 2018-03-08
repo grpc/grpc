@@ -204,7 +204,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/http/message_compress/message_compress_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/server/http_server_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/context/security_context.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/alts_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/composite/composite_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/fake/fake_credentials.h" role="src" />
@@ -216,7 +215,6 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/oauth2/oauth2_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/plugin/plugin_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/ssl/ssl_credentials.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/security_connector/alts_security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/auth_filters.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/secure_endpoint.h" role="src" />
@@ -224,39 +222,15 @@
     <file baseinstalldir="/" name="src/core/lib/security/transport/target_authority_table.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/tsi_error.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/util/json_util.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/crypt/gsec.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/frame_protector/alts_counter.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/frame_protector/alts_crypter.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/frame_protector/alts_frame_protector.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/frame_protector/frame_handler.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_handshaker_client.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_tsi_event.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_tsi_handshaker.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/check_gcp_environment.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_handshaker_service_api.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_tsi_utils.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/transport_security_common_api.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/altscontext.pb.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/handshaker.pb.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/transport_security_common.pb.h" role="src" />
-    <file baseinstalldir="/" name="third_party/nanopb/pb.h" role="src" />
-    <file baseinstalldir="/" name="third_party/nanopb/pb_common.h" role="src" />
-    <file baseinstalldir="/" name="third_party/nanopb/pb_decode.h" role="src" />
-    <file baseinstalldir="/" name="third_party/nanopb/pb_encode.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/alts_transport_security.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl_types.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/transport_security_grpc.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security_adapter.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security_interface.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/chttp2_connector.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/chttp2_server.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/backup_poller.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel_factory.h" role="src" />
@@ -279,12 +253,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_index.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/uri_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts_transport_security.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/ssl_types.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/transport_security_grpc.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/chttp2_server.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/chttp2_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/inproc/inproc_transport.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/avl/avl.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/backoff/backoff.h" role="src" />
@@ -419,6 +388,10 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h" role="src" />
+    <file baseinstalldir="/" name="third_party/nanopb/pb.h" role="src" />
+    <file baseinstalldir="/" name="third_party/nanopb/pb_common.h" role="src" />
+    <file baseinstalldir="/" name="third_party/nanopb/pb_decode.h" role="src" />
+    <file baseinstalldir="/" name="third_party/nanopb/pb_encode.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/subchannel_list.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h" role="src" />
@@ -595,7 +568,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/http/server/http_server_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/httpcli_security_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/context/security_context.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/alts_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/composite/composite_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/credentials_metadata.cc" role="src" />
@@ -609,7 +581,6 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/oauth2/oauth2_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/plugin/plugin_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/ssl/ssl_credentials.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/security_connector/alts_security_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/security_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/client_auth_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/secure_endpoint.cc" role="src" />
@@ -619,45 +590,14 @@
     <file baseinstalldir="/" name="src/core/lib/security/transport/tsi_error.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/util/json_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/init_secure.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/crypt/aes_gcm.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/crypt/gsec.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/frame_protector/alts_counter.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/frame_protector/alts_crypter.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/frame_protector/alts_frame_protector.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/frame_protector/frame_handler.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_handshaker_client.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_tsi_event.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/check_gcp_environment.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_handshaker_service_api.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_tsi_utils.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/transport_security_common_api.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/altscontext.pb.c" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/handshaker.pb.c" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/transport_security_common.pb.c" role="src" />
-    <file baseinstalldir="/" name="third_party/nanopb/pb_common.c" role="src" />
-    <file baseinstalldir="/" name="third_party/nanopb/pb_decode.c" role="src" />
-    <file baseinstalldir="/" name="third_party/nanopb/pb_encode.c" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/alts_transport_security.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/transport_security_grpc.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security_adapter.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/insecure/channel_create.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/chttp2_connector.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/chttp2_server.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/backup_poller.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/channel_connectivity.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel.cc" role="src" />
@@ -681,14 +621,11 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_index.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/uri_parser.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts_transport_security.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/transport_security_grpc.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/chttp2_server.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/chttp2_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/insecure/channel_create.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/inproc/inproc_plugin.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/inproc/inproc_transport.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc" role="src" />
@@ -697,6 +634,9 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c" role="src" />
+    <file baseinstalldir="/" name="third_party/nanopb/pb_common.c" role="src" />
+    <file baseinstalldir="/" name="third_party/nanopb/pb_decode.c" role="src" />
+    <file baseinstalldir="/" name="third_party/nanopb/pb_encode.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc" role="src" />
