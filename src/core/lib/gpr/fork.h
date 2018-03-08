@@ -24,12 +24,59 @@
  *       AROUND VERY SPECIFIC USE CASES.
  */
 
-void grpc_fork_support_init(void);
+namespace grpc_core {
 
-int grpc_fork_support_enabled(void);
+namespace {
+  class ExecCtxState;
+  class ThreadState;
+}
 
-// Test only:  Must be called before grpc_init(), and overrides
-// environment variables/compile flags
-void grpc_enable_fork_support(int enable);
+namespace internal {
+
+class ForkSupport {
+ public:
+  static void GlobalInit();
+  static void GlobalShutdown();
+
+  // Returns true if fork suppport is enabled, false otherwise
+  static bool Enabled();
+
+  // Increment the count of active ExecCtxs.
+  // Will block until a pending fork is complete if one is in progress.
+  void IncExecCtxCount();
+
+  // Decrement the count of active ExecCtxs
+  void DecExecCtxCount();
+
+  // Check if there is a single active ExecCtx
+  // (the one used to invoke this function).  If there are more,
+  // return false.  Otherwise, return true and block creation of
+  // more ExecCtx s until AlloWExecCtx() is called
+  //
+  bool BlockExecCtx();
+  void AllowExecCtx();
+
+  // Increment the count of active threads.
+  void IncThreadCount();
+
+  // Decrement the count of active threads.
+  void DecThreadCount();
+
+  // Await all core threads to be joined.
+  void AwaitThreads();
+
+  // Test only: overrides environment variables/compile flags
+  // Must be called before grpc_init()
+  void Enable(bool enable);
+
+ private:
+  static ExecCtxState* execCtxState_ = nullptr;
+  static ThreadState* threadState_ = nullptr;
+  static bool supportEnabled_ = false;
+  static int overrideEnabled_ = -1;
+}
+
+} // namespace internal
+} // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_GPR_FORK_H */

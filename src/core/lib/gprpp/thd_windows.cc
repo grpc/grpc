@@ -131,13 +131,6 @@ class ThreadInternalsWindows
 
 namespace grpc_core {
 
-void Thread::Init() {}
-
-bool Thread::AwaitAll(gpr_timespec deadline) {
-  // TODO: Consider adding this if needed
-  return false;
-}
-
 Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
                bool* success) {
   bool outcome = false;

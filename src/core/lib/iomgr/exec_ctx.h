@@ -25,6 +25,7 @@
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gpr/fork.h"
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/iomgr/closure.h"
 
@@ -76,16 +77,23 @@ class ExecCtx {
  public:
   /** Default Constructor */
 
-  ExecCtx() : flags_(GRPC_EXEC_CTX_FLAG_IS_FINISHED) { Set(this); }
+  ExecCtx() : flags_(GRPC_EXEC_CTX_FLAG_IS_FINISHED) {
+    grpc_fork_inc_exec_ctx_count();
+    Set(this);
+  }
 
   /** Parameterised Constructor */
-  ExecCtx(uintptr_t fl) : flags_(fl) { Set(this); }
+  ExecCtx(uintptr_t fl) : flags_(fl) {
+    grpc_fork_inc_exec_ctx_count();
+    Set(this);
+  }
 
   /** Destructor */
   virtual ~ExecCtx() {
     flags_ |= GRPC_EXEC_CTX_FLAG_IS_FINISHED;
     Flush();
     Set(last_exec_ctx_);
+    grpc_fork_dec_exec_ctx_count();
   }
 
   /** Disallow copy and assignment operators */

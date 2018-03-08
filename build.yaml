@@ -2316,6 +2316,18 @@ targets:
   - mac
   - linux
   - posix
+- name: fork_test
+  build: test
+  language: c
+  src:
+  - test/core/gpr/fork_test.cc
+  deps:
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  uses_polling: false
 - name: goaway_server_test
   cpu_cost: 0.1
   build: test
