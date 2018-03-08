@@ -4503,6 +4503,20 @@
   {
     "deps": [
       "boringssl", 
+      "boringssl_buf_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_buf_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
       "boringssl_bytestring_test_lib", 
       "boringssl_test_util"
     ], 
@@ -7141,7 +7155,6 @@
       "third_party/boringssl/crypto/cipher_extra/internal.h", 
       "third_party/boringssl/crypto/conf/conf_def.h", 
       "third_party/boringssl/crypto/conf/internal.h", 
-      "third_party/boringssl/crypto/curve25519/internal.h", 
       "third_party/boringssl/crypto/err/internal.h", 
       "third_party/boringssl/crypto/evp/internal.h", 
       "third_party/boringssl/crypto/fipsmodule/aes/aes.c", 
@@ -7302,7 +7315,8 @@
       "third_party/boringssl/include/openssl/x509.h", 
       "third_party/boringssl/include/openssl/x509_vfy.h", 
       "third_party/boringssl/include/openssl/x509v3.h", 
-      "third_party/boringssl/ssl/internal.h"
+      "third_party/boringssl/ssl/internal.h", 
+      "third_party/boringssl/third_party/fiat/internal.h"
     ], 
     "is_filegroup": false, 
     "language": "c", 
@@ -7373,6 +7387,19 @@
     "is_filegroup": false, 
     "language": "c++", 
     "name": "boringssl_bio_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_buf_test_lib", 
     "src": [], 
     "third_party": true, 
     "type": "lib"
