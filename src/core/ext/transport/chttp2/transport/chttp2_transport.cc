@@ -1711,7 +1711,6 @@ static void send_goaway(grpc_chttp2_transport* t, grpc_error* error) {
 }
 
 void grpc_chttp2_add_ping_strike(grpc_chttp2_transport* t) {
-  t->ping_recv_state.ping_strikes++;
   if (++t->ping_recv_state.ping_strikes > t->ping_policy.max_ping_strikes &&
       t->ping_policy.max_ping_strikes != 0) {
     send_goaway(t,
