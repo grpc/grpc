@@ -157,6 +157,9 @@ args = argp.parse_args()
 
 KNOWN_BAD = set([
     'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h',
+    'src/core/tsi/alts/handshaker/altscontext.pb.h',
+    'src/core/tsi/alts/handshaker/handshaker.pb.h',
+    'src/core/tsi/alts/handshaker/transport_security_common.pb.h',
     'include/grpc++/ext/reflection.grpc.pb.h',
     'include/grpc++/ext/reflection.pb.h',
 ])
