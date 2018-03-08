@@ -187,7 +187,7 @@ static grpc_error* pull_slice_from_send_message(call_data* calld) {
 
 // Reads as many slices as possible from the send_message byte stream.
 // Upon successful return, if calld->send_message_bytes_read ==
-// calld->send_message_caching_stream.base.length, then we have completed
+// calld->send_message_caching_stream->length(), then we have completed
 // reading from the byte stream; otherwise, an async read has been dispatched
 // and on_send_message_next_done() will be invoked when it is complete.
 static grpc_error* read_all_available_send_message_data(call_data* calld) {

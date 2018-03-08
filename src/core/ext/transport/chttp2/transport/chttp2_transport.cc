@@ -2769,7 +2769,6 @@ void Chttp2IncomingByteStream::NextLocked(void* arg,
   Chttp2IncomingByteStream* bs = static_cast<Chttp2IncomingByteStream*>(arg);
   grpc_chttp2_transport* t = bs->transport_;
   grpc_chttp2_stream* s = bs->stream_;
-
   size_t cur_length = s->frame_storage.length;
   if (!s->read_closed) {
     s->flow_control->IncomingByteStreamUpdate(bs->next_action_.max_size_hint,
@@ -2812,8 +2811,7 @@ void Chttp2IncomingByteStream::NextLocked(void* arg,
 bool Chttp2IncomingByteStream::Next(size_t max_size_hint,
                                     grpc_closure* on_complete) {
   GPR_TIMER_SCOPE("incoming_byte_stream_next", 0);
-  grpc_chttp2_stream* s = stream_;
-  if (s->unprocessed_incoming_frames_buffer.length > 0) {
+  if (stream_->unprocessed_incoming_frames_buffer.length > 0) {
     return true;
   } else {
     Ref();
@@ -2830,67 +2828,65 @@ bool Chttp2IncomingByteStream::Next(size_t max_size_hint,
 
 grpc_error* Chttp2IncomingByteStream::Pull(grpc_slice* slice) {
   GPR_TIMER_SCOPE("incoming_byte_stream_pull", 0);
-  grpc_chttp2_stream* s = stream_;
   grpc_error* error;
-
-  if (s->unprocessed_incoming_frames_buffer.length > 0) {
-    if (!s->unprocessed_incoming_frames_decompressed) {
+  if (stream_->unprocessed_incoming_frames_buffer.length > 0) {
+    if (!stream_->unprocessed_incoming_frames_decompressed) {
       bool end_of_context;
-      if (!s->stream_decompression_ctx) {
-        s->stream_decompression_ctx = grpc_stream_compression_context_create(
-            s->stream_decompression_method);
+      if (!stream_->stream_decompression_ctx) {
+        stream_->stream_decompression_ctx =
+            grpc_stream_compression_context_create(
+                stream_->stream_decompression_method);
       }
-      if (!grpc_stream_decompress(s->stream_decompression_ctx,
-                                  &s->unprocessed_incoming_frames_buffer,
-                                  &s->decompressed_data_buffer, nullptr,
+      if (!grpc_stream_decompress(stream_->stream_decompression_ctx,
+                                  &stream_->unprocessed_incoming_frames_buffer,
+                                  &stream_->decompressed_data_buffer, nullptr,
                                   MAX_SIZE_T, &end_of_context)) {
         error =
             GRPC_ERROR_CREATE_FROM_STATIC_STRING("Stream decompression error.");
         return error;
       }
-      GPR_ASSERT(s->unprocessed_incoming_frames_buffer.length == 0);
-      grpc_slice_buffer_swap(&s->unprocessed_incoming_frames_buffer,
-                             &s->decompressed_data_buffer);
-      s->unprocessed_incoming_frames_decompressed = true;
+      GPR_ASSERT(stream_->unprocessed_incoming_frames_buffer.length == 0);
+      grpc_slice_buffer_swap(&stream_->unprocessed_incoming_frames_buffer,
+                             &stream_->decompressed_data_buffer);
+      stream_->unprocessed_incoming_frames_decompressed = true;
       if (end_of_context) {
-        grpc_stream_compression_context_destroy(s->stream_decompression_ctx);
-        s->stream_decompression_ctx = nullptr;
+        grpc_stream_compression_context_destroy(
+            stream_->stream_decompression_ctx);
+        stream_->stream_decompression_ctx = nullptr;
       }
-      if (s->unprocessed_incoming_frames_buffer.length == 0) {
+      if (stream_->unprocessed_incoming_frames_buffer.length == 0) {
         *slice = grpc_empty_slice();
       }
     }
     error = grpc_deframe_unprocessed_incoming_frames(
-        &s->data_parser, s, &s->unprocessed_incoming_frames_buffer, slice,
-        nullptr);
+        &stream_->data_parser, stream_,
+        &stream_->unprocessed_incoming_frames_buffer, slice, nullptr);
     if (error != GRPC_ERROR_NONE) {
       return error;
     }
   } else {
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Truncated message");
-    GRPC_CLOSURE_SCHED(&s->reset_byte_stream, GRPC_ERROR_REF(error));
+    GRPC_CLOSURE_SCHED(&stream_->reset_byte_stream, GRPC_ERROR_REF(error));
     return error;
   }
   return GRPC_ERROR_NONE;
 }
 
 void Chttp2IncomingByteStream::PublishError(grpc_error* error) {
-  grpc_chttp2_stream* s = stream_;
   GPR_ASSERT(error != GRPC_ERROR_NONE);
-  GRPC_CLOSURE_SCHED(s->on_next, GRPC_ERROR_REF(error));
-  s->on_next = nullptr;
-  GRPC_ERROR_UNREF(s->byte_stream_error);
-  s->byte_stream_error = GRPC_ERROR_REF(error);
+  GRPC_CLOSURE_SCHED(stream_->on_next, GRPC_ERROR_REF(error));
+  stream_->on_next = nullptr;
+  GRPC_ERROR_UNREF(stream_->byte_stream_error);
+  stream_->byte_stream_error = GRPC_ERROR_REF(error);
   grpc_chttp2_cancel_stream(transport_, stream_, GRPC_ERROR_REF(error));
 }
 
 grpc_error* Chttp2IncomingByteStream::Push(grpc_slice slice,
                                            grpc_slice* slice_out) {
-  grpc_chttp2_stream* s = stream_;
   if (remaining_bytes_ < GRPC_SLICE_LENGTH(slice)) {
     grpc_error* error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Too many bytes in stream");
-    GRPC_CLOSURE_SCHED(&s->reset_byte_stream, GRPC_ERROR_REF(error));
+    GRPC_CLOSURE_SCHED(&stream_->reset_byte_stream, GRPC_ERROR_REF(error));
     grpc_slice_unref_internal(slice);
     return error;
   } else {
@@ -2904,14 +2900,13 @@ grpc_error* Chttp2IncomingByteStream::Push(grpc_slice slice,
 
 grpc_error* Chttp2IncomingByteStream::Finished(grpc_error* error,
                                                bool reset_on_error) {
-  grpc_chttp2_stream* s = stream_;
   if (error == GRPC_ERROR_NONE) {
     if (remaining_bytes_ != 0) {
       error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Truncated message");
     }
   }
   if (error != GRPC_ERROR_NONE && reset_on_error) {
-    GRPC_CLOSURE_SCHED(&s->reset_byte_stream, GRPC_ERROR_REF(error));
+    GRPC_CLOSURE_SCHED(&stream_->reset_byte_stream, GRPC_ERROR_REF(error));
   }
   Unref();
   return error;

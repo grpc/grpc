@@ -82,7 +82,8 @@ char* grpc_transport_stream_op_batch_string(
     } else {
       // This can happen when we check a batch after the transport has
       // processed and cleared the send_message op.
-      tmp = gpr_strdup("SEND_MESSAGE(nullptr)");
+      tmp =
+          gpr_strdup("SEND_MESSAGE(flag and length unknown, already orphaned)");
     }
     gpr_strvec_add(&b, tmp);
   }
