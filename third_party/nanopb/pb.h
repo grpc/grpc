@@ -25,7 +25,7 @@
 /* #define PB_FIELD_16BIT 1 */
 
 /* Add support for tag numbers > 65536 and fields larger than 65536 bytes. */
-/* #define PB_FIELD_32BIT 1 */
+/* #define PB_FIELD_32BIT 1 */ 
 
 /* Disable support for error messages in order to save some code space. */
 /* #define PB_NO_ERRMSG 1 */
