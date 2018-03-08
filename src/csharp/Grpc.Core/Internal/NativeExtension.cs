@@ -111,6 +111,10 @@ namespace Grpc.Core.Internal
 
         /// <summary>
         /// Return native method delegates when running on Unity platform.
+        /// Unity does not use standard NuGet packages and the native library is treated
+        /// there as a "native plugin" which is (provided it has the right metadata)
+        /// automatically made available to <c>[DllImport]</c> loading logic.
+        /// WARNING: Unity support is experimental and work-in-progress. Don't expect it to work.
         /// </summary>
         private static NativeMethods LoadNativeMethodsUnity()
         {
