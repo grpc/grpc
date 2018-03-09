@@ -58,6 +58,7 @@ void* gpr_malloc(size_t size) {
   if (!p) {
     abort();
   }
+  GPR_ASSERT((((uintptr_t)p) & ((sizeof(void*) << 1) - 1)) == 0);
   return p;
 }
 
@@ -69,6 +70,7 @@ void* gpr_zalloc(size_t size) {
   if (!p) {
     abort();
   }
+  GPR_ASSERT((((uintptr_t)p) & ((sizeof(void*) << 1) - 1)) == 0);
   return p;
 }
 
@@ -84,6 +86,7 @@ void* gpr_realloc(void* p, size_t size) {
   if (!p) {
     abort();
   }
+  GPR_ASSERT((((uintptr_t)p) & ((sizeof(void*) << 1) - 1)) == 0);
   return p;
 }
 
