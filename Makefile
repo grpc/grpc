@@ -961,7 +961,6 @@ avl_test: $(BINDIR)/$(CONFIG)/avl_test
 bad_server_response_test: $(BINDIR)/$(CONFIG)/bad_server_response_test
 bin_decoder_test: $(BINDIR)/$(CONFIG)/bin_decoder_test
 bin_encoder_test: $(BINDIR)/$(CONFIG)/bin_encoder_test
-byte_stream_test: $(BINDIR)/$(CONFIG)/byte_stream_test
 channel_create_test: $(BINDIR)/$(CONFIG)/channel_create_test
 check_epollexclusive: $(BINDIR)/$(CONFIG)/check_epollexclusive
 chttp2_hpack_encoder_test: $(BINDIR)/$(CONFIG)/chttp2_hpack_encoder_test
@@ -1127,6 +1126,7 @@ bm_fullstack_trickle: $(BINDIR)/$(CONFIG)/bm_fullstack_trickle
 bm_fullstack_unary_ping_pong: $(BINDIR)/$(CONFIG)/bm_fullstack_unary_ping_pong
 bm_metadata: $(BINDIR)/$(CONFIG)/bm_metadata
 bm_pollset: $(BINDIR)/$(CONFIG)/bm_pollset
+byte_stream_test: $(BINDIR)/$(CONFIG)/byte_stream_test
 channel_arguments_test: $(BINDIR)/$(CONFIG)/channel_arguments_test
 channel_filter_test: $(BINDIR)/$(CONFIG)/channel_filter_test
 check_gcp_environment_linux_test: $(BINDIR)/$(CONFIG)/check_gcp_environment_linux_test
@@ -1399,7 +1399,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/bad_server_response_test \
   $(BINDIR)/$(CONFIG)/bin_decoder_test \
   $(BINDIR)/$(CONFIG)/bin_encoder_test \
-  $(BINDIR)/$(CONFIG)/byte_stream_test \
   $(BINDIR)/$(CONFIG)/channel_create_test \
   $(BINDIR)/$(CONFIG)/chttp2_hpack_encoder_test \
   $(BINDIR)/$(CONFIG)/chttp2_stream_map_test \
@@ -1613,6 +1612,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/bm_fullstack_unary_ping_pong \
   $(BINDIR)/$(CONFIG)/bm_metadata \
   $(BINDIR)/$(CONFIG)/bm_pollset \
+  $(BINDIR)/$(CONFIG)/byte_stream_test \
   $(BINDIR)/$(CONFIG)/channel_arguments_test \
   $(BINDIR)/$(CONFIG)/channel_filter_test \
   $(BINDIR)/$(CONFIG)/check_gcp_environment_linux_test \
@@ -1779,6 +1779,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/bm_fullstack_unary_ping_pong \
   $(BINDIR)/$(CONFIG)/bm_metadata \
   $(BINDIR)/$(CONFIG)/bm_pollset \
+  $(BINDIR)/$(CONFIG)/byte_stream_test \
   $(BINDIR)/$(CONFIG)/channel_arguments_test \
   $(BINDIR)/$(CONFIG)/channel_filter_test \
   $(BINDIR)/$(CONFIG)/check_gcp_environment_linux_test \
@@ -1885,8 +1886,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/bin_decoder_test || ( echo test bin_decoder_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bin_encoder_test"
 	$(Q) $(BINDIR)/$(CONFIG)/bin_encoder_test || ( echo test bin_encoder_test failed ; exit 1 )
-	$(E) "[RUN]     Testing byte_stream_test"
-	$(Q) $(BINDIR)/$(CONFIG)/byte_stream_test || ( echo test byte_stream_test failed ; exit 1 )
 	$(E) "[RUN]     Testing channel_create_test"
 	$(Q) $(BINDIR)/$(CONFIG)/channel_create_test || ( echo test channel_create_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_hpack_encoder_test"
@@ -2203,6 +2202,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/bm_metadata || ( echo test bm_metadata failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_pollset"
 	$(Q) $(BINDIR)/$(CONFIG)/bm_pollset || ( echo test bm_pollset failed ; exit 1 )
+	$(E) "[RUN]     Testing byte_stream_test"
+	$(Q) $(BINDIR)/$(CONFIG)/byte_stream_test || ( echo test byte_stream_test failed ; exit 1 )
 	$(E) "[RUN]     Testing channel_arguments_test"
 	$(Q) $(BINDIR)/$(CONFIG)/channel_arguments_test || ( echo test channel_arguments_test failed ; exit 1 )
 	$(E) "[RUN]     Testing channel_filter_test"
@@ -10128,38 +10129,6 @@ endif
 endif
 
 
-BYTE_STREAM_TEST_SRC = \
-    test/core/transport/byte_stream_test.cc \
-
-BYTE_STREAM_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BYTE_STREAM_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/byte_stream_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/byte_stream_test: $(BYTE_STREAM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(BYTE_STREAM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/byte_stream_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/transport/byte_stream_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_byte_stream_test: $(BYTE_STREAM_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(BYTE_STREAM_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 CHANNEL_CREATE_TEST_SRC = \
     test/core/surface/channel_create_test.cc \
 
@@ -15826,6 +15795,49 @@ deps_bm_pollset: $(BM_POLLSET_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(BM_POLLSET_OBJS:.o=.dep)
+endif
+endif
+
+
+BYTE_STREAM_TEST_SRC = \
+    test/core/transport/byte_stream_test.cc \
+
+BYTE_STREAM_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BYTE_STREAM_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/byte_stream_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/byte_stream_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/byte_stream_test: $(PROTOBUF_DEP) $(BYTE_STREAM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BYTE_STREAM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/byte_stream_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/transport/byte_stream_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_byte_stream_test: $(BYTE_STREAM_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BYTE_STREAM_TEST_OBJS:.o=.dep)
 endif
 endif
 
