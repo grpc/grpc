@@ -104,7 +104,8 @@ RUN /bin/bash -l -c "nvm install 4 && npm config set cache /tmp/npm-cache && npm
 RUN /bin/bash -l -c "nvm install 5 && npm config set cache /tmp/npm-cache && npm install -g npm"
 RUN /bin/bash -l -c "nvm install 6 && npm config set cache /tmp/npm-cache && npm install -g npm"
 RUN /bin/bash -l -c "nvm install 8 && npm config set cache /tmp/npm-cache && npm install -g npm"
-RUN /bin/bash -l -c "nvm alias default 8"
+RUN /bin/bash -l -c "nvm install 9 && npm config set cache /tmp/npm-cache && npm install -g npm"
+RUN /bin/bash -l -c "nvm alias default 9"
 #=================
 # PHP dependencies
 

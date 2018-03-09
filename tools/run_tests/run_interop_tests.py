@@ -394,7 +394,7 @@ class NodePureJSLanguage:
     def client_cmd(self, args):
         return [
             'packages/grpc-native-core/deps/grpc/tools/run_tests/interop/with_nvm.sh',
-            'node', '--require', './test/fixtures/native_js',
+            'node', '--require', './test/fixtures/js_js',
             'test/interop/interop_client.js'
         ] + args
 
@@ -411,7 +411,7 @@ class NodePureJSLanguage:
         return []
 
     def __str__(self):
-        return 'nodepurejs'
+        return 'node'
 
 class PHPLanguage:
 
