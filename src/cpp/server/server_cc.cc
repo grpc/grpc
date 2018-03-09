@@ -368,13 +368,13 @@ Server::Server(
     std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
         sync_server_cqs,
     int min_pollers, int max_pollers, int sync_cq_timeout_msec)
-    : server_(nullptr),
-      started_(false),
-      max_receive_message_size_(max_receive_message_size),
+    : max_receive_message_size_(max_receive_message_size),
       sync_server_cqs_(sync_server_cqs),
+      started_(false),
       shutdown_(false),
       shutdown_notified_(false),
       has_generic_service_(false),
+      server_(nullptr),
       server_initializer_(new ServerInitializer(this)),
       health_check_service_disabled_(false) {
   g_gli_initializer.summon();
