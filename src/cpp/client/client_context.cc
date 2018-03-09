@@ -85,7 +85,7 @@ void ClientContext::set_call(grpc_call* call,
   GPR_ASSERT(call_ == nullptr);
   call_ = call;
   channel_ = channel;
-  if (creds_ && !creds_->ApplyToCall(call_)) {
+  if (creds_ && !creds_->ApplyToCall(this)) {
     grpc_call_cancel_with_status(call, GRPC_STATUS_CANCELLED,
                                  "Failed to set credentials to rpc.", nullptr);
   }

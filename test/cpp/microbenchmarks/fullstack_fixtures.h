@@ -96,7 +96,7 @@ class FullstackFixture : public BaseFixture {
     // Dummy shutdown tag (this tag is swallowed by cq->Next() and is not
     // returned to the user) see ShutdownTag definition for more details
     ShutdownTag shutdown_tag;
-    grpc_server_shutdown_and_notify(server_->c_server(), cq_->cq(),
+    grpc_server_shutdown_and_notify(server_->server(), cq_->cq(),
                                     &shutdown_tag);
     cq_->Shutdown();
     void* tag;
@@ -108,7 +108,8 @@ class FullstackFixture : public BaseFixture {
   void AddToLabel(std::ostream& out, benchmark::State& state) {
     BaseFixture::AddToLabel(out, state);
     out << " polls/iter:"
-        << static_cast<double>(grpc_get_cq_poll_num(this->cq()->cq())) /
+        << static_cast<double>(
+               grpc::internal::CompletionQueueStats(this->cq()).GetPollNum()) /
                state.iterations();
   }
 
@@ -186,20 +187,20 @@ class EndpointPairFixture : public BaseFixture {
      * */
     {
       const grpc_channel_args* server_args =
-          grpc_server_get_channel_args(server_->c_server());
+          grpc_server_get_channel_args(server_->server());
       server_transport_ = grpc_create_chttp2_transport(
           server_args, endpoints.server, false /* is_client */);
 
       grpc_pollset** pollsets;
       size_t num_pollsets = 0;
-      grpc_server_get_pollsets(server_->c_server(), &pollsets, &num_pollsets);
+      grpc_server_get_pollsets(server_->server(), &pollsets, &num_pollsets);
 
       for (size_t i = 0; i < num_pollsets; i++) {
         grpc_endpoint_add_to_pollset(endpoints.server, pollsets[i]);
       }
 
-      grpc_server_setup_transport(server_->c_server(), server_transport_,
-                                  nullptr, server_args);
+      grpc_server_setup_transport(server_->server(), server_transport_, nullptr,
+                                  server_args);
       grpc_chttp2_transport_start_reading(server_transport_, nullptr, nullptr);
     }
 
@@ -225,7 +226,7 @@ class EndpointPairFixture : public BaseFixture {
     // Dummy shutdown tag (this tag is swallowed by cq->Next() and is not
     // returned to the user) see ShutdownTag definition for more details
     ShutdownTag shutdown_tag;
-    grpc_server_shutdown_and_notify(server_->c_server(), cq_->cq(),
+    grpc_server_shutdown_and_notify(server_->server(), cq_->cq(),
                                     &shutdown_tag);
     cq_->Shutdown();
     void* tag;
@@ -237,7 +238,8 @@ class EndpointPairFixture : public BaseFixture {
   void AddToLabel(std::ostream& out, benchmark::State& state) {
     BaseFixture::AddToLabel(out, state);
     out << " polls/iter:"
-        << static_cast<double>(grpc_get_cq_poll_num(this->cq()->cq())) /
+        << static_cast<double>(
+               grpc::internal::CompletionQueueStats(this->cq()).GetPollNum()) /
                state.iterations();
   }
 

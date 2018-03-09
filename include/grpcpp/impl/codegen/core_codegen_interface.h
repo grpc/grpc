@@ -26,14 +26,13 @@
 #include <grpcpp/impl/codegen/status.h>
 
 namespace grpc {
+namespace internal {
 
 /// Interface between the codegen library and the minimal subset of core
 /// features required by the generated code.
 ///
 /// All undocumented methods are simply forwarding the call to their namesakes.
 /// Please refer to their corresponding documentation for details.
-///
-/// \warning This interface should be considered internal and private.
 class CoreCodegenInterface {
  public:
   virtual ~CoreCodegenInterface() = default;
@@ -134,14 +133,16 @@ class CoreCodegenInterface {
 
 extern CoreCodegenInterface* g_core_codegen_interface;
 
-/// Codegen specific version of \a GPR_ASSERT.
-#define GPR_CODEGEN_ASSERT(x)                                              \
-  do {                                                                     \
-    if (!(x)) {                                                            \
-      grpc::g_core_codegen_interface->assert_fail(#x, __FILE__, __LINE__); \
-    }                                                                      \
-  } while (0)
-
+}  // namespace internal
 }  // namespace grpc
+
+/// Codegen specific version of \a GPR_ASSERT.
+#define GPR_CODEGEN_ASSERT(x)                                             \
+  do {                                                                    \
+    if (!(x)) {                                                           \
+      grpc::internal::g_core_codegen_interface->assert_fail(#x, __FILE__, \
+                                                            __LINE__);    \
+    }                                                                     \
+  } while (0)
 
 #endif  // GRPCPP_IMPL_CODEGEN_CORE_CODEGEN_INTERFACE_H

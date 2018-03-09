@@ -21,6 +21,7 @@
 
 #include <grpc/grpc_security.h>
 
+#include <grpcpp/impl/codegen/client_context.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/support/config.h>
 
@@ -34,12 +35,12 @@ class SecureChannelCredentials final : public ChannelCredentials {
   ~SecureChannelCredentials() { grpc_channel_credentials_release(c_creds_); }
   grpc_channel_credentials* GetRawCreds() { return c_creds_; }
 
+ private:
+  grpc_channel_credentials* const c_creds_;
+
   std::shared_ptr<grpc::Channel> CreateChannel(
       const string& target, const grpc::ChannelArguments& args) override;
   SecureChannelCredentials* AsSecureCredentials() override { return this; }
-
- private:
-  grpc_channel_credentials* const c_creds_;
 };
 
 class SecureCallCredentials final : public CallCredentials {
@@ -48,14 +49,15 @@ class SecureCallCredentials final : public CallCredentials {
   ~SecureCallCredentials() { grpc_call_credentials_release(c_creds_); }
   grpc_call_credentials* GetRawCreds() { return c_creds_; }
 
-  bool ApplyToCall(grpc_call* call) override;
-  SecureCallCredentials* AsSecureCredentials() override { return this; }
-
  private:
   grpc_call_credentials* const c_creds_;
+
+  bool ApplyToCall(ClientContext* ctx) override;
+  SecureCallCredentials* AsSecureCredentials() override { return this; }
 };
 
-class MetadataCredentialsPluginWrapper final : private GrpcLibraryCodegen {
+class MetadataCredentialsPluginWrapper final
+    : private internal::GrpcLibraryCodegen {
  public:
   static void Destroy(void* wrapper);
   static int GetMetadata(

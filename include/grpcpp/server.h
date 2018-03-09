@@ -19,6 +19,8 @@
 #ifndef GRPCPP_SERVER_H
 #define GRPCPP_SERVER_H
 
+#include <grpc/support/port_platform.h>
+
 #include <condition_variable>
 #include <list>
 #include <memory>
@@ -45,11 +47,16 @@ class HealthCheckServiceInterface;
 class ServerContext;
 class ServerInitializer;
 
+namespace testing {
+class EndpointPairFixture;
+class FullstackFixture;
+}  // namespace testing
+
 /// Represents a gRPC server.
 ///
 /// Use a \a grpc::ServerBuilder to create, configure, and start
 /// \a Server instances.
-class Server : public ServerInterface, private GrpcLibraryCodegen {
+class Server : public ServerInterface, private internal::GrpcLibraryCodegen {
  public:
   ~Server();
 
@@ -87,10 +94,6 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   /// application and is shared among all \a Server objects.
   static void SetGlobalCallbacks(GlobalCallbacks* callbacks);
 
-  /// Returns a \em raw pointer to the underlying \a grpc_server instance.
-  /// EXPERIMENTAL:  for internal/test use only
-  grpc_server* c_server();
-
   /// Returns the health check service.
   HealthCheckServiceInterface* GetHealthCheckService() const {
     return health_check_service_.get();
@@ -98,6 +101,9 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
 
   /// Establish a channel for in-process communication
   std::shared_ptr<Channel> InProcessChannel(const ChannelArguments& args);
+
+  /// server() meant for internal use only
+  grpc_server* server() override { return server_; };
 
  protected:
   /// Register a service. This call does not take ownership of the service.
@@ -154,12 +160,13 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   /// \param num_cqs How many completion queues does \a cqs hold.
   void Start(ServerCompletionQueue** cqs, size_t num_cqs) override;
 
-  grpc_server* server() override { return server_; };
-
  private:
   friend class AsyncGenericService;
   friend class ServerBuilder;
   friend class ServerInitializer;
+  friend class testing::EndpointPairFixture;  // for use by tests only
+  friend class testing::FullstackFixture;     // for use by tests only
+  friend void AddInsecureChannelFromFd(Server* server, int fd);
 
   class SyncRequest;
   class UnimplementedAsyncRequest;
@@ -219,6 +226,17 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   std::unique_ptr<HealthCheckServiceInterface> health_check_service_;
   bool health_check_service_disabled_;
 };
+
+#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
+
+/// Add a new client to a \a Server communicating over the given
+/// file descriptor.
+///
+/// \param server The server to add the client to.
+/// \param fd The file descriptor representing a socket.
+void AddInsecureChannelFromFd(Server* server, int fd);
+
+#endif  // GPR_SUPPORT_CHANNELS_FROM_FD
 
 }  // namespace grpc
 

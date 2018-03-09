@@ -27,6 +27,7 @@
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 
 namespace grpc {
+namespace internal {
 
 /// Implementation of the core codegen interface.
 class CoreCodegen final : public CoreCodegenInterface {
@@ -115,6 +116,7 @@ class CoreCodegen final : public CoreCodegenInterface {
                    int line) override;
 };
 
+}  // namespace internal
 }  // namespace grpc
 
 #endif  // GRPCPP_IMPL_CODEGEN_CORE_CODEGEN_H

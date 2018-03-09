@@ -22,12 +22,11 @@
 #include <map>
 #include <memory>
 
+#include <grpcpp/impl/codegen/client_context.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/security/auth_context.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
-
-struct grpc_call;
 
 namespace grpc {
 class ChannelArguments;
@@ -40,19 +39,14 @@ class SecureCallCredentials;
 /// to authenticate with a server for a given channel.
 /// It can make various assertions, e.g., about the client’s identity, role
 /// for all the calls on that channel.
+/// This is a base class that will only get constructed from its derived
+/// classes in the implementation.
 ///
 /// \see https://grpc.io/docs/guides/auth.html
-class ChannelCredentials : private GrpcLibraryCodegen {
- public:
+class ChannelCredentials : private internal::GrpcLibraryCodegen {
+ protected:
   ChannelCredentials();
   ~ChannelCredentials();
-
- protected:
-  friend std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
-      const std::shared_ptr<ChannelCredentials>& channel_creds,
-      const std::shared_ptr<CallCredentials>& call_creds);
-
-  virtual SecureChannelCredentials* AsSecureCredentials() = 0;
 
  private:
   friend std::shared_ptr<Channel> CreateCustomChannel(
@@ -60,23 +54,32 @@ class ChannelCredentials : private GrpcLibraryCodegen {
       const std::shared_ptr<ChannelCredentials>& creds,
       const ChannelArguments& args);
 
+  friend std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
+      const std::shared_ptr<ChannelCredentials>& channel_creds,
+      const std::shared_ptr<CallCredentials>& call_creds);
+
+  /// Either give this call credentials if secure or nullptr if not
+  /// (like a dynamic_cast). Only called by CompositeChannelCredentials
+  virtual SecureChannelCredentials* AsSecureCredentials() = 0;
+
   virtual std::shared_ptr<Channel> CreateChannel(
       const grpc::string& target, const ChannelArguments& args) = 0;
 };
 
 /// A call credentials object encapsulates the state needed by a client to
 /// authenticate with a server for a given call on a channel.
+/// This is a base class that will only get constructed from its derived
+/// classes in the implementation.
 ///
 /// \see https://grpc.io/docs/guides/auth.html
-class CallCredentials : private GrpcLibraryCodegen {
- public:
+class CallCredentials : private internal::GrpcLibraryCodegen {
+ protected:
   CallCredentials();
   ~CallCredentials();
 
-  /// Apply this instance's credentials to \a call.
-  virtual bool ApplyToCall(grpc_call* call) = 0;
+ private:
+  friend class ClientContext;
 
- protected:
   friend std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
       const std::shared_ptr<ChannelCredentials>& channel_creds,
       const std::shared_ptr<CallCredentials>& call_creds);
@@ -85,6 +88,13 @@ class CallCredentials : private GrpcLibraryCodegen {
       const std::shared_ptr<CallCredentials>& creds1,
       const std::shared_ptr<CallCredentials>& creds2);
 
+  /// Apply this instance's credentials to call in \a ctx.
+  /// Applications should not need to call this; this will be called by
+  /// the ClientContext when it gets bound to a call.
+  virtual bool ApplyToCall(ClientContext* ctx) = 0;
+
+  /// Either give this call credentials if secure or nullptr if not
+  /// (like a dynamic_cast). Only called by the CompositeCredentials functions.
   virtual SecureCallCredentials* AsSecureCredentials() = 0;
 };
 

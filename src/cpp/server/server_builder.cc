@@ -28,15 +28,17 @@
 #include "src/cpp/server/thread_pool_interface.h"
 
 namespace grpc {
+namespace {
 
-static std::vector<std::unique_ptr<ServerBuilderPlugin> (*)()>*
-    g_plugin_factory_list;
-static gpr_once once_init_plugin_list = GPR_ONCE_INIT;
+std::vector<std::unique_ptr<ServerBuilderPlugin> (*)()>* g_plugin_factory_list;
+gpr_once once_init_plugin_list = GPR_ONCE_INIT;
 
-static void do_plugin_list_init(void) {
+void do_plugin_list_init(void) {
   g_plugin_factory_list =
       new std::vector<std::unique_ptr<ServerBuilderPlugin> (*)()>();
 }
+
+}  // namespace
 
 ServerBuilder::ServerBuilder()
     : max_receive_message_size_(-1),
@@ -125,10 +127,11 @@ ServerBuilder& ServerBuilder::SetSyncServerOption(
 
 ServerBuilder& ServerBuilder::SetCompressionAlgorithmSupportStatus(
     grpc_compression_algorithm algorithm, bool enabled) {
+  int alg = static_cast<int>(algorithm);
   if (enabled) {
-    GPR_BITSET(&enabled_compression_algorithms_bitset_, algorithm);
+    GPR_BITSET(&enabled_compression_algorithms_bitset_, alg);
   } else {
-    GPR_BITCLEAR(&enabled_compression_algorithms_bitset_, algorithm);
+    GPR_BITCLEAR(&enabled_compression_algorithms_bitset_, alg);
   }
   return *this;
 }

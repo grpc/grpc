@@ -27,6 +27,9 @@ namespace grpc {
 namespace testing {
 
 /// A test-only class to access private members and methods of ServerContext.
+/// It is used primarily by libraries that are unit-testing their
+/// gRPC service implementations using direct access to ServerContext.
+
 class ServerContextTestSpouse {
  public:
   explicit ServerContextTestSpouse(ServerContext* ctx) : ctx_(ctx) {}

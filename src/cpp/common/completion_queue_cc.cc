@@ -24,6 +24,8 @@
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/time.h>
 
+#include "src/core/lib/surface/completion_queue.h"
+
 namespace grpc {
 
 static internal::GrpcLibraryInitializer g_gli_initializer;
@@ -95,5 +97,11 @@ bool CompletionQueue::CompletionQueueTLSCache::Flush(void** tag, bool* ok) {
   }
   return false;
 }
+
+namespace internal {
+int CompletionQueueStats::GetPollNum() {
+  return grpc_get_cq_poll_num(cq_->cq());
+}
+}  // namespace internal
 
 }  // namespace grpc

@@ -35,8 +35,6 @@
 
 namespace grpc {
 
-extern CoreCodegenInterface* g_core_codegen_interface;
-
 /// This is a specialization of the protobuf class ZeroCopyInputStream
 /// The principle is to get one chunk of data at a time from the proto layer,
 /// with options to backup (re-see some bytes) or skip (forward past some bytes)
@@ -52,8 +50,8 @@ class GrpcProtoBufferReader : public ::grpc::protobuf::io::ZeroCopyInputStream {
     /// Implemented through a grpc_byte_buffer_reader which iterates
     /// over the slices that make up a byte buffer
     if (!buffer->Valid() ||
-        !g_core_codegen_interface->grpc_byte_buffer_reader_init(
-            &reader_, buffer->c_buffer())) {
+        !internal::g_core_codegen_interface->grpc_byte_buffer_reader_init(
+            &reader_, buffer->bbuf_ptr())) {
       status_ = Status(StatusCode::INTERNAL,
                        "Couldn't initialize byte buffer reader");
     }
@@ -61,7 +59,8 @@ class GrpcProtoBufferReader : public ::grpc::protobuf::io::ZeroCopyInputStream {
 
   ~GrpcProtoBufferReader() {
     if (status_.ok()) {
-      g_core_codegen_interface->grpc_byte_buffer_reader_destroy(&reader_);
+      internal::g_core_codegen_interface->grpc_byte_buffer_reader_destroy(
+          &reader_);
     }
   }
 
@@ -81,11 +80,11 @@ class GrpcProtoBufferReader : public ::grpc::protobuf::io::ZeroCopyInputStream {
       return true;
     }
     /// Otherwise get the next slice from the byte buffer reader
-    if (!g_core_codegen_interface->grpc_byte_buffer_reader_next(&reader_,
-                                                                &slice_)) {
+    if (!internal::g_core_codegen_interface->grpc_byte_buffer_reader_next(
+            &reader_, &slice_)) {
       return false;
     }
-    g_core_codegen_interface->grpc_slice_unref(slice_);
+    internal::g_core_codegen_interface->grpc_slice_unref(slice_);
     *data = GRPC_SLICE_START_PTR(slice_);
     // On win x64, int is only 32bit
     GPR_CODEGEN_ASSERT(GRPC_SLICE_LENGTH(slice_) <= INT_MAX);
@@ -126,11 +125,12 @@ class GrpcProtoBufferReader : public ::grpc::protobuf::io::ZeroCopyInputStream {
     return byte_count_ - backup_count_;
   }
 
-  // These protected members are needed to support internal optimizations.
-  // they expose internal bits of grpc core that are NOT stable. If you have
-  // a use case needs to use one of these functions, please send an email to
-  // https://groups.google.com/forum/#!forum/grpc-io.
  protected:
+  // These protected members are needed to support internal optimizations.
+  // They expose internal bits of grpc core that are NOT stable. If you have
+  // a use case that needs to use one of these functions, please send email to
+  // https://groups.google.com/forum/#!forum/grpc-io.
+
   void set_byte_count(int64_t byte_count) { byte_count_ = byte_count; }
   int64_t backup_count() { return backup_count_; }
   void set_backup_count(int64_t backup_count) { backup_count_ = backup_count; }

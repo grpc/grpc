@@ -38,8 +38,6 @@
 
 namespace grpc {
 
-extern CoreCodegenInterface* g_core_codegen_interface;
-
 // ProtoBufferWriter must be a subclass of ::protobuf::io::ZeroCopyOutputStream.
 template <class ProtoBufferWriter, class T>
 Status GenericSerialize(const grpc::protobuf::Message& msg, ByteBuffer* bb,
@@ -58,12 +56,12 @@ Status GenericSerialize(const grpc::protobuf::Message& msg, ByteBuffer* bb,
     ByteBuffer tmp(&slice, 1);
     bb->Swap(&tmp);
 
-    return g_core_codegen_interface->ok();
+    return internal::g_core_codegen_interface->ok();
   }
   ProtoBufferWriter writer(bb, kGrpcProtoBufferWriterMaxBufferLength,
                            byte_size);
   return msg.SerializeToZeroCopyStream(&writer)
-             ? g_core_codegen_interface->ok()
+             ? internal::g_core_codegen_interface->ok()
              : Status(StatusCode::INTERNAL, "Failed to serialize message");
 }
 
@@ -77,7 +75,7 @@ Status GenericDeserialize(ByteBuffer* buffer, grpc::protobuf::Message* msg) {
   if (buffer == nullptr) {
     return Status(StatusCode::INTERNAL, "No payload");
   }
-  Status result = g_core_codegen_interface->ok();
+  Status result = internal::g_core_codegen_interface->ok();
   {
     ProtoBufferReader reader(buffer);
     if (!reader.status().ok()) {

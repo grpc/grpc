@@ -947,8 +947,10 @@ include/grpcpp/impl/codegen/client_context.h \
 include/grpcpp/impl/codegen/client_unary_call.h \
 include/grpcpp/impl/codegen/completion_queue.h \
 include/grpcpp/impl/codegen/completion_queue_tag.h \
+include/grpcpp/impl/codegen/compression.h \
 include/grpcpp/impl/codegen/config.h \
 include/grpcpp/impl/codegen/config_protobuf.h \
+include/grpcpp/impl/codegen/connectivity.h \
 include/grpcpp/impl/codegen/core_codegen.h \
 include/grpcpp/impl/codegen/core_codegen.h \
 include/grpcpp/impl/codegen/core_codegen_interface.h \

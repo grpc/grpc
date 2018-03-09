@@ -16,8 +16,6 @@
  *
  */
 
-/// An Alarm posts the user provided tag to its associated completion queue upon
-/// expiry or cancellation.
 #ifndef GRPCPP_ALARM_H
 #define GRPCPP_ALARM_H
 
@@ -30,8 +28,9 @@
 
 namespace grpc {
 
-/// A thin wrapper around \a grpc_alarm (see / \a / src/core/surface/alarm.h).
-class Alarm : private GrpcLibraryCodegen {
+/// An Alarm posts the user provided tag to its associated completion queue upon
+/// expiry or cancellation.
+class Alarm : private internal::GrpcLibraryCodegen {
  public:
   /// Create an unset completion queue alarm
   Alarm();

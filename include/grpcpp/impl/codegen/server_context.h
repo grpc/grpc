@@ -23,10 +23,9 @@
 #include <memory>
 #include <vector>
 
-#include <grpc/impl/codegen/compression_types.h>
-
 #include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
+#include <grpcpp/impl/codegen/compression.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/create_auth_context.h>
 #include <grpcpp/impl/codegen/metadata_map.h>
@@ -103,7 +102,8 @@ class ServerContext {
     return Timespec2Timepoint(deadline_);
   }
 
-  /// Return a \a gpr_timespec representation of the server call's deadline.
+  /// For internal/advanced use only. Will be replaced/removed in the future.
+  /// Return a \a gpr_timespec representation of the client call's deadline.
   gpr_timespec raw_deadline() const { return deadline_; }
 
   /// Add the (\a meta_key, \a meta_value) pair to the initial metadata
@@ -171,14 +171,23 @@ class ServerContext {
     return *client_metadata_.map();
   }
 
-  /// Return the compression algorithm to be used by the server call.
-  grpc_compression_level compression_level() const {
-    return compression_level_;
+  /// Return the compression level to be used by the server call.
+  CompressionLevel compression_level() const {
+    return static_cast<CompressionLevel>(compression_level_);
   }
 
-  /// Set \a algorithm to be the compression algorithm used for the server call.
+  /// Set \a level to be the compression level used for the server call.
   ///
-  /// \param algorithm The compression algorithm used for the server call.
+  /// \param level The compression level used for the server call.
+  void set_compression_level(CompressionLevel level) {
+    compression_level_set_ = true;
+    compression_level_ = static_cast<grpc_compression_level>(level);
+  }
+
+  /// DEPRECATED API
+  /// Set \a level to be the compression level used for the server call.
+  ///
+  /// \param level The compression level used for the server call.
   void set_compression_level(grpc_compression_level level) {
     compression_level_set_ = true;
     compression_level_ = level;
@@ -193,9 +202,19 @@ class ServerContext {
   /// Note that the gRPC runtime may decide to ignore this request, for example,
   /// due to resource constraints, or if the server is aware the client doesn't
   /// support the requested algorithm.
-  grpc_compression_algorithm compression_algorithm() const {
+  CompressionAlgorithm compression_algorithm() const {
     return compression_algorithm_;
   }
+
+  /// Set \a algorithm to be the compression algorithm used for the server call.
+  ///
+  /// \param algorithm The compression algorithm used for the server call.
+  void set_compression_algorithm(CompressionAlgorithm algorithm) {
+    set_compression_algorithm(
+        static_cast<grpc_compression_algorithm>(algorithm));
+  }
+
+  /// DEPRECATED API
   /// Set \a algorithm to be the compression algorithm used for the server call.
   ///
   /// \param algorithm The compression algorithm used for the server call.
@@ -209,7 +228,7 @@ class ServerContext {
   /// \see grpc::AuthContext.
   std::shared_ptr<const AuthContext> auth_context() const {
     if (auth_context_.get() == nullptr) {
-      auth_context_ = CreateAuthContext(call_);
+      auth_context_ = internal::CreateAuthContext(call_);
     }
     return auth_context_;
   }
@@ -296,7 +315,7 @@ class ServerContext {
 
   bool compression_level_set_;
   grpc_compression_level compression_level_;
-  grpc_compression_algorithm compression_algorithm_;
+  CompressionAlgorithm compression_algorithm_;
 
   internal::CallOpSet<internal::CallOpSendInitialMetadata,
                       internal::CallOpSendMessage>

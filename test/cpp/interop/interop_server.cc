@@ -106,11 +106,11 @@ bool SetPayload(int size, Payload* payload) {
 bool CheckExpectedCompression(const ServerContext& context,
                               const bool compression_expected) {
   const InteropServerContextInspector inspector(context);
-  const grpc_compression_algorithm received_compression =
+  const grpc::CompressionAlgorithm received_compression =
       inspector.GetCallCompressionAlgorithm();
 
   if (compression_expected) {
-    if (received_compression == GRPC_COMPRESS_NONE) {
+    if (received_compression == grpc::CompressionAlgorithm::NONE) {
       // Expected some compression, got NONE. This is an error.
       gpr_log(GPR_ERROR,
               "Expected compression but got uncompressed request from client.");
@@ -162,9 +162,9 @@ class TestServiceImpl : public TestService::Service {
               compression_requested ? "enabled" : "disabled", __func__);
       if (compression_requested) {
         // Any level would do, let's go for HIGH because we are overachievers.
-        context->set_compression_level(GRPC_COMPRESS_LEVEL_HIGH);
+        context->set_compression_level(grpc::CompressionLevel::HIGH);
       } else {
-        context->set_compression_level(GRPC_COMPRESS_LEVEL_NONE);
+        context->set_compression_level(grpc::CompressionLevel::NONE);
       }
     }
     if (!CheckExpectedCompression(*context,
@@ -203,7 +203,7 @@ class TestServiceImpl : public TestService::Service {
       WriteOptions wopts;
       if (request->response_parameters(i).has_compressed()) {
         // Compress by default. Disabled on a per-message basis.
-        context->set_compression_level(GRPC_COMPRESS_LEVEL_HIGH);
+        context->set_compression_level(grpc::CompressionLevel::HIGH);
         const bool compression_requested =
             request->response_parameters(i).compressed().value();
         gpr_log(GPR_DEBUG, "Request for compression (%s) present for %s",

@@ -34,13 +34,13 @@ namespace grpc {
 class Channel final : public ChannelInterface,
                       public internal::CallHook,
                       public std::enable_shared_from_this<Channel>,
-                      private GrpcLibraryCodegen {
+                      private internal::GrpcLibraryCodegen {
  public:
   ~Channel();
 
   /// Get the current channel state. If the channel is in IDLE and
   /// \a try_to_connect is set to true, try to connect.
-  grpc_connectivity_state GetState(bool try_to_connect) override;
+  ConnectivityState GetState(bool try_to_connect) override;
 
   /// Returns the LB policy name, or the empty string if not yet available.
   grpc::string GetLoadBalancingPolicyName() const;
@@ -63,10 +63,10 @@ class Channel final : public ChannelInterface,
                         internal::Call* call) override;
   void* RegisterMethod(const char* method) override;
 
-  void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
+  void NotifyOnStateChangeImpl(ConnectivityState last_observed,
                                gpr_timespec deadline, CompletionQueue* cq,
                                void* tag) override;
-  bool WaitForStateChangeImpl(grpc_connectivity_state last_observed,
+  bool WaitForStateChangeImpl(ConnectivityState last_observed,
                               gpr_timespec deadline) override;
 
   const grpc::string host_;

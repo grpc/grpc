@@ -44,7 +44,7 @@ class GrpcProtoBufferWriterPeer {
 class GrpcByteBufferPeer {
  public:
   explicit GrpcByteBufferPeer(ByteBuffer* bb) : bb_(bb) {}
-  grpc_byte_buffer* c_buffer() { return bb_->c_buffer(); }
+  grpc_byte_buffer* c_buffer() { return bb_->bbuf_ptr(); }
 
  private:
   ByteBuffer* bb_;
@@ -165,7 +165,7 @@ int main(int argc, char** argv) {
   // Ensure the GrpcProtoBufferWriter internals are initialized.
   grpc::internal::GrpcLibraryInitializer init;
   init.summon();
-  grpc::GrpcLibraryCodegen lib;
+  grpc::internal::GrpcLibraryCodegen lib;
 
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

@@ -34,8 +34,6 @@
 
 namespace grpc {
 
-extern CoreCodegenInterface* g_core_codegen_interface;
-
 // Forward declaration for testing use only
 namespace internal {
 class GrpcProtoBufferWriterPeer;
@@ -66,14 +64,15 @@ class GrpcProtoBufferWriter
     GPR_CODEGEN_ASSERT(!byte_buffer->Valid());
     /// Create an empty raw byte buffer and look at its underlying slice buffer
     grpc_byte_buffer* bp =
-        g_core_codegen_interface->grpc_raw_byte_buffer_create(NULL, 0);
+        internal::g_core_codegen_interface->grpc_raw_byte_buffer_create(NULL,
+                                                                        0);
     byte_buffer->set_buffer(bp);
     slice_buffer_ = &bp->data.raw.slice_buffer;
   }
 
   ~GrpcProtoBufferWriter() {
     if (have_backup_) {
-      g_core_codegen_interface->grpc_slice_unref(backup_slice_);
+      internal::g_core_codegen_interface->grpc_slice_unref(backup_slice_);
     }
   }
 
@@ -100,7 +99,7 @@ class GrpcProtoBufferWriter
       // But make sure the allocated slice is not inlined.
       size_t allocate_length =
           remain > static_cast<size_t>(block_size_) ? block_size_ : remain;
-      slice_ = g_core_codegen_interface->grpc_slice_malloc(
+      slice_ = internal::g_core_codegen_interface->grpc_slice_malloc(
           allocate_length > GRPC_SLICE_INLINED_SIZE
               ? allocate_length
               : GRPC_SLICE_INLINED_SIZE + 1);
@@ -109,7 +108,8 @@ class GrpcProtoBufferWriter
     // On win x64, int is only 32bit
     GPR_CODEGEN_ASSERT(GRPC_SLICE_LENGTH(slice_) <= INT_MAX);
     byte_count_ += * size = (int)GRPC_SLICE_LENGTH(slice_);
-    g_core_codegen_interface->grpc_slice_buffer_add(slice_buffer_, slice_);
+    internal::g_core_codegen_interface->grpc_slice_buffer_add(slice_buffer_,
+                                                              slice_);
     return true;
   }
 
@@ -122,13 +122,14 @@ class GrpcProtoBufferWriter
     /// 3. Add the needed part back to the slice buffer
     /// 4. Mark that we still have the remaining part (for later use/unref)
     GPR_CODEGEN_ASSERT(count <= static_cast<int>(GRPC_SLICE_LENGTH(slice_)));
-    g_core_codegen_interface->grpc_slice_buffer_pop(slice_buffer_);
+    internal::g_core_codegen_interface->grpc_slice_buffer_pop(slice_buffer_);
     if ((size_t)count == GRPC_SLICE_LENGTH(slice_)) {
       backup_slice_ = slice_;
     } else {
-      backup_slice_ = g_core_codegen_interface->grpc_slice_split_tail(
+      backup_slice_ = internal::g_core_codegen_interface->grpc_slice_split_tail(
           &slice_, GRPC_SLICE_LENGTH(slice_) - count);
-      g_core_codegen_interface->grpc_slice_buffer_add(slice_buffer_, slice_);
+      internal::g_core_codegen_interface->grpc_slice_buffer_add(slice_buffer_,
+                                                                slice_);
     }
     // It's dangerous to keep an inlined grpc_slice as the backup slice, since
     // on a following Next() call, a reference will be returned to this slice
@@ -141,11 +142,12 @@ class GrpcProtoBufferWriter
   /// Returns the total number of bytes written since this object was created.
   grpc::protobuf::int64 ByteCount() const override { return byte_count_; }
 
-  // These protected members are needed to support internal optimizations.
-  // they expose internal bits of grpc core that are NOT stable. If you have
-  // a use case needs to use one of these functions, please send an email to
-  // https://groups.google.com/forum/#!forum/grpc-io.
  protected:
+  // These protected members are needed to support internal optimizations.
+  // They expose internal bits of grpc core that are NOT stable. If you have
+  // a use case that needs to use one of these functions, please send email to
+  // https://groups.google.com/forum/#!forum/grpc-io.
+
   grpc_slice_buffer* slice_buffer() { return slice_buffer_; }
   void set_byte_count(int64_t byte_count) { byte_count_ = byte_count; }
 

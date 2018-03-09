@@ -57,8 +57,8 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
     grpc_process_auth_metadata_done_cb cb, void* user_data) {
   AuthMetadataProcessor::InputMetadata metadata;
   for (size_t i = 0; i < num_md; i++) {
-    metadata.insert(std::make_pair(StringRefFromSlice(&md[i].key),
-                                   StringRefFromSlice(&md[i].value)));
+    metadata.insert(std::make_pair(internal::StringRefFromSlice(&md[i].key),
+                                   internal::StringRefFromSlice(&md[i].value)));
   }
   SecureAuthContext context(ctx, false);
   AuthMetadataProcessor::OutputMetadata consumed_metadata;
@@ -71,8 +71,8 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
   for (auto it = consumed_metadata.begin(); it != consumed_metadata.end();
        ++it) {
     grpc_metadata md_entry;
-    md_entry.key = SliceReferencingString(it->first);
-    md_entry.value = SliceReferencingString(it->second);
+    md_entry.key = internal::SliceReferencingString(it->first);
+    md_entry.value = internal::SliceReferencingString(it->second);
     md_entry.flags = 0;
     consumed_md.push_back(md_entry);
   }
@@ -80,8 +80,8 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
   for (auto it = response_metadata.begin(); it != response_metadata.end();
        ++it) {
     grpc_metadata md_entry;
-    md_entry.key = SliceReferencingString(it->first);
-    md_entry.value = SliceReferencingString(it->second);
+    md_entry.key = internal::SliceReferencingString(it->first);
+    md_entry.value = internal::SliceReferencingString(it->second);
     md_entry.flags = 0;
     response_md.push_back(md_entry);
   }

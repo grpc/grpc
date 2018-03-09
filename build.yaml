@@ -1132,7 +1132,9 @@ filegroups:
   - include/grpcpp/impl/codegen/client_unary_call.h
   - include/grpcpp/impl/codegen/completion_queue.h
   - include/grpcpp/impl/codegen/completion_queue_tag.h
+  - include/grpcpp/impl/codegen/compression.h
   - include/grpcpp/impl/codegen/config.h
+  - include/grpcpp/impl/codegen/connectivity.h
   - include/grpcpp/impl/codegen/core_codegen_interface.h
   - include/grpcpp/impl/codegen/create_auth_context.h
   - include/grpcpp/impl/codegen/grpc_library.h
@@ -5071,13 +5073,12 @@ targets:
   src:
   - test/cpp/test/server_context_test_spouse_test.cc
   deps:
+  - grpc++_test_util
   - grpc_test_util
   - grpc++
   - grpc
   - gpr_test_util
   - gpr
-  uses:
-  - grpc++_test
 - name: server_crash_test
   gtest: true
   cpu_cost: 0.1

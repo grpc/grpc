@@ -36,6 +36,7 @@
 struct grpc_byte_buffer;
 
 namespace grpc {
+namespace internal {
 
 const grpc_completion_queue_factory*
 CoreCodegen::grpc_completion_queue_factory_lookup(
@@ -218,4 +219,5 @@ void CoreCodegen::assert_fail(const char* failed_assertion, const char* file,
   abort();
 }
 
+}  // namespace internal
 }  // namespace grpc

@@ -92,8 +92,8 @@ internal::Call Channel::CreateCall(const internal::RpcMethod& method,
   if (kRegistered) {
     c_call = grpc_channel_create_registered_call(
         c_channel_, context->propagate_from_call_,
-        context->propagation_options_.c_bitmask(), cq->cq(),
-        method.channel_tag(), context->raw_deadline(), nullptr);
+        context->propagation_options_.bitmask_, cq->cq(), method.channel_tag(),
+        context->deadline_, nullptr);
   } else {
     const char* host_str = nullptr;
     if (!context->authority().empty()) {
@@ -101,15 +101,15 @@ internal::Call Channel::CreateCall(const internal::RpcMethod& method,
     } else if (!host_.empty()) {
       host_str = host_.c_str();
     }
-    grpc_slice method_slice = SliceFromCopiedString(method.name());
+    grpc_slice method_slice = internal::SliceFromCopiedString(method.name());
     grpc_slice host_slice;
     if (host_str != nullptr) {
-      host_slice = SliceFromCopiedString(host_str);
+      host_slice = internal::SliceFromCopiedString(host_str);
     }
     c_call = grpc_channel_create_call(
         c_channel_, context->propagate_from_call_,
-        context->propagation_options_.c_bitmask(), cq->cq(), method_slice,
-        host_str == nullptr ? nullptr : &host_slice, context->raw_deadline(),
+        context->propagation_options_.bitmask_, cq->cq(), method_slice,
+        host_str == nullptr ? nullptr : &host_slice, context->deadline_,
         nullptr);
     grpc_slice_unref(method_slice);
     if (host_str != nullptr) {
@@ -136,7 +136,7 @@ void* Channel::RegisterMethod(const char* method) {
       c_channel_, method, host_.empty() ? nullptr : host_.c_str(), nullptr);
 }
 
-grpc_connectivity_state Channel::GetState(bool try_to_connect) {
+ConnectivityState Channel::GetState(bool try_to_connect) {
   return grpc_channel_check_connectivity_state(c_channel_, try_to_connect);
 }
 
@@ -158,7 +158,7 @@ class TagSaver final : public internal::CompletionQueueTag {
 
 }  // namespace
 
-void Channel::NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
+void Channel::NotifyOnStateChangeImpl(ConnectivityState last_observed,
                                       gpr_timespec deadline,
                                       CompletionQueue* cq, void* tag) {
   TagSaver* tag_saver = new TagSaver(tag);
@@ -166,7 +166,7 @@ void Channel::NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
                                         cq->cq(), tag_saver);
 }
 
-bool Channel::WaitForStateChangeImpl(grpc_connectivity_state last_observed,
+bool Channel::WaitForStateChangeImpl(ConnectivityState last_observed,
                                      gpr_timespec deadline) {
   CompletionQueue cq;
   bool ok = false;

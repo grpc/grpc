@@ -19,6 +19,7 @@
 #include <grpcpp/impl/channel_argument_option.h>
 
 namespace grpc {
+namespace internal {
 
 std::unique_ptr<ServerBuilderOption> MakeChannelArgumentOption(
     const grpc::string& name, const grpc::string& value) {
@@ -60,4 +61,5 @@ std::unique_ptr<ServerBuilderOption> MakeChannelArgumentOption(
   return std::unique_ptr<ServerBuilderOption>(new IntOption(name, value));
 }
 
+}  // namespace internal
 }  // namespace grpc

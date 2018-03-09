@@ -34,7 +34,6 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/generic/generic_stub.h>
 
-#include "src/core/lib/surface/completion_queue.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/usage_timer.h"
@@ -202,8 +201,8 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
 
   int GetPollCount() override {
     int count = 0;
-    for (auto cq = cli_cqs_.begin(); cq != cli_cqs_.end(); cq++) {
-      count += grpc_get_cq_poll_num((*cq)->cq());
+    for (auto&& cq : cli_cqs_) {
+      count += grpc::internal::CompletionQueueStats(cq.get()).GetPollNum();
     }
     return count;
   }

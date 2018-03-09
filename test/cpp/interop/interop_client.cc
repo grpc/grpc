@@ -55,10 +55,10 @@ void NoopChecks(const InteropClientContextInspector& inspector,
 void UnaryCompressionChecks(const InteropClientContextInspector& inspector,
                             const SimpleRequest* request,
                             const SimpleResponse* response) {
-  const grpc_compression_algorithm received_compression =
+  const CompressionAlgorithm received_compression =
       inspector.GetCallCompressionAlgorithm();
   if (request->response_compressed().value()) {
-    if (received_compression == GRPC_COMPRESS_NONE) {
+    if (received_compression == CompressionAlgorithm::NONE) {
       // Requested some compression, got NONE. This is an error.
       gpr_log(GPR_ERROR,
               "Failure: Requested compression but got uncompressed response "
@@ -188,9 +188,9 @@ bool InteropClient::PerformLargeUnary(SimpleRequest* request,
   request->mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
   if (request->has_expect_compressed()) {
     if (request->expect_compressed().value()) {
-      context.set_compression_algorithm(GRPC_COMPRESS_GZIP);
+      context.set_compression_algorithm(CompressionAlgorithm::MESSAGE_GZIP);
     } else {
-      context.set_compression_algorithm(GRPC_COMPRESS_NONE);
+      context.set_compression_algorithm(CompressionAlgorithm::NONE);
     }
   }
 
@@ -317,7 +317,7 @@ bool InteropClient::DoClientCompressedUnary() {
   SimpleRequest probe_req;
   SimpleResponse probe_res;
 
-  probe_context.set_compression_algorithm(GRPC_COMPRESS_NONE);
+  probe_context.set_compression_algorithm(CompressionAlgorithm::NONE);
   probe_req.mutable_expect_compressed()->set_value(true);  // lies!
 
   probe_req.set_response_size(kLargeResponseSize);
@@ -469,7 +469,7 @@ bool InteropClient::DoClientCompressedStreaming() {
   StreamingInputCallRequest probe_req;
   StreamingInputCallResponse probe_res;
 
-  probe_context.set_compression_algorithm(GRPC_COMPRESS_NONE);
+  probe_context.set_compression_algorithm(CompressionAlgorithm::NONE);
   probe_req.mutable_expect_compressed()->set_value(true);  // lies!
   probe_req.mutable_payload()->set_body(grpc::string(27182, '\0'));
 
@@ -496,7 +496,7 @@ bool InteropClient::DoClientCompressedStreaming() {
   StreamingInputCallRequest request;
   StreamingInputCallResponse response;
 
-  context.set_compression_algorithm(GRPC_COMPRESS_GZIP);
+  context.set_compression_algorithm(CompressionAlgorithm::MESSAGE_GZIP);
   std::unique_ptr<ClientWriter<StreamingInputCallRequest>> stream(
       serviceStub_.Get()->StreamingInputCall(&context, &response));
 
@@ -562,7 +562,9 @@ bool InteropClient::DoServerCompressedStreaming() {
     // Compression checks.
     GPR_ASSERT(request.response_parameters(k).has_compressed());
     if (request.response_parameters(k).compressed().value()) {
-      GPR_ASSERT(inspector.GetCallCompressionAlgorithm() > GRPC_COMPRESS_NONE);
+      GPR_ASSERT(static_cast<grpc::CompressionAlgorithm::Algorithm>(
+                     inspector.GetCallCompressionAlgorithm()) >
+                 CompressionAlgorithm::NONE);
       GPR_ASSERT(inspector.GetMessageFlags() & GRPC_WRITE_INTERNAL_COMPRESS);
     } else {
       // requested *no* compression.
