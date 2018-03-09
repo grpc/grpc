@@ -16,11 +16,11 @@
  *
  */
 
-#include <grpc++/impl/codegen/config.h>
+#include <grpcpp/impl/codegen/config.h>
 #include <gtest/gtest.h>
 
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
 
 #include <grpc/grpc.h>
 

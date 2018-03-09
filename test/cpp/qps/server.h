@@ -19,11 +19,11 @@
 #ifndef TEST_QPS_SERVER_H
 #define TEST_QPS_SERVER_H
 
-#include <grpc++/resource_quota.h>
-#include <grpc++/security/server_credentials.h>
-#include <grpc++/server_builder.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
+#include <grpcpp/resource_quota.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/server_builder.h>
 #include <vector>
 
 #include "src/cpp/util/core_stats.h"

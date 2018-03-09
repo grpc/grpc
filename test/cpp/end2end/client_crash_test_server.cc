@@ -21,10 +21,10 @@
 #include <memory>
 #include <string>
 
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
-#include <grpc++/server_context.h>
 #include <grpc/support/log.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/server_context.h>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 

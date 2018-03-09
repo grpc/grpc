@@ -21,14 +21,14 @@
 #include <sstream>
 
 #include <gflags/gflags.h>
-#include <grpc++/channel.h>
-#include <grpc++/client_context.h>
-#include <grpc++/create_channel.h>
-#include <grpc++/ext/proto_server_reflection_plugin.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
-#include <grpc++/server_context.h>
 #include <grpc/grpc.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/ext/proto_server_reflection_plugin.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/server_context.h>
 #include <gtest/gtest.h>
 
 #include "src/core/lib/gpr/env.h"

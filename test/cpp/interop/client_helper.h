@@ -22,7 +22,7 @@
 #include <memory>
 #include <unordered_map>
 
-#include <grpc++/channel.h>
+#include <grpcpp/channel.h>
 
 #include "src/core/lib/surface/call_test_only.h"
 
