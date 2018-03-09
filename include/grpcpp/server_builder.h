@@ -230,7 +230,7 @@ class ServerBuilder {
 
   std::vector<std::reference_wrapper<NamedService>> services() {
     std::vector<std::reference_wrapper<NamedService>> service_refs;
-    for (auto &ptr : services_) {
+    for (auto& ptr : services_) {
       service_refs.push_back(std::ref(*ptr));
     }
     return service_refs;
@@ -238,12 +238,11 @@ class ServerBuilder {
 
   std::vector<std::reference_wrapper<ServerBuilderOption>> options() {
     std::vector<std::reference_wrapper<ServerBuilderOption>> option_refs;
-    for (auto &ptr : options_) {
+    for (auto& ptr : options_) {
       option_refs.push_back(std::ref(*ptr));
     }
     return option_refs;
   }
-
 
  private:
   friend class ::grpc::testing::ServerBuilderPluginTest;
