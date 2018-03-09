@@ -59,7 +59,6 @@ class ServerReaderWriterBody;
 }  // namespace internal
 
 class Channel;
-class ChannelInterface;
 class ClientContext;
 class CompletionQueue;
 class Server;
@@ -68,6 +67,7 @@ class ServerContext;
 class ServerInterface;
 
 namespace internal {
+class AlarmImpl;
 class CompletionQueueTag;
 class RpcMethod;
 template <class ServiceType, class RequestType, class ResponseType>
@@ -83,15 +83,21 @@ template <class Streamer, bool WriteNeeded>
 class TemplatedBidiStreamingHandler;
 template <class InputMessage, class OutputMessage>
 class BlockingUnaryCallImpl;
+
+class CompletionQueueStats;
 }  // namespace internal
 
-extern CoreCodegenInterface* g_core_codegen_interface;
+namespace testing {
+class CompletionQueueBenchmarks;
+class EndpointPairFixture;
+class FullstackFixture;
+}  // namespace testing
 
 /// A thin wrapper around \ref grpc_completion_queue (see \ref
 /// src/core/lib/surface/completion_queue.h).
 /// See \ref doc/cpp/perf_notes.md for notes on best practices for high
 /// performance servers.
-class CompletionQueue : private GrpcLibraryCodegen {
+class CompletionQueue : private internal::GrpcLibraryCodegen {
  public:
   /// Default constructor. Implicitly creates a \a grpc_completion_queue
   /// instance.
@@ -99,14 +105,9 @@ class CompletionQueue : private GrpcLibraryCodegen {
       : CompletionQueue(grpc_completion_queue_attributes{
             GRPC_CQ_CURRENT_VERSION, GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING}) {}
 
-  /// Wrap \a take, taking ownership of the instance.
-  ///
-  /// \param take The completion queue instance to wrap. Ownership is taken.
-  explicit CompletionQueue(grpc_completion_queue* take);
-
   /// Destructor. Destroys the owned wrapped completion queue / instance.
   ~CompletionQueue() {
-    g_core_codegen_interface->grpc_completion_queue_destroy(cq_);
+    internal::g_core_codegen_interface->grpc_completion_queue_destroy(cq_);
   }
 
   /// Tri-state return for AsyncNext: SHUTDOWN, GOT_EVENT, TIMEOUT.
@@ -166,9 +167,10 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// \return true if got an event, false if the queue is fully drained and
   ///         shut down.
   bool Next(void** tag, bool* ok) {
-    return (AsyncNextInternal(tag, ok,
-                              g_core_codegen_interface->gpr_inf_future(
-                                  GPR_CLOCK_REALTIME)) != SHUTDOWN);
+    return (
+        AsyncNextInternal(tag, ok,
+                          internal::g_core_codegen_interface->gpr_inf_future(
+                              GPR_CLOCK_REALTIME)) != SHUTDOWN);
   }
 
   /// Read from the queue, blocking up to \a deadline (or the queue's shutdown).
@@ -224,19 +226,13 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// completion queue after this method is called.
   void Shutdown();
 
-  /// Returns a \em raw pointer to the underlying \a grpc_completion_queue
-  /// instance.
-  ///
-  /// \warning Remember that the returned instance is owned. No transfer of
-  /// owership is performed.
-  grpc_completion_queue* cq() { return cq_; }
-
  protected:
-  /// Private constructor of CompletionQueue only visible to friend classes
-  CompletionQueue(const grpc_completion_queue_attributes& attributes) {
-    cq_ = g_core_codegen_interface->grpc_completion_queue_create(
-        g_core_codegen_interface->grpc_completion_queue_factory_lookup(
-            &attributes),
+  /// Protected constructor of CompletionQueue only visible to friend
+  /// and derived classes. Meant for internal use.
+  explicit CompletionQueue(const grpc_completion_queue_attributes& attributes) {
+    cq_ = internal::g_core_codegen_interface->grpc_completion_queue_create(
+        internal::g_core_codegen_interface
+            ->grpc_completion_queue_factory_lookup(&attributes),
         &attributes, NULL);
     InitialAvalanching();  // reserve this for the future shutdown
   }
@@ -265,11 +261,30 @@ class CompletionQueue : private GrpcLibraryCodegen {
   template <class Streamer, bool WriteNeeded>
   friend class ::grpc::internal::TemplatedBidiStreamingHandler;
   friend class ::grpc::internal::UnknownMethodHandler;
+  friend class ::grpc::Channel;
   friend class ::grpc::Server;
+  friend class ::grpc::ServerBuilder;
   friend class ::grpc::ServerContext;
   friend class ::grpc::ServerInterface;
+  friend class ::grpc::internal::AlarmImpl;
   template <class InputMessage, class OutputMessage>
   friend class ::grpc::internal::BlockingUnaryCallImpl;
+  friend class ::grpc::internal::CompletionQueueStats;
+  friend class ::grpc::testing::CompletionQueueBenchmarks;
+  friend class ::grpc::testing::EndpointPairFixture;  // for use by tests only
+  friend class ::grpc::testing::FullstackFixture;     // for use by tests only
+
+  /// Wrap \a take, taking ownership of the instance.
+  ///
+  /// \param take The completion queue instance to wrap. Ownership is taken.
+  explicit CompletionQueue(grpc_completion_queue* take);
+
+  /// Returns a \em raw pointer to the underlying \a grpc_completion_queue
+  /// instance.
+  ///
+  /// \warning Remember that the returned instance is owned. No transfer of
+  /// owership is performed.
+  grpc_completion_queue* cq() { return cq_; }
 
   /// EXPERIMENTAL
   /// Creates a Thread Local cache to store the first event
@@ -292,8 +307,8 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// \warning Must not be mixed with calls to \a Next.
   bool Pluck(internal::CompletionQueueTag* tag) {
     auto deadline =
-        g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME);
-    auto ev = g_core_codegen_interface->grpc_completion_queue_pluck(
+        internal::g_core_codegen_interface->gpr_inf_future(GPR_CLOCK_REALTIME);
+    auto ev = internal::g_core_codegen_interface->grpc_completion_queue_pluck(
         cq_, tag, deadline, nullptr);
     bool ok = ev.success != 0;
     void* ignored = tag;
@@ -312,8 +327,9 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// timeout. i.e:
   ///      TryPluck(tag, gpr_time_0(GPR_CLOCK_REALTIME))
   void TryPluck(internal::CompletionQueueTag* tag) {
-    auto deadline = g_core_codegen_interface->gpr_time_0(GPR_CLOCK_REALTIME);
-    auto ev = g_core_codegen_interface->grpc_completion_queue_pluck(
+    auto deadline =
+        internal::g_core_codegen_interface->gpr_time_0(GPR_CLOCK_REALTIME);
+    auto ev = internal::g_core_codegen_interface->grpc_completion_queue_pluck(
         cq_, tag, deadline, nullptr);
     if (ev.type == GRPC_QUEUE_TIMEOUT) return;
     bool ok = ev.success != 0;
@@ -328,7 +344,7 @@ class CompletionQueue : private GrpcLibraryCodegen {
   /// This exects tag->FinalizeResult (if called) to return 'false' i.e expects
   /// that the tag is internal not something that is returned to the user.
   void TryPluck(internal::CompletionQueueTag* tag, gpr_timespec deadline) {
-    auto ev = g_core_codegen_interface->grpc_completion_queue_pluck(
+    auto ev = internal::g_core_codegen_interface->grpc_completion_queue_pluck(
         cq_, tag, deadline, nullptr);
     if (ev.type == GRPC_QUEUE_TIMEOUT || ev.type == GRPC_QUEUE_SHUTDOWN) {
       return;
@@ -382,6 +398,17 @@ class ServerCompletionQueue : public CompletionQueue {
   grpc_cq_polling_type polling_type_;
   friend class ServerBuilder;
 };
+
+namespace internal {
+class CompletionQueueStats {
+ public:
+  CompletionQueueStats(CompletionQueue* cq) : cq_(cq) {}
+  int GetPollNum();
+
+ private:
+  CompletionQueue* cq_;
+};
+}  // namespace internal
 
 }  // namespace grpc
 

@@ -26,13 +26,10 @@
 
 namespace grpc {
 
-class Server;
-class Service;
-
+/// This class is for internal or specialized usage only, and only used through
+/// the ServerBuilderPlugin interface. It can only be constructed by the Server.
 class ServerInitializer {
  public:
-  ServerInitializer(Server* server) : server_(server) {}
-
   bool RegisterService(std::shared_ptr<Service> service) {
     if (!server_->RegisterService(nullptr, service.get())) {
       return false;
@@ -46,6 +43,9 @@ class ServerInitializer {
   }
 
  private:
+  friend class Server;
+  ServerInitializer(Server* server) : server_(server) {}
+
   Server* server_;
   std::vector<std::shared_ptr<Service> > default_services_;
 };

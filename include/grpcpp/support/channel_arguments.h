@@ -24,6 +24,7 @@
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
+#include <grpcpp/impl/codegen/compression.h>
 #include <grpcpp/support/config.h>
 
 namespace grpc {
@@ -49,6 +50,7 @@ class ChannelArguments {
 
   void Swap(ChannelArguments& other);
 
+  /// API meant for internal use only.
   /// Dump arguments in this instance to \a channel_args. Does not take
   /// ownership of \a channel_args.
   ///
@@ -60,7 +62,13 @@ class ChannelArguments {
   /// Set target name override for SSL host name checking. This option is for
   /// testing only and should never be used in production.
   void SetSslTargetNameOverride(const grpc::string& name);
+
   // TODO(yangg) add flow control options
+
+  /// Set the compression algorithm for the channel.
+  void SetCompressionAlgorithm(CompressionAlgorithm algorithm);
+
+  // DEPRECATED VERSION
   /// Set the compression algorithm for the channel.
   void SetCompressionAlgorithm(grpc_compression_algorithm algorithm);
 
@@ -106,6 +114,7 @@ class ChannelArguments {
   /// Set a textual argument \a value under \a key.
   void SetString(const grpc::string& key, const grpc::string& value);
 
+  /// API meant for internal/advanced/test use only.
   /// Return (by value) a C \a grpc_channel_args structure which points to
   /// arguments owned by this \a ChannelArguments instance
   grpc_channel_args c_channel_args() const {

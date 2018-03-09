@@ -26,6 +26,13 @@
 
 namespace grpc {
 
+// forward declarations
+class Alarm;
+class ChannelInterface;
+class ClientContext;
+class CompletionQueue;
+class ServerInterface;
+
 /** If you are trying to use CompletionQueue::AsyncNext with a time class that
     isn't either gpr_timespec or std::chrono::system_clock::time_point, you
     will most likely be looking at this comment as your compiler will have
@@ -40,12 +47,12 @@ template <typename T>
 class TimePoint {
  public:
   TimePoint(const T& time) { you_need_a_specialization_of_TimePoint(); }
+
+ private:
   gpr_timespec raw_time() {
     gpr_timespec t;
     return t;
   }
-
- private:
   void you_need_a_specialization_of_TimePoint();
 };
 
@@ -53,15 +60,17 @@ template <>
 class TimePoint<gpr_timespec> {
  public:
   TimePoint(const gpr_timespec& time) : time_(time) {}
-  gpr_timespec raw_time() { return time_; }
 
  private:
+  friend class Alarm;
+  friend class ChannelInterface;
+  friend class ClientContext;
+  friend class CompletionQueue;
+  friend class ServerInterface;
+
+  gpr_timespec raw_time() { return time_; }
   gpr_timespec time_;
 };
-
-}  // namespace grpc
-
-namespace grpc {
 
 // from and to should be absolute time.
 void Timepoint2Timespec(const std::chrono::system_clock::time_point& from,
@@ -78,9 +87,15 @@ class TimePoint<std::chrono::system_clock::time_point> {
   TimePoint(const std::chrono::system_clock::time_point& time) {
     Timepoint2Timespec(time, &time_);
   }
-  gpr_timespec raw_time() const { return time_; }
 
  private:
+  friend class Alarm;
+  friend class ChannelInterface;
+  friend class ClientContext;
+  friend class CompletionQueue;
+  friend class ServerInterface;
+
+  gpr_timespec raw_time() const { return time_; }
   gpr_timespec time_;
 };
 

@@ -19,24 +19,9 @@
 #ifndef GRPCPP_SERVER_POSIX_H
 #define GRPCPP_SERVER_POSIX_H
 
-#include <memory>
-
-#include <grpc/support/port_platform.h>
 #include <grpcpp/server.h>
 
-namespace grpc {
-
-#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
-
-/// Add a new client to a \a Server communicating over the given
-/// file descriptor.
-///
-/// \param server The server to add the client to.
-/// \param fd The file descriptor representing a socket.
-void AddInsecureChannelFromFd(Server* server, int fd);
-
-#endif  // GPR_SUPPORT_CHANNELS_FROM_FD
-
-}  // namespace grpc
+// This header file is deprecated and its former contents are entirely in
+// server.h
 
 #endif  // GRPCPP_SERVER_POSIX_H

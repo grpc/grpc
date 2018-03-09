@@ -19,7 +19,6 @@
 #ifndef GRPCPP_SUPPORT_SLICE_H
 #define GRPCPP_SUPPORT_SLICE_H
 
-#include <grpc/slice.h>
 #include <grpcpp/impl/codegen/slice.h>
 #include <grpcpp/support/config.h>
 

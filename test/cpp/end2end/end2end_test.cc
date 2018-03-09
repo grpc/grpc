@@ -350,7 +350,7 @@ static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs,
                        '\4', '\5', '\6', static_cast<char>(i)};
       context.AddMetadata("custom-bin", grpc::string(bytes, 8));
     }
-    context.set_compression_algorithm(GRPC_COMPRESS_GZIP);
+    context.set_compression_algorithm(CompressionAlgorithm::MESSAGE_GZIP);
     Status s = stub->Echo(&context, request, &response);
     EXPECT_EQ(response.message(), request.message());
     EXPECT_TRUE(s.ok());
@@ -1117,23 +1117,25 @@ TEST_P(End2endTest, ChannelState) {
 
   ResetStub();
   // Start IDLE
-  EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
+  EXPECT_EQ(ConnectivityState::IDLE, channel_->GetState(false));
 
   // Did not ask to connect, no state change.
   CompletionQueue cq;
   std::chrono::system_clock::time_point deadline =
       std::chrono::system_clock::now() + std::chrono::milliseconds(10);
-  channel_->NotifyOnStateChange(GRPC_CHANNEL_IDLE, deadline, &cq, nullptr);
+  channel_->NotifyOnStateChange(ConnectivityState::IDLE, deadline, &cq,
+                                nullptr);
   void* tag;
   bool ok = true;
   cq.Next(&tag, &ok);
   EXPECT_FALSE(ok);
 
-  EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(true));
-  EXPECT_TRUE(channel_->WaitForStateChange(GRPC_CHANNEL_IDLE,
+  EXPECT_EQ(ConnectivityState::IDLE, channel_->GetState(true));
+  EXPECT_TRUE(channel_->WaitForStateChange(ConnectivityState::IDLE,
                                            gpr_inf_future(GPR_CLOCK_REALTIME)));
   auto state = channel_->GetState(false);
-  EXPECT_TRUE(state == GRPC_CHANNEL_CONNECTING || state == GRPC_CHANNEL_READY);
+  EXPECT_TRUE(state == ConnectivityState::CONNECTING ||
+              state == ConnectivityState::READY);
 }
 
 // Takes 10s.
@@ -1149,9 +1151,9 @@ TEST_P(End2endTest, ChannelStateTimeout) {
   auto channel =
       CreateChannel(server_address.str(), InsecureChannelCredentials());
   // Start IDLE
-  EXPECT_EQ(GRPC_CHANNEL_IDLE, channel->GetState(true));
+  EXPECT_EQ(ConnectivityState::IDLE, channel->GetState(true));
 
-  auto state = GRPC_CHANNEL_IDLE;
+  auto state = ConnectivityState::IDLE;
   for (int i = 0; i < 10; i++) {
     channel->WaitForStateChange(
         state, std::chrono::system_clock::now() + std::chrono::seconds(1));

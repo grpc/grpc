@@ -22,8 +22,8 @@
 #include <grpcpp/impl/codegen/slice.h>
 
 namespace grpc {
-
 namespace internal {
+
 class MetadataMap {
  public:
   MetadataMap() { memset(&arr_, 0, sizeof(arr_)); }
@@ -51,8 +51,8 @@ class MetadataMap {
   grpc_metadata_array arr_;
   std::multimap<grpc::string_ref, grpc::string_ref> map_;
 };
-}  // namespace internal
 
+}  // namespace internal
 }  // namespace grpc
 
 #endif  // GRPCPP_IMPL_CODEGEN_METADATA_MAP_H

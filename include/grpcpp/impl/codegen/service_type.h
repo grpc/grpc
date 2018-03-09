@@ -19,6 +19,7 @@
 #ifndef GRPCPP_IMPL_CODEGEN_SERVICE_TYPE_H
 #define GRPCPP_IMPL_CODEGEN_SERVICE_TYPE_H
 
+#include <grpcpp/impl/codegen/completion_queue.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/rpc_service_method.h>
@@ -28,11 +29,7 @@
 
 namespace grpc {
 
-class CompletionQueue;
 class Server;
-class ServerInterface;
-class ServerCompletionQueue;
-class ServerContext;
 
 namespace internal {
 class Call;
@@ -54,10 +51,11 @@ class ServerAsyncStreamingInterface {
 };
 }  // namespace internal
 
-/// Desriptor of an RPC service and its various RPC methods
+/// Desriptor of an RPC service and its various RPC methods. This class
+/// is a base class for actual service classes instantiated by a code
+/// generator.
 class Service {
  public:
-  Service() : server_(nullptr) {}
   virtual ~Service() {}
 
   bool has_async_methods() const {
@@ -88,6 +86,8 @@ class Service {
   }
 
  protected:
+  Service() : server_(nullptr) {}
+
   template <class Message>
   void RequestAsyncUnary(int index, ServerContext* context, Message* request,
                          internal::ServerAsyncStreamingInterface* stream,

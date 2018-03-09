@@ -26,12 +26,17 @@
 #include <grpcpp/support/channel_arguments.h>
 
 namespace grpc {
+namespace internal {
 
+/// These functions are used entirely within the ServerBuilder
+/// to set options for fine-tuning the library parameters. This
+/// is an advanced/specialized feature only.
 std::unique_ptr<ServerBuilderOption> MakeChannelArgumentOption(
     const grpc::string& name, const grpc::string& value);
 std::unique_ptr<ServerBuilderOption> MakeChannelArgumentOption(
     const grpc::string& name, int value);
 
+}  // namespace internal
 }  // namespace grpc
 
 #endif  // GRPCPP_IMPL_CHANNEL_ARGUMENT_OPTION_H

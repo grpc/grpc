@@ -21,10 +21,12 @@
 #include <grpcpp/security/auth_context.h>
 
 namespace grpc {
+namespace internal {
 
 std::shared_ptr<const AuthContext> CreateAuthContext(grpc_call* call) {
   (void)call;
   return std::shared_ptr<const AuthContext>();
 }
 
+}  // namespace internal
 }  // namespace grpc

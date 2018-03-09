@@ -28,6 +28,7 @@
 #include <grpcpp/impl/codegen/byte_buffer.h>
 #include <grpcpp/impl/codegen/call_hook.h>
 #include <grpcpp/impl/codegen/client_context.h>
+#include <grpcpp/impl/codegen/completion_queue.h>
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
@@ -41,12 +42,8 @@
 #include <grpc/impl/codegen/grpc_types.h>
 
 namespace grpc {
-
-class ByteBuffer;
-class CompletionQueue;
-extern CoreCodegenInterface* g_core_codegen_interface;
-
 namespace internal {
+
 class Call;
 class CallHook;
 
@@ -285,7 +282,7 @@ class CallOpSendMessage {
     op->op = GRPC_OP_SEND_MESSAGE;
     op->flags = write_options_.flags();
     op->reserved = NULL;
-    op->data.send_message.send_message = send_buf_.c_buffer();
+    op->data.send_message.send_message = send_buf_.bbuf_ptr();
     // Flags are per-message: clear them after use.
     write_options_.Clear();
   }
@@ -339,7 +336,7 @@ class CallOpRecvMessage {
     op->op = GRPC_OP_RECV_MESSAGE;
     op->flags = 0;
     op->reserved = NULL;
-    op->data.recv_message.recv_message = recv_buf_.c_buffer_ptr();
+    op->data.recv_message.recv_message = recv_buf_.bbuf_ptr();
   }
 
   void FinishOp(bool* status) {
@@ -414,7 +411,7 @@ class CallOpGenericRecvMessage {
     op->op = GRPC_OP_RECV_MESSAGE;
     op->flags = 0;
     op->reserved = NULL;
-    op->data.recv_message.recv_message = recv_buf_.c_buffer_ptr();
+    op->data.recv_message.recv_message = recv_buf_.bbuf_ptr();
   }
 
   void FinishOp(bool* status) {

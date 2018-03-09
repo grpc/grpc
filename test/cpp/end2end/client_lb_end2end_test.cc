@@ -418,11 +418,11 @@ TEST_F(ClientLbEnd2endTest, PickFirstUpdates) {
   ports.clear();
   SetNextResolution(ports);
   gpr_log(GPR_INFO, "****** SET none *******");
-  grpc_connectivity_state channel_state;
+  ConnectivityState channel_state;
   do {
     channel_state = channel->GetState(true /* try to connect */);
-  } while (channel_state == GRPC_CHANNEL_READY);
-  GPR_ASSERT(channel_state != GRPC_CHANNEL_READY);
+  } while (channel_state == ConnectivityState::READY);
+  GPR_ASSERT(channel_state != ConnectivityState::READY);
   servers_[0]->service_.ResetCounters();
 
   // Next update introduces servers_[1], making the channel recover.
@@ -600,11 +600,11 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   // An empty update will result in the channel going into TRANSIENT_FAILURE.
   ports.clear();
   SetNextResolution(ports);
-  grpc_connectivity_state channel_state;
+  ConnectivityState channel_state;
   do {
     channel_state = channel->GetState(true /* try to connect */);
-  } while (channel_state == GRPC_CHANNEL_READY);
-  GPR_ASSERT(channel_state != GRPC_CHANNEL_READY);
+  } while (channel_state == ConnectivityState::READY);
+  GPR_ASSERT(channel_state != ConnectivityState::READY);
   servers_[0]->service_.ResetCounters();
 
   // Next update introduces servers_[1], making the channel recover.
@@ -613,7 +613,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   SetNextResolution(ports);
   WaitForServer(stub, 1, DEBUG_LOCATION);
   channel_state = channel->GetState(false /* try to connect */);
-  GPR_ASSERT(channel_state == GRPC_CHANNEL_READY);
+  GPR_ASSERT(channel_state == ConnectivityState::READY);
 
   // Check LB policy name for the channel.
   EXPECT_EQ("round_robin", channel->GetLoadBalancingPolicyName());

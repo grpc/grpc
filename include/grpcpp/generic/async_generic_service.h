@@ -22,13 +22,13 @@
 #include <grpcpp/support/async_stream.h>
 #include <grpcpp/support/byte_buffer.h>
 
-struct grpc_server;
-
 namespace grpc {
 
 typedef ServerAsyncReaderWriter<ByteBuffer, ByteBuffer>
     GenericServerAsyncReaderWriter;
 
+/// A generic server context is the same as a regular ServerContext, but also
+/// has methods to extract the method and host being used by the generic call
 class GenericServerContext final : public ServerContext {
  public:
   const grpc::string& method() const { return method_; }
@@ -42,27 +42,29 @@ class GenericServerContext final : public ServerContext {
   grpc::string host_;
 };
 
-// A generic service at the server side accepts all RPC methods and hosts. It is
-// typically used in proxies. The generic service can be registered to a server
-// which also has other services.
-// Sample usage:
-//   ServerBuilder builder;
-//   auto cq = builder.AddCompletionQueue();
-//   AsyncGenericService generic_service;
-//   builder.RegisterAsyncGeneicService(&generic_service);
-//   auto server = builder.BuildAndStart();
-//
-//   // request a new call
-//   GenericServerContext context;
-//   GenericAsyncReaderWriter stream;
-//   generic_service.RequestCall(&context, &stream, cq.get(), cq.get(), tag);
-//
-// When tag is retrieved from cq->Next(), context.method() can be used to look
-// at the method and the RPC can be handled accordingly.
+/// A generic service at the server side accepts all RPC methods and hosts. It
+/// is typically used in proxies. The generic service can be registered to a
+/// server which also has other services. Sample usage:
+///   ServerBuilder builder;
+///   auto cq = builder.AddCompletionQueue();
+///   AsyncGenericService generic_service;
+///   builder.RegisterAsyncGeneicService(&generic_service);
+///   auto server = builder.BuildAndStart();
+///
+///   // request a new call
+///   GenericServerContext context;
+///   GenericAsyncReaderWriter stream;
+///   generic_service.RequestCall(&context, &stream, cq.get(), cq.get(), tag);
+///
+/// When tag is retrieved from cq->Next(), context.method() can be used to look
+/// at the method and the RPC can be handled accordingly.
 class AsyncGenericService final {
  public:
   AsyncGenericService() : server_(nullptr) {}
 
+  /// Request that an incoming RPC be delivered to \a ctx using streaming
+  /// object \a reader_writer with streaming call activities on \a call_cq and
+  /// call notification on \a notification_cq using \a tag
   void RequestCall(GenericServerContext* ctx,
                    GenericServerAsyncReaderWriter* reader_writer,
                    CompletionQueue* call_cq,

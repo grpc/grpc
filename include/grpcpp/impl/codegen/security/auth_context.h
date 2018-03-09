@@ -34,6 +34,9 @@ class SecureAuthContext;
 
 typedef std::pair<grpc::string_ref, grpc::string_ref> AuthProperty;
 
+/// AuthPropertyIterator is not intended to be directly instantiated but is
+/// public API because it is the return value of the begin/end functions of
+/// AuthContext. It behaves like other iterators in the C++ library.
 class AuthPropertyIterator
     : public std::iterator<std::input_iterator_tag, const AuthProperty> {
  public:
@@ -45,7 +48,10 @@ class AuthPropertyIterator
   const AuthProperty operator*();
 
  protected:
+  /// Constructor for internal/test use only
   AuthPropertyIterator();
+
+  /// Constructor for internal/test use only
   AuthPropertyIterator(const grpc_auth_property* property,
                        const grpc_auth_property_iterator* iter);
 

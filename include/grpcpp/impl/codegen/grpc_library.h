@@ -22,6 +22,7 @@
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 
 namespace grpc {
+namespace internal {
 
 class GrpcLibraryInterface {
  public:
@@ -59,6 +60,7 @@ class GrpcLibraryCodegen {
   bool grpc_init_called_;
 };
 
+}  // namespace internal
 }  // namespace grpc
 
 #endif  // GRPCPP_IMPL_CODEGEN_GRPC_LIBRARY_H

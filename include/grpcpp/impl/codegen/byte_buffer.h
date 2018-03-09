@@ -30,7 +30,6 @@
 #include <vector>
 
 namespace grpc {
-
 namespace internal {
 class CallOpSendMessage;
 template <class R>
@@ -44,6 +43,7 @@ class ServerStreamingHandler;
 template <class R>
 class DeserializeFuncType;
 }  // namespace internal
+
 /// A sequence of bytes.
 class ByteBuffer final {
  public:
@@ -59,7 +59,7 @@ class ByteBuffer final {
 
   ~ByteBuffer() {
     if (buffer_) {
-      g_core_codegen_interface->grpc_byte_buffer_destroy(buffer_);
+      internal::g_core_codegen_interface->grpc_byte_buffer_destroy(buffer_);
     }
   }
 
@@ -71,7 +71,7 @@ class ByteBuffer final {
   /// Remove all data.
   void Clear() {
     if (buffer_) {
-      g_core_codegen_interface->grpc_byte_buffer_destroy(buffer_);
+      internal::g_core_codegen_interface->grpc_byte_buffer_destroy(buffer_);
       buffer_ = nullptr;
     }
   }
@@ -80,7 +80,8 @@ class ByteBuffer final {
   /// buffer so that we have our own owned version of it.
   /// bbuf.Duplicate(); is equivalent to bbuf=bbuf; but is actually readable
   void Duplicate() {
-    buffer_ = g_core_codegen_interface->grpc_byte_buffer_copy(buffer_);
+    buffer_ =
+        internal::g_core_codegen_interface->grpc_byte_buffer_copy(buffer_);
   }
 
   /// Forget underlying byte buffer without destroying
@@ -119,9 +120,6 @@ class ByteBuffer final {
     }
     buffer_ = buf;
   }
-
-  grpc_byte_buffer* c_buffer() { return buffer_; }
-  grpc_byte_buffer** c_buffer_ptr() { return &buffer_; }
 
   class ByteBufferPointer {
    public:

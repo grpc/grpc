@@ -19,8 +19,6 @@
 #ifndef GRPCPP_IMPL_GRPC_LIBRARY_H
 #define GRPCPP_IMPL_GRPC_LIBRARY_H
 
-#include <iostream>
-
 #include <grpc/grpc.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen.h>
@@ -42,11 +40,11 @@ static CoreCodegen g_core_codegen;
 class GrpcLibraryInitializer final {
  public:
   GrpcLibraryInitializer() {
-    if (grpc::g_glip == nullptr) {
-      grpc::g_glip = &g_gli;
+    if (g_glip == nullptr) {
+      g_glip = &g_gli;
     }
-    if (grpc::g_core_codegen_interface == nullptr) {
-      grpc::g_core_codegen_interface = &g_core_codegen;
+    if (g_core_codegen_interface == nullptr) {
+      g_core_codegen_interface = &g_core_codegen;
     }
   }
 

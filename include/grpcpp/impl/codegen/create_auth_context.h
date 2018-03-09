@@ -25,9 +25,11 @@
 #include <grpcpp/impl/codegen/security/auth_context.h>
 
 namespace grpc {
+namespace internal {
 
 std::shared_ptr<const AuthContext> CreateAuthContext(grpc_call* call);
 
+}  // namespace internal
 }  // namespace grpc
 
 #endif  // GRPCPP_IMPL_CODEGEN_CREATE_AUTH_CONTEXT_H

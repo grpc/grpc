@@ -35,7 +35,6 @@
 #include <grpcpp/support/config.h>
 
 #include "src/core/lib/gpr/host_port.h"
-#include "src/core/lib/surface/completion_queue.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/qps/server.h"
@@ -180,8 +179,8 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
 
   int GetPollCount() override {
     int count = 0;
-    for (auto cq = srv_cqs_.begin(); cq != srv_cqs_.end(); cq++) {
-      count += grpc_get_cq_poll_num((*cq)->cq());
+    for (auto&& cq : srv_cqs_) {
+      count += grpc::internal::CompletionQueueStats(cq.get()).GetPollNum();
     }
     return count;
   }

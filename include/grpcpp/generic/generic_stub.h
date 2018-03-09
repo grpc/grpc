@@ -19,13 +19,13 @@
 #ifndef GRPCPP_GENERIC_GENERIC_STUB_H
 #define GRPCPP_GENERIC_GENERIC_STUB_H
 
+#include <grpcpp/completion_queue.h>
 #include <grpcpp/support/async_stream.h>
 #include <grpcpp/support/async_unary_call.h>
 #include <grpcpp/support/byte_buffer.h>
 
 namespace grpc {
 
-class CompletionQueue;
 typedef ClientAsyncReaderWriter<ByteBuffer, ByteBuffer>
     GenericClientAsyncReaderWriter;
 typedef ClientAsyncResponseReader<ByteBuffer> GenericClientAsyncResponseReader;

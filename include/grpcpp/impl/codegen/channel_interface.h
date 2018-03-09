@@ -19,7 +19,7 @@
 #ifndef GRPCPP_IMPL_CODEGEN_CHANNEL_INTERFACE_H
 #define GRPCPP_IMPL_CODEGEN_CHANNEL_INTERFACE_H
 
-#include <grpc/impl/codegen/connectivity_state.h>
+#include <grpcpp/impl/codegen/connectivity.h>
 #include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/time.h>
 
@@ -57,12 +57,12 @@ class ChannelInterface {
   virtual ~ChannelInterface() {}
   /// Get the current channel state. If the channel is in IDLE and
   /// \a try_to_connect is set to true, try to connect.
-  virtual grpc_connectivity_state GetState(bool try_to_connect) = 0;
+  virtual ConnectivityState GetState(bool try_to_connect) = 0;
 
   /// Return the \a tag on \a cq when the channel state is changed or \a
   /// deadline expires. \a GetState needs to called to get the current state.
   template <typename T>
-  void NotifyOnStateChange(grpc_connectivity_state last_observed, T deadline,
+  void NotifyOnStateChange(ConnectivityState last_observed, T deadline,
                            CompletionQueue* cq, void* tag) {
     TimePoint<T> deadline_tp(deadline);
     NotifyOnStateChangeImpl(last_observed, deadline_tp.raw_time(), cq, tag);
@@ -71,7 +71,7 @@ class ChannelInterface {
   /// Blocking wait for channel state change or \a deadline expiration.
   /// \a GetState needs to called to get the current state.
   template <typename T>
-  bool WaitForStateChange(grpc_connectivity_state last_observed, T deadline) {
+  bool WaitForStateChange(ConnectivityState last_observed, T deadline) {
     TimePoint<T> deadline_tp(deadline);
     return WaitForStateChangeImpl(last_observed, deadline_tp.raw_time());
   }
@@ -79,7 +79,7 @@ class ChannelInterface {
   /// Wait for this channel to be connected
   template <typename T>
   bool WaitForConnected(T deadline) {
-    grpc_connectivity_state state;
+    ConnectivityState state;
     while ((state = GetState(true)) != GRPC_CHANNEL_READY) {
       if (!WaitForStateChange(state, deadline)) return false;
     }
@@ -110,10 +110,10 @@ class ChannelInterface {
   virtual void PerformOpsOnCall(internal::CallOpSetInterface* ops,
                                 internal::Call* call) = 0;
   virtual void* RegisterMethod(const char* method) = 0;
-  virtual void NotifyOnStateChangeImpl(grpc_connectivity_state last_observed,
+  virtual void NotifyOnStateChangeImpl(ConnectivityState last_observed,
                                        gpr_timespec deadline,
                                        CompletionQueue* cq, void* tag) = 0;
-  virtual bool WaitForStateChangeImpl(grpc_connectivity_state last_observed,
+  virtual bool WaitForStateChangeImpl(ConnectivityState last_observed,
                                       gpr_timespec deadline) = 0;
 };
 }  // namespace grpc

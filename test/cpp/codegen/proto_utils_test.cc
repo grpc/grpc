@@ -157,7 +157,7 @@ int main(int argc, char** argv) {
   // Ensure the GrpcBufferWriter internals are initialized.
   grpc::internal::GrpcLibraryInitializer init;
   init.summon();
-  grpc::GrpcLibraryCodegen lib;
+  grpc::internal::GrpcLibraryCodegen lib;
 
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

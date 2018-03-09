@@ -30,9 +30,6 @@
 #include <grpcpp/impl/codegen/status.h>
 
 namespace grpc {
-
-extern CoreCodegenInterface* g_core_codegen_interface;
-
 namespace internal {
 
 class GrpcBufferWriterPeer;

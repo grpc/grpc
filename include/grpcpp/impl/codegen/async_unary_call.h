@@ -23,14 +23,13 @@
 #include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/channel_interface.h>
 #include <grpcpp/impl/codegen/client_context.h>
+#include <grpcpp/impl/codegen/completion_queue.h>
+#include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/server_context.h>
 #include <grpcpp/impl/codegen/service_type.h>
 #include <grpcpp/impl/codegen/status.h>
 
 namespace grpc {
-
-class CompletionQueue;
-extern CoreCodegenInterface* g_core_codegen_interface;
 
 /// An interface relevant for async client side unary RPCs (which send
 /// one request message to a server and receive one response message).

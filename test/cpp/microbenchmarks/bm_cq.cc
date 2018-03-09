@@ -42,15 +42,48 @@ static void BM_CreateDestroyCpp(benchmark::State& state) {
 }
 BENCHMARK(BM_CreateDestroyCpp);
 
-/* Create cq using a different constructor */
-static void BM_CreateDestroyCpp2(benchmark::State& state) {
-  TrackCounters track_counters;
-  while (state.KeepRunning()) {
-    grpc_completion_queue* core_cq =
-        grpc_completion_queue_create_for_next(nullptr);
-    CompletionQueue cq(core_cq);
+static void DoneWithCompletionOnStack(void* arg,
+                                      grpc_cq_completion* completion) {}
+
+class DummyTag final : public internal::CompletionQueueTag {
+ public:
+  bool FinalizeResult(void** tag, bool* status) override { return true; }
+};
+
+class CompletionQueueBenchmarks {
+ public:
+  /* Create cq using a different constructor */
+  static void BM_CreateDestroyCpp2(benchmark::State& state) {
+    TrackCounters track_counters;
+    while (state.KeepRunning()) {
+      grpc_completion_queue* core_cq =
+          grpc_completion_queue_create_for_next(nullptr);
+      CompletionQueue cq(core_cq);
+    }
+    track_counters.Finish(state);
   }
-  track_counters.Finish(state);
+  static void BM_Pass1Cpp(benchmark::State& state) {
+    TrackCounters track_counters;
+    CompletionQueue cq;
+    grpc_completion_queue* c_cq = cq.cq();
+    while (state.KeepRunning()) {
+      grpc_cq_completion completion;
+      DummyTag dummy_tag;
+      grpc_core::ExecCtx exec_ctx;
+      GPR_ASSERT(grpc_cq_begin_op(c_cq, &dummy_tag));
+      grpc_cq_end_op(c_cq, &dummy_tag, GRPC_ERROR_NONE,
+                     DoneWithCompletionOnStack, nullptr, &completion);
+
+      void* tag;
+      bool ok;
+      cq.Next(&tag, &ok);
+    }
+    track_counters.Finish(state);
+  }
+};
+
+static void BM_CreateDestroyCpp2(benchmark::State& state) {
+  CompletionQueueBenchmarks::BM_CreateDestroyCpp2(state);
 }
 BENCHMARK(BM_CreateDestroyCpp2);
 
@@ -66,31 +99,8 @@ static void BM_CreateDestroyCore(benchmark::State& state) {
 }
 BENCHMARK(BM_CreateDestroyCore);
 
-static void DoneWithCompletionOnStack(void* arg,
-                                      grpc_cq_completion* completion) {}
-
-class DummyTag final : public internal::CompletionQueueTag {
- public:
-  bool FinalizeResult(void** tag, bool* status) override { return true; }
-};
-
 static void BM_Pass1Cpp(benchmark::State& state) {
-  TrackCounters track_counters;
-  CompletionQueue cq;
-  grpc_completion_queue* c_cq = cq.cq();
-  while (state.KeepRunning()) {
-    grpc_cq_completion completion;
-    DummyTag dummy_tag;
-    grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(grpc_cq_begin_op(c_cq, &dummy_tag));
-    grpc_cq_end_op(c_cq, &dummy_tag, GRPC_ERROR_NONE, DoneWithCompletionOnStack,
-                   nullptr, &completion);
-
-    void* tag;
-    bool ok;
-    cq.Next(&tag, &ok);
-  }
-  track_counters.Finish(state);
+  CompletionQueueBenchmarks::BM_Pass1Cpp(state);
 }
 BENCHMARK(BM_Pass1Cpp);
 

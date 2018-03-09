@@ -2860,7 +2860,9 @@ foreach(_hdr
   include/grpcpp/impl/codegen/client_unary_call.h
   include/grpcpp/impl/codegen/completion_queue.h
   include/grpcpp/impl/codegen/completion_queue_tag.h
+  include/grpcpp/impl/codegen/compression.h
   include/grpcpp/impl/codegen/config.h
+  include/grpcpp/impl/codegen/connectivity.h
   include/grpcpp/impl/codegen/core_codegen_interface.h
   include/grpcpp/impl/codegen/create_auth_context.h
   include/grpcpp/impl/codegen/grpc_library.h
@@ -3418,7 +3420,9 @@ foreach(_hdr
   include/grpcpp/impl/codegen/client_unary_call.h
   include/grpcpp/impl/codegen/completion_queue.h
   include/grpcpp/impl/codegen/completion_queue_tag.h
+  include/grpcpp/impl/codegen/compression.h
   include/grpcpp/impl/codegen/config.h
+  include/grpcpp/impl/codegen/connectivity.h
   include/grpcpp/impl/codegen/core_codegen_interface.h
   include/grpcpp/impl/codegen/create_auth_context.h
   include/grpcpp/impl/codegen/grpc_library.h
@@ -3817,7 +3821,9 @@ foreach(_hdr
   include/grpcpp/impl/codegen/client_unary_call.h
   include/grpcpp/impl/codegen/completion_queue.h
   include/grpcpp/impl/codegen/completion_queue_tag.h
+  include/grpcpp/impl/codegen/compression.h
   include/grpcpp/impl/codegen/config.h
+  include/grpcpp/impl/codegen/connectivity.h
   include/grpcpp/impl/codegen/core_codegen_interface.h
   include/grpcpp/impl/codegen/create_auth_context.h
   include/grpcpp/impl/codegen/grpc_library.h
@@ -3989,7 +3995,9 @@ foreach(_hdr
   include/grpcpp/impl/codegen/client_unary_call.h
   include/grpcpp/impl/codegen/completion_queue.h
   include/grpcpp/impl/codegen/completion_queue_tag.h
+  include/grpcpp/impl/codegen/compression.h
   include/grpcpp/impl/codegen/config.h
+  include/grpcpp/impl/codegen/connectivity.h
   include/grpcpp/impl/codegen/core_codegen_interface.h
   include/grpcpp/impl/codegen/create_auth_context.h
   include/grpcpp/impl/codegen/grpc_library.h
@@ -4299,7 +4307,9 @@ foreach(_hdr
   include/grpcpp/impl/codegen/client_unary_call.h
   include/grpcpp/impl/codegen/completion_queue.h
   include/grpcpp/impl/codegen/completion_queue_tag.h
+  include/grpcpp/impl/codegen/compression.h
   include/grpcpp/impl/codegen/config.h
+  include/grpcpp/impl/codegen/connectivity.h
   include/grpcpp/impl/codegen/core_codegen_interface.h
   include/grpcpp/impl/codegen/create_auth_context.h
   include/grpcpp/impl/codegen/grpc_library.h
@@ -12779,6 +12789,7 @@ target_include_directories(server_context_test_spouse_test
 target_link_libraries(server_context_test_spouse_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
   grpc_test_util
   grpc++
   grpc

@@ -301,7 +301,7 @@ class Server::SyncRequestThreadManager : public ThreadManager {
       // Prepare for the next request
       if (!IsShutdown()) {
         sync_req->SetupRequest();  // Create new completion queue for sync_req
-        sync_req->Request(server_->c_server(), server_cq_->cq());
+        sync_req->Request(server_->server_, server_cq_->cq());
       }
 
       GPR_TIMER_SCOPE("cd.Run()", 0);
@@ -345,7 +345,7 @@ class Server::SyncRequestThreadManager : public ThreadManager {
     if (!sync_requests_.empty()) {
       for (auto m = sync_requests_.begin(); m != sync_requests_.end(); m++) {
         (*m)->SetupRequest();
-        (*m)->Request(server_->c_server(), server_cq_->cq());
+        (*m)->Request(server_->server_, server_cq_->cq());
       }
 
       Initialize();  // ThreadManager's Initialize()
@@ -431,8 +431,6 @@ void Server::SetGlobalCallbacks(GlobalCallbacks* callbacks) {
   GPR_ASSERT(callbacks);
   g_callbacks.reset(callbacks);
 }
-
-grpc_server* Server::c_server() { return server_; }
 
 std::shared_ptr<Channel> Server::InProcessChannel(
     const ChannelArguments& args) {
@@ -663,6 +661,10 @@ bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
   return true;
 }
 
+GenericServerContext* ServerInterface::BaseAsyncRequest::generic_ctx() {
+  return static_cast<GenericServerContext*>(context_);
+}
+
 ServerInterface::RegisteredAsyncRequest::RegisteredAsyncRequest(
     ServerInterface* server, ServerContext* context,
     internal::ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
@@ -673,10 +675,9 @@ void ServerInterface::RegisteredAsyncRequest::IssueRequest(
     void* registered_method, grpc_byte_buffer** payload,
     ServerCompletionQueue* notification_cq) {
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_registered_call(
-                                 server_->server(), registered_method, &call_,
-                                 &context_->deadline_,
-                                 context_->client_metadata_.arr(), payload,
-                                 call_cq_->cq(), notification_cq->cq(), this));
+                                 server(), registered_method, callptr(),
+                                 deadline(), client_metadata(), payload, cq(),
+                                 notification_cq->cq(), this));
 }
 
 ServerInterface::GenericAsyncRequest::GenericAsyncRequest(
@@ -688,21 +689,20 @@ ServerInterface::GenericAsyncRequest::GenericAsyncRequest(
   grpc_call_details_init(&call_details_);
   GPR_ASSERT(notification_cq);
   GPR_ASSERT(call_cq);
-  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
-                                 server->server(), &call_, &call_details_,
-                                 context->client_metadata_.arr(), call_cq->cq(),
-                                 notification_cq->cq(), this));
+  GPR_ASSERT(GRPC_CALL_OK ==
+             grpc_server_request_call(this->server(), callptr(), &call_details_,
+                                      client_metadata(), call_cq->cq(),
+                                      notification_cq->cq(), this));
 }
 
 bool ServerInterface::GenericAsyncRequest::FinalizeResult(void** tag,
                                                           bool* status) {
   // TODO(yangg) remove the copy here.
   if (*status) {
-    static_cast<GenericServerContext*>(context_)->method_ =
-        StringFromCopiedSlice(call_details_.method);
-    static_cast<GenericServerContext*>(context_)->host_ =
-        StringFromCopiedSlice(call_details_.host);
-    context_->deadline_ = call_details_.deadline;
+    generic_ctx()->method_ =
+        internal::StringFromCopiedSlice(call_details_.method);
+    generic_ctx()->host_ = internal::StringFromCopiedSlice(call_details_.host);
+    *deadline() = call_details_.deadline;
   }
   grpc_slice_unref(call_details_.method);
   grpc_slice_unref(call_details_.host);
