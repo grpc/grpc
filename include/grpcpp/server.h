@@ -87,7 +87,8 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   /// application and is shared among all \a Server objects.
   static void SetGlobalCallbacks(GlobalCallbacks* callbacks);
 
-  // Returns a \em raw pointer to the underlying \a grpc_server instance.
+  /// Returns a \em raw pointer to the underlying \a grpc_server instance.
+  /// EXPERIMENTAL:  for internal/test use only
   grpc_server* c_server();
 
   /// Returns the health check service.
