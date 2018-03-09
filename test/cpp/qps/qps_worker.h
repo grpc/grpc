@@ -21,10 +21,10 @@
 
 #include <memory>
 
-#include <grpc++/server.h>
-#include <grpc++/support/channel_arguments.h>
-#include <grpc++/support/config.h>
 #include <grpc/support/atm.h>
+#include <grpcpp/server.h>
+#include <grpcpp/support/channel_arguments.h>
+#include <grpcpp/support/config.h>
 
 #include "test/cpp/qps/server.h"
 

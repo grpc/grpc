@@ -20,11 +20,11 @@
 #include <unordered_map>
 
 #include <gflags/gflags.h>
-#include <grpc++/channel.h>
-#include <grpc++/client_context.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
 
 #include "src/core/lib/gpr/string.h"
 #include "test/cpp/interop/client_helper.h"

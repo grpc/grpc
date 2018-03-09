@@ -18,9 +18,9 @@
 
 #include "test/cpp/qps/benchmark_config.h"
 #include <gflags/gflags.h>
-#include <grpc++/create_channel.h>
-#include <grpc++/security/credentials.h>
 #include <grpc/support/log.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/security/credentials.h>
 
 DEFINE_bool(enable_log_reporter, true,
             "Enable reporting of benchmark results through GprLog");

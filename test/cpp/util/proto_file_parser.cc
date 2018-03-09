@@ -23,7 +23,7 @@
 #include <sstream>
 #include <unordered_set>
 
-#include <grpc++/support/config.h>
+#include <grpcpp/support/config.h>
 
 namespace grpc {
 namespace testing {
