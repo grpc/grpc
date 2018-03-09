@@ -25,7 +25,7 @@ import twisted.internet.reactor as reactor
 
 def main():
   argp = argparse.ArgumentParser(description='Make DNS queries for A records')
-  argp.add_argument('-s', '--server_host', default='127.0.0.1', type=str,
+  argp.add_argument('-s', '--server_host', default='::1', type=str,
                     help='Host for DNS server to listen on for TCP and UDP.')
   argp.add_argument('-p', '--server_port', default=53, type=int,
                     help='Port that the DNS server is listening on.')
