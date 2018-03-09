@@ -153,11 +153,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   /// \param num_cqs How many completion queues does \a cqs hold.
   void Start(ServerCompletionQueue** cqs, size_t num_cqs) override;
 
-  // Pointer to the wrapped grpc_server.
-  grpc_server* server_;
-
-  // Server status
-  bool started_;
+  grpc_server* server() override { return server_; };
 
  private:
   friend class AsyncGenericService;
@@ -191,8 +187,6 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
     return max_receive_message_size_;
   };
 
-  grpc_server* server() override { return server_; };
-
   ServerInitializer* initializer();
 
   const int max_receive_message_size_;
@@ -209,6 +203,8 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
 
   // Server status
   std::mutex mu_;
+  // Server status
+  bool started_;
   bool shutdown_;
   bool shutdown_notified_;  // Was notify called on the shutdown_cv_
 
@@ -218,6 +214,9 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
 
   std::vector<grpc::string> services_;
   bool has_generic_service_;
+
+  // Pointer to the wrapped grpc_server.
+  grpc_server* server_;
 
   std::unique_ptr<ServerInitializer> server_initializer_;
 

@@ -226,9 +226,24 @@ class ServerBuilder {
     Service* service;
   };
 
-  std::vector<std::unique_ptr<ServerBuilderOption>> options_;
-  std::vector<std::unique_ptr<NamedService>> services_;
-  std::vector<Port> ports_;
+  std::vector<Port> ports() { return ports_; }
+
+  std::vector<std::reference_wrapper<NamedService>> services() {
+    std::vector<std::reference_wrapper<NamedService>> service_refs;
+    for (auto &ptr : services_) {
+      service_refs.push_back(std::ref(*ptr));
+    }
+    return service_refs;
+  }
+
+  std::vector<std::reference_wrapper<ServerBuilderOption>> options() {
+    std::vector<std::reference_wrapper<ServerBuilderOption>> option_refs;
+    for (auto &ptr : options_) {
+      option_refs.push_back(std::ref(*ptr));
+    }
+    return option_refs;
+  }
+
 
  private:
   friend class ::grpc::testing::ServerBuilderPluginTest;
@@ -254,6 +269,9 @@ class ServerBuilder {
 
   int max_receive_message_size_;
   int max_send_message_size_;
+  std::vector<std::unique_ptr<ServerBuilderOption>> options_;
+  std::vector<std::unique_ptr<NamedService>> services_;
+  std::vector<Port> ports_;
 
   SyncServerSettings sync_server_settings_;
 
