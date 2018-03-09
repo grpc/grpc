@@ -384,6 +384,34 @@ class NodeLanguage:
     def __str__(self):
         return 'node'
 
+class NodePureJSLanguage:
+
+    def __init__(self):
+        self.client_cwd = '../grpc-node'
+        self.server_cwd = '../grpc-node'
+        self.safename = str(self)
+
+    def client_cmd(self, args):
+        return [
+            'packages/grpc-native-core/deps/grpc/tools/run_tests/interop/with_nvm.sh',
+            'node', '--require', './test/fixtures/native_js',
+            'test/interop/interop_client.js'
+        ] + args
+
+    def cloud_to_prod_env(self):
+        return {}
+
+    def global_env(self):
+        return {}
+
+    def unimplemented_test_cases(self):
+        return _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING
+
+    def unimplemented_test_cases_server(self):
+        return []
+
+    def __str__(self):
+        return 'nodepurejs'
 
 class PHPLanguage:
 
@@ -559,6 +587,7 @@ _LANGUAGES = {
     'java': JavaLanguage(),
     'javaokhttp': JavaOkHttpClient(),
     'node': NodeLanguage(),
+    'nodepurejs': NodePureJSLanguage(),
     'php': PHPLanguage(),
     'php7': PHP7Language(),
     'objc': ObjcLanguage(),
@@ -676,7 +705,7 @@ def auth_options(language, test_case):
     if test_case in ['jwt_token_creds', 'per_rpc_creds', 'oauth2_auth_token']:
         if language in [
                 'csharp', 'csharpcoreclr', 'node', 'php', 'php7', 'python',
-                'ruby'
+                'ruby', 'nodepurejs'
         ]:
             env['GOOGLE_APPLICATION_CREDENTIALS'] = key_filepath
         else:
