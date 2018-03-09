@@ -16,8 +16,8 @@
  *
  */
 
-#include <grpc++/alarm.h>
-#include <grpc++/completion_queue.h>
+#include <grpcpp/alarm.h>
+#include <grpcpp/completion_queue.h>
 #include <thread>
 
 #include <gtest/gtest.h>

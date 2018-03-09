@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2017 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  * limitations under the License.
  *
  */
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 
@@ -125,13 +127,7 @@ static void run_poller(void* arg, grpc_error* error) {
                   &p->run_poller_closure);
 }
 
-void grpc_client_channel_start_backup_polling(
-    grpc_pollset_set* interested_parties) {
-  gpr_once_init(&g_once, init_globals);
-  if (g_poll_interval_ms == 0) {
-    return;
-  }
-  gpr_mu_lock(&g_poller_mu);
+static void g_poller_init_locked() {
   if (g_poller == nullptr) {
     g_poller = static_cast<backup_poller*>(gpr_zalloc(sizeof(backup_poller)));
     g_poller->pollset =
@@ -147,7 +143,16 @@ void grpc_client_channel_start_backup_polling(
                     grpc_core::ExecCtx::Get()->Now() + g_poll_interval_ms,
                     &g_poller->run_poller_closure);
   }
+}
 
+void grpc_client_channel_start_backup_polling(
+    grpc_pollset_set* interested_parties) {
+  gpr_once_init(&g_once, init_globals);
+  if (g_poll_interval_ms == 0) {
+    return;
+  }
+  gpr_mu_lock(&g_poller_mu);
+  g_poller_init_locked();
   gpr_ref(&g_poller->refs);
   /* Get a reference to g_poller->pollset before releasing g_poller_mu to make
    * TSAN happy. Otherwise, reading from g_poller (i.e g_poller->pollset) after

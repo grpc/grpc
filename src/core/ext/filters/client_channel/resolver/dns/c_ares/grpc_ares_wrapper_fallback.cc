@@ -17,6 +17,7 @@
  */
 
 #include <grpc/support/port_platform.h>
+
 #if GRPC_ARES != 1 || defined(GRPC_UV)
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"

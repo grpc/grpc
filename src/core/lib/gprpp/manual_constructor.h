@@ -21,6 +21,8 @@
 
 // manually construct a region of memory with some type
 
+#include <grpc/support/port_platform.h>
+
 #include <stddef.h>
 #include <stdlib.h>
 #include <new>
@@ -154,7 +156,7 @@ class PolymorphicManualConstructor {
     static_assert(
         manual_ctor_impl::is_one_of<DerivedType, DerivedTypes...>::value,
         "DerivedType must be one of the predeclared DerivedTypes");
-    GPR_ASSERT(reinterpret_cast<BaseType*>(static_cast<DerivedType*>(p)) == p);
+    GPR_ASSERT(static_cast<BaseType*>(p) == p);
   }
 
   typename std::aligned_storage<

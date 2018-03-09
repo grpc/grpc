@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_GPRPP_MEMORY_H
 #define GRPC_CORE_LIB_GPRPP_MEMORY_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/support/alloc.h>
 
 #include <limits>
@@ -28,12 +30,12 @@
 namespace grpc_core {
 
 // The alignment of memory returned by gpr_malloc().
-constexpr size_t kAllignmentForDefaultAllocationInBytes = 8;
+constexpr size_t kAlignmentForDefaultAllocationInBytes = 8;
 
 // Alternative to new, since we cannot use it (for fear of libstdc++)
 template <typename T, typename... Args>
 inline T* New(Args&&... args) {
-  void* p = alignof(T) > kAllignmentForDefaultAllocationInBytes
+  void* p = alignof(T) > kAlignmentForDefaultAllocationInBytes
                 ? gpr_malloc_aligned(sizeof(T), alignof(T))
                 : gpr_malloc(sizeof(T));
   return new (p) T(std::forward<Args>(args)...);
@@ -43,7 +45,7 @@ inline T* New(Args&&... args) {
 template <typename T>
 inline void Delete(T* p) {
   p->~T();
-  if (alignof(T) > kAllignmentForDefaultAllocationInBytes) {
+  if (alignof(T) > kAlignmentForDefaultAllocationInBytes) {
     gpr_free_aligned(p);
   } else {
     gpr_free(p);

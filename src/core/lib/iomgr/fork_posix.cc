@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_FORK
@@ -27,7 +29,7 @@
 
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/fork.h"
-#include "src/core/lib/gpr/thd.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer_manager.h"
@@ -51,7 +53,7 @@ void grpc_prefork() {
     grpc_timer_manager_set_threading(false);
     grpc_executor_set_threading(false);
     grpc_core::ExecCtx::Get()->Flush();
-    if (!gpr_await_threads(
+    if (!grpc_core::Thread::AwaitAll(
             gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                          gpr_time_from_seconds(3, GPR_TIMESPAN)))) {
       gpr_log(GPR_ERROR, "gRPC thread still active! Cannot fork!");

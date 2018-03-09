@@ -84,6 +84,7 @@
 
   # Options
   option(gRPC_BUILD_TESTS "Build tests" OFF)
+  option(gRPC_BUILD_CODEGEN "Build codegen" ON)
 
   set(gRPC_INSTALL_default ON)
   if (NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
@@ -125,6 +126,8 @@
       set(_gRPC_PLATFORM_LINUX ON)
     elseif(<%text>${CMAKE_SYSTEM_NAME}</%text> MATCHES "Darwin")
       set(_gRPC_PLATFORM_MAC ON)
+    elseif(<%text>${CMAKE_SYSTEM_NAME}</%text> MATCHES "Android")
+      set(_gRPC_PLATFORM_ANDROID ON)
     else()
       set(_gRPC_PLATFORM_POSIX ON)
     endif()
@@ -135,6 +138,8 @@
 
   ## Some libraries are shared even with BUILD_SHARED_LIBRARIES=OFF
   set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+  
+  add_definitions(-DPB_FIELD_16BIT)
 
   if (MSVC)
     include(cmake/msvc_static_runtime.cmake)
@@ -168,6 +173,8 @@
 
   if(_gRPC_PLATFORM_MAC)
     set(_gRPC_ALLTARGETS_LIBRARIES <%text>${CMAKE_DL_LIBS}</%text> m pthread)
+  elseif(_gRPC_PLATFORM_ANDROID)
+    set(_gRPC_ALLTARGETS_LIBRARIES <%text>${CMAKE_DL_LIBS}</%text> m)
   elseif(UNIX)
     set(_gRPC_ALLTARGETS_LIBRARIES <%text>${CMAKE_DL_LIBS}</%text> rt m pthread)
   endif()
@@ -304,6 +311,13 @@
   ${cc_binary(tgt)}
   ${get_platforms_condition_end(tgt.platforms)}\
   endif (gRPC_BUILD_TESTS)
+  % elif tgt.build in ["protoc"]:
+  if (gRPC_BUILD_CODEGEN)
+  ${get_platforms_condition_begin(tgt.platforms)}\
+  ${cc_binary(tgt)}
+  ${cc_install(tgt)}
+  ${get_platforms_condition_end(tgt.platforms)}\
+  endif (gRPC_BUILD_CODEGEN)
   % else:
   ${get_platforms_condition_begin(tgt.platforms)}\
   ${cc_binary(tgt)}
@@ -314,6 +328,9 @@
   % endfor
 
   <%def name="cc_library(lib)">
+  % if any(proto_re.match(src) for src in lib.src):
+  if (gRPC_BUILD_CODEGEN)
+  % endif
   add_library(${lib.name}${' SHARED' if lib.get('dll', None) == 'only' else ''}
   % for src in lib.src:
   % if not proto_re.match(src):
@@ -376,6 +393,14 @@
   % endfor
   )
   % endif
+  % if lib.name in ["gpr"]:
+  if (_gRPC_PLATFORM_ANDROID)
+    target_link_libraries(gpr
+      android
+      log
+    )
+  endif (_gRPC_PLATFORM_ANDROID)
+  % endif
 
   % if len(lib.get('public_headers', [])) > 0:
   foreach(_hdr
@@ -389,6 +414,9 @@
       DESTINATION "<%text>${gRPC_INSTALL_INCLUDEDIR}/${_path}</%text>"
     )
   endforeach()
+  % endif
+  % if any(proto_re.match(src) for src in lib.src):
+  endif (gRPC_BUILD_CODEGEN)
   % endif
   </%def>
 

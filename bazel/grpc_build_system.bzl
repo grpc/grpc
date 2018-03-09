@@ -57,6 +57,12 @@ def _maybe_update_cc_library_hdrs(hdrs):
       ret.append(h)
   return ret
 
+def _maybe_update_cc_library_defines(name):
+  ret = []
+  if name == "alts_proto":
+    ret += ["PB_FIELD_16BIT=1"]
+  return ret
+
 def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
                     external_deps = [], deps = [], standalone = False,
                     language = "C++", testonly = False, visibility = None,
@@ -64,10 +70,11 @@ def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
   copts = []
   if language.upper() == "C":
     copts = if_not_windows(["-std=c99"])
+  defines = _maybe_update_cc_library_defines(name)
   native.cc_library(
     name = name,
     srcs = srcs,
-    defines = select({"//:grpc_no_ares": ["GRPC_ARES=0"],
+    defines = defines + select({"//:grpc_no_ares": ["GRPC_ARES=0"],
                       "//conditions:default": [],}) +
               select({"//:remote_execution":  ["GRPC_PORT_ISOLATED_RUNTIME=1"],
                       "//conditions:default": [],}) +
@@ -170,17 +177,14 @@ def grpc_sh_binary(name, srcs, data = []):
     srcs = srcs,
     data = data)
 
-def grpc_py_binary(name, srcs, data = [], deps = []):
-  if name == "test_dns_server":
-    deps = _get_external_deps([
-      "twisted",
-      "yaml",
-    ])
+def grpc_py_binary(name, srcs, data = [], deps = [], external_deps = [], testonly = False):
   native.py_binary(
     name = name,
     srcs = srcs,
+    testonly = testonly,
     data = data,
-    deps = deps)
+    deps = deps + _get_external_deps(external_deps)
+  )
 
 def grpc_package(name, visibility = "private", features = []):
   if visibility == "tests":

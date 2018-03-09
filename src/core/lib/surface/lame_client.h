@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_SURFACE_LAME_CLIENT_H
 #define GRPC_CORE_LIB_SURFACE_LAME_CLIENT_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/channel/channel_stack.h"
 
 extern const grpc_channel_filter grpc_lame_filter;

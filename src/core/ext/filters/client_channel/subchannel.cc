@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/filters/client_channel/subchannel.h"
 
 #include <inttypes.h>
@@ -657,7 +659,6 @@ static void on_subchannel_connected(void* arg, grpc_error* error) {
 static void subchannel_call_destroy(void* call, grpc_error* error) {
   GPR_TIMER_SCOPE("grpc_subchannel_call_unref.destroy", 0);
   grpc_subchannel_call* c = static_cast<grpc_subchannel_call*>(call);
-  GPR_ASSERT(c->schedule_closure_after_destroy != nullptr);
   grpc_core::ConnectedSubchannel* connection = c->connection;
   grpc_call_stack_destroy(SUBCHANNEL_CALL_TO_CALL_STACK(c), nullptr,
                           c->schedule_closure_after_destroy);
@@ -671,9 +672,10 @@ void grpc_subchannel_call_set_cleanup_closure(grpc_subchannel_call* call,
   call->schedule_closure_after_destroy = closure;
 }
 
-void grpc_subchannel_call_ref(
+grpc_subchannel_call* grpc_subchannel_call_ref(
     grpc_subchannel_call* c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   GRPC_CALL_STACK_REF(SUBCHANNEL_CALL_TO_CALL_STACK(c), REF_REASON);
+  return c;
 }
 
 void grpc_subchannel_call_unref(
@@ -701,6 +703,13 @@ grpc_subchannel_get_connected_subchannel(grpc_subchannel* c) {
 const grpc_subchannel_key* grpc_subchannel_get_key(
     const grpc_subchannel* subchannel) {
   return subchannel->key;
+}
+
+void* grpc_connected_subchannel_call_get_parent_data(
+    grpc_subchannel_call* subchannel_call) {
+  grpc_channel_stack* chanstk = subchannel_call->connection->channel_stack();
+  return (char*)subchannel_call + sizeof(grpc_subchannel_call) +
+         chanstk->call_stack_size;
 }
 
 grpc_call_stack* grpc_subchannel_call_get_call_stack(
@@ -774,8 +783,8 @@ void ConnectedSubchannel::Ping(grpc_closure* on_initiate,
 grpc_error* ConnectedSubchannel::CreateCall(const CallArgs& args,
                                             grpc_subchannel_call** call) {
   *call = static_cast<grpc_subchannel_call*>(gpr_arena_alloc(
-      args.arena,
-      sizeof(grpc_subchannel_call) + channel_stack_->call_stack_size));
+      args.arena, sizeof(grpc_subchannel_call) +
+                      channel_stack_->call_stack_size + args.parent_data_size));
   grpc_call_stack* callstk = SUBCHANNEL_CALL_TO_CALL_STACK(*call);
   RefCountedPtr<ConnectedSubchannel> connection =
       Ref(DEBUG_LOCATION, "subchannel_call");

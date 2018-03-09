@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -150,18 +152,4 @@ grpc_lb_addresses* grpc_lb_addresses_find_channel_arg(
   if (lb_addresses_arg == nullptr || lb_addresses_arg->type != GRPC_ARG_POINTER)
     return nullptr;
   return static_cast<grpc_lb_addresses*>(lb_addresses_arg->value.pointer.p);
-}
-
-void grpc_lb_policy_factory_ref(grpc_lb_policy_factory* factory) {
-  factory->vtable->ref(factory);
-}
-
-void grpc_lb_policy_factory_unref(grpc_lb_policy_factory* factory) {
-  factory->vtable->unref(factory);
-}
-
-grpc_lb_policy* grpc_lb_policy_factory_create_lb_policy(
-    grpc_lb_policy_factory* factory, grpc_lb_policy_args* args) {
-  if (factory == nullptr) return nullptr;
-  return factory->vtable->create_lb_policy(factory, args);
 }

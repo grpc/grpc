@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/tsi/alts_transport_security.h"
 
 #include <string.h>
@@ -54,7 +56,7 @@ void grpc_tsi_alts_shutdown() {
     grpc_tsi_alts_wait_for_cq_drain();
     grpc_completion_queue_destroy(g_alts_resource.cq);
     grpc_channel_destroy(g_alts_resource.channel);
-    gpr_thd_join(g_alts_resource.thread_id);
+    g_alts_resource.thread.Join();
   }
   gpr_cv_destroy(&g_alts_resource.cv);
   gpr_mu_destroy(&g_alts_resource.mu);

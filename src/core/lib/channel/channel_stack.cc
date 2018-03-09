@@ -16,9 +16,11 @@
  *
  */
 
-#include "src/core/lib/channel/channel_stack.h"
+#include <grpc/support/port_platform.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include "src/core/lib/channel/channel_stack.h"
 
 #include <stdlib.h>
 #include <string.h>

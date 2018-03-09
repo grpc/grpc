@@ -19,7 +19,7 @@
   <ItemGroup>
     <PackageReference Include="Google.Protobuf" Version="$(GoogleProtobufVersion)" />
     <PackageReference Include="CommandLineParser" Version="2.1.1-beta" />
-    <PackageReference Include="Moq" Version="4.7.0" />
+    <PackageReference Include="Moq" Version="4.8.2" />
     <PackageReference Include="NUnit" Version="3.6.0" />
     <PackageReference Include="NUnitLite" Version="3.6.0" />
   </ItemGroup>

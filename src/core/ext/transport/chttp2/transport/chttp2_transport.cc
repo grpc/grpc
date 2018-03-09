@@ -16,9 +16,9 @@
  *
  */
 
-#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
-
 #include <grpc/support/port_platform.h>
+
+#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 
 #include <inttypes.h>
 #include <limits.h>
@@ -1456,8 +1456,10 @@ static void perform_stream_op_locked(void* stream_op,
       }
     }
     if (op_payload->send_initial_metadata.peer_string != nullptr) {
-      gpr_atm_rel_store(op_payload->send_initial_metadata.peer_string,
-                        (gpr_atm)gpr_strdup(t->peer_string));
+      char* old_peer_string = (char*)gpr_atm_full_xchg(
+          op_payload->send_initial_metadata.peer_string,
+          (gpr_atm)gpr_strdup(t->peer_string));
+      gpr_free(old_peer_string);
     }
   }
 
@@ -1571,8 +1573,10 @@ static void perform_stream_op_locked(void* stream_op,
     s->trailing_metadata_available =
         op_payload->recv_initial_metadata.trailing_metadata_available;
     if (op_payload->recv_initial_metadata.peer_string != nullptr) {
-      gpr_atm_rel_store(op_payload->recv_initial_metadata.peer_string,
-                        (gpr_atm)gpr_strdup(t->peer_string));
+      char* old_peer_string = (char*)gpr_atm_full_xchg(
+          op_payload->recv_initial_metadata.peer_string,
+          (gpr_atm)gpr_strdup(t->peer_string));
+      gpr_free(old_peer_string);
     }
     grpc_chttp2_maybe_complete_recv_initial_metadata(t, s);
   }
@@ -1707,7 +1711,6 @@ static void send_goaway(grpc_chttp2_transport* t, grpc_error* error) {
 }
 
 void grpc_chttp2_add_ping_strike(grpc_chttp2_transport* t) {
-  t->ping_recv_state.ping_strikes++;
   if (++t->ping_recv_state.ping_strikes > t->ping_policy.max_ping_strikes &&
       t->ping_policy.max_ping_strikes != 0) {
     send_goaway(t,

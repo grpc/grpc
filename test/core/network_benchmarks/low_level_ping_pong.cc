@@ -38,8 +38,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/thd.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "test/core/util/cmdline.h"
@@ -575,7 +575,6 @@ int create_socket(const char* socket_type, fd_pair* client_fds,
 
 static int run_benchmark(const char* socket_type, thread_args* client_args,
                          thread_args* server_args) {
-  gpr_thd_id tid;
   int rv = 0;
 
   rv = create_socket(socket_type, &client_args->fds, &server_args->fds);
@@ -586,8 +585,11 @@ static int run_benchmark(const char* socket_type, thread_args* client_args,
   gpr_log(GPR_INFO, "Starting test %s %s %zu", client_args->strategy_name,
           socket_type, client_args->msg_size);
 
-  gpr_thd_new(&tid, "server_thread", server_thread_wrap, server_args, nullptr);
+  grpc_core::Thread server("server_thread", server_thread_wrap, server_args);
+  server.Start();
   client_thread(client_args);
+  server.Join();
+
   return 0;
 }
 

@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_SUBCHANNEL_LIST_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_SUBCHANNEL_LIST_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/debug/trace.h"
@@ -82,7 +84,7 @@ void grpc_lb_subchannel_data_stop_connectivity_watch(
 
 struct grpc_lb_subchannel_list {
   /** backpointer to owning policy */
-  grpc_lb_policy* policy;
+  grpc_core::LoadBalancingPolicy* policy;
 
   grpc_core::TraceFlag* tracer;
 
@@ -115,22 +117,16 @@ struct grpc_lb_subchannel_list {
 };
 
 grpc_lb_subchannel_list* grpc_lb_subchannel_list_create(
-    grpc_lb_policy* p, grpc_core::TraceFlag* tracer,
-    const grpc_lb_addresses* addresses, const grpc_lb_policy_args* args,
-    grpc_iomgr_cb_func connectivity_changed_cb);
+    grpc_core::LoadBalancingPolicy* p, grpc_core::TraceFlag* tracer,
+    const grpc_lb_addresses* addresses, grpc_combiner* combiner,
+    grpc_client_channel_factory* client_channel_factory,
+    const grpc_channel_args& args, grpc_iomgr_cb_func connectivity_changed_cb);
 
 void grpc_lb_subchannel_list_ref(grpc_lb_subchannel_list* subchannel_list,
                                  const char* reason);
 
 void grpc_lb_subchannel_list_unref(grpc_lb_subchannel_list* subchannel_list,
                                    const char* reason);
-
-/// Takes and releases refs needed for a connectivity notification.
-/// This includes a ref to subchannel_list and a weak ref to the LB policy.
-void grpc_lb_subchannel_list_ref_for_connectivity_watch(
-    grpc_lb_subchannel_list* subchannel_list, const char* reason);
-void grpc_lb_subchannel_list_unref_for_connectivity_watch(
-    grpc_lb_subchannel_list* subchannel_list, const char* reason);
 
 /// Mark subchannel_list as discarded. Unsubscribes all its subchannels. The
 /// connectivity state notification callback will ultimately unref it.

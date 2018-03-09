@@ -21,7 +21,7 @@
 #include <string>
 #include <thread>
 
-#include <grpc++/grpc++.h>
+#include <grpcpp/grpcpp.h>
 #include <grpc/support/log.h>
 
 #include "helloworld.grpc.pb.h"

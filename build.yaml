@@ -13,9 +13,87 @@ settings:
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
   core_version: 6.0.0-dev
-  g_stands_for: glamorous
-  version: 1.10.0-dev
+  g_stands_for: gorgeous
+  version: 1.11.0-dev
 filegroups:
+- name: alts_proto
+  headers:
+  - src/core/tsi/alts/handshaker/altscontext.pb.h
+  - src/core/tsi/alts/handshaker/handshaker.pb.h
+  - src/core/tsi/alts/handshaker/transport_security_common.pb.h
+  src:
+  - src/core/tsi/alts/handshaker/altscontext.pb.c
+  - src/core/tsi/alts/handshaker/handshaker.pb.c
+  - src/core/tsi/alts/handshaker/transport_security_common.pb.c
+  uses:
+  - nanopb
+- name: alts_tsi
+  headers:
+  - src/core/tsi/alts/crypt/gsec.h
+  - src/core/tsi/alts/frame_protector/alts_counter.h
+  - src/core/tsi/alts/frame_protector/alts_crypter.h
+  - src/core/tsi/alts/frame_protector/alts_frame_protector.h
+  - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.h
+  - src/core/tsi/alts/frame_protector/frame_handler.h
+  - src/core/tsi/alts/handshaker/alts_handshaker_client.h
+  - src/core/tsi/alts/handshaker/alts_tsi_event.h
+  - src/core/tsi/alts/handshaker/alts_tsi_handshaker.h
+  - src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h
+  src:
+  - src/core/tsi/alts/crypt/aes_gcm.cc
+  - src/core/tsi/alts/crypt/gsec.cc
+  - src/core/tsi/alts/frame_protector/alts_counter.cc
+  - src/core/tsi/alts/frame_protector/alts_crypter.cc
+  - src/core/tsi/alts/frame_protector/alts_frame_protector.cc
+  - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc
+  - src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc
+  - src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
+  - src/core/tsi/alts/frame_protector/frame_handler.cc
+  - src/core/tsi/alts/handshaker/alts_handshaker_client.cc
+  - src/core/tsi/alts/handshaker/alts_tsi_event.cc
+  - src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
+  uses:
+  - alts_util
+  - grpc_base
+  - grpc_transport_chttp2_client_insecure
+  - tsi_interface
+  - tsi
+- name: alts_util
+  headers:
+  - src/core/lib/security/credentials/alts/check_gcp_environment.h
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h
+  - src/core/tsi/alts/handshaker/alts_handshaker_service_api.h
+  - src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.h
+  - src/core/tsi/alts/handshaker/alts_tsi_utils.h
+  - src/core/tsi/alts/handshaker/transport_security_common_api.h
+  src:
+  - src/core/lib/security/credentials/alts/check_gcp_environment.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
+  - src/core/tsi/alts/handshaker/alts_handshaker_service_api.cc
+  - src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.cc
+  - src/core/tsi/alts/handshaker/alts_tsi_utils.cc
+  - src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  uses:
+  - alts_proto
+  - grpc_base
+  - tsi_interface
+  - nanopb
 - name: census
   public_headers:
   - include/grpc/census.h
@@ -59,9 +137,6 @@ filegroups:
   - src/core/lib/gpr/sync.cc
   - src/core/lib/gpr/sync_posix.cc
   - src/core/lib/gpr/sync_windows.cc
-  - src/core/lib/gpr/thd.cc
-  - src/core/lib/gpr/thd_posix.cc
-  - src/core/lib/gpr/thd_windows.cc
   - src/core/lib/gpr/time.cc
   - src/core/lib/gpr/time_posix.cc
   - src/core/lib/gpr/time_precise.cc
@@ -71,6 +146,8 @@ filegroups:
   - src/core/lib/gpr/tmpfile_posix.cc
   - src/core/lib/gpr/tmpfile_windows.cc
   - src/core/lib/gpr/wrap_memcpy.cc
+  - src/core/lib/gprpp/thd_posix.cc
+  - src/core/lib/gprpp/thd_windows.cc
   - src/core/lib/profiling/basic_timers.cc
   - src/core/lib/profiling/stap_timers.cc
   uses:
@@ -104,7 +181,6 @@ filegroups:
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gpr/string.h
   - src/core/lib/gpr/string_windows.h
-  - src/core/lib/gpr/thd.h
   - src/core/lib/gpr/time_precise.h
   - src/core/lib/gpr/tls.h
   - src/core/lib/gpr/tls_gcc.h
@@ -118,6 +194,7 @@ filegroups:
   - src/core/lib/gprpp/atomic_with_std.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/memory.h
+  - src/core/lib/gprpp/thd.h
   - src/core/lib/profiling/timers.h
   uses:
   - gpr_codegen
@@ -250,7 +327,6 @@ filegroups:
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
-  - src/core/lib/slice/slice_hash_table.cc
   - src/core/lib/slice/slice_intern.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/api_trace.cc
@@ -281,6 +357,7 @@ filegroups:
   - src/core/lib/transport/service_config.cc
   - src/core/lib/transport/static_metadata.cc
   - src/core/lib/transport/status_conversion.cc
+  - src/core/lib/transport/status_metadata.cc
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/lib/transport/transport.cc
   - src/core/lib/transport/transport_op_string.cc
@@ -404,6 +481,7 @@ filegroups:
   - src/core/lib/slice/slice_hash_table.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/slice/slice_weak_hash_table.h
   - src/core/lib/surface/api_trace.h
   - src/core/lib/surface/call.h
   - src/core/lib/surface/call_test_only.h
@@ -428,6 +506,7 @@ filegroups:
   - src/core/lib/transport/service_config.h
   - src/core/lib/transport/static_metadata.h
   - src/core/lib/transport/status_conversion.h
+  - src/core/lib/transport/status_metadata.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_impl.h
@@ -447,6 +526,7 @@ filegroups:
   - src/core/ext/filters/client_channel/lb_policy.h
   - src/core/ext/filters/client_channel/lb_policy_factory.h
   - src/core/ext/filters/client_channel/lb_policy_registry.h
+  - src/core/ext/filters/client_channel/method_params.h
   - src/core/ext/filters/client_channel/parse_address.h
   - src/core/ext/filters/client_channel/proxy_mapper.h
   - src/core/ext/filters/client_channel/proxy_mapper_registry.h
@@ -454,6 +534,7 @@ filegroups:
   - src/core/ext/filters/client_channel/resolver_factory.h
   - src/core/ext/filters/client_channel/resolver_registry.h
   - src/core/ext/filters/client_channel/retry_throttle.h
+  - src/core/ext/filters/client_channel/status_util.h
   - src/core/ext/filters/client_channel/subchannel.h
   - src/core/ext/filters/client_channel/subchannel_index.h
   - src/core/ext/filters/client_channel/uri_parser.h
@@ -469,12 +550,14 @@ filegroups:
   - src/core/ext/filters/client_channel/lb_policy.cc
   - src/core/ext/filters/client_channel/lb_policy_factory.cc
   - src/core/ext/filters/client_channel/lb_policy_registry.cc
+  - src/core/ext/filters/client_channel/method_params.cc
   - src/core/ext/filters/client_channel/parse_address.cc
   - src/core/ext/filters/client_channel/proxy_mapper.cc
   - src/core/ext/filters/client_channel/proxy_mapper_registry.cc
   - src/core/ext/filters/client_channel/resolver.cc
   - src/core/ext/filters/client_channel/resolver_registry.cc
   - src/core/ext/filters/client_channel/retry_throttle.cc
+  - src/core/ext/filters/client_channel/status_util.cc
   - src/core/ext/filters/client_channel/subchannel.cc
   - src/core/ext/filters/client_channel/subchannel_index.cc
   - src/core/ext/filters/client_channel/uri_parser.cc
@@ -518,7 +601,6 @@ filegroups:
 - name: grpc_lb_policy_grpclb
   headers:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
@@ -539,7 +621,6 @@ filegroups:
 - name: grpc_lb_policy_grpclb_secure
   headers:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
@@ -639,6 +720,7 @@ filegroups:
   - include/grpc/grpc_security.h
   headers:
   - src/core/lib/security/context/security_context.h
+  - src/core/lib/security/credentials/alts/alts_credentials.h
   - src/core/lib/security/credentials/composite/composite_credentials.h
   - src/core/lib/security/credentials/credentials.h
   - src/core/lib/security/credentials/fake/fake_credentials.h
@@ -650,16 +732,18 @@ filegroups:
   - src/core/lib/security/credentials/oauth2/oauth2_credentials.h
   - src/core/lib/security/credentials/plugin/plugin_credentials.h
   - src/core/lib/security/credentials/ssl/ssl_credentials.h
+  - src/core/lib/security/security_connector/alts_security_connector.h
+  - src/core/lib/security/security_connector/security_connector.h
   - src/core/lib/security/transport/auth_filters.h
-  - src/core/lib/security/transport/lb_targets_info.h
   - src/core/lib/security/transport/secure_endpoint.h
-  - src/core/lib/security/transport/security_connector.h
   - src/core/lib/security/transport/security_handshaker.h
+  - src/core/lib/security/transport/target_authority_table.h
   - src/core/lib/security/transport/tsi_error.h
   - src/core/lib/security/util/json_util.h
   src:
   - src/core/lib/http/httpcli_security_connector.cc
   - src/core/lib/security/context/security_context.cc
+  - src/core/lib/security/credentials/alts/alts_credentials.cc
   - src/core/lib/security/credentials/composite/composite_credentials.cc
   - src/core/lib/security/credentials/credentials.cc
   - src/core/lib/security/credentials/credentials_metadata.cc
@@ -673,17 +757,19 @@ filegroups:
   - src/core/lib/security/credentials/oauth2/oauth2_credentials.cc
   - src/core/lib/security/credentials/plugin/plugin_credentials.cc
   - src/core/lib/security/credentials/ssl/ssl_credentials.cc
+  - src/core/lib/security/security_connector/alts_security_connector.cc
+  - src/core/lib/security/security_connector/security_connector.cc
   - src/core/lib/security/transport/client_auth_filter.cc
-  - src/core/lib/security/transport/lb_targets_info.cc
   - src/core/lib/security/transport/secure_endpoint.cc
-  - src/core/lib/security/transport/security_connector.cc
   - src/core/lib/security/transport/security_handshaker.cc
   - src/core/lib/security/transport/server_auth_filter.cc
+  - src/core/lib/security/transport/target_authority_table.cc
   - src/core/lib/security/transport/tsi_error.cc
   - src/core/lib/security/util/json_util.cc
   - src/core/lib/surface/init_secure.cc
   secure: true
   uses:
+  - alts_tsi
   - grpc_base
   - grpc_transport_chttp2_alpn
   - tsi
@@ -1208,6 +1294,18 @@ filegroups:
   - grpc++
   - grpc
 libs:
+- name: alts_test_util
+  build: private
+  language: c
+  headers:
+  - test/core/tsi/alts/crypt/gsec_test_util.h
+  - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h
+  src:
+  - test/core/tsi/alts/crypt/gsec_test_util.cc
+  - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
+  deps:
+  - grpc
+  secure: true
 - name: gpr
   build: all
   language: c
@@ -2326,7 +2424,7 @@ targets:
   build: test
   language: c
   src:
-  - test/core/gpr/thd_test.cc
+  - test/core/gprpp/thd_test.cc
   deps:
   - gpr_test_util
   - gpr
@@ -3149,17 +3247,6 @@ targets:
   - gpr_test_util
   - gpr
   uses_polling: false
-- name: slice_hash_table_test
-  build: test
-  language: c
-  src:
-  - test/core/slice/slice_hash_table_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  uses_polling: false
 - name: slice_string_helpers_test
   build: test
   language: c
@@ -3504,6 +3591,125 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+- name: alts_counter_test
+  build: test
+  language: c++
+  src:
+  - test/core/tsi/alts/frame_protector/alts_counter_test.cc
+  deps:
+  - alts_test_util
+  - gpr
+  - grpc
+- name: alts_crypt_test
+  build: test
+  language: c++
+  src:
+  - test/core/tsi/alts/crypt/aes_gcm_test.cc
+  deps:
+  - alts_test_util
+  - gpr_test_util
+  - gpr
+  - grpc
+- name: alts_crypter_test
+  build: test
+  language: c++
+  src:
+  - test/core/tsi/alts/frame_protector/alts_crypter_test.cc
+  deps:
+  - alts_test_util
+  - gpr
+  - grpc
+- name: alts_frame_handler_test
+  build: test
+  language: c++
+  src:
+  - test/core/tsi/alts/frame_protector/frame_handler_test.cc
+  deps:
+  - alts_test_util
+  - gpr
+  - grpc
+- name: alts_frame_protector_test
+  build: test
+  language: c++
+  src:
+  - test/core/tsi/alts/frame_protector/alts_frame_protector_test.cc
+  deps:
+  - alts_test_util
+  - gpr
+  - grpc
+  filegroups:
+  - transport_security_test_lib
+- name: alts_grpc_record_protocol_test
+  build: test
+  language: c++
+  src:
+  - test/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_test.cc
+  deps:
+  - alts_test_util
+  - gpr
+  - grpc
+- name: alts_handshaker_client_test
+  build: test
+  language: c++
+  src:
+  - test/core/tsi/alts/handshaker/alts_handshaker_client_test.cc
+  deps:
+  - alts_test_util
+  - gpr
+  - grpc
+- name: alts_handshaker_service_api_test
+  build: test
+  language: c++
+  src:
+  - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test.cc
+  deps:
+  - alts_test_util
+  - gpr
+  - grpc
+- name: alts_iovec_record_protocol_test
+  build: test
+  language: c++
+  src:
+  - test/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol_test.cc
+  deps:
+  - alts_test_util
+  - gpr
+  - grpc
+- name: alts_security_connector_test
+  build: test
+  language: c++
+  src:
+  - test/core/security/alts_security_connector_test.cc
+  deps:
+  - gpr
+  - grpc
+- name: alts_tsi_handshaker_test
+  build: test
+  language: c++
+  src:
+  - test/core/tsi/alts/handshaker/alts_tsi_handshaker_test.cc
+  deps:
+  - alts_test_util
+  - gpr
+  - grpc
+- name: alts_tsi_utils_test
+  build: test
+  language: c++
+  src:
+  - test/core/tsi/alts/handshaker/alts_tsi_utils_test.cc
+  deps:
+  - alts_test_util
+  - gpr
+  - grpc
+- name: alts_zero_copy_grpc_protector_test
+  build: test
+  language: c++
+  src:
+  - test/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector_test.cc
+  deps:
+  - alts_test_util
+  - gpr
+  - grpc
 - name: async_end2end_test
   gtest: true
   build: test
@@ -3887,6 +4093,22 @@ targets:
   - grpc
   - gpr
   uses_polling: false
+- name: check_gcp_environment_linux_test
+  build: test
+  language: c++
+  src:
+  - test/core/security/check_gcp_environment_linux_test.cc
+  deps:
+  - grpc
+  - gpr
+- name: check_gcp_environment_windows_test
+  build: test
+  language: c++
+  src:
+  - test/core/security/check_gcp_environment_windows_test.cc
+  deps:
+  - grpc
+  - gpr
 - name: chttp2_settings_timeout_test
   gtest: true
   build: test
@@ -4145,6 +4367,14 @@ targets:
   args:
   - --generated_file_path=gens/src/proto/grpc/testing/
   uses_polling: false
+- name: grpc_alts_credentials_options_test
+  build: test
+  language: c++
+  src:
+  - test/core/security/grpc_alts_credentials_options_test.cc
+  deps:
+  - grpc
+  - gpr
 - name: grpc_cli
   build: test
   run: false
@@ -4829,6 +5059,30 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: slice_hash_table_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/slice/slice_hash_table_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses_polling: false
+- name: slice_weak_hash_table_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/slice/slice_weak_hash_table_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses_polling: false
 - name: stats_test
   gtest: true
   build: test
@@ -4845,6 +5099,15 @@ targets:
   - tsan
   timeout_seconds: 1200
   uses_polling: false
+- name: status_metadata_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/transport/status_metadata_test.cc
+  deps:
+  - grpc
+  uses_polling: false
 - name: status_test
   build: test
   language: c++
@@ -4856,6 +5119,16 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  uses_polling: false
+- name: status_util_test
+  gtest: true
+  cpu_cost: 0.1
+  build: test
+  language: c++
+  src:
+  - test/core/client_channel/status_util_test.cc
+  deps:
+  - grpc
   uses_polling: false
 - name: streaming_throughput_test
   gtest: true
@@ -4937,6 +5210,15 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: transport_security_common_api_test
+  build: test
+  language: c++
+  src:
+  - test/core/tsi/alts/handshaker/transport_security_common_api_test.cc
+  deps:
+  - alts_test_util
+  - gpr
+  - grpc
 - name: writes_per_rpc_test
   gtest: true
   cpu_cost: 0.5

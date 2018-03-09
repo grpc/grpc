@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_GPRPP_REF_COUNTED_PTR_H
 #define GRPC_CORE_LIB_GPRPP_REF_COUNTED_PTR_H
 
+#include <grpc/support/port_platform.h>
+
 #include <utility>
 
 #include "src/core/lib/gprpp/memory.h"
@@ -31,6 +33,7 @@ template <typename T>
 class RefCountedPtr {
  public:
   RefCountedPtr() {}
+  RefCountedPtr(std::nullptr_t) {}
 
   // If value is non-null, we take ownership of a ref to it.
   explicit RefCountedPtr(T* value) { value_ = value; }

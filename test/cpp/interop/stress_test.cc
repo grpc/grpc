@@ -23,10 +23,10 @@
 #include <vector>
 
 #include <gflags/gflags.h>
-#include <grpc++/create_channel.h>
-#include <grpc++/grpc++.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/grpcpp.h>
 
 #include "src/proto/grpc/testing/metrics.grpc.pb.h"
 #include "src/proto/grpc/testing/metrics.pb.h"

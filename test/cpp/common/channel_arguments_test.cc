@@ -16,10 +16,10 @@
  *
  */
 
-#include <grpc++/support/channel_arguments.h>
+#include <grpcpp/support/channel_arguments.h>
 
-#include <grpc++/grpc++.h>
 #include <grpc/grpc.h>
+#include <grpcpp/grpcpp.h>
 #include <gtest/gtest.h>
 
 #include "src/core/lib/gpr/useful.h"

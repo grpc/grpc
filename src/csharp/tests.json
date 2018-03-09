@@ -1,5 +1,7 @@
 {
   "Grpc.Core.Tests": [
+    "Grpc.Core.Interceptors.Tests.ClientInterceptorTest",
+    "Grpc.Core.Interceptors.Tests.ServerInterceptorTest",
     "Grpc.Core.Internal.Tests.AsyncCallServerTest",
     "Grpc.Core.Internal.Tests.AsyncCallTest",
     "Grpc.Core.Internal.Tests.ChannelArgsSafeHandleTest",

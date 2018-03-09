@@ -906,11 +906,6 @@ class Channel(grpc.Channel):
         self._call_state = _ChannelCallState(self._channel)
         self._connectivity_state = _ChannelConnectivityState(self._channel)
 
-        # TODO(https://github.com/grpc/grpc/issues/9884)
-        # Temporary work around UNAVAILABLE issues
-        # Remove this once c-core has retry support
-        _subscribe(self._connectivity_state, lambda *args: None, None)
-
     def subscribe(self, callback, try_to_connect=None):
         _subscribe(self._connectivity_state, callback, try_to_connect)
 

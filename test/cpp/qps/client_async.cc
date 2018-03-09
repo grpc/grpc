@@ -26,13 +26,13 @@
 #include <thread>
 #include <vector>
 
-#include <grpc++/alarm.h>
-#include <grpc++/channel.h>
-#include <grpc++/client_context.h>
-#include <grpc++/generic/generic_stub.h>
 #include <grpc/grpc.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
+#include <grpcpp/alarm.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/generic/generic_stub.h>
 
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
@@ -50,9 +50,9 @@ class ClientRpcContext {
   // next state, return false if done. Collect stats when appropriate
   virtual bool RunNextState(bool, HistogramEntry* entry) = 0;
   virtual void StartNewClone(CompletionQueue* cq) = 0;
-  static void* tag(ClientRpcContext* c) { return reinterpret_cast<void*>(c); }
+  static void* tag(ClientRpcContext* c) { return static_cast<void*>(c); }
   static ClientRpcContext* detag(void* t) {
-    return reinterpret_cast<ClientRpcContext*>(t);
+    return static_cast<ClientRpcContext*>(t);
   }
 
   virtual void Start(CompletionQueue* cq, const ClientConfig& config) = 0;

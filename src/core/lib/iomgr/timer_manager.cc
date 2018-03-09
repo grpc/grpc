@@ -16,22 +16,22 @@
  *
  */
 
-#include "src/core/lib/iomgr/timer_manager.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 
 #include <inttypes.h>
 
-#include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/thd.h"
-#include "src/core/lib/iomgr/timer.h"
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
-typedef struct completed_thread {
-  gpr_thd_id t;
-  struct completed_thread* next;
-} completed_thread;
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/iomgr/timer_manager.h"
+
+struct completed_thread {
+  grpc_core::Thread thd;
+  completed_thread* next;
+};
 
 extern grpc_core::TraceFlag grpc_timer_check_trace;
 
@@ -67,7 +67,7 @@ static void gc_completed_threads(void) {
     g_completed_threads = nullptr;
     gpr_mu_unlock(&g_mu);
     while (to_gc != nullptr) {
-      gpr_thd_join(to_gc->t);
+      to_gc->thd.Join();
       completed_thread* next = to_gc->next;
       gpr_free(to_gc);
       to_gc = next;
@@ -84,18 +84,10 @@ static void start_timer_thread_and_unlock(void) {
   if (grpc_timer_check_trace.enabled()) {
     gpr_log(GPR_DEBUG, "Spawn timer thread");
   }
-  gpr_thd_options opt = gpr_thd_options_default();
-  gpr_thd_options_set_joinable(&opt);
   completed_thread* ct =
       static_cast<completed_thread*>(gpr_malloc(sizeof(*ct)));
-  // The call to gpr_thd_new() has to be under the same lock used by
-  // gc_completed_threads(), particularly due to ct->t, which is written here
-  // (internally by gpr_thd_new) and read there. Otherwise it's possible for ct
-  // to leak through g_completed_threads and be freed in gc_completed_threads()
-  // before "&ct->t" is written to, causing a use-after-free.
-  gpr_mu_lock(&g_mu);
-  gpr_thd_new(&ct->t, "grpc_global_timer", timer_thread, ct, &opt);
-  gpr_mu_unlock(&g_mu);
+  ct->thd = grpc_core::Thread("grpc_global_timer", timer_thread, ct);
+  ct->thd.Start();
 }
 
 void grpc_timer_manager_tick() {

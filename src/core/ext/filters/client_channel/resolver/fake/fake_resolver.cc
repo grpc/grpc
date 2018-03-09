@@ -17,6 +17,8 @@
 // This is similar to the sockaddr resolver, except that it supports a
 // bunch of query args that are useful for dependency injection in tests.
 
+#include <grpc/support/port_platform.h>
+
 #include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -24,7 +26,6 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"

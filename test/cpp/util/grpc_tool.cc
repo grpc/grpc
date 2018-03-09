@@ -27,13 +27,13 @@
 #include <thread>
 
 #include <gflags/gflags.h>
-#include <grpc++/channel.h>
-#include <grpc++/create_channel.h>
-#include <grpc++/grpc++.h>
-#include <grpc++/security/credentials.h>
-#include <grpc++/support/string_ref.h>
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/support/string_ref.h>
 
 #include "test/cpp/util/cli_call.h"
 #include "test/cpp/util/proto_file_parser.h"
@@ -747,6 +747,8 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
       }
     }
     Status status = call.Finish(&server_trailing_metadata);
+    PrintMetadata(server_trailing_metadata,
+                  "Received trailing metadata from server:");
     if (status.ok()) {
       fprintf(stderr, "Rpc succeeded with OK status\n");
       return true;

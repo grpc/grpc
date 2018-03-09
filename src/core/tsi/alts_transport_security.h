@@ -19,13 +19,15 @@
 #ifndef GRPC_CORE_TSI_ALTS_TRANSPORT_SECURITY_H
 #define GRPC_CORE_TSI_ALTS_TRANSPORT_SECURITY_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/grpc.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/gpr/thd.h"
+#include "src/core/lib/gprpp/thd.h"
 
 typedef struct alts_shared_resource {
-  gpr_thd_id thread_id;
+  grpc_core::Thread thread;
   grpc_channel* channel;
   grpc_completion_queue* cq;
   gpr_mu mu;

@@ -21,7 +21,7 @@
 #include <string.h>
 
 #include "src/core/lib/iomgr/load_file.h"
-#include "src/core/lib/security/transport/security_connector.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_adapter.h"
@@ -528,7 +528,7 @@ void ssl_tsi_test_do_round_trip_for_all_configs() {
     tsi_test_frame_protector_config_destroy(ssl_fixture->base.config);
     ssl_fixture->base.config = tsi_test_frame_protector_config_create(
         bit_array[0], bit_array[1], bit_array[2], bit_array[3], bit_array[4],
-        bit_array[5], bit_array[6], bit_array[7]);
+        bit_array[5], bit_array[6]);
     tsi_test_do_round_trip(&ssl_fixture->base);
     tsi_test_fixture_destroy(fixture);
   }
@@ -681,15 +681,12 @@ int main(int argc, char** argv) {
   ssl_tsi_test_do_handshake_with_server_name_indication_wild_star_domain();
   ssl_tsi_test_do_handshake_with_bad_server_cert();
   ssl_tsi_test_do_handshake_with_bad_client_cert();
-  // TODO: BoringSSL and OpenSSL have different behaviors on handling mismatched
-  // ALPN. Re-enable this test if we can detect in the runtime which SSL library
-  // is used.
-  // ssl_tsi_test_do_handshake_alpn_client_no_server();
+#ifdef OPENSSL_IS_BORINGSSL
+  // BoringSSL and OpenSSL have different behaviors on mismatched ALPN.
+  ssl_tsi_test_do_handshake_alpn_client_no_server();
+  ssl_tsi_test_do_handshake_alpn_client_server_mismatch();
+#endif
   ssl_tsi_test_do_handshake_alpn_server_no_client();
-  // TODO: BoringSSL and OpenSSL have different behaviors on handling mismatched
-  // ALPN. Re-enable this test if we can detect in the runtime which SSL library
-  // is used.
-  // ssl_tsi_test_do_handshake_alpn_client_server_mismatch();
   ssl_tsi_test_do_handshake_alpn_client_server_ok();
   ssl_tsi_test_do_round_trip_for_all_configs();
   ssl_tsi_test_do_round_trip_odd_buffer_size();

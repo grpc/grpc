@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/grpc.h>
 
 #include <string.h>
@@ -50,14 +52,14 @@ struct ChannelData {
 };
 
 static void fill_metadata(grpc_call_element* elem, grpc_metadata_batch* mdb) {
-  CallData* calld = reinterpret_cast<CallData*>(elem->call_data);
+  CallData* calld = static_cast<CallData*>(elem->call_data);
   bool expected = false;
   if (!calld->filled_metadata.compare_exchange_strong(
           expected, true, grpc_core::memory_order_relaxed,
           grpc_core::memory_order_relaxed)) {
     return;
   }
-  ChannelData* chand = reinterpret_cast<ChannelData*>(elem->channel_data);
+  ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
   char tmp[GPR_LTOA_MIN_BUFSIZE];
   gpr_ltoa(chand->error_code, tmp);
   calld->status.md = grpc_mdelem_from_slices(
@@ -76,7 +78,7 @@ static void fill_metadata(grpc_call_element* elem, grpc_metadata_batch* mdb) {
 
 static void lame_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
-  CallData* calld = reinterpret_cast<CallData*>(elem->call_data);
+  CallData* calld = static_cast<CallData*>(elem->call_data);
   if (op->recv_initial_metadata) {
     fill_metadata(elem,
                   op->payload->recv_initial_metadata.recv_initial_metadata);
@@ -117,7 +119,7 @@ static void lame_start_transport_op(grpc_channel_element* elem,
 
 static grpc_error* init_call_elem(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
-  CallData* calld = reinterpret_cast<CallData*>(elem->call_data);
+  CallData* calld = static_cast<CallData*>(elem->call_data);
   calld->call_combiner = args->call_combiner;
   return GRPC_ERROR_NONE;
 }
@@ -170,7 +172,7 @@ grpc_channel* grpc_lame_client_channel_create(const char* target,
       "error_message=%s)",
       3, (target, (int)error_code, error_message));
   GPR_ASSERT(elem->filter == &grpc_lame_filter);
-  auto chand = reinterpret_cast<grpc_core::ChannelData*>(elem->channel_data);
+  auto chand = static_cast<grpc_core::ChannelData*>(elem->channel_data);
   chand->error_code = error_code;
   chand->error_message = error_message;
 

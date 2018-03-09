@@ -21,7 +21,7 @@
 
 #include <functional>
 
-#include <grpc++/support/config.h>
+#include <grpcpp/support/config.h>
 
 #include "test/cpp/util/cli_credentials.h"
 

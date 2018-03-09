@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include <assert.h>
 #include <limits.h>
 #include <stdio.h>
@@ -48,6 +50,7 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/static_metadata.h"
+#include "src/core/lib/transport/status_metadata.h"
 #include "src/core/lib/transport/transport.h"
 
 /** The maximum number of concurrent batches possible.
@@ -974,32 +977,6 @@ static int prepare_application_metadata(grpc_call* call, int count,
   return 1;
 }
 
-/* we offset status by a small amount when storing it into transport metadata
-   as metadata cannot store a 0 value (which is used as OK for grpc_status_codes
-   */
-#define STATUS_OFFSET 1
-static void destroy_status(void* ignored) {}
-
-static uint32_t decode_status(grpc_mdelem md) {
-  uint32_t status;
-  void* user_data;
-  if (grpc_mdelem_eq(md, GRPC_MDELEM_GRPC_STATUS_0)) return 0;
-  if (grpc_mdelem_eq(md, GRPC_MDELEM_GRPC_STATUS_1)) return 1;
-  if (grpc_mdelem_eq(md, GRPC_MDELEM_GRPC_STATUS_2)) return 2;
-  user_data = grpc_mdelem_get_user_data(md, destroy_status);
-  if (user_data != nullptr) {
-    status = (static_cast<uint32_t>((intptr_t)user_data)) - STATUS_OFFSET;
-  } else {
-    if (!grpc_parse_slice_to_uint32(GRPC_MDVALUE(md), &status)) {
-      status = GRPC_STATUS_UNKNOWN; /* could not parse status code */
-    }
-    grpc_mdelem_set_user_data(
-        md, destroy_status,
-        (void*)static_cast<intptr_t>(status + STATUS_OFFSET));
-  }
-  return status;
-}
-
 static grpc_message_compression_algorithm decode_message_compression(
     grpc_mdelem md) {
   grpc_message_compression_algorithm algorithm =
@@ -1091,7 +1068,8 @@ static void recv_initial_filter(grpc_call* call, grpc_metadata_batch* b) {
 static void recv_trailing_filter(void* args, grpc_metadata_batch* b) {
   grpc_call* call = static_cast<grpc_call*>(args);
   if (b->idx.named.grpc_status != nullptr) {
-    uint32_t status_code = decode_status(b->idx.named.grpc_status->md);
+    grpc_status_code status_code =
+        grpc_get_status_code_from_metadata(b->idx.named.grpc_status->md);
     grpc_error* error =
         status_code == GRPC_STATUS_OK
             ? GRPC_ERROR_NONE

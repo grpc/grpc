@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_URI_PARSER_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_URI_PARSER_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stddef.h>
 #include "src/core/lib/iomgr/exec_ctx.h"
 

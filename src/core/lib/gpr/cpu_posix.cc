@@ -37,7 +37,7 @@ static long ncpus = 0;
 static pthread_key_t thread_id_key;
 
 static void init_ncpus() {
-  ncpus = sysconf(_SC_NPROCESSORS_ONLN);
+  ncpus = sysconf(_SC_NPROCESSORS_CONF);
   if (ncpus < 1 || ncpus > INT32_MAX) {
     gpr_log(GPR_ERROR, "Cannot determine number of CPUs: assuming 1");
     ncpus = 1;

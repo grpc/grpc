@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/slice/slice_string_helpers.h"
 
 #include <string.h>

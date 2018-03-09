@@ -22,8 +22,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/thd.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "test/core/util/test_config.h"
 
 static void test_no_op(void) {
@@ -97,21 +97,19 @@ static void test_execute_many(void) {
   gpr_log(GPR_DEBUG, "test_execute_many");
 
   grpc_combiner* lock = grpc_combiner_create();
-  gpr_thd_id thds[100];
+  grpc_core::Thread thds[100];
   thd_args ta[GPR_ARRAY_SIZE(thds)];
   for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
-    gpr_thd_options options = gpr_thd_options_default();
-    gpr_thd_options_set_joinable(&options);
     ta[i].ctr = 0;
     ta[i].lock = lock;
     gpr_event_init(&ta[i].done);
-    GPR_ASSERT(gpr_thd_new(&thds[i], "grpc_execute_many", execute_many_loop,
-                           &ta[i], &options));
+    thds[i] = grpc_core::Thread("grpc_execute_many", execute_many_loop, &ta[i]);
+    thds[i].Start();
   }
   for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
     GPR_ASSERT(gpr_event_wait(&ta[i].done,
                               gpr_inf_future(GPR_CLOCK_REALTIME)) != nullptr);
-    gpr_thd_join(thds[i]);
+    thds[i].Join();
   }
   grpc_core::ExecCtx exec_ctx;
   GRPC_COMBINER_UNREF(lock, "test_execute_many");

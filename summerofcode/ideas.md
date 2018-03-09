@@ -29,8 +29,8 @@ gRPC Python:
 
 1. Support static type-checking of both gRPC Python itself and of code that uses gRPC Python. No one likes dynamic typing and Python is finally outgrowing it! There are probably errors in the implementation of gRPC Python that [pytype](https://github.com/google/pytype) or [mypy](http://mypy-lang.org/) could detect. There are certainly errors in other code that uses gRPC Python that they could detect.
     * **Required skills:** Python programming language, open source development across multiple repositories and projects.
-    * **Likely mentors:** [Nathaniel Manista](https://github.com/nathanielmanistaatgoogle), [Kailash Sethuraman](https://github.com/hsaliak), [Ken Payson](https://github.com/kpayson64), [Mehrdad Afshari](https://github.com/mehrdada).
+    * **Likely mentors:** [Nathaniel Manista](https://github.com/nathanielmanistaatgoogle), [Kailash Sethuraman](https://github.com/hsaliak).
 
 1. [Enable building of gRPC Python with Bazel](https://github.com/grpc/grpc/issues/8079). Bazel is the designated replacement for our constellation of crufty build scripts, but it's still under active development itself. Up for a challenge? gRPC Python could easily be the most complex codebase to be built with Bazel.
     * **Required skills:** Python programming language, Bazel toolchain, Cython, open source development across multiple repositories and projects.
-    * **Likely mentors:** [Nathaniel Manista](https://github.com/nathanielmanistaatgoogle), [Ken Payson](https://github.com/kpayson64), [Mehrdad Afshari](https://github.com/mehrdada).
+    * **Likely mentors:** [Nathaniel Manista](https://github.com/nathanielmanistaatgoogle).

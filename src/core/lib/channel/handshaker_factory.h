@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_CHANNEL_HANDSHAKER_FACTORY_H
 #define GRPC_CORE_LIB_CHANNEL_HANDSHAKER_FACTORY_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/channel/handshaker.h"

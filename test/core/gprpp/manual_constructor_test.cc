@@ -26,7 +26,6 @@
 #include <stdlib.h>
 #include <cstring>
 
-#include "src/core/lib/gpr/thd.h"
 #include "src/core/lib/gprpp/abstract.h"
 #include "test/core/util/test_config.h"
 

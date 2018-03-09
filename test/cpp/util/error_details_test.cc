@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc++/support/error_details.h>
+#include <grpcpp/support/error_details.h>
 #include <gtest/gtest.h>
 
 #include "src/proto/grpc/status/status.pb.h"

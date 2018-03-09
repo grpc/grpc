@@ -22,8 +22,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/thd.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "test/core/util/test_config.h"
 
@@ -78,16 +78,14 @@ static void test_too_many_plucks(void) {
   grpc_completion_queue* cc;
   void* tags[GRPC_MAX_COMPLETION_QUEUE_PLUCKERS];
   grpc_cq_completion completions[GPR_ARRAY_SIZE(tags)];
-  gpr_thd_id thread_ids[GPR_ARRAY_SIZE(tags)];
+  grpc_core::Thread threads[GPR_ARRAY_SIZE(tags)];
   struct thread_state thread_states[GPR_ARRAY_SIZE(tags)];
-  gpr_thd_options thread_options = gpr_thd_options_default();
   grpc_core::ExecCtx exec_ctx;
   unsigned i, j;
 
   LOG_TEST("test_too_many_plucks");
 
   cc = grpc_completion_queue_create_for_pluck(nullptr);
-  gpr_thd_options_set_joinable(&thread_options);
 
   for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
     tags[i] = create_test_tag();
@@ -96,8 +94,9 @@ static void test_too_many_plucks(void) {
     }
     thread_states[i].cc = cc;
     thread_states[i].tag = tags[i];
-    gpr_thd_new(thread_ids + i, "grpc_pluck_test", pluck_one, thread_states + i,
-                &thread_options);
+    threads[i] =
+        grpc_core::Thread("grpc_pluck_test", pluck_one, thread_states + i);
+    threads[i].Start();
   }
 
   /* wait until all other threads are plucking */
@@ -113,8 +112,8 @@ static void test_too_many_plucks(void) {
                    nullptr, &completions[i]);
   }
 
-  for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
-    gpr_thd_join(thread_ids[i]);
+  for (auto& th : threads) {
+    th.Join();
   }
 
   shutdown_and_destroy(cc);
@@ -220,8 +219,9 @@ static void test_threading(size_t producers, size_t consumers) {
           "test_threading", producers, consumers);
 
   /* start all threads: they will wait for phase1 */
+  grpc_core::Thread* threads = static_cast<grpc_core::Thread*>(
+      gpr_malloc(sizeof(*threads) * (producers + consumers)));
   for (i = 0; i < producers + consumers; i++) {
-    gpr_thd_id id;
     gpr_event_init(&options[i].on_started);
     gpr_event_init(&options[i].on_phase1_done);
     gpr_event_init(&options[i].on_finished);
@@ -230,10 +230,13 @@ static void test_threading(size_t producers, size_t consumers) {
     options[i].events_triggered = 0;
     options[i].cc = cc;
     options[i].id = optid++;
-    GPR_ASSERT(gpr_thd_new(&id,
-                           i < producers ? "grpc_producer" : "grpc_consumer",
-                           i < producers ? producer_thread : consumer_thread,
-                           options + i, nullptr));
+
+    bool ok;
+    threads[i] = grpc_core::Thread(
+        i < producers ? "grpc_producer" : "grpc_consumer",
+        i < producers ? producer_thread : consumer_thread, options + i, &ok);
+    GPR_ASSERT(ok);
+    threads[i].Start();
     gpr_event_wait(&options[i].on_started, ten_seconds_time());
   }
 
@@ -265,6 +268,11 @@ static void test_threading(size_t producers, size_t consumers) {
 
   /* destroy the completion channel */
   grpc_completion_queue_destroy(cc);
+
+  for (i = 0; i < producers + consumers; i++) {
+    threads[i].Join();
+  }
+  gpr_free(threads);
 
   /* verify that everything was produced and consumed */
   for (i = 0; i < producers + consumers; i++) {

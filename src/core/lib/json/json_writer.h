@@ -31,6 +31,8 @@
 #ifndef GRPC_CORE_LIB_JSON_JSON_WRITER_H
 #define GRPC_CORE_LIB_JSON_JSON_WRITER_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stdlib.h>
 
 #include "src/core/lib/json/json_common.h"

@@ -47,6 +47,8 @@
 #ifndef GRPC_CORE_LIB_IOMGR_WAKEUP_FD_POSIX_H
 #define GRPC_CORE_LIB_IOMGR_WAKEUP_FD_POSIX_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/error.h"
 
 void grpc_wakeup_fd_global_init(void);

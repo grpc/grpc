@@ -17,9 +17,9 @@
  */
 
 #import "ViewController.h"
-#import <grpc++/grpc++.h>
-#include <grpc++/generic/generic_stub.h>
-#include <grpc++/generic/async_generic_service.h>
+#import <grpcpp/grpcpp.h>
+#include <grpcpp/generic/generic_stub.h>
+#include <grpcpp/generic/async_generic_service.h>
 
 static void* tag(int i) { return (void*)(intptr_t)i; }
 
