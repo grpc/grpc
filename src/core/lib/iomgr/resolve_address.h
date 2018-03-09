@@ -19,9 +19,16 @@
 #ifndef GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H
 #define GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stddef.h>
+
+#ifdef GPR_WINDOWS
+#include <winsock2.h>
+#else
 #include <sys/socket.h>
-#include "src/core/lib/iomgr/exec_ctx.h"
+#endif
+
 #include "src/core/lib/iomgr/pollset_set.h"
 
 #define GRPC_MAX_SOCKADDR_SIZE 128
