@@ -20,12 +20,19 @@
 #define GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
+#include "src/core/lib/iomgr/port.h"
+
+#ifdef GRPC_UV
+#include <uv.h>
+#endif
+
 #ifdef GPR_WINDOWS
-#include <winsock2.h>
-#else
+#include <WS2tcpip.h>
+#endif
+
+#ifdef GRPC_POSIX_SOCKETADDR
 #include <sys/socket.h>
 #endif
 
