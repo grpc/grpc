@@ -31,7 +31,8 @@ def create_docker_jobspec(name,
                           timeout_retries=0,
                           timeout_seconds=30 * 60,
                           docker_base_image=None,
-                          extra_docker_args=None):
+                          extra_docker_args=None,
+                          verbose_success=False):
     """Creates jobspec for a task running under docker."""
     environ = environ.copy()
     environ['RUN_COMMAND'] = shell_command
@@ -57,7 +58,8 @@ def create_docker_jobspec(name,
         shortname='build_artifact.%s' % (name),
         timeout_seconds=timeout_seconds,
         flake_retries=flake_retries,
-        timeout_retries=timeout_retries)
+        timeout_retries=timeout_retries,
+        verbose_success=verbose_success)
     return jobspec
 
 
@@ -69,7 +71,8 @@ def create_jobspec(name,
                    timeout_retries=0,
                    timeout_seconds=30 * 60,
                    use_workspace=False,
-                   cpu_cost=1.0):
+                   cpu_cost=1.0,
+                   verbose_success=False):
     """Creates jobspec."""
     environ = environ.copy()
     if use_workspace:
@@ -88,7 +91,8 @@ def create_jobspec(name,
         flake_retries=flake_retries,
         timeout_retries=timeout_retries,
         shell=shell,
-        cpu_cost=cpu_cost)
+        cpu_cost=cpu_cost,
+        verbose_success=verbose_success)
     return jobspec
 
 
