@@ -64,6 +64,12 @@ bool CheckIsLocalhost(const grpc::string& addr) {
          addr.substr(0, kIpv6.size()) == kIpv6;
 }
 
+bool CheckIsLocalhost(const grpc::PeerInfo& info) {
+  return (info.protocol_ == "ipv4" && info.ip_ == "127.0.0.1") ||
+         (info.protocol_ == "ipv6" &&
+          (info.ip_ == "[::1]" || info.ip_ == "[::ffff:127.0.0.1]"));
+}
+
 const char kTestCredsPluginErrorMsg[] = "Could not find plugin metadata.";
 
 class TestMetadataCredentialsPlugin : public MetadataCredentialsPlugin {

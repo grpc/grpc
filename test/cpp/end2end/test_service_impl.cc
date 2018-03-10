@@ -160,7 +160,7 @@ Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
         grpc::string(request->param().response_message_length(), '\0'));
   }
   if (request->has_param() && request->param().echo_peer()) {
-    response->mutable_param()->set_peer(context->peer());
+    response->mutable_param()->set_peer(context->peer().to_string());
   }
   return Status::OK;
 }
