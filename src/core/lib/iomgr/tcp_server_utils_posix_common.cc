@@ -183,7 +183,7 @@ grpc_error* grpc_tcp_server_prepare_socket(int fd,
     goto error;
   }
 
-  sockname_temp.len = sizeof(struct sockaddr_storage);
+  sockname_temp.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
 
   if (getsockname(fd, reinterpret_cast<struct sockaddr*>(sockname_temp.addr),
                   reinterpret_cast<socklen_t*>(&sockname_temp.len)) < 0) {

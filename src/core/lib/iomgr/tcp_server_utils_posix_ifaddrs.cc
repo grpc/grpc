@@ -119,9 +119,9 @@ grpc_error* grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
     if (ifa_it->ifa_addr == nullptr) {
       continue;
     } else if (ifa_it->ifa_addr->sa_family == AF_INET) {
-      addr.len = sizeof(struct sockaddr_in);
+      addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
     } else if (ifa_it->ifa_addr->sa_family == AF_INET6) {
-      addr.len = sizeof(struct sockaddr_in6);
+      addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_in6));
     } else {
       continue;
     }

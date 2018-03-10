@@ -30,7 +30,7 @@
 #endif
 
 #ifdef GPR_WINDOWS
-#include <WS2tcpip.h>
+#include <ws2tcpip.h>
 #endif
 
 #ifdef GRPC_POSIX_SOCKETADDR

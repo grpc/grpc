@@ -49,7 +49,7 @@ bool grpc_parse_unix(const grpc_uri* uri,
   if (path_len == maxlen) return false;
   un->sun_family = AF_UNIX;
   strcpy(un->sun_path, uri->path);
-  resolved_addr->len = sizeof(*un);
+  resolved_addr->len = static_cast<socklen_t>(sizeof(*un));
   return true;
 }
 
@@ -71,7 +71,7 @@ bool grpc_parse_ipv4_hostport(const char* hostport, grpc_resolved_address* addr,
   if (!gpr_split_host_port(hostport, &host, &port)) return false;
   // Parse IP address.
   memset(addr, 0, sizeof(*addr));
-  addr->len = sizeof(struct sockaddr_in);
+  addr->len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
   struct sockaddr_in* in = reinterpret_cast<struct sockaddr_in*>(addr->addr);
   in->sin_family = AF_INET;
   if (inet_pton(AF_INET, host, &in->sin_addr) == 0) {
@@ -117,7 +117,7 @@ bool grpc_parse_ipv6_hostport(const char* hostport, grpc_resolved_address* addr,
   if (!gpr_split_host_port(hostport, &host, &port)) return false;
   // Parse IP address.
   memset(addr, 0, sizeof(*addr));
-  addr->len = sizeof(struct sockaddr_in6);
+  addr->len = static_cast<socklen_t>(sizeof(struct sockaddr_in6));
   struct sockaddr_in6* in6 = reinterpret_cast<struct sockaddr_in6*>(addr->addr);
   in6->sin6_family = AF_INET6;
   // Handle the RFC6874 syntax for IPv6 zone identifiers.
