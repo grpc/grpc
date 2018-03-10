@@ -19,10 +19,10 @@
 #include <thread>
 
 #include <gflags/gflags.h>
-#include <grpc++/channel.h>
-#include <grpc++/client_context.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
 
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/proto/grpc/testing/messages.pb.h"

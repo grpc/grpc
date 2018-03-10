@@ -23,11 +23,11 @@
 #include <string.h>
 #include <sstream>
 
-#include <grpc++/channel.h>
-#include <grpc++/support/channel_arguments.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/support/channel_arguments.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/deadline/deadline_filter.h"

@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc++/support/slice.h>
+#include <grpcpp/support/slice.h>
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>

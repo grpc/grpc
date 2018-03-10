@@ -26,13 +26,13 @@
 #include <thread>
 #include <vector>
 
-#include <grpc++/alarm.h>
-#include <grpc++/channel.h>
-#include <grpc++/client_context.h>
-#include <grpc++/generic/generic_stub.h>
 #include <grpc/grpc.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
+#include <grpcpp/alarm.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/generic/generic_stub.h>
 
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"

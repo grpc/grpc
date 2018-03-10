@@ -21,8 +21,8 @@
 #include <memory>
 #include <mutex>
 
-#include <grpc++/server_context.h>
 #include <grpc/grpc.h>
+#include <grpcpp/server_context.h>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 

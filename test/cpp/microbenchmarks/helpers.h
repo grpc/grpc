@@ -27,7 +27,7 @@
 #include "test/core/util/memory_counters.h"
 
 #include <benchmark/benchmark.h>
-#include <grpc++/impl/grpc_library.h>
+#include <grpcpp/impl/grpc_library.h>
 
 class Library {
  public:

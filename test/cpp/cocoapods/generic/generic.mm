@@ -20,15 +20,15 @@
 
 #include <sstream>
 
-#include <grpc++/channel.h>
-#include <grpc++/client_context.h>
-#include <grpc++/create_channel.h>
-#include <grpc++/generic/async_generic_service.h>
-#include <grpc++/generic/generic_stub.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
-#include <grpc++/server_context.h>
-#include <grpc++/support/slice.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/generic/async_generic_service.h>
+#include <grpcpp/generic/generic_stub.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/server_context.h>
+#include <grpcpp/support/slice.h>
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
 
