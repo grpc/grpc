@@ -87,24 +87,28 @@ TEST_F(ExceptionTest, Unary) {
   EchoRequest request;
   EchoResponse response;
   request.set_message("test");
-  ClientContext context;
 
-  Status s = stub_->Echo(&context, request, &response);
-  EXPECT_FALSE(s.ok());
-  EXPECT_EQ(s.error_code(), StatusCode::UNKNOWN);
+  for (int i = 0; i < 10; i++) {
+    ClientContext context;
+    Status s = stub_->Echo(&context, request, &response);
+    EXPECT_FALSE(s.ok());
+    EXPECT_EQ(s.error_code(), StatusCode::UNKNOWN);
+  }
 }
 
 TEST_F(ExceptionTest, RequestStream) {
   ResetStub();
   EchoResponse response;
-  ClientContext context;
 
-  auto stream = stub_->RequestStream(&context, &response);
-  stream->WritesDone();
-  Status s = stream->Finish();
+  for (int i = 0; i < 10; i++) {
+    ClientContext context;
+    auto stream = stub_->RequestStream(&context, &response);
+    stream->WritesDone();
+    Status s = stream->Finish();
 
-  EXPECT_FALSE(s.ok());
-  EXPECT_EQ(s.error_code(), StatusCode::UNKNOWN);
+    EXPECT_FALSE(s.ok());
+    EXPECT_EQ(s.error_code(), StatusCode::UNKNOWN);
+  }
 }
 
 #endif  // GRPC_ALLOW_EXCEPTIONS
