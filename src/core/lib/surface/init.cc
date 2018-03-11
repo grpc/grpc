@@ -27,6 +27,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/client_authority_filter.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/debug/stats.h"
@@ -83,6 +84,13 @@ static bool prepend_filter(grpc_channel_stack_builder* builder, void* arg) {
 }
 
 static void register_builtin_channel_init() {
+  grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL, INT_MAX,
+                                   prepend_filter,
+                                   (void*)(&grpc_client_authority_filter));
+  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX,
+                                   prepend_filter,
+                                   (void*)(&grpc_client_authority_filter));
+
   grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL,
                                    GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
                                    grpc_add_connected_filter, nullptr);

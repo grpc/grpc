@@ -39,6 +39,8 @@ static bool append_filter(grpc_channel_stack_builder* builder, void* arg) {
       builder, static_cast<const grpc_channel_filter*>(arg), nullptr, nullptr);
 }
 
+// Only used for direct channels, as they don't create subchannels, which is
+// where default authority is handled for regular channels.
 static bool set_default_host_if_unset(grpc_channel_stack_builder* builder,
                                       void* unused) {
   const grpc_channel_args* args =
@@ -69,7 +71,7 @@ void grpc_client_channel_init(void) {
   grpc_proxy_mapper_registry_init();
   grpc_register_http_proxy_mapper();
   grpc_subchannel_index_init();
-  grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MIN,
+  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MIN,
                                    set_default_host_if_unset, nullptr);
   grpc_channel_init_register_stage(
       GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY, append_filter,

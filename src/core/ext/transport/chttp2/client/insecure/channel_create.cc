@@ -38,11 +38,41 @@ static void client_channel_factory_ref(
 static void client_channel_factory_unref(
     grpc_client_channel_factory* cc_factory) {}
 
+static grpc_channel_args* add_default_authority_if_not_present(
+    const grpc_channel_args* args) {
+  const bool has_default_authority =
+      grpc_channel_args_find(args, GRPC_ARG_DEFAULT_AUTHORITY) != nullptr;
+  grpc_arg new_args[1];
+  size_t num_new_args = 0;
+  grpc_core::UniquePtr<char> default_authority;
+  if (!has_default_authority) {
+    const grpc_arg* server_uri_arg =
+        grpc_channel_args_find(args, GRPC_ARG_SERVER_URI);
+    const char* server_uri_str = grpc_channel_arg_get_string(server_uri_arg);
+    GPR_ASSERT(server_uri_str != nullptr);
+    default_authority =
+        grpc_core::ResolverRegistry::GetDefaultAuthority(server_uri_str);
+    GPR_ASSERT(default_authority != nullptr);
+    new_args[num_new_args++] = grpc_channel_arg_string_create(
+        const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), default_authority.get());
+  }
+  return grpc_channel_args_copy_and_add(args, new_args, num_new_args);
+}
+
 static grpc_subchannel* client_channel_factory_create_subchannel(
     grpc_client_channel_factory* cc_factory, const grpc_subchannel_args* args) {
+  grpc_subchannel_args* final_sc_args =
+      static_cast<grpc_subchannel_args*>(gpr_malloc(sizeof(*final_sc_args)));
+  memcpy(final_sc_args, args, sizeof(*args));
+  final_sc_args->args = add_default_authority_if_not_present(args->args);
+
   grpc_connector* connector = grpc_chttp2_connector_create();
-  grpc_subchannel* s = grpc_subchannel_create(connector, args);
+  grpc_subchannel* s = grpc_subchannel_create(connector, final_sc_args);
   grpc_connector_unref(connector);
+
+  grpc_channel_args_destroy(
+      const_cast<grpc_channel_args*>(final_sc_args->args));
+  gpr_free(final_sc_args);
   return s;
 }
 
@@ -56,8 +86,8 @@ static grpc_channel* client_channel_factory_create_channel(
   // Add channel arg containing the server URI.
   grpc_core::UniquePtr<char> canonical_target =
       grpc_core::ResolverRegistry::AddDefaultPrefixIfNeeded(target);
-  grpc_arg arg = grpc_channel_arg_string_create((char*)GRPC_ARG_SERVER_URI,
-                                                canonical_target.get());
+  grpc_arg arg = grpc_channel_arg_string_create(
+      const_cast<char*>(GRPC_ARG_SERVER_URI), canonical_target.get());
   const char* to_remove[] = {GRPC_ARG_SERVER_URI};
   grpc_channel_args* new_args =
       grpc_channel_args_copy_and_add_and_remove(args, to_remove, 1, &arg, 1);

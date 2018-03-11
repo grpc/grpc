@@ -191,7 +191,9 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-  GPR_ASSERT(grpc_slice_buf_start_eq(call_details.host, "localhost", 9));
+  char* target = grpc_channel_get_target(f.client);
+  GPR_ASSERT(grpc_slice_buf_start_eq(call_details.host, target, 9));
+  gpr_free(target);
   GPR_ASSERT(was_cancelled == 1);
 
   grpc_slice_unref(details);
@@ -216,10 +218,9 @@ static void test_invoke_simple_request(grpc_end2end_test_config config) {
 }
 
 void default_host(grpc_end2end_test_config config) {
-  if ((config.feature_mask & FEATURE_MASK_SUPPORTS_HOSTNAME_VERIFICATION) == 0)
+  if ((config.feature_mask & FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS) != 0) {
     return;
-  if ((config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION) == 0)
-    return;
+  }
   test_invoke_simple_request(config);
 }
 
