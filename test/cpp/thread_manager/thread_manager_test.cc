@@ -16,6 +16,7 @@
  *is % allowed in string
  */
 
+#include <inttypes.h>
 #include <ctime>
 #include <memory>
 #include <string>
