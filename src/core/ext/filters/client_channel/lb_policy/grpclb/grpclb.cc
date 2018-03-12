@@ -983,6 +983,10 @@ grpc_channel_args* BuildBalancerChannelArgs(
       // authority table (see \a grpc_lb_policy_grpclb_modify_lb_channel_args),
       // as opposed to the authority from the parent channel.
       GRPC_ARG_DEFAULT_AUTHORITY,
+      // Just as for \a GRPC_ARG_DEFAULT_AUTHORITY, the LB channel should be
+      // treated as a stand-alone channel and not inherit this argument from the
+      // args of the parent channel.
+      GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
   };
   // Channel args to add.
   const grpc_arg args_to_add[] = {

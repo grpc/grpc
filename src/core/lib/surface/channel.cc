@@ -155,6 +155,12 @@ static grpc_core::UniquePtr<char> get_default_authority(
   if (!has_default_authority && ssl_override != nullptr) {
     default_authority.reset(gpr_strdup(ssl_override));
   }
+  if (channel_stack_type == GRPC_CLIENT_DIRECT_CHANNEL &&
+      default_authority == nullptr) {
+    // Set the default authority. This is handled by the subchannel stack for
+    // regular client channels.
+    default_authority.reset(gpr_strdup(target));
+  }
   return default_authority;
 }
 
