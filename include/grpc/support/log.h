@@ -21,13 +21,6 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
-/* On Apple platforms, including inttypes.h in a public header prevents gRPC
- * core to be built as framework. We rule out this inclusion on Apple platforms.
- */
-#if !defined(__APPLE__)
-#include <inttypes.h>
-#endif
-
 #include <stdarg.h>
 #include <stdlib.h> /* for abort() */
 
