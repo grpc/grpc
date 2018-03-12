@@ -50,12 +50,6 @@ void CompletionQueue::CompleteAvalanching() {
   }
 }
 
-bool CompletionQueue::Next(void** tag, bool* ok) {
-  return (AsyncNextInternal(tag, ok,
-                            g_core_codegen_interface->gpr_inf_future(
-                                GPR_CLOCK_REALTIME)) != SHUTDOWN);
-}
-
 CompletionQueue::NextStatus CompletionQueue::AsyncNextInternal(
     void** tag, bool* ok, gpr_timespec deadline) {
   for (;;) {
