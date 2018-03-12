@@ -32,3 +32,4 @@ cd /var/local/git/grpc-node
 npm install -g gulp
 npm install
 gulp js.core.install
+gulp protobuf.install
