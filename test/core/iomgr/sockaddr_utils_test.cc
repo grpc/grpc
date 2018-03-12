@@ -40,7 +40,7 @@ static grpc_resolved_address make_addr4(const uint8_t* data, size_t data_len) {
   GPR_ASSERT(data_len == sizeof(addr4->sin_addr.s_addr));
   memcpy(&addr4->sin_addr.s_addr, data, data_len);
   addr4->sin_port = htons(12345);
-  resolved_addr4.len = sizeof(struct sockaddr_in);
+  resolved_addr4.len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
   return resolved_addr4;
 }
 
@@ -53,7 +53,7 @@ static grpc_resolved_address make_addr6(const uint8_t* data, size_t data_len) {
   GPR_ASSERT(data_len == sizeof(addr6->sin6_addr.s6_addr));
   memcpy(&addr6->sin6_addr.s6_addr, data, data_len);
   addr6->sin6_port = htons(12345);
-  resolved_addr6.len = sizeof(struct sockaddr_in6);
+  resolved_addr6.len = static_cast<socklen_t>(sizeof(struct sockaddr_in6));
   return resolved_addr6;
 }
 

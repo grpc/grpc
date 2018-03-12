@@ -188,7 +188,7 @@ static void test_no_op_with_port(void) {
   LOG_TEST("test_no_op_with_port");
 
   memset(&resolved_addr, 0, sizeof(resolved_addr));
-  resolved_addr.len = sizeof(struct sockaddr_in);
+  resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
   addr->sin_family = AF_INET;
   int port = -1;
   GPR_ASSERT(grpc_tcp_server_add_port(s, &resolved_addr, &port) ==
@@ -209,7 +209,7 @@ static void test_no_op_with_port_and_start(void) {
   int port = -1;
 
   memset(&resolved_addr, 0, sizeof(resolved_addr));
-  resolved_addr.len = sizeof(struct sockaddr_in);
+  resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
   addr->sin_family = AF_INET;
   GPR_ASSERT(grpc_tcp_server_add_port(s, &resolved_addr, &port) ==
                  GRPC_ERROR_NONE &&
@@ -314,8 +314,8 @@ static void test_connect(size_t num_connects,
           dst_addrs != nullptr ? "<specific>" : "::", test_dst_addrs);
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   memset(&resolved_addr1, 0, sizeof(resolved_addr1));
-  resolved_addr.len = sizeof(struct sockaddr_storage);
-  resolved_addr1.len = sizeof(struct sockaddr_storage);
+  resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
+  resolved_addr1.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
   addr->ss_family = addr1->ss_family = AF_INET;
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "grpc_tcp_server_add_port",
@@ -387,7 +387,7 @@ static void test_connect(size_t num_connects,
         size_t connect_num;
         test_addr dst;
         GPR_ASSERT(fd >= 0);
-        dst.addr.len = sizeof(dst.addr.addr);
+        dst.addr.len = static_cast<socklen_t>(sizeof(dst.addr.addr));
         GPR_ASSERT(getsockname(fd, (struct sockaddr*)dst.addr.addr,
                                (socklen_t*)&dst.addr.len) == 0);
         GPR_ASSERT(dst.addr.len <= sizeof(dst.addr.addr));
@@ -460,10 +460,10 @@ int main(int argc, char** argv) {
         continue;
       } else if (ifa_it->ifa_addr->sa_family == AF_INET) {
         dst_addrs->addrs[dst_addrs->naddrs].addr.len =
-            sizeof(struct sockaddr_in);
+            static_cast<socklen_t>(sizeof(struct sockaddr_in));
       } else if (ifa_it->ifa_addr->sa_family == AF_INET6) {
         dst_addrs->addrs[dst_addrs->naddrs].addr.len =
-            sizeof(struct sockaddr_in6);
+            static_cast<socklen_t>(sizeof(struct sockaddr_in6));
       } else {
         continue;
       }

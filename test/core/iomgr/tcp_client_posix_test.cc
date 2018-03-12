@@ -89,7 +89,7 @@ void test_succeeds(void) {
   gpr_log(GPR_DEBUG, "test_succeeds");
 
   memset(&resolved_addr, 0, sizeof(resolved_addr));
-  resolved_addr.len = sizeof(struct sockaddr_in);
+  resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
   addr->sin_family = AF_INET;
 
   /* create a dummy server */
@@ -112,7 +112,7 @@ void test_succeeds(void) {
 
   /* await the connection */
   do {
-    resolved_addr.len = sizeof(addr);
+    resolved_addr.len = static_cast<socklen_t>(sizeof(addr));
     r = accept(svr_fd, reinterpret_cast<struct sockaddr*>(addr),
                reinterpret_cast<socklen_t*>(&resolved_addr.len));
   } while (r == -1 && errno == EINTR);
@@ -147,7 +147,7 @@ void test_fails(void) {
   gpr_log(GPR_DEBUG, "test_fails");
 
   memset(&resolved_addr, 0, sizeof(resolved_addr));
-  resolved_addr.len = sizeof(struct sockaddr_in);
+  resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
   addr->sin_family = AF_INET;
 
   gpr_mu_lock(g_mu);
