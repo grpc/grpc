@@ -406,9 +406,11 @@ class NodePureJSLanguage:
         return {}
 
     def unimplemented_test_cases(self):
-        return (_SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING + _AUTH_TEST_CASES +
-                ['cancel_after_begin', 'cancel_after_first_response',
-                 'timeout_on_sleeping_server'])
+        return (
+            _SKIP_COMPRESSION + _SKIP_DATA_FRAME_PADDING + _AUTH_TEST_CASES + [
+                'cancel_after_begin', 'cancel_after_first_response',
+                'timeout_on_sleeping_server'
+            ])
 
     def unimplemented_test_cases_server(self):
         return []
