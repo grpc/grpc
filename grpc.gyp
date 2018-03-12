@@ -2500,7 +2500,6 @@
       'sources': [
         'test/core/end2end/end2end_tests.cc',
         'test/core/end2end/end2end_test_utils.cc',
-        'test/core/end2end/tests/authority_not_supported.cc',
         'test/core/end2end/tests/bad_hostname.cc',
         'test/core/end2end/tests/bad_ping.cc',
         'test/core/end2end/tests/binary_metadata.cc',
@@ -2589,7 +2588,6 @@
       'sources': [
         'test/core/end2end/end2end_nosec_tests.cc',
         'test/core/end2end/end2end_test_utils.cc',
-        'test/core/end2end/tests/authority_not_supported.cc',
         'test/core/end2end/tests/bad_hostname.cc',
         'test/core/end2end/tests/bad_ping.cc',
         'test/core/end2end/tests/binary_metadata.cc',

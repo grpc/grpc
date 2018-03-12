@@ -742,7 +742,9 @@ static void convert_metadata_to_cronet_headers(
     }
     if (grpc_slice_eq(GRPC_MDKEY(mdelem), GRPC_MDSTR_SCHEME) ||
         grpc_slice_eq(GRPC_MDKEY(mdelem), GRPC_MDSTR_AUTHORITY)) {
-      /* Cronet populates these fields on its own */
+      /* Cronet populates these fields on its own. Providing :authority header
+       * is illegal. */
+      GPR_ASSERT(false);
       gpr_free(key);
       gpr_free(value);
       continue;
@@ -786,16 +788,6 @@ static void parse_grpc_header(const uint8_t* data, int* length,
   *length |= (*p++) << 16;
   *length |= (*p++) << 8;
   *length |= (*p++);
-}
-
-static bool header_has_authority(grpc_linked_mdelem* head) {
-  while (head != nullptr) {
-    if (grpc_slice_eq(GRPC_MDKEY(head->md), GRPC_MDSTR_AUTHORITY)) {
-      return true;
-    }
-    head = head->next;
-  }
-  return false;
 }
 
 /*
@@ -1384,23 +1376,6 @@ static void set_pollset_set_do_nothing(grpc_transport* gt, grpc_stream* gs,
 static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
                               grpc_transport_stream_op_batch* op) {
   CRONET_LOG(GPR_DEBUG, "perform_stream_op");
-  if (op->send_initial_metadata &&
-      header_has_authority(op->payload->send_initial_metadata
-                               .send_initial_metadata->list.head)) {
-    /* Cronet does not support :authority header field. We cancel the call when
-     this field is present in metadata */
-    if (op->recv_initial_metadata) {
-      GRPC_CLOSURE_SCHED(
-          op->payload->recv_initial_metadata.recv_initial_metadata_ready,
-          GRPC_ERROR_CANCELLED);
-    }
-    if (op->recv_message) {
-      GRPC_CLOSURE_SCHED(op->payload->recv_message.recv_message_ready,
-                         GRPC_ERROR_CANCELLED);
-    }
-    GRPC_CLOSURE_SCHED(op->on_complete, GRPC_ERROR_CANCELLED);
-    return;
-  }
   stream_obj* s = reinterpret_cast<stream_obj*>(gs);
   add_to_storage(s, op);
   execute_from_storage(s);
