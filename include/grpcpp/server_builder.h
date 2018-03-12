@@ -226,20 +226,23 @@ class ServerBuilder {
     Service* service;
   };
 
+  /// Experimental, to be deprecated
   std::vector<Port> ports() { return ports_; }
 
-  std::vector<std::reference_wrapper<NamedService>> services() {
-    std::vector<std::reference_wrapper<NamedService>> service_refs;
+  /// Experimental, to be deprecated
+  std::vector<NamedService*> services() {
+    std::vector<NamedService*> service_refs;
     for (auto& ptr : services_) {
-      service_refs.push_back(std::ref(*ptr));
+      service_refs.push_back(ptr.get());
     }
     return service_refs;
   }
 
-  std::vector<std::reference_wrapper<ServerBuilderOption>> options() {
-    std::vector<std::reference_wrapper<ServerBuilderOption>> option_refs;
+  /// Experimental, to be deprecated
+  std::vector<ServerBuilderOption*> options() {
+    std::vector<ServerBuilderOption*> option_refs;
     for (auto& ptr : options_) {
-      option_refs.push_back(std::ref(*ptr));
+      option_refs.push_back(ptr.get());
     }
     return option_refs;
   }
