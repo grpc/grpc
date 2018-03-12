@@ -47,22 +47,22 @@ class Snapshot {
 
 TEST(StatsTest, IncCounters) {
   for (int i = 0; i < GRPC_STATS_COUNTER_COUNT; i++) {
-    Snapshot snapshot;
+    std::unique_ptr<Snapshot> snapshot(new Snapshot);
 
     grpc_core::ExecCtx exec_ctx;
     GRPC_STATS_INC_COUNTER((grpc_stats_counters)i);
 
-    EXPECT_EQ(snapshot.delta().counters[i], 1);
+    EXPECT_EQ(snapshot->delta().counters[i], 1);
   }
 }
 
 TEST(StatsTest, IncSpecificCounter) {
-  Snapshot snapshot;
+  std::unique_ptr<Snapshot> snapshot(new Snapshot);
 
   grpc_core::ExecCtx exec_ctx;
   GRPC_STATS_INC_SYSCALL_POLL();
 
-  EXPECT_EQ(snapshot.delta().counters[GRPC_STATS_COUNTER_SYSCALL_POLL], 1);
+  EXPECT_EQ(snapshot->delta().counters[GRPC_STATS_COUNTER_SYSCALL_POLL], 1);
 }
 
 static int FindExpectedBucket(int i, int j) {
@@ -90,12 +90,12 @@ TEST_P(HistogramTest, IncHistogram) {
     gpr_log(GPR_DEBUG, "expected_bucket:%d nvalues=%" PRIdPTR, expected_bucket,
             test_values.size());
     for (auto j : test_values) {
-      Snapshot snapshot;
+      std::unique_ptr<Snapshot> snapshot(new Snapshot);
 
       grpc_core::ExecCtx exec_ctx;
       grpc_stats_inc_histogram[kHistogram](j);
 
-      auto delta = snapshot.delta();
+      auto delta = snapshot->delta();
 
       EXPECT_EQ(
           delta

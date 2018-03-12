@@ -77,7 +77,7 @@ CC_opt = $(DEFAULT_CC)
 CXX_opt = $(DEFAULT_CXX)
 LD_opt = $(DEFAULT_CC)
 LDXX_opt = $(DEFAULT_CXX)
-CPPFLAGS_opt = -O2
+CPPFLAGS_opt = -O2 -Wframe-larger-than=16384
 DEFINES_opt = NDEBUG
 
 VALID_CONFIG_asan-trace-cmp = 1
@@ -148,7 +148,7 @@ CXX_noexcept = $(DEFAULT_CXX)
 LD_noexcept = $(DEFAULT_CC)
 LDXX_noexcept = $(DEFAULT_CXX)
 CXXFLAGS_noexcept = -fno-exceptions
-CPPFLAGS_noexcept = -O2
+CPPFLAGS_noexcept = -O2 -Wframe-larger-than=16384
 DEFINES_noexcept = NDEBUG
 
 VALID_CONFIG_ubsan = 1
