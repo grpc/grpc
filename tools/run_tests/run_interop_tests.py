@@ -384,6 +384,7 @@ class NodeLanguage:
     def __str__(self):
         return 'node'
 
+
 class NodePureJSLanguage:
 
     def __init__(self):
@@ -411,7 +412,8 @@ class NodePureJSLanguage:
         return []
 
     def __str__(self):
-        return 'node'
+        return 'nodepurejs'
+
 
 class PHPLanguage:
 
