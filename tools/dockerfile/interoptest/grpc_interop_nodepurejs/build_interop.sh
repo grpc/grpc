@@ -33,3 +33,4 @@ npm install -g gulp
 npm install
 gulp js.core.install
 gulp protobuf.install
+gulp internal.test.install
