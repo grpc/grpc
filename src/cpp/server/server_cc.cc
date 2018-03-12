@@ -383,10 +383,9 @@ Server::Server(
   global_callbacks_->UpdateArguments(args);
 
   if (sync_server_cqs_ != nullptr) {
-    for (auto it = sync_server_cqs_->begin(); it != sync_server_cqs_->end();
-         it++) {
+    for (const auto& it : *sync_server_cqs_) {
       sync_req_mgrs_.emplace_back(new SyncRequestThreadManager(
-          this, (*it).get(), global_callbacks_, min_pollers, max_pollers,
+          this, it.get(), global_callbacks_, min_pollers, max_pollers,
           sync_cq_timeout_msec));
     }
   }
