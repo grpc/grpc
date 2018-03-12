@@ -78,9 +78,9 @@
 
 using std::chrono::system_clock;
 
+using grpc::lb::v1::LoadBalancer;
 using grpc::lb::v1::LoadBalanceRequest;
 using grpc::lb::v1::LoadBalanceResponse;
-using grpc::lb::v1::LoadBalancer;
 
 namespace grpc {
 namespace testing {
@@ -125,12 +125,20 @@ class CountedService : public ServiceType {
 using BackendService = CountedService<TestServiceImpl>;
 using BalancerService = CountedService<LoadBalancer::Service>;
 
+const char g_kCallCredsMdKey[] = "Balancer should not ...";
+const char g_kCallCredsMdValue[] = "... receive me";
+
 class BackendServiceImpl : public BackendService {
  public:
   BackendServiceImpl() {}
 
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
+    // Backend should receive the call credentials metadata.
+    auto call_credentials_entry =
+        context->client_metadata().find(g_kCallCredsMdKey);
+    EXPECT_NE(call_credentials_entry, context->client_metadata().end());
+    EXPECT_EQ(call_credentials_entry->second, g_kCallCredsMdValue);
     IncreaseRequestCount();
     const auto status = TestServiceImpl::Echo(context, request, response);
     IncreaseResponseCount();
@@ -177,9 +185,6 @@ struct ClientStats {
     return *this;
   }
 };
-
-const char g_kCallCredsMdKey[] = "Balancer should not ...";
-const char g_kCallCredsMdValue[] = "... receive me";
 
 class BalancerServiceImpl : public BalancerService {
  public:
