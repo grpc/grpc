@@ -154,6 +154,8 @@ class ByteStreamCache {
 
  private:
   OrphanablePtr<ByteStream> underlying_stream_;
+  uint32_t length_;
+  uint32_t flags_;
   grpc_slice_buffer cache_buffer_;
 };
 
