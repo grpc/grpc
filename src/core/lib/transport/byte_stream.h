@@ -139,6 +139,7 @@ class ByteStreamCache {
    private:
     ByteStreamCache* cache_;
     size_t cursor_ = 0;
+    size_t offset_ = 0;
     grpc_error* shutdown_error_ = GRPC_ERROR_NONE;
   };
 
