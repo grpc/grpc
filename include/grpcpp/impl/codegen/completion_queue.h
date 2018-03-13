@@ -366,6 +366,10 @@ class ServerCompletionQueue : public CompletionQueue {
   bool IsFrequentlyPolled() { return polling_type_ != GRPC_CQ_NON_LISTENING; }
 
  protected:
+  // Default constructor
+  ServerCompletionQueue() {}
+
+ private:
   /// \param is_frequently_polled Informs the GRPC library about whether the
   /// server completion queue would be actively polled (by calling Next() or
   /// AsyncNext()). By default all server completion queues are assumed to be
@@ -375,7 +379,6 @@ class ServerCompletionQueue : public CompletionQueue {
             GRPC_CQ_CURRENT_VERSION, GRPC_CQ_NEXT, polling_type}),
         polling_type_(polling_type) {}
 
- private:
   grpc_cq_polling_type polling_type_;
   friend class ServerBuilder;
 };
