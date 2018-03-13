@@ -1,15 +1,17 @@
-*.xproj.user
 *.userprefs
-*.csproj.user
+*.user
 *.lock.json
+/*.suo
+/*.sdf
+/.vs/
+bin/
+obj/
+*.nupkg
 StyleCop.Cache
-test-results
-packages
-Grpc.v12.suo
-Grpc.sdf
+/packages/
+/protoc_plugins/
 
+test-results/
 TestResult.xml
 coverage_results.xml
 /TestResults
-.vs/
-*.nupkg
