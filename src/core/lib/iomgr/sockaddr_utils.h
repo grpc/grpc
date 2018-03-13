@@ -71,6 +71,8 @@ int grpc_sockaddr_set_port(const grpc_resolved_address* addr, int port);
 int grpc_sockaddr_to_string(char** out, const grpc_resolved_address* addr,
                             int normalize);
 
+void grpc_string_to_sockaddr(grpc_resolved_address* out, char* addr, int port);
+
 /* Returns the URI string corresponding to \a addr */
 char* grpc_sockaddr_to_uri(const grpc_resolved_address* addr);
 

@@ -63,7 +63,7 @@ typedef GRPC_MSG_IOVLEN_TYPE msg_iovlen_type;
 typedef size_t msg_iovlen_type;
 #endif
 
-grpc_core::TraceFlag grpc_tcp_trace(false, "tcp");
+extern grpc_core::TraceFlag grpc_tcp_trace;
 
 namespace {
 struct grpc_tcp {

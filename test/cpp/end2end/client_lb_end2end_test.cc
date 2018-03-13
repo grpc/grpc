@@ -40,6 +40,7 @@
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/iomgr/tcp_client.h"
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -52,13 +53,10 @@ using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
 using std::chrono::system_clock;
 
-// defined in tcp_client_posix.c
-extern void (*grpc_tcp_client_connect_impl)(
-    grpc_closure* closure, grpc_endpoint** ep,
-    grpc_pollset_set* interested_parties, const grpc_channel_args* channel_args,
-    const grpc_resolved_address* addr, grpc_millis deadline);
+// defined in tcp_client.cc
+extern grpc_tcp_client_vtable* grpc_tcp_client_impl;
 
-const auto original_tcp_connect_fn = grpc_tcp_client_connect_impl;
+static grpc_tcp_client_vtable* default_client_impl;
 
 namespace grpc {
 namespace testing {
@@ -75,9 +73,11 @@ void tcp_client_connect_with_delay(grpc_closure* closure, grpc_endpoint** ep,
   if (delay_ms > 0) {
     gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(delay_ms));
   }
-  original_tcp_connect_fn(closure, ep, interested_parties, channel_args, addr,
-                          deadline + delay_ms);
+  default_client_impl->connect(closure, ep, interested_parties, channel_args,
+                               addr, deadline + delay_ms);
 }
+
+grpc_tcp_client_vtable delayed_connect = {tcp_client_connect_with_delay};
 
 // Subclass of TestServiceImpl that increments a request counter for
 // every call to the Echo RPC.
@@ -384,7 +384,8 @@ TEST_F(ClientLbEnd2endTest, PickFirstBackOffMinReconnect) {
   // Make connection delay a 10% longer than it's willing to in order to make
   // sure we are hitting the codepath that waits for the min reconnect backoff.
   gpr_atm_rel_store(&g_connection_delay_ms, kMinReconnectBackOffMs * 1.10);
-  grpc_tcp_client_connect_impl = tcp_client_connect_with_delay;
+  default_client_impl = grpc_tcp_client_impl;
+  grpc_set_tcp_client_impl(&delayed_connect);
   const gpr_timespec t0 = gpr_now(GPR_CLOCK_MONOTONIC);
   channel->WaitForConnected(
       grpc_timeout_milliseconds_to_deadline(kMinReconnectBackOffMs * 2));

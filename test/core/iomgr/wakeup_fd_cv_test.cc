@@ -225,7 +225,7 @@ int main(int argc, char** argv) {
   grpc_poll_function = &mock_poll;
   gpr_mu_init(&poll_mu);
   gpr_cv_init(&poll_cv);
-
+  grpc_determine_iomgr_platform();
   grpc_iomgr_platform_init();
   test_many_fds();
   grpc_iomgr_platform_shutdown();

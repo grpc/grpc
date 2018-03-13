@@ -171,6 +171,10 @@ on outside context */
     return reinterpret_cast<ExecCtx*>(gpr_tls_get(&exec_ctx_));
   }
 
+  static void Set(ExecCtx* exec_ctx) {
+    gpr_tls_set(&exec_ctx_, reinterpret_cast<intptr_t>(exec_ctx));
+  }
+
  protected:
   /** Check if ready to finish */
   virtual bool CheckReadyToFinish() { return false; }
@@ -180,9 +184,6 @@ on outside context */
 
  private:
   /** Set exec_ctx_ to exec_ctx */
-  void Set(ExecCtx* exec_ctx) {
-    gpr_tls_set(&exec_ctx_, reinterpret_cast<intptr_t>(exec_ctx));
-  }
 
   grpc_closure_list closure_list_ = GRPC_CLOSURE_LIST_INIT;
   CombinerData combiner_data_ = {nullptr, nullptr};
