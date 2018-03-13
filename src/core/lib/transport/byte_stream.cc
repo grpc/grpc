@@ -99,8 +99,7 @@ void ByteStreamCache::Destroy() {
 //
 
 ByteStreamCache::CachingByteStream::CachingByteStream(ByteStreamCache* cache)
-    : ByteStream(cache->length_, cache->flags_),
-      cache_(cache) {}
+    : ByteStream(cache->length_, cache->flags_), cache_(cache) {}
 
 ByteStreamCache::CachingByteStream::~CachingByteStream() {}
 
