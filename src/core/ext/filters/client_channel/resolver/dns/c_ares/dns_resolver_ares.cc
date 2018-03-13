@@ -443,14 +443,6 @@ class AresDnsResolverFactory : public ResolverFactory {
 extern grpc_address_resolver_vtable* grpc_resolve_address_impl;
 static grpc_address_resolver_vtable* default_resolver;
 
-static void resolve_address_ares(const char* addr, const char* default_port,
-                                 grpc_pollset_set* interested_parties,
-                                 grpc_closure* on_done,
-                                 grpc_resolved_addresses** addrs) {
-  grpc_resolve_address_ares(addr, default_port, interested_parties, on_done,
-                            addrs);
-}
-
 static grpc_error* blocking_resolve_address_ares(
     const char* name, const char* default_port,
     grpc_resolved_addresses** addresses) {
@@ -459,7 +451,7 @@ static grpc_error* blocking_resolve_address_ares(
 }
 
 static grpc_address_resolver_vtable ares_resolver = {
-    resolve_address_ares, blocking_resolve_address_ares};
+    grpc_resolve_address_ares, blocking_resolve_address_ares};
 
 void grpc_resolver_dns_ares_init() {
   char* resolver_env = gpr_getenv("GRPC_DNS_RESOLVER");
