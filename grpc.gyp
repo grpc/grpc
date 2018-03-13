@@ -34,6 +34,7 @@
       'Release': {
         'cflags': [
           '-O2',
+          '-Wframe-larger-than=16384',
         ],
         'defines': [
           'NDEBUG',

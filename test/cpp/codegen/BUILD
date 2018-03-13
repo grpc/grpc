@@ -61,13 +61,26 @@ grpc_cc_binary(
     srcs = ["golden_file_test.cc"],
     deps = [
         "//:grpc++",
-        "//src/proto/grpc/testing:compiler_test_proto",
         "//test/core/util:gpr_test_util",
     ],
     external_deps = [
         "gtest",
         "gflags",
     ],
+)
+
+genrule(
+    name = "copy_compiler_test_grpc_pb_h",
+    srcs = ["//src/proto/grpc/testing:_compiler_test_proto_grpc_codegen"],
+    cmd = "cat $(GENDIR)/src/proto/grpc/testing/compiler_test.grpc.pb.h > $@",
+    outs = ["compiler_test.grpc.pb.h"],
+)
+
+genrule(
+    name = "copy_compiler_test_mock_grpc_pb_h",
+    srcs = ["//src/proto/grpc/testing:_compiler_test_proto_grpc_codegen"],
+    cmd = "cat $(GENDIR)/src/proto/grpc/testing/compiler_test_mock.grpc.pb.h > $@",
+    outs = ["compiler_test_mock.grpc.pb.h"],
 )
 
 grpc_sh_test(
@@ -77,6 +90,7 @@ grpc_sh_test(
         ":golden_file_test",
         ":compiler_test_golden",
         ":compiler_test_mock_golden",
-        "//src/proto/grpc/testing:_compiler_test_proto_grpc_codegen",
+        ":compiler_test.grpc.pb.h",
+        ":compiler_test_mock.grpc.pb.h",
     ],
 )

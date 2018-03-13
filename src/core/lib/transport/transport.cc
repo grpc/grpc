@@ -209,7 +209,7 @@ void grpc_transport_stream_op_batch_finish_with_failure(
     grpc_transport_stream_op_batch* batch, grpc_error* error,
     grpc_call_combiner* call_combiner) {
   if (batch->send_message) {
-    grpc_byte_stream_destroy(batch->payload->send_message.send_message);
+    batch->payload->send_message.send_message.reset();
   }
   if (batch->recv_message) {
     GRPC_CALL_COMBINER_START(

@@ -184,11 +184,10 @@ struct grpc_transport_stream_op_batch_payload {
 
   struct {
     // The transport (or a filter that decides to return a failure before
-    // the op gets down to the transport) is responsible for calling
-    // grpc_byte_stream_destroy() on this.
+    // the op gets down to the transport) takes ownership.
     // The batch's on_complete will not be called until after the byte
-    // stream is destroyed.
-    grpc_byte_stream* send_message;
+    // stream is orphaned.
+    grpc_core::OrphanablePtr<grpc_core::ByteStream> send_message;
   } send_message;
 
   struct {
@@ -216,10 +215,8 @@ struct grpc_transport_stream_op_batch_payload {
   struct {
     // Will be set by the transport to point to the byte stream
     // containing a received message.
-    // The caller is responsible for calling grpc_byte_stream_destroy()
-    // on this byte stream.
     // Will be NULL if trailing metadata is received instead of a message.
-    grpc_byte_stream** recv_message;
+    grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message;
     /** Should be enqueued when one message is ready to be processed. */
     grpc_closure* recv_message_ready;
   } recv_message;

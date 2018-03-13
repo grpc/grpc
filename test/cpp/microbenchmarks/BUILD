@@ -143,3 +143,10 @@ grpc_cc_binary(
     srcs = ["bm_metadata.cc"],
     deps = [":helpers"],
 )
+
+grpc_cc_binary(
+    name = "bm_chttp2_hpack",
+    testonly = 1,
+    srcs = ["bm_chttp2_hpack.cc"],
+    deps = [":helpers"],
+)

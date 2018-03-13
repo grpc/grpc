@@ -417,7 +417,7 @@ grpc_error* grpc_tcp_server_add_port(grpc_tcp_server* s,
       if (0 ==
           getsockname(sp->fd,
                       reinterpret_cast<struct sockaddr*>(&sockname_temp.addr),
-                      reinterpret_cast<socklen_t*>(&sockname_temp.len))) {
+                      &sockname_temp.len)) {
         int used_port = grpc_sockaddr_get_port(&sockname_temp);
         if (used_port > 0) {
           memcpy(&sockname_temp, addr, sizeof(grpc_resolved_address));
