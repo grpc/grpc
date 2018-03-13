@@ -561,6 +561,7 @@ add_dependencies(buildtests_cxx grpc_tool_test)
 add_dependencies(buildtests_cxx grpclb_api_test)
 add_dependencies(buildtests_cxx grpclb_end2end_test)
 add_dependencies(buildtests_cxx h2_ssl_cert_test)
+add_dependencies(buildtests_cxx h2_ssl_session_reuse_test)
 add_dependencies(buildtests_cxx health_service_end2end_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx http2_client)
@@ -1104,6 +1105,9 @@ add_library(grpc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/tsi/alts_transport_security.cc
   src/core/tsi/fake_transport_security.cc
+  src/core/tsi/ssl_session_boringssl.cc
+  src/core/tsi/ssl_session_cache.cc
+  src/core/tsi/ssl_session_openssl.cc
   src/core/tsi/ssl_transport_security.cc
   src/core/tsi/transport_security_grpc.cc
   src/core/ext/transport/chttp2/server/chttp2_server.cc
@@ -1482,6 +1486,9 @@ add_library(grpc_cronet
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
   src/core/tsi/alts_transport_security.cc
   src/core/tsi/fake_transport_security.cc
+  src/core/tsi/ssl_session_boringssl.cc
+  src/core/tsi/ssl_session_cache.cc
+  src/core/tsi/ssl_session_openssl.cc
   src/core/tsi/ssl_transport_security.cc
   src/core/tsi/transport_security_grpc.cc
   src/core/ext/filters/load_reporting/server_load_reporting_filter.cc
@@ -11415,6 +11422,43 @@ target_include_directories(h2_ssl_cert_test
 )
 
 target_link_libraries(h2_ssl_cert_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(h2_ssl_session_reuse_test
+  test/core/end2end/h2_ssl_session_reuse_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(h2_ssl_session_reuse_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(h2_ssl_session_reuse_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util

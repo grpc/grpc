@@ -281,6 +281,8 @@
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts_transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl_session.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl_session_cache.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_types.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security_grpc.h" role="src" />
@@ -683,6 +685,9 @@
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts_transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl_session_boringssl.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl_session_cache.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl_session_openssl.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security_grpc.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/chttp2_server.cc" role="src" />
