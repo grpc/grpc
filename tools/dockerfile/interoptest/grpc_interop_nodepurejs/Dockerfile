@@ -49,36 +49,6 @@ RUN apt-get update && apt-get install -y \
 # Build profiling
 RUN apt-get update && apt-get install -y time && apt-get clean
 
-# Google Cloud platform API libraries
-RUN apt-get update && apt-get install -y python-pip && apt-get clean
-RUN pip install --upgrade google-api-python-client
-
-
-# Install Electron apt dependencies
-RUN apt-get update && apt-get install -y \
-  libasound2 \
-  libgconf-2-4 \
-  libgtk2.0-0 \
-  libnss3 \
-  libxss1 \
-  libxtst6 \
-  xvfb
-
-#====================
-# Python dependencies
-
-# Install dependencies
-
-RUN apt-get update && apt-get install -y \
-    python-all-dev \
-    python3-all-dev \
-    python-pip
-
-# Install Python packages from PyPI
-RUN pip install --upgrade pip==9.0.1
-RUN pip install virtualenv
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.0.post1 six==1.10.0 twisted==17.5.0
-
 #==================
 # Node dependencies
 
@@ -102,9 +72,6 @@ RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
 
 
 RUN mkdir /var/local/jenkins
-
-# Install Mako to generate files in grpc/grpc-node
-RUN pip install Mako
 
 # Define the default command.
 CMD ["bash"]
