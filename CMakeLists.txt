@@ -855,7 +855,6 @@ add_library(grpc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
-  src/core/lib/channel/client_authority_filter.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
@@ -1133,6 +1132,7 @@ add_library(grpc
   src/core/ext/census/grpc_context.cc
   src/core/ext/filters/max_age/max_age_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
+  src/core/lib/channel/client_authority_filter.cc
   src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc
   src/core/ext/filters/workarounds/workaround_utils.cc
   src/core/plugin_registry/grpc_plugin_registry.cc
@@ -1231,7 +1231,6 @@ add_library(grpc_cronet
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
-  src/core/lib/channel/client_authority_filter.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
@@ -1598,7 +1597,6 @@ add_library(grpc_test_util
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
-  src/core/lib/channel/client_authority_filter.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
@@ -1888,7 +1886,6 @@ add_library(grpc_test_util_unsecure
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
-  src/core/lib/channel/client_authority_filter.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
@@ -2158,7 +2155,6 @@ add_library(grpc_unsecure
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
-  src/core/lib/channel/client_authority_filter.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
@@ -2371,6 +2367,7 @@ add_library(grpc_unsecure
   src/core/ext/census/grpc_context.cc
   src/core/ext/filters/max_age/max_age_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
+  src/core/lib/channel/client_authority_filter.cc
   src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc
   src/core/ext/filters/workarounds/workaround_utils.cc
   src/core/plugin_registry/grpc_unsecure_plugin_registry.cc
@@ -2962,7 +2959,6 @@ add_library(grpc++_cronet
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
-  src/core/lib/channel/client_authority_filter.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc

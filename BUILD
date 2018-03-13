@@ -966,6 +966,7 @@ grpc_cc_library(
         # standard plugins
         "census",
         "grpc_deadline_filter",
+        "grpc_client_authority_filter",
         "grpc_lb_policy_pick_first",
         "grpc_lb_policy_round_robin",
         "grpc_server_load_reporting",
@@ -1036,6 +1037,7 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "grpc_base",
+        "grpc_client_authority_filter",
         "grpc_deadline_filter",
         "inlined_vector",
         "orphanable",
@@ -1065,6 +1067,20 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/ext/filters/deadline/deadline_filter.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_client_authority_filter",
+    srcs = [
+        "src/core/lib/channel/client_authority_filter.cc",
+    ],
+    hdrs = [
+        "src/core/lib/channel/client_authority_filter.h",
     ],
     language = "c++",
     deps = [

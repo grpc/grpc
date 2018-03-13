@@ -84,7 +84,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/channel/channel_args.cc \
     src/core/lib/channel/channel_stack.cc \
     src/core/lib/channel/channel_stack_builder.cc \
-    src/core/lib/channel/client_authority_filter.cc \
     src/core/lib/channel/connected_channel.cc \
     src/core/lib/channel/handshaker.cc \
     src/core/lib/channel/handshaker_factory.cc \
@@ -362,6 +361,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/census/grpc_context.cc \
     src/core/ext/filters/max_age/max_age_filter.cc \
     src/core/ext/filters/message_size/message_size_filter.cc \
+    src/core/lib/channel/client_authority_filter.cc \
     src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc \
     src/core/ext/filters/workarounds/workaround_utils.cc \
     src/core/plugin_registry/grpc_plugin_registry.cc \

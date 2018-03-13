@@ -354,7 +354,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/channel_args.h',
                       'src/core/lib/channel/channel_stack.h',
                       'src/core/lib/channel/channel_stack_builder.h',
-                      'src/core/lib/channel/client_authority_filter.h',
                       'src/core/lib/channel/connected_channel.h',
                       'src/core/lib/channel/context.h',
                       'src/core/lib/channel/handshaker.h',
@@ -491,6 +490,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/load_reporting/server_load_reporting_plugin.h',
                       'src/core/ext/filters/max_age/max_age_filter.h',
                       'src/core/ext/filters/message_size/message_size_filter.h',
+                      'src/core/lib/channel/client_authority_filter.h',
                       'src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h',
                       'src/core/ext/filters/workarounds/workaround_utils.h',
                       'src/core/lib/surface/init.cc',
@@ -499,7 +499,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/channel_args.cc',
                       'src/core/lib/channel/channel_stack.cc',
                       'src/core/lib/channel/channel_stack_builder.cc',
-                      'src/core/lib/channel/client_authority_filter.cc',
                       'src/core/lib/channel/connected_channel.cc',
                       'src/core/lib/channel/handshaker.cc',
                       'src/core/lib/channel/handshaker_factory.cc',
@@ -774,6 +773,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/census/grpc_context.cc',
                       'src/core/ext/filters/max_age/max_age_filter.cc',
                       'src/core/ext/filters/message_size/message_size_filter.cc',
+                      'src/core/lib/channel/client_authority_filter.cc',
                       'src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc',
                       'src/core/ext/filters/workarounds/workaround_utils.cc',
                       'src/core/plugin_registry/grpc_plugin_registry.cc'
@@ -910,7 +910,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/channel/channel_args.h',
                               'src/core/lib/channel/channel_stack.h',
                               'src/core/lib/channel/channel_stack_builder.h',
-                              'src/core/lib/channel/client_authority_filter.h',
                               'src/core/lib/channel/connected_channel.h',
                               'src/core/lib/channel/context.h',
                               'src/core/lib/channel/handshaker.h',
@@ -1047,6 +1046,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/load_reporting/server_load_reporting_plugin.h',
                               'src/core/ext/filters/max_age/max_age_filter.h',
                               'src/core/ext/filters/message_size/message_size_filter.h',
+                              'src/core/lib/channel/client_authority_filter.h',
                               'src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h',
                               'src/core/ext/filters/workarounds/workaround_utils.h'
   end

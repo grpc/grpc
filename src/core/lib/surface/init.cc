@@ -84,13 +84,6 @@ static bool prepend_filter(grpc_channel_stack_builder* builder, void* arg) {
 }
 
 static void register_builtin_channel_init() {
-  grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL, INT_MAX,
-                                   prepend_filter,
-                                   (void*)(&grpc_client_authority_filter));
-  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX,
-                                   prepend_filter,
-                                   (void*)(&grpc_client_authority_filter));
-
   grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL,
                                    GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
                                    grpc_add_connected_filter, nullptr);

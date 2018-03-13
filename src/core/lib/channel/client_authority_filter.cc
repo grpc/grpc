@@ -19,6 +19,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <assert.h>
+#include <limits.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -115,3 +116,20 @@ const grpc_channel_filter grpc_client_authority_filter = {
     destroy_channel_elem,
     grpc_channel_next_get_info,
     "authority"};
+
+static bool add_client_authority_filter(grpc_channel_stack_builder* builder,
+                                        void* arg) {
+  return grpc_channel_stack_builder_prepend_filter(
+      builder, static_cast<const grpc_channel_filter*>(arg), nullptr, nullptr);
+}
+
+void grpc_client_authority_filter_init(void) {
+  grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL, INT_MAX,
+                                   add_client_authority_filter,
+                                   (void*)&grpc_client_authority_filter);
+  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX,
+                                   add_client_authority_filter,
+                                   (void*)&grpc_client_authority_filter);
+}
+
+void grpc_client_authority_filter_shutdown(void) {}
