@@ -204,7 +204,6 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
 
   // Server status
   std::mutex mu_;
-
   bool started_;
   bool shutdown_;
   bool shutdown_notified_;  // Was notify called on the shutdown_cv_
