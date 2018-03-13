@@ -330,9 +330,9 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/gethostname.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iocp_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_custom.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_posix.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_uv.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/is_epollexclusive_available.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/load_file.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/lockfree_event.h" role="src" />
@@ -340,14 +340,17 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/network_status_tracker.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/polling_entity.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_custom.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_set.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_set_custom.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_set_windows.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_uv.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/port.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_custom.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resource_quota.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_custom.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_windows.h" role="src" />
@@ -359,17 +362,16 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/sys_epoll_wrapper.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client_posix.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_custom.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_utils_posix.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_uv.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/time_averaged_stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/timer_generic.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/timer_custom.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer_heap.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer_manager.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/timer_uv.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/udp_server.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/unix_sockets_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_cv.h" role="src" />
@@ -472,6 +474,8 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/gethostname_sysconf.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iocp_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_custom.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_internal.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_uv.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/iomgr_windows.cc" role="src" />
@@ -480,12 +484,16 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/lockfree_event.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/network_status_tracker.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/polling_entity.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_set_uv.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/pollset.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_custom.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_set.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_set_custom.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_set_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_uv.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_windows.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_custom.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_posix.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_uv.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resource_quota.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sockaddr_utils.cc" role="src" />
@@ -497,19 +505,24 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_uv.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_windows.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client_custom.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client_posix.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client_uv.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client_windows.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_custom.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_posix.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_custom.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_utils_posix_common.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_uv.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_server_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_uv.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/time_averaged_stats.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/timer.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/timer_custom.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer_generic.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer_heap.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/timer_manager.cc" role="src" />

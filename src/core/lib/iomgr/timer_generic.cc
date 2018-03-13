@@ -22,8 +22,6 @@
 
 #include <inttypes.h>
 
-#ifdef GRPC_TIMER_USE_GENERIC
-
 #include "src/core/lib/iomgr/timer.h"
 
 #include <grpc/support/alloc.h>
@@ -238,7 +236,7 @@ static gpr_atm compute_min_deadline(timer_shard* shard) {
              : grpc_timer_heap_top(&shard->heap)->deadline;
 }
 
-void grpc_timer_list_init() {
+static void timer_list_init() {
   uint32_t i;
 
   g_num_shards = GPR_MIN(1, 2 * gpr_cpu_num_cores());
@@ -270,7 +268,7 @@ void grpc_timer_list_init() {
   INIT_TIMER_HASH_TABLE();
 }
 
-void grpc_timer_list_shutdown() {
+static void timer_list_shutdown() {
   size_t i;
   run_some_expired_timers(
       GPR_ATM_MAX, nullptr,
@@ -326,8 +324,8 @@ static void note_deadline_change(timer_shard* shard) {
 
 void grpc_timer_init_unset(grpc_timer* timer) { timer->pending = false; }
 
-void grpc_timer_init(grpc_timer* timer, grpc_millis deadline,
-                     grpc_closure* closure) {
+static void timer_init(grpc_timer* timer, grpc_millis deadline,
+                       grpc_closure* closure) {
   int is_first_timer = 0;
   timer_shard* shard = &g_shards[GPR_HASH_POINTER(timer, g_num_shards)];
   timer->closure = closure;
@@ -412,12 +410,12 @@ void grpc_timer_init(grpc_timer* timer, grpc_millis deadline,
   }
 }
 
-void grpc_timer_consume_kick(void) {
+static void timer_consume_kick(void) {
   /* force re-evaluation of last seeen min */
   gpr_tls_set(&g_last_seen_min_timer, 0);
 }
 
-void grpc_timer_cancel(grpc_timer* timer) {
+static void timer_cancel(grpc_timer* timer) {
   if (!g_shared_mutables.initialized) {
     /* must have already been cancelled, also the shard mutex is invalid */
     return;
@@ -604,7 +602,7 @@ static grpc_timer_check_result run_some_expired_timers(gpr_atm now,
   return result;
 }
 
-grpc_timer_check_result grpc_timer_check(grpc_millis* next) {
+static grpc_timer_check_result timer_check(grpc_millis* next) {
   // prelude
   grpc_millis now = grpc_core::ExecCtx::Get()->Now();
 
@@ -660,4 +658,6 @@ grpc_timer_check_result grpc_timer_check(grpc_millis* next) {
   return r;
 }
 
-#endif /* GRPC_TIMER_USE_GENERIC */
+grpc_timer_vtable grpc_generic_timer_vtable = {
+    timer_init,      timer_cancel,        timer_check,
+    timer_list_init, timer_list_shutdown, timer_consume_kick};

@@ -42,7 +42,7 @@
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 
-static grpc_error* blocking_resolve_address_impl(
+static grpc_error* posix_blocking_resolve_address(
     const char* name, const char* default_port,
     grpc_resolved_addresses** addresses) {
   grpc_core::ExecCtx exec_ctx;
@@ -141,10 +141,6 @@ done:
   return err;
 }
 
-grpc_error* (*grpc_blocking_resolve_address)(
-    const char* name, const char* default_port,
-    grpc_resolved_addresses** addresses) = blocking_resolve_address_impl;
-
 typedef struct {
   char* name;
   char* default_port;
@@ -165,17 +161,10 @@ static void do_request_thread(void* rp, grpc_error* error) {
   gpr_free(r);
 }
 
-void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addrs) {
-  if (addrs != nullptr) {
-    gpr_free(addrs->addrs);
-  }
-  gpr_free(addrs);
-}
-
-static void resolve_address_impl(const char* name, const char* default_port,
-                                 grpc_pollset_set* interested_parties,
-                                 grpc_closure* on_done,
-                                 grpc_resolved_addresses** addrs) {
+static void posix_resolve_address(const char* name, const char* default_port,
+                                  grpc_pollset_set* interested_parties,
+                                  grpc_closure* on_done,
+                                  grpc_resolved_addresses** addrs) {
   request* r = static_cast<request*>(gpr_malloc(sizeof(request)));
   GRPC_CLOSURE_INIT(&r->request_closure, do_request_thread, r,
                     grpc_executor_scheduler(GRPC_EXECUTOR_SHORT));
@@ -186,9 +175,6 @@ static void resolve_address_impl(const char* name, const char* default_port,
   GRPC_CLOSURE_SCHED(&r->request_closure, GRPC_ERROR_NONE);
 }
 
-void (*grpc_resolve_address)(
-    const char* name, const char* default_port,
-    grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    grpc_resolved_addresses** addrs) = resolve_address_impl;
-
+grpc_address_resolver_vtable grpc_posix_resolver_vtable = {
+    posix_resolve_address, posix_blocking_resolve_address};
 #endif

@@ -440,6 +440,19 @@ class AresDnsResolverFactory : public ResolverFactory {
 
 }  // namespace grpc_core
 
+extern grpc_address_resolver_vtable* grpc_resolve_address_impl;
+static grpc_address_resolver_vtable* default_resolver;
+
+static grpc_error* blocking_resolve_address_ares(
+    const char* name, const char* default_port,
+    grpc_resolved_addresses** addresses) {
+  return default_resolver->blocking_resolve_address(name, default_port,
+                                                    addresses);
+}
+
+static grpc_address_resolver_vtable ares_resolver = {
+    grpc_resolve_address_ares, blocking_resolve_address_ares};
+
 void grpc_resolver_dns_ares_init() {
   char* resolver_env = gpr_getenv("GRPC_DNS_RESOLVER");
   /* TODO(zyc): Turn on c-ares based resolver by default after the address
@@ -450,7 +463,8 @@ void grpc_resolver_dns_ares_init() {
       GRPC_LOG_IF_ERROR("ares_library_init() failed", error);
       return;
     }
-    grpc_resolve_address = grpc_resolve_address_ares;
+    default_resolver = grpc_resolve_address_impl;
+    grpc_set_resolver_impl(&ares_resolver);
     grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
         grpc_core::UniquePtr<grpc_core::ResolverFactory>(
             grpc_core::New<grpc_core::AresDnsResolverFactory>()));

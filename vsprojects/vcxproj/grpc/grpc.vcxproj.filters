@@ -106,10 +106,13 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_posix.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_custom.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_uv.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_internal.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_posix.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_windows.c">
@@ -130,7 +133,16 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\polling_entity.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_set_uv.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_custom.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_set.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_set_custom.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_set_windows.c">
@@ -142,10 +154,13 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\pollset_windows.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\resolve_address_posix.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\resolve_address.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\resolve_address_uv.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\resolve_address_custom.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\resolve_address_posix.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\resolve_address_windows.c">
@@ -181,16 +196,28 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\socket_windows.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_client_posix.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_client.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_client_uv.c">
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_client_custom.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_client_posix.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_client_windows.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_custom.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_posix.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_custom.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_posix.c">
@@ -205,9 +232,6 @@
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_utils_posix_noifaddrs.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
-    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_uv.c">
-      <Filter>src\core\lib\iomgr</Filter>
-    </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_server_windows.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
@@ -218,6 +242,12 @@
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\time_averaged_stats.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\timer.c">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_custom.c">
       <Filter>src\core\lib\iomgr</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_generic.c">
@@ -540,6 +570,9 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\lib\surface\init_secure.c">
       <Filter>src\core\lib\surface</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)\..\src\python\grpcio\grpc\_cython\cygrpc.c">
+      <Filter>src\python\grpcio\grpc\_cython</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)\..\src\core\tsi\fake_transport_security.c">
       <Filter>src\core\tsi</Filter>
@@ -965,13 +998,13 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_custom.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_internal.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_posix.h">
-      <Filter>src\core\lib\iomgr</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\iomgr_uv.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\is_epollexclusive_available.h">
@@ -1049,6 +1082,9 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_client_posix.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_custom.h">
+      <Filter>src\core\lib\iomgr</Filter>
+    </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\tcp_posix.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
@@ -1070,16 +1106,13 @@
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\timer.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_generic.h">
+    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_custom.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_heap.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_manager.h">
-      <Filter>src\core\lib\iomgr</Filter>
-    </ClInclude>
-    <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\timer_uv.h">
       <Filter>src\core\lib\iomgr</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)\..\src\core\lib\iomgr\udp_server.h">
@@ -1747,6 +1780,18 @@
     </Filter>
     <Filter Include="src\core\tsi">
       <UniqueIdentifier>{0b0f9ab1-efa4-7f03-e446-6fb9b5227e84}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\python">
+      <UniqueIdentifier>{50d054e3-a413-b871-9049-e8612ef56281}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\python\grpcio">
+      <UniqueIdentifier>{92bc7bec-9183-0f2b-47d9-31f68a980f1e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\python\grpcio\grpc">
+      <UniqueIdentifier>{a75d942e-8d7a-306e-372f-0c6260f439d4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\python\grpcio\grpc\_cython">
+      <UniqueIdentifier>{89423fb6-ab96-95e8-d197-239e91b777ca}</UniqueIdentifier>
     </Filter>
     <Filter Include="third_party">
       <UniqueIdentifier>{aaab30a4-2a15-732e-c141-3fbc0f0f5a7a}</UniqueIdentifier>

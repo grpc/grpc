@@ -23,17 +23,41 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_UV
-#include "src/core/lib/iomgr/timer_uv.h"
-#else
-#include "src/core/lib/iomgr/timer_generic.h"
-#endif /* GRPC_UV */
-
 #include <grpc/support/time.h>
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 
-typedef struct grpc_timer grpc_timer;
+typedef struct grpc_timer {
+  gpr_atm deadline;
+  uint32_t heap_index; /* INVALID_HEAP_INDEX if not in heap */
+  bool pending;
+  struct grpc_timer* next;
+  struct grpc_timer* prev;
+  grpc_closure* closure;
+#ifndef NDEBUG
+  struct grpc_timer* hash_table_next;
+#endif
+
+  // Optional field used by custom timers
+  void* custom_timer;
+} grpc_timer;
+
+typedef enum {
+  GRPC_TIMERS_NOT_CHECKED,
+  GRPC_TIMERS_CHECKED_AND_EMPTY,
+  GRPC_TIMERS_FIRED,
+} grpc_timer_check_result;
+
+typedef struct grpc_timer_vtable {
+  void (*init)(grpc_timer* timer, grpc_millis, grpc_closure* closure);
+  void (*cancel)(grpc_timer* timer);
+
+  /* Internal API */
+  grpc_timer_check_result (*check)(grpc_millis* next);
+  void (*list_init)();
+  void (*list_shutdown)(void);
+  void (*consume_kick)(void);
+} grpc_timer_vtable;
 
 /* Initialize *timer. When expired or canceled, closure will be called with
    error set to indicate if it expired (GRPC_ERROR_NONE) or was canceled
@@ -78,12 +102,6 @@ void grpc_timer_cancel(grpc_timer* timer);
 
 /* iomgr internal api for dealing with timers */
 
-typedef enum {
-  GRPC_TIMERS_NOT_CHECKED,
-  GRPC_TIMERS_CHECKED_AND_EMPTY,
-  GRPC_TIMERS_FIRED,
-} grpc_timer_check_result;
-
 /* Check for timers to be run, and run them.
    Return true if timer callbacks were executed.
    If next is non-null, TRY to update *next with the next running timer
@@ -99,7 +117,9 @@ void grpc_timer_list_shutdown();
 void grpc_timer_consume_kick(void);
 
 /* the following must be implemented by each iomgr implementation */
-
 void grpc_kick_poller(void);
+
+/* Sets the timer implementation */
+void grpc_set_timer_impl(grpc_timer_vtable* vtable);
 
 #endif /* GRPC_CORE_LIB_IOMGR_TIMER_H */

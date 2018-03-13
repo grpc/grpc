@@ -21,7 +21,12 @@
 
 extern int grpc_pollset_work_run_loop;
 
-void grpc_pollset_global_init(void);
-void grpc_pollset_global_shutdown(void);
+typedef struct grpc_custom_poller_vtable {
+  void (*init)(void);
+  void (*run_loop)(int blocking);
+} grpc_custom_poller_vtable;
+
+void grpc_custom_pollset_global_init(grpc_custom_poller_vtable* vtable);
+void grpc_custom_pollset_global_shutdown(void);
 
 #endif /* GRPC_CORE_LIB_IOMGR_POLLSET_UV_H */

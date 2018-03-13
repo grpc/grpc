@@ -20,6 +20,8 @@
 
 #include "src/core/lib/iomgr/endpoint.h"
 
+grpc_core::TraceFlag grpc_tcp_trace(false, "tcp");
+
 void grpc_endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
                         grpc_closure* cb) {
   ep->vtable->read(ep, slices, cb);

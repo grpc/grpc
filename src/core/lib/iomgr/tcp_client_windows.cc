@@ -122,12 +122,11 @@ static void on_connect(void* acp, grpc_error* error) {
 
 /* Tries to issue one async connection, then schedules both an IOCP
    notification request for the connection, and one timeout alert. */
-static void tcp_client_connect_impl(grpc_closure* on_done,
-                                    grpc_endpoint** endpoint,
-                                    grpc_pollset_set* interested_parties,
-                                    const grpc_channel_args* channel_args,
-                                    const grpc_resolved_address* addr,
-                                    grpc_millis deadline) {
+static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
+                        grpc_pollset_set* interested_parties,
+                        const grpc_channel_args* channel_args,
+                        const grpc_resolved_address* addr,
+                        grpc_millis deadline) {
   SOCKET sock = INVALID_SOCKET;
   BOOL success;
   int status;
@@ -175,7 +174,7 @@ static void tcp_client_connect_impl(grpc_closure* on_done,
   grpc_sockaddr_make_wildcard6(0, &local_address);
 
   status =
-      bind(sock, (struct sockaddr*)&local_address.addr, (int)local_address.len);
+      bind(sock, (grpc_sockaddr*)&local_address.addr, (int)local_address.len);
   if (status != 0) {
     error = GRPC_WSA_ERROR(WSAGetLastError(), "bind");
     goto failure;
@@ -183,7 +182,7 @@ static void tcp_client_connect_impl(grpc_closure* on_done,
 
   socket = grpc_winsocket_create(sock, "client");
   info = &socket->write_info;
-  success = ConnectEx(sock, (struct sockaddr*)&addr->addr, (int)addr->len, NULL,
+  success = ConnectEx(sock, (grpc_sockaddr*)&addr->addr, (int)addr->len, NULL,
                       0, NULL, &info->overlapped);
 
   /* It wouldn't be unusual to get a success immediately. But we'll still get
@@ -227,20 +226,6 @@ failure:
   GRPC_CLOSURE_SCHED(on_done, final_error);
 }
 
-// overridden by api_fuzzer.c
-void (*grpc_tcp_client_connect_impl)(
-    grpc_closure* closure, grpc_endpoint** ep,
-    grpc_pollset_set* interested_parties, const grpc_channel_args* channel_args,
-    const grpc_resolved_address* addr,
-    grpc_millis deadline) = tcp_client_connect_impl;
-
-void grpc_tcp_client_connect(grpc_closure* closure, grpc_endpoint** ep,
-                             grpc_pollset_set* interested_parties,
-                             const grpc_channel_args* channel_args,
-                             const grpc_resolved_address* addr,
-                             grpc_millis deadline) {
-  grpc_tcp_client_connect_impl(closure, ep, interested_parties, channel_args,
-                               addr, deadline);
-}
+grpc_tcp_client_vtable grpc_windows_tcp_client_vtable = {tcp_connect};
 
 #endif /* GRPC_WINSOCK_SOCKET */
