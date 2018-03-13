@@ -39,7 +39,7 @@ int grpc_accept4(int sockfd, grpc_resolved_address* resolved_addr, int nonblock,
   flags |= cloexec ? SOCK_CLOEXEC : 0;
   return accept4(sockfd,
                  reinterpret_cast<struct sockaddr*>(resolved_addr->addr),
-                 reinterpret_cast<socklen_t*>(&resolved_addr->len), flags);
+                 &resolved_addr->len, flags);
 }
 
 #endif

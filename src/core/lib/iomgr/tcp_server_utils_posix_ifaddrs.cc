@@ -68,14 +68,14 @@ static grpc_error* get_unused_port(int* port) {
   if (dsmode == GRPC_DSMODE_IPV4) {
     grpc_sockaddr_make_wildcard4(0, &wild);
   }
-  if (bind(fd, reinterpret_cast<const struct sockaddr*>(wild.addr),
-           static_cast<socklen_t>(wild.len)) != 0) {
+  if (bind(fd, reinterpret_cast<const struct sockaddr*>(wild.addr), wild.len) !=
+      0) {
     err = GRPC_OS_ERROR(errno, "bind");
     close(fd);
     return err;
   }
   if (getsockname(fd, reinterpret_cast<struct sockaddr*>(wild.addr),
-                  reinterpret_cast<socklen_t*>(&wild.len)) != 0) {
+                  &wild.len) != 0) {
     err = GRPC_OS_ERROR(errno, "getsockname");
     close(fd);
     return err;
