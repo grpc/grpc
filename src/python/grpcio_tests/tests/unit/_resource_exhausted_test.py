@@ -77,18 +77,13 @@ def handle_unary_stream(trigger, request, servicer_context):
 
 def handle_stream_unary(trigger, request_iterator, servicer_context):
     trigger.await_trigger()
-    # TODO(issue:#6891) We should be able to remove this loop
-    for request in request_iterator:
-        pass
     return _RESPONSE
 
 
 def handle_stream_stream(trigger, request_iterator, servicer_context):
     trigger.await_trigger()
-    # TODO(issue:#6891) We should be able to remove this loop,
-    # and replace with return; yield
-    for request in request_iterator:
-        yield _RESPONSE
+    return
+    yield
 
 
 class _MethodHandler(grpc.RpcMethodHandler):
