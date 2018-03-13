@@ -366,7 +366,7 @@ class ServerCompletionQueue : public CompletionQueue {
   bool IsFrequentlyPolled() { return polling_type_ != GRPC_CQ_NON_LISTENING; }
 
  protected:
-  // Default constructor
+  /// Default constructor
   ServerCompletionQueue() {}
 
  private:
