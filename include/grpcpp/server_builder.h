@@ -211,12 +211,14 @@ class ServerBuilder {
   ServerBuilder& EnableWorkaround(grpc_workaround_list id);
 
  protected:
+  /// Experimental, to be deprecated
   struct Port {
     grpc::string addr;
     std::shared_ptr<ServerCredentials> creds;
     int* selected_port;
   };
 
+  /// Experimental, to be deprecated
   typedef std::unique_ptr<grpc::string> HostString;
   struct NamedService {
     explicit NamedService(Service* s) : service(s) {}
