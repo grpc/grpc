@@ -116,14 +116,22 @@ void ClientContext::TryCancel() {
   }
 }
 
-grpc::string ClientContext::peer() const {
+grpc::PeerInfo ClientContext::peer() const {
   grpc::string peer;
   if (call_) {
     char* c_peer = grpc_call_get_peer(call_);
     peer = c_peer;
     gpr_free(c_peer);
   }
-  return peer;
+  grpc::PeerInfo info;
+  size_t first = peer.find_first_of(':');
+  size_t last = peer.find_last_of(':');
+  if (first != grpc::string::npos && last != grpc::string::npos) {
+    info.protocol_ = peer.substr(0, first);
+    info.ip_ = peer.substr(first + 1, last - first - 1);
+    info.port_ = peer.substr(last + 1);
+  }
+  return info;
 }
 
 void ClientContext::SetGlobalCallbacks(GlobalCallbacks* client_callbacks) {

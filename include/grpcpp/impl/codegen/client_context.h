@@ -45,6 +45,7 @@
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/create_auth_context.h>
 #include <grpcpp/impl/codegen/metadata_map.h>
+#include <grpcpp/impl/codegen/peer_info.h>
 #include <grpcpp/impl/codegen/security/auth_context.h>
 #include <grpcpp/impl/codegen/slice.h>
 #include <grpcpp/impl/codegen/status.h>
@@ -315,14 +316,14 @@ class ClientContext {
     initial_metadata_corked_ = corked;
   }
 
-  /// Return the peer uri in a string.
+  /// Return the peer uri information.
   ///
   /// \warning This value is never authenticated or subject to any security
   /// related code. It must not be used for any authentication related
   /// functionality. Instead, use auth_context.
   ///
-  /// \return The call's peer URI.
-  grpc::string peer() const;
+  /// \return The call's peer URI information.
+  grpc::PeerInfo peer() const;
 
   /// Get and set census context.
   void set_census_context(struct census_context* ccp) { census_context_ = ccp; }

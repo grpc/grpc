@@ -5094,6 +5094,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/grpc_library.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
+    include/grpcpp/impl/codegen/peer_info.h \
     include/grpcpp/impl/codegen/rpc_method.h \
     include/grpcpp/impl/codegen/rpc_service_method.h \
     include/grpcpp/impl/codegen/security/auth_context.h \
@@ -5661,6 +5662,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/grpc_library.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
+    include/grpcpp/impl/codegen/peer_info.h \
     include/grpcpp/impl/codegen/rpc_method.h \
     include/grpcpp/impl/codegen/rpc_service_method.h \
     include/grpcpp/impl/codegen/security/auth_context.h \
@@ -6048,6 +6050,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/grpc_library.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
+    include/grpcpp/impl/codegen/peer_info.h \
     include/grpcpp/impl/codegen/rpc_method.h \
     include/grpcpp/impl/codegen/rpc_service_method.h \
     include/grpcpp/impl/codegen/security/auth_context.h \
@@ -6197,6 +6200,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/grpc_library.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
+    include/grpcpp/impl/codegen/peer_info.h \
     include/grpcpp/impl/codegen/rpc_method.h \
     include/grpcpp/impl/codegen/rpc_service_method.h \
     include/grpcpp/impl/codegen/security/auth_context.h \
@@ -6513,6 +6517,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/grpc_library.h \
     include/grpcpp/impl/codegen/metadata_map.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
+    include/grpcpp/impl/codegen/peer_info.h \
     include/grpcpp/impl/codegen/rpc_method.h \
     include/grpcpp/impl/codegen/rpc_service_method.h \
     include/grpcpp/impl/codegen/security/auth_context.h \

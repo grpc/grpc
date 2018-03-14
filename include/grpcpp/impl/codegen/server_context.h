@@ -30,6 +30,7 @@
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/create_auth_context.h>
 #include <grpcpp/impl/codegen/metadata_map.h>
+#include <grpcpp/impl/codegen/peer_info.h>
 #include <grpcpp/impl/codegen/security/auth_context.h>
 #include <grpcpp/impl/codegen/string_ref.h>
 #include <grpcpp/impl/codegen/time.h>
@@ -214,11 +215,15 @@ class ServerContext {
     return auth_context_;
   }
 
-  /// Return the peer uri in a string.
+  /// Return the peer uri information.
   /// WARNING: this value is never authenticated or subject to any security
   /// related code. It must not be used for any authentication related
   /// functionality. Instead, use auth_context.
-  grpc::string peer() const;
+  grpc::PeerInfo peer() const;
+
+  /// Return the peer uri data.
+  /// \see
+  // grpc::string peer_info() const;
 
   /// Get the census context associated with this server call.
   const struct census_context* census_context() const;
