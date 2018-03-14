@@ -61,8 +61,6 @@
 // - Test handling of creation of faulty RR instance by having the LB return a
 //   serverlist with non-existent backends after having initially returned a
 //   valid one.
-// - test using secure credentials and make sure we don't send call
-//   credentials to the balancer
 //
 // Findings from end to end testing to be covered here:
 // - Handling of LB servers restart, including reconnection after backing-off
@@ -126,12 +124,22 @@ class CountedService : public ServiceType {
 using BackendService = CountedService<TestServiceImpl>;
 using BalancerService = CountedService<LoadBalancer::Service>;
 
+const char g_kCallCredsMdKey[] = "Balancer should not ...";
+const char g_kCallCredsMdValue[] = "... receive me";
+
 class BackendServiceImpl : public BackendService {
  public:
   BackendServiceImpl() {}
 
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
+    // Backend should receive the call credentials metadata.
+    auto call_credentials_entry =
+        context->client_metadata().find(g_kCallCredsMdKey);
+    EXPECT_NE(call_credentials_entry, context->client_metadata().end());
+    if (call_credentials_entry != context->client_metadata().end()) {
+      EXPECT_EQ(call_credentials_entry->second, g_kCallCredsMdValue);
+    }
     IncreaseRequestCount();
     const auto status = TestServiceImpl::Echo(context, request, response);
     IncreaseResponseCount();
@@ -190,6 +198,9 @@ class BalancerServiceImpl : public BalancerService {
         shutdown_(false) {}
 
   Status BalanceLoad(ServerContext* context, Stream* stream) override {
+    // Balancer shouldn't receive the call credentials metadata.
+    EXPECT_EQ(context->client_metadata().find(g_kCallCredsMdKey),
+              context->client_metadata().end());
     gpr_log(GPR_INFO, "LB[%p]: BalanceLoad", this);
     LoadBalanceRequest request;
     std::vector<ResponseDelayPair> responses_and_delays;
@@ -394,8 +405,15 @@ class GrpclbEnd2endTest : public ::testing::Test {
     uri << "fake:///" << kApplicationTargetName_;
     // TODO(dgq): templatize tests to run everything using both secure and
     // insecure channel credentials.
-    std::shared_ptr<ChannelCredentials> creds(new SecureChannelCredentials(
-        grpc_fake_transport_security_credentials_create()));
+    grpc_channel_credentials* channel_creds =
+        grpc_fake_transport_security_credentials_create();
+    grpc_call_credentials* call_creds = grpc_md_only_test_credentials_create(
+        g_kCallCredsMdKey, g_kCallCredsMdValue, false);
+    std::shared_ptr<ChannelCredentials> creds(
+        new SecureChannelCredentials(grpc_composite_channel_credentials_create(
+            channel_creds, call_creds, nullptr)));
+    grpc_call_credentials_unref(call_creds);
+    grpc_channel_credentials_unref(channel_creds);
     channel_ = CreateCustomChannel(uri.str(), creds, args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }

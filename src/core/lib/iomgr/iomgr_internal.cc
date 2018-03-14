@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2017 gRPC authors.
+ * Copyright 2018 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,28 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_IOMGR_UV_H
-#define GRPC_CORE_LIB_IOMGR_IOMGR_UV_H
-
 #include <grpc/support/port_platform.h>
 
+#include <stddef.h>
+
 #include "src/core/lib/iomgr/iomgr_internal.h"
+#include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/iomgr/timer_manager.h"
 
-#include <grpc/support/thd_id.h>
+static grpc_iomgr_platform_vtable* iomgr_platform_vtable = nullptr;
 
-/* The thread ID of the thread on which grpc was initialized. Used to verify
- * that all calls into libuv are made on that same thread */
-extern gpr_thd_id g_init_thread;
+void grpc_set_iomgr_platform_vtable(grpc_iomgr_platform_vtable* vtable) {
+  iomgr_platform_vtable = vtable;
+}
 
-#ifdef GRPC_UV_THREAD_CHECK
-#define GRPC_UV_ASSERT_SAME_THREAD() \
-  GPR_ASSERT(gpr_thd_currentid() == g_init_thread)
-#else
-#define GRPC_UV_ASSERT_SAME_THREAD()
-#endif /* GRPC_UV_THREAD_CHECK */
+void grpc_determine_iomgr_platform() {
+  if (iomgr_platform_vtable == nullptr) {
+    grpc_set_default_iomgr_platform();
+  }
+}
 
-#endif /* GRPC_CORE_LIB_IOMGR_IOMGR_UV_H */
+void grpc_iomgr_platform_init() { iomgr_platform_vtable->init(); }
+
+void grpc_iomgr_platform_flush() { iomgr_platform_vtable->flush(); }
+
+void grpc_iomgr_platform_shutdown() { iomgr_platform_vtable->shutdown(); }

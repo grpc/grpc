@@ -124,14 +124,13 @@ void bad_server_thread(void* vargs) {
 
   grpc_core::ExecCtx exec_ctx;
   grpc_resolved_address resolved_addr;
-  struct sockaddr_storage* addr =
-      reinterpret_cast<struct sockaddr_storage*>(resolved_addr.addr);
+  grpc_sockaddr* addr = reinterpret_cast<grpc_sockaddr*>(resolved_addr.addr);
   int port;
   grpc_tcp_server* s;
   grpc_error* error = grpc_tcp_server_create(nullptr, nullptr, &s);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   memset(&resolved_addr, 0, sizeof(resolved_addr));
-  addr->ss_family = AF_INET;
+  addr->sa_family = GRPC_AF_INET;
   error = grpc_tcp_server_add_port(s, &resolved_addr, &port);
   GPR_ASSERT(GRPC_LOG_IF_ERROR("grpc_tcp_server_add_port", error));
   GPR_ASSERT(port > 0);

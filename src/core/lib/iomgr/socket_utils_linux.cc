@@ -37,8 +37,7 @@ int grpc_accept4(int sockfd, grpc_resolved_address* resolved_addr, int nonblock,
   GPR_ASSERT(resolved_addr->len <= (socklen_t)-1);
   flags |= nonblock ? SOCK_NONBLOCK : 0;
   flags |= cloexec ? SOCK_CLOEXEC : 0;
-  return accept4(sockfd,
-                 reinterpret_cast<struct sockaddr*>(resolved_addr->addr),
+  return accept4(sockfd, reinterpret_cast<grpc_sockaddr*>(resolved_addr->addr),
                  reinterpret_cast<socklen_t*>(&resolved_addr->len), flags);
 }
 

@@ -3202,6 +3202,8 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/gethostname_sysconf.cc \
     src/core/lib/iomgr/iocp_windows.cc \
     src/core/lib/iomgr/iomgr.cc \
+    src/core/lib/iomgr/iomgr_custom.cc \
+    src/core/lib/iomgr/iomgr_internal.cc \
     src/core/lib/iomgr/iomgr_posix.cc \
     src/core/lib/iomgr/iomgr_uv.cc \
     src/core/lib/iomgr/iomgr_windows.cc \
@@ -3210,12 +3212,16 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/lockfree_event.cc \
     src/core/lib/iomgr/network_status_tracker.cc \
     src/core/lib/iomgr/polling_entity.cc \
-    src/core/lib/iomgr/pollset_set_uv.cc \
+    src/core/lib/iomgr/pollset.cc \
+    src/core/lib/iomgr/pollset_custom.cc \
+    src/core/lib/iomgr/pollset_set.cc \
+    src/core/lib/iomgr/pollset_set_custom.cc \
     src/core/lib/iomgr/pollset_set_windows.cc \
     src/core/lib/iomgr/pollset_uv.cc \
     src/core/lib/iomgr/pollset_windows.cc \
+    src/core/lib/iomgr/resolve_address.cc \
+    src/core/lib/iomgr/resolve_address_custom.cc \
     src/core/lib/iomgr/resolve_address_posix.cc \
-    src/core/lib/iomgr/resolve_address_uv.cc \
     src/core/lib/iomgr/resolve_address_windows.cc \
     src/core/lib/iomgr/resource_quota.cc \
     src/core/lib/iomgr/sockaddr_utils.cc \
@@ -3227,19 +3233,24 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/socket_utils_uv.cc \
     src/core/lib/iomgr/socket_utils_windows.cc \
     src/core/lib/iomgr/socket_windows.cc \
+    src/core/lib/iomgr/tcp_client.cc \
+    src/core/lib/iomgr/tcp_client_custom.cc \
     src/core/lib/iomgr/tcp_client_posix.cc \
-    src/core/lib/iomgr/tcp_client_uv.cc \
     src/core/lib/iomgr/tcp_client_windows.cc \
+    src/core/lib/iomgr/tcp_custom.cc \
     src/core/lib/iomgr/tcp_posix.cc \
+    src/core/lib/iomgr/tcp_server.cc \
+    src/core/lib/iomgr/tcp_server_custom.cc \
     src/core/lib/iomgr/tcp_server_posix.cc \
     src/core/lib/iomgr/tcp_server_utils_posix_common.cc \
     src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc \
     src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc \
-    src/core/lib/iomgr/tcp_server_uv.cc \
     src/core/lib/iomgr/tcp_server_windows.cc \
     src/core/lib/iomgr/tcp_uv.cc \
     src/core/lib/iomgr/tcp_windows.cc \
     src/core/lib/iomgr/time_averaged_stats.cc \
+    src/core/lib/iomgr/timer.cc \
+    src/core/lib/iomgr/timer_custom.cc \
     src/core/lib/iomgr/timer_generic.cc \
     src/core/lib/iomgr/timer_heap.cc \
     src/core/lib/iomgr/timer_manager.cc \
@@ -3579,6 +3590,8 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/gethostname_sysconf.cc \
     src/core/lib/iomgr/iocp_windows.cc \
     src/core/lib/iomgr/iomgr.cc \
+    src/core/lib/iomgr/iomgr_custom.cc \
+    src/core/lib/iomgr/iomgr_internal.cc \
     src/core/lib/iomgr/iomgr_posix.cc \
     src/core/lib/iomgr/iomgr_uv.cc \
     src/core/lib/iomgr/iomgr_windows.cc \
@@ -3587,12 +3600,16 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/lockfree_event.cc \
     src/core/lib/iomgr/network_status_tracker.cc \
     src/core/lib/iomgr/polling_entity.cc \
-    src/core/lib/iomgr/pollset_set_uv.cc \
+    src/core/lib/iomgr/pollset.cc \
+    src/core/lib/iomgr/pollset_custom.cc \
+    src/core/lib/iomgr/pollset_set.cc \
+    src/core/lib/iomgr/pollset_set_custom.cc \
     src/core/lib/iomgr/pollset_set_windows.cc \
     src/core/lib/iomgr/pollset_uv.cc \
     src/core/lib/iomgr/pollset_windows.cc \
+    src/core/lib/iomgr/resolve_address.cc \
+    src/core/lib/iomgr/resolve_address_custom.cc \
     src/core/lib/iomgr/resolve_address_posix.cc \
-    src/core/lib/iomgr/resolve_address_uv.cc \
     src/core/lib/iomgr/resolve_address_windows.cc \
     src/core/lib/iomgr/resource_quota.cc \
     src/core/lib/iomgr/sockaddr_utils.cc \
@@ -3604,19 +3621,24 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/socket_utils_uv.cc \
     src/core/lib/iomgr/socket_utils_windows.cc \
     src/core/lib/iomgr/socket_windows.cc \
+    src/core/lib/iomgr/tcp_client.cc \
+    src/core/lib/iomgr/tcp_client_custom.cc \
     src/core/lib/iomgr/tcp_client_posix.cc \
-    src/core/lib/iomgr/tcp_client_uv.cc \
     src/core/lib/iomgr/tcp_client_windows.cc \
+    src/core/lib/iomgr/tcp_custom.cc \
     src/core/lib/iomgr/tcp_posix.cc \
+    src/core/lib/iomgr/tcp_server.cc \
+    src/core/lib/iomgr/tcp_server_custom.cc \
     src/core/lib/iomgr/tcp_server_posix.cc \
     src/core/lib/iomgr/tcp_server_utils_posix_common.cc \
     src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc \
     src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc \
-    src/core/lib/iomgr/tcp_server_uv.cc \
     src/core/lib/iomgr/tcp_server_windows.cc \
     src/core/lib/iomgr/tcp_uv.cc \
     src/core/lib/iomgr/tcp_windows.cc \
     src/core/lib/iomgr/time_averaged_stats.cc \
+    src/core/lib/iomgr/timer.cc \
+    src/core/lib/iomgr/timer_custom.cc \
     src/core/lib/iomgr/timer_generic.cc \
     src/core/lib/iomgr/timer_heap.cc \
     src/core/lib/iomgr/timer_manager.cc \
@@ -3946,6 +3968,8 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/gethostname_sysconf.cc \
     src/core/lib/iomgr/iocp_windows.cc \
     src/core/lib/iomgr/iomgr.cc \
+    src/core/lib/iomgr/iomgr_custom.cc \
+    src/core/lib/iomgr/iomgr_internal.cc \
     src/core/lib/iomgr/iomgr_posix.cc \
     src/core/lib/iomgr/iomgr_uv.cc \
     src/core/lib/iomgr/iomgr_windows.cc \
@@ -3954,12 +3978,16 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/lockfree_event.cc \
     src/core/lib/iomgr/network_status_tracker.cc \
     src/core/lib/iomgr/polling_entity.cc \
-    src/core/lib/iomgr/pollset_set_uv.cc \
+    src/core/lib/iomgr/pollset.cc \
+    src/core/lib/iomgr/pollset_custom.cc \
+    src/core/lib/iomgr/pollset_set.cc \
+    src/core/lib/iomgr/pollset_set_custom.cc \
     src/core/lib/iomgr/pollset_set_windows.cc \
     src/core/lib/iomgr/pollset_uv.cc \
     src/core/lib/iomgr/pollset_windows.cc \
+    src/core/lib/iomgr/resolve_address.cc \
+    src/core/lib/iomgr/resolve_address_custom.cc \
     src/core/lib/iomgr/resolve_address_posix.cc \
-    src/core/lib/iomgr/resolve_address_uv.cc \
     src/core/lib/iomgr/resolve_address_windows.cc \
     src/core/lib/iomgr/resource_quota.cc \
     src/core/lib/iomgr/sockaddr_utils.cc \
@@ -3971,19 +3999,24 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/socket_utils_uv.cc \
     src/core/lib/iomgr/socket_utils_windows.cc \
     src/core/lib/iomgr/socket_windows.cc \
+    src/core/lib/iomgr/tcp_client.cc \
+    src/core/lib/iomgr/tcp_client_custom.cc \
     src/core/lib/iomgr/tcp_client_posix.cc \
-    src/core/lib/iomgr/tcp_client_uv.cc \
     src/core/lib/iomgr/tcp_client_windows.cc \
+    src/core/lib/iomgr/tcp_custom.cc \
     src/core/lib/iomgr/tcp_posix.cc \
+    src/core/lib/iomgr/tcp_server.cc \
+    src/core/lib/iomgr/tcp_server_custom.cc \
     src/core/lib/iomgr/tcp_server_posix.cc \
     src/core/lib/iomgr/tcp_server_utils_posix_common.cc \
     src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc \
     src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc \
-    src/core/lib/iomgr/tcp_server_uv.cc \
     src/core/lib/iomgr/tcp_server_windows.cc \
     src/core/lib/iomgr/tcp_uv.cc \
     src/core/lib/iomgr/tcp_windows.cc \
     src/core/lib/iomgr/time_averaged_stats.cc \
+    src/core/lib/iomgr/timer.cc \
+    src/core/lib/iomgr/timer_custom.cc \
     src/core/lib/iomgr/timer_generic.cc \
     src/core/lib/iomgr/timer_heap.cc \
     src/core/lib/iomgr/timer_manager.cc \
@@ -4228,6 +4261,8 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/iomgr/gethostname_sysconf.cc \
     src/core/lib/iomgr/iocp_windows.cc \
     src/core/lib/iomgr/iomgr.cc \
+    src/core/lib/iomgr/iomgr_custom.cc \
+    src/core/lib/iomgr/iomgr_internal.cc \
     src/core/lib/iomgr/iomgr_posix.cc \
     src/core/lib/iomgr/iomgr_uv.cc \
     src/core/lib/iomgr/iomgr_windows.cc \
@@ -4236,12 +4271,16 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/iomgr/lockfree_event.cc \
     src/core/lib/iomgr/network_status_tracker.cc \
     src/core/lib/iomgr/polling_entity.cc \
-    src/core/lib/iomgr/pollset_set_uv.cc \
+    src/core/lib/iomgr/pollset.cc \
+    src/core/lib/iomgr/pollset_custom.cc \
+    src/core/lib/iomgr/pollset_set.cc \
+    src/core/lib/iomgr/pollset_set_custom.cc \
     src/core/lib/iomgr/pollset_set_windows.cc \
     src/core/lib/iomgr/pollset_uv.cc \
     src/core/lib/iomgr/pollset_windows.cc \
+    src/core/lib/iomgr/resolve_address.cc \
+    src/core/lib/iomgr/resolve_address_custom.cc \
     src/core/lib/iomgr/resolve_address_posix.cc \
-    src/core/lib/iomgr/resolve_address_uv.cc \
     src/core/lib/iomgr/resolve_address_windows.cc \
     src/core/lib/iomgr/resource_quota.cc \
     src/core/lib/iomgr/sockaddr_utils.cc \
@@ -4253,19 +4292,24 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/iomgr/socket_utils_uv.cc \
     src/core/lib/iomgr/socket_utils_windows.cc \
     src/core/lib/iomgr/socket_windows.cc \
+    src/core/lib/iomgr/tcp_client.cc \
+    src/core/lib/iomgr/tcp_client_custom.cc \
     src/core/lib/iomgr/tcp_client_posix.cc \
-    src/core/lib/iomgr/tcp_client_uv.cc \
     src/core/lib/iomgr/tcp_client_windows.cc \
+    src/core/lib/iomgr/tcp_custom.cc \
     src/core/lib/iomgr/tcp_posix.cc \
+    src/core/lib/iomgr/tcp_server.cc \
+    src/core/lib/iomgr/tcp_server_custom.cc \
     src/core/lib/iomgr/tcp_server_posix.cc \
     src/core/lib/iomgr/tcp_server_utils_posix_common.cc \
     src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc \
     src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc \
-    src/core/lib/iomgr/tcp_server_uv.cc \
     src/core/lib/iomgr/tcp_server_windows.cc \
     src/core/lib/iomgr/tcp_uv.cc \
     src/core/lib/iomgr/tcp_windows.cc \
     src/core/lib/iomgr/time_averaged_stats.cc \
+    src/core/lib/iomgr/timer.cc \
+    src/core/lib/iomgr/timer_custom.cc \
     src/core/lib/iomgr/timer_generic.cc \
     src/core/lib/iomgr/timer_heap.cc \
     src/core/lib/iomgr/timer_manager.cc \
@@ -4477,6 +4521,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/gethostname_sysconf.cc \
     src/core/lib/iomgr/iocp_windows.cc \
     src/core/lib/iomgr/iomgr.cc \
+    src/core/lib/iomgr/iomgr_custom.cc \
+    src/core/lib/iomgr/iomgr_internal.cc \
     src/core/lib/iomgr/iomgr_posix.cc \
     src/core/lib/iomgr/iomgr_uv.cc \
     src/core/lib/iomgr/iomgr_windows.cc \
@@ -4485,12 +4531,16 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/lockfree_event.cc \
     src/core/lib/iomgr/network_status_tracker.cc \
     src/core/lib/iomgr/polling_entity.cc \
-    src/core/lib/iomgr/pollset_set_uv.cc \
+    src/core/lib/iomgr/pollset.cc \
+    src/core/lib/iomgr/pollset_custom.cc \
+    src/core/lib/iomgr/pollset_set.cc \
+    src/core/lib/iomgr/pollset_set_custom.cc \
     src/core/lib/iomgr/pollset_set_windows.cc \
     src/core/lib/iomgr/pollset_uv.cc \
     src/core/lib/iomgr/pollset_windows.cc \
+    src/core/lib/iomgr/resolve_address.cc \
+    src/core/lib/iomgr/resolve_address_custom.cc \
     src/core/lib/iomgr/resolve_address_posix.cc \
-    src/core/lib/iomgr/resolve_address_uv.cc \
     src/core/lib/iomgr/resolve_address_windows.cc \
     src/core/lib/iomgr/resource_quota.cc \
     src/core/lib/iomgr/sockaddr_utils.cc \
@@ -4502,19 +4552,24 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/socket_utils_uv.cc \
     src/core/lib/iomgr/socket_utils_windows.cc \
     src/core/lib/iomgr/socket_windows.cc \
+    src/core/lib/iomgr/tcp_client.cc \
+    src/core/lib/iomgr/tcp_client_custom.cc \
     src/core/lib/iomgr/tcp_client_posix.cc \
-    src/core/lib/iomgr/tcp_client_uv.cc \
     src/core/lib/iomgr/tcp_client_windows.cc \
+    src/core/lib/iomgr/tcp_custom.cc \
     src/core/lib/iomgr/tcp_posix.cc \
+    src/core/lib/iomgr/tcp_server.cc \
+    src/core/lib/iomgr/tcp_server_custom.cc \
     src/core/lib/iomgr/tcp_server_posix.cc \
     src/core/lib/iomgr/tcp_server_utils_posix_common.cc \
     src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc \
     src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc \
-    src/core/lib/iomgr/tcp_server_uv.cc \
     src/core/lib/iomgr/tcp_server_windows.cc \
     src/core/lib/iomgr/tcp_uv.cc \
     src/core/lib/iomgr/tcp_windows.cc \
     src/core/lib/iomgr/time_averaged_stats.cc \
+    src/core/lib/iomgr/timer.cc \
+    src/core/lib/iomgr/timer_custom.cc \
     src/core/lib/iomgr/timer_generic.cc \
     src/core/lib/iomgr/timer_heap.cc \
     src/core/lib/iomgr/timer_manager.cc \
@@ -5279,6 +5334,8 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/iomgr/gethostname_sysconf.cc \
     src/core/lib/iomgr/iocp_windows.cc \
     src/core/lib/iomgr/iomgr.cc \
+    src/core/lib/iomgr/iomgr_custom.cc \
+    src/core/lib/iomgr/iomgr_internal.cc \
     src/core/lib/iomgr/iomgr_posix.cc \
     src/core/lib/iomgr/iomgr_uv.cc \
     src/core/lib/iomgr/iomgr_windows.cc \
@@ -5287,12 +5344,16 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/iomgr/lockfree_event.cc \
     src/core/lib/iomgr/network_status_tracker.cc \
     src/core/lib/iomgr/polling_entity.cc \
-    src/core/lib/iomgr/pollset_set_uv.cc \
+    src/core/lib/iomgr/pollset.cc \
+    src/core/lib/iomgr/pollset_custom.cc \
+    src/core/lib/iomgr/pollset_set.cc \
+    src/core/lib/iomgr/pollset_set_custom.cc \
     src/core/lib/iomgr/pollset_set_windows.cc \
     src/core/lib/iomgr/pollset_uv.cc \
     src/core/lib/iomgr/pollset_windows.cc \
+    src/core/lib/iomgr/resolve_address.cc \
+    src/core/lib/iomgr/resolve_address_custom.cc \
     src/core/lib/iomgr/resolve_address_posix.cc \
-    src/core/lib/iomgr/resolve_address_uv.cc \
     src/core/lib/iomgr/resolve_address_windows.cc \
     src/core/lib/iomgr/resource_quota.cc \
     src/core/lib/iomgr/sockaddr_utils.cc \
@@ -5304,19 +5365,24 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/iomgr/socket_utils_uv.cc \
     src/core/lib/iomgr/socket_utils_windows.cc \
     src/core/lib/iomgr/socket_windows.cc \
+    src/core/lib/iomgr/tcp_client.cc \
+    src/core/lib/iomgr/tcp_client_custom.cc \
     src/core/lib/iomgr/tcp_client_posix.cc \
-    src/core/lib/iomgr/tcp_client_uv.cc \
     src/core/lib/iomgr/tcp_client_windows.cc \
+    src/core/lib/iomgr/tcp_custom.cc \
     src/core/lib/iomgr/tcp_posix.cc \
+    src/core/lib/iomgr/tcp_server.cc \
+    src/core/lib/iomgr/tcp_server_custom.cc \
     src/core/lib/iomgr/tcp_server_posix.cc \
     src/core/lib/iomgr/tcp_server_utils_posix_common.cc \
     src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc \
     src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc \
-    src/core/lib/iomgr/tcp_server_uv.cc \
     src/core/lib/iomgr/tcp_server_windows.cc \
     src/core/lib/iomgr/tcp_uv.cc \
     src/core/lib/iomgr/tcp_windows.cc \
     src/core/lib/iomgr/time_averaged_stats.cc \
+    src/core/lib/iomgr/timer.cc \
+    src/core/lib/iomgr/timer_custom.cc \
     src/core/lib/iomgr/timer_generic.cc \
     src/core/lib/iomgr/timer_heap.cc \
     src/core/lib/iomgr/timer_manager.cc \
