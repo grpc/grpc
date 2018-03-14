@@ -281,6 +281,21 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+  name = "grpc_nanopb",
+  hdrs = [
+      "third_party/nanopb/pb.h",
+      "third_party/nanopb/pb_common.h",
+      "third_party/nanopb/pb_decode.h",
+      "third_party/nanopb/pb_encode.h",
+  ],
+  srcs = [
+      "third_party/nanopb/pb_common.c",
+      "third_party/nanopb/pb_decode.c",
+      "third_party/nanopb/pb_encode.c",
+  ],
+)
+
+grpc_cc_library(
     name = "grpc",
     srcs = [
         "src/core/lib/surface/init.cc",
