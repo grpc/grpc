@@ -157,9 +157,10 @@ static grpc_core::UniquePtr<char> get_default_authority(
   }
   if (channel_stack_type == GRPC_CLIENT_DIRECT_CHANNEL &&
       default_authority == nullptr) {
-    // Set the default authority. This is handled by the subchannel stack for
-    // regular client channels.
-    default_authority.reset(gpr_strdup(target));
+    gpr_log(GPR_ERROR,
+            "Direct channels must specify a value for the "
+            "GRPC_ARG_DEFAULT_AUTHORITY channel arg.");
+    abort();
   }
   return default_authority;
 }
