@@ -204,6 +204,8 @@ void grpc_string_to_sockaddr(grpc_resolved_address* out, char* addr, int port) {
 
   if (grpc_inet_pton(GRPC_AF_INET6, addr, &addr6->sin6_addr) == 1) {
     addr6->sin6_family = GRPC_AF_INET6;
+    addr6->sin6_flowinfo = 0;
+    addr6->sin6_scope_id = 0;
     out->len = sizeof(grpc_sockaddr_in6);
   } else if (grpc_inet_pton(GRPC_AF_INET, addr, &addr4->sin_addr) == 1) {
     addr4->sin_family = GRPC_AF_INET;
