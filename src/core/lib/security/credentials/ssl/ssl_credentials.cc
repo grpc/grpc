@@ -58,7 +58,7 @@ static grpc_security_status ssl_create_security_connector(
   const char* overridden_target_name = nullptr;
   for (size_t i = 0; args && i < args->num_args; i++) {
     grpc_arg* arg = &args->args[i];
-    if (strcmp(arg->key, GRPC_ARG_DEFAULT_AUTHORITY) == 0 &&
+    if (strcmp(arg->key, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG) == 0 &&
         arg->type == GRPC_ARG_STRING) {
       overridden_target_name = arg->value.string;
       break;
