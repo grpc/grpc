@@ -156,7 +156,7 @@ static grpc_core::UniquePtr<char> get_default_authority(
     default_authority.reset(gpr_strdup(ssl_override));
   }
   if (channel_stack_type == GRPC_CLIENT_DIRECT_CHANNEL &&
-      default_authority == nullptr) {
+      !has_default_authority) {
     gpr_log(GPR_ERROR,
             "Direct channels must specify a value for the "
             "GRPC_ARG_DEFAULT_AUTHORITY channel arg.");

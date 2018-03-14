@@ -20,6 +20,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/iomgr/executor.h"
@@ -58,8 +59,14 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
         grpc_create_chttp2_transport(nullptr, mock_endpoint, true);
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
 
+    grpc_arg authority_arg = grpc_channel_arg_string_create(
+        const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
+        const_cast<char*>("test-authority"));
+    grpc_channel_args* args =
+        grpc_channel_args_copy_and_add(nullptr, &authority_arg, 1);
     grpc_channel* channel = grpc_channel_create(
-        "test-target", nullptr, GRPC_CLIENT_DIRECT_CHANNEL, transport);
+        "test-target", args, GRPC_CLIENT_DIRECT_CHANNEL, transport);
+    grpc_channel_args_destroy(args);
     grpc_slice host = grpc_slice_from_static_string("localhost");
     grpc_call* call = grpc_channel_create_call(
         channel, nullptr, 0, cq, grpc_slice_from_static_string("/foo"), &host,

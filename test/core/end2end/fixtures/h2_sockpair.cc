@@ -58,8 +58,14 @@ typedef struct {
 static void client_setup_transport(void* ts, grpc_transport* transport) {
   sp_client_setup* cs = static_cast<sp_client_setup*>(ts);
 
-  cs->f->client = grpc_channel_create("socketpair-target", cs->client_args,
+  grpc_arg authority_arg = grpc_channel_arg_string_create(
+      const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY),
+      const_cast<char*>("test-authority"));
+  grpc_channel_args* args =
+      grpc_channel_args_copy_and_add(cs->client_args, &authority_arg, 1);
+  cs->f->client = grpc_channel_create("socketpair-target", args,
                                       GRPC_CLIENT_DIRECT_CHANNEL, transport);
+  grpc_channel_args_destroy(args);
 }
 
 static grpc_end2end_test_fixture chttp2_create_fixture_socketpair(
