@@ -94,7 +94,6 @@ $CFLAGS << ' -std=c99 '
 $CFLAGS << ' -Wall '
 $CFLAGS << ' -Wextra '
 $CFLAGS << ' -pedantic '
-$CFLAGS << ' -Wno-format '
 
 output = File.join('grpc', 'grpc_c')
 puts 'Generating Makefile for ' + output
