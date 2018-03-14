@@ -18,12 +18,12 @@
 set -ex
 
 # all command args required in this set order
-FLAGS_test_bin_path=$(echo "$1" | grep '\--test_bin_path=' | cut -d "=" -f 2)
-FLAGS_dns_server_bin_path=$(echo "$2" | grep '\--dns_server_bin_path=' | cut -d "=" -f 2)
-FLAGS_records_config_path=$(echo "$3" | grep '\--records_config_path=' | cut -d "=" -f 2)
-FLAGS_dns_server_port=$(echo "$4" | grep '\--dns_server_port=' | cut -d "=" -f 2)
-FLAGS_dns_resolver_bin_path=$(echo "$5" | grep '\--dns_resolver_bin_path=' | cut -d "=" -f 2)
-FLAGS_tcp_connect_bin_path=$(echo "$6" | grep '\--tcp_connect_bin_path=' | cut -d "=" -f 2)
+FLAGS_test_bin_path=$(echo "$1" | grep '\--test_bin_path=' | sed 's/^--test_bin_path=//')
+FLAGS_dns_server_bin_path=$(echo "$2" | grep '\--dns_server_bin_path=' | sed 's/^--dns_server_bin_path=//')
+FLAGS_records_config_path=$(echo "$3" | grep '\--records_config_path=' | sed 's/^--records_config_path=//')
+FLAGS_dns_server_port=$(echo "$4" | grep '\--dns_server_port=' | sed 's/^--dns_server_port=//')
+FLAGS_dns_resolver_bin_path=$(echo "$5" | grep '\--dns_resolver_bin_path=' | sed 's/^--dns_resolver_bin_path=//')
+FLAGS_tcp_connect_bin_path=$(echo "$6" | grep '\--tcp_connect_bin_path=' | sed 's/^--tcp_connect_bin_path=//')
 
 for cmd_arg in "$FLAGS_test_bin_path" "$FLAGS_dns_server_bin_path" "$FLAGS_records_config_path" "$FLAGS_dns_server_port" "$FLAGS_dns_resolver_bin_path" "$FLAGS_tcp_connect_bin_path"; do
   if [[ "$cmd_arg" == "" ]]; then
