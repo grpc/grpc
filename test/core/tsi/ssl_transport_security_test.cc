@@ -61,7 +61,9 @@ typedef struct ssl_alpn_lib {
 typedef struct ssl_key_cert_lib {
   bool use_bad_server_cert;
   bool use_bad_client_cert;
+  bool use_root_store;
   char* root_cert;
+  tsi_ssl_root_certs_store* root_store;
   tsi_ssl_pem_key_cert_pair* server_pem_key_cert_pairs;
   tsi_ssl_pem_key_cert_pair* bad_server_pem_key_cert_pairs;
   tsi_ssl_pem_key_cert_pair client_pem_key_cert_pair;
@@ -103,10 +105,16 @@ static void ssl_test_setup_handshakers(tsi_test_fixture* fixture) {
     client_alpn_protocols = alpn_lib->client_alpn_protocols;
     num_client_alpn_protocols = alpn_lib->num_client_alpn_protocols;
   }
-  GPR_ASSERT(tsi_create_ssl_client_handshaker_factory(
-                 client_key_cert_pair, key_cert_lib->root_cert, nullptr,
-                 (const char**)client_alpn_protocols, num_client_alpn_protocols,
-                 &ssl_fixture->client_handshaker_factory) == TSI_OK);
+  tsi_ssl_client_handshaker_factory_options options;
+  options.pem_key_cert_pair = client_key_cert_pair;
+  options.pem_root_certs = key_cert_lib->root_cert;
+  options.root_store =
+      key_cert_lib->use_root_store ? key_cert_lib->root_store : nullptr;
+  options.cipher_suites = nullptr;
+  options.alpn_protocols = (const char**)client_alpn_protocols;
+  options.num_alpn_protocols = num_client_alpn_protocols;
+  GPR_ASSERT(tsi_create_ssl_client_handshaker_factory_with_options(
+                 &options, &ssl_fixture->client_handshaker_factory) == TSI_OK);
   /* Create server handshaker factory. */
   char** server_alpn_protocols = nullptr;
   uint16_t num_server_alpn_protocols = 0;
@@ -315,6 +323,7 @@ static void ssl_test_destruct(tsi_test_fixture* fixture) {
   ssl_test_pem_key_cert_pair_destroy(
       key_cert_lib->bad_client_pem_key_cert_pair);
   gpr_free(key_cert_lib->root_cert);
+  tsi_ssl_root_certs_store_destroy(key_cert_lib->root_store);
   gpr_free(key_cert_lib);
   /* Unreference others. */
   tsi_ssl_server_handshaker_factory_unref(
@@ -351,6 +360,7 @@ static tsi_test_fixture* ssl_tsi_test_fixture_create() {
       static_cast<ssl_key_cert_lib*>(gpr_zalloc(sizeof(*key_cert_lib)));
   key_cert_lib->use_bad_server_cert = false;
   key_cert_lib->use_bad_client_cert = false;
+  key_cert_lib->use_root_store = false;
   key_cert_lib->server_num_key_cert_pairs =
       SSL_TSI_TEST_SERVER_KEY_CERT_PAIRS_NUM;
   key_cert_lib->bad_server_num_key_cert_pairs =
@@ -384,6 +394,9 @@ static tsi_test_fixture* ssl_tsi_test_fixture_create() {
   key_cert_lib->bad_client_pem_key_cert_pair.cert_chain =
       load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "badclient.pem");
   key_cert_lib->root_cert = load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "ca.pem");
+  key_cert_lib->root_store =
+      tsi_ssl_root_certs_store_create(key_cert_lib->root_cert);
+  GPR_ASSERT(key_cert_lib->root_store != nullptr);
   ssl_fixture->key_cert_lib = key_cert_lib;
   /* Create ssl_alpn_lib. */
   ssl_alpn_lib* alpn_lib =
@@ -426,11 +439,30 @@ void ssl_tsi_test_do_handshake() {
   tsi_test_fixture_destroy(fixture);
 }
 
+void ssl_tsi_test_do_handshake_with_root_store() {
+  tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
+  ssl_tsi_test_fixture* ssl_fixture =
+      reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
+  ssl_fixture->key_cert_lib->use_root_store = true;
+  tsi_test_do_handshake(fixture);
+  tsi_test_fixture_destroy(fixture);
+}
+
 void ssl_tsi_test_do_handshake_with_client_authentication() {
   tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
   ssl_tsi_test_fixture* ssl_fixture =
       reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
   ssl_fixture->force_client_auth = true;
+  tsi_test_do_handshake(fixture);
+  tsi_test_fixture_destroy(fixture);
+}
+
+void ssl_tsi_test_do_handshake_with_client_authentication_and_root_store() {
+  tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
+  ssl_tsi_test_fixture* ssl_fixture =
+      reinterpret_cast<ssl_tsi_test_fixture*>(fixture);
+  ssl_fixture->force_client_auth = true;
+  ssl_fixture->key_cert_lib->use_root_store = true;
   tsi_test_do_handshake(fixture);
   tsi_test_fixture_destroy(fixture);
 }
@@ -579,9 +611,11 @@ void test_tsi_ssl_client_handshaker_factory_refcounting() {
       load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "client.pem");
 
   tsi_ssl_client_handshaker_factory* client_handshaker_factory;
-  GPR_ASSERT(tsi_create_ssl_client_handshaker_factory(
-                 nullptr, cert_chain, nullptr, nullptr, 0,
-                 &client_handshaker_factory) == TSI_OK);
+  tsi_ssl_client_handshaker_factory_options options;
+  memset(&options, 0, sizeof(options));
+  options.pem_root_certs = cert_chain;
+  GPR_ASSERT(tsi_create_ssl_client_handshaker_factory_with_options(
+                 &options, &client_handshaker_factory) == TSI_OK);
 
   handshaker_factory_destructor_called = false;
   original_vtable = tsi_ssl_handshaker_factory_swap_vtable(
@@ -658,9 +692,11 @@ void test_tsi_ssl_client_handshaker_factory_bad_params() {
   const char* cert_chain = "This is not a valid PEM file.";
 
   tsi_ssl_client_handshaker_factory* client_handshaker_factory;
-  GPR_ASSERT(tsi_create_ssl_client_handshaker_factory(
-                 nullptr, cert_chain, nullptr, nullptr, 0,
-                 &client_handshaker_factory) == TSI_INVALID_ARGUMENT);
+  tsi_ssl_client_handshaker_factory_options options;
+  memset(&options, 0, sizeof(options));
+  options.pem_root_certs = cert_chain;
+  GPR_ASSERT(tsi_create_ssl_client_handshaker_factory_with_options(
+                 &options, &client_handshaker_factory) == TSI_INVALID_ARGUMENT);
   tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory);
 }
 
@@ -676,7 +712,9 @@ int main(int argc, char** argv) {
   ssl_tsi_test_do_handshake_tiny_handshake_buffer();
   ssl_tsi_test_do_handshake_small_handshake_buffer();
   ssl_tsi_test_do_handshake();
+  ssl_tsi_test_do_handshake_with_root_store();
   ssl_tsi_test_do_handshake_with_client_authentication();
+  ssl_tsi_test_do_handshake_with_client_authentication_and_root_store();
   ssl_tsi_test_do_handshake_with_server_name_indication_exact_domain();
   ssl_tsi_test_do_handshake_with_server_name_indication_wild_star_domain();
   ssl_tsi_test_do_handshake_with_bad_server_cert();
