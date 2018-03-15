@@ -24,7 +24,13 @@
 #
 
 # The set of pollers to test against if a test exercises polling
-POLLERS = ['epollex', 'epollsig', 'epoll1', 'poll', 'poll-cv']
+POLLERS = [
+    "epollex",
+    "epollsig",
+    "epoll1",
+    "poll",
+    "poll-cv",
+]
 
 def if_not_windows(a):
   return select({
@@ -63,14 +69,14 @@ def _maybe_update_cc_library_defines(name):
     ret += ["PB_FIELD_16BIT=1"]
   return ret
 
-def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
+def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [], defines = [],
                     external_deps = [], deps = [], standalone = False,
                     language = "C++", testonly = False, visibility = None,
                     alwayslink = 0):
   copts = []
   if language.upper() == "C":
     copts = if_not_windows(["-std=c99"])
-  defines = _maybe_update_cc_library_defines(name)
+  defines = defines + _maybe_update_cc_library_defines(name)
   native.cc_library(
     name = name,
     srcs = srcs,
