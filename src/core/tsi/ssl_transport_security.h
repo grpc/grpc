@@ -35,6 +35,19 @@
 
 #define TSI_SSL_ALPN_SELECTED_PROTOCOL "ssl_alpn_selected_protocol"
 
+/* --- ssl_root_certs_store object ---
+
+   This object is a wapper to X509_STORE that stores SSL root certificates.
+   It can be shared by multiple SSL context. */
+typedef struct ssl_root_certs_store ssl_root_certs_store;
+
+/* Given a NULL-terminated string containing the PEM encoding of the root
+   certificates, creates an ssl_root_certs_store object. */
+ssl_root_certs_store* ssl_root_certs_store_create(const char* pem_roots);
+
+/* Destroys the ssl_root_certs_store object. */
+void ssl_root_certs_store_destroy(ssl_root_certs_store* self);
+
 /* --- tsi_ssl_client_handshaker_factory object ---
 
    This object creates a client tsi_handshaker objects implemented in terms of
@@ -59,8 +72,10 @@ typedef struct {
      key and certificate chain. This parameter can be NULL if the client does
      not have such a key/cert pair.
    - pem_roots_cert is the NULL-terminated string containing the PEM encoding of
-     the client root certificates. This parameter may be NULL if the server does
-     not want the client to be authenticated with SSL.
+     the server root certificates.
+   - root_store is a pointer to the ssl_root_certs_store object. If root_store
+     is nullptr, pem_roots_cert will be used to load server root certificates,
+     otherwise, root_store will be used as root certificates for the SSL client.
    - cipher_suites contains an optional list of the ciphers that the client
      supports. The format of this string is described in:
      https://www.openssl.org/docs/apps/ciphers.html.
@@ -77,9 +92,9 @@ typedef struct {
      where a parameter is invalid.  */
 tsi_result tsi_create_ssl_client_handshaker_factory(
     const tsi_ssl_pem_key_cert_pair* pem_key_cert_pair,
-    const char* pem_root_certs, const char* cipher_suites,
-    const char** alpn_protocols, uint16_t num_alpn_protocols,
-    tsi_ssl_client_handshaker_factory** factory);
+    const char* pem_root_certs, const ssl_root_certs_store* root_store,
+    const char* cipher_suites, const char** alpn_protocols,
+    uint16_t num_alpn_protocols, tsi_ssl_client_handshaker_factory** factory);
 
 /* Creates a client handshaker.
   - self is the factory from which the handshaker will be created.
@@ -112,7 +127,8 @@ typedef struct tsi_ssl_server_handshaker_factory
      server.
    - num_key_cert_pairs is the number of items in the pem_key_cert_pairs array.
    - pem_root_certs is the NULL-terminated string containing the PEM encoding
-     of the server root certificates.
+     of the client root certificates. This parameter may be NULL if the server
+     does not want the client to be authenticated with SSL.
    - cipher_suites contains an optional list of the ciphers that the server
      supports. The format of this string is described in:
      https://www.openssl.org/docs/apps/ciphers.html.

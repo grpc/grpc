@@ -382,6 +382,8 @@ static void test_default_ssl_roots(void) {
   grpc_set_ssl_roots_override_callback(override_roots_permanent_failure);
   roots = grpc_get_default_ssl_roots_for_testing();
   GPR_ASSERT(GRPC_SLICE_IS_EMPTY(roots));
+  const ssl_root_certs_store* root_store = grpc_get_default_ssl_root_store();
+  GPR_ASSERT(root_store == nullptr);
 
   /* Cleanup. */
   remove(roots_env_var_file_path);

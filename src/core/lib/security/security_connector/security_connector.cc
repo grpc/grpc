@@ -959,24 +959,29 @@ static grpc_slice compute_default_pem_root_certs_once(void) {
 }
 
 static grpc_slice default_pem_root_certs;
+static ssl_root_certs_store* default_root_store = nullptr;
 
-static void init_default_pem_root_certs(void) {
+static void init_default_ssl_root_store(void) {
   default_pem_root_certs = compute_default_pem_root_certs_once();
+  if (!GRPC_SLICE_IS_EMPTY(default_pem_root_certs)) {
+    default_root_store =
+        ssl_root_certs_store_create(reinterpret_cast<const char*>(
+            GRPC_SLICE_START_PTR(default_pem_root_certs)));
+  }
 }
 
 grpc_slice grpc_get_default_ssl_roots_for_testing(void) {
   return compute_default_pem_root_certs_once();
 }
 
-const char* grpc_get_default_ssl_roots(void) {
-  /* TODO(jboeuf@google.com): Maybe revisit the approach which consists in
-     loading all the roots once for the lifetime of the process. */
+const ssl_root_certs_store* grpc_get_default_ssl_root_store(void) {
   static gpr_once once = GPR_ONCE_INIT;
-  gpr_once_init(&once, init_default_pem_root_certs);
-  return GRPC_SLICE_IS_EMPTY(default_pem_root_certs)
-             ? nullptr
-             : reinterpret_cast<const char*>
-                   GRPC_SLICE_START_PTR(default_pem_root_certs);
+  gpr_once_init(&once, init_default_ssl_root_store);
+  return default_root_store;
+}
+
+void grpc_destroy_default_ssl_root_store(void) {
+  ssl_root_certs_store_destroy(default_root_store);
 }
 
 grpc_security_status grpc_ssl_channel_security_connector_create(
@@ -989,7 +994,7 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
       fill_alpn_protocol_strings(&num_alpn_protocols);
   tsi_result result = TSI_OK;
   grpc_ssl_channel_security_connector* c;
-  const char* pem_root_certs;
+  const ssl_root_certs_store* root_store = nullptr;
   char* port;
   bool has_key_cert_pair;
 
@@ -998,15 +1003,12 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
     goto error;
   }
   if (config->pem_root_certs == nullptr) {
-    pem_root_certs = grpc_get_default_ssl_roots();
-    if (pem_root_certs == nullptr) {
+    root_store = grpc_get_default_ssl_root_store();
+    if (root_store == nullptr) {
       gpr_log(GPR_ERROR, "Could not get default pem root certs.");
       goto error;
     }
-  } else {
-    pem_root_certs = config->pem_root_certs;
   }
-
   c = static_cast<grpc_ssl_channel_security_connector*>(
       gpr_zalloc(sizeof(grpc_ssl_channel_security_connector)));
 
@@ -1029,9 +1031,10 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
                       config->pem_key_cert_pair->private_key != nullptr &&
                       config->pem_key_cert_pair->cert_chain != nullptr;
   result = tsi_create_ssl_client_handshaker_factory(
-      has_key_cert_pair ? config->pem_key_cert_pair : nullptr, pem_root_certs,
-      ssl_cipher_suites(), alpn_protocol_strings,
-      static_cast<uint16_t>(num_alpn_protocols), &c->client_handshaker_factory);
+      has_key_cert_pair ? config->pem_key_cert_pair : nullptr,
+      config->pem_root_certs, root_store, ssl_cipher_suites(),
+      alpn_protocol_strings, static_cast<uint16_t>(num_alpn_protocols),
+      &c->client_handshaker_factory);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
             tsi_result_to_string(result));

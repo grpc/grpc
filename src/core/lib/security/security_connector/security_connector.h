@@ -214,8 +214,11 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
     const grpc_ssl_config* config, const char* target_name,
     const char* overridden_target_name, grpc_channel_security_connector** sc);
 
-/* Gets the default ssl roots. Returns NULL if not found. */
-const char* grpc_get_default_ssl_roots(void);
+/* Gets the default ssl root store. Returns nullptr if not found. */
+const ssl_root_certs_store* grpc_get_default_ssl_root_store(void);
+
+/* Destroys the default ssl root store. */
+void grpc_destroy_default_ssl_root_store(void);
 
 /* Exposed for TESTING ONLY!. */
 grpc_slice grpc_get_default_ssl_roots_for_testing(void);

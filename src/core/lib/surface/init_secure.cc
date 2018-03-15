@@ -76,3 +76,5 @@ void grpc_register_security_filters(void) {
 }
 
 void grpc_security_init() { grpc_security_register_handshaker_factories(); }
+
+void grpc_security_shutdown() { grpc_destroy_default_ssl_root_store(); }
