@@ -26,6 +26,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
 
