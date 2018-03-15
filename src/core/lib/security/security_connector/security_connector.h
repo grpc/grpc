@@ -214,12 +214,6 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
     const grpc_ssl_config* config, const char* target_name,
     const char* overridden_target_name, grpc_channel_security_connector** sc);
 
-/* Gets the default ssl roots. Returns NULL if not found. */
-const char* grpc_get_default_ssl_roots(void);
-
-/* Exposed for TESTING ONLY!. */
-grpc_slice grpc_get_default_ssl_roots_for_testing(void);
-
 /* Config for ssl servers. */
 typedef struct {
   tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs;
@@ -247,5 +241,37 @@ grpc_auth_context* tsi_ssl_peer_to_auth_context(const tsi_peer* peer);
 tsi_peer tsi_shallow_peer_from_ssl_auth_context(
     const grpc_auth_context* auth_context);
 void tsi_shallow_peer_destruct(tsi_peer* peer);
+
+/* --- Default SSL Root Store. --- */
+namespace grpc_core {
+
+// The class implements default SSL root store.
+class DefaultSslRootStore {
+ public:
+  // Gets the default SSL root store. Returns nullptr if not found.
+  static const tsi_ssl_root_certs_store* GetRootStore();
+
+  // Destroys the default SSL root store. Should only be called by
+  // grpc_shutdown().
+  static void DestroyRootStore();
+
+  // Exposed for TESTING ONLY!
+  static grpc_slice GetSslRootsForTesting();
+
+ private:
+  // Construct me not!
+  DefaultSslRootStore();
+
+  // Returns default PEM root certificates in nullptr terminated grpc_slice.
+  static grpc_slice ComputePemRootCerts();
+
+  // One time initialization of default SSL root store.
+  static void InitRootStore();
+
+  // Actual SSL root store in tsi_ssl_root_certs_store object.
+  static tsi_ssl_root_certs_store* default_root_store_;
+};
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SECURITY_CONNECTOR_H */

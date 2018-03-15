@@ -35,6 +35,20 @@
 
 #define TSI_SSL_ALPN_SELECTED_PROTOCOL "ssl_alpn_selected_protocol"
 
+/* --- tsi_ssl_root_certs_store object ---
+
+   This object stores SSL root certificates. It can be shared by multiple SSL
+   context. */
+typedef struct tsi_ssl_root_certs_store tsi_ssl_root_certs_store;
+
+/* Given a NULL-terminated string containing the PEM encoding of the root
+   certificates, creates a tsi_ssl_root_certs_store object. */
+tsi_ssl_root_certs_store* tsi_ssl_root_certs_store_create(
+    const char* pem_roots);
+
+/* Destroys the tsi_ssl_root_certs_store object. */
+void tsi_ssl_root_certs_store_destroy(tsi_ssl_root_certs_store* self);
+
 /* --- tsi_ssl_client_handshaker_factory object ---
 
    This object creates a client tsi_handshaker objects implemented in terms of
@@ -54,13 +68,51 @@ typedef struct {
   const char* cert_chain;
 } tsi_ssl_pem_key_cert_pair;
 
-/* Creates a client handshaker factory.
+/* Options for creating SSL client handshaker factory. Note that this struct
+   does not own pem_key_cert_pair, pem_root_certs, root_store, cipher_suites,
+   or alpn_protocols.
+   - pem_key_cert_pair is a pointer to the object containing client's private
+     key and certificate chain. This parameter can be nullptr if the client does
+     not have such a key/cert pair.
+   - pem_roots_cert is the NULL-terminated string containing the PEM encoding of
+     the server root certificates.
+   - root_store is a pointer to the ssl_root_certs_store object. If root_store
+     is nullptr, pem_roots_cert will be used to load server root certificates,
+     otherwise, root_store will be used as root certificates for the SSL client.
+   - cipher_suites contains an optional list of the ciphers that the client
+     supports. The format of this string is described in:
+     https://www.openssl.org/docs/apps/ciphers.html.
+     This parameter can be set to nullptr to use the default set of ciphers.
+   - alpn_protocols is an array containing the nullptr terminated protocol names
+     that the handshakers created with this factory support. This parameter can
+     be NULL.
+   - num_alpn_protocols is the number of alpn protocols and associated lengths
+     specified. If this parameter is 0, the other alpn parameters must be
+     nullptr. */
+typedef struct {
+  const tsi_ssl_pem_key_cert_pair* pem_key_cert_pair;
+  const char* pem_root_certs;
+  const tsi_ssl_root_certs_store* root_store;
+  const char* cipher_suites;
+  const char** alpn_protocols;
+  uint16_t num_alpn_protocols;
+} tsi_ssl_client_handshaker_factory_options;
+
+/* Creates a client handshaker factory with options.
+   - factory is the address of the factory pointer to be created.
+   - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
+     where a parameter is invalid. */
+tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
+    const tsi_ssl_client_handshaker_factory_options* options,
+    tsi_ssl_client_handshaker_factory** factory);
+
+/* TO BE DEPRECATED.
+   Creates a client handshaker factory.
    - pem_key_cert_pair is a pointer to the object containing client's private
      key and certificate chain. This parameter can be NULL if the client does
      not have such a key/cert pair.
    - pem_roots_cert is the NULL-terminated string containing the PEM encoding of
-     the client root certificates. This parameter may be NULL if the server does
-     not want the client to be authenticated with SSL.
+     the server root certificates.
    - cipher_suites contains an optional list of the ciphers that the client
      supports. The format of this string is described in:
      https://www.openssl.org/docs/apps/ciphers.html.
@@ -112,7 +164,8 @@ typedef struct tsi_ssl_server_handshaker_factory
      server.
    - num_key_cert_pairs is the number of items in the pem_key_cert_pairs array.
    - pem_root_certs is the NULL-terminated string containing the PEM encoding
-     of the server root certificates.
+     of the client root certificates. This parameter may be NULL if the server
+     does not want the client to be authenticated with SSL.
    - cipher_suites contains an optional list of the ciphers that the server
      supports. The format of this string is described in:
      https://www.openssl.org/docs/apps/ciphers.html.

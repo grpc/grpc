@@ -353,7 +353,7 @@ static void test_default_ssl_roots(void) {
      value. */
   gpr_setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR, "");
   grpc_set_ssl_roots_override_callback(override_roots_success);
-  grpc_slice roots = grpc_get_default_ssl_roots_for_testing();
+  grpc_slice roots = grpc_core::DefaultSslRootStore::GetSslRootsForTesting();
   char* roots_contents = grpc_slice_to_c_string(roots);
   grpc_slice_unref(roots);
   GPR_ASSERT(strcmp(roots_contents, roots_for_override_api) == 0);
@@ -362,7 +362,7 @@ static void test_default_ssl_roots(void) {
   /* Now let's set the env var: We should get the contents pointed value
      instead. */
   gpr_setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR, roots_env_var_file_path);
-  roots = grpc_get_default_ssl_roots_for_testing();
+  roots = grpc_core::DefaultSslRootStore::GetSslRootsForTesting();
   roots_contents = grpc_slice_to_c_string(roots);
   grpc_slice_unref(roots);
   GPR_ASSERT(strcmp(roots_contents, roots_for_env_var) == 0);
@@ -371,7 +371,7 @@ static void test_default_ssl_roots(void) {
   /* Now reset the env var. We should fall back to the value overridden using
      the api. */
   gpr_setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR, "");
-  roots = grpc_get_default_ssl_roots_for_testing();
+  roots = grpc_core::DefaultSslRootStore::GetSslRootsForTesting();
   roots_contents = grpc_slice_to_c_string(roots);
   grpc_slice_unref(roots);
   GPR_ASSERT(strcmp(roots_contents, roots_for_override_api) == 0);
@@ -380,8 +380,11 @@ static void test_default_ssl_roots(void) {
   /* Now setup a permanent failure for the overridden roots and we should get
      an empty slice. */
   grpc_set_ssl_roots_override_callback(override_roots_permanent_failure);
-  roots = grpc_get_default_ssl_roots_for_testing();
+  roots = grpc_core::DefaultSslRootStore::GetSslRootsForTesting();
   GPR_ASSERT(GRPC_SLICE_IS_EMPTY(roots));
+  const tsi_ssl_root_certs_store* root_store =
+      grpc_core::DefaultSslRootStore::GetRootStore();
+  GPR_ASSERT(root_store == nullptr);
 
   /* Cleanup. */
   remove(roots_env_var_file_path);
