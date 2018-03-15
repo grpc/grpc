@@ -27,6 +27,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)

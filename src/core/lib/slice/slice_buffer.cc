@@ -26,6 +26,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 /* grow a buffer; requires GRPC_SLICE_BUFFER_INLINE_ELEMENTS > 1 */

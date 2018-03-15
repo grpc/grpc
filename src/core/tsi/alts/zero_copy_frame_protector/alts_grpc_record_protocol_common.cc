@@ -26,6 +26,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 const size_t kInitialIovecBufferSize = 8;

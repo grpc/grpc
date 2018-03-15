@@ -27,6 +27,7 @@
 
 #ifdef GRPC_WINSOCK_SOCKET
 
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 
 typedef enum {

@@ -25,7 +25,6 @@
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_table.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/metadata.h"
 
 typedef struct grpc_chttp2_hpack_parser grpc_chttp2_hpack_parser;
