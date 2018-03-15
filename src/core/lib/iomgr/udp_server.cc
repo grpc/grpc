@@ -345,7 +345,7 @@ static int bind_socket(grpc_socket_factory* socket_factory, int sockfd,
   return (socket_factory != nullptr)
              ? grpc_socket_factory_bind(socket_factory, sockfd, addr)
              : bind(sockfd,
-                    reinterpret_cast<struct sockaddr*>(
+                    reinterpret_cast<grpc_sockaddr*>(
                         const_cast<char*>(addr->addr)),
                     addr->len);
 }
@@ -355,8 +355,8 @@ static int prepare_socket(grpc_socket_factory* socket_factory, int fd,
                           const grpc_resolved_address* addr, int rcv_buf_size,
                           int snd_buf_size) {
   grpc_resolved_address sockname_temp;
-  struct sockaddr* addr_ptr =
-      reinterpret_cast<struct sockaddr*>(const_cast<char*>(addr->addr));
+  grpc_sockaddr* addr_ptr =
+      reinterpret_cast<grpc_sockaddr*>(const_cast<char*>(addr->addr));
 
   if (fd < 0) {
     goto error;
@@ -392,7 +392,7 @@ static int prepare_socket(grpc_socket_factory* socket_factory, int fd,
 
   sockname_temp.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
 
-  if (getsockname(fd, reinterpret_cast<struct sockaddr*>(sockname_temp.addr),
+  if (getsockname(fd, reinterpret_cast<grpc_sockaddr*>(sockname_temp.addr),
                   &sockname_temp.len) < 0) {
     goto error;
   }
@@ -577,10 +577,9 @@ int grpc_udp_server_add_port(grpc_udp_server* s,
     for (size_t i = 0; i < s->listeners.size(); ++i) {
       sockname_temp.len =
           static_cast<socklen_t>(sizeof(struct sockaddr_storage));
-      if (0 ==
-          getsockname(s->listeners[i].fd(),
-                      reinterpret_cast<struct sockaddr*>(sockname_temp.addr),
-                      &sockname_temp.len)) {
+      if (0 == getsockname(s->listeners[i].fd(),
+                           reinterpret_cast<grpc_sockaddr*>(sockname_temp.addr),
+                           &sockname_temp.len)) {
         port = grpc_sockaddr_get_port(&sockname_temp);
         if (port > 0) {
           allocated_addr = static_cast<grpc_resolved_address*>(

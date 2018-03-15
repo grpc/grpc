@@ -69,9 +69,9 @@ static void init(void) {
 #endif
 }
 
-grpc_error* grpc_tcp_server_create(grpc_closure* shutdown_complete,
-                                   const grpc_channel_args* args,
-                                   grpc_tcp_server** server) {
+static grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
+                                     const grpc_channel_args* args,
+                                     grpc_tcp_server** server) {
   gpr_once_init(&check_init, init);
 
   grpc_tcp_server* s =
@@ -392,9 +392,9 @@ static grpc_error* clone_port(grpc_tcp_listener* listener, unsigned count) {
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* grpc_tcp_server_add_port(grpc_tcp_server* s,
-                                     const grpc_resolved_address* addr,
-                                     int* out_port) {
+static grpc_error* tcp_server_add_port(grpc_tcp_server* s,
+                                       const grpc_resolved_address* addr,
+                                       int* out_port) {
   grpc_tcp_listener* sp;
   grpc_resolved_address sockname_temp;
   grpc_resolved_address addr6_v4mapped;
@@ -416,7 +416,7 @@ grpc_error* grpc_tcp_server_add_port(grpc_tcp_server* s,
           static_cast<socklen_t>(sizeof(struct sockaddr_storage));
       if (0 ==
           getsockname(sp->fd,
-                      reinterpret_cast<struct sockaddr*>(&sockname_temp.addr),
+                      reinterpret_cast<grpc_sockaddr*>(&sockname_temp.addr),
                       &sockname_temp.len)) {
         int used_port = grpc_sockaddr_get_port(&sockname_temp);
         if (used_port > 0) {
@@ -459,8 +459,7 @@ static grpc_tcp_listener* get_port_index(grpc_tcp_server* s,
   return nullptr;
 }
 
-unsigned grpc_tcp_server_port_fd_count(grpc_tcp_server* s,
-                                       unsigned port_index) {
+unsigned tcp_server_port_fd_count(grpc_tcp_server* s, unsigned port_index) {
   unsigned num_fds = 0;
   gpr_mu_lock(&s->mu);
   grpc_tcp_listener* sp = get_port_index(s, port_index);
@@ -471,8 +470,8 @@ unsigned grpc_tcp_server_port_fd_count(grpc_tcp_server* s,
   return num_fds;
 }
 
-int grpc_tcp_server_port_fd(grpc_tcp_server* s, unsigned port_index,
-                            unsigned fd_index) {
+static int tcp_server_port_fd(grpc_tcp_server* s, unsigned port_index,
+                              unsigned fd_index) {
   gpr_mu_lock(&s->mu);
   grpc_tcp_listener* sp = get_port_index(s, port_index);
   for (; sp; sp = sp->sibling, --fd_index) {
@@ -485,10 +484,10 @@ int grpc_tcp_server_port_fd(grpc_tcp_server* s, unsigned port_index,
   return -1;
 }
 
-void grpc_tcp_server_start(grpc_tcp_server* s, grpc_pollset** pollsets,
-                           size_t pollset_count,
-                           grpc_tcp_server_cb on_accept_cb,
-                           void* on_accept_cb_arg) {
+static void tcp_server_start(grpc_tcp_server* s, grpc_pollset** pollsets,
+                             size_t pollset_count,
+                             grpc_tcp_server_cb on_accept_cb,
+                             void* on_accept_cb_arg) {
   size_t i;
   grpc_tcp_listener* sp;
   GPR_ASSERT(on_accept_cb);
@@ -527,20 +526,20 @@ void grpc_tcp_server_start(grpc_tcp_server* s, grpc_pollset** pollsets,
   gpr_mu_unlock(&s->mu);
 }
 
-grpc_tcp_server* grpc_tcp_server_ref(grpc_tcp_server* s) {
+grpc_tcp_server* tcp_server_ref(grpc_tcp_server* s) {
   gpr_ref_non_zero(&s->refs);
   return s;
 }
 
-void grpc_tcp_server_shutdown_starting_add(grpc_tcp_server* s,
-                                           grpc_closure* shutdown_starting) {
+static void tcp_server_shutdown_starting_add(grpc_tcp_server* s,
+                                             grpc_closure* shutdown_starting) {
   gpr_mu_lock(&s->mu);
   grpc_closure_list_append(&s->shutdown_starting, shutdown_starting,
                            GRPC_ERROR_NONE);
   gpr_mu_unlock(&s->mu);
 }
 
-void grpc_tcp_server_unref(grpc_tcp_server* s) {
+static void tcp_server_unref(grpc_tcp_server* s) {
   if (gpr_unref(&s->refs)) {
     grpc_tcp_server_shutdown_listeners(s);
     gpr_mu_lock(&s->mu);
@@ -550,7 +549,7 @@ void grpc_tcp_server_unref(grpc_tcp_server* s) {
   }
 }
 
-void grpc_tcp_server_shutdown_listeners(grpc_tcp_server* s) {
+static void tcp_server_shutdown_listeners(grpc_tcp_server* s) {
   gpr_mu_lock(&s->mu);
   s->shutdown_listeners = true;
   /* shutdown all fd's */
@@ -564,4 +563,14 @@ void grpc_tcp_server_shutdown_listeners(grpc_tcp_server* s) {
   gpr_mu_unlock(&s->mu);
 }
 
+grpc_tcp_server_vtable grpc_posix_tcp_server_vtable = {
+    tcp_server_create,
+    tcp_server_start,
+    tcp_server_add_port,
+    tcp_server_port_fd_count,
+    tcp_server_port_fd,
+    tcp_server_ref,
+    tcp_server_shutdown_starting_add,
+    tcp_server_unref,
+    tcp_server_shutdown_listeners};
 #endif

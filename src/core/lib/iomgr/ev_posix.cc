@@ -224,26 +224,26 @@ void grpc_fd_notify_on_write(grpc_fd* fd, grpc_closure* closure) {
   g_event_engine->fd_notify_on_write(fd, closure);
 }
 
-size_t grpc_pollset_size(void) { return g_event_engine->pollset_size; }
+static size_t pollset_size(void) { return g_event_engine->pollset_size; }
 
-void grpc_pollset_init(grpc_pollset* pollset, gpr_mu** mu) {
+static void pollset_init(grpc_pollset* pollset, gpr_mu** mu) {
   GRPC_POLLING_API_TRACE("pollset_init(%p)", pollset);
   g_event_engine->pollset_init(pollset, mu);
 }
 
-void grpc_pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
+static void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
   GRPC_POLLING_API_TRACE("pollset_shutdown(%p)", pollset);
   g_event_engine->pollset_shutdown(pollset, closure);
 }
 
-void grpc_pollset_destroy(grpc_pollset* pollset) {
+static void pollset_destroy(grpc_pollset* pollset) {
   GRPC_POLLING_API_TRACE("pollset_destroy(%p)", pollset);
   g_event_engine->pollset_destroy(pollset);
 }
 
-grpc_error* grpc_pollset_work(grpc_pollset* pollset,
-                              grpc_pollset_worker** worker,
-                              grpc_millis deadline) {
+static grpc_error* pollset_work(grpc_pollset* pollset,
+                                grpc_pollset_worker** worker,
+                                grpc_millis deadline) {
   GRPC_POLLING_API_TRACE("pollset_work(%p, %" PRIdPTR ") begin", pollset,
                          deadline);
   grpc_error* err = g_event_engine->pollset_work(pollset, worker, deadline);
@@ -252,8 +252,8 @@ grpc_error* grpc_pollset_work(grpc_pollset* pollset,
   return err;
 }
 
-grpc_error* grpc_pollset_kick(grpc_pollset* pollset,
-                              grpc_pollset_worker* specific_worker) {
+static grpc_error* pollset_kick(grpc_pollset* pollset,
+                                grpc_pollset_worker* specific_worker) {
   GRPC_POLLING_API_TRACE("pollset_kick(%p, %p)", pollset, specific_worker);
   return g_event_engine->pollset_kick(pollset, specific_worker);
 }
@@ -264,42 +264,56 @@ void grpc_pollset_add_fd(grpc_pollset* pollset, struct grpc_fd* fd) {
   g_event_engine->pollset_add_fd(pollset, fd);
 }
 
-grpc_pollset_set* grpc_pollset_set_create(void) {
+void pollset_global_init() {}
+void pollset_global_shutdown() {}
+
+grpc_pollset_vtable grpc_posix_pollset_vtable = {
+    pollset_global_init, pollset_global_shutdown,
+    pollset_init,        pollset_shutdown,
+    pollset_destroy,     pollset_work,
+    pollset_kick,        pollset_size};
+
+static grpc_pollset_set* pollset_set_create(void) {
   grpc_pollset_set* pss = g_event_engine->pollset_set_create();
   GRPC_POLLING_API_TRACE("pollset_set_create(%p)", pss);
   return pss;
 }
 
-void grpc_pollset_set_destroy(grpc_pollset_set* pollset_set) {
+static void pollset_set_destroy(grpc_pollset_set* pollset_set) {
   GRPC_POLLING_API_TRACE("pollset_set_destroy(%p)", pollset_set);
   g_event_engine->pollset_set_destroy(pollset_set);
 }
 
-void grpc_pollset_set_add_pollset(grpc_pollset_set* pollset_set,
-                                  grpc_pollset* pollset) {
+static void pollset_set_add_pollset(grpc_pollset_set* pollset_set,
+                                    grpc_pollset* pollset) {
   GRPC_POLLING_API_TRACE("pollset_set_add_pollset(%p, %p)", pollset_set,
                          pollset);
   g_event_engine->pollset_set_add_pollset(pollset_set, pollset);
 }
 
-void grpc_pollset_set_del_pollset(grpc_pollset_set* pollset_set,
-                                  grpc_pollset* pollset) {
+static void pollset_set_del_pollset(grpc_pollset_set* pollset_set,
+                                    grpc_pollset* pollset) {
   GRPC_POLLING_API_TRACE("pollset_set_del_pollset(%p, %p)", pollset_set,
                          pollset);
   g_event_engine->pollset_set_del_pollset(pollset_set, pollset);
 }
 
-void grpc_pollset_set_add_pollset_set(grpc_pollset_set* bag,
-                                      grpc_pollset_set* item) {
+static void pollset_set_add_pollset_set(grpc_pollset_set* bag,
+                                        grpc_pollset_set* item) {
   GRPC_POLLING_API_TRACE("pollset_set_add_pollset_set(%p, %p)", bag, item);
   g_event_engine->pollset_set_add_pollset_set(bag, item);
 }
 
-void grpc_pollset_set_del_pollset_set(grpc_pollset_set* bag,
-                                      grpc_pollset_set* item) {
+static void pollset_set_del_pollset_set(grpc_pollset_set* bag,
+                                        grpc_pollset_set* item) {
   GRPC_POLLING_API_TRACE("pollset_set_del_pollset_set(%p, %p)", bag, item);
   g_event_engine->pollset_set_del_pollset_set(bag, item);
 }
+
+grpc_pollset_set_vtable grpc_posix_pollset_set_vtable = {
+    pollset_set_create,          pollset_set_destroy,
+    pollset_set_add_pollset,     pollset_set_del_pollset,
+    pollset_set_add_pollset_set, pollset_set_del_pollset_set};
 
 void grpc_pollset_set_add_fd(grpc_pollset_set* pollset_set, grpc_fd* fd) {
   GRPC_POLLING_API_TRACE("pollset_set_add_fd(%p, %d)", pollset_set,

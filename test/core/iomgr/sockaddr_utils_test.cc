@@ -22,6 +22,7 @@
    headers. Therefore, sockaddr.h must always be included first */
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/socket_utils.h"
 
 #include <errno.h>
 #include <string.h>
@@ -33,34 +34,33 @@
 
 static grpc_resolved_address make_addr4(const uint8_t* data, size_t data_len) {
   grpc_resolved_address resolved_addr4;
-  struct sockaddr_in* addr4 =
-      reinterpret_cast<struct sockaddr_in*>(resolved_addr4.addr);
+  grpc_sockaddr_in* addr4 =
+      reinterpret_cast<grpc_sockaddr_in*>(resolved_addr4.addr);
   memset(&resolved_addr4, 0, sizeof(resolved_addr4));
-  addr4->sin_family = AF_INET;
+  addr4->sin_family = GRPC_AF_INET;
   GPR_ASSERT(data_len == sizeof(addr4->sin_addr.s_addr));
   memcpy(&addr4->sin_addr.s_addr, data, data_len);
-  addr4->sin_port = htons(12345);
-  resolved_addr4.len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
+  addr4->sin_port = grpc_htons(12345);
+  resolved_addr4.len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
   return resolved_addr4;
 }
 
 static grpc_resolved_address make_addr6(const uint8_t* data, size_t data_len) {
   grpc_resolved_address resolved_addr6;
-  struct sockaddr_in6* addr6 =
-      reinterpret_cast<struct sockaddr_in6*>(resolved_addr6.addr);
+  grpc_sockaddr_in6* addr6 =
+      reinterpret_cast<grpc_sockaddr_in6*>(resolved_addr6.addr);
   memset(&resolved_addr6, 0, sizeof(resolved_addr6));
-  addr6->sin6_family = AF_INET6;
+  addr6->sin6_family = GRPC_AF_INET6;
   GPR_ASSERT(data_len == sizeof(addr6->sin6_addr.s6_addr));
   memcpy(&addr6->sin6_addr.s6_addr, data, data_len);
-  addr6->sin6_port = htons(12345);
-  resolved_addr6.len = static_cast<socklen_t>(sizeof(struct sockaddr_in6));
+  addr6->sin6_port = grpc_htons(12345);
+  resolved_addr6.len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in6));
   return resolved_addr6;
 }
 
 static void set_addr6_scope_id(grpc_resolved_address* addr, uint32_t scope_id) {
-  struct sockaddr_in6* addr6 =
-      reinterpret_cast<struct sockaddr_in6*>(addr->addr);
-  GPR_ASSERT(addr6->sin6_family == AF_INET6);
+  grpc_sockaddr_in6* addr6 = reinterpret_cast<grpc_sockaddr_in6*>(addr->addr);
+  GPR_ASSERT(addr6->sin6_family == GRPC_AF_INET6);
   addr6->sin6_scope_id = scope_id;
 }
 
@@ -131,9 +131,9 @@ static void test_sockaddr_is_wildcard(void) {
   grpc_resolved_address wild6;
   grpc_resolved_address wild_mapped;
   grpc_resolved_address dummy;
-  struct sockaddr_in* wild4_addr;
-  struct sockaddr_in6* wild6_addr;
-  struct sockaddr_in6* wild_mapped_addr;
+  grpc_sockaddr_in* wild4_addr;
+  grpc_sockaddr_in6* wild6_addr;
+  grpc_sockaddr_in6* wild_mapped_addr;
   int port;
 
   gpr_log(GPR_INFO, "%s", "test_sockaddr_is_wildcard");
@@ -146,7 +146,7 @@ static void test_sockaddr_is_wildcard(void) {
   port = -1;
   GPR_ASSERT(grpc_sockaddr_is_wildcard(&wild4, &port));
   GPR_ASSERT(port == 555);
-  wild4_addr = reinterpret_cast<struct sockaddr_in*>(&wild4.addr);
+  wild4_addr = reinterpret_cast<grpc_sockaddr_in*>(&wild4.addr);
   memset(&wild4_addr->sin_addr.s_addr, 0xbd, 1);
   GPR_ASSERT(!grpc_sockaddr_is_wildcard(&wild4, &port));
 
@@ -154,7 +154,7 @@ static void test_sockaddr_is_wildcard(void) {
   port = -1;
   GPR_ASSERT(grpc_sockaddr_is_wildcard(&wild6, &port));
   GPR_ASSERT(port == 555);
-  wild6_addr = reinterpret_cast<struct sockaddr_in6*>(&wild6.addr);
+  wild6_addr = reinterpret_cast<grpc_sockaddr_in6*>(&wild6.addr);
   memset(&wild6_addr->sin6_addr.s6_addr, 0xbd, 1);
   GPR_ASSERT(!grpc_sockaddr_is_wildcard(&wild6, &port));
 
@@ -162,7 +162,7 @@ static void test_sockaddr_is_wildcard(void) {
   port = -1;
   GPR_ASSERT(grpc_sockaddr_is_wildcard(&wild_mapped, &port));
   GPR_ASSERT(port == 555);
-  wild_mapped_addr = reinterpret_cast<struct sockaddr_in6*>(&wild_mapped.addr);
+  wild_mapped_addr = reinterpret_cast<grpc_sockaddr_in6*>(&wild_mapped.addr);
   memset(&wild_mapped_addr->sin6_addr.s6_addr, 0xbd, 1);
   GPR_ASSERT(!grpc_sockaddr_is_wildcard(&wild_mapped, &port));
 
@@ -200,7 +200,7 @@ static void test_sockaddr_to_string(void) {
   grpc_resolved_address input4;
   grpc_resolved_address input6;
   grpc_resolved_address dummy;
-  struct sockaddr* dummy_addr;
+  grpc_sockaddr* dummy_addr;
 
   gpr_log(GPR_INFO, "%s", "test_sockaddr_to_string");
 
@@ -237,7 +237,7 @@ static void test_sockaddr_to_string(void) {
   expect_sockaddr_uri("ipv6:[::fffe:c000:263]:12345", &input6);
 
   memset(&dummy, 0, sizeof(dummy));
-  dummy_addr = reinterpret_cast<struct sockaddr*>(dummy.addr);
+  dummy_addr = reinterpret_cast<grpc_sockaddr*>(dummy.addr);
   dummy_addr->sa_family = 123;
   expect_sockaddr_str("(sockaddr family=123)", &dummy, 0);
   expect_sockaddr_str("(sockaddr family=123)", &dummy, 1);
@@ -248,7 +248,7 @@ static void test_sockaddr_set_get_port(void) {
   grpc_resolved_address input4;
   grpc_resolved_address input6;
   grpc_resolved_address dummy;
-  struct sockaddr* dummy_addr;
+  grpc_sockaddr* dummy_addr;
 
   gpr_log(GPR_DEBUG, "test_sockaddr_set_get_port");
 
@@ -263,7 +263,7 @@ static void test_sockaddr_set_get_port(void) {
   GPR_ASSERT(grpc_sockaddr_get_port(&input6) == 54321);
 
   memset(&dummy, 0, sizeof(dummy));
-  dummy_addr = reinterpret_cast<struct sockaddr*>(dummy.addr);
+  dummy_addr = reinterpret_cast<grpc_sockaddr*>(dummy.addr);
   dummy_addr->sa_family = 123;
   GPR_ASSERT(grpc_sockaddr_get_port(&dummy) == 0);
   GPR_ASSERT(grpc_sockaddr_set_port(&dummy, 1234) == 0);

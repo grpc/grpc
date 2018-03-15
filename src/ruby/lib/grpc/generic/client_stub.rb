@@ -58,8 +58,8 @@ module GRPC
     # Minimally, a stub is created with the just the host of the gRPC service
     # it wishes to access, e.g.,
     #
-    # my_stub = ClientStub.new(example.host.com:50505,
-    #                          :this_channel_is_insecure)
+    #   my_stub = ClientStub.new(example.host.com:50505,
+    #                            :this_channel_is_insecure)
     #
     # If a channel_override argument is passed, it will be used as the
     # underlying channel. Otherwise, the channel_args argument will be used
@@ -376,7 +376,7 @@ module GRPC
     # This is a blocking call.
     #
     # * the call completes when the next call to provided block returns
-    # * [False]
+    #   false
     #
     # * the execution block parameters are two objects for sending and
     #   receiving responses, each of which blocks waiting for flow control.
@@ -398,13 +398,9 @@ module GRPC
     # responses by throwing StopIteration, but can only happen either
     # if bidi_call#writes_done is called.
     #
-    # To terminate the RPC correctly the block:
-    #
-    # * must call bidi#writes_done and then
-    #
-    #    * either return false as soon as there is no need for other responses
-    #
-    #    * loop on responses#next until no further responses are available
+    # To properly terminate the RPC, the responses should be completely iterated
+    # through; one way to do this is to loop on responses#next until no further
+    # responses are available.
     #
     # == Errors ==
     # An RuntimeError is raised if

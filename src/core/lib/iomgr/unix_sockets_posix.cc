@@ -67,15 +67,15 @@ grpc_error* grpc_resolve_unix_domain_address(const char* name,
 }
 
 int grpc_is_unix_socket(const grpc_resolved_address* resolved_addr) {
-  const struct sockaddr* addr =
-      reinterpret_cast<const struct sockaddr*>(resolved_addr->addr);
+  const grpc_sockaddr* addr =
+      reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
   return addr->sa_family == AF_UNIX;
 }
 
 void grpc_unlink_if_unix_domain_socket(
     const grpc_resolved_address* resolved_addr) {
-  const struct sockaddr* addr =
-      reinterpret_cast<const struct sockaddr*>(resolved_addr->addr);
+  const grpc_sockaddr* addr =
+      reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
   if (addr->sa_family != AF_UNIX) {
     return;
   }
@@ -90,8 +90,8 @@ void grpc_unlink_if_unix_domain_socket(
 
 char* grpc_sockaddr_to_uri_unix_if_possible(
     const grpc_resolved_address* resolved_addr) {
-  const struct sockaddr* addr =
-      reinterpret_cast<const struct sockaddr*>(resolved_addr->addr);
+  const grpc_sockaddr* addr =
+      reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
   if (addr->sa_family != AF_UNIX) {
     return nullptr;
   }

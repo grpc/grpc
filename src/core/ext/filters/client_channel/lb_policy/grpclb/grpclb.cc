@@ -61,6 +61,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/socket_utils.h"
 
 #include <inttypes.h>
 #include <limits.h>
@@ -417,20 +418,20 @@ void ParseServer(const grpc_grpclb_server* server,
                  grpc_resolved_address* addr) {
   memset(addr, 0, sizeof(*addr));
   if (server->drop) return;
-  const uint16_t netorder_port = htons((uint16_t)server->port);
+  const uint16_t netorder_port = grpc_htons((uint16_t)server->port);
   /* the addresses are given in binary format (a in(6)_addr struct) in
    * server->ip_address.bytes. */
   const grpc_grpclb_ip_address* ip = &server->ip_address;
   if (ip->size == 4) {
-    addr->len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
-    struct sockaddr_in* addr4 = (struct sockaddr_in*)&addr->addr;
-    addr4->sin_family = AF_INET;
+    addr->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
+    grpc_sockaddr_in* addr4 = reinterpret_cast<grpc_sockaddr_in*>(&addr->addr);
+    addr4->sin_family = GRPC_AF_INET;
     memcpy(&addr4->sin_addr, ip->bytes, ip->size);
     addr4->sin_port = netorder_port;
   } else if (ip->size == 16) {
-    addr->len = static_cast<socklen_t>(sizeof(struct sockaddr_in6));
-    struct sockaddr_in6* addr6 = (struct sockaddr_in6*)&addr->addr;
-    addr6->sin6_family = AF_INET6;
+    addr->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in6));
+    grpc_sockaddr_in6* addr6 = (grpc_sockaddr_in6*)&addr->addr;
+    addr6->sin6_family = GRPC_AF_INET6;
     memcpy(&addr6->sin6_addr, ip->bytes, ip->size);
     addr6->sin6_port = netorder_port;
   }

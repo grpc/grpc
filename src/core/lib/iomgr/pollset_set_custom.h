@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016 gRPC authors.
+ * Copyright 2018 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,11 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_TIMER_UV_H
-#define GRPC_CORE_LIB_IOMGR_TIMER_UV_H
+#ifndef GRPC_CORE_LIB_IOMGR_POLLSET_SET_CUSTOM_H
+#define GRPC_CORE_LIB_IOMGR_POLLSET_SET_CUSTOM_H
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/exec_ctx.h"
+void grpc_custom_pollset_set_init();
 
-struct grpc_timer {
-  grpc_closure* closure;
-  /* This is actually a uv_timer_t*, but we want to keep platform-specific
-     types out of headers */
-  void* uv_timer;
-  int pending;
-};
-
-#endif /* GRPC_CORE_LIB_IOMGR_TIMER_UV_H */
+#endif /* GRPC_CORE_LIB_IOMGR_POLLSET_SET_CUSTOM_H */
