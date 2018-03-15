@@ -676,7 +676,6 @@ grpc_cc_library(
         "src/core/lib/channel/channel_args.cc",
         "src/core/lib/channel/channel_stack.cc",
         "src/core/lib/channel/channel_stack_builder.cc",
-        "src/core/lib/channel/client_authority_filter.cc",
         "src/core/lib/channel/connected_channel.cc",
         "src/core/lib/channel/handshaker.cc",
         "src/core/lib/channel/handshaker_factory.cc",
@@ -812,7 +811,6 @@ grpc_cc_library(
         "src/core/lib/channel/channel_args.h",
         "src/core/lib/channel/channel_stack.h",
         "src/core/lib/channel/channel_stack_builder.h",
-        "src/core/lib/channel/client_authority_filter.h",
         "src/core/lib/channel/connected_channel.h",
         "src/core/lib/channel/context.h",
         "src/core/lib/channel/handshaker.h",
@@ -1077,10 +1075,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_client_authority_filter",
     srcs = [
-        "src/core/lib/channel/client_authority_filter.cc",
+        "src/core/ext/filters/http/client_authority_filter.cc",
     ],
     hdrs = [
-        "src/core/lib/channel/client_authority_filter.h",
+        "src/core/ext/filters/http/client_authority_filter.h",
     ],
     language = "c++",
     deps = [

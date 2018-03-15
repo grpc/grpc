@@ -27,7 +27,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/client_authority_filter.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/debug/stats.h"

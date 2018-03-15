@@ -337,7 +337,7 @@ CORE_SOURCE_FILES = [
     'src/core/ext/census/grpc_context.cc',
     'src/core/ext/filters/max_age/max_age_filter.cc',
     'src/core/ext/filters/message_size/message_size_filter.cc',
-    'src/core/lib/channel/client_authority_filter.cc',
+    'src/core/ext/filters/http/client_authority_filter.cc',
     'src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc',
     'src/core/ext/filters/workarounds/workaround_utils.cc',
     'src/core/plugin_registry/grpc_plugin_registry.cc',

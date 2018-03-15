@@ -9423,14 +9423,14 @@
       "grpc_base"
     ], 
     "headers": [
-      "src/core/lib/channel/client_authority_filter.h"
+      "src/core/ext/filters/http/client_authority_filter.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
     "name": "grpc_client_authority_filter", 
     "src": [
-      "src/core/lib/channel/client_authority_filter.cc", 
-      "src/core/lib/channel/client_authority_filter.h"
+      "src/core/ext/filters/http/client_authority_filter.cc", 
+      "src/core/ext/filters/http/client_authority_filter.h"
     ], 
     "third_party": false, 
     "type": "filegroup"

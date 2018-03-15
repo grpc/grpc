@@ -517,9 +517,9 @@ filegroups:
   - grpc_trace_headers
 - name: grpc_client_authority_filter
   headers:
-  - src/core/lib/channel/client_authority_filter.h
+  - src/core/ext/filters/http/client_authority_filter.h
   src:
-  - src/core/lib/channel/client_authority_filter.cc
+  - src/core/ext/filters/http/client_authority_filter.cc
   plugin: grpc_client_authority_filter
   uses:
   - grpc_base
