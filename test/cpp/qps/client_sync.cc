@@ -24,14 +24,14 @@
 #include <thread>
 #include <vector>
 
-#include <grpc++/channel.h>
-#include <grpc++/client_context.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
 
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/profiling/timers.h"

@@ -20,8 +20,8 @@
 #include <string>
 
 #include <gflags/gflags.h>
-#include <grpc++/grpc++.h>
 #include <grpc/support/log.h>
+#include <grpcpp/grpcpp.h>
 
 #include "src/proto/grpc/testing/metrics.grpc.pb.h"
 #include "src/proto/grpc/testing/metrics.pb.h"

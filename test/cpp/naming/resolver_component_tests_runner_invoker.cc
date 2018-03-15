@@ -102,14 +102,18 @@ namespace testing {
 void InvokeResolverComponentTestsRunner(std::string test_runner_bin_path,
                                         std::string test_bin_path,
                                         std::string dns_server_bin_path,
-                                        std::string records_config_path) {
-  int test_dns_server_port = grpc_pick_unused_port_or_die();
+                                        std::string records_config_path,
+                                        std::string dns_resolver_bin_path,
+                                        std::string tcp_connect_bin_path) {
+  int dns_server_port = grpc_pick_unused_port_or_die();
 
-  SubProcess* test_driver = new SubProcess(
-      {test_runner_bin_path, "--test_bin_path=" + test_bin_path,
-       "--dns_server_bin_path=" + dns_server_bin_path,
-       "--records_config_path=" + records_config_path,
-       "--test_dns_server_port=" + std::to_string(test_dns_server_port)});
+  SubProcess* test_driver =
+      new SubProcess({test_runner_bin_path, "--test_bin_path=" + test_bin_path,
+                      "--dns_server_bin_path=" + dns_server_bin_path,
+                      "--records_config_path=" + records_config_path,
+                      "--dns_server_port=" + std::to_string(dns_server_port),
+                      "--dns_resolver_bin_path=" + dns_resolver_bin_path,
+                      "--tcp_connect_bin_path=" + tcp_connect_bin_path});
   gpr_mu test_driver_mu;
   gpr_mu_init(&test_driver_mu);
   gpr_cv test_driver_cv;
@@ -170,8 +174,9 @@ int main(int argc, char** argv) {
     // sure that we're using bazel's test environment.
     grpc::testing::InvokeResolverComponentTestsRunner(
         bin_dir + "/resolver_component_tests_runner",
-        bin_dir + "/" + FLAGS_test_bin_name, bin_dir + "/test_dns_server",
-        bin_dir + "/resolver_test_record_groups.yaml");
+        bin_dir + "/" + FLAGS_test_bin_name, bin_dir + "/utils/dns_server",
+        bin_dir + "/resolver_test_record_groups.yaml",
+        bin_dir + "/utils/dns_resolver", bin_dir + "/utils/tcp_connect");
   } else {
     // Get the current binary's directory relative to repo root to invoke the
     // correct build config (asan/tsan/dbg, etc.).
@@ -180,8 +185,10 @@ int main(int argc, char** argv) {
     grpc::testing::InvokeResolverComponentTestsRunner(
         "test/cpp/naming/resolver_component_tests_runner.sh",
         bin_dir + "/" + FLAGS_test_bin_name,
-        "test/cpp/naming/test_dns_server.py",
-        "test/cpp/naming/resolver_test_record_groups.yaml");
+        "test/cpp/naming/utils/dns_server.py",
+        "test/cpp/naming/resolver_test_record_groups.yaml",
+        "test/cpp/naming/utils/dns_resolver.py",
+        "test/cpp/naming/utils/tcp_connect.py");
   }
   grpc_shutdown();
   return 0;

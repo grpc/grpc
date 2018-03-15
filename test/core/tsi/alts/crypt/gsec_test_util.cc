@@ -18,13 +18,15 @@
 
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"
 
+#include <time.h>
+
 #include <grpc/support/alloc.h>
 
 void gsec_test_random_bytes(uint8_t* bytes, size_t length) {
-  if (!RAND_bytes(bytes, static_cast<int>(length))) {
-    fprintf(stderr,
-            "Random bytes generation failed in gsec_test_random_bytes().");
-    abort();
+  srand(time(nullptr));
+  size_t ind;
+  for (ind = 0; ind < length; ind++) {
+    bytes[ind] = static_cast<uint8_t>(rand() % 255 + 1);
   }
 }
 

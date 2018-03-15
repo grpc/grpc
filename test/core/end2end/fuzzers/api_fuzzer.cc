@@ -426,6 +426,9 @@ void my_resolve_address(const char* addr, const char* default_port,
       GRPC_CLOSURE_CREATE(finish_resolve, r, grpc_schedule_on_exec_ctx));
 }
 
+static grpc_address_resolver_vtable fuzzer_resolver = {my_resolve_address,
+                                                       nullptr};
+
 grpc_ares_request* my_dns_lookup_ares(const char* dns_server, const char* addr,
                                       const char* default_port,
                                       grpc_pollset_set* interested_parties,
@@ -446,12 +449,6 @@ grpc_ares_request* my_dns_lookup_ares(const char* dns_server, const char* addr,
 
 ////////////////////////////////////////////////////////////////////////////////
 // client connection
-
-// defined in tcp_client_posix.c
-extern void (*grpc_tcp_client_connect_impl)(
-    grpc_closure* closure, grpc_endpoint** ep,
-    grpc_pollset_set* interested_parties, const grpc_channel_args* channel_args,
-    const grpc_resolved_address* addr, grpc_millis deadline);
 
 static void sched_connect(grpc_closure* closure, grpc_endpoint** ep,
                           gpr_timespec deadline);
@@ -512,6 +509,8 @@ static void my_tcp_client_connect(grpc_closure* closure, grpc_endpoint** ep,
   sched_connect(closure, ep,
                 grpc_millis_to_timespec(deadline, GPR_CLOCK_MONOTONIC));
 }
+
+grpc_tcp_client_vtable fuzz_tcp_client_vtable = {my_tcp_client_connect};
 
 ////////////////////////////////////////////////////////////////////////////////
 // test driver
@@ -753,7 +752,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   if (squelch && grpc_trace_fuzzer == nullptr) gpr_set_log_function(dont_log);
   gpr_free(grpc_trace_fuzzer);
   input_stream inp = {data, data + size};
-  grpc_tcp_client_connect_impl = my_tcp_client_connect;
+  grpc_set_tcp_client_impl(&fuzz_tcp_client_vtable);
   gpr_now_impl = now_impl;
   grpc_init();
   grpc_timer_manager_set_threading(false);
@@ -761,7 +760,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_core::ExecCtx exec_ctx;
     grpc_executor_set_threading(false);
   }
-  grpc_resolve_address = my_resolve_address;
+  grpc_set_resolver_impl(&fuzzer_resolver);
   grpc_dns_lookup_ares = my_dns_lookup_ares;
 
   GPR_ASSERT(g_channel == nullptr);

@@ -15,6 +15,8 @@
 
 # Helper script to crosscompile grpc_csharp_ext native extension for Android.
 
+set -ex
+
 cd "$(dirname "$0")/../../../cmake"
 
 mkdir -p build
@@ -34,4 +36,4 @@ cmake ../.. \
   -DRUN_HAVE_STEADY_CLOCK=0 \
   -DCMAKE_BUILD_TYPE=Release
 
-make grpc_csharp_ext
+make -j4 grpc_csharp_ext

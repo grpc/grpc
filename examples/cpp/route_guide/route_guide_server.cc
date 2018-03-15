@@ -24,10 +24,10 @@
 #include <string>
 
 #include <grpc/grpc.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
-#include <grpc++/server_context.h>
-#include <grpc++/security/server_credentials.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/server_context.h>
+#include <grpcpp/security/server_credentials.h>
 #include "helper.h"
 #include "route_guide.grpc.pb.h"
 

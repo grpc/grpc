@@ -382,11 +382,12 @@ Server::Server(
   global_callbacks_ = g_callbacks;
   global_callbacks_->UpdateArguments(args);
 
-  for (auto it = sync_server_cqs_->begin(); it != sync_server_cqs_->end();
-       it++) {
-    sync_req_mgrs_.emplace_back(new SyncRequestThreadManager(
-        this, (*it).get(), global_callbacks_, min_pollers, max_pollers,
-        sync_cq_timeout_msec));
+  if (sync_server_cqs_ != nullptr) {
+    for (const auto& it : *sync_server_cqs_) {
+      sync_req_mgrs_.emplace_back(new SyncRequestThreadManager(
+          this, it.get(), global_callbacks_, min_pollers, max_pollers,
+          sync_cq_timeout_msec));
+    }
   }
 
   grpc_channel_args channel_args;
@@ -525,7 +526,7 @@ void Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
   // explicit one.
   if (health_check_service_ == nullptr && !health_check_service_disabled_ &&
       DefaultHealthCheckServiceEnabled()) {
-    if (sync_server_cqs_->empty()) {
+    if (sync_server_cqs_ == nullptr || sync_server_cqs_->empty()) {
       gpr_log(GPR_INFO,
               "Default health check service disabled at async-only server.");
     } else {

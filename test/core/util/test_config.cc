@@ -18,6 +18,7 @@
 
 #include "test/core/util/test_config.h"
 
+#include <inttypes.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>

@@ -23,6 +23,7 @@ grpc_cc_library(
     srcs = ["alts_handshaker_service_api_test_lib.cc"],
     hdrs = ["alts_handshaker_service_api_test_lib.h"],
     deps = [
+        "//:alts_util",
         "//:grpc",
     ], 
 )
@@ -33,6 +34,8 @@ grpc_cc_test(
     language = "C++",
     deps = [
         ":alts_handshaker_service_api_test_lib",
+        "//:tsi",
+        "//:tsi_interface",
         "//:grpc",
     ],
 )
@@ -53,7 +56,10 @@ grpc_cc_test(
     language = "C++",
     deps = [
         ":alts_handshaker_service_api_test_lib",
+        "//:gpr",
+        "//:gpr_base",
         "//:grpc",
+        "//:tsi",
     ],
 )
 
@@ -64,6 +70,7 @@ grpc_cc_test(
     deps = [
         ":alts_handshaker_service_api_test_lib",
         "//:grpc",
+        "//:tsi",
     ],
 )
 
@@ -72,6 +79,7 @@ grpc_cc_test(
     srcs = ["transport_security_common_api_test.cc"],
     language = "C++",
     deps = [
+        "//:alts_util",
         "//:grpc",
     ],
 )

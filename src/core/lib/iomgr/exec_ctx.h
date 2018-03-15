@@ -54,23 +54,32 @@ grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec timespec);
 namespace grpc_core {
 /** Execution context.
  *  A bag of data that collects information along a callstack.
- *  Generally created at public API entry points, and passed down as
- *  pointer to child functions that manipulate it.
+ *  It is created on the stack at public API entry points, and stored internally
+ *  as a thread-local variable.
+ *
+ *  Generally, to create an exec_ctx instance, add the following line at the top
+ *  of the public API entry point or at the start of a thread's work function :
+ *
+ *  grpc_core::ExecCtx exec_ctx;
+ *
+ *  Access the created ExecCtx instance using :
+ *  grpc_core::ExecCtx::Get()
  *
  *  Specific responsibilities (this may grow in the future):
  *  - track a list of work that needs to be delayed until the top of the
  *    call stack (this provides a convenient mechanism to run callbacks
  *    without worrying about locking issues)
- *  - provide a decision maker (via grpc_exec_ctx_ready_to_finish) that provides
+ *  - provide a decision maker (via IsReadyToFinish) that provides a
  *    signal as to whether a borrowed thread should continue to do work or
  *    should actively try to finish up and get this thread back to its owner
  *
  *  CONVENTIONS:
  *  - Instance of this must ALWAYS be constructed on the stack, never
  *    heap allocated.
- *  - Instances and pointers to them must always be called exec_ctx.
- *  - Instances are always passed as the first argument to a function that
- *    takes it, and always as a pointer (grpc_exec_ctx is never copied).
+ *  - Exactly one instance of ExecCtx must be created per thread. Instances must
+ *    always be called exec_ctx.
+ *  - Do not pass exec_ctx as a parameter to a function. Always access it using
+ *    grpc_core::ExecCtx::Get()
  */
 class ExecCtx {
  public:
@@ -171,6 +180,10 @@ on outside context */
     return reinterpret_cast<ExecCtx*>(gpr_tls_get(&exec_ctx_));
   }
 
+  static void Set(ExecCtx* exec_ctx) {
+    gpr_tls_set(&exec_ctx_, reinterpret_cast<intptr_t>(exec_ctx));
+  }
+
  protected:
   /** Check if ready to finish */
   virtual bool CheckReadyToFinish() { return false; }
@@ -180,9 +193,6 @@ on outside context */
 
  private:
   /** Set exec_ctx_ to exec_ctx */
-  void Set(ExecCtx* exec_ctx) {
-    gpr_tls_set(&exec_ctx_, reinterpret_cast<intptr_t>(exec_ctx));
-  }
 
   grpc_closure_list closure_list_ = GRPC_CLOSURE_LIST_INIT;
   CombinerData combiner_data_ = {nullptr, nullptr};

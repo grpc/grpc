@@ -18,21 +18,25 @@ licenses(["notice"])  # Apache v2
 
 grpc_package(name = "crypt", visibility = "public")
 
-grpc_cc_library(
-    name = "alts_crypt_test_util",
-    srcs = ["gsec_test_util.cc"],
-    hdrs = ["gsec_test_util.h"],
-    deps = [
-        "//:grpc",
-    ],
-)
-
 grpc_cc_test(
     name = "alts_crypt_test",
     srcs = ["aes_gcm_test.cc"],
     language = "C++",
     deps = [
         ":alts_crypt_test_util",
+        "//:alts_frame_protector",
+        "//:gpr",
         "//:grpc",
     ],
 )
+
+grpc_cc_library(
+    name = "alts_crypt_test_util",
+    srcs = ["gsec_test_util.cc"],
+    hdrs = ["gsec_test_util.h"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+    ],
+)
+

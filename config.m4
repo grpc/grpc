@@ -124,6 +124,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/gethostname_sysconf.cc \
     src/core/lib/iomgr/iocp_windows.cc \
     src/core/lib/iomgr/iomgr.cc \
+    src/core/lib/iomgr/iomgr_custom.cc \
+    src/core/lib/iomgr/iomgr_internal.cc \
     src/core/lib/iomgr/iomgr_posix.cc \
     src/core/lib/iomgr/iomgr_uv.cc \
     src/core/lib/iomgr/iomgr_windows.cc \
@@ -132,12 +134,16 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/lockfree_event.cc \
     src/core/lib/iomgr/network_status_tracker.cc \
     src/core/lib/iomgr/polling_entity.cc \
-    src/core/lib/iomgr/pollset_set_uv.cc \
+    src/core/lib/iomgr/pollset.cc \
+    src/core/lib/iomgr/pollset_custom.cc \
+    src/core/lib/iomgr/pollset_set.cc \
+    src/core/lib/iomgr/pollset_set_custom.cc \
     src/core/lib/iomgr/pollset_set_windows.cc \
     src/core/lib/iomgr/pollset_uv.cc \
     src/core/lib/iomgr/pollset_windows.cc \
+    src/core/lib/iomgr/resolve_address.cc \
+    src/core/lib/iomgr/resolve_address_custom.cc \
     src/core/lib/iomgr/resolve_address_posix.cc \
-    src/core/lib/iomgr/resolve_address_uv.cc \
     src/core/lib/iomgr/resolve_address_windows.cc \
     src/core/lib/iomgr/resource_quota.cc \
     src/core/lib/iomgr/sockaddr_utils.cc \
@@ -149,19 +155,24 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/socket_utils_uv.cc \
     src/core/lib/iomgr/socket_utils_windows.cc \
     src/core/lib/iomgr/socket_windows.cc \
+    src/core/lib/iomgr/tcp_client.cc \
+    src/core/lib/iomgr/tcp_client_custom.cc \
     src/core/lib/iomgr/tcp_client_posix.cc \
-    src/core/lib/iomgr/tcp_client_uv.cc \
     src/core/lib/iomgr/tcp_client_windows.cc \
+    src/core/lib/iomgr/tcp_custom.cc \
     src/core/lib/iomgr/tcp_posix.cc \
+    src/core/lib/iomgr/tcp_server.cc \
+    src/core/lib/iomgr/tcp_server_custom.cc \
     src/core/lib/iomgr/tcp_server_posix.cc \
     src/core/lib/iomgr/tcp_server_utils_posix_common.cc \
     src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc \
     src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc \
-    src/core/lib/iomgr/tcp_server_uv.cc \
     src/core/lib/iomgr/tcp_server_windows.cc \
     src/core/lib/iomgr/tcp_uv.cc \
     src/core/lib/iomgr/tcp_windows.cc \
     src/core/lib/iomgr/time_averaged_stats.cc \
+    src/core/lib/iomgr/timer.cc \
+    src/core/lib/iomgr/timer_custom.cc \
     src/core/lib/iomgr/timer_generic.cc \
     src/core/lib/iomgr/timer_heap.cc \
     src/core/lib/iomgr/timer_manager.cc \
@@ -435,7 +446,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/crypto/cpu-intel.c \
     third_party/boringssl/crypto/cpu-ppc64le.c \
     third_party/boringssl/crypto/crypto.c \
-    third_party/boringssl/crypto/curve25519/curve25519.c \
     third_party/boringssl/crypto/curve25519/spake25519.c \
     third_party/boringssl/crypto/curve25519/x25519-x86_64.c \
     third_party/boringssl/crypto/dh/check.c \
@@ -621,6 +631,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/ssl/tls13_server.cc \
     third_party/boringssl/ssl/tls_method.cc \
     third_party/boringssl/ssl/tls_record.cc \
+    third_party/boringssl/third_party/fiat/curve25519.c \
     , $ext_shared, , -fvisibility=hidden \
     -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN \
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0)
@@ -728,5 +739,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/x509)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/x509v3)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/ssl)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/third_party/fiat)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/nanopb)
 fi

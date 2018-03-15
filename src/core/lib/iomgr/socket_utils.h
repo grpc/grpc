@@ -23,6 +23,15 @@
 
 #include <stddef.h>
 
+/* A wrapper for htons on POSIX and Windows */
+uint16_t grpc_htons(uint16_t hostshort);
+
+/* A wrapper for ntohs on POSIX and WINDOWS */
+uint16_t grpc_ntohs(uint16_t netshort);
+
+/* A wrapper for inet_pton on POSIX and WINDOWS */
+int grpc_inet_pton(int af, const char* src, void* dst);
+
 /* A wrapper for inet_ntop on POSIX systems and InetNtop on Windows systems */
 const char* grpc_inet_ntop(int af, const void* src, char* dst, size_t size);
 

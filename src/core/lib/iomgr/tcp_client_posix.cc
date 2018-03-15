@@ -38,6 +38,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr_posix.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
@@ -293,7 +294,7 @@ void grpc_tcp_client_create_from_prepared_fd(
   async_connect* ac;
   do {
     GPR_ASSERT(addr->len < ~(socklen_t)0);
-    err = connect(fd, reinterpret_cast<const struct sockaddr*>(addr->addr),
+    err = connect(fd, reinterpret_cast<const grpc_sockaddr*>(addr->addr),
                   static_cast<socklen_t>(addr->len));
   } while (err < 0 && errno == EINTR);
   if (err >= 0) {
@@ -336,11 +337,11 @@ void grpc_tcp_client_create_from_prepared_fd(
   gpr_mu_unlock(&ac->mu);
 }
 
-static void tcp_client_connect_impl(grpc_closure* closure, grpc_endpoint** ep,
-                                    grpc_pollset_set* interested_parties,
-                                    const grpc_channel_args* channel_args,
-                                    const grpc_resolved_address* addr,
-                                    grpc_millis deadline) {
+static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
+                        grpc_pollset_set* interested_parties,
+                        const grpc_channel_args* channel_args,
+                        const grpc_resolved_address* addr,
+                        grpc_millis deadline) {
   grpc_resolved_address mapped_addr;
   grpc_fd* fdobj = nullptr;
   grpc_error* error;
@@ -355,20 +356,5 @@ static void tcp_client_connect_impl(grpc_closure* closure, grpc_endpoint** ep,
                                           ep);
 }
 
-// overridden by api_fuzzer.c
-void (*grpc_tcp_client_connect_impl)(
-    grpc_closure* closure, grpc_endpoint** ep,
-    grpc_pollset_set* interested_parties, const grpc_channel_args* channel_args,
-    const grpc_resolved_address* addr,
-    grpc_millis deadline) = tcp_client_connect_impl;
-
-void grpc_tcp_client_connect(grpc_closure* closure, grpc_endpoint** ep,
-                             grpc_pollset_set* interested_parties,
-                             const grpc_channel_args* channel_args,
-                             const grpc_resolved_address* addr,
-                             grpc_millis deadline) {
-  grpc_tcp_client_connect_impl(closure, ep, interested_parties, channel_args,
-                               addr, deadline);
-}
-
+grpc_tcp_client_vtable grpc_posix_tcp_client_vtable = {tcp_connect};
 #endif

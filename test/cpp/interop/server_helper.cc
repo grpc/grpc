@@ -21,7 +21,7 @@
 #include <memory>
 
 #include <gflags/gflags.h>
-#include <grpc++/security/server_credentials.h>
+#include <grpcpp/security/server_credentials.h>
 
 #include "src/core/lib/surface/call_test_only.h"
 #include "test/cpp/util/test_credentials_provider.h"

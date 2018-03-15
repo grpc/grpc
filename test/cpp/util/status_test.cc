@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc++/support/status.h>
+#include <grpcpp/support/status.h>
 
 #include <grpc/status.h>
 #include <grpc/support/log.h>

@@ -177,7 +177,7 @@ class PythonArtifact:
                 self.name,
                 ['tools/run_tests/artifacts/build_artifact_python.sh'],
                 environ=environ,
-                timeout_seconds=60 * 60,
+                timeout_seconds=60 * 60 * 2,
                 use_workspace=True)
 
     def __str__(self):

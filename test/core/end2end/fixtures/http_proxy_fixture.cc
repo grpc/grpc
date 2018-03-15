@@ -535,10 +535,10 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   // Bind to port.
   grpc_resolved_address resolved_addr;
-  struct sockaddr_in* addr =
-      reinterpret_cast<struct sockaddr_in*>(resolved_addr.addr);
+  grpc_sockaddr_in* addr =
+      reinterpret_cast<grpc_sockaddr_in*>(resolved_addr.addr);
   memset(&resolved_addr, 0, sizeof(resolved_addr));
-  addr->sin_family = AF_INET;
+  addr->sin_family = GRPC_AF_INET;
   grpc_sockaddr_set_port(&resolved_addr, proxy_port);
   int port;
   error = grpc_tcp_server_add_port(proxy->server, &resolved_addr, &port);
