@@ -48,15 +48,22 @@ class ChannelTrace : public RefCounted<ChannelTrace> {
   };
 
   // Adds a new trace event to the tracing object
+  //
+  // TODO(ncteisen): as this call is used more and more throughout the gRPC
+  // stack, determine if it makes more sense to accept a char* instead of a
+  // slice.
   void AddTraceEvent(Severity severity, grpc_slice data);
 
   // Adds a new trace event to the tracing object. This trace event refers to a
   // an event on a child of the channel. For example, if this channel has
   // created a new subchannel, then it would record that with a TraceEvent
   // referencing the new subchannel.
-
+  //
   // TODO(ncteisen): Once channelz is implemented, the events should reference
   // the overall channelz object, not just the ChannelTrace object.
+  // TODO(ncteisen): as this call is used more and more throughout the gRPC
+  // stack, determine if it makes more sense to accept a char* instead of a
+  // slice.
   void AddTraceEventReferencingChannel(
       Severity severity, grpc_slice data,
       RefCountedPtr<ChannelTrace> referenced_tracer);

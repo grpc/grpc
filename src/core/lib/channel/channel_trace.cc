@@ -152,10 +152,10 @@ char* fmt_time(gpr_timespec tm) {
   for (int i = 7; i >= 1; i -= 3) {
     if (ns_buffer[i] == '0' && ns_buffer[i + 1] == '0' &&
         ns_buffer[i + 2] == '0') {
-      ns_buffer[i] = 0;
-      // Specially case in which all fractional digits were 0.
+      ns_buffer[i] = '\0';
+      // Edge case in which all fractional digits were 0.
       if (i == 1) {
-        ns_buffer[0] = 0;
+        ns_buffer[0] = '\0';
       }
     } else {
       break;

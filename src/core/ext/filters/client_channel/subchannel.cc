@@ -35,6 +35,7 @@
 #include "src/core/ext/filters/client_channel/subchannel_index.h"
 #include "src/core/ext/filters/client_channel/uri_parser.h"
 #include "src/core/lib/backoff/backoff.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gprpp/debug_location.h"
