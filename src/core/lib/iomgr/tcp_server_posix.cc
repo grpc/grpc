@@ -213,6 +213,7 @@ static void on_read(void* arg, grpc_error* err) {
     grpc_resolved_address addr;
     char* addr_str;
     char* name;
+    memset(&addr, 0, sizeof(addr));
     addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
     /* Note: If we ever decide to return this address to the user, remember to
        strip off the ::ffff:0.0.0.0/96 prefix first. */

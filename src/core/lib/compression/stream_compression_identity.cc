@@ -22,7 +22,6 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/compression/stream_compression_identity.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 #define OUTPUT_BLOCK_SIZE (1024)

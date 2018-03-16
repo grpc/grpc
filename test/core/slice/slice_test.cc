@@ -16,8 +16,11 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/slice.h>
 
+#include <inttypes.h>
 #include <string.h>
 
 #include <grpc/grpc.h>

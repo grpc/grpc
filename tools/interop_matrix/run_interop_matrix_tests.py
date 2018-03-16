@@ -59,7 +59,6 @@ argp.add_argument(
     choices=['all', 'master'] + _RELEASES,
     help='Release tags to test.  When testing all '
     'releases defined in client_matrix.py, use "all".')
-
 argp.add_argument(
     '-l',
     '--language',
@@ -89,6 +88,12 @@ argp.add_argument(
     type=str,
     nargs='?',
     help='Upload test results to a specified BQ table.')
+argp.add_argument(
+    '--server_host',
+    default='74.125.206.210',
+    type=str,
+    nargs='?',
+    help='The gateway to backend services.')
 
 args = argp.parse_args()
 
@@ -166,6 +171,20 @@ def find_test_cases(lang, runtime, release, suite_name):
                         '--server_host_override=(.*).sandbox.googleapis.com',
                         line)
                     server = m.group(1) if m else 'unknown_server'
+
+                    # If server_host arg is not None, replace the original
+                    # server_host with the one provided or append to the end of
+                    # the command if server_host does not appear originally.
+                    if args.server_host:
+                        if line.find('--server_host=') > -1:
+                            line = re.sub('--server_host=[^ ]*',
+                                          '--server_host=%s' % args.server_host,
+                                          line)
+                        else:
+                            line = '%s --server_host=%s"' % (line[:-1],
+                                                             args.server_host)
+                        print(line)
+
                     spec = jobset.JobSpec(
                         cmdline=line,
                         shortname='%s:%s:%s:%s' % (suite_name, lang, server,

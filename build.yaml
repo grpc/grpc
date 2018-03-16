@@ -5122,18 +5122,6 @@ targets:
   deps:
   - grpc
   uses_polling: false
-- name: status_test
-  build: test
-  language: c++
-  src:
-  - test/cpp/util/status_test.cc
-  deps:
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr_test_util
-  - gpr
-  uses_polling: false
 - name: status_util_test
   gtest: true
   cpu_cost: 0.1
