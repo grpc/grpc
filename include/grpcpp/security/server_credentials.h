@@ -86,6 +86,15 @@ std::shared_ptr<ServerCredentials> SslServerCredentials(
 /// Builds insecure server credentials.
 std::shared_ptr<ServerCredentials> InsecureServerCredentials();
 
+/// Options to create ServerCredentials with ALTS
+struct AltsServerCredentialsOptions {
+  /// Add fields if needed.
+};
+
+/// Builds ALTS ServerCredentials given ALTS specific options
+std::shared_ptr<ServerCredentials> AltsServerCredentials(
+    const AltsServerCredentialsOptions& options);
+
 }  // namespace grpc
 
 #endif  // GRPCPP_SECURITY_SERVER_CREDENTIALS_H
