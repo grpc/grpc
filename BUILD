@@ -1688,6 +1688,7 @@ grpc_cc_library(
         "src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.h",
         "src/core/tsi/alts/handshaker/transport_security_common_api.h",
     ],
+    public_hdrs = GRPC_SECURE_PUBLIC_HDRS, 
     external_deps = [
         "nanopb",
     ],

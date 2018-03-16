@@ -18,7 +18,7 @@ import "transport_security_common.proto";
 
 package grpc.gcp;
 
-option java_package = "io.grpc.alts";
+option java_package = "io.grpc.alts.internal";
 
 message AltsContext {
   // The application protocol negotiated for this connection.
@@ -39,3 +39,4 @@ message AltsContext {
   // The RPC protocol versions supported by the peer.
   RpcProtocolVersions peer_rpc_versions = 6;
 }
+

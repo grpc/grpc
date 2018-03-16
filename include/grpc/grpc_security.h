@@ -469,6 +469,63 @@ typedef struct {
 GRPCAPI void grpc_server_credentials_set_auth_metadata_processor(
     grpc_server_credentials* creds, grpc_auth_metadata_processor processor);
 
+/** --- ALTS channel/server credentials --- **/
+
+/**
+ * Main interface for ALTS credentials options. The options will contain
+ * information that will be passed from grpc to TSI layer such as RPC protocol
+ * versions. ALTS client (channel) and server credentials will have their own
+ * implementation of this interface. The APIs listed in this header are
+ * thread-compatible.
+ */
+typedef struct grpc_alts_credentials_options grpc_alts_credentials_options;
+
+/* This method creates a grpc ALTS credentials client options instance. */
+grpc_alts_credentials_options* grpc_alts_credentials_client_options_create();
+
+/* This method creates a grpc ALTS credentials server options instance. */
+grpc_alts_credentials_options* grpc_alts_credentials_server_options_create();
+
+/**
+ * This method adds a target service account to grpc client's ALTS credentials
+ * options instance.
+ *
+ * - options: grpc ALTS credentials options instance.
+ * - service_account: service account of target endpoint.
+ */
+void grpc_alts_credentials_client_options_add_target_service_account(
+    grpc_alts_credentials_options* options, const char* service_account);
+
+/**
+ * This method destroys a grpc_alts_credentials_options instance by
+ * de-allocating all of its occupied memory.
+ *
+ * - options: a grpc_alts_credentials_options instance that needs to be
+ *   destroyed.
+ */
+void grpc_alts_credentials_options_destroy(
+    grpc_alts_credentials_options* options);
+
+/**
+ * This method creates an ALTS channel credential object.
+ *
+ * - options: grpc ALTS credentials options instance for client.
+ *
+ * It returns the created ALTS channel credential object.
+ */
+grpc_channel_credentials* grpc_alts_credentials_create(
+    const grpc_alts_credentials_options* options);
+
+/**
+ * This method creates an ALTS server credential object.
+ *
+ * - options: grpc ALTS credentials options instance for server.
+ *
+ * It returns the created ALTS server credential object.
+ */
+grpc_server_credentials* grpc_alts_server_credentials_create(
+    const grpc_alts_credentials_options* options);
+
 #ifdef __cplusplus
 }
 #endif
