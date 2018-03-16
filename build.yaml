@@ -232,10 +232,13 @@ filegroups:
   - src/core/lib/channel/channel_args.cc
   - src/core/lib/channel/channel_stack.cc
   - src/core/lib/channel/channel_stack_builder.cc
+  - src/core/lib/channel/channel_trace.cc
+  - src/core/lib/channel/channel_trace_registry.cc
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/handshaker.cc
   - src/core/lib/channel/handshaker_factory.cc
   - src/core/lib/channel/handshaker_registry.cc
+  - src/core/lib/channel/status_util.cc
   - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
   - src/core/lib/compression/message_compress.cc
@@ -399,11 +402,14 @@ filegroups:
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
+  - src/core/lib/channel/channel_trace.h
+  - src/core/lib/channel/channel_trace_registry.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
   - src/core/lib/channel/handshaker.h
   - src/core/lib/channel/handshaker_factory.h
   - src/core/lib/channel/handshaker_registry.h
+  - src/core/lib/channel/status_util.h
   - src/core/lib/compression/algorithm_metadata.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
@@ -547,7 +553,6 @@ filegroups:
   - src/core/ext/filters/client_channel/resolver_factory.h
   - src/core/ext/filters/client_channel/resolver_registry.h
   - src/core/ext/filters/client_channel/retry_throttle.h
-  - src/core/ext/filters/client_channel/status_util.h
   - src/core/ext/filters/client_channel/subchannel.h
   - src/core/ext/filters/client_channel/subchannel_index.h
   - src/core/ext/filters/client_channel/uri_parser.h
@@ -570,7 +575,6 @@ filegroups:
   - src/core/ext/filters/client_channel/resolver.cc
   - src/core/ext/filters/client_channel/resolver_registry.cc
   - src/core/ext/filters/client_channel/retry_throttle.cc
-  - src/core/ext/filters/client_channel/status_util.cc
   - src/core/ext/filters/client_channel/subchannel.cc
   - src/core/ext/filters/client_channel/subchannel_index.cc
   - src/core/ext/filters/client_channel/uri_parser.cc
@@ -1066,6 +1070,10 @@ filegroups:
   secure: true
   uses:
   - grpc_trace
+- name: grpc++_channelz_proto
+  language: c++
+  src:
+  - src/proto/grpc/channelz/channelz.proto
 - name: grpc++_codegen_base
   language: c++
   public_headers:
@@ -1614,17 +1622,20 @@ libs:
   headers:
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/util/byte_buffer_proto_helper.h
+  - test/cpp/util/channel_trace_proto_helper.h
   - test/cpp/util/create_test_channel.h
   - test/cpp/util/string_ref_helper.h
   - test/cpp/util/subprocess.h
   - test/cpp/util/test_credentials_provider.h
   src:
+  - src/proto/grpc/channelz/channelz.proto
   - src/proto/grpc/health/v1/health.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/util/byte_buffer_proto_helper.cc
+  - test/cpp/util/channel_trace_proto_helper.cc
   - test/cpp/util/create_test_channel.cc
   - test/cpp/util/string_ref_helper.cc
   - test/cpp/util/subprocess.cc
@@ -4107,6 +4118,24 @@ targets:
   - grpc
   - gpr
   uses_polling: false
+- name: channel_trace_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/channel/channel_trace_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  filegroups:
+  - grpc++_channelz_proto
+  uses:
+  - grpc++_test
+  uses_polling: false
 - name: check_gcp_environment_linux_test
   build: test
   language: c++
@@ -5122,25 +5151,13 @@ targets:
   deps:
   - grpc
   uses_polling: false
-- name: status_test
-  build: test
-  language: c++
-  src:
-  - test/cpp/util/status_test.cc
-  deps:
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr_test_util
-  - gpr
-  uses_polling: false
 - name: status_util_test
   gtest: true
   cpu_cost: 0.1
   build: test
   language: c++
   src:
-  - test/core/client_channel/status_util_test.cc
+  - test/core/channel/status_util_test.cc
   deps:
   - grpc
   uses_polling: false

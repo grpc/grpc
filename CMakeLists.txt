@@ -532,6 +532,7 @@ endif()
 add_dependencies(buildtests_cxx byte_stream_test)
 add_dependencies(buildtests_cxx channel_arguments_test)
 add_dependencies(buildtests_cxx channel_filter_test)
+add_dependencies(buildtests_cxx channel_trace_test)
 add_dependencies(buildtests_cxx check_gcp_environment_linux_test)
 add_dependencies(buildtests_cxx check_gcp_environment_windows_test)
 add_dependencies(buildtests_cxx chttp2_settings_timeout_test)
@@ -620,7 +621,6 @@ add_dependencies(buildtests_cxx slice_hash_table_test)
 add_dependencies(buildtests_cxx slice_weak_hash_table_test)
 add_dependencies(buildtests_cxx stats_test)
 add_dependencies(buildtests_cxx status_metadata_test)
-add_dependencies(buildtests_cxx status_test)
 add_dependencies(buildtests_cxx status_util_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx streaming_throughput_test)
@@ -856,10 +856,13 @@ add_library(grpc
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
+  src/core/lib/channel/channel_trace.cc
+  src/core/lib/channel/channel_trace_registry.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
   src/core/lib/channel/handshaker_registry.cc
+  src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
@@ -1108,7 +1111,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
-  src/core/ext/filters/client_channel/status_util.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
@@ -1242,10 +1244,13 @@ add_library(grpc_cronet
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
+  src/core/lib/channel/channel_trace.cc
+  src/core/lib/channel/channel_trace_registry.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
   src/core/lib/channel/handshaker_registry.cc
+  src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
@@ -1432,7 +1437,6 @@ add_library(grpc_cronet
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
-  src/core/ext/filters/client_channel/status_util.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
@@ -1619,10 +1623,13 @@ add_library(grpc_test_util
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
+  src/core/lib/channel/channel_trace.cc
+  src/core/lib/channel/channel_trace_registry.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
   src/core/lib/channel/handshaker_registry.cc
+  src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
@@ -1778,7 +1785,6 @@ add_library(grpc_test_util
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
-  src/core/ext/filters/client_channel/status_util.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
@@ -1919,10 +1925,13 @@ add_library(grpc_test_util_unsecure
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
+  src/core/lib/channel/channel_trace.cc
+  src/core/lib/channel/channel_trace_registry.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
   src/core/lib/channel/handshaker_registry.cc
+  src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
@@ -2078,7 +2087,6 @@ add_library(grpc_test_util_unsecure
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
-  src/core/ext/filters/client_channel/status_util.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
@@ -2199,10 +2207,13 @@ add_library(grpc_unsecure
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
+  src/core/lib/channel/channel_trace.cc
+  src/core/lib/channel/channel_trace_registry.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
   src/core/lib/channel/handshaker_registry.cc
+  src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
@@ -2391,7 +2402,6 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
-  src/core/ext/filters/client_channel/status_util.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
@@ -3013,10 +3023,13 @@ add_library(grpc++_cronet
   src/core/lib/channel/channel_args.cc
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
+  src/core/lib/channel/channel_trace.cc
+  src/core/lib/channel/channel_trace_registry.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
   src/core/lib/channel/handshaker_registry.cc
+  src/core/lib/channel/status_util.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
   src/core/lib/compression/message_compress.cc
@@ -3177,7 +3190,6 @@ add_library(grpc++_cronet
   src/core/ext/filters/client_channel/resolver.cc
   src/core/ext/filters/client_channel/resolver_registry.cc
   src/core/ext/filters/client_channel/retry_throttle.cc
-  src/core/ext/filters/client_channel/status_util.cc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
@@ -3682,6 +3694,10 @@ if (gRPC_BUILD_TESTS)
 
 if (gRPC_BUILD_CODEGEN)
 add_library(grpc++_test_util
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.h
@@ -3701,6 +3717,7 @@ add_library(grpc++_test_util
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h
   test/cpp/end2end/test_service_impl.cc
   test/cpp/util/byte_buffer_proto_helper.cc
+  test/cpp/util/channel_trace_proto_helper.cc
   test/cpp/util/create_test_channel.cc
   test/cpp/util/string_ref_helper.cc
   test/cpp/util/subprocess.cc
@@ -3719,6 +3736,9 @@ if(WIN32 AND MSVC)
   endif()
 endif()
 
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/channelz/channelz.proto
+)
 protobuf_generate_grpc_cpp(
   src/proto/grpc/health/v1/health.proto
 )
@@ -10129,6 +10149,51 @@ target_link_libraries(channel_filter_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(channel_trace_test
+  test/core/channel/channel_trace_test.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.h
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/channelz/channelz.proto
+)
+
+target_include_directories(channel_trace_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(channel_trace_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc++_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(check_gcp_environment_linux_test
   test/core/security/check_gcp_environment_linux_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -13073,45 +13138,8 @@ target_link_libraries(status_metadata_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(status_test
-  test/cpp/util/status_test.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-
-target_include_directories(status_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE third_party/googletest/googletest/include
-  PRIVATE third_party/googletest/googletest
-  PRIVATE third_party/googletest/googlemock/include
-  PRIVATE third_party/googletest/googlemock
-  PRIVATE ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(status_test
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc++
-  grpc
-  gpr_test_util
-  gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
 add_executable(status_util_test
-  test/core/client_channel/status_util_test.cc
+  test/core/channel/status_util_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )

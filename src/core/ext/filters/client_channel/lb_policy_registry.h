@@ -24,7 +24,6 @@
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc_core {
 

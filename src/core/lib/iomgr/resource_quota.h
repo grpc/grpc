@@ -24,7 +24,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/closure.h"
 
 /** \file Tracks resource usage against a pool.
 

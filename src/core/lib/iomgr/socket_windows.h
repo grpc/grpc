@@ -29,7 +29,7 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 
 /* This holds the data for an outstanding read or write on a socket.
