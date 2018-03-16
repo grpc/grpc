@@ -182,7 +182,9 @@ LANG_RELEASE_MATRIX = {
         },
     ],
     'node': [
-        # {'v1.0.1': None},
+        {
+            'v1.0.1': None
+        },
         # {'v1.1.4': None},
         # {'v1.2.5': None},
         # {'v1.3.9': None},
