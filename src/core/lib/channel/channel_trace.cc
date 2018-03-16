@@ -169,13 +169,13 @@ char* fmt_time(gpr_timespec tm) {
 const char* severity_string(ChannelTrace::Severity severity) {
   switch (severity) {
     case ChannelTrace::Severity::Info:
-      return "INFO";
+      return "CT_INFO";
     case ChannelTrace::Severity::Warning:
-      return "WARNING";
+      return "CT_WARNING";
     case ChannelTrace::Severity::Error:
-      return "ERROR";
+      return "CT_ERROR";
     default:
-      GPR_UNREACHABLE_CODE(return "UNKNOWN");
+      GPR_UNREACHABLE_CODE(return "CT_UNKNOWN");
   }
 }
 

@@ -111,10 +111,10 @@ message ChannelTraceEvent {
   string description = 1;
   // The supported severity levels of trace events.
   enum Severity {
-    UNKNOWN = 0;
-    INFO = 1;
-    WARNING = 2;
-    ERROR = 3;
+    CT_UNKNOWN = 0;
+    CT_INFO = 1;
+    CT_WARNING = 2;
+    CT_ERROR = 3;
   }
   // the severity of the trace event
   Severity severity = 2;
