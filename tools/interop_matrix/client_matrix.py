@@ -200,7 +200,15 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.6.6': None
         },
-        #{'v1.7.1': None}, Failing tests
+        {
+            'v1.7.2': None
+        },
+        {
+            'v1.8.4': None
+        },
+        {
+            'v1.9.1': None
+        }
     ],
     'ruby': [
         {
