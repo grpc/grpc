@@ -332,6 +332,9 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/tsi/alts_transport_security.cc \
     src/core/tsi/fake_transport_security.cc \
+    src/core/tsi/ssl_session_boringssl.cc \
+    src/core/tsi/ssl_session_cache.cc \
+    src/core/tsi/ssl_session_openssl.cc \
     src/core/tsi/ssl_transport_security.cc \
     src/core/tsi/transport_security_grpc.cc \
     src/core/ext/transport/chttp2/server/chttp2_server.cc \
