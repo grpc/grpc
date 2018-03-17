@@ -31,6 +31,7 @@
 #include "test/cpp/interop/interop_client.h"
 #include "test/cpp/util/test_config.h"
 
+DEFINE_bool(use_alts, false, "Whether to use alts.");
 DEFINE_bool(use_tls, false, "Whether to use tls.");
 DEFINE_string(custom_credentials_type, "", "User provided credentials type.");
 DEFINE_bool(use_test_ca, false, "False to use SSL roots for google");
