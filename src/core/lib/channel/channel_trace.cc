@@ -25,6 +25,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "src/core/lib/channel/channel_trace_registry.h"
