@@ -22,13 +22,28 @@
 #include <grpc/support/port_platform.h>
 
 #include <stddef.h>
+
+#include "src/core/lib/iomgr/port.h"
+
+#ifdef GRPC_UV
+#include <uv.h>
+#endif
+
+#ifdef GRPC_WINSOCK_SOCKET
+#include <ws2tcpip.h>
+#endif
+
+#ifdef GRPC_POSIX_SOCKET
+#include <sys/socket.h>
+#endif
+
 #include "src/core/lib/iomgr/pollset_set.h"
 
 #define GRPC_MAX_SOCKADDR_SIZE 128
 
 typedef struct {
   char addr[GRPC_MAX_SOCKADDR_SIZE];
-  size_t len;
+  socklen_t len;
 } grpc_resolved_address;
 
 typedef struct {

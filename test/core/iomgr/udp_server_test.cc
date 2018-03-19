@@ -210,7 +210,7 @@ static void test_no_op_with_port(void) {
   LOG_TEST("test_no_op_with_port");
 
   memset(&resolved_addr, 0, sizeof(resolved_addr));
-  resolved_addr.len = sizeof(struct sockaddr_in);
+  resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
   addr->sin_family = AF_INET;
   GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, rcv_buf_size,
                                       snd_buf_size, &handler_factory));
@@ -241,7 +241,7 @@ static void test_no_op_with_port_and_socket_factory(void) {
   LOG_TEST("test_no_op_with_port_and_socket_factory");
 
   memset(&resolved_addr, 0, sizeof(resolved_addr));
-  resolved_addr.len = sizeof(struct sockaddr_in);
+  resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
   addr->sin_family = AF_INET;
   GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, rcv_buf_size,
                                       snd_buf_size, &handler_factory));
@@ -268,7 +268,7 @@ static void test_no_op_with_port_and_start(void) {
   LOG_TEST("test_no_op_with_port_and_start");
 
   memset(&resolved_addr, 0, sizeof(resolved_addr));
-  resolved_addr.len = sizeof(struct sockaddr_in);
+  resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
   addr->sin_family = AF_INET;
   GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, rcv_buf_size,
                                       snd_buf_size, &handler_factory));
@@ -301,7 +301,7 @@ static void test_receive(int number_of_clients) {
   g_number_of_orphan_calls = 0;
 
   memset(&resolved_addr, 0, sizeof(resolved_addr));
-  resolved_addr.len = sizeof(struct sockaddr_storage);
+  resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
   addr->ss_family = AF_INET;
   GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, rcv_buf_size,
                                       snd_buf_size, &handler_factory));

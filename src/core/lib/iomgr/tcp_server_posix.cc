@@ -214,7 +214,7 @@ static void on_read(void* arg, grpc_error* err) {
     char* addr_str;
     char* name;
     memset(&addr, 0, sizeof(addr));
-    addr.len = sizeof(struct sockaddr_storage);
+    addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
     /* Note: If we ever decide to return this address to the user, remember to
        strip off the ::ffff:0.0.0.0/96 prefix first. */
     int fd = grpc_accept4(sp->fd, &addr, 1, 1);
@@ -413,11 +413,12 @@ static grpc_error* tcp_server_add_port(grpc_tcp_server* s,
      as some previously created listener. */
   if (requested_port == 0) {
     for (sp = s->head; sp; sp = sp->next) {
-      sockname_temp.len = sizeof(struct sockaddr_storage);
+      sockname_temp.len =
+          static_cast<socklen_t>(sizeof(struct sockaddr_storage));
       if (0 ==
           getsockname(sp->fd,
                       reinterpret_cast<grpc_sockaddr*>(&sockname_temp.addr),
-                      reinterpret_cast<socklen_t*>(&sockname_temp.len))) {
+                      &sockname_temp.len)) {
         int used_port = grpc_sockaddr_get_port(&sockname_temp);
         if (used_port > 0) {
           memcpy(&sockname_temp, addr, sizeof(grpc_resolved_address));
