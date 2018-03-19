@@ -42,10 +42,19 @@ def generate_cc_impl(ctx):
   else:
     arguments += ["--cpp_out=" + ",".join(ctx.attr.flags) + ":" + dir_out]
     additional_input = []
-  # Import protos relative to the workspace root so that protoc prints the right
-  # include paths.
-  arguments += ["--proto_path=" + (ctx.label.workspace_root or ".")]
-  # A second include so that protoc puts the generated code in the right directory.
+
+  # Import protos relative to their workspace root so that protoc prints the
+  # right include paths.
+  for include in includes:
+    directory = include.path
+    if directory.startswith("external"):
+      external_sep = directory.find("/")
+      repository_sep = directory.find("/", external_sep + 1)
+      arguments += ["--proto_path=" + directory[:repository_sep]]
+    else:
+      arguments += ["--proto_path=."]
+  # Include the output directory so that protoc puts the generated code in the
+  # right directory.
   arguments += ["--proto_path={0}{1}".format(dir_out, proto_root)]
   arguments += [proto.path for proto in protos]
 
