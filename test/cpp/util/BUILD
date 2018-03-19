@@ -86,6 +86,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "channel_trace_proto_helper",
+    testonly = 1,
     srcs = [
         "channel_trace_proto_helper.cc",
     ],
