@@ -1,0 +1,456 @@
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package grpc.channelz;
+
+import "google/protobuf/any.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+
+// See go/grpc-channelz.
+
+// Channel is a logical grouping of channels, subchannels, and sockets.
+message Channel {
+  // The identifier for this channel.
+  ChannelRef ref = 1;
+  // Data specific to this channel.
+  ChannelData data = 2;
+  // At most one of 'channel_ref+subchannel_ref' and 'socket' is set.
+
+  // There are no ordering guarantees on the order of channel refs.
+  // There may not be cycles in the ref graph.
+  // A channel ref may be present in more than one channel or subchannel.
+  repeated ChannelRef channel_ref = 3;
+
+  // At most one of 'channel_ref+subchannel_ref' and 'socket' is set.
+  // There are no ordering guarantees on the order of subchannel refs.
+  // There may not be cycles in the ref graph.
+  // A sub channel ref may be present in more than one channel or subchannel.
+  repeated SubchannelRef subchannel_ref = 4;
+
+  // There are no ordering guarantees on the order of sockets.
+  repeated SocketRef socket = 5;
+}
+
+// Subchannel is a logical grouping of channels, subchannels, and sockets.
+// A subchannel is load balanced over by it's ancestor
+message Subchannel {
+  // The identifier for this channel.
+  SubchannelRef ref = 1;
+  // Data specific to this channel.
+  ChannelData data = 2;
+  // At most one of 'channel_ref+subchannel_ref' and 'socket' is set.
+
+  // There are no ordering guarantees on the order of channel refs.
+  // There may not be cycles in the ref graph.
+  // A channel ref may be present in more than one channel or subchannel.
+  repeated ChannelRef channel_ref = 3;
+
+  // At most one of 'channel_ref+subchannel_ref' and 'socket' is set.
+  // There are no ordering guarantees on the order of subchannel refs.
+  // There may not be cycles in the ref graph.
+  // A sub channel ref may be present in more than one channel or subchannel.
+  repeated SubchannelRef subchannel_ref = 4;
+
+  // There are no ordering guarantees on the order of sockets.
+  repeated SocketRef socket = 5;
+}
+
+// These come from the specified states in this document:
+// https://github.com/grpc/grpc/blob/master/doc/connectivity-semantics-and-api.md
+message ChannelConnectivityState {
+  enum State {
+    UNKNOWN = 0;
+    IDLE = 1;
+    CONNECTING = 2;
+    READY = 3;
+    TRANSIENT_FAILURE = 4;
+    SHUTDOWN = 5;
+  }
+  State state = 1;
+}
+
+message ChannelData {
+
+  ChannelConnectivityState state = 1;
+
+  // The target this channel originally tried to connect to.  May be absent
+  string target = 2;
+
+  ChannelTrace trace = 3;
+
+  // The number of calls started on the channel
+  int64 calls_started = 4;
+  // The number of calls that have completed with an OK status
+  int64 calls_succeeded = 5;
+  // The number of calls that have a completed with a non-OK status
+  int64 calls_failed = 6;
+
+  // The last time a call was started on the channel.
+  google.protobuf.Timestamp last_call_started_timestamp = 7;
+}
+
+// A trace event is an interesting thing that happened to a channel or
+// subchannel, such as creation, address resolution, subchannel creation, etc.
+message ChannelTraceEvent {
+  // High level description of the event.
+  string description = 1;
+  // The supported severity levels of trace events.
+  enum Severity {
+    CT_UNKNOWN = 0;
+    CT_INFO = 1;
+    CT_WARNING = 2;
+    CT_ERROR = 3;
+  }
+  // the severity of the trace event
+  Severity severity = 2;
+  // When this event occurred.
+  google.protobuf.Timestamp timestamp = 3;
+  // ref of referenced channel or subchannel.
+  // Optional, only present if this event refers to a child object. For example,
+  // this field would be filled if this trace event was for a subchannel being
+  // created.
+  oneof child_ref {
+    ChannelRef channel_ref = 4;
+    SubchannelRef subchannel_ref = 5;
+  }
+}
+
+message ChannelTrace {
+  // Number of events ever logged in this tracing object. This can differ from
+  // events.size() because events can be overwritten or garbage collected by
+  // implementations.
+  int64 num_events_logged = 1;
+  // Time that this channel was created.
+  google.protobuf.Timestamp creation_time = 2;
+  // List of events that have occurred on this channel.
+  repeated ChannelTraceEvent events = 3;
+}
+
+message ChannelRef {
+  // The globally unique id for this channel.  Must be a positive number.
+  int64 channel_id = 1;
+  // An optional name associated with the channel.
+  string name = 2;
+  // Intentionally don't use field numbers from other refs.
+  reserved 3, 4, 5, 6;
+}
+
+message SubchannelRef {
+  // The globally unique id for this subchannel.  Must be a positive number.
+  int64 subchannel_id = 7;
+  // An optional name associated with the subchannel.
+  string name = 8;
+  // Intentionally don't use field numbers from other refs.
+  reserved 1, 2, 3, 4, 5, 6;
+}
+
+message SocketRef {
+  int64 socket_id = 3;
+  // An optional name associated with the socket.
+  string name = 4;
+  // Intentionally don't use field numbers from other refs.
+  reserved 1, 2, 5, 6, 7, 8;
+}
+
+message ServerRef {
+  // A globally unique identifier for this server.   Must be a positive number.
+  int64 server_id = 5;
+  // An optional name associated with the server.
+  string name = 6;
+  // Intentionally don't use field numbers from other refs.
+  reserved 1, 2, 3, 4, 7, 8;
+}
+
+message Server {
+  ServerRef ref = 1;
+  ServerData data = 2;
+
+  // The sockets that the server is listening on.  There are no ordering
+  // guarantees.
+  repeated SocketRef listen_socket = 3;
+}
+
+message ServerData {
+  ChannelTrace trace = 1;
+
+  // The number of incoming calls started on the server
+  int64 calls_started = 2;
+  // The number of incoming calls that have completed with an OK status
+  int64 calls_succeeded = 3;
+  // The number of incoming calls that have a completed with a non-OK status
+  int64 calls_failed = 4;
+
+  // The last time a call was started on the server.
+  google.protobuf.Timestamp last_call_started_timestamp = 5;
+}
+
+// Information about an actual connection.  Pronounced "sock-ay".
+message Socket {
+  SocketRef ref = 1;
+
+  SocketData data = 2;
+  // The locally bound address.
+  Address local = 3;
+  // The remote bound address.  May be absent.
+  Address remote = 4;
+  Security security = 5;
+
+  // Optional, represents the name of the remote endpoint, if different than
+  // the original target name.
+  string remote_name = 6;
+}
+
+message SocketData {
+  // The number of streams that have been started.
+  int64 streams_started = 1;
+  // The number of streams that have ended successfully with the EoS bit set for
+  //  both end points
+  int64 streams_succeeded = 2;
+  // The number of incoming streams that have a completed with a non-OK status
+  int64 streams_failed = 3;
+
+  // The number of messages successfully sent on this socket.
+  int64 messages_sent = 4;
+  int64 messages_received = 5;
+
+  // The number of keep alives sent.  This is typically implemented with HTTP/2
+  // ping messages.
+  int64 keep_alives_sent = 6;
+
+  // The last time a stream was created by this endpoint.  Usually unset for
+  // servers.
+  google.protobuf.Timestamp last_local_stream_created_timestamp = 7;
+  // The last time a stream was created by the remote endpoint.  Usually unset
+  // for clients.
+  google.protobuf.Timestamp last_remote_stream_created_timestamp = 8;
+
+  // The last time a message was sent by this endpoint.
+  google.protobuf.Timestamp last_message_sent_timestamp = 9;
+  // The last time a message was received by this endpoint.
+  google.protobuf.Timestamp last_message_received_timestamp = 10;
+
+  // The amount of window, granted to the local endpoint by the remote endpoint.
+  // This may be slightly out of date due to network latency.  This does NOT
+  // include stream level or TCP level flow control info.
+  google.protobuf.Int64Value local_flow_control_window = 11;
+
+  // The amount of window, granted to the remote endpoint by the local endpoint.
+  // This may be slightly out of date due to network latency.  This does NOT
+  // include stream level or TCP level flow control info.
+  google.protobuf.Int64Value  remote_flow_control_window = 12;
+
+  repeated SocketOption option = 13;
+}
+
+message Address {
+  message TcpIpAddress {
+    // Either the IPv4 or IPv6 address in bytes.  Will either be 4 bytes or 16
+    // bytes in length.
+    bytes ip_address = 1;
+    // 0-64k, or -1 if not appropriate.
+    int32 port = 2;
+  }
+  // A Unix Domain Socket address.
+  message UdsAddress {
+    string filename = 1;
+  }
+  // An address type not included above.
+  message OtherAddress {
+    // The human readable version of the value.
+    string name = 1;
+    // The actual address message.
+    google.protobuf.Any value = 2;
+  }
+
+  oneof address {
+    TcpIpAddress tcpip_address = 1;
+    UdsAddress uds_address = 2;
+    OtherAddress other_address = 3;
+  }
+}
+
+message Security {
+  message Tls {
+    // The key exchange used.  e.g. X25519
+    string key_exchange = 1;
+    // The cipher used. e.g. AES_128_GCM.
+    string cipher = 2;
+    // the certificate used by this endpoint.
+    bytes local_certificate = 3;
+    // the certificate used by the remote endpoint.
+    bytes remote_certificate = 4;
+  }
+  message OtherSecurity {
+    // The human readable version of the value.
+    string name = 1;
+    // The actual security details message.
+    google.protobuf.Any value = 2;
+  }
+  oneof model {
+    Tls tls = 1;
+    OtherSecurity other = 2;
+  }
+}
+
+message SocketOption {
+  string name = 1;
+  // The human readable value of this socket option.  At least one of value or
+  // additional will be set.
+  string value = 2;
+  // Additional data associated with the socket option.  At least one of value
+  // or additional will be set.
+  google.protobuf.Any additional = 3;
+}
+
+// For use with SocketOption's additional field.  This is primarily used for
+// SO_RCVTIMEO and SO_SNDTIMEO
+message SocketOptionTimeout {
+  google.protobuf.Duration duration = 1;
+}
+
+message SocketOptionLinger {
+  bool active = 1;
+  google.protobuf.Duration duration = 2;
+}
+
+// Tcp info for SOL_TCP, TCP_INFO
+message SocketOptionTcpInfo {
+  uint32 tcpi_state = 1;
+
+  uint32 tcpi_ca_state = 2;
+  uint32 tcpi_retransmits = 3;
+  uint32 tcpi_probes = 4;
+  uint32 tcpi_backoff = 5;
+  uint32 tcpi_options = 6;
+  uint32 tcpi_snd_wscale = 7;
+  uint32 tcpi_rcv_wscale = 8;
+
+  uint32 tcpi_rto = 9;
+  uint32 tcpi_ato = 10;
+  uint32 tcpi_snd_mss = 11;
+  uint32 tcpi_rcv_mss = 12;
+
+  uint32 tcpi_unacked = 13;
+  uint32 tcpi_sacked = 14;
+  uint32 tcpi_lost = 15;
+  uint32 tcpi_retrans = 16;
+  uint32 tcpi_fackets = 17;
+
+  uint32 tcpi_last_data_sent = 18;
+  uint32 tcpi_last_ack_sent = 19;
+  uint32 tcpi_last_data_recv = 20;
+  uint32 tcpi_last_ack_recv = 21;
+
+  uint32 tcpi_pmtu = 22;
+  uint32 tcpi_rcv_ssthresh = 23;
+  uint32 tcpi_rtt = 24;
+  uint32 tcpi_rttvar = 25;
+  uint32 tcpi_snd_ssthresh = 26;
+  uint32 tcpi_snd_cwnd = 27;
+  uint32 tcpi_advmss = 28;
+  uint32 tcpi_reordering = 29;
+}
+
+service Channelz {
+  // Gets all root channels (e.g. channels the application has directly
+  // created). This does not include subchannels nor non-top level channels.
+  rpc GetTopChannels(GetTopChannelsRequest) returns (GetTopChannelsResponse);
+  // Gets all servers that exist in the process.
+  rpc GetServers(GetServersRequest) returns (GetServersResponse);
+  // Gets all server sockets that exist in the process.
+  rpc GetServerSockets(GetServerSocketsRequest) returns (GetServerSocketsResponse);
+  // Returns a single Channel, or else a NOT_FOUND code.
+  rpc GetChannel(GetChannelRequest) returns (GetChannelResponse);
+  // Returns a single Subchannel, or else a NOT_FOUND code.
+  rpc GetSubchannel(GetSubchannelRequest) returns (GetSubchannelResponse);
+  // Returns a single Socket or else a NOT_FOUND code.
+  rpc GetSocket(GetSocketRequest) returns (GetSocketResponse);
+}
+
+message GetServersRequest {
+  // start_server_id indicates that only servers at or above this id should be
+  // included in the results.
+  int64 start_server_id = 1;
+}
+
+message GetServersResponse {
+  // list of servers that the connection detail service knows about.  Sorted in
+  // ascending server_id order.
+  repeated Server server = 1;
+  // If set, indicates that the list of servers is the final list.  Requesting
+  // more servers will only return more if they are created after this RPC
+  // completes.
+  bool end = 2;
+}
+
+message GetServerSocketsRequest {
+  int64 server_id = 1;
+  // start_socket_id indicates that only sockets at or above this id should be
+  // included in the results.
+  int64 start_socket_id = 2;
+}
+
+message GetServerSocketsResponse {
+  // list of socket refs that the connection detail service knows about.  Sorted in
+  // ascending socket_id order.
+  repeated SocketRef socket_ref = 1;
+  // If set, indicates that the list of sockets is the final list.  Requesting
+  // more sockets will only return more if they are created after this RPC
+  // completes.
+  bool end = 2;
+}
+
+message GetTopChannelsRequest {
+  // start_channel_id indicates that only channels at or above this id should be
+  // included in the results.
+  int64 start_channel_id = 1;
+}
+
+message GetTopChannelsResponse {
+  // list of channels that the connection detail service knows about.  Sorted in
+  // ascending channel_id order.
+  repeated Channel channel = 1;
+  // If set, indicates that the list of channels is the final list.  Requesting
+  // more channels can only return more if they are created after this RPC
+  // completes.
+  bool end = 2;
+}
+
+message GetChannelRequest {
+  int64 channel_id = 1;
+}
+
+message GetChannelResponse {
+  Channel channel = 1;
+}
+
+message GetSubchannelRequest {
+  int64 subchannel_id = 1;
+}
+
+message GetSubchannelResponse {
+  Subchannel subchannel = 1;
+}
+
+message GetSocketRequest {
+  int64 socket_id = 1;
+}
+
+message GetSocketResponse {
+  Socket socket = 1;
+}
