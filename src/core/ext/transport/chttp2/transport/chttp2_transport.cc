@@ -1584,7 +1584,8 @@ static void perform_stream_op_locked(void* stream_op,
     s->recv_message = op_payload->recv_message.recv_message;
     if (s->id != 0) {
       if (!s->read_closed) {
-        already_received = s->frame_storage.length;
+        already_received = s->frame_storage.length +
+                           s->unprocessed_incoming_frames_buffer.length;
         s->flow_control->IncomingByteStreamUpdate(GRPC_HEADER_SIZE_IN_BYTES,
                                                   already_received);
         grpc_chttp2_act_on_flowctl_action(s->flow_control->MakeAction(), t, s);
