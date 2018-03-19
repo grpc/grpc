@@ -85,24 +85,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "channel_trace_proto_helper",
-    srcs = [
-        "channel_trace_proto_helper.cc",
-    ],
-    hdrs = [
-        "channel_trace_proto_helper.h",
-    ],
-    deps = [
-        "//:grpc++",
-        "//src/proto/grpc/channelz:channelz_proto",
-    ],
-    external_deps = [
-        "gtest",
-        "protobuf",
-    ],
-)
-
-grpc_cc_library(
     name = "test_util_unsecure",
     srcs = GRPCXX_TESTUTIL_SRCS,
     hdrs = GRPCXX_TESTUTIL_HDRS,

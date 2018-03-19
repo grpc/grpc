@@ -16,7 +16,7 @@
  *
  */
 
-#include "src/core/lib/channel/status_util.h"
+#include "src/core/ext/filters/client_channel/status_util.h"
 
 #include <gtest/gtest.h>
 

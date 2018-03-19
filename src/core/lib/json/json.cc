@@ -21,7 +21,6 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 #include "src/core/lib/json/json.h"
 
@@ -47,40 +46,5 @@ void grpc_json_destroy(grpc_json* json) {
     json->parent->child = json->next;
   }
 
-  if (json->owns_value) {
-    gpr_free((void*)json->value);
-  }
-
   gpr_free(json);
-}
-
-grpc_json* grpc_json_link_child(grpc_json* parent, grpc_json* child,
-                                grpc_json* sibling) {
-  // first child case.
-  if (parent->child == nullptr) {
-    GPR_ASSERT(sibling == nullptr);
-    parent->child = child;
-    return child;
-  }
-  if (sibling == nullptr) {
-    sibling = parent->child;
-  }
-  // always find the right most sibling.
-  while (sibling->next != nullptr) {
-    sibling = sibling->next;
-  }
-  sibling->next = child;
-  return child;
-}
-
-grpc_json* grpc_json_create_child(grpc_json* sibling, grpc_json* parent,
-                                  const char* key, const char* value,
-                                  grpc_json_type type, bool owns_value) {
-  grpc_json* child = grpc_json_create(type);
-  grpc_json_link_child(parent, child, sibling);
-  child->owns_value = owns_value;
-  child->parent = parent;
-  child->value = value;
-  child->key = key;
-  return child;
 }
