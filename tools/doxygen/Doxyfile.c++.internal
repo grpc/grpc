@@ -1007,14 +1007,11 @@ src/core/lib/backoff/backoff.h \
 src/core/lib/channel/channel_args.h \
 src/core/lib/channel/channel_stack.h \
 src/core/lib/channel/channel_stack_builder.h \
-src/core/lib/channel/channel_trace.h \
-src/core/lib/channel/channel_trace_registry.h \
 src/core/lib/channel/connected_channel.h \
 src/core/lib/channel/context.h \
 src/core/lib/channel/handshaker.h \
 src/core/lib/channel/handshaker_factory.h \
 src/core/lib/channel/handshaker_registry.h \
-src/core/lib/channel/status_util.h \
 src/core/lib/compression/algorithm_metadata.h \
 src/core/lib/compression/compression_internal.h \
 src/core/lib/compression/message_compress.h \
