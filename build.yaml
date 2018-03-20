@@ -1383,8 +1383,10 @@ libs:
   dll: true
   filegroups:
   - grpc_base
+  - grpc_base_headers
   - grpc_transport_cronet_client_secure
   - grpc_transport_chttp2_client_secure
+  - grpc_transport_chttp2_server_secure
   - grpc_server_load_reporting
   generate_plugin_registry: true
   platforms:
