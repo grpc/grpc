@@ -68,11 +68,24 @@ class CompressionAlgorithm {
     return *this;
   }
 
+  /// Provide a conversion to Algorithm to support comparison against a
+  /// specific compression algorithm
+  operator Algorithm() const { return static_cast<Algorithm>(algorithm_); }
+
   /// This conversion operator is needed to maintain API compatibility
   /// with older release versions of the C++ API that returned
   /// grpc_compression_algorithm from ClientContext and ServerContext
   /// rather than grpc::CompressionAlgorithm
   operator grpc_compression_algorithm() const { return algorithm_; }
+
+  /// Having 2 ambiguous enum conversions is ambiguous for gtest which needs
+  /// to print it as an integral type, so provide a general integral conversion
+  template <class T>
+  operator T() const {
+    static_assert(std::is_integral<T>::value,
+                  "No implicit conversion to non-integer type");
+    return static_cast<T>(algorithm_);
+  }
 
  private:
   grpc_compression_algorithm algorithm_;
@@ -113,11 +126,24 @@ class CompressionLevel {
     return *this;
   }
 
+  /// Provide a conversion to Algorithm to support comparison against a
+  /// specific compression algorithm
+  operator Level() const { return static_cast<Level>(level_); }
+
   /// This conversion operator is needed to maintain API compatibility
   /// with older release versions of the C++ API that returned
   /// grpc_compression_level from ServerContext rather than
   /// grpc::CompressionLevel
   operator grpc_compression_level() const { return level_; }
+
+  /// Having 2 ambiguous enum conversions is ambiguous for gtest which needs
+  /// to print it as an integral type, so provide a general integral conversion
+  template <class T>
+  operator T() const {
+    static_assert(std::is_integral<T>::value,
+                  "No implicit conversion to non-integer type");
+    return static_cast<T>(level_);
+  }
 
  private:
   grpc_compression_level level_;
