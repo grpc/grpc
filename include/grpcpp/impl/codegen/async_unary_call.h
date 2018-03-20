@@ -33,14 +33,19 @@ namespace grpc {
 
 /// An interface relevant for async client side unary RPCs (which send
 /// one request message to a server and receive one response message).
+/// Note that all async RPCs are not guaranteed to do any network-visible work
+/// unless they are bound to a tag that is being checked at the completion
+/// queue. In practice, this means that \a StartCall may not actually start
+/// the work for async unary RPCs, as these RPCs are not bound to a tag until
+/// there is a call to \a Finish or \a ReadInitialMetadata
 template <class R>
 class ClientAsyncResponseReaderInterface {
  public:
   virtual ~ClientAsyncResponseReaderInterface() {}
 
-  /// Start the call that was set up by the constructor, but only if the
-  /// constructor was invoked through the "Prepare" API which doesn't actually
-  /// start the call
+  /// Bind initial metadata to the call that was set up by the constructor,
+  /// but only if the constructor was invoked through the "Prepare" API that
+  /// doesn't actually do so
   virtual void StartCall() = 0;
 
   /// Request notification of the reading of initial metadata. Completion

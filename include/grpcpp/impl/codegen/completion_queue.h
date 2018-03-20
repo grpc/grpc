@@ -130,6 +130,10 @@ class CompletionQueue : private internal::GrpcLibraryCodegen {
   /// or not. Success here means that this operation completed in the normal
   /// valid manner.
   ///
+  /// Also note that an asynchronous RPC may not generate any network activity
+  /// at all unless it is associated with a tag on a completion queue that is
+  /// being checked by Next.
+  ///
   /// Server-side RPC request: \a ok indicates that the RPC has indeed
   /// been started. If it is false, the server has been Shutdown
   /// before this particular call got matched to an incoming RPC.
