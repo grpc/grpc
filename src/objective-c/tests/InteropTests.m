@@ -486,4 +486,41 @@ BOOL isRemoteInteropTest(NSString *host) {
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
+- (void)testKeepalive {
+  XCTAssertNotNil(self.class.host);
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"PingPong"];
+
+  [GRPCCall setKeepaliveWithInterval:1500 timeout:1 forHost:self.class.host];
+
+  NSArray *requests = @[@27182, @8];
+  NSArray *responses = @[@31415, @9];
+
+  GRXBufferedPipe *requestsBuffer = [[GRXBufferedPipe alloc] init];
+
+  __block int index = 0;
+
+  id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:requests[index]
+                                               requestedResponseSize:responses[index]];
+  [requestsBuffer writeValue:request];
+
+  [_service fullDuplexCallWithRequestsWriter:requestsBuffer
+                                eventHandler:^(BOOL done,
+                                               RMTStreamingOutputCallResponse *response,
+                                               NSError *error) {
+    if (index == 0) {
+      XCTAssertNil(error, @"Finished with unexpected error: %@", error);
+      XCTAssertTrue(response, @"Event handler called without an event.");
+      XCTAssertFalse(done);
+      index++;
+    } else {
+      // Keepalive should kick after 1s elapsed and fails the call.
+      XCTAssertNotNil(error);
+      XCTAssertTrue(done);
+      [expectation fulfill];
+    }
+  }];
+
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+}
+
 @end

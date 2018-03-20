@@ -46,4 +46,11 @@ typedef NS_ENUM(NSInteger, GRPCCompressAlgorithm) {
 + (void)setDefaultCompressMethod:(GRPCCompressAlgorithm)algorithm
                          forhost:(nonnull NSString *)host;
 
+/** Configure keepalive timeout parameters. A client ping after \a interval ms to check if the
+ * transport is still alive. After waiting for \a timeout ms, if the client does not receive the
+ * ping ack, it closes the transport. */
++ (void)setKeepaliveWithInterval:(int)interval
+                         timeout:(int)timeout
+                         forHost:(nonnull NSString *)host;
+
 @end
