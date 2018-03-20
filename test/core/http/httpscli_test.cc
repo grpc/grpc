@@ -21,13 +21,16 @@
 #include <string.h>
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security_constants.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/subprocess.h>
 #include <grpc/support/sync.h>
+
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "test/core/util/port.h"
+#include "test/core/util/subprocess.h"
 #include "test/core/util/test_config.h"
 
 static int g_done = 0;
@@ -40,12 +43,13 @@ static grpc_millis n_seconds_time(int seconds) {
       grpc_timeout_seconds_to_deadline(seconds));
 }
 
-static void on_finish(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
+static void on_finish(void* arg, grpc_error* error) {
   const char* expect =
       "<html><head><title>Hello world!</title></head>"
       "<body><p>This is a test</p></body></html>";
   grpc_http_response* response = static_cast<grpc_http_response*>(arg);
   GPR_ASSERT(response);
+  gpr_log(GPR_INFO, "response status %d", response->status);
   GPR_ASSERT(response->status == 200);
   GPR_ASSERT(response->body_length == strlen(expect));
   GPR_ASSERT(0 == memcmp(expect, response->body, response->body_length));
@@ -53,15 +57,14 @@ static void on_finish(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {
   g_done = 1;
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "pollset_kick",
-      grpc_pollset_kick(exec_ctx, grpc_polling_entity_pollset(&g_pops),
-                        nullptr)));
+      grpc_pollset_kick(grpc_polling_entity_pollset(&g_pops), nullptr)));
   gpr_mu_unlock(g_mu);
 }
 
 static void test_get(int port) {
   grpc_httpcli_request req;
   char* host;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
 
   g_done = 0;
   gpr_log(GPR_INFO, "test_get");
@@ -79,19 +82,18 @@ static void test_get(int port) {
   memset(&response, 0, sizeof(response));
   grpc_resource_quota* resource_quota = grpc_resource_quota_create("test_get");
   grpc_httpcli_get(
-      &exec_ctx, &g_context, &g_pops, resource_quota, &req, n_seconds_time(15),
+      &g_context, &g_pops, resource_quota, &req, n_seconds_time(15),
       GRPC_CLOSURE_CREATE(on_finish, &response, grpc_schedule_on_exec_ctx),
       &response);
-  grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
+  grpc_resource_quota_unref_internal(resource_quota);
   gpr_mu_lock(g_mu);
   while (!g_done) {
     grpc_pollset_worker* worker = nullptr;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "pollset_work",
-        grpc_pollset_work(&exec_ctx, grpc_polling_entity_pollset(&g_pops),
-                          &worker, n_seconds_time(1))));
+        "pollset_work", grpc_pollset_work(grpc_polling_entity_pollset(&g_pops),
+                                          &worker, n_seconds_time(1))));
     gpr_mu_unlock(g_mu);
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(g_mu);
   }
   gpr_mu_unlock(g_mu);
@@ -102,7 +104,7 @@ static void test_get(int port) {
 static void test_post(int port) {
   grpc_httpcli_request req;
   char* host;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
 
   g_done = 0;
   gpr_log(GPR_INFO, "test_post");
@@ -120,20 +122,18 @@ static void test_post(int port) {
   memset(&response, 0, sizeof(response));
   grpc_resource_quota* resource_quota = grpc_resource_quota_create("test_post");
   grpc_httpcli_post(
-      &exec_ctx, &g_context, &g_pops, resource_quota, &req, "hello", 5,
-      n_seconds_time(15),
+      &g_context, &g_pops, resource_quota, &req, "hello", 5, n_seconds_time(15),
       GRPC_CLOSURE_CREATE(on_finish, &response, grpc_schedule_on_exec_ctx),
       &response);
-  grpc_resource_quota_unref_internal(&exec_ctx, resource_quota);
+  grpc_resource_quota_unref_internal(resource_quota);
   gpr_mu_lock(g_mu);
   while (!g_done) {
     grpc_pollset_worker* worker = nullptr;
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "pollset_work",
-        grpc_pollset_work(&exec_ctx, grpc_polling_entity_pollset(&g_pops),
-                          &worker, n_seconds_time(1))));
+        "pollset_work", grpc_pollset_work(grpc_polling_entity_pollset(&g_pops),
+                                          &worker, n_seconds_time(1))));
     gpr_mu_unlock(g_mu);
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(g_mu);
   }
   gpr_mu_unlock(g_mu);
@@ -141,14 +141,13 @@ static void test_post(int port) {
   grpc_http_response_destroy(&response);
 }
 
-static void destroy_pops(grpc_exec_ctx* exec_ctx, void* p, grpc_error* error) {
-  grpc_pollset_destroy(exec_ctx, grpc_polling_entity_pollset(
-                                     static_cast<grpc_polling_entity*>(p)));
+static void destroy_pops(void* p, grpc_error* error) {
+  grpc_pollset_destroy(
+      grpc_polling_entity_pollset(static_cast<grpc_polling_entity*>(p)));
 }
 
 int main(int argc, char** argv) {
   grpc_closure destroyed;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
   gpr_subprocess* server;
   char* me = argv[0];
   char* lslash = strrchr(me, '/');
@@ -157,10 +156,17 @@ int main(int argc, char** argv) {
   int arg_shift = 0;
   /* figure out where we are */
   char* root;
-  if (lslash) {
-    root = static_cast<char*>(gpr_malloc((size_t)(lslash - me + 1)));
-    memcpy(root, me, (size_t)(lslash - me));
-    root[lslash - me] = 0;
+  if (lslash != nullptr) {
+    /* Hack for bazel target */
+    if (static_cast<unsigned>(lslash - me) >= (sizeof("http") - 1) &&
+        strncmp(me + (lslash - me) - sizeof("http") + 1, "http",
+                sizeof("http") - 1) == 0) {
+      lslash = me + (lslash - me) - sizeof("http");
+    }
+    root = static_cast<char*>(
+        gpr_malloc(static_cast<size_t>(lslash - me + sizeof("/../.."))));
+    memcpy(root, me, static_cast<size_t>(lslash - me));
+    memcpy(root + (lslash - me), "/../..", sizeof("/../.."));
   } else {
     root = gpr_strdup(".");
   }
@@ -170,9 +176,15 @@ int main(int argc, char** argv) {
     args[0] = gpr_strdup(argv[1]);
   } else {
     arg_shift = 1;
-    gpr_asprintf(&args[0], "%s/../../tools/distrib/python_wrapper.sh", root);
-    gpr_asprintf(&args[1], "%s/../../test/core/http/test_server.py", root);
+    gpr_asprintf(&args[0], "%s/test/core/http/python_wrapper.sh", root);
+    gpr_asprintf(&args[1], "%s/test/core/http/test_server.py", root);
   }
+
+  /* Set the environment variable for the SSL certificate file */
+  char* pem_file;
+  gpr_asprintf(&pem_file, "%s/src/core/tsi/test_creds/ca.pem", root);
+  gpr_setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR, pem_file);
+  gpr_free(pem_file);
 
   /* start the server */
   args[1 + arg_shift] = const_cast<char*>("--port");
@@ -199,12 +211,13 @@ int main(int argc, char** argv) {
   test_get(port);
   test_post(port);
 
-  grpc_httpcli_context_destroy(&exec_ctx, &g_context);
-  GRPC_CLOSURE_INIT(&destroyed, destroy_pops, &g_pops,
-                    grpc_schedule_on_exec_ctx);
-  grpc_pollset_shutdown(&exec_ctx, grpc_polling_entity_pollset(&g_pops),
-                        &destroyed);
-  grpc_exec_ctx_finish(&exec_ctx);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_httpcli_context_destroy(&g_context);
+    GRPC_CLOSURE_INIT(&destroyed, destroy_pops, &g_pops,
+                      grpc_schedule_on_exec_ctx);
+    grpc_pollset_shutdown(grpc_polling_entity_pollset(&g_pops), &destroyed);
+  }
   grpc_shutdown();
 
   gpr_free(grpc_polling_entity_pollset(&g_pops));

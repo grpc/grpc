@@ -118,6 +118,7 @@ if EXTRA_ENV_COMPILE_ARGS is None:
     EXTRA_ENV_COMPILE_ARGS += ' -std=c++11 -std=gnu99 -fvisibility=hidden -fno-wrapv -fno-exceptions'
   elif "darwin" in sys.platform:
     EXTRA_ENV_COMPILE_ARGS += ' -fvisibility=hidden -fno-wrapv -fno-exceptions'
+EXTRA_ENV_COMPILE_ARGS += ' -DPB_FIELD_16BIT'	
 
 if EXTRA_ENV_LINK_ARGS is None:
   EXTRA_ENV_LINK_ARGS = ''
@@ -160,12 +161,13 @@ if "win32" in sys.platform:
 
 DEFINE_MACROS = (
     ('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600),
-    ('GPR_BACKWARDS_COMPATIBILITY_MODE', 1),)
+    ('GPR_BACKWARDS_COMPATIBILITY_MODE', 1))
 if "win32" in sys.platform:
   # TODO(zyc): Re-enble c-ares on x64 and x86 windows after fixing the
   # ares_library_init compilation issue
   DEFINE_MACROS += (('WIN32_LEAN_AND_MEAN', 1), ('CARES_STATICLIB', 1),
-                    ('GRPC_ARES', 0), ('NTDDI_VERSION', 0x06000000),)
+                    ('GRPC_ARES', 0), ('NTDDI_VERSION', 0x06000000),
+                    ('NOMINMAX', 1),)
   if '64bit' in platform.architecture()[0]:
     DEFINE_MACROS += (('MS_WIN64', 1),)
   elif sys.version_info >= (3, 5):
@@ -173,7 +175,7 @@ if "win32" in sys.platform:
     # on msvc, but only for 32 bits
     DEFINE_MACROS += (('NTDDI_VERSION', 0x06000000),)
 else:
-  DEFINE_MACROS += (('HAVE_CONFIG_H', 1),)
+  DEFINE_MACROS += (('HAVE_CONFIG_H', 1), ('GRPC_ENABLE_FORK_SUPPORT', 1),)
 
 LDFLAGS = tuple(EXTRA_LINK_ARGS)
 CFLAGS = tuple(EXTRA_COMPILE_ARGS)
@@ -181,6 +183,7 @@ if "linux" in sys.platform or "darwin" in sys.platform:
   pymodinit_type = 'PyObject*' if PY3 else 'void'
   pymodinit = '__attribute__((visibility ("default"))) {}'.format(pymodinit_type)
   DEFINE_MACROS += (('PyMODINIT_FUNC', pymodinit),)
+  DEFINE_MACROS += (('GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK', 1),)
 
 # By default, Python3 distutils enforces compatibility of
 # c plugins (.so files) with the OSX version Python3 was built with.

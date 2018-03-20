@@ -19,18 +19,6 @@ licenses(["notice"])  # Apache v2
 grpc_package(name = "test/core/surface")
 
 grpc_cc_test(
-    name = "alarm_test",
-    srcs = ["alarm_test.cc"],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:gpr_test_util",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "grpc_byte_buffer_reader_test",
     srcs = ["byte_buffer_reader_test.cc"],
     language = "C++",
@@ -57,6 +45,18 @@ grpc_cc_test(
 grpc_cc_test(
     name = "grpc_completion_queue_test",
     srcs = ["completion_queue_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "completion_queue_threading_test",
+    srcs = ["completion_queue_threading_test.cc"],
     language = "C++",
     deps = [
         "//:gpr",
@@ -110,6 +110,19 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/end2end:cq_verifier",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "num_external_connectivity_watchers_test",
+    srcs = ["num_external_connectivity_watchers_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/end2end:ssl_test_data",
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],

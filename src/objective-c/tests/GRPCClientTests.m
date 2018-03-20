@@ -95,6 +95,10 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
 
 @implementation GRPCClientTests
 
++ (void)setUp {
+  NSLog(@"GRPCClientTests Started");
+}
+
 - (void)setUp {
   // Add a custom user agent prefix that will be used in test
   [GRPCCall setUserAgentPrefix:@"Foo" forHost:kHostAddress];

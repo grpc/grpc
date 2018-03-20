@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2017 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,16 +19,17 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_BACKUP_POLLER_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_BACKUP_POLLER_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/grpc.h>
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 
 /* Start polling \a interested_parties periodically in the timer thread  */
 void grpc_client_channel_start_backup_polling(
-    grpc_exec_ctx* exec_ctx, grpc_pollset_set* interested_parties);
+    grpc_pollset_set* interested_parties);
 
 /* Stop polling \a interested_parties */
 void grpc_client_channel_stop_backup_polling(
-    grpc_exec_ctx* exec_ctx, grpc_pollset_set* interested_parties);
+    grpc_pollset_set* interested_parties);
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_BACKUP_POLLER_H */

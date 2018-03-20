@@ -19,17 +19,11 @@
 #ifndef GRPC_CORE_LIB_COMPRESSION_STREAM_COMPRESSION_IDENTITY_H
 #define GRPC_CORE_LIB_COMPRESSION_STREAM_COMPRESSION_IDENTITY_H
 
-#include "src/core/lib/compression/stream_compression.h"
+#include <grpc/support/port_platform.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "src/core/lib/compression/stream_compression.h"
 
 extern const grpc_stream_compression_vtable
     grpc_stream_compression_identity_vtable;
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

@@ -19,12 +19,10 @@
 #ifndef GRPC_CORE_LIB_IOMGR_POLLING_ENTITY_H
 #define GRPC_CORE_LIB_IOMGR_POLLING_ENTITY_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 typedef enum grpc_pollset_tag {
   GRPC_POLLS_NONE,
@@ -59,17 +57,12 @@ bool grpc_polling_entity_is_empty(const grpc_polling_entity* pollent);
 
 /** Add the pollset or pollset_set in \a pollent to the destination pollset_set
  * \a * pss_dst */
-void grpc_polling_entity_add_to_pollset_set(grpc_exec_ctx* exec_ctx,
-                                            grpc_polling_entity* pollent,
+void grpc_polling_entity_add_to_pollset_set(grpc_polling_entity* pollent,
                                             grpc_pollset_set* pss_dst);
 
 /** Delete the pollset or pollset_set in \a pollent from the destination
  * pollset_set \a * pss_dst */
-void grpc_polling_entity_del_from_pollset_set(grpc_exec_ctx* exec_ctx,
-                                              grpc_polling_entity* pollent,
+void grpc_polling_entity_del_from_pollset_set(grpc_polling_entity* pollent,
                                               grpc_pollset_set* pss_dst);
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_POLLING_ENTITY_H */

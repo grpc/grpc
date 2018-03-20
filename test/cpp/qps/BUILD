@@ -106,7 +106,7 @@ grpc_cc_library(
         "histogram.h",
         "stats.h",
     ],
-    deps = ["//:gpr"],
+    deps = ["//test/core/util:grpc_test_util"],
 )
 
 grpc_cc_test(

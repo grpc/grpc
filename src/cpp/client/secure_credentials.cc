@@ -17,11 +17,11 @@
  */
 
 #include "src/cpp/client/secure_credentials.h"
-#include <grpc++/channel.h>
-#include <grpc++/impl/grpc_library.h>
-#include <grpc++/support/channel_arguments.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/impl/grpc_library.h>
+#include <grpcpp/support/channel_arguments.h>
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/cpp/common/secure_auth_context.h"
 
@@ -168,7 +168,7 @@ std::shared_ptr<CallCredentials> CompositeCallCredentials(
 void MetadataCredentialsPluginWrapper::Destroy(void* wrapper) {
   if (wrapper == nullptr) return;
   MetadataCredentialsPluginWrapper* w =
-      reinterpret_cast<MetadataCredentialsPluginWrapper*>(wrapper);
+      static_cast<MetadataCredentialsPluginWrapper*>(wrapper);
   delete w;
 }
 
@@ -180,7 +180,7 @@ int MetadataCredentialsPluginWrapper::GetMetadata(
     const char** error_details) {
   GPR_ASSERT(wrapper);
   MetadataCredentialsPluginWrapper* w =
-      reinterpret_cast<MetadataCredentialsPluginWrapper*>(wrapper);
+      static_cast<MetadataCredentialsPluginWrapper*>(wrapper);
   if (!w->plugin_) {
     *num_creds_md = 0;
     *status = GRPC_STATUS_OK;

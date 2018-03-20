@@ -34,16 +34,4 @@ grpc_sh_binary(
     ],
 )
 
-grpc_py_binary(
-  name = "test_dns_server",
-  srcs = ["test_dns_server.py"],
-  data = [
-      "resolver_test_record_groups.yaml",
-  ],
-  deps = [
-      "twisted",
-      "yaml",
-  ]
-)
-
 generate_resolver_component_tests()

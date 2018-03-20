@@ -19,14 +19,12 @@
 #ifndef GRPC_CORE_LIB_SURFACE_SERVER_H
 #define GRPC_CORE_LIB_SURFACE_SERVER_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/grpc.h>
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/transport/transport.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 extern const grpc_channel_filter grpc_server_top_filter;
 
@@ -35,17 +33,16 @@ extern grpc_core::TraceFlag grpc_server_channel_trace;
 
 /* Add a listener to the server: when the server starts, it will call start,
    and when it shuts down, it will call destroy */
-void grpc_server_add_listener(
-    grpc_exec_ctx* exec_ctx, grpc_server* server, void* listener,
-    void (*start)(grpc_exec_ctx* exec_ctx, grpc_server* server, void* arg,
-                  grpc_pollset** pollsets, size_t npollsets),
-    void (*destroy)(grpc_exec_ctx* exec_ctx, grpc_server* server, void* arg,
-                    grpc_closure* on_done));
+void grpc_server_add_listener(grpc_server* server, void* listener,
+                              void (*start)(grpc_server* server, void* arg,
+                                            grpc_pollset** pollsets,
+                                            size_t npollsets),
+                              void (*destroy)(grpc_server* server, void* arg,
+                                              grpc_closure* on_done));
 
 /* Setup a transport - creates a channel stack, binds the transport to the
    server */
-void grpc_server_setup_transport(grpc_exec_ctx* exec_ctx, grpc_server* server,
-                                 grpc_transport* transport,
+void grpc_server_setup_transport(grpc_server* server, grpc_transport* transport,
                                  grpc_pollset* accepting_pollset,
                                  const grpc_channel_args* args);
 
@@ -57,9 +54,5 @@ int grpc_server_has_open_connections(grpc_server* server);
  * number of pollsets via 'pollsets' and 'pollset_count'. */
 void grpc_server_get_pollsets(grpc_server* server, grpc_pollset*** pollsets,
                               size_t* pollset_count);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_SURFACE_SERVER_H */

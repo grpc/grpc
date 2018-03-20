@@ -16,10 +16,11 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/surface/channel_init.h"
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/useful.h>
 
 typedef struct stage_slot {
   grpc_channel_init_stage fn;
@@ -53,9 +54,9 @@ void grpc_channel_init_register_stage(grpc_channel_stack_type type,
   GPR_ASSERT(!g_finalized);
   if (g_slots[type].cap_slots == g_slots[type].num_slots) {
     g_slots[type].cap_slots = GPR_MAX(8, 3 * g_slots[type].cap_slots / 2);
-    g_slots[type].slots = (stage_slot*)gpr_realloc(
-        g_slots[type].slots,
-        g_slots[type].cap_slots * sizeof(*g_slots[type].slots));
+    g_slots[type].slots = static_cast<stage_slot*>(
+        gpr_realloc(g_slots[type].slots,
+                    g_slots[type].cap_slots * sizeof(*g_slots[type].slots)));
   }
   stage_slot* s = &g_slots[type].slots[g_slots[type].num_slots++];
   s->insertion_order = g_slots[type].num_slots;
@@ -65,8 +66,8 @@ void grpc_channel_init_register_stage(grpc_channel_stack_type type,
 }
 
 static int compare_slots(const void* a, const void* b) {
-  const stage_slot* sa = (const stage_slot*)a;
-  const stage_slot* sb = (const stage_slot*)b;
+  const stage_slot* sa = static_cast<const stage_slot*>(a);
+  const stage_slot* sb = static_cast<const stage_slot*>(b);
 
   int c = GPR_ICMP(sa->priority, sb->priority);
   if (c != 0) return c;
@@ -85,12 +86,12 @@ void grpc_channel_init_finalize(void) {
 void grpc_channel_init_shutdown(void) {
   for (int i = 0; i < GRPC_NUM_CHANNEL_STACK_TYPES; i++) {
     gpr_free(g_slots[i].slots);
-    g_slots[i].slots = (stage_slot*)(void*)(uintptr_t)0xdeadbeef;
+    g_slots[i].slots =
+        static_cast<stage_slot*>((void*)static_cast<uintptr_t>(0xdeadbeef));
   }
 }
 
-bool grpc_channel_init_create_stack(grpc_exec_ctx* exec_ctx,
-                                    grpc_channel_stack_builder* builder,
+bool grpc_channel_init_create_stack(grpc_channel_stack_builder* builder,
                                     grpc_channel_stack_type type) {
   GPR_ASSERT(g_finalized);
 
@@ -99,7 +100,7 @@ bool grpc_channel_init_create_stack(grpc_exec_ctx* exec_ctx,
 
   for (size_t i = 0; i < g_slots[type].num_slots; i++) {
     const stage_slot* slot = &g_slots[type].slots[i];
-    if (!slot->fn(exec_ctx, builder, slot->arg)) {
+    if (!slot->fn(builder, slot->arg)) {
       return false;
     }
   }

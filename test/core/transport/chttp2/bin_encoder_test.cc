@@ -26,8 +26,8 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/support/string.h"
 
 static int all_ok = 1;
 
@@ -99,6 +99,8 @@ static void expect_binary_header(const char* hdr, int binary) {
 }
 
 int main(int argc, char** argv) {
+  grpc_init();
+
   /* Base64 test vectors from RFC 4648, with padding removed */
   /* BASE64("") = "" */
   EXPECT_SLICE_EQ("", B64(""));
@@ -169,5 +171,6 @@ int main(int argc, char** argv) {
   expect_binary_header("foo-bar", 0);
   expect_binary_header("-bin", 0);
 
+  grpc_shutdown();
   return all_ok ? 0 : 1;
 }

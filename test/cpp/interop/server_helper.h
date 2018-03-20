@@ -19,13 +19,14 @@
 #ifndef GRPC_TEST_CPP_INTEROP_SERVER_HELPER_H
 #define GRPC_TEST_CPP_INTEROP_SERVER_HELPER_H
 
+#include <condition_variable>
 #include <memory>
 
 #include <grpc/compression.h>
 #include <grpc/impl/codegen/atm.h>
 
-#include <grpc++/security/server_credentials.h>
-#include <grpc++/server_context.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/server_context.h>
 
 namespace grpc {
 namespace testing {
@@ -50,7 +51,26 @@ class InteropServerContextInspector {
 namespace interop {
 
 extern gpr_atm g_got_sigint;
+
+struct ServerStartedCondition {
+  std::mutex mutex;
+  std::condition_variable condition;
+  bool server_started = false;
+};
+
+/// Run gRPC interop server using port FLAGS_port.
+///
+/// \param creds The credentials associated with the server.
 void RunServer(std::shared_ptr<ServerCredentials> creds);
+
+/// Run gRPC interop server.
+///
+/// \param creds The credentials associated with the server.
+/// \param port Port to use for the server.
+/// \param server_started_condition (optional) Struct holding mutex, condition
+///     variable, and condition used to notify when the server has started.
+void RunServer(std::shared_ptr<ServerCredentials> creds, int port,
+               ServerStartedCondition* server_started_condition);
 
 }  // namespace interop
 }  // namespace testing

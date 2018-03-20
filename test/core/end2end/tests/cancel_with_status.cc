@@ -18,6 +18,7 @@
 
 #include "test/core/end2end/end2end_tests.h"
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -27,8 +28,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
-#include <grpc/support/useful.h>
-#include "src/core/lib/support/string.h"
+#include "src/core/lib/gpr/string.h"
 #include "test/core/end2end/cq_verifier.h"
 
 static void* tag(intptr_t t) { return (void*)t; }

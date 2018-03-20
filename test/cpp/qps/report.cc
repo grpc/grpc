@@ -25,7 +25,7 @@
 #include "test/cpp/qps/parse_json.h"
 #include "test/cpp/qps/stats.h"
 
-#include <grpc++/client_context.h>
+#include <grpcpp/client_context.h>
 #include "src/cpp/util/core_stats.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 
@@ -109,9 +109,12 @@ void GprLogReporter::ReportCoreStats(const char* name, int idx,
   for (int i = 0; i < GRPC_STATS_HISTOGRAM_COUNT; i++) {
     gpr_log(GPR_DEBUG, "%s[%d].%s = %.1lf/%.1lf/%.1lf (50/95/99%%-ile)", name,
             idx, grpc_stats_histogram_name[i],
-            grpc_stats_histo_percentile(&data, (grpc_stats_histograms)i, 50),
-            grpc_stats_histo_percentile(&data, (grpc_stats_histograms)i, 95),
-            grpc_stats_histo_percentile(&data, (grpc_stats_histograms)i, 99));
+            grpc_stats_histo_percentile(
+                &data, static_cast<grpc_stats_histograms>(i), 50),
+            grpc_stats_histo_percentile(
+                &data, static_cast<grpc_stats_histograms>(i), 95),
+            grpc_stats_histo_percentile(
+                &data, static_cast<grpc_stats_histograms>(i), 99));
   }
 }
 

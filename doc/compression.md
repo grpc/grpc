@@ -63,7 +63,7 @@ header received from the client), it SHALL send the message uncompressed.
 
 If the user (through the previously described mechanisms) requests to disable
 compression the next message MUST be sent uncompressed. This is instrumental in
-preventing BEAST/CRIME attacks. This applies to both the the unary and streaming
+preventing BEAST/CRIME attacks. This applies to both the unary and streaming
 cases.
 
 ### Compression Levels and Algorithms

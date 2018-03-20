@@ -60,6 +60,19 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "error_test",
+    srcs = ["error_test.cc"],
+    language = "C++",
+    deps = [
+        ":endpoint_tests",
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "ev_epollsig_linux_test",
     srcs = ["ev_epollsig_linux_test.cc"],
     deps = [

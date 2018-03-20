@@ -12,7 +12,7 @@ The service config is a JSON string of the following form:
 
 ```
 {
-  // Load balancing policy name.
+  // Load balancing policy name (case insensitive).
   // Currently, the only selectable client-side policy provided with gRPC
   // is 'round_robin', but third parties may add their own policies.
   // This field is optional; if unset, the default behavior is to pick

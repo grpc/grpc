@@ -21,6 +21,7 @@
    including windows.h on Windows, uv.h must be included before other system
    headers. Therefore, sockaddr.h must always be included first */
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/socket_utils.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -35,20 +36,18 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
+extern grpc_address_resolver_vtable* grpc_resolve_address_impl;
+static grpc_address_resolver_vtable* default_resolver;
+
 static void* tag(intptr_t i) { return (void*)i; }
 
 static gpr_mu g_mu;
 static int g_resolve_port = -1;
-static void (*iomgr_resolve_address)(grpc_exec_ctx* exec_ctx, const char* addr,
-                                     const char* default_port,
-                                     grpc_pollset_set* interested_parties,
-                                     grpc_closure* on_done,
-                                     grpc_resolved_addresses** addresses);
 
 static grpc_ares_request* (*iomgr_dns_lookup_ares)(
-    grpc_exec_ctx* exec_ctx, const char* dns_server, const char* addr,
-    const char* default_port, grpc_pollset_set* interested_parties,
-    grpc_closure* on_done, grpc_lb_addresses** addresses, bool check_grpclb,
+    const char* dns_server, const char* addr, const char* default_port,
+    grpc_pollset_set* interested_parties, grpc_closure* on_done,
+    grpc_lb_addresses** addresses, bool check_grpclb,
     char** service_config_json);
 
 static void set_resolve_port(int port) {
@@ -57,14 +56,13 @@ static void set_resolve_port(int port) {
   gpr_mu_unlock(&g_mu);
 }
 
-static void my_resolve_address(grpc_exec_ctx* exec_ctx, const char* addr,
-                               const char* default_port,
+static void my_resolve_address(const char* addr, const char* default_port,
                                grpc_pollset_set* interested_parties,
                                grpc_closure* on_done,
                                grpc_resolved_addresses** addrs) {
   if (0 != strcmp(addr, "test")) {
-    iomgr_resolve_address(exec_ctx, addr, default_port, interested_parties,
-                          on_done, addrs);
+    default_resolver->resolve_address(addr, default_port, interested_parties,
+                                      on_done, addrs);
     return;
   }
 
@@ -79,23 +77,34 @@ static void my_resolve_address(grpc_exec_ctx* exec_ctx, const char* addr,
     (*addrs)->addrs = static_cast<grpc_resolved_address*>(
         gpr_malloc(sizeof(*(*addrs)->addrs)));
     memset((*addrs)->addrs, 0, sizeof(*(*addrs)->addrs));
-    struct sockaddr_in* sa = (struct sockaddr_in*)(*addrs)->addrs[0].addr;
-    sa->sin_family = AF_INET;
-    sa->sin_addr.s_addr = htonl(0x7f000001);
-    sa->sin_port = htons((uint16_t)g_resolve_port);
-    (*addrs)->addrs[0].len = sizeof(*sa);
+    grpc_sockaddr_in* sa =
+        reinterpret_cast<grpc_sockaddr_in*>((*addrs)->addrs[0].addr);
+    sa->sin_family = GRPC_AF_INET;
+    sa->sin_addr.s_addr = 0x100007f;
+    sa->sin_port = grpc_htons(static_cast<uint16_t>(g_resolve_port));
+    (*addrs)->addrs[0].len = static_cast<socklen_t>(sizeof(*sa));
     gpr_mu_unlock(&g_mu);
   }
-  GRPC_CLOSURE_SCHED(exec_ctx, on_done, error);
+  GRPC_CLOSURE_SCHED(on_done, error);
 }
 
+static grpc_error* my_blocking_resolve_address(
+    const char* name, const char* default_port,
+    grpc_resolved_addresses** addresses) {
+  return default_resolver->blocking_resolve_address(name, default_port,
+                                                    addresses);
+}
+
+static grpc_address_resolver_vtable test_resolver = {
+    my_resolve_address, my_blocking_resolve_address};
+
 static grpc_ares_request* my_dns_lookup_ares(
-    grpc_exec_ctx* exec_ctx, const char* dns_server, const char* addr,
-    const char* default_port, grpc_pollset_set* interested_parties,
-    grpc_closure* on_done, grpc_lb_addresses** lb_addrs, bool check_grpclb,
+    const char* dns_server, const char* addr, const char* default_port,
+    grpc_pollset_set* interested_parties, grpc_closure* on_done,
+    grpc_lb_addresses** lb_addrs, bool check_grpclb,
     char** service_config_json) {
   if (0 != strcmp(addr, "test")) {
-    return iomgr_dns_lookup_ares(exec_ctx, dns_server, addr, default_port,
+    return iomgr_dns_lookup_ares(dns_server, addr, default_port,
                                  interested_parties, on_done, lb_addrs,
                                  check_grpclb, service_config_json);
   }
@@ -107,17 +116,17 @@ static grpc_ares_request* my_dns_lookup_ares(
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Forced Failure");
   } else {
     *lb_addrs = grpc_lb_addresses_create(1, nullptr);
-    struct sockaddr_in* sa = static_cast<struct sockaddr_in*>(
-        gpr_zalloc(sizeof(struct sockaddr_in)));
-    sa->sin_family = AF_INET;
-    sa->sin_addr.s_addr = htonl(0x7f000001);
-    sa->sin_port = htons((uint16_t)g_resolve_port);
+    grpc_sockaddr_in* sa =
+        static_cast<grpc_sockaddr_in*>(gpr_zalloc(sizeof(grpc_sockaddr_in)));
+    sa->sin_family = GRPC_AF_INET;
+    sa->sin_addr.s_addr = 0x100007f;
+    sa->sin_port = grpc_htons(static_cast<uint16_t>(g_resolve_port));
     grpc_lb_addresses_set_address(*lb_addrs, 0, sa, sizeof(*sa), false, nullptr,
                                   nullptr);
     gpr_free(sa);
     gpr_mu_unlock(&g_mu);
   }
-  GRPC_CLOSURE_SCHED(exec_ctx, on_done, error);
+  GRPC_CLOSURE_SCHED(on_done, error);
   return nullptr;
 }
 
@@ -131,9 +140,9 @@ int main(int argc, char** argv) {
 
   gpr_mu_init(&g_mu);
   grpc_init();
-  iomgr_resolve_address = grpc_resolve_address;
+  default_resolver = grpc_resolve_address_impl;
+  grpc_set_resolver_impl(&test_resolver);
   iomgr_dns_lookup_ares = grpc_dns_lookup_ares;
-  grpc_resolve_address = my_resolve_address;
   grpc_dns_lookup_ares = my_dns_lookup_ares;
 
   int was_cancelled1;
@@ -189,7 +198,7 @@ int main(int argc, char** argv) {
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
+  op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY;
   op->reserved = nullptr;
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call1, ops,
@@ -265,7 +274,7 @@ int main(int argc, char** argv) {
   op = ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
   op->data.send_initial_metadata.count = 0;
-  op->flags = 0;
+  op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY;
   op->reserved = nullptr;
   op++;
   GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call2, ops,

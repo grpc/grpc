@@ -26,9 +26,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/useful.h>
 
-#include "src/core/lib/support/string.h"
+#include "src/core/lib/gpr/string.h"
 #include "test/core/util/test_config.h"
 
 #define LOG_TEST_NAME(x) gpr_log(GPR_INFO, "%s", x)
@@ -128,9 +127,77 @@ static void test_strsplit(void) {
   gpr_free(parts);
 }
 
+static void test_strsplit_nospace(void) {
+  grpc_slice_buffer* parts;
+  grpc_slice str;
+
+  LOG_TEST_NAME("test_strsplit_nospace");
+
+  parts =
+      static_cast<grpc_slice_buffer*>(gpr_malloc(sizeof(grpc_slice_buffer)));
+  grpc_slice_buffer_init(parts);
+
+  str = grpc_slice_from_copied_string("one  ,two,   three  , four");
+  grpc_slice_split_without_space(str, ",", parts);
+  GPR_ASSERT(4 == parts->count);
+  GPR_ASSERT(0 == grpc_slice_str_cmp(parts->slices[0], "one"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(parts->slices[1], "two"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(parts->slices[2], "three"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(parts->slices[3], "four"));
+  grpc_slice_buffer_reset_and_unref(parts);
+  grpc_slice_unref(str);
+
+  /* separator not present in string */
+  str = grpc_slice_from_copied_string("one two three four ");
+  grpc_slice_split_without_space(str, ",", parts);
+  GPR_ASSERT(1 == parts->count);
+  GPR_ASSERT(0 == grpc_slice_str_cmp(parts->slices[0], "one two three four"));
+  grpc_slice_buffer_reset_and_unref(parts);
+  grpc_slice_unref(str);
+
+  /* separator at the end */
+  str = grpc_slice_from_copied_string("foo,");
+  grpc_slice_split_without_space(str, ",", parts);
+  GPR_ASSERT(2 == parts->count);
+  GPR_ASSERT(0 == grpc_slice_str_cmp(parts->slices[0], "foo"));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(parts->slices[1], ""));
+  grpc_slice_buffer_reset_and_unref(parts);
+  grpc_slice_unref(str);
+
+  /* separator at the beginning */
+  str = grpc_slice_from_copied_string(" , foo");
+  grpc_slice_split_without_space(str, ",", parts);
+  GPR_ASSERT(2 == parts->count);
+  GPR_ASSERT(0 == grpc_slice_str_cmp(parts->slices[0], ""));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(parts->slices[1], "foo"));
+  grpc_slice_buffer_reset_and_unref(parts);
+  grpc_slice_unref(str);
+
+  /* standalone separator */
+  str = grpc_slice_from_copied_string(", ");
+  grpc_slice_split_without_space(str, ", ", parts);
+  GPR_ASSERT(2 == parts->count);
+  GPR_ASSERT(0 == grpc_slice_str_cmp(parts->slices[0], ""));
+  GPR_ASSERT(0 == grpc_slice_str_cmp(parts->slices[1], ""));
+  grpc_slice_buffer_reset_and_unref(parts);
+  grpc_slice_unref(str);
+
+  /* empty input */
+  str = grpc_slice_from_copied_string("");
+  grpc_slice_split_without_space(str, ",", parts);
+  GPR_ASSERT(1 == parts->count);
+  GPR_ASSERT(0 == grpc_slice_str_cmp(parts->slices[0], ""));
+  grpc_slice_buffer_reset_and_unref(parts);
+  grpc_slice_unref(str);
+
+  grpc_slice_buffer_destroy(parts);
+  gpr_free(parts);
+}
+
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   test_dump_slice();
   test_strsplit();
+  test_strsplit_nospace();
   return 0;
 }

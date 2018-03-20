@@ -15,27 +15,27 @@
  *
  */
 
-#include <grpc++/server.h>
+#include <grpcpp/server.h>
 
 #include <cstdlib>
 #include <sstream>
 #include <utility>
 
-#include <grpc++/completion_queue.h>
-#include <grpc++/generic/async_generic_service.h>
-#include <grpc++/impl/codegen/async_unary_call.h>
-#include <grpc++/impl/codegen/completion_queue_tag.h>
-#include <grpc++/impl/grpc_library.h>
-#include <grpc++/impl/method_handler_impl.h>
-#include <grpc++/impl/rpc_service_method.h>
-#include <grpc++/impl/server_initializer.h>
-#include <grpc++/impl/service_type.h>
-#include <grpc++/security/server_credentials.h>
-#include <grpc++/server_context.h>
-#include <grpc++/support/time.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpcpp/completion_queue.h>
+#include <grpcpp/generic/async_generic_service.h>
+#include <grpcpp/impl/codegen/async_unary_call.h>
+#include <grpcpp/impl/codegen/completion_queue_tag.h>
+#include <grpcpp/impl/grpc_library.h>
+#include <grpcpp/impl/method_handler_impl.h>
+#include <grpcpp/impl/rpc_service_method.h>
+#include <grpcpp/impl/server_initializer.h>
+#include <grpcpp/impl/service_type.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/server_context.h>
+#include <grpcpp/support/time.h>
 
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/profiling/timers.h"
@@ -382,11 +382,12 @@ Server::Server(
   global_callbacks_ = g_callbacks;
   global_callbacks_->UpdateArguments(args);
 
-  for (auto it = sync_server_cqs_->begin(); it != sync_server_cqs_->end();
-       it++) {
-    sync_req_mgrs_.emplace_back(new SyncRequestThreadManager(
-        this, (*it).get(), global_callbacks_, min_pollers, max_pollers,
-        sync_cq_timeout_msec));
+  if (sync_server_cqs_ != nullptr) {
+    for (const auto& it : *sync_server_cqs_) {
+      sync_req_mgrs_.emplace_back(new SyncRequestThreadManager(
+          this, it.get(), global_callbacks_, min_pollers, max_pollers,
+          sync_cq_timeout_msec));
+    }
   }
 
   grpc_channel_args channel_args;
@@ -525,7 +526,7 @@ void Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
   // explicit one.
   if (health_check_service_ == nullptr && !health_check_service_disabled_ &&
       DefaultHealthCheckServiceEnabled()) {
-    if (sync_server_cqs_->empty()) {
+    if (sync_server_cqs_ == nullptr || sync_server_cqs_->empty()) {
       gpr_log(GPR_INFO,
               "Default health check service disabled at async-only server.");
     } else {

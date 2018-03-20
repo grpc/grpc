@@ -19,16 +19,14 @@
 #ifndef GRPC_CORE_LIB_COMPRESSION_STREAM_COMPRESSION_H
 #define GRPC_CORE_LIB_COMPRESSION_STREAM_COMPRESSION_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stdbool.h>
 
 #include <grpc/slice_buffer.h>
 #include <zlib.h>
 
 #include "src/core/lib/transport/static_metadata.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 typedef struct grpc_stream_compression_vtable grpc_stream_compression_vtable;
 
@@ -114,9 +112,5 @@ void grpc_stream_compression_context_destroy(
  */
 int grpc_stream_compression_method_parse(
     grpc_slice value, bool is_compress, grpc_stream_compression_method* method);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

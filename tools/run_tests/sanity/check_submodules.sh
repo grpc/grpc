@@ -19,15 +19,15 @@ set -e
 
 export TEST=true
 
-cd `dirname $0`/../../..
+cd "$(dirname "$0")/../../.."
 
-submodules=`mktemp /tmp/submXXXXXX`
-want_submodules=`mktemp /tmp/submXXXXXX`
+submodules=$(mktemp /tmp/submXXXXXX)
+want_submodules=$(mktemp /tmp/submXXXXXX)
 
-git submodule | awk '{ print $1 }' | sort > $submodules
-cat << EOF | awk '{ print $1 }' | sort > $want_submodules
+git submodule | awk '{ print $1 }' | sort > "$submodules"
+cat << EOF | awk '{ print $1 }' | sort > "$want_submodules"
  5b7683f49e1e9223cf9927b24f6fd3d6bd82e3f8 third_party/benchmark (v1.2.0)
- be2ee342d3781ddb954f91f8a7e660c6f59e87e5 third_party/boringssl (heads/chromium-stable)
+ a20bb7ff8bb5057065a2e7941249773f9676cf45 third_party/boringssl (heads/chromium-stable)
  886e7d75368e3f4fab3f4d0d3584e4abfc557755 third_party/boringssl-with-bazel (version_for_cocoapods_7.0-857-g886e7d7)
  30dbc81fb5ffdc98ea9b14b1918bfe4e8779b26e third_party/gflags (v2.2.0)
  ec44c6c1675c25b9827aacd08c02433cccde7780 third_party/googletest (release-1.8.0)
@@ -38,6 +38,6 @@ cat << EOF | awk '{ print $1 }' | sort > $want_submodules
  cc4bed2d74f7c8717e31f9579214ab52a9c9c610 third_party/abseil-cpp
 EOF
 
-diff -u $submodules $want_submodules
+diff -u "$submodules" "$want_submodules"
 
-rm $submodules $want_submodules
+rm "$submodules" "$want_submodules"

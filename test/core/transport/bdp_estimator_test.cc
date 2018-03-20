@@ -22,14 +22,16 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/useful.h>
+
 #include <gtest/gtest.h>
 #include <limits.h>
+
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/timer_manager.h"
-#include "src/core/lib/support/string.h"
 #include "test/core/util/test_config.h"
 
-extern "C" gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
+extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 
 namespace grpc_core {
 namespace testing {
@@ -58,7 +60,7 @@ namespace {
 void AddSamples(BdpEstimator* estimator, int64_t* samples, size_t n) {
   estimator->AddIncomingBytes(1234567);
   inc_time();
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   estimator->SchedulePing();
   estimator->StartPing();
   for (size_t i = 0; i < n; i++) {
@@ -66,9 +68,8 @@ void AddSamples(BdpEstimator* estimator, int64_t* samples, size_t n) {
   }
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                gpr_time_from_millis(1, GPR_TIMESPAN)));
-  grpc_exec_ctx_invalidate_now(&exec_ctx);
-  estimator->CompletePing(&exec_ctx);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_core::ExecCtx::Get()->InvalidateNow();
+  estimator->CompletePing();
 }
 
 void AddSample(BdpEstimator* estimator, int64_t sample) {

@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/security/credentials/credentials.h"
 
 #include <grpc/support/alloc.h>
@@ -33,8 +35,8 @@ static void mdelem_list_ensure_capacity(grpc_credentials_mdelem_array* list,
   while (new_size < target_size) {
     new_size *= 2;
   }
-  list->md =
-      (grpc_mdelem*)gpr_realloc(list->md, sizeof(grpc_mdelem) * new_size);
+  list->md = static_cast<grpc_mdelem*>(
+      gpr_realloc(list->md, sizeof(grpc_mdelem) * new_size));
 }
 
 void grpc_credentials_mdelem_array_add(grpc_credentials_mdelem_array* list,
@@ -52,9 +54,9 @@ void grpc_credentials_mdelem_array_append(grpc_credentials_mdelem_array* dst,
 }
 
 void grpc_credentials_mdelem_array_destroy(
-    grpc_exec_ctx* exec_ctx, grpc_credentials_mdelem_array* list) {
+    grpc_credentials_mdelem_array* list) {
   for (size_t i = 0; i < list->size; ++i) {
-    GRPC_MDELEM_UNREF(exec_ctx, list->md[i]);
+    GRPC_MDELEM_UNREF(list->md[i]);
   }
   gpr_free(list->md);
 }

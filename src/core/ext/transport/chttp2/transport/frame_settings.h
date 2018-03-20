@@ -19,15 +19,11 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_SETTINGS_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_SETTINGS_H
 
-#include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
+
+#include <grpc/slice.h>
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 typedef enum {
   GRPC_CHTTP2_SPS_ID0,
@@ -56,14 +52,9 @@ grpc_slice grpc_chttp2_settings_ack_create(void);
 grpc_error* grpc_chttp2_settings_parser_begin_frame(
     grpc_chttp2_settings_parser* parser, uint32_t length, uint8_t flags,
     uint32_t* settings);
-grpc_error* grpc_chttp2_settings_parser_parse(grpc_exec_ctx* exec_ctx,
-                                              void* parser,
+grpc_error* grpc_chttp2_settings_parser_parse(void* parser,
                                               grpc_chttp2_transport* t,
                                               grpc_chttp2_stream* s,
                                               grpc_slice slice, int is_last);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_SETTINGS_H */

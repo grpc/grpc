@@ -25,12 +25,12 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/lib/support/env.h"
+#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/thd.h"
 
 typedef enum { BEGIN = '{', END = '}', MARK = '.' } marker_type;
 
@@ -68,7 +68,7 @@ static pthread_cond_t g_cv;
 static gpr_timer_log_list g_in_progress_logs;
 static gpr_timer_log_list g_done_logs;
 static int g_shutdown;
-static gpr_thd_id g_writing_thread;
+static grpc_core::Thread* g_writing_thread;
 static __thread int g_thread_id;
 static int g_next_thread_id;
 static int g_writing_enabled = 1;
@@ -182,7 +182,8 @@ static void finish_writing(void) {
   g_shutdown = 1;
   pthread_cond_signal(&g_cv);
   pthread_mutex_unlock(&g_mu);
-  gpr_thd_join(g_writing_thread);
+  g_writing_thread->Join();
+  grpc_core::Delete(g_writing_thread);
 
   gpr_log(GPR_INFO, "flushing logs");
 
@@ -201,9 +202,8 @@ void gpr_timers_set_log_filename(const char* filename) {
 }
 
 static void init_output() {
-  gpr_thd_options options = gpr_thd_options_default();
-  gpr_thd_options_set_joinable(&options);
-  GPR_ASSERT(gpr_thd_new(&g_writing_thread, writing_thread, NULL, &options));
+  g_writing_thread = grpc_core::New<grpc_core::Thread>("timer_output_thread",
+                                                       writing_thread, nullptr);
   atexit(finish_writing);
 }
 

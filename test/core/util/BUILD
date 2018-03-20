@@ -16,7 +16,10 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_c
 
 licenses(["notice"])  # Apache v2
 
-grpc_package(name = "test/core/util", visibility = "public")
+grpc_package(
+    name = "test/core/util",
+    visibility = "public",
+)
 
 grpc_cc_library(
     name = "gpr_test_util",
@@ -48,26 +51,34 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_test_util_base",
     srcs = [
+        "cmdline.cc",
         "grpc_profiler.cc",
+        "histogram.cc",
         "mock_endpoint.cc",
         "parse_hexstring.cc",
         "passthru_endpoint.cc",
         "port.cc",
+        "port_isolated_runtime_environment.cc",
         "port_server_client.cc",
         "reconnect_server.cc",
         "slice_splitter.cc",
+        "subprocess_posix.cc",
+        "subprocess_windows.cc",
         "test_tcp_server.cc",
         "tracer_util.cc",
         "trickle_endpoint.cc",
     ],
     hdrs = [
+        "cmdline.h",
         "grpc_profiler.h",
+        "histogram.h",
         "mock_endpoint.h",
         "parse_hexstring.h",
         "passthru_endpoint.h",
         "port.h",
         "port_server_client.h",
         "reconnect_server.h",
+        "subprocess.h",
         "slice_splitter.h",
         "test_tcp_server.h",
         "tracer_util.h",
@@ -76,8 +87,8 @@ grpc_cc_library(
     language = "C++",
     deps = [
         ":gpr_test_util",
+        ":grpc_debugger_macros",
         "//:grpc_common",
-        ":grpc_debugger_macros"
     ],
 )
 
@@ -103,21 +114,46 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_test(
+    name = "cmdline_test",
+    srcs = ["cmdline_test.cc"],
+    language = "C++",
+    deps = [
+        ":grpc_test_util",
+        "//:gpr",
+    ],
+)
+
 grpc_cc_library(
     name = "fuzzer_corpus_test",
     testonly = 1,
     srcs = ["fuzzer_corpus_test.cc"],
+    external_deps = [
+        "gtest",
+        "gflags",
+    ],
     deps = [
         ":gpr_test_util",
         "//:grpc",
     ],
-    external_deps = [
-        "gtest",
-        "gflags",
+)
+
+grpc_cc_test(
+    name = "histogram_test",
+    srcs = ["histogram_test.cc"],
+    language = "C++",
+    deps = [
+        ":grpc_test_util",
+        "//:gpr",
     ],
 )
 
 sh_library(
     name = "fuzzer_one_entry_runner",
     srcs = ["fuzzer_one_entry_runner.sh"],
+)
+
+sh_library(
+    name = "run_with_poller_sh",
+    srcs = ["run_with_poller.sh"],
 )

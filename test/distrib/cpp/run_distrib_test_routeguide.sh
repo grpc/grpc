@@ -16,7 +16,7 @@
 set -ex
 
 # change to grpc repo root
-cd $(dirname $0)/../../..
+cd "$(dirname "$0")/../../.."
 
 cd third_party/protobuf && ./autogen.sh && \
 ./configure && make -j4 && make check && make install && ldconfig

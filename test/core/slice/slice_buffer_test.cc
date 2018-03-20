@@ -16,6 +16,7 @@
  *
  */
 
+#include <grpc/grpc.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/log.h>
 #include "test/core/util/test_config.h"
@@ -106,9 +107,11 @@ void test_slice_buffer_move_first() {
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
+  grpc_init();
 
   test_slice_buffer_add();
   test_slice_buffer_move_first();
 
+  grpc_shutdown();
   return 0;
 }

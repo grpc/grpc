@@ -27,6 +27,8 @@
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <string.h>
 
 #include "rb_grpc.h"
@@ -159,7 +161,6 @@ void grpc_rb_compression_options_algorithm_name_to_value_internal(
     grpc_compression_algorithm* algorithm_value, VALUE algorithm_name) {
   grpc_slice name_slice;
   VALUE algorithm_name_as_string = Qnil;
-  char* tmp_str = NULL;
 
   Check_Type(algorithm_name, T_SYMBOL);
 
@@ -175,8 +176,17 @@ void grpc_rb_compression_options_algorithm_name_to_value_internal(
    * the algorithm parse function
    * in GRPC core. */
   if (!grpc_compression_algorithm_parse(name_slice, algorithm_value)) {
-    tmp_str = grpc_slice_to_c_string(name_slice);
-    rb_raise(rb_eNameError, "Invalid compression algorithm name: %s", tmp_str);
+    char* name_slice_str = grpc_slice_to_c_string(name_slice);
+    char* error_message_str = NULL;
+    VALUE error_message_ruby_str = Qnil;
+    GPR_ASSERT(gpr_asprintf(&error_message_str,
+                            "Invalid compression algorithm name: %s",
+                            name_slice_str) != -1);
+    gpr_free(name_slice_str);
+    error_message_ruby_str =
+        rb_str_new(error_message_str, strlen(error_message_str));
+    gpr_free(error_message_str);
+    rb_raise(rb_eNameError, StringValueCStr(error_message_ruby_str));
   }
 
   grpc_slice_unref(name_slice);

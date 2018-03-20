@@ -19,28 +19,19 @@
 #ifndef GRPC_CORE_LIB_DEBUG_TRACE_H
 #define GRPC_CORE_LIB_DEBUG_TRACE_H
 
-#include <grpc/support/atm.h>
 #include <grpc/support/port_platform.h>
-#include <stdbool.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <grpc/support/atm.h>
+#include <stdbool.h>
 
 void grpc_tracer_init(const char* env_var_name);
 void grpc_tracer_shutdown(void);
-
-#ifdef __cplusplus
-}
-#endif
 
 #if defined(__has_feature)
 #if __has_feature(thread_sanitizer)
 #define GRPC_THREADSAFE_TRACER
 #endif
 #endif
-
-#ifdef __cplusplus
 
 namespace grpc_core {
 
@@ -109,7 +100,5 @@ class DebugOnlyTraceFlag {
 #endif
 
 }  // namespace grpc_core
-
-#endif  // __cplusplus
 
 #endif /* GRPC_CORE_LIB_DEBUG_TRACE_H */

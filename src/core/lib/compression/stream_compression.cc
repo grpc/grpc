@@ -16,12 +16,14 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/support/log.h>
 
 #include "src/core/lib/compression/stream_compression.h"
 #include "src/core/lib/compression/stream_compression_gzip.h"
 
-extern "C" const grpc_stream_compression_vtable
+extern const grpc_stream_compression_vtable
     grpc_stream_compression_identity_vtable;
 
 bool grpc_stream_compress(grpc_stream_compression_context* ctx,

@@ -23,10 +23,9 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/thd.h>
 #include <grpc/support/time.h>
-#include <grpc/support/useful.h>
 
+#include "src/core/lib/gpr/useful.h"
 #include "test/core/end2end/cq_verifier.h"
 
 #define MAX_PING_STRIKES 1
@@ -144,7 +143,8 @@ static void test_bad_ping(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error =
@@ -155,14 +155,15 @@ static void test_bad_ping(grpc_end2end_test_config config) {
   cq_verify(cqv);
 
   // Send too many pings to the server to trigger the punishment:
-  // Each ping will trigger a ping strike, and we need at least MAX_PING_STRIKES
-  // strikes to trigger the punishment. So (MAX_PING_STRIKES + 1) pings are
+  // The first ping will let server mark its last_recv time. Afterwards, each
+  // ping will trigger a ping strike, and we need at least MAX_PING_STRIKES
+  // strikes to trigger the punishment. So (MAX_PING_STRIKES + 2) pings are
   // needed here.
   int i;
-  for (i = 1; i <= MAX_PING_STRIKES + 1; i++) {
+  for (i = 1; i <= MAX_PING_STRIKES + 2; i++) {
     grpc_channel_ping(f.client, f.cq, tag(200 + i), nullptr);
     CQ_EXPECT_COMPLETION(cqv, tag(200 + i), 1);
-    if (i == MAX_PING_STRIKES + 1) {
+    if (i == MAX_PING_STRIKES + 2) {
       CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
     }
     cq_verify(cqv);
@@ -188,7 +189,8 @@ static void test_bad_ping(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);

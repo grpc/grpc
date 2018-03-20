@@ -23,10 +23,10 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/compression/message_compress.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 
@@ -132,10 +132,11 @@ static void read_compressed_slice(grpc_compression_algorithm algorithm,
   memset(GRPC_SLICE_START_PTR(input_slice), 'a', input_size);
   grpc_slice_buffer_add(&sliceb_in, input_slice); /* takes ownership */
   {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    GPR_ASSERT(
-        grpc_msg_compress(&exec_ctx, algorithm, &sliceb_in, &sliceb_out));
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_core::ExecCtx exec_ctx;
+    GPR_ASSERT(grpc_msg_compress(
+
+        grpc_compression_algorithm_to_message_compression_algorithm(algorithm),
+        &sliceb_in, &sliceb_out));
   }
 
   buffer = grpc_raw_compressed_byte_buffer_create(sliceb_out.slices,
@@ -204,8 +205,8 @@ static void test_readall(void) {
 
   LOG_TEST("test_readall");
 
-  memset(lotsa_as, 'a', 512);
-  memset(lotsa_bs, 'b', 1024);
+  memset(lotsa_as, 'a', 512 * sizeof(lotsa_as[0]));
+  memset(lotsa_bs, 'b', 1024 * sizeof(lotsa_bs[0]));
   /* use slices large enough to overflow inlining */
   slices[0] = grpc_slice_malloc(512);
   memcpy(GRPC_SLICE_START_PTR(slices[0]), lotsa_as, 512);
@@ -239,8 +240,8 @@ static void test_byte_buffer_copy(void) {
 
   LOG_TEST("test_byte_buffer_copy");
 
-  memset(lotsa_as, 'a', 512);
-  memset(lotsa_bs, 'b', 1024);
+  memset(lotsa_as, 'a', 512 * sizeof(lotsa_as[0]));
+  memset(lotsa_bs, 'b', 1024 * sizeof(lotsa_bs[0]));
   /* use slices large enough to overflow inlining */
   slices[0] = grpc_slice_malloc(512);
   memcpy(GRPC_SLICE_START_PTR(slices[0]), lotsa_as, 512);

@@ -16,13 +16,15 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_WINSOCK_SOCKET
 
 #include <grpc/support/log.h>
-#include <grpc/support/thd.h>
 
+#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/pollset.h"
@@ -36,7 +38,7 @@ gpr_mu grpc_polling_mu;
 static grpc_pollset_worker* g_active_poller;
 static grpc_pollset_worker g_global_root_worker;
 
-void grpc_pollset_global_init(void) {
+static void pollset_global_init(void) {
   gpr_mu_init(&grpc_polling_mu);
   g_active_poller = NULL;
   g_global_root_worker.links[GRPC_POLLSET_WORKER_LINK_GLOBAL].next =
@@ -44,7 +46,7 @@ void grpc_pollset_global_init(void) {
           &g_global_root_worker;
 }
 
-void grpc_pollset_global_shutdown(void) { gpr_mu_destroy(&grpc_polling_mu); }
+static void pollset_global_shutdown(void) { gpr_mu_destroy(&grpc_polling_mu); }
 
 static void remove_worker(grpc_pollset_worker* worker,
                           grpc_pollset_worker_link_type type) {
@@ -78,36 +80,35 @@ static void push_front_worker(grpc_pollset_worker* root,
       worker->links[type].next->links[type].prev = worker;
 }
 
-size_t grpc_pollset_size(void) { return sizeof(grpc_pollset); }
+static size_t pollset_size(void) { return sizeof(grpc_pollset); }
 
 /* There isn't really any such thing as a pollset under Windows, due to the
    nature of the IO completion ports. We're still going to provide a minimal
    set of features for the sake of the rest of grpc. But grpc_pollset_work
    won't actually do any polling, and return as quickly as possible. */
 
-void grpc_pollset_init(grpc_pollset* pollset, gpr_mu** mu) {
+static void pollset_init(grpc_pollset* pollset, gpr_mu** mu) {
   *mu = &grpc_polling_mu;
   pollset->root_worker.links[GRPC_POLLSET_WORKER_LINK_POLLSET].next =
       pollset->root_worker.links[GRPC_POLLSET_WORKER_LINK_POLLSET].prev =
           &pollset->root_worker;
 }
 
-void grpc_pollset_shutdown(grpc_exec_ctx* exec_ctx, grpc_pollset* pollset,
-                           grpc_closure* closure) {
+static void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
   pollset->shutting_down = 1;
-  grpc_pollset_kick(exec_ctx, pollset, GRPC_POLLSET_KICK_BROADCAST);
+  grpc_pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
   if (!pollset->is_iocp_worker) {
-    GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(closure, GRPC_ERROR_NONE);
   } else {
     pollset->on_shutdown = closure;
   }
 }
 
-void grpc_pollset_destroy(grpc_exec_ctx* exec_ctx, grpc_pollset* pollset) {}
+static void pollset_destroy(grpc_pollset* pollset) {}
 
-grpc_error* grpc_pollset_work(grpc_exec_ctx* exec_ctx, grpc_pollset* pollset,
-                              grpc_pollset_worker** worker_hdl,
-                              grpc_millis deadline) {
+static grpc_error* pollset_work(grpc_pollset* pollset,
+                                grpc_pollset_worker** worker_hdl,
+                                grpc_millis deadline) {
   grpc_pollset_worker worker;
   if (worker_hdl) *worker_hdl = &worker;
 
@@ -126,8 +127,8 @@ grpc_error* grpc_pollset_work(grpc_exec_ctx* exec_ctx, grpc_pollset* pollset,
       pollset->is_iocp_worker = 1;
       g_active_poller = &worker;
       gpr_mu_unlock(&grpc_polling_mu);
-      grpc_iocp_work(exec_ctx, deadline);
-      grpc_exec_ctx_flush(exec_ctx);
+      grpc_iocp_work(deadline);
+      grpc_core::ExecCtx::Get()->Flush();
       gpr_mu_lock(&grpc_polling_mu);
       pollset->is_iocp_worker = 0;
       g_active_poller = NULL;
@@ -145,7 +146,7 @@ grpc_error* grpc_pollset_work(grpc_exec_ctx* exec_ctx, grpc_pollset* pollset,
       }
 
       if (pollset->shutting_down && pollset->on_shutdown != NULL) {
-        GRPC_CLOSURE_SCHED(exec_ctx, pollset->on_shutdown, GRPC_ERROR_NONE);
+        GRPC_CLOSURE_SCHED(pollset->on_shutdown, GRPC_ERROR_NONE);
         pollset->on_shutdown = NULL;
       }
       goto done;
@@ -158,18 +159,18 @@ grpc_error* grpc_pollset_work(grpc_exec_ctx* exec_ctx, grpc_pollset* pollset,
     while (!worker.kicked) {
       if (gpr_cv_wait(&worker.cv, &grpc_polling_mu,
                       grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME))) {
-        grpc_exec_ctx_invalidate_now(exec_ctx);
+        grpc_core::ExecCtx::Get()->InvalidateNow();
         break;
       }
-      grpc_exec_ctx_invalidate_now(exec_ctx);
+      grpc_core::ExecCtx::Get()->InvalidateNow();
     }
   } else {
     pollset->kicked_without_pollers = 0;
   }
 done:
-  if (!grpc_closure_list_empty(exec_ctx->closure_list)) {
+  if (!grpc_closure_list_empty(*grpc_core::ExecCtx::Get()->closure_list())) {
     gpr_mu_unlock(&grpc_polling_mu);
-    grpc_exec_ctx_flush(exec_ctx);
+    grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(&grpc_polling_mu);
   }
   if (added_worker) {
@@ -181,8 +182,8 @@ done:
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* grpc_pollset_kick(grpc_exec_ctx* exec_ctx, grpc_pollset* p,
-                              grpc_pollset_worker* specific_worker) {
+static grpc_error* pollset_kick(grpc_pollset* p,
+                                grpc_pollset_worker* specific_worker) {
   if (specific_worker != NULL) {
     if (specific_worker == GRPC_POLLSET_KICK_BROADCAST) {
       for (specific_worker =
@@ -209,7 +210,7 @@ grpc_error* grpc_pollset_kick(grpc_exec_ctx* exec_ctx, grpc_pollset* p,
     specific_worker =
         pop_front_worker(&p->root_worker, GRPC_POLLSET_WORKER_LINK_POLLSET);
     if (specific_worker != NULL) {
-      grpc_pollset_kick(exec_ctx, p, specific_worker);
+      grpc_pollset_kick(p, specific_worker);
     } else if (p->is_iocp_worker) {
       grpc_iocp_kick();
     } else {
@@ -218,5 +219,11 @@ grpc_error* grpc_pollset_kick(grpc_exec_ctx* exec_ctx, grpc_pollset* p,
   }
   return GRPC_ERROR_NONE;
 }
+
+grpc_pollset_vtable grpc_windows_pollset_vtable = {
+    pollset_global_init, pollset_global_shutdown,
+    pollset_init,        pollset_shutdown,
+    pollset_destroy,     pollset_work,
+    pollset_kick,        pollset_size};
 
 #endif /* GRPC_WINSOCK_SOCKET */

@@ -29,6 +29,9 @@ require 'optparse'
 require 'thread'
 require 'timeout'
 require 'English' # see https://github.com/bbatsov/rubocop/issues/1747
+require_relative '../spec/support/helpers'
+
+include GRPC::Spec::Helpers
 
 # GreeterServer is simple server that implements the Helloworld Greeter server.
 class EchoServerImpl < Echo::EchoServer::Service
@@ -46,7 +49,7 @@ class ServerRunner
   end
 
   def run
-    @srv = GRPC::RpcServer.new(@rpc_server_args)
+    @srv = new_rpc_server_for_testing(@rpc_server_args)
     port = @srv.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
     @srv.handle(@service_impl)
 

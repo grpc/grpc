@@ -26,7 +26,8 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/support/string.h"
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
@@ -44,10 +45,10 @@ static void assert_index(const grpc_chttp2_hptbl* tbl, uint32_t idx,
 }
 
 static void test_static_lookup(void) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   grpc_chttp2_hptbl tbl;
 
-  grpc_chttp2_hptbl_init(&exec_ctx, &tbl);
+  grpc_chttp2_hptbl_init(&tbl);
 
   LOG_TEST("test_static_lookup");
   assert_index(&tbl, 1, ":authority", "");
@@ -112,8 +113,7 @@ static void test_static_lookup(void) {
   assert_index(&tbl, 60, "via", "");
   assert_index(&tbl, 61, "www-authenticate", "");
 
-  grpc_chttp2_hptbl_destroy(&exec_ctx, &tbl);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_chttp2_hptbl_destroy(&tbl);
 }
 
 static void test_many_additions(void) {
@@ -124,18 +124,17 @@ static void test_many_additions(void) {
 
   LOG_TEST("test_many_additions");
 
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_chttp2_hptbl_init(&exec_ctx, &tbl);
+  grpc_core::ExecCtx exec_ctx;
+  grpc_chttp2_hptbl_init(&tbl);
 
   for (i = 0; i < 100000; i++) {
     grpc_mdelem elem;
     gpr_asprintf(&key, "K:%d", i);
     gpr_asprintf(&value, "VALUE:%d", i);
-    elem =
-        grpc_mdelem_from_slices(&exec_ctx, grpc_slice_from_copied_string(key),
-                                grpc_slice_from_copied_string(value));
-    GPR_ASSERT(grpc_chttp2_hptbl_add(&exec_ctx, &tbl, elem) == GRPC_ERROR_NONE);
-    GRPC_MDELEM_UNREF(&exec_ctx, elem);
+    elem = grpc_mdelem_from_slices(grpc_slice_from_copied_string(key),
+                                   grpc_slice_from_copied_string(value));
+    GPR_ASSERT(grpc_chttp2_hptbl_add(&tbl, elem) == GRPC_ERROR_NONE);
+    GRPC_MDELEM_UNREF(elem);
     assert_index(&tbl, 1 + GRPC_CHTTP2_LAST_STATIC_ENTRY, key, value);
     gpr_free(key);
     gpr_free(value);
@@ -148,25 +147,23 @@ static void test_many_additions(void) {
     }
   }
 
-  grpc_chttp2_hptbl_destroy(&exec_ctx, &tbl);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_chttp2_hptbl_destroy(&tbl);
 }
 
 static grpc_chttp2_hptbl_find_result find_simple(grpc_chttp2_hptbl* tbl,
                                                  const char* key,
                                                  const char* value) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_mdelem md =
-      grpc_mdelem_from_slices(&exec_ctx, grpc_slice_from_copied_string(key),
-                              grpc_slice_from_copied_string(value));
+  grpc_core::ExecCtx exec_ctx;
+  grpc_mdelem md = grpc_mdelem_from_slices(
+      grpc_slice_from_copied_string(key), grpc_slice_from_copied_string(value));
   grpc_chttp2_hptbl_find_result r = grpc_chttp2_hptbl_find(tbl, md);
-  GRPC_MDELEM_UNREF(&exec_ctx, md);
-  grpc_exec_ctx_finish(&exec_ctx);
+  GRPC_MDELEM_UNREF(md);
+
   return r;
 }
 
 static void test_find(void) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   grpc_chttp2_hptbl tbl;
   uint32_t i;
   char buffer[32];
@@ -175,21 +172,19 @@ static void test_find(void) {
 
   LOG_TEST("test_find");
 
-  grpc_chttp2_hptbl_init(&exec_ctx, &tbl);
-  elem =
-      grpc_mdelem_from_slices(&exec_ctx, grpc_slice_from_static_string("abc"),
-                              grpc_slice_from_static_string("xyz"));
-  GPR_ASSERT(grpc_chttp2_hptbl_add(&exec_ctx, &tbl, elem) == GRPC_ERROR_NONE);
-  GRPC_MDELEM_UNREF(&exec_ctx, elem);
-  elem =
-      grpc_mdelem_from_slices(&exec_ctx, grpc_slice_from_static_string("abc"),
-                              grpc_slice_from_static_string("123"));
-  GPR_ASSERT(grpc_chttp2_hptbl_add(&exec_ctx, &tbl, elem) == GRPC_ERROR_NONE);
-  GRPC_MDELEM_UNREF(&exec_ctx, elem);
-  elem = grpc_mdelem_from_slices(&exec_ctx, grpc_slice_from_static_string("x"),
+  grpc_chttp2_hptbl_init(&tbl);
+  elem = grpc_mdelem_from_slices(grpc_slice_from_static_string("abc"),
+                                 grpc_slice_from_static_string("xyz"));
+  GPR_ASSERT(grpc_chttp2_hptbl_add(&tbl, elem) == GRPC_ERROR_NONE);
+  GRPC_MDELEM_UNREF(elem);
+  elem = grpc_mdelem_from_slices(grpc_slice_from_static_string("abc"),
+                                 grpc_slice_from_static_string("123"));
+  GPR_ASSERT(grpc_chttp2_hptbl_add(&tbl, elem) == GRPC_ERROR_NONE);
+  GRPC_MDELEM_UNREF(elem);
+  elem = grpc_mdelem_from_slices(grpc_slice_from_static_string("x"),
                                  grpc_slice_from_static_string("1"));
-  GPR_ASSERT(grpc_chttp2_hptbl_add(&exec_ctx, &tbl, elem) == GRPC_ERROR_NONE);
-  GRPC_MDELEM_UNREF(&exec_ctx, elem);
+  GPR_ASSERT(grpc_chttp2_hptbl_add(&tbl, elem) == GRPC_ERROR_NONE);
+  GRPC_MDELEM_UNREF(elem);
 
   r = find_simple(&tbl, "abc", "123");
   GPR_ASSERT(r.index == 2 + GRPC_CHTTP2_LAST_STATIC_ENTRY);
@@ -238,11 +233,10 @@ static void test_find(void) {
   /* overflow the string buffer, check find still works */
   for (i = 0; i < 10000; i++) {
     int64_ttoa(i, buffer);
-    elem = grpc_mdelem_from_slices(&exec_ctx,
-                                   grpc_slice_from_static_string("test"),
+    elem = grpc_mdelem_from_slices(grpc_slice_from_static_string("test"),
                                    grpc_slice_from_copied_string(buffer));
-    GPR_ASSERT(grpc_chttp2_hptbl_add(&exec_ctx, &tbl, elem) == GRPC_ERROR_NONE);
-    GRPC_MDELEM_UNREF(&exec_ctx, elem);
+    GPR_ASSERT(grpc_chttp2_hptbl_add(&tbl, elem) == GRPC_ERROR_NONE);
+    GRPC_MDELEM_UNREF(elem);
   }
 
   r = find_simple(&tbl, "abc", "123");
@@ -270,8 +264,7 @@ static void test_find(void) {
   GPR_ASSERT(r.index != 0);
   GPR_ASSERT(r.has_value == 0);
 
-  grpc_chttp2_hptbl_destroy(&exec_ctx, &tbl);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_chttp2_hptbl_destroy(&tbl);
 }
 
 int main(int argc, char** argv) {

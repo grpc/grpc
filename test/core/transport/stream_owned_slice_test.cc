@@ -20,12 +20,14 @@
 
 #include "test/core/util/test_config.h"
 
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
-static void do_nothing(grpc_exec_ctx* exec_ctx, void* arg, grpc_error* error) {}
+static void do_nothing(void* arg, grpc_error* error) {}
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
+  grpc_init();
 
   uint8_t buffer[] = "abc123";
   grpc_stream_refcount r;
@@ -39,5 +41,6 @@ int main(int argc, char** argv) {
   grpc_slice_unref(slice);
   GPR_ASSERT(r.refs.count == 1);
 
+  grpc_shutdown();
   return 0;
 }

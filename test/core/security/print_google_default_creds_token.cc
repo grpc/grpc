@@ -23,14 +23,14 @@
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/cmdline.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/security/credentials/composite/composite_credentials.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/support/string.h"
+#include "test/core/util/cmdline.h"
 
 typedef struct {
   gpr_mu* mu;
@@ -41,11 +41,11 @@ typedef struct {
   grpc_closure on_request_metadata;
 } synchronizer;
 
-static void on_metadata_response(grpc_exec_ctx* exec_ctx, void* arg,
-                                 grpc_error* error) {
+static void on_metadata_response(void* arg, grpc_error* error) {
   synchronizer* sync = static_cast<synchronizer*>(arg);
   if (error != GRPC_ERROR_NONE) {
     fprintf(stderr, "Fetching token failed: %s\n", grpc_error_string(error));
+    fflush(stderr);
   } else {
     char* token;
     GPR_ASSERT(sync->md_array.size == 1);
@@ -57,14 +57,13 @@ static void on_metadata_response(grpc_exec_ctx* exec_ctx, void* arg,
   sync->is_done = true;
   GRPC_LOG_IF_ERROR(
       "pollset_kick",
-      grpc_pollset_kick(exec_ctx, grpc_polling_entity_pollset(&sync->pops),
-                        nullptr));
+      grpc_pollset_kick(grpc_polling_entity_pollset(&sync->pops), nullptr));
   gpr_mu_unlock(sync->mu);
 }
 
 int main(int argc, char** argv) {
   int result = 0;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   synchronizer sync;
   grpc_channel_credentials* creds = nullptr;
   const char* service_url = "https://test.foo.google.com/Foo";
@@ -83,12 +82,13 @@ int main(int argc, char** argv) {
   creds = grpc_google_default_credentials_create();
   if (creds == nullptr) {
     fprintf(stderr, "\nCould not find default credentials.\n\n");
+    fflush(stderr);
     result = 1;
     goto end;
   }
 
   memset(&sync, 0, sizeof(sync));
-  pollset = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
+  pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(pollset, &sync.mu);
   sync.pops = grpc_polling_entity_create_from_pollset(pollset);
   sync.is_done = false;
@@ -97,11 +97,12 @@ int main(int argc, char** argv) {
 
   error = GRPC_ERROR_NONE;
   if (grpc_call_credentials_get_request_metadata(
-          &exec_ctx, ((grpc_composite_channel_credentials*)creds)->call_creds,
+          (reinterpret_cast<grpc_composite_channel_credentials*>(creds))
+              ->call_creds,
           &sync.pops, context, &sync.md_array, &sync.on_request_metadata,
           &error)) {
     // Synchronous response.  Invoke callback directly.
-    on_metadata_response(&exec_ctx, &sync, error);
+    on_metadata_response(&sync, error);
     GRPC_ERROR_UNREF(error);
   }
 
@@ -110,17 +111,14 @@ int main(int argc, char** argv) {
     grpc_pollset_worker* worker = nullptr;
     if (!GRPC_LOG_IF_ERROR(
             "pollset_work",
-            grpc_pollset_work(&exec_ctx,
-                              grpc_polling_entity_pollset(&sync.pops), &worker,
+            grpc_pollset_work(grpc_polling_entity_pollset(&sync.pops), &worker,
                               GRPC_MILLIS_INF_FUTURE)))
       sync.is_done = true;
     gpr_mu_unlock(sync.mu);
-    grpc_exec_ctx_flush(&exec_ctx);
+    grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(sync.mu);
   }
   gpr_mu_unlock(sync.mu);
-
-  grpc_exec_ctx_finish(&exec_ctx);
 
   grpc_channel_credentials_release(creds);
   gpr_free(grpc_polling_entity_pollset(&sync.pops));

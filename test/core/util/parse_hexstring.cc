@@ -39,10 +39,11 @@ grpc_slice parse_hexstring(const char* hexstring) {
   temp = 0;
   for (p = hexstring; *p; p++) {
     if (*p >= '0' && *p <= '9') {
-      temp = (uint8_t)(temp << 4) | (uint8_t)(*p - '0');
+      temp = static_cast<uint8_t>(temp << 4) | static_cast<uint8_t>(*p - '0');
       nibbles++;
     } else if (*p >= 'a' && *p <= 'f') {
-      temp = (uint8_t)(temp << 4) | (uint8_t)(*p - 'a' + 10);
+      temp =
+          static_cast<uint8_t>(temp << 4) | static_cast<uint8_t>(*p - 'a' + 10);
       nibbles++;
     }
     if (nibbles == 2) {

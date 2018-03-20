@@ -20,13 +20,13 @@
 
 #include <string.h>
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 
 #include "src/core/lib/surface/server.h"
 
 #define PFX_STR                                                            \
-  "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"                                       \
-  "\x00\x00\x00\x04\x00\x00\x00\x00\x00" /* settings frame */              \
+  "\x00\x00\x00\x04\x01\x00\x00\x00\x00"                                   \
   "\x00\x00\xc9\x01\x04\x00\x00\x00\x01" /* headers: generated from        \
                                             simple_request.headers in this \
                                             directory */                   \
@@ -69,15 +69,17 @@ int main(int argc, char** argv) {
 #define MAX_FRAME_SIZE 16384
 #define MESSAGES_PER_FRAME (MAX_FRAME_SIZE / 5)
 #define FRAME_SIZE (MESSAGES_PER_FRAME * 5)
-#define SEND_SIZE (6 * 1024 * 1024)
+#define SEND_SIZE (4 * 1024 * 1024)
 #define NUM_FRAMES (SEND_SIZE / FRAME_SIZE + 1)
   grpc_test_init(argc, argv);
+  grpc_init();
 
   addbuf(PFX_STR, sizeof(PFX_STR) - 1);
   for (i = 0; i < NUM_FRAMES; i++) {
-    uint8_t hdr[9] = {(uint8_t)(FRAME_SIZE >> 16),
-                      (uint8_t)(FRAME_SIZE >> 8),
-                      (uint8_t)FRAME_SIZE,
+    uint8_t hdr[9] = {static_cast<uint8_t>(FRAME_SIZE >> 16),
+                      static_cast<uint8_t>(FRAME_SIZE >> 8),
+                      static_cast<uint8_t>
+                          FRAME_SIZE,
                       0,
                       0,
                       0,
@@ -90,9 +92,12 @@ int main(int argc, char** argv) {
       addbuf(message, sizeof(message));
     }
   }
-  grpc_run_bad_client_test(verifier, nullptr, g_buffer, g_count,
-                           GRPC_BAD_CLIENT_LARGE_REQUEST);
+  grpc_bad_client_arg bca[2];
+  bca[0] = connection_preface_arg;
+  bca[1] = {rst_stream_client_validator, nullptr, g_buffer, g_count};
+  grpc_run_bad_client_test(verifier, bca, 2, GRPC_BAD_CLIENT_LARGE_REQUEST);
   gpr_free(g_buffer);
+  grpc_shutdown();
 
   return 0;
 }

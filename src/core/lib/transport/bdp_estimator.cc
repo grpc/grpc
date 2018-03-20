@@ -16,12 +16,14 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/transport/bdp_estimator.h"
 
 #include <inttypes.h>
 #include <stdlib.h>
 
-#include <grpc/support/useful.h>
+#include "src/core/lib/gpr/useful.h"
 
 grpc_core::TraceFlag grpc_bdp_estimator_trace(false, "bdp_estimator");
 
@@ -37,11 +39,12 @@ BdpEstimator::BdpEstimator(const char* name)
       bw_est_(0),
       name_(name) {}
 
-grpc_millis BdpEstimator::CompletePing(grpc_exec_ctx* exec_ctx) {
+grpc_millis BdpEstimator::CompletePing() {
   gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
   gpr_timespec dt_ts = gpr_time_sub(now, ping_start_time_);
-  double dt = (double)dt_ts.tv_sec + 1e-9 * (double)dt_ts.tv_nsec;
-  double bw = dt > 0 ? ((double)accumulator_ / dt) : 0;
+  double dt = static_cast<double>(dt_ts.tv_sec) +
+              1e-9 * static_cast<double>(dt_ts.tv_nsec);
+  double bw = dt > 0 ? (static_cast<double>(accumulator_) / dt) : 0;
   int start_inter_ping_delay = inter_ping_delay_;
   if (grpc_bdp_estimator_trace.enabled()) {
     gpr_log(GPR_DEBUG,
@@ -64,8 +67,8 @@ grpc_millis BdpEstimator::CompletePing(grpc_exec_ctx* exec_ctx) {
     stable_estimate_count_++;
     if (stable_estimate_count_ >= 2) {
       inter_ping_delay_ +=
-          100 +
-          (int)(rand() * 100.0 / RAND_MAX);  // if the ping estimate is steady,
+          100 + static_cast<int>(rand() * 100.0 /
+                                 RAND_MAX);  // if the ping estimate is steady,
                                              // slowly ramp down the probe time
     }
   }
@@ -78,7 +81,7 @@ grpc_millis BdpEstimator::CompletePing(grpc_exec_ctx* exec_ctx) {
   }
   ping_state_ = PingState::UNSCHEDULED;
   accumulator_ = 0;
-  return grpc_exec_ctx_now(exec_ctx) + inter_ping_delay_;
+  return grpc_core::ExecCtx::Get()->Now() + inter_ping_delay_;
 }
 
 }  // namespace grpc_core

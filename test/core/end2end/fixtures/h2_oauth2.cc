@@ -22,9 +22,10 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
+
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "test/core/end2end/data/ssl_test_data.h"
@@ -65,7 +66,7 @@ static void process_oauth2_success(void* state, grpc_auth_context* ctx,
   test_processor_state* s;
 
   GPR_ASSERT(state != nullptr);
-  s = (test_processor_state*)state;
+  s = static_cast<test_processor_state*>(state);
   GPR_ASSERT(s->pseudo_refcount == 1);
   GPR_ASSERT(oauth2 != nullptr);
   grpc_auth_context_add_cstring_property(ctx, client_identity_property_name,
@@ -83,7 +84,7 @@ static void process_oauth2_failure(void* state, grpc_auth_context* ctx,
       find_metadata(md, md_count, "authorization", oauth2_md);
   test_processor_state* s;
   GPR_ASSERT(state != nullptr);
-  s = (test_processor_state*)state;
+  s = static_cast<test_processor_state*>(state);
   GPR_ASSERT(s->pseudo_refcount == 1);
   GPR_ASSERT(oauth2 != nullptr);
   cb(user_data, oauth2, 1, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
@@ -143,11 +144,11 @@ void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture* f) {
 
 static void chttp2_init_client_simple_ssl_with_oauth2_secure_fullstack(
     grpc_end2end_test_fixture* f, grpc_channel_args* client_args) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   grpc_channel_credentials* ssl_creds =
       grpc_ssl_credentials_create(test_root_cert, nullptr, nullptr);
   grpc_call_credentials* oauth2_creds = grpc_md_only_test_credentials_create(
-      &exec_ctx, "authorization", oauth2_md, true /* is_async */);
+      "authorization", oauth2_md, true /* is_async */);
   grpc_channel_credentials* ssl_oauth2_creds =
       grpc_composite_channel_credentials_create(ssl_creds, oauth2_creds,
                                                 nullptr);
@@ -158,10 +159,9 @@ static void chttp2_init_client_simple_ssl_with_oauth2_secure_fullstack(
   grpc_channel_args* new_client_args =
       grpc_channel_args_copy_and_add(client_args, &ssl_name_override, 1);
   chttp2_init_client_secure_fullstack(f, new_client_args, ssl_oauth2_creds);
-  grpc_channel_args_destroy(&exec_ctx, new_client_args);
+  grpc_channel_args_destroy(new_client_args);
   grpc_channel_credentials_release(ssl_creds);
   grpc_call_credentials_release(oauth2_creds);
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static int fail_server_auth_check(grpc_channel_args* server_args) {
@@ -177,7 +177,7 @@ static int fail_server_auth_check(grpc_channel_args* server_args) {
 }
 
 static void processor_destroy(void* state) {
-  test_processor_state* s = (test_processor_state*)state;
+  test_processor_state* s = static_cast<test_processor_state*>(state);
   GPR_ASSERT((s->pseudo_refcount--) == 1);
   gpr_free(s);
 }

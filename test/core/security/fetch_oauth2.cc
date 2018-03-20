@@ -23,13 +23,13 @@
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/cmdline.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "test/core/security/oauth2_utils.h"
+#include "test/core/util/cmdline.h"
 
 static grpc_call_credentials* create_refresh_token_creds(
     const char* json_refresh_token_file_path) {
@@ -38,7 +38,8 @@ static grpc_call_credentials* create_refresh_token_creds(
       "load_file",
       grpc_load_file(json_refresh_token_file_path, 1, &refresh_token)));
   return grpc_google_refresh_token_credentials_create(
-      (const char*)GRPC_SLICE_START_PTR(refresh_token), nullptr);
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(refresh_token),
+      nullptr);
 }
 
 int main(int argc, char** argv) {

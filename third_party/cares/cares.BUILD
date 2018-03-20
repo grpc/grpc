@@ -45,32 +45,26 @@ config_setting(
 )
 
 genrule(
-    name = "ares_build",
-    srcs = ["@cares_local_files//:ares_build_h"],
+    name = "ares_build_h",
+    srcs = ["@com_github_grpc_grpc//third_party/cares:ares_build.h"],
     outs = ["ares_build.h"],
-    cmd = "cat $(location @cares_local_files//:ares_build_h) > $@",
+    cmd = "cat $< > $@",
 )
-
-# cc_library(
-#     name = "ares_build_h",
-#     hdrs = ["ares_build.h"],
-#     data = [":ares_build"],
-#     includes = ["."],
-# )
 
 genrule(
-    name = "ares_config",
-    srcs = ["@cares_local_files//:ares_config_h"],
+    name = "ares_config_h",
+    srcs = select({
+        ":ios_x86_64": ["@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h"],
+        ":ios_armv7": ["@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h"],
+        ":ios_armv7s": ["@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h"],
+        ":ios_arm64": ["@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h"],
+        ":darwin": ["@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h"],
+        ":android": ["@com_github_grpc_grpc//third_party/cares:config_android/ares_config.h"],
+        "//conditions:default": ["@com_github_grpc_grpc//third_party/cares:config_linux/ares_config.h"],
+    }),
     outs = ["ares_config.h"],
-    cmd = "cat $(location @cares_local_files//:ares_config_h) > $@",
+    cmd = "cat $< > $@",
 )
-
-# cc_library(
-#     name = "ares_config_h",
-#     hdrs = ["ares_config.h"],
-#     data = [":ares_config"],
-#     includes = ["."],
-# )
 
 cc_library(
     name = "ares",
@@ -160,10 +154,6 @@ cc_library(
         ":windows_msvc": [],
         "//conditions:default": ["-DHAVE_CONFIG_H"],
     }),
-    data = [
-        ":ares_build",
-        ":ares_config",
-    ],
     includes = ["."],
     linkstatic = 1,
     visibility = [

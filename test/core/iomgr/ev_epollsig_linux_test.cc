@@ -18,7 +18,7 @@
 #include "src/core/lib/iomgr/port.h"
 
 /* This test only relevant on linux systems where epoll() is available */
-#ifdef GRPC_LINUX_EPOLL
+#ifdef GRPC_LINUX_EPOLL_CREATE1
 #include "src/core/lib/iomgr/ev_epollsig_linux.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 
@@ -29,9 +29,9 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/thd.h>
-#include <grpc/support/useful.h>
 
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "test/core/util/test_config.h"
 
@@ -70,19 +70,18 @@ static void test_fd_init(test_fd* tfds, int* fds, int num_fds) {
   }
 }
 
-static void test_fd_cleanup(grpc_exec_ctx* exec_ctx, test_fd* tfds,
-                            int num_fds) {
+static void test_fd_cleanup(test_fd* tfds, int num_fds) {
   int release_fd;
   int i;
 
   for (i = 0; i < num_fds; i++) {
-    grpc_fd_shutdown(exec_ctx, tfds[i].fd,
+    grpc_fd_shutdown(tfds[i].fd,
                      GRPC_ERROR_CREATE_FROM_STATIC_STRING("test_fd_cleanup"));
-    grpc_exec_ctx_flush(exec_ctx);
+    grpc_core::ExecCtx::Get()->Flush();
 
-    grpc_fd_orphan(exec_ctx, tfds[i].fd, nullptr, &release_fd,
-                   false /* already_closed */, "test_fd_cleanup");
-    grpc_exec_ctx_flush(exec_ctx);
+    grpc_fd_orphan(tfds[i].fd, nullptr, &release_fd, false /* already_closed */,
+                   "test_fd_cleanup");
+    grpc_core::ExecCtx::Get()->Flush();
 
     GPR_ASSERT(release_fd == tfds[i].inner_fd);
     close(tfds[i].inner_fd);
@@ -98,22 +97,20 @@ static void test_pollset_init(test_pollset* pollsets, int num_pollsets) {
   }
 }
 
-static void destroy_pollset(grpc_exec_ctx* exec_ctx, void* p,
-                            grpc_error* error) {
-  grpc_pollset_destroy(exec_ctx, (grpc_pollset*)p);
+static void destroy_pollset(void* p, grpc_error* error) {
+  grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 
-static void test_pollset_cleanup(grpc_exec_ctx* exec_ctx,
-                                 test_pollset* pollsets, int num_pollsets) {
+static void test_pollset_cleanup(test_pollset* pollsets, int num_pollsets) {
   grpc_closure destroyed;
   int i;
 
   for (i = 0; i < num_pollsets; i++) {
     GRPC_CLOSURE_INIT(&destroyed, destroy_pollset, pollsets[i].pollset,
                       grpc_schedule_on_exec_ctx);
-    grpc_pollset_shutdown(exec_ctx, pollsets[i].pollset, &destroyed);
+    grpc_pollset_shutdown(pollsets[i].pollset, &destroyed);
 
-    grpc_exec_ctx_flush(exec_ctx);
+    grpc_core::ExecCtx::Get()->Flush();
     gpr_free(pollsets[i].pollset);
   }
 }
@@ -133,7 +130,7 @@ static void test_pollset_cleanup(grpc_exec_ctx* exec_ctx,
 #define NUM_POLLSETS 4
 
 static void test_add_fd_to_pollset() {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   test_fd tfds[NUM_FDS];
   int fds[NUM_FDS];
   test_pollset pollsets[NUM_POLLSETS];
@@ -170,33 +167,33 @@ static void test_add_fd_to_pollset() {
 
   /* == Step 1 == */
   for (i = 0; i <= 2; i++) {
-    grpc_pollset_add_fd(&exec_ctx, pollsets[0].pollset, tfds[i].fd);
-    grpc_exec_ctx_flush(&exec_ctx);
+    grpc_pollset_add_fd(pollsets[0].pollset, tfds[i].fd);
+    grpc_core::ExecCtx::Get()->Flush();
   }
 
   for (i = 3; i <= 4; i++) {
-    grpc_pollset_add_fd(&exec_ctx, pollsets[1].pollset, tfds[i].fd);
-    grpc_exec_ctx_flush(&exec_ctx);
+    grpc_pollset_add_fd(pollsets[1].pollset, tfds[i].fd);
+    grpc_core::ExecCtx::Get()->Flush();
   }
 
   for (i = 5; i <= 7; i++) {
-    grpc_pollset_add_fd(&exec_ctx, pollsets[2].pollset, tfds[i].fd);
-    grpc_exec_ctx_flush(&exec_ctx);
+    grpc_pollset_add_fd(pollsets[2].pollset, tfds[i].fd);
+    grpc_core::ExecCtx::Get()->Flush();
   }
 
   /* == Step 2 == */
   for (i = 0; i <= 1; i++) {
-    grpc_pollset_add_fd(&exec_ctx, pollsets[3].pollset, tfds[i].fd);
-    grpc_exec_ctx_flush(&exec_ctx);
+    grpc_pollset_add_fd(pollsets[3].pollset, tfds[i].fd);
+    grpc_core::ExecCtx::Get()->Flush();
   }
 
   /* == Step 3 == */
-  grpc_pollset_add_fd(&exec_ctx, pollsets[1].pollset, tfds[0].fd);
-  grpc_exec_ctx_flush(&exec_ctx);
+  grpc_pollset_add_fd(pollsets[1].pollset, tfds[0].fd);
+  grpc_core::ExecCtx::Get()->Flush();
 
   /* == Step 4 == */
-  grpc_pollset_add_fd(&exec_ctx, pollsets[2].pollset, tfds[3].fd);
-  grpc_exec_ctx_flush(&exec_ctx);
+  grpc_pollset_add_fd(pollsets[2].pollset, tfds[3].fd);
+  grpc_core::ExecCtx::Get()->Flush();
 
   /* All polling islands are merged at this point */
 
@@ -213,9 +210,8 @@ static void test_add_fd_to_pollset() {
         expected_pi, grpc_pollset_get_polling_island(pollsets[i].pollset)));
   }
 
-  test_fd_cleanup(&exec_ctx, tfds, NUM_FDS);
-  test_pollset_cleanup(&exec_ctx, pollsets, NUM_POLLSETS);
-  grpc_exec_ctx_finish(&exec_ctx);
+  test_fd_cleanup(tfds, NUM_FDS);
+  test_pollset_cleanup(pollsets, NUM_POLLSETS);
 }
 
 #undef NUM_FDS
@@ -235,26 +231,24 @@ static __thread int thread_wakeups = 0;
 static void test_threading_loop(void* arg) {
   threading_shared* shared = static_cast<threading_shared*>(arg);
   while (thread_wakeups < 1000000) {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_core::ExecCtx exec_ctx;
     grpc_pollset_worker* worker;
     gpr_mu_lock(shared->mu);
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
-        "pollset_work", grpc_pollset_work(&exec_ctx, shared->pollset, &worker,
-                                          GRPC_MILLIS_INF_FUTURE)));
+        "pollset_work",
+        grpc_pollset_work(shared->pollset, &worker, GRPC_MILLIS_INF_FUTURE)));
     gpr_mu_unlock(shared->mu);
-    grpc_exec_ctx_finish(&exec_ctx);
   }
 }
 
-static void test_threading_wakeup(grpc_exec_ctx* exec_ctx, void* arg,
-                                  grpc_error* error) {
+static void test_threading_wakeup(void* arg, grpc_error* error) {
   threading_shared* shared = static_cast<threading_shared*>(arg);
   ++shared->wakeups;
   ++thread_wakeups;
   if (error == GRPC_ERROR_NONE) {
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "consume_wakeup", grpc_wakeup_fd_consume_wakeup(shared->wakeup_fd)));
-    grpc_fd_notify_on_read(exec_ctx, shared->wakeup_desc, &shared->on_wakeup);
+    grpc_fd_notify_on_read(shared->wakeup_desc, &shared->on_wakeup);
     GPR_ASSERT(GRPC_LOG_IF_ERROR("wakeup_next",
                                  grpc_wakeup_fd_wakeup(shared->wakeup_fd)));
   }
@@ -265,11 +259,10 @@ static void test_threading(void) {
   shared.pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
   grpc_pollset_init(shared.pollset, &shared.mu);
 
-  gpr_thd_id thds[10];
-  for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
-    gpr_thd_options opt = gpr_thd_options_default();
-    gpr_thd_options_set_joinable(&opt);
-    gpr_thd_new(&thds[i], test_threading_loop, &shared, &opt);
+  grpc_core::Thread thds[10];
+  for (auto& th : thds) {
+    th = grpc_core::Thread("test_thread", test_threading_loop, &shared);
+    th.Start();
   }
   grpc_wakeup_fd fd;
   GPR_ASSERT(GRPC_LOG_IF_ERROR("wakeup_fd_init", grpc_wakeup_fd_init(&fd)));
@@ -277,30 +270,28 @@ static void test_threading(void) {
   shared.wakeup_desc = grpc_fd_create(fd.read_fd, "wakeup");
   shared.wakeups = 0;
   {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_pollset_add_fd(&exec_ctx, shared.pollset, shared.wakeup_desc);
+    grpc_core::ExecCtx exec_ctx;
+    grpc_pollset_add_fd(shared.pollset, shared.wakeup_desc);
     grpc_fd_notify_on_read(
-        &exec_ctx, shared.wakeup_desc,
+        shared.wakeup_desc,
         GRPC_CLOSURE_INIT(&shared.on_wakeup, test_threading_wakeup, &shared,
                           grpc_schedule_on_exec_ctx));
-    grpc_exec_ctx_finish(&exec_ctx);
   }
   GPR_ASSERT(GRPC_LOG_IF_ERROR("wakeup_first",
                                grpc_wakeup_fd_wakeup(shared.wakeup_fd)));
-  for (size_t i = 0; i < GPR_ARRAY_SIZE(thds); i++) {
-    gpr_thd_join(thds[i]);
+  for (auto& th : thds) {
+    th.Join();
   }
   fd.read_fd = 0;
   grpc_wakeup_fd_destroy(&fd);
   {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_fd_shutdown(&exec_ctx, shared.wakeup_desc, GRPC_ERROR_CANCELLED);
-    grpc_fd_orphan(&exec_ctx, shared.wakeup_desc, nullptr, nullptr,
+    grpc_core::ExecCtx exec_ctx;
+    grpc_fd_shutdown(shared.wakeup_desc, GRPC_ERROR_CANCELLED);
+    grpc_fd_orphan(shared.wakeup_desc, nullptr, nullptr,
                    false /* already_closed */, "done");
-    grpc_pollset_shutdown(&exec_ctx, shared.pollset,
+    grpc_pollset_shutdown(shared.pollset,
                           GRPC_CLOSURE_CREATE(destroy_pollset, shared.pollset,
                                               grpc_schedule_on_exec_ctx));
-    grpc_exec_ctx_finish(&exec_ctx);
   }
   gpr_free(shared.pollset);
 }
@@ -309,23 +300,24 @@ int main(int argc, char** argv) {
   const char* poll_strategy = nullptr;
   grpc_test_init(argc, argv);
   grpc_init();
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  {
+    grpc_core::ExecCtx exec_ctx;
 
-  poll_strategy = grpc_get_poll_strategy_name();
-  if (poll_strategy != nullptr && strcmp(poll_strategy, "epollsig") == 0) {
-    test_add_fd_to_pollset();
-    test_threading();
-  } else {
-    gpr_log(GPR_INFO,
-            "Skipping the test. The test is only relevant for 'epollsig' "
-            "strategy. and the current strategy is: '%s'",
-            poll_strategy);
+    poll_strategy = grpc_get_poll_strategy_name();
+    if (poll_strategy != nullptr && strcmp(poll_strategy, "epollsig") == 0) {
+      test_add_fd_to_pollset();
+      test_threading();
+    } else {
+      gpr_log(GPR_INFO,
+              "Skipping the test. The test is only relevant for 'epollsig' "
+              "strategy. and the current strategy is: '%s'",
+              poll_strategy);
+    }
   }
 
-  grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();
   return 0;
 }
-#else  /* defined(GRPC_LINUX_EPOLL) */
+#else  /* defined(GRPC_LINUX_EPOLL_CREATE1) */
 int main(int argc, char** argv) { return 0; }
-#endif /* !defined(GRPC_LINUX_EPOLL) */
+#endif /* !defined(GRPC_LINUX_EPOLL_CREATE1) */

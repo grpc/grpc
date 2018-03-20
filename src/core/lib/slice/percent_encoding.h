@@ -26,13 +26,11 @@
      and another which applies percent encoding only to non-http2 header
      bytes (the 'compatible' variant) */
 
+#include <grpc/support/port_platform.h>
+
 #include <stdbool.h>
 
 #include <grpc/slice.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /* URL percent encoding spec bitfield (usabel as 'unreserved_bytes' in
    grpc_percent_encode_slice, grpc_strict_percent_decode_slice).
@@ -63,9 +61,5 @@ bool grpc_strict_percent_decode_slice(grpc_slice slice_in,
    If a % triplet can not be decoded, pass it through verbatim.
    This cannot fail. */
 grpc_slice grpc_permissive_percent_decode_slice(grpc_slice slice_in);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_SLICE_PERCENT_ENCODING_H */

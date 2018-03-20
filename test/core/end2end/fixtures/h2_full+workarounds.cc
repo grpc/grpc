@@ -21,16 +21,16 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/thd.h>
-#include <grpc/support/useful.h>
+
 #include <grpc/support/workaround_list.h>
+
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/connected_channel.h"
+#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
 #include "test/core/util/port.h"
@@ -72,7 +72,7 @@ void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
 void chttp2_init_server_fullstack(grpc_end2end_test_fixture* f,
                                   grpc_channel_args* server_args) {
   int i;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   fullstack_fixture_data* ffd =
       static_cast<fullstack_fixture_data*>(f->fixture_data);
   grpc_arg args[GRPC_MAX_WORKAROUND_ID];
@@ -90,8 +90,7 @@ void chttp2_init_server_fullstack(grpc_end2end_test_fixture* f,
   grpc_server_register_completion_queue(f->server, f->cq, nullptr);
   GPR_ASSERT(grpc_server_add_insecure_http2_port(f->server, ffd->localaddr));
   grpc_server_start(f->server);
-  grpc_channel_args_destroy(&exec_ctx, server_args_new);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_channel_args_destroy(server_args_new);
 }
 
 void chttp2_tear_down_fullstack(grpc_end2end_test_fixture* f) {

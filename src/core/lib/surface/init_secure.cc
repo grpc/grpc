@@ -27,9 +27,9 @@
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/plugin/plugin_credentials.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/security/transport/secure_endpoint.h"
-#include "src/core/lib/security/transport/security_connector.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/tsi/transport_security_interface.h"
@@ -37,7 +37,7 @@
 void grpc_security_pre_init(void) {}
 
 static bool maybe_prepend_client_auth_filter(
-    grpc_exec_ctx* exec_ctx, grpc_channel_stack_builder* builder, void* arg) {
+    grpc_channel_stack_builder* builder, void* arg) {
   const grpc_channel_args* args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
   if (args) {
@@ -52,7 +52,7 @@ static bool maybe_prepend_client_auth_filter(
 }
 
 static bool maybe_prepend_server_auth_filter(
-    grpc_exec_ctx* exec_ctx, grpc_channel_stack_builder* builder, void* arg) {
+    grpc_channel_stack_builder* builder, void* arg) {
   const grpc_channel_args* args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
   if (args) {

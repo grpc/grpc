@@ -18,9 +18,9 @@
 
 #include "test/cpp/util/create_test_channel.h"
 
-#include <grpc++/create_channel.h>
-#include <grpc++/security/credentials.h>
 #include <grpc/support/log.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/security/credentials.h>
 
 #include "test/cpp/util/test_credentials_provider.h"
 

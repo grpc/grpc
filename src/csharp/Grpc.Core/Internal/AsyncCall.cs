@@ -92,23 +92,28 @@ namespace Grpc.Core.Internal
                 }
 
                 using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
-                using (var ctx = BatchContextSafeHandle.Create())
                 {
-                    call.StartUnary(ctx, payload, GetWriteFlagsForCall(), metadataArray, details.Options.Flags);
-
-                    var ev = cq.Pluck(ctx.Handle);
-
-                    bool success = (ev.success != 0);
+                    var ctx = details.Channel.Environment.BatchContextPool.Lease();
                     try
                     {
-                        using (profiler.NewScope("AsyncCall.UnaryCall.HandleBatch"))
+                        call.StartUnary(ctx, payload, GetWriteFlagsForCall(), metadataArray, details.Options.Flags);
+                        var ev = cq.Pluck(ctx.Handle);
+                        bool success = (ev.success != 0);
+                        try
                         {
-                            HandleUnaryResponse(success, ctx.GetReceivedStatusOnClient(), ctx.GetReceivedMessage(), ctx.GetReceivedInitialMetadata());
+                            using (profiler.NewScope("AsyncCall.UnaryCall.HandleBatch"))
+                            {
+                                HandleUnaryResponse(success, ctx.GetReceivedStatusOnClient(), ctx.GetReceivedMessage(), ctx.GetReceivedInitialMetadata());
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Logger.Error(e, "Exception occured while invoking completion delegate.");
                         }
                     }
-                    catch (Exception e)
+                    finally
                     {
-                        Logger.Error(e, "Exception occured while invoking completion delegate.");
+                        ctx.Recycle();
                     }
                 }
                     

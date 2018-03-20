@@ -66,7 +66,10 @@ rm linux-*
 # Add pubkey of jenkins@grpc-jenkins-master to authorized keys of jenkins@
 # This needs to happen as the last step to prevent Jenkins master from connecting
 # to a machine that hasn't been properly setup yet.
-cat jenkins_master.pub | sudo tee --append ~jenkins/.ssh/authorized_keys
+
+# disable superfluous warning by shellcheck:
+# shellcheck disable=SC2024
+sudo tee --append ~jenkins/.ssh/authorized_keys < jenkins_master.pub
 
 # Restart for docker to pick up the config changes.
 echo 'Successfully initialized the linux worker, going for reboot in 10 seconds'

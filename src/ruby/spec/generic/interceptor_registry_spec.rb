@@ -14,7 +14,7 @@
 require 'spec_helper'
 
 describe GRPC::InterceptorRegistry do
-  let(:server) { RpcServer.new }
+  let(:server) { new_rpc_server_for_testing }
   let(:interceptor) { TestServerInterceptor.new }
   let(:interceptors) { [interceptor] }
   let(:registry) { described_class.new(interceptors) }

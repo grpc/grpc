@@ -19,6 +19,8 @@
 #ifndef GRPC_GRPC_H
 #define GRPC_GRPC_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/status.h>
 
 #include <grpc/byte_buffer.h>
@@ -160,25 +162,6 @@ GRPCAPI void grpc_completion_queue_thread_local_cache_init(
 GRPCAPI int grpc_completion_queue_thread_local_cache_flush(
     grpc_completion_queue* cq, void** tag, int* ok);
 
-/** Create a completion queue alarm instance */
-GRPCAPI grpc_alarm* grpc_alarm_create(void* reserved);
-
-/** Set a completion queue alarm instance associated to \a cq.
- *
- * Once the alarm expires (at \a deadline) or it's cancelled (see \a
- * grpc_alarm_cancel), an event with tag \a tag will be added to \a cq. If the
- * alarm expired, the event's success bit will be true, false otherwise (ie,
- * upon cancellation). */
-GRPCAPI void grpc_alarm_set(grpc_alarm* alarm, grpc_completion_queue* cq,
-                            gpr_timespec deadline, void* tag, void* reserved);
-
-/** Cancel a completion queue alarm. Calling this function over an alarm that
- * has already fired has no effect. */
-GRPCAPI void grpc_alarm_cancel(grpc_alarm* alarm, void* reserved);
-
-/** Destroy the given completion queue alarm, cancelling it in the process. */
-GRPCAPI void grpc_alarm_destroy(grpc_alarm* alarm, void* reserved);
-
 /** Check the connectivity state of a channel. */
 GRPCAPI grpc_connectivity_state grpc_channel_check_connectivity_state(
     grpc_channel* channel, int try_to_connect);
@@ -288,9 +271,11 @@ GRPCAPI void grpc_channel_get_info(grpc_channel* channel,
 
 /** Create a client channel to 'target'. Additional channel level configuration
     MAY be provided by grpc_channel_args, though the expectation is that most
-    clients will want to simply pass NULL. See grpc_channel_args definition for
-    more on this. The data in 'args' need only live through the invocation of
-    this function. */
+    clients will want to simply pass NULL. The user data in 'args' need only
+    live through the invocation of this function. However, if any args of the
+    'pointer' type are passed, then the referenced vtable must be maintained
+    by the caller until grpc_channel_destroy terminates. See grpc_channel_args
+    definition for more on this. */
 GRPCAPI grpc_channel* grpc_insecure_channel_create(
     const char* target, const grpc_channel_args* args, void* reserved);
 
@@ -383,8 +368,11 @@ GRPCAPI grpc_call_error grpc_server_request_registered_call(
 
 /** Create a server. Additional configuration for each incoming channel can
     be specified with args. If no additional configuration is needed, args can
-    be NULL. See grpc_channel_args for more. The data in 'args' need only live
-    through the invocation of this function. */
+    be NULL. The user data in 'args' need only live through the invocation of
+    this function. However, if any args of the 'pointer' type are passed, then
+    the referenced vtable must be maintained by the caller until
+    grpc_server_destroy terminates. See grpc_channel_args definition for more
+    on this. */
 GRPCAPI grpc_server* grpc_server_create(const grpc_channel_args* args,
                                         void* reserved);
 

@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include <string.h>
 
 #include <grpc/support/alloc.h>
@@ -29,11 +31,12 @@
 grpc_lb_addresses* grpc_lb_addresses_create(
     size_t num_addresses, const grpc_lb_user_data_vtable* user_data_vtable) {
   grpc_lb_addresses* addresses =
-      (grpc_lb_addresses*)gpr_zalloc(sizeof(grpc_lb_addresses));
+      static_cast<grpc_lb_addresses*>(gpr_zalloc(sizeof(grpc_lb_addresses)));
   addresses->num_addresses = num_addresses;
   addresses->user_data_vtable = user_data_vtable;
   const size_t addresses_size = sizeof(grpc_lb_address) * num_addresses;
-  addresses->addresses = (grpc_lb_address*)gpr_zalloc(addresses_size);
+  addresses->addresses =
+      static_cast<grpc_lb_address*>(gpr_zalloc(addresses_size));
   return addresses;
 }
 
@@ -63,7 +66,7 @@ void grpc_lb_addresses_set_address(grpc_lb_addresses* addresses, size_t index,
   if (user_data != nullptr) GPR_ASSERT(addresses->user_data_vtable != nullptr);
   grpc_lb_address* target = &addresses->addresses[index];
   memcpy(target->address.addr, address, address_len);
-  target->address.len = address_len;
+  target->address.len = static_cast<socklen_t>(address_len);
   target->is_balancer = is_balancer;
   target->balancer_name = gpr_strdup(balancer_name);
   target->user_data = user_data;
@@ -112,13 +115,11 @@ int grpc_lb_addresses_cmp(const grpc_lb_addresses* addresses1,
   return 0;
 }
 
-void grpc_lb_addresses_destroy(grpc_exec_ctx* exec_ctx,
-                               grpc_lb_addresses* addresses) {
+void grpc_lb_addresses_destroy(grpc_lb_addresses* addresses) {
   for (size_t i = 0; i < addresses->num_addresses; ++i) {
     gpr_free(addresses->addresses[i].balancer_name);
     if (addresses->addresses[i].user_data != nullptr) {
-      addresses->user_data_vtable->destroy(exec_ctx,
-                                           addresses->addresses[i].user_data);
+      addresses->user_data_vtable->destroy(addresses->addresses[i].user_data);
     }
   }
   gpr_free(addresses->addresses);
@@ -126,14 +127,14 @@ void grpc_lb_addresses_destroy(grpc_exec_ctx* exec_ctx,
 }
 
 static void* lb_addresses_copy(void* addresses) {
-  return grpc_lb_addresses_copy((grpc_lb_addresses*)addresses);
+  return grpc_lb_addresses_copy(static_cast<grpc_lb_addresses*>(addresses));
 }
-static void lb_addresses_destroy(grpc_exec_ctx* exec_ctx, void* addresses) {
-  grpc_lb_addresses_destroy(exec_ctx, (grpc_lb_addresses*)addresses);
+static void lb_addresses_destroy(void* addresses) {
+  grpc_lb_addresses_destroy(static_cast<grpc_lb_addresses*>(addresses));
 }
 static int lb_addresses_cmp(void* addresses1, void* addresses2) {
-  return grpc_lb_addresses_cmp((grpc_lb_addresses*)addresses1,
-                               (grpc_lb_addresses*)addresses2);
+  return grpc_lb_addresses_cmp(static_cast<grpc_lb_addresses*>(addresses1),
+                               static_cast<grpc_lb_addresses*>(addresses2));
 }
 static const grpc_arg_pointer_vtable lb_addresses_arg_vtable = {
     lb_addresses_copy, lb_addresses_destroy, lb_addresses_cmp};
@@ -150,20 +151,5 @@ grpc_lb_addresses* grpc_lb_addresses_find_channel_arg(
       grpc_channel_args_find(channel_args, GRPC_ARG_LB_ADDRESSES);
   if (lb_addresses_arg == nullptr || lb_addresses_arg->type != GRPC_ARG_POINTER)
     return nullptr;
-  return (grpc_lb_addresses*)lb_addresses_arg->value.pointer.p;
-}
-
-void grpc_lb_policy_factory_ref(grpc_lb_policy_factory* factory) {
-  factory->vtable->ref(factory);
-}
-
-void grpc_lb_policy_factory_unref(grpc_lb_policy_factory* factory) {
-  factory->vtable->unref(factory);
-}
-
-grpc_lb_policy* grpc_lb_policy_factory_create_lb_policy(
-    grpc_exec_ctx* exec_ctx, grpc_lb_policy_factory* factory,
-    grpc_lb_policy_args* args) {
-  if (factory == nullptr) return nullptr;
-  return factory->vtable->create_lb_policy(exec_ctx, factory, args);
+  return static_cast<grpc_lb_addresses*>(lb_addresses_arg->value.pointer.p);
 }

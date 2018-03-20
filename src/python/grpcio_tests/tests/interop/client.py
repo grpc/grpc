@@ -104,8 +104,10 @@ def _stub(args):
             channel_credentials = grpc.composite_channel_credentials(
                 channel_credentials, call_credentials)
 
-        channel = grpc.secure_channel(target, channel_credentials, (
-            ('grpc.ssl_target_name_override', args.server_host_override,),))
+        channel = grpc.secure_channel(target, channel_credentials, ((
+            'grpc.ssl_target_name_override',
+            args.server_host_override,
+        ),))
     else:
         channel = grpc.insecure_channel(target)
     if args.test_case == "unimplemented_service":

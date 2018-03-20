@@ -20,11 +20,11 @@
 #include <stdlib.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/cmdline.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/json/json_reader.h"
 #include "src/core/lib/json/json_writer.h"
+#include "test/core/util/cmdline.h"
 
 typedef struct json_writer_userdata {
   FILE* out;
@@ -86,7 +86,7 @@ static void json_reader_string_add_char(void* userdata, uint32_t c) {
   json_reader_userdata* state = static_cast<json_reader_userdata*>(userdata);
   check_string(state, 1);
   GPR_ASSERT(c < 256);
-  state->scratchpad[state->string_len++] = (char)c;
+  state->scratchpad[state->string_len++] = static_cast<char>(c);
 }
 
 static void json_reader_string_add_utf32(void* userdata, uint32_t c) {
@@ -122,7 +122,7 @@ static uint32_t json_reader_read_char(void* userdata) {
 
   r = fgetc(state->in);
   if (r == EOF) r = GRPC_JSON_READ_CHAR_EOF;
-  return (uint32_t)r;
+  return static_cast<uint32_t>(r);
 }
 
 static void json_reader_container_begins(void* userdata, grpc_json_type type) {

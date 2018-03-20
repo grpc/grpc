@@ -16,7 +16,7 @@
 
 for p in python2.7 python2.6 python2 python not_found ; do 
 
-  python=`which $p || echo not_found`
+  python=$(which $p || echo not_found)
 
   if [ -x "$python" ] ; then
     break
@@ -25,7 +25,7 @@ for p in python2.7 python2.6 python2 python not_found ; do
 done
 
 if [ -x "$python" ] ; then
-  exec $python $@
+  exec "$python" "$@"
 else
   echo "No acceptable version of python found on the system"
   exit 1

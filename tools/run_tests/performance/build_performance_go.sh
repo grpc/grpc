@@ -15,7 +15,7 @@
 
 set -ex
 
-cd $(dirname $0)/../../..
+cd "$(dirname "$0")/../../.."
 
 export GOPATH=$(pwd)/../gopath
 
@@ -24,6 +24,6 @@ go get google.golang.org/grpc
 rm -rf "${GOPATH}/src/google.golang.org/grpc"
 
 # Get the revision of grpc-go we want to test
-git clone --recursive ../grpc-go ${GOPATH}/src/google.golang.org/grpc
+git clone --recursive ../grpc-go "${GOPATH}/src/google.golang.org/grpc"
 
-(cd ${GOPATH}/src/google.golang.org/grpc/benchmark/worker && go install)
+(cd "${GOPATH}/src/google.golang.org/grpc/benchmark/worker" && go install)

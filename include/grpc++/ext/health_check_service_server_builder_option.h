@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016 gRPC authors.
+ * Copyright 2018 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,32 +16,13 @@
  *
  */
 
+// DEPRECATED: The headers in include/grpc++ are deprecated. Please include the
+// headers in include/grpcpp instead. This header exists only for backwards
+// compatibility.
+
 #ifndef GRPCXX_EXT_HEALTH_CHECK_SERVICE_SERVER_BUILDER_OPTION_H
 #define GRPCXX_EXT_HEALTH_CHECK_SERVICE_SERVER_BUILDER_OPTION_H
 
-#include <memory>
-
-#include <grpc++/health_check_service_interface.h>
-#include <grpc++/impl/server_builder_option.h>
-#include <grpc++/support/config.h>
-
-namespace grpc {
-
-class HealthCheckServiceServerBuilderOption : public ServerBuilderOption {
- public:
-  /// The ownership of \a hc will be taken and transferred to the grpc server.
-  /// To explicitly disable default service, pass in a nullptr.
-  explicit HealthCheckServiceServerBuilderOption(
-      std::unique_ptr<HealthCheckServiceInterface> hc);
-  ~HealthCheckServiceServerBuilderOption() override {}
-  void UpdateArguments(ChannelArguments* args) override;
-  void UpdatePlugins(
-      std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins) override;
-
- private:
-  std::unique_ptr<HealthCheckServiceInterface> hc_;
-};
-
-}  // namespace grpc
+#include <grpcpp/ext/health_check_service_server_builder_option.h>
 
 #endif  // GRPCXX_EXT_HEALTH_CHECK_SERVICE_SERVER_BUILDER_OPTION_H

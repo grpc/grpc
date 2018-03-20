@@ -21,7 +21,8 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/useful.h>
+
+#include "src/core/lib/gpr/useful.h"
 
 const char* grpc_slice_split_mode_name(grpc_slice_split_mode mode) {
   switch (mode) {
@@ -44,8 +45,8 @@ void grpc_split_slices(grpc_slice_split_mode mode, grpc_slice* src_slices,
   switch (mode) {
     case GRPC_SLICE_SPLIT_IDENTITY:
       *dst_slice_count = src_slice_count;
-      *dst_slices =
-          (grpc_slice*)gpr_malloc(sizeof(grpc_slice) * src_slice_count);
+      *dst_slices = static_cast<grpc_slice*>(
+          gpr_malloc(sizeof(grpc_slice) * src_slice_count));
       for (i = 0; i < src_slice_count; i++) {
         (*dst_slices)[i] = src_slices[i];
         grpc_slice_ref((*dst_slices)[i]);
@@ -57,7 +58,7 @@ void grpc_split_slices(grpc_slice_split_mode mode, grpc_slice* src_slices,
       for (i = 0; i < src_slice_count; i++) {
         length += GRPC_SLICE_LENGTH(src_slices[i]);
       }
-      *dst_slices = (grpc_slice*)gpr_malloc(sizeof(grpc_slice));
+      *dst_slices = static_cast<grpc_slice*>(gpr_malloc(sizeof(grpc_slice)));
       **dst_slices = grpc_slice_malloc(length);
       length = 0;
       for (i = 0; i < src_slice_count; i++) {
@@ -73,7 +74,8 @@ void grpc_split_slices(grpc_slice_split_mode mode, grpc_slice* src_slices,
         length += GRPC_SLICE_LENGTH(src_slices[i]);
       }
       *dst_slice_count = length;
-      *dst_slices = (grpc_slice*)gpr_malloc(sizeof(grpc_slice) * length);
+      *dst_slices =
+          static_cast<grpc_slice*>(gpr_malloc(sizeof(grpc_slice) * length));
       length = 0;
       for (i = 0; i < src_slice_count; i++) {
         for (j = 0; j < GRPC_SLICE_LENGTH(src_slices[i]); j++) {
@@ -113,7 +115,7 @@ grpc_slice grpc_slice_merge(grpc_slice* slices, size_t nslices) {
   for (i = 0; i < nslices; i++) {
     if (GRPC_SLICE_LENGTH(slices[i]) + length > capacity) {
       capacity = GPR_MAX(capacity * 2, GRPC_SLICE_LENGTH(slices[i]) + length);
-      out = (uint8_t*)gpr_realloc(out, capacity);
+      out = static_cast<uint8_t*>(gpr_realloc(out, capacity));
     }
     memcpy(out + length, GRPC_SLICE_START_PTR(slices[i]),
            GRPC_SLICE_LENGTH(slices[i]));

@@ -25,7 +25,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include <grpc/support/useful.h>
+
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/transport/byte_stream.h"
 #include "test/core/end2end/cq_verifier.h"
 
@@ -47,14 +48,12 @@ static gpr_timespec n_seconds_from_now(int n) {
   return grpc_timeout_seconds_to_deadline(n);
 }
 
-static gpr_timespec five_seconds_from_now(void) {
-  return n_seconds_from_now(5);
-}
+static gpr_timespec one_second_from_now(void) { return n_seconds_from_now(1); }
 
 static void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
-    ev = grpc_completion_queue_next(cq, five_seconds_from_now(), nullptr);
+    ev = grpc_completion_queue_next(cq, one_second_from_now(), nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
@@ -108,7 +107,7 @@ static void test_invoke_request_with_flags(
   grpc_slice details;
   grpc_call_error expectation;
 
-  gpr_timespec deadline = five_seconds_from_now();
+  gpr_timespec deadline = one_second_from_now();
   c = grpc_channel_create_call(
       f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
       grpc_slice_from_static_string("/foo"),
@@ -150,7 +149,8 @@ static void test_invoke_request_with_flags(
   op->reserved = nullptr;
   op++;
   expectation = call_start_batch_expected_result;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
+                                nullptr);
   GPR_ASSERT(expectation == error);
 
   if (expectation == GRPC_CALL_OK) {

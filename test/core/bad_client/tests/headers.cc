@@ -34,6 +34,7 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
+  grpc_init();
 
   /* partial http2 header prefixes */
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, PFX_STR "\x00",
@@ -335,5 +336,6 @@ int main(int argc, char** argv) {
                            "15 seconds",
                            GRPC_BAD_CLIENT_DISCONNECT);
 
+  grpc_shutdown();
   return 0;
 }

@@ -80,9 +80,8 @@ class Rpc(object):
 
     def application_cancel(self):
         with self._condition:
-            self._abort(
-                grpc.StatusCode.CANCELLED,
-                'Cancelled by server-side application!')
+            self._abort(grpc.StatusCode.CANCELLED,
+                        'Cancelled by server-side application!')
 
     def application_exception_abort(self, exception):
         with self._condition:

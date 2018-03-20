@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/security/credentials/plugin/plugin_credentials.h"
 
 #include <string.h>
@@ -33,9 +35,9 @@
 
 grpc_core::TraceFlag grpc_plugin_credentials_trace(false, "plugin_credentials");
 
-static void plugin_destruct(grpc_exec_ctx* exec_ctx,
-                            grpc_call_credentials* creds) {
-  grpc_plugin_credentials* c = (grpc_plugin_credentials*)creds;
+static void plugin_destruct(grpc_call_credentials* creds) {
+  grpc_plugin_credentials* c =
+      reinterpret_cast<grpc_plugin_credentials*>(creds);
   gpr_mu_destroy(&c->mu);
   if (c->plugin.state != nullptr && c->plugin.destroy != nullptr) {
     c->plugin.destroy(c->plugin.state);
@@ -61,18 +63,17 @@ static void pending_request_remove_locked(
 // When this returns, r->cancelled indicates whether the request was
 // cancelled before completion.
 static void pending_request_complete(
-    grpc_exec_ctx* exec_ctx, grpc_plugin_credentials_pending_request* r) {
+    grpc_plugin_credentials_pending_request* r) {
   gpr_mu_lock(&r->creds->mu);
   if (!r->cancelled) pending_request_remove_locked(r->creds, r);
   gpr_mu_unlock(&r->creds->mu);
   // Ref to credentials not needed anymore.
-  grpc_call_credentials_unref(exec_ctx, &r->creds->base);
+  grpc_call_credentials_unref(&r->creds->base);
 }
 
 static grpc_error* process_plugin_result(
-    grpc_exec_ctx* exec_ctx, grpc_plugin_credentials_pending_request* r,
-    const grpc_metadata* md, size_t num_md, grpc_status_code status,
-    const char* error_details) {
+    grpc_plugin_credentials_pending_request* r, const grpc_metadata* md,
+    size_t num_md, grpc_status_code status, const char* error_details) {
   grpc_error* error = GRPC_ERROR_NONE;
   if (status != GRPC_STATUS_OK) {
     char* msg;
@@ -100,11 +101,11 @@ static grpc_error* process_plugin_result(
       error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Illegal metadata");
     } else {
       for (size_t i = 0; i < num_md; ++i) {
-        grpc_mdelem mdelem = grpc_mdelem_from_slices(
-            exec_ctx, grpc_slice_ref_internal(md[i].key),
-            grpc_slice_ref_internal(md[i].value));
+        grpc_mdelem mdelem =
+            grpc_mdelem_from_slices(grpc_slice_ref_internal(md[i].key),
+                                    grpc_slice_ref_internal(md[i].value));
         grpc_credentials_mdelem_array_add(r->md_array, mdelem);
-        GRPC_MDELEM_UNREF(exec_ctx, mdelem);
+        GRPC_MDELEM_UNREF(mdelem);
       }
     }
   }
@@ -117,11 +118,10 @@ static void plugin_md_request_metadata_ready(void* request,
                                              grpc_status_code status,
                                              const char* error_details) {
   /* called from application code */
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INITIALIZER(
-      GRPC_EXEC_CTX_FLAG_IS_FINISHED | GRPC_EXEC_CTX_FLAG_THREAD_RESOURCE_LOOP,
-      nullptr, nullptr);
+  grpc_core::ExecCtx exec_ctx(GRPC_EXEC_CTX_FLAG_IS_FINISHED |
+                              GRPC_EXEC_CTX_FLAG_THREAD_RESOURCE_LOOP);
   grpc_plugin_credentials_pending_request* r =
-      (grpc_plugin_credentials_pending_request*)request;
+      static_cast<grpc_plugin_credentials_pending_request*>(request);
   if (grpc_plugin_credentials_trace.enabled()) {
     gpr_log(GPR_INFO,
             "plugin_credentials[%p]: request %p: plugin returned "
@@ -129,12 +129,12 @@ static void plugin_md_request_metadata_ready(void* request,
             r->creds, r);
   }
   // Remove request from pending list if not previously cancelled.
-  pending_request_complete(&exec_ctx, r);
+  pending_request_complete(r);
   // If it has not been cancelled, process it.
   if (!r->cancelled) {
     grpc_error* error =
-        process_plugin_result(&exec_ctx, r, md, num_md, status, error_details);
-    GRPC_CLOSURE_SCHED(&exec_ctx, r->on_request_metadata, error);
+        process_plugin_result(r, md, num_md, status, error_details);
+    GRPC_CLOSURE_SCHED(r->on_request_metadata, error);
   } else if (grpc_plugin_credentials_trace.enabled()) {
     gpr_log(GPR_INFO,
             "plugin_credentials[%p]: request %p: plugin was previously "
@@ -142,23 +142,22 @@ static void plugin_md_request_metadata_ready(void* request,
             r->creds, r);
   }
   gpr_free(r);
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static bool plugin_get_request_metadata(grpc_exec_ctx* exec_ctx,
-                                        grpc_call_credentials* creds,
+static bool plugin_get_request_metadata(grpc_call_credentials* creds,
                                         grpc_polling_entity* pollent,
                                         grpc_auth_metadata_context context,
                                         grpc_credentials_mdelem_array* md_array,
                                         grpc_closure* on_request_metadata,
                                         grpc_error** error) {
-  grpc_plugin_credentials* c = (grpc_plugin_credentials*)creds;
+  grpc_plugin_credentials* c =
+      reinterpret_cast<grpc_plugin_credentials*>(creds);
   bool retval = true;  // Synchronous return.
   if (c->plugin.get_metadata != nullptr) {
     // Create pending_request object.
     grpc_plugin_credentials_pending_request* pending_request =
-        (grpc_plugin_credentials_pending_request*)gpr_zalloc(
-            sizeof(*pending_request));
+        static_cast<grpc_plugin_credentials_pending_request*>(
+            gpr_zalloc(sizeof(*pending_request)));
     pending_request->creds = c;
     pending_request->md_array = md_array;
     pending_request->on_request_metadata = on_request_metadata;
@@ -194,7 +193,7 @@ static bool plugin_get_request_metadata(grpc_exec_ctx* exec_ctx,
     }
     // Returned synchronously.
     // Remove request from pending list if not previously cancelled.
-    pending_request_complete(exec_ctx, pending_request);
+    pending_request_complete(pending_request);
     // If the request was cancelled, the error will have been returned
     // asynchronously by plugin_cancel_get_request_metadata(), so return
     // false.  Otherwise, process the result.
@@ -213,13 +212,13 @@ static bool plugin_get_request_metadata(grpc_exec_ctx* exec_ctx,
                 "synchronously",
                 c, pending_request);
       }
-      *error = process_plugin_result(exec_ctx, pending_request, creds_md,
-                                     num_creds_md, status, error_details);
+      *error = process_plugin_result(pending_request, creds_md, num_creds_md,
+                                     status, error_details);
     }
     // Clean up.
     for (size_t i = 0; i < num_creds_md; ++i) {
-      grpc_slice_unref_internal(exec_ctx, creds_md[i].key);
-      grpc_slice_unref_internal(exec_ctx, creds_md[i].value);
+      grpc_slice_unref_internal(creds_md[i].key);
+      grpc_slice_unref_internal(creds_md[i].value);
     }
     gpr_free((void*)error_details);
     gpr_free(pending_request);
@@ -228,9 +227,10 @@ static bool plugin_get_request_metadata(grpc_exec_ctx* exec_ctx,
 }
 
 static void plugin_cancel_get_request_metadata(
-    grpc_exec_ctx* exec_ctx, grpc_call_credentials* creds,
-    grpc_credentials_mdelem_array* md_array, grpc_error* error) {
-  grpc_plugin_credentials* c = (grpc_plugin_credentials*)creds;
+    grpc_call_credentials* creds, grpc_credentials_mdelem_array* md_array,
+    grpc_error* error) {
+  grpc_plugin_credentials* c =
+      reinterpret_cast<grpc_plugin_credentials*>(creds);
   gpr_mu_lock(&c->mu);
   for (grpc_plugin_credentials_pending_request* pending_request =
            c->pending_requests;
@@ -241,7 +241,7 @@ static void plugin_cancel_get_request_metadata(
                 pending_request);
       }
       pending_request->cancelled = true;
-      GRPC_CLOSURE_SCHED(exec_ctx, pending_request->on_request_metadata,
+      GRPC_CLOSURE_SCHED(pending_request->on_request_metadata,
                          GRPC_ERROR_REF(error));
       pending_request_remove_locked(c, pending_request);
       break;
@@ -257,7 +257,8 @@ static grpc_call_credentials_vtable plugin_vtable = {
 
 grpc_call_credentials* grpc_metadata_credentials_create_from_plugin(
     grpc_metadata_credentials_plugin plugin, void* reserved) {
-  grpc_plugin_credentials* c = (grpc_plugin_credentials*)gpr_zalloc(sizeof(*c));
+  grpc_plugin_credentials* c =
+      static_cast<grpc_plugin_credentials*>(gpr_zalloc(sizeof(*c)));
   GRPC_API_TRACE("grpc_metadata_credentials_create_from_plugin(reserved=%p)", 1,
                  (reserved));
   GPR_ASSERT(reserved == nullptr);

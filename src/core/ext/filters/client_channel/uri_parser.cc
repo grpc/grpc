@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/filters/client_channel/uri_parser.h"
 
 #include <string.h>
@@ -23,13 +25,12 @@
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/support/string.h"
 
 /** a size_t default value... maps to all 1's */
 #define NOT_SET (~(size_t)0)
@@ -45,7 +46,7 @@ static grpc_uri* bad_uri(const char* uri_text, size_t pos, const char* section,
     gpr_log(GPR_ERROR, "%s%s'", line_prefix, uri_text);
     gpr_free(line_prefix);
 
-    line_prefix = (char*)gpr_malloc(pfx_len + 1);
+    line_prefix = static_cast<char*>(gpr_malloc(pfx_len + 1));
     memset(line_prefix, ' ', pfx_len);
     line_prefix[pfx_len] = 0;
     gpr_log(GPR_ERROR, "%s^ here", line_prefix);
@@ -56,8 +57,8 @@ static grpc_uri* bad_uri(const char* uri_text, size_t pos, const char* section,
 }
 
 /** Returns a copy of percent decoded \a src[begin, end) */
-static char* decode_and_copy_component(grpc_exec_ctx* exec_ctx, const char* src,
-                                       size_t begin, size_t end) {
+static char* decode_and_copy_component(const char* src, size_t begin,
+                                       size_t end) {
   grpc_slice component =
       (begin == NOT_SET || end == NOT_SET)
           ? grpc_empty_slice()
@@ -65,8 +66,8 @@ static char* decode_and_copy_component(grpc_exec_ctx* exec_ctx, const char* src,
   grpc_slice decoded_component =
       grpc_permissive_percent_decode_slice(component);
   char* out = grpc_dump_slice(decoded_component, GPR_DUMP_ASCII);
-  grpc_slice_unref_internal(exec_ctx, component);
-  grpc_slice_unref_internal(exec_ctx, decoded_component);
+  grpc_slice_unref_internal(component);
+  grpc_slice_unref_internal(decoded_component);
   return out;
 }
 
@@ -159,7 +160,7 @@ static void parse_query_parts(grpc_uri* uri) {
   gpr_string_split(uri->query, QUERY_PARTS_SEPARATOR, &uri->query_parts,
                    &uri->num_query_parts);
   uri->query_parts_values =
-      (char**)gpr_malloc(uri->num_query_parts * sizeof(char**));
+      static_cast<char**>(gpr_malloc(uri->num_query_parts * sizeof(char**)));
   for (size_t i = 0; i < uri->num_query_parts; i++) {
     char** query_param_parts;
     size_t num_query_param_parts;
@@ -184,8 +185,7 @@ static void parse_query_parts(grpc_uri* uri) {
   }
 }
 
-grpc_uri* grpc_uri_parse(grpc_exec_ctx* exec_ctx, const char* uri_text,
-                         bool suppress_errors) {
+grpc_uri* grpc_uri_parse(const char* uri_text, bool suppress_errors) {
   grpc_uri* uri;
   size_t scheme_begin = 0;
   size_t scheme_end = NOT_SET;
@@ -272,17 +272,14 @@ grpc_uri* grpc_uri_parse(grpc_exec_ctx* exec_ctx, const char* uri_text,
     fragment_end = i;
   }
 
-  uri = (grpc_uri*)gpr_zalloc(sizeof(*uri));
-  uri->scheme =
-      decode_and_copy_component(exec_ctx, uri_text, scheme_begin, scheme_end);
-  uri->authority = decode_and_copy_component(exec_ctx, uri_text,
-                                             authority_begin, authority_end);
-  uri->path =
-      decode_and_copy_component(exec_ctx, uri_text, path_begin, path_end);
-  uri->query =
-      decode_and_copy_component(exec_ctx, uri_text, query_begin, query_end);
-  uri->fragment = decode_and_copy_component(exec_ctx, uri_text, fragment_begin,
-                                            fragment_end);
+  uri = static_cast<grpc_uri*>(gpr_zalloc(sizeof(*uri)));
+  uri->scheme = decode_and_copy_component(uri_text, scheme_begin, scheme_end);
+  uri->authority =
+      decode_and_copy_component(uri_text, authority_begin, authority_end);
+  uri->path = decode_and_copy_component(uri_text, path_begin, path_end);
+  uri->query = decode_and_copy_component(uri_text, query_begin, query_end);
+  uri->fragment =
+      decode_and_copy_component(uri_text, fragment_begin, fragment_end);
   parse_query_parts(uri);
 
   return uri;

@@ -16,20 +16,20 @@
  *
  */
 
-#include <grpc++/server_context.h>
+#include <grpcpp/server_context.h>
 
 #include <algorithm>
 #include <mutex>
 #include <utility>
 
-#include <grpc++/completion_queue.h>
-#include <grpc++/impl/call.h>
-#include <grpc++/support/time.h>
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/load_reporting.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpcpp/completion_queue.h>
+#include <grpcpp/impl/call.h>
+#include <grpcpp/support/time.h>
 
 #include "src/core/lib/surface/call.h"
 
@@ -190,6 +190,7 @@ bool ServerContext::IsCancelled() const {
 
 void ServerContext::set_compression_algorithm(
     grpc_compression_algorithm algorithm) {
+  compression_algorithm_ = algorithm;
   const char* algorithm_name = nullptr;
   if (!grpc_compression_algorithm_name(algorithm, &algorithm_name)) {
     gpr_log(GPR_ERROR, "Name for compression algorithm '%d' unknown.",

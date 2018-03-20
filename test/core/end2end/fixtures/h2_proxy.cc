@@ -21,15 +21,14 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/thd.h>
-#include <grpc/support/useful.h>
+
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/connected_channel.h"
+#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
 #include "test/core/end2end/fixtures/proxy.h"
@@ -49,7 +48,17 @@ static grpc_server* create_proxy_server(const char* port,
 
 static grpc_channel* create_proxy_client(const char* target,
                                          grpc_channel_args* client_args) {
-  return grpc_insecure_channel_create(target, client_args, nullptr);
+  // Disable retries in proxy client.
+  grpc_arg arg;
+  arg.type = GRPC_ARG_INTEGER;
+  arg.key = const_cast<char*>(GRPC_ARG_ENABLE_RETRIES);
+  arg.value.integer = 0;
+  grpc_channel_args* new_args =
+      grpc_channel_args_copy_and_add(client_args, &arg, 1);
+  grpc_channel* channel =
+      grpc_insecure_channel_create(target, new_args, nullptr);
+  grpc_channel_args_destroy(new_args);
+  return channel;
 }
 
 static const grpc_end2end_proxy_def proxy_def = {create_proxy_server,

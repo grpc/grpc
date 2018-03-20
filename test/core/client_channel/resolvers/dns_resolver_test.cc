@@ -27,49 +27,46 @@
 
 static grpc_combiner* g_combiner;
 
-static void test_succeeds(grpc_resolver_factory* factory, const char* string) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_uri* uri = grpc_uri_parse(&exec_ctx, string, 0);
-  grpc_resolver_args args;
-  grpc_resolver* resolver;
+static void test_succeeds(grpc_core::ResolverFactory* factory,
+                          const char* string) {
   gpr_log(GPR_DEBUG, "test: '%s' should be valid for '%s'", string,
-          factory->vtable->scheme);
+          factory->scheme());
+  grpc_core::ExecCtx exec_ctx;
+  grpc_uri* uri = grpc_uri_parse(string, 0);
   GPR_ASSERT(uri);
-  memset(&args, 0, sizeof(args));
+  grpc_core::ResolverArgs args;
   args.uri = uri;
   args.combiner = g_combiner;
-  resolver = grpc_resolver_factory_create_resolver(&exec_ctx, factory, &args);
+  grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
+      factory->CreateResolver(args);
   GPR_ASSERT(resolver != nullptr);
-  GRPC_RESOLVER_UNREF(&exec_ctx, resolver, "test_succeeds");
   grpc_uri_destroy(uri);
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
-static void test_fails(grpc_resolver_factory* factory, const char* string) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_uri* uri = grpc_uri_parse(&exec_ctx, string, 0);
-  grpc_resolver_args args;
-  grpc_resolver* resolver;
+static void test_fails(grpc_core::ResolverFactory* factory,
+                       const char* string) {
   gpr_log(GPR_DEBUG, "test: '%s' should be invalid for '%s'", string,
-          factory->vtable->scheme);
+          factory->scheme());
+  grpc_core::ExecCtx exec_ctx;
+  grpc_uri* uri = grpc_uri_parse(string, 0);
   GPR_ASSERT(uri);
-  memset(&args, 0, sizeof(args));
+  grpc_core::ResolverArgs args;
   args.uri = uri;
   args.combiner = g_combiner;
-  resolver = grpc_resolver_factory_create_resolver(&exec_ctx, factory, &args);
+  grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
+      factory->CreateResolver(args);
   GPR_ASSERT(resolver == nullptr);
   grpc_uri_destroy(uri);
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 int main(int argc, char** argv) {
-  grpc_resolver_factory* dns;
   grpc_test_init(argc, argv);
   grpc_init();
 
   g_combiner = grpc_combiner_create();
 
-  dns = grpc_resolver_factory_lookup("dns");
+  grpc_core::ResolverFactory* dns =
+      grpc_core::ResolverRegistry::LookupResolverFactory("dns");
 
   test_succeeds(dns, "dns:10.2.1.1");
   test_succeeds(dns, "dns:10.2.1.1:1234");
@@ -80,11 +77,9 @@ int main(int argc, char** argv) {
     test_fails(dns, "ipv4://8.8.8.8/8.8.8.8:8888");
   }
 
-  grpc_resolver_factory_unref(dns);
   {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    GRPC_COMBINER_UNREF(&exec_ctx, g_combiner, "test");
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_core::ExecCtx exec_ctx;
+    GRPC_COMBINER_UNREF(g_combiner, "test");
   }
   grpc_shutdown();
 

@@ -18,7 +18,7 @@
 
 /* Benchmark arenas */
 
-#include "src/core/lib/support/arena.h"
+#include "src/core/lib/gpr/arena.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "third_party/benchmark/include/benchmark/benchmark.h"
 

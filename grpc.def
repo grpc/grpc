@@ -1,14 +1,13 @@
 EXPORTS
+    grpc_compression_algorithm_is_message
+    grpc_compression_algorithm_is_stream
     grpc_compression_algorithm_parse
     grpc_compression_algorithm_name
-    grpc_stream_compression_algorithm_name
     grpc_compression_algorithm_for_level
-    grpc_stream_compression_algorithm_for_level
     grpc_compression_options_init
     grpc_compression_options_enable_algorithm
     grpc_compression_options_disable_algorithm
     grpc_compression_options_is_algorithm_enabled
-    grpc_compression_options_is_stream_compression_algorithm_enabled
     grpc_metadata_array_init
     grpc_metadata_array_destroy
     grpc_call_details_init
@@ -28,10 +27,6 @@ EXPORTS
     grpc_completion_queue_destroy
     grpc_completion_queue_thread_local_cache_init
     grpc_completion_queue_thread_local_cache_flush
-    grpc_alarm_create
-    grpc_alarm_set
-    grpc_alarm_cancel
-    grpc_alarm_destroy
     grpc_channel_check_connectivity_state
     grpc_channel_num_external_connectivity_watchers
     grpc_channel_watch_connectivity_state
@@ -181,42 +176,8 @@ EXPORTS
     gpr_free_aligned
     gpr_set_allocation_functions
     gpr_get_allocation_functions
-    gpr_avl_create
-    gpr_avl_ref
-    gpr_avl_unref
-    gpr_avl_add
-    gpr_avl_remove
-    gpr_avl_get
-    gpr_avl_maybe_get
-    gpr_avl_is_empty
-    gpr_cmdline_create
-    gpr_cmdline_add_int
-    gpr_cmdline_add_flag
-    gpr_cmdline_add_string
-    gpr_cmdline_on_extra_arg
-    gpr_cmdline_set_survive_failure
-    gpr_cmdline_parse
-    gpr_cmdline_destroy
-    gpr_cmdline_usage_string
     gpr_cpu_num_cores
     gpr_cpu_current_cpu
-    gpr_histogram_create
-    gpr_histogram_destroy
-    gpr_histogram_add
-    gpr_histogram_merge
-    gpr_histogram_percentile
-    gpr_histogram_mean
-    gpr_histogram_stddev
-    gpr_histogram_variance
-    gpr_histogram_maximum
-    gpr_histogram_minimum
-    gpr_histogram_count
-    gpr_histogram_sum
-    gpr_histogram_sum_of_squares
-    gpr_histogram_get_contents
-    gpr_histogram_merge_contents
-    gpr_join_host_port
-    gpr_split_host_port
     gpr_log_severity_string
     gpr_log
     gpr_log_message
@@ -226,11 +187,6 @@ EXPORTS
     gpr_format_message
     gpr_strdup
     gpr_asprintf
-    gpr_subprocess_binary_extension
-    gpr_subprocess_create
-    gpr_subprocess_destroy
-    gpr_subprocess_join
-    gpr_subprocess_interrupt
     gpr_mu_init
     gpr_mu_destroy
     gpr_mu_lock
@@ -255,14 +211,7 @@ EXPORTS
     gpr_stats_init
     gpr_stats_inc
     gpr_stats_read
-    gpr_thd_new
-    gpr_thd_options_default
-    gpr_thd_options_set_detached
-    gpr_thd_options_set_joinable
-    gpr_thd_options_is_detached
-    gpr_thd_options_is_joinable
     gpr_thd_currentid
-    gpr_thd_join
     gpr_time_0
     gpr_inf_future
     gpr_inf_past

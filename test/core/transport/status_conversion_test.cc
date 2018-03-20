@@ -22,12 +22,11 @@
 
 #define GRPC_STATUS_TO_HTTP2_ERROR(a, b) \
   GPR_ASSERT(grpc_status_to_http2_error(a) == (b))
-#define HTTP2_ERROR_TO_GRPC_STATUS(a, deadline, b)                           \
-  do {                                                                       \
-    grpc_exec_ctx my_exec_ctx = GRPC_EXEC_CTX_INIT;                          \
-    GPR_ASSERT(grpc_http2_error_to_grpc_status(&my_exec_ctx, a, deadline) == \
-               (b));                                                         \
-    grpc_exec_ctx_finish(&my_exec_ctx);                                      \
+#define HTTP2_ERROR_TO_GRPC_STATUS(a, deadline, b)                   \
+  do {                                                               \
+    grpc_core::ExecCtx exec_ctx;                                     \
+    GPR_ASSERT(grpc_http2_error_to_grpc_status(a, deadline) == (b)); \
+                                                                     \
   } while (0)
 #define GRPC_STATUS_TO_HTTP2_STATUS(a, b) \
   GPR_ASSERT(grpc_status_to_http2_status(a) == (b))

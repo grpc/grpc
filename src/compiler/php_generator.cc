@@ -18,10 +18,12 @@
 
 #include <map>
 
+#include <google/protobuf/compiler/php/php_generator.h>
 #include "src/compiler/config.h"
 #include "src/compiler/generator_helpers.h"
 #include "src/compiler/php_generator_helpers.h"
 
+using google::protobuf::compiler::php::GeneratedClassName;
 using grpc::protobuf::Descriptor;
 using grpc::protobuf::FileDescriptor;
 using grpc::protobuf::MethodDescriptor;
@@ -55,8 +57,10 @@ grpc::string MessageIdentifierName(const grpc::string& name,
                                    const FileDescriptor* file) {
   std::vector<grpc::string> tokens = grpc_generator::tokenize(name, ".");
   std::ostringstream oss;
-  oss << PackageName(file) << "\\"
-      << grpc_generator::CapitalizeFirstLetter(tokens[tokens.size() - 1]);
+  if (PackageName(file) != "") {
+    oss << PackageName(file) << "\\";
+  }
+  oss << grpc_generator::CapitalizeFirstLetter(tokens[tokens.size() - 1]);
   return oss.str();
 }
 
@@ -67,9 +71,9 @@ void PrintMethod(const MethodDescriptor* method, Printer* out) {
   vars["service_name"] = method->service()->full_name();
   vars["name"] = method->name();
   vars["input_type_id"] =
-      MessageIdentifierName(input_type->full_name(), input_type->file());
-  vars["output_type_id"] =
-      MessageIdentifierName(output_type->full_name(), output_type->file());
+      MessageIdentifierName(GeneratedClassName(input_type), input_type->file());
+  vars["output_type_id"] = MessageIdentifierName(
+      GeneratedClassName(output_type), output_type->file());
 
   out->Print("/**\n");
   out->Print(GetPHPComments(method, " *").c_str());

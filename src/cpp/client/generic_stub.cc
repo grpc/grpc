@@ -16,9 +16,9 @@
  *
  */
 
-#include <grpc++/generic/generic_stub.h>
+#include <grpcpp/generic/generic_stub.h>
 
-#include <grpc++/impl/rpc_method.h>
+#include <grpcpp/impl/rpc_method.h>
 
 namespace grpc {
 

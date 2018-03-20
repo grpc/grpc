@@ -21,17 +21,16 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/thd.h>
-#include <grpc/support/useful.h>
+
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/connected_channel.h"
-#include "src/core/lib/support/env.h"
+#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/server.h"
 #include "test/core/end2end/fixtures/http_proxy_fixture.h"
@@ -72,11 +71,12 @@ void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
   /* If testing for proxy auth, add credentials to proxy uri */
   const grpc_arg* proxy_auth_arg =
       grpc_channel_args_find(client_args, GRPC_ARG_HTTP_PROXY_AUTH_CREDS);
-  if (proxy_auth_arg == nullptr || proxy_auth_arg->type != GRPC_ARG_STRING) {
+  const char* proxy_auth_str = grpc_channel_arg_get_string(proxy_auth_arg);
+  if (proxy_auth_str == nullptr) {
     gpr_asprintf(&proxy_uri, "http://%s",
                  grpc_end2end_http_proxy_get_proxy_name(ffd->proxy));
   } else {
-    gpr_asprintf(&proxy_uri, "http://%s@%s", proxy_auth_arg->value.string,
+    gpr_asprintf(&proxy_uri, "http://%s@%s", proxy_auth_str,
                  grpc_end2end_http_proxy_get_proxy_name(ffd->proxy));
   }
   gpr_setenv("http_proxy", proxy_uri);

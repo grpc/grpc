@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/census.h>
 #include <grpc/grpc.h>
 #include "src/core/lib/surface/api_trace.h"
@@ -31,5 +33,6 @@ void grpc_census_call_set_context(grpc_call* call, census_context* context) {
 
 census_context* grpc_census_call_get_context(grpc_call* call) {
   GRPC_API_TRACE("grpc_census_call_get_context(call=%p)", 1, (call));
-  return (census_context*)grpc_call_context_get(call, GRPC_CONTEXT_TRACING);
+  return static_cast<census_context*>(
+      grpc_call_context_get(call, GRPC_CONTEXT_TRACING));
 }

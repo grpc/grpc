@@ -16,35 +16,34 @@
  *
  */
 
-#include <grpc++/channel.h>
+#include <grpcpp/channel.h>
 
 #include <chrono>
 #include <condition_variable>
 #include <memory>
 #include <mutex>
 
-#include <grpc++/client_context.h>
-#include <grpc++/completion_queue.h>
-#include <grpc++/impl/call.h>
-#include <grpc++/impl/codegen/completion_queue_tag.h>
-#include <grpc++/impl/grpc_library.h>
-#include <grpc++/impl/rpc_method.h>
-#include <grpc++/security/credentials.h>
-#include <grpc++/support/channel_arguments.h>
-#include <grpc++/support/config.h>
-#include <grpc++/support/status.h>
-#include <grpc++/support/time.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/thd.h>
 #include <grpc/support/time.h>
-#include <grpc/support/useful.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/completion_queue.h>
+#include <grpcpp/impl/call.h>
+#include <grpcpp/impl/codegen/completion_queue_tag.h>
+#include <grpcpp/impl/grpc_library.h>
+#include <grpcpp/impl/rpc_method.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/support/channel_arguments.h>
+#include <grpcpp/support/config.h>
+#include <grpcpp/support/status.h>
+#include <grpcpp/support/time.h>
+#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/profiling/timers.h"
-#include "src/core/lib/support/env.h"
-#include "src/core/lib/support/string.h"
 
 namespace grpc {
 

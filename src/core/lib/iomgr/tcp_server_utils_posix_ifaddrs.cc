@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_HAVE_IFADDRS
@@ -66,12 +68,13 @@ static grpc_error* get_unused_port(int* port) {
   if (dsmode == GRPC_DSMODE_IPV4) {
     grpc_sockaddr_make_wildcard4(0, &wild);
   }
-  if (bind(fd, (const struct sockaddr*)wild.addr, (socklen_t)wild.len) != 0) {
+  if (bind(fd, reinterpret_cast<const grpc_sockaddr*>(wild.addr), wild.len) !=
+      0) {
     err = GRPC_OS_ERROR(errno, "bind");
     close(fd);
     return err;
   }
-  if (getsockname(fd, (struct sockaddr*)wild.addr, (socklen_t*)&wild.len) !=
+  if (getsockname(fd, reinterpret_cast<grpc_sockaddr*>(wild.addr), &wild.len) !=
       0) {
     err = GRPC_OS_ERROR(errno, "getsockname");
     close(fd);
@@ -116,9 +119,9 @@ grpc_error* grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
     if (ifa_it->ifa_addr == nullptr) {
       continue;
     } else if (ifa_it->ifa_addr->sa_family == AF_INET) {
-      addr.len = sizeof(struct sockaddr_in);
+      addr.len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
     } else if (ifa_it->ifa_addr->sa_family == AF_INET6) {
-      addr.len = sizeof(struct sockaddr_in6);
+      addr.len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in6));
     } else {
       continue;
     }

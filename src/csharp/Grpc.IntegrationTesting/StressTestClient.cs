@@ -243,7 +243,7 @@ namespace Grpc.IntegrationTesting
             const string GaugeName = "csharp_overall_qps";
 
             readonly Histogram histogram;
-            readonly WallClockStopwatch wallClockStopwatch = new WallClockStopwatch();
+            readonly TimeStats timeStats = new TimeStats();
 
             public MetricsServiceImpl(Histogram histogram)
             {
@@ -280,9 +280,9 @@ namespace Grpc.IntegrationTesting
             long GetQpsAndReset()
             {
                 var snapshot = histogram.GetSnapshot(true);
-                var elapsedSnapshot = wallClockStopwatch.GetElapsedSnapshot(true);
+                var timeSnapshot = timeStats.GetSnapshot(true);
 
-                return (long) (snapshot.Count / elapsedSnapshot.TotalSeconds);
+                return (long) (snapshot.Count / timeSnapshot.WallClockTime.TotalSeconds);
             }
         }
     }

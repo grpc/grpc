@@ -25,27 +25,32 @@ import sys
 import time
 import uuid
 
-
-gcp_utils_dir = os.path.abspath(os.path.join(
-    os.path.dirname(__file__), '../../gcp/utils'))
+gcp_utils_dir = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '../../gcp/utils'))
 sys.path.append(gcp_utils_dir)
 import big_query_utils
 
+_PROJECT_ID = 'grpc-testing'
 
-_PROJECT_ID='grpc-testing'
 
 def _patch_results_table(dataset_id, table_id):
-  bq = big_query_utils.create_big_query()
-  with open(os.path.dirname(__file__) + '/scenario_result_schema.json', 'r') as f:
-    table_schema = json.loads(f.read())
-  desc = 'Results of performance benchmarks.'
-  return big_query_utils.patch_table(bq, _PROJECT_ID, dataset_id,
-                                     table_id, table_schema)
+    bq = big_query_utils.create_big_query()
+    with open(os.path.dirname(__file__) + '/scenario_result_schema.json',
+              'r') as f:
+        table_schema = json.loads(f.read())
+    desc = 'Results of performance benchmarks.'
+    return big_query_utils.patch_table(bq, _PROJECT_ID, dataset_id, table_id,
+                                       table_schema)
 
 
-argp = argparse.ArgumentParser(description='Patch schema of scenario results table.')
-argp.add_argument('--bq_result_table', required=True, default=None, type=str,
-                  help='Bigquery "dataset.table" to patch.')
+argp = argparse.ArgumentParser(
+    description='Patch schema of scenario results table.')
+argp.add_argument(
+    '--bq_result_table',
+    required=True,
+    default=None,
+    type=str,
+    help='Bigquery "dataset.table" to patch.')
 
 args = argp.parse_args()
 

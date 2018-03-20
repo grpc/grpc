@@ -19,17 +19,15 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_METADATA_H
 #define GRPC_CORE_LIB_TRANSPORT_METADATA_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
-#include <grpc/support/useful.h>
 
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/useful.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_metadata;
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /* This file provides a mechanism for tracking metadata through the grpc stack.
    It's not intended for consumption outside of the library.
@@ -111,20 +109,18 @@ struct grpc_mdelem {
                               (uintptr_t)GRPC_MDELEM_STORAGE_INTERNED_BIT))
 
 /* Unrefs the slices. */
-grpc_mdelem grpc_mdelem_from_slices(grpc_exec_ctx* exec_ctx, grpc_slice key,
-                                    grpc_slice value);
+grpc_mdelem grpc_mdelem_from_slices(grpc_slice key, grpc_slice value);
 
 /* Cheaply convert a grpc_metadata to a grpc_mdelem; may use the grpc_metadata
    object as backing storage (so lifetimes should align) */
-grpc_mdelem grpc_mdelem_from_grpc_metadata(grpc_exec_ctx* exec_ctx,
-                                           grpc_metadata* metadata);
+grpc_mdelem grpc_mdelem_from_grpc_metadata(grpc_metadata* metadata);
 
 /* Does not unref the slices; if a new non-interned mdelem is needed, allocates
    one if compatible_external_backing_store is NULL, or uses
    compatible_external_backing_store if it is non-NULL (in which case it's the
    users responsibility to ensure that it outlives usage) */
 grpc_mdelem grpc_mdelem_create(
-    grpc_exec_ctx* exec_ctx, grpc_slice key, grpc_slice value,
+    grpc_slice key, grpc_slice value,
     grpc_mdelem_data* compatible_external_backing_store);
 
 bool grpc_mdelem_eq(grpc_mdelem a, grpc_mdelem b);
@@ -140,16 +136,14 @@ void* grpc_mdelem_set_user_data(grpc_mdelem md, void (*destroy_func)(void*),
 
 #ifndef NDEBUG
 #define GRPC_MDELEM_REF(s) grpc_mdelem_ref((s), __FILE__, __LINE__)
-#define GRPC_MDELEM_UNREF(exec_ctx, s) \
-  grpc_mdelem_unref((exec_ctx), (s), __FILE__, __LINE__)
+#define GRPC_MDELEM_UNREF(s) grpc_mdelem_unref((s), __FILE__, __LINE__)
 grpc_mdelem grpc_mdelem_ref(grpc_mdelem md, const char* file, int line);
-void grpc_mdelem_unref(grpc_exec_ctx* exec_ctx, grpc_mdelem md,
-                       const char* file, int line);
+void grpc_mdelem_unref(grpc_mdelem md, const char* file, int line);
 #else
 #define GRPC_MDELEM_REF(s) grpc_mdelem_ref((s))
-#define GRPC_MDELEM_UNREF(exec_ctx, s) grpc_mdelem_unref((exec_ctx), (s))
+#define GRPC_MDELEM_UNREF(s) grpc_mdelem_unref((s))
 grpc_mdelem grpc_mdelem_ref(grpc_mdelem md);
-void grpc_mdelem_unref(grpc_exec_ctx* exec_ctx, grpc_mdelem md);
+void grpc_mdelem_unref(grpc_mdelem md);
 #endif
 
 #define GRPC_MDKEY(md) (GRPC_MDELEM_DATA(md)->key)
@@ -166,10 +160,6 @@ void grpc_mdelem_unref(grpc_exec_ctx* exec_ctx, grpc_mdelem md);
 #define GRPC_MDSTR_KV_HASH(k_hash, v_hash) (GPR_ROTL((k_hash), 2) ^ (v_hash))
 
 void grpc_mdctx_global_init(void);
-void grpc_mdctx_global_shutdown(grpc_exec_ctx* exec_ctx);
-
-#ifdef __cplusplus
-}
-#endif
+void grpc_mdctx_global_shutdown();
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_METADATA_H */

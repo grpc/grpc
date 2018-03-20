@@ -21,6 +21,8 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_SETTINGS_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_SETTINGS_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -36,9 +38,6 @@ typedef enum {
 
 #define GRPC_CHTTP2_NUM_SETTINGS 7
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 extern const uint16_t grpc_setting_id_to_wire_id[];
 
 bool grpc_wire_id_to_setting_id(uint32_t wire_id, grpc_chttp2_setting_id* out);
@@ -59,9 +58,5 @@ typedef struct {
 
 extern const grpc_chttp2_setting_parameters
     grpc_chttp2_settings_parameters[GRPC_CHTTP2_NUM_SETTINGS];
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_SETTINGS_H */

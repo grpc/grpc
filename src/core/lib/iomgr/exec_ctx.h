@@ -19,14 +19,14 @@
 #ifndef GRPC_CORE_LIB_IOMGR_EXEC_CTX_H
 #define GRPC_CORE_LIB_IOMGR_EXEC_CTX_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/support/atm.h>
 #include <grpc/support/cpu.h>
+#include <grpc/support/log.h>
 
+#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/iomgr/closure.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 typedef gpr_atm grpc_millis;
 
@@ -45,87 +45,166 @@ typedef struct grpc_combiner grpc_combiner;
    should be given to not delete said call/channel from this exec_ctx */
 #define GRPC_EXEC_CTX_FLAG_THREAD_RESOURCE_LOOP 2
 
+extern grpc_closure_scheduler* grpc_schedule_on_exec_ctx;
+
+gpr_timespec grpc_millis_to_timespec(grpc_millis millis, gpr_clock_type clock);
+grpc_millis grpc_timespec_to_millis_round_down(gpr_timespec timespec);
+grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec timespec);
+
+namespace grpc_core {
 /** Execution context.
  *  A bag of data that collects information along a callstack.
- *  Generally created at public API entry points, and passed down as
- *  pointer to child functions that manipulate it.
+ *  It is created on the stack at public API entry points, and stored internally
+ *  as a thread-local variable.
+ *
+ *  Generally, to create an exec_ctx instance, add the following line at the top
+ *  of the public API entry point or at the start of a thread's work function :
+ *
+ *  grpc_core::ExecCtx exec_ctx;
+ *
+ *  Access the created ExecCtx instance using :
+ *  grpc_core::ExecCtx::Get()
  *
  *  Specific responsibilities (this may grow in the future):
  *  - track a list of work that needs to be delayed until the top of the
  *    call stack (this provides a convenient mechanism to run callbacks
  *    without worrying about locking issues)
- *  - provide a decision maker (via grpc_exec_ctx_ready_to_finish) that provides
+ *  - provide a decision maker (via IsReadyToFinish) that provides a
  *    signal as to whether a borrowed thread should continue to do work or
  *    should actively try to finish up and get this thread back to its owner
  *
  *  CONVENTIONS:
  *  - Instance of this must ALWAYS be constructed on the stack, never
  *    heap allocated.
- *  - Instances and pointers to them must always be called exec_ctx.
- *  - Instances are always passed as the first argument to a function that
- *    takes it, and always as a pointer (grpc_exec_ctx is never copied).
+ *  - Exactly one instance of ExecCtx must be created per thread. Instances must
+ *    always be called exec_ctx.
+ *  - Do not pass exec_ctx as a parameter to a function. Always access it using
+ *    grpc_core::ExecCtx::Get()
  */
-struct grpc_exec_ctx {
-  grpc_closure_list closure_list;
-  /** currently active combiner: updated only via combiner.c */
-  grpc_combiner* active_combiner;
-  /** last active combiner in the active combiner list */
-  grpc_combiner* last_combiner;
-  uintptr_t flags;
-  unsigned starting_cpu;
-  void* check_ready_to_finish_arg;
-  bool (*check_ready_to_finish)(grpc_exec_ctx* exec_ctx, void* arg);
+class ExecCtx {
+ public:
+  /** Default Constructor */
 
-  bool now_is_valid;
-  grpc_millis now;
-};
+  ExecCtx() : flags_(GRPC_EXEC_CTX_FLAG_IS_FINISHED) { Set(this); }
 
-/* initializer for grpc_exec_ctx:
-   prefer to use GRPC_EXEC_CTX_INIT whenever possible */
-#define GRPC_EXEC_CTX_INITIALIZER(flags, finish_check, finish_check_arg) \
-  {                                                                      \
-    GRPC_CLOSURE_LIST_INIT, NULL, NULL, flags, gpr_cpu_current_cpu(),    \
-        finish_check_arg, finish_check, false, 0                         \
+  /** Parameterised Constructor */
+  ExecCtx(uintptr_t fl) : flags_(fl) { Set(this); }
+
+  /** Destructor */
+  virtual ~ExecCtx() {
+    flags_ |= GRPC_EXEC_CTX_FLAG_IS_FINISHED;
+    Flush();
+    Set(last_exec_ctx_);
   }
 
-/* initialize an execution context at the top level of an API call into grpc
-   (this is safe to use elsewhere, though possibly not as efficient) */
-#define GRPC_EXEC_CTX_INIT \
-  GRPC_EXEC_CTX_INITIALIZER(GRPC_EXEC_CTX_FLAG_IS_FINISHED, NULL, NULL)
+  /** Disallow copy and assignment operators */
+  ExecCtx(const ExecCtx&) = delete;
+  ExecCtx& operator=(const ExecCtx&) = delete;
 
-extern grpc_closure_scheduler* grpc_schedule_on_exec_ctx;
+  /** Return starting_cpu */
+  unsigned starting_cpu() const { return starting_cpu_; }
 
-bool grpc_exec_ctx_has_work(grpc_exec_ctx* exec_ctx);
+  struct CombinerData {
+    /* currently active combiner: updated only via combiner.c */
+    grpc_combiner* active_combiner;
+    /* last active combiner in the active combiner list */
+    grpc_combiner* last_combiner;
+  };
 
-/** Flush any work that has been enqueued onto this grpc_exec_ctx.
- *  Caller must guarantee that no interfering locks are held.
- *  Returns true if work was performed, false otherwise. */
-bool grpc_exec_ctx_flush(grpc_exec_ctx* exec_ctx);
-/** Finish any pending work for a grpc_exec_ctx. Must be called before
- *  the instance is destroyed, or work may be lost. */
-void grpc_exec_ctx_finish(grpc_exec_ctx* exec_ctx);
-/** Returns true if we'd like to leave this execution context as soon as
-    possible: useful for deciding whether to do something more or not depending
-    on outside context */
-bool grpc_exec_ctx_ready_to_finish(grpc_exec_ctx* exec_ctx);
-/** A finish check that is never ready to finish */
-bool grpc_never_ready_to_finish(grpc_exec_ctx* exec_ctx, void* arg_ignored);
-/** A finish check that is always ready to finish */
-bool grpc_always_ready_to_finish(grpc_exec_ctx* exec_ctx, void* arg_ignored);
+  /** Only to be used by grpc-combiner code */
+  CombinerData* combiner_data() { return &combiner_data_; }
 
-void grpc_exec_ctx_global_init(void);
+  /** Return pointer to grpc_closure_list */
+  grpc_closure_list* closure_list() { return &closure_list_; }
 
-void grpc_exec_ctx_global_init(void);
-void grpc_exec_ctx_global_shutdown(void);
+  /** Return flags */
+  uintptr_t flags() { return flags_; }
 
-grpc_millis grpc_exec_ctx_now(grpc_exec_ctx* exec_ctx);
-void grpc_exec_ctx_invalidate_now(grpc_exec_ctx* exec_ctx);
-gpr_timespec grpc_millis_to_timespec(grpc_millis millis, gpr_clock_type clock);
-grpc_millis grpc_timespec_to_millis_round_down(gpr_timespec timespec);
-grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec timespec);
+  /** Checks if there is work to be done */
+  bool HasWork() {
+    return combiner_data_.active_combiner != nullptr ||
+           !grpc_closure_list_empty(closure_list_);
+  }
 
-#ifdef __cplusplus
-}
-#endif
+  /** Flush any work that has been enqueued onto this grpc_exec_ctx.
+   *  Caller must guarantee that no interfering locks are held.
+   *  Returns true if work was performed, false otherwise. */
+  bool Flush();
+
+  /** Returns true if we'd like to leave this execution context as soon as
+possible: useful for deciding whether to do something more or not depending
+on outside context */
+  bool IsReadyToFinish() {
+    if ((flags_ & GRPC_EXEC_CTX_FLAG_IS_FINISHED) == 0) {
+      if (CheckReadyToFinish()) {
+        flags_ |= GRPC_EXEC_CTX_FLAG_IS_FINISHED;
+        return true;
+      }
+      return false;
+    } else {
+      return true;
+    }
+  }
+
+  /** Returns the stored current time relative to start if valid,
+   * otherwise refreshes the stored time, sets it valid and returns the new
+   * value */
+  grpc_millis Now();
+
+  /** Invalidates the stored time value. A new time value will be set on calling
+   * Now() */
+  void InvalidateNow() { now_is_valid_ = false; }
+
+  /** To be used only by shutdown code in iomgr */
+  void SetNowIomgrShutdown() {
+    now_ = GRPC_MILLIS_INF_FUTURE;
+    now_is_valid_ = true;
+  }
+
+  /** To be used only for testing.
+   * Sets the now value
+   */
+  void TestOnlySetNow(grpc_millis new_val) {
+    now_ = new_val;
+    now_is_valid_ = true;
+  }
+
+  /** Global initialization for ExecCtx. Called by iomgr */
+  static void GlobalInit(void);
+
+  /** Global shutdown for ExecCtx. Called by iomgr */
+  static void GlobalShutdown(void) { gpr_tls_destroy(&exec_ctx_); }
+
+  /** Gets pointer to current exec_ctx */
+  static ExecCtx* Get() {
+    return reinterpret_cast<ExecCtx*>(gpr_tls_get(&exec_ctx_));
+  }
+
+  static void Set(ExecCtx* exec_ctx) {
+    gpr_tls_set(&exec_ctx_, reinterpret_cast<intptr_t>(exec_ctx));
+  }
+
+ protected:
+  /** Check if ready to finish */
+  virtual bool CheckReadyToFinish() { return false; }
+
+  /** Disallow delete on ExecCtx */
+  static void operator delete(void* p) { abort(); }
+
+ private:
+  /** Set exec_ctx_ to exec_ctx */
+
+  grpc_closure_list closure_list_ = GRPC_CLOSURE_LIST_INIT;
+  CombinerData combiner_data_ = {nullptr, nullptr};
+  uintptr_t flags_;
+  unsigned starting_cpu_ = gpr_cpu_current_cpu();
+
+  bool now_is_valid_ = false;
+  grpc_millis now_ = 0;
+
+  GPR_TLS_CLASS_DECL(exec_ctx_);
+  ExecCtx* last_exec_ctx_ = Get();
+};
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_IOMGR_EXEC_CTX_H */

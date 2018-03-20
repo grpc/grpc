@@ -20,6 +20,7 @@
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/census.h>
 #include <grpc/compression.h>
+#include <grpc/fork.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
@@ -28,7 +29,7 @@
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/connectivity_state.h>
-#include <grpc/impl/codegen/exec_ctx_fwd.h>
+#include <grpc/impl/codegen/fork.h>
 #include <grpc/impl/codegen/gpr_slice.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
@@ -45,37 +46,29 @@
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
-#include <grpc/support/avl.h>
-#include <grpc/support/cmdline.h>
 #include <grpc/support/cpu.h>
-#include <grpc/support/histogram.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/subprocess.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/sync_custom.h>
 #include <grpc/support/sync_generic.h>
-#include <grpc/support/thd.h>
+#include <grpc/support/thd_id.h>
 #include <grpc/support/time.h>
-#include <grpc/support/tls.h>
-#include <grpc/support/useful.h>
 #include <grpc/support/workaround_list.h>
 
 #include <stdio.h>
 
 int main(int argc, char **argv) {
+  printf("%lx", (unsigned long) grpc_compression_algorithm_is_message);
+  printf("%lx", (unsigned long) grpc_compression_algorithm_is_stream);
   printf("%lx", (unsigned long) grpc_compression_algorithm_parse);
   printf("%lx", (unsigned long) grpc_compression_algorithm_name);
-  printf("%lx", (unsigned long) grpc_stream_compression_algorithm_name);
   printf("%lx", (unsigned long) grpc_compression_algorithm_for_level);
-  printf("%lx", (unsigned long) grpc_stream_compression_algorithm_for_level);
   printf("%lx", (unsigned long) grpc_compression_options_init);
   printf("%lx", (unsigned long) grpc_compression_options_enable_algorithm);
   printf("%lx", (unsigned long) grpc_compression_options_disable_algorithm);
   printf("%lx", (unsigned long) grpc_compression_options_is_algorithm_enabled);
-  printf("%lx", (unsigned long) grpc_compression_options_is_stream_compression_algorithm_enabled);
   printf("%lx", (unsigned long) grpc_metadata_array_init);
   printf("%lx", (unsigned long) grpc_metadata_array_destroy);
   printf("%lx", (unsigned long) grpc_call_details_init);
@@ -95,10 +88,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_completion_queue_destroy);
   printf("%lx", (unsigned long) grpc_completion_queue_thread_local_cache_init);
   printf("%lx", (unsigned long) grpc_completion_queue_thread_local_cache_flush);
-  printf("%lx", (unsigned long) grpc_alarm_create);
-  printf("%lx", (unsigned long) grpc_alarm_set);
-  printf("%lx", (unsigned long) grpc_alarm_cancel);
-  printf("%lx", (unsigned long) grpc_alarm_destroy);
   printf("%lx", (unsigned long) grpc_channel_check_connectivity_state);
   printf("%lx", (unsigned long) grpc_channel_num_external_connectivity_watchers);
   printf("%lx", (unsigned long) grpc_channel_watch_connectivity_state);
@@ -245,42 +234,8 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) gpr_free_aligned);
   printf("%lx", (unsigned long) gpr_set_allocation_functions);
   printf("%lx", (unsigned long) gpr_get_allocation_functions);
-  printf("%lx", (unsigned long) gpr_avl_create);
-  printf("%lx", (unsigned long) gpr_avl_ref);
-  printf("%lx", (unsigned long) gpr_avl_unref);
-  printf("%lx", (unsigned long) gpr_avl_add);
-  printf("%lx", (unsigned long) gpr_avl_remove);
-  printf("%lx", (unsigned long) gpr_avl_get);
-  printf("%lx", (unsigned long) gpr_avl_maybe_get);
-  printf("%lx", (unsigned long) gpr_avl_is_empty);
-  printf("%lx", (unsigned long) gpr_cmdline_create);
-  printf("%lx", (unsigned long) gpr_cmdline_add_int);
-  printf("%lx", (unsigned long) gpr_cmdline_add_flag);
-  printf("%lx", (unsigned long) gpr_cmdline_add_string);
-  printf("%lx", (unsigned long) gpr_cmdline_on_extra_arg);
-  printf("%lx", (unsigned long) gpr_cmdline_set_survive_failure);
-  printf("%lx", (unsigned long) gpr_cmdline_parse);
-  printf("%lx", (unsigned long) gpr_cmdline_destroy);
-  printf("%lx", (unsigned long) gpr_cmdline_usage_string);
   printf("%lx", (unsigned long) gpr_cpu_num_cores);
   printf("%lx", (unsigned long) gpr_cpu_current_cpu);
-  printf("%lx", (unsigned long) gpr_histogram_create);
-  printf("%lx", (unsigned long) gpr_histogram_destroy);
-  printf("%lx", (unsigned long) gpr_histogram_add);
-  printf("%lx", (unsigned long) gpr_histogram_merge);
-  printf("%lx", (unsigned long) gpr_histogram_percentile);
-  printf("%lx", (unsigned long) gpr_histogram_mean);
-  printf("%lx", (unsigned long) gpr_histogram_stddev);
-  printf("%lx", (unsigned long) gpr_histogram_variance);
-  printf("%lx", (unsigned long) gpr_histogram_maximum);
-  printf("%lx", (unsigned long) gpr_histogram_minimum);
-  printf("%lx", (unsigned long) gpr_histogram_count);
-  printf("%lx", (unsigned long) gpr_histogram_sum);
-  printf("%lx", (unsigned long) gpr_histogram_sum_of_squares);
-  printf("%lx", (unsigned long) gpr_histogram_get_contents);
-  printf("%lx", (unsigned long) gpr_histogram_merge_contents);
-  printf("%lx", (unsigned long) gpr_join_host_port);
-  printf("%lx", (unsigned long) gpr_split_host_port);
   printf("%lx", (unsigned long) gpr_log_severity_string);
   printf("%lx", (unsigned long) gpr_log);
   printf("%lx", (unsigned long) gpr_log_message);
@@ -289,11 +244,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) gpr_set_log_function);
   printf("%lx", (unsigned long) gpr_strdup);
   printf("%lx", (unsigned long) gpr_asprintf);
-  printf("%lx", (unsigned long) gpr_subprocess_binary_extension);
-  printf("%lx", (unsigned long) gpr_subprocess_create);
-  printf("%lx", (unsigned long) gpr_subprocess_destroy);
-  printf("%lx", (unsigned long) gpr_subprocess_join);
-  printf("%lx", (unsigned long) gpr_subprocess_interrupt);
   printf("%lx", (unsigned long) gpr_mu_init);
   printf("%lx", (unsigned long) gpr_mu_destroy);
   printf("%lx", (unsigned long) gpr_mu_lock);
@@ -318,14 +268,7 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) gpr_stats_init);
   printf("%lx", (unsigned long) gpr_stats_inc);
   printf("%lx", (unsigned long) gpr_stats_read);
-  printf("%lx", (unsigned long) gpr_thd_new);
-  printf("%lx", (unsigned long) gpr_thd_options_default);
-  printf("%lx", (unsigned long) gpr_thd_options_set_detached);
-  printf("%lx", (unsigned long) gpr_thd_options_set_joinable);
-  printf("%lx", (unsigned long) gpr_thd_options_is_detached);
-  printf("%lx", (unsigned long) gpr_thd_options_is_joinable);
   printf("%lx", (unsigned long) gpr_thd_currentid);
-  printf("%lx", (unsigned long) gpr_thd_join);
   printf("%lx", (unsigned long) gpr_time_0);
   printf("%lx", (unsigned long) gpr_inf_future);
   printf("%lx", (unsigned long) gpr_inf_past);

@@ -345,7 +345,10 @@ namespace Grpc.Reflection.V1Alpha {
           FileContainingSymbol = other.FileContainingSymbol;
           break;
         case MessageRequestOneofCase.FileContainingExtension:
-          FileContainingExtension = other.FileContainingExtension;
+          if (FileContainingExtension == null) {
+            FileContainingExtension = new global::Grpc.Reflection.V1Alpha.ExtensionRequest();
+          }
+          FileContainingExtension.MergeFrom(other.FileContainingExtension);
           break;
         case MessageRequestOneofCase.AllExtensionNumbersOfType:
           AllExtensionNumbersOfType = other.AllExtensionNumbersOfType;
@@ -816,16 +819,28 @@ namespace Grpc.Reflection.V1Alpha {
       }
       switch (other.MessageResponseCase) {
         case MessageResponseOneofCase.FileDescriptorResponse:
-          FileDescriptorResponse = other.FileDescriptorResponse;
+          if (FileDescriptorResponse == null) {
+            FileDescriptorResponse = new global::Grpc.Reflection.V1Alpha.FileDescriptorResponse();
+          }
+          FileDescriptorResponse.MergeFrom(other.FileDescriptorResponse);
           break;
         case MessageResponseOneofCase.AllExtensionNumbersResponse:
-          AllExtensionNumbersResponse = other.AllExtensionNumbersResponse;
+          if (AllExtensionNumbersResponse == null) {
+            AllExtensionNumbersResponse = new global::Grpc.Reflection.V1Alpha.ExtensionNumberResponse();
+          }
+          AllExtensionNumbersResponse.MergeFrom(other.AllExtensionNumbersResponse);
           break;
         case MessageResponseOneofCase.ListServicesResponse:
-          ListServicesResponse = other.ListServicesResponse;
+          if (ListServicesResponse == null) {
+            ListServicesResponse = new global::Grpc.Reflection.V1Alpha.ListServiceResponse();
+          }
+          ListServicesResponse.MergeFrom(other.ListServicesResponse);
           break;
         case MessageResponseOneofCase.ErrorResponse:
-          ErrorResponse = other.ErrorResponse;
+          if (ErrorResponse == null) {
+            ErrorResponse = new global::Grpc.Reflection.V1Alpha.ErrorResponse();
+          }
+          ErrorResponse.MergeFrom(other.ErrorResponse);
           break;
       }
 

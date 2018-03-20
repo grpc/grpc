@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_PLUGIN_PLUGIN_CREDENTIALS_H
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_PLUGIN_PLUGIN_CREDENTIALS_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/security/credentials/credentials.h"
 
 extern grpc_core::TraceFlag grpc_plugin_credentials_trace;

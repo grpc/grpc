@@ -16,6 +16,7 @@
 
 """Generates the appropriate build.json data for all the bad_client tests."""
 
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_library")
 
 def test_options():
   return struct()
@@ -25,10 +26,11 @@ def test_options():
 BAD_CLIENT_TESTS = {
     'badreq': test_options(),
     'connection_prefix': test_options(),
+    'duplicate_header': test_options(),
     'headers': test_options(),
     'initial_settings_frame': test_options(),
     'head_of_line_blocking': test_options(),
-    # 'large_metadata': test_options(), # disabling as per issue #11745
+    'large_metadata': test_options(),
     'server_registered_method': test_options(),
     'simple_request': test_options(),
     'window_overflow': test_options(),
@@ -36,14 +38,14 @@ BAD_CLIENT_TESTS = {
 }
 
 def grpc_bad_client_tests():
-  native.cc_library(
+  grpc_cc_library(
       name = 'bad_client_test',
       srcs = ['bad_client.cc'],
       hdrs = ['bad_client.h'],
       deps = ['//test/core/util:grpc_test_util', '//:grpc', '//:gpr', '//test/core/end2end:cq_verifier']
   )
   for t, topt in BAD_CLIENT_TESTS.items():
-    native.cc_test(
+    grpc_cc_test(
         name = '%s_bad_client_test' % t,
         srcs = ['tests/%s.cc' % t],
         deps = [':bad_client_test'],

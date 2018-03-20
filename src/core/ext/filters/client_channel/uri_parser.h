@@ -19,12 +19,9 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_URI_PARSER_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_URI_PARSER_H
 
-#include <stddef.h>
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include <grpc/support/port_platform.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <stddef.h>
 
 typedef struct {
   char* scheme;
@@ -41,8 +38,7 @@ typedef struct {
 } grpc_uri;
 
 /** parse a uri, return NULL on failure */
-grpc_uri* grpc_uri_parse(grpc_exec_ctx* exec_ctx, const char* uri_text,
-                         bool suppress_errors);
+grpc_uri* grpc_uri_parse(const char* uri_text, bool suppress_errors);
 
 /** return the part of a query string after the '=' in "?key=xxx&...", or NULL
  * if key is not present */
@@ -50,9 +46,5 @@ const char* grpc_uri_get_query_arg(const grpc_uri* uri, const char* key);
 
 /** destroy a uri */
 void grpc_uri_destroy(grpc_uri* uri);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_URI_PARSER_H */

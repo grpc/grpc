@@ -41,8 +41,10 @@ class FirstServiceServicer(services_pb2_grpc.FirstServiceServicer):
         yield services_pb2.Strange()
 
     def StreUn(self, request_iterator, context):
-        context.send_initial_metadata((
-            ('server_application_metadata_key', 'Hi there!',),))
+        context.send_initial_metadata(((
+            'server_application_metadata_key',
+            'Hi there!',
+        ),))
         for request in request_iterator:
             if request != _application_common.STREAM_UNARY_REQUEST:
                 context.set_code(grpc.StatusCode.INVALID_ARGUMENT)

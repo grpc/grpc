@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include <string.h>
 
 #include "src/core/ext/filters/http/client/http_client_filter.h"
@@ -40,11 +42,10 @@ static bool is_building_http_like_transport(
   return t != nullptr && strstr(t->vtable->name, "http");
 }
 
-static bool maybe_add_optional_filter(grpc_exec_ctx* exec_ctx,
-                                      grpc_channel_stack_builder* builder,
+static bool maybe_add_optional_filter(grpc_channel_stack_builder* builder,
                                       void* arg) {
   if (!is_building_http_like_transport(builder)) return true;
-  optional_filter* filtarg = (optional_filter*)arg;
+  optional_filter* filtarg = static_cast<optional_filter*>(arg);
   const grpc_channel_args* channel_args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
   bool enable = grpc_channel_arg_get_bool(
@@ -55,16 +56,16 @@ static bool maybe_add_optional_filter(grpc_exec_ctx* exec_ctx,
                 : true;
 }
 
-static bool maybe_add_required_filter(grpc_exec_ctx* exec_ctx,
-                                      grpc_channel_stack_builder* builder,
+static bool maybe_add_required_filter(grpc_channel_stack_builder* builder,
                                       void* arg) {
   return is_building_http_like_transport(builder)
              ? grpc_channel_stack_builder_prepend_filter(
-                   builder, (const grpc_channel_filter*)arg, nullptr, nullptr)
+                   builder, static_cast<const grpc_channel_filter*>(arg),
+                   nullptr, nullptr)
              : true;
 }
 
-extern "C" void grpc_http_filters_init(void) {
+void grpc_http_filters_init(void) {
   grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL,
                                    GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
                                    maybe_add_optional_filter, &compress_filter);
@@ -85,4 +86,4 @@ extern "C" void grpc_http_filters_init(void) {
       maybe_add_required_filter, (void*)&grpc_http_server_filter);
 }
 
-extern "C" void grpc_http_filters_shutdown(void) {}
+void grpc_http_filters_shutdown(void) {}

@@ -43,6 +43,18 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "dns_resolver_cooldown_test",
+    srcs = ["dns_resolver_cooldown_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "sockaddr_resolver_test",
     srcs = ["sockaddr_resolver_test.cc"],
     language = "C++",

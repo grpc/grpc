@@ -49,4 +49,4 @@ class CompletionQueuePollFuture(SimpleFuture):
 
     def __init__(self, completion_queue, deadline):
         super(CompletionQueuePollFuture,
-              self).__init__(lambda: completion_queue.poll(deadline))
+              self).__init__(lambda: completion_queue.poll(deadline=deadline))

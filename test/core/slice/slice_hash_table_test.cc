@@ -20,65 +20,67 @@
 
 #include <string.h>
 
+#include <vector>
+
+#include <gtest/gtest.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
 
-typedef struct {
+namespace grpc_core {
+namespace {
+
+typedef SliceHashTable<UniquePtr<char>> TestHashTable;
+
+struct TestEntry {
   const char* key;
   const char* value;
-} test_entry;
+};
 
-static void populate_entries(const test_entry* input, size_t num_entries,
-                             grpc_slice_hash_table_entry* output) {
-  for (size_t i = 0; i < num_entries; ++i) {
-    output[i].key = grpc_slice_from_copied_string(input[i].key);
-    output[i].value = gpr_strdup(input[i].value);
-  }
-}
-
-static void check_values(const test_entry* input, size_t num_entries,
-                         grpc_slice_hash_table* table) {
-  for (size_t i = 0; i < num_entries; ++i) {
-    grpc_slice key = grpc_slice_from_static_string(input[i].key);
-    const char* actual =
-        static_cast<const char*>(grpc_slice_hash_table_get(table, key));
-    GPR_ASSERT(actual != nullptr);
-    GPR_ASSERT(strcmp(actual, input[i].value) == 0);
+void CheckValues(const std::vector<TestEntry>& input,
+                 const TestHashTable& table) {
+  for (const TestEntry& expected : input) {
+    grpc_slice key = grpc_slice_from_static_string(expected.key);
+    const UniquePtr<char>* actual = table.Get(key);
+    ASSERT_NE(actual, nullptr);
+    EXPECT_STREQ(expected.value, actual->get());
     grpc_slice_unref(key);
   }
 }
 
-static void check_non_existent_value(const char* key_string,
-                                     grpc_slice_hash_table* table) {
+void CheckNonExistentValue(const char* key_string, const TestHashTable& table) {
   grpc_slice key = grpc_slice_from_static_string(key_string);
-  GPR_ASSERT(grpc_slice_hash_table_get(table, key) == nullptr);
+  ASSERT_EQ(nullptr, table.Get(key));
   grpc_slice_unref(key);
 }
 
-static void destroy_string(grpc_exec_ctx* exec_ctx, void* value) {
-  gpr_free(value);
+void PopulateEntries(const std::vector<TestEntry>& input,
+                     TestHashTable::Entry* output) {
+  for (size_t i = 0; i < input.size(); ++i) {
+    output[i].key = grpc_slice_from_copied_string(input[i].key);
+    output[i].value = UniquePtr<char>(gpr_strdup(input[i].value));
+  }
 }
 
-static grpc_slice_hash_table* create_table_from_entries(
-    const test_entry* test_entries, size_t num_test_entries,
-    int (*value_cmp_fn)(void*, void*)) {
-  // Construct table.
-  grpc_slice_hash_table_entry* entries =
-      static_cast<grpc_slice_hash_table_entry*>(
-          gpr_zalloc(sizeof(*entries) * num_test_entries));
-  populate_entries(test_entries, num_test_entries, entries);
-  grpc_slice_hash_table* table = grpc_slice_hash_table_create(
-      num_test_entries, entries, destroy_string, value_cmp_fn);
+RefCountedPtr<TestHashTable> CreateTableFromEntries(
+    const std::vector<TestEntry>& test_entries,
+    TestHashTable::ValueCmp value_cmp) {
+  TestHashTable::Entry* entries = static_cast<TestHashTable::Entry*>(
+      gpr_zalloc(sizeof(*entries) * test_entries.size()));
+  PopulateEntries(test_entries, entries);
+  RefCountedPtr<TestHashTable> table =
+      TestHashTable::Create(test_entries.size(), entries, value_cmp);
   gpr_free(entries);
   return table;
 }
 
-static void test_slice_hash_table() {
-  const test_entry test_entries[] = {
+TEST(SliceHashTable, Basic) {
+  const std::vector<TestEntry> test_entries = {
       {"key_0", "value_0"},   {"key_1", "value_1"},   {"key_2", "value_2"},
       {"key_3", "value_3"},   {"key_4", "value_4"},   {"key_5", "value_5"},
       {"key_6", "value_6"},   {"key_7", "value_7"},   {"key_8", "value_8"},
@@ -114,130 +116,110 @@ static void test_slice_hash_table() {
       {"key_96", "value_96"}, {"key_97", "value_97"}, {"key_98", "value_98"},
       {"key_99", "value_99"},
   };
-  const size_t num_entries = GPR_ARRAY_SIZE(test_entries);
-  grpc_slice_hash_table* table =
-      create_table_from_entries(test_entries, num_entries, nullptr);
+  RefCountedPtr<TestHashTable> table =
+      CreateTableFromEntries(test_entries, nullptr);
   // Check contents of table.
-  check_values(test_entries, num_entries, table);
-  check_non_existent_value("XX", table);
-  // Clean up.
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_slice_hash_table_unref(&exec_ctx, table);
-  grpc_exec_ctx_finish(&exec_ctx);
+  CheckValues(test_entries, *table);
+  CheckNonExistentValue("XX", *table);
 }
 
-static int value_cmp_fn(void* a, void* b) {
-  const char* a_str = static_cast<const char*>(a);
-  const char* b_str = static_cast<const char*>(b);
-  return strcmp(a_str, b_str);
+int StringCmp(const UniquePtr<char>& a, const UniquePtr<char>& b) {
+  return strcmp(a.get(), b.get());
 }
 
-static int pointer_cmp_fn(void* a, void* b) { return GPR_ICMP(a, b); }
-
-static void test_slice_hash_table_eq() {
-  const test_entry test_entries_a[] = {
-      {"key_0", "value_0"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
-  const size_t num_entries_a = GPR_ARRAY_SIZE(test_entries_a);
-  grpc_slice_hash_table* table_a =
-      create_table_from_entries(test_entries_a, num_entries_a, value_cmp_fn);
-  GPR_ASSERT(grpc_slice_hash_table_cmp(table_a, table_a) == 0);
-
-  const test_entry test_entries_b[] = {
-      {"key_0", "value_0"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
-  const size_t num_entries_b = GPR_ARRAY_SIZE(test_entries_b);
-  grpc_slice_hash_table* table_b =
-      create_table_from_entries(test_entries_b, num_entries_b, value_cmp_fn);
-
-  GPR_ASSERT(grpc_slice_hash_table_cmp(table_a, table_b) == 0);
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_slice_hash_table_unref(&exec_ctx, table_a);
-  grpc_slice_hash_table_unref(&exec_ctx, table_b);
-  grpc_exec_ctx_finish(&exec_ctx);
+int PointerCmp(const UniquePtr<char>& a, const UniquePtr<char>& b) {
+  return GPR_ICMP(a.get(), b.get());
 }
 
-static void test_slice_hash_table_not_eq() {
-  const test_entry test_entries_a[] = {
+TEST(SliceHashTable, CmpEqual) {
+  const std::vector<TestEntry> test_entries_a = {
       {"key_0", "value_0"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
-  const size_t num_entries_a = GPR_ARRAY_SIZE(test_entries_a);
-  grpc_slice_hash_table* table_a =
-      create_table_from_entries(test_entries_a, num_entries_a, value_cmp_fn);
+  RefCountedPtr<TestHashTable> table_a =
+      CreateTableFromEntries(test_entries_a, StringCmp);
+  const std::vector<TestEntry> test_entries_b = {
+      {"key_0", "value_0"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
+  RefCountedPtr<TestHashTable> table_b =
+      CreateTableFromEntries(test_entries_b, StringCmp);
+  // table_a equals itself.
+  EXPECT_EQ(0, TestHashTable::Cmp(*table_a, *table_a));
+  // table_a equals table_b.
+  EXPECT_EQ(0, TestHashTable::Cmp(*table_a, *table_b));
+}
 
-  // Different sizes.
-  const test_entry test_entries_b_smaller[] = {{"key_0", "value_0"},
-                                               {"key_1", "value_1"}};
-  const size_t num_entries_b_smaller = GPR_ARRAY_SIZE(test_entries_b_smaller);
-  grpc_slice_hash_table* table_b_smaller = create_table_from_entries(
-      test_entries_b_smaller, num_entries_b_smaller, value_cmp_fn);
-  GPR_ASSERT(grpc_slice_hash_table_cmp(table_a, table_b_smaller) > 0);
+TEST(SliceHashTable, CmpDifferentSizes) {
+  // table_a has 3 entries, table_b has only 2.
+  const std::vector<TestEntry> test_entries_a = {
+      {"key_0", "value_0"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
+  RefCountedPtr<TestHashTable> table_a =
+      CreateTableFromEntries(test_entries_a, StringCmp);
+  const std::vector<TestEntry> test_entries_b = {{"key_0", "value_0"},
+                                                 {"key_1", "value_1"}};
+  RefCountedPtr<TestHashTable> table_b =
+      CreateTableFromEntries(test_entries_b, StringCmp);
+  EXPECT_GT(TestHashTable::Cmp(*table_a, *table_b), 0);
+  EXPECT_LT(TestHashTable::Cmp(*table_b, *table_a), 0);
+}
 
-  const test_entry test_entries_b_larger[] = {{"key_0", "value_0"},
-                                              {"key_1", "value_1"},
-                                              {"key_2", "value_2"},
-                                              {"key_3", "value_3"}};
-  const size_t num_entries_b_larger = GPR_ARRAY_SIZE(test_entries_b_larger);
-  grpc_slice_hash_table* table_b_larger = create_table_from_entries(
-      test_entries_b_larger, num_entries_b_larger, value_cmp_fn);
-  GPR_ASSERT(grpc_slice_hash_table_cmp(table_a, table_b_larger) < 0);
-
+TEST(SliceHashTable, CmpDifferentKey) {
   // One key doesn't match and is lexicographically "smaller".
-  const test_entry test_entries_c[] = {
+  const std::vector<TestEntry> test_entries_a = {
+      {"key_0", "value_0"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
+  RefCountedPtr<TestHashTable> table_a =
+      CreateTableFromEntries(test_entries_a, StringCmp);
+  const std::vector<TestEntry> test_entries_b = {
       {"key_zz", "value_0"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
-  const size_t num_entries_c = GPR_ARRAY_SIZE(test_entries_c);
-  grpc_slice_hash_table* table_c =
-      create_table_from_entries(test_entries_c, num_entries_c, value_cmp_fn);
-  GPR_ASSERT(grpc_slice_hash_table_cmp(table_a, table_c) > 0);
-  GPR_ASSERT(grpc_slice_hash_table_cmp(table_c, table_a) < 0);
-
-  // One value doesn't match.
-  const test_entry test_entries_d[] = {
-      {"key_0", "value_z"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
-  const size_t num_entries_d = GPR_ARRAY_SIZE(test_entries_d);
-  grpc_slice_hash_table* table_d =
-      create_table_from_entries(test_entries_d, num_entries_d, value_cmp_fn);
-  GPR_ASSERT(grpc_slice_hash_table_cmp(table_a, table_d) < 0);
-  GPR_ASSERT(grpc_slice_hash_table_cmp(table_d, table_a) > 0);
-
-  // Same values but different "equals" functions.
-  const test_entry test_entries_e[] = {
-      {"key_0", "value_0"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
-  const size_t num_entries_e = GPR_ARRAY_SIZE(test_entries_e);
-  grpc_slice_hash_table* table_e =
-      create_table_from_entries(test_entries_e, num_entries_e, value_cmp_fn);
-  const test_entry test_entries_f[] = {
-      {"key_0", "value_0"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
-  const size_t num_entries_f = GPR_ARRAY_SIZE(test_entries_f);
-  grpc_slice_hash_table* table_f =
-      create_table_from_entries(test_entries_f, num_entries_f, pointer_cmp_fn);
-  GPR_ASSERT(grpc_slice_hash_table_cmp(table_e, table_f) != 0);
-
-  // Same (empty) key, different values.
-  const test_entry test_entries_g[] = {{"", "value_0"}};
-  const size_t num_entries_g = GPR_ARRAY_SIZE(test_entries_g);
-  grpc_slice_hash_table* table_g =
-      create_table_from_entries(test_entries_g, num_entries_g, value_cmp_fn);
-  const test_entry test_entries_h[] = {{"", "value_1"}};
-  const size_t num_entries_h = GPR_ARRAY_SIZE(test_entries_h);
-  grpc_slice_hash_table* table_h =
-      create_table_from_entries(test_entries_h, num_entries_h, pointer_cmp_fn);
-  GPR_ASSERT(grpc_slice_hash_table_cmp(table_g, table_h) != 0);
-
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_slice_hash_table_unref(&exec_ctx, table_a);
-  grpc_slice_hash_table_unref(&exec_ctx, table_b_larger);
-  grpc_slice_hash_table_unref(&exec_ctx, table_b_smaller);
-  grpc_slice_hash_table_unref(&exec_ctx, table_c);
-  grpc_slice_hash_table_unref(&exec_ctx, table_d);
-  grpc_slice_hash_table_unref(&exec_ctx, table_e);
-  grpc_slice_hash_table_unref(&exec_ctx, table_f);
-  grpc_slice_hash_table_unref(&exec_ctx, table_g);
-  grpc_slice_hash_table_unref(&exec_ctx, table_h);
-  grpc_exec_ctx_finish(&exec_ctx);
+  RefCountedPtr<TestHashTable> table_b =
+      CreateTableFromEntries(test_entries_b, StringCmp);
+  EXPECT_GT(TestHashTable::Cmp(*table_a, *table_b), 0);
+  EXPECT_LT(TestHashTable::Cmp(*table_b, *table_a), 0);
 }
+
+TEST(SliceHashTable, CmpDifferentValue) {
+  // One value doesn't match.
+  const std::vector<TestEntry> test_entries_a = {
+      {"key_0", "value_0"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
+  RefCountedPtr<TestHashTable> table_a =
+      CreateTableFromEntries(test_entries_a, StringCmp);
+  const std::vector<TestEntry> test_entries_b = {
+      {"key_0", "value_z"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
+  RefCountedPtr<TestHashTable> table_b =
+      CreateTableFromEntries(test_entries_b, StringCmp);
+  EXPECT_LT(TestHashTable::Cmp(*table_a, *table_b), 0);
+  EXPECT_GT(TestHashTable::Cmp(*table_b, *table_a), 0);
+}
+
+TEST(SliceHashTable, CmpDifferentCmpFunctions) {
+  // Same values but different "equals" functions.
+  const std::vector<TestEntry> test_entries_a = {
+      {"key_0", "value_0"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
+  RefCountedPtr<TestHashTable> table_a =
+      CreateTableFromEntries(test_entries_a, StringCmp);
+  const std::vector<TestEntry> test_entries_b = {
+      {"key_0", "value_0"}, {"key_1", "value_1"}, {"key_2", "value_2"}};
+  RefCountedPtr<TestHashTable> table_b =
+      CreateTableFromEntries(test_entries_b, PointerCmp);
+  EXPECT_NE(TestHashTable::Cmp(*table_a, *table_b), 0);
+}
+
+TEST(SliceHashTable, CmpEmptyKeysDifferentValue) {
+  // Same (empty) key, different values.
+  const std::vector<TestEntry> test_entries_a = {{"", "value_0"}};
+  RefCountedPtr<TestHashTable> table_a =
+      CreateTableFromEntries(test_entries_a, StringCmp);
+  const std::vector<TestEntry> test_entries_b = {{"", "value_1"}};
+  RefCountedPtr<TestHashTable> table_b =
+      CreateTableFromEntries(test_entries_b, PointerCmp);
+  EXPECT_NE(TestHashTable::Cmp(*table_a, *table_b), 0);
+}
+
+}  // namespace
+}  // namespace grpc_core
 
 int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
   grpc_test_init(argc, argv);
-  test_slice_hash_table();
-  test_slice_hash_table_eq();
-  test_slice_hash_table_not_eq();
-  return 0;
+  grpc_core::ExecCtx::GlobalInit();
+  int result = RUN_ALL_TESTS();
+  grpc_core::ExecCtx::GlobalShutdown();
+  return result;
 }

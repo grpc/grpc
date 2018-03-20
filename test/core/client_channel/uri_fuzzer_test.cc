@@ -20,6 +20,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 
 #include "src/core/ext/filters/client_channel/uri_parser.h"
@@ -33,12 +34,18 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   memcpy(s, data, size);
   s[size] = 0;
 
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_uri* x;
-  if ((x = grpc_uri_parse(&exec_ctx, s, 1))) {
-    grpc_uri_destroy(x);
+  grpc_init();
+
+  {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_uri* x;
+    if ((x = grpc_uri_parse(s, 1))) {
+      grpc_uri_destroy(x);
+    }
+
+    gpr_free(s);
   }
-  grpc_exec_ctx_finish(&exec_ctx);
-  gpr_free(s);
+
+  grpc_shutdown();
   return 0;
 }

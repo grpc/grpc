@@ -13,23 +13,27 @@
 @rem limitations under the License.
 
 @rem Current package versions
-set VERSION=1.9.0-dev
+set VERSION=1.11.0-dev
 
 @rem Adjust the location of nuget.exe
 set NUGET=C:\nuget\nuget.exe
 set DOTNET=dotnet
 
-set -ex
-
 mkdir ..\..\artifacts
 
 @rem Collect the artifacts built by the previous build step if running on Jenkins
 mkdir nativelibs
+@rem Jenkins flow (deprecated)
 powershell -Command "cp -r ..\..\platform=*\artifacts\csharp_ext_* nativelibs"
+@rem Kokoro flow
+powershell -Command "cp -r ..\..\input_artifacts\csharp_ext_* nativelibs"
 
 @rem Collect protoc artifacts built by the previous build step
 mkdir protoc_plugins
+@rem Jenkins flow (deprecated)
 powershell -Command "cp -r ..\..\platform=*\artifacts\protoc_* protoc_plugins"
+@rem Kokoro flow
+powershell -Command "cp -r ..\..\input_artifacts\protoc_* protoc_plugins"
 
 %DOTNET% restore Grpc.sln || goto :error
 

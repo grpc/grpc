@@ -253,7 +253,8 @@ PHP_MSHUTDOWN_FUNCTION(grpc) {
  */
 PHP_MINFO_FUNCTION(grpc) {
   php_info_print_table_start();
-  php_info_print_table_header(2, "grpc support", "enabled");
+  php_info_print_table_row(2, "grpc support", "enabled");
+  php_info_print_table_row(2, "grpc module version", PHP_GRPC_VERSION);
   php_info_print_table_end();
 
   /* Remove comments if you have entries in php.ini

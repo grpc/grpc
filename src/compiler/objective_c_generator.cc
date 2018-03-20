@@ -28,6 +28,7 @@
 
 using ::google::protobuf::compiler::objectivec::ClassName;
 using ::grpc::protobuf::FileDescriptor;
+using ::grpc::protobuf::FileDescriptor;
 using ::grpc::protobuf::MethodDescriptor;
 using ::grpc::protobuf::ServiceDescriptor;
 using ::grpc::protobuf::io::Printer;
@@ -211,37 +212,49 @@ void PrintMethodImplementations(Printer* printer,
   return output;
 }
 
-::grpc::string GetHeader(const ServiceDescriptor* service) {
+::grpc::string GetProtocol(const ServiceDescriptor* service) {
   ::grpc::string output;
-  {
-    // Scope the output stream so it closes and finalizes output to the string.
-    grpc::protobuf::io::StringOutputStream output_stream(&output);
-    Printer printer(&output_stream, '$');
 
-    map< ::grpc::string, ::grpc::string> vars = {
-        {"service_class", ServiceClassName(service)}};
+  // Scope the output stream so it closes and finalizes output to the string.
+  grpc::protobuf::io::StringOutputStream output_stream(&output);
+  Printer printer(&output_stream, '$');
 
-    printer.Print(vars, "@protocol $service_class$ <NSObject>\n\n");
+  map< ::grpc::string, ::grpc::string> vars = {
+      {"service_class", ServiceClassName(service)}};
 
-    for (int i = 0; i < service->method_count(); i++) {
-      PrintMethodDeclarations(&printer, service->method(i));
-    }
-    printer.Print("@end\n\n");
-
-    printer.Print(
-        "/**\n"
-        " * Basic service implementation, over gRPC, that only does\n"
-        " * marshalling and parsing.\n"
-        " */\n");
-    printer.Print(vars,
-                  "@interface $service_class$ :"
-                  " GRPCProtoService<$service_class$>\n");
-    printer.Print(
-        "- (instancetype)initWithHost:(NSString *)host"
-        " NS_DESIGNATED_INITIALIZER;\n");
-    printer.Print("+ (instancetype)serviceWithHost:(NSString *)host;\n");
-    printer.Print("@end\n");
+  printer.Print(vars, "@protocol $service_class$ <NSObject>\n\n");
+  for (int i = 0; i < service->method_count(); i++) {
+    PrintMethodDeclarations(&printer, service->method(i));
   }
+  printer.Print("@end\n\n");
+
+  return output;
+}
+
+::grpc::string GetInterface(const ServiceDescriptor* service) {
+  ::grpc::string output;
+
+  // Scope the output stream so it closes and finalizes output to the string.
+  grpc::protobuf::io::StringOutputStream output_stream(&output);
+  Printer printer(&output_stream, '$');
+
+  map< ::grpc::string, ::grpc::string> vars = {
+      {"service_class", ServiceClassName(service)}};
+
+  printer.Print(vars,
+                "/**\n"
+                " * Basic service implementation, over gRPC, that only does\n"
+                " * marshalling and parsing.\n"
+                " */\n");
+  printer.Print(vars,
+                "@interface $service_class$ :"
+                " GRPCProtoService<$service_class$>\n");
+  printer.Print(
+      "- (instancetype)initWithHost:(NSString *)host"
+      " NS_DESIGNATED_INITIALIZER;\n");
+  printer.Print("+ (instancetype)serviceWithHost:(NSString *)host;\n");
+  printer.Print("@end\n");
+
   return output;
 }
 
@@ -257,26 +270,32 @@ void PrintMethodImplementations(Printer* printer,
         {"service_class", ServiceClassName(service)},
         {"package", service->file()->package()}};
 
-    printer.Print(vars, "@implementation $service_class$\n\n");
+    printer.Print(vars,
+                  "@implementation $service_class$\n\n"
+                  "// Designated initializer\n"
+                  "- (instancetype)initWithHost:(NSString *)host {\n"
+                  "  self = [super initWithHost:host\n"
+                  "                 packageName:@\"$package$\"\n"
+                  "                 serviceName:@\"$service_name$\"];\n"
+                  "  return self;\n"
+                  "}\n\n");
 
-    printer.Print("// Designated initializer\n");
-    printer.Print("- (instancetype)initWithHost:(NSString *)host {\n");
-    printer.Print(
-        vars,
-        "  return (self = [super initWithHost:host"
-        " packageName:@\"$package$\" serviceName:@\"$service_name$\"]);\n");
-    printer.Print("}\n\n");
     printer.Print(
         "// Override superclass initializer to disallow different"
-        " package and service names.\n");
-    printer.Print("- (instancetype)initWithHost:(NSString *)host\n");
-    printer.Print("                 packageName:(NSString *)packageName\n");
-    printer.Print("                 serviceName:(NSString *)serviceName {\n");
-    printer.Print("  return [self initWithHost:host];\n");
-    printer.Print("}\n\n");
-    printer.Print("+ (instancetype)serviceWithHost:(NSString *)host {\n");
-    printer.Print("  return [[self alloc] initWithHost:host];\n");
-    printer.Print("}\n\n\n");
+        " package and service names.\n"
+        "- (instancetype)initWithHost:(NSString *)host\n"
+        "                 packageName:(NSString *)packageName\n"
+        "                 serviceName:(NSString *)serviceName {\n"
+        "  return [self initWithHost:host];\n"
+        "}\n\n");
+
+    printer.Print(
+        "#pragma mark - Class Methods\n\n"
+        "+ (instancetype)serviceWithHost:(NSString *)host {\n"
+        "  return [[self alloc] initWithHost:host];\n"
+        "}\n\n");
+
+    printer.Print("#pragma mark - Method Implementations\n\n");
 
     for (int i = 0; i < service->method_count(); i++) {
       PrintMethodImplementations(&printer, service->method(i));

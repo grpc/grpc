@@ -16,8 +16,8 @@
  *
  */
 
-#include <grpc++/support/slice.h>
 #include <grpc/slice.h>
+#include <grpcpp/support/slice.h>
 
 namespace grpc {
 
@@ -32,15 +32,15 @@ Slice::Slice(grpc_slice slice, StealRef) : slice_(slice) {}
 Slice::Slice(size_t len) : slice_(grpc_slice_malloc(len)) {}
 
 Slice::Slice(const void* buf, size_t len)
-    : slice_(grpc_slice_from_copied_buffer(reinterpret_cast<const char*>(buf),
-                                           len)) {}
+    : slice_(
+          grpc_slice_from_copied_buffer(static_cast<const char*>(buf), len)) {}
 
 Slice::Slice(const grpc::string& str)
     : slice_(grpc_slice_from_copied_buffer(str.c_str(), str.length())) {}
 
 Slice::Slice(const void* buf, size_t len, StaticSlice)
-    : slice_(grpc_slice_from_static_buffer(reinterpret_cast<const char*>(buf),
-                                           len)) {}
+    : slice_(
+          grpc_slice_from_static_buffer(static_cast<const char*>(buf), len)) {}
 
 Slice::Slice(const Slice& other) : slice_(grpc_slice_ref(other.slice_)) {}
 

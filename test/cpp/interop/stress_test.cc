@@ -23,10 +23,10 @@
 #include <vector>
 
 #include <gflags/gflags.h>
-#include <grpc++/create_channel.h>
-#include <grpc++/grpc++.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/grpcpp.h>
 
 #include "src/proto/grpc/testing/metrics.grpc.pb.h"
 #include "src/proto/grpc/testing/metrics.pb.h"
@@ -36,9 +36,7 @@
 #include "test/cpp/util/metrics_server.h"
 #include "test/cpp/util/test_config.h"
 
-extern "C" {
 extern void gpr_default_log(gpr_log_func_args* args);
-}
 
 DEFINE_int32(metrics_port, 8081, "The metrics server port.");
 

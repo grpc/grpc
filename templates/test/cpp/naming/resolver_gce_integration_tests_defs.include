@@ -24,7 +24,7 @@ elif [[ "$GRPC_DNS_RESOLVER" != ares ]]; then
   exit 1
 fi
 
-cd $(dirname $0)/../../..
+cd "$(dirname "$0")/../../.."
 
 if [[ "$CONFIG" == "" ]]; then
   export CONFIG=opt

@@ -23,10 +23,6 @@
 
 #include <stddef.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* Data structure to map a uint32_t to a data object (represented by a void*)
 
    Represented as a sorted array of keys, and a corresponding array of values.
@@ -68,9 +64,5 @@ void grpc_chttp2_stream_map_for_each(grpc_chttp2_stream_map* map,
                                      void (*f)(void* user_data, uint32_t key,
                                                void* value),
                                      void* user_data);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_STREAM_MAP_H */

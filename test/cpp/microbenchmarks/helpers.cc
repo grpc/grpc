@@ -43,18 +43,21 @@ void TrackCounters::AddToLabel(std::ostream& out, benchmark::State& state) {
   grpc_stats_data stats;
   grpc_stats_diff(&stats_end, &stats_begin_, &stats);
   for (int i = 0; i < GRPC_STATS_COUNTER_COUNT; i++) {
-    out << " " << grpc_stats_counter_name[i]
-        << "/iter:" << ((double)stats.counters[i] / (double)state.iterations());
+    out << " " << grpc_stats_counter_name[i] << "/iter:"
+        << (static_cast<double>(stats.counters[i]) /
+            static_cast<double>(state.iterations()));
   }
   for (int i = 0; i < GRPC_STATS_HISTOGRAM_COUNT; i++) {
     std::ostringstream median_ss;
     median_ss << grpc_stats_histogram_name[i] << "-median";
-    state.counters[median_ss.str()] = benchmark::Counter(
-        grpc_stats_histo_percentile(&stats, (grpc_stats_histograms)i, 50.0));
+    state.counters[median_ss.str()] =
+        benchmark::Counter(grpc_stats_histo_percentile(
+            &stats, static_cast<grpc_stats_histograms>(i), 50.0));
     std::ostringstream tail_ss;
     tail_ss << grpc_stats_histogram_name[i] << "-99p";
-    state.counters[tail_ss.str()] = benchmark::Counter(
-        grpc_stats_histo_percentile(&stats, (grpc_stats_histograms)i, 99.0));
+    state.counters[tail_ss.str()] =
+        benchmark::Counter(grpc_stats_histo_percentile(
+            &stats, static_cast<grpc_stats_histograms>(i), 99.0));
   }
 #ifdef GPR_LOW_LEVEL_COUNTERS
   grpc_memory_counters counters_at_end = grpc_memory_counters_snapshot();

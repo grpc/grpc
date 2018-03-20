@@ -22,8 +22,6 @@ import six
 import grpc
 from grpc._cython import cygrpc
 
-EMPTY_METADATA = cygrpc.Metadata(())
-
 CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY = {
     cygrpc.ConnectivityState.idle:
     grpc.ChannelConnectivity.IDLE,
@@ -79,31 +77,6 @@ def decode(b):
         except UnicodeDecodeError:
             logging.exception('Invalid encoding on %s', b)
             return b.decode('latin1')
-
-
-def channel_args(options):
-    cygrpc_args = []
-    for key, value in options:
-        if isinstance(value, six.string_types):
-            cygrpc_args.append(cygrpc.ChannelArg(encode(key), encode(value)))
-        else:
-            cygrpc_args.append(cygrpc.ChannelArg(encode(key), value))
-    return cygrpc.ChannelArgs(cygrpc_args)
-
-
-def to_cygrpc_metadata(application_metadata):
-    return EMPTY_METADATA if application_metadata is None else cygrpc.Metadata(
-        cygrpc.Metadatum(encode(key), encode(value))
-        for key, value in application_metadata)
-
-
-def to_application_metadata(cygrpc_metadata):
-    if cygrpc_metadata is None:
-        return ()
-    else:
-        return tuple((decode(key), value
-                      if key[-4:] == b'-bin' else decode(value))
-                     for key, value in cygrpc_metadata)
 
 
 def _transform(message, transformer, exception_message):

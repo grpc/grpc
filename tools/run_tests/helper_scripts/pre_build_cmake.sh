@@ -15,10 +15,10 @@
 
 set -ex
 
-cd $(dirname $0)/../../..
+cd "$(dirname "$0")/../../.."
 
 mkdir -p cmake/build
 cd cmake/build
 
 # MSBUILD_CONFIG's values are suitable for cmake as well
-cmake -DgRPC_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=${MSBUILD_CONFIG} ../..
+cmake -DgRPC_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE="${MSBUILD_CONFIG}" ../..

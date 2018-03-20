@@ -16,10 +16,13 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_WINSOCK_SOCKET
 #include "src/core/lib/iomgr/endpoint_pair.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 
 #include <errno.h>
@@ -44,19 +47,19 @@ static void create_sockets(SOCKET sv[2]) {
   memset(&addr, 0, sizeof(addr));
   addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
   addr.sin_family = AF_INET;
-  GPR_ASSERT(bind(lst_sock, (struct sockaddr*)&addr, sizeof(addr)) !=
+  GPR_ASSERT(bind(lst_sock, (grpc_sockaddr*)&addr, sizeof(addr)) !=
              SOCKET_ERROR);
   GPR_ASSERT(listen(lst_sock, SOMAXCONN) != SOCKET_ERROR);
-  GPR_ASSERT(getsockname(lst_sock, (struct sockaddr*)&addr, &addr_len) !=
+  GPR_ASSERT(getsockname(lst_sock, (grpc_sockaddr*)&addr, &addr_len) !=
              SOCKET_ERROR);
 
   cli_sock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
                        WSA_FLAG_OVERLAPPED);
   GPR_ASSERT(cli_sock != INVALID_SOCKET);
 
-  GPR_ASSERT(WSAConnect(cli_sock, (struct sockaddr*)&addr, addr_len, NULL, NULL,
+  GPR_ASSERT(WSAConnect(cli_sock, (grpc_sockaddr*)&addr, addr_len, NULL, NULL,
                         NULL, NULL) == 0);
-  svr_sock = accept(lst_sock, (struct sockaddr*)&addr, &addr_len);
+  svr_sock = accept(lst_sock, (grpc_sockaddr*)&addr, &addr_len);
   GPR_ASSERT(svr_sock != INVALID_SOCKET);
 
   closesocket(lst_sock);
@@ -72,14 +75,12 @@ grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(
   SOCKET sv[2];
   grpc_endpoint_pair p;
   create_sockets(sv);
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  p.client = grpc_tcp_create(&exec_ctx,
-                             grpc_winsocket_create(sv[1], "endpoint:client"),
+  grpc_core::ExecCtx exec_ctx;
+  p.client = grpc_tcp_create(grpc_winsocket_create(sv[1], "endpoint:client"),
                              channel_args, "endpoint:server");
-  p.server = grpc_tcp_create(&exec_ctx,
-                             grpc_winsocket_create(sv[0], "endpoint:server"),
+  p.server = grpc_tcp_create(grpc_winsocket_create(sv[0], "endpoint:server"),
                              channel_args, "endpoint:client");
-  grpc_exec_ctx_finish(&exec_ctx);
+
   return p;
 }
 

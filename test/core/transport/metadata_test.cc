@@ -27,8 +27,9 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/support/string.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "test/core/util/test_config.h"
 
@@ -60,15 +61,15 @@ static void test_create_metadata(bool intern_keys, bool intern_values) {
           intern_keys, intern_values);
 
   grpc_init();
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   m1 = grpc_mdelem_from_slices(
-      &exec_ctx, maybe_intern(grpc_slice_from_static_string("a"), intern_keys),
+      maybe_intern(grpc_slice_from_static_string("a"), intern_keys),
       maybe_intern(grpc_slice_from_static_string("b"), intern_values));
   m2 = grpc_mdelem_from_slices(
-      &exec_ctx, maybe_intern(grpc_slice_from_static_string("a"), intern_keys),
+      maybe_intern(grpc_slice_from_static_string("a"), intern_keys),
       maybe_intern(grpc_slice_from_static_string("b"), intern_values));
   m3 = grpc_mdelem_from_slices(
-      &exec_ctx, maybe_intern(grpc_slice_from_static_string("a"), intern_keys),
+      maybe_intern(grpc_slice_from_static_string("a"), intern_keys),
       maybe_intern(grpc_slice_from_static_string("c"), intern_values));
   GPR_ASSERT(grpc_mdelem_eq(m1, m2));
   GPR_ASSERT(!grpc_mdelem_eq(m3, m1));
@@ -77,10 +78,10 @@ static void test_create_metadata(bool intern_keys, bool intern_values) {
   GPR_ASSERT(grpc_slice_str_cmp(GRPC_MDKEY(m1), "a") == 0);
   GPR_ASSERT(grpc_slice_str_cmp(GRPC_MDVALUE(m1), "b") == 0);
   GPR_ASSERT(grpc_slice_str_cmp(GRPC_MDVALUE(m3), "c") == 0);
-  GRPC_MDELEM_UNREF(&exec_ctx, m1);
-  GRPC_MDELEM_UNREF(&exec_ctx, m2);
-  GRPC_MDELEM_UNREF(&exec_ctx, m3);
-  grpc_exec_ctx_finish(&exec_ctx);
+  GRPC_MDELEM_UNREF(m1);
+  GRPC_MDELEM_UNREF(m2);
+  GRPC_MDELEM_UNREF(m3);
+
   grpc_shutdown();
 }
 
@@ -95,19 +96,15 @@ static void test_create_many_ephemeral_metadata(bool intern_keys,
       intern_keys, intern_values);
 
   grpc_init();
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   /* add, and immediately delete a bunch of different elements */
   for (i = 0; i < MANY; i++) {
     gpr_ltoa(i, buffer);
-    GRPC_MDELEM_UNREF(
-        &exec_ctx,
-        grpc_mdelem_from_slices(
-            &exec_ctx,
-            maybe_intern(grpc_slice_from_static_string("a"), intern_keys),
-            maybe_intern(grpc_slice_from_copied_string(buffer),
-                         intern_values)));
+    GRPC_MDELEM_UNREF(grpc_mdelem_from_slices(
+        maybe_intern(grpc_slice_from_static_string("a"), intern_keys),
+        maybe_intern(grpc_slice_from_copied_string(buffer), intern_values)));
   }
-  grpc_exec_ctx_finish(&exec_ctx);
+
   grpc_shutdown();
 }
 
@@ -121,28 +118,28 @@ static void test_create_many_persistant_metadata(void) {
   gpr_log(GPR_INFO, "test_create_many_persistant_metadata");
 
   grpc_init();
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   /* add phase */
   for (i = 0; i < MANY; i++) {
     gpr_ltoa(i, buffer);
     created[i] = grpc_mdelem_from_slices(
-        &exec_ctx, grpc_slice_intern(grpc_slice_from_static_string("a")),
+        grpc_slice_intern(grpc_slice_from_static_string("a")),
         grpc_slice_intern(grpc_slice_from_static_string(buffer)));
   }
   /* verify phase */
   for (i = 0; i < MANY; i++) {
     gpr_ltoa(i, buffer);
     md = grpc_mdelem_from_slices(
-        &exec_ctx, grpc_slice_intern(grpc_slice_from_static_string("a")),
+        grpc_slice_intern(grpc_slice_from_static_string("a")),
         grpc_slice_intern(grpc_slice_from_static_string(buffer)));
     GPR_ASSERT(grpc_mdelem_eq(md, created[i]));
-    GRPC_MDELEM_UNREF(&exec_ctx, md);
+    GRPC_MDELEM_UNREF(md);
   }
   /* cleanup phase */
   for (i = 0; i < MANY; i++) {
-    GRPC_MDELEM_UNREF(&exec_ctx, created[i]);
+    GRPC_MDELEM_UNREF(created[i]);
   }
-  grpc_exec_ctx_finish(&exec_ctx);
+
   grpc_shutdown();
 
   gpr_free(created);
@@ -155,31 +152,25 @@ static void test_spin_creating_the_same_thing(bool intern_keys,
           intern_keys, intern_values);
 
   grpc_init();
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   grpc_mdelem a, b, c;
   GRPC_MDELEM_UNREF(
-      &exec_ctx,
       a = grpc_mdelem_from_slices(
-          &exec_ctx,
           maybe_intern(grpc_slice_from_static_string("a"), intern_keys),
           maybe_intern(grpc_slice_from_static_string("b"), intern_values)));
   GRPC_MDELEM_UNREF(
-      &exec_ctx,
       b = grpc_mdelem_from_slices(
-          &exec_ctx,
           maybe_intern(grpc_slice_from_static_string("a"), intern_keys),
           maybe_intern(grpc_slice_from_static_string("b"), intern_values)));
   GRPC_MDELEM_UNREF(
-      &exec_ctx,
       c = grpc_mdelem_from_slices(
-          &exec_ctx,
           maybe_intern(grpc_slice_from_static_string("a"), intern_keys),
           maybe_intern(grpc_slice_from_static_string("b"), intern_values)));
   if (intern_keys && intern_values) {
     GPR_ASSERT(a.payload == b.payload);
     GPR_ASSERT(a.payload == c.payload);
   }
-  grpc_exec_ctx_finish(&exec_ctx);
+
   grpc_shutdown();
 }
 
@@ -188,16 +179,16 @@ static void test_identity_laws(bool intern_keys, bool intern_values) {
           intern_keys, intern_values);
 
   grpc_init();
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   grpc_mdelem a, b, c;
   a = grpc_mdelem_from_slices(
-      &exec_ctx, maybe_intern(grpc_slice_from_static_string("a"), intern_keys),
+      maybe_intern(grpc_slice_from_static_string("a"), intern_keys),
       maybe_intern(grpc_slice_from_static_string("b"), intern_values));
   b = grpc_mdelem_from_slices(
-      &exec_ctx, maybe_intern(grpc_slice_from_static_string("a"), intern_keys),
+      maybe_intern(grpc_slice_from_static_string("a"), intern_keys),
       maybe_intern(grpc_slice_from_static_string("b"), intern_values));
   c = grpc_mdelem_from_slices(
-      &exec_ctx, maybe_intern(grpc_slice_from_static_string("a"), intern_keys),
+      maybe_intern(grpc_slice_from_static_string("a"), intern_keys),
       maybe_intern(grpc_slice_from_static_string("b"), intern_values));
   GPR_ASSERT(grpc_mdelem_eq(a, a));
   GPR_ASSERT(grpc_mdelem_eq(b, b));
@@ -216,10 +207,10 @@ static void test_identity_laws(bool intern_keys, bool intern_values) {
     GPR_ASSERT(a.payload != c.payload);
     GPR_ASSERT(b.payload != c.payload);
   }
-  GRPC_MDELEM_UNREF(&exec_ctx, a);
-  GRPC_MDELEM_UNREF(&exec_ctx, b);
-  GRPC_MDELEM_UNREF(&exec_ctx, c);
-  grpc_exec_ctx_finish(&exec_ctx);
+  GRPC_MDELEM_UNREF(a);
+  GRPC_MDELEM_UNREF(b);
+  GRPC_MDELEM_UNREF(c);
+
   grpc_shutdown();
 }
 
@@ -235,7 +226,7 @@ static void test_things_stick_around(void) {
   gpr_log(GPR_INFO, "test_things_stick_around");
 
   grpc_init();
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
 
   for (i = 0; i < nstrs; i++) {
     gpr_asprintf(&buffer, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%" PRIuPTR "x", i);
@@ -246,30 +237,29 @@ static void test_things_stick_around(void) {
 
   for (i = 0; i < nstrs; i++) {
     grpc_slice_ref_internal(strs[i]);
-    grpc_slice_unref_internal(&exec_ctx, strs[i]);
+    grpc_slice_unref_internal(strs[i]);
   }
 
   for (i = 0; i < nstrs; i++) {
-    size_t p = (size_t)rand() % nstrs;
-    size_t q = (size_t)rand() % nstrs;
+    size_t p = static_cast<size_t>(rand()) % nstrs;
+    size_t q = static_cast<size_t>(rand()) % nstrs;
     size_t temp = shuf[p];
     shuf[p] = shuf[q];
     shuf[q] = temp;
   }
 
   for (i = 0; i < nstrs; i++) {
-    grpc_slice_unref_internal(&exec_ctx, strs[shuf[i]]);
+    grpc_slice_unref_internal(strs[shuf[i]]);
     for (j = i + 1; j < nstrs; j++) {
       gpr_asprintf(&buffer, "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx%" PRIuPTR "x",
                    shuf[j]);
       test = grpc_slice_intern(grpc_slice_from_static_string(buffer));
       GPR_ASSERT(grpc_slice_is_equivalent(test, strs[shuf[j]]));
-      grpc_slice_unref_internal(&exec_ctx, test);
+      grpc_slice_unref_internal(test);
       gpr_free(buffer);
     }
   }
 
-  grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();
   gpr_free(strs);
   gpr_free(shuf);
@@ -282,51 +272,50 @@ static void test_user_data_works(void) {
   gpr_log(GPR_INFO, "test_user_data_works");
 
   grpc_init();
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   ud1 = static_cast<int*>(gpr_malloc(sizeof(int)));
   *ud1 = 1;
   ud2 = static_cast<int*>(gpr_malloc(sizeof(int)));
   *ud2 = 2;
   md = grpc_mdelem_from_slices(
-      &exec_ctx, grpc_slice_intern(grpc_slice_from_static_string("abc")),
+      grpc_slice_intern(grpc_slice_from_static_string("abc")),
       grpc_slice_intern(grpc_slice_from_static_string("123")));
   grpc_mdelem_set_user_data(md, gpr_free, ud1);
   grpc_mdelem_set_user_data(md, gpr_free, ud2);
   GPR_ASSERT(grpc_mdelem_get_user_data(md, gpr_free) == ud1);
-  GRPC_MDELEM_UNREF(&exec_ctx, md);
-  grpc_exec_ctx_finish(&exec_ctx);
+  GRPC_MDELEM_UNREF(md);
+
   grpc_shutdown();
 }
 
-static void verify_ascii_header_size(grpc_exec_ctx* exec_ctx, const char* key,
-                                     const char* value, bool intern_key,
-                                     bool intern_value) {
+static void verify_ascii_header_size(const char* key, const char* value,
+                                     bool intern_key, bool intern_value) {
   grpc_mdelem elem = grpc_mdelem_from_slices(
-      exec_ctx, maybe_intern(grpc_slice_from_static_string(key), intern_key),
+      maybe_intern(grpc_slice_from_static_string(key), intern_key),
       maybe_intern(grpc_slice_from_static_string(value), intern_value));
   size_t elem_size = grpc_mdelem_get_size_in_hpack_table(elem, false);
   size_t expected_size = 32 + strlen(key) + strlen(value);
   GPR_ASSERT(expected_size == elem_size);
-  GRPC_MDELEM_UNREF(exec_ctx, elem);
+  GRPC_MDELEM_UNREF(elem);
 }
 
-static void verify_binary_header_size(grpc_exec_ctx* exec_ctx, const char* key,
-                                      const uint8_t* value, size_t value_len,
-                                      bool intern_key, bool intern_value) {
+static void verify_binary_header_size(const char* key, const uint8_t* value,
+                                      size_t value_len, bool intern_key,
+                                      bool intern_value) {
   grpc_mdelem elem = grpc_mdelem_from_slices(
-      exec_ctx, maybe_intern(grpc_slice_from_static_string(key), intern_key),
+      maybe_intern(grpc_slice_from_static_string(key), intern_key),
       maybe_intern(grpc_slice_from_static_buffer(value, value_len),
                    intern_value));
   GPR_ASSERT(grpc_is_binary_header(GRPC_MDKEY(elem)));
   size_t elem_size = grpc_mdelem_get_size_in_hpack_table(elem, false);
-  grpc_slice value_slice =
-      grpc_slice_from_copied_buffer((const char*)value, value_len);
+  grpc_slice value_slice = grpc_slice_from_copied_buffer(
+      reinterpret_cast<const char*>(value), value_len);
   grpc_slice base64_encoded = grpc_chttp2_base64_encode(value_slice);
   size_t expected_size = 32 + strlen(key) + GRPC_SLICE_LENGTH(base64_encoded);
   GPR_ASSERT(expected_size == elem_size);
-  grpc_slice_unref_internal(exec_ctx, value_slice);
-  grpc_slice_unref_internal(exec_ctx, base64_encoded);
-  GRPC_MDELEM_UNREF(exec_ctx, elem);
+  grpc_slice_unref_internal(value_slice);
+  grpc_slice_unref_internal(base64_encoded);
+  GRPC_MDELEM_UNREF(elem);
 }
 
 #define BUFFER_SIZE 64
@@ -334,27 +323,23 @@ static void test_mdelem_sizes_in_hpack(bool intern_key, bool intern_value) {
   gpr_log(GPR_INFO, "test_mdelem_size: intern_key=%d intern_value=%d",
           intern_key, intern_value);
   grpc_init();
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
 
   uint8_t binary_value[BUFFER_SIZE] = {0};
   for (uint8_t i = 0; i < BUFFER_SIZE; i++) {
     binary_value[i] = i;
   }
 
-  verify_ascii_header_size(&exec_ctx, "hello", "world", intern_key,
-                           intern_value);
-  verify_ascii_header_size(&exec_ctx, "hello",
-                           "worldxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", intern_key,
-                           intern_value);
-  verify_ascii_header_size(&exec_ctx, ":scheme", "http", intern_key,
-                           intern_value);
+  verify_ascii_header_size("hello", "world", intern_key, intern_value);
+  verify_ascii_header_size("hello", "worldxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                           intern_key, intern_value);
+  verify_ascii_header_size(":scheme", "http", intern_key, intern_value);
 
   for (uint8_t i = 0; i < BUFFER_SIZE; i++) {
-    verify_binary_header_size(&exec_ctx, "hello-bin", binary_value, i,
-                              intern_key, intern_value);
+    verify_binary_header_size("hello-bin", binary_value, i, intern_key,
+                              intern_value);
   }
 
-  grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();
 }
 
@@ -362,13 +347,13 @@ static void test_copied_static_metadata(bool dup_key, bool dup_value) {
   gpr_log(GPR_INFO, "test_static_metadata: dup_key=%d dup_value=%d", dup_key,
           dup_value);
   grpc_init();
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
 
   for (size_t i = 0; i < GRPC_STATIC_MDELEM_COUNT; i++) {
     grpc_mdelem p = GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[i],
                                      GRPC_MDELEM_STORAGE_STATIC);
     grpc_mdelem q =
-        grpc_mdelem_from_slices(&exec_ctx, maybe_dup(GRPC_MDKEY(p), dup_key),
+        grpc_mdelem_from_slices(maybe_dup(GRPC_MDKEY(p), dup_key),
                                 maybe_dup(GRPC_MDVALUE(p), dup_value));
     GPR_ASSERT(grpc_mdelem_eq(p, q));
     if (dup_key || dup_value) {
@@ -376,16 +361,16 @@ static void test_copied_static_metadata(bool dup_key, bool dup_value) {
     } else {
       GPR_ASSERT(p.payload == q.payload);
     }
-    GRPC_MDELEM_UNREF(&exec_ctx, p);
-    GRPC_MDELEM_UNREF(&exec_ctx, q);
+    GRPC_MDELEM_UNREF(p);
+    GRPC_MDELEM_UNREF(q);
   }
 
-  grpc_exec_ctx_finish(&exec_ctx);
   grpc_shutdown();
 }
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
+  grpc_init();
   test_no_op();
   for (int k = 0; k <= 1; k++) {
     for (int v = 0; v <= 1; v++) {
@@ -400,5 +385,6 @@ int main(int argc, char** argv) {
   test_create_many_persistant_metadata();
   test_things_stick_around();
   test_user_data_works();
+  grpc_shutdown();
   return 0;
 }

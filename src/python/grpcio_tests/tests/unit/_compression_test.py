@@ -17,7 +17,6 @@ import unittest
 
 import grpc
 from grpc import _grpcio_metadata
-from grpc.framework.foundation import logging_pool
 
 from tests.unit import test_common
 from tests.unit.framework.common import test_constants
@@ -27,18 +26,16 @@ _STREAM_STREAM = '/test/StreamStream'
 
 
 def handle_unary(request, servicer_context):
-    servicer_context.send_initial_metadata(
-        [('grpc-internal-encoding-request', 'gzip')])
+    servicer_context.send_initial_metadata([('grpc-internal-encoding-request',
+                                             'gzip')])
     return request
 
 
 def handle_stream(request_iterator, servicer_context):
-    # TODO(issue:#6891) We should be able to remove this loop,
-    # and replace with return; yield
-    servicer_context.send_initial_metadata(
-        [('grpc-internal-encoding-request', 'gzip')])
-    for request in request_iterator:
-        yield request
+    servicer_context.send_initial_metadata([('grpc-internal-encoding-request',
+                                             'gzip')])
+    return
+    yield
 
 
 class _MethodHandler(grpc.RpcMethodHandler):
@@ -72,9 +69,8 @@ class _GenericHandler(grpc.GenericRpcHandler):
 class CompressionTest(unittest.TestCase):
 
     def setUp(self):
-        self._server_pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
-        self._server = grpc.server(
-            self._server_pool, handlers=(_GenericHandler(),))
+        self._server = test_common.test_server()
+        self._server.add_generic_rpc_handlers((_GenericHandler(),))
         self._port = self._server.add_insecure_port('[::]:0')
         self._server.start()
 

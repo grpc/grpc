@@ -20,10 +20,10 @@
  * working */
 
 #include <benchmark/benchmark.h>
-#include <grpc++/completion_queue.h>
-#include <grpc++/impl/grpc_library.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+#include <grpcpp/completion_queue.h>
+#include <grpcpp/impl/grpc_library.h>
 #include "test/cpp/microbenchmarks/helpers.h"
 
 #include "src/core/lib/surface/completion_queue.h"
@@ -66,7 +66,7 @@ static void BM_CreateDestroyCore(benchmark::State& state) {
 }
 BENCHMARK(BM_CreateDestroyCore);
 
-static void DoneWithCompletionOnStack(grpc_exec_ctx* exec_ctx, void* arg,
+static void DoneWithCompletionOnStack(void* arg,
                                       grpc_cq_completion* completion) {}
 
 class DummyTag final : public internal::CompletionQueueTag {
@@ -81,11 +81,11 @@ static void BM_Pass1Cpp(benchmark::State& state) {
   while (state.KeepRunning()) {
     grpc_cq_completion completion;
     DummyTag dummy_tag;
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_core::ExecCtx exec_ctx;
     GPR_ASSERT(grpc_cq_begin_op(c_cq, &dummy_tag));
-    grpc_cq_end_op(&exec_ctx, c_cq, &dummy_tag, GRPC_ERROR_NONE,
-                   DoneWithCompletionOnStack, nullptr, &completion);
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_cq_end_op(c_cq, &dummy_tag, GRPC_ERROR_NONE, DoneWithCompletionOnStack,
+                   nullptr, &completion);
+
     void* tag;
     bool ok;
     cq.Next(&tag, &ok);
@@ -101,11 +101,11 @@ static void BM_Pass1Core(benchmark::State& state) {
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   while (state.KeepRunning()) {
     grpc_cq_completion completion;
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_core::ExecCtx exec_ctx;
     GPR_ASSERT(grpc_cq_begin_op(cq, nullptr));
-    grpc_cq_end_op(&exec_ctx, cq, nullptr, GRPC_ERROR_NONE,
-                   DoneWithCompletionOnStack, nullptr, &completion);
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_cq_end_op(cq, nullptr, GRPC_ERROR_NONE, DoneWithCompletionOnStack,
+                   nullptr, &completion);
+
     grpc_completion_queue_next(cq, deadline, nullptr);
   }
   grpc_completion_queue_destroy(cq);
@@ -120,11 +120,11 @@ static void BM_Pluck1Core(benchmark::State& state) {
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   while (state.KeepRunning()) {
     grpc_cq_completion completion;
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_core::ExecCtx exec_ctx;
     GPR_ASSERT(grpc_cq_begin_op(cq, nullptr));
-    grpc_cq_end_op(&exec_ctx, cq, nullptr, GRPC_ERROR_NONE,
-                   DoneWithCompletionOnStack, nullptr, &completion);
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_cq_end_op(cq, nullptr, GRPC_ERROR_NONE, DoneWithCompletionOnStack,
+                   nullptr, &completion);
+
     grpc_completion_queue_pluck(cq, nullptr, deadline, nullptr);
   }
   grpc_completion_queue_destroy(cq);

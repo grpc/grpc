@@ -16,11 +16,10 @@
  *
  */
 
-#include <grpc++/impl/codegen/core_codegen.h>
+#include <grpcpp/impl/codegen/core_codegen.h>
 
 #include <stdlib.h>
 
-#include <grpc++/support/config.h>
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
@@ -30,12 +29,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
+#include <grpcpp/support/config.h>
 
 #include "src/core/lib/profiling/timers.h"
 
-extern "C" {
 struct grpc_byte_buffer;
-}
 
 namespace grpc {
 

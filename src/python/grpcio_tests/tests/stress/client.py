@@ -102,8 +102,10 @@ def _get_channel(target, args):
             root_certificates = None  # will load default roots.
         channel_credentials = grpc.ssl_channel_credentials(
             root_certificates=root_certificates)
-        options = (('grpc.ssl_target_name_override',
-                    args.server_host_override,),)
+        options = ((
+            'grpc.ssl_target_name_override',
+            args.server_host_override,
+        ),)
         channel = grpc.secure_channel(
             target, channel_credentials, options=options)
     else:

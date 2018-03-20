@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2018 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,13 @@
  *
  */
 
+// DEPRECATED: The headers in include/grpc++ are deprecated. Please include the
+// headers in include/grpcpp instead. This header exists only for backwards
+// compatibility.
+
 #ifndef GRPCXX_SUPPORT_BYTE_BUFFER_H
 #define GRPCXX_SUPPORT_BYTE_BUFFER_H
 
-#include <grpc++/impl/codegen/byte_buffer.h>
-#include <grpc++/impl/serialization_traits.h>
-#include <grpc++/support/config.h>
-#include <grpc++/support/slice.h>
-#include <grpc++/support/status.h>
-#include <grpc/byte_buffer.h>
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
+#include <grpcpp/support/byte_buffer.h>
 
 #endif  // GRPCXX_SUPPORT_BYTE_BUFFER_H

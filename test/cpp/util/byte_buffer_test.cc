@@ -16,13 +16,14 @@
  *
  */
 
-#include <grpc++/support/byte_buffer.h>
+#include <grpcpp/support/byte_buffer.h>
 
 #include <cstring>
 #include <vector>
 
-#include <grpc++/support/slice.h>
+#include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <grpcpp/support/slice.h>
 #include <gtest/gtest.h>
 
 namespace grpc {
@@ -109,5 +110,8 @@ TEST_F(ByteBufferTest, SerializationMakesCopy) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  grpc_init();
+  int ret = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return ret;
 }

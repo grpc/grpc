@@ -46,9 +46,11 @@ class _State(object):
 
 
 class _Delta(
-        collections.namedtuple('_Delta',
-                               ('mature_behaviors', 'earliest_mature_time',
-                                'earliest_immature_time',))):
+        collections.namedtuple('_Delta', (
+            'mature_behaviors',
+            'earliest_mature_time',
+            'earliest_immature_time',
+        ))):
     pass
 
 

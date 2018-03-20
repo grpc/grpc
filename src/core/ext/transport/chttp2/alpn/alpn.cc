@@ -16,9 +16,12 @@
  *
  */
 
-#include "src/core/ext/transport/chttp2/alpn/alpn.h"
+#include <grpc/support/port_platform.h>
+
 #include <grpc/support/log.h>
-#include <grpc/support/useful.h>
+#include "src/core/ext/transport/chttp2/alpn/alpn.h"
+
+#include "src/core/lib/gpr/useful.h"
 
 /* in order of preference */
 static const char* const supported_versions[] = {"grpc-exp", "h2"};

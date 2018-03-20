@@ -21,7 +21,7 @@
 
 #include <memory>
 
-#include <grpc++/security/credentials.h>
+#include <grpcpp/security/credentials.h>
 
 namespace grpc {
 class Channel;

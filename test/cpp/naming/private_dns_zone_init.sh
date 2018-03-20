@@ -17,7 +17,7 @@
 
 set -ex
 
-cd $(dirname $0)/../../..
+cd "$(dirname "$0")/../../.."
 
 gcloud dns record-sets transaction start -z=resolver-tests-version-4-grpctestingexp-zone-id
 

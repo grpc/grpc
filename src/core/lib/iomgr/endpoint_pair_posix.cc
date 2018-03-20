@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET
@@ -33,8 +35,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
-#include "src/core/lib/support/string.h"
 
 static void create_sockets(int sv[2]) {
   int flags;
@@ -54,18 +56,17 @@ grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char* name,
   char* final_name;
   create_sockets(sv);
 
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
 
   gpr_asprintf(&final_name, "%s:client", name);
-  p.client = grpc_tcp_create(&exec_ctx, grpc_fd_create(sv[1], final_name), args,
+  p.client = grpc_tcp_create(grpc_fd_create(sv[1], final_name), args,
                              "socketpair-server");
   gpr_free(final_name);
   gpr_asprintf(&final_name, "%s:server", name);
-  p.server = grpc_tcp_create(&exec_ctx, grpc_fd_create(sv[0], final_name), args,
+  p.server = grpc_tcp_create(grpc_fd_create(sv[0], final_name), args,
                              "socketpair-client");
   gpr_free(final_name);
 
-  grpc_exec_ctx_finish(&exec_ctx);
   return p;
 }
 

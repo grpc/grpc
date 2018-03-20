@@ -1,0 +1,208 @@
+%YAML 1.2
+--- |
+  <%
+    native_method_signatures = [
+      'void grpcsharp_init()',
+      'void grpcsharp_shutdown()',
+      'IntPtr grpcsharp_version_string()  // returns not-owned const char*',
+      'BatchContextSafeHandle grpcsharp_batch_context_create()',
+      'IntPtr grpcsharp_batch_context_recv_initial_metadata(BatchContextSafeHandle ctx)',
+      'IntPtr grpcsharp_batch_context_recv_message_length(BatchContextSafeHandle ctx)',
+      'void grpcsharp_batch_context_recv_message_to_buffer(BatchContextSafeHandle ctx, byte[] buffer, UIntPtr bufferLen)',
+      'StatusCode grpcsharp_batch_context_recv_status_on_client_status(BatchContextSafeHandle ctx)',
+      'IntPtr grpcsharp_batch_context_recv_status_on_client_details(BatchContextSafeHandle ctx, out UIntPtr detailsLength)',
+      'IntPtr grpcsharp_batch_context_recv_status_on_client_trailing_metadata(BatchContextSafeHandle ctx)',
+      'int grpcsharp_batch_context_recv_close_on_server_cancelled(BatchContextSafeHandle ctx)',
+      'void grpcsharp_batch_context_reset(BatchContextSafeHandle ctx)',
+      'void grpcsharp_batch_context_destroy(IntPtr ctx)',
+      'RequestCallContextSafeHandle grpcsharp_request_call_context_create()',
+      'CallSafeHandle grpcsharp_request_call_context_call(RequestCallContextSafeHandle ctx)',
+      'IntPtr grpcsharp_request_call_context_method(RequestCallContextSafeHandle ctx, out UIntPtr methodLength)',
+      'IntPtr grpcsharp_request_call_context_host(RequestCallContextSafeHandle ctx, out UIntPtr hostLength)',
+      'Timespec grpcsharp_request_call_context_deadline(RequestCallContextSafeHandle ctx)',
+      'IntPtr grpcsharp_request_call_context_request_metadata(RequestCallContextSafeHandle ctx)',
+      'void grpcsharp_request_call_context_reset(RequestCallContextSafeHandle ctx)',
+      'void grpcsharp_request_call_context_destroy(IntPtr ctx)',
+      'CallCredentialsSafeHandle grpcsharp_composite_call_credentials_create(CallCredentialsSafeHandle creds1, CallCredentialsSafeHandle creds2)',
+      'void grpcsharp_call_credentials_release(IntPtr credentials)',
+      'CallError grpcsharp_call_cancel(CallSafeHandle call)',
+      'CallError grpcsharp_call_cancel_with_status(CallSafeHandle call, StatusCode status, string description)',
+      'CallError grpcsharp_call_start_unary(CallSafeHandle call, BatchContextSafeHandle ctx, byte[] sendBuffer, UIntPtr sendBufferLen, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags)',
+      'CallError grpcsharp_call_start_client_streaming(CallSafeHandle call, BatchContextSafeHandle ctx, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags)',
+      'CallError grpcsharp_call_start_server_streaming(CallSafeHandle call, BatchContextSafeHandle ctx, byte[] sendBuffer, UIntPtr sendBufferLen, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags)',
+      'CallError grpcsharp_call_start_duplex_streaming(CallSafeHandle call, BatchContextSafeHandle ctx, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags)',
+      'CallError grpcsharp_call_send_message(CallSafeHandle call, BatchContextSafeHandle ctx, byte[] sendBuffer, UIntPtr sendBufferLen, WriteFlags writeFlags, int sendEmptyInitialMetadata)',
+      'CallError grpcsharp_call_send_close_from_client(CallSafeHandle call, BatchContextSafeHandle ctx)',
+      'CallError grpcsharp_call_send_status_from_server(CallSafeHandle call, BatchContextSafeHandle ctx, StatusCode statusCode, byte[] statusMessage, UIntPtr statusMessageLen, MetadataArraySafeHandle metadataArray, int sendEmptyInitialMetadata, byte[] optionalSendBuffer, UIntPtr optionalSendBufferLen, WriteFlags writeFlags)',
+      'CallError grpcsharp_call_recv_message(CallSafeHandle call, BatchContextSafeHandle ctx)',
+      'CallError grpcsharp_call_recv_initial_metadata(CallSafeHandle call, BatchContextSafeHandle ctx)',
+      'CallError grpcsharp_call_start_serverside(CallSafeHandle call, BatchContextSafeHandle ctx)',
+      'CallError grpcsharp_call_send_initial_metadata(CallSafeHandle call, BatchContextSafeHandle ctx, MetadataArraySafeHandle metadataArray)',
+      'CallError grpcsharp_call_set_credentials(CallSafeHandle call, CallCredentialsSafeHandle credentials)',
+      'CStringSafeHandle grpcsharp_call_get_peer(CallSafeHandle call)',
+      'void grpcsharp_call_destroy(IntPtr call)',
+      'ChannelArgsSafeHandle grpcsharp_channel_args_create(UIntPtr numArgs)',
+      'void grpcsharp_channel_args_set_string(ChannelArgsSafeHandle args, UIntPtr index, string key, string value)',
+      'void grpcsharp_channel_args_set_integer(ChannelArgsSafeHandle args, UIntPtr index, string key, int value)',
+      'void grpcsharp_channel_args_destroy(IntPtr args)',
+      'void grpcsharp_override_default_ssl_roots(string pemRootCerts)',
+      'ChannelCredentialsSafeHandle grpcsharp_ssl_credentials_create(string pemRootCerts, string keyCertPairCertChain, string keyCertPairPrivateKey)',
+      'ChannelCredentialsSafeHandle grpcsharp_composite_channel_credentials_create(ChannelCredentialsSafeHandle channelCreds, CallCredentialsSafeHandle callCreds)',
+      'void grpcsharp_channel_credentials_release(IntPtr credentials)',
+      'ChannelSafeHandle grpcsharp_insecure_channel_create(string target, ChannelArgsSafeHandle channelArgs)',
+      'ChannelSafeHandle grpcsharp_secure_channel_create(ChannelCredentialsSafeHandle credentials, string target, ChannelArgsSafeHandle channelArgs)',
+      'CallSafeHandle grpcsharp_channel_create_call(ChannelSafeHandle channel, CallSafeHandle parentCall, ContextPropagationFlags propagationMask, CompletionQueueSafeHandle cq, string method, string host, Timespec deadline)',
+      'ChannelState grpcsharp_channel_check_connectivity_state(ChannelSafeHandle channel, int tryToConnect)',
+      'void grpcsharp_channel_watch_connectivity_state(ChannelSafeHandle channel, ChannelState lastObservedState, Timespec deadline, CompletionQueueSafeHandle cq, BatchContextSafeHandle ctx)',
+      'CStringSafeHandle grpcsharp_channel_get_target(ChannelSafeHandle call)',
+      'void grpcsharp_channel_destroy(IntPtr channel)',
+      'int grpcsharp_sizeof_grpc_event()',
+      'CompletionQueueSafeHandle grpcsharp_completion_queue_create_async()',
+      'CompletionQueueSafeHandle grpcsharp_completion_queue_create_sync()',
+      'void grpcsharp_completion_queue_shutdown(CompletionQueueSafeHandle cq)',
+      'CompletionQueueEvent grpcsharp_completion_queue_next(CompletionQueueSafeHandle cq)',
+      'CompletionQueueEvent grpcsharp_completion_queue_pluck(CompletionQueueSafeHandle cq, IntPtr tag)',
+      'void grpcsharp_completion_queue_destroy(IntPtr cq)',
+      'void gprsharp_free(IntPtr ptr)',
+      'MetadataArraySafeHandle grpcsharp_metadata_array_create(UIntPtr capacity)',
+      'void grpcsharp_metadata_array_add(MetadataArraySafeHandle array, string key, byte[] value, UIntPtr valueLength)',
+      'UIntPtr grpcsharp_metadata_array_count(IntPtr metadataArray)',
+      'IntPtr grpcsharp_metadata_array_get_key(IntPtr metadataArray, UIntPtr index, out UIntPtr keyLength)',
+      'IntPtr grpcsharp_metadata_array_get_value(IntPtr metadataArray, UIntPtr index, out UIntPtr valueLength)',
+      'void grpcsharp_metadata_array_destroy_full(IntPtr array)',
+      'void grpcsharp_redirect_log(GprLogDelegate callback)',
+      'CallCredentialsSafeHandle grpcsharp_metadata_credentials_create_from_plugin(NativeMetadataInterceptor interceptor)',
+      'void grpcsharp_metadata_credentials_notify_from_plugin(IntPtr callbackPtr, IntPtr userData, MetadataArraySafeHandle metadataArray, StatusCode statusCode, string errorDetails)',
+      'ServerCredentialsSafeHandle grpcsharp_ssl_server_credentials_create(string pemRootCerts, string[] keyCertPairCertChainArray, string[] keyCertPairPrivateKeyArray, UIntPtr numKeyCertPairs, int forceClientAuth)',
+      'void grpcsharp_server_credentials_release(IntPtr credentials)',
+      'ServerSafeHandle grpcsharp_server_create(ChannelArgsSafeHandle args)',
+      'void grpcsharp_server_register_completion_queue(ServerSafeHandle server, CompletionQueueSafeHandle cq)',
+      'int grpcsharp_server_add_insecure_http2_port(ServerSafeHandle server, string addr)',
+      'int grpcsharp_server_add_secure_http2_port(ServerSafeHandle server, string addr, ServerCredentialsSafeHandle creds)',
+      'void grpcsharp_server_start(ServerSafeHandle server)',
+      'CallError grpcsharp_server_request_call(ServerSafeHandle server, CompletionQueueSafeHandle cq, RequestCallContextSafeHandle ctx)',
+      'void grpcsharp_server_cancel_all_calls(ServerSafeHandle server)',
+      'void grpcsharp_server_shutdown_and_notify_callback(ServerSafeHandle server, CompletionQueueSafeHandle cq, BatchContextSafeHandle ctx)',
+      'void grpcsharp_server_destroy(IntPtr server)',
+      'AuthContextSafeHandle grpcsharp_call_auth_context(CallSafeHandle call)',
+      'IntPtr grpcsharp_auth_context_peer_identity_property_name(AuthContextSafeHandle authContext)  // returns const char*',
+      'AuthContextSafeHandle.NativeAuthPropertyIterator grpcsharp_auth_context_property_iterator(AuthContextSafeHandle authContext)',
+      'IntPtr grpcsharp_auth_property_iterator_next(ref AuthContextSafeHandle.NativeAuthPropertyIterator iterator)  // returns const auth_property*',
+      'void grpcsharp_auth_context_release(IntPtr authContext)',
+      'Timespec gprsharp_now(ClockType clockType)',
+      'Timespec gprsharp_inf_future(ClockType clockType)',
+      'Timespec gprsharp_inf_past(ClockType clockType)',
+      'Timespec gprsharp_convert_clock_type(Timespec t, ClockType targetClock)',
+      'int gprsharp_sizeof_timespec()',
+      'CallError grpcsharp_test_callback([MarshalAs(UnmanagedType.FunctionPtr)] NativeCallbackTestDelegate callback)',
+      'IntPtr grpcsharp_test_nop(IntPtr ptr)',
+      'void grpcsharp_test_override_method(string methodName, string variant)',
+    ]
+    
+    import re
+    native_methods = []
+    for signature in native_method_signatures:
+      match = re.match('([A-Za-z0-9_.]+) +([A-Za-z0-9_]+)\\((.*)\\)(.*)', signature)
+      if not match:
+        raise Exception('Malformed signature "%s"' % signature)
+      native_methods.append({'returntype': match.group(1), 'name': match.group(2), 'params': match.group(3), 'comment': match.group(4)})
+  %>
+  #region Copyright notice and license
+  
+  // Copyright 2015 gRPC authors.
+  //
+  // Licensed under the Apache License, Version 2.0 (the "License");
+  // you may not use this file except in compliance with the License.
+  // You may obtain a copy of the License at
+  //
+  //     http://www.apache.org/licenses/LICENSE-2.0
+  //
+  // Unless required by applicable law or agreed to in writing, software
+  // distributed under the License is distributed on an "AS IS" BASIS,
+  // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  // See the License for the specific language governing permissions and
+  // limitations under the License.
+  
+  #endregion
+  
+  using System;
+  using System.Collections.Concurrent;
+  using System.Diagnostics;
+  using System.IO;
+  using System.Reflection;
+  using System.Runtime.InteropServices;
+  using System.Threading;
+  
+  using Grpc.Core.Logging;
+  using Grpc.Core.Utils;
+  
+  namespace Grpc.Core.Internal
+  {
+      internal partial class NativeMethods
+      {
+          #region Native methods
+          
+          % for method in native_methods:
+          public readonly Delegates.${method['name']}_delegate ${method['name']};
+          % endfor
+
+          #endregion
+  
+          public NativeMethods(UnmanagedLibrary library)
+          {
+              % for method in native_methods:
+              this.${method['name']} = GetMethodDelegate<Delegates.${method['name']}_delegate>(library);
+              % endfor
+          }
+          
+          public NativeMethods(DllImportsFromStaticLib unusedInstance)
+          {
+              % for method in native_methods:
+              this.${method['name']} = DllImportsFromStaticLib.${method['name']};
+              % endfor
+          }
+          
+          public NativeMethods(DllImportsFromSharedLib unusedInstance)
+          {
+              % for method in native_methods:
+              this.${method['name']} = DllImportsFromSharedLib.${method['name']};
+              % endfor
+          }
+
+          /// <summary>
+          /// Delegate types for all published native methods. Declared under inner class to prevent scope pollution.
+          /// </summary>
+          public class Delegates
+          {
+              % for method in native_methods:
+              public delegate ${method['returntype']} ${method['name']}_delegate(${method['params']});${method['comment']}
+              % endfor
+          }
+          
+          /// <summary>
+          /// grpc_csharp_ext used as a static library (e.g Unity iOS).
+          /// </summary>
+          internal class DllImportsFromStaticLib
+          {
+              private const string ImportName = "__Internal";
+              % for method in native_methods:
+              
+              [DllImport(ImportName)]
+              public static extern ${method['returntype']} ${method['name']}(${method['params']});
+              % endfor
+          }
+          
+          /// <summary>
+          /// grpc_csharp_ext used a shared library (e.g on Unity Standalone and Android).
+          /// </summary>
+          internal class DllImportsFromSharedLib
+          {
+              private const string ImportName = "grpc_csharp_ext";
+              % for method in native_methods:
+              
+              [DllImport(ImportName)]
+              public static extern ${method['returntype']} ${method['name']}(${method['params']});
+              % endfor
+          }
+      }
+  }

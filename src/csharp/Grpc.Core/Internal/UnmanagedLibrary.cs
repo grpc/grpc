@@ -64,7 +64,7 @@ namespace Grpc.Core.Internal
         /// </summary>
         /// <param name="symbolName"></param>
         /// <returns></returns>
-        public IntPtr LoadSymbol(string symbolName)
+        private IntPtr LoadSymbol(string symbolName)
         {
             if (PlatformApis.IsWindows)
             {

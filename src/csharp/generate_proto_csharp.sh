@@ -33,6 +33,11 @@ $PROTOC --plugin=$PLUGIN --csharp_out=$HEALTHCHECK_DIR --grpc_out=$HEALTHCHECK_D
 $PROTOC --plugin=$PLUGIN --csharp_out=$REFLECTION_DIR --grpc_out=$REFLECTION_DIR \
     -I src/proto src/proto/grpc/reflection/v1alpha/reflection.proto
 
+# Put grp/core/stats.proto in a subdirectory to avoid collision with grpc/testing/stats.proto
+mkdir -p $TESTING_DIR/CoreStats
+$PROTOC --plugin=$PLUGIN --csharp_out=$TESTING_DIR/CoreStats --grpc_out=$TESTING_DIR/CoreStats \
+    -I src/proto src/proto/grpc/core/stats.proto
+
 # TODO(jtattermusch): following .proto files are a bit broken and import paths
 # don't match the package names. Setting -I to the correct value src/proto
 # breaks the code generation.

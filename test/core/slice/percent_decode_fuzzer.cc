@@ -20,6 +20,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -31,6 +32,7 @@ bool leak_check = true;
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   struct grpc_memory_counters counters;
+  grpc_init();
   grpc_memory_counters_init();
   grpc_slice input = grpc_slice_from_copied_buffer((const char*)data, size);
   grpc_slice output;
@@ -46,6 +48,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   grpc_slice_unref(input);
   counters = grpc_memory_counters_snapshot();
   grpc_memory_counters_destroy();
+  grpc_shutdown();
   GPR_ASSERT(counters.total_size_relative == 0);
   return 0;
 }

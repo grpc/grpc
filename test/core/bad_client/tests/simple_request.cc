@@ -20,6 +20,8 @@
 
 #include <string.h>
 
+#include <grpc/grpc.h>
+
 #include "src/core/lib/surface/server.h"
 #include "test/core/end2end/cq_verifier.h"
 
@@ -122,6 +124,7 @@ static void failure_verifier(grpc_server* server, grpc_completion_queue* cq,
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
+  grpc_init();
 
   /* basic request: check that things are working */
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, PFX_STR, 0);
@@ -164,5 +167,6 @@ int main(int argc, char** argv) {
   GRPC_RUN_BAD_CLIENT_TEST(failure_verifier, nullptr,
                            PFX_STR "\x00\x00\x00\x03\x10\x00\x00\x00\x01", 0);
 
+  grpc_shutdown();
   return 0;
 }

@@ -19,11 +19,9 @@
 #ifndef GRPC_CORE_LIB_IOMGR_SOCKADDR_UTILS_H
 #define GRPC_CORE_LIB_IOMGR_SOCKADDR_UTILS_H
 
-#include "src/core/lib/iomgr/resolve_address.h"
+#include <grpc/support/port_platform.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "src/core/lib/iomgr/resolve_address.h"
 
 /* Returns true if addr is an IPv4-mapped IPv6 address within the
    ::ffff:0.0.0.0/96 range, or false otherwise.
@@ -73,6 +71,8 @@ int grpc_sockaddr_set_port(const grpc_resolved_address* addr, int port);
 int grpc_sockaddr_to_string(char** out, const grpc_resolved_address* addr,
                             int normalize);
 
+void grpc_string_to_sockaddr(grpc_resolved_address* out, char* addr, int port);
+
 /* Returns the URI string corresponding to \a addr */
 char* grpc_sockaddr_to_uri(const grpc_resolved_address* addr);
 
@@ -80,9 +80,5 @@ char* grpc_sockaddr_to_uri(const grpc_resolved_address* addr);
 const char* grpc_sockaddr_get_uri_scheme(const grpc_resolved_address* addr);
 
 int grpc_sockaddr_get_family(const grpc_resolved_address* resolved_addr);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKADDR_UTILS_H */

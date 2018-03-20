@@ -23,13 +23,13 @@
 #include <grpc/support/log.h>
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
-#include "src/core/lib/security/transport/security_connector.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/surface/channel.h"
 #include "test/core/util/test_config.h"
 
 void test_unknown_scheme_target(void) {
-  grpc_resolver_registry_shutdown();
-  grpc_resolver_registry_init();
+  grpc_core::ResolverRegistry::Builder::ShutdownRegistry();
+  grpc_core::ResolverRegistry::Builder::InitRegistry();
   grpc_channel_credentials* creds =
       grpc_fake_transport_security_credentials_create();
   grpc_channel* chan =
@@ -37,10 +37,9 @@ void test_unknown_scheme_target(void) {
   grpc_channel_element* elem =
       grpc_channel_stack_element(grpc_channel_get_channel_stack(chan), 0);
   GPR_ASSERT(0 == strcmp(elem->filter->name, "lame-client"));
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  GRPC_CHANNEL_INTERNAL_UNREF(&exec_ctx, chan, "test");
-  grpc_channel_credentials_unref(&exec_ctx, creds);
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_core::ExecCtx exec_ctx;
+  GRPC_CHANNEL_INTERNAL_UNREF(chan, "test");
+  grpc_channel_credentials_unref(creds);
 }
 
 void test_security_connector_already_in_arg(void) {
@@ -56,9 +55,8 @@ void test_security_connector_already_in_arg(void) {
   grpc_channel_element* elem =
       grpc_channel_stack_element(grpc_channel_get_channel_stack(chan), 0);
   GPR_ASSERT(0 == strcmp(elem->filter->name, "lame-client"));
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  GRPC_CHANNEL_INTERNAL_UNREF(&exec_ctx, chan, "test");
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_core::ExecCtx exec_ctx;
+  GRPC_CHANNEL_INTERNAL_UNREF(chan, "test");
 }
 
 void test_null_creds(void) {
@@ -67,9 +65,8 @@ void test_null_creds(void) {
   grpc_channel_element* elem =
       grpc_channel_stack_element(grpc_channel_get_channel_stack(chan), 0);
   GPR_ASSERT(0 == strcmp(elem->filter->name, "lame-client"));
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  GRPC_CHANNEL_INTERNAL_UNREF(&exec_ctx, chan, "test");
-  grpc_exec_ctx_finish(&exec_ctx);
+  grpc_core::ExecCtx exec_ctx;
+  GRPC_CHANNEL_INTERNAL_UNREF(chan, "test");
 }
 
 int main(int argc, char** argv) {

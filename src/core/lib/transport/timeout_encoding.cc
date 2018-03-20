@@ -16,13 +16,14 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/transport/timeout_encoding.h"
 
 #include <stdio.h>
 #include <string.h>
 
-#include <grpc/support/port_platform.h>
-#include "src/core/lib/support/string.h"
+#include "src/core/lib/gpr/string.h"
 
 static int64_t round_up(int64_t x, int64_t divisor) {
   return (x / divisor + (x % divisor != 0)) * divisor;
@@ -98,7 +99,7 @@ int grpc_http2_decode_timeout(grpc_slice text, grpc_millis* timeout) {
     ;
   /* decode numeric part */
   for (; p != end && *p >= '0' && *p <= '9'; p++) {
-    int32_t digit = (int32_t)(*p - (uint8_t)'0');
+    int32_t digit = static_cast<int32_t>(*p - static_cast<uint8_t>('0'));
     have_digit = 1;
     /* spec allows max. 8 digits, but we allow values up to 1,000,000,000 */
     if (x >= (100 * 1000 * 1000)) {
@@ -138,5 +139,6 @@ int grpc_http2_decode_timeout(grpc_slice text, grpc_millis* timeout) {
       return 0;
   }
   p++;
-  return is_all_whitespace((const char*)p, (const char*)end);
+  return is_all_whitespace(reinterpret_cast<const char*>(p),
+                           reinterpret_cast<const char*>(end));
 }

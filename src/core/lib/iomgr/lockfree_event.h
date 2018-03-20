@@ -21,9 +21,11 @@
 
 /* Lock free event notification for file descriptors */
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/support/atm.h>
 
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/closure.h"
 
 namespace grpc_core {
 
@@ -44,9 +46,9 @@ class LockfreeEvent {
     return (gpr_atm_no_barrier_load(&state_) & kShutdownBit) != 0;
   }
 
-  void NotifyOn(grpc_exec_ctx* exec_ctx, grpc_closure* closure);
-  bool SetShutdown(grpc_exec_ctx* exec_ctx, grpc_error* error);
-  void SetReady(grpc_exec_ctx* exec_ctx);
+  void NotifyOn(grpc_closure* closure);
+  bool SetShutdown(grpc_error* error);
+  void SetReady();
 
  private:
   enum State { kClosureNotReady = 0, kClosureReady = 2, kShutdownBit = 1 };

@@ -22,14 +22,14 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/host_port.h"
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/support/env.h"
-#include "src/core/lib/support/string.h"
-#include "src/core/lib/support/tmpfile.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
@@ -181,9 +181,8 @@ typedef enum { NONE, SELF_SIGNED, SIGNED, BAD_CERT_PAIR } certtype;
         grpc_channel_args_copy_and_add(client_args, &ssl_name_override, 1);  \
     chttp2_init_client_secure_fullstack(f, new_client_args, ssl_creds);      \
     {                                                                        \
-      grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;                           \
-      grpc_channel_args_destroy(&exec_ctx, new_client_args);                 \
-      grpc_exec_ctx_finish(&exec_ctx);                                       \
+      grpc_core::ExecCtx exec_ctx;                                           \
+      grpc_channel_args_destroy(new_client_args);                            \
     }                                                                        \
   }
 
@@ -273,6 +272,20 @@ static void drain_cq(grpc_completion_queue* cq) {
 
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
+  /* Perform a completion queue next, so that any pending operations can be
+   * finished, and resources can be released. This is so that, shutdown does not
+   * hang. For example, the server might be stuck in the handshaking code, which
+   * keeps a ref to a listener. Unless, it is unref'd, shutdown won't be able
+   * to proceed.
+   *
+   * (If shutdown times out, it is probably because 100ms wasn't enough. In that
+   * case, the deadline can be increased. Or, we could simply have another
+   * thread for the server to poll the completion queue while the shutdown
+   * progresses.)
+   */
+  GPR_ASSERT(grpc_completion_queue_next(
+                 f->cq, grpc_timeout_milliseconds_to_deadline(100), nullptr)
+                 .type == GRPC_QUEUE_TIMEOUT);
   grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
   GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
                                          grpc_timeout_seconds_to_deadline(5),
@@ -289,8 +302,8 @@ static void shutdown_client(grpc_end2end_test_fixture* f) {
 }
 
 static void end_test(grpc_end2end_test_fixture* f) {
-  shutdown_server(f);
   shutdown_client(f);
+  shutdown_server(f);
 
   grpc_completion_queue_shutdown(f->cq);
   drain_cq(f->cq);
@@ -320,7 +333,8 @@ static void simple_request_body(grpc_end2end_test_fixture f,
   op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(1), expected_result == SUCCESS);

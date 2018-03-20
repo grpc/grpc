@@ -43,9 +43,9 @@ if [[ ! -f "$INPUT_PROTO" ]]; then
   echo "Input proto file '$INPUT_PROTO' doesn't exist."
   exit 2
 fi
+
 if [[ ! -f "${EXPECTED_OPTIONS_FILE_PATH}" ]]; then
-  echo "Expected nanopb options file '${EXPECTED_OPTIONS_FILE_PATH}' missing"
-  exit 3
+  echo "Input proto file may need .options file to be correctly compiled."
 fi
 
 if [[ "${OUTPUT_DIR:0:1}" != '/' ]]; then
@@ -80,6 +80,11 @@ protoc \
 readonly PROTO_BASENAME=$(basename $INPUT_PROTO .proto)
 sed -i "s:$PROTO_BASENAME.pb.h:${GRPC_OUTPUT_DIR}/$PROTO_BASENAME.pb.h:g" \
   "$OUTPUT_DIR/$PROTO_BASENAME.pb.c"
+
+if [ $PROTO_BASENAME == "handshaker" ] || [ $PROTO_BASENAME == "altscontext" ]; then
+  sed -i "s:transport_security_common.pb.h:${GRPC_OUTPUT_DIR}/transport_security_common.pb.h:g" \
+    "$OUTPUT_DIR/$PROTO_BASENAME.pb.h"
+fi
 
 # Fix up the include guards such that they pass the check_include_guards.py
 # test. Assumes that the generated files are being placed in gRPC src dir.

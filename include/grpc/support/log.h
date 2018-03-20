@@ -19,11 +19,10 @@
 #ifndef GRPC_SUPPORT_LOG_H
 #define GRPC_SUPPORT_LOG_H
 
-#include <inttypes.h>
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <stdarg.h>
 #include <stdlib.h> /* for abort() */
-
-#include <grpc/impl/codegen/port_platform.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -73,12 +72,14 @@ GPRAPI void gpr_log_verbosity_init(void);
 /** Log overrides: applications can use this API to intercept logging calls
    and use their own implementations */
 
-typedef struct {
+struct gpr_log_func_args {
   const char* file;
   int line;
   gpr_log_severity severity;
   const char* message;
-} gpr_log_func_args;
+};
+
+typedef struct gpr_log_func_args gpr_log_func_args;
 
 typedef void (*gpr_log_func)(gpr_log_func_args* args);
 GPRAPI void gpr_set_log_function(gpr_log_func func);

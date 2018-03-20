@@ -40,5 +40,45 @@ inline string ServiceClassName(const ServiceDescriptor* service) {
   string prefix = file->options().objc_class_prefix();
   return prefix + service->name();
 }
+
+inline ::grpc::string LocalImport(const ::grpc::string& import) {
+  return ::grpc::string("#import \"" + import + "\"\n");
+}
+
+inline ::grpc::string SystemImport(const ::grpc::string& import) {
+  return ::grpc::string("#import <" + import + ">\n");
+}
+
+inline ::grpc::string PreprocConditional(::grpc::string symbol, bool invert) {
+  return invert ? "!defined(" + symbol + ") || !" + symbol
+                : "defined(" + symbol + ") && " + symbol;
+}
+
+inline ::grpc::string PreprocIf(const ::grpc::string& symbol,
+                                const ::grpc::string& if_true) {
+  return ::grpc::string("#if " + PreprocConditional(symbol, false) + "\n" +
+                        if_true + "#endif\n");
+}
+
+inline ::grpc::string PreprocIfNot(const ::grpc::string& symbol,
+                                   const ::grpc::string& if_true) {
+  return ::grpc::string("#if " + PreprocConditional(symbol, true) + "\n" +
+                        if_true + "#endif\n");
+}
+
+inline ::grpc::string PreprocIfElse(const ::grpc::string& symbol,
+                                    const ::grpc::string& if_true,
+                                    const ::grpc::string& if_false) {
+  return ::grpc::string("#if " + PreprocConditional(symbol, false) + "\n" +
+                        if_true + "#else\n" + if_false + "#endif\n");
+}
+
+inline ::grpc::string PreprocIfNotElse(const ::grpc::string& symbol,
+                                       const ::grpc::string& if_true,
+                                       const ::grpc::string& if_false) {
+  return ::grpc::string("#if " + PreprocConditional(symbol, true) + "\n" +
+                        if_true + "#else\n" + if_false + "#endif\n");
+}
+
 }  // namespace grpc_objective_c_generator
 #endif  // GRPC_INTERNAL_COMPILER_OBJECTIVE_C_GENERATOR_HELPERS_H

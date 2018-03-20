@@ -108,6 +108,9 @@ static NSString * const kBearerPrefix = @"Bearer ";
   // The dispatch queue to be used for enqueuing responses to user. Defaulted to the main dispatch
   // queue
   dispatch_queue_t _responseQueue;
+
+  // Whether the call is finished. If it is, should not call finishWithError again.
+  BOOL _finished;
 }
 
 @synthesize state = _state;
@@ -206,6 +209,8 @@ static NSString * const kBearerPrefix = @"Bearer ";
   } else {
     [_responseWriteable enqueueSuccessfulCompletion];
   }
+
+  [GRPCConnectivityMonitor unregisterObserver:self];
 }
 
 - (void)cancelCall {
@@ -214,13 +219,27 @@ static NSString * const kBearerPrefix = @"Bearer ";
 }
 
 - (void)cancel {
-  [self finishWithError:[NSError errorWithDomain:kGRPCErrorDomain
-                                            code:GRPCErrorCodeCancelled
-                                        userInfo:@{NSLocalizedDescriptionKey: @"Canceled by app"}]];
+  [self maybeFinishWithError:[NSError errorWithDomain:kGRPCErrorDomain
+                                                 code:GRPCErrorCodeCancelled
+                                             userInfo:@{NSLocalizedDescriptionKey: @"Canceled by app"}]];
+
   if (!self.isWaitingForToken) {
     [self cancelCall];
   } else {
     self.isWaitingForToken = NO;
+  }
+}
+
+- (void)maybeFinishWithError:(NSError *)errorOrNil {
+  BOOL toFinish = NO;
+  @synchronized(self) {
+    if (_finished == NO) {
+      _finished = YES;
+      toFinish = YES;
+    }
+  }
+  if (toFinish == YES) {
+    [self finishWithError:errorOrNil];
   }
 }
 
@@ -250,11 +269,13 @@ static NSString * const kBearerPrefix = @"Bearer ";
   if (self.state == GRXWriterStatePaused) {
     return;
   }
-  __weak GRPCCall *weakSelf = self;
-  __weak GRXConcurrentWriteable *weakWriteable = _responseWriteable;
 
   dispatch_async(_callQueue, ^{
-    [weakSelf startReadWithHandler:^(grpc_byte_buffer *message) {
+    __weak GRPCCall *weakSelf = self;
+    __weak GRXConcurrentWriteable *weakWriteable = self->_responseWriteable;
+    [self startReadWithHandler:^(grpc_byte_buffer *message) {
+      __strong GRPCCall *strongSelf = weakSelf;
+      __strong GRXConcurrentWriteable *strongWriteable = weakWriteable;
       if (message == NULL) {
         // No more messages from the server
         return;
@@ -266,14 +287,14 @@ static NSString * const kBearerPrefix = @"Bearer ";
         // don't want to throw, because the app shouldn't crash for a behavior
         // that's on the hands of any server to have. Instead we finish and ask
         // the server to cancel.
-        [weakSelf finishWithError:[NSError errorWithDomain:kGRPCErrorDomain
-                                                      code:GRPCErrorCodeResourceExhausted
-                                                  userInfo:@{NSLocalizedDescriptionKey: @"Client does not have enough memory to hold the server response."}]];
-        [weakSelf cancelCall];
+        [strongSelf maybeFinishWithError:[NSError errorWithDomain:kGRPCErrorDomain
+                                                             code:GRPCErrorCodeResourceExhausted
+                                                         userInfo:@{NSLocalizedDescriptionKey: @"Client does not have enough memory to hold the server response."}]];
+        [strongSelf cancelCall];
         return;
       }
-      [weakWriteable enqueueValue:data completionHandler:^{
-        [weakSelf startNextRead];
+      [strongWriteable enqueueValue:data completionHandler:^{
+        [strongSelf startNextRead];
       }];
     }];
   });
@@ -333,12 +354,17 @@ static NSString * const kBearerPrefix = @"Bearer ";
     _requestWriter.state = GRXWriterStatePaused;
   }
 
-  __weak GRPCCall *weakSelf = self;
   dispatch_async(_callQueue, ^{
-    [weakSelf writeMessage:value withErrorHandler:^{
-      [weakSelf finishWithError:[NSError errorWithDomain:kGRPCErrorDomain
-                                                    code:GRPCErrorCodeInternal
-                                                userInfo:nil]];
+    __weak GRPCCall *weakSelf = self;
+    [self writeMessage:value withErrorHandler:^{
+      __strong GRPCCall *strongSelf = weakSelf;
+      if (strongSelf != nil) {
+        [strongSelf maybeFinishWithError:[NSError errorWithDomain:kGRPCErrorDomain
+                                                             code:GRPCErrorCodeInternal
+                                                         userInfo:nil]];
+        // Wrapped call must be canceled when error is reported to upper layers
+        [strongSelf cancelCall];
+      }
     }];
   });
 }
@@ -360,12 +386,15 @@ static NSString * const kBearerPrefix = @"Bearer ";
   if (errorOrNil) {
     [self cancel];
   } else {
-    __weak GRPCCall *weakSelf = self;
     dispatch_async(_callQueue, ^{
-      [weakSelf finishRequestWithErrorHandler:^{
-        [weakSelf finishWithError:[NSError errorWithDomain:kGRPCErrorDomain
-                                                      code:GRPCErrorCodeInternal
-                                                  userInfo:nil]];
+      __weak GRPCCall *weakSelf = self;
+      [self finishRequestWithErrorHandler:^{
+        __strong GRPCCall *strongSelf = weakSelf;
+        [strongSelf maybeFinishWithError:[NSError errorWithDomain:kGRPCErrorDomain
+                                                             code:GRPCErrorCodeInternal
+                                                         userInfo:nil]];
+        // Wrapped call must be canceled when error is reported to upper layers
+        [strongSelf cancelCall];
       }];
     });
   }
@@ -387,30 +416,37 @@ static NSString * const kBearerPrefix = @"Bearer ";
 }
 
 - (void)invokeCall {
+  __weak GRPCCall *weakSelf = self;
   [self invokeCallWithHeadersHandler:^(NSDictionary *headers) {
     // Response headers received.
-    self.responseHeaders = headers;
-    [self startNextRead];
-  } completionHandler:^(NSError *error, NSDictionary *trailers) {
-    self.responseTrailers = trailers;
-
-    if (error) {
-      NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
-      if (error.userInfo) {
-        [userInfo addEntriesFromDictionary:error.userInfo];
-      }
-      userInfo[kGRPCTrailersKey] = self.responseTrailers;
-      // TODO(jcanizales): The C gRPC library doesn't guarantee that the headers block will be
-      // called before this one, so an error might end up with trailers but no headers. We
-      // shouldn't call finishWithError until ater both blocks are called. It is also when this is
-      // done that we can provide a merged view of response headers and trailers in a thread-safe
-      // way.
-      if (self.responseHeaders) {
-        userInfo[kGRPCHeadersKey] = self.responseHeaders;
-      }
-      error = [NSError errorWithDomain:error.domain code:error.code userInfo:userInfo];
+    __strong GRPCCall *strongSelf = weakSelf;
+    if (strongSelf) {
+      strongSelf.responseHeaders = headers;
+      [strongSelf startNextRead];
     }
-    [self finishWithError:error];
+  } completionHandler:^(NSError *error, NSDictionary *trailers) {
+    __strong GRPCCall *strongSelf = weakSelf;
+    if (strongSelf) {
+      strongSelf.responseTrailers = trailers;
+
+      if (error) {
+        NSMutableDictionary *userInfo = [NSMutableDictionary dictionary];
+        if (error.userInfo) {
+          [userInfo addEntriesFromDictionary:error.userInfo];
+        }
+        userInfo[kGRPCTrailersKey] = strongSelf.responseTrailers;
+        // TODO(jcanizales): The C gRPC library doesn't guarantee that the headers block will be
+        // called before this one, so an error might end up with trailers but no headers. We
+        // shouldn't call finishWithError until ater both blocks are called. It is also when this is
+        // done that we can provide a merged view of response headers and trailers in a thread-safe
+        // way.
+        if (strongSelf.responseHeaders) {
+          userInfo[kGRPCHeadersKey] = strongSelf.responseHeaders;
+        }
+        error = [NSError errorWithDomain:error.domain code:error.code userInfo:userInfo];
+      }
+      [strongSelf maybeFinishWithError:error];
+    }
   }];
   // Now that the RPC has been initiated, request writes can start.
   @synchronized(_requestWriter) {
@@ -433,22 +469,8 @@ static NSString * const kBearerPrefix = @"Bearer ";
   [self sendHeaders:_requestHeaders];
   [self invokeCall];
 
-  // TODO(jcanizales): Extract this logic somewhere common.
-  NSString *host = [NSURL URLWithString:[@"https://" stringByAppendingString:_host]].host;
-  if (!host) {
-    // TODO(jcanizales): Check this on init.
-    [NSException raise:NSInvalidArgumentException format:@"host of %@ is nil", _host];
-  }
-  _connectivityMonitor = [GRPCConnectivityMonitor monitorWithHost:host];
-  __weak typeof(self) weakSelf = self;
-  void (^handler)(void) = ^{
-    typeof(self) strongSelf = weakSelf;
-    [strongSelf finishWithError:[NSError errorWithDomain:kGRPCErrorDomain
-                                                    code:GRPCErrorCodeUnavailable
-                                                userInfo:@{ NSLocalizedDescriptionKey : @"Connectivity lost." }]];
-  };
-  [_connectivityMonitor handleLossWithHandler:handler
-                      wifiStatusChangeHandler:nil];
+  [GRPCConnectivityMonitor registerObserver:self
+                                   selector:@selector(connectivityChanged:)];
 }
 
 - (void)startWithWriteable:(id<GRXWriteable>)writeable {
@@ -510,6 +532,14 @@ static NSString * const kBearerPrefix = @"Bearer ";
         return;
     }
   }
+}
+
+- (void)connectivityChanged:(NSNotification *)note {
+  [self maybeFinishWithError:[NSError errorWithDomain:kGRPCErrorDomain
+                                                 code:GRPCErrorCodeUnavailable
+                                             userInfo:@{ NSLocalizedDescriptionKey : @"Connectivity lost." }]];
+  // Cancel underlying call upon this notification
+  [self cancelCall];
 }
 
 @end

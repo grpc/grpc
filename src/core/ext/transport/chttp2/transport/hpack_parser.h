@@ -19,23 +19,18 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stddef.h>
 
-#include <grpc/support/port_platform.h>
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_table.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/metadata.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 typedef struct grpc_chttp2_hpack_parser grpc_chttp2_hpack_parser;
 
 typedef grpc_error* (*grpc_chttp2_hpack_parser_state)(
-    grpc_exec_ctx* exec_ctx, grpc_chttp2_hpack_parser* p, const uint8_t* beg,
-    const uint8_t* end);
+    grpc_chttp2_hpack_parser* p, const uint8_t* beg, const uint8_t* end);
 
 typedef struct {
   bool copied;
@@ -51,7 +46,7 @@ typedef struct {
 
 struct grpc_chttp2_hpack_parser {
   /* user specified callback for each header output */
-  void (*on_header)(grpc_exec_ctx* exec_ctx, void* user_data, grpc_mdelem md);
+  void (*on_header)(void* user_data, grpc_mdelem md);
   void* on_header_user_data;
 
   grpc_error* last_error;
@@ -96,27 +91,19 @@ struct grpc_chttp2_hpack_parser {
   grpc_chttp2_hptbl table;
 };
 
-void grpc_chttp2_hpack_parser_init(grpc_exec_ctx* exec_ctx,
-                                   grpc_chttp2_hpack_parser* p);
-void grpc_chttp2_hpack_parser_destroy(grpc_exec_ctx* exec_ctx,
-                                      grpc_chttp2_hpack_parser* p);
+void grpc_chttp2_hpack_parser_init(grpc_chttp2_hpack_parser* p);
+void grpc_chttp2_hpack_parser_destroy(grpc_chttp2_hpack_parser* p);
 
 void grpc_chttp2_hpack_parser_set_has_priority(grpc_chttp2_hpack_parser* p);
 
-grpc_error* grpc_chttp2_hpack_parser_parse(grpc_exec_ctx* exec_ctx,
-                                           grpc_chttp2_hpack_parser* p,
+grpc_error* grpc_chttp2_hpack_parser_parse(grpc_chttp2_hpack_parser* p,
                                            grpc_slice slice);
 
 /* wraps grpc_chttp2_hpack_parser_parse to provide a frame level parser for
    the transport */
-grpc_error* grpc_chttp2_header_parser_parse(grpc_exec_ctx* exec_ctx,
-                                            void* hpack_parser,
+grpc_error* grpc_chttp2_header_parser_parse(void* hpack_parser,
                                             grpc_chttp2_transport* t,
                                             grpc_chttp2_stream* s,
                                             grpc_slice slice, int is_last);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_H */

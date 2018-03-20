@@ -16,8 +16,11 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/slice.h>
 
+#include <inttypes.h>
 #include <string.h>
 
 #include <grpc/grpc.h>
@@ -57,7 +60,7 @@ static void test_slice_malloc_returns_something_sensible(void) {
     }
     /* We must be able to write to every byte of the data */
     for (i = 0; i < length; i++) {
-      GRPC_SLICE_START_PTR(slice)[i] = (uint8_t)i;
+      GRPC_SLICE_START_PTR(slice)[i] = static_cast<uint8_t>(i);
     }
     /* And finally we must succeed in destroying the slice */
     grpc_slice_unref(slice);
@@ -77,7 +80,7 @@ static void test_slice_new_returns_something_sensible(void) {
 }
 
 /* destroy function that sets a mark to indicate it was called. */
-static void set_mark(void* p) { *((int*)p) = 1; }
+static void set_mark(void* p) { *(static_cast<int*>(p)) = 1; }
 
 static void test_slice_new_with_user_data(void) {
   int marker = 0;
@@ -143,7 +146,7 @@ static void test_slice_sub_works(unsigned length) {
      beginning of the slice. */
   slice = grpc_slice_malloc(length);
   for (i = 0; i < length; i++) {
-    GRPC_SLICE_START_PTR(slice)[i] = (uint8_t)i;
+    GRPC_SLICE_START_PTR(slice)[i] = static_cast<uint8_t>(i);
   }
 
   /* Ensure that for all subsets length is correct and that we start on the
@@ -183,7 +186,7 @@ static void test_slice_split_head_works(size_t length) {
      beginning of the slice. */
   slice = grpc_slice_malloc(length);
   for (i = 0; i < length; i++) {
-    GRPC_SLICE_START_PTR(slice)[i] = (uint8_t)i;
+    GRPC_SLICE_START_PTR(slice)[i] = static_cast<uint8_t>(i);
   }
 
   /* Ensure that for all subsets length is correct and that we start on the
@@ -211,7 +214,7 @@ static void test_slice_split_tail_works(size_t length) {
      beginning of the slice. */
   slice = grpc_slice_malloc(length);
   for (i = 0; i < length; i++) {
-    GRPC_SLICE_START_PTR(slice)[i] = (uint8_t)i;
+    GRPC_SLICE_START_PTR(slice)[i] = static_cast<uint8_t>(i);
   }
 
   /* Ensure that for all subsets length is correct and that we start on the
@@ -292,6 +295,7 @@ static void test_static_slice_copy_interning(void) {
 int main(int argc, char** argv) {
   unsigned length;
   grpc_test_init(argc, argv);
+  grpc_init();
   test_slice_malloc_returns_something_sensible();
   test_slice_new_returns_something_sensible();
   test_slice_new_with_user_data();
@@ -305,5 +309,6 @@ int main(int argc, char** argv) {
   test_slice_interning();
   test_static_slice_interning();
   test_static_slice_copy_interning();
+  grpc_shutdown();
   return 0;
 }

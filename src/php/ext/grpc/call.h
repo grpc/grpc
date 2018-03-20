@@ -69,5 +69,6 @@ void grpc_init_call(TSRMLS_D);
 /* Populates a grpc_metadata_array with the data in a PHP array object.
    Returns true on success and false on failure */
 bool create_metadata_array(zval *array, grpc_metadata_array *metadata);
-
+void grpc_php_metadata_array_destroy_including_entries(
+    grpc_metadata_array* array);
 #endif /* NET_GRPC_PHP_GRPC_CHANNEL_H_ */

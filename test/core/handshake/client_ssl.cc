@@ -34,7 +34,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/thd.h>
+
+#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -68,7 +69,7 @@ static int create_socket(int* out_port) {
     return -1;
   }
 
-  if (bind(s, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+  if (bind(s, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) < 0) {
     perror("Unable to bind");
     gpr_log(GPR_ERROR, "%s", "Unable to bind to any port");
     close(s);
@@ -82,7 +83,8 @@ static int create_socket(int* out_port) {
   }
 
   addr_len = sizeof(addr);
-  if (getsockname(s, (struct sockaddr*)&addr, &addr_len) != 0 ||
+  if (getsockname(s, reinterpret_cast<struct sockaddr*>(&addr), &addr_len) !=
+          0 ||
       addr_len > sizeof(addr)) {
     perror("getsockname");
     gpr_log(GPR_ERROR, "%s", "Unable to get socket local address");
@@ -98,19 +100,19 @@ static int create_socket(int* out_port) {
 // SSL_CTX_set_alpn_select_cb.
 static int alpn_select_cb(SSL* ssl, const uint8_t** out, uint8_t* out_len,
                           const uint8_t* in, unsigned in_len, void* arg) {
-  const uint8_t* alpn_preferred = (const uint8_t*)arg;
+  const uint8_t* alpn_preferred = static_cast<const uint8_t*>(arg);
 
   *out = alpn_preferred;
-  *out_len = (uint8_t)strlen((char*)alpn_preferred);
+  *out_len = static_cast<uint8_t>(strlen((char*)alpn_preferred));
 
   // Validate that the ALPN list includes "h2" and "grpc-exp", that "grpc-exp"
   // precedes "h2".
   bool grpc_exp_seen = false;
   bool h2_seen = false;
-  const char* inp = (const char*)in;
+  const char* inp = reinterpret_cast<const char*>(in);
   const char* in_end = inp + in_len;
   while (inp < in_end) {
-    const size_t length = (size_t)*inp++;
+    const size_t length = static_cast<size_t>(*inp++);
     if (length == strlen("grpc-exp") && strncmp(inp, "grpc-exp", length) == 0) {
       grpc_exp_seen = true;
       GPR_ASSERT(!h2_seen);
@@ -133,7 +135,7 @@ static int alpn_select_cb(SSL* ssl, const uint8_t** out, uint8_t* out_len,
 // https://wiki.openssl.org/index.php/Simple_TLS_Server and the gRPC core
 // internals in src/core/tsi/ssl_transport_security.c.
 static void server_thread(void* arg) {
-  const server_args* args = (server_args*)arg;
+  const server_args* args = static_cast<server_args*>(arg);
 
   SSL_load_error_strings();
   OpenSSL_add_ssl_algorithms();
@@ -175,7 +177,8 @@ static void server_thread(void* arg) {
   gpr_log(GPR_INFO, "Server listening");
   struct sockaddr_in addr;
   socklen_t len = sizeof(addr);
-  const int client = accept(sock, (struct sockaddr*)&addr, &len);
+  const int client =
+      accept(sock, reinterpret_cast<struct sockaddr*>(&addr), &len);
   if (client < 0) {
     perror("Unable to accept");
     abort();
@@ -227,11 +230,11 @@ static bool client_ssl_test(char* server_alpn_preferred) {
   GPR_ASSERT(server_socket > 0 && port > 0);
 
   // Launch the TLS server thread.
-  gpr_thd_options thdopt = gpr_thd_options_default();
-  gpr_thd_id thdid;
-  gpr_thd_options_set_joinable(&thdopt);
   server_args args = {server_socket, server_alpn_preferred};
-  GPR_ASSERT(gpr_thd_new(&thdid, server_thread, &args, &thdopt));
+  bool ok;
+  grpc_core::Thread thd("grpc_client_ssl_test", server_thread, &args, &ok);
+  GPR_ASSERT(ok);
+  thd.Start();
 
   // Load key pair and establish client SSL credentials.
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair;
@@ -242,9 +245,12 @@ static bool client_ssl_test(char* server_alpn_preferred) {
                                grpc_load_file(SSL_CERT_PATH, 1, &cert_slice)));
   GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
                                grpc_load_file(SSL_KEY_PATH, 1, &key_slice)));
-  const char* ca_cert = (const char*)GRPC_SLICE_START_PTR(ca_slice);
-  pem_key_cert_pair.private_key = (const char*)GRPC_SLICE_START_PTR(key_slice);
-  pem_key_cert_pair.cert_chain = (const char*)GRPC_SLICE_START_PTR(cert_slice);
+  const char* ca_cert =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(ca_slice);
+  pem_key_cert_pair.private_key =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
+  pem_key_cert_pair.cert_chain =
+      reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
   grpc_channel_credentials* ssl_creds =
       grpc_ssl_credentials_create(ca_cert, &pem_key_cert_pair, nullptr);
 
@@ -296,7 +302,7 @@ static bool client_ssl_test(char* server_alpn_preferred) {
   grpc_slice_unref(key_slice);
   grpc_slice_unref(ca_slice);
 
-  gpr_thd_join(thdid);
+  thd.Join();
 
   grpc_shutdown();
 

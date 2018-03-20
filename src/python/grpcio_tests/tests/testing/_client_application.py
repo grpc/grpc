@@ -235,8 +235,8 @@ def run(scenario, channel):
         elif scenario is Scenario.INFINITE_REQUEST_STREAM:
             return _run_infinite_request_stream(stub)
     except grpc.RpcError as rpc_error:
-        return Outcome(Outcome.Kind.RPC_ERROR,
-                       rpc_error.code(), rpc_error.details())
+        return Outcome(Outcome.Kind.RPC_ERROR, rpc_error.code(),
+                       rpc_error.details())
 
 
 _IMPLEMENTATIONS = {
@@ -256,5 +256,5 @@ def run(scenario, channel):
     try:
         return _IMPLEMENTATIONS[scenario](stub)
     except grpc.RpcError as rpc_error:
-        return Outcome(Outcome.Kind.RPC_ERROR,
-                       rpc_error.code(), rpc_error.details())
+        return Outcome(Outcome.Kind.RPC_ERROR, rpc_error.code(),
+                       rpc_error.details())

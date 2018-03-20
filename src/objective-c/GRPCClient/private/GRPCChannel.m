@@ -32,6 +32,24 @@
 #endif
 #import "GRPCCompletionQueue.h"
 
+static void* copy_pointer_arg(void *p) {
+  // Add ref count to the object when making copy
+  id obj = (__bridge id)p;
+  return (__bridge_retained void *)obj;
+}
+
+static void destroy_pointer_arg(void *p) {
+  // Decrease ref count to the object when destroying
+  CFRelease((CFTreeRef)p);
+}
+
+static int cmp_pointer_arg(void *p, void *q) {
+  return p == q;
+}
+
+static const grpc_arg_pointer_vtable objc_arg_vtable = {
+  copy_pointer_arg, destroy_pointer_arg, cmp_pointer_arg};
+
 static void FreeChannelArgs(grpc_channel_args *channel_args) {
   for (size_t i = 0; i < channel_args->num_args; ++i) {
     grpc_arg *arg = &channel_args->args[i];
@@ -75,6 +93,10 @@ static grpc_channel_args *BuildChannelArgs(NSDictionary *dictionary) {
     } else if ([value respondsToSelector:@selector(intValue)]) {
       arg->type = GRPC_ARG_INTEGER;
       arg->value.integer = [value intValue];
+    } else if (value != nil) {
+      arg->type = GRPC_ARG_POINTER;
+      arg->value.pointer.p = (__bridge_retained void *)value;
+      arg->value.pointer.vtable = &objc_arg_vtable;
     } else {
       [NSException raise:NSInvalidArgumentException
                   format:@"Invalid value type: %@", [value class]];
@@ -188,7 +210,7 @@ static grpc_channel_args *BuildChannelArgs(NSDictionary *dictionary) {
   if (timeout < 0) {
     timeout = 0;
   }
-  grpc_slice host_slice;
+  grpc_slice host_slice = grpc_empty_slice();
   if (serverName) {
     host_slice = grpc_slice_from_copied_string(serverName.UTF8String);
   }

@@ -16,13 +16,13 @@
  *
  */
 
-#include <grpc++/support/channel_arguments.h>
+#include <grpcpp/support/channel_arguments.h>
 
-#include <grpc++/grpc++.h>
 #include <grpc/grpc.h>
-#include <grpc/support/useful.h>
+#include <grpcpp/grpcpp.h>
 #include <gtest/gtest.h>
 
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 
@@ -249,5 +249,8 @@ TEST_F(ChannelArgumentsTest, SetUserAgentPrefix) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  grpc_init();
+  int ret = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return ret;
 }

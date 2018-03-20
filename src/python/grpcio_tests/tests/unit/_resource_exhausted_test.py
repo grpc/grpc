@@ -77,18 +77,13 @@ def handle_unary_stream(trigger, request, servicer_context):
 
 def handle_stream_unary(trigger, request_iterator, servicer_context):
     trigger.await_trigger()
-    # TODO(issue:#6891) We should be able to remove this loop
-    for request in request_iterator:
-        pass
     return _RESPONSE
 
 
 def handle_stream_stream(trigger, request_iterator, servicer_context):
     trigger.await_trigger()
-    # TODO(issue:#6891) We should be able to remove this loop,
-    # and replace with return; yield
-    for request in request_iterator:
-        yield _RESPONSE
+    return
+    yield
 
 
 class _MethodHandler(grpc.RpcMethodHandler):
@@ -139,6 +134,7 @@ class ResourceExhaustedTest(unittest.TestCase):
         self._server = grpc.server(
             self._server_pool,
             handlers=(_GenericHandler(self._trigger),),
+            options=(('grpc.so_reuseport', 0),),
             maximum_concurrent_rpcs=test_constants.THREAD_CONCURRENCY)
         port = self._server.add_insecure_port('[::]:0')
         self._server.start()

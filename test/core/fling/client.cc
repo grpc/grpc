@@ -21,16 +21,17 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <grpc/support/cmdline.h>
-#include <grpc/support/histogram.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include <grpc/support/useful.h>
+
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/profiling/timers.h"
+#include "test/core/util/cmdline.h"
 #include "test/core/util/grpc_profiler.h"
+#include "test/core/util/histogram.h"
 #include "test/core/util/test_config.h"
 
-static gpr_histogram* histogram;
+static grpc_histogram* histogram;
 static grpc_byte_buffer* the_buffer;
 static grpc_channel* channel;
 static grpc_completion_queue* cq;
@@ -74,7 +75,7 @@ static void init_ping_pong_request(void) {
 }
 
 static void step_ping_pong_request(void) {
-  GPR_TIMER_BEGIN("ping_pong", 1);
+  GPR_TIMER_SCOPE("ping_pong", 1);
   grpc_slice host = grpc_slice_from_static_string("localhost");
   call = grpc_channel_create_call(
       channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
@@ -87,7 +88,6 @@ static void step_ping_pong_request(void) {
   grpc_call_unref(call);
   grpc_byte_buffer_destroy(response_payload_recv);
   call = nullptr;
-  GPR_TIMER_END("ping_pong", 1);
 }
 
 static void init_ping_pong_stream(void) {
@@ -117,18 +117,17 @@ static void init_ping_pong_stream(void) {
 }
 
 static void step_ping_pong_stream(void) {
+  GPR_TIMER_SCOPE("ping_pong", 1);
   grpc_call_error error;
-  GPR_TIMER_BEGIN("ping_pong", 1);
   error = grpc_call_start_batch(call, stream_step_ops, 2, (void*)1, nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   grpc_byte_buffer_destroy(response_payload_recv);
-  GPR_TIMER_END("ping_pong", 1);
 }
 
 static double now(void) {
   gpr_timespec tv = gpr_now(GPR_CLOCK_REALTIME);
-  return 1e9 * (double)tv.tv_sec + tv.tv_nsec;
+  return 1e9 * static_cast<double>(tv.tv_sec) + tv.tv_nsec;
 }
 
 typedef struct {
@@ -186,16 +185,19 @@ int main(int argc, char** argv) {
   }
   if (!sc.name) {
     fprintf(stderr, "unsupported scenario '%s'. Valid are:", scenario_name);
+    fflush(stderr);
     for (i = 0; i < GPR_ARRAY_SIZE(scenarios); i++) {
       fprintf(stderr, " %s", scenarios[i].name);
+      fflush(stderr);
     }
     return 1;
   }
 
   channel = grpc_insecure_channel_create(target, nullptr, nullptr);
   cq = grpc_completion_queue_create_for_next(nullptr);
-  the_buffer = grpc_raw_byte_buffer_create(&slice, (size_t)payload_size);
-  histogram = gpr_histogram_create(0.01, 60e9);
+  the_buffer =
+      grpc_raw_byte_buffer_create(&slice, static_cast<size_t>(payload_size));
+  histogram = grpc_histogram_create(0.01, 60e9);
 
   sc.init();
 
@@ -213,7 +215,7 @@ int main(int argc, char** argv) {
     start = now();
     sc.do_one_step();
     stop = now();
-    gpr_histogram_add(histogram, stop - start);
+    grpc_histogram_add(histogram, stop - start);
   }
   grpc_profiler_stop();
 
@@ -232,11 +234,11 @@ int main(int argc, char** argv) {
   grpc_slice_unref(slice);
 
   gpr_log(GPR_INFO, "latency (50/95/99/99.9): %f/%f/%f/%f",
-          gpr_histogram_percentile(histogram, 50),
-          gpr_histogram_percentile(histogram, 95),
-          gpr_histogram_percentile(histogram, 99),
-          gpr_histogram_percentile(histogram, 99.9));
-  gpr_histogram_destroy(histogram);
+          grpc_histogram_percentile(histogram, 50),
+          grpc_histogram_percentile(histogram, 95),
+          grpc_histogram_percentile(histogram, 99),
+          grpc_histogram_percentile(histogram, 99.9));
+  grpc_histogram_destroy(histogram);
 
   grpc_shutdown();
 

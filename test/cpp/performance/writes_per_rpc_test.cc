@@ -16,14 +16,14 @@
  *
  */
 
-#include <grpc++/channel.h>
-#include <grpc++/create_channel.h>
-#include <grpc++/impl/grpc_library.h>
-#include <grpc++/security/credentials.h>
-#include <grpc++/security/server_credentials.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
 #include <grpc/support/log.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/impl/grpc_library.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
 #include <gtest/gtest.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
@@ -82,26 +82,26 @@ class EndpointPairFixture {
     ApplyCommonServerBuilderConfig(&b);
     server_ = b.BuildAndStart();
 
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_core::ExecCtx exec_ctx;
 
     /* add server endpoint to server_ */
     {
       const grpc_channel_args* server_args =
           grpc_server_get_channel_args(server_->c_server());
       grpc_transport* transport = grpc_create_chttp2_transport(
-          &exec_ctx, server_args, endpoints.server, 0 /* is_client */);
+          server_args, endpoints.server, false /* is_client */);
 
       grpc_pollset** pollsets;
       size_t num_pollsets = 0;
       grpc_server_get_pollsets(server_->c_server(), &pollsets, &num_pollsets);
 
       for (size_t i = 0; i < num_pollsets; i++) {
-        grpc_endpoint_add_to_pollset(&exec_ctx, endpoints.server, pollsets[i]);
+        grpc_endpoint_add_to_pollset(endpoints.server, pollsets[i]);
       }
 
-      grpc_server_setup_transport(&exec_ctx, server_->c_server(), transport,
-                                  nullptr, server_args);
-      grpc_chttp2_transport_start_reading(&exec_ctx, transport, nullptr);
+      grpc_server_setup_transport(server_->c_server(), transport, nullptr,
+                                  server_args);
+      grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
     }
 
     /* create channel */
@@ -112,16 +112,14 @@ class EndpointPairFixture {
 
       grpc_channel_args c_args = args.c_channel_args();
       grpc_transport* transport =
-          grpc_create_chttp2_transport(&exec_ctx, &c_args, endpoints.client, 1);
+          grpc_create_chttp2_transport(&c_args, endpoints.client, true);
       GPR_ASSERT(transport);
       grpc_channel* channel = grpc_channel_create(
-          &exec_ctx, "target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL, transport);
-      grpc_chttp2_transport_start_reading(&exec_ctx, transport, nullptr);
+          "target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL, transport);
+      grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
 
       channel_ = CreateChannelInternal("", channel);
     }
-
-    grpc_exec_ctx_finish(&exec_ctx);
   }
 
   virtual ~EndpointPairFixture() {
@@ -144,18 +142,24 @@ class EndpointPairFixture {
 
 class InProcessCHTTP2 : public EndpointPairFixture {
  public:
-  InProcessCHTTP2(Service* service)
-      : EndpointPairFixture(service, MakeEndpoints()) {}
+  InProcessCHTTP2(Service* service, grpc_passthru_endpoint_stats* stats)
+      : EndpointPairFixture(service, MakeEndpoints(stats)), stats_(stats) {}
 
-  int writes_performed() const { return stats_.num_writes; }
+  virtual ~InProcessCHTTP2() {
+    if (stats_ != nullptr) {
+      grpc_passthru_endpoint_stats_destroy(stats_);
+    }
+  }
+
+  int writes_performed() const { return stats_->num_writes; }
 
  private:
-  grpc_passthru_endpoint_stats stats_;
+  grpc_passthru_endpoint_stats* stats_;
 
-  grpc_endpoint_pair MakeEndpoints() {
+  static grpc_endpoint_pair MakeEndpoints(grpc_passthru_endpoint_stats* stats) {
     grpc_endpoint_pair p;
     grpc_passthru_endpoint_create(&p.client, &p.server, initialize_stuff.rq(),
-                                  &stats_);
+                                  stats);
     return p;
   }
 };
@@ -164,7 +168,8 @@ static double UnaryPingPong(int request_size, int response_size) {
   const int kIterations = 10000;
 
   EchoTestService::AsyncService service;
-  std::unique_ptr<InProcessCHTTP2> fixture(new InProcessCHTTP2(&service));
+  std::unique_ptr<InProcessCHTTP2> fixture(
+      new InProcessCHTTP2(&service, grpc_passthru_endpoint_stats_create()));
   EchoRequest send_request;
   EchoResponse send_response;
   EchoResponse recv_response;
@@ -212,7 +217,7 @@ static double UnaryPingPong(int request_size, int response_size) {
     for (int i = (1 << 3) | (1 << 4); i != 0;) {
       GPR_ASSERT(fixture->cq()->Next(&t, &ok));
       GPR_ASSERT(ok);
-      int tagnum = (int)reinterpret_cast<intptr_t>(t);
+      int tagnum = static_cast<int>(reinterpret_cast<intptr_t>(t));
       GPR_ASSERT(i & (1 << tagnum));
       i -= 1 << tagnum;
     }
@@ -225,7 +230,8 @@ static double UnaryPingPong(int request_size, int response_size) {
   }
 
   double writes_per_iteration =
-      (double)fixture->writes_performed() / (double)kIterations;
+      static_cast<double>(fixture->writes_performed()) /
+      static_cast<double>(kIterations);
 
   fixture.reset();
   server_env[0]->~ServerEnv();

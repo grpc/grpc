@@ -19,6 +19,8 @@
 #ifndef GRPC_SLICE_H
 #define GRPC_SLICE_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/support/sync.h>
 

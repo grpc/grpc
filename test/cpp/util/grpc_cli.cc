@@ -58,7 +58,7 @@
 #include <iostream>
 
 #include <gflags/gflags.h>
-#include <grpc++/support/config.h>
+#include <grpcpp/support/config.h>
 #include "test/cpp/util/cli_credentials.h"
 #include "test/cpp/util/grpc_tool.h"
 #include "test/cpp/util/test_config.h"

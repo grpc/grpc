@@ -19,13 +19,11 @@
 #ifndef GRPC_CORE_EXT_FILTERS_LOAD_REPORTING_SERVER_LOAD_REPORTING_PLUGIN_H
 #define GRPC_CORE_EXT_FILTERS_LOAD_REPORTING_SERVER_LOAD_REPORTING_PLUGIN_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/channel/channel_stack.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /** Identifiers for the invocation point of the users LR callback */
 typedef enum grpc_load_reporting_source {
@@ -58,10 +56,6 @@ typedef struct grpc_load_reporting_call_data {
 
 /** Return a \a grpc_arg enabling load reporting */
 grpc_arg grpc_load_reporting_enable_arg();
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_EXT_FILTERS_LOAD_REPORTING_SERVER_LOAD_REPORTING_PLUGIN_H \
         */

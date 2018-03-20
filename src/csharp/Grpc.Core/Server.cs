@@ -300,6 +300,7 @@ namespace Grpc.Core
         {
             if (!shutdownRequested)
             {
+                // TODO(jtattermusch): avoid unnecessary delegate allocation
                 handle.RequestCall((success, ctx) => HandleNewServerRpc(success, ctx, cq), cq);
             }
         }
