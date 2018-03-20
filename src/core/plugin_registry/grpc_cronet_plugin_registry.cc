@@ -20,6 +20,8 @@
 
 #include <grpc/grpc.h>
 
+void grpc_server_load_reporting_plugin_init(void);
+void grpc_server_load_reporting_plugin_shutdown(void);
 void grpc_http_filters_init(void);
 void grpc_http_filters_shutdown(void);
 void grpc_chttp2_plugin_init(void);
@@ -30,10 +32,10 @@ void grpc_client_channel_init(void);
 void grpc_client_channel_shutdown(void);
 void grpc_tsi_alts_init(void);
 void grpc_tsi_alts_shutdown(void);
-void grpc_server_load_reporting_plugin_init(void);
-void grpc_server_load_reporting_plugin_shutdown(void);
 
 void grpc_register_built_in_plugins(void) {
+  grpc_register_plugin(grpc_server_load_reporting_plugin_init,
+                       grpc_server_load_reporting_plugin_shutdown);
   grpc_register_plugin(grpc_http_filters_init,
                        grpc_http_filters_shutdown);
   grpc_register_plugin(grpc_chttp2_plugin_init,
@@ -44,6 +46,4 @@ void grpc_register_built_in_plugins(void) {
                        grpc_client_channel_shutdown);
   grpc_register_plugin(grpc_tsi_alts_init,
                        grpc_tsi_alts_shutdown);
-  grpc_register_plugin(grpc_server_load_reporting_plugin_init,
-                       grpc_server_load_reporting_plugin_shutdown);
 }

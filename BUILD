@@ -308,7 +308,9 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_http_filters",
+        "grpc_server_load_reporting",
         "grpc_transport_chttp2_client_secure",
+        "grpc_transport_chttp2_server_secure",
         "grpc_transport_cronet_client_secure",
     ],
 )
