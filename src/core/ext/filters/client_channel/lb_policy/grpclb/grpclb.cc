@@ -423,13 +423,13 @@ void ParseServer(const grpc_grpclb_server* server,
    * server->ip_address.bytes. */
   const grpc_grpclb_ip_address* ip = &server->ip_address;
   if (ip->size == 4) {
-    addr->len = sizeof(grpc_sockaddr_in);
+    addr->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
     grpc_sockaddr_in* addr4 = reinterpret_cast<grpc_sockaddr_in*>(&addr->addr);
     addr4->sin_family = GRPC_AF_INET;
     memcpy(&addr4->sin_addr, ip->bytes, ip->size);
     addr4->sin_port = netorder_port;
   } else if (ip->size == 16) {
-    addr->len = sizeof(grpc_sockaddr_in6);
+    addr->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in6));
     grpc_sockaddr_in6* addr6 = (grpc_sockaddr_in6*)&addr->addr;
     addr6->sin6_family = GRPC_AF_INET6;
     memcpy(&addr6->sin6_addr, ip->bytes, ip->size);

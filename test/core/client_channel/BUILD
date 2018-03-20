@@ -53,3 +53,15 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "status_util_test",
+    srcs = ["status_util_test.cc"],
+    language = "C++",
+    deps = [
+        "//:grpc",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+)
