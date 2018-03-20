@@ -32,10 +32,8 @@ ThreadManager::WorkerThread::WorkerThread(ThreadManager* thd_mgr)
   // Make thread creation exclusive with respect to its join happening in
   // ~WorkerThread().
   thd_ = grpc_core::Thread(
-      "sync server thread",
-      [](void* th) {
-        reinterpret_cast<ThreadManager::WorkerThread*>(th)->Run();
-      },
+      "grpcpp_sync_server",
+      [](void* th) { static_cast<ThreadManager::WorkerThread*>(th)->Run(); },
       this);
   thd_.Start();
 }

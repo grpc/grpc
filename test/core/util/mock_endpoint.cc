@@ -30,7 +30,7 @@
 #include <grpc/support/string_util.h>
 #include "src/core/lib/iomgr/sockaddr.h"
 
-typedef struct grpc_mock_endpoint {
+typedef struct mock_endpoint {
   grpc_endpoint base;
   gpr_mu mu;
   void (*on_write)(grpc_slice slice);
@@ -38,11 +38,11 @@ typedef struct grpc_mock_endpoint {
   grpc_slice_buffer* on_read_out;
   grpc_closure* on_read;
   grpc_resource_user* resource_user;
-} grpc_mock_endpoint;
+} mock_endpoint;
 
 static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
                     grpc_closure* cb) {
-  grpc_mock_endpoint* m = reinterpret_cast<grpc_mock_endpoint*>(ep);
+  mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
   gpr_mu_lock(&m->mu);
   if (m->read_buffer.count > 0) {
     grpc_slice_buffer_swap(&m->read_buffer, slices);
@@ -56,7 +56,7 @@ static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
 
 static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
                      grpc_closure* cb) {
-  grpc_mock_endpoint* m = reinterpret_cast<grpc_mock_endpoint*>(ep);
+  mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
   for (size_t i = 0; i < slices->count; i++) {
     m->on_write(slices->slices[i]);
   }
@@ -72,7 +72,7 @@ static void me_delete_from_pollset_set(grpc_endpoint* ep,
                                        grpc_pollset_set* pollset) {}
 
 static void me_shutdown(grpc_endpoint* ep, grpc_error* why) {
-  grpc_mock_endpoint* m = reinterpret_cast<grpc_mock_endpoint*>(ep);
+  mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
   gpr_mu_lock(&m->mu);
   if (m->on_read) {
     GRPC_CLOSURE_SCHED(m->on_read,
@@ -86,7 +86,7 @@ static void me_shutdown(grpc_endpoint* ep, grpc_error* why) {
 }
 
 static void me_destroy(grpc_endpoint* ep) {
-  grpc_mock_endpoint* m = reinterpret_cast<grpc_mock_endpoint*>(ep);
+  mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
   grpc_slice_buffer_destroy(&m->read_buffer);
   grpc_resource_user_unref(m->resource_user);
   gpr_free(m);
@@ -97,7 +97,7 @@ static char* me_get_peer(grpc_endpoint* ep) {
 }
 
 static grpc_resource_user* me_get_resource_user(grpc_endpoint* ep) {
-  grpc_mock_endpoint* m = reinterpret_cast<grpc_mock_endpoint*>(ep);
+  mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
   return m->resource_user;
 }
 
@@ -118,8 +118,7 @@ static const grpc_endpoint_vtable vtable = {
 
 grpc_endpoint* grpc_mock_endpoint_create(void (*on_write)(grpc_slice slice),
                                          grpc_resource_quota* resource_quota) {
-  grpc_mock_endpoint* m =
-      static_cast<grpc_mock_endpoint*>(gpr_malloc(sizeof(*m)));
+  mock_endpoint* m = static_cast<mock_endpoint*>(gpr_malloc(sizeof(*m)));
   m->base.vtable = &vtable;
   char* name;
   gpr_asprintf(&name, "mock_endpoint_%" PRIxPTR, (intptr_t)m);
@@ -133,7 +132,7 @@ grpc_endpoint* grpc_mock_endpoint_create(void (*on_write)(grpc_slice slice),
 }
 
 void grpc_mock_endpoint_put_read(grpc_endpoint* ep, grpc_slice slice) {
-  grpc_mock_endpoint* m = reinterpret_cast<grpc_mock_endpoint*>(ep);
+  mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
   gpr_mu_lock(&m->mu);
   if (m->on_read != nullptr) {
     grpc_slice_buffer_add(m->on_read_out, slice);

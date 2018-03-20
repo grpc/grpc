@@ -19,6 +19,7 @@
 #ifndef GRPCPP_IMPL_CODEGEN_STATUS_H
 #define GRPCPP_IMPL_CODEGEN_STATUS_H
 
+#include <grpc/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/status_code_enum.h>
 #include <grpcpp/export.h>
@@ -31,7 +32,60 @@ namespace grpc {
 class Status {
  public:
   /// Construct an OK instance.
-  GRPCXX_EXPORT Status() : code_(StatusCode::OK) {}
+  GRPCXX_EXPORT Status() : code_(StatusCode::OK) {
+    // Static assertions to make sure that the C++ API value correctly
+    // maps to the core surface API value
+    static_assert(StatusCode::OK == static_cast<StatusCode>(GRPC_STATUS_OK),
+                  "Mismatched status code");
+    static_assert(
+        StatusCode::CANCELLED == static_cast<StatusCode>(GRPC_STATUS_CANCELLED),
+        "Mismatched status code");
+    static_assert(
+        StatusCode::UNKNOWN == static_cast<StatusCode>(GRPC_STATUS_UNKNOWN),
+        "Mismatched status code");
+    static_assert(StatusCode::INVALID_ARGUMENT ==
+                      static_cast<StatusCode>(GRPC_STATUS_INVALID_ARGUMENT),
+                  "Mismatched status code");
+    static_assert(StatusCode::DEADLINE_EXCEEDED ==
+                      static_cast<StatusCode>(GRPC_STATUS_DEADLINE_EXCEEDED),
+                  "Mismatched status code");
+    static_assert(
+        StatusCode::NOT_FOUND == static_cast<StatusCode>(GRPC_STATUS_NOT_FOUND),
+        "Mismatched status code");
+    static_assert(StatusCode::ALREADY_EXISTS ==
+                      static_cast<StatusCode>(GRPC_STATUS_ALREADY_EXISTS),
+                  "Mismatched status code");
+    static_assert(StatusCode::PERMISSION_DENIED ==
+                      static_cast<StatusCode>(GRPC_STATUS_PERMISSION_DENIED),
+                  "Mismatched status code");
+    static_assert(StatusCode::UNAUTHENTICATED ==
+                      static_cast<StatusCode>(GRPC_STATUS_UNAUTHENTICATED),
+                  "Mismatched status code");
+    static_assert(StatusCode::RESOURCE_EXHAUSTED ==
+                      static_cast<StatusCode>(GRPC_STATUS_RESOURCE_EXHAUSTED),
+                  "Mismatched status code");
+    static_assert(StatusCode::FAILED_PRECONDITION ==
+                      static_cast<StatusCode>(GRPC_STATUS_FAILED_PRECONDITION),
+                  "Mismatched status code");
+    static_assert(
+        StatusCode::ABORTED == static_cast<StatusCode>(GRPC_STATUS_ABORTED),
+        "Mismatched status code");
+    static_assert(StatusCode::OUT_OF_RANGE ==
+                      static_cast<StatusCode>(GRPC_STATUS_OUT_OF_RANGE),
+                  "Mismatched status code");
+    static_assert(StatusCode::UNIMPLEMENTED ==
+                      static_cast<StatusCode>(GRPC_STATUS_UNIMPLEMENTED),
+                  "Mismatched status code");
+    static_assert(
+        StatusCode::INTERNAL == static_cast<StatusCode>(GRPC_STATUS_INTERNAL),
+        "Mismatched status code");
+    static_assert(StatusCode::UNAVAILABLE ==
+                      static_cast<StatusCode>(GRPC_STATUS_UNAVAILABLE),
+                  "Mismatched status code");
+    static_assert(
+        StatusCode::DATA_LOSS == static_cast<StatusCode>(GRPC_STATUS_DATA_LOSS),
+        "Mismatched status code");
+  }
 
   /// Construct an instance with associated \a code and \a error_message.
   /// It is an error to construct an OK status with non-empty \a error_message.

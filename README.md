@@ -34,10 +34,12 @@ Libraries in different languages may be in different states of development. We a
 | C#                      | [src/csharp](src/csharp)            |
 | Objective-C             | [src/objective-c](src/objective-c)  |
 
-Java source code is in the [grpc-java](http://github.com/grpc/grpc-java)
-repository. Go source code is in the
-[grpc-go](http://github.com/grpc/grpc-go) repository. NodeJS source code is in the
-[grpc-node](https://github.com/grpc/grpc-node) repository.
+| Language                | Source repo                                          |
+|-------------------------|------------------------------------------------------|
+| Java                    | [grpc-java](http://github.com/grpc/grpc-java)        |
+| Go                      | [grpc-go](http://github.com/grpc/grpc-go)            |
+| NodeJS                  | [grpc-node](https://github.com/grpc/grpc-node)       |
+| Dart                    | [grpc-dart](https://github.com/grpc/grpc-dart)       |
 
 See [MANIFEST.md](MANIFEST.md) for a listing of top-level items in the
 repository.

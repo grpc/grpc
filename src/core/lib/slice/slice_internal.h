@@ -24,8 +24,6 @@
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 
-#include "src/core/lib/iomgr/exec_ctx.h"
-
 grpc_slice grpc_slice_ref_internal(grpc_slice slice);
 void grpc_slice_unref_internal(grpc_slice slice);
 void grpc_slice_buffer_reset_and_unref_internal(grpc_slice_buffer* sb);

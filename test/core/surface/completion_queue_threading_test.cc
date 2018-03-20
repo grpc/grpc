@@ -219,7 +219,7 @@ static void test_threading(size_t producers, size_t consumers) {
           "test_threading", producers, consumers);
 
   /* start all threads: they will wait for phase1 */
-  grpc_core::Thread* threads = reinterpret_cast<grpc_core::Thread*>(
+  grpc_core::Thread* threads = static_cast<grpc_core::Thread*>(
       gpr_malloc(sizeof(*threads) * (producers + consumers)));
   for (i = 0; i < producers + consumers; i++) {
     gpr_event_init(&options[i].on_started);

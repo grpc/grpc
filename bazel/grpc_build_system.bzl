@@ -37,7 +37,7 @@ def _get_external_deps(external_deps):
   ret = []
   for dep in external_deps:
     if dep == "nanopb":
-      ret += ["//third_party/nanopb"]
+      ret += ["grpc_nanopb"]
     elif dep == "cares":
       ret += select({"//:grpc_no_ares": [],
                      "//conditions:default": ["//external:cares"],})
@@ -155,7 +155,23 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
   )
 
 def grpc_generate_one_off_targets():
-  pass
+  native.cc_library(
+    name = "grpc_nanopb",
+    hdrs = [
+      "//third_party/nanopb:pb.h",
+      "//third_party/nanopb:pb_common.h",
+      "//third_party/nanopb:pb_decode.h",
+      "//third_party/nanopb:pb_encode.h",
+    ],
+    srcs = [
+      "//third_party/nanopb:pb_common.c",
+      "//third_party/nanopb:pb_decode.c",
+      "//third_party/nanopb:pb_encode.c",
+    ],
+    defines = [
+      "PB_FIELD_16BIT=1",
+    ],
+  )
 
 def grpc_sh_test(name, srcs, args = [], data = []):
   native.sh_test(
@@ -170,17 +186,14 @@ def grpc_sh_binary(name, srcs, data = []):
     srcs = srcs,
     data = data)
 
-def grpc_py_binary(name, srcs, data = [], deps = []):
-  if name == "test_dns_server":
-    deps = _get_external_deps([
-      "twisted",
-      "yaml",
-    ])
+def grpc_py_binary(name, srcs, data = [], deps = [], external_deps = [], testonly = False):
   native.py_binary(
     name = name,
     srcs = srcs,
+    testonly = testonly,
     data = data,
-    deps = deps)
+    deps = deps + _get_external_deps(external_deps)
+  )
 
 def grpc_package(name, visibility = "private", features = []):
   if visibility == "tests":

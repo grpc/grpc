@@ -107,7 +107,7 @@ void fake_tsi_test_do_round_trip_for_all_configs() {
     tsi_test_frame_protector_config_destroy(fake_fixture->base.config);
     fake_fixture->base.config = tsi_test_frame_protector_config_create(
         bit_array[0], bit_array[1], bit_array[2], bit_array[3], bit_array[4],
-        bit_array[5], bit_array[6], bit_array[7]);
+        bit_array[5], bit_array[6]);
     tsi_test_do_round_trip(&fake_fixture->base);
     tsi_test_fixture_destroy(fixture);
   }

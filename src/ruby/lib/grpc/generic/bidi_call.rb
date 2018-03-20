@@ -64,7 +64,7 @@ module GRPC
     # @param requests the Enumerable of requests to send
     # @param set_input_stream_done [Proc] called back when we're done
     #   reading the input stream
-    # @param set_input_stream_done [Proc] called back when we're done
+    # @param set_output_stream_done [Proc] called back when we're done
     #   sending data on the output stream
     # @return an Enumerator of requests to yield
     def run_on_client(requests,

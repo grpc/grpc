@@ -177,7 +177,7 @@ class PythonArtifact:
                 self.name,
                 ['tools/run_tests/artifacts/build_artifact_python.sh'],
                 environ=environ,
-                timeout_seconds=60 * 60,
+                timeout_seconds=60 * 60 * 2,
                 use_workspace=True)
 
     def __str__(self):
@@ -317,6 +317,7 @@ class ProtocArtifact:
                     self.name,
                     ['tools/run_tests/artifacts/build_artifact_protoc.sh'],
                     environ=environ,
+                    timeout_seconds=60 * 60,
                     use_workspace=True)
         else:
             generator = 'Visual Studio 14 2015 Win64' if self.arch == 'x64' else 'Visual Studio 14 2015'

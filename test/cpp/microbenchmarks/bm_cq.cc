@@ -20,10 +20,10 @@
  * working */
 
 #include <benchmark/benchmark.h>
-#include <grpc++/completion_queue.h>
-#include <grpc++/impl/grpc_library.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+#include <grpcpp/completion_queue.h>
+#include <grpcpp/impl/grpc_library.h>
 #include "test/cpp/microbenchmarks/helpers.h"
 
 #include "src/core/lib/surface/completion_queue.h"

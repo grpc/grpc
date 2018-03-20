@@ -22,7 +22,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/handshaker.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 
 /// Creates a security handshaker using \a handshaker.

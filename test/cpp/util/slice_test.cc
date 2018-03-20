@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc++/support/slice.h>
+#include <grpcpp/support/slice.h>
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
@@ -67,7 +67,7 @@ TEST_F(SliceTest, StaticBuf) {
 TEST_F(SliceTest, SliceNew) {
   char* x = new char[strlen(kContent) + 1];
   strcpy(x, kContent);
-  Slice spp(x, strlen(x), [](void* p) { delete[] reinterpret_cast<char*>(p); });
+  Slice spp(x, strlen(x), [](void* p) { delete[] static_cast<char*>(p); });
   CheckSlice(spp, kContent);
 }
 
@@ -86,7 +86,7 @@ TEST_F(SliceTest, SliceNewWithUserData) {
   strcpy(t->x, kContent);
   Slice spp(t->x, strlen(t->x),
             [](void* p) {
-              auto* t = reinterpret_cast<stest*>(p);
+              auto* t = static_cast<stest*>(p);
               delete[] t->x;
               delete t;
             },

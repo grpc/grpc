@@ -92,6 +92,8 @@ endif()
 
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
+add_definitions(-DPB_FIELD_16BIT)
+
 if (MSVC)
   if (gRPC_BUILD_SHARED)
     include(cmake/msvc_dynamic_runtime.cmake)
@@ -229,7 +231,6 @@ add_dependencies(buildtests_c avl_test)
 add_dependencies(buildtests_c bad_server_response_test)
 add_dependencies(buildtests_c bin_decoder_test)
 add_dependencies(buildtests_c bin_encoder_test)
-add_dependencies(buildtests_c byte_stream_test)
 add_dependencies(buildtests_c channel_create_test)
 add_dependencies(buildtests_c chttp2_hpack_encoder_test)
 add_dependencies(buildtests_c chttp2_stream_map_test)
@@ -476,6 +477,19 @@ add_dependencies(buildtests_c uri_fuzzer_test_one_entry)
 
 add_custom_target(buildtests_cxx)
 add_dependencies(buildtests_cxx alarm_test)
+add_dependencies(buildtests_cxx alts_counter_test)
+add_dependencies(buildtests_cxx alts_crypt_test)
+add_dependencies(buildtests_cxx alts_crypter_test)
+add_dependencies(buildtests_cxx alts_frame_handler_test)
+add_dependencies(buildtests_cxx alts_frame_protector_test)
+add_dependencies(buildtests_cxx alts_grpc_record_protocol_test)
+add_dependencies(buildtests_cxx alts_handshaker_client_test)
+add_dependencies(buildtests_cxx alts_handshaker_service_api_test)
+add_dependencies(buildtests_cxx alts_iovec_record_protocol_test)
+add_dependencies(buildtests_cxx alts_security_connector_test)
+add_dependencies(buildtests_cxx alts_tsi_handshaker_test)
+add_dependencies(buildtests_cxx alts_tsi_utils_test)
+add_dependencies(buildtests_cxx alts_zero_copy_grpc_protector_test)
 add_dependencies(buildtests_cxx async_end2end_test)
 add_dependencies(buildtests_cxx auth_property_iterator_test)
 add_dependencies(buildtests_cxx backoff_test)
@@ -522,8 +536,11 @@ endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx bm_pollset)
 endif()
+add_dependencies(buildtests_cxx byte_stream_test)
 add_dependencies(buildtests_cxx channel_arguments_test)
 add_dependencies(buildtests_cxx channel_filter_test)
+add_dependencies(buildtests_cxx check_gcp_environment_linux_test)
+add_dependencies(buildtests_cxx check_gcp_environment_windows_test)
 add_dependencies(buildtests_cxx chttp2_settings_timeout_test)
 add_dependencies(buildtests_cxx cli_call_test)
 add_dependencies(buildtests_cxx client_channel_stress_test)
@@ -545,6 +562,7 @@ add_dependencies(buildtests_cxx exception_test)
 add_dependencies(buildtests_cxx filter_end2end_test)
 add_dependencies(buildtests_cxx generic_end2end_test)
 add_dependencies(buildtests_cxx golden_file_test)
+add_dependencies(buildtests_cxx grpc_alts_credentials_options_test)
 add_dependencies(buildtests_cxx grpc_cli)
 add_dependencies(buildtests_cxx grpc_tool_test)
 add_dependencies(buildtests_cxx grpclb_api_test)
@@ -609,7 +627,6 @@ add_dependencies(buildtests_cxx slice_hash_table_test)
 add_dependencies(buildtests_cxx slice_weak_hash_table_test)
 add_dependencies(buildtests_cxx stats_test)
 add_dependencies(buildtests_cxx status_metadata_test)
-add_dependencies(buildtests_cxx status_test)
 add_dependencies(buildtests_cxx status_util_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx streaming_throughput_test)
@@ -618,6 +635,7 @@ add_dependencies(buildtests_cxx stress_test)
 add_dependencies(buildtests_cxx thread_manager_test)
 add_dependencies(buildtests_cxx thread_stress_test)
 add_dependencies(buildtests_cxx transport_pid_controller_test)
+add_dependencies(buildtests_cxx transport_security_common_api_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx writes_per_rpc_test)
 endif()
@@ -638,6 +656,44 @@ add_custom_target(buildtests
   DEPENDS buildtests_c buildtests_cxx)
 endif (gRPC_BUILD_TESTS)
 
+if (gRPC_BUILD_TESTS)
+
+add_library(alts_test_util
+  test/core/tsi/alts/crypt/gsec_test_util.cc
+  test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(alts_test_util PROPERTIES COMPILE_PDB_NAME "alts_test_util"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if (gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/alts_test_util.pdb
+      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+
+target_include_directories(alts_test_util
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+)
+
+target_link_libraries(alts_test_util
+  ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
+)
+
+
+endif (gRPC_BUILD_TESTS)
 
 add_library(gpr
   src/core/lib/gpr/alloc.cc
@@ -843,6 +899,8 @@ add_library(grpc
   src/core/lib/iomgr/gethostname_sysconf.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
+  src/core/lib/iomgr/iomgr_custom.cc
+  src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/iomgr/iomgr_posix.cc
   src/core/lib/iomgr/iomgr_uv.cc
   src/core/lib/iomgr/iomgr_windows.cc
@@ -851,12 +909,16 @@ add_library(grpc
   src/core/lib/iomgr/lockfree_event.cc
   src/core/lib/iomgr/network_status_tracker.cc
   src/core/lib/iomgr/polling_entity.cc
-  src/core/lib/iomgr/pollset_set_uv.cc
+  src/core/lib/iomgr/pollset.cc
+  src/core/lib/iomgr/pollset_custom.cc
+  src/core/lib/iomgr/pollset_set.cc
+  src/core/lib/iomgr/pollset_set_custom.cc
   src/core/lib/iomgr/pollset_set_windows.cc
   src/core/lib/iomgr/pollset_uv.cc
   src/core/lib/iomgr/pollset_windows.cc
+  src/core/lib/iomgr/resolve_address.cc
+  src/core/lib/iomgr/resolve_address_custom.cc
   src/core/lib/iomgr/resolve_address_posix.cc
-  src/core/lib/iomgr/resolve_address_uv.cc
   src/core/lib/iomgr/resolve_address_windows.cc
   src/core/lib/iomgr/resource_quota.cc
   src/core/lib/iomgr/sockaddr_utils.cc
@@ -868,19 +930,24 @@ add_library(grpc
   src/core/lib/iomgr/socket_utils_uv.cc
   src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/iomgr/socket_windows.cc
+  src/core/lib/iomgr/tcp_client.cc
+  src/core/lib/iomgr/tcp_client_custom.cc
   src/core/lib/iomgr/tcp_client_posix.cc
-  src/core/lib/iomgr/tcp_client_uv.cc
   src/core/lib/iomgr/tcp_client_windows.cc
+  src/core/lib/iomgr/tcp_custom.cc
   src/core/lib/iomgr/tcp_posix.cc
+  src/core/lib/iomgr/tcp_server.cc
+  src/core/lib/iomgr/tcp_server_custom.cc
   src/core/lib/iomgr/tcp_server_posix.cc
   src/core/lib/iomgr/tcp_server_utils_posix_common.cc
   src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc
   src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc
-  src/core/lib/iomgr/tcp_server_uv.cc
   src/core/lib/iomgr/tcp_server_windows.cc
   src/core/lib/iomgr/tcp_uv.cc
   src/core/lib/iomgr/tcp_windows.cc
   src/core/lib/iomgr/time_averaged_stats.cc
+  src/core/lib/iomgr/timer.cc
+  src/core/lib/iomgr/timer_custom.cc
   src/core/lib/iomgr/timer_generic.cc
   src/core/lib/iomgr/timer_heap.cc
   src/core/lib/iomgr/timer_manager.cc
@@ -966,6 +1033,7 @@ add_library(grpc
   src/core/ext/filters/http/server/http_server_filter.cc
   src/core/lib/http/httpcli_security_connector.cc
   src/core/lib/security/context/security_context.cc
+  src/core/lib/security/credentials/alts/alts_credentials.cc
   src/core/lib/security/credentials/composite/composite_credentials.cc
   src/core/lib/security/credentials/credentials.cc
   src/core/lib/security/credentials/credentials_metadata.cc
@@ -979,6 +1047,7 @@ add_library(grpc
   src/core/lib/security/credentials/oauth2/oauth2_credentials.cc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/ssl/ssl_credentials.cc
+  src/core/lib/security/security_connector/alts_security_connector.cc
   src/core/lib/security/security_connector/security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/secure_endpoint.cc
@@ -988,14 +1057,45 @@ add_library(grpc
   src/core/lib/security/transport/tsi_error.cc
   src/core/lib/security/util/json_util.cc
   src/core/lib/surface/init_secure.cc
-  src/core/tsi/alts_transport_security.cc
-  src/core/tsi/fake_transport_security.cc
-  src/core/tsi/ssl_transport_security.cc
-  src/core/tsi/transport_security_grpc.cc
+  src/core/tsi/alts/crypt/aes_gcm.cc
+  src/core/tsi/alts/crypt/gsec.cc
+  src/core/tsi/alts/frame_protector/alts_counter.cc
+  src/core/tsi/alts/frame_protector/alts_crypter.cc
+  src/core/tsi/alts/frame_protector/alts_frame_protector.cc
+  src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc
+  src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc
+  src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
+  src/core/tsi/alts/frame_protector/frame_handler.cc
+  src/core/tsi/alts/handshaker/alts_handshaker_client.cc
+  src/core/tsi/alts/handshaker/alts_tsi_event.cc
+  src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc
+  src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
+  src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
+  src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc
+  src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
+  src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
+  src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
+  src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
+  src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
+  src/core/tsi/alts/handshaker/alts_handshaker_service_api.cc
+  src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.cc
+  src/core/tsi/alts/handshaker/alts_tsi_utils.cc
+  src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  src/core/tsi/alts/handshaker/altscontext.pb.c
+  src/core/tsi/alts/handshaker/handshaker.pb.c
+  src/core/tsi/alts/handshaker/transport_security_common.pb.c
+  third_party/nanopb/pb_common.c
+  third_party/nanopb/pb_decode.c
+  third_party/nanopb/pb_encode.c
   src/core/tsi/transport_security.cc
   src/core/tsi/transport_security_adapter.cc
-  src/core/ext/transport/chttp2/server/chttp2_server.cc
-  src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc
+  src/core/ext/transport/chttp2/client/insecure/channel_create.cc
+  src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
+  src/core/ext/transport/chttp2/client/chttp2_connector.cc
   src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
   src/core/ext/filters/client_channel/client_channel.cc
@@ -1019,11 +1119,14 @@ add_library(grpc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
   src/core/ext/filters/deadline/deadline_filter.cc
-  src/core/ext/transport/chttp2/client/chttp2_connector.cc
+  src/core/tsi/alts_transport_security.cc
+  src/core/tsi/fake_transport_security.cc
+  src/core/tsi/ssl_transport_security.cc
+  src/core/tsi/transport_security_grpc.cc
+  src/core/ext/transport/chttp2/server/chttp2_server.cc
+  src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc
   src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc
-  src/core/ext/transport/chttp2/client/insecure/channel_create.cc
-  src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
   src/core/ext/transport/inproc/inproc_plugin.cc
   src/core/ext/transport/inproc/inproc_transport.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
@@ -1032,9 +1135,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
-  third_party/nanopb/pb_common.c
-  third_party/nanopb/pb_decode.c
-  third_party/nanopb/pb_encode.c
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc
@@ -1185,6 +1285,8 @@ add_library(grpc_cronet
   src/core/lib/iomgr/gethostname_sysconf.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
+  src/core/lib/iomgr/iomgr_custom.cc
+  src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/iomgr/iomgr_posix.cc
   src/core/lib/iomgr/iomgr_uv.cc
   src/core/lib/iomgr/iomgr_windows.cc
@@ -1193,12 +1295,16 @@ add_library(grpc_cronet
   src/core/lib/iomgr/lockfree_event.cc
   src/core/lib/iomgr/network_status_tracker.cc
   src/core/lib/iomgr/polling_entity.cc
-  src/core/lib/iomgr/pollset_set_uv.cc
+  src/core/lib/iomgr/pollset.cc
+  src/core/lib/iomgr/pollset_custom.cc
+  src/core/lib/iomgr/pollset_set.cc
+  src/core/lib/iomgr/pollset_set_custom.cc
   src/core/lib/iomgr/pollset_set_windows.cc
   src/core/lib/iomgr/pollset_uv.cc
   src/core/lib/iomgr/pollset_windows.cc
+  src/core/lib/iomgr/resolve_address.cc
+  src/core/lib/iomgr/resolve_address_custom.cc
   src/core/lib/iomgr/resolve_address_posix.cc
-  src/core/lib/iomgr/resolve_address_uv.cc
   src/core/lib/iomgr/resolve_address_windows.cc
   src/core/lib/iomgr/resource_quota.cc
   src/core/lib/iomgr/sockaddr_utils.cc
@@ -1210,19 +1316,24 @@ add_library(grpc_cronet
   src/core/lib/iomgr/socket_utils_uv.cc
   src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/iomgr/socket_windows.cc
+  src/core/lib/iomgr/tcp_client.cc
+  src/core/lib/iomgr/tcp_client_custom.cc
   src/core/lib/iomgr/tcp_client_posix.cc
-  src/core/lib/iomgr/tcp_client_uv.cc
   src/core/lib/iomgr/tcp_client_windows.cc
+  src/core/lib/iomgr/tcp_custom.cc
   src/core/lib/iomgr/tcp_posix.cc
+  src/core/lib/iomgr/tcp_server.cc
+  src/core/lib/iomgr/tcp_server_custom.cc
   src/core/lib/iomgr/tcp_server_posix.cc
   src/core/lib/iomgr/tcp_server_utils_posix_common.cc
   src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc
   src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc
-  src/core/lib/iomgr/tcp_server_uv.cc
   src/core/lib/iomgr/tcp_server_windows.cc
   src/core/lib/iomgr/tcp_uv.cc
   src/core/lib/iomgr/tcp_windows.cc
   src/core/lib/iomgr/time_averaged_stats.cc
+  src/core/lib/iomgr/timer.cc
+  src/core/lib/iomgr/timer_custom.cc
   src/core/lib/iomgr/timer_generic.cc
   src/core/lib/iomgr/timer_heap.cc
   src/core/lib/iomgr/timer_manager.cc
@@ -1334,6 +1445,7 @@ add_library(grpc_cronet
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/lib/http/httpcli_security_connector.cc
   src/core/lib/security/context/security_context.cc
+  src/core/lib/security/credentials/alts/alts_credentials.cc
   src/core/lib/security/credentials/composite/composite_credentials.cc
   src/core/lib/security/credentials/credentials.cc
   src/core/lib/security/credentials/credentials_metadata.cc
@@ -1347,6 +1459,7 @@ add_library(grpc_cronet
   src/core/lib/security/credentials/oauth2/oauth2_credentials.cc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/ssl/ssl_credentials.cc
+  src/core/lib/security/security_connector/alts_security_connector.cc
   src/core/lib/security/security_connector/security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/secure_endpoint.cc
@@ -1356,13 +1469,49 @@ add_library(grpc_cronet
   src/core/lib/security/transport/tsi_error.cc
   src/core/lib/security/util/json_util.cc
   src/core/lib/surface/init_secure.cc
+  src/core/tsi/alts/crypt/aes_gcm.cc
+  src/core/tsi/alts/crypt/gsec.cc
+  src/core/tsi/alts/frame_protector/alts_counter.cc
+  src/core/tsi/alts/frame_protector/alts_crypter.cc
+  src/core/tsi/alts/frame_protector/alts_frame_protector.cc
+  src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc
+  src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc
+  src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
+  src/core/tsi/alts/frame_protector/frame_handler.cc
+  src/core/tsi/alts/handshaker/alts_handshaker_client.cc
+  src/core/tsi/alts/handshaker/alts_tsi_event.cc
+  src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc
+  src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
+  src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
+  src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc
+  src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
+  src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
+  src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
+  src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
+  src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
+  src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
+  src/core/tsi/alts/handshaker/alts_handshaker_service_api.cc
+  src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.cc
+  src/core/tsi/alts/handshaker/alts_tsi_utils.cc
+  src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  src/core/tsi/alts/handshaker/altscontext.pb.c
+  src/core/tsi/alts/handshaker/handshaker.pb.c
+  src/core/tsi/alts/handshaker/transport_security_common.pb.c
+  third_party/nanopb/pb_common.c
+  third_party/nanopb/pb_decode.c
+  third_party/nanopb/pb_encode.c
+  src/core/tsi/transport_security.cc
+  src/core/tsi/transport_security_adapter.cc
+  src/core/ext/transport/chttp2/client/insecure/channel_create.cc
+  src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
+  src/core/ext/transport/chttp2/client/chttp2_connector.cc
   src/core/tsi/alts_transport_security.cc
   src/core/tsi/fake_transport_security.cc
   src/core/tsi/ssl_transport_security.cc
   src/core/tsi/transport_security_grpc.cc
-  src/core/tsi/transport_security.cc
-  src/core/tsi/transport_security_adapter.cc
-  src/core/ext/transport/chttp2/client/chttp2_connector.cc
   src/core/ext/filters/load_reporting/server_load_reporting_filter.cc
   src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc
   src/core/plugin_registry/grpc_cronet_plugin_registry.cc
@@ -1513,6 +1662,8 @@ add_library(grpc_test_util
   src/core/lib/iomgr/gethostname_sysconf.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
+  src/core/lib/iomgr/iomgr_custom.cc
+  src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/iomgr/iomgr_posix.cc
   src/core/lib/iomgr/iomgr_uv.cc
   src/core/lib/iomgr/iomgr_windows.cc
@@ -1521,12 +1672,16 @@ add_library(grpc_test_util
   src/core/lib/iomgr/lockfree_event.cc
   src/core/lib/iomgr/network_status_tracker.cc
   src/core/lib/iomgr/polling_entity.cc
-  src/core/lib/iomgr/pollset_set_uv.cc
+  src/core/lib/iomgr/pollset.cc
+  src/core/lib/iomgr/pollset_custom.cc
+  src/core/lib/iomgr/pollset_set.cc
+  src/core/lib/iomgr/pollset_set_custom.cc
   src/core/lib/iomgr/pollset_set_windows.cc
   src/core/lib/iomgr/pollset_uv.cc
   src/core/lib/iomgr/pollset_windows.cc
+  src/core/lib/iomgr/resolve_address.cc
+  src/core/lib/iomgr/resolve_address_custom.cc
   src/core/lib/iomgr/resolve_address_posix.cc
-  src/core/lib/iomgr/resolve_address_uv.cc
   src/core/lib/iomgr/resolve_address_windows.cc
   src/core/lib/iomgr/resource_quota.cc
   src/core/lib/iomgr/sockaddr_utils.cc
@@ -1538,19 +1693,24 @@ add_library(grpc_test_util
   src/core/lib/iomgr/socket_utils_uv.cc
   src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/iomgr/socket_windows.cc
+  src/core/lib/iomgr/tcp_client.cc
+  src/core/lib/iomgr/tcp_client_custom.cc
   src/core/lib/iomgr/tcp_client_posix.cc
-  src/core/lib/iomgr/tcp_client_uv.cc
   src/core/lib/iomgr/tcp_client_windows.cc
+  src/core/lib/iomgr/tcp_custom.cc
   src/core/lib/iomgr/tcp_posix.cc
+  src/core/lib/iomgr/tcp_server.cc
+  src/core/lib/iomgr/tcp_server_custom.cc
   src/core/lib/iomgr/tcp_server_posix.cc
   src/core/lib/iomgr/tcp_server_utils_posix_common.cc
   src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc
   src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc
-  src/core/lib/iomgr/tcp_server_uv.cc
   src/core/lib/iomgr/tcp_server_windows.cc
   src/core/lib/iomgr/tcp_uv.cc
   src/core/lib/iomgr/tcp_windows.cc
   src/core/lib/iomgr/time_averaged_stats.cc
+  src/core/lib/iomgr/timer.cc
+  src/core/lib/iomgr/timer_custom.cc
   src/core/lib/iomgr/timer_generic.cc
   src/core/lib/iomgr/timer_heap.cc
   src/core/lib/iomgr/timer_manager.cc
@@ -1802,6 +1962,8 @@ add_library(grpc_test_util_unsecure
   src/core/lib/iomgr/gethostname_sysconf.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
+  src/core/lib/iomgr/iomgr_custom.cc
+  src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/iomgr/iomgr_posix.cc
   src/core/lib/iomgr/iomgr_uv.cc
   src/core/lib/iomgr/iomgr_windows.cc
@@ -1810,12 +1972,16 @@ add_library(grpc_test_util_unsecure
   src/core/lib/iomgr/lockfree_event.cc
   src/core/lib/iomgr/network_status_tracker.cc
   src/core/lib/iomgr/polling_entity.cc
-  src/core/lib/iomgr/pollset_set_uv.cc
+  src/core/lib/iomgr/pollset.cc
+  src/core/lib/iomgr/pollset_custom.cc
+  src/core/lib/iomgr/pollset_set.cc
+  src/core/lib/iomgr/pollset_set_custom.cc
   src/core/lib/iomgr/pollset_set_windows.cc
   src/core/lib/iomgr/pollset_uv.cc
   src/core/lib/iomgr/pollset_windows.cc
+  src/core/lib/iomgr/resolve_address.cc
+  src/core/lib/iomgr/resolve_address_custom.cc
   src/core/lib/iomgr/resolve_address_posix.cc
-  src/core/lib/iomgr/resolve_address_uv.cc
   src/core/lib/iomgr/resolve_address_windows.cc
   src/core/lib/iomgr/resource_quota.cc
   src/core/lib/iomgr/sockaddr_utils.cc
@@ -1827,19 +1993,24 @@ add_library(grpc_test_util_unsecure
   src/core/lib/iomgr/socket_utils_uv.cc
   src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/iomgr/socket_windows.cc
+  src/core/lib/iomgr/tcp_client.cc
+  src/core/lib/iomgr/tcp_client_custom.cc
   src/core/lib/iomgr/tcp_client_posix.cc
-  src/core/lib/iomgr/tcp_client_uv.cc
   src/core/lib/iomgr/tcp_client_windows.cc
+  src/core/lib/iomgr/tcp_custom.cc
   src/core/lib/iomgr/tcp_posix.cc
+  src/core/lib/iomgr/tcp_server.cc
+  src/core/lib/iomgr/tcp_server_custom.cc
   src/core/lib/iomgr/tcp_server_posix.cc
   src/core/lib/iomgr/tcp_server_utils_posix_common.cc
   src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc
   src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc
-  src/core/lib/iomgr/tcp_server_uv.cc
   src/core/lib/iomgr/tcp_server_windows.cc
   src/core/lib/iomgr/tcp_uv.cc
   src/core/lib/iomgr/tcp_windows.cc
   src/core/lib/iomgr/time_averaged_stats.cc
+  src/core/lib/iomgr/timer.cc
+  src/core/lib/iomgr/timer_custom.cc
   src/core/lib/iomgr/timer_generic.cc
   src/core/lib/iomgr/timer_heap.cc
   src/core/lib/iomgr/timer_manager.cc
@@ -2071,6 +2242,8 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/gethostname_sysconf.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
+  src/core/lib/iomgr/iomgr_custom.cc
+  src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/iomgr/iomgr_posix.cc
   src/core/lib/iomgr/iomgr_uv.cc
   src/core/lib/iomgr/iomgr_windows.cc
@@ -2079,12 +2252,16 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/lockfree_event.cc
   src/core/lib/iomgr/network_status_tracker.cc
   src/core/lib/iomgr/polling_entity.cc
-  src/core/lib/iomgr/pollset_set_uv.cc
+  src/core/lib/iomgr/pollset.cc
+  src/core/lib/iomgr/pollset_custom.cc
+  src/core/lib/iomgr/pollset_set.cc
+  src/core/lib/iomgr/pollset_set_custom.cc
   src/core/lib/iomgr/pollset_set_windows.cc
   src/core/lib/iomgr/pollset_uv.cc
   src/core/lib/iomgr/pollset_windows.cc
+  src/core/lib/iomgr/resolve_address.cc
+  src/core/lib/iomgr/resolve_address_custom.cc
   src/core/lib/iomgr/resolve_address_posix.cc
-  src/core/lib/iomgr/resolve_address_uv.cc
   src/core/lib/iomgr/resolve_address_windows.cc
   src/core/lib/iomgr/resource_quota.cc
   src/core/lib/iomgr/sockaddr_utils.cc
@@ -2096,19 +2273,24 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/socket_utils_uv.cc
   src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/iomgr/socket_windows.cc
+  src/core/lib/iomgr/tcp_client.cc
+  src/core/lib/iomgr/tcp_client_custom.cc
   src/core/lib/iomgr/tcp_client_posix.cc
-  src/core/lib/iomgr/tcp_client_uv.cc
   src/core/lib/iomgr/tcp_client_windows.cc
+  src/core/lib/iomgr/tcp_custom.cc
   src/core/lib/iomgr/tcp_posix.cc
+  src/core/lib/iomgr/tcp_server.cc
+  src/core/lib/iomgr/tcp_server_custom.cc
   src/core/lib/iomgr/tcp_server_posix.cc
   src/core/lib/iomgr/tcp_server_utils_posix_common.cc
   src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc
   src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc
-  src/core/lib/iomgr/tcp_server_uv.cc
   src/core/lib/iomgr/tcp_server_windows.cc
   src/core/lib/iomgr/tcp_uv.cc
   src/core/lib/iomgr/tcp_windows.cc
   src/core/lib/iomgr/time_averaged_stats.cc
+  src/core/lib/iomgr/timer.cc
+  src/core/lib/iomgr/timer_custom.cc
   src/core/lib/iomgr/timer_generic.cc
   src/core/lib/iomgr/timer_heap.cc
   src/core/lib/iomgr/timer_manager.cc
@@ -2885,6 +3067,8 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/gethostname_sysconf.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
+  src/core/lib/iomgr/iomgr_custom.cc
+  src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/iomgr/iomgr_posix.cc
   src/core/lib/iomgr/iomgr_uv.cc
   src/core/lib/iomgr/iomgr_windows.cc
@@ -2893,12 +3077,16 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/lockfree_event.cc
   src/core/lib/iomgr/network_status_tracker.cc
   src/core/lib/iomgr/polling_entity.cc
-  src/core/lib/iomgr/pollset_set_uv.cc
+  src/core/lib/iomgr/pollset.cc
+  src/core/lib/iomgr/pollset_custom.cc
+  src/core/lib/iomgr/pollset_set.cc
+  src/core/lib/iomgr/pollset_set_custom.cc
   src/core/lib/iomgr/pollset_set_windows.cc
   src/core/lib/iomgr/pollset_uv.cc
   src/core/lib/iomgr/pollset_windows.cc
+  src/core/lib/iomgr/resolve_address.cc
+  src/core/lib/iomgr/resolve_address_custom.cc
   src/core/lib/iomgr/resolve_address_posix.cc
-  src/core/lib/iomgr/resolve_address_uv.cc
   src/core/lib/iomgr/resolve_address_windows.cc
   src/core/lib/iomgr/resource_quota.cc
   src/core/lib/iomgr/sockaddr_utils.cc
@@ -2910,19 +3098,24 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/socket_utils_uv.cc
   src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/iomgr/socket_windows.cc
+  src/core/lib/iomgr/tcp_client.cc
+  src/core/lib/iomgr/tcp_client_custom.cc
   src/core/lib/iomgr/tcp_client_posix.cc
-  src/core/lib/iomgr/tcp_client_uv.cc
   src/core/lib/iomgr/tcp_client_windows.cc
+  src/core/lib/iomgr/tcp_custom.cc
   src/core/lib/iomgr/tcp_posix.cc
+  src/core/lib/iomgr/tcp_server.cc
+  src/core/lib/iomgr/tcp_server_custom.cc
   src/core/lib/iomgr/tcp_server_posix.cc
   src/core/lib/iomgr/tcp_server_utils_posix_common.cc
   src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc
   src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc
-  src/core/lib/iomgr/tcp_server_uv.cc
   src/core/lib/iomgr/tcp_server_windows.cc
   src/core/lib/iomgr/tcp_uv.cc
   src/core/lib/iomgr/tcp_windows.cc
   src/core/lib/iomgr/time_averaged_stats.cc
+  src/core/lib/iomgr/timer.cc
+  src/core/lib/iomgr/timer_custom.cc
   src/core/lib/iomgr/timer_generic.cc
   src/core/lib/iomgr/timer_heap.cc
   src/core/lib/iomgr/timer_manager.cc
@@ -5331,33 +5524,6 @@ target_link_libraries(bin_encoder_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(byte_stream_test
-  test/core/transport/byte_stream_test.cc
-)
-
-
-target_include_directories(byte_stream_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-)
-
-target_link_libraries(byte_stream_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
 )
 
 endif (gRPC_BUILD_TESTS)
@@ -8689,6 +8855,462 @@ target_link_libraries(alarm_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(alts_counter_test
+  test/core/tsi/alts/frame_protector/alts_counter_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(alts_counter_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(alts_counter_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  alts_test_util
+  gpr
+  grpc
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(alts_crypt_test
+  test/core/tsi/alts/crypt/aes_gcm_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(alts_crypt_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(alts_crypt_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  alts_test_util
+  gpr_test_util
+  gpr
+  grpc
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(alts_crypter_test
+  test/core/tsi/alts/frame_protector/alts_crypter_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(alts_crypter_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(alts_crypter_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  alts_test_util
+  gpr
+  grpc
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(alts_frame_handler_test
+  test/core/tsi/alts/frame_protector/frame_handler_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(alts_frame_handler_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(alts_frame_handler_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  alts_test_util
+  gpr
+  grpc
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(alts_frame_protector_test
+  test/core/tsi/alts/frame_protector/alts_frame_protector_test.cc
+  test/core/tsi/transport_security_test_lib.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(alts_frame_protector_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(alts_frame_protector_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  alts_test_util
+  gpr
+  grpc
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(alts_grpc_record_protocol_test
+  test/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(alts_grpc_record_protocol_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(alts_grpc_record_protocol_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  alts_test_util
+  gpr
+  grpc
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(alts_handshaker_client_test
+  test/core/tsi/alts/handshaker/alts_handshaker_client_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(alts_handshaker_client_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(alts_handshaker_client_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  alts_test_util
+  gpr
+  grpc
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(alts_handshaker_service_api_test
+  test/core/tsi/alts/handshaker/alts_handshaker_service_api_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(alts_handshaker_service_api_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(alts_handshaker_service_api_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  alts_test_util
+  gpr
+  grpc
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(alts_iovec_record_protocol_test
+  test/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(alts_iovec_record_protocol_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(alts_iovec_record_protocol_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  alts_test_util
+  gpr
+  grpc
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(alts_security_connector_test
+  test/core/security/alts_security_connector_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(alts_security_connector_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(alts_security_connector_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gpr
+  grpc
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(alts_tsi_handshaker_test
+  test/core/tsi/alts/handshaker/alts_tsi_handshaker_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(alts_tsi_handshaker_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(alts_tsi_handshaker_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  alts_test_util
+  gpr
+  grpc
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(alts_tsi_utils_test
+  test/core/tsi/alts/handshaker/alts_tsi_utils_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(alts_tsi_utils_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(alts_tsi_utils_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  alts_test_util
+  gpr
+  grpc
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(alts_zero_copy_grpc_protector_test
+  test/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(alts_zero_copy_grpc_protector_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(alts_zero_copy_grpc_protector_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  alts_test_util
+  gpr
+  grpc
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(async_end2end_test
   test/cpp/end2end/async_end2end_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -9428,6 +10050,42 @@ endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(byte_stream_test
+  test/core/transport/byte_stream_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(byte_stream_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(byte_stream_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(channel_arguments_test
   test/cpp/common/channel_arguments_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -9490,6 +10148,74 @@ target_link_libraries(channel_filter_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
+  grpc
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(check_gcp_environment_linux_test
+  test/core/security/check_gcp_environment_linux_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(check_gcp_environment_linux_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(check_gcp_environment_linux_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(check_gcp_environment_windows_test
+  test/core/security/check_gcp_environment_windows_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(check_gcp_environment_windows_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(check_gcp_environment_windows_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
@@ -10283,6 +11009,40 @@ target_link_libraries(golden_file_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
+  grpc
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(grpc_alts_credentials_options_test
+  test/core/security/grpc_alts_credentials_options_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(grpc_alts_credentials_options_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(grpc_alts_credentials_options_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}
@@ -12359,43 +13119,6 @@ target_link_libraries(status_metadata_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(status_test
-  test/cpp/util/status_test.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-
-target_include_directories(status_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE third_party/googletest/googletest/include
-  PRIVATE third_party/googletest/googletest
-  PRIVATE third_party/googletest/googlemock/include
-  PRIVATE third_party/googletest/googlemock
-  PRIVATE ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(status_test
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc++
-  grpc
-  gpr_test_util
-  gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
 add_executable(status_util_test
   test/core/client_channel/status_util_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -12645,6 +13368,41 @@ target_link_libraries(transport_pid_controller_test
   grpc
   gpr_test_util
   gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(transport_security_common_api_test
+  test/core/tsi/alts/handshaker/transport_security_common_api_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(transport_security_common_api_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(transport_security_common_api_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  alts_test_util
+  gpr
+  grpc
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 

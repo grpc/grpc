@@ -29,7 +29,6 @@
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/tcp_client_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/surface/api_trace.h"

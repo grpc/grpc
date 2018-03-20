@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+set -eux
 
-GENERATED_FILES_PATH="$TEST_SRCDIR/../../../../../genfiles/src/proto/grpc/testing/"
-test/cpp/codegen/golden_file_test --generated_file_path="$GENERATED_FILES_PATH"
+GENERATED_PB_H_DIR="${TEST_SRCDIR}/com_github_grpc_grpc/test/cpp/codegen/"
+test/cpp/codegen/golden_file_test --generated_file_path="$GENERATED_PB_H_DIR"

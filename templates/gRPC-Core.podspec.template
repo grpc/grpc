@@ -144,7 +144,7 @@
     }
 
     s.default_subspecs = 'Interface', 'Implementation'
-    s.compiler_flags = '-DGRPC_ARES=0'
+    s.compiler_flags = '-DGRPC_ARES=0', '-DPB_FIELD_16BIT'
     s.libraries = 'c++'
 
     # Like many other C libraries, gRPC-Core has its public headers under `include/<libname>/` and its
@@ -202,6 +202,6 @@
 
     # TODO (mxyan): Instead of this hack, add include path "third_party" to C core's include path?
     s.prepare_command = <<-END_OF_COMMAND
-      find src/core/ -type f -exec sed -E -i'.back' 's;#include "third_party/nanopb/(.*)";#include <nanopb/\\1>;g' {} \\\;
+      find src/core/ -type f ! -path '*.back*' -exec sed -E -i'.back' 's;#include "third_party/nanopb/(.*)";#include <nanopb/\\1>;g' {} \\\;
     END_OF_COMMAND
   end

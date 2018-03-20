@@ -92,6 +92,26 @@ xcodebuild \
 echo "TIME:  $(date)"
 xcodebuild \
     -workspace Tests.xcworkspace \
+    -scheme CoreCronetEnd2EndTests_Asan \
+    -destination name="iPhone 6" \
+    test \
+    | egrep -v "$XCODEBUILD_FILTER" \
+    | egrep -v '^$' \
+    | egrep -v "(GPBDictionary|GPBArray)" -
+
+echo "TIME:  $(date)"
+xcodebuild \
+    -workspace Tests.xcworkspace \
+    -scheme CoreCronetEnd2EndTests_Tsan \
+    -destination name="iPhone 6" \
+    test \
+    | egrep -v "$XCODEBUILD_FILTER" \
+    | egrep -v '^$' \
+    | egrep -v "(GPBDictionary|GPBArray)" -
+
+echo "TIME:  $(date)"
+xcodebuild \
+    -workspace Tests.xcworkspace \
     -scheme CronetUnitTests \
     -destination name="iPhone 6" \
     test \

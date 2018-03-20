@@ -16,11 +16,11 @@
  *
  */
 
-#include <grpc++/impl/codegen/grpc_library.h>
-#include <grpc++/impl/codegen/proto_utils.h>
-#include <grpc++/impl/grpc_library.h>
 #include <grpc/impl/codegen/byte_buffer.h>
 #include <grpc/slice.h>
+#include <grpcpp/impl/codegen/grpc_library.h>
+#include <grpcpp/impl/codegen/proto_utils.h>
+#include <grpcpp/impl/grpc_library.h>
 #include <gtest/gtest.h>
 
 namespace grpc {

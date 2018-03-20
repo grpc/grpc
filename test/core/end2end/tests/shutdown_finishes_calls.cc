@@ -150,6 +150,13 @@ static void test_early_server_shutdown_finishes_inflight_calls(
                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
+  /* Make sure we don't shutdown the server while HTTP/2 PING frames are still
+   * being exchanged on the newly established connection. It can lead to
+   * failures when testing with HTTP proxy. See
+   * https://github.com/grpc/grpc/issues/14471
+   */
+  gpr_sleep_until(n_seconds_from_now(1));
+
   /* shutdown and destroy the server */
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(1000));
   grpc_server_cancel_all_calls(f.server);

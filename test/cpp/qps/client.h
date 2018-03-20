@@ -24,12 +24,12 @@
 #include <unordered_map>
 #include <vector>
 
-#include <grpc++/channel.h>
-#include <grpc++/support/byte_buffer.h>
-#include <grpc++/support/channel_arguments.h>
-#include <grpc++/support/slice.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/support/byte_buffer.h>
+#include <grpcpp/support/channel_arguments.h>
+#include <grpcpp/support/slice.h>
 
 #include "src/proto/grpc/testing/payloads.pb.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"

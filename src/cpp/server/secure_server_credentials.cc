@@ -29,14 +29,14 @@
 namespace grpc {
 
 void AuthMetadataProcessorAyncWrapper::Destroy(void* wrapper) {
-  auto* w = reinterpret_cast<AuthMetadataProcessorAyncWrapper*>(wrapper);
+  auto* w = static_cast<AuthMetadataProcessorAyncWrapper*>(wrapper);
   delete w;
 }
 
 void AuthMetadataProcessorAyncWrapper::Process(
     void* wrapper, grpc_auth_context* context, const grpc_metadata* md,
     size_t num_md, grpc_process_auth_metadata_done_cb cb, void* user_data) {
-  auto* w = reinterpret_cast<AuthMetadataProcessorAyncWrapper*>(wrapper);
+  auto* w = static_cast<AuthMetadataProcessorAyncWrapper*>(wrapper);
   if (!w->processor_) {
     // Early exit.
     cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_OK, nullptr);

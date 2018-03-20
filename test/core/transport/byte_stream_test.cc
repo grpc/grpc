@@ -23,20 +23,23 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 #include "test/core/util/test_config.h"
 
+#include <gtest/gtest.h>
+
+namespace grpc_core {
+namespace {
+
 //
-// grpc_slice_buffer_stream tests
+// SliceBufferByteStream tests
 //
 
-static void not_called_closure(void* arg, grpc_error* error) {
-  GPR_ASSERT(false);
-}
+void NotCalledClosure(void* arg, grpc_error* error) { GPR_ASSERT(false); }
 
-static void test_slice_buffer_stream_basic(void) {
-  gpr_log(GPR_DEBUG, "test_slice_buffer_stream_basic");
+TEST(SliceBufferByteStream, Basic) {
   grpc_core::ExecCtx exec_ctx;
   // Create and populate slice buffer.
   grpc_slice_buffer buffer;
@@ -49,28 +52,26 @@ static void test_slice_buffer_stream_basic(void) {
     grpc_slice_buffer_add(&buffer, input[i]);
   }
   // Create byte stream.
-  grpc_slice_buffer_stream stream;
-  grpc_slice_buffer_stream_init(&stream, &buffer, 0);
-  GPR_ASSERT(stream.base.length == 6);
+  SliceBufferByteStream stream(&buffer, 0);
+  grpc_slice_buffer_destroy_internal(&buffer);
+  EXPECT_EQ(6U, stream.length());
   grpc_closure closure;
-  GRPC_CLOSURE_INIT(&closure, not_called_closure, nullptr,
+  GRPC_CLOSURE_INIT(&closure, NotCalledClosure, nullptr,
                     grpc_schedule_on_exec_ctx);
-  // Read each slice.  Note that next() always returns synchronously.
+  // Read each slice.  Note that Next() always returns synchronously.
   for (size_t i = 0; i < GPR_ARRAY_SIZE(input); ++i) {
-    GPR_ASSERT(grpc_byte_stream_next(&stream.base, ~(size_t)0, &closure));
+    ASSERT_TRUE(stream.Next(~(size_t)0, &closure));
     grpc_slice output;
-    grpc_error* error = grpc_byte_stream_pull(&stream.base, &output);
-    GPR_ASSERT(error == GRPC_ERROR_NONE);
-    GPR_ASSERT(grpc_slice_eq(input[i], output));
+    grpc_error* error = stream.Pull(&output);
+    EXPECT_TRUE(error == GRPC_ERROR_NONE);
+    EXPECT_TRUE(grpc_slice_eq(input[i], output));
     grpc_slice_unref_internal(output);
   }
   // Clean up.
-  grpc_byte_stream_destroy(&stream.base);
-  grpc_slice_buffer_destroy_internal(&buffer);
+  stream.Orphan();
 }
 
-static void test_slice_buffer_stream_shutdown(void) {
-  gpr_log(GPR_DEBUG, "test_slice_buffer_stream_shutdown");
+TEST(SliceBufferByteStream, Shutdown) {
   grpc_core::ExecCtx exec_ctx;
   // Create and populate slice buffer.
   grpc_slice_buffer buffer;
@@ -83,40 +84,38 @@ static void test_slice_buffer_stream_shutdown(void) {
     grpc_slice_buffer_add(&buffer, input[i]);
   }
   // Create byte stream.
-  grpc_slice_buffer_stream stream;
-  grpc_slice_buffer_stream_init(&stream, &buffer, 0);
-  GPR_ASSERT(stream.base.length == 6);
+  SliceBufferByteStream stream(&buffer, 0);
+  grpc_slice_buffer_destroy_internal(&buffer);
+  EXPECT_EQ(6U, stream.length());
   grpc_closure closure;
-  GRPC_CLOSURE_INIT(&closure, not_called_closure, nullptr,
+  GRPC_CLOSURE_INIT(&closure, NotCalledClosure, nullptr,
                     grpc_schedule_on_exec_ctx);
   // Read the first slice.
-  GPR_ASSERT(grpc_byte_stream_next(&stream.base, ~(size_t)0, &closure));
+  ASSERT_TRUE(stream.Next(~(size_t)0, &closure));
   grpc_slice output;
-  grpc_error* error = grpc_byte_stream_pull(&stream.base, &output);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
-  GPR_ASSERT(grpc_slice_eq(input[0], output));
+  grpc_error* error = stream.Pull(&output);
+  EXPECT_TRUE(error == GRPC_ERROR_NONE);
+  EXPECT_TRUE(grpc_slice_eq(input[0], output));
   grpc_slice_unref_internal(output);
   // Now shutdown.
   grpc_error* shutdown_error =
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("shutdown error");
-  grpc_byte_stream_shutdown(&stream.base, GRPC_ERROR_REF(shutdown_error));
+  stream.Shutdown(GRPC_ERROR_REF(shutdown_error));
   // After shutdown, the next pull() should return the error.
-  GPR_ASSERT(grpc_byte_stream_next(&stream.base, ~(size_t)0, &closure));
-  error = grpc_byte_stream_pull(&stream.base, &output);
-  GPR_ASSERT(error == shutdown_error);
+  ASSERT_TRUE(stream.Next(~(size_t)0, &closure));
+  error = stream.Pull(&output);
+  EXPECT_TRUE(error == shutdown_error);
   GRPC_ERROR_UNREF(error);
   GRPC_ERROR_UNREF(shutdown_error);
   // Clean up.
-  grpc_byte_stream_destroy(&stream.base);
-  grpc_slice_buffer_destroy_internal(&buffer);
+  stream.Orphan();
 }
 
 //
-// grpc_caching_byte_stream tests
+// CachingByteStream tests
 //
 
-static void test_caching_byte_stream_basic(void) {
-  gpr_log(GPR_DEBUG, "test_caching_byte_stream_basic");
+TEST(CachingByteStream, Basic) {
   grpc_core::ExecCtx exec_ctx;
   // Create and populate slice buffer byte stream.
   grpc_slice_buffer buffer;
@@ -128,34 +127,30 @@ static void test_caching_byte_stream_basic(void) {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(input); ++i) {
     grpc_slice_buffer_add(&buffer, input[i]);
   }
-  grpc_slice_buffer_stream underlying_stream;
-  grpc_slice_buffer_stream_init(&underlying_stream, &buffer, 0);
+  SliceBufferByteStream underlying_stream(&buffer, 0);
+  grpc_slice_buffer_destroy_internal(&buffer);
   // Create cache and caching stream.
-  grpc_byte_stream_cache cache;
-  grpc_byte_stream_cache_init(&cache, &underlying_stream.base);
-  grpc_caching_byte_stream stream;
-  grpc_caching_byte_stream_init(&stream, &cache);
+  ByteStreamCache cache((OrphanablePtr<ByteStream>(&underlying_stream)));
+  ByteStreamCache::CachingByteStream stream(&cache);
   grpc_closure closure;
-  GRPC_CLOSURE_INIT(&closure, not_called_closure, nullptr,
+  GRPC_CLOSURE_INIT(&closure, NotCalledClosure, nullptr,
                     grpc_schedule_on_exec_ctx);
   // Read each slice.  Note that next() always returns synchronously,
   // because the underlying byte stream always does.
   for (size_t i = 0; i < GPR_ARRAY_SIZE(input); ++i) {
-    GPR_ASSERT(grpc_byte_stream_next(&stream.base, ~(size_t)0, &closure));
+    ASSERT_TRUE(stream.Next(~(size_t)0, &closure));
     grpc_slice output;
-    grpc_error* error = grpc_byte_stream_pull(&stream.base, &output);
-    GPR_ASSERT(error == GRPC_ERROR_NONE);
-    GPR_ASSERT(grpc_slice_eq(input[i], output));
+    grpc_error* error = stream.Pull(&output);
+    EXPECT_TRUE(error == GRPC_ERROR_NONE);
+    EXPECT_TRUE(grpc_slice_eq(input[i], output));
     grpc_slice_unref_internal(output);
   }
   // Clean up.
-  grpc_byte_stream_destroy(&stream.base);
-  grpc_byte_stream_cache_destroy(&cache);
-  grpc_slice_buffer_destroy_internal(&buffer);
+  stream.Orphan();
+  cache.Destroy();
 }
 
-static void test_caching_byte_stream_reset(void) {
-  gpr_log(GPR_DEBUG, "test_caching_byte_stream_reset");
+TEST(CachingByteStream, Reset) {
   grpc_core::ExecCtx exec_ctx;
   // Create and populate slice buffer byte stream.
   grpc_slice_buffer buffer;
@@ -167,41 +162,37 @@ static void test_caching_byte_stream_reset(void) {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(input); ++i) {
     grpc_slice_buffer_add(&buffer, input[i]);
   }
-  grpc_slice_buffer_stream underlying_stream;
-  grpc_slice_buffer_stream_init(&underlying_stream, &buffer, 0);
+  SliceBufferByteStream underlying_stream(&buffer, 0);
+  grpc_slice_buffer_destroy_internal(&buffer);
   // Create cache and caching stream.
-  grpc_byte_stream_cache cache;
-  grpc_byte_stream_cache_init(&cache, &underlying_stream.base);
-  grpc_caching_byte_stream stream;
-  grpc_caching_byte_stream_init(&stream, &cache);
+  ByteStreamCache cache((OrphanablePtr<ByteStream>(&underlying_stream)));
+  ByteStreamCache::CachingByteStream stream(&cache);
   grpc_closure closure;
-  GRPC_CLOSURE_INIT(&closure, not_called_closure, nullptr,
+  GRPC_CLOSURE_INIT(&closure, NotCalledClosure, nullptr,
                     grpc_schedule_on_exec_ctx);
   // Read one slice.
-  GPR_ASSERT(grpc_byte_stream_next(&stream.base, ~(size_t)0, &closure));
+  ASSERT_TRUE(stream.Next(~(size_t)0, &closure));
   grpc_slice output;
-  grpc_error* error = grpc_byte_stream_pull(&stream.base, &output);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
-  GPR_ASSERT(grpc_slice_eq(input[0], output));
+  grpc_error* error = stream.Pull(&output);
+  EXPECT_TRUE(error == GRPC_ERROR_NONE);
+  EXPECT_TRUE(grpc_slice_eq(input[0], output));
   grpc_slice_unref_internal(output);
   // Reset the caching stream.  The reads should start over from the
   // first slice.
-  grpc_caching_byte_stream_reset(&stream);
+  stream.Reset();
   for (size_t i = 0; i < GPR_ARRAY_SIZE(input); ++i) {
-    GPR_ASSERT(grpc_byte_stream_next(&stream.base, ~(size_t)0, &closure));
-    error = grpc_byte_stream_pull(&stream.base, &output);
-    GPR_ASSERT(error == GRPC_ERROR_NONE);
-    GPR_ASSERT(grpc_slice_eq(input[i], output));
+    ASSERT_TRUE(stream.Next(~(size_t)0, &closure));
+    error = stream.Pull(&output);
+    EXPECT_TRUE(error == GRPC_ERROR_NONE);
+    EXPECT_TRUE(grpc_slice_eq(input[i], output));
     grpc_slice_unref_internal(output);
   }
   // Clean up.
-  grpc_byte_stream_destroy(&stream.base);
-  grpc_byte_stream_cache_destroy(&cache);
-  grpc_slice_buffer_destroy_internal(&buffer);
+  stream.Orphan();
+  cache.Destroy();
 }
 
-static void test_caching_byte_stream_shared_cache(void) {
-  gpr_log(GPR_DEBUG, "test_caching_byte_stream_shared_cache");
+TEST(CachingByteStream, SharedCache) {
   grpc_core::ExecCtx exec_ctx;
   // Create and populate slice buffer byte stream.
   grpc_slice_buffer buffer;
@@ -213,54 +204,50 @@ static void test_caching_byte_stream_shared_cache(void) {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(input); ++i) {
     grpc_slice_buffer_add(&buffer, input[i]);
   }
-  grpc_slice_buffer_stream underlying_stream;
-  grpc_slice_buffer_stream_init(&underlying_stream, &buffer, 0);
+  SliceBufferByteStream underlying_stream(&buffer, 0);
+  grpc_slice_buffer_destroy_internal(&buffer);
   // Create cache and two caching streams.
-  grpc_byte_stream_cache cache;
-  grpc_byte_stream_cache_init(&cache, &underlying_stream.base);
-  grpc_caching_byte_stream stream1;
-  grpc_caching_byte_stream_init(&stream1, &cache);
-  grpc_caching_byte_stream stream2;
-  grpc_caching_byte_stream_init(&stream2, &cache);
+  ByteStreamCache cache((OrphanablePtr<ByteStream>(&underlying_stream)));
+  ByteStreamCache::CachingByteStream stream1(&cache);
+  ByteStreamCache::CachingByteStream stream2(&cache);
   grpc_closure closure;
-  GRPC_CLOSURE_INIT(&closure, not_called_closure, nullptr,
+  GRPC_CLOSURE_INIT(&closure, NotCalledClosure, nullptr,
                     grpc_schedule_on_exec_ctx);
   // Read one slice from stream1.
-  GPR_ASSERT(grpc_byte_stream_next(&stream1.base, ~(size_t)0, &closure));
+  EXPECT_TRUE(stream1.Next(~(size_t)0, &closure));
   grpc_slice output;
-  grpc_error* error = grpc_byte_stream_pull(&stream1.base, &output);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
-  GPR_ASSERT(grpc_slice_eq(input[0], output));
+  grpc_error* error = stream1.Pull(&output);
+  EXPECT_TRUE(error == GRPC_ERROR_NONE);
+  EXPECT_TRUE(grpc_slice_eq(input[0], output));
   grpc_slice_unref_internal(output);
   // Read all slices from stream2.
   for (size_t i = 0; i < GPR_ARRAY_SIZE(input); ++i) {
-    GPR_ASSERT(grpc_byte_stream_next(&stream2.base, ~(size_t)0, &closure));
-    error = grpc_byte_stream_pull(&stream2.base, &output);
-    GPR_ASSERT(error == GRPC_ERROR_NONE);
-    GPR_ASSERT(grpc_slice_eq(input[i], output));
+    EXPECT_TRUE(stream2.Next(~(size_t)0, &closure));
+    error = stream2.Pull(&output);
+    EXPECT_TRUE(error == GRPC_ERROR_NONE);
+    EXPECT_TRUE(grpc_slice_eq(input[i], output));
     grpc_slice_unref_internal(output);
   }
   // Now read the second slice from stream1.
-  GPR_ASSERT(grpc_byte_stream_next(&stream1.base, ~(size_t)0, &closure));
-  error = grpc_byte_stream_pull(&stream1.base, &output);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
-  GPR_ASSERT(grpc_slice_eq(input[1], output));
+  EXPECT_TRUE(stream1.Next(~(size_t)0, &closure));
+  error = stream1.Pull(&output);
+  EXPECT_TRUE(error == GRPC_ERROR_NONE);
+  EXPECT_TRUE(grpc_slice_eq(input[1], output));
   grpc_slice_unref_internal(output);
   // Clean up.
-  grpc_byte_stream_destroy(&stream1.base);
-  grpc_byte_stream_destroy(&stream2.base);
-  grpc_byte_stream_cache_destroy(&cache);
-  grpc_slice_buffer_destroy_internal(&buffer);
+  stream1.Orphan();
+  stream2.Orphan();
+  cache.Destroy();
 }
+
+}  // namespace
+}  // namespace grpc_core
 
 int main(int argc, char** argv) {
   grpc_init();
   grpc_test_init(argc, argv);
-  test_slice_buffer_stream_basic();
-  test_slice_buffer_stream_shutdown();
-  test_caching_byte_stream_basic();
-  test_caching_byte_stream_reset();
-  test_caching_byte_stream_shared_cache();
+  ::testing::InitGoogleTest(&argc, argv);
+  int retval = RUN_ALL_TESTS();
   grpc_shutdown();
-  return 0;
+  return retval;
 }

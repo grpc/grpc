@@ -23,7 +23,7 @@
 
 #include <grpc/grpc.h>
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/closure.h"
 
 typedef struct grpc_connectivity_state_watcher {
   /** we keep watchers in a linked list */

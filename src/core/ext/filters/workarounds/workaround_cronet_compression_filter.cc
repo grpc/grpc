@@ -93,7 +93,9 @@ static void start_transport_stream_op_batch(
     /* Send message happens after client's user-agent (initial metadata) is
      * received, so workaround_active must be set already */
     if (calld->workaround_active) {
-      op->payload->send_message.send_message->flags |= GRPC_WRITE_NO_COMPRESS;
+      op->payload->send_message.send_message->set_flags(
+          op->payload->send_message.send_message->flags() |
+          GRPC_WRITE_NO_COMPRESS);
     }
   }
 

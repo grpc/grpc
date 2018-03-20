@@ -182,20 +182,22 @@ class TransportStreamOpBatch {
     op_->payload->recv_initial_metadata.recv_initial_metadata_ready = closure;
   }
 
-  grpc_byte_stream* send_message() const {
-    return op_->send_message ? op_->payload->send_message.send_message
+  grpc_core::OrphanablePtr<grpc_core::ByteStream>* send_message() const {
+    return op_->send_message ? &op_->payload->send_message.send_message
                              : nullptr;
   }
-  void set_send_message(grpc_byte_stream* send_message) {
+  void set_send_message(
+      grpc_core::OrphanablePtr<grpc_core::ByteStream> send_message) {
     op_->send_message = true;
-    op_->payload->send_message.send_message = send_message;
+    op_->payload->send_message.send_message = std::move(send_message);
   }
 
-  grpc_byte_stream** recv_message() const {
+  grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message() const {
     return op_->recv_message ? op_->payload->recv_message.recv_message
                              : nullptr;
   }
-  void set_recv_message(grpc_byte_stream** recv_message) {
+  void set_recv_message(
+      grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message) {
     op_->recv_message = true;
     op_->payload->recv_message.recv_message = recv_message;
   }
@@ -283,7 +285,7 @@ class ChannelFilter final {
 
   static void DestroyChannelElement(grpc_channel_element* elem) {
     ChannelDataType* channel_data =
-        reinterpret_cast<ChannelDataType*>(elem->channel_data);
+        static_cast<ChannelDataType*>(elem->channel_data);
     channel_data->Destroy(elem);
     channel_data->~ChannelDataType();
   }
@@ -291,7 +293,7 @@ class ChannelFilter final {
   static void StartTransportOp(grpc_channel_element* elem,
                                grpc_transport_op* op) {
     ChannelDataType* channel_data =
-        reinterpret_cast<ChannelDataType*>(elem->channel_data);
+        static_cast<ChannelDataType*>(elem->channel_data);
     TransportOp op_wrapper(op);
     channel_data->StartTransportOp(elem, &op_wrapper);
   }
@@ -299,7 +301,7 @@ class ChannelFilter final {
   static void GetChannelInfo(grpc_channel_element* elem,
                              const grpc_channel_info* channel_info) {
     ChannelDataType* channel_data =
-        reinterpret_cast<ChannelDataType*>(elem->channel_data);
+        static_cast<ChannelDataType*>(elem->channel_data);
     channel_data->GetInfo(elem, channel_info);
   }
 
@@ -315,21 +317,21 @@ class ChannelFilter final {
   static void DestroyCallElement(grpc_call_element* elem,
                                  const grpc_call_final_info* final_info,
                                  grpc_closure* then_call_closure) {
-    CallDataType* call_data = reinterpret_cast<CallDataType*>(elem->call_data);
+    CallDataType* call_data = static_cast<CallDataType*>(elem->call_data);
     call_data->Destroy(elem, final_info, then_call_closure);
     call_data->~CallDataType();
   }
 
   static void StartTransportStreamOpBatch(grpc_call_element* elem,
                                           grpc_transport_stream_op_batch* op) {
-    CallDataType* call_data = reinterpret_cast<CallDataType*>(elem->call_data);
+    CallDataType* call_data = static_cast<CallDataType*>(elem->call_data);
     TransportStreamOpBatch op_wrapper(op);
     call_data->StartTransportStreamOpBatch(elem, &op_wrapper);
   }
 
   static void SetPollsetOrPollsetSet(grpc_call_element* elem,
                                      grpc_polling_entity* pollent) {
-    CallDataType* call_data = reinterpret_cast<CallDataType*>(elem->call_data);
+    CallDataType* call_data = static_cast<CallDataType*>(elem->call_data);
     call_data->SetPollsetOrPollsetSet(elem, pollent);
   }
 };

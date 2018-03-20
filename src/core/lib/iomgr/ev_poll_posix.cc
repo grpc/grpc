@@ -177,7 +177,6 @@ struct grpc_pollset {
   int called_shutdown;
   int kicked_without_pollers;
   grpc_closure* shutdown_done;
-  grpc_closure_list idle_jobs;
   int pollset_set_count;
   /* all polled fds */
   size_t fd_count;
@@ -812,7 +811,6 @@ static void pollset_init(grpc_pollset* pollset, gpr_mu** mu) {
   pollset->shutting_down = 0;
   pollset->called_shutdown = 0;
   pollset->kicked_without_pollers = 0;
-  pollset->idle_jobs.head = pollset->idle_jobs.tail = nullptr;
   pollset->local_wakeup_cache = nullptr;
   pollset->kicked_without_pollers = 0;
   pollset->fd_count = 0;
@@ -823,7 +821,6 @@ static void pollset_init(grpc_pollset* pollset, gpr_mu** mu) {
 
 static void pollset_destroy(grpc_pollset* pollset) {
   GPR_ASSERT(!pollset_has_workers(pollset));
-  GPR_ASSERT(pollset->idle_jobs.head == pollset->idle_jobs.tail);
   while (pollset->local_wakeup_cache) {
     grpc_cached_wakeup_fd* next = pollset->local_wakeup_cache->next;
     grpc_wakeup_fd_destroy(&pollset->local_wakeup_cache->fd);
@@ -855,7 +852,6 @@ exit:
 }
 
 static void finish_shutdown(grpc_pollset* pollset) {
-  GPR_ASSERT(grpc_closure_list_empty(pollset->idle_jobs));
   size_t i;
   for (i = 0; i < pollset->fd_count; i++) {
     GRPC_FD_UNREF(pollset->fds[i], "multipoller");
@@ -876,7 +872,6 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
                                 grpc_pollset_worker** worker_hdl,
                                 grpc_millis deadline) {
   GPR_TIMER_SCOPE("pollset_work", 0);
-
   grpc_pollset_worker worker;
   if (worker_hdl) *worker_hdl = &worker;
   grpc_error* error = GRPC_ERROR_NONE;
@@ -907,14 +902,6 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
     }
   }
   worker.kicked_specifically = 0;
-  /* If there's work waiting for the pollset to be idle, and the
-     pollset is idle, then do that work */
-  if (!pollset_has_workers(pollset) &&
-      !grpc_closure_list_empty(pollset->idle_jobs)) {
-    GPR_TIMER_MARK("pollset_work.idle_jobs", 0);
-    GRPC_CLOSURE_LIST_SCHED(&pollset->idle_jobs);
-    goto done;
-  }
   /* If we're shutting down then we don't execute any extended work */
   if (pollset->shutting_down) {
     GPR_TIMER_MARK("pollset_work.shutting_down", 0);
@@ -927,7 +914,8 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
   gpr_tls_set(&g_current_thread_poller, (intptr_t)pollset);
   while (keep_polling) {
     keep_polling = 0;
-    if (!pollset->kicked_without_pollers) {
+    if (!pollset->kicked_without_pollers ||
+        deadline <= grpc_core::ExecCtx::Get()->Now()) {
       if (!added_worker) {
         push_front_worker(pollset, &worker);
         added_worker = 1;
@@ -1101,11 +1089,6 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
        * pollset_work.
        * TODO(dklempner): Can we refactor the shutdown logic to avoid this? */
       gpr_mu_lock(&pollset->mu);
-    } else if (!grpc_closure_list_empty(pollset->idle_jobs)) {
-      GRPC_CLOSURE_LIST_SCHED(&pollset->idle_jobs);
-      gpr_mu_unlock(&pollset->mu);
-      grpc_core::ExecCtx::Get()->Flush();
-      gpr_mu_lock(&pollset->mu);
     }
   }
   if (worker_hdl) *worker_hdl = nullptr;
@@ -1118,9 +1101,6 @@ static void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
   pollset->shutting_down = 1;
   pollset->shutdown_done = closure;
   pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
-  if (!pollset_has_workers(pollset)) {
-    GRPC_CLOSURE_LIST_SCHED(&pollset->idle_jobs);
-  }
   if (!pollset->called_shutdown && !pollset_has_observers(pollset)) {
     pollset->called_shutdown = 1;
     finish_shutdown(pollset);

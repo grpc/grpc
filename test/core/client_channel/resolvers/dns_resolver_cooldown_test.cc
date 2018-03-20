@@ -28,12 +28,10 @@
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "test/core/util/test_config.h"
 
-static grpc_combiner* g_combiner;
+extern grpc_address_resolver_vtable* grpc_resolve_address_impl;
+static grpc_address_resolver_vtable* default_resolve_address;
 
-static void (*g_default_grpc_resolve_address)(
-    const char* name, const char* default_port,
-    grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    grpc_resolved_addresses** addrs);
+static grpc_combiner* g_combiner;
 
 grpc_ares_request* (*g_default_dns_lookup_ares)(
     const char* dns_server, const char* name, const char* default_port,
@@ -52,17 +50,27 @@ struct iomgr_args {
   grpc_pollset_set* pollset_set;
 } g_iomgr_args;
 
-// Wrapper around g_default_grpc_resolve_address in order to count the number of
+// Wrapper around default resolve_address in order to count the number of
 // times we incur in a system-level name resolution.
 static void test_resolve_address_impl(const char* name,
                                       const char* default_port,
                                       grpc_pollset_set* interested_parties,
                                       grpc_closure* on_done,
                                       grpc_resolved_addresses** addrs) {
-  g_default_grpc_resolve_address(name, default_port, g_iomgr_args.pollset_set,
-                                 on_done, addrs);
+  default_resolve_address->resolve_address(
+      name, default_port, g_iomgr_args.pollset_set, on_done, addrs);
   ++g_resolution_count;
 }
+
+static grpc_error* test_blocking_resolve_address_impl(
+    const char* name, const char* default_port,
+    grpc_resolved_addresses** addresses) {
+  return default_resolve_address->blocking_resolve_address(name, default_port,
+                                                           addresses);
+}
+
+static grpc_address_resolver_vtable test_resolver = {
+    test_resolve_address_impl, test_blocking_resolve_address_impl};
 
 grpc_ares_request* test_dns_lookup_ares(
     const char* dns_server, const char* name, const char* default_port,
@@ -285,11 +293,14 @@ int main(int argc, char** argv) {
 
   g_combiner = grpc_combiner_create();
 
-  const bool using_cares = (grpc_resolve_address == grpc_resolve_address_ares);
-  g_default_grpc_resolve_address = grpc_resolve_address;
+  bool using_cares = false;
+#if GRPC_ARES == 1
+  using_cares = true;
+#endif
   g_default_dns_lookup_ares = grpc_dns_lookup_ares;
   grpc_dns_lookup_ares = test_dns_lookup_ares;
-  grpc_resolve_address = test_resolve_address_impl;
+  default_resolve_address = grpc_resolve_address_impl;
+  grpc_set_resolver_impl(&test_resolver);
 
   test_cooldown(using_cares);
 
