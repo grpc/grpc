@@ -343,6 +343,9 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/tsi/alts_transport_security.cc \
     src/core/tsi/fake_transport_security.cc \
+    src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc \
+    src/core/tsi/ssl/session_cache/ssl_session_cache.cc \
+    src/core/tsi/ssl/session_cache/ssl_session_openssl.cc \
     src/core/tsi/ssl_transport_security.cc \
     src/core/tsi/transport_security_grpc.cc \
     src/core/ext/transport/chttp2/server/chttp2_server.cc \
@@ -700,6 +703,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/alts/frame_protector)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/alts/handshaker)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/alts/zero_copy_frame_protector)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/ssl/session_cache)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/asn1)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/base64)
