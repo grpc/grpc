@@ -61,6 +61,11 @@ static bool has_so_reuseport = false;
 static void init(void) {
 #ifndef GPR_MANYLINUX1
   int s = socket(AF_INET, SOCK_STREAM, 0);
+  if (s < 0) {
+    /* This might be an ipv6-only environment in which case 'socket(AF_INET,..)'
+       call would fail. Try creating IPv6 socket in that case */
+    s = socket(AF_INET6, SOCK_STREAM, 0);
+  }
   if (s >= 0) {
     has_so_reuseport = GRPC_LOG_IF_ERROR("check for SO_REUSEPORT",
                                          grpc_set_socket_reuse_port(s, 1));
