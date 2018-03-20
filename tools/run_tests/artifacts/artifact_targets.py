@@ -317,6 +317,7 @@ class ProtocArtifact:
                     self.name,
                     ['tools/run_tests/artifacts/build_artifact_protoc.sh'],
                     environ=environ,
+                    timeout_seconds=60 * 60,
                     use_workspace=True)
         else:
             generator = 'Visual Studio 14 2015 Win64' if self.arch == 'x64' else 'Visual Studio 14 2015'
