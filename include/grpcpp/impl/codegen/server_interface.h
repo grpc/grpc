@@ -75,6 +75,9 @@ class ServerInterface : public internal::CallHook {
   /// call \a Shutdown for this function to ever return.
   virtual void Wait() = 0;
 
+  /// Method intended for internal use only when requesting calls
+  virtual grpc_server* server() = 0;
+
  protected:
   friend class ::grpc::Service;
 
@@ -111,9 +114,6 @@ class ServerInterface : public internal::CallHook {
   virtual void ShutdownInternal(gpr_timespec deadline) = 0;
 
   virtual int max_receive_message_size() const = 0;
-
-  /// Method intended for internal use only when requesting calls
-  virtual grpc_server* server() = 0;
 
   /// Method intended for internal use only by operations on RPCs
   virtual void PerformOpsOnCall(internal::CallOpSetInterface* ops,

@@ -102,6 +102,9 @@ class Server : public ServerInterface, private internal::GrpcLibraryCodegen {
   /// Establish a channel for in-process communication
   std::shared_ptr<Channel> InProcessChannel(const ChannelArguments& args);
 
+  /// server() meant for internal use only
+  grpc_server* server() override { return server_; };
+
  protected:
   /// Register a service. This call does not take ownership of the service.
   /// The service must exist for the lifetime of the Server instance.
@@ -156,9 +159,6 @@ class Server : public ServerInterface, private internal::GrpcLibraryCodegen {
   /// destroyed.
   /// \param num_cqs How many completion queues does \a cqs hold.
   void Start(ServerCompletionQueue** cqs, size_t num_cqs) override;
-
-  /// server() meant for internal use only
-  grpc_server* server() override { return server_; };
 
  private:
   friend class AsyncGenericService;
