@@ -371,8 +371,6 @@ error_handler:
     /* t->parser = grpc_chttp2_data_parser_parse;*/
     t->parser = grpc_chttp2_data_parser_parse;
     t->parser_data = &s->data_parser;
-    t->ping_state.pings_before_data_required =
-        t->ping_policy.max_pings_without_data;
     t->ping_state.last_ping_sent_time = GRPC_MILLIS_INF_PAST;
     return GRPC_ERROR_NONE;
   } else if (grpc_error_get_int(err, GRPC_ERROR_INT_STREAM_ID, nullptr)) {
@@ -545,8 +543,6 @@ static grpc_error* init_header_frame_parser(grpc_chttp2_transport* t,
         (t->incoming_frame_flags & GRPC_CHTTP2_DATA_FLAG_END_STREAM) != 0;
   }
 
-  t->ping_state.pings_before_data_required =
-      t->ping_policy.max_pings_without_data;
   t->ping_state.last_ping_sent_time = GRPC_MILLIS_INF_PAST;
 
   /* could be a new grpc_chttp2_stream or an existing grpc_chttp2_stream */
