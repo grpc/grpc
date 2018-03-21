@@ -90,7 +90,13 @@ grpc_error* init_channel_elem(grpc_channel_element* elem,
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   const grpc_arg* default_authority_arg =
       grpc_channel_args_find(args->channel_args, GRPC_ARG_DEFAULT_AUTHORITY);
-  GPR_ASSERT(default_authority_arg != nullptr);
+  if (default_authority_arg == nullptr) {
+    gpr_log(
+        GPR_ERROR,
+        "GRPC_ARG_DEFAULT_AUTHORITY channel arg. not found. Note that direct "
+        "channels must explicity specify a value for this argument.");
+    abort();
+  }
   chand->default_authority = grpc_slice_from_copied_string(
       grpc_channel_arg_get_string(default_authority_arg));
   GPR_ASSERT(!args->is_last);
