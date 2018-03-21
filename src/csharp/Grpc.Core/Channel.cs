@@ -160,8 +160,18 @@ namespace Grpc.Core
             var deadlineTimespec = deadline.HasValue ? Timespec.FromDateTime(deadline.Value) : Timespec.InfFuture;
             lock (myLock)
             {
-                // pass "tcs" as "state" for WatchConnectivityStateHandler.
-                handle.WatchConnectivityState(lastObservedState, deadlineTimespec, completionQueue, WatchConnectivityStateHandler, tcs);
+                if (handle.IsClosed)
+                {
+                    // If channel has been already shutdown and handle was disposed, we would end up with
+                    // an abandoned completion added to the completion registry. So we act as if the
+                    // wait has timed out instead.
+                    tcs.SetResult(false);
+                }
+                else
+                {
+                    // pass "tcs" as "state" for WatchConnectivityStateHandler.
+                    handle.WatchConnectivityState(lastObservedState, deadlineTimespec, completionQueue, WatchConnectivityStateHandler, tcs);
+                }
             }
             return tcs.Task;
         }
