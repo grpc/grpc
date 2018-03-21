@@ -11803,7 +11803,7 @@ target_include_directories(h2_ssl_session_reuse_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/third_party/address_sorting
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
