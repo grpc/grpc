@@ -293,7 +293,6 @@ void grpc_tcp_client_create_from_prepared_fd(
   int err;
   async_connect* ac;
   do {
-    GPR_ASSERT(addr->len < ~(socklen_t)0);
     err = connect(fd, reinterpret_cast<const grpc_sockaddr*>(addr->addr),
                   addr->len);
   } while (err < 0 && errno == EINTR);
