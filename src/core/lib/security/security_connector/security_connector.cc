@@ -540,6 +540,46 @@ grpc_server_security_connector* grpc_fake_server_security_connector_create(
 
 /* --- Ssl implementation. --- */
 
+grpc_ssl_session_cache* grpc_ssl_session_cache_create_lru(size_t capacity) {
+  tsi_ssl_session_cache* cache = tsi_ssl_session_cache_create_lru(capacity);
+  return reinterpret_cast<grpc_ssl_session_cache*>(cache);
+}
+
+void grpc_ssl_session_cache_destroy(grpc_ssl_session_cache* cache) {
+  tsi_ssl_session_cache* tsi_cache =
+      reinterpret_cast<tsi_ssl_session_cache*>(cache);
+  tsi_ssl_session_cache_unref(tsi_cache);
+}
+
+static void* grpc_ssl_session_cache_arg_copy(void* p) {
+  tsi_ssl_session_cache* tsi_cache =
+      reinterpret_cast<tsi_ssl_session_cache*>(p);
+  // destroy call below will unref the pointer.
+  tsi_ssl_session_cache_ref(tsi_cache);
+  return p;
+}
+
+static void grpc_ssl_session_cache_arg_destroy(void* p) {
+  tsi_ssl_session_cache* tsi_cache =
+      reinterpret_cast<tsi_ssl_session_cache*>(p);
+  tsi_ssl_session_cache_unref(tsi_cache);
+}
+
+static int grpc_ssl_session_cache_arg_cmp(void* p, void* q) {
+  return GPR_ICMP(p, q);
+}
+
+grpc_arg grpc_ssl_session_cache_create_channel_arg(
+    grpc_ssl_session_cache* cache) {
+  static const grpc_arg_pointer_vtable vtable = {
+      grpc_ssl_session_cache_arg_copy,
+      grpc_ssl_session_cache_arg_destroy,
+      grpc_ssl_session_cache_arg_cmp,
+  };
+  return grpc_channel_arg_pointer_create(
+      const_cast<char*>(GRPC_SSL_SESSION_CACHE_ARG), cache, &vtable);
+}
+
 typedef struct {
   grpc_channel_security_connector base;
   tsi_ssl_client_handshaker_factory* client_handshaker_factory;
@@ -757,6 +797,9 @@ grpc_auth_context* tsi_ssl_peer_to_auth_context(const tsi_peer* peer) {
                                      prop->value.data, prop->value.length);
     } else if (strcmp(prop->name, TSI_X509_PEM_CERT_PROPERTY) == 0) {
       grpc_auth_context_add_property(ctx, GRPC_X509_PEM_CERT_PROPERTY_NAME,
+                                     prop->value.data, prop->value.length);
+    } else if (strcmp(prop->name, TSI_SSL_SESSION_REUSED_PEER_PROPERTY) == 0) {
+      grpc_auth_context_add_property(ctx, GRPC_SSL_SESSION_REUSED_PROPERTY,
                                      prop->value.data, prop->value.length);
     }
   }
@@ -981,28 +1024,30 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
     grpc_channel_credentials* channel_creds,
     grpc_call_credentials* request_metadata_creds,
     const grpc_ssl_config* config, const char* target_name,
-    const char* overridden_target_name, grpc_channel_security_connector** sc) {
-  size_t num_alpn_protocols = 0;
-  const char** alpn_protocol_strings =
-      fill_alpn_protocol_strings(&num_alpn_protocols);
+    const char* overridden_target_name,
+    tsi_ssl_session_cache* ssl_session_cache,
+    grpc_channel_security_connector** sc) {
   tsi_result result = TSI_OK;
   grpc_ssl_channel_security_connector* c;
-  const char* pem_root_certs;
   char* port;
   bool has_key_cert_pair;
+  tsi_ssl_client_handshaker_options options;
+  memset(&options, 0, sizeof(options));
+  options.alpn_protocols =
+      fill_alpn_protocol_strings(&options.num_alpn_protocols);
 
   if (config == nullptr || target_name == nullptr) {
     gpr_log(GPR_ERROR, "An ssl channel needs a config and a target name.");
     goto error;
   }
   if (config->pem_root_certs == nullptr) {
-    pem_root_certs = grpc_get_default_ssl_roots();
-    if (pem_root_certs == nullptr) {
+    options.pem_root_certs = grpc_get_default_ssl_roots();
+    if (options.pem_root_certs == nullptr) {
       gpr_log(GPR_ERROR, "Could not get default pem root certs.");
       goto error;
     }
   } else {
-    pem_root_certs = config->pem_root_certs;
+    options.pem_root_certs = config->pem_root_certs;
   }
 
   c = static_cast<grpc_ssl_channel_security_connector*>(
@@ -1026,10 +1071,13 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
   has_key_cert_pair = config->pem_key_cert_pair != nullptr &&
                       config->pem_key_cert_pair->private_key != nullptr &&
                       config->pem_key_cert_pair->cert_chain != nullptr;
-  result = tsi_create_ssl_client_handshaker_factory(
-      has_key_cert_pair ? config->pem_key_cert_pair : nullptr, pem_root_certs,
-      ssl_cipher_suites(), alpn_protocol_strings,
-      static_cast<uint16_t>(num_alpn_protocols), &c->client_handshaker_factory);
+  if (has_key_cert_pair) {
+    options.pem_key_cert_pair = config->pem_key_cert_pair;
+  }
+  options.cipher_suites = ssl_cipher_suites();
+  options.session_cache = ssl_session_cache;
+  result = tsi_create_ssl_client_handshaker_factory_with_options(
+      &options, &c->client_handshaker_factory);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
             tsi_result_to_string(result));
@@ -1038,11 +1086,11 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
     goto error;
   }
   *sc = &c->base;
-  gpr_free((void*)alpn_protocol_strings);
+  gpr_free((void*)options.alpn_protocols);
   return GRPC_SECURITY_OK;
 
 error:
-  gpr_free((void*)alpn_protocol_strings);
+  gpr_free((void*)options.alpn_protocols);
   return GRPC_SECURITY_ERROR;
 }
 

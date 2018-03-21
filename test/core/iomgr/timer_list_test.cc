@@ -19,8 +19,9 @@
 #include "src/core/lib/iomgr/port.h"
 
 // This test only works with the generic timer implementation
-#ifdef GRPC_TIMER_USE_GENERIC
+#ifndef GRPC_CUSTOM_SOCKET
 
+#include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/timer.h"
 
 #include <string.h>
@@ -153,15 +154,19 @@ void destruction_test(void) {
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_core::ExecCtx::GlobalInit();
+  grpc_core::ExecCtx exec_ctx;
+  grpc_determine_iomgr_platform();
+  grpc_iomgr_platform_init();
   gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
   add_test();
   destruction_test();
+  grpc_iomgr_platform_shutdown();
   grpc_core::ExecCtx::GlobalShutdown();
   return 0;
 }
 
-#else /* GRPC_TIMER_USE_GENERIC */
+#else /* GRPC_CUSTOM_SOCKET */
 
 int main(int argc, char** argv) { return 1; }
 
-#endif /* GRPC_TIMER_USE_GENERIC */
+#endif /* GRPC_CUSTOM_SOCKET */

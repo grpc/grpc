@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package grpc.gcp;
 
-option java_package = "io.grpc.alts";
+option java_package = "io.grpc.alts.internal";
 
 // The security level of the created channel. The list is sorted in increasing
 // level of security. This order must always be maintained.

@@ -224,7 +224,6 @@ add_dependencies(buildtests_c avl_test)
 add_dependencies(buildtests_c bad_server_response_test)
 add_dependencies(buildtests_c bin_decoder_test)
 add_dependencies(buildtests_c bin_encoder_test)
-add_dependencies(buildtests_c byte_stream_test)
 add_dependencies(buildtests_c channel_create_test)
 add_dependencies(buildtests_c chttp2_hpack_encoder_test)
 add_dependencies(buildtests_c chttp2_stream_map_test)
@@ -529,6 +528,7 @@ endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx bm_pollset)
 endif()
+add_dependencies(buildtests_cxx byte_stream_test)
 add_dependencies(buildtests_cxx channel_arguments_test)
 add_dependencies(buildtests_cxx channel_filter_test)
 add_dependencies(buildtests_cxx check_gcp_environment_linux_test)
@@ -560,6 +560,7 @@ add_dependencies(buildtests_cxx grpc_tool_test)
 add_dependencies(buildtests_cxx grpclb_api_test)
 add_dependencies(buildtests_cxx grpclb_end2end_test)
 add_dependencies(buildtests_cxx h2_ssl_cert_test)
+add_dependencies(buildtests_cxx h2_ssl_session_reuse_test)
 add_dependencies(buildtests_cxx health_service_end2end_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx http2_client)
@@ -619,7 +620,6 @@ add_dependencies(buildtests_cxx slice_hash_table_test)
 add_dependencies(buildtests_cxx slice_weak_hash_table_test)
 add_dependencies(buildtests_cxx stats_test)
 add_dependencies(buildtests_cxx status_metadata_test)
-add_dependencies(buildtests_cxx status_test)
 add_dependencies(buildtests_cxx status_util_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx streaming_throughput_test)
@@ -892,6 +892,8 @@ add_library(grpc
   src/core/lib/iomgr/gethostname_sysconf.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
+  src/core/lib/iomgr/iomgr_custom.cc
+  src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/iomgr/iomgr_posix.cc
   src/core/lib/iomgr/iomgr_uv.cc
   src/core/lib/iomgr/iomgr_windows.cc
@@ -900,12 +902,16 @@ add_library(grpc
   src/core/lib/iomgr/lockfree_event.cc
   src/core/lib/iomgr/network_status_tracker.cc
   src/core/lib/iomgr/polling_entity.cc
-  src/core/lib/iomgr/pollset_set_uv.cc
+  src/core/lib/iomgr/pollset.cc
+  src/core/lib/iomgr/pollset_custom.cc
+  src/core/lib/iomgr/pollset_set.cc
+  src/core/lib/iomgr/pollset_set_custom.cc
   src/core/lib/iomgr/pollset_set_windows.cc
   src/core/lib/iomgr/pollset_uv.cc
   src/core/lib/iomgr/pollset_windows.cc
+  src/core/lib/iomgr/resolve_address.cc
+  src/core/lib/iomgr/resolve_address_custom.cc
   src/core/lib/iomgr/resolve_address_posix.cc
-  src/core/lib/iomgr/resolve_address_uv.cc
   src/core/lib/iomgr/resolve_address_windows.cc
   src/core/lib/iomgr/resource_quota.cc
   src/core/lib/iomgr/sockaddr_utils.cc
@@ -917,19 +923,24 @@ add_library(grpc
   src/core/lib/iomgr/socket_utils_uv.cc
   src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/iomgr/socket_windows.cc
+  src/core/lib/iomgr/tcp_client.cc
+  src/core/lib/iomgr/tcp_client_custom.cc
   src/core/lib/iomgr/tcp_client_posix.cc
-  src/core/lib/iomgr/tcp_client_uv.cc
   src/core/lib/iomgr/tcp_client_windows.cc
+  src/core/lib/iomgr/tcp_custom.cc
   src/core/lib/iomgr/tcp_posix.cc
+  src/core/lib/iomgr/tcp_server.cc
+  src/core/lib/iomgr/tcp_server_custom.cc
   src/core/lib/iomgr/tcp_server_posix.cc
   src/core/lib/iomgr/tcp_server_utils_posix_common.cc
   src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc
   src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc
-  src/core/lib/iomgr/tcp_server_uv.cc
   src/core/lib/iomgr/tcp_server_windows.cc
   src/core/lib/iomgr/tcp_uv.cc
   src/core/lib/iomgr/tcp_windows.cc
   src/core/lib/iomgr/time_averaged_stats.cc
+  src/core/lib/iomgr/timer.cc
+  src/core/lib/iomgr/timer_custom.cc
   src/core/lib/iomgr/timer_generic.cc
   src/core/lib/iomgr/timer_heap.cc
   src/core/lib/iomgr/timer_manager.cc
@@ -1103,6 +1114,9 @@ add_library(grpc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/tsi/alts_transport_security.cc
   src/core/tsi/fake_transport_security.cc
+  src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
+  src/core/tsi/ssl/session_cache/ssl_session_cache.cc
+  src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
   src/core/tsi/ssl_transport_security.cc
   src/core/tsi/transport_security_grpc.cc
   src/core/ext/transport/chttp2/server/chttp2_server.cc
@@ -1268,6 +1282,8 @@ add_library(grpc_cronet
   src/core/lib/iomgr/gethostname_sysconf.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
+  src/core/lib/iomgr/iomgr_custom.cc
+  src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/iomgr/iomgr_posix.cc
   src/core/lib/iomgr/iomgr_uv.cc
   src/core/lib/iomgr/iomgr_windows.cc
@@ -1276,12 +1292,16 @@ add_library(grpc_cronet
   src/core/lib/iomgr/lockfree_event.cc
   src/core/lib/iomgr/network_status_tracker.cc
   src/core/lib/iomgr/polling_entity.cc
-  src/core/lib/iomgr/pollset_set_uv.cc
+  src/core/lib/iomgr/pollset.cc
+  src/core/lib/iomgr/pollset_custom.cc
+  src/core/lib/iomgr/pollset_set.cc
+  src/core/lib/iomgr/pollset_set_custom.cc
   src/core/lib/iomgr/pollset_set_windows.cc
   src/core/lib/iomgr/pollset_uv.cc
   src/core/lib/iomgr/pollset_windows.cc
+  src/core/lib/iomgr/resolve_address.cc
+  src/core/lib/iomgr/resolve_address_custom.cc
   src/core/lib/iomgr/resolve_address_posix.cc
-  src/core/lib/iomgr/resolve_address_uv.cc
   src/core/lib/iomgr/resolve_address_windows.cc
   src/core/lib/iomgr/resource_quota.cc
   src/core/lib/iomgr/sockaddr_utils.cc
@@ -1293,19 +1313,24 @@ add_library(grpc_cronet
   src/core/lib/iomgr/socket_utils_uv.cc
   src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/iomgr/socket_windows.cc
+  src/core/lib/iomgr/tcp_client.cc
+  src/core/lib/iomgr/tcp_client_custom.cc
   src/core/lib/iomgr/tcp_client_posix.cc
-  src/core/lib/iomgr/tcp_client_uv.cc
   src/core/lib/iomgr/tcp_client_windows.cc
+  src/core/lib/iomgr/tcp_custom.cc
   src/core/lib/iomgr/tcp_posix.cc
+  src/core/lib/iomgr/tcp_server.cc
+  src/core/lib/iomgr/tcp_server_custom.cc
   src/core/lib/iomgr/tcp_server_posix.cc
   src/core/lib/iomgr/tcp_server_utils_posix_common.cc
   src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc
   src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc
-  src/core/lib/iomgr/tcp_server_uv.cc
   src/core/lib/iomgr/tcp_server_windows.cc
   src/core/lib/iomgr/tcp_uv.cc
   src/core/lib/iomgr/tcp_windows.cc
   src/core/lib/iomgr/time_averaged_stats.cc
+  src/core/lib/iomgr/timer.cc
+  src/core/lib/iomgr/timer_custom.cc
   src/core/lib/iomgr/timer_generic.cc
   src/core/lib/iomgr/timer_heap.cc
   src/core/lib/iomgr/timer_manager.cc
@@ -1361,6 +1386,10 @@ add_library(grpc_cronet
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
   src/core/lib/debug/trace.cc
+  src/core/ext/filters/deadline/deadline_filter.cc
+  src/core/ext/filters/message_size/message_size_filter.cc
+  src/core/ext/filters/load_reporting/server_load_reporting_filter.cc
+  src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc
   src/core/ext/transport/cronet/client/secure/cronet_channel_create.cc
   src/core/ext/transport/cronet/transport/cronet_api_dummy.cc
   src/core/ext/transport/cronet/transport/cronet_transport.cc
@@ -1414,7 +1443,6 @@ add_library(grpc_cronet
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
-  src/core/ext/filters/deadline/deadline_filter.cc
   src/core/lib/http/httpcli_security_connector.cc
   src/core/lib/security/context/security_context.cc
   src/core/lib/security/credentials/alts/alts_credentials.cc
@@ -1482,10 +1510,13 @@ add_library(grpc_cronet
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
   src/core/tsi/alts_transport_security.cc
   src/core/tsi/fake_transport_security.cc
+  src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
+  src/core/tsi/ssl/session_cache/ssl_session_cache.cc
+  src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
   src/core/tsi/ssl_transport_security.cc
   src/core/tsi/transport_security_grpc.cc
-  src/core/ext/filters/load_reporting/server_load_reporting_filter.cc
-  src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc
+  src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc
+  src/core/ext/transport/chttp2/server/chttp2_server.cc
   src/core/plugin_registry/grpc_cronet_plugin_registry.cc
 )
 
@@ -1543,9 +1574,20 @@ foreach(_hdr
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
+  include/grpc/byte_buffer.h
+  include/grpc/byte_buffer_reader.h
+  include/grpc/compression.h
+  include/grpc/fork.h
+  include/grpc/grpc.h
+  include/grpc/grpc_posix.h
+  include/grpc/grpc_security_constants.h
+  include/grpc/load_reporting.h
+  include/grpc/slice.h
+  include/grpc/slice_buffer.h
+  include/grpc/status.h
+  include/grpc/support/workaround_list.h
   include/grpc/grpc_cronet.h
   include/grpc/grpc_security.h
-  include/grpc/grpc_security_constants.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -1634,6 +1676,8 @@ add_library(grpc_test_util
   src/core/lib/iomgr/gethostname_sysconf.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
+  src/core/lib/iomgr/iomgr_custom.cc
+  src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/iomgr/iomgr_posix.cc
   src/core/lib/iomgr/iomgr_uv.cc
   src/core/lib/iomgr/iomgr_windows.cc
@@ -1642,12 +1686,16 @@ add_library(grpc_test_util
   src/core/lib/iomgr/lockfree_event.cc
   src/core/lib/iomgr/network_status_tracker.cc
   src/core/lib/iomgr/polling_entity.cc
-  src/core/lib/iomgr/pollset_set_uv.cc
+  src/core/lib/iomgr/pollset.cc
+  src/core/lib/iomgr/pollset_custom.cc
+  src/core/lib/iomgr/pollset_set.cc
+  src/core/lib/iomgr/pollset_set_custom.cc
   src/core/lib/iomgr/pollset_set_windows.cc
   src/core/lib/iomgr/pollset_uv.cc
   src/core/lib/iomgr/pollset_windows.cc
+  src/core/lib/iomgr/resolve_address.cc
+  src/core/lib/iomgr/resolve_address_custom.cc
   src/core/lib/iomgr/resolve_address_posix.cc
-  src/core/lib/iomgr/resolve_address_uv.cc
   src/core/lib/iomgr/resolve_address_windows.cc
   src/core/lib/iomgr/resource_quota.cc
   src/core/lib/iomgr/sockaddr_utils.cc
@@ -1659,19 +1707,24 @@ add_library(grpc_test_util
   src/core/lib/iomgr/socket_utils_uv.cc
   src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/iomgr/socket_windows.cc
+  src/core/lib/iomgr/tcp_client.cc
+  src/core/lib/iomgr/tcp_client_custom.cc
   src/core/lib/iomgr/tcp_client_posix.cc
-  src/core/lib/iomgr/tcp_client_uv.cc
   src/core/lib/iomgr/tcp_client_windows.cc
+  src/core/lib/iomgr/tcp_custom.cc
   src/core/lib/iomgr/tcp_posix.cc
+  src/core/lib/iomgr/tcp_server.cc
+  src/core/lib/iomgr/tcp_server_custom.cc
   src/core/lib/iomgr/tcp_server_posix.cc
   src/core/lib/iomgr/tcp_server_utils_posix_common.cc
   src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc
   src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc
-  src/core/lib/iomgr/tcp_server_uv.cc
   src/core/lib/iomgr/tcp_server_windows.cc
   src/core/lib/iomgr/tcp_uv.cc
   src/core/lib/iomgr/tcp_windows.cc
   src/core/lib/iomgr/time_averaged_stats.cc
+  src/core/lib/iomgr/timer.cc
+  src/core/lib/iomgr/timer_custom.cc
   src/core/lib/iomgr/timer_generic.cc
   src/core/lib/iomgr/timer_heap.cc
   src/core/lib/iomgr/timer_manager.cc
@@ -1923,6 +1976,8 @@ add_library(grpc_test_util_unsecure
   src/core/lib/iomgr/gethostname_sysconf.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
+  src/core/lib/iomgr/iomgr_custom.cc
+  src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/iomgr/iomgr_posix.cc
   src/core/lib/iomgr/iomgr_uv.cc
   src/core/lib/iomgr/iomgr_windows.cc
@@ -1931,12 +1986,16 @@ add_library(grpc_test_util_unsecure
   src/core/lib/iomgr/lockfree_event.cc
   src/core/lib/iomgr/network_status_tracker.cc
   src/core/lib/iomgr/polling_entity.cc
-  src/core/lib/iomgr/pollset_set_uv.cc
+  src/core/lib/iomgr/pollset.cc
+  src/core/lib/iomgr/pollset_custom.cc
+  src/core/lib/iomgr/pollset_set.cc
+  src/core/lib/iomgr/pollset_set_custom.cc
   src/core/lib/iomgr/pollset_set_windows.cc
   src/core/lib/iomgr/pollset_uv.cc
   src/core/lib/iomgr/pollset_windows.cc
+  src/core/lib/iomgr/resolve_address.cc
+  src/core/lib/iomgr/resolve_address_custom.cc
   src/core/lib/iomgr/resolve_address_posix.cc
-  src/core/lib/iomgr/resolve_address_uv.cc
   src/core/lib/iomgr/resolve_address_windows.cc
   src/core/lib/iomgr/resource_quota.cc
   src/core/lib/iomgr/sockaddr_utils.cc
@@ -1948,19 +2007,24 @@ add_library(grpc_test_util_unsecure
   src/core/lib/iomgr/socket_utils_uv.cc
   src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/iomgr/socket_windows.cc
+  src/core/lib/iomgr/tcp_client.cc
+  src/core/lib/iomgr/tcp_client_custom.cc
   src/core/lib/iomgr/tcp_client_posix.cc
-  src/core/lib/iomgr/tcp_client_uv.cc
   src/core/lib/iomgr/tcp_client_windows.cc
+  src/core/lib/iomgr/tcp_custom.cc
   src/core/lib/iomgr/tcp_posix.cc
+  src/core/lib/iomgr/tcp_server.cc
+  src/core/lib/iomgr/tcp_server_custom.cc
   src/core/lib/iomgr/tcp_server_posix.cc
   src/core/lib/iomgr/tcp_server_utils_posix_common.cc
   src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc
   src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc
-  src/core/lib/iomgr/tcp_server_uv.cc
   src/core/lib/iomgr/tcp_server_windows.cc
   src/core/lib/iomgr/tcp_uv.cc
   src/core/lib/iomgr/tcp_windows.cc
   src/core/lib/iomgr/time_averaged_stats.cc
+  src/core/lib/iomgr/timer.cc
+  src/core/lib/iomgr/timer_custom.cc
   src/core/lib/iomgr/timer_generic.cc
   src/core/lib/iomgr/timer_heap.cc
   src/core/lib/iomgr/timer_manager.cc
@@ -2192,6 +2256,8 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/gethostname_sysconf.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
+  src/core/lib/iomgr/iomgr_custom.cc
+  src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/iomgr/iomgr_posix.cc
   src/core/lib/iomgr/iomgr_uv.cc
   src/core/lib/iomgr/iomgr_windows.cc
@@ -2200,12 +2266,16 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/lockfree_event.cc
   src/core/lib/iomgr/network_status_tracker.cc
   src/core/lib/iomgr/polling_entity.cc
-  src/core/lib/iomgr/pollset_set_uv.cc
+  src/core/lib/iomgr/pollset.cc
+  src/core/lib/iomgr/pollset_custom.cc
+  src/core/lib/iomgr/pollset_set.cc
+  src/core/lib/iomgr/pollset_set_custom.cc
   src/core/lib/iomgr/pollset_set_windows.cc
   src/core/lib/iomgr/pollset_uv.cc
   src/core/lib/iomgr/pollset_windows.cc
+  src/core/lib/iomgr/resolve_address.cc
+  src/core/lib/iomgr/resolve_address_custom.cc
   src/core/lib/iomgr/resolve_address_posix.cc
-  src/core/lib/iomgr/resolve_address_uv.cc
   src/core/lib/iomgr/resolve_address_windows.cc
   src/core/lib/iomgr/resource_quota.cc
   src/core/lib/iomgr/sockaddr_utils.cc
@@ -2217,19 +2287,24 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/socket_utils_uv.cc
   src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/iomgr/socket_windows.cc
+  src/core/lib/iomgr/tcp_client.cc
+  src/core/lib/iomgr/tcp_client_custom.cc
   src/core/lib/iomgr/tcp_client_posix.cc
-  src/core/lib/iomgr/tcp_client_uv.cc
   src/core/lib/iomgr/tcp_client_windows.cc
+  src/core/lib/iomgr/tcp_custom.cc
   src/core/lib/iomgr/tcp_posix.cc
+  src/core/lib/iomgr/tcp_server.cc
+  src/core/lib/iomgr/tcp_server_custom.cc
   src/core/lib/iomgr/tcp_server_posix.cc
   src/core/lib/iomgr/tcp_server_utils_posix_common.cc
   src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc
   src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc
-  src/core/lib/iomgr/tcp_server_uv.cc
   src/core/lib/iomgr/tcp_server_windows.cc
   src/core/lib/iomgr/tcp_uv.cc
   src/core/lib/iomgr/tcp_windows.cc
   src/core/lib/iomgr/time_averaged_stats.cc
+  src/core/lib/iomgr/timer.cc
+  src/core/lib/iomgr/timer_custom.cc
   src/core/lib/iomgr/timer_generic.cc
   src/core/lib/iomgr/timer_heap.cc
   src/core/lib/iomgr/timer_manager.cc
@@ -2996,6 +3071,8 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/gethostname_sysconf.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
+  src/core/lib/iomgr/iomgr_custom.cc
+  src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/iomgr/iomgr_posix.cc
   src/core/lib/iomgr/iomgr_uv.cc
   src/core/lib/iomgr/iomgr_windows.cc
@@ -3004,12 +3081,16 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/lockfree_event.cc
   src/core/lib/iomgr/network_status_tracker.cc
   src/core/lib/iomgr/polling_entity.cc
-  src/core/lib/iomgr/pollset_set_uv.cc
+  src/core/lib/iomgr/pollset.cc
+  src/core/lib/iomgr/pollset_custom.cc
+  src/core/lib/iomgr/pollset_set.cc
+  src/core/lib/iomgr/pollset_set_custom.cc
   src/core/lib/iomgr/pollset_set_windows.cc
   src/core/lib/iomgr/pollset_uv.cc
   src/core/lib/iomgr/pollset_windows.cc
+  src/core/lib/iomgr/resolve_address.cc
+  src/core/lib/iomgr/resolve_address_custom.cc
   src/core/lib/iomgr/resolve_address_posix.cc
-  src/core/lib/iomgr/resolve_address_uv.cc
   src/core/lib/iomgr/resolve_address_windows.cc
   src/core/lib/iomgr/resource_quota.cc
   src/core/lib/iomgr/sockaddr_utils.cc
@@ -3021,19 +3102,24 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/socket_utils_uv.cc
   src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/iomgr/socket_windows.cc
+  src/core/lib/iomgr/tcp_client.cc
+  src/core/lib/iomgr/tcp_client_custom.cc
   src/core/lib/iomgr/tcp_client_posix.cc
-  src/core/lib/iomgr/tcp_client_uv.cc
   src/core/lib/iomgr/tcp_client_windows.cc
+  src/core/lib/iomgr/tcp_custom.cc
   src/core/lib/iomgr/tcp_posix.cc
+  src/core/lib/iomgr/tcp_server.cc
+  src/core/lib/iomgr/tcp_server_custom.cc
   src/core/lib/iomgr/tcp_server_posix.cc
   src/core/lib/iomgr/tcp_server_utils_posix_common.cc
   src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc
   src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc
-  src/core/lib/iomgr/tcp_server_uv.cc
   src/core/lib/iomgr/tcp_server_windows.cc
   src/core/lib/iomgr/tcp_uv.cc
   src/core/lib/iomgr/tcp_windows.cc
   src/core/lib/iomgr/time_averaged_stats.cc
+  src/core/lib/iomgr/timer.cc
+  src/core/lib/iomgr/timer_custom.cc
   src/core/lib/iomgr/timer_generic.cc
   src/core/lib/iomgr/timer_heap.cc
   src/core/lib/iomgr/timer_manager.cc
@@ -5432,33 +5518,6 @@ target_link_libraries(bin_encoder_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(byte_stream_test
-  test/core/transport/byte_stream_test.cc
-)
-
-
-target_include_directories(byte_stream_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-)
-
-target_link_libraries(byte_stream_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
 )
 
 endif (gRPC_BUILD_TESTS)
@@ -9958,6 +10017,42 @@ endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(byte_stream_test
+  test/core/transport/byte_stream_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(byte_stream_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(byte_stream_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(channel_arguments_test
   test/cpp/common/channel_arguments_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -11380,6 +11475,43 @@ target_include_directories(h2_ssl_cert_test
 )
 
 target_link_libraries(h2_ssl_cert_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(h2_ssl_session_reuse_test
+  test/core/end2end/h2_ssl_session_reuse_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(h2_ssl_session_reuse_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(h2_ssl_session_reuse_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -12966,43 +13098,6 @@ target_link_libraries(status_metadata_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(status_test
-  test/cpp/util/status_test.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-
-target_include_directories(status_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE third_party/googletest/googletest/include
-  PRIVATE third_party/googletest/googletest
-  PRIVATE third_party/googletest/googlemock/include
-  PRIVATE third_party/googletest/googlemock
-  PRIVATE ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(status_test
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc++
-  grpc
-  gpr_test_util
-  gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 

@@ -18,6 +18,7 @@
 
 #include "test/core/end2end/end2end_tests.h"
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
 

@@ -141,6 +141,9 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_auth_context_add_property);
   printf("%lx", (unsigned long) grpc_auth_context_add_cstring_property);
   printf("%lx", (unsigned long) grpc_auth_context_set_peer_identity_property_name);
+  printf("%lx", (unsigned long) grpc_ssl_session_cache_create_lru);
+  printf("%lx", (unsigned long) grpc_ssl_session_cache_destroy);
+  printf("%lx", (unsigned long) grpc_ssl_session_cache_create_channel_arg);
   printf("%lx", (unsigned long) grpc_channel_credentials_release);
   printf("%lx", (unsigned long) grpc_google_default_credentials_create);
   printf("%lx", (unsigned long) grpc_set_ssl_roots_override_callback);

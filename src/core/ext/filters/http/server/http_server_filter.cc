@@ -23,6 +23,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <string.h>
+#include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/b64.h"
 #include "src/core/lib/slice/percent_encoding.h"
@@ -53,8 +54,8 @@ struct call_data {
    */
   grpc_closure* recv_message_ready;
   grpc_closure* on_complete;
-  grpc_byte_stream** pp_recv_message;
-  grpc_slice_buffer_stream read_stream;
+  grpc_core::OrphanablePtr<grpc_core::ByteStream>* pp_recv_message;
+  grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream> read_stream;
 
   /** Receive closures are chained: we inject this closure as the on_done_recv
       up-call on transport_op, and remember to call our on_done_recv member
@@ -232,7 +233,7 @@ static grpc_error* server_filter_incoming_metadata(grpc_call_element* elem,
           grpc_base64_decode_with_len(
               reinterpret_cast<const char*> GRPC_SLICE_START_PTR(query_slice),
               GRPC_SLICE_LENGTH(query_slice), k_url_safe));
-      grpc_slice_buffer_stream_init(&calld->read_stream, &read_slice_buffer, 0);
+      calld->read_stream.Init(&read_slice_buffer, 0);
       grpc_slice_buffer_destroy_internal(&read_slice_buffer);
       calld->seen_path_with_query = true;
       grpc_slice_unref_internal(query_slice);
@@ -281,10 +282,10 @@ static void hs_on_complete(void* user_data, grpc_error* err) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   /* Call recv_message_ready if we got the payload via the path field */
   if (calld->seen_path_with_query && calld->recv_message_ready != nullptr) {
-    *calld->pp_recv_message =
-        calld->payload_bin_delivered
-            ? nullptr
-            : reinterpret_cast<grpc_byte_stream*>(&calld->read_stream);
+    calld->pp_recv_message->reset(
+        calld->payload_bin_delivered ? nullptr
+                                     : reinterpret_cast<grpc_core::ByteStream*>(
+                                           calld->read_stream.get()));
     // Re-enter call combiner for recv_message_ready, since the surface
     // code will release the call combiner for each callback it receives.
     GRPC_CALL_COMBINER_START(calld->call_combiner, calld->recv_message_ready,
@@ -405,7 +406,7 @@ static void destroy_call_elem(grpc_call_element* elem,
                               grpc_closure* ignored) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   if (calld->seen_path_with_query && !calld->payload_bin_delivered) {
-    grpc_byte_stream_destroy(&calld->read_stream.base);
+    calld->read_stream->Orphan();
   }
 }
 

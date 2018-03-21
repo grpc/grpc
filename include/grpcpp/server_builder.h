@@ -52,7 +52,7 @@ class ServerBuilderPluginTest;
 class ServerBuilder {
  public:
   ServerBuilder();
-  ~ServerBuilder();
+  virtual ~ServerBuilder();
 
   //////////////////////////////////////////////////////////////////////////////
   // Primary API's
@@ -65,7 +65,7 @@ class ServerBuilder {
   ///     traffic (via AddListeningPort)
   ///  3. [for async api only] completion queues have been added via
   ///     AddCompletionQueue
-  std::unique_ptr<Server> BuildAndStart();
+  virtual std::unique_ptr<Server> BuildAndStart();
 
   /// Register a service. This call does not take ownership of the service.
   /// The service must exist for the lifetime of the \a Server instance returned
@@ -210,14 +210,47 @@ class ServerBuilder {
   /// doc/workarounds.md.
   ServerBuilder& EnableWorkaround(grpc_workaround_list id);
 
- private:
-  friend class ::grpc::testing::ServerBuilderPluginTest;
-
+ protected:
+  /// Experimental, to be deprecated
   struct Port {
     grpc::string addr;
     std::shared_ptr<ServerCredentials> creds;
     int* selected_port;
   };
+
+  /// Experimental, to be deprecated
+  typedef std::unique_ptr<grpc::string> HostString;
+  struct NamedService {
+    explicit NamedService(Service* s) : service(s) {}
+    NamedService(const grpc::string& h, Service* s)
+        : host(new grpc::string(h)), service(s) {}
+    HostString host;
+    Service* service;
+  };
+
+  /// Experimental, to be deprecated
+  std::vector<Port> ports() { return ports_; }
+
+  /// Experimental, to be deprecated
+  std::vector<NamedService*> services() {
+    std::vector<NamedService*> service_refs;
+    for (auto& ptr : services_) {
+      service_refs.push_back(ptr.get());
+    }
+    return service_refs;
+  }
+
+  /// Experimental, to be deprecated
+  std::vector<ServerBuilderOption*> options() {
+    std::vector<ServerBuilderOption*> option_refs;
+    for (auto& ptr : options_) {
+      option_refs.push_back(ptr.get());
+    }
+    return option_refs;
+  }
+
+ private:
+  friend class ::grpc::testing::ServerBuilderPluginTest;
 
   struct SyncServerSettings {
     SyncServerSettings()
@@ -236,15 +269,6 @@ class ServerBuilder {
 
     /// The timeout for server completion queue's AsyncNext call.
     int cq_timeout_msec;
-  };
-
-  typedef std::unique_ptr<grpc::string> HostString;
-  struct NamedService {
-    explicit NamedService(Service* s) : service(s) {}
-    NamedService(const grpc::string& h, Service* s)
-        : host(new grpc::string(h)), service(s) {}
-    HostString host;
-    Service* service;
   };
 
   int max_receive_message_size_;

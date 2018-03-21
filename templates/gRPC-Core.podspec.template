@@ -42,21 +42,21 @@
     out = grpc_lib_files(libs, ("grpc", "gpr"), ("headers",))
     return [file for file in out if not file.startswith("third_party/nanopb/")]
 
-  def grpc_cronet_files(libs):
-    out = grpc_lib_files(libs, ("grpc_cronet",), ("src", "headers"))
-    excl = grpc_private_files(libs)
-    excl += [
-        # We do not need cronet dedicated plugin registry
-        "src/core/plugin_registry/grpc_cronet_plugin_registry.cc",
-        # We do not need dummy cronet API for ObjC
+  def grpc_cronet_private_files(libs):
+    out = grpc_lib_files(libs, ("grpc_cronet", "gpr"), ("headers", "src"))
+    excl = [
+        # We do not want dummy cronet API for ObjC
         "src/core/ext/transport/cronet/transport/cronet_api_dummy.cc",
     ]
     return [file for file in out if not file in excl]
 
   def grpc_cronet_public_headers(libs):
-    out = grpc_lib_files(libs, ("grpc_cronet",), ("public_headers",))
-    excl = grpc_public_headers(libs)
-    return [file for file in out if not file in excl]
+    out = grpc_lib_files(libs, ("grpc_cronet", "gpr"), ("public_headers",))
+    return out
+
+  def grpc_cronet_private_headers(libs):
+    out = grpc_lib_files(libs, ("grpc_cronet", "gpr"), ("headers",))
+    return out
 
   def grpc_test_util_files(libs):
     out = grpc_lib_files(libs, ("grpc_test_util", "gpr_test_util"), ("src", "headers"))
@@ -169,7 +169,6 @@
       ss.dependency 'BoringSSL', '~> 10.0'
       ss.dependency 'nanopb', '~> 0.3'
 
-      # To save you from scrolling, this is the last part of the podspec.
       ss.source_files = ${ruby_multiline_list(grpc_private_files(libs), 22)}
 
       ss.private_header_files = ${ruby_multiline_list(grpc_private_headers(libs), 30)}
@@ -182,19 +181,21 @@
 
     s.subspec 'Cronet-Implementation' do |ss|
       ss.header_mappings_dir = '.'
-
-      ss.dependency "#{s.name}/Interface", version
-      ss.dependency "#{s.name}/Implementation", version
+      ss.libraries = 'z'
       ss.dependency "#{s.name}/Cronet-Interface", version
+      ss.dependency 'BoringSSL', '~> 10.0'
+      ss.dependency 'nanopb', '~> 0.3'
 
-      ss.source_files = ${ruby_multiline_list(grpc_cronet_files(libs), 22)}
+      ss.source_files = ${ruby_multiline_list(grpc_cronet_private_files(libs), 22)}
+
+      ss.private_header_files = ${ruby_multiline_list(grpc_cronet_private_headers(libs), 30)}
     end
 
-    s.subspec 'Tests' do |ss|
+    s.subspec 'Cronet-Tests' do |ss|
       ss.header_mappings_dir = '.'
 
-      ss.dependency "#{s.name}/Interface", version
-      ss.dependency "#{s.name}/Implementation", version
+      ss.dependency "#{s.name}/Cronet-Interface", version
+      ss.dependency "#{s.name}/Cronet-Implementation", version
 
       ss.source_files = ${ruby_multiline_list(grpc_test_util_files(libs), 22)},
                         ${ruby_multiline_list(end2end_tests_files(libs), 22)}
@@ -202,6 +203,6 @@
 
     # TODO (mxyan): Instead of this hack, add include path "third_party" to C core's include path?
     s.prepare_command = <<-END_OF_COMMAND
-      find src/core/ -type f -exec sed -E -i'.back' 's;#include "third_party/nanopb/(.*)";#include <nanopb/\\1>;g' {} \\\;
+      find src/core/ -type f ! -path '*.back*' -exec sed -E -i'.back' 's;#include "third_party/nanopb/(.*)";#include <nanopb/\\1>;g' {} \\\;
     END_OF_COMMAND
   end

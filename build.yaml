@@ -269,6 +269,8 @@ filegroups:
   - src/core/lib/iomgr/gethostname_sysconf.cc
   - src/core/lib/iomgr/iocp_windows.cc
   - src/core/lib/iomgr/iomgr.cc
+  - src/core/lib/iomgr/iomgr_custom.cc
+  - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/iomgr/iomgr_posix.cc
   - src/core/lib/iomgr/iomgr_uv.cc
   - src/core/lib/iomgr/iomgr_windows.cc
@@ -277,12 +279,16 @@ filegroups:
   - src/core/lib/iomgr/lockfree_event.cc
   - src/core/lib/iomgr/network_status_tracker.cc
   - src/core/lib/iomgr/polling_entity.cc
-  - src/core/lib/iomgr/pollset_set_uv.cc
+  - src/core/lib/iomgr/pollset.cc
+  - src/core/lib/iomgr/pollset_custom.cc
+  - src/core/lib/iomgr/pollset_set.cc
+  - src/core/lib/iomgr/pollset_set_custom.cc
   - src/core/lib/iomgr/pollset_set_windows.cc
   - src/core/lib/iomgr/pollset_uv.cc
   - src/core/lib/iomgr/pollset_windows.cc
+  - src/core/lib/iomgr/resolve_address.cc
+  - src/core/lib/iomgr/resolve_address_custom.cc
   - src/core/lib/iomgr/resolve_address_posix.cc
-  - src/core/lib/iomgr/resolve_address_uv.cc
   - src/core/lib/iomgr/resolve_address_windows.cc
   - src/core/lib/iomgr/resource_quota.cc
   - src/core/lib/iomgr/sockaddr_utils.cc
@@ -294,19 +300,24 @@ filegroups:
   - src/core/lib/iomgr/socket_utils_uv.cc
   - src/core/lib/iomgr/socket_utils_windows.cc
   - src/core/lib/iomgr/socket_windows.cc
+  - src/core/lib/iomgr/tcp_client.cc
+  - src/core/lib/iomgr/tcp_client_custom.cc
   - src/core/lib/iomgr/tcp_client_posix.cc
-  - src/core/lib/iomgr/tcp_client_uv.cc
   - src/core/lib/iomgr/tcp_client_windows.cc
+  - src/core/lib/iomgr/tcp_custom.cc
   - src/core/lib/iomgr/tcp_posix.cc
+  - src/core/lib/iomgr/tcp_server.cc
+  - src/core/lib/iomgr/tcp_server_custom.cc
   - src/core/lib/iomgr/tcp_server_posix.cc
   - src/core/lib/iomgr/tcp_server_utils_posix_common.cc
   - src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc
   - src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc
-  - src/core/lib/iomgr/tcp_server_uv.cc
   - src/core/lib/iomgr/tcp_server_windows.cc
   - src/core/lib/iomgr/tcp_uv.cc
   - src/core/lib/iomgr/tcp_windows.cc
   - src/core/lib/iomgr/time_averaged_stats.cc
+  - src/core/lib/iomgr/timer.cc
+  - src/core/lib/iomgr/timer_custom.cc
   - src/core/lib/iomgr/timer_generic.cc
   - src/core/lib/iomgr/timer_heap.cc
   - src/core/lib/iomgr/timer_manager.cc
@@ -427,9 +438,9 @@ filegroups:
   - src/core/lib/iomgr/gethostname.h
   - src/core/lib/iomgr/iocp_windows.h
   - src/core/lib/iomgr/iomgr.h
+  - src/core/lib/iomgr/iomgr_custom.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/iomgr/iomgr_posix.h
-  - src/core/lib/iomgr/iomgr_uv.h
   - src/core/lib/iomgr/is_epollexclusive_available.h
   - src/core/lib/iomgr/load_file.h
   - src/core/lib/iomgr/lockfree_event.h
@@ -437,14 +448,17 @@ filegroups:
   - src/core/lib/iomgr/network_status_tracker.h
   - src/core/lib/iomgr/polling_entity.h
   - src/core/lib/iomgr/pollset.h
+  - src/core/lib/iomgr/pollset_custom.h
   - src/core/lib/iomgr/pollset_set.h
+  - src/core/lib/iomgr/pollset_set_custom.h
   - src/core/lib/iomgr/pollset_set_windows.h
-  - src/core/lib/iomgr/pollset_uv.h
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/port.h
   - src/core/lib/iomgr/resolve_address.h
+  - src/core/lib/iomgr/resolve_address_custom.h
   - src/core/lib/iomgr/resource_quota.h
   - src/core/lib/iomgr/sockaddr.h
+  - src/core/lib/iomgr/sockaddr_custom.h
   - src/core/lib/iomgr/sockaddr_posix.h
   - src/core/lib/iomgr/sockaddr_utils.h
   - src/core/lib/iomgr/sockaddr_windows.h
@@ -456,17 +470,16 @@ filegroups:
   - src/core/lib/iomgr/sys_epoll_wrapper.h
   - src/core/lib/iomgr/tcp_client.h
   - src/core/lib/iomgr/tcp_client_posix.h
+  - src/core/lib/iomgr/tcp_custom.h
   - src/core/lib/iomgr/tcp_posix.h
   - src/core/lib/iomgr/tcp_server.h
   - src/core/lib/iomgr/tcp_server_utils_posix.h
-  - src/core/lib/iomgr/tcp_uv.h
   - src/core/lib/iomgr/tcp_windows.h
   - src/core/lib/iomgr/time_averaged_stats.h
   - src/core/lib/iomgr/timer.h
-  - src/core/lib/iomgr/timer_generic.h
+  - src/core/lib/iomgr/timer_custom.h
   - src/core/lib/iomgr/timer_heap.h
   - src/core/lib/iomgr/timer_manager.h
-  - src/core/lib/iomgr/timer_uv.h
   - src/core/lib/iomgr/udp_server.h
   - src/core/lib/iomgr/unix_sockets_posix.h
   - src/core/lib/iomgr/wakeup_fd_cv.h
@@ -1032,12 +1045,17 @@ filegroups:
   headers:
   - src/core/tsi/alts_transport_security.h
   - src/core/tsi/fake_transport_security.h
+  - src/core/tsi/ssl/session_cache/ssl_session.h
+  - src/core/tsi/ssl/session_cache/ssl_session_cache.h
   - src/core/tsi/ssl_transport_security.h
   - src/core/tsi/ssl_types.h
   - src/core/tsi/transport_security_grpc.h
   src:
   - src/core/tsi/alts_transport_security.cc
   - src/core/tsi/fake_transport_security.cc
+  - src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
+  - src/core/tsi/ssl/session_cache/ssl_session_cache.cc
+  - src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
   - src/core/tsi/ssl_transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
   deps:
@@ -1379,9 +1397,13 @@ libs:
   dll: true
   filegroups:
   - grpc_base
+  - grpc_base_headers
+  - grpc_deadline_filter
+  - grpc_message_size_filter
+  - grpc_server_load_reporting
   - grpc_transport_cronet_client_secure
   - grpc_transport_chttp2_client_secure
-  - grpc_server_load_reporting
+  - grpc_transport_chttp2_server_secure
   generate_plugin_registry: true
   platforms:
   - linux
@@ -1995,17 +2017,6 @@ targets:
   deps:
   - grpc_test_util
   - grpc
-  uses_polling: false
-- name: byte_stream_test
-  build: test
-  language: c
-  src:
-  - test/core/transport/byte_stream_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
   uses_polling: false
 - name: channel_create_test
   build: test
@@ -4070,6 +4081,18 @@ targets:
   - mac
   - linux
   - posix
+- name: byte_stream_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/transport/byte_stream_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses_polling: false
 - name: channel_arguments_test
   gtest: true
   build: test
@@ -4509,6 +4532,22 @@ targets:
   - test/core/end2end/end2end_tests.h
   src:
   - test/core/end2end/h2_ssl_cert_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses:
+  - grpc++_test
+- name: h2_ssl_session_reuse_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/end2end_tests.h
+  src:
+  - test/core/end2end/h2_ssl_session_reuse_test.cc
   deps:
   - grpc_test_util
   - grpc++
@@ -5107,18 +5146,6 @@ targets:
   deps:
   - grpc
   uses_polling: false
-- name: status_test
-  build: test
-  language: c++
-  src:
-  - test/cpp/util/status_test.cc
-  deps:
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr_test_util
-  - gpr
-  uses_polling: false
 - name: status_util_test
   gtest: true
   cpu_cost: 0.1
@@ -5374,11 +5401,11 @@ configs:
     DEFINES: NDEBUG
     LDFLAGS: -rdynamic
   noexcept:
-    CPPFLAGS: -O2
+    CPPFLAGS: -O2 -Wframe-larger-than=16384
     CXXFLAGS: -fno-exceptions
     DEFINES: NDEBUG
   opt:
-    CPPFLAGS: -O2
+    CPPFLAGS: -O2 -Wframe-larger-than=16384
     DEFINES: NDEBUG
   stapprof:
     CPPFLAGS: -O2 -DGRPC_STAP_PROFILER

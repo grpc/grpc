@@ -21,6 +21,11 @@ unzip -o "$EXTERNAL_GIT_ROOT/input_artifacts/csharp_nugets_windows_dotnetcli.zip
 
 ./update_version.sh auto
 
+# With a recent-enough version of mono, the "nuget restore" command would
+# restore packages based on project.json files, but we want to restore packages
+# based on the net45 legacy "packages.config" file instead.
+rm DistribTest/*project.json
+
 nuget restore
 
 xbuild DistribTest.sln
