@@ -2630,7 +2630,7 @@ static void start_keepalive_ping_locked(void* arg, grpc_error* error) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(arg);
   GRPC_CHTTP2_REF_TRANSPORT(t, "keepalive watchdog");
   grpc_timer_init(&t->keepalive_watchdog_timer,
-                  grpc_core::ExecCtx::Get()->Now() + t->keepalive_time,
+                  grpc_core::ExecCtx::Get()->Now() + t->keepalive_timeout,
                   &t->keepalive_watchdog_fired_locked);
 }
 
