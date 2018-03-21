@@ -14,7 +14,7 @@ def generate_cc_impl(ctx):
   if ctx.executable.plugin:
     outs += [proto.path[label_len:-len(".proto")] + ".grpc.pb.h" for proto in protos]
     outs += [proto.path[label_len:-len(".proto")] + ".grpc.pb.cc" for proto in protos]
-    if ctx.attr.generate_mock:
+    if ctx.attr.generate_mocks:
       outs += [proto.path[label_len:-len(".proto")] + "_mock.grpc.pb.h" for proto in protos]
   else:
     outs += [proto.path[label_len:-len(".proto")] + ".pb.h" for proto in protos]
@@ -26,7 +26,7 @@ def generate_cc_impl(ctx):
   if ctx.executable.plugin:
     arguments += ["--plugin=protoc-gen-PLUGIN=" + ctx.executable.plugin.path]
     flags = list(ctx.attr.flags)
-    if ctx.attr.generate_mock:
+    if ctx.attr.generate_mocks:
       flags.append("generate_mock_code=true")
     arguments += ["--PLUGIN_out=" + ",".join(flags) + ":" + dir_out]
     additional_input = [ctx.executable.plugin]
@@ -76,7 +76,7 @@ _generate_cc = rule(
         "well_known_protos" : attr.label(
             mandatory = False,
         ),
-        "generate_mock" : attr.bool(
+        "generate_mocks" : attr.bool(
             default = False,
             mandatory = False,
         ),
