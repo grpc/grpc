@@ -190,9 +190,10 @@ LANG_RELEASE_MATRIX = {
         # {'v1.3.9': None},
         # {'v1.4.2': None},
         # {'v1.6.6': None},
-        {
-            'v1.7.2': None
-        },
+        # TODO: https://github.com/grpc/grpc-node/issues/235.
+        #{
+        #    'v1.7.2': None
+        #},
         {
             'v1.8.4': None
         },
