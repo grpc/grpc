@@ -274,7 +274,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_throttle.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/status_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_index.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/uri_parser.h" role="src" />
@@ -293,11 +292,14 @@
     <file baseinstalldir="/" name="src/core/lib/channel/channel_args.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack_builder.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/channel_trace.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/channel_trace_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/connected_channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/context.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/status_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/algorithm_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/message_compress.h" role="src" />
@@ -439,10 +441,13 @@
     <file baseinstalldir="/" name="src/core/lib/channel/channel_args.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack_builder.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/channel_trace.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/channel_trace_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/connected_channel.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker_registry.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/status_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression_internal.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/message_compress.cc" role="src" />
@@ -691,7 +696,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/retry_throttle.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/status_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_index.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/uri_parser.cc" role="src" />
