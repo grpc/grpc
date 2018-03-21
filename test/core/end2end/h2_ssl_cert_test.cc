@@ -270,17 +270,6 @@ static void drain_cq(grpc_completion_queue* cq) {
 
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
-  /* Perform a completion queue next, so that any pending operations can be
-   * finished, and resources can be released. This is so that, shutdown does not
-   * hang. For example, the server might be stuck in the handshaking code, which
-   * keeps a ref to a listener. Unless, it is unref'd, shutdown won't be able
-   * to proceed.
-   *
-   * (If shutdown times out, it is probably because 100ms wasn't enough. In that
-   * case, the deadline can be increased. Or, we could simply have another
-   * thread for the server to poll the completion queue while the shutdown
-   * progresses.)
-   */
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
   grpc_event ev = grpc_completion_queue_next(
       f->cq, grpc_timeout_seconds_to_deadline(5), nullptr);
