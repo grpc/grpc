@@ -23,6 +23,7 @@ def grpc_fuzzer(name, corpus, srcs = [], deps = [], **kwargs):
     external_deps = [
       'gtest',
     ],
+    size = "enormous",
     args = ["--directory=" + native.package_name() + "/" + corpus,],
     **kwargs
   )
