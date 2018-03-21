@@ -22,7 +22,6 @@
 #include <grpc/support/port_platform.h>
 
 #include <stddef.h>
-#include "src/core/lib/iomgr/exec_ctx.h"
 
 typedef struct {
   char* scheme;

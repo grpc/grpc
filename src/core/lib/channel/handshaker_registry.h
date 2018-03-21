@@ -24,7 +24,6 @@
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/channel/handshaker_factory.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 
 typedef enum {
   HANDSHAKER_CLIENT = 0,

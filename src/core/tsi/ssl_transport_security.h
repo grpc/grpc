@@ -30,6 +30,7 @@
 #define TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY "x509_subject_common_name"
 #define TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY \
   "x509_subject_alternative_name"
+#define TSI_SSL_SESSION_REUSED_PEER_PROPERTY "ssl_session_reused"
 
 #define TSI_X509_PEM_CERT_PROPERTY "x509_pem_cert"
 
@@ -49,6 +50,21 @@ tsi_ssl_root_certs_store* tsi_ssl_root_certs_store_create(
 /* Destroys the tsi_ssl_root_certs_store object. */
 void tsi_ssl_root_certs_store_destroy(tsi_ssl_root_certs_store* self);
 
+/* --- tsi_ssl_session_cache object ---
+
+   Cache for SSL sessions for sessions resumption.  */
+
+typedef struct tsi_ssl_session_cache tsi_ssl_session_cache;
+
+/* Create LRU cache for SSL sessions with \a capacity.  */
+tsi_ssl_session_cache* tsi_ssl_session_cache_create_lru(size_t capacity);
+
+/* Increment reference counter of \a cache.  */
+void tsi_ssl_session_cache_ref(tsi_ssl_session_cache* cache);
+
+/* Decrement reference counter of \a cache.  */
+void tsi_ssl_session_cache_unref(tsi_ssl_session_cache* cache);
+
 /* --- tsi_ssl_client_handshaker_factory object ---
 
    This object creates a client tsi_handshaker objects implemented in terms of
@@ -67,44 +83,6 @@ typedef struct {
      the client's certificate chain. */
   const char* cert_chain;
 } tsi_ssl_pem_key_cert_pair;
-
-/* Options for creating SSL client handshaker factory. Note that this struct
-   does not own pem_key_cert_pair, pem_root_certs, root_store, cipher_suites,
-   or alpn_protocols.
-   - pem_key_cert_pair is a pointer to the object containing client's private
-     key and certificate chain. This parameter can be nullptr if the client does
-     not have such a key/cert pair.
-   - pem_roots_cert is the NULL-terminated string containing the PEM encoding of
-     the server root certificates.
-   - root_store is a pointer to the ssl_root_certs_store object. If root_store
-     is nullptr, pem_roots_cert will be used to load server root certificates,
-     otherwise, root_store will be used as root certificates for the SSL client.
-   - cipher_suites contains an optional list of the ciphers that the client
-     supports. The format of this string is described in:
-     https://www.openssl.org/docs/apps/ciphers.html.
-     This parameter can be set to nullptr to use the default set of ciphers.
-   - alpn_protocols is an array containing the nullptr terminated protocol names
-     that the handshakers created with this factory support. This parameter can
-     be NULL.
-   - num_alpn_protocols is the number of alpn protocols and associated lengths
-     specified. If this parameter is 0, the other alpn parameters must be
-     nullptr. */
-typedef struct {
-  const tsi_ssl_pem_key_cert_pair* pem_key_cert_pair;
-  const char* pem_root_certs;
-  const tsi_ssl_root_certs_store* root_store;
-  const char* cipher_suites;
-  const char** alpn_protocols;
-  uint16_t num_alpn_protocols;
-} tsi_ssl_client_handshaker_factory_options;
-
-/* Creates a client handshaker factory with options.
-   - factory is the address of the factory pointer to be created.
-   - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
-     where a parameter is invalid. */
-tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
-    const tsi_ssl_client_handshaker_factory_options* options,
-    tsi_ssl_client_handshaker_factory** factory);
 
 /* TO BE DEPRECATED.
    Creates a client handshaker factory.
@@ -133,6 +111,47 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
     const char** alpn_protocols, uint16_t num_alpn_protocols,
     tsi_ssl_client_handshaker_factory** factory);
 
+typedef struct {
+  /* pem_key_cert_pair is a pointer to the object containing client's private
+     key and certificate chain. This parameter can be NULL if the client does
+     not have such a key/cert pair. */
+  const tsi_ssl_pem_key_cert_pair* pem_key_cert_pair;
+  /* pem_roots_cert is the NULL-terminated string containing the PEM encoding of
+     the client root certificates. */
+  const char* pem_root_certs;
+  /* root_store is a pointer to the ssl_root_certs_store object. If root_store
+    is not nullptr and SSL implementation permits, root_store will be used as
+    root certificates. Otherwise, pem_roots_cert will be used to load server
+    root certificates. */
+  const tsi_ssl_root_certs_store* root_store;
+  /* cipher_suites contains an optional list of the ciphers that the client
+     supports. The format of this string is described in:
+     https://www.openssl.org/docs/apps/ciphers.html.
+     This parameter can be set to NULL to use the default set of ciphers.
+     TODO(jboeuf): Revisit the format of this parameter. */
+  const char* cipher_suites;
+  /* alpn_protocols is an array containing the NULL terminated protocol names
+     that the handshakers created with this factory support. This parameter can
+     be NULL. */
+  const char** alpn_protocols;
+  /* num_alpn_protocols is the number of alpn protocols and associated lengths
+     specified. If this parameter is 0, the other alpn parameters must be
+     NULL. */
+  size_t num_alpn_protocols;
+  /* ssl_session_cache is a cache for reusable client-side sessions. */
+  tsi_ssl_session_cache* session_cache;
+} tsi_ssl_client_handshaker_options;
+
+/* Creates a client handshaker factory.
+   - options is the options used to create a factory.
+   - factory is the address of the factory pointer to be created.
+
+   - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
+     where a parameter is invalid. */
+tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
+    const tsi_ssl_client_handshaker_options* options,
+    tsi_ssl_client_handshaker_factory** factory);
+
 /* Creates a client handshaker.
   - self is the factory from which the handshaker will be created.
   - server_name_indication indicates the name of the server the client is
@@ -159,7 +178,8 @@ void tsi_ssl_client_handshaker_factory_unref(
 typedef struct tsi_ssl_server_handshaker_factory
     tsi_ssl_server_handshaker_factory;
 
-/* Creates a server handshaker factory.
+/* TO BE DEPRECATED.
+   Creates a server handshaker factory.
    - pem_key_cert_pairs is an array private key / certificate chains of the
      server.
    - num_key_cert_pairs is the number of items in the pem_key_cert_pairs array.
@@ -187,7 +207,8 @@ tsi_result tsi_create_ssl_server_handshaker_factory(
     const char** alpn_protocols, uint16_t num_alpn_protocols,
     tsi_ssl_server_handshaker_factory** factory);
 
-/* Same as tsi_create_ssl_server_handshaker_factory method except uses
+/* TO BE DEPRECATED.
+   Same as tsi_create_ssl_server_handshaker_factory method except uses
    tsi_client_certificate_request_type to support more ways to handle client
    certificate authentication.
    - client_certificate_request, if set to non-zero will force the client to
@@ -199,6 +220,52 @@ tsi_result tsi_create_ssl_server_handshaker_factory_ex(
     tsi_client_certificate_request_type client_certificate_request,
     const char* cipher_suites, const char** alpn_protocols,
     uint16_t num_alpn_protocols, tsi_ssl_server_handshaker_factory** factory);
+
+typedef struct {
+  /* pem_key_cert_pairs is an array private key / certificate chains of the
+     server. */
+  const tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs;
+  /* num_key_cert_pairs is the number of items in the pem_key_cert_pairs
+     array. */
+  size_t num_key_cert_pairs;
+  /* pem_root_certs is the NULL-terminated string containing the PEM encoding
+     of the server root certificates. This parameter may be NULL if the server
+     does not want the client to be authenticated with SSL. */
+  const char* pem_client_root_certs;
+  /* client_certificate_request, if set to non-zero will force the client to
+     authenticate with an SSL cert. Note that this option is ignored if
+     pem_client_root_certs is NULL or pem_client_roots_certs_size is 0. */
+  tsi_client_certificate_request_type client_certificate_request;
+  /* cipher_suites contains an optional list of the ciphers that the server
+     supports. The format of this string is described in:
+     https://www.openssl.org/docs/apps/ciphers.html.
+     This parameter can be set to NULL to use the default set of ciphers.
+     TODO(jboeuf): Revisit the format of this parameter. */
+  const char* cipher_suites;
+  /* alpn_protocols is an array containing the NULL terminated protocol names
+     that the handshakers created with this factory support. This parameter can
+     be NULL. */
+  const char** alpn_protocols;
+  /* num_alpn_protocols is the number of alpn protocols and associated lengths
+     specified. If this parameter is 0, the other alpn parameters must be
+     NULL. */
+  uint16_t num_alpn_protocols;
+  /* session_ticket_key is optional key for encrypting session keys. If paramter
+     is not specified it must be NULL. */
+  const char* session_ticket_key;
+  /* session_ticket_key_size is a size of session ticket encryption key. */
+  size_t session_ticket_key_size;
+} tsi_ssl_server_handshaker_options;
+
+/* Creates a server handshaker factory.
+   - options is the options used to create a factory.
+   - factory is the address of the factory pointer to be created.
+
+   - This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
+     where a parameter is invalid. */
+tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
+    const tsi_ssl_server_handshaker_options* options,
+    tsi_ssl_server_handshaker_factory** factory);
 
 /* Creates a server handshaker.
   - self is the factory from which the handshaker will be created.

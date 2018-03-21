@@ -27,7 +27,6 @@
 
 #include "src/core/lib/gpr/mpscq.h"
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 
 // A simple, lock-free mechanism for serializing activity related to a
 // single call.  This is similar to a combiner but is more lightweight.

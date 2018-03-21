@@ -61,6 +61,11 @@ static bool has_so_reuseport = false;
 static void init(void) {
 #ifndef GPR_MANYLINUX1
   int s = socket(AF_INET, SOCK_STREAM, 0);
+  if (s < 0) {
+    /* This might be an ipv6-only environment in which case 'socket(AF_INET,..)'
+       call would fail. Try creating IPv6 socket in that case */
+    s = socket(AF_INET6, SOCK_STREAM, 0);
+  }
   if (s >= 0) {
     has_so_reuseport = GRPC_LOG_IF_ERROR("check for SO_REUSEPORT",
                                          grpc_set_socket_reuse_port(s, 1));
@@ -213,7 +218,8 @@ static void on_read(void* arg, grpc_error* err) {
     grpc_resolved_address addr;
     char* addr_str;
     char* name;
-    addr.len = sizeof(struct sockaddr_storage);
+    memset(&addr, 0, sizeof(addr));
+    addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
     /* Note: If we ever decide to return this address to the user, remember to
        strip off the ::ffff:0.0.0.0/96 prefix first. */
     int fd = grpc_accept4(sp->fd, &addr, 1, 1);
@@ -412,11 +418,12 @@ static grpc_error* tcp_server_add_port(grpc_tcp_server* s,
      as some previously created listener. */
   if (requested_port == 0) {
     for (sp = s->head; sp; sp = sp->next) {
-      sockname_temp.len = sizeof(struct sockaddr_storage);
+      sockname_temp.len =
+          static_cast<socklen_t>(sizeof(struct sockaddr_storage));
       if (0 ==
           getsockname(sp->fd,
                       reinterpret_cast<grpc_sockaddr*>(&sockname_temp.addr),
-                      reinterpret_cast<socklen_t*>(&sockname_temp.len))) {
+                      &sockname_temp.len)) {
         int used_port = grpc_sockaddr_get_port(&sockname_temp);
         if (used_port > 0) {
           memcpy(&sockname_temp, addr, sizeof(grpc_resolved_address));
