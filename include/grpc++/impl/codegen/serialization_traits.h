@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2018 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,38 +16,13 @@
  *
  */
 
+// DEPRECATED: The headers in include/grpc++ are deprecated. Please include the
+// headers in include/grpcpp instead. This header exists only for backwards
+// compatibility.
+
 #ifndef GRPCXX_IMPL_CODEGEN_SERIALIZATION_TRAITS_H
 #define GRPCXX_IMPL_CODEGEN_SERIALIZATION_TRAITS_H
 
-namespace grpc {
-
-/// Defines how to serialize and deserialize some type.
-///
-/// Used for hooking different message serialization API's into GRPC.
-/// Each SerializationTraits implementation must provide the following
-/// functions:
-///   static Status Serialize(const Message& msg,
-///                           grpc_byte_buffer** buffer,
-///                           bool* own_buffer);
-///   static Status Deserialize(grpc_byte_buffer* buffer,
-///                             Message* msg,
-///                             int max_receive_message_size);
-///
-/// Serialize is required to convert message to a grpc_byte_buffer, and
-/// to store a pointer to that byte buffer at *buffer. *own_buffer should
-/// be set to true if the caller owns said byte buffer, or false if
-/// ownership is retained elsewhere.
-///
-/// Deserialize is required to convert buffer into the message stored at
-/// msg. max_receive_message_size is passed in as a bound on the maximum
-/// number of message bytes Deserialize should accept.
-///
-/// Both functions return a Status, allowing them to explain what went
-/// wrong if required.
-template <class Message,
-          class UnusedButHereForPartialTemplateSpecialization = void>
-class SerializationTraits;
-
-}  // namespace grpc
+#include <grpcpp/impl/codegen/serialization_traits.h>
 
 #endif  // GRPCXX_IMPL_CODEGEN_SERIALIZATION_TRAITS_H

@@ -154,6 +154,15 @@ module GRPC
       Operation.new(self)
     end
 
+    ##
+    # Returns a restricted view of this ActiveCall for use in interceptors
+    #
+    # @return [InterceptableView]
+    #
+    def interceptable
+      InterceptableView.new(self)
+    end
+
     def receive_and_check_status
       batch_result = @call.run_batch(RECV_STATUS_ON_CLIENT => nil)
       set_input_stream_done
@@ -515,15 +524,27 @@ module GRPC
     # This does not mean that must necessarily be one.  E.g, the replies
     # produced by gen_each_reply could ignore the received_msgs
     #
-    # @param gen_each_reply [Proc] generates the BiDi stream replies
-    def run_server_bidi(gen_each_reply)
-      bd = BidiCall.new(@call,
-                        @marshal,
-                        @unmarshal,
-                        metadata_received: @metadata_received,
-                        req_view: MultiReqView.new(self))
-
-      bd.run_on_server(gen_each_reply, proc { set_input_stream_done })
+    # @param mth [Proc] generates the BiDi stream replies
+    # @param interception_ctx [InterceptionContext]
+    #
+    def run_server_bidi(mth, interception_ctx)
+      view = multi_req_view
+      bidi_call = BidiCall.new(
+        @call,
+        @marshal,
+        @unmarshal,
+        metadata_received: @metadata_received,
+        req_view: view
+      )
+      requests = bidi_call.read_next_loop(proc { set_input_stream_done }, false)
+      interception_ctx.intercept!(
+        :bidi_streamer,
+        call: view,
+        method: mth,
+        requests: requests
+      ) do
+        bidi_call.run_on_server(mth, requests)
+      end
     end
 
     # Waits till an operation completes
@@ -645,5 +666,9 @@ module GRPC
     Operation = view_class(:cancel, :cancelled?, :deadline, :execute,
                            :metadata, :status, :start_call, :wait, :write_flag,
                            :write_flag=, :trailing_metadata)
+
+    # InterceptableView further limits access to an ActiveCall's methods
+    # for use in interceptors on the client, exposing only the deadline
+    InterceptableView = view_class(:deadline)
   end
 end

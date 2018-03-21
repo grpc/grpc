@@ -37,60 +37,33 @@ cdef class CompletionQueue:
     self.is_shutdown = False
 
   cdef _interpret_event(self, grpc_event event):
-    cdef OperationTag tag = None
-    cdef object user_tag = None
-    cdef Call operation_call = None
-    cdef CallDetails request_call_details = None
-    cdef Metadata request_metadata = None
-    cdef Operations batch_operations = None
-    cdef Operation batch_operation = None
+    cdef _Tag tag = None
     if event.type == GRPC_QUEUE_TIMEOUT:
-      return Event(
-          event.type, False, None, None, None, None, False, None)
+      # NOTE(nathaniel): For now we coopt ConnectivityEvent here.
+      return ConnectivityEvent(GRPC_QUEUE_TIMEOUT, False, None)
     elif event.type == GRPC_QUEUE_SHUTDOWN:
       self.is_shutdown = True
-      return Event(
-          event.type, True, None, None, None, None, False, None)
+      # NOTE(nathaniel): For now we coopt ConnectivityEvent here.
+      return ConnectivityEvent(GRPC_QUEUE_TIMEOUT, True, None)
     else:
-      if event.tag != NULL:
-        tag = <OperationTag>event.tag
-        # We receive event tags only after they've been inc-ref'd elsewhere in
-        # the code.
-        cpython.Py_DECREF(tag)
-        if tag.shutting_down_server is not None:
-          tag.shutting_down_server.notify_shutdown_complete()
-        user_tag = tag.user_tag
-        operation_call = tag.operation_call
-        request_call_details = tag.request_call_details
-        if tag.request_metadata is not None:
-          request_metadata = tag.request_metadata
-          request_metadata._claim_slice_ownership()
-        batch_operations = tag.batch_operations
-        if tag.batch_operations is not None:
-          for op in batch_operations.operations:
-            batch_operation = <Operation>op
-            if batch_operation._received_metadata is not None:
-              batch_operation._received_metadata._claim_slice_ownership()
-        if tag.is_new_request:
-          # Stuff in the tag not explicitly handled by us needs to live through
-          # the life of the call
-          operation_call.references.extend(tag.references)
-      return Event(
-          event.type, event.success, user_tag, operation_call,
-          request_call_details, request_metadata, tag.is_new_request,
-          batch_operations)
+      tag = <_Tag>event.tag
+      # We receive event tags only after they've been inc-ref'd elsewhere in
+      # the code.
+      cpython.Py_DECREF(tag)
+      return tag.event(event)
 
-  def poll(self, Timespec deadline=None):
+  def poll(self, deadline=None):
     # We name this 'poll' to avoid problems with CPython's expectations for
     # 'special' methods (like next and __next__).
     cdef gpr_timespec c_increment
     cdef gpr_timespec c_timeout
     cdef gpr_timespec c_deadline
+    if deadline is None:
+      c_deadline = gpr_inf_future(GPR_CLOCK_REALTIME)
+    else:
+      c_deadline = _timespec_from_time(deadline)
     with nogil:
       c_increment = gpr_time_from_millis(_INTERRUPT_CHECK_PERIOD_MS, GPR_TIMESPAN)
-      c_deadline = gpr_inf_future(GPR_CLOCK_REALTIME)
-      if deadline is not None:
-        c_deadline = deadline.c_time
 
       while True:
         c_timeout = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), c_increment)

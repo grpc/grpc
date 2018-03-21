@@ -16,11 +16,13 @@
  *
  */
 
-#include <grpc++/impl/codegen/config.h>
+#include <grpcpp/impl/codegen/config.h>
 #include <gtest/gtest.h>
 
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+
+#include <grpc/grpc.h>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -77,5 +79,8 @@ TEST(ServerBuilderTest, CreateServerRepeatedPortWithDisallowedReusePort) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  grpc_init();
+  int ret = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return ret;
 }

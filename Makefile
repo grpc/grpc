@@ -77,8 +77,7 @@ CC_opt = $(DEFAULT_CC)
 CXX_opt = $(DEFAULT_CXX)
 LD_opt = $(DEFAULT_CC)
 LDXX_opt = $(DEFAULT_CXX)
-CXXFLAGS_opt = -fno-exceptions
-CPPFLAGS_opt = -O2
+CPPFLAGS_opt = -O2 -Wframe-larger-than=16384
 DEFINES_opt = NDEBUG
 
 VALID_CONFIG_asan-trace-cmp = 1
@@ -95,7 +94,6 @@ CC_dbg = $(DEFAULT_CC)
 CXX_dbg = $(DEFAULT_CXX)
 LD_dbg = $(DEFAULT_CC)
 LDXX_dbg = $(DEFAULT_CXX)
-CXXFLAGS_dbg = -fno-exceptions
 CPPFLAGS_dbg = -O0
 DEFINES_dbg = _DEBUG DEBUG
 
@@ -114,7 +112,7 @@ CC_msan = clang
 CXX_msan = clang++
 LD_msan = clang++
 LDXX_msan = clang++
-CPPFLAGS_msan = -O0 -fsanitize-coverage=edge -fsanitize=memory -fsanitize-memory-track-origins -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
+CPPFLAGS_msan = -O0 -fsanitize-coverage=edge -fsanitize=memory -fsanitize-memory-track-origins -fsanitize-memory-use-after-dtor -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_msan = -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
 DEFINES_msan = NDEBUG
 
@@ -144,14 +142,14 @@ LDXX_asan-noleaks = clang++
 CPPFLAGS_asan-noleaks = -O0 -fsanitize-coverage=edge -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
 LDFLAGS_asan-noleaks = -fsanitize=address
 
-VALID_CONFIG_c++-compat = 1
-CC_c++-compat = $(DEFAULT_CC)
-CXX_c++-compat = $(DEFAULT_CXX)
-LD_c++-compat = $(DEFAULT_CC)
-LDXX_c++-compat = $(DEFAULT_CXX)
-CFLAGS_c++-compat = -Wc++-compat
-CPPFLAGS_c++-compat = -O0
-DEFINES_c++-compat = _DEBUG DEBUG
+VALID_CONFIG_noexcept = 1
+CC_noexcept = $(DEFAULT_CC)
+CXX_noexcept = $(DEFAULT_CXX)
+LD_noexcept = $(DEFAULT_CC)
+LDXX_noexcept = $(DEFAULT_CXX)
+CXXFLAGS_noexcept = -fno-exceptions
+CPPFLAGS_noexcept = -O2 -Wframe-larger-than=16384
+DEFINES_noexcept = NDEBUG
 
 VALID_CONFIG_ubsan = 1
 REQUIRE_CUSTOM_LIBRARIES_ubsan = 1
@@ -187,7 +185,7 @@ CXX_gcov = g++
 LD_gcov = gcc
 LDXX_gcov = g++
 CPPFLAGS_gcov = -O0 -fprofile-arcs -ftest-coverage -Wno-return-type
-LDFLAGS_gcov = -fprofile-arcs -ftest-coverage -rdynamic
+LDFLAGS_gcov = -fprofile-arcs -ftest-coverage -rdynamic -lstdc++
 DEFINES_gcov = _DEBUG DEBUG GPR_GCOV
 
 VALID_CONFIG_memcheck = 1
@@ -206,6 +204,15 @@ LD_lto = $(DEFAULT_CC)
 LDXX_lto = $(DEFAULT_CXX)
 CPPFLAGS_lto = -O2
 DEFINES_lto = NDEBUG
+
+VALID_CONFIG_c++-compat = 1
+CC_c++-compat = $(DEFAULT_CC)
+CXX_c++-compat = $(DEFAULT_CXX)
+LD_c++-compat = $(DEFAULT_CC)
+LDXX_c++-compat = $(DEFAULT_CXX)
+CFLAGS_c++-compat = -Wc++-compat
+CPPFLAGS_c++-compat = -O0
+DEFINES_c++-compat = _DEBUG DEBUG
 
 VALID_CONFIG_mutrace = 1
 CC_mutrace = $(DEFAULT_CC)
@@ -327,8 +334,11 @@ CXXFLAGS += -std=c++11
 ifeq ($(SYSTEM),Darwin)
 CXXFLAGS += -stdlib=libc++
 endif
-CPPFLAGS += -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1
+CPPFLAGS += -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1 -Wno-deprecated-declarations
+COREFLAGS += -fno-rtti -fno-exceptions
 LDFLAGS += -g
+
+DEFINES += PB_FIELD_16BIT
 
 CPPFLAGS += $(CPPFLAGS_$(CONFIG))
 CFLAGS += $(CFLAGS_$(CONFIG))
@@ -410,9 +420,9 @@ E = @echo
 Q = @
 endif
 
-CORE_VERSION = 4.0.0-dev
-CPP_VERSION = 1.7.0-dev
-CSHARP_VERSION = 1.7.0-dev
+CORE_VERSION = 6.0.0-dev
+CPP_VERSION = 1.11.0-dev
+CSHARP_VERSION = 1.11.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -460,7 +470,7 @@ SHARED_EXT_CORE = dll
 SHARED_EXT_CPP = dll
 SHARED_EXT_CSHARP = dll
 SHARED_PREFIX =
-SHARED_VERSION_CORE = -4
+SHARED_VERSION_CORE = -6
 SHARED_VERSION_CPP = -1
 SHARED_VERSION_CSHARP = -1
 else ifeq ($(SYSTEM),Darwin)
@@ -505,7 +515,7 @@ endif
 
 OPENSSL_ALPN_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/openssl-alpn.c $(addprefix -l, $(OPENSSL_LIBS)) $(LDFLAGS)
 OPENSSL_NPN_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/openssl-npn.c $(addprefix -l, $(OPENSSL_LIBS)) $(LDFLAGS)
-BORINGSSL_COMPILE_CHECK_CMD = $(CC) $(CPPFLAGS) -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI) -o $(TMPOUT) test/build/boringssl.c $(LDFLAGS)
+BORINGSSL_COMPILE_CHECK_CMD = $(CC) $(CPPFLAGS) -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI) -o $(TMPOUT) test/build/boringssl.c $(LDFLAGS)
 ZLIB_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/zlib.c -lz $(LDFLAGS)
 PROTOBUF_CHECK_CMD = $(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $(TMPOUT) test/build/protobuf.cc -lprotobuf $(LDFLAGS)
 CARES_CHECK_CMD = $(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $(TMPOUT) test/build/c-ares.c -lcares $(LDFLAGS)
@@ -642,7 +652,6 @@ ZLIB_DEP = $(LIBDIR)/$(CONFIG)/libz.a
 ZLIB_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libz.a
 ZLIB_MERGE_OBJS = $(LIBZ_OBJS)
 CPPFLAGS += -Ithird_party/zlib
-LDFLAGS += -L$(LIBDIR)/$(CONFIG)/zlib
 else
 ifeq ($(HAS_PKG_CONFIG),true)
 CPPFLAGS += $(shell $(PKG_CONFIG) --cflags zlib)
@@ -673,7 +682,6 @@ CARES_DEP = $(LIBDIR)/$(CONFIG)/libares.a
 CARES_MERGE_OBJS = $(LIBARES_OBJS)
 CARES_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libares.a
 CPPFLAGS := -Ithird_party/cares -Ithird_party/cares/cares $(CPPFLAGS)
-LDFLAGS := -L$(LIBDIR)/$(CONFIG)/c-ares $(LDFLAGS)
 else
 ifeq ($(HAS_PKG_CONFIG),true)
 PC_REQUIRES_GRPC += libcares
@@ -944,59 +952,49 @@ systemtap_dep_error:
 stop:
 	@false
 
-alarm_test: $(BINDIR)/$(CONFIG)/alarm_test
 algorithm_test: $(BINDIR)/$(CONFIG)/algorithm_test
 alloc_test: $(BINDIR)/$(CONFIG)/alloc_test
 alpn_test: $(BINDIR)/$(CONFIG)/alpn_test
 api_fuzzer: $(BINDIR)/$(CONFIG)/api_fuzzer
 arena_test: $(BINDIR)/$(CONFIG)/arena_test
+avl_test: $(BINDIR)/$(CONFIG)/avl_test
 bad_server_response_test: $(BINDIR)/$(CONFIG)/bad_server_response_test
-bdp_estimator_test: $(BINDIR)/$(CONFIG)/bdp_estimator_test
 bin_decoder_test: $(BINDIR)/$(CONFIG)/bin_decoder_test
 bin_encoder_test: $(BINDIR)/$(CONFIG)/bin_encoder_test
-byte_stream_test: $(BINDIR)/$(CONFIG)/byte_stream_test
-census_context_test: $(BINDIR)/$(CONFIG)/census_context_test
-census_intrusive_hash_map_test: $(BINDIR)/$(CONFIG)/census_intrusive_hash_map_test
-census_resource_test: $(BINDIR)/$(CONFIG)/census_resource_test
-census_trace_context_test: $(BINDIR)/$(CONFIG)/census_trace_context_test
 channel_create_test: $(BINDIR)/$(CONFIG)/channel_create_test
 check_epollexclusive: $(BINDIR)/$(CONFIG)/check_epollexclusive
 chttp2_hpack_encoder_test: $(BINDIR)/$(CONFIG)/chttp2_hpack_encoder_test
 chttp2_stream_map_test: $(BINDIR)/$(CONFIG)/chttp2_stream_map_test
 chttp2_varint_test: $(BINDIR)/$(CONFIG)/chttp2_varint_test
 client_fuzzer: $(BINDIR)/$(CONFIG)/client_fuzzer
+cmdline_test: $(BINDIR)/$(CONFIG)/cmdline_test
 combiner_test: $(BINDIR)/$(CONFIG)/combiner_test
 compression_test: $(BINDIR)/$(CONFIG)/compression_test
 concurrent_connectivity_test: $(BINDIR)/$(CONFIG)/concurrent_connectivity_test
 connection_refused_test: $(BINDIR)/$(CONFIG)/connection_refused_test
 dns_resolver_connectivity_test: $(BINDIR)/$(CONFIG)/dns_resolver_connectivity_test
+dns_resolver_cooldown_test: $(BINDIR)/$(CONFIG)/dns_resolver_cooldown_test
 dns_resolver_test: $(BINDIR)/$(CONFIG)/dns_resolver_test
 dualstack_socket_test: $(BINDIR)/$(CONFIG)/dualstack_socket_test
 endpoint_pair_test: $(BINDIR)/$(CONFIG)/endpoint_pair_test
 error_test: $(BINDIR)/$(CONFIG)/error_test
 ev_epollsig_linux_test: $(BINDIR)/$(CONFIG)/ev_epollsig_linux_test
 fake_resolver_test: $(BINDIR)/$(CONFIG)/fake_resolver_test
+fake_transport_security_test: $(BINDIR)/$(CONFIG)/fake_transport_security_test
 fd_conservation_posix_test: $(BINDIR)/$(CONFIG)/fd_conservation_posix_test
 fd_posix_test: $(BINDIR)/$(CONFIG)/fd_posix_test
 fling_client: $(BINDIR)/$(CONFIG)/fling_client
 fling_server: $(BINDIR)/$(CONFIG)/fling_server
 fling_stream_test: $(BINDIR)/$(CONFIG)/fling_stream_test
 fling_test: $(BINDIR)/$(CONFIG)/fling_test
-gen_hpack_tables: $(BINDIR)/$(CONFIG)/gen_hpack_tables
-gen_legal_metadata_characters: $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters
-gen_percent_encoding_tables: $(BINDIR)/$(CONFIG)/gen_percent_encoding_tables
 goaway_server_test: $(BINDIR)/$(CONFIG)/goaway_server_test
-gpr_avl_test: $(BINDIR)/$(CONFIG)/gpr_avl_test
-gpr_backoff_test: $(BINDIR)/$(CONFIG)/gpr_backoff_test
-gpr_cmdline_test: $(BINDIR)/$(CONFIG)/gpr_cmdline_test
 gpr_cpu_test: $(BINDIR)/$(CONFIG)/gpr_cpu_test
 gpr_env_test: $(BINDIR)/$(CONFIG)/gpr_env_test
-gpr_histogram_test: $(BINDIR)/$(CONFIG)/gpr_histogram_test
 gpr_host_port_test: $(BINDIR)/$(CONFIG)/gpr_host_port_test
 gpr_log_test: $(BINDIR)/$(CONFIG)/gpr_log_test
+gpr_manual_constructor_test: $(BINDIR)/$(CONFIG)/gpr_manual_constructor_test
 gpr_mpscq_test: $(BINDIR)/$(CONFIG)/gpr_mpscq_test
 gpr_spinlock_test: $(BINDIR)/$(CONFIG)/gpr_spinlock_test
-gpr_stack_lockfree_test: $(BINDIR)/$(CONFIG)/gpr_stack_lockfree_test
 gpr_string_test: $(BINDIR)/$(CONFIG)/gpr_string_test
 gpr_sync_test: $(BINDIR)/$(CONFIG)/gpr_sync_test
 gpr_thd_test: $(BINDIR)/$(CONFIG)/gpr_thd_test
@@ -1007,6 +1005,7 @@ grpc_auth_context_test: $(BINDIR)/$(CONFIG)/grpc_auth_context_test
 grpc_b64_test: $(BINDIR)/$(CONFIG)/grpc_b64_test
 grpc_byte_buffer_reader_test: $(BINDIR)/$(CONFIG)/grpc_byte_buffer_reader_test
 grpc_channel_args_test: $(BINDIR)/$(CONFIG)/grpc_channel_args_test
+grpc_channel_stack_builder_test: $(BINDIR)/$(CONFIG)/grpc_channel_stack_builder_test
 grpc_channel_stack_test: $(BINDIR)/$(CONFIG)/grpc_channel_stack_test
 grpc_completion_queue_test: $(BINDIR)/$(CONFIG)/grpc_completion_queue_test
 grpc_completion_queue_threading_test: $(BINDIR)/$(CONFIG)/grpc_completion_queue_threading_test
@@ -1018,9 +1017,12 @@ grpc_json_token_test: $(BINDIR)/$(CONFIG)/grpc_json_token_test
 grpc_jwt_verifier_test: $(BINDIR)/$(CONFIG)/grpc_jwt_verifier_test
 grpc_print_google_default_creds_token: $(BINDIR)/$(CONFIG)/grpc_print_google_default_creds_token
 grpc_security_connector_test: $(BINDIR)/$(CONFIG)/grpc_security_connector_test
+grpc_ssl_credentials_test: $(BINDIR)/$(CONFIG)/grpc_ssl_credentials_test
 grpc_verify_jwt: $(BINDIR)/$(CONFIG)/grpc_verify_jwt
 handshake_client: $(BINDIR)/$(CONFIG)/handshake_client
 handshake_server: $(BINDIR)/$(CONFIG)/handshake_server
+handshake_server_with_readahead_handshaker: $(BINDIR)/$(CONFIG)/handshake_server_with_readahead_handshaker
+histogram_test: $(BINDIR)/$(CONFIG)/histogram_test
 hpack_parser_fuzzer_test: $(BINDIR)/$(CONFIG)/hpack_parser_fuzzer_test
 hpack_parser_test: $(BINDIR)/$(CONFIG)/hpack_parser_test
 hpack_table_test: $(BINDIR)/$(CONFIG)/hpack_table_test
@@ -1038,7 +1040,6 @@ json_rewrite_test: $(BINDIR)/$(CONFIG)/json_rewrite_test
 json_stream_error_test: $(BINDIR)/$(CONFIG)/json_stream_error_test
 json_test: $(BINDIR)/$(CONFIG)/json_test
 lame_client_test: $(BINDIR)/$(CONFIG)/lame_client_test
-lb_policies_test: $(BINDIR)/$(CONFIG)/lb_policies_test
 load_file_test: $(BINDIR)/$(CONFIG)/load_file_test
 low_level_ping_pong_benchmark: $(BINDIR)/$(CONFIG)/low_level_ping_pong_benchmark
 memory_profile_client: $(BINDIR)/$(CONFIG)/memory_profile_client
@@ -1046,7 +1047,6 @@ memory_profile_server: $(BINDIR)/$(CONFIG)/memory_profile_server
 memory_profile_test: $(BINDIR)/$(CONFIG)/memory_profile_test
 message_compress_test: $(BINDIR)/$(CONFIG)/message_compress_test
 minimal_stack_is_minimal_test: $(BINDIR)/$(CONFIG)/minimal_stack_is_minimal_test
-mlog_test: $(BINDIR)/$(CONFIG)/mlog_test
 multiple_server_queues_test: $(BINDIR)/$(CONFIG)/multiple_server_queues_test
 murmur_hash_test: $(BINDIR)/$(CONFIG)/murmur_hash_test
 nanopb_fuzzer_response_test: $(BINDIR)/$(CONFIG)/nanopb_fuzzer_response_test
@@ -1068,13 +1068,13 @@ server_chttp2_test: $(BINDIR)/$(CONFIG)/server_chttp2_test
 server_fuzzer: $(BINDIR)/$(CONFIG)/server_fuzzer
 server_test: $(BINDIR)/$(CONFIG)/server_test
 slice_buffer_test: $(BINDIR)/$(CONFIG)/slice_buffer_test
-slice_hash_table_test: $(BINDIR)/$(CONFIG)/slice_hash_table_test
 slice_string_helpers_test: $(BINDIR)/$(CONFIG)/slice_string_helpers_test
 slice_test: $(BINDIR)/$(CONFIG)/slice_test
 sockaddr_resolver_test: $(BINDIR)/$(CONFIG)/sockaddr_resolver_test
 sockaddr_utils_test: $(BINDIR)/$(CONFIG)/sockaddr_utils_test
 socket_utils_test: $(BINDIR)/$(CONFIG)/socket_utils_test
 ssl_server_fuzzer: $(BINDIR)/$(CONFIG)/ssl_server_fuzzer
+ssl_transport_security_test: $(BINDIR)/$(CONFIG)/ssl_transport_security_test
 status_conversion_test: $(BINDIR)/$(CONFIG)/status_conversion_test
 stream_compression_test: $(BINDIR)/$(CONFIG)/stream_compression_test
 stream_owned_slice_test: $(BINDIR)/$(CONFIG)/stream_owned_slice_test
@@ -1089,15 +1089,29 @@ timer_heap_test: $(BINDIR)/$(CONFIG)/timer_heap_test
 timer_list_test: $(BINDIR)/$(CONFIG)/timer_list_test
 transport_connectivity_state_test: $(BINDIR)/$(CONFIG)/transport_connectivity_state_test
 transport_metadata_test: $(BINDIR)/$(CONFIG)/transport_metadata_test
-transport_pid_controller_test: $(BINDIR)/$(CONFIG)/transport_pid_controller_test
 transport_security_test: $(BINDIR)/$(CONFIG)/transport_security_test
 udp_server_test: $(BINDIR)/$(CONFIG)/udp_server_test
 uri_fuzzer_test: $(BINDIR)/$(CONFIG)/uri_fuzzer_test
 uri_parser_test: $(BINDIR)/$(CONFIG)/uri_parser_test
 wakeup_fd_cv_test: $(BINDIR)/$(CONFIG)/wakeup_fd_cv_test
-alarm_cpp_test: $(BINDIR)/$(CONFIG)/alarm_cpp_test
+alarm_test: $(BINDIR)/$(CONFIG)/alarm_test
+alts_counter_test: $(BINDIR)/$(CONFIG)/alts_counter_test
+alts_crypt_test: $(BINDIR)/$(CONFIG)/alts_crypt_test
+alts_crypter_test: $(BINDIR)/$(CONFIG)/alts_crypter_test
+alts_frame_handler_test: $(BINDIR)/$(CONFIG)/alts_frame_handler_test
+alts_frame_protector_test: $(BINDIR)/$(CONFIG)/alts_frame_protector_test
+alts_grpc_record_protocol_test: $(BINDIR)/$(CONFIG)/alts_grpc_record_protocol_test
+alts_handshaker_client_test: $(BINDIR)/$(CONFIG)/alts_handshaker_client_test
+alts_handshaker_service_api_test: $(BINDIR)/$(CONFIG)/alts_handshaker_service_api_test
+alts_iovec_record_protocol_test: $(BINDIR)/$(CONFIG)/alts_iovec_record_protocol_test
+alts_security_connector_test: $(BINDIR)/$(CONFIG)/alts_security_connector_test
+alts_tsi_handshaker_test: $(BINDIR)/$(CONFIG)/alts_tsi_handshaker_test
+alts_tsi_utils_test: $(BINDIR)/$(CONFIG)/alts_tsi_utils_test
+alts_zero_copy_grpc_protector_test: $(BINDIR)/$(CONFIG)/alts_zero_copy_grpc_protector_test
 async_end2end_test: $(BINDIR)/$(CONFIG)/async_end2end_test
 auth_property_iterator_test: $(BINDIR)/$(CONFIG)/auth_property_iterator_test
+backoff_test: $(BINDIR)/$(CONFIG)/backoff_test
+bdp_estimator_test: $(BINDIR)/$(CONFIG)/bdp_estimator_test
 bm_arena: $(BINDIR)/$(CONFIG)/bm_arena
 bm_call_create: $(BINDIR)/$(CONFIG)/bm_call_create
 bm_chttp2_hpack: $(BINDIR)/$(CONFIG)/bm_chttp2_hpack
@@ -1112,9 +1126,14 @@ bm_fullstack_trickle: $(BINDIR)/$(CONFIG)/bm_fullstack_trickle
 bm_fullstack_unary_ping_pong: $(BINDIR)/$(CONFIG)/bm_fullstack_unary_ping_pong
 bm_metadata: $(BINDIR)/$(CONFIG)/bm_metadata
 bm_pollset: $(BINDIR)/$(CONFIG)/bm_pollset
+byte_stream_test: $(BINDIR)/$(CONFIG)/byte_stream_test
 channel_arguments_test: $(BINDIR)/$(CONFIG)/channel_arguments_test
 channel_filter_test: $(BINDIR)/$(CONFIG)/channel_filter_test
+check_gcp_environment_linux_test: $(BINDIR)/$(CONFIG)/check_gcp_environment_linux_test
+check_gcp_environment_windows_test: $(BINDIR)/$(CONFIG)/check_gcp_environment_windows_test
+chttp2_settings_timeout_test: $(BINDIR)/$(CONFIG)/chttp2_settings_timeout_test
 cli_call_test: $(BINDIR)/$(CONFIG)/cli_call_test
+client_channel_stress_test: $(BINDIR)/$(CONFIG)/client_channel_stress_test
 client_crash_test: $(BINDIR)/$(CONFIG)/client_crash_test
 client_crash_test_server: $(BINDIR)/$(CONFIG)/client_crash_test_server
 client_lb_end2end_test: $(BINDIR)/$(CONFIG)/client_lb_end2end_test
@@ -1127,9 +1146,11 @@ cxx_string_ref_test: $(BINDIR)/$(CONFIG)/cxx_string_ref_test
 cxx_time_test: $(BINDIR)/$(CONFIG)/cxx_time_test
 end2end_test: $(BINDIR)/$(CONFIG)/end2end_test
 error_details_test: $(BINDIR)/$(CONFIG)/error_details_test
+exception_test: $(BINDIR)/$(CONFIG)/exception_test
 filter_end2end_test: $(BINDIR)/$(CONFIG)/filter_end2end_test
 generic_end2end_test: $(BINDIR)/$(CONFIG)/generic_end2end_test
 golden_file_test: $(BINDIR)/$(CONFIG)/golden_file_test
+grpc_alts_credentials_options_test: $(BINDIR)/$(CONFIG)/grpc_alts_credentials_options_test
 grpc_cli: $(BINDIR)/$(CONFIG)/grpc_cli
 grpc_cpp_plugin: $(BINDIR)/$(CONFIG)/grpc_cpp_plugin
 grpc_csharp_plugin: $(BINDIR)/$(CONFIG)/grpc_csharp_plugin
@@ -1141,10 +1162,13 @@ grpc_ruby_plugin: $(BINDIR)/$(CONFIG)/grpc_ruby_plugin
 grpc_tool_test: $(BINDIR)/$(CONFIG)/grpc_tool_test
 grpclb_api_test: $(BINDIR)/$(CONFIG)/grpclb_api_test
 grpclb_end2end_test: $(BINDIR)/$(CONFIG)/grpclb_end2end_test
-grpclb_test: $(BINDIR)/$(CONFIG)/grpclb_test
+h2_ssl_cert_test: $(BINDIR)/$(CONFIG)/h2_ssl_cert_test
+h2_ssl_session_reuse_test: $(BINDIR)/$(CONFIG)/h2_ssl_session_reuse_test
 health_service_end2end_test: $(BINDIR)/$(CONFIG)/health_service_end2end_test
 http2_client: $(BINDIR)/$(CONFIG)/http2_client
 hybrid_end2end_test: $(BINDIR)/$(CONFIG)/hybrid_end2end_test
+inlined_vector_test: $(BINDIR)/$(CONFIG)/inlined_vector_test
+inproc_sync_unary_ping_pong_test: $(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test
 interop_client: $(BINDIR)/$(CONFIG)/interop_client
 interop_server: $(BINDIR)/$(CONFIG)/interop_server
 interop_test: $(BINDIR)/$(CONFIG)/interop_test
@@ -1152,7 +1176,9 @@ json_run_localhost: $(BINDIR)/$(CONFIG)/json_run_localhost
 memory_test: $(BINDIR)/$(CONFIG)/memory_test
 metrics_client: $(BINDIR)/$(CONFIG)/metrics_client
 mock_test: $(BINDIR)/$(CONFIG)/mock_test
+nonblocking_test: $(BINDIR)/$(CONFIG)/nonblocking_test
 noop-benchmark: $(BINDIR)/$(CONFIG)/noop-benchmark
+orphanable_test: $(BINDIR)/$(CONFIG)/orphanable_test
 proto_server_reflection_test: $(BINDIR)/$(CONFIG)/proto_server_reflection_test
 proto_utils_test: $(BINDIR)/$(CONFIG)/proto_utils_test
 qps_interarrival_test: $(BINDIR)/$(CONFIG)/qps_interarrival_test
@@ -1161,6 +1187,8 @@ qps_openloop_test: $(BINDIR)/$(CONFIG)/qps_openloop_test
 qps_worker: $(BINDIR)/$(CONFIG)/qps_worker
 reconnect_interop_client: $(BINDIR)/$(CONFIG)/reconnect_interop_client
 reconnect_interop_server: $(BINDIR)/$(CONFIG)/reconnect_interop_server
+ref_counted_ptr_test: $(BINDIR)/$(CONFIG)/ref_counted_ptr_test
+ref_counted_test: $(BINDIR)/$(CONFIG)/ref_counted_test
 secure_auth_context_test: $(BINDIR)/$(CONFIG)/secure_auth_context_test
 secure_sync_unary_ping_pong_test: $(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test
 server_builder_plugin_test: $(BINDIR)/$(CONFIG)/server_builder_plugin_test
@@ -1168,55 +1196,78 @@ server_builder_test: $(BINDIR)/$(CONFIG)/server_builder_test
 server_context_test_spouse_test: $(BINDIR)/$(CONFIG)/server_context_test_spouse_test
 server_crash_test: $(BINDIR)/$(CONFIG)/server_crash_test
 server_crash_test_client: $(BINDIR)/$(CONFIG)/server_crash_test_client
+server_early_return_test: $(BINDIR)/$(CONFIG)/server_early_return_test
 server_request_call_test: $(BINDIR)/$(CONFIG)/server_request_call_test
 shutdown_test: $(BINDIR)/$(CONFIG)/shutdown_test
-status_test: $(BINDIR)/$(CONFIG)/status_test
+slice_hash_table_test: $(BINDIR)/$(CONFIG)/slice_hash_table_test
+slice_weak_hash_table_test: $(BINDIR)/$(CONFIG)/slice_weak_hash_table_test
+stats_test: $(BINDIR)/$(CONFIG)/stats_test
+status_metadata_test: $(BINDIR)/$(CONFIG)/status_metadata_test
+status_util_test: $(BINDIR)/$(CONFIG)/status_util_test
 streaming_throughput_test: $(BINDIR)/$(CONFIG)/streaming_throughput_test
 stress_test: $(BINDIR)/$(CONFIG)/stress_test
 thread_manager_test: $(BINDIR)/$(CONFIG)/thread_manager_test
 thread_stress_test: $(BINDIR)/$(CONFIG)/thread_stress_test
+transport_pid_controller_test: $(BINDIR)/$(CONFIG)/transport_pid_controller_test
+transport_security_common_api_test: $(BINDIR)/$(CONFIG)/transport_security_common_api_test
 writes_per_rpc_test: $(BINDIR)/$(CONFIG)/writes_per_rpc_test
 public_headers_must_be_c89: $(BINDIR)/$(CONFIG)/public_headers_must_be_c89
-boringssl_aes_test: $(BINDIR)/$(CONFIG)/boringssl_aes_test
+gen_hpack_tables: $(BINDIR)/$(CONFIG)/gen_hpack_tables
+gen_legal_metadata_characters: $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters
+gen_percent_encoding_tables: $(BINDIR)/$(CONFIG)/gen_percent_encoding_tables
+boringssl_crypto_test_data: $(BINDIR)/$(CONFIG)/boringssl_crypto_test_data
 boringssl_asn1_test: $(BINDIR)/$(CONFIG)/boringssl_asn1_test
 boringssl_base64_test: $(BINDIR)/$(CONFIG)/boringssl_base64_test
 boringssl_bio_test: $(BINDIR)/$(CONFIG)/boringssl_bio_test
-boringssl_bn_test: $(BINDIR)/$(CONFIG)/boringssl_bn_test
+boringssl_buf_test: $(BINDIR)/$(CONFIG)/boringssl_buf_test
 boringssl_bytestring_test: $(BINDIR)/$(CONFIG)/boringssl_bytestring_test
+boringssl_chacha_test: $(BINDIR)/$(CONFIG)/boringssl_chacha_test
 boringssl_aead_test: $(BINDIR)/$(CONFIG)/boringssl_aead_test
 boringssl_cipher_test: $(BINDIR)/$(CONFIG)/boringssl_cipher_test
 boringssl_cmac_test: $(BINDIR)/$(CONFIG)/boringssl_cmac_test
+boringssl_compiler_test: $(BINDIR)/$(CONFIG)/boringssl_compiler_test
 boringssl_constant_time_test: $(BINDIR)/$(CONFIG)/boringssl_constant_time_test
 boringssl_ed25519_test: $(BINDIR)/$(CONFIG)/boringssl_ed25519_test
 boringssl_spake25519_test: $(BINDIR)/$(CONFIG)/boringssl_spake25519_test
 boringssl_x25519_test: $(BINDIR)/$(CONFIG)/boringssl_x25519_test
+boringssl_dh_test: $(BINDIR)/$(CONFIG)/boringssl_dh_test
 boringssl_digest_test: $(BINDIR)/$(CONFIG)/boringssl_digest_test
-boringssl_example_mul: $(BINDIR)/$(CONFIG)/boringssl_example_mul
-boringssl_p256-x86_64_test: $(BINDIR)/$(CONFIG)/boringssl_p256-x86_64_test
+boringssl_dsa_test: $(BINDIR)/$(CONFIG)/boringssl_dsa_test
 boringssl_ecdh_test: $(BINDIR)/$(CONFIG)/boringssl_ecdh_test
-boringssl_ecdsa_sign_test: $(BINDIR)/$(CONFIG)/boringssl_ecdsa_sign_test
-boringssl_ecdsa_test: $(BINDIR)/$(CONFIG)/boringssl_ecdsa_test
-boringssl_ecdsa_verify_test: $(BINDIR)/$(CONFIG)/boringssl_ecdsa_verify_test
+boringssl_err_test: $(BINDIR)/$(CONFIG)/boringssl_err_test
 boringssl_evp_extra_test: $(BINDIR)/$(CONFIG)/boringssl_evp_extra_test
 boringssl_evp_test: $(BINDIR)/$(CONFIG)/boringssl_evp_test
 boringssl_pbkdf_test: $(BINDIR)/$(CONFIG)/boringssl_pbkdf_test
+boringssl_scrypt_test: $(BINDIR)/$(CONFIG)/boringssl_scrypt_test
+boringssl_aes_test: $(BINDIR)/$(CONFIG)/boringssl_aes_test
+boringssl_bn_test: $(BINDIR)/$(CONFIG)/boringssl_bn_test
+boringssl_ec_test: $(BINDIR)/$(CONFIG)/boringssl_ec_test
+boringssl_p256-x86_64_test: $(BINDIR)/$(CONFIG)/boringssl_p256-x86_64_test
+boringssl_ecdsa_test: $(BINDIR)/$(CONFIG)/boringssl_ecdsa_test
+boringssl_gcm_test: $(BINDIR)/$(CONFIG)/boringssl_gcm_test
+boringssl_ctrdrbg_test: $(BINDIR)/$(CONFIG)/boringssl_ctrdrbg_test
 boringssl_hkdf_test: $(BINDIR)/$(CONFIG)/boringssl_hkdf_test
 boringssl_hmac_test: $(BINDIR)/$(CONFIG)/boringssl_hmac_test
 boringssl_lhash_test: $(BINDIR)/$(CONFIG)/boringssl_lhash_test
-boringssl_gcm_test: $(BINDIR)/$(CONFIG)/boringssl_gcm_test
 boringssl_obj_test: $(BINDIR)/$(CONFIG)/boringssl_obj_test
+boringssl_pkcs7_test: $(BINDIR)/$(CONFIG)/boringssl_pkcs7_test
 boringssl_pkcs12_test: $(BINDIR)/$(CONFIG)/boringssl_pkcs12_test
 boringssl_pkcs8_test: $(BINDIR)/$(CONFIG)/boringssl_pkcs8_test
 boringssl_poly1305_test: $(BINDIR)/$(CONFIG)/boringssl_poly1305_test
 boringssl_pool_test: $(BINDIR)/$(CONFIG)/boringssl_pool_test
 boringssl_refcount_test: $(BINDIR)/$(CONFIG)/boringssl_refcount_test
+boringssl_rsa_test: $(BINDIR)/$(CONFIG)/boringssl_rsa_test
+boringssl_file_test_gtest: $(BINDIR)/$(CONFIG)/boringssl_file_test_gtest
+boringssl_gtest_main: $(BINDIR)/$(CONFIG)/boringssl_gtest_main
 boringssl_thread_test: $(BINDIR)/$(CONFIG)/boringssl_thread_test
-boringssl_pkcs7_test: $(BINDIR)/$(CONFIG)/boringssl_pkcs7_test
 boringssl_x509_test: $(BINDIR)/$(CONFIG)/boringssl_x509_test
 boringssl_tab_test: $(BINDIR)/$(CONFIG)/boringssl_tab_test
 boringssl_v3name_test: $(BINDIR)/$(CONFIG)/boringssl_v3name_test
+boringssl_span_test: $(BINDIR)/$(CONFIG)/boringssl_span_test
+boringssl_ssl_test: $(BINDIR)/$(CONFIG)/boringssl_ssl_test
 badreq_bad_client_test: $(BINDIR)/$(CONFIG)/badreq_bad_client_test
 connection_prefix_bad_client_test: $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test
+duplicate_header_bad_client_test: $(BINDIR)/$(CONFIG)/duplicate_header_bad_client_test
 head_of_line_blocking_bad_client_test: $(BINDIR)/$(CONFIG)/head_of_line_blocking_bad_client_test
 headers_bad_client_test: $(BINDIR)/$(CONFIG)/headers_bad_client_test
 initial_settings_frame_bad_client_test: $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test
@@ -1243,7 +1294,6 @@ h2_sockpair_test: $(BINDIR)/$(CONFIG)/h2_sockpair_test
 h2_sockpair+trace_test: $(BINDIR)/$(CONFIG)/h2_sockpair+trace_test
 h2_sockpair_1byte_test: $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_test
 h2_ssl_test: $(BINDIR)/$(CONFIG)/h2_ssl_test
-h2_ssl_cert_test: $(BINDIR)/$(CONFIG)/h2_ssl_cert_test
 h2_ssl_proxy_test: $(BINDIR)/$(CONFIG)/h2_ssl_proxy_test
 h2_uds_test: $(BINDIR)/$(CONFIG)/h2_uds_test
 inproc_test: $(BINDIR)/$(CONFIG)/inproc_test
@@ -1262,6 +1312,10 @@ h2_sockpair+trace_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair+trace_nosec_test
 h2_sockpair_1byte_nosec_test: $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_nosec_test
 h2_uds_nosec_test: $(BINDIR)/$(CONFIG)/h2_uds_nosec_test
 inproc_nosec_test: $(BINDIR)/$(CONFIG)/inproc_nosec_test
+resolver_component_test_unsecure: $(BINDIR)/$(CONFIG)/resolver_component_test_unsecure
+resolver_component_test: $(BINDIR)/$(CONFIG)/resolver_component_test
+resolver_component_tests_runner_invoker_unsecure: $(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker_unsecure
+resolver_component_tests_runner_invoker: $(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker
 api_fuzzer_one_entry: $(BINDIR)/$(CONFIG)/api_fuzzer_one_entry
 client_fuzzer_one_entry: $(BINDIR)/$(CONFIG)/client_fuzzer_one_entry
 hpack_parser_fuzzer_test_one_entry: $(BINDIR)/$(CONFIG)/hpack_parser_fuzzer_test_one_entry
@@ -1291,10 +1345,10 @@ third_party/protobuf/configure:
 
 $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
 	$(E) "[MAKE]    Building protobuf"
+	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/protobuf
 	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g $(PROTOBUF_LDFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g $(PROTOBUF_CPPFLAGS_EXTRA)" ./configure --disable-shared --enable-static $(PROTOBUF_CONFIG_OPTS))
 	$(Q)$(MAKE) -C third_party/protobuf clean
 	$(Q)$(MAKE) -C third_party/protobuf
-	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/protobuf
 	$(Q)mkdir -p $(BINDIR)/$(CONFIG)/protobuf
 	$(Q)cp third_party/protobuf/src/.libs/libprotoc.a $(LIBDIR)/$(CONFIG)/protobuf
 	$(Q)cp third_party/protobuf/src/.libs/libprotobuf.a $(LIBDIR)/$(CONFIG)/protobuf
@@ -1318,7 +1372,7 @@ plugins: $(PROTOC_PLUGINS)
 
 privatelibs: privatelibs_c privatelibs_cxx
 
-privatelibs_c:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libz.a $(LIBDIR)/$(CONFIG)/libares.a $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a
+privatelibs_c:  $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libz.a $(LIBDIR)/$(CONFIG)/libares.a $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a
 pc_c: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc
 
 pc_c_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc
@@ -1328,44 +1382,41 @@ pc_cxx: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc
 pc_cxx_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc
 
 ifeq ($(EMBED_OPENSSL),true)
-privatelibs_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++_proto_reflection_desc_db.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a $(LIBDIR)/$(CONFIG)/libhttp2_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a $(LIBDIR)/$(CONFIG)/libinterop_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a $(LIBDIR)/$(CONFIG)/libinterop_server_lib.a $(LIBDIR)/$(CONFIG)/libinterop_server_main.a $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_constant_time_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_spake25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_p256-x86_64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ecdh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_sign_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_verify_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_hkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_lhash_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_obj_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pool_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_refcount_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a $(LIBDIR)/$(CONFIG)/libbenchmark.a
+privatelibs_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_proto_reflection_desc_db.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a $(LIBDIR)/$(CONFIG)/libhttp2_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a $(LIBDIR)/$(CONFIG)/libinterop_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a $(LIBDIR)/$(CONFIG)/libinterop_server_lib.a $(LIBDIR)/$(CONFIG)/libinterop_server_main.a $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl_crypto_test_data_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_buf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_chacha_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_compiler_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_constant_time_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_spake25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_dsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ecdh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_scrypt_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_p256-x86_64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ctrdrbg_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_hkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_lhash_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_obj_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pool_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_refcount_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_file_test_gtest_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_gtest_main_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_thread_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_tab_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_v3name_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_span_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a $(LIBDIR)/$(CONFIG)/libbenchmark.a
 else
-privatelibs_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++_proto_reflection_desc_db.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a $(LIBDIR)/$(CONFIG)/libhttp2_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a $(LIBDIR)/$(CONFIG)/libinterop_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a $(LIBDIR)/$(CONFIG)/libinterop_server_lib.a $(LIBDIR)/$(CONFIG)/libinterop_server_main.a $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libbenchmark.a
+privatelibs_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_proto_reflection_desc_db.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a $(LIBDIR)/$(CONFIG)/libhttp2_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a $(LIBDIR)/$(CONFIG)/libinterop_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a $(LIBDIR)/$(CONFIG)/libinterop_server_lib.a $(LIBDIR)/$(CONFIG)/libinterop_server_main.a $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libbenchmark.a
 endif
 
 
 buildtests: buildtests_c buildtests_cxx
 
 buildtests_c: privatelibs_c \
-  $(BINDIR)/$(CONFIG)/alarm_test \
   $(BINDIR)/$(CONFIG)/algorithm_test \
   $(BINDIR)/$(CONFIG)/alloc_test \
   $(BINDIR)/$(CONFIG)/alpn_test \
   $(BINDIR)/$(CONFIG)/arena_test \
+  $(BINDIR)/$(CONFIG)/avl_test \
   $(BINDIR)/$(CONFIG)/bad_server_response_test \
-  $(BINDIR)/$(CONFIG)/bdp_estimator_test \
   $(BINDIR)/$(CONFIG)/bin_decoder_test \
   $(BINDIR)/$(CONFIG)/bin_encoder_test \
-  $(BINDIR)/$(CONFIG)/byte_stream_test \
-  $(BINDIR)/$(CONFIG)/census_context_test \
-  $(BINDIR)/$(CONFIG)/census_intrusive_hash_map_test \
-  $(BINDIR)/$(CONFIG)/census_resource_test \
-  $(BINDIR)/$(CONFIG)/census_trace_context_test \
   $(BINDIR)/$(CONFIG)/channel_create_test \
   $(BINDIR)/$(CONFIG)/chttp2_hpack_encoder_test \
   $(BINDIR)/$(CONFIG)/chttp2_stream_map_test \
   $(BINDIR)/$(CONFIG)/chttp2_varint_test \
+  $(BINDIR)/$(CONFIG)/cmdline_test \
   $(BINDIR)/$(CONFIG)/combiner_test \
   $(BINDIR)/$(CONFIG)/compression_test \
   $(BINDIR)/$(CONFIG)/concurrent_connectivity_test \
   $(BINDIR)/$(CONFIG)/connection_refused_test \
   $(BINDIR)/$(CONFIG)/dns_resolver_connectivity_test \
+  $(BINDIR)/$(CONFIG)/dns_resolver_cooldown_test \
   $(BINDIR)/$(CONFIG)/dns_resolver_test \
   $(BINDIR)/$(CONFIG)/dualstack_socket_test \
   $(BINDIR)/$(CONFIG)/endpoint_pair_test \
   $(BINDIR)/$(CONFIG)/error_test \
   $(BINDIR)/$(CONFIG)/ev_epollsig_linux_test \
   $(BINDIR)/$(CONFIG)/fake_resolver_test \
+  $(BINDIR)/$(CONFIG)/fake_transport_security_test \
   $(BINDIR)/$(CONFIG)/fd_conservation_posix_test \
   $(BINDIR)/$(CONFIG)/fd_posix_test \
   $(BINDIR)/$(CONFIG)/fling_client \
@@ -1373,17 +1424,13 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/fling_stream_test \
   $(BINDIR)/$(CONFIG)/fling_test \
   $(BINDIR)/$(CONFIG)/goaway_server_test \
-  $(BINDIR)/$(CONFIG)/gpr_avl_test \
-  $(BINDIR)/$(CONFIG)/gpr_backoff_test \
-  $(BINDIR)/$(CONFIG)/gpr_cmdline_test \
   $(BINDIR)/$(CONFIG)/gpr_cpu_test \
   $(BINDIR)/$(CONFIG)/gpr_env_test \
-  $(BINDIR)/$(CONFIG)/gpr_histogram_test \
   $(BINDIR)/$(CONFIG)/gpr_host_port_test \
   $(BINDIR)/$(CONFIG)/gpr_log_test \
+  $(BINDIR)/$(CONFIG)/gpr_manual_constructor_test \
   $(BINDIR)/$(CONFIG)/gpr_mpscq_test \
   $(BINDIR)/$(CONFIG)/gpr_spinlock_test \
-  $(BINDIR)/$(CONFIG)/gpr_stack_lockfree_test \
   $(BINDIR)/$(CONFIG)/gpr_string_test \
   $(BINDIR)/$(CONFIG)/gpr_sync_test \
   $(BINDIR)/$(CONFIG)/gpr_thd_test \
@@ -1394,6 +1441,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/grpc_b64_test \
   $(BINDIR)/$(CONFIG)/grpc_byte_buffer_reader_test \
   $(BINDIR)/$(CONFIG)/grpc_channel_args_test \
+  $(BINDIR)/$(CONFIG)/grpc_channel_stack_builder_test \
   $(BINDIR)/$(CONFIG)/grpc_channel_stack_test \
   $(BINDIR)/$(CONFIG)/grpc_completion_queue_test \
   $(BINDIR)/$(CONFIG)/grpc_completion_queue_threading_test \
@@ -1403,8 +1451,11 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/grpc_json_token_test \
   $(BINDIR)/$(CONFIG)/grpc_jwt_verifier_test \
   $(BINDIR)/$(CONFIG)/grpc_security_connector_test \
+  $(BINDIR)/$(CONFIG)/grpc_ssl_credentials_test \
   $(BINDIR)/$(CONFIG)/handshake_client \
   $(BINDIR)/$(CONFIG)/handshake_server \
+  $(BINDIR)/$(CONFIG)/handshake_server_with_readahead_handshaker \
+  $(BINDIR)/$(CONFIG)/histogram_test \
   $(BINDIR)/$(CONFIG)/hpack_parser_test \
   $(BINDIR)/$(CONFIG)/hpack_table_test \
   $(BINDIR)/$(CONFIG)/http_parser_test \
@@ -1418,14 +1469,12 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/json_stream_error_test \
   $(BINDIR)/$(CONFIG)/json_test \
   $(BINDIR)/$(CONFIG)/lame_client_test \
-  $(BINDIR)/$(CONFIG)/lb_policies_test \
   $(BINDIR)/$(CONFIG)/load_file_test \
   $(BINDIR)/$(CONFIG)/memory_profile_client \
   $(BINDIR)/$(CONFIG)/memory_profile_server \
   $(BINDIR)/$(CONFIG)/memory_profile_test \
   $(BINDIR)/$(CONFIG)/message_compress_test \
   $(BINDIR)/$(CONFIG)/minimal_stack_is_minimal_test \
-  $(BINDIR)/$(CONFIG)/mlog_test \
   $(BINDIR)/$(CONFIG)/multiple_server_queues_test \
   $(BINDIR)/$(CONFIG)/murmur_hash_test \
   $(BINDIR)/$(CONFIG)/no_server_test \
@@ -1442,12 +1491,12 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/server_chttp2_test \
   $(BINDIR)/$(CONFIG)/server_test \
   $(BINDIR)/$(CONFIG)/slice_buffer_test \
-  $(BINDIR)/$(CONFIG)/slice_hash_table_test \
   $(BINDIR)/$(CONFIG)/slice_string_helpers_test \
   $(BINDIR)/$(CONFIG)/slice_test \
   $(BINDIR)/$(CONFIG)/sockaddr_resolver_test \
   $(BINDIR)/$(CONFIG)/sockaddr_utils_test \
   $(BINDIR)/$(CONFIG)/socket_utils_test \
+  $(BINDIR)/$(CONFIG)/ssl_transport_security_test \
   $(BINDIR)/$(CONFIG)/status_conversion_test \
   $(BINDIR)/$(CONFIG)/stream_compression_test \
   $(BINDIR)/$(CONFIG)/stream_owned_slice_test \
@@ -1462,7 +1511,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/timer_list_test \
   $(BINDIR)/$(CONFIG)/transport_connectivity_state_test \
   $(BINDIR)/$(CONFIG)/transport_metadata_test \
-  $(BINDIR)/$(CONFIG)/transport_pid_controller_test \
   $(BINDIR)/$(CONFIG)/transport_security_test \
   $(BINDIR)/$(CONFIG)/udp_server_test \
   $(BINDIR)/$(CONFIG)/uri_parser_test \
@@ -1470,6 +1518,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/public_headers_must_be_c89 \
   $(BINDIR)/$(CONFIG)/badreq_bad_client_test \
   $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test \
+  $(BINDIR)/$(CONFIG)/duplicate_header_bad_client_test \
   $(BINDIR)/$(CONFIG)/head_of_line_blocking_bad_client_test \
   $(BINDIR)/$(CONFIG)/headers_bad_client_test \
   $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test \
@@ -1496,7 +1545,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/h2_sockpair+trace_test \
   $(BINDIR)/$(CONFIG)/h2_sockpair_1byte_test \
   $(BINDIR)/$(CONFIG)/h2_ssl_test \
-  $(BINDIR)/$(CONFIG)/h2_ssl_cert_test \
   $(BINDIR)/$(CONFIG)/h2_ssl_proxy_test \
   $(BINDIR)/$(CONFIG)/h2_uds_test \
   $(BINDIR)/$(CONFIG)/inproc_test \
@@ -1532,9 +1580,24 @@ buildtests_c: privatelibs_c \
 
 ifeq ($(EMBED_OPENSSL),true)
 buildtests_cxx: privatelibs_cxx \
-  $(BINDIR)/$(CONFIG)/alarm_cpp_test \
+  $(BINDIR)/$(CONFIG)/alarm_test \
+  $(BINDIR)/$(CONFIG)/alts_counter_test \
+  $(BINDIR)/$(CONFIG)/alts_crypt_test \
+  $(BINDIR)/$(CONFIG)/alts_crypter_test \
+  $(BINDIR)/$(CONFIG)/alts_frame_handler_test \
+  $(BINDIR)/$(CONFIG)/alts_frame_protector_test \
+  $(BINDIR)/$(CONFIG)/alts_grpc_record_protocol_test \
+  $(BINDIR)/$(CONFIG)/alts_handshaker_client_test \
+  $(BINDIR)/$(CONFIG)/alts_handshaker_service_api_test \
+  $(BINDIR)/$(CONFIG)/alts_iovec_record_protocol_test \
+  $(BINDIR)/$(CONFIG)/alts_security_connector_test \
+  $(BINDIR)/$(CONFIG)/alts_tsi_handshaker_test \
+  $(BINDIR)/$(CONFIG)/alts_tsi_utils_test \
+  $(BINDIR)/$(CONFIG)/alts_zero_copy_grpc_protector_test \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
+  $(BINDIR)/$(CONFIG)/backoff_test \
+  $(BINDIR)/$(CONFIG)/bdp_estimator_test \
   $(BINDIR)/$(CONFIG)/bm_arena \
   $(BINDIR)/$(CONFIG)/bm_call_create \
   $(BINDIR)/$(CONFIG)/bm_chttp2_hpack \
@@ -1549,9 +1612,14 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/bm_fullstack_unary_ping_pong \
   $(BINDIR)/$(CONFIG)/bm_metadata \
   $(BINDIR)/$(CONFIG)/bm_pollset \
+  $(BINDIR)/$(CONFIG)/byte_stream_test \
   $(BINDIR)/$(CONFIG)/channel_arguments_test \
   $(BINDIR)/$(CONFIG)/channel_filter_test \
+  $(BINDIR)/$(CONFIG)/check_gcp_environment_linux_test \
+  $(BINDIR)/$(CONFIG)/check_gcp_environment_windows_test \
+  $(BINDIR)/$(CONFIG)/chttp2_settings_timeout_test \
   $(BINDIR)/$(CONFIG)/cli_call_test \
+  $(BINDIR)/$(CONFIG)/client_channel_stress_test \
   $(BINDIR)/$(CONFIG)/client_crash_test \
   $(BINDIR)/$(CONFIG)/client_crash_test_server \
   $(BINDIR)/$(CONFIG)/client_lb_end2end_test \
@@ -1564,17 +1632,22 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/cxx_time_test \
   $(BINDIR)/$(CONFIG)/end2end_test \
   $(BINDIR)/$(CONFIG)/error_details_test \
+  $(BINDIR)/$(CONFIG)/exception_test \
   $(BINDIR)/$(CONFIG)/filter_end2end_test \
   $(BINDIR)/$(CONFIG)/generic_end2end_test \
   $(BINDIR)/$(CONFIG)/golden_file_test \
+  $(BINDIR)/$(CONFIG)/grpc_alts_credentials_options_test \
   $(BINDIR)/$(CONFIG)/grpc_cli \
   $(BINDIR)/$(CONFIG)/grpc_tool_test \
   $(BINDIR)/$(CONFIG)/grpclb_api_test \
   $(BINDIR)/$(CONFIG)/grpclb_end2end_test \
-  $(BINDIR)/$(CONFIG)/grpclb_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_cert_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_session_reuse_test \
   $(BINDIR)/$(CONFIG)/health_service_end2end_test \
   $(BINDIR)/$(CONFIG)/http2_client \
   $(BINDIR)/$(CONFIG)/hybrid_end2end_test \
+  $(BINDIR)/$(CONFIG)/inlined_vector_test \
+  $(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test \
   $(BINDIR)/$(CONFIG)/interop_client \
   $(BINDIR)/$(CONFIG)/interop_server \
   $(BINDIR)/$(CONFIG)/interop_test \
@@ -1582,7 +1655,9 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/memory_test \
   $(BINDIR)/$(CONFIG)/metrics_client \
   $(BINDIR)/$(CONFIG)/mock_test \
+  $(BINDIR)/$(CONFIG)/nonblocking_test \
   $(BINDIR)/$(CONFIG)/noop-benchmark \
+  $(BINDIR)/$(CONFIG)/orphanable_test \
   $(BINDIR)/$(CONFIG)/proto_server_reflection_test \
   $(BINDIR)/$(CONFIG)/proto_utils_test \
   $(BINDIR)/$(CONFIG)/qps_interarrival_test \
@@ -1591,6 +1666,8 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/qps_worker \
   $(BINDIR)/$(CONFIG)/reconnect_interop_client \
   $(BINDIR)/$(CONFIG)/reconnect_interop_server \
+  $(BINDIR)/$(CONFIG)/ref_counted_ptr_test \
+  $(BINDIR)/$(CONFIG)/ref_counted_test \
   $(BINDIR)/$(CONFIG)/secure_auth_context_test \
   $(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test \
   $(BINDIR)/$(CONFIG)/server_builder_plugin_test \
@@ -1598,58 +1675,96 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/server_context_test_spouse_test \
   $(BINDIR)/$(CONFIG)/server_crash_test \
   $(BINDIR)/$(CONFIG)/server_crash_test_client \
+  $(BINDIR)/$(CONFIG)/server_early_return_test \
   $(BINDIR)/$(CONFIG)/server_request_call_test \
   $(BINDIR)/$(CONFIG)/shutdown_test \
-  $(BINDIR)/$(CONFIG)/status_test \
+  $(BINDIR)/$(CONFIG)/slice_hash_table_test \
+  $(BINDIR)/$(CONFIG)/slice_weak_hash_table_test \
+  $(BINDIR)/$(CONFIG)/stats_test \
+  $(BINDIR)/$(CONFIG)/status_metadata_test \
+  $(BINDIR)/$(CONFIG)/status_util_test \
   $(BINDIR)/$(CONFIG)/streaming_throughput_test \
   $(BINDIR)/$(CONFIG)/stress_test \
   $(BINDIR)/$(CONFIG)/thread_manager_test \
   $(BINDIR)/$(CONFIG)/thread_stress_test \
+  $(BINDIR)/$(CONFIG)/transport_pid_controller_test \
+  $(BINDIR)/$(CONFIG)/transport_security_common_api_test \
   $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
-  $(BINDIR)/$(CONFIG)/boringssl_aes_test \
+  $(BINDIR)/$(CONFIG)/boringssl_crypto_test_data \
   $(BINDIR)/$(CONFIG)/boringssl_asn1_test \
   $(BINDIR)/$(CONFIG)/boringssl_base64_test \
   $(BINDIR)/$(CONFIG)/boringssl_bio_test \
-  $(BINDIR)/$(CONFIG)/boringssl_bn_test \
+  $(BINDIR)/$(CONFIG)/boringssl_buf_test \
   $(BINDIR)/$(CONFIG)/boringssl_bytestring_test \
+  $(BINDIR)/$(CONFIG)/boringssl_chacha_test \
   $(BINDIR)/$(CONFIG)/boringssl_aead_test \
   $(BINDIR)/$(CONFIG)/boringssl_cipher_test \
   $(BINDIR)/$(CONFIG)/boringssl_cmac_test \
+  $(BINDIR)/$(CONFIG)/boringssl_compiler_test \
   $(BINDIR)/$(CONFIG)/boringssl_constant_time_test \
   $(BINDIR)/$(CONFIG)/boringssl_ed25519_test \
   $(BINDIR)/$(CONFIG)/boringssl_spake25519_test \
   $(BINDIR)/$(CONFIG)/boringssl_x25519_test \
+  $(BINDIR)/$(CONFIG)/boringssl_dh_test \
   $(BINDIR)/$(CONFIG)/boringssl_digest_test \
-  $(BINDIR)/$(CONFIG)/boringssl_example_mul \
-  $(BINDIR)/$(CONFIG)/boringssl_p256-x86_64_test \
+  $(BINDIR)/$(CONFIG)/boringssl_dsa_test \
   $(BINDIR)/$(CONFIG)/boringssl_ecdh_test \
-  $(BINDIR)/$(CONFIG)/boringssl_ecdsa_sign_test \
-  $(BINDIR)/$(CONFIG)/boringssl_ecdsa_test \
-  $(BINDIR)/$(CONFIG)/boringssl_ecdsa_verify_test \
+  $(BINDIR)/$(CONFIG)/boringssl_err_test \
   $(BINDIR)/$(CONFIG)/boringssl_evp_extra_test \
   $(BINDIR)/$(CONFIG)/boringssl_evp_test \
   $(BINDIR)/$(CONFIG)/boringssl_pbkdf_test \
+  $(BINDIR)/$(CONFIG)/boringssl_scrypt_test \
+  $(BINDIR)/$(CONFIG)/boringssl_aes_test \
+  $(BINDIR)/$(CONFIG)/boringssl_bn_test \
+  $(BINDIR)/$(CONFIG)/boringssl_ec_test \
+  $(BINDIR)/$(CONFIG)/boringssl_p256-x86_64_test \
+  $(BINDIR)/$(CONFIG)/boringssl_ecdsa_test \
+  $(BINDIR)/$(CONFIG)/boringssl_gcm_test \
+  $(BINDIR)/$(CONFIG)/boringssl_ctrdrbg_test \
   $(BINDIR)/$(CONFIG)/boringssl_hkdf_test \
   $(BINDIR)/$(CONFIG)/boringssl_hmac_test \
   $(BINDIR)/$(CONFIG)/boringssl_lhash_test \
-  $(BINDIR)/$(CONFIG)/boringssl_gcm_test \
   $(BINDIR)/$(CONFIG)/boringssl_obj_test \
+  $(BINDIR)/$(CONFIG)/boringssl_pkcs7_test \
   $(BINDIR)/$(CONFIG)/boringssl_pkcs12_test \
   $(BINDIR)/$(CONFIG)/boringssl_pkcs8_test \
   $(BINDIR)/$(CONFIG)/boringssl_poly1305_test \
   $(BINDIR)/$(CONFIG)/boringssl_pool_test \
   $(BINDIR)/$(CONFIG)/boringssl_refcount_test \
+  $(BINDIR)/$(CONFIG)/boringssl_rsa_test \
+  $(BINDIR)/$(CONFIG)/boringssl_file_test_gtest \
+  $(BINDIR)/$(CONFIG)/boringssl_gtest_main \
   $(BINDIR)/$(CONFIG)/boringssl_thread_test \
-  $(BINDIR)/$(CONFIG)/boringssl_pkcs7_test \
   $(BINDIR)/$(CONFIG)/boringssl_x509_test \
   $(BINDIR)/$(CONFIG)/boringssl_tab_test \
   $(BINDIR)/$(CONFIG)/boringssl_v3name_test \
+  $(BINDIR)/$(CONFIG)/boringssl_span_test \
+  $(BINDIR)/$(CONFIG)/boringssl_ssl_test \
+  $(BINDIR)/$(CONFIG)/resolver_component_test_unsecure \
+  $(BINDIR)/$(CONFIG)/resolver_component_test \
+  $(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker_unsecure \
+  $(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker \
 
 else
 buildtests_cxx: privatelibs_cxx \
-  $(BINDIR)/$(CONFIG)/alarm_cpp_test \
+  $(BINDIR)/$(CONFIG)/alarm_test \
+  $(BINDIR)/$(CONFIG)/alts_counter_test \
+  $(BINDIR)/$(CONFIG)/alts_crypt_test \
+  $(BINDIR)/$(CONFIG)/alts_crypter_test \
+  $(BINDIR)/$(CONFIG)/alts_frame_handler_test \
+  $(BINDIR)/$(CONFIG)/alts_frame_protector_test \
+  $(BINDIR)/$(CONFIG)/alts_grpc_record_protocol_test \
+  $(BINDIR)/$(CONFIG)/alts_handshaker_client_test \
+  $(BINDIR)/$(CONFIG)/alts_handshaker_service_api_test \
+  $(BINDIR)/$(CONFIG)/alts_iovec_record_protocol_test \
+  $(BINDIR)/$(CONFIG)/alts_security_connector_test \
+  $(BINDIR)/$(CONFIG)/alts_tsi_handshaker_test \
+  $(BINDIR)/$(CONFIG)/alts_tsi_utils_test \
+  $(BINDIR)/$(CONFIG)/alts_zero_copy_grpc_protector_test \
   $(BINDIR)/$(CONFIG)/async_end2end_test \
   $(BINDIR)/$(CONFIG)/auth_property_iterator_test \
+  $(BINDIR)/$(CONFIG)/backoff_test \
+  $(BINDIR)/$(CONFIG)/bdp_estimator_test \
   $(BINDIR)/$(CONFIG)/bm_arena \
   $(BINDIR)/$(CONFIG)/bm_call_create \
   $(BINDIR)/$(CONFIG)/bm_chttp2_hpack \
@@ -1664,9 +1779,14 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/bm_fullstack_unary_ping_pong \
   $(BINDIR)/$(CONFIG)/bm_metadata \
   $(BINDIR)/$(CONFIG)/bm_pollset \
+  $(BINDIR)/$(CONFIG)/byte_stream_test \
   $(BINDIR)/$(CONFIG)/channel_arguments_test \
   $(BINDIR)/$(CONFIG)/channel_filter_test \
+  $(BINDIR)/$(CONFIG)/check_gcp_environment_linux_test \
+  $(BINDIR)/$(CONFIG)/check_gcp_environment_windows_test \
+  $(BINDIR)/$(CONFIG)/chttp2_settings_timeout_test \
   $(BINDIR)/$(CONFIG)/cli_call_test \
+  $(BINDIR)/$(CONFIG)/client_channel_stress_test \
   $(BINDIR)/$(CONFIG)/client_crash_test \
   $(BINDIR)/$(CONFIG)/client_crash_test_server \
   $(BINDIR)/$(CONFIG)/client_lb_end2end_test \
@@ -1679,17 +1799,22 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/cxx_time_test \
   $(BINDIR)/$(CONFIG)/end2end_test \
   $(BINDIR)/$(CONFIG)/error_details_test \
+  $(BINDIR)/$(CONFIG)/exception_test \
   $(BINDIR)/$(CONFIG)/filter_end2end_test \
   $(BINDIR)/$(CONFIG)/generic_end2end_test \
   $(BINDIR)/$(CONFIG)/golden_file_test \
+  $(BINDIR)/$(CONFIG)/grpc_alts_credentials_options_test \
   $(BINDIR)/$(CONFIG)/grpc_cli \
   $(BINDIR)/$(CONFIG)/grpc_tool_test \
   $(BINDIR)/$(CONFIG)/grpclb_api_test \
   $(BINDIR)/$(CONFIG)/grpclb_end2end_test \
-  $(BINDIR)/$(CONFIG)/grpclb_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_cert_test \
+  $(BINDIR)/$(CONFIG)/h2_ssl_session_reuse_test \
   $(BINDIR)/$(CONFIG)/health_service_end2end_test \
   $(BINDIR)/$(CONFIG)/http2_client \
   $(BINDIR)/$(CONFIG)/hybrid_end2end_test \
+  $(BINDIR)/$(CONFIG)/inlined_vector_test \
+  $(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test \
   $(BINDIR)/$(CONFIG)/interop_client \
   $(BINDIR)/$(CONFIG)/interop_server \
   $(BINDIR)/$(CONFIG)/interop_test \
@@ -1697,7 +1822,9 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/memory_test \
   $(BINDIR)/$(CONFIG)/metrics_client \
   $(BINDIR)/$(CONFIG)/mock_test \
+  $(BINDIR)/$(CONFIG)/nonblocking_test \
   $(BINDIR)/$(CONFIG)/noop-benchmark \
+  $(BINDIR)/$(CONFIG)/orphanable_test \
   $(BINDIR)/$(CONFIG)/proto_server_reflection_test \
   $(BINDIR)/$(CONFIG)/proto_utils_test \
   $(BINDIR)/$(CONFIG)/qps_interarrival_test \
@@ -1706,6 +1833,8 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/qps_worker \
   $(BINDIR)/$(CONFIG)/reconnect_interop_client \
   $(BINDIR)/$(CONFIG)/reconnect_interop_server \
+  $(BINDIR)/$(CONFIG)/ref_counted_ptr_test \
+  $(BINDIR)/$(CONFIG)/ref_counted_test \
   $(BINDIR)/$(CONFIG)/secure_auth_context_test \
   $(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test \
   $(BINDIR)/$(CONFIG)/server_builder_plugin_test \
@@ -1713,14 +1842,25 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/server_context_test_spouse_test \
   $(BINDIR)/$(CONFIG)/server_crash_test \
   $(BINDIR)/$(CONFIG)/server_crash_test_client \
+  $(BINDIR)/$(CONFIG)/server_early_return_test \
   $(BINDIR)/$(CONFIG)/server_request_call_test \
   $(BINDIR)/$(CONFIG)/shutdown_test \
-  $(BINDIR)/$(CONFIG)/status_test \
+  $(BINDIR)/$(CONFIG)/slice_hash_table_test \
+  $(BINDIR)/$(CONFIG)/slice_weak_hash_table_test \
+  $(BINDIR)/$(CONFIG)/stats_test \
+  $(BINDIR)/$(CONFIG)/status_metadata_test \
+  $(BINDIR)/$(CONFIG)/status_util_test \
   $(BINDIR)/$(CONFIG)/streaming_throughput_test \
   $(BINDIR)/$(CONFIG)/stress_test \
   $(BINDIR)/$(CONFIG)/thread_manager_test \
   $(BINDIR)/$(CONFIG)/thread_stress_test \
+  $(BINDIR)/$(CONFIG)/transport_pid_controller_test \
+  $(BINDIR)/$(CONFIG)/transport_security_common_api_test \
   $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
+  $(BINDIR)/$(CONFIG)/resolver_component_test_unsecure \
+  $(BINDIR)/$(CONFIG)/resolver_component_test \
+  $(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker_unsecure \
+  $(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker \
 
 endif
 
@@ -1730,8 +1870,6 @@ test: test_c test_cxx
 flaky_test: flaky_test_c flaky_test_cxx
 
 test_c: buildtests_c
-	$(E) "[RUN]     Testing alarm_test"
-	$(Q) $(BINDIR)/$(CONFIG)/alarm_test || ( echo test alarm_test failed ; exit 1 )
 	$(E) "[RUN]     Testing algorithm_test"
 	$(Q) $(BINDIR)/$(CONFIG)/algorithm_test || ( echo test algorithm_test failed ; exit 1 )
 	$(E) "[RUN]     Testing alloc_test"
@@ -1740,24 +1878,14 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/alpn_test || ( echo test alpn_test failed ; exit 1 )
 	$(E) "[RUN]     Testing arena_test"
 	$(Q) $(BINDIR)/$(CONFIG)/arena_test || ( echo test arena_test failed ; exit 1 )
+	$(E) "[RUN]     Testing avl_test"
+	$(Q) $(BINDIR)/$(CONFIG)/avl_test || ( echo test avl_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bad_server_response_test"
 	$(Q) $(BINDIR)/$(CONFIG)/bad_server_response_test || ( echo test bad_server_response_test failed ; exit 1 )
-	$(E) "[RUN]     Testing bdp_estimator_test"
-	$(Q) $(BINDIR)/$(CONFIG)/bdp_estimator_test || ( echo test bdp_estimator_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bin_decoder_test"
 	$(Q) $(BINDIR)/$(CONFIG)/bin_decoder_test || ( echo test bin_decoder_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bin_encoder_test"
 	$(Q) $(BINDIR)/$(CONFIG)/bin_encoder_test || ( echo test bin_encoder_test failed ; exit 1 )
-	$(E) "[RUN]     Testing byte_stream_test"
-	$(Q) $(BINDIR)/$(CONFIG)/byte_stream_test || ( echo test byte_stream_test failed ; exit 1 )
-	$(E) "[RUN]     Testing census_context_test"
-	$(Q) $(BINDIR)/$(CONFIG)/census_context_test || ( echo test census_context_test failed ; exit 1 )
-	$(E) "[RUN]     Testing census_intrusive_hash_map_test"
-	$(Q) $(BINDIR)/$(CONFIG)/census_intrusive_hash_map_test || ( echo test census_intrusive_hash_map_test failed ; exit 1 )
-	$(E) "[RUN]     Testing census_resource_test"
-	$(Q) $(BINDIR)/$(CONFIG)/census_resource_test || ( echo test census_resource_test failed ; exit 1 )
-	$(E) "[RUN]     Testing census_trace_context_test"
-	$(Q) $(BINDIR)/$(CONFIG)/census_trace_context_test || ( echo test census_trace_context_test failed ; exit 1 )
 	$(E) "[RUN]     Testing channel_create_test"
 	$(Q) $(BINDIR)/$(CONFIG)/channel_create_test || ( echo test channel_create_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_hpack_encoder_test"
@@ -1766,6 +1894,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/chttp2_stream_map_test || ( echo test chttp2_stream_map_test failed ; exit 1 )
 	$(E) "[RUN]     Testing chttp2_varint_test"
 	$(Q) $(BINDIR)/$(CONFIG)/chttp2_varint_test || ( echo test chttp2_varint_test failed ; exit 1 )
+	$(E) "[RUN]     Testing cmdline_test"
+	$(Q) $(BINDIR)/$(CONFIG)/cmdline_test || ( echo test cmdline_test failed ; exit 1 )
 	$(E) "[RUN]     Testing combiner_test"
 	$(Q) $(BINDIR)/$(CONFIG)/combiner_test || ( echo test combiner_test failed ; exit 1 )
 	$(E) "[RUN]     Testing compression_test"
@@ -1776,6 +1906,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/connection_refused_test || ( echo test connection_refused_test failed ; exit 1 )
 	$(E) "[RUN]     Testing dns_resolver_connectivity_test"
 	$(Q) $(BINDIR)/$(CONFIG)/dns_resolver_connectivity_test || ( echo test dns_resolver_connectivity_test failed ; exit 1 )
+	$(E) "[RUN]     Testing dns_resolver_cooldown_test"
+	$(Q) $(BINDIR)/$(CONFIG)/dns_resolver_cooldown_test || ( echo test dns_resolver_cooldown_test failed ; exit 1 )
 	$(E) "[RUN]     Testing dns_resolver_test"
 	$(Q) $(BINDIR)/$(CONFIG)/dns_resolver_test || ( echo test dns_resolver_test failed ; exit 1 )
 	$(E) "[RUN]     Testing dualstack_socket_test"
@@ -1788,6 +1920,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/ev_epollsig_linux_test || ( echo test ev_epollsig_linux_test failed ; exit 1 )
 	$(E) "[RUN]     Testing fake_resolver_test"
 	$(Q) $(BINDIR)/$(CONFIG)/fake_resolver_test || ( echo test fake_resolver_test failed ; exit 1 )
+	$(E) "[RUN]     Testing fake_transport_security_test"
+	$(Q) $(BINDIR)/$(CONFIG)/fake_transport_security_test || ( echo test fake_transport_security_test failed ; exit 1 )
 	$(E) "[RUN]     Testing fd_conservation_posix_test"
 	$(Q) $(BINDIR)/$(CONFIG)/fd_conservation_posix_test || ( echo test fd_conservation_posix_test failed ; exit 1 )
 	$(E) "[RUN]     Testing fd_posix_test"
@@ -1798,28 +1932,20 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/fling_test || ( echo test fling_test failed ; exit 1 )
 	$(E) "[RUN]     Testing goaway_server_test"
 	$(Q) $(BINDIR)/$(CONFIG)/goaway_server_test || ( echo test goaway_server_test failed ; exit 1 )
-	$(E) "[RUN]     Testing gpr_avl_test"
-	$(Q) $(BINDIR)/$(CONFIG)/gpr_avl_test || ( echo test gpr_avl_test failed ; exit 1 )
-	$(E) "[RUN]     Testing gpr_backoff_test"
-	$(Q) $(BINDIR)/$(CONFIG)/gpr_backoff_test || ( echo test gpr_backoff_test failed ; exit 1 )
-	$(E) "[RUN]     Testing gpr_cmdline_test"
-	$(Q) $(BINDIR)/$(CONFIG)/gpr_cmdline_test || ( echo test gpr_cmdline_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_cpu_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_cpu_test || ( echo test gpr_cpu_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_env_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_env_test || ( echo test gpr_env_test failed ; exit 1 )
-	$(E) "[RUN]     Testing gpr_histogram_test"
-	$(Q) $(BINDIR)/$(CONFIG)/gpr_histogram_test || ( echo test gpr_histogram_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_host_port_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_host_port_test || ( echo test gpr_host_port_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_log_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_log_test || ( echo test gpr_log_test failed ; exit 1 )
+	$(E) "[RUN]     Testing gpr_manual_constructor_test"
+	$(Q) $(BINDIR)/$(CONFIG)/gpr_manual_constructor_test || ( echo test gpr_manual_constructor_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_mpscq_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_mpscq_test || ( echo test gpr_mpscq_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_spinlock_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_spinlock_test || ( echo test gpr_spinlock_test failed ; exit 1 )
-	$(E) "[RUN]     Testing gpr_stack_lockfree_test"
-	$(Q) $(BINDIR)/$(CONFIG)/gpr_stack_lockfree_test || ( echo test gpr_stack_lockfree_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_string_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_string_test || ( echo test gpr_string_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_sync_test"
@@ -1840,6 +1966,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_byte_buffer_reader_test || ( echo test grpc_byte_buffer_reader_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_channel_args_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_channel_args_test || ( echo test grpc_channel_args_test failed ; exit 1 )
+	$(E) "[RUN]     Testing grpc_channel_stack_builder_test"
+	$(Q) $(BINDIR)/$(CONFIG)/grpc_channel_stack_builder_test || ( echo test grpc_channel_stack_builder_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_channel_stack_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_channel_stack_test || ( echo test grpc_channel_stack_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_completion_queue_test"
@@ -1856,10 +1984,16 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_jwt_verifier_test || ( echo test grpc_jwt_verifier_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_security_connector_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_security_connector_test || ( echo test grpc_security_connector_test failed ; exit 1 )
+	$(E) "[RUN]     Testing grpc_ssl_credentials_test"
+	$(Q) $(BINDIR)/$(CONFIG)/grpc_ssl_credentials_test || ( echo test grpc_ssl_credentials_test failed ; exit 1 )
 	$(E) "[RUN]     Testing handshake_client"
 	$(Q) $(BINDIR)/$(CONFIG)/handshake_client || ( echo test handshake_client failed ; exit 1 )
 	$(E) "[RUN]     Testing handshake_server"
 	$(Q) $(BINDIR)/$(CONFIG)/handshake_server || ( echo test handshake_server failed ; exit 1 )
+	$(E) "[RUN]     Testing handshake_server_with_readahead_handshaker"
+	$(Q) $(BINDIR)/$(CONFIG)/handshake_server_with_readahead_handshaker || ( echo test handshake_server_with_readahead_handshaker failed ; exit 1 )
+	$(E) "[RUN]     Testing histogram_test"
+	$(Q) $(BINDIR)/$(CONFIG)/histogram_test || ( echo test histogram_test failed ; exit 1 )
 	$(E) "[RUN]     Testing hpack_parser_test"
 	$(Q) $(BINDIR)/$(CONFIG)/hpack_parser_test || ( echo test hpack_parser_test failed ; exit 1 )
 	$(E) "[RUN]     Testing hpack_table_test"
@@ -1924,8 +2058,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/server_test || ( echo test server_test failed ; exit 1 )
 	$(E) "[RUN]     Testing slice_buffer_test"
 	$(Q) $(BINDIR)/$(CONFIG)/slice_buffer_test || ( echo test slice_buffer_test failed ; exit 1 )
-	$(E) "[RUN]     Testing slice_hash_table_test"
-	$(Q) $(BINDIR)/$(CONFIG)/slice_hash_table_test || ( echo test slice_hash_table_test failed ; exit 1 )
 	$(E) "[RUN]     Testing slice_string_helpers_test"
 	$(Q) $(BINDIR)/$(CONFIG)/slice_string_helpers_test || ( echo test slice_string_helpers_test failed ; exit 1 )
 	$(E) "[RUN]     Testing slice_test"
@@ -1936,6 +2068,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/sockaddr_utils_test || ( echo test sockaddr_utils_test failed ; exit 1 )
 	$(E) "[RUN]     Testing socket_utils_test"
 	$(Q) $(BINDIR)/$(CONFIG)/socket_utils_test || ( echo test socket_utils_test failed ; exit 1 )
+	$(E) "[RUN]     Testing ssl_transport_security_test"
+	$(Q) $(BINDIR)/$(CONFIG)/ssl_transport_security_test || ( echo test ssl_transport_security_test failed ; exit 1 )
 	$(E) "[RUN]     Testing status_conversion_test"
 	$(Q) $(BINDIR)/$(CONFIG)/status_conversion_test || ( echo test status_conversion_test failed ; exit 1 )
 	$(E) "[RUN]     Testing stream_compression_test"
@@ -1964,8 +2098,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/transport_connectivity_state_test || ( echo test transport_connectivity_state_test failed ; exit 1 )
 	$(E) "[RUN]     Testing transport_metadata_test"
 	$(Q) $(BINDIR)/$(CONFIG)/transport_metadata_test || ( echo test transport_metadata_test failed ; exit 1 )
-	$(E) "[RUN]     Testing transport_pid_controller_test"
-	$(Q) $(BINDIR)/$(CONFIG)/transport_pid_controller_test || ( echo test transport_pid_controller_test failed ; exit 1 )
 	$(E) "[RUN]     Testing transport_security_test"
 	$(Q) $(BINDIR)/$(CONFIG)/transport_security_test || ( echo test transport_security_test failed ; exit 1 )
 	$(E) "[RUN]     Testing udp_server_test"
@@ -1980,6 +2112,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/badreq_bad_client_test || ( echo test badreq_bad_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing connection_prefix_bad_client_test"
 	$(Q) $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test || ( echo test connection_prefix_bad_client_test failed ; exit 1 )
+	$(E) "[RUN]     Testing duplicate_header_bad_client_test"
+	$(Q) $(BINDIR)/$(CONFIG)/duplicate_header_bad_client_test || ( echo test duplicate_header_bad_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing head_of_line_blocking_bad_client_test"
 	$(Q) $(BINDIR)/$(CONFIG)/head_of_line_blocking_bad_client_test || ( echo test head_of_line_blocking_bad_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing headers_bad_client_test"
@@ -2001,17 +2135,45 @@ test_c: buildtests_c
 
 
 flaky_test_c: buildtests_c
-	$(E) "[RUN]     Testing mlog_test"
-	$(Q) $(BINDIR)/$(CONFIG)/mlog_test || ( echo test mlog_test failed ; exit 1 )
 
 
 test_cxx: buildtests_cxx
-	$(E) "[RUN]     Testing alarm_cpp_test"
-	$(Q) $(BINDIR)/$(CONFIG)/alarm_cpp_test || ( echo test alarm_cpp_test failed ; exit 1 )
+	$(E) "[RUN]     Testing alarm_test"
+	$(Q) $(BINDIR)/$(CONFIG)/alarm_test || ( echo test alarm_test failed ; exit 1 )
+	$(E) "[RUN]     Testing alts_counter_test"
+	$(Q) $(BINDIR)/$(CONFIG)/alts_counter_test || ( echo test alts_counter_test failed ; exit 1 )
+	$(E) "[RUN]     Testing alts_crypt_test"
+	$(Q) $(BINDIR)/$(CONFIG)/alts_crypt_test || ( echo test alts_crypt_test failed ; exit 1 )
+	$(E) "[RUN]     Testing alts_crypter_test"
+	$(Q) $(BINDIR)/$(CONFIG)/alts_crypter_test || ( echo test alts_crypter_test failed ; exit 1 )
+	$(E) "[RUN]     Testing alts_frame_handler_test"
+	$(Q) $(BINDIR)/$(CONFIG)/alts_frame_handler_test || ( echo test alts_frame_handler_test failed ; exit 1 )
+	$(E) "[RUN]     Testing alts_frame_protector_test"
+	$(Q) $(BINDIR)/$(CONFIG)/alts_frame_protector_test || ( echo test alts_frame_protector_test failed ; exit 1 )
+	$(E) "[RUN]     Testing alts_grpc_record_protocol_test"
+	$(Q) $(BINDIR)/$(CONFIG)/alts_grpc_record_protocol_test || ( echo test alts_grpc_record_protocol_test failed ; exit 1 )
+	$(E) "[RUN]     Testing alts_handshaker_client_test"
+	$(Q) $(BINDIR)/$(CONFIG)/alts_handshaker_client_test || ( echo test alts_handshaker_client_test failed ; exit 1 )
+	$(E) "[RUN]     Testing alts_handshaker_service_api_test"
+	$(Q) $(BINDIR)/$(CONFIG)/alts_handshaker_service_api_test || ( echo test alts_handshaker_service_api_test failed ; exit 1 )
+	$(E) "[RUN]     Testing alts_iovec_record_protocol_test"
+	$(Q) $(BINDIR)/$(CONFIG)/alts_iovec_record_protocol_test || ( echo test alts_iovec_record_protocol_test failed ; exit 1 )
+	$(E) "[RUN]     Testing alts_security_connector_test"
+	$(Q) $(BINDIR)/$(CONFIG)/alts_security_connector_test || ( echo test alts_security_connector_test failed ; exit 1 )
+	$(E) "[RUN]     Testing alts_tsi_handshaker_test"
+	$(Q) $(BINDIR)/$(CONFIG)/alts_tsi_handshaker_test || ( echo test alts_tsi_handshaker_test failed ; exit 1 )
+	$(E) "[RUN]     Testing alts_tsi_utils_test"
+	$(Q) $(BINDIR)/$(CONFIG)/alts_tsi_utils_test || ( echo test alts_tsi_utils_test failed ; exit 1 )
+	$(E) "[RUN]     Testing alts_zero_copy_grpc_protector_test"
+	$(Q) $(BINDIR)/$(CONFIG)/alts_zero_copy_grpc_protector_test || ( echo test alts_zero_copy_grpc_protector_test failed ; exit 1 )
 	$(E) "[RUN]     Testing async_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/async_end2end_test || ( echo test async_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing auth_property_iterator_test"
 	$(Q) $(BINDIR)/$(CONFIG)/auth_property_iterator_test || ( echo test auth_property_iterator_test failed ; exit 1 )
+	$(E) "[RUN]     Testing backoff_test"
+	$(Q) $(BINDIR)/$(CONFIG)/backoff_test || ( echo test backoff_test failed ; exit 1 )
+	$(E) "[RUN]     Testing bdp_estimator_test"
+	$(Q) $(BINDIR)/$(CONFIG)/bdp_estimator_test || ( echo test bdp_estimator_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_arena"
 	$(Q) $(BINDIR)/$(CONFIG)/bm_arena || ( echo test bm_arena failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_call_create"
@@ -2040,12 +2202,22 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/bm_metadata || ( echo test bm_metadata failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_pollset"
 	$(Q) $(BINDIR)/$(CONFIG)/bm_pollset || ( echo test bm_pollset failed ; exit 1 )
+	$(E) "[RUN]     Testing byte_stream_test"
+	$(Q) $(BINDIR)/$(CONFIG)/byte_stream_test || ( echo test byte_stream_test failed ; exit 1 )
 	$(E) "[RUN]     Testing channel_arguments_test"
 	$(Q) $(BINDIR)/$(CONFIG)/channel_arguments_test || ( echo test channel_arguments_test failed ; exit 1 )
 	$(E) "[RUN]     Testing channel_filter_test"
 	$(Q) $(BINDIR)/$(CONFIG)/channel_filter_test || ( echo test channel_filter_test failed ; exit 1 )
+	$(E) "[RUN]     Testing check_gcp_environment_linux_test"
+	$(Q) $(BINDIR)/$(CONFIG)/check_gcp_environment_linux_test || ( echo test check_gcp_environment_linux_test failed ; exit 1 )
+	$(E) "[RUN]     Testing check_gcp_environment_windows_test"
+	$(Q) $(BINDIR)/$(CONFIG)/check_gcp_environment_windows_test || ( echo test check_gcp_environment_windows_test failed ; exit 1 )
+	$(E) "[RUN]     Testing chttp2_settings_timeout_test"
+	$(Q) $(BINDIR)/$(CONFIG)/chttp2_settings_timeout_test || ( echo test chttp2_settings_timeout_test failed ; exit 1 )
 	$(E) "[RUN]     Testing cli_call_test"
 	$(Q) $(BINDIR)/$(CONFIG)/cli_call_test || ( echo test cli_call_test failed ; exit 1 )
+	$(E) "[RUN]     Testing client_channel_stress_test"
+	$(Q) $(BINDIR)/$(CONFIG)/client_channel_stress_test || ( echo test client_channel_stress_test failed ; exit 1 )
 	$(E) "[RUN]     Testing client_crash_test"
 	$(Q) $(BINDIR)/$(CONFIG)/client_crash_test || ( echo test client_crash_test failed ; exit 1 )
 	$(E) "[RUN]     Testing client_lb_end2end_test"
@@ -2068,36 +2240,54 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/end2end_test || ( echo test end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing error_details_test"
 	$(Q) $(BINDIR)/$(CONFIG)/error_details_test || ( echo test error_details_test failed ; exit 1 )
+	$(E) "[RUN]     Testing exception_test"
+	$(Q) $(BINDIR)/$(CONFIG)/exception_test || ( echo test exception_test failed ; exit 1 )
 	$(E) "[RUN]     Testing filter_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/filter_end2end_test || ( echo test filter_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing generic_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/generic_end2end_test || ( echo test generic_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing golden_file_test"
 	$(Q) $(BINDIR)/$(CONFIG)/golden_file_test || ( echo test golden_file_test failed ; exit 1 )
+	$(E) "[RUN]     Testing grpc_alts_credentials_options_test"
+	$(Q) $(BINDIR)/$(CONFIG)/grpc_alts_credentials_options_test || ( echo test grpc_alts_credentials_options_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_tool_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_tool_test || ( echo test grpc_tool_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpclb_api_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpclb_api_test || ( echo test grpclb_api_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpclb_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpclb_end2end_test || ( echo test grpclb_end2end_test failed ; exit 1 )
-	$(E) "[RUN]     Testing grpclb_test"
-	$(Q) $(BINDIR)/$(CONFIG)/grpclb_test || ( echo test grpclb_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_ssl_cert_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_cert_test || ( echo test h2_ssl_cert_test failed ; exit 1 )
+	$(E) "[RUN]     Testing h2_ssl_session_reuse_test"
+	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_session_reuse_test || ( echo test h2_ssl_session_reuse_test failed ; exit 1 )
 	$(E) "[RUN]     Testing health_service_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/health_service_end2end_test || ( echo test health_service_end2end_test failed ; exit 1 )
+	$(E) "[RUN]     Testing inlined_vector_test"
+	$(Q) $(BINDIR)/$(CONFIG)/inlined_vector_test || ( echo test inlined_vector_test failed ; exit 1 )
+	$(E) "[RUN]     Testing inproc_sync_unary_ping_pong_test"
+	$(Q) $(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test || ( echo test inproc_sync_unary_ping_pong_test failed ; exit 1 )
 	$(E) "[RUN]     Testing interop_test"
 	$(Q) $(BINDIR)/$(CONFIG)/interop_test || ( echo test interop_test failed ; exit 1 )
 	$(E) "[RUN]     Testing memory_test"
 	$(Q) $(BINDIR)/$(CONFIG)/memory_test || ( echo test memory_test failed ; exit 1 )
 	$(E) "[RUN]     Testing mock_test"
 	$(Q) $(BINDIR)/$(CONFIG)/mock_test || ( echo test mock_test failed ; exit 1 )
+	$(E) "[RUN]     Testing nonblocking_test"
+	$(Q) $(BINDIR)/$(CONFIG)/nonblocking_test || ( echo test nonblocking_test failed ; exit 1 )
 	$(E) "[RUN]     Testing noop-benchmark"
 	$(Q) $(BINDIR)/$(CONFIG)/noop-benchmark || ( echo test noop-benchmark failed ; exit 1 )
+	$(E) "[RUN]     Testing orphanable_test"
+	$(Q) $(BINDIR)/$(CONFIG)/orphanable_test || ( echo test orphanable_test failed ; exit 1 )
 	$(E) "[RUN]     Testing proto_server_reflection_test"
 	$(Q) $(BINDIR)/$(CONFIG)/proto_server_reflection_test || ( echo test proto_server_reflection_test failed ; exit 1 )
 	$(E) "[RUN]     Testing proto_utils_test"
 	$(Q) $(BINDIR)/$(CONFIG)/proto_utils_test || ( echo test proto_utils_test failed ; exit 1 )
 	$(E) "[RUN]     Testing qps_openloop_test"
 	$(Q) $(BINDIR)/$(CONFIG)/qps_openloop_test || ( echo test qps_openloop_test failed ; exit 1 )
+	$(E) "[RUN]     Testing ref_counted_ptr_test"
+	$(Q) $(BINDIR)/$(CONFIG)/ref_counted_ptr_test || ( echo test ref_counted_ptr_test failed ; exit 1 )
+	$(E) "[RUN]     Testing ref_counted_test"
+	$(Q) $(BINDIR)/$(CONFIG)/ref_counted_test || ( echo test ref_counted_test failed ; exit 1 )
 	$(E) "[RUN]     Testing secure_auth_context_test"
 	$(Q) $(BINDIR)/$(CONFIG)/secure_auth_context_test || ( echo test secure_auth_context_test failed ; exit 1 )
 	$(E) "[RUN]     Testing secure_sync_unary_ping_pong_test"
@@ -2110,20 +2300,38 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/server_context_test_spouse_test || ( echo test server_context_test_spouse_test failed ; exit 1 )
 	$(E) "[RUN]     Testing server_crash_test"
 	$(Q) $(BINDIR)/$(CONFIG)/server_crash_test || ( echo test server_crash_test failed ; exit 1 )
+	$(E) "[RUN]     Testing server_early_return_test"
+	$(Q) $(BINDIR)/$(CONFIG)/server_early_return_test || ( echo test server_early_return_test failed ; exit 1 )
 	$(E) "[RUN]     Testing server_request_call_test"
 	$(Q) $(BINDIR)/$(CONFIG)/server_request_call_test || ( echo test server_request_call_test failed ; exit 1 )
 	$(E) "[RUN]     Testing shutdown_test"
 	$(Q) $(BINDIR)/$(CONFIG)/shutdown_test || ( echo test shutdown_test failed ; exit 1 )
-	$(E) "[RUN]     Testing status_test"
-	$(Q) $(BINDIR)/$(CONFIG)/status_test || ( echo test status_test failed ; exit 1 )
+	$(E) "[RUN]     Testing slice_hash_table_test"
+	$(Q) $(BINDIR)/$(CONFIG)/slice_hash_table_test || ( echo test slice_hash_table_test failed ; exit 1 )
+	$(E) "[RUN]     Testing slice_weak_hash_table_test"
+	$(Q) $(BINDIR)/$(CONFIG)/slice_weak_hash_table_test || ( echo test slice_weak_hash_table_test failed ; exit 1 )
+	$(E) "[RUN]     Testing stats_test"
+	$(Q) $(BINDIR)/$(CONFIG)/stats_test || ( echo test stats_test failed ; exit 1 )
+	$(E) "[RUN]     Testing status_metadata_test"
+	$(Q) $(BINDIR)/$(CONFIG)/status_metadata_test || ( echo test status_metadata_test failed ; exit 1 )
+	$(E) "[RUN]     Testing status_util_test"
+	$(Q) $(BINDIR)/$(CONFIG)/status_util_test || ( echo test status_util_test failed ; exit 1 )
 	$(E) "[RUN]     Testing streaming_throughput_test"
 	$(Q) $(BINDIR)/$(CONFIG)/streaming_throughput_test || ( echo test streaming_throughput_test failed ; exit 1 )
 	$(E) "[RUN]     Testing thread_manager_test"
 	$(Q) $(BINDIR)/$(CONFIG)/thread_manager_test || ( echo test thread_manager_test failed ; exit 1 )
 	$(E) "[RUN]     Testing thread_stress_test"
 	$(Q) $(BINDIR)/$(CONFIG)/thread_stress_test || ( echo test thread_stress_test failed ; exit 1 )
+	$(E) "[RUN]     Testing transport_pid_controller_test"
+	$(Q) $(BINDIR)/$(CONFIG)/transport_pid_controller_test || ( echo test transport_pid_controller_test failed ; exit 1 )
+	$(E) "[RUN]     Testing transport_security_common_api_test"
+	$(Q) $(BINDIR)/$(CONFIG)/transport_security_common_api_test || ( echo test transport_security_common_api_test failed ; exit 1 )
 	$(E) "[RUN]     Testing writes_per_rpc_test"
 	$(Q) $(BINDIR)/$(CONFIG)/writes_per_rpc_test || ( echo test writes_per_rpc_test failed ; exit 1 )
+	$(E) "[RUN]     Testing resolver_component_tests_runner_invoker_unsecure"
+	$(Q) $(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker_unsecure || ( echo test resolver_component_tests_runner_invoker_unsecure failed ; exit 1 )
+	$(E) "[RUN]     Testing resolver_component_tests_runner_invoker"
+	$(Q) $(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker || ( echo test resolver_component_tests_runner_invoker failed ; exit 1 )
 
 
 flaky_test_cxx: buildtests_cxx
@@ -2139,7 +2347,7 @@ test_python: static_c
 tools: tools_c tools_cxx
 
 
-tools_c: privatelibs_c $(BINDIR)/$(CONFIG)/check_epollexclusive $(BINDIR)/$(CONFIG)/gen_hpack_tables $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters $(BINDIR)/$(CONFIG)/gen_percent_encoding_tables $(BINDIR)/$(CONFIG)/grpc_create_jwt $(BINDIR)/$(CONFIG)/grpc_print_google_default_creds_token $(BINDIR)/$(CONFIG)/grpc_verify_jwt
+tools_c: privatelibs_c $(BINDIR)/$(CONFIG)/check_epollexclusive $(BINDIR)/$(CONFIG)/grpc_create_jwt $(BINDIR)/$(CONFIG)/grpc_print_google_default_creds_token $(BINDIR)/$(CONFIG)/grpc_verify_jwt $(BINDIR)/$(CONFIG)/gen_hpack_tables $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters $(BINDIR)/$(CONFIG)/gen_percent_encoding_tables
 
 tools_cxx: privatelibs_cxx
 
@@ -2239,6 +2447,22 @@ $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc:
 	$(E) "[MAKE]    Generating $@"
 	$(Q) mkdir -p $(@D)
 	$(Q) echo "$(GRPCXX_UNSECURE_PC_FILE)" | tr , '\n' >$@
+
+ifeq ($(NO_PROTOC),true)
+$(GENDIR)/src/proto/grpc/core/stats.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/core/stats.grpc.pb.cc: protoc_dep_error
+else
+
+$(GENDIR)/src/proto/grpc/core/stats.pb.cc: src/proto/grpc/core/stats.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/src/proto/grpc/core/stats.grpc.pb.cc: src/proto/grpc/core/stats.proto $(GENDIR)/src/proto/grpc/core/stats.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
+endif
 
 ifeq ($(NO_PROTOC),true)
 $(GENDIR)/src/proto/grpc/health/v1/health.pb.cc: protoc_dep_error
@@ -2455,12 +2679,12 @@ $(GENDIR)/src/proto/grpc/testing/services.pb.cc: protoc_dep_error
 $(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc: protoc_dep_error
 else
 
-$(GENDIR)/src/proto/grpc/testing/services.pb.cc: src/proto/grpc/testing/services.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc
+$(GENDIR)/src/proto/grpc/testing/services.pb.cc: src/proto/grpc/testing/services.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc: src/proto/grpc/testing/services.proto $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc
+$(GENDIR)/src/proto/grpc/testing/services.grpc.pb.cc: src/proto/grpc/testing/services.proto $(GENDIR)/src/proto/grpc/testing/services.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/control.pb.cc $(GENDIR)/src/proto/grpc/testing/control.grpc.pb.cc
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
@@ -2471,12 +2695,12 @@ $(GENDIR)/src/proto/grpc/testing/stats.pb.cc: protoc_dep_error
 $(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc: protoc_dep_error
 else
 
-$(GENDIR)/src/proto/grpc/testing/stats.pb.cc: src/proto/grpc/testing/stats.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+$(GENDIR)/src/proto/grpc/testing/stats.pb.cc: src/proto/grpc/testing/stats.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/core/stats.pb.cc
 	$(E) "[PROTOC]  Generating protobuf CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
 
-$(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc: src/proto/grpc/testing/stats.proto $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+$(GENDIR)/src/proto/grpc/testing/stats.grpc.pb.cc: src/proto/grpc/testing/stats.proto $(GENDIR)/src/proto/grpc/testing/stats.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/core/stats.pb.cc $(GENDIR)/src/proto/grpc/core/stats.grpc.pb.cc
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
@@ -2525,6 +2749,16 @@ $(OBJDIR)/$(CONFIG)/src/compiler/%.o : src/compiler/%.cc
 	$(E) "[HOSTCXX] Compiling $<"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(HOST_CXX) $(HOST_CXXFLAGS) $(HOST_CPPFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
+
+$(OBJDIR)/$(CONFIG)/src/core/%.o : src/core/%.cc
+	$(E) "[CXX]     Compiling $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(CXX) $(CPPFLAGS) $(CXXFLAGS) $(COREFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
+
+$(OBJDIR)/$(CONFIG)/test/core/%.o : test/core/%.cc
+	$(E) "[CXX]     Compiling $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(CXX) $(CPPFLAGS) $(CXXFLAGS) $(COREFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
 $(OBJDIR)/$(CONFIG)/%.o : %.cc
 	$(E) "[CXX]     Compiling $<"
@@ -2595,7 +2829,7 @@ install-shared_c: shared_c strip-shared_c install-pkg-config_c
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libgpr.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgpr.so.4
+	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgpr.so.6
 	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgpr.so
 endif
 	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
@@ -2604,7 +2838,7 @@ endif
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libgrpc.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc.so.4
+	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc.so.6
 	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc.so
 endif
 	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
@@ -2613,7 +2847,7 @@ endif
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libgrpc_cronet.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc_cronet.so.4
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc_cronet.so.6
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc_cronet.so
 endif
 	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)"
@@ -2622,7 +2856,7 @@ endif
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE)-dll.a $(prefix)/lib/libgrpc_unsecure.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc_unsecure.so.4
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc_unsecure.so.6
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(prefix)/lib/libgrpc_unsecure.so
 endif
 ifneq ($(SYSTEM),MINGW32)
@@ -2639,7 +2873,7 @@ install-shared_cxx: shared_cxx strip-shared_cxx install-shared_c install-pkg-con
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++$(SHARED_VERSION_CPP)-dll.a $(prefix)/lib/libgrpc++.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++.so.4
+	$(Q) ln -sf $(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++.so.6
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++.so
 endif
 	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
@@ -2648,7 +2882,7 @@ endif
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_cronet$(SHARED_VERSION_CPP)-dll.a $(prefix)/lib/libgrpc++_cronet.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_cronet.so.4
+	$(Q) ln -sf $(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_cronet.so.6
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_cronet.so
 endif
 	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
@@ -2657,7 +2891,7 @@ endif
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_error_details$(SHARED_VERSION_CPP)-dll.a $(prefix)/lib/libgrpc++_error_details.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_error_details.so.4
+	$(Q) ln -sf $(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_error_details.so.6
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_error_details.so
 endif
 	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
@@ -2666,7 +2900,7 @@ endif
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_reflection$(SHARED_VERSION_CPP)-dll.a $(prefix)/lib/libgrpc++_reflection.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_reflection.so.4
+	$(Q) ln -sf $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_reflection.so.6
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_reflection.so
 endif
 	$(E) "[INSTALL] Installing $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)"
@@ -2675,7 +2909,7 @@ endif
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure$(SHARED_VERSION_CPP)-dll.a $(prefix)/lib/libgrpc++_unsecure.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_unsecure.so.4
+	$(Q) ln -sf $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_unsecure.so.6
 	$(Q) ln -sf $(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(prefix)/lib/libgrpc++_unsecure.so
 endif
 ifneq ($(SYSTEM),MINGW32)
@@ -2692,7 +2926,7 @@ install-shared_csharp: shared_csharp strip-shared_csharp
 ifeq ($(SYSTEM),MINGW32)
 	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CSHARP)-dll.a $(prefix)/lib/libgrpc_csharp_ext.a
 else ifneq ($(SYSTEM),Darwin)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP) $(prefix)/lib/libgrpc_csharp_ext.so.4
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP) $(prefix)/lib/libgrpc_csharp_ext.so.6
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP) $(prefix)/lib/libgrpc_csharp_ext.so
 endif
 ifneq ($(SYSTEM),MINGW32)
@@ -2719,17 +2953,22 @@ install-plugins: $(PROTOC_PLUGINS)
 	$(Q) $(INSTALL) -d $(prefix)/bin
 	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_ruby_plugin $(prefix)/bin/grpc_ruby_plugin
 
+install-grpc-cli: grpc_cli
+	$(E) "[INSTALL] Installing grpc cli"
+	$(Q) $(INSTALL) -d $(prefix)/bin
+	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_cli $(prefix)/bin/grpc_cli
+
 install-pkg-config_c: pc_c pc_c_unsecure
 	$(E) "[INSTALL] Installing C pkg-config files"
 	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(prefix)/lib/pkgconfig/grpc.pc
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(prefix)/lib/pkgconfig/grpc_unsecure.pc
+	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(prefix)/lib/pkgconfig/grpc.pc
+	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(prefix)/lib/pkgconfig/grpc_unsecure.pc
 
 install-pkg-config_cxx: pc_cxx pc_cxx_unsecure
 	$(E) "[INSTALL] Installing C++ pkg-config files"
 	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc $(prefix)/lib/pkgconfig/grpc++.pc
-	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc $(prefix)/lib/pkgconfig/grpc++_unsecure.pc
+	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc $(prefix)/lib/pkgconfig/grpc++.pc
+	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc $(prefix)/lib/pkgconfig/grpc++_unsecure.pc
 
 install-certs: etc/roots.pem
 	$(E) "[INSTALL] Installing root certificates"
@@ -2744,53 +2983,86 @@ clean:
 # The various libraries
 
 
+LIBALTS_TEST_UTIL_SRC = \
+    test/core/tsi/alts/crypt/gsec_test_util.cc \
+    test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc \
+
+PUBLIC_HEADERS_C += \
+
+LIBALTS_TEST_UTIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBALTS_TEST_UTIL_SRC))))
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure libraries if you don't have OpenSSL.
+
+$(LIBDIR)/$(CONFIG)/libalts_test_util.a: openssl_dep_error
+
+
+else
+
+
+$(LIBDIR)/$(CONFIG)/libalts_test_util.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(LIBALTS_TEST_UTIL_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libalts_test_util.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBALTS_TEST_UTIL_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libalts_test_util.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(LIBALTS_TEST_UTIL_OBJS:.o=.dep)
+endif
+endif
+
+
 LIBGPR_SRC = \
-    src/core/lib/profiling/basic_timers.c \
-    src/core/lib/profiling/stap_timers.c \
-    src/core/lib/support/alloc.c \
-    src/core/lib/support/arena.c \
-    src/core/lib/support/atm.c \
-    src/core/lib/support/avl.c \
-    src/core/lib/support/backoff.c \
-    src/core/lib/support/cmdline.c \
-    src/core/lib/support/cpu_iphone.c \
-    src/core/lib/support/cpu_linux.c \
-    src/core/lib/support/cpu_posix.c \
-    src/core/lib/support/cpu_windows.c \
-    src/core/lib/support/env_linux.c \
-    src/core/lib/support/env_posix.c \
-    src/core/lib/support/env_windows.c \
-    src/core/lib/support/histogram.c \
-    src/core/lib/support/host_port.c \
-    src/core/lib/support/log.c \
-    src/core/lib/support/log_android.c \
-    src/core/lib/support/log_linux.c \
-    src/core/lib/support/log_posix.c \
-    src/core/lib/support/log_windows.c \
-    src/core/lib/support/mpscq.c \
-    src/core/lib/support/murmur_hash.c \
-    src/core/lib/support/stack_lockfree.c \
-    src/core/lib/support/string.c \
-    src/core/lib/support/string_posix.c \
-    src/core/lib/support/string_util_windows.c \
-    src/core/lib/support/string_windows.c \
-    src/core/lib/support/subprocess_posix.c \
-    src/core/lib/support/subprocess_windows.c \
-    src/core/lib/support/sync.c \
-    src/core/lib/support/sync_posix.c \
-    src/core/lib/support/sync_windows.c \
-    src/core/lib/support/thd.c \
-    src/core/lib/support/thd_posix.c \
-    src/core/lib/support/thd_windows.c \
-    src/core/lib/support/time.c \
-    src/core/lib/support/time_posix.c \
-    src/core/lib/support/time_precise.c \
-    src/core/lib/support/time_windows.c \
-    src/core/lib/support/tls_pthread.c \
-    src/core/lib/support/tmpfile_msys.c \
-    src/core/lib/support/tmpfile_posix.c \
-    src/core/lib/support/tmpfile_windows.c \
-    src/core/lib/support/wrap_memcpy.c \
+    src/core/lib/gpr/alloc.cc \
+    src/core/lib/gpr/arena.cc \
+    src/core/lib/gpr/atm.cc \
+    src/core/lib/gpr/cpu_iphone.cc \
+    src/core/lib/gpr/cpu_linux.cc \
+    src/core/lib/gpr/cpu_posix.cc \
+    src/core/lib/gpr/cpu_windows.cc \
+    src/core/lib/gpr/env_linux.cc \
+    src/core/lib/gpr/env_posix.cc \
+    src/core/lib/gpr/env_windows.cc \
+    src/core/lib/gpr/fork.cc \
+    src/core/lib/gpr/host_port.cc \
+    src/core/lib/gpr/log.cc \
+    src/core/lib/gpr/log_android.cc \
+    src/core/lib/gpr/log_linux.cc \
+    src/core/lib/gpr/log_posix.cc \
+    src/core/lib/gpr/log_windows.cc \
+    src/core/lib/gpr/mpscq.cc \
+    src/core/lib/gpr/murmur_hash.cc \
+    src/core/lib/gpr/string.cc \
+    src/core/lib/gpr/string_posix.cc \
+    src/core/lib/gpr/string_util_windows.cc \
+    src/core/lib/gpr/string_windows.cc \
+    src/core/lib/gpr/sync.cc \
+    src/core/lib/gpr/sync_posix.cc \
+    src/core/lib/gpr/sync_windows.cc \
+    src/core/lib/gpr/time.cc \
+    src/core/lib/gpr/time_posix.cc \
+    src/core/lib/gpr/time_precise.cc \
+    src/core/lib/gpr/time_windows.cc \
+    src/core/lib/gpr/tls_pthread.cc \
+    src/core/lib/gpr/tmpfile_msys.cc \
+    src/core/lib/gpr/tmpfile_posix.cc \
+    src/core/lib/gpr/tmpfile_windows.cc \
+    src/core/lib/gpr/wrap_memcpy.cc \
+    src/core/lib/gprpp/thd_posix.cc \
+    src/core/lib/gprpp/thd_windows.cc \
+    src/core/lib/profiling/basic_timers.cc \
+    src/core/lib/profiling/stap_timers.cc \
 
 PUBLIC_HEADERS_C += \
     include/grpc/support/alloc.h \
@@ -2798,32 +3070,23 @@ PUBLIC_HEADERS_C += \
     include/grpc/support/atm_gcc_atomic.h \
     include/grpc/support/atm_gcc_sync.h \
     include/grpc/support/atm_windows.h \
-    include/grpc/support/avl.h \
-    include/grpc/support/cmdline.h \
     include/grpc/support/cpu.h \
-    include/grpc/support/histogram.h \
-    include/grpc/support/host_port.h \
     include/grpc/support/log.h \
     include/grpc/support/log_windows.h \
     include/grpc/support/port_platform.h \
     include/grpc/support/string_util.h \
-    include/grpc/support/subprocess.h \
     include/grpc/support/sync.h \
     include/grpc/support/sync_custom.h \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
     include/grpc/support/sync_windows.h \
-    include/grpc/support/thd.h \
+    include/grpc/support/thd_id.h \
     include/grpc/support/time.h \
-    include/grpc/support/tls.h \
-    include/grpc/support/tls_gcc.h \
-    include/grpc/support/tls_msvc.h \
-    include/grpc/support/tls_pthread.h \
-    include/grpc/support/useful.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
     include/grpc/impl/codegen/atm_windows.h \
+    include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
@@ -2859,8 +3122,8 @@ $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGPR_OB
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgpr.so.4 -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).so.4
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgpr.so.6 -o $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGPR_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).so.6
 	$(Q) ln -sf $(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgpr$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -2871,7 +3134,7 @@ endif
 
 
 LIBGPR_TEST_UTIL_SRC = \
-    test/core/util/test_config.c \
+    test/core/util/test_config.cc \
 
 PUBLIC_HEADERS_C += \
 
@@ -2896,271 +3159,313 @@ endif
 
 
 LIBGRPC_SRC = \
-    src/core/lib/surface/init.c \
-    src/core/lib/channel/channel_args.c \
-    src/core/lib/channel/channel_stack.c \
-    src/core/lib/channel/channel_stack_builder.c \
-    src/core/lib/channel/connected_channel.c \
-    src/core/lib/channel/handshaker.c \
-    src/core/lib/channel/handshaker_factory.c \
-    src/core/lib/channel/handshaker_registry.c \
-    src/core/lib/compression/compression.c \
-    src/core/lib/compression/message_compress.c \
-    src/core/lib/compression/stream_compression.c \
-    src/core/lib/http/format_request.c \
-    src/core/lib/http/httpcli.c \
-    src/core/lib/http/parser.c \
-    src/core/lib/iomgr/closure.c \
-    src/core/lib/iomgr/combiner.c \
-    src/core/lib/iomgr/endpoint.c \
-    src/core/lib/iomgr/endpoint_pair_posix.c \
-    src/core/lib/iomgr/endpoint_pair_uv.c \
-    src/core/lib/iomgr/endpoint_pair_windows.c \
-    src/core/lib/iomgr/error.c \
-    src/core/lib/iomgr/ev_epoll1_linux.c \
-    src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c \
-    src/core/lib/iomgr/ev_epoll_thread_pool_linux.c \
-    src/core/lib/iomgr/ev_epollex_linux.c \
-    src/core/lib/iomgr/ev_epollsig_linux.c \
-    src/core/lib/iomgr/ev_poll_posix.c \
-    src/core/lib/iomgr/ev_posix.c \
-    src/core/lib/iomgr/ev_windows.c \
-    src/core/lib/iomgr/exec_ctx.c \
-    src/core/lib/iomgr/executor.c \
-    src/core/lib/iomgr/gethostname_fallback.c \
-    src/core/lib/iomgr/gethostname_host_name_max.c \
-    src/core/lib/iomgr/gethostname_sysconf.c \
-    src/core/lib/iomgr/iocp_windows.c \
-    src/core/lib/iomgr/iomgr.c \
-    src/core/lib/iomgr/iomgr_posix.c \
-    src/core/lib/iomgr/iomgr_uv.c \
-    src/core/lib/iomgr/iomgr_windows.c \
-    src/core/lib/iomgr/is_epollexclusive_available.c \
-    src/core/lib/iomgr/load_file.c \
-    src/core/lib/iomgr/lockfree_event.c \
-    src/core/lib/iomgr/network_status_tracker.c \
-    src/core/lib/iomgr/polling_entity.c \
-    src/core/lib/iomgr/pollset_set_uv.c \
-    src/core/lib/iomgr/pollset_set_windows.c \
-    src/core/lib/iomgr/pollset_uv.c \
-    src/core/lib/iomgr/pollset_windows.c \
-    src/core/lib/iomgr/resolve_address_posix.c \
-    src/core/lib/iomgr/resolve_address_uv.c \
-    src/core/lib/iomgr/resolve_address_windows.c \
-    src/core/lib/iomgr/resource_quota.c \
-    src/core/lib/iomgr/sockaddr_utils.c \
-    src/core/lib/iomgr/socket_factory_posix.c \
-    src/core/lib/iomgr/socket_mutator.c \
-    src/core/lib/iomgr/socket_utils_common_posix.c \
-    src/core/lib/iomgr/socket_utils_linux.c \
-    src/core/lib/iomgr/socket_utils_posix.c \
-    src/core/lib/iomgr/socket_utils_uv.c \
-    src/core/lib/iomgr/socket_utils_windows.c \
-    src/core/lib/iomgr/socket_windows.c \
-    src/core/lib/iomgr/tcp_client_posix.c \
-    src/core/lib/iomgr/tcp_client_uv.c \
-    src/core/lib/iomgr/tcp_client_windows.c \
-    src/core/lib/iomgr/tcp_posix.c \
-    src/core/lib/iomgr/tcp_server_posix.c \
-    src/core/lib/iomgr/tcp_server_utils_posix_common.c \
-    src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c \
-    src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c \
-    src/core/lib/iomgr/tcp_server_uv.c \
-    src/core/lib/iomgr/tcp_server_windows.c \
-    src/core/lib/iomgr/tcp_uv.c \
-    src/core/lib/iomgr/tcp_windows.c \
-    src/core/lib/iomgr/time_averaged_stats.c \
-    src/core/lib/iomgr/timer_generic.c \
-    src/core/lib/iomgr/timer_heap.c \
-    src/core/lib/iomgr/timer_manager.c \
-    src/core/lib/iomgr/timer_uv.c \
-    src/core/lib/iomgr/udp_server.c \
-    src/core/lib/iomgr/unix_sockets_posix.c \
-    src/core/lib/iomgr/unix_sockets_posix_noop.c \
-    src/core/lib/iomgr/wakeup_fd_cv.c \
-    src/core/lib/iomgr/wakeup_fd_eventfd.c \
-    src/core/lib/iomgr/wakeup_fd_nospecial.c \
-    src/core/lib/iomgr/wakeup_fd_pipe.c \
-    src/core/lib/iomgr/wakeup_fd_posix.c \
-    src/core/lib/json/json.c \
-    src/core/lib/json/json_reader.c \
-    src/core/lib/json/json_string.c \
-    src/core/lib/json/json_writer.c \
-    src/core/lib/slice/b64.c \
-    src/core/lib/slice/percent_encoding.c \
-    src/core/lib/slice/slice.c \
-    src/core/lib/slice/slice_buffer.c \
-    src/core/lib/slice/slice_hash_table.c \
-    src/core/lib/slice/slice_intern.c \
-    src/core/lib/slice/slice_string_helpers.c \
-    src/core/lib/surface/alarm.c \
-    src/core/lib/surface/api_trace.c \
-    src/core/lib/surface/byte_buffer.c \
-    src/core/lib/surface/byte_buffer_reader.c \
-    src/core/lib/surface/call.c \
-    src/core/lib/surface/call_details.c \
-    src/core/lib/surface/call_log_batch.c \
-    src/core/lib/surface/channel.c \
-    src/core/lib/surface/channel_init.c \
-    src/core/lib/surface/channel_ping.c \
-    src/core/lib/surface/channel_stack_type.c \
-    src/core/lib/surface/completion_queue.c \
-    src/core/lib/surface/completion_queue_factory.c \
-    src/core/lib/surface/event_string.c \
+    src/core/lib/surface/init.cc \
+    src/core/lib/avl/avl.cc \
+    src/core/lib/backoff/backoff.cc \
+    src/core/lib/channel/channel_args.cc \
+    src/core/lib/channel/channel_stack.cc \
+    src/core/lib/channel/channel_stack_builder.cc \
+    src/core/lib/channel/connected_channel.cc \
+    src/core/lib/channel/handshaker.cc \
+    src/core/lib/channel/handshaker_factory.cc \
+    src/core/lib/channel/handshaker_registry.cc \
+    src/core/lib/compression/compression.cc \
+    src/core/lib/compression/compression_internal.cc \
+    src/core/lib/compression/message_compress.cc \
+    src/core/lib/compression/stream_compression.cc \
+    src/core/lib/compression/stream_compression_gzip.cc \
+    src/core/lib/compression/stream_compression_identity.cc \
+    src/core/lib/debug/stats.cc \
+    src/core/lib/debug/stats_data.cc \
+    src/core/lib/http/format_request.cc \
+    src/core/lib/http/httpcli.cc \
+    src/core/lib/http/parser.cc \
+    src/core/lib/iomgr/call_combiner.cc \
+    src/core/lib/iomgr/combiner.cc \
+    src/core/lib/iomgr/endpoint.cc \
+    src/core/lib/iomgr/endpoint_pair_posix.cc \
+    src/core/lib/iomgr/endpoint_pair_uv.cc \
+    src/core/lib/iomgr/endpoint_pair_windows.cc \
+    src/core/lib/iomgr/error.cc \
+    src/core/lib/iomgr/ev_epoll1_linux.cc \
+    src/core/lib/iomgr/ev_epollex_linux.cc \
+    src/core/lib/iomgr/ev_epollsig_linux.cc \
+    src/core/lib/iomgr/ev_poll_posix.cc \
+    src/core/lib/iomgr/ev_posix.cc \
+    src/core/lib/iomgr/ev_windows.cc \
+    src/core/lib/iomgr/exec_ctx.cc \
+    src/core/lib/iomgr/executor.cc \
+    src/core/lib/iomgr/fork_posix.cc \
+    src/core/lib/iomgr/fork_windows.cc \
+    src/core/lib/iomgr/gethostname_fallback.cc \
+    src/core/lib/iomgr/gethostname_host_name_max.cc \
+    src/core/lib/iomgr/gethostname_sysconf.cc \
+    src/core/lib/iomgr/iocp_windows.cc \
+    src/core/lib/iomgr/iomgr.cc \
+    src/core/lib/iomgr/iomgr_custom.cc \
+    src/core/lib/iomgr/iomgr_internal.cc \
+    src/core/lib/iomgr/iomgr_posix.cc \
+    src/core/lib/iomgr/iomgr_uv.cc \
+    src/core/lib/iomgr/iomgr_windows.cc \
+    src/core/lib/iomgr/is_epollexclusive_available.cc \
+    src/core/lib/iomgr/load_file.cc \
+    src/core/lib/iomgr/lockfree_event.cc \
+    src/core/lib/iomgr/network_status_tracker.cc \
+    src/core/lib/iomgr/polling_entity.cc \
+    src/core/lib/iomgr/pollset.cc \
+    src/core/lib/iomgr/pollset_custom.cc \
+    src/core/lib/iomgr/pollset_set.cc \
+    src/core/lib/iomgr/pollset_set_custom.cc \
+    src/core/lib/iomgr/pollset_set_windows.cc \
+    src/core/lib/iomgr/pollset_uv.cc \
+    src/core/lib/iomgr/pollset_windows.cc \
+    src/core/lib/iomgr/resolve_address.cc \
+    src/core/lib/iomgr/resolve_address_custom.cc \
+    src/core/lib/iomgr/resolve_address_posix.cc \
+    src/core/lib/iomgr/resolve_address_windows.cc \
+    src/core/lib/iomgr/resource_quota.cc \
+    src/core/lib/iomgr/sockaddr_utils.cc \
+    src/core/lib/iomgr/socket_factory_posix.cc \
+    src/core/lib/iomgr/socket_mutator.cc \
+    src/core/lib/iomgr/socket_utils_common_posix.cc \
+    src/core/lib/iomgr/socket_utils_linux.cc \
+    src/core/lib/iomgr/socket_utils_posix.cc \
+    src/core/lib/iomgr/socket_utils_uv.cc \
+    src/core/lib/iomgr/socket_utils_windows.cc \
+    src/core/lib/iomgr/socket_windows.cc \
+    src/core/lib/iomgr/tcp_client.cc \
+    src/core/lib/iomgr/tcp_client_custom.cc \
+    src/core/lib/iomgr/tcp_client_posix.cc \
+    src/core/lib/iomgr/tcp_client_windows.cc \
+    src/core/lib/iomgr/tcp_custom.cc \
+    src/core/lib/iomgr/tcp_posix.cc \
+    src/core/lib/iomgr/tcp_server.cc \
+    src/core/lib/iomgr/tcp_server_custom.cc \
+    src/core/lib/iomgr/tcp_server_posix.cc \
+    src/core/lib/iomgr/tcp_server_utils_posix_common.cc \
+    src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc \
+    src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc \
+    src/core/lib/iomgr/tcp_server_windows.cc \
+    src/core/lib/iomgr/tcp_uv.cc \
+    src/core/lib/iomgr/tcp_windows.cc \
+    src/core/lib/iomgr/time_averaged_stats.cc \
+    src/core/lib/iomgr/timer.cc \
+    src/core/lib/iomgr/timer_custom.cc \
+    src/core/lib/iomgr/timer_generic.cc \
+    src/core/lib/iomgr/timer_heap.cc \
+    src/core/lib/iomgr/timer_manager.cc \
+    src/core/lib/iomgr/timer_uv.cc \
+    src/core/lib/iomgr/udp_server.cc \
+    src/core/lib/iomgr/unix_sockets_posix.cc \
+    src/core/lib/iomgr/unix_sockets_posix_noop.cc \
+    src/core/lib/iomgr/wakeup_fd_cv.cc \
+    src/core/lib/iomgr/wakeup_fd_eventfd.cc \
+    src/core/lib/iomgr/wakeup_fd_nospecial.cc \
+    src/core/lib/iomgr/wakeup_fd_pipe.cc \
+    src/core/lib/iomgr/wakeup_fd_posix.cc \
+    src/core/lib/json/json.cc \
+    src/core/lib/json/json_reader.cc \
+    src/core/lib/json/json_string.cc \
+    src/core/lib/json/json_writer.cc \
+    src/core/lib/slice/b64.cc \
+    src/core/lib/slice/percent_encoding.cc \
+    src/core/lib/slice/slice.cc \
+    src/core/lib/slice/slice_buffer.cc \
+    src/core/lib/slice/slice_intern.cc \
+    src/core/lib/slice/slice_string_helpers.cc \
+    src/core/lib/surface/api_trace.cc \
+    src/core/lib/surface/byte_buffer.cc \
+    src/core/lib/surface/byte_buffer_reader.cc \
+    src/core/lib/surface/call.cc \
+    src/core/lib/surface/call_details.cc \
+    src/core/lib/surface/call_log_batch.cc \
+    src/core/lib/surface/channel.cc \
+    src/core/lib/surface/channel_init.cc \
+    src/core/lib/surface/channel_ping.cc \
+    src/core/lib/surface/channel_stack_type.cc \
+    src/core/lib/surface/completion_queue.cc \
+    src/core/lib/surface/completion_queue_factory.cc \
+    src/core/lib/surface/event_string.cc \
     src/core/lib/surface/lame_client.cc \
-    src/core/lib/surface/metadata_array.c \
-    src/core/lib/surface/server.c \
-    src/core/lib/surface/validate_metadata.c \
-    src/core/lib/surface/version.c \
-    src/core/lib/transport/bdp_estimator.c \
-    src/core/lib/transport/byte_stream.c \
-    src/core/lib/transport/connectivity_state.c \
-    src/core/lib/transport/error_utils.c \
-    src/core/lib/transport/metadata.c \
-    src/core/lib/transport/metadata_batch.c \
-    src/core/lib/transport/pid_controller.c \
-    src/core/lib/transport/service_config.c \
-    src/core/lib/transport/static_metadata.c \
-    src/core/lib/transport/status_conversion.c \
-    src/core/lib/transport/timeout_encoding.c \
-    src/core/lib/transport/transport.c \
-    src/core/lib/transport/transport_op_string.c \
-    src/core/lib/debug/trace.c \
-    src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c \
-    src/core/ext/transport/chttp2/transport/bin_decoder.c \
-    src/core/ext/transport/chttp2/transport/bin_encoder.c \
-    src/core/ext/transport/chttp2/transport/chttp2_plugin.c \
-    src/core/ext/transport/chttp2/transport/chttp2_transport.c \
-    src/core/ext/transport/chttp2/transport/flow_control.c \
-    src/core/ext/transport/chttp2/transport/frame_data.c \
-    src/core/ext/transport/chttp2/transport/frame_goaway.c \
-    src/core/ext/transport/chttp2/transport/frame_ping.c \
-    src/core/ext/transport/chttp2/transport/frame_rst_stream.c \
-    src/core/ext/transport/chttp2/transport/frame_settings.c \
-    src/core/ext/transport/chttp2/transport/frame_window_update.c \
-    src/core/ext/transport/chttp2/transport/hpack_encoder.c \
-    src/core/ext/transport/chttp2/transport/hpack_parser.c \
-    src/core/ext/transport/chttp2/transport/hpack_table.c \
-    src/core/ext/transport/chttp2/transport/http2_settings.c \
-    src/core/ext/transport/chttp2/transport/huffsyms.c \
-    src/core/ext/transport/chttp2/transport/incoming_metadata.c \
-    src/core/ext/transport/chttp2/transport/parsing.c \
-    src/core/ext/transport/chttp2/transport/stream_lists.c \
-    src/core/ext/transport/chttp2/transport/stream_map.c \
-    src/core/ext/transport/chttp2/transport/varint.c \
-    src/core/ext/transport/chttp2/transport/writing.c \
-    src/core/ext/transport/chttp2/alpn/alpn.c \
-    src/core/ext/filters/http/client/http_client_filter.c \
-    src/core/ext/filters/http/http_filters_plugin.c \
-    src/core/ext/filters/http/message_compress/message_compress_filter.c \
-    src/core/ext/filters/http/server/http_server_filter.c \
-    src/core/lib/http/httpcli_security_connector.c \
-    src/core/lib/security/context/security_context.c \
-    src/core/lib/security/credentials/composite/composite_credentials.c \
-    src/core/lib/security/credentials/credentials.c \
-    src/core/lib/security/credentials/credentials_metadata.c \
-    src/core/lib/security/credentials/fake/fake_credentials.c \
-    src/core/lib/security/credentials/google_default/credentials_generic.c \
-    src/core/lib/security/credentials/google_default/google_default_credentials.c \
-    src/core/lib/security/credentials/iam/iam_credentials.c \
-    src/core/lib/security/credentials/jwt/json_token.c \
-    src/core/lib/security/credentials/jwt/jwt_credentials.c \
-    src/core/lib/security/credentials/jwt/jwt_verifier.c \
-    src/core/lib/security/credentials/oauth2/oauth2_credentials.c \
-    src/core/lib/security/credentials/plugin/plugin_credentials.c \
-    src/core/lib/security/credentials/ssl/ssl_credentials.c \
-    src/core/lib/security/transport/client_auth_filter.c \
-    src/core/lib/security/transport/lb_targets_info.c \
-    src/core/lib/security/transport/secure_endpoint.c \
-    src/core/lib/security/transport/security_connector.c \
-    src/core/lib/security/transport/security_handshaker.c \
-    src/core/lib/security/transport/server_auth_filter.c \
-    src/core/lib/security/transport/tsi_error.c \
-    src/core/lib/security/util/json_util.c \
-    src/core/lib/surface/init_secure.c \
-    src/core/tsi/fake_transport_security.c \
-    src/core/tsi/gts_transport_security.c \
-    src/core/tsi/ssl_transport_security.c \
-    src/core/tsi/transport_security_grpc.c \
-    src/core/tsi/transport_security.c \
-    src/core/tsi/transport_security_adapter.c \
-    src/core/ext/transport/chttp2/server/chttp2_server.c \
-    src/core/ext/transport/chttp2/client/secure/secure_channel_create.c \
-    src/core/ext/filters/client_channel/channel_connectivity.c \
-    src/core/ext/filters/client_channel/client_channel.c \
-    src/core/ext/filters/client_channel/client_channel_factory.c \
-    src/core/ext/filters/client_channel/client_channel_plugin.c \
-    src/core/ext/filters/client_channel/connector.c \
-    src/core/ext/filters/client_channel/http_connect_handshaker.c \
-    src/core/ext/filters/client_channel/http_proxy.c \
-    src/core/ext/filters/client_channel/lb_policy.c \
-    src/core/ext/filters/client_channel/lb_policy_factory.c \
-    src/core/ext/filters/client_channel/lb_policy_registry.c \
-    src/core/ext/filters/client_channel/parse_address.c \
-    src/core/ext/filters/client_channel/proxy_mapper.c \
-    src/core/ext/filters/client_channel/proxy_mapper_registry.c \
-    src/core/ext/filters/client_channel/resolver.c \
-    src/core/ext/filters/client_channel/resolver_factory.c \
-    src/core/ext/filters/client_channel/resolver_registry.c \
-    src/core/ext/filters/client_channel/retry_throttle.c \
-    src/core/ext/filters/client_channel/subchannel.c \
-    src/core/ext/filters/client_channel/subchannel_index.c \
-    src/core/ext/filters/client_channel/uri_parser.c \
-    src/core/ext/filters/deadline/deadline_filter.c \
-    src/core/ext/transport/chttp2/client/chttp2_connector.c \
-    src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
-    src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c \
-    src/core/ext/transport/chttp2/client/insecure/channel_create.c \
-    src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c \
-    src/core/ext/transport/inproc/inproc_plugin.c \
-    src/core/ext/transport/inproc/inproc_transport.c \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.c \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
+    src/core/lib/surface/metadata_array.cc \
+    src/core/lib/surface/server.cc \
+    src/core/lib/surface/validate_metadata.cc \
+    src/core/lib/surface/version.cc \
+    src/core/lib/transport/bdp_estimator.cc \
+    src/core/lib/transport/byte_stream.cc \
+    src/core/lib/transport/connectivity_state.cc \
+    src/core/lib/transport/error_utils.cc \
+    src/core/lib/transport/metadata.cc \
+    src/core/lib/transport/metadata_batch.cc \
+    src/core/lib/transport/pid_controller.cc \
+    src/core/lib/transport/service_config.cc \
+    src/core/lib/transport/static_metadata.cc \
+    src/core/lib/transport/status_conversion.cc \
+    src/core/lib/transport/status_metadata.cc \
+    src/core/lib/transport/timeout_encoding.cc \
+    src/core/lib/transport/transport.cc \
+    src/core/lib/transport/transport_op_string.cc \
+    src/core/lib/debug/trace.cc \
+    src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc \
+    src/core/ext/transport/chttp2/transport/bin_decoder.cc \
+    src/core/ext/transport/chttp2/transport/bin_encoder.cc \
+    src/core/ext/transport/chttp2/transport/chttp2_plugin.cc \
+    src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
+    src/core/ext/transport/chttp2/transport/flow_control.cc \
+    src/core/ext/transport/chttp2/transport/frame_data.cc \
+    src/core/ext/transport/chttp2/transport/frame_goaway.cc \
+    src/core/ext/transport/chttp2/transport/frame_ping.cc \
+    src/core/ext/transport/chttp2/transport/frame_rst_stream.cc \
+    src/core/ext/transport/chttp2/transport/frame_settings.cc \
+    src/core/ext/transport/chttp2/transport/frame_window_update.cc \
+    src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
+    src/core/ext/transport/chttp2/transport/hpack_parser.cc \
+    src/core/ext/transport/chttp2/transport/hpack_table.cc \
+    src/core/ext/transport/chttp2/transport/http2_settings.cc \
+    src/core/ext/transport/chttp2/transport/huffsyms.cc \
+    src/core/ext/transport/chttp2/transport/incoming_metadata.cc \
+    src/core/ext/transport/chttp2/transport/parsing.cc \
+    src/core/ext/transport/chttp2/transport/stream_lists.cc \
+    src/core/ext/transport/chttp2/transport/stream_map.cc \
+    src/core/ext/transport/chttp2/transport/varint.cc \
+    src/core/ext/transport/chttp2/transport/writing.cc \
+    src/core/ext/transport/chttp2/alpn/alpn.cc \
+    src/core/ext/filters/http/client/http_client_filter.cc \
+    src/core/ext/filters/http/http_filters_plugin.cc \
+    src/core/ext/filters/http/message_compress/message_compress_filter.cc \
+    src/core/ext/filters/http/server/http_server_filter.cc \
+    src/core/lib/http/httpcli_security_connector.cc \
+    src/core/lib/security/context/security_context.cc \
+    src/core/lib/security/credentials/alts/alts_credentials.cc \
+    src/core/lib/security/credentials/composite/composite_credentials.cc \
+    src/core/lib/security/credentials/credentials.cc \
+    src/core/lib/security/credentials/credentials_metadata.cc \
+    src/core/lib/security/credentials/fake/fake_credentials.cc \
+    src/core/lib/security/credentials/google_default/credentials_generic.cc \
+    src/core/lib/security/credentials/google_default/google_default_credentials.cc \
+    src/core/lib/security/credentials/iam/iam_credentials.cc \
+    src/core/lib/security/credentials/jwt/json_token.cc \
+    src/core/lib/security/credentials/jwt/jwt_credentials.cc \
+    src/core/lib/security/credentials/jwt/jwt_verifier.cc \
+    src/core/lib/security/credentials/oauth2/oauth2_credentials.cc \
+    src/core/lib/security/credentials/plugin/plugin_credentials.cc \
+    src/core/lib/security/credentials/ssl/ssl_credentials.cc \
+    src/core/lib/security/security_connector/alts_security_connector.cc \
+    src/core/lib/security/security_connector/security_connector.cc \
+    src/core/lib/security/transport/client_auth_filter.cc \
+    src/core/lib/security/transport/secure_endpoint.cc \
+    src/core/lib/security/transport/security_handshaker.cc \
+    src/core/lib/security/transport/server_auth_filter.cc \
+    src/core/lib/security/transport/target_authority_table.cc \
+    src/core/lib/security/transport/tsi_error.cc \
+    src/core/lib/security/util/json_util.cc \
+    src/core/lib/surface/init_secure.cc \
+    src/core/tsi/alts/crypt/aes_gcm.cc \
+    src/core/tsi/alts/crypt/gsec.cc \
+    src/core/tsi/alts/frame_protector/alts_counter.cc \
+    src/core/tsi/alts/frame_protector/alts_crypter.cc \
+    src/core/tsi/alts/frame_protector/alts_frame_protector.cc \
+    src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc \
+    src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc \
+    src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc \
+    src/core/tsi/alts/frame_protector/frame_handler.cc \
+    src/core/tsi/alts/handshaker/alts_handshaker_client.cc \
+    src/core/tsi/alts/handshaker/alts_tsi_event.cc \
+    src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc \
+    src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc \
+    src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc \
+    src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc \
+    src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc \
+    src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc \
+    src/core/lib/security/credentials/alts/check_gcp_environment.cc \
+    src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc \
+    src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc \
+    src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc \
+    src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc \
+    src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc \
+    src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc \
+    src/core/tsi/alts/handshaker/alts_handshaker_service_api.cc \
+    src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.cc \
+    src/core/tsi/alts/handshaker/alts_tsi_utils.cc \
+    src/core/tsi/alts/handshaker/transport_security_common_api.cc \
+    src/core/tsi/alts/handshaker/altscontext.pb.c \
+    src/core/tsi/alts/handshaker/handshaker.pb.c \
+    src/core/tsi/alts/handshaker/transport_security_common.pb.c \
     third_party/nanopb/pb_common.c \
     third_party/nanopb/pb_decode.c \
     third_party/nanopb/pb_encode.c \
-    src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c \
-    src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.c \
-    src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.c \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.c \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.c \
-    src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c \
-    src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c \
-    src/core/ext/filters/load_reporting/load_reporting.c \
-    src/core/ext/filters/load_reporting/load_reporting_filter.c \
-    src/core/ext/census/base_resources.c \
-    src/core/ext/census/context.c \
-    src/core/ext/census/gen/census.pb.c \
-    src/core/ext/census/gen/trace_context.pb.c \
-    src/core/ext/census/grpc_context.c \
-    src/core/ext/census/grpc_filter.c \
-    src/core/ext/census/grpc_plugin.c \
-    src/core/ext/census/initialize.c \
-    src/core/ext/census/intrusive_hash_map.c \
-    src/core/ext/census/mlog.c \
-    src/core/ext/census/operation.c \
-    src/core/ext/census/placeholders.c \
-    src/core/ext/census/resource.c \
-    src/core/ext/census/trace_context.c \
-    src/core/ext/census/tracing.c \
-    src/core/ext/filters/max_age/max_age_filter.c \
-    src/core/ext/filters/message_size/message_size_filter.c \
-    src/core/ext/filters/workarounds/workaround_cronet_compression_filter.c \
-    src/core/ext/filters/workarounds/workaround_utils.c \
-    src/core/plugin_registry/grpc_plugin_registry.c \
+    src/core/tsi/transport_security.cc \
+    src/core/tsi/transport_security_adapter.cc \
+    src/core/ext/transport/chttp2/client/insecure/channel_create.cc \
+    src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc \
+    src/core/ext/transport/chttp2/client/chttp2_connector.cc \
+    src/core/ext/filters/client_channel/backup_poller.cc \
+    src/core/ext/filters/client_channel/channel_connectivity.cc \
+    src/core/ext/filters/client_channel/client_channel.cc \
+    src/core/ext/filters/client_channel/client_channel_factory.cc \
+    src/core/ext/filters/client_channel/client_channel_plugin.cc \
+    src/core/ext/filters/client_channel/connector.cc \
+    src/core/ext/filters/client_channel/http_connect_handshaker.cc \
+    src/core/ext/filters/client_channel/http_proxy.cc \
+    src/core/ext/filters/client_channel/lb_policy.cc \
+    src/core/ext/filters/client_channel/lb_policy_factory.cc \
+    src/core/ext/filters/client_channel/lb_policy_registry.cc \
+    src/core/ext/filters/client_channel/method_params.cc \
+    src/core/ext/filters/client_channel/parse_address.cc \
+    src/core/ext/filters/client_channel/proxy_mapper.cc \
+    src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
+    src/core/ext/filters/client_channel/resolver.cc \
+    src/core/ext/filters/client_channel/resolver_registry.cc \
+    src/core/ext/filters/client_channel/retry_throttle.cc \
+    src/core/ext/filters/client_channel/status_util.cc \
+    src/core/ext/filters/client_channel/subchannel.cc \
+    src/core/ext/filters/client_channel/subchannel_index.cc \
+    src/core/ext/filters/client_channel/uri_parser.cc \
+    src/core/ext/filters/deadline/deadline_filter.cc \
+    src/core/tsi/alts_transport_security.cc \
+    src/core/tsi/fake_transport_security.cc \
+    src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc \
+    src/core/tsi/ssl/session_cache/ssl_session_cache.cc \
+    src/core/tsi/ssl/session_cache/ssl_session_openssl.cc \
+    src/core/tsi/ssl_transport_security.cc \
+    src/core/tsi/transport_security_grpc.cc \
+    src/core/ext/transport/chttp2/server/chttp2_server.cc \
+    src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc \
+    src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc \
+    src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc \
+    src/core/ext/transport/inproc/inproc_plugin.cc \
+    src/core/ext/transport/inproc/inproc_transport.cc \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
+    src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
+    src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
+    src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc \
+    src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc \
+    src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc \
+    src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
+    src/core/ext/filters/load_reporting/server_load_reporting_filter.cc \
+    src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc \
+    src/core/ext/census/grpc_context.cc \
+    src/core/ext/filters/max_age/max_age_filter.cc \
+    src/core/ext/filters/message_size/message_size_filter.cc \
+    src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc \
+    src/core/ext/filters/workarounds/workaround_utils.cc \
+    src/core/plugin_registry/grpc_plugin_registry.cc \
 
 PUBLIC_HEADERS_C += \
+    include/grpc/impl/codegen/byte_buffer.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
-    include/grpc/impl/codegen/exec_ctx_fwd.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/slice.h \
@@ -3169,6 +3474,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
     include/grpc/impl/codegen/atm_windows.h \
+    include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
@@ -3181,6 +3487,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer.h \
     include/grpc/byte_buffer_reader.h \
     include/grpc/compression.h \
+    include/grpc/fork.h \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security_constants.h \
@@ -3228,8 +3535,8 @@ $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.4 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.4
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.6 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.6
 	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -3244,228 +3551,288 @@ endif
 
 
 LIBGRPC_CRONET_SRC = \
-    src/core/lib/surface/init.c \
-    src/core/lib/channel/channel_args.c \
-    src/core/lib/channel/channel_stack.c \
-    src/core/lib/channel/channel_stack_builder.c \
-    src/core/lib/channel/connected_channel.c \
-    src/core/lib/channel/handshaker.c \
-    src/core/lib/channel/handshaker_factory.c \
-    src/core/lib/channel/handshaker_registry.c \
-    src/core/lib/compression/compression.c \
-    src/core/lib/compression/message_compress.c \
-    src/core/lib/compression/stream_compression.c \
-    src/core/lib/http/format_request.c \
-    src/core/lib/http/httpcli.c \
-    src/core/lib/http/parser.c \
-    src/core/lib/iomgr/closure.c \
-    src/core/lib/iomgr/combiner.c \
-    src/core/lib/iomgr/endpoint.c \
-    src/core/lib/iomgr/endpoint_pair_posix.c \
-    src/core/lib/iomgr/endpoint_pair_uv.c \
-    src/core/lib/iomgr/endpoint_pair_windows.c \
-    src/core/lib/iomgr/error.c \
-    src/core/lib/iomgr/ev_epoll1_linux.c \
-    src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c \
-    src/core/lib/iomgr/ev_epoll_thread_pool_linux.c \
-    src/core/lib/iomgr/ev_epollex_linux.c \
-    src/core/lib/iomgr/ev_epollsig_linux.c \
-    src/core/lib/iomgr/ev_poll_posix.c \
-    src/core/lib/iomgr/ev_posix.c \
-    src/core/lib/iomgr/ev_windows.c \
-    src/core/lib/iomgr/exec_ctx.c \
-    src/core/lib/iomgr/executor.c \
-    src/core/lib/iomgr/gethostname_fallback.c \
-    src/core/lib/iomgr/gethostname_host_name_max.c \
-    src/core/lib/iomgr/gethostname_sysconf.c \
-    src/core/lib/iomgr/iocp_windows.c \
-    src/core/lib/iomgr/iomgr.c \
-    src/core/lib/iomgr/iomgr_posix.c \
-    src/core/lib/iomgr/iomgr_uv.c \
-    src/core/lib/iomgr/iomgr_windows.c \
-    src/core/lib/iomgr/is_epollexclusive_available.c \
-    src/core/lib/iomgr/load_file.c \
-    src/core/lib/iomgr/lockfree_event.c \
-    src/core/lib/iomgr/network_status_tracker.c \
-    src/core/lib/iomgr/polling_entity.c \
-    src/core/lib/iomgr/pollset_set_uv.c \
-    src/core/lib/iomgr/pollset_set_windows.c \
-    src/core/lib/iomgr/pollset_uv.c \
-    src/core/lib/iomgr/pollset_windows.c \
-    src/core/lib/iomgr/resolve_address_posix.c \
-    src/core/lib/iomgr/resolve_address_uv.c \
-    src/core/lib/iomgr/resolve_address_windows.c \
-    src/core/lib/iomgr/resource_quota.c \
-    src/core/lib/iomgr/sockaddr_utils.c \
-    src/core/lib/iomgr/socket_factory_posix.c \
-    src/core/lib/iomgr/socket_mutator.c \
-    src/core/lib/iomgr/socket_utils_common_posix.c \
-    src/core/lib/iomgr/socket_utils_linux.c \
-    src/core/lib/iomgr/socket_utils_posix.c \
-    src/core/lib/iomgr/socket_utils_uv.c \
-    src/core/lib/iomgr/socket_utils_windows.c \
-    src/core/lib/iomgr/socket_windows.c \
-    src/core/lib/iomgr/tcp_client_posix.c \
-    src/core/lib/iomgr/tcp_client_uv.c \
-    src/core/lib/iomgr/tcp_client_windows.c \
-    src/core/lib/iomgr/tcp_posix.c \
-    src/core/lib/iomgr/tcp_server_posix.c \
-    src/core/lib/iomgr/tcp_server_utils_posix_common.c \
-    src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c \
-    src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c \
-    src/core/lib/iomgr/tcp_server_uv.c \
-    src/core/lib/iomgr/tcp_server_windows.c \
-    src/core/lib/iomgr/tcp_uv.c \
-    src/core/lib/iomgr/tcp_windows.c \
-    src/core/lib/iomgr/time_averaged_stats.c \
-    src/core/lib/iomgr/timer_generic.c \
-    src/core/lib/iomgr/timer_heap.c \
-    src/core/lib/iomgr/timer_manager.c \
-    src/core/lib/iomgr/timer_uv.c \
-    src/core/lib/iomgr/udp_server.c \
-    src/core/lib/iomgr/unix_sockets_posix.c \
-    src/core/lib/iomgr/unix_sockets_posix_noop.c \
-    src/core/lib/iomgr/wakeup_fd_cv.c \
-    src/core/lib/iomgr/wakeup_fd_eventfd.c \
-    src/core/lib/iomgr/wakeup_fd_nospecial.c \
-    src/core/lib/iomgr/wakeup_fd_pipe.c \
-    src/core/lib/iomgr/wakeup_fd_posix.c \
-    src/core/lib/json/json.c \
-    src/core/lib/json/json_reader.c \
-    src/core/lib/json/json_string.c \
-    src/core/lib/json/json_writer.c \
-    src/core/lib/slice/b64.c \
-    src/core/lib/slice/percent_encoding.c \
-    src/core/lib/slice/slice.c \
-    src/core/lib/slice/slice_buffer.c \
-    src/core/lib/slice/slice_hash_table.c \
-    src/core/lib/slice/slice_intern.c \
-    src/core/lib/slice/slice_string_helpers.c \
-    src/core/lib/surface/alarm.c \
-    src/core/lib/surface/api_trace.c \
-    src/core/lib/surface/byte_buffer.c \
-    src/core/lib/surface/byte_buffer_reader.c \
-    src/core/lib/surface/call.c \
-    src/core/lib/surface/call_details.c \
-    src/core/lib/surface/call_log_batch.c \
-    src/core/lib/surface/channel.c \
-    src/core/lib/surface/channel_init.c \
-    src/core/lib/surface/channel_ping.c \
-    src/core/lib/surface/channel_stack_type.c \
-    src/core/lib/surface/completion_queue.c \
-    src/core/lib/surface/completion_queue_factory.c \
-    src/core/lib/surface/event_string.c \
+    src/core/lib/surface/init.cc \
+    src/core/lib/avl/avl.cc \
+    src/core/lib/backoff/backoff.cc \
+    src/core/lib/channel/channel_args.cc \
+    src/core/lib/channel/channel_stack.cc \
+    src/core/lib/channel/channel_stack_builder.cc \
+    src/core/lib/channel/connected_channel.cc \
+    src/core/lib/channel/handshaker.cc \
+    src/core/lib/channel/handshaker_factory.cc \
+    src/core/lib/channel/handshaker_registry.cc \
+    src/core/lib/compression/compression.cc \
+    src/core/lib/compression/compression_internal.cc \
+    src/core/lib/compression/message_compress.cc \
+    src/core/lib/compression/stream_compression.cc \
+    src/core/lib/compression/stream_compression_gzip.cc \
+    src/core/lib/compression/stream_compression_identity.cc \
+    src/core/lib/debug/stats.cc \
+    src/core/lib/debug/stats_data.cc \
+    src/core/lib/http/format_request.cc \
+    src/core/lib/http/httpcli.cc \
+    src/core/lib/http/parser.cc \
+    src/core/lib/iomgr/call_combiner.cc \
+    src/core/lib/iomgr/combiner.cc \
+    src/core/lib/iomgr/endpoint.cc \
+    src/core/lib/iomgr/endpoint_pair_posix.cc \
+    src/core/lib/iomgr/endpoint_pair_uv.cc \
+    src/core/lib/iomgr/endpoint_pair_windows.cc \
+    src/core/lib/iomgr/error.cc \
+    src/core/lib/iomgr/ev_epoll1_linux.cc \
+    src/core/lib/iomgr/ev_epollex_linux.cc \
+    src/core/lib/iomgr/ev_epollsig_linux.cc \
+    src/core/lib/iomgr/ev_poll_posix.cc \
+    src/core/lib/iomgr/ev_posix.cc \
+    src/core/lib/iomgr/ev_windows.cc \
+    src/core/lib/iomgr/exec_ctx.cc \
+    src/core/lib/iomgr/executor.cc \
+    src/core/lib/iomgr/fork_posix.cc \
+    src/core/lib/iomgr/fork_windows.cc \
+    src/core/lib/iomgr/gethostname_fallback.cc \
+    src/core/lib/iomgr/gethostname_host_name_max.cc \
+    src/core/lib/iomgr/gethostname_sysconf.cc \
+    src/core/lib/iomgr/iocp_windows.cc \
+    src/core/lib/iomgr/iomgr.cc \
+    src/core/lib/iomgr/iomgr_custom.cc \
+    src/core/lib/iomgr/iomgr_internal.cc \
+    src/core/lib/iomgr/iomgr_posix.cc \
+    src/core/lib/iomgr/iomgr_uv.cc \
+    src/core/lib/iomgr/iomgr_windows.cc \
+    src/core/lib/iomgr/is_epollexclusive_available.cc \
+    src/core/lib/iomgr/load_file.cc \
+    src/core/lib/iomgr/lockfree_event.cc \
+    src/core/lib/iomgr/network_status_tracker.cc \
+    src/core/lib/iomgr/polling_entity.cc \
+    src/core/lib/iomgr/pollset.cc \
+    src/core/lib/iomgr/pollset_custom.cc \
+    src/core/lib/iomgr/pollset_set.cc \
+    src/core/lib/iomgr/pollset_set_custom.cc \
+    src/core/lib/iomgr/pollset_set_windows.cc \
+    src/core/lib/iomgr/pollset_uv.cc \
+    src/core/lib/iomgr/pollset_windows.cc \
+    src/core/lib/iomgr/resolve_address.cc \
+    src/core/lib/iomgr/resolve_address_custom.cc \
+    src/core/lib/iomgr/resolve_address_posix.cc \
+    src/core/lib/iomgr/resolve_address_windows.cc \
+    src/core/lib/iomgr/resource_quota.cc \
+    src/core/lib/iomgr/sockaddr_utils.cc \
+    src/core/lib/iomgr/socket_factory_posix.cc \
+    src/core/lib/iomgr/socket_mutator.cc \
+    src/core/lib/iomgr/socket_utils_common_posix.cc \
+    src/core/lib/iomgr/socket_utils_linux.cc \
+    src/core/lib/iomgr/socket_utils_posix.cc \
+    src/core/lib/iomgr/socket_utils_uv.cc \
+    src/core/lib/iomgr/socket_utils_windows.cc \
+    src/core/lib/iomgr/socket_windows.cc \
+    src/core/lib/iomgr/tcp_client.cc \
+    src/core/lib/iomgr/tcp_client_custom.cc \
+    src/core/lib/iomgr/tcp_client_posix.cc \
+    src/core/lib/iomgr/tcp_client_windows.cc \
+    src/core/lib/iomgr/tcp_custom.cc \
+    src/core/lib/iomgr/tcp_posix.cc \
+    src/core/lib/iomgr/tcp_server.cc \
+    src/core/lib/iomgr/tcp_server_custom.cc \
+    src/core/lib/iomgr/tcp_server_posix.cc \
+    src/core/lib/iomgr/tcp_server_utils_posix_common.cc \
+    src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc \
+    src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc \
+    src/core/lib/iomgr/tcp_server_windows.cc \
+    src/core/lib/iomgr/tcp_uv.cc \
+    src/core/lib/iomgr/tcp_windows.cc \
+    src/core/lib/iomgr/time_averaged_stats.cc \
+    src/core/lib/iomgr/timer.cc \
+    src/core/lib/iomgr/timer_custom.cc \
+    src/core/lib/iomgr/timer_generic.cc \
+    src/core/lib/iomgr/timer_heap.cc \
+    src/core/lib/iomgr/timer_manager.cc \
+    src/core/lib/iomgr/timer_uv.cc \
+    src/core/lib/iomgr/udp_server.cc \
+    src/core/lib/iomgr/unix_sockets_posix.cc \
+    src/core/lib/iomgr/unix_sockets_posix_noop.cc \
+    src/core/lib/iomgr/wakeup_fd_cv.cc \
+    src/core/lib/iomgr/wakeup_fd_eventfd.cc \
+    src/core/lib/iomgr/wakeup_fd_nospecial.cc \
+    src/core/lib/iomgr/wakeup_fd_pipe.cc \
+    src/core/lib/iomgr/wakeup_fd_posix.cc \
+    src/core/lib/json/json.cc \
+    src/core/lib/json/json_reader.cc \
+    src/core/lib/json/json_string.cc \
+    src/core/lib/json/json_writer.cc \
+    src/core/lib/slice/b64.cc \
+    src/core/lib/slice/percent_encoding.cc \
+    src/core/lib/slice/slice.cc \
+    src/core/lib/slice/slice_buffer.cc \
+    src/core/lib/slice/slice_intern.cc \
+    src/core/lib/slice/slice_string_helpers.cc \
+    src/core/lib/surface/api_trace.cc \
+    src/core/lib/surface/byte_buffer.cc \
+    src/core/lib/surface/byte_buffer_reader.cc \
+    src/core/lib/surface/call.cc \
+    src/core/lib/surface/call_details.cc \
+    src/core/lib/surface/call_log_batch.cc \
+    src/core/lib/surface/channel.cc \
+    src/core/lib/surface/channel_init.cc \
+    src/core/lib/surface/channel_ping.cc \
+    src/core/lib/surface/channel_stack_type.cc \
+    src/core/lib/surface/completion_queue.cc \
+    src/core/lib/surface/completion_queue_factory.cc \
+    src/core/lib/surface/event_string.cc \
     src/core/lib/surface/lame_client.cc \
-    src/core/lib/surface/metadata_array.c \
-    src/core/lib/surface/server.c \
-    src/core/lib/surface/validate_metadata.c \
-    src/core/lib/surface/version.c \
-    src/core/lib/transport/bdp_estimator.c \
-    src/core/lib/transport/byte_stream.c \
-    src/core/lib/transport/connectivity_state.c \
-    src/core/lib/transport/error_utils.c \
-    src/core/lib/transport/metadata.c \
-    src/core/lib/transport/metadata_batch.c \
-    src/core/lib/transport/pid_controller.c \
-    src/core/lib/transport/service_config.c \
-    src/core/lib/transport/static_metadata.c \
-    src/core/lib/transport/status_conversion.c \
-    src/core/lib/transport/timeout_encoding.c \
-    src/core/lib/transport/transport.c \
-    src/core/lib/transport/transport_op_string.c \
-    src/core/lib/debug/trace.c \
-    src/core/ext/transport/cronet/client/secure/cronet_channel_create.c \
-    src/core/ext/transport/cronet/transport/cronet_api_dummy.c \
-    src/core/ext/transport/cronet/transport/cronet_transport.c \
-    src/core/ext/transport/chttp2/client/secure/secure_channel_create.c \
-    src/core/ext/transport/chttp2/transport/bin_decoder.c \
-    src/core/ext/transport/chttp2/transport/bin_encoder.c \
-    src/core/ext/transport/chttp2/transport/chttp2_plugin.c \
-    src/core/ext/transport/chttp2/transport/chttp2_transport.c \
-    src/core/ext/transport/chttp2/transport/flow_control.c \
-    src/core/ext/transport/chttp2/transport/frame_data.c \
-    src/core/ext/transport/chttp2/transport/frame_goaway.c \
-    src/core/ext/transport/chttp2/transport/frame_ping.c \
-    src/core/ext/transport/chttp2/transport/frame_rst_stream.c \
-    src/core/ext/transport/chttp2/transport/frame_settings.c \
-    src/core/ext/transport/chttp2/transport/frame_window_update.c \
-    src/core/ext/transport/chttp2/transport/hpack_encoder.c \
-    src/core/ext/transport/chttp2/transport/hpack_parser.c \
-    src/core/ext/transport/chttp2/transport/hpack_table.c \
-    src/core/ext/transport/chttp2/transport/http2_settings.c \
-    src/core/ext/transport/chttp2/transport/huffsyms.c \
-    src/core/ext/transport/chttp2/transport/incoming_metadata.c \
-    src/core/ext/transport/chttp2/transport/parsing.c \
-    src/core/ext/transport/chttp2/transport/stream_lists.c \
-    src/core/ext/transport/chttp2/transport/stream_map.c \
-    src/core/ext/transport/chttp2/transport/varint.c \
-    src/core/ext/transport/chttp2/transport/writing.c \
-    src/core/ext/transport/chttp2/alpn/alpn.c \
-    src/core/ext/filters/http/client/http_client_filter.c \
-    src/core/ext/filters/http/http_filters_plugin.c \
-    src/core/ext/filters/http/message_compress/message_compress_filter.c \
-    src/core/ext/filters/http/server/http_server_filter.c \
-    src/core/ext/filters/client_channel/channel_connectivity.c \
-    src/core/ext/filters/client_channel/client_channel.c \
-    src/core/ext/filters/client_channel/client_channel_factory.c \
-    src/core/ext/filters/client_channel/client_channel_plugin.c \
-    src/core/ext/filters/client_channel/connector.c \
-    src/core/ext/filters/client_channel/http_connect_handshaker.c \
-    src/core/ext/filters/client_channel/http_proxy.c \
-    src/core/ext/filters/client_channel/lb_policy.c \
-    src/core/ext/filters/client_channel/lb_policy_factory.c \
-    src/core/ext/filters/client_channel/lb_policy_registry.c \
-    src/core/ext/filters/client_channel/parse_address.c \
-    src/core/ext/filters/client_channel/proxy_mapper.c \
-    src/core/ext/filters/client_channel/proxy_mapper_registry.c \
-    src/core/ext/filters/client_channel/resolver.c \
-    src/core/ext/filters/client_channel/resolver_factory.c \
-    src/core/ext/filters/client_channel/resolver_registry.c \
-    src/core/ext/filters/client_channel/retry_throttle.c \
-    src/core/ext/filters/client_channel/subchannel.c \
-    src/core/ext/filters/client_channel/subchannel_index.c \
-    src/core/ext/filters/client_channel/uri_parser.c \
-    src/core/ext/filters/deadline/deadline_filter.c \
-    src/core/lib/http/httpcli_security_connector.c \
-    src/core/lib/security/context/security_context.c \
-    src/core/lib/security/credentials/composite/composite_credentials.c \
-    src/core/lib/security/credentials/credentials.c \
-    src/core/lib/security/credentials/credentials_metadata.c \
-    src/core/lib/security/credentials/fake/fake_credentials.c \
-    src/core/lib/security/credentials/google_default/credentials_generic.c \
-    src/core/lib/security/credentials/google_default/google_default_credentials.c \
-    src/core/lib/security/credentials/iam/iam_credentials.c \
-    src/core/lib/security/credentials/jwt/json_token.c \
-    src/core/lib/security/credentials/jwt/jwt_credentials.c \
-    src/core/lib/security/credentials/jwt/jwt_verifier.c \
-    src/core/lib/security/credentials/oauth2/oauth2_credentials.c \
-    src/core/lib/security/credentials/plugin/plugin_credentials.c \
-    src/core/lib/security/credentials/ssl/ssl_credentials.c \
-    src/core/lib/security/transport/client_auth_filter.c \
-    src/core/lib/security/transport/lb_targets_info.c \
-    src/core/lib/security/transport/secure_endpoint.c \
-    src/core/lib/security/transport/security_connector.c \
-    src/core/lib/security/transport/security_handshaker.c \
-    src/core/lib/security/transport/server_auth_filter.c \
-    src/core/lib/security/transport/tsi_error.c \
-    src/core/lib/security/util/json_util.c \
-    src/core/lib/surface/init_secure.c \
-    src/core/tsi/fake_transport_security.c \
-    src/core/tsi/gts_transport_security.c \
-    src/core/tsi/ssl_transport_security.c \
-    src/core/tsi/transport_security_grpc.c \
-    src/core/tsi/transport_security.c \
-    src/core/tsi/transport_security_adapter.c \
-    src/core/ext/transport/chttp2/client/chttp2_connector.c \
-    src/core/ext/filters/load_reporting/load_reporting.c \
-    src/core/ext/filters/load_reporting/load_reporting_filter.c \
-    src/core/plugin_registry/grpc_cronet_plugin_registry.c \
+    src/core/lib/surface/metadata_array.cc \
+    src/core/lib/surface/server.cc \
+    src/core/lib/surface/validate_metadata.cc \
+    src/core/lib/surface/version.cc \
+    src/core/lib/transport/bdp_estimator.cc \
+    src/core/lib/transport/byte_stream.cc \
+    src/core/lib/transport/connectivity_state.cc \
+    src/core/lib/transport/error_utils.cc \
+    src/core/lib/transport/metadata.cc \
+    src/core/lib/transport/metadata_batch.cc \
+    src/core/lib/transport/pid_controller.cc \
+    src/core/lib/transport/service_config.cc \
+    src/core/lib/transport/static_metadata.cc \
+    src/core/lib/transport/status_conversion.cc \
+    src/core/lib/transport/status_metadata.cc \
+    src/core/lib/transport/timeout_encoding.cc \
+    src/core/lib/transport/transport.cc \
+    src/core/lib/transport/transport_op_string.cc \
+    src/core/lib/debug/trace.cc \
+    src/core/ext/transport/cronet/client/secure/cronet_channel_create.cc \
+    src/core/ext/transport/cronet/transport/cronet_api_dummy.cc \
+    src/core/ext/transport/cronet/transport/cronet_transport.cc \
+    src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc \
+    src/core/ext/transport/chttp2/transport/bin_decoder.cc \
+    src/core/ext/transport/chttp2/transport/bin_encoder.cc \
+    src/core/ext/transport/chttp2/transport/chttp2_plugin.cc \
+    src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
+    src/core/ext/transport/chttp2/transport/flow_control.cc \
+    src/core/ext/transport/chttp2/transport/frame_data.cc \
+    src/core/ext/transport/chttp2/transport/frame_goaway.cc \
+    src/core/ext/transport/chttp2/transport/frame_ping.cc \
+    src/core/ext/transport/chttp2/transport/frame_rst_stream.cc \
+    src/core/ext/transport/chttp2/transport/frame_settings.cc \
+    src/core/ext/transport/chttp2/transport/frame_window_update.cc \
+    src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
+    src/core/ext/transport/chttp2/transport/hpack_parser.cc \
+    src/core/ext/transport/chttp2/transport/hpack_table.cc \
+    src/core/ext/transport/chttp2/transport/http2_settings.cc \
+    src/core/ext/transport/chttp2/transport/huffsyms.cc \
+    src/core/ext/transport/chttp2/transport/incoming_metadata.cc \
+    src/core/ext/transport/chttp2/transport/parsing.cc \
+    src/core/ext/transport/chttp2/transport/stream_lists.cc \
+    src/core/ext/transport/chttp2/transport/stream_map.cc \
+    src/core/ext/transport/chttp2/transport/varint.cc \
+    src/core/ext/transport/chttp2/transport/writing.cc \
+    src/core/ext/transport/chttp2/alpn/alpn.cc \
+    src/core/ext/filters/http/client/http_client_filter.cc \
+    src/core/ext/filters/http/http_filters_plugin.cc \
+    src/core/ext/filters/http/message_compress/message_compress_filter.cc \
+    src/core/ext/filters/http/server/http_server_filter.cc \
+    src/core/ext/filters/client_channel/backup_poller.cc \
+    src/core/ext/filters/client_channel/channel_connectivity.cc \
+    src/core/ext/filters/client_channel/client_channel.cc \
+    src/core/ext/filters/client_channel/client_channel_factory.cc \
+    src/core/ext/filters/client_channel/client_channel_plugin.cc \
+    src/core/ext/filters/client_channel/connector.cc \
+    src/core/ext/filters/client_channel/http_connect_handshaker.cc \
+    src/core/ext/filters/client_channel/http_proxy.cc \
+    src/core/ext/filters/client_channel/lb_policy.cc \
+    src/core/ext/filters/client_channel/lb_policy_factory.cc \
+    src/core/ext/filters/client_channel/lb_policy_registry.cc \
+    src/core/ext/filters/client_channel/method_params.cc \
+    src/core/ext/filters/client_channel/parse_address.cc \
+    src/core/ext/filters/client_channel/proxy_mapper.cc \
+    src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
+    src/core/ext/filters/client_channel/resolver.cc \
+    src/core/ext/filters/client_channel/resolver_registry.cc \
+    src/core/ext/filters/client_channel/retry_throttle.cc \
+    src/core/ext/filters/client_channel/status_util.cc \
+    src/core/ext/filters/client_channel/subchannel.cc \
+    src/core/ext/filters/client_channel/subchannel_index.cc \
+    src/core/ext/filters/client_channel/uri_parser.cc \
+    src/core/ext/filters/deadline/deadline_filter.cc \
+    src/core/lib/http/httpcli_security_connector.cc \
+    src/core/lib/security/context/security_context.cc \
+    src/core/lib/security/credentials/alts/alts_credentials.cc \
+    src/core/lib/security/credentials/composite/composite_credentials.cc \
+    src/core/lib/security/credentials/credentials.cc \
+    src/core/lib/security/credentials/credentials_metadata.cc \
+    src/core/lib/security/credentials/fake/fake_credentials.cc \
+    src/core/lib/security/credentials/google_default/credentials_generic.cc \
+    src/core/lib/security/credentials/google_default/google_default_credentials.cc \
+    src/core/lib/security/credentials/iam/iam_credentials.cc \
+    src/core/lib/security/credentials/jwt/json_token.cc \
+    src/core/lib/security/credentials/jwt/jwt_credentials.cc \
+    src/core/lib/security/credentials/jwt/jwt_verifier.cc \
+    src/core/lib/security/credentials/oauth2/oauth2_credentials.cc \
+    src/core/lib/security/credentials/plugin/plugin_credentials.cc \
+    src/core/lib/security/credentials/ssl/ssl_credentials.cc \
+    src/core/lib/security/security_connector/alts_security_connector.cc \
+    src/core/lib/security/security_connector/security_connector.cc \
+    src/core/lib/security/transport/client_auth_filter.cc \
+    src/core/lib/security/transport/secure_endpoint.cc \
+    src/core/lib/security/transport/security_handshaker.cc \
+    src/core/lib/security/transport/server_auth_filter.cc \
+    src/core/lib/security/transport/target_authority_table.cc \
+    src/core/lib/security/transport/tsi_error.cc \
+    src/core/lib/security/util/json_util.cc \
+    src/core/lib/surface/init_secure.cc \
+    src/core/tsi/alts/crypt/aes_gcm.cc \
+    src/core/tsi/alts/crypt/gsec.cc \
+    src/core/tsi/alts/frame_protector/alts_counter.cc \
+    src/core/tsi/alts/frame_protector/alts_crypter.cc \
+    src/core/tsi/alts/frame_protector/alts_frame_protector.cc \
+    src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc \
+    src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc \
+    src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc \
+    src/core/tsi/alts/frame_protector/frame_handler.cc \
+    src/core/tsi/alts/handshaker/alts_handshaker_client.cc \
+    src/core/tsi/alts/handshaker/alts_tsi_event.cc \
+    src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc \
+    src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc \
+    src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc \
+    src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc \
+    src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc \
+    src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc \
+    src/core/lib/security/credentials/alts/check_gcp_environment.cc \
+    src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc \
+    src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc \
+    src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc \
+    src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc \
+    src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc \
+    src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc \
+    src/core/tsi/alts/handshaker/alts_handshaker_service_api.cc \
+    src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.cc \
+    src/core/tsi/alts/handshaker/alts_tsi_utils.cc \
+    src/core/tsi/alts/handshaker/transport_security_common_api.cc \
+    src/core/tsi/alts/handshaker/altscontext.pb.c \
+    src/core/tsi/alts/handshaker/handshaker.pb.c \
+    src/core/tsi/alts/handshaker/transport_security_common.pb.c \
+    third_party/nanopb/pb_common.c \
+    third_party/nanopb/pb_decode.c \
+    third_party/nanopb/pb_encode.c \
+    src/core/tsi/transport_security.cc \
+    src/core/tsi/transport_security_adapter.cc \
+    src/core/ext/transport/chttp2/client/insecure/channel_create.cc \
+    src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc \
+    src/core/ext/transport/chttp2/client/chttp2_connector.cc \
+    src/core/tsi/alts_transport_security.cc \
+    src/core/tsi/fake_transport_security.cc \
+    src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc \
+    src/core/tsi/ssl/session_cache/ssl_session_cache.cc \
+    src/core/tsi/ssl/session_cache/ssl_session_openssl.cc \
+    src/core/tsi/ssl_transport_security.cc \
+    src/core/tsi/transport_security_grpc.cc \
+    src/core/ext/filters/load_reporting/server_load_reporting_filter.cc \
+    src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc \
+    src/core/plugin_registry/grpc_cronet_plugin_registry.cc \
 
 PUBLIC_HEADERS_C += \
+    include/grpc/impl/codegen/byte_buffer.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
-    include/grpc/impl/codegen/exec_ctx_fwd.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/slice.h \
@@ -3474,6 +3841,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
     include/grpc/impl/codegen/atm_windows.h \
+    include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
@@ -3523,8 +3891,8 @@ $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(L
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CRONET_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_cronet.so.4 -o $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CRONET_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE).so.4
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_cronet.so.6 -o $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CRONET_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE).so.6
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_cronet$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -3539,217 +3907,252 @@ endif
 
 
 LIBGRPC_TEST_UTIL_SRC = \
-    test/core/end2end/data/client_certs.c \
-    test/core/end2end/data/server1_cert.c \
-    test/core/end2end/data/server1_key.c \
-    test/core/end2end/data/test_root_cert.c \
-    test/core/security/oauth2_utils.c \
-    src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c \
-    test/core/end2end/cq_verifier.c \
-    test/core/end2end/fixtures/http_proxy_fixture.c \
-    test/core/end2end/fixtures/proxy.c \
-    test/core/iomgr/endpoint_tests.c \
-    test/core/util/debugger_macros.c \
-    test/core/util/grpc_profiler.c \
-    test/core/util/memory_counters.c \
-    test/core/util/mock_endpoint.c \
-    test/core/util/parse_hexstring.c \
-    test/core/util/passthru_endpoint.c \
-    test/core/util/port.c \
-    test/core/util/port_server_client.c \
-    test/core/util/slice_splitter.c \
-    test/core/util/trickle_endpoint.c \
-    src/core/lib/channel/channel_args.c \
-    src/core/lib/channel/channel_stack.c \
-    src/core/lib/channel/channel_stack_builder.c \
-    src/core/lib/channel/connected_channel.c \
-    src/core/lib/channel/handshaker.c \
-    src/core/lib/channel/handshaker_factory.c \
-    src/core/lib/channel/handshaker_registry.c \
-    src/core/lib/compression/compression.c \
-    src/core/lib/compression/message_compress.c \
-    src/core/lib/compression/stream_compression.c \
-    src/core/lib/http/format_request.c \
-    src/core/lib/http/httpcli.c \
-    src/core/lib/http/parser.c \
-    src/core/lib/iomgr/closure.c \
-    src/core/lib/iomgr/combiner.c \
-    src/core/lib/iomgr/endpoint.c \
-    src/core/lib/iomgr/endpoint_pair_posix.c \
-    src/core/lib/iomgr/endpoint_pair_uv.c \
-    src/core/lib/iomgr/endpoint_pair_windows.c \
-    src/core/lib/iomgr/error.c \
-    src/core/lib/iomgr/ev_epoll1_linux.c \
-    src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c \
-    src/core/lib/iomgr/ev_epoll_thread_pool_linux.c \
-    src/core/lib/iomgr/ev_epollex_linux.c \
-    src/core/lib/iomgr/ev_epollsig_linux.c \
-    src/core/lib/iomgr/ev_poll_posix.c \
-    src/core/lib/iomgr/ev_posix.c \
-    src/core/lib/iomgr/ev_windows.c \
-    src/core/lib/iomgr/exec_ctx.c \
-    src/core/lib/iomgr/executor.c \
-    src/core/lib/iomgr/gethostname_fallback.c \
-    src/core/lib/iomgr/gethostname_host_name_max.c \
-    src/core/lib/iomgr/gethostname_sysconf.c \
-    src/core/lib/iomgr/iocp_windows.c \
-    src/core/lib/iomgr/iomgr.c \
-    src/core/lib/iomgr/iomgr_posix.c \
-    src/core/lib/iomgr/iomgr_uv.c \
-    src/core/lib/iomgr/iomgr_windows.c \
-    src/core/lib/iomgr/is_epollexclusive_available.c \
-    src/core/lib/iomgr/load_file.c \
-    src/core/lib/iomgr/lockfree_event.c \
-    src/core/lib/iomgr/network_status_tracker.c \
-    src/core/lib/iomgr/polling_entity.c \
-    src/core/lib/iomgr/pollset_set_uv.c \
-    src/core/lib/iomgr/pollset_set_windows.c \
-    src/core/lib/iomgr/pollset_uv.c \
-    src/core/lib/iomgr/pollset_windows.c \
-    src/core/lib/iomgr/resolve_address_posix.c \
-    src/core/lib/iomgr/resolve_address_uv.c \
-    src/core/lib/iomgr/resolve_address_windows.c \
-    src/core/lib/iomgr/resource_quota.c \
-    src/core/lib/iomgr/sockaddr_utils.c \
-    src/core/lib/iomgr/socket_factory_posix.c \
-    src/core/lib/iomgr/socket_mutator.c \
-    src/core/lib/iomgr/socket_utils_common_posix.c \
-    src/core/lib/iomgr/socket_utils_linux.c \
-    src/core/lib/iomgr/socket_utils_posix.c \
-    src/core/lib/iomgr/socket_utils_uv.c \
-    src/core/lib/iomgr/socket_utils_windows.c \
-    src/core/lib/iomgr/socket_windows.c \
-    src/core/lib/iomgr/tcp_client_posix.c \
-    src/core/lib/iomgr/tcp_client_uv.c \
-    src/core/lib/iomgr/tcp_client_windows.c \
-    src/core/lib/iomgr/tcp_posix.c \
-    src/core/lib/iomgr/tcp_server_posix.c \
-    src/core/lib/iomgr/tcp_server_utils_posix_common.c \
-    src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c \
-    src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c \
-    src/core/lib/iomgr/tcp_server_uv.c \
-    src/core/lib/iomgr/tcp_server_windows.c \
-    src/core/lib/iomgr/tcp_uv.c \
-    src/core/lib/iomgr/tcp_windows.c \
-    src/core/lib/iomgr/time_averaged_stats.c \
-    src/core/lib/iomgr/timer_generic.c \
-    src/core/lib/iomgr/timer_heap.c \
-    src/core/lib/iomgr/timer_manager.c \
-    src/core/lib/iomgr/timer_uv.c \
-    src/core/lib/iomgr/udp_server.c \
-    src/core/lib/iomgr/unix_sockets_posix.c \
-    src/core/lib/iomgr/unix_sockets_posix_noop.c \
-    src/core/lib/iomgr/wakeup_fd_cv.c \
-    src/core/lib/iomgr/wakeup_fd_eventfd.c \
-    src/core/lib/iomgr/wakeup_fd_nospecial.c \
-    src/core/lib/iomgr/wakeup_fd_pipe.c \
-    src/core/lib/iomgr/wakeup_fd_posix.c \
-    src/core/lib/json/json.c \
-    src/core/lib/json/json_reader.c \
-    src/core/lib/json/json_string.c \
-    src/core/lib/json/json_writer.c \
-    src/core/lib/slice/b64.c \
-    src/core/lib/slice/percent_encoding.c \
-    src/core/lib/slice/slice.c \
-    src/core/lib/slice/slice_buffer.c \
-    src/core/lib/slice/slice_hash_table.c \
-    src/core/lib/slice/slice_intern.c \
-    src/core/lib/slice/slice_string_helpers.c \
-    src/core/lib/surface/alarm.c \
-    src/core/lib/surface/api_trace.c \
-    src/core/lib/surface/byte_buffer.c \
-    src/core/lib/surface/byte_buffer_reader.c \
-    src/core/lib/surface/call.c \
-    src/core/lib/surface/call_details.c \
-    src/core/lib/surface/call_log_batch.c \
-    src/core/lib/surface/channel.c \
-    src/core/lib/surface/channel_init.c \
-    src/core/lib/surface/channel_ping.c \
-    src/core/lib/surface/channel_stack_type.c \
-    src/core/lib/surface/completion_queue.c \
-    src/core/lib/surface/completion_queue_factory.c \
-    src/core/lib/surface/event_string.c \
+    test/core/end2end/data/client_certs.cc \
+    test/core/end2end/data/server1_cert.cc \
+    test/core/end2end/data/server1_key.cc \
+    test/core/end2end/data/test_root_cert.cc \
+    test/core/security/oauth2_utils.cc \
+    src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
+    test/core/end2end/cq_verifier.cc \
+    test/core/end2end/fixtures/http_proxy_fixture.cc \
+    test/core/end2end/fixtures/proxy.cc \
+    test/core/iomgr/endpoint_tests.cc \
+    test/core/util/debugger_macros.cc \
+    test/core/util/grpc_profiler.cc \
+    test/core/util/histogram.cc \
+    test/core/util/memory_counters.cc \
+    test/core/util/mock_endpoint.cc \
+    test/core/util/parse_hexstring.cc \
+    test/core/util/passthru_endpoint.cc \
+    test/core/util/port.cc \
+    test/core/util/port_isolated_runtime_environment.cc \
+    test/core/util/port_server_client.cc \
+    test/core/util/slice_splitter.cc \
+    test/core/util/subprocess_posix.cc \
+    test/core/util/subprocess_windows.cc \
+    test/core/util/tracer_util.cc \
+    test/core/util/trickle_endpoint.cc \
+    test/core/util/cmdline.cc \
+    src/core/lib/avl/avl.cc \
+    src/core/lib/backoff/backoff.cc \
+    src/core/lib/channel/channel_args.cc \
+    src/core/lib/channel/channel_stack.cc \
+    src/core/lib/channel/channel_stack_builder.cc \
+    src/core/lib/channel/connected_channel.cc \
+    src/core/lib/channel/handshaker.cc \
+    src/core/lib/channel/handshaker_factory.cc \
+    src/core/lib/channel/handshaker_registry.cc \
+    src/core/lib/compression/compression.cc \
+    src/core/lib/compression/compression_internal.cc \
+    src/core/lib/compression/message_compress.cc \
+    src/core/lib/compression/stream_compression.cc \
+    src/core/lib/compression/stream_compression_gzip.cc \
+    src/core/lib/compression/stream_compression_identity.cc \
+    src/core/lib/debug/stats.cc \
+    src/core/lib/debug/stats_data.cc \
+    src/core/lib/http/format_request.cc \
+    src/core/lib/http/httpcli.cc \
+    src/core/lib/http/parser.cc \
+    src/core/lib/iomgr/call_combiner.cc \
+    src/core/lib/iomgr/combiner.cc \
+    src/core/lib/iomgr/endpoint.cc \
+    src/core/lib/iomgr/endpoint_pair_posix.cc \
+    src/core/lib/iomgr/endpoint_pair_uv.cc \
+    src/core/lib/iomgr/endpoint_pair_windows.cc \
+    src/core/lib/iomgr/error.cc \
+    src/core/lib/iomgr/ev_epoll1_linux.cc \
+    src/core/lib/iomgr/ev_epollex_linux.cc \
+    src/core/lib/iomgr/ev_epollsig_linux.cc \
+    src/core/lib/iomgr/ev_poll_posix.cc \
+    src/core/lib/iomgr/ev_posix.cc \
+    src/core/lib/iomgr/ev_windows.cc \
+    src/core/lib/iomgr/exec_ctx.cc \
+    src/core/lib/iomgr/executor.cc \
+    src/core/lib/iomgr/fork_posix.cc \
+    src/core/lib/iomgr/fork_windows.cc \
+    src/core/lib/iomgr/gethostname_fallback.cc \
+    src/core/lib/iomgr/gethostname_host_name_max.cc \
+    src/core/lib/iomgr/gethostname_sysconf.cc \
+    src/core/lib/iomgr/iocp_windows.cc \
+    src/core/lib/iomgr/iomgr.cc \
+    src/core/lib/iomgr/iomgr_custom.cc \
+    src/core/lib/iomgr/iomgr_internal.cc \
+    src/core/lib/iomgr/iomgr_posix.cc \
+    src/core/lib/iomgr/iomgr_uv.cc \
+    src/core/lib/iomgr/iomgr_windows.cc \
+    src/core/lib/iomgr/is_epollexclusive_available.cc \
+    src/core/lib/iomgr/load_file.cc \
+    src/core/lib/iomgr/lockfree_event.cc \
+    src/core/lib/iomgr/network_status_tracker.cc \
+    src/core/lib/iomgr/polling_entity.cc \
+    src/core/lib/iomgr/pollset.cc \
+    src/core/lib/iomgr/pollset_custom.cc \
+    src/core/lib/iomgr/pollset_set.cc \
+    src/core/lib/iomgr/pollset_set_custom.cc \
+    src/core/lib/iomgr/pollset_set_windows.cc \
+    src/core/lib/iomgr/pollset_uv.cc \
+    src/core/lib/iomgr/pollset_windows.cc \
+    src/core/lib/iomgr/resolve_address.cc \
+    src/core/lib/iomgr/resolve_address_custom.cc \
+    src/core/lib/iomgr/resolve_address_posix.cc \
+    src/core/lib/iomgr/resolve_address_windows.cc \
+    src/core/lib/iomgr/resource_quota.cc \
+    src/core/lib/iomgr/sockaddr_utils.cc \
+    src/core/lib/iomgr/socket_factory_posix.cc \
+    src/core/lib/iomgr/socket_mutator.cc \
+    src/core/lib/iomgr/socket_utils_common_posix.cc \
+    src/core/lib/iomgr/socket_utils_linux.cc \
+    src/core/lib/iomgr/socket_utils_posix.cc \
+    src/core/lib/iomgr/socket_utils_uv.cc \
+    src/core/lib/iomgr/socket_utils_windows.cc \
+    src/core/lib/iomgr/socket_windows.cc \
+    src/core/lib/iomgr/tcp_client.cc \
+    src/core/lib/iomgr/tcp_client_custom.cc \
+    src/core/lib/iomgr/tcp_client_posix.cc \
+    src/core/lib/iomgr/tcp_client_windows.cc \
+    src/core/lib/iomgr/tcp_custom.cc \
+    src/core/lib/iomgr/tcp_posix.cc \
+    src/core/lib/iomgr/tcp_server.cc \
+    src/core/lib/iomgr/tcp_server_custom.cc \
+    src/core/lib/iomgr/tcp_server_posix.cc \
+    src/core/lib/iomgr/tcp_server_utils_posix_common.cc \
+    src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc \
+    src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc \
+    src/core/lib/iomgr/tcp_server_windows.cc \
+    src/core/lib/iomgr/tcp_uv.cc \
+    src/core/lib/iomgr/tcp_windows.cc \
+    src/core/lib/iomgr/time_averaged_stats.cc \
+    src/core/lib/iomgr/timer.cc \
+    src/core/lib/iomgr/timer_custom.cc \
+    src/core/lib/iomgr/timer_generic.cc \
+    src/core/lib/iomgr/timer_heap.cc \
+    src/core/lib/iomgr/timer_manager.cc \
+    src/core/lib/iomgr/timer_uv.cc \
+    src/core/lib/iomgr/udp_server.cc \
+    src/core/lib/iomgr/unix_sockets_posix.cc \
+    src/core/lib/iomgr/unix_sockets_posix_noop.cc \
+    src/core/lib/iomgr/wakeup_fd_cv.cc \
+    src/core/lib/iomgr/wakeup_fd_eventfd.cc \
+    src/core/lib/iomgr/wakeup_fd_nospecial.cc \
+    src/core/lib/iomgr/wakeup_fd_pipe.cc \
+    src/core/lib/iomgr/wakeup_fd_posix.cc \
+    src/core/lib/json/json.cc \
+    src/core/lib/json/json_reader.cc \
+    src/core/lib/json/json_string.cc \
+    src/core/lib/json/json_writer.cc \
+    src/core/lib/slice/b64.cc \
+    src/core/lib/slice/percent_encoding.cc \
+    src/core/lib/slice/slice.cc \
+    src/core/lib/slice/slice_buffer.cc \
+    src/core/lib/slice/slice_intern.cc \
+    src/core/lib/slice/slice_string_helpers.cc \
+    src/core/lib/surface/api_trace.cc \
+    src/core/lib/surface/byte_buffer.cc \
+    src/core/lib/surface/byte_buffer_reader.cc \
+    src/core/lib/surface/call.cc \
+    src/core/lib/surface/call_details.cc \
+    src/core/lib/surface/call_log_batch.cc \
+    src/core/lib/surface/channel.cc \
+    src/core/lib/surface/channel_init.cc \
+    src/core/lib/surface/channel_ping.cc \
+    src/core/lib/surface/channel_stack_type.cc \
+    src/core/lib/surface/completion_queue.cc \
+    src/core/lib/surface/completion_queue_factory.cc \
+    src/core/lib/surface/event_string.cc \
     src/core/lib/surface/lame_client.cc \
-    src/core/lib/surface/metadata_array.c \
-    src/core/lib/surface/server.c \
-    src/core/lib/surface/validate_metadata.c \
-    src/core/lib/surface/version.c \
-    src/core/lib/transport/bdp_estimator.c \
-    src/core/lib/transport/byte_stream.c \
-    src/core/lib/transport/connectivity_state.c \
-    src/core/lib/transport/error_utils.c \
-    src/core/lib/transport/metadata.c \
-    src/core/lib/transport/metadata_batch.c \
-    src/core/lib/transport/pid_controller.c \
-    src/core/lib/transport/service_config.c \
-    src/core/lib/transport/static_metadata.c \
-    src/core/lib/transport/status_conversion.c \
-    src/core/lib/transport/timeout_encoding.c \
-    src/core/lib/transport/transport.c \
-    src/core/lib/transport/transport_op_string.c \
-    src/core/lib/debug/trace.c \
-    src/core/ext/filters/client_channel/channel_connectivity.c \
-    src/core/ext/filters/client_channel/client_channel.c \
-    src/core/ext/filters/client_channel/client_channel_factory.c \
-    src/core/ext/filters/client_channel/client_channel_plugin.c \
-    src/core/ext/filters/client_channel/connector.c \
-    src/core/ext/filters/client_channel/http_connect_handshaker.c \
-    src/core/ext/filters/client_channel/http_proxy.c \
-    src/core/ext/filters/client_channel/lb_policy.c \
-    src/core/ext/filters/client_channel/lb_policy_factory.c \
-    src/core/ext/filters/client_channel/lb_policy_registry.c \
-    src/core/ext/filters/client_channel/parse_address.c \
-    src/core/ext/filters/client_channel/proxy_mapper.c \
-    src/core/ext/filters/client_channel/proxy_mapper_registry.c \
-    src/core/ext/filters/client_channel/resolver.c \
-    src/core/ext/filters/client_channel/resolver_factory.c \
-    src/core/ext/filters/client_channel/resolver_registry.c \
-    src/core/ext/filters/client_channel/retry_throttle.c \
-    src/core/ext/filters/client_channel/subchannel.c \
-    src/core/ext/filters/client_channel/subchannel_index.c \
-    src/core/ext/filters/client_channel/uri_parser.c \
-    src/core/ext/filters/deadline/deadline_filter.c \
-    src/core/ext/transport/chttp2/transport/bin_decoder.c \
-    src/core/ext/transport/chttp2/transport/bin_encoder.c \
-    src/core/ext/transport/chttp2/transport/chttp2_plugin.c \
-    src/core/ext/transport/chttp2/transport/chttp2_transport.c \
-    src/core/ext/transport/chttp2/transport/flow_control.c \
-    src/core/ext/transport/chttp2/transport/frame_data.c \
-    src/core/ext/transport/chttp2/transport/frame_goaway.c \
-    src/core/ext/transport/chttp2/transport/frame_ping.c \
-    src/core/ext/transport/chttp2/transport/frame_rst_stream.c \
-    src/core/ext/transport/chttp2/transport/frame_settings.c \
-    src/core/ext/transport/chttp2/transport/frame_window_update.c \
-    src/core/ext/transport/chttp2/transport/hpack_encoder.c \
-    src/core/ext/transport/chttp2/transport/hpack_parser.c \
-    src/core/ext/transport/chttp2/transport/hpack_table.c \
-    src/core/ext/transport/chttp2/transport/http2_settings.c \
-    src/core/ext/transport/chttp2/transport/huffsyms.c \
-    src/core/ext/transport/chttp2/transport/incoming_metadata.c \
-    src/core/ext/transport/chttp2/transport/parsing.c \
-    src/core/ext/transport/chttp2/transport/stream_lists.c \
-    src/core/ext/transport/chttp2/transport/stream_map.c \
-    src/core/ext/transport/chttp2/transport/varint.c \
-    src/core/ext/transport/chttp2/transport/writing.c \
-    src/core/ext/transport/chttp2/alpn/alpn.c \
-    src/core/ext/filters/http/client/http_client_filter.c \
-    src/core/ext/filters/http/http_filters_plugin.c \
-    src/core/ext/filters/http/message_compress/message_compress_filter.c \
-    src/core/ext/filters/http/server/http_server_filter.c \
+    src/core/lib/surface/metadata_array.cc \
+    src/core/lib/surface/server.cc \
+    src/core/lib/surface/validate_metadata.cc \
+    src/core/lib/surface/version.cc \
+    src/core/lib/transport/bdp_estimator.cc \
+    src/core/lib/transport/byte_stream.cc \
+    src/core/lib/transport/connectivity_state.cc \
+    src/core/lib/transport/error_utils.cc \
+    src/core/lib/transport/metadata.cc \
+    src/core/lib/transport/metadata_batch.cc \
+    src/core/lib/transport/pid_controller.cc \
+    src/core/lib/transport/service_config.cc \
+    src/core/lib/transport/static_metadata.cc \
+    src/core/lib/transport/status_conversion.cc \
+    src/core/lib/transport/status_metadata.cc \
+    src/core/lib/transport/timeout_encoding.cc \
+    src/core/lib/transport/transport.cc \
+    src/core/lib/transport/transport_op_string.cc \
+    src/core/lib/debug/trace.cc \
+    src/core/ext/filters/client_channel/backup_poller.cc \
+    src/core/ext/filters/client_channel/channel_connectivity.cc \
+    src/core/ext/filters/client_channel/client_channel.cc \
+    src/core/ext/filters/client_channel/client_channel_factory.cc \
+    src/core/ext/filters/client_channel/client_channel_plugin.cc \
+    src/core/ext/filters/client_channel/connector.cc \
+    src/core/ext/filters/client_channel/http_connect_handshaker.cc \
+    src/core/ext/filters/client_channel/http_proxy.cc \
+    src/core/ext/filters/client_channel/lb_policy.cc \
+    src/core/ext/filters/client_channel/lb_policy_factory.cc \
+    src/core/ext/filters/client_channel/lb_policy_registry.cc \
+    src/core/ext/filters/client_channel/method_params.cc \
+    src/core/ext/filters/client_channel/parse_address.cc \
+    src/core/ext/filters/client_channel/proxy_mapper.cc \
+    src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
+    src/core/ext/filters/client_channel/resolver.cc \
+    src/core/ext/filters/client_channel/resolver_registry.cc \
+    src/core/ext/filters/client_channel/retry_throttle.cc \
+    src/core/ext/filters/client_channel/status_util.cc \
+    src/core/ext/filters/client_channel/subchannel.cc \
+    src/core/ext/filters/client_channel/subchannel_index.cc \
+    src/core/ext/filters/client_channel/uri_parser.cc \
+    src/core/ext/filters/deadline/deadline_filter.cc \
+    src/core/ext/transport/chttp2/transport/bin_decoder.cc \
+    src/core/ext/transport/chttp2/transport/bin_encoder.cc \
+    src/core/ext/transport/chttp2/transport/chttp2_plugin.cc \
+    src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
+    src/core/ext/transport/chttp2/transport/flow_control.cc \
+    src/core/ext/transport/chttp2/transport/frame_data.cc \
+    src/core/ext/transport/chttp2/transport/frame_goaway.cc \
+    src/core/ext/transport/chttp2/transport/frame_ping.cc \
+    src/core/ext/transport/chttp2/transport/frame_rst_stream.cc \
+    src/core/ext/transport/chttp2/transport/frame_settings.cc \
+    src/core/ext/transport/chttp2/transport/frame_window_update.cc \
+    src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
+    src/core/ext/transport/chttp2/transport/hpack_parser.cc \
+    src/core/ext/transport/chttp2/transport/hpack_table.cc \
+    src/core/ext/transport/chttp2/transport/http2_settings.cc \
+    src/core/ext/transport/chttp2/transport/huffsyms.cc \
+    src/core/ext/transport/chttp2/transport/incoming_metadata.cc \
+    src/core/ext/transport/chttp2/transport/parsing.cc \
+    src/core/ext/transport/chttp2/transport/stream_lists.cc \
+    src/core/ext/transport/chttp2/transport/stream_map.cc \
+    src/core/ext/transport/chttp2/transport/varint.cc \
+    src/core/ext/transport/chttp2/transport/writing.cc \
+    src/core/ext/transport/chttp2/alpn/alpn.cc \
+    src/core/ext/filters/http/client/http_client_filter.cc \
+    src/core/ext/filters/http/http_filters_plugin.cc \
+    src/core/ext/filters/http/message_compress/message_compress_filter.cc \
+    src/core/ext/filters/http/server/http_server_filter.cc \
 
 PUBLIC_HEADERS_C += \
-    include/grpc/impl/codegen/byte_buffer_reader.h \
-    include/grpc/impl/codegen/compression_types.h \
-    include/grpc/impl/codegen/connectivity_state.h \
-    include/grpc/impl/codegen/exec_ctx_fwd.h \
-    include/grpc/impl/codegen/grpc_types.h \
-    include/grpc/impl/codegen/propagation_bits.h \
-    include/grpc/impl/codegen/slice.h \
-    include/grpc/impl/codegen/status.h \
+    include/grpc/support/alloc.h \
+    include/grpc/support/atm.h \
+    include/grpc/support/atm_gcc_atomic.h \
+    include/grpc/support/atm_gcc_sync.h \
+    include/grpc/support/atm_windows.h \
+    include/grpc/support/cpu.h \
+    include/grpc/support/log.h \
+    include/grpc/support/log_windows.h \
+    include/grpc/support/port_platform.h \
+    include/grpc/support/string_util.h \
+    include/grpc/support/sync.h \
+    include/grpc/support/sync_custom.h \
+    include/grpc/support/sync_generic.h \
+    include/grpc/support/sync_posix.h \
+    include/grpc/support/sync_windows.h \
+    include/grpc/support/thd_id.h \
+    include/grpc/support/time.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
     include/grpc/impl/codegen/atm_windows.h \
+    include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
@@ -3758,6 +4161,14 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
+    include/grpc/impl/codegen/byte_buffer.h \
+    include/grpc/impl/codegen/byte_buffer_reader.h \
+    include/grpc/impl/codegen/compression_types.h \
+    include/grpc/impl/codegen/connectivity_state.h \
+    include/grpc/impl/codegen/grpc_types.h \
+    include/grpc/impl/codegen/propagation_bits.h \
+    include/grpc/impl/codegen/slice.h \
+    include/grpc/impl/codegen/status.h \
 
 LIBGRPC_TEST_UTIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_TEST_UTIL_SRC))))
 
@@ -3794,212 +4205,247 @@ endif
 
 
 LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
-    src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c \
-    test/core/end2end/cq_verifier.c \
-    test/core/end2end/fixtures/http_proxy_fixture.c \
-    test/core/end2end/fixtures/proxy.c \
-    test/core/iomgr/endpoint_tests.c \
-    test/core/util/debugger_macros.c \
-    test/core/util/grpc_profiler.c \
-    test/core/util/memory_counters.c \
-    test/core/util/mock_endpoint.c \
-    test/core/util/parse_hexstring.c \
-    test/core/util/passthru_endpoint.c \
-    test/core/util/port.c \
-    test/core/util/port_server_client.c \
-    test/core/util/slice_splitter.c \
-    test/core/util/trickle_endpoint.c \
-    src/core/lib/channel/channel_args.c \
-    src/core/lib/channel/channel_stack.c \
-    src/core/lib/channel/channel_stack_builder.c \
-    src/core/lib/channel/connected_channel.c \
-    src/core/lib/channel/handshaker.c \
-    src/core/lib/channel/handshaker_factory.c \
-    src/core/lib/channel/handshaker_registry.c \
-    src/core/lib/compression/compression.c \
-    src/core/lib/compression/message_compress.c \
-    src/core/lib/compression/stream_compression.c \
-    src/core/lib/http/format_request.c \
-    src/core/lib/http/httpcli.c \
-    src/core/lib/http/parser.c \
-    src/core/lib/iomgr/closure.c \
-    src/core/lib/iomgr/combiner.c \
-    src/core/lib/iomgr/endpoint.c \
-    src/core/lib/iomgr/endpoint_pair_posix.c \
-    src/core/lib/iomgr/endpoint_pair_uv.c \
-    src/core/lib/iomgr/endpoint_pair_windows.c \
-    src/core/lib/iomgr/error.c \
-    src/core/lib/iomgr/ev_epoll1_linux.c \
-    src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c \
-    src/core/lib/iomgr/ev_epoll_thread_pool_linux.c \
-    src/core/lib/iomgr/ev_epollex_linux.c \
-    src/core/lib/iomgr/ev_epollsig_linux.c \
-    src/core/lib/iomgr/ev_poll_posix.c \
-    src/core/lib/iomgr/ev_posix.c \
-    src/core/lib/iomgr/ev_windows.c \
-    src/core/lib/iomgr/exec_ctx.c \
-    src/core/lib/iomgr/executor.c \
-    src/core/lib/iomgr/gethostname_fallback.c \
-    src/core/lib/iomgr/gethostname_host_name_max.c \
-    src/core/lib/iomgr/gethostname_sysconf.c \
-    src/core/lib/iomgr/iocp_windows.c \
-    src/core/lib/iomgr/iomgr.c \
-    src/core/lib/iomgr/iomgr_posix.c \
-    src/core/lib/iomgr/iomgr_uv.c \
-    src/core/lib/iomgr/iomgr_windows.c \
-    src/core/lib/iomgr/is_epollexclusive_available.c \
-    src/core/lib/iomgr/load_file.c \
-    src/core/lib/iomgr/lockfree_event.c \
-    src/core/lib/iomgr/network_status_tracker.c \
-    src/core/lib/iomgr/polling_entity.c \
-    src/core/lib/iomgr/pollset_set_uv.c \
-    src/core/lib/iomgr/pollset_set_windows.c \
-    src/core/lib/iomgr/pollset_uv.c \
-    src/core/lib/iomgr/pollset_windows.c \
-    src/core/lib/iomgr/resolve_address_posix.c \
-    src/core/lib/iomgr/resolve_address_uv.c \
-    src/core/lib/iomgr/resolve_address_windows.c \
-    src/core/lib/iomgr/resource_quota.c \
-    src/core/lib/iomgr/sockaddr_utils.c \
-    src/core/lib/iomgr/socket_factory_posix.c \
-    src/core/lib/iomgr/socket_mutator.c \
-    src/core/lib/iomgr/socket_utils_common_posix.c \
-    src/core/lib/iomgr/socket_utils_linux.c \
-    src/core/lib/iomgr/socket_utils_posix.c \
-    src/core/lib/iomgr/socket_utils_uv.c \
-    src/core/lib/iomgr/socket_utils_windows.c \
-    src/core/lib/iomgr/socket_windows.c \
-    src/core/lib/iomgr/tcp_client_posix.c \
-    src/core/lib/iomgr/tcp_client_uv.c \
-    src/core/lib/iomgr/tcp_client_windows.c \
-    src/core/lib/iomgr/tcp_posix.c \
-    src/core/lib/iomgr/tcp_server_posix.c \
-    src/core/lib/iomgr/tcp_server_utils_posix_common.c \
-    src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c \
-    src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c \
-    src/core/lib/iomgr/tcp_server_uv.c \
-    src/core/lib/iomgr/tcp_server_windows.c \
-    src/core/lib/iomgr/tcp_uv.c \
-    src/core/lib/iomgr/tcp_windows.c \
-    src/core/lib/iomgr/time_averaged_stats.c \
-    src/core/lib/iomgr/timer_generic.c \
-    src/core/lib/iomgr/timer_heap.c \
-    src/core/lib/iomgr/timer_manager.c \
-    src/core/lib/iomgr/timer_uv.c \
-    src/core/lib/iomgr/udp_server.c \
-    src/core/lib/iomgr/unix_sockets_posix.c \
-    src/core/lib/iomgr/unix_sockets_posix_noop.c \
-    src/core/lib/iomgr/wakeup_fd_cv.c \
-    src/core/lib/iomgr/wakeup_fd_eventfd.c \
-    src/core/lib/iomgr/wakeup_fd_nospecial.c \
-    src/core/lib/iomgr/wakeup_fd_pipe.c \
-    src/core/lib/iomgr/wakeup_fd_posix.c \
-    src/core/lib/json/json.c \
-    src/core/lib/json/json_reader.c \
-    src/core/lib/json/json_string.c \
-    src/core/lib/json/json_writer.c \
-    src/core/lib/slice/b64.c \
-    src/core/lib/slice/percent_encoding.c \
-    src/core/lib/slice/slice.c \
-    src/core/lib/slice/slice_buffer.c \
-    src/core/lib/slice/slice_hash_table.c \
-    src/core/lib/slice/slice_intern.c \
-    src/core/lib/slice/slice_string_helpers.c \
-    src/core/lib/surface/alarm.c \
-    src/core/lib/surface/api_trace.c \
-    src/core/lib/surface/byte_buffer.c \
-    src/core/lib/surface/byte_buffer_reader.c \
-    src/core/lib/surface/call.c \
-    src/core/lib/surface/call_details.c \
-    src/core/lib/surface/call_log_batch.c \
-    src/core/lib/surface/channel.c \
-    src/core/lib/surface/channel_init.c \
-    src/core/lib/surface/channel_ping.c \
-    src/core/lib/surface/channel_stack_type.c \
-    src/core/lib/surface/completion_queue.c \
-    src/core/lib/surface/completion_queue_factory.c \
-    src/core/lib/surface/event_string.c \
+    src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
+    test/core/end2end/cq_verifier.cc \
+    test/core/end2end/fixtures/http_proxy_fixture.cc \
+    test/core/end2end/fixtures/proxy.cc \
+    test/core/iomgr/endpoint_tests.cc \
+    test/core/util/debugger_macros.cc \
+    test/core/util/grpc_profiler.cc \
+    test/core/util/histogram.cc \
+    test/core/util/memory_counters.cc \
+    test/core/util/mock_endpoint.cc \
+    test/core/util/parse_hexstring.cc \
+    test/core/util/passthru_endpoint.cc \
+    test/core/util/port.cc \
+    test/core/util/port_isolated_runtime_environment.cc \
+    test/core/util/port_server_client.cc \
+    test/core/util/slice_splitter.cc \
+    test/core/util/subprocess_posix.cc \
+    test/core/util/subprocess_windows.cc \
+    test/core/util/tracer_util.cc \
+    test/core/util/trickle_endpoint.cc \
+    test/core/util/cmdline.cc \
+    src/core/lib/avl/avl.cc \
+    src/core/lib/backoff/backoff.cc \
+    src/core/lib/channel/channel_args.cc \
+    src/core/lib/channel/channel_stack.cc \
+    src/core/lib/channel/channel_stack_builder.cc \
+    src/core/lib/channel/connected_channel.cc \
+    src/core/lib/channel/handshaker.cc \
+    src/core/lib/channel/handshaker_factory.cc \
+    src/core/lib/channel/handshaker_registry.cc \
+    src/core/lib/compression/compression.cc \
+    src/core/lib/compression/compression_internal.cc \
+    src/core/lib/compression/message_compress.cc \
+    src/core/lib/compression/stream_compression.cc \
+    src/core/lib/compression/stream_compression_gzip.cc \
+    src/core/lib/compression/stream_compression_identity.cc \
+    src/core/lib/debug/stats.cc \
+    src/core/lib/debug/stats_data.cc \
+    src/core/lib/http/format_request.cc \
+    src/core/lib/http/httpcli.cc \
+    src/core/lib/http/parser.cc \
+    src/core/lib/iomgr/call_combiner.cc \
+    src/core/lib/iomgr/combiner.cc \
+    src/core/lib/iomgr/endpoint.cc \
+    src/core/lib/iomgr/endpoint_pair_posix.cc \
+    src/core/lib/iomgr/endpoint_pair_uv.cc \
+    src/core/lib/iomgr/endpoint_pair_windows.cc \
+    src/core/lib/iomgr/error.cc \
+    src/core/lib/iomgr/ev_epoll1_linux.cc \
+    src/core/lib/iomgr/ev_epollex_linux.cc \
+    src/core/lib/iomgr/ev_epollsig_linux.cc \
+    src/core/lib/iomgr/ev_poll_posix.cc \
+    src/core/lib/iomgr/ev_posix.cc \
+    src/core/lib/iomgr/ev_windows.cc \
+    src/core/lib/iomgr/exec_ctx.cc \
+    src/core/lib/iomgr/executor.cc \
+    src/core/lib/iomgr/fork_posix.cc \
+    src/core/lib/iomgr/fork_windows.cc \
+    src/core/lib/iomgr/gethostname_fallback.cc \
+    src/core/lib/iomgr/gethostname_host_name_max.cc \
+    src/core/lib/iomgr/gethostname_sysconf.cc \
+    src/core/lib/iomgr/iocp_windows.cc \
+    src/core/lib/iomgr/iomgr.cc \
+    src/core/lib/iomgr/iomgr_custom.cc \
+    src/core/lib/iomgr/iomgr_internal.cc \
+    src/core/lib/iomgr/iomgr_posix.cc \
+    src/core/lib/iomgr/iomgr_uv.cc \
+    src/core/lib/iomgr/iomgr_windows.cc \
+    src/core/lib/iomgr/is_epollexclusive_available.cc \
+    src/core/lib/iomgr/load_file.cc \
+    src/core/lib/iomgr/lockfree_event.cc \
+    src/core/lib/iomgr/network_status_tracker.cc \
+    src/core/lib/iomgr/polling_entity.cc \
+    src/core/lib/iomgr/pollset.cc \
+    src/core/lib/iomgr/pollset_custom.cc \
+    src/core/lib/iomgr/pollset_set.cc \
+    src/core/lib/iomgr/pollset_set_custom.cc \
+    src/core/lib/iomgr/pollset_set_windows.cc \
+    src/core/lib/iomgr/pollset_uv.cc \
+    src/core/lib/iomgr/pollset_windows.cc \
+    src/core/lib/iomgr/resolve_address.cc \
+    src/core/lib/iomgr/resolve_address_custom.cc \
+    src/core/lib/iomgr/resolve_address_posix.cc \
+    src/core/lib/iomgr/resolve_address_windows.cc \
+    src/core/lib/iomgr/resource_quota.cc \
+    src/core/lib/iomgr/sockaddr_utils.cc \
+    src/core/lib/iomgr/socket_factory_posix.cc \
+    src/core/lib/iomgr/socket_mutator.cc \
+    src/core/lib/iomgr/socket_utils_common_posix.cc \
+    src/core/lib/iomgr/socket_utils_linux.cc \
+    src/core/lib/iomgr/socket_utils_posix.cc \
+    src/core/lib/iomgr/socket_utils_uv.cc \
+    src/core/lib/iomgr/socket_utils_windows.cc \
+    src/core/lib/iomgr/socket_windows.cc \
+    src/core/lib/iomgr/tcp_client.cc \
+    src/core/lib/iomgr/tcp_client_custom.cc \
+    src/core/lib/iomgr/tcp_client_posix.cc \
+    src/core/lib/iomgr/tcp_client_windows.cc \
+    src/core/lib/iomgr/tcp_custom.cc \
+    src/core/lib/iomgr/tcp_posix.cc \
+    src/core/lib/iomgr/tcp_server.cc \
+    src/core/lib/iomgr/tcp_server_custom.cc \
+    src/core/lib/iomgr/tcp_server_posix.cc \
+    src/core/lib/iomgr/tcp_server_utils_posix_common.cc \
+    src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc \
+    src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc \
+    src/core/lib/iomgr/tcp_server_windows.cc \
+    src/core/lib/iomgr/tcp_uv.cc \
+    src/core/lib/iomgr/tcp_windows.cc \
+    src/core/lib/iomgr/time_averaged_stats.cc \
+    src/core/lib/iomgr/timer.cc \
+    src/core/lib/iomgr/timer_custom.cc \
+    src/core/lib/iomgr/timer_generic.cc \
+    src/core/lib/iomgr/timer_heap.cc \
+    src/core/lib/iomgr/timer_manager.cc \
+    src/core/lib/iomgr/timer_uv.cc \
+    src/core/lib/iomgr/udp_server.cc \
+    src/core/lib/iomgr/unix_sockets_posix.cc \
+    src/core/lib/iomgr/unix_sockets_posix_noop.cc \
+    src/core/lib/iomgr/wakeup_fd_cv.cc \
+    src/core/lib/iomgr/wakeup_fd_eventfd.cc \
+    src/core/lib/iomgr/wakeup_fd_nospecial.cc \
+    src/core/lib/iomgr/wakeup_fd_pipe.cc \
+    src/core/lib/iomgr/wakeup_fd_posix.cc \
+    src/core/lib/json/json.cc \
+    src/core/lib/json/json_reader.cc \
+    src/core/lib/json/json_string.cc \
+    src/core/lib/json/json_writer.cc \
+    src/core/lib/slice/b64.cc \
+    src/core/lib/slice/percent_encoding.cc \
+    src/core/lib/slice/slice.cc \
+    src/core/lib/slice/slice_buffer.cc \
+    src/core/lib/slice/slice_intern.cc \
+    src/core/lib/slice/slice_string_helpers.cc \
+    src/core/lib/surface/api_trace.cc \
+    src/core/lib/surface/byte_buffer.cc \
+    src/core/lib/surface/byte_buffer_reader.cc \
+    src/core/lib/surface/call.cc \
+    src/core/lib/surface/call_details.cc \
+    src/core/lib/surface/call_log_batch.cc \
+    src/core/lib/surface/channel.cc \
+    src/core/lib/surface/channel_init.cc \
+    src/core/lib/surface/channel_ping.cc \
+    src/core/lib/surface/channel_stack_type.cc \
+    src/core/lib/surface/completion_queue.cc \
+    src/core/lib/surface/completion_queue_factory.cc \
+    src/core/lib/surface/event_string.cc \
     src/core/lib/surface/lame_client.cc \
-    src/core/lib/surface/metadata_array.c \
-    src/core/lib/surface/server.c \
-    src/core/lib/surface/validate_metadata.c \
-    src/core/lib/surface/version.c \
-    src/core/lib/transport/bdp_estimator.c \
-    src/core/lib/transport/byte_stream.c \
-    src/core/lib/transport/connectivity_state.c \
-    src/core/lib/transport/error_utils.c \
-    src/core/lib/transport/metadata.c \
-    src/core/lib/transport/metadata_batch.c \
-    src/core/lib/transport/pid_controller.c \
-    src/core/lib/transport/service_config.c \
-    src/core/lib/transport/static_metadata.c \
-    src/core/lib/transport/status_conversion.c \
-    src/core/lib/transport/timeout_encoding.c \
-    src/core/lib/transport/transport.c \
-    src/core/lib/transport/transport_op_string.c \
-    src/core/lib/debug/trace.c \
-    src/core/ext/filters/client_channel/channel_connectivity.c \
-    src/core/ext/filters/client_channel/client_channel.c \
-    src/core/ext/filters/client_channel/client_channel_factory.c \
-    src/core/ext/filters/client_channel/client_channel_plugin.c \
-    src/core/ext/filters/client_channel/connector.c \
-    src/core/ext/filters/client_channel/http_connect_handshaker.c \
-    src/core/ext/filters/client_channel/http_proxy.c \
-    src/core/ext/filters/client_channel/lb_policy.c \
-    src/core/ext/filters/client_channel/lb_policy_factory.c \
-    src/core/ext/filters/client_channel/lb_policy_registry.c \
-    src/core/ext/filters/client_channel/parse_address.c \
-    src/core/ext/filters/client_channel/proxy_mapper.c \
-    src/core/ext/filters/client_channel/proxy_mapper_registry.c \
-    src/core/ext/filters/client_channel/resolver.c \
-    src/core/ext/filters/client_channel/resolver_factory.c \
-    src/core/ext/filters/client_channel/resolver_registry.c \
-    src/core/ext/filters/client_channel/retry_throttle.c \
-    src/core/ext/filters/client_channel/subchannel.c \
-    src/core/ext/filters/client_channel/subchannel_index.c \
-    src/core/ext/filters/client_channel/uri_parser.c \
-    src/core/ext/filters/deadline/deadline_filter.c \
-    src/core/ext/transport/chttp2/transport/bin_decoder.c \
-    src/core/ext/transport/chttp2/transport/bin_encoder.c \
-    src/core/ext/transport/chttp2/transport/chttp2_plugin.c \
-    src/core/ext/transport/chttp2/transport/chttp2_transport.c \
-    src/core/ext/transport/chttp2/transport/flow_control.c \
-    src/core/ext/transport/chttp2/transport/frame_data.c \
-    src/core/ext/transport/chttp2/transport/frame_goaway.c \
-    src/core/ext/transport/chttp2/transport/frame_ping.c \
-    src/core/ext/transport/chttp2/transport/frame_rst_stream.c \
-    src/core/ext/transport/chttp2/transport/frame_settings.c \
-    src/core/ext/transport/chttp2/transport/frame_window_update.c \
-    src/core/ext/transport/chttp2/transport/hpack_encoder.c \
-    src/core/ext/transport/chttp2/transport/hpack_parser.c \
-    src/core/ext/transport/chttp2/transport/hpack_table.c \
-    src/core/ext/transport/chttp2/transport/http2_settings.c \
-    src/core/ext/transport/chttp2/transport/huffsyms.c \
-    src/core/ext/transport/chttp2/transport/incoming_metadata.c \
-    src/core/ext/transport/chttp2/transport/parsing.c \
-    src/core/ext/transport/chttp2/transport/stream_lists.c \
-    src/core/ext/transport/chttp2/transport/stream_map.c \
-    src/core/ext/transport/chttp2/transport/varint.c \
-    src/core/ext/transport/chttp2/transport/writing.c \
-    src/core/ext/transport/chttp2/alpn/alpn.c \
-    src/core/ext/filters/http/client/http_client_filter.c \
-    src/core/ext/filters/http/http_filters_plugin.c \
-    src/core/ext/filters/http/message_compress/message_compress_filter.c \
-    src/core/ext/filters/http/server/http_server_filter.c \
+    src/core/lib/surface/metadata_array.cc \
+    src/core/lib/surface/server.cc \
+    src/core/lib/surface/validate_metadata.cc \
+    src/core/lib/surface/version.cc \
+    src/core/lib/transport/bdp_estimator.cc \
+    src/core/lib/transport/byte_stream.cc \
+    src/core/lib/transport/connectivity_state.cc \
+    src/core/lib/transport/error_utils.cc \
+    src/core/lib/transport/metadata.cc \
+    src/core/lib/transport/metadata_batch.cc \
+    src/core/lib/transport/pid_controller.cc \
+    src/core/lib/transport/service_config.cc \
+    src/core/lib/transport/static_metadata.cc \
+    src/core/lib/transport/status_conversion.cc \
+    src/core/lib/transport/status_metadata.cc \
+    src/core/lib/transport/timeout_encoding.cc \
+    src/core/lib/transport/transport.cc \
+    src/core/lib/transport/transport_op_string.cc \
+    src/core/lib/debug/trace.cc \
+    src/core/ext/filters/client_channel/backup_poller.cc \
+    src/core/ext/filters/client_channel/channel_connectivity.cc \
+    src/core/ext/filters/client_channel/client_channel.cc \
+    src/core/ext/filters/client_channel/client_channel_factory.cc \
+    src/core/ext/filters/client_channel/client_channel_plugin.cc \
+    src/core/ext/filters/client_channel/connector.cc \
+    src/core/ext/filters/client_channel/http_connect_handshaker.cc \
+    src/core/ext/filters/client_channel/http_proxy.cc \
+    src/core/ext/filters/client_channel/lb_policy.cc \
+    src/core/ext/filters/client_channel/lb_policy_factory.cc \
+    src/core/ext/filters/client_channel/lb_policy_registry.cc \
+    src/core/ext/filters/client_channel/method_params.cc \
+    src/core/ext/filters/client_channel/parse_address.cc \
+    src/core/ext/filters/client_channel/proxy_mapper.cc \
+    src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
+    src/core/ext/filters/client_channel/resolver.cc \
+    src/core/ext/filters/client_channel/resolver_registry.cc \
+    src/core/ext/filters/client_channel/retry_throttle.cc \
+    src/core/ext/filters/client_channel/status_util.cc \
+    src/core/ext/filters/client_channel/subchannel.cc \
+    src/core/ext/filters/client_channel/subchannel_index.cc \
+    src/core/ext/filters/client_channel/uri_parser.cc \
+    src/core/ext/filters/deadline/deadline_filter.cc \
+    src/core/ext/transport/chttp2/transport/bin_decoder.cc \
+    src/core/ext/transport/chttp2/transport/bin_encoder.cc \
+    src/core/ext/transport/chttp2/transport/chttp2_plugin.cc \
+    src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
+    src/core/ext/transport/chttp2/transport/flow_control.cc \
+    src/core/ext/transport/chttp2/transport/frame_data.cc \
+    src/core/ext/transport/chttp2/transport/frame_goaway.cc \
+    src/core/ext/transport/chttp2/transport/frame_ping.cc \
+    src/core/ext/transport/chttp2/transport/frame_rst_stream.cc \
+    src/core/ext/transport/chttp2/transport/frame_settings.cc \
+    src/core/ext/transport/chttp2/transport/frame_window_update.cc \
+    src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
+    src/core/ext/transport/chttp2/transport/hpack_parser.cc \
+    src/core/ext/transport/chttp2/transport/hpack_table.cc \
+    src/core/ext/transport/chttp2/transport/http2_settings.cc \
+    src/core/ext/transport/chttp2/transport/huffsyms.cc \
+    src/core/ext/transport/chttp2/transport/incoming_metadata.cc \
+    src/core/ext/transport/chttp2/transport/parsing.cc \
+    src/core/ext/transport/chttp2/transport/stream_lists.cc \
+    src/core/ext/transport/chttp2/transport/stream_map.cc \
+    src/core/ext/transport/chttp2/transport/varint.cc \
+    src/core/ext/transport/chttp2/transport/writing.cc \
+    src/core/ext/transport/chttp2/alpn/alpn.cc \
+    src/core/ext/filters/http/client/http_client_filter.cc \
+    src/core/ext/filters/http/http_filters_plugin.cc \
+    src/core/ext/filters/http/message_compress/message_compress_filter.cc \
+    src/core/ext/filters/http/server/http_server_filter.cc \
 
 PUBLIC_HEADERS_C += \
-    include/grpc/impl/codegen/byte_buffer_reader.h \
-    include/grpc/impl/codegen/compression_types.h \
-    include/grpc/impl/codegen/connectivity_state.h \
-    include/grpc/impl/codegen/exec_ctx_fwd.h \
-    include/grpc/impl/codegen/grpc_types.h \
-    include/grpc/impl/codegen/propagation_bits.h \
-    include/grpc/impl/codegen/slice.h \
-    include/grpc/impl/codegen/status.h \
+    include/grpc/support/alloc.h \
+    include/grpc/support/atm.h \
+    include/grpc/support/atm_gcc_atomic.h \
+    include/grpc/support/atm_gcc_sync.h \
+    include/grpc/support/atm_windows.h \
+    include/grpc/support/cpu.h \
+    include/grpc/support/log.h \
+    include/grpc/support/log_windows.h \
+    include/grpc/support/port_platform.h \
+    include/grpc/support/string_util.h \
+    include/grpc/support/sync.h \
+    include/grpc/support/sync_custom.h \
+    include/grpc/support/sync_generic.h \
+    include/grpc/support/sync_posix.h \
+    include/grpc/support/sync_windows.h \
+    include/grpc/support/thd_id.h \
+    include/grpc/support/time.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
     include/grpc/impl/codegen/atm_windows.h \
+    include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
@@ -4008,6 +4454,14 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
+    include/grpc/impl/codegen/byte_buffer.h \
+    include/grpc/impl/codegen/byte_buffer_reader.h \
+    include/grpc/impl/codegen/compression_types.h \
+    include/grpc/impl/codegen/connectivity_state.h \
+    include/grpc/impl/codegen/grpc_types.h \
+    include/grpc/impl/codegen/propagation_bits.h \
+    include/grpc/impl/codegen/slice.h \
+    include/grpc/impl/codegen/status.h \
 
 LIBGRPC_TEST_UTIL_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_TEST_UTIL_UNSECURE_SRC))))
 
@@ -4030,240 +4484,246 @@ endif
 
 
 LIBGRPC_UNSECURE_SRC = \
-    src/core/lib/surface/init.c \
-    src/core/lib/surface/init_unsecure.c \
-    src/core/lib/channel/channel_args.c \
-    src/core/lib/channel/channel_stack.c \
-    src/core/lib/channel/channel_stack_builder.c \
-    src/core/lib/channel/connected_channel.c \
-    src/core/lib/channel/handshaker.c \
-    src/core/lib/channel/handshaker_factory.c \
-    src/core/lib/channel/handshaker_registry.c \
-    src/core/lib/compression/compression.c \
-    src/core/lib/compression/message_compress.c \
-    src/core/lib/compression/stream_compression.c \
-    src/core/lib/http/format_request.c \
-    src/core/lib/http/httpcli.c \
-    src/core/lib/http/parser.c \
-    src/core/lib/iomgr/closure.c \
-    src/core/lib/iomgr/combiner.c \
-    src/core/lib/iomgr/endpoint.c \
-    src/core/lib/iomgr/endpoint_pair_posix.c \
-    src/core/lib/iomgr/endpoint_pair_uv.c \
-    src/core/lib/iomgr/endpoint_pair_windows.c \
-    src/core/lib/iomgr/error.c \
-    src/core/lib/iomgr/ev_epoll1_linux.c \
-    src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c \
-    src/core/lib/iomgr/ev_epoll_thread_pool_linux.c \
-    src/core/lib/iomgr/ev_epollex_linux.c \
-    src/core/lib/iomgr/ev_epollsig_linux.c \
-    src/core/lib/iomgr/ev_poll_posix.c \
-    src/core/lib/iomgr/ev_posix.c \
-    src/core/lib/iomgr/ev_windows.c \
-    src/core/lib/iomgr/exec_ctx.c \
-    src/core/lib/iomgr/executor.c \
-    src/core/lib/iomgr/gethostname_fallback.c \
-    src/core/lib/iomgr/gethostname_host_name_max.c \
-    src/core/lib/iomgr/gethostname_sysconf.c \
-    src/core/lib/iomgr/iocp_windows.c \
-    src/core/lib/iomgr/iomgr.c \
-    src/core/lib/iomgr/iomgr_posix.c \
-    src/core/lib/iomgr/iomgr_uv.c \
-    src/core/lib/iomgr/iomgr_windows.c \
-    src/core/lib/iomgr/is_epollexclusive_available.c \
-    src/core/lib/iomgr/load_file.c \
-    src/core/lib/iomgr/lockfree_event.c \
-    src/core/lib/iomgr/network_status_tracker.c \
-    src/core/lib/iomgr/polling_entity.c \
-    src/core/lib/iomgr/pollset_set_uv.c \
-    src/core/lib/iomgr/pollset_set_windows.c \
-    src/core/lib/iomgr/pollset_uv.c \
-    src/core/lib/iomgr/pollset_windows.c \
-    src/core/lib/iomgr/resolve_address_posix.c \
-    src/core/lib/iomgr/resolve_address_uv.c \
-    src/core/lib/iomgr/resolve_address_windows.c \
-    src/core/lib/iomgr/resource_quota.c \
-    src/core/lib/iomgr/sockaddr_utils.c \
-    src/core/lib/iomgr/socket_factory_posix.c \
-    src/core/lib/iomgr/socket_mutator.c \
-    src/core/lib/iomgr/socket_utils_common_posix.c \
-    src/core/lib/iomgr/socket_utils_linux.c \
-    src/core/lib/iomgr/socket_utils_posix.c \
-    src/core/lib/iomgr/socket_utils_uv.c \
-    src/core/lib/iomgr/socket_utils_windows.c \
-    src/core/lib/iomgr/socket_windows.c \
-    src/core/lib/iomgr/tcp_client_posix.c \
-    src/core/lib/iomgr/tcp_client_uv.c \
-    src/core/lib/iomgr/tcp_client_windows.c \
-    src/core/lib/iomgr/tcp_posix.c \
-    src/core/lib/iomgr/tcp_server_posix.c \
-    src/core/lib/iomgr/tcp_server_utils_posix_common.c \
-    src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c \
-    src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c \
-    src/core/lib/iomgr/tcp_server_uv.c \
-    src/core/lib/iomgr/tcp_server_windows.c \
-    src/core/lib/iomgr/tcp_uv.c \
-    src/core/lib/iomgr/tcp_windows.c \
-    src/core/lib/iomgr/time_averaged_stats.c \
-    src/core/lib/iomgr/timer_generic.c \
-    src/core/lib/iomgr/timer_heap.c \
-    src/core/lib/iomgr/timer_manager.c \
-    src/core/lib/iomgr/timer_uv.c \
-    src/core/lib/iomgr/udp_server.c \
-    src/core/lib/iomgr/unix_sockets_posix.c \
-    src/core/lib/iomgr/unix_sockets_posix_noop.c \
-    src/core/lib/iomgr/wakeup_fd_cv.c \
-    src/core/lib/iomgr/wakeup_fd_eventfd.c \
-    src/core/lib/iomgr/wakeup_fd_nospecial.c \
-    src/core/lib/iomgr/wakeup_fd_pipe.c \
-    src/core/lib/iomgr/wakeup_fd_posix.c \
-    src/core/lib/json/json.c \
-    src/core/lib/json/json_reader.c \
-    src/core/lib/json/json_string.c \
-    src/core/lib/json/json_writer.c \
-    src/core/lib/slice/b64.c \
-    src/core/lib/slice/percent_encoding.c \
-    src/core/lib/slice/slice.c \
-    src/core/lib/slice/slice_buffer.c \
-    src/core/lib/slice/slice_hash_table.c \
-    src/core/lib/slice/slice_intern.c \
-    src/core/lib/slice/slice_string_helpers.c \
-    src/core/lib/surface/alarm.c \
-    src/core/lib/surface/api_trace.c \
-    src/core/lib/surface/byte_buffer.c \
-    src/core/lib/surface/byte_buffer_reader.c \
-    src/core/lib/surface/call.c \
-    src/core/lib/surface/call_details.c \
-    src/core/lib/surface/call_log_batch.c \
-    src/core/lib/surface/channel.c \
-    src/core/lib/surface/channel_init.c \
-    src/core/lib/surface/channel_ping.c \
-    src/core/lib/surface/channel_stack_type.c \
-    src/core/lib/surface/completion_queue.c \
-    src/core/lib/surface/completion_queue_factory.c \
-    src/core/lib/surface/event_string.c \
+    src/core/lib/surface/init.cc \
+    src/core/lib/surface/init_unsecure.cc \
+    src/core/lib/avl/avl.cc \
+    src/core/lib/backoff/backoff.cc \
+    src/core/lib/channel/channel_args.cc \
+    src/core/lib/channel/channel_stack.cc \
+    src/core/lib/channel/channel_stack_builder.cc \
+    src/core/lib/channel/connected_channel.cc \
+    src/core/lib/channel/handshaker.cc \
+    src/core/lib/channel/handshaker_factory.cc \
+    src/core/lib/channel/handshaker_registry.cc \
+    src/core/lib/compression/compression.cc \
+    src/core/lib/compression/compression_internal.cc \
+    src/core/lib/compression/message_compress.cc \
+    src/core/lib/compression/stream_compression.cc \
+    src/core/lib/compression/stream_compression_gzip.cc \
+    src/core/lib/compression/stream_compression_identity.cc \
+    src/core/lib/debug/stats.cc \
+    src/core/lib/debug/stats_data.cc \
+    src/core/lib/http/format_request.cc \
+    src/core/lib/http/httpcli.cc \
+    src/core/lib/http/parser.cc \
+    src/core/lib/iomgr/call_combiner.cc \
+    src/core/lib/iomgr/combiner.cc \
+    src/core/lib/iomgr/endpoint.cc \
+    src/core/lib/iomgr/endpoint_pair_posix.cc \
+    src/core/lib/iomgr/endpoint_pair_uv.cc \
+    src/core/lib/iomgr/endpoint_pair_windows.cc \
+    src/core/lib/iomgr/error.cc \
+    src/core/lib/iomgr/ev_epoll1_linux.cc \
+    src/core/lib/iomgr/ev_epollex_linux.cc \
+    src/core/lib/iomgr/ev_epollsig_linux.cc \
+    src/core/lib/iomgr/ev_poll_posix.cc \
+    src/core/lib/iomgr/ev_posix.cc \
+    src/core/lib/iomgr/ev_windows.cc \
+    src/core/lib/iomgr/exec_ctx.cc \
+    src/core/lib/iomgr/executor.cc \
+    src/core/lib/iomgr/fork_posix.cc \
+    src/core/lib/iomgr/fork_windows.cc \
+    src/core/lib/iomgr/gethostname_fallback.cc \
+    src/core/lib/iomgr/gethostname_host_name_max.cc \
+    src/core/lib/iomgr/gethostname_sysconf.cc \
+    src/core/lib/iomgr/iocp_windows.cc \
+    src/core/lib/iomgr/iomgr.cc \
+    src/core/lib/iomgr/iomgr_custom.cc \
+    src/core/lib/iomgr/iomgr_internal.cc \
+    src/core/lib/iomgr/iomgr_posix.cc \
+    src/core/lib/iomgr/iomgr_uv.cc \
+    src/core/lib/iomgr/iomgr_windows.cc \
+    src/core/lib/iomgr/is_epollexclusive_available.cc \
+    src/core/lib/iomgr/load_file.cc \
+    src/core/lib/iomgr/lockfree_event.cc \
+    src/core/lib/iomgr/network_status_tracker.cc \
+    src/core/lib/iomgr/polling_entity.cc \
+    src/core/lib/iomgr/pollset.cc \
+    src/core/lib/iomgr/pollset_custom.cc \
+    src/core/lib/iomgr/pollset_set.cc \
+    src/core/lib/iomgr/pollset_set_custom.cc \
+    src/core/lib/iomgr/pollset_set_windows.cc \
+    src/core/lib/iomgr/pollset_uv.cc \
+    src/core/lib/iomgr/pollset_windows.cc \
+    src/core/lib/iomgr/resolve_address.cc \
+    src/core/lib/iomgr/resolve_address_custom.cc \
+    src/core/lib/iomgr/resolve_address_posix.cc \
+    src/core/lib/iomgr/resolve_address_windows.cc \
+    src/core/lib/iomgr/resource_quota.cc \
+    src/core/lib/iomgr/sockaddr_utils.cc \
+    src/core/lib/iomgr/socket_factory_posix.cc \
+    src/core/lib/iomgr/socket_mutator.cc \
+    src/core/lib/iomgr/socket_utils_common_posix.cc \
+    src/core/lib/iomgr/socket_utils_linux.cc \
+    src/core/lib/iomgr/socket_utils_posix.cc \
+    src/core/lib/iomgr/socket_utils_uv.cc \
+    src/core/lib/iomgr/socket_utils_windows.cc \
+    src/core/lib/iomgr/socket_windows.cc \
+    src/core/lib/iomgr/tcp_client.cc \
+    src/core/lib/iomgr/tcp_client_custom.cc \
+    src/core/lib/iomgr/tcp_client_posix.cc \
+    src/core/lib/iomgr/tcp_client_windows.cc \
+    src/core/lib/iomgr/tcp_custom.cc \
+    src/core/lib/iomgr/tcp_posix.cc \
+    src/core/lib/iomgr/tcp_server.cc \
+    src/core/lib/iomgr/tcp_server_custom.cc \
+    src/core/lib/iomgr/tcp_server_posix.cc \
+    src/core/lib/iomgr/tcp_server_utils_posix_common.cc \
+    src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc \
+    src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc \
+    src/core/lib/iomgr/tcp_server_windows.cc \
+    src/core/lib/iomgr/tcp_uv.cc \
+    src/core/lib/iomgr/tcp_windows.cc \
+    src/core/lib/iomgr/time_averaged_stats.cc \
+    src/core/lib/iomgr/timer.cc \
+    src/core/lib/iomgr/timer_custom.cc \
+    src/core/lib/iomgr/timer_generic.cc \
+    src/core/lib/iomgr/timer_heap.cc \
+    src/core/lib/iomgr/timer_manager.cc \
+    src/core/lib/iomgr/timer_uv.cc \
+    src/core/lib/iomgr/udp_server.cc \
+    src/core/lib/iomgr/unix_sockets_posix.cc \
+    src/core/lib/iomgr/unix_sockets_posix_noop.cc \
+    src/core/lib/iomgr/wakeup_fd_cv.cc \
+    src/core/lib/iomgr/wakeup_fd_eventfd.cc \
+    src/core/lib/iomgr/wakeup_fd_nospecial.cc \
+    src/core/lib/iomgr/wakeup_fd_pipe.cc \
+    src/core/lib/iomgr/wakeup_fd_posix.cc \
+    src/core/lib/json/json.cc \
+    src/core/lib/json/json_reader.cc \
+    src/core/lib/json/json_string.cc \
+    src/core/lib/json/json_writer.cc \
+    src/core/lib/slice/b64.cc \
+    src/core/lib/slice/percent_encoding.cc \
+    src/core/lib/slice/slice.cc \
+    src/core/lib/slice/slice_buffer.cc \
+    src/core/lib/slice/slice_intern.cc \
+    src/core/lib/slice/slice_string_helpers.cc \
+    src/core/lib/surface/api_trace.cc \
+    src/core/lib/surface/byte_buffer.cc \
+    src/core/lib/surface/byte_buffer_reader.cc \
+    src/core/lib/surface/call.cc \
+    src/core/lib/surface/call_details.cc \
+    src/core/lib/surface/call_log_batch.cc \
+    src/core/lib/surface/channel.cc \
+    src/core/lib/surface/channel_init.cc \
+    src/core/lib/surface/channel_ping.cc \
+    src/core/lib/surface/channel_stack_type.cc \
+    src/core/lib/surface/completion_queue.cc \
+    src/core/lib/surface/completion_queue_factory.cc \
+    src/core/lib/surface/event_string.cc \
     src/core/lib/surface/lame_client.cc \
-    src/core/lib/surface/metadata_array.c \
-    src/core/lib/surface/server.c \
-    src/core/lib/surface/validate_metadata.c \
-    src/core/lib/surface/version.c \
-    src/core/lib/transport/bdp_estimator.c \
-    src/core/lib/transport/byte_stream.c \
-    src/core/lib/transport/connectivity_state.c \
-    src/core/lib/transport/error_utils.c \
-    src/core/lib/transport/metadata.c \
-    src/core/lib/transport/metadata_batch.c \
-    src/core/lib/transport/pid_controller.c \
-    src/core/lib/transport/service_config.c \
-    src/core/lib/transport/static_metadata.c \
-    src/core/lib/transport/status_conversion.c \
-    src/core/lib/transport/timeout_encoding.c \
-    src/core/lib/transport/transport.c \
-    src/core/lib/transport/transport_op_string.c \
-    src/core/lib/debug/trace.c \
-    src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
-    src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c \
-    src/core/ext/transport/chttp2/transport/bin_decoder.c \
-    src/core/ext/transport/chttp2/transport/bin_encoder.c \
-    src/core/ext/transport/chttp2/transport/chttp2_plugin.c \
-    src/core/ext/transport/chttp2/transport/chttp2_transport.c \
-    src/core/ext/transport/chttp2/transport/flow_control.c \
-    src/core/ext/transport/chttp2/transport/frame_data.c \
-    src/core/ext/transport/chttp2/transport/frame_goaway.c \
-    src/core/ext/transport/chttp2/transport/frame_ping.c \
-    src/core/ext/transport/chttp2/transport/frame_rst_stream.c \
-    src/core/ext/transport/chttp2/transport/frame_settings.c \
-    src/core/ext/transport/chttp2/transport/frame_window_update.c \
-    src/core/ext/transport/chttp2/transport/hpack_encoder.c \
-    src/core/ext/transport/chttp2/transport/hpack_parser.c \
-    src/core/ext/transport/chttp2/transport/hpack_table.c \
-    src/core/ext/transport/chttp2/transport/http2_settings.c \
-    src/core/ext/transport/chttp2/transport/huffsyms.c \
-    src/core/ext/transport/chttp2/transport/incoming_metadata.c \
-    src/core/ext/transport/chttp2/transport/parsing.c \
-    src/core/ext/transport/chttp2/transport/stream_lists.c \
-    src/core/ext/transport/chttp2/transport/stream_map.c \
-    src/core/ext/transport/chttp2/transport/varint.c \
-    src/core/ext/transport/chttp2/transport/writing.c \
-    src/core/ext/transport/chttp2/alpn/alpn.c \
-    src/core/ext/filters/http/client/http_client_filter.c \
-    src/core/ext/filters/http/http_filters_plugin.c \
-    src/core/ext/filters/http/message_compress/message_compress_filter.c \
-    src/core/ext/filters/http/server/http_server_filter.c \
-    src/core/ext/transport/chttp2/server/chttp2_server.c \
-    src/core/ext/transport/chttp2/client/insecure/channel_create.c \
-    src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c \
-    src/core/ext/transport/chttp2/client/chttp2_connector.c \
-    src/core/ext/filters/client_channel/channel_connectivity.c \
-    src/core/ext/filters/client_channel/client_channel.c \
-    src/core/ext/filters/client_channel/client_channel_factory.c \
-    src/core/ext/filters/client_channel/client_channel_plugin.c \
-    src/core/ext/filters/client_channel/connector.c \
-    src/core/ext/filters/client_channel/http_connect_handshaker.c \
-    src/core/ext/filters/client_channel/http_proxy.c \
-    src/core/ext/filters/client_channel/lb_policy.c \
-    src/core/ext/filters/client_channel/lb_policy_factory.c \
-    src/core/ext/filters/client_channel/lb_policy_registry.c \
-    src/core/ext/filters/client_channel/parse_address.c \
-    src/core/ext/filters/client_channel/proxy_mapper.c \
-    src/core/ext/filters/client_channel/proxy_mapper_registry.c \
-    src/core/ext/filters/client_channel/resolver.c \
-    src/core/ext/filters/client_channel/resolver_factory.c \
-    src/core/ext/filters/client_channel/resolver_registry.c \
-    src/core/ext/filters/client_channel/retry_throttle.c \
-    src/core/ext/filters/client_channel/subchannel.c \
-    src/core/ext/filters/client_channel/subchannel_index.c \
-    src/core/ext/filters/client_channel/uri_parser.c \
-    src/core/ext/filters/deadline/deadline_filter.c \
-    src/core/ext/transport/inproc/inproc_plugin.c \
-    src/core/ext/transport/inproc/inproc_transport.c \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.c \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.c \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.c \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.c \
-    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.c \
-    src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.c \
-    src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.c \
-    src/core/ext/filters/client_channel/resolver/fake/fake_resolver.c \
-    src/core/ext/filters/load_reporting/load_reporting.c \
-    src/core/ext/filters/load_reporting/load_reporting_filter.c \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.c \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.c \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.c \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.c \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.c \
+    src/core/lib/surface/metadata_array.cc \
+    src/core/lib/surface/server.cc \
+    src/core/lib/surface/validate_metadata.cc \
+    src/core/lib/surface/version.cc \
+    src/core/lib/transport/bdp_estimator.cc \
+    src/core/lib/transport/byte_stream.cc \
+    src/core/lib/transport/connectivity_state.cc \
+    src/core/lib/transport/error_utils.cc \
+    src/core/lib/transport/metadata.cc \
+    src/core/lib/transport/metadata_batch.cc \
+    src/core/lib/transport/pid_controller.cc \
+    src/core/lib/transport/service_config.cc \
+    src/core/lib/transport/static_metadata.cc \
+    src/core/lib/transport/status_conversion.cc \
+    src/core/lib/transport/status_metadata.cc \
+    src/core/lib/transport/timeout_encoding.cc \
+    src/core/lib/transport/transport.cc \
+    src/core/lib/transport/transport_op_string.cc \
+    src/core/lib/debug/trace.cc \
+    src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc \
+    src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc \
+    src/core/ext/transport/chttp2/transport/bin_decoder.cc \
+    src/core/ext/transport/chttp2/transport/bin_encoder.cc \
+    src/core/ext/transport/chttp2/transport/chttp2_plugin.cc \
+    src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
+    src/core/ext/transport/chttp2/transport/flow_control.cc \
+    src/core/ext/transport/chttp2/transport/frame_data.cc \
+    src/core/ext/transport/chttp2/transport/frame_goaway.cc \
+    src/core/ext/transport/chttp2/transport/frame_ping.cc \
+    src/core/ext/transport/chttp2/transport/frame_rst_stream.cc \
+    src/core/ext/transport/chttp2/transport/frame_settings.cc \
+    src/core/ext/transport/chttp2/transport/frame_window_update.cc \
+    src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
+    src/core/ext/transport/chttp2/transport/hpack_parser.cc \
+    src/core/ext/transport/chttp2/transport/hpack_table.cc \
+    src/core/ext/transport/chttp2/transport/http2_settings.cc \
+    src/core/ext/transport/chttp2/transport/huffsyms.cc \
+    src/core/ext/transport/chttp2/transport/incoming_metadata.cc \
+    src/core/ext/transport/chttp2/transport/parsing.cc \
+    src/core/ext/transport/chttp2/transport/stream_lists.cc \
+    src/core/ext/transport/chttp2/transport/stream_map.cc \
+    src/core/ext/transport/chttp2/transport/varint.cc \
+    src/core/ext/transport/chttp2/transport/writing.cc \
+    src/core/ext/transport/chttp2/alpn/alpn.cc \
+    src/core/ext/filters/http/client/http_client_filter.cc \
+    src/core/ext/filters/http/http_filters_plugin.cc \
+    src/core/ext/filters/http/message_compress/message_compress_filter.cc \
+    src/core/ext/filters/http/server/http_server_filter.cc \
+    src/core/ext/transport/chttp2/server/chttp2_server.cc \
+    src/core/ext/transport/chttp2/client/insecure/channel_create.cc \
+    src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc \
+    src/core/ext/transport/chttp2/client/chttp2_connector.cc \
+    src/core/ext/filters/client_channel/backup_poller.cc \
+    src/core/ext/filters/client_channel/channel_connectivity.cc \
+    src/core/ext/filters/client_channel/client_channel.cc \
+    src/core/ext/filters/client_channel/client_channel_factory.cc \
+    src/core/ext/filters/client_channel/client_channel_plugin.cc \
+    src/core/ext/filters/client_channel/connector.cc \
+    src/core/ext/filters/client_channel/http_connect_handshaker.cc \
+    src/core/ext/filters/client_channel/http_proxy.cc \
+    src/core/ext/filters/client_channel/lb_policy.cc \
+    src/core/ext/filters/client_channel/lb_policy_factory.cc \
+    src/core/ext/filters/client_channel/lb_policy_registry.cc \
+    src/core/ext/filters/client_channel/method_params.cc \
+    src/core/ext/filters/client_channel/parse_address.cc \
+    src/core/ext/filters/client_channel/proxy_mapper.cc \
+    src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
+    src/core/ext/filters/client_channel/resolver.cc \
+    src/core/ext/filters/client_channel/resolver_registry.cc \
+    src/core/ext/filters/client_channel/retry_throttle.cc \
+    src/core/ext/filters/client_channel/status_util.cc \
+    src/core/ext/filters/client_channel/subchannel.cc \
+    src/core/ext/filters/client_channel/subchannel_index.cc \
+    src/core/ext/filters/client_channel/uri_parser.cc \
+    src/core/ext/filters/deadline/deadline_filter.cc \
+    src/core/ext/transport/inproc/inproc_plugin.cc \
+    src/core/ext/transport/inproc/inproc_transport.cc \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc \
+    src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc \
+    src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
+    src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
+    src/core/ext/filters/load_reporting/server_load_reporting_filter.cc \
+    src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
     third_party/nanopb/pb_common.c \
     third_party/nanopb/pb_decode.c \
     third_party/nanopb/pb_encode.c \
-    src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.c \
-    src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.c \
-    src/core/ext/census/base_resources.c \
-    src/core/ext/census/context.c \
-    src/core/ext/census/gen/census.pb.c \
-    src/core/ext/census/gen/trace_context.pb.c \
-    src/core/ext/census/grpc_context.c \
-    src/core/ext/census/grpc_filter.c \
-    src/core/ext/census/grpc_plugin.c \
-    src/core/ext/census/initialize.c \
-    src/core/ext/census/intrusive_hash_map.c \
-    src/core/ext/census/mlog.c \
-    src/core/ext/census/operation.c \
-    src/core/ext/census/placeholders.c \
-    src/core/ext/census/resource.c \
-    src/core/ext/census/trace_context.c \
-    src/core/ext/census/tracing.c \
-    src/core/ext/filters/max_age/max_age_filter.c \
-    src/core/ext/filters/message_size/message_size_filter.c \
-    src/core/ext/filters/workarounds/workaround_cronet_compression_filter.c \
-    src/core/ext/filters/workarounds/workaround_utils.c \
-    src/core/plugin_registry/grpc_unsecure_plugin_registry.c \
+    src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
+    src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc \
+    src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
+    src/core/ext/census/grpc_context.cc \
+    src/core/ext/filters/max_age/max_age_filter.cc \
+    src/core/ext/filters/message_size/message_size_filter.cc \
+    src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc \
+    src/core/ext/filters/workarounds/workaround_utils.cc \
+    src/core/plugin_registry/grpc_unsecure_plugin_registry.cc \
 
 PUBLIC_HEADERS_C += \
+    include/grpc/impl/codegen/byte_buffer.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
-    include/grpc/impl/codegen/exec_ctx_fwd.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/slice.h \
@@ -4272,6 +4732,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
     include/grpc/impl/codegen/atm_windows.h \
+    include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
@@ -4283,6 +4744,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer.h \
     include/grpc/byte_buffer_reader.h \
     include/grpc/compression.h \
+    include/grpc/fork.h \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security_constants.h \
@@ -4319,8 +4781,8 @@ $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_unsecure.so.4 -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).so.4
+	$(Q) $(LD) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_unsecure.so.6 -o $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).so.6
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_unsecure$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -4331,7 +4793,7 @@ endif
 
 
 LIBRECONNECT_SERVER_SRC = \
-    test/core/util/reconnect_server.c \
+    test/core/util/reconnect_server.cc \
 
 PUBLIC_HEADERS_C += \
 
@@ -4370,7 +4832,7 @@ endif
 
 
 LIBTEST_TCP_SERVER_SRC = \
-    test/core/util/test_tcp_server.c \
+    test/core/util/test_tcp_server.cc \
 
 PUBLIC_HEADERS_C += \
 
@@ -4424,6 +4886,7 @@ LIBGRPC++_SRC = \
     src/cpp/client/create_channel_posix.cc \
     src/cpp/client/credentials_cc.cc \
     src/cpp/client/generic_stub.cc \
+    src/cpp/common/alarm.cc \
     src/cpp/common/channel_arguments.cc \
     src/cpp/common/channel_filter.cc \
     src/cpp/common/completion_queue_cc.cc \
@@ -4498,37 +4961,73 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/support/stub_options.h \
     include/grpc++/support/sync_stream.h \
     include/grpc++/support/time.h \
+    include/grpcpp/alarm.h \
+    include/grpcpp/channel.h \
+    include/grpcpp/client_context.h \
+    include/grpcpp/completion_queue.h \
+    include/grpcpp/create_channel.h \
+    include/grpcpp/create_channel_posix.h \
+    include/grpcpp/ext/health_check_service_server_builder_option.h \
+    include/grpcpp/generic/async_generic_service.h \
+    include/grpcpp/generic/generic_stub.h \
+    include/grpcpp/grpcpp.h \
+    include/grpcpp/health_check_service_interface.h \
+    include/grpcpp/impl/call.h \
+    include/grpcpp/impl/channel_argument_option.h \
+    include/grpcpp/impl/client_unary_call.h \
+    include/grpcpp/impl/codegen/core_codegen.h \
+    include/grpcpp/impl/grpc_library.h \
+    include/grpcpp/impl/method_handler_impl.h \
+    include/grpcpp/impl/rpc_method.h \
+    include/grpcpp/impl/rpc_service_method.h \
+    include/grpcpp/impl/serialization_traits.h \
+    include/grpcpp/impl/server_builder_option.h \
+    include/grpcpp/impl/server_builder_plugin.h \
+    include/grpcpp/impl/server_initializer.h \
+    include/grpcpp/impl/service_type.h \
+    include/grpcpp/resource_quota.h \
+    include/grpcpp/security/auth_context.h \
+    include/grpcpp/security/auth_metadata_processor.h \
+    include/grpcpp/security/credentials.h \
+    include/grpcpp/security/server_credentials.h \
+    include/grpcpp/server.h \
+    include/grpcpp/server_builder.h \
+    include/grpcpp/server_context.h \
+    include/grpcpp/server_posix.h \
+    include/grpcpp/support/async_stream.h \
+    include/grpcpp/support/async_unary_call.h \
+    include/grpcpp/support/byte_buffer.h \
+    include/grpcpp/support/channel_arguments.h \
+    include/grpcpp/support/config.h \
+    include/grpcpp/support/slice.h \
+    include/grpcpp/support/status.h \
+    include/grpcpp/support/status_code_enum.h \
+    include/grpcpp/support/string_ref.h \
+    include/grpcpp/support/stub_options.h \
+    include/grpcpp/support/sync_stream.h \
+    include/grpcpp/support/time.h \
     include/grpc/support/alloc.h \
     include/grpc/support/atm.h \
     include/grpc/support/atm_gcc_atomic.h \
     include/grpc/support/atm_gcc_sync.h \
     include/grpc/support/atm_windows.h \
-    include/grpc/support/avl.h \
-    include/grpc/support/cmdline.h \
     include/grpc/support/cpu.h \
-    include/grpc/support/histogram.h \
-    include/grpc/support/host_port.h \
     include/grpc/support/log.h \
     include/grpc/support/log_windows.h \
     include/grpc/support/port_platform.h \
     include/grpc/support/string_util.h \
-    include/grpc/support/subprocess.h \
     include/grpc/support/sync.h \
     include/grpc/support/sync_custom.h \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
     include/grpc/support/sync_windows.h \
-    include/grpc/support/thd.h \
+    include/grpc/support/thd_id.h \
     include/grpc/support/time.h \
-    include/grpc/support/tls.h \
-    include/grpc/support/tls_gcc.h \
-    include/grpc/support/tls_msvc.h \
-    include/grpc/support/tls_pthread.h \
-    include/grpc/support/useful.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
     include/grpc/impl/codegen/atm_windows.h \
+    include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
@@ -4540,6 +5039,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/byte_buffer.h \
     include/grpc/byte_buffer_reader.h \
     include/grpc/compression.h \
+    include/grpc/fork.h \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security_constants.h \
@@ -4548,16 +5048,17 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/slice_buffer.h \
     include/grpc/status.h \
     include/grpc/support/workaround_list.h \
+    include/grpc/impl/codegen/byte_buffer.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
-    include/grpc/impl/codegen/exec_ctx_fwd.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/slice.h \
     include/grpc/impl/codegen/status.h \
     include/grpc++/impl/codegen/async_stream.h \
     include/grpc++/impl/codegen/async_unary_call.h \
+    include/grpc++/impl/codegen/byte_buffer.h \
     include/grpc++/impl/codegen/call.h \
     include/grpc++/impl/codegen/call_hook.h \
     include/grpc++/impl/codegen/channel_interface.h \
@@ -4585,8 +5086,40 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/stub_options.h \
     include/grpc++/impl/codegen/sync_stream.h \
     include/grpc++/impl/codegen/time.h \
+    include/grpcpp/impl/codegen/async_stream.h \
+    include/grpcpp/impl/codegen/async_unary_call.h \
+    include/grpcpp/impl/codegen/byte_buffer.h \
+    include/grpcpp/impl/codegen/call.h \
+    include/grpcpp/impl/codegen/call_hook.h \
+    include/grpcpp/impl/codegen/channel_interface.h \
+    include/grpcpp/impl/codegen/client_context.h \
+    include/grpcpp/impl/codegen/client_unary_call.h \
+    include/grpcpp/impl/codegen/completion_queue.h \
+    include/grpcpp/impl/codegen/completion_queue_tag.h \
+    include/grpcpp/impl/codegen/config.h \
+    include/grpcpp/impl/codegen/core_codegen_interface.h \
+    include/grpcpp/impl/codegen/create_auth_context.h \
+    include/grpcpp/impl/codegen/grpc_library.h \
+    include/grpcpp/impl/codegen/metadata_map.h \
+    include/grpcpp/impl/codegen/method_handler_impl.h \
+    include/grpcpp/impl/codegen/rpc_method.h \
+    include/grpcpp/impl/codegen/rpc_service_method.h \
+    include/grpcpp/impl/codegen/security/auth_context.h \
+    include/grpcpp/impl/codegen/serialization_traits.h \
+    include/grpcpp/impl/codegen/server_context.h \
+    include/grpcpp/impl/codegen/server_interface.h \
+    include/grpcpp/impl/codegen/service_type.h \
+    include/grpcpp/impl/codegen/slice.h \
+    include/grpcpp/impl/codegen/status.h \
+    include/grpcpp/impl/codegen/status_code_enum.h \
+    include/grpcpp/impl/codegen/string_ref.h \
+    include/grpcpp/impl/codegen/stub_options.h \
+    include/grpcpp/impl/codegen/sync_stream.h \
+    include/grpcpp/impl/codegen/time.h \
     include/grpc++/impl/codegen/proto_utils.h \
+    include/grpcpp/impl/codegen/proto_utils.h \
     include/grpc++/impl/codegen/config_protobuf.h \
+    include/grpcpp/impl/codegen/config_protobuf.h \
 
 LIBGRPC++_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_SRC))))
 
@@ -4651,6 +5184,57 @@ endif
 endif
 
 
+LIBGRPC++_CORE_STATS_SRC = \
+    $(GENDIR)/src/proto/grpc/core/stats.pb.cc $(GENDIR)/src/proto/grpc/core/stats.grpc.pb.cc \
+    src/cpp/util/core_stats.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBGRPC++_CORE_STATS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_CORE_STATS_SRC))))
+
+
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure libraries if you don't have OpenSSL.
+
+$(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a: openssl_dep_error
+
+
+else
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(PROTOBUF_DEP) $(LIBGRPC++_CORE_STATS_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBGRPC++_CORE_STATS_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a
+endif
+
+
+
+
+endif
+
+endif
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(LIBGRPC++_CORE_STATS_OBJS:.o=.dep)
+endif
+endif
+$(OBJDIR)/$(CONFIG)/src/cpp/util/core_stats.o: $(GENDIR)/src/proto/grpc/core/stats.pb.cc $(GENDIR)/src/proto/grpc/core/stats.grpc.pb.cc
+
+
 LIBGRPC++_CRONET_SRC = \
     src/cpp/client/cronet_credentials.cc \
     src/cpp/client/insecure_credentials.cc \
@@ -4663,6 +5247,7 @@ LIBGRPC++_CRONET_SRC = \
     src/cpp/client/create_channel_posix.cc \
     src/cpp/client/credentials_cc.cc \
     src/cpp/client/generic_stub.cc \
+    src/cpp/common/alarm.cc \
     src/cpp/common/channel_arguments.cc \
     src/cpp/common/channel_filter.cc \
     src/cpp/common/completion_queue_cc.cc \
@@ -4690,204 +5275,209 @@ LIBGRPC++_CRONET_SRC = \
     src/cpp/util/string_ref.cc \
     src/cpp/util/time_cc.cc \
     src/cpp/codegen/codegen_init.cc \
-    src/core/ext/transport/chttp2/client/insecure/channel_create.c \
-    src/core/ext/transport/chttp2/client/insecure/channel_create_posix.c \
-    src/core/ext/transport/chttp2/client/chttp2_connector.c \
-    src/core/ext/transport/chttp2/transport/bin_decoder.c \
-    src/core/ext/transport/chttp2/transport/bin_encoder.c \
-    src/core/ext/transport/chttp2/transport/chttp2_plugin.c \
-    src/core/ext/transport/chttp2/transport/chttp2_transport.c \
-    src/core/ext/transport/chttp2/transport/flow_control.c \
-    src/core/ext/transport/chttp2/transport/frame_data.c \
-    src/core/ext/transport/chttp2/transport/frame_goaway.c \
-    src/core/ext/transport/chttp2/transport/frame_ping.c \
-    src/core/ext/transport/chttp2/transport/frame_rst_stream.c \
-    src/core/ext/transport/chttp2/transport/frame_settings.c \
-    src/core/ext/transport/chttp2/transport/frame_window_update.c \
-    src/core/ext/transport/chttp2/transport/hpack_encoder.c \
-    src/core/ext/transport/chttp2/transport/hpack_parser.c \
-    src/core/ext/transport/chttp2/transport/hpack_table.c \
-    src/core/ext/transport/chttp2/transport/http2_settings.c \
-    src/core/ext/transport/chttp2/transport/huffsyms.c \
-    src/core/ext/transport/chttp2/transport/incoming_metadata.c \
-    src/core/ext/transport/chttp2/transport/parsing.c \
-    src/core/ext/transport/chttp2/transport/stream_lists.c \
-    src/core/ext/transport/chttp2/transport/stream_map.c \
-    src/core/ext/transport/chttp2/transport/varint.c \
-    src/core/ext/transport/chttp2/transport/writing.c \
-    src/core/lib/channel/channel_args.c \
-    src/core/lib/channel/channel_stack.c \
-    src/core/lib/channel/channel_stack_builder.c \
-    src/core/lib/channel/connected_channel.c \
-    src/core/lib/channel/handshaker.c \
-    src/core/lib/channel/handshaker_factory.c \
-    src/core/lib/channel/handshaker_registry.c \
-    src/core/lib/compression/compression.c \
-    src/core/lib/compression/message_compress.c \
-    src/core/lib/compression/stream_compression.c \
-    src/core/lib/http/format_request.c \
-    src/core/lib/http/httpcli.c \
-    src/core/lib/http/parser.c \
-    src/core/lib/iomgr/closure.c \
-    src/core/lib/iomgr/combiner.c \
-    src/core/lib/iomgr/endpoint.c \
-    src/core/lib/iomgr/endpoint_pair_posix.c \
-    src/core/lib/iomgr/endpoint_pair_uv.c \
-    src/core/lib/iomgr/endpoint_pair_windows.c \
-    src/core/lib/iomgr/error.c \
-    src/core/lib/iomgr/ev_epoll1_linux.c \
-    src/core/lib/iomgr/ev_epoll_limited_pollers_linux.c \
-    src/core/lib/iomgr/ev_epoll_thread_pool_linux.c \
-    src/core/lib/iomgr/ev_epollex_linux.c \
-    src/core/lib/iomgr/ev_epollsig_linux.c \
-    src/core/lib/iomgr/ev_poll_posix.c \
-    src/core/lib/iomgr/ev_posix.c \
-    src/core/lib/iomgr/ev_windows.c \
-    src/core/lib/iomgr/exec_ctx.c \
-    src/core/lib/iomgr/executor.c \
-    src/core/lib/iomgr/gethostname_fallback.c \
-    src/core/lib/iomgr/gethostname_host_name_max.c \
-    src/core/lib/iomgr/gethostname_sysconf.c \
-    src/core/lib/iomgr/iocp_windows.c \
-    src/core/lib/iomgr/iomgr.c \
-    src/core/lib/iomgr/iomgr_posix.c \
-    src/core/lib/iomgr/iomgr_uv.c \
-    src/core/lib/iomgr/iomgr_windows.c \
-    src/core/lib/iomgr/is_epollexclusive_available.c \
-    src/core/lib/iomgr/load_file.c \
-    src/core/lib/iomgr/lockfree_event.c \
-    src/core/lib/iomgr/network_status_tracker.c \
-    src/core/lib/iomgr/polling_entity.c \
-    src/core/lib/iomgr/pollset_set_uv.c \
-    src/core/lib/iomgr/pollset_set_windows.c \
-    src/core/lib/iomgr/pollset_uv.c \
-    src/core/lib/iomgr/pollset_windows.c \
-    src/core/lib/iomgr/resolve_address_posix.c \
-    src/core/lib/iomgr/resolve_address_uv.c \
-    src/core/lib/iomgr/resolve_address_windows.c \
-    src/core/lib/iomgr/resource_quota.c \
-    src/core/lib/iomgr/sockaddr_utils.c \
-    src/core/lib/iomgr/socket_factory_posix.c \
-    src/core/lib/iomgr/socket_mutator.c \
-    src/core/lib/iomgr/socket_utils_common_posix.c \
-    src/core/lib/iomgr/socket_utils_linux.c \
-    src/core/lib/iomgr/socket_utils_posix.c \
-    src/core/lib/iomgr/socket_utils_uv.c \
-    src/core/lib/iomgr/socket_utils_windows.c \
-    src/core/lib/iomgr/socket_windows.c \
-    src/core/lib/iomgr/tcp_client_posix.c \
-    src/core/lib/iomgr/tcp_client_uv.c \
-    src/core/lib/iomgr/tcp_client_windows.c \
-    src/core/lib/iomgr/tcp_posix.c \
-    src/core/lib/iomgr/tcp_server_posix.c \
-    src/core/lib/iomgr/tcp_server_utils_posix_common.c \
-    src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.c \
-    src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.c \
-    src/core/lib/iomgr/tcp_server_uv.c \
-    src/core/lib/iomgr/tcp_server_windows.c \
-    src/core/lib/iomgr/tcp_uv.c \
-    src/core/lib/iomgr/tcp_windows.c \
-    src/core/lib/iomgr/time_averaged_stats.c \
-    src/core/lib/iomgr/timer_generic.c \
-    src/core/lib/iomgr/timer_heap.c \
-    src/core/lib/iomgr/timer_manager.c \
-    src/core/lib/iomgr/timer_uv.c \
-    src/core/lib/iomgr/udp_server.c \
-    src/core/lib/iomgr/unix_sockets_posix.c \
-    src/core/lib/iomgr/unix_sockets_posix_noop.c \
-    src/core/lib/iomgr/wakeup_fd_cv.c \
-    src/core/lib/iomgr/wakeup_fd_eventfd.c \
-    src/core/lib/iomgr/wakeup_fd_nospecial.c \
-    src/core/lib/iomgr/wakeup_fd_pipe.c \
-    src/core/lib/iomgr/wakeup_fd_posix.c \
-    src/core/lib/json/json.c \
-    src/core/lib/json/json_reader.c \
-    src/core/lib/json/json_string.c \
-    src/core/lib/json/json_writer.c \
-    src/core/lib/slice/b64.c \
-    src/core/lib/slice/percent_encoding.c \
-    src/core/lib/slice/slice.c \
-    src/core/lib/slice/slice_buffer.c \
-    src/core/lib/slice/slice_hash_table.c \
-    src/core/lib/slice/slice_intern.c \
-    src/core/lib/slice/slice_string_helpers.c \
-    src/core/lib/surface/alarm.c \
-    src/core/lib/surface/api_trace.c \
-    src/core/lib/surface/byte_buffer.c \
-    src/core/lib/surface/byte_buffer_reader.c \
-    src/core/lib/surface/call.c \
-    src/core/lib/surface/call_details.c \
-    src/core/lib/surface/call_log_batch.c \
-    src/core/lib/surface/channel.c \
-    src/core/lib/surface/channel_init.c \
-    src/core/lib/surface/channel_ping.c \
-    src/core/lib/surface/channel_stack_type.c \
-    src/core/lib/surface/completion_queue.c \
-    src/core/lib/surface/completion_queue_factory.c \
-    src/core/lib/surface/event_string.c \
+    src/core/ext/transport/chttp2/client/insecure/channel_create.cc \
+    src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc \
+    src/core/ext/transport/chttp2/client/chttp2_connector.cc \
+    src/core/ext/transport/chttp2/transport/bin_decoder.cc \
+    src/core/ext/transport/chttp2/transport/bin_encoder.cc \
+    src/core/ext/transport/chttp2/transport/chttp2_plugin.cc \
+    src/core/ext/transport/chttp2/transport/chttp2_transport.cc \
+    src/core/ext/transport/chttp2/transport/flow_control.cc \
+    src/core/ext/transport/chttp2/transport/frame_data.cc \
+    src/core/ext/transport/chttp2/transport/frame_goaway.cc \
+    src/core/ext/transport/chttp2/transport/frame_ping.cc \
+    src/core/ext/transport/chttp2/transport/frame_rst_stream.cc \
+    src/core/ext/transport/chttp2/transport/frame_settings.cc \
+    src/core/ext/transport/chttp2/transport/frame_window_update.cc \
+    src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
+    src/core/ext/transport/chttp2/transport/hpack_parser.cc \
+    src/core/ext/transport/chttp2/transport/hpack_table.cc \
+    src/core/ext/transport/chttp2/transport/http2_settings.cc \
+    src/core/ext/transport/chttp2/transport/huffsyms.cc \
+    src/core/ext/transport/chttp2/transport/incoming_metadata.cc \
+    src/core/ext/transport/chttp2/transport/parsing.cc \
+    src/core/ext/transport/chttp2/transport/stream_lists.cc \
+    src/core/ext/transport/chttp2/transport/stream_map.cc \
+    src/core/ext/transport/chttp2/transport/varint.cc \
+    src/core/ext/transport/chttp2/transport/writing.cc \
+    src/core/lib/avl/avl.cc \
+    src/core/lib/backoff/backoff.cc \
+    src/core/lib/channel/channel_args.cc \
+    src/core/lib/channel/channel_stack.cc \
+    src/core/lib/channel/channel_stack_builder.cc \
+    src/core/lib/channel/connected_channel.cc \
+    src/core/lib/channel/handshaker.cc \
+    src/core/lib/channel/handshaker_factory.cc \
+    src/core/lib/channel/handshaker_registry.cc \
+    src/core/lib/compression/compression.cc \
+    src/core/lib/compression/compression_internal.cc \
+    src/core/lib/compression/message_compress.cc \
+    src/core/lib/compression/stream_compression.cc \
+    src/core/lib/compression/stream_compression_gzip.cc \
+    src/core/lib/compression/stream_compression_identity.cc \
+    src/core/lib/debug/stats.cc \
+    src/core/lib/debug/stats_data.cc \
+    src/core/lib/http/format_request.cc \
+    src/core/lib/http/httpcli.cc \
+    src/core/lib/http/parser.cc \
+    src/core/lib/iomgr/call_combiner.cc \
+    src/core/lib/iomgr/combiner.cc \
+    src/core/lib/iomgr/endpoint.cc \
+    src/core/lib/iomgr/endpoint_pair_posix.cc \
+    src/core/lib/iomgr/endpoint_pair_uv.cc \
+    src/core/lib/iomgr/endpoint_pair_windows.cc \
+    src/core/lib/iomgr/error.cc \
+    src/core/lib/iomgr/ev_epoll1_linux.cc \
+    src/core/lib/iomgr/ev_epollex_linux.cc \
+    src/core/lib/iomgr/ev_epollsig_linux.cc \
+    src/core/lib/iomgr/ev_poll_posix.cc \
+    src/core/lib/iomgr/ev_posix.cc \
+    src/core/lib/iomgr/ev_windows.cc \
+    src/core/lib/iomgr/exec_ctx.cc \
+    src/core/lib/iomgr/executor.cc \
+    src/core/lib/iomgr/fork_posix.cc \
+    src/core/lib/iomgr/fork_windows.cc \
+    src/core/lib/iomgr/gethostname_fallback.cc \
+    src/core/lib/iomgr/gethostname_host_name_max.cc \
+    src/core/lib/iomgr/gethostname_sysconf.cc \
+    src/core/lib/iomgr/iocp_windows.cc \
+    src/core/lib/iomgr/iomgr.cc \
+    src/core/lib/iomgr/iomgr_custom.cc \
+    src/core/lib/iomgr/iomgr_internal.cc \
+    src/core/lib/iomgr/iomgr_posix.cc \
+    src/core/lib/iomgr/iomgr_uv.cc \
+    src/core/lib/iomgr/iomgr_windows.cc \
+    src/core/lib/iomgr/is_epollexclusive_available.cc \
+    src/core/lib/iomgr/load_file.cc \
+    src/core/lib/iomgr/lockfree_event.cc \
+    src/core/lib/iomgr/network_status_tracker.cc \
+    src/core/lib/iomgr/polling_entity.cc \
+    src/core/lib/iomgr/pollset.cc \
+    src/core/lib/iomgr/pollset_custom.cc \
+    src/core/lib/iomgr/pollset_set.cc \
+    src/core/lib/iomgr/pollset_set_custom.cc \
+    src/core/lib/iomgr/pollset_set_windows.cc \
+    src/core/lib/iomgr/pollset_uv.cc \
+    src/core/lib/iomgr/pollset_windows.cc \
+    src/core/lib/iomgr/resolve_address.cc \
+    src/core/lib/iomgr/resolve_address_custom.cc \
+    src/core/lib/iomgr/resolve_address_posix.cc \
+    src/core/lib/iomgr/resolve_address_windows.cc \
+    src/core/lib/iomgr/resource_quota.cc \
+    src/core/lib/iomgr/sockaddr_utils.cc \
+    src/core/lib/iomgr/socket_factory_posix.cc \
+    src/core/lib/iomgr/socket_mutator.cc \
+    src/core/lib/iomgr/socket_utils_common_posix.cc \
+    src/core/lib/iomgr/socket_utils_linux.cc \
+    src/core/lib/iomgr/socket_utils_posix.cc \
+    src/core/lib/iomgr/socket_utils_uv.cc \
+    src/core/lib/iomgr/socket_utils_windows.cc \
+    src/core/lib/iomgr/socket_windows.cc \
+    src/core/lib/iomgr/tcp_client.cc \
+    src/core/lib/iomgr/tcp_client_custom.cc \
+    src/core/lib/iomgr/tcp_client_posix.cc \
+    src/core/lib/iomgr/tcp_client_windows.cc \
+    src/core/lib/iomgr/tcp_custom.cc \
+    src/core/lib/iomgr/tcp_posix.cc \
+    src/core/lib/iomgr/tcp_server.cc \
+    src/core/lib/iomgr/tcp_server_custom.cc \
+    src/core/lib/iomgr/tcp_server_posix.cc \
+    src/core/lib/iomgr/tcp_server_utils_posix_common.cc \
+    src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc \
+    src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc \
+    src/core/lib/iomgr/tcp_server_windows.cc \
+    src/core/lib/iomgr/tcp_uv.cc \
+    src/core/lib/iomgr/tcp_windows.cc \
+    src/core/lib/iomgr/time_averaged_stats.cc \
+    src/core/lib/iomgr/timer.cc \
+    src/core/lib/iomgr/timer_custom.cc \
+    src/core/lib/iomgr/timer_generic.cc \
+    src/core/lib/iomgr/timer_heap.cc \
+    src/core/lib/iomgr/timer_manager.cc \
+    src/core/lib/iomgr/timer_uv.cc \
+    src/core/lib/iomgr/udp_server.cc \
+    src/core/lib/iomgr/unix_sockets_posix.cc \
+    src/core/lib/iomgr/unix_sockets_posix_noop.cc \
+    src/core/lib/iomgr/wakeup_fd_cv.cc \
+    src/core/lib/iomgr/wakeup_fd_eventfd.cc \
+    src/core/lib/iomgr/wakeup_fd_nospecial.cc \
+    src/core/lib/iomgr/wakeup_fd_pipe.cc \
+    src/core/lib/iomgr/wakeup_fd_posix.cc \
+    src/core/lib/json/json.cc \
+    src/core/lib/json/json_reader.cc \
+    src/core/lib/json/json_string.cc \
+    src/core/lib/json/json_writer.cc \
+    src/core/lib/slice/b64.cc \
+    src/core/lib/slice/percent_encoding.cc \
+    src/core/lib/slice/slice.cc \
+    src/core/lib/slice/slice_buffer.cc \
+    src/core/lib/slice/slice_intern.cc \
+    src/core/lib/slice/slice_string_helpers.cc \
+    src/core/lib/surface/api_trace.cc \
+    src/core/lib/surface/byte_buffer.cc \
+    src/core/lib/surface/byte_buffer_reader.cc \
+    src/core/lib/surface/call.cc \
+    src/core/lib/surface/call_details.cc \
+    src/core/lib/surface/call_log_batch.cc \
+    src/core/lib/surface/channel.cc \
+    src/core/lib/surface/channel_init.cc \
+    src/core/lib/surface/channel_ping.cc \
+    src/core/lib/surface/channel_stack_type.cc \
+    src/core/lib/surface/completion_queue.cc \
+    src/core/lib/surface/completion_queue_factory.cc \
+    src/core/lib/surface/event_string.cc \
     src/core/lib/surface/lame_client.cc \
-    src/core/lib/surface/metadata_array.c \
-    src/core/lib/surface/server.c \
-    src/core/lib/surface/validate_metadata.c \
-    src/core/lib/surface/version.c \
-    src/core/lib/transport/bdp_estimator.c \
-    src/core/lib/transport/byte_stream.c \
-    src/core/lib/transport/connectivity_state.c \
-    src/core/lib/transport/error_utils.c \
-    src/core/lib/transport/metadata.c \
-    src/core/lib/transport/metadata_batch.c \
-    src/core/lib/transport/pid_controller.c \
-    src/core/lib/transport/service_config.c \
-    src/core/lib/transport/static_metadata.c \
-    src/core/lib/transport/status_conversion.c \
-    src/core/lib/transport/timeout_encoding.c \
-    src/core/lib/transport/transport.c \
-    src/core/lib/transport/transport_op_string.c \
-    src/core/lib/debug/trace.c \
-    src/core/ext/transport/chttp2/alpn/alpn.c \
-    src/core/ext/filters/http/client/http_client_filter.c \
-    src/core/ext/filters/http/http_filters_plugin.c \
-    src/core/ext/filters/http/message_compress/message_compress_filter.c \
-    src/core/ext/filters/http/server/http_server_filter.c \
-    src/core/ext/filters/client_channel/channel_connectivity.c \
-    src/core/ext/filters/client_channel/client_channel.c \
-    src/core/ext/filters/client_channel/client_channel_factory.c \
-    src/core/ext/filters/client_channel/client_channel_plugin.c \
-    src/core/ext/filters/client_channel/connector.c \
-    src/core/ext/filters/client_channel/http_connect_handshaker.c \
-    src/core/ext/filters/client_channel/http_proxy.c \
-    src/core/ext/filters/client_channel/lb_policy.c \
-    src/core/ext/filters/client_channel/lb_policy_factory.c \
-    src/core/ext/filters/client_channel/lb_policy_registry.c \
-    src/core/ext/filters/client_channel/parse_address.c \
-    src/core/ext/filters/client_channel/proxy_mapper.c \
-    src/core/ext/filters/client_channel/proxy_mapper_registry.c \
-    src/core/ext/filters/client_channel/resolver.c \
-    src/core/ext/filters/client_channel/resolver_factory.c \
-    src/core/ext/filters/client_channel/resolver_registry.c \
-    src/core/ext/filters/client_channel/retry_throttle.c \
-    src/core/ext/filters/client_channel/subchannel.c \
-    src/core/ext/filters/client_channel/subchannel_index.c \
-    src/core/ext/filters/client_channel/uri_parser.c \
-    src/core/ext/filters/deadline/deadline_filter.c \
-    src/core/ext/transport/chttp2/server/insecure/server_chttp2.c \
-    src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.c \
-    src/core/ext/transport/chttp2/server/chttp2_server.c \
-    src/core/ext/census/base_resources.c \
-    src/core/ext/census/context.c \
-    src/core/ext/census/gen/census.pb.c \
-    src/core/ext/census/gen/trace_context.pb.c \
-    src/core/ext/census/grpc_context.c \
-    src/core/ext/census/grpc_filter.c \
-    src/core/ext/census/grpc_plugin.c \
-    src/core/ext/census/initialize.c \
-    src/core/ext/census/intrusive_hash_map.c \
-    src/core/ext/census/mlog.c \
-    src/core/ext/census/operation.c \
-    src/core/ext/census/placeholders.c \
-    src/core/ext/census/resource.c \
-    src/core/ext/census/trace_context.c \
-    src/core/ext/census/tracing.c \
+    src/core/lib/surface/metadata_array.cc \
+    src/core/lib/surface/server.cc \
+    src/core/lib/surface/validate_metadata.cc \
+    src/core/lib/surface/version.cc \
+    src/core/lib/transport/bdp_estimator.cc \
+    src/core/lib/transport/byte_stream.cc \
+    src/core/lib/transport/connectivity_state.cc \
+    src/core/lib/transport/error_utils.cc \
+    src/core/lib/transport/metadata.cc \
+    src/core/lib/transport/metadata_batch.cc \
+    src/core/lib/transport/pid_controller.cc \
+    src/core/lib/transport/service_config.cc \
+    src/core/lib/transport/static_metadata.cc \
+    src/core/lib/transport/status_conversion.cc \
+    src/core/lib/transport/status_metadata.cc \
+    src/core/lib/transport/timeout_encoding.cc \
+    src/core/lib/transport/transport.cc \
+    src/core/lib/transport/transport_op_string.cc \
+    src/core/lib/debug/trace.cc \
+    src/core/ext/transport/chttp2/alpn/alpn.cc \
+    src/core/ext/filters/http/client/http_client_filter.cc \
+    src/core/ext/filters/http/http_filters_plugin.cc \
+    src/core/ext/filters/http/message_compress/message_compress_filter.cc \
+    src/core/ext/filters/http/server/http_server_filter.cc \
+    src/core/ext/filters/client_channel/backup_poller.cc \
+    src/core/ext/filters/client_channel/channel_connectivity.cc \
+    src/core/ext/filters/client_channel/client_channel.cc \
+    src/core/ext/filters/client_channel/client_channel_factory.cc \
+    src/core/ext/filters/client_channel/client_channel_plugin.cc \
+    src/core/ext/filters/client_channel/connector.cc \
+    src/core/ext/filters/client_channel/http_connect_handshaker.cc \
+    src/core/ext/filters/client_channel/http_proxy.cc \
+    src/core/ext/filters/client_channel/lb_policy.cc \
+    src/core/ext/filters/client_channel/lb_policy_factory.cc \
+    src/core/ext/filters/client_channel/lb_policy_registry.cc \
+    src/core/ext/filters/client_channel/method_params.cc \
+    src/core/ext/filters/client_channel/parse_address.cc \
+    src/core/ext/filters/client_channel/proxy_mapper.cc \
+    src/core/ext/filters/client_channel/proxy_mapper_registry.cc \
+    src/core/ext/filters/client_channel/resolver.cc \
+    src/core/ext/filters/client_channel/resolver_registry.cc \
+    src/core/ext/filters/client_channel/retry_throttle.cc \
+    src/core/ext/filters/client_channel/status_util.cc \
+    src/core/ext/filters/client_channel/subchannel.cc \
+    src/core/ext/filters/client_channel/subchannel_index.cc \
+    src/core/ext/filters/client_channel/uri_parser.cc \
+    src/core/ext/filters/deadline/deadline_filter.cc \
+    src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc \
+    src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc \
+    src/core/ext/transport/chttp2/server/chttp2_server.cc \
+    src/core/ext/census/grpc_context.cc \
     third_party/nanopb/pb_common.c \
     third_party/nanopb/pb_decode.c \
     third_party/nanopb/pb_encode.c \
@@ -4938,37 +5528,73 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/support/stub_options.h \
     include/grpc++/support/sync_stream.h \
     include/grpc++/support/time.h \
+    include/grpcpp/alarm.h \
+    include/grpcpp/channel.h \
+    include/grpcpp/client_context.h \
+    include/grpcpp/completion_queue.h \
+    include/grpcpp/create_channel.h \
+    include/grpcpp/create_channel_posix.h \
+    include/grpcpp/ext/health_check_service_server_builder_option.h \
+    include/grpcpp/generic/async_generic_service.h \
+    include/grpcpp/generic/generic_stub.h \
+    include/grpcpp/grpcpp.h \
+    include/grpcpp/health_check_service_interface.h \
+    include/grpcpp/impl/call.h \
+    include/grpcpp/impl/channel_argument_option.h \
+    include/grpcpp/impl/client_unary_call.h \
+    include/grpcpp/impl/codegen/core_codegen.h \
+    include/grpcpp/impl/grpc_library.h \
+    include/grpcpp/impl/method_handler_impl.h \
+    include/grpcpp/impl/rpc_method.h \
+    include/grpcpp/impl/rpc_service_method.h \
+    include/grpcpp/impl/serialization_traits.h \
+    include/grpcpp/impl/server_builder_option.h \
+    include/grpcpp/impl/server_builder_plugin.h \
+    include/grpcpp/impl/server_initializer.h \
+    include/grpcpp/impl/service_type.h \
+    include/grpcpp/resource_quota.h \
+    include/grpcpp/security/auth_context.h \
+    include/grpcpp/security/auth_metadata_processor.h \
+    include/grpcpp/security/credentials.h \
+    include/grpcpp/security/server_credentials.h \
+    include/grpcpp/server.h \
+    include/grpcpp/server_builder.h \
+    include/grpcpp/server_context.h \
+    include/grpcpp/server_posix.h \
+    include/grpcpp/support/async_stream.h \
+    include/grpcpp/support/async_unary_call.h \
+    include/grpcpp/support/byte_buffer.h \
+    include/grpcpp/support/channel_arguments.h \
+    include/grpcpp/support/config.h \
+    include/grpcpp/support/slice.h \
+    include/grpcpp/support/status.h \
+    include/grpcpp/support/status_code_enum.h \
+    include/grpcpp/support/string_ref.h \
+    include/grpcpp/support/stub_options.h \
+    include/grpcpp/support/sync_stream.h \
+    include/grpcpp/support/time.h \
     include/grpc/support/alloc.h \
     include/grpc/support/atm.h \
     include/grpc/support/atm_gcc_atomic.h \
     include/grpc/support/atm_gcc_sync.h \
     include/grpc/support/atm_windows.h \
-    include/grpc/support/avl.h \
-    include/grpc/support/cmdline.h \
     include/grpc/support/cpu.h \
-    include/grpc/support/histogram.h \
-    include/grpc/support/host_port.h \
     include/grpc/support/log.h \
     include/grpc/support/log_windows.h \
     include/grpc/support/port_platform.h \
     include/grpc/support/string_util.h \
-    include/grpc/support/subprocess.h \
     include/grpc/support/sync.h \
     include/grpc/support/sync_custom.h \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
     include/grpc/support/sync_windows.h \
-    include/grpc/support/thd.h \
+    include/grpc/support/thd_id.h \
     include/grpc/support/time.h \
-    include/grpc/support/tls.h \
-    include/grpc/support/tls_gcc.h \
-    include/grpc/support/tls_msvc.h \
-    include/grpc/support/tls_pthread.h \
-    include/grpc/support/useful.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
     include/grpc/impl/codegen/atm_windows.h \
+    include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
@@ -4980,6 +5606,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/byte_buffer.h \
     include/grpc/byte_buffer_reader.h \
     include/grpc/compression.h \
+    include/grpc/fork.h \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security_constants.h \
@@ -4988,16 +5615,17 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/slice_buffer.h \
     include/grpc/status.h \
     include/grpc/support/workaround_list.h \
+    include/grpc/impl/codegen/byte_buffer.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
-    include/grpc/impl/codegen/exec_ctx_fwd.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/slice.h \
     include/grpc/impl/codegen/status.h \
     include/grpc++/impl/codegen/async_stream.h \
     include/grpc++/impl/codegen/async_unary_call.h \
+    include/grpc++/impl/codegen/byte_buffer.h \
     include/grpc++/impl/codegen/call.h \
     include/grpc++/impl/codegen/call_hook.h \
     include/grpc++/impl/codegen/channel_interface.h \
@@ -5025,6 +5653,36 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/stub_options.h \
     include/grpc++/impl/codegen/sync_stream.h \
     include/grpc++/impl/codegen/time.h \
+    include/grpcpp/impl/codegen/async_stream.h \
+    include/grpcpp/impl/codegen/async_unary_call.h \
+    include/grpcpp/impl/codegen/byte_buffer.h \
+    include/grpcpp/impl/codegen/call.h \
+    include/grpcpp/impl/codegen/call_hook.h \
+    include/grpcpp/impl/codegen/channel_interface.h \
+    include/grpcpp/impl/codegen/client_context.h \
+    include/grpcpp/impl/codegen/client_unary_call.h \
+    include/grpcpp/impl/codegen/completion_queue.h \
+    include/grpcpp/impl/codegen/completion_queue_tag.h \
+    include/grpcpp/impl/codegen/config.h \
+    include/grpcpp/impl/codegen/core_codegen_interface.h \
+    include/grpcpp/impl/codegen/create_auth_context.h \
+    include/grpcpp/impl/codegen/grpc_library.h \
+    include/grpcpp/impl/codegen/metadata_map.h \
+    include/grpcpp/impl/codegen/method_handler_impl.h \
+    include/grpcpp/impl/codegen/rpc_method.h \
+    include/grpcpp/impl/codegen/rpc_service_method.h \
+    include/grpcpp/impl/codegen/security/auth_context.h \
+    include/grpcpp/impl/codegen/serialization_traits.h \
+    include/grpcpp/impl/codegen/server_context.h \
+    include/grpcpp/impl/codegen/server_interface.h \
+    include/grpcpp/impl/codegen/service_type.h \
+    include/grpcpp/impl/codegen/slice.h \
+    include/grpcpp/impl/codegen/status.h \
+    include/grpcpp/impl/codegen/status_code_enum.h \
+    include/grpcpp/impl/codegen/string_ref.h \
+    include/grpcpp/impl/codegen/stub_options.h \
+    include/grpcpp/impl/codegen/sync_stream.h \
+    include/grpcpp/impl/codegen/time.h \
     include/grpc/census.h \
 
 LIBGRPC++_CRONET_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_CRONET_SRC))))
@@ -5096,6 +5754,7 @@ LIBGRPC++_ERROR_DETAILS_SRC = \
 
 PUBLIC_HEADERS_CXX += \
     include/grpc++/support/error_details.h \
+    include/grpcpp/support/error_details.h \
 
 LIBGRPC++_ERROR_DETAILS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_ERROR_DETAILS_SRC))))
 
@@ -5167,6 +5826,7 @@ LIBGRPC++_PROTO_REFLECTION_DESC_DB_SRC = \
 
 PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/config_protobuf.h \
+    include/grpcpp/impl/codegen/config_protobuf.h \
 
 LIBGRPC++_PROTO_REFLECTION_DESC_DB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_PROTO_REFLECTION_DESC_DB_SRC))))
 
@@ -5220,6 +5880,7 @@ LIBGRPC++_REFLECTION_SRC = \
 
 PUBLIC_HEADERS_CXX += \
     include/grpc++/ext/proto_server_reflection_plugin.h \
+    include/grpcpp/ext/proto_server_reflection_plugin.h \
 
 LIBGRPC++_REFLECTION_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_REFLECTION_SRC))))
 
@@ -5351,6 +6012,7 @@ LIBGRPC++_TEST_UTIL_SRC = \
 PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/async_stream.h \
     include/grpc++/impl/codegen/async_unary_call.h \
+    include/grpc++/impl/codegen/byte_buffer.h \
     include/grpc++/impl/codegen/call.h \
     include/grpc++/impl/codegen/call_hook.h \
     include/grpc++/impl/codegen/channel_interface.h \
@@ -5378,10 +6040,40 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/stub_options.h \
     include/grpc++/impl/codegen/sync_stream.h \
     include/grpc++/impl/codegen/time.h \
+    include/grpcpp/impl/codegen/async_stream.h \
+    include/grpcpp/impl/codegen/async_unary_call.h \
+    include/grpcpp/impl/codegen/byte_buffer.h \
+    include/grpcpp/impl/codegen/call.h \
+    include/grpcpp/impl/codegen/call_hook.h \
+    include/grpcpp/impl/codegen/channel_interface.h \
+    include/grpcpp/impl/codegen/client_context.h \
+    include/grpcpp/impl/codegen/client_unary_call.h \
+    include/grpcpp/impl/codegen/completion_queue.h \
+    include/grpcpp/impl/codegen/completion_queue_tag.h \
+    include/grpcpp/impl/codegen/config.h \
+    include/grpcpp/impl/codegen/core_codegen_interface.h \
+    include/grpcpp/impl/codegen/create_auth_context.h \
+    include/grpcpp/impl/codegen/grpc_library.h \
+    include/grpcpp/impl/codegen/metadata_map.h \
+    include/grpcpp/impl/codegen/method_handler_impl.h \
+    include/grpcpp/impl/codegen/rpc_method.h \
+    include/grpcpp/impl/codegen/rpc_service_method.h \
+    include/grpcpp/impl/codegen/security/auth_context.h \
+    include/grpcpp/impl/codegen/serialization_traits.h \
+    include/grpcpp/impl/codegen/server_context.h \
+    include/grpcpp/impl/codegen/server_interface.h \
+    include/grpcpp/impl/codegen/service_type.h \
+    include/grpcpp/impl/codegen/slice.h \
+    include/grpcpp/impl/codegen/status.h \
+    include/grpcpp/impl/codegen/status_code_enum.h \
+    include/grpcpp/impl/codegen/string_ref.h \
+    include/grpcpp/impl/codegen/stub_options.h \
+    include/grpcpp/impl/codegen/sync_stream.h \
+    include/grpcpp/impl/codegen/time.h \
+    include/grpc/impl/codegen/byte_buffer.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
-    include/grpc/impl/codegen/exec_ctx_fwd.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/slice.h \
@@ -5390,6 +6082,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
     include/grpc/impl/codegen/atm_windows.h \
+    include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
@@ -5399,7 +6092,9 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
     include/grpc++/impl/codegen/proto_utils.h \
+    include/grpcpp/impl/codegen/proto_utils.h \
     include/grpc++/impl/codegen/config_protobuf.h \
+    include/grpcpp/impl/codegen/config_protobuf.h \
 
 LIBGRPC++_TEST_UTIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_TEST_UTIL_SRC))))
 
@@ -5466,6 +6161,7 @@ LIBGRPC++_TEST_UTIL_UNSECURE_SRC = \
 PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/async_stream.h \
     include/grpc++/impl/codegen/async_unary_call.h \
+    include/grpc++/impl/codegen/byte_buffer.h \
     include/grpc++/impl/codegen/call.h \
     include/grpc++/impl/codegen/call_hook.h \
     include/grpc++/impl/codegen/channel_interface.h \
@@ -5493,10 +6189,40 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/stub_options.h \
     include/grpc++/impl/codegen/sync_stream.h \
     include/grpc++/impl/codegen/time.h \
+    include/grpcpp/impl/codegen/async_stream.h \
+    include/grpcpp/impl/codegen/async_unary_call.h \
+    include/grpcpp/impl/codegen/byte_buffer.h \
+    include/grpcpp/impl/codegen/call.h \
+    include/grpcpp/impl/codegen/call_hook.h \
+    include/grpcpp/impl/codegen/channel_interface.h \
+    include/grpcpp/impl/codegen/client_context.h \
+    include/grpcpp/impl/codegen/client_unary_call.h \
+    include/grpcpp/impl/codegen/completion_queue.h \
+    include/grpcpp/impl/codegen/completion_queue_tag.h \
+    include/grpcpp/impl/codegen/config.h \
+    include/grpcpp/impl/codegen/core_codegen_interface.h \
+    include/grpcpp/impl/codegen/create_auth_context.h \
+    include/grpcpp/impl/codegen/grpc_library.h \
+    include/grpcpp/impl/codegen/metadata_map.h \
+    include/grpcpp/impl/codegen/method_handler_impl.h \
+    include/grpcpp/impl/codegen/rpc_method.h \
+    include/grpcpp/impl/codegen/rpc_service_method.h \
+    include/grpcpp/impl/codegen/security/auth_context.h \
+    include/grpcpp/impl/codegen/serialization_traits.h \
+    include/grpcpp/impl/codegen/server_context.h \
+    include/grpcpp/impl/codegen/server_interface.h \
+    include/grpcpp/impl/codegen/service_type.h \
+    include/grpcpp/impl/codegen/slice.h \
+    include/grpcpp/impl/codegen/status.h \
+    include/grpcpp/impl/codegen/status_code_enum.h \
+    include/grpcpp/impl/codegen/string_ref.h \
+    include/grpcpp/impl/codegen/stub_options.h \
+    include/grpcpp/impl/codegen/sync_stream.h \
+    include/grpcpp/impl/codegen/time.h \
+    include/grpc/impl/codegen/byte_buffer.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
-    include/grpc/impl/codegen/exec_ctx_fwd.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/slice.h \
@@ -5505,6 +6231,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
     include/grpc/impl/codegen/atm_windows.h \
+    include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
@@ -5514,7 +6241,9 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
     include/grpc++/impl/codegen/proto_utils.h \
+    include/grpcpp/impl/codegen/proto_utils.h \
     include/grpc++/impl/codegen/config_protobuf.h \
+    include/grpcpp/impl/codegen/config_protobuf.h \
 
 LIBGRPC++_TEST_UTIL_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_TEST_UTIL_UNSECURE_SRC))))
 
@@ -5576,6 +6305,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/client/create_channel_posix.cc \
     src/cpp/client/credentials_cc.cc \
     src/cpp/client/generic_stub.cc \
+    src/cpp/common/alarm.cc \
     src/cpp/common/channel_arguments.cc \
     src/cpp/common/channel_filter.cc \
     src/cpp/common/completion_queue_cc.cc \
@@ -5650,37 +6380,73 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/support/stub_options.h \
     include/grpc++/support/sync_stream.h \
     include/grpc++/support/time.h \
+    include/grpcpp/alarm.h \
+    include/grpcpp/channel.h \
+    include/grpcpp/client_context.h \
+    include/grpcpp/completion_queue.h \
+    include/grpcpp/create_channel.h \
+    include/grpcpp/create_channel_posix.h \
+    include/grpcpp/ext/health_check_service_server_builder_option.h \
+    include/grpcpp/generic/async_generic_service.h \
+    include/grpcpp/generic/generic_stub.h \
+    include/grpcpp/grpcpp.h \
+    include/grpcpp/health_check_service_interface.h \
+    include/grpcpp/impl/call.h \
+    include/grpcpp/impl/channel_argument_option.h \
+    include/grpcpp/impl/client_unary_call.h \
+    include/grpcpp/impl/codegen/core_codegen.h \
+    include/grpcpp/impl/grpc_library.h \
+    include/grpcpp/impl/method_handler_impl.h \
+    include/grpcpp/impl/rpc_method.h \
+    include/grpcpp/impl/rpc_service_method.h \
+    include/grpcpp/impl/serialization_traits.h \
+    include/grpcpp/impl/server_builder_option.h \
+    include/grpcpp/impl/server_builder_plugin.h \
+    include/grpcpp/impl/server_initializer.h \
+    include/grpcpp/impl/service_type.h \
+    include/grpcpp/resource_quota.h \
+    include/grpcpp/security/auth_context.h \
+    include/grpcpp/security/auth_metadata_processor.h \
+    include/grpcpp/security/credentials.h \
+    include/grpcpp/security/server_credentials.h \
+    include/grpcpp/server.h \
+    include/grpcpp/server_builder.h \
+    include/grpcpp/server_context.h \
+    include/grpcpp/server_posix.h \
+    include/grpcpp/support/async_stream.h \
+    include/grpcpp/support/async_unary_call.h \
+    include/grpcpp/support/byte_buffer.h \
+    include/grpcpp/support/channel_arguments.h \
+    include/grpcpp/support/config.h \
+    include/grpcpp/support/slice.h \
+    include/grpcpp/support/status.h \
+    include/grpcpp/support/status_code_enum.h \
+    include/grpcpp/support/string_ref.h \
+    include/grpcpp/support/stub_options.h \
+    include/grpcpp/support/sync_stream.h \
+    include/grpcpp/support/time.h \
     include/grpc/support/alloc.h \
     include/grpc/support/atm.h \
     include/grpc/support/atm_gcc_atomic.h \
     include/grpc/support/atm_gcc_sync.h \
     include/grpc/support/atm_windows.h \
-    include/grpc/support/avl.h \
-    include/grpc/support/cmdline.h \
     include/grpc/support/cpu.h \
-    include/grpc/support/histogram.h \
-    include/grpc/support/host_port.h \
     include/grpc/support/log.h \
     include/grpc/support/log_windows.h \
     include/grpc/support/port_platform.h \
     include/grpc/support/string_util.h \
-    include/grpc/support/subprocess.h \
     include/grpc/support/sync.h \
     include/grpc/support/sync_custom.h \
     include/grpc/support/sync_generic.h \
     include/grpc/support/sync_posix.h \
     include/grpc/support/sync_windows.h \
-    include/grpc/support/thd.h \
+    include/grpc/support/thd_id.h \
     include/grpc/support/time.h \
-    include/grpc/support/tls.h \
-    include/grpc/support/tls_gcc.h \
-    include/grpc/support/tls_msvc.h \
-    include/grpc/support/tls_pthread.h \
-    include/grpc/support/useful.h \
     include/grpc/impl/codegen/atm.h \
     include/grpc/impl/codegen/atm_gcc_atomic.h \
     include/grpc/impl/codegen/atm_gcc_sync.h \
     include/grpc/impl/codegen/atm_windows.h \
+    include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
     include/grpc/impl/codegen/port_platform.h \
@@ -5692,6 +6458,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/byte_buffer.h \
     include/grpc/byte_buffer_reader.h \
     include/grpc/compression.h \
+    include/grpc/fork.h \
     include/grpc/grpc.h \
     include/grpc/grpc_posix.h \
     include/grpc/grpc_security_constants.h \
@@ -5700,16 +6467,17 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/slice_buffer.h \
     include/grpc/status.h \
     include/grpc/support/workaround_list.h \
+    include/grpc/impl/codegen/byte_buffer.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
     include/grpc/impl/codegen/compression_types.h \
     include/grpc/impl/codegen/connectivity_state.h \
-    include/grpc/impl/codegen/exec_ctx_fwd.h \
     include/grpc/impl/codegen/grpc_types.h \
     include/grpc/impl/codegen/propagation_bits.h \
     include/grpc/impl/codegen/slice.h \
     include/grpc/impl/codegen/status.h \
     include/grpc++/impl/codegen/async_stream.h \
     include/grpc++/impl/codegen/async_unary_call.h \
+    include/grpc++/impl/codegen/byte_buffer.h \
     include/grpc++/impl/codegen/call.h \
     include/grpc++/impl/codegen/call_hook.h \
     include/grpc++/impl/codegen/channel_interface.h \
@@ -5737,6 +6505,36 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/stub_options.h \
     include/grpc++/impl/codegen/sync_stream.h \
     include/grpc++/impl/codegen/time.h \
+    include/grpcpp/impl/codegen/async_stream.h \
+    include/grpcpp/impl/codegen/async_unary_call.h \
+    include/grpcpp/impl/codegen/byte_buffer.h \
+    include/grpcpp/impl/codegen/call.h \
+    include/grpcpp/impl/codegen/call_hook.h \
+    include/grpcpp/impl/codegen/channel_interface.h \
+    include/grpcpp/impl/codegen/client_context.h \
+    include/grpcpp/impl/codegen/client_unary_call.h \
+    include/grpcpp/impl/codegen/completion_queue.h \
+    include/grpcpp/impl/codegen/completion_queue_tag.h \
+    include/grpcpp/impl/codegen/config.h \
+    include/grpcpp/impl/codegen/core_codegen_interface.h \
+    include/grpcpp/impl/codegen/create_auth_context.h \
+    include/grpcpp/impl/codegen/grpc_library.h \
+    include/grpcpp/impl/codegen/metadata_map.h \
+    include/grpcpp/impl/codegen/method_handler_impl.h \
+    include/grpcpp/impl/codegen/rpc_method.h \
+    include/grpcpp/impl/codegen/rpc_service_method.h \
+    include/grpcpp/impl/codegen/security/auth_context.h \
+    include/grpcpp/impl/codegen/serialization_traits.h \
+    include/grpcpp/impl/codegen/server_context.h \
+    include/grpcpp/impl/codegen/server_interface.h \
+    include/grpcpp/impl/codegen/service_type.h \
+    include/grpcpp/impl/codegen/slice.h \
+    include/grpcpp/impl/codegen/status.h \
+    include/grpcpp/impl/codegen/status_code_enum.h \
+    include/grpcpp/impl/codegen/string_ref.h \
+    include/grpcpp/impl/codegen/stub_options.h \
+    include/grpcpp/impl/codegen/sync_stream.h \
+    include/grpcpp/impl/codegen/time.h \
 
 LIBGRPC++_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_UNSECURE_SRC))))
 
@@ -5847,6 +6645,7 @@ LIBGRPC_CLI_LIBS_SRC = \
 
 PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/config_protobuf.h \
+    include/grpcpp/impl/codegen/config_protobuf.h \
 
 LIBGRPC_CLI_LIBS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_CLI_LIBS_SRC))))
 
@@ -5908,6 +6707,7 @@ LIBGRPC_PLUGIN_SUPPORT_SRC = \
 
 PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/config_protobuf.h \
+    include/grpcpp/impl/codegen/config_protobuf.h \
 
 LIBGRPC_PLUGIN_SUPPORT_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_PLUGIN_SUPPORT_SRC))))
 
@@ -6382,9 +7182,6 @@ endif
 
 LIBBORINGSSL_SRC = \
     src/boringssl/err_data.c \
-    third_party/boringssl/crypto/aes/aes.c \
-    third_party/boringssl/crypto/aes/key_wrap.c \
-    third_party/boringssl/crypto/aes/mode_wrappers.c \
     third_party/boringssl/crypto/asn1/a_bitstr.c \
     third_party/boringssl/crypto/asn1/a_bool.c \
     third_party/boringssl/crypto/asn1/a_d2i_fp.c \
@@ -6408,7 +7205,6 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl/crypto/asn1/f_enum.c \
     third_party/boringssl/crypto/asn1/f_int.c \
     third_party/boringssl/crypto/asn1/f_string.c \
-    third_party/boringssl/crypto/asn1/t_bitst.c \
     third_party/boringssl/crypto/asn1/tasn_dec.c \
     third_party/boringssl/crypto/asn1/tasn_enc.c \
     third_party/boringssl/crypto/asn1/tasn_fre.c \
@@ -6416,8 +7212,6 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl/crypto/asn1/tasn_typ.c \
     third_party/boringssl/crypto/asn1/tasn_utl.c \
     third_party/boringssl/crypto/asn1/time_support.c \
-    third_party/boringssl/crypto/asn1/x_bignum.c \
-    third_party/boringssl/crypto/asn1/x_long.c \
     third_party/boringssl/crypto/base64/base64.c \
     third_party/boringssl/crypto/bio/bio.c \
     third_party/boringssl/crypto/bio/bio_mem.c \
@@ -6429,44 +7223,25 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl/crypto/bio/printf.c \
     third_party/boringssl/crypto/bio/socket.c \
     third_party/boringssl/crypto/bio/socket_helper.c \
-    third_party/boringssl/crypto/bn/add.c \
-    third_party/boringssl/crypto/bn/asm/x86_64-gcc.c \
-    third_party/boringssl/crypto/bn/bn.c \
-    third_party/boringssl/crypto/bn/bn_asn1.c \
-    third_party/boringssl/crypto/bn/cmp.c \
-    third_party/boringssl/crypto/bn/convert.c \
-    third_party/boringssl/crypto/bn/ctx.c \
-    third_party/boringssl/crypto/bn/div.c \
-    third_party/boringssl/crypto/bn/exponentiation.c \
-    third_party/boringssl/crypto/bn/gcd.c \
-    third_party/boringssl/crypto/bn/generic.c \
-    third_party/boringssl/crypto/bn/kronecker.c \
-    third_party/boringssl/crypto/bn/montgomery.c \
-    third_party/boringssl/crypto/bn/montgomery_inv.c \
-    third_party/boringssl/crypto/bn/mul.c \
-    third_party/boringssl/crypto/bn/prime.c \
-    third_party/boringssl/crypto/bn/random.c \
-    third_party/boringssl/crypto/bn/rsaz_exp.c \
-    third_party/boringssl/crypto/bn/shift.c \
-    third_party/boringssl/crypto/bn/sqrt.c \
+    third_party/boringssl/crypto/bn_extra/bn_asn1.c \
+    third_party/boringssl/crypto/bn_extra/convert.c \
     third_party/boringssl/crypto/buf/buf.c \
     third_party/boringssl/crypto/bytestring/asn1_compat.c \
     third_party/boringssl/crypto/bytestring/ber.c \
     third_party/boringssl/crypto/bytestring/cbb.c \
     third_party/boringssl/crypto/bytestring/cbs.c \
     third_party/boringssl/crypto/chacha/chacha.c \
-    third_party/boringssl/crypto/cipher/aead.c \
-    third_party/boringssl/crypto/cipher/cipher.c \
-    third_party/boringssl/crypto/cipher/derive_key.c \
-    third_party/boringssl/crypto/cipher/e_aes.c \
-    third_party/boringssl/crypto/cipher/e_chacha20poly1305.c \
-    third_party/boringssl/crypto/cipher/e_des.c \
-    third_party/boringssl/crypto/cipher/e_null.c \
-    third_party/boringssl/crypto/cipher/e_rc2.c \
-    third_party/boringssl/crypto/cipher/e_rc4.c \
-    third_party/boringssl/crypto/cipher/e_ssl3.c \
-    third_party/boringssl/crypto/cipher/e_tls.c \
-    third_party/boringssl/crypto/cipher/tls_cbc.c \
+    third_party/boringssl/crypto/cipher_extra/cipher_extra.c \
+    third_party/boringssl/crypto/cipher_extra/derive_key.c \
+    third_party/boringssl/crypto/cipher_extra/e_aesctrhmac.c \
+    third_party/boringssl/crypto/cipher_extra/e_aesgcmsiv.c \
+    third_party/boringssl/crypto/cipher_extra/e_chacha20poly1305.c \
+    third_party/boringssl/crypto/cipher_extra/e_null.c \
+    third_party/boringssl/crypto/cipher_extra/e_rc2.c \
+    third_party/boringssl/crypto/cipher_extra/e_rc4.c \
+    third_party/boringssl/crypto/cipher_extra/e_ssl3.c \
+    third_party/boringssl/crypto/cipher_extra/e_tls.c \
+    third_party/boringssl/crypto/cipher_extra/tls_cbc.c \
     third_party/boringssl/crypto/cmac/cmac.c \
     third_party/boringssl/crypto/conf/conf.c \
     third_party/boringssl/crypto/cpu-aarch64-linux.c \
@@ -6475,32 +7250,18 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl/crypto/cpu-intel.c \
     third_party/boringssl/crypto/cpu-ppc64le.c \
     third_party/boringssl/crypto/crypto.c \
-    third_party/boringssl/crypto/curve25519/curve25519.c \
     third_party/boringssl/crypto/curve25519/spake25519.c \
     third_party/boringssl/crypto/curve25519/x25519-x86_64.c \
-    third_party/boringssl/crypto/des/des.c \
     third_party/boringssl/crypto/dh/check.c \
     third_party/boringssl/crypto/dh/dh.c \
     third_party/boringssl/crypto/dh/dh_asn1.c \
     third_party/boringssl/crypto/dh/params.c \
-    third_party/boringssl/crypto/digest/digest.c \
-    third_party/boringssl/crypto/digest/digests.c \
+    third_party/boringssl/crypto/digest_extra/digest_extra.c \
     third_party/boringssl/crypto/dsa/dsa.c \
     third_party/boringssl/crypto/dsa/dsa_asn1.c \
-    third_party/boringssl/crypto/ec/ec.c \
-    third_party/boringssl/crypto/ec/ec_asn1.c \
-    third_party/boringssl/crypto/ec/ec_key.c \
-    third_party/boringssl/crypto/ec/ec_montgomery.c \
-    third_party/boringssl/crypto/ec/oct.c \
-    third_party/boringssl/crypto/ec/p224-64.c \
-    third_party/boringssl/crypto/ec/p256-64.c \
-    third_party/boringssl/crypto/ec/p256-x86_64.c \
-    third_party/boringssl/crypto/ec/simple.c \
-    third_party/boringssl/crypto/ec/util-64.c \
-    third_party/boringssl/crypto/ec/wnaf.c \
+    third_party/boringssl/crypto/ec_extra/ec_asn1.c \
     third_party/boringssl/crypto/ecdh/ecdh.c \
-    third_party/boringssl/crypto/ecdsa/ecdsa.c \
-    third_party/boringssl/crypto/ecdsa/ecdsa_asn1.c \
+    third_party/boringssl/crypto/ecdsa_extra/ecdsa_asn1.c \
     third_party/boringssl/crypto/engine/engine.c \
     third_party/boringssl/crypto/err/err.c \
     third_party/boringssl/crypto/evp/digestsign.c \
@@ -6510,24 +7271,20 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl/crypto/evp/p_dsa_asn1.c \
     third_party/boringssl/crypto/evp/p_ec.c \
     third_party/boringssl/crypto/evp/p_ec_asn1.c \
+    third_party/boringssl/crypto/evp/p_ed25519.c \
+    third_party/boringssl/crypto/evp/p_ed25519_asn1.c \
     third_party/boringssl/crypto/evp/p_rsa.c \
     third_party/boringssl/crypto/evp/p_rsa_asn1.c \
     third_party/boringssl/crypto/evp/pbkdf.c \
     third_party/boringssl/crypto/evp/print.c \
+    third_party/boringssl/crypto/evp/scrypt.c \
     third_party/boringssl/crypto/evp/sign.c \
     third_party/boringssl/crypto/ex_data.c \
+    third_party/boringssl/crypto/fipsmodule/bcm.c \
+    third_party/boringssl/crypto/fipsmodule/is_fips.c \
     third_party/boringssl/crypto/hkdf/hkdf.c \
-    third_party/boringssl/crypto/hmac/hmac.c \
     third_party/boringssl/crypto/lhash/lhash.c \
-    third_party/boringssl/crypto/md4/md4.c \
-    third_party/boringssl/crypto/md5/md5.c \
     third_party/boringssl/crypto/mem.c \
-    third_party/boringssl/crypto/modes/cbc.c \
-    third_party/boringssl/crypto/modes/cfb.c \
-    third_party/boringssl/crypto/modes/ctr.c \
-    third_party/boringssl/crypto/modes/gcm.c \
-    third_party/boringssl/crypto/modes/ofb.c \
-    third_party/boringssl/crypto/modes/polyval.c \
     third_party/boringssl/crypto/obj/obj.c \
     third_party/boringssl/crypto/obj/obj_xref.c \
     third_party/boringssl/crypto/pem/pem_all.c \
@@ -6538,30 +7295,24 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl/crypto/pem/pem_pkey.c \
     third_party/boringssl/crypto/pem/pem_x509.c \
     third_party/boringssl/crypto/pem/pem_xaux.c \
+    third_party/boringssl/crypto/pkcs7/pkcs7.c \
+    third_party/boringssl/crypto/pkcs7/pkcs7_x509.c \
     third_party/boringssl/crypto/pkcs8/p5_pbev2.c \
-    third_party/boringssl/crypto/pkcs8/p8_pkey.c \
     third_party/boringssl/crypto/pkcs8/pkcs8.c \
+    third_party/boringssl/crypto/pkcs8/pkcs8_x509.c \
     third_party/boringssl/crypto/poly1305/poly1305.c \
     third_party/boringssl/crypto/poly1305/poly1305_arm.c \
     third_party/boringssl/crypto/poly1305/poly1305_vec.c \
     third_party/boringssl/crypto/pool/pool.c \
-    third_party/boringssl/crypto/rand/deterministic.c \
-    third_party/boringssl/crypto/rand/fuchsia.c \
-    third_party/boringssl/crypto/rand/rand.c \
-    third_party/boringssl/crypto/rand/urandom.c \
-    third_party/boringssl/crypto/rand/windows.c \
+    third_party/boringssl/crypto/rand_extra/deterministic.c \
+    third_party/boringssl/crypto/rand_extra/forkunsafe.c \
+    third_party/boringssl/crypto/rand_extra/fuchsia.c \
+    third_party/boringssl/crypto/rand_extra/rand_extra.c \
+    third_party/boringssl/crypto/rand_extra/windows.c \
     third_party/boringssl/crypto/rc4/rc4.c \
     third_party/boringssl/crypto/refcount_c11.c \
     third_party/boringssl/crypto/refcount_lock.c \
-    third_party/boringssl/crypto/rsa/blinding.c \
-    third_party/boringssl/crypto/rsa/padding.c \
-    third_party/boringssl/crypto/rsa/rsa.c \
-    third_party/boringssl/crypto/rsa/rsa_asn1.c \
-    third_party/boringssl/crypto/rsa/rsa_impl.c \
-    third_party/boringssl/crypto/sha/sha1-altivec.c \
-    third_party/boringssl/crypto/sha/sha1.c \
-    third_party/boringssl/crypto/sha/sha256.c \
-    third_party/boringssl/crypto/sha/sha512.c \
+    third_party/boringssl/crypto/rsa_extra/rsa_asn1.c \
     third_party/boringssl/crypto/stack/stack.c \
     third_party/boringssl/crypto/thread.c \
     third_party/boringssl/crypto/thread_none.c \
@@ -6576,7 +7327,6 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl/crypto/x509/by_dir.c \
     third_party/boringssl/crypto/x509/by_file.c \
     third_party/boringssl/crypto/x509/i2d_pr.c \
-    third_party/boringssl/crypto/x509/pkcs7.c \
     third_party/boringssl/crypto/x509/rsa_pss.c \
     third_party/boringssl/crypto/x509/t_crl.c \
     third_party/boringssl/crypto/x509/t_req.c \
@@ -6602,7 +7352,6 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl/crypto/x509/x509name.c \
     third_party/boringssl/crypto/x509/x509rset.c \
     third_party/boringssl/crypto/x509/x509spki.c \
-    third_party/boringssl/crypto/x509/x509type.c \
     third_party/boringssl/crypto/x509/x_algor.c \
     third_party/boringssl/crypto/x509/x_all.c \
     third_party/boringssl/crypto/x509/x_attrib.c \
@@ -6650,48 +7399,51 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl/crypto/x509v3/v3_skey.c \
     third_party/boringssl/crypto/x509v3/v3_sxnet.c \
     third_party/boringssl/crypto/x509v3/v3_utl.c \
-    third_party/boringssl/ssl/bio_ssl.c \
-    third_party/boringssl/ssl/custom_extensions.c \
-    third_party/boringssl/ssl/d1_both.c \
-    third_party/boringssl/ssl/d1_lib.c \
-    third_party/boringssl/ssl/d1_pkt.c \
-    third_party/boringssl/ssl/d1_srtp.c \
-    third_party/boringssl/ssl/dtls_method.c \
-    third_party/boringssl/ssl/dtls_record.c \
-    third_party/boringssl/ssl/handshake_client.c \
-    third_party/boringssl/ssl/handshake_server.c \
-    third_party/boringssl/ssl/s3_both.c \
-    third_party/boringssl/ssl/s3_lib.c \
-    third_party/boringssl/ssl/s3_pkt.c \
-    third_party/boringssl/ssl/ssl_aead_ctx.c \
-    third_party/boringssl/ssl/ssl_asn1.c \
-    third_party/boringssl/ssl/ssl_buffer.c \
-    third_party/boringssl/ssl/ssl_cert.c \
-    third_party/boringssl/ssl/ssl_cipher.c \
-    third_party/boringssl/ssl/ssl_ecdh.c \
-    third_party/boringssl/ssl/ssl_file.c \
-    third_party/boringssl/ssl/ssl_lib.c \
-    third_party/boringssl/ssl/ssl_privkey.c \
-    third_party/boringssl/ssl/ssl_privkey_cc.cc \
-    third_party/boringssl/ssl/ssl_session.c \
-    third_party/boringssl/ssl/ssl_stat.c \
-    third_party/boringssl/ssl/ssl_transcript.c \
-    third_party/boringssl/ssl/ssl_x509.c \
-    third_party/boringssl/ssl/t1_enc.c \
-    third_party/boringssl/ssl/t1_lib.c \
-    third_party/boringssl/ssl/tls13_both.c \
-    third_party/boringssl/ssl/tls13_client.c \
-    third_party/boringssl/ssl/tls13_enc.c \
-    third_party/boringssl/ssl/tls13_server.c \
-    third_party/boringssl/ssl/tls_method.c \
-    third_party/boringssl/ssl/tls_record.c \
+    third_party/boringssl/ssl/bio_ssl.cc \
+    third_party/boringssl/ssl/custom_extensions.cc \
+    third_party/boringssl/ssl/d1_both.cc \
+    third_party/boringssl/ssl/d1_lib.cc \
+    third_party/boringssl/ssl/d1_pkt.cc \
+    third_party/boringssl/ssl/d1_srtp.cc \
+    third_party/boringssl/ssl/dtls_method.cc \
+    third_party/boringssl/ssl/dtls_record.cc \
+    third_party/boringssl/ssl/handshake.cc \
+    third_party/boringssl/ssl/handshake_client.cc \
+    third_party/boringssl/ssl/handshake_server.cc \
+    third_party/boringssl/ssl/s3_both.cc \
+    third_party/boringssl/ssl/s3_lib.cc \
+    third_party/boringssl/ssl/s3_pkt.cc \
+    third_party/boringssl/ssl/ssl_aead_ctx.cc \
+    third_party/boringssl/ssl/ssl_asn1.cc \
+    third_party/boringssl/ssl/ssl_buffer.cc \
+    third_party/boringssl/ssl/ssl_cert.cc \
+    third_party/boringssl/ssl/ssl_cipher.cc \
+    third_party/boringssl/ssl/ssl_file.cc \
+    third_party/boringssl/ssl/ssl_key_share.cc \
+    third_party/boringssl/ssl/ssl_lib.cc \
+    third_party/boringssl/ssl/ssl_privkey.cc \
+    third_party/boringssl/ssl/ssl_session.cc \
+    third_party/boringssl/ssl/ssl_stat.cc \
+    third_party/boringssl/ssl/ssl_transcript.cc \
+    third_party/boringssl/ssl/ssl_versions.cc \
+    third_party/boringssl/ssl/ssl_x509.cc \
+    third_party/boringssl/ssl/t1_enc.cc \
+    third_party/boringssl/ssl/t1_lib.cc \
+    third_party/boringssl/ssl/tls13_both.cc \
+    third_party/boringssl/ssl/tls13_client.cc \
+    third_party/boringssl/ssl/tls13_enc.cc \
+    third_party/boringssl/ssl/tls13_server.cc \
+    third_party/boringssl/ssl/tls_method.cc \
+    third_party/boringssl/ssl/tls_record.cc \
+    third_party/boringssl/third_party/fiat/curve25519.c \
 
 PUBLIC_HEADERS_C += \
 
 LIBBORINGSSL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_SRC))))
 
 $(LIBBORINGSSL_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
 $(LIBDIR)/$(CONFIG)/libboringssl.a: $(ZLIB_DEP) $(CARES_DEP)  $(LIBBORINGSSL_OBJS) 
 	$(E) "[AR]      Creating $@"
@@ -6720,7 +7472,8 @@ PUBLIC_HEADERS_CXX += \
 LIBBORINGSSL_TEST_UTIL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_TEST_UTIL_SRC))))
 
 $(LIBBORINGSSL_TEST_UTIL_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_TEST_UTIL_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_TEST_UTIL_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_TEST_UTIL_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -6750,32 +7503,33 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
-LIBBORINGSSL_AES_TEST_LIB_SRC = \
-    third_party/boringssl/crypto/aes/aes_test.cc \
+LIBBORINGSSL_CRYPTO_TEST_DATA_LIB_SRC = \
+    src/boringssl/crypto_test_data.cc \
 
 PUBLIC_HEADERS_CXX += \
 
-LIBBORINGSSL_AES_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_AES_TEST_LIB_SRC))))
+LIBBORINGSSL_CRYPTO_TEST_DATA_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_CRYPTO_TEST_DATA_LIB_SRC))))
 
-$(LIBBORINGSSL_AES_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_AES_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_CRYPTO_TEST_DATA_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_CRYPTO_TEST_DATA_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_CRYPTO_TEST_DATA_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
 ifeq ($(NO_PROTOBUF),true)
 
 # You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
 
-$(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a: protobuf_dep_error
+$(LIBDIR)/$(CONFIG)/libboringssl_crypto_test_data_lib.a: protobuf_dep_error
 
 
 else
 
-$(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_AES_TEST_LIB_OBJS) 
+$(LIBDIR)/$(CONFIG)/libboringssl_crypto_test_data_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_CRYPTO_TEST_DATA_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a $(LIBBORINGSSL_AES_TEST_LIB_OBJS) 
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_crypto_test_data_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_crypto_test_data_lib.a $(LIBBORINGSSL_CRYPTO_TEST_DATA_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_crypto_test_data_lib.a
 endif
 
 
@@ -6784,7 +7538,7 @@ endif
 endif
 
 ifneq ($(NO_DEPS),true)
--include $(LIBBORINGSSL_AES_TEST_LIB_OBJS:.o=.dep)
+-include $(LIBBORINGSSL_CRYPTO_TEST_DATA_LIB_OBJS:.o=.dep)
 endif
 
 
@@ -6796,7 +7550,8 @@ PUBLIC_HEADERS_CXX += \
 LIBBORINGSSL_ASN1_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_ASN1_TEST_LIB_SRC))))
 
 $(LIBBORINGSSL_ASN1_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_ASN1_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_ASN1_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_ASN1_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -6834,7 +7589,8 @@ PUBLIC_HEADERS_CXX += \
 LIBBORINGSSL_BASE64_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_BASE64_TEST_LIB_SRC))))
 
 $(LIBBORINGSSL_BASE64_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_BASE64_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_BASE64_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_BASE64_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -6872,7 +7628,8 @@ PUBLIC_HEADERS_CXX += \
 LIBBORINGSSL_BIO_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_BIO_TEST_LIB_SRC))))
 
 $(LIBBORINGSSL_BIO_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_BIO_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_BIO_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_BIO_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -6902,32 +7659,33 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
-LIBBORINGSSL_BN_TEST_LIB_SRC = \
-    third_party/boringssl/crypto/bn/bn_test.cc \
+LIBBORINGSSL_BUF_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/buf/buf_test.cc \
 
 PUBLIC_HEADERS_CXX += \
 
-LIBBORINGSSL_BN_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_BN_TEST_LIB_SRC))))
+LIBBORINGSSL_BUF_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_BUF_TEST_LIB_SRC))))
 
-$(LIBBORINGSSL_BN_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_BN_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_BUF_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_BUF_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_BUF_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
 ifeq ($(NO_PROTOBUF),true)
 
 # You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
 
-$(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a: protobuf_dep_error
+$(LIBDIR)/$(CONFIG)/libboringssl_buf_test_lib.a: protobuf_dep_error
 
 
 else
 
-$(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_BN_TEST_LIB_OBJS) 
+$(LIBDIR)/$(CONFIG)/libboringssl_buf_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_BUF_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a $(LIBBORINGSSL_BN_TEST_LIB_OBJS) 
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_buf_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_buf_test_lib.a $(LIBBORINGSSL_BUF_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_buf_test_lib.a
 endif
 
 
@@ -6936,7 +7694,7 @@ endif
 endif
 
 ifneq ($(NO_DEPS),true)
--include $(LIBBORINGSSL_BN_TEST_LIB_OBJS:.o=.dep)
+-include $(LIBBORINGSSL_BUF_TEST_LIB_OBJS:.o=.dep)
 endif
 
 
@@ -6948,7 +7706,8 @@ PUBLIC_HEADERS_CXX += \
 LIBBORINGSSL_BYTESTRING_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_BYTESTRING_TEST_LIB_SRC))))
 
 $(LIBBORINGSSL_BYTESTRING_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_BYTESTRING_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_BYTESTRING_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_BYTESTRING_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -6978,15 +7737,55 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
+LIBBORINGSSL_CHACHA_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/chacha/chacha_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_CHACHA_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_CHACHA_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_CHACHA_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_CHACHA_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_CHACHA_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_chacha_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_chacha_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_CHACHA_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_chacha_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_chacha_test_lib.a $(LIBBORINGSSL_CHACHA_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_chacha_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_CHACHA_TEST_LIB_OBJS:.o=.dep)
+endif
+
+
 LIBBORINGSSL_AEAD_TEST_LIB_SRC = \
-    third_party/boringssl/crypto/cipher/aead_test.cc \
+    third_party/boringssl/crypto/cipher_extra/aead_test.cc \
 
 PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_AEAD_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_AEAD_TEST_LIB_SRC))))
 
 $(LIBBORINGSSL_AEAD_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_AEAD_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_AEAD_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_AEAD_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -7017,14 +7816,15 @@ endif
 
 
 LIBBORINGSSL_CIPHER_TEST_LIB_SRC = \
-    third_party/boringssl/crypto/cipher/cipher_test.cc \
+    third_party/boringssl/crypto/cipher_extra/cipher_test.cc \
 
 PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_CIPHER_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_CIPHER_TEST_LIB_SRC))))
 
 $(LIBBORINGSSL_CIPHER_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_CIPHER_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_CIPHER_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_CIPHER_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -7062,7 +7862,8 @@ PUBLIC_HEADERS_CXX += \
 LIBBORINGSSL_CMAC_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_CMAC_TEST_LIB_SRC))))
 
 $(LIBBORINGSSL_CMAC_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_CMAC_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_CMAC_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_CMAC_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -7092,6 +7893,45 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
+LIBBORINGSSL_COMPILER_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/compiler_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_COMPILER_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_COMPILER_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_COMPILER_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_COMPILER_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_COMPILER_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_compiler_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_compiler_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_COMPILER_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_compiler_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_compiler_test_lib.a $(LIBBORINGSSL_COMPILER_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_compiler_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_COMPILER_TEST_LIB_OBJS:.o=.dep)
+endif
+
+
 LIBBORINGSSL_CONSTANT_TIME_TEST_LIB_SRC = \
     third_party/boringssl/crypto/constant_time_test.cc \
 
@@ -7100,7 +7940,8 @@ PUBLIC_HEADERS_CXX += \
 LIBBORINGSSL_CONSTANT_TIME_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_CONSTANT_TIME_TEST_LIB_SRC))))
 
 $(LIBBORINGSSL_CONSTANT_TIME_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_CONSTANT_TIME_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_CONSTANT_TIME_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_CONSTANT_TIME_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -7138,7 +7979,8 @@ PUBLIC_HEADERS_CXX += \
 LIBBORINGSSL_ED25519_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_ED25519_TEST_LIB_SRC))))
 
 $(LIBBORINGSSL_ED25519_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_ED25519_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_ED25519_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_ED25519_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -7176,7 +8018,8 @@ PUBLIC_HEADERS_CXX += \
 LIBBORINGSSL_SPAKE25519_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_SPAKE25519_TEST_LIB_SRC))))
 
 $(LIBBORINGSSL_SPAKE25519_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_SPAKE25519_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_SPAKE25519_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_SPAKE25519_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -7214,7 +8057,8 @@ PUBLIC_HEADERS_CXX += \
 LIBBORINGSSL_X25519_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_X25519_TEST_LIB_SRC))))
 
 $(LIBBORINGSSL_X25519_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_X25519_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_X25519_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_X25519_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -7244,15 +8088,55 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
+LIBBORINGSSL_DH_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/dh/dh_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_DH_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_DH_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_DH_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_DH_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_DH_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_DH_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a $(LIBBORINGSSL_DH_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_DH_TEST_LIB_OBJS:.o=.dep)
+endif
+
+
 LIBBORINGSSL_DIGEST_TEST_LIB_SRC = \
-    third_party/boringssl/crypto/digest/digest_test.cc \
+    third_party/boringssl/crypto/digest_extra/digest_test.cc \
 
 PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_DIGEST_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_DIGEST_TEST_LIB_SRC))))
 
 $(LIBBORINGSSL_DIGEST_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_DIGEST_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_DIGEST_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_DIGEST_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -7282,59 +8166,33 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
-LIBBORINGSSL_EXAMPLE_MUL_LIB_SRC = \
-    third_party/boringssl/crypto/ec/example_mul.c \
-
-PUBLIC_HEADERS_C += \
-
-LIBBORINGSSL_EXAMPLE_MUL_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_EXAMPLE_MUL_LIB_SRC))))
-
-$(LIBBORINGSSL_EXAMPLE_MUL_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_EXAMPLE_MUL_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
-
-$(LIBDIR)/$(CONFIG)/libboringssl_example_mul_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(LIBBORINGSSL_EXAMPLE_MUL_LIB_OBJS) 
-	$(E) "[AR]      Creating $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_example_mul_lib.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_example_mul_lib.a $(LIBBORINGSSL_EXAMPLE_MUL_LIB_OBJS) 
-ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_example_mul_lib.a
-endif
-
-
-
-
-ifneq ($(NO_DEPS),true)
--include $(LIBBORINGSSL_EXAMPLE_MUL_LIB_OBJS:.o=.dep)
-endif
-
-
-LIBBORINGSSL_P256-X86_64_TEST_LIB_SRC = \
-    third_party/boringssl/crypto/ec/p256-x86_64_test.cc \
+LIBBORINGSSL_DSA_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/dsa/dsa_test.cc \
 
 PUBLIC_HEADERS_CXX += \
 
-LIBBORINGSSL_P256-X86_64_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_P256-X86_64_TEST_LIB_SRC))))
+LIBBORINGSSL_DSA_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_DSA_TEST_LIB_SRC))))
 
-$(LIBBORINGSSL_P256-X86_64_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_P256-X86_64_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_DSA_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_DSA_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_DSA_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
 ifeq ($(NO_PROTOBUF),true)
 
 # You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
 
-$(LIBDIR)/$(CONFIG)/libboringssl_p256-x86_64_test_lib.a: protobuf_dep_error
+$(LIBDIR)/$(CONFIG)/libboringssl_dsa_test_lib.a: protobuf_dep_error
 
 
 else
 
-$(LIBDIR)/$(CONFIG)/libboringssl_p256-x86_64_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_P256-X86_64_TEST_LIB_OBJS) 
+$(LIBDIR)/$(CONFIG)/libboringssl_dsa_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_DSA_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_p256-x86_64_test_lib.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_p256-x86_64_test_lib.a $(LIBBORINGSSL_P256-X86_64_TEST_LIB_OBJS) 
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_dsa_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_dsa_test_lib.a $(LIBBORINGSSL_DSA_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_p256-x86_64_test_lib.a
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_dsa_test_lib.a
 endif
 
 
@@ -7343,7 +8201,7 @@ endif
 endif
 
 ifneq ($(NO_DEPS),true)
--include $(LIBBORINGSSL_P256-X86_64_TEST_LIB_OBJS:.o=.dep)
+-include $(LIBBORINGSSL_DSA_TEST_LIB_OBJS:.o=.dep)
 endif
 
 
@@ -7355,7 +8213,8 @@ PUBLIC_HEADERS_CXX += \
 LIBBORINGSSL_ECDH_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_ECDH_TEST_LIB_SRC))))
 
 $(LIBBORINGSSL_ECDH_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_ECDH_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_ECDH_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_ECDH_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -7385,32 +8244,33 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
-LIBBORINGSSL_ECDSA_SIGN_TEST_LIB_SRC = \
-    third_party/boringssl/crypto/ecdsa/ecdsa_sign_test.cc \
+LIBBORINGSSL_ERR_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/err/err_test.cc \
 
 PUBLIC_HEADERS_CXX += \
 
-LIBBORINGSSL_ECDSA_SIGN_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_ECDSA_SIGN_TEST_LIB_SRC))))
+LIBBORINGSSL_ERR_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_ERR_TEST_LIB_SRC))))
 
-$(LIBBORINGSSL_ECDSA_SIGN_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_ECDSA_SIGN_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_ERR_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_ERR_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_ERR_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
 ifeq ($(NO_PROTOBUF),true)
 
 # You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
 
-$(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_sign_test_lib.a: protobuf_dep_error
+$(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a: protobuf_dep_error
 
 
 else
 
-$(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_sign_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_ECDSA_SIGN_TEST_LIB_OBJS) 
+$(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_ERR_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_sign_test_lib.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_sign_test_lib.a $(LIBBORINGSSL_ECDSA_SIGN_TEST_LIB_OBJS) 
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a $(LIBBORINGSSL_ERR_TEST_LIB_OBJS) 
 ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_sign_test_lib.a
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a
 endif
 
 
@@ -7419,83 +8279,7 @@ endif
 endif
 
 ifneq ($(NO_DEPS),true)
--include $(LIBBORINGSSL_ECDSA_SIGN_TEST_LIB_OBJS:.o=.dep)
-endif
-
-
-LIBBORINGSSL_ECDSA_TEST_LIB_SRC = \
-    third_party/boringssl/crypto/ecdsa/ecdsa_test.cc \
-
-PUBLIC_HEADERS_CXX += \
-
-LIBBORINGSSL_ECDSA_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_ECDSA_TEST_LIB_SRC))))
-
-$(LIBBORINGSSL_ECDSA_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_ECDSA_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
-
-$(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a: protobuf_dep_error
-
-
-else
-
-$(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_ECDSA_TEST_LIB_OBJS) 
-	$(E) "[AR]      Creating $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a $(LIBBORINGSSL_ECDSA_TEST_LIB_OBJS) 
-ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a
-endif
-
-
-
-
-endif
-
-ifneq ($(NO_DEPS),true)
--include $(LIBBORINGSSL_ECDSA_TEST_LIB_OBJS:.o=.dep)
-endif
-
-
-LIBBORINGSSL_ECDSA_VERIFY_TEST_LIB_SRC = \
-    third_party/boringssl/crypto/ecdsa/ecdsa_verify_test.cc \
-
-PUBLIC_HEADERS_CXX += \
-
-LIBBORINGSSL_ECDSA_VERIFY_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_ECDSA_VERIFY_TEST_LIB_SRC))))
-
-$(LIBBORINGSSL_ECDSA_VERIFY_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_ECDSA_VERIFY_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
-
-$(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_verify_test_lib.a: protobuf_dep_error
-
-
-else
-
-$(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_verify_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_ECDSA_VERIFY_TEST_LIB_OBJS) 
-	$(E) "[AR]      Creating $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_verify_test_lib.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_verify_test_lib.a $(LIBBORINGSSL_ECDSA_VERIFY_TEST_LIB_OBJS) 
-ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_verify_test_lib.a
-endif
-
-
-
-
-endif
-
-ifneq ($(NO_DEPS),true)
--include $(LIBBORINGSSL_ECDSA_VERIFY_TEST_LIB_OBJS:.o=.dep)
+-include $(LIBBORINGSSL_ERR_TEST_LIB_OBJS:.o=.dep)
 endif
 
 
@@ -7507,7 +8291,8 @@ PUBLIC_HEADERS_CXX += \
 LIBBORINGSSL_EVP_EXTRA_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_EVP_EXTRA_TEST_LIB_SRC))))
 
 $(LIBBORINGSSL_EVP_EXTRA_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_EVP_EXTRA_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_EVP_EXTRA_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_EVP_EXTRA_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -7545,7 +8330,8 @@ PUBLIC_HEADERS_CXX += \
 LIBBORINGSSL_EVP_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_EVP_TEST_LIB_SRC))))
 
 $(LIBBORINGSSL_EVP_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_EVP_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_EVP_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_EVP_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -7583,7 +8369,8 @@ PUBLIC_HEADERS_CXX += \
 LIBBORINGSSL_PBKDF_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_PBKDF_TEST_LIB_SRC))))
 
 $(LIBBORINGSSL_PBKDF_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_PBKDF_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_PBKDF_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_PBKDF_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -7613,6 +8400,318 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
+LIBBORINGSSL_SCRYPT_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/evp/scrypt_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_SCRYPT_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_SCRYPT_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_SCRYPT_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_SCRYPT_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_SCRYPT_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_scrypt_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_scrypt_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_SCRYPT_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_scrypt_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_scrypt_test_lib.a $(LIBBORINGSSL_SCRYPT_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_scrypt_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_SCRYPT_TEST_LIB_OBJS:.o=.dep)
+endif
+
+
+LIBBORINGSSL_AES_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/fipsmodule/aes/aes_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_AES_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_AES_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_AES_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_AES_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_AES_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_AES_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a $(LIBBORINGSSL_AES_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_AES_TEST_LIB_OBJS:.o=.dep)
+endif
+
+
+LIBBORINGSSL_BN_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/fipsmodule/bn/bn_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_BN_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_BN_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_BN_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_BN_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_BN_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_BN_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a $(LIBBORINGSSL_BN_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_BN_TEST_LIB_OBJS:.o=.dep)
+endif
+
+
+LIBBORINGSSL_EC_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/fipsmodule/ec/ec_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_EC_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_EC_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_EC_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_EC_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_EC_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_EC_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a $(LIBBORINGSSL_EC_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_EC_TEST_LIB_OBJS:.o=.dep)
+endif
+
+
+LIBBORINGSSL_P256-X86_64_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/fipsmodule/ec/p256-x86_64_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_P256-X86_64_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_P256-X86_64_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_P256-X86_64_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_P256-X86_64_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_P256-X86_64_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_p256-x86_64_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_p256-x86_64_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_P256-X86_64_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_p256-x86_64_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_p256-x86_64_test_lib.a $(LIBBORINGSSL_P256-X86_64_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_p256-x86_64_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_P256-X86_64_TEST_LIB_OBJS:.o=.dep)
+endif
+
+
+LIBBORINGSSL_ECDSA_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/fipsmodule/ecdsa/ecdsa_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_ECDSA_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_ECDSA_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_ECDSA_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_ECDSA_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_ECDSA_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_ECDSA_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a $(LIBBORINGSSL_ECDSA_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_ECDSA_TEST_LIB_OBJS:.o=.dep)
+endif
+
+
+LIBBORINGSSL_GCM_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/fipsmodule/modes/gcm_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_GCM_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_GCM_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_GCM_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_GCM_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_GCM_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_GCM_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a $(LIBBORINGSSL_GCM_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_GCM_TEST_LIB_OBJS:.o=.dep)
+endif
+
+
+LIBBORINGSSL_CTRDRBG_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/fipsmodule/rand/ctrdrbg_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_CTRDRBG_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_CTRDRBG_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_CTRDRBG_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_CTRDRBG_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_CTRDRBG_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_ctrdrbg_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_ctrdrbg_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_CTRDRBG_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_ctrdrbg_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_ctrdrbg_test_lib.a $(LIBBORINGSSL_CTRDRBG_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_ctrdrbg_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_CTRDRBG_TEST_LIB_OBJS:.o=.dep)
+endif
+
+
 LIBBORINGSSL_HKDF_TEST_LIB_SRC = \
     third_party/boringssl/crypto/hkdf/hkdf_test.cc \
 
@@ -7621,7 +8720,8 @@ PUBLIC_HEADERS_CXX += \
 LIBBORINGSSL_HKDF_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_HKDF_TEST_LIB_SRC))))
 
 $(LIBBORINGSSL_HKDF_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_HKDF_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_HKDF_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_HKDF_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -7652,14 +8752,15 @@ endif
 
 
 LIBBORINGSSL_HMAC_TEST_LIB_SRC = \
-    third_party/boringssl/crypto/hmac/hmac_test.cc \
+    third_party/boringssl/crypto/hmac_extra/hmac_test.cc \
 
 PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_HMAC_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_HMAC_TEST_LIB_SRC))))
 
 $(LIBBORINGSSL_HMAC_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_HMAC_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_HMAC_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_HMAC_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -7697,7 +8798,8 @@ PUBLIC_HEADERS_CXX += \
 LIBBORINGSSL_LHASH_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_LHASH_TEST_LIB_SRC))))
 
 $(LIBBORINGSSL_LHASH_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_LHASH_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_LHASH_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_LHASH_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -7727,44 +8829,6 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
-LIBBORINGSSL_GCM_TEST_LIB_SRC = \
-    third_party/boringssl/crypto/modes/gcm_test.cc \
-
-PUBLIC_HEADERS_CXX += \
-
-LIBBORINGSSL_GCM_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_GCM_TEST_LIB_SRC))))
-
-$(LIBBORINGSSL_GCM_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_GCM_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
-
-$(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a: protobuf_dep_error
-
-
-else
-
-$(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_GCM_TEST_LIB_OBJS) 
-	$(E) "[AR]      Creating $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a $(LIBBORINGSSL_GCM_TEST_LIB_OBJS) 
-ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a
-endif
-
-
-
-
-endif
-
-ifneq ($(NO_DEPS),true)
--include $(LIBBORINGSSL_GCM_TEST_LIB_OBJS:.o=.dep)
-endif
-
-
 LIBBORINGSSL_OBJ_TEST_LIB_SRC = \
     third_party/boringssl/crypto/obj/obj_test.cc \
 
@@ -7773,7 +8837,8 @@ PUBLIC_HEADERS_CXX += \
 LIBBORINGSSL_OBJ_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_OBJ_TEST_LIB_SRC))))
 
 $(LIBBORINGSSL_OBJ_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_OBJ_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_OBJ_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_OBJ_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -7803,6 +8868,45 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
+LIBBORINGSSL_PKCS7_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/pkcs7/pkcs7_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_PKCS7_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_PKCS7_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_PKCS7_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_PKCS7_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_PKCS7_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_PKCS7_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a $(LIBBORINGSSL_PKCS7_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_PKCS7_TEST_LIB_OBJS:.o=.dep)
+endif
+
+
 LIBBORINGSSL_PKCS12_TEST_LIB_SRC = \
     third_party/boringssl/crypto/pkcs8/pkcs12_test.cc \
 
@@ -7811,7 +8915,8 @@ PUBLIC_HEADERS_CXX += \
 LIBBORINGSSL_PKCS12_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_PKCS12_TEST_LIB_SRC))))
 
 $(LIBBORINGSSL_PKCS12_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_PKCS12_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_PKCS12_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_PKCS12_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -7849,7 +8954,8 @@ PUBLIC_HEADERS_CXX += \
 LIBBORINGSSL_PKCS8_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_PKCS8_TEST_LIB_SRC))))
 
 $(LIBBORINGSSL_PKCS8_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_PKCS8_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_PKCS8_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_PKCS8_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -7887,7 +8993,8 @@ PUBLIC_HEADERS_CXX += \
 LIBBORINGSSL_POLY1305_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_POLY1305_TEST_LIB_SRC))))
 
 $(LIBBORINGSSL_POLY1305_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_POLY1305_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_POLY1305_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_POLY1305_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -7925,7 +9032,8 @@ PUBLIC_HEADERS_CXX += \
 LIBBORINGSSL_POOL_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_POOL_TEST_LIB_SRC))))
 
 $(LIBBORINGSSL_POOL_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_POOL_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_POOL_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_POOL_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -7963,7 +9071,8 @@ PUBLIC_HEADERS_CXX += \
 LIBBORINGSSL_REFCOUNT_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_REFCOUNT_TEST_LIB_SRC))))
 
 $(LIBBORINGSSL_REFCOUNT_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_REFCOUNT_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_REFCOUNT_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_REFCOUNT_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -7993,17 +9102,144 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
-LIBBORINGSSL_THREAD_TEST_LIB_SRC = \
-    third_party/boringssl/crypto/thread_test.c \
+LIBBORINGSSL_RSA_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/rsa_extra/rsa_test.cc \
 
-PUBLIC_HEADERS_C += \
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_RSA_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_RSA_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_RSA_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_RSA_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_RSA_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_RSA_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a $(LIBBORINGSSL_RSA_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_RSA_TEST_LIB_OBJS:.o=.dep)
+endif
+
+
+LIBBORINGSSL_FILE_TEST_GTEST_LIB_SRC = \
+    third_party/boringssl/crypto/test/file_test_gtest.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_FILE_TEST_GTEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_FILE_TEST_GTEST_LIB_SRC))))
+
+$(LIBBORINGSSL_FILE_TEST_GTEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_FILE_TEST_GTEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_FILE_TEST_GTEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_file_test_gtest_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_file_test_gtest_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_FILE_TEST_GTEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_file_test_gtest_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_file_test_gtest_lib.a $(LIBBORINGSSL_FILE_TEST_GTEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_file_test_gtest_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_FILE_TEST_GTEST_LIB_OBJS:.o=.dep)
+endif
+
+
+LIBBORINGSSL_GTEST_MAIN_LIB_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_GTEST_MAIN_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_GTEST_MAIN_LIB_SRC))))
+
+$(LIBBORINGSSL_GTEST_MAIN_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_GTEST_MAIN_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_GTEST_MAIN_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_gtest_main_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_gtest_main_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_GTEST_MAIN_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_gtest_main_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_gtest_main_lib.a $(LIBBORINGSSL_GTEST_MAIN_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_gtest_main_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_GTEST_MAIN_LIB_OBJS:.o=.dep)
+endif
+
+
+LIBBORINGSSL_THREAD_TEST_LIB_SRC = \
+    third_party/boringssl/crypto/thread_test.cc \
+
+PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_THREAD_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_THREAD_TEST_LIB_SRC))))
 
 $(LIBBORINGSSL_THREAD_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_THREAD_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_THREAD_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_THREAD_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
-$(LIBDIR)/$(CONFIG)/libboringssl_thread_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(LIBBORINGSSL_THREAD_TEST_LIB_OBJS) 
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_thread_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_thread_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_THREAD_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_thread_test_lib.a
@@ -8015,35 +9251,10 @@ endif
 
 
 
+endif
+
 ifneq ($(NO_DEPS),true)
 -include $(LIBBORINGSSL_THREAD_TEST_LIB_OBJS:.o=.dep)
-endif
-
-
-LIBBORINGSSL_PKCS7_TEST_LIB_SRC = \
-    third_party/boringssl/crypto/x509/pkcs7_test.c \
-
-PUBLIC_HEADERS_C += \
-
-LIBBORINGSSL_PKCS7_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_PKCS7_TEST_LIB_SRC))))
-
-$(LIBBORINGSSL_PKCS7_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_PKCS7_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
-
-$(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(LIBBORINGSSL_PKCS7_TEST_LIB_OBJS) 
-	$(E) "[AR]      Creating $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a $(LIBBORINGSSL_PKCS7_TEST_LIB_OBJS) 
-ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a
-endif
-
-
-
-
-ifneq ($(NO_DEPS),true)
--include $(LIBBORINGSSL_PKCS7_TEST_LIB_OBJS:.o=.dep)
 endif
 
 
@@ -8055,7 +9266,8 @@ PUBLIC_HEADERS_CXX += \
 LIBBORINGSSL_X509_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_X509_TEST_LIB_SRC))))
 
 $(LIBBORINGSSL_X509_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_X509_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_X509_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_X509_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
 ifeq ($(NO_PROTOBUF),true)
 
@@ -8086,16 +9298,26 @@ endif
 
 
 LIBBORINGSSL_TAB_TEST_LIB_SRC = \
-    third_party/boringssl/crypto/x509v3/tab_test.c \
+    third_party/boringssl/crypto/x509v3/tab_test.cc \
 
-PUBLIC_HEADERS_C += \
+PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_TAB_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_TAB_TEST_LIB_SRC))))
 
 $(LIBBORINGSSL_TAB_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_TAB_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_TAB_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_TAB_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
-$(LIBDIR)/$(CONFIG)/libboringssl_tab_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(LIBBORINGSSL_TAB_TEST_LIB_OBJS) 
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_tab_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_tab_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_TAB_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_tab_test_lib.a
@@ -8107,22 +9329,34 @@ endif
 
 
 
+endif
+
 ifneq ($(NO_DEPS),true)
 -include $(LIBBORINGSSL_TAB_TEST_LIB_OBJS:.o=.dep)
 endif
 
 
 LIBBORINGSSL_V3NAME_TEST_LIB_SRC = \
-    third_party/boringssl/crypto/x509v3/v3name_test.c \
+    third_party/boringssl/crypto/x509v3/v3name_test.cc \
 
-PUBLIC_HEADERS_C += \
+PUBLIC_HEADERS_CXX += \
 
 LIBBORINGSSL_V3NAME_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_V3NAME_TEST_LIB_SRC))))
 
 $(LIBBORINGSSL_V3NAME_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(LIBBORINGSSL_V3NAME_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(LIBBORINGSSL_V3NAME_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_V3NAME_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
 
-$(LIBDIR)/$(CONFIG)/libboringssl_v3name_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(LIBBORINGSSL_V3NAME_TEST_LIB_OBJS) 
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_v3name_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_v3name_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_V3NAME_TEST_LIB_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_v3name_test_lib.a
@@ -8134,8 +9368,88 @@ endif
 
 
 
+endif
+
 ifneq ($(NO_DEPS),true)
 -include $(LIBBORINGSSL_V3NAME_TEST_LIB_OBJS:.o=.dep)
+endif
+
+
+LIBBORINGSSL_SPAN_TEST_LIB_SRC = \
+    third_party/boringssl/ssl/span_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_SPAN_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_SPAN_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_SPAN_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_SPAN_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_SPAN_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_span_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_span_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_SPAN_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_span_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_span_test_lib.a $(LIBBORINGSSL_SPAN_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_span_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_SPAN_TEST_LIB_OBJS:.o=.dep)
+endif
+
+
+LIBBORINGSSL_SSL_TEST_LIB_SRC = \
+    third_party/boringssl/ssl/ssl_test.cc \
+
+PUBLIC_HEADERS_CXX += \
+
+LIBBORINGSSL_SSL_TEST_LIB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_SSL_TEST_LIB_SRC))))
+
+$(LIBBORINGSSL_SSL_TEST_LIB_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(LIBBORINGSSL_SSL_TEST_LIB_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(LIBBORINGSSL_SSL_TEST_LIB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a: $(ZLIB_DEP) $(CARES_DEP)  $(PROTOBUF_DEP) $(LIBBORINGSSL_SSL_TEST_LIB_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a $(LIBBORINGSSL_SSL_TEST_LIB_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a
+endif
+
+
+
+
+endif
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBBORINGSSL_SSL_TEST_LIB_OBJS:.o=.dep)
 endif
 
 
@@ -8146,6 +9460,7 @@ LIBBENCHMARK_SRC = \
     third_party/benchmark/src/commandlineflags.cc \
     third_party/benchmark/src/complexity.cc \
     third_party/benchmark/src/console_reporter.cc \
+    third_party/benchmark/src/counter.cc \
     third_party/benchmark/src/csv_reporter.cc \
     third_party/benchmark/src/json_reporter.cc \
     third_party/benchmark/src/reporter.cc \
@@ -8209,7 +9524,7 @@ PUBLIC_HEADERS_C += \
 
 LIBZ_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBZ_SRC))))
 
-$(LIBZ_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration $(W_NO_SHIFT_NEGATIVE_VALUE) -fvisibility=hidden
+$(LIBZ_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration -Wno-implicit-fallthrough $(W_NO_SHIFT_NEGATIVE_VALUE) -fvisibility=hidden
 
 $(LIBDIR)/$(CONFIG)/libz.a: $(CARES_DEP)  $(LIBZ_OBJS) 
 	$(E) "[AR]      Creating $@"
@@ -8283,8 +9598,8 @@ PUBLIC_HEADERS_C += \
 
 LIBARES_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBARES_SRC))))
 
-$(LIBARES_OBJS): CPPFLAGS += -Ithird_party/cares -Ithird_party/cares/cares $(if $(subst Linux,,$(SYSTEM)),,-Ithird_party/cares/config_linux) $(if $(subst Darwin,,$(SYSTEM)),,-Ithird_party/cares/config_darwin) -fvisibility=hidden -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX $(if $(subst MINGW32,,$(SYSTEM)),-DHAVE_CONFIG_H,)
-$(LIBARES_OBJS): CFLAGS += -Wno-sign-conversion $(if $(subst MINGW32,,$(SYSTEM)),-Wno-invalid-source-encoding,)
+$(LIBARES_OBJS): CPPFLAGS += -Ithird_party/cares -Ithird_party/cares/cares -fvisibility=hidden -D_GNU_SOURCE $(if $(subst Darwin,,$(SYSTEM)),,-Ithird_party/cares/config_darwin) $(if $(subst FreeBSD,,$(SYSTEM)),,-Ithird_party/cares/config_freebsd) $(if $(subst Linux,,$(SYSTEM)),,-Ithird_party/cares/config_linux) $(if $(subst OpenBSD,,$(SYSTEM)),,-Ithird_party/cares/config_openbsd) -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX $(if $(subst MINGW32,,$(SYSTEM)),-DHAVE_CONFIG_H,)
+$(LIBARES_OBJS): CFLAGS += -Wno-sign-conversion $(if $(subst Darwin,,$(SYSTEM)),,-Wno-shorten-64-to-32) $(if $(subst MINGW32,,$(SYSTEM)),-Wno-invalid-source-encoding,)
 
 $(LIBDIR)/$(CONFIG)/libares.a: $(ZLIB_DEP)  $(LIBARES_OBJS) 
 	$(E) "[AR]      Creating $@"
@@ -8304,7 +9619,7 @@ endif
 
 
 LIBBAD_CLIENT_TEST_SRC = \
-    test/core/bad_client/bad_client.c \
+    test/core/bad_client/bad_client.cc \
 
 PUBLIC_HEADERS_C += \
 
@@ -8343,7 +9658,7 @@ endif
 
 
 LIBBAD_SSL_TEST_SERVER_SRC = \
-    test/core/bad_ssl/server_common.c \
+    test/core/bad_ssl/server_common.cc \
 
 PUBLIC_HEADERS_C += \
 
@@ -8382,67 +9697,83 @@ endif
 
 
 LIBEND2END_TESTS_SRC = \
-    test/core/end2end/end2end_tests.c \
-    test/core/end2end/end2end_test_utils.c \
-    test/core/end2end/tests/authority_not_supported.c \
-    test/core/end2end/tests/bad_hostname.c \
-    test/core/end2end/tests/bad_ping.c \
-    test/core/end2end/tests/binary_metadata.c \
-    test/core/end2end/tests/call_creds.c \
-    test/core/end2end/tests/cancel_after_accept.c \
-    test/core/end2end/tests/cancel_after_client_done.c \
-    test/core/end2end/tests/cancel_after_invoke.c \
-    test/core/end2end/tests/cancel_after_round_trip.c \
-    test/core/end2end/tests/cancel_before_invoke.c \
-    test/core/end2end/tests/cancel_in_a_vacuum.c \
-    test/core/end2end/tests/cancel_with_status.c \
-    test/core/end2end/tests/compressed_payload.c \
-    test/core/end2end/tests/connectivity.c \
-    test/core/end2end/tests/default_host.c \
-    test/core/end2end/tests/disappearing_server.c \
-    test/core/end2end/tests/empty_batch.c \
-    test/core/end2end/tests/filter_call_init_fails.c \
-    test/core/end2end/tests/filter_causes_close.c \
-    test/core/end2end/tests/filter_latency.c \
-    test/core/end2end/tests/graceful_server_shutdown.c \
-    test/core/end2end/tests/high_initial_seqno.c \
-    test/core/end2end/tests/hpack_size.c \
-    test/core/end2end/tests/idempotent_request.c \
-    test/core/end2end/tests/invoke_large_request.c \
-    test/core/end2end/tests/keepalive_timeout.c \
-    test/core/end2end/tests/large_metadata.c \
-    test/core/end2end/tests/load_reporting_hook.c \
-    test/core/end2end/tests/max_concurrent_streams.c \
-    test/core/end2end/tests/max_connection_age.c \
-    test/core/end2end/tests/max_connection_idle.c \
-    test/core/end2end/tests/max_message_length.c \
-    test/core/end2end/tests/negative_deadline.c \
-    test/core/end2end/tests/network_status_change.c \
-    test/core/end2end/tests/no_logging.c \
-    test/core/end2end/tests/no_op.c \
-    test/core/end2end/tests/payload.c \
-    test/core/end2end/tests/ping.c \
-    test/core/end2end/tests/ping_pong_streaming.c \
-    test/core/end2end/tests/proxy_auth.c \
-    test/core/end2end/tests/registered_call.c \
-    test/core/end2end/tests/request_with_flags.c \
-    test/core/end2end/tests/request_with_payload.c \
-    test/core/end2end/tests/resource_quota_server.c \
-    test/core/end2end/tests/server_finishes_request.c \
-    test/core/end2end/tests/shutdown_finishes_calls.c \
-    test/core/end2end/tests/shutdown_finishes_tags.c \
-    test/core/end2end/tests/simple_cacheable_request.c \
-    test/core/end2end/tests/simple_delayed_request.c \
-    test/core/end2end/tests/simple_metadata.c \
-    test/core/end2end/tests/simple_request.c \
-    test/core/end2end/tests/stream_compression_compressed_payload.c \
-    test/core/end2end/tests/stream_compression_payload.c \
-    test/core/end2end/tests/stream_compression_ping_pong_streaming.c \
-    test/core/end2end/tests/streaming_error_response.c \
-    test/core/end2end/tests/trailing_metadata.c \
-    test/core/end2end/tests/workaround_cronet_compression.c \
-    test/core/end2end/tests/write_buffering.c \
-    test/core/end2end/tests/write_buffering_at_end.c \
+    test/core/end2end/end2end_tests.cc \
+    test/core/end2end/end2end_test_utils.cc \
+    test/core/end2end/tests/authority_not_supported.cc \
+    test/core/end2end/tests/bad_hostname.cc \
+    test/core/end2end/tests/bad_ping.cc \
+    test/core/end2end/tests/binary_metadata.cc \
+    test/core/end2end/tests/call_creds.cc \
+    test/core/end2end/tests/cancel_after_accept.cc \
+    test/core/end2end/tests/cancel_after_client_done.cc \
+    test/core/end2end/tests/cancel_after_invoke.cc \
+    test/core/end2end/tests/cancel_after_round_trip.cc \
+    test/core/end2end/tests/cancel_before_invoke.cc \
+    test/core/end2end/tests/cancel_in_a_vacuum.cc \
+    test/core/end2end/tests/cancel_with_status.cc \
+    test/core/end2end/tests/compressed_payload.cc \
+    test/core/end2end/tests/connectivity.cc \
+    test/core/end2end/tests/default_host.cc \
+    test/core/end2end/tests/disappearing_server.cc \
+    test/core/end2end/tests/empty_batch.cc \
+    test/core/end2end/tests/filter_call_init_fails.cc \
+    test/core/end2end/tests/filter_causes_close.cc \
+    test/core/end2end/tests/filter_latency.cc \
+    test/core/end2end/tests/filter_status_code.cc \
+    test/core/end2end/tests/graceful_server_shutdown.cc \
+    test/core/end2end/tests/high_initial_seqno.cc \
+    test/core/end2end/tests/hpack_size.cc \
+    test/core/end2end/tests/idempotent_request.cc \
+    test/core/end2end/tests/invoke_large_request.cc \
+    test/core/end2end/tests/keepalive_timeout.cc \
+    test/core/end2end/tests/large_metadata.cc \
+    test/core/end2end/tests/load_reporting_hook.cc \
+    test/core/end2end/tests/max_concurrent_streams.cc \
+    test/core/end2end/tests/max_connection_age.cc \
+    test/core/end2end/tests/max_connection_idle.cc \
+    test/core/end2end/tests/max_message_length.cc \
+    test/core/end2end/tests/negative_deadline.cc \
+    test/core/end2end/tests/network_status_change.cc \
+    test/core/end2end/tests/no_logging.cc \
+    test/core/end2end/tests/no_op.cc \
+    test/core/end2end/tests/payload.cc \
+    test/core/end2end/tests/ping.cc \
+    test/core/end2end/tests/ping_pong_streaming.cc \
+    test/core/end2end/tests/proxy_auth.cc \
+    test/core/end2end/tests/registered_call.cc \
+    test/core/end2end/tests/request_with_flags.cc \
+    test/core/end2end/tests/request_with_payload.cc \
+    test/core/end2end/tests/resource_quota_server.cc \
+    test/core/end2end/tests/retry.cc \
+    test/core/end2end/tests/retry_cancellation.cc \
+    test/core/end2end/tests/retry_disabled.cc \
+    test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc \
+    test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc \
+    test/core/end2end/tests/retry_non_retriable_status.cc \
+    test/core/end2end/tests/retry_recv_initial_metadata.cc \
+    test/core/end2end/tests/retry_recv_message.cc \
+    test/core/end2end/tests/retry_server_pushback_delay.cc \
+    test/core/end2end/tests/retry_server_pushback_disabled.cc \
+    test/core/end2end/tests/retry_streaming.cc \
+    test/core/end2end/tests/retry_streaming_after_commit.cc \
+    test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc \
+    test/core/end2end/tests/retry_throttled.cc \
+    test/core/end2end/tests/retry_too_many_attempts.cc \
+    test/core/end2end/tests/server_finishes_request.cc \
+    test/core/end2end/tests/shutdown_finishes_calls.cc \
+    test/core/end2end/tests/shutdown_finishes_tags.cc \
+    test/core/end2end/tests/simple_cacheable_request.cc \
+    test/core/end2end/tests/simple_delayed_request.cc \
+    test/core/end2end/tests/simple_metadata.cc \
+    test/core/end2end/tests/simple_request.cc \
+    test/core/end2end/tests/stream_compression_compressed_payload.cc \
+    test/core/end2end/tests/stream_compression_payload.cc \
+    test/core/end2end/tests/stream_compression_ping_pong_streaming.cc \
+    test/core/end2end/tests/streaming_error_response.cc \
+    test/core/end2end/tests/trailing_metadata.cc \
+    test/core/end2end/tests/workaround_cronet_compression.cc \
+    test/core/end2end/tests/write_buffering.cc \
+    test/core/end2end/tests/write_buffering_at_end.cc \
 
 PUBLIC_HEADERS_C += \
 
@@ -8481,66 +9812,82 @@ endif
 
 
 LIBEND2END_NOSEC_TESTS_SRC = \
-    test/core/end2end/end2end_nosec_tests.c \
-    test/core/end2end/end2end_test_utils.c \
-    test/core/end2end/tests/authority_not_supported.c \
-    test/core/end2end/tests/bad_hostname.c \
-    test/core/end2end/tests/bad_ping.c \
-    test/core/end2end/tests/binary_metadata.c \
-    test/core/end2end/tests/cancel_after_accept.c \
-    test/core/end2end/tests/cancel_after_client_done.c \
-    test/core/end2end/tests/cancel_after_invoke.c \
-    test/core/end2end/tests/cancel_after_round_trip.c \
-    test/core/end2end/tests/cancel_before_invoke.c \
-    test/core/end2end/tests/cancel_in_a_vacuum.c \
-    test/core/end2end/tests/cancel_with_status.c \
-    test/core/end2end/tests/compressed_payload.c \
-    test/core/end2end/tests/connectivity.c \
-    test/core/end2end/tests/default_host.c \
-    test/core/end2end/tests/disappearing_server.c \
-    test/core/end2end/tests/empty_batch.c \
-    test/core/end2end/tests/filter_call_init_fails.c \
-    test/core/end2end/tests/filter_causes_close.c \
-    test/core/end2end/tests/filter_latency.c \
-    test/core/end2end/tests/graceful_server_shutdown.c \
-    test/core/end2end/tests/high_initial_seqno.c \
-    test/core/end2end/tests/hpack_size.c \
-    test/core/end2end/tests/idempotent_request.c \
-    test/core/end2end/tests/invoke_large_request.c \
-    test/core/end2end/tests/keepalive_timeout.c \
-    test/core/end2end/tests/large_metadata.c \
-    test/core/end2end/tests/load_reporting_hook.c \
-    test/core/end2end/tests/max_concurrent_streams.c \
-    test/core/end2end/tests/max_connection_age.c \
-    test/core/end2end/tests/max_connection_idle.c \
-    test/core/end2end/tests/max_message_length.c \
-    test/core/end2end/tests/negative_deadline.c \
-    test/core/end2end/tests/network_status_change.c \
-    test/core/end2end/tests/no_logging.c \
-    test/core/end2end/tests/no_op.c \
-    test/core/end2end/tests/payload.c \
-    test/core/end2end/tests/ping.c \
-    test/core/end2end/tests/ping_pong_streaming.c \
-    test/core/end2end/tests/proxy_auth.c \
-    test/core/end2end/tests/registered_call.c \
-    test/core/end2end/tests/request_with_flags.c \
-    test/core/end2end/tests/request_with_payload.c \
-    test/core/end2end/tests/resource_quota_server.c \
-    test/core/end2end/tests/server_finishes_request.c \
-    test/core/end2end/tests/shutdown_finishes_calls.c \
-    test/core/end2end/tests/shutdown_finishes_tags.c \
-    test/core/end2end/tests/simple_cacheable_request.c \
-    test/core/end2end/tests/simple_delayed_request.c \
-    test/core/end2end/tests/simple_metadata.c \
-    test/core/end2end/tests/simple_request.c \
-    test/core/end2end/tests/stream_compression_compressed_payload.c \
-    test/core/end2end/tests/stream_compression_payload.c \
-    test/core/end2end/tests/stream_compression_ping_pong_streaming.c \
-    test/core/end2end/tests/streaming_error_response.c \
-    test/core/end2end/tests/trailing_metadata.c \
-    test/core/end2end/tests/workaround_cronet_compression.c \
-    test/core/end2end/tests/write_buffering.c \
-    test/core/end2end/tests/write_buffering_at_end.c \
+    test/core/end2end/end2end_nosec_tests.cc \
+    test/core/end2end/end2end_test_utils.cc \
+    test/core/end2end/tests/authority_not_supported.cc \
+    test/core/end2end/tests/bad_hostname.cc \
+    test/core/end2end/tests/bad_ping.cc \
+    test/core/end2end/tests/binary_metadata.cc \
+    test/core/end2end/tests/cancel_after_accept.cc \
+    test/core/end2end/tests/cancel_after_client_done.cc \
+    test/core/end2end/tests/cancel_after_invoke.cc \
+    test/core/end2end/tests/cancel_after_round_trip.cc \
+    test/core/end2end/tests/cancel_before_invoke.cc \
+    test/core/end2end/tests/cancel_in_a_vacuum.cc \
+    test/core/end2end/tests/cancel_with_status.cc \
+    test/core/end2end/tests/compressed_payload.cc \
+    test/core/end2end/tests/connectivity.cc \
+    test/core/end2end/tests/default_host.cc \
+    test/core/end2end/tests/disappearing_server.cc \
+    test/core/end2end/tests/empty_batch.cc \
+    test/core/end2end/tests/filter_call_init_fails.cc \
+    test/core/end2end/tests/filter_causes_close.cc \
+    test/core/end2end/tests/filter_latency.cc \
+    test/core/end2end/tests/filter_status_code.cc \
+    test/core/end2end/tests/graceful_server_shutdown.cc \
+    test/core/end2end/tests/high_initial_seqno.cc \
+    test/core/end2end/tests/hpack_size.cc \
+    test/core/end2end/tests/idempotent_request.cc \
+    test/core/end2end/tests/invoke_large_request.cc \
+    test/core/end2end/tests/keepalive_timeout.cc \
+    test/core/end2end/tests/large_metadata.cc \
+    test/core/end2end/tests/load_reporting_hook.cc \
+    test/core/end2end/tests/max_concurrent_streams.cc \
+    test/core/end2end/tests/max_connection_age.cc \
+    test/core/end2end/tests/max_connection_idle.cc \
+    test/core/end2end/tests/max_message_length.cc \
+    test/core/end2end/tests/negative_deadline.cc \
+    test/core/end2end/tests/network_status_change.cc \
+    test/core/end2end/tests/no_logging.cc \
+    test/core/end2end/tests/no_op.cc \
+    test/core/end2end/tests/payload.cc \
+    test/core/end2end/tests/ping.cc \
+    test/core/end2end/tests/ping_pong_streaming.cc \
+    test/core/end2end/tests/proxy_auth.cc \
+    test/core/end2end/tests/registered_call.cc \
+    test/core/end2end/tests/request_with_flags.cc \
+    test/core/end2end/tests/request_with_payload.cc \
+    test/core/end2end/tests/resource_quota_server.cc \
+    test/core/end2end/tests/retry.cc \
+    test/core/end2end/tests/retry_cancellation.cc \
+    test/core/end2end/tests/retry_disabled.cc \
+    test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc \
+    test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc \
+    test/core/end2end/tests/retry_non_retriable_status.cc \
+    test/core/end2end/tests/retry_recv_initial_metadata.cc \
+    test/core/end2end/tests/retry_recv_message.cc \
+    test/core/end2end/tests/retry_server_pushback_delay.cc \
+    test/core/end2end/tests/retry_server_pushback_disabled.cc \
+    test/core/end2end/tests/retry_streaming.cc \
+    test/core/end2end/tests/retry_streaming_after_commit.cc \
+    test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc \
+    test/core/end2end/tests/retry_throttled.cc \
+    test/core/end2end/tests/retry_too_many_attempts.cc \
+    test/core/end2end/tests/server_finishes_request.cc \
+    test/core/end2end/tests/shutdown_finishes_calls.cc \
+    test/core/end2end/tests/shutdown_finishes_tags.cc \
+    test/core/end2end/tests/simple_cacheable_request.cc \
+    test/core/end2end/tests/simple_delayed_request.cc \
+    test/core/end2end/tests/simple_metadata.cc \
+    test/core/end2end/tests/simple_request.cc \
+    test/core/end2end/tests/stream_compression_compressed_payload.cc \
+    test/core/end2end/tests/stream_compression_payload.cc \
+    test/core/end2end/tests/stream_compression_ping_pong_streaming.cc \
+    test/core/end2end/tests/streaming_error_response.cc \
+    test/core/end2end/tests/trailing_metadata.cc \
+    test/core/end2end/tests/workaround_cronet_compression.cc \
+    test/core/end2end/tests/write_buffering.cc \
+    test/core/end2end/tests/write_buffering_at_end.cc \
 
 PUBLIC_HEADERS_C += \
 
@@ -8568,40 +9915,8 @@ endif
 # All of the test targets, and protoc plugins
 
 
-ALARM_TEST_SRC = \
-    test/core/surface/alarm_test.c \
-
-ALARM_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ALARM_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/alarm_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/alarm_test: $(ALARM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(ALARM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/alarm_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/surface/alarm_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_alarm_test: $(ALARM_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(ALARM_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 ALGORITHM_TEST_SRC = \
-    test/core/compression/algorithm_test.c \
+    test/core/compression/algorithm_test.cc \
 
 ALGORITHM_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ALGORITHM_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -8633,7 +9948,7 @@ endif
 
 
 ALLOC_TEST_SRC = \
-    test/core/support/alloc_test.c \
+    test/core/gpr/alloc_test.cc \
 
 ALLOC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ALLOC_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -8653,7 +9968,7 @@ $(BINDIR)/$(CONFIG)/alloc_test: $(ALLOC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_te
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/support/alloc_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/gpr/alloc_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_alloc_test: $(ALLOC_TEST_OBJS:.o=.dep)
 
@@ -8665,7 +9980,7 @@ endif
 
 
 ALPN_TEST_SRC = \
-    test/core/transport/chttp2/alpn_test.c \
+    test/core/transport/chttp2/alpn_test.cc \
 
 ALPN_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ALPN_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -8697,7 +10012,7 @@ endif
 
 
 API_FUZZER_SRC = \
-    test/core/end2end/fuzzers/api_fuzzer.c \
+    test/core/end2end/fuzzers/api_fuzzer.cc \
 
 API_FUZZER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(API_FUZZER_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -8729,7 +10044,7 @@ endif
 
 
 ARENA_TEST_SRC = \
-    test/core/support/arena_test.c \
+    test/core/gpr/arena_test.cc \
 
 ARENA_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ARENA_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -8749,7 +10064,7 @@ $(BINDIR)/$(CONFIG)/arena_test: $(ARENA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_te
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/support/arena_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/gpr/arena_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_arena_test: $(ARENA_TEST_OBJS:.o=.dep)
 
@@ -8760,8 +10075,40 @@ endif
 endif
 
 
+AVL_TEST_SRC = \
+    test/core/avl/avl_test.cc \
+
+AVL_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(AVL_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/avl_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/avl_test: $(AVL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(AVL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/avl_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/avl/avl_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+deps_avl_test: $(AVL_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(AVL_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 BAD_SERVER_RESPONSE_TEST_SRC = \
-    test/core/end2end/bad_server_response_test.c \
+    test/core/end2end/bad_server_response_test.cc \
 
 BAD_SERVER_RESPONSE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BAD_SERVER_RESPONSE_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -8792,40 +10139,8 @@ endif
 endif
 
 
-BDP_ESTIMATOR_TEST_SRC = \
-    test/core/transport/bdp_estimator_test.c \
-
-BDP_ESTIMATOR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BDP_ESTIMATOR_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/bdp_estimator_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/bdp_estimator_test: $(BDP_ESTIMATOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(BDP_ESTIMATOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/bdp_estimator_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/transport/bdp_estimator_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_bdp_estimator_test: $(BDP_ESTIMATOR_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(BDP_ESTIMATOR_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 BIN_DECODER_TEST_SRC = \
-    test/core/transport/chttp2/bin_decoder_test.c \
+    test/core/transport/chttp2/bin_decoder_test.cc \
 
 BIN_DECODER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BIN_DECODER_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -8857,7 +10172,7 @@ endif
 
 
 BIN_ENCODER_TEST_SRC = \
-    test/core/transport/chttp2/bin_encoder_test.c \
+    test/core/transport/chttp2/bin_encoder_test.cc \
 
 BIN_ENCODER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BIN_ENCODER_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -8888,168 +10203,8 @@ endif
 endif
 
 
-BYTE_STREAM_TEST_SRC = \
-    test/core/transport/byte_stream_test.c \
-
-BYTE_STREAM_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BYTE_STREAM_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/byte_stream_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/byte_stream_test: $(BYTE_STREAM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(BYTE_STREAM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/byte_stream_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/transport/byte_stream_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_byte_stream_test: $(BYTE_STREAM_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(BYTE_STREAM_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-CENSUS_CONTEXT_TEST_SRC = \
-    test/core/census/context_test.c \
-
-CENSUS_CONTEXT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CENSUS_CONTEXT_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/census_context_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/census_context_test: $(CENSUS_CONTEXT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CENSUS_CONTEXT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/census_context_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/census/context_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_census_context_test: $(CENSUS_CONTEXT_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(CENSUS_CONTEXT_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-CENSUS_INTRUSIVE_HASH_MAP_TEST_SRC = \
-    test/core/census/intrusive_hash_map_test.c \
-
-CENSUS_INTRUSIVE_HASH_MAP_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CENSUS_INTRUSIVE_HASH_MAP_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/census_intrusive_hash_map_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/census_intrusive_hash_map_test: $(CENSUS_INTRUSIVE_HASH_MAP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CENSUS_INTRUSIVE_HASH_MAP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/census_intrusive_hash_map_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/census/intrusive_hash_map_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_census_intrusive_hash_map_test: $(CENSUS_INTRUSIVE_HASH_MAP_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(CENSUS_INTRUSIVE_HASH_MAP_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-CENSUS_RESOURCE_TEST_SRC = \
-    test/core/census/resource_test.c \
-
-CENSUS_RESOURCE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CENSUS_RESOURCE_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/census_resource_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/census_resource_test: $(CENSUS_RESOURCE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CENSUS_RESOURCE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/census_resource_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/census/resource_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_census_resource_test: $(CENSUS_RESOURCE_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(CENSUS_RESOURCE_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-CENSUS_TRACE_CONTEXT_TEST_SRC = \
-    test/core/census/trace_context_test.c \
-
-CENSUS_TRACE_CONTEXT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CENSUS_TRACE_CONTEXT_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/census_trace_context_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/census_trace_context_test: $(CENSUS_TRACE_CONTEXT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CENSUS_TRACE_CONTEXT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/census_trace_context_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/census/trace_context_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_census_trace_context_test: $(CENSUS_TRACE_CONTEXT_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(CENSUS_TRACE_CONTEXT_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 CHANNEL_CREATE_TEST_SRC = \
-    test/core/surface/channel_create_test.c \
+    test/core/surface/channel_create_test.cc \
 
 CHANNEL_CREATE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHANNEL_CREATE_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -9113,7 +10268,7 @@ endif
 
 
 CHTTP2_HPACK_ENCODER_TEST_SRC = \
-    test/core/transport/chttp2/hpack_encoder_test.c \
+    test/core/transport/chttp2/hpack_encoder_test.cc \
 
 CHTTP2_HPACK_ENCODER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_HPACK_ENCODER_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -9145,7 +10300,7 @@ endif
 
 
 CHTTP2_STREAM_MAP_TEST_SRC = \
-    test/core/transport/chttp2/stream_map_test.c \
+    test/core/transport/chttp2/stream_map_test.cc \
 
 CHTTP2_STREAM_MAP_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_STREAM_MAP_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -9177,7 +10332,7 @@ endif
 
 
 CHTTP2_VARINT_TEST_SRC = \
-    test/core/transport/chttp2/varint_test.c \
+    test/core/transport/chttp2/varint_test.cc \
 
 CHTTP2_VARINT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_VARINT_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -9209,7 +10364,7 @@ endif
 
 
 CLIENT_FUZZER_SRC = \
-    test/core/end2end/fuzzers/client_fuzzer.c \
+    test/core/end2end/fuzzers/client_fuzzer.cc \
 
 CLIENT_FUZZER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CLIENT_FUZZER_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -9240,8 +10395,40 @@ endif
 endif
 
 
+CMDLINE_TEST_SRC = \
+    test/core/util/cmdline_test.cc \
+
+CMDLINE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CMDLINE_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/cmdline_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/cmdline_test: $(CMDLINE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(CMDLINE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/cmdline_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/util/cmdline_test.o:  $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a
+
+deps_cmdline_test: $(CMDLINE_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CMDLINE_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 COMBINER_TEST_SRC = \
-    test/core/iomgr/combiner_test.c \
+    test/core/iomgr/combiner_test.cc \
 
 COMBINER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(COMBINER_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -9273,7 +10460,7 @@ endif
 
 
 COMPRESSION_TEST_SRC = \
-    test/core/compression/compression_test.c \
+    test/core/compression/compression_test.cc \
 
 COMPRESSION_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(COMPRESSION_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -9305,7 +10492,7 @@ endif
 
 
 CONCURRENT_CONNECTIVITY_TEST_SRC = \
-    test/core/surface/concurrent_connectivity_test.c \
+    test/core/surface/concurrent_connectivity_test.cc \
 
 CONCURRENT_CONNECTIVITY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CONCURRENT_CONNECTIVITY_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -9337,7 +10524,7 @@ endif
 
 
 CONNECTION_REFUSED_TEST_SRC = \
-    test/core/end2end/connection_refused_test.c \
+    test/core/end2end/connection_refused_test.cc \
 
 CONNECTION_REFUSED_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CONNECTION_REFUSED_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -9369,7 +10556,7 @@ endif
 
 
 DNS_RESOLVER_CONNECTIVITY_TEST_SRC = \
-    test/core/client_channel/resolvers/dns_resolver_connectivity_test.c \
+    test/core/client_channel/resolvers/dns_resolver_connectivity_test.cc \
 
 DNS_RESOLVER_CONNECTIVITY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(DNS_RESOLVER_CONNECTIVITY_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -9400,8 +10587,40 @@ endif
 endif
 
 
+DNS_RESOLVER_COOLDOWN_TEST_SRC = \
+    test/core/client_channel/resolvers/dns_resolver_cooldown_test.cc \
+
+DNS_RESOLVER_COOLDOWN_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(DNS_RESOLVER_COOLDOWN_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/dns_resolver_cooldown_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/dns_resolver_cooldown_test: $(DNS_RESOLVER_COOLDOWN_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(DNS_RESOLVER_COOLDOWN_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/dns_resolver_cooldown_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/client_channel/resolvers/dns_resolver_cooldown_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_dns_resolver_cooldown_test: $(DNS_RESOLVER_COOLDOWN_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(DNS_RESOLVER_COOLDOWN_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 DNS_RESOLVER_TEST_SRC = \
-    test/core/client_channel/resolvers/dns_resolver_test.c \
+    test/core/client_channel/resolvers/dns_resolver_test.cc \
 
 DNS_RESOLVER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(DNS_RESOLVER_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -9433,7 +10652,7 @@ endif
 
 
 DUALSTACK_SOCKET_TEST_SRC = \
-    test/core/end2end/dualstack_socket_test.c \
+    test/core/end2end/dualstack_socket_test.cc \
 
 DUALSTACK_SOCKET_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(DUALSTACK_SOCKET_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -9465,7 +10684,7 @@ endif
 
 
 ENDPOINT_PAIR_TEST_SRC = \
-    test/core/iomgr/endpoint_pair_test.c \
+    test/core/iomgr/endpoint_pair_test.cc \
 
 ENDPOINT_PAIR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ENDPOINT_PAIR_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -9497,7 +10716,7 @@ endif
 
 
 ERROR_TEST_SRC = \
-    test/core/iomgr/error_test.c \
+    test/core/iomgr/error_test.cc \
 
 ERROR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ERROR_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -9529,7 +10748,7 @@ endif
 
 
 EV_EPOLLSIG_LINUX_TEST_SRC = \
-    test/core/iomgr/ev_epollsig_linux_test.c \
+    test/core/iomgr/ev_epollsig_linux_test.cc \
 
 EV_EPOLLSIG_LINUX_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(EV_EPOLLSIG_LINUX_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -9561,7 +10780,7 @@ endif
 
 
 FAKE_RESOLVER_TEST_SRC = \
-    test/core/client_channel/resolvers/fake_resolver_test.c \
+    test/core/client_channel/resolvers/fake_resolver_test.cc \
 
 FAKE_RESOLVER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(FAKE_RESOLVER_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -9592,8 +10811,43 @@ endif
 endif
 
 
+FAKE_TRANSPORT_SECURITY_TEST_SRC = \
+    test/core/tsi/fake_transport_security_test.cc \
+    test/core/tsi/transport_security_test_lib.cc \
+
+FAKE_TRANSPORT_SECURITY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(FAKE_TRANSPORT_SECURITY_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/fake_transport_security_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/fake_transport_security_test: $(FAKE_TRANSPORT_SECURITY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(FAKE_TRANSPORT_SECURITY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/fake_transport_security_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/tsi/fake_transport_security_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+$(OBJDIR)/$(CONFIG)/test/core/tsi/transport_security_test_lib.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+deps_fake_transport_security_test: $(FAKE_TRANSPORT_SECURITY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(FAKE_TRANSPORT_SECURITY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 FD_CONSERVATION_POSIX_TEST_SRC = \
-    test/core/iomgr/fd_conservation_posix_test.c \
+    test/core/iomgr/fd_conservation_posix_test.cc \
 
 FD_CONSERVATION_POSIX_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(FD_CONSERVATION_POSIX_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -9625,7 +10879,7 @@ endif
 
 
 FD_POSIX_TEST_SRC = \
-    test/core/iomgr/fd_posix_test.c \
+    test/core/iomgr/fd_posix_test.cc \
 
 FD_POSIX_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(FD_POSIX_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -9657,7 +10911,7 @@ endif
 
 
 FLING_CLIENT_SRC = \
-    test/core/fling/client.c \
+    test/core/fling/client.cc \
 
 FLING_CLIENT_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(FLING_CLIENT_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -9689,7 +10943,7 @@ endif
 
 
 FLING_SERVER_SRC = \
-    test/core/fling/server.c \
+    test/core/fling/server.cc \
 
 FLING_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(FLING_SERVER_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -9721,7 +10975,7 @@ endif
 
 
 FLING_STREAM_TEST_SRC = \
-    test/core/fling/fling_stream_test.c \
+    test/core/fling/fling_stream_test.cc \
 
 FLING_STREAM_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(FLING_STREAM_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -9753,7 +11007,7 @@ endif
 
 
 FLING_TEST_SRC = \
-    test/core/fling/fling_test.c \
+    test/core/fling/fling_test.cc \
 
 FLING_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(FLING_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -9784,104 +11038,8 @@ endif
 endif
 
 
-GEN_HPACK_TABLES_SRC = \
-    tools/codegen/core/gen_hpack_tables.c \
-
-GEN_HPACK_TABLES_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GEN_HPACK_TABLES_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/gen_hpack_tables: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/gen_hpack_tables: $(GEN_HPACK_TABLES_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GEN_HPACK_TABLES_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gen_hpack_tables
-
-endif
-
-$(OBJDIR)/$(CONFIG)/tools/codegen/core/gen_hpack_tables.o:  $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
-
-deps_gen_hpack_tables: $(GEN_HPACK_TABLES_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(GEN_HPACK_TABLES_OBJS:.o=.dep)
-endif
-endif
-
-
-GEN_LEGAL_METADATA_CHARACTERS_SRC = \
-    tools/codegen/core/gen_legal_metadata_characters.c \
-
-GEN_LEGAL_METADATA_CHARACTERS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GEN_LEGAL_METADATA_CHARACTERS_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/gen_legal_metadata_characters: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/gen_legal_metadata_characters: $(GEN_LEGAL_METADATA_CHARACTERS_OBJS)
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GEN_LEGAL_METADATA_CHARACTERS_OBJS) $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters
-
-endif
-
-$(OBJDIR)/$(CONFIG)/tools/codegen/core/gen_legal_metadata_characters.o: 
-
-deps_gen_legal_metadata_characters: $(GEN_LEGAL_METADATA_CHARACTERS_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(GEN_LEGAL_METADATA_CHARACTERS_OBJS:.o=.dep)
-endif
-endif
-
-
-GEN_PERCENT_ENCODING_TABLES_SRC = \
-    tools/codegen/core/gen_percent_encoding_tables.c \
-
-GEN_PERCENT_ENCODING_TABLES_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GEN_PERCENT_ENCODING_TABLES_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/gen_percent_encoding_tables: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/gen_percent_encoding_tables: $(GEN_PERCENT_ENCODING_TABLES_OBJS)
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GEN_PERCENT_ENCODING_TABLES_OBJS) $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gen_percent_encoding_tables
-
-endif
-
-$(OBJDIR)/$(CONFIG)/tools/codegen/core/gen_percent_encoding_tables.o: 
-
-deps_gen_percent_encoding_tables: $(GEN_PERCENT_ENCODING_TABLES_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(GEN_PERCENT_ENCODING_TABLES_OBJS:.o=.dep)
-endif
-endif
-
-
 GOAWAY_SERVER_TEST_SRC = \
-    test/core/end2end/goaway_server_test.c \
+    test/core/end2end/goaway_server_test.cc \
 
 GOAWAY_SERVER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GOAWAY_SERVER_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -9912,104 +11070,8 @@ endif
 endif
 
 
-GPR_AVL_TEST_SRC = \
-    test/core/support/avl_test.c \
-
-GPR_AVL_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_AVL_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/gpr_avl_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/gpr_avl_test: $(GPR_AVL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_AVL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gpr_avl_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/support/avl_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_gpr_avl_test: $(GPR_AVL_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(GPR_AVL_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-GPR_BACKOFF_TEST_SRC = \
-    test/core/support/backoff_test.c \
-
-GPR_BACKOFF_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_BACKOFF_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/gpr_backoff_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/gpr_backoff_test: $(GPR_BACKOFF_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_BACKOFF_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gpr_backoff_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/support/backoff_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_gpr_backoff_test: $(GPR_BACKOFF_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(GPR_BACKOFF_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-GPR_CMDLINE_TEST_SRC = \
-    test/core/support/cmdline_test.c \
-
-GPR_CMDLINE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_CMDLINE_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/gpr_cmdline_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/gpr_cmdline_test: $(GPR_CMDLINE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_CMDLINE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gpr_cmdline_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/support/cmdline_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_gpr_cmdline_test: $(GPR_CMDLINE_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(GPR_CMDLINE_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 GPR_CPU_TEST_SRC = \
-    test/core/support/cpu_test.c \
+    test/core/gpr/cpu_test.cc \
 
 GPR_CPU_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_CPU_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10029,7 +11091,7 @@ $(BINDIR)/$(CONFIG)/gpr_cpu_test: $(GPR_CPU_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgp
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/support/cpu_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/gpr/cpu_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_gpr_cpu_test: $(GPR_CPU_TEST_OBJS:.o=.dep)
 
@@ -10041,7 +11103,7 @@ endif
 
 
 GPR_ENV_TEST_SRC = \
-    test/core/support/env_test.c \
+    test/core/gpr/env_test.cc \
 
 GPR_ENV_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_ENV_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10061,7 +11123,7 @@ $(BINDIR)/$(CONFIG)/gpr_env_test: $(GPR_ENV_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgp
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/support/env_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/gpr/env_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_gpr_env_test: $(GPR_ENV_TEST_OBJS:.o=.dep)
 
@@ -10072,40 +11134,8 @@ endif
 endif
 
 
-GPR_HISTOGRAM_TEST_SRC = \
-    test/core/support/histogram_test.c \
-
-GPR_HISTOGRAM_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_HISTOGRAM_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/gpr_histogram_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/gpr_histogram_test: $(GPR_HISTOGRAM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_HISTOGRAM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gpr_histogram_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/support/histogram_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_gpr_histogram_test: $(GPR_HISTOGRAM_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(GPR_HISTOGRAM_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 GPR_HOST_PORT_TEST_SRC = \
-    test/core/support/host_port_test.c \
+    test/core/gpr/host_port_test.cc \
 
 GPR_HOST_PORT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_HOST_PORT_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10125,7 +11155,7 @@ $(BINDIR)/$(CONFIG)/gpr_host_port_test: $(GPR_HOST_PORT_TEST_OBJS) $(LIBDIR)/$(C
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/support/host_port_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/gpr/host_port_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_gpr_host_port_test: $(GPR_HOST_PORT_TEST_OBJS:.o=.dep)
 
@@ -10137,7 +11167,7 @@ endif
 
 
 GPR_LOG_TEST_SRC = \
-    test/core/support/log_test.c \
+    test/core/gpr/log_test.cc \
 
 GPR_LOG_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_LOG_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10157,7 +11187,7 @@ $(BINDIR)/$(CONFIG)/gpr_log_test: $(GPR_LOG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgp
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/support/log_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/gpr/log_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_gpr_log_test: $(GPR_LOG_TEST_OBJS:.o=.dep)
 
@@ -10168,8 +11198,40 @@ endif
 endif
 
 
+GPR_MANUAL_CONSTRUCTOR_TEST_SRC = \
+    test/core/gprpp/manual_constructor_test.cc \
+
+GPR_MANUAL_CONSTRUCTOR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_MANUAL_CONSTRUCTOR_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/gpr_manual_constructor_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/gpr_manual_constructor_test: $(GPR_MANUAL_CONSTRUCTOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(GPR_MANUAL_CONSTRUCTOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gpr_manual_constructor_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/gprpp/manual_constructor_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_gpr_manual_constructor_test: $(GPR_MANUAL_CONSTRUCTOR_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GPR_MANUAL_CONSTRUCTOR_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 GPR_MPSCQ_TEST_SRC = \
-    test/core/support/mpscq_test.c \
+    test/core/gpr/mpscq_test.cc \
 
 GPR_MPSCQ_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_MPSCQ_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10189,7 +11251,7 @@ $(BINDIR)/$(CONFIG)/gpr_mpscq_test: $(GPR_MPSCQ_TEST_OBJS) $(LIBDIR)/$(CONFIG)/l
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/support/mpscq_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/gpr/mpscq_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_gpr_mpscq_test: $(GPR_MPSCQ_TEST_OBJS:.o=.dep)
 
@@ -10201,7 +11263,7 @@ endif
 
 
 GPR_SPINLOCK_TEST_SRC = \
-    test/core/support/spinlock_test.c \
+    test/core/gpr/spinlock_test.cc \
 
 GPR_SPINLOCK_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_SPINLOCK_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10221,7 +11283,7 @@ $(BINDIR)/$(CONFIG)/gpr_spinlock_test: $(GPR_SPINLOCK_TEST_OBJS) $(LIBDIR)/$(CON
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/support/spinlock_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/gpr/spinlock_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_gpr_spinlock_test: $(GPR_SPINLOCK_TEST_OBJS:.o=.dep)
 
@@ -10232,40 +11294,8 @@ endif
 endif
 
 
-GPR_STACK_LOCKFREE_TEST_SRC = \
-    test/core/support/stack_lockfree_test.c \
-
-GPR_STACK_LOCKFREE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_STACK_LOCKFREE_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/gpr_stack_lockfree_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/gpr_stack_lockfree_test: $(GPR_STACK_LOCKFREE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(GPR_STACK_LOCKFREE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gpr_stack_lockfree_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/support/stack_lockfree_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_gpr_stack_lockfree_test: $(GPR_STACK_LOCKFREE_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(GPR_STACK_LOCKFREE_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 GPR_STRING_TEST_SRC = \
-    test/core/support/string_test.c \
+    test/core/gpr/string_test.cc \
 
 GPR_STRING_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_STRING_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10285,7 +11315,7 @@ $(BINDIR)/$(CONFIG)/gpr_string_test: $(GPR_STRING_TEST_OBJS) $(LIBDIR)/$(CONFIG)
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/support/string_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/gpr/string_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_gpr_string_test: $(GPR_STRING_TEST_OBJS:.o=.dep)
 
@@ -10297,7 +11327,7 @@ endif
 
 
 GPR_SYNC_TEST_SRC = \
-    test/core/support/sync_test.c \
+    test/core/gpr/sync_test.cc \
 
 GPR_SYNC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_SYNC_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10317,7 +11347,7 @@ $(BINDIR)/$(CONFIG)/gpr_sync_test: $(GPR_SYNC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/lib
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/support/sync_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/gpr/sync_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_gpr_sync_test: $(GPR_SYNC_TEST_OBJS:.o=.dep)
 
@@ -10329,7 +11359,7 @@ endif
 
 
 GPR_THD_TEST_SRC = \
-    test/core/support/thd_test.c \
+    test/core/gprpp/thd_test.cc \
 
 GPR_THD_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_THD_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10349,7 +11379,7 @@ $(BINDIR)/$(CONFIG)/gpr_thd_test: $(GPR_THD_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgp
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/support/thd_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/gprpp/thd_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_gpr_thd_test: $(GPR_THD_TEST_OBJS:.o=.dep)
 
@@ -10361,7 +11391,7 @@ endif
 
 
 GPR_TIME_TEST_SRC = \
-    test/core/support/time_test.c \
+    test/core/gpr/time_test.cc \
 
 GPR_TIME_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_TIME_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10381,7 +11411,7 @@ $(BINDIR)/$(CONFIG)/gpr_time_test: $(GPR_TIME_TEST_OBJS) $(LIBDIR)/$(CONFIG)/lib
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/support/time_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/gpr/time_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_gpr_time_test: $(GPR_TIME_TEST_OBJS:.o=.dep)
 
@@ -10393,7 +11423,7 @@ endif
 
 
 GPR_TLS_TEST_SRC = \
-    test/core/support/tls_test.c \
+    test/core/gpr/tls_test.cc \
 
 GPR_TLS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_TLS_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10413,7 +11443,7 @@ $(BINDIR)/$(CONFIG)/gpr_tls_test: $(GPR_TLS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgp
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/support/tls_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/gpr/tls_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_gpr_tls_test: $(GPR_TLS_TEST_OBJS:.o=.dep)
 
@@ -10425,7 +11455,7 @@ endif
 
 
 GPR_USEFUL_TEST_SRC = \
-    test/core/support/useful_test.c \
+    test/core/gpr/useful_test.cc \
 
 GPR_USEFUL_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_USEFUL_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10445,7 +11475,7 @@ $(BINDIR)/$(CONFIG)/gpr_useful_test: $(GPR_USEFUL_TEST_OBJS) $(LIBDIR)/$(CONFIG)
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/support/useful_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/gpr/useful_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_gpr_useful_test: $(GPR_USEFUL_TEST_OBJS:.o=.dep)
 
@@ -10457,7 +11487,7 @@ endif
 
 
 GRPC_AUTH_CONTEXT_TEST_SRC = \
-    test/core/security/auth_context_test.c \
+    test/core/security/auth_context_test.cc \
 
 GRPC_AUTH_CONTEXT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_AUTH_CONTEXT_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10489,7 +11519,7 @@ endif
 
 
 GRPC_B64_TEST_SRC = \
-    test/core/slice/b64_test.c \
+    test/core/slice/b64_test.cc \
 
 GRPC_B64_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_B64_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10521,7 +11551,7 @@ endif
 
 
 GRPC_BYTE_BUFFER_READER_TEST_SRC = \
-    test/core/surface/byte_buffer_reader_test.c \
+    test/core/surface/byte_buffer_reader_test.cc \
 
 GRPC_BYTE_BUFFER_READER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_BYTE_BUFFER_READER_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10553,7 +11583,7 @@ endif
 
 
 GRPC_CHANNEL_ARGS_TEST_SRC = \
-    test/core/channel/channel_args_test.c \
+    test/core/channel/channel_args_test.cc \
 
 GRPC_CHANNEL_ARGS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_CHANNEL_ARGS_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10584,8 +11614,40 @@ endif
 endif
 
 
+GRPC_CHANNEL_STACK_BUILDER_TEST_SRC = \
+    test/core/channel/channel_stack_builder_test.cc \
+
+GRPC_CHANNEL_STACK_BUILDER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_CHANNEL_STACK_BUILDER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/grpc_channel_stack_builder_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/grpc_channel_stack_builder_test: $(GRPC_CHANNEL_STACK_BUILDER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(GRPC_CHANNEL_STACK_BUILDER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/grpc_channel_stack_builder_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/channel/channel_stack_builder_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_grpc_channel_stack_builder_test: $(GRPC_CHANNEL_STACK_BUILDER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GRPC_CHANNEL_STACK_BUILDER_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 GRPC_CHANNEL_STACK_TEST_SRC = \
-    test/core/channel/channel_stack_test.c \
+    test/core/channel/channel_stack_test.cc \
 
 GRPC_CHANNEL_STACK_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_CHANNEL_STACK_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10617,7 +11679,7 @@ endif
 
 
 GRPC_COMPLETION_QUEUE_TEST_SRC = \
-    test/core/surface/completion_queue_test.c \
+    test/core/surface/completion_queue_test.cc \
 
 GRPC_COMPLETION_QUEUE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_COMPLETION_QUEUE_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10649,7 +11711,7 @@ endif
 
 
 GRPC_COMPLETION_QUEUE_THREADING_TEST_SRC = \
-    test/core/surface/completion_queue_threading_test.c \
+    test/core/surface/completion_queue_threading_test.cc \
 
 GRPC_COMPLETION_QUEUE_THREADING_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_COMPLETION_QUEUE_THREADING_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10681,7 +11743,8 @@ endif
 
 
 GRPC_CREATE_JWT_SRC = \
-    test/core/security/create_jwt.c \
+    test/core/security/create_jwt.cc \
+    test/core/util/cmdline.cc \
 
 GRPC_CREATE_JWT_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_CREATE_JWT_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10703,6 +11766,8 @@ endif
 
 $(OBJDIR)/$(CONFIG)/test/core/security/create_jwt.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
+$(OBJDIR)/$(CONFIG)/test/core/util/cmdline.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_grpc_create_jwt: $(GRPC_CREATE_JWT_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
@@ -10713,7 +11778,7 @@ endif
 
 
 GRPC_CREDENTIALS_TEST_SRC = \
-    test/core/security/credentials_test.c \
+    test/core/security/credentials_test.cc \
 
 GRPC_CREDENTIALS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_CREDENTIALS_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10745,7 +11810,7 @@ endif
 
 
 GRPC_FETCH_OAUTH2_SRC = \
-    test/core/security/fetch_oauth2.c \
+    test/core/security/fetch_oauth2.cc \
 
 GRPC_FETCH_OAUTH2_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_FETCH_OAUTH2_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10777,7 +11842,7 @@ endif
 
 
 GRPC_INVALID_CHANNEL_ARGS_TEST_SRC = \
-    test/core/surface/invalid_channel_args_test.c \
+    test/core/surface/invalid_channel_args_test.cc \
 
 GRPC_INVALID_CHANNEL_ARGS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_INVALID_CHANNEL_ARGS_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10809,7 +11874,7 @@ endif
 
 
 GRPC_JSON_TOKEN_TEST_SRC = \
-    test/core/security/json_token_test.c \
+    test/core/security/json_token_test.cc \
 
 GRPC_JSON_TOKEN_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_JSON_TOKEN_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10841,7 +11906,7 @@ endif
 
 
 GRPC_JWT_VERIFIER_TEST_SRC = \
-    test/core/security/jwt_verifier_test.c \
+    test/core/security/jwt_verifier_test.cc \
 
 GRPC_JWT_VERIFIER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_JWT_VERIFIER_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10873,7 +11938,8 @@ endif
 
 
 GRPC_PRINT_GOOGLE_DEFAULT_CREDS_TOKEN_SRC = \
-    test/core/security/print_google_default_creds_token.c \
+    test/core/security/print_google_default_creds_token.cc \
+    test/core/util/cmdline.cc \
 
 GRPC_PRINT_GOOGLE_DEFAULT_CREDS_TOKEN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_PRINT_GOOGLE_DEFAULT_CREDS_TOKEN_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10895,6 +11961,8 @@ endif
 
 $(OBJDIR)/$(CONFIG)/test/core/security/print_google_default_creds_token.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
+$(OBJDIR)/$(CONFIG)/test/core/util/cmdline.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_grpc_print_google_default_creds_token: $(GRPC_PRINT_GOOGLE_DEFAULT_CREDS_TOKEN_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
@@ -10905,7 +11973,7 @@ endif
 
 
 GRPC_SECURITY_CONNECTOR_TEST_SRC = \
-    test/core/security/security_connector_test.c \
+    test/core/security/security_connector_test.cc \
 
 GRPC_SECURITY_CONNECTOR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_SECURITY_CONNECTOR_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10936,8 +12004,41 @@ endif
 endif
 
 
+GRPC_SSL_CREDENTIALS_TEST_SRC = \
+    test/core/security/ssl_credentials_test.cc \
+
+GRPC_SSL_CREDENTIALS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_SSL_CREDENTIALS_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/grpc_ssl_credentials_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/grpc_ssl_credentials_test: $(GRPC_SSL_CREDENTIALS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(GRPC_SSL_CREDENTIALS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/grpc_ssl_credentials_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/security/ssl_credentials_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_grpc_ssl_credentials_test: $(GRPC_SSL_CREDENTIALS_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GRPC_SSL_CREDENTIALS_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 GRPC_VERIFY_JWT_SRC = \
-    test/core/security/verify_jwt.c \
+    test/core/security/verify_jwt.cc \
+    test/core/util/cmdline.cc \
 
 GRPC_VERIFY_JWT_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_VERIFY_JWT_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10959,6 +12060,8 @@ endif
 
 $(OBJDIR)/$(CONFIG)/test/core/security/verify_jwt.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
+$(OBJDIR)/$(CONFIG)/test/core/util/cmdline.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_grpc_verify_jwt: $(GRPC_VERIFY_JWT_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
@@ -10969,7 +12072,7 @@ endif
 
 
 HANDSHAKE_CLIENT_SRC = \
-    test/core/handshake/client_ssl.c \
+    test/core/handshake/client_ssl.cc \
 
 HANDSHAKE_CLIENT_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HANDSHAKE_CLIENT_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11001,7 +12104,8 @@ endif
 
 
 HANDSHAKE_SERVER_SRC = \
-    test/core/handshake/server_ssl.c \
+    test/core/handshake/server_ssl.cc \
+    test/core/handshake/server_ssl_common.cc \
 
 HANDSHAKE_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HANDSHAKE_SERVER_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11023,6 +12127,8 @@ endif
 
 $(OBJDIR)/$(CONFIG)/test/core/handshake/server_ssl.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
+$(OBJDIR)/$(CONFIG)/test/core/handshake/server_ssl_common.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_handshake_server: $(HANDSHAKE_SERVER_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
@@ -11032,8 +12138,75 @@ endif
 endif
 
 
+HANDSHAKE_SERVER_WITH_READAHEAD_HANDSHAKER_SRC = \
+    test/core/handshake/readahead_handshaker_server_ssl.cc \
+    test/core/handshake/server_ssl_common.cc \
+
+HANDSHAKE_SERVER_WITH_READAHEAD_HANDSHAKER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HANDSHAKE_SERVER_WITH_READAHEAD_HANDSHAKER_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/handshake_server_with_readahead_handshaker: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/handshake_server_with_readahead_handshaker: $(HANDSHAKE_SERVER_WITH_READAHEAD_HANDSHAKER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(HANDSHAKE_SERVER_WITH_READAHEAD_HANDSHAKER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/handshake_server_with_readahead_handshaker
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/handshake/readahead_handshaker_server_ssl.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/core/handshake/server_ssl_common.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_handshake_server_with_readahead_handshaker: $(HANDSHAKE_SERVER_WITH_READAHEAD_HANDSHAKER_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(HANDSHAKE_SERVER_WITH_READAHEAD_HANDSHAKER_OBJS:.o=.dep)
+endif
+endif
+
+
+HISTOGRAM_TEST_SRC = \
+    test/core/util/histogram_test.cc \
+
+HISTOGRAM_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HISTOGRAM_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/histogram_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/histogram_test: $(HISTOGRAM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(HISTOGRAM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/histogram_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/util/histogram_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_histogram_test: $(HISTOGRAM_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(HISTOGRAM_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 HPACK_PARSER_FUZZER_TEST_SRC = \
-    test/core/transport/chttp2/hpack_parser_fuzzer_test.c \
+    test/core/transport/chttp2/hpack_parser_fuzzer_test.cc \
 
 HPACK_PARSER_FUZZER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HPACK_PARSER_FUZZER_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11065,7 +12238,7 @@ endif
 
 
 HPACK_PARSER_TEST_SRC = \
-    test/core/transport/chttp2/hpack_parser_test.c \
+    test/core/transport/chttp2/hpack_parser_test.cc \
 
 HPACK_PARSER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HPACK_PARSER_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11097,7 +12270,7 @@ endif
 
 
 HPACK_TABLE_TEST_SRC = \
-    test/core/transport/chttp2/hpack_table_test.c \
+    test/core/transport/chttp2/hpack_table_test.cc \
 
 HPACK_TABLE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HPACK_TABLE_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11129,7 +12302,7 @@ endif
 
 
 HTTP_PARSER_TEST_SRC = \
-    test/core/http/parser_test.c \
+    test/core/http/parser_test.cc \
 
 HTTP_PARSER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HTTP_PARSER_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11161,7 +12334,7 @@ endif
 
 
 HTTP_REQUEST_FUZZER_TEST_SRC = \
-    test/core/http/request_fuzzer.c \
+    test/core/http/request_fuzzer.cc \
 
 HTTP_REQUEST_FUZZER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HTTP_REQUEST_FUZZER_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11193,7 +12366,7 @@ endif
 
 
 HTTP_RESPONSE_FUZZER_TEST_SRC = \
-    test/core/http/response_fuzzer.c \
+    test/core/http/response_fuzzer.cc \
 
 HTTP_RESPONSE_FUZZER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HTTP_RESPONSE_FUZZER_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11225,7 +12398,7 @@ endif
 
 
 HTTPCLI_FORMAT_REQUEST_TEST_SRC = \
-    test/core/http/format_request_test.c \
+    test/core/http/format_request_test.cc \
 
 HTTPCLI_FORMAT_REQUEST_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HTTPCLI_FORMAT_REQUEST_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11257,7 +12430,7 @@ endif
 
 
 HTTPCLI_TEST_SRC = \
-    test/core/http/httpcli_test.c \
+    test/core/http/httpcli_test.cc \
 
 HTTPCLI_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HTTPCLI_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11289,7 +12462,7 @@ endif
 
 
 HTTPSCLI_TEST_SRC = \
-    test/core/http/httpscli_test.c \
+    test/core/http/httpscli_test.cc \
 
 HTTPSCLI_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HTTPSCLI_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11321,7 +12494,7 @@ endif
 
 
 INIT_TEST_SRC = \
-    test/core/surface/init_test.c \
+    test/core/surface/init_test.cc \
 
 INIT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(INIT_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11353,7 +12526,7 @@ endif
 
 
 INVALID_CALL_ARGUMENT_TEST_SRC = \
-    test/core/end2end/invalid_call_argument_test.c \
+    test/core/end2end/invalid_call_argument_test.cc \
 
 INVALID_CALL_ARGUMENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(INVALID_CALL_ARGUMENT_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11385,7 +12558,7 @@ endif
 
 
 JSON_FUZZER_TEST_SRC = \
-    test/core/json/fuzzer.c \
+    test/core/json/fuzzer.cc \
 
 JSON_FUZZER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(JSON_FUZZER_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11417,7 +12590,7 @@ endif
 
 
 JSON_REWRITE_SRC = \
-    test/core/json/json_rewrite.c \
+    test/core/json/json_rewrite.cc \
 
 JSON_REWRITE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(JSON_REWRITE_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11430,14 +12603,14 @@ else
 
 
 
-$(BINDIR)/$(CONFIG)/json_rewrite: $(JSON_REWRITE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/json_rewrite: $(JSON_REWRITE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(JSON_REWRITE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/json_rewrite
+	$(Q) $(LD) $(LDFLAGS) $(JSON_REWRITE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/json_rewrite
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/json/json_rewrite.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/json/json_rewrite.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_json_rewrite: $(JSON_REWRITE_OBJS:.o=.dep)
 
@@ -11449,7 +12622,7 @@ endif
 
 
 JSON_REWRITE_TEST_SRC = \
-    test/core/json/json_rewrite_test.c \
+    test/core/json/json_rewrite_test.cc \
 
 JSON_REWRITE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(JSON_REWRITE_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11481,7 +12654,7 @@ endif
 
 
 JSON_STREAM_ERROR_TEST_SRC = \
-    test/core/json/json_stream_error_test.c \
+    test/core/json/json_stream_error_test.cc \
 
 JSON_STREAM_ERROR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(JSON_STREAM_ERROR_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11513,7 +12686,7 @@ endif
 
 
 JSON_TEST_SRC = \
-    test/core/json/json_test.c \
+    test/core/json/json_test.cc \
 
 JSON_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(JSON_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11545,7 +12718,7 @@ endif
 
 
 LAME_CLIENT_TEST_SRC = \
-    test/core/surface/lame_client_test.c \
+    test/core/surface/lame_client_test.cc \
 
 LAME_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LAME_CLIENT_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11576,40 +12749,8 @@ endif
 endif
 
 
-LB_POLICIES_TEST_SRC = \
-    test/core/client_channel/lb_policies_test.c \
-
-LB_POLICIES_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LB_POLICIES_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/lb_policies_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/lb_policies_test: $(LB_POLICIES_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(LB_POLICIES_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/lb_policies_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/client_channel/lb_policies_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_lb_policies_test: $(LB_POLICIES_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(LB_POLICIES_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 LOAD_FILE_TEST_SRC = \
-    test/core/iomgr/load_file_test.c \
+    test/core/iomgr/load_file_test.cc \
 
 LOAD_FILE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LOAD_FILE_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11641,7 +12782,7 @@ endif
 
 
 LOW_LEVEL_PING_PONG_BENCHMARK_SRC = \
-    test/core/network_benchmarks/low_level_ping_pong.c \
+    test/core/network_benchmarks/low_level_ping_pong.cc \
 
 LOW_LEVEL_PING_PONG_BENCHMARK_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LOW_LEVEL_PING_PONG_BENCHMARK_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11673,7 +12814,7 @@ endif
 
 
 MEMORY_PROFILE_CLIENT_SRC = \
-    test/core/memory_usage/client.c \
+    test/core/memory_usage/client.cc \
 
 MEMORY_PROFILE_CLIENT_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(MEMORY_PROFILE_CLIENT_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11705,7 +12846,7 @@ endif
 
 
 MEMORY_PROFILE_SERVER_SRC = \
-    test/core/memory_usage/server.c \
+    test/core/memory_usage/server.cc \
 
 MEMORY_PROFILE_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(MEMORY_PROFILE_SERVER_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11737,7 +12878,7 @@ endif
 
 
 MEMORY_PROFILE_TEST_SRC = \
-    test/core/memory_usage/memory_usage_test.c \
+    test/core/memory_usage/memory_usage_test.cc \
 
 MEMORY_PROFILE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(MEMORY_PROFILE_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11769,7 +12910,7 @@ endif
 
 
 MESSAGE_COMPRESS_TEST_SRC = \
-    test/core/compression/message_compress_test.c \
+    test/core/compression/message_compress_test.cc \
 
 MESSAGE_COMPRESS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(MESSAGE_COMPRESS_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11801,7 +12942,7 @@ endif
 
 
 MINIMAL_STACK_IS_MINIMAL_TEST_SRC = \
-    test/core/channel/minimal_stack_is_minimal_test.c \
+    test/core/channel/minimal_stack_is_minimal_test.cc \
 
 MINIMAL_STACK_IS_MINIMAL_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(MINIMAL_STACK_IS_MINIMAL_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11832,40 +12973,8 @@ endif
 endif
 
 
-MLOG_TEST_SRC = \
-    test/core/census/mlog_test.c \
-
-MLOG_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(MLOG_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/mlog_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/mlog_test: $(MLOG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(MLOG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/mlog_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/census/mlog_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_mlog_test: $(MLOG_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(MLOG_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 MULTIPLE_SERVER_QUEUES_TEST_SRC = \
-    test/core/end2end/multiple_server_queues_test.c \
+    test/core/end2end/multiple_server_queues_test.cc \
 
 MULTIPLE_SERVER_QUEUES_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(MULTIPLE_SERVER_QUEUES_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11897,7 +13006,7 @@ endif
 
 
 MURMUR_HASH_TEST_SRC = \
-    test/core/support/murmur_hash_test.c \
+    test/core/gpr/murmur_hash_test.cc \
 
 MURMUR_HASH_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(MURMUR_HASH_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11917,7 +13026,7 @@ $(BINDIR)/$(CONFIG)/murmur_hash_test: $(MURMUR_HASH_TEST_OBJS) $(LIBDIR)/$(CONFI
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/support/murmur_hash_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/gpr/murmur_hash_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_murmur_hash_test: $(MURMUR_HASH_TEST_OBJS:.o=.dep)
 
@@ -11929,7 +13038,7 @@ endif
 
 
 NANOPB_FUZZER_RESPONSE_TEST_SRC = \
-    test/core/nanopb/fuzzer_response.c \
+    test/core/nanopb/fuzzer_response.cc \
 
 NANOPB_FUZZER_RESPONSE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(NANOPB_FUZZER_RESPONSE_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11961,7 +13070,7 @@ endif
 
 
 NANOPB_FUZZER_SERVERLIST_TEST_SRC = \
-    test/core/nanopb/fuzzer_serverlist.c \
+    test/core/nanopb/fuzzer_serverlist.cc \
 
 NANOPB_FUZZER_SERVERLIST_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(NANOPB_FUZZER_SERVERLIST_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -11993,7 +13102,7 @@ endif
 
 
 NO_SERVER_TEST_SRC = \
-    test/core/end2end/no_server_test.c \
+    test/core/end2end/no_server_test.cc \
 
 NO_SERVER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(NO_SERVER_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -12025,7 +13134,7 @@ endif
 
 
 NUM_EXTERNAL_CONNECTIVITY_WATCHERS_TEST_SRC = \
-    test/core/surface/num_external_connectivity_watchers_test.c \
+    test/core/surface/num_external_connectivity_watchers_test.cc \
 
 NUM_EXTERNAL_CONNECTIVITY_WATCHERS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(NUM_EXTERNAL_CONNECTIVITY_WATCHERS_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -12057,7 +13166,7 @@ endif
 
 
 PARSE_ADDRESS_TEST_SRC = \
-    test/core/client_channel/parse_address_test.c \
+    test/core/client_channel/parse_address_test.cc \
 
 PARSE_ADDRESS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PARSE_ADDRESS_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -12089,7 +13198,7 @@ endif
 
 
 PERCENT_DECODE_FUZZER_SRC = \
-    test/core/slice/percent_decode_fuzzer.c \
+    test/core/slice/percent_decode_fuzzer.cc \
 
 PERCENT_DECODE_FUZZER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PERCENT_DECODE_FUZZER_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -12121,7 +13230,7 @@ endif
 
 
 PERCENT_ENCODE_FUZZER_SRC = \
-    test/core/slice/percent_encode_fuzzer.c \
+    test/core/slice/percent_encode_fuzzer.cc \
 
 PERCENT_ENCODE_FUZZER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PERCENT_ENCODE_FUZZER_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -12153,7 +13262,7 @@ endif
 
 
 PERCENT_ENCODING_TEST_SRC = \
-    test/core/slice/percent_encoding_test.c \
+    test/core/slice/percent_encoding_test.cc \
 
 PERCENT_ENCODING_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PERCENT_ENCODING_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -12185,7 +13294,7 @@ endif
 
 
 POLLSET_SET_TEST_SRC = \
-    test/core/iomgr/pollset_set_test.c \
+    test/core/iomgr/pollset_set_test.cc \
 
 POLLSET_SET_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(POLLSET_SET_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -12217,7 +13326,7 @@ endif
 
 
 RESOLVE_ADDRESS_POSIX_TEST_SRC = \
-    test/core/iomgr/resolve_address_posix_test.c \
+    test/core/iomgr/resolve_address_posix_test.cc \
 
 RESOLVE_ADDRESS_POSIX_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(RESOLVE_ADDRESS_POSIX_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -12249,7 +13358,7 @@ endif
 
 
 RESOLVE_ADDRESS_TEST_SRC = \
-    test/core/iomgr/resolve_address_test.c \
+    test/core/iomgr/resolve_address_test.cc \
 
 RESOLVE_ADDRESS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(RESOLVE_ADDRESS_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -12281,7 +13390,7 @@ endif
 
 
 RESOURCE_QUOTA_TEST_SRC = \
-    test/core/iomgr/resource_quota_test.c \
+    test/core/iomgr/resource_quota_test.cc \
 
 RESOURCE_QUOTA_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(RESOURCE_QUOTA_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -12313,7 +13422,7 @@ endif
 
 
 SECURE_CHANNEL_CREATE_TEST_SRC = \
-    test/core/surface/secure_channel_create_test.c \
+    test/core/surface/secure_channel_create_test.cc \
 
 SECURE_CHANNEL_CREATE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SECURE_CHANNEL_CREATE_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -12345,7 +13454,7 @@ endif
 
 
 SECURE_ENDPOINT_TEST_SRC = \
-    test/core/security/secure_endpoint_test.c \
+    test/core/security/secure_endpoint_test.cc \
 
 SECURE_ENDPOINT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SECURE_ENDPOINT_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -12377,7 +13486,7 @@ endif
 
 
 SEQUENTIAL_CONNECTIVITY_TEST_SRC = \
-    test/core/surface/sequential_connectivity_test.c \
+    test/core/surface/sequential_connectivity_test.cc \
 
 SEQUENTIAL_CONNECTIVITY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SEQUENTIAL_CONNECTIVITY_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -12409,7 +13518,7 @@ endif
 
 
 SERVER_CHTTP2_TEST_SRC = \
-    test/core/surface/server_chttp2_test.c \
+    test/core/surface/server_chttp2_test.cc \
 
 SERVER_CHTTP2_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SERVER_CHTTP2_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -12441,7 +13550,7 @@ endif
 
 
 SERVER_FUZZER_SRC = \
-    test/core/end2end/fuzzers/server_fuzzer.c \
+    test/core/end2end/fuzzers/server_fuzzer.cc \
 
 SERVER_FUZZER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SERVER_FUZZER_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -12473,7 +13582,7 @@ endif
 
 
 SERVER_TEST_SRC = \
-    test/core/surface/server_test.c \
+    test/core/surface/server_test.cc \
 
 SERVER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SERVER_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -12505,7 +13614,7 @@ endif
 
 
 SLICE_BUFFER_TEST_SRC = \
-    test/core/slice/slice_buffer_test.c \
+    test/core/slice/slice_buffer_test.cc \
 
 SLICE_BUFFER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SLICE_BUFFER_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -12536,40 +13645,8 @@ endif
 endif
 
 
-SLICE_HASH_TABLE_TEST_SRC = \
-    test/core/slice/slice_hash_table_test.c \
-
-SLICE_HASH_TABLE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SLICE_HASH_TABLE_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/slice_hash_table_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/slice_hash_table_test: $(SLICE_HASH_TABLE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(SLICE_HASH_TABLE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/slice_hash_table_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/slice/slice_hash_table_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_slice_hash_table_test: $(SLICE_HASH_TABLE_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(SLICE_HASH_TABLE_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 SLICE_STRING_HELPERS_TEST_SRC = \
-    test/core/slice/slice_string_helpers_test.c \
+    test/core/slice/slice_string_helpers_test.cc \
 
 SLICE_STRING_HELPERS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SLICE_STRING_HELPERS_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -12601,7 +13678,7 @@ endif
 
 
 SLICE_TEST_SRC = \
-    test/core/slice/slice_test.c \
+    test/core/slice/slice_test.cc \
 
 SLICE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SLICE_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -12633,7 +13710,7 @@ endif
 
 
 SOCKADDR_RESOLVER_TEST_SRC = \
-    test/core/client_channel/resolvers/sockaddr_resolver_test.c \
+    test/core/client_channel/resolvers/sockaddr_resolver_test.cc \
 
 SOCKADDR_RESOLVER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SOCKADDR_RESOLVER_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -12665,7 +13742,7 @@ endif
 
 
 SOCKADDR_UTILS_TEST_SRC = \
-    test/core/iomgr/sockaddr_utils_test.c \
+    test/core/iomgr/sockaddr_utils_test.cc \
 
 SOCKADDR_UTILS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SOCKADDR_UTILS_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -12697,7 +13774,7 @@ endif
 
 
 SOCKET_UTILS_TEST_SRC = \
-    test/core/iomgr/socket_utils_test.c \
+    test/core/iomgr/socket_utils_test.cc \
 
 SOCKET_UTILS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SOCKET_UTILS_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -12729,7 +13806,7 @@ endif
 
 
 SSL_SERVER_FUZZER_SRC = \
-    test/core/security/ssl_server_fuzzer.c \
+    test/core/security/ssl_server_fuzzer.cc \
 
 SSL_SERVER_FUZZER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SSL_SERVER_FUZZER_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -12760,8 +13837,43 @@ endif
 endif
 
 
+SSL_TRANSPORT_SECURITY_TEST_SRC = \
+    test/core/tsi/ssl_transport_security_test.cc \
+    test/core/tsi/transport_security_test_lib.cc \
+
+SSL_TRANSPORT_SECURITY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SSL_TRANSPORT_SECURITY_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/ssl_transport_security_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/ssl_transport_security_test: $(SSL_TRANSPORT_SECURITY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(SSL_TRANSPORT_SECURITY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/ssl_transport_security_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/tsi/ssl_transport_security_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+$(OBJDIR)/$(CONFIG)/test/core/tsi/transport_security_test_lib.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+deps_ssl_transport_security_test: $(SSL_TRANSPORT_SECURITY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SSL_TRANSPORT_SECURITY_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 STATUS_CONVERSION_TEST_SRC = \
-    test/core/transport/status_conversion_test.c \
+    test/core/transport/status_conversion_test.cc \
 
 STATUS_CONVERSION_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(STATUS_CONVERSION_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -12793,7 +13905,7 @@ endif
 
 
 STREAM_COMPRESSION_TEST_SRC = \
-    test/core/compression/stream_compression_test.c \
+    test/core/compression/stream_compression_test.cc \
 
 STREAM_COMPRESSION_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(STREAM_COMPRESSION_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -12825,7 +13937,7 @@ endif
 
 
 STREAM_OWNED_SLICE_TEST_SRC = \
-    test/core/transport/stream_owned_slice_test.c \
+    test/core/transport/stream_owned_slice_test.cc \
 
 STREAM_OWNED_SLICE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(STREAM_OWNED_SLICE_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -12857,7 +13969,7 @@ endif
 
 
 TCP_CLIENT_POSIX_TEST_SRC = \
-    test/core/iomgr/tcp_client_posix_test.c \
+    test/core/iomgr/tcp_client_posix_test.cc \
 
 TCP_CLIENT_POSIX_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(TCP_CLIENT_POSIX_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -12889,7 +14001,7 @@ endif
 
 
 TCP_CLIENT_UV_TEST_SRC = \
-    test/core/iomgr/tcp_client_uv_test.c \
+    test/core/iomgr/tcp_client_uv_test.cc \
 
 TCP_CLIENT_UV_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(TCP_CLIENT_UV_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -12921,7 +14033,7 @@ endif
 
 
 TCP_POSIX_TEST_SRC = \
-    test/core/iomgr/tcp_posix_test.c \
+    test/core/iomgr/tcp_posix_test.cc \
 
 TCP_POSIX_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(TCP_POSIX_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -12953,7 +14065,7 @@ endif
 
 
 TCP_SERVER_POSIX_TEST_SRC = \
-    test/core/iomgr/tcp_server_posix_test.c \
+    test/core/iomgr/tcp_server_posix_test.cc \
 
 TCP_SERVER_POSIX_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(TCP_SERVER_POSIX_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -12985,7 +14097,7 @@ endif
 
 
 TCP_SERVER_UV_TEST_SRC = \
-    test/core/iomgr/tcp_server_uv_test.c \
+    test/core/iomgr/tcp_server_uv_test.cc \
 
 TCP_SERVER_UV_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(TCP_SERVER_UV_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -13017,7 +14129,7 @@ endif
 
 
 TIME_AVERAGED_STATS_TEST_SRC = \
-    test/core/iomgr/time_averaged_stats_test.c \
+    test/core/iomgr/time_averaged_stats_test.cc \
 
 TIME_AVERAGED_STATS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(TIME_AVERAGED_STATS_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -13049,7 +14161,7 @@ endif
 
 
 TIMEOUT_ENCODING_TEST_SRC = \
-    test/core/transport/timeout_encoding_test.c \
+    test/core/transport/timeout_encoding_test.cc \
 
 TIMEOUT_ENCODING_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(TIMEOUT_ENCODING_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -13081,7 +14193,7 @@ endif
 
 
 TIMER_HEAP_TEST_SRC = \
-    test/core/iomgr/timer_heap_test.c \
+    test/core/iomgr/timer_heap_test.cc \
 
 TIMER_HEAP_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(TIMER_HEAP_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -13113,7 +14225,7 @@ endif
 
 
 TIMER_LIST_TEST_SRC = \
-    test/core/iomgr/timer_list_test.c \
+    test/core/iomgr/timer_list_test.cc \
 
 TIMER_LIST_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(TIMER_LIST_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -13145,7 +14257,7 @@ endif
 
 
 TRANSPORT_CONNECTIVITY_STATE_TEST_SRC = \
-    test/core/transport/connectivity_state_test.c \
+    test/core/transport/connectivity_state_test.cc \
 
 TRANSPORT_CONNECTIVITY_STATE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(TRANSPORT_CONNECTIVITY_STATE_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -13177,7 +14289,7 @@ endif
 
 
 TRANSPORT_METADATA_TEST_SRC = \
-    test/core/transport/metadata_test.c \
+    test/core/transport/metadata_test.cc \
 
 TRANSPORT_METADATA_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(TRANSPORT_METADATA_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -13208,40 +14320,8 @@ endif
 endif
 
 
-TRANSPORT_PID_CONTROLLER_TEST_SRC = \
-    test/core/transport/pid_controller_test.c \
-
-TRANSPORT_PID_CONTROLLER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(TRANSPORT_PID_CONTROLLER_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/transport_pid_controller_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/transport_pid_controller_test: $(TRANSPORT_PID_CONTROLLER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(TRANSPORT_PID_CONTROLLER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/transport_pid_controller_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/transport/pid_controller_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_transport_pid_controller_test: $(TRANSPORT_PID_CONTROLLER_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(TRANSPORT_PID_CONTROLLER_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 TRANSPORT_SECURITY_TEST_SRC = \
-    test/core/tsi/transport_security_test.c \
+    test/core/tsi/transport_security_test.cc \
 
 TRANSPORT_SECURITY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(TRANSPORT_SECURITY_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -13273,7 +14353,7 @@ endif
 
 
 UDP_SERVER_TEST_SRC = \
-    test/core/iomgr/udp_server_test.c \
+    test/core/iomgr/udp_server_test.cc \
 
 UDP_SERVER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(UDP_SERVER_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -13305,7 +14385,7 @@ endif
 
 
 URI_FUZZER_TEST_SRC = \
-    test/core/client_channel/uri_fuzzer_test.c \
+    test/core/client_channel/uri_fuzzer_test.cc \
 
 URI_FUZZER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(URI_FUZZER_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -13337,7 +14417,7 @@ endif
 
 
 URI_PARSER_TEST_SRC = \
-    test/core/client_channel/uri_parser_test.c \
+    test/core/client_channel/uri_parser_test.cc \
 
 URI_PARSER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(URI_PARSER_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -13369,7 +14449,7 @@ endif
 
 
 WAKEUP_FD_CV_TEST_SRC = \
-    test/core/iomgr/wakeup_fd_cv_test.c \
+    test/core/iomgr/wakeup_fd_cv_test.cc \
 
 WAKEUP_FD_CV_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(WAKEUP_FD_CV_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -13400,15 +14480,15 @@ endif
 endif
 
 
-ALARM_CPP_TEST_SRC = \
-    test/cpp/common/alarm_cpp_test.cc \
+ALARM_TEST_SRC = \
+    test/cpp/common/alarm_test.cc \
 
-ALARM_CPP_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ALARM_CPP_TEST_SRC))))
+ALARM_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ALARM_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/alarm_cpp_test: openssl_dep_error
+$(BINDIR)/$(CONFIG)/alarm_test: openssl_dep_error
 
 else
 
@@ -13419,26 +14499,588 @@ ifeq ($(NO_PROTOBUF),true)
 
 # You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
 
-$(BINDIR)/$(CONFIG)/alarm_cpp_test: protobuf_dep_error
+$(BINDIR)/$(CONFIG)/alarm_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/alarm_cpp_test: $(PROTOBUF_DEP) $(ALARM_CPP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/alarm_test: $(PROTOBUF_DEP) $(ALARM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(ALARM_CPP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/alarm_cpp_test
+	$(Q) $(LDXX) $(LDFLAGS) $(ALARM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/alarm_test
 
 endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/cpp/common/alarm_cpp_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/cpp/common/alarm_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-deps_alarm_cpp_test: $(ALARM_CPP_TEST_OBJS:.o=.dep)
+deps_alarm_test: $(ALARM_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(ALARM_CPP_TEST_OBJS:.o=.dep)
+-include $(ALARM_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+ALTS_COUNTER_TEST_SRC = \
+    test/core/tsi/alts/frame_protector/alts_counter_test.cc \
+
+ALTS_COUNTER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ALTS_COUNTER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/alts_counter_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/alts_counter_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/alts_counter_test: $(PROTOBUF_DEP) $(ALTS_COUNTER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(ALTS_COUNTER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/alts_counter_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/tsi/alts/frame_protector/alts_counter_test.o:  $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+deps_alts_counter_test: $(ALTS_COUNTER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(ALTS_COUNTER_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+ALTS_CRYPT_TEST_SRC = \
+    test/core/tsi/alts/crypt/aes_gcm_test.cc \
+
+ALTS_CRYPT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ALTS_CRYPT_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/alts_crypt_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/alts_crypt_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/alts_crypt_test: $(PROTOBUF_DEP) $(ALTS_CRYPT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(ALTS_CRYPT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/alts_crypt_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/tsi/alts/crypt/aes_gcm_test.o:  $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+deps_alts_crypt_test: $(ALTS_CRYPT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(ALTS_CRYPT_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+ALTS_CRYPTER_TEST_SRC = \
+    test/core/tsi/alts/frame_protector/alts_crypter_test.cc \
+
+ALTS_CRYPTER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ALTS_CRYPTER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/alts_crypter_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/alts_crypter_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/alts_crypter_test: $(PROTOBUF_DEP) $(ALTS_CRYPTER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(ALTS_CRYPTER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/alts_crypter_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/tsi/alts/frame_protector/alts_crypter_test.o:  $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+deps_alts_crypter_test: $(ALTS_CRYPTER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(ALTS_CRYPTER_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+ALTS_FRAME_HANDLER_TEST_SRC = \
+    test/core/tsi/alts/frame_protector/frame_handler_test.cc \
+
+ALTS_FRAME_HANDLER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ALTS_FRAME_HANDLER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/alts_frame_handler_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/alts_frame_handler_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/alts_frame_handler_test: $(PROTOBUF_DEP) $(ALTS_FRAME_HANDLER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(ALTS_FRAME_HANDLER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/alts_frame_handler_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/tsi/alts/frame_protector/frame_handler_test.o:  $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+deps_alts_frame_handler_test: $(ALTS_FRAME_HANDLER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(ALTS_FRAME_HANDLER_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+ALTS_FRAME_PROTECTOR_TEST_SRC = \
+    test/core/tsi/alts/frame_protector/alts_frame_protector_test.cc \
+    test/core/tsi/transport_security_test_lib.cc \
+
+ALTS_FRAME_PROTECTOR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ALTS_FRAME_PROTECTOR_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/alts_frame_protector_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/alts_frame_protector_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/alts_frame_protector_test: $(PROTOBUF_DEP) $(ALTS_FRAME_PROTECTOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(ALTS_FRAME_PROTECTOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/alts_frame_protector_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/tsi/alts/frame_protector/alts_frame_protector_test.o:  $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+$(OBJDIR)/$(CONFIG)/test/core/tsi/transport_security_test_lib.o:  $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+deps_alts_frame_protector_test: $(ALTS_FRAME_PROTECTOR_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(ALTS_FRAME_PROTECTOR_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+ALTS_GRPC_RECORD_PROTOCOL_TEST_SRC = \
+    test/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_test.cc \
+
+ALTS_GRPC_RECORD_PROTOCOL_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ALTS_GRPC_RECORD_PROTOCOL_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/alts_grpc_record_protocol_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/alts_grpc_record_protocol_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/alts_grpc_record_protocol_test: $(PROTOBUF_DEP) $(ALTS_GRPC_RECORD_PROTOCOL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(ALTS_GRPC_RECORD_PROTOCOL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/alts_grpc_record_protocol_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_test.o:  $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+deps_alts_grpc_record_protocol_test: $(ALTS_GRPC_RECORD_PROTOCOL_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(ALTS_GRPC_RECORD_PROTOCOL_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+ALTS_HANDSHAKER_CLIENT_TEST_SRC = \
+    test/core/tsi/alts/handshaker/alts_handshaker_client_test.cc \
+
+ALTS_HANDSHAKER_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ALTS_HANDSHAKER_CLIENT_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/alts_handshaker_client_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/alts_handshaker_client_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/alts_handshaker_client_test: $(PROTOBUF_DEP) $(ALTS_HANDSHAKER_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(ALTS_HANDSHAKER_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/alts_handshaker_client_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/tsi/alts/handshaker/alts_handshaker_client_test.o:  $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+deps_alts_handshaker_client_test: $(ALTS_HANDSHAKER_CLIENT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(ALTS_HANDSHAKER_CLIENT_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+ALTS_HANDSHAKER_SERVICE_API_TEST_SRC = \
+    test/core/tsi/alts/handshaker/alts_handshaker_service_api_test.cc \
+
+ALTS_HANDSHAKER_SERVICE_API_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ALTS_HANDSHAKER_SERVICE_API_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/alts_handshaker_service_api_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/alts_handshaker_service_api_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/alts_handshaker_service_api_test: $(PROTOBUF_DEP) $(ALTS_HANDSHAKER_SERVICE_API_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(ALTS_HANDSHAKER_SERVICE_API_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/alts_handshaker_service_api_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/tsi/alts/handshaker/alts_handshaker_service_api_test.o:  $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+deps_alts_handshaker_service_api_test: $(ALTS_HANDSHAKER_SERVICE_API_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(ALTS_HANDSHAKER_SERVICE_API_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+ALTS_IOVEC_RECORD_PROTOCOL_TEST_SRC = \
+    test/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol_test.cc \
+
+ALTS_IOVEC_RECORD_PROTOCOL_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ALTS_IOVEC_RECORD_PROTOCOL_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/alts_iovec_record_protocol_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/alts_iovec_record_protocol_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/alts_iovec_record_protocol_test: $(PROTOBUF_DEP) $(ALTS_IOVEC_RECORD_PROTOCOL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(ALTS_IOVEC_RECORD_PROTOCOL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/alts_iovec_record_protocol_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol_test.o:  $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+deps_alts_iovec_record_protocol_test: $(ALTS_IOVEC_RECORD_PROTOCOL_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(ALTS_IOVEC_RECORD_PROTOCOL_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+ALTS_SECURITY_CONNECTOR_TEST_SRC = \
+    test/core/security/alts_security_connector_test.cc \
+
+ALTS_SECURITY_CONNECTOR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ALTS_SECURITY_CONNECTOR_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/alts_security_connector_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/alts_security_connector_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/alts_security_connector_test: $(PROTOBUF_DEP) $(ALTS_SECURITY_CONNECTOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(ALTS_SECURITY_CONNECTOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/alts_security_connector_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/security/alts_security_connector_test.o:  $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+deps_alts_security_connector_test: $(ALTS_SECURITY_CONNECTOR_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(ALTS_SECURITY_CONNECTOR_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+ALTS_TSI_HANDSHAKER_TEST_SRC = \
+    test/core/tsi/alts/handshaker/alts_tsi_handshaker_test.cc \
+
+ALTS_TSI_HANDSHAKER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ALTS_TSI_HANDSHAKER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/alts_tsi_handshaker_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/alts_tsi_handshaker_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/alts_tsi_handshaker_test: $(PROTOBUF_DEP) $(ALTS_TSI_HANDSHAKER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(ALTS_TSI_HANDSHAKER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/alts_tsi_handshaker_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/tsi/alts/handshaker/alts_tsi_handshaker_test.o:  $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+deps_alts_tsi_handshaker_test: $(ALTS_TSI_HANDSHAKER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(ALTS_TSI_HANDSHAKER_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+ALTS_TSI_UTILS_TEST_SRC = \
+    test/core/tsi/alts/handshaker/alts_tsi_utils_test.cc \
+
+ALTS_TSI_UTILS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ALTS_TSI_UTILS_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/alts_tsi_utils_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/alts_tsi_utils_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/alts_tsi_utils_test: $(PROTOBUF_DEP) $(ALTS_TSI_UTILS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(ALTS_TSI_UTILS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/alts_tsi_utils_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/tsi/alts/handshaker/alts_tsi_utils_test.o:  $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+deps_alts_tsi_utils_test: $(ALTS_TSI_UTILS_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(ALTS_TSI_UTILS_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+ALTS_ZERO_COPY_GRPC_PROTECTOR_TEST_SRC = \
+    test/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector_test.cc \
+
+ALTS_ZERO_COPY_GRPC_PROTECTOR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ALTS_ZERO_COPY_GRPC_PROTECTOR_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/alts_zero_copy_grpc_protector_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/alts_zero_copy_grpc_protector_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/alts_zero_copy_grpc_protector_test: $(PROTOBUF_DEP) $(ALTS_ZERO_COPY_GRPC_PROTECTOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(ALTS_ZERO_COPY_GRPC_PROTECTOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/alts_zero_copy_grpc_protector_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector_test.o:  $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+deps_alts_zero_copy_grpc_protector_test: $(ALTS_ZERO_COPY_GRPC_PROTECTOR_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(ALTS_ZERO_COPY_GRPC_PROTECTOR_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -13525,6 +15167,92 @@ deps_auth_property_iterator_test: $(AUTH_PROPERTY_ITERATOR_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(AUTH_PROPERTY_ITERATOR_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+BACKOFF_TEST_SRC = \
+    test/core/backoff/backoff_test.cc \
+
+BACKOFF_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BACKOFF_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/backoff_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/backoff_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/backoff_test: $(PROTOBUF_DEP) $(BACKOFF_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BACKOFF_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/backoff_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/backoff/backoff_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_backoff_test: $(BACKOFF_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BACKOFF_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+BDP_ESTIMATOR_TEST_SRC = \
+    test/core/transport/bdp_estimator_test.cc \
+
+BDP_ESTIMATOR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BDP_ESTIMATOR_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/bdp_estimator_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/bdp_estimator_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/bdp_estimator_test: $(PROTOBUF_DEP) $(BDP_ESTIMATOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BDP_ESTIMATOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/bdp_estimator_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/transport/bdp_estimator_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_bdp_estimator_test: $(BDP_ESTIMATOR_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BDP_ESTIMATOR_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -14145,6 +15873,49 @@ endif
 endif
 
 
+BYTE_STREAM_TEST_SRC = \
+    test/core/transport/byte_stream_test.cc \
+
+BYTE_STREAM_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BYTE_STREAM_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/byte_stream_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/byte_stream_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/byte_stream_test: $(PROTOBUF_DEP) $(BYTE_STREAM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BYTE_STREAM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/byte_stream_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/transport/byte_stream_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_byte_stream_test: $(BYTE_STREAM_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BYTE_STREAM_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 CHANNEL_ARGUMENTS_TEST_SRC = \
     test/cpp/common/channel_arguments_test.cc \
 
@@ -14231,6 +16002,135 @@ endif
 endif
 
 
+CHECK_GCP_ENVIRONMENT_LINUX_TEST_SRC = \
+    test/core/security/check_gcp_environment_linux_test.cc \
+
+CHECK_GCP_ENVIRONMENT_LINUX_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHECK_GCP_ENVIRONMENT_LINUX_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/check_gcp_environment_linux_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/check_gcp_environment_linux_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/check_gcp_environment_linux_test: $(PROTOBUF_DEP) $(CHECK_GCP_ENVIRONMENT_LINUX_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(CHECK_GCP_ENVIRONMENT_LINUX_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/check_gcp_environment_linux_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/security/check_gcp_environment_linux_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_check_gcp_environment_linux_test: $(CHECK_GCP_ENVIRONMENT_LINUX_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHECK_GCP_ENVIRONMENT_LINUX_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHECK_GCP_ENVIRONMENT_WINDOWS_TEST_SRC = \
+    test/core/security/check_gcp_environment_windows_test.cc \
+
+CHECK_GCP_ENVIRONMENT_WINDOWS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHECK_GCP_ENVIRONMENT_WINDOWS_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/check_gcp_environment_windows_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/check_gcp_environment_windows_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/check_gcp_environment_windows_test: $(PROTOBUF_DEP) $(CHECK_GCP_ENVIRONMENT_WINDOWS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(CHECK_GCP_ENVIRONMENT_WINDOWS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/check_gcp_environment_windows_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/security/check_gcp_environment_windows_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_check_gcp_environment_windows_test: $(CHECK_GCP_ENVIRONMENT_WINDOWS_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHECK_GCP_ENVIRONMENT_WINDOWS_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CHTTP2_SETTINGS_TIMEOUT_TEST_SRC = \
+    test/core/transport/chttp2/settings_timeout_test.cc \
+
+CHTTP2_SETTINGS_TIMEOUT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHTTP2_SETTINGS_TIMEOUT_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/chttp2_settings_timeout_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/chttp2_settings_timeout_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/chttp2_settings_timeout_test: $(PROTOBUF_DEP) $(CHTTP2_SETTINGS_TIMEOUT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(CHTTP2_SETTINGS_TIMEOUT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/chttp2_settings_timeout_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/transport/chttp2/settings_timeout_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_chttp2_settings_timeout_test: $(CHTTP2_SETTINGS_TIMEOUT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHTTP2_SETTINGS_TIMEOUT_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 CLI_CALL_TEST_SRC = \
     test/cpp/util/cli_call_test.cc \
 
@@ -14272,6 +16172,53 @@ ifneq ($(NO_DEPS),true)
 -include $(CLI_CALL_TEST_OBJS:.o=.dep)
 endif
 endif
+
+
+CLIENT_CHANNEL_STRESS_TEST_SRC = \
+    $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc \
+    test/cpp/client/client_channel_stress_test.cc \
+
+CLIENT_CHANNEL_STRESS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CLIENT_CHANNEL_STRESS_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/client_channel_stress_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/client_channel_stress_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/client_channel_stress_test: $(PROTOBUF_DEP) $(CLIENT_CHANNEL_STRESS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(CLIENT_CHANNEL_STRESS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/client_channel_stress_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/lb/v1/load_balancer.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/test/cpp/client/client_channel_stress_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_client_channel_stress_test: $(CLIENT_CHANNEL_STRESS_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CLIENT_CHANNEL_STRESS_TEST_OBJS:.o=.dep)
+endif
+endif
+$(OBJDIR)/$(CONFIG)/test/cpp/client/client_channel_stress_test.o: $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
 
 
 CLIENT_CRASH_TEST_SRC = \
@@ -14431,26 +16378,26 @@ $(BINDIR)/$(CONFIG)/codegen_test_full: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/codegen_test_full: $(PROTOBUF_DEP) $(CODEGEN_TEST_FULL_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/codegen_test_full: $(PROTOBUF_DEP) $(CODEGEN_TEST_FULL_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(CODEGEN_TEST_FULL_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/codegen_test_full
+	$(Q) $(LDXX) $(LDFLAGS) $(CODEGEN_TEST_FULL_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/codegen_test_full
 
 endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/control.o:  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/control.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/messages.o:  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/messages.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/payloads.o:  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/payloads.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/services.o:  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/services.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/stats.o:  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/stats.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-$(OBJDIR)/$(CONFIG)/test/cpp/codegen/codegen_test_full.o:  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/cpp/codegen/codegen_test_full.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_codegen_test_full: $(CODEGEN_TEST_FULL_OBJS:.o=.dep)
 
@@ -14491,28 +16438,28 @@ $(BINDIR)/$(CONFIG)/codegen_test_minimal: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/codegen_test_minimal: $(PROTOBUF_DEP) $(CODEGEN_TEST_MINIMAL_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/codegen_test_minimal: $(PROTOBUF_DEP) $(CODEGEN_TEST_MINIMAL_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(CODEGEN_TEST_MINIMAL_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/codegen_test_minimal
+	$(Q) $(LDXX) $(LDFLAGS) $(CODEGEN_TEST_MINIMAL_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/codegen_test_minimal
 
 endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/control.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/control.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/messages.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/messages.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/payloads.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/payloads.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/services.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/services.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/stats.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/testing/stats.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-$(OBJDIR)/$(CONFIG)/test/cpp/codegen/codegen_test_minimal.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/cpp/codegen/codegen_test_minimal.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-$(OBJDIR)/$(CONFIG)/src/cpp/codegen/codegen_init.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/src/cpp/codegen/codegen_init.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_codegen_test_minimal: $(CODEGEN_TEST_MINIMAL_OBJS:.o=.dep)
 
@@ -14830,6 +16777,49 @@ endif
 $(OBJDIR)/$(CONFIG)/test/cpp/util/error_details_test.o: $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc
 
 
+EXCEPTION_TEST_SRC = \
+    test/cpp/end2end/exception_test.cc \
+
+EXCEPTION_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(EXCEPTION_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/exception_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/exception_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/exception_test: $(PROTOBUF_DEP) $(EXCEPTION_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(EXCEPTION_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/exception_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/exception_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_exception_test: $(EXCEPTION_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(EXCEPTION_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 FILTER_END2END_TEST_SRC = \
     test/cpp/end2end/filter_end2end_test.cc \
 
@@ -14961,6 +16951,49 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 $(OBJDIR)/$(CONFIG)/test/cpp/codegen/golden_file_test.o: $(GENDIR)/src/proto/grpc/testing/compiler_test.pb.cc $(GENDIR)/src/proto/grpc/testing/compiler_test.grpc.pb.cc
+
+
+GRPC_ALTS_CREDENTIALS_OPTIONS_TEST_SRC = \
+    test/core/security/grpc_alts_credentials_options_test.cc \
+
+GRPC_ALTS_CREDENTIALS_OPTIONS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_ALTS_CREDENTIALS_OPTIONS_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/grpc_alts_credentials_options_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/grpc_alts_credentials_options_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/grpc_alts_credentials_options_test: $(PROTOBUF_DEP) $(GRPC_ALTS_CREDENTIALS_OPTIONS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(GRPC_ALTS_CREDENTIALS_OPTIONS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/grpc_alts_credentials_options_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/security/grpc_alts_credentials_options_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_grpc_alts_credentials_options_test: $(GRPC_ALTS_CREDENTIALS_OPTIONS_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GRPC_ALTS_CREDENTIALS_OPTIONS_TEST_OBJS:.o=.dep)
+endif
+endif
 
 
 GRPC_CLI_SRC = \
@@ -15367,16 +17400,15 @@ endif
 $(OBJDIR)/$(CONFIG)/test/cpp/end2end/grpclb_end2end_test.o: $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
 
 
-GRPCLB_TEST_SRC = \
-    $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc \
-    test/cpp/grpclb/grpclb_test.cc \
+H2_SSL_CERT_TEST_SRC = \
+    test/core/end2end/h2_ssl_cert_test.cc \
 
-GRPCLB_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPCLB_TEST_SRC))))
+H2_SSL_CERT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SSL_CERT_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/grpclb_test: openssl_dep_error
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test: openssl_dep_error
 
 else
 
@@ -15387,31 +17419,71 @@ ifeq ($(NO_PROTOBUF),true)
 
 # You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
 
-$(BINDIR)/$(CONFIG)/grpclb_test: protobuf_dep_error
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/grpclb_test: $(PROTOBUF_DEP) $(GRPCLB_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/h2_ssl_cert_test: $(PROTOBUF_DEP) $(H2_SSL_CERT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(GRPCLB_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/grpclb_test
+	$(Q) $(LDXX) $(LDFLAGS) $(H2_SSL_CERT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/h2_ssl_cert_test
 
 endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/src/proto/grpc/lb/v1/load_balancer.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_cert_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-$(OBJDIR)/$(CONFIG)/test/cpp/grpclb/grpclb_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_grpclb_test: $(GRPCLB_TEST_OBJS:.o=.dep)
+deps_h2_ssl_cert_test: $(H2_SSL_CERT_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(GRPCLB_TEST_OBJS:.o=.dep)
+-include $(H2_SSL_CERT_TEST_OBJS:.o=.dep)
 endif
 endif
-$(OBJDIR)/$(CONFIG)/test/cpp/grpclb/grpclb_test.o: $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
+
+
+H2_SSL_SESSION_REUSE_TEST_SRC = \
+    test/core/end2end/h2_ssl_session_reuse_test.cc \
+
+H2_SSL_SESSION_REUSE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SSL_SESSION_REUSE_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/h2_ssl_session_reuse_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/h2_ssl_session_reuse_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/h2_ssl_session_reuse_test: $(PROTOBUF_DEP) $(H2_SSL_SESSION_REUSE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(H2_SSL_SESSION_REUSE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/h2_ssl_session_reuse_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/end2end/h2_ssl_session_reuse_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_h2_ssl_session_reuse_test: $(H2_SSL_SESSION_REUSE_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(H2_SSL_SESSION_REUSE_TEST_OBJS:.o=.dep)
+endif
+endif
 
 
 HEALTH_SERVICE_END2END_TEST_SRC = \
@@ -15527,6 +17599,92 @@ deps_hybrid_end2end_test: $(HYBRID_END2END_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(HYBRID_END2END_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+INLINED_VECTOR_TEST_SRC = \
+    test/core/gprpp/inlined_vector_test.cc \
+
+INLINED_VECTOR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(INLINED_VECTOR_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/inlined_vector_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/inlined_vector_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/inlined_vector_test: $(PROTOBUF_DEP) $(INLINED_VECTOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(INLINED_VECTOR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/inlined_vector_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/gprpp/inlined_vector_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_inlined_vector_test: $(INLINED_VECTOR_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(INLINED_VECTOR_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+INPROC_SYNC_UNARY_PING_PONG_TEST_SRC = \
+    test/cpp/qps/inproc_sync_unary_ping_pong_test.cc \
+
+INPROC_SYNC_UNARY_PING_PONG_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(INPROC_SYNC_UNARY_PING_PONG_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test: $(PROTOBUF_DEP) $(INPROC_SYNC_UNARY_PING_PONG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(INPROC_SYNC_UNARY_PING_PONG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/inproc_sync_unary_ping_pong_test.o:  $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+
+deps_inproc_sync_unary_ping_pong_test: $(INPROC_SYNC_UNARY_PING_PONG_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(INPROC_SYNC_UNARY_PING_PONG_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -15680,7 +17838,7 @@ endif
 
 
 MEMORY_TEST_SRC = \
-    test/core/support/memory_test.cc \
+    test/core/gprpp/memory_test.cc \
 
 MEMORY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(MEMORY_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -15711,7 +17869,7 @@ endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/support/memory_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/gprpp/memory_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_memory_test: $(MEMORY_TEST_OBJS:.o=.dep)
 
@@ -15812,6 +17970,49 @@ endif
 endif
 
 
+NONBLOCKING_TEST_SRC = \
+    test/cpp/end2end/nonblocking_test.cc \
+
+NONBLOCKING_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(NONBLOCKING_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/nonblocking_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/nonblocking_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/nonblocking_test: $(PROTOBUF_DEP) $(NONBLOCKING_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(NONBLOCKING_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/nonblocking_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/nonblocking_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_nonblocking_test: $(NONBLOCKING_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(NONBLOCKING_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 NOOP-BENCHMARK_SRC = \
     test/cpp/microbenchmarks/noop-benchmark.cc \
 
@@ -15852,6 +18053,49 @@ deps_noop-benchmark: $(NOOP-BENCHMARK_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(NOOP-BENCHMARK_OBJS:.o=.dep)
+endif
+endif
+
+
+ORPHANABLE_TEST_SRC = \
+    test/core/gprpp/orphanable_test.cc \
+
+ORPHANABLE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ORPHANABLE_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/orphanable_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/orphanable_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/orphanable_test: $(PROTOBUF_DEP) $(ORPHANABLE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(ORPHANABLE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/orphanable_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/gprpp/orphanable_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_orphanable_test: $(ORPHANABLE_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(ORPHANABLE_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -16008,16 +18252,16 @@ $(BINDIR)/$(CONFIG)/qps_json_driver: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/qps_json_driver: $(PROTOBUF_DEP) $(QPS_JSON_DRIVER_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+$(BINDIR)/$(CONFIG)/qps_json_driver: $(PROTOBUF_DEP) $(QPS_JSON_DRIVER_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(QPS_JSON_DRIVER_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/qps_json_driver
+	$(Q) $(LDXX) $(LDFLAGS) $(QPS_JSON_DRIVER_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/qps_json_driver
 
 endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/qps_json_driver.o:  $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/qps_json_driver.o:  $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 
 deps_qps_json_driver: $(QPS_JSON_DRIVER_OBJS:.o=.dep)
 
@@ -16051,16 +18295,16 @@ $(BINDIR)/$(CONFIG)/qps_openloop_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/qps_openloop_test: $(PROTOBUF_DEP) $(QPS_OPENLOOP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+$(BINDIR)/$(CONFIG)/qps_openloop_test: $(PROTOBUF_DEP) $(QPS_OPENLOOP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(QPS_OPENLOOP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/qps_openloop_test
+	$(Q) $(LDXX) $(LDFLAGS) $(QPS_OPENLOOP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/qps_openloop_test
 
 endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/qps_openloop_test.o:  $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/qps_openloop_test.o:  $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 
 deps_qps_openloop_test: $(QPS_OPENLOOP_TEST_OBJS:.o=.dep)
 
@@ -16094,16 +18338,16 @@ $(BINDIR)/$(CONFIG)/qps_worker: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/qps_worker: $(PROTOBUF_DEP) $(QPS_WORKER_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+$(BINDIR)/$(CONFIG)/qps_worker: $(PROTOBUF_DEP) $(QPS_WORKER_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(QPS_WORKER_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/qps_worker
+	$(Q) $(LDXX) $(LDFLAGS) $(QPS_WORKER_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/qps_worker
 
 endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/worker.o:  $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/worker.o:  $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 
 deps_qps_worker: $(QPS_WORKER_OBJS:.o=.dep)
 
@@ -16220,6 +18464,92 @@ endif
 $(OBJDIR)/$(CONFIG)/test/cpp/interop/reconnect_interop_server.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
 
 
+REF_COUNTED_PTR_TEST_SRC = \
+    test/core/gprpp/ref_counted_ptr_test.cc \
+
+REF_COUNTED_PTR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(REF_COUNTED_PTR_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/ref_counted_ptr_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/ref_counted_ptr_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/ref_counted_ptr_test: $(PROTOBUF_DEP) $(REF_COUNTED_PTR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(REF_COUNTED_PTR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/ref_counted_ptr_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/gprpp/ref_counted_ptr_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_ref_counted_ptr_test: $(REF_COUNTED_PTR_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(REF_COUNTED_PTR_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+REF_COUNTED_TEST_SRC = \
+    test/core/gprpp/ref_counted_test.cc \
+
+REF_COUNTED_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(REF_COUNTED_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/ref_counted_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/ref_counted_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/ref_counted_test: $(PROTOBUF_DEP) $(REF_COUNTED_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(REF_COUNTED_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/ref_counted_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/gprpp/ref_counted_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_ref_counted_test: $(REF_COUNTED_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(REF_COUNTED_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 SECURE_AUTH_CONTEXT_TEST_SRC = \
     test/cpp/common/secure_auth_context_test.cc \
 
@@ -16286,16 +18616,16 @@ $(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test: $(PROTOBUF_DEP) $(SECURE_SYNC_UNARY_PING_PONG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+$(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test: $(PROTOBUF_DEP) $(SECURE_SYNC_UNARY_PING_PONG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(SECURE_SYNC_UNARY_PING_PONG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test
+	$(Q) $(LDXX) $(LDFLAGS) $(SECURE_SYNC_UNARY_PING_PONG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test
 
 endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/cpp/qps/secure_sync_unary_ping_pong_test.o:  $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+$(OBJDIR)/$(CONFIG)/test/cpp/qps/secure_sync_unary_ping_pong_test.o:  $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 
 deps_secure_sync_unary_ping_pong_test: $(SECURE_SYNC_UNARY_PING_PONG_TEST_OBJS:.o=.dep)
 
@@ -16528,6 +18858,49 @@ endif
 endif
 
 
+SERVER_EARLY_RETURN_TEST_SRC = \
+    test/cpp/end2end/server_early_return_test.cc \
+
+SERVER_EARLY_RETURN_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SERVER_EARLY_RETURN_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/server_early_return_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/server_early_return_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/server_early_return_test: $(PROTOBUF_DEP) $(SERVER_EARLY_RETURN_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(SERVER_EARLY_RETURN_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/server_early_return_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/server_early_return_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_server_early_return_test: $(SERVER_EARLY_RETURN_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SERVER_EARLY_RETURN_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 SERVER_REQUEST_CALL_TEST_SRC = \
     $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc \
     $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc \
@@ -16621,15 +18994,15 @@ endif
 endif
 
 
-STATUS_TEST_SRC = \
-    test/cpp/util/status_test.cc \
+SLICE_HASH_TABLE_TEST_SRC = \
+    test/core/slice/slice_hash_table_test.cc \
 
-STATUS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(STATUS_TEST_SRC))))
+SLICE_HASH_TABLE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SLICE_HASH_TABLE_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/status_test: openssl_dep_error
+$(BINDIR)/$(CONFIG)/slice_hash_table_test: openssl_dep_error
 
 else
 
@@ -16640,26 +19013,198 @@ ifeq ($(NO_PROTOBUF),true)
 
 # You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
 
-$(BINDIR)/$(CONFIG)/status_test: protobuf_dep_error
+$(BINDIR)/$(CONFIG)/slice_hash_table_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/status_test: $(PROTOBUF_DEP) $(STATUS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/slice_hash_table_test: $(PROTOBUF_DEP) $(SLICE_HASH_TABLE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(STATUS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/status_test
+	$(Q) $(LDXX) $(LDFLAGS) $(SLICE_HASH_TABLE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/slice_hash_table_test
 
 endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/cpp/util/status_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/slice/slice_hash_table_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-deps_status_test: $(STATUS_TEST_OBJS:.o=.dep)
+deps_slice_hash_table_test: $(SLICE_HASH_TABLE_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(STATUS_TEST_OBJS:.o=.dep)
+-include $(SLICE_HASH_TABLE_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+SLICE_WEAK_HASH_TABLE_TEST_SRC = \
+    test/core/slice/slice_weak_hash_table_test.cc \
+
+SLICE_WEAK_HASH_TABLE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SLICE_WEAK_HASH_TABLE_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/slice_weak_hash_table_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/slice_weak_hash_table_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/slice_weak_hash_table_test: $(PROTOBUF_DEP) $(SLICE_WEAK_HASH_TABLE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(SLICE_WEAK_HASH_TABLE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/slice_weak_hash_table_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/slice/slice_weak_hash_table_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_slice_weak_hash_table_test: $(SLICE_WEAK_HASH_TABLE_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SLICE_WEAK_HASH_TABLE_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+STATS_TEST_SRC = \
+    test/core/debug/stats_test.cc \
+
+STATS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(STATS_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/stats_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/stats_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/stats_test: $(PROTOBUF_DEP) $(STATS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(STATS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/stats_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/debug/stats_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_stats_test: $(STATS_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(STATS_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+STATUS_METADATA_TEST_SRC = \
+    test/core/transport/status_metadata_test.cc \
+
+STATUS_METADATA_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(STATUS_METADATA_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/status_metadata_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/status_metadata_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/status_metadata_test: $(PROTOBUF_DEP) $(STATUS_METADATA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(STATUS_METADATA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/status_metadata_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/transport/status_metadata_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+deps_status_metadata_test: $(STATUS_METADATA_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(STATUS_METADATA_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+STATUS_UTIL_TEST_SRC = \
+    test/core/client_channel/status_util_test.cc \
+
+STATUS_UTIL_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(STATUS_UTIL_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/status_util_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/status_util_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/status_util_test: $(PROTOBUF_DEP) $(STATUS_UTIL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(STATUS_UTIL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/status_util_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/client_channel/status_util_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+deps_status_util_test: $(STATUS_UTIL_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(STATUS_UTIL_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -16861,6 +19406,92 @@ endif
 endif
 
 
+TRANSPORT_PID_CONTROLLER_TEST_SRC = \
+    test/core/transport/pid_controller_test.cc \
+
+TRANSPORT_PID_CONTROLLER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(TRANSPORT_PID_CONTROLLER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/transport_pid_controller_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/transport_pid_controller_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/transport_pid_controller_test: $(PROTOBUF_DEP) $(TRANSPORT_PID_CONTROLLER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(TRANSPORT_PID_CONTROLLER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/transport_pid_controller_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/transport/pid_controller_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_transport_pid_controller_test: $(TRANSPORT_PID_CONTROLLER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(TRANSPORT_PID_CONTROLLER_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+TRANSPORT_SECURITY_COMMON_API_TEST_SRC = \
+    test/core/tsi/alts/handshaker/transport_security_common_api_test.cc \
+
+TRANSPORT_SECURITY_COMMON_API_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(TRANSPORT_SECURITY_COMMON_API_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/transport_security_common_api_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/transport_security_common_api_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/transport_security_common_api_test: $(PROTOBUF_DEP) $(TRANSPORT_SECURITY_COMMON_API_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(TRANSPORT_SECURITY_COMMON_API_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/transport_security_common_api_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/tsi/alts/handshaker/transport_security_common_api_test.o:  $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+deps_transport_security_common_api_test: $(TRANSPORT_SECURITY_COMMON_API_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(TRANSPORT_SECURITY_COMMON_API_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 WRITES_PER_RPC_TEST_SRC = \
     test/cpp/performance/writes_per_rpc_test.cc \
 
@@ -16940,35 +19571,146 @@ endif
 endif
 
 
+GEN_HPACK_TABLES_SRC = \
+    tools/codegen/core/gen_hpack_tables.cc \
+
+GEN_HPACK_TABLES_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GEN_HPACK_TABLES_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/gen_hpack_tables: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/gen_hpack_tables: $(GEN_HPACK_TABLES_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(GEN_HPACK_TABLES_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gen_hpack_tables
+
+endif
+
+$(OBJDIR)/$(CONFIG)/tools/codegen/core/gen_hpack_tables.o:  $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
+
+deps_gen_hpack_tables: $(GEN_HPACK_TABLES_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GEN_HPACK_TABLES_OBJS:.o=.dep)
+endif
+endif
+
+
+GEN_LEGAL_METADATA_CHARACTERS_SRC = \
+    tools/codegen/core/gen_legal_metadata_characters.cc \
+
+GEN_LEGAL_METADATA_CHARACTERS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GEN_LEGAL_METADATA_CHARACTERS_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/gen_legal_metadata_characters: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/gen_legal_metadata_characters: $(GEN_LEGAL_METADATA_CHARACTERS_OBJS)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(GEN_LEGAL_METADATA_CHARACTERS_OBJS) $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters
+
+endif
+
+$(OBJDIR)/$(CONFIG)/tools/codegen/core/gen_legal_metadata_characters.o: 
+
+deps_gen_legal_metadata_characters: $(GEN_LEGAL_METADATA_CHARACTERS_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GEN_LEGAL_METADATA_CHARACTERS_OBJS:.o=.dep)
+endif
+endif
+
+
+GEN_PERCENT_ENCODING_TABLES_SRC = \
+    tools/codegen/core/gen_percent_encoding_tables.cc \
+
+GEN_PERCENT_ENCODING_TABLES_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GEN_PERCENT_ENCODING_TABLES_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/gen_percent_encoding_tables: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/gen_percent_encoding_tables: $(GEN_PERCENT_ENCODING_TABLES_OBJS)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(GEN_PERCENT_ENCODING_TABLES_OBJS) $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gen_percent_encoding_tables
+
+endif
+
+$(OBJDIR)/$(CONFIG)/tools/codegen/core/gen_percent_encoding_tables.o: 
+
+deps_gen_percent_encoding_tables: $(GEN_PERCENT_ENCODING_TABLES_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GEN_PERCENT_ENCODING_TABLES_OBJS:.o=.dep)
+endif
+endif
+
+
+BORINGSSL_CRYPTO_TEST_DATA_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_CRYPTO_TEST_DATA_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_CRYPTO_TEST_DATA_SRC))))
 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_AES_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
-$(BORINGSSL_AES_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
-$(BORINGSSL_AES_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(BORINGSSL_CRYPTO_TEST_DATA_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_CRYPTO_TEST_DATA_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_CRYPTO_TEST_DATA_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
 ifeq ($(NO_PROTOBUF),true)
 
 # You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
 
-$(BINDIR)/$(CONFIG)/boringssl_aes_test: protobuf_dep_error
+$(BINDIR)/$(CONFIG)/boringssl_crypto_test_data: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/boringssl_aes_test:  $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(BINDIR)/$(CONFIG)/boringssl_crypto_test_data: $(PROTOBUF_DEP) $(BORINGSSL_CRYPTO_TEST_DATA_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_crypto_test_data_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_aes_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_CRYPTO_TEST_DATA_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_crypto_test_data_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_crypto_test_data
 
 endif
 
-$(BORINGSSL_AES_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_AES_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_CRYPTO_TEST_DATA_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_CRYPTO_TEST_DATA_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_CRYPTO_TEST_DATA_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_crypto_test_data_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_crypto_test_data: $(BORINGSSL_CRYPTO_TEST_DATA_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_CRYPTO_TEST_DATA_OBJS:.o=.dep)
+endif
 
 
+BORINGSSL_ASN1_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
 
+BORINGSSL_ASN1_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_ASN1_TEST_SRC))))
 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
@@ -16986,18 +19728,29 @@ $(BINDIR)/$(CONFIG)/boringssl_asn1_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/boringssl_asn1_test:  $(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(BINDIR)/$(CONFIG)/boringssl_asn1_test: $(PROTOBUF_DEP) $(BORINGSSL_ASN1_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_asn1_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_ASN1_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_asn1_test
 
 endif
 
 $(BORINGSSL_ASN1_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_ASN1_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_ASN1_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_ASN1_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_asn1_test: $(BORINGSSL_ASN1_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_ASN1_TEST_OBJS:.o=.dep)
+endif
 
 
+BORINGSSL_BASE64_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
 
+BORINGSSL_BASE64_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_BASE64_TEST_SRC))))
 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
@@ -17015,18 +19768,29 @@ $(BINDIR)/$(CONFIG)/boringssl_base64_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/boringssl_base64_test:  $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(BINDIR)/$(CONFIG)/boringssl_base64_test: $(PROTOBUF_DEP) $(BORINGSSL_BASE64_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_base64_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_BASE64_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_base64_test
 
 endif
 
 $(BORINGSSL_BASE64_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_BASE64_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_BASE64_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_BASE64_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_base64_test: $(BORINGSSL_BASE64_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_BASE64_TEST_OBJS:.o=.dep)
+endif
 
 
+BORINGSSL_BIO_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
 
+BORINGSSL_BIO_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_BIO_TEST_SRC))))
 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
@@ -17044,47 +19808,69 @@ $(BINDIR)/$(CONFIG)/boringssl_bio_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/boringssl_bio_test:  $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(BINDIR)/$(CONFIG)/boringssl_bio_test: $(PROTOBUF_DEP) $(BORINGSSL_BIO_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_bio_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_BIO_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_bio_test
 
 endif
 
 $(BORINGSSL_BIO_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_BIO_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_BIO_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_BIO_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_bio_test: $(BORINGSSL_BIO_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_BIO_TEST_OBJS:.o=.dep)
+endif
 
 
+BORINGSSL_BUF_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
 
+BORINGSSL_BUF_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_BUF_TEST_SRC))))
 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_BN_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
-$(BORINGSSL_BN_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
-$(BORINGSSL_BN_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(BORINGSSL_BUF_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_BUF_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_BUF_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
 ifeq ($(NO_PROTOBUF),true)
 
 # You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
 
-$(BINDIR)/$(CONFIG)/boringssl_bn_test: protobuf_dep_error
+$(BINDIR)/$(CONFIG)/boringssl_buf_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/boringssl_bn_test:  $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(BINDIR)/$(CONFIG)/boringssl_buf_test: $(PROTOBUF_DEP) $(BORINGSSL_BUF_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_buf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_bn_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_BUF_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_buf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_buf_test
 
 endif
 
-$(BORINGSSL_BN_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_BN_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_BUF_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_BUF_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_BUF_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_buf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_buf_test: $(BORINGSSL_BUF_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_BUF_TEST_OBJS:.o=.dep)
+endif
 
 
+BORINGSSL_BYTESTRING_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
 
+BORINGSSL_BYTESTRING_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_BYTESTRING_TEST_SRC))))
 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
@@ -17102,18 +19888,69 @@ $(BINDIR)/$(CONFIG)/boringssl_bytestring_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/boringssl_bytestring_test:  $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(BINDIR)/$(CONFIG)/boringssl_bytestring_test: $(PROTOBUF_DEP) $(BORINGSSL_BYTESTRING_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_bytestring_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_BYTESTRING_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_bytestring_test
 
 endif
 
 $(BORINGSSL_BYTESTRING_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_BYTESTRING_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_BYTESTRING_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_BYTESTRING_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_bytestring_test: $(BORINGSSL_BYTESTRING_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_BYTESTRING_TEST_OBJS:.o=.dep)
+endif
 
 
+BORINGSSL_CHACHA_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
 
+BORINGSSL_CHACHA_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_CHACHA_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_CHACHA_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_CHACHA_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_CHACHA_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_chacha_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_chacha_test: $(PROTOBUF_DEP) $(BORINGSSL_CHACHA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_chacha_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_CHACHA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_chacha_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_chacha_test
+
+endif
+
+$(BORINGSSL_CHACHA_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_CHACHA_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_CHACHA_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_chacha_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_chacha_test: $(BORINGSSL_CHACHA_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_CHACHA_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_AEAD_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_AEAD_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_AEAD_TEST_SRC))))
 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
@@ -17131,18 +19968,29 @@ $(BINDIR)/$(CONFIG)/boringssl_aead_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/boringssl_aead_test:  $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(BINDIR)/$(CONFIG)/boringssl_aead_test: $(PROTOBUF_DEP) $(BORINGSSL_AEAD_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_aead_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_AEAD_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_aead_test
 
 endif
 
 $(BORINGSSL_AEAD_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_AEAD_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_AEAD_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_AEAD_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_aead_test: $(BORINGSSL_AEAD_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_AEAD_TEST_OBJS:.o=.dep)
+endif
 
 
+BORINGSSL_CIPHER_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
 
+BORINGSSL_CIPHER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_CIPHER_TEST_SRC))))
 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
@@ -17160,18 +20008,29 @@ $(BINDIR)/$(CONFIG)/boringssl_cipher_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/boringssl_cipher_test:  $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(BINDIR)/$(CONFIG)/boringssl_cipher_test: $(PROTOBUF_DEP) $(BORINGSSL_CIPHER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_cipher_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_CIPHER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_cipher_test
 
 endif
 
 $(BORINGSSL_CIPHER_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_CIPHER_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_CIPHER_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_CIPHER_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_cipher_test: $(BORINGSSL_CIPHER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_CIPHER_TEST_OBJS:.o=.dep)
+endif
 
 
+BORINGSSL_CMAC_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
 
+BORINGSSL_CMAC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_CMAC_TEST_SRC))))
 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
@@ -17189,18 +20048,69 @@ $(BINDIR)/$(CONFIG)/boringssl_cmac_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/boringssl_cmac_test:  $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(BINDIR)/$(CONFIG)/boringssl_cmac_test: $(PROTOBUF_DEP) $(BORINGSSL_CMAC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_cmac_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_CMAC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_cmac_test
 
 endif
 
 $(BORINGSSL_CMAC_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_CMAC_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_CMAC_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_CMAC_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_cmac_test: $(BORINGSSL_CMAC_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_CMAC_TEST_OBJS:.o=.dep)
+endif
 
 
+BORINGSSL_COMPILER_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
 
+BORINGSSL_COMPILER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_COMPILER_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_COMPILER_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_COMPILER_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_COMPILER_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_compiler_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_compiler_test: $(PROTOBUF_DEP) $(BORINGSSL_COMPILER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_compiler_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_COMPILER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_compiler_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_compiler_test
+
+endif
+
+$(BORINGSSL_COMPILER_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_COMPILER_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_COMPILER_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_compiler_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_compiler_test: $(BORINGSSL_COMPILER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_COMPILER_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_CONSTANT_TIME_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_CONSTANT_TIME_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_CONSTANT_TIME_TEST_SRC))))
 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
@@ -17218,18 +20128,29 @@ $(BINDIR)/$(CONFIG)/boringssl_constant_time_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/boringssl_constant_time_test:  $(LIBDIR)/$(CONFIG)/libboringssl_constant_time_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(BINDIR)/$(CONFIG)/boringssl_constant_time_test: $(PROTOBUF_DEP) $(BORINGSSL_CONSTANT_TIME_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_constant_time_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_constant_time_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_constant_time_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_CONSTANT_TIME_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_constant_time_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_constant_time_test
 
 endif
 
 $(BORINGSSL_CONSTANT_TIME_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_CONSTANT_TIME_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_CONSTANT_TIME_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_CONSTANT_TIME_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_constant_time_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_constant_time_test: $(BORINGSSL_CONSTANT_TIME_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_CONSTANT_TIME_TEST_OBJS:.o=.dep)
+endif
 
 
+BORINGSSL_ED25519_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
 
+BORINGSSL_ED25519_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_ED25519_TEST_SRC))))
 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
@@ -17247,18 +20168,29 @@ $(BINDIR)/$(CONFIG)/boringssl_ed25519_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/boringssl_ed25519_test:  $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(BINDIR)/$(CONFIG)/boringssl_ed25519_test: $(PROTOBUF_DEP) $(BORINGSSL_ED25519_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_ed25519_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_ED25519_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_ed25519_test
 
 endif
 
 $(BORINGSSL_ED25519_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_ED25519_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_ED25519_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_ED25519_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_ed25519_test: $(BORINGSSL_ED25519_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_ED25519_TEST_OBJS:.o=.dep)
+endif
 
 
+BORINGSSL_SPAKE25519_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
 
+BORINGSSL_SPAKE25519_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_SPAKE25519_TEST_SRC))))
 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
@@ -17276,18 +20208,29 @@ $(BINDIR)/$(CONFIG)/boringssl_spake25519_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/boringssl_spake25519_test:  $(LIBDIR)/$(CONFIG)/libboringssl_spake25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(BINDIR)/$(CONFIG)/boringssl_spake25519_test: $(PROTOBUF_DEP) $(BORINGSSL_SPAKE25519_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_spake25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_spake25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_spake25519_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_SPAKE25519_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_spake25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_spake25519_test
 
 endif
 
 $(BORINGSSL_SPAKE25519_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_SPAKE25519_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_SPAKE25519_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_SPAKE25519_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_spake25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_spake25519_test: $(BORINGSSL_SPAKE25519_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_SPAKE25519_TEST_OBJS:.o=.dep)
+endif
 
 
+BORINGSSL_X25519_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
 
+BORINGSSL_X25519_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_X25519_TEST_SRC))))
 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
@@ -17305,18 +20248,69 @@ $(BINDIR)/$(CONFIG)/boringssl_x25519_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/boringssl_x25519_test:  $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(BINDIR)/$(CONFIG)/boringssl_x25519_test: $(PROTOBUF_DEP) $(BORINGSSL_X25519_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_x25519_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_X25519_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_x25519_test
 
 endif
 
 $(BORINGSSL_X25519_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_X25519_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_X25519_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_X25519_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_x25519_test: $(BORINGSSL_X25519_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_X25519_TEST_OBJS:.o=.dep)
+endif
 
 
+BORINGSSL_DH_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
 
+BORINGSSL_DH_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_DH_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_DH_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_DH_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_DH_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_dh_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_dh_test: $(PROTOBUF_DEP) $(BORINGSSL_DH_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_DH_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_dh_test
+
+endif
+
+$(BORINGSSL_DH_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_DH_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_DH_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_dh_test: $(BORINGSSL_DH_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_DH_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_DIGEST_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_DIGEST_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_DIGEST_TEST_SRC))))
 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
@@ -17334,76 +20328,69 @@ $(BINDIR)/$(CONFIG)/boringssl_digest_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/boringssl_digest_test:  $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(BINDIR)/$(CONFIG)/boringssl_digest_test: $(PROTOBUF_DEP) $(BORINGSSL_DIGEST_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_digest_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_DIGEST_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_digest_test
 
 endif
 
 $(BORINGSSL_DIGEST_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_DIGEST_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_DIGEST_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_DIGEST_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_digest_test: $(BORINGSSL_DIGEST_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_DIGEST_TEST_OBJS:.o=.dep)
+endif
 
 
+BORINGSSL_DSA_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
 
+BORINGSSL_DSA_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_DSA_TEST_SRC))))
 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_EXAMPLE_MUL_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
-$(BORINGSSL_EXAMPLE_MUL_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
-$(BORINGSSL_EXAMPLE_MUL_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(BORINGSSL_DSA_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_DSA_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_DSA_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
 ifeq ($(NO_PROTOBUF),true)
 
 # You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
 
-$(BINDIR)/$(CONFIG)/boringssl_example_mul: protobuf_dep_error
+$(BINDIR)/$(CONFIG)/boringssl_dsa_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/boringssl_example_mul:  $(LIBDIR)/$(CONFIG)/libboringssl_example_mul_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(BINDIR)/$(CONFIG)/boringssl_dsa_test: $(PROTOBUF_DEP) $(BORINGSSL_DSA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_dsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_example_mul_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_example_mul
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_DSA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_dsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_dsa_test
 
 endif
 
-$(BORINGSSL_EXAMPLE_MUL_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_EXAMPLE_MUL_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_DSA_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_DSA_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_DSA_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_dsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
+deps_boringssl_dsa_test: $(BORINGSSL_DSA_TEST_OBJS:.o=.dep)
 
-
-
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(BORINGSSL_P256-X86_64_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
-$(BORINGSSL_P256-X86_64_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
-$(BORINGSSL_P256-X86_64_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
-
-$(BINDIR)/$(CONFIG)/boringssl_p256-x86_64_test: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/boringssl_p256-x86_64_test:  $(LIBDIR)/$(CONFIG)/libboringssl_p256-x86_64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_p256-x86_64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_p256-x86_64_test
-
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_DSA_TEST_OBJS:.o=.dep)
 endif
 
-$(BORINGSSL_P256-X86_64_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_P256-X86_64_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
 
+BORINGSSL_ECDH_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
 
-
+BORINGSSL_ECDH_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_ECDH_TEST_SRC))))
 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
@@ -17421,105 +20408,69 @@ $(BINDIR)/$(CONFIG)/boringssl_ecdh_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/boringssl_ecdh_test:  $(LIBDIR)/$(CONFIG)/libboringssl_ecdh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(BINDIR)/$(CONFIG)/boringssl_ecdh_test: $(PROTOBUF_DEP) $(BORINGSSL_ECDH_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_ecdh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_ecdh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_ecdh_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_ECDH_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_ecdh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_ecdh_test
 
 endif
 
 $(BORINGSSL_ECDH_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_ECDH_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_ECDH_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_ECDH_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_ecdh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_ecdh_test: $(BORINGSSL_ECDH_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_ECDH_TEST_OBJS:.o=.dep)
+endif
 
 
+BORINGSSL_ERR_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
 
+BORINGSSL_ERR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_ERR_TEST_SRC))))
 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_ECDSA_SIGN_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
-$(BORINGSSL_ECDSA_SIGN_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
-$(BORINGSSL_ECDSA_SIGN_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(BORINGSSL_ERR_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_ERR_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_ERR_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
 ifeq ($(NO_PROTOBUF),true)
 
 # You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
 
-$(BINDIR)/$(CONFIG)/boringssl_ecdsa_sign_test: protobuf_dep_error
+$(BINDIR)/$(CONFIG)/boringssl_err_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/boringssl_ecdsa_sign_test:  $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_sign_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(BINDIR)/$(CONFIG)/boringssl_err_test: $(PROTOBUF_DEP) $(BORINGSSL_ERR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_sign_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_ecdsa_sign_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_ERR_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_err_test
 
 endif
 
-$(BORINGSSL_ECDSA_SIGN_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_ECDSA_SIGN_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_ERR_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_ERR_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_ERR_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
+deps_boringssl_err_test: $(BORINGSSL_ERR_TEST_OBJS:.o=.dep)
 
-
-
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(BORINGSSL_ECDSA_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
-$(BORINGSSL_ECDSA_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
-$(BORINGSSL_ECDSA_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
-
-$(BINDIR)/$(CONFIG)/boringssl_ecdsa_test: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/boringssl_ecdsa_test:  $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_ecdsa_test
-
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_ERR_TEST_OBJS:.o=.dep)
 endif
 
-$(BORINGSSL_ECDSA_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_ECDSA_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
 
+BORINGSSL_EVP_EXTRA_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
 
-
-
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(BORINGSSL_ECDSA_VERIFY_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
-$(BORINGSSL_ECDSA_VERIFY_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
-$(BORINGSSL_ECDSA_VERIFY_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
-
-$(BINDIR)/$(CONFIG)/boringssl_ecdsa_verify_test: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/boringssl_ecdsa_verify_test:  $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_verify_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_verify_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_ecdsa_verify_test
-
-endif
-
-$(BORINGSSL_ECDSA_VERIFY_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_ECDSA_VERIFY_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
-
-
-
+BORINGSSL_EVP_EXTRA_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_EVP_EXTRA_TEST_SRC))))
 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
@@ -17537,18 +20488,29 @@ $(BINDIR)/$(CONFIG)/boringssl_evp_extra_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/boringssl_evp_extra_test:  $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(BINDIR)/$(CONFIG)/boringssl_evp_extra_test: $(PROTOBUF_DEP) $(BORINGSSL_EVP_EXTRA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_evp_extra_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_EVP_EXTRA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_evp_extra_test
 
 endif
 
 $(BORINGSSL_EVP_EXTRA_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_EVP_EXTRA_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_EVP_EXTRA_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_EVP_EXTRA_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_evp_extra_test: $(BORINGSSL_EVP_EXTRA_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_EVP_EXTRA_TEST_OBJS:.o=.dep)
+endif
 
 
+BORINGSSL_EVP_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
 
+BORINGSSL_EVP_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_EVP_TEST_SRC))))
 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
@@ -17566,18 +20528,29 @@ $(BINDIR)/$(CONFIG)/boringssl_evp_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/boringssl_evp_test:  $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(BINDIR)/$(CONFIG)/boringssl_evp_test: $(PROTOBUF_DEP) $(BORINGSSL_EVP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_evp_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_EVP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_evp_test
 
 endif
 
 $(BORINGSSL_EVP_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_EVP_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_EVP_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_EVP_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_evp_test: $(BORINGSSL_EVP_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_EVP_TEST_OBJS:.o=.dep)
+endif
 
 
+BORINGSSL_PBKDF_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
 
+BORINGSSL_PBKDF_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_PBKDF_TEST_SRC))))
 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
@@ -17595,105 +20568,269 @@ $(BINDIR)/$(CONFIG)/boringssl_pbkdf_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/boringssl_pbkdf_test:  $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(BINDIR)/$(CONFIG)/boringssl_pbkdf_test: $(PROTOBUF_DEP) $(BORINGSSL_PBKDF_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_pbkdf_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_PBKDF_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_pbkdf_test
 
 endif
 
 $(BORINGSSL_PBKDF_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_PBKDF_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_PBKDF_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_PBKDF_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_pbkdf_test: $(BORINGSSL_PBKDF_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_PBKDF_TEST_OBJS:.o=.dep)
+endif
 
 
+BORINGSSL_SCRYPT_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
 
+BORINGSSL_SCRYPT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_SCRYPT_TEST_SRC))))
 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_HKDF_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
-$(BORINGSSL_HKDF_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
-$(BORINGSSL_HKDF_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(BORINGSSL_SCRYPT_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_SCRYPT_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_SCRYPT_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
 ifeq ($(NO_PROTOBUF),true)
 
 # You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
 
-$(BINDIR)/$(CONFIG)/boringssl_hkdf_test: protobuf_dep_error
+$(BINDIR)/$(CONFIG)/boringssl_scrypt_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/boringssl_hkdf_test:  $(LIBDIR)/$(CONFIG)/libboringssl_hkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(BINDIR)/$(CONFIG)/boringssl_scrypt_test: $(PROTOBUF_DEP) $(BORINGSSL_SCRYPT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_scrypt_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_hkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_hkdf_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_SCRYPT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_scrypt_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_scrypt_test
 
 endif
 
-$(BORINGSSL_HKDF_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_HKDF_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_SCRYPT_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_SCRYPT_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_SCRYPT_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_scrypt_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_scrypt_test: $(BORINGSSL_SCRYPT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_SCRYPT_TEST_OBJS:.o=.dep)
+endif
 
 
+BORINGSSL_AES_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
 
+BORINGSSL_AES_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_AES_TEST_SRC))))
 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_HMAC_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
-$(BORINGSSL_HMAC_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
-$(BORINGSSL_HMAC_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(BORINGSSL_AES_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_AES_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_AES_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
 ifeq ($(NO_PROTOBUF),true)
 
 # You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
 
-$(BINDIR)/$(CONFIG)/boringssl_hmac_test: protobuf_dep_error
+$(BINDIR)/$(CONFIG)/boringssl_aes_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/boringssl_hmac_test:  $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(BINDIR)/$(CONFIG)/boringssl_aes_test: $(PROTOBUF_DEP) $(BORINGSSL_AES_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_hmac_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_AES_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_aes_test
 
 endif
 
-$(BORINGSSL_HMAC_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_HMAC_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_AES_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_AES_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_AES_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_aes_test: $(BORINGSSL_AES_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_AES_TEST_OBJS:.o=.dep)
+endif
 
 
+BORINGSSL_BN_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
 
+BORINGSSL_BN_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_BN_TEST_SRC))))
 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
 # we do so here with a target specific variable assignment
-$(BORINGSSL_LHASH_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
-$(BORINGSSL_LHASH_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
-$(BORINGSSL_LHASH_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+$(BORINGSSL_BN_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_BN_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_BN_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 
 ifeq ($(NO_PROTOBUF),true)
 
 # You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
 
-$(BINDIR)/$(CONFIG)/boringssl_lhash_test: protobuf_dep_error
+$(BINDIR)/$(CONFIG)/boringssl_bn_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/boringssl_lhash_test:  $(LIBDIR)/$(CONFIG)/libboringssl_lhash_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(BINDIR)/$(CONFIG)/boringssl_bn_test: $(PROTOBUF_DEP) $(BORINGSSL_BN_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_lhash_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_lhash_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_BN_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_bn_test
 
 endif
 
-$(BORINGSSL_LHASH_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_LHASH_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_BN_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_BN_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_BN_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_bn_test: $(BORINGSSL_BN_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_BN_TEST_OBJS:.o=.dep)
+endif
 
 
+BORINGSSL_EC_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
 
+BORINGSSL_EC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_EC_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_EC_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_EC_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_EC_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_ec_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_ec_test: $(PROTOBUF_DEP) $(BORINGSSL_EC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_EC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_ec_test
+
+endif
+
+$(BORINGSSL_EC_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_EC_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_EC_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_ec_test: $(BORINGSSL_EC_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_EC_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_P256-X86_64_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_P256-X86_64_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_P256-X86_64_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_P256-X86_64_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_P256-X86_64_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_P256-X86_64_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_p256-x86_64_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_p256-x86_64_test: $(PROTOBUF_DEP) $(BORINGSSL_P256-X86_64_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_p256-x86_64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_P256-X86_64_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_p256-x86_64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_p256-x86_64_test
+
+endif
+
+$(BORINGSSL_P256-X86_64_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_P256-X86_64_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_P256-X86_64_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_p256-x86_64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_p256-x86_64_test: $(BORINGSSL_P256-X86_64_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_P256-X86_64_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_ECDSA_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_ECDSA_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_ECDSA_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_ECDSA_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_ECDSA_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_ECDSA_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_ecdsa_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_ecdsa_test: $(PROTOBUF_DEP) $(BORINGSSL_ECDSA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_ECDSA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_ecdsa_test
+
+endif
+
+$(BORINGSSL_ECDSA_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_ECDSA_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_ECDSA_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_ecdsa_test: $(BORINGSSL_ECDSA_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_ECDSA_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_GCM_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_GCM_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_GCM_TEST_SRC))))
 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
@@ -17711,18 +20848,189 @@ $(BINDIR)/$(CONFIG)/boringssl_gcm_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/boringssl_gcm_test:  $(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(BINDIR)/$(CONFIG)/boringssl_gcm_test: $(PROTOBUF_DEP) $(BORINGSSL_GCM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_gcm_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_GCM_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_gcm_test
 
 endif
 
 $(BORINGSSL_GCM_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_GCM_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_GCM_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_GCM_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_gcm_test: $(BORINGSSL_GCM_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_GCM_TEST_OBJS:.o=.dep)
+endif
 
 
+BORINGSSL_CTRDRBG_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
 
+BORINGSSL_CTRDRBG_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_CTRDRBG_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_CTRDRBG_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_CTRDRBG_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_CTRDRBG_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_ctrdrbg_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_ctrdrbg_test: $(PROTOBUF_DEP) $(BORINGSSL_CTRDRBG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_ctrdrbg_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_CTRDRBG_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_ctrdrbg_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_ctrdrbg_test
+
+endif
+
+$(BORINGSSL_CTRDRBG_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_CTRDRBG_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_CTRDRBG_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_ctrdrbg_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_ctrdrbg_test: $(BORINGSSL_CTRDRBG_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_CTRDRBG_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_HKDF_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_HKDF_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_HKDF_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_HKDF_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_HKDF_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_HKDF_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_hkdf_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_hkdf_test: $(PROTOBUF_DEP) $(BORINGSSL_HKDF_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_hkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_HKDF_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_hkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_hkdf_test
+
+endif
+
+$(BORINGSSL_HKDF_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_HKDF_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_HKDF_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_hkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_hkdf_test: $(BORINGSSL_HKDF_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_HKDF_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_HMAC_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_HMAC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_HMAC_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_HMAC_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_HMAC_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_HMAC_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_hmac_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_hmac_test: $(PROTOBUF_DEP) $(BORINGSSL_HMAC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_HMAC_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_hmac_test
+
+endif
+
+$(BORINGSSL_HMAC_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_HMAC_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_HMAC_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_hmac_test: $(BORINGSSL_HMAC_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_HMAC_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_LHASH_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_LHASH_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_LHASH_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_LHASH_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_LHASH_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_LHASH_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_lhash_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_lhash_test: $(PROTOBUF_DEP) $(BORINGSSL_LHASH_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_lhash_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_LHASH_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_lhash_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_lhash_test
+
+endif
+
+$(BORINGSSL_LHASH_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_LHASH_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_LHASH_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_lhash_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_lhash_test: $(BORINGSSL_LHASH_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_LHASH_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_OBJ_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_OBJ_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_OBJ_TEST_SRC))))
 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
@@ -17740,192 +21048,29 @@ $(BINDIR)/$(CONFIG)/boringssl_obj_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/boringssl_obj_test:  $(LIBDIR)/$(CONFIG)/libboringssl_obj_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(BINDIR)/$(CONFIG)/boringssl_obj_test: $(PROTOBUF_DEP) $(BORINGSSL_OBJ_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_obj_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_obj_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_obj_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_OBJ_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_obj_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_obj_test
 
 endif
 
 $(BORINGSSL_OBJ_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_OBJ_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_OBJ_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_OBJ_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_obj_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
+deps_boringssl_obj_test: $(BORINGSSL_OBJ_TEST_OBJS:.o=.dep)
 
-
-
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(BORINGSSL_PKCS12_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
-$(BORINGSSL_PKCS12_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
-$(BORINGSSL_PKCS12_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
-
-$(BINDIR)/$(CONFIG)/boringssl_pkcs12_test: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/boringssl_pkcs12_test:  $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_pkcs12_test
-
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_OBJ_TEST_OBJS:.o=.dep)
 endif
 
-$(BORINGSSL_PKCS12_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_PKCS12_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
 
+BORINGSSL_PKCS7_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
 
-
-
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(BORINGSSL_PKCS8_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
-$(BORINGSSL_PKCS8_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
-$(BORINGSSL_PKCS8_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
-
-$(BINDIR)/$(CONFIG)/boringssl_pkcs8_test: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/boringssl_pkcs8_test:  $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_pkcs8_test
-
-endif
-
-$(BORINGSSL_PKCS8_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_PKCS8_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
-
-
-
-
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(BORINGSSL_POLY1305_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
-$(BORINGSSL_POLY1305_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
-$(BORINGSSL_POLY1305_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
-
-$(BINDIR)/$(CONFIG)/boringssl_poly1305_test: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/boringssl_poly1305_test:  $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_poly1305_test
-
-endif
-
-$(BORINGSSL_POLY1305_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_POLY1305_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
-
-
-
-
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(BORINGSSL_POOL_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
-$(BORINGSSL_POOL_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
-$(BORINGSSL_POOL_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
-
-$(BINDIR)/$(CONFIG)/boringssl_pool_test: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/boringssl_pool_test:  $(LIBDIR)/$(CONFIG)/libboringssl_pool_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_pool_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_pool_test
-
-endif
-
-$(BORINGSSL_POOL_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_POOL_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
-
-
-
-
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(BORINGSSL_REFCOUNT_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
-$(BORINGSSL_REFCOUNT_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
-$(BORINGSSL_REFCOUNT_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
-
-$(BINDIR)/$(CONFIG)/boringssl_refcount_test: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/boringssl_refcount_test:  $(LIBDIR)/$(CONFIG)/libboringssl_refcount_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_refcount_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_refcount_test
-
-endif
-
-$(BORINGSSL_REFCOUNT_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_REFCOUNT_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
-
-
-
-
-# boringssl needs an override to ensure that it does not include
-# system openssl headers regardless of other configuration
-# we do so here with a target specific variable assignment
-$(BORINGSSL_THREAD_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
-$(BORINGSSL_THREAD_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
-$(BORINGSSL_THREAD_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
-
-$(BINDIR)/$(CONFIG)/boringssl_thread_test: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/boringssl_thread_test:  $(LIBDIR)/$(CONFIG)/libboringssl_thread_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_thread_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_thread_test
-
-endif
-
-$(BORINGSSL_THREAD_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_THREAD_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
-
-
-
+BORINGSSL_PKCS7_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_PKCS7_TEST_SRC))))
 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
@@ -17943,18 +21088,389 @@ $(BINDIR)/$(CONFIG)/boringssl_pkcs7_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/boringssl_pkcs7_test:  $(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(BINDIR)/$(CONFIG)/boringssl_pkcs7_test: $(PROTOBUF_DEP) $(BORINGSSL_PKCS7_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_pkcs7_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_PKCS7_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_pkcs7_test
 
 endif
 
 $(BORINGSSL_PKCS7_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_PKCS7_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_PKCS7_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_PKCS7_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_pkcs7_test: $(BORINGSSL_PKCS7_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_PKCS7_TEST_OBJS:.o=.dep)
+endif
 
 
+BORINGSSL_PKCS12_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
 
+BORINGSSL_PKCS12_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_PKCS12_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_PKCS12_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_PKCS12_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_PKCS12_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_pkcs12_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_pkcs12_test: $(PROTOBUF_DEP) $(BORINGSSL_PKCS12_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_PKCS12_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_pkcs12_test
+
+endif
+
+$(BORINGSSL_PKCS12_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_PKCS12_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_PKCS12_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_pkcs12_test: $(BORINGSSL_PKCS12_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_PKCS12_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_PKCS8_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_PKCS8_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_PKCS8_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_PKCS8_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_PKCS8_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_PKCS8_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_pkcs8_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_pkcs8_test: $(PROTOBUF_DEP) $(BORINGSSL_PKCS8_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_PKCS8_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_pkcs8_test
+
+endif
+
+$(BORINGSSL_PKCS8_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_PKCS8_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_PKCS8_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_pkcs8_test: $(BORINGSSL_PKCS8_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_PKCS8_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_POLY1305_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_POLY1305_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_POLY1305_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_POLY1305_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_POLY1305_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_POLY1305_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_poly1305_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_poly1305_test: $(PROTOBUF_DEP) $(BORINGSSL_POLY1305_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_POLY1305_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_poly1305_test
+
+endif
+
+$(BORINGSSL_POLY1305_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_POLY1305_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_POLY1305_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_poly1305_test: $(BORINGSSL_POLY1305_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_POLY1305_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_POOL_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_POOL_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_POOL_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_POOL_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_POOL_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_POOL_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_pool_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_pool_test: $(PROTOBUF_DEP) $(BORINGSSL_POOL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_pool_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_POOL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_pool_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_pool_test
+
+endif
+
+$(BORINGSSL_POOL_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_POOL_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_POOL_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_pool_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_pool_test: $(BORINGSSL_POOL_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_POOL_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_REFCOUNT_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_REFCOUNT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_REFCOUNT_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_REFCOUNT_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_REFCOUNT_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_REFCOUNT_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_refcount_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_refcount_test: $(PROTOBUF_DEP) $(BORINGSSL_REFCOUNT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_refcount_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_REFCOUNT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_refcount_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_refcount_test
+
+endif
+
+$(BORINGSSL_REFCOUNT_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_REFCOUNT_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_REFCOUNT_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_refcount_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_refcount_test: $(BORINGSSL_REFCOUNT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_REFCOUNT_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_RSA_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_RSA_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_RSA_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_RSA_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_RSA_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_RSA_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_rsa_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_rsa_test: $(PROTOBUF_DEP) $(BORINGSSL_RSA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_RSA_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_rsa_test
+
+endif
+
+$(BORINGSSL_RSA_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_RSA_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_RSA_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_rsa_test: $(BORINGSSL_RSA_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_RSA_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_FILE_TEST_GTEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_FILE_TEST_GTEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_FILE_TEST_GTEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_FILE_TEST_GTEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_FILE_TEST_GTEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_FILE_TEST_GTEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_file_test_gtest: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_file_test_gtest: $(PROTOBUF_DEP) $(BORINGSSL_FILE_TEST_GTEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_file_test_gtest_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_FILE_TEST_GTEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_file_test_gtest_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_file_test_gtest
+
+endif
+
+$(BORINGSSL_FILE_TEST_GTEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_FILE_TEST_GTEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_FILE_TEST_GTEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_file_test_gtest_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_file_test_gtest: $(BORINGSSL_FILE_TEST_GTEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_FILE_TEST_GTEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_GTEST_MAIN_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_GTEST_MAIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_GTEST_MAIN_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_GTEST_MAIN_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_GTEST_MAIN_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_GTEST_MAIN_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_gtest_main: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_gtest_main: $(PROTOBUF_DEP) $(BORINGSSL_GTEST_MAIN_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_gtest_main_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_GTEST_MAIN_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_gtest_main_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_gtest_main
+
+endif
+
+$(BORINGSSL_GTEST_MAIN_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_GTEST_MAIN_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_GTEST_MAIN_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_gtest_main_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_gtest_main: $(BORINGSSL_GTEST_MAIN_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_GTEST_MAIN_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_THREAD_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_THREAD_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_THREAD_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_THREAD_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_THREAD_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_THREAD_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_thread_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_thread_test: $(PROTOBUF_DEP) $(BORINGSSL_THREAD_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_thread_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_THREAD_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_thread_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_thread_test
+
+endif
+
+$(BORINGSSL_THREAD_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_THREAD_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_THREAD_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_thread_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_thread_test: $(BORINGSSL_THREAD_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_THREAD_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_X509_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_X509_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_X509_TEST_SRC))))
 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
@@ -17972,18 +21488,29 @@ $(BINDIR)/$(CONFIG)/boringssl_x509_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/boringssl_x509_test:  $(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(BINDIR)/$(CONFIG)/boringssl_x509_test: $(PROTOBUF_DEP) $(BORINGSSL_X509_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_x509_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_X509_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_x509_test
 
 endif
 
 $(BORINGSSL_X509_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_X509_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_X509_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_X509_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_x509_test: $(BORINGSSL_X509_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_X509_TEST_OBJS:.o=.dep)
+endif
 
 
+BORINGSSL_TAB_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
 
+BORINGSSL_TAB_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_TAB_TEST_SRC))))
 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
@@ -18001,18 +21528,29 @@ $(BINDIR)/$(CONFIG)/boringssl_tab_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/boringssl_tab_test:  $(LIBDIR)/$(CONFIG)/libboringssl_tab_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(BINDIR)/$(CONFIG)/boringssl_tab_test: $(PROTOBUF_DEP) $(BORINGSSL_TAB_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_tab_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_tab_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_tab_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_TAB_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_tab_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_tab_test
 
 endif
 
 $(BORINGSSL_TAB_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_TAB_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_TAB_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_TAB_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_tab_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_tab_test: $(BORINGSSL_TAB_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_TAB_TEST_OBJS:.o=.dep)
+endif
 
 
+BORINGSSL_V3NAME_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
 
+BORINGSSL_V3NAME_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_V3NAME_TEST_SRC))))
 
 # boringssl needs an override to ensure that it does not include
 # system openssl headers regardless of other configuration
@@ -18030,20 +21568,107 @@ $(BINDIR)/$(CONFIG)/boringssl_v3name_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/boringssl_v3name_test:  $(LIBDIR)/$(CONFIG)/libboringssl_v3name_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+$(BINDIR)/$(CONFIG)/boringssl_v3name_test: $(PROTOBUF_DEP) $(BORINGSSL_V3NAME_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_v3name_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS)  $(LIBDIR)/$(CONFIG)/libboringssl_v3name_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_v3name_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_V3NAME_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_v3name_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_v3name_test
 
 endif
 
 $(BORINGSSL_V3NAME_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-$(BORINGSSL_V3NAME_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_V3NAME_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_V3NAME_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_v3name_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
+deps_boringssl_v3name_test: $(BORINGSSL_V3NAME_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_V3NAME_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_SPAN_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_SPAN_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_SPAN_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_SPAN_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_SPAN_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_SPAN_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_span_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_span_test: $(PROTOBUF_DEP) $(BORINGSSL_SPAN_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_span_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_SPAN_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_span_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_span_test
+
+endif
+
+$(BORINGSSL_SPAN_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_SPAN_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_SPAN_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_span_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_span_test: $(BORINGSSL_SPAN_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_SPAN_TEST_OBJS:.o=.dep)
+endif
+
+
+BORINGSSL_SSL_TEST_SRC = \
+    third_party/boringssl/crypto/test/gtest_main.cc \
+
+BORINGSSL_SSL_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BORINGSSL_SSL_TEST_SRC))))
+
+# boringssl needs an override to ensure that it does not include
+# system openssl headers regardless of other configuration
+# we do so here with a target specific variable assignment
+$(BORINGSSL_SSL_TEST_OBJS): CFLAGS := -Ithird_party/boringssl/include $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value $(NO_W_EXTRA_SEMI)
+$(BORINGSSL_SSL_TEST_OBJS): CXXFLAGS := -Ithird_party/boringssl/include $(CXXFLAGS)
+$(BORINGSSL_SSL_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/boringssl_ssl_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/boringssl_ssl_test: $(PROTOBUF_DEP) $(BORINGSSL_SSL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BORINGSSL_SSL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/boringssl_ssl_test
+
+endif
+
+$(BORINGSSL_SSL_TEST_OBJS): CPPFLAGS += -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
+$(BORINGSSL_SSL_TEST_OBJS): CXXFLAGS += -fno-rtti -fno-exceptions
+$(BORINGSSL_SSL_TEST_OBJS): CFLAGS += -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI)
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/test/gtest_main.o:  $(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+deps_boringssl_ssl_test: $(BORINGSSL_SSL_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BORINGSSL_SSL_TEST_OBJS:.o=.dep)
+endif
 
 
 BADREQ_BAD_CLIENT_TEST_SRC = \
-    test/core/bad_client/tests/badreq.c \
+    test/core/bad_client/tests/badreq.cc \
 
 BADREQ_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BADREQ_BAD_CLIENT_TEST_SRC))))
 
@@ -18063,7 +21688,7 @@ endif
 
 
 CONNECTION_PREFIX_BAD_CLIENT_TEST_SRC = \
-    test/core/bad_client/tests/connection_prefix.c \
+    test/core/bad_client/tests/connection_prefix.cc \
 
 CONNECTION_PREFIX_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CONNECTION_PREFIX_BAD_CLIENT_TEST_SRC))))
 
@@ -18082,8 +21707,28 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
+DUPLICATE_HEADER_BAD_CLIENT_TEST_SRC = \
+    test/core/bad_client/tests/duplicate_header.cc \
+
+DUPLICATE_HEADER_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(DUPLICATE_HEADER_BAD_CLIENT_TEST_SRC))))
+
+
+$(BINDIR)/$(CONFIG)/duplicate_header_bad_client_test: $(DUPLICATE_HEADER_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(DUPLICATE_HEADER_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/duplicate_header_bad_client_test
+
+$(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/duplicate_header.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_duplicate_header_bad_client_test: $(DUPLICATE_HEADER_BAD_CLIENT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(DUPLICATE_HEADER_BAD_CLIENT_TEST_OBJS:.o=.dep)
+endif
+
+
 HEAD_OF_LINE_BLOCKING_BAD_CLIENT_TEST_SRC = \
-    test/core/bad_client/tests/head_of_line_blocking.c \
+    test/core/bad_client/tests/head_of_line_blocking.cc \
 
 HEAD_OF_LINE_BLOCKING_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HEAD_OF_LINE_BLOCKING_BAD_CLIENT_TEST_SRC))))
 
@@ -18103,7 +21748,7 @@ endif
 
 
 HEADERS_BAD_CLIENT_TEST_SRC = \
-    test/core/bad_client/tests/headers.c \
+    test/core/bad_client/tests/headers.cc \
 
 HEADERS_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HEADERS_BAD_CLIENT_TEST_SRC))))
 
@@ -18123,7 +21768,7 @@ endif
 
 
 INITIAL_SETTINGS_FRAME_BAD_CLIENT_TEST_SRC = \
-    test/core/bad_client/tests/initial_settings_frame.c \
+    test/core/bad_client/tests/initial_settings_frame.cc \
 
 INITIAL_SETTINGS_FRAME_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(INITIAL_SETTINGS_FRAME_BAD_CLIENT_TEST_SRC))))
 
@@ -18143,7 +21788,7 @@ endif
 
 
 LARGE_METADATA_BAD_CLIENT_TEST_SRC = \
-    test/core/bad_client/tests/large_metadata.c \
+    test/core/bad_client/tests/large_metadata.cc \
 
 LARGE_METADATA_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LARGE_METADATA_BAD_CLIENT_TEST_SRC))))
 
@@ -18163,7 +21808,7 @@ endif
 
 
 SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_SRC = \
-    test/core/bad_client/tests/server_registered_method.c \
+    test/core/bad_client/tests/server_registered_method.cc \
 
 SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_SRC))))
 
@@ -18183,7 +21828,7 @@ endif
 
 
 SIMPLE_REQUEST_BAD_CLIENT_TEST_SRC = \
-    test/core/bad_client/tests/simple_request.c \
+    test/core/bad_client/tests/simple_request.cc \
 
 SIMPLE_REQUEST_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SIMPLE_REQUEST_BAD_CLIENT_TEST_SRC))))
 
@@ -18203,7 +21848,7 @@ endif
 
 
 UNKNOWN_FRAME_BAD_CLIENT_TEST_SRC = \
-    test/core/bad_client/tests/unknown_frame.c \
+    test/core/bad_client/tests/unknown_frame.cc \
 
 UNKNOWN_FRAME_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(UNKNOWN_FRAME_BAD_CLIENT_TEST_SRC))))
 
@@ -18223,7 +21868,7 @@ endif
 
 
 WINDOW_OVERFLOW_BAD_CLIENT_TEST_SRC = \
-    test/core/bad_client/tests/window_overflow.c \
+    test/core/bad_client/tests/window_overflow.cc \
 
 WINDOW_OVERFLOW_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(WINDOW_OVERFLOW_BAD_CLIENT_TEST_SRC))))
 
@@ -18243,7 +21888,7 @@ endif
 
 
 BAD_SSL_CERT_SERVER_SRC = \
-    test/core/bad_ssl/servers/cert.c \
+    test/core/bad_ssl/servers/cert.cc \
 
 BAD_SSL_CERT_SERVER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BAD_SSL_CERT_SERVER_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -18275,7 +21920,7 @@ endif
 
 
 BAD_SSL_CERT_TEST_SRC = \
-    test/core/bad_ssl/bad_ssl_test.c \
+    test/core/bad_ssl/bad_ssl_test.cc \
 
 BAD_SSL_CERT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BAD_SSL_CERT_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -18307,7 +21952,7 @@ endif
 
 
 H2_CENSUS_TEST_SRC = \
-    test/core/end2end/fixtures/h2_census.c \
+    test/core/end2end/fixtures/h2_census.cc \
 
 H2_CENSUS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_CENSUS_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -18339,7 +21984,7 @@ endif
 
 
 H2_COMPRESS_TEST_SRC = \
-    test/core/end2end/fixtures/h2_compress.c \
+    test/core/end2end/fixtures/h2_compress.cc \
 
 H2_COMPRESS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_COMPRESS_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -18371,7 +22016,7 @@ endif
 
 
 H2_FAKESEC_TEST_SRC = \
-    test/core/end2end/fixtures/h2_fakesec.c \
+    test/core/end2end/fixtures/h2_fakesec.cc \
 
 H2_FAKESEC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_FAKESEC_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -18403,7 +22048,7 @@ endif
 
 
 H2_FD_TEST_SRC = \
-    test/core/end2end/fixtures/h2_fd.c \
+    test/core/end2end/fixtures/h2_fd.cc \
 
 H2_FD_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_FD_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -18435,7 +22080,7 @@ endif
 
 
 H2_FULL_TEST_SRC = \
-    test/core/end2end/fixtures/h2_full.c \
+    test/core/end2end/fixtures/h2_full.cc \
 
 H2_FULL_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_FULL_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -18467,7 +22112,7 @@ endif
 
 
 H2_FULL+PIPE_TEST_SRC = \
-    test/core/end2end/fixtures/h2_full+pipe.c \
+    test/core/end2end/fixtures/h2_full+pipe.cc \
 
 H2_FULL+PIPE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_FULL+PIPE_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -18499,7 +22144,7 @@ endif
 
 
 H2_FULL+TRACE_TEST_SRC = \
-    test/core/end2end/fixtures/h2_full+trace.c \
+    test/core/end2end/fixtures/h2_full+trace.cc \
 
 H2_FULL+TRACE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_FULL+TRACE_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -18531,7 +22176,7 @@ endif
 
 
 H2_FULL+WORKAROUNDS_TEST_SRC = \
-    test/core/end2end/fixtures/h2_full+workarounds.c \
+    test/core/end2end/fixtures/h2_full+workarounds.cc \
 
 H2_FULL+WORKAROUNDS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_FULL+WORKAROUNDS_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -18563,7 +22208,7 @@ endif
 
 
 H2_HTTP_PROXY_TEST_SRC = \
-    test/core/end2end/fixtures/h2_http_proxy.c \
+    test/core/end2end/fixtures/h2_http_proxy.cc \
 
 H2_HTTP_PROXY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_HTTP_PROXY_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -18595,7 +22240,7 @@ endif
 
 
 H2_LOAD_REPORTING_TEST_SRC = \
-    test/core/end2end/fixtures/h2_load_reporting.c \
+    test/core/end2end/fixtures/h2_load_reporting.cc \
 
 H2_LOAD_REPORTING_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_LOAD_REPORTING_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -18627,7 +22272,7 @@ endif
 
 
 H2_OAUTH2_TEST_SRC = \
-    test/core/end2end/fixtures/h2_oauth2.c \
+    test/core/end2end/fixtures/h2_oauth2.cc \
 
 H2_OAUTH2_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_OAUTH2_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -18659,7 +22304,7 @@ endif
 
 
 H2_PROXY_TEST_SRC = \
-    test/core/end2end/fixtures/h2_proxy.c \
+    test/core/end2end/fixtures/h2_proxy.cc \
 
 H2_PROXY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_PROXY_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -18691,7 +22336,7 @@ endif
 
 
 H2_SOCKPAIR_TEST_SRC = \
-    test/core/end2end/fixtures/h2_sockpair.c \
+    test/core/end2end/fixtures/h2_sockpair.cc \
 
 H2_SOCKPAIR_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SOCKPAIR_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -18723,7 +22368,7 @@ endif
 
 
 H2_SOCKPAIR+TRACE_TEST_SRC = \
-    test/core/end2end/fixtures/h2_sockpair+trace.c \
+    test/core/end2end/fixtures/h2_sockpair+trace.cc \
 
 H2_SOCKPAIR+TRACE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SOCKPAIR+TRACE_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -18755,7 +22400,7 @@ endif
 
 
 H2_SOCKPAIR_1BYTE_TEST_SRC = \
-    test/core/end2end/fixtures/h2_sockpair_1byte.c \
+    test/core/end2end/fixtures/h2_sockpair_1byte.cc \
 
 H2_SOCKPAIR_1BYTE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SOCKPAIR_1BYTE_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -18787,7 +22432,7 @@ endif
 
 
 H2_SSL_TEST_SRC = \
-    test/core/end2end/fixtures/h2_ssl.c \
+    test/core/end2end/fixtures/h2_ssl.cc \
 
 H2_SSL_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SSL_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -18818,40 +22463,8 @@ endif
 endif
 
 
-H2_SSL_CERT_TEST_SRC = \
-    test/core/end2end/fixtures/h2_ssl_cert.c \
-
-H2_SSL_CERT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SSL_CERT_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/h2_ssl_cert_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/h2_ssl_cert_test: $(H2_SSL_CERT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(H2_SSL_CERT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/h2_ssl_cert_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/end2end/fixtures/h2_ssl_cert.o:  $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_h2_ssl_cert_test: $(H2_SSL_CERT_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(H2_SSL_CERT_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 H2_SSL_PROXY_TEST_SRC = \
-    test/core/end2end/fixtures/h2_ssl_proxy.c \
+    test/core/end2end/fixtures/h2_ssl_proxy.cc \
 
 H2_SSL_PROXY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SSL_PROXY_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -18883,7 +22496,7 @@ endif
 
 
 H2_UDS_TEST_SRC = \
-    test/core/end2end/fixtures/h2_uds.c \
+    test/core/end2end/fixtures/h2_uds.cc \
 
 H2_UDS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_UDS_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -18915,7 +22528,7 @@ endif
 
 
 INPROC_TEST_SRC = \
-    test/core/end2end/fixtures/inproc.c \
+    test/core/end2end/fixtures/inproc.cc \
 
 INPROC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(INPROC_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -18947,7 +22560,7 @@ endif
 
 
 H2_CENSUS_NOSEC_TEST_SRC = \
-    test/core/end2end/fixtures/h2_census.c \
+    test/core/end2end/fixtures/h2_census.cc \
 
 H2_CENSUS_NOSEC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_CENSUS_NOSEC_TEST_SRC))))
 
@@ -18967,7 +22580,7 @@ endif
 
 
 H2_COMPRESS_NOSEC_TEST_SRC = \
-    test/core/end2end/fixtures/h2_compress.c \
+    test/core/end2end/fixtures/h2_compress.cc \
 
 H2_COMPRESS_NOSEC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_COMPRESS_NOSEC_TEST_SRC))))
 
@@ -18987,7 +22600,7 @@ endif
 
 
 H2_FD_NOSEC_TEST_SRC = \
-    test/core/end2end/fixtures/h2_fd.c \
+    test/core/end2end/fixtures/h2_fd.cc \
 
 H2_FD_NOSEC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_FD_NOSEC_TEST_SRC))))
 
@@ -19007,7 +22620,7 @@ endif
 
 
 H2_FULL_NOSEC_TEST_SRC = \
-    test/core/end2end/fixtures/h2_full.c \
+    test/core/end2end/fixtures/h2_full.cc \
 
 H2_FULL_NOSEC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_FULL_NOSEC_TEST_SRC))))
 
@@ -19027,7 +22640,7 @@ endif
 
 
 H2_FULL+PIPE_NOSEC_TEST_SRC = \
-    test/core/end2end/fixtures/h2_full+pipe.c \
+    test/core/end2end/fixtures/h2_full+pipe.cc \
 
 H2_FULL+PIPE_NOSEC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_FULL+PIPE_NOSEC_TEST_SRC))))
 
@@ -19047,7 +22660,7 @@ endif
 
 
 H2_FULL+TRACE_NOSEC_TEST_SRC = \
-    test/core/end2end/fixtures/h2_full+trace.c \
+    test/core/end2end/fixtures/h2_full+trace.cc \
 
 H2_FULL+TRACE_NOSEC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_FULL+TRACE_NOSEC_TEST_SRC))))
 
@@ -19067,7 +22680,7 @@ endif
 
 
 H2_FULL+WORKAROUNDS_NOSEC_TEST_SRC = \
-    test/core/end2end/fixtures/h2_full+workarounds.c \
+    test/core/end2end/fixtures/h2_full+workarounds.cc \
 
 H2_FULL+WORKAROUNDS_NOSEC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_FULL+WORKAROUNDS_NOSEC_TEST_SRC))))
 
@@ -19087,7 +22700,7 @@ endif
 
 
 H2_HTTP_PROXY_NOSEC_TEST_SRC = \
-    test/core/end2end/fixtures/h2_http_proxy.c \
+    test/core/end2end/fixtures/h2_http_proxy.cc \
 
 H2_HTTP_PROXY_NOSEC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_HTTP_PROXY_NOSEC_TEST_SRC))))
 
@@ -19107,7 +22720,7 @@ endif
 
 
 H2_LOAD_REPORTING_NOSEC_TEST_SRC = \
-    test/core/end2end/fixtures/h2_load_reporting.c \
+    test/core/end2end/fixtures/h2_load_reporting.cc \
 
 H2_LOAD_REPORTING_NOSEC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_LOAD_REPORTING_NOSEC_TEST_SRC))))
 
@@ -19127,7 +22740,7 @@ endif
 
 
 H2_PROXY_NOSEC_TEST_SRC = \
-    test/core/end2end/fixtures/h2_proxy.c \
+    test/core/end2end/fixtures/h2_proxy.cc \
 
 H2_PROXY_NOSEC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_PROXY_NOSEC_TEST_SRC))))
 
@@ -19147,7 +22760,7 @@ endif
 
 
 H2_SOCKPAIR_NOSEC_TEST_SRC = \
-    test/core/end2end/fixtures/h2_sockpair.c \
+    test/core/end2end/fixtures/h2_sockpair.cc \
 
 H2_SOCKPAIR_NOSEC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SOCKPAIR_NOSEC_TEST_SRC))))
 
@@ -19167,7 +22780,7 @@ endif
 
 
 H2_SOCKPAIR+TRACE_NOSEC_TEST_SRC = \
-    test/core/end2end/fixtures/h2_sockpair+trace.c \
+    test/core/end2end/fixtures/h2_sockpair+trace.cc \
 
 H2_SOCKPAIR+TRACE_NOSEC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SOCKPAIR+TRACE_NOSEC_TEST_SRC))))
 
@@ -19187,7 +22800,7 @@ endif
 
 
 H2_SOCKPAIR_1BYTE_NOSEC_TEST_SRC = \
-    test/core/end2end/fixtures/h2_sockpair_1byte.c \
+    test/core/end2end/fixtures/h2_sockpair_1byte.cc \
 
 H2_SOCKPAIR_1BYTE_NOSEC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_SOCKPAIR_1BYTE_NOSEC_TEST_SRC))))
 
@@ -19207,7 +22820,7 @@ endif
 
 
 H2_UDS_NOSEC_TEST_SRC = \
-    test/core/end2end/fixtures/h2_uds.c \
+    test/core/end2end/fixtures/h2_uds.cc \
 
 H2_UDS_NOSEC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(H2_UDS_NOSEC_TEST_SRC))))
 
@@ -19227,7 +22840,7 @@ endif
 
 
 INPROC_NOSEC_TEST_SRC = \
-    test/core/end2end/fixtures/inproc.c \
+    test/core/end2end/fixtures/inproc.cc \
 
 INPROC_NOSEC_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(INPROC_NOSEC_TEST_SRC))))
 
@@ -19246,9 +22859,181 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
+RESOLVER_COMPONENT_TEST_UNSECURE_SRC = \
+    test/cpp/naming/resolver_component_test.cc \
+
+RESOLVER_COMPONENT_TEST_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(RESOLVER_COMPONENT_TEST_UNSECURE_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/resolver_component_test_unsecure: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/resolver_component_test_unsecure: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/resolver_component_test_unsecure: $(PROTOBUF_DEP) $(RESOLVER_COMPONENT_TEST_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(RESOLVER_COMPONENT_TEST_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/resolver_component_test_unsecure
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/naming/resolver_component_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+
+deps_resolver_component_test_unsecure: $(RESOLVER_COMPONENT_TEST_UNSECURE_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(RESOLVER_COMPONENT_TEST_UNSECURE_OBJS:.o=.dep)
+endif
+endif
+
+
+RESOLVER_COMPONENT_TEST_SRC = \
+    test/cpp/naming/resolver_component_test.cc \
+
+RESOLVER_COMPONENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(RESOLVER_COMPONENT_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/resolver_component_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/resolver_component_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/resolver_component_test: $(PROTOBUF_DEP) $(RESOLVER_COMPONENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(RESOLVER_COMPONENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/resolver_component_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/naming/resolver_component_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+
+deps_resolver_component_test: $(RESOLVER_COMPONENT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(RESOLVER_COMPONENT_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+RESOLVER_COMPONENT_TESTS_RUNNER_INVOKER_UNSECURE_SRC = \
+    test/cpp/naming/resolver_component_tests_runner_invoker.cc \
+
+RESOLVER_COMPONENT_TESTS_RUNNER_INVOKER_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(RESOLVER_COMPONENT_TESTS_RUNNER_INVOKER_UNSECURE_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker_unsecure: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker_unsecure: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker_unsecure: $(PROTOBUF_DEP) $(RESOLVER_COMPONENT_TESTS_RUNNER_INVOKER_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(RESOLVER_COMPONENT_TESTS_RUNNER_INVOKER_UNSECURE_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker_unsecure
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/naming/resolver_component_tests_runner_invoker.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+
+deps_resolver_component_tests_runner_invoker_unsecure: $(RESOLVER_COMPONENT_TESTS_RUNNER_INVOKER_UNSECURE_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(RESOLVER_COMPONENT_TESTS_RUNNER_INVOKER_UNSECURE_OBJS:.o=.dep)
+endif
+endif
+
+
+RESOLVER_COMPONENT_TESTS_RUNNER_INVOKER_SRC = \
+    test/cpp/naming/resolver_component_tests_runner_invoker.cc \
+
+RESOLVER_COMPONENT_TESTS_RUNNER_INVOKER_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(RESOLVER_COMPONENT_TESTS_RUNNER_INVOKER_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker: $(PROTOBUF_DEP) $(RESOLVER_COMPONENT_TESTS_RUNNER_INVOKER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(RESOLVER_COMPONENT_TESTS_RUNNER_INVOKER_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/naming/resolver_component_tests_runner_invoker.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+
+deps_resolver_component_tests_runner_invoker: $(RESOLVER_COMPONENT_TESTS_RUNNER_INVOKER_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(RESOLVER_COMPONENT_TESTS_RUNNER_INVOKER_OBJS:.o=.dep)
+endif
+endif
+
+
 API_FUZZER_ONE_ENTRY_SRC = \
-    test/core/end2end/fuzzers/api_fuzzer.c \
-    test/core/util/one_corpus_entry_fuzzer.c \
+    test/core/end2end/fuzzers/api_fuzzer.cc \
+    test/core/util/one_corpus_entry_fuzzer.cc \
 
 API_FUZZER_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(API_FUZZER_ONE_ENTRY_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -19282,8 +23067,8 @@ endif
 
 
 CLIENT_FUZZER_ONE_ENTRY_SRC = \
-    test/core/end2end/fuzzers/client_fuzzer.c \
-    test/core/util/one_corpus_entry_fuzzer.c \
+    test/core/end2end/fuzzers/client_fuzzer.cc \
+    test/core/util/one_corpus_entry_fuzzer.cc \
 
 CLIENT_FUZZER_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CLIENT_FUZZER_ONE_ENTRY_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -19317,8 +23102,8 @@ endif
 
 
 HPACK_PARSER_FUZZER_TEST_ONE_ENTRY_SRC = \
-    test/core/transport/chttp2/hpack_parser_fuzzer_test.c \
-    test/core/util/one_corpus_entry_fuzzer.c \
+    test/core/transport/chttp2/hpack_parser_fuzzer_test.cc \
+    test/core/util/one_corpus_entry_fuzzer.cc \
 
 HPACK_PARSER_FUZZER_TEST_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HPACK_PARSER_FUZZER_TEST_ONE_ENTRY_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -19352,8 +23137,8 @@ endif
 
 
 HTTP_REQUEST_FUZZER_TEST_ONE_ENTRY_SRC = \
-    test/core/http/request_fuzzer.c \
-    test/core/util/one_corpus_entry_fuzzer.c \
+    test/core/http/request_fuzzer.cc \
+    test/core/util/one_corpus_entry_fuzzer.cc \
 
 HTTP_REQUEST_FUZZER_TEST_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HTTP_REQUEST_FUZZER_TEST_ONE_ENTRY_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -19387,8 +23172,8 @@ endif
 
 
 HTTP_RESPONSE_FUZZER_TEST_ONE_ENTRY_SRC = \
-    test/core/http/response_fuzzer.c \
-    test/core/util/one_corpus_entry_fuzzer.c \
+    test/core/http/response_fuzzer.cc \
+    test/core/util/one_corpus_entry_fuzzer.cc \
 
 HTTP_RESPONSE_FUZZER_TEST_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HTTP_RESPONSE_FUZZER_TEST_ONE_ENTRY_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -19422,8 +23207,8 @@ endif
 
 
 JSON_FUZZER_TEST_ONE_ENTRY_SRC = \
-    test/core/json/fuzzer.c \
-    test/core/util/one_corpus_entry_fuzzer.c \
+    test/core/json/fuzzer.cc \
+    test/core/util/one_corpus_entry_fuzzer.cc \
 
 JSON_FUZZER_TEST_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(JSON_FUZZER_TEST_ONE_ENTRY_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -19457,8 +23242,8 @@ endif
 
 
 NANOPB_FUZZER_RESPONSE_TEST_ONE_ENTRY_SRC = \
-    test/core/nanopb/fuzzer_response.c \
-    test/core/util/one_corpus_entry_fuzzer.c \
+    test/core/nanopb/fuzzer_response.cc \
+    test/core/util/one_corpus_entry_fuzzer.cc \
 
 NANOPB_FUZZER_RESPONSE_TEST_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(NANOPB_FUZZER_RESPONSE_TEST_ONE_ENTRY_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -19492,8 +23277,8 @@ endif
 
 
 NANOPB_FUZZER_SERVERLIST_TEST_ONE_ENTRY_SRC = \
-    test/core/nanopb/fuzzer_serverlist.c \
-    test/core/util/one_corpus_entry_fuzzer.c \
+    test/core/nanopb/fuzzer_serverlist.cc \
+    test/core/util/one_corpus_entry_fuzzer.cc \
 
 NANOPB_FUZZER_SERVERLIST_TEST_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(NANOPB_FUZZER_SERVERLIST_TEST_ONE_ENTRY_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -19527,8 +23312,8 @@ endif
 
 
 PERCENT_DECODE_FUZZER_ONE_ENTRY_SRC = \
-    test/core/slice/percent_decode_fuzzer.c \
-    test/core/util/one_corpus_entry_fuzzer.c \
+    test/core/slice/percent_decode_fuzzer.cc \
+    test/core/util/one_corpus_entry_fuzzer.cc \
 
 PERCENT_DECODE_FUZZER_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PERCENT_DECODE_FUZZER_ONE_ENTRY_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -19562,8 +23347,8 @@ endif
 
 
 PERCENT_ENCODE_FUZZER_ONE_ENTRY_SRC = \
-    test/core/slice/percent_encode_fuzzer.c \
-    test/core/util/one_corpus_entry_fuzzer.c \
+    test/core/slice/percent_encode_fuzzer.cc \
+    test/core/util/one_corpus_entry_fuzzer.cc \
 
 PERCENT_ENCODE_FUZZER_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(PERCENT_ENCODE_FUZZER_ONE_ENTRY_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -19597,8 +23382,8 @@ endif
 
 
 SERVER_FUZZER_ONE_ENTRY_SRC = \
-    test/core/end2end/fuzzers/server_fuzzer.c \
-    test/core/util/one_corpus_entry_fuzzer.c \
+    test/core/end2end/fuzzers/server_fuzzer.cc \
+    test/core/util/one_corpus_entry_fuzzer.cc \
 
 SERVER_FUZZER_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SERVER_FUZZER_ONE_ENTRY_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -19632,8 +23417,8 @@ endif
 
 
 SSL_SERVER_FUZZER_ONE_ENTRY_SRC = \
-    test/core/security/ssl_server_fuzzer.c \
-    test/core/util/one_corpus_entry_fuzzer.c \
+    test/core/security/ssl_server_fuzzer.cc \
+    test/core/util/one_corpus_entry_fuzzer.cc \
 
 SSL_SERVER_FUZZER_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SSL_SERVER_FUZZER_ONE_ENTRY_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -19667,8 +23452,8 @@ endif
 
 
 URI_FUZZER_TEST_ONE_ENTRY_SRC = \
-    test/core/client_channel/uri_fuzzer_test.c \
-    test/core/util/one_corpus_entry_fuzzer.c \
+    test/core/client_channel/uri_fuzzer_test.cc \
+    test/core/util/one_corpus_entry_fuzzer.cc \
 
 URI_FUZZER_TEST_ONE_ENTRY_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(URI_FUZZER_TEST_ONE_ENTRY_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -19709,44 +23494,80 @@ ifneq ($(OPENSSL_DEP),)
 # This is to ensure the embedded OpenSSL is built beforehand, properly
 # installing headers to their final destination on the drive. We need this
 # otherwise parallel compilation will fail if a source is compiled first.
-src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.c: $(OPENSSL_DEP)
-src/core/ext/transport/chttp2/client/secure/secure_channel_create.c: $(OPENSSL_DEP)
-src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.c: $(OPENSSL_DEP)
-src/core/ext/transport/cronet/client/secure/cronet_channel_create.c: $(OPENSSL_DEP)
-src/core/ext/transport/cronet/transport/cronet_api_dummy.c: $(OPENSSL_DEP)
-src/core/ext/transport/cronet/transport/cronet_transport.c: $(OPENSSL_DEP)
-src/core/lib/http/httpcli_security_connector.c: $(OPENSSL_DEP)
-src/core/lib/security/context/security_context.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials/composite/composite_credentials.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials/credentials.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials/credentials_metadata.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials/fake/fake_credentials.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials/google_default/credentials_generic.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials/google_default/google_default_credentials.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials/iam/iam_credentials.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials/jwt/json_token.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials/jwt/jwt_credentials.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials/jwt/jwt_verifier.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials/oauth2/oauth2_credentials.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials/plugin/plugin_credentials.c: $(OPENSSL_DEP)
-src/core/lib/security/credentials/ssl/ssl_credentials.c: $(OPENSSL_DEP)
-src/core/lib/security/transport/client_auth_filter.c: $(OPENSSL_DEP)
-src/core/lib/security/transport/lb_targets_info.c: $(OPENSSL_DEP)
-src/core/lib/security/transport/secure_endpoint.c: $(OPENSSL_DEP)
-src/core/lib/security/transport/security_connector.c: $(OPENSSL_DEP)
-src/core/lib/security/transport/security_handshaker.c: $(OPENSSL_DEP)
-src/core/lib/security/transport/server_auth_filter.c: $(OPENSSL_DEP)
-src/core/lib/security/transport/tsi_error.c: $(OPENSSL_DEP)
-src/core/lib/security/util/json_util.c: $(OPENSSL_DEP)
-src/core/lib/surface/init_secure.c: $(OPENSSL_DEP)
-src/core/plugin_registry/grpc_cronet_plugin_registry.c: $(OPENSSL_DEP)
-src/core/plugin_registry/grpc_plugin_registry.c: $(OPENSSL_DEP)
-src/core/tsi/fake_transport_security.c: $(OPENSSL_DEP)
-src/core/tsi/gts_transport_security.c: $(OPENSSL_DEP)
-src/core/tsi/ssl_transport_security.c: $(OPENSSL_DEP)
-src/core/tsi/transport_security.c: $(OPENSSL_DEP)
-src/core/tsi/transport_security_adapter.c: $(OPENSSL_DEP)
-src/core/tsi/transport_security_grpc.c: $(OPENSSL_DEP)
+src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc: $(OPENSSL_DEP)
+src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc: $(OPENSSL_DEP)
+src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc: $(OPENSSL_DEP)
+src/core/ext/transport/cronet/client/secure/cronet_channel_create.cc: $(OPENSSL_DEP)
+src/core/ext/transport/cronet/transport/cronet_api_dummy.cc: $(OPENSSL_DEP)
+src/core/ext/transport/cronet/transport/cronet_transport.cc: $(OPENSSL_DEP)
+src/core/lib/http/httpcli_security_connector.cc: $(OPENSSL_DEP)
+src/core/lib/security/context/security_context.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/alts/alts_credentials.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/alts/check_gcp_environment.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/composite/composite_credentials.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/credentials.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/credentials_metadata.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/fake/fake_credentials.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/google_default/credentials_generic.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/google_default/google_default_credentials.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/iam/iam_credentials.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/jwt/json_token.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/jwt/jwt_credentials.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/jwt/jwt_verifier.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/oauth2/oauth2_credentials.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/plugin/plugin_credentials.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/ssl/ssl_credentials.cc: $(OPENSSL_DEP)
+src/core/lib/security/security_connector/alts_security_connector.cc: $(OPENSSL_DEP)
+src/core/lib/security/security_connector/security_connector.cc: $(OPENSSL_DEP)
+src/core/lib/security/transport/client_auth_filter.cc: $(OPENSSL_DEP)
+src/core/lib/security/transport/secure_endpoint.cc: $(OPENSSL_DEP)
+src/core/lib/security/transport/security_handshaker.cc: $(OPENSSL_DEP)
+src/core/lib/security/transport/server_auth_filter.cc: $(OPENSSL_DEP)
+src/core/lib/security/transport/target_authority_table.cc: $(OPENSSL_DEP)
+src/core/lib/security/transport/tsi_error.cc: $(OPENSSL_DEP)
+src/core/lib/security/util/json_util.cc: $(OPENSSL_DEP)
+src/core/lib/surface/init_secure.cc: $(OPENSSL_DEP)
+src/core/plugin_registry/grpc_cronet_plugin_registry.cc: $(OPENSSL_DEP)
+src/core/plugin_registry/grpc_plugin_registry.cc: $(OPENSSL_DEP)
+src/core/tsi/alts/crypt/aes_gcm.cc: $(OPENSSL_DEP)
+src/core/tsi/alts/crypt/gsec.cc: $(OPENSSL_DEP)
+src/core/tsi/alts/frame_protector/alts_counter.cc: $(OPENSSL_DEP)
+src/core/tsi/alts/frame_protector/alts_crypter.cc: $(OPENSSL_DEP)
+src/core/tsi/alts/frame_protector/alts_frame_protector.cc: $(OPENSSL_DEP)
+src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc: $(OPENSSL_DEP)
+src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc: $(OPENSSL_DEP)
+src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc: $(OPENSSL_DEP)
+src/core/tsi/alts/frame_protector/frame_handler.cc: $(OPENSSL_DEP)
+src/core/tsi/alts/handshaker/alts_handshaker_client.cc: $(OPENSSL_DEP)
+src/core/tsi/alts/handshaker/alts_handshaker_service_api.cc: $(OPENSSL_DEP)
+src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.cc: $(OPENSSL_DEP)
+src/core/tsi/alts/handshaker/alts_tsi_event.cc: $(OPENSSL_DEP)
+src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc: $(OPENSSL_DEP)
+src/core/tsi/alts/handshaker/alts_tsi_utils.cc: $(OPENSSL_DEP)
+src/core/tsi/alts/handshaker/altscontext.pb.c: $(OPENSSL_DEP)
+src/core/tsi/alts/handshaker/handshaker.pb.c: $(OPENSSL_DEP)
+src/core/tsi/alts/handshaker/transport_security_common.pb.c: $(OPENSSL_DEP)
+src/core/tsi/alts/handshaker/transport_security_common_api.cc: $(OPENSSL_DEP)
+src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc: $(OPENSSL_DEP)
+src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc: $(OPENSSL_DEP)
+src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc: $(OPENSSL_DEP)
+src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc: $(OPENSSL_DEP)
+src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc: $(OPENSSL_DEP)
+src/core/tsi/alts_transport_security.cc: $(OPENSSL_DEP)
+src/core/tsi/fake_transport_security.cc: $(OPENSSL_DEP)
+src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc: $(OPENSSL_DEP)
+src/core/tsi/ssl/session_cache/ssl_session_cache.cc: $(OPENSSL_DEP)
+src/core/tsi/ssl/session_cache/ssl_session_openssl.cc: $(OPENSSL_DEP)
+src/core/tsi/ssl_transport_security.cc: $(OPENSSL_DEP)
+src/core/tsi/transport_security.cc: $(OPENSSL_DEP)
+src/core/tsi/transport_security_adapter.cc: $(OPENSSL_DEP)
+src/core/tsi/transport_security_grpc.cc: $(OPENSSL_DEP)
 src/cpp/client/cronet_credentials.cc: $(OPENSSL_DEP)
 src/cpp/client/secure_credentials.cc: $(OPENSSL_DEP)
 src/cpp/common/auth_property_iterator.cc: $(OPENSSL_DEP)
@@ -19756,19 +23577,22 @@ src/cpp/common/secure_create_auth_context.cc: $(OPENSSL_DEP)
 src/cpp/ext/proto_server_reflection.cc: $(OPENSSL_DEP)
 src/cpp/ext/proto_server_reflection_plugin.cc: $(OPENSSL_DEP)
 src/cpp/server/secure_server_credentials.cc: $(OPENSSL_DEP)
+src/cpp/util/core_stats.cc: $(OPENSSL_DEP)
 src/cpp/util/error_details.cc: $(OPENSSL_DEP)
 src/csharp/ext/grpc_csharp_ext.c: $(OPENSSL_DEP)
-test/core/bad_client/bad_client.c: $(OPENSSL_DEP)
-test/core/bad_ssl/server_common.c: $(OPENSSL_DEP)
-test/core/end2end/data/client_certs.c: $(OPENSSL_DEP)
-test/core/end2end/data/server1_cert.c: $(OPENSSL_DEP)
-test/core/end2end/data/server1_key.c: $(OPENSSL_DEP)
-test/core/end2end/data/test_root_cert.c: $(OPENSSL_DEP)
-test/core/end2end/end2end_tests.c: $(OPENSSL_DEP)
-test/core/end2end/tests/call_creds.c: $(OPENSSL_DEP)
-test/core/security/oauth2_utils.c: $(OPENSSL_DEP)
-test/core/util/reconnect_server.c: $(OPENSSL_DEP)
-test/core/util/test_tcp_server.c: $(OPENSSL_DEP)
+test/core/bad_client/bad_client.cc: $(OPENSSL_DEP)
+test/core/bad_ssl/server_common.cc: $(OPENSSL_DEP)
+test/core/end2end/data/client_certs.cc: $(OPENSSL_DEP)
+test/core/end2end/data/server1_cert.cc: $(OPENSSL_DEP)
+test/core/end2end/data/server1_key.cc: $(OPENSSL_DEP)
+test/core/end2end/data/test_root_cert.cc: $(OPENSSL_DEP)
+test/core/end2end/end2end_tests.cc: $(OPENSSL_DEP)
+test/core/end2end/tests/call_creds.cc: $(OPENSSL_DEP)
+test/core/security/oauth2_utils.cc: $(OPENSSL_DEP)
+test/core/tsi/alts/crypt/gsec_test_util.cc: $(OPENSSL_DEP)
+test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc: $(OPENSSL_DEP)
+test/core/util/reconnect_server.cc: $(OPENSSL_DEP)
+test/core/util/test_tcp_server.cc: $(OPENSSL_DEP)
 test/cpp/end2end/test_service_impl.cc: $(OPENSSL_DEP)
 test/cpp/interop/client.cc: $(OPENSSL_DEP)
 test/cpp/interop/client_helper.cc: $(OPENSSL_DEP)

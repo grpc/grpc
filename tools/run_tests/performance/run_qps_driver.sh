@@ -15,7 +15,7 @@
 
 set -ex
 
-cd $(dirname $0)/../../..
+cd "$(dirname "$0")/../../.."
 
 bins/opt/qps_json_driver "$@"
 

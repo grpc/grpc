@@ -18,7 +18,10 @@
 
 #import "ProtoMethod.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-implementations"
 @implementation ProtoMethod
+#pragma clang diagnostic pop
 - (instancetype)initWithPackage:(NSString *)package
                         service:(NSString *)service
                          method:(NSString *)method {

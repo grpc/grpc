@@ -19,44 +19,30 @@
 #import <Foundation/Foundation.h>
 #import <SystemConfiguration/SystemConfiguration.h>
 
-@interface GRPCReachabilityFlags : NSObject
+typedef NS_ENUM(NSInteger, GRPCConnectivityStatus) {
+  GRPCConnectivityUnknown = 0,
+  GRPCConnectivityNoNetwork = 1,
+  GRPCConnectivityCellular = 2,
+  GRPCConnectivityWiFi = 3,
+};
 
-+ (nonnull instancetype)flagsWithFlags:(SCNetworkReachabilityFlags)flags;
+extern NSString * _Nonnull kGRPCConnectivityNotification;
 
-/**
- * One accessor method to query each of the different flags. Example:
-
-@property(nonatomic, readonly) BOOL isCell;
-
- */
-#define GRPC_XMACRO_ITEM(methodName, FlagName) \
-@property(nonatomic, readonly) BOOL methodName;
-
-#include "GRPCReachabilityFlagNames.xmacro.h"
-#undef GRPC_XMACRO_ITEM
-
-@property(nonatomic, readonly) BOOL isHostReachable;
-@end
-
+// This interface monitors OS reachability interface for any network status
+// change. Parties interested in these events should register themselves as
+// observer.
 @interface GRPCConnectivityMonitor : NSObject
-
-+ (nullable instancetype)monitorWithHost:(nonnull NSString *)hostName;
 
 - (nonnull instancetype)init NS_UNAVAILABLE;
 
-/**
- * Queue on which callbacks will be dispatched. Default is the main queue. Set it before calling
- * handleLossWithHandler:.
- */
-// TODO(jcanizales): Default to a serial background queue instead.
-@property(nonatomic, strong, null_resettable) dispatch_queue_t queue;
+// Register an object as observer of network status change. \a observer
+// must have a notification method with one parameter of type
+// (NSNotification *) and should pass it to parameter \a selector. The
+// parameter of this notification method is not used for now.
++ (void)registerObserver:(_Nonnull id)observer
+                selector:(_Nonnull SEL)selector;
 
-/**
- * Calls handler every time the connectivity to this instance's host is lost. If this instance is
- * released before that happens, the handler won't be called.
- * Only one handler is active at a time, so if this method is called again before the previous
- * handler has been called, it might never be called at all (or yes, if it has already been queued).
- */
-- (void)handleLossWithHandler:(nullable void (^)())lossHandler
-      wifiStatusChangeHandler:(nullable void (^)())wifiStatusChangeHandler;
+// Ungegister an object from observers of network status change.
++ (void)unregisterObserver:(_Nonnull id)observer;
+
 @end

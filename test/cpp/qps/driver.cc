@@ -23,29 +23,29 @@
 #include <unordered_map>
 #include <vector>
 
-#include <grpc++/channel.h>
-#include <grpc++/client_context.h>
-#include <grpc++/create_channel.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/create_channel.h>
 
+#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/profiling/timers.h"
-#include "src/core/lib/support/env.h"
-#include "src/proto/grpc/testing/services.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/qps/client.h"
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/histogram.h"
 #include "test/cpp/qps/qps_worker.h"
 #include "test/cpp/qps/stats.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
+using std::deque;
 using std::list;
 using std::thread;
 using std::unique_ptr;
-using std::deque;
 using std::vector;
 
 namespace grpc {
@@ -63,11 +63,11 @@ static std::string get_host(const std::string& worker) {
 }
 
 static deque<string> get_workers(const string& env_name) {
+  deque<string> out;
   char* env = gpr_getenv(env_name.c_str());
   if (!env) {
     env = gpr_strdup("");
   }
-  deque<string> out;
   char* p = env;
   if (strlen(env) != 0) {
     for (;;) {
@@ -146,9 +146,8 @@ static void postprocess_scenario_result(ScenarioResult* result) {
     result->mutable_summary()->set_server_cpu_usage(0);
   } else {
     auto server_cpu_usage =
-        100 -
-        100 * average(result->server_stats(), ServerIdleCpuTime) /
-            average(result->server_stats(), ServerTotalCpuTime);
+        100 - 100 * average(result->server_stats(), ServerIdleCpuTime) /
+                  average(result->server_stats(), ServerTotalCpuTime);
     result->mutable_summary()->set_server_cpu_usage(server_cpu_usage);
   }
 
@@ -187,12 +186,17 @@ static void postprocess_scenario_result(ScenarioResult* result) {
       client_queries_per_cpu_sec);
 }
 
+std::vector<grpc::testing::Server*>* g_inproc_servers = nullptr;
+
 std::unique_ptr<ScenarioResult> RunScenario(
     const ClientConfig& initial_client_config, size_t num_clients,
     const ServerConfig& initial_server_config, size_t num_servers,
     int warmup_seconds, int benchmark_seconds, int spawn_local_worker_count,
     const grpc::string& qps_server_target_override,
-    const grpc::string& credential_type) {
+    const grpc::string& credential_type, bool run_inproc) {
+  if (run_inproc) {
+    g_inproc_servers = new std::vector<grpc::testing::Server*>;
+  }
   // Log everything from the driver
   gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
 
@@ -210,8 +214,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
   ClientConfig result_client_config;
   const ServerConfig result_server_config = initial_server_config;
 
-  // Get client, server lists
-  auto workers = get_workers("QPS_WORKERS");
+  // Get client, server lists; ignore if inproc test
+  auto workers = (!run_inproc) ? get_workers("QPS_WORKERS") : deque<string>();
   ClientConfig client_config = initial_client_config;
 
   // Spawn some local workers if desired
@@ -227,9 +231,10 @@ std::unique_ptr<ScenarioResult> RunScenario(
       called_init = true;
     }
 
-    int driver_port = grpc_pick_unused_port_or_die();
-    local_workers.emplace_back(new QpsWorker(driver_port, 0, credential_type));
     char addr[256];
+    // we use port # of -1 to indicate inproc
+    int driver_port = (!run_inproc) ? grpc_pick_unused_port_or_die() : -1;
+    local_workers.emplace_back(new QpsWorker(driver_port, 0, credential_type));
     sprintf(addr, "localhost:%d", driver_port);
     if (spawn_local_worker_count < 0) {
       workers.push_front(addr);
@@ -265,9 +270,14 @@ std::unique_ptr<ScenarioResult> RunScenario(
   for (size_t i = 0; i < num_servers; i++) {
     gpr_log(GPR_INFO, "Starting server on %s (worker #%" PRIuPTR ")",
             workers[i].c_str(), i);
-    servers[i].stub = WorkerService::NewStub(CreateChannel(
-        workers[i], GetCredentialsProvider()->GetChannelCredentials(
-                        credential_type, &channel_args)));
+    if (!run_inproc) {
+      servers[i].stub = WorkerService::NewStub(CreateChannel(
+          workers[i], GetCredentialsProvider()->GetChannelCredentials(
+                          credential_type, &channel_args)));
+    } else {
+      servers[i].stub = WorkerService::NewStub(
+          local_workers[i]->InProcessChannel(channel_args));
+    }
 
     ServerConfig server_config = initial_server_config;
     if (server_config.core_limit() != 0) {
@@ -289,6 +299,10 @@ std::unique_ptr<ScenarioResult> RunScenario(
       // overriding the qps server target only works if there is 1 server
       GPR_ASSERT(num_servers == 1);
       client_config.add_server_targets(qps_server_target_override);
+    } else if (run_inproc) {
+      std::string cli_target(INPROC_NAME_PREFIX);
+      cli_target += std::to_string(i);
+      client_config.add_server_targets(cli_target);
     } else {
       std::string host;
       char* cli_target;
@@ -312,9 +326,14 @@ std::unique_ptr<ScenarioResult> RunScenario(
     const auto& worker = workers[i + num_servers];
     gpr_log(GPR_INFO, "Starting client on %s (worker #%" PRIuPTR ")",
             worker.c_str(), i + num_servers);
-    clients[i].stub = WorkerService::NewStub(
-        CreateChannel(worker, GetCredentialsProvider()->GetChannelCredentials(
-                                  credential_type, &channel_args)));
+    if (!run_inproc) {
+      clients[i].stub = WorkerService::NewStub(
+          CreateChannel(worker, GetCredentialsProvider()->GetChannelCredentials(
+                                    credential_type, &channel_args)));
+    } else {
+      clients[i].stub = WorkerService::NewStub(
+          local_workers[i + num_servers]->InProcessChannel(channel_args));
+    }
     ClientConfig per_client_config = client_config;
 
     if (initial_client_config.core_limit() != 0) {
@@ -495,6 +514,9 @@ std::unique_ptr<ScenarioResult> RunScenario(
     }
   }
 
+  if (g_inproc_servers != nullptr) {
+    delete g_inproc_servers;
+  }
   postprocess_scenario_result(result.get());
   return result;
 }

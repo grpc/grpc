@@ -20,9 +20,10 @@
 
 #include <climits>
 #include <mutex>
-#include <thread>
 
 #include <grpc/support/log.h>
+
+#include "src/core/lib/gprpp/thd.h"
 
 namespace grpc {
 
@@ -30,8 +31,11 @@ ThreadManager::WorkerThread::WorkerThread(ThreadManager* thd_mgr)
     : thd_mgr_(thd_mgr) {
   // Make thread creation exclusive with respect to its join happening in
   // ~WorkerThread().
-  std::lock_guard<std::mutex> lock(wt_mu_);
-  thd_ = std::thread(&ThreadManager::WorkerThread::Run, this);
+  thd_ = grpc_core::Thread(
+      "grpcpp_sync_server",
+      [](void* th) { static_cast<ThreadManager::WorkerThread*>(th)->Run(); },
+      this);
+  thd_.Start();
 }
 
 void ThreadManager::WorkerThread::Run() {
@@ -41,8 +45,7 @@ void ThreadManager::WorkerThread::Run() {
 
 ThreadManager::WorkerThread::~WorkerThread() {
   // Don't join until the thread is fully constructed.
-  std::lock_guard<std::mutex> lock(wt_mu_);
-  thd_.join();
+  thd_.Join();
 }
 
 ThreadManager::ThreadManager(int min_pollers, int max_pollers)

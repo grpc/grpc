@@ -63,7 +63,7 @@ namespace Grpc.Core.Tests
         [Ignore("Prevent running on Jenkins")]
         public void NativeCallbackBenchmark()
         {
-            OpCompletionDelegate handler = Handler;
+            NativeCallbackTestDelegate handler = Handler;
 
             counter = 0;
             BenchmarkUtil.RunBenchmark(
@@ -91,7 +91,7 @@ namespace Grpc.Core.Tests
                 10000, 10000,
                 () =>
                 {
-                    Native.grpcsharp_test_callback(new OpCompletionDelegate(Handler));
+                    Native.grpcsharp_test_callback(new NativeCallbackTestDelegate(Handler));
                 });
             Assert.AreNotEqual(0, counter);
         }

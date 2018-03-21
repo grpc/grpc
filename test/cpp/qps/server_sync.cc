@@ -19,13 +19,13 @@
 #include <atomic>
 #include <thread>
 
-#include <grpc++/security/server_credentials.h>
-#include <grpc++/server.h>
-#include <grpc++/server_context.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_context.h>
 
+#include "src/core/lib/gpr/host_port.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 #include "test/cpp/qps/server.h"
 #include "test/cpp/qps/usage_timer.h"
@@ -156,18 +156,26 @@ class SynchronousServer final : public grpc::testing::Server {
   explicit SynchronousServer(const ServerConfig& config) : Server(config) {
     ServerBuilder builder;
 
-    char* server_address = NULL;
-
-    gpr_join_host_port(&server_address, "::", port());
-    builder.AddListeningPort(server_address,
-                             Server::CreateServerCredentials(config));
-    gpr_free(server_address);
+    auto port_num = port();
+    // Negative port number means inproc server, so no listen port needed
+    if (port_num >= 0) {
+      char* server_address = nullptr;
+      gpr_join_host_port(&server_address, "::", port_num);
+      builder.AddListeningPort(server_address,
+                               Server::CreateServerCredentials(config));
+      gpr_free(server_address);
+    }
 
     ApplyConfigToBuilder(config, &builder);
 
     builder.RegisterService(&service_);
 
     impl_ = builder.BuildAndStart();
+  }
+
+  std::shared_ptr<Channel> InProcessChannel(
+      const ChannelArguments& args) override {
+    return impl_->InProcessChannel(args);
   }
 
  private:

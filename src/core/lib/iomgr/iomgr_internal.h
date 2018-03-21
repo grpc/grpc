@@ -19,18 +19,32 @@
 #ifndef GRPC_CORE_LIB_IOMGR_IOMGR_INTERNAL_H
 #define GRPC_CORE_LIB_IOMGR_IOMGR_INTERNAL_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stdbool.h>
 
 #include "src/core/lib/iomgr/iomgr.h"
 
 typedef struct grpc_iomgr_object {
-  char *name;
-  struct grpc_iomgr_object *next;
-  struct grpc_iomgr_object *prev;
+  char* name;
+  struct grpc_iomgr_object* next;
+  struct grpc_iomgr_object* prev;
 } grpc_iomgr_object;
 
-void grpc_iomgr_register_object(grpc_iomgr_object *obj, const char *name);
-void grpc_iomgr_unregister_object(grpc_iomgr_object *obj);
+typedef struct grpc_iomgr_platform_vtable {
+  void (*init)(void);
+  void (*flush)(void);
+  void (*shutdown)(void);
+} grpc_iomgr_platform_vtable;
+
+void grpc_iomgr_register_object(grpc_iomgr_object* obj, const char* name);
+void grpc_iomgr_unregister_object(grpc_iomgr_object* obj);
+
+void grpc_determine_iomgr_platform();
+
+void grpc_set_iomgr_platform_vtable(grpc_iomgr_platform_vtable* vtable);
+
+void grpc_set_default_iomgr_platform();
 
 void grpc_iomgr_platform_init(void);
 /** flush any globally queued work from iomgr */

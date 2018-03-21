@@ -23,19 +23,19 @@
 #include "src/core/lib/iomgr/tcp_server.h"
 
 typedef struct test_tcp_server {
-  grpc_tcp_server *tcp_server;
+  grpc_tcp_server* tcp_server;
   grpc_closure shutdown_complete;
   int shutdown;
-  gpr_mu *mu;
-  grpc_pollset *pollset;
+  gpr_mu* mu;
+  grpc_pollset* pollset;
   grpc_tcp_server_cb on_connect;
-  void *cb_data;
+  void* cb_data;
 } test_tcp_server;
 
-void test_tcp_server_init(test_tcp_server *server,
-                          grpc_tcp_server_cb on_connect, void *user_data);
-void test_tcp_server_start(test_tcp_server *server, int port);
-void test_tcp_server_poll(test_tcp_server *server, int seconds);
-void test_tcp_server_destroy(test_tcp_server *server);
+void test_tcp_server_init(test_tcp_server* server,
+                          grpc_tcp_server_cb on_connect, void* user_data);
+void test_tcp_server_start(test_tcp_server* server, int port);
+void test_tcp_server_poll(test_tcp_server* server, int seconds);
+void test_tcp_server_destroy(test_tcp_server* server);
 
 #endif /* GRPC_TEST_CORE_UTIL_TEST_TCP_SERVER_H */

@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RETRY_THROTTLE_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RETRY_THROTTLE_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stdbool.h>
 
 /// Tracks retry throttling data for an individual server name.

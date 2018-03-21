@@ -18,10 +18,10 @@
 
 #include <memory>
 
-#include <grpc++/channel.h>
-#include <grpc++/create_channel.h>
-#include <grpc++/impl/grpc_library.h>
-#include <grpc++/support/channel_arguments.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/impl/grpc_library.h>
+#include <grpcpp/support/channel_arguments.h>
 
 #include "src/cpp/client/create_channel_internal.h"
 
@@ -38,13 +38,12 @@ std::shared_ptr<Channel> CreateCustomChannel(
     const grpc::string& target,
     const std::shared_ptr<ChannelCredentials>& creds,
     const ChannelArguments& args) {
-  internal::GrpcLibrary
-      init_lib;  // We need to call init in case of a bad creds.
-  return creds
-             ? creds->CreateChannel(target, args)
-             : CreateChannelInternal("", grpc_lame_client_channel_create(
-                                             NULL, GRPC_STATUS_INVALID_ARGUMENT,
-                                             "Invalid credentials."));
+  GrpcLibraryCodegen init_lib;  // We need to call init in case of a bad creds.
+  return creds ? creds->CreateChannel(target, args)
+               : CreateChannelInternal(
+                     "", grpc_lame_client_channel_create(
+                             nullptr, GRPC_STATUS_INVALID_ARGUMENT,
+                             "Invalid credentials."));
 }
 
 }  // namespace grpc

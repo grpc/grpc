@@ -21,13 +21,12 @@
 
 #include "src/core/lib/iomgr/endpoint.h"
 
-grpc_endpoint *grpc_trickle_endpoint_create(grpc_endpoint *wrap,
+grpc_endpoint* grpc_trickle_endpoint_create(grpc_endpoint* wrap,
                                             double bytes_per_second);
 
 /* Allow up to \a bytes through the endpoint. Returns the new backlog. */
-size_t grpc_trickle_endpoint_trickle(grpc_exec_ctx *exec_ctx,
-                                     grpc_endpoint *endpoint);
+size_t grpc_trickle_endpoint_trickle(grpc_endpoint* endpoint);
 
-size_t grpc_trickle_get_backlog(grpc_endpoint *endpoint);
+size_t grpc_trickle_get_backlog(grpc_endpoint* endpoint);
 
 #endif

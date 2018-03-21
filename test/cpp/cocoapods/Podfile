@@ -1,0 +1,71 @@
+source 'https://github.com/CocoaPods/Specs.git'
+platform :ios, '8.0'
+
+install! 'cocoapods', :deterministic_uuids => false
+
+# Location of gRPC's repo root relative to this file.
+GRPC_LOCAL_SRC = '../../..'
+
+%w(
+  test
+  generic
+).each do |target_name|
+  target target_name do
+    pod 'gRPC-Core',      :path => GRPC_LOCAL_SRC
+    pod 'gRPC-Core/Tests', :path => GRPC_LOCAL_SRC
+    pod 'gRPC-C++',       :path => GRPC_LOCAL_SRC
+    pod 'BoringSSL',      :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c", :inhibit_warnings => true
+  end
+end
+
+# gRPC-Core.podspec needs to be modified to be successfully used for local development. A Podfile's
+# pre_install hook lets us do that. The block passed to it runs after the podspecs are downloaded
+# and before they are installed in the user project.
+#
+# This podspec searches for the gRPC core library headers under "$(PODS_ROOT)/gRPC-Core", where
+# Cocoapods normally places the downloaded sources. When doing local development of the libraries,
+# though, Cocoapods just takes the sources from whatever directory was specified using `:path`, and
+# doesn't copy them under $(PODS_ROOT). When using static libraries, one can sometimes rely on the
+# symbolic links to the pods headers that Cocoapods creates under "$(PODS_ROOT)/Headers". But those
+# aren't created when using dynamic frameworks. So our solution is to modify the podspec on the fly
+# to point at the local directory where the sources are.
+#
+# TODO(jcanizales): Send a PR to Cocoapods to get rid of this need.
+pre_install do |installer|
+  # This is the gRPC-Core podspec object, as initialized by its podspec file.
+  grpc_core_spec = installer.pod_targets.find{|t| t.name == 'gRPC-Core'}.root_spec
+
+  # Copied from gRPC-Core.podspec, except for the adjusted src_root:
+  src_root = "$(PODS_ROOT)/../#{GRPC_LOCAL_SRC}"
+  grpc_core_spec.pod_target_xcconfig = {
+    'GRPC_SRC_ROOT' => src_root,
+    'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(GRPC_SRC_ROOT)/include"',
+    'USER_HEADER_SEARCH_PATHS' => '"$(GRPC_SRC_ROOT)"',
+    # If we don't set these two settings, `include/grpc/support/time.h` and
+    # `src/core/lib/support/string.h` shadow the system `<time.h>` and `<string.h>`, breaking the
+    # build.
+    'USE_HEADERMAP' => 'NO',
+    'ALWAYS_SEARCH_USER_PATHS' => 'NO',
+  }
+end
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'YES'
+    end
+
+    # CocoaPods creates duplicated library targets of gRPC-Core when the test targets include
+    # non-default subspecs of gRPC-Core. All of these library targets start with prefix 'gRPC-Core'
+    # and require the same error suppresion.
+    if target.name.start_with?('gRPC-Core')
+      target.build_configurations.each do |config|
+        # TODO(zyc): Remove this setting after the issue is resolved
+        # GPR_UNREACHABLE_CODE causes "Control may reach end of non-void
+        # function" warning
+        config.build_settings['GCC_WARN_ABOUT_RETURN_TYPE'] = 'NO'
+        config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = '$(inherited) COCOAPODS=1 GRPC_CRONET_WITH_PACKET_COALESCING=1'
+      end
+    end
+  end
+end

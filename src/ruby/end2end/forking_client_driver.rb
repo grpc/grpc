@@ -20,12 +20,6 @@ def main
   STDERR.puts 'start server'
   server_runner = ServerRunner.new(EchoServerImpl)
   server_port = server_runner.run
-
-  # TODO(apolcyn) Can we get rid of this sleep?
-  # Without it, an immediate call to the just started EchoServer
-  # fails with UNAVAILABLE
-  sleep 1
-
   STDERR.puts 'start client'
   _, client_pid = start_client('forking_client_client.rb',
                                server_port)

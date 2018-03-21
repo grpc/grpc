@@ -13,7 +13,6 @@
 # limitations under the License.
 """Insecure client-server interoperability as a unit test."""
 
-from concurrent import futures
 import unittest
 
 import grpc
@@ -22,13 +21,14 @@ from src.proto.grpc.testing import test_pb2_grpc
 from tests.interop import _intraop_test_case
 from tests.interop import methods
 from tests.interop import server
+from tests.unit import test_common
 
 
 class InsecureIntraopTest(_intraop_test_case.IntraopTestCase,
                           unittest.TestCase):
 
     def setUp(self):
-        self.server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+        self.server = test_common.test_server()
         test_pb2_grpc.add_TestServiceServicer_to_server(methods.TestService(),
                                                         self.server)
         port = self.server.add_insecure_port('[::]:0')

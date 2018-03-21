@@ -19,17 +19,17 @@
 #ifndef GRPC_CORE_LIB_SLICE_SLICE_INTERNAL_H
 #define GRPC_CORE_LIB_SLICE_SLICE_INTERNAL_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 
-#include "src/core/lib/iomgr/exec_ctx.h"
-
 grpc_slice grpc_slice_ref_internal(grpc_slice slice);
-void grpc_slice_unref_internal(grpc_exec_ctx *exec_ctx, grpc_slice slice);
-void grpc_slice_buffer_reset_and_unref_internal(grpc_exec_ctx *exec_ctx,
-                                                grpc_slice_buffer *sb);
-void grpc_slice_buffer_destroy_internal(grpc_exec_ctx *exec_ctx,
-                                        grpc_slice_buffer *sb);
+void grpc_slice_unref_internal(grpc_slice slice);
+void grpc_slice_buffer_reset_and_unref_internal(grpc_slice_buffer* sb);
+void grpc_slice_buffer_partial_unref_internal(grpc_slice_buffer* sb,
+                                              size_t idx);
+void grpc_slice_buffer_destroy_internal(grpc_slice_buffer* sb);
 
 /* Check if a slice is interned */
 bool grpc_slice_is_interned(grpc_slice slice);
@@ -42,7 +42,7 @@ void grpc_test_only_set_slice_hash_seed(uint32_t key);
 // used for surface boundaries where we might receive an un-interned static
 // string
 grpc_slice grpc_slice_maybe_static_intern(grpc_slice slice,
-                                          bool *returned_slice_is_different);
+                                          bool* returned_slice_is_different);
 uint32_t grpc_static_slice_hash(grpc_slice s);
 int grpc_static_slice_eq(grpc_slice a, grpc_slice b);
 

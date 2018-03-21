@@ -19,16 +19,23 @@
 #ifndef GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURE_ENDPOINT_H
 #define GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURE_ENDPOINT_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/slice.h>
 #include "src/core/lib/iomgr/endpoint.h"
 
 struct tsi_frame_protector;
+struct tsi_zero_copy_grpc_protector;
 
-extern grpc_tracer_flag grpc_trace_secure_endpoint;
+extern grpc_core::TraceFlag grpc_trace_secure_endpoint;
 
-/* Takes ownership of protector and to_wrap, and refs leftover_slices. */
-grpc_endpoint *grpc_secure_endpoint_create(
-    struct tsi_frame_protector *protector, grpc_endpoint *to_wrap,
-    grpc_slice *leftover_slices, size_t leftover_nslices);
+/* Takes ownership of protector, zero_copy_protector, and to_wrap, and refs
+ * leftover_slices. If zero_copy_protector is not NULL, protector will never be
+ * used. */
+grpc_endpoint* grpc_secure_endpoint_create(
+    struct tsi_frame_protector* protector,
+    struct tsi_zero_copy_grpc_protector* zero_copy_protector,
+    grpc_endpoint* to_wrap, grpc_slice* leftover_slices,
+    size_t leftover_nslices);
 
 #endif /* GRPC_CORE_LIB_SECURITY_TRANSPORT_SECURE_ENDPOINT_H */

@@ -9,37 +9,29 @@ use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * <pre>
  * Unary response, as configured by the request.
- * </pre>
  *
- * Protobuf type <code>grpc.testing.SimpleResponse</code>
+ * Generated from protobuf message <code>grpc.testing.SimpleResponse</code>
  */
 class SimpleResponse extends \Google\Protobuf\Internal\Message
 {
     /**
-     * <pre>
      * Payload to increase message size.
-     * </pre>
      *
-     * <code>.grpc.testing.Payload payload = 1;</code>
+     * Generated from protobuf field <code>.grpc.testing.Payload payload = 1;</code>
      */
     private $payload = null;
     /**
-     * <pre>
      * The user the request came from, for verifying authentication was
      * successful when the client expected it.
-     * </pre>
      *
-     * <code>string username = 2;</code>
+     * Generated from protobuf field <code>string username = 2;</code>
      */
     private $username = '';
     /**
-     * <pre>
      * OAuth scope.
-     * </pre>
      *
-     * <code>string oauth_scope = 3;</code>
+     * Generated from protobuf field <code>string oauth_scope = 3;</code>
      */
     private $oauth_scope = '';
 
@@ -49,11 +41,10 @@ class SimpleResponse extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
      * Payload to increase message size.
-     * </pre>
      *
-     * <code>.grpc.testing.Payload payload = 1;</code>
+     * Generated from protobuf field <code>.grpc.testing.Payload payload = 1;</code>
+     * @return \Grpc\Testing\Payload
      */
     public function getPayload()
     {
@@ -61,25 +52,26 @@ class SimpleResponse extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
      * Payload to increase message size.
-     * </pre>
      *
-     * <code>.grpc.testing.Payload payload = 1;</code>
+     * Generated from protobuf field <code>.grpc.testing.Payload payload = 1;</code>
+     * @param \Grpc\Testing\Payload $var
+     * @return $this
      */
-    public function setPayload(&$var)
+    public function setPayload($var)
     {
         GPBUtil::checkMessage($var, \Grpc\Testing\Payload::class);
         $this->payload = $var;
+
+        return $this;
     }
 
     /**
-     * <pre>
      * The user the request came from, for verifying authentication was
      * successful when the client expected it.
-     * </pre>
      *
-     * <code>string username = 2;</code>
+     * Generated from protobuf field <code>string username = 2;</code>
+     * @return string
      */
     public function getUsername()
     {
@@ -87,25 +79,26 @@ class SimpleResponse extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
      * The user the request came from, for verifying authentication was
      * successful when the client expected it.
-     * </pre>
      *
-     * <code>string username = 2;</code>
+     * Generated from protobuf field <code>string username = 2;</code>
+     * @param string $var
+     * @return $this
      */
     public function setUsername($var)
     {
         GPBUtil::checkString($var, True);
         $this->username = $var;
+
+        return $this;
     }
 
     /**
-     * <pre>
      * OAuth scope.
-     * </pre>
      *
-     * <code>string oauth_scope = 3;</code>
+     * Generated from protobuf field <code>string oauth_scope = 3;</code>
+     * @return string
      */
     public function getOauthScope()
     {
@@ -113,16 +106,18 @@ class SimpleResponse extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
      * OAuth scope.
-     * </pre>
      *
-     * <code>string oauth_scope = 3;</code>
+     * Generated from protobuf field <code>string oauth_scope = 3;</code>
+     * @param string $var
+     * @return $this
      */
     public function setOauthScope($var)
     {
         GPBUtil::checkString($var, True);
         $this->oauth_scope = $var;
+
+        return $this;
     }
 
 }

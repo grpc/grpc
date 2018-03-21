@@ -11,8 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-require 'grpc'
+require 'spec_helper'
 
 def load_test_certs
   test_root = File.join(File.dirname(File.dirname(__FILE__)), 'testdata')
@@ -28,17 +27,6 @@ def check_md(wanted_md, received_md)
   end
 end
 
-# A test message
-class EchoMsg
-  def self.marshal(_o)
-    ''
-  end
-
-  def self.unmarshal(_o)
-    EchoMsg.new
-  end
-end
-
 # A test service with no methods.
 class EmptyService
   include GRPC::GenericService
@@ -49,27 +37,6 @@ class NoRpcImplementation
   include GRPC::GenericService
   rpc :an_rpc, EchoMsg, EchoMsg
 end
-
-# A test service with an echo implementation.
-class EchoService
-  include GRPC::GenericService
-  rpc :an_rpc, EchoMsg, EchoMsg
-  attr_reader :received_md
-
-  def initialize(**kw)
-    @trailing_metadata = kw
-    @received_md = []
-  end
-
-  def an_rpc(req, call)
-    GRPC.logger.info('echo service received a request')
-    call.output_metadata.update(@trailing_metadata)
-    @received_md << call.metadata unless call.metadata.nil?
-    req
-  end
-end
-
-EchoStub = EchoService.rpc_stub_class
 
 # A test service with an implementation that fails with BadStatus
 class FailingService
@@ -205,7 +172,7 @@ describe GRPC::RpcServer do
     it 'can be created with just some args' do
       opts = { server_args: { a_channel_arg: 'an_arg' } }
       blk = proc do
-        RpcServer.new(**opts)
+        new_rpc_server_for_testing(**opts)
       end
       expect(&blk).not_to raise_error
     end
@@ -216,7 +183,7 @@ describe GRPC::RpcServer do
           server_args: { a_channel_arg: 'an_arg' },
           creds: Object.new
         }
-        RpcServer.new(**opts)
+        new_rpc_server_for_testing(**opts)
       end
       expect(&blk).to raise_error
     end
@@ -225,7 +192,7 @@ describe GRPC::RpcServer do
   describe '#stopped?' do
     before(:each) do
       opts = { server_args: { a_channel_arg: 'an_arg' }, poll_period: 1.5 }
-      @srv = RpcServer.new(**opts)
+      @srv = new_rpc_server_for_testing(**opts)
       @srv.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
     end
 
@@ -257,7 +224,7 @@ describe GRPC::RpcServer do
       opts = {
         server_args: { a_channel_arg: 'an_arg' }
       }
-      r = RpcServer.new(**opts)
+      r = new_rpc_server_for_testing(**opts)
       expect(r.running?).to be(false)
     end
 
@@ -266,7 +233,7 @@ describe GRPC::RpcServer do
         server_args: { a_channel_arg: 'an_arg' },
         poll_period: 2
       }
-      r = RpcServer.new(**opts)
+      r = new_rpc_server_for_testing(**opts)
       r.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
       expect { r.run }.to raise_error(RuntimeError)
     end
@@ -276,7 +243,7 @@ describe GRPC::RpcServer do
         server_args: { a_channel_arg: 'an_arg' },
         poll_period: 2.5
       }
-      r = RpcServer.new(**opts)
+      r = new_rpc_server_for_testing(**opts)
       r.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
       r.handle(EchoService)
       t = Thread.new { r.run }
@@ -290,7 +257,7 @@ describe GRPC::RpcServer do
   describe '#handle' do
     before(:each) do
       @opts = { server_args: { a_channel_arg: 'an_arg' }, poll_period: 1 }
-      @srv = RpcServer.new(**@opts)
+      @srv = new_rpc_server_for_testing(**@opts)
       @srv.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
     end
 
@@ -336,7 +303,7 @@ describe GRPC::RpcServer do
         server_opts = {
           poll_period: 1
         }
-        @srv = RpcServer.new(**server_opts)
+        @srv = new_rpc_server_for_testing(**server_opts)
         server_port = @srv.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
         @host = "localhost:#{server_port}"
         @ch = GRPC::Core::Channel.new(@host, nil, :this_channel_is_insecure)
@@ -507,7 +474,7 @@ describe GRPC::RpcServer do
           poll_period: 1,
           max_waiting_requests: 1
         }
-        alt_srv = RpcServer.new(**opts)
+        alt_srv = new_rpc_server_for_testing(**opts)
         alt_srv.handle(SlowService)
         alt_port = alt_srv.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
         alt_host = "0.0.0.0:#{alt_port}"
@@ -571,7 +538,7 @@ describe GRPC::RpcServer do
           poll_period: 1,
           connect_md_proc: test_md_proc
         }
-        @srv = RpcServer.new(**server_opts)
+        @srv = new_rpc_server_for_testing(**server_opts)
         alt_port = @srv.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
         @alt_host = "0.0.0.0:#{alt_port}"
       end
@@ -606,7 +573,7 @@ describe GRPC::RpcServer do
         server_opts = {
           poll_period: 1
         }
-        @srv = RpcServer.new(**server_opts)
+        @srv = new_rpc_server_for_testing(**server_opts)
         alt_port = @srv.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
         @alt_host = "0.0.0.0:#{alt_port}"
       end
@@ -657,7 +624,7 @@ describe GRPC::RpcServer do
         server_opts = {
           poll_period: 1
         }
-        @srv = RpcServer.new(**server_opts)
+        @srv = new_rpc_server_for_testing(**server_opts)
         alt_port = @srv.add_http2_port('0.0.0.0:0', :this_port_is_insecure)
         @alt_host = "0.0.0.0:#{alt_port}"
 

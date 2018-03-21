@@ -22,7 +22,7 @@ from tests.unit.framework.common import test_constants
 
 
 def _channel_and_completion_queue():
-    channel = cygrpc.Channel(b'localhost:54321', cygrpc.ChannelArgs(()))
+    channel = cygrpc.Channel(b'localhost:54321', ())
     completion_queue = cygrpc.CompletionQueue()
     return channel, completion_queue
 
@@ -31,9 +31,9 @@ def _connectivity_loop(channel, completion_queue):
     for _ in range(100):
         connectivity = channel.check_connectivity_state(True)
         channel.watch_connectivity_state(connectivity,
-                                         cygrpc.Timespec(time.time() + 0.2),
-                                         completion_queue, None)
-        completion_queue.poll(deadline=cygrpc.Timespec(float('+inf')))
+                                         time.time() + 0.2, completion_queue,
+                                         None)
+        completion_queue.poll()
 
 
 def _create_loop_destroy():
@@ -56,7 +56,10 @@ class ChannelTest(unittest.TestCase):
 
     def test_single_channel_lonely_connectivity(self):
         channel, completion_queue = _channel_and_completion_queue()
-        _in_parallel(_connectivity_loop, (channel, completion_queue,))
+        _in_parallel(_connectivity_loop, (
+            channel,
+            completion_queue,
+        ))
         completion_queue.shutdown()
 
     def test_multiple_channels_lonely_connectivity(self):

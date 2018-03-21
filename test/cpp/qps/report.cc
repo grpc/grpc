@@ -25,7 +25,8 @@
 #include "test/cpp/qps/parse_json.h"
 #include "test/cpp/qps/stats.h"
 
-#include <grpc++/client_context.h>
+#include <grpcpp/client_context.h>
+#include "src/cpp/util/core_stats.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 
 namespace grpc {
@@ -84,6 +85,36 @@ void GprLogReporter::ReportQPS(const ScenarioResult& result) {
             result.summary().failed_requests_per_second());
     gpr_log(GPR_INFO, "successful requests/second: %.1f",
             result.summary().successful_requests_per_second());
+  }
+  for (int i = 0; i < result.client_stats_size(); i++) {
+    if (result.client_stats(i).has_core_stats()) {
+      ReportCoreStats("CLIENT", i, result.client_stats(i).core_stats());
+    }
+  }
+  for (int i = 0; i < result.server_stats_size(); i++) {
+    if (result.server_stats(i).has_core_stats()) {
+      ReportCoreStats("SERVER", i, result.server_stats(i).core_stats());
+    }
+  }
+}
+
+void GprLogReporter::ReportCoreStats(const char* name, int idx,
+                                     const grpc::core::Stats& stats) {
+  grpc_stats_data data;
+  ProtoToCoreStats(stats, &data);
+  for (int i = 0; i < GRPC_STATS_COUNTER_COUNT; i++) {
+    gpr_log(GPR_DEBUG, "%s[%d].%s = %" PRIdPTR, name, idx,
+            grpc_stats_counter_name[i], data.counters[i]);
+  }
+  for (int i = 0; i < GRPC_STATS_HISTOGRAM_COUNT; i++) {
+    gpr_log(GPR_DEBUG, "%s[%d].%s = %.1lf/%.1lf/%.1lf (50/95/99%%-ile)", name,
+            idx, grpc_stats_histogram_name[i],
+            grpc_stats_histo_percentile(
+                &data, static_cast<grpc_stats_histograms>(i), 50),
+            grpc_stats_histo_percentile(
+                &data, static_cast<grpc_stats_histograms>(i), 95),
+            grpc_stats_histo_percentile(
+                &data, static_cast<grpc_stats_histograms>(i), 99));
   }
 }
 

@@ -54,15 +54,24 @@ class BaseStub
             }
             unset($opts['update_metadata']);
         }
+        if (!empty($opts['grpc.ssl_target_name_override'])) {
+            $this->hostname_override = $opts['grpc.ssl_target_name_override'];
+        }
+        if ($channel) {
+            if (!is_a($channel, 'Grpc\Channel')) {
+                throw new \Exception('The channel argument is not a'.
+                                     'Channel object');
+            }
+            $this->channel = $channel;
+            return;
+        }
+
         $package_config = json_decode(
             file_get_contents(dirname(__FILE__).'/../../composer.json'), true);
         if (!empty($opts['grpc.primary_user_agent'])) {
             $opts['grpc.primary_user_agent'] .= ' ';
         } else {
             $opts['grpc.primary_user_agent'] = '';
-        }
-        if (!empty($opts['grpc.ssl_target_name_override'])) {
-            $this->hostname_override = $opts['grpc.ssl_target_name_override'];
         }
         $opts['grpc.primary_user_agent'] .=
             'grpc-php/'.$package_config['version'];
@@ -71,15 +80,7 @@ class BaseStub
                                  'required. Please see one of the '.
                                  'ChannelCredentials::create methods');
         }
-        if ($channel) {
-            if (!is_a($channel, 'Grpc\Channel')) {
-                throw new \Exception('The channel argument is not a'.
-                                     'Channel object');
-            }
-            $this->channel = $channel;
-        } else {
-            $this->channel = new Channel($hostname, $opts);
-        }
+        $this->channel = new Channel($hostname, $opts);
     }
 
     /**
@@ -218,7 +219,7 @@ class BaseStub
      *                              (optional)
      * @param array    $options     An array of options (optional)
      *
-     * @return SimpleSurfaceActiveCall The active call object
+     * @return UnaryCall The active call object
      */
     protected function _simpleRequest($method,
                                    $argument,
@@ -253,7 +254,7 @@ class BaseStub
      *                              (optional)
      * @param array    $options     An array of options (optional)
      *
-     * @return ClientStreamingSurfaceActiveCall The active call object
+     * @return ClientStreamingCall The active call object
      */
     protected function _clientStreamRequest($method,
                                          $deserialize,
@@ -288,7 +289,7 @@ class BaseStub
      *                              (optional)
      * @param array    $options     An array of options (optional)
      *
-     * @return ServerStreamingSurfaceActiveCall The active call object
+     * @return ServerStreamingCall The active call object
      */
     protected function _serverStreamRequest($method,
                                          $argument,
@@ -322,7 +323,7 @@ class BaseStub
      *                              (optional)
      * @param array    $options     An array of options (optional)
      *
-     * @return BidiStreamingSurfaceActiveCall The active call object
+     * @return BidiStreamingCall The active call object
      */
     protected function _bidiRequest($method,
                                  $deserialize,

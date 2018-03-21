@@ -32,7 +32,7 @@ namespace Grpc.Testing {
             "U2VjdXJpdHlQYXJhbXMSEwoLdXNlX3Rlc3RfY2EYASABKAgSHAoUc2VydmVy",
             "X2hvc3Rfb3ZlcnJpZGUYAiABKAkSEQoJY3JlZF90eXBlGAMgASgJIk0KCkNo",
             "YW5uZWxBcmcSDAoEbmFtZRgBIAEoCRITCglzdHJfdmFsdWUYAiABKAlIABIT",
-            "CglpbnRfdmFsdWUYAyABKAVIAEIHCgV2YWx1ZSLVBAoMQ2xpZW50Q29uZmln",
+            "CglpbnRfdmFsdWUYAyABKAVIAEIHCgV2YWx1ZSLvBAoMQ2xpZW50Q29uZmln",
             "EhYKDnNlcnZlcl90YXJnZXRzGAEgAygJEi0KC2NsaWVudF90eXBlGAIgASgO",
             "MhguZ3JwYy50ZXN0aW5nLkNsaWVudFR5cGUSNQoPc2VjdXJpdHlfcGFyYW1z",
             "GAMgASgLMhwuZ3JwYy50ZXN0aW5nLlNlY3VyaXR5UGFyYW1zEiQKHG91dHN0",
@@ -45,59 +45,60 @@ namespace Grpc.Testing {
             "dG9ncmFtUGFyYW1zEhEKCWNvcmVfbGlzdBgNIAMoBRISCgpjb3JlX2xpbWl0",
             "GA4gASgFEhgKEG90aGVyX2NsaWVudF9hcGkYDyABKAkSLgoMY2hhbm5lbF9h",
             "cmdzGBAgAygLMhguZ3JwYy50ZXN0aW5nLkNoYW5uZWxBcmcSFgoOdGhyZWFk",
-            "c19wZXJfY3EYESABKAUSGwoTbWVzc2FnZXNfcGVyX3N0cmVhbRgSIAEoBSI4",
-            "CgxDbGllbnRTdGF0dXMSKAoFc3RhdHMYASABKAsyGS5ncnBjLnRlc3Rpbmcu",
-            "Q2xpZW50U3RhdHMiFQoETWFyaxINCgVyZXNldBgBIAEoCCJoCgpDbGllbnRB",
-            "cmdzEisKBXNldHVwGAEgASgLMhouZ3JwYy50ZXN0aW5nLkNsaWVudENvbmZp",
-            "Z0gAEiIKBG1hcmsYAiABKAsyEi5ncnBjLnRlc3RpbmcuTWFya0gAQgkKB2Fy",
-            "Z3R5cGUi/QIKDFNlcnZlckNvbmZpZxItCgtzZXJ2ZXJfdHlwZRgBIAEoDjIY",
-            "LmdycGMudGVzdGluZy5TZXJ2ZXJUeXBlEjUKD3NlY3VyaXR5X3BhcmFtcxgC",
-            "IAEoCzIcLmdycGMudGVzdGluZy5TZWN1cml0eVBhcmFtcxIMCgRwb3J0GAQg",
-            "ASgFEhwKFGFzeW5jX3NlcnZlcl90aHJlYWRzGAcgASgFEhIKCmNvcmVfbGlt",
-            "aXQYCCABKAUSMwoOcGF5bG9hZF9jb25maWcYCSABKAsyGy5ncnBjLnRlc3Rp",
-            "bmcuUGF5bG9hZENvbmZpZxIRCgljb3JlX2xpc3QYCiADKAUSGAoQb3RoZXJf",
-            "c2VydmVyX2FwaRgLIAEoCRIWCg50aHJlYWRzX3Blcl9jcRgMIAEoBRIcChNy",
-            "ZXNvdXJjZV9xdW90YV9zaXplGOkHIAEoBRIvCgxjaGFubmVsX2FyZ3MY6gcg",
-            "AygLMhguZ3JwYy50ZXN0aW5nLkNoYW5uZWxBcmciaAoKU2VydmVyQXJncxIr",
-            "CgVzZXR1cBgBIAEoCzIaLmdycGMudGVzdGluZy5TZXJ2ZXJDb25maWdIABIi",
-            "CgRtYXJrGAIgASgLMhIuZ3JwYy50ZXN0aW5nLk1hcmtIAEIJCgdhcmd0eXBl",
-            "IlUKDFNlcnZlclN0YXR1cxIoCgVzdGF0cxgBIAEoCzIZLmdycGMudGVzdGlu",
-            "Zy5TZXJ2ZXJTdGF0cxIMCgRwb3J0GAIgASgFEg0KBWNvcmVzGAMgASgFIg0K",
-            "C0NvcmVSZXF1ZXN0Ih0KDENvcmVSZXNwb25zZRINCgVjb3JlcxgBIAEoBSIG",
-            "CgRWb2lkIv0BCghTY2VuYXJpbxIMCgRuYW1lGAEgASgJEjEKDWNsaWVudF9j",
-            "b25maWcYAiABKAsyGi5ncnBjLnRlc3RpbmcuQ2xpZW50Q29uZmlnEhMKC251",
-            "bV9jbGllbnRzGAMgASgFEjEKDXNlcnZlcl9jb25maWcYBCABKAsyGi5ncnBj",
-            "LnRlc3RpbmcuU2VydmVyQ29uZmlnEhMKC251bV9zZXJ2ZXJzGAUgASgFEhYK",
-            "Dndhcm11cF9zZWNvbmRzGAYgASgFEhkKEWJlbmNobWFya19zZWNvbmRzGAcg",
-            "ASgFEiAKGHNwYXduX2xvY2FsX3dvcmtlcl9jb3VudBgIIAEoBSI2CglTY2Vu",
-            "YXJpb3MSKQoJc2NlbmFyaW9zGAEgAygLMhYuZ3JwYy50ZXN0aW5nLlNjZW5h",
-            "cmlvIoQEChVTY2VuYXJpb1Jlc3VsdFN1bW1hcnkSCwoDcXBzGAEgASgBEhsK",
-            "E3Fwc19wZXJfc2VydmVyX2NvcmUYAiABKAESGgoSc2VydmVyX3N5c3RlbV90",
-            "aW1lGAMgASgBEhgKEHNlcnZlcl91c2VyX3RpbWUYBCABKAESGgoSY2xpZW50",
-            "X3N5c3RlbV90aW1lGAUgASgBEhgKEGNsaWVudF91c2VyX3RpbWUYBiABKAES",
-            "EgoKbGF0ZW5jeV81MBgHIAEoARISCgpsYXRlbmN5XzkwGAggASgBEhIKCmxh",
-            "dGVuY3lfOTUYCSABKAESEgoKbGF0ZW5jeV85ORgKIAEoARITCgtsYXRlbmN5",
-            "Xzk5ORgLIAEoARIYChBzZXJ2ZXJfY3B1X3VzYWdlGAwgASgBEiYKHnN1Y2Nl",
-            "c3NmdWxfcmVxdWVzdHNfcGVyX3NlY29uZBgNIAEoARIiChpmYWlsZWRfcmVx",
-            "dWVzdHNfcGVyX3NlY29uZBgOIAEoARIgChhjbGllbnRfcG9sbHNfcGVyX3Jl",
-            "cXVlc3QYDyABKAESIAoYc2VydmVyX3BvbGxzX3Blcl9yZXF1ZXN0GBAgASgB",
-            "EiIKGnNlcnZlcl9xdWVyaWVzX3Blcl9jcHVfc2VjGBEgASgBEiIKGmNsaWVu",
-            "dF9xdWVyaWVzX3Blcl9jcHVfc2VjGBIgASgBIoMDCg5TY2VuYXJpb1Jlc3Vs",
-            "dBIoCghzY2VuYXJpbxgBIAEoCzIWLmdycGMudGVzdGluZy5TY2VuYXJpbxIu",
-            "CglsYXRlbmNpZXMYAiABKAsyGy5ncnBjLnRlc3RpbmcuSGlzdG9ncmFtRGF0",
-            "YRIvCgxjbGllbnRfc3RhdHMYAyADKAsyGS5ncnBjLnRlc3RpbmcuQ2xpZW50",
-            "U3RhdHMSLwoMc2VydmVyX3N0YXRzGAQgAygLMhkuZ3JwYy50ZXN0aW5nLlNl",
-            "cnZlclN0YXRzEhQKDHNlcnZlcl9jb3JlcxgFIAMoBRI0CgdzdW1tYXJ5GAYg",
-            "ASgLMiMuZ3JwYy50ZXN0aW5nLlNjZW5hcmlvUmVzdWx0U3VtbWFyeRIWCg5j",
-            "bGllbnRfc3VjY2VzcxgHIAMoCBIWCg5zZXJ2ZXJfc3VjY2VzcxgIIAMoCBI5",
-            "Cg9yZXF1ZXN0X3Jlc3VsdHMYCSADKAsyIC5ncnBjLnRlc3RpbmcuUmVxdWVz",
-            "dFJlc3VsdENvdW50KkEKCkNsaWVudFR5cGUSDwoLU1lOQ19DTElFTlQQABIQ",
-            "CgxBU1lOQ19DTElFTlQQARIQCgxPVEhFUl9DTElFTlQQAipbCgpTZXJ2ZXJU",
-            "eXBlEg8KC1NZTkNfU0VSVkVSEAASEAoMQVNZTkNfU0VSVkVSEAESGAoUQVNZ",
-            "TkNfR0VORVJJQ19TRVJWRVIQAhIQCgxPVEhFUl9TRVJWRVIQAypyCgdScGNU",
-            "eXBlEgkKBVVOQVJZEAASDQoJU1RSRUFNSU5HEAESGQoVU1RSRUFNSU5HX0ZS",
-            "T01fQ0xJRU5UEAISGQoVU1RSRUFNSU5HX0ZST01fU0VSVkVSEAMSFwoTU1RS",
-            "RUFNSU5HX0JPVEhfV0FZUxAEYgZwcm90bzM="));
+            "c19wZXJfY3EYESABKAUSGwoTbWVzc2FnZXNfcGVyX3N0cmVhbRgSIAEoBRIY",
+            "ChB1c2VfY29hbGVzY2VfYXBpGBMgASgIIjgKDENsaWVudFN0YXR1cxIoCgVz",
+            "dGF0cxgBIAEoCzIZLmdycGMudGVzdGluZy5DbGllbnRTdGF0cyIVCgRNYXJr",
+            "Eg0KBXJlc2V0GAEgASgIImgKCkNsaWVudEFyZ3MSKwoFc2V0dXAYASABKAsy",
+            "Gi5ncnBjLnRlc3RpbmcuQ2xpZW50Q29uZmlnSAASIgoEbWFyaxgCIAEoCzIS",
+            "LmdycGMudGVzdGluZy5NYXJrSABCCQoHYXJndHlwZSL9AgoMU2VydmVyQ29u",
+            "ZmlnEi0KC3NlcnZlcl90eXBlGAEgASgOMhguZ3JwYy50ZXN0aW5nLlNlcnZl",
+            "clR5cGUSNQoPc2VjdXJpdHlfcGFyYW1zGAIgASgLMhwuZ3JwYy50ZXN0aW5n",
+            "LlNlY3VyaXR5UGFyYW1zEgwKBHBvcnQYBCABKAUSHAoUYXN5bmNfc2VydmVy",
+            "X3RocmVhZHMYByABKAUSEgoKY29yZV9saW1pdBgIIAEoBRIzCg5wYXlsb2Fk",
+            "X2NvbmZpZxgJIAEoCzIbLmdycGMudGVzdGluZy5QYXlsb2FkQ29uZmlnEhEK",
+            "CWNvcmVfbGlzdBgKIAMoBRIYChBvdGhlcl9zZXJ2ZXJfYXBpGAsgASgJEhYK",
+            "DnRocmVhZHNfcGVyX2NxGAwgASgFEhwKE3Jlc291cmNlX3F1b3RhX3NpemUY",
+            "6QcgASgFEi8KDGNoYW5uZWxfYXJncxjqByADKAsyGC5ncnBjLnRlc3Rpbmcu",
+            "Q2hhbm5lbEFyZyJoCgpTZXJ2ZXJBcmdzEisKBXNldHVwGAEgASgLMhouZ3Jw",
+            "Yy50ZXN0aW5nLlNlcnZlckNvbmZpZ0gAEiIKBG1hcmsYAiABKAsyEi5ncnBj",
+            "LnRlc3RpbmcuTWFya0gAQgkKB2FyZ3R5cGUiVQoMU2VydmVyU3RhdHVzEigK",
+            "BXN0YXRzGAEgASgLMhkuZ3JwYy50ZXN0aW5nLlNlcnZlclN0YXRzEgwKBHBv",
+            "cnQYAiABKAUSDQoFY29yZXMYAyABKAUiDQoLQ29yZVJlcXVlc3QiHQoMQ29y",
+            "ZVJlc3BvbnNlEg0KBWNvcmVzGAEgASgFIgYKBFZvaWQi/QEKCFNjZW5hcmlv",
+            "EgwKBG5hbWUYASABKAkSMQoNY2xpZW50X2NvbmZpZxgCIAEoCzIaLmdycGMu",
+            "dGVzdGluZy5DbGllbnRDb25maWcSEwoLbnVtX2NsaWVudHMYAyABKAUSMQoN",
+            "c2VydmVyX2NvbmZpZxgEIAEoCzIaLmdycGMudGVzdGluZy5TZXJ2ZXJDb25m",
+            "aWcSEwoLbnVtX3NlcnZlcnMYBSABKAUSFgoOd2FybXVwX3NlY29uZHMYBiAB",
+            "KAUSGQoRYmVuY2htYXJrX3NlY29uZHMYByABKAUSIAoYc3Bhd25fbG9jYWxf",
+            "d29ya2VyX2NvdW50GAggASgFIjYKCVNjZW5hcmlvcxIpCglzY2VuYXJpb3MY",
+            "ASADKAsyFi5ncnBjLnRlc3RpbmcuU2NlbmFyaW8ihAQKFVNjZW5hcmlvUmVz",
+            "dWx0U3VtbWFyeRILCgNxcHMYASABKAESGwoTcXBzX3Blcl9zZXJ2ZXJfY29y",
+            "ZRgCIAEoARIaChJzZXJ2ZXJfc3lzdGVtX3RpbWUYAyABKAESGAoQc2VydmVy",
+            "X3VzZXJfdGltZRgEIAEoARIaChJjbGllbnRfc3lzdGVtX3RpbWUYBSABKAES",
+            "GAoQY2xpZW50X3VzZXJfdGltZRgGIAEoARISCgpsYXRlbmN5XzUwGAcgASgB",
+            "EhIKCmxhdGVuY3lfOTAYCCABKAESEgoKbGF0ZW5jeV85NRgJIAEoARISCgps",
+            "YXRlbmN5Xzk5GAogASgBEhMKC2xhdGVuY3lfOTk5GAsgASgBEhgKEHNlcnZl",
+            "cl9jcHVfdXNhZ2UYDCABKAESJgoec3VjY2Vzc2Z1bF9yZXF1ZXN0c19wZXJf",
+            "c2Vjb25kGA0gASgBEiIKGmZhaWxlZF9yZXF1ZXN0c19wZXJfc2Vjb25kGA4g",
+            "ASgBEiAKGGNsaWVudF9wb2xsc19wZXJfcmVxdWVzdBgPIAEoARIgChhzZXJ2",
+            "ZXJfcG9sbHNfcGVyX3JlcXVlc3QYECABKAESIgoac2VydmVyX3F1ZXJpZXNf",
+            "cGVyX2NwdV9zZWMYESABKAESIgoaY2xpZW50X3F1ZXJpZXNfcGVyX2NwdV9z",
+            "ZWMYEiABKAEigwMKDlNjZW5hcmlvUmVzdWx0EigKCHNjZW5hcmlvGAEgASgL",
+            "MhYuZ3JwYy50ZXN0aW5nLlNjZW5hcmlvEi4KCWxhdGVuY2llcxgCIAEoCzIb",
+            "LmdycGMudGVzdGluZy5IaXN0b2dyYW1EYXRhEi8KDGNsaWVudF9zdGF0cxgD",
+            "IAMoCzIZLmdycGMudGVzdGluZy5DbGllbnRTdGF0cxIvCgxzZXJ2ZXJfc3Rh",
+            "dHMYBCADKAsyGS5ncnBjLnRlc3RpbmcuU2VydmVyU3RhdHMSFAoMc2VydmVy",
+            "X2NvcmVzGAUgAygFEjQKB3N1bW1hcnkYBiABKAsyIy5ncnBjLnRlc3Rpbmcu",
+            "U2NlbmFyaW9SZXN1bHRTdW1tYXJ5EhYKDmNsaWVudF9zdWNjZXNzGAcgAygI",
+            "EhYKDnNlcnZlcl9zdWNjZXNzGAggAygIEjkKD3JlcXVlc3RfcmVzdWx0cxgJ",
+            "IAMoCzIgLmdycGMudGVzdGluZy5SZXF1ZXN0UmVzdWx0Q291bnQqQQoKQ2xp",
+            "ZW50VHlwZRIPCgtTWU5DX0NMSUVOVBAAEhAKDEFTWU5DX0NMSUVOVBABEhAK",
+            "DE9USEVSX0NMSUVOVBACKlsKClNlcnZlclR5cGUSDwoLU1lOQ19TRVJWRVIQ",
+            "ABIQCgxBU1lOQ19TRVJWRVIQARIYChRBU1lOQ19HRU5FUklDX1NFUlZFUhAC",
+            "EhAKDE9USEVSX1NFUlZFUhADKnIKB1JwY1R5cGUSCQoFVU5BUlkQABINCglT",
+            "VFJFQU1JTkcQARIZChVTVFJFQU1JTkdfRlJPTV9DTElFTlQQAhIZChVTVFJF",
+            "QU1JTkdfRlJPTV9TRVJWRVIQAxIXChNTVFJFQU1JTkdfQk9USF9XQVlTEARi",
+            "BnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Grpc.Testing.PayloadsReflection.Descriptor, global::Grpc.Testing.StatsReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Grpc.Testing.ClientType), typeof(global::Grpc.Testing.ServerType), typeof(global::Grpc.Testing.RpcType), }, new pbr::GeneratedClrTypeInfo[] {
@@ -106,7 +107,7 @@ namespace Grpc.Testing {
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.LoadParams), global::Grpc.Testing.LoadParams.Parser, new[]{ "ClosedLoop", "Poisson" }, new[]{ "Load" }, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.SecurityParams), global::Grpc.Testing.SecurityParams.Parser, new[]{ "UseTestCa", "ServerHostOverride", "CredType" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ChannelArg), global::Grpc.Testing.ChannelArg.Parser, new[]{ "Name", "StrValue", "IntValue" }, new[]{ "Value" }, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClientConfig), global::Grpc.Testing.ClientConfig.Parser, new[]{ "ServerTargets", "ClientType", "SecurityParams", "OutstandingRpcsPerChannel", "ClientChannels", "AsyncClientThreads", "RpcType", "LoadParams", "PayloadConfig", "HistogramParams", "CoreList", "CoreLimit", "OtherClientApi", "ChannelArgs", "ThreadsPerCq", "MessagesPerStream" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClientConfig), global::Grpc.Testing.ClientConfig.Parser, new[]{ "ServerTargets", "ClientType", "SecurityParams", "OutstandingRpcsPerChannel", "ClientChannels", "AsyncClientThreads", "RpcType", "LoadParams", "PayloadConfig", "HistogramParams", "CoreList", "CoreLimit", "OtherClientApi", "ChannelArgs", "ThreadsPerCq", "MessagesPerStream", "UseCoalesceApi" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClientStatus), global::Grpc.Testing.ClientStatus.Parser, new[]{ "Stats" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.Mark), global::Grpc.Testing.Mark.Parser, new[]{ "Reset" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClientArgs), global::Grpc.Testing.ClientArgs.Parser, new[]{ "Setup", "Mark" }, new[]{ "Argtype" }, null, null),
@@ -522,10 +523,16 @@ namespace Grpc.Testing {
       }
       switch (other.LoadCase) {
         case LoadOneofCase.ClosedLoop:
-          ClosedLoop = other.ClosedLoop;
+          if (ClosedLoop == null) {
+            ClosedLoop = new global::Grpc.Testing.ClosedLoopParams();
+          }
+          ClosedLoop.MergeFrom(other.ClosedLoop);
           break;
         case LoadOneofCase.Poisson:
-          Poisson = other.Poisson;
+          if (Poisson == null) {
+            Poisson = new global::Grpc.Testing.PoissonParams();
+          }
+          Poisson.MergeFrom(other.Poisson);
           break;
       }
 
@@ -983,6 +990,7 @@ namespace Grpc.Testing {
       channelArgs_ = other.channelArgs_.Clone();
       threadsPerCq_ = other.threadsPerCq_;
       messagesPerStream_ = other.messagesPerStream_;
+      useCoalesceApi_ = other.useCoalesceApi_;
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1192,6 +1200,20 @@ namespace Grpc.Testing {
       }
     }
 
+    /// <summary>Field number for the "use_coalesce_api" field.</summary>
+    public const int UseCoalesceApiFieldNumber = 19;
+    private bool useCoalesceApi_;
+    /// <summary>
+    /// Use coalescing API when possible.
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool UseCoalesceApi {
+      get { return useCoalesceApi_; }
+      set {
+        useCoalesceApi_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as ClientConfig);
@@ -1221,6 +1243,7 @@ namespace Grpc.Testing {
       if(!channelArgs_.Equals(other.channelArgs_)) return false;
       if (ThreadsPerCq != other.ThreadsPerCq) return false;
       if (MessagesPerStream != other.MessagesPerStream) return false;
+      if (UseCoalesceApi != other.UseCoalesceApi) return false;
       return true;
     }
 
@@ -1243,6 +1266,7 @@ namespace Grpc.Testing {
       hash ^= channelArgs_.GetHashCode();
       if (ThreadsPerCq != 0) hash ^= ThreadsPerCq.GetHashCode();
       if (MessagesPerStream != 0) hash ^= MessagesPerStream.GetHashCode();
+      if (UseCoalesceApi != false) hash ^= UseCoalesceApi.GetHashCode();
       return hash;
     }
 
@@ -1308,6 +1332,10 @@ namespace Grpc.Testing {
         output.WriteRawTag(144, 1);
         output.WriteInt32(MessagesPerStream);
       }
+      if (UseCoalesceApi != false) {
+        output.WriteRawTag(152, 1);
+        output.WriteBool(UseCoalesceApi);
+      }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1354,6 +1382,9 @@ namespace Grpc.Testing {
       }
       if (MessagesPerStream != 0) {
         size += 2 + pb::CodedOutputStream.ComputeInt32Size(MessagesPerStream);
+      }
+      if (UseCoalesceApi != false) {
+        size += 2 + 1;
       }
       return size;
     }
@@ -1416,6 +1447,9 @@ namespace Grpc.Testing {
       }
       if (other.MessagesPerStream != 0) {
         MessagesPerStream = other.MessagesPerStream;
+      }
+      if (other.UseCoalesceApi != false) {
+        UseCoalesceApi = other.UseCoalesceApi;
       }
     }
 
@@ -1502,6 +1536,10 @@ namespace Grpc.Testing {
           }
           case 144: {
             MessagesPerStream = input.ReadInt32();
+            break;
+          }
+          case 152: {
+            UseCoalesceApi = input.ReadBool();
             break;
           }
         }
@@ -1901,10 +1939,16 @@ namespace Grpc.Testing {
       }
       switch (other.ArgtypeCase) {
         case ArgtypeOneofCase.Setup:
-          Setup = other.Setup;
+          if (Setup == null) {
+            Setup = new global::Grpc.Testing.ClientConfig();
+          }
+          Setup.MergeFrom(other.Setup);
           break;
         case ArgtypeOneofCase.Mark:
-          Mark = other.Mark;
+          if (Mark == null) {
+            Mark = new global::Grpc.Testing.Mark();
+          }
+          Mark.MergeFrom(other.Mark);
           break;
       }
 
@@ -2508,10 +2552,16 @@ namespace Grpc.Testing {
       }
       switch (other.ArgtypeCase) {
         case ArgtypeOneofCase.Setup:
-          Setup = other.Setup;
+          if (Setup == null) {
+            Setup = new global::Grpc.Testing.ServerConfig();
+          }
+          Setup.MergeFrom(other.Setup);
           break;
         case ArgtypeOneofCase.Mark:
-          Mark = other.Mark;
+          if (Mark == null) {
+            Mark = new global::Grpc.Testing.Mark();
+          }
+          Mark.MergeFrom(other.Mark);
           break;
       }
 

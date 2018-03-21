@@ -35,7 +35,7 @@ def main
                                       :this_channel_is_insecure)
     stub.echo(Echo::EchoRequest.new(request: 'hello'))
     fail 'the clients rpc in this test shouldnt complete. ' \
-      'expecting SIGINT to happen in the middle of the call'
+      'expecting SIGTERM to happen in the middle of the call'
   end
   thd.join
 end

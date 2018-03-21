@@ -181,8 +181,8 @@ class Runner(object):
         # Run the tests
         result.startTestRun()
         for augmented_case in augmented_cases:
-            sys.stdout.write(
-                'Running       {}\n'.format(augmented_case.case.id()))
+            sys.stdout.write('Running       {}\n'.format(
+                augmented_case.case.id()))
             sys.stdout.flush()
             case_thread = threading.Thread(
                 target=augmented_case.case.run, args=(result,))
@@ -196,8 +196,8 @@ class Runner(object):
             except:
                 # re-raise the exception after forcing the with-block to end
                 raise
-            result.set_output(augmented_case.case,
-                              stdout_pipe.output(), stderr_pipe.output())
+            result.set_output(augmented_case.case, stdout_pipe.output(),
+                              stderr_pipe.output())
             sys.stdout.write(result_out.getvalue())
             sys.stdout.flush()
             result_out.truncate(0)

@@ -21,6 +21,7 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #import <GRPCClient/GRPCCall.h>
+#import <GRPCClient/GRPCCall+MobileLog.h>
 #ifdef GRPC_COMPILE_WITH_CRONET
 #import <GRPCClient/GRPCCall+ChannelArg.h>
 #import <GRPCClient/GRPCCall+Cronet.h>
@@ -35,12 +36,6 @@
 NS_ASSUME_NONNULL_BEGIN
 
 static NSMutableDictionary *kHostCache;
-
-// This connectivity monitor flushes the host cache when connectivity status
-// changes or when connection switch between Wifi and Cellular data, so that a
-// new call will use a new channel. Otherwise, a new call will still use the
-// cached channel which is no longer available and will cause gRPC to hang.
-static GRPCConnectivityMonitor *connectivityMonitor = nil;
 
 @implementation GRPCHost {
   // TODO(mlumish): Investigate whether caching channels with strong links is a good idea.
@@ -87,18 +82,9 @@ static GRPCConnectivityMonitor *connectivityMonitor = nil;
       _address = address;
       _secure = YES;
       kHostCache[address] = self;
+      _compressAlgorithm = GRPC_COMPRESS_NONE;
     }
-    // Keep a single monitor to flush the cache if the connectivity status changes
-    // Thread safety guarded by @synchronized(kHostCache)
-    if (!connectivityMonitor) {
-      connectivityMonitor =
-      [GRPCConnectivityMonitor monitorWithHost:hostURL.host];
-      void (^handler)() = ^{
-        [GRPCHost flushChannelCache];
-      };
-      [connectivityMonitor handleLossWithHandler:handler
-                         wifiStatusChangeHandler:handler];
-    }
+    [GRPCConnectivityMonitor registerObserver:self selector:@selector(connectivityChange:)];
   }
   return self;
 }
@@ -121,6 +107,7 @@ static GRPCConnectivityMonitor *connectivityMonitor = nil;
 
 - (nullable grpc_call *)unmanagedCallWithPath:(NSString *)path
                                    serverName:(NSString *)serverName
+                                      timeout:(NSTimeInterval)timeout
                               completionQueue:(GRPCCompletionQueue *)queue {
   GRPCChannel *channel;
   // This is racing -[GRPCHost disconnect].
@@ -130,7 +117,10 @@ static GRPCConnectivityMonitor *connectivityMonitor = nil;
     }
     channel = _channel;
   }
-  return [channel unmanagedCallWithPath:path serverName:serverName completionQueue:queue];
+  return [channel unmanagedCallWithPath:path
+                             serverName:serverName
+                                timeout:timeout
+                        completionQueue:queue];
 }
 
 - (BOOL)setTLSPEMRootCerts:(nullable NSString *)pemRootCerts
@@ -220,8 +210,17 @@ static GRPCConnectivityMonitor *connectivityMonitor = nil;
   if (_responseSizeLimitOverride) {
     args[@GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH] = _responseSizeLimitOverride;
   }
-  // Use 10000ms initial backoff time for correct behavior on bad/slow networks  
-  args[@GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS] = @10000;
+
+  if (_compressAlgorithm != GRPC_COMPRESS_NONE) {
+    args[@GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM] =
+        [NSNumber numberWithInt:_compressAlgorithm];
+  }
+
+  id logConfig = [GRPCCall logConfig];
+  if (logConfig != nil) {
+    args[@GRPC_ARG_MOBILE_LOG_CONFIG] = logConfig;
+  }
+
   return args;
 }
 
@@ -264,6 +263,13 @@ static GRPCConnectivityMonitor *connectivityMonitor = nil;
   @synchronized(self) {
     _channel = nil;
   }
+}
+
+// Flushes the host cache when connectivity status changes or when connection switch between Wifi
+// and Cellular data, so that a new call will use a new channel. Otherwise, a new call will still
+// use the cached channel which is no longer available and will cause gRPC to hang.
+- (void)connectivityChange:(NSNotification *)note {
+  [GRPCHost flushChannelCache];
 }
 
 @end

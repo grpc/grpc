@@ -213,7 +213,7 @@ class StreamStreamChannelRpc(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
 
-class Channel(six.with_metaclass(abc.ABCMeta), grpc.Channel):
+class Channel(six.with_metaclass(abc.ABCMeta, grpc.Channel)):
     """A grpc.Channel double with which to test a system that invokes RPCs."""
 
     @abc.abstractmethod
@@ -289,6 +289,278 @@ class Channel(six.with_metaclass(abc.ABCMeta), grpc.Channel):
           A (invocation_metadata, stream_stream_channel_rpc) tuple of the RPC's
             invocation metadata and a StreamStreamChannelRpc with which to
             "play server" for the RPC.
+        """
+        raise NotImplementedError()
+
+
+class UnaryUnaryServerRpc(six.with_metaclass(abc.ABCMeta)):
+    """Fixture for a unary-unary RPC serviced by a system under test.
+
+    Enables users to "play client" for the RPC.
+    """
+
+    @abc.abstractmethod
+    def initial_metadata(self):
+        """Accesses the initial metadata emitted by the system under test.
+
+        This method blocks until the system under test has added initial
+        metadata to the RPC (or has provided one or more response messages or
+        has terminated the RPC, either of which will cause gRPC Python to
+        synthesize initial metadata for the RPC).
+
+        Returns:
+          The initial metadata for the RPC.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def cancel(self):
+        """Cancels the RPC."""
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def termination(self):
+        """Blocks until the system under test has terminated the RPC.
+
+        Returns:
+          A (response, trailing_metadata, code, details) sequence with the RPC's
+            response, trailing metadata, code, and details.
+        """
+        raise NotImplementedError()
+
+
+class UnaryStreamServerRpc(six.with_metaclass(abc.ABCMeta)):
+    """Fixture for a unary-stream RPC serviced by a system under test.
+
+    Enables users to "play client" for the RPC.
+    """
+
+    @abc.abstractmethod
+    def initial_metadata(self):
+        """Accesses the initial metadata emitted by the system under test.
+
+        This method blocks until the system under test has added initial
+        metadata to the RPC (or has provided one or more response messages or
+        has terminated the RPC, either of which will cause gRPC Python to
+        synthesize initial metadata for the RPC).
+
+        Returns:
+          The initial metadata for the RPC.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def take_response(self):
+        """Draws one of the responses added to the RPC by the system under test.
+
+        Successive calls to this method return responses in the same order in
+        which the system under test added them to the RPC.
+
+        Returns:
+          A response message added to the RPC by the system under test.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def cancel(self):
+        """Cancels the RPC."""
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def termination(self):
+        """Blocks until the system under test has terminated the RPC.
+
+        Returns:
+          A (trailing_metadata, code, details) sequence with the RPC's trailing
+            metadata, code, and details.
+        """
+        raise NotImplementedError()
+
+
+class StreamUnaryServerRpc(six.with_metaclass(abc.ABCMeta)):
+    """Fixture for a stream-unary RPC serviced by a system under test.
+
+    Enables users to "play client" for the RPC.
+    """
+
+    @abc.abstractmethod
+    def initial_metadata(self):
+        """Accesses the initial metadata emitted by the system under test.
+
+        This method blocks until the system under test has added initial
+        metadata to the RPC (or has provided one or more response messages or
+        has terminated the RPC, either of which will cause gRPC Python to
+        synthesize initial metadata for the RPC).
+
+        Returns:
+          The initial metadata for the RPC.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def send_request(self, request):
+        """Sends a request to the system under test.
+
+        Args:
+          request: A request message for the RPC to be "sent" to the system
+            under test.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def requests_closed(self):
+        """Indicates the end of the RPC's request stream."""
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def cancel(self):
+        """Cancels the RPC."""
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def termination(self):
+        """Blocks until the system under test has terminated the RPC.
+
+        Returns:
+          A (response, trailing_metadata, code, details) sequence with the RPC's
+            response, trailing metadata, code, and details.
+        """
+        raise NotImplementedError()
+
+
+class StreamStreamServerRpc(six.with_metaclass(abc.ABCMeta)):
+    """Fixture for a stream-stream RPC serviced by a system under test.
+
+    Enables users to "play client" for the RPC.
+    """
+
+    @abc.abstractmethod
+    def initial_metadata(self):
+        """Accesses the initial metadata emitted by the system under test.
+
+        This method blocks until the system under test has added initial
+        metadata to the RPC (or has provided one or more response messages or
+        has terminated the RPC, either of which will cause gRPC Python to
+        synthesize initial metadata for the RPC).
+
+        Returns:
+          The initial metadata for the RPC.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def send_request(self, request):
+        """Sends a request to the system under test.
+
+        Args:
+          request: A request message for the RPC to be "sent" to the system
+            under test.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def requests_closed(self):
+        """Indicates the end of the RPC's request stream."""
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def take_response(self):
+        """Draws one of the responses added to the RPC by the system under test.
+
+        Successive calls to this method return responses in the same order in
+        which the system under test added them to the RPC.
+
+        Returns:
+          A response message added to the RPC by the system under test.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def cancel(self):
+        """Cancels the RPC."""
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def termination(self):
+        """Blocks until the system under test has terminated the RPC.
+
+        Returns:
+          A (trailing_metadata, code, details) sequence with the RPC's trailing
+            metadata, code, and details.
+        """
+        raise NotImplementedError()
+
+
+class Server(six.with_metaclass(abc.ABCMeta)):
+    """A server with which to test a system that services RPCs."""
+
+    @abc.abstractmethod
+    def invoke_unary_unary(self, method_descriptor, invocation_metadata,
+                           request, timeout):
+        """Invokes an RPC to be serviced by the system under test.
+
+        Args:
+          method_descriptor: A descriptor.MethodDescriptor describing a unary-unary
+            RPC method.
+          invocation_metadata: The RPC's invocation metadata.
+          request: The RPC's request.
+          timeout: A duration of time in seconds for the RPC or None to
+            indicate that the RPC has no time limit.
+
+        Returns:
+          A UnaryUnaryServerRpc with which to "play client" for the RPC.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def invoke_unary_stream(self, method_descriptor, invocation_metadata,
+                            request, timeout):
+        """Invokes an RPC to be serviced by the system under test.
+
+        Args:
+          method_descriptor: A descriptor.MethodDescriptor describing a unary-stream
+            RPC method.
+          invocation_metadata: The RPC's invocation metadata.
+          request: The RPC's request.
+          timeout: A duration of time in seconds for the RPC or None to
+            indicate that the RPC has no time limit.
+
+        Returns:
+          A UnaryStreamServerRpc with which to "play client" for the RPC.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def invoke_stream_unary(self, method_descriptor, invocation_metadata,
+                            timeout):
+        """Invokes an RPC to be serviced by the system under test.
+
+        Args:
+          method_descriptor: A descriptor.MethodDescriptor describing a stream-unary
+            RPC method.
+          invocation_metadata: The RPC's invocation metadata.
+          timeout: A duration of time in seconds for the RPC or None to
+            indicate that the RPC has no time limit.
+
+        Returns:
+          A StreamUnaryServerRpc with which to "play client" for the RPC.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def invoke_stream_stream(self, method_descriptor, invocation_metadata,
+                             timeout):
+        """Invokes an RPC to be serviced by the system under test.
+
+        Args:
+          method_descriptor: A descriptor.MethodDescriptor describing a stream-stream
+            RPC method.
+          invocation_metadata: The RPC's invocation metadata.
+          timeout: A duration of time in seconds for the RPC or None to
+            indicate that the RPC has no time limit.
+
+        Returns:
+          A StreamStreamServerRpc with which to "play client" for the RPC.
         """
         raise NotImplementedError()
 
@@ -406,3 +678,20 @@ def channel(service_descriptors, time):
     """
     from grpc_testing import _channel
     return _channel.testing_channel(service_descriptors, time)
+
+
+def server_from_dictionary(descriptors_to_servicers, time):
+    """Creates a Server for use in tests of a gRPC Python-using system.
+
+    Args:
+      descriptors_to_servicers: A dictionary from descriptor.ServiceDescriptors
+        defining RPC services to servicer objects (usually instances of classes
+        that implement "Servicer" interfaces defined in generated "_pb2_grpc"
+        modules) implementing those services.
+      time: A Time to be used for tests.
+
+    Returns:
+      A Server for use in tests.
+    """
+    from grpc_testing import _server
+    return _server.server_from_dictionary(descriptors_to_servicers, time)

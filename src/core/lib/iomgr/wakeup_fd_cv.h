@@ -33,33 +33,37 @@
 #ifndef GRPC_CORE_LIB_IOMGR_WAKEUP_FD_CV_H
 #define GRPC_CORE_LIB_IOMGR_WAKEUP_FD_CV_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/iomgr/ev_posix.h"
 
-#define FD_TO_IDX(fd) (-(fd)-1)
-#define IDX_TO_FD(idx) (-(idx)-1)
+#define GRPC_FD_TO_IDX(fd) (-(fd)-1)
+#define GRPC_IDX_TO_FD(idx) (-(idx)-1)
 
-typedef struct cv_node {
+typedef struct grpc_cv_node {
   gpr_cv* cv;
-  struct cv_node* next;
-  struct cv_node* prev;
-} cv_node;
+  struct grpc_cv_node* next;
+  struct grpc_cv_node* prev;
+} grpc_cv_node;
 
-typedef struct fd_node {
+typedef struct grpc_fd_node {
   int is_set;
-  cv_node* cvs;
-  struct fd_node* next_free;
-} fd_node;
+  grpc_cv_node* cvs;
+  struct grpc_fd_node* next_free;
+} grpc_fd_node;
 
-typedef struct cv_fd_table {
+typedef struct grpc_cv_fd_table {
   gpr_mu mu;
   gpr_refcount pollcount;
   gpr_cv shutdown_cv;
-  fd_node* cvfds;
-  fd_node* free_fds;
+  grpc_fd_node* cvfds;
+  grpc_fd_node* free_fds;
   unsigned int size;
   grpc_poll_function_type poll;
-} cv_fd_table;
+} grpc_cv_fd_table;
+
+extern const grpc_wakeup_fd_vtable grpc_cv_wakeup_fd_vtable;
 
 #endif /* GRPC_CORE_LIB_IOMGR_WAKEUP_FD_CV_H */

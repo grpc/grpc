@@ -49,9 +49,7 @@ const zend_function_entry grpc_functions[] = {
 /* {{{ grpc_module_entry
  */
 zend_module_entry grpc_module_entry = {
-#if ZEND_MODULE_API_NO >= 20010901
   STANDARD_MODULE_HEADER,
-#endif
   "grpc",
   grpc_functions,
   PHP_MINIT(grpc),
@@ -59,9 +57,7 @@ zend_module_entry grpc_module_entry = {
   PHP_RINIT(grpc),
   NULL,
   PHP_MINFO(grpc),
-#if ZEND_MODULE_API_NO >= 20010901
   PHP_GRPC_VERSION,
-#endif
   PHP_MODULE_GLOBALS(grpc),
   PHP_GINIT(grpc),
   NULL,
@@ -257,7 +253,8 @@ PHP_MSHUTDOWN_FUNCTION(grpc) {
  */
 PHP_MINFO_FUNCTION(grpc) {
   php_info_print_table_start();
-  php_info_print_table_header(2, "grpc support", "enabled");
+  php_info_print_table_row(2, "grpc support", "enabled");
+  php_info_print_table_row(2, "grpc module version", PHP_GRPC_VERSION);
   php_info_print_table_end();
 
   /* Remove comments if you have entries in php.ini

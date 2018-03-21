@@ -21,10 +21,8 @@
 #include <benchmark/benchmark.h>
 #include <memory>
 
-extern "C" {
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/error_utils.h"
-}
 
 #include "test/cpp/microbenchmarks/helpers.h"
 
@@ -159,39 +157,39 @@ BENCHMARK(BM_ErrorGetPresentInt);
 // Fixtures for tests: generate different kinds of errors
 class ErrorNone {
  public:
-  gpr_timespec deadline() const { return deadline_; }
+  grpc_millis deadline() const { return deadline_; }
   grpc_error* error() const { return GRPC_ERROR_NONE; }
 
  private:
-  const gpr_timespec deadline_ = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+  const grpc_millis deadline_ = GRPC_MILLIS_INF_FUTURE;
 };
 
 class ErrorCancelled {
  public:
-  gpr_timespec deadline() const { return deadline_; }
+  grpc_millis deadline() const { return deadline_; }
   grpc_error* error() const { return GRPC_ERROR_CANCELLED; }
 
  private:
-  const gpr_timespec deadline_ = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+  const grpc_millis deadline_ = GRPC_MILLIS_INF_FUTURE;
 };
 
 class SimpleError {
  public:
-  gpr_timespec deadline() const { return deadline_; }
+  grpc_millis deadline() const { return deadline_; }
   grpc_error* error() const { return error_.get(); }
 
  private:
-  const gpr_timespec deadline_ = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+  const grpc_millis deadline_ = GRPC_MILLIS_INF_FUTURE;
   ErrorPtr error_{GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error")};
 };
 
 class ErrorWithGrpcStatus {
  public:
-  gpr_timespec deadline() const { return deadline_; }
+  grpc_millis deadline() const { return deadline_; }
   grpc_error* error() const { return error_.get(); }
 
  private:
-  const gpr_timespec deadline_ = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+  const grpc_millis deadline_ = GRPC_MILLIS_INF_FUTURE;
   ErrorPtr error_{grpc_error_set_int(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"), GRPC_ERROR_INT_GRPC_STATUS,
       GRPC_STATUS_UNIMPLEMENTED)};
@@ -199,11 +197,11 @@ class ErrorWithGrpcStatus {
 
 class ErrorWithHttpError {
  public:
-  gpr_timespec deadline() const { return deadline_; }
+  grpc_millis deadline() const { return deadline_; }
   grpc_error* error() const { return error_.get(); }
 
  private:
-  const gpr_timespec deadline_ = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+  const grpc_millis deadline_ = GRPC_MILLIS_INF_FUTURE;
   ErrorPtr error_{grpc_error_set_int(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"), GRPC_ERROR_INT_HTTP2_ERROR,
       GRPC_HTTP2_COMPRESSION_ERROR)};
@@ -211,11 +209,11 @@ class ErrorWithHttpError {
 
 class ErrorWithNestedGrpcStatus {
  public:
-  gpr_timespec deadline() const { return deadline_; }
+  grpc_millis deadline() const { return deadline_; }
   grpc_error* error() const { return error_.get(); }
 
  private:
-  const gpr_timespec deadline_ = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+  const grpc_millis deadline_ = GRPC_MILLIS_INF_FUTURE;
   ErrorPtr nested_error_{grpc_error_set_int(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"), GRPC_ERROR_INT_GRPC_STATUS,
       GRPC_STATUS_UNIMPLEMENTED)};
@@ -248,12 +246,14 @@ template <class Fixture>
 static void BM_ErrorGetStatus(benchmark::State& state) {
   TrackCounters track_counters;
   Fixture fixture;
+  grpc_core::ExecCtx exec_ctx;
   while (state.KeepRunning()) {
     grpc_status_code status;
     grpc_slice slice;
     grpc_error_get_status(fixture.error(), fixture.deadline(), &status, &slice,
-                          NULL);
+                          nullptr, nullptr);
   }
+
   track_counters.Finish(state);
 }
 
@@ -261,11 +261,13 @@ template <class Fixture>
 static void BM_ErrorGetStatusCode(benchmark::State& state) {
   TrackCounters track_counters;
   Fixture fixture;
+  grpc_core::ExecCtx exec_ctx;
   while (state.KeepRunning()) {
     grpc_status_code status;
-    grpc_error_get_status(fixture.error(), fixture.deadline(), &status, NULL,
-                          NULL);
+    grpc_error_get_status(fixture.error(), fixture.deadline(), &status, nullptr,
+                          nullptr, nullptr);
   }
+
   track_counters.Finish(state);
 }
 
@@ -273,11 +275,13 @@ template <class Fixture>
 static void BM_ErrorHttpError(benchmark::State& state) {
   TrackCounters track_counters;
   Fixture fixture;
+  grpc_core::ExecCtx exec_ctx;
   while (state.KeepRunning()) {
     grpc_http2_error_code error;
-    grpc_error_get_status(fixture.error(), fixture.deadline(), NULL, NULL,
-                          &error);
+    grpc_error_get_status(fixture.error(), fixture.deadline(), nullptr, nullptr,
+                          &error, nullptr);
   }
+
   track_counters.Finish(state);
 }
 

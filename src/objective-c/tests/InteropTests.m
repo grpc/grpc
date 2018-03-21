@@ -68,6 +68,10 @@
 }
 @end
 
+BOOL isRemoteInteropTest(NSString *host) {
+  return [host isEqualToString:@"grpc-test.sandbox.googleapis.com"];
+}
+
 #pragma mark Tests
 
 @implementation InteropTests {
@@ -86,6 +90,7 @@
 }
 
 + (void)setUp {
+  NSLog(@"InteropTest Started, class: %@", [[self class] description]);
 #ifdef GRPC_COMPILE_WITH_CRONET
   // Cronet setup
   [Cronet setHttp2Enabled:YES];
@@ -446,6 +451,36 @@
       XCTAssertNil(error, @"Second RPC finished with unexpected error: %@", error);
       [expectation fulfill];
     }];
+  }];
+
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+}
+
+- (void)testCompressedUnaryRPC {
+  // This test needs to be disabled for remote test because interop server grpc-test
+  // does not support compression.
+  if (isRemoteInteropTest(self.class.host)) {
+    return;
+  }
+  XCTAssertNotNil(self.class.host);
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"LargeUnary"];
+
+  RMTSimpleRequest *request = [RMTSimpleRequest message];
+  request.responseType = RMTPayloadType_Compressable;
+  request.responseSize = 314159;
+  request.payload.body = [NSMutableData dataWithLength:271828];
+  request.expectCompressed.value = YES;
+  [GRPCCall setDefaultCompressMethod:GRPCCompressGzip forhost:self.class.host];
+
+  [_service unaryCallWithRequest:request handler:^(RMTSimpleResponse *response, NSError *error) {
+    XCTAssertNil(error, @"Finished with unexpected error: %@", error);
+
+    RMTSimpleResponse *expectedResponse = [RMTSimpleResponse message];
+    expectedResponse.payload.type = RMTPayloadType_Compressable;
+    expectedResponse.payload.body = [NSMutableData dataWithLength:314159];
+    XCTAssertEqualObjects(response, expectedResponse);
+
+    [expectation fulfill];
   }];
 
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];

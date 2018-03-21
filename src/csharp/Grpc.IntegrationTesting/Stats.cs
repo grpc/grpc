@@ -23,28 +23,30 @@ namespace Grpc.Testing {
       byte[] descriptorData = global::System.Convert.FromBase64String(
           string.Concat(
             "CiJzcmMvcHJvdG8vZ3JwYy90ZXN0aW5nL3N0YXRzLnByb3RvEgxncnBjLnRl",
-            "c3RpbmcikQEKC1NlcnZlclN0YXRzEhQKDHRpbWVfZWxhcHNlZBgBIAEoARIR",
-            "Cgl0aW1lX3VzZXIYAiABKAESEwoLdGltZV9zeXN0ZW0YAyABKAESFgoOdG90",
-            "YWxfY3B1X3RpbWUYBCABKAQSFQoNaWRsZV9jcHVfdGltZRgFIAEoBBIVCg1j",
-            "cV9wb2xsX2NvdW50GAYgASgEIjsKD0hpc3RvZ3JhbVBhcmFtcxISCgpyZXNv",
-            "bHV0aW9uGAEgASgBEhQKDG1heF9wb3NzaWJsZRgCIAEoASJ3Cg1IaXN0b2dy",
-            "YW1EYXRhEg4KBmJ1Y2tldBgBIAMoDRIQCghtaW5fc2VlbhgCIAEoARIQCght",
-            "YXhfc2VlbhgDIAEoARILCgNzdW0YBCABKAESFgoOc3VtX29mX3NxdWFyZXMY",
-            "BSABKAESDQoFY291bnQYBiABKAEiOAoSUmVxdWVzdFJlc3VsdENvdW50EhMK",
-            "C3N0YXR1c19jb2RlGAEgASgFEg0KBWNvdW50GAIgASgDIs0BCgtDbGllbnRT",
-            "dGF0cxIuCglsYXRlbmNpZXMYASABKAsyGy5ncnBjLnRlc3RpbmcuSGlzdG9n",
-            "cmFtRGF0YRIUCgx0aW1lX2VsYXBzZWQYAiABKAESEQoJdGltZV91c2VyGAMg",
-            "ASgBEhMKC3RpbWVfc3lzdGVtGAQgASgBEjkKD3JlcXVlc3RfcmVzdWx0cxgF",
-            "IAMoCzIgLmdycGMudGVzdGluZy5SZXF1ZXN0UmVzdWx0Q291bnQSFQoNY3Ff",
-            "cG9sbF9jb3VudBgGIAEoBGIGcHJvdG8z"));
+            "c3RpbmcaH3NyYy9wcm90by9ncnBjL2NvcmUvc3RhdHMucHJvdG8itwEKC1Nl",
+            "cnZlclN0YXRzEhQKDHRpbWVfZWxhcHNlZBgBIAEoARIRCgl0aW1lX3VzZXIY",
+            "AiABKAESEwoLdGltZV9zeXN0ZW0YAyABKAESFgoOdG90YWxfY3B1X3RpbWUY",
+            "BCABKAQSFQoNaWRsZV9jcHVfdGltZRgFIAEoBBIVCg1jcV9wb2xsX2NvdW50",
+            "GAYgASgEEiQKCmNvcmVfc3RhdHMYByABKAsyEC5ncnBjLmNvcmUuU3RhdHMi",
+            "OwoPSGlzdG9ncmFtUGFyYW1zEhIKCnJlc29sdXRpb24YASABKAESFAoMbWF4",
+            "X3Bvc3NpYmxlGAIgASgBIncKDUhpc3RvZ3JhbURhdGESDgoGYnVja2V0GAEg",
+            "AygNEhAKCG1pbl9zZWVuGAIgASgBEhAKCG1heF9zZWVuGAMgASgBEgsKA3N1",
+            "bRgEIAEoARIWCg5zdW1fb2Zfc3F1YXJlcxgFIAEoARINCgVjb3VudBgGIAEo",
+            "ASI4ChJSZXF1ZXN0UmVzdWx0Q291bnQSEwoLc3RhdHVzX2NvZGUYASABKAUS",
+            "DQoFY291bnQYAiABKAMi8wEKC0NsaWVudFN0YXRzEi4KCWxhdGVuY2llcxgB",
+            "IAEoCzIbLmdycGMudGVzdGluZy5IaXN0b2dyYW1EYXRhEhQKDHRpbWVfZWxh",
+            "cHNlZBgCIAEoARIRCgl0aW1lX3VzZXIYAyABKAESEwoLdGltZV9zeXN0ZW0Y",
+            "BCABKAESOQoPcmVxdWVzdF9yZXN1bHRzGAUgAygLMiAuZ3JwYy50ZXN0aW5n",
+            "LlJlcXVlc3RSZXN1bHRDb3VudBIVCg1jcV9wb2xsX2NvdW50GAYgASgEEiQK",
+            "CmNvcmVfc3RhdHMYByABKAsyEC5ncnBjLmNvcmUuU3RhdHNiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
-          new pbr::FileDescriptor[] { },
+          new pbr::FileDescriptor[] { global::Grpc.Core.StatsReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ServerStats), global::Grpc.Testing.ServerStats.Parser, new[]{ "TimeElapsed", "TimeUser", "TimeSystem", "TotalCpuTime", "IdleCpuTime", "CqPollCount" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ServerStats), global::Grpc.Testing.ServerStats.Parser, new[]{ "TimeElapsed", "TimeUser", "TimeSystem", "TotalCpuTime", "IdleCpuTime", "CqPollCount", "CoreStats" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.HistogramParams), global::Grpc.Testing.HistogramParams.Parser, new[]{ "Resolution", "MaxPossible" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.HistogramData), global::Grpc.Testing.HistogramData.Parser, new[]{ "Bucket", "MinSeen", "MaxSeen", "Sum", "SumOfSquares", "Count" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.RequestResultCount), global::Grpc.Testing.RequestResultCount.Parser, new[]{ "StatusCode", "Count" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClientStats), global::Grpc.Testing.ClientStats.Parser, new[]{ "Latencies", "TimeElapsed", "TimeUser", "TimeSystem", "RequestResults", "CqPollCount" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ClientStats), global::Grpc.Testing.ClientStats.Parser, new[]{ "Latencies", "TimeElapsed", "TimeUser", "TimeSystem", "RequestResults", "CqPollCount", "CoreStats" }, null, null, null)
           }));
     }
     #endregion
@@ -81,6 +83,7 @@ namespace Grpc.Testing {
       totalCpuTime_ = other.totalCpuTime_;
       idleCpuTime_ = other.idleCpuTime_;
       cqPollCount_ = other.cqPollCount_;
+      CoreStats = other.coreStats_ != null ? other.CoreStats.Clone() : null;
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -173,6 +176,20 @@ namespace Grpc.Testing {
       }
     }
 
+    /// <summary>Field number for the "core_stats" field.</summary>
+    public const int CoreStatsFieldNumber = 7;
+    private global::Grpc.Core.Stats coreStats_;
+    /// <summary>
+    /// Core library stats
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Grpc.Core.Stats CoreStats {
+      get { return coreStats_; }
+      set {
+        coreStats_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as ServerStats);
@@ -192,6 +209,7 @@ namespace Grpc.Testing {
       if (TotalCpuTime != other.TotalCpuTime) return false;
       if (IdleCpuTime != other.IdleCpuTime) return false;
       if (CqPollCount != other.CqPollCount) return false;
+      if (!object.Equals(CoreStats, other.CoreStats)) return false;
       return true;
     }
 
@@ -204,6 +222,7 @@ namespace Grpc.Testing {
       if (TotalCpuTime != 0UL) hash ^= TotalCpuTime.GetHashCode();
       if (IdleCpuTime != 0UL) hash ^= IdleCpuTime.GetHashCode();
       if (CqPollCount != 0UL) hash ^= CqPollCount.GetHashCode();
+      if (coreStats_ != null) hash ^= CoreStats.GetHashCode();
       return hash;
     }
 
@@ -238,6 +257,10 @@ namespace Grpc.Testing {
         output.WriteRawTag(48);
         output.WriteUInt64(CqPollCount);
       }
+      if (coreStats_ != null) {
+        output.WriteRawTag(58);
+        output.WriteMessage(CoreStats);
+      }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -260,6 +283,9 @@ namespace Grpc.Testing {
       }
       if (CqPollCount != 0UL) {
         size += 1 + pb::CodedOutputStream.ComputeUInt64Size(CqPollCount);
+      }
+      if (coreStats_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(CoreStats);
       }
       return size;
     }
@@ -286,6 +312,12 @@ namespace Grpc.Testing {
       }
       if (other.CqPollCount != 0UL) {
         CqPollCount = other.CqPollCount;
+      }
+      if (other.coreStats_ != null) {
+        if (coreStats_ == null) {
+          coreStats_ = new global::Grpc.Core.Stats();
+        }
+        CoreStats.MergeFrom(other.CoreStats);
       }
     }
 
@@ -319,6 +351,13 @@ namespace Grpc.Testing {
           }
           case 48: {
             CqPollCount = input.ReadUInt64();
+            break;
+          }
+          case 58: {
+            if (coreStats_ == null) {
+              coreStats_ = new global::Grpc.Core.Stats();
+            }
+            input.ReadMessage(coreStats_);
             break;
           }
         }
@@ -909,6 +948,7 @@ namespace Grpc.Testing {
       timeSystem_ = other.timeSystem_;
       requestResults_ = other.requestResults_.Clone();
       cqPollCount_ = other.cqPollCount_;
+      CoreStats = other.coreStats_ != null ? other.CoreStats.Clone() : null;
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -993,6 +1033,20 @@ namespace Grpc.Testing {
       }
     }
 
+    /// <summary>Field number for the "core_stats" field.</summary>
+    public const int CoreStatsFieldNumber = 7;
+    private global::Grpc.Core.Stats coreStats_;
+    /// <summary>
+    /// Core library stats
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Grpc.Core.Stats CoreStats {
+      get { return coreStats_; }
+      set {
+        coreStats_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as ClientStats);
@@ -1012,6 +1066,7 @@ namespace Grpc.Testing {
       if (TimeSystem != other.TimeSystem) return false;
       if(!requestResults_.Equals(other.requestResults_)) return false;
       if (CqPollCount != other.CqPollCount) return false;
+      if (!object.Equals(CoreStats, other.CoreStats)) return false;
       return true;
     }
 
@@ -1024,6 +1079,7 @@ namespace Grpc.Testing {
       if (TimeSystem != 0D) hash ^= TimeSystem.GetHashCode();
       hash ^= requestResults_.GetHashCode();
       if (CqPollCount != 0UL) hash ^= CqPollCount.GetHashCode();
+      if (coreStats_ != null) hash ^= CoreStats.GetHashCode();
       return hash;
     }
 
@@ -1055,6 +1111,10 @@ namespace Grpc.Testing {
         output.WriteRawTag(48);
         output.WriteUInt64(CqPollCount);
       }
+      if (coreStats_ != null) {
+        output.WriteRawTag(58);
+        output.WriteMessage(CoreStats);
+      }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -1075,6 +1135,9 @@ namespace Grpc.Testing {
       size += requestResults_.CalculateSize(_repeated_requestResults_codec);
       if (CqPollCount != 0UL) {
         size += 1 + pb::CodedOutputStream.ComputeUInt64Size(CqPollCount);
+      }
+      if (coreStats_ != null) {
+        size += 1 + pb::CodedOutputStream.ComputeMessageSize(CoreStats);
       }
       return size;
     }
@@ -1102,6 +1165,12 @@ namespace Grpc.Testing {
       requestResults_.Add(other.requestResults_);
       if (other.CqPollCount != 0UL) {
         CqPollCount = other.CqPollCount;
+      }
+      if (other.coreStats_ != null) {
+        if (coreStats_ == null) {
+          coreStats_ = new global::Grpc.Core.Stats();
+        }
+        CoreStats.MergeFrom(other.CoreStats);
       }
     }
 
@@ -1138,6 +1207,13 @@ namespace Grpc.Testing {
           }
           case 48: {
             CqPollCount = input.ReadUInt64();
+            break;
+          }
+          case 58: {
+            if (coreStats_ == null) {
+              coreStats_ = new global::Grpc.Core.Stats();
+            }
+            input.ReadMessage(coreStats_);
             break;
           }
         }

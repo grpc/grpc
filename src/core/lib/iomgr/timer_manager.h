@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_IOMGR_TIMER_MANAGER_H
 #define GRPC_CORE_LIB_IOMGR_TIMER_MANAGER_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stdbool.h>
 
 /* Timer Manager tries to keep one thread waiting for the next timeout at all

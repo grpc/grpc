@@ -9,20 +9,16 @@ use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * <pre>
  * Client-streaming response.
- * </pre>
  *
- * Protobuf type <code>grpc.testing.StreamingInputCallResponse</code>
+ * Generated from protobuf message <code>grpc.testing.StreamingInputCallResponse</code>
  */
 class StreamingInputCallResponse extends \Google\Protobuf\Internal\Message
 {
     /**
-     * <pre>
      * Aggregated size of payloads received from the client.
-     * </pre>
      *
-     * <code>int32 aggregated_payload_size = 1;</code>
+     * Generated from protobuf field <code>int32 aggregated_payload_size = 1;</code>
      */
     private $aggregated_payload_size = 0;
 
@@ -32,11 +28,10 @@ class StreamingInputCallResponse extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
      * Aggregated size of payloads received from the client.
-     * </pre>
      *
-     * <code>int32 aggregated_payload_size = 1;</code>
+     * Generated from protobuf field <code>int32 aggregated_payload_size = 1;</code>
+     * @return int
      */
     public function getAggregatedPayloadSize()
     {
@@ -44,16 +39,18 @@ class StreamingInputCallResponse extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
      * Aggregated size of payloads received from the client.
-     * </pre>
      *
-     * <code>int32 aggregated_payload_size = 1;</code>
+     * Generated from protobuf field <code>int32 aggregated_payload_size = 1;</code>
+     * @param int $var
+     * @return $this
      */
     public function setAggregatedPayloadSize($var)
     {
         GPBUtil::checkInt32($var);
         $this->aggregated_payload_size = $var;
+
+        return $this;
     }
 
 }

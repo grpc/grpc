@@ -24,14 +24,20 @@ import sys
 import tempfile
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--config', metavar='c', type=str, nargs=1,
-                    help='GRPC/GPR libraries build configuration',
-                    default='opt')
+parser.add_argument(
+    '--config',
+    metavar='c',
+    type=str,
+    nargs=1,
+    help='GRPC/GPR libraries build configuration',
+    default='opt')
 parser.add_argument('--submit', action='store_true')
 parser.add_argument('--gh-user', type=str, help='GitHub user to push as.')
-parser.add_argument('--gh-repo-owner', type=str,
-                    help=('Owner of the GitHub repository to be pushed; '
-                          'defaults to --gh-user.'))
+parser.add_argument(
+    '--gh-repo-owner',
+    type=str,
+    help=('Owner of the GitHub repository to be pushed; '
+          'defaults to --gh-user.'))
 parser.add_argument('--doc-branch', type=str)
 args = parser.parse_args()
 
@@ -59,60 +65,75 @@ environment.update({
 })
 
 subprocess_arguments_list = [
-    {'args': ['virtualenv', VIRTUALENV_DIR], 'env': environment},
-    {'args': [VIRTUALENV_PIP_PATH, 'install', '--upgrade', 'pip'],
-     'env': environment},
-    {'args': [VIRTUALENV_PIP_PATH, 'install', '-r', REQUIREMENTS_PATH],
-     'env': environment},
-    {'args': [VIRTUALENV_PYTHON_PATH, SETUP_PATH, 'build'], 'env': environment},
-    {'args': [VIRTUALENV_PYTHON_PATH, SETUP_PATH, 'doc'], 'env': environment},
+    {
+        'args': ['virtualenv', VIRTUALENV_DIR],
+        'env': environment
+    },
+    {
+        'args': [VIRTUALENV_PIP_PATH, 'install', '--upgrade', 'pip==9.0.1'],
+        'env': environment
+    },
+    {
+        'args': [VIRTUALENV_PIP_PATH, 'install', '-r', REQUIREMENTS_PATH],
+        'env': environment
+    },
+    {
+        'args': [VIRTUALENV_PYTHON_PATH, SETUP_PATH, 'build'],
+        'env': environment
+    },
+    {
+        'args': [VIRTUALENV_PYTHON_PATH, SETUP_PATH, 'doc'],
+        'env': environment
+    },
 ]
 
 for subprocess_arguments in subprocess_arguments_list:
-  print('Running command: {}'.format(subprocess_arguments['args']))
-  subprocess.check_call(**subprocess_arguments)
+    print('Running command: {}'.format(subprocess_arguments['args']))
+    subprocess.check_call(**subprocess_arguments)
 
 if args.submit:
-  assert args.gh_user
-  assert args.doc_branch
-  github_user = args.gh_user
-  github_repository_owner = (
-      args.gh_repo_owner if args.gh_repo_owner else args.gh_user)
-  # Create a temporary directory out of tree, checkout gh-pages from the
-  # specified repository, edit it, and push it. It's up to the user to then go
-  # onto GitHub and make a PR against grpc/grpc:gh-pages.
-  repo_parent_dir = tempfile.mkdtemp()
-  print('Documentation parent directory: {}'.format(repo_parent_dir))
-  repo_dir = os.path.join(repo_parent_dir, 'grpc')
-  python_doc_dir = os.path.join(repo_dir, 'python')
-  doc_branch = args.doc_branch
+    assert args.gh_user
+    assert args.doc_branch
+    github_user = args.gh_user
+    github_repository_owner = (args.gh_repo_owner
+                               if args.gh_repo_owner else args.gh_user)
+    # Create a temporary directory out of tree, checkout gh-pages from the
+    # specified repository, edit it, and push it. It's up to the user to then go
+    # onto GitHub and make a PR against grpc/grpc:gh-pages.
+    repo_parent_dir = tempfile.mkdtemp()
+    print('Documentation parent directory: {}'.format(repo_parent_dir))
+    repo_dir = os.path.join(repo_parent_dir, 'grpc')
+    python_doc_dir = os.path.join(repo_dir, 'python')
+    doc_branch = args.doc_branch
 
-  print('Cloning your repository...')
-  subprocess.check_call([
-          'git', 'clone', 'https://{}@github.com/{}/grpc'.format(
-              github_user, github_repository_owner)
-      ], cwd=repo_parent_dir)
-  subprocess.check_call([
-          'git', 'remote', 'add', 'upstream', 'https://github.com/grpc/grpc'
-      ], cwd=repo_dir)
-  subprocess.check_call(['git', 'fetch', 'upstream'], cwd=repo_dir)
-  subprocess.check_call([
-          'git', 'checkout', 'upstream/gh-pages', '-b', doc_branch
-      ], cwd=repo_dir)
-  print('Updating documentation...')
-  shutil.rmtree(python_doc_dir, ignore_errors=True)
-  shutil.copytree(DOC_PATH, python_doc_dir)
-  print('Attempting to push documentation...')
-  try:
-    subprocess.check_call(['git', 'add', '--all'], cwd=repo_dir)
-    subprocess.check_call([
-            'git', 'commit', '-m', 'Auto-update Python documentation'
-        ], cwd=repo_dir)
-    subprocess.check_call([
-            'git', 'push', '--set-upstream', 'origin', doc_branch
-        ], cwd=repo_dir)
-  except subprocess.CalledProcessError:
-    print('Failed to push documentation. Examine this directory and push '
-          'manually: {}'.format(repo_parent_dir))
-    sys.exit(1)
-  shutil.rmtree(repo_parent_dir)
+    print('Cloning your repository...')
+    subprocess.check_call(
+        [
+            'git', 'clone', 'https://{}@github.com/{}/grpc'.format(
+                github_user, github_repository_owner)
+        ],
+        cwd=repo_parent_dir)
+    subprocess.check_call(
+        ['git', 'remote', 'add', 'upstream', 'https://github.com/grpc/grpc'],
+        cwd=repo_dir)
+    subprocess.check_call(['git', 'fetch', 'upstream'], cwd=repo_dir)
+    subprocess.check_call(
+        ['git', 'checkout', 'upstream/gh-pages', '-b', doc_branch],
+        cwd=repo_dir)
+    print('Updating documentation...')
+    shutil.rmtree(python_doc_dir, ignore_errors=True)
+    shutil.copytree(DOC_PATH, python_doc_dir)
+    print('Attempting to push documentation...')
+    try:
+        subprocess.check_call(['git', 'add', '--all'], cwd=repo_dir)
+        subprocess.check_call(
+            ['git', 'commit', '-m', 'Auto-update Python documentation'],
+            cwd=repo_dir)
+        subprocess.check_call(
+            ['git', 'push', '--set-upstream', 'origin', doc_branch],
+            cwd=repo_dir)
+    except subprocess.CalledProcessError:
+        print('Failed to push documentation. Examine this directory and push '
+              'manually: {}'.format(repo_parent_dir))
+        sys.exit(1)
+    shutil.rmtree(repo_parent_dir)

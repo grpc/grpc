@@ -19,7 +19,7 @@ import os
 from google import auth as google_auth
 from google.auth import jwt as google_auth_jwt
 import grpc
-from src.proto.grpc.testing import test_pb2
+from src.proto.grpc.testing import test_pb2_grpc
 
 from tests.interop import methods
 from tests.interop import resources
@@ -29,37 +29,40 @@ def _args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--server_host',
-        help='the host to which to connect',
+        default="localhost",
         type=str,
-        default="localhost")
+        help='the host to which to connect')
     parser.add_argument(
-        '--server_port', help='the port to which to connect', type=int)
+        '--server_port',
+        type=int,
+        required=True,
+        help='the port to which to connect')
     parser.add_argument(
         '--test_case',
-        help='the test case to execute',
+        default='large_unary',
         type=str,
-        default="large_unary")
+        help='the test case to execute')
     parser.add_argument(
         '--use_tls',
-        help='require a secure connection',
         default=False,
-        type=resources.parse_bool)
+        type=resources.parse_bool,
+        help='require a secure connection')
     parser.add_argument(
         '--use_test_ca',
-        help='replace platform root CAs with ca.pem',
         default=False,
-        type=resources.parse_bool)
+        type=resources.parse_bool,
+        help='replace platform root CAs with ca.pem')
     parser.add_argument(
         '--server_host_override',
         default="foo.test.google.fr",
-        help='the server host to which to claim to connect',
-        type=str)
+        type=str,
+        help='the server host to which to claim to connect')
     parser.add_argument(
-        '--oauth_scope', help='scope for OAuth tokens', type=str)
+        '--oauth_scope', type=str, help='scope for OAuth tokens')
     parser.add_argument(
         '--default_service_account',
-        help='email address of the default service account',
-        type=str)
+        type=str,
+        help='email address of the default service account')
     return parser.parse_args()
 
 
@@ -101,14 +104,16 @@ def _stub(args):
             channel_credentials = grpc.composite_channel_credentials(
                 channel_credentials, call_credentials)
 
-        channel = grpc.secure_channel(target, channel_credentials, (
-            ('grpc.ssl_target_name_override', args.server_host_override,),))
+        channel = grpc.secure_channel(target, channel_credentials, ((
+            'grpc.ssl_target_name_override',
+            args.server_host_override,
+        ),))
     else:
         channel = grpc.insecure_channel(target)
     if args.test_case == "unimplemented_service":
-        return test_pb2.UnimplementedServiceStub(channel)
+        return test_pb2_grpc.UnimplementedServiceStub(channel)
     else:
-        return test_pb2.TestServiceStub(channel)
+        return test_pb2_grpc.TestServiceStub(channel)
 
 
 def _test_case_from_arg(test_case_arg):

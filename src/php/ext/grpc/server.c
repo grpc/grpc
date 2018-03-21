@@ -169,7 +169,7 @@ PHP_METHOD(Server, requestCall) {
 /**
  * Add a http2 over tcp listener.
  * @param string $addr The address to add
- * @return bool True on success, false on failure
+ * @return int Port on success, 0 on failure
  */
 PHP_METHOD(Server, addHttp2Port) {
   const char *addr;
@@ -190,7 +190,7 @@ PHP_METHOD(Server, addHttp2Port) {
  * Add a secure http2 over tcp listener.
  * @param string $addr The address to add
  * @param ServerCredentials The ServerCredentials object
- * @return bool True on success, false on failure
+ * @return int Port on success, 0 on failure
  */
 PHP_METHOD(Server, addSecureHttp2Port) {
   const char *addr;

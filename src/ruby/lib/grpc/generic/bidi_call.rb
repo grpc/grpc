@@ -64,7 +64,7 @@ module GRPC
     # @param requests the Enumerable of requests to send
     # @param set_input_stream_done [Proc] called back when we're done
     #   reading the input stream
-    # @param set_input_stream_done [Proc] called back when we're done
+    # @param set_output_stream_done [Proc] called back when we're done
     #   sending data on the output stream
     # @return an Enumerator of requests to yield
     def run_on_client(requests,
@@ -87,23 +87,32 @@ module GRPC
     # This does not mean that must necessarily be one.  E.g, the replies
     # produced by gen_each_reply could ignore the received_msgs
     #
-    # @param gen_each_reply [Proc] generates the BiDi stream replies.
-    # @param set_input_steam_done [Proc] call back to call when
-    #   the reads have been completely read through.
-    def run_on_server(gen_each_reply, set_input_stream_done)
+    # @param [Proc] gen_each_reply generates the BiDi stream replies.
+    # @param [Enumerable] requests The enumerable of requests to run
+    def run_on_server(gen_each_reply, requests)
+      replies = nil
+
       # Pass in the optional call object parameter if possible
       if gen_each_reply.arity == 1
-        replys = gen_each_reply.call(
-          read_loop(set_input_stream_done, is_client: false))
+        replies = gen_each_reply.call(requests)
       elsif gen_each_reply.arity == 2
-        replys = gen_each_reply.call(
-          read_loop(set_input_stream_done, is_client: false),
-          @req_view)
+        replies = gen_each_reply.call(requests, @req_view)
       else
         fail 'Illegal arity of reply generator'
       end
 
-      write_loop(replys, is_client: false)
+      write_loop(replies, is_client: false)
+    end
+
+    ##
+    # Read the next stream iteration
+    #
+    # @param [Proc] finalize_stream callback to call when the reads have been
+    #   completely read through.
+    # @param [Boolean] is_client If this is a client or server request
+    #
+    def read_next_loop(finalize_stream, is_client = false)
+      read_loop(finalize_stream, is_client: is_client)
     end
 
     private

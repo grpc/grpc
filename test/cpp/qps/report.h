@@ -23,11 +23,11 @@
 #include <set>
 #include <vector>
 
-#include <grpc++/support/config.h>
+#include <grpcpp/support/config.h>
 
 #include "test/cpp/qps/driver.h"
 
-#include <grpc++/channel.h>
+#include <grpcpp/channel.h>
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 
 namespace grpc {
@@ -104,6 +104,9 @@ class GprLogReporter : public Reporter {
   void ReportCpuUsage(const ScenarioResult& result) override;
   void ReportPollCount(const ScenarioResult& result) override;
   void ReportQueriesPerCpuSec(const ScenarioResult& result) override;
+
+  void ReportCoreStats(const char* name, int idx,
+                       const grpc::core::Stats& stats);
 };
 
 /** Dumps the report to a JSON file. */

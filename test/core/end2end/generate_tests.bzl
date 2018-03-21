@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+POLLERS = ['epollex', 'epollsig', 'epoll1', 'poll', 'poll-cv']
+
 load("//bazel:grpc_build_system.bzl", "grpc_sh_test", "grpc_cc_binary", "grpc_cc_library")
 
 """Generates the appropriate build.json data for all the end2end tests."""
@@ -21,7 +23,8 @@ load("//bazel:grpc_build_system.bzl", "grpc_sh_test", "grpc_cc_binary", "grpc_cc
 def fixture_options(fullstack=True, includes_proxy=False, dns_resolver=True,
                     name_resolution=True, secure=True, tracing=False,
                     platforms=['windows', 'linux', 'mac', 'posix'],
-                    is_inproc=False, is_http2=True, supports_proxy_auth=False):
+                    is_inproc=False, is_http2=True, supports_proxy_auth=False,
+                    supports_write_buffering=True, client_channel=True):
   return struct(
     fullstack=fullstack,
     includes_proxy=includes_proxy,
@@ -31,8 +34,10 @@ def fixture_options(fullstack=True, includes_proxy=False, dns_resolver=True,
     tracing=tracing,
     is_inproc=is_inproc,
     is_http2=is_http2,
-    supports_proxy_auth=supports_proxy_auth
-    #platforms=platforms
+    supports_proxy_auth=supports_proxy_auth,
+    supports_write_buffering=supports_write_buffering,
+    client_channel=client_channel,
+    #platforms=platforms,
   )
 
 
@@ -43,6 +48,7 @@ END2END_FIXTURES = {
     'h2_load_reporting': fixture_options(),
     'h2_fakesec': fixture_options(),
     'h2_fd': fixture_options(dns_resolver=False, fullstack=False,
+                             client_channel=False,
                              platforms=['linux', 'mac', 'posix']),
     'h2_full': fixture_options(),
     'h2_full+pipe': fixture_options(platforms=['linux']),
@@ -51,25 +57,28 @@ END2END_FIXTURES = {
     'h2_http_proxy': fixture_options(supports_proxy_auth=True),
     'h2_oauth2': fixture_options(),
     'h2_proxy': fixture_options(includes_proxy=True),
-    'h2_sockpair_1byte': fixture_options(fullstack=False, dns_resolver=False),
-    'h2_sockpair': fixture_options(fullstack=False, dns_resolver=False),
+    'h2_sockpair_1byte': fixture_options(fullstack=False, dns_resolver=False,
+                                         client_channel=False),
+    'h2_sockpair': fixture_options(fullstack=False, dns_resolver=False,
+                                   client_channel=False),
     'h2_sockpair+trace': fixture_options(fullstack=False, dns_resolver=False,
-                                         tracing=True),
+                                         tracing=True, client_channel=False),
     'h2_ssl': fixture_options(secure=True),
-    'h2_ssl_cert': fixture_options(secure=True),
     'h2_ssl_proxy': fixture_options(includes_proxy=True, secure=True),
     'h2_uds': fixture_options(dns_resolver=False,
                               platforms=['linux', 'mac', 'posix']),
     'inproc': fixture_options(fullstack=False, dns_resolver=False,
                               name_resolution=False, is_inproc=True,
-                              is_http2=False),
+                              is_http2=False, supports_write_buffering=False,
+                              client_channel=False),
 }
 
 
 def test_options(needs_fullstack=False, needs_dns=False, needs_names=False,
                  proxyable=True, secure=False, traceable=False,
                  exclude_inproc=False, needs_http2=False,
-                 needs_proxy_auth=False):
+                 needs_proxy_auth=False, needs_write_buffering=False,
+                 needs_client_channel=False):
   return struct(
     needs_fullstack=needs_fullstack,
     needs_dns=needs_dns,
@@ -79,7 +88,9 @@ def test_options(needs_fullstack=False, needs_dns=False, needs_names=False,
     traceable=traceable,
     exclude_inproc=exclude_inproc,
     needs_http2=needs_http2,
-    needs_proxy_auth=needs_proxy_auth
+    needs_proxy_auth=needs_proxy_auth,
+    needs_write_buffering=needs_write_buffering,
+    needs_client_channel=needs_client_channel,
   )
 
 
@@ -114,7 +125,8 @@ END2END_TESTS = {
     'invoke_large_request': test_options(),
     'keepalive_timeout': test_options(proxyable=False, needs_http2=True),
     'large_metadata': test_options(),
-    'max_concurrent_streams': test_options(proxyable=False, exclude_inproc=True),
+    'max_concurrent_streams': test_options(proxyable=False,
+                                           exclude_inproc=True),
     'max_connection_age': test_options(exclude_inproc=True),
     'max_connection_idle': test_options(needs_fullstack=True, proxyable=False),
     'max_message_length': test_options(),
@@ -130,6 +142,37 @@ END2END_TESTS = {
     'registered_call': test_options(),
     'request_with_flags': test_options(proxyable=False),
     'request_with_payload': test_options(),
+    # TODO(roth): Remove proxyable=False for all retry tests once we
+    # have a way for the proxy to propagate the fact that trailing
+    # metadata is available when initial metadata is returned.
+    # See https://github.com/grpc/grpc/issues/14467 for context.
+    'retry': test_options(needs_client_channel=True, proxyable=False),
+    'retry_cancellation': test_options(needs_client_channel=True,
+                                       proxyable=False),
+    'retry_disabled': test_options(needs_client_channel=True, proxyable=False),
+    'retry_exceeds_buffer_size_in_initial_batch': test_options(
+        needs_client_channel=True, proxyable=False),
+    'retry_exceeds_buffer_size_in_subsequent_batch': test_options(
+        needs_client_channel=True, proxyable=False),
+    'retry_non_retriable_status': test_options(needs_client_channel=True,
+                                               proxyable=False),
+    'retry_recv_initial_metadata': test_options(needs_client_channel=True,
+                                                proxyable=False),
+    'retry_recv_message': test_options(needs_client_channel=True,
+                                       proxyable=False),
+    'retry_server_pushback_delay': test_options(needs_client_channel=True,
+                                                proxyable=False),
+    'retry_server_pushback_disabled': test_options(needs_client_channel=True,
+                                                   proxyable=False),
+    'retry_streaming': test_options(needs_client_channel=True, proxyable=False),
+    'retry_streaming_after_commit': test_options(needs_client_channel=True,
+                                                 proxyable=False),
+    'retry_streaming_succeeds_before_replay_finished': test_options(
+        needs_client_channel=True, proxyable=False),
+    'retry_throttled': test_options(needs_client_channel=True,
+                                    proxyable=False),
+    'retry_too_many_attempts': test_options(needs_client_channel=True,
+                                            proxyable=False),
     'server_finishes_request': test_options(),
     'shutdown_finishes_calls': test_options(),
     'shutdown_finishes_tags': test_options(),
@@ -138,15 +181,17 @@ END2END_TESTS = {
     'simple_metadata': test_options(),
     'simple_request': test_options(),
     'streaming_error_response': test_options(),
-    'stream_compression_compressed_payload': test_options(proxyable=False, exclude_inproc=True),
+    'stream_compression_compressed_payload': test_options(proxyable=False,
+                                                          exclude_inproc=True),
     'stream_compression_payload': test_options(exclude_inproc=True),
     'stream_compression_ping_pong_streaming': test_options(exclude_inproc=True),
     'trailing_metadata': test_options(),
     'authority_not_supported': test_options(),
     'filter_latency': test_options(),
+    'filter_status_code': test_options(),
     'workaround_cronet_compression': test_options(),
-    'write_buffering': test_options(),
-    'write_buffering_at_end': test_options(),
+    'write_buffering': test_options(needs_write_buffering=True),
+    'write_buffering_at_end': test_options(needs_write_buffering=True),
 }
 
 
@@ -175,20 +220,26 @@ def compatible(fopt, topt):
   if topt.needs_proxy_auth:
     if not fopt.supports_proxy_auth:
       return False
+  if topt.needs_write_buffering:
+    if not fopt.supports_write_buffering:
+      return False
+  if topt.needs_client_channel:
+    if not fopt.client_channel:
+      return False
   return True
 
 
 def grpc_end2end_tests():
   grpc_cc_library(
     name = 'end2end_tests',
-    srcs = ['end2end_tests.c', 'end2end_test_utils.c'] + [
-             'tests/%s.c' % t
+    srcs = ['end2end_tests.cc', 'end2end_test_utils.cc'] + [
+             'tests/%s.cc' % t
              for t in sorted(END2END_TESTS.keys())],
     hdrs = [
       'tests/cancel_test_helpers.h',
       'end2end_tests.h'
     ],
-    language = "C",
+    language = "C++",
     deps = [
       ':cq_verifier',
       ':ssl_test_data',
@@ -200,8 +251,8 @@ def grpc_end2end_tests():
   for f, fopt in END2END_FIXTURES.items():
     grpc_cc_binary(
       name = '%s_test' % f,
-      srcs = ['fixtures/%s.c' % f],
-      language = "C",
+      srcs = ['fixtures/%s.cc' % f],
+      language = "C++",
       deps = [
         ':end2end_tests',
         '//test/core/util:grpc_test_util',
@@ -213,9 +264,14 @@ def grpc_end2end_tests():
     for t, topt in END2END_TESTS.items():
       #print(compatible(fopt, topt), f, t, fopt, topt)
       if not compatible(fopt, topt): continue
-      grpc_sh_test(
-        name = '%s_test@%s' % (f, t),
-        srcs = ['end2end_test.sh'],
-        args = ['$(location %s_test)' % f, t],
-        data = [':%s_test' % f],
-      )
+      for poller in POLLERS:
+        native.sh_test(
+          name = '%s_test@%s@poller=%s' % (f, t, poller),
+          data = [':%s_test' % f],
+          srcs = ['end2end_test.sh'],
+          args = [
+            '$(location %s_test)' % f, 
+            t,
+            poller,
+          ],
+        )

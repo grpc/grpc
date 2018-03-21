@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc++/support/error_details.h>
+#include <grpcpp/support/error_details.h>
 #include <gtest/gtest.h>
 
 #include "src/proto/grpc/status/status.pb.h"
@@ -82,7 +82,7 @@ TEST(SetTest, NullInput) {
 
 TEST(SetTest, OutOfScopeErrorCode) {
   google::rpc::Status expected;
-  expected.set_code(20);  // Out of scope (DATA_LOSS is 15).
+  expected.set_code(17);  // Out of scope (UNAUTHENTICATED is 16).
   expected.set_message("I am an error message");
   testing::EchoRequest expected_details;
   expected_details.set_message(grpc::string(100, '\0'));
@@ -94,6 +94,24 @@ TEST(SetTest, OutOfScopeErrorCode) {
   EXPECT_EQ(StatusCode::UNKNOWN, to.error_code());
   EXPECT_EQ(expected.message(), to.error_message());
   EXPECT_EQ(expected.SerializeAsString(), to.error_details());
+}
+
+TEST(SetTest, ValidScopeErrorCode) {
+  for (int c = StatusCode::OK; c <= StatusCode::UNAUTHENTICATED; c++) {
+    google::rpc::Status expected;
+    expected.set_code(c);
+    expected.set_message("I am an error message");
+    testing::EchoRequest expected_details;
+    expected_details.set_message(grpc::string(100, '\0'));
+    expected.add_details()->PackFrom(expected_details);
+
+    Status to;
+    Status s = SetErrorDetails(expected, &to);
+    EXPECT_TRUE(s.ok());
+    EXPECT_EQ(c, to.error_code());
+    EXPECT_EQ(expected.message(), to.error_message());
+    EXPECT_EQ(expected.SerializeAsString(), to.error_details());
+  }
 }
 
 }  // namespace

@@ -9,22 +9,20 @@ use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * <pre>
  * For reconnect interop test only.
  * Server tells client whether its reconnects are following the spec and the
  * reconnect backoffs it saw.
- * </pre>
  *
- * Protobuf type <code>grpc.testing.ReconnectInfo</code>
+ * Generated from protobuf message <code>grpc.testing.ReconnectInfo</code>
  */
 class ReconnectInfo extends \Google\Protobuf\Internal\Message
 {
     /**
-     * <code>bool passed = 1;</code>
+     * Generated from protobuf field <code>bool passed = 1;</code>
      */
     private $passed = false;
     /**
-     * <code>repeated int32 backoff_ms = 2;</code>
+     * Generated from protobuf field <code>repeated int32 backoff_ms = 2;</code>
      */
     private $backoff_ms;
 
@@ -34,7 +32,8 @@ class ReconnectInfo extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <code>bool passed = 1;</code>
+     * Generated from protobuf field <code>bool passed = 1;</code>
+     * @return bool
      */
     public function getPassed()
     {
@@ -42,16 +41,21 @@ class ReconnectInfo extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <code>bool passed = 1;</code>
+     * Generated from protobuf field <code>bool passed = 1;</code>
+     * @param bool $var
+     * @return $this
      */
     public function setPassed($var)
     {
         GPBUtil::checkBool($var);
         $this->passed = $var;
+
+        return $this;
     }
 
     /**
-     * <code>repeated int32 backoff_ms = 2;</code>
+     * Generated from protobuf field <code>repeated int32 backoff_ms = 2;</code>
+     * @return \Google\Protobuf\Internal\RepeatedField
      */
     public function getBackoffMs()
     {
@@ -59,12 +63,16 @@ class ReconnectInfo extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <code>repeated int32 backoff_ms = 2;</code>
+     * Generated from protobuf field <code>repeated int32 backoff_ms = 2;</code>
+     * @param int[]|\Google\Protobuf\Internal\RepeatedField $var
+     * @return $this
      */
-    public function setBackoffMs(&$var)
+    public function setBackoffMs($var)
     {
-        GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::INT32);
-        $this->backoff_ms = $var;
+        $arr = GPBUtil::checkRepeatedField($var, \Google\Protobuf\Internal\GPBType::INT32);
+        $this->backoff_ms = $arr;
+
+        return $this;
     }
 
 }

@@ -18,19 +18,18 @@
 
 #include <memory>
 
-#include <grpc++/channel.h>
-#include <grpc++/client_context.h>
-#include <grpc++/create_channel.h>
-#include <grpc++/generic/async_generic_service.h>
-#include <grpc++/generic/generic_stub.h>
-#include <grpc++/impl/codegen/proto_utils.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
-#include <grpc++/server_context.h>
-#include <grpc++/support/slice.h>
 #include <grpc/grpc.h>
-#include <grpc/support/thd.h>
 #include <grpc/support/time.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/generic/async_generic_service.h>
+#include <grpcpp/generic/generic_stub.h>
+#include <grpcpp/impl/codegen/proto_utils.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/server_context.h>
+#include <grpcpp/support/slice.h>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -47,7 +46,7 @@ namespace grpc {
 namespace testing {
 namespace {
 
-void* tag(int i) { return (void*)(intptr_t)i; }
+void* tag(int i) { return (void*)static_cast<intptr_t>(i); }
 
 void verify_ok(CompletionQueue* cq, int i, bool expect_ok) {
   bool ok;
@@ -125,7 +124,8 @@ class GenericEnd2endTest : public ::testing::Test {
       }
 
       std::unique_ptr<GenericClientAsyncReaderWriter> call =
-          generic_stub_->Call(&cli_ctx, kMethodName, &cli_cq_, tag(1));
+          generic_stub_->PrepareCall(&cli_ctx, kMethodName, &cli_cq_);
+      call->StartCall(tag(1));
       client_ok(1);
       std::unique_ptr<ByteBuffer> send_buffer =
           SerializeToByteBuffer(&send_request);
@@ -145,7 +145,7 @@ class GenericEnd2endTest : public ::testing::Test {
 
       if (check_deadline) {
         EXPECT_TRUE(gpr_time_similar(deadline, srv_ctx.raw_deadline(),
-                                     gpr_time_from_millis(100, GPR_TIMESPAN)));
+                                     gpr_time_from_millis(1000, GPR_TIMESPAN)));
       }
 
       ByteBuffer recv_buffer;
@@ -196,6 +196,63 @@ TEST_F(GenericEnd2endTest, SequentialRpcs) {
   SendRpc(10);
 }
 
+TEST_F(GenericEnd2endTest, SequentialUnaryRpcs) {
+  ResetStub();
+  const int num_rpcs = 10;
+  const grpc::string kMethodName("/grpc.cpp.test.util.EchoTestService/Echo");
+  for (int i = 0; i < num_rpcs; i++) {
+    EchoRequest send_request;
+    EchoRequest recv_request;
+    EchoResponse send_response;
+    EchoResponse recv_response;
+    Status recv_status;
+
+    ClientContext cli_ctx;
+    GenericServerContext srv_ctx;
+    GenericServerAsyncReaderWriter stream(&srv_ctx);
+
+    // The string needs to be long enough to test heap-based slice.
+    send_request.set_message("Hello world. Hello world. Hello world.");
+
+    std::unique_ptr<ByteBuffer> cli_send_buffer =
+        SerializeToByteBuffer(&send_request);
+    // Use the same cq as server so that events can be polled in time.
+    std::unique_ptr<GenericClientAsyncResponseReader> call =
+        generic_stub_->PrepareUnaryCall(&cli_ctx, kMethodName,
+                                        *cli_send_buffer.get(), srv_cq_.get());
+    call->StartCall();
+    ByteBuffer cli_recv_buffer;
+    call->Finish(&cli_recv_buffer, &recv_status, tag(1));
+
+    generic_service_.RequestCall(&srv_ctx, &stream, srv_cq_.get(),
+                                 srv_cq_.get(), tag(4));
+
+    server_ok(4);
+    EXPECT_EQ(server_host_, srv_ctx.host().substr(0, server_host_.length()));
+    EXPECT_EQ(kMethodName, srv_ctx.method());
+
+    ByteBuffer srv_recv_buffer;
+    stream.Read(&srv_recv_buffer, tag(5));
+    server_ok(5);
+    EXPECT_TRUE(ParseFromByteBuffer(&srv_recv_buffer, &recv_request));
+    EXPECT_EQ(send_request.message(), recv_request.message());
+
+    send_response.set_message(recv_request.message());
+    std::unique_ptr<ByteBuffer> srv_send_buffer =
+        SerializeToByteBuffer(&send_response);
+    stream.Write(*srv_send_buffer, tag(6));
+    server_ok(6);
+
+    stream.Finish(Status::OK, tag(7));
+    server_ok(7);
+
+    verify_ok(srv_cq_.get(), 1, true);
+    EXPECT_TRUE(ParseFromByteBuffer(&cli_recv_buffer, &recv_response));
+    EXPECT_EQ(send_response.message(), recv_response.message());
+    EXPECT_TRUE(recv_status.ok());
+  }
+}
+
 // One ping, one pong.
 TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
   ResetStub();
@@ -214,7 +271,8 @@ TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
   cli_ctx.set_compression_algorithm(GRPC_COMPRESS_GZIP);
   send_request.set_message("Hello");
   std::unique_ptr<GenericClientAsyncReaderWriter> cli_stream =
-      generic_stub_->Call(&cli_ctx, kMethodName, &cli_cq_, tag(1));
+      generic_stub_->PrepareCall(&cli_ctx, kMethodName, &cli_cq_);
+  cli_stream->StartCall(tag(1));
   client_ok(1);
 
   generic_service_.RequestCall(&srv_ctx, &srv_stream, srv_cq_.get(),
@@ -265,8 +323,9 @@ TEST_F(GenericEnd2endTest, SimpleBidiStreaming) {
 
 TEST_F(GenericEnd2endTest, Deadline) {
   ResetStub();
-  SendRpc(1, true, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                                gpr_time_from_seconds(10, GPR_TIMESPAN)));
+  SendRpc(1, true,
+          gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                       gpr_time_from_seconds(10, GPR_TIMESPAN)));
 }
 
 }  // namespace

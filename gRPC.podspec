@@ -20,7 +20,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC'
-  version = '1.7.0-dev'
+  version = '1.11.0-dev'
   s.version  = version
   s.summary  = 'gRPC client library for iOS/OSX'
   s.homepage = 'https://grpc.io'
@@ -50,6 +50,7 @@ Pod::Spec.new do |s|
   s.pod_target_xcconfig = {
     # This is needed by all pods that depend on gRPC-RxLibrary:
     'CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES' => 'YES',
+    'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
   }
 
   s.subspec 'Main' do |ss|
@@ -63,10 +64,13 @@ Pod::Spec.new do |s|
   end
 
   s.subspec 'GID' do |ss|
+    ss.ios.deployment_target = '7.0'
+
     ss.header_mappings_dir = "#{src_dir}"
 
     ss.source_files = "#{src_dir}/GRPCCall+GID.{h,m}"
 
+    ss.dependency "#{s.name}/Main", version
     ss.dependency 'Google/SignIn'
   end
 end

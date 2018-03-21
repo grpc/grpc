@@ -16,12 +16,12 @@
  *
  */
 
-#include <grpc++/test/server_context_test_spouse.h>
+#include <grpcpp/test/server_context_test_spouse.h>
 
 #include <cstring>
 #include <vector>
 
-#include <grpc++/impl/grpc_library.h>
+#include <grpcpp/impl/grpc_library.h>
 #include <gtest/gtest.h>
 
 namespace grpc {
@@ -87,7 +87,7 @@ TEST(ServerContextTestSpouseTest, TrailingMetadata) {
   ASSERT_EQ(metadata, spouse.GetTrailingMetadata());
 }
 
-}  // namespace
+}  // namespace testing
 }  // namespace grpc
 
 int main(int argc, char** argv) {

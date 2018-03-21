@@ -35,6 +35,8 @@
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 zend_class_entry *grpc_ce_call_credentials;
 #if PHP_MAJOR_VERSION >= 7
@@ -119,6 +121,8 @@ PHP_METHOD(CallCredentials, createFromPlugin) {
                             fci->params, fci->param_count) == FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
                          "createFromPlugin expects 1 callback", 1 TSRMLS_CC);
+    free(fci);
+    free(fci_cache);
     return;
   }
 
@@ -143,9 +147,12 @@ PHP_METHOD(CallCredentials, createFromPlugin) {
 }
 
 /* Callback function for plugin creds API */
-void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
-                         grpc_credentials_plugin_metadata_cb cb,
-                         void *user_data) {
+int plugin_get_metadata(
+    void *ptr, grpc_auth_metadata_context context,
+    grpc_credentials_plugin_metadata_cb cb, void *user_data,
+    grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
+    size_t *num_creds_md, grpc_status_code *status,
+    const char **error_details) {
   TSRMLS_FETCH();
 
   plugin_state *state = (plugin_state *)ptr;
@@ -172,18 +179,26 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
 
   PHP_GRPC_DELREF(arg);
 
+  gpr_log(GPR_INFO, "GRPC_PHP: call credentials plugin function - begin");
   /* call the user callback function */
   zend_call_function(state->fci, state->fci_cache TSRMLS_CC);
+  gpr_log(GPR_INFO, "GRPC_PHP: call credentials plugin function - end");
 
-  grpc_status_code code = GRPC_STATUS_OK;
+  *num_creds_md = 0;
+  *status = GRPC_STATUS_OK;
+  *error_details = NULL;
+
+  bool should_return = false;
   grpc_metadata_array metadata;
-  bool cleanup = true;
 
   if (retval == NULL || Z_TYPE_P(retval) != IS_ARRAY) {
-    cleanup = false;
-    code = GRPC_STATUS_INVALID_ARGUMENT;
-  } else if (!create_metadata_array(retval, &metadata)) {
-    code = GRPC_STATUS_INVALID_ARGUMENT;
+    *status = GRPC_STATUS_INVALID_ARGUMENT;
+    should_return = true;  // Synchronous return.
+  }
+  if (!create_metadata_array(retval, &metadata)) {
+    *status = GRPC_STATUS_INVALID_ARGUMENT;
+    should_return = true;  // Synchronous return.
+    grpc_php_metadata_array_destroy_including_entries(&metadata);
   }
 
   if (retval != NULL) {
@@ -196,15 +211,28 @@ void plugin_get_metadata(void *ptr, grpc_auth_metadata_context context,
     PHP_GRPC_FREE_STD_ZVAL(retval);
 #endif
   }
+  if (should_return) {
+    return true;
+  }
 
-  /* Pass control back to core */
-  cb(user_data, metadata.metadata, metadata.count, code, NULL);
-  if (cleanup) {
-    for (int i = 0; i < metadata.count; i++) {
+  if (metadata.count > GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX) {
+    *status = GRPC_STATUS_INTERNAL;
+    *error_details = gpr_strdup(
+        "PHP plugin credentials returned too many metadata entries");
+    for (size_t i = 0; i < metadata.count; i++) {
+      // TODO(stanleycheung): Why don't we need to unref the key here?
       grpc_slice_unref(metadata.metadata[i].value);
     }
-    grpc_metadata_array_destroy(&metadata);
+  } else {
+    // Return data to core.
+    *num_creds_md = metadata.count;
+    for (size_t i = 0; i < metadata.count; ++i) {
+      creds_md[i] = metadata.metadata[i];
+    }
   }
+
+  grpc_metadata_array_destroy(&metadata);
+  return true;  // Synchronous return.
 }
 
 /* Cleanup function for plugin creds API */

@@ -15,29 +15,31 @@
  *
  */
 
-#include <grpc++/server.h>
+#include <grpcpp/server.h>
 
+#include <cstdlib>
 #include <sstream>
 #include <utility>
 
-#include <grpc++/completion_queue.h>
-#include <grpc++/generic/async_generic_service.h>
-#include <grpc++/impl/codegen/async_unary_call.h>
-#include <grpc++/impl/codegen/completion_queue_tag.h>
-#include <grpc++/impl/grpc_library.h>
-#include <grpc++/impl/method_handler_impl.h>
-#include <grpc++/impl/rpc_service_method.h>
-#include <grpc++/impl/server_initializer.h>
-#include <grpc++/impl/service_type.h>
-#include <grpc++/security/server_credentials.h>
-#include <grpc++/server_context.h>
-#include <grpc++/support/time.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpcpp/completion_queue.h>
+#include <grpcpp/generic/async_generic_service.h>
+#include <grpcpp/impl/codegen/async_unary_call.h>
+#include <grpcpp/impl/codegen/completion_queue_tag.h>
+#include <grpcpp/impl/grpc_library.h>
+#include <grpcpp/impl/method_handler_impl.h>
+#include <grpcpp/impl/rpc_service_method.h>
+#include <grpcpp/impl/server_initializer.h>
+#include <grpcpp/impl/service_type.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/server_context.h>
+#include <grpcpp/support/time.h>
 
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/surface/call.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/cpp/server/health/default_health_check_service.h"
 #include "src/cpp/thread_manager/thread_manager.h"
@@ -74,7 +76,7 @@ class Server::UnimplementedAsyncRequest final
  public:
   UnimplementedAsyncRequest(Server* server, ServerCompletionQueue* cq)
       : GenericAsyncRequest(server, &server_context_, &generic_stream_, cq, cq,
-                            NULL, false),
+                            nullptr, false),
         server_(server),
         cq_(cq) {}
 
@@ -88,7 +90,8 @@ class Server::UnimplementedAsyncRequest final
   ServerCompletionQueue* const cq_;
 };
 
-typedef SneakyCallOpSet<CallOpSendInitialMetadata, CallOpServerSendStatus>
+typedef internal::SneakyCallOpSet<internal::CallOpSendInitialMetadata,
+                                  internal::CallOpServerSendStatus>
     UnimplementedAsyncResponseOp;
 class Server::UnimplementedAsyncResponse final
     : public UnimplementedAsyncResponseOp {
@@ -106,12 +109,12 @@ class Server::UnimplementedAsyncResponse final
   UnimplementedAsyncRequest* const request_;
 };
 
-class ShutdownTag : public CompletionQueueTag {
+class ShutdownTag : public internal::CompletionQueueTag {
  public:
   bool FinalizeResult(void** tag, bool* status) { return false; }
 };
 
-class DummyTag : public CompletionQueueTag {
+class DummyTag : public internal::CompletionQueueTag {
  public:
   bool FinalizeResult(void** tag, bool* status) {
     *status = true;
@@ -119,15 +122,15 @@ class DummyTag : public CompletionQueueTag {
   }
 };
 
-class Server::SyncRequest final : public CompletionQueueTag {
+class Server::SyncRequest final : public internal::CompletionQueueTag {
  public:
-  SyncRequest(RpcServiceMethod* method, void* tag)
+  SyncRequest(internal::RpcServiceMethod* method, void* tag)
       : method_(method),
         tag_(tag),
         in_flight_(false),
-        has_request_payload_(method->method_type() == RpcMethod::NORMAL_RPC ||
-                             method->method_type() ==
-                                 RpcMethod::SERVER_STREAMING),
+        has_request_payload_(
+            method->method_type() == internal::RpcMethod::NORMAL_RPC ||
+            method->method_type() == internal::RpcMethod::SERVER_STREAMING),
         call_details_(nullptr),
         cq_(nullptr) {
     grpc_metadata_array_init(&request_metadata_);
@@ -210,14 +213,14 @@ class Server::SyncRequest final : public CompletionQueueTag {
     void Run(std::shared_ptr<GlobalCallbacks> global_callbacks) {
       ctx_.BeginCompletionOp(&call_);
       global_callbacks->PreSynchronousRequest(&ctx_);
-      method_->handler()->RunHandler(
-          MethodHandler::HandlerParameter(&call_, &ctx_, request_payload_));
+      method_->handler()->RunHandler(internal::MethodHandler::HandlerParameter(
+          &call_, &ctx_, request_payload_));
       global_callbacks->PostSynchronousRequest(&ctx_);
       request_payload_ = nullptr;
 
       cq_.Shutdown();
 
-      CompletionQueueTag* op_tag = ctx_.GetCompletionOpTag();
+      internal::CompletionQueueTag* op_tag = ctx_.GetCompletionOpTag();
       cq_.TryPluck(op_tag, gpr_inf_future(GPR_CLOCK_REALTIME));
 
       /* Ensure the cq_ is shutdown */
@@ -227,15 +230,15 @@ class Server::SyncRequest final : public CompletionQueueTag {
 
    private:
     CompletionQueue cq_;
-    Call call_;
+    internal::Call call_;
     ServerContext ctx_;
     const bool has_request_payload_;
     grpc_byte_buffer* request_payload_;
-    RpcServiceMethod* const method_;
+    internal::RpcServiceMethod* const method_;
   };
 
  private:
-  RpcServiceMethod* const method_;
+  internal::RpcServiceMethod* const method_;
   void* const tag_;
   bool in_flight_;
   const bool has_request_payload_;
@@ -264,8 +267,11 @@ class Server::SyncRequestThreadManager : public ThreadManager {
 
   WorkStatus PollForWork(void** tag, bool* ok) override {
     *tag = nullptr;
+    // TODO(ctiller): workaround for GPR_TIMESPAN based deadlines not working
+    // right now
     gpr_timespec deadline =
-        gpr_time_from_millis(cq_timeout_msec_, GPR_TIMESPAN);
+        gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                     gpr_time_from_millis(cq_timeout_msec_, GPR_TIMESPAN));
 
     switch (server_cq_->AsyncNext(tag, ok, deadline)) {
       case CompletionQueue::TIMEOUT:
@@ -306,14 +312,15 @@ class Server::SyncRequestThreadManager : public ThreadManager {
     // object
   }
 
-  void AddSyncMethod(RpcServiceMethod* method, void* tag) {
+  void AddSyncMethod(internal::RpcServiceMethod* method, void* tag) {
     sync_requests_.emplace_back(new SyncRequest(method, tag));
   }
 
   void AddUnknownSyncMethod() {
     if (!sync_requests_.empty()) {
-      unknown_method_.reset(new RpcServiceMethod(
-          "unknown", RpcMethod::BIDI_STREAMING, new UnknownMethodHandler));
+      unknown_method_.reset(new internal::RpcServiceMethod(
+          "unknown", internal::RpcMethod::BIDI_STREAMING,
+          new internal::UnknownMethodHandler));
       sync_requests_.emplace_back(
           new SyncRequest(unknown_method_.get(), nullptr));
     }
@@ -350,8 +357,8 @@ class Server::SyncRequestThreadManager : public ThreadManager {
   CompletionQueue* server_cq_;
   int cq_timeout_msec_;
   std::vector<std::unique_ptr<SyncRequest>> sync_requests_;
-  std::unique_ptr<RpcServiceMethod> unknown_method_;
-  std::unique_ptr<RpcServiceMethod> health_check_;
+  std::unique_ptr<internal::RpcServiceMethod> unknown_method_;
+  std::unique_ptr<internal::RpcServiceMethod> health_check_;
   std::shared_ptr<Server::GlobalCallbacks> global_callbacks_;
 };
 
@@ -375,11 +382,12 @@ Server::Server(
   global_callbacks_ = g_callbacks;
   global_callbacks_->UpdateArguments(args);
 
-  for (auto it = sync_server_cqs_->begin(); it != sync_server_cqs_->end();
-       it++) {
-    sync_req_mgrs_.emplace_back(new SyncRequestThreadManager(
-        this, (*it).get(), global_callbacks_, min_pollers, max_pollers,
-        sync_cq_timeout_msec));
+  if (sync_server_cqs_ != nullptr) {
+    for (const auto& it : *sync_server_cqs_) {
+      sync_req_mgrs_.emplace_back(new SyncRequestThreadManager(
+          this, it.get(), global_callbacks_, min_pollers, max_pollers,
+          sync_cq_timeout_msec));
+    }
   }
 
   grpc_channel_args channel_args;
@@ -434,13 +442,13 @@ std::shared_ptr<Channel> Server::InProcessChannel(
 }
 
 static grpc_server_register_method_payload_handling PayloadHandlingForMethod(
-    RpcServiceMethod* method) {
+    internal::RpcServiceMethod* method) {
   switch (method->method_type()) {
-    case RpcMethod::NORMAL_RPC:
-    case RpcMethod::SERVER_STREAMING:
+    case internal::RpcMethod::NORMAL_RPC:
+    case internal::RpcMethod::SERVER_STREAMING:
       return GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER;
-    case RpcMethod::CLIENT_STREAMING:
-    case RpcMethod::BIDI_STREAMING:
+    case internal::RpcMethod::CLIENT_STREAMING:
+    case internal::RpcMethod::BIDI_STREAMING:
       return GRPC_SRM_PAYLOAD_NONE;
   }
   GPR_UNREACHABLE_CODE(return GRPC_SRM_PAYLOAD_NONE;);
@@ -461,7 +469,7 @@ bool Server::RegisterService(const grpc::string* host, Service* service) {
       continue;
     }
 
-    RpcServiceMethod* method = it->get();
+    internal::RpcServiceMethod* method = it->get();
     void* tag = grpc_server_register_method(
         server_, method->name(), host ? host->c_str() : nullptr,
         PayloadHandlingForMethod(method), 0);
@@ -518,7 +526,7 @@ void Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
   // explicit one.
   if (health_check_service_ == nullptr && !health_check_service_disabled_ &&
       DefaultHealthCheckServiceEnabled()) {
-    if (sync_server_cqs_->empty()) {
+    if (sync_server_cqs_ == nullptr || sync_server_cqs_->empty()) {
       gpr_log(GPR_INFO,
               "Default health check service disabled at async-only server.");
     } else {
@@ -601,19 +609,25 @@ void Server::Wait() {
   }
 }
 
-void Server::PerformOpsOnCall(CallOpSetInterface* ops, Call* call) {
+void Server::PerformOpsOnCall(internal::CallOpSetInterface* ops,
+                              internal::Call* call) {
   static const size_t MAX_OPS = 8;
   size_t nops = 0;
   grpc_op cops[MAX_OPS];
   ops->FillOps(call->call(), cops, &nops);
   auto result = grpc_call_start_batch(call->call(), cops, nops, ops, nullptr);
-  GPR_ASSERT(GRPC_CALL_OK == result);
+  if (result != GRPC_CALL_OK) {
+    gpr_log(GPR_ERROR, "Fatal: grpc_call_start_batch returned %d", result);
+    grpc_call_log_batch(__FILE__, __LINE__, GPR_LOG_SEVERITY_ERROR,
+                        call->call(), cops, nops, ops);
+    abort();
+  }
 }
 
 ServerInterface::BaseAsyncRequest::BaseAsyncRequest(
     ServerInterface* server, ServerContext* context,
-    ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq, void* tag,
-    bool delete_on_finalize)
+    internal::ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
+    void* tag, bool delete_on_finalize)
     : server_(server),
       context_(context),
       stream_(stream),
@@ -635,7 +649,8 @@ bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
   }
   context_->set_call(call_);
   context_->cq_ = call_cq_;
-  Call call(call_, server_, call_cq_, server_->max_receive_message_size());
+  internal::Call call(call_, server_, call_cq_,
+                      server_->max_receive_message_size());
   if (*status && call_) {
     context_->BeginCompletionOp(&call);
   }
@@ -650,7 +665,8 @@ bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
 
 ServerInterface::RegisteredAsyncRequest::RegisteredAsyncRequest(
     ServerInterface* server, ServerContext* context,
-    ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq, void* tag)
+    internal::ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
+    void* tag)
     : BaseAsyncRequest(server, context, stream, call_cq, tag, true) {}
 
 void ServerInterface::RegisteredAsyncRequest::IssueRequest(
@@ -665,7 +681,7 @@ void ServerInterface::RegisteredAsyncRequest::IssueRequest(
 
 ServerInterface::GenericAsyncRequest::GenericAsyncRequest(
     ServerInterface* server, GenericServerContext* context,
-    ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
+    internal::ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
     ServerCompletionQueue* notification_cq, void* tag, bool delete_on_finalize)
     : BaseAsyncRequest(server, context, stream, call_cq, tag,
                        delete_on_finalize) {
@@ -708,7 +724,7 @@ Server::UnimplementedAsyncResponse::UnimplementedAsyncResponse(
     UnimplementedAsyncRequest* request)
     : request_(request) {
   Status status(StatusCode::UNIMPLEMENTED, "");
-  UnknownMethodHandler::FillOps(request_->context(), this);
+  internal::UnknownMethodHandler::FillOps(request_->context(), this);
   request_->stream()->call_.PerformOps(this);
 }
 

@@ -19,8 +19,16 @@
 #ifndef GRPC_CORE_LIB_IOMGR_POLLING_ENTITY_H
 #define GRPC_CORE_LIB_IOMGR_POLLING_ENTITY_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
+
+typedef enum grpc_pollset_tag {
+  GRPC_POLLS_NONE,
+  GRPC_POLLS_POLLSET,
+  GRPC_POLLS_POLLSET_SET
+} grpc_pollset_tag;
 
 /* A grpc_polling_entity is a pollset-or-pollset_set container. It allows
  * functions that accept a pollset XOR a pollset_set to do so through an
@@ -28,34 +36,33 @@
 
 typedef struct grpc_polling_entity {
   union {
-    grpc_pollset *pollset;
-    grpc_pollset_set *pollset_set;
+    grpc_pollset* pollset;
+    grpc_pollset_set* pollset_set;
   } pollent;
-  enum pops_tag { POPS_NONE, POPS_POLLSET, POPS_POLLSET_SET } tag;
+  grpc_pollset_tag tag;
 } grpc_polling_entity;
 
 grpc_polling_entity grpc_polling_entity_create_from_pollset_set(
-    grpc_pollset_set *pollset_set);
+    grpc_pollset_set* pollset_set);
 grpc_polling_entity grpc_polling_entity_create_from_pollset(
-    grpc_pollset *pollset);
+    grpc_pollset* pollset);
 
 /** If \a pollent contains a pollset, return it. Otherwise, return NULL */
-grpc_pollset *grpc_polling_entity_pollset(grpc_polling_entity *pollent);
+grpc_pollset* grpc_polling_entity_pollset(grpc_polling_entity* pollent);
 
 /** If \a pollent contains a pollset_set, return it. Otherwise, return NULL */
-grpc_pollset_set *grpc_polling_entity_pollset_set(grpc_polling_entity *pollent);
+grpc_pollset_set* grpc_polling_entity_pollset_set(grpc_polling_entity* pollent);
 
-bool grpc_polling_entity_is_empty(const grpc_polling_entity *pollent);
+bool grpc_polling_entity_is_empty(const grpc_polling_entity* pollent);
 
 /** Add the pollset or pollset_set in \a pollent to the destination pollset_set
  * \a * pss_dst */
-void grpc_polling_entity_add_to_pollset_set(grpc_exec_ctx *exec_ctx,
-                                            grpc_polling_entity *pollent,
-                                            grpc_pollset_set *pss_dst);
+void grpc_polling_entity_add_to_pollset_set(grpc_polling_entity* pollent,
+                                            grpc_pollset_set* pss_dst);
 
 /** Delete the pollset or pollset_set in \a pollent from the destination
  * pollset_set \a * pss_dst */
-void grpc_polling_entity_del_from_pollset_set(grpc_exec_ctx *exec_ctx,
-                                              grpc_polling_entity *pollent,
-                                              grpc_pollset_set *pss_dst);
+void grpc_polling_entity_del_from_pollset_set(grpc_polling_entity* pollent,
+                                              grpc_pollset_set* pss_dst);
+
 #endif /* GRPC_CORE_LIB_IOMGR_POLLING_ENTITY_H */

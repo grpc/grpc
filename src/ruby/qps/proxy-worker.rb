@@ -31,8 +31,10 @@ require 'src/proto/grpc/testing/services_services_pb'
 require 'src/proto/grpc/testing/proxy-service_services_pb'
 
 class ProxyBenchmarkClientServiceImpl < Grpc::Testing::ProxyClientService::Service
-  def initialize(port)
+  def initialize(port, c_ext, php_client_bin)
     @mytarget = "localhost:" + port.to_s
+    @use_c_ext = c_ext
+    @php_client_bin = php_client_bin
   end
   def setup(config)
     @config = config
@@ -40,23 +42,46 @@ class ProxyBenchmarkClientServiceImpl < Grpc::Testing::ProxyClientService::Servi
     @histmax = config.histogram_params.max_possible
     @histogram = Histogram.new(@histres, @histmax)
     @start_time = Time.now
-    # TODO(vjpai): Support multiple client channels by spawning off a PHP client per channel
-    command = "php " + File.expand_path(File.dirname(__FILE__)) + "/../../php/tests/qps/client.php " + @mytarget
-    puts "Starting command: " + command
-    @php_pid = spawn(command)
+    @php_pid = Array.new(@config.client_channels)
+    (0..@config.client_channels-1).each do |chan|
+      Thread.new {
+        if @use_c_ext
+          puts "Use protobuf c extension"
+          command = "php -d extension=" + File.expand_path(File.dirname(__FILE__)) +
+            "/../../php/tests/qps/vendor/google/protobuf/php/ext/google/protobuf/modules/protobuf.so " +
+            "-d extension=" + File.expand_path(File.dirname(__FILE__)) + "/../../php/ext/grpc/modules/grpc.so " +
+            File.expand_path(File.dirname(__FILE__)) + "/" + @php_client_bin + " " + @mytarget + " #{chan%@config.server_targets.length}"
+        else
+          puts "Use protobuf php extension"
+          command = "php -d extension=" + File.expand_path(File.dirname(__FILE__)) + "/../../php/ext/grpc/modules/grpc.so " +
+            File.expand_path(File.dirname(__FILE__)) + "/" + @php_client_bin + " " + @mytarget + " #{chan%@config.server_targets.length}"
+        end
+        puts "[ruby proxy] Starting #{chan}th php-client command use c protobuf #{@use_c_ext}: " + command
+        @php_pid[chan] = spawn(command)
+        while true
+          sleep
+        end
+      }
+    end
   end
   def stop
-    Process.kill("TERM", @php_pid)
-    Process.wait(@php_pid)
+    (0..@config.client_channels-1).each do |chan|
+      Process.kill("TERM", @php_pid[chan])
+      Process.wait(@php_pid[chan])
+    end
   end
   def get_config(_args, _call)
-    puts "Answering get_config"
     @config
   end
   def report_time(call)
-    puts "Starting a time reporting stream"
     call.each_remote_read do |lat|
       @histogram.add((lat.latency)*1e9)
+    end
+    Grpc::Testing::Void.new
+  end
+  def report_hist(call)
+    call.each_remote_read do |lat|
+      @histogram.merge(lat)
     end
     Grpc::Testing::Void.new
   end
@@ -121,22 +146,31 @@ end
 
 def proxymain
   options = {
-    'driver_port' => 0
+    'driver_port' => 0,
+    'php_client_bin' => '../../php/tests/qps/client.php'
   }
   OptionParser.new do |opts|
     opts.banner = 'Usage: [--driver_port <port>]'
     opts.on('--driver_port PORT', '<port>') do |v|
       options['driver_port'] = v
     end
+    opts.on("-c", "--[no-]use_protobuf_c_extension", "Use protobuf C-extention") do |c|
+      options[:c_ext] = c
+    end
+    opts.on("-b", "--php_client_bin [FILE]",
+      "PHP client to execute; path relative to this script") do |c|
+      options['php_client_bin'] = c
+    end
   end.parse!
 
   # Configure any errors with client or server child threads to surface
   Thread.abort_on_exception = true
 
-  s = GRPC::RpcServer.new
+  # Make sure proxy_server can handle the large number of calls in benchmarks
+  s = GRPC::RpcServer.new(pool_size: 1024)
   port = s.add_http2_port("0.0.0.0:" + options['driver_port'].to_s,
                           :this_port_is_insecure)
-  bmc = ProxyBenchmarkClientServiceImpl.new(port)
+  bmc = ProxyBenchmarkClientServiceImpl.new(port, options[:c_ext], options['php_client_bin'])
   s.handle(bmc)
   s.handle(ProxyWorkerServiceImpl.new(s, bmc))
   s.run

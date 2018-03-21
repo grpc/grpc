@@ -26,11 +26,11 @@
 #include <sstream>
 
 #include <gflags/gflags.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
-#include <grpc++/server_context.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/server_context.h>
 
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
@@ -53,9 +53,9 @@ using grpc::ServerWriter;
 using grpc::SslServerCredentialsOptions;
 using grpc::Status;
 using grpc::testing::Empty;
-using grpc::testing::ReconnectService;
 using grpc::testing::ReconnectInfo;
 using grpc::testing::ReconnectParams;
+using grpc::testing::ReconnectService;
 
 static bool got_sigint = false;
 

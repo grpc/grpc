@@ -23,6 +23,7 @@
 #include "test/cpp/qps/benchmark_config.h"
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/report.h"
+#include "test/cpp/qps/server.h"
 #include "test/cpp/util/test_config.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
@@ -52,8 +53,9 @@ static void RunSynchronousUnaryPingPong() {
   client_config.mutable_security_params()->CopyFrom(security);
   server_config.mutable_security_params()->CopyFrom(security);
 
-  const auto result = RunScenario(client_config, 1, server_config, 1, WARMUP,
-                                  BENCHMARK, -2, "", kInsecureCredentialsType);
+  const auto result =
+      RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2, "",
+                  kInsecureCredentialsType, false);
 
   GetReporter()->ReportQPS(*result);
   GetReporter()->ReportLatency(*result);

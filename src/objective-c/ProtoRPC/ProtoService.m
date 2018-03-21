@@ -24,7 +24,10 @@
 #import "ProtoMethod.h"
 #import "ProtoRPC.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-implementations"
 @implementation ProtoService {
+#pragma clang diagnostic pop
   NSString *_host;
   NSString *_packageName;
   NSString *_serviceName;

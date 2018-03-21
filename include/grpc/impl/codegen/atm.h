@@ -46,6 +46,7 @@
 
    // Atomically return *p, with acquire semantics.
    gpr_atm gpr_atm_acq_load(gpr_atm *p);
+   gpr_atm gpr_atm_no_barrier_load(gpr_atm *p);
 
    // Atomically set *p = value, with release semantics.
    void gpr_atm_rel_store(gpr_atm *p, gpr_atm value);
@@ -78,9 +79,17 @@
 #error could not determine platform for atm
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** Adds \a delta to \a *value, clamping the result to the range specified
     by \a min and \a max.  Returns the new value. */
-gpr_atm gpr_atm_no_barrier_clamped_add(gpr_atm *value, gpr_atm delta,
+gpr_atm gpr_atm_no_barrier_clamped_add(gpr_atm* value, gpr_atm delta,
                                        gpr_atm min, gpr_atm max);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_IMPL_CODEGEN_ATM_H */

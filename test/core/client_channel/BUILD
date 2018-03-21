@@ -22,9 +22,9 @@ load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_fuzzer(
     name = "uri_fuzzer_test",
-    srcs = ["uri_fuzzer_test.c"],
-    language = "C",
+    srcs = ["uri_fuzzer_test.cc"],
     corpus = "uri_corpus",
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -33,14 +33,35 @@ grpc_fuzzer(
 )
 
 grpc_cc_test(
-    name = "lb_policies_test",
-    srcs = ["lb_policies_test.c"],
-    language = "C",
+    name = "parse_address_test",
+    srcs = ["parse_address_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/end2end:cq_verifier",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "uri_parser_test",
+    srcs = ["uri_parser_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "status_util_test",
+    srcs = ["status_util_test.cc"],
+    language = "C++",
+    deps = [
+        "//:grpc",
+    ],
+    external_deps = [
+        "gtest",
     ],
 )

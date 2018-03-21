@@ -17,61 +17,51 @@
 require_relative './end2end_common'
 
 # Service that sleeps for a long time upon receiving an 'echo request'
-# Also, this notifies @call_started_cv once it has received a request.
+# Also, this calls it's callback upon receiving an RPC as a method
+# of synchronization/waiting for the child to start.
 class SleepingEchoServerImpl < Echo::EchoServer::Service
-  def initialize(call_started, call_started_mu, call_started_cv)
-    @call_started = call_started
-    @call_started_mu = call_started_mu
-    @call_started_cv = call_started_cv
+  def initialize(received_rpc_callback)
+    @received_rpc_callback = received_rpc_callback
   end
 
   def echo(echo_req, _)
-    @call_started_mu.synchronize do
-      @call_started.set_true
-      @call_started_cv.signal
-    end
-    sleep 1000
+    @received_rpc_callback.call
+    # sleep forever to get the client stuck waiting
+    sleep
     Echo::EchoReply.new(response: echo_req.request)
-  end
-end
-
-# Mutable boolean
-class BoolHolder
-  attr_reader :val
-
-  def init
-    @val = false
-  end
-
-  def set_true
-    @val = true
   end
 end
 
 def main
   STDERR.puts 'start server'
 
-  call_started = BoolHolder.new
-  call_started_mu = Mutex.new
-  call_started_cv = ConditionVariable.new
+  client_started = false
+  client_started_mu = Mutex.new
+  client_started_cv = ConditionVariable.new
+  received_rpc_callback = proc do
+    client_started_mu.synchronize do
+      client_started = true
+      client_started_cv.signal
+    end
+  end
 
-  service_impl = SleepingEchoServerImpl.new(call_started,
-                                            call_started_mu,
-                                            call_started_cv)
-  server_runner = ServerRunner.new(service_impl)
+  service_impl = SleepingEchoServerImpl.new(received_rpc_callback)
+  # RPCs against the server will all be hanging, so kill thread
+  # pool workers immediately rather than after waiting for a second.
+  rpc_server_args = { poll_period: 0, pool_keep_alive: 0 }
+  server_runner = ServerRunner.new(service_impl, rpc_server_args: rpc_server_args)
   server_port = server_runner.run
-
   STDERR.puts 'start client'
   _, client_pid = start_client('killed_client_thread_client.rb',
                                server_port)
 
-  call_started_mu.synchronize do
-    call_started_cv.wait(call_started_mu) until call_started.val
+  client_started_mu.synchronize do
+    client_started_cv.wait(client_started_mu) until client_started
   end
 
-  # SIGINT the child process now that it's
+  # SIGTERM the child process now that it's
   # in the middle of an RPC (happening on a non-main thread)
-  Process.kill('SIGINT', client_pid)
+  Process.kill('SIGTERM', client_pid)
   STDERR.puts 'sent shutdown'
 
   begin
@@ -88,8 +78,8 @@ def main
   end
 
   client_exit_code = $CHILD_STATUS
-  if client_exit_code.termsig != 2 # SIGINT
-    fail 'expected client exit from SIGINT ' \
+  if client_exit_code.termsig != 15 # SIGTERM
+    fail 'expected client exit from SIGTERM ' \
       "but got child status: #{client_exit_code}"
   end
 

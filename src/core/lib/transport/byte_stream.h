@@ -19,8 +19,12 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_BYTE_STREAM_H
 #define GRPC_CORE_LIB_TRANSPORT_BYTE_STREAM_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/slice_buffer.h>
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/gprpp/abstract.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/iomgr/closure.h"
 
 /** Internal bit flag for grpc_begin_message's \a flags signaling the use of
  * compression for the message */
@@ -28,77 +32,82 @@
 /** Mask of all valid internal flags. */
 #define GRPC_WRITE_INTERNAL_USED_MASK (GRPC_WRITE_INTERNAL_COMPRESS)
 
-typedef struct grpc_byte_stream grpc_byte_stream;
+namespace grpc_core {
 
-typedef struct {
-  bool (*next)(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream,
-               size_t max_size_hint, grpc_closure *on_complete);
-  grpc_error *(*pull)(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream,
-                      grpc_slice *slice);
-  void (*shutdown)(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream,
-                   grpc_error *error);
-  void (*destroy)(grpc_exec_ctx *exec_ctx, grpc_byte_stream *byte_stream);
-} grpc_byte_stream_vtable;
+class ByteStream : public Orphanable {
+ public:
+  virtual ~ByteStream() {}
 
-struct grpc_byte_stream {
-  uint32_t length;
-  uint32_t flags;
-  const grpc_byte_stream_vtable *vtable;
+  // Returns true if the bytes are available immediately (in which case
+  // on_complete will not be called), or false if the bytes will be available
+  // asynchronously (in which case on_complete will be called when they
+  // are available).
+  //
+  // max_size_hint can be set as a hint as to the maximum number
+  // of bytes that would be acceptable to read.
+  virtual bool Next(size_t max_size_hint,
+                    grpc_closure* on_complete) GRPC_ABSTRACT;
+
+  // Returns the next slice in the byte stream when it is available, as
+  // indicated by Next().
+  //
+  // Once a slice is returned into *slice, it is owned by the caller.
+  virtual grpc_error* Pull(grpc_slice* slice) GRPC_ABSTRACT;
+
+  // Shuts down the byte stream.
+  //
+  // If there is a pending call to on_complete from Next(), it will be
+  // invoked with the error passed to Shutdown().
+  //
+  // The next call to Pull() (if any) will return the error passed to
+  // Shutdown().
+  virtual void Shutdown(grpc_error* error) GRPC_ABSTRACT;
+
+  uint32_t length() const { return length_; }
+  uint32_t flags() const { return flags_; }
+
+  void set_flags(uint32_t flags) { flags_ = flags; }
+
+  GRPC_ABSTRACT_BASE_CLASS
+
+ protected:
+  ByteStream(uint32_t length, uint32_t flags)
+      : length_(length), flags_(flags) {}
+
+ private:
+  const uint32_t length_;
+  uint32_t flags_;
 };
 
-// Returns true if the bytes are available immediately (in which case
-// on_complete will not be called), false if the bytes will be available
-// asynchronously.
 //
-// max_size_hint can be set as a hint as to the maximum number
-// of bytes that would be acceptable to read.
-bool grpc_byte_stream_next(grpc_exec_ctx *exec_ctx,
-                           grpc_byte_stream *byte_stream, size_t max_size_hint,
-                           grpc_closure *on_complete);
-
-// Returns the next slice in the byte stream when it is ready (indicated by
-// either grpc_byte_stream_next returning true or on_complete passed to
-// grpc_byte_stream_next is called).
+// SliceBufferByteStream
 //
-// Once a slice is returned into *slice, it is owned by the caller.
-grpc_error *grpc_byte_stream_pull(grpc_exec_ctx *exec_ctx,
-                                  grpc_byte_stream *byte_stream,
-                                  grpc_slice *slice);
-
-// Shuts down the byte stream.
+// A ByteStream that wraps a slice buffer.
 //
-// If there is a pending call to on_complete from grpc_byte_stream_next(),
-// it will be invoked with the error passed to grpc_byte_stream_shutdown().
+
+class SliceBufferByteStream : public ByteStream {
+ public:
+  // Removes all slices in slice_buffer, leaving it empty.
+  SliceBufferByteStream(grpc_slice_buffer* slice_buffer, uint32_t flags);
+
+  ~SliceBufferByteStream();
+
+  void Orphan() override;
+
+  bool Next(size_t max_size_hint, grpc_closure* on_complete) override;
+  grpc_error* Pull(grpc_slice* slice) override;
+  void Shutdown(grpc_error* error) override;
+
+ private:
+  grpc_slice_buffer backing_buffer_;
+  size_t cursor_ = 0;
+  grpc_error* shutdown_error_ = GRPC_ERROR_NONE;
+};
+
 //
-// The next call to grpc_byte_stream_pull() (if any) will return the error
-// passed to grpc_byte_stream_shutdown().
-void grpc_byte_stream_shutdown(grpc_exec_ctx *exec_ctx,
-                               grpc_byte_stream *byte_stream,
-                               grpc_error *error);
-
-void grpc_byte_stream_destroy(grpc_exec_ctx *exec_ctx,
-                              grpc_byte_stream *byte_stream);
-
-// grpc_slice_buffer_stream
+// CachingByteStream
 //
-// A grpc_byte_stream that wraps a slice buffer.  The stream takes
-// ownership of the slices in the buffer, and on destruction will
-// reset the contents of the buffer.
-
-typedef struct grpc_slice_buffer_stream {
-  grpc_byte_stream base;
-  grpc_slice_buffer *backing_buffer;
-  size_t cursor;
-  grpc_error *shutdown_error;
-} grpc_slice_buffer_stream;
-
-void grpc_slice_buffer_stream_init(grpc_slice_buffer_stream *stream,
-                                   grpc_slice_buffer *slice_buffer,
-                                   uint32_t flags);
-
-// grpc_caching_byte_stream
-//
-// A grpc_byte_stream that that wraps an underlying byte stream but caches
+// A ByteStream that that wraps an underlying byte stream but caches
 // the resulting slices in a slice buffer.  If an initial attempt fails
 // without fully draining the underlying stream, a new caching stream
 // can be created from the same underlying cache, in which case it will
@@ -106,33 +115,50 @@ void grpc_slice_buffer_stream_init(grpc_slice_buffer_stream *stream,
 // underlying stream.
 //
 // NOTE: No synchronization is done, so it is not safe to have multiple
-// grpc_caching_byte_streams simultaneously drawing from the same underlying
-// grpc_byte_stream_cache at the same time.
+// CachingByteStreams simultaneously drawing from the same underlying
+// ByteStreamCache at the same time.
+//
 
-typedef struct {
-  grpc_byte_stream *underlying_stream;
-  grpc_slice_buffer cache_buffer;
-} grpc_byte_stream_cache;
+class ByteStreamCache {
+ public:
+  class CachingByteStream : public ByteStream {
+   public:
+    explicit CachingByteStream(ByteStreamCache* cache);
 
-// Takes ownership of underlying_stream.
-void grpc_byte_stream_cache_init(grpc_byte_stream_cache *cache,
-                                 grpc_byte_stream *underlying_stream);
+    ~CachingByteStream();
 
-// Must not be called while still in use by a grpc_caching_byte_stream.
-void grpc_byte_stream_cache_destroy(grpc_exec_ctx *exec_ctx,
-                                    grpc_byte_stream_cache *cache);
+    void Orphan() override;
 
-typedef struct {
-  grpc_byte_stream base;
-  grpc_byte_stream_cache *cache;
-  size_t cursor;
-  grpc_error *shutdown_error;
-} grpc_caching_byte_stream;
+    bool Next(size_t max_size_hint, grpc_closure* on_complete) override;
+    grpc_error* Pull(grpc_slice* slice) override;
+    void Shutdown(grpc_error* error) override;
 
-void grpc_caching_byte_stream_init(grpc_caching_byte_stream *stream,
-                                   grpc_byte_stream_cache *cache);
+    // Resets the byte stream to the start of the underlying stream.
+    void Reset();
 
-// Resets the byte stream to the start of the underlying stream.
-void grpc_caching_byte_stream_reset(grpc_caching_byte_stream *stream);
+   private:
+    ByteStreamCache* cache_;
+    size_t cursor_ = 0;
+    size_t offset_ = 0;
+    grpc_error* shutdown_error_ = GRPC_ERROR_NONE;
+  };
+
+  explicit ByteStreamCache(OrphanablePtr<ByteStream> underlying_stream);
+
+  ~ByteStreamCache();
+
+  // Must not be destroyed while still in use by a CachingByteStream.
+  void Destroy();
+
+  grpc_slice_buffer* cache_buffer() { return &cache_buffer_; }
+
+ private:
+  OrphanablePtr<ByteStream> underlying_stream_;
+  uint32_t length_;
+  uint32_t flags_;
+  grpc_slice_buffer cache_buffer_;
+};
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_BYTE_STREAM_H */

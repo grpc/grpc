@@ -16,13 +16,14 @@
  *
  */
 
-#include <grpc++/support/byte_buffer.h>
+#include <grpcpp/support/byte_buffer.h>
 
 #include <cstring>
 #include <vector>
 
-#include <grpc++/support/slice.h>
+#include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <grpcpp/support/slice.h>
 #include <gtest/gtest.h>
 
 namespace grpc {
@@ -93,7 +94,7 @@ TEST_F(ByteBufferTest, SerializationMakesCopy) {
   std::vector<Slice> slices;
   slices.push_back(Slice(hello, Slice::STEAL_REF));
   slices.push_back(Slice(world, Slice::STEAL_REF));
-  grpc_byte_buffer* send_buffer = nullptr;
+  ByteBuffer send_buffer;
   bool owned = false;
   ByteBuffer buffer(&slices[0], 2);
   slices.clear();
@@ -101,8 +102,7 @@ TEST_F(ByteBufferTest, SerializationMakesCopy) {
       buffer, &send_buffer, &owned);
   EXPECT_TRUE(status.ok());
   EXPECT_TRUE(owned);
-  EXPECT_TRUE(send_buffer != nullptr);
-  grpc_byte_buffer_destroy(send_buffer);
+  EXPECT_TRUE(send_buffer.Valid());
 }
 
 }  // namespace
@@ -110,5 +110,8 @@ TEST_F(ByteBufferTest, SerializationMakesCopy) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  grpc_init();
+  int ret = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return ret;
 }

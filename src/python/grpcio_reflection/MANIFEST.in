@@ -1,4 +1,3 @@
 include grpc_version.py
-include reflection_commands.py
-graft grpc_reflection
+recursive-include grpc_reflection *.py
 global-exclude *.pyc

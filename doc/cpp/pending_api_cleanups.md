@@ -15,3 +15,5 @@ number:
   `include/grpc++/server_builder.h` (commit `6980362`)
 - remove `ClientContext::set_fail_fast()` method from
   `include/grpc++/impl/codegen/client_context.h` (commit `9477724`)
+- remove directory `include/grpc++` and all headers in it
+  (commit `eb06572`)

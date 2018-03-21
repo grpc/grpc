@@ -35,13 +35,13 @@ grpc_cc_library(
         "fullstack_fixtures.h",
         "helpers.h",
     ],
+    external_deps = [
+        "benchmark",
+    ],
     deps = [
         "//:grpc++_unsecure",
         "//src/proto/grpc/testing:echo_proto",
         "//test/core/util:grpc_test_util_unsecure",
-    ],
-    external_deps = [
-        "benchmark",
     ],
 )
 
@@ -73,18 +73,40 @@ grpc_cc_binary(
     deps = [":helpers"],
 )
 
+grpc_cc_library(
+    name = "fullstack_streaming_ping_pong_h",
+    testonly = 1,
+    hdrs = [
+        "fullstack_streaming_ping_pong.h",
+    ],
+    deps = [":helpers"],
+)
+
 grpc_cc_binary(
     name = "bm_fullstack_streaming_ping_pong",
     testonly = 1,
-    srcs = ["bm_fullstack_streaming_ping_pong.cc"],
+    srcs = [
+        "bm_fullstack_streaming_ping_pong.cc",
+    ],
+    deps = [":fullstack_streaming_ping_pong_h"],
+)
+
+grpc_cc_library(
+    name = "fullstack_streaming_pump_h",
+    testonly = 1,
+    hdrs = [
+        "fullstack_streaming_pump.h",
+    ],
     deps = [":helpers"],
 )
 
 grpc_cc_binary(
     name = "bm_fullstack_streaming_pump",
     testonly = 1,
-    srcs = ["bm_fullstack_streaming_pump.cc"],
-    deps = [":helpers"],
+    srcs = [
+        "bm_fullstack_streaming_pump.cc",
+    ],
+    deps = [":fullstack_streaming_pump_h"],
 )
 
 grpc_cc_binary(
@@ -92,21 +114,39 @@ grpc_cc_binary(
     testonly = 1,
     srcs = ["bm_fullstack_trickle.cc"],
     deps = [
-      ":helpers",
-      "//test/cpp/util:test_config",
+        ":helpers",
+        "//test/cpp/util:test_config",
     ],
+)
+
+grpc_cc_library(
+    name = "fullstack_unary_ping_pong_h",
+    testonly = 1,
+    hdrs = [
+        "fullstack_unary_ping_pong.h",
+    ],
+    deps = [":helpers"],
 )
 
 grpc_cc_binary(
     name = "bm_fullstack_unary_ping_pong",
     testonly = 1,
-    srcs = ["bm_fullstack_unary_ping_pong.cc"],
-    deps = [":helpers"],
+    srcs = [
+        "bm_fullstack_unary_ping_pong.cc",
+    ],
+    deps = [":fullstack_unary_ping_pong_h"],
 )
 
 grpc_cc_binary(
     name = "bm_metadata",
     testonly = 1,
     srcs = ["bm_metadata.cc"],
+    deps = [":helpers"],
+)
+
+grpc_cc_binary(
+    name = "bm_chttp2_hpack",
+    testonly = 1,
+    srcs = ["bm_chttp2_hpack.cc"],
     deps = [":helpers"],
 )

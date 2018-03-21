@@ -21,6 +21,8 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_SETTINGS_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_SETTINGS_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -35,9 +37,10 @@ typedef enum {
 } grpc_chttp2_setting_id;
 
 #define GRPC_CHTTP2_NUM_SETTINGS 7
+
 extern const uint16_t grpc_setting_id_to_wire_id[];
 
-bool grpc_wire_id_to_setting_id(uint32_t wire_id, grpc_chttp2_setting_id *out);
+bool grpc_wire_id_to_setting_id(uint32_t wire_id, grpc_chttp2_setting_id* out);
 
 typedef enum {
   GRPC_CHTTP2_CLAMP_INVALID_VALUE,
@@ -45,7 +48,7 @@ typedef enum {
 } grpc_chttp2_invalid_value_behavior;
 
 typedef struct {
-  const char *name;
+  const char* name;
   uint32_t default_value;
   uint32_t min_value;
   uint32_t max_value;

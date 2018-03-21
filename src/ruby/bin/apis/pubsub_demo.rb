@@ -193,7 +193,7 @@ end
 Args = Struct.new(:host, :port, :action, :project_id, :topic_name,
                   :sub_name)
 
-# validates the the command line options, returning them as an Arg.
+# validates the command line options, returning them as an Arg.
 def parse_args
   args = Args.new('pubsub-staging.googleapis.com',
                    443, 'list_some_topics', 'stoked-keyword-656')

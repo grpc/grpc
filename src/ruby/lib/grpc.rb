@@ -24,6 +24,7 @@ require_relative 'grpc/generic/active_call'
 require_relative 'grpc/generic/client_stub'
 require_relative 'grpc/generic/service'
 require_relative 'grpc/generic/rpc_server'
+require_relative 'grpc/generic/interceptors'
 
 begin
   file = File.open(ssl_roots_path)

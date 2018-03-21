@@ -46,6 +46,7 @@ grpc_cc_library(
         ":usage_timer",
         "//:grpc",
         "//:grpc++",
+        "//:grpc++_core_stats",
         "//src/proto/grpc/testing:control_proto",
         "//src/proto/grpc/testing:payloads_proto",
         "//src/proto/grpc/testing:services_proto",
@@ -105,7 +106,19 @@ grpc_cc_library(
         "histogram.h",
         "stats.h",
     ],
-    deps = ["//:gpr"],
+    deps = ["//test/core/util:grpc_test_util"],
+)
+
+grpc_cc_test(
+    name = "inproc_sync_unary_ping_pong_test",
+    srcs = ["inproc_sync_unary_ping_pong_test.cc"],
+    deps = [
+        ":benchmark_config",
+        ":driver_impl",
+        "//:grpc++",
+        "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
+    ],
 )
 
 grpc_cc_library(

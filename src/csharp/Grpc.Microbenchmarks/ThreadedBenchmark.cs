@@ -46,6 +46,7 @@ namespace Grpc.Microbenchmarks
         public void Run()
         {
             Console.WriteLine("Running threads.");
+            var gcStats = new GCStats();
             var threads = new List<Thread>();
             for (int i = 0; i < runners.Count; i++)
             {
@@ -58,7 +59,7 @@ namespace Grpc.Microbenchmarks
             {
                 thread.Join();
             }
-            Console.WriteLine("All threads finished.");
+            Console.WriteLine("All threads finished (GC Stats Delta: " + gcStats.GetSnapshot() + ")");
         }
     }
 }

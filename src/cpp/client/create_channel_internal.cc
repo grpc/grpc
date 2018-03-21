@@ -18,7 +18,7 @@
 
 #include <memory>
 
-#include <grpc++/channel.h>
+#include <grpcpp/channel.h>
 
 struct grpc_channel;
 

@@ -19,11 +19,9 @@
 #ifndef GRPC_CORE_TSI_TRANSPORT_SECURITY_ADAPTER_H
 #define GRPC_CORE_TSI_TRANSPORT_SECURITY_ADAPTER_H
 
-#include "src/core/tsi/transport_security_interface.h"
+#include <grpc/support/port_platform.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "src/core/tsi/transport_security_interface.h"
 
 /* Create a tsi handshaker that takes an implementation of old interface and
    converts into an implementation of new interface. In the old interface,
@@ -33,15 +31,11 @@ extern "C" {
    this tsi adapter handshaker is temporary. It will be removed once TSI has
    been fully migrated to the new interface.
    Ownership of input tsi_handshaker is transferred to this new adapter.  */
-tsi_handshaker *tsi_create_adapter_handshaker(tsi_handshaker *wrapped);
+tsi_handshaker* tsi_create_adapter_handshaker(tsi_handshaker* wrapped);
 
 /* Given a tsi adapter handshaker, return the original wrapped handshaker. The
    adapter still owns the wrapped handshaker which should not be destroyed by
    the caller. */
-tsi_handshaker *tsi_adapter_handshaker_get_wrapped(tsi_handshaker *adapter);
-
-#ifdef __cplusplus
-}
-#endif
+tsi_handshaker* tsi_adapter_handshaker_get_wrapped(tsi_handshaker* adapter);
 
 #endif /* GRPC_CORE_TSI_TRANSPORT_SECURITY_ADAPTER_H */

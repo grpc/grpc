@@ -17,13 +17,14 @@ set -ex
 
 rm -rf ~/.rake-compiler
 
-CROSS_RUBY=`mktemp tmpfile.XXXXXXXX`
+CROSS_RUBY=$(mktemp tmpfile.XXXXXXXX)
 
-curl https://raw.githubusercontent.com/rake-compiler/rake-compiler/v1.0.3/tasks/bin/cross-ruby.rake > $CROSS_RUBY
+curl https://raw.githubusercontent.com/rake-compiler/rake-compiler/v1.0.3/tasks/bin/cross-ruby.rake > "$CROSS_RUBY"
 
-patch $CROSS_RUBY << EOF
---- cross-ruby.rake	2016-02-05 16:26:53.000000000 -0800
-+++ cross-ruby.rake.patched	2016-02-05 16:27:33.000000000 -0800
+# See https://github.com/grpc/grpc/issues/12161 for verconf.h patch details
+patch "$CROSS_RUBY" << EOF
+--- cross-ruby.rake 2017-09-27 16:46:00.311020325 +0200
++++ patched 2017-09-27 16:49:46.127016895 +0200
 @@ -133,7 +133,8 @@
      "--host=#{MINGW_HOST}",
      "--target=#{MINGW_TARGET}",
@@ -32,16 +33,25 @@ patch $CROSS_RUBY << EOF
 +    '--enable-static',
 +    '--disable-shared',
      '--disable-install-doc',
-     '--without-tk',
-     '--without-tcl'
+     '--with-ext='
+   ]
+@@ -151,6 +152,7 @@
+ # make
+ file "#{USER_HOME}/builds/#{MINGW_HOST}/#{RUBY_CC_VERSION}/ruby.exe" => ["#{USER_HOME}/builds/#{MINGW_HOST}/#{RUBY_CC_VERSION}/Makefile"] do |t|
+   chdir File.dirname(t.prerequisites.first) do
++    sh "test -s verconf.h || rm -f verconf.h"  # if verconf.h has size 0, make sure it gets re-built by make
+     sh MAKE
+   end
+ end
 EOF
 
 MAKE="make -j8"
 
-for v in 2.4.0 2.3.0 2.2.2 2.1.5 2.0.0-p645 ; do
+for v in 2.5.0 2.4.0 2.3.0 2.2.2 2.1.6 2.0.0-p645 ; do
   ccache -c
-  rake -f $CROSS_RUBY cross-ruby VERSION=$v HOST=x86_64-darwin11
+  rake -f "$CROSS_RUBY" cross-ruby VERSION="$v" HOST=x86_64-darwin11 MAKE="$MAKE"
 done
 
-sed 's/x86_64-darwin-11/universal-darwin/' ~/.rake-compiler/config.yml > $CROSS_RUBY
-mv $CROSS_RUBY ~/.rake-compiler/config.yml
+sed 's/x86_64-darwin-11/universal-darwin/' ~/.rake-compiler/config.yml > "$CROSS_RUBY"
+mv "$CROSS_RUBY" ~/.rake-compiler/config.yml
+

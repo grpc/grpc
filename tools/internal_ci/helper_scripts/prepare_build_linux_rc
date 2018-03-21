@@ -22,20 +22,12 @@ ulimit -n 32768
 
 # Move docker's storage location to scratch disk so we don't run out of space.
 echo 'DOCKER_OPTS="${DOCKER_OPTS} --graph=/tmpfs/docker"' | sudo tee --append /etc/default/docker
+# Use container registry mirror for pulling docker images (should make downloads faster)
+# See https://cloud.google.com/container-registry/docs/using-dockerhub-mirroring
+echo 'DOCKER_OPTS="${DOCKER_OPTS} --registry-mirror=https://mirror.gcr.io"' | sudo tee --append /etc/default/docker
 sudo service docker restart
-
-# Populate xdg-cache-home to workaround https://github.com/grpc/grpc/issues/11968
-sudo mkdir -p /tmp/xdg-cache-home
-PYTHONWARNINGS=ignore XDG_CACHE_HOME=/tmp/xdg-cache-home sudo -E pip install coverage==4.4 pylint==1.6.5
 
 # Download Docker images from DockerHub
 export DOCKERHUB_ORGANIZATION=grpctesting
-
-# If this is a PR using RUN_TESTS_FLAGS var, then add flags to filter tests
-if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ] && [ -n "$RUN_TESTS_FLAGS" ]; then
-  sudo apt-get install -y jq
-  ghprbTargetBranch=$(curl -s https://api.github.com/repos/grpc/grpc/pulls/$KOKORO_GITHUB_PULL_REQUEST_NUMBER | jq -r .base.ref)
-  export RUN_TESTS_FLAGS="$RUN_TESTS_FLAGS --filter_pr_tests --base_branch origin/$ghprbTargetBranch"	
-fi
 
 git submodule update --init

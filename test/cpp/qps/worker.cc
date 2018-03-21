@@ -20,6 +20,7 @@
 
 #include <chrono>
 #include <thread>
+#include <vector>
 
 #include <gflags/gflags.h>
 #include <grpc/grpc.h>
@@ -40,6 +41,8 @@ static void sigint_handler(int x) { got_sigint = true; }
 
 namespace grpc {
 namespace testing {
+
+std::vector<grpc::testing::Server*>* g_inproc_servers = nullptr;
 
 static void RunServer() {
   QpsWorker worker(FLAGS_driver_port, FLAGS_server_port, FLAGS_credential_type);

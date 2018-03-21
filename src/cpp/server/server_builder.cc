@@ -16,15 +16,15 @@
  *
  */
 
-#include <grpc++/server_builder.h>
+#include <grpcpp/server_builder.h>
 
-#include <grpc++/impl/service_type.h>
-#include <grpc++/resource_quota.h>
-#include <grpc++/server.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
-#include <grpc/support/useful.h>
+#include <grpcpp/impl/service_type.h>
+#include <grpcpp/resource_quota.h>
+#include <grpcpp/server.h>
 
+#include "src/core/lib/gpr/useful.h"
 #include "src/cpp/server/thread_pool_interface.h"
 
 namespace grpc {

@@ -9,29 +9,23 @@ use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * <pre>
  * A block of data, to simply increase gRPC message size.
- * </pre>
  *
- * Protobuf type <code>grpc.testing.Payload</code>
+ * Generated from protobuf message <code>grpc.testing.Payload</code>
  */
 class Payload extends \Google\Protobuf\Internal\Message
 {
     /**
-     * <pre>
      * DEPRECATED, don't use. To be removed shortly.
      * The type of data in body.
-     * </pre>
      *
-     * <code>.grpc.testing.PayloadType type = 1;</code>
+     * Generated from protobuf field <code>.grpc.testing.PayloadType type = 1;</code>
      */
     private $type = 0;
     /**
-     * <pre>
      * Primary contents of payload.
-     * </pre>
      *
-     * <code>bytes body = 2;</code>
+     * Generated from protobuf field <code>bytes body = 2;</code>
      */
     private $body = '';
 
@@ -41,12 +35,11 @@ class Payload extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
      * DEPRECATED, don't use. To be removed shortly.
      * The type of data in body.
-     * </pre>
      *
-     * <code>.grpc.testing.PayloadType type = 1;</code>
+     * Generated from protobuf field <code>.grpc.testing.PayloadType type = 1;</code>
+     * @return int
      */
     public function getType()
     {
@@ -54,25 +47,26 @@ class Payload extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
      * DEPRECATED, don't use. To be removed shortly.
      * The type of data in body.
-     * </pre>
      *
-     * <code>.grpc.testing.PayloadType type = 1;</code>
+     * Generated from protobuf field <code>.grpc.testing.PayloadType type = 1;</code>
+     * @param int $var
+     * @return $this
      */
     public function setType($var)
     {
         GPBUtil::checkEnum($var, \Grpc\Testing\PayloadType::class);
         $this->type = $var;
+
+        return $this;
     }
 
     /**
-     * <pre>
      * Primary contents of payload.
-     * </pre>
      *
-     * <code>bytes body = 2;</code>
+     * Generated from protobuf field <code>bytes body = 2;</code>
+     * @return string
      */
     public function getBody()
     {
@@ -80,16 +74,18 @@ class Payload extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <pre>
      * Primary contents of payload.
-     * </pre>
      *
-     * <code>bytes body = 2;</code>
+     * Generated from protobuf field <code>bytes body = 2;</code>
+     * @param string $var
+     * @return $this
      */
     public function setBody($var)
     {
         GPBUtil::checkString($var, False);
         $this->body = $var;
+
+        return $this;
     }
 
 }

@@ -22,6 +22,7 @@ RUN apt-get update && apt-get install -y \
   bzip2 \
   ccache \
   curl \
+  dnsutils \
   gcc \
   gcc-multilib \
   git \
@@ -63,9 +64,9 @@ RUN apt-get update && apt-get install -y \
     python-pip
 
 # Install Python packages from PyPI
-RUN pip install pip --upgrade
+RUN pip install --upgrade pip==9.0.1
 RUN pip install virtualenv
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.2.0 six==1.10.0
+RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.0.post1 six==1.10.0 twisted==17.5.0
 
 #================
 # C# dependencies

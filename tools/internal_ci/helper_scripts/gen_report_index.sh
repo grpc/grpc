@@ -26,7 +26,7 @@ mkdir -p reports
 
 echo '<html><head></head><body>' > reports/kokoro_index.html
 echo '<h1>'${KOKORO_JOB_NAME}', build '#${KOKORO_BUILD_NUMBER}'</h1>' >> reports/kokoro_index.html
-echo '<h2><a href="https://kokoro.corp.google.com/job/'${KOKORO_JOB_PATH}'/'${KOKORO_BUILD_NUMBER}'/">Kokoro build dashboard (internal only)</a></h2>' >> reports/kokoro_index.html
+echo '<h2><a href="https://kokoro2.corp.google.com/job/'${KOKORO_JOB_PATH}'/'${KOKORO_BUILD_NUMBER}'/">Kokoro build dashboard (internal only)</a></h2>' >> reports/kokoro_index.html
 echo '<h2><a href="https://sponge.corp.google.com/invocation?id='${KOKORO_BUILD_ID}'&searchFor=">Test result dashboard (internal only)</a></h2>' >> reports/kokoro_index.html
 echo '<h2><a href="test_report.html">HTML test report (Not available yet)</a></h2>' >> reports/kokoro_index.html
 echo '<h2><a href="test_log.txt">Test log (Not available yet)</a></h2>' >> reports/kokoro_index.html
