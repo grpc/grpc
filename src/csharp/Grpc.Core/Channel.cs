@@ -163,9 +163,8 @@ namespace Grpc.Core
                 if (handle.IsClosed)
                 {
                     // If channel has been already shutdown and handle was disposed, we would end up with
-                    // an abandoned completion added to the completion registry. So we act as if the
-                    // wait has timed out instead.
-                    tcs.SetResult(false);
+                    // an abandoned completion added to the completion registry. Instead, we make sure we fail early.
+                    throw new ObjectDisposedException(nameof(handle), "Channel handle has already been disposed.");
                 }
                 else
                 {
