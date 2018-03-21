@@ -307,8 +307,12 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "grpc_base",
+        "grpc_deadline_filter",
         "grpc_http_filters",
+        "grpc_message_size_filter",
+        "grpc_server_load_reporting",
         "grpc_transport_chttp2_client_secure",
+        "grpc_transport_chttp2_server_secure",
         "grpc_transport_cronet_client_secure",
     ],
 )

@@ -3697,6 +3697,10 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/transport/transport.cc \
     src/core/lib/transport/transport_op_string.cc \
     src/core/lib/debug/trace.cc \
+    src/core/ext/filters/deadline/deadline_filter.cc \
+    src/core/ext/filters/message_size/message_size_filter.cc \
+    src/core/ext/filters/load_reporting/server_load_reporting_filter.cc \
+    src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc \
     src/core/ext/transport/cronet/client/secure/cronet_channel_create.cc \
     src/core/ext/transport/cronet/transport/cronet_api_dummy.cc \
     src/core/ext/transport/cronet/transport/cronet_transport.cc \
@@ -3750,7 +3754,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_index.cc \
     src/core/ext/filters/client_channel/uri_parser.cc \
-    src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/lib/http/httpcli_security_connector.cc \
     src/core/lib/security/context/security_context.cc \
     src/core/lib/security/credentials/alts/alts_credentials.cc \
@@ -3823,8 +3826,8 @@ LIBGRPC_CRONET_SRC = \
     src/core/tsi/ssl/session_cache/ssl_session_openssl.cc \
     src/core/tsi/ssl_transport_security.cc \
     src/core/tsi/transport_security_grpc.cc \
-    src/core/ext/filters/load_reporting/server_load_reporting_filter.cc \
-    src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc \
+    src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc \
+    src/core/ext/transport/chttp2/server/chttp2_server.cc \
     src/core/plugin_registry/grpc_cronet_plugin_registry.cc \
 
 PUBLIC_HEADERS_C += \
@@ -3849,9 +3852,20 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/sync_generic.h \
     include/grpc/impl/codegen/sync_posix.h \
     include/grpc/impl/codegen/sync_windows.h \
+    include/grpc/byte_buffer.h \
+    include/grpc/byte_buffer_reader.h \
+    include/grpc/compression.h \
+    include/grpc/fork.h \
+    include/grpc/grpc.h \
+    include/grpc/grpc_posix.h \
+    include/grpc/grpc_security_constants.h \
+    include/grpc/load_reporting.h \
+    include/grpc/slice.h \
+    include/grpc/slice_buffer.h \
+    include/grpc/status.h \
+    include/grpc/support/workaround_list.h \
     include/grpc/grpc_cronet.h \
     include/grpc/grpc_security.h \
-    include/grpc/grpc_security_constants.h \
 
 LIBGRPC_CRONET_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_CRONET_SRC))))
 
