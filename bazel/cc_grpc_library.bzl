@@ -16,7 +16,7 @@ def cc_grpc_library(name, srcs, deps, proto_only, well_known_protos, generate_mo
         protos
       use_external: When True the grpc deps are prefixed with //external. This
         allows grpc to be used as a dependency in other bazel projects.
-      generate_mocks: When true GMOCk code for client stub is generated.
+      generate_mocks: When True, Google Mock code for client stub is generated.
       **kwargs: rest of arguments, e.g., compatible_with and visibility.
   """
   if len(srcs) > 1:
