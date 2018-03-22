@@ -268,13 +268,13 @@ static void drain_cq(grpc_completion_queue* cq) {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
+// Shuts down the server.
+// Side effect - Also shuts down and drains the completion queue.
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
   grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
-  grpc_event ev = grpc_completion_queue_next(
-      f->cq, grpc_timeout_seconds_to_deadline(5), nullptr);
-  ASSERT_EQ(ev.type, GRPC_OP_COMPLETE);
-  ASSERT_EQ(ev.tag, tag(1000));
+  grpc_completion_queue_shutdown(f->cq);
+  drain_cq(f->cq);
   grpc_server_destroy(f->server);
   f->server = nullptr;
 }
@@ -288,9 +288,6 @@ static void shutdown_client(grpc_end2end_test_fixture* f) {
 static void end_test(grpc_end2end_test_fixture* f) {
   shutdown_client(f);
   shutdown_server(f);
-
-  grpc_completion_queue_shutdown(f->cq);
-  drain_cq(f->cq);
   grpc_completion_queue_destroy(f->cq);
 }
 
