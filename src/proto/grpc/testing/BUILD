@@ -26,7 +26,7 @@ exports_files([
 grpc_proto_library(
     name = "compiler_test_proto",
     srcs = ["compiler_test.proto"],
-    generate_mock = True,
+    generate_mocks = True,
 )
 
 grpc_proto_library(
@@ -49,7 +49,7 @@ grpc_proto_library(
     name = "echo_proto",
     srcs = ["echo.proto"],
     deps = ["echo_messages_proto"],
-    generate_mock = True,
+    generate_mocks = True,
 )
 
 grpc_proto_library(
