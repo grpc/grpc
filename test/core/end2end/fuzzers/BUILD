@@ -25,6 +25,7 @@ grpc_fuzzer(
     srcs = ["api_fuzzer.cc"],
     language = "C++",
     corpus = "api_fuzzer_corpus",
+    size = "enormous",
     deps = [
         "//:gpr",
         "//:grpc",
