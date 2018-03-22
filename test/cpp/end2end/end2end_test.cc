@@ -290,7 +290,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
       args.SetUserAgentPrefix(user_agent_prefix_);
     }
     args.SetString(GRPC_ARG_SECONDARY_USER_AGENT_STRING, "end2end_test");
-
+    args.SetString(GRPC_ARG_DEFAULT_AUTHORITY, "test-authority");
     if (!GetParam().inproc) {
       channel_ =
           CreateCustomChannel(server_address_.str(), channel_creds, args);
