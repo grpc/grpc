@@ -194,14 +194,13 @@ def percentile(N, percent, key=lambda x: x):
     """
     if not N:
         return None
-    idx = (len(N) - 1) * percent
-    idx_floor = math.floor(idx)
-    idx_ceil = math.ceil(idx)
-    if idx_floor != idx_ceil:
-        # interpolate the nearest element values
-        return (key(N[int(idx_floor)]) * (idx_ceil - idx) +
-                key(N[int(idx_ceil)]) * (idx - idx_floor))
-    return key(N[int(idx)])
+    float_idx = (len(N) - 1) * percent
+    idx = int(float_idx)
+    result = key(N[idx])
+    if idx < len(N) - 1:
+        # interpolate with the next element's value
+        result += (float_idx - idx) * (key(N[idx + 1]) - key(N[idx]))
+    return result
 
 
 def tidy_tag(tag):
