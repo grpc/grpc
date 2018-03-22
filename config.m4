@@ -84,10 +84,13 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/channel/channel_args.cc \
     src/core/lib/channel/channel_stack.cc \
     src/core/lib/channel/channel_stack_builder.cc \
+    src/core/lib/channel/channel_trace.cc \
+    src/core/lib/channel/channel_trace_registry.cc \
     src/core/lib/channel/connected_channel.cc \
     src/core/lib/channel/handshaker.cc \
     src/core/lib/channel/handshaker_factory.cc \
     src/core/lib/channel/handshaker_registry.cc \
+    src/core/lib/channel/status_util.cc \
     src/core/lib/compression/compression.cc \
     src/core/lib/compression/compression_internal.cc \
     src/core/lib/compression/message_compress.cc \
@@ -336,7 +339,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/resolver.cc \
     src/core/ext/filters/client_channel/resolver_registry.cc \
     src/core/ext/filters/client_channel/retry_throttle.cc \
-    src/core/ext/filters/client_channel/status_util.cc \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_index.cc \
     src/core/ext/filters/client_channel/uri_parser.cc \
