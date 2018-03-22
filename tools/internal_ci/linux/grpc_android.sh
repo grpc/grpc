@@ -23,6 +23,7 @@ git submodule update --init
 # TODO(ericgribkoff) Remove when this commit (already in master) is included in
 # next protobuf release
 cd third_party/protobuf
+git fetch
 git cherry-pick 7daa320065f3bea2b54bf983337d1724f153422d -m 1
 
 cd ../../examples/android/helloworld
