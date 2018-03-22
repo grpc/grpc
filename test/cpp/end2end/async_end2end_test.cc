@@ -485,7 +485,7 @@ TEST_P(AsyncEnd2endTest, DoThenAsyncNextRpc) {
   EXPECT_EQ(send_request.message(), recv_request.message());
 
   send_response.set_message(recv_request.message());
-  auto lambda_3 = [&, this, resp_writer_ptr, send_response]() {
+  auto lambda_3 = [resp_writer_ptr, send_response]() {
     resp_writer_ptr->Finish(send_response, Status::OK, tag(3));
   };
   Verifier().Expect(3, true).Expect(4, true).Verify(
@@ -1216,8 +1216,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     srv_ctx.AsyncNotifyWhenDone(tag(11));
     service_->RequestRequestStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
                                    tag(2));
-    std::thread t1(
-        [this, &cli_cq] { Verifier().Expect(1, true).Verify(&cli_cq); });
+    std::thread t1([&cli_cq] { Verifier().Expect(1, true).Verify(&cli_cq); });
     Verifier().Expect(2, true).Verify(cq_.get());
     t1.join();
 
@@ -1241,7 +1240,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
         (server_try_cancel == CANCEL_BEFORE_PROCESSING);
 
     std::thread cli_thread([&cli_cq, &cli_stream, &expected_client_cq_result,
-                            &ignore_client_cq_result, this] {
+                            &ignore_client_cq_result] {
       EchoRequest send_request;
       // Client sends 3 messages (tags 3, 4 and 5)
       for (int tag_idx = 3; tag_idx <= 5; tag_idx++) {
@@ -1372,8 +1371,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     service_->RequestResponseStream(&srv_ctx, &recv_request, &srv_stream,
                                     cq_.get(), cq_.get(), tag(2));
 
-    std::thread t1(
-        [this, &cli_cq] { Verifier().Expect(1, true).Verify(&cli_cq); });
+    std::thread t1([&cli_cq] { Verifier().Expect(1, true).Verify(&cli_cq); });
     Verifier().Expect(2, true).Verify(cq_.get());
     t1.join();
 
@@ -1398,7 +1396,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     }
 
     std::thread cli_thread([&cli_cq, &cli_stream, &expected_client_cq_result,
-                            &ignore_client_cq_result, this] {
+                            &ignore_client_cq_result] {
       // Client attempts to read the three messages from the server
       for (int tag_idx = 6; tag_idx <= 8; tag_idx++) {
         EchoResponse recv_response;
