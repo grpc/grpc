@@ -17,6 +17,10 @@ of gRPC's ten languages on at least one of Linux, macOS, and Windows.
 
 gRPC Core:
 
+1. Implement ["early OK" semantics](https://github.com/grpc/grpc/issues/7032). The gRPC wire protocol allows servers to complete an RPC with OK status without having processed all requests ever sent to the client; it's the gRPC Core that currently restricts applications from so behaving. This behavioral gap in the gRPC Core should be filled in.
+    * **Required skills:** C programming language, C++ programming language.
+    * **Likely mentors:** [Nathaniel Manista](https://github.com/nathanielmanistaatgoogle), [Nicolas Noble](https://github.com/nicolasnoble).
+
 1. [Make channel-connectivity-watching cancellable](https://github.com/grpc/grpc/issues/3064). Anything worth waiting for is worth cancelling. The fact that channel connectivity is currently poll-based means that clean shutdown of gRPC channels can take as long as the poll interval. No one should have to wait two hundred milliseconds to garbage-collect an object.
     * **Required skills:** C programming language, C++ programming language, Python programming language.
     * **Likely mentors:** [Nathaniel Manista](https://github.com/nathanielmanistaatgoogle), [Vijay Pai](https://github.com/vjpai).
