@@ -194,6 +194,7 @@ static void on_peer_checked_inner(security_handshaker* h, grpc_error* error) {
   tsi_handshaker_result_destroy(h->handshaker_result);
   h->handshaker_result = nullptr;
   // Add auth context to channel args.
+  GPR_ASSERT(h->auth_context != nullptr);
   grpc_arg auth_context_arg = grpc_auth_context_to_arg(h->auth_context);
   grpc_channel_args* tmp_args = h->args->args;
   h->args->args =
