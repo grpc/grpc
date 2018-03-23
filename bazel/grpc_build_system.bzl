@@ -108,7 +108,7 @@ def grpc_proto_library(name, srcs = [], deps = [], well_known_protos = False,
     generate_mocks = generate_mocks,
   )
 
-def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", timeout = "moderate"):
+def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = "moderate"):
   copts = []
   if language.upper() == "C":
     copts = if_not_windows(["-std=c99"])
@@ -120,6 +120,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
     'deps': deps + _get_external_deps(external_deps),
     'copts': copts,
     'linkopts': if_not_windows(["-pthread"]),
+    'size': size,
     'timeout': timeout,
   }
   if uses_polling:
@@ -131,9 +132,11 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         srcs = [
           '//test/core/util:run_with_poller_sh',
         ],
+        size = size,
+        timeout = timeout,
         args = [
           poller,
-          '$(location %s)' % name
+          '$(location %s)' % name,
         ] + args['args'],
       )
   else:
