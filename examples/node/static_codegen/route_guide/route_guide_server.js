@@ -102,7 +102,7 @@ function listFeatures(call) {
 
 /**
  * Calculate the distance between two points using the "haversine" formula.
- * This code was taken from http://www.movable-type.co.uk/scripts/latlong.html.
+ * The formula is based on http://mathforum.org/library/drmath/view/51879.html.
  * @param start The starting point
  * @param end The end point
  * @return The distance between the points in meters
@@ -111,21 +111,18 @@ function getDistance(start, end) {
   function toRadians(num) {
     return num * Math.PI / 180;
   }
-  var lat1 = start.getLatitude() / COORD_FACTOR;
-  var lat2 = end.getLatitude() / COORD_FACTOR;
-  var lon1 = start.getLongitude() / COORD_FACTOR;
-  var lon2 = end.getLongitude() / COORD_FACTOR;
-  var R = 6371000; // metres
-  var φ1 = toRadians(lat1);
-  var φ2 = toRadians(lat2);
-  var Δφ = toRadians(lat2-lat1);
-  var Δλ = toRadians(lon2-lon1);
+  var R = 6371000;  // earth radius in metres
+  var lat1 = toRadians(start.getLatitude() / COORD_FACTOR);
+  var lat2 = toRadians(end.getLatitude() / COORD_FACTOR);
+  var lon1 = toRadians(start.getLongitude() / COORD_FACTOR);
+  var lon2 = toRadians(end.getLongitude() / COORD_FACTOR);
 
-  var a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-      Math.cos(φ1) * Math.cos(φ2) *
-      Math.sin(Δλ/2) * Math.sin(Δλ/2);
+  var deltalat = lat2-lat1;
+  var deltalon = lon2-lon1;
+  var a = Math.sin(deltalat/2) * Math.sin(deltalat/2) +
+      Math.cos(lat1) * Math.cos(lat2) *
+      Math.sin(deltalon/2) * Math.sin(deltalon/2);
   var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-
   return R * c;
 }
 

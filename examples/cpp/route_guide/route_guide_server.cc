@@ -51,6 +51,7 @@ float ConvertToRadians(float num) {
   return num * 3.1415926 /180;
 }
 
+// The formula is based on http://mathforum.org/library/drmath/view/51879.html
 float GetDistance(const Point& start, const Point& end) {
   const float kCoordFactor = 10000000.0;
   float lat_1 = start.latitude() / kCoordFactor;
