@@ -186,7 +186,7 @@ void grpc_rb_compression_options_algorithm_name_to_value_internal(
     error_message_ruby_str =
         rb_str_new(error_message_str, strlen(error_message_str));
     gpr_free(error_message_str);
-    rb_raise(rb_eNameError, StringValueCStr(error_message_ruby_str));
+    rb_raise(rb_eNameError, "%s", StringValueCStr(error_message_ruby_str));
   }
 
   grpc_slice_unref(name_slice);
