@@ -85,7 +85,13 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-static void simple_request_body(grpc_end2end_test_fixture f) {
+static void test_invoke_simple_request(grpc_end2end_test_config config) {
+  grpc_end2end_test_fixture f =
+      begin_test(config, "test_invoke_simple_request", nullptr, nullptr);
+  const bool override_host_for_call_creds_use =
+      (config.feature_mask & FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS) != 0;
+  const char* expected_host =
+      override_host_for_call_creds_use ? "foo.test.google.fr" : "localhost";
   grpc_call* c;
   grpc_call* s;
   cq_verifier* cqv = cq_verifier_create(f.cq);
@@ -191,9 +197,12 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-  char* target = grpc_channel_get_target(f.client);
-  GPR_ASSERT(grpc_slice_buf_start_eq(call_details.host, target, 9));
-  gpr_free(target);
+  if (override_host_for_call_creds_use) {
+    validate_host_override_string("foo.test.google.fr", call_details.host,
+                                  config);
+  }
+  GPR_ASSERT(grpc_slice_buf_start_eq(call_details.host, expected_host,
+                                     strlen(expected_host)));
   GPR_ASSERT(was_cancelled == 1);
 
   grpc_slice_unref(details);
@@ -206,21 +215,12 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   grpc_call_unref(s);
 
   cq_verifier_destroy(cqv);
-}
 
-static void test_invoke_simple_request(grpc_end2end_test_config config) {
-  grpc_end2end_test_fixture f;
-
-  f = begin_test(config, "test_invoke_simple_request", nullptr, nullptr);
-  simple_request_body(f);
   end_test(&f);
   config.tear_down_data(&f);
 }
 
 void default_host(grpc_end2end_test_config config) {
-  if ((config.feature_mask & FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS) != 0) {
-    return;
-  }
   test_invoke_simple_request(config);
 }
 

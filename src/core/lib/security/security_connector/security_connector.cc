@@ -474,14 +474,21 @@ static bool fake_channel_check_call_host(grpc_channel_security_connector* sc,
   gpr_split_host_port(host, &authority_hostname, &authority_ignored_port);
   gpr_split_host_port(c->target, &target_hostname, &target_ignored_port);
   if (c->ssl_target_name_override != nullptr) {
-    abort();
-    if (strcmp(authority_hostname, target_hostname) != 0) {
+    char* ssl_target_name_override_hostname = nullptr;
+    char* ssl_target_name_override_ignored_port = nullptr;
+    gpr_split_host_port(c->ssl_target_name_override,
+                        &ssl_target_name_override_hostname,
+                        &ssl_target_name_override_ignored_port);
+    if (strcmp(authority_hostname, ssl_target_name_override_hostname) != 0) {
       gpr_log(GPR_ERROR, "Authority (host) '%s' != SSL Target override '%s'",
-              host, c->ssl_target_name_override);
+              host, ssl_target_name_override_hostname);
+      abort();
     }
-  }
-  if (strcmp(authority_hostname, target_hostname) != 0) {
-    gpr_log(GPR_ERROR, "Authority (host) '%s' != Target '%s'", host, c->target);
+    gpr_free(ssl_target_name_override_hostname);
+    gpr_free(ssl_target_name_override_ignored_port);
+  } else if (strcmp(authority_hostname, target_hostname) != 0) {
+    gpr_log(GPR_ERROR, "Authority (host) '%s' != Target '%s'",
+            authority_hostname, target_hostname);
     abort();
   }
   gpr_free(authority_hostname);

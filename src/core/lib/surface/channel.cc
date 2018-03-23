@@ -157,8 +157,7 @@ grpc_channel* grpc_channel_create_with_builder(
 }
 
 static grpc_core::UniquePtr<char> get_default_authority(
-    const char* target, const grpc_channel_args* input_args,
-    grpc_channel_stack_type channel_stack_type) {
+    const grpc_channel_args* input_args) {
   bool has_default_authority = false;
   char* ssl_override = nullptr;
   grpc_core::UniquePtr<char> default_authority;
@@ -202,7 +201,7 @@ grpc_channel* grpc_channel_create(const char* target,
                                   grpc_transport* optional_transport) {
   grpc_channel_stack_builder* builder = grpc_channel_stack_builder_create();
   const grpc_core::UniquePtr<char> default_authority =
-      get_default_authority(target, input_args, channel_stack_type);
+      get_default_authority(input_args);
   grpc_channel_args* args =
       build_channel_args(input_args, default_authority.get());
   grpc_channel_stack_builder_set_channel_arguments(builder, args);

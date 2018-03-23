@@ -86,7 +86,6 @@ class ShutdownTest : public ::testing::TestWithParam<string> {
     ChannelArguments args;
     auto channel_creds =
         GetCredentialsProvider()->GetChannelCredentials(GetParam(), &args);
-    args.SetString(GRPC_ARG_DEFAULT_AUTHORITY, "test-authority");
     channel_ = CreateCustomChannel(target, channel_creds, args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
