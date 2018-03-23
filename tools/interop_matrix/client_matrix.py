@@ -152,7 +152,7 @@ LANG_RELEASE_MATRIX = {
             'v1.9.1': None
         },
         {
-            'v1.10.0': None
+            'v1.10.1': None
         },
     ],
     'python': [
