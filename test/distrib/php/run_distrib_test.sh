@@ -20,6 +20,6 @@ cd "$(dirname "$0")"
 cp -r "$EXTERNAL_GIT_ROOT"/input_artifacts/grpc-*.tgz .
 
 find . -regex ".*/grpc-[0-9].*.tgz" | cut -b3- | \
-    xargs pecl install
+    xargs sudo pecl install
 
 php -d extension=grpc.so -d max_execution_time=300 distribtest.php
