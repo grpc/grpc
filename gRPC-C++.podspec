@@ -309,6 +309,7 @@ Pod::Spec.new do |s|
                       'src/core/tsi/transport_security_adapter.h',
                       'src/core/tsi/transport_security_interface.h',
                       'src/core/ext/transport/chttp2/client/chttp2_connector.h',
+                      'src/core/ext/filters/client_channel/authority.h',
                       'src/core/ext/filters/client_channel/backup_poller.h',
                       'src/core/ext/filters/client_channel/client_channel.h',
                       'src/core/ext/filters/client_channel/client_channel_factory.h',

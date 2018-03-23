@@ -25,6 +25,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/filters/client_channel/authority.h"
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
@@ -38,33 +39,12 @@ static void client_channel_factory_ref(
 static void client_channel_factory_unref(
     grpc_client_channel_factory* cc_factory) {}
 
-static grpc_channel_args* add_default_authority_if_not_present(
-    const grpc_channel_args* args) {
-  const bool has_default_authority =
-      grpc_channel_args_find(args, GRPC_ARG_DEFAULT_AUTHORITY) != nullptr;
-  grpc_arg new_args[1];
-  size_t num_new_args = 0;
-  grpc_core::UniquePtr<char> default_authority;
-  if (!has_default_authority) {
-    const grpc_arg* server_uri_arg =
-        grpc_channel_args_find(args, GRPC_ARG_SERVER_URI);
-    const char* server_uri_str = grpc_channel_arg_get_string(server_uri_arg);
-    GPR_ASSERT(server_uri_str != nullptr);
-    default_authority =
-        grpc_core::ResolverRegistry::GetDefaultAuthority(server_uri_str);
-    GPR_ASSERT(default_authority != nullptr);
-    new_args[num_new_args++] = grpc_channel_arg_string_create(
-        const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), default_authority.get());
-  }
-  return grpc_channel_args_copy_and_add(args, new_args, num_new_args);
-}
-
 static grpc_subchannel* client_channel_factory_create_subchannel(
     grpc_client_channel_factory* cc_factory, const grpc_subchannel_args* args) {
   grpc_subchannel_args* final_sc_args =
       static_cast<grpc_subchannel_args*>(gpr_malloc(sizeof(*final_sc_args)));
   memcpy(final_sc_args, args, sizeof(*args));
-  final_sc_args->args = add_default_authority_if_not_present(args->args);
+  final_sc_args->args = grpc_add_default_authority_if_not_present(args->args);
   grpc_connector* connector = grpc_chttp2_connector_create();
   grpc_subchannel* s = grpc_subchannel_create(connector, final_sc_args);
   grpc_connector_unref(connector);

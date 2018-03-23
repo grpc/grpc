@@ -297,6 +297,7 @@ CORE_SOURCE_FILES = [
     'src/core/ext/transport/chttp2/client/insecure/channel_create.cc',
     'src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc',
     'src/core/ext/transport/chttp2/client/chttp2_connector.cc',
+    'src/core/ext/filters/client_channel/authority.cc',
     'src/core/ext/filters/client_channel/backup_poller.cc',
     'src/core/ext/filters/client_channel/channel_connectivity.cc',
     'src/core/ext/filters/client_channel/client_channel.cc',
