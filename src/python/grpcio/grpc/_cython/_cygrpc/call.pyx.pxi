@@ -30,9 +30,12 @@ cdef class Call:
         tag, operations, self if retain_self else None)
     batch_operation_tag.prepare()
     cpython.Py_INCREF(batch_operation_tag)
-    return grpc_call_start_batch(
+    cdef grpc_call_error error
+    with nogil:
+      error = grpc_call_start_batch(
           self.c_call, batch_operation_tag.c_ops, batch_operation_tag.c_nops,
           <cpython.PyObject *>batch_operation_tag, NULL)
+    return error
 
   def start_client_batch(self, operations, tag):
     # We don't reference this call in the operations tag because
