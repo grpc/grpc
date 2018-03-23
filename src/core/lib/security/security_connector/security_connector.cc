@@ -306,6 +306,7 @@ typedef struct {
   char* target;
   char* expected_targets;
   bool is_lb_channel;
+  char* ssl_target_name_override;
 } grpc_fake_channel_security_connector;
 
 static void fake_channel_destroy(grpc_security_connector* sc) {
@@ -314,6 +315,7 @@ static void fake_channel_destroy(grpc_security_connector* sc) {
   grpc_call_credentials_unref(c->base.request_metadata_creds);
   gpr_free(c->target);
   gpr_free(c->expected_targets);
+  gpr_free(c->ssl_target_name_override);
   gpr_free(c);
 }
 
@@ -465,11 +467,27 @@ static bool fake_channel_check_call_host(grpc_channel_security_connector* sc,
                                          grpc_error** error) {
   grpc_fake_channel_security_connector* c =
       reinterpret_cast<grpc_fake_channel_security_connector*>(sc);
-  if (c->is_lb_channel && strcmp(host, c->target) != 0) {
-    gpr_log(GPR_ERROR, "Authority (host) '%s' != Target '%s' for an LB call",
-            host, c->target);
+  char* authority_hostname = nullptr;
+  char* authority_ignored_port = nullptr;
+  char* target_hostname = nullptr;
+  char* target_ignored_port = nullptr;
+  gpr_split_host_port(host, &authority_hostname, &authority_ignored_port);
+  gpr_split_host_port(c->target, &target_hostname, &target_ignored_port);
+  if (c->ssl_target_name_override != nullptr) {
+    abort();
+    if (strcmp(authority_hostname, target_hostname) != 0) {
+      gpr_log(GPR_ERROR, "Authority (host) '%s' != SSL Target override '%s'",
+              host, c->ssl_target_name_override);
+    }
+  }
+  if (strcmp(authority_hostname, target_hostname) != 0) {
+    gpr_log(GPR_ERROR, "Authority (host) '%s' != Target '%s'", host, c->target);
     abort();
   }
+  gpr_free(authority_hostname);
+  gpr_free(authority_ignored_port);
+  gpr_free(target_hostname);
+  gpr_free(target_ignored_port);
   return true;
 }
 
@@ -522,6 +540,12 @@ grpc_channel_security_connector* grpc_fake_channel_security_connector_create(
   const char* expected_targets = grpc_fake_transport_get_expected_targets(args);
   c->expected_targets = gpr_strdup(expected_targets);
   c->is_lb_channel = grpc_core::FindTargetAuthorityTableInArgs(args) != nullptr;
+  const grpc_arg* ssl_target_name_override_arg =
+      grpc_channel_args_find(args, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
+  if (ssl_target_name_override_arg != nullptr) {
+    c->ssl_target_name_override =
+        grpc_channel_arg_get_string(ssl_target_name_override_arg);
+  }
   return &c->base;
 }
 

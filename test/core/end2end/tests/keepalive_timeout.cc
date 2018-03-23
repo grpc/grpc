@@ -130,11 +130,9 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
   grpc_set_disable_ping_ack(true);
 
   gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(
-      f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-      grpc_slice_from_static_string("/foo"),
-      get_host_override_slice("foo.test.google.fr:1234", config), deadline,
-      nullptr);
+  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
+                               grpc_slice_from_static_string("/foo"), nullptr,
+                               deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -200,8 +198,6 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
   GPR_ASSERT(status == GRPC_STATUS_INTERNAL);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "keepalive watchdog timeout"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-  validate_host_override_string("foo.test.google.fr:1234", call_details.host,
-                                config);
 
   gpr_free(details_str);
   gpr_free(method_str);
