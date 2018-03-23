@@ -68,7 +68,7 @@
 
 #define DEFAULT_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS 300000 /* 5 minutes */
 #define DEFAULT_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS 300000 /* 5 minutes */
-#define DEFAULT_MAX_PINGS_BETWEEN_DATA 0                      /* unlimited */
+#define DEFAULT_MAX_PINGS_BETWEEN_DATA 2
 #define DEFAULT_MAX_PING_STRIKES 2
 
 static int g_default_client_keepalive_time_ms =
