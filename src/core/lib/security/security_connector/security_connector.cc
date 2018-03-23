@@ -1104,7 +1104,7 @@ grpc_security_status grpc_ssl_server_security_connector_create(
 
 namespace grpc_core {
 
-tsi_ssl_root_certs_store* DefaultSslRootStore::default_root_store_ = nullptr;
+tsi_ssl_root_certs_store* DefaultSslRootStore::default_root_store_;
 grpc_slice DefaultSslRootStore::default_pem_root_certs_;
 
 const tsi_ssl_root_certs_store* DefaultSslRootStore::GetRootStore() {
@@ -1120,14 +1120,18 @@ const char* DefaultSslRootStore::GetPemRootCerts() {
                    GRPC_SLICE_START_PTR(default_pem_root_certs_);
 }
 
-void DefaultSslRootStore::DestroyRootStore() {
-  tsi_ssl_root_certs_store_destroy(default_root_store_);
+void DefaultSslRootStore::Initialize() {
   default_root_store_ = nullptr;
+  default_pem_root_certs_ = grpc_empty_slice();
+}
+
+void DefaultSslRootStore::Destroy() {
+  tsi_ssl_root_certs_store_destroy(default_root_store_);
+  grpc_slice_unref_internal(default_pem_root_certs_);
 }
 
 grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
   grpc_slice result = grpc_empty_slice();
-
   // First try to load the roots from the environment.
   char* default_root_certs_path =
       gpr_getenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR);
@@ -1136,7 +1140,6 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
                       grpc_load_file(default_root_certs_path, 1, &result));
     gpr_free(default_root_certs_path);
   }
-
   // Try overridden roots if needed.
   grpc_ssl_roots_override_result ovrd_res = GRPC_SSL_ROOTS_OVERRIDE_FAIL;
   if (GRPC_SLICE_IS_EMPTY(result) && ssl_roots_override_cb != nullptr) {
@@ -1150,7 +1153,6 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
     }
     gpr_free(pem_root_certs);
   }
-
   // Fall back to installed certs if needed.
   if (GRPC_SLICE_IS_EMPTY(result) &&
       ovrd_res != GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY) {
