@@ -84,6 +84,9 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.9.1': None
         },
+        {
+            'v1.10.0': None
+        },
     ],
     'go': [
         {
@@ -180,6 +183,9 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.9.1': None
         },
+        {
+            'v1.10.0': None
+        },
     ],
     'node': [
         {
@@ -209,7 +215,10 @@ LANG_RELEASE_MATRIX = {
         },
         {
             'v1.9.1': None
-        }
+        },
+        {
+            'v1.10.0': None
+        },
     ],
     'ruby': [
         {
@@ -244,6 +253,9 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.9.1': None
         },
+        {
+            'v1.10.0': None
+        },
     ],
     'php': [
         {
@@ -273,6 +285,9 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.9.1': None
         },
+        {
+            'v1.10.0': None
+        },
     ],
     'csharp': [
         #{'v1.0.1': None},
@@ -299,6 +314,9 @@ LANG_RELEASE_MATRIX = {
         },
         {
             'v1.9.1': None
+        },
+        {
+            'v1.10.0': None
         },
     ],
 }
