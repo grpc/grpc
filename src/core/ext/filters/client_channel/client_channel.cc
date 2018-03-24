@@ -303,11 +303,16 @@ static void request_reresolution_locked(void* arg, grpc_error* error) {
   chand->lb_policy->SetReresolutionClosureLocked(&args->closure);
 }
 
+// TODO(roth): The logic in this function is very hard to follow.  We
+// should refactor this so that it's easier to understand, perhaps as
+// part of changing the resolver API to more clearly differentiate
+// between transient failures and shutdown.
 static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
   channel_data* chand = static_cast<channel_data*>(arg);
   if (grpc_client_channel_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "chand=%p: got resolver result: error=%s", chand,
-            grpc_error_string(error));
+    gpr_log(GPR_DEBUG,
+            "chand=%p: got resolver result: resolver_result=%p error=%s", chand,
+            chand->resolver_result, grpc_error_string(error));
   }
   // Extract the following fields from the resolver result, if non-nullptr.
   bool lb_policy_updated = false;
@@ -423,8 +428,6 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
         }
       }
     }
-    grpc_channel_args_destroy(chand->resolver_result);
-    chand->resolver_result = nullptr;
   }
   if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG,
@@ -497,6 +500,8 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
                                    "Channel disconnected", &error, 1));
     GRPC_CLOSURE_LIST_SCHED(&chand->waiting_for_resolver_result_closures);
     GRPC_CHANNEL_STACK_UNREF(chand->owning_stack, "resolver");
+    grpc_channel_args_destroy(chand->resolver_result);
+    chand->resolver_result = nullptr;
   } else {  // Not shutting down.
     grpc_connectivity_state state = GRPC_CHANNEL_TRANSIENT_FAILURE;
     grpc_error* state_error =
@@ -515,11 +520,16 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
         chand->exit_idle_when_lb_policy_arrives = false;
       }
       watch_lb_policy_locked(chand, chand->lb_policy.get(), state);
+    } else if (chand->resolver_result == nullptr) {
+      // Transient failure.
+      GRPC_CLOSURE_LIST_SCHED(&chand->waiting_for_resolver_result_closures);
     }
     if (!lb_policy_updated) {
       set_channel_connectivity_state_locked(
           chand, state, GRPC_ERROR_REF(state_error), "new_lb+resolver");
     }
+    grpc_channel_args_destroy(chand->resolver_result);
+    chand->resolver_result = nullptr;
     chand->resolver->NextLocked(&chand->resolver_result,
                                 &chand->on_resolver_result_changed);
     GRPC_ERROR_UNREF(state_error);
@@ -2753,7 +2763,45 @@ static void pick_after_resolver_result_done_locked(void* arg,
               chand, calld);
     }
     async_pick_done_locked(elem, GRPC_ERROR_REF(error));
-  } else if (chand->lb_policy != nullptr) {
+  } else if (chand->resolver == nullptr) {
+    // Shutting down.
+    if (grpc_client_channel_trace.enabled()) {
+      gpr_log(GPR_DEBUG, "chand=%p calld=%p: resolver disconnected", chand,
+              calld);
+    }
+    async_pick_done_locked(
+        elem, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Disconnected"));
+  } else if (chand->lb_policy == nullptr) {
+    // Transient resolver failure.
+    // If call has wait_for_ready=true, try again; otherwise, fail.
+    uint32_t send_initial_metadata_flags =
+        calld->seen_send_initial_metadata
+            ? calld->send_initial_metadata_flags
+            : calld->pending_batches[0]
+                  .batch->payload->send_initial_metadata
+                  .send_initial_metadata_flags;
+    if (send_initial_metadata_flags & GRPC_INITIAL_METADATA_WAIT_FOR_READY) {
+      if (grpc_client_channel_trace.enabled()) {
+        gpr_log(GPR_DEBUG,
+                "chand=%p calld=%p: resolver returned but no LB policy; "
+                "wait_for_ready=true; trying again",
+                chand, calld);
+      }
+      pick_after_resolver_result_start_locked(elem);
+    } else {
+      if (grpc_client_channel_trace.enabled()) {
+        gpr_log(GPR_DEBUG,
+                "chand=%p calld=%p: resolver returned but no LB policy; "
+                "wait_for_ready=false; failing",
+                chand, calld);
+      }
+      async_pick_done_locked(
+          elem,
+          grpc_error_set_int(
+              GRPC_ERROR_CREATE_FROM_STATIC_STRING("Name resolution failure"),
+              GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
+    }
+  } else {
     if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: resolver returned, doing pick",
               chand, calld);
@@ -2766,30 +2814,6 @@ static void pick_after_resolver_result_done_locked(void* arg,
       // instead of pick_done_locked().
       async_pick_done_locked(elem, GRPC_ERROR_NONE);
     }
-  }
-  // TODO(roth): It should be impossible for chand->lb_policy to be nullptr
-  // here, so the rest of this code should never actually be executed.
-  // However, we have reports of a crash on iOS that triggers this case,
-  // so we are temporarily adding this to restore branches that were
-  // removed in https://github.com/grpc/grpc/pull/12297.  Need to figure
-  // out what is actually causing this to occur and then figure out the
-  // right way to deal with it.
-  else if (chand->resolver != nullptr) {
-    // No LB policy, so try again.
-    if (grpc_client_channel_trace.enabled()) {
-      gpr_log(GPR_DEBUG,
-              "chand=%p calld=%p: resolver returned but no LB policy, "
-              "trying again",
-              chand, calld);
-    }
-    pick_after_resolver_result_start_locked(elem);
-  } else {
-    if (grpc_client_channel_trace.enabled()) {
-      gpr_log(GPR_DEBUG, "chand=%p calld=%p: resolver disconnected", chand,
-              calld);
-    }
-    async_pick_done_locked(
-        elem, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Disconnected"));
   }
 }
 

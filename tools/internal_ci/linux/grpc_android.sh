@@ -1,5 +1,5 @@
-#!/bin/bash
-# Copyright 2015 gRPC authors.
+#!/usr/bin/env bash
+# Copyright 2018 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,11 +15,16 @@
 
 set -ex
 
-cd "$(dirname "$0")"
+# change to grpc repo root
+cd $(dirname $0)/../../..
 
-cp -r "$EXTERNAL_GIT_ROOT"/input_artifacts/grpc-*.tgz .
+git submodule update --init
 
-find . -regex ".*/grpc-[0-9].*.tgz" | cut -b3- | \
-    xargs sudo pecl install
+# TODO(ericgribkoff) Remove when this commit (already in master) is included in
+# next protobuf release
+cd third_party/protobuf
+git fetch
+git cherry-pick 7daa320065f3bea2b54bf983337d1724f153422d -m 1
 
-php -d extension=grpc.so -d max_execution_time=300 distribtest.php
+cd ../../examples/android/helloworld
+./gradlew build

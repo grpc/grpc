@@ -28,7 +28,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "test/core/end2end/cq_verifier.h"
 
-#define MAX_PING_STRIKES 1
+#define MAX_PING_STRIKES 2
 
 static void* tag(intptr_t t) { return (void*)t; }
 
@@ -62,6 +62,7 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
+// Send more pings than server allows to trigger server's GOAWAY.
 static void test_bad_ping(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f = config.create_fixture(nullptr, nullptr);
   cq_verifier* cqv = cq_verifier_create(f.cq);
@@ -217,9 +218,170 @@ static void test_bad_ping(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 }
 
+// Try sending more pings than server allows, but server should be fine because
+// max_pings_without_data should limit pings sent out on wire.
+static void test_pings_without_data(grpc_end2end_test_config config) {
+  grpc_end2end_test_fixture f = config.create_fixture(nullptr, nullptr);
+  cq_verifier* cqv = cq_verifier_create(f.cq);
+  grpc_arg client_a[3];
+  client_a[0].type = GRPC_ARG_INTEGER;
+  client_a[0].key =
+      const_cast<char*>(GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS);
+  client_a[0].value.integer = 10;
+  // Only allow MAX_PING_STRIKES pings without data (DATA/HEADERS/WINDOW_UPDATE)
+  // so that the transport will throttle the excess pings.
+  client_a[1].type = GRPC_ARG_INTEGER;
+  client_a[1].key = const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA);
+  client_a[1].value.integer = MAX_PING_STRIKES;
+  client_a[2].type = GRPC_ARG_INTEGER;
+  client_a[2].key = const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE);
+  client_a[2].value.integer = 0;
+  grpc_arg server_a[3];
+  server_a[0].type = GRPC_ARG_INTEGER;
+  server_a[0].key =
+      const_cast<char*>(GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS);
+  server_a[0].value.integer = 300000 /* 5 minutes */;
+  server_a[1].type = GRPC_ARG_INTEGER;
+  server_a[1].key = const_cast<char*>(GRPC_ARG_HTTP2_MAX_PING_STRIKES);
+  server_a[1].value.integer = MAX_PING_STRIKES;
+  server_a[2].type = GRPC_ARG_INTEGER;
+  server_a[2].key = const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE);
+  server_a[2].value.integer = 0;
+  grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
+  grpc_channel_args server_args = {GPR_ARRAY_SIZE(server_a), server_a};
+
+  config.init_client(&f, &client_args);
+  config.init_server(&f, &server_args);
+
+  grpc_call* c;
+  grpc_call* s;
+  gpr_timespec deadline = grpc_timeout_seconds_to_deadline(10);
+  grpc_op ops[6];
+  grpc_op* op;
+  grpc_metadata_array initial_metadata_recv;
+  grpc_metadata_array trailing_metadata_recv;
+  grpc_metadata_array request_metadata_recv;
+  grpc_call_details call_details;
+  grpc_status_code status;
+  grpc_call_error error;
+  grpc_slice details;
+  int was_cancelled = 2;
+
+  c = grpc_channel_create_call(
+      f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
+      grpc_slice_from_static_string("/foo"),
+      get_host_override_slice("foo.test.google.fr:1234", config), deadline,
+      nullptr);
+  GPR_ASSERT(c);
+
+  grpc_metadata_array_init(&initial_metadata_recv);
+  grpc_metadata_array_init(&trailing_metadata_recv);
+  grpc_metadata_array_init(&request_metadata_recv);
+  grpc_call_details_init(&call_details);
+
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 0;
+  op->data.send_initial_metadata.metadata = nullptr;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  op->op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  op->op = GRPC_OP_RECV_INITIAL_METADATA;
+  op->data.recv_initial_metadata.recv_initial_metadata = &initial_metadata_recv;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+  op->data.recv_status_on_client.trailing_metadata = &trailing_metadata_recv;
+  op->data.recv_status_on_client.status = &status;
+  op->data.recv_status_on_client.status_details = &details;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
+                                nullptr);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+
+  error =
+      grpc_server_request_call(f.server, &s, &call_details,
+                               &request_metadata_recv, f.cq, f.cq, tag(101));
+  GPR_ASSERT(GRPC_CALL_OK == error);
+  CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
+  cq_verify(cqv);
+
+  // Send too many pings to the server similar to the prevous test case.
+  // However, since we set the MAX_PINGS_WITHOUT_DATA at the client side, only
+  // MAX_PING_STRIKES will actually be sent and the rpc will still succeed.
+  int i;
+  for (i = 1; i <= MAX_PING_STRIKES + 2; i++) {
+    grpc_channel_ping(f.client, f.cq, tag(200 + i), nullptr);
+    if (i <= MAX_PING_STRIKES) {
+      CQ_EXPECT_COMPLETION(cqv, tag(200 + i), 1);
+    }
+    cq_verify(cqv);
+  }
+
+  memset(ops, 0, sizeof(ops));
+  op = ops;
+  op->op = GRPC_OP_SEND_INITIAL_METADATA;
+  op->data.send_initial_metadata.count = 0;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
+  op->data.send_status_from_server.trailing_metadata_count = 0;
+  op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
+  grpc_slice status_details = grpc_slice_from_static_string("xyz");
+  op->data.send_status_from_server.status_details = &status_details;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  op->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
+  op->data.recv_close_on_server.cancelled = &was_cancelled;
+  op->flags = 0;
+  op->reserved = nullptr;
+  op++;
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
+                                nullptr);
+  GPR_ASSERT(GRPC_CALL_OK == error);
+
+  CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
+  // Client call should return.
+  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
+  cq_verify(cqv);
+
+  grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
+  CQ_EXPECT_COMPLETION(cqv, tag(0xdead), 1);
+  cq_verify(cqv);
+
+  grpc_call_unref(s);
+
+  // The rpc should be successful.
+  GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
+  GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
+  validate_host_override_string("foo.test.google.fr:1234", call_details.host,
+                                config);
+
+  grpc_slice_unref(details);
+  grpc_metadata_array_destroy(&initial_metadata_recv);
+  grpc_metadata_array_destroy(&trailing_metadata_recv);
+  grpc_metadata_array_destroy(&request_metadata_recv);
+  grpc_call_details_destroy(&call_details);
+  grpc_call_unref(c);
+  cq_verifier_destroy(cqv);
+  end_test(&f);
+  config.tear_down_data(&f);
+}
+
 void bad_ping(grpc_end2end_test_config config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION);
   test_bad_ping(config);
+  test_pings_without_data(config);
 }
 
 void bad_ping_pre_init(void) {}
