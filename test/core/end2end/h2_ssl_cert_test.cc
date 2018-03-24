@@ -202,6 +202,7 @@ typedef enum { SUCCESS, FAIL } test_result;
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |       \
          FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS | \
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL,        \
+     "foo.test.google.fr",                            \
      chttp2_create_fixture_secure_fullstack,          \
      CLIENT_INIT_NAME(cert_type),                     \
      SERVER_INIT_NAME(request_type),                  \

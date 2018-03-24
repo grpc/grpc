@@ -88,10 +88,6 @@ static void end_test(grpc_end2end_test_fixture* f) {
 static void test_invoke_simple_request(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f =
       begin_test(config, "test_invoke_simple_request", nullptr, nullptr);
-  const bool override_host_for_call_creds_use =
-      (config.feature_mask & FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS) != 0;
-  const char* expected_host =
-      override_host_for_call_creds_use ? "foo.test.google.fr" : "localhost";
   grpc_call* c;
   grpc_call* s;
   cq_verifier* cqv = cq_verifier_create(f.cq);
@@ -197,12 +193,13 @@ static void test_invoke_simple_request(grpc_end2end_test_config config) {
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-  if (override_host_for_call_creds_use) {
-    validate_host_override_string("foo.test.google.fr", call_details.host,
-                                  config);
+
+  if (config.overridden_call_host != nullptr) {
+    validate_host_override_string(config.overridden_call_host,
+                                  call_details.host, config);
+  } else {
+    GPR_ASSERT(grpc_slice_buf_start_eq(call_details.host, "localhost", 9));
   }
-  GPR_ASSERT(grpc_slice_buf_start_eq(call_details.host, expected_host,
-                                     strlen(expected_host)));
   GPR_ASSERT(was_cancelled == 1);
 
   grpc_slice_unref(details);

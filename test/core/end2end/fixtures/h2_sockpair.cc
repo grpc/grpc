@@ -118,7 +118,7 @@ static void chttp2_tear_down_socketpair(grpc_end2end_test_fixture* f) {
 
 /* All test configurations */
 static grpc_end2end_test_config configs[] = {
-    {"chttp2/socketpair", FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
+    {"chttp2/socketpair", FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER, nullptr,
      chttp2_create_fixture_socketpair, chttp2_init_client_socketpair,
      chttp2_init_server_socketpair, chttp2_tear_down_socketpair},
 };
