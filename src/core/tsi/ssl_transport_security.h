@@ -36,6 +36,20 @@
 
 #define TSI_SSL_ALPN_SELECTED_PROTOCOL "ssl_alpn_selected_protocol"
 
+/* --- tsi_ssl_root_certs_store object ---
+
+   This object stores SSL root certificates. It can be shared by multiple SSL
+   context. */
+typedef struct tsi_ssl_root_certs_store tsi_ssl_root_certs_store;
+
+/* Given a NULL-terminated string containing the PEM encoding of the root
+   certificates, creates a tsi_ssl_root_certs_store object. */
+tsi_ssl_root_certs_store* tsi_ssl_root_certs_store_create(
+    const char* pem_roots);
+
+/* Destroys the tsi_ssl_root_certs_store object. */
+void tsi_ssl_root_certs_store_destroy(tsi_ssl_root_certs_store* self);
+
 /* --- tsi_ssl_session_cache object ---
 
    Cache for SSL sessions for sessions resumption.  */
@@ -70,13 +84,13 @@ typedef struct {
   const char* cert_chain;
 } tsi_ssl_pem_key_cert_pair;
 
-/* Creates a client handshaker factory.
+/* TO BE DEPRECATED.
+   Creates a client handshaker factory.
    - pem_key_cert_pair is a pointer to the object containing client's private
      key and certificate chain. This parameter can be NULL if the client does
      not have such a key/cert pair.
    - pem_roots_cert is the NULL-terminated string containing the PEM encoding of
-     the client root certificates. This parameter may be NULL if the server does
-     not want the client to be authenticated with SSL.
+     the server root certificates.
    - cipher_suites contains an optional list of the ciphers that the client
      supports. The format of this string is described in:
      https://www.openssl.org/docs/apps/ciphers.html.
@@ -103,9 +117,13 @@ typedef struct {
      not have such a key/cert pair. */
   const tsi_ssl_pem_key_cert_pair* pem_key_cert_pair;
   /* pem_roots_cert is the NULL-terminated string containing the PEM encoding of
-     the client root certificates. This parameter may be NULL if the server does
-     not want the client to be authenticated with SSL. */
+     the client root certificates. */
   const char* pem_root_certs;
+  /* root_store is a pointer to the ssl_root_certs_store object. If root_store
+    is not nullptr and SSL implementation permits, root_store will be used as
+    root certificates. Otherwise, pem_roots_cert will be used to load server
+    root certificates. */
+  const tsi_ssl_root_certs_store* root_store;
   /* cipher_suites contains an optional list of the ciphers that the client
      supports. The format of this string is described in:
      https://www.openssl.org/docs/apps/ciphers.html.
@@ -160,12 +178,14 @@ void tsi_ssl_client_handshaker_factory_unref(
 typedef struct tsi_ssl_server_handshaker_factory
     tsi_ssl_server_handshaker_factory;
 
-/* Creates a server handshaker factory.
+/* TO BE DEPRECATED.
+   Creates a server handshaker factory.
    - pem_key_cert_pairs is an array private key / certificate chains of the
      server.
    - num_key_cert_pairs is the number of items in the pem_key_cert_pairs array.
    - pem_root_certs is the NULL-terminated string containing the PEM encoding
-     of the server root certificates.
+     of the client root certificates. This parameter may be NULL if the server
+     does not want the client to be authenticated with SSL.
    - cipher_suites contains an optional list of the ciphers that the server
      supports. The format of this string is described in:
      https://www.openssl.org/docs/apps/ciphers.html.
@@ -187,7 +207,8 @@ tsi_result tsi_create_ssl_server_handshaker_factory(
     const char** alpn_protocols, uint16_t num_alpn_protocols,
     tsi_ssl_server_handshaker_factory** factory);
 
-/* Same as tsi_create_ssl_server_handshaker_factory method except uses
+/* TO BE DEPRECATED.
+   Same as tsi_create_ssl_server_handshaker_factory method except uses
    tsi_client_certificate_request_type to support more ways to handle client
    certificate authentication.
    - client_certificate_request, if set to non-zero will force the client to
@@ -208,7 +229,8 @@ typedef struct {
      array. */
   size_t num_key_cert_pairs;
   /* pem_root_certs is the NULL-terminated string containing the PEM encoding
-     of the server root certificates. */
+     of the server root certificates. This parameter may be NULL if the server
+     does not want the client to be authenticated with SSL. */
   const char* pem_client_root_certs;
   /* client_certificate_request, if set to non-zero will force the client to
      authenticate with an SSL cert. Note that this option is ignored if

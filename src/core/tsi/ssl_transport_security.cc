@@ -71,6 +71,10 @@ extern "C" {
 
 /* --- Structure definitions. ---*/
 
+struct tsi_ssl_root_certs_store {
+  X509_STORE* store;
+};
+
 struct tsi_ssl_handshaker_factory {
   const tsi_ssl_handshaker_factory_vtable* vtable;
   gpr_refcount refcount;
@@ -553,21 +557,18 @@ static tsi_result ssl_ctx_use_private_key(SSL_CTX* context, const char* pem_key,
 
 /* Loads in-memory PEM verification certs into the SSL context and optionally
    returns the verification cert names (root_names can be NULL). */
-static tsi_result ssl_ctx_load_verification_certs(SSL_CTX* context,
-                                                  const char* pem_roots,
-                                                  size_t pem_roots_size,
-                                                  STACK_OF(X509_NAME) *
-                                                      *root_names) {
+static tsi_result x509_store_load_certs(X509_STORE* cert_store,
+                                        const char* pem_roots,
+                                        size_t pem_roots_size,
+                                        STACK_OF(X509_NAME) * *root_names) {
   tsi_result result = TSI_OK;
   size_t num_roots = 0;
   X509* root = nullptr;
   X509_NAME* root_name = nullptr;
   BIO* pem;
-  X509_STORE* root_store;
   GPR_ASSERT(pem_roots_size <= INT_MAX);
   pem = BIO_new_mem_buf((void*)pem_roots, static_cast<int>(pem_roots_size));
-  root_store = SSL_CTX_get_cert_store(context);
-  if (root_store == nullptr) return TSI_INVALID_ARGUMENT;
+  if (cert_store == nullptr) return TSI_INVALID_ARGUMENT;
   if (pem == nullptr) return TSI_OUT_OF_RESOURCES;
   if (root_names != nullptr) {
     *root_names = sk_X509_NAME_new_null();
@@ -595,7 +596,7 @@ static tsi_result ssl_ctx_load_verification_certs(SSL_CTX* context,
       sk_X509_NAME_push(*root_names, root_name);
       root_name = nullptr;
     }
-    if (!X509_STORE_add_cert(root_store, root)) {
+    if (!X509_STORE_add_cert(cert_store, root)) {
       gpr_log(GPR_ERROR, "Could not add root certificate to ssl context.");
       result = TSI_INTERNAL_ERROR;
       break;
@@ -619,6 +620,16 @@ static tsi_result ssl_ctx_load_verification_certs(SSL_CTX* context,
   }
   BIO_free(pem);
   return result;
+}
+
+static tsi_result ssl_ctx_load_verification_certs(SSL_CTX* context,
+                                                  const char* pem_roots,
+                                                  size_t pem_roots_size,
+                                                  STACK_OF(X509_NAME) *
+                                                      *root_name) {
+  X509_STORE* cert_store = SSL_CTX_get_cert_store(context);
+  return x509_store_load_certs(cert_store, pem_roots, pem_roots_size,
+                               root_name);
 }
 
 /* Populates the SSL context with a private key and a cert chain, and sets the
@@ -728,6 +739,43 @@ static tsi_result build_alpn_protocol_name_list(
 // we don't really care.
 static int NullVerifyCallback(int preverify_ok, X509_STORE_CTX* ctx) {
   return 1;
+}
+
+/* --- tsi_ssl_root_certs_store methods implementation. ---*/
+
+tsi_ssl_root_certs_store* tsi_ssl_root_certs_store_create(
+    const char* pem_roots) {
+  if (pem_roots == nullptr) {
+    gpr_log(GPR_ERROR, "The root certificates are empty.");
+    return nullptr;
+  }
+  tsi_ssl_root_certs_store* root_store = static_cast<tsi_ssl_root_certs_store*>(
+      gpr_zalloc(sizeof(tsi_ssl_root_certs_store)));
+  if (root_store == nullptr) {
+    gpr_log(GPR_ERROR, "Could not allocate buffer for ssl_root_certs_store.");
+    return nullptr;
+  }
+  root_store->store = X509_STORE_new();
+  if (root_store->store == nullptr) {
+    gpr_log(GPR_ERROR, "Could not allocate buffer for X509_STORE.");
+    gpr_free(root_store);
+    return nullptr;
+  }
+  tsi_result result = x509_store_load_certs(root_store->store, pem_roots,
+                                            strlen(pem_roots), nullptr);
+  if (result != TSI_OK) {
+    gpr_log(GPR_ERROR, "Could not load root certificates.");
+    X509_STORE_free(root_store->store);
+    gpr_free(root_store);
+    return nullptr;
+  }
+  return root_store;
+}
+
+void tsi_ssl_root_certs_store_destroy(tsi_ssl_root_certs_store* self) {
+  if (self == nullptr) return;
+  X509_STORE_free(self->store);
+  gpr_free(self);
 }
 
 /* --- tsi_ssl_session_cache methods implementation. ---*/
@@ -1468,7 +1516,9 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
 
   if (factory == nullptr) return TSI_INVALID_ARGUMENT;
   *factory = nullptr;
-  if (options->pem_root_certs == nullptr) return TSI_INVALID_ARGUMENT;
+  if (options->pem_root_certs == nullptr && options->root_store == nullptr) {
+    return TSI_INVALID_ARGUMENT;
+  }
 
   ssl_context = SSL_CTX_new(TLSv1_2_method());
   if (ssl_context == nullptr) {
@@ -1480,9 +1530,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
       gpr_zalloc(sizeof(*impl)));
   tsi_ssl_handshaker_factory_init(&impl->base);
   impl->base.vtable = &client_handshaker_factory_vtable;
-
   impl->ssl_context = ssl_context;
-
   if (options->session_cache != nullptr) {
     // Unref is called manually on factory destruction.
     impl->session_cache =
@@ -1498,12 +1546,22 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     result = populate_ssl_context(ssl_context, options->pem_key_cert_pair,
                                   options->cipher_suites);
     if (result != TSI_OK) break;
-    result = ssl_ctx_load_verification_certs(
-        ssl_context, options->pem_root_certs, strlen(options->pem_root_certs),
-        nullptr);
-    if (result != TSI_OK) {
-      gpr_log(GPR_ERROR, "Cannot load server root certificates.");
-      break;
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
+    // X509_STORE_up_ref is only available since OpenSSL 1.1.
+    if (options->root_store != nullptr) {
+      X509_STORE_up_ref(options->root_store->store);
+      SSL_CTX_set_cert_store(ssl_context, options->root_store->store);
+    }
+#endif
+    if (OPENSSL_VERSION_NUMBER < 0x10100000 || options->root_store == nullptr) {
+      result = ssl_ctx_load_verification_certs(
+          ssl_context, options->pem_root_certs, strlen(options->pem_root_certs),
+          nullptr);
+      if (result != TSI_OK) {
+        gpr_log(GPR_ERROR, "Cannot load server root certificates.");
+        break;
+      }
     }
 
     if (options->num_alpn_protocols != 0) {
