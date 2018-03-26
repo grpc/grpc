@@ -3419,7 +3419,6 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/client/insecure/channel_create.cc \
     src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
-    src/core/ext/filters/client_channel/authority.cc \
     src/core/ext/filters/client_channel/backup_poller.cc \
     src/core/ext/filters/client_channel/channel_connectivity.cc \
     src/core/ext/filters/client_channel/client_channel.cc \
@@ -3441,6 +3440,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_index.cc \
     src/core/ext/filters/client_channel/uri_parser.cc \
+    src/core/ext/transport/chttp2/client/authority.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/tsi/alts_transport_security.cc \
     src/core/tsi/fake_transport_security.cc \
@@ -3756,7 +3756,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/filters/http/http_filters_plugin.cc \
     src/core/ext/filters/http/message_compress/message_compress_filter.cc \
     src/core/ext/filters/http/server/http_server_filter.cc \
-    src/core/ext/filters/client_channel/authority.cc \
     src/core/ext/filters/client_channel/backup_poller.cc \
     src/core/ext/filters/client_channel/channel_connectivity.cc \
     src/core/ext/filters/client_channel/client_channel.cc \
@@ -3778,6 +3777,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_index.cc \
     src/core/ext/filters/client_channel/uri_parser.cc \
+    src/core/ext/transport/chttp2/client/authority.cc \
     src/core/lib/http/httpcli_security_connector.cc \
     src/core/lib/security/context/security_context.cc \
     src/core/lib/security/credentials/alts/alts_credentials.cc \
@@ -4119,7 +4119,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/transport/transport.cc \
     src/core/lib/transport/transport_op_string.cc \
     src/core/lib/debug/trace.cc \
-    src/core/ext/filters/client_channel/authority.cc \
     src/core/ext/filters/client_channel/backup_poller.cc \
     src/core/ext/filters/client_channel/channel_connectivity.cc \
     src/core/ext/filters/client_channel/client_channel.cc \
@@ -4141,6 +4140,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_index.cc \
     src/core/ext/filters/client_channel/uri_parser.cc \
+    src/core/ext/transport/chttp2/client/authority.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/transport/chttp2/transport/bin_decoder.cc \
     src/core/ext/transport/chttp2/transport/bin_encoder.cc \
@@ -4415,7 +4415,6 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/transport/transport.cc \
     src/core/lib/transport/transport_op_string.cc \
     src/core/lib/debug/trace.cc \
-    src/core/ext/filters/client_channel/authority.cc \
     src/core/ext/filters/client_channel/backup_poller.cc \
     src/core/ext/filters/client_channel/channel_connectivity.cc \
     src/core/ext/filters/client_channel/client_channel.cc \
@@ -4437,6 +4436,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_index.cc \
     src/core/ext/filters/client_channel/uri_parser.cc \
+    src/core/ext/transport/chttp2/client/authority.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/transport/chttp2/transport/bin_decoder.cc \
     src/core/ext/transport/chttp2/transport/bin_encoder.cc \
@@ -4711,7 +4711,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/transport/chttp2/client/insecure/channel_create.cc \
     src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
-    src/core/ext/filters/client_channel/authority.cc \
     src/core/ext/filters/client_channel/backup_poller.cc \
     src/core/ext/filters/client_channel/channel_connectivity.cc \
     src/core/ext/filters/client_channel/client_channel.cc \
@@ -4733,6 +4732,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_index.cc \
     src/core/ext/filters/client_channel/uri_parser.cc \
+    src/core/ext/transport/chttp2/client/authority.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/transport/inproc/inproc_plugin.cc \
     src/core/ext/transport/inproc/inproc_transport.cc \
@@ -5500,7 +5500,6 @@ LIBGRPC++_CRONET_SRC = \
     src/core/ext/filters/http/http_filters_plugin.cc \
     src/core/ext/filters/http/message_compress/message_compress_filter.cc \
     src/core/ext/filters/http/server/http_server_filter.cc \
-    src/core/ext/filters/client_channel/authority.cc \
     src/core/ext/filters/client_channel/backup_poller.cc \
     src/core/ext/filters/client_channel/channel_connectivity.cc \
     src/core/ext/filters/client_channel/client_channel.cc \
@@ -5522,6 +5521,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_index.cc \
     src/core/ext/filters/client_channel/uri_parser.cc \
+    src/core/ext/transport/chttp2/client/authority.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc \

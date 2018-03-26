@@ -866,8 +866,6 @@ src/core/README.md \
 src/core/ext/README.md \
 src/core/ext/census/grpc_context.cc \
 src/core/ext/filters/client_channel/README.md \
-src/core/ext/filters/client_channel/authority.cc \
-src/core/ext/filters/client_channel/authority.h \
 src/core/ext/filters/client_channel/backup_poller.cc \
 src/core/ext/filters/client_channel/backup_poller.h \
 src/core/ext/filters/client_channel/channel_connectivity.cc \
@@ -964,6 +962,8 @@ src/core/ext/transport/README.md \
 src/core/ext/transport/chttp2/README.md \
 src/core/ext/transport/chttp2/alpn/alpn.cc \
 src/core/ext/transport/chttp2/alpn/alpn.h \
+src/core/ext/transport/chttp2/client/authority.cc \
+src/core/ext/transport/chttp2/client/authority.h \
 src/core/ext/transport/chttp2/client/chttp2_connector.cc \
 src/core/ext/transport/chttp2/client/chttp2_connector.h \
 src/core/ext/transport/chttp2/client/insecure/README.md \

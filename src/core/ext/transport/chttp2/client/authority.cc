@@ -18,9 +18,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/authority.h"
+#include "src/core/ext/transport/chttp2/client/authority.h"
 
-grpc_channel_args* grpc_add_default_authority_if_not_present(
+grpc_channel_args* grpc_default_authority_add_if_not_present(
     const grpc_channel_args* args) {
   const bool has_default_authority =
       grpc_channel_args_find(args, GRPC_ARG_DEFAULT_AUTHORITY) != nullptr;

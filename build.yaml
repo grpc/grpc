@@ -544,7 +544,6 @@ filegroups:
   - grpc_base
 - name: grpc_client_channel
   headers:
-  - src/core/ext/filters/client_channel/authority.h
   - src/core/ext/filters/client_channel/backup_poller.h
   - src/core/ext/filters/client_channel/client_channel.h
   - src/core/ext/filters/client_channel/client_channel_factory.h
@@ -565,8 +564,8 @@ filegroups:
   - src/core/ext/filters/client_channel/subchannel.h
   - src/core/ext/filters/client_channel/subchannel_index.h
   - src/core/ext/filters/client_channel/uri_parser.h
+  - src/core/ext/transport/chttp2/client/authority.h
   src:
-  - src/core/ext/filters/client_channel/authority.cc
   - src/core/ext/filters/client_channel/backup_poller.cc
   - src/core/ext/filters/client_channel/channel_connectivity.cc
   - src/core/ext/filters/client_channel/client_channel.cc
@@ -588,6 +587,7 @@ filegroups:
   - src/core/ext/filters/client_channel/subchannel.cc
   - src/core/ext/filters/client_channel/subchannel_index.cc
   - src/core/ext/filters/client_channel/uri_parser.cc
+  - src/core/ext/transport/chttp2/client/authority.cc
   plugin: grpc_client_channel
   uses:
   - grpc_base
