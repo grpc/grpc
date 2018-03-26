@@ -25,7 +25,7 @@
 #include "test/cpp/qps/parse_json.h"
 #include "test/cpp/qps/stats.h"
 
-#include <grpc++/client_context.h>
+#include <grpcpp/client_context.h>
 #include "src/cpp/util/core_stats.h"
 #include "src/proto/grpc/testing/services.grpc.pb.h"
 

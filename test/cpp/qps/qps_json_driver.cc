@@ -21,7 +21,7 @@
 #include <memory>
 #include <set>
 
-#include <grpc++/impl/codegen/config_protobuf.h>
+#include <grpcpp/impl/codegen/config_protobuf.h>
 
 #include <gflags/gflags.h>
 #include <grpc/support/log.h>

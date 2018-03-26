@@ -21,7 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"

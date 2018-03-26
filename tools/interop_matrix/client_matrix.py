@@ -84,6 +84,9 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.9.1': None
         },
+        {
+            'v1.10.0': None
+        },
     ],
     'go': [
         {
@@ -149,7 +152,7 @@ LANG_RELEASE_MATRIX = {
             'v1.9.1': None
         },
         {
-            'v1.10.0': None
+            'v1.10.1': None
         },
     ],
     'python': [
@@ -180,6 +183,9 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.9.1': None
         },
+        {
+            'v1.10.0': None
+        },
     ],
     'node': [
         {
@@ -200,7 +206,19 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.6.6': None
         },
-        #{'v1.7.1': None}, Failing tests
+        # TODO: https://github.com/grpc/grpc-node/issues/235.
+        #{
+        #    'v1.7.2': None
+        #},
+        {
+            'v1.8.4': None
+        },
+        {
+            'v1.9.1': None
+        },
+        {
+            'v1.10.0': None
+        },
     ],
     'ruby': [
         {
@@ -235,6 +253,9 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.9.1': None
         },
+        {
+            'v1.10.0': None
+        },
     ],
     'php': [
         {
@@ -264,6 +285,9 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.9.1': None
         },
+        {
+            'v1.10.0': None
+        },
     ],
     'csharp': [
         #{'v1.0.1': None},
@@ -291,5 +315,26 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.9.1': None
         },
+        {
+            'v1.10.0': None
+        },
     ],
+}
+
+# This matrix lists the version of testcases to use for a release. As new
+# releases come out, some older docker commands for running tests need to be
+# changed, hence the need for specifying which commands to use for a
+# particular version in some cases. If not specified, xxx__master file will be
+# used. For example, all java versions will run the commands in java__master.
+# The testcases files exist under the testcases directory.
+TESTCASES_VERSION_MATRIX = {
+    'node_v1.0.1': 'node__v1.0.1',
+    'node_v1.1.4': 'node__v1.1.4',
+    'node_v1.2.5': 'node__v1.1.4',
+    'node_v1.3.9': 'node__v1.1.4',
+    'node_v1.4.2': 'node__v1.1.4',
+    'node_v1.6.6': 'node__v1.1.4',
+    'ruby_v1.0.1': 'ruby__v1.0.1',
+    'csharp_v1.1.4': 'csharp__v1.1.4',
+    'csharp_v1.2.5': 'csharp__v1.1.4',
 }

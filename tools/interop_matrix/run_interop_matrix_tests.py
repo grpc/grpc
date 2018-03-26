@@ -59,7 +59,6 @@ argp.add_argument(
     choices=['all', 'master'] + _RELEASES,
     help='Release tags to test.  When testing all '
     'releases defined in client_matrix.py, use "all".')
-
 argp.add_argument(
     '-l',
     '--language',
@@ -67,15 +66,12 @@ argp.add_argument(
     nargs='+',
     default=['all'],
     help='Languages to test')
-
 argp.add_argument(
     '--keep',
     action='store_true',
     help='keep the created local images after finishing the tests.')
-
 argp.add_argument(
     '--report_file', default='report.xml', help='The result file to create.')
-
 argp.add_argument(
     '--allow_flakes',
     default=False,
@@ -89,6 +85,12 @@ argp.add_argument(
     type=str,
     nargs='?',
     help='Upload test results to a specified BQ table.')
+argp.add_argument(
+    '--server_host',
+    default='74.125.206.210',
+    type=str,
+    nargs='?',
+    help='The gateway to backend services.')
 
 args = argp.parse_args()
 
@@ -145,14 +147,17 @@ def find_all_images_for_lang(lang):
 # caches test cases (list of JobSpec) loaded from file.  Keyed by lang and runtime.
 def find_test_cases(lang, runtime, release, suite_name):
     """Returns the list of test cases from testcase files per lang/release."""
-    file_tmpl = os.path.join(os.path.dirname(__file__), 'testcases/%s__%s')
-    testcase_release = release
+    testcase_dir = os.path.join(os.path.dirname(__file__), 'testcases')
     filename_prefix = lang
     if lang == 'csharp':
         filename_prefix = runtime
-    if not os.path.exists(file_tmpl % (filename_prefix, release)):
-        testcase_release = 'master'
-    testcases = file_tmpl % (filename_prefix, testcase_release)
+    # Check to see if we need to use a particular version of test cases.
+    lang_version = '%s_%s' % (filename_prefix, release)
+    if lang_version in client_matrix.TESTCASES_VERSION_MATRIX:
+        testcases = os.path.join(
+            testcase_dir, client_matrix.TESTCASES_VERSION_MATRIX[lang_version])
+    else:
+        testcases = os.path.join(testcase_dir, '%s__master' % filename_prefix)
 
     job_spec_list = []
     try:
@@ -166,6 +171,20 @@ def find_test_cases(lang, runtime, release, suite_name):
                         '--server_host_override=(.*).sandbox.googleapis.com',
                         line)
                     server = m.group(1) if m else 'unknown_server'
+
+                    # If server_host arg is not None, replace the original
+                    # server_host with the one provided or append to the end of
+                    # the command if server_host does not appear originally.
+                    if args.server_host:
+                        if line.find('--server_host=') > -1:
+                            line = re.sub('--server_host=[^ ]*',
+                                          '--server_host=%s' % args.server_host,
+                                          line)
+                        else:
+                            line = '%s --server_host=%s"' % (line[:-1],
+                                                             args.server_host)
+                        print(line)
+
                     spec = jobset.JobSpec(
                         cmdline=line,
                         shortname='%s:%s:%s:%s' % (suite_name, lang, server,

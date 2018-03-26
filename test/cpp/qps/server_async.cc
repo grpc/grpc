@@ -23,16 +23,16 @@
 #include <mutex>
 #include <thread>
 
-#include <grpc++/generic/async_generic_service.h>
-#include <grpc++/resource_quota.h>
-#include <grpc++/security/server_credentials.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
-#include <grpc++/server_context.h>
-#include <grpc++/support/config.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpcpp/generic/async_generic_service.h>
+#include <grpcpp/resource_quota.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/server_context.h>
+#include <grpcpp/support/config.h>
 
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/surface/completion_queue.h"

@@ -224,7 +224,7 @@ class WriteContext {
       grpc_slice_buffer_add(
           &t_->outbuf, grpc_chttp2_window_update_create(0, transport_announce,
                                                         &throwaway_stats));
-      ResetPingRecvClock();
+      ResetPingClock();
     }
   }
 
@@ -269,11 +269,13 @@ class WriteContext {
     return s;
   }
 
-  void ResetPingRecvClock() {
+  void ResetPingClock() {
     if (!t_->is_client) {
       t_->ping_recv_state.last_ping_recv_time = GRPC_MILLIS_INF_PAST;
       t_->ping_recv_state.ping_strikes = 0;
     }
+    t_->ping_state.pings_before_data_required =
+        t_->ping_policy.max_pings_without_data;
   }
 
   void IncInitialMetadataWrites() { ++initial_metadata_writes_; }
@@ -435,7 +437,7 @@ class StreamWriteContext {
       };
       grpc_chttp2_encode_header(&t_->hpack_compressor, nullptr, 0,
                                 s_->send_initial_metadata, &hopt, &t_->outbuf);
-      write_context_->ResetPingRecvClock();
+      write_context_->ResetPingClock();
       write_context_->IncInitialMetadataWrites();
     }
 
@@ -455,7 +457,7 @@ class StreamWriteContext {
     grpc_slice_buffer_add(
         &t_->outbuf, grpc_chttp2_window_update_create(s_->id, stream_announce,
                                                       &s_->stats.outgoing));
-    write_context_->ResetPingRecvClock();
+    write_context_->ResetPingClock();
     write_context_->IncWindowUpdateWrites();
   }
 
@@ -489,7 +491,7 @@ class StreamWriteContext {
         data_send_context.CompressMoreBytes();
       }
     }
-    write_context_->ResetPingRecvClock();
+    write_context_->ResetPingClock();
     if (data_send_context.is_last_frame()) {
       SentLastFrame();
     }
@@ -530,7 +532,7 @@ class StreamWriteContext {
                                 s_->send_trailing_metadata, &hopt, &t_->outbuf);
     }
     write_context_->IncTrailingMetadataWrites();
-    write_context_->ResetPingRecvClock();
+    write_context_->ResetPingClock();
     SentLastFrame();
 
     write_context_->NoteScheduledResults();

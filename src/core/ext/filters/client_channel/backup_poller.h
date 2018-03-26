@@ -23,7 +23,6 @@
 
 #include <grpc/grpc.h>
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 
 /* Start polling \a interested_parties periodically in the timer thread  */
 void grpc_client_channel_start_backup_polling(

@@ -153,7 +153,7 @@ module GRPC
   #
   class InterceptionContext
     ##
-    # @param [Array<GRPC::Interceptor>]
+    # @param interceptors [Array<GRPC::Interceptor>]
     #
     def initialize(interceptors = [])
       @interceptors = interceptors.dup

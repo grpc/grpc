@@ -28,6 +28,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include <address_sorting/address_sorting.h>
+
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
@@ -440,17 +442,32 @@ class AresDnsResolverFactory : public ResolverFactory {
 
 }  // namespace grpc_core
 
+extern grpc_address_resolver_vtable* grpc_resolve_address_impl;
+static grpc_address_resolver_vtable* default_resolver;
+
+static grpc_error* blocking_resolve_address_ares(
+    const char* name, const char* default_port,
+    grpc_resolved_addresses** addresses) {
+  return default_resolver->blocking_resolve_address(name, default_port,
+                                                    addresses);
+}
+
+static grpc_address_resolver_vtable ares_resolver = {
+    grpc_resolve_address_ares, blocking_resolve_address_ares};
+
 void grpc_resolver_dns_ares_init() {
   char* resolver_env = gpr_getenv("GRPC_DNS_RESOLVER");
   /* TODO(zyc): Turn on c-ares based resolver by default after the address
      sorter and the CNAME support are added. */
   if (resolver_env != nullptr && gpr_stricmp(resolver_env, "ares") == 0) {
+    address_sorting_init();
     grpc_error* error = grpc_ares_init();
     if (error != GRPC_ERROR_NONE) {
       GRPC_LOG_IF_ERROR("ares_library_init() failed", error);
       return;
     }
-    grpc_resolve_address = grpc_resolve_address_ares;
+    default_resolver = grpc_resolve_address_impl;
+    grpc_set_resolver_impl(&ares_resolver);
     grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
         grpc_core::UniquePtr<grpc_core::ResolverFactory>(
             grpc_core::New<grpc_core::AresDnsResolverFactory>()));
@@ -461,6 +478,7 @@ void grpc_resolver_dns_ares_init() {
 void grpc_resolver_dns_ares_shutdown() {
   char* resolver_env = gpr_getenv("GRPC_DNS_RESOLVER");
   if (resolver_env != nullptr && gpr_stricmp(resolver_env, "ares") == 0) {
+    address_sorting_shutdown();
     grpc_ares_cleanup();
   }
   gpr_free(resolver_env);

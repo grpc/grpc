@@ -45,6 +45,7 @@
 #include "src/cpp/thread_manager/thread_manager.h"
 
 namespace grpc {
+namespace {
 
 class DefaultGlobalCallbacks final : public Server::GlobalCallbacks {
  public:
@@ -53,16 +54,29 @@ class DefaultGlobalCallbacks final : public Server::GlobalCallbacks {
   void PostSynchronousRequest(ServerContext* context) override {}
 };
 
-static std::shared_ptr<Server::GlobalCallbacks> g_callbacks = nullptr;
-static gpr_once g_once_init_callbacks = GPR_ONCE_INIT;
+std::shared_ptr<Server::GlobalCallbacks> g_callbacks = nullptr;
+gpr_once g_once_init_callbacks = GPR_ONCE_INIT;
 
-static void InitGlobalCallbacks() {
+void InitGlobalCallbacks() {
   if (!g_callbacks) {
     g_callbacks.reset(new DefaultGlobalCallbacks());
   }
 }
 
-class Server::UnimplementedAsyncRequestContext {
+class ShutdownTag : public internal::CompletionQueueTag {
+ public:
+  bool FinalizeResult(void** tag, bool* status) { return false; }
+};
+
+class DummyTag : public internal::CompletionQueueTag {
+ public:
+  bool FinalizeResult(void** tag, bool* status) {
+    *status = true;
+    return true;
+  }
+};
+
+class UnimplementedAsyncRequestContext {
  protected:
   UnimplementedAsyncRequestContext() : generic_stream_(&server_context_) {}
 
@@ -70,8 +84,14 @@ class Server::UnimplementedAsyncRequestContext {
   GenericServerAsyncReaderWriter generic_stream_;
 };
 
+}  // namespace
+
+/// Use private inheritance rather than composition only to establish order
+/// of construction, since the public base class should be constructed after the
+/// elements belonging to the private base class are constructed. This is not
+/// possible using true composition.
 class Server::UnimplementedAsyncRequest final
-    : public UnimplementedAsyncRequestContext,
+    : private UnimplementedAsyncRequestContext,
       public GenericAsyncRequest {
  public:
   UnimplementedAsyncRequest(Server* server, ServerCompletionQueue* cq)
@@ -90,36 +110,25 @@ class Server::UnimplementedAsyncRequest final
   ServerCompletionQueue* const cq_;
 };
 
-typedef internal::SneakyCallOpSet<internal::CallOpSendInitialMetadata,
-                                  internal::CallOpServerSendStatus>
-    UnimplementedAsyncResponseOp;
+/// UnimplementedAsyncResponse should not post user-visible completions to the
+/// C++ completion queue, but is generated as a CQ event by the core
 class Server::UnimplementedAsyncResponse final
-    : public UnimplementedAsyncResponseOp {
+    : public internal::CallOpSet<internal::CallOpSendInitialMetadata,
+                                 internal::CallOpServerSendStatus> {
  public:
   UnimplementedAsyncResponse(UnimplementedAsyncRequest* request);
   ~UnimplementedAsyncResponse() { delete request_; }
 
   bool FinalizeResult(void** tag, bool* status) override {
-    bool r = UnimplementedAsyncResponseOp::FinalizeResult(tag, status);
+    internal::CallOpSet<
+        internal::CallOpSendInitialMetadata,
+        internal::CallOpServerSendStatus>::FinalizeResult(tag, status);
     delete this;
-    return r;
+    return false;
   }
 
  private:
   UnimplementedAsyncRequest* const request_;
-};
-
-class ShutdownTag : public internal::CompletionQueueTag {
- public:
-  bool FinalizeResult(void** tag, bool* status) { return false; }
-};
-
-class DummyTag : public internal::CompletionQueueTag {
- public:
-  bool FinalizeResult(void** tag, bool* status) {
-    *status = true;
-    return true;
-  }
 };
 
 class Server::SyncRequest final : public internal::CompletionQueueTag {
@@ -382,11 +391,12 @@ Server::Server(
   global_callbacks_ = g_callbacks;
   global_callbacks_->UpdateArguments(args);
 
-  for (auto it = sync_server_cqs_->begin(); it != sync_server_cqs_->end();
-       it++) {
-    sync_req_mgrs_.emplace_back(new SyncRequestThreadManager(
-        this, (*it).get(), global_callbacks_, min_pollers, max_pollers,
-        sync_cq_timeout_msec));
+  if (sync_server_cqs_ != nullptr) {
+    for (const auto& it : *sync_server_cqs_) {
+      sync_req_mgrs_.emplace_back(new SyncRequestThreadManager(
+          this, it.get(), global_callbacks_, min_pollers, max_pollers,
+          sync_cq_timeout_msec));
+    }
   }
 
   grpc_channel_args channel_args;
@@ -525,7 +535,7 @@ void Server::Start(ServerCompletionQueue** cqs, size_t num_cqs) {
   // explicit one.
   if (health_check_service_ == nullptr && !health_check_service_disabled_ &&
       DefaultHealthCheckServiceEnabled()) {
-    if (sync_server_cqs_->empty()) {
+    if (sync_server_cqs_ == nullptr || sync_server_cqs_->empty()) {
       gpr_log(GPR_INFO,
               "Default health check service disabled at async-only server.");
     } else {

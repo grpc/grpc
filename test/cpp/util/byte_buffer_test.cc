@@ -16,14 +16,14 @@
  *
  */
 
-#include <grpc++/support/byte_buffer.h>
+#include <grpcpp/support/byte_buffer.h>
 
 #include <cstring>
 #include <vector>
 
-#include <grpc++/support/slice.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <grpcpp/support/slice.h>
 #include <gtest/gtest.h>
 
 namespace grpc {

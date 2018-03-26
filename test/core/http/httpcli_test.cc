@@ -47,6 +47,7 @@ static void on_finish(void* arg, grpc_error* error) {
       "<body><p>This is a test</p></body></html>";
   grpc_http_response* response = static_cast<grpc_http_response*>(arg);
   GPR_ASSERT(response);
+  gpr_log(GPR_INFO, "response status %d", response->status);
   GPR_ASSERT(response->status == 200);
   GPR_ASSERT(response->body_length == strlen(expect));
   GPR_ASSERT(0 == memcmp(expect, response->body, response->body_length));

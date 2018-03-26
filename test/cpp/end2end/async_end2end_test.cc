@@ -20,17 +20,17 @@
 #include <memory>
 #include <thread>
 
-#include <grpc++/channel.h>
-#include <grpc++/client_context.h>
-#include <grpc++/create_channel.h>
-#include <grpc++/ext/health_check_service_server_builder_option.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
-#include <grpc++/server_context.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/ext/health_check_service_server_builder_option.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/server_context.h>
 
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/tls.h"
@@ -319,12 +319,13 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
       service_->RequestEcho(&srv_ctx, &recv_request, &response_writer,
                             cq_.get(), cq_.get(), tag(2));
 
+      response_reader->Finish(&recv_response, &recv_status, tag(4));
+
       Verifier().Expect(2, true).Verify(cq_.get());
       EXPECT_EQ(send_request.message(), recv_request.message());
 
       send_response.set_message(recv_request.message());
       response_writer.Finish(send_response, Status::OK, tag(3));
-      response_reader->Finish(&recv_response, &recv_status, tag(4));
       Verifier().Expect(3, true).Expect(4, true).Verify(cq_.get());
 
       EXPECT_EQ(send_response.message(), recv_response.message());
@@ -434,13 +435,13 @@ TEST_P(AsyncEnd2endTest, AsyncNextRpc) {
 
   service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
                         cq_.get(), tag(2));
+  response_reader->Finish(&recv_response, &recv_status, tag(4));
 
   Verifier().Expect(2, true).Verify(cq_.get(), time_limit);
   EXPECT_EQ(send_request.message(), recv_request.message());
 
   send_response.set_message(recv_request.message());
   response_writer.Finish(send_response, Status::OK, tag(3));
-  response_reader->Finish(&recv_response, &recv_status, tag(4));
   Verifier().Expect(3, true).Expect(4, true).Verify(
       cq_.get(), std::chrono::system_clock::time_point::max());
 
@@ -475,21 +476,18 @@ TEST_P(AsyncEnd2endTest, DoThenAsyncNextRpc) {
 
   auto resp_writer_ptr = &response_writer;
   auto lambda_2 = [&, this, resp_writer_ptr]() {
-    gpr_log(GPR_ERROR, "CALLED");
     service_->RequestEcho(&srv_ctx, &recv_request, resp_writer_ptr, cq_.get(),
                           cq_.get(), tag(2));
   };
+  response_reader->Finish(&recv_response, &recv_status, tag(4));
 
   Verifier().Expect(2, true).Verify(cq_.get(), time_limit, lambda_2);
   EXPECT_EQ(send_request.message(), recv_request.message());
 
-  auto recv_resp_ptr = &recv_response;
-  auto status_ptr = &recv_status;
   send_response.set_message(recv_request.message());
-  auto lambda_3 = [&, this, resp_writer_ptr, send_response]() {
+  auto lambda_3 = [resp_writer_ptr, send_response]() {
     resp_writer_ptr->Finish(send_response, Status::OK, tag(3));
   };
-  response_reader->Finish(recv_resp_ptr, status_ptr, tag(4));
   Verifier().Expect(3, true).Expect(4, true).Verify(
       cq_.get(), std::chrono::system_clock::time_point::max(), lambda_3);
 
@@ -887,6 +885,7 @@ TEST_P(AsyncEnd2endTest, ClientInitialMetadataRpc) {
 
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
       stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
+  response_reader->Finish(&recv_response, &recv_status, tag(4));
 
   service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
                         cq_.get(), tag(2));
@@ -903,7 +902,6 @@ TEST_P(AsyncEnd2endTest, ClientInitialMetadataRpc) {
 
   send_response.set_message(recv_request.message());
   response_writer.Finish(send_response, Status::OK, tag(3));
-  response_reader->Finish(&recv_response, &recv_status, tag(4));
   Verifier().Expect(3, true).Expect(4, true).Verify(cq_.get());
 
   EXPECT_EQ(send_response.message(), recv_response.message());
@@ -929,6 +927,7 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataRpc) {
 
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
       stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
+  response_reader->ReadInitialMetadata(tag(4));
 
   service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
                         cq_.get(), tag(2));
@@ -937,10 +936,7 @@ TEST_P(AsyncEnd2endTest, ServerInitialMetadataRpc) {
   srv_ctx.AddInitialMetadata(meta1.first, meta1.second);
   srv_ctx.AddInitialMetadata(meta2.first, meta2.second);
   response_writer.SendInitialMetadata(tag(3));
-  Verifier().Expect(3, true).Verify(cq_.get());
-
-  response_reader->ReadInitialMetadata(tag(4));
-  Verifier().Expect(4, true).Verify(cq_.get());
+  Verifier().Expect(3, true).Expect(4, true).Verify(cq_.get());
   auto server_initial_metadata = cli_ctx.GetServerInitialMetadata();
   EXPECT_EQ(meta1.second,
             ToString(server_initial_metadata.find(meta1.first)->second));
@@ -976,6 +972,7 @@ TEST_P(AsyncEnd2endTest, ServerTrailingMetadataRpc) {
 
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
       stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
+  response_reader->Finish(&recv_response, &recv_status, tag(5));
 
   service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
                         cq_.get(), tag(2));
@@ -988,7 +985,6 @@ TEST_P(AsyncEnd2endTest, ServerTrailingMetadataRpc) {
   srv_ctx.AddTrailingMetadata(meta1.first, meta1.second);
   srv_ctx.AddTrailingMetadata(meta2.first, meta2.second);
   response_writer.Finish(send_response, Status::OK, tag(4));
-  response_reader->Finish(&recv_response, &recv_status, tag(5));
 
   Verifier().Expect(4, true).Expect(5, true).Verify(cq_.get());
 
@@ -1036,6 +1032,7 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
 
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
       stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
+  response_reader->ReadInitialMetadata(tag(4));
 
   service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
                         cq_.get(), tag(2));
@@ -1051,9 +1048,7 @@ TEST_P(AsyncEnd2endTest, MetadataRpc) {
   srv_ctx.AddInitialMetadata(meta3.first, meta3.second);
   srv_ctx.AddInitialMetadata(meta4.first, meta4.second);
   response_writer.SendInitialMetadata(tag(3));
-  Verifier().Expect(3, true).Verify(cq_.get());
-  response_reader->ReadInitialMetadata(tag(4));
-  Verifier().Expect(4, true).Verify(cq_.get());
+  Verifier().Expect(3, true).Expect(4, true).Verify(cq_.get());
   auto server_initial_metadata = cli_ctx.GetServerInitialMetadata();
   EXPECT_EQ(meta3.second,
             ToString(server_initial_metadata.find(meta3.first)->second));
@@ -1096,6 +1091,7 @@ TEST_P(AsyncEnd2endTest, ServerCheckCancellation) {
   send_request.set_message(GetParam().message_content);
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
       stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
+  response_reader->Finish(&recv_response, &recv_status, tag(4));
 
   srv_ctx.AsyncNotifyWhenDone(tag(5));
   service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
@@ -1105,11 +1101,8 @@ TEST_P(AsyncEnd2endTest, ServerCheckCancellation) {
   EXPECT_EQ(send_request.message(), recv_request.message());
 
   cli_ctx.TryCancel();
-  Verifier().Expect(5, true).Verify(cq_.get());
+  Verifier().Expect(5, true).Expect(4, true).Verify(cq_.get());
   EXPECT_TRUE(srv_ctx.IsCancelled());
-
-  response_reader->Finish(&recv_response, &recv_status, tag(4));
-  Verifier().Expect(4, true).Verify(cq_.get());
 
   EXPECT_EQ(StatusCode::CANCELLED, recv_status.error_code());
 }
@@ -1131,6 +1124,7 @@ TEST_P(AsyncEnd2endTest, ServerCheckDone) {
   send_request.set_message(GetParam().message_content);
   std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
       stub_->AsyncEcho(&cli_ctx, send_request, cq_.get()));
+  response_reader->Finish(&recv_response, &recv_status, tag(4));
 
   srv_ctx.AsyncNotifyWhenDone(tag(5));
   service_->RequestEcho(&srv_ctx, &recv_request, &response_writer, cq_.get(),
@@ -1141,7 +1135,6 @@ TEST_P(AsyncEnd2endTest, ServerCheckDone) {
 
   send_response.set_message(recv_request.message());
   response_writer.Finish(send_response, Status::OK, tag(3));
-  response_reader->Finish(&recv_response, &recv_status, tag(4));
   Verifier().Expect(3, true).Expect(4, true).Expect(5, true).Verify(cq_.get());
   EXPECT_FALSE(srv_ctx.IsCancelled());
 
@@ -1223,8 +1216,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     srv_ctx.AsyncNotifyWhenDone(tag(11));
     service_->RequestRequestStream(&srv_ctx, &srv_stream, cq_.get(), cq_.get(),
                                    tag(2));
-    std::thread t1(
-        [this, &cli_cq] { Verifier().Expect(1, true).Verify(&cli_cq); });
+    std::thread t1([&cli_cq] { Verifier().Expect(1, true).Verify(&cli_cq); });
     Verifier().Expect(2, true).Verify(cq_.get());
     t1.join();
 
@@ -1248,7 +1240,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
         (server_try_cancel == CANCEL_BEFORE_PROCESSING);
 
     std::thread cli_thread([&cli_cq, &cli_stream, &expected_client_cq_result,
-                            &ignore_client_cq_result, this] {
+                            &ignore_client_cq_result] {
       EchoRequest send_request;
       // Client sends 3 messages (tags 3, 4 and 5)
       for (int tag_idx = 3; tag_idx <= 5; tag_idx++) {
@@ -1379,8 +1371,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     service_->RequestResponseStream(&srv_ctx, &recv_request, &srv_stream,
                                     cq_.get(), cq_.get(), tag(2));
 
-    std::thread t1(
-        [this, &cli_cq] { Verifier().Expect(1, true).Verify(&cli_cq); });
+    std::thread t1([&cli_cq] { Verifier().Expect(1, true).Verify(&cli_cq); });
     Verifier().Expect(2, true).Verify(cq_.get());
     t1.join();
 
@@ -1405,7 +1396,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
     }
 
     std::thread cli_thread([&cli_cq, &cli_stream, &expected_client_cq_result,
-                            &ignore_client_cq_result, this] {
+                            &ignore_client_cq_result] {
       // Client attempts to read the three messages from the server
       for (int tag_idx = 6; tag_idx <= 8; tag_idx++) {
         EchoResponse recv_response;

@@ -22,6 +22,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 grpc_byte_buffer* grpc_raw_byte_buffer_create(grpc_slice* slices,

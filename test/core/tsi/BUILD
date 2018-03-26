@@ -41,6 +41,20 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_test(
+    name = "ssl_session_cache_test",
+    srcs = ["ssl_session_cache_test.cc"],
+    language = "C++",
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:grpc",
+        "//:gpr",
+        "//:tsi",
+        "//test/core/util:gpr_test_util",
+    ],
+)
 
 grpc_cc_test(
     name = "ssl_transport_security_test",

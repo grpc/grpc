@@ -24,6 +24,7 @@ LANGUAGES = [
     'core',
     'cpp',
     'csharp',
+    'node',
     'objc',
     'php',
     'python',

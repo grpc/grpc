@@ -45,6 +45,8 @@ EXPORTS
     grpc_insecure_channel_create
     grpc_lame_client_channel_create
     grpc_channel_destroy
+    grpc_channel_get_trace
+    grpc_channel_get_uuid
     grpc_call_cancel
     grpc_call_cancel_with_status
     grpc_call_ref
@@ -83,6 +85,9 @@ EXPORTS
     grpc_auth_context_add_property
     grpc_auth_context_add_cstring_property
     grpc_auth_context_set_peer_identity_property_name
+    grpc_ssl_session_cache_create_lru
+    grpc_ssl_session_cache_destroy
+    grpc_ssl_session_cache_create_channel_arg
     grpc_channel_credentials_release
     grpc_google_default_credentials_create
     grpc_set_ssl_roots_override_callback

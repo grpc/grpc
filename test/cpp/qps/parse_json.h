@@ -19,8 +19,8 @@
 #ifndef TEST_QPS_PARSE_JSON_H
 #define TEST_QPS_PARSE_JSON_H
 
-#include <grpc++/impl/codegen/config_protobuf.h>
-#include <grpc++/support/config.h>
+#include <grpcpp/impl/codegen/config_protobuf.h>
+#include <grpcpp/support/config.h>
 
 namespace grpc {
 namespace testing {

@@ -24,7 +24,7 @@
 #include <random>
 #include <vector>
 
-#include <grpc++/support/config.h>
+#include <grpcpp/support/config.h>
 
 namespace grpc {
 namespace testing {

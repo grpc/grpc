@@ -18,12 +18,12 @@
 
 #include <memory>
 
-#include <grpc++/channel.h>
-#include <grpc++/client_context.h>
-#include <grpc++/create_channel.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
-#include <grpc++/server_context.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/server_context.h>
 
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/iomgr/port.h"
@@ -128,6 +128,7 @@ class NonblockingTest : public ::testing::Test {
           stub_->PrepareAsyncEcho(&cli_ctx, send_request, cq_.get()));
 
       response_reader->StartCall();
+      response_reader->Finish(&recv_response, &recv_status, tag(4));
 
       service_->RequestEcho(&srv_ctx, &recv_request, &response_writer,
                             cq_.get(), cq_.get(), tag(2));
@@ -141,7 +142,6 @@ class NonblockingTest : public ::testing::Test {
 
       send_response.set_message(recv_request.message());
       response_writer.Finish(send_response, Status::OK, tag(3));
-      response_reader->Finish(&recv_response, &recv_status, tag(4));
 
       int tagsum = 0;
       int tagprod = 1;

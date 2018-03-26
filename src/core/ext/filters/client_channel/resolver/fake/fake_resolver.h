@@ -56,6 +56,10 @@ class FakeResolverResponseGenerator
   // resolver will return the last value set via \a SetResponse().
   void SetReresolutionResponse(grpc_channel_args* response);
 
+  // Tells the resolver to return a transient failure (signalled by
+  // returning a null result with no error).
+  void SetFailure();
+
   // Returns a channel arg containing \a generator.
   static grpc_arg MakeChannelArg(FakeResolverResponseGenerator* generator);
 
@@ -68,6 +72,7 @@ class FakeResolverResponseGenerator
 
   static void SetResponseLocked(void* arg, grpc_error* error);
   static void SetReresolutionResponseLocked(void* arg, grpc_error* error);
+  static void SetFailureLocked(void* arg, grpc_error* error);
 
   FakeResolver* resolver_ = nullptr;  // Do not own.
 };

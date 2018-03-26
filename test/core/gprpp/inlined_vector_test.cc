@@ -87,14 +87,17 @@ TEST(InlinedVectorTest, ClearAndRepopulate) {
 }
 
 TEST(InlinedVectorTest, ConstIndexOperator) {
-  const int kNumElements = 10;
+  constexpr int kNumElements = 10;
   InlinedVector<int, 5> v;
   EXPECT_EQ(0UL, v.size());
   for (int i = 0; i < kNumElements; ++i) {
     v.push_back(i);
     EXPECT_EQ(i + 1UL, v.size());
   }
-  auto const_func = [kNumElements](const InlinedVector<int, 5>& v) {
+  // The following lambda function is exceptionally allowed to use an anonymous
+  // capture due to the erroneous behavior of the MSVC compiler, that refuses to
+  // capture the kNumElements constexpr, something allowed by the standard.
+  auto const_func = [&](const InlinedVector<int, 5>& v) {
     for (int i = 0; i < kNumElements; ++i) {
       EXPECT_EQ(i, v[i]);
     }

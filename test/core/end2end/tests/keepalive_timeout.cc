@@ -102,7 +102,7 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
   grpc_arg keepalive_arg_elems[3];
   keepalive_arg_elems[0].type = GRPC_ARG_INTEGER;
   keepalive_arg_elems[0].key = const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS);
-  keepalive_arg_elems[0].value.integer = 1500;
+  keepalive_arg_elems[0].value.integer = 3500;
   keepalive_arg_elems[1].type = GRPC_ARG_INTEGER;
   keepalive_arg_elems[1].key = const_cast<char*>(GRPC_ARG_KEEPALIVE_TIMEOUT_MS);
   keepalive_arg_elems[1].value.integer = 0;

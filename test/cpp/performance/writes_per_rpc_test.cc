@@ -16,14 +16,14 @@
  *
  */
 
-#include <grpc++/channel.h>
-#include <grpc++/create_channel.h>
-#include <grpc++/impl/grpc_library.h>
-#include <grpc++/security/credentials.h>
-#include <grpc++/security/server_credentials.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
 #include <grpc/support/log.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/impl/grpc_library.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
 #include <gtest/gtest.h>
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
@@ -207,13 +207,13 @@ static double UnaryPingPong(int request_size, int response_size) {
         stub->AsyncEcho(&cli_ctx, send_request, fixture->cq()));
     void* t;
     bool ok;
+    response_reader->Finish(&recv_response, &recv_status, tag(4));
     GPR_ASSERT(fixture->cq()->Next(&t, &ok));
     GPR_ASSERT(ok);
     GPR_ASSERT(t == tag(0) || t == tag(1));
     intptr_t slot = reinterpret_cast<intptr_t>(t);
     ServerEnv* senv = server_env[slot];
     senv->response_writer.Finish(send_response, Status::OK, tag(3));
-    response_reader->Finish(&recv_response, &recv_status, tag(4));
     for (int i = (1 << 3) | (1 << 4); i != 0;) {
       GPR_ASSERT(fixture->cq()->Next(&t, &ok));
       GPR_ASSERT(ok);

@@ -47,6 +47,7 @@ static grpc_iomgr_object g_root_object;
 
 void grpc_iomgr_init() {
   grpc_core::ExecCtx exec_ctx;
+  grpc_determine_iomgr_platform();
   g_shutdown = 0;
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_rcv);

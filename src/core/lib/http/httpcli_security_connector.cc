@@ -102,8 +102,8 @@ static grpc_security_connector_vtable httpcli_ssl_vtable = {
     httpcli_ssl_destroy, httpcli_ssl_check_peer, httpcli_ssl_cmp};
 
 static grpc_security_status httpcli_ssl_channel_security_connector_create(
-    const char* pem_root_certs, const char* secure_peer_name,
-    grpc_channel_security_connector** sc) {
+    const char* pem_root_certs, const tsi_ssl_root_certs_store* root_store,
+    const char* secure_peer_name, grpc_channel_security_connector** sc) {
   tsi_result result = TSI_OK;
   grpc_httpcli_ssl_channel_security_connector* c;
 
@@ -121,8 +121,12 @@ static grpc_security_status httpcli_ssl_channel_security_connector_create(
   if (secure_peer_name != nullptr) {
     c->secure_peer_name = gpr_strdup(secure_peer_name);
   }
-  result = tsi_create_ssl_client_handshaker_factory(
-      nullptr, pem_root_certs, nullptr, nullptr, 0, &c->handshaker_factory);
+  tsi_ssl_client_handshaker_options options;
+  memset(&options, 0, sizeof(options));
+  options.pem_root_certs = pem_root_certs;
+  options.root_store = root_store;
+  result = tsi_create_ssl_client_handshaker_factory_with_options(
+      &options, &c->handshaker_factory);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
             tsi_result_to_string(result));
@@ -169,8 +173,11 @@ static void ssl_handshake(void* arg, grpc_endpoint* tcp, const char* host,
                           grpc_millis deadline,
                           void (*on_done)(void* arg, grpc_endpoint* endpoint)) {
   on_done_closure* c = static_cast<on_done_closure*>(gpr_malloc(sizeof(*c)));
-  const char* pem_root_certs = grpc_get_default_ssl_roots();
-  if (pem_root_certs == nullptr) {
+  const char* pem_root_certs =
+      grpc_core::DefaultSslRootStore::GetPemRootCerts();
+  const tsi_ssl_root_certs_store* root_store =
+      grpc_core::DefaultSslRootStore::GetRootStore();
+  if (root_store == nullptr) {
     gpr_log(GPR_ERROR, "Could not get default pem root certs.");
     on_done(arg, nullptr);
     gpr_free(c);
@@ -180,7 +187,7 @@ static void ssl_handshake(void* arg, grpc_endpoint* tcp, const char* host,
   c->arg = arg;
   grpc_channel_security_connector* sc = nullptr;
   GPR_ASSERT(httpcli_ssl_channel_security_connector_create(
-                 pem_root_certs, host, &sc) == GRPC_SECURITY_OK);
+                 pem_root_certs, root_store, host, &sc) == GRPC_SECURITY_OK);
   grpc_arg channel_arg = grpc_security_connector_to_arg(&sc->base);
   grpc_channel_args args = {1, &channel_arg};
   c->handshake_mgr = grpc_handshake_manager_create();

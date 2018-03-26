@@ -22,8 +22,8 @@
 #include <string>
 #include <vector>
 
-#include <grpc++/create_channel.h>
 #include <grpc/support/log.h>
+#include <grpcpp/create_channel.h>
 
 #include "test/cpp/interop/interop_client.h"
 #include "test/cpp/util/metrics_server.h"

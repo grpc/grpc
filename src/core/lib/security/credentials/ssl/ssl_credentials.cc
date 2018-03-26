@@ -24,6 +24,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/surface/api_trace.h"
+#include "src/core/tsi/ssl_transport_security.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -56,16 +57,22 @@ static grpc_security_status ssl_create_security_connector(
   grpc_ssl_credentials* c = reinterpret_cast<grpc_ssl_credentials*>(creds);
   grpc_security_status status = GRPC_SECURITY_OK;
   const char* overridden_target_name = nullptr;
+  tsi_ssl_session_cache* ssl_session_cache = nullptr;
   for (size_t i = 0; args && i < args->num_args; i++) {
     grpc_arg* arg = &args->args[i];
     if (strcmp(arg->key, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG) == 0 &&
         arg->type == GRPC_ARG_STRING) {
       overridden_target_name = arg->value.string;
-      break;
+    }
+    if (strcmp(arg->key, GRPC_SSL_SESSION_CACHE_ARG) == 0 &&
+        arg->type == GRPC_ARG_POINTER) {
+      ssl_session_cache =
+          static_cast<tsi_ssl_session_cache*>(arg->value.pointer.p);
     }
   }
   status = grpc_ssl_channel_security_connector_create(
-      creds, call_creds, &c->config, target, overridden_target_name, sc);
+      creds, call_creds, &c->config, target, overridden_target_name,
+      ssl_session_cache, sc);
   if (status != GRPC_SECURITY_OK) {
     return status;
   }

@@ -184,24 +184,23 @@ for cs in call_stacks:
 
 def percentile(N, percent, key=lambda x: x):
     """
-    Find the percentile of a list of values.
+    Find the percentile of an already sorted list of values.
 
-    @parameter N - is a list of values. Note N MUST BE already sorted.
-    @parameter percent - a float value from 0.0 to 1.0.
+    @parameter N - is a list of values. MUST be already sorted.
+    @parameter percent - a float value from [0.0,1.0].
     @parameter key - optional key function to compute value from each element of N.
 
     @return - the percentile of the values
     """
     if not N:
         return None
-    k = (len(N) - 1) * percent
-    f = math.floor(k)
-    c = math.ceil(k)
-    if f == c:
-        return key(N[int(k)])
-    d0 = key(N[int(f)]) * (c - k)
-    d1 = key(N[int(c)]) * (k - f)
-    return d0 + d1
+    float_idx = (len(N) - 1) * percent
+    idx = int(float_idx)
+    result = key(N[idx])
+    if idx < len(N) - 1:
+        # interpolate with the next element's value
+        result += (float_idx - idx) * (key(N[idx + 1]) - key(N[idx]))
+    return result
 
 
 def tidy_tag(tag):

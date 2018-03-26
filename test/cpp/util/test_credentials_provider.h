@@ -21,9 +21,9 @@
 
 #include <memory>
 
-#include <grpc++/security/credentials.h>
-#include <grpc++/security/server_credentials.h>
-#include <grpc++/support/channel_arguments.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/support/channel_arguments.h>
 
 namespace grpc {
 namespace testing {
