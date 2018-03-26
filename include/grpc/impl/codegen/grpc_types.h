@@ -258,6 +258,16 @@ typedef struct {
     secure channel is an SSL channel). If this parameter is specified and the
     underlying is not an SSL channel, it will just be ignored. */
 #define GRPC_SSL_TARGET_NAME_OVERRIDE_ARG "grpc.ssl_target_name_override"
+/** This *should* be used for testing only.
+    The caller of the secure_channel_create functions may override the target
+    name used for fake security host name checking using this channel argument
+    which is of type \a GRPC_ARG_STRING. If this argument is not specified, the
+    name used for fake security host name checking will be the target parameter
+    (assuming that the secure channel is a fake security channel). If this
+    parameter is specified and the underlying is not a fake security channel, it
+    will just be ignored. */
+#define GRPC_FAKE_SECURITY_TARGET_NAME_OVERRIDE_ARG \
+  "grpc.fake_security_target_name_override"
 /** If non-zero, a pointer to a session cache (a pointer of type
     grpc_ssl_session_cache*). (use grpc_ssl_session_cache_arg_vtable() to fetch
     an appropriate pointer arg vtable) */

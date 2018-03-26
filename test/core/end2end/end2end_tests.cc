@@ -40,6 +40,8 @@ extern void binary_metadata(grpc_end2end_test_config config);
 extern void binary_metadata_pre_init(void);
 extern void call_creds(grpc_end2end_test_config config);
 extern void call_creds_pre_init(void);
+extern void call_host_override(grpc_end2end_test_config config);
+extern void call_host_override_pre_init(void);
 extern void cancel_after_accept(grpc_end2end_test_config config);
 extern void cancel_after_accept_pre_init(void);
 extern void cancel_after_client_done(grpc_end2end_test_config config);
@@ -190,6 +192,7 @@ void grpc_end2end_tests_pre_init(void) {
   bad_ping_pre_init();
   binary_metadata_pre_init();
   call_creds_pre_init();
+  call_host_override_pre_init();
   cancel_after_accept_pre_init();
   cancel_after_client_done_pre_init();
   cancel_after_invoke_pre_init();
@@ -274,6 +277,7 @@ void grpc_end2end_tests(int argc, char **argv,
     bad_ping(config);
     binary_metadata(config);
     call_creds(config);
+    call_host_override(config);
     cancel_after_accept(config);
     cancel_after_client_done(config);
     cancel_after_invoke(config);
@@ -366,6 +370,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("call_creds", argv[i])) {
       call_creds(config);
+      continue;
+    }
+    if (0 == strcmp("call_host_override", argv[i])) {
+      call_host_override(config);
       continue;
     }
     if (0 == strcmp("cancel_after_accept", argv[i])) {

@@ -9756,6 +9756,7 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/bad_ping.cc \
     test/core/end2end/tests/binary_metadata.cc \
     test/core/end2end/tests/call_creds.cc \
+    test/core/end2end/tests/call_host_override.cc \
     test/core/end2end/tests/cancel_after_accept.cc \
     test/core/end2end/tests/cancel_after_client_done.cc \
     test/core/end2end/tests/cancel_after_invoke.cc \
@@ -9870,6 +9871,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/bad_hostname.cc \
     test/core/end2end/tests/bad_ping.cc \
     test/core/end2end/tests/binary_metadata.cc \
+    test/core/end2end/tests/call_host_override.cc \
     test/core/end2end/tests/cancel_after_accept.cc \
     test/core/end2end/tests/cancel_after_client_done.cc \
     test/core/end2end/tests/cancel_after_invoke.cc \

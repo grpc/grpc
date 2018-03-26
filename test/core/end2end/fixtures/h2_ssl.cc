@@ -109,10 +109,7 @@ static void chttp2_init_client_simple_ssl_secure_fullstack(
   grpc_channel_args* new_client_args =
       grpc_channel_args_copy_and_add(client_args, &ssl_name_override, 1);
   chttp2_init_client_secure_fullstack(f, new_client_args, ssl_creds);
-  {
-    grpc_core::ExecCtx exec_ctx;
-    grpc_channel_args_destroy(new_client_args);
-  }
+  grpc_channel_args_destroy(new_client_args);
 }
 
 static int fail_server_auth_check(grpc_channel_args* server_args) {
