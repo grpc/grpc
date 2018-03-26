@@ -38,8 +38,8 @@ class CallMetricValue {
     total_ += other.total_;
   }
 
+  // Getters.
   uint64_t count() const { return count_; }
-
   double total() const { return total_; }
 
  private:
@@ -67,6 +67,13 @@ class Key {
            user_id_ == other.user_id_ && client_ip_hex_ == other.client_ip_hex_;
   }
 
+  // Getters.
+  const grpc::string& lb_id() const { return lb_id_; }
+  const grpc::string& lb_tag() const { return lb_tag_; }
+  const grpc::string& user_id() const { return user_id_; }
+  const grpc::string& client_ip_hex() const { return client_ip_hex_; }
+
+ private:
   struct Hasher {
     size_t operator()(const Key& k) const {
       return std::hash<grpc::string>()(k.lb_id_) ^
@@ -76,6 +83,8 @@ class Key {
     }
   };
 
+  // To use Hasher.
+  friend class PerBalancerStore;
   grpc::string lb_id_;
   grpc::string lb_tag_;
   grpc::string user_id_;
@@ -84,6 +93,16 @@ class Key {
 
 class Value {
  public:
+  Value(uint64_t start_count = 0, uint64_t ok_count = 0,
+        uint64_t error_count = 0, double bytes_sent = 0, double bytes_recv = 0,
+        double latency_ms = 0)
+      : start_count_(start_count),
+        ok_count_(ok_count),
+        error_count_(error_count),
+        bytes_sent_(bytes_sent),
+        bytes_recv_(bytes_recv),
+        latency_ms_(latency_ms) {}
+
   void MergeFrom(const Value& other) {
     start_count_ += other.start_count_;
     ok_count_ += other.ok_count_;
@@ -118,6 +137,24 @@ class Value {
            ", latency_ms_=" + grpc::to_string(latency_ms_) + "]";
   }
 
+  bool InsertCallMetric(const grpc::string& metric_name,
+                        const CallMetricValue& metric_value) {
+    return call_metrics_.insert({metric_name, metric_value}).second;
+  }
+
+  // Getters.
+  uint64_t start_count() const { return start_count_; }
+  uint64_t ok_count() const { return ok_count_; }
+  uint64_t error_count() const { return error_count_; }
+  double bytes_sent() const { return bytes_sent_; }
+  double bytes_recv() const { return bytes_recv_; }
+  double latency_ms() const { return latency_ms_; }
+  const std::unordered_map<grpc::string, CallMetricValue>& call_metrics()
+      const {
+    return call_metrics_;
+  }
+
+ private:
   uint64_t start_count_ = 0;
   uint64_t ok_count_ = 0;
   uint64_t error_count_ = 0;
@@ -158,11 +195,14 @@ class PerBalancerStore {
            "]";
   }
 
+  // Getters.
+  const grpc::string& lb_id() const { return lb_id_; }
+  const grpc::string& load_key() const { return load_key_; }
+
+ private:
   grpc::string lb_id_;
   // TODO(juanlishen): Use bytestring protobuf type?
   grpc::string load_key_;
-
- private:
   std::unordered_map<Key, Value, Key::Hasher> container_;
   uint64_t num_calls_in_progress_ = 0;
   uint64_t last_reported_num_calls_in_progress_ = 0;

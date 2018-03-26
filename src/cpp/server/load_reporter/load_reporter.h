@@ -29,10 +29,6 @@
 #include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/config.h>
 
-// TODO(juanlishen): Difference?
-//#include
-//"src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
-
 #include "src/cpp/server/load_reporter/load_data_store.h"
 #include "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h"
 

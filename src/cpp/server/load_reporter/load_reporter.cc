@@ -101,28 +101,29 @@ LoadBalancingFeedback LoadReporter::GenerateLoadBalancingFeedback() {
         Key key = entry.first;
         Value value = entry.second;
         auto load = loads.Add();
-        load->set_load_balance_tag(key.lb_tag_);
-        load->set_user_id(key.user_id_);
+        load->set_load_balance_tag(key.lb_tag());
+        load->set_user_id(key.user_id());
         // TODO(juanlishen): Bytes field. Need decoding?
-        load->set_client_ip_address(key.client_ip_hex_);
-        load->set_num_calls_started(value.start_count_);
-        load->set_num_calls_finished_without_error(value.ok_count_);
-        load->set_num_calls_finished_with_error(value.error_count_);
-        load->set_total_bytes_sent(static_cast<int64_t>(value.bytes_sent_));
-        load->set_total_bytes_received(static_cast<int64_t>(value.bytes_recv_));
+        load->set_client_ip_address(key.client_ip_hex());
+        load->set_num_calls_started(value.start_count());
+        load->set_num_calls_finished_without_error(value.ok_count());
+        load->set_num_calls_finished_with_error(value.error_count());
+        load->set_total_bytes_sent(static_cast<int64_t>(value.bytes_sent()));
+        load->set_total_bytes_received(
+            static_cast<int64_t>(value.bytes_recv()));
         Duration latency;
-        latency.set_seconds(static_cast<int64_t>(value.latency_ms_ / 1000));
-        latency.set_nanos((static_cast<int32_t>(value.latency_ms_) % 1000) *
+        latency.set_seconds(static_cast<int64_t>(value.latency_ms() / 1000));
+        latency.set_nanos((static_cast<int32_t>(value.latency_ms()) % 1000) *
                           1000);
         load->set_allocated_total_latency(&latency);
-        for (auto call_metric : value.call_metrics_) {
+        for (auto call_metric : value.call_metrics()) {
           auto call_metric_data = load->add_metric_data();
           call_metric_data->set_metric_name(call_metric.first);
           call_metric_data->set_num_calls_finished_with_metric(
               call_metric.second.count());
           call_metric_data->set_total_metric_value(call_metric.second.total());
         }
-        if (per_balancer_store->lb_id_ != lb_id) {
+        if (per_balancer_store->lb_id() != lb_id) {
           // This per-balancer store is an orphan assigned to this receiving
           // balancer. Extract an OrphanedLoadIdentifier from the
           // per-balancer store and attach it to the load.
@@ -135,7 +136,7 @@ LoadBalancingFeedback LoadReporter::GenerateLoadBalancingFeedback() {
       auto load = loads.Add();
       load->set_num_calls_in_progress(
           per_balancer_store->GetNumCallsInProgressForReport());
-      if (per_balancer_store->lb_id_ != lb_id) {
+      if (per_balancer_store->lb_id() != lb_id) {
         AttachOrphanLoadId(load, per_balancer_store);
       }
     }
@@ -145,13 +146,13 @@ LoadBalancingFeedback LoadReporter::GenerateLoadBalancingFeedback() {
 
 void LoadReporter::AttachOrphanLoadId(
     Load* load, const PerBalancerStore* per_balancer_store) {
-  if (per_balancer_store->lb_id_ == INVALID_LBID) {
+  if (per_balancer_store->lb_id() == INVALID_LBID) {
     load->set_load_key_unknown(true);
   } else {
     load->set_load_key_unknown(false);
     OrphanedLoadIdentifier orphan_load_identifier;
-    orphan_load_identifier.set_load_key(per_balancer_store->load_key_);
-    orphan_load_identifier.set_load_balancer_id(per_balancer_store->lb_id_);
+    orphan_load_identifier.set_load_key(per_balancer_store->load_key());
+    orphan_load_identifier.set_load_balancer_id(per_balancer_store->lb_id());
     load->set_allocated_orphaned_load_identifier(&orphan_load_identifier);
   }
 }

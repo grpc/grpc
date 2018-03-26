@@ -62,8 +62,8 @@ bool PerBalancerStoresContains(
   auto original_per_balancer_store =
       load_data_store.GetPerBalancerStoreForTest(hostname, lb_id);
   EXPECT_NE(original_per_balancer_store, nullptr);
-  EXPECT_EQ(original_per_balancer_store->lb_id_, lb_id);
-  EXPECT_EQ(original_per_balancer_store->load_key_, load_key);
+  EXPECT_EQ(original_per_balancer_store->lb_id(), lb_id);
+  EXPECT_EQ(original_per_balancer_store->load_key(), load_key);
   for (auto per_balancer_store : per_balancer_stores) {
     if (per_balancer_store == original_per_balancer_store) {
       return true;
@@ -76,7 +76,7 @@ grpc::string FormatLbId(size_t index) {
   return "LB_ID_" + std::to_string(index);
 }
 
-TEST(LoadDataStore, AssignToSelf) {
+TEST(LoadDataStoreTest, AssignToSelf) {
   LoadDataStore load_data_store;
   load_data_store.ReportStreamCreated(HOSTNAME_1, LB_ID_1, LOAD_KEY_1);
   auto assigned_stores = load_data_store.GetAssignedStores(HOSTNAME_1, LB_ID_1);
@@ -84,7 +84,7 @@ TEST(LoadDataStore, AssignToSelf) {
                                         HOSTNAME_1, LB_ID_1, LOAD_KEY_1));
 }
 
-TEST(LoadDataStore, ReassignOrphanStores) {
+TEST(LoadDataStoreTest, ReassignOrphanStores) {
   LoadDataStore load_data_store;
   load_data_store.ReportStreamCreated(HOSTNAME_1, LB_ID_1, LOAD_KEY_1);
   load_data_store.ReportStreamCreated(HOSTNAME_1, LB_ID_2, LOAD_KEY_1);
@@ -127,7 +127,7 @@ TEST(LoadDataStore, ReassignOrphanStores) {
                                         HOSTNAME_2, LB_ID_4, LOAD_KEY_1));
 }
 
-TEST(LoadDataStore, OrphanAssignmentIsSticky) {
+TEST(LoadDataStoreTest, OrphanAssignmentIsSticky) {
   LoadDataStore load_data_store;
   std::set<grpc::string> active_lb_ids;
   size_t num_lb_ids = 1000;
@@ -183,7 +183,7 @@ TEST(LoadDataStore, OrphanAssignmentIsSticky) {
   EXPECT_EQ(orphaned_lb_id_occurences, 1U);
 }
 
-TEST(LoadDataStore, HostTemporarilyLoseAllStreams) {
+TEST(LoadDataStoreTest, HostTemporarilyLoseAllStreams) {
   LoadDataStore load_data_store;
   load_data_store.ReportStreamCreated(HOSTNAME_1, LB_ID_1, LOAD_KEY_1);
   load_data_store.ReportStreamCreated(HOSTNAME_2, LB_ID_2, LOAD_KEY_1);
@@ -232,7 +232,7 @@ TEST(LoadDataStore, HostTemporarilyLoseAllStreams) {
                                         HOSTNAME_1, LB_ID_3, LOAD_KEY_2));
 }
 
-TEST(LoadDataStore, OneStorePerLbId) {
+TEST(LoadDataStoreTest, OneStorePerLbId) {
   LoadDataStore load_data_store;
   EXPECT_EQ(load_data_store.GetPerBalancerStoreForTest(HOSTNAME_1, LB_ID_1),
             nullptr);
@@ -274,7 +274,7 @@ TEST(LoadDataStore, OneStorePerLbId) {
             nullptr);
 }
 
-TEST(LoadDataStore, ExactlyOnceAssignment) {
+TEST(LoadDataStoreTest, ExactlyOnceAssignment) {
   LoadDataStore load_data_store;
   size_t num_create = 100;
   size_t num_close = 50;
@@ -288,7 +288,7 @@ TEST(LoadDataStore, ExactlyOnceAssignment) {
   for (size_t i = num_close; i < num_create; ++i) {
     for (auto assigned_store :
          load_data_store.GetAssignedStores(HOSTNAME_1, FormatLbId(i))) {
-      EXPECT_TRUE(reported_lb_ids.insert(assigned_store->lb_id_).second);
+      EXPECT_TRUE(reported_lb_ids.insert(assigned_store->lb_id()).second);
     }
   }
   // Add one for INVALID_LBID.
@@ -296,22 +296,19 @@ TEST(LoadDataStore, ExactlyOnceAssignment) {
   EXPECT_NE(reported_lb_ids.find(INVALID_LBID), reported_lb_ids.end());
 }
 
-TEST(LoadDataStore, UnknownBalancerIdTracking) {
+TEST(LoadDataStoreTest, UnknownBalancerIdTracking) {
   LoadDataStore load_data_store;
   load_data_store.ReportStreamCreated(HOSTNAME_1, LB_ID_1, LOAD_KEY_1);
   // Merge data for a known LB ID.
-  Value v1;
-  v1.start_count_ = 192;
+  Value v1(192);
   load_data_store.MergeRow(HOSTNAME_1, KEY_1, v1);
   // Merge data for unknown LB ID.
-  Value v2;
-  v2.start_count_ = 23;
+  Value v2(23);
   EXPECT_FALSE(load_data_store.IsTrackedUnknownBalancerId(LB_ID_2));
   load_data_store.MergeRow(HOSTNAME_1,
                            Key(LB_ID_2, LB_TAG_1, USER_1, CLIENT_IP_1), v2);
   EXPECT_TRUE(load_data_store.IsTrackedUnknownBalancerId(LB_ID_2));
-  Value v3;
-  v3.start_count_ = 952;
+  Value v3(952);
   load_data_store.MergeRow(HOSTNAME_2,
                            Key(LB_ID_3, LB_TAG_1, USER_1, CLIENT_IP_1), v3);
   EXPECT_TRUE(load_data_store.IsTrackedUnknownBalancerId(LB_ID_3));
@@ -319,40 +316,37 @@ TEST(LoadDataStore, UnknownBalancerIdTracking) {
   auto store_lb_id_1 =
       load_data_store.GetPerBalancerStoreForTest(HOSTNAME_1, LB_ID_1);
   EXPECT_EQ(store_lb_id_1->container().size(), 1U);
-  EXPECT_EQ(store_lb_id_1->container().find(KEY_1)->second.start_count_,
-            v1.start_count_);
-  EXPECT_EQ(store_lb_id_1->GetNumCallsInProgressForReport(), v1.start_count_);
+  EXPECT_EQ(store_lb_id_1->container().find(KEY_1)->second.start_count(),
+            v1.start_count());
+  EXPECT_EQ(store_lb_id_1->GetNumCallsInProgressForReport(), v1.start_count());
   // No PerBalancerStore created for Unknown LB ID.
   EXPECT_EQ(load_data_store.GetPerBalancerStoreForTest(HOSTNAME_1, LB_ID_2),
             nullptr);
   EXPECT_EQ(load_data_store.GetPerBalancerStoreForTest(HOSTNAME_2, LB_ID_3),
             nullptr);
   // End all the started RPCs for LB_ID_1.
-  Value v4;
-  v4.ok_count_ = v1.start_count_;
+  Value v4(0, v1.start_count());
   load_data_store.MergeRow(HOSTNAME_1, KEY_1, v4);
   EXPECT_EQ(store_lb_id_1->container().size(), 1U);
-  EXPECT_EQ(store_lb_id_1->container().find(KEY_1)->second.start_count_,
-            v1.start_count_);
-  EXPECT_EQ(store_lb_id_1->container().find(KEY_1)->second.ok_count_,
-            v4.ok_count_);
+  EXPECT_EQ(store_lb_id_1->container().find(KEY_1)->second.start_count(),
+            v1.start_count());
+  EXPECT_EQ(store_lb_id_1->container().find(KEY_1)->second.ok_count(),
+            v4.ok_count());
   EXPECT_EQ(store_lb_id_1->GetNumCallsInProgressForReport(), 0U);
   EXPECT_FALSE(load_data_store.IsTrackedUnknownBalancerId(LB_ID_1));
   // End all the started RPCs for LB_ID_2.
-  Value v5;
-  v5.ok_count_ = v2.start_count_;
+  Value v5(0, v2.start_count());
   load_data_store.MergeRow(HOSTNAME_1,
                            Key(LB_ID_2, LB_TAG_1, USER_1, CLIENT_IP_1), v5);
   EXPECT_FALSE(load_data_store.IsTrackedUnknownBalancerId(LB_ID_2));
   // End some of the started RPCs for LB_ID_3.
-  Value v6;
-  v6.ok_count_ = v3.start_count_ / 2;
+  Value v6(0, v3.start_count() / 2);
   load_data_store.MergeRow(HOSTNAME_2,
                            Key(LB_ID_3, LB_TAG_1, USER_1, CLIENT_IP_1), v6);
   EXPECT_TRUE(load_data_store.IsTrackedUnknownBalancerId(LB_ID_3));
 }
 
-TEST(PerBalancerStore, Suspend) {
+TEST(PerBalancerStoreTest, Suspend) {
   PerBalancerStore per_balancer_store(LB_ID_1, LOAD_KEY_1);
   EXPECT_FALSE(per_balancer_store.IsSuspended());
   // Suspend the store.
@@ -360,9 +354,7 @@ TEST(PerBalancerStore, Suspend) {
   EXPECT_TRUE(per_balancer_store.IsSuspended());
   EXPECT_EQ(0U, per_balancer_store.container().size());
   // Data merged when the store is suspended won't be kept.
-  Value v1;
-  v1.start_count_ = 139;
-  v1.ok_count_ = 19;
+  Value v1(139, 19);
   per_balancer_store.MergeRow(KEY_1, v1);
   EXPECT_EQ(0U, per_balancer_store.container().size());
   // Resume the store.
@@ -370,9 +362,7 @@ TEST(PerBalancerStore, Suspend) {
   EXPECT_FALSE(per_balancer_store.IsSuspended());
   EXPECT_EQ(0U, per_balancer_store.container().size());
   // Data merged after the store is resumed will be kept.
-  Value v2;
-  v2.start_count_ = 23;
-  v2.error_count_ = 51;
+  Value v2(23, 0, 51);
   per_balancer_store.MergeRow(KEY_1, v2);
   EXPECT_EQ(1U, per_balancer_store.container().size());
   // Suspend the store.
@@ -380,9 +370,7 @@ TEST(PerBalancerStore, Suspend) {
   EXPECT_TRUE(per_balancer_store.IsSuspended());
   EXPECT_EQ(0U, per_balancer_store.container().size());
   // Data merged when the store is suspended won't be kept.
-  Value v3;
-  v3.start_count_ = 62;
-  v3.ok_count_ = 11;
+  Value v3(62, 11);
   per_balancer_store.MergeRow(KEY_1, v3);
   EXPECT_EQ(0U, per_balancer_store.container().size());
   // Resume the store.
@@ -390,48 +378,28 @@ TEST(PerBalancerStore, Suspend) {
   EXPECT_FALSE(per_balancer_store.IsSuspended());
   EXPECT_EQ(0U, per_balancer_store.container().size());
   // Data merged after the store is resumed will be kept.
-  Value v4;
-  v4.start_count_ = 225;
-  v4.ok_count_ = 98;
+  Value v4(225, 98);
   per_balancer_store.MergeRow(KEY_1, v4);
   EXPECT_EQ(1U, per_balancer_store.container().size());
   // In-progress count is always kept.
   EXPECT_EQ(per_balancer_store.GetNumCallsInProgressForReport(),
-            v1.start_count_ - v1.ok_count_ + v2.start_count_ - v2.error_count_ +
-                v3.start_count_ - v3.ok_count_ + v4.start_count_ -
-                v4.ok_count_);
+            v1.start_count() - v1.ok_count() + v2.start_count() -
+                v2.error_count() + v3.start_count() - v3.ok_count() +
+                v4.start_count() - v4.ok_count());
 }
 
-TEST(PerBalancerStore, DataAggregation) {
+TEST(PerBalancerStoreTest, DataAggregation) {
   PerBalancerStore per_balancer_store(LB_ID_1, LOAD_KEY_1);
   // Construct some Values.
-  Value v1;
-  v1.start_count_ = 992;
-  v1.ok_count_ = 34;
-  v1.error_count_ = 13;
-  v1.bytes_sent_ = 234.0;
-  v1.bytes_recv_ = 164.0;
-  v1.latency_ms_ = 173467.38;
-  v1.call_metrics_.insert({METRIC_1, CallMetricValue(3, 2773.2)});
-  Value v2;
-  v2.start_count_ = 4842;
-  v2.ok_count_ = 213;
-  v2.error_count_ = 9;
-  v2.bytes_sent_ = 393.0;
-  v2.bytes_recv_ = 974.0;
-  v2.latency_ms_ = 1345.2398;
-  v2.call_metrics_.insert({METRIC_1, CallMetricValue(7, 25.234)});
-  v2.call_metrics_.insert({METRIC_2, CallMetricValue(2, 387.08)});
-  Value v3;
-  v3.start_count_ = 293;
-  v3.ok_count_ = 55;
+  Value v1(992, 34, 13, 234.0, 164.0, 173467.38);
+  v1.InsertCallMetric(METRIC_1, CallMetricValue(3, 2773.2));
+  Value v2(4842, 213, 9, 393.0, 974.0, 1345.2398);
+  v2.InsertCallMetric(METRIC_1, CallMetricValue(7, 25.234));
+  v2.InsertCallMetric(METRIC_2, CallMetricValue(2, 387.08));
   // v3 doesn't change the number of in-progress RPCs.
-  v3.error_count_ = v3.start_count_ - v3.ok_count_;
-  v3.bytes_sent_ = 28764;
-  v3.bytes_recv_ = 5284;
-  v3.latency_ms_ = 5772;
-  v3.call_metrics_.insert({METRIC_1, CallMetricValue(61, 3465.0)});
-  v3.call_metrics_.insert({METRIC_2, CallMetricValue(13, 672.0)});
+  Value v3(293, 55, 293 - 55, 28764, 5284, 5772);
+  v3.InsertCallMetric(METRIC_1, CallMetricValue(61, 3465.0));
+  v3.InsertCallMetric(METRIC_2, CallMetricValue(13, 672.0));
   // The initial state of the store.
   uint64_t num_calls_in_progress = 0;
   EXPECT_FALSE(per_balancer_store.IsNumCallsInProgressChangedSinceLastReport());
@@ -442,14 +410,14 @@ TEST(PerBalancerStore, DataAggregation) {
   EXPECT_TRUE(per_balancer_store.IsNumCallsInProgressChangedSinceLastReport());
   EXPECT_EQ(per_balancer_store.GetNumCallsInProgressForReport(),
             num_calls_in_progress +=
-            (v1.start_count_ - v1.ok_count_ - v1.error_count_));
+            (v1.start_count() - v1.ok_count() - v1.error_count()));
   EXPECT_FALSE(per_balancer_store.IsNumCallsInProgressChangedSinceLastReport());
   // Merge v2 and get report of the number of in-progress calls.
   per_balancer_store.MergeRow(KEY_2, v2);
   EXPECT_TRUE(per_balancer_store.IsNumCallsInProgressChangedSinceLastReport());
   EXPECT_EQ(per_balancer_store.GetNumCallsInProgressForReport(),
             num_calls_in_progress +=
-            (v2.start_count_ - v2.ok_count_ - v2.error_count_));
+            (v2.start_count() - v2.ok_count() - v2.error_count()));
   EXPECT_FALSE(per_balancer_store.IsNumCallsInProgressChangedSinceLastReport());
   // Merge v3 and get report of the number of in-progress calls.
   per_balancer_store.MergeRow(KEY_1, v3);
@@ -458,40 +426,40 @@ TEST(PerBalancerStore, DataAggregation) {
             num_calls_in_progress);
   // Value for KEY_1 is aggregated correctly.
   Value value_for_key1 = per_balancer_store.container().find(KEY_1)->second;
-  EXPECT_EQ(value_for_key1.start_count_, v1.start_count_ + v3.start_count_);
-  EXPECT_EQ(value_for_key1.ok_count_, v1.ok_count_ + v3.ok_count_);
-  EXPECT_EQ(value_for_key1.error_count_, v1.error_count_ + v3.error_count_);
-  EXPECT_EQ(value_for_key1.bytes_sent_, v1.bytes_sent_ + v3.bytes_sent_);
-  EXPECT_EQ(value_for_key1.bytes_recv_, v1.bytes_recv_ + v3.bytes_recv_);
-  EXPECT_EQ(value_for_key1.latency_ms_, v1.latency_ms_ + v3.latency_ms_);
-  EXPECT_EQ(value_for_key1.call_metrics_.size(), 2U);
-  EXPECT_EQ(value_for_key1.call_metrics_.find(METRIC_1)->second.count(),
-            v1.call_metrics_.find(METRIC_1)->second.count() +
-                v3.call_metrics_.find(METRIC_1)->second.count());
-  EXPECT_EQ(value_for_key1.call_metrics_.find(METRIC_1)->second.total(),
-            v1.call_metrics_.find(METRIC_1)->second.total() +
-                v3.call_metrics_.find(METRIC_1)->second.total());
-  EXPECT_EQ(value_for_key1.call_metrics_.find(METRIC_2)->second.count(),
-            v3.call_metrics_.find(METRIC_2)->second.count());
-  EXPECT_EQ(value_for_key1.call_metrics_.find(METRIC_2)->second.total(),
-            v3.call_metrics_.find(METRIC_2)->second.total());
+  EXPECT_EQ(value_for_key1.start_count(), v1.start_count() + v3.start_count());
+  EXPECT_EQ(value_for_key1.ok_count(), v1.ok_count() + v3.ok_count());
+  EXPECT_EQ(value_for_key1.error_count(), v1.error_count() + v3.error_count());
+  EXPECT_EQ(value_for_key1.bytes_sent(), v1.bytes_sent() + v3.bytes_sent());
+  EXPECT_EQ(value_for_key1.bytes_recv(), v1.bytes_recv() + v3.bytes_recv());
+  EXPECT_EQ(value_for_key1.latency_ms(), v1.latency_ms() + v3.latency_ms());
+  EXPECT_EQ(value_for_key1.call_metrics().size(), 2U);
+  EXPECT_EQ(value_for_key1.call_metrics().find(METRIC_1)->second.count(),
+            v1.call_metrics().find(METRIC_1)->second.count() +
+                v3.call_metrics().find(METRIC_1)->second.count());
+  EXPECT_EQ(value_for_key1.call_metrics().find(METRIC_1)->second.total(),
+            v1.call_metrics().find(METRIC_1)->second.total() +
+                v3.call_metrics().find(METRIC_1)->second.total());
+  EXPECT_EQ(value_for_key1.call_metrics().find(METRIC_2)->second.count(),
+            v3.call_metrics().find(METRIC_2)->second.count());
+  EXPECT_EQ(value_for_key1.call_metrics().find(METRIC_2)->second.total(),
+            v3.call_metrics().find(METRIC_2)->second.total());
   // Value for KEY_2 is aggregated (trivially) correctly.
   Value value_for_key2 = per_balancer_store.container().find(KEY_2)->second;
-  EXPECT_EQ(value_for_key2.start_count_, v2.start_count_);
-  EXPECT_EQ(value_for_key2.ok_count_, v2.ok_count_);
-  EXPECT_EQ(value_for_key2.error_count_, v2.error_count_);
-  EXPECT_EQ(value_for_key2.bytes_sent_, v2.bytes_sent_);
-  EXPECT_EQ(value_for_key2.bytes_recv_, v2.bytes_recv_);
-  EXPECT_EQ(value_for_key2.latency_ms_, v2.latency_ms_);
-  EXPECT_EQ(value_for_key2.call_metrics_.size(), 2U);
-  EXPECT_EQ(value_for_key2.call_metrics_.find(METRIC_1)->second.count(),
-            v2.call_metrics_.find(METRIC_1)->second.count());
-  EXPECT_EQ(value_for_key2.call_metrics_.find(METRIC_1)->second.total(),
-            v2.call_metrics_.find(METRIC_1)->second.total());
-  EXPECT_EQ(value_for_key2.call_metrics_.find(METRIC_2)->second.count(),
-            v2.call_metrics_.find(METRIC_2)->second.count());
-  EXPECT_EQ(value_for_key2.call_metrics_.find(METRIC_2)->second.total(),
-            v2.call_metrics_.find(METRIC_2)->second.total());
+  EXPECT_EQ(value_for_key2.start_count(), v2.start_count());
+  EXPECT_EQ(value_for_key2.ok_count(), v2.ok_count());
+  EXPECT_EQ(value_for_key2.error_count(), v2.error_count());
+  EXPECT_EQ(value_for_key2.bytes_sent(), v2.bytes_sent());
+  EXPECT_EQ(value_for_key2.bytes_recv(), v2.bytes_recv());
+  EXPECT_EQ(value_for_key2.latency_ms(), v2.latency_ms());
+  EXPECT_EQ(value_for_key2.call_metrics().size(), 2U);
+  EXPECT_EQ(value_for_key2.call_metrics().find(METRIC_1)->second.count(),
+            v2.call_metrics().find(METRIC_1)->second.count());
+  EXPECT_EQ(value_for_key2.call_metrics().find(METRIC_1)->second.total(),
+            v2.call_metrics().find(METRIC_1)->second.total());
+  EXPECT_EQ(value_for_key2.call_metrics().find(METRIC_2)->second.count(),
+            v2.call_metrics().find(METRIC_2)->second.count());
+  EXPECT_EQ(value_for_key2.call_metrics().find(METRIC_2)->second.total(),
+            v2.call_metrics().find(METRIC_2)->second.total());
 }
 
 }  // namespace

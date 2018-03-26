@@ -98,7 +98,7 @@ void PerHostStore::ReportStreamClosed(grpc::string lb_id) {
   auto it_store_for_gone_lb = per_balancer_stores_.find(lb_id);
   GPR_ASSERT(it_store_for_gone_lb != per_balancer_stores_.end());
   GPR_ASSERT(UnorderedMultimapEraseKeyValue(
-      load_key_to_receiving_lb_ids_, it_store_for_gone_lb->second->load_key_,
+      load_key_to_receiving_lb_ids_, it_store_for_gone_lb->second->load_key(),
       lb_id));
   // The stores that were assigned to this balancer are orphaned now. They
   // should be re-assigned to other balancers which are still receiving reports.
@@ -106,7 +106,7 @@ void PerHostStore::ReportStreamClosed(grpc::string lb_id) {
   for (auto orphaned_store : orphaned_stores) {
     std::vector<grpc::string> lb_ids_with_same_load_key =
         UnorderedMultimapFindAll(load_key_to_receiving_lb_ids_,
-                                 orphaned_store->load_key_);
+                                 orphaned_store->load_key());
     std::vector<grpc::string> candidates;
     if (!lb_ids_with_same_load_key.empty()) {
       // First, try to pick from the active balancers with the same load key.
@@ -132,7 +132,7 @@ void PerHostStore::AssignOrphanedStore(PerBalancerStore* orphaned_store,
   gpr_log(GPR_INFO,
           "[PerHostStore %p] Re-assigned orphaned store (%p) with original LB"
           " ID of %s to new receiver %s",
-          this, orphaned_store, orphaned_store->lb_id_.c_str(),
+          this, orphaned_store, orphaned_store->lb_id().c_str(),
           new_receiver.c_str());
 }
 
@@ -163,7 +163,7 @@ void LoadDataStore::MergeRow(grpc::string hostname, Key key, Value value) {
   auto it_per_host_store = per_host_stores_.find(hostname);
   if (it_per_host_store != per_host_stores_.end()) {
     auto it_per_balancer_store =
-        it_per_host_store->second.per_balancer_stores_.find(key.lb_id_);
+        it_per_host_store->second.per_balancer_stores_.find(key.lb_id());
     if (it_per_balancer_store !=
         it_per_host_store->second.per_balancer_stores_.end()) {
       it_per_balancer_store->second->MergeRow(key, value);
@@ -174,19 +174,19 @@ void LoadDataStore::MergeRow(grpc::string hostname, Key key, Value value) {
   // zero.
   int64_t in_progress_delta = value.GetNumCallsInProgressDelta();
   if (in_progress_delta != 0) {
-    auto it_tracker = unknown_balancer_id_trackers.find(key.lb_id_);
+    auto it_tracker = unknown_balancer_id_trackers.find(key.lb_id());
     if (it_tracker == unknown_balancer_id_trackers.end()) {
       gpr_log(
           GPR_DEBUG,
           "[LoadDataStore %p] Start tracking unknown balancer (lb_id_: %s).",
-          this, key.lb_id_.c_str());
+          this, key.lb_id().c_str());
       unknown_balancer_id_trackers.insert(
-          {key.lb_id_, static_cast<uint64_t>(in_progress_delta)});
+          {key.lb_id(), static_cast<uint64_t>(in_progress_delta)});
     } else if ((it_tracker->second += in_progress_delta) == 0) {
       unknown_balancer_id_trackers.erase(it_tracker);
       gpr_log(GPR_DEBUG,
               "[LoadDataStore %p] Stop tracking unknown balancer (lb_id_: %s).",
-              this, key.lb_id_.c_str());
+              this, key.lb_id().c_str());
     }
   }
 }
