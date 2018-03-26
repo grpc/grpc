@@ -16,6 +16,9 @@ if (PHP_GRPC != "no") {
     "src\\php\\ext\\grpc\\server.c " +
     "src\\php\\ext\\grpc\\server_credentials.c " +
     "src\\php\\ext\\grpc\\timeval.c " +
+    "third_party\\address_sorting\\address_sorting.c " +
+    "third_party\\address_sorting\\address_sorting_posix.c " +
+    "third_party\\address_sorting\\address_sorting_windows.c " +
     "src\\core\\lib\\gpr\\alloc.cc " +
     "src\\core\\lib\\gpr\\arena.cc " +
     "src\\core\\lib\\gpr\\atm.cc " +
@@ -725,6 +728,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\php\\ext");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\php\\ext\\grpc");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\address_sorting");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\asn1");

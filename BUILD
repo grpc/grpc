@@ -1298,6 +1298,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "cares",
+        "address_sorting",
     ],
     language = "c++",
     deps = [

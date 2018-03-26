@@ -15,6 +15,9 @@
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio/grpc_core_dependencies.py.template`!!!
 
 CORE_SOURCE_FILES = [
+    'third_party/address_sorting/address_sorting.c',
+    'third_party/address_sorting/address_sorting_posix.c',
+    'third_party/address_sorting/address_sorting_windows.c',
     'src/core/lib/gpr/alloc.cc',
     'src/core/lib/gpr/arena.cc',
     'src/core/lib/gpr/atm.cc',
