@@ -515,6 +515,9 @@ BOOL isRemoteInteropTest(NSString *host) {
     } else {
       // Keepalive should kick after 1s elapsed and fails the call.
       XCTAssertNotNil(error);
+      XCTAssertEqual(error.code, GRPC_STATUS_INTERNAL);
+      XCTAssertEqualObjects(error.localizedDescription, @"keepalive watchdog timeout",
+                            @"Unexpected failure that is not keepalive watchdog timeout.");
       XCTAssertTrue(done);
       [expectation fulfill];
     }
