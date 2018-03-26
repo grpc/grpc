@@ -37,28 +37,11 @@ _RESULTS_SCHEMA = [
     ('build_id', 'INTEGER', 'Build ID of Kokoro job'),
     ('build_url', 'STRING', 'URL of Kokoro build'),
     ('test_target', 'STRING', 'Bazel target path'),
+    ('test_case', 'STRING', 'Name of test case'),
     ('result', 'STRING', 'Test or build result'),
-    ('type', 'STRING', 'Type of Bazel target'),
-    ('language', 'STRING', 'Language of target'),
     ('timestamp', 'TIMESTAMP', 'Timestamp of test run'),
-    ('size', 'STRING', 'Size of Bazel target'),
 ]
 _TABLE_ID = 'rbe_test_results'
-
-
-def _fill_missing_fields(target):
-    """Inserts 'N/A' to missing expected fields of Bazel target
-
-  Args:
-      target: A dictionary of a Bazel target's ResultStore data 
-  """
-    if 'type' not in target['targetAttributes']:
-        target['targetAttributes']['type'] = 'N/A'
-    if 'language' not in target['targetAttributes']:
-        target['targetAttributes']['language'] = 'N/A'
-    if 'testAttributes' not in target:
-        target['testAttributes'] = {'size': 'N/A'}
-    return target
 
 
 def _get_api_key():
@@ -114,6 +97,33 @@ def _upload_results_to_bq(rows):
                 sys.exit(1)
 
 
+def _get_resultstore_data(api_key, invocation_id):
+    """Returns dictionary of test results by querying ResultStore API.
+  Args:
+      api_key: String of ResultStore API key
+      invocation_id: String of ResultStore invocation ID to results from 
+  """
+    all_actions = []
+    page_token = ''
+    # ResultStore's API returns data on a limited number of tests. When we exceed
+    # that limit, the 'nextPageToken' field is included in the request to get
+    # subsequent data, so keep requesting until 'nextPageToken' field is omitted.
+    while True:
+        req = urllib2.Request(
+            url=
+            'https://resultstore.googleapis.com/v2/invocations/%s/targets/-/configuredTargets/-/actions?key=%s&pageToken=%s'
+            % (invocation_id, api_key, page_token),
+            headers={
+                'Content-Type': 'application/json'
+            })
+        results = json.loads(urllib2.urlopen(req).read())
+        all_actions.extend(results['actions'])
+        if 'nextPageToken' not in results:
+            break
+        page_token = results['nextPageToken']
+    return all_actions
+
+
 if __name__ == "__main__":
     # Arguments are necessary if running in a non-Kokoro envrionment.
     argp = argparse.ArgumentParser(description='Upload RBE results.')
@@ -123,40 +133,50 @@ if __name__ == "__main__":
 
     api_key = args.api_key or _get_api_key()
     invocation_id = args.invocation_id or _get_invocation_id()
+    resultstore_actions = _get_resultstore_data(api_key, invocation_id)
 
-    req = urllib2.Request(
-        url='https://resultstore.googleapis.com/v2/invocations/%s/targets?key=%s'
-        % (invocation_id, api_key),
-        headers={
-            'Content-Type': 'application/json'
-        })
-
-    results = json.loads(urllib2.urlopen(req).read())
     bq_rows = []
-    for target in map(_fill_missing_fields, results['targets']):
-        bq_rows.append({
-            'insertId': str(uuid.uuid4()),
-            'json': {
-                'build_id':
-                os.getenv('KOKORO_BUILD_NUMBER'),
-                'build_url':
-                'https://sponge.corp.google.com/invocation?id=%s' %
-                os.getenv('KOKORO_BUILD_ID'),
-                'job_name':
-                os.getenv('KOKORO_JOB_NAME'),
-                'test_target':
-                target['id']['targetId'],
-                'result':
-                target['statusAttributes']['status'],
-                'type':
-                target['targetAttributes']['type'],
-                'language':
-                target['targetAttributes']['language'],
-                'timestamp':
-                target['timing']['startTime'],
-                'size':
-                target['testAttributes']['size']
-            }
-        })
-
-    _upload_results_to_bq(bq_rows)
+    for action in resultstore_actions:
+        # Filter out non-test related data, such as build results.
+        if 'testAction' not in action:
+            continue
+        # Some test results contain the fileProcessingErrors field, which indicates
+        # an issue with parsing results individual test cases.
+        if 'fileProcessingErrors' in action:
+            test_cases = [{
+                'testCase': {
+                    'caseName': str(action['id']['actionId']),
+                    'result': str(action['statusAttributes']['status'])
+                }
+            }]
+        else:
+            test_cases = action['testAction']['testSuite']['tests'][0][
+                'testSuite']['tests']
+        for test_case in test_cases:
+            if 'errors' in test_case['testCase']:
+                result = 'FAILED'
+            else:
+                result = 'PASSED'
+            bq_rows.append({
+                'insertId': str(uuid.uuid4()),
+                'json': {
+                    'job_name':
+                    os.getenv('KOKORO_JOB_NAME'),
+                    'build_id':
+                    os.getenv('KOKORO_BUILD_NUMBER'),
+                    'build_url':
+                    'https://sponge.corp.google.com/invocation?id=%s' %
+                    os.getenv('KOKORO_BUILD_ID'),
+                    'test_target':
+                    action['id']['targetId'],
+                    'test_case':
+                    test_case['testCase']['caseName'],
+                    'result':
+                    result,
+                    'timestamp':
+                    action['timing']['startTime'],
+                }
+            })
+    # BigQuery sometimes fails with large uploads, so batch 1,000 rows at a time.
+    for i in range((len(bq_rows) / 1000) + 1):
+        _upload_results_to_bq(bq_rows[i * 1000:(i + 1) * 1000])
