@@ -18,6 +18,8 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
+REPO_ROOT="$(pwd)"
+
 git submodule update --init
 
 # Build protoc and grpc_cpp_plugin. Codegen is not cross-compiled to Android
@@ -31,5 +33,5 @@ git cherry-pick 7daa320065f3bea2b54bf983337d1724f153422d -m 1
 
 cd ../../examples/android/helloworld
 ./gradlew build \
-    -Dprotoc=../../../third_party/protobuf/src/protoc \
-    -Dgrpc_cpp_plugin=../../../bins/opt/grpc_cpp_plugin
+    "-Pprotoc=${REPO_ROOT}/third_party/protobuf/src/protoc" \
+    "-Pgrpc_cpp_plugin=${REPO_ROOT}/bins/opt/grpc_cpp_plugin"
