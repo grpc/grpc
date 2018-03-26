@@ -1373,7 +1373,7 @@ static_cxx: pc_cxx pc_cxx_unsecure cache.mk  $(LIBDIR)/$(CONFIG)/libgrpc++.a $(L
 shared: shared_c shared_cxx
 
 shared_c: pc_c pc_c_unsecure cache.mk $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)address_sorting$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)gpr$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_cronet$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_unsecure$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE)
-shared_cxx: pc_cxx pc_cxx_unsecure cache.mk $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)
+shared_cxx: pc_cxx pc_cxx_unsecure cache.mk $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_cronet$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_error_details$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_reflection$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc++_unsecure$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)lb_load_data_store$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)lb_load_reporter$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)lb_load_reporter_async_service_impl$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP)
 
 shared_csharp: shared_c  $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CSHARP).$(SHARED_EXT_CSHARP)
 grpc_csharp_ext: shared_csharp
@@ -7259,7 +7259,7 @@ $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)lb_load_data_store$(SHARED_VERSION_CPP).$(SH
 
 else
 
-$(LIBDIR)/$(CONFIG)/liblb_load_data_store.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(PROTOBUF_DEP) $(LIBLB_LOAD_DATA_STORE_OBJS) 
+$(LIBDIR)/$(CONFIG)/liblb_load_data_store.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(PROTOBUF_DEP) $(LIBLB_LOAD_DATA_STORE_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/liblb_load_data_store.a
@@ -7271,18 +7271,18 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/lb_load_data_store$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBLB_LOAD_DATA_STORE_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(PROTOBUF_DEP) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/lb_load_data_store$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBLB_LOAD_DATA_STORE_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(PROTOBUF_DEP) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/lb_load_data_store$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/liblb_load_data_store$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/lb_load_data_store$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBLB_LOAD_DATA_STORE_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/lb_load_data_store$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/liblb_load_data_store$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/lb_load_data_store$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBLB_LOAD_DATA_STORE_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS)
 else
-$(LIBDIR)/$(CONFIG)/liblb_load_data_store$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBLB_LOAD_DATA_STORE_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(PROTOBUF_DEP) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/liblb_load_data_store$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBLB_LOAD_DATA_STORE_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(PROTOBUF_DEP) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)lb_load_data_store$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/liblb_load_data_store$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBLB_LOAD_DATA_STORE_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)lb_load_data_store$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/liblb_load_data_store$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBLB_LOAD_DATA_STORE_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,liblb_load_data_store.so.1 -o $(LIBDIR)/$(CONFIG)/liblb_load_data_store$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBLB_LOAD_DATA_STORE_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,liblb_load_data_store.so.1 -o $(LIBDIR)/$(CONFIG)/liblb_load_data_store$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBLB_LOAD_DATA_STORE_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS)
 	$(Q) ln -sf $(SHARED_PREFIX)lb_load_data_store$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/liblb_load_data_store$(SHARED_VERSION_CPP).so.1
 	$(Q) ln -sf $(SHARED_PREFIX)lb_load_data_store$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/liblb_load_data_store$(SHARED_VERSION_CPP).so
 endif
@@ -7327,7 +7327,7 @@ $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)lb_load_reporter$(SHARED_VERSION_CPP).$(SHAR
 
 else
 
-$(LIBDIR)/$(CONFIG)/liblb_load_reporter.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(PROTOBUF_DEP) $(LIBLB_LOAD_REPORTER_OBJS) 
+$(LIBDIR)/$(CONFIG)/liblb_load_reporter.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(PROTOBUF_DEP) $(LIBLB_LOAD_REPORTER_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/liblb_load_reporter.a
@@ -7339,18 +7339,18 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/lb_load_reporter$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBLB_LOAD_REPORTER_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(PROTOBUF_DEP) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/lb_load_reporter$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBLB_LOAD_REPORTER_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(PROTOBUF_DEP) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/lb_load_reporter$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/liblb_load_reporter$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/lb_load_reporter$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBLB_LOAD_REPORTER_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/lb_load_reporter$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/liblb_load_reporter$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/lb_load_reporter$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBLB_LOAD_REPORTER_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS)
 else
-$(LIBDIR)/$(CONFIG)/liblb_load_reporter$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBLB_LOAD_REPORTER_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(PROTOBUF_DEP) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/liblb_load_reporter$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBLB_LOAD_REPORTER_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(PROTOBUF_DEP) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)lb_load_reporter$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/liblb_load_reporter$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBLB_LOAD_REPORTER_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)lb_load_reporter$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/liblb_load_reporter$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBLB_LOAD_REPORTER_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,liblb_load_reporter.so.1 -o $(LIBDIR)/$(CONFIG)/liblb_load_reporter$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBLB_LOAD_REPORTER_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,liblb_load_reporter.so.1 -o $(LIBDIR)/$(CONFIG)/liblb_load_reporter$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBLB_LOAD_REPORTER_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS)
 	$(Q) ln -sf $(SHARED_PREFIX)lb_load_reporter$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/liblb_load_reporter$(SHARED_VERSION_CPP).so.1
 	$(Q) ln -sf $(SHARED_PREFIX)lb_load_reporter$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/liblb_load_reporter$(SHARED_VERSION_CPP).so
 endif
@@ -7395,7 +7395,7 @@ $(LIBDIR)/$(CONFIG)/$(SHARED_PREFIX)lb_load_reporter_async_service_impl$(SHARED_
 
 else
 
-$(LIBDIR)/$(CONFIG)/liblb_load_reporter_async_service_impl.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(PROTOBUF_DEP) $(LIBLB_LOAD_REPORTER_ASYNC_SERVICE_IMPL_OBJS) 
+$(LIBDIR)/$(CONFIG)/liblb_load_reporter_async_service_impl.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(PROTOBUF_DEP) $(LIBLB_LOAD_REPORTER_ASYNC_SERVICE_IMPL_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/liblb_load_reporter_async_service_impl.a
@@ -7407,18 +7407,18 @@ endif
 
 
 ifeq ($(SYSTEM),MINGW32)
-$(LIBDIR)/$(CONFIG)/lb_load_reporter_async_service_impl$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBLB_LOAD_REPORTER_ASYNC_SERVICE_IMPL_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(PROTOBUF_DEP) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/lb_load_reporter_async_service_impl$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBLB_LOAD_REPORTER_ASYNC_SERVICE_IMPL_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(PROTOBUF_DEP) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/lb_load_reporter_async_service_impl$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/liblb_load_reporter_async_service_impl$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/lb_load_reporter_async_service_impl$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBLB_LOAD_REPORTER_ASYNC_SERVICE_IMPL_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/lb_load_reporter_async_service_impl$(SHARED_VERSION_CPP).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/liblb_load_reporter_async_service_impl$(SHARED_VERSION_CPP)-dll.a -o $(LIBDIR)/$(CONFIG)/lb_load_reporter_async_service_impl$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBLB_LOAD_REPORTER_ASYNC_SERVICE_IMPL_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS)
 else
-$(LIBDIR)/$(CONFIG)/liblb_load_reporter_async_service_impl$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBLB_LOAD_REPORTER_ASYNC_SERVICE_IMPL_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(PROTOBUF_DEP) $(OPENSSL_DEP)
+$(LIBDIR)/$(CONFIG)/liblb_load_reporter_async_service_impl$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP): $(LIBLB_LOAD_REPORTER_ASYNC_SERVICE_IMPL_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(PROTOBUF_DEP) $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)lb_load_reporter_async_service_impl$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/liblb_load_reporter_async_service_impl$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBLB_LOAD_REPORTER_ASYNC_SERVICE_IMPL_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)lb_load_reporter_async_service_impl$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) -dynamiclib -o $(LIBDIR)/$(CONFIG)/liblb_load_reporter_async_service_impl$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBLB_LOAD_REPORTER_ASYNC_SERVICE_IMPL_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,liblb_load_reporter_async_service_impl.so.1 -o $(LIBDIR)/$(CONFIG)/liblb_load_reporter_async_service_impl$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBLB_LOAD_REPORTER_ASYNC_SERVICE_IMPL_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,liblb_load_reporter_async_service_impl.so.1 -o $(LIBDIR)/$(CONFIG)/liblb_load_reporter_async_service_impl$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBLB_LOAD_REPORTER_ASYNC_SERVICE_IMPL_OBJS) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS)
 	$(Q) ln -sf $(SHARED_PREFIX)lb_load_reporter_async_service_impl$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/liblb_load_reporter_async_service_impl$(SHARED_VERSION_CPP).so.1
 	$(Q) ln -sf $(SHARED_PREFIX)lb_load_reporter_async_service_impl$(SHARED_VERSION_CPP).$(SHARED_EXT_CPP) $(LIBDIR)/$(CONFIG)/liblb_load_reporter_async_service_impl$(SHARED_VERSION_CPP).so
 endif
