@@ -309,6 +309,7 @@
     <file baseinstalldir="/" name="src/core/lib/debug/stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/stats_data.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/debug_location.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/fixed_capacity_vector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/inlined_vector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/orphanable.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/ref_counted.h" role="src" />
