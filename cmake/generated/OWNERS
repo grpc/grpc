@@ -1,0 +1,5 @@
+set noparent
+
+# Files in this directory are generated. Anyone from grpc-team can approve.
+
+@grpc/grpc-team

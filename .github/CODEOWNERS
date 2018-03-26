@@ -4,6 +4,7 @@
 /**/OWNERS @markdroth @nicolasnoble @a11r
 /bazel/** @nicolasnoble @dgquintas @a11r @vjpai
 /cmake/** @jtattermusch @nicolasnoble @matt-kwong
+/cmake/generated/** @grpc/grpc-team
 /src/core/ext/filters/client_channel/** @markdroth @dgquintas @a11r
 /tools/dockerfile/** @jtattermusch @matt-kwong @nicolasnoble
 /tools/run_tests/performance/** @ncteisen @matt-kwong @jtattermusch
