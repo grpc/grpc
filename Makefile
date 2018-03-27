@@ -503,7 +503,7 @@ ifeq ($(HAS_PKG_CONFIG),true)
 OPENSSL_ALPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.2 openssl
 OPENSSL_NPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.1 openssl
 ZLIB_CHECK_CMD = $(PKG_CONFIG) --exists zlib
-PROTOBUF_CHECK_CMD = $(PKG_CONFIG) --atleast-version=3.0.0 protobuf
+PROTOBUF_CHECK_CMD = $(PKG_CONFIG) --atleast-version=3.5.0 protobuf
 CARES_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.11.0 libcares
 else # HAS_PKG_CONFIG
 
@@ -919,7 +919,7 @@ protobuf_dep_message:
 	@echo
 	@echo "DEPENDENCY ERROR"
 	@echo
-	@echo "The target you are trying to run requires protobuf 3.0.0+"
+	@echo "The target you are trying to run requires protobuf 3.5.0+"
 	@echo "Your system doesn't have it, and neither does the third_party directory."
 	@echo
 	@echo "Please consult INSTALL to get more information."
@@ -933,7 +933,7 @@ protoc_dep_message:
 	@echo
 	@echo "DEPENDENCY ERROR"
 	@echo
-	@echo "The target you are trying to run requires protobuf-compiler 3.0.0+"
+	@echo "The target you are trying to run requires protobuf-compiler 3.5.0+"
 	@echo "Your system doesn't have it, and neither does the third_party directory."
 	@echo
 	@echo "Please consult INSTALL to get more information."
@@ -14620,7 +14620,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/alarm_test: protobuf_dep_error
 
@@ -14663,7 +14663,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/alts_counter_test: protobuf_dep_error
 
@@ -14706,7 +14706,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/alts_crypt_test: protobuf_dep_error
 
@@ -14749,7 +14749,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/alts_crypter_test: protobuf_dep_error
 
@@ -14792,7 +14792,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/alts_frame_handler_test: protobuf_dep_error
 
@@ -14836,7 +14836,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/alts_frame_protector_test: protobuf_dep_error
 
@@ -14881,7 +14881,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/alts_grpc_record_protocol_test: protobuf_dep_error
 
@@ -14924,7 +14924,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/alts_handshaker_client_test: protobuf_dep_error
 
@@ -14967,7 +14967,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/alts_handshaker_service_api_test: protobuf_dep_error
 
@@ -15010,7 +15010,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/alts_iovec_record_protocol_test: protobuf_dep_error
 
@@ -15053,7 +15053,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/alts_security_connector_test: protobuf_dep_error
 
@@ -15096,7 +15096,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/alts_tsi_handshaker_test: protobuf_dep_error
 
@@ -15139,7 +15139,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/alts_tsi_utils_test: protobuf_dep_error
 
@@ -15182,7 +15182,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/alts_zero_copy_grpc_protector_test: protobuf_dep_error
 
@@ -15225,7 +15225,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/async_end2end_test: protobuf_dep_error
 
@@ -15268,7 +15268,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/auth_property_iterator_test: protobuf_dep_error
 
@@ -15311,7 +15311,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/backoff_test: protobuf_dep_error
 
@@ -15354,7 +15354,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/bdp_estimator_test: protobuf_dep_error
 
@@ -15397,7 +15397,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/bm_arena: protobuf_dep_error
 
@@ -15441,7 +15441,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/bm_call_create: protobuf_dep_error
 
@@ -15485,7 +15485,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/bm_chttp2_hpack: protobuf_dep_error
 
@@ -15529,7 +15529,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/bm_chttp2_transport: protobuf_dep_error
 
@@ -15573,7 +15573,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/bm_closure: protobuf_dep_error
 
@@ -15617,7 +15617,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/bm_cq: protobuf_dep_error
 
@@ -15661,7 +15661,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/bm_cq_multiple_threads: protobuf_dep_error
 
@@ -15705,7 +15705,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/bm_error: protobuf_dep_error
 
@@ -15749,7 +15749,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/bm_fullstack_streaming_ping_pong: protobuf_dep_error
 
@@ -15793,7 +15793,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/bm_fullstack_streaming_pump: protobuf_dep_error
 
@@ -15837,7 +15837,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/bm_fullstack_trickle: protobuf_dep_error
 
@@ -15881,7 +15881,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/bm_fullstack_unary_ping_pong: protobuf_dep_error
 
@@ -15925,7 +15925,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/bm_metadata: protobuf_dep_error
 
@@ -15969,7 +15969,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/bm_pollset: protobuf_dep_error
 
@@ -16013,7 +16013,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/byte_stream_test: protobuf_dep_error
 
@@ -16056,7 +16056,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/channel_arguments_test: protobuf_dep_error
 
@@ -16099,7 +16099,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/channel_filter_test: protobuf_dep_error
 
@@ -16143,7 +16143,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/channel_trace_test: protobuf_dep_error
 
@@ -16189,7 +16189,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/check_gcp_environment_linux_test: protobuf_dep_error
 
@@ -16232,7 +16232,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/check_gcp_environment_windows_test: protobuf_dep_error
 
@@ -16275,7 +16275,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/chttp2_settings_timeout_test: protobuf_dep_error
 
@@ -16318,7 +16318,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/cli_call_test: protobuf_dep_error
 
@@ -16362,7 +16362,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/client_channel_stress_test: protobuf_dep_error
 
@@ -16408,7 +16408,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/client_crash_test: protobuf_dep_error
 
@@ -16451,7 +16451,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/client_crash_test_server: protobuf_dep_error
 
@@ -16494,7 +16494,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/client_lb_end2end_test: protobuf_dep_error
 
@@ -16542,7 +16542,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/codegen_test_full: protobuf_dep_error
 
@@ -16602,7 +16602,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/codegen_test_minimal: protobuf_dep_error
 
@@ -16659,7 +16659,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/credentials_test: protobuf_dep_error
 
@@ -16702,7 +16702,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/cxx_byte_buffer_test: protobuf_dep_error
 
@@ -16745,7 +16745,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/cxx_slice_test: protobuf_dep_error
 
@@ -16788,7 +16788,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/cxx_string_ref_test: protobuf_dep_error
 
@@ -16831,7 +16831,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/cxx_time_test: protobuf_dep_error
 
@@ -16874,7 +16874,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/end2end_test: protobuf_dep_error
 
@@ -16918,7 +16918,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/error_details_test: protobuf_dep_error
 
@@ -16964,7 +16964,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/exception_test: protobuf_dep_error
 
@@ -17007,7 +17007,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/filter_end2end_test: protobuf_dep_error
 
@@ -17050,7 +17050,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/generic_end2end_test: protobuf_dep_error
 
@@ -17094,7 +17094,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/golden_file_test: protobuf_dep_error
 
@@ -17140,7 +17140,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/grpc_alts_credentials_options_test: protobuf_dep_error
 
@@ -17183,7 +17183,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/grpc_cli: protobuf_dep_error
 
@@ -17218,7 +17218,7 @@ GRPC_CPP_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basen
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/grpc_cpp_plugin: protobuf_dep_error
 
@@ -17249,7 +17249,7 @@ GRPC_CSHARP_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(ba
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/grpc_csharp_plugin: protobuf_dep_error
 
@@ -17280,7 +17280,7 @@ GRPC_NODE_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(base
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/grpc_node_plugin: protobuf_dep_error
 
@@ -17311,7 +17311,7 @@ GRPC_OBJECTIVE_C_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o,
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/grpc_objective_c_plugin: protobuf_dep_error
 
@@ -17342,7 +17342,7 @@ GRPC_PHP_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basen
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/grpc_php_plugin: protobuf_dep_error
 
@@ -17373,7 +17373,7 @@ GRPC_PYTHON_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(ba
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/grpc_python_plugin: protobuf_dep_error
 
@@ -17404,7 +17404,7 @@ GRPC_RUBY_PLUGIN_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(base
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/grpc_ruby_plugin: protobuf_dep_error
 
@@ -17445,7 +17445,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/grpc_tool_test: protobuf_dep_error
 
@@ -17494,7 +17494,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/grpclb_api_test: protobuf_dep_error
 
@@ -17541,7 +17541,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/grpclb_end2end_test: protobuf_dep_error
 
@@ -17587,7 +17587,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/h2_ssl_cert_test: protobuf_dep_error
 
@@ -17630,7 +17630,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/h2_ssl_session_reuse_test: protobuf_dep_error
 
@@ -17673,7 +17673,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/health_service_end2end_test: protobuf_dep_error
 
@@ -17712,7 +17712,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/http2_client: protobuf_dep_error
 
@@ -17747,7 +17747,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/hybrid_end2end_test: protobuf_dep_error
 
@@ -17790,7 +17790,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/inlined_vector_test: protobuf_dep_error
 
@@ -17833,7 +17833,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test: protobuf_dep_error
 
@@ -17872,7 +17872,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/interop_client: protobuf_dep_error
 
@@ -17903,7 +17903,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/interop_server: protobuf_dep_error
 
@@ -17938,7 +17938,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/interop_test: protobuf_dep_error
 
@@ -17981,7 +17981,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/json_run_localhost: protobuf_dep_error
 
@@ -18024,7 +18024,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/memory_test: protobuf_dep_error
 
@@ -18068,7 +18068,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/metrics_client: protobuf_dep_error
 
@@ -18114,7 +18114,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/mock_test: protobuf_dep_error
 
@@ -18157,7 +18157,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/nonblocking_test: protobuf_dep_error
 
@@ -18200,7 +18200,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/noop-benchmark: protobuf_dep_error
 
@@ -18244,7 +18244,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/orphanable_test: protobuf_dep_error
 
@@ -18287,7 +18287,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/proto_server_reflection_test: protobuf_dep_error
 
@@ -18330,7 +18330,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/proto_utils_test: protobuf_dep_error
 
@@ -18373,7 +18373,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/qps_interarrival_test: protobuf_dep_error
 
@@ -18416,7 +18416,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/qps_json_driver: protobuf_dep_error
 
@@ -18459,7 +18459,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/qps_openloop_test: protobuf_dep_error
 
@@ -18502,7 +18502,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/qps_worker: protobuf_dep_error
 
@@ -18548,7 +18548,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/reconnect_interop_client: protobuf_dep_error
 
@@ -18601,7 +18601,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/reconnect_interop_server: protobuf_dep_error
 
@@ -18651,7 +18651,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/ref_counted_ptr_test: protobuf_dep_error
 
@@ -18694,7 +18694,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/ref_counted_test: protobuf_dep_error
 
@@ -18737,7 +18737,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/secure_auth_context_test: protobuf_dep_error
 
@@ -18780,7 +18780,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test: protobuf_dep_error
 
@@ -18823,7 +18823,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/server_builder_plugin_test: protobuf_dep_error
 
@@ -18868,7 +18868,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/server_builder_test: protobuf_dep_error
 
@@ -18916,7 +18916,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/server_context_test_spouse_test: protobuf_dep_error
 
@@ -18959,7 +18959,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/server_crash_test: protobuf_dep_error
 
@@ -19002,7 +19002,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/server_crash_test_client: protobuf_dep_error
 
@@ -19045,7 +19045,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/server_early_return_test: protobuf_dep_error
 
@@ -19090,7 +19090,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/server_request_call_test: protobuf_dep_error
 
@@ -19138,7 +19138,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/shutdown_test: protobuf_dep_error
 
@@ -19181,7 +19181,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/slice_hash_table_test: protobuf_dep_error
 
@@ -19224,7 +19224,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/slice_weak_hash_table_test: protobuf_dep_error
 
@@ -19267,7 +19267,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/stats_test: protobuf_dep_error
 
@@ -19310,7 +19310,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/status_metadata_test: protobuf_dep_error
 
@@ -19353,7 +19353,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/status_util_test: protobuf_dep_error
 
@@ -19396,7 +19396,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/streaming_throughput_test: protobuf_dep_error
 
@@ -19446,7 +19446,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/stress_test: protobuf_dep_error
 
@@ -19507,7 +19507,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/thread_manager_test: protobuf_dep_error
 
@@ -19550,7 +19550,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/thread_stress_test: protobuf_dep_error
 
@@ -19593,7 +19593,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/transport_pid_controller_test: protobuf_dep_error
 
@@ -19636,7 +19636,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/transport_security_common_api_test: protobuf_dep_error
 
@@ -19679,7 +19679,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/writes_per_rpc_test: protobuf_dep_error
 
@@ -19852,7 +19852,7 @@ $(BORINGSSL_CRYPTO_TEST_DATA_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_crypto_test_data: protobuf_dep_error
 
@@ -19892,7 +19892,7 @@ $(BORINGSSL_ASN1_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_asn1_test: protobuf_dep_error
 
@@ -19932,7 +19932,7 @@ $(BORINGSSL_BASE64_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_base64_test: protobuf_dep_error
 
@@ -19972,7 +19972,7 @@ $(BORINGSSL_BIO_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_bio_test: protobuf_dep_error
 
@@ -20012,7 +20012,7 @@ $(BORINGSSL_BUF_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_buf_test: protobuf_dep_error
 
@@ -20052,7 +20052,7 @@ $(BORINGSSL_BYTESTRING_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_bytestring_test: protobuf_dep_error
 
@@ -20092,7 +20092,7 @@ $(BORINGSSL_CHACHA_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_chacha_test: protobuf_dep_error
 
@@ -20132,7 +20132,7 @@ $(BORINGSSL_AEAD_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_aead_test: protobuf_dep_error
 
@@ -20172,7 +20172,7 @@ $(BORINGSSL_CIPHER_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_cipher_test: protobuf_dep_error
 
@@ -20212,7 +20212,7 @@ $(BORINGSSL_CMAC_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_cmac_test: protobuf_dep_error
 
@@ -20252,7 +20252,7 @@ $(BORINGSSL_COMPILER_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_compiler_test: protobuf_dep_error
 
@@ -20292,7 +20292,7 @@ $(BORINGSSL_CONSTANT_TIME_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_constant_time_test: protobuf_dep_error
 
@@ -20332,7 +20332,7 @@ $(BORINGSSL_ED25519_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_ed25519_test: protobuf_dep_error
 
@@ -20372,7 +20372,7 @@ $(BORINGSSL_SPAKE25519_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_spake25519_test: protobuf_dep_error
 
@@ -20412,7 +20412,7 @@ $(BORINGSSL_X25519_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_x25519_test: protobuf_dep_error
 
@@ -20452,7 +20452,7 @@ $(BORINGSSL_DH_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_dh_test: protobuf_dep_error
 
@@ -20492,7 +20492,7 @@ $(BORINGSSL_DIGEST_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_digest_test: protobuf_dep_error
 
@@ -20532,7 +20532,7 @@ $(BORINGSSL_DSA_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_dsa_test: protobuf_dep_error
 
@@ -20572,7 +20572,7 @@ $(BORINGSSL_ECDH_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_ecdh_test: protobuf_dep_error
 
@@ -20612,7 +20612,7 @@ $(BORINGSSL_ERR_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_err_test: protobuf_dep_error
 
@@ -20652,7 +20652,7 @@ $(BORINGSSL_EVP_EXTRA_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_evp_extra_test: protobuf_dep_error
 
@@ -20692,7 +20692,7 @@ $(BORINGSSL_EVP_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_evp_test: protobuf_dep_error
 
@@ -20732,7 +20732,7 @@ $(BORINGSSL_PBKDF_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_pbkdf_test: protobuf_dep_error
 
@@ -20772,7 +20772,7 @@ $(BORINGSSL_SCRYPT_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_scrypt_test: protobuf_dep_error
 
@@ -20812,7 +20812,7 @@ $(BORINGSSL_AES_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_aes_test: protobuf_dep_error
 
@@ -20852,7 +20852,7 @@ $(BORINGSSL_BN_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_bn_test: protobuf_dep_error
 
@@ -20892,7 +20892,7 @@ $(BORINGSSL_EC_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_ec_test: protobuf_dep_error
 
@@ -20932,7 +20932,7 @@ $(BORINGSSL_P256-X86_64_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_p256-x86_64_test: protobuf_dep_error
 
@@ -20972,7 +20972,7 @@ $(BORINGSSL_ECDSA_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_ecdsa_test: protobuf_dep_error
 
@@ -21012,7 +21012,7 @@ $(BORINGSSL_GCM_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_gcm_test: protobuf_dep_error
 
@@ -21052,7 +21052,7 @@ $(BORINGSSL_CTRDRBG_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_ctrdrbg_test: protobuf_dep_error
 
@@ -21092,7 +21092,7 @@ $(BORINGSSL_HKDF_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_hkdf_test: protobuf_dep_error
 
@@ -21132,7 +21132,7 @@ $(BORINGSSL_HMAC_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_hmac_test: protobuf_dep_error
 
@@ -21172,7 +21172,7 @@ $(BORINGSSL_LHASH_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_lhash_test: protobuf_dep_error
 
@@ -21212,7 +21212,7 @@ $(BORINGSSL_OBJ_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_obj_test: protobuf_dep_error
 
@@ -21252,7 +21252,7 @@ $(BORINGSSL_PKCS7_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_pkcs7_test: protobuf_dep_error
 
@@ -21292,7 +21292,7 @@ $(BORINGSSL_PKCS12_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_pkcs12_test: protobuf_dep_error
 
@@ -21332,7 +21332,7 @@ $(BORINGSSL_PKCS8_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_pkcs8_test: protobuf_dep_error
 
@@ -21372,7 +21372,7 @@ $(BORINGSSL_POLY1305_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_poly1305_test: protobuf_dep_error
 
@@ -21412,7 +21412,7 @@ $(BORINGSSL_POOL_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_pool_test: protobuf_dep_error
 
@@ -21452,7 +21452,7 @@ $(BORINGSSL_REFCOUNT_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_refcount_test: protobuf_dep_error
 
@@ -21492,7 +21492,7 @@ $(BORINGSSL_RSA_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_rsa_test: protobuf_dep_error
 
@@ -21532,7 +21532,7 @@ $(BORINGSSL_FILE_TEST_GTEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_file_test_gtest: protobuf_dep_error
 
@@ -21572,7 +21572,7 @@ $(BORINGSSL_GTEST_MAIN_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_gtest_main: protobuf_dep_error
 
@@ -21612,7 +21612,7 @@ $(BORINGSSL_THREAD_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_thread_test: protobuf_dep_error
 
@@ -21652,7 +21652,7 @@ $(BORINGSSL_X509_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_x509_test: protobuf_dep_error
 
@@ -21692,7 +21692,7 @@ $(BORINGSSL_TAB_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_tab_test: protobuf_dep_error
 
@@ -21732,7 +21732,7 @@ $(BORINGSSL_V3NAME_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_v3name_test: protobuf_dep_error
 
@@ -21772,7 +21772,7 @@ $(BORINGSSL_SPAN_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_span_test: protobuf_dep_error
 
@@ -21812,7 +21812,7 @@ $(BORINGSSL_SSL_TEST_OBJS): CPPFLAGS += -DOPENSSL_NO_ASM -D_GNU_SOURCE
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/boringssl_ssl_test: protobuf_dep_error
 
@@ -23046,7 +23046,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/resolver_component_test_unsecure: protobuf_dep_error
 
@@ -23089,7 +23089,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/resolver_component_test: protobuf_dep_error
 
@@ -23132,7 +23132,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker_unsecure: protobuf_dep_error
 
@@ -23175,7 +23175,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker: protobuf_dep_error
 
@@ -23218,7 +23218,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/address_sorting_test_unsecure: protobuf_dep_error
 
@@ -23261,7 +23261,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/address_sorting_test: protobuf_dep_error
 
