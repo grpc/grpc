@@ -6351,6 +6351,46 @@
     "deps": [
       "gpr", 
       "gpr_test_util", 
+      "grpc++_test_config", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "address_sorting_test_unsecure", 
+    "src": [
+      "test/cpp/naming/address_sorting_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_config", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "address_sorting_test", 
+    "src": [
+      "test/cpp/naming/address_sorting_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6582,6 +6622,19 @@
     "type": "target"
   }, 
   {
+    "deps": [], 
+    "headers": [
+      "third_party/address_sorting/address_sorting_internal.h", 
+      "third_party/address_sorting/include/address_sorting/address_sorting.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "address_sorting", 
+    "src": [], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
     "deps": [
       "grpc"
     ], 
@@ -6672,7 +6725,11 @@
       "grpc_base", 
       "grpc_base_headers", 
       "grpc_deadline_filter", 
+      "grpc_lb_policy_pick_first", 
+      "grpc_max_age_filter", 
       "grpc_message_size_filter", 
+      "grpc_resolver_dns_native", 
+      "grpc_resolver_sockaddr", 
       "grpc_server_load_reporting", 
       "grpc_transport_chttp2_client_secure", 
       "grpc_transport_chttp2_server_secure", 

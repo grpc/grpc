@@ -308,8 +308,12 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_deadline_filter",
+        "grpc_lb_policy_pick_first",
         "grpc_http_filters",
+        "grpc_max_age_filter",
         "grpc_message_size_filter",
+        "grpc_resolver_dns_native",
+        "grpc_resolver_sockaddr",
         "grpc_server_load_reporting",
         "grpc_transport_chttp2_client_secure",
         "grpc_transport_chttp2_server_secure",
@@ -1316,6 +1320,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "cares",
+        "address_sorting",
     ],
     language = "c++",
     deps = [

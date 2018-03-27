@@ -1330,6 +1330,17 @@ filegroups:
   - grpc++
   - grpc
 libs:
+- name: address_sorting
+  build: all
+  language: c
+  headers:
+  - third_party/address_sorting/address_sorting_internal.h
+  - third_party/address_sorting/include/address_sorting/address_sorting.h
+  src:
+  - third_party/address_sorting/address_sorting.c
+  - third_party/address_sorting/address_sorting_posix.c
+  - third_party/address_sorting/address_sorting_windows.c
+  secure: false
 - name: alts_test_util
   build: private
   language: c
@@ -1409,7 +1420,11 @@ libs:
   - grpc_base
   - grpc_base_headers
   - grpc_deadline_filter
+  - grpc_lb_policy_pick_first
+  - grpc_max_age_filter
   - grpc_message_size_filter
+  - grpc_resolver_dns_native
+  - grpc_resolver_sockaddr
   - grpc_server_load_reporting
   - grpc_transport_cronet_client_secure
   - grpc_transport_chttp2_client_secure
@@ -5501,6 +5516,7 @@ php_config_m4:
   - gpr
   - boringssl
   - z
+  - address_sorting
   headers:
   - src/php/ext/grpc/byte_buffer.h
   - src/php/ext/grpc/call.h
@@ -5532,6 +5548,7 @@ python_dependencies:
   - ares
   - boringssl
   - z
+  - address_sorting
 ruby_gem:
   deps:
   - grpc
@@ -5539,3 +5556,4 @@ ruby_gem:
   - ares
   - boringssl
   - z
+  - address_sorting

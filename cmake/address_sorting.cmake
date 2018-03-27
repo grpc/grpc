@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 # Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-EXTRA_FLAGS="--copt=-gmlt --strip=never --copt=-fsanitize=address --linkopt=-fsanitize=address --test_timeout=3600"
-github/grpc/tools/internal_ci/linux/grpc_bazel_on_foundry_base.sh "${EXTRA_FLAGS}"
-
+set(_gRPC_ADDRESS_SORTING_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/address_sorting/include")
+set(_gRPC_ADDRESS_SORTING_LIBRARIES address_sorting)

@@ -78,4 +78,9 @@ void grpc_register_security_filters(void) {
                                    maybe_prepend_server_auth_filter, nullptr);
 }
 
-void grpc_security_init() { grpc_security_register_handshaker_factories(); }
+void grpc_security_init() {
+  grpc_security_register_handshaker_factories();
+  grpc_core::DefaultSslRootStore::Initialize();
+}
+
+void grpc_security_shutdown() { grpc_core::DefaultSslRootStore::Destroy(); }

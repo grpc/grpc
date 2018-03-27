@@ -38,7 +38,6 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 "${KOKORO_GFILE_DIR}/bazel_wrapper.py" \
   --host_jvm_args=-Dbazel.DigestFunction=SHA256 \
   test --jobs="100" \
-  --test_timeout="3600,3600,3600,3600" \
   --test_output=errors  \
   --verbose_failures=true  \
   --keep_going  \
