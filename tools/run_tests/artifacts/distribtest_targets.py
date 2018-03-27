@@ -232,7 +232,7 @@ class PHPDistribTest(object):
                 copy_rel_path='test/distrib')
         elif self.platform == 'macos':
             return create_jobspec(
-                self.name, ['test/distrib/php/run_distrib_test.sh'],
+                self.name, ['test/distrib/php/run_distrib_test_macos.sh'],
                 environ={'EXTERNAL_GIT_ROOT': '../../../..'},
                 use_workspace=True)
         else:

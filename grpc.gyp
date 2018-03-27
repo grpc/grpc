@@ -157,6 +157,17 @@
   },
   'targets': [
     {
+      'target_name': 'address_sorting',
+      'type': 'static_library',
+      'dependencies': [
+      ],
+      'sources': [
+        'third_party/address_sorting/address_sorting.c',
+        'third_party/address_sorting/address_sorting_posix.c',
+        'third_party/address_sorting/address_sorting_windows.c',
+      ],
+    },
+    {
       'target_name': 'alts_test_util',
       'type': 'static_library',
       'dependencies': [

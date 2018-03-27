@@ -11,6 +11,13 @@ android {
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         externalNativeBuild {
             cmake {
+                // The paths to the protoc and grpc_cpp_plugin binaries on the host system (codegen
+                // is not cross-compiled to Android)
+                def protoc = project.hasProperty('protoc') ?
+                        project.property('protoc') : '/usr/local/bin/protoc'
+                def grpc_cpp_plugin = project.hasProperty('grpc_cpp_plugin') ?
+                        project.property('grpc_cpp_plugin') : '/usr/local/bin/grpc_cpp_plugin'
+
                 cppFlags "-std=c++14 -frtti -fexceptions"
                 arguments '-DANDROID_STL=c++_static'
                 arguments '-DRUN_HAVE_POSIX_REGEX=0'
@@ -18,12 +25,8 @@ android {
                 arguments '-DRUN_HAVE_STEADY_CLOCK=0'
                 arguments '-Dprotobuf_BUILD_PROTOC_BINARIES=off'
                 arguments '-DgRPC_BUILD_CODEGEN=off'
-                // Set this to the path to the protoc binary on the host system (codegen is not
-                // cross-compiled to Android)
-                arguments '-Dhelloworld_PROTOBUF_PROTOC_EXECUTABLE=/usr/local/bin/protoc'
-                // Set this to the path to the gRPC C++ protoc plugin binary on the host system
-                // (codegen is not cross-compiled to Android)
-                arguments '-Dhelloworld_GRPC_CPP_PLUGIN_EXECUTABLE=/usr/local/bin/grpc_cpp_plugin'
+                arguments '-Dhelloworld_PROTOBUF_PROTOC_EXECUTABLE=' + protoc
+                arguments '-Dhelloworld_GRPC_CPP_PLUGIN_EXECUTABLE=' + grpc_cpp_plugin
             }
         }
         ndk.abiFilters 'x86'
