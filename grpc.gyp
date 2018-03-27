@@ -58,6 +58,7 @@
       '-Wno-long-long',
       '-Wno-unused-parameter',
       '-DOSATOMIC_USE_INLINED=1',
+      '-Ithird_party/abseil-cpp',
       '-Wno-deprecated-declarations',
     ],
     'ldflags': [
@@ -136,6 +137,7 @@
             '-Wno-long-long',
             '-Wno-unused-parameter',
             '-DOSATOMIC_USE_INLINED=1',
+            '-Ithird_party/abseil-cpp',
             '-Wno-deprecated-declarations',
           ],
           'OTHER_CPLUSPLUSFLAGS': [
@@ -146,6 +148,7 @@
             '-Wno-long-long',
             '-Wno-unused-parameter',
             '-DOSATOMIC_USE_INLINED=1',
+            '-Ithird_party/abseil-cpp',
             '-Wno-deprecated-declarations',
             '-stdlib=libc++',
             '-std=c++11',
