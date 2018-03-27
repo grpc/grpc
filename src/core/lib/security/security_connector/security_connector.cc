@@ -550,7 +550,7 @@ grpc_channel_security_connector* grpc_fake_channel_security_connector_create(
   c->expected_targets = gpr_strdup(expected_targets);
   c->is_lb_channel = grpc_core::FindTargetAuthorityTableInArgs(args) != nullptr;
   const grpc_arg* target_name_override_arg =
-      grpc_channel_args_find(args, GRPC_FAKE_SECURITY_TARGET_NAME_OVERRIDE_ARG);
+      grpc_channel_args_find(args, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
   if (target_name_override_arg != nullptr) {
     c->target_name_override =
         gpr_strdup(grpc_channel_arg_get_string(target_name_override_arg));

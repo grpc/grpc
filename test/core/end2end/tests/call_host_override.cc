@@ -42,7 +42,7 @@ static grpc_end2end_test_fixture begin_test(grpc_end2end_test_config config,
   f = config.create_fixture(client_args, server_args);
   grpc_arg fake_security_name_override = {
       GRPC_ARG_STRING,
-      const_cast<char*>(GRPC_FAKE_SECURITY_TARGET_NAME_OVERRIDE_ARG),
+      const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
       {const_cast<char*>("foo.test.google.fr:1234")}};
   grpc_channel_args* new_client_args = grpc_channel_args_copy_and_add(
       client_args, &fake_security_name_override, 1);

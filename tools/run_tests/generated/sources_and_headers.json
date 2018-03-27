@@ -9522,8 +9522,7 @@
       "src/core/ext/filters/client_channel/retry_throttle.h", 
       "src/core/ext/filters/client_channel/subchannel.h", 
       "src/core/ext/filters/client_channel/subchannel_index.h", 
-      "src/core/ext/filters/client_channel/uri_parser.h", 
-      "src/core/ext/transport/chttp2/client/authority.h"
+      "src/core/ext/filters/client_channel/uri_parser.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
@@ -9569,9 +9568,7 @@
       "src/core/ext/filters/client_channel/subchannel_index.cc", 
       "src/core/ext/filters/client_channel/subchannel_index.h", 
       "src/core/ext/filters/client_channel/uri_parser.cc", 
-      "src/core/ext/filters/client_channel/uri_parser.h", 
-      "src/core/ext/transport/chttp2/client/authority.cc", 
-      "src/core/ext/transport/chttp2/client/authority.h"
+      "src/core/ext/filters/client_channel/uri_parser.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -10220,12 +10217,15 @@
       "grpc_transport_chttp2"
     ], 
     "headers": [
+      "src/core/ext/transport/chttp2/client/authority.h", 
       "src/core/ext/transport/chttp2/client/chttp2_connector.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
     "name": "grpc_transport_chttp2_client_connector", 
     "src": [
+      "src/core/ext/transport/chttp2/client/authority.cc", 
+      "src/core/ext/transport/chttp2/client/authority.h", 
       "src/core/ext/transport/chttp2/client/chttp2_connector.cc", 
       "src/core/ext/transport/chttp2/client/chttp2_connector.h"
     ], 

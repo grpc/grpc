@@ -1485,9 +1485,11 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_transport_chttp2_client_connector",
     srcs = [
+        "src/core/ext/transport/chttp2/client/authority.cc",
         "src/core/ext/transport/chttp2/client/chttp2_connector.cc",
     ],
     hdrs = [
+        "src/core/ext/transport/chttp2/client/authority.h",
         "src/core/ext/transport/chttp2/client/chttp2_connector.h",
     ],
     language = "c++",

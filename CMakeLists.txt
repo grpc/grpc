@@ -1092,6 +1092,7 @@ add_library(grpc
   src/core/tsi/transport_security_adapter.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
+  src/core/ext/transport/chttp2/client/authority.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
   src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
@@ -1114,7 +1115,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
-  src/core/ext/transport/chttp2/client/authority.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/tsi/alts_transport_security.cc
   src/core/tsi/fake_transport_security.cc
@@ -1449,7 +1449,6 @@ add_library(grpc_cronet
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
-  src/core/ext/transport/chttp2/client/authority.cc
   src/core/lib/http/httpcli_security_connector.cc
   src/core/lib/security/context/security_context.cc
   src/core/lib/security/credentials/alts/alts_credentials.cc
@@ -1514,6 +1513,7 @@ add_library(grpc_cronet
   src/core/tsi/transport_security_adapter.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
+  src/core/ext/transport/chttp2/client/authority.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
   src/core/tsi/alts_transport_security.cc
   src/core/tsi/fake_transport_security.cc
@@ -1811,7 +1811,6 @@ add_library(grpc_test_util
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
-  src/core/ext/transport/chttp2/client/authority.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
@@ -2114,7 +2113,6 @@ add_library(grpc_test_util_unsecure
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
-  src/core/ext/transport/chttp2/client/authority.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
@@ -2408,6 +2406,7 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/server/chttp2_server.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
+  src/core/ext/transport/chttp2/client/authority.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
   src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
@@ -2430,7 +2429,6 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
-  src/core/ext/transport/chttp2/client/authority.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/transport/inproc/inproc_plugin.cc
   src/core/ext/transport/inproc/inproc_transport.cc
@@ -3022,6 +3020,7 @@ add_library(grpc++_cronet
   src/cpp/codegen/codegen_init.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
+  src/core/ext/transport/chttp2/client/authority.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
@@ -3220,7 +3219,6 @@ add_library(grpc++_cronet
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
-  src/core/ext/transport/chttp2/client/authority.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc

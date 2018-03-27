@@ -564,7 +564,6 @@ filegroups:
   - src/core/ext/filters/client_channel/subchannel.h
   - src/core/ext/filters/client_channel/subchannel_index.h
   - src/core/ext/filters/client_channel/uri_parser.h
-  - src/core/ext/transport/chttp2/client/authority.h
   src:
   - src/core/ext/filters/client_channel/backup_poller.cc
   - src/core/ext/filters/client_channel/channel_connectivity.cc
@@ -587,7 +586,6 @@ filegroups:
   - src/core/ext/filters/client_channel/subchannel.cc
   - src/core/ext/filters/client_channel/subchannel_index.cc
   - src/core/ext/filters/client_channel/uri_parser.cc
-  - src/core/ext/transport/chttp2/client/authority.cc
   plugin: grpc_client_channel
   uses:
   - grpc_base
@@ -939,8 +937,10 @@ filegroups:
   - gpr
 - name: grpc_transport_chttp2_client_connector
   headers:
+  - src/core/ext/transport/chttp2/client/authority.h
   - src/core/ext/transport/chttp2/client/chttp2_connector.h
   src:
+  - src/core/ext/transport/chttp2/client/authority.cc
   - src/core/ext/transport/chttp2/client/chttp2_connector.cc
   uses:
   - grpc_transport_chttp2
