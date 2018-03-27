@@ -507,6 +507,11 @@ struct grpc_chttp2_stream {
   grpc_slice_buffer unprocessed_incoming_frames_buffer;
   grpc_closure* on_next;    /* protected by t combiner */
   bool pending_byte_stream; /* protected by t combiner */
+  // cached length of buffer to be used by the transport thread in cases where
+  // stream->pending_byte_stream == true. The value is saved before
+  // application threads are allowed to modify
+  // unprocessed_incoming_frames_buffer
+  size_t unprocessed_incoming_frames_buffer_cached_length;
   grpc_closure reset_byte_stream;
   grpc_error* byte_stream_error; /* protected by t combiner */
   bool received_last_frame;      /* protected by t combiner */
