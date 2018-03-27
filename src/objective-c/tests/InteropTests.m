@@ -488,9 +488,9 @@ BOOL isRemoteInteropTest(NSString *host) {
 
 - (void)testKeepalive {
   XCTAssertNotNil(self.class.host);
-  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"PingPong"];
+  __weak XCTestExpectation *expectation = [self expectationWithDescription:@"Keepalive"];
 
-  [GRPCCall setKeepaliveWithInterval:1500 timeout:1 forHost:self.class.host];
+  [GRPCCall setKeepaliveWithInterval:1500 timeout:0 forHost:self.class.host];
 
   NSArray *requests = @[@27182, @8];
   NSArray *responses = @[@31415, @9];
