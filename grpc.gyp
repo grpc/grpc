@@ -1639,6 +1639,7 @@
       'target_name': 'lb_load_data_store',
       'type': 'static_library',
       'dependencies': [
+        'grpc++',
       ],
       'sources': [
         'src/cpp/server/load_reporter/load_data_store.cc',
@@ -1648,6 +1649,8 @@
       'target_name': 'lb_load_reporter',
       'type': 'static_library',
       'dependencies': [
+        'grpc++',
+        'lb_load_data_store',
       ],
       'sources': [
         'src/cpp/server/load_reporter/load_reporter.cc',
@@ -1657,6 +1660,8 @@
       'target_name': 'lb_load_reporter_async_service_impl',
       'type': 'static_library',
       'dependencies': [
+        'grpc++',
+        'lb_load_reporter',
       ],
       'sources': [
         'src/cpp/server/load_reporter/load_reporter_async_service_impl.cc',

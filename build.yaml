@@ -1882,8 +1882,11 @@ libs:
   language: c++
   headers:
   - src/cpp/server/load_reporter/load_data_store.h
+  - src/cpp/server/load_reporter/util.h
   src:
   - src/cpp/server/load_reporter/load_data_store.cc
+  deps:
+  - grpc++
 - name: lb_load_reporter
   build: all
   language: c++
@@ -1891,13 +1894,20 @@ libs:
   - src/cpp/server/load_reporter/load_reporter.h
   src:
   - src/cpp/server/load_reporter/load_reporter.cc
+  deps:
+  - grpc++
+  - lb_load_data_store
 - name: lb_load_reporter_async_service_impl
   build: all
   language: c++
   headers:
   - src/cpp/server/load_reporter/load_reporter_async_service_impl.h
+  - src/proto/grpc/lb/v1/load_reporter.grpc.pb.h
   src:
   - src/cpp/server/load_reporter/load_reporter_async_service_impl.cc
+  deps:
+  - grpc++
+  - lb_load_reporter
 - name: qps
   build: private
   language: c++

@@ -7487,22 +7487,29 @@
     "type": "lib"
   }, 
   {
-    "deps": [], 
+    "deps": [
+      "grpc++"
+    ], 
     "headers": [
-      "src/cpp/server/load_reporter/load_data_store.h"
+      "src/cpp/server/load_reporter/load_data_store.h", 
+      "src/cpp/server/load_reporter/util.h"
     ], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "lb_load_data_store", 
     "src": [
       "src/cpp/server/load_reporter/load_data_store.cc", 
-      "src/cpp/server/load_reporter/load_data_store.h"
+      "src/cpp/server/load_reporter/load_data_store.h", 
+      "src/cpp/server/load_reporter/util.h"
     ], 
     "third_party": false, 
     "type": "lib"
   }, 
   {
-    "deps": [], 
+    "deps": [
+      "grpc++", 
+      "lb_load_data_store"
+    ], 
     "headers": [
       "src/cpp/server/load_reporter/load_reporter.h"
     ], 
@@ -7517,16 +7524,21 @@
     "type": "lib"
   }, 
   {
-    "deps": [], 
+    "deps": [
+      "grpc++", 
+      "lb_load_reporter"
+    ], 
     "headers": [
-      "src/cpp/server/load_reporter/load_reporter_async_service_impl.h"
+      "src/cpp/server/load_reporter/load_reporter_async_service_impl.h", 
+      "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h"
     ], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "lb_load_reporter_async_service_impl", 
     "src": [
       "src/cpp/server/load_reporter/load_reporter_async_service_impl.cc", 
-      "src/cpp/server/load_reporter/load_reporter_async_service_impl.h"
+      "src/cpp/server/load_reporter/load_reporter_async_service_impl.h", 
+      "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h"
     ], 
     "third_party": false, 
     "type": "lib"

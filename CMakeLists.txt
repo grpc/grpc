@@ -5007,6 +5007,7 @@ target_include_directories(lb_load_data_store
 target_link_libraries(lb_load_data_store
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++
 )
 
 
@@ -5052,6 +5053,8 @@ target_include_directories(lb_load_reporter
 target_link_libraries(lb_load_reporter
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++
+  lb_load_data_store
 )
 
 
@@ -5097,6 +5100,8 @@ target_include_directories(lb_load_reporter_async_service_impl
 target_link_libraries(lb_load_reporter_async_service_impl
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++
+  lb_load_reporter
 )
 
 
