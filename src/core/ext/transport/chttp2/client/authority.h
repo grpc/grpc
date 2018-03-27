@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_AUTHORITY_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_AUTHORITY_H
+#ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_CLIENT_AUTHORITY_H
+#define GRPC_CORE_EXT_TRANSPORT_CHTTP2_CLIENT_AUTHORITY_H
 
 #include <grpc/support/port_platform.h>
 
@@ -33,4 +33,4 @@
 grpc_channel_args* grpc_default_authority_add_if_not_present(
     const grpc_channel_args* args);
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_AUTHORITY_H */
+#endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_CLIENT_AUTHORITY_H */
