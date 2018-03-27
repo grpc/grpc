@@ -554,7 +554,7 @@ struct grpc_chttp2_stream {
   // stream->pending_byte_stream == true. The value is saved before
   // application threads are allowed to modify
   // unprocessed_incoming_frames_buffer
-  int32_t unprocessed_incoming_frames_buffer_cached_length;
+  size_t unprocessed_incoming_frames_buffer_cached_length;
   grpc_closure reset_byte_stream;
   grpc_error* byte_stream_error; /* protected by t combiner */
   bool received_last_frame;      /* protected by t combiner */
