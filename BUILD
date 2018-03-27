@@ -308,8 +308,8 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_deadline_filter",
-        "grpc_lb_policy_pick_first",
         "grpc_http_filters",
+        "grpc_lb_policy_pick_first",
         "grpc_max_age_filter",
         "grpc_message_size_filter",
         "grpc_resolver_dns_native",
@@ -1013,7 +1013,6 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_client_channel",
     srcs = [
-        "src/core/ext/filters/client_channel/authority.cc",
         "src/core/ext/filters/client_channel/backup_poller.cc",
         "src/core/ext/filters/client_channel/channel_connectivity.cc",
         "src/core/ext/filters/client_channel/client_channel.cc",
@@ -1037,7 +1036,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/uri_parser.cc",
     ],
     hdrs = [
-        "src/core/ext/filters/client_channel/authority.h",
         "src/core/ext/filters/client_channel/backup_poller.h",
         "src/core/ext/filters/client_channel/client_channel.h",
         "src/core/ext/filters/client_channel/client_channel_factory.h",
