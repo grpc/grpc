@@ -1108,12 +1108,10 @@ tsi_ssl_root_certs_store* DefaultSslRootStore::default_root_store_;
 grpc_slice DefaultSslRootStore::default_pem_root_certs_;
 
 const tsi_ssl_root_certs_store* DefaultSslRootStore::GetRootStore() {
-  InitRootStore();
   return default_root_store_;
 }
 
 const char* DefaultSslRootStore::GetPemRootCerts() {
-  InitRootStore();
   return GRPC_SLICE_IS_EMPTY(default_pem_root_certs_)
              ? nullptr
              : reinterpret_cast<const char*>
@@ -1121,8 +1119,14 @@ const char* DefaultSslRootStore::GetPemRootCerts() {
 }
 
 void DefaultSslRootStore::Initialize() {
-  default_root_store_ = nullptr;
-  default_pem_root_certs_ = grpc_empty_slice();
+  default_pem_root_certs_ = ComputePemRootCerts();
+  if (!GRPC_SLICE_IS_EMPTY(default_pem_root_certs_)) {
+    default_root_store_ =
+        tsi_ssl_root_certs_store_create(reinterpret_cast<const char*>(
+            GRPC_SLICE_START_PTR(default_pem_root_certs_)));
+  } else {
+    default_root_store_ = nullptr;
+  }
 }
 
 void DefaultSslRootStore::Destroy() {
@@ -1160,20 +1164,6 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
                       grpc_load_file(installed_roots_path, 1, &result));
   }
   return result;
-}
-
-void DefaultSslRootStore::InitRootStore() {
-  static gpr_once once = GPR_ONCE_INIT;
-  gpr_once_init(&once, DefaultSslRootStore::InitRootStoreOnce);
-}
-
-void DefaultSslRootStore::InitRootStoreOnce() {
-  default_pem_root_certs_ = ComputePemRootCerts();
-  if (!GRPC_SLICE_IS_EMPTY(default_pem_root_certs_)) {
-    default_root_store_ =
-        tsi_ssl_root_certs_store_create(reinterpret_cast<const char*>(
-            GRPC_SLICE_START_PTR(default_pem_root_certs_)));
-  }
 }
 
 }  // namespace grpc_core

@@ -274,12 +274,6 @@ class DefaultSslRootStore {
   // Construct me not!
   DefaultSslRootStore();
 
-  // Initialization of default SSL root store.
-  static void InitRootStore();
-
-  // One-time initialization of default SSL root store.
-  static void InitRootStoreOnce();
-
   // SSL root store in tsi_ssl_root_certs_store object.
   static tsi_ssl_root_certs_store* default_root_store_;
 
