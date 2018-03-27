@@ -287,7 +287,9 @@ def targets():
     return [
         CppDistribTest('linux', 'x64', 'jessie', 'routeguide'),
         CppDistribTest('linux', 'x64', 'jessie', 'cmake'),
+        CppDistribTest('linux', 'x64', 'jessie', 'cmake_as_externalproject'),
         CppDistribTest('windows', 'x86', testcase='cmake'),
+        CppDistribTest('windows', 'x86', testcase='cmake_as_externalproject'),
         CSharpDistribTest('linux', 'x64', 'wheezy'),
         CSharpDistribTest('linux', 'x64', 'jessie'),
         CSharpDistribTest('linux', 'x86', 'jessie'),
