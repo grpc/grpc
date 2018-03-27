@@ -101,6 +101,8 @@ END2END_TESTS = {
     'binary_metadata': test_options(),
     'resource_quota_server': test_options(proxyable=False),
     'call_creds': test_options(secure=True),
+    'call_host_override': test_options(needs_fullstack=True, needs_dns=True,
+                                       needs_names=True),
     'cancel_after_accept': test_options(),
     'cancel_after_client_done': test_options(),
     'cancel_after_invoke': test_options(),
