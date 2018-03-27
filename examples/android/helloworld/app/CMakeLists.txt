@@ -26,6 +26,10 @@ add_library(libgpr STATIC IMPORTED)
 set_target_properties(libgpr PROPERTIES IMPORTED_LOCATION
   ${GRPC_BUILD_DIR}/libgpr.a)
 
+add_library(libaddress_sorting STATIC IMPORTED)
+set_target_properties(libaddress_sorting PROPERTIES IMPORTED_LOCATION
+  ${GRPC_BUILD_DIR}/libaddress_sorting.a)
+
 add_library(libcares STATIC IMPORTED)
 set_target_properties(libcares PROPERTIES IMPORTED_LOCATION
   ${GRPC_BUILD_DIR}/third_party/cares/cares/lib/libcares.a)
@@ -113,6 +117,7 @@ target_include_directories(grpc-helloworld
 target_link_libraries(grpc-helloworld
   libgrpc++
   libgrpc
+  libaddress_sorting
   libzlib
   libcares
   libssl
