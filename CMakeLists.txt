@@ -5691,15 +5691,6 @@ target_link_libraries(check_epollexclusive
   gpr
 )
 
-
-if (gRPC_INSTALL)
-  install(TARGETS check_epollexclusive EXPORT gRPCTargets
-    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
-  )
-endif()
-
 if (gRPC_BUILD_TESTS)
 
 add_executable(chttp2_hpack_encoder_test
@@ -6975,15 +6966,6 @@ target_link_libraries(grpc_create_jwt
   gpr
 )
 
-
-if (gRPC_INSTALL)
-  install(TARGETS grpc_create_jwt EXPORT gRPCTargets
-    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
-  )
-endif()
-
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_credentials_test
@@ -7151,15 +7133,6 @@ target_link_libraries(grpc_print_google_default_creds_token
   gpr
 )
 
-
-if (gRPC_INSTALL)
-  install(TARGETS grpc_print_google_default_creds_token EXPORT gRPCTargets
-    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
-  )
-endif()
-
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_security_connector_test
@@ -7240,15 +7213,6 @@ target_link_libraries(grpc_verify_jwt
   grpc
   gpr
 )
-
-
-if (gRPC_INSTALL)
-  install(TARGETS grpc_verify_jwt EXPORT gRPCTargets
-    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
-  )
-endif()
 
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX)
@@ -13911,15 +13875,6 @@ target_link_libraries(gen_hpack_tables
 )
 
 
-if (gRPC_INSTALL)
-  install(TARGETS gen_hpack_tables EXPORT gRPCTargets
-    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
-  )
-endif()
-
-
 add_executable(gen_legal_metadata_characters
   tools/codegen/core/gen_legal_metadata_characters.cc
 )
@@ -13942,15 +13897,6 @@ target_link_libraries(gen_legal_metadata_characters
 )
 
 
-if (gRPC_INSTALL)
-  install(TARGETS gen_legal_metadata_characters EXPORT gRPCTargets
-    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
-  )
-endif()
-
-
 add_executable(gen_percent_encoding_tables
   tools/codegen/core/gen_percent_encoding_tables.cc
 )
@@ -13971,15 +13917,6 @@ target_include_directories(gen_percent_encoding_tables
 target_link_libraries(gen_percent_encoding_tables
   ${_gRPC_ALLTARGETS_LIBRARIES}
 )
-
-
-if (gRPC_INSTALL)
-  install(TARGETS gen_percent_encoding_tables EXPORT gRPCTargets
-    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
-  )
-endif()
 
 if (gRPC_BUILD_TESTS)
 
