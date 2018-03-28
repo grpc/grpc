@@ -638,6 +638,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "fixed_capacity_vector",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/gprpp/fixed_capacity_vector.h",
+    ],
+    deps = [
+        "gpr_base",
+    ],
+)
+
+grpc_cc_library(
     name = "debug_location",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/debug_location.h"],

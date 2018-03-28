@@ -419,6 +419,7 @@ filegroups:
   - src/core/lib/debug/stats.h
   - src/core/lib/debug/stats_data.h
   - src/core/lib/gprpp/debug_location.h
+  - src/core/lib/gprpp/fixed_capacity_vector.h
   - src/core/lib/gprpp/inlined_vector.h
   - src/core/lib/gprpp/orphanable.h
   - src/core/lib/gprpp/ref_counted.h
@@ -4407,6 +4408,20 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: fixed_capacity_vector_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/gprpp/fixed_capacity_vector_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses:
+  - grpc++_test
 - name: generic_end2end_test
   gtest: true
   build: test

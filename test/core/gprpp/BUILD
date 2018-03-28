@@ -55,6 +55,19 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "fixed_capacity_vector_test",
+    srcs = ["fixed_capacity_vector_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:fixed_capacity_vector",
+        "//test/core/util:gpr_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "orphanable_test",
     srcs = ["orphanable_test.cc"],
     external_deps = [
