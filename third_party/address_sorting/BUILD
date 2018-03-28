@@ -28,6 +28,8 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+# TODO: don't submit this change
+
 package(
     default_visibility = ["//visibility:public"],
     features = [

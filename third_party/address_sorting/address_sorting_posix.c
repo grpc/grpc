@@ -38,6 +38,8 @@
  * this was written.
  */
 
+// TODO: don't submit this change
+
 #include "address_sorting_internal.h"
 
 #if defined(ADDRESS_SORTING_POSIX)
