@@ -88,8 +88,7 @@ class InlinedVector {
   template <typename... Args>
   void emplace_back(Args&&... args) {
     if (size_ == capacity_) {
-      const size_t new_capacity = capacity_ == 0 ? 2 : capacity_ * 2;
-      reserve(new_capacity);
+      reserve(capacity_ * 2);
     }
     new (&(data()[size_])) T(std::forward<Args>(args)...);
     ++size_;
