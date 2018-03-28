@@ -545,13 +545,13 @@ class PythonLanguage:
 
     def client_cmd(self, args):
         return [
-            'py27/bin/python', 'src/python/grpcio_tests/setup.py',
+            'py27_native/bin/python', 'src/python/grpcio_tests/setup.py',
             'run_interop', '--client', '--args="{}"'.format(' '.join(args))
         ]
 
     def client_cmd_http2interop(self, args):
         return [
-            'py27/bin/python',
+            'py27_native/bin/python',
             'src/python/grpcio_tests/tests/http2/negative_http2_client.py',
         ] + args
 
@@ -560,7 +560,7 @@ class PythonLanguage:
 
     def server_cmd(self, args):
         return [
-            'py27/bin/python', 'src/python/grpcio_tests/setup.py',
+            'py27_native/bin/python', 'src/python/grpcio_tests/setup.py',
             'run_interop', '--server', '--args="{}"'.format(' '.join(args))
         ]
 

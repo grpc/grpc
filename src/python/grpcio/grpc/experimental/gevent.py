@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2015 gRPC authors.
+# Copyright 2018 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,19 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""gRPC's Python gEvent APIs."""
 
-set -ex
+from grpc._cython import cygrpc as _cygrpc
 
-# change to grpc repo root
-cd "$(dirname "$0")/../../.."
 
-PYTHON=$(realpath "${1:-py27/bin/python}")
+def init_gevent():
+    """Patches gRPC's libraries to be compatible with gevent.
 
-ROOT=$(pwd)
+    This must be called AFTER the python standard lib has been patched,
+    but BEFORE creating and gRPC objects.
 
-$PYTHON "$ROOT/src/python/grpcio_tests/setup.py" "$2"
-
-mkdir -p "$ROOT/reports"
-rm -rf "$ROOT/reports/python-coverage"
-(mv -T "$ROOT/htmlcov" "$ROOT/reports/python-coverage") || true
-
+    In order for progress to be made, the application must drive the event loop.
+    """
+    _cygrpc.init_grpc_gevent()
