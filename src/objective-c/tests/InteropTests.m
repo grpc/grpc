@@ -486,6 +486,7 @@ BOOL isRemoteInteropTest(NSString *host) {
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
+#ifndef GRPC_COMPILE_WITH_CRONET
 - (void)testKeepalive {
   XCTAssertNotNil(self.class.host);
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"Keepalive"];
@@ -525,5 +526,6 @@ BOOL isRemoteInteropTest(NSString *host) {
 
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
+#endif
 
 @end
