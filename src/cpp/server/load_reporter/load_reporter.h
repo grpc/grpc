@@ -46,6 +46,7 @@ namespace grpc {
 
 class CensusViewProvider {
  public:
+  virtual ~CensusViewProvider() = default;
   virtual bool FetchData() = 0;
 };
 
@@ -56,6 +57,7 @@ class CensusViewProviderDefaultImpl : public CensusViewProvider {
 
 class CpuStatsProvider {
  public:
+  virtual ~CpuStatsProvider() = default;
   // Gets the cumulative used CPU and total CPU resource.
   virtual std::pair<double, double> GetCpuStats() = 0;
 };
@@ -125,7 +127,7 @@ class LoadReporter {
   void AttachOrphanLoadId(Load* load,
                           const PerBalancerStore* per_balancer_store);
 
-  std::atomic_int64_t next_lb_id_{0};
+  std::atomic<int64_t> next_lb_id_{0};
   const std::chrono::seconds feedback_sample_window_seconds_;
   std::mutex feedback_mu_;
   std::unique_ptr<CensusViewProvider> census_view_provider_;

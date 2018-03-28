@@ -26,7 +26,6 @@
 #include <grpcpp/grpcpp.h>
 
 #include "src/cpp/server/load_reporter/load_reporter.h"
-#include "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h"
 
 constexpr uint32_t FEEDBACK_SAMPLE_WINDOW_SECONDS = 10;
 constexpr uint32_t FETCH_AND_SAMPLE_INTERVAL_SECONDS = 1;
