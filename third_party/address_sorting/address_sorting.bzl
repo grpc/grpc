@@ -28,6 +28,8 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+# TODO: don't submit this change
+
 def address_sorting_cc_library(name, srcs, hdrs, copts, includes):
   native.cc_library(
       name = name,
