@@ -4996,6 +4996,18 @@ targets:
   - gpr
   uses:
   - grpc++_test
+- name: retry_throttle_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/client_channel/retry_throttle_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses_polling: false
 - name: secure_auth_context_test
   gtest: true
   build: test
