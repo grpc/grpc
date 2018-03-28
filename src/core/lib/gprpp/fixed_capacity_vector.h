@@ -41,7 +41,7 @@ class FixedCapacityVector {
   static UniquePtr<FixedCapacityVector> Create(size_t capacity) {
     // Allocate space for both this object and the elements.
     FixedCapacityVector* v = static_cast<FixedCapacityVector*>(
-        gpr_malloc(sizeof(FixedCapacityVector) + (capacity * sizeof(T))));
+        gpr_malloc(padded_allocation_size() + (capacity * sizeof(T))));
     new (v) FixedCapacityVector(capacity);
     return UniquePtr<FixedCapacityVector>(v);
   }
@@ -86,9 +86,23 @@ class FixedCapacityVector {
   explicit FixedCapacityVector(size_t capacity)
       : capacity_(capacity), size_(0) {}
 
-  T* data() { return reinterpret_cast<T*>(this + 1); }
+  // Returns the size of the FixedCapacityVector object, padded up to
+  // the alignment of T.  This is the offset from the object's address
+  // at which we store the elements.
+  static size_t padded_allocation_size() {
+    return (sizeof(FixedCapacityVector) + alignof(T) - 1u) & ~(alignof(T) - 1u);
+  }
 
-  const T* data() const { return reinterpret_cast<const T*>(this + 1); }
+  // Returns a pointer to the array of elements.
+  // Defined for both const and non-const.
+  T* data() {
+    return reinterpret_cast<T*>(reinterpret_cast<char*>(this) +
+                                padded_allocation_size());
+  }
+  const T* data() const {
+    return reinterpret_cast<const T*>(reinterpret_cast<const char*>(this) +
+                                      padded_allocation_size());
+  }
 
   void destroy_elements() {
     for (size_t i = 0; i < size_; ++i) {
