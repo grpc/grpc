@@ -534,6 +534,14 @@ filegroups:
   uses:
   - grpc_codegen
   - grpc_trace_headers
+- name: grpc_client_authority_filter
+  headers:
+  - src/core/ext/filters/http/client_authority_filter.h
+  src:
+  - src/core/ext/filters/http/client_authority_filter.cc
+  plugin: grpc_client_authority_filter
+  uses:
+  - grpc_base
 - name: grpc_client_channel
   headers:
   - src/core/ext/filters/client_channel/backup_poller.h
@@ -929,8 +937,10 @@ filegroups:
   - gpr
 - name: grpc_transport_chttp2_client_connector
   headers:
+  - src/core/ext/transport/chttp2/client/authority.h
   - src/core/ext/transport/chttp2/client/chttp2_connector.h
   src:
+  - src/core/ext/transport/chttp2/client/authority.cc
   - src/core/ext/transport/chttp2/client/chttp2_connector.cc
   uses:
   - grpc_transport_chttp2
@@ -1389,6 +1399,7 @@ libs:
   - grpc_max_age_filter
   - grpc_message_size_filter
   - grpc_deadline_filter
+  - grpc_client_authority_filter
   - grpc_workaround_cronet_compression_filter
   - grpc_server_backward_compatibility
   generate_plugin_registry: true
@@ -1499,6 +1510,7 @@ libs:
   - grpc_max_age_filter
   - grpc_message_size_filter
   - grpc_deadline_filter
+  - grpc_client_authority_filter
   - grpc_workaround_cronet_compression_filter
   - grpc_server_backward_compatibility
   generate_plugin_registry: true
@@ -2613,17 +2625,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: grpc_invalid_channel_args_test
-  build: test
-  language: c
-  src:
-  - test/core/surface/invalid_channel_args_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  uses_polling: false
 - name: grpc_json_token_test
   build: test
   language: c

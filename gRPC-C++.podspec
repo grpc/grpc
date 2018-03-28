@@ -308,6 +308,7 @@ Pod::Spec.new do |s|
                       'src/core/tsi/transport_security.h',
                       'src/core/tsi/transport_security_adapter.h',
                       'src/core/tsi/transport_security_interface.h',
+                      'src/core/ext/transport/chttp2/client/authority.h',
                       'src/core/ext/transport/chttp2/client/chttp2_connector.h',
                       'src/core/ext/filters/client_channel/backup_poller.h',
                       'src/core/ext/filters/client_channel/client_channel.h',
@@ -485,6 +486,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/load_reporting/server_load_reporting_plugin.h',
                       'src/core/ext/filters/max_age/max_age_filter.h',
                       'src/core/ext/filters/message_size/message_size_filter.h',
+                      'src/core/ext/filters/http/client_authority_filter.h',
                       'src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h',
                       'src/core/ext/filters/workarounds/workaround_utils.h'
 
