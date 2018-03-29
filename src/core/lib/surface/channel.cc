@@ -167,7 +167,7 @@ static grpc_core::UniquePtr<char> get_default_authority(
       has_default_authority = true;
     } else if (0 == strcmp(input_args->args[i].key,
                            GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)) {
-      ssl_override = input_args->args[i].value.string;
+      ssl_override = grpc_channel_arg_get_string(&input_args->args[i]);
     }
   }
   if (!has_default_authority && ssl_override != nullptr) {

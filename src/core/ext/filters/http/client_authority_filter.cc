@@ -97,8 +97,15 @@ grpc_error* init_channel_elem(grpc_channel_element* elem,
         "channels must explicity specify a value for this argument.");
     abort();
   }
-  chand->default_authority = grpc_slice_from_copied_string(
-      grpc_channel_arg_get_string(default_authority_arg));
+  const char* default_authority_str =
+      grpc_channel_arg_get_string(default_authority_arg);
+  if (default_authority_str == nullptr) {
+    gpr_log(GPR_ERROR,
+            "GRPC_ARG_DEFAULT_AUTHORITY channel arg. must be a string.");
+    abort();
+  }
+  chand->default_authority =
+      grpc_slice_from_copied_string(default_authority_str);
   GPR_ASSERT(!args->is_last);
   return GRPC_ERROR_NONE;
 }
