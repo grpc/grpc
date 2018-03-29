@@ -1151,16 +1151,6 @@ const char* DefaultSslRootStore::GetPemRootCerts() {
                    GRPC_SLICE_START_PTR(default_pem_root_certs_);
 }
 
-void DefaultSslRootStore::Initialize() {
-  default_root_store_ = nullptr;
-  default_pem_root_certs_ = grpc_empty_slice();
-}
-
-void DefaultSslRootStore::Destroy() {
-  tsi_ssl_root_certs_store_destroy(default_root_store_);
-  grpc_slice_unref_internal(default_pem_root_certs_);
-}
-
 grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
   grpc_slice result = grpc_empty_slice();
   // First try to load the roots from the environment.
