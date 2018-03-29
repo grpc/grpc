@@ -256,15 +256,6 @@ class DefaultSslRootStore {
   // Gets the default PEM root certificate.
   static const char* GetPemRootCerts();
 
-  // Initializes the SSL root store's underlying data structure. It does not
-  // load default SSL root certificates. Should only be called by
-  // grpc_security_init().
-  static void Initialize();
-
-  // Destroys the default SSL root store. Should only be called by
-  // grpc_security_shutdown().
-  static void Destroy();
-
  protected:
   // Returns default PEM root certificates in nullptr terminated grpc_slice.
   // This function is protected instead of private, so that it can be tested.
