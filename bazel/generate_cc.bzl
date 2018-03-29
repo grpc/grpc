@@ -4,13 +4,20 @@ This is an internal rule used by cc_grpc_library, and shouldn't be used
 directly.
 """
 
+def _maybe_terminate(value, suffix):
+  if value == "" or value.endswith(suffix):
+    return value
+  return value + suffix
+
+
 def generate_cc_impl(ctx):
   """Implementation of the generate_cc rule."""
   protos = [f for src in ctx.attr.srcs for f in src.proto.direct_sources]
   includes = [f for src in ctx.attr.srcs for f in src.proto.transitive_imports]
   outs = []
   # label_len is length of the path from WORKSPACE root to the location of this build file
-  label_len = len(ctx.label.package) + 1
+  prefix = _maybe_terminate(ctx.label.workspace_root, "/") + ctx.label.package
+  label_len = len(_maybe_terminate(prefix, "/"))
   if ctx.executable.plugin:
     outs += [proto.path[label_len:-len(".proto")] + ".grpc.pb.h" for proto in protos]
     outs += [proto.path[label_len:-len(".proto")] + ".grpc.pb.cc" for proto in protos]

@@ -15,17 +15,3 @@
 licenses(["notice"])  # Apache v2
 
 package(default_visibility = ["//:__subpackages__"])
-
-load(":cc_grpc_library.bzl", "cc_grpc_library")
-
-proto_library(
-    name = "well_known_protos_list",
-    srcs = ["@com_google_protobuf//:well_known_protos"],
-)
-
-cc_grpc_library(
-    name = "well_known_protos",
-    srcs = "well_known_protos_list",
-    proto_only = True,
-    deps = [],
-)
