@@ -216,6 +216,11 @@ static NSMutableDictionary *kHostCache;
         [NSNumber numberWithInt:_compressAlgorithm];
   }
 
+  if (_keepaliveInterval != 0) {
+    args[@GRPC_ARG_KEEPALIVE_TIME_MS] = [NSNumber numberWithInt:_keepaliveInterval];
+    args[@GRPC_ARG_KEEPALIVE_TIMEOUT_MS] = [NSNumber numberWithInt:_keepaliveTimeout];
+  }
+
   id logConfig = [GRPCCall logConfig];
   if (logConfig != nil) {
     args[@GRPC_ARG_MOBILE_LOG_CONFIG] = logConfig;
