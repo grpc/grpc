@@ -170,7 +170,6 @@ grpc_error* grpc_tcp_server_prepare_socket(int fd,
   err = grpc_set_socket_no_sigpipe_if_possible(fd);
   if (err != GRPC_ERROR_NONE) goto error;
 
-  GPR_ASSERT(addr->len < ~(socklen_t)0);
   if (bind(fd, reinterpret_cast<grpc_sockaddr*>(const_cast<char*>(addr->addr)),
            addr->len) < 0) {
     err = GRPC_OS_ERROR(errno, "bind");
