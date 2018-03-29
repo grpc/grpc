@@ -28,10 +28,10 @@ through TLS handshake (or equivalent) and all subsequent attempt to communicate
 have succeeded (or are pending without any known failure ).
 
 TRANSIENT_FAILURE: There has been some transient failure (such as a TCP 3-way
-handshake timing out or a socket error). New RPCs should, by default, fail
-immediately with status UNAVAILABLE, but implementations may support a per-RPC
-option specifying an RPC is 'wait-for-ready' which will leave the RPC as
-pending. Channels in this state will eventually
+handshake timing out or a socket error). New RPCs will fail immediately with
+status UNAVAILABLE, but implementations may support options like
+[wait-for-ready](wait-for-ready.md) that modifies the behavior. Channels in
+this state will eventually
 switch to the CONNECTING state and try to establish a connection again. Since
 retries are done with exponential backoff, channels that fail to connect will
 start out spending very little time in this state but as the attempts fail
