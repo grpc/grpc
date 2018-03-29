@@ -298,7 +298,9 @@
   endif (gRPC_BUILD_TESTS)
   % else:
   ${cc_library(lib)}
+  % if not lib.build in ["tool"]:
   ${cc_install(lib)}
+  % endif
   % endif
   % endif
   % endif
@@ -323,7 +325,9 @@
   % else:
   ${get_platforms_condition_begin(tgt.platforms)}\
   ${cc_binary(tgt)}
+  % if not tgt.build in ["tool"]:
   ${cc_install(tgt)}
+  % endif
   ${get_platforms_condition_end(tgt.platforms)}\
   % endif
   % endif
