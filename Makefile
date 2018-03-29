@@ -1194,6 +1194,7 @@ reconnect_interop_client: $(BINDIR)/$(CONFIG)/reconnect_interop_client
 reconnect_interop_server: $(BINDIR)/$(CONFIG)/reconnect_interop_server
 ref_counted_ptr_test: $(BINDIR)/$(CONFIG)/ref_counted_ptr_test
 ref_counted_test: $(BINDIR)/$(CONFIG)/ref_counted_test
+retry_throttle_test: $(BINDIR)/$(CONFIG)/retry_throttle_test
 secure_auth_context_test: $(BINDIR)/$(CONFIG)/secure_auth_context_test
 secure_sync_unary_ping_pong_test: $(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test
 server_builder_plugin_test: $(BINDIR)/$(CONFIG)/server_builder_plugin_test
@@ -1675,6 +1676,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/reconnect_interop_server \
   $(BINDIR)/$(CONFIG)/ref_counted_ptr_test \
   $(BINDIR)/$(CONFIG)/ref_counted_test \
+  $(BINDIR)/$(CONFIG)/retry_throttle_test \
   $(BINDIR)/$(CONFIG)/secure_auth_context_test \
   $(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test \
   $(BINDIR)/$(CONFIG)/server_builder_plugin_test \
@@ -1845,6 +1847,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/reconnect_interop_server \
   $(BINDIR)/$(CONFIG)/ref_counted_ptr_test \
   $(BINDIR)/$(CONFIG)/ref_counted_test \
+  $(BINDIR)/$(CONFIG)/retry_throttle_test \
   $(BINDIR)/$(CONFIG)/secure_auth_context_test \
   $(BINDIR)/$(CONFIG)/secure_sync_unary_ping_pong_test \
   $(BINDIR)/$(CONFIG)/server_builder_plugin_test \
@@ -2300,6 +2303,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/ref_counted_ptr_test || ( echo test ref_counted_ptr_test failed ; exit 1 )
 	$(E) "[RUN]     Testing ref_counted_test"
 	$(Q) $(BINDIR)/$(CONFIG)/ref_counted_test || ( echo test ref_counted_test failed ; exit 1 )
+	$(E) "[RUN]     Testing retry_throttle_test"
+	$(Q) $(BINDIR)/$(CONFIG)/retry_throttle_test || ( echo test retry_throttle_test failed ; exit 1 )
 	$(E) "[RUN]     Testing secure_auth_context_test"
 	$(Q) $(BINDIR)/$(CONFIG)/secure_auth_context_test || ( echo test secure_auth_context_test failed ; exit 1 )
 	$(E) "[RUN]     Testing secure_sync_unary_ping_pong_test"
@@ -18693,6 +18698,49 @@ deps_ref_counted_test: $(REF_COUNTED_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(REF_COUNTED_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+RETRY_THROTTLE_TEST_SRC = \
+    test/core/client_channel/retry_throttle_test.cc \
+
+RETRY_THROTTLE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(RETRY_THROTTLE_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/retry_throttle_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+
+$(BINDIR)/$(CONFIG)/retry_throttle_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/retry_throttle_test: $(PROTOBUF_DEP) $(RETRY_THROTTLE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(RETRY_THROTTLE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/retry_throttle_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/client_channel/retry_throttle_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_retry_throttle_test: $(RETRY_THROTTLE_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(RETRY_THROTTLE_TEST_OBJS:.o=.dep)
 endif
 endif
 
