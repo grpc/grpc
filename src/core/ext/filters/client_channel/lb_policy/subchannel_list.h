@@ -59,22 +59,22 @@ class SubchannelData {
     return connected_subchannel_.get();
   }
 
-// FIXME: maybe do this automatically in OnConnectivityChangedLocked()
-// when the new state is TRANSIENT_FAILURE?
-  void clear_connected_subchannel() { connected_subchannel_.reset(); }
-
-  void GetConnectedSubchannelFromSubchannelLocked() {
+  void SetConnectedSubchannelFromSubchannelLocked() {
     connected_subchannel_ =
         grpc_subchannel_get_connected_subchannel(subchannel_);
   }
 
+  // An alternative to SetConnectedSubchannelFromSubchannelLocked() for
+  // cases where we are retaining a connected subchannel from a previous
+  // subchannel list.  This is slightly more efficient than getting the
+  // connected subchannel from the subchannel, because that approach
+  // requires the use of a mutex, whereas this one only mutates a
+  // refcount.
   void SetConnectedSubchannelFromLocked(SubchannelData* other) {
+    GPR_ASSERT(subchannel_ == other->subchannel_);
     connected_subchannel_ = other->connected_subchannel_;  // Adds ref.
   }
 
-  bool connectivity_notification_pending() const {
-    return connectivity_notification_pending_;
-  }
   grpc_connectivity_state connectivity_state() const {
     return curr_connectivity_state_;
   }
@@ -87,6 +87,7 @@ class SubchannelData {
   }
 
   // Unrefs the subchannel.
+// FIXME: move this to private in favor of ShutdownLocked()?
   virtual void UnrefSubchannelLocked(const char* reason);
 
   /// Starts watching the connectivity state of the subchannel.
@@ -129,7 +130,7 @@ class SubchannelData {
   // Notification that connectivity has changed on subchannel.
   grpc_closure connectivity_changed_closure_;
   // Is a connectivity notification pending?
-  bool connectivity_notification_pending_;
+  bool connectivity_notification_pending_ = false;
   // Connectivity state to be updated by
   // grpc_subchannel_notify_on_state_change(), not guarded by
   // the combiner.  Will be copied to \a curr_connectivity_state_ by
@@ -297,6 +298,10 @@ void SubchannelData<SubchannelListType,
   // state (which was set by the connectivity state watcher) to
   // curr_connectivity_state_, which is what we use inside of the combiner.
   sd->curr_connectivity_state_ = sd->pending_connectivity_state_unsafe_;
+  // If we get TRANSIENT_FAILURE, unref the connected subchannel.
+  if (sd->curr_connectivity_state_ == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+    sd->connected_subchannel_.reset();
+  }
   sd->ProcessConnectivityChangeLocked(error);
 }
 

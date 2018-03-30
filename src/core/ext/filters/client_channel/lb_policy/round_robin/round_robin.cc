@@ -477,10 +477,11 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
   if (grpc_lb_round_robin_trace.enabled()) {
     gpr_log(
         GPR_DEBUG,
-        "[RR %p] connectivity changed for subchannel %p, subchannel_list %p: "
-        "prev_state=%s new_state=%s p->shutdown=%d "
-        "sd->subchannel_list->shutting_down=%d error=%s",
-        p, subchannel(), subchannel_list(),
+        "[RR %p] connectivity changed for subchannel %p, subchannel_list %p "
+        "(index %" PRIuPTR " of %" PRIuPTR "): prev_state=%s new_state=%s "
+        "p->shutdown=%d sd->subchannel_list->shutting_down=%d error=%s",
+        p, subchannel(), subchannel_list(), Index(),
+        subchannel_list()->num_subchannels(),
         grpc_connectivity_state_name(prev_connectivity_state_),
         grpc_connectivity_state_name(connectivity_state()),
         p->shutdown_, subchannel_list()->shutting_down(),
@@ -510,7 +511,6 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
   // subchannel, if any.
   switch (connectivity_state()) {
     case GRPC_CHANNEL_TRANSIENT_FAILURE: {
-      clear_connected_subchannel();
       if (grpc_lb_round_robin_trace.enabled()) {
         gpr_log(GPR_DEBUG,
                 "[RR %p] Subchannel %p has gone into TRANSIENT_FAILURE. "
@@ -522,7 +522,7 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
     }
     case GRPC_CHANNEL_READY: {
       if (connected_subchannel() == nullptr) {
-        GetConnectedSubchannelFromSubchannelLocked();
+        SetConnectedSubchannelFromSubchannelLocked();
       }
       if (p->subchannel_list_ != subchannel_list()) {
         // promote subchannel_list() to p->subchannel_list_.
@@ -657,13 +657,16 @@ void RoundRobin::UpdateLocked(const grpc_channel_args& args) {
   }
   if (started_picking_) {
     for (size_t i = 0; i < subchannel_list->num_subchannels(); ++i) {
+// FIXME: this is wrong, because we should not reset
+// curr_connectivity_state_ or pending_connectivity_state_unsafe_ unless
+// the new state is TRANSIENT_FAILURE
       const grpc_connectivity_state subchannel_state =
           subchannel_list->subchannel(i)->CheckConnectivityStateLocked();
       // Override the default setting of IDLE for connectivity notification
       // purposes if the subchannel is already in transient failure. Otherwise
       // we'd be immediately notified of the IDLE-TRANSIENT_FAILURE
       // discrepancy, attempt to re-resolve, and end up here again.
-// FIXME
+// FIXME: do this
       // TODO(roth): As part of C++-ifying the subchannel_list API, design a
       // better API for notifying the LB policy of subchannel states, which can
       // be used both for the subchannel's initial state and for subsequent

@@ -508,7 +508,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
     case GRPC_CHANNEL_READY: {
       // Case 2.  Promote p->latest_pending_subchannel_list_ to
       // p->subchannel_list_.
-      GetConnectedSubchannelFromSubchannelLocked();
+      SetConnectedSubchannelFromSubchannelLocked();
       if (p->latest_pending_subchannel_list_ == subchannel_list()) {
         GPR_ASSERT(p->subchannel_list_ != nullptr);
         p->subchannel_list_->ShutdownLocked("finish_update");
