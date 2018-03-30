@@ -39,7 +39,10 @@ grpc::string MakePort() {
   return s.str();
 }
 
-grpc::string g_port = MakePort();
+const grpc::string& GetPort() {
+    static grpc::string g_port = MakePort();
+    return g_port;
+}
 
 TEST(ServerBuilderTest, NoOp) { ServerBuilder b; }
 
@@ -50,7 +53,7 @@ TEST(ServerBuilderTest, CreateServerNoPorts) {
 TEST(ServerBuilderTest, CreateServerOnePort) {
   ServerBuilder()
       .RegisterService(&g_service)
-      .AddListeningPort(g_port, InsecureServerCredentials())
+      .AddListeningPort(GetPort(), InsecureServerCredentials())
       .BuildAndStart()
       ->Shutdown();
 }
@@ -58,8 +61,8 @@ TEST(ServerBuilderTest, CreateServerOnePort) {
 TEST(ServerBuilderTest, CreateServerRepeatedPort) {
   ServerBuilder()
       .RegisterService(&g_service)
-      .AddListeningPort(g_port, InsecureServerCredentials())
-      .AddListeningPort(g_port, InsecureServerCredentials())
+      .AddListeningPort(GetPort(), InsecureServerCredentials())
+      .AddListeningPort(GetPort(), InsecureServerCredentials())
       .BuildAndStart()
       ->Shutdown();
 }
@@ -67,8 +70,8 @@ TEST(ServerBuilderTest, CreateServerRepeatedPort) {
 TEST(ServerBuilderTest, CreateServerRepeatedPortWithDisallowedReusePort) {
   EXPECT_EQ(ServerBuilder()
                 .RegisterService(&g_service)
-                .AddListeningPort(g_port, InsecureServerCredentials())
-                .AddListeningPort(g_port, InsecureServerCredentials())
+                .AddListeningPort(GetPort(), InsecureServerCredentials())
+                .AddListeningPort(GetPort(), InsecureServerCredentials())
                 .AddChannelArgument(GRPC_ARG_ALLOW_REUSEPORT, 0)
                 .BuildAndStart(),
             nullptr);
