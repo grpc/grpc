@@ -20,6 +20,7 @@
 #define GRPCPP_IMPL_CODEGEN_SERVER_INTERFACE_H
 
 #include <grpc/impl/codegen/grpc_types.h>
+#include <grpcpp/impl/codegen/byte_buffer.h>
 #include <grpcpp/impl/codegen/call_hook.h>
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
@@ -185,13 +186,13 @@ class ServerInterface : public internal::CallHook {
           notification_cq_(notification_cq),
           tag_(tag),
           request_(request) {
-      IssueRequest(registered_method, &payload_, notification_cq);
+      IssueRequest(registered_method, payload_.bbuf_ptr(), notification_cq);
     }
 
     bool FinalizeResult(void** tag, bool* status) override {
       if (*status) {
-        if (payload_ == nullptr ||
-            !SerializationTraits<Message>::Deserialize(payload_, request_)
+        if (!payload_.Valid() ||
+            !SerializationTraits<Message>::Deserialize(payload_.bbuf_ptr(), request_)
                  .ok()) {
           // If deserialization fails, we cancel the call and instantiate
           // a new instance of ourselves to request another call.  We then
@@ -219,7 +220,7 @@ class ServerInterface : public internal::CallHook {
     ServerCompletionQueue* const notification_cq_;
     void* const tag_;
     Message* const request_;
-    grpc_byte_buffer* payload_;
+    ByteBuffer payload_;
   };
 
   class GenericAsyncRequest : public BaseAsyncRequest {
