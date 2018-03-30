@@ -722,7 +722,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c )
   s.files += %w( src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc )
-  s.files += %w( src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc )
