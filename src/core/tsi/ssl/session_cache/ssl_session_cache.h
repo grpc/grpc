@@ -69,6 +69,10 @@ class SslSessionLRUCache : public grpc_core::RefCounted<SslSessionLRUCache> {
   template <typename T, typename... Args>
   friend T* grpc_core::New(Args&&... args);
 
+  // So Delete() can call our private dtor.
+  template <typename T>
+  friend void grpc_core::Delete(T*);
+
   class Node;
 
   explicit SslSessionLRUCache(size_t capacity);
