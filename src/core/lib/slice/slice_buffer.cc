@@ -75,7 +75,6 @@ void grpc_slice_buffer_destroy_internal(grpc_slice_buffer* sb) {
 }
 
 void grpc_slice_buffer_destroy(grpc_slice_buffer* sb) {
-  grpc_core::ExecCtx exec_ctx;
   grpc_slice_buffer_destroy_internal(sb);
 }
 
@@ -176,7 +175,6 @@ void grpc_slice_buffer_reset_and_unref_internal(grpc_slice_buffer* sb) {
 }
 
 void grpc_slice_buffer_reset_and_unref(grpc_slice_buffer* sb) {
-  grpc_core::ExecCtx exec_ctx;
   grpc_slice_buffer_reset_and_unref_internal(sb);
 }
 

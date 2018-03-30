@@ -68,10 +68,7 @@ grpc_slice grpc_slice_ref(grpc_slice slice) {
 }
 
 /* Public API */
-void grpc_slice_unref(grpc_slice slice) {
-  grpc_core::ExecCtx exec_ctx;
-  grpc_slice_unref_internal(slice);
-}
+void grpc_slice_unref(grpc_slice slice) { grpc_slice_unref_internal(slice); }
 
 /* grpc_slice_from_static_string support structure - a refcount that does
    nothing */
