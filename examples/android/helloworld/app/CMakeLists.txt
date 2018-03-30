@@ -12,40 +12,6 @@ file(MAKE_DIRECTORY ${GRPC_BUILD_DIR})
 
 add_subdirectory(${GRPC_SRC_DIR} ${GRPC_BUILD_DIR})
 
-include_directories(${GRPC_SRC_DIR}/include)
-
-add_library(libgrpc STATIC IMPORTED)
-set_target_properties(libgrpc PROPERTIES IMPORTED_LOCATION
-  ${GRPC_BUILD_DIR}/libgrpc.a)
-
-add_library(libgrpc++ STATIC IMPORTED)
-set_target_properties(libgrpc++ PROPERTIES IMPORTED_LOCATION
-  ${GRPC_BUILD_DIR}/libgrpc++.a)
-
-add_library(libgpr STATIC IMPORTED)
-set_target_properties(libgpr PROPERTIES IMPORTED_LOCATION
-  ${GRPC_BUILD_DIR}/libgpr.a)
-
-add_library(libaddress_sorting STATIC IMPORTED)
-set_target_properties(libaddress_sorting PROPERTIES IMPORTED_LOCATION
-  ${GRPC_BUILD_DIR}/libaddress_sorting.a)
-
-add_library(libcares STATIC IMPORTED)
-set_target_properties(libcares PROPERTIES IMPORTED_LOCATION
-  ${GRPC_BUILD_DIR}/third_party/cares/cares/lib/libcares.a)
-
-add_library(libzlib STATIC IMPORTED)
-set_target_properties(libzlib PROPERTIES IMPORTED_LOCATION
-  ${GRPC_BUILD_DIR}/third_party/zlib/libz.a)
-
-add_library(libcrypto STATIC IMPORTED)
-set_target_properties(libcrypto PROPERTIES IMPORTED_LOCATION
-  ${GRPC_BUILD_DIR}/third_party/boringssl/crypto/libcrypto.a)
-
-add_library(libssl STATIC IMPORTED)
-set_target_properties(libssl PROPERTIES IMPORTED_LOCATION
-  ${GRPC_BUILD_DIR}/third_party/boringssl/ssl/libssl.a)
-
 set(GRPC_PROTO_GENS_DIR ${CMAKE_BINARY_DIR}/gens)
 file(MAKE_DIRECTORY ${GRPC_PROTO_GENS_DIR})
 include_directories(${GRPC_PROTO_GENS_DIR})
@@ -100,8 +66,8 @@ add_library(helloworld_proto_lib
   SHARED ${HELLOWORLD_PROTO_HDRS} ${HELLOWORLD_PROTO_SRCS})
 
 target_link_libraries(helloworld_proto_lib
-  libprotobuf
-  libgrpc++
+  grpc++
+  ${_gRPC_PROTOBUF_LIBRARIES}
   android
   log)
 
@@ -115,14 +81,6 @@ target_include_directories(grpc-helloworld
   PRIVATE ${HELLOWORLD_PROTO_HEADERS})
 
 target_link_libraries(grpc-helloworld
-  libgrpc++
-  libgrpc
-  libaddress_sorting
-  libzlib
-  libcares
-  libssl
-  libcrypto
   helloworld_proto_lib
-  libgpr
   android
   ${log-lib})
