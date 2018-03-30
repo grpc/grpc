@@ -186,7 +186,11 @@ class ServerInterface : public internal::CallHook {
           notification_cq_(notification_cq),
           tag_(tag),
           request_(request) {
-      IssueRequest(registered_method, payload_.bbuf_ptr(), notification_cq);
+      IssueRequest(registered_method, payload_.c_buffer_ptr(), notification_cq);
+    }
+
+    ~PayloadAsyncRequest() {
+        payload_.Release(); // We do not own the payload_
     }
 
     bool FinalizeResult(void** tag, bool* status) override {
