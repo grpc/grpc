@@ -65,11 +65,6 @@ DEFINE_string(expected_addrs, "",
               "List of expected backend or balancer addresses in the form "
               "'<ip0:port0>,<is_balancer0>;<ip1:port1>,<is_balancer1>;...'. "
               "'is_balancer' should be bool, i.e. true or false.");
-DEFINE_bool(allow_extra_addrs, false,
-            "Permit extra resolved addresses in the final list of "
-            "resolved addresses. This is useful in certain integration "
-            "test environments in which DNS responses are not fully "
-            "deterministic.");
 DEFINE_string(expected_chosen_service_config, "",
               "Expected service config json string that gets chosen (no "
               "whitespace). Empty for none.");
@@ -245,11 +240,9 @@ void CheckResolverResultLocked(void* argsp, grpc_error* err) {
   GPR_ASSERT(channel_arg->type == GRPC_ARG_POINTER);
   grpc_lb_addresses* addresses =
       (grpc_lb_addresses*)channel_arg->value.pointer.p;
-  gpr_log(GPR_INFO,
-          "num addrs found: %" PRIdPTR ". expected %" PRIdPTR
-          ". Allow extra addresses:%d.",
-          addresses->num_addresses, args->expected_addrs.size(),
-          FLAGS_allow_extra_addrs);
+  gpr_log(GPR_INFO, "num addrs found: %" PRIdPTR ". expected %" PRIdPTR,
+          addresses->num_addresses, args->expected_addrs.size());
+  GPR_ASSERT(addresses->num_addresses == args->expected_addrs.size());
   std::vector<GrpcLBAddress> found_lb_addrs;
   for (size_t i = 0; i < addresses->num_addresses; i++) {
     grpc_lb_address addr = addresses->addresses[i];
@@ -261,20 +254,13 @@ void CheckResolverResultLocked(void* argsp, grpc_error* err) {
     gpr_free(str);
   }
   if (args->expected_addrs.size() != found_lb_addrs.size()) {
-    // Permit extra resolved addresses if "--allow_extra_addrs" was set.
-    if (!(FLAGS_allow_extra_addrs &&
-          found_lb_addrs.size() > args->expected_addrs.size())) {
-      gpr_log(GPR_DEBUG,
-              "found lb addrs size is: %" PRIdPTR
-              ". expected addrs size is %" PRIdPTR ". --allow_extra_addrs=%d.",
-              found_lb_addrs.size(), args->expected_addrs.size(),
-              FLAGS_allow_extra_addrs);
-      abort();
-    }
+    gpr_log(GPR_DEBUG,
+            "found lb addrs size is: %" PRIdPTR
+            ". expected addrs size is %" PRIdPTR,
+            found_lb_addrs.size(), args->expected_addrs.size());
+    abort();
   }
-  for (size_t i = 0; i < args->expected_addrs.size(); i++) {
-    EXPECT_THAT(found_lb_addrs, ::testing::Contains(args->expected_addrs[i]));
-  }
+  EXPECT_THAT(args->expected_addrs, UnorderedElementsAreArray(found_lb_addrs));
   CheckServiceConfigResultLocked(channel_args, args);
   if (args->expected_service_config_string == "") {
     CheckLBPolicyResultLocked(channel_args, args);
