@@ -26,6 +26,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/end2end/cq_verifier.h"
 
 static void* tag(intptr_t t) { return (void*)t; }
@@ -106,6 +107,7 @@ void resource_quota_server(grpc_end2end_test_config config) {
       FEATURE_MASK_DOES_NOT_SUPPORT_RESOURCE_QUOTA_SERVER) {
     return;
   }
+  grpc_core::ExecCtx exec_ctx;
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("test_server");
   grpc_resource_quota_resize(resource_quota, 5 * 1024 * 1024);
