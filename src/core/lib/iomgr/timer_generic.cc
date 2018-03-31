@@ -30,6 +30,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/spinlock.h"
 #include "src/core/lib/gpr/tls.h"
@@ -337,7 +338,7 @@ static void timer_init(grpc_timer* timer, grpc_millis deadline,
 
   if (grpc_timer_trace.enabled()) {
     gpr_log(GPR_DEBUG,
-            "TIMER %p: SET %" PRIdPTR " now %" PRIdPTR " call %p[%p]", timer,
+            "TIMER %p: SET %" PRIdPTR " now %" PRId64 " call %p[%p]", timer,
             deadline, grpc_core::ExecCtx::Get()->Now(), closure, closure->cb);
   }
 
@@ -650,7 +651,7 @@ static grpc_timer_check_result timer_check(grpc_millis* next) {
     if (next == nullptr) {
       next_str = gpr_strdup("NULL");
     } else {
-      gpr_asprintf(&next_str, "%" PRIdPTR, *next);
+      gpr_asprintf(&next_str, "%" PRId64, *next);
     }
     gpr_log(GPR_DEBUG, "TIMER CHECK END: r=%d; next=%s", r, next_str);
     gpr_free(next_str);
