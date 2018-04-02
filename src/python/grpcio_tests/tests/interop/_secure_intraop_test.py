@@ -45,6 +45,9 @@ class SecureIntraopTest(_intraop_test_case.IntraopTestCase, unittest.TestCase):
                                         _SERVER_HOST_OVERRIDE,
                                     ),)))
 
+    def tearDown(self):
+        self.server.stop(None)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
