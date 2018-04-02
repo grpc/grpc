@@ -190,14 +190,14 @@ class ServerInterface : public internal::CallHook {
     }
 
     ~PayloadAsyncRequest() {
-        payload_.Release(); // We do not own the payload_
+      payload_.Release();  // We do not own the payload_
     }
 
     bool FinalizeResult(void** tag, bool* status) override {
       if (*status) {
-        if (!payload_.Valid() ||
-            !SerializationTraits<Message>::Deserialize(payload_.bbuf_ptr(), request_)
-                 .ok()) {
+        if (!payload_.Valid() || !SerializationTraits<Message>::Deserialize(
+                                      payload_.bbuf_ptr(), request_)
+                                      .ok()) {
           // If deserialization fails, we cancel the call and instantiate
           // a new instance of ourselves to request another call.  We then
           // return false, which prevents the call from being returned to
