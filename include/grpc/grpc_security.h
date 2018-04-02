@@ -481,10 +481,10 @@ GRPCAPI void grpc_server_credentials_set_auth_metadata_processor(
 typedef struct grpc_alts_credentials_options grpc_alts_credentials_options;
 
 /* This method creates a grpc ALTS credentials client options instance. */
-grpc_alts_credentials_options* grpc_alts_credentials_client_options_create();
+GRPCAPI grpc_alts_credentials_options* grpc_alts_credentials_client_options_create();
 
 /* This method creates a grpc ALTS credentials server options instance. */
-grpc_alts_credentials_options* grpc_alts_credentials_server_options_create();
+GRPCAPI grpc_alts_credentials_options* grpc_alts_credentials_server_options_create();
 
 /**
  * This method adds a target service account to grpc client's ALTS credentials
@@ -493,7 +493,7 @@ grpc_alts_credentials_options* grpc_alts_credentials_server_options_create();
  * - options: grpc ALTS credentials options instance.
  * - service_account: service account of target endpoint.
  */
-void grpc_alts_credentials_client_options_add_target_service_account(
+GRPCAPI void grpc_alts_credentials_client_options_add_target_service_account(
     grpc_alts_credentials_options* options, const char* service_account);
 
 /**
@@ -503,7 +503,7 @@ void grpc_alts_credentials_client_options_add_target_service_account(
  * - options: a grpc_alts_credentials_options instance that needs to be
  *   destroyed.
  */
-void grpc_alts_credentials_options_destroy(
+GRPCAPI void grpc_alts_credentials_options_destroy(
     grpc_alts_credentials_options* options);
 
 /**
@@ -513,7 +513,7 @@ void grpc_alts_credentials_options_destroy(
  *
  * It returns the created ALTS channel credential object.
  */
-grpc_channel_credentials* grpc_alts_credentials_create(
+GRPCAPI grpc_channel_credentials* grpc_alts_credentials_create(
     const grpc_alts_credentials_options* options);
 
 /**
@@ -523,7 +523,7 @@ grpc_channel_credentials* grpc_alts_credentials_create(
  *
  * It returns the created ALTS server credential object.
  */
-grpc_server_credentials* grpc_alts_server_credentials_create(
+GRPCAPI grpc_server_credentials* grpc_alts_server_credentials_create(
     const grpc_alts_credentials_options* options);
 
 #ifdef __cplusplus
