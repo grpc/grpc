@@ -186,7 +186,7 @@ class ServerInterface : public internal::CallHook {
           notification_cq_(notification_cq),
           tag_(tag),
           request_(request) {
-      IssueRequest(registered_method, payload_.c_buffer_ptr(), notification_cq);
+      IssueRequest(registered_method, payload_.bbuf_ptr(), notification_cq);
     }
 
     ~PayloadAsyncRequest() {
