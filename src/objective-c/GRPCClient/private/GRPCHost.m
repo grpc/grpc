@@ -192,7 +192,7 @@ static NSMutableDictionary *kHostCache;
   return YES;
 }
 
-- (NSDictionary *)channelArgs {
+- (NSDictionary *)channelArgsUsingCronet:(BOOL)useCronet {
   NSMutableDictionary *args = [NSMutableDictionary dictionary];
 
   // TODO(jcanizales): Add OS and device information (see
@@ -226,14 +226,19 @@ static NSMutableDictionary *kHostCache;
     args[@GRPC_ARG_MOBILE_LOG_CONFIG] = logConfig;
   }
 
+  if (useCronet) {
+    args[@GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER] = [NSNumber numberWithInt:1];
+  }
+
   return args;
 }
 
 - (GRPCChannel *)newChannel {
-  NSDictionary *args = [self channelArgs];
+  BOOL useCronet = NO;
 #ifdef GRPC_COMPILE_WITH_CRONET
-  BOOL useCronet = [GRPCCall isUsingCronet];
+  useCronet = [GRPCCall isUsingCronet];
 #endif
+  NSDictionary *args = [self channelArgsUsingCronet:useCronet];
   if (_secure) {
     GRPCChannel *channel;
     @synchronized(self) {

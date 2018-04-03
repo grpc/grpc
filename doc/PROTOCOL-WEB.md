@@ -29,7 +29,7 @@ More specifically, we expect the protocol to
 * evolve over time, mainly to optimize for browser clients or support
 web-specific features such as CORS, XSRF
 * become optional (in 1-2 years) when browsers are able to speak the native
-gRPC protocol via the new [whatwg fetch/streams API](https://github.com/whatwg/fetch)
+gRPC protocol via the new [whatwg streams API](https://github.com/whatwg/streams)
 
 # Protocol differences vs [gRPC over HTTP2](PROTOCOL-HTTP2.md)
 

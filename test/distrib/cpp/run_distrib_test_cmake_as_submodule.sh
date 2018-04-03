@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015 gRPC authors.
+# Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,10 +15,11 @@
 
 set -ex
 
-# change to grpc repo root
 cd "$(dirname "$0")/../../.."
 
-# build grpc_ruby_plugin
-make grpc_ruby_plugin -j8
-
-rake
+# Build helloworld example using cmake, including grpc with "add_subdirectory"
+cd examples/cpp/helloworld
+mkdir -p cmake/build
+cd cmake/build
+cmake -DGRPC_AS_SUBMODULE=ON ../..
+make

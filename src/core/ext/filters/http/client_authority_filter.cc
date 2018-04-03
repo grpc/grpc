@@ -91,14 +91,18 @@ grpc_error* init_channel_elem(grpc_channel_element* elem,
   const grpc_arg* default_authority_arg =
       grpc_channel_args_find(args->channel_args, GRPC_ARG_DEFAULT_AUTHORITY);
   if (default_authority_arg == nullptr) {
-    gpr_log(
-        GPR_ERROR,
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "GRPC_ARG_DEFAULT_AUTHORITY channel arg. not found. Note that direct "
         "channels must explicity specify a value for this argument.");
-    abort();
   }
-  chand->default_authority = grpc_slice_from_copied_string(
-      grpc_channel_arg_get_string(default_authority_arg));
+  const char* default_authority_str =
+      grpc_channel_arg_get_string(default_authority_arg);
+  if (default_authority_str == nullptr) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "GRPC_ARG_DEFAULT_AUTHORITY channel arg. must be a string");
+  }
+  chand->default_authority =
+      grpc_slice_from_copied_string(default_authority_str);
   GPR_ASSERT(!args->is_last);
   return GRPC_ERROR_NONE;
 }
@@ -125,6 +129,17 @@ const grpc_channel_filter grpc_client_authority_filter = {
 
 static bool add_client_authority_filter(grpc_channel_stack_builder* builder,
                                         void* arg) {
+  const grpc_channel_args* channel_args =
+      grpc_channel_stack_builder_get_channel_arguments(builder);
+  const grpc_arg* disable_client_authority_filter_arg = grpc_channel_args_find(
+      channel_args, GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER);
+  if (disable_client_authority_filter_arg != nullptr) {
+    const bool is_client_authority_filter_disabled =
+        grpc_channel_arg_get_bool(disable_client_authority_filter_arg, false);
+    if (is_client_authority_filter_disabled) {
+      return true;
+    }
+  }
   return grpc_channel_stack_builder_prepend_filter(
       builder, static_cast<const grpc_channel_filter*>(arg), nullptr, nullptr);
 }

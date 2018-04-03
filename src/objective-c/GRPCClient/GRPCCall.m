@@ -196,9 +196,6 @@ static NSString * const kBearerPrefix = @"Bearer ";
     _state = GRXWriterStateFinished;
   }
 
-  // If the call isn't retained anywhere else, it can be deallocated now.
-  _retainSelf = nil;
-
   // If there were still request messages coming, stop them.
   @synchronized(_requestWriter) {
     _requestWriter.state = GRXWriterStateFinished;
@@ -211,6 +208,9 @@ static NSString * const kBearerPrefix = @"Bearer ";
   }
 
   [GRPCConnectivityMonitor unregisterObserver:self];
+
+  // If the call isn't retained anywhere else, it can be deallocated now.
+  _retainSelf = nil;
 }
 
 - (void)cancelCall {

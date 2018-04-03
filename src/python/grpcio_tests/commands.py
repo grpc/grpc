@@ -121,6 +121,8 @@ class TestGevent(setuptools.Command):
         'testing._client_test.ClientTest.test_infinite_request_stream_real_time',
         # TODO(https://github.com/grpc/grpc/issues/14789) enable this test
         'unit._server_ssl_cert_config_test',
+        # TODO(https://github.com/grpc/grpc/issues/14901) enable this test
+        'protoc_plugin._python_plugin_test.PythonPluginTest',
         # Beta API is unsupported for gevent
         'protoc_plugin.beta_python_plugin_test',
         'unit.beta._beta_features_test',

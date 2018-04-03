@@ -57,9 +57,8 @@ int le_plink;
 
 /* Frees and destroys an instance of wrapped_grpc_channel */
 PHP_GRPC_FREE_WRAPPED_FUNC_START(wrapped_grpc_channel)
-  bool is_last_wrapper = false;
-  // In_persistent_list is used when the user don't close the channel.
-  // In this case, le in the list won't be freed.
+  // In_persistent_list is used when the user don't close the channel,
+  // In this case, channels not in the list should be freed.
   bool in_persistent_list = true;
   if (p->wrapper != NULL) {
     gpr_mu_lock(&p->wrapper->mu);
@@ -79,41 +78,18 @@ PHP_GRPC_FREE_WRAPPED_FUNC_START(wrapped_grpc_channel)
             free(p->wrapper->creds_hashstr);
             p->wrapper->creds_hashstr = NULL;
           }
+          free(p->wrapper->key);
         }
         gpr_mu_unlock(&global_persistent_list_mu);
       }
     }
     p->wrapper->ref_count -= 1;
-    if (p->wrapper->ref_count == 0) {
-      is_last_wrapper = true;
-    }
     gpr_mu_unlock(&p->wrapper->mu);
-    if (is_last_wrapper) {
-      if (in_persistent_list) {
-        // If ref_count==0 and the key still in the list, it means the user
-        // don't call channel->close().persistent list should free the
-        // allocation in such case, as well as related wrapped channel.
-        if (p->wrapper->wrapped != NULL) {
-          gpr_mu_lock(&p->wrapper->mu);
-          grpc_channel_destroy(p->wrapper->wrapped);
-          free(p->wrapper->target);
-          free(p->wrapper->args_hashstr);
-          if(p->wrapper->creds_hashstr != NULL){
-            free(p->wrapper->creds_hashstr);
-            p->wrapper->creds_hashstr = NULL;
-          }
-          p->wrapper->wrapped = NULL;
-          php_grpc_delete_persistent_list_entry(p->wrapper->key,
-                                                strlen(p->wrapper->key)
-                                                TSRMLS_CC);
-          gpr_mu_unlock(&p->wrapper->mu);
-        }
-      }
+    if (!in_persistent_list) {
       gpr_mu_destroy(&p->wrapper->mu);
-      free(p->wrapper->key);
       free(p->wrapper);
+      p->wrapper = NULL;
     }
-    p->wrapper = NULL;
   }
 PHP_GRPC_FREE_WRAPPED_FUNC_END()
 
@@ -330,7 +306,6 @@ PHP_METHOD(Channel, __construct) {
 
   gpr_mu_init(&channel->wrapper->mu);
   smart_str_free(&buf);
-
   if (force_new || (creds != NULL && creds->has_call_creds)) {
     // If the ChannelCredentials object was composed with a CallCredentials
     // object, there is no way we can tell them apart. Do NOT persist
@@ -540,8 +515,18 @@ static void php_grpc_channel_plink_dtor(php_grpc_zend_resource *rsrc
       grpc_channel_destroy(le->channel->wrapped);
       free(le->channel->target);
       free(le->channel->args_hashstr);
+      le->channel->wrapped = NULL;
+      le->channel->target = NULL;
+      le->channel->args_hashstr = NULL;
     }
+    free(le->channel->key);
+    le->channel->key = NULL;
     gpr_mu_unlock(&le->channel->mu);
+    gpr_mu_destroy(&le->channel->mu);
+    free(le->channel);
+    le->channel = NULL;
+    free(le);
+    le = NULL;
   }
 }
 
