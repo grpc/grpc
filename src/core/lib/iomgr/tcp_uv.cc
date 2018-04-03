@@ -414,9 +414,9 @@ static void uv_resolve_async(grpc_custom_resolver* r, char* host, char* port) {
 grpc_custom_resolver_vtable uv_resolver_vtable = {uv_resolve, uv_resolve_async};
 
 grpc_socket_vtable grpc_uv_socket_vtable = {
-    uv_socket_init,       uv_socket_connect,     uv_socket_destroy,
-    uv_socket_shutdown,   uv_socket_close,       uv_socket_write,
-    uv_socket_read,       uv_socket_getpeername, uv_socket_getsockname,
-    uv_socket_bind,        uv_socket_listen,     uv_socket_accept};
+    uv_socket_init,     uv_socket_connect,     uv_socket_destroy,
+    uv_socket_shutdown, uv_socket_close,       uv_socket_write,
+    uv_socket_read,     uv_socket_getpeername, uv_socket_getsockname,
+    uv_socket_bind,     uv_socket_listen,      uv_socket_accept};
 
 #endif
