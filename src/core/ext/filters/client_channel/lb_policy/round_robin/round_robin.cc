@@ -425,15 +425,21 @@ void RoundRobin::RoundRobinSubchannelList::UnrefForConnectivityWatch(
 }
 
 void RoundRobin::RoundRobinSubchannelList::StartWatchingLocked() {
-// FIXME: consider moving this to SubchannelList ctor
-// FIXME: add explanatory comment
-gpr_log(GPR_INFO, "BEFORE: CheckConnectivityStateLocked loop");
+  if (num_subchannels() == 0) return;
+  // Check current state of each subchannel synchronously, since any
+  // subchannel already used by some other channel may have a non-IDLE
+  // state.  This will invoke ProcessConnectivityChangeLocked() for each
+  // subchannel whose state is not IDLE.  However, because initialized_
+  // is still false, the code there will (a) skip re-resolution for any
+  // subchannel in state TRANSIENT_FAILURE and (b) not call
+  // UpdateOverallStateLocked().
   for (size_t i = 0; i < num_subchannels(); ++i) {
     subchannel(i)->CheckConnectivityStateLocked();
   }
-gpr_log(GPR_INFO, "AFTER: CheckConnectivityStateLocked loop");
+  // Now set initialized_ to true and call UpdateOverallStateLocked().
   initialized_ = true;
   UpdateOverallStateLocked();
+  // Start connectivity watch for each subchannel.
   for (size_t i = 0; i < num_subchannels(); i++) {
     if (subchannel(i)->subchannel() != nullptr) {
       RefForConnectivityWatch("connectivity_watch");
@@ -468,12 +474,11 @@ void RoundRobin::RoundRobinSubchannelList::UpdateStateCountersLocked(
   last_transient_failure_error_ = transient_failure_error;
 }
 
-/** Sets the policy's connectivity status based on that of the passed-in \a sd
- * (the grpc_lb_subchannel_data associated with the updated subchannel) and the
- * subchannel list \a sd belongs to (sd->subchannel_list). \a error will be used
- * only if the policy transitions to state TRANSIENT_FAILURE. */
+// Sets the RR policy's connectivity state based on the current
+// subchannel list.
 void RoundRobin::RoundRobinSubchannelList::UpdateConnectivityStateLocked() {
   RoundRobin* p = static_cast<RoundRobin*>(policy());
+  // Only set connectivity state if this is the current subchannel list.
   if (p->subchannel_list_ != this) return;
   /* In priority order. The first rule to match terminates the search (ie, if we
    * are on rule n, all previous rules were unfulfilled).
@@ -536,10 +541,8 @@ void RoundRobin::RoundRobinSubchannelList::UpdateOverallStateLocked() {
     // Drain pending picks.
     p->DrainPendingPicksLocked();
   }
-  // Only update connectivity based on the selected subchannel list.
-  if (p->subchannel_list_ == this) {
-    UpdateConnectivityStateLocked();
-  }
+  // Update the RR policy's connectivity state if needed.
+  UpdateConnectivityStateLocked();
 }
 
 void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
