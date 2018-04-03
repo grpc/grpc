@@ -40,8 +40,8 @@ grpc::string MakePort() {
 }
 
 const grpc::string& GetPort() {
-    static grpc::string g_port = MakePort();
-    return g_port;
+  static grpc::string g_port = MakePort();
+  return g_port;
 }
 
 TEST(ServerBuilderTest, NoOp) { ServerBuilder b; }
