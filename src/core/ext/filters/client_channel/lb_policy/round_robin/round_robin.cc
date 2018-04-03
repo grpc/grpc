@@ -134,19 +134,30 @@ class RoundRobin : public LoadBalancingPolicy {
       GRPC_ERROR_UNREF(last_transient_failure_error_);
     }
 
+    // Manages references for connectivity watches.
     void RefForConnectivityWatch(const char* reason);
     void UnrefForConnectivityWatch(const char* reason);
 
+    // Starts watching the subchannels in this list.
     void StartWatchingLocked();
 
+    // Updates the counters of subchannels in each state when a
+    // subchannel transitions from old_state to new_state.
+    // transient_failure_error is the error that is reported when
+    // new_state is TRANSIENT_FAILURE.
     void UpdateStateCountersLocked(grpc_connectivity_state old_state,
                                    grpc_connectivity_state new_state,
                                    grpc_error* transient_failure_error);
 
-    void UpdateConnectivityStateLocked();
+    // If this subchannel list is the RR policy's current subchannel
+    // list, updates the RR policy's connectivity state based on the
+    // subchannel list's state counters.
+    void MaybeUpdateConnectivityStateLocked();
 
+// FIXME: rename and document
     void UpdateOverallStateLocked();
 
+// FIXME: rename started_watching
     bool initialized() const { return initialized_; }
 
    private:
@@ -160,9 +171,9 @@ class RoundRobin : public LoadBalancingPolicy {
   void ShutdownLocked() override;
 
   void StartPickingLocked();
-  size_t GetNextReadySubchannelIndexLocked();
   bool DoPickLocked(PickState* pick);
   void DrainPendingPicksLocked();
+  size_t GetNextReadySubchannelIndexLocked();
   void UpdateLastReadySubchannelIndexLocked(size_t last_ready_index);
 
   /** list of subchannels */
@@ -484,7 +495,8 @@ void RoundRobin::RoundRobinSubchannelList::UpdateStateCountersLocked(
 
 // Sets the RR policy's connectivity state based on the current
 // subchannel list.
-void RoundRobin::RoundRobinSubchannelList::UpdateConnectivityStateLocked() {
+void
+RoundRobin::RoundRobinSubchannelList::MaybeUpdateConnectivityStateLocked() {
   RoundRobin* p = static_cast<RoundRobin*>(policy());
   // Only set connectivity state if this is the current subchannel list.
   if (p->subchannel_list_ != this) return;
@@ -550,7 +562,7 @@ void RoundRobin::RoundRobinSubchannelList::UpdateOverallStateLocked() {
     p->DrainPendingPicksLocked();
   }
   // Update the RR policy's connectivity state if needed.
-  UpdateConnectivityStateLocked();
+  MaybeUpdateConnectivityStateLocked();
 }
 
 void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(

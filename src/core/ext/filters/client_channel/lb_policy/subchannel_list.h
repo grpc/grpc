@@ -194,21 +194,25 @@ class SubchannelData {
 };
 
 // A list of subchannels.
-// FIXME: document more
 template <typename SubchannelListType, typename SubchannelDataType>
 class SubchannelList
     : public RefCountedWithTracing<SubchannelListType> {
  public:
   typedef InlinedVector<SubchannelDataType, 10> SubchannelVector;
 
+  // The number of subchannels in the list.
   size_t num_subchannels() const { return subchannels_.size(); }
+
+  // The data for the subchannel at a particular index.
   SubchannelDataType* subchannel(size_t index) { return &subchannels_[index]; }
 
   // Marks the subchannel_list as discarded. Unsubscribes all its subchannels.
   void ShutdownLocked(const char* reason);
 
+  // Returns true if the subchannel list is shutting down.
   bool shutting_down() const { return shutting_down_; }
 
+  // Accessors.
   LoadBalancingPolicy* policy() const { return policy_; }
   TraceFlag* tracer() const { return tracer_; }
 
