@@ -118,7 +118,7 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       Write(context, file_name + ".pbrpc.h",
             PreprocIfNot(kForwardDeclare, imports) + "\n" +
                 PreprocIfNot(kProtocolOnly, system_imports) + "\n" +
-                class_declarations + "\n"
+                class_declarations + "\n" +
                 PreprocIfNot(kForwardDeclare, class_imports) +
                 "\n" + forward_declarations + "\n" + kNonNullBegin + "\n" +
                 protocols + "\n" + PreprocIfNot(kProtocolOnly, interfaces) +
