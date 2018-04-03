@@ -148,6 +148,7 @@ class RoundRobin : public LoadBalancingPolicy {
 
   void StartPickingLocked();
   size_t GetNextReadySubchannelIndexLocked();
+  bool DoPickLocked(PickState* pick);
   void UpdateLastReadySubchannelIndexLocked(size_t last_ready_index);
   void UpdateConnectivityStateLocked(grpc_connectivity_state state,
                                      grpc_error* error);
@@ -351,6 +352,31 @@ void RoundRobin::ExitIdleLocked() {
   }
 }
 
+bool RoundRobin::DoPickLocked(PickState* pick) {
+  const size_t next_ready_index = GetNextReadySubchannelIndexLocked();
+  if (next_ready_index < subchannel_list_->num_subchannels()) {
+    /* readily available, report right away */
+    RoundRobinSubchannelData* sd =
+        subchannel_list_->subchannel(next_ready_index);
+    pick->connected_subchannel = sd->connected_subchannel()->Ref();
+    if (pick->user_data != nullptr) {
+      *pick->user_data = sd->user_data();
+    }
+    if (grpc_lb_round_robin_trace.enabled()) {
+      gpr_log(
+          GPR_DEBUG,
+          "[RR %p] Picked target <-- Subchannel %p (connected %p) (sl %p, "
+          "index %" PRIuPTR ")",
+          this, sd->subchannel(), pick->connected_subchannel.get(),
+          sd->subchannel_list(), next_ready_index);
+    }
+    /* only advance the last picked pointer if the selection was used */
+    UpdateLastReadySubchannelIndexLocked(next_ready_index);
+    return true;
+  }
+  return false;
+}
+
 bool RoundRobin::PickLocked(PickState* pick) {
   if (grpc_lb_round_robin_trace.enabled()) {
     gpr_log(GPR_DEBUG, "[RR %p] Trying to pick (shutdown: %d)", this,
@@ -358,27 +384,7 @@ bool RoundRobin::PickLocked(PickState* pick) {
   }
   GPR_ASSERT(!shutdown_);
   if (subchannel_list_ != nullptr) {
-    const size_t next_ready_index = GetNextReadySubchannelIndexLocked();
-    if (next_ready_index < subchannel_list_->num_subchannels()) {
-      /* readily available, report right away */
-      RoundRobinSubchannelData* sd =
-          subchannel_list_->subchannel(next_ready_index);
-      pick->connected_subchannel = sd->connected_subchannel()->Ref();
-      if (pick->user_data != nullptr) {
-        *pick->user_data = sd->user_data();
-      }
-      if (grpc_lb_round_robin_trace.enabled()) {
-        gpr_log(
-            GPR_DEBUG,
-            "[RR %p] Picked target <-- Subchannel %p (connected %p) (sl %p, "
-            "index %" PRIuPTR ")",
-            this, sd->subchannel(), pick->connected_subchannel.get(),
-            sd->subchannel_list(), next_ready_index);
-      }
-      /* only advance the last picked pointer if the selection was used */
-      UpdateLastReadySubchannelIndexLocked(next_ready_index);
-      return true;
-    }
+    if (DoPickLocked(pick)) return true;
   }
   /* no pick currently available. Save for later in list of pending picks */
   if (!started_picking_) {
@@ -548,32 +554,11 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
         }
         p->subchannel_list_ = std::move(p->latest_pending_subchannel_list_);
       }
-      /* at this point we know there's at least one suitable subchannel. Go
-       * ahead and pick one and notify the pending suitors in
-       * p->pending_picks. This preemptively replicates rr_pick()'s actions. */
-      const size_t next_ready_index = p->GetNextReadySubchannelIndexLocked();
-      GPR_ASSERT(next_ready_index < p->subchannel_list_->num_subchannels());
-      RoundRobinSubchannelData* selected =
-          p->subchannel_list_->subchannel(next_ready_index);
-      if (p->pending_picks_ != nullptr) {
-        // if the selected subchannel is going to be used for the pending
-        // picks, update the last picked pointer
-        p->UpdateLastReadySubchannelIndexLocked(next_ready_index);
-      }
+      // Drain pending picks.
       PickState* pick;
       while ((pick = p->pending_picks_)) {
         p->pending_picks_ = pick->next;
-        pick->connected_subchannel = selected->connected_subchannel()->Ref();
-        if (pick->user_data != nullptr) {
-          *pick->user_data = selected->user_data();
-        }
-        if (grpc_lb_round_robin_trace.enabled()) {
-          gpr_log(GPR_DEBUG,
-                  "[RR %p] Fulfilling pending pick. Target <-- subchannel %p "
-                  "(subchannel_list %p, index %" PRIuPTR ")",
-                  p, selected->subchannel(), p->subchannel_list_.get(),
-                  next_ready_index);
-        }
+        GPR_ASSERT(p->DoPickLocked(pick));
         GRPC_CLOSURE_SCHED(pick->on_complete, GRPC_ERROR_NONE);
       }
       break;
