@@ -299,14 +299,17 @@ static grpc_error* uv_socket_listen(grpc_custom_socket* socket) {
   return tcp_error_create("Failed to listen to port", status);
 }
 
-static grpc_error* uv_socket_setsockopt(grpc_custom_socket* socket, int level,
-                                        int option_name, const void* optval,
-                                        socklen_t option_len) {
-  int fd;
-  uv_socket_t* uv_socket = (uv_socket_t*)socket->impl;
-  uv_fileno((uv_handle_t*)uv_socket->handle, &fd);
-  // TODO Handle error here.  Also, does this work on windows??
-  setsockopt(fd, level, option_name, &optval, (socklen_t)option_len);
+static grpc_error* uv_socket_setsockopt(grpc_custom_socket* socket) {
+#if defined(GPR_LINUX) && defined(SO_REUSEPORT)
+  if (family == AF_INET || family == AF_INET6) {
+    int enable = 1;
+    int fd;
+    uv_socket_t* uv_socket = (uv_socket_t*)socket->impl;
+    uv_fileno((uv_handle_t*)uv_socket->handle, &fd);
+    // TODO Handle error here.
+    setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(enable));
+  }
+#endif
   return GRPC_ERROR_NONE;
 }
 
