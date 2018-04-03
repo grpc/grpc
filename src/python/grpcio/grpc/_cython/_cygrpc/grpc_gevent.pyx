@@ -239,8 +239,7 @@ cdef grpc_error* socket_getsockname(grpc_custom_socket* socket,
   length[0] = c_addr.len
   return grpc_error_none()
 
-cdef grpc_error* socket_setsockopt(grpc_custom_socket* socket, int level, int optname,
-                const void *optval, uint32_t optlen) with gil:
+cdef grpc_error* socket_setsockopt(grpc_custom_socket* socket) with gil:
   # No-op; we provide a default set of options
   return grpc_error_none()
 
