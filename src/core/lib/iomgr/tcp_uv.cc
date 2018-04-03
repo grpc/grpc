@@ -192,6 +192,16 @@ static grpc_error* uv_socket_init_helper(uv_socket_t* uv_socket, int domain) {
   if (status != 0) {
     return tcp_error_create("Failed to initialize UV tcp handle", status);
   }
+#if defined(GPR_LINUX) && defined(SO_REUSEPORT)
+  if (domain == AF_INET || domain == AF_INET6) {
+    int enable = 1;
+    int fd;
+    uv_socket_t* uv_socket = (uv_socket_t*)socket->impl;
+    uv_fileno((uv_handle_t*)uv_socket->handle, &fd);
+    // TODO Handle error here.
+    setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(enable));
+  }
+#endif
   uv_socket->write_buffers = nullptr;
   uv_socket->read_len = 0;
   uv_tcp_nodelay(uv_socket->handle, 1);
@@ -297,20 +307,6 @@ static grpc_error* uv_socket_listen(grpc_custom_socket* socket) {
   int status =
       uv_listen((uv_stream_t*)uv_socket->handle, SOMAXCONN, uv_on_connect);
   return tcp_error_create("Failed to listen to port", status);
-}
-
-static grpc_error* uv_socket_setsockopt(grpc_custom_socket* socket) {
-#if defined(GPR_LINUX) && defined(SO_REUSEPORT)
-  if (family == AF_INET || family == AF_INET6) {
-    int enable = 1;
-    int fd;
-    uv_socket_t* uv_socket = (uv_socket_t*)socket->impl;
-    uv_fileno((uv_handle_t*)uv_socket->handle, &fd);
-    // TODO Handle error here.
-    setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(enable));
-  }
-#endif
-  return GRPC_ERROR_NONE;
 }
 
 static void uv_tc_on_connect(uv_connect_t* req, int status) {
@@ -421,7 +417,6 @@ grpc_socket_vtable grpc_uv_socket_vtable = {
     uv_socket_init,       uv_socket_connect,     uv_socket_destroy,
     uv_socket_shutdown,   uv_socket_close,       uv_socket_write,
     uv_socket_read,       uv_socket_getpeername, uv_socket_getsockname,
-    uv_socket_setsockopt, uv_socket_bind,        uv_socket_listen,
-    uv_socket_accept};
+    uv_socket_bind,        uv_socket_listen,     uv_socket_accept};
 
 #endif

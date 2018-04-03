@@ -62,7 +62,6 @@ typedef struct grpc_socket_vtable {
                              const grpc_sockaddr* addr, int* len);
   grpc_error* (*getsockname)(grpc_custom_socket* socket,
                              const grpc_sockaddr* addr, int* len);
-  grpc_error* (*setsockopt)(grpc_custom_socket* socket);
   grpc_error* (*bind)(grpc_custom_socket* socket, const grpc_sockaddr* addr,
                       size_t len, int flags);
   grpc_error* (*listen)(grpc_custom_socket* socket);
