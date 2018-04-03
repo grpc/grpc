@@ -174,7 +174,7 @@ class RoundRobin : public LoadBalancingPolicy {
   /** our connectivity state tracker */
   grpc_connectivity_state_tracker state_tracker_;
   /** Index into subchannel_list_ for last pick. */
-  size_t last_ready_subchannel_index_ = 0;  // FIXME: set to -1?
+  size_t last_ready_subchannel_index_ = -1;
 };
 
 RoundRobin::RoundRobin(const Args& args) : LoadBalancingPolicy(args) {
@@ -562,15 +562,6 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
         grpc_error_string(error));
   }
   GPR_ASSERT(subchannel() != nullptr);
-// FIXME: this check may not be needed, because subchannel_list should
-// always be shutting down if policy is shutting down
-  // If the policy is shutting down, unref and return.
-  if (p->shutdown_) {
-    StopConnectivityWatchLocked();
-    UnrefSubchannelLocked("rr_shutdown");
-    subchannel_list()->UnrefForConnectivityWatch("rr_shutdown");
-    return;
-  }
   // If the subchannel list is shutting down, stop watching.
   if (subchannel_list()->shutting_down() || error == GRPC_ERROR_CANCELLED) {
     StopConnectivityWatchLocked();
