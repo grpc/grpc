@@ -568,6 +568,7 @@ grpc_cc_library(
     public_hdrs = GPR_PUBLIC_HDRS,
     deps = [
         "gpr_codegen",
+        "@com_google_absl//absl/container:inlined_vector"
     ],
 )
 
