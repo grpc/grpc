@@ -161,6 +161,13 @@ static NSString * const kBearerPrefix = @"Bearer ";
     [NSException raise:NSInvalidArgumentException
                 format:@"The requests writer can't be already started."];
   }
+  NSString *check_host = [NSURL URLWithString:[@"https://" stringByAppendingString:host]].host;
+  if (!check_host) {
+    if (host.length == 0) {
+      [NSException raise:NSInvalidArgumentException format:@"host of %@ is nil or empty", host];
+    }
+  }
+
   if ((self = [super init])) {
     _host = [host copy];
     _path = [path copy];

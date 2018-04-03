@@ -65,6 +65,24 @@ static NSMutableDictionary *kHostCache;
   NSURL *hostURL = [NSURL URLWithString:[@"https://" stringByAppendingString:address]];
   if (hostURL.host && !hostURL.port) {
     address = [hostURL.host stringByAppendingString:@":443"];
+  } else if (!hostURL) {
+    // NSURL failed to parse the address. It probably has a `%` in it (denoting IPv6 zone-id).
+    // Connectivity monitor happens per host.
+    char *chost = NULL, *cport = NULL;
+    if (!gpr_split_host_port(address.UTF8String, &chost, &cport)) {
+      return nil;
+    }
+    char *caddr = NULL;
+    if (!cport) {
+      if (gpr_join_host_port(caddr, chost, 443) == -1) {
+        gpr_free(chost);
+        return nil;
+      }
+      address = [[NSString alloc] initWithCString:caddr encoding:NSUTF8StringEncoding];
+      gpr_free(caddr);
+    }
+    gpr_free(chost);
+    gpr_free(cport);
   }
 
   // Look up the GRPCHost in the cache.
