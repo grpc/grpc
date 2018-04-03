@@ -122,13 +122,18 @@ class RoundRobin : public LoadBalancingPolicy {
         : SubchannelList(policy, tracer, addresses, combiner,
                          client_channel_factory, args) {}
 
+    ~RoundRobinSubchannelList() {
+      GRPC_ERROR_UNREF(last_transient_failure_error_);
+    }
+
     void RefForConnectivityWatch(const char* reason);
     void UnrefForConnectivityWatch(const char* reason);
 
     void StartWatchingLocked();
 
     void UpdateStateCountersLocked(grpc_connectivity_state old_state,
-                                   grpc_connectivity_state new_state);
+                                   grpc_connectivity_state new_state,
+                                   grpc_error* transient_failure_error);
 
     void UpdateConnectivityStateLocked();
 
@@ -141,6 +146,7 @@ class RoundRobin : public LoadBalancingPolicy {
     size_t num_ready_ = 0;
     size_t num_connecting_ = 0;
     size_t num_transient_failure_ = 0;
+    grpc_error* last_transient_failure_error_ = GRPC_ERROR_NONE;
   };
 
   void ShutdownLocked() override;
@@ -437,7 +443,8 @@ gpr_log(GPR_INFO, "AFTER: CheckConnectivityStateLocked loop");
 }
 
 void RoundRobin::RoundRobinSubchannelList::UpdateStateCountersLocked(
-    grpc_connectivity_state old_state, grpc_connectivity_state new_state) {
+    grpc_connectivity_state old_state, grpc_connectivity_state new_state,
+    grpc_error* transient_failure_error) {
   GPR_ASSERT(old_state != GRPC_CHANNEL_SHUTDOWN);
   GPR_ASSERT(new_state != GRPC_CHANNEL_SHUTDOWN);
   if (old_state == GRPC_CHANNEL_READY) {
@@ -457,6 +464,8 @@ void RoundRobin::RoundRobinSubchannelList::UpdateStateCountersLocked(
   } else if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     ++num_transient_failure_;
   }
+  GRPC_ERROR_UNREF(last_transient_failure_error_);
+  last_transient_failure_error_ = transient_failure_error;
 }
 
 /** Sets the policy's connectivity status based on that of the passed-in \a sd
@@ -492,10 +501,9 @@ void RoundRobin::RoundRobinSubchannelList::UpdateConnectivityStateLocked() {
     /* 3) TRANSIENT_FAILURE */
     grpc_connectivity_state_set(&p->state_tracker_,
                                 GRPC_CHANNEL_TRANSIENT_FAILURE,
-                                GRPC_ERROR_NONE,  // FIXME: GRPC_ERROR_REF(error),
+                                GRPC_ERROR_REF(last_transient_failure_error_),
                                 "rr_exhausted_subchannels");
   }
-// FIXME:  GRPC_ERROR_UNREF(error);
 }
 
 void RoundRobin::RoundRobinSubchannelList::UpdateOverallStateLocked() {
@@ -598,7 +606,8 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
   }
   // Update state counters.
   subchannel_list()->UpdateStateCountersLocked(prev_connectivity_state_,
-                                               connectivity_state());
+                                               connectivity_state(),
+                                               GRPC_ERROR_REF(error));
   prev_connectivity_state_ = connectivity_state();
   // If not initializing, update overall state and renew notification.
   if (subchannel_list()->initialized()) {
