@@ -67,7 +67,7 @@ add_library(helloworld_proto_lib
 
 target_link_libraries(helloworld_proto_lib
   grpc++
-  ${_gRPC_PROTOBUF_LIBRARIES}
+  libprotobuf
   android
   log)
 
