@@ -79,11 +79,15 @@ class SubchannelData {
     return curr_connectivity_state_;
   }
 
-  virtual grpc_connectivity_state CheckConnectivityStateLocked() {
+  void CheckConnectivityStateLocked() {
+    GPR_ASSERT(!connectivity_notification_pending_);
+    grpc_error* error = GRPC_ERROR_NONE;
     pending_connectivity_state_unsafe_ =
-        grpc_subchannel_check_connectivity(subchannel(), nullptr);
-    curr_connectivity_state_ = pending_connectivity_state_unsafe_;
-    return curr_connectivity_state_;
+        grpc_subchannel_check_connectivity(subchannel(), &error);
+    if (pending_connectivity_state_unsafe_ != curr_connectivity_state_) {
+      curr_connectivity_state_ = pending_connectivity_state_unsafe_;
+      ProcessConnectivityChangeLocked(error);
+    }
   }
 
   // Unrefs the subchannel.
