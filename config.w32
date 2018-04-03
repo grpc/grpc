@@ -376,7 +376,6 @@ if (PHP_GRPC != "no") {
     "third_party\\boringssl\\crypto\\cpu-intel.c " +
     "third_party\\boringssl\\crypto\\cpu-ppc64le.c " +
     "third_party\\boringssl\\crypto\\crypto.c " +
-    "third_party\\boringssl\\crypto\\curve25519\\curve25519.c " +
     "third_party\\boringssl\\crypto\\curve25519\\spake25519.c " +
     "third_party\\boringssl\\crypto\\curve25519\\x25519-x86_64.c " +
     "third_party\\boringssl\\crypto\\dh\\check.c " +
@@ -562,6 +561,7 @@ if (PHP_GRPC != "no") {
     "third_party\\boringssl\\ssl\\tls13_server.cc " +
     "third_party\\boringssl\\ssl\\tls_method.cc " +
     "third_party\\boringssl\\ssl\\tls_record.cc " +
+    "third_party\\boringssl\\third_party\\fiat\\curve25519.c " +
     "third_party\\zlib\\adler32.c " +
     "third_party\\zlib\\compress.c " +
     "third_party\\zlib\\crc32.c " +
@@ -704,6 +704,8 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\x509");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\x509v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\ssl");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\third_party");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\third_party\\fiat");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\nanopb");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\zlib");
   _build_dirs = new Array();

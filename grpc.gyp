@@ -1629,7 +1629,6 @@
         'third_party/boringssl/crypto/cpu-intel.c',
         'third_party/boringssl/crypto/cpu-ppc64le.c',
         'third_party/boringssl/crypto/crypto.c',
-        'third_party/boringssl/crypto/curve25519/curve25519.c',
         'third_party/boringssl/crypto/curve25519/spake25519.c',
         'third_party/boringssl/crypto/curve25519/x25519-x86_64.c',
         'third_party/boringssl/crypto/dh/check.c',
@@ -1815,6 +1814,7 @@
         'third_party/boringssl/ssl/tls13_server.cc',
         'third_party/boringssl/ssl/tls_method.cc',
         'third_party/boringssl/ssl/tls_record.cc',
+        'third_party/boringssl/third_party/fiat/curve25519.c',
       ],
     },
     {
@@ -1870,6 +1870,17 @@
       ],
       'sources': [
         'third_party/boringssl/crypto/bio/bio_test.cc',
+      ],
+    },
+    {
+      'target_name': 'boringssl_buf_test_lib',
+      'type': 'static_library',
+      'dependencies': [
+        'boringssl_test_util',
+        'boringssl',
+      ],
+      'sources': [
+        'third_party/boringssl/crypto/buf/buf_test.cc',
       ],
     },
     {
