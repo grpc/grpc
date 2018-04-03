@@ -190,9 +190,14 @@ void grpc_event_engine_shutdown(void) {
   g_event_engine = nullptr;
 }
 
-grpc_fd* grpc_fd_create(int fd, const char* name) {
-  GRPC_POLLING_API_TRACE("fd_create(%d, %s)", fd, name);
-  return g_event_engine->fd_create(fd, name);
+bool grpc_event_engine_can_track_errors(void) {
+  return g_event_engine->can_track_err;
+}
+
+grpc_fd* grpc_fd_create(int fd, const char* name, bool track_err) {
+  GRPC_POLLING_API_TRACE("fd_create(%d, %s, %d)", fd, name, track_err);
+  GPR_DEBUG_ASSERT(!track_err || g_event_engine->can_track_err);
+  return g_event_engine->fd_create(fd, name, track_err);
 }
 
 int grpc_fd_wrapped_fd(grpc_fd* fd) {
@@ -222,6 +227,10 @@ void grpc_fd_notify_on_read(grpc_fd* fd, grpc_closure* closure) {
 
 void grpc_fd_notify_on_write(grpc_fd* fd, grpc_closure* closure) {
   g_event_engine->fd_notify_on_write(fd, closure);
+}
+
+void grpc_fd_notify_on_error(grpc_fd* fd, grpc_closure* closure) {
+  g_event_engine->fd_notify_on_error(fd, closure);
 }
 
 static size_t pollset_size(void) { return g_event_engine->pollset_size; }

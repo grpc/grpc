@@ -284,7 +284,7 @@ static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver) {
           gpr_asprintf(&fd_name, "ares_ev_driver-%" PRIuPTR, i);
           fdn = static_cast<fd_node*>(gpr_malloc(sizeof(fd_node)));
           gpr_log(GPR_DEBUG, "new fd: %d", socks[i]);
-          fdn->fd = grpc_fd_create(socks[i], fd_name);
+          fdn->fd = grpc_fd_create(socks[i], fd_name, false);
           fdn->ev_driver = ev_driver;
           fdn->readable_registered = false;
           fdn->writable_registered = false;

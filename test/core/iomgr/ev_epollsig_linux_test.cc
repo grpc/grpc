@@ -66,7 +66,7 @@ static void test_fd_init(test_fd* tfds, int* fds, int num_fds) {
 
   for (i = 0; i < num_fds; i++) {
     tfds[i].inner_fd = fds[i];
-    tfds[i].fd = grpc_fd_create(fds[i], "test_fd");
+    tfds[i].fd = grpc_fd_create(fds[i], "test_fd", false);
   }
 }
 
@@ -267,7 +267,7 @@ static void test_threading(void) {
   grpc_wakeup_fd fd;
   GPR_ASSERT(GRPC_LOG_IF_ERROR("wakeup_fd_init", grpc_wakeup_fd_init(&fd)));
   shared.wakeup_fd = &fd;
-  shared.wakeup_desc = grpc_fd_create(fd.read_fd, "wakeup");
+  shared.wakeup_desc = grpc_fd_create(fd.read_fd, "wakeup", false);
   shared.wakeups = 0;
   {
     grpc_core::ExecCtx exec_ctx;

@@ -43,8 +43,9 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server* server,
   char* name;
   gpr_asprintf(&name, "fd:%d", fd);
 
-  grpc_endpoint* server_endpoint = grpc_tcp_create(
-      grpc_fd_create(fd, name), grpc_server_get_channel_args(server), name);
+  grpc_endpoint* server_endpoint =
+      grpc_tcp_create(grpc_fd_create(fd, name, false),
+                      grpc_server_get_channel_args(server), name);
 
   gpr_free(name);
 
