@@ -126,6 +126,14 @@ unsigned int parse_h2_length(const char *field) {
          ((unsigned int)(unsigned char)(field[2]));
 }
 
+grpc_channel_args *add_disable_client_authority_filter_args(grpc_channel_args *args) {
+  grpc_arg arg;
+  arg.key = const_cast<char*>(GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER);
+  arg.type = GRPC_ARG_INTEGER;
+  arg.value.integer = 1;
+  return grpc_channel_args_copy_and_add(args, &arg, 1);
+}
+
 - (void)testInternalError {
   grpc_call *c;
   grpc_slice request_payload_slice =
@@ -147,8 +155,10 @@ unsigned int parse_h2_length(const char *field) {
   gpr_join_host_port(&addr, "127.0.0.1", port);
   grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
   stream_engine *cronetEngine = [Cronet getGlobalEngine];
+  grpc_channel_args *client_args = add_disable_client_authority_filter_args(NULL);
   grpc_channel *client =
-      grpc_cronet_secure_channel_create(cronetEngine, addr, NULL, NULL);
+      grpc_cronet_secure_channel_create(cronetEngine, addr, client_args, NULL);
+  grpc_channel_args_destroy(client_args);
 
   cq_verifier *cqv = cq_verifier_create(cq);
   grpc_op ops[6];
@@ -262,6 +272,8 @@ unsigned int parse_h2_length(const char *field) {
   arg.type = GRPC_ARG_INTEGER;
   arg.value.integer = useCoalescing ? 1 : 0;
   grpc_channel_args *args = grpc_channel_args_copy_and_add(NULL, &arg, 1);
+  args = add_disable_client_authority_filter_args(args);
+
   grpc_call *c;
   grpc_slice request_payload_slice =
       grpc_slice_from_copied_string("hello world");

@@ -31,6 +31,8 @@
 
 namespace grpc {
 
+class ServerInterface;
+
 namespace internal {
 class CallOpSendMessage;
 template <class R>
@@ -98,6 +100,7 @@ class ByteBuffer final {
 
  private:
   friend class SerializationTraits<ByteBuffer, void>;
+  friend class ServerInterface;
   friend class internal::CallOpSendMessage;
   template <class R>
   friend class internal::CallOpRecvMessage;

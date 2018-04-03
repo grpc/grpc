@@ -129,6 +129,17 @@ const grpc_channel_filter grpc_client_authority_filter = {
 
 static bool add_client_authority_filter(grpc_channel_stack_builder* builder,
                                         void* arg) {
+  const grpc_channel_args* channel_args =
+      grpc_channel_stack_builder_get_channel_arguments(builder);
+  const grpc_arg* disable_client_authority_filter_arg = grpc_channel_args_find(
+      channel_args, GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER);
+  if (disable_client_authority_filter_arg != nullptr) {
+    const bool is_client_authority_filter_disabled =
+        grpc_channel_arg_get_bool(disable_client_authority_filter_arg, false);
+    if (is_client_authority_filter_disabled) {
+      return true;
+    }
+  }
   return grpc_channel_stack_builder_prepend_filter(
       builder, static_cast<const grpc_channel_filter*>(arg), nullptr, nullptr);
 }
