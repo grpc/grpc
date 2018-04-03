@@ -38,27 +38,63 @@
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
-// FIXME: add comments
+// Code for maintaining a list of subchannels within an LB policy.
+//
+// To use this, callers must create their own subclasses, like so:
+/*
+
+class MySubchannelList;  // Forward declaration.
+
+class MySubchannelData
+    : public SubchannelData<MySubchannelList, MySubchannelData> {
+ public:
+  void ProcessConnectivityChangeLocked(grpc_error* error) override {
+    // ...code to handle connectivity changes...
+  }
+};
+
+class MySubchannelList
+    : public SubchannelList<MySubchannelList, MySubchannelData> {
+};
+
+*/
+// All methods with a Locked() suffix must be called from within the
+// client_channel combiner.
 
 namespace grpc_core {
 
+// Stores data for a particular subchannel in a subchannel list.
+// Callers must create a subclass that implements the
+// ProcessConnectivityChangeLocked() method.
 template <typename SubchannelListType, typename SubchannelDataType>
 class SubchannelData {
  public:
-  // Returns the index into subchannel_list_ of this object.
+  // Returns a pointer to the subchannel list containing this object.
+  SubchannelListType* subchannel_list() const { return subchannel_list_; }
+
+  // Returns the index into the subchannel list of this object.
   size_t Index() const {
     return static_cast<size_t>(static_cast<const SubchannelDataType*>(this) -
                                subchannel_list_->subchannel(0));
   }
 
-  SubchannelListType* subchannel_list() const { return subchannel_list_; }
-
+  // Returns a pointer to the subchannel.
   grpc_subchannel* subchannel() const { return subchannel_; }
 
+  // Returns the connected subchannel.  Will be null if the subchannel
+  // is not connected.
   ConnectedSubchannel* connected_subchannel() const {
     return connected_subchannel_.get();
   }
 
+  // The current connectivity state.
+  // May be called from ProcessConnectivityChangeLocked() to determine
+  // the state that the subchannel has transitioned into.
+  grpc_connectivity_state connectivity_state() const {
+    return curr_connectivity_state_;
+  }
+
+  // Sets the connected subchannel from the subchannel.
   void SetConnectedSubchannelFromSubchannelLocked() {
     connected_subchannel_ =
         grpc_subchannel_get_connected_subchannel(subchannel_);
@@ -75,10 +111,11 @@ class SubchannelData {
     connected_subchannel_ = other->connected_subchannel_;  // Adds ref.
   }
 
-  grpc_connectivity_state connectivity_state() const {
-    return curr_connectivity_state_;
-  }
-
+  // Synchronously checks the subchannel's connectivity state.  Calls
+  // ProcessConnectivityChangeLocked() if the state has changed.
+  // Must not be called while there is a connectivity notification
+  // pending (i.e., between calling StartConnectivityWatchLocked() and
+  // the resulting invocation of ProcessConnectivityChangeLocked()).
   void CheckConnectivityStateLocked() {
     GPR_ASSERT(!connectivity_notification_pending_);
     grpc_error* error = GRPC_ERROR_NONE;
@@ -90,21 +127,28 @@ class SubchannelData {
     }
   }
 
-  // Unrefs the subchannel.
-// FIXME: move this to private in favor of ShutdownLocked()?
+  // Unrefs the subchannel.  May be used if an individual subchannel is
+  // no longer needed even though the subchannel list as a whole is not
+  // being unreffed.
   virtual void UnrefSubchannelLocked(const char* reason);
 
-  /// Starts watching the connectivity state of the subchannel.
-  /// The connectivity_changed_cb callback must invoke either
-  /// StopConnectivityWatch() or again call StartConnectivityWatch().
+  // Starts or renewes watching the connectivity state of the subchannel.
+  // ProcessConnectivityChangeLocked() will be called when the
+  // connectivity state changes.
   void StartConnectivityWatchLocked();
 
-  /// Stops watching the connectivity state of the subchannel.
+  // Stops watching the connectivity state of the subchannel.
   void StopConnectivityWatchLocked();
 
-  /// Cancels watching the connectivity state of the subchannel.
+  // Cancels watching the connectivity state of the subchannel.
+  // Must be called only while there is a connectivity notification
+  // pending (i.e., between calling StartConnectivityWatchLocked() and
+  // the resulting invocation of ProcessConnectivityChangeLocked()).
+  // From within ProcessConnectivityChangeLocked(), use
+  // StopConnectivityWatchLocked() instead.
   void CancelConnectivityWatchLocked(const char* reason);
 
+  // Cancels any pending connectivity watch and unrefs the subchannel.
   void ShutdownLocked(const char* reason);
 
   GRPC_ABSTRACT_BASE_CLASS
@@ -118,7 +162,12 @@ class SubchannelData {
 
   virtual ~SubchannelData();
 
-// FIXME: define API
+  // After StartConnectivityWatchLocked() is called, this method will be
+  // invoked when the subchannel's connectivity state changes.
+  // Implementations can use connectivity_state() to get the new
+  // connectivity state.
+  // Implementations must invoke either StopConnectivityWatch() or again
+  // call StartConnectivityWatch() before returning.
   virtual void ProcessConnectivityChangeLocked(grpc_error* error) GRPC_ABSTRACT;
 
  private:
@@ -137,13 +186,15 @@ class SubchannelData {
   bool connectivity_notification_pending_ = false;
   // Connectivity state to be updated by
   // grpc_subchannel_notify_on_state_change(), not guarded by
-  // the combiner.  Will be copied to \a curr_connectivity_state_ by
-  // \a connectivity_changed_closure_.
+  // the combiner.  Will be copied to curr_connectivity_state_ by
+  // OnConnectivityChangedLocked().
   grpc_connectivity_state pending_connectivity_state_unsafe_;
   // Current connectivity state.
   grpc_connectivity_state curr_connectivity_state_;
 };
 
+// A list of subchannels.
+// FIXME: document more
 template <typename SubchannelListType, typename SubchannelDataType>
 class SubchannelList
     : public RefCountedWithTracing<SubchannelListType> {

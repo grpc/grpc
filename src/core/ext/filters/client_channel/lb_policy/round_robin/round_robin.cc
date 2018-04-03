@@ -73,8 +73,15 @@ class RoundRobin : public LoadBalancingPolicy {
  private:
   ~RoundRobin();
 
+  // Forward declaration.
   class RoundRobinSubchannelList;
 
+  // Data for a particular subchannel in a subchannel list.
+  // This subclass adds the following functionality:
+  // - Tracks user_data associated with each address, which will be
+  //   returned along with picks that select the subchannel.
+  // - Tracks the previous connectivity state of the subchannel, so that
+  //   we know how many subchannels are in each state.
   class RoundRobinSubchannelData
       : public SubchannelData<RoundRobinSubchannelList,
                               RoundRobinSubchannelData> {
@@ -91,8 +98,6 @@ class RoundRobin : public LoadBalancingPolicy {
                      ? user_data_vtable_->copy(address.user_data)
                      : nullptr) {}
 
-    void ProcessConnectivityChangeLocked(grpc_error* error) override;
-
     void UnrefSubchannelLocked(const char* reason) override {
       SubchannelData::UnrefSubchannelLocked(reason);
       if (user_data_ != nullptr) {
@@ -105,11 +110,14 @@ class RoundRobin : public LoadBalancingPolicy {
     void* user_data() const { return user_data_; }
 
    private:
+    void ProcessConnectivityChangeLocked(grpc_error* error) override;
+
     const grpc_lb_user_data_vtable* user_data_vtable_;
     void* user_data_ = nullptr;
     grpc_connectivity_state prev_connectivity_state_ = GRPC_CHANNEL_IDLE;
   };
 
+  // A list of subchannels.
   class RoundRobinSubchannelList
       : public SubchannelList<RoundRobinSubchannelList,
                               RoundRobinSubchannelData> {
