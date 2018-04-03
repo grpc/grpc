@@ -141,6 +141,9 @@ class RoundRobin : public LoadBalancingPolicy {
     // Starts watching the subchannels in this list.
     void StartWatchingLocked();
 
+    // Returns true if we have started watching.
+    bool started_watching() const { return started_watching_; }
+
     // Updates the counters of subchannels in each state when a
     // subchannel transitions from old_state to new_state.
     // transient_failure_error is the error that is reported when
@@ -154,14 +157,12 @@ class RoundRobin : public LoadBalancingPolicy {
     // subchannel list's state counters.
     void MaybeUpdateConnectivityStateLocked();
 
-// FIXME: rename and document
+    // Updates the RR policy's overall state based on the counters of
+    // subchannels in each state.
     void UpdateOverallStateLocked();
 
-// FIXME: rename started_watching
-    bool initialized() const { return initialized_; }
-
    private:
-    bool initialized_ = false;
+    bool started_watching_ = false;
     size_t num_ready_ = 0;
     size_t num_connecting_ = 0;
     size_t num_transient_failure_ = 0;
@@ -448,15 +449,27 @@ void RoundRobin::RoundRobinSubchannelList::StartWatchingLocked() {
   // Check current state of each subchannel synchronously, since any
   // subchannel already used by some other channel may have a non-IDLE
   // state.  This will invoke ProcessConnectivityChangeLocked() for each
-  // subchannel whose state is not IDLE.  However, because initialized_
-  // is still false, the code there will (a) skip re-resolution for any
-  // subchannel in state TRANSIENT_FAILURE and (b) not call
-  // UpdateOverallStateLocked().
+  // subchannel whose state is not IDLE.  However, because started_watching_
+  // is still false, the code there will do two special things:
+  //
+  // - It will skip re-resolution for any subchannel in state
+  //   TRANSIENT_FAILURE, since doing this at start-watching-time would
+  //   cause us to enter an endless loop of re-resolution (i.e.,
+  //   re-resolution would cause a new update, and the new update would
+  //   immediately trigger a new re-resolution).
+  //
+  // - It will not call UpdateOverallStateLocked(); instead, we call
+  //   that here after all subchannels have been checked.  This allows us
+  //   to act more intelligently based on the state of all subchannels,
+  //   rather than just acting on the first one.  For example, if there is
+  //   more than one pending pick, this allows us to spread the picks
+  //   across all READY subchannels rather than sending them all to the
+  //   first subchannel that reports READY.
   for (size_t i = 0; i < num_subchannels(); ++i) {
     subchannel(i)->CheckConnectivityStateLocked();
   }
-  // Now set initialized_ to true and call UpdateOverallStateLocked().
-  initialized_ = true;
+  // Now set started_watching_ to true and call UpdateOverallStateLocked().
+  started_watching_ = true;
   UpdateOverallStateLocked();
   // Start connectivity watch for each subchannel.
   for (size_t i = 0; i < num_subchannels(); i++) {
@@ -557,6 +570,7 @@ void RoundRobin::RoundRobinSubchannelList::UpdateOverallStateLocked() {
         p->subchannel_list_->ShutdownLocked("sl_phase_out_shutdown");
       }
       p->subchannel_list_ = std::move(p->latest_pending_subchannel_list_);
+      p->last_ready_subchannel_index_ = -1;
     }
     // Drain pending picks.
     p->DrainPendingPicksLocked();
@@ -592,11 +606,11 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
   // Process the state change.
   switch (connectivity_state()) {
     case GRPC_CHANNEL_TRANSIENT_FAILURE: {
-      // Only re-resolve if we're being called for a state update, not
-      // for initialization.  Otherwise, if the subchannel was already
-      // in state TRANSIENT_FAILURE when the subchannel list was
-      // created, we'd wind up in a constant loop of re-resolution.
-      if (subchannel_list()->initialized()) {
+      // Only re-resolve if we've started watching, not at startup time.
+      // Otherwise, if the subchannel was already in state TRANSIENT_FAILURE
+      // when the subchannel list was created, we'd wind up in a constant
+      // loop of re-resolution.
+      if (subchannel_list()->started_watching()) {
         if (grpc_lb_round_robin_trace.enabled()) {
           gpr_log(GPR_DEBUG,
                   "[RR %p] Subchannel %p has gone into TRANSIENT_FAILURE. "
@@ -623,8 +637,8 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
                                                connectivity_state(),
                                                GRPC_ERROR_REF(error));
   prev_connectivity_state_ = connectivity_state();
-  // If not initializing, update overall state and renew notification.
-  if (subchannel_list()->initialized()) {
+  // If we've started watching, update overall state and renew notification.
+  if (subchannel_list()->started_watching()) {
     subchannel_list()->UpdateOverallStateLocked();
     StartConnectivityWatchLocked();
   }
@@ -702,6 +716,7 @@ void RoundRobin::UpdateLocked(const grpc_channel_args& args) {
       subchannel_list_->ShutdownLocked("sl_shutdown_replace_on_update");
     }
     subchannel_list_ = std::move(latest_pending_subchannel_list_);
+    last_ready_subchannel_index_ = -1;
   } else {
     // If we've started picking, start watching the new list.
     latest_pending_subchannel_list_->StartWatchingLocked();
