@@ -380,13 +380,17 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
   bool immediately_cancel = false;
 
   if (args->parent != nullptr) {
-    call->child =
+    child_call* cc = call->child =
         static_cast<child_call*>(gpr_arena_alloc(arena, sizeof(child_call)));
     call->child->parent = args->parent;
 
     GRPC_CALL_INTERNAL_REF(args->parent, "child");
     GPR_ASSERT(call->is_client);
     GPR_ASSERT(!args->parent->is_client);
+
+    parent_call* pc = get_or_create_parent_call(args->parent);
+
+    gpr_mu_lock(&pc->child_list_mu);
 
     if (args->propagation_mask & GRPC_PROPAGATE_DEADLINE) {
       send_deadline = GPR_MIN(send_deadline, args->parent->send_deadline);
@@ -415,6 +419,18 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
         immediately_cancel = true;
       }
     }
+
+    if (pc->first_child == nullptr) {
+      pc->first_child = call;
+      cc->sibling_next = cc->sibling_prev = call;
+    } else {
+      cc->sibling_next = pc->first_child;
+      cc->sibling_prev = pc->first_child->child->sibling_prev;
+      cc->sibling_next->child->sibling_prev =
+          cc->sibling_prev->child->sibling_next = call;
+    }
+
+    gpr_mu_unlock(&pc->child_list_mu);
   }
 
   call->send_deadline = send_deadline;
@@ -431,22 +447,6 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
                                       &call->call_combiner};
   add_init_error(&error, grpc_call_stack_init(channel_stack, 1, destroy_call,
                                               call, &call_args));
-  // Publish this call to parent only after the call stack has been initialized.
-  if (args->parent != nullptr) {
-    child_call* cc = call->child;
-    parent_call* pc = get_or_create_parent_call(args->parent);
-    gpr_mu_lock(&pc->child_list_mu);
-    if (pc->first_child == nullptr) {
-      pc->first_child = call;
-      cc->sibling_next = cc->sibling_prev = call;
-    } else {
-      cc->sibling_next = pc->first_child;
-      cc->sibling_prev = pc->first_child->child->sibling_prev;
-      cc->sibling_next->child->sibling_prev =
-          cc->sibling_prev->child->sibling_next = call;
-    }
-    gpr_mu_unlock(&pc->child_list_mu);
-  }
   if (error != GRPC_ERROR_NONE) {
     cancel_with_error(call, STATUS_FROM_SURFACE, GRPC_ERROR_REF(error));
   }
