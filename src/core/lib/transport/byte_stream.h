@@ -139,7 +139,6 @@ class ByteStreamCache {
    private:
     ByteStreamCache* cache_;
     size_t cursor_ = 0;
-    size_t offset_ = 0;
     grpc_error* shutdown_error_ = GRPC_ERROR_NONE;
   };
 
@@ -154,8 +153,6 @@ class ByteStreamCache {
 
  private:
   OrphanablePtr<ByteStream> underlying_stream_;
-  uint32_t length_;
-  uint32_t flags_;
   grpc_slice_buffer cache_buffer_;
 };
 
