@@ -22,5 +22,5 @@
 #include <grpcpp/grpcpp.h>
 
 namespace grpc {
-grpc::string Version() { return "1.11.0-dev"; }
+grpc::string Version() { return "1.11.0-pre1"; }
 }  // namespace grpc
