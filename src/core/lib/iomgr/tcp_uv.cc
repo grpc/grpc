@@ -196,8 +196,7 @@ static grpc_error* uv_socket_init_helper(uv_socket_t* uv_socket, int domain) {
   if (domain == AF_INET || domain == AF_INET6) {
     int enable = 1;
     int fd;
-    uv_socket_t* uv_socket = (uv_socket_t*)socket->impl;
-    uv_fileno((uv_handle_t*)uv_socket->handle, &fd);
+    uv_fileno((uv_handle_t*)tcp, &fd);
     // TODO Handle error here.
     setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(enable));
   }
