@@ -38,8 +38,8 @@ int grpc_inet_pton(int af, const char* src, void* dst) {
 }
 
 const char* grpc_inet_ntop(int af, const void* src, char* dst, size_t size) {
-  /* Windows InetNtopA wants a mutable ip pointer */
-  return inet_ntop(af, src, dst, (socklen_t)size);
+  uv_inet_ntop(af, src, dst, size);
+  return dst;
 }
 
 #endif /* GRPC_UV */
