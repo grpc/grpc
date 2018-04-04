@@ -356,7 +356,9 @@ static grpc_resolved_addresses* handle_addrinfo_result(
     i++;
     prev = resp;
     resp = resp->ai_next;
-    gpr_free(prev);
+    // addrinfo objects are allocated by libuv (e.g. in uv_getaddrinfo)
+    // and not by gpr_malloc
+    free(prev);
   }
   return addresses;
 }
