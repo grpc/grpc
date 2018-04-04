@@ -73,8 +73,8 @@ class PickFirst : public LoadBalancingPolicy {
                             const grpc_lb_address& address,
                             grpc_subchannel* subchannel,
                             grpc_combiner* combiner)
-        : SubchannelData(subchannel_list, user_data_vtable, address,
-                         subchannel, combiner) {}
+        : SubchannelData(subchannel_list, user_data_vtable, address, subchannel,
+                         combiner) {}
 
     void ProcessConnectivityChangeLocked(grpc_error* error) override;
   };
@@ -83,11 +83,11 @@ class PickFirst : public LoadBalancingPolicy {
       : public SubchannelList<PickFirstSubchannelList,
                               PickFirstSubchannelData> {
    public:
-    PickFirstSubchannelList(
-        PickFirst* policy, TraceFlag* tracer,
-        const grpc_lb_addresses* addresses, grpc_combiner* combiner,
-        grpc_client_channel_factory* client_channel_factory,
-        const grpc_channel_args& args)
+    PickFirstSubchannelList(PickFirst* policy, TraceFlag* tracer,
+                            const grpc_lb_addresses* addresses,
+                            grpc_combiner* combiner,
+                            grpc_client_channel_factory* client_channel_factory,
+                            const grpc_channel_args& args)
         : SubchannelList(policy, tracer, addresses, combiner,
                          client_channel_factory, args) {}
 
@@ -430,9 +430,8 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
             "sd->subchannel_list->shutting_down=%d error=%s",
             p, subchannel(), Index(), subchannel_list()->num_subchannels(),
             subchannel_list(),
-            grpc_connectivity_state_name(connectivity_state()),
-            p->shutdown_, subchannel_list()->shutting_down(),
-            grpc_error_string(error));
+            grpc_connectivity_state_name(connectivity_state()), p->shutdown_,
+            subchannel_list()->shutting_down(), grpc_error_string(error));
   }
   // If the policy is shutting down, unref and return.
   if (p->shutdown_) {
