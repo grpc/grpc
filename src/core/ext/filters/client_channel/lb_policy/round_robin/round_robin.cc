@@ -600,6 +600,7 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
     StopConnectivityWatchLocked();
     UnrefSubchannelLocked("rr_sl_shutdown");
     subchannel_list()->UnrefForConnectivityWatch("rr_sl_shutdown");
+    GRPC_ERROR_UNREF(error);
     return;
   }
   // Process the state change.
@@ -640,6 +641,7 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
     subchannel_list()->UpdateOverallStateLocked();
     StartConnectivityWatchLocked();
   }
+  GRPC_ERROR_UNREF(error);
 }
 
 grpc_connectivity_state RoundRobin::CheckConnectivityLocked(

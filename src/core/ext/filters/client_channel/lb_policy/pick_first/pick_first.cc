@@ -433,18 +433,12 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
             grpc_connectivity_state_name(connectivity_state()), p->shutdown_,
             subchannel_list()->shutting_down(), grpc_error_string(error));
   }
-  // If the policy is shutting down, unref and return.
-  if (p->shutdown_) {
-    StopConnectivityWatchLocked();
-    UnrefSubchannelLocked("pf_shutdown");
-    subchannel_list()->UnrefForConnectivityWatch("pf_shutdown");
-    return;
-  }
   // If the subchannel list is shutting down, stop watching.
   if (subchannel_list()->shutting_down() || error == GRPC_ERROR_CANCELLED) {
     StopConnectivityWatchLocked();
     UnrefSubchannelLocked("pf_sl_shutdown");
     subchannel_list()->UnrefForConnectivityWatch("pf_sl_shutdown");
+    GRPC_ERROR_UNREF(error);
     return;
   }
   // If we're still here, the notification must be for a subchannel in
@@ -492,6 +486,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
         StartConnectivityWatchLocked();
       }
     }
+    GRPC_ERROR_UNREF(error);
     return;
   }
   // If we get here, there are two possible cases:
@@ -574,6 +569,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
     case GRPC_CHANNEL_SHUTDOWN:
       GPR_UNREACHABLE_CODE(break);
   }
+  GRPC_ERROR_UNREF(error);
 }
 
 //

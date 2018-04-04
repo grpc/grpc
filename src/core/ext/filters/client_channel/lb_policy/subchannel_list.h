@@ -124,6 +124,8 @@ class SubchannelData {
     if (pending_connectivity_state_unsafe_ != curr_connectivity_state_) {
       curr_connectivity_state_ = pending_connectivity_state_unsafe_;
       ProcessConnectivityChangeLocked(error);
+    } else {
+      GRPC_ERROR_UNREF(error);
     }
   }
 
@@ -354,7 +356,7 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::
   if (sd->curr_connectivity_state_ == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     sd->connected_subchannel_.reset();
   }
-  sd->ProcessConnectivityChangeLocked(error);
+  sd->ProcessConnectivityChangeLocked(GRPC_ERROR_REF(error));
 }
 
 template <typename SubchannelListType, typename SubchannelDataType>
