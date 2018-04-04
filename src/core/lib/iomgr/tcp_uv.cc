@@ -338,7 +338,6 @@ static void uv_socket_connect(grpc_custom_socket* socket,
 static grpc_resolved_addresses* handle_addrinfo_result(
     struct addrinfo* result) {
   struct addrinfo* resp;
-  struct addrinfo* prev;
   size_t i;
   grpc_resolved_addresses* addresses =
       (grpc_resolved_addresses*)gpr_malloc(sizeof(grpc_resolved_addresses));
@@ -348,18 +347,13 @@ static grpc_resolved_addresses* handle_addrinfo_result(
   }
   addresses->addrs = (grpc_resolved_address*)gpr_malloc(
       sizeof(grpc_resolved_address) * addresses->naddrs);
-  i = 0;
-  resp = result;
-  while (resp != nullptr) {
+  for (resp = result, i = 0; resp != nullptr; resp = resp->ai_next, i++) {
     memcpy(&addresses->addrs[i].addr, resp->ai_addr, resp->ai_addrlen);
     addresses->addrs[i].len = resp->ai_addrlen;
-    i++;
-    prev = resp;
-    resp = resp->ai_next;
-    // addrinfo objects are allocated by libuv (e.g. in uv_getaddrinfo)
-    // and not by gpr_malloc
-    free(prev);
   }
+  // addrinfo objects are allocated by libuv (e.g. in uv_getaddrinfo)
+  // and not by gpr_malloc
+  uv_freeaddrinfo(result);
   return addresses;
 }
 
