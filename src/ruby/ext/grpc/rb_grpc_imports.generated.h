@@ -599,6 +599,9 @@ extern gpr_log_severity_string_type gpr_log_severity_string_import;
 typedef void(*gpr_log_type)(const char* file, int line, gpr_log_severity severity, const char* format, ...) GPR_PRINT_FORMAT_CHECK(4, 5);
 extern gpr_log_type gpr_log_import;
 #define gpr_log gpr_log_import
+typedef int(*gpr_should_log_type)(gpr_log_severity severity);
+extern gpr_should_log_type gpr_should_log_import;
+#define gpr_should_log gpr_should_log_import
 typedef void(*gpr_log_message_type)(const char* file, int line, gpr_log_severity severity, const char* message);
 extern gpr_log_message_type gpr_log_message_import;
 #define gpr_log_message gpr_log_message_import

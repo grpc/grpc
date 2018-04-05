@@ -243,6 +243,7 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) gpr_cpu_current_cpu);
   printf("%lx", (unsigned long) gpr_log_severity_string);
   printf("%lx", (unsigned long) gpr_log);
+  printf("%lx", (unsigned long) gpr_should_log);
   printf("%lx", (unsigned long) gpr_log_message);
   printf("%lx", (unsigned long) gpr_set_log_verbosity);
   printf("%lx", (unsigned long) gpr_log_verbosity_init);
