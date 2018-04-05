@@ -36,7 +36,8 @@ if [[ "$GRPC_DNS_RESOLVER" != "" && "$GRPC_DNS_RESOLVER" != ares ]]; then
 fi
 export GRPC_DNS_RESOLVER=ares
 
-"$FLAGS_dns_server_bin_path" --records_config_path="$FLAGS_records_config_path" --port="$FLAGS_dns_server_port" > /dev/null 2>&1 &
+DNS_SERVER_LOG="$(mktemp)"
+"$FLAGS_dns_server_bin_path" --records_config_path="$FLAGS_records_config_path" --port="$FLAGS_dns_server_port" > "$DNS_SERVER_LOG" 2>&1 &
 DNS_SERVER_PID=$!
 echo "Local DNS server started. PID: $DNS_SERVER_PID"
 
@@ -55,8 +56,11 @@ done
 
 if [[ $RETRY == 1 ]]; then
   echo "FAILED TO START LOCAL DNS SERVER"
-  kill -SIGTERM "$DNS_SERVER_PID"
+  kill -SIGTERM "$DNS_SERVER_PID" || true
   wait
+  echo "========== DNS server log (merged stdout and stderr) ========="
+  cat "$DNS_SERVER_LOG"
+  echo "========== end DNS server log ================================"
   exit 1
 fi
 
