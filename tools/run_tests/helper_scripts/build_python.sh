@@ -132,7 +132,7 @@ fi
 # Perform build operations #
 ############################
 
-# Instnatiate the virtualenv, preferring to do so from the relevant python
+# Instantiate the virtualenv, preferring to do so from the relevant python
 # version. Even if these commands fail (e.g. on Windows due to name conflicts)
 # it's possible that the virtualenv is still usable and we trust the tester to
 # be able to 'figure it out' instead of us e.g. doing potentially expensive and
@@ -158,7 +158,7 @@ case "$VENV" in
   ;;
 esac
 
-$VENV_PYTHON -m pip install --upgrade pip==9.0.1
+$VENV_PYTHON -m pip install --upgrade pip
 $VENV_PYTHON -m pip install setuptools
 $VENV_PYTHON -m pip install cython
 $VENV_PYTHON -m pip install six enum34 protobuf futures
