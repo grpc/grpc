@@ -315,7 +315,7 @@ static VALUE grpc_rb_channel_get_connectivity_state(int argc, VALUE* argv,
 }
 
 typedef struct watch_state_stack {
-  grpc_channel* channel;
+  bg_watched_channel* bg_wrapped;
   gpr_timespec deadline;
   int last_state;
 } watch_state_stack;
@@ -328,15 +328,15 @@ static void* wait_for_watch_state_op_complete_without_gvl(void* arg) {
   gpr_mu_lock(&global_connection_polling_mu);
   // its unsafe to do a "watch" after "channel polling abort" because the cq has
   // been shut down.
-  if (abort_channel_polling) {
+  if (abort_channel_polling || stack->bg_wrapped->channel_destroyed) {
     gpr_mu_unlock(&global_connection_polling_mu);
     return (void*)0;
   }
   op = gpr_zalloc(sizeof(watch_state_op));
   op->op_type = WATCH_STATE_API;
-  grpc_channel_watch_connectivity_state(stack->channel, stack->last_state,
-                                        stack->deadline, channel_polling_cq,
-                                        op);
+  grpc_channel_watch_connectivity_state(stack->bg_wrapped->channel,
+                                        stack->last_state, stack->deadline,
+                                        channel_polling_cq, op);
 
   while (!op->op.api_callback_args.called_back) {
     gpr_cv_wait(&global_connection_polling_cv, &global_connection_polling_mu,
@@ -388,7 +388,7 @@ static VALUE grpc_rb_channel_watch_connectivity_state(VALUE self,
     return Qnil;
   }
 
-  stack.channel = wrapper->bg_wrapped->channel;
+  stack.bg_wrapped = wrapper->bg_wrapped;
   stack.deadline = grpc_rb_time_timeval(deadline, 0),
   stack.last_state = NUM2LONG(last_state);
 
