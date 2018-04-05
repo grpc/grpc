@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc++/grpc++.h>
+#include <grpcpp/grpcpp.h>
 #include <jni.h>
 #include <src/core/lib/gpr/env.h>
 
