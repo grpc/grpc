@@ -21,6 +21,8 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
+#include <memory>
+
 #include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/config.h>
 
@@ -221,21 +223,20 @@ class PerBalancerStore {
 // Stores the data associated with a particular host.
 class PerHostStore {
  public:
-  ~PerHostStore();
-
   void ReportStreamCreated(grpc::string lb_id, grpc::string load_key);
 
   void ReportStreamClosed(grpc::string lb_id);
 
-  PerBalancerStore* FindPerBalancerStore(const grpc::string& lb_id) const;
+  std::shared_ptr<PerBalancerStore> FindPerBalancerStore(
+      const grpc::string& lb_id) const;
 
-  const std::vector<PerBalancerStore*> GetAssignedStores(
+  const std::vector<std::shared_ptr<PerBalancerStore>> GetAssignedStores(
       const grpc::string& lb_id) const;
 
  private:
   void InternalAddLb(grpc::string lb_id, grpc::string load_key);
 
-  void AssignOrphanedStore(PerBalancerStore* orphaned_store,
+  void AssignOrphanedStore(std::shared_ptr<PerBalancerStore> orphaned_store,
                            grpc::string new_receiver);
 
   std::unordered_multimap<grpc::string, grpc::string>
@@ -243,11 +244,13 @@ class PerHostStore {
 
   // Key: LB ID. The key set includes all the LB IDs that have been
   // allocated for reporting streams so far.
-  std::unordered_map<grpc::string, PerBalancerStore*> per_balancer_stores_;
+  std::unordered_map<grpc::string, std::shared_ptr<PerBalancerStore>>
+      per_balancer_stores_;
 
   // Key: LB ID. The key set includes the LB IDs of the balancers that are
   // currently receiving report.
-  std::unordered_multimap<grpc::string, PerBalancerStore*> assigned_stores_;
+  std::unordered_multimap<grpc::string, std::shared_ptr<PerBalancerStore>>
+      assigned_stores_;
 };
 
 // Two-level bookkeeper of all the load data.
@@ -261,8 +264,8 @@ class PerHostStore {
 // PerBalancerStore.
 class LoadDataStore {
  public:
-  PerBalancerStore* FindPerBalancerStore(const string& hostname,
-                                         const string& lb_id) const;
+  std::shared_ptr<PerBalancerStore> FindPerBalancerStore(
+      const string& hostname, const string& lb_id) const;
 
   void MergeRow(grpc::string hostname, LoadRecordKey key,
                 LoadRecordValue value);
@@ -272,8 +275,8 @@ class LoadDataStore {
            unknown_balancer_id_trackers.end();
   }
 
-  const std::vector<PerBalancerStore*> GetAssignedStores(const string& hostname,
-                                                         const string& lb_id);
+  const std::vector<std::shared_ptr<PerBalancerStore>> GetAssignedStores(
+      const string& hostname, const string& lb_id);
 
   void ReportStreamCreated(grpc::string hostname, grpc::string lb_id,
                            grpc::string load_key);

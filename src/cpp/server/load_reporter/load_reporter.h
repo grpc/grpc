@@ -131,8 +131,8 @@ class LoadReporter {
 
   void AppendNewFeedbackRecord(uint64_t rpcs, uint64_t errors);
 
-  void AttachOrphanLoadId(Load* load,
-                          const PerBalancerStore* per_balancer_store);
+  void AttachOrphanLoadId(
+      Load* load, const std::shared_ptr<PerBalancerStore> per_balancer_store);
 
   std::atomic<int64_t> next_lb_id_{0};
   const std::chrono::seconds feedback_sample_window_seconds_;

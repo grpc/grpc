@@ -68,12 +68,6 @@ uint64_t PerBalancerStore::GetNumCallsInProgressForReport() {
   return num_calls_in_progress_;
 }
 
-PerHostStore::~PerHostStore() {
-  for (auto it_per_balancer_store : per_balancer_stores_) {
-    delete it_per_balancer_store.second;
-  }
-}
-
 void PerHostStore::ReportStreamCreated(grpc::string lb_id,
                                        grpc::string load_key) {
   GPR_ASSERT(lb_id != INVALID_LBID);
@@ -128,7 +122,7 @@ void PerHostStore::ReportStreamClosed(grpc::string lb_id) {
   }
 }
 
-PerBalancerStore* PerHostStore::FindPerBalancerStore(
+std::shared_ptr<PerBalancerStore> PerHostStore::FindPerBalancerStore(
     const grpc::string& lb_id) const {
   auto it_balancer = per_balancer_stores_.find(lb_id);
   if (it_balancer != per_balancer_stores_.end()) {
@@ -137,18 +131,19 @@ PerBalancerStore* PerHostStore::FindPerBalancerStore(
   return nullptr;
 }
 
-const std::vector<PerBalancerStore*> PerHostStore::GetAssignedStores(
-    const grpc::string& lb_id) const {
+const std::vector<std::shared_ptr<PerBalancerStore>>
+PerHostStore::GetAssignedStores(const grpc::string& lb_id) const {
   return UnorderedMultimapFindAll(assigned_stores_, lb_id);
 }
 
-void PerHostStore::AssignOrphanedStore(PerBalancerStore* orphaned_store,
-                                       grpc::string new_receiver) {
+void PerHostStore::AssignOrphanedStore(
+    std::shared_ptr<PerBalancerStore> orphaned_store,
+    grpc::string new_receiver) {
   assigned_stores_.insert({new_receiver, orphaned_store});
   gpr_log(GPR_INFO,
           "[PerHostStore %p] Re-assigned orphaned store (%p) with original LB"
           " ID of %s to new receiver %s",
-          this, orphaned_store, orphaned_store->lb_id().c_str(),
+          this, orphaned_store.get(), orphaned_store->lb_id().c_str(),
           new_receiver.c_str());
 }
 
@@ -158,12 +153,13 @@ void PerHostStore::InternalAddLb(grpc::string lb_id, grpc::string load_key) {
   GPR_ASSERT(per_balancer_stores_.find(lb_id) == per_balancer_stores_.end());
   GPR_ASSERT(assigned_stores_.find(lb_id) == assigned_stores_.end());
   load_key_to_receiving_lb_ids_.insert({load_key, lb_id});
-  PerBalancerStore* per_balancer_store = new PerBalancerStore(lb_id, load_key);
+  std::shared_ptr<PerBalancerStore> per_balancer_store(
+      new PerBalancerStore(lb_id, load_key));
   per_balancer_stores_.insert({lb_id, per_balancer_store});
   assigned_stores_.insert({lb_id, per_balancer_store});
 }
 
-PerBalancerStore* LoadDataStore::FindPerBalancerStore(
+std::shared_ptr<PerBalancerStore> LoadDataStore::FindPerBalancerStore(
     const string& hostname, const string& lb_id) const {
   auto it_host = per_host_stores_.find(hostname);
   if (it_host != per_host_stores_.end()) {
@@ -200,8 +196,9 @@ void LoadDataStore::MergeRow(grpc::string hostname, LoadRecordKey key,
   }
 }
 
-const std::vector<PerBalancerStore*> LoadDataStore::GetAssignedStores(
-    const grpc::string& hostname, const grpc::string& lb_id) {
+const std::vector<std::shared_ptr<PerBalancerStore>>
+LoadDataStore::GetAssignedStores(const grpc::string& hostname,
+                                 const grpc::string& lb_id) {
   auto it_per_host_store = per_host_stores_.find(hostname);
   if (it_per_host_store != per_host_stores_.end()) {
     return it_per_host_store->second.GetAssignedStores(lb_id);

@@ -92,7 +92,7 @@ LoadBalancingFeedback LoadReporter::GenerateLoadBalancingFeedback() {
 ::google::protobuf::RepeatedPtrField<Load> LoadReporter::GenerateLoads(
     grpc::string hostname, grpc::string lb_id) {
   std::lock_guard<std::mutex> lock(store_mu_);
-  std::vector<PerBalancerStore*> assigned_stores =
+  std::vector<std::shared_ptr<PerBalancerStore>> assigned_stores =
       load_data_store_.GetAssignedStores(std::move(hostname), lb_id);
   GPR_ASSERT(!assigned_stores.empty());
   ::google::protobuf::RepeatedPtrField<Load> loads;
@@ -147,7 +147,7 @@ LoadBalancingFeedback LoadReporter::GenerateLoadBalancingFeedback() {
 }
 
 void LoadReporter::AttachOrphanLoadId(
-    Load* load, const PerBalancerStore* per_balancer_store) {
+    Load* load, const std::shared_ptr<PerBalancerStore> per_balancer_store) {
   if (per_balancer_store->lb_id() == INVALID_LBID) {
     load->set_load_key_unknown(true);
   } else {

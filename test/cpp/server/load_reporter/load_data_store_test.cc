@@ -58,16 +58,16 @@ const grpc::string METRIC_2 = "METRIC_2";
 // created for <hostname, lb_id, and load_key>.
 bool PerBalancerStoresContains(
     const LoadDataStore& load_data_store,
-    const std::vector<PerBalancerStore*>& per_balancer_stores,
+    const std::vector<std::shared_ptr<PerBalancerStore>>& per_balancer_stores,
     const grpc::string hostname, const grpc::string lb_id,
     const grpc::string load_key) {
   auto original_per_balancer_store =
-      load_data_store.FindPerBalancerStore(hostname, lb_id);
+      load_data_store.FindPerBalancerStore(hostname, lb_id).get();
   EXPECT_NE(original_per_balancer_store, nullptr);
   EXPECT_EQ(original_per_balancer_store->lb_id(), lb_id);
   EXPECT_EQ(original_per_balancer_store->load_key(), load_key);
   for (auto per_balancer_store : per_balancer_stores) {
-    if (per_balancer_store == original_per_balancer_store) {
+    if (per_balancer_store.get() == original_per_balancer_store) {
       return true;
     }
   }
