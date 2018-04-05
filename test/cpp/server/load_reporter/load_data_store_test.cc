@@ -33,6 +33,8 @@ namespace grpc {
 namespace testing {
 namespace {
 
+using namespace ::grpc::load_reporter;
+
 const grpc::string HOSTNAME_1 = "HOSTNAME_1";
 const grpc::string HOSTNAME_2 = "HOSTNAME_2";
 const grpc::string LB_ID_1 = "LB_ID_1";
@@ -47,8 +49,8 @@ const grpc::string USER_1 = "USER_1";
 const grpc::string USER_2 = "USER_2";
 const grpc::string CLIENT_IP_1 = "00";
 const grpc::string CLIENT_IP_2 = "02";
-const Key KEY_1(LB_ID_1, LB_TAG_1, USER_1, CLIENT_IP_1);
-const Key KEY_2(LB_ID_2, LB_TAG_2, USER_2, CLIENT_IP_2);
+const LoadRecordKey KEY_1(LB_ID_1, LB_TAG_1, USER_1, CLIENT_IP_1);
+const LoadRecordKey KEY_2(LB_ID_2, LB_TAG_2, USER_2, CLIENT_IP_2);
 const grpc::string METRIC_1 = "METRIC_1";
 const grpc::string METRIC_2 = "METRIC_2";
 
@@ -60,7 +62,7 @@ bool PerBalancerStoresContains(
     const grpc::string hostname, const grpc::string lb_id,
     const grpc::string load_key) {
   auto original_per_balancer_store =
-      load_data_store.GetPerBalancerStoreForTest(hostname, lb_id);
+      load_data_store.FindPerBalancerStore(hostname, lb_id);
   EXPECT_NE(original_per_balancer_store, nullptr);
   EXPECT_EQ(original_per_balancer_store->lb_id(), lb_id);
   EXPECT_EQ(original_per_balancer_store->load_key(), load_key);
@@ -188,9 +190,9 @@ TEST(LoadDataStoreTest, HostTemporarilyLoseAllStreams) {
   load_data_store.ReportStreamCreated(HOSTNAME_1, LB_ID_1, LOAD_KEY_1);
   load_data_store.ReportStreamCreated(HOSTNAME_2, LB_ID_2, LOAD_KEY_1);
   auto store_lb_id_1 =
-      load_data_store.GetPerBalancerStoreForTest(HOSTNAME_1, LB_ID_1);
+      load_data_store.FindPerBalancerStore(HOSTNAME_1, LB_ID_1);
   auto store_invalid_lb_id_1 =
-      load_data_store.GetPerBalancerStoreForTest(HOSTNAME_1, INVALID_LBID);
+      load_data_store.FindPerBalancerStore(HOSTNAME_1, INVALID_LBID);
   EXPECT_FALSE(store_lb_id_1->IsSuspended());
   EXPECT_FALSE(store_invalid_lb_id_1->IsSuspended());
   // Disconnect all the streams of the first host.
@@ -199,8 +201,8 @@ TEST(LoadDataStoreTest, HostTemporarilyLoseAllStreams) {
   EXPECT_TRUE(store_lb_id_1->IsSuspended());
   EXPECT_TRUE(store_invalid_lb_id_1->IsSuspended());
   // Detailed load data won't be kept when the PerBalancerStore is suspended.
-  store_lb_id_1->MergeRow(KEY_1, Value());
-  store_invalid_lb_id_1->MergeRow(KEY_1, Value());
+  store_lb_id_1->MergeRow(KEY_1, LoadRecordValue());
+  store_invalid_lb_id_1->MergeRow(KEY_1, LoadRecordValue());
   EXPECT_EQ(store_lb_id_1->container().size(), 0U);
   EXPECT_EQ(store_invalid_lb_id_1->container().size(), 0U);
   // The stores for different hosts won't mix, even if the load key is the same.
@@ -216,8 +218,8 @@ TEST(LoadDataStoreTest, HostTemporarilyLoseAllStreams) {
   // The stores for the first host are resumed.
   EXPECT_FALSE(store_lb_id_1->IsSuspended());
   EXPECT_FALSE(store_invalid_lb_id_1->IsSuspended());
-  store_lb_id_1->MergeRow(KEY_1, Value());
-  store_invalid_lb_id_1->MergeRow(KEY_1, Value());
+  store_lb_id_1->MergeRow(KEY_1, LoadRecordValue());
+  store_invalid_lb_id_1->MergeRow(KEY_1, LoadRecordValue());
   EXPECT_EQ(store_lb_id_1->container().size(), 1U);
   EXPECT_EQ(store_invalid_lb_id_1->container().size(), 1U);
   // The resumed stores are assigned to the new LB.
@@ -234,44 +236,37 @@ TEST(LoadDataStoreTest, HostTemporarilyLoseAllStreams) {
 
 TEST(LoadDataStoreTest, OneStorePerLbId) {
   LoadDataStore load_data_store;
-  EXPECT_EQ(load_data_store.GetPerBalancerStoreForTest(HOSTNAME_1, LB_ID_1),
+  EXPECT_EQ(load_data_store.FindPerBalancerStore(HOSTNAME_1, LB_ID_1), nullptr);
+  EXPECT_EQ(load_data_store.FindPerBalancerStore(HOSTNAME_1, INVALID_LBID),
             nullptr);
-  EXPECT_EQ(
-      load_data_store.GetPerBalancerStoreForTest(HOSTNAME_1, INVALID_LBID),
-      nullptr);
-  EXPECT_EQ(load_data_store.GetPerBalancerStoreForTest(HOSTNAME_2, LB_ID_2),
-            nullptr);
-  EXPECT_EQ(load_data_store.GetPerBalancerStoreForTest(HOSTNAME_2, LB_ID_3),
-            nullptr);
+  EXPECT_EQ(load_data_store.FindPerBalancerStore(HOSTNAME_2, LB_ID_2), nullptr);
+  EXPECT_EQ(load_data_store.FindPerBalancerStore(HOSTNAME_2, LB_ID_3), nullptr);
   // Create The first stream.
   load_data_store.ReportStreamCreated(HOSTNAME_1, LB_ID_1, LOAD_KEY_1);
   auto store_lb_id_1 =
-      load_data_store.GetPerBalancerStoreForTest(HOSTNAME_1, LB_ID_1);
+      load_data_store.FindPerBalancerStore(HOSTNAME_1, LB_ID_1);
   auto store_invalid_lb_id_1 =
-      load_data_store.GetPerBalancerStoreForTest(HOSTNAME_1, INVALID_LBID);
+      load_data_store.FindPerBalancerStore(HOSTNAME_1, INVALID_LBID);
   // Two stores will be created: one is for the stream; the other one is for
   // INVALID_LBID.
   EXPECT_NE(store_lb_id_1, nullptr);
   EXPECT_NE(store_invalid_lb_id_1, nullptr);
   EXPECT_NE(store_lb_id_1, store_invalid_lb_id_1);
-  EXPECT_EQ(load_data_store.GetPerBalancerStoreForTest(HOSTNAME_2, LB_ID_2),
-            nullptr);
-  EXPECT_EQ(load_data_store.GetPerBalancerStoreForTest(HOSTNAME_2, LB_ID_3),
-            nullptr);
+  EXPECT_EQ(load_data_store.FindPerBalancerStore(HOSTNAME_2, LB_ID_2), nullptr);
+  EXPECT_EQ(load_data_store.FindPerBalancerStore(HOSTNAME_2, LB_ID_3), nullptr);
   // Create the second stream.
   load_data_store.ReportStreamCreated(HOSTNAME_2, LB_ID_3, LOAD_KEY_1);
   auto store_lb_id_3 =
-      load_data_store.GetPerBalancerStoreForTest(HOSTNAME_2, LB_ID_3);
+      load_data_store.FindPerBalancerStore(HOSTNAME_2, LB_ID_3);
   auto store_invalid_lb_id_2 =
-      load_data_store.GetPerBalancerStoreForTest(HOSTNAME_2, INVALID_LBID);
+      load_data_store.FindPerBalancerStore(HOSTNAME_2, INVALID_LBID);
   EXPECT_NE(store_lb_id_3, nullptr);
   EXPECT_NE(store_invalid_lb_id_2, nullptr);
   EXPECT_NE(store_lb_id_3, store_invalid_lb_id_2);
   // The PerBalancerStores created for different hosts are independent.
   EXPECT_NE(store_lb_id_3, store_invalid_lb_id_1);
   EXPECT_NE(store_invalid_lb_id_2, store_invalid_lb_id_1);
-  EXPECT_EQ(load_data_store.GetPerBalancerStoreForTest(HOSTNAME_2, LB_ID_2),
-            nullptr);
+  EXPECT_EQ(load_data_store.FindPerBalancerStore(HOSTNAME_2, LB_ID_2), nullptr);
 }
 
 TEST(LoadDataStoreTest, ExactlyOnceAssignment) {
@@ -300,32 +295,30 @@ TEST(LoadDataStoreTest, UnknownBalancerIdTracking) {
   LoadDataStore load_data_store;
   load_data_store.ReportStreamCreated(HOSTNAME_1, LB_ID_1, LOAD_KEY_1);
   // Merge data for a known LB ID.
-  Value v1(192);
+  LoadRecordValue v1(192);
   load_data_store.MergeRow(HOSTNAME_1, KEY_1, v1);
   // Merge data for unknown LB ID.
-  Value v2(23);
+  LoadRecordValue v2(23);
   EXPECT_FALSE(load_data_store.IsTrackedUnknownBalancerId(LB_ID_2));
-  load_data_store.MergeRow(HOSTNAME_1,
-                           Key(LB_ID_2, LB_TAG_1, USER_1, CLIENT_IP_1), v2);
+  load_data_store.MergeRow(
+      HOSTNAME_1, LoadRecordKey(LB_ID_2, LB_TAG_1, USER_1, CLIENT_IP_1), v2);
   EXPECT_TRUE(load_data_store.IsTrackedUnknownBalancerId(LB_ID_2));
-  Value v3(952);
-  load_data_store.MergeRow(HOSTNAME_2,
-                           Key(LB_ID_3, LB_TAG_1, USER_1, CLIENT_IP_1), v3);
+  LoadRecordValue v3(952);
+  load_data_store.MergeRow(
+      HOSTNAME_2, LoadRecordKey(LB_ID_3, LB_TAG_1, USER_1, CLIENT_IP_1), v3);
   EXPECT_TRUE(load_data_store.IsTrackedUnknownBalancerId(LB_ID_3));
   // The data kept for a known LB ID is correct.
   auto store_lb_id_1 =
-      load_data_store.GetPerBalancerStoreForTest(HOSTNAME_1, LB_ID_1);
+      load_data_store.FindPerBalancerStore(HOSTNAME_1, LB_ID_1);
   EXPECT_EQ(store_lb_id_1->container().size(), 1U);
   EXPECT_EQ(store_lb_id_1->container().find(KEY_1)->second.start_count(),
             v1.start_count());
   EXPECT_EQ(store_lb_id_1->GetNumCallsInProgressForReport(), v1.start_count());
   // No PerBalancerStore created for Unknown LB ID.
-  EXPECT_EQ(load_data_store.GetPerBalancerStoreForTest(HOSTNAME_1, LB_ID_2),
-            nullptr);
-  EXPECT_EQ(load_data_store.GetPerBalancerStoreForTest(HOSTNAME_2, LB_ID_3),
-            nullptr);
+  EXPECT_EQ(load_data_store.FindPerBalancerStore(HOSTNAME_1, LB_ID_2), nullptr);
+  EXPECT_EQ(load_data_store.FindPerBalancerStore(HOSTNAME_2, LB_ID_3), nullptr);
   // End all the started RPCs for LB_ID_1.
-  Value v4(0, v1.start_count());
+  LoadRecordValue v4(0, v1.start_count());
   load_data_store.MergeRow(HOSTNAME_1, KEY_1, v4);
   EXPECT_EQ(store_lb_id_1->container().size(), 1U);
   EXPECT_EQ(store_lb_id_1->container().find(KEY_1)->second.start_count(),
@@ -335,14 +328,14 @@ TEST(LoadDataStoreTest, UnknownBalancerIdTracking) {
   EXPECT_EQ(store_lb_id_1->GetNumCallsInProgressForReport(), 0U);
   EXPECT_FALSE(load_data_store.IsTrackedUnknownBalancerId(LB_ID_1));
   // End all the started RPCs for LB_ID_2.
-  Value v5(0, v2.start_count());
-  load_data_store.MergeRow(HOSTNAME_1,
-                           Key(LB_ID_2, LB_TAG_1, USER_1, CLIENT_IP_1), v5);
+  LoadRecordValue v5(0, v2.start_count());
+  load_data_store.MergeRow(
+      HOSTNAME_1, LoadRecordKey(LB_ID_2, LB_TAG_1, USER_1, CLIENT_IP_1), v5);
   EXPECT_FALSE(load_data_store.IsTrackedUnknownBalancerId(LB_ID_2));
   // End some of the started RPCs for LB_ID_3.
-  Value v6(0, v3.start_count() / 2);
-  load_data_store.MergeRow(HOSTNAME_2,
-                           Key(LB_ID_3, LB_TAG_1, USER_1, CLIENT_IP_1), v6);
+  LoadRecordValue v6(0, v3.start_count() / 2);
+  load_data_store.MergeRow(
+      HOSTNAME_2, LoadRecordKey(LB_ID_3, LB_TAG_1, USER_1, CLIENT_IP_1), v6);
   EXPECT_TRUE(load_data_store.IsTrackedUnknownBalancerId(LB_ID_3));
 }
 
@@ -354,7 +347,7 @@ TEST(PerBalancerStoreTest, Suspend) {
   EXPECT_TRUE(per_balancer_store.IsSuspended());
   EXPECT_EQ(0U, per_balancer_store.container().size());
   // Data merged when the store is suspended won't be kept.
-  Value v1(139, 19);
+  LoadRecordValue v1(139, 19);
   per_balancer_store.MergeRow(KEY_1, v1);
   EXPECT_EQ(0U, per_balancer_store.container().size());
   // Resume the store.
@@ -362,7 +355,7 @@ TEST(PerBalancerStoreTest, Suspend) {
   EXPECT_FALSE(per_balancer_store.IsSuspended());
   EXPECT_EQ(0U, per_balancer_store.container().size());
   // Data merged after the store is resumed will be kept.
-  Value v2(23, 0, 51);
+  LoadRecordValue v2(23, 0, 51);
   per_balancer_store.MergeRow(KEY_1, v2);
   EXPECT_EQ(1U, per_balancer_store.container().size());
   // Suspend the store.
@@ -370,7 +363,7 @@ TEST(PerBalancerStoreTest, Suspend) {
   EXPECT_TRUE(per_balancer_store.IsSuspended());
   EXPECT_EQ(0U, per_balancer_store.container().size());
   // Data merged when the store is suspended won't be kept.
-  Value v3(62, 11);
+  LoadRecordValue v3(62, 11);
   per_balancer_store.MergeRow(KEY_1, v3);
   EXPECT_EQ(0U, per_balancer_store.container().size());
   // Resume the store.
@@ -378,7 +371,7 @@ TEST(PerBalancerStoreTest, Suspend) {
   EXPECT_FALSE(per_balancer_store.IsSuspended());
   EXPECT_EQ(0U, per_balancer_store.container().size());
   // Data merged after the store is resumed will be kept.
-  Value v4(225, 98);
+  LoadRecordValue v4(225, 98);
   per_balancer_store.MergeRow(KEY_1, v4);
   EXPECT_EQ(1U, per_balancer_store.container().size());
   // In-progress count is always kept.
@@ -391,13 +384,13 @@ TEST(PerBalancerStoreTest, Suspend) {
 TEST(PerBalancerStoreTest, DataAggregation) {
   PerBalancerStore per_balancer_store(LB_ID_1, LOAD_KEY_1);
   // Construct some Values.
-  Value v1(992, 34, 13, 234.0, 164.0, 173467.38);
+  LoadRecordValue v1(992, 34, 13, 234.0, 164.0, 173467.38);
   v1.InsertCallMetric(METRIC_1, CallMetricValue(3, 2773.2));
-  Value v2(4842, 213, 9, 393.0, 974.0, 1345.2398);
+  LoadRecordValue v2(4842, 213, 9, 393.0, 974.0, 1345.2398);
   v2.InsertCallMetric(METRIC_1, CallMetricValue(7, 25.234));
   v2.InsertCallMetric(METRIC_2, CallMetricValue(2, 387.08));
   // v3 doesn't change the number of in-progress RPCs.
-  Value v3(293, 55, 293 - 55, 28764, 5284, 5772);
+  LoadRecordValue v3(293, 55, 293 - 55, 28764, 5284, 5772);
   v3.InsertCallMetric(METRIC_1, CallMetricValue(61, 3465.0));
   v3.InsertCallMetric(METRIC_2, CallMetricValue(13, 672.0));
   // The initial state of the store.
@@ -424,8 +417,9 @@ TEST(PerBalancerStoreTest, DataAggregation) {
   EXPECT_FALSE(per_balancer_store.IsNumCallsInProgressChangedSinceLastReport());
   EXPECT_EQ(per_balancer_store.GetNumCallsInProgressForReport(),
             num_calls_in_progress);
-  // Value for KEY_1 is aggregated correctly.
-  Value value_for_key1 = per_balancer_store.container().find(KEY_1)->second;
+  // LoadRecordValue for KEY_1 is aggregated correctly.
+  LoadRecordValue value_for_key1 =
+      per_balancer_store.container().find(KEY_1)->second;
   EXPECT_EQ(value_for_key1.start_count(), v1.start_count() + v3.start_count());
   EXPECT_EQ(value_for_key1.ok_count(), v1.ok_count() + v3.ok_count());
   EXPECT_EQ(value_for_key1.error_count(), v1.error_count() + v3.error_count());
@@ -443,8 +437,9 @@ TEST(PerBalancerStoreTest, DataAggregation) {
             v3.call_metrics().find(METRIC_2)->second.count());
   EXPECT_EQ(value_for_key1.call_metrics().find(METRIC_2)->second.total(),
             v3.call_metrics().find(METRIC_2)->second.total());
-  // Value for KEY_2 is aggregated (trivially) correctly.
-  Value value_for_key2 = per_balancer_store.container().find(KEY_2)->second;
+  // LoadRecordValue for KEY_2 is aggregated (trivially) correctly.
+  LoadRecordValue value_for_key2 =
+      per_balancer_store.container().find(KEY_2)->second;
   EXPECT_EQ(value_for_key2.start_count(), v2.start_count());
   EXPECT_EQ(value_for_key2.ok_count(), v2.ok_count());
   EXPECT_EQ(value_for_key2.error_count(), v2.error_count());

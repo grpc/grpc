@@ -43,21 +43,27 @@ using grpc::lb::v1::LoadReportResponse;
 using grpc::lb::v1::OrphanedLoadIdentifier;
 
 namespace grpc {
+namespace load_reporter {
 
+// The interface to get the Census stats.
 class CensusViewProvider {
  public:
   virtual ~CensusViewProvider() = default;
+
   virtual bool FetchData() = 0;
 };
 
+// The default implementation fetches the real stats from Census.
 class CensusViewProviderDefaultImpl : public CensusViewProvider {
  public:
   bool FetchData() override;
 };
 
+// The interface to get the CPU stats.
 class CpuStatsProvider {
  public:
   virtual ~CpuStatsProvider() = default;
+
   // Gets the cumulative used CPU and total CPU resource.
   virtual std::pair<double, double> GetCpuStats() = 0;
 };
@@ -69,7 +75,8 @@ class CpuStatsProviderDefaultImpl : public CpuStatsProvider {
   std::pair<double, double> GetCpuStats() override;
 };
 
-// Thread-safe.
+// A thread-safe class that maintains all the load data and load reporting
+// streams.
 class LoadReporter {
  public:
   // TODO(juanlishen): allow config for providers.
@@ -139,6 +146,8 @@ class LoadReporter {
   LoadDataStore load_data_store_;
   double fake_cpu_usage_per_rpc_ = -1;
 };
+
+}  // namespace load_reporter
 }  // namespace grpc
 
 #endif  // GRPC_SRC_CPP_SERVER_LOAD_REPORTER_LOAD_REPORTER_H

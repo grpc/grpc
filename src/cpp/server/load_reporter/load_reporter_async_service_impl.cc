@@ -20,6 +20,7 @@
 #include <memory>
 
 namespace grpc {
+namespace load_reporter {
 
 LoadReporterAsyncServiceImpl::LoadReporterAsyncServiceImpl() {
   // TODO(juanlishen): Use make_unique.
@@ -250,4 +251,5 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnFinishDone(bool ok) {
   delete this;
 }
 
+}  // namespace load_reporter
 }  // namespace grpc

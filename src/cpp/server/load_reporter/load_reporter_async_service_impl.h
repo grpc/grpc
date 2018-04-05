@@ -34,7 +34,11 @@ constexpr uint32_t FETCH_AND_SAMPLE_INTERVAL_SECONDS = 1;
 constexpr uint32_t VERSION = 15000;
 
 namespace grpc {
+namespace load_reporter {
 
+// A singleton class of async load reporting service. It's mainly responsible
+// for controlling the procedure of incoming requests. The real business
+// logic is handed off to the LoadReporter.
 class LoadReporterAsyncServiceImpl {
  public:
   ~LoadReporterAsyncServiceImpl();
@@ -51,6 +55,9 @@ class LoadReporterAsyncServiceImpl {
       delete;
 
  private:
+  // Each handler takes care of one load reporting stream. It contains
+  // per-stream data and it will access the members of the parent class (i.e.,
+  // LoadReporterAsyncServiceImpl) for service-wide data (e.g., the load data).
   class ReportLoadHandler {
    public:
     // When a new handler is constructed, it starts waiting for the next
@@ -119,6 +126,7 @@ class LoadReporterAsyncServiceImpl {
   Alarm next_fetch_and_sample_alarm_;
 };
 
+}  // namespace load_reporter
 }  // namespace grpc
 
 #endif  // GRPC_SRC_CPP_SERVER_LOAD_REPORTER_REPORT_LOAD_HANDLER_H

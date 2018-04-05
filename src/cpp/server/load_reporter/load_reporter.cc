@@ -22,6 +22,7 @@
 #include "src/cpp/server/load_reporter/load_reporter.h"
 
 namespace grpc {
+namespace load_reporter {
 
 std::pair<double, double> CpuStatsProviderDefaultImpl::GetCpuStats() {
   uint64_t busy, total;
@@ -91,15 +92,16 @@ LoadBalancingFeedback LoadReporter::GenerateLoadBalancingFeedback() {
 ::google::protobuf::RepeatedPtrField<Load> LoadReporter::GenerateLoads(
     grpc::string hostname, grpc::string lb_id) {
   std::lock_guard<std::mutex> lock(store_mu_);
-  std::vector<PerBalancerStore*> per_balancer_stores =
+  std::vector<PerBalancerStore*> assigned_stores =
       load_data_store_.GetAssignedStores(std::move(hostname), lb_id);
+  GPR_ASSERT(!assigned_stores.empty());
   ::google::protobuf::RepeatedPtrField<Load> loads;
-  for (auto per_balancer_store : per_balancer_stores) {
+  for (auto per_balancer_store : assigned_stores) {
     GPR_ASSERT(!per_balancer_store->IsSuspended());
     if (!per_balancer_store->container().empty()) {
       for (auto entry : per_balancer_store->container()) {
-        Key key = entry.first;
-        Value value = entry.second;
+        LoadRecordKey key = entry.first;
+        LoadRecordValue value = entry.second;
         auto load = loads.Add();
         load->set_load_balance_tag(key.lb_tag());
         load->set_user_id(key.user_id());
@@ -182,4 +184,5 @@ void LoadReporter::FetchAndSample() {
   // TODO(juanlishen): Implement when Census has unblocked.
 }
 
+}  // namespace load_reporter
 }  // namespace grpc

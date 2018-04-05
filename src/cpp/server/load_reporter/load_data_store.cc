@@ -24,12 +24,14 @@
 #include "src/cpp/server/load_reporter/load_data_store.h"
 
 namespace grpc {
+namespace load_reporter {
 
-void PerBalancerStore::MergeRow(const Key& key, const Value& value) {
+void PerBalancerStore::MergeRow(const LoadRecordKey& key,
+                                const LoadRecordValue& value) {
   // During suspension, the load data received will be dropped.
   if (!suspended_) {
     if (container_.find(key) == container_.end()) {
-      container_.insert({key, Value()});
+      container_.insert({key, LoadRecordValue()});
     }
     container_.find(key)->second.MergeFrom(value);
     gpr_log(GPR_DEBUG,
@@ -126,6 +128,20 @@ void PerHostStore::ReportStreamClosed(grpc::string lb_id) {
   }
 }
 
+PerBalancerStore* PerHostStore::FindPerBalancerStore(
+    const grpc::string& lb_id) const {
+  auto it_balancer = per_balancer_stores_.find(lb_id);
+  if (it_balancer != per_balancer_stores_.end()) {
+    return it_balancer->second;
+  }
+  return nullptr;
+}
+
+const std::vector<PerBalancerStore*> PerHostStore::GetAssignedStores(
+    const grpc::string& lb_id) const {
+  return UnorderedMultimapFindAll(assigned_stores_, lb_id);
+}
+
 void PerHostStore::AssignOrphanedStore(PerBalancerStore* orphaned_store,
                                        grpc::string new_receiver) {
   assigned_stores_.insert({new_receiver, orphaned_store});
@@ -147,28 +163,21 @@ void PerHostStore::InternalAddLb(grpc::string lb_id, grpc::string load_key) {
   assigned_stores_.insert({lb_id, per_balancer_store});
 }
 
-PerBalancerStore* LoadDataStore::GetPerBalancerStoreForTest(
-    grpc::string hostname, grpc::string lb_id) const {
+PerBalancerStore* LoadDataStore::FindPerBalancerStore(
+    const string& hostname, const string& lb_id) const {
   auto it_host = per_host_stores_.find(hostname);
   if (it_host != per_host_stores_.end()) {
-    auto it_balancer = it_host->second.per_balancer_stores_.find(lb_id);
-    if (it_balancer != it_host->second.per_balancer_stores_.end()) {
-      return it_balancer->second;
-    }
+    return it_host->second.FindPerBalancerStore(lb_id);
   }
   return nullptr;
 }
 
-void LoadDataStore::MergeRow(grpc::string hostname, Key key, Value value) {
-  auto it_per_host_store = per_host_stores_.find(hostname);
-  if (it_per_host_store != per_host_stores_.end()) {
-    auto it_per_balancer_store =
-        it_per_host_store->second.per_balancer_stores_.find(key.lb_id());
-    if (it_per_balancer_store !=
-        it_per_host_store->second.per_balancer_stores_.end()) {
-      it_per_balancer_store->second->MergeRow(key, value);
-      return;
-    }
+void LoadDataStore::MergeRow(grpc::string hostname, LoadRecordKey key,
+                             LoadRecordValue value) {
+  auto per_balancer_store = FindPerBalancerStore(hostname, key.lb_id());
+  if (per_balancer_store != nullptr) {
+    per_balancer_store->MergeRow(key, value);
+    return;
   }
   // Unknown LB ID. Track it until its number of in-progress calls drops to
   // zero.
@@ -192,15 +201,12 @@ void LoadDataStore::MergeRow(grpc::string hostname, Key key, Value value) {
 }
 
 const std::vector<PerBalancerStore*> LoadDataStore::GetAssignedStores(
-    grpc::string hostname, grpc::string lb_id) {
+    const grpc::string& hostname, const grpc::string& lb_id) {
   auto it_per_host_store = per_host_stores_.find(hostname);
-  GPR_ASSERT(it_per_host_store != per_host_stores_.end());
-  auto it_per_balancer_store =
-      it_per_host_store->second.assigned_stores_.find(lb_id);
-  GPR_ASSERT(it_per_balancer_store !=
-             it_per_host_store->second.assigned_stores_.end());
-  return UnorderedMultimapFindAll(it_per_host_store->second.assigned_stores_,
-                                  lb_id);
+  if (it_per_host_store != per_host_stores_.end()) {
+    return it_per_host_store->second.GetAssignedStores(lb_id);
+  }
+  return {};
 }
 
 void LoadDataStore::ReportStreamCreated(grpc::string hostname,
@@ -217,4 +223,5 @@ void LoadDataStore::ReportStreamClosed(grpc::string hostname,
   it_per_host_store->second.ReportStreamClosed(std::move(lb_id));
 }
 
+}  // namespace load_reporter
 }  // namespace grpc
