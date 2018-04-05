@@ -52,26 +52,23 @@ namespace Routeguide
 
         /// <summary>
         /// Calculate the distance between two points using the "haversine" formula.
-        /// This code was taken from http://www.movable-type.co.uk/scripts/latlong.html.
+        /// The formula is based on http://mathforum.org/library/drmath/view/51879.html
         /// </summary>
         /// <param name="start">the starting point</param>
         /// <param name="end">the end point</param>
         /// <returns>the distance between the points in meters</returns>
         public static double GetDistance(this Point start, Point end)
         {
-            double lat1 = start.GetLatitude();
-            double lat2 = end.GetLatitude();
-            double lon1 = start.GetLongitude();
-            double lon2 = end.GetLongitude();
-            int r = 6371000; // metres
-            double phi1 = ToRadians(lat1);
-            double phi2 = ToRadians(lat2);
-            double deltaPhi = ToRadians(lat2 - lat1);
-            double deltaLambda = ToRadians(lon2 - lon1);
+            int r = 6371000;  // earth radius in metres
+            double lat1 = ToRadians(start.GetLatitude());
+            double lat2 = ToRadians(end.GetLatitude());
+            double lon1 = ToRadians(start.GetLongitude());
+            double lon2 = ToRadians(end.GetLongitude());
+            double deltalat = lat2 - lat1;
+            double deltalon = lon2 - lon1;
 
-            double a = Math.Sin(deltaPhi / 2) * Math.Sin(deltaPhi / 2) + Math.Cos(phi1) * Math.Cos(phi2) * Math.Sin(deltaLambda / 2) * Math.Sin(deltaLambda / 2);
+            double a = Math.Sin(deltalat / 2) * Math.Sin(deltalat / 2) + Math.Cos(lat1) * Math.Cos(lat2) * Math.Sin(deltalon / 2) * Math.Sin(deltalon / 2);
             double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-
             return r * c;
         }
 

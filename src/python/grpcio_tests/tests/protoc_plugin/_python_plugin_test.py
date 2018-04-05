@@ -237,6 +237,7 @@ class PythonPluginTest(unittest.TestCase):
         self.assertIsNotNone(service.servicer_methods)
         self.assertIsNotNone(service.server)
         self.assertIsNotNone(service.stub)
+        service.server.stop(None)
 
     def testIncompleteServicer(self):
         service = _CreateIncompleteService()
@@ -245,6 +246,7 @@ class PythonPluginTest(unittest.TestCase):
             service.stub.UnaryCall(request)
         self.assertIs(exception_context.exception.code(),
                       grpc.StatusCode.UNIMPLEMENTED)
+        service.server.stop(None)
 
     def testUnaryCall(self):
         service = _CreateService()
@@ -253,6 +255,7 @@ class PythonPluginTest(unittest.TestCase):
         expected_response = service.servicer_methods.UnaryCall(
             request, 'not a real context!')
         self.assertEqual(expected_response, response)
+        service.server.stop(None)
 
     def testUnaryCallFuture(self):
         service = _CreateService()
@@ -264,6 +267,7 @@ class PythonPluginTest(unittest.TestCase):
         expected_response = service.servicer_methods.UnaryCall(
             request, 'not a real RpcContext!')
         self.assertEqual(expected_response, response)
+        service.server.stop(None)
 
     def testUnaryCallFutureExpired(self):
         service = _CreateService()
@@ -276,6 +280,7 @@ class PythonPluginTest(unittest.TestCase):
         self.assertIs(exception_context.exception.code(),
                       grpc.StatusCode.DEADLINE_EXCEEDED)
         self.assertIs(response_future.code(), grpc.StatusCode.DEADLINE_EXCEEDED)
+        service.server.stop(None)
 
     def testUnaryCallFutureCancelled(self):
         service = _CreateService()
@@ -285,6 +290,7 @@ class PythonPluginTest(unittest.TestCase):
             response_future.cancel()
         self.assertTrue(response_future.cancelled())
         self.assertIs(response_future.code(), grpc.StatusCode.CANCELLED)
+        service.server.stop(None)
 
     def testUnaryCallFutureFailed(self):
         service = _CreateService()
@@ -293,6 +299,7 @@ class PythonPluginTest(unittest.TestCase):
             response_future = service.stub.UnaryCall.future(request)
             self.assertIsNotNone(response_future.exception())
         self.assertIs(response_future.code(), grpc.StatusCode.UNKNOWN)
+        service.server.stop(None)
 
     def testStreamingOutputCall(self):
         service = _CreateService()
@@ -303,6 +310,7 @@ class PythonPluginTest(unittest.TestCase):
         for expected_response, response in moves.zip_longest(
                 expected_responses, responses):
             self.assertEqual(expected_response, response)
+        service.server.stop(None)
 
     def testStreamingOutputCallExpired(self):
         service = _CreateService()
@@ -314,6 +322,7 @@ class PythonPluginTest(unittest.TestCase):
                 list(responses)
         self.assertIs(exception_context.exception.code(),
                       grpc.StatusCode.DEADLINE_EXCEEDED)
+        service.server.stop(None)
 
     def testStreamingOutputCallCancelled(self):
         service = _CreateService()
@@ -324,6 +333,7 @@ class PythonPluginTest(unittest.TestCase):
         with self.assertRaises(grpc.RpcError) as exception_context:
             next(responses)
         self.assertIs(responses.code(), grpc.StatusCode.CANCELLED)
+        service.server.stop(None)
 
     def testStreamingOutputCallFailed(self):
         service = _CreateService()
@@ -335,6 +345,7 @@ class PythonPluginTest(unittest.TestCase):
                 next(responses)
         self.assertIs(exception_context.exception.code(),
                       grpc.StatusCode.UNKNOWN)
+        service.server.stop(None)
 
     def testStreamingInputCall(self):
         service = _CreateService()
@@ -343,6 +354,7 @@ class PythonPluginTest(unittest.TestCase):
         expected_response = service.servicer_methods.StreamingInputCall(
             _streaming_input_request_iterator(), 'not a real RpcContext!')
         self.assertEqual(expected_response, response)
+        service.server.stop(None)
 
     def testStreamingInputCallFuture(self):
         service = _CreateService()
@@ -353,6 +365,7 @@ class PythonPluginTest(unittest.TestCase):
         expected_response = service.servicer_methods.StreamingInputCall(
             _streaming_input_request_iterator(), 'not a real RpcContext!')
         self.assertEqual(expected_response, response)
+        service.server.stop(None)
 
     def testStreamingInputCallFutureExpired(self):
         service = _CreateService()
@@ -367,6 +380,7 @@ class PythonPluginTest(unittest.TestCase):
                       grpc.StatusCode.DEADLINE_EXCEEDED)
         self.assertIs(exception_context.exception.code(),
                       grpc.StatusCode.DEADLINE_EXCEEDED)
+        service.server.stop(None)
 
     def testStreamingInputCallFutureCancelled(self):
         service = _CreateService()
@@ -377,6 +391,7 @@ class PythonPluginTest(unittest.TestCase):
         self.assertTrue(response_future.cancelled())
         with self.assertRaises(grpc.FutureCancelledError):
             response_future.result()
+        service.server.stop(None)
 
     def testStreamingInputCallFutureFailed(self):
         service = _CreateService()
@@ -385,6 +400,7 @@ class PythonPluginTest(unittest.TestCase):
                 _streaming_input_request_iterator())
             self.assertIsNotNone(response_future.exception())
             self.assertIs(response_future.code(), grpc.StatusCode.UNKNOWN)
+        service.server.stop(None)
 
     def testFullDuplexCall(self):
         service = _CreateService()
@@ -394,6 +410,7 @@ class PythonPluginTest(unittest.TestCase):
         for expected_response, response in moves.zip_longest(
                 expected_responses, responses):
             self.assertEqual(expected_response, response)
+        service.server.stop(None)
 
     def testFullDuplexCallExpired(self):
         request_iterator = _full_duplex_request_iterator()
@@ -405,6 +422,7 @@ class PythonPluginTest(unittest.TestCase):
                 list(responses)
         self.assertIs(exception_context.exception.code(),
                       grpc.StatusCode.DEADLINE_EXCEEDED)
+        service.server.stop(None)
 
     def testFullDuplexCallCancelled(self):
         service = _CreateService()
@@ -416,6 +434,7 @@ class PythonPluginTest(unittest.TestCase):
             next(responses)
         self.assertIs(exception_context.exception.code(),
                       grpc.StatusCode.CANCELLED)
+        service.server.stop(None)
 
     def testFullDuplexCallFailed(self):
         request_iterator = _full_duplex_request_iterator()
@@ -426,6 +445,7 @@ class PythonPluginTest(unittest.TestCase):
                 next(responses)
         self.assertIs(exception_context.exception.code(),
                       grpc.StatusCode.UNKNOWN)
+        service.server.stop(None)
 
     def testHalfDuplexCall(self):
         service = _CreateService()
@@ -445,6 +465,7 @@ class PythonPluginTest(unittest.TestCase):
         for expected_response, response in moves.zip_longest(
                 expected_responses, responses):
             self.assertEqual(expected_response, response)
+        service.server.stop(None)
 
     def testHalfDuplexCallWedged(self):
         condition = threading.Condition()
@@ -478,6 +499,7 @@ class PythonPluginTest(unittest.TestCase):
                 next(responses)
         self.assertIs(exception_context.exception.code(),
                       grpc.StatusCode.DEADLINE_EXCEEDED)
+        service.server.stop(None)
 
 
 if __name__ == '__main__':

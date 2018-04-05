@@ -145,11 +145,9 @@ static void test_retry_too_many_attempts(grpc_end2end_test_config config) {
   cq_verifier* cqv = cq_verifier_create(f.cq);
 
   gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(
-      f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-      grpc_slice_from_static_string("/service/method"),
-      get_host_override_slice("foo.test.google.fr:1234", config), deadline,
-      nullptr);
+  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
+                               grpc_slice_from_static_string("/service/method"),
+                               nullptr, deadline, nullptr);
   GPR_ASSERT(c);
 
   peer = grpc_call_get_peer(c);
@@ -267,8 +265,6 @@ static void test_retry_too_many_attempts(grpc_end2end_test_config config) {
   GPR_ASSERT(status == GRPC_STATUS_ABORTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
-  validate_host_override_string("foo.test.google.fr:1234", call_details.host,
-                                config);
   GPR_ASSERT(0 == call_details.flags);
   GPR_ASSERT(was_cancelled == 1);
 

@@ -13,5 +13,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-EXTRA_FLAGS="-c opt"
+EXTRA_FLAGS="-c opt --test_timeout=300,450,1200,3600"
 github/grpc/tools/internal_ci/linux/grpc_bazel_on_foundry_base.sh "${EXTRA_FLAGS}"

@@ -32,10 +32,12 @@ def handle_unary(request, servicer_context):
 
 
 def handle_stream(request_iterator, servicer_context):
+    # TODO(issue:#6891) We should be able to remove this loop,
+    # and replace with return; yield
     servicer_context.send_initial_metadata([('grpc-internal-encoding-request',
                                              'gzip')])
-    return
-    yield
+    for request in request_iterator:
+        yield request
 
 
 class _MethodHandler(grpc.RpcMethodHandler):

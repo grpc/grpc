@@ -117,6 +117,9 @@ def handle_stream_unary(test, request_iterator, servicer_context):
     validate_client_metadata(test, servicer_context)
     servicer_context.send_initial_metadata(_INITIAL_METADATA)
     servicer_context.set_trailing_metadata(_TRAILING_METADATA)
+    # TODO(issue:#6891) We should be able to remove this loop
+    for request in request_iterator:
+        pass
     return _RESPONSE
 
 
@@ -124,8 +127,10 @@ def handle_stream_stream(test, request_iterator, servicer_context):
     validate_client_metadata(test, servicer_context)
     servicer_context.send_initial_metadata(_INITIAL_METADATA)
     servicer_context.set_trailing_metadata(_TRAILING_METADATA)
-    return
-    yield
+    # TODO(issue:#6891) We should be able to remove this loop,
+    # and replace with return; yield
+    for request in request_iterator:
+        yield _RESPONSE
 
 
 class _MethodHandler(grpc.RpcMethodHandler):

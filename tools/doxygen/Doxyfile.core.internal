@@ -939,6 +939,8 @@ src/core/ext/filters/deadline/deadline_filter.cc \
 src/core/ext/filters/deadline/deadline_filter.h \
 src/core/ext/filters/http/client/http_client_filter.cc \
 src/core/ext/filters/http/client/http_client_filter.h \
+src/core/ext/filters/http/client_authority_filter.cc \
+src/core/ext/filters/http/client_authority_filter.h \
 src/core/ext/filters/http/http_filters_plugin.cc \
 src/core/ext/filters/http/message_compress/message_compress_filter.cc \
 src/core/ext/filters/http/message_compress/message_compress_filter.h \
@@ -960,6 +962,8 @@ src/core/ext/transport/README.md \
 src/core/ext/transport/chttp2/README.md \
 src/core/ext/transport/chttp2/alpn/alpn.cc \
 src/core/ext/transport/chttp2/alpn/alpn.h \
+src/core/ext/transport/chttp2/client/authority.cc \
+src/core/ext/transport/chttp2/client/authority.h \
 src/core/ext/transport/chttp2/client/chttp2_connector.cc \
 src/core/ext/transport/chttp2/client/chttp2_connector.h \
 src/core/ext/transport/chttp2/client/insecure/README.md \
@@ -1482,6 +1486,11 @@ src/core/tsi/alts_transport_security.cc \
 src/core/tsi/alts_transport_security.h \
 src/core/tsi/fake_transport_security.cc \
 src/core/tsi/fake_transport_security.h \
+src/core/tsi/ssl/session_cache/ssl_session.h \
+src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc \
+src/core/tsi/ssl/session_cache/ssl_session_cache.cc \
+src/core/tsi/ssl/session_cache/ssl_session_cache.h \
+src/core/tsi/ssl/session_cache/ssl_session_openssl.cc \
 src/core/tsi/ssl_transport_security.cc \
 src/core/tsi/ssl_transport_security.h \
 src/core/tsi/ssl_types.h \

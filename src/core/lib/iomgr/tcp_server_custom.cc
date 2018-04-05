@@ -393,13 +393,6 @@ static grpc_error* tcp_server_add_port(grpc_tcp_server* s,
   grpc_custom_socket_vtable->init(socket, family);
 
   if (error == GRPC_ERROR_NONE) {
-#if defined(GPR_LINUX) && defined(SO_REUSEPORT)
-    if (family == AF_INET || family == AF_INET6) {
-      int enable = 1;
-      grpc_custom_socket_vtable->setsockopt(socket, SOL_SOCKET, SO_REUSEPORT,
-                                            &enable, sizeof(enable));
-    }
-#endif /* GPR_LINUX && SO_REUSEPORT */
     error = add_socket_to_server(s, socket, addr, port_index, &sp);
   }
   gpr_free(allocated_addr);

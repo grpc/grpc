@@ -129,6 +129,7 @@ static void destroy_server(void* arg, grpc_error* error) {
     gpr_free(sp);
   }
   grpc_channel_args_destroy(s->channel_args);
+  gpr_mu_destroy(&s->mu);
   gpr_free(s);
 }
 

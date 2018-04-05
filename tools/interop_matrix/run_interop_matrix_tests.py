@@ -66,15 +66,12 @@ argp.add_argument(
     nargs='+',
     default=['all'],
     help='Languages to test')
-
 argp.add_argument(
     '--keep',
     action='store_true',
     help='keep the created local images after finishing the tests.')
-
 argp.add_argument(
     '--report_file', default='report.xml', help='The result file to create.')
-
 argp.add_argument(
     '--allow_flakes',
     default=False,
@@ -150,14 +147,17 @@ def find_all_images_for_lang(lang):
 # caches test cases (list of JobSpec) loaded from file.  Keyed by lang and runtime.
 def find_test_cases(lang, runtime, release, suite_name):
     """Returns the list of test cases from testcase files per lang/release."""
-    file_tmpl = os.path.join(os.path.dirname(__file__), 'testcases/%s__%s')
-    testcase_release = release
+    testcase_dir = os.path.join(os.path.dirname(__file__), 'testcases')
     filename_prefix = lang
     if lang == 'csharp':
         filename_prefix = runtime
-    if not os.path.exists(file_tmpl % (filename_prefix, release)):
-        testcase_release = 'master'
-    testcases = file_tmpl % (filename_prefix, testcase_release)
+    # Check to see if we need to use a particular version of test cases.
+    lang_version = '%s_%s' % (filename_prefix, release)
+    if lang_version in client_matrix.TESTCASES_VERSION_MATRIX:
+        testcases = os.path.join(
+            testcase_dir, client_matrix.TESTCASES_VERSION_MATRIX[lang_version])
+    else:
+        testcases = os.path.join(testcase_dir, '%s__master' % filename_prefix)
 
     job_spec_list = []
     try:

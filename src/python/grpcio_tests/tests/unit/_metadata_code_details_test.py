@@ -107,6 +107,9 @@ class _Servicer(object):
             self._received_client_metadata = context.invocation_metadata()
             context.send_initial_metadata(_SERVER_INITIAL_METADATA)
             context.set_trailing_metadata(_SERVER_TRAILING_METADATA)
+            # TODO(https://github.com/grpc/grpc/issues/6891): just ignore the
+            # request iterator.
+            list(request_iterator)
             if self._abort_call:
                 context.abort(self._code, self._details)
             else:
@@ -124,6 +127,9 @@ class _Servicer(object):
             self._received_client_metadata = context.invocation_metadata()
             context.send_initial_metadata(_SERVER_INITIAL_METADATA)
             context.set_trailing_metadata(_SERVER_TRAILING_METADATA)
+            # TODO(https://github.com/grpc/grpc/issues/6891): just ignore the
+            # request iterator.
+            list(request_iterator)
             if self._abort_call:
                 context.abort(self._code, self._details)
             else:

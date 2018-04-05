@@ -13,8 +13,8 @@ settings:
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
   core_version: 6.0.0-dev
-  g_stands_for: gorgeous
-  version: 1.11.0-dev
+  g_stands_for: glorious
+  version: 1.12.0-dev
 filegroups:
 - name: alts_proto
   headers:
@@ -536,6 +536,14 @@ filegroups:
   uses:
   - grpc_codegen
   - grpc_trace_headers
+- name: grpc_client_authority_filter
+  headers:
+  - src/core/ext/filters/http/client_authority_filter.h
+  src:
+  - src/core/ext/filters/http/client_authority_filter.cc
+  plugin: grpc_client_authority_filter
+  uses:
+  - grpc_base
 - name: grpc_client_channel
   headers:
   - src/core/ext/filters/client_channel/backup_poller.h
@@ -931,8 +939,10 @@ filegroups:
   - gpr
 - name: grpc_transport_chttp2_client_connector
   headers:
+  - src/core/ext/transport/chttp2/client/authority.h
   - src/core/ext/transport/chttp2/client/chttp2_connector.h
   src:
+  - src/core/ext/transport/chttp2/client/authority.cc
   - src/core/ext/transport/chttp2/client/chttp2_connector.cc
   uses:
   - grpc_transport_chttp2
@@ -1043,12 +1053,17 @@ filegroups:
   headers:
   - src/core/tsi/alts_transport_security.h
   - src/core/tsi/fake_transport_security.h
+  - src/core/tsi/ssl/session_cache/ssl_session.h
+  - src/core/tsi/ssl/session_cache/ssl_session_cache.h
   - src/core/tsi/ssl_transport_security.h
   - src/core/tsi/ssl_types.h
   - src/core/tsi/transport_security_grpc.h
   src:
   - src/core/tsi/alts_transport_security.cc
   - src/core/tsi/fake_transport_security.cc
+  - src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
+  - src/core/tsi/ssl/session_cache/ssl_session_cache.cc
+  - src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
   - src/core/tsi/ssl_transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
   deps:
@@ -1317,6 +1332,17 @@ filegroups:
   - grpc++
   - grpc
 libs:
+- name: address_sorting
+  build: all
+  language: c
+  headers:
+  - third_party/address_sorting/address_sorting_internal.h
+  - third_party/address_sorting/include/address_sorting/address_sorting.h
+  src:
+  - third_party/address_sorting/address_sorting.c
+  - third_party/address_sorting/address_sorting_posix.c
+  - third_party/address_sorting/address_sorting_windows.c
+  secure: false
 - name: alts_test_util
   build: private
   language: c
@@ -1375,6 +1401,7 @@ libs:
   - grpc_max_age_filter
   - grpc_message_size_filter
   - grpc_deadline_filter
+  - grpc_client_authority_filter
   - grpc_workaround_cronet_compression_filter
   - grpc_server_backward_compatibility
   generate_plugin_registry: true
@@ -1477,6 +1504,7 @@ libs:
   - grpc_max_age_filter
   - grpc_message_size_filter
   - grpc_deadline_filter
+  - grpc_client_authority_filter
   - grpc_workaround_cronet_compression_filter
   - grpc_server_backward_compatibility
   generate_plugin_registry: true
@@ -2591,17 +2619,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: grpc_invalid_channel_args_test
-  build: test
-  language: c
-  src:
-  - test/core/surface/invalid_channel_args_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  uses_polling: false
 - name: grpc_json_token_test
   build: test
   language: c
@@ -4563,6 +4580,22 @@ targets:
   - gpr
   uses:
   - grpc++_test
+- name: h2_ssl_session_reuse_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/end2end/end2end_tests.h
+  src:
+  - test/core/end2end/h2_ssl_session_reuse_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses:
+  - grpc++_test
 - name: health_service_end2end_test
   gtest: true
   build: test
@@ -4958,6 +4991,18 @@ targets:
   - gpr
   uses:
   - grpc++_test
+- name: retry_throttle_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/client_channel/retry_throttle_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses_polling: false
 - name: secure_auth_context_test
   gtest: true
   build: test
@@ -5477,6 +5522,7 @@ php_config_m4:
   - gpr
   - boringssl
   - z
+  - address_sorting
   headers:
   - src/php/ext/grpc/byte_buffer.h
   - src/php/ext/grpc/call.h
@@ -5508,6 +5554,7 @@ python_dependencies:
   - ares
   - boringssl
   - z
+  - address_sorting
 ruby_gem:
   deps:
   - grpc
@@ -5515,3 +5562,4 @@ ruby_gem:
   - ares
   - boringssl
   - z
+  - address_sorting

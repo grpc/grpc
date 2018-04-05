@@ -82,7 +82,7 @@ static void my_resolve_address(const char* addr, const char* default_port,
     sa->sin_family = GRPC_AF_INET;
     sa->sin_addr.s_addr = 0x100007f;
     sa->sin_port = grpc_htons(static_cast<uint16_t>(g_resolve_port));
-    (*addrs)->addrs[0].len = sizeof(*sa);
+    (*addrs)->addrs[0].len = static_cast<socklen_t>(sizeof(*sa));
     gpr_mu_unlock(&g_mu);
   }
   GRPC_CLOSURE_SCHED(on_done, error);

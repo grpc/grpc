@@ -22,7 +22,7 @@ PYTHON=$(realpath "${1:-py27/bin/python}")
 
 ROOT=$(pwd)
 
-$PYTHON "$ROOT/src/python/grpcio_tests/setup.py" test_lite
+$PYTHON "$ROOT/src/python/grpcio_tests/setup.py" "$2"
 
 mkdir -p "$ROOT/reports"
 rm -rf "$ROOT/reports/python-coverage"

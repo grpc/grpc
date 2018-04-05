@@ -57,6 +57,16 @@ def grpc_deps():
         actual = "@com_github_gflags_gflags//:gflags",
     )
 
+    native.bind(
+        name = "grpc_cpp_plugin",
+        actual = "@com_github_grpc_grpc//:grpc_cpp_plugin"
+    )
+
+    native.bind(
+        name = "grpc++_codegen_proto",
+        actual = "@com_github_grpc_grpc//:grpc++_codegen_proto"
+    )
+
     if "boringssl" not in native.existing_rules():
         native.http_archive(
             name = "boringssl",

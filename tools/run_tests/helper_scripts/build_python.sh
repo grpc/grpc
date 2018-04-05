@@ -152,6 +152,12 @@ pip_install_dir() {
   cd "$PWD"
 }
 
+case "$VENV" in
+  *gevent*)
+  $VENV_PYTHON -m pip install gevent
+  ;;
+esac
+
 $VENV_PYTHON -m pip install --upgrade pip==9.0.1
 $VENV_PYTHON -m pip install setuptools
 $VENV_PYTHON -m pip install cython

@@ -15,6 +15,9 @@
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio/grpc_core_dependencies.py.template`!!!
 
 CORE_SOURCE_FILES = [
+    'third_party/address_sorting/address_sorting.c',
+    'third_party/address_sorting/address_sorting_posix.c',
+    'third_party/address_sorting/address_sorting_windows.c',
     'src/core/lib/gpr/alloc.cc',
     'src/core/lib/gpr/arena.cc',
     'src/core/lib/gpr/atm.cc',
@@ -296,6 +299,7 @@ CORE_SOURCE_FILES = [
     'src/core/tsi/transport_security_adapter.cc',
     'src/core/ext/transport/chttp2/client/insecure/channel_create.cc',
     'src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc',
+    'src/core/ext/transport/chttp2/client/authority.cc',
     'src/core/ext/transport/chttp2/client/chttp2_connector.cc',
     'src/core/ext/filters/client_channel/backup_poller.cc',
     'src/core/ext/filters/client_channel/channel_connectivity.cc',
@@ -321,6 +325,9 @@ CORE_SOURCE_FILES = [
     'src/core/ext/filters/deadline/deadline_filter.cc',
     'src/core/tsi/alts_transport_security.cc',
     'src/core/tsi/fake_transport_security.cc',
+    'src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc',
+    'src/core/tsi/ssl/session_cache/ssl_session_cache.cc',
+    'src/core/tsi/ssl/session_cache/ssl_session_openssl.cc',
     'src/core/tsi/ssl_transport_security.cc',
     'src/core/tsi/transport_security_grpc.cc',
     'src/core/ext/transport/chttp2/server/chttp2_server.cc',
@@ -350,6 +357,7 @@ CORE_SOURCE_FILES = [
     'src/core/ext/census/grpc_context.cc',
     'src/core/ext/filters/max_age/max_age_filter.cc',
     'src/core/ext/filters/message_size/message_size_filter.cc',
+    'src/core/ext/filters/http/client_authority_filter.cc',
     'src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc',
     'src/core/ext/filters/workarounds/workaround_utils.cc',
     'src/core/plugin_registry/grpc_plugin_registry.cc',

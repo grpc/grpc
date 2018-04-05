@@ -13,8 +13,8 @@
  <date>2018-01-19</date>
  <time>16:06:07</time>
  <version>
-  <release>1.11.0dev</release>
-  <api>1.11.0dev</api>
+  <release>1.12.0dev</release>
+  <api>1.12.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -51,6 +51,11 @@
     <file baseinstalldir="/" name="src/php/ext/grpc/server_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/timeval.h" role="src" />
     <file baseinstalldir="/" name="src/php/ext/grpc/version.h" role="src" />
+    <file baseinstalldir="/" name="third_party/address_sorting/address_sorting_internal.h" role="src" />
+    <file baseinstalldir="/" name="third_party/address_sorting/include/address_sorting/address_sorting.h" role="src" />
+    <file baseinstalldir="/" name="third_party/address_sorting/address_sorting.c" role="src" />
+    <file baseinstalldir="/" name="third_party/address_sorting/address_sorting_posix.c" role="src" />
+    <file baseinstalldir="/" name="third_party/address_sorting/address_sorting_windows.c" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/alloc.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/atm.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/atm_gcc_atomic.h" role="src" />
@@ -256,6 +261,7 @@
     <file baseinstalldir="/" name="src/core/tsi/transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security_adapter.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security_interface.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/authority.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/chttp2_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/backup_poller.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel.h" role="src" />
@@ -280,6 +286,8 @@
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts_transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session_cache.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_types.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security_grpc.h" role="src" />
@@ -431,6 +439,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/load_reporting/server_load_reporting_plugin.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/max_age/max_age_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/message_size/message_size_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/http/client_authority_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/workarounds/workaround_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/surface/init.cc" role="src" />
@@ -675,6 +684,7 @@
     <file baseinstalldir="/" name="src/core/tsi/transport_security_adapter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/insecure/channel_create.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/authority.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/chttp2_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/backup_poller.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/channel_connectivity.cc" role="src" />
@@ -700,6 +710,9 @@
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts_transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session_cache.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session_openssl.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security_grpc.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/chttp2_server.cc" role="src" />
@@ -729,6 +742,7 @@
     <file baseinstalldir="/" name="src/core/ext/census/grpc_context.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/max_age/max_age_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/message_size/message_size_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/http/client_authority_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/workarounds/workaround_utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/plugin_registry/grpc_plugin_registry.cc" role="src" />

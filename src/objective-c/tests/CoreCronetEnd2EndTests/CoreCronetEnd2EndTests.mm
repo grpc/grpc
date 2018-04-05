@@ -82,8 +82,14 @@ static void cronet_init_client_secure_fullstack(grpc_end2end_test_fixture *f,
                                                 grpc_channel_args *client_args,
                                                 stream_engine *cronetEngine) {
   fullstack_secure_fixture_data *ffd = (fullstack_secure_fixture_data *)f->fixture_data;
+  grpc_arg arg;
+  arg.key = const_cast<char*>(GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER);
+  arg.type = GRPC_ARG_INTEGER;
+  arg.value.integer = 1;
+  client_args = grpc_channel_args_copy_and_add(client_args, &arg, 1);
   f->client = grpc_cronet_secure_channel_create(cronetEngine, ffd->localaddr,
                                                 client_args, NULL);
+  grpc_channel_args_destroy(client_args);
   GPR_ASSERT(f->client != NULL);
 }
 
@@ -147,12 +153,9 @@ static void chttp2_init_server_simple_ssl_secure_fullstack(
 
 static grpc_end2end_test_config configs[] = {
     {"chttp2/simple_ssl_fullstack",
-     FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
-         FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS,
-     chttp2_create_fixture_secure_fullstack,
-     cronet_init_client_simple_ssl_secure_fullstack,
-     chttp2_init_server_simple_ssl_secure_fullstack,
-     chttp2_tear_down_secure_fullstack},
+     FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION | FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS, nullptr,
+     chttp2_create_fixture_secure_fullstack, cronet_init_client_simple_ssl_secure_fullstack,
+     chttp2_init_server_simple_ssl_secure_fullstack, chttp2_tear_down_secure_fullstack},
 };
 
 static char *roots_filename;

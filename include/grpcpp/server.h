@@ -162,18 +162,14 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   friend class ServerInitializer;
 
   class SyncRequest;
-  class AsyncRequest;
-  class ShutdownRequest;
+  class UnimplementedAsyncRequest;
+  class UnimplementedAsyncResponse;
 
   /// SyncRequestThreadManager is an implementation of ThreadManager. This class
   /// is responsible for polling for incoming RPCs and calling the RPC handlers.
   /// This is only used in case of a Sync server (i.e a server exposing a sync
   /// interface)
   class SyncRequestThreadManager;
-
-  class UnimplementedAsyncRequestContext;
-  class UnimplementedAsyncRequest;
-  class UnimplementedAsyncResponse;
 
   /// Register a generic service. This call does not take ownership of the
   /// service. The service must exist for the lifetime of the Server instance.

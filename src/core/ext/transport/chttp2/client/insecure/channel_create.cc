@@ -27,6 +27,7 @@
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
+#include "src/core/ext/transport/chttp2/client/authority.h"
 #include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -40,9 +41,13 @@ static void client_channel_factory_unref(
 
 static grpc_subchannel* client_channel_factory_create_subchannel(
     grpc_client_channel_factory* cc_factory, const grpc_subchannel_args* args) {
+  grpc_subchannel_args final_sc_args;
+  memcpy(&final_sc_args, args, sizeof(*args));
+  final_sc_args.args = grpc_default_authority_add_if_not_present(args->args);
   grpc_connector* connector = grpc_chttp2_connector_create();
-  grpc_subchannel* s = grpc_subchannel_create(connector, args);
+  grpc_subchannel* s = grpc_subchannel_create(connector, &final_sc_args);
   grpc_connector_unref(connector);
+  grpc_channel_args_destroy(const_cast<grpc_channel_args*>(final_sc_args.args));
   return s;
 }
 
@@ -56,8 +61,8 @@ static grpc_channel* client_channel_factory_create_channel(
   // Add channel arg containing the server URI.
   grpc_core::UniquePtr<char> canonical_target =
       grpc_core::ResolverRegistry::AddDefaultPrefixIfNeeded(target);
-  grpc_arg arg = grpc_channel_arg_string_create((char*)GRPC_ARG_SERVER_URI,
-                                                canonical_target.get());
+  grpc_arg arg = grpc_channel_arg_string_create(
+      const_cast<char*>(GRPC_ARG_SERVER_URI), canonical_target.get());
   const char* to_remove[] = {GRPC_ARG_SERVER_URI};
   grpc_channel_args* new_args =
       grpc_channel_args_copy_and_add_and_remove(args, to_remove, 1, &arg, 1);

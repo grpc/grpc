@@ -423,13 +423,13 @@ void ParseServer(const grpc_grpclb_server* server,
    * server->ip_address.bytes. */
   const grpc_grpclb_ip_address* ip = &server->ip_address;
   if (ip->size == 4) {
-    addr->len = sizeof(grpc_sockaddr_in);
+    addr->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
     grpc_sockaddr_in* addr4 = reinterpret_cast<grpc_sockaddr_in*>(&addr->addr);
     addr4->sin_family = GRPC_AF_INET;
     memcpy(&addr4->sin_addr, ip->bytes, ip->size);
     addr4->sin_port = netorder_port;
   } else if (ip->size == 16) {
-    addr->len = sizeof(grpc_sockaddr_in6);
+    addr->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in6));
     grpc_sockaddr_in6* addr6 = (grpc_sockaddr_in6*)&addr->addr;
     addr6->sin6_family = GRPC_AF_INET6;
     memcpy(&addr6->sin6_addr, ip->bytes, ip->size);
@@ -505,9 +505,7 @@ GrpcLb::BalancerCallState::BalancerCallState(
   // the polling entities from client_channel.
   GPR_ASSERT(grpclb_policy()->server_name_ != nullptr);
   GPR_ASSERT(grpclb_policy()->server_name_[0] != '\0');
-  grpc_slice host =
-      grpc_slice_from_copied_string(grpclb_policy()->server_name_);
-  grpc_millis deadline =
+  const grpc_millis deadline =
       grpclb_policy()->lb_call_timeout_ms_ == 0
           ? GRPC_MILLIS_INF_FUTURE
           : ExecCtx::Get()->Now() + grpclb_policy()->lb_call_timeout_ms_;
@@ -515,8 +513,7 @@ GrpcLb::BalancerCallState::BalancerCallState(
       grpclb_policy()->lb_channel_, nullptr, GRPC_PROPAGATE_DEFAULTS,
       grpclb_policy_->interested_parties(),
       GRPC_MDSTR_SLASH_GRPC_DOT_LB_DOT_V1_DOT_LOADBALANCER_SLASH_BALANCELOAD,
-      &host, deadline, nullptr);
-  grpc_slice_unref_internal(host);
+      nullptr, deadline, nullptr);
   // Init the LB call request payload.
   grpc_grpclb_request* request =
       grpc_grpclb_request_create(grpclb_policy()->server_name_);
@@ -983,6 +980,14 @@ grpc_channel_args* BuildBalancerChannelArgs(
       // with the one from the grpclb policy, used to propagate updates to
       // the LB channel.
       GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
+      // The LB channel should use the authority indicated by the target
+      // authority table (see \a grpc_lb_policy_grpclb_modify_lb_channel_args),
+      // as opposed to the authority from the parent channel.
+      GRPC_ARG_DEFAULT_AUTHORITY,
+      // Just as for \a GRPC_ARG_DEFAULT_AUTHORITY, the LB channel should be
+      // treated as a stand-alone channel and not inherit this argument from the
+      // args of the parent channel.
+      GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
   };
   // Channel args to add.
   const grpc_arg args_to_add[] = {

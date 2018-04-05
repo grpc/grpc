@@ -103,23 +103,11 @@ static void grpc_rb_call_destroy(void* p) {
   xfree(p);
 }
 
-static size_t md_ary_datasize(const void* p) {
-  const grpc_metadata_array* const ary = (grpc_metadata_array*)p;
-  size_t i, datasize = sizeof(grpc_metadata_array);
-  for (i = 0; i < ary->count; ++i) {
-    const grpc_metadata* const md = &ary->metadata[i];
-    datasize += GRPC_SLICE_LENGTH(md->key);
-    datasize += GRPC_SLICE_LENGTH(md->value);
-  }
-  datasize += ary->capacity * sizeof(grpc_metadata);
-  return datasize;
-}
-
 static const rb_data_type_t grpc_rb_md_ary_data_type = {
     "grpc_metadata_array",
     {GRPC_RB_GC_NOT_MARKED,
      GRPC_RB_GC_DONT_FREE,
-     md_ary_datasize,
+     GRPC_RB_MEMSIZE_UNAVAILABLE,
      {NULL, NULL}},
     NULL,
     NULL,

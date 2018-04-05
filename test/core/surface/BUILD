@@ -91,18 +91,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "grpc_invalid_channel_args_test",
-    srcs = ["invalid_channel_args_test.cc"],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:gpr_test_util",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "lame_client_test",
     srcs = ["lame_client_test.cc"],
     language = "C++",

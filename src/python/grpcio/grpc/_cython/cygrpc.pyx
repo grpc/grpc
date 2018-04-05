@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+# distutils: language=c++
 
 cimport cpython
 
@@ -34,6 +35,8 @@ include "_cygrpc/security.pyx.pxi"
 include "_cygrpc/server.pyx.pxi"
 include "_cygrpc/tag.pyx.pxi"
 include "_cygrpc/time.pyx.pxi"
+
+include "_cygrpc/grpc_gevent.pyx"
 
 #
 # initialize gRPC
