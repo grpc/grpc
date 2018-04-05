@@ -64,7 +64,10 @@ export LANG=en_US.UTF-8
 pod repo update  # needed by python
 
 # python
+# brew update
+# brew upgrade python
 pip install virtualenv --user python
+ls /usr/local/bin
 pip install -U Mako six tox setuptools twisted pyyaml --user python
 export PYTHONPATH=/Library/Python/3.4/site-packages
 
