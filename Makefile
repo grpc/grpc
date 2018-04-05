@@ -442,6 +442,7 @@ HOST_CFLAGS = $(CFLAGS)
 HOST_CXXFLAGS = $(CXXFLAGS)
 HOST_LDFLAGS = $(LDFLAGS)
 HOST_LDLIBS = $(LDLIBS)
+HOST_LDLIBSXX = $(LDLIBSXX)
 
 # These are automatically computed variables.
 # There shouldn't be any need to change anything from now on.
