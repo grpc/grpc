@@ -34,6 +34,10 @@ static intptr_t gettid(void) { return (intptr_t)pthread_self(); }
 
 void gpr_log(const char* file, int line, gpr_log_severity severity,
              const char* format, ...) {
+  /* Avoid message construction if gpr_log_message won't log */
+  if (gpr_should_log(severity) == 0) {
+    return;
+  }
   char buf[64];
   char* allocated = nullptr;
   char* message = nullptr;

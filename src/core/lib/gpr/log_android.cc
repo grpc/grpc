@@ -41,6 +41,10 @@ static android_LogPriority severity_to_log_priority(gpr_log_severity severity) {
 
 void gpr_log(const char* file, int line, gpr_log_severity severity,
              const char* format, ...) {
+  /* Avoid message construction if gpr_log_message won't log */
+  if (gpr_should_log(severity) == 0) {
+    return;
+  }
   char* message = NULL;
   va_list args;
   va_start(args, format);
