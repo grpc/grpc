@@ -66,9 +66,9 @@ config_setting(
 # This should be updated along with build.yaml
 g_stands_for = "glamorous"
 
-core_version = "6.0.0-pre2"
+core_version = "6.0.0"
 
-version = "1.10.1-pre2"
+version = "1.10.1"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
