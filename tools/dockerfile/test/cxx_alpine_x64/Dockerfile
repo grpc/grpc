@@ -32,6 +32,7 @@ RUN apk update && apk add \
   strace \
   python-dev \
   py-pip \
+  py-yaml \
   unzip \
   wget \
   zip
