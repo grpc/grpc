@@ -500,10 +500,12 @@ GRPCAPI void grpc_server_credentials_set_auth_metadata_processor(
 typedef struct grpc_alts_credentials_options grpc_alts_credentials_options;
 
 /* This method creates a grpc ALTS credentials client options instance. */
-GRPCAPI grpc_alts_credentials_options* grpc_alts_credentials_client_options_create();
+GRPCAPI grpc_alts_credentials_options*
+grpc_alts_credentials_client_options_create();
 
 /* This method creates a grpc ALTS credentials server options instance. */
-GRPCAPI grpc_alts_credentials_options* grpc_alts_credentials_server_options_create();
+GRPCAPI grpc_alts_credentials_options*
+grpc_alts_credentials_server_options_create();
 
 /**
  * This method adds a target service account to grpc client's ALTS credentials

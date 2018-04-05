@@ -220,6 +220,8 @@ class MetadataCredentialsPlugin {
 std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
     std::unique_ptr<MetadataCredentialsPlugin> plugin);
 
+namespace experimental {
+
 /// Options used to build AltsCredentials.
 struct AltsCredentialsOptions {
   /// service accounts of target endpoint that will be acceptable
@@ -232,6 +234,7 @@ struct AltsCredentialsOptions {
 std::shared_ptr<ChannelCredentials> AltsCredentials(
     const AltsCredentialsOptions& options);
 
+}  // namespace experimental
 }  // namespace grpc
 
 #endif  // GRPCPP_SECURITY_CREDENTIALS_H

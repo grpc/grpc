@@ -87,6 +87,8 @@ std::shared_ptr<ChannelCredentials> SslCredentials(
   return WrapChannelCredentials(c_creds);
 }
 
+namespace experimental {
+
 // Builds ALTS Credentials given ALTS specific options
 std::shared_ptr<ChannelCredentials> AltsCredentials(
     const AltsCredentialsOptions& options) {
@@ -103,6 +105,8 @@ std::shared_ptr<ChannelCredentials> AltsCredentials(
   grpc_alts_credentials_options_destroy(c_options);
   return WrapChannelCredentials(c_creds);
 }
+
+}  // namespace experimental
 
 // Builds credentials for use when running in GCE
 std::shared_ptr<CallCredentials> GoogleComputeEngineCredentials() {
