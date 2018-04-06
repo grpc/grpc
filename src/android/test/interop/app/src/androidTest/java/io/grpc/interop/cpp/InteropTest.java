@@ -37,11 +37,12 @@ public class InteropTest {
 
   @Before
   public void setUp() throws Exception {
-    host = InstrumentationRegistry.getArguments().getString("server_host", "10.0.2.2");
-    port =
-        Integer.parseInt(InstrumentationRegistry.getArguments().getString("server_port", "8080"));
+    host =
+        InstrumentationRegistry.getArguments()
+            .getString("server_host", "grpc-test.sandbox.googleapis.com");
+    port = Integer.parseInt(InstrumentationRegistry.getArguments().getString("server_port", "443"));
     useTls =
-        Boolean.parseBoolean(InstrumentationRegistry.getArguments().getString("use_tls", "false"));
+        Boolean.parseBoolean(InstrumentationRegistry.getArguments().getString("use_tls", "true"));
 
     if (useTls) {
       Context ctx = InstrumentationRegistry.getTargetContext();
