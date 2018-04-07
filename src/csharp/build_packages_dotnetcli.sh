@@ -32,6 +32,8 @@ mkdir -p protoc_plugins
 cp -r $EXTERNAL_GIT_ROOT/platform={windows,linux,macos}/artifacts/protoc_* protoc_plugins || true
 # Kokoro flow
 cp -r $EXTERNAL_GIT_ROOT/input_artifacts/protoc_* protoc_plugins || true
+find protoc_plugins/ -type f -name protoc -exec chmod +x {} ";"
+find protoc_plugins/ -type f -name grpc_csharp_plugin -exec chmod +x {} ";"
 
 dotnet restore Grpc.sln
 
