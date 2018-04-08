@@ -980,15 +980,6 @@ static grpc_message_compression_algorithm decode_message_compression(
     grpc_mdelem md) {
   grpc_message_compression_algorithm algorithm =
       grpc_message_compression_algorithm_from_slice(GRPC_MDVALUE(md));
-  if (algorithm == GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT) {
-    char* md_c_str = grpc_slice_to_c_string(GRPC_MDVALUE(md));
-    gpr_log(GPR_ERROR,
-            "Invalid incoming message compression algorithm: '%s'. "
-            "Interpreting incoming data as uncompressed.",
-            md_c_str);
-    gpr_free(md_c_str);
-    return GRPC_MESSAGE_COMPRESS_NONE;
-  }
   return algorithm;
 }
 
@@ -996,15 +987,6 @@ static grpc_stream_compression_algorithm decode_stream_compression(
     grpc_mdelem md) {
   grpc_stream_compression_algorithm algorithm =
       grpc_stream_compression_algorithm_from_slice(GRPC_MDVALUE(md));
-  if (algorithm == GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT) {
-    char* md_c_str = grpc_slice_to_c_string(GRPC_MDVALUE(md));
-    gpr_log(GPR_ERROR,
-            "Invalid incoming stream compression algorithm: '%s'. Interpreting "
-            "incoming data as uncompressed.",
-            md_c_str);
-    gpr_free(md_c_str);
-    return GRPC_STREAM_COMPRESS_NONE;
-  }
   return algorithm;
 }
 
@@ -1033,14 +1015,44 @@ static void publish_app_metadata(grpc_call* call, grpc_metadata_batch* b,
 static void recv_initial_filter(grpc_call* call, grpc_metadata_batch* b) {
   if (b->idx.named.content_encoding != nullptr) {
     GPR_TIMER_SCOPE("incoming_stream_compression_algorithm", 0);
-    set_incoming_stream_compression_algorithm(
-        call, decode_stream_compression(b->idx.named.content_encoding->md));
+    grpc_stream_compression_algorithm algorithm =
+        decode_stream_compression(b->idx.named.content_encoding->md);
+    if (algorithm == GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT) {
+      char* md_c_str = grpc_slice_to_c_string(
+          GRPC_MDVALUE(b->idx.named.content_encoding->md));
+      char* error_msg;
+      gpr_asprintf(&error_msg,
+                   "Invalid incoming stream compression algorithm: '%s'.",
+                   md_c_str);
+      gpr_free(md_c_str);
+      gpr_log(GPR_ERROR, "%s", error_msg);
+      cancel_with_status(call, STATUS_FROM_SURFACE, GRPC_STATUS_INTERNAL,
+                         error_msg);
+      gpr_free(error_msg);
+      return;
+    }
+    set_incoming_stream_compression_algorithm(call, algorithm);
     grpc_metadata_batch_remove(b, b->idx.named.content_encoding);
   }
   if (b->idx.named.grpc_encoding != nullptr) {
     GPR_TIMER_SCOPE("incoming_message_compression_algorithm", 0);
-    set_incoming_message_compression_algorithm(
-        call, decode_message_compression(b->idx.named.grpc_encoding->md));
+    grpc_message_compression_algorithm algorithm =
+        decode_message_compression(b->idx.named.grpc_encoding->md);
+    if (algorithm == GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT) {
+      char* md_c_str =
+          grpc_slice_to_c_string(GRPC_MDVALUE(b->idx.named.grpc_encoding->md));
+      char* error_msg;
+      gpr_asprintf(&error_msg,
+                   "Invalid incoming message compression algorithm: '%s'.",
+                   md_c_str);
+      gpr_free(md_c_str);
+      gpr_log(GPR_ERROR, "%s", error_msg);
+      cancel_with_status(call, STATUS_FROM_SURFACE, GRPC_STATUS_INTERNAL,
+                         error_msg);
+      gpr_free(error_msg);
+      return;
+    }
+    set_incoming_message_compression_algorithm(call, algorithm);
     grpc_metadata_batch_remove(b, b->idx.named.grpc_encoding);
   }
   uint32_t message_encodings_accepted_by_peer = 1u;
