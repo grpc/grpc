@@ -30,4 +30,4 @@ export GRPC_DEFAULT_SSL_ROOTS_FILE_PATH="$(pwd)/etc/roots.pem"
 # building all languages in the same working copy can also lead to conflicts
 # due to different compilation flags
 # TODO(jtattermusch): add --cloud_to_prod_auth support
-tools/run_tests/run_interop_tests.py -l c++ --cloud_to_prod -t -j 4
+tools/run_tests/run_interop_tests.py -l c++ --cloud_to_prod --prod_servers default gateway_v4 -t -j 4
