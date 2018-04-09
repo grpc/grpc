@@ -53,8 +53,11 @@ for arch in {x86,x64}; do
     output_dir="$base/src/ruby/tools/bin/${ruby_arch}-${plat}"
     mkdir -p "$output_dir"/google/protobuf
     mkdir -p "$output_dir"/google/protobuf/compiler  # needed for plugin.proto
-    cp "$input_dir"/protoc* "$output_dir"/
-    cp "$input_dir"/grpc_ruby_plugin* "$output_dir"/
+    cp "$input_dir"/protoc* "$input_dir"/grpc_ruby_plugin* "$output_dir/"
+    if [[ "$plat" != "windows" ]]
+    then
+      chmod +x "$output_dir/protoc" "$output_dir/grpc_ruby_plugin"
+    fi
     for proto in "${well_known_protos[@]}"; do
       cp "$base/third_party/protobuf/src/google/protobuf/$proto.proto" "$output_dir/google/protobuf/$proto.proto"
     done
