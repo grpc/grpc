@@ -23,6 +23,8 @@
 
 namespace grpc {
 
+static internal::GrpcLibraryInitializer g_gli_initializer;
+
 Status ByteBuffer::Dump(std::vector<Slice>* slices) const {
   slices->clear();
   if (!buffer_) {
