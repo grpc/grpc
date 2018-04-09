@@ -16,6 +16,8 @@ Builds gRPC in given language and runs unit tests. Use `tools/run_tests/run_test
 
 Note: some tests may fail due to flakiness. Check the "Issues" tab for known flakes and other issues.
 
+The full suite of unit tests will take many minutes to run.
+
 # Interop tests (run_interop_tests.py)
 
 Runs tests for cross-platform/cross-language interoperability. For more details, see [Interop tests descriptions](/doc/interop-test-descriptions.md)
