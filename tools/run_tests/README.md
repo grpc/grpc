@@ -14,6 +14,8 @@ Builds gRPC in given language and runs unit tests. Use `tools/run_tests/run_test
 - `--use_docker` Builds a docker container containing all the prerequisites for given language and runs the tests under that container.
 - `--build_only` Only build, do not run the tests.
 
+Note: some tests may fail due to flakiness. Check the "Issues" tab for known flakes and other issues.
+
 # Interop tests (run_interop_tests.py)
 
 Runs tests for cross-platform/cross-language interoperability. For more details, see [Interop tests descriptions](/doc/interop-test-descriptions.md)
