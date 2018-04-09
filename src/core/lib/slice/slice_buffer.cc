@@ -75,7 +75,12 @@ void grpc_slice_buffer_destroy_internal(grpc_slice_buffer* sb) {
 }
 
 void grpc_slice_buffer_destroy(grpc_slice_buffer* sb) {
-  grpc_slice_buffer_destroy_internal(sb);
+  if (grpc_core::ExecCtx::Get() == nullptr) {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_slice_buffer_destroy_internal(sb);
+  } else {
+    grpc_slice_buffer_destroy_internal(sb);
+  }
 }
 
 uint8_t* grpc_slice_buffer_tiny_add(grpc_slice_buffer* sb, size_t n) {
@@ -175,7 +180,12 @@ void grpc_slice_buffer_reset_and_unref_internal(grpc_slice_buffer* sb) {
 }
 
 void grpc_slice_buffer_reset_and_unref(grpc_slice_buffer* sb) {
-  grpc_slice_buffer_reset_and_unref_internal(sb);
+  if (grpc_core::ExecCtx::Get() == nullptr) {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_slice_buffer_reset_and_unref_internal(sb);
+  } else {
+    grpc_slice_buffer_reset_and_unref_internal(sb);
+  }
 }
 
 void grpc_slice_buffer_swap(grpc_slice_buffer* a, grpc_slice_buffer* b) {
