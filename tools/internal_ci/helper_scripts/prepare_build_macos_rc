@@ -15,8 +15,6 @@
 
 # Source this rc script to prepare the environment for macos builds
 
-tools/internal_ci/helper_scripts/gen_report_index.sh
-
 sudo launchctl limit maxfiles unlimited unlimited
 
 # show current maxfiles
