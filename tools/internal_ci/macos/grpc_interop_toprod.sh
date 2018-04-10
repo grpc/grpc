@@ -29,5 +29,7 @@ export GRPC_DEFAULT_SSL_ROOTS_FILE_PATH="$(pwd)/etc/roots.pem"
 # NOTE: only tests a subset of languages for time & dependency constraints
 # building all languages in the same working copy can also lead to conflicts
 # due to different compilation flags
-# TODO(jtattermusch): add --cloud_to_prod_auth support
-tools/run_tests/run_interop_tests.py -l c++ --cloud_to_prod -t -j 4
+tools/run_tests/run_interop_tests.py -l c++ \
+    --cloud_to_prod --cloud_to_prod_auth --prod_servers default gateway_v4 \
+    --service_account_key_file="${KOKORO_GFILE_DIR}/GrpcTesting-726eb1347f15.json" \
+    --skip_compute_engine_creds --internal_ci -t -j 4

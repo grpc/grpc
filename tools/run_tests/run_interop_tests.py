@@ -699,17 +699,29 @@ def bash_cmdline(cmdline):
     return ['bash', '-c', ' '.join(cmdline)]
 
 
-def auth_options(language, test_case):
+def compute_engine_creds_required(language, test_case):
+    """Returns True if given test requires access to compute engine creds."""
+    language = str(language)
+    if test_case == 'compute_engine_creds':
+        return True
+    if test_case == 'oauth2_auth_token' and language == 'c++':
+        # C++ oauth2 test uses GCE creds because C++ only supports JWT
+        return True
+    return False
+
+
+def auth_options(language, test_case, service_account_key_file=None):
     """Returns (cmdline, env) tuple with cloud_to_prod_auth test options."""
 
     language = str(language)
     cmdargs = []
     env = {}
 
-    # TODO(jtattermusch): this file path only works inside docker
-    key_filepath = '/root/service_account/GrpcTesting-726eb1347f15.json'
+    if not service_account_key_file:
+        # this file path only works inside docker
+        service_account_key_file = '/root/service_account/GrpcTesting-726eb1347f15.json'
     oauth_scope_arg = '--oauth_scope=https://www.googleapis.com/auth/xapi.zoo'
-    key_file_arg = '--service_account_key_file=%s' % key_filepath
+    key_file_arg = '--service_account_key_file=%s' % service_account_key_file
     default_account_arg = '--default_service_account=830293263384-compute@developer.gserviceaccount.com'
 
     if test_case in ['jwt_token_creds', 'per_rpc_creds', 'oauth2_auth_token']:
@@ -717,7 +729,7 @@ def auth_options(language, test_case):
                 'csharp', 'csharpcoreclr', 'node', 'php', 'php7', 'python',
                 'ruby', 'nodepurejs'
         ]:
-            env['GOOGLE_APPLICATION_CREDENTIALS'] = key_filepath
+            env['GOOGLE_APPLICATION_CREDENTIALS'] = service_account_key_file
         else:
             cmdargs += [key_file_arg]
 
@@ -750,7 +762,8 @@ def cloud_to_prod_jobspec(language,
                           server_host_detail,
                           docker_image=None,
                           auth=False,
-                          manual_cmd_log=None):
+                          manual_cmd_log=None,
+                          service_account_key_file=None):
     """Creates jobspec for cloud-to-prod interop test"""
     container_name = None
     cmdargs = [
@@ -761,7 +774,8 @@ def cloud_to_prod_jobspec(language,
     ]
     environ = dict(language.cloud_to_prod_env(), **language.global_env())
     if auth:
-        auth_cmdargs, auth_env = auth_options(language, test_case)
+        auth_cmdargs, auth_env = auth_options(language, test_case,
+                                              service_account_key_file)
         cmdargs += auth_cmdargs
         environ.update(auth_env)
     cmdline = bash_cmdline(language.client_cmd(cmdargs))
@@ -1069,6 +1083,12 @@ argp.add_argument(
     'Use servername=HOST:PORT to explicitly specify a server. E.g. csharp=localhost:50000',
     default=[])
 argp.add_argument(
+    '--service_account_key_file',
+    type=str,
+    help=
+    'Override the default service account key file to use for auth interop tests.',
+    default=None)
+argp.add_argument(
     '-t', '--travis', default=False, action='store_const', const=True)
 argp.add_argument(
     '-v', '--verbose', default=False, action='store_const', const=True)
@@ -1118,6 +1138,12 @@ argp.add_argument(
     nargs='?',
     const=True,
     help='Which transport security mechanism to use.')
+argp.add_argument(
+    '--skip_compute_engine_creds',
+    default=False,
+    action='store_const',
+    const=True,
+    help='Skip auth tests requiring access to compute engine credentials.')
 argp.add_argument(
     '--internal_ci',
     default=False,
@@ -1282,7 +1308,9 @@ try:
                                 server_host_name,
                                 prod_servers[server_host_name],
                                 docker_image=docker_images.get(str(language)),
-                                manual_cmd_log=client_manual_cmd_log)
+                                manual_cmd_log=client_manual_cmd_log,
+                                service_account_key_file=args.
+                                service_account_key_file)
                             jobs.append(test_job)
 
             if args.http2_interop:
@@ -1293,7 +1321,8 @@ try:
                         server_host_name,
                         prod_servers[server_host_name],
                         docker_image=docker_images.get(str(http2Interop)),
-                        manual_cmd_log=client_manual_cmd_log)
+                        manual_cmd_log=client_manual_cmd_log,
+                        service_account_key_file=args.service_account_key_file)
                     jobs.append(test_job)
 
     if args.cloud_to_prod_auth:
@@ -1302,16 +1331,21 @@ try:
         for server_host_name in args.prod_servers:
             for language in languages:
                 for test_case in _AUTH_TEST_CASES:
-                    if not test_case in language.unimplemented_test_cases():
-                        test_job = cloud_to_prod_jobspec(
-                            language,
-                            test_case,
-                            server_host_name,
-                            prod_servers[server_host_name],
-                            docker_image=docker_images.get(str(language)),
-                            auth=True,
-                            manual_cmd_log=client_manual_cmd_log)
-                        jobs.append(test_job)
+                    if (not args.skip_compute_engine_creds or
+                            not compute_engine_creds_required(
+                                language, test_case)):
+                        if not test_case in language.unimplemented_test_cases():
+                            test_job = cloud_to_prod_jobspec(
+                                language,
+                                test_case,
+                                server_host_name,
+                                prod_servers[server_host_name],
+                                docker_image=docker_images.get(str(language)),
+                                auth=True,
+                                manual_cmd_log=client_manual_cmd_log,
+                                service_account_key_file=args.
+                                service_account_key_file)
+                            jobs.append(test_job)
 
     for server in args.override_server:
         server_name = server[0]
