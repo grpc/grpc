@@ -2559,6 +2559,22 @@ $(GENDIR)/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc: src/proto/grpc/lb/v1/lo
 endif
 
 ifeq ($(NO_PROTOC),true)
+$(GENDIR)/src/proto/grpc/lb/v1/load_reporter.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/lb/v1/load_reporter.grpc.pb.cc: protoc_dep_error
+else
+
+$(GENDIR)/src/proto/grpc/lb/v1/load_reporter.pb.cc: src/proto/grpc/lb/v1/load_reporter.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/src/proto/grpc/lb/v1/load_reporter.grpc.pb.cc: src/proto/grpc/lb/v1/load_reporter.proto $(GENDIR)/src/proto/grpc/lb/v1/load_reporter.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
+endif
+
+ifeq ($(NO_PROTOC),true)
 $(GENDIR)/src/proto/grpc/reflection/v1alpha/reflection.pb.cc: protoc_dep_error
 $(GENDIR)/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc: protoc_dep_error
 else
@@ -7300,6 +7316,7 @@ endif
 
 
 LIBLB_LOAD_REPORTER_SRC = \
+    $(GENDIR)/src/proto/grpc/lb/v1/load_reporter.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_reporter.grpc.pb.cc \
     src/cpp/server/load_reporter/load_reporter.cc \
 
 PUBLIC_HEADERS_CXX += \
@@ -7365,6 +7382,7 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBLB_LOAD_REPORTER_OBJS:.o=.dep)
 endif
 endif
+$(OBJDIR)/$(CONFIG)/src/cpp/server/load_reporter/load_reporter.o: $(GENDIR)/src/proto/grpc/lb/v1/load_reporter.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_reporter.grpc.pb.cc
 
 
 LIBLB_LOAD_REPORTER_ASYNC_SERVICE_IMPL_SRC = \

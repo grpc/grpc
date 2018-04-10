@@ -7511,7 +7511,10 @@
       "lb_load_data_store"
     ], 
     "headers": [
-      "src/cpp/server/load_reporter/load_reporter.h"
+      "src/cpp/server/load_reporter/load_reporter.h", 
+      "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h", 
+      "src/proto/grpc/lb/v1/load_reporter.pb.h", 
+      "src/proto/grpc/lb/v1/load_reporter_mock.grpc.pb.h"
     ], 
     "is_filegroup": false, 
     "language": "c++", 

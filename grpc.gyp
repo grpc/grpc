@@ -1653,6 +1653,7 @@
         'lb_load_data_store',
       ],
       'sources': [
+        'src/proto/grpc/lb/v1/load_reporter.proto',
         'src/cpp/server/load_reporter/load_reporter.cc',
       ],
     },

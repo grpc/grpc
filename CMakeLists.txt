@@ -5021,7 +5021,12 @@ if (gRPC_INSTALL)
 endif()
 
 
+if (gRPC_BUILD_CODEGEN)
 add_library(lb_load_reporter
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_reporter.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_reporter.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_reporter.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_reporter.grpc.pb.h
   src/cpp/server/load_reporter/load_reporter.cc
 )
 
@@ -5036,6 +5041,9 @@ if(WIN32 AND MSVC)
   endif()
 endif()
 
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/lb/v1/load_reporter.proto
+)
 
 target_include_directories(lb_load_reporter
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -5057,6 +5065,7 @@ target_link_libraries(lb_load_reporter
   lb_load_data_store
 )
 
+endif (gRPC_BUILD_CODEGEN)
 
 
 if (gRPC_INSTALL)
