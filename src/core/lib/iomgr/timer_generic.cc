@@ -202,11 +202,19 @@ static void validate_non_pending_timer(grpc_timer* t) {
 
 #endif
 
+#if GPR_ARCH_64
+/* NOTE: TODO(sreek) - Currently the thread local storage support in grpc is
+   for intptr_t which means on 32-bit machines it is not wide enough to hold
+   grpc_millis which is 64-bit. Adding thread local support for 64 bit values
+   is a lot of work for very little gain. So we are currently restricting this
+   optimization to only 64 bit machines */
+
 /* Thread local variable that stores the deadline of the next timer the thread
  * has last-seen. This is an optimization to prevent the thread from checking
  * shared_mutables.min_timer (which requires acquiring shared_mutables.mu lock,
  * an expensive operation) */
 GPR_TLS_DECL(g_last_seen_min_timer);
+#endif
 
 struct shared_mutables {
   /* The deadline of the next timer due across all timer shards */
@@ -250,8 +258,11 @@ static void timer_list_init() {
   g_shared_mutables.checker_mu = GPR_SPINLOCK_INITIALIZER;
   gpr_mu_init(&g_shared_mutables.mu);
   g_shared_mutables.min_timer = grpc_core::ExecCtx::Get()->Now();
+
+#if GPR_ARCH_64
   gpr_tls_init(&g_last_seen_min_timer);
   gpr_tls_set(&g_last_seen_min_timer, 0);
+#endif
 
   for (i = 0; i < g_num_shards; i++) {
     timer_shard* shard = &g_shards[i];
@@ -280,7 +291,11 @@ static void timer_list_shutdown() {
     grpc_timer_heap_destroy(&shard->heap);
   }
   gpr_mu_destroy(&g_shared_mutables.mu);
+
+#if GPR_ARCH_64
   gpr_tls_destroy(&g_last_seen_min_timer);
+#endif
+
   gpr_free(g_shards);
   gpr_free(g_shard_queue);
   g_shared_mutables.initialized = false;
@@ -337,7 +352,7 @@ static void timer_init(grpc_timer* timer, grpc_millis deadline,
 #endif
 
   if (grpc_timer_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "TIMER %p: SET %" PRIdPTR " now %" PRId64 " call %p[%p]",
+    gpr_log(GPR_DEBUG, "TIMER %p: SET %" PRId64 " now %" PRId64 " call %p[%p]",
             timer, deadline, grpc_core::ExecCtx::Get()->Now(), closure,
             closure->cb);
   }
@@ -412,8 +427,10 @@ static void timer_init(grpc_timer* timer, grpc_millis deadline,
 }
 
 static void timer_consume_kick(void) {
-  /* force re-evaluation of last seeen min */
+#if GPR_ARCH_64
+  /* Force re-evaluation of last seen min */
   gpr_tls_set(&g_last_seen_min_timer, 0);
+#endif
 }
 
 static void timer_cancel(grpc_timer* timer) {
@@ -502,12 +519,12 @@ static grpc_timer* pop_one(timer_shard* shard, grpc_millis now) {
     timer = grpc_timer_heap_top(&shard->heap);
     if (grpc_timer_check_trace.enabled()) {
       gpr_log(GPR_DEBUG,
-              "  .. check top timer deadline=%" PRIdPTR " now=%" PRIdPTR,
+              "  .. check top timer deadline=%" PRId64 " now=%" PRId64,
               timer->deadline, now);
     }
     if (timer->deadline > now) return nullptr;
     if (grpc_timer_trace.enabled()) {
-      gpr_log(GPR_DEBUG, "TIMER %p: FIRE %" PRIdPTR "ms late via %s scheduler",
+      gpr_log(GPR_DEBUG, "TIMER %p: FIRE %" PRId64 "ms late via %s scheduler",
               timer, now - timer->deadline,
               timer->closure->scheduler->vtable->name);
     }
@@ -543,7 +560,9 @@ static grpc_timer_check_result run_some_expired_timers(grpc_millis now,
   grpc_timer_check_result result = GRPC_TIMERS_NOT_CHECKED;
 
   grpc_millis min_timer = gpr_atm_no_barrier_load(&g_shared_mutables.min_timer);
+#if GPR_ARCH_64
   gpr_tls_set(&g_last_seen_min_timer, min_timer);
+#endif
   if (now < min_timer) {
     if (next != nullptr) *next = GPR_MIN(*next, min_timer);
     return GRPC_TIMERS_CHECKED_AND_EMPTY;
@@ -608,17 +627,21 @@ static grpc_timer_check_result timer_check(grpc_millis* next) {
   // prelude
   grpc_millis now = grpc_core::ExecCtx::Get()->Now();
 
+#if GPR_ARCH_64
   /* fetch from a thread-local first: this avoids contention on a globally
      mutable cacheline in the common case */
   grpc_millis min_timer = gpr_tls_get(&g_last_seen_min_timer);
+#else
+  grpc_millis min_timer = gpr_atm_no_barrier_load(&g_shared_mutables.min_timer);
+#endif
+
   if (now < min_timer) {
     if (next != nullptr) {
       *next = GPR_MIN(*next, min_timer);
     }
     if (grpc_timer_check_trace.enabled()) {
-      gpr_log(GPR_DEBUG,
-              "TIMER CHECK SKIP: now=%" PRId64" min_timer=%" PRId64, now,
-              min_timer);
+      gpr_log(GPR_DEBUG, "TIMER CHECK SKIP: now=%" PRId64 " min_timer=%" PRId64,
+              now, min_timer);
     }
     return GRPC_TIMERS_CHECKED_AND_EMPTY;
   }
@@ -634,12 +657,12 @@ static grpc_timer_check_result timer_check(grpc_millis* next) {
     if (next == nullptr) {
       next_str = gpr_strdup("NULL");
     } else {
-      gpr_asprintf(&next_str, "%" PRIdPTR, *next);
+      gpr_asprintf(&next_str, "%" PRId64, *next);
     }
     gpr_log(GPR_DEBUG,
-            "TIMER CHECK BEGIN: now=%" PRIdPTR " next=%s tls_min=%" PRIdPTR
-            " glob_min=%" PRIdPTR,
-            now, next_str, gpr_tls_get(&g_last_seen_min_timer),
+            "TIMER CHECK BEGIN: now=%" PRId64 " next=%s tls_min=%" PRId64
+            " glob_min=%" PRId64,
+            now, next_str, min_timer,
             gpr_atm_no_barrier_load(&g_shared_mutables.min_timer));
     gpr_free(next_str);
   }
