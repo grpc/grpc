@@ -125,8 +125,12 @@ message Load {
 
   // The following values are counts or totals of call statistics that finished
   // with the given tag and user_id.
-  int64 num_calls_finished_without_error = 6;
-  int64 num_calls_finished_with_error = 7;
+  int64 num_calls_finished_without_error = 6;  // Calls with status OK.
+  int64 num_calls_finished_with_error = 7;  // Calls with status non-OK.
+  // Calls that finished with a status that maps to HTTP 5XX (see
+  // googleapis/google/rpc/code.proto). Note that this is a subset of
+  // num_calls_finished_with_error.
+  int64 num_calls_finished_with_server_error = 16;
 
   // Totals are from calls that with _and_ without error.
   int64 total_bytes_sent = 8;
