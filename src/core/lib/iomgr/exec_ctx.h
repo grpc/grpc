@@ -22,16 +22,17 @@
 #include <grpc/support/port_platform.h>
 
 #include <grpc/support/atm.h>
+#include <grpc/support/atm64.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/iomgr/closure.h"
 
-typedef int64_t grpc_millis;
+typedef gpr_atm64 grpc_millis;
 
-#define GRPC_MILLIS_INF_FUTURE INT64_MAX
-#define GRPC_MILLIS_INF_PAST INT64_MIN
+#define GRPC_MILLIS_INF_FUTURE GPR_ATM64_MAX
+#define GRPC_MILLIS_INF_PAST GPR_ATM64_MIN
 
 /** A workqueue represents a list of work to be executed asynchronously.
     Forward declared here to avoid a circular dependency with workqueue.h. */
