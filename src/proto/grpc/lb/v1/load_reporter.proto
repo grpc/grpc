@@ -20,19 +20,7 @@ syntax = "proto3";
 
 package grpc.lb.v1;
 
-message Duration {
-  // Signed seconds of the span of time. Must be from -315,576,000,000
-  // to +315,576,000,000 inclusive.
-  int64 seconds = 1;
-
-  // Signed fractions of a second at nanosecond resolution of the span
-  // of time. Durations less than one second are represented with a 0
-  // `seconds` field and a positive or negative `nanos` field. For durations
-  // of one second or more, a non-zero value for the `nanos` field must be
-  // of the same sign as the `seconds` field. Must be from -999,999,999
-  // to +999,999,999 inclusive.
-  int32 nanos = 2;
-}
+import "google/protobuf/duration.proto";
 
 // The LoadReporter service.
 service LoadReporter {
@@ -59,7 +47,7 @@ message InitialLoadReportRequest {
 
   // This interval defines how often the server should send load reports to
   // the load balancer.
-  Duration load_report_interval = 3;
+  google.protobuf.Duration load_report_interval = 3;
 }
 
 message LoadReportResponse {
@@ -93,7 +81,7 @@ message InitialLoadReportResponse {
 
   // Optional server_version should be a value that is modified (and
   // monotonically increased) when changes are made to the server
-  // implementation. In google3 this will be the original CL# of the change.
+  // implementation.
   int64 server_version = 3;
 }
 
@@ -143,7 +131,7 @@ message Load {
   // Totals are from calls that with _and_ without error.
   int64 total_bytes_sent = 8;
   int64 total_bytes_received = 9;
-  Duration total_latency = 10;
+  google.protobuf.Duration total_latency = 10;
 
   // Optional metrics reported for the call(s). Requires that metric_name is
   // unique.

@@ -17,22 +17,36 @@
  */
 
 #include "src/cpp/server/load_reporter/load_reporter_async_service_impl.h"
-#include <memory>
 
 namespace grpc {
 namespace load_reporter {
 
 LoadReporterAsyncServiceImpl::LoadReporterAsyncServiceImpl() {
-  // TODO(juanlishen): Use make_unique.
+#if defined(GPR_LINUX) || defined(GPR_WINDOWS)
   load_reporter_ = std::unique_ptr<LoadReporter>(new LoadReporter(
-      FEEDBACK_SAMPLE_WINDOW_SECONDS, new CensusViewProviderDefaultImpl(),
-      new CpuStatsProviderDefaultImpl()));
+      kFeedbackSampleWindowSeconds,
+      std::unique_ptr<CensusViewProvider>(new CensusViewProviderDefaultImpl()),
+      std::unique_ptr<CpuStatsProvider>(new CpuStatsProviderDefaultImpl())));
+#else
+  load_reporter_ = std::unique_ptr<LoadReporter>(new LoadReporter(
+      kFeedbackSampleWindowSeconds,
+      std::unique_ptr<CensusViewProvider>(new CensusViewProviderDefaultImpl()),
+      std::unique_ptr<CpuStatsProvider>(nullptr)));
+#endif
   FetchAndSample(true);
 }
 
-LoadReporterAsyncServiceImpl& LoadReporterAsyncServiceImpl::instance() {
-  static LoadReporterAsyncServiceImpl instance_;
+LoadReporterAsyncServiceImpl* LoadReporterAsyncServiceImpl::GetInstance() {
+  if (instance_ == nullptr) {
+    instance_ = new LoadReporterAsyncServiceImpl();
+  }
   return instance_;
+}
+
+void LoadReporterAsyncServiceImpl::ResetInstance() {
+  if (instance_ != nullptr) {
+    delete instance_;
+  }
 }
 
 LoadReporterAsyncServiceImpl::~LoadReporterAsyncServiceImpl() {
@@ -47,8 +61,8 @@ void LoadReporterAsyncServiceImpl::ScheduleNextFetchAndSample() {
                 std::placeholders::_1));
   auto next_fetch_and_sample_time =
       gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                   gpr_time_from_millis(
-                       FETCH_AND_SAMPLE_INTERVAL_SECONDS * 1000, GPR_TIMESPAN));
+                   gpr_time_from_millis(kFetchAndSampleIntervalSeconds * 1000,
+                                        GPR_TIMESPAN));
   next_fetch_and_sample_alarm_.Set(cq_.get(), next_fetch_and_sample_time,
                                    next_step);
   gpr_log(GPR_DEBUG, "[LRS %p] Next fetch-and-sample scheduled.", this);
@@ -79,7 +93,7 @@ void LoadReporterAsyncServiceImpl::Run() {
 }
 
 void LoadReporterAsyncServiceImpl::HandleRequests() {
-  new ReportLoadHandler();
+  new ReportLoadHandler(cq_.get(), &service_, load_reporter_.get());
   void* tag;
   bool ok;
   while (true) {
@@ -93,11 +107,17 @@ void LoadReporterAsyncServiceImpl::HandleRequests() {
   }
 }
 
-LoadReporterAsyncServiceImpl::ReportLoadHandler::ReportLoadHandler()
-    : stream_(&ctx_) {
+LoadReporterAsyncServiceImpl::ReportLoadHandler::ReportLoadHandler(
+    ServerCompletionQueue* cq,
+    grpc::lb::v1::LoadReporter::AsyncService* service,
+    LoadReporter* load_reporter)
+    : cq_(cq),
+      service_(service),
+      load_reporter_(load_reporter),
+      stream_(&ctx_) {
   auto next_step = new std::function<void(bool)>(std::bind(
       &ReportLoadHandler::OnRequestDelivered, this, std::placeholders::_1));
-  service_.RequestReportLoad(&ctx_, &stream_, cq_.get(), cq_.get(), next_step);
+  service->RequestReportLoad(&ctx_, &stream_, cq_, cq_, next_step);
 }
 
 void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnRequestDelivered(
@@ -109,13 +129,13 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnRequestDelivered(
   }
   // Spawn a new handler instance to serve the next new client. Every
   // handler instance will deallocate itself when it's done.
-  new ReportLoadHandler();
+  new ReportLoadHandler(cq_, service_, load_reporter_);
   // LB ID is unique for each load reporting stream.
   lb_id_ = load_reporter_->GenerateLbId();
   gpr_log(GPR_INFO,
           "[LRS %p] Load report request delivered (lb_id_: %s, handler: %p). "
           "Start reading request.",
-          &LoadReporterAsyncServiceImpl::instance(), lb_id_.c_str(), this);
+          LoadReporterAsyncServiceImpl::GetInstance(), lb_id_.c_str(), this);
   auto next_step = new std::function<void(bool)>(
       std::bind(&ReportLoadHandler::OnReadDone, this, std::placeholders::_1));
   stream_.Read(&request_, next_step);
@@ -128,12 +148,12 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnReadDone(bool ok) {
       if (!request_.has_initial_request()) {
         Shutdown();
       } else {
-        InitialLoadReportRequest initial_request = request_.initial_request();
+        const auto& initial_request = request_.initial_request();
         load_balanced_hostname_ = initial_request.load_balanced_hostname();
         load_key_ = initial_request.load_key();
         load_reporter_->ReportStreamCreated(load_balanced_hostname_, lb_id_,
                                             load_key_);
-        const Duration& load_report_interval =
+        const auto& load_report_interval =
             initial_request.load_report_interval();
         load_report_interval_ms_ =
             static_cast<uint64_t>(load_report_interval.seconds() * 1000 +
@@ -142,7 +162,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnReadDone(bool ok) {
         gpr_log(GPR_INFO,
                 "[LRS %p] Initial request received. Start load reporting (load "
                 "balanced host: %s, interval: %lu ms, lb_id_: %s, handler: %p)",
-                &LoadReporterAsyncServiceImpl::instance(),
+                LoadReporterAsyncServiceImpl::GetInstance(),
                 load_balanced_hostname_.c_str(), load_report_interval_ms_,
                 lb_id_.c_str(), this);
         SendReport(true /* ok */);
@@ -161,14 +181,16 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnReadDone(bool ok) {
       // Another request received! This violates the spec.
       gpr_log(GPR_ERROR,
               "[LRS %p] Another request received (lb_id_: %s, handler: %p).",
-              &LoadReporterAsyncServiceImpl::instance(), lb_id_.c_str(), this);
+              LoadReporterAsyncServiceImpl::GetInstance(), lb_id_.c_str(),
+              this);
     } else {
       // TODO(juanlishen): Use AsyncNotifyOnDone to distinguish.
       // The client may have half-closed the stream or the stream is broken.
       gpr_log(GPR_INFO,
               "[LRS %p] Stream was half-closed by the client or it's broken "
               "(lb_id_: %s, handler: %p).",
-              &LoadReporterAsyncServiceImpl::instance(), lb_id_.c_str(), this);
+              LoadReporterAsyncServiceImpl::GetInstance(), lb_id_.c_str(),
+              this);
     }
     Shutdown();
   }
@@ -186,7 +208,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::ScheduleNextReport(
   auto next_report_time = gpr_time_add(
       gpr_now(GPR_CLOCK_MONOTONIC),
       gpr_time_from_millis(load_report_interval_ms_, GPR_TIMESPAN));
-  next_report_alarm_.Set(cq_.get(), next_report_time, next_step);
+  next_report_alarm_.Set(cq_, next_report_time, next_step);
   // TODO(juanlishen): It's possible that this function (1) checks shutdown_
   // before Shutdown() sets that flag and (2) sets the alarm after Shutdown()
   // cancels the alarm. There might be cleaner way to fix this than
@@ -197,7 +219,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::ScheduleNextReport(
   }
   gpr_log(GPR_DEBUG,
           "[LRS %p] Next load report scheduled (lb_id_: %s, handler: %p).",
-          &LoadReporterAsyncServiceImpl::instance(), lb_id_.c_str(), this);
+          LoadReporterAsyncServiceImpl::GetInstance(), lb_id_.c_str(), this);
 }
 
 void LoadReporterAsyncServiceImpl::ReportLoadHandler::SendReport(bool ok) {
@@ -206,7 +228,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::SendReport(bool ok) {
     Shutdown();
     return;
   }
-  LoadReportResponse response;
+  ::grpc::lb::v1::LoadReportResponse response;
   auto loads = load_reporter_->GenerateLoads(load_balanced_hostname_, lb_id_);
   response.mutable_load()->Swap(&loads);
   auto feedback = load_reporter_->GenerateLoadBalancingFeedback();
@@ -214,21 +236,22 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::SendReport(bool ok) {
   if (!initial_response_sent_) {
     auto initial_response = response.mutable_initial_response();
     initial_response->set_load_balancer_id(lb_id_);
-    initial_response->set_implementation_id(InitialLoadReportResponse::CPP);
-    initial_response->set_server_version(VERSION);
+    initial_response->set_implementation_id(
+        ::grpc::lb::v1::InitialLoadReportResponse::CPP);
+    initial_response->set_server_version(kVersion);
     initial_response_sent_ = true;
   }
   auto next_step = new std::function<void(bool)>(std::bind(
       &ReportLoadHandler::ScheduleNextReport, this, std::placeholders::_1));
   gpr_log(GPR_INFO, "[LRS %p] Send load report (lb_id_: %s, handler: %p).",
-          &LoadReporterAsyncServiceImpl::instance(), lb_id_.c_str(), this);
+          LoadReporterAsyncServiceImpl::GetInstance(), lb_id_.c_str(), this);
   stream_.Write(response, next_step);
 }
 
 void LoadReporterAsyncServiceImpl::ReportLoadHandler::Shutdown() {
   gpr_log(GPR_INFO,
           "[LRS %p] Shutting down the handler (lb_id_: %s, handler: %p).",
-          &LoadReporterAsyncServiceImpl::instance(), lb_id_.c_str(), this);
+          LoadReporterAsyncServiceImpl::GetInstance(), lb_id_.c_str(), this);
   shutdown_ = true;
   if (initial_request_received_) {
     load_reporter_->ReportStreamClosed(load_balanced_hostname_, lb_id_);
@@ -244,7 +267,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnFinishDone(bool ok) {
     gpr_log(GPR_INFO,
             "[LRS %p] Load reporting finished (status ode: %d, status detail: "
             "%s, lb_id_: %s, handler: %p).",
-            &LoadReporterAsyncServiceImpl::instance(),
+            LoadReporterAsyncServiceImpl::GetInstance(),
             final_status_.error_code(), final_status_.error_details().c_str(),
             lb_id_.c_str(), this);
   }

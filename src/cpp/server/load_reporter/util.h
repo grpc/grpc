@@ -23,46 +23,36 @@
 #include <unordered_map>
 #include <vector>
 
-const grpc::string INVALID_LBID = "<INVALID_LBID_238dsb234890rb>";
+const grpc::string kInvalidLbId = "<INVALID_LBID_238dsb234890rb>";
 constexpr uint8_t LB_ID_LEN = 8;
 
 template <typename K, typename V>
-bool UnorderedMultimapEraseKeyValue(std::unordered_multimap<K, V>& map,
+bool UnorderedMapOfSetEraseKeyValue(std::unordered_map<K, std::set<V>>& map,
                                     const K& key, const V& value) {
-  auto range = map.equal_range(key);
-  for (auto it = range.first; it != range.second; ++it) {
-    if (it->second == value) {
-      map.erase(it);
-      return true;
-    }
-  }
-  return false;
+  return map.find(key) != map.end() ? map.find(key)->second.erase(value)
+                                    : false;
 };
 
 template <typename K, typename V>
-std::vector<K> UnorderedMultimapKeys(const std::unordered_multimap<K, V>& map) {
+std::set<K> UnorderedMapOfSetGetKeys(
+    const std::unordered_map<K, std::set<V>>& map) {
   std::set<K> keys;
   for (auto it : map) {
     keys.insert(it.first);
   }
-  return std::vector<K>(keys.begin(), keys.end());
+  return keys;
 };
 
 template <typename K, typename V>
-std::vector<V> UnorderedMultimapFindAll(
-    const std::unordered_multimap<K, V>& map, const K& key) {
-  std::vector<V> values;
-  auto range = map.equal_range(key);
-  for (auto it = range.first; it != range.second; ++it) {
-    values.push_back(it->second);
-  }
-  return values;
+std::set<V> UnorderedMapOfSetFindAll(
+    const std::unordered_map<K, std::set<V>>& map, const K& key) {
+  return map.find(key) != map.end() ? map.find(key)->second : std::set<V>();
 };
 
 template <typename K, typename V>
-std::vector<V> UnorderedMultimapRemoveAll(std::unordered_multimap<K, V>& map,
-                                          const K& key) {
-  std::vector<V> values = UnorderedMultimapFindAll(map, key);
+std::set<V> UnorderedMapOfSetExtract(std::unordered_map<K, std::set<V>>& map,
+                                     const K& key) {
+  auto values = UnorderedMapOfSetFindAll(map, key);
   map.erase(key);
   return values;
 };

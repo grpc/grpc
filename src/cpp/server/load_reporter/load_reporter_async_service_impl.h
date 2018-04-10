@@ -19,7 +19,7 @@
 #ifndef GRPC_SRC_CPP_SERVER_LOAD_REPORTER_REPORT_LOAD_HANDLER_H
 #define GRPC_SRC_CPP_SERVER_LOAD_REPORTER_REPORT_LOAD_HANDLER_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <grpc/support/log.h>
 #include <grpcpp/alarm.h>
@@ -27,11 +27,11 @@
 
 #include "src/cpp/server/load_reporter/load_reporter.h"
 
-constexpr uint32_t FEEDBACK_SAMPLE_WINDOW_SECONDS = 10;
-constexpr uint32_t FETCH_AND_SAMPLE_INTERVAL_SECONDS = 1;
+constexpr uint32_t kFeedbackSampleWindowSeconds = 10;
+constexpr uint32_t kFetchAndSampleIntervalSeconds = 1;
 // TODO(juanlishen): Update the version number with the PR number every time
-// there is any change.
-constexpr uint32_t VERSION = 15000;
+// there is any change to the server load reporter.
+constexpr uint32_t kVersion = 14793;
 
 namespace grpc {
 namespace load_reporter {
@@ -43,8 +43,11 @@ class LoadReporterAsyncServiceImpl {
  public:
   ~LoadReporterAsyncServiceImpl();
 
-  // Get the singleton instance.
-  static LoadReporterAsyncServiceImpl& instance();
+  // Gets the singleton instance.
+  static LoadReporterAsyncServiceImpl* GetInstance();
+
+  // Mirror method of GetInstance().
+  static void ResetInstance();
 
   // Builds up the server and starts handling incoming load reporting requests.
   void Run();
@@ -62,7 +65,9 @@ class LoadReporterAsyncServiceImpl {
    public:
     // When a new handler is constructed, it starts waiting for the next
     // load reporting request.
-    ReportLoadHandler();
+    ReportLoadHandler(ServerCompletionQueue* cq,
+                      grpc::lb::v1::LoadReporter::AsyncService* service,
+                      LoadReporter* load_reporter);
 
     // After a request is delivered to this handler, it starts reading the
     // request. Also, a new handler is spawned so that we can keep servicing
@@ -89,11 +94,17 @@ class LoadReporterAsyncServiceImpl {
     void Shutdown();
     // The data for RPC communication with the load reportee.
     ServerContext ctx_;
-    LoadReportRequest request_;
+    ::grpc::lb::v1::LoadReportRequest request_;
+    // The members passed down from LoadReporterAsyncServiceImpl.
+    ServerCompletionQueue* cq_;
+    grpc::lb::v1::LoadReporter::AsyncService* service_;
+    LoadReporter* load_reporter_;
     // Only one request is expected, so other request will never be answered
     // even if it is received.
-    LoadReportRequest subsequent_request_;
-    ServerAsyncReaderWriter<LoadReportResponse, LoadReportRequest> stream_;
+    ::grpc::lb::v1::LoadReportRequest subsequent_request_;
+    ServerAsyncReaderWriter<::grpc::lb::v1::LoadReportResponse,
+                            ::grpc::lb::v1::LoadReportRequest>
+        stream_;
     // The status of the RPC progress.
     std::atomic_bool shutdown_{false};
     std::atomic_bool initial_request_received_{false};
@@ -115,16 +126,20 @@ class LoadReporterAsyncServiceImpl {
   // Schedules next data fetching from Census.
   void ScheduleNextFetchAndSample();
 
-  // Fetch data from Census.
+  // Fetches data from Census.
   void FetchAndSample(bool ok);
 
-  static std::unique_ptr<ServerCompletionQueue> cq_;
-  static grpc::lb::v1::LoadReporter::AsyncService service_;
+  std::unique_ptr<ServerCompletionQueue> cq_;
   std::unique_ptr<Server> server_;
-  static std::unique_ptr<LoadReporter> load_reporter_;
+  grpc::lb::v1::LoadReporter::AsyncService service_;
+  std::unique_ptr<LoadReporter> load_reporter_;
 
   Alarm next_fetch_and_sample_alarm_;
+  // This has to be a raw pointer to be trivially destructible.
+  static LoadReporterAsyncServiceImpl* instance_;
 };
+
+LoadReporterAsyncServiceImpl* LoadReporterAsyncServiceImpl::instance_ = nullptr;
 
 }  // namespace load_reporter
 }  // namespace grpc

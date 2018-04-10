@@ -19,7 +19,7 @@
 #ifndef GRPC_SRC_CPP_SERVER_LOAD_REPORTER_LOAD_DATA_STORE_H
 #define GRPC_SRC_CPP_SERVER_LOAD_REPORTER_LOAD_DATA_STORE_H
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <grpc/support/port_platform.h>
 
 #include <memory>
 
@@ -41,7 +41,7 @@ namespace load_reporter {
 // The value of a customized call metric.
 class CallMetricValue {
  public:
-  CallMetricValue(uint64_t count, double total)
+  explicit CallMetricValue(uint64_t count = 0, double total = 0)
       : count_(count), total_(total) {}
 
   void MergeFrom(CallMetricValue other) {
@@ -54,8 +54,8 @@ class CallMetricValue {
   double total() const { return total_; }
 
  private:
-  uint64_t count_;
-  double total_;
+  uint64_t count_ = 0;
+  double total_ = 0;
 };
 
 // The key of a load record.
@@ -104,9 +104,9 @@ class LoadRecordKey {
 // The value of a load record.
 class LoadRecordValue {
  public:
-  LoadRecordValue(uint64_t start_count = 0, uint64_t ok_count = 0,
-                  uint64_t error_count = 0, double bytes_sent = 0,
-                  double bytes_recv = 0, double latency_ms = 0)
+  explicit LoadRecordValue(uint64_t start_count = 0, uint64_t ok_count = 0,
+                           uint64_t error_count = 0, double bytes_sent = 0,
+                           double bytes_recv = 0, double latency_ms = 0)
       : start_count_(start_count),
         ok_count_(ok_count),
         error_count_(error_count),
@@ -121,15 +121,9 @@ class LoadRecordValue {
     bytes_sent_ += other.bytes_sent_;
     bytes_recv_ += other.bytes_recv_;
     latency_ms_ += other.latency_ms_;
-    for (auto other_call_metric : other.call_metrics_) {
-      grpc::string metric_name = other_call_metric.first;
-      CallMetricValue other_metric_value = other_call_metric.second;
-      auto it_this_metric = call_metrics_.find(metric_name);
-      if (it_this_metric == call_metrics_.end()) {
-        call_metrics_.insert({metric_name, other_metric_value});
-      } else {
-        it_this_metric->second.MergeFrom(other_metric_value);
-      }
+    for (const auto& p : other.call_metrics_) {
+      call_metrics_.insert({p.first, CallMetricValue()})
+          .first->second.MergeFrom(p.second);
     }
   }
 
@@ -179,6 +173,8 @@ class PerBalancerStore {
   PerBalancerStore(grpc::string lb_id, grpc::string load_key)
       : lb_id_(std::move(lb_id)), load_key_(std::move(load_key)) {}
 
+  // Merge a load record with the given key and value if the store is not
+  // suspended.
   void MergeRow(const LoadRecordKey& key, const LoadRecordValue& value);
 
   bool IsSuspended() const { return suspended_; }
@@ -193,13 +189,6 @@ class PerBalancerStore {
 
   uint64_t GetNumCallsInProgressForReport();
 
-  std::unordered_map<LoadRecordKey, LoadRecordValue, LoadRecordKey::Hasher>&
-  container() {
-    return container_;
-  }
-
-  void ClearContainer() { container_.clear(); }
-
   grpc::string ToString() {
     return "[PerBalancerStore lb_id_=" + lb_id_ + " load_key_=" + load_key_ +
            "]";
@@ -208,6 +197,10 @@ class PerBalancerStore {
   // Getters.
   const grpc::string& lb_id() const { return lb_id_; }
   const grpc::string& load_key() const { return load_key_; }
+  std::unordered_map<LoadRecordKey, LoadRecordValue, LoadRecordKey::Hasher>&
+  container() {
+    return container_;
+  }
 
  private:
   grpc::string lb_id_;
@@ -223,23 +216,35 @@ class PerBalancerStore {
 // Stores the data associated with a particular host.
 class PerHostStore {
  public:
-  void ReportStreamCreated(grpc::string lb_id, grpc::string load_key);
+  // When a report stream is created, a PerBalancerStore is created for the
+  // LB ID (guaranteed unique) associated with that stream. If it is the only
+  // active store, adopt all the orphaned stores. If it is the first created
+  // store, adopt the store of kInvalidLbId.
+  void ReportStreamCreated(const grpc::string& lb_id,
+                           const grpc::string& load_key);
 
-  void ReportStreamClosed(grpc::string lb_id);
+  // When a report stream is closed, the PerBalancerStores assigned to the
+  // associate LB ID need to be re-assigned to other active balancers,
+  // ideally with the same load key. If there is no active balancer, we have
+  // to suspend those stores and drop the incoming load data until they are
+  // resumed.
+  void ReportStreamClosed(const grpc::string& lb_id);
 
   std::shared_ptr<PerBalancerStore> FindPerBalancerStore(
       const grpc::string& lb_id) const;
 
-  const std::vector<std::shared_ptr<PerBalancerStore>> GetAssignedStores(
+  const std::set<std::shared_ptr<PerBalancerStore>> GetAssignedStores(
       const grpc::string& lb_id) const;
 
  private:
-  void InternalAddLb(grpc::string lb_id, grpc::string load_key);
+  // Creates a PerBalancerStore for the given LB ID, assigns the store to
+  // itself, and records the LB ID to the load key.
+  void InternalAddLb(const grpc::string& lb_id, const grpc::string& load_key);
 
   void AssignOrphanedStore(std::shared_ptr<PerBalancerStore> orphaned_store,
-                           grpc::string new_receiver);
+                           const grpc::string& new_receiver);
 
-  std::unordered_multimap<grpc::string, grpc::string>
+  std::unordered_map<grpc::string, std::set<grpc::string>>
       load_key_to_receiving_lb_ids_;
 
   // Key: LB ID. The key set includes all the LB IDs that have been
@@ -249,7 +254,7 @@ class PerHostStore {
 
   // Key: LB ID. The key set includes the LB IDs of the balancers that are
   // currently receiving report.
-  std::unordered_multimap<grpc::string, std::shared_ptr<PerBalancerStore>>
+  std::unordered_map<grpc::string, std::set<std::shared_ptr<PerBalancerStore>>>
       assigned_stores_;
 };
 
@@ -265,23 +270,30 @@ class PerHostStore {
 class LoadDataStore {
  public:
   std::shared_ptr<PerBalancerStore> FindPerBalancerStore(
-      const string& hostname, const string& lb_id) const;
+      const grpc::string& hostname, const grpc::string& lb_id) const;
 
-  void MergeRow(grpc::string hostname, LoadRecordKey key,
-                LoadRecordValue value);
-
-  bool IsTrackedUnknownBalancerId(const grpc::string& lb_id) const {
-    return unknown_balancer_id_trackers.find(lb_id) !=
-           unknown_balancer_id_trackers.end();
-  }
-
-  const std::vector<std::shared_ptr<PerBalancerStore>> GetAssignedStores(
+  const std::set<std::shared_ptr<PerBalancerStore>> GetAssignedStores(
       const string& hostname, const string& lb_id);
 
-  void ReportStreamCreated(grpc::string hostname, grpc::string lb_id,
-                           grpc::string load_key);
+  // If a PerBalancerStore can be found by the hostname and LB ID in
+  // LoadRecordKey, the load data will be merged to that store. Otherwise,
+  // only track the number of the in-progress calls for this unknown LB ID.
+  void MergeRow(const grpc::string& hostname, const LoadRecordKey& key,
+                const LoadRecordValue& value);
 
-  void ReportStreamClosed(grpc::string hostname, grpc::string lb_id);
+  bool IsTrackedUnknownBalancerId(const grpc::string& lb_id) const {
+    return unknown_balancer_id_trackers_.find(lb_id) !=
+           unknown_balancer_id_trackers_.end();
+  }
+
+  // Wrapper around PerHostStore::ReportStreamCreated.
+  void ReportStreamCreated(const grpc::string& hostname,
+                           const grpc::string& lb_id,
+                           const grpc::string& load_key);
+
+  // Wrapper around PerHostStore::ReportStreamClosed.
+  void ReportStreamClosed(const grpc::string& hostname,
+                          const grpc::string& lb_id);
 
  private:
   // Buffered data that was fetched from Census but hasn't been sent to
@@ -289,7 +301,8 @@ class LoadDataStore {
   // delete the data once it's returned.
   std::unordered_map<grpc::string, PerHostStore> per_host_stores_;
 
-  std::unordered_map<grpc::string, uint64_t> unknown_balancer_id_trackers;
+  // Tracks the number of in-progress calls for each unknown LB ID.
+  std::unordered_map<grpc::string, uint64_t> unknown_balancer_id_trackers_;
 };
 
 }  // namespace load_reporter
