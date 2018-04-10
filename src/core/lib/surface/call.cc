@@ -878,8 +878,8 @@ static void set_encodings_accepted_by_peer(grpc_call* call, grpc_mdelem mdel,
     } else {
       char* accept_encoding_entry_str =
           grpc_slice_to_c_string(accept_encoding_entry_slice);
-      gpr_log(GPR_ERROR,
-              "Invalid entry in accept encoding metadata: '%s'. Ignoring.",
+      gpr_log(GPR_DEBUG,
+              "Unknown entry in accept encoding metadata: '%s'. Ignoring.",
               accept_encoding_entry_str);
       gpr_free(accept_encoding_entry_str);
     }

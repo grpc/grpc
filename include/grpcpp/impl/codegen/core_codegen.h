@@ -73,6 +73,7 @@ class CoreCodegen final : public CoreCodegenInterface {
 
   grpc_byte_buffer* grpc_byte_buffer_copy(grpc_byte_buffer* bb) override;
   void grpc_byte_buffer_destroy(grpc_byte_buffer* bb) override;
+  size_t grpc_byte_buffer_length(grpc_byte_buffer* bb) override;
 
   int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader* reader,
                                    grpc_byte_buffer* buffer) override;
@@ -86,6 +87,8 @@ class CoreCodegen final : public CoreCodegenInterface {
   grpc_slice grpc_slice_new_with_user_data(void* p, size_t len,
                                            void (*destroy)(void*),
                                            void* user_data) override;
+  grpc_slice grpc_slice_new_with_len(void* p, size_t len,
+                                     void (*destroy)(void*, size_t)) override;
   grpc_slice grpc_empty_slice() override;
   grpc_slice grpc_slice_malloc(size_t length) override;
   void grpc_slice_unref(grpc_slice slice) override;
