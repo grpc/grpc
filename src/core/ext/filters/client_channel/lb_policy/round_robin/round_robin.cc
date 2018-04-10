@@ -155,11 +155,11 @@ class RoundRobin : public LoadBalancingPolicy {
     // If this subchannel list is the RR policy's current subchannel
     // list, updates the RR policy's connectivity state based on the
     // subchannel list's state counters.
-    void MaybeUpdateConnectivityStateLocked();
+    void MaybeUpdateRoundRobinConnectivityStateLocked();
 
     // Updates the RR policy's overall state based on the counters of
     // subchannels in each state.
-    void UpdateOverallStateLocked();
+    void UpdateRoundRobinStateFromSubchannelStateCountsLocked();
 
    private:
     bool started_watching_ = false;
@@ -457,19 +457,20 @@ void RoundRobin::RoundRobinSubchannelList::StartWatchingLocked() {
   //   re-resolution would cause a new update, and the new update would
   //   immediately trigger a new re-resolution).
   //
-  // - It will not call UpdateOverallStateLocked(); instead, we call
-  //   that here after all subchannels have been checked.  This allows us
-  //   to act more intelligently based on the state of all subchannels,
-  //   rather than just acting on the first one.  For example, if there is
-  //   more than one pending pick, this allows us to spread the picks
-  //   across all READY subchannels rather than sending them all to the
-  //   first subchannel that reports READY.
+  // - It will not call UpdateRoundRobinStateFromSubchannelStateCountsLocked();
+  //   instead, we call that here after all subchannels have been checked.
+  //   This allows us to act more intelligently based on the state of all
+  //   subchannels, rather than just acting on the first one.  For example,
+  //   if there is more than one pending pick, this allows us to spread the
+  //   picks across all READY subchannels rather than sending them all to
+  //   the first subchannel that reports READY.
   for (size_t i = 0; i < num_subchannels(); ++i) {
     subchannel(i)->CheckConnectivityStateLocked();
   }
-  // Now set started_watching_ to true and call UpdateOverallStateLocked().
+  // Now set started_watching_ to true and call
+  // UpdateRoundRobinStateFromSubchannelStateCountsLocked().
   started_watching_ = true;
-  UpdateOverallStateLocked();
+  UpdateRoundRobinStateFromSubchannelStateCountsLocked();
   // Start connectivity watch for each subchannel.
   for (size_t i = 0; i < num_subchannels(); i++) {
     if (subchannel(i)->subchannel() != nullptr) {
@@ -508,7 +509,7 @@ void RoundRobin::RoundRobinSubchannelList::UpdateStateCountersLocked(
 // Sets the RR policy's connectivity state based on the current
 // subchannel list.
 void RoundRobin::RoundRobinSubchannelList::
-    MaybeUpdateConnectivityStateLocked() {
+    MaybeUpdateRoundRobinConnectivityStateLocked() {
   RoundRobin* p = static_cast<RoundRobin*>(policy());
   // Only set connectivity state if this is the current subchannel list.
   if (p->subchannel_list_ != this) return;
@@ -543,12 +544,13 @@ void RoundRobin::RoundRobinSubchannelList::
   }
 }
 
-void RoundRobin::RoundRobinSubchannelList::UpdateOverallStateLocked() {
+void RoundRobin::RoundRobinSubchannelList::
+    UpdateRoundRobinStateFromSubchannelStateCountsLocked() {
   RoundRobin* p = static_cast<RoundRobin*>(policy());
   if (num_ready_ > 0) {
     if (p->subchannel_list_ != this) {
       // Promote this list to p->subchannel_list_.
-      // This list must be p->latest_pending_subchannel_list_, because we
+      // This list must be p->latest_pending_subchannel_list_, because
       // any previous update would have been shut down already and
       // therefore weeded out in ProcessConnectivityChangeLocked().
       GPR_ASSERT(p->latest_pending_subchannel_list_ == this);
@@ -575,7 +577,7 @@ void RoundRobin::RoundRobinSubchannelList::UpdateOverallStateLocked() {
     p->DrainPendingPicksLocked();
   }
   // Update the RR policy's connectivity state if needed.
-  MaybeUpdateConnectivityStateLocked();
+  MaybeUpdateRoundRobinConnectivityStateLocked();
 }
 
 void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
@@ -638,7 +640,7 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
   prev_connectivity_state_ = connectivity_state();
   // If we've started watching, update overall state and renew notification.
   if (subchannel_list()->started_watching()) {
-    subchannel_list()->UpdateOverallStateLocked();
+    subchannel_list()->UpdateRoundRobinStateFromSubchannelStateCountsLocked();
     StartConnectivityWatchLocked();
   }
   GRPC_ERROR_UNREF(error);
