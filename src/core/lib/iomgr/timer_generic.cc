@@ -218,7 +218,7 @@ GPR_TLS_DECL(g_last_seen_min_timer);
 
 struct shared_mutables {
   /* The deadline of the next timer due across all timer shards */
-  gpr_atm64 min_timer;
+  grpc_millis min_timer;
   /* Allow only one run_some_expired_timers at once */
   gpr_spinlock checker_mu;
   bool initialized;
@@ -418,7 +418,14 @@ static void timer_init(grpc_timer* timer, grpc_millis deadline,
       shard->min_deadline = deadline;
       note_deadline_change(shard);
       if (shard->shard_queue_index == 0 && deadline < old_min_deadline) {
-        gpr_atm64_no_barrier_store(&g_shared_mutables.min_timer, deadline);
+#if GPR_ARCH_64
+        gpr_atm_no_barrier_store(&g_shared_mutables.min_timer, deadline);
+#else
+        // On a 32-bit system, gpr_atm_no_barrier_store does not work on 64-bit
+        // types (like grpc_millis). So all reads and writes to
+        // g_shared_mutables.min_timer varialbe under g_shared_mutables.mu
+        g_shared_mutables.min_timer = deadline;
+#endif
         grpc_kick_poller();
       }
     }
@@ -559,10 +566,16 @@ static grpc_timer_check_result run_some_expired_timers(grpc_millis now,
                                                        grpc_error* error) {
   grpc_timer_check_result result = GRPC_TIMERS_NOT_CHECKED;
 
-  grpc_millis min_timer =
-      gpr_atm64_no_barrier_load(&g_shared_mutables.min_timer);
 #if GPR_ARCH_64
+  grpc_millis min_timer =
+      gpr_atm_no_barrier_load(&g_shared_mutables.min_timer);
   gpr_tls_set(&g_last_seen_min_timer, min_timer);
+#else
+  // On a 32-bit system, gpr_atm_no_barrier_load does not work on 64-bit types
+  // (like grpc_millis). So we need to do the read under g_shared_mutables.mu
+  gpr_mu_lock(&g_shared_mutables.mu);
+  grpc_millis min_timer = g_shared_mutables.min_timer;
+  gpr_mu_unlock(&g_shared_mutables.mu);
 #endif
   if (now < min_timer) {
     if (next != nullptr) *next = GPR_MIN(*next, min_timer);
@@ -613,8 +626,15 @@ static grpc_timer_check_result run_some_expired_timers(grpc_millis now,
       *next = GPR_MIN(*next, g_shard_queue[0]->min_deadline);
     }
 
-    gpr_atm64_no_barrier_store(&g_shared_mutables.min_timer,
+#if GPR_ARCH_64
+    gpr_atm_no_barrier_store(&g_shared_mutables.min_timer,
                                g_shard_queue[0]->min_deadline);
+#else
+    // On a 32-bit system, gpr_atm_no_barrier_store does not work on 64-bit
+    // types (like grpc_millis). So all reads and writes to
+    // g_shared_mutables.min_timer are done under g_shared_mutables.mu
+    g_shared_mutables.min_timer = g_shard_queue[0]->min_deadline;
+#endif
     gpr_mu_unlock(&g_shared_mutables.mu);
     gpr_spinlock_unlock(&g_shared_mutables.checker_mu);
   }
@@ -633,8 +653,14 @@ static grpc_timer_check_result timer_check(grpc_millis* next) {
      mutable cacheline in the common case */
   grpc_millis min_timer = gpr_tls_get(&g_last_seen_min_timer);
 #else
-  grpc_millis min_timer =
-      gpr_atm64_no_barrier_load(&g_shared_mutables.min_timer);
+  // On a 32-bit system, we do not have thread local support for 64-bit types.
+  // Directly read the valye from g_shared_mutables.min_timer
+  // Also, note that on 32-bit systems, gpr_atm_no_barrier_store does not work
+  // on 64-bit types like grpc_millis. So all reads and writes to
+  // g_shared_mutables.min_timer are done under g_shared_mutables.mu
+  gpr_mu_lock(&g_shared_mutables.mu);
+  grpc_millis min_timer = g_shared_mutables.min_timer;
+  gpr_mu_unlock(&g_shared_mutables.mu);
 #endif
 
   if (now < min_timer) {
@@ -661,11 +687,17 @@ static grpc_timer_check_result timer_check(grpc_millis* next) {
     } else {
       gpr_asprintf(&next_str, "%" PRId64, *next);
     }
+#if GPR_ARCH_64
     gpr_log(GPR_DEBUG,
             "TIMER CHECK BEGIN: now=%" PRId64 " next=%s tls_min=%" PRId64
             " glob_min=%" PRId64,
             now, next_str, min_timer,
             gpr_atm_no_barrier_load(&g_shared_mutables.min_timer));
+#else
+    gpr_log(GPR_DEBUG,
+            "TIMER CHECK BEGIN: now=%" PRId64 " next=%s min=%" PRId64, now,
+            next_str, min_timer);
+#endif
     gpr_free(next_str);
   }
   // actual code
