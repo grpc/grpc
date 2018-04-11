@@ -1,0 +1,8 @@
+set noparent
+
+# These owners are in place to because our test runners are non-trivial
+# and bad changes can cause lot of stuff fail silently.
+
+@jtattermusch
+@matt-kwong
+@dgquintas

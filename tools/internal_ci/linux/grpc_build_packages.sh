@@ -30,6 +30,7 @@ set -ex
 # where they can be accessed from within a docker container that builds
 # the packages
 mv ${KOKORO_GFILE_DIR}/github/grpc/artifacts input_artifacts || true
+chmod +x input_artifacts/protoc*/* || true
 ls -R input_artifacts || true
 
 tools/run_tests/task_runner.py -f package linux -j 6

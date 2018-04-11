@@ -637,11 +637,13 @@ if (PHP_GRPC != "no") {
   EXTENSION("grpc", grpc_source, null,
     "/DOPENSSL_NO_ASM /D_GNU_SOURCE /DWIN32_LEAN_AND_MEAN "+
     "/D_HAS_EXCEPTIONS=0 /DNOMINMAX /DGRPC_ARES=0 /D_WIN32_WINNT=0x600 "+
+    "/DPB_FIELD_16BIT "+
     "/I"+configure_module_dirname+" "+
     "/I"+configure_module_dirname+"\\include "+
     "/I"+configure_module_dirname+"\\src\\php\\ext\\grpc "+
     "/I"+configure_module_dirname+"\\third_party\\boringssl\\include "+
-    "/I"+configure_module_dirname+"\\third_party\\zlib");
+    "/I"+configure_module_dirname+"\\third_party\\zlib "+
+    "/I"+configure_module_dirname+"\\third_party\\address_sorting\\include");
 
   base_dir = get_define('BUILD_DIR');
   FSO.CreateFolder(base_dir+"\\ext");

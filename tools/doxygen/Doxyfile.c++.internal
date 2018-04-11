@@ -956,6 +956,8 @@ include/grpcpp/impl/codegen/create_auth_context.h \
 include/grpcpp/impl/codegen/grpc_library.h \
 include/grpcpp/impl/codegen/metadata_map.h \
 include/grpcpp/impl/codegen/method_handler_impl.h \
+include/grpcpp/impl/codegen/proto_buffer_reader.h \
+include/grpcpp/impl/codegen/proto_buffer_writer.h \
 include/grpcpp/impl/codegen/proto_utils.h \
 include/grpcpp/impl/codegen/rpc_method.h \
 include/grpcpp/impl/codegen/rpc_service_method.h \
@@ -994,6 +996,8 @@ include/grpcpp/support/async_unary_call.h \
 include/grpcpp/support/byte_buffer.h \
 include/grpcpp/support/channel_arguments.h \
 include/grpcpp/support/config.h \
+include/grpcpp/support/proto_buffer_reader.h \
+include/grpcpp/support/proto_buffer_writer.h \
 include/grpcpp/support/slice.h \
 include/grpcpp/support/status.h \
 include/grpcpp/support/status_code_enum.h \
@@ -1209,7 +1213,6 @@ src/cpp/server/thread_pool_interface.h \
 src/cpp/thread_manager/thread_manager.cc \
 src/cpp/thread_manager/thread_manager.h \
 src/cpp/util/byte_buffer_cc.cc \
-src/cpp/util/slice_cc.cc \
 src/cpp/util/status.cc \
 src/cpp/util/string_ref.cc \
 src/cpp/util/time_cc.cc \
