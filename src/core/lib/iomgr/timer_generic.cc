@@ -218,7 +218,7 @@ GPR_TLS_DECL(g_last_seen_min_timer);
 
 struct shared_mutables {
   /* The deadline of the next timer due across all timer shards */
-  grpc_millis min_timer;
+  gpr_atm64 min_timer;
   /* Allow only one run_some_expired_timers at once */
   gpr_spinlock checker_mu;
   bool initialized;
@@ -418,7 +418,7 @@ static void timer_init(grpc_timer* timer, grpc_millis deadline,
       shard->min_deadline = deadline;
       note_deadline_change(shard);
       if (shard->shard_queue_index == 0 && deadline < old_min_deadline) {
-        gpr_atm_no_barrier_store(&g_shared_mutables.min_timer, deadline);
+        gpr_atm64_no_barrier_store(&g_shared_mutables.min_timer, deadline);
         grpc_kick_poller();
       }
     }
@@ -559,7 +559,8 @@ static grpc_timer_check_result run_some_expired_timers(grpc_millis now,
                                                        grpc_error* error) {
   grpc_timer_check_result result = GRPC_TIMERS_NOT_CHECKED;
 
-  grpc_millis min_timer = gpr_atm_no_barrier_load(&g_shared_mutables.min_timer);
+  grpc_millis min_timer =
+      gpr_atm64_no_barrier_load(&g_shared_mutables.min_timer);
 #if GPR_ARCH_64
   gpr_tls_set(&g_last_seen_min_timer, min_timer);
 #endif
@@ -612,8 +613,8 @@ static grpc_timer_check_result run_some_expired_timers(grpc_millis now,
       *next = GPR_MIN(*next, g_shard_queue[0]->min_deadline);
     }
 
-    gpr_atm_no_barrier_store(&g_shared_mutables.min_timer,
-                             g_shard_queue[0]->min_deadline);
+    gpr_atm64_no_barrier_store(&g_shared_mutables.min_timer,
+                               g_shard_queue[0]->min_deadline);
     gpr_mu_unlock(&g_shared_mutables.mu);
     gpr_spinlock_unlock(&g_shared_mutables.checker_mu);
   }
@@ -632,7 +633,8 @@ static grpc_timer_check_result timer_check(grpc_millis* next) {
      mutable cacheline in the common case */
   grpc_millis min_timer = gpr_tls_get(&g_last_seen_min_timer);
 #else
-  grpc_millis min_timer = gpr_atm_no_barrier_load(&g_shared_mutables.min_timer);
+  grpc_millis min_timer =
+      gpr_atm64_no_barrier_load(&g_shared_mutables.min_timer);
 #endif
 
   if (now < min_timer) {

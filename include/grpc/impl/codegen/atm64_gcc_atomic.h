@@ -31,8 +31,8 @@ typedef int64_t gpr_atm64;
 #define GPR_ATM64_MAX INT64_MAX
 #define GPR_ATM64_MIN INT64_MIN
 
-#define gpr_atm_no_barrier_load(p) (__atomic_load_n((p), __ATOMIC_RELAXED))
-#define gpr_atm_no_barrier_store(p, value) \
+#define gpr_atm64_no_barrier_load(p) (__atomic_load_n((p), __ATOMIC_RELAXED))
+#define gpr_atm64_no_barrier_store(p, value) \
   (__atomic_store_n((p), (int64_t)(value), __ATOMIC_RELAXED))
 
 #ifdef __cplusplus
