@@ -1878,7 +1878,7 @@ libs:
   deps:
   - interop_server_lib
 - name: lb_load_data_store
-  build: all
+  build: private
   language: c++
   headers:
   - src/cpp/server/load_reporter/load_data_store.h
@@ -1888,10 +1888,11 @@ libs:
   deps:
   - grpc++
 - name: lb_load_reporter
-  build: all
+  build: private
   language: c++
   headers:
   - src/cpp/server/load_reporter/load_reporter.h
+  - src/proto/grpc/lb/v1/load_reporter.grpc.pb.h
   src:
   - src/proto/grpc/lb/v1/load_reporter.proto
   - src/cpp/server/load_reporter/load_reporter.cc
@@ -1899,10 +1900,11 @@ libs:
   - grpc++
   - lb_load_data_store
 - name: lb_load_reporter_async_service_impl
-  build: all
+  build: private
   language: c++
   headers:
   - src/cpp/server/load_reporter/load_reporter_async_service_impl.h
+  - src/proto/grpc/lb/v1/load_reporter.grpc.pb.h
   src:
   - src/proto/grpc/lb/v1/load_reporter.proto
   - src/cpp/server/load_reporter/load_reporter_async_service_impl.cc

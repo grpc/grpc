@@ -4974,6 +4974,7 @@ target_link_libraries(interop_server_main
 
 
 endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
 
 add_library(lb_load_data_store
   src/cpp/server/load_reporter/load_data_store.cc
@@ -5001,6 +5002,10 @@ target_include_directories(lb_load_data_store
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -5011,15 +5016,8 @@ target_link_libraries(lb_load_data_store
 )
 
 
-
-if (gRPC_INSTALL)
-  install(TARGETS lb_load_data_store EXPORT gRPCTargets
-    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
-  )
-endif()
-
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
 
 if (gRPC_BUILD_CODEGEN)
 add_library(lb_load_reporter
@@ -5055,6 +5053,10 @@ target_include_directories(lb_load_reporter
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -5067,17 +5069,15 @@ target_link_libraries(lb_load_reporter
 
 endif (gRPC_BUILD_CODEGEN)
 
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
 
-if (gRPC_INSTALL)
-  install(TARGETS lb_load_reporter EXPORT gRPCTargets
-    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
-  )
-endif()
-
-
+if (gRPC_BUILD_CODEGEN)
 add_library(lb_load_reporter_async_service_impl
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_reporter.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_reporter.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_reporter.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_reporter.grpc.pb.h
   src/cpp/server/load_reporter/load_reporter_async_service_impl.cc
 )
 
@@ -5092,6 +5092,9 @@ if(WIN32 AND MSVC)
   endif()
 endif()
 
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/lb/v1/load_reporter.proto
+)
 
 target_include_directories(lb_load_reporter_async_service_impl
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -5103,6 +5106,10 @@ target_include_directories(lb_load_reporter_async_service_impl
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
   PRIVATE ${_gRPC_PROTO_GENS_DIR}
 )
 
@@ -5113,16 +5120,9 @@ target_link_libraries(lb_load_reporter_async_service_impl
   lb_load_reporter
 )
 
+endif (gRPC_BUILD_CODEGEN)
 
-
-if (gRPC_INSTALL)
-  install(TARGETS lb_load_reporter_async_service_impl EXPORT gRPCTargets
-    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
-  )
-endif()
-
+endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 if (gRPC_BUILD_CODEGEN)

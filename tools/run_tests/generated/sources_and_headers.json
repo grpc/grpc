@@ -7513,6 +7513,7 @@
     "headers": [
       "src/cpp/server/load_reporter/load_reporter.h", 
       "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h", 
+      "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h", 
       "src/proto/grpc/lb/v1/load_reporter.pb.h", 
       "src/proto/grpc/lb/v1/load_reporter_mock.grpc.pb.h"
     ], 
@@ -7521,7 +7522,8 @@
     "name": "lb_load_reporter", 
     "src": [
       "src/cpp/server/load_reporter/load_reporter.cc", 
-      "src/cpp/server/load_reporter/load_reporter.h"
+      "src/cpp/server/load_reporter/load_reporter.h", 
+      "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h"
     ], 
     "third_party": false, 
     "type": "lib"
@@ -7533,7 +7535,10 @@
     ], 
     "headers": [
       "src/cpp/server/load_reporter/load_reporter_async_service_impl.h", 
-      "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h"
+      "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h", 
+      "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h", 
+      "src/proto/grpc/lb/v1/load_reporter.pb.h", 
+      "src/proto/grpc/lb/v1/load_reporter_mock.grpc.pb.h"
     ], 
     "is_filegroup": false, 
     "language": "c++", 

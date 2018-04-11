@@ -1665,6 +1665,7 @@
         'lb_load_reporter',
       ],
       'sources': [
+        'src/proto/grpc/lb/v1/load_reporter.proto',
         'src/cpp/server/load_reporter/load_reporter_async_service_impl.cc',
       ],
     },
