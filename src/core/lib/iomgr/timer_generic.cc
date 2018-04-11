@@ -431,7 +431,7 @@ static void timer_init(grpc_timer* timer, grpc_millis deadline,
 #if GPR_ARCH_64
         gpr_atm_no_barrier_store(&g_shared_mutables.min_timer, deadline);
 #else
-        // On a 32-bit system, gpr_atm_no_barrier_store does not work on 64-bit
+        // On 32-bit systems, gpr_atm_no_barrier_store does not work on 64-bit
         // types (like grpc_millis). So all reads and writes to
         // g_shared_mutables.min_timer varialbe under g_shared_mutables.mu
         g_shared_mutables.min_timer = deadline;
@@ -577,12 +577,12 @@ static grpc_timer_check_result run_some_expired_timers(grpc_millis now,
   grpc_timer_check_result result = GRPC_TIMERS_NOT_CHECKED;
 
 #if GPR_ARCH_64
-  grpc_millis min_timer =
-      gpr_atm_no_barrier_load(&g_shared_mutables.min_timer);
+  grpc_millis min_timer = gpr_atm_no_barrier_load(&g_shared_mutables.min_timer);
   gpr_tls_set(&g_last_seen_min_timer, min_timer);
 #else
-  // On a 32-bit system, gpr_atm_no_barrier_load does not work on 64-bit types
-  // (like grpc_millis). So we need to do the read under g_shared_mutables.mu
+  // On 32-bit systems, gpr_atm_no_barrier_load does not work on 64-bit types
+  // (like grpc_millis). So all reads and writes to g_shared_mutables.min_timer
+  // are done under g_shared_mutables.mu
   gpr_mu_lock(&g_shared_mutables.mu);
   grpc_millis min_timer = g_shared_mutables.min_timer;
   gpr_mu_unlock(&g_shared_mutables.mu);
@@ -638,9 +638,9 @@ static grpc_timer_check_result run_some_expired_timers(grpc_millis now,
 
 #if GPR_ARCH_64
     gpr_atm_no_barrier_store(&g_shared_mutables.min_timer,
-                               g_shard_queue[0]->min_deadline);
+                             g_shard_queue[0]->min_deadline);
 #else
-    // On a 32-bit system, gpr_atm_no_barrier_store does not work on 64-bit
+    // On 32-bit systems, gpr_atm_no_barrier_store does not work on 64-bit
     // types (like grpc_millis). So all reads and writes to
     // g_shared_mutables.min_timer are done under g_shared_mutables.mu
     g_shared_mutables.min_timer = g_shard_queue[0]->min_deadline;
@@ -663,10 +663,10 @@ static grpc_timer_check_result timer_check(grpc_millis* next) {
      mutable cacheline in the common case */
   grpc_millis min_timer = gpr_tls_get(&g_last_seen_min_timer);
 #else
-  // On a 32-bit system, we do not have thread local support for 64-bit types.
-  // Directly read the valye from g_shared_mutables.min_timer
+  // On 32-bit systems, we currently do not have thread local support for 64-bit
+  // types. In this case, directly read from g_shared_mutables.min_timer.
   // Also, note that on 32-bit systems, gpr_atm_no_barrier_store does not work
-  // on 64-bit types like grpc_millis. So all reads and writes to
+  // on 64-bit types (like grpc_millis). So all reads and writes to
   // g_shared_mutables.min_timer are done under g_shared_mutables.mu
   gpr_mu_lock(&g_shared_mutables.mu);
   grpc_millis min_timer = g_shared_mutables.min_timer;
