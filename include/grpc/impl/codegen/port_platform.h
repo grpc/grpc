@@ -508,6 +508,7 @@ typedef unsigned __int64 uint64_t;
 #define GPR_UNLIKELY(x) __builtin_expect((x), 0)
 #else /* __GNUC__ */
 #define GPR_LIKELY(x) (x)
+#define GPR_UNLIKELY(x) (x)
 #endif /* __GNUC__ */
 
 #ifndef __STDC_FORMAT_MACROS
