@@ -239,11 +239,6 @@ cdef grpc_error* socket_getsockname(grpc_custom_socket* socket,
   length[0] = c_addr.len
   return grpc_error_none()
 
-cdef grpc_error* socket_setsockopt(grpc_custom_socket* socket, int level, int optname,
-                const void *optval, uint32_t optlen) with gil:
-  # No-op; we provide a default set of options
-  return grpc_error_none()
-
 def applysockopts(s):
   s.setsockopt(gevent_socket.SOL_SOCKET, gevent_socket.SO_REUSEADDR, 1)
   s.setsockopt(gevent_socket.IPPROTO_TCP, gevent_socket.TCP_NODELAY, True)
@@ -435,7 +430,6 @@ def init_grpc_gevent():
   gevent_socket_vtable.read = socket_read
   gevent_socket_vtable.getpeername = socket_getpeername
   gevent_socket_vtable.getsockname = socket_getsockname
-  gevent_socket_vtable.setsockopt = socket_setsockopt
   gevent_socket_vtable.bind = socket_bind
   gevent_socket_vtable.listen = socket_listen
   gevent_socket_vtable.accept = socket_accept

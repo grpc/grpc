@@ -26,7 +26,7 @@
 ///
 /// Context settings are only relevant to the call they are invoked with, that
 /// is to say, they aren't sticky. Some of these settings, such as the
-/// compression options, can be made persistant at channel construction time
+/// compression options, can be made persistent at channel construction time
 /// (see \a grpc::CreateCustomChannel).
 ///
 /// \warning ClientContext instances should \em not be reused across rpcs.

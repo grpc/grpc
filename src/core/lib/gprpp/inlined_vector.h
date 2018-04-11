@@ -54,43 +54,43 @@ class InlinedVector {
   InlinedVector(const InlinedVector&) = delete;
   InlinedVector& operator=(const InlinedVector&) = delete;
 
+  T* data() {
+    return dynamic_ != nullptr ? dynamic_ : reinterpret_cast<T*>(inline_);
+  }
+
+  const T* data() const {
+    return dynamic_ != nullptr ? dynamic_ : reinterpret_cast<const T*>(inline_);
+  }
+
   T& operator[](size_t offset) {
     assert(offset < size_);
-    if (offset < N) {
-      return *reinterpret_cast<T*>(inline_ + offset);
-    } else {
-      return dynamic_[offset - N];
-    }
+    return data()[offset];
   }
 
   const T& operator[](size_t offset) const {
     assert(offset < size_);
-    if (offset < N) {
-      return *reinterpret_cast<const T*>(inline_ + offset);
-    } else {
-      return dynamic_[offset - N];
+    return data()[offset];
+  }
+
+  void reserve(size_t capacity) {
+    if (capacity > capacity_) {
+      T* new_dynamic = static_cast<T*>(gpr_malloc(sizeof(T) * capacity));
+      for (size_t i = 0; i < size_; ++i) {
+        new (&new_dynamic[i]) T(std::move(data()[i]));
+        data()[i].~T();
+      }
+      gpr_free(dynamic_);
+      dynamic_ = new_dynamic;
+      capacity_ = capacity;
     }
   }
 
   template <typename... Args>
   void emplace_back(Args&&... args) {
-    if (size_ < N) {
-      new (&inline_[size_]) T(std::forward<Args>(args)...);
-    } else {
-      if (size_ - N == dynamic_capacity_) {
-        size_t new_capacity =
-            dynamic_capacity_ == 0 ? 2 : dynamic_capacity_ * 2;
-        T* new_dynamic = static_cast<T*>(gpr_malloc(sizeof(T) * new_capacity));
-        for (size_t i = 0; i < dynamic_capacity_; ++i) {
-          new (&new_dynamic[i]) T(std::move(dynamic_[i]));
-          dynamic_[i].~T();
-        }
-        gpr_free(dynamic_);
-        dynamic_ = new_dynamic;
-        dynamic_capacity_ = new_capacity;
-      }
-      new (&dynamic_[size_ - N]) T(std::forward<Args>(args)...);
+    if (size_ == capacity_) {
+      reserve(capacity_ * 2);
     }
+    new (&(data()[size_])) T(std::forward<Args>(args)...);
     ++size_;
   }
 
@@ -99,6 +99,7 @@ class InlinedVector {
   void push_back(T&& value) { emplace_back(std::move(value)); }
 
   size_t size() const { return size_; }
+  size_t capacity() const { return capacity_; }
 
   void clear() {
     destroy_elements();
@@ -109,18 +110,13 @@ class InlinedVector {
   void init_data() {
     dynamic_ = nullptr;
     size_ = 0;
-    dynamic_capacity_ = 0;
+    capacity_ = N;
   }
 
   void destroy_elements() {
-    for (size_t i = 0; i < size_ && i < N; ++i) {
-      T& value = *reinterpret_cast<T*>(inline_ + i);
+    for (size_t i = 0; i < size_; ++i) {
+      T& value = data()[i];
       value.~T();
-    }
-    if (size_ > N) {  // Avoid subtracting two signed values.
-      for (size_t i = 0; i < size_ - N; ++i) {
-        dynamic_[i].~T();
-      }
     }
     gpr_free(dynamic_);
   }
@@ -128,7 +124,7 @@ class InlinedVector {
   typename std::aligned_storage<sizeof(T)>::type inline_[N];
   T* dynamic_;
   size_t size_;
-  size_t dynamic_capacity_;
+  size_t capacity_;
 };
 
 }  // namespace grpc_core

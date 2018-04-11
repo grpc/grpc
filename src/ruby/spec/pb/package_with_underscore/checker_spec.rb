@@ -15,16 +15,13 @@
 require 'open3'
 require 'tmpdir'
 
-def debug_mode?
-  !ENV['CONFIG'].nil? && ENV['CONFIG'] == 'dbg'
-end
-
 describe 'Package with underscore protobuf code generation' do
   it 'should have the same content as created by code generation' do
     root_dir = File.join(File.dirname(__FILE__), '..', '..', '..', '..', '..')
     pb_dir = File.join(root_dir, 'src', 'ruby', 'spec', 'pb')
 
-    bins_sub_dir = debug_mode? ? 'dbg' : 'opt'
+    fail 'CONFIG env variable unexpectedly unset' unless ENV['CONFIG']
+    bins_sub_dir = ENV['CONFIG']
     bins_dir = File.join(root_dir, 'bins', bins_sub_dir)
 
     plugin = File.join(bins_dir, 'grpc_ruby_plugin')

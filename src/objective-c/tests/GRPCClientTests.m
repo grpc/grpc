@@ -31,6 +31,8 @@
 #import <RxLibrary/GRXWriter+Immediate.h>
 #import <RxLibrary/GRXBufferedPipe.h>
 
+#include <netinet/in.h>
+
 #import "version.h"
 
 #define TEST_TIMEOUT 16
@@ -477,6 +479,42 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
   }];
 
   call.timeout = 0.001;
+  [call startWithWriteable:responsesWriteable];
+
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+}
+
+- (int)findFreePort {
+  struct sockaddr_in addr;
+  unsigned int addr_len = sizeof(addr);
+  memset(&addr, 0, sizeof(addr));
+  addr.sin_family = AF_INET;
+  int fd = socket(AF_INET, SOCK_STREAM, 0);
+  XCTAssertEqual(bind(fd, (struct sockaddr*)&addr, sizeof(addr)), 0);
+  XCTAssertEqual(getsockname(fd, (struct sockaddr*)&addr, &addr_len), 0);
+  XCTAssertEqual(addr_len, sizeof(addr));
+  close(fd);
+  return addr.sin_port;
+}
+
+- (void)testErrorCode {
+  int port = [self findFreePort];
+  NSString * const kDummyAddress = [NSString stringWithFormat:@"localhost:%d", port];
+  __weak XCTestExpectation *completion = [self expectationWithDescription:@"Empty RPC completed."];
+
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:kDummyAddress
+                                             path:kEmptyCallMethod.HTTPPath
+                                   requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
+
+  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+    // Should not reach here
+    XCTAssert(NO);
+  } completionHandler:^(NSError *errorOrNil) {
+    XCTAssertNotNil(errorOrNil, @"Finished with no error");
+    XCTAssertEqual(errorOrNil.code, GRPC_STATUS_UNAVAILABLE);
+    [completion fulfill];
+  }];
+
   [call startWithWriteable:responsesWriteable];
 
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];

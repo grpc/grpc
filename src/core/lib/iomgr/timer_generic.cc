@@ -98,6 +98,12 @@ static void init_timer_ht() {
   }
 }
 
+static void destroy_timer_ht() {
+  for (int i = 0; i < NUM_HASH_BUCKETS; i++) {
+    gpr_mu_destroy(&g_hash_mu[i]);
+  }
+}
+
 static bool is_in_ht(grpc_timer* t) {
   size_t i = GPR_HASH_POINTER(t, NUM_HASH_BUCKETS);
 
@@ -189,6 +195,7 @@ static void validate_non_pending_timer(grpc_timer* t) {
 }
 
 #define INIT_TIMER_HASH_TABLE() init_timer_ht()
+#define DESTROY_TIMER_HASH_TABLE() destroy_timer_ht()
 #define ADD_TO_HASH_TABLE(t) add_to_ht((t))
 #define REMOVE_FROM_HASH_TABLE(t) remove_from_ht((t))
 #define VALIDATE_NON_PENDING_TIMER(t) validate_non_pending_timer((t))
@@ -196,6 +203,7 @@ static void validate_non_pending_timer(grpc_timer* t) {
 #else
 
 #define INIT_TIMER_HASH_TABLE()
+#define DESTROY_TIMER_HASH_TABLE()
 #define ADD_TO_HASH_TABLE(t)
 #define REMOVE_FROM_HASH_TABLE(t)
 #define VALIDATE_NON_PENDING_TIMER(t)
@@ -299,6 +307,8 @@ static void timer_list_shutdown() {
   gpr_free(g_shards);
   gpr_free(g_shard_queue);
   g_shared_mutables.initialized = false;
+
+  DESTROY_TIMER_HASH_TABLE();
 }
 
 /* returns true if the first element in the list */

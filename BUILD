@@ -64,11 +64,11 @@ config_setting(
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "gorgeous"
+g_stands_for = "glorious"
 
 core_version = "6.0.0-dev"
 
-version = "1.11.0-dev"
+version = "1.12.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -141,7 +141,6 @@ GRPCXX_SRCS = [
     "src/cpp/server/server_posix.cc",
     "src/cpp/thread_manager/thread_manager.cc",
     "src/cpp/util/byte_buffer_cc.cc",
-    "src/cpp/util/slice_cc.cc",
     "src/cpp/util/status.cc",
     "src/cpp/util/string_ref.cc",
     "src/cpp/util/time_cc.cc",
@@ -245,6 +244,8 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/support/byte_buffer.h",
     "include/grpcpp/support/channel_arguments.h",
     "include/grpcpp/support/config.h",
+    "include/grpcpp/support/proto_buffer_reader.h",
+    "include/grpcpp/support/proto_buffer_writer.h",
     "include/grpcpp/support/slice.h",
     "include/grpcpp/support/status.h",
     "include/grpcpp/support/status_code_enum.h",
@@ -1871,6 +1872,8 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = [
         "include/grpc++/impl/codegen/proto_utils.h",
+        "include/grpcpp/impl/codegen/proto_buffer_reader.h",
+        "include/grpcpp/impl/codegen/proto_buffer_writer.h",
         "include/grpcpp/impl/codegen/proto_utils.h",
     ],
     deps = [
