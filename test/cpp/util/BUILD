@@ -112,7 +112,7 @@ grpc_cc_library(
     ],
     deps = [
         "//:grpc++_unsecure",
-        "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_unsecure",
     ],
 )
 
