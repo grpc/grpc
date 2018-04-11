@@ -173,6 +173,12 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_server_add_secure_http2_port);
   printf("%lx", (unsigned long) grpc_call_set_credentials);
   printf("%lx", (unsigned long) grpc_server_credentials_set_auth_metadata_processor);
+  printf("%lx", (unsigned long) grpc_alts_credentials_client_options_create);
+  printf("%lx", (unsigned long) grpc_alts_credentials_server_options_create);
+  printf("%lx", (unsigned long) grpc_alts_credentials_client_options_add_target_service_account);
+  printf("%lx", (unsigned long) grpc_alts_credentials_options_destroy);
+  printf("%lx", (unsigned long) grpc_alts_credentials_create);
+  printf("%lx", (unsigned long) grpc_alts_server_credentials_create);
   printf("%lx", (unsigned long) grpc_raw_byte_buffer_create);
   printf("%lx", (unsigned long) grpc_raw_compressed_byte_buffer_create);
   printf("%lx", (unsigned long) grpc_byte_buffer_copy);

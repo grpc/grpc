@@ -115,6 +115,12 @@ EXPORTS
     grpc_server_add_secure_http2_port
     grpc_call_set_credentials
     grpc_server_credentials_set_auth_metadata_processor
+    grpc_alts_credentials_client_options_create
+    grpc_alts_credentials_server_options_create
+    grpc_alts_credentials_client_options_add_target_service_account
+    grpc_alts_credentials_options_destroy
+    grpc_alts_credentials_create
+    grpc_alts_server_credentials_create
     grpc_raw_byte_buffer_create
     grpc_raw_compressed_byte_buffer_create
     grpc_byte_buffer_copy

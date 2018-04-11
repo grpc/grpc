@@ -495,21 +495,29 @@ GRPCAPI void grpc_server_credentials_set_auth_metadata_processor(
  * information that will be passed from grpc to TSI layer such as RPC protocol
  * versions. ALTS client (channel) and server credentials will have their own
  * implementation of this interface. The APIs listed in this header are
- * thread-compatible.
+ * thread-compatible. It is used for experimental purpose for now and subject
+ * to change.
  */
 typedef struct grpc_alts_credentials_options grpc_alts_credentials_options;
 
-/* This method creates a grpc ALTS credentials client options instance. */
+/**
+ * This method creates a grpc ALTS credentials client options instance.
+ * It is used for experimental purpose for now and subject to change.
+ */
 GRPCAPI grpc_alts_credentials_options*
 grpc_alts_credentials_client_options_create();
 
-/* This method creates a grpc ALTS credentials server options instance. */
+/**
+ * This method creates a grpc ALTS credentials server options instance.
+ * It is used for experimental purpose for now and subject to change.
+ */
 GRPCAPI grpc_alts_credentials_options*
 grpc_alts_credentials_server_options_create();
 
 /**
  * This method adds a target service account to grpc client's ALTS credentials
- * options instance.
+ * options instance. It is used for experimental purpose for now and subject
+ * to change.
  *
  * - options: grpc ALTS credentials options instance.
  * - service_account: service account of target endpoint.
@@ -519,7 +527,8 @@ GRPCAPI void grpc_alts_credentials_client_options_add_target_service_account(
 
 /**
  * This method destroys a grpc_alts_credentials_options instance by
- * de-allocating all of its occupied memory.
+ * de-allocating all of its occupied memory. It is used for experimental purpose
+ * for now and subject to change.
  *
  * - options: a grpc_alts_credentials_options instance that needs to be
  *   destroyed.
@@ -528,7 +537,8 @@ GRPCAPI void grpc_alts_credentials_options_destroy(
     grpc_alts_credentials_options* options);
 
 /**
- * This method creates an ALTS channel credential object.
+ * This method creates an ALTS channel credential object. It is used for
+ * experimental purpose for now and subject to change.
  *
  * - options: grpc ALTS credentials options instance for client.
  *
@@ -538,7 +548,8 @@ GRPCAPI grpc_channel_credentials* grpc_alts_credentials_create(
     const grpc_alts_credentials_options* options);
 
 /**
- * This method creates an ALTS server credential object.
+ * This method creates an ALTS server credential object. It is used for
+ * experimental purpose for now and subject to change.
  *
  * - options: grpc ALTS credentials options instance for server.
  *
