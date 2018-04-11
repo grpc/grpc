@@ -6,6 +6,4 @@
 /cmake/** @jtattermusch @nicolasnoble @matt-kwong
 /src/core/ext/filters/client_channel/** @markdroth @dgquintas @a11r
 /tools/dockerfile/** @jtattermusch @matt-kwong @nicolasnoble
-/tools/run_tests/** @jtattermusch @matt-kwong @dgquintas
-/tools/run_tests/generated/** @grpc/grpc-team
 /tools/run_tests/performance/** @ncteisen @matt-kwong @jtattermusch
