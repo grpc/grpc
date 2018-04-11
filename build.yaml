@@ -1903,8 +1903,8 @@ libs:
   language: c++
   headers:
   - src/cpp/server/load_reporter/load_reporter_async_service_impl.h
-  - src/proto/grpc/lb/v1/load_reporter.grpc.pb.h
   src:
+  - src/proto/grpc/lb/v1/load_reporter.proto
   - src/cpp/server/load_reporter/load_reporter_async_service_impl.cc
   deps:
   - grpc++

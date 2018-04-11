@@ -29,5 +29,6 @@ grpc_proto_library(
 grpc_proto_library(
     name = "load_reporter_proto",
     srcs = ["load_reporter.proto"],
+    has_services = True,
     well_known_protos = True,
 )
