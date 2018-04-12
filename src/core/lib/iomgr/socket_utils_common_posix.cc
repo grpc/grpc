@@ -193,8 +193,8 @@ void probe_so_reuseport_once(void) {
     s = socket(AF_INET6, SOCK_STREAM, 0);
   }
   if (s >= 0) {
-    g_support_so_reuseport = GRPC_LOG_IF_ERROR("check for SO_REUSEPORT",
-                                         grpc_set_socket_reuse_port(s, 1));
+    g_support_so_reuseport = GRPC_LOG_IF_ERROR(
+        "check for SO_REUSEPORT", grpc_set_socket_reuse_port(s, 1));
     close(s);
   }
 #endif
