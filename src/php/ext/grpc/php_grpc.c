@@ -37,6 +37,7 @@
 ZEND_DECLARE_MODULE_GLOBALS(grpc)
 static PHP_GINIT_FUNCTION(grpc);
 HashTable grpc_persistent_list;
+HashTable grpc_target_upper_bound_map;
 /* {{{ grpc_functions[]
  *
  * Every user visible function must have an entry in grpc_functions[].
@@ -242,6 +243,8 @@ PHP_MSHUTDOWN_FUNCTION(grpc) {
   if (GRPC_G(initialized)) {
     zend_hash_clean(&grpc_persistent_list);
     zend_hash_destroy(&grpc_persistent_list);
+    zend_hash_clean(&grpc_target_upper_bound_map);
+    zend_hash_destroy(&grpc_target_upper_bound_map);
     grpc_shutdown_timeval(TSRMLS_C);
     grpc_php_shutdown_completion_queue(TSRMLS_C);
     grpc_shutdown();
