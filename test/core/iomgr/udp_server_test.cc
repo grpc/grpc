@@ -40,6 +40,7 @@
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/socket_factory_posix.h"
+#include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "test/core/util/test_config.h"
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", #x)
@@ -54,6 +55,8 @@ static int g_number_of_starts = 0;
 
 int rcv_buf_size = 1024;
 int snd_buf_size = 1024;
+
+static int g_num_listeners = 1;
 
 class TestGrpcUdpHandler : public GrpcUdpHandler {
  public:
@@ -75,6 +78,7 @@ class TestGrpcUdpHandler : public GrpcUdpHandler {
     g_number_of_reads++;
     g_number_of_bytes_read += static_cast<int>(byte_count);
 
+    gpr_log(GPR_DEBUG, "receive %zu on handler %p", byte_count, this);
     GPR_ASSERT(GRPC_LOG_IF_ERROR("pollset_kick",
                                  grpc_pollset_kick(g_pollset, nullptr)));
     gpr_mu_unlock(g_mu);
@@ -213,7 +217,8 @@ static void test_no_op_with_port(void) {
   resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
   addr->sin_family = AF_INET;
   GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, rcv_buf_size,
-                                      snd_buf_size, &handler_factory));
+                                      snd_buf_size, &handler_factory,
+                                      g_num_listeners));
 
   grpc_udp_server_destroy(s, nullptr);
 
@@ -244,9 +249,10 @@ static void test_no_op_with_port_and_socket_factory(void) {
   resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
   addr->sin_family = AF_INET;
   GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, rcv_buf_size,
-                                      snd_buf_size, &handler_factory));
-  GPR_ASSERT(socket_factory->number_of_socket_calls == 1);
-  GPR_ASSERT(socket_factory->number_of_bind_calls == 1);
+                                      snd_buf_size, &handler_factory,
+                                      g_num_listeners));
+  GPR_ASSERT(socket_factory->number_of_socket_calls == g_num_listeners);
+  GPR_ASSERT(socket_factory->number_of_bind_calls == g_num_listeners);
 
   grpc_udp_server_destroy(s, nullptr);
 
@@ -271,15 +277,16 @@ static void test_no_op_with_port_and_start(void) {
   resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
   addr->sin_family = AF_INET;
   GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, rcv_buf_size,
-                                      snd_buf_size, &handler_factory));
+                                      snd_buf_size, &handler_factory,
+                                      g_num_listeners));
 
   grpc_udp_server_start(s, nullptr, 0, nullptr);
-  GPR_ASSERT(g_number_of_starts == 1);
+  GPR_ASSERT(g_number_of_starts == g_num_listeners);
   grpc_udp_server_destroy(s, nullptr);
 
   /* The server had a single FD, which is orphaned exactly once in *
    * grpc_udp_server_destroy. */
-  GPR_ASSERT(g_number_of_orphan_calls == 1);
+  GPR_ASSERT(g_number_of_orphan_calls == g_num_listeners);
   shutdown_and_destroy_pollset();
 }
 
@@ -304,7 +311,8 @@ static void test_receive(int number_of_clients) {
   resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
   addr->ss_family = AF_INET;
   GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, rcv_buf_size,
-                                      snd_buf_size, &handler_factory));
+                                      snd_buf_size, &handler_factory,
+                                      g_num_listeners));
 
   svrfd = grpc_udp_server_get_fd(s, 0);
   GPR_ASSERT(svrfd >= 0);
@@ -347,13 +355,16 @@ static void test_receive(int number_of_clients) {
 
   /* The server had a single FD, which is orphaned exactly once in *
    * grpc_udp_server_destroy. */
-  GPR_ASSERT(g_number_of_orphan_calls == 1);
+  GPR_ASSERT(g_number_of_orphan_calls == g_num_listeners);
   shutdown_and_destroy_pollset();
 }
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
+  if (grpc_support_socket_reuse_port()) {
+    g_num_listeners = 10;
+  }
   {
     grpc_core::ExecCtx exec_ctx;
     g_pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));

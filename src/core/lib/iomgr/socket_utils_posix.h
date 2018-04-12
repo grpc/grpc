@@ -44,6 +44,9 @@ grpc_error* grpc_set_socket_cloexec(int fd, int close_on_exec);
 /* set a socket to reuse old addresses */
 grpc_error* grpc_set_socket_reuse_addr(int fd, int reuse);
 
+/* return true if SO_REUSEPORT is supported */
+bool grpc_is_socket_reuse_port_supported();
+
 /* disable nagle */
 grpc_error* grpc_set_socket_low_latency(int fd, int low_latency);
 
