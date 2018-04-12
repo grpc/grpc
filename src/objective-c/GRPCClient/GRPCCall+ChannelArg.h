@@ -39,12 +39,12 @@ typedef NS_ENUM(NSInteger, GRPCCompressAlgorithm) {
 /** The default response size limit is 4MB. Set this to override that default. */
 + (void)setResponseSizeLimit:(NSUInteger)limit forHost:(nonnull NSString *)host;
 
-+ (void)closeOpenConnections DEPRECATED_MSG_ATTRIBUTE("The API for this feature is experimental, "
-                                                      "and might be removed or modified at any "
-                                                      "time.");
++ (void)closeOpenConnections DEPRECATED_MSG_ATTRIBUTE(
+    "The API for this feature is experimental, "
+    "and might be removed or modified at any "
+    "time.");
 
-+ (void)setDefaultCompressMethod:(GRPCCompressAlgorithm)algorithm
-                         forhost:(nonnull NSString *)host;
++ (void)setDefaultCompressMethod:(GRPCCompressAlgorithm)algorithm forhost:(nonnull NSString *)host;
 
 /** Enable keepalive and configure keepalive parameters. A user should call this function once to
  * enable keepalive for a particular host. gRPC client sends a ping after every \a interval ms to

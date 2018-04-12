@@ -30,10 +30,10 @@
 //
 // TODO(jcanizales): Move this to a test util library, and add tests for it.
 @interface CapturingSingleValueHandler : NSObject
-@property (nonatomic, readonly) void (^block)(id value, NSError *errorOrNil);
-@property (nonatomic, readonly) NSUInteger timesCalled;
-@property (nonatomic, readonly) id value;
-@property (nonatomic, readonly) NSError *errorOrNil;
+@property(nonatomic, readonly) void (^block)(id value, NSError *errorOrNil);
+@property(nonatomic, readonly) NSUInteger timesCalled;
+@property(nonatomic, readonly) id value;
+@property(nonatomic, readonly) NSError *errorOrNil;
 + (instancetype)handler;
 @end
 
@@ -149,10 +149,11 @@
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"Response received"];
   // Given:
   CapturingSingleValueHandler *handler = [CapturingSingleValueHandler handler];
-  id<GRXWriteable> writeable = [GRXWriteable writeableWithSingleHandler:^(id value, NSError *errorOrNil) {
-    handler.block(value, errorOrNil);
-    [expectation fulfill];
-  }];
+  id<GRXWriteable> writeable =
+      [GRXWriteable writeableWithSingleHandler:^(id value, NSError *errorOrNil) {
+        handler.block(value, errorOrNil);
+        [expectation fulfill];
+      }];
 
   id anyValue = @7;
 
@@ -167,17 +168,17 @@
   XCTAssertEqual(handler.timesCalled, 1);
   XCTAssertEqualObjects(handler.value, anyValue);
   XCTAssertEqualObjects(handler.errorOrNil, nil);
-
 }
 
 - (void)testBufferedPipePropagatesError {
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"Response received"];
   // Given:
   CapturingSingleValueHandler *handler = [CapturingSingleValueHandler handler];
-  id<GRXWriteable> writeable = [GRXWriteable writeableWithSingleHandler:^(id value, NSError *errorOrNil) {
-    handler.block(value, errorOrNil);
-    [expectation fulfill];
-  }];
+  id<GRXWriteable> writeable =
+      [GRXWriteable writeableWithSingleHandler:^(id value, NSError *errorOrNil) {
+        handler.block(value, errorOrNil);
+        [expectation fulfill];
+      }];
   NSError *anyError = [NSError errorWithDomain:@"domain" code:7 userInfo:nil];
 
   // If:
@@ -196,10 +197,11 @@
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"Response received"];
   // Given:
   CapturingSingleValueHandler *handler = [CapturingSingleValueHandler handler];
-  id<GRXWriteable> writeable = [GRXWriteable writeableWithSingleHandler:^(id value, NSError *errorOrNil) {
-    handler.block(value, errorOrNil);
-    [expectation fulfill];
-  }];
+  id<GRXWriteable> writeable =
+      [GRXWriteable writeableWithSingleHandler:^(id value, NSError *errorOrNil) {
+        handler.block(value, errorOrNil);
+        [expectation fulfill];
+      }];
   id anyValue = @7;
 
   // If:
@@ -220,8 +222,9 @@
 #define WRITE_ROUNDS (1000)
 - (void)testBufferedPipeResumeWhenDealloc {
   id anyValue = @7;
-  id<GRXWriteable> writeable = [GRXWriteable  writeableWithSingleHandler:^(id value, NSError *errorOrNil) {
-  }];
+  id<GRXWriteable> writeable =
+      [GRXWriteable writeableWithSingleHandler:^(id value, NSError *errorOrNil){
+      }];
 
   // Release after alloc;
   GRXBufferedPipe *pipe = [GRXBufferedPipe pipe];

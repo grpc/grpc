@@ -20,6 +20,8 @@
 
 #include <sstream>
 
+#include <grpc/grpc.h>
+#include <grpc/support/time.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -29,8 +31,6 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/slice.h>
-#include <grpc/grpc.h>
-#include <grpc/support/time.h>
 
 #include "src/core/lib/gprpp/thd.h"
 #include "test/core/util/port.h"
@@ -55,8 +55,7 @@ static grpc_slice merge_slices(grpc_slice* slices, size_t nslices) {
   cursor = GRPC_SLICE_START_PTR(out);
 
   for (i = 0; i < nslices; i++) {
-    memcpy(cursor, GRPC_SLICE_START_PTR(slices[i]),
-           GRPC_SLICE_LENGTH(slices[i]));
+    memcpy(cursor, GRPC_SLICE_START_PTR(slices[i]), GRPC_SLICE_LENGTH(slices[i]));
     cursor += GRPC_SLICE_LENGTH(slices[i]);
   }
 
@@ -74,16 +73,14 @@ int byte_buffer_eq_string(ByteBuffer* bb, const char* str) {
   }
   grpc_slice a = merge_slices(c_slices, slices.size());
   grpc_slice b = grpc_slice_from_copied_string(str);
-  res =
-      (GRPC_SLICE_LENGTH(a) == GRPC_SLICE_LENGTH(b)) &&
-      (0 == memcmp(GRPC_SLICE_START_PTR(a), GRPC_SLICE_START_PTR(b),
-                   GRPC_SLICE_LENGTH(a)));
+  res = (GRPC_SLICE_LENGTH(a) == GRPC_SLICE_LENGTH(b)) &&
+        (0 == memcmp(GRPC_SLICE_START_PTR(a), GRPC_SLICE_START_PTR(b), GRPC_SLICE_LENGTH(a)));
   grpc_slice_unref(a);
   grpc_slice_unref(b);
   for (int i = 0; i < slices.size(); i++) {
     grpc_slice_unref(c_slices[i]);
   }
-  delete [] c_slices;
+  delete[] c_slices;
 
   return res;
 }
@@ -102,9 +99,7 @@ int byte_buffer_eq_string(ByteBuffer* bb, const char* str) {
   std::ostringstream server_address_;
 }
 
-- (void)verify_ok:(grpc::CompletionQueue*)cq
-                i:(int)i
-        expect_ok:(bool)expect_ok {
+- (void)verify_ok:(grpc::CompletionQueue*)cq i:(int)i expect_ok:(bool)expect_ok {
   bool ok;
   void* got_tag;
   XCTAssertTrue(cq->Next(&got_tag, &ok));
@@ -112,10 +107,18 @@ int byte_buffer_eq_string(ByteBuffer* bb, const char* str) {
   XCTAssertEqual(tag(i), got_tag);
 }
 
-- (void)server_ok:(int)i { [self verify_ok:srv_cq_.get() i:i expect_ok:true]; }
-- (void)client_ok:(int)i { [self verify_ok:&cli_cq_ i:i expect_ok:true]; }
-- (void)server_fail:(int)i { [self verify_ok:srv_cq_.get() i:i expect_ok:false]; }
-- (void)client_fail:(int)i { [self verify_ok:&cli_cq_ i:i expect_ok:false]; }
+- (void)server_ok:(int)i {
+  [self verify_ok:srv_cq_.get() i:i expect_ok:true];
+}
+- (void)client_ok:(int)i {
+  [self verify_ok:&cli_cq_ i:i expect_ok:true];
+}
+- (void)server_fail:(int)i {
+  [self verify_ok:srv_cq_.get() i:i expect_ok:false];
+}
+- (void)client_fail:(int)i {
+  [self verify_ok:&cli_cq_ i:i expect_ok:false];
+}
 
 - (void)setUp {
   [super setUp];
@@ -125,8 +128,7 @@ int byte_buffer_eq_string(ByteBuffer* bb, const char* str) {
   server_address_ << server_host_ << ":" << port;
   // Setup server
   ServerBuilder builder;
-  builder.AddListeningPort(server_address_.str(),
-                           InsecureServerCredentials());
+  builder.AddListeningPort(server_address_.str(), InsecureServerCredentials());
   builder.RegisterAsyncGenericService(&generic_service_);
   // Include a second call to RegisterAsyncGenericService to make sure that
   // we get an error in the log, since it is not allowed to have 2 async
@@ -137,14 +139,17 @@ int byte_buffer_eq_string(ByteBuffer* bb, const char* str) {
 }
 
 - (void)tearDown {
-  // Put teardown code here. This method is called after the invocation of each test method in the class.
+  // Put teardown code here. This method is called after the invocation of each test method in the
+  // class.
   server_->Shutdown();
   void* ignored_tag;
   bool ignored_ok;
   cli_cq_.Shutdown();
   srv_cq_->Shutdown();
-  while (cli_cq_.Next(&ignored_tag, &ignored_ok));
-  while (srv_cq_->Next(&ignored_tag, &ignored_ok));
+  while (cli_cq_.Next(&ignored_tag, &ignored_ok))
+    ;
+  while (srv_cq_->Next(&ignored_tag, &ignored_ok))
+    ;
   [super tearDown];
 }
 
@@ -156,11 +161,9 @@ int byte_buffer_eq_string(ByteBuffer* bb, const char* str) {
 
 - (void)SendRpc:(int)num_rpcs {
   [self SendRpc:num_rpcs check_deadline:false deadline:gpr_inf_future(GPR_CLOCK_MONOTONIC)];
- }
+}
 
-- (void)SendRpc:(int)num_rpcs
- check_deadline:(bool)check_deadline
-       deadline:(gpr_timespec)deadline {
+- (void)SendRpc:(int)num_rpcs check_deadline:(bool)check_deadline deadline:(gpr_timespec)deadline {
   const grpc::string kMethodName("/grpc.cpp.test.util.EchoTestService/Echo");
   for (int i = 0; i < num_rpcs; i++) {
     Status recv_status;
@@ -177,7 +180,7 @@ int byte_buffer_eq_string(ByteBuffer* bb, const char* str) {
     }
 
     std::unique_ptr<GenericClientAsyncReaderWriter> call =
-    generic_stub_->Call(&cli_ctx, kMethodName, &cli_cq_, tag(1));
+        generic_stub_->Call(&cli_ctx, kMethodName, &cli_cq_, tag(1));
     [self client_ok:1];
     Slice send_slice = Slice("hello world", 11);
     std::unique_ptr<ByteBuffer> send_buffer =
@@ -189,8 +192,7 @@ int byte_buffer_eq_string(ByteBuffer* bb, const char* str) {
     call->WritesDone(tag(3));
     [self client_ok:3];
 
-    generic_service_.RequestCall(&srv_ctx, &stream, srv_cq_.get(),
-                                 srv_cq_.get(), tag(4));
+    generic_service_.RequestCall(&srv_ctx, &stream, srv_cq_.get(), srv_cq_.get(), tag(4));
 
     [self verify_ok:srv_cq_.get() i:4 expect_ok:true];
     XCTAssertEqual(server_host_, srv_ctx.host().substr(0, server_host_.length()));
@@ -198,7 +200,7 @@ int byte_buffer_eq_string(ByteBuffer* bb, const char* str) {
 
     if (check_deadline) {
       XCTAssertTrue(gpr_time_similar(deadline, srv_ctx.raw_deadline(),
-                                   gpr_time_from_millis(1000, GPR_TIMESPAN)));
+                                     gpr_time_from_millis(1000, GPR_TIMESPAN)));
     }
 
     ByteBuffer recv_buffer;
@@ -241,4 +243,3 @@ int byte_buffer_eq_string(ByteBuffer* bb, const char* str) {
 }
 
 @end
-

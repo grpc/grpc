@@ -20,7 +20,7 @@
 
 #include <grpc/grpc.h>
 
-NSString * const kGRPCErrorDomain = @"io.grpc";
+NSString *const kGRPCErrorDomain = @"io.grpc";
 
 @implementation NSError (GRPC)
 + (instancetype)grpc_errorFromStatusCode:(grpc_status_code)statusCode details:(char *)details {
@@ -30,6 +30,6 @@ NSString * const kGRPCErrorDomain = @"io.grpc";
   NSString *message = [NSString stringWithCString:details encoding:NSASCIIStringEncoding];
   return [NSError errorWithDomain:kGRPCErrorDomain
                              code:statusCode
-                         userInfo:@{NSLocalizedDescriptionKey: message}];
+                         userInfo:@{NSLocalizedDescriptionKey : message}];
 }
 @end
