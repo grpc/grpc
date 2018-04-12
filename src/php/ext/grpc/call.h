@@ -27,6 +27,7 @@
 #include <php_ini.h>
 #include <ext/standard/info.h>
 #include "php_grpc.h"
+#include "channel.h"
 
 #include <grpc/grpc.h>
 
@@ -37,6 +38,7 @@ extern zend_class_entry *grpc_ce_call;
 PHP_GRPC_WRAP_OBJECT_START(wrapped_grpc_call)
   bool owned;
   grpc_call *wrapped;
+  wrapped_grpc_channel* channel;
 PHP_GRPC_WRAP_OBJECT_END(wrapped_grpc_call)
 
 #if PHP_MAJOR_VERSION < 7

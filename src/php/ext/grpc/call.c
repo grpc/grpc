@@ -230,7 +230,7 @@ PHP_METHOD(Call, __construct) {
   }
   wrapped_grpc_channel *channel = Z_WRAPPED_GRPC_CHANNEL_P(channel_obj);
   gpr_mu_lock(&channel->wrapper->mu);
-  if (channel->wrapper->wrapped == NULL) {
+  if (channel->wrapper->wrapped == NULL || !channel->is_valid) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
                          "Call cannot be constructed from a closed Channel",
                          1 TSRMLS_CC);
@@ -251,6 +251,7 @@ PHP_METHOD(Call, __construct) {
   grpc_slice_unref(method_slice);
   grpc_slice_unref(host_slice);
   call->owned = true;
+  call->channel = channel;
   gpr_mu_unlock(&channel->wrapper->mu);
 }
 
@@ -270,6 +271,14 @@ PHP_METHOD(Call, startBatch) {
   zval *message_value;
   zval *message_flags;
   wrapped_grpc_call *call = Z_WRAPPED_GRPC_CALL_P(getThis());
+  if (call->channel) {
+    // startBatch in gRPC PHP server doesn't have channel in it.
+    if (!call->channel->is_valid) {
+      zend_throw_exception(spl_ce_RuntimeException,
+                           "startBatch Error. Channel is closed",
+                           1 TSRMLS_CC);
+    }
+  }
   
   grpc_op ops[8];
   size_t op_num = 0;

@@ -39,17 +39,33 @@ typedef struct _grpc_channel_wrapper {
   char *target;
   char *args_hashstr;
   char *creds_hashstr;
-  gpr_mu mu;
-  // is_valid is used to check the wrapped channel has been freed
-  // before to avoid double free.
+  // is_valid is used to tell the wrapper can be freed or not.
   bool is_valid;
-  // ref_count is used to let the last wrapper free related channel and key.
-  size_t ref_count;
+  // ref_count_wrapper is used to help the persistent list
+  // to decide whether can remove a channel. It stands for how many
+  // wrapped_channel point to it while not close(). Only when
+  // ref_count_wrapper=0 or the channel is IDLE, we can remove it from
+  // the persistent list.
+  size_t ref_count_wrapper;
+  // ref_count_destroy is used to let the last wrapper
+  // free related channel. It stands for how many wrapped object
+  // point to it while not destroy. Only when ref_count_destroy=0,
+  // we can safely let the last wrapper destroy itself.
+  size_t ref_count_destroy;
+  gpr_mu mu;
 } grpc_channel_wrapper;
 
 /* Wrapper struct for grpc_channel that can be associated with a PHP object */
 PHP_GRPC_WRAP_OBJECT_START(wrapped_grpc_channel)
   grpc_channel_wrapper *wrapper;
+  // Each PHP_GRPC_WRAPPER stands for a stub, which may share the channel with
+  // other PHP_GRPC_WRAPPER. is_valid is used to mark which stub is closed, and
+  // related methods including call methods will check it first.
+  bool is_valid;
+  // It is possible that a Channel is created by 'force_new' while there is
+  // another Channel have the same key persisted in the list. We should prevent
+  // deleting the persistent Channel during the destroy function.
+  bool is_persisted;
 PHP_GRPC_WRAP_OBJECT_END(wrapped_grpc_channel)
 
 #if PHP_MAJOR_VERSION < 7
