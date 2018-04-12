@@ -1676,6 +1676,33 @@ static void send_ping_locked(grpc_chttp2_transport* t,
                            GRPC_ERROR_NONE);
 }
 
+/*
+ * Specialized form of send_ping_locked for keepalive ping. If there is already
+ * a ping in progress, the keepalive ping would piggyback onto that ping,
+ * instead of waiting for that ping to complete and then starting a new ping.
+ */
+static void send_keepalive_ping_locked(grpc_chttp2_transport* t) {
+  if (t->closed_with_error != GRPC_ERROR_NONE) {
+    GRPC_CLOSURE_SCHED(&t->start_keepalive_ping_locked,
+                       GRPC_ERROR_REF(t->closed_with_error));
+    GRPC_CLOSURE_SCHED(&t->finish_keepalive_ping_locked,
+                       GRPC_ERROR_REF(t->closed_with_error));
+    return;
+  }
+  grpc_chttp2_ping_queue* pq = &t->ping_queue;
+  if (!grpc_closure_list_empty(pq->lists[GRPC_CHTTP2_PCL_INFLIGHT])) {
+    /* There is a ping in flight. Add yourself to the inflight closure list. */
+    GRPC_CLOSURE_SCHED(&t->start_keepalive_ping_locked, GRPC_ERROR_NONE);
+    grpc_closure_list_append(&pq->lists[GRPC_CHTTP2_PCL_INFLIGHT],
+                             &t->finish_keepalive_ping_locked, GRPC_ERROR_NONE);
+    return;
+  }
+  grpc_closure_list_append(&pq->lists[GRPC_CHTTP2_PCL_INITIATE],
+                           &t->start_keepalive_ping_locked, GRPC_ERROR_NONE);
+  grpc_closure_list_append(&pq->lists[GRPC_CHTTP2_PCL_NEXT],
+                           &t->finish_keepalive_ping_locked, GRPC_ERROR_NONE);
+}
+
 static void retry_initiate_ping_locked(void* tp, grpc_error* error) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
   t->ping_state.is_delayed_ping_timer_set = false;
@@ -2619,8 +2646,7 @@ static void init_keepalive_ping_locked(void* arg, grpc_error* error) {
         grpc_chttp2_stream_map_size(&t->stream_map) > 0) {
       t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_PINGING;
       GRPC_CHTTP2_REF_TRANSPORT(t, "keepalive ping end");
-      send_ping_locked(t, &t->start_keepalive_ping_locked,
-                       &t->finish_keepalive_ping_locked);
+      send_keepalive_ping_locked(t);
       grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_KEEPALIVE_PING);
     } else {
       GRPC_CHTTP2_REF_TRANSPORT(t, "init keepalive ping");
