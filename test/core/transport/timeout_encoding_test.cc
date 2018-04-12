@@ -71,7 +71,7 @@ static void assert_decodes_as(const char* buffer, grpc_millis expected) {
   GPR_ASSERT(1 == grpc_http2_decode_timeout(
                       grpc_slice_from_static_string(buffer), &got));
   if (got != expected) {
-    gpr_log(GPR_ERROR, "got:'%" PRIdPTR "' != expected:'%" PRIdPTR "'", got,
+    gpr_log(GPR_ERROR, "got:'%" PRId64 "' != expected:'%" PRId64 "'", got,
             expected);
     abort();
   }

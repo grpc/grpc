@@ -345,7 +345,7 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
     RefCountedPtr<Resolver> self = r->Ref(DEBUG_LOCATION, "retry-timer");
     self.release();
     if (timeout > 0) {
-      gpr_log(GPR_DEBUG, "retrying in %" PRIdPTR " milliseconds", timeout);
+      gpr_log(GPR_DEBUG, "retrying in %" PRId64 " milliseconds", timeout);
     } else {
       gpr_log(GPR_DEBUG, "retrying immediately");
     }
@@ -371,8 +371,8 @@ void AresDnsResolver::MaybeStartResolvingLocked() {
       const grpc_millis last_resolution_ago =
           grpc_core::ExecCtx::Get()->Now() - last_resolution_timestamp_;
       gpr_log(GPR_DEBUG,
-              "In cooldown from last resolution (from %" PRIdPTR
-              " ms ago). Will resolve again in %" PRIdPTR " ms",
+              "In cooldown from last resolution (from %" PRId64
+              " ms ago). Will resolve again in %" PRId64 " ms",
               last_resolution_ago, ms_until_next_resolution);
       if (!have_next_resolution_timer_) {
         have_next_resolution_timer_ = true;

@@ -774,7 +774,7 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
       if (grpc_lb_glb_trace.enabled()) {
         gpr_log(GPR_INFO,
                 "[grpclb %p] Received initial LB response message; "
-                "client load reporting interval = %" PRIdPTR " milliseconds",
+                "client load reporting interval = %" PRId64 " milliseconds",
                 grpclb_policy, lb_calld->client_stats_report_interval_);
       }
     } else if (grpc_lb_glb_trace.enabled()) {
@@ -1412,9 +1412,8 @@ void GrpcLb::StartBalancerCallRetryTimerLocked() {
     gpr_log(GPR_DEBUG, "[grpclb %p] Connection to LB server lost...", this);
     grpc_millis timeout = next_try - ExecCtx::Get()->Now();
     if (timeout > 0) {
-      gpr_log(GPR_DEBUG,
-              "[grpclb %p] ... retry_timer_active in %" PRIuPTR "ms.", this,
-              timeout);
+      gpr_log(GPR_DEBUG, "[grpclb %p] ... retry_timer_active in %" PRId64 "ms.",
+              this, timeout);
     } else {
       gpr_log(GPR_DEBUG, "[grpclb %p] ... retry_timer_active immediately.",
               this);

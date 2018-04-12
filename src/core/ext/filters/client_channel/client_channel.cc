@@ -1399,7 +1399,7 @@ static void do_retry(grpc_call_element* elem,
   }
   if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG,
-            "chand=%p calld=%p: retrying failed call in %" PRIuPTR " ms", chand,
+            "chand=%p calld=%p: retrying failed call in %" PRId64 " ms", chand,
             calld, next_attempt_time - grpc_core::ExecCtx::Get()->Now());
   }
   // Schedule retry after computed delay.

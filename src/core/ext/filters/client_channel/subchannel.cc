@@ -467,7 +467,7 @@ static void maybe_start_connecting_locked(grpc_subchannel* c) {
     if (time_til_next <= 0) {
       gpr_log(GPR_INFO, "Subchannel %p: Retry immediately", c);
     } else {
-      gpr_log(GPR_INFO, "Subchannel %p: Retry in %" PRIdPTR " milliseconds", c,
+      gpr_log(GPR_INFO, "Subchannel %p: Retry in %" PRId64 " milliseconds", c,
               time_til_next);
     }
     GRPC_CLOSURE_INIT(&c->on_alarm, on_alarm, c, grpc_schedule_on_exec_ctx);
