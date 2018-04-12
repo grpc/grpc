@@ -500,6 +500,17 @@ typedef unsigned __int64 uint64_t;
 #endif /* __GPR_WINDOWS */
 #endif /* GRPC_ALLOW_EXCEPTIONS */
 
+/* Use GPR_LIKELY only in cases where you are sure that a certain outcome is the
+ * most likely. Ideally, also collect performance numbers to justify the claim.
+ */
+#ifdef __GNUC__
+#define GPR_LIKELY(x) __builtin_expect((x), 1)
+#define GPR_UNLIKELY(x) __builtin_expect((x), 0)
+#else /* __GNUC__ */
+#define GPR_LIKELY(x) (x)
+#define GPR_UNLIKELY(x) (x)
+#endif /* __GNUC__ */
+
 #ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS
 #endif
