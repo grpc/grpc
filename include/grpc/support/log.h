@@ -93,7 +93,7 @@ GPRAPI void gpr_set_log_function(gpr_log_func func);
    an exception in a higher-level language, consider returning error code.  */
 #define GPR_ASSERT(x)                                 \
   do {                                                \
-    if (!(x)) {                                       \
+    if (GPR_UNLIKELY(!(x))) {                         \
       gpr_log(GPR_ERROR, "assertion failed: %s", #x); \
       abort();                                        \
     }                                                 \
