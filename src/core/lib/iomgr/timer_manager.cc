@@ -172,8 +172,7 @@ static bool wait_until(grpc_millis next) {
 
         if (grpc_timer_check_trace.enabled()) {
           grpc_millis wait_time = next - grpc_core::ExecCtx::Get()->Now();
-          gpr_log(GPR_DEBUG, "sleep for a %" PRIdPTR " milliseconds",
-                  wait_time);
+          gpr_log(GPR_DEBUG, "sleep for a %" PRId64 " milliseconds", wait_time);
         }
       } else {  // g_timed_waiter == true && next >= g_timed_waiter_deadline
         next = GRPC_MILLIS_INF_FUTURE;
