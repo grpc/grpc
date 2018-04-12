@@ -86,17 +86,21 @@ int grpc_udp_server_get_fd(grpc_udp_server* s, unsigned port_index);
 /* Add a port to the server, returning port number on success, or negative
    on failure.
 
+   Create |num_listeners| sockets for given address to listen on using
+   SO_REUSEPORT if supported.
+
    The :: and 0.0.0.0 wildcard addresses are treated identically, accepting
-   both IPv4 and IPv6 connections, but :: is the preferred style.  This usually
-   creates one socket, but possibly two on systems which support IPv6,
-   but not dualstack sockets. */
+   both IPv4 and IPv6 connections, but :: is the preferred style. This usually
+   creates |num_listeners| sockets, but possibly 2 * |num_listeners| on systems
+   which support IPv6, but not dualstack sockets. */
 
 /* TODO(ctiller): deprecate this, and make grpc_udp_server_add_ports to handle
                   all of the multiple socket port matching logic in one place */
 int grpc_udp_server_add_port(grpc_udp_server* s,
                              const grpc_resolved_address* addr,
                              int rcv_buf_size, int snd_buf_size,
-                             GrpcUdpHandlerFactory* handler_factory);
+                             GrpcUdpHandlerFactory* handler_factory,
+                             size_t num_listeners);
 
 void grpc_udp_server_destroy(grpc_udp_server* server, grpc_closure* on_done);
 
