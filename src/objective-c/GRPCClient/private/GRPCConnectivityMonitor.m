@@ -41,8 +41,8 @@ GRPCConnectivityStatus CalculateConnectivityStatus(SCNetworkReachabilityFlags fl
   return result;
 }
 
-static void ReachabilityCallback(
-    SCNetworkReachabilityRef target, SCNetworkReachabilityFlags flags, void* info) {
+static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReachabilityFlags flags,
+                                 void *info) {
   GRPCConnectivityStatus newStatus = CalculateConnectivityStatus(flags);
 
   if (newStatus != currentStatus) {
@@ -69,15 +69,14 @@ static void ReachabilityCallback(
 
     SCNetworkReachabilityContext context = {0, (__bridge void *)(self), NULL, NULL, NULL};
     if (!SCNetworkReachabilitySetCallback(reachability, ReachabilityCallback, &context) ||
-        !SCNetworkReachabilityScheduleWithRunLoop(
-            reachability, CFRunLoopGetMain(), kCFRunLoopCommonModes)) {
+        !SCNetworkReachabilityScheduleWithRunLoop(reachability, CFRunLoopGetMain(),
+                                                  kCFRunLoopCommonModes)) {
       NSLog(@"gRPC connectivity monitor fail to set");
     }
   }
 }
 
-+ (void)registerObserver:(_Nonnull id)observer
-                selector:(SEL)selector {
++ (void)registerObserver:(_Nonnull id)observer selector:(SEL)selector {
   [[NSNotificationCenter defaultCenter] addObserver:observer
                                            selector:selector
                                                name:kGRPCConnectivityNotification

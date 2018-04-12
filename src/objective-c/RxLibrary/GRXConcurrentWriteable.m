@@ -46,8 +46,7 @@
 }
 
 - (instancetype)initWithWriteable:(id<GRXWriteable>)writeable {
-  return [self initWithWriteable:writeable
-                   dispatchQueue:dispatch_get_main_queue()];
+  return [self initWithWriteable:writeable dispatchQueue:dispatch_get_main_queue()];
 }
 
 - (void)enqueueValue:(id)value completionHandler:(void (^)(void))handler {
@@ -69,7 +68,7 @@
     typeof(self) strongSelf = weakSelf;
     if (strongSelf) {
       BOOL finished = NO;
-      @synchronized (self) {
+      @synchronized(self) {
         if (!strongSelf->_alreadyFinished) {
           strongSelf->_alreadyFinished = YES;
         } else {
@@ -90,7 +89,7 @@
 - (void)cancelWithError:(NSError *)error {
   NSAssert(error, @"For a successful completion, use enqueueSuccessfulCompletion.");
   BOOL finished = NO;
-  @synchronized (self) {
+  @synchronized(self) {
     if (!_alreadyFinished) {
       _alreadyFinished = YES;
     } else {
@@ -112,7 +111,7 @@
 
 - (void)cancelSilently {
   BOOL finished = NO;
-  @synchronized (self) {
+  @synchronized(self) {
     if (!_alreadyFinished) {
       _alreadyFinished = YES;
     } else {

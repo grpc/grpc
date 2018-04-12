@@ -47,7 +47,6 @@ struct grpc_channel_credentials;
 /** The default response size limit is 4MB. Set this to override that default. */
 @property(nonatomic, strong, nullable) NSNumber *responseSizeLimitOverride;
 
-
 - (nullable instancetype)init NS_UNAVAILABLE;
 /** Host objects initialized with the same address are the same. */
 + (nullable instancetype)hostWithAddress:(NSString *)address;
