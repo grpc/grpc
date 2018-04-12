@@ -350,6 +350,7 @@ void PickFirst::UpdateLocked(const grpc_channel_args& args) {
                   subchannel_list->num_subchannels());
         }
         if (selected_->connected_subchannel() != nullptr) {
+// FIXME: restructure to work more like RR?
           sd->SetConnectedSubchannelFromLocked(selected_);
         }
         selected_ = sd;
@@ -433,6 +434,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
             grpc_connectivity_state_name(connectivity_state()), p->shutdown_,
             subchannel_list()->shutting_down(), grpc_error_string(error));
   }
+// FIXME: move this to SubchannelData::OnConnectivityChangedLocked()
   // If the subchannel list is shutting down, stop watching.
   if (subchannel_list()->shutting_down() || error == GRPC_ERROR_CANCELLED) {
     StopConnectivityWatchLocked();
@@ -502,7 +504,6 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
     case GRPC_CHANNEL_READY: {
       // Case 2.  Promote p->latest_pending_subchannel_list_ to
       // p->subchannel_list_.
-      SetConnectedSubchannelFromSubchannelLocked();
       if (p->latest_pending_subchannel_list_ == subchannel_list()) {
         GPR_ASSERT(p->subchannel_list_ != nullptr);
         p->subchannel_list_->ShutdownLocked("finish_update");

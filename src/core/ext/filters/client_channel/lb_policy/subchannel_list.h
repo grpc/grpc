@@ -94,12 +94,7 @@ class SubchannelData {
     return curr_connectivity_state_;
   }
 
-  // Sets the connected subchannel from the subchannel.
-  void SetConnectedSubchannelFromSubchannelLocked() {
-    connected_subchannel_ =
-        grpc_subchannel_get_connected_subchannel(subchannel_);
-  }
-
+// FIXME: remove
   // An alternative to SetConnectedSubchannelFromSubchannelLocked() for
   // cases where we are retaining a connected subchannel from a previous
   // subchannel list.  This is slightly more efficient than getting the
@@ -191,10 +186,16 @@ class SubchannelData {
   // OnConnectivityChangedLocked().
   grpc_connectivity_state pending_connectivity_state_unsafe_;
   // Current connectivity state.
+// FIXME: move this into RR, not needed in PF because connectivity_state
+// is only used in ProcessConnectivityChangeLocked()
+// (maybe pass it as a param and eliminate the accessor method?)
   grpc_connectivity_state curr_connectivity_state_;
 };
 
 // A list of subchannels.
+// FIXME: make this InternallyRefCounted, and have Orphan() do
+// ShutdownLocked()?
+// (also, maybe we don't need to take a ref to the LB policy anymore?)
 template <typename SubchannelListType, typename SubchannelDataType>
 class SubchannelList : public RefCountedWithTracing<SubchannelListType> {
  public:
@@ -348,14 +349,36 @@ template <typename SubchannelListType, typename SubchannelDataType>
 void SubchannelData<SubchannelListType, SubchannelDataType>::
     OnConnectivityChangedLocked(void* arg, grpc_error* error) {
   SubchannelData* sd = static_cast<SubchannelData*>(arg);
+// FIXME: add trace logging
+  // If the subchannel is READY, get a ref to the connected subchannel.
+  if (sd->pending_connectivity_state_unsafe_ == GRPC_CHANNEL_READY) {
+    sd->connected_subchannel_ =
+        grpc_subchannel_get_connected_subchannel(sd->subchannel_);
+    // If the subchannel became disconnected between the time that this
+    // callback was scheduled and the time that it was actually run in the
+    // combiner, then the connected subchannel may have disappeared out from
+    // under us.  In that case, instead of propagating the READY notification,
+    // we simply renew our watch and wait for the next notification.
+    // Note that we start the renewed watch from IDLE to make sure we
+    // get a notification for the next state, even if that state is
+    // READY again (e.g., if the subchannel has transitioned back to
+    // READY before the callback gets scheduled).
+    if (sd->connected_subchannel_ == nullptr) {
+      sd->pending_connectivity_state_unsafe_ = GRPC_CHANNEL_IDLE;
+      sd->StartConnectivityWatchLocked();
+      return;
+    }
+  }
+  // If we get TRANSIENT_FAILURE, unref the connected subchannel.
+  else if (sd->pending_connectivity_state_unsafe_ ==
+           GRPC_CHANNEL_TRANSIENT_FAILURE) {
+    sd->connected_subchannel_.reset();
+  }
   // Now that we're inside the combiner, copy the pending connectivity
   // state (which was set by the connectivity state watcher) to
   // curr_connectivity_state_, which is what we use inside of the combiner.
   sd->curr_connectivity_state_ = sd->pending_connectivity_state_unsafe_;
-  // If we get TRANSIENT_FAILURE, unref the connected subchannel.
-  if (sd->curr_connectivity_state_ == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-    sd->connected_subchannel_.reset();
-  }
+  // Call the subclass's ProcessConnectivityChangeLocked() method.
   sd->ProcessConnectivityChangeLocked(GRPC_ERROR_REF(error));
 }
 

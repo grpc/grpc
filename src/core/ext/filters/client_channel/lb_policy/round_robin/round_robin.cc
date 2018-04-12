@@ -597,6 +597,7 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
         subchannel_list()->shutting_down(), grpc_error_string(error));
   }
   GPR_ASSERT(subchannel() != nullptr);
+// FIXME: move this to SubchannelData::OnConnectivityChangedLocked()
   // If the subchannel list is shutting down, stop watching.
   if (subchannel_list()->shutting_down() || error == GRPC_ERROR_CANCELLED) {
     StopConnectivityWatchLocked();
@@ -605,34 +606,20 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
     GRPC_ERROR_UNREF(error);
     return;
   }
-  // Process the state change.
-  switch (connectivity_state()) {
-    case GRPC_CHANNEL_TRANSIENT_FAILURE: {
-      // Only re-resolve if we've started watching, not at startup time.
-      // Otherwise, if the subchannel was already in state TRANSIENT_FAILURE
-      // when the subchannel list was created, we'd wind up in a constant
-      // loop of re-resolution.
-      if (subchannel_list()->started_watching()) {
-        if (grpc_lb_round_robin_trace.enabled()) {
-          gpr_log(GPR_DEBUG,
-                  "[RR %p] Subchannel %p has gone into TRANSIENT_FAILURE. "
-                  "Requesting re-resolution",
-                  p, subchannel());
-        }
-        p->TryReresolutionLocked(&grpc_lb_round_robin_trace, GRPC_ERROR_NONE);
-      }
-      break;
+  // If the new state is TRANSIENT_FAILURE, re-resolve.
+  // Only do this if we've started watching, not at startup time.
+  // Otherwise, if the subchannel was already in state TRANSIENT_FAILURE
+  // when the subchannel list was created, we'd wind up in a constant
+  // loop of re-resolution.
+  if (connectivity_state() == GRPC_CHANNEL_TRANSIENT_FAILURE &&
+      subchannel_list()->started_watching()) {
+    if (grpc_lb_round_robin_trace.enabled()) {
+      gpr_log(GPR_DEBUG,
+              "[RR %p] Subchannel %p has gone into TRANSIENT_FAILURE. "
+              "Requesting re-resolution",
+              p, subchannel());
     }
-    case GRPC_CHANNEL_READY: {
-      if (connected_subchannel() == nullptr) {
-        SetConnectedSubchannelFromSubchannelLocked();
-      }
-      break;
-    }
-    case GRPC_CHANNEL_SHUTDOWN:
-      GPR_UNREACHABLE_CODE(return );
-    case GRPC_CHANNEL_CONNECTING:
-    case GRPC_CHANNEL_IDLE:;  // fallthrough
+    p->TryReresolutionLocked(&grpc_lb_round_robin_trace, GRPC_ERROR_NONE);
   }
   // Update state counters.
   subchannel_list()->UpdateStateCountersLocked(
