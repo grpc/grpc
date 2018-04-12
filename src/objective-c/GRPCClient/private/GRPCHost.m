@@ -275,7 +275,7 @@ static NSMutableDictionary *kHostCache;
 // and Cellular data, so that a new call will use a new channel. Otherwise, a new call will still
 // use the cached channel which is no longer available and will cause gRPC to hang.
 - (void)connectivityChange:(NSNotification *)note {
-  [GRPCHost flushChannelCache];
+  [GRPCHost disconnect];
 }
 
 @end
