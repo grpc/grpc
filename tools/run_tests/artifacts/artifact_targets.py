@@ -222,7 +222,13 @@ class CSharpExtArtifact:
         return []
 
     def build_jobspec(self):
-        if self.platform == 'windows':
+        if self.arch == 'android':
+            return create_docker_jobspec(
+                self.name,
+                'tools/dockerfile/grpc_artifact_android_ndk',
+                'tools/run_tests/artifacts/build_artifact_csharp_android.sh',
+                environ={})
+        elif self.platform == 'windows':
             cmake_arch_option = 'Win32' if self.arch == 'x86' else self.arch
             return create_jobspec(
                 self.name, [
@@ -342,6 +348,7 @@ def targets():
         for Cls in (CSharpExtArtifact, ProtocArtifact)
         for platform in ('linux', 'macos', 'windows') for arch in ('x86', 'x64')
     ] + [
+        CSharpExtArtifact('linux', 'android'),
         PythonArtifact('linux', 'x86', 'cp27-cp27m'),
         PythonArtifact('linux', 'x86', 'cp27-cp27mu'),
         PythonArtifact('linux', 'x86', 'cp34-cp34m'),
