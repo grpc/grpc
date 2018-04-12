@@ -204,6 +204,11 @@ static grpc_error* uv_socket_init_helper(uv_socket_t* uv_socket, int domain) {
   uv_socket->write_buffers = nullptr;
   uv_socket->read_len = 0;
   uv_tcp_nodelay(uv_socket->handle, 1);
+  // Node uses a garbage collector to call destructors, so we don't
+  // want to hold the uv loop open with active gRPC objects.
+#ifndef GRPC_UV_HOLD_LOOP
+  uv_unref((uv_handle_t*)uv_socket->handle);
+#endif
   uv_socket->pending_connection = false;
   uv_socket->accept_socket = nullptr;
   uv_socket->accept_error = GRPC_ERROR_NONE;
