@@ -61,6 +61,8 @@ GPRAPI const char* gpr_log_severity_string(gpr_log_severity severity);
 GPRAPI void gpr_log(const char* file, int line, gpr_log_severity severity,
                     const char* format, ...) GPR_PRINT_FORMAT_CHECK(4, 5);
 
+GPRAPI int gpr_should_log(gpr_log_severity severity);
+
 GPRAPI void gpr_log_message(const char* file, int line,
                             gpr_log_severity severity, const char* message);
 
