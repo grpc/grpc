@@ -214,6 +214,7 @@ gpr_cpu_num_cores_type gpr_cpu_num_cores_import;
 gpr_cpu_current_cpu_type gpr_cpu_current_cpu_import;
 gpr_log_severity_string_type gpr_log_severity_string_import;
 gpr_log_type gpr_log_import;
+gpr_should_log_type gpr_should_log_import;
 gpr_log_message_type gpr_log_message_import;
 gpr_set_log_verbosity_type gpr_set_log_verbosity_import;
 gpr_log_verbosity_init_type gpr_log_verbosity_init_import;
@@ -461,6 +462,7 @@ void grpc_rb_load_imports(HMODULE library) {
   gpr_cpu_current_cpu_import = (gpr_cpu_current_cpu_type) GetProcAddress(library, "gpr_cpu_current_cpu");
   gpr_log_severity_string_import = (gpr_log_severity_string_type) GetProcAddress(library, "gpr_log_severity_string");
   gpr_log_import = (gpr_log_type) GetProcAddress(library, "gpr_log");
+  gpr_should_log_import = (gpr_should_log_type) GetProcAddress(library, "gpr_should_log");
   gpr_log_message_import = (gpr_log_message_type) GetProcAddress(library, "gpr_log_message");
   gpr_set_log_verbosity_import = (gpr_set_log_verbosity_type) GetProcAddress(library, "gpr_set_log_verbosity");
   gpr_log_verbosity_init_import = (gpr_log_verbosity_init_type) GetProcAddress(library, "gpr_log_verbosity_init");
