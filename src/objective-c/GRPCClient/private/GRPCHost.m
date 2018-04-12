@@ -50,6 +50,7 @@ static NSMutableDictionary *kHostCache;
   if (_channelCreds != nil) {
     grpc_channel_credentials_release(_channelCreds);
   }
+  [GRPCConnectivityMonitor unregisterObserver:self];
 }
 
 // Default initializer.
