@@ -95,9 +95,17 @@ Status GenericDeserialize(ByteBuffer* buffer, grpc::protobuf::Message* msg) {
   return result;
 }
 
-// this is needed so the following class does not conflict with protobuf
+// This is needed so the following class does not conflict with protobuf
 // serializers that utilize internal-only tools.
 #ifdef GRPC_OPEN_SOURCE_PROTO
+
+// These allow other Google projects that exist internally and in OSS (cough
+// cough TensorFlow) to utilize certain internal optimization (cough cough
+// Cord) that should be open sourced soon (sniff sneeze Abseil) clearing this
+// whole mess up.
+typedef ProtoBufferWriter MaybeCordProtoBufferWriter;
+typedef ProtoBufferReader MaybeCordProtoBufferReader;
+
 // This class provides a protobuf serializer. It translates between protobuf
 // objects and grpc_byte_buffers. More information about SerializationTraits can
 // be found in include/grpcpp/impl/codegen/serialization_traits.h.
@@ -114,7 +122,7 @@ class SerializationTraits<T, typename std::enable_if<std::is_base_of<
     return GenericDeserialize<ProtoBufferReader, T>(buffer, msg);
   }
 };
-#endif
+#endif  // GRPC_OPEN_SOURCE_PROTO
 
 }  // namespace grpc
 
