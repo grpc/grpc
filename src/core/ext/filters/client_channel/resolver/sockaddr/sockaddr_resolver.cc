@@ -123,7 +123,7 @@ void DoNothing(void* ignored) {}
 OrphanablePtr<Resolver> CreateSockaddrResolver(
     const ResolverArgs& args,
     bool parse(const grpc_uri* uri, grpc_resolved_address* dst)) {
-  if (0 != strcmp(args.uri->authority, "")) {
+  if (GPR_UNLIKELY(0 != strcmp(args.uri->authority, ""))) {
     gpr_log(GPR_ERROR, "authority-based URIs not supported by the %s scheme",
             args.uri->scheme);
     return OrphanablePtr<Resolver>(nullptr);

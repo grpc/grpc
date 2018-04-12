@@ -460,7 +460,7 @@ static size_t max_payload_size_from_args(const grpc_channel_args* args) {
   if (args != nullptr) {
     for (size_t i = 0; i < args->num_args; ++i) {
       if (0 == strcmp(args->args[i].key, GRPC_ARG_MAX_PAYLOAD_SIZE_FOR_GET)) {
-        if (args->args[i].type != GRPC_ARG_INTEGER) {
+        if (GPR_UNLIKELY(args->args[i].type != GRPC_ARG_INTEGER)) {
           gpr_log(GPR_ERROR, "%s: must be an integer",
                   GRPC_ARG_MAX_PAYLOAD_SIZE_FOR_GET);
         } else {
@@ -484,7 +484,7 @@ static grpc_slice user_agent_from_args(const grpc_channel_args* args,
 
   for (i = 0; args && i < args->num_args; i++) {
     if (0 == strcmp(args->args[i].key, GRPC_ARG_PRIMARY_USER_AGENT_STRING)) {
-      if (args->args[i].type != GRPC_ARG_STRING) {
+      if (GPR_UNLIKELY(args->args[i].type != GRPC_ARG_STRING)) {
         gpr_log(GPR_ERROR, "Channel argument '%s' should be a string",
                 GRPC_ARG_PRIMARY_USER_AGENT_STRING);
       } else {
@@ -503,7 +503,7 @@ static grpc_slice user_agent_from_args(const grpc_channel_args* args,
 
   for (i = 0; args && i < args->num_args; i++) {
     if (0 == strcmp(args->args[i].key, GRPC_ARG_SECONDARY_USER_AGENT_STRING)) {
-      if (args->args[i].type != GRPC_ARG_STRING) {
+      if (GPR_UNLIKELY(args->args[i].type != GRPC_ARG_STRING)) {
         gpr_log(GPR_ERROR, "Channel argument '%s' should be a string",
                 GRPC_ARG_SECONDARY_USER_AGENT_STRING);
       } else {

@@ -50,11 +50,11 @@ static char* get_http_proxy_server(char** user_cred) {
   size_t authority_nstrs;
   if (uri_str == nullptr) return nullptr;
   grpc_uri* uri = grpc_uri_parse(uri_str, false /* suppress_errors */);
-  if (uri == nullptr || uri->authority == nullptr) {
+  if (GPR_UNLIKELY(uri == nullptr || uri->authority == nullptr)) {
     gpr_log(GPR_ERROR, "cannot parse value of 'http_proxy' env var");
     goto done;
   }
-  if (strcmp(uri->scheme, "http") != 0) {
+  if (GPR_UNLIKELY(strcmp(uri->scheme, "http") != 0)) {
     gpr_log(GPR_ERROR, "'%s' scheme not supported in proxy URI", uri->scheme);
     goto done;
   }
@@ -93,7 +93,7 @@ static bool proxy_mapper_map_name(grpc_proxy_mapper* mapper,
   if (*name_to_resolve == nullptr) return false;
   char* no_proxy_str = nullptr;
   grpc_uri* uri = grpc_uri_parse(server_uri, false /* suppress_errors */);
-  if (uri == nullptr || uri->path[0] == '\0') {
+  if (GPR_UNLIKELY(uri == nullptr || uri->path[0] == '\0')) {
     gpr_log(GPR_ERROR,
             "'http_proxy' environment variable set, but cannot "
             "parse server URI '%s' -- not using proxy",

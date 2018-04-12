@@ -74,7 +74,7 @@ class RegistryState {
       *uri = grpc_uri_parse(*canonical_target, 1);
       factory =
           *uri == nullptr ? nullptr : LookupResolverFactory((*uri)->scheme);
-      if (factory == nullptr) {
+      if (GPR_UNLIKELY(factory == nullptr)) {
         grpc_uri_destroy(grpc_uri_parse(target, 0));
         grpc_uri_destroy(grpc_uri_parse(*canonical_target, 0));
         gpr_log(GPR_ERROR, "don't know how to resolve '%s' or '%s'", target,

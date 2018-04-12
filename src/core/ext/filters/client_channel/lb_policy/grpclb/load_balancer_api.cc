@@ -29,7 +29,7 @@ static bool count_serverlist(pb_istream_t* stream, const pb_field_t* field,
                              void** arg) {
   grpc_grpclb_serverlist* sl = static_cast<grpc_grpclb_serverlist*>(*arg);
   grpc_grpclb_server server;
-  if (!pb_decode(stream, grpc_lb_v1_Server_fields, &server)) {
+  if (GPR_UNLIKELY(!pb_decode(stream, grpc_lb_v1_Server_fields, &server))) {
     gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(stream));
     return false;
   }
@@ -52,7 +52,7 @@ static bool decode_serverlist(pb_istream_t* stream, const pb_field_t* field,
   GPR_ASSERT(dec_arg->serverlist->num_servers >= dec_arg->decoding_idx);
   grpc_grpclb_server* server =
       static_cast<grpc_grpclb_server*>(gpr_zalloc(sizeof(grpc_grpclb_server)));
-  if (!pb_decode(stream, grpc_lb_v1_Server_fields, server)) {
+  if (GPR_UNLIKELY(!pb_decode(stream, grpc_lb_v1_Server_fields, server))) {
     gpr_free(server);
     gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(stream));
     return false;
@@ -165,7 +165,8 @@ grpc_grpclb_initial_response* grpc_grpclb_initial_response_parse(
                              GRPC_SLICE_LENGTH(encoded_grpc_grpclb_response));
   grpc_grpclb_response res;
   memset(&res, 0, sizeof(grpc_grpclb_response));
-  if (!pb_decode(&stream, grpc_lb_v1_LoadBalanceResponse_fields, &res)) {
+  if (GPR_UNLIKELY(
+          !pb_decode(&stream, grpc_lb_v1_LoadBalanceResponse_fields, &res))) {
     gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(&stream));
     return nullptr;
   }
@@ -195,7 +196,7 @@ grpc_grpclb_serverlist* grpc_grpclb_response_parse_serverlist(
   res.server_list.servers.funcs.decode = count_serverlist;
   res.server_list.servers.arg = sl;
   bool status = pb_decode(&stream, grpc_lb_v1_LoadBalanceResponse_fields, &res);
-  if (!status) {
+  if (GPR_UNLIKELY(!status)) {
     gpr_free(sl);
     gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(&stream));
     return nullptr;
@@ -211,7 +212,7 @@ grpc_grpclb_serverlist* grpc_grpclb_response_parse_serverlist(
     res.server_list.servers.arg = &decode_arg;
     status = pb_decode(&stream_at_start, grpc_lb_v1_LoadBalanceResponse_fields,
                        &res);
-    if (!status) {
+    if (GPR_UNLIKELY(!status)) {
       grpc_grpclb_destroy_serverlist(sl);
       gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(&stream));
       return nullptr;

@@ -280,7 +280,7 @@ static void http_connect_handshaker_do_handshake(
         gpr_malloc(sizeof(grpc_http_header) * num_header_strings));
     for (size_t i = 0; i < num_header_strings; ++i) {
       char* sep = strchr(header_strings[i], ':');
-      if (sep == nullptr) {
+      if (GPR_UNLIKELY(sep == nullptr)) {
         gpr_log(GPR_ERROR, "skipping unparseable HTTP CONNECT header: %s",
                 header_strings[i]);
         continue;
