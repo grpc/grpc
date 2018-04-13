@@ -43,11 +43,11 @@ extern CoreCodegenInterface* g_core_codegen_interface;
 ///
 /// Read more about ZeroCopyInputStream interface here:
 /// https://developers.google.com/protocol-buffers/docs/reference/cpp/google.protobuf.io.zero_copy_stream#ZeroCopyInputStream
-class GrpcProtoBufferReader : public ::grpc::protobuf::io::ZeroCopyInputStream {
+class ProtoBufferReader : public ::grpc::protobuf::io::ZeroCopyInputStream {
  public:
   /// Constructs buffer reader from \a buffer. Will set \a status() to non ok
   /// if \a buffer is invalid (the internal buffer has not been initialized).
-  explicit GrpcProtoBufferReader(ByteBuffer* buffer)
+  explicit ProtoBufferReader(ByteBuffer* buffer)
       : byte_count_(0), backup_count_(0), status_() {
     /// Implemented through a grpc_byte_buffer_reader which iterates
     /// over the slices that make up a byte buffer
@@ -59,7 +59,7 @@ class GrpcProtoBufferReader : public ::grpc::protobuf::io::ZeroCopyInputStream {
     }
   }
 
-  ~GrpcProtoBufferReader() {
+  ~ProtoBufferReader() {
     if (status_.ok()) {
       g_core_codegen_interface->grpc_byte_buffer_reader_destroy(&reader_);
     }
