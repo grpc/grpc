@@ -211,6 +211,9 @@ class BalancerServiceImpl : public BalancerService {
     IncreaseRequestCount();
     gpr_log(GPR_INFO, "LB[%p]: received initial message '%s'", this,
             request.DebugString().c_str());
+    if (request.initial_request().name() == "invalid_name") {
+      return Status::NOT_FOUND;
+    }
 
     // TODO(juanlishen): Initial response should always be the first response.
     if (client_load_reporting_interval_seconds_ > 0) {
@@ -393,7 +396,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
   }
 
   void ResetStub(int fallback_timeout = 0,
-                 const grpc::string& expected_targets = "") {
+                 const grpc::string& expected_targets = "",
+                 const grpc::string& application_target_name = "") {
     ChannelArguments args;
     args.SetGrpclbFallbackTimeout(fallback_timeout);
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
@@ -402,7 +406,11 @@ class GrpclbEnd2endTest : public ::testing::Test {
       args.SetString(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS, expected_targets);
     }
     std::ostringstream uri;
-    uri << "fake:///" << kApplicationTargetName_;
+    if (application_target_name != "") {
+      uri << "fake:///" << application_target_name;
+    } else {
+      uri << "fake:///" << kApplicationTargetName_;
+    }
     // TODO(dgq): templatize tests to run everything using both secure and
     // insecure channel credentials.
     grpc_channel_credentials* channel_creds =
@@ -907,6 +915,41 @@ TEST_F(SingleBalancerTest, FallbackUpdate) {
   EXPECT_EQ(1U, balancer_servers_[0].service_->request_count());
   // and sent a single response.
   EXPECT_EQ(1U, balancer_servers_[0].service_->response_count());
+}
+
+TEST_F(SingleBalancerTest, FallbackInvalidServerName) {
+  SetNextResolutionAllBalancers();
+  const int kFallbackTimeoutMs = 200 * grpc_test_slowdown_factor();
+
+  ResetStub(kFallbackTimeoutMs, "", "invalid_name");
+  std::vector<AddressData> addresses;
+  addresses.emplace_back(AddressData{balancer_servers_[0].port_, true, ""});
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    addresses.emplace_back(AddressData{backend_servers_[i].port_, false, ""});
+  }
+  SetNextResolution(addresses);
+
+  // Wait until all the fallback backends are reachable.
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    WaitForBackend(i);
+  }
+
+  // The first and only request batch.
+  gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
+  CheckRpcSendOk(backends_.size());
+  gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
+
+  // Fallback is used: each backend returned by the resolver should have
+  // gotten one request.
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    EXPECT_EQ(1U, backend_servers_[i].service_->request_count());
+  }
+
+  // The balancer may get multiple requests because of re-connection and/or
+  // re-resolution.
+  EXPECT_LE(1U, balancer_servers_[0].service_->request_count());
+  // But it never sends any response.
+  EXPECT_EQ(0U, balancer_servers_[0].service_->response_count());
 }
 
 TEST_F(SingleBalancerTest, BackendsRestart) {

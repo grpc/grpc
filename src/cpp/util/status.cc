@@ -22,5 +22,6 @@ namespace grpc {
 
 const Status& Status::OK = Status();
 const Status& Status::CANCELLED = Status(StatusCode::CANCELLED, "");
+const Status& Status::NOT_FOUND = Status(StatusCode::NOT_FOUND, "");
 
 }  // namespace grpc

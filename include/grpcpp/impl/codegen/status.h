@@ -105,6 +105,8 @@ class Status {
   static const Status& OK;
   /// A CANCELLED pre-defined instance.
   static const Status& CANCELLED;
+  /// A NOT_FOUND pre-defined instance.
+  static const Status& NOT_FOUND;
 
   /// Return the instance's error code.
   StatusCode error_code() const { return code_; }
