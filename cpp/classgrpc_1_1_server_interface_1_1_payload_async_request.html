@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.10.0</span>
+   &#160;<span id="projectnumber">1.11.0</span>
    </div>
   </td>
  </tr>
@@ -76,6 +76,8 @@ $(function() {
 Public Member Functions</h2></td></tr>
 <tr class="memitem:abc1f39238fa414c05b01a359bea2ce58"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface_1_1_payload_async_request.html#abc1f39238fa414c05b01a359bea2ce58">PayloadAsyncRequest</a> (void *registered_method, <a class="el" href="classgrpc_1_1_server_interface.html">ServerInterface</a> *<a class="el" href="classgrpc_1_1_server_interface.html#a8e9cf80377d3fd1f110089ad16ec79e7">server</a>, <a class="el" href="classgrpc_1_1_server_context.html">ServerContext</a> *context, <a class="el" href="classgrpc_1_1internal_1_1_server_async_streaming_interface.html">internal::ServerAsyncStreamingInterface</a> *stream, <a class="el" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a> *call_cq, <a class="el" href="classgrpc_1_1_server_completion_queue.html">ServerCompletionQueue</a> *notification_cq, void *tag, Message *request)</td></tr>
 <tr class="separator:abc1f39238fa414c05b01a359bea2ce58"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a77ca64853e2ec47ca28a00a678f75570"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface_1_1_payload_async_request.html#a77ca64853e2ec47ca28a00a678f75570">~PayloadAsyncRequest</a> ()</td></tr>
+<tr class="separator:a77ca64853e2ec47ca28a00a678f75570"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7b30fb67e83af11c447f76e9ca0471c8"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface_1_1_payload_async_request.html#a7b30fb67e83af11c447f76e9ca0471c8">FinalizeResult</a> (void **tag, bool *status) override</td></tr>
 <tr class="memdesc:a7b30fb67e83af11c447f76e9ca0471c8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called prior to returning from Next(), return value is the status of the operation (return status is the default thing to do).  <a href="#a7b30fb67e83af11c447f76e9ca0471c8">More...</a><br /></td></tr>
 <tr class="separator:a7b30fb67e83af11c447f76e9ca0471c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -187,6 +189,33 @@ template&lt;class Message &gt; </div>
 
 </div>
 </div>
+<a id="a77ca64853e2ec47ca28a00a678f75570"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a77ca64853e2ec47ca28a00a678f75570">&#9670;&nbsp;</a></span>~PayloadAsyncRequest()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class Message &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classgrpc_1_1_server_interface_1_1_payload_async_request.html">grpc::ServerInterface::PayloadAsyncRequest</a>&lt; Message &gt;::~<a class="el" href="classgrpc_1_1_server_interface_1_1_payload_async_request.html">PayloadAsyncRequest</a> </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <h2 class="groupheader">Member Function Documentation</h2>
 <a id="a7b30fb67e83af11c447f76e9ca0471c8"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a7b30fb67e83af11c447f76e9ca0471c8">&#9670;&nbsp;</a></span>FinalizeResult()</h2>
@@ -237,7 +266,7 @@ template&lt;class Message &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 1 2018 16:16:09 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Apr 13 2018 15:03:53 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

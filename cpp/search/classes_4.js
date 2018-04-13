@@ -3,7 +3,7 @@ var searchData=
   ['genericasyncrequest',['GenericAsyncRequest',['../classgrpc_1_1_server_interface_1_1_generic_async_request.html',1,'grpc::ServerInterface']]],
   ['genericservercontext',['GenericServerContext',['../classgrpc_1_1_generic_server_context.html',1,'grpc']]],
   ['genericstub',['GenericStub',['../classgrpc_1_1_generic_stub.html',1,'grpc']]],
-  ['globalcallbacks',['GlobalCallbacks',['../classgrpc_1_1_server_1_1_global_callbacks.html',1,'grpc::Server::GlobalCallbacks'],['../classgrpc_1_1_client_context_1_1_global_callbacks.html',1,'grpc::ClientContext::GlobalCallbacks']]],
+  ['globalcallbacks',['GlobalCallbacks',['../classgrpc_1_1_client_context_1_1_global_callbacks.html',1,'grpc::ClientContext::GlobalCallbacks'],['../classgrpc_1_1_server_1_1_global_callbacks.html',1,'grpc::Server::GlobalCallbacks']]],
   ['gpr_5fallocation_5ffunctions',['gpr_allocation_functions',['../structgpr__allocation__functions.html',1,'']]],
   ['gpr_5fevent',['gpr_event',['../structgpr__event.html',1,'']]],
   ['gpr_5flog_5ffunc_5fargs',['gpr_log_func_args',['../structgpr__log__func__args.html',1,'']]],

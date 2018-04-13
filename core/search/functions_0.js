@@ -106,6 +106,8 @@ var searchData=
   ['grpc_5fchannel_5fdestroy',['grpc_channel_destroy',['../grpc_8h.html#a3af54515116727e18116883e64ee031e',1,'grpc.h']]],
   ['grpc_5fchannel_5fget_5finfo',['grpc_channel_get_info',['../grpc_8h.html#afacde78420397fae74276ec522bd4dba',1,'grpc.h']]],
   ['grpc_5fchannel_5fget_5ftarget',['grpc_channel_get_target',['../grpc_8h.html#aaa25111c739e1c01ae2d195a23079afd',1,'grpc.h']]],
+  ['grpc_5fchannel_5fget_5ftrace',['grpc_channel_get_trace',['../grpc_8h.html#ad9315e8c062a4d2a32e49460813da2b2',1,'grpc.h']]],
+  ['grpc_5fchannel_5fget_5fuuid',['grpc_channel_get_uuid',['../grpc_8h.html#a6dcb2303de383361c8067afd9da4862e',1,'grpc.h']]],
   ['grpc_5fchannel_5fnum_5fexternal_5fconnectivity_5fwatchers',['grpc_channel_num_external_connectivity_watchers',['../grpc_8h.html#ac325c84ef541bcf04697abcc5d167a51',1,'grpc.h']]],
   ['grpc_5fchannel_5fping',['grpc_channel_ping',['../grpc_8h.html#acad1b47029ebf10f80e0db9423401c87',1,'grpc.h']]],
   ['grpc_5fchannel_5fregister_5fcall',['grpc_channel_register_call',['../grpc_8h.html#af09cbd24340547542b6ec3300e973d62',1,'grpc.h']]],
@@ -236,6 +238,9 @@ var searchData=
   ['grpc_5fssl_5fserver_5fcredentials_5fcreate_5foptions_5fusing_5fconfig_5ffetcher',['grpc_ssl_server_credentials_create_options_using_config_fetcher',['../grpc__security_8h.html#a0bef5efe91a84e2c74b031759a9a7313',1,'grpc_security.h']]],
   ['grpc_5fssl_5fserver_5fcredentials_5fcreate_5fwith_5foptions',['grpc_ssl_server_credentials_create_with_options',['../grpc__security_8h.html#aec838ac89bd393040f0c88dad25a72ca',1,'grpc_security.h']]],
   ['grpc_5fssl_5fserver_5fcredentials_5foptions_5fdestroy',['grpc_ssl_server_credentials_options_destroy',['../grpc__security_8h.html#aa22779b6b4ffefc0efdaf8de4c8314a8',1,'grpc_security.h']]],
+  ['grpc_5fssl_5fsession_5fcache_5fcreate_5fchannel_5farg',['grpc_ssl_session_cache_create_channel_arg',['../grpc__security_8h.html#a4fd0dd05b90f7dcebaaacf8a0088c46f',1,'grpc_security.h']]],
+  ['grpc_5fssl_5fsession_5fcache_5fcreate_5flru',['grpc_ssl_session_cache_create_lru',['../grpc__security_8h.html#ae175e13bfcab1b77f4cc7f193d898aff',1,'grpc_security.h']]],
+  ['grpc_5fssl_5fsession_5fcache_5fdestroy',['grpc_ssl_session_cache_destroy',['../grpc__security_8h.html#a3f83f8a3390b8b1659b719b7f47005a1',1,'grpc_security.h']]],
   ['grpc_5ftracer_5fset_5fenabled',['grpc_tracer_set_enabled',['../grpc_8h.html#a0bcbc8d69b256843facb8339d812ae2e',1,'grpc.h']]],
   ['grpc_5fuse_5fsignal',['grpc_use_signal',['../grpc__posix_8h.html#a0dd4f6903c0919775d45189990067d14',1,'grpc_posix.h']]],
   ['grpc_5fversion_5fstring',['grpc_version_string',['../grpc_8h.html#a8bf40c680565d2d3b29b85e8a9e661f3',1,'grpc.h']]]

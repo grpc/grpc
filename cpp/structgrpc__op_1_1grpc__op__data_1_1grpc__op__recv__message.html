@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.10.0</span>
+   &#160;<span id="projectnumber">1.11.0</span>
    </div>
   </td>
  </tr>
@@ -82,6 +82,7 @@ Data Fields</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>ownership of the byte buffer is moved to the caller; the caller must call grpc_byte_buffer_destroy on this value, or reuse it in a future op. </p>
+<p>The returned byte buffer will be NULL if trailing metadata was received instead of a message. </p>
 </div><h2 class="groupheader">Field Documentation</h2>
 <a id="a59e4b45136bd82fcb00d76977b5bfadc"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a59e4b45136bd82fcb00d76977b5bfadc">&#9670;&nbsp;</a></span>recv_message</h2>
@@ -103,7 +104,7 @@ Data Fields</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 1 2018 16:16:09 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Apr 13 2018 15:03:53 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

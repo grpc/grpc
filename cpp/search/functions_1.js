@@ -6,7 +6,7 @@ var searchData=
   ['bidistreaminghandler',['BidiStreamingHandler',['../classgrpc_1_1internal_1_1_bidi_streaming_handler.html#a9a3351529eb5b2dd8e2e680ed1e33be0',1,'grpc::internal::BidiStreamingHandler']]],
   ['blockingunarycall',['BlockingUnaryCall',['../namespacegrpc_1_1internal.html#ab89adb1632c2a6b19fa92583d698298c',1,'grpc::internal']]],
   ['blockingunarycallimpl',['BlockingUnaryCallImpl',['../classgrpc_1_1internal_1_1_blocking_unary_call_impl.html#a0e4479a420ea883bfaf35733030e85dd',1,'grpc::internal::BlockingUnaryCallImpl']]],
-  ['buildandstart',['BuildAndStart',['../classgrpc_1_1_server_builder.html#af284cd39b185043e8e92405c1ae0f310',1,'grpc::ServerBuilder']]],
+  ['buildandstart',['BuildAndStart',['../classgrpc_1_1_server_builder.html#aa3966340091070dd68fa831a03e1e6ef',1,'grpc::ServerBuilder']]],
   ['bytebuffer',['ByteBuffer',['../classgrpc_1_1_byte_buffer.html#aa3037355cbd37dce99c97e5c3700a76b',1,'grpc::ByteBuffer::ByteBuffer()'],['../classgrpc_1_1_byte_buffer.html#aa1f69f81c3cb03c61b544a0222e83004',1,'grpc::ByteBuffer::ByteBuffer(const Slice *slices, size_t nslices)'],['../classgrpc_1_1_byte_buffer.html#a67fdf624e23dbd80d84e3e85e1d5b176',1,'grpc::ByteBuffer::ByteBuffer(const ByteBuffer &amp;buf)']]],
   ['bytecount',['ByteCount',['../classgrpc_1_1internal_1_1_grpc_buffer_writer.html#af7b145efa2ac6b4a3a72a331af9d6466',1,'grpc::internal::GrpcBufferWriter::ByteCount()'],['../classgrpc_1_1internal_1_1_grpc_buffer_reader.html#acc660ae3172f370d7d2538f9fb9067b1',1,'grpc::internal::GrpcBufferReader::ByteCount()']]]
 ];

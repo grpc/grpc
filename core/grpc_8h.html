@@ -71,7 +71,8 @@ $(function() {
 <div class="title">grpc.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &lt;<a class="el" href="status_8h_source.html">grpc/status.h</a>&gt;</code><br />
+<div class="textblock"><code>#include &lt;<a class="el" href="support_2port__platform_8h_source.html">grpc/support/port_platform.h</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="status_8h_source.html">grpc/status.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="byte__buffer_8h_source.html">grpc/byte_buffer.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="connectivity__state_8h_source.html">grpc/impl/codegen/connectivity_state.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="grpc__types_8h_source.html">grpc/impl/codegen/grpc_types.h</a>&gt;</code><br />
@@ -205,6 +206,12 @@ Functions</h2></td></tr>
 <tr class="memitem:a3af54515116727e18116883e64ee031e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a3af54515116727e18116883e64ee031e">grpc_channel_destroy</a> (<a class="el" href="grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a> *channel)</td></tr>
 <tr class="memdesc:a3af54515116727e18116883e64ee031e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Close and destroy a grpc channel.  <a href="#a3af54515116727e18116883e64ee031e">More...</a><br /></td></tr>
 <tr class="separator:a3af54515116727e18116883e64ee031e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad9315e8c062a4d2a32e49460813da2b2"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#ad9315e8c062a4d2a32e49460813da2b2">grpc_channel_get_trace</a> (<a class="el" href="grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a> *channel)</td></tr>
+<tr class="memdesc:ad9315e8c062a4d2a32e49460813da2b2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the JSON formatted channel trace for this channel.  <a href="#ad9315e8c062a4d2a32e49460813da2b2">More...</a><br /></td></tr>
+<tr class="separator:ad9315e8c062a4d2a32e49460813da2b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6dcb2303de383361c8067afd9da4862e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> intptr_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#a6dcb2303de383361c8067afd9da4862e">grpc_channel_get_uuid</a> (<a class="el" href="grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a> *channel)</td></tr>
+<tr class="memdesc:a6dcb2303de383361c8067afd9da4862e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the channel uuid, which can be used to look up its trace at a later time.  <a href="#a6dcb2303de383361c8067afd9da4862e">More...</a><br /></td></tr>
+<tr class="separator:a6dcb2303de383361c8067afd9da4862e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ada3c794f1c02477b0d71b12026dd0333"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__types_8h.html#a0d5a8bdd6d53d209cacea4b6fa5d785b">grpc_call_error</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc_8h.html#ada3c794f1c02477b0d71b12026dd0333">grpc_call_cancel</a> (<a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *call, void *reserved)</td></tr>
 <tr class="memdesc:ada3c794f1c02477b0d71b12026dd0333"><td class="mdescLeft">&#160;</td><td class="mdescRight">Error handling for grpc_call Most grpc_call functions return a grpc_error.  <a href="#ada3c794f1c02477b0d71b12026dd0333">More...</a><br /></td></tr>
 <tr class="separator:ada3c794f1c02477b0d71b12026dd0333"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -868,6 +875,47 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Return a newly allocated string representing the target a channel was created for. </p>
+
+</div>
+</div>
+<a id="ad9315e8c062a4d2a32e49460813da2b2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad9315e8c062a4d2a32e49460813da2b2">&#9670;&nbsp;</a></span>grpc_channel_get_trace()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> char* grpc_channel_get_trace </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a> *&#160;</td>
+          <td class="paramname"><em>channel</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns the JSON formatted channel trace for this channel. </p>
+<p>The caller owns the returned string and is responsible for freeing it. </p>
+
+</div>
+</div>
+<a id="a6dcb2303de383361c8067afd9da4862e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6dcb2303de383361c8067afd9da4862e">&#9670;&nbsp;</a></span>grpc_channel_get_uuid()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> intptr_t grpc_channel_get_uuid </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a> *&#160;</td>
+          <td class="paramname"><em>channel</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Returns the channel uuid, which can be used to look up its trace at a later time. </p>
 
 </div>
 </div>
@@ -2134,7 +2182,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 1 2018 16:16:08 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Apr 13 2018 15:03:52 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

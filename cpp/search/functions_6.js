@@ -112,6 +112,8 @@ var searchData=
   ['grpc_5fchannel_5fdestroy',['grpc_channel_destroy',['../grpc_8h.html#a3af54515116727e18116883e64ee031e',1,'grpc.h']]],
   ['grpc_5fchannel_5fget_5finfo',['grpc_channel_get_info',['../grpc_8h.html#afacde78420397fae74276ec522bd4dba',1,'grpc.h']]],
   ['grpc_5fchannel_5fget_5ftarget',['grpc_channel_get_target',['../grpc_8h.html#aaa25111c739e1c01ae2d195a23079afd',1,'grpc.h']]],
+  ['grpc_5fchannel_5fget_5ftrace',['grpc_channel_get_trace',['../grpc_8h.html#ad9315e8c062a4d2a32e49460813da2b2',1,'grpc.h']]],
+  ['grpc_5fchannel_5fget_5fuuid',['grpc_channel_get_uuid',['../grpc_8h.html#a6dcb2303de383361c8067afd9da4862e',1,'grpc.h']]],
   ['grpc_5fchannel_5fnum_5fexternal_5fconnectivity_5fwatchers',['grpc_channel_num_external_connectivity_watchers',['../grpc_8h.html#ac325c84ef541bcf04697abcc5d167a51',1,'grpc.h']]],
   ['grpc_5fchannel_5fping',['grpc_channel_ping',['../grpc_8h.html#acad1b47029ebf10f80e0db9423401c87',1,'grpc.h']]],
   ['grpc_5fchannel_5fregister_5fcall',['grpc_channel_register_call',['../grpc_8h.html#af09cbd24340547542b6ec3300e973d62',1,'grpc.h']]],

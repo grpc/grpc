@@ -125,6 +125,7 @@ var searchData=
   ['grpc_5fslice_5fmalloc',['GRPC_SLICE_MALLOC',['../grpc_2slice_8h.html#ae0799ad659c9438e0b2cc25e1aa99a52',1,'slice.h']]],
   ['grpc_5fslice_5fset_5flength',['GRPC_SLICE_SET_LENGTH',['../grpc_2impl_2codegen_2slice_8h.html#a6791fa7be0a1a9144e005cfea7baea84',1,'slice.h']]],
   ['grpc_5fslice_5fstart_5fptr',['GRPC_SLICE_START_PTR',['../grpc_2impl_2codegen_2slice_8h.html#a8a15783c251cdeb18c3f8b0ad41d0352',1,'slice.h']]],
+  ['grpc_5fssl_5fsession_5freused_5fproperty',['GRPC_SSL_SESSION_REUSED_PROPERTY',['../grpc__security__constants_8h.html#aacbb09bfff7ebda81d9d3d89f0597312',1,'grpc_security_constants.h']]],
   ['grpc_5fssl_5ftransport_5fsecurity_5ftype',['GRPC_SSL_TRANSPORT_SECURITY_TYPE',['../grpc__security__constants_8h.html#a35a35c597b7090b8ac7e2d854c9bcc7a',1,'grpc_security_constants.h']]],
   ['grpc_5ftransport_5fsecurity_5ftype_5fproperty_5fname',['GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME',['../grpc__security__constants_8h.html#aff82fdff9e7c40c4dd4bdc650e38e25a',1,'grpc_security_constants.h']]],
   ['grpc_5funused',['GRPC_UNUSED',['../impl_2codegen_2port__platform_8h.html#a278515bb22fcd59e3a1092bb35063bd8',1,'port_platform.h']]],

@@ -34,8 +34,6 @@ var searchData=
   ['serverwriterinterface',['ServerWriterInterface',['../classgrpc_1_1_server_writer_interface.html',1,'grpc']]],
   ['service',['Service',['../classgrpc_1_1_service.html',1,'grpc']]],
   ['slice',['Slice',['../classgrpc_1_1_slice.html',1,'grpc']]],
-  ['sneakycallopset',['SneakyCallOpSet',['../classgrpc_1_1internal_1_1_sneaky_call_op_set.html',1,'grpc::internal']]],
-  ['sneakycallopset_3c_20grpc_3a_3ainternal_3a_3acallopsendinitialmetadata_2c_20grpc_3a_3ainternal_3a_3acallopsendmessage_2c_20grpc_3a_3ainternal_3a_3acallopclientsendclose_20_3e',['SneakyCallOpSet&lt; grpc::internal::CallOpSendInitialMetadata, grpc::internal::CallOpSendMessage, grpc::internal::CallOpClientSendClose &gt;',['../classgrpc_1_1internal_1_1_sneaky_call_op_set.html',1,'grpc::internal']]],
   ['splitserverstreaminghandler',['SplitServerStreamingHandler',['../classgrpc_1_1internal_1_1_split_server_streaming_handler.html',1,'grpc::internal']]],
   ['sslcredentialsoptions',['SslCredentialsOptions',['../structgrpc_1_1_ssl_credentials_options.html',1,'grpc']]],
   ['sslservercredentialsoptions',['SslServerCredentialsOptions',['../structgrpc_1_1_ssl_server_credentials_options.html',1,'grpc']]],

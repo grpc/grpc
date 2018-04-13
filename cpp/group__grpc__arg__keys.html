@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.10.0</span>
+   &#160;<span id="projectnumber">1.11.0</span>
    </div>
   </td>
  </tr>
@@ -190,6 +190,9 @@ Macros</h2></td></tr>
 <tr class="memitem:ga218bf55b665134a11baf07ada5980825"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga218bf55b665134a11baf07ada5980825">GRPC_SSL_TARGET_NAME_OVERRIDE_ARG</a>&#160;&#160;&#160;&quot;grpc.ssl_target_name_override&quot;</td></tr>
 <tr class="memdesc:ga218bf55b665134a11baf07ada5980825"><td class="mdescLeft">&#160;</td><td class="mdescRight">This <em>should</em> be used for testing only.  <a href="#ga218bf55b665134a11baf07ada5980825">More...</a><br /></td></tr>
 <tr class="separator:ga218bf55b665134a11baf07ada5980825"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga728b6e9699b2bc90b56a4fb06d269670"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga728b6e9699b2bc90b56a4fb06d269670">GRPC_SSL_SESSION_CACHE_ARG</a>&#160;&#160;&#160;&quot;grpc.ssl_session_cache&quot;</td></tr>
+<tr class="memdesc:ga728b6e9699b2bc90b56a4fb06d269670"><td class="mdescLeft">&#160;</td><td class="mdescRight">If non-zero, a pointer to a session cache (a pointer of type grpc_ssl_session_cache*).  <a href="#ga728b6e9699b2bc90b56a4fb06d269670">More...</a><br /></td></tr>
+<tr class="separator:ga728b6e9699b2bc90b56a4fb06d269670"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga2a9e23d3fe81ae539ba655d2e49051c8"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga2a9e23d3fe81ae539ba655d2e49051c8">GRPC_ARG_MAX_METADATA_SIZE</a>&#160;&#160;&#160;&quot;grpc.max_metadata_size&quot;</td></tr>
 <tr class="memdesc:ga2a9e23d3fe81ae539ba655d2e49051c8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maximum metadata size, in bytes.  <a href="#ga2a9e23d3fe81ae539ba655d2e49051c8">More...</a><br /></td></tr>
 <tr class="separator:ga2a9e23d3fe81ae539ba655d2e49051c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -217,6 +220,9 @@ Macros</h2></td></tr>
 <tr class="memitem:ga9e1054f78a26481931b10aa0b33f52b7"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga9e1054f78a26481931b10aa0b33f52b7">GRPC_ARG_SOCKET_FACTORY</a>&#160;&#160;&#160;&quot;grpc.socket_factory&quot;</td></tr>
 <tr class="memdesc:ga9e1054f78a26481931b10aa0b33f52b7"><td class="mdescLeft">&#160;</td><td class="mdescRight">The grpc_socket_factory instance to create and bind sockets.  <a href="#ga9e1054f78a26481931b10aa0b33f52b7">More...</a><br /></td></tr>
 <tr class="separator:ga9e1054f78a26481931b10aa0b33f52b7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gae4baf9476091b1f1cda04fbfd19da456"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gae4baf9476091b1f1cda04fbfd19da456">GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE</a>&#160;&#160;&#160;&quot;grpc.max_channel_trace_events_per_node&quot;</td></tr>
+<tr class="memdesc:gae4baf9476091b1f1cda04fbfd19da456"><td class="mdescLeft">&#160;</td><td class="mdescRight">The maximum number of trace events to keep in the tracer for each channel or subchannel.  <a href="#gae4baf9476091b1f1cda04fbfd19da456">More...</a><br /></td></tr>
+<tr class="separator:gae4baf9476091b1f1cda04fbfd19da456"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga3da556ec531495ace9f93b97c8c4f24b"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga3da556ec531495ace9f93b97c8c4f24b">GRPC_ARG_USE_CRONET_PACKET_COALESCING</a>&#160;&#160;&#160;&quot;grpc.use_cronet_packet_coalescing&quot;</td></tr>
 <tr class="memdesc:ga3da556ec531495ace9f93b97c8c4f24b"><td class="mdescLeft">&#160;</td><td class="mdescRight">If non-zero, Cronet transport will coalesce packets to fewer frames when possible.  <a href="#ga3da556ec531495ace9f93b97c8c4f24b">More...</a><br /></td></tr>
 <tr class="separator:ga3da556ec531495ace9f93b97c8c4f24b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -240,6 +246,18 @@ Macros</h2></td></tr>
 <tr class="memitem:ga5bbdfddb3afba6b330221d9adbecc778"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga5bbdfddb3afba6b330221d9adbecc778">GRPC_ARG_OPTIMIZATION_TARGET</a>&#160;&#160;&#160;&quot;grpc.optimization_target&quot;</td></tr>
 <tr class="memdesc:ga5bbdfddb3afba6b330221d9adbecc778"><td class="mdescLeft">&#160;</td><td class="mdescRight">String defining the optimization target for a channel.  <a href="#ga5bbdfddb3afba6b330221d9adbecc778">More...</a><br /></td></tr>
 <tr class="separator:ga5bbdfddb3afba6b330221d9adbecc778"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga212f667ecbcee3b100898ba7e88454df"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga212f667ecbcee3b100898ba7e88454df">GRPC_ARG_ENABLE_RETRIES</a>&#160;&#160;&#160;&quot;grpc.enable_retries&quot;</td></tr>
+<tr class="memdesc:ga212f667ecbcee3b100898ba7e88454df"><td class="mdescLeft">&#160;</td><td class="mdescRight">If set to zero, disables retry behavior.  <a href="#ga212f667ecbcee3b100898ba7e88454df">More...</a><br /></td></tr>
+<tr class="separator:ga212f667ecbcee3b100898ba7e88454df"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaa40f8424599668676462a76ec54eb712"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gaa40f8424599668676462a76ec54eb712">GRPC_ARG_PER_RPC_RETRY_BUFFER_SIZE</a>&#160;&#160;&#160;&quot;grpc.per_rpc_retry_buffer_size&quot;</td></tr>
+<tr class="memdesc:gaa40f8424599668676462a76ec54eb712"><td class="mdescLeft">&#160;</td><td class="mdescRight">Per-RPC retry buffer size, in bytes.  <a href="#gaa40f8424599668676462a76ec54eb712">More...</a><br /></td></tr>
+<tr class="separator:gaa40f8424599668676462a76ec54eb712"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga8280aa3fac6ead233c14ad2c5b1b9fc2"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga8280aa3fac6ead233c14ad2c5b1b9fc2">GRPC_ARG_MOBILE_LOG_CONFIG</a>&#160;&#160;&#160;&quot;grpc.mobile_log_config&quot;</td></tr>
+<tr class="memdesc:ga8280aa3fac6ead233c14ad2c5b1b9fc2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Channel arg that carries the bridged objective c object for custom metrics logging filter.  <a href="#ga8280aa3fac6ead233c14ad2c5b1b9fc2">More...</a><br /></td></tr>
+<tr class="separator:ga8280aa3fac6ead233c14ad2c5b1b9fc2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gad5cfeb3dfc4f99cbc4e1436f7b72f873"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gad5cfeb3dfc4f99cbc4e1436f7b72f873">GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER</a>&#160;&#160;&#160;&quot;grpc.disable_client_authority_filter&quot;</td></tr>
+<tr class="memdesc:gad5cfeb3dfc4f99cbc4e1436f7b72f873"><td class="mdescLeft">&#160;</td><td class="mdescRight">If non-zero, client authority filter is disabled for the channel.  <a href="#gad5cfeb3dfc4f99cbc4e1436f7b72f873">More...</a><br /></td></tr>
+<tr class="separator:gad5cfeb3dfc4f99cbc4e1436f7b72f873"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <p>Channel argument keys. </p>
@@ -275,6 +293,22 @@ Macros</h2></td></tr>
 
 <p>Default authority to pass if none specified on call construction. </p>
 <p>A string. </p>
+
+</div>
+</div>
+<a id="gad5cfeb3dfc4f99cbc4e1436f7b72f873"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gad5cfeb3dfc4f99cbc4e1436f7b72f873">&#9670;&nbsp;</a></span>GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER&#160;&#160;&#160;&quot;grpc.disable_client_authority_filter&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>If non-zero, client authority filter is disabled for the channel. </p>
 
 </div>
 </div>
@@ -357,6 +391,23 @@ Macros</h2></td></tr>
 
 <p>Enable/disable support for per-message compression. </p>
 <p>Defaults to 1, unless GRPC_ARG_MINIMAL_STACK is enabled, in which case it defaults to 0. </p>
+
+</div>
+</div>
+<a id="ga212f667ecbcee3b100898ba7e88454df"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga212f667ecbcee3b100898ba7e88454df">&#9670;&nbsp;</a></span>GRPC_ARG_ENABLE_RETRIES</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_ENABLE_RETRIES&#160;&#160;&#160;&quot;grpc.enable_retries&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>If set to zero, disables retry behavior. </p>
+<p>Otherwise, transparent retries are enabled for all RPCs, and configurable retries are enabled when they are configured via the service config. For details, see: <a href="https://github.com/grpc/proposal/blob/master/A6-client-retries.md">https://github.com/grpc/proposal/blob/master/A6-client-retries.md</a> </p>
 
 </div>
 </div>
@@ -701,6 +752,23 @@ Macros</h2></td></tr>
 
 </div>
 </div>
+<a id="gae4baf9476091b1f1cda04fbfd19da456"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gae4baf9476091b1f1cda04fbfd19da456">&#9670;&nbsp;</a></span>GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE&#160;&#160;&#160;&quot;grpc.max_channel_trace_events_per_node&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>The maximum number of trace events to keep in the tracer for each channel or subchannel. </p>
+<p>The default is 10. If set to 0, channel tracing is disabled. </p>
+
+</div>
+</div>
 <a id="ga5bb9256d0b457cab219f4d9d765148b6"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ga5bb9256d0b457cab219f4d9d765148b6">&#9670;&nbsp;</a></span>GRPC_ARG_MAX_CONCURRENT_STREAMS</h2>
 
@@ -884,6 +952,22 @@ Macros</h2></td></tr>
 
 </div>
 </div>
+<a id="ga8280aa3fac6ead233c14ad2c5b1b9fc2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga8280aa3fac6ead233c14ad2c5b1b9fc2">&#9670;&nbsp;</a></span>GRPC_ARG_MOBILE_LOG_CONFIG</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_MOBILE_LOG_CONFIG&#160;&#160;&#160;&quot;grpc.mobile_log_config&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Channel arg that carries the bridged objective c object for custom metrics logging filter. </p>
+
+</div>
+</div>
 <a id="ga5bbdfddb3afba6b330221d9adbecc778"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ga5bbdfddb3afba6b330221d9adbecc778">&#9670;&nbsp;</a></span>GRPC_ARG_OPTIMIZATION_TARGET</h2>
 
@@ -898,6 +982,23 @@ Macros</h2></td></tr>
 
 <p>String defining the optimization target for a channel. </p>
 <p>Can be: "latency" - attempt to minimize latency at the cost of throughput "blend" - try to balance latency and throughput "throughput" - attempt to maximize throughput at the expense of latency Defaults to "blend". In the current implementation "blend" is equivalent to "latency". </p>
+
+</div>
+</div>
+<a id="gaa40f8424599668676462a76ec54eb712"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gaa40f8424599668676462a76ec54eb712">&#9670;&nbsp;</a></span>GRPC_ARG_PER_RPC_RETRY_BUFFER_SIZE</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_PER_RPC_RETRY_BUFFER_SIZE&#160;&#160;&#160;&quot;grpc.per_rpc_retry_buffer_size&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Per-RPC retry buffer size, in bytes. </p>
+<p>Default is 256 KiB. </p>
 
 </div>
 </div>
@@ -1163,6 +1264,23 @@ Macros</h2></td></tr>
 
 </div>
 </div>
+<a id="ga728b6e9699b2bc90b56a4fb06d269670"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga728b6e9699b2bc90b56a4fb06d269670">&#9670;&nbsp;</a></span>GRPC_SSL_SESSION_CACHE_ARG</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_SSL_SESSION_CACHE_ARG&#160;&#160;&#160;&quot;grpc.ssl_session_cache&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>If non-zero, a pointer to a session cache (a pointer of type grpc_ssl_session_cache*). </p>
+<p>(use grpc_ssl_session_cache_arg_vtable() to fetch an appropriate pointer arg vtable) </p>
+
+</div>
+</div>
 <a id="ga218bf55b665134a11baf07ada5980825"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ga218bf55b665134a11baf07ada5980825">&#9670;&nbsp;</a></span>GRPC_SSL_TARGET_NAME_OVERRIDE_ARG</h2>
 
@@ -1200,7 +1318,7 @@ Macros</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 1 2018 16:16:09 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Apr 13 2018 15:03:53 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

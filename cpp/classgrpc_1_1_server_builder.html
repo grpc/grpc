@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.10.0</span>
+   &#160;<span id="projectnumber">1.11.0</span>
    </div>
   </td>
  </tr>
@@ -68,6 +68,8 @@ $(function() {
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
+<a href="#pro-types">Protected Types</a> &#124;
+<a href="#pro-methods">Protected Member Functions</a> &#124;
 <a href="#friends">Friends</a>  </div>
   <div class="headertitle">
 <div class="title">grpc::ServerBuilder Class Reference</div>  </div>
@@ -79,6 +81,14 @@ $(function() {
 
 <p><code>#include &lt;<a class="el" href="grpcpp_2server__builder_8h_source.html">server_builder.h</a>&gt;</code></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Data Structures</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc_1_1_server_builder_1_1_named_service.html">NamedService</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc_1_1_server_builder_1_1_port.html">Port</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Experimental, to be deprecated.  <a href="structgrpc_1_1_server_builder_1_1_port.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
 <tr class="memitem:aff66bd93cba7d4240a64550fe1fca88d"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#aff66bd93cba7d4240a64550fe1fca88d">SyncServerOption</a> { <a class="el" href="classgrpc_1_1_server_builder.html#aff66bd93cba7d4240a64550fe1fca88da9514f2add3875fc14c843f6498dc1319">NUM_CQS</a>, 
@@ -93,11 +103,11 @@ Public Types</h2></td></tr>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a208346e343cd01351492f0cace59b242"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#a208346e343cd01351492f0cace59b242">ServerBuilder</a> ()</td></tr>
 <tr class="separator:a208346e343cd01351492f0cace59b242"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a870c0bbcc61393e13fa04a82f96328f6"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#a870c0bbcc61393e13fa04a82f96328f6">~ServerBuilder</a> ()</td></tr>
-<tr class="separator:a870c0bbcc61393e13fa04a82f96328f6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af284cd39b185043e8e92405c1ae0f310"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; <a class="el" href="classgrpc_1_1_server.html">Server</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#af284cd39b185043e8e92405c1ae0f310">BuildAndStart</a> ()</td></tr>
-<tr class="memdesc:af284cd39b185043e8e92405c1ae0f310"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a running server which is ready for processing calls.  <a href="#af284cd39b185043e8e92405c1ae0f310">More...</a><br /></td></tr>
-<tr class="separator:af284cd39b185043e8e92405c1ae0f310"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0bf5d1d50d4e5522ba90bc0efcf91b19"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#a0bf5d1d50d4e5522ba90bc0efcf91b19">~ServerBuilder</a> ()</td></tr>
+<tr class="separator:a0bf5d1d50d4e5522ba90bc0efcf91b19"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa3966340091070dd68fa831a03e1e6ef"><td class="memItemLeft" align="right" valign="top">virtual std::unique_ptr&lt; <a class="el" href="classgrpc_1_1_server.html">Server</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#aa3966340091070dd68fa831a03e1e6ef">BuildAndStart</a> ()</td></tr>
+<tr class="memdesc:aa3966340091070dd68fa831a03e1e6ef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a running server which is ready for processing calls.  <a href="#aa3966340091070dd68fa831a03e1e6ef">More...</a><br /></td></tr>
+<tr class="separator:aa3966340091070dd68fa831a03e1e6ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5300484238239412a11e0a9c49435d7e"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_server_builder.html">ServerBuilder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#a5300484238239412a11e0a9c49435d7e">RegisterService</a> (<a class="el" href="classgrpc_1_1_service.html">Service</a> *service)</td></tr>
 <tr class="memdesc:a5300484238239412a11e0a9c49435d7e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register a service.  <a href="#a5300484238239412a11e0a9c49435d7e">More...</a><br /></td></tr>
 <tr class="separator:a5300484238239412a11e0a9c49435d7e"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -152,6 +162,24 @@ Static Public Member Functions</h2></td></tr>
 <tr class="memdesc:ae37fe433154b148b9ea9ccb17ac1488a"><td class="mdescLeft">&#160;</td><td class="mdescRight">For internal use only: Register a <a class="el" href="classgrpc_1_1_server_builder_plugin.html" title="This interface is meant for internal usage only. ">ServerBuilderPlugin</a> factory function.  <a href="#ae37fe433154b148b9ea9ccb17ac1488a">More...</a><br /></td></tr>
 <tr class="separator:ae37fe433154b148b9ea9ccb17ac1488a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-types"></a>
+Protected Types</h2></td></tr>
+<tr class="memitem:a3d9114a66c038daad94f379161209242"><td class="memItemLeft" align="right" valign="top">typedef std::unique_ptr&lt; <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#a3d9114a66c038daad94f379161209242">HostString</a></td></tr>
+<tr class="memdesc:a3d9114a66c038daad94f379161209242"><td class="mdescLeft">&#160;</td><td class="mdescRight">Experimental, to be deprecated.  <a href="#a3d9114a66c038daad94f379161209242">More...</a><br /></td></tr>
+<tr class="separator:a3d9114a66c038daad94f379161209242"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
+Protected Member Functions</h2></td></tr>
+<tr class="memitem:a5826774e7c803998238a74ef43b5c811"><td class="memItemLeft" align="right" valign="top">std::vector&lt; <a class="el" href="structgrpc_1_1_server_builder_1_1_port.html">Port</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#a5826774e7c803998238a74ef43b5c811">ports</a> ()</td></tr>
+<tr class="memdesc:a5826774e7c803998238a74ef43b5c811"><td class="mdescLeft">&#160;</td><td class="mdescRight">Experimental, to be deprecated.  <a href="#a5826774e7c803998238a74ef43b5c811">More...</a><br /></td></tr>
+<tr class="separator:a5826774e7c803998238a74ef43b5c811"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4799eec87ef7d336d0f5db95d273e432"><td class="memItemLeft" align="right" valign="top">std::vector&lt; <a class="el" href="structgrpc_1_1_server_builder_1_1_named_service.html">NamedService</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#a4799eec87ef7d336d0f5db95d273e432">services</a> ()</td></tr>
+<tr class="memdesc:a4799eec87ef7d336d0f5db95d273e432"><td class="mdescLeft">&#160;</td><td class="mdescRight">Experimental, to be deprecated.  <a href="#a4799eec87ef7d336d0f5db95d273e432">More...</a><br /></td></tr>
+<tr class="separator:a4799eec87ef7d336d0f5db95d273e432"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4d10732684bd9ace89303dd746adfb96"><td class="memItemLeft" align="right" valign="top">std::vector&lt; <a class="el" href="classgrpc_1_1_server_builder_option.html">ServerBuilderOption</a> * &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#a4d10732684bd9ace89303dd746adfb96">options</a> ()</td></tr>
+<tr class="memdesc:a4d10732684bd9ace89303dd746adfb96"><td class="mdescLeft">&#160;</td><td class="mdescRight">Experimental, to be deprecated.  <a href="#a4d10732684bd9ace89303dd746adfb96">More...</a><br /></td></tr>
+<tr class="separator:a4d10732684bd9ace89303dd746adfb96"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
 Friends</h2></td></tr>
 <tr class="memitem:a6d051c774efa6448928d2ca4062676d0"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#a6d051c774efa6448928d2ca4062676d0">::grpc::testing::ServerBuilderPluginTest</a></td></tr>
@@ -159,7 +187,32 @@ Friends</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>A builder class for the creation and startup of <em><a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">grpc::Server</a></em> instances. </p>
-</div><h2 class="groupheader">Member Enumeration Documentation</h2>
+</div><h2 class="groupheader">Member Typedef Documentation</h2>
+<a id="a3d9114a66c038daad94f379161209242"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3d9114a66c038daad94f379161209242">&#9670;&nbsp;</a></span>HostString</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef std::unique_ptr&lt;<a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>&gt; <a class="el" href="classgrpc_1_1_server_builder.html#a3d9114a66c038daad94f379161209242">grpc::ServerBuilder::HostString</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Experimental, to be deprecated. </p>
+
+</div>
+</div>
+<h2 class="groupheader">Member Enumeration Documentation</h2>
 <a id="aff66bd93cba7d4240a64550fe1fca88d"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aff66bd93cba7d4240a64550fe1fca88d">&#9670;&nbsp;</a></span>SyncServerOption</h2>
 
@@ -204,19 +257,27 @@ Friends</h2></td></tr>
 
 </div>
 </div>
-<a id="a870c0bbcc61393e13fa04a82f96328f6"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a870c0bbcc61393e13fa04a82f96328f6">&#9670;&nbsp;</a></span>~ServerBuilder()</h2>
+<a id="a0bf5d1d50d4e5522ba90bc0efcf91b19"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0bf5d1d50d4e5522ba90bc0efcf91b19">&#9670;&nbsp;</a></span>~ServerBuilder()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">grpc::ServerBuilder::~ServerBuilder </td>
+          <td class="memname">virtual grpc::ServerBuilder::~ServerBuilder </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 </div>
@@ -337,19 +398,27 @@ template&lt;class T &gt; </div>
 
 </div>
 </div>
-<a id="af284cd39b185043e8e92405c1ae0f310"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af284cd39b185043e8e92405c1ae0f310">&#9670;&nbsp;</a></span>BuildAndStart()</h2>
+<a id="aa3966340091070dd68fa831a03e1e6ef"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa3966340091070dd68fa831a03e1e6ef">&#9670;&nbsp;</a></span>BuildAndStart()</h2>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">std::unique_ptr&lt;<a class="el" href="classgrpc_1_1_server.html">Server</a>&gt; grpc::ServerBuilder::BuildAndStart </td>
+          <td class="memname">virtual std::unique_ptr&lt;<a class="el" href="classgrpc_1_1_server.html">Server</a>&gt; grpc::ServerBuilder::BuildAndStart </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 <p>Return a running server which is ready for processing calls. </p>
@@ -410,6 +479,60 @@ template&lt;class T &gt; </div>
 
 </div>
 </div>
+<a id="a4d10732684bd9ace89303dd746adfb96"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4d10732684bd9ace89303dd746adfb96">&#9670;&nbsp;</a></span>options()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::vector&lt;<a class="el" href="classgrpc_1_1_server_builder_option.html">ServerBuilderOption</a>*&gt; grpc::ServerBuilder::options </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Experimental, to be deprecated. </p>
+
+</div>
+</div>
+<a id="a5826774e7c803998238a74ef43b5c811"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5826774e7c803998238a74ef43b5c811">&#9670;&nbsp;</a></span>ports()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::vector&lt;<a class="el" href="structgrpc_1_1_server_builder_1_1_port.html">Port</a>&gt; grpc::ServerBuilder::ports </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Experimental, to be deprecated. </p>
+
+</div>
+</div>
 <a id="a06468091b05b8bba676a0b94ca8e1281"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a06468091b05b8bba676a0b94ca8e1281">&#9670;&nbsp;</a></span>RegisterAsyncGenericService()</h2>
 
@@ -448,7 +571,7 @@ template&lt;class T &gt; </div>
 </div><div class="memdoc">
 
 <p>Register a service. </p>
-<p>This call does not take ownership of the service. The service must exist for the lifetime of the <em><a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">Server</a></em> instance returned by <em><a class="el" href="classgrpc_1_1_server_builder.html#af284cd39b185043e8e92405c1ae0f310" title="Return a running server which is ready for processing calls. ">BuildAndStart()</a></em>. Matches requests with any :authority </p>
+<p>This call does not take ownership of the service. The service must exist for the lifetime of the <em><a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">Server</a></em> instance returned by <em><a class="el" href="classgrpc_1_1_server_builder.html#aa3966340091070dd68fa831a03e1e6ef" title="Return a running server which is ready for processing calls. ">BuildAndStart()</a></em>. Matches requests with any :authority </p>
 
 </div>
 </div>
@@ -479,7 +602,34 @@ template&lt;class T &gt; </div>
 </div><div class="memdoc">
 
 <p>Register a service. </p>
-<p>This call does not take ownership of the service. The service must exist for the lifetime of the <em><a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">Server</a></em> instance returned by <em><a class="el" href="classgrpc_1_1_server_builder.html#af284cd39b185043e8e92405c1ae0f310" title="Return a running server which is ready for processing calls. ">BuildAndStart()</a></em>. Only matches requests with :authority <em>host</em> </p>
+<p>This call does not take ownership of the service. The service must exist for the lifetime of the <em><a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">Server</a></em> instance returned by <em><a class="el" href="classgrpc_1_1_server_builder.html#aa3966340091070dd68fa831a03e1e6ef" title="Return a running server which is ready for processing calls. ">BuildAndStart()</a></em>. Only matches requests with :authority <em>host</em> </p>
+
+</div>
+</div>
+<a id="a4799eec87ef7d336d0f5db95d273e432"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4799eec87ef7d336d0f5db95d273e432">&#9670;&nbsp;</a></span>services()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::vector&lt;<a class="el" href="structgrpc_1_1_server_builder_1_1_named_service.html">NamedService</a>*&gt; grpc::ServerBuilder::services </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Experimental, to be deprecated. </p>
 
 </div>
 </div>
@@ -779,7 +929,7 @@ template&lt;class T &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 1 2018 16:16:09 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Apr 13 2018 15:03:53 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

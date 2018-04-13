@@ -72,7 +72,8 @@ $(function() {
 <div class="title">grpc_security.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &lt;<a class="el" href="grpc_8h_source.html">grpc/grpc.h</a>&gt;</code><br />
+<div class="textblock"><code>#include &lt;<a class="el" href="support_2port__platform_8h_source.html">grpc/support/port_platform.h</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="grpc_8h_source.html">grpc/grpc.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="grpc__security__constants_8h_source.html">grpc/grpc_security_constants.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="status_8h_source.html">grpc/status.h</a>&gt;</code><br />
 </div>
@@ -114,6 +115,9 @@ Typedefs</h2></td></tr>
 <tr class="memitem:a010fe7d27deaa2ea50b765b48dbad429"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="structgrpc__auth__property.html">grpc_auth_property</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a010fe7d27deaa2ea50b765b48dbad429">grpc_auth_property</a></td></tr>
 <tr class="memdesc:a010fe7d27deaa2ea50b765b48dbad429"><td class="mdescLeft">&#160;</td><td class="mdescRight">value, if not NULL, is guaranteed to be NULL terminated.  <a href="#a010fe7d27deaa2ea50b765b48dbad429">More...</a><br /></td></tr>
 <tr class="separator:a010fe7d27deaa2ea50b765b48dbad429"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7008e76d9e21a435a03267390c6f8a37"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="grpc__security_8h.html#a7008e76d9e21a435a03267390c6f8a37">grpc_ssl_session_cache</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a7008e76d9e21a435a03267390c6f8a37">grpc_ssl_session_cache</a></td></tr>
+<tr class="memdesc:a7008e76d9e21a435a03267390c6f8a37"><td class="mdescLeft">&#160;</td><td class="mdescRight">&mdash; SSL Session Cache.  <a href="#a7008e76d9e21a435a03267390c6f8a37">More...</a><br /></td></tr>
+<tr class="separator:a7008e76d9e21a435a03267390c6f8a37"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab4ed40ea84a2f70ffd81a84bd8ee634b"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a></td></tr>
 <tr class="memdesc:ab4ed40ea84a2f70ffd81a84bd8ee634b"><td class="mdescLeft">&#160;</td><td class="mdescRight">&mdash; grpc_channel_credentials object.  <a href="#ab4ed40ea84a2f70ffd81a84bd8ee634b">More...</a><br /></td></tr>
 <tr class="separator:ab4ed40ea84a2f70ffd81a84bd8ee634b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -176,6 +180,15 @@ Functions</h2></td></tr>
 <tr class="memitem:a9cff913051370085b7cc58aa3ccbd4a4"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a9cff913051370085b7cc58aa3ccbd4a4">grpc_auth_context_set_peer_identity_property_name</a> (<a class="el" href="grpc__security_8h.html#aa13f0724cb7ff99995d7f0881c01d553">grpc_auth_context</a> *ctx, const char *name)</td></tr>
 <tr class="memdesc:a9cff913051370085b7cc58aa3ccbd4a4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the property name.  <a href="#a9cff913051370085b7cc58aa3ccbd4a4">More...</a><br /></td></tr>
 <tr class="separator:a9cff913051370085b7cc58aa3ccbd4a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae175e13bfcab1b77f4cc7f193d898aff"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#a7008e76d9e21a435a03267390c6f8a37">grpc_ssl_session_cache</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#ae175e13bfcab1b77f4cc7f193d898aff">grpc_ssl_session_cache_create_lru</a> (size_t capacity)</td></tr>
+<tr class="memdesc:ae175e13bfcab1b77f4cc7f193d898aff"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create LRU cache for client-side SSL sessions with the given capacity.  <a href="#ae175e13bfcab1b77f4cc7f193d898aff">More...</a><br /></td></tr>
+<tr class="separator:ae175e13bfcab1b77f4cc7f193d898aff"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3f83f8a3390b8b1659b719b7f47005a1"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a3f83f8a3390b8b1659b719b7f47005a1">grpc_ssl_session_cache_destroy</a> (<a class="el" href="grpc__security_8h.html#a7008e76d9e21a435a03267390c6f8a37">grpc_ssl_session_cache</a> *cache)</td></tr>
+<tr class="memdesc:a3f83f8a3390b8b1659b719b7f47005a1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destroy SSL session cache.  <a href="#a3f83f8a3390b8b1659b719b7f47005a1">More...</a><br /></td></tr>
+<tr class="separator:a3f83f8a3390b8b1659b719b7f47005a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4fd0dd05b90f7dcebaaacf8a0088c46f"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="structgrpc__arg.html">grpc_arg</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a4fd0dd05b90f7dcebaaacf8a0088c46f">grpc_ssl_session_cache_create_channel_arg</a> (<a class="el" href="grpc__security_8h.html#a7008e76d9e21a435a03267390c6f8a37">grpc_ssl_session_cache</a> *cache)</td></tr>
+<tr class="memdesc:a4fd0dd05b90f7dcebaaacf8a0088c46f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a channel arg with the given cache object.  <a href="#a4fd0dd05b90f7dcebaaacf8a0088c46f">More...</a><br /></td></tr>
+<tr class="separator:a4fd0dd05b90f7dcebaaacf8a0088c46f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5a32645c900c2b50bc89fa11ebdc5a07"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a5a32645c900c2b50bc89fa11ebdc5a07">grpc_channel_credentials_release</a> (<a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *creds)</td></tr>
 <tr class="memdesc:a5a32645c900c2b50bc89fa11ebdc5a07"><td class="mdescLeft">&#160;</td><td class="mdescRight">Releases a channel credentials object.  <a href="#a5a32645c900c2b50bc89fa11ebdc5a07">More...</a><br /></td></tr>
 <tr class="separator:a5a32645c900c2b50bc89fa11ebdc5a07"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -485,6 +498,24 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+</div>
+</div>
+<a id="a7008e76d9e21a435a03267390c6f8a37"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7008e76d9e21a435a03267390c6f8a37">&#9670;&nbsp;</a></span>grpc_ssl_session_cache</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef struct <a class="el" href="grpc__security_8h.html#a7008e76d9e21a435a03267390c6f8a37">grpc_ssl_session_cache</a> <a class="el" href="grpc__security_8h.html#a7008e76d9e21a435a03267390c6f8a37">grpc_ssl_session_cache</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>&mdash; SSL Session Cache. </p>
+<hr/>
+<p>A SSL session cache object represents a way to cache client sessions between connections. Only ticket-based resumption is supported. </p>
 
 </div>
 </div>
@@ -1620,10 +1651,71 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="a4fd0dd05b90f7dcebaaacf8a0088c46f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4fd0dd05b90f7dcebaaacf8a0088c46f">&#9670;&nbsp;</a></span>grpc_ssl_session_cache_create_channel_arg()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="structgrpc__arg.html">grpc_arg</a> grpc_ssl_session_cache_create_channel_arg </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__security_8h.html#a7008e76d9e21a435a03267390c6f8a37">grpc_ssl_session_cache</a> *&#160;</td>
+          <td class="paramname"><em>cache</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Create a channel arg with the given cache object. </p>
+
+</div>
+</div>
+<a id="ae175e13bfcab1b77f4cc7f193d898aff"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae175e13bfcab1b77f4cc7f193d898aff">&#9670;&nbsp;</a></span>grpc_ssl_session_cache_create_lru()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#a7008e76d9e21a435a03267390c6f8a37">grpc_ssl_session_cache</a>* grpc_ssl_session_cache_create_lru </td>
+          <td>(</td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>capacity</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Create LRU cache for client-side SSL sessions with the given capacity. </p>
+<p>If capacity is &lt; 1, a default capacity is used instead. </p>
+
+</div>
+</div>
+<a id="a3f83f8a3390b8b1659b719b7f47005a1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3f83f8a3390b8b1659b719b7f47005a1">&#9670;&nbsp;</a></span>grpc_ssl_session_cache_destroy()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void grpc_ssl_session_cache_destroy </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__security_8h.html#a7008e76d9e21a435a03267390c6f8a37">grpc_ssl_session_cache</a> *&#160;</td>
+          <td class="paramname"><em>cache</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Destroy SSL session cache. </p>
+
+</div>
+</div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 1 2018 16:16:08 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Apr 13 2018 15:03:52 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

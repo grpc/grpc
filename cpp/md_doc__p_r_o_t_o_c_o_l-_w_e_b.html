@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.10.0</span>
+   &#160;<span id="projectnumber">1.11.0</span>
    </div>
   </td>
  </tr>
@@ -75,7 +75,7 @@ $(function() {
 <p>While the new protocol will be published/reviewed publicly, we also intend to keep the protocol as an internal detail to gRPC-Web. More specifically, we expect the protocol to</p>
 <ul>
 <li>evolve over time, mainly to optimize for browser clients or support web-specific features such as CORS, XSRF</li>
-<li>become optional (in 1-2 years) when browsers are able to speak the native gRPC protocol via the new <a href="https://github.com/whatwg/fetch">whatwg fetch/streams API</a></li>
+<li>become optional (in 1-2 years) when browsers are able to speak the native gRPC protocol via the new <a href="https://github.com/whatwg/streams">whatwg streams API</a></li>
 </ul>
 <h1>Protocol differences vs  <a class="el" href="_p_r_o_t_o_c_o_l-_h_t_t_p2_8md.html">PROTOCOL-HTTP2.md</a> "gRPC over HTTP2"</h1>
 <p>Content-Type</p>
@@ -140,19 +140,6 @@ $(function() {
 </li>
 </ol>
 <h1>Other features</h1>
-<p>Compression</p>
-<ul>
-<li>Full-body compression is supported and expected for all unary requests/responses. The compression/decompression will be done by browsers, using standard Content-Encoding headers<ul>
-<li>“grpc-encoding” header is not used</li>
-<li>SDCH, Brotli will be supported</li>
-</ul>
-</li>
-<li>Message-level compression for streamed requests/responses is not supported because manual compression/decompression is prohibitively expensive using JS<ul>
-<li>Per-message compression may be feasible in future with wasm <hr/>
-</li>
-</ul>
-</li>
-</ul>
 <p>Retries, caching</p>
 <ul>
 <li>Will spec out the support after their respective gRPC spec extensions are finalized<ul>
@@ -160,26 +147,6 @@ $(function() {
 <li>Caching: header encoded request and/or a web specific spec <hr/>
 </li>
 </ul>
-</li>
-</ul>
-<p>Security</p>
-<ul>
-<li>XSRF, XSS etc to be specified <hr/>
-</li>
-</ul>
-<p>CORS preflight</p>
-<ul>
-<li>Should follow the <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Server-Side_Access_Control">CORS spec</a><ul>
-<li>Access-Control-Allow-Credentials to allow Authorization headers</li>
-<li>Access-Control-Allow-Methods to allow POST and (preflight) OPTIONS only</li>
-<li>Access-Control-Allow-Headers to whatever the preflight request carries</li>
-</ul>
-</li>
-<li>The client library may support header overwrites to avoid preflight<ul>
-<li><a href="https://github.com/whatwg/fetch/issues/210">https://github.com/whatwg/fetch/issues/210</a></li>
-</ul>
-</li>
-<li>CSP support to be specified <hr/>
 </li>
 </ul>
 <p>Keep-alive</p>
@@ -196,12 +163,17 @@ $(function() {
 </ul>
 <p>Versioning</p>
 <ul>
-<li>Special headers may be introduced to support features that may break compatiblity. </li>
+<li>Special headers may be introduced to support features that may break compatiblity. <hr/>
+</li>
+</ul>
+<p>Browser-specific features</p>
+<ul>
+<li>For features that are unique to browser or HTML clients, check the https://github.com/grpc/grpc-web/blob/master/PROTOCOL-WEB.md "spec doc" published in the grpc/grpc-web repo. </li>
 </ul>
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 1 2018 16:16:09 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Apr 13 2018 15:03:53 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

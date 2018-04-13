@@ -36,6 +36,7 @@ var searchData=
   ['grpc_5fserver',['grpc_server',['../grpc__types_8h.html#a2bbbaad8f7a806f6c834b68c5dd916d8',1,'grpc_types.h']]],
   ['grpc_5fserver_5fcredentials',['grpc_server_credentials',['../grpc__security_8h.html#aa724192e56fdc03827846f16752deccc',1,'grpc_security.h']]],
   ['grpc_5fslice',['grpc_slice',['../impl_2codegen_2slice_8h.html#a2a5f8eaa5d8784bfec46ac983644dca2',1,'slice.h']]],
+  ['grpc_5fslice_5fbuffer',['grpc_slice_buffer',['../impl_2codegen_2slice_8h.html#a96ab1e43093bbd3fa178ae2e819863e4',1,'slice.h']]],
   ['grpc_5fslice_5frefcount',['grpc_slice_refcount',['../impl_2codegen_2slice_8h.html#acb7fc89ea8343fde6d0c09f1ea70dbc4',1,'slice.h']]],
   ['grpc_5fslice_5frefcount_5fvtable',['grpc_slice_refcount_vtable',['../impl_2codegen_2slice_8h.html#a0ba9a84b74d6308678a2f53212b5b3fd',1,'slice.h']]],
   ['grpc_5fsocket_5ffactory',['grpc_socket_factory',['../grpc__types_8h.html#a6bb7fdad6ac88edb9468eb46c801ddb0',1,'grpc_types.h']]],
@@ -43,5 +44,6 @@ var searchData=
   ['grpc_5fssl_5froots_5foverride_5fcallback',['grpc_ssl_roots_override_callback',['../grpc__security_8h.html#a81799db566912702502c280b163b12bc',1,'grpc_security.h']]],
   ['grpc_5fssl_5fserver_5fcertificate_5fconfig',['grpc_ssl_server_certificate_config',['../grpc__security_8h.html#acb8bbd3a6006aee7f7b254d4a91d914f',1,'grpc_security.h']]],
   ['grpc_5fssl_5fserver_5fcertificate_5fconfig_5fcallback',['grpc_ssl_server_certificate_config_callback',['../grpc__security_8h.html#a8c5f064d7d008bc46fa61e87d68898f3',1,'grpc_security.h']]],
-  ['grpc_5fssl_5fserver_5fcredentials_5foptions',['grpc_ssl_server_credentials_options',['../grpc__security_8h.html#ade0da78380603c2e26c81695f09ea4c8',1,'grpc_security.h']]]
+  ['grpc_5fssl_5fserver_5fcredentials_5foptions',['grpc_ssl_server_credentials_options',['../grpc__security_8h.html#ade0da78380603c2e26c81695f09ea4c8',1,'grpc_security.h']]],
+  ['grpc_5fssl_5fsession_5fcache',['grpc_ssl_session_cache',['../grpc__security_8h.html#a7008e76d9e21a435a03267390c6f8a37',1,'grpc_security.h']]]
 ];

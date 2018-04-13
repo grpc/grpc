@@ -75,11 +75,11 @@ $(function() {
 <li>Setting flag(generate_mock_code=true) on grpc plugin for protoc, or</li>
 </ol>
 <ol type="1">
-<li>Setting an attribute(generate_mock) in your bazel rule.</li>
+<li>Setting an attribute(generate_mocks) in your bazel rule.</li>
 </ol>
 <p>Protoc plugin flag:</p>
 <div class="fragment"><div class="line">protoc -I . --grpc_out=generate_mock_code=true:. --plugin=protoc-gen-grpc=`which grpc_cpp_plugin` echo.proto</div></div><!-- fragment --><p>Bazel rule:</p>
-<div class="fragment"><div class="line">grpc_proto_library(</div><div class="line">  name = <span class="stringliteral">&quot;echo_proto&quot;</span>,</div><div class="line">  srcs = [<span class="stringliteral">&quot;echo.proto&quot;</span>],</div><div class="line">  generate_mock = <span class="keyword">True</span>, </div><div class="line">)</div></div><!-- fragment --><p>By adding such a flag now a header file <code>echo_mock.grpc.pb.h</code> containing the mocked stub will also be generated.</p>
+<div class="fragment"><div class="line">grpc_proto_library(</div><div class="line">  name = <span class="stringliteral">&quot;echo_proto&quot;</span>,</div><div class="line">  srcs = [<span class="stringliteral">&quot;echo.proto&quot;</span>],</div><div class="line">  generate_mocks = <span class="keyword">True</span>,</div><div class="line">)</div></div><!-- fragment --><p>By adding such a flag now a header file <code>echo_mock.grpc.pb.h</code> containing the mocked stub will also be generated.</p>
 <p>This header file can then be included in test files along with a gmock dependency.</p>
 <p><b>Writing tests with mocked Stub.</b></p>
 <p>Consider the following client a user might have:</p>
@@ -89,7 +89,7 @@ $(function() {
 <div class="fragment"><div class="line">ACTION_P(copy, msg) {</div><div class="line">  arg0-&gt;set_message(msg-&gt;message());</div><div class="line">}</div><div class="line"></div><div class="line"></div><div class="line"><span class="keyword">auto</span> rw = <span class="keyword">new</span> MockClientReaderWriter&lt;EchoRequest, EchoResponse&gt;();</div><div class="line">EchoRequest msg;</div><div class="line">EXPECT_CALL(*rw, Write(_, _)).Times(3).WillRepeatedly(DoAll(SaveArg&lt;0&gt;(&amp;msg), Return(<span class="keyword">true</span>)));</div><div class="line">EXPECT_CALL(*rw, Read(_)).</div><div class="line">      WillOnce(DoAll(WithArg&lt;0&gt;(copy(&amp;msg)), Return(<span class="keyword">true</span>))).</div><div class="line">      WillOnce(DoAll(WithArg&lt;0&gt;(copy(&amp;msg)), Return(<span class="keyword">true</span>))).</div><div class="line">      WillOnce(DoAll(WithArg&lt;0&gt;(copy(&amp;msg)), Return(<span class="keyword">true</span>))).</div><div class="line">      WillOnce(Return(<span class="keyword">false</span>));</div><div class="line"></div><div class="line">MockEchoTestServiceStub  stub;</div><div class="line">EXPECT_CALL(stub, BidiStreamRaw(_)).Times(AtLeast(1)).WillOnce(Return(rw));</div><div class="line"></div><div class="line">FakeClient client(stub);</div><div class="line">client.DoBidiStream();</div></div><!-- fragment --> </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 1 2018 16:16:08 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Apr 13 2018 15:03:52 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

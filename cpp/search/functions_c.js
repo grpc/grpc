@@ -12,5 +12,6 @@ var searchData=
   ['operator_3d',['operator=',['../classgrpc_1_1_alarm.html#a4c46dacfd26561470f0901cec2686f49',1,'grpc::Alarm::operator=(const Alarm &amp;)=delete'],['../classgrpc_1_1_alarm.html#a47545b12ace3607ed259225e38eade46',1,'grpc::Alarm::operator=(Alarm &amp;&amp;rhs)'],['../classgrpc_1_1_byte_buffer.html#ac17487e1e411f469d653e3c44c873e6d',1,'grpc::ByteBuffer::operator=()'],['../classgrpc_1_1_write_options.html#abe3d32a3e5879022e7b8f1c6a7533841',1,'grpc::WriteOptions::operator=()'],['../classgrpc_1_1_slice.html#ac5a109779239ed4d3fd58e8124abdba1',1,'grpc::Slice::operator=()'],['../classgrpc_1_1string__ref.html#a4363e737a77a7b2784ee1e3b915315e3',1,'grpc::string_ref::operator=()'],['../classgrpc_1_1_channel_arguments.html#ac75ba90de32a5c7f3cb6c62f7ce649be',1,'grpc::ChannelArguments::operator=()']]],
   ['operator_3d_3d',['operator==',['../classgrpc_1_1_auth_property_iterator.html#a15e66ce56801c275502cd60805f68499',1,'grpc::AuthPropertyIterator::operator==()'],['../namespacegrpc.html#add0b2451b8e272bad6d673bc2ada0f47',1,'grpc::operator==()']]],
   ['operator_3e',['operator&gt;',['../namespacegrpc.html#a43a91fc985698c2346d3942b6bb64bc3',1,'grpc']]],
-  ['operator_3e_3d',['operator&gt;=',['../namespacegrpc.html#a068f3ef856653abfa58ddd445a281461',1,'grpc']]]
+  ['operator_3e_3d',['operator&gt;=',['../namespacegrpc.html#a068f3ef856653abfa58ddd445a281461',1,'grpc']]],
+  ['options',['options',['../classgrpc_1_1_server_builder.html#a4d10732684bd9ace89303dd746adfb96',1,'grpc::ServerBuilder']]]
 ];

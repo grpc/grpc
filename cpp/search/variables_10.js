@@ -1,11 +1,13 @@
 var searchData=
 [
+  ['selected_5fport',['selected_port',['../structgrpc_1_1_server_builder_1_1_port.html#a82f41a22f8096e017f08345081141cf1',1,'grpc::ServerBuilder::Port']]],
   ['send_5f',['send_',['../classgrpc_1_1internal_1_1_call_op_send_initial_metadata.html#a20cdbc5d2db285e523f700ff4f535268',1,'grpc::internal::CallOpSendInitialMetadata']]],
   ['send_5finitial_5fmetadata',['send_initial_metadata',['../uniongrpc__op_1_1grpc__op__data.html#ae6ef97451e551478d4e4e5c74f0ece2f',1,'grpc_op::grpc_op_data']]],
   ['send_5fmessage',['send_message',['../structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__message.html#ac5710965e63672497b156855e096a759',1,'grpc_op::grpc_op_data::grpc_op_send_message::send_message()'],['../uniongrpc__op_1_1grpc__op__data.html#a475ece8579e74caec4338c3e9221702c',1,'grpc_op::grpc_op_data::send_message()']]],
   ['send_5fstatus_5ffrom_5fserver',['send_status_from_server',['../uniongrpc__op_1_1grpc__op__data.html#adc789e7a8a91b5f20a16a989e9150a0d',1,'grpc_op::grpc_op_data']]],
   ['server_5f',['server_',['../classgrpc_1_1_server_interface_1_1_base_async_request.html#aacf318c2080831d73f7f02469fa045dc',1,'grpc::ServerInterface::BaseAsyncRequest']]],
   ['server_5fcontext',['server_context',['../structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html#a3e6c2bce4e404620dc42c9f2c336a6c6',1,'grpc::internal::MethodHandler::HandlerParameter']]],
+  ['service',['service',['../structgrpc_1_1_server_builder_1_1_named_service.html#ae9f70f6e8f8f7483bdabee3866e8c443',1,'grpc::ServerBuilder::NamedService']]],
   ['service_5fconfig_5fjson',['service_config_json',['../structgrpc__channel__info.html#a578275f6c9da1610e3bf2f99a89d14ba',1,'grpc_channel_info']]],
   ['severity',['severity',['../structgpr__log__func__args.html#af0b4b9d8beace1cae0d1a24783d70ccc',1,'gpr_log_func_args']]],
   ['slice_5f',['slice_',['../classgrpc_1_1internal_1_1_grpc_buffer_writer.html#a0d82c79ed1450a74b67448e6e1a32976',1,'grpc::internal::GrpcBufferWriter::slice_()'],['../classgrpc_1_1internal_1_1_grpc_buffer_reader.html#a74845b264add2937ff253114edb008cb',1,'grpc::internal::GrpcBufferReader::slice_()']]],
