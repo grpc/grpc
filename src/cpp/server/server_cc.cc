@@ -690,16 +690,16 @@ void ServerInterface::RegisteredAsyncRequest::IssueRequest(
 }
 
 ServerInterface::GenericAsyncRequest::GenericAsyncRequest(
-    ServerInterface* server, GenericServerContext* context,
+    ServerInterface* req_server, GenericServerContext* context,
     internal::ServerAsyncStreamingInterface* stream, CompletionQueue* call_cq,
     ServerCompletionQueue* notification_cq, void* tag, bool delete_on_finalize)
-    : BaseAsyncRequest(server, context, stream, call_cq, tag,
+    : BaseAsyncRequest(req_server, context, stream, call_cq, tag,
                        delete_on_finalize) {
   grpc_call_details_init(&call_details_);
   GPR_ASSERT(notification_cq);
   GPR_ASSERT(call_cq);
   GPR_ASSERT(GRPC_CALL_OK ==
-             grpc_server_request_call(this->server(), callptr(), &call_details_,
+             grpc_server_request_call(server(), callptr(), &call_details_,
                                       client_metadata(), call_cq->cq(),
                                       notification_cq->cq(), this));
 }

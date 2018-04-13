@@ -201,7 +201,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
 
   int GetPollCount() override {
     int count = 0;
-    for (auto&& cq : cli_cqs_) {
+    for (auto& cq : cli_cqs_) {
       count += grpc::internal::CompletionQueueStats(cq.get()).GetPollNum();
     }
     return count;

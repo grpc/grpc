@@ -47,6 +47,7 @@ class ConnectivityState {
     static_assert(SHUTDOWN == static_cast<State>(GRPC_CHANNEL_SHUTDOWN),
                   "gRPC Core/C++ connectivity state value mismatch");
   }
+
   ConnectivityState(grpc_connectivity_state state)
       : state_(static_cast<State>(state)) {}
 

@@ -243,7 +243,8 @@ class ServerInterface : public internal::CallHook {
 
   class GenericAsyncRequest : public BaseAsyncRequest {
    public:
-    GenericAsyncRequest(ServerInterface* server, GenericServerContext* context,
+    GenericAsyncRequest(ServerInterface* req_server,
+                        GenericServerContext* context,
                         internal::ServerAsyncStreamingInterface* stream,
                         CompletionQueue* call_cq,
                         ServerCompletionQueue* notification_cq, void* tag,

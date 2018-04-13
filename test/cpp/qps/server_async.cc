@@ -179,7 +179,7 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
 
   int GetPollCount() override {
     int count = 0;
-    for (auto&& cq : srv_cqs_) {
+    for (auto& cq : srv_cqs_) {
       count += grpc::internal::CompletionQueueStats(cq.get()).GetPollNum();
     }
     return count;

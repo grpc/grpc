@@ -109,7 +109,7 @@ class FullstackFixture : public BaseFixture {
     BaseFixture::AddToLabel(out, state);
     out << " polls/iter:"
         << static_cast<double>(
-               grpc::internal::CompletionQueueStats(this->cq()).GetPollNum()) /
+               grpc::internal::CompletionQueueStats(cq()).GetPollNum()) /
                state.iterations();
   }
 
@@ -239,7 +239,7 @@ class EndpointPairFixture : public BaseFixture {
     BaseFixture::AddToLabel(out, state);
     out << " polls/iter:"
         << static_cast<double>(
-               grpc::internal::CompletionQueueStats(this->cq()).GetPollNum()) /
+               grpc::internal::CompletionQueueStats(cq()).GetPollNum()) /
                state.iterations();
   }
 
