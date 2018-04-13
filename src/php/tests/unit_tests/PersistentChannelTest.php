@@ -42,6 +42,11 @@ class PersistentListTest extends PHPUnit_Framework_TestCase
       $this->assertTrue(false);
   }
 
+  public function assertConnecting($state) {
+      $this->assertTrue($state == GRPC\CHANNEL_CONNECTING ||
+      $state == GRPC\CHANNEL_TRANSIENT_FAILURE);
+  }
+
   public function testPersistentChennelCreateOneChannel()
   {
       $this->channel1 = new Grpc\Channel('localhost:1', []);
@@ -66,8 +71,7 @@ class PersistentListTest extends PHPUnit_Framework_TestCase
 
       $this->waitUntilNotIdle($this->channel1);
       $plist = $this->channel1->getPersistentList();
-      $this->assertEquals($plist['localhost:1']['connectivity_status'],
-                          GRPC\CHANNEL_CONNECTING);
+      $this->assertConnecting($plist['localhost:1']['connectivity_status']);
       $this->assertEquals($plist['localhost:1']['is_valid'], 1);
 
       $this->channel1->close();
