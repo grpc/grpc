@@ -4335,7 +4335,7 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
-      "grpc++_test_util", 
+      "grpc++_test", 
       "grpc_test_util"
     ], 
     "headers": [], 

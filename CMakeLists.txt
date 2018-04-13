@@ -13142,7 +13142,6 @@ target_include_directories(server_context_test_spouse_test
 target_link_libraries(server_context_test_spouse_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++_test_util
   grpc_test_util
   grpc++
   grpc

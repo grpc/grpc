@@ -5073,12 +5073,13 @@ targets:
   src:
   - test/cpp/test/server_context_test_spouse_test.cc
   deps:
-  - grpc++_test_util
   - grpc_test_util
   - grpc++
   - grpc
   - gpr_test_util
   - gpr
+  uses:
+  - grpc++_test
 - name: server_crash_test
   gtest: true
   cpu_cost: 0.1
