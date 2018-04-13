@@ -55,39 +55,18 @@
 #include "src/core/lib/iomgr/tcp_server_utils_posix.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 
-static gpr_once check_init = GPR_ONCE_INIT;
-static bool has_so_reuseport = false;
-
-static void init(void) {
-#ifndef GPR_MANYLINUX1
-  int s = socket(AF_INET, SOCK_STREAM, 0);
-  if (s < 0) {
-    /* This might be an ipv6-only environment in which case 'socket(AF_INET,..)'
-       call would fail. Try creating IPv6 socket in that case */
-    s = socket(AF_INET6, SOCK_STREAM, 0);
-  }
-  if (s >= 0) {
-    has_so_reuseport = GRPC_LOG_IF_ERROR("check for SO_REUSEPORT",
-                                         grpc_set_socket_reuse_port(s, 1));
-    close(s);
-  }
-#endif
-}
-
 static grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
                                      const grpc_channel_args* args,
                                      grpc_tcp_server** server) {
-  gpr_once_init(&check_init, init);
-
   grpc_tcp_server* s =
       static_cast<grpc_tcp_server*>(gpr_zalloc(sizeof(grpc_tcp_server)));
-  s->so_reuseport = has_so_reuseport;
+  s->so_reuseport = grpc_is_socket_reuse_port_supported();
   s->expand_wildcard_addrs = false;
   for (size_t i = 0; i < (args == nullptr ? 0 : args->num_args); i++) {
     if (0 == strcmp(GRPC_ARG_ALLOW_REUSEPORT, args->args[i].key)) {
       if (args->args[i].type == GRPC_ARG_INTEGER) {
-        s->so_reuseport =
-            has_so_reuseport && (args->args[i].value.integer != 0);
+        s->so_reuseport = grpc_is_socket_reuse_port_supported() &&
+                          (args->args[i].value.integer != 0);
       } else {
         gpr_free(s);
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(GRPC_ARG_ALLOW_REUSEPORT

@@ -37,11 +37,11 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/security/credentials/credentials.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -58,7 +58,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   grpc_end2end_test_fixture f;
   int port = grpc_pick_unused_port_or_die();
   fullstack_secure_fixture_data *ffd =
-      (fullstack_secure_fixture_data*)gpr_malloc(sizeof(fullstack_secure_fixture_data));
+      (fullstack_secure_fixture_data *)gpr_malloc(sizeof(fullstack_secure_fixture_data));
   memset(&f, 0, sizeof(f));
 
   gpr_join_host_port(&ffd->localaddr, "127.0.0.1", port);
@@ -70,9 +70,8 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   return f;
 }
 
-static void process_auth_failure(void *state, grpc_auth_context *ctx,
-                                 const grpc_metadata *md, size_t md_count,
-                                 grpc_process_auth_metadata_done_cb cb,
+static void process_auth_failure(void *state, grpc_auth_context *ctx, const grpc_metadata *md,
+                                 size_t md_count, grpc_process_auth_metadata_done_cb cb,
                                  void *user_data) {
   GPR_ASSERT(state == NULL);
   cb(user_data, NULL, 0, NULL, 0, GRPC_STATUS_UNAUTHENTICATED, NULL);
@@ -83,27 +82,25 @@ static void cronet_init_client_secure_fullstack(grpc_end2end_test_fixture *f,
                                                 stream_engine *cronetEngine) {
   fullstack_secure_fixture_data *ffd = (fullstack_secure_fixture_data *)f->fixture_data;
   grpc_arg arg;
-  arg.key = const_cast<char*>(GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER);
+  arg.key = const_cast<char *>(GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER);
   arg.type = GRPC_ARG_INTEGER;
   arg.value.integer = 1;
   client_args = grpc_channel_args_copy_and_add(client_args, &arg, 1);
-  f->client = grpc_cronet_secure_channel_create(cronetEngine, ffd->localaddr,
-                                                client_args, NULL);
+  f->client = grpc_cronet_secure_channel_create(cronetEngine, ffd->localaddr, client_args, NULL);
   grpc_channel_args_destroy(client_args);
   GPR_ASSERT(f->client != NULL);
 }
 
-static void chttp2_init_server_secure_fullstack(
-    grpc_end2end_test_fixture *f, grpc_channel_args *server_args,
-    grpc_server_credentials *server_creds) {
+static void chttp2_init_server_secure_fullstack(grpc_end2end_test_fixture *f,
+                                                grpc_channel_args *server_args,
+                                                grpc_server_credentials *server_creds) {
   fullstack_secure_fixture_data *ffd = (fullstack_secure_fixture_data *)f->fixture_data;
   if (f->server) {
     grpc_server_destroy(f->server);
   }
   f->server = grpc_server_create(server_args, NULL);
   grpc_server_register_completion_queue(f->server, f->cq, NULL);
-  GPR_ASSERT(grpc_server_add_secure_http2_port(f->server, ffd->localaddr,
-                                               server_creds));
+  GPR_ASSERT(grpc_server_add_secure_http2_port(f->server, ffd->localaddr, server_creds));
   grpc_server_credentials_release(server_creds);
   grpc_server_start(f->server);
 }
@@ -114,8 +111,8 @@ static void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture *f) {
   gpr_free(ffd);
 }
 
-static void cronet_init_client_simple_ssl_secure_fullstack(
-    grpc_end2end_test_fixture *f, grpc_channel_args *client_args) {
+static void cronet_init_client_simple_ssl_secure_fullstack(grpc_end2end_test_fixture *f,
+                                                           grpc_channel_args *client_args) {
   grpc_core::ExecCtx exec_ctx;
   stream_engine *cronetEngine = [Cronet getGlobalEngine];
 
@@ -128,18 +125,16 @@ static int fail_server_auth_check(grpc_channel_args *server_args) {
   size_t i;
   if (server_args == NULL) return 0;
   for (i = 0; i < server_args->num_args; i++) {
-    if (strcmp(server_args->args[i].key, FAIL_AUTH_CHECK_SERVER_ARG_NAME) ==
-        0) {
+    if (strcmp(server_args->args[i].key, FAIL_AUTH_CHECK_SERVER_ARG_NAME) == 0) {
       return 1;
     }
   }
   return 0;
 }
 
-static void chttp2_init_server_simple_ssl_secure_fullstack(
-    grpc_end2end_test_fixture *f, grpc_channel_args *server_args) {
-  grpc_ssl_pem_key_cert_pair pem_cert_key_pair = {test_server1_key,
-                                                  test_server1_cert};
+static void chttp2_init_server_simple_ssl_secure_fullstack(grpc_end2end_test_fixture *f,
+                                                           grpc_channel_args *server_args) {
+  grpc_ssl_pem_key_cert_pair pem_cert_key_pair = {test_server1_key, test_server1_cert};
   grpc_server_credentials *ssl_creds =
       grpc_ssl_server_credentials_create(NULL, &pem_cert_key_pair, 1, 0, NULL);
   if (fail_server_auth_check(server_args)) {
@@ -189,9 +184,8 @@ static char *roots_filename;
 
   [Cronet setHttp2Enabled:YES];
   [Cronet enableTestCertVerifierForTesting];
-  NSURL *url = [[[NSFileManager defaultManager]
-      URLsForDirectory:NSDocumentDirectory
-             inDomains:NSUserDomainMask] lastObject];
+  NSURL *url = [[[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory
+                                                       inDomains:NSUserDomainMask] lastObject];
   NSLog(@"Documents directory: %@", url);
   [Cronet start];
   [Cronet startNetLogToFile:@"cronet_netlog.json" logBytes:YES];

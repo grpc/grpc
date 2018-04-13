@@ -28,8 +28,8 @@
 
 @synthesize state = _state;
 
-- (instancetype) init {
-  return [self initWithEnumerator:nil error:nil]; // results in an empty writer.
+- (instancetype)init {
+  return [self initWithEnumerator:nil error:nil];  // results in an empty writer.
 }
 
 // Designated initializer
@@ -57,7 +57,8 @@
 }
 
 + (GRXWriter *)writerWithContainer:(id<NSFastEnumeration>)container {
-  return [self writerWithEnumerator:[NSEnumerator grx_enumeratorWithContainer:container]];;
+  return [self writerWithEnumerator:[NSEnumerator grx_enumeratorWithContainer:container]];
+  ;
 }
 
 + (GRXWriter *)writerWithValue:(id)value {
