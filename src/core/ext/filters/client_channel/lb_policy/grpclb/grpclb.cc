@@ -503,7 +503,6 @@ GrpcLb::BalancerCallState::BalancerCallState(
   // Init the LB call. Note that the LB call will progress every time there's
   // activity in grpclb_policy_->interested_parties(), which is comprised of
   // the polling entities from client_channel.
-  gpr_log(GPR_INFO, "SERVER NAME = %s", grpclb_policy()->server_name_);
   GPR_ASSERT(grpclb_policy()->server_name_ != nullptr);
   GPR_ASSERT(grpclb_policy()->server_name_[0] != '\0');
   const grpc_millis deadline =
