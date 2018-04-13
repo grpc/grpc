@@ -212,7 +212,7 @@ class BalancerServiceImpl : public BalancerService {
     gpr_log(GPR_INFO, "LB[%p]: received initial message '%s'", this,
             request.DebugString().c_str());
     if (request.initial_request().name() == "invalid_name") {
-      return Status::NOT_FOUND;
+      return Status(StatusCode::NOT_FOUND, "");
     }
 
     // TODO(juanlishen): Initial response should always be the first response.
