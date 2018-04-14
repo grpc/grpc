@@ -3,6 +3,21 @@
 def grpc_deps():
     """Loads dependencies need to compile and test the grpc library."""
     native.bind(
+        name = "absl-base",
+        actual = "@com_google_absl//absl/base",
+    )
+
+    native.bind(
+        name = "absl-time",
+        actual = "@com_google_absl//absl/time:time",
+    )
+
+    native.bind(
+        name = "cctz",
+        actual = "@com_googlesource_code_cctz//:cctz",
+    )
+
+    native.bind(
         name = "libssl",
         actual = "@boringssl//:ssl",
     )
@@ -67,6 +82,16 @@ def grpc_deps():
         actual = "@com_github_grpc_grpc//:grpc++_codegen_proto"
     )
 
+    native.bind(
+        name = "opencensus-trace",
+        actual = "@io_opencensus_cpp//opencensus/trace:trace"
+    )
+
+    native.bind(
+        name = "opencensus-stats",
+        actual = "@io_opencensus_cpp//opencensus/stats:stats"
+    )
+
     if "boringssl" not in native.existing_rules():
         native.http_archive(
             name = "boringssl",
@@ -108,8 +133,8 @@ def grpc_deps():
         native.new_http_archive(
             name = "com_github_google_benchmark",
             build_file = "@com_github_grpc_grpc//third_party:benchmark.BUILD",
-            strip_prefix = "benchmark-5b7683f49e1e9223cf9927b24f6fd3d6bd82e3f8",
-            url = "https://github.com/google/benchmark/archive/5b7683f49e1e9223cf9927b24f6fd3d6bd82e3f8.tar.gz",
+            strip_prefix = "benchmark-9913418d323e64a0111ca0da81388260c2bbe1e9",
+            url = "https://github.com/google/benchmark/archive/9913418d323e64a0111ca0da81388260c2bbe1e9.tar.gz",
         )
 
     if "com_github_cares_cares" not in native.existing_rules():
@@ -137,6 +162,21 @@ def grpc_deps():
             ],
             sha256 = "699b55a6916c687f4b7dc092dbbf5f64672cde0dc965f79717735ec4e5416556",
         )
+
+    if "io_opencensus_cpp" not in native.existing_rules():
+      native.http_archive(
+            name = "io_opencensus_cpp",
+            strip_prefix = "opencensus-cpp-9cde3c9b368d22d2297779ab634166491f05566e",
+            url = "https://github.com/census-instrumentation/opencensus-cpp/archive/9cde3c9b368d22d2297779ab634166491f05566e.tar.gz",
+        )
+
+    if "com_googlesource_code_cctz" not in native.existing_rules():
+        native.http_archive(
+            name = "com_googlesource_code_cctz",
+            strip_prefix = "cctz-e19879df3a14791b7d483c359c4acd6b2a1cd96b",
+            url = "https://github.com/google/cctz/archive/e19879df3a14791b7d483c359c4acd6b2a1cd96b.zip",
+        )
+
 
 # TODO: move some dependencies from "grpc_deps" here?
 def grpc_test_only_deps():

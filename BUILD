@@ -1957,4 +1957,37 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "grpc_opencensus_plugin",
+    srcs = [
+        "src/core/ext/census/client_filter.cc",
+        "src/core/ext/census/server_filter.cc",
+        "src/core/ext/census/channel_filter.cc",
+        "src/core/ext/census/filter.cc",
+        "src/core/ext/census/grpc_context.cc",
+        "src/core/ext/census/grpc_plugin.cc",
+        "src/core/ext/census/measures.cc",
+        "src/core/ext/census/rpc_encoding.cc",
+    ],
+    hdrs = [
+        "src/core/ext/census/client_filter.h",
+        "src/core/ext/census/server_filter.h",
+        "src/core/ext/census/channel_filter.h",
+        "src/core/ext/census/filter.h",
+        "src/core/ext/census/grpc_plugin.h",
+        "src/core/ext/census/measures.h",
+        "src/core/ext/census/rpc_encoding.h",
+    ],
+    language = "c++",
+    external_deps = [
+        "absl-base",
+        "absl-time",
+        "opencensus-trace",
+        "opencensus-stats",
+    ],
+    deps = [
+        ":grpc++",
+    ],
+)
+
 grpc_generate_one_off_targets()
