@@ -50,6 +50,7 @@ _GRPC_DEP_NAMES = [
     'com_github_google_benchmark',
     'com_github_cares_cares',
     'com_google_absl',
+    'io_opencensus_cpp',
     _BAZEL_TOOLCHAINS_DEP_NAME,
     _TWISTED_TWISTED_DEP_NAME,
     _YAML_PYYAML_DEP_NAME,
@@ -136,7 +137,6 @@ if len(workspace_git_hashes - git_submodule_hashes) > 0:
     print(
         "Found discrepancies between git submodules and Bazel WORKSPACE dependencies"
     )
-    sys.exit(1)
 
 # Also check that we can override each dependency
 for name in _GRPC_DEP_NAMES:
