@@ -1,4 +1,4 @@
-// Copyright 2016 gRPC authors.
+// Copyright 2018 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,16 +14,21 @@
 
 syntax = "proto3";
 
-package google.trace;
+package grpc_core.testing;
 
-// Tracing information that is propagated with RPC's.
-message TraceContext {
-  // A TraceId uniquely represents a single Trace. It is a 128-bit nonce.
-  // The 128-bit ID is split into 2 64-bit chunks. (REQUIRED)
-  fixed64 trace_id_hi = 1;
-  fixed64 trace_id_lo = 2;
-  // ID of parent (client) span. (REQUIRED)
-  fixed64 span_id = 3;
-  // Span option flags. First bit is true if this trace is sampled. (OPTIONAL)
-  fixed32 span_options = 4;
+message EchoRequest {
+  string message = 1;
+  int32 status_code = 2;
+}
+
+message EchoResponse {
+  string message = 1;
+}
+
+service EchoService {
+  // Copies the request message to the response. If status_code is set in the
+  // request, returns the corresponding error code (for testing error
+  // reporting).
+  rpc Echo(EchoRequest) returns (EchoResponse) {
+  }
 }

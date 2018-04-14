@@ -864,7 +864,7 @@ include/grpc/support/time.h \
 include/grpc/support/workaround_list.h \
 src/core/README.md \
 src/core/ext/README.md \
-src/core/ext/census/grpc_context.cc \
+src/core/ext/filters/census/grpc_context.cc \
 src/core/ext/filters/client_channel/README.md \
 src/core/ext/filters/client_channel/backup_poller.cc \
 src/core/ext/filters/client_channel/backup_poller.h \

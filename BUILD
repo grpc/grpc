@@ -485,7 +485,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "census",
     srcs = [
-        "src/core/ext/census/grpc_context.cc",
+        "src/core/ext/filters/census/grpc_context.cc",
     ],
     external_deps = [
         "nanopb",
@@ -1954,6 +1954,41 @@ grpc_cc_library(
     deps = [
         ":grpc++",
         "//src/proto/grpc/core:stats_proto",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_opencensus_plugin",
+    srcs = [
+        "src/core/ext/filters/census/client_filter.cc",
+        "src/core/ext/filters/census/server_filter.cc",
+        "src/core/ext/filters/census/channel_filter.cc",
+        "src/core/ext/filters/census/context.cc",
+        "src/core/ext/filters/census/grpc_context.cc",
+        "src/core/ext/filters/census/grpc_plugin.cc",
+        "src/core/ext/filters/census/measures.cc",
+        "src/core/ext/filters/census/rpc_encoding.cc",
+        "src/core/ext/filters/census/views.cc",
+    ],
+    hdrs = [
+        "include/grpc/census.h",
+        "src/core/ext/filters/census/client_filter.h",
+        "src/core/ext/filters/census/server_filter.h",
+        "src/core/ext/filters/census/channel_filter.h",
+        "src/core/ext/filters/census/context.h",
+        "src/core/ext/filters/census/grpc_plugin.h",
+        "src/core/ext/filters/census/measures.h",
+        "src/core/ext/filters/census/rpc_encoding.h",
+    ],
+    language = "c++",
+    external_deps = [
+        "absl-base",
+        "absl-time",
+        "opencensus-trace",
+        "opencensus-stats",
+    ],
+    deps = [
+        ":grpc++",
     ],
 )
 
