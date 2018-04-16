@@ -21,6 +21,7 @@
 
 #include <map>
 #include <memory>
+#include <vector>
 
 #include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/security/auth_context.h>
@@ -219,6 +220,21 @@ class MetadataCredentialsPlugin {
 std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
     std::unique_ptr<MetadataCredentialsPlugin> plugin);
 
+namespace experimental {
+
+/// Options used to build AltsCredentials.
+struct AltsCredentialsOptions {
+  /// service accounts of target endpoint that will be acceptable
+  /// by the client. If service accounts are provided and none of them matches
+  /// that of the server, authentication will fail.
+  std::vector<grpc::string> target_service_accounts;
+};
+
+/// Builds ALTS Credentials given ALTS specific options
+std::shared_ptr<ChannelCredentials> AltsCredentials(
+    const AltsCredentialsOptions& options);
+
+}  // namespace experimental
 }  // namespace grpc
 
 #endif  // GRPCPP_SECURITY_CREDENTIALS_H
