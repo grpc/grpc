@@ -108,6 +108,9 @@ static NSMutableDictionary *kHostCache;
                                    serverName:(NSString *)serverName
                                       timeout:(NSTimeInterval)timeout
                               completionQueue:(GRPCCompletionQueue *)queue {
+  // The __block attribute is to allow channel take refcount inside @synchronized block. Without
+  // this attribute, retain of channel object happens after objc_sync_exit in release builds, which
+  // may result in channel released before used. See grpc/#15033.
   __block GRPCChannel *channel;
   // This is racing -[GRPCHost disconnect].
   @synchronized(self) {
