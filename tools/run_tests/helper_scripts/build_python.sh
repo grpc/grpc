@@ -141,6 +141,7 @@ fi
  $HOST_PYTHON -m virtualenv -p "$PYTHON" "$VENV" ||
  true)
 VENV_PYTHON=$(script_realpath "$VENV/$VENV_RELATIVE_PYTHON")
+curl https://bootstrap.pypa.io/get-pip.py | $VENV_PYTHON
 
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
 # Python gets confused when parsing paths.
