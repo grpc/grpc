@@ -38,6 +38,8 @@
  * this was written.
  */
 
+/* test */
+
 #include "address_sorting_internal.h"
 
 #include <errno.h>
