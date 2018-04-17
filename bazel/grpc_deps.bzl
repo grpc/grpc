@@ -171,15 +171,15 @@ def grpc_deps():
     if "io_opencensus_cpp" not in native.existing_rules():
       native.http_archive(
             name = "io_opencensus_cpp",
-            strip_prefix = "opencensus-cpp-master",
-            url = "https://github.com/census-instrumentation/opencensus-cpp/archive/master.tar.gz",
+            strip_prefix = "opencensus-cpp-fadd9894f985b772b35767983fc2f9ad86b370a8",
+            url = "https://github.com/census-instrumentation/opencensus-cpp/archive/fadd9894f985b772b35767983fc2f9ad86b370a8.tar.gz",
         )
 
     if "com_googlesource_code_cctz" not in native.existing_rules():
         native.http_archive(
             name = "com_googlesource_code_cctz",
             strip_prefix = "cctz-e19879df3a14791b7d483c359c4acd6b2a1cd96b",
-            url = "https://github.com/google/cctz/archive/e19879df3a14791b7d483c359c4acd6b2a1cd96b.zip",
+            url = "https://github.com/google/cctz/archive/e19879df3a14791b7d483c359c4acd6b2a1cd96b.tar.gz",
         )
 
 
