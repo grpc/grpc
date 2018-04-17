@@ -58,7 +58,8 @@ int grpc_sockaddr_is_v4mapped(const grpc_resolved_address* resolved_addr,
         /* s6_addr32 would be nice, but it's non-standard. */
         memcpy(&addr4_out->sin_addr, &addr6->sin6_addr.s6_addr[12], 4);
         addr4_out->sin_port = addr6->sin6_port;
-        resolved_addr4_out->len = sizeof(grpc_sockaddr_in);
+        resolved_addr4_out->len =
+            static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
       }
       return 1;
     }
@@ -81,7 +82,7 @@ int grpc_sockaddr_to_v4mapped(const grpc_resolved_address* resolved_addr,
     memcpy(&addr6_out->sin6_addr.s6_addr[0], kV4MappedPrefix, 12);
     memcpy(&addr6_out->sin6_addr.s6_addr[12], &addr4->sin_addr, 4);
     addr6_out->sin6_port = addr4->sin_port;
-    resolved_addr6_out->len = sizeof(grpc_sockaddr_in6);
+    resolved_addr6_out->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in6));
     return 1;
   }
   return 0;
@@ -135,7 +136,7 @@ void grpc_sockaddr_make_wildcard4(int port,
   memset(resolved_wild_out, 0, sizeof(*resolved_wild_out));
   wild_out->sin_family = GRPC_AF_INET;
   wild_out->sin_port = grpc_htons(static_cast<uint16_t>(port));
-  resolved_wild_out->len = sizeof(grpc_sockaddr_in);
+  resolved_wild_out->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
 }
 
 void grpc_sockaddr_make_wildcard6(int port,
@@ -146,7 +147,7 @@ void grpc_sockaddr_make_wildcard6(int port,
   memset(resolved_wild_out, 0, sizeof(*resolved_wild_out));
   wild_out->sin6_family = GRPC_AF_INET6;
   wild_out->sin6_port = grpc_htons(static_cast<uint16_t>(port));
-  resolved_wild_out->len = sizeof(grpc_sockaddr_in6);
+  resolved_wild_out->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in6));
 }
 
 int grpc_sockaddr_to_string(char** out,
@@ -203,6 +204,8 @@ void grpc_string_to_sockaddr(grpc_resolved_address* out, char* addr, int port) {
 
   if (grpc_inet_pton(GRPC_AF_INET6, addr, &addr6->sin6_addr) == 1) {
     addr6->sin6_family = GRPC_AF_INET6;
+    addr6->sin6_flowinfo = 0;
+    addr6->sin6_scope_id = 0;
     out->len = sizeof(grpc_sockaddr_in6);
   } else if (grpc_inet_pton(GRPC_AF_INET, addr, &addr4->sin_addr) == 1) {
     addr4->sin_family = GRPC_AF_INET;

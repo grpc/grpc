@@ -143,6 +143,9 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_auth_context_add_property);
   printf("%lx", (unsigned long) grpc_auth_context_add_cstring_property);
   printf("%lx", (unsigned long) grpc_auth_context_set_peer_identity_property_name);
+  printf("%lx", (unsigned long) grpc_ssl_session_cache_create_lru);
+  printf("%lx", (unsigned long) grpc_ssl_session_cache_destroy);
+  printf("%lx", (unsigned long) grpc_ssl_session_cache_create_channel_arg);
   printf("%lx", (unsigned long) grpc_channel_credentials_release);
   printf("%lx", (unsigned long) grpc_google_default_credentials_create);
   printf("%lx", (unsigned long) grpc_set_ssl_roots_override_callback);
@@ -170,6 +173,12 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_server_add_secure_http2_port);
   printf("%lx", (unsigned long) grpc_call_set_credentials);
   printf("%lx", (unsigned long) grpc_server_credentials_set_auth_metadata_processor);
+  printf("%lx", (unsigned long) grpc_alts_credentials_client_options_create);
+  printf("%lx", (unsigned long) grpc_alts_credentials_server_options_create);
+  printf("%lx", (unsigned long) grpc_alts_credentials_client_options_add_target_service_account);
+  printf("%lx", (unsigned long) grpc_alts_credentials_options_destroy);
+  printf("%lx", (unsigned long) grpc_alts_credentials_create);
+  printf("%lx", (unsigned long) grpc_alts_server_credentials_create);
   printf("%lx", (unsigned long) grpc_raw_byte_buffer_create);
   printf("%lx", (unsigned long) grpc_raw_compressed_byte_buffer_create);
   printf("%lx", (unsigned long) grpc_byte_buffer_copy);
@@ -240,6 +249,7 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) gpr_cpu_current_cpu);
   printf("%lx", (unsigned long) gpr_log_severity_string);
   printf("%lx", (unsigned long) gpr_log);
+  printf("%lx", (unsigned long) gpr_should_log);
   printf("%lx", (unsigned long) gpr_log_message);
   printf("%lx", (unsigned long) gpr_set_log_verbosity);
   printf("%lx", (unsigned long) gpr_log_verbosity_init);

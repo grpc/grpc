@@ -107,11 +107,13 @@ std::shared_ptr<Channel> CreateTestChannel(
 
 std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, const grpc::string& override_hostname,
-    bool enable_ssl, bool use_prod_roots,
+    bool enable_alts, bool enable_ssl, bool use_prod_roots,
     const std::shared_ptr<CallCredentials>& creds,
     const ChannelArguments& args) {
   grpc::string type;
-  if (enable_ssl) {
+  if (enable_alts) {
+    type = testing::kAltsCredentialsType;
+  } else if (enable_ssl) {
     type = testing::kTlsCredentialsType;
   }
 
@@ -121,23 +123,24 @@ std::shared_ptr<Channel> CreateTestChannel(
 
 std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, const grpc::string& override_hostname,
-    bool enable_ssl, bool use_prod_roots,
+    bool enable_alts, bool enable_ssl, bool use_prod_roots,
     const std::shared_ptr<CallCredentials>& creds) {
-  return CreateTestChannel(server, override_hostname, enable_ssl,
+  return CreateTestChannel(server, override_hostname, enable_alts, enable_ssl,
                            use_prod_roots, creds, ChannelArguments());
 }
 
 std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, const grpc::string& override_hostname,
-    bool enable_ssl, bool use_prod_roots) {
-  return CreateTestChannel(server, override_hostname, enable_ssl,
+    bool enable_alts, bool enable_ssl, bool use_prod_roots) {
+  return CreateTestChannel(server, override_hostname, enable_alts, enable_ssl,
                            use_prod_roots, std::shared_ptr<CallCredentials>());
 }
 
 // Shortcut for end2end and interop tests.
 std::shared_ptr<Channel> CreateTestChannel(const grpc::string& server,
-                                           bool enable_ssl) {
-  return CreateTestChannel(server, "foo.test.google.fr", enable_ssl, false);
+                                           bool enable_alts, bool enable_ssl) {
+  return CreateTestChannel(server, "foo.test.google.fr", enable_alts,
+                           enable_ssl, false);
 }
 
 std::shared_ptr<Channel> CreateTestChannel(

@@ -194,7 +194,7 @@ int main(int argc, char** argv) {
   snprintf(host_port, host_port_buf_size, "%s:%d", FLAGS_server_host.c_str(),
            FLAGS_server_port);
   std::shared_ptr<grpc::Channel> channel =
-      grpc::CreateTestChannel(host_port, false);
+      grpc::CreateTestChannel(host_port, false, false);
   GPR_ASSERT(channel->WaitForConnected(gpr_time_add(
       gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(300, GPR_TIMESPAN))));
   grpc::testing::Http2Client client(channel);

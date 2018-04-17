@@ -35,3 +35,24 @@ gem generate_index --directory "${GEM_SOURCE}"
 bundle install
 
 bundle exec ./distribtest.rb
+
+# Attempt to repro https://github.com/google/protobuf/issues/4210.
+# TODO: This sanity check only works for linux-based distrib tests and for
+# binary gRPC packages. It will need to be ran conditionally if this test script is
+# used for other types of distrib tests.
+INSTALLATION_DIR="$(gem env | grep '\- INSTALLATION DIRECTORY' | awk '{ print $4 }')"
+if [[ "$(find "$INSTALLATION_DIR" -name 'grpc_c.so' | wc -l)" == 0 ]]; then
+  echo "Sanity check failed. The gRPC package is not installed in $INSTALLATION_DIR."
+  exit 1
+fi
+LIBRUBY_DEPENDENCY_EXISTS="$(find "$INSTALLATION_DIR" -name 'grpc_c.so' -exec ldd {} \; | grep -c 'libruby')" || true
+if [[ "$LIBRUBY_DEPENDENCY_EXISTS" != 0 ]]; then
+  echo "A grpc_c.so file in this binary gRPC package is dynamically linked to libruby."
+fi
+DEPENDENCY_NOT_FOUND="$(find "$INSTALLATION_DIR" -name 'grpc_c.so' -exec ldd {} \; | grep -c 'not found')" || true
+if [[ "$DEPENDENCY_NOT_FOUND" != 0 ]]; then
+  echo "A grpc_c.so file in this binary gRPC package has an non-portable dependency."
+fi
+if [ "$LIBRUBY_DEPENDENCY_EXISTS" != 0 ] || [ "$DEPENDENCY_NOT_FOUND" != 0 ]; then
+  exit 1
+fi

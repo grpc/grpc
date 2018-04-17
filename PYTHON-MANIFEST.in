@@ -4,10 +4,11 @@ graft src/python/grpcio/grpcio.egg-info
 graft src/core
 graft src/boringssl
 graft include/grpc
+graft third_party/address_sorting
 graft third_party/boringssl
+graft third_party/cares
 graft third_party/nanopb
 graft third_party/zlib
-graft third_party/cares
 include src/python/grpcio/_spawn_patch.py
 include src/python/grpcio/commands.py
 include src/python/grpcio/grpc_version.py

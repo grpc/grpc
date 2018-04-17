@@ -38,8 +38,7 @@
   [GRPCHost flushChannelCache];
 }
 
-+ (void)setDefaultCompressMethod:(GRPCCompressAlgorithm)algorithm
-                         forhost:(nonnull NSString *)host {
++ (void)setDefaultCompressMethod:(GRPCCompressAlgorithm)algorithm forhost:(nonnull NSString *)host {
   GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
   switch (algorithm) {
     case GRPCCompressNone:
@@ -55,6 +54,14 @@
       NSLog(@"Invalid compression algorithm");
       abort();
   }
+}
+
++ (void)setKeepaliveWithInterval:(int)interval
+                         timeout:(int)timeout
+                         forHost:(nonnull NSString *)host {
+  GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
+  hostConfig.keepaliveInterval = interval;
+  hostConfig.keepaliveTimeout = timeout;
 }
 
 @end

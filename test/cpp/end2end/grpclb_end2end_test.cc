@@ -1139,7 +1139,7 @@ TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
   EXPECT_EQ(0U, backend_servers_[1].service_->request_count());
   WaitForBackend(1);
 
-  // This is serviced by the existing RR policy
+  // This is serviced by the updated RR policy
   backend_servers_[1].service_->ResetCounters();
   gpr_log(GPR_INFO, "========= BEFORE THIRD BATCH ==========");
   CheckRpcSendOk(10);

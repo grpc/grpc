@@ -23,7 +23,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  # version = '1.11.0-dev'
+  # version = '1.12.0-dev'
   version = '0.0.2'
   s.version  = version
   s.summary  = 'gRPC C++ library'
@@ -31,7 +31,7 @@ Pod::Spec.new do |s|
   s.license  = 'Apache License, Version 2.0'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
-  grpc_version = '1.11.0-dev'
+  grpc_version = '1.12.0-dev'
 
   s.source = {
     :git => 'https://github.com/grpc/grpc.git',
@@ -112,6 +112,8 @@ Pod::Spec.new do |s|
                       'include/grpcpp/support/byte_buffer.h',
                       'include/grpcpp/support/channel_arguments.h',
                       'include/grpcpp/support/config.h',
+                      'include/grpcpp/support/proto_buffer_reader.h',
+                      'include/grpcpp/support/proto_buffer_writer.h',
                       'include/grpcpp/support/slice.h',
                       'include/grpcpp/support/status.h',
                       'include/grpcpp/support/status_code_enum.h',
@@ -206,7 +208,6 @@ Pod::Spec.new do |s|
                       'src/cpp/server/server_posix.cc',
                       'src/cpp/thread_manager/thread_manager.cc',
                       'src/cpp/util/byte_buffer_cc.cc',
-                      'src/cpp/util/slice_cc.cc',
                       'src/cpp/util/status.cc',
                       'src/cpp/util/string_ref.cc',
                       'src/cpp/util/time_cc.cc',
@@ -308,6 +309,7 @@ Pod::Spec.new do |s|
                       'src/core/tsi/transport_security.h',
                       'src/core/tsi/transport_security_adapter.h',
                       'src/core/tsi/transport_security_interface.h',
+                      'src/core/ext/transport/chttp2/client/authority.h',
                       'src/core/ext/transport/chttp2/client/chttp2_connector.h',
                       'src/core/ext/filters/client_channel/backup_poller.h',
                       'src/core/ext/filters/client_channel/client_channel.h',
@@ -332,6 +334,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/deadline/deadline_filter.h',
                       'src/core/tsi/alts_transport_security.h',
                       'src/core/tsi/fake_transport_security.h',
+                      'src/core/tsi/ssl/session_cache/ssl_session.h',
+                      'src/core/tsi/ssl/session_cache/ssl_session_cache.h',
                       'src/core/tsi/ssl_transport_security.h',
                       'src/core/tsi/ssl_types.h',
                       'src/core/tsi/transport_security_grpc.h',
@@ -483,6 +487,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/load_reporting/server_load_reporting_plugin.h',
                       'src/core/ext/filters/max_age/max_age_filter.h',
                       'src/core/ext/filters/message_size/message_size_filter.h',
+                      'src/core/ext/filters/http/client_authority_filter.h',
                       'src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h',
                       'src/core/ext/filters/workarounds/workaround_utils.h'
 

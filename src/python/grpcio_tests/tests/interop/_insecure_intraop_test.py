@@ -36,6 +36,9 @@ class InsecureIntraopTest(_intraop_test_case.IntraopTestCase,
         self.stub = test_pb2_grpc.TestServiceStub(
             grpc.insecure_channel('localhost:{}'.format(port)))
 
+    def tearDown(self):
+        self.server.stop(None)
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

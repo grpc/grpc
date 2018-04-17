@@ -188,11 +188,10 @@ void resource_quota_server(grpc_end2end_test_config config) {
   }
 
   for (int i = 0; i < NUM_CALLS; i++) {
-    client_calls[i] = grpc_channel_create_call(
-        f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-        grpc_slice_from_static_string("/foo"),
-        get_host_override_slice("foo.test.google.fr", config),
-        n_seconds_from_now(60), nullptr);
+    client_calls[i] =
+        grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS,
+                                 f.cq, grpc_slice_from_static_string("/foo"),
+                                 nullptr, n_seconds_from_now(60), nullptr);
 
     memset(ops, 0, sizeof(ops));
     op = ops;

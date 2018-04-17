@@ -180,11 +180,10 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
 
   cqv = cq_verifier_create(f.cq);
 
-  c = grpc_channel_create_call(
-      f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-      grpc_slice_from_static_string("/service/method"),
-      get_host_override_slice("foo.test.google.fr:1234", config),
-      gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
+                               grpc_slice_from_static_string("/service/method"),
+                               nullptr, gpr_inf_future(GPR_CLOCK_REALTIME),
+                               nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -258,8 +257,6 @@ static void test_max_message_length_on_request(grpc_end2end_test_config config,
   cq_verify(cqv);
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
-  validate_host_override_string("foo.test.google.fr:1234", call_details.host,
-                                config);
   GPR_ASSERT(was_cancelled == 1);
 
 done:
@@ -371,11 +368,10 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
   }
   cqv = cq_verifier_create(f.cq);
 
-  c = grpc_channel_create_call(
-      f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-      grpc_slice_from_static_string("/service/method"),
-      get_host_override_slice("foo.test.google.fr:1234", config),
-      gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
+  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
+                               grpc_slice_from_static_string("/service/method"),
+                               nullptr, gpr_inf_future(GPR_CLOCK_REALTIME),
+                               nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -456,9 +452,6 @@ static void test_max_message_length_on_response(grpc_end2end_test_config config,
   cq_verify(cqv);
 
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/service/method"));
-  GPR_ASSERT(0 ==
-             grpc_slice_str_cmp(call_details.host, "foo.test.google.fr:1234"));
-
   GPR_ASSERT(status == GRPC_STATUS_RESOURCE_EXHAUSTED);
   GPR_ASSERT(
       grpc_slice_str_cmp(

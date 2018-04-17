@@ -15,8 +15,10 @@ python_pylint_venv/
 htmlcov/
 dist/
 *.egg
-py27/
-py3[0-9]*/
+py27_gevent/
+py27_native/
+py3[0-9]_gevent/
+py3[0-9]_native/
 
 # Node installation output
 node_modules

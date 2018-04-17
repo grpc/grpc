@@ -53,8 +53,12 @@ class Resolver : public InternallyRefCountedWithTracing<Resolver> {
   /// Requests a callback when a new result becomes available.
   /// When the new result is available, sets \a *result to the new result
   /// and schedules \a on_complete for execution.
+  /// Upon transient failure, sets \a *result to nullptr and schedules
+  /// \a on_complete with no error.
   /// If resolution is fatally broken, sets \a *result to nullptr and
   /// schedules \a on_complete with an error.
+  /// TODO(roth): When we have time, improve the way this API represents
+  /// transient failure vs. shutdown.
   ///
   /// Note that the client channel will almost always have a request
   /// to \a NextLocked() pending.  When it gets the callback, it will

@@ -22,7 +22,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.11.0-dev'
+  version = '1.12.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -319,6 +319,7 @@ Pod::Spec.new do |s|
                       'src/core/tsi/transport_security.h',
                       'src/core/tsi/transport_security_adapter.h',
                       'src/core/tsi/transport_security_interface.h',
+                      'src/core/ext/transport/chttp2/client/authority.h',
                       'src/core/ext/transport/chttp2/client/chttp2_connector.h',
                       'src/core/ext/filters/client_channel/backup_poller.h',
                       'src/core/ext/filters/client_channel/client_channel.h',
@@ -343,6 +344,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/deadline/deadline_filter.h',
                       'src/core/tsi/alts_transport_security.h',
                       'src/core/tsi/fake_transport_security.h',
+                      'src/core/tsi/ssl/session_cache/ssl_session.h',
+                      'src/core/tsi/ssl/session_cache/ssl_session_cache.h',
                       'src/core/tsi/ssl_transport_security.h',
                       'src/core/tsi/ssl_types.h',
                       'src/core/tsi/transport_security_grpc.h',
@@ -494,6 +497,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/load_reporting/server_load_reporting_plugin.h',
                       'src/core/ext/filters/max_age/max_age_filter.h',
                       'src/core/ext/filters/message_size/message_size_filter.h',
+                      'src/core/ext/filters/http/client_authority_filter.h',
                       'src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h',
                       'src/core/ext/filters/workarounds/workaround_utils.h',
                       'src/core/lib/surface/init.cc',
@@ -735,6 +739,7 @@ Pod::Spec.new do |s|
                       'src/core/tsi/transport_security_adapter.cc',
                       'src/core/ext/transport/chttp2/client/insecure/channel_create.cc',
                       'src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc',
+                      'src/core/ext/transport/chttp2/client/authority.cc',
                       'src/core/ext/transport/chttp2/client/chttp2_connector.cc',
                       'src/core/ext/filters/client_channel/backup_poller.cc',
                       'src/core/ext/filters/client_channel/channel_connectivity.cc',
@@ -760,6 +765,9 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/deadline/deadline_filter.cc',
                       'src/core/tsi/alts_transport_security.cc',
                       'src/core/tsi/fake_transport_security.cc',
+                      'src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc',
+                      'src/core/tsi/ssl/session_cache/ssl_session_cache.cc',
+                      'src/core/tsi/ssl/session_cache/ssl_session_openssl.cc',
                       'src/core/tsi/ssl_transport_security.cc',
                       'src/core/tsi/transport_security_grpc.cc',
                       'src/core/ext/transport/chttp2/server/chttp2_server.cc',
@@ -789,6 +797,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/census/grpc_context.cc',
                       'src/core/ext/filters/max_age/max_age_filter.cc',
                       'src/core/ext/filters/message_size/message_size_filter.cc',
+                      'src/core/ext/filters/http/client_authority_filter.cc',
                       'src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc',
                       'src/core/ext/filters/workarounds/workaround_utils.cc',
                       'src/core/plugin_registry/grpc_plugin_registry.cc'
@@ -890,6 +899,7 @@ Pod::Spec.new do |s|
                               'src/core/tsi/transport_security.h',
                               'src/core/tsi/transport_security_adapter.h',
                               'src/core/tsi/transport_security_interface.h',
+                              'src/core/ext/transport/chttp2/client/authority.h',
                               'src/core/ext/transport/chttp2/client/chttp2_connector.h',
                               'src/core/ext/filters/client_channel/backup_poller.h',
                               'src/core/ext/filters/client_channel/client_channel.h',
@@ -914,6 +924,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/deadline/deadline_filter.h',
                               'src/core/tsi/alts_transport_security.h',
                               'src/core/tsi/fake_transport_security.h',
+                              'src/core/tsi/ssl/session_cache/ssl_session.h',
+                              'src/core/tsi/ssl/session_cache/ssl_session_cache.h',
                               'src/core/tsi/ssl_transport_security.h',
                               'src/core/tsi/ssl_types.h',
                               'src/core/tsi/transport_security_grpc.h',
@@ -1065,6 +1077,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/load_reporting/server_load_reporting_plugin.h',
                               'src/core/ext/filters/max_age/max_age_filter.h',
                               'src/core/ext/filters/message_size/message_size_filter.h',
+                              'src/core/ext/filters/http/client_authority_filter.h',
                               'src/core/ext/filters/workarounds/workaround_cronet_compression_filter.h',
                               'src/core/ext/filters/workarounds/workaround_utils.h'
   end
@@ -1154,6 +1167,7 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/bad_ping.cc',
                       'test/core/end2end/tests/binary_metadata.cc',
                       'test/core/end2end/tests/call_creds.cc',
+                      'test/core/end2end/tests/call_host_override.cc',
                       'test/core/end2end/tests/cancel_after_accept.cc',
                       'test/core/end2end/tests/cancel_after_client_done.cc',
                       'test/core/end2end/tests/cancel_after_invoke.cc',

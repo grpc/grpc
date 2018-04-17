@@ -993,23 +993,6 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "grpc_invalid_channel_args_test", 
-    "src": [
-      "test/core/surface/invalid_channel_args_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
     "name": "grpc_json_token_test", 
     "src": [
       "test/core/security/json_token_test.cc"
@@ -3704,6 +3687,28 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_test", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "test/core/end2end/end2end_tests.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "h2_ssl_session_reuse_test", 
+    "src": [
+      "test/core/end2end/end2end_tests.h", 
+      "test/core/end2end/h2_ssl_session_reuse_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
       "grpc++_test_util", 
       "grpc_test_util"
     ], 
@@ -4217,6 +4222,23 @@
     "name": "ref_counted_test", 
     "src": [
       "test/core/gprpp/ref_counted_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "retry_throttle_test", 
+    "src": [
+      "test/core/client_channel/retry_throttle_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -6346,6 +6368,46 @@
     "deps": [
       "gpr", 
       "gpr_test_util", 
+      "grpc++_test_config", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "address_sorting_test_unsecure", 
+    "src": [
+      "test/cpp/naming/address_sorting_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_config", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "address_sorting_test", 
+    "src": [
+      "test/cpp/naming/address_sorting_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
       "grpc", 
       "grpc_test_util"
     ], 
@@ -6577,6 +6639,19 @@
     "type": "target"
   }, 
   {
+    "deps": [], 
+    "headers": [
+      "third_party/address_sorting/address_sorting_internal.h", 
+      "third_party/address_sorting/include/address_sorting/address_sorting.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "address_sorting", 
+    "src": [], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
     "deps": [
       "grpc"
     ], 
@@ -6630,6 +6705,7 @@
       "census", 
       "gpr", 
       "grpc_base", 
+      "grpc_client_authority_filter", 
       "grpc_deadline_filter", 
       "grpc_lb_policy_grpclb_secure", 
       "grpc_lb_policy_pick_first", 
@@ -6737,6 +6813,7 @@
       "census", 
       "gpr", 
       "grpc_base", 
+      "grpc_client_authority_filter", 
       "grpc_deadline_filter", 
       "grpc_lb_policy_grpclb", 
       "grpc_lb_policy_pick_first", 
@@ -8441,6 +8518,7 @@
       "test/core/end2end/tests/bad_ping.cc", 
       "test/core/end2end/tests/binary_metadata.cc", 
       "test/core/end2end/tests/call_creds.cc", 
+      "test/core/end2end/tests/call_host_override.cc", 
       "test/core/end2end/tests/cancel_after_accept.cc", 
       "test/core/end2end/tests/cancel_after_client_done.cc", 
       "test/core/end2end/tests/cancel_after_invoke.cc", 
@@ -8538,6 +8616,7 @@
       "test/core/end2end/tests/bad_hostname.cc", 
       "test/core/end2end/tests/bad_ping.cc", 
       "test/core/end2end/tests/binary_metadata.cc", 
+      "test/core/end2end/tests/call_host_override.cc", 
       "test/core/end2end/tests/cancel_after_accept.cc", 
       "test/core/end2end/tests/cancel_after_client_done.cc", 
       "test/core/end2end/tests/cancel_after_invoke.cc", 
@@ -8713,6 +8792,7 @@
       "tsi_interface"
     ], 
     "headers": [
+      "include/grpc/grpc_security.h", 
       "src/core/lib/security/credentials/alts/check_gcp_environment.h", 
       "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h", 
       "src/core/tsi/alts/handshaker/alts_handshaker_service_api.h", 
@@ -8724,6 +8804,7 @@
     "language": "c", 
     "name": "alts_util", 
     "src": [
+      "include/grpc/grpc_security.h", 
       "src/core/lib/security/credentials/alts/check_gcp_environment.cc", 
       "src/core/lib/security/credentials/alts/check_gcp_environment.h", 
       "src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc", 
@@ -9468,6 +9549,24 @@
   {
     "deps": [
       "gpr", 
+      "grpc_base"
+    ], 
+    "headers": [
+      "src/core/ext/filters/http/client_authority_filter.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_client_authority_filter", 
+    "src": [
+      "src/core/ext/filters/http/client_authority_filter.cc", 
+      "src/core/ext/filters/http/client_authority_filter.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc_base", 
       "grpc_deadline_filter"
     ], 
@@ -10186,12 +10285,15 @@
       "grpc_transport_chttp2"
     ], 
     "headers": [
+      "src/core/ext/transport/chttp2/client/authority.h", 
       "src/core/ext/transport/chttp2/client/chttp2_connector.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
     "name": "grpc_transport_chttp2_client_connector", 
     "src": [
+      "src/core/ext/transport/chttp2/client/authority.cc", 
+      "src/core/ext/transport/chttp2/client/authority.h", 
       "src/core/ext/transport/chttp2/client/chttp2_connector.cc", 
       "src/core/ext/transport/chttp2/client/chttp2_connector.h"
     ], 
@@ -10426,6 +10528,8 @@
     "headers": [
       "src/core/tsi/alts_transport_security.h", 
       "src/core/tsi/fake_transport_security.h", 
+      "src/core/tsi/ssl/session_cache/ssl_session.h", 
+      "src/core/tsi/ssl/session_cache/ssl_session_cache.h", 
       "src/core/tsi/ssl_transport_security.h", 
       "src/core/tsi/ssl_types.h", 
       "src/core/tsi/transport_security_grpc.h"
@@ -10438,6 +10542,11 @@
       "src/core/tsi/alts_transport_security.h", 
       "src/core/tsi/fake_transport_security.cc", 
       "src/core/tsi/fake_transport_security.h", 
+      "src/core/tsi/ssl/session_cache/ssl_session.h", 
+      "src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc", 
+      "src/core/tsi/ssl/session_cache/ssl_session_cache.cc", 
+      "src/core/tsi/ssl/session_cache/ssl_session_cache.h", 
+      "src/core/tsi/ssl/session_cache/ssl_session_openssl.cc", 
       "src/core/tsi/ssl_transport_security.cc", 
       "src/core/tsi/ssl_transport_security.h", 
       "src/core/tsi/ssl_types.h", 
@@ -10639,6 +10748,8 @@
     ], 
     "headers": [
       "include/grpc++/impl/codegen/proto_utils.h", 
+      "include/grpcpp/impl/codegen/proto_buffer_reader.h", 
+      "include/grpcpp/impl/codegen/proto_buffer_writer.h", 
       "include/grpcpp/impl/codegen/proto_utils.h"
     ], 
     "is_filegroup": true, 
@@ -10646,6 +10757,8 @@
     "name": "grpc++_codegen_proto", 
     "src": [
       "include/grpc++/impl/codegen/proto_utils.h", 
+      "include/grpcpp/impl/codegen/proto_buffer_reader.h", 
+      "include/grpcpp/impl/codegen/proto_buffer_writer.h", 
       "include/grpcpp/impl/codegen/proto_utils.h"
     ], 
     "third_party": false, 
@@ -10744,6 +10857,8 @@
       "include/grpcpp/support/byte_buffer.h", 
       "include/grpcpp/support/channel_arguments.h", 
       "include/grpcpp/support/config.h", 
+      "include/grpcpp/support/proto_buffer_reader.h", 
+      "include/grpcpp/support/proto_buffer_writer.h", 
       "include/grpcpp/support/slice.h", 
       "include/grpcpp/support/status.h", 
       "include/grpcpp/support/status_code_enum.h", 
@@ -10846,6 +10961,8 @@
       "include/grpcpp/support/byte_buffer.h", 
       "include/grpcpp/support/channel_arguments.h", 
       "include/grpcpp/support/config.h", 
+      "include/grpcpp/support/proto_buffer_reader.h", 
+      "include/grpcpp/support/proto_buffer_writer.h", 
       "include/grpcpp/support/slice.h", 
       "include/grpcpp/support/status.h", 
       "include/grpcpp/support/status_code_enum.h", 
@@ -10890,7 +11007,6 @@
       "src/cpp/thread_manager/thread_manager.cc", 
       "src/cpp/thread_manager/thread_manager.h", 
       "src/cpp/util/byte_buffer_cc.cc", 
-      "src/cpp/util/slice_cc.cc", 
       "src/cpp/util/status.cc", 
       "src/cpp/util/string_ref.cc", 
       "src/cpp/util/time_cc.cc"

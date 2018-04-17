@@ -3,5 +3,10 @@ Language:        Cpp
 BasedOnStyle:  Google
 DerivePointerAlignment: false
 PointerAlignment: Left
+---
+Language: ObjC
+BasedOnStyle: Google
+ColumnLimit: 100
+ObjCBlockIndentWidth: 2
 ...
 

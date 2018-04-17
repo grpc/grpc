@@ -68,7 +68,7 @@
 
 #define DEFAULT_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS 300000 /* 5 minutes */
 #define DEFAULT_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS 300000 /* 5 minutes */
-#define DEFAULT_MAX_PINGS_BETWEEN_DATA 0                      /* unlimited */
+#define DEFAULT_MAX_PINGS_BETWEEN_DATA 2
 #define DEFAULT_MAX_PING_STRIKES 2
 
 static int g_default_client_keepalive_time_ms =
@@ -669,6 +669,7 @@ static int init_stream(grpc_transport* gt, grpc_stream* gs,
   GRPC_CLOSURE_INIT(&s->complete_fetch_locked, complete_fetch_locked, s,
                     grpc_schedule_on_exec_ctx);
   grpc_slice_buffer_init(&s->unprocessed_incoming_frames_buffer);
+  s->unprocessed_incoming_frames_buffer_cached_length = 0;
   grpc_slice_buffer_init(&s->frame_storage);
   grpc_slice_buffer_init(&s->compressed_data_buffer);
   grpc_slice_buffer_init(&s->decompressed_data_buffer);
@@ -1577,20 +1578,27 @@ static void perform_stream_op_locked(void* stream_op,
 
   if (op->recv_message) {
     GRPC_STATS_INC_HTTP2_OP_RECV_MESSAGE();
-    size_t already_received;
+    size_t before = 0;
     GPR_ASSERT(s->recv_message_ready == nullptr);
     GPR_ASSERT(!s->pending_byte_stream);
     s->recv_message_ready = op_payload->recv_message.recv_message_ready;
     s->recv_message = op_payload->recv_message.recv_message;
     if (s->id != 0) {
       if (!s->read_closed) {
-        already_received = s->frame_storage.length;
-        s->flow_control->IncomingByteStreamUpdate(GRPC_HEADER_SIZE_IN_BYTES,
-                                                  already_received);
-        grpc_chttp2_act_on_flowctl_action(s->flow_control->MakeAction(), t, s);
+        before = s->frame_storage.length +
+                 s->unprocessed_incoming_frames_buffer.length;
       }
     }
     grpc_chttp2_maybe_complete_recv_message(t, s);
+    if (s->id != 0) {
+      if (!s->read_closed && s->frame_storage.length == 0) {
+        size_t after = s->frame_storage.length +
+                       s->unprocessed_incoming_frames_buffer_cached_length;
+        s->flow_control->IncomingByteStreamUpdate(GRPC_HEADER_SIZE_IN_BYTES,
+                                                  before - after);
+        grpc_chttp2_act_on_flowctl_action(s->flow_control->MakeAction(), t, s);
+      }
+    }
   }
 
   if (op->recv_trailing_metadata) {
@@ -1666,6 +1674,33 @@ static void send_ping_locked(grpc_chttp2_transport* t,
                            GRPC_ERROR_NONE);
   grpc_closure_list_append(&pq->lists[GRPC_CHTTP2_PCL_NEXT], on_ack,
                            GRPC_ERROR_NONE);
+}
+
+/*
+ * Specialized form of send_ping_locked for keepalive ping. If there is already
+ * a ping in progress, the keepalive ping would piggyback onto that ping,
+ * instead of waiting for that ping to complete and then starting a new ping.
+ */
+static void send_keepalive_ping_locked(grpc_chttp2_transport* t) {
+  if (t->closed_with_error != GRPC_ERROR_NONE) {
+    GRPC_CLOSURE_SCHED(&t->start_keepalive_ping_locked,
+                       GRPC_ERROR_REF(t->closed_with_error));
+    GRPC_CLOSURE_SCHED(&t->finish_keepalive_ping_locked,
+                       GRPC_ERROR_REF(t->closed_with_error));
+    return;
+  }
+  grpc_chttp2_ping_queue* pq = &t->ping_queue;
+  if (!grpc_closure_list_empty(pq->lists[GRPC_CHTTP2_PCL_INFLIGHT])) {
+    /* There is a ping in flight. Add yourself to the inflight closure list. */
+    GRPC_CLOSURE_SCHED(&t->start_keepalive_ping_locked, GRPC_ERROR_NONE);
+    grpc_closure_list_append(&pq->lists[GRPC_CHTTP2_PCL_INFLIGHT],
+                             &t->finish_keepalive_ping_locked, GRPC_ERROR_NONE);
+    return;
+  }
+  grpc_closure_list_append(&pq->lists[GRPC_CHTTP2_PCL_INITIATE],
+                           &t->start_keepalive_ping_locked, GRPC_ERROR_NONE);
+  grpc_closure_list_append(&pq->lists[GRPC_CHTTP2_PCL_NEXT],
+                           &t->finish_keepalive_ping_locked, GRPC_ERROR_NONE);
 }
 
 static void retry_initiate_ping_locked(void* tp, grpc_error* error) {
@@ -1867,6 +1902,10 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
         }
       }
     }
+    // save the length of the buffer before handing control back to application
+    // threads. Needed to support correct flow control bookkeeping
+    s->unprocessed_incoming_frames_buffer_cached_length =
+        s->unprocessed_incoming_frames_buffer.length;
     if (error == GRPC_ERROR_NONE && *s->recv_message != nullptr) {
       null_then_run_closure(&s->recv_message_ready, GRPC_ERROR_NONE);
     } else if (s->published_metadata[1] != GRPC_METADATA_NOT_PUBLISHED) {
@@ -2607,8 +2646,7 @@ static void init_keepalive_ping_locked(void* arg, grpc_error* error) {
         grpc_chttp2_stream_map_size(&t->stream_map) > 0) {
       t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_PINGING;
       GRPC_CHTTP2_REF_TRANSPORT(t, "keepalive ping end");
-      send_ping_locked(t, &t->start_keepalive_ping_locked,
-                       &t->finish_keepalive_ping_locked);
+      send_keepalive_ping_locked(t);
       grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_KEEPALIVE_PING);
     } else {
       GRPC_CHTTP2_REF_TRANSPORT(t, "init keepalive ping");
@@ -2630,7 +2668,7 @@ static void start_keepalive_ping_locked(void* arg, grpc_error* error) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(arg);
   GRPC_CHTTP2_REF_TRANSPORT(t, "keepalive watchdog");
   grpc_timer_init(&t->keepalive_watchdog_timer,
-                  grpc_core::ExecCtx::Get()->Now() + t->keepalive_time,
+                  grpc_core::ExecCtx::Get()->Now() + t->keepalive_timeout,
                   &t->keepalive_watchdog_fired_locked);
 }
 

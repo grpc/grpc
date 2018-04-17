@@ -63,6 +63,7 @@
 #include "src/core/lib/transport/status_metadata.h"
 
 using grpc_core::internal::ClientChannelMethodParams;
+using grpc_core::internal::ServerRetryThrottleData;
 
 /* Client channel implementation */
 
@@ -99,7 +100,7 @@ typedef struct client_channel_channel_data {
   /** currently active load balancer */
   grpc_core::OrphanablePtr<grpc_core::LoadBalancingPolicy> lb_policy;
   /** retry throttle data */
-  grpc_server_retry_throttle_data* retry_throttle_data;
+  grpc_core::RefCountedPtr<ServerRetryThrottleData> retry_throttle_data;
   /** maps method names to method_parameters structs */
   grpc_core::RefCountedPtr<MethodParamsTable> method_params_table;
   /** incoming resolver result - set by resolver.next() */
@@ -225,7 +226,7 @@ static void start_resolving_locked(channel_data* chand) {
 
 typedef struct {
   char* server_name;
-  grpc_server_retry_throttle_data* retry_throttle_data;
+  grpc_core::RefCountedPtr<ServerRetryThrottleData> retry_throttle_data;
 } service_config_parsing_state;
 
 static void parse_retry_throttle_params(
@@ -278,7 +279,7 @@ static void parse_retry_throttle_params(
       }
     }
     parsing_state->retry_throttle_data =
-        grpc_retry_throttle_map_get_data_for_server(
+        grpc_core::internal::ServerRetryThrottleMap::GetDataForServer(
             parsing_state->server_name, max_milli_tokens, milli_token_ratio);
   }
 }
@@ -303,11 +304,16 @@ static void request_reresolution_locked(void* arg, grpc_error* error) {
   chand->lb_policy->SetReresolutionClosureLocked(&args->closure);
 }
 
+// TODO(roth): The logic in this function is very hard to follow.  We
+// should refactor this so that it's easier to understand, perhaps as
+// part of changing the resolver API to more clearly differentiate
+// between transient failures and shutdown.
 static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
   channel_data* chand = static_cast<channel_data*>(arg);
   if (grpc_client_channel_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "chand=%p: got resolver result: error=%s", chand,
-            grpc_error_string(error));
+    gpr_log(GPR_DEBUG,
+            "chand=%p: got resolver result: resolver_result=%p error=%s", chand,
+            chand->resolver_result, grpc_error_string(error));
   }
   // Extract the following fields from the resolver result, if non-nullptr.
   bool lb_policy_updated = false;
@@ -316,7 +322,7 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
   bool lb_policy_name_changed = false;
   grpc_core::OrphanablePtr<grpc_core::LoadBalancingPolicy> new_lb_policy;
   char* service_config_json = nullptr;
-  grpc_server_retry_throttle_data* retry_throttle_data = nullptr;
+  grpc_core::RefCountedPtr<ServerRetryThrottleData> retry_throttle_data;
   grpc_core::RefCountedPtr<MethodParamsTable> method_params_table;
   if (chand->resolver_result != nullptr) {
     if (chand->resolver != nullptr) {
@@ -416,15 +422,13 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
             service_config->ParseGlobalParams(parse_retry_throttle_params,
                                               &parsing_state);
             grpc_uri_destroy(uri);
-            retry_throttle_data = parsing_state.retry_throttle_data;
+            retry_throttle_data = std::move(parsing_state.retry_throttle_data);
           }
           method_params_table = service_config->CreateMethodConfigTable(
               ClientChannelMethodParams::CreateFromJson);
         }
       }
     }
-    grpc_channel_args_destroy(chand->resolver_result);
-    chand->resolver_result = nullptr;
   }
   if (grpc_client_channel_trace.enabled()) {
     gpr_log(GPR_DEBUG,
@@ -449,10 +453,7 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
   }
   gpr_mu_unlock(&chand->info_mu);
   // Swap out the retry throttle data.
-  if (chand->retry_throttle_data != nullptr) {
-    grpc_server_retry_throttle_data_unref(chand->retry_throttle_data);
-  }
-  chand->retry_throttle_data = retry_throttle_data;
+  chand->retry_throttle_data = std::move(retry_throttle_data);
   // Swap out the method params table.
   chand->method_params_table = std::move(method_params_table);
   // If we have a new LB policy or are shutting down (in which case
@@ -497,6 +498,8 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
                                    "Channel disconnected", &error, 1));
     GRPC_CLOSURE_LIST_SCHED(&chand->waiting_for_resolver_result_closures);
     GRPC_CHANNEL_STACK_UNREF(chand->owning_stack, "resolver");
+    grpc_channel_args_destroy(chand->resolver_result);
+    chand->resolver_result = nullptr;
   } else {  // Not shutting down.
     grpc_connectivity_state state = GRPC_CHANNEL_TRANSIENT_FAILURE;
     grpc_error* state_error =
@@ -515,11 +518,16 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
         chand->exit_idle_when_lb_policy_arrives = false;
       }
       watch_lb_policy_locked(chand, chand->lb_policy.get(), state);
+    } else if (chand->resolver_result == nullptr) {
+      // Transient failure.
+      GRPC_CLOSURE_LIST_SCHED(&chand->waiting_for_resolver_result_closures);
     }
     if (!lb_policy_updated) {
       set_channel_connectivity_state_locked(
           chand, state, GRPC_ERROR_REF(state_error), "new_lb+resolver");
     }
+    grpc_channel_args_destroy(chand->resolver_result);
+    chand->resolver_result = nullptr;
     chand->resolver->NextLocked(&chand->resolver_result,
                                 &chand->on_resolver_result_changed);
     GRPC_ERROR_UNREF(state_error);
@@ -715,12 +723,8 @@ static void cc_destroy_channel_elem(grpc_channel_element* elem) {
   }
   gpr_free(chand->info_lb_policy_name);
   gpr_free(chand->info_service_config_json);
-  if (chand->retry_throttle_data != nullptr) {
-    grpc_server_retry_throttle_data_unref(chand->retry_throttle_data);
-  }
-  if (chand->method_params_table != nullptr) {
-    chand->method_params_table.reset();
-  }
+  chand->retry_throttle_data.reset();
+  chand->method_params_table.reset();
   grpc_client_channel_stop_backup_polling(chand->interested_parties);
   grpc_connectivity_state_destroy(&chand->state_tracker);
   grpc_pollset_set_destroy(chand->interested_parties);
@@ -873,7 +877,7 @@ typedef struct client_channel_call_data {
   grpc_call_stack* owning_call;
   grpc_call_combiner* call_combiner;
 
-  grpc_server_retry_throttle_data* retry_throttle_data;
+  grpc_core::RefCountedPtr<ServerRetryThrottleData> retry_throttle_data;
   grpc_core::RefCountedPtr<ClientChannelMethodParams> method_params;
 
   grpc_subchannel_call* subchannel_call;
@@ -920,7 +924,9 @@ typedef struct client_channel_call_data {
   // Note: We inline the cache for the first 3 send_message ops and use
   // dynamic allocation after that.  This number was essentially picked
   // at random; it could be changed in the future to tune performance.
-  grpc_core::InlinedVector<grpc_core::ByteStreamCache*, 3> send_messages;
+  grpc_core::ManualConstructor<
+      grpc_core::InlinedVector<grpc_core::ByteStreamCache*, 3>>
+      send_messages;
   // send_trailing_metadata
   bool seen_send_trailing_metadata;
   grpc_linked_mdelem* send_trailing_metadata_storage;
@@ -970,7 +976,7 @@ static void maybe_cache_send_ops_for_batch(call_data* calld,
             gpr_arena_alloc(calld->arena, sizeof(grpc_core::ByteStreamCache)));
     new (cache) grpc_core::ByteStreamCache(
         std::move(batch->payload->send_message.send_message));
-    calld->send_messages.push_back(cache);
+    calld->send_messages->push_back(cache);
   }
   // Save metadata batch for send_trailing_metadata ops.
   if (batch->send_trailing_metadata) {
@@ -1004,7 +1010,7 @@ static void free_cached_send_op_data_after_commit(
               "]",
               chand, calld, i);
     }
-    calld->send_messages[i]->Destroy();
+    (*calld->send_messages)[i]->Destroy();
   }
   if (retry_state->completed_send_trailing_metadata) {
     grpc_metadata_batch_destroy(&calld->send_trailing_metadata);
@@ -1028,7 +1034,7 @@ static void free_cached_send_op_data_for_completed_batch(
               "]",
               chand, calld, retry_state->completed_send_message_count - 1);
     }
-    calld->send_messages[retry_state->completed_send_message_count - 1]
+    (*calld->send_messages)[retry_state->completed_send_message_count - 1]
         ->Destroy();
   }
   if (batch_data->batch.send_trailing_metadata) {
@@ -1276,7 +1282,8 @@ static bool pending_batch_is_completed(
     return false;
   }
   if (pending->batch->send_message &&
-      retry_state->completed_send_message_count < calld->send_messages.size()) {
+      retry_state->completed_send_message_count <
+          calld->send_messages->size()) {
     return false;
   }
   if (pending->batch->send_trailing_metadata &&
@@ -1311,7 +1318,7 @@ static bool pending_batch_is_unstarted(
     return true;
   }
   if (pending->batch->send_message &&
-      retry_state->started_send_message_count < calld->send_messages.size()) {
+      retry_state->started_send_message_count < calld->send_messages->size()) {
     return true;
   }
   if (pending->batch->send_trailing_metadata &&
@@ -1433,7 +1440,9 @@ static bool maybe_retry(grpc_call_element* elem,
   }
   // Check status.
   if (status == GRPC_STATUS_OK) {
-    grpc_server_retry_throttle_data_record_success(calld->retry_throttle_data);
+    if (calld->retry_throttle_data != nullptr) {
+      calld->retry_throttle_data->RecordSuccess();
+    }
     if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: call succeeded", chand, calld);
     }
@@ -1455,8 +1464,8 @@ static bool maybe_retry(grpc_call_element* elem,
   // things like failures due to malformed requests (INVALID_ARGUMENT).
   // Conversely, it's important for this to come before the remaining
   // checks, so that we don't fail to record failures due to other factors.
-  if (!grpc_server_retry_throttle_data_record_failure(
-          calld->retry_throttle_data)) {
+  if (calld->retry_throttle_data != nullptr &&
+      !calld->retry_throttle_data->RecordFailure()) {
     if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: retries throttled", chand, calld);
     }
@@ -1811,7 +1820,7 @@ static void add_closures_for_replay_or_pending_send_ops(
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   bool have_pending_send_message_ops =
-      retry_state->started_send_message_count < calld->send_messages.size();
+      retry_state->started_send_message_count < calld->send_messages->size();
   bool have_pending_send_trailing_metadata_op =
       calld->seen_send_trailing_metadata &&
       !retry_state->started_send_trailing_metadata;
@@ -2127,7 +2136,7 @@ static void add_retriable_send_message_op(
             chand, calld, retry_state->started_send_message_count);
   }
   grpc_core::ByteStreamCache* cache =
-      calld->send_messages[retry_state->started_send_message_count];
+      (*calld->send_messages)[retry_state->started_send_message_count];
   ++retry_state->started_send_message_count;
   batch_data->send_message.Init(cache);
   batch_data->batch.send_message = true;
@@ -2248,7 +2257,7 @@ static subchannel_batch_data* maybe_create_subchannel_batch_for_replay(
   }
   // send_message.
   // Note that we can only have one send_message op in flight at a time.
-  if (retry_state->started_send_message_count < calld->send_messages.size() &&
+  if (retry_state->started_send_message_count < calld->send_messages->size() &&
       retry_state->started_send_message_count ==
           retry_state->completed_send_message_count &&
       !calld->pending_send_message) {
@@ -2268,7 +2277,7 @@ static subchannel_batch_data* maybe_create_subchannel_batch_for_replay(
   // to start, since we can't send down any more send_message ops after
   // send_trailing_metadata.
   if (calld->seen_send_trailing_metadata &&
-      retry_state->started_send_message_count == calld->send_messages.size() &&
+      retry_state->started_send_message_count == calld->send_messages->size() &&
       !retry_state->started_send_trailing_metadata &&
       !calld->pending_send_trailing_metadata) {
     if (grpc_client_channel_trace.enabled()) {
@@ -2319,7 +2328,7 @@ static void add_subchannel_batches_for_pending_batches(
     // send_message ops after send_trailing_metadata.
     if (batch->send_trailing_metadata &&
         (retry_state->started_send_message_count + batch->send_message <
-             calld->send_messages.size() ||
+             calld->send_messages->size() ||
          retry_state->started_send_trailing_metadata)) {
       continue;
     }
@@ -2591,8 +2600,7 @@ static void apply_service_config_to_call_locked(grpc_call_element* elem) {
             chand, calld);
   }
   if (chand->retry_throttle_data != nullptr) {
-    calld->retry_throttle_data =
-        grpc_server_retry_throttle_data_ref(chand->retry_throttle_data);
+    calld->retry_throttle_data = chand->retry_throttle_data->Ref();
   }
   if (chand->method_params_table != nullptr) {
     calld->method_params = grpc_core::ServiceConfig::MethodConfigTableLookup(
@@ -2753,7 +2761,45 @@ static void pick_after_resolver_result_done_locked(void* arg,
               chand, calld);
     }
     async_pick_done_locked(elem, GRPC_ERROR_REF(error));
-  } else if (chand->lb_policy != nullptr) {
+  } else if (chand->resolver == nullptr) {
+    // Shutting down.
+    if (grpc_client_channel_trace.enabled()) {
+      gpr_log(GPR_DEBUG, "chand=%p calld=%p: resolver disconnected", chand,
+              calld);
+    }
+    async_pick_done_locked(
+        elem, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Disconnected"));
+  } else if (chand->lb_policy == nullptr) {
+    // Transient resolver failure.
+    // If call has wait_for_ready=true, try again; otherwise, fail.
+    uint32_t send_initial_metadata_flags =
+        calld->seen_send_initial_metadata
+            ? calld->send_initial_metadata_flags
+            : calld->pending_batches[0]
+                  .batch->payload->send_initial_metadata
+                  .send_initial_metadata_flags;
+    if (send_initial_metadata_flags & GRPC_INITIAL_METADATA_WAIT_FOR_READY) {
+      if (grpc_client_channel_trace.enabled()) {
+        gpr_log(GPR_DEBUG,
+                "chand=%p calld=%p: resolver returned but no LB policy; "
+                "wait_for_ready=true; trying again",
+                chand, calld);
+      }
+      pick_after_resolver_result_start_locked(elem);
+    } else {
+      if (grpc_client_channel_trace.enabled()) {
+        gpr_log(GPR_DEBUG,
+                "chand=%p calld=%p: resolver returned but no LB policy; "
+                "wait_for_ready=false; failing",
+                chand, calld);
+      }
+      async_pick_done_locked(
+          elem,
+          grpc_error_set_int(
+              GRPC_ERROR_CREATE_FROM_STATIC_STRING("Name resolution failure"),
+              GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
+    }
+  } else {
     if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_DEBUG, "chand=%p calld=%p: resolver returned, doing pick",
               chand, calld);
@@ -2766,30 +2812,6 @@ static void pick_after_resolver_result_done_locked(void* arg,
       // instead of pick_done_locked().
       async_pick_done_locked(elem, GRPC_ERROR_NONE);
     }
-  }
-  // TODO(roth): It should be impossible for chand->lb_policy to be nullptr
-  // here, so the rest of this code should never actually be executed.
-  // However, we have reports of a crash on iOS that triggers this case,
-  // so we are temporarily adding this to restore branches that were
-  // removed in https://github.com/grpc/grpc/pull/12297.  Need to figure
-  // out what is actually causing this to occur and then figure out the
-  // right way to deal with it.
-  else if (chand->resolver != nullptr) {
-    // No LB policy, so try again.
-    if (grpc_client_channel_trace.enabled()) {
-      gpr_log(GPR_DEBUG,
-              "chand=%p calld=%p: resolver returned but no LB policy, "
-              "trying again",
-              chand, calld);
-    }
-    pick_after_resolver_result_start_locked(elem);
-  } else {
-    if (grpc_client_channel_trace.enabled()) {
-      gpr_log(GPR_DEBUG, "chand=%p calld=%p: resolver disconnected", chand,
-              calld);
-    }
-    async_pick_done_locked(
-        elem, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Disconnected"));
   }
 }
 
@@ -2957,6 +2979,7 @@ static grpc_error* cc_init_call_elem(grpc_call_element* elem,
                              calld->deadline);
   }
   calld->enable_retries = chand->enable_retries;
+  calld->send_messages.Init();
   return GRPC_ERROR_NONE;
 }
 
@@ -2970,6 +2993,7 @@ static void cc_destroy_call_elem(grpc_call_element* elem,
     grpc_deadline_state_destroy(elem);
   }
   grpc_slice_unref_internal(calld->path);
+  calld->retry_throttle_data.reset();
   calld->method_params.reset();
   GRPC_ERROR_UNREF(calld->cancel_error);
   if (calld->subchannel_call != nullptr) {
@@ -2991,6 +3015,7 @@ static void cc_destroy_call_elem(grpc_call_element* elem,
           calld->pick.subchannel_call_context[i].value);
     }
   }
+  calld->send_messages.Destroy();
   GRPC_CLOSURE_SCHED(then_schedule_closure, GRPC_ERROR_NONE);
 }
 

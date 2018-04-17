@@ -8,7 +8,6 @@ GRPC_LOCAL_SRC = '../../..'
 
 # Install the dependencies in the main target plus all test targets.
 %w(
-  Tests
   AllTests
   RxLibraryUnitTests
   InteropTestsRemote
