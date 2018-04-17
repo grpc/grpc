@@ -20,7 +20,7 @@
 
 #include "src/core/ext/census/grpc_plugin.h"
 
-#include <grpc++/server_context.h>
+#include <grpcpp/server_context.h>
 
 #include "opencensus/trace/span.h"
 #include "src/core/ext/census/channel_filter.h"
