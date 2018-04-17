@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
   server_address << FLAGS_server_host << ':' << FLAGS_server_control_port;
   std::unique_ptr<ReconnectService::Stub> control_stub(
       ReconnectService::NewStub(
-          CreateTestChannel(server_address.str(), false)));
+          CreateTestChannel(server_address.str(), false, false)));
   ClientContext start_context;
   ReconnectParams reconnect_params;
   reconnect_params.set_max_reconnect_backoff_ms(FLAGS_max_reconnect_backoff_ms);
@@ -74,9 +74,9 @@ int main(int argc, char** argv) {
     channel_args.SetInt(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS,
                         FLAGS_max_reconnect_backoff_ms);
   }
-  std::shared_ptr<Channel> retry_channel =
-      CreateTestChannel(server_address.str(), "foo.test.google.fr", true, false,
-                        std::shared_ptr<CallCredentials>(), channel_args);
+  std::shared_ptr<Channel> retry_channel = CreateTestChannel(
+      server_address.str(), "foo.test.google.fr", false, true, false,
+      std::shared_ptr<CallCredentials>(), channel_args);
 
   // About 13 retries.
   const int kDeadlineSeconds = 540;
