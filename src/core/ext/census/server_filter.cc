@@ -92,13 +92,8 @@ void CensusServerCallData::OnDoneRecvInitialMetadataCb(void* user_data,
     sml.census_proto = grpc_empty_slice();
     FilterInitialMetadata(initial_metadata, &sml);
     calld->path_ = grpc_slice_ref_internal(sml.path);
-    const char* method_str =
-        GRPC_SLICE_IS_EMPTY(calld->path_)
-            ? ""
-            : reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(calld->path_));
-    calld->method_ = absl::string_view(
-        method_str,
-        GRPC_SLICE_IS_EMPTY(sml.path) ? 0 : GRPC_SLICE_LENGTH(sml.path));
+    calld->method_ = GetMethod(&calld->path_);
+    calld->qualified_method_ = StrCat("Recv.", calld->method_);
     const char* tracing_str =
         GRPC_SLICE_IS_EMPTY(sml.tracing_slice)
             ? ""
@@ -117,10 +112,8 @@ void CensusServerCallData::OnDoneRecvInitialMetadataCb(void* user_data,
 
     GenerateServerContext(absl::string_view(tracing_str, tracing_str_len),
                           absl::string_view(census_str, census_str_len),
-                          /*primary_role*/ "", calld->method_,
+                          /*primary_role*/ "", calld->qualified_method_,
                           &calld->context_);
-    stats::Record({{RpcServerStartedCount(), 1}},
-                  {{kMethodTagKey, calld->method_}});
 
     grpc_slice_unref_internal(sml.tracing_slice);
     grpc_slice_unref_internal(sml.census_proto);
@@ -191,16 +184,13 @@ void CensusServerCallData::Destroy(grpc_call_element* elem,
   double elapsed_time_ms = absl::ToDoubleMilliseconds(elapsed_time_);
   grpc_auth_context_release(auth_context_);
   stats::Record(
-      {{RpcServerErrorCount(),
-        final_info->final_status == GRPC_STATUS_OK ? 0 : 1},
-       {RpcServerRequestBytes(), static_cast<double>(request_size)},
-       {RpcServerResponseBytes(), static_cast<double>(response_size)},
-       {RpcServerServerElapsedTime(), elapsed_time_ms},
-       {RpcServerRequestCount(), sent_message_count_},
-       {RpcServerFinishedCount(), 1},
-       {RpcServerResponseCount(), recv_message_count_}},
-      {{kMethodTagKey, method_},
-       {kStatusTagKey, StatusCodeToString(final_info->final_status)}});
+      {{RpcServerSentBytesPerRpc(), static_cast<double>(response_size)},
+       {RpcServerReceivedBytesPerRpc(), static_cast<double>(request_size)},
+       {RpcServerServerLatency(), elapsed_time_ms},
+       {RpcServerSentMessagesPerRpc(), sent_message_count_},
+       {RpcServerReceivedMessagesPerRpc(), recv_message_count_}},
+      {{ServerMethodTagKey(), method_},
+       {ServerStatusTagKey(), StatusCodeToString(final_info->final_status)}});
   grpc_slice_unref_internal(path_);
   context_.EndSpan();
 }

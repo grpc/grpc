@@ -1968,6 +1968,7 @@ grpc_cc_library(
         "src/core/ext/census/grpc_plugin.cc",
         "src/core/ext/census/measures.cc",
         "src/core/ext/census/rpc_encoding.cc",
+        "src/core/ext/census/views.cc",
     ],
     hdrs = [
         "src/core/ext/census/client_filter.h",

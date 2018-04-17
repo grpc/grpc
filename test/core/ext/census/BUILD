@@ -30,7 +30,7 @@ cc_grpc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_opencensus_plugin_test_lib",
+    name = "grpc_opencensus_stats_plugin_test_lib",
     testonly = True,
     srcs = [
         "stats_plugin_end2end_test.cc",
@@ -39,6 +39,7 @@ grpc_cc_library(
     external_deps = [
         "gtest",
         "gmock",
+        "opencensus-stats-test",
     ],
     deps = [
         ":echo_proto",
@@ -52,9 +53,9 @@ grpc_cc_library(
 )
 
 grpc_cc_test(
-  name = "grpc_opencensus_plugin_test",
+  name = "grpc_opencensus_stats_plugin_test",
   deps = [
-    ":grpc_opencensus_plugin_test_lib",
+    ":grpc_opencensus_stats_plugin_test_lib",
   ],
 )
 

@@ -26,6 +26,7 @@
 #include "gtest/gtest.h"
 #include "include/grpc++/grpc++.h"
 #include "opencensus/stats/stats.h"
+#include "opencensus/stats/testing/test_utils.h"
 #include "src/core/ext/census/grpc_plugin.h"
 #include "test/core/ext/census/echo.grpc.pb.h"
 #include "test/core/util/test_config.h"
@@ -57,13 +58,14 @@ class StatsPluginEnd2EndTest : public ::testing::Test {
     // interface.
     ::grpc::ServerBuilder builder;
     int port;
-    builder.AddListeningPort("[::1]:0", ::grpc::InsecureServerCredentials(),
+    // Use IPv4 here because it's less flaky than IPv6 ("[::]:0") on Travis.
+    builder.AddListeningPort("0.0.0.0:0", ::grpc::InsecureServerCredentials(),
                              &port);
     builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
     ASSERT_NE(nullptr, server_);
     ASSERT_NE(0, port);
-    server_address_ = absl::StrCat("[::1]:", port);
+    server_address_ = absl::StrCat("0.0.0.0:", port);
     server_thread_ = std::thread(&StatsPluginEnd2EndTest::RunServerLoop, this);
 
     stub_ = EchoService::NewStub(::grpc::CreateChannel(
@@ -77,7 +79,8 @@ class StatsPluginEnd2EndTest : public ::testing::Test {
 
   void RunServerLoop() { server_->Wait(); }
 
-  const std::string method_name_ = "/opencensus.testing.EchoService/Echo";
+  const std::string client_method_name_ = "opencensus.testing.EchoService/Echo";
+  const std::string server_method_name_ = "opencensus.testing.EchoService/Echo";
 
   std::string server_address_;
   EchoServer service_;
@@ -90,33 +93,32 @@ class StatsPluginEnd2EndTest : public ::testing::Test {
 TEST_F(StatsPluginEnd2EndTest, ErrorCount) {
   const auto client_method_descriptor =
       stats::ViewDescriptor()
-          .set_measure(kRpcClientErrorCountMeasureName)
+          .set_measure(kRpcClientRoundtripLatencyMeasureName)
           .set_name("client_method")
-          .set_aggregation(stats::Aggregation::Sum())
-
-          .add_column(kMethodTagKey);
+          .set_aggregation(stats::Aggregation::Count())
+          .add_column(ClientMethodTagKey());
   stats::View client_method_view(client_method_descriptor);
   const auto server_method_descriptor =
       stats::ViewDescriptor()
-          .set_measure(kRpcServerErrorCountMeasureName)
+          .set_measure(kRpcServerServerLatencyMeasureName)
           .set_name("server_method")
-          .set_aggregation(stats::Aggregation::Sum())
-          .add_column(kMethodTagKey);
-  stats::View server_method_view(client_method_descriptor);
+          .set_aggregation(stats::Aggregation::Count())
+          .add_column(ServerMethodTagKey());
+  stats::View server_method_view(server_method_descriptor);
 
   const auto client_status_descriptor =
       stats::ViewDescriptor()
-          .set_measure(kRpcClientErrorCountMeasureName)
+          .set_measure(kRpcClientRoundtripLatencyMeasureName)
           .set_name("client_status")
-          .set_aggregation(stats::Aggregation::Sum())
-          .add_column(kStatusTagKey);
+          .set_aggregation(stats::Aggregation::Count())
+          .add_column(ClientStatusTagKey());
   stats::View client_status_view(client_status_descriptor);
   const auto server_status_descriptor =
       stats::ViewDescriptor()
-          .set_measure(kRpcServerErrorCountMeasureName)
+          .set_measure(kRpcServerServerLatencyMeasureName)
           .set_name("server_status")
-          .set_aggregation(stats::Aggregation::Sum())
-          .add_column(kStatusTagKey);
+          .set_aggregation(stats::Aggregation::Count())
+          .add_column(ServerStatusTagKey());
   stats::View server_status_view(server_status_descriptor);
 
   // Cover all valid statuses.
@@ -128,73 +130,49 @@ TEST_F(StatsPluginEnd2EndTest, ErrorCount) {
     ::grpc::ClientContext context;
     ::grpc::Status status = stub_->Echo(&context, request, &response);
   }
+  absl::SleepFor(absl::Milliseconds(500));
+  stats::testing::TestUtils::Flush();
 
-  EXPECT_THAT(client_method_view.GetData().double_data(),
-              ::testing::UnorderedElementsAre(
-                  ::testing::Pair(::testing::ElementsAre(method_name_), 16.0)));
-  EXPECT_THAT(server_method_view.GetData().double_data(),
-              ::testing::UnorderedElementsAre(
-                  ::testing::Pair(::testing::ElementsAre(method_name_), 16.0)));
+  EXPECT_THAT(client_method_view.GetData().int_data(),
+              ::testing::UnorderedElementsAre(::testing::Pair(
+                  ::testing::ElementsAre(client_method_name_), 17)));
+  EXPECT_THAT(server_method_view.GetData().int_data(),
+              ::testing::UnorderedElementsAre(::testing::Pair(
+                  ::testing::ElementsAre(server_method_name_), 17)));
 
   auto codes = {
-      ::testing::Pair(::testing::ElementsAre("OK"), 0.0),
-      ::testing::Pair(::testing::ElementsAre("CANCELLED"), 1.0),
-      ::testing::Pair(::testing::ElementsAre("UNKNOWN"), 1.0),
-      ::testing::Pair(::testing::ElementsAre("INVALID_ARGUMENT"), 1.0),
-      ::testing::Pair(::testing::ElementsAre("DEADLINE_EXCEEDED"), 1.0),
-      ::testing::Pair(::testing::ElementsAre("NOT_FOUND"), 1.0),
-      ::testing::Pair(::testing::ElementsAre("ALREADY_EXISTS"), 1.0),
-      ::testing::Pair(::testing::ElementsAre("PERMISSION_DENIED"), 1.0),
-      ::testing::Pair(::testing::ElementsAre("UNAUTHENTICATED"), 1.0),
-      ::testing::Pair(::testing::ElementsAre("RESOURCE_EXHAUSTED"), 1.0),
-      ::testing::Pair(::testing::ElementsAre("FAILED_PRECONDITION"), 1.0),
-      ::testing::Pair(::testing::ElementsAre("ABORTED"), 1.0),
-      ::testing::Pair(::testing::ElementsAre("OUT_OF_RANGE"), 1.0),
-      ::testing::Pair(::testing::ElementsAre("UNIMPLEMENTED"), 1.0),
-      ::testing::Pair(::testing::ElementsAre("INTERNAL"), 1.0),
-      ::testing::Pair(::testing::ElementsAre("UNAVAILABLE"), 1.0),
-      ::testing::Pair(::testing::ElementsAre("DATA_LOSS"), 1.0),
+      ::testing::Pair(::testing::ElementsAre("OK"), 1),
+      ::testing::Pair(::testing::ElementsAre("CANCELLED"), 1),
+      ::testing::Pair(::testing::ElementsAre("UNKNOWN"), 1),
+      ::testing::Pair(::testing::ElementsAre("INVALID_ARGUMENT"), 1),
+      ::testing::Pair(::testing::ElementsAre("DEADLINE_EXCEEDED"), 1),
+      ::testing::Pair(::testing::ElementsAre("NOT_FOUND"), 1),
+      ::testing::Pair(::testing::ElementsAre("ALREADY_EXISTS"), 1),
+      ::testing::Pair(::testing::ElementsAre("PERMISSION_DENIED"), 1),
+      ::testing::Pair(::testing::ElementsAre("UNAUTHENTICATED"), 1),
+      ::testing::Pair(::testing::ElementsAre("RESOURCE_EXHAUSTED"), 1),
+      ::testing::Pair(::testing::ElementsAre("FAILED_PRECONDITION"), 1),
+      ::testing::Pair(::testing::ElementsAre("ABORTED"), 1),
+      ::testing::Pair(::testing::ElementsAre("OUT_OF_RANGE"), 1),
+      ::testing::Pair(::testing::ElementsAre("UNIMPLEMENTED"), 1),
+      ::testing::Pair(::testing::ElementsAre("INTERNAL"), 1),
+      ::testing::Pair(::testing::ElementsAre("UNAVAILABLE"), 1),
+      ::testing::Pair(::testing::ElementsAre("DATA_LOSS"), 1),
   };
 
-  EXPECT_THAT(client_status_view.GetData().double_data(),
+  EXPECT_THAT(client_status_view.GetData().int_data(),
               ::testing::UnorderedElementsAreArray(codes));
-  EXPECT_THAT(server_status_view.GetData().double_data(),
+  EXPECT_THAT(server_status_view.GetData().int_data(),
               ::testing::UnorderedElementsAreArray(codes));
 }
 
-TEST_F(StatsPluginEnd2EndTest, RequestResponseBytes) {
-  const auto client_request_bytes_descriptor =
-      stats::ViewDescriptor()
-          .set_measure(kRpcClientRequestBytesMeasureName)
-          .set_name("client_request_bytes")
-          .set_aggregation(stats::Aggregation::Distribution(
-              stats::BucketBoundaries::Explicit({})))
-          .add_column(kMethodTagKey);
-  stats::View client_request_bytes_view(client_request_bytes_descriptor);
-  const auto client_response_bytes_descriptor =
-      stats::ViewDescriptor()
-          .set_measure(kRpcClientResponseBytesMeasureName)
-          .set_name("client_response_bytes")
-          .set_aggregation(stats::Aggregation::Distribution(
-              stats::BucketBoundaries::Explicit({})))
-          .add_column(kMethodTagKey);
-  stats::View client_response_bytes_view(client_response_bytes_descriptor);
-  const auto server_request_bytes_descriptor =
-      stats::ViewDescriptor()
-          .set_measure(kRpcServerRequestBytesMeasureName)
-          .set_name("server_request_bytes")
-          .set_aggregation(stats::Aggregation::Distribution(
-              stats::BucketBoundaries::Explicit({})))
-          .add_column(kMethodTagKey);
-  stats::View server_request_bytes_view(server_request_bytes_descriptor);
-  const auto server_response_bytes_descriptor =
-      stats::ViewDescriptor()
-          .set_measure(kRpcServerResponseBytesMeasureName)
-          .set_name("server_response_bytes")
-          .set_aggregation(stats::Aggregation::Distribution(
-              stats::BucketBoundaries::Explicit({})))
-          .add_column(kMethodTagKey);
-  stats::View server_response_bytes_view(server_response_bytes_descriptor);
+TEST_F(StatsPluginEnd2EndTest, RequestReceivedBytesPerRpc) {
+  stats::View client_sent_bytes_per_rpc_view(ClientSentBytesPerRpcCumulative());
+  stats::View client_received_bytes_per_rpc_view(
+      ClientReceivedBytesPerRpcCumulative());
+  stats::View server_sent_bytes_per_rpc_view(ServerSentBytesPerRpcCumulative());
+  stats::View server_received_bytes_per_rpc_view(
+      ServerReceivedBytesPerRpcCumulative());
 
   {
     EchoRequest request;
@@ -205,73 +183,43 @@ TEST_F(StatsPluginEnd2EndTest, RequestResponseBytes) {
     ASSERT_TRUE(status.ok());
     EXPECT_EQ("foo", response.message());
   }
+  absl::SleepFor(absl::Milliseconds(500));
+  stats::testing::TestUtils::Flush();
 
-  const auto client_request_bytes_data =
-      client_request_bytes_view.GetData().distribution_data();
-  ASSERT_EQ(1, client_request_bytes_data.size());
-  const auto client_request_bytes =
-      client_request_bytes_data.find({method_name_});
-  ASSERT_NE(client_request_bytes, client_request_bytes_data.end());
-  EXPECT_EQ(1, client_request_bytes->second.count());
-  EXPECT_GT(client_request_bytes->second.mean(), 0);
-
-  const auto client_response_bytes_data =
-      client_response_bytes_view.GetData().distribution_data();
-  ASSERT_EQ(1, client_response_bytes_data.size());
-  const auto client_response_bytes =
-      client_response_bytes_data.find({method_name_});
-  ASSERT_NE(client_response_bytes, client_response_bytes_data.end());
-  EXPECT_EQ(1, client_response_bytes->second.count());
-  EXPECT_GT(client_response_bytes->second.mean(), 0);
-
-  const auto server_request_bytes_data =
-      server_request_bytes_view.GetData().distribution_data();
-  ASSERT_EQ(1, server_request_bytes_data.size());
-  const auto server_request_bytes =
-      server_request_bytes_data.find({method_name_});
-  ASSERT_NE(server_request_bytes, server_request_bytes_data.end());
-  EXPECT_EQ(1, server_request_bytes->second.count());
-  EXPECT_DOUBLE_EQ(server_request_bytes->second.mean(),
-                   client_request_bytes->second.mean());
-
-  const auto server_response_bytes_data =
-      server_response_bytes_view.GetData().distribution_data();
-  ASSERT_EQ(1, server_response_bytes_data.size());
-  const auto server_response_bytes =
-      server_response_bytes_data.find({method_name_});
-  ASSERT_NE(server_response_bytes, server_response_bytes_data.end());
-  EXPECT_EQ(1, server_response_bytes->second.count());
-  EXPECT_DOUBLE_EQ(server_response_bytes->second.mean(),
-                   client_response_bytes->second.mean());
+  EXPECT_THAT(
+      client_received_bytes_per_rpc_view.GetData().distribution_data(),
+      ::testing::UnorderedElementsAre(::testing::Pair(
+          ::testing::ElementsAre(client_method_name_),
+          ::testing::AllOf(::testing::Property(&stats::Distribution::count, 1),
+                           ::testing::Property(&stats::Distribution::mean,
+                                               ::testing::Gt(0.0))))));
+  EXPECT_THAT(
+      client_sent_bytes_per_rpc_view.GetData().distribution_data(),
+      ::testing::UnorderedElementsAre(::testing::Pair(
+          ::testing::ElementsAre(client_method_name_),
+          ::testing::AllOf(::testing::Property(&stats::Distribution::count, 1),
+                           ::testing::Property(&stats::Distribution::mean,
+                                               ::testing::Gt(0.0))))));
+  EXPECT_THAT(
+      server_received_bytes_per_rpc_view.GetData().distribution_data(),
+      ::testing::UnorderedElementsAre(::testing::Pair(
+          ::testing::ElementsAre(server_method_name_),
+          ::testing::AllOf(::testing::Property(&stats::Distribution::count, 1),
+                           ::testing::Property(&stats::Distribution::mean,
+                                               ::testing::Gt(0.0))))));
+  EXPECT_THAT(
+      server_sent_bytes_per_rpc_view.GetData().distribution_data(),
+      ::testing::UnorderedElementsAre(::testing::Pair(
+          ::testing::ElementsAre(server_method_name_),
+          ::testing::AllOf(::testing::Property(&stats::Distribution::count, 1),
+                           ::testing::Property(&stats::Distribution::mean,
+                                               ::testing::Gt(0.0))))));
 }
 
 TEST_F(StatsPluginEnd2EndTest, Latency) {
-  const auto client_latency_descriptor =
-      stats::ViewDescriptor()
-          .set_measure(kRpcClientRoundtripLatencyMeasureName)
-          .set_name("client_latency")
-          .set_aggregation(stats::Aggregation::Distribution(
-              stats::BucketBoundaries::Explicit({})))
-          .add_column(kMethodTagKey);
-  stats::View client_latency_view(client_latency_descriptor);
-  const auto client_server_elapsed_time_descriptor =
-      stats::ViewDescriptor()
-          .set_measure(kRpcClientServerElapsedTimeMeasureName)
-          .set_name("client_server_elapsed_time")
-          .set_aggregation(stats::Aggregation::Distribution(
-              stats::BucketBoundaries::Explicit({})))
-          .add_column(kMethodTagKey);
-  stats::View client_server_elapsed_time_view(
-      client_server_elapsed_time_descriptor);
-  const auto server_server_elapsed_time_descriptor =
-      stats::ViewDescriptor()
-          .set_measure(kRpcServerServerElapsedTimeMeasureName)
-          .set_name("server_server_elapsed_time")
-          .set_aggregation(stats::Aggregation::Distribution(
-              stats::BucketBoundaries::Explicit({})))
-          .add_column(kMethodTagKey);
-  stats::View server_server_elapsed_time_view(
-      server_server_elapsed_time_descriptor);
+  stats::View client_latency_view(ClientRoundtripLatencyCumulative());
+  stats::View client_server_latency_view(ClientServerLatencyCumulative());
+  stats::View server_server_latency_view(ServerServerLatencyCumulative());
 
   const absl::Time start_time = absl::Now();
   {
@@ -287,69 +235,53 @@ TEST_F(StatsPluginEnd2EndTest, Latency) {
   // entire time spent making the RPC.
   const double max_time = absl::ToDoubleMilliseconds(absl::Now() - start_time);
 
-  const auto client_latency_data =
-      client_latency_view.GetData().distribution_data();
-  ASSERT_EQ(1, client_latency_data.size());
-  const auto client_latency = client_latency_data.find({method_name_});
-  ASSERT_NE(client_latency, client_latency_data.end());
-  EXPECT_EQ(1, client_latency->second.count());
-  EXPECT_GT(client_latency->second.mean(), 0);
-  EXPECT_LT(client_latency->second.mean(), max_time);
+  absl::SleepFor(absl::Milliseconds(500));
+  stats::testing::TestUtils::Flush();
 
-  const auto client_server_elapsed_time_data =
-      client_server_elapsed_time_view.GetData().distribution_data();
-  ASSERT_EQ(1, client_server_elapsed_time_data.size());
-  const auto client_server_elapsed_time =
-      client_server_elapsed_time_data.find({method_name_});
-  ASSERT_NE(client_server_elapsed_time, client_server_elapsed_time_data.end());
-  EXPECT_EQ(1, client_server_elapsed_time->second.count());
-  EXPECT_GT(client_server_elapsed_time->second.mean(), 0);
+  EXPECT_THAT(
+      client_latency_view.GetData().distribution_data(),
+      ::testing::UnorderedElementsAre(::testing::Pair(
+          ::testing::ElementsAre(client_method_name_),
+          ::testing::AllOf(::testing::Property(&stats::Distribution::count, 1),
+                           ::testing::Property(&stats::Distribution::mean,
+                                               ::testing::Gt(0.0)),
+                           ::testing::Property(&stats::Distribution::mean,
+                                               ::testing::Lt(max_time))))));
+
   // Elapsed time is a subinterval of total latency.
-  EXPECT_LT(client_server_elapsed_time->second.mean(),
-            client_latency->second.mean());
+  const auto client_latency = client_latency_view.GetData()
+                                  .distribution_data()
+                                  .find({client_method_name_})
+                                  ->second.mean();
+  EXPECT_THAT(client_server_latency_view.GetData().distribution_data(),
+              ::testing::UnorderedElementsAre(::testing::Pair(
+                  ::testing::ElementsAre(client_method_name_),
+                  ::testing::AllOf(
+                      ::testing::Property(&stats::Distribution::count, 1),
+                      ::testing::Property(&stats::Distribution::mean,
+                                          ::testing::Gt(0.0)),
+                      ::testing::Property(&stats::Distribution::mean,
+                                          ::testing::Lt(client_latency))))));
 
-  const auto server_server_elapsed_time_data =
-      server_server_elapsed_time_view.GetData().distribution_data();
-  ASSERT_EQ(1, server_server_elapsed_time_data.size());
-  const auto server_server_elapsed_time =
-      server_server_elapsed_time_data.find({method_name_});
-  ASSERT_NE(server_server_elapsed_time, server_server_elapsed_time_data.end());
-  EXPECT_EQ(1, server_server_elapsed_time->second.count());
   // client server elapsed time should be the same value propagated to the
   // client.
-  EXPECT_DOUBLE_EQ(server_server_elapsed_time->second.mean(),
-                   client_server_elapsed_time->second.mean());
+  const auto client_elapsed_time = client_server_latency_view.GetData()
+                                       .distribution_data()
+                                       .find({client_method_name_})
+                                       ->second.mean();
+  EXPECT_THAT(
+      server_server_latency_view.GetData().distribution_data(),
+      ::testing::UnorderedElementsAre(::testing::Pair(
+          ::testing::ElementsAre(server_method_name_),
+          ::testing::AllOf(
+              ::testing::Property(&stats::Distribution::count, 1),
+              ::testing::Property(&stats::Distribution::mean,
+                                  ::testing::DoubleEq(client_elapsed_time))))));
 }
 
-TEST_F(StatsPluginEnd2EndTest, StartFinishCount) {
-  const auto client_started_count_descriptor =
-      stats::ViewDescriptor()
-          .set_measure(kRpcClientStartedCountMeasureName)
-          .set_name("client_started_count")
-          .set_aggregation(stats::Aggregation::Sum())
-          .add_column(kMethodTagKey);
-  stats::View client_started_count_view(client_started_count_descriptor);
-  const auto client_finished_count_descriptor =
-      stats::ViewDescriptor()
-          .set_measure(kRpcClientFinishedCountMeasureName)
-          .set_name("client_finished_count")
-          .set_aggregation(stats::Aggregation::Sum())
-          .add_column(kMethodTagKey);
-  stats::View client_finished_count_view(client_finished_count_descriptor);
-  const auto server_started_count_descriptor =
-      stats::ViewDescriptor()
-          .set_measure(kRpcServerStartedCountMeasureName)
-          .set_name("server_started_count")
-          .set_aggregation(stats::Aggregation::Sum())
-          .add_column(kMethodTagKey);
-  stats::View server_started_count_view(server_started_count_descriptor);
-  const auto server_finished_count_descriptor =
-      stats::ViewDescriptor()
-          .set_measure(kRpcServerFinishedCountMeasureName)
-          .set_name("server_finished_count")
-          .set_aggregation(stats::Aggregation::Sum())
-          .add_column(kMethodTagKey);
-  stats::View server_finished_count_view(server_finished_count_descriptor);
+TEST_F(StatsPluginEnd2EndTest, CompletedRpcs) {
+  stats::View client_completed_rpcs_view(ClientCompletedRpcsCumulative());
+  stats::View server_completed_rpcs_view(ServerCompletedRpcsCumulative());
 
   EchoRequest request;
   request.set_message("foo");
@@ -362,52 +294,28 @@ TEST_F(StatsPluginEnd2EndTest, StartFinishCount) {
       ASSERT_TRUE(status.ok());
       EXPECT_EQ("foo", response.message());
     }
+    absl::SleepFor(absl::Milliseconds(500));
+    stats::testing::TestUtils::Flush();
 
-    EXPECT_THAT(client_started_count_view.GetData().double_data(),
+    EXPECT_THAT(client_completed_rpcs_view.GetData().int_data(),
                 ::testing::UnorderedElementsAre(::testing::Pair(
-                    ::testing::ElementsAre(method_name_), i + 1)));
-    EXPECT_THAT(client_finished_count_view.GetData().double_data(),
+                    ::testing::ElementsAre(client_method_name_, "OK"), i + 1)));
+    EXPECT_THAT(server_completed_rpcs_view.GetData().int_data(),
                 ::testing::UnorderedElementsAre(::testing::Pair(
-                    ::testing::ElementsAre(method_name_), i + 1)));
-    EXPECT_THAT(server_started_count_view.GetData().double_data(),
-                ::testing::UnorderedElementsAre(::testing::Pair(
-                    ::testing::ElementsAre(method_name_), i + 1)));
-    EXPECT_THAT(server_finished_count_view.GetData().double_data(),
-                ::testing::UnorderedElementsAre(::testing::Pair(
-                    ::testing::ElementsAre(method_name_), i + 1)));
+                    ::testing::ElementsAre(server_method_name_, "OK"), i + 1)));
   }
 }
 
-TEST_F(StatsPluginEnd2EndTest, RequestResponseCount) {
+TEST_F(StatsPluginEnd2EndTest, RequestReceivedMessagesPerRpc) {
   // TODO: Use streaming RPCs.
-  const auto client_request_count_descriptor =
-      stats::ViewDescriptor()
-          .set_measure(kRpcClientRequestCountMeasureName)
-          .set_name("client_request_count")
-          .set_aggregation(stats::Aggregation::Sum())
-          .add_column(kMethodTagKey);
-  stats::View client_request_count_view(client_request_count_descriptor);
-  const auto client_response_count_descriptor =
-      stats::ViewDescriptor()
-          .set_measure(kRpcClientResponseCountMeasureName)
-          .set_name("client_response_count")
-          .set_aggregation(stats::Aggregation::Sum())
-          .add_column(kMethodTagKey);
-  stats::View client_response_count_view(client_response_count_descriptor);
-  const auto server_request_count_descriptor =
-      stats::ViewDescriptor()
-          .set_measure(kRpcServerRequestCountMeasureName)
-          .set_name("server_request_count")
-          .set_aggregation(stats::Aggregation::Sum())
-          .add_column(kMethodTagKey);
-  stats::View server_request_count_view(server_request_count_descriptor);
-  const auto server_response_count_descriptor =
-      stats::ViewDescriptor()
-          .set_measure(kRpcServerResponseCountMeasureName)
-          .set_name("server_response_count")
-          .set_aggregation(stats::Aggregation::Sum())
-          .add_column(kMethodTagKey);
-  stats::View server_response_count_view(server_response_count_descriptor);
+  stats::View client_received_messages_per_rpc_view(
+      ClientSentMessagesPerRpcCumulative());
+  stats::View client_sent_messages_per_rpc_view(
+      ClientReceivedMessagesPerRpcCumulative());
+  stats::View server_received_messages_per_rpc_view(
+      ServerSentMessagesPerRpcCumulative());
+  stats::View server_sent_messages_per_rpc_view(
+      ServerReceivedMessagesPerRpcCumulative());
 
   EchoRequest request;
   request.set_message("foo");
@@ -420,19 +328,39 @@ TEST_F(StatsPluginEnd2EndTest, RequestResponseCount) {
       ASSERT_TRUE(status.ok());
       EXPECT_EQ("foo", response.message());
     }
+    absl::SleepFor(absl::Milliseconds(500));
+    stats::testing::TestUtils::Flush();
 
-    EXPECT_THAT(client_request_count_view.GetData().double_data(),
+    EXPECT_THAT(
+        client_received_messages_per_rpc_view.GetData().distribution_data(),
+        ::testing::UnorderedElementsAre(::testing::Pair(
+            ::testing::ElementsAre(client_method_name_),
+            ::testing::AllOf(
+                ::testing::Property(&stats::Distribution::count, i + 1),
+                ::testing::Property(&stats::Distribution::mean,
+                                    ::testing::DoubleEq(1.0))))));
+    EXPECT_THAT(client_sent_messages_per_rpc_view.GetData().distribution_data(),
                 ::testing::UnorderedElementsAre(::testing::Pair(
-                    ::testing::ElementsAre(method_name_), i + 1)));
-    EXPECT_THAT(client_response_count_view.GetData().double_data(),
+                    ::testing::ElementsAre(client_method_name_),
+                    ::testing::AllOf(
+                        ::testing::Property(&stats::Distribution::count, i + 1),
+                        ::testing::Property(&stats::Distribution::mean,
+                                            ::testing::DoubleEq(1.0))))));
+    EXPECT_THAT(
+        server_received_messages_per_rpc_view.GetData().distribution_data(),
+        ::testing::UnorderedElementsAre(::testing::Pair(
+            ::testing::ElementsAre(server_method_name_),
+            ::testing::AllOf(
+                ::testing::Property(&stats::Distribution::count, i + 1),
+                ::testing::Property(&stats::Distribution::mean,
+                                    ::testing::DoubleEq(1.0))))));
+    EXPECT_THAT(server_sent_messages_per_rpc_view.GetData().distribution_data(),
                 ::testing::UnorderedElementsAre(::testing::Pair(
-                    ::testing::ElementsAre(method_name_), i + 1)));
-    EXPECT_THAT(server_request_count_view.GetData().double_data(),
-                ::testing::UnorderedElementsAre(::testing::Pair(
-                    ::testing::ElementsAre(method_name_), i + 1)));
-    EXPECT_THAT(server_response_count_view.GetData().double_data(),
-                ::testing::UnorderedElementsAre(::testing::Pair(
-                    ::testing::ElementsAre(method_name_), i + 1)));
+                    ::testing::ElementsAre(server_method_name_),
+                    ::testing::AllOf(
+                        ::testing::Property(&stats::Distribution::count, i + 1),
+                        ::testing::Property(&stats::Distribution::mean,
+                                            ::testing::DoubleEq(1.0))))));
   }
 }
 

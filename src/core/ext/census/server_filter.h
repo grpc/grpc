@@ -71,6 +71,7 @@ class CensusServerCallData : public grpc::CallData {
   CensusContext context_;
   // server method
   absl::string_view method_;
+  std::string qualified_method_;
   grpc_slice path_;
   // Pointer to the grpc_call element
   grpc_call* gc_;
@@ -85,7 +86,7 @@ class CensusServerCallData : public grpc::CallData {
   // recv message
   grpc_closure* initial_on_done_recv_message_;
   grpc_closure on_done_recv_message_;
-  absl::Time start_time_;  // For measuring elapsed time.
+  absl::Time start_time_;
   absl::Duration elapsed_time_;
   grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message_;
   uint64_t recv_message_count_;

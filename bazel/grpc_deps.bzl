@@ -92,6 +92,11 @@ def grpc_deps():
         actual = "@io_opencensus_cpp//opencensus/stats:stats"
     )
 
+    native.bind(
+        name = "opencensus-stats-test",
+        actual = "@io_opencensus_cpp//opencensus/stats:test_utils"
+    )
+
     if "boringssl" not in native.existing_rules():
         native.http_archive(
             name = "boringssl",
@@ -166,8 +171,8 @@ def grpc_deps():
     if "io_opencensus_cpp" not in native.existing_rules():
       native.http_archive(
             name = "io_opencensus_cpp",
-            strip_prefix = "opencensus-cpp-9cde3c9b368d22d2297779ab634166491f05566e",
-            url = "https://github.com/census-instrumentation/opencensus-cpp/archive/9cde3c9b368d22d2297779ab634166491f05566e.tar.gz",
+            strip_prefix = "opencensus-cpp-master",
+            url = "https://github.com/census-instrumentation/opencensus-cpp/archive/master.tar.gz",
         )
 
     if "com_googlesource_code_cctz" not in native.existing_rules():

@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
 #include "include/grpc/impl/codegen/status.h"
 #include "opencensus/trace/span.h"
 #include "opencensus/trace/span_context.h"
@@ -110,6 +111,17 @@ trace::Span SpanFromCensusContext(const census_context* ctxt);
 
 // Returns a string representation of the StatusCode enum.
 absl::string_view StatusCodeToString(grpc_status_code code);
+
+inline absl::string_view GetMethod(const grpc_slice* path) {
+  if (GRPC_SLICE_IS_EMPTY(*path)) {
+    return "";
+  }
+  // Check for leading '/' and trim it if present.
+  return absl::StripPrefix(absl::string_view(reinterpret_cast<const char*>(
+                                                 GRPC_SLICE_START_PTR(*path)),
+                                             GRPC_SLICE_LENGTH(*path)),
+                           "/");
+}
 
 }  // namespace opencensus
 

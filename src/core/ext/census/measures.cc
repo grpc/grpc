@@ -39,117 +39,87 @@ constexpr char kCount[] = "1";
 }  // namespace
 
 // Client
-stats::MeasureInt RpcClientErrorCount() {
-  static stats::MeasureInt measure = stats::MeasureRegistry::RegisterInt(
-      kRpcClientErrorCountMeasureName, kCount, "RPC Errors");
+stats::MeasureDouble RpcClientSentBytesPerRpc() {
+  static const auto measure = stats::MeasureDouble::Register(
+      kRpcClientSentBytesPerRpcMeasureName,
+      "Total bytes sent across all request messages per RPC", kUnitBytes);
   return measure;
 }
 
-stats::MeasureDouble RpcClientRequestBytes() {
-  static stats::MeasureDouble measure = stats::MeasureRegistry::RegisterDouble(
-      kRpcClientRequestBytesMeasureName, kUnitBytes, "Request bytes");
-  return measure;
-}
-
-stats::MeasureDouble RpcClientResponseBytes() {
-  static stats::MeasureDouble measure = stats::MeasureRegistry::RegisterDouble(
-      kRpcClientResponseBytesMeasureName, kUnitBytes, "Response bytes");
+stats::MeasureDouble RpcClientReceivedBytesPerRpc() {
+  static const auto measure = stats::MeasureDouble::Register(
+      kRpcClientReceivedBytesPerRpcMeasureName,
+      "Total bytes received across all response messages per RPC", kUnitBytes);
   return measure;
 }
 
 stats::MeasureDouble RpcClientRoundtripLatency() {
-  static stats::MeasureDouble measure = stats::MeasureRegistry::RegisterDouble(
-      kRpcClientRoundtripLatencyMeasureName, kUnitMilliseconds,
-      "RPC roundtrip latency msec");
+  static const auto measure = stats::MeasureDouble::Register(
+      kRpcClientRoundtripLatencyMeasureName,
+      "Time between first byte of request sent to last byte of response "
+      "received, or terminal error",
+      kUnitMilliseconds);
   return measure;
 }
 
-stats::MeasureDouble RpcClientServerElapsedTime() {
-  static stats::MeasureDouble measure = stats::MeasureRegistry::RegisterDouble(
-      kRpcClientServerElapsedTimeMeasureName, kUnitMilliseconds,
-      "Server elapsed time in msecs");
+stats::MeasureDouble RpcClientServerLatency() {
+  static const auto measure = stats::MeasureDouble::Register(
+      kRpcClientServerLatencyMeasureName,
+      "Time between first byte of request received to last byte of response "
+      "sent, or terminal error (propagated from the server)",
+      kUnitMilliseconds);
   return measure;
 }
 
-stats::MeasureInt RpcClientStartedCount() {
-  static stats::MeasureInt measure = stats::MeasureRegistry::RegisterInt(
-      kRpcClientStartedCountMeasureName, kCount,
-      "Number of client RPCs (streams) started");
+stats::MeasureInt64 RpcClientSentMessagesPerRpc() {
+  static const auto measure =
+      stats::MeasureInt64::Register(kRpcClientSentMessagesPerRpcMeasureName,
+                                    "Number of messages sent per RPC", kCount);
   return measure;
 }
 
-stats::MeasureInt RpcClientFinishedCount() {
-  static stats::MeasureInt measure = stats::MeasureRegistry::RegisterInt(
-      kRpcClientFinishedCountMeasureName, kCount,
-      "Number of client RPCs (streams) finished");
-  return measure;
-}
-
-stats::MeasureInt RpcClientRequestCount() {
-  static stats::MeasureInt measure = stats::MeasureRegistry::RegisterInt(
-      kRpcClientRequestCountMeasureName, kCount,
-      "Number of client RPC request messages");
-  return measure;
-}
-
-stats::MeasureInt RpcClientResponseCount() {
-  static stats::MeasureInt measure = stats::MeasureRegistry::RegisterInt(
-      kRpcClientResponseCountMeasureName, kCount,
-      "Number of client RPC response messages");
+stats::MeasureInt64 RpcClientReceivedMessagesPerRpc() {
+  static const auto measure = stats::MeasureInt64::Register(
+      kRpcClientReceivedMessagesPerRpcMeasureName,
+      "Number of messages received per RPC", kCount);
   return measure;
 }
 
 // Server
-stats::MeasureInt RpcServerErrorCount() {
-  static stats::MeasureInt measure = stats::MeasureRegistry::RegisterInt(
-      kRpcServerErrorCountMeasureName, kCount, "RPC Errors");
+stats::MeasureDouble RpcServerSentBytesPerRpc() {
+  static const auto measure = stats::MeasureDouble::Register(
+      kRpcServerSentBytesPerRpcMeasureName,
+      "Total bytes sent across all messages per RPC", kUnitBytes);
   return measure;
 }
 
-stats::MeasureDouble RpcServerRequestBytes() {
-  static stats::MeasureDouble measure = stats::MeasureRegistry::RegisterDouble(
-      kRpcServerRequestBytesMeasureName, kUnitBytes, "Request bytes");
+stats::MeasureDouble RpcServerReceivedBytesPerRpc() {
+  static const auto measure = stats::MeasureDouble::Register(
+      kRpcServerReceivedBytesPerRpcMeasureName,
+      "Total bytes received across all messages per RPC", kUnitBytes);
   return measure;
 }
 
-stats::MeasureDouble RpcServerResponseBytes() {
-  static stats::MeasureDouble measure = stats::MeasureRegistry::RegisterDouble(
-      kRpcServerResponseBytesMeasureName, kUnitBytes, "Response bytes");
+stats::MeasureDouble RpcServerServerLatency() {
+  static const auto measure = stats::MeasureDouble::Register(
+      kRpcServerServerLatencyMeasureName,
+      "Time between first byte of request received to last byte of response "
+      "sent, or terminal error",
+      kUnitMilliseconds);
   return measure;
 }
 
-stats::MeasureDouble RpcServerServerElapsedTime() {
-  static stats::MeasureDouble measure = stats::MeasureRegistry::RegisterDouble(
-      kRpcServerServerElapsedTimeMeasureName, kUnitMilliseconds,
-      "Server elapsed time in msecs");
+stats::MeasureInt64 RpcServerSentMessagesPerRpc() {
+  static const auto measure =
+      stats::MeasureInt64::Register(kRpcServerSentMessagesPerRpcMeasureName,
+                                    "Number of messages sent per RPC", kCount);
   return measure;
 }
 
-stats::MeasureInt RpcServerStartedCount() {
-  static stats::MeasureInt measure = stats::MeasureRegistry::RegisterInt(
-      kRpcServerStartedCountMeasureName, kCount,
-      "Number of server RPCs (streams) started");
-  return measure;
-}
-
-stats::MeasureInt RpcServerFinishedCount() {
-  static stats::MeasureInt measure = stats::MeasureRegistry::RegisterInt(
-      kRpcServerFinishedCountMeasureName, kCount,
-      "Number of server RPCs (streams) finished");
-  return measure;
-}
-
-stats::MeasureInt RpcServerRequestCount() {
-  static stats::MeasureInt measure = stats::MeasureRegistry::RegisterInt(
-      kRpcServerRequestCountMeasureName, kCount,
-      "Number of server RPC request messages");
-  return measure;
-}
-
-stats::MeasureInt RpcServerResponseCount() {
-  static stats::MeasureInt measure = stats::MeasureRegistry::RegisterInt(
-      kRpcServerResponseCountMeasureName, kCount,
-      "Number of server RPC response messages");
+stats::MeasureInt64 RpcServerReceivedMessagesPerRpc() {
+  static const auto measure = stats::MeasureInt64::Register(
+      kRpcServerReceivedMessagesPerRpcMeasureName,
+      "Number of messages received per RPC", kCount);
   return measure;
 }
 
