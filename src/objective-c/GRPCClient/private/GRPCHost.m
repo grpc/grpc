@@ -108,7 +108,7 @@ static NSMutableDictionary *kHostCache;
                                    serverName:(NSString *)serverName
                                       timeout:(NSTimeInterval)timeout
                               completionQueue:(GRPCCompletionQueue *)queue {
-  GRPCChannel *channel;
+  __block GRPCChannel *channel;
   // This is racing -[GRPCHost disconnect].
   @synchronized(self) {
     if (!_channel) {
