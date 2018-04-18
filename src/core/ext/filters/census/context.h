@@ -21,9 +21,9 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/status.h>
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-#include "include/grpc/impl/codegen/status.h"
 #include "opencensus/trace/span.h"
 #include "opencensus/trace/span_context.h"
 #include "opencensus/trace/trace_params.h"
