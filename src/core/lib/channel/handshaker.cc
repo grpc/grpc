@@ -188,12 +188,15 @@ void grpc_handshake_manager_shutdown(grpc_handshake_manager* mgr,
 
 static char* handshaker_args_string(grpc_handshaker_args* args) {
   char* args_str = grpc_channel_args_string(args->args);
+  size_t num_args = args->args != nullptr ? args->args->num_args : 0;
+  size_t read_buffer_length =
+      args->read_buffer != nullptr ? args->read_buffer->length : 0;
   char* str;
   gpr_asprintf(&str,
                "{endpoint=%p, args=%p {size=%" PRIuPTR
                ": %s}, read_buffer=%p (length=%" PRIuPTR "), exit_early=%d}",
-               args->endpoint, args->args, args->args->num_args, args_str,
-               args->read_buffer, args->read_buffer->length, args->exit_early);
+               args->endpoint, args->args, num_args, args_str,
+               args->read_buffer, read_buffer_length, args->exit_early);
   gpr_free(args_str);
   return str;
 }

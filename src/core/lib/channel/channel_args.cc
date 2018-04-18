@@ -413,6 +413,7 @@ grpc_arg grpc_channel_arg_pointer_create(
 }
 
 char* grpc_channel_args_string(const grpc_channel_args* args) {
+  if (args == nullptr) return nullptr;
   gpr_strvec v;
   gpr_strvec_init(&v);
   for (size_t i = 0; i < args->num_args; ++i) {
