@@ -18,8 +18,8 @@
 
 #import "GRXWriter+Immediate.h"
 
-#import "GRXImmediateWriter.h"
 #import "GRXImmediateSingleWriter.h"
+#import "GRXImmediateWriter.h"
 
 @implementation GRXWriter (Immediate)
 

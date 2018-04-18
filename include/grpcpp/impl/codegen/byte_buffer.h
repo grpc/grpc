@@ -146,8 +146,8 @@ class ByteBuffer final {
   friend class internal::ServerStreamingHandler;
   template <class R>
   friend class internal::DeserializeFuncType;
-  friend class GrpcProtoBufferReader;
-  friend class GrpcProtoBufferWriter;
+  friend class ProtoBufferReader;
+  friend class ProtoBufferWriter;
   friend class internal::GrpcByteBufferPeer;
 
   grpc_byte_buffer* buffer_;

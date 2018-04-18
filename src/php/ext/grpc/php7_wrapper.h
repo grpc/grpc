@@ -38,6 +38,12 @@
 #define PHP_GRPC_MAKE_STD_ZVAL(pzv) MAKE_STD_ZVAL(pzv)
 #define PHP_GRPC_FREE_STD_ZVAL(pzv)
 #define PHP_GRPC_DELREF(zv) Z_DELREF_P(zv)
+#define PHP_GRPC_ADD_STRING_TO_ARRAY(val, key, key_len, str, dup) \
+   add_assoc_string_ex(val, key, key_len , str, dup);
+#define PHP_GRPC_ADD_LONG_TO_ARRAY(val, key, key_len, str) \
+   add_assoc_long_ex(val, key, key_len, str);
+#define PHP_GRPC_ADD_BOOL_TO_ARRAY(val, key, key_len, str) \
+   add_assoc_bool_ex(val, key, key_len, str);
 
 #define RETURN_DESTROY_ZVAL(val) \
   RETURN_ZVAL(val, false /* Don't execute copy constructor */, \
@@ -88,6 +94,9 @@
                                          0, NULL); \
     data = *tmp##key;
 
+#define PHP_GRPC_HASH_VALPTR_TO_VAL(data) \
+  &data;
+
 #define PHP_GRPC_HASH_FOREACH_LONG_KEY_VAL_START(ht, key, key_type, index,\
                                                  data) \
   zval **tmp##key = NULL; \
@@ -128,6 +137,8 @@ static inline int php_grpc_zend_hash_find(HashTable *ht, char *key, int len,
 #define PHP_GRPC_PERSISTENT_LIST_UPDATE(plist, key, len, rsrc) \
   zend_hash_update(plist, key, len+1, rsrc, sizeof(php_grpc_zend_resource), \
                    NULL)
+#define PHP_GRPC_PERSISTENT_LIST_SIZE(plist) \
+  plist.nTableSize
 
 #define PHP_GRPC_GET_CLASS_ENTRY(object) zend_get_class_entry(object TSRMLS_CC)
 
@@ -152,6 +163,12 @@ static inline int php_grpc_zend_hash_find(HashTable *ht, char *key, int len,
   pzv = (zval *)emalloc(sizeof(zval));
 #define PHP_GRPC_FREE_STD_ZVAL(pzv) efree(pzv);
 #define PHP_GRPC_DELREF(zv)
+#define PHP_GRPC_ADD_STRING_TO_ARRAY(val, key, key_len, str, dup) \
+   add_assoc_string_ex(val, key, key_len - 1, str);
+#define PHP_GRPC_ADD_LONG_TO_ARRAY(val, key, key_len, str) \
+   add_assoc_long_ex(val, key, key_len - 1, str);
+#define PHP_GRPC_ADD_BOOL_TO_ARRAY(val, key, key_len, str) \
+   add_assoc_bool_ex(val, key, key_len - 1, str);
 
 #define RETURN_DESTROY_ZVAL(val) \
   RETVAL_ZVAL(val, false /* Don't execute copy constructor */, \
@@ -193,6 +210,9 @@ static inline int php_grpc_zend_hash_find(HashTable *ht, char *key, int len,
     if ((zs_##key) == NULL) {key = NULL; key_type = HASH_KEY_IS_LONG;} \
     else {key = (zs_##key)->val; key_type = HASH_KEY_IS_STRING;}
 
+#define PHP_GRPC_HASH_VALPTR_TO_VAL(data) \
+  Z_PTR_P(data);
+
 #define PHP_GRPC_HASH_FOREACH_LONG_KEY_VAL_START(ht, key, key_type, index, \
                                                  data) \
   zend_string *(zs_##key); \
@@ -230,6 +250,8 @@ static inline int php_grpc_zend_hash_del(HashTable *ht, char *key, int len) {
 #define PHP_GRPC_PERSISTENT_LIST_UPDATE(plist, key, len, rsrc) \
   zend_hash_str_update_mem(plist, key, len, rsrc, \
                            sizeof(php_grpc_zend_resource))
+#define PHP_GRPC_PERSISTENT_LIST_SIZE(plist) \
+  zend_array_count(plist)
 
 #define PHP_GRPC_GET_CLASS_ENTRY(object) Z_OBJ_P(object)->ce
 

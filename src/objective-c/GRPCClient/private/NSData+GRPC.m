@@ -24,8 +24,8 @@
 
 // TODO(jcanizales): Move these two incantations to the C library.
 
-static void MallocAndCopyByteBufferToCharArray(grpc_byte_buffer *buffer,
-                                               size_t *length, char **array) {
+static void MallocAndCopyByteBufferToCharArray(grpc_byte_buffer *buffer, size_t *length,
+                                               char **array) {
   grpc_byte_buffer_reader reader;
   if (!grpc_byte_buffer_reader_init(&reader, buffer)) {
     // grpc_byte_buffer_reader_init can fail if the data sent by the server
@@ -51,8 +51,7 @@ static void MallocAndCopyByteBufferToCharArray(grpc_byte_buffer *buffer,
   grpc_byte_buffer_reader_destroy(&reader);
 }
 
-static grpc_byte_buffer *CopyCharArrayToNewByteBuffer(const char *array,
-                                                      size_t length) {
+static grpc_byte_buffer *CopyCharArrayToNewByteBuffer(const char *array, size_t length) {
   grpc_slice slice = grpc_slice_from_copied_buffer(array, length);
   grpc_byte_buffer *buffer = grpc_raw_byte_buffer_create(&slice, 1);
   grpc_slice_unref(slice);
@@ -89,7 +88,6 @@ static grpc_byte_buffer *CopyCharArrayToNewByteBuffer(const char *array,
   // to create an array of grpc_slice objects to pass to
   // grpc_raw_byte_buffer_create.
   // That would make it do exactly one copy, always.
-  return CopyCharArrayToNewByteBuffer((const char *)self.bytes,
-                                      (size_t)self.length);
+  return CopyCharArrayToNewByteBuffer((const char *)self.bytes, (size_t)self.length);
 }
 @end

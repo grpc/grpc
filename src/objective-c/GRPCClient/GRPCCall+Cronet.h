@@ -32,11 +32,11 @@
  * all subsequent RPCs will use Cronet transport. The method is not thread
  * safe.
  */
-+(void)useCronetWithEngine:(stream_engine *)engine;
++ (void)useCronetWithEngine:(stream_engine*)engine;
 
-+(stream_engine *)cronetEngine;
++ (stream_engine*)cronetEngine;
 
-+(BOOL)isUsingCronet;
++ (BOOL)isUsingCronet;
 
 @end
 #endif

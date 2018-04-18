@@ -8792,6 +8792,7 @@
       "tsi_interface"
     ], 
     "headers": [
+      "include/grpc/grpc_security.h", 
       "src/core/lib/security/credentials/alts/check_gcp_environment.h", 
       "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h", 
       "src/core/tsi/alts/handshaker/alts_handshaker_service_api.h", 
@@ -8803,6 +8804,7 @@
     "language": "c", 
     "name": "alts_util", 
     "src": [
+      "include/grpc/grpc_security.h", 
       "src/core/lib/security/credentials/alts/check_gcp_environment.cc", 
       "src/core/lib/security/credentials/alts/check_gcp_environment.h", 
       "src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc", 

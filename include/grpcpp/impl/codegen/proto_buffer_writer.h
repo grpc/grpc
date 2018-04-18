@@ -38,10 +38,10 @@ extern CoreCodegenInterface* g_core_codegen_interface;
 
 // Forward declaration for testing use only
 namespace internal {
-class GrpcProtoBufferWriterPeer;
+class ProtoBufferWriterPeer;
 }  // namespace internal
 
-const int kGrpcProtoBufferWriterMaxBufferLength = 1024 * 1024;
+const int kProtoBufferWriterMaxBufferLength = 1024 * 1024;
 
 /// This is a specialization of the protobuf class ZeroCopyOutputStream.
 /// The principle is to give the proto layer one buffer of bytes at a time
@@ -50,15 +50,14 @@ const int kGrpcProtoBufferWriterMaxBufferLength = 1024 * 1024;
 ///
 /// Read more about ZeroCopyOutputStream interface here:
 /// https://developers.google.com/protocol-buffers/docs/reference/cpp/google.protobuf.io.zero_copy_stream#ZeroCopyOutputStream
-class GrpcProtoBufferWriter
-    : public ::grpc::protobuf::io::ZeroCopyOutputStream {
+class ProtoBufferWriter : public ::grpc::protobuf::io::ZeroCopyOutputStream {
  public:
   /// Constructor for this derived class
   ///
   /// \param[out] byte_buffer A pointer to the grpc::ByteBuffer created
   /// \param block_size How big are the chunks to allocate at a time
   /// \param total_size How many total bytes are required for this proto
-  GrpcProtoBufferWriter(ByteBuffer* byte_buffer, int block_size, int total_size)
+  ProtoBufferWriter(ByteBuffer* byte_buffer, int block_size, int total_size)
       : block_size_(block_size),
         total_size_(total_size),
         byte_count_(0),
@@ -71,7 +70,7 @@ class GrpcProtoBufferWriter
     slice_buffer_ = &bp->data.raw.slice_buffer;
   }
 
-  ~GrpcProtoBufferWriter() {
+  ~ProtoBufferWriter() {
     if (have_backup_) {
       g_core_codegen_interface->grpc_slice_unref(backup_slice_);
     }
@@ -151,7 +150,7 @@ class GrpcProtoBufferWriter
 
  private:
   // friend for testing purposes only
-  friend class internal::GrpcProtoBufferWriterPeer;
+  friend class internal::ProtoBufferWriterPeer;
   const int block_size_;  ///< size to alloc for each new \a grpc_slice needed
   const int total_size_;  ///< byte size of proto being serialized
   int64_t byte_count_;    ///< bytes written since this object was created

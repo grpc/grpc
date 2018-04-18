@@ -70,6 +70,8 @@ filegroups:
   - tsi_interface
   - tsi
 - name: alts_util
+  public_headers:
+  - include/grpc/grpc_security.h
   headers:
   - src/core/lib/security/credentials/alts/check_gcp_environment.h
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h
