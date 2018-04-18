@@ -26,8 +26,8 @@ GRPC_LOCAL_SRC = '../../..'
     pod 'gRPC',           :path => GRPC_LOCAL_SRC
     pod 'gRPC-Core',      :path => GRPC_LOCAL_SRC
     pod 'gRPC-RxLibrary', :path => GRPC_LOCAL_SRC
-    pod 'gRPC-ProtoRPC',  :path => GRPC_LOCAL_SRC
-    pod 'RemoteTest', :path => "RemoteTestClient"
+    pod 'gRPC-ProtoRPC',  :path => GRPC_LOCAL_SRC, :inhibit_warnings => true
+    pod 'RemoteTest', :path => "RemoteTestClient", :inhibit_warnings => true
 
     if target_name == 'InteropTestsRemoteWithCronet'
       pod 'gRPC-Core/Cronet-Implementation', :path => GRPC_LOCAL_SRC
