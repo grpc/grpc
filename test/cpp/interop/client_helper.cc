@@ -35,6 +35,7 @@
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
+DECLARE_bool(use_alts);
 DECLARE_bool(use_tls);
 DECLARE_string(custom_credentials_type);
 DECLARE_bool(use_test_ca);
@@ -104,7 +105,8 @@ std::shared_ptr<Channel> CreateChannelForTestCase(
   }
   if (FLAGS_custom_credentials_type.empty()) {
     return CreateTestChannel(host_port, FLAGS_server_host_override,
-                             FLAGS_use_tls, !FLAGS_use_test_ca, creds);
+                             FLAGS_use_alts, FLAGS_use_tls, !FLAGS_use_test_ca,
+                             creds);
   } else {
     return CreateTestChannel(host_port, FLAGS_custom_credentials_type, creds);
   }

@@ -34,6 +34,8 @@ const char kInsecureCredentialsType[] = "INSECURE_CREDENTIALS";
 // property "transport_security_type".
 const char kTlsCredentialsType[] = "ssl";
 
+const char kAltsCredentialsType[] = "alts";
+
 // Provide test credentials of a particular type.
 class CredentialTypeProvider {
  public:
