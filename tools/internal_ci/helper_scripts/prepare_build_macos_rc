@@ -67,7 +67,7 @@ pip install -U Mako six tox setuptools twisted pyyaml --user python
 export PYTHONPATH=/Library/Python/3.4/site-packages
 
 # set xcode version for Obj-C tests
-sudo xcode-select -switch /Applications/Xcode_8.2.1.app/Contents/Developer
+sudo xcode-select -switch /Applications/Xcode_9.2.app/Contents/Developer/
 
 # TODO(jtattermusch): better debugging of clock skew, remove once not needed
 date
