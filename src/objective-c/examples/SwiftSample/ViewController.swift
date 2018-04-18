@@ -59,29 +59,29 @@ class ViewController: UIViewController {
     }
 
     // TODO(jcanizales): Revert to using subscript syntax once XCode 8 is released.
-    RPC.requestHeaders.setObject("My value", forKey: "My-Header" as NSCopying)
+    RPC.requestHeaders["My-Header"] = "My value"
 
     RPC.start()
 
 
     // Same example call using the generic gRPC client library:
 
-    let method = GRPCProtoMethod(package: "grpc.testing", service: "TestService", method: "UnaryCall")
+    let method = GRPCProtoMethod(package: "grpc.testing", service: "TestService", method: "UnaryCall")!
 
     let requestsWriter = GRXWriter(value: request.data())
 
-    let call = GRPCCall(host: RemoteHost, path: method?.httpPath, requestsWriter: requestsWriter)
+    let call = GRPCCall(host: RemoteHost, path: method.httpPath, requestsWriter: requestsWriter)!
 
-    call?.requestHeaders.setObject("My value", forKey: "My-Header" as NSCopying)
+    call.requestHeaders["My-Header"] = "My value"
 
-    call?.start(with: GRXWriteable { response, error in
+    call.start(with: GRXWriteable { response, error in
       if let response = response as? Data {
         NSLog("3. Received response:\n\(try! RMTSimpleResponse(data: response))")
       } else {
         NSLog("3. Finished with error: \(error!)")
       }
-      NSLog("3. Response headers: \(call?.responseHeaders)")
-      NSLog("3. Response trailers: \(call?.responseTrailers)")
+      NSLog("3. Response headers: \(call.responseHeaders)")
+      NSLog("3. Response trailers: \(call.responseTrailers)")
     })
   }
 }
