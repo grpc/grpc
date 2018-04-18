@@ -635,18 +635,10 @@ add_dependencies(buildtests_cxx transport_security_common_api_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx writes_per_rpc_test)
 endif()
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx resolver_component_test_unsecure)
-endif()
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx resolver_component_test)
-endif()
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx resolver_component_tests_runner_invoker_unsecure)
-endif()
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx resolver_component_tests_runner_invoker)
-endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx address_sorting_test_unsecure)
 endif()
@@ -1196,7 +1188,9 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
+  src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc
+  src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc
   src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
@@ -2481,7 +2475,9 @@ add_library(grpc_unsecure
   src/core/ext/transport/inproc/inproc_plugin.cc
   src/core/ext/transport/inproc/inproc_transport.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
+  src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc
+  src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc
   src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
@@ -15364,7 +15360,6 @@ target_link_libraries(inproc_nosec_test
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(resolver_component_test_unsecure
   test/cpp/naming/resolver_component_test.cc
@@ -15403,10 +15398,8 @@ target_link_libraries(resolver_component_test_unsecure
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
-endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(resolver_component_test
   test/cpp/naming/resolver_component_test.cc
@@ -15445,13 +15438,13 @@ target_link_libraries(resolver_component_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
-endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(resolver_component_tests_runner_invoker_unsecure
   test/cpp/naming/resolver_component_tests_runner_invoker.cc
+  test/cpp/naming/resolver_component_tests_runner_invoker_posix.cc
+  test/cpp/naming/resolver_component_tests_runner_invoker_windows.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -15487,13 +15480,13 @@ target_link_libraries(resolver_component_tests_runner_invoker_unsecure
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
-endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 add_executable(resolver_component_tests_runner_invoker
   test/cpp/naming/resolver_component_tests_runner_invoker.cc
+  test/cpp/naming/resolver_component_tests_runner_invoker_posix.cc
+  test/cpp/naming/resolver_component_tests_runner_invoker_windows.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
@@ -15529,7 +15522,6 @@ target_link_libraries(resolver_component_tests_runner_invoker
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
-endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)

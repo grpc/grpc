@@ -79,6 +79,14 @@ EXIT_CODE=0
 # in the resolver.
 
 $FLAGS_test_bin_path \
+  --target_name='no-srv-ipv4-single-target.resolver-tests-version-4.grpctestingexp.' \
+  --expected_addrs='5.5.5.5:443,False' \
+  --expected_chosen_service_config='' \
+  --expected_lb_policy='' \
+  --local_dns_server_address="127.0.0.1:$FLAGS_dns_server_port" &
+wait "$!" || EXIT_CODE=1
+
+$FLAGS_test_bin_path \
   --target_name='srv-ipv4-single-target.resolver-tests-version-4.grpctestingexp.' \
   --expected_addrs='1.2.3.4:1234,True' \
   --expected_chosen_service_config='' \

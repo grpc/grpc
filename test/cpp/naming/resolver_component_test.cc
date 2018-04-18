@@ -280,9 +280,9 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
   args.expected_lb_policy = FLAGS_expected_lb_policy;
   // maybe build the address with an authority
   char* whole_uri = nullptr;
-  GPR_ASSERT(asprintf(&whole_uri, "dns://%s/%s",
-                      FLAGS_local_dns_server_address.c_str(),
-                      FLAGS_target_name.c_str()));
+  GPR_ASSERT(gpr_asprintf(&whole_uri, "dns://%s/%s",
+                          FLAGS_local_dns_server_address.c_str(),
+                          FLAGS_target_name.c_str()));
   // create resolver and resolve
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       grpc_core::ResolverRegistry::CreateResolver(whole_uri, nullptr,

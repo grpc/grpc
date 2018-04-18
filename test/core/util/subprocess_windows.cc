@@ -56,6 +56,7 @@ gpr_subprocess* gpr_subprocess_create(int argc, const char** argv) {
 
   if (!CreateProcess(NULL, args_tchar, NULL, NULL, FALSE,
                      CREATE_NEW_PROCESS_GROUP, NULL, NULL, &si, &pi)) {
+    gpr_log(GPR_ERROR, "Failed to create subprocess.");
     gpr_free(args_tchar);
     return NULL;
   }

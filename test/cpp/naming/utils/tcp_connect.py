@@ -16,8 +16,17 @@
 """Opens a TCP connection to a specified server and then exits."""
 
 import argparse
-import signal
 import socket
+import threading
+import time
+import sys
+
+connect_success = False
+
+def try_connect(args):
+  socket.create_connection([args.server_host, args.server_port])
+  global connect_success
+  connect_success = True
 
 def main():
   argp = argparse.ArgumentParser(description='Open a TCP handshake to a server')
@@ -28,8 +37,14 @@ def main():
   argp.add_argument('-t', '--timeout', default=1, type=int,
                     help='Force process exit after this number of seconds.')
   args = argp.parse_args()
-  signal.alarm(args.timeout)
-  socket.create_connection([args.server_host, args.server_port])
+  t = threading.Thread(target=try_connect, args=[args])
+  t.setDaemon(True)
+  t.start()
+  # We can't use sigalarm on windows, so join with a timeout.
+  t.join(timeout=args.timeout)
+  time.sleep(args.timeout)
+  if t.isAlive() or not connect_success:
+    sys.exit(1)
 
 if __name__ == '__main__':
   main()

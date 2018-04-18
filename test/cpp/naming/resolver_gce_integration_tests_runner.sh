@@ -34,6 +34,13 @@ echo "Sanity check DNS records are resolveable with dig:"
 EXIT_CODE=0
 
 ONE_FAILED=0
+dig A no-srv-ipv4-single-target.resolver-tests-version-4.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
+if [[ "$ONE_FAILED" != 0 ]]; then
+  echo "Sanity check: dig A no-srv-ipv4-single-target.resolver-tests-version-4.grpctestingexp. FAILED"
+  exit 1
+fi
+
+ONE_FAILED=0
 dig SRV _grpclb._tcp.srv-ipv4-single-target.resolver-tests-version-4.grpctestingexp. | grep 'ANSWER SECTION' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
   echo "Sanity check: dig SRV _grpclb._tcp.srv-ipv4-single-target.resolver-tests-version-4.grpctestingexp. FAILED"
@@ -223,6 +230,17 @@ if [[ "$ONE_FAILED" != 0 ]]; then
 fi
 
 echo "Sanity check PASSED. Run resolver tests:"
+
+ONE_FAILED=0
+bins/$CONFIG/resolver_component_test \
+  --target_name='no-srv-ipv4-single-target.resolver-tests-version-4.grpctestingexp.' \
+  --expected_addrs='5.5.5.5:443,False' \
+  --expected_chosen_service_config='' \
+  --expected_lb_policy='' || ONE_FAILED=1
+if [[ "$ONE_FAILED" != 0 ]]; then
+  echo "Test based on target record: no-srv-ipv4-single-target.resolver-tests-version-4.grpctestingexp. FAILED"
+  EXIT_CODE=1
+fi
 
 ONE_FAILED=0
 bins/$CONFIG/resolver_component_test \

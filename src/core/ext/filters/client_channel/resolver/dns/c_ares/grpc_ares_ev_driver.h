@@ -22,32 +22,83 @@
 #include <grpc/support/port_platform.h>
 
 #include <ares.h>
+#include "src/core/lib/gprpp/abstract.h"
+#include "src/core/lib/gprpp/inlined_vector.h"
+#include "src/core/lib/gprpp/orphanable.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 
-typedef struct grpc_ares_ev_driver grpc_ares_ev_driver;
+namespace grpc_core {
 
-/* Start \a ev_driver. It will keep working until all IO on its ares_channel is
-   done, or grpc_ares_ev_driver_destroy() is called. It may notify the callbacks
-   bound to its ares_channel when necessary. */
-void grpc_ares_ev_driver_start(grpc_ares_ev_driver* ev_driver);
+class AresEvDriver;
 
-/* Returns the ares_channel owned by \a ev_driver. To bind a c-ares query to
-   \a ev_driver, use the ares_channel owned by \a ev_driver as the arg of the
-   query. */
-ares_channel* grpc_ares_ev_driver_get_channel(grpc_ares_ev_driver* ev_driver);
+class FdNode : public InternallyRefCounted<FdNode> {
+ public:
+  explicit FdNode();
+  ~FdNode();
+  void MaybeRegisterForReadsAndWrites(RefCountedPtr<AresEvDriver>,
+                                      int socks_bitmask, size_t idx);
+  void Shutdown();
+  virtual ares_socket_t GetInnerEndpoint() GRPC_ABSTRACT;
+  virtual void ShutdownInnerEndpoint() GRPC_ABSTRACT;
 
-/* Creates a new grpc_ares_ev_driver. Returns GRPC_ERROR_NONE if \a ev_driver is
-   created successfully. */
-grpc_error* grpc_ares_ev_driver_create(grpc_ares_ev_driver** ev_driver,
+ protected:
+  /** a closure wrapping OnReadable, which should be invoked when the
+      grpc_fd in this node becomes readable. */
+  grpc_closure read_closure_;
+  /** a closure wrapping OnWriteable, which should be invoked when the
+      grpc_fd in this node becomes writable. */
+  grpc_closure write_closure_;
+
+ private:
+  static void OnReadable(void* arg, grpc_error* error);
+  static void OnWriteable(void* arg, grpc_error* error);
+  void OnReadableInner(AresEvDriver*, grpc_error* error);
+  void OnWriteableInner(AresEvDriver*, grpc_error* error);
+  virtual void RegisterForOnReadable() GRPC_ABSTRACT;
+  virtual void RegisterForOnWriteable() GRPC_ABSTRACT;
+  virtual bool ShouldRepeatReadForAresProcessFd() GRPC_ABSTRACT;
+  /** mutex guarding the rest of the state */
+  gpr_mu mu_;
+  /** if the readable closure has been registered */
+  bool readable_registered_;
+  /** if the writable closure has been registered */
+  bool writable_registered_;
+  /** if the fd is being shut down */
+  bool shutting_down_;
+};
+
+class AresEvDriver : public InternallyRefCounted<AresEvDriver> {
+ public:
+  explicit AresEvDriver();
+  ~AresEvDriver();
+  void Start();
+  void Destroy();
+  void Shutdown();
+  ares_channel GetChannel();
+  ares_channel* GetChannelPointer();
+  void NotifyOnEvent();
+  /* CreateAndInitalize returns a new grpc_ares_ev_driver. Returns
+     GRPC_ERROR_NONE if \a ev_driver is created successfully. */
+  static grpc_error* CreateAndInitialize(AresEvDriver** ev_driver,
+                                         grpc_pollset_set* pollset_set);
+
+ private:
+  static AresEvDriver* Create(grpc_pollset_set* pollset_set);
+  virtual FdNode* CreateFdNode(ares_socket_t, const char*) GRPC_ABSTRACT;
+  void NotifyOnEventLocked();
+  int LookupFdNodeIndex(ares_socket_t as);
+  UniquePtr<InlinedVector<RefCountedPtr<FdNode>, ARES_GETSOCK_MAXNUM>> fds_;
+  ares_channel channel_;
+  gpr_mu mu_;
+  bool working_;
+  bool shutting_down_;
+};
+
+}  // namespace grpc_core
+
+grpc_error* grpc_ares_ev_driver_create(grpc_core::AresEvDriver** ev_driver,
                                        grpc_pollset_set* pollset_set);
-
-/* Destroys \a ev_driver asynchronously. Pending lookups made on \a ev_driver
-   will be cancelled and their on_done callbacks will be invoked with a status
-   of ARES_ECANCELLED. */
-void grpc_ares_ev_driver_destroy(grpc_ares_ev_driver* ev_driver);
-
-/* Shutdown all the grpc_fds used by \a ev_driver */
-void grpc_ares_ev_driver_shutdown(grpc_ares_ev_driver* ev_driver);
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_C_ARES_GRPC_ARES_EV_DRIVER_H \
         */
