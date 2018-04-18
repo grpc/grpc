@@ -1910,7 +1910,9 @@ libs:
   - src/proto/grpc/testing/payloads.proto
   - src/proto/grpc/testing/stats.proto
   - src/proto/grpc/testing/control.proto
-  - src/proto/grpc/testing/services.proto
+  - src/proto/grpc/testing/benchmark_service.proto
+  - src/proto/grpc/testing/report_qps_scenario_service.proto
+  - src/proto/grpc/testing/worker_service.proto
   - test/cpp/qps/benchmark_config.cc
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_sync.cc
@@ -4266,7 +4268,9 @@ targets:
   - src/proto/grpc/testing/control.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/payloads.proto
-  - src/proto/grpc/testing/services.proto
+  - src/proto/grpc/testing/benchmark_service.proto
+  - src/proto/grpc/testing/report_qps_scenario_service.proto
+  - src/proto/grpc/testing/worker_service.proto
   - src/proto/grpc/testing/stats.proto
   - test/cpp/codegen/codegen_test_full.cc
   deps:
@@ -4285,7 +4289,9 @@ targets:
   - src/proto/grpc/testing/control.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/payloads.proto
-  - src/proto/grpc/testing/services.proto
+  - src/proto/grpc/testing/benchmark_service.proto
+  - src/proto/grpc/testing/report_qps_scenario_service.proto
+  - src/proto/grpc/testing/worker_service.proto
   - src/proto/grpc/testing/stats.proto
   - test/cpp/codegen/codegen_test_minimal.cc
   deps:
