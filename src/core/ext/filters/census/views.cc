@@ -18,49 +18,53 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/census/grpc_plugin.h"
+#include "src/core/ext/filters/census/grpc_plugin.h"
 
 #include "absl/time/time.h"
 #include "opencensus/stats/internal/aggregation_window.h"
 #include "opencensus/stats/internal/set_aggregation_window.h"
 #include "opencensus/stats/stats.h"
 
-namespace opencensus {
+namespace grpc_core {
+
+using ::opencensus::stats::Aggregation;
+using ::opencensus::stats::AggregationWindow;
+using ::opencensus::stats::BucketBoundaries;
+using ::opencensus::stats::ViewDescriptor;
 
 // These measure definitions should be kept in sync across opencensus
 // implementations.
 
 namespace {
 
-stats::Aggregation BytesDistributionAggregation() {
-  return stats::Aggregation::Distribution(stats::BucketBoundaries::Explicit(
+Aggregation BytesDistributionAggregation() {
+  return Aggregation::Distribution(BucketBoundaries::Explicit(
       {0, 1024, 2048, 4096, 16384, 65536, 262144, 1048576, 4194304, 16777216,
        67108864, 268435456, 1073741824, 4294967296}));
 }
 
-stats::Aggregation MillisDistributionAggregation() {
-  return stats::Aggregation::Distribution(stats::BucketBoundaries::Explicit(
+Aggregation MillisDistributionAggregation() {
+  return Aggregation::Distribution(BucketBoundaries::Explicit(
       {0,   0.01, 0.05, 0.1,  0.3,   0.6,   0.8,   1,     2,   3,   4,
        5,   6,    8,    10,   13,    16,    20,    25,    30,  40,  50,
        65,  80,   100,  130,  160,   200,   250,   300,   400, 500, 650,
        800, 1000, 2000, 5000, 10000, 20000, 50000, 100000}));
 }
 
-stats::Aggregation CountDistributionAggregation() {
-  return stats::Aggregation::Distribution(
-      stats::BucketBoundaries::Exponential(17, 1.0, 2.0));
+Aggregation CountDistributionAggregation() {
+  return Aggregation::Distribution(BucketBoundaries::Exponential(17, 1.0, 2.0));
 }
 
-stats::ViewDescriptor MinuteDescriptor() {
-  auto descriptor = stats::ViewDescriptor();
-  SetAggregationWindow(stats::AggregationWindow::Interval(absl::Minutes(1)),
+ViewDescriptor MinuteDescriptor() {
+  auto descriptor = ViewDescriptor();
+  SetAggregationWindow(AggregationWindow::Interval(absl::Minutes(1)),
                        &descriptor);
   return descriptor;
 }
 
-stats::ViewDescriptor HourDescriptor() {
-  auto descriptor = stats::ViewDescriptor();
-  SetAggregationWindow(stats::AggregationWindow::Interval(absl::Hours(1)),
+ViewDescriptor HourDescriptor() {
+  auto descriptor = ViewDescriptor();
+  SetAggregationWindow(AggregationWindow::Interval(absl::Hours(1)),
                        &descriptor);
   return descriptor;
 }
@@ -83,9 +87,9 @@ void RegisterGrpcViewsForExport() {
 }
 
 // client cumulative
-const stats::ViewDescriptor& ClientSentBytesPerRpcCumulative() {
-  const static stats::ViewDescriptor descriptor =
-      stats::ViewDescriptor()
+const ViewDescriptor& ClientSentBytesPerRpcCumulative() {
+  const static ViewDescriptor descriptor =
+      ViewDescriptor()
           .set_name("grpc.io/client/sent_bytes_per_rpc/cumulative")
           .set_measure(kRpcClientSentBytesPerRpcMeasureName)
           .set_aggregation(BytesDistributionAggregation())
@@ -93,9 +97,9 @@ const stats::ViewDescriptor& ClientSentBytesPerRpcCumulative() {
   return descriptor;
 }
 
-const stats::ViewDescriptor& ClientReceivedBytesPerRpcCumulative() {
-  const static stats::ViewDescriptor descriptor =
-      stats::ViewDescriptor()
+const ViewDescriptor& ClientReceivedBytesPerRpcCumulative() {
+  const static ViewDescriptor descriptor =
+      ViewDescriptor()
           .set_name("grpc.io/client/received_bytes_per_rpc/cumulative")
           .set_measure(kRpcClientReceivedBytesPerRpcMeasureName)
           .set_aggregation(BytesDistributionAggregation())
@@ -103,9 +107,9 @@ const stats::ViewDescriptor& ClientReceivedBytesPerRpcCumulative() {
   return descriptor;
 }
 
-const stats::ViewDescriptor& ClientRoundtripLatencyCumulative() {
-  const static stats::ViewDescriptor descriptor =
-      stats::ViewDescriptor()
+const ViewDescriptor& ClientRoundtripLatencyCumulative() {
+  const static ViewDescriptor descriptor =
+      ViewDescriptor()
           .set_name("grpc.io/client/roundtrip_latency/cumulative")
           .set_measure(kRpcClientRoundtripLatencyMeasureName)
           .set_aggregation(MillisDistributionAggregation())
@@ -113,9 +117,9 @@ const stats::ViewDescriptor& ClientRoundtripLatencyCumulative() {
   return descriptor;
 }
 
-const stats::ViewDescriptor& ClientServerLatencyCumulative() {
-  const static stats::ViewDescriptor descriptor =
-      stats::ViewDescriptor()
+const ViewDescriptor& ClientServerLatencyCumulative() {
+  const static ViewDescriptor descriptor =
+      ViewDescriptor()
           .set_name("grpc.io/client/server_latency/cumulative")
           .set_measure(kRpcClientServerLatencyMeasureName)
           .set_aggregation(MillisDistributionAggregation())
@@ -123,20 +127,20 @@ const stats::ViewDescriptor& ClientServerLatencyCumulative() {
   return descriptor;
 }
 
-const stats::ViewDescriptor& ClientCompletedRpcsCumulative() {
-  const static stats::ViewDescriptor descriptor =
-      stats::ViewDescriptor()
+const ViewDescriptor& ClientCompletedRpcsCumulative() {
+  const static ViewDescriptor descriptor =
+      ViewDescriptor()
           .set_name("grpc.io/client/completed_rpcs/cumulative")
           .set_measure(kRpcClientRoundtripLatencyMeasureName)
-          .set_aggregation(stats::Aggregation::Count())
+          .set_aggregation(Aggregation::Count())
           .add_column(ClientMethodTagKey())
           .add_column(ClientStatusTagKey());
   return descriptor;
 }
 
-const stats::ViewDescriptor& ClientSentMessagesPerRpcCumulative() {
-  const static stats::ViewDescriptor descriptor =
-      stats::ViewDescriptor()
+const ViewDescriptor& ClientSentMessagesPerRpcCumulative() {
+  const static ViewDescriptor descriptor =
+      ViewDescriptor()
           .set_name("grpc.io/client/received_messages_per_rpc/cumulative")
           .set_measure(kRpcClientSentMessagesPerRpcMeasureName)
           .set_aggregation(CountDistributionAggregation())
@@ -144,9 +148,9 @@ const stats::ViewDescriptor& ClientSentMessagesPerRpcCumulative() {
   return descriptor;
 }
 
-const stats::ViewDescriptor& ClientReceivedMessagesPerRpcCumulative() {
-  const static stats::ViewDescriptor descriptor =
-      stats::ViewDescriptor()
+const ViewDescriptor& ClientReceivedMessagesPerRpcCumulative() {
+  const static ViewDescriptor descriptor =
+      ViewDescriptor()
           .set_name("grpc.io/client/sent_messages_per_rpc/cumulative")
           .set_measure(kRpcClientReceivedMessagesPerRpcMeasureName)
           .set_aggregation(CountDistributionAggregation())
@@ -155,9 +159,9 @@ const stats::ViewDescriptor& ClientReceivedMessagesPerRpcCumulative() {
 }
 
 // server cumulative
-const stats::ViewDescriptor& ServerSentBytesPerRpcCumulative() {
-  const static stats::ViewDescriptor descriptor =
-      stats::ViewDescriptor()
+const ViewDescriptor& ServerSentBytesPerRpcCumulative() {
+  const static ViewDescriptor descriptor =
+      ViewDescriptor()
           .set_name("grpc.io/server/received_bytes_per_rpc/cumulative")
           .set_measure(kRpcServerSentBytesPerRpcMeasureName)
           .set_aggregation(BytesDistributionAggregation())
@@ -165,9 +169,9 @@ const stats::ViewDescriptor& ServerSentBytesPerRpcCumulative() {
   return descriptor;
 }
 
-const stats::ViewDescriptor& ServerReceivedBytesPerRpcCumulative() {
-  const static stats::ViewDescriptor descriptor =
-      stats::ViewDescriptor()
+const ViewDescriptor& ServerReceivedBytesPerRpcCumulative() {
+  const static ViewDescriptor descriptor =
+      ViewDescriptor()
           .set_name("grpc.io/server/sent_bytes_per_rpc/cumulative")
           .set_measure(kRpcServerReceivedBytesPerRpcMeasureName)
           .set_aggregation(BytesDistributionAggregation())
@@ -175,9 +179,9 @@ const stats::ViewDescriptor& ServerReceivedBytesPerRpcCumulative() {
   return descriptor;
 }
 
-const stats::ViewDescriptor& ServerServerLatencyCumulative() {
-  const static stats::ViewDescriptor descriptor =
-      stats::ViewDescriptor()
+const ViewDescriptor& ServerServerLatencyCumulative() {
+  const static ViewDescriptor descriptor =
+      ViewDescriptor()
           .set_name("grpc.io/server/elapsed_time/cumulative")
           .set_measure(kRpcServerServerLatencyMeasureName)
           .set_aggregation(MillisDistributionAggregation())
@@ -185,20 +189,20 @@ const stats::ViewDescriptor& ServerServerLatencyCumulative() {
   return descriptor;
 }
 
-const stats::ViewDescriptor& ServerCompletedRpcsCumulative() {
-  const static stats::ViewDescriptor descriptor =
-      stats::ViewDescriptor()
+const ViewDescriptor& ServerCompletedRpcsCumulative() {
+  const static ViewDescriptor descriptor =
+      ViewDescriptor()
           .set_name("grpc.io/server/completed_rpcs/cumulative")
           .set_measure(kRpcServerServerLatencyMeasureName)
-          .set_aggregation(stats::Aggregation::Count())
+          .set_aggregation(Aggregation::Count())
           .add_column(ServerMethodTagKey())
           .add_column(ServerStatusTagKey());
   return descriptor;
 }
 
-const stats::ViewDescriptor& ServerSentMessagesPerRpcCumulative() {
-  const static stats::ViewDescriptor descriptor =
-      stats::ViewDescriptor()
+const ViewDescriptor& ServerSentMessagesPerRpcCumulative() {
+  const static ViewDescriptor descriptor =
+      ViewDescriptor()
           .set_name("grpc.io/server/received_messages_per_rpc/cumulative")
           .set_measure(kRpcServerSentMessagesPerRpcMeasureName)
           .set_aggregation(CountDistributionAggregation())
@@ -206,9 +210,9 @@ const stats::ViewDescriptor& ServerSentMessagesPerRpcCumulative() {
   return descriptor;
 }
 
-const stats::ViewDescriptor& ServerReceivedMessagesPerRpcCumulative() {
-  const static stats::ViewDescriptor descriptor =
-      stats::ViewDescriptor()
+const ViewDescriptor& ServerReceivedMessagesPerRpcCumulative() {
+  const static ViewDescriptor descriptor =
+      ViewDescriptor()
           .set_name("grpc.io/server/sent_messages_per_rpc/cumulative")
           .set_measure(kRpcServerReceivedMessagesPerRpcMeasureName)
           .set_aggregation(CountDistributionAggregation())
@@ -217,8 +221,8 @@ const stats::ViewDescriptor& ServerReceivedMessagesPerRpcCumulative() {
 }
 
 // client minute
-const stats::ViewDescriptor& ClientSentBytesPerRpcMinute() {
-  const static stats::ViewDescriptor descriptor =
+const ViewDescriptor& ClientSentBytesPerRpcMinute() {
+  const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/client/sent_bytes_per_rpc/minute")
           .set_measure(kRpcClientSentBytesPerRpcMeasureName)
@@ -227,8 +231,8 @@ const stats::ViewDescriptor& ClientSentBytesPerRpcMinute() {
   return descriptor;
 }
 
-const stats::ViewDescriptor& ClientReceivedBytesPerRpcMinute() {
-  const static stats::ViewDescriptor descriptor =
+const ViewDescriptor& ClientReceivedBytesPerRpcMinute() {
+  const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/client/received_bytes_per_rpc/minute")
           .set_measure(kRpcClientReceivedBytesPerRpcMeasureName)
@@ -237,8 +241,8 @@ const stats::ViewDescriptor& ClientReceivedBytesPerRpcMinute() {
   return descriptor;
 }
 
-const stats::ViewDescriptor& ClientRoundtripLatencyMinute() {
-  const static stats::ViewDescriptor descriptor =
+const ViewDescriptor& ClientRoundtripLatencyMinute() {
+  const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/client/roundtrip_latency/minute")
           .set_measure(kRpcClientRoundtripLatencyMeasureName)
@@ -247,8 +251,8 @@ const stats::ViewDescriptor& ClientRoundtripLatencyMinute() {
   return descriptor;
 }
 
-const stats::ViewDescriptor& ClientServerLatencyMinute() {
-  const static stats::ViewDescriptor descriptor =
+const ViewDescriptor& ClientServerLatencyMinute() {
+  const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/client/server_latency/minute")
           .set_measure(kRpcClientServerLatencyMeasureName)
@@ -257,19 +261,19 @@ const stats::ViewDescriptor& ClientServerLatencyMinute() {
   return descriptor;
 }
 
-const stats::ViewDescriptor& ClientCompletedRpcsMinute() {
-  const static stats::ViewDescriptor descriptor =
+const ViewDescriptor& ClientCompletedRpcsMinute() {
+  const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/client/completed_rpcs/minute")
           .set_measure(kRpcClientRoundtripLatencyMeasureName)
-          .set_aggregation(stats::Aggregation::Count())
+          .set_aggregation(Aggregation::Count())
           .add_column(ClientMethodTagKey())
           .add_column(ClientStatusTagKey());
   return descriptor;
 }
 
-const stats::ViewDescriptor& ClientSentMessagesPerRpcMinute() {
-  const static stats::ViewDescriptor descriptor =
+const ViewDescriptor& ClientSentMessagesPerRpcMinute() {
+  const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/client/sent_messages_per_rpc/minute")
           .set_measure(kRpcClientSentMessagesPerRpcMeasureName)
@@ -278,8 +282,8 @@ const stats::ViewDescriptor& ClientSentMessagesPerRpcMinute() {
   return descriptor;
 }
 
-const stats::ViewDescriptor& ClientReceivedMessagesPerRpcMinute() {
-  const static stats::ViewDescriptor descriptor =
+const ViewDescriptor& ClientReceivedMessagesPerRpcMinute() {
+  const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/client/received_messages_per_rpc/minute")
           .set_measure(kRpcClientReceivedMessagesPerRpcMeasureName)
@@ -289,8 +293,8 @@ const stats::ViewDescriptor& ClientReceivedMessagesPerRpcMinute() {
 }
 
 // server minute
-const stats::ViewDescriptor& ServerSentBytesPerRpcMinute() {
-  const static stats::ViewDescriptor descriptor =
+const ViewDescriptor& ServerSentBytesPerRpcMinute() {
+  const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/server/sent_bytes_per_rpc/minute")
           .set_measure(kRpcServerSentBytesPerRpcMeasureName)
@@ -299,8 +303,8 @@ const stats::ViewDescriptor& ServerSentBytesPerRpcMinute() {
   return descriptor;
 }
 
-const stats::ViewDescriptor& ServerReceivedBytesPerRpcMinute() {
-  const static stats::ViewDescriptor descriptor =
+const ViewDescriptor& ServerReceivedBytesPerRpcMinute() {
+  const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/server/received_bytes_per_rpc/minute")
           .set_measure(kRpcServerReceivedBytesPerRpcMeasureName)
@@ -309,8 +313,8 @@ const stats::ViewDescriptor& ServerReceivedBytesPerRpcMinute() {
   return descriptor;
 }
 
-const stats::ViewDescriptor& ServerServerLatencyMinute() {
-  const static stats::ViewDescriptor descriptor =
+const ViewDescriptor& ServerServerLatencyMinute() {
+  const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/server/server_latency/minute")
           .set_measure(kRpcServerServerLatencyMeasureName)
@@ -319,19 +323,19 @@ const stats::ViewDescriptor& ServerServerLatencyMinute() {
   return descriptor;
 }
 
-const stats::ViewDescriptor& ServerCompletedRpcsMinute() {
-  const static stats::ViewDescriptor descriptor =
+const ViewDescriptor& ServerCompletedRpcsMinute() {
+  const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/server/completed_rpcs/minute")
           .set_measure(kRpcServerServerLatencyMeasureName)
-          .set_aggregation(stats::Aggregation::Count())
+          .set_aggregation(Aggregation::Count())
           .add_column(ServerMethodTagKey())
           .add_column(ServerStatusTagKey());
   return descriptor;
 }
 
-const stats::ViewDescriptor& ServerSentMessagesPerRpcMinute() {
-  const static stats::ViewDescriptor descriptor =
+const ViewDescriptor& ServerSentMessagesPerRpcMinute() {
+  const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/server/sent_messages_per_rpc/minute")
           .set_measure(kRpcServerSentMessagesPerRpcMeasureName)
@@ -340,8 +344,8 @@ const stats::ViewDescriptor& ServerSentMessagesPerRpcMinute() {
   return descriptor;
 }
 
-const stats::ViewDescriptor& ServerReceivedMessagesPerRpcMinute() {
-  const static stats::ViewDescriptor descriptor =
+const ViewDescriptor& ServerReceivedMessagesPerRpcMinute() {
+  const static ViewDescriptor descriptor =
       MinuteDescriptor()
           .set_name("grpc.io/server/received_messages_per_rpc/minute")
           .set_measure(kRpcServerReceivedMessagesPerRpcMeasureName)
@@ -351,8 +355,8 @@ const stats::ViewDescriptor& ServerReceivedMessagesPerRpcMinute() {
 }
 
 // client hour
-const stats::ViewDescriptor& ClientSentBytesPerRpcHour() {
-  const static stats::ViewDescriptor descriptor =
+const ViewDescriptor& ClientSentBytesPerRpcHour() {
+  const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/client/sent_bytes_per_rpc/hour")
           .set_measure(kRpcClientSentBytesPerRpcMeasureName)
@@ -361,8 +365,8 @@ const stats::ViewDescriptor& ClientSentBytesPerRpcHour() {
   return descriptor;
 }
 
-const stats::ViewDescriptor& ClientReceivedBytesPerRpcHour() {
-  const static stats::ViewDescriptor descriptor =
+const ViewDescriptor& ClientReceivedBytesPerRpcHour() {
+  const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/client/received_bytes_per_rpc/hour")
           .set_measure(kRpcClientReceivedBytesPerRpcMeasureName)
@@ -371,8 +375,8 @@ const stats::ViewDescriptor& ClientReceivedBytesPerRpcHour() {
   return descriptor;
 }
 
-const stats::ViewDescriptor& ClientRoundtripLatencyHour() {
-  const static stats::ViewDescriptor descriptor =
+const ViewDescriptor& ClientRoundtripLatencyHour() {
+  const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/client/roundtrip_latency/hour")
           .set_measure(kRpcClientRoundtripLatencyMeasureName)
@@ -381,8 +385,8 @@ const stats::ViewDescriptor& ClientRoundtripLatencyHour() {
   return descriptor;
 }
 
-const stats::ViewDescriptor& ClientServerLatencyHour() {
-  const static stats::ViewDescriptor descriptor =
+const ViewDescriptor& ClientServerLatencyHour() {
+  const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/client/server_latency/hour")
           .set_measure(kRpcClientServerLatencyMeasureName)
@@ -391,19 +395,19 @@ const stats::ViewDescriptor& ClientServerLatencyHour() {
   return descriptor;
 }
 
-const stats::ViewDescriptor& ClientCompletedRpcsHour() {
-  const static stats::ViewDescriptor descriptor =
+const ViewDescriptor& ClientCompletedRpcsHour() {
+  const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/client/completed_rpcs/hour")
           .set_measure(kRpcClientRoundtripLatencyMeasureName)
-          .set_aggregation(stats::Aggregation::Count())
+          .set_aggregation(Aggregation::Count())
           .add_column(ClientMethodTagKey())
           .add_column(ClientStatusTagKey());
   return descriptor;
 }
 
-const stats::ViewDescriptor& ClientSentMessagesPerRpcHour() {
-  const static stats::ViewDescriptor descriptor =
+const ViewDescriptor& ClientSentMessagesPerRpcHour() {
+  const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/client/sent_messages_per_rpc/hour")
           .set_measure(kRpcClientSentMessagesPerRpcMeasureName)
@@ -412,8 +416,8 @@ const stats::ViewDescriptor& ClientSentMessagesPerRpcHour() {
   return descriptor;
 }
 
-const stats::ViewDescriptor& ClientReceivedMessagesPerRpcHour() {
-  const static stats::ViewDescriptor descriptor =
+const ViewDescriptor& ClientReceivedMessagesPerRpcHour() {
+  const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/client/received_messages_per_rpc/hour")
           .set_measure(kRpcClientReceivedMessagesPerRpcMeasureName)
@@ -423,8 +427,8 @@ const stats::ViewDescriptor& ClientReceivedMessagesPerRpcHour() {
 }
 
 // server hour
-const stats::ViewDescriptor& ServerSentBytesPerRpcHour() {
-  const static stats::ViewDescriptor descriptor =
+const ViewDescriptor& ServerSentBytesPerRpcHour() {
+  const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/server/sent_bytes_per_rpc/hour")
           .set_measure(kRpcServerSentBytesPerRpcMeasureName)
@@ -433,8 +437,8 @@ const stats::ViewDescriptor& ServerSentBytesPerRpcHour() {
   return descriptor;
 }
 
-const stats::ViewDescriptor& ServerReceivedBytesPerRpcHour() {
-  const static stats::ViewDescriptor descriptor =
+const ViewDescriptor& ServerReceivedBytesPerRpcHour() {
+  const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/server/received_bytes_per_rpc/hour")
           .set_measure(kRpcServerReceivedBytesPerRpcMeasureName)
@@ -443,8 +447,8 @@ const stats::ViewDescriptor& ServerReceivedBytesPerRpcHour() {
   return descriptor;
 }
 
-const stats::ViewDescriptor& ServerServerLatencyHour() {
-  const static stats::ViewDescriptor descriptor =
+const ViewDescriptor& ServerServerLatencyHour() {
+  const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/server/server_latency/hour")
           .set_measure(kRpcServerServerLatencyMeasureName)
@@ -453,19 +457,19 @@ const stats::ViewDescriptor& ServerServerLatencyHour() {
   return descriptor;
 }
 
-const stats::ViewDescriptor& ServerCompletedRpcsHour() {
-  const static stats::ViewDescriptor descriptor =
+const ViewDescriptor& ServerCompletedRpcsHour() {
+  const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/server/completed_rpcs/hour")
           .set_measure(kRpcServerServerLatencyMeasureName)
-          .set_aggregation(stats::Aggregation::Count())
+          .set_aggregation(Aggregation::Count())
           .add_column(ServerMethodTagKey())
           .add_column(ServerStatusTagKey());
   return descriptor;
 }
 
-const stats::ViewDescriptor& ServerSentMessagesPerRpcHour() {
-  const static stats::ViewDescriptor descriptor =
+const ViewDescriptor& ServerSentMessagesPerRpcHour() {
+  const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/server/sent_messages_per_rpc/hour")
           .set_measure(kRpcServerSentMessagesPerRpcMeasureName)
@@ -474,8 +478,8 @@ const stats::ViewDescriptor& ServerSentMessagesPerRpcHour() {
   return descriptor;
 }
 
-const stats::ViewDescriptor& ServerReceivedMessagesPerRpcHour() {
-  const static stats::ViewDescriptor descriptor =
+const ViewDescriptor& ServerReceivedMessagesPerRpcHour() {
+  const static ViewDescriptor descriptor =
       HourDescriptor()
           .set_name("grpc.io/server/received_messages_per_rpc/hour")
           .set_measure(kRpcServerReceivedMessagesPerRpcMeasureName)
@@ -484,4 +488,4 @@ const stats::ViewDescriptor& ServerReceivedMessagesPerRpcHour() {
   return descriptor;
 }
 
-}  // namespace opencensus
+}  // namespace grpc_core

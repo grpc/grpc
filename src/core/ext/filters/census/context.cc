@@ -18,25 +18,34 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "include/grpc/impl/codegen/status.h"
-#include "src/core/ext/census/filter.h"
+#include "src/core/ext/filters/census/context.h"
 
-namespace opencensus {
+#include <grpc/census.h>
+#include <grpc/grpc.h>
+#include <grpc/status.h>
+#include "src/core/lib/surface/api_trace.h"
+#include "src/core/lib/surface/call.h"
+
+namespace grpc_core {
+
+using ::opencensus::CensusContext;
+using ::opencensus::trace::Span;
+using ::opencensus::trace::SpanContext;
 
 void GenerateServerContext(absl::string_view tracing, absl::string_view stats,
                            absl::string_view primary_role,
                            absl::string_view method, CensusContext* context) {
   GrpcTraceContext trace_ctxt;
   TraceContextEncoding::Decode(tracing, &trace_ctxt);
-  trace::SpanContext parent_ctx = trace_ctxt.ToSpanContext();
+  SpanContext parent_ctx = trace_ctxt.ToSpanContext();
   new (context) CensusContext(method, parent_ctx);
 }
 
 void GenerateClientContext(absl::string_view method, CensusContext* ctxt,
                            CensusContext* parent_ctxt) {
   if (parent_ctxt != nullptr) {
-    trace::SpanContext span_ctxt = parent_ctxt->Context();
-    trace::Span span = parent_ctxt->Span();
+    SpanContext span_ctxt = parent_ctxt->Context();
+    Span span = parent_ctxt->Span();
     if (span_ctxt.IsValid()) {
       new (ctxt) CensusContext(method, &span);
       return;
@@ -64,11 +73,11 @@ uint64_t GetOutgoingDataSize(const grpc_call_final_info* final_info) {
   return final_info->stats.transport_stream_stats.outgoing.data_bytes;
 }
 
-trace::SpanContext SpanContextFromCensusContext(const census_context* ctxt) {
+SpanContext SpanContextFromCensusContext(const census_context* ctxt) {
   return reinterpret_cast<const CensusContext*>(ctxt)->Context();
 }
 
-trace::Span SpanFromCensusContext(const census_context* ctxt) {
+Span SpanFromCensusContext(const census_context* ctxt) {
   return reinterpret_cast<const CensusContext*>(ctxt)->Span();
 }
 
@@ -115,4 +124,19 @@ absl::string_view StatusCodeToString(grpc_status_code code) {
   }
 }
 
-}  // namespace opencensus
+}  // namespace grpc_core
+
+// These functions are defined in include/grpc/grpc.h within global namespace.
+void grpc_census_call_set_context(grpc_call* call, census_context* context) {
+  GRPC_API_TRACE("grpc_census_call_set_context(call=%p, census_context=%p)", 2,
+                 (call, context));
+  if (context != nullptr) {
+    grpc_call_context_set(call, GRPC_CONTEXT_TRACING, context, nullptr);
+  }
+}
+
+census_context* grpc_census_call_get_context(grpc_call* call) {
+  GRPC_API_TRACE("grpc_census_call_get_context(call=%p)", 1, (call));
+  return static_cast<census_context*>(
+      grpc_call_context_get(call, GRPC_CONTEXT_TRACING));
+}

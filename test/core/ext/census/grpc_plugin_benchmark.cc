@@ -25,14 +25,14 @@
 #include "benchmark/benchmark.h"
 #include "include/grpc++/grpc++.h"
 #include "opencensus/stats/stats.h"
-#include "src/core/ext/census/grpc_plugin.h"
+#include "src/core/ext/filters/census/grpc_plugin.h"
 #include "test/core/ext/census/echo.grpc.pb.h"
 
-namespace opencensus {
+namespace grpc_core {
 namespace {
 
 absl::once_flag once;
-void RegisterOnce() { absl::call_once(once, RegisterGrpcPlugin); }
+void RegisterOnce() { absl::call_once(once, grpc_census_init); }
 
 class EchoServer final : public testing::EchoService::Service {
   ::grpc::Status Echo(::grpc::ServerContext* context,
@@ -118,6 +118,6 @@ void BM_E2eLatencyCensusEnabled(benchmark::State& state) {
 BENCHMARK(BM_E2eLatencyCensusEnabled);
 
 }  // namespace
-}  // namespace opencensus
+}  // namespace grpc_core
 
 BENCHMARK_MAIN();

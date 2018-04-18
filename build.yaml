@@ -94,14 +94,6 @@ filegroups:
   - grpc_base
   - tsi_interface
   - nanopb
-- name: census
-  public_headers:
-  - include/grpc/census.h
-  src:
-  - src/core/ext/census/grpc_context.cc
-  uses:
-  - grpc_base
-  - nanopb
 - name: cmdline
   headers:
   - test/core/util/cmdline.h
@@ -1398,7 +1390,6 @@ libs:
   - grpc_resolver_fake
   - grpc_server_load_reporting
   - grpc_secure
-  - census
   - grpc_max_age_filter
   - grpc_message_size_filter
   - grpc_deadline_filter
@@ -1501,7 +1492,6 @@ libs:
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
-  - census
   - grpc_max_age_filter
   - grpc_message_size_filter
   - grpc_deadline_filter
@@ -1594,7 +1584,6 @@ libs:
   - grpc++_codegen_base_src
   - grpc_transport_chttp2_client_insecure
   - grpc_transport_chttp2_server_insecure
-  - census
   platforms:
   - linux
   secure: true

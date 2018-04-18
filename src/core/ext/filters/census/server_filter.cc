@@ -18,18 +18,18 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/census/server_filter.h"
+#include "src/core/ext/filters/census/server_filter.h"
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "opencensus/stats/stats.h"
-#include "src/core/ext/census/grpc_plugin.h"
-#include "src/core/ext/census/measures.h"
+#include "src/core/ext/filters/census/grpc_plugin.h"
+#include "src/core/ext/filters/census/measures.h"
 #include "src/core/lib/surface/call.h"
 
-namespace opencensus {
+namespace grpc_core {
 
 constexpr uint32_t CensusServerCallData::kMaxServerStatsLen;
 
@@ -183,7 +183,7 @@ void CensusServerCallData::Destroy(grpc_call_element* elem,
   const uint64_t response_size = GetIncomingDataSize(final_info);
   double elapsed_time_ms = absl::ToDoubleMilliseconds(elapsed_time_);
   grpc_auth_context_release(auth_context_);
-  stats::Record(
+  ::opencensus::stats::Record(
       {{RpcServerSentBytesPerRpc(), static_cast<double>(response_size)},
        {RpcServerReceivedBytesPerRpc(), static_cast<double>(request_size)},
        {RpcServerServerLatency(), elapsed_time_ms},
@@ -195,4 +195,4 @@ void CensusServerCallData::Destroy(grpc_call_element* elem,
   context_.EndSpan();
 }
 
-}  // namespace opencensus
+}  // namespace grpc_core

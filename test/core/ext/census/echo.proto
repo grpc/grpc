@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package opencensus.testing;
+package grpc_core.testing;
 
 message EchoRequest {
   string message = 1;

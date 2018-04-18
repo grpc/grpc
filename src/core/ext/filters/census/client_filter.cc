@@ -18,16 +18,16 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/census/client_filter.h"
+#include "src/core/ext/filters/census/client_filter.h"
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "opencensus/stats/stats.h"
-#include "src/core/ext/census/grpc_plugin.h"
-#include "src/core/ext/census/measures.h"
+#include "src/core/ext/filters/census/grpc_plugin.h"
+#include "src/core/ext/filters/census/measures.h"
 #include "src/core/lib/surface/call.h"
 
-namespace opencensus {
+namespace grpc_core {
 
 constexpr uint32_t CensusClientCallData::kMaxTraceContextLen;
 constexpr uint32_t CensusClientCallData::kMaxTagsLen;
@@ -84,7 +84,9 @@ void CensusClientCallData::StartTransportStreamOpBatch(
     census_context* ctxt = op->get_census_context();
     GenerateClientContext(
         qualified_method_, &context_,
-        (ctxt == nullptr) ? nullptr : reinterpret_cast<CensusContext*>(ctxt));
+        (ctxt == nullptr)
+            ? nullptr
+            : reinterpret_cast<::opencensus::CensusContext*>(ctxt));
     size_t tracing_len =
         context_.TraceContextSerialize(tracing_buf_, kMaxTraceContextLen);
     if (tracing_len > 0) {
@@ -146,7 +148,7 @@ void CensusClientCallData::Destroy(grpc_call_element* elem,
   const uint64_t request_size = GetOutgoingDataSize(final_info);
   const uint64_t response_size = GetIncomingDataSize(final_info);
   double latency_ms = absl::ToDoubleMilliseconds(absl::Now() - start_time_);
-  stats::Record(
+  ::opencensus::stats::Record(
       {{RpcClientSentBytesPerRpc(), static_cast<double>(request_size)},
        {RpcClientReceivedBytesPerRpc(), static_cast<double>(response_size)},
        {RpcClientRoundtripLatency(), latency_ms},
@@ -160,4 +162,4 @@ void CensusClientCallData::Destroy(grpc_call_element* elem,
   context_.EndSpan();
 }
 
-}  // namespace opencensus
+}  // namespace grpc_core

@@ -18,12 +18,15 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/census/measures.h"
+#include "src/core/ext/filters/census/measures.h"
 
 #include "opencensus/stats/stats.h"
-#include "src/core/ext/census/grpc_plugin.h"
+#include "src/core/ext/filters/census/grpc_plugin.h"
 
-namespace opencensus {
+namespace grpc_core {
+
+using ::opencensus::stats::MeasureDouble;
+using ::opencensus::stats::MeasureInt64;
 
 // These measure definitions should be kept in sync across opencensus
 // implementations--see
@@ -39,22 +42,22 @@ constexpr char kCount[] = "1";
 }  // namespace
 
 // Client
-stats::MeasureDouble RpcClientSentBytesPerRpc() {
-  static const auto measure = stats::MeasureDouble::Register(
+MeasureDouble RpcClientSentBytesPerRpc() {
+  static const auto measure = MeasureDouble::Register(
       kRpcClientSentBytesPerRpcMeasureName,
       "Total bytes sent across all request messages per RPC", kUnitBytes);
   return measure;
 }
 
-stats::MeasureDouble RpcClientReceivedBytesPerRpc() {
-  static const auto measure = stats::MeasureDouble::Register(
+MeasureDouble RpcClientReceivedBytesPerRpc() {
+  static const auto measure = MeasureDouble::Register(
       kRpcClientReceivedBytesPerRpcMeasureName,
       "Total bytes received across all response messages per RPC", kUnitBytes);
   return measure;
 }
 
-stats::MeasureDouble RpcClientRoundtripLatency() {
-  static const auto measure = stats::MeasureDouble::Register(
+MeasureDouble RpcClientRoundtripLatency() {
+  static const auto measure = MeasureDouble::Register(
       kRpcClientRoundtripLatencyMeasureName,
       "Time between first byte of request sent to last byte of response "
       "received, or terminal error",
@@ -62,8 +65,8 @@ stats::MeasureDouble RpcClientRoundtripLatency() {
   return measure;
 }
 
-stats::MeasureDouble RpcClientServerLatency() {
-  static const auto measure = stats::MeasureDouble::Register(
+MeasureDouble RpcClientServerLatency() {
+  static const auto measure = MeasureDouble::Register(
       kRpcClientServerLatencyMeasureName,
       "Time between first byte of request received to last byte of response "
       "sent, or terminal error (propagated from the server)",
@@ -71,37 +74,37 @@ stats::MeasureDouble RpcClientServerLatency() {
   return measure;
 }
 
-stats::MeasureInt64 RpcClientSentMessagesPerRpc() {
+MeasureInt64 RpcClientSentMessagesPerRpc() {
   static const auto measure =
-      stats::MeasureInt64::Register(kRpcClientSentMessagesPerRpcMeasureName,
-                                    "Number of messages sent per RPC", kCount);
+      MeasureInt64::Register(kRpcClientSentMessagesPerRpcMeasureName,
+                             "Number of messages sent per RPC", kCount);
   return measure;
 }
 
-stats::MeasureInt64 RpcClientReceivedMessagesPerRpc() {
-  static const auto measure = stats::MeasureInt64::Register(
-      kRpcClientReceivedMessagesPerRpcMeasureName,
-      "Number of messages received per RPC", kCount);
+MeasureInt64 RpcClientReceivedMessagesPerRpc() {
+  static const auto measure =
+      MeasureInt64::Register(kRpcClientReceivedMessagesPerRpcMeasureName,
+                             "Number of messages received per RPC", kCount);
   return measure;
 }
 
 // Server
-stats::MeasureDouble RpcServerSentBytesPerRpc() {
-  static const auto measure = stats::MeasureDouble::Register(
+MeasureDouble RpcServerSentBytesPerRpc() {
+  static const auto measure = MeasureDouble::Register(
       kRpcServerSentBytesPerRpcMeasureName,
       "Total bytes sent across all messages per RPC", kUnitBytes);
   return measure;
 }
 
-stats::MeasureDouble RpcServerReceivedBytesPerRpc() {
-  static const auto measure = stats::MeasureDouble::Register(
+MeasureDouble RpcServerReceivedBytesPerRpc() {
+  static const auto measure = MeasureDouble::Register(
       kRpcServerReceivedBytesPerRpcMeasureName,
       "Total bytes received across all messages per RPC", kUnitBytes);
   return measure;
 }
 
-stats::MeasureDouble RpcServerServerLatency() {
-  static const auto measure = stats::MeasureDouble::Register(
+MeasureDouble RpcServerServerLatency() {
+  static const auto measure = MeasureDouble::Register(
       kRpcServerServerLatencyMeasureName,
       "Time between first byte of request received to last byte of response "
       "sent, or terminal error",
@@ -109,18 +112,18 @@ stats::MeasureDouble RpcServerServerLatency() {
   return measure;
 }
 
-stats::MeasureInt64 RpcServerSentMessagesPerRpc() {
+MeasureInt64 RpcServerSentMessagesPerRpc() {
   static const auto measure =
-      stats::MeasureInt64::Register(kRpcServerSentMessagesPerRpcMeasureName,
-                                    "Number of messages sent per RPC", kCount);
+      MeasureInt64::Register(kRpcServerSentMessagesPerRpcMeasureName,
+                             "Number of messages sent per RPC", kCount);
   return measure;
 }
 
-stats::MeasureInt64 RpcServerReceivedMessagesPerRpc() {
-  static const auto measure = stats::MeasureInt64::Register(
-      kRpcServerReceivedMessagesPerRpcMeasureName,
-      "Number of messages received per RPC", kCount);
+MeasureInt64 RpcServerReceivedMessagesPerRpc() {
+  static const auto measure =
+      MeasureInt64::Register(kRpcServerReceivedMessagesPerRpcMeasureName,
+                             "Number of messages received per RPC", kCount);
   return measure;
 }
 
-}  // namespace opencensus
+}  // namespace grpc_core

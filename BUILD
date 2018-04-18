@@ -483,23 +483,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "census",
-    srcs = [
-        "src/core/ext/census/grpc_context.cc",
-    ],
-    external_deps = [
-        "nanopb",
-    ],
-    language = "c++",
-    public_hdrs = [
-        "include/grpc/census.h",
-    ],
-    deps = [
-        "grpc_base",
-    ],
-)
-
-grpc_cc_library(
     name = "gpr_base",
     srcs = [
         "src/core/lib/gpr/alloc.cc",
@@ -983,7 +966,6 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         # standard plugins
-        "census",
         "grpc_deadline_filter",
         "grpc_client_authority_filter",
         "grpc_lb_policy_pick_first",
@@ -1960,24 +1942,24 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_opencensus_plugin",
     srcs = [
-        "src/core/ext/census/client_filter.cc",
-        "src/core/ext/census/server_filter.cc",
-        "src/core/ext/census/channel_filter.cc",
-        "src/core/ext/census/filter.cc",
-        "src/core/ext/census/grpc_context.cc",
-        "src/core/ext/census/grpc_plugin.cc",
-        "src/core/ext/census/measures.cc",
-        "src/core/ext/census/rpc_encoding.cc",
-        "src/core/ext/census/views.cc",
+        "src/core/ext/filters/census/client_filter.cc",
+        "src/core/ext/filters/census/server_filter.cc",
+        "src/core/ext/filters/census/channel_filter.cc",
+        "src/core/ext/filters/census/context.cc",
+        "src/core/ext/filters/census/grpc_plugin.cc",
+        "src/core/ext/filters/census/measures.cc",
+        "src/core/ext/filters/census/rpc_encoding.cc",
+        "src/core/ext/filters/census/views.cc",
     ],
     hdrs = [
-        "src/core/ext/census/client_filter.h",
-        "src/core/ext/census/server_filter.h",
-        "src/core/ext/census/channel_filter.h",
-        "src/core/ext/census/filter.h",
-        "src/core/ext/census/grpc_plugin.h",
-        "src/core/ext/census/measures.h",
-        "src/core/ext/census/rpc_encoding.h",
+        "include/grpc/census.h",
+        "src/core/ext/filters/census/client_filter.h",
+        "src/core/ext/filters/census/server_filter.h",
+        "src/core/ext/filters/census/channel_filter.h",
+        "src/core/ext/filters/census/context.h",
+        "src/core/ext/filters/census/grpc_plugin.h",
+        "src/core/ext/filters/census/measures.h",
+        "src/core/ext/filters/census/rpc_encoding.h",
     ],
     language = "c++",
     external_deps = [
