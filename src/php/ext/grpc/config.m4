@@ -4,6 +4,14 @@ PHP_ARG_ENABLE(grpc, whether to enable grpc support,
 PHP_ARG_ENABLE(coverage, whether to include code coverage symbols,
 [  --enable-coverage       Enable coverage support], no, no)
 
+PHP_ARG_ENABLE(tests, whether to compile helper methods for tests,
+[  --enable-tests          Enable tests methods], no, no)
+
+dnl Check whether to enable tests
+if test "$PHP_TESTS" != "no"; then
+  CPPFLAGS="$CPPFLAGS -DGRPC_PHP_DEBUG"
+fi
+
 if test "$PHP_GRPC" != "no"; then
   dnl Write more examples of tests here...
 

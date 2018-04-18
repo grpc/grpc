@@ -534,6 +534,7 @@ static void php_grpc_channel_plink_dtor(php_grpc_zend_resource *rsrc
   }
 }
 
+#ifdef GRPC_PHP_DEBUG
 /**
  * Clean all channels in the persistent.
  * @return void
@@ -580,6 +581,7 @@ PHP_METHOD(Channel, getPersistentList) {
     add_assoc_zval(return_value, le->channel->target, ret_arr);
   PHP_GRPC_HASH_FOREACH_END()
 }
+#endif
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_construct, 0, 0, 2)
   ZEND_ARG_INFO(0, target)
@@ -601,11 +603,13 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_close, 0, 0, 0)
 ZEND_END_ARG_INFO()
 
+#ifdef GRPC_PHP_DEBUG
 ZEND_BEGIN_ARG_INFO_EX(arginfo_cleanPersistentList, 0, 0, 0)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_getPersistentList, 0, 0, 0)
 ZEND_END_ARG_INFO()
+#endif
 
 static zend_function_entry channel_methods[] = {
   PHP_ME(Channel, __construct, arginfo_construct,
@@ -618,10 +622,12 @@ static zend_function_entry channel_methods[] = {
          ZEND_ACC_PUBLIC)
   PHP_ME(Channel, close, arginfo_close,
          ZEND_ACC_PUBLIC)
+  #ifdef GRPC_PHP_DEBUG
   PHP_ME(Channel, cleanPersistentList, arginfo_cleanPersistentList,
          ZEND_ACC_PUBLIC)
   PHP_ME(Channel, getPersistentList, arginfo_getPersistentList,
          ZEND_ACC_PUBLIC)
+  #endif
   PHP_FE_END
 };
 
