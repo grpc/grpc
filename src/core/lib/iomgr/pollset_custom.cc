@@ -71,7 +71,7 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
   grpc_millis now = grpc_core::ExecCtx::Get()->Now();
   size_t timeout = 0;
   if (deadline > now) {
-    timeout = (size_t)(deadline - now);
+    timeout = static_cast<size_t>(deadline - now);
   }
   // We yield here because the poll() call might yield
   // control back to the application
