@@ -1530,6 +1530,12 @@ static void run_poll(void* args) {
 
 // This function overrides poll() to handle condition variable wakeup fds
 static int cvfd_poll(struct pollfd* fds, nfds_t nfds, int timeout) {
+  if (timeout == 0) {
+    // Don't bother using background threads for polling if timeout is 0,
+    // poll-cv might not wait for a poll to return otherwise.
+    // https://github.com/grpc/grpc/issues/13298
+    return poll(fds, nfds, 0);
+  }
   unsigned int i;
   int res, idx;
   grpc_cv_node* pollcv;

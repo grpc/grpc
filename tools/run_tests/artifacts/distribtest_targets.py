@@ -164,7 +164,7 @@ class PythonDistribTest(object):
             self.name,
             'tools/dockerfile/distribtest/python_%s_%s' % (self.docker_suffix,
                                                            self.arch),
-            'test/distrib/python/run_distrib_test.sh',
+            'test/distrib/python/run_binary_distrib_test.sh',
             copy_rel_path='test/distrib')
 
     def __str__(self):
@@ -288,6 +288,7 @@ def targets():
         CppDistribTest('linux', 'x64', 'jessie', 'routeguide'),
         CppDistribTest('linux', 'x64', 'jessie', 'cmake'),
         CppDistribTest('linux', 'x64', 'jessie', 'cmake_as_externalproject'),
+        CppDistribTest('linux', 'x64', 'jessie', 'cmake_as_submodule'),
         CppDistribTest('windows', 'x86', testcase='cmake'),
         CppDistribTest('windows', 'x86', testcase='cmake_as_externalproject'),
         CSharpDistribTest('linux', 'x64', 'wheezy'),

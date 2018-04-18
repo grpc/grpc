@@ -132,7 +132,7 @@ fi
 # Perform build operations #
 ############################
 
-# Instnatiate the virtualenv, preferring to do so from the relevant python
+# Instantiate the virtualenv, preferring to do so from the relevant python
 # version. Even if these commands fail (e.g. on Windows due to name conflicts)
 # it's possible that the virtualenv is still usable and we trust the tester to
 # be able to 'figure it out' instead of us e.g. doing potentially expensive and
@@ -141,6 +141,11 @@ fi
  $HOST_PYTHON -m virtualenv -p "$PYTHON" "$VENV" ||
  true)
 VENV_PYTHON=$(script_realpath "$VENV/$VENV_RELATIVE_PYTHON")
+
+# See https://github.com/grpc/grpc/issues/14815 for more context. We cannot rely
+# on pip to upgrade itself because if pip is too old, it may not have the required
+# TLS version to run `pip install`.
+curl https://bootstrap.pypa.io/get-pip.py | $VENV_PYTHON
 
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
 # Python gets confused when parsing paths.
@@ -158,7 +163,7 @@ case "$VENV" in
   ;;
 esac
 
-$VENV_PYTHON -m pip install --upgrade pip==9.0.1
+$VENV_PYTHON -m pip install --upgrade pip==9.0.2
 $VENV_PYTHON -m pip install setuptools
 $VENV_PYTHON -m pip install cython
 $VENV_PYTHON -m pip install six enum34 protobuf futures

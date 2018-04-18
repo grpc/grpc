@@ -43,7 +43,7 @@ class _State(object):
 
 def _is_cancellation_event(event):
     return (event.tag is _RECEIVE_CLOSE_ON_SERVER_TAG and
-            event.batch_operations[0].received_cancelled)
+            event.batch_operations[0].cancelled())
 
 
 class _Handler(object):

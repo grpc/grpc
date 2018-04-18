@@ -64,11 +64,11 @@ config_setting(
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "gorgeous"
+g_stands_for = "glorious"
 
 core_version = "6.0.0-dev"
 
-version = "1.11.0-dev"
+version = "1.12.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -141,7 +141,6 @@ GRPCXX_SRCS = [
     "src/cpp/server/server_posix.cc",
     "src/cpp/thread_manager/thread_manager.cc",
     "src/cpp/util/byte_buffer_cc.cc",
-    "src/cpp/util/slice_cc.cc",
     "src/cpp/util/status.cc",
     "src/cpp/util/string_ref.cc",
     "src/cpp/util/time_cc.cc",
@@ -245,6 +244,8 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/support/byte_buffer.h",
     "include/grpcpp/support/channel_arguments.h",
     "include/grpcpp/support/config.h",
+    "include/grpcpp/support/proto_buffer_reader.h",
+    "include/grpcpp/support/proto_buffer_writer.h",
     "include/grpcpp/support/slice.h",
     "include/grpcpp/support/status.h",
     "include/grpcpp/support/status_code_enum.h",
@@ -307,16 +308,8 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "grpc_base",
-        "grpc_deadline_filter",
         "grpc_http_filters",
-        "grpc_lb_policy_pick_first",
-        "grpc_max_age_filter",
-        "grpc_message_size_filter",
-        "grpc_resolver_dns_native",
-        "grpc_resolver_sockaddr",
-        "grpc_server_load_reporting",
         "grpc_transport_chttp2_client_secure",
-        "grpc_transport_chttp2_server_secure",
         "grpc_transport_cronet_client_secure",
     ],
 )
@@ -1715,6 +1708,7 @@ grpc_cc_library(
         "src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.h",
         "src/core/tsi/alts/handshaker/transport_security_common_api.h",
     ],
+    public_hdrs = GRPC_SECURE_PUBLIC_HDRS, 
     external_deps = [
         "nanopb",
     ],
@@ -1879,6 +1873,8 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = [
         "include/grpc++/impl/codegen/proto_utils.h",
+        "include/grpcpp/impl/codegen/proto_buffer_reader.h",
+        "include/grpcpp/impl/codegen/proto_buffer_writer.h",
         "include/grpcpp/impl/codegen/proto_utils.h",
     ],
     deps = [

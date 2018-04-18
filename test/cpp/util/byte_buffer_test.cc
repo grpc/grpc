@@ -16,7 +16,8 @@
  *
  */
 
-#include <grpcpp/support/byte_buffer.h>
+#include <grpc++/support/byte_buffer.h>
+#include <grpcpp/impl/grpc_library.h>
 
 #include <cstring>
 #include <vector>
@@ -27,6 +28,9 @@
 #include <gtest/gtest.h>
 
 namespace grpc {
+
+static internal::GrpcLibraryInitializer g_gli_initializer;
+
 namespace {
 
 const char* kContent1 = "hello xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";

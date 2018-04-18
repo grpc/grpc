@@ -84,6 +84,7 @@ void php_grpc_delete_persistent_list_entry(char *key, php_grpc_int key_len
 
 typedef struct _channel_persistent_le {
   grpc_channel_wrapper *channel;
+  size_t ref_count;
 } channel_persistent_le_t;
 
 

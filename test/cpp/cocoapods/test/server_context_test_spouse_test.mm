@@ -18,7 +18,7 @@
 
 // Hack TEST macro of gTest and make they conform XCTest style. We only
 // need test name (b), not test case name (a).
-#define TEST(a,b) - (void)test ## b
+#define TEST(a, b) -(void)test##b
 #define ASSERT_TRUE XCTAssert
 #define ASSERT_EQ XCTAssertEqual
 
@@ -38,12 +38,10 @@ const char key2[] = "metadata-key2";
 const char val1[] = "metadata-val1";
 const char val2[] = "metadata-val2";
 
-bool ClientMetadataContains(const grpc::ServerContext& context,
-                            const grpc::string_ref& key,
+bool ClientMetadataContains(const grpc::ServerContext& context, const grpc::string_ref& key,
                             const grpc::string_ref& value) {
   const auto& client_metadata = context.client_metadata();
-  for (auto iter = client_metadata.begin(); iter != client_metadata.end();
-       ++iter) {
+  for (auto iter = client_metadata.begin(); iter != client_metadata.end(); ++iter) {
     if (iter->first == key && iter->second == value) {
       return true;
     }
