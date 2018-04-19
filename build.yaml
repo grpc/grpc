@@ -1887,35 +1887,6 @@ libs:
   - src/cpp/server/load_reporter/load_data_store.cc
   deps:
   - grpc++
-- name: lb_load_reporter
-  build: private
-  language: c++
-  headers:
-  - gens/src/proto/grpc/lb/v1/load_reporter.grpc.pb.h
-  - src/cpp/server/load_reporter/get_cpu_stats.h
-  - src/cpp/server/load_reporter/load_reporter.h
-  src:
-  - src/proto/grpc/lb/v1/load_reporter.proto
-  - src/cpp/server/load_reporter/get_cpu_stats_linux.cc
-  - src/cpp/server/load_reporter/get_cpu_stats_macos.cc
-  - src/cpp/server/load_reporter/get_cpu_stats_unsupported.cc
-  - src/cpp/server/load_reporter/get_cpu_stats_windows.cc
-  - src/cpp/server/load_reporter/load_reporter.cc
-  deps:
-  - grpc++
-  - lb_load_data_store
-- name: lb_load_reporter_async_service_impl
-  build: private
-  language: c++
-  headers:
-  - src/cpp/server/load_reporter/load_reporter_async_service_impl.h
-  - src/proto/grpc/lb/v1/load_reporter.grpc.pb.h
-  src:
-  - src/proto/grpc/lb/v1/load_reporter.proto
-  - src/cpp/server/load_reporter/load_reporter_async_service_impl.cc
-  deps:
-  - grpc++
-  - lb_load_reporter
 - name: qps
   build: private
   language: c++
@@ -4792,22 +4763,6 @@ targets:
   - test/cpp/server/load_reporter/load_data_store_test.cc
   deps:
   - lb_load_data_store
-  - lb_load_reporter
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: lb_load_reporter_test
-  gtest: true
-  build: test
-  language: c++
-  src:
-  - test/cpp/server/load_reporter/load_reporter_test.cc
-  deps:
-  - lb_load_data_store
-  - lb_load_reporter
   - grpc++_test_util
   - grpc_test_util
   - grpc++

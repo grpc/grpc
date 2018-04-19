@@ -25,7 +25,6 @@
 #include <gtest/gtest.h>
 
 #include "src/cpp/server/load_reporter/load_data_store.h"
-#include "src/cpp/server/load_reporter/load_reporter.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 

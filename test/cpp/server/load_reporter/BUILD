@@ -26,21 +26,6 @@ grpc_cc_test(
     ],
     deps = [
         "//:lb_load_data_store",
-        "//:lb_load_reporter",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "load_reporter_test",
-    srcs = ["load_reporter_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    deps = [
-        "//:lb_load_data_store",
-        "//:lb_load_reporter",
-        "//src/proto/grpc/lb/v1:load_reporter_proto",
         "//test/core/util:grpc_test_util",
     ],
 )

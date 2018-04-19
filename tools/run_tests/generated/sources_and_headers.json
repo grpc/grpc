@@ -3903,8 +3903,7 @@
       "grpc++", 
       "grpc++_test_util", 
       "grpc_test_util", 
-      "lb_load_data_store", 
-      "lb_load_reporter"
+      "lb_load_data_store"
     ], 
     "headers": [], 
     "is_filegroup": false, 
@@ -3912,27 +3911,6 @@
     "name": "lb_load_data_store_test", 
     "src": [
       "test/cpp/server/load_reporter/load_data_store_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
-      "grpc_test_util", 
-      "lb_load_data_store", 
-      "lb_load_reporter"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "lb_load_reporter_test", 
-    "src": [
-      "test/cpp/server/load_reporter/load_reporter_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -7501,58 +7479,6 @@
       "src/cpp/server/load_reporter/load_data_store.cc", 
       "src/cpp/server/load_reporter/load_data_store.h", 
       "src/cpp/server/load_reporter/util.h"
-    ], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "grpc++", 
-      "lb_load_data_store"
-    ], 
-    "headers": [
-      "gens/src/proto/grpc/lb/v1/load_reporter.grpc.pb.h", 
-      "src/cpp/server/load_reporter/get_cpu_stats.h", 
-      "src/cpp/server/load_reporter/load_reporter.h", 
-      "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h", 
-      "src/proto/grpc/lb/v1/load_reporter.pb.h", 
-      "src/proto/grpc/lb/v1/load_reporter_mock.grpc.pb.h"
-    ], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "lb_load_reporter", 
-    "src": [
-      "gens/src/proto/grpc/lb/v1/load_reporter.grpc.pb.h", 
-      "src/cpp/server/load_reporter/get_cpu_stats.h", 
-      "src/cpp/server/load_reporter/get_cpu_stats_linux.cc", 
-      "src/cpp/server/load_reporter/get_cpu_stats_macos.cc", 
-      "src/cpp/server/load_reporter/get_cpu_stats_unsupported.cc", 
-      "src/cpp/server/load_reporter/get_cpu_stats_windows.cc", 
-      "src/cpp/server/load_reporter/load_reporter.cc", 
-      "src/cpp/server/load_reporter/load_reporter.h"
-    ], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "grpc++", 
-      "lb_load_reporter"
-    ], 
-    "headers": [
-      "src/cpp/server/load_reporter/load_reporter_async_service_impl.h", 
-      "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h", 
-      "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h", 
-      "src/proto/grpc/lb/v1/load_reporter.pb.h", 
-      "src/proto/grpc/lb/v1/load_reporter_mock.grpc.pb.h"
-    ], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "lb_load_reporter_async_service_impl", 
-    "src": [
-      "src/cpp/server/load_reporter/load_reporter_async_service_impl.cc", 
-      "src/cpp/server/load_reporter/load_reporter_async_service_impl.h", 
-      "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h"
     ], 
     "third_party": false, 
     "type": "lib"
