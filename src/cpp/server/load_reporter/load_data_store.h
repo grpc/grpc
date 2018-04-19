@@ -122,8 +122,7 @@ class LoadRecordValue {
     bytes_recv_ += other.bytes_recv_;
     latency_ms_ += other.latency_ms_;
     for (const auto& p : other.call_metrics_) {
-      call_metrics_.insert({p.first, CallMetricValue()})
-          .first->second.MergeFrom(p.second);
+      call_metrics_[p.first].MergeFrom(p.second);
     }
   }
 
@@ -170,6 +169,9 @@ class LoadRecordValue {
 // Stores the data associated with a particular LB ID.
 class PerBalancerStore {
  public:
+  using LoadRecords =
+      std::unordered_map<LoadRecordKey, LoadRecordValue, LoadRecordKey::Hasher>;
+
   PerBalancerStore(grpc::string lb_id, grpc::string load_key)
       : lb_id_(std::move(lb_id)), load_key_(std::move(load_key)) {}
 
@@ -194,20 +196,18 @@ class PerBalancerStore {
            "]";
   }
 
+  void ClearContainer() { container_.clear(); }
+
   // Getters.
   const grpc::string& lb_id() const { return lb_id_; }
   const grpc::string& load_key() const { return load_key_; }
-  std::unordered_map<LoadRecordKey, LoadRecordValue, LoadRecordKey::Hasher>&
-  container() {
-    return container_;
-  }
+  const LoadRecords& container() const { return container_; }
 
  private:
   grpc::string lb_id_;
   // TODO(juanlishen): Use bytestring protobuf type?
   grpc::string load_key_;
-  std::unordered_map<LoadRecordKey, LoadRecordValue, LoadRecordKey::Hasher>
-      container_;
+  LoadRecords container_;
   uint64_t num_calls_in_progress_ = 0;
   uint64_t last_reported_num_calls_in_progress_ = 0;
   bool suspended_ = false;
@@ -230,10 +230,9 @@ class PerHostStore {
   // resumed.
   void ReportStreamClosed(const grpc::string& lb_id);
 
-  std::shared_ptr<PerBalancerStore> FindPerBalancerStore(
-      const grpc::string& lb_id) const;
+  PerBalancerStore* FindPerBalancerStore(const grpc::string& lb_id) const;
 
-  const std::set<std::shared_ptr<PerBalancerStore>> GetAssignedStores(
+  const std::set<PerBalancerStore*>* GetAssignedStores(
       const grpc::string& lb_id) const;
 
  private:
@@ -241,7 +240,7 @@ class PerHostStore {
   // itself, and records the LB ID to the load key.
   void InternalAddLb(const grpc::string& lb_id, const grpc::string& load_key);
 
-  void AssignOrphanedStore(std::shared_ptr<PerBalancerStore> orphaned_store,
+  void AssignOrphanedStore(PerBalancerStore* orphaned_store,
                            const grpc::string& new_receiver);
 
   std::unordered_map<grpc::string, std::set<grpc::string>>
@@ -249,12 +248,12 @@ class PerHostStore {
 
   // Key: LB ID. The key set includes all the LB IDs that have been
   // allocated for reporting streams so far.
-  std::unordered_map<grpc::string, std::shared_ptr<PerBalancerStore>>
+  std::unordered_map<grpc::string, std::unique_ptr<PerBalancerStore>>
       per_balancer_stores_;
 
   // Key: LB ID. The key set includes the LB IDs of the balancers that are
   // currently receiving report.
-  std::unordered_map<grpc::string, std::set<std::shared_ptr<PerBalancerStore>>>
+  std::unordered_map<grpc::string, std::set<PerBalancerStore*>>
       assigned_stores_;
 };
 
@@ -269,11 +268,11 @@ class PerHostStore {
 // PerBalancerStore.
 class LoadDataStore {
  public:
-  std::shared_ptr<PerBalancerStore> FindPerBalancerStore(
-      const grpc::string& hostname, const grpc::string& lb_id) const;
+  PerBalancerStore* FindPerBalancerStore(const grpc::string& hostname,
+                                         const grpc::string& lb_id) const;
 
-  const std::set<std::shared_ptr<PerBalancerStore>> GetAssignedStores(
-      const string& hostname, const string& lb_id);
+  const std::set<PerBalancerStore*>* GetAssignedStores(const string& hostname,
+                                                       const string& lb_id);
 
   // If a PerBalancerStore can be found by the hostname and LB ID in
   // LoadRecordKey, the load data will be merged to that store. Otherwise,

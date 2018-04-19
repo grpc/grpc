@@ -19,43 +19,14 @@
 #include <iomanip>
 #include <sstream>
 
+#include "src/cpp/server/load_reporter/get_cpu_stats.h"
 #include "src/cpp/server/load_reporter/load_reporter.h"
 
 namespace grpc {
 namespace load_reporter {
 
-std::pair<double, double> CpuStatsProviderDefaultImpl::GetCpuStats() {
-  uint64_t busy = 0, total = 0;
-  // Read the accumulative CPU stats.
-#if defined(GPR_LINUX)
-  FILE* fp;
-  fp = fopen("/proc/stat", "r");
-  uint64_t user, nice, system, idle;
-  fscanf(fp, "cpu %lu %lu %lu %lu", &user, &nice, &system, &idle);
-  fclose(fp);
-  busy = user + nice + system;
-  total = busy + idle;
-  // TODO(juanlishen): Not verified.
-#elif defined(GPR_WINDOWS)
-  uint64_t idle, kernel, user;
-  if (GetSystemTimes(&idle, &kernel, &user) != 0) {
-    total = kernal + user;
-    busy = total - idle;
-  }
-#elif defined(GPR_APPLE)
-  host_cpu_load_info_data_t cpuinfo;
-  mach_msg_type_number_t count = HOST_CPU_LOAD_INFO_COUNT;
-  if (host_statistics(mach_host_self(), HOST_CPU_LOAD_INFO,
-                      (host_info_t)&cpuinfo, &count) == KERN_SUCCESS) {
-    unsigned long long totalTicks = 0;
-    for (int i = 0; i < CPU_STATE_MAX; i++) totalTicks += cpuinfo.cpu_ticks[i];
-    return CalculateCPULoad(cpuinfo.cpu_ticks[CPU_STATE_IDLE], totalTicks);
-  } else
-    return -1.0f;
-#else
-  GPR_ASSERT(false);
-#endif
-  return std::make_pair(busy, total);
+std::pair<uint64_t, uint64_t> CpuStatsProviderDefaultImpl::GetCpuStats() {
+  return get_cpu_stats();
 }
 
 grpc::string LoadReporter::GenerateLbId() {
@@ -123,9 +94,10 @@ LoadReporter::GenerateLoads(const grpc::string& hostname,
                             const grpc::string& lb_id) {
   std::lock_guard<std::mutex> lock(store_mu_);
   auto assigned_stores = load_data_store_.GetAssignedStores(hostname, lb_id);
-  GPR_ASSERT(!assigned_stores.empty());
+  GPR_ASSERT(assigned_stores != nullptr);
+  GPR_ASSERT(!assigned_stores->empty());
   ::google::protobuf::RepeatedPtrField<::grpc::lb::v1::Load> loads;
-  for (auto& per_balancer_store : assigned_stores) {
+  for (auto& per_balancer_store : *assigned_stores) {
     GPR_ASSERT(!per_balancer_store->IsSuspended());
     if (!per_balancer_store->container().empty()) {
       for (const auto& entry : per_balancer_store->container()) {
@@ -161,7 +133,7 @@ LoadReporter::GenerateLoads(const grpc::string& hostname,
           AttachOrphanLoadId(load, per_balancer_store);
         }
       }
-      per_balancer_store->container().clear();
+      per_balancer_store->ClearContainer();
     }
     if (per_balancer_store->IsNumCallsInProgressChangedSinceLastReport()) {
       auto load = loads.Add();
@@ -175,9 +147,8 @@ LoadReporter::GenerateLoads(const grpc::string& hostname,
   return loads;
 }
 
-void LoadReporter::AttachOrphanLoadId(
-    ::grpc::lb::v1::Load* load,
-    const std::shared_ptr<PerBalancerStore> per_balancer_store) {
+void LoadReporter::AttachOrphanLoadId(::grpc::lb::v1::Load* load,
+                                      PerBalancerStore* per_balancer_store) {
   if (per_balancer_store->lb_id() == kInvalidLbId) {
     load->set_load_key_unknown(true);
   } else {

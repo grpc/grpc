@@ -1290,9 +1290,14 @@ grpc_cc_library(
 grpc_cc_library(
     name = "lb_load_reporter",
     srcs = [
+        "src/cpp/server/load_reporter/get_cpu_stats_linux.cc",
+        "src/cpp/server/load_reporter/get_cpu_stats_macos.cc",
+        "src/cpp/server/load_reporter/get_cpu_stats_unsupported.cc",
+        "src/cpp/server/load_reporter/get_cpu_stats_windows.cc",
         "src/cpp/server/load_reporter/load_reporter.cc",
     ],
     hdrs = [
+        "src/cpp/server/load_reporter/get_cpu_stats.h",
         "src/cpp/server/load_reporter/load_reporter.h",
     ],
     language = "c++",

@@ -1654,6 +1654,10 @@
       ],
       'sources': [
         'src/proto/grpc/lb/v1/load_reporter.proto',
+        'src/cpp/server/load_reporter/get_cpu_stats_linux.cc',
+        'src/cpp/server/load_reporter/get_cpu_stats_macos.cc',
+        'src/cpp/server/load_reporter/get_cpu_stats_unsupported.cc',
+        'src/cpp/server/load_reporter/get_cpu_stats_windows.cc',
         'src/cpp/server/load_reporter/load_reporter.cc',
       ],
     },

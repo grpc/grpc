@@ -33,7 +33,11 @@ namespace grpc {
 namespace testing {
 namespace {
 
-using namespace ::grpc::load_reporter;
+using ::grpc::load_reporter::CallMetricValue;
+using ::grpc::load_reporter::LoadDataStore;
+using ::grpc::load_reporter::LoadRecordKey;
+using ::grpc::load_reporter::LoadRecordValue;
+using ::grpc::load_reporter::PerBalancerStore;
 
 class LoadDataStoreTest : public ::testing::Test {
  public:
@@ -45,16 +49,16 @@ class LoadDataStoreTest : public ::testing::Test {
   // created for <hostname, lb_id, and load_key>.
   bool PerBalancerStoresContains(
       const LoadDataStore& load_data_store,
-      const std::set<std::shared_ptr<PerBalancerStore>>& per_balancer_stores,
+      const std::set<PerBalancerStore*>* per_balancer_stores,
       const grpc::string hostname, const grpc::string lb_id,
       const grpc::string load_key) {
     auto original_per_balancer_store =
-        load_data_store.FindPerBalancerStore(hostname, lb_id).get();
+        load_data_store.FindPerBalancerStore(hostname, lb_id);
     EXPECT_NE(original_per_balancer_store, nullptr);
     EXPECT_EQ(original_per_balancer_store->lb_id(), lb_id);
     EXPECT_EQ(original_per_balancer_store->load_key(), load_key);
-    for (auto per_balancer_store : per_balancer_stores) {
-      if (per_balancer_store.get() == original_per_balancer_store) {
+    for (auto per_balancer_store : *per_balancer_stores) {
+      if (per_balancer_store == original_per_balancer_store) {
         return true;
       }
     }
@@ -216,7 +220,7 @@ TEST_F(LoadDataStoreTest, HostTemporarilyLoseAllStreams) {
   // The stores for different hosts won't mix, even if the load key is the same.
   auto assigned_to_lb_id_2 =
       load_data_store.GetAssignedStores(kHostname2, kLbId2);
-  EXPECT_EQ(assigned_to_lb_id_2.size(), 2U);
+  EXPECT_EQ(assigned_to_lb_id_2->size(), 2U);
   EXPECT_TRUE(PerBalancerStoresContains(load_data_store, assigned_to_lb_id_2,
                                         kHostname2, kLbId2, kLoadKey1));
   EXPECT_TRUE(PerBalancerStoresContains(load_data_store, assigned_to_lb_id_2,
@@ -233,7 +237,7 @@ TEST_F(LoadDataStoreTest, HostTemporarilyLoseAllStreams) {
   // The resumed stores are assigned to the new LB.
   auto assigned_to_lb_id_3 =
       load_data_store.GetAssignedStores(kHostname1, kLbId3);
-  EXPECT_EQ(assigned_to_lb_id_3.size(), 3U);
+  EXPECT_EQ(assigned_to_lb_id_3->size(), 3U);
   EXPECT_TRUE(PerBalancerStoresContains(load_data_store, assigned_to_lb_id_3,
                                         kHostname1, kLbId1, kLoadKey1));
   EXPECT_TRUE(PerBalancerStoresContains(load_data_store, assigned_to_lb_id_3,
@@ -288,7 +292,7 @@ TEST_F(LoadDataStoreTest, ExactlyOnceAssignment) {
   std::set<grpc::string> reported_lb_ids;
   for (size_t i = num_close; i < num_create; ++i) {
     for (auto assigned_store :
-         load_data_store.GetAssignedStores(kHostname1, FormatLbId(i))) {
+         *load_data_store.GetAssignedStores(kHostname1, FormatLbId(i))) {
       EXPECT_TRUE(reported_lb_ids.insert(assigned_store->lb_id()).second);
     }
   }

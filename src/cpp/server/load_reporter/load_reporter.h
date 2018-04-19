@@ -55,14 +55,14 @@ class CpuStatsProvider {
   virtual ~CpuStatsProvider() = default;
 
   // Gets the cumulative used CPU and total CPU resource.
-  virtual std::pair<double, double> GetCpuStats() = 0;
+  virtual std::pair<uint64_t, uint64_t> GetCpuStats() = 0;
 };
 
 // The default implementation reads CPU busy and idle jiffies from the
 // system to calculate CPU utilization.
 class CpuStatsProviderDefaultImpl : public CpuStatsProvider {
  public:
-  std::pair<double, double> GetCpuStats() override;
+  std::pair<uint64_t, uint64_t> GetCpuStats() override;
 };
 
 // A thread-safe class that maintains all the load data and load reporting
@@ -110,8 +110,8 @@ class LoadReporter {
     std::chrono::system_clock::time_point end_time;
     uint64_t rpcs;
     uint64_t errors;
-    double cpu_usage;
-    double cpu_limit;
+    uint64_t cpu_usage;
+    uint64_t cpu_limit;
   };
 
   bool IsRecordInWindow(const LoadBalancingFeedbackRecord& record,
@@ -125,9 +125,8 @@ class LoadReporter {
 
   void AppendNewFeedbackRecord(uint64_t rpcs, uint64_t errors);
 
-  void AttachOrphanLoadId(
-      ::grpc::lb::v1::Load* load,
-      const std::shared_ptr<PerBalancerStore> per_balancer_store);
+  void AttachOrphanLoadId(::grpc::lb::v1::Load* load,
+                          PerBalancerStore* per_balancer_store);
 
   std::atomic<int64_t> next_lb_id_{0};
   const std::chrono::seconds feedback_sample_window_seconds_;

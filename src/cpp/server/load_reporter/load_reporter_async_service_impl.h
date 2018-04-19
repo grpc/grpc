@@ -135,8 +135,9 @@ class LoadReporterAsyncServiceImpl {
   std::unique_ptr<LoadReporter> load_reporter_;
 
   Alarm next_fetch_and_sample_alarm_;
-  // This has to be a raw pointer to be trivially destructible.
-  static LoadReporterAsyncServiceImpl* instance_;
+  // This has to be a raw pointer to be trivially destructible. Making it atomic
+  // is OK though.
+  static std::atomic<LoadReporterAsyncServiceImpl*> instance_;
 };
 
 LoadReporterAsyncServiceImpl* LoadReporterAsyncServiceImpl::instance_ = nullptr;

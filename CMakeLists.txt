@@ -5025,6 +5025,10 @@ add_library(lb_load_reporter
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_reporter.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_reporter.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_reporter.grpc.pb.h
+  src/cpp/server/load_reporter/get_cpu_stats_linux.cc
+  src/cpp/server/load_reporter/get_cpu_stats_macos.cc
+  src/cpp/server/load_reporter/get_cpu_stats_unsupported.cc
+  src/cpp/server/load_reporter/get_cpu_stats_windows.cc
   src/cpp/server/load_reporter/load_reporter.cc
 )
 

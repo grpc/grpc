@@ -29,32 +29,27 @@ constexpr uint8_t LB_ID_LEN = 8;
 template <typename K, typename V>
 bool UnorderedMapOfSetEraseKeyValue(std::unordered_map<K, std::set<V>>& map,
                                     const K& key, const V& value) {
-  return map.find(key) != map.end() ? map.find(key)->second.erase(value)
-                                    : false;
-};
-
-template <typename K, typename V>
-std::set<K> UnorderedMapOfSetGetKeys(
-    const std::unordered_map<K, std::set<V>>& map) {
-  std::set<K> keys;
-  for (auto it : map) {
-    keys.insert(it.first);
+  auto it = map.find(key);
+  if (it != map.end()) {
+    auto erased = it->second.erase(value);
+    if (it->second.size() == 0) {
+      map.erase(key);
+    }
+    return erased;
   }
-  return keys;
-};
-
-template <typename K, typename V>
-std::set<V> UnorderedMapOfSetFindAll(
-    const std::unordered_map<K, std::set<V>>& map, const K& key) {
-  return map.find(key) != map.end() ? map.find(key)->second : std::set<V>();
+  return false;
 };
 
 template <typename K, typename V>
 std::set<V> UnorderedMapOfSetExtract(std::unordered_map<K, std::set<V>>& map,
                                      const K& key) {
-  auto values = UnorderedMapOfSetFindAll(map, key);
-  map.erase(key);
-  return values;
+  auto it = map.find(key);
+  if (it != map.end()) {
+    auto set = map.find(key)->second;
+    map.erase(key);
+    return set;
+  }
+  return {};
 };
 
 #endif  // GRPC_SRC_CPP_SERVER_LOAD_REPORTER_UTIL_H

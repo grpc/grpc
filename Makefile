@@ -7250,6 +7250,10 @@ endif
 
 LIBLB_LOAD_REPORTER_SRC = \
     $(GENDIR)/src/proto/grpc/lb/v1/load_reporter.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_reporter.grpc.pb.cc \
+    src/cpp/server/load_reporter/get_cpu_stats_linux.cc \
+    src/cpp/server/load_reporter/get_cpu_stats_macos.cc \
+    src/cpp/server/load_reporter/get_cpu_stats_unsupported.cc \
+    src/cpp/server/load_reporter/get_cpu_stats_windows.cc \
     src/cpp/server/load_reporter/load_reporter.cc \
 
 PUBLIC_HEADERS_CXX += \
@@ -7296,6 +7300,10 @@ ifneq ($(NO_DEPS),true)
 -include $(LIBLB_LOAD_REPORTER_OBJS:.o=.dep)
 endif
 endif
+$(OBJDIR)/$(CONFIG)/src/cpp/server/load_reporter/get_cpu_stats_linux.o: $(GENDIR)/src/proto/grpc/lb/v1/load_reporter.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_reporter.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/src/cpp/server/load_reporter/get_cpu_stats_macos.o: $(GENDIR)/src/proto/grpc/lb/v1/load_reporter.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_reporter.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/src/cpp/server/load_reporter/get_cpu_stats_unsupported.o: $(GENDIR)/src/proto/grpc/lb/v1/load_reporter.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_reporter.grpc.pb.cc
+$(OBJDIR)/$(CONFIG)/src/cpp/server/load_reporter/get_cpu_stats_windows.o: $(GENDIR)/src/proto/grpc/lb/v1/load_reporter.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_reporter.grpc.pb.cc
 $(OBJDIR)/$(CONFIG)/src/cpp/server/load_reporter/load_reporter.o: $(GENDIR)/src/proto/grpc/lb/v1/load_reporter.pb.cc $(GENDIR)/src/proto/grpc/lb/v1/load_reporter.grpc.pb.cc
 
 
@@ -24095,6 +24103,10 @@ src/cpp/common/secure_channel_arguments.cc: $(OPENSSL_DEP)
 src/cpp/common/secure_create_auth_context.cc: $(OPENSSL_DEP)
 src/cpp/ext/proto_server_reflection.cc: $(OPENSSL_DEP)
 src/cpp/ext/proto_server_reflection_plugin.cc: $(OPENSSL_DEP)
+src/cpp/server/load_reporter/get_cpu_stats_linux.cc: $(OPENSSL_DEP)
+src/cpp/server/load_reporter/get_cpu_stats_macos.cc: $(OPENSSL_DEP)
+src/cpp/server/load_reporter/get_cpu_stats_unsupported.cc: $(OPENSSL_DEP)
+src/cpp/server/load_reporter/get_cpu_stats_windows.cc: $(OPENSSL_DEP)
 src/cpp/server/load_reporter/load_data_store.cc: $(OPENSSL_DEP)
 src/cpp/server/load_reporter/load_reporter.cc: $(OPENSSL_DEP)
 src/cpp/server/load_reporter/load_reporter_async_service_impl.cc: $(OPENSSL_DEP)
