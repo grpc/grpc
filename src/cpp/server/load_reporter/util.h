@@ -24,7 +24,7 @@
 #include <vector>
 
 const grpc::string kInvalidLbId = "<INVALID_LBID_238dsb234890rb>";
-constexpr uint8_t LB_ID_LEN = 8;
+const uint8_t kLbIdLen = 8;
 
 template <typename K, typename V>
 bool UnorderedMapOfSetEraseKeyValue(std::unordered_map<K, std::set<V>>& map,
