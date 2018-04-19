@@ -57,13 +57,22 @@ class TraceFlag {
 
   const char* name() const { return name_; }
 
+// This following define may be commented out to ensure that the compiler
+// deletes any "if (tracer.enabled()) {...}" codeblocks. This is useful to
+// test the performance impact tracers have on the system.
+//
+// #define COMPILE_OUT_ALL_TRACERS_IN_OPT_BUILD
+#ifdef COMPILE_OUT_ALL_TRACERS_IN_OPT_BUILD
+  bool enabled() { return false; }
+#else
   bool enabled() {
 #ifdef GRPC_THREADSAFE_TRACER
     return gpr_atm_no_barrier_load(&value_) != 0;
 #else
     return value_;
-#endif
+#endif  // GRPC_THREADSAFE_TRACER
   }
+#endif  // COMPILE_OUT_ALL_TRACERS_IN_OPT_BUILD
 
  private:
   friend void grpc_core::testing::grpc_tracer_enable_flag(TraceFlag* flag);
