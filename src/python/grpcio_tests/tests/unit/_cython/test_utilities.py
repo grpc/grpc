@@ -41,7 +41,7 @@ class SimpleFuture(object):
         self._thread.join()
         if self._error:
             # TODO(atash): re-raise exceptions in a way that preserves tracebacks
-            raise self._error
+            raise self._error  # pylint: disable=raising-bad-type
         return self._result
 
 

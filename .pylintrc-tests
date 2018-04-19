@@ -58,7 +58,6 @@ disable=
 	wrong-import-order,
 	non-iterator-returned,
 	undefined-loop-variable,
-	raising-bad-type,
 	# -- END OF TEST-SPECIFIC SUPPRESSIONS --
 
 
