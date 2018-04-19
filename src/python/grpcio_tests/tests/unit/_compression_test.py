@@ -52,9 +52,9 @@ class _MethodHandler(grpc.RpcMethodHandler):
         self.stream_unary = None
         self.stream_stream = None
         if self.request_streaming and self.response_streaming:
-            self.stream_stream = lambda x, y: handle_stream(x, y)
+            self.stream_stream = handle_stream
         elif not self.request_streaming and not self.response_streaming:
-            self.unary_unary = lambda x, y: handle_unary(x, y)
+            self.unary_unary = handle_unary
 
 
 class _GenericHandler(grpc.GenericRpcHandler):
