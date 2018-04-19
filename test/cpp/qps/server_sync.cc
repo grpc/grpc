@@ -26,7 +26,7 @@
 #include <grpcpp/server_context.h>
 
 #include "src/core/lib/gpr/host_port.h"
-#include "src/proto/grpc/testing/services.grpc.pb.h"
+#include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "test/cpp/qps/server.h"
 #include "test/cpp/qps/usage_timer.h"
 
