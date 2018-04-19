@@ -37,6 +37,7 @@ using ::grpc::load_reporter::LoadDataStore;
 using ::grpc::load_reporter::LoadRecordKey;
 using ::grpc::load_reporter::LoadRecordValue;
 using ::grpc::load_reporter::PerBalancerStore;
+using ::grpc::load_reporter::kInvalidLbId;
 
 class LoadDataStoreTest : public ::testing::Test {
  public:

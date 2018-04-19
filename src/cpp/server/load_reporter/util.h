@@ -23,6 +23,9 @@
 #include <unordered_map>
 #include <vector>
 
+namespace grpc {
+namespace load_reporter {
+
 const grpc::string kInvalidLbId = "<INVALID_LBID_238dsb234890rb>";
 const uint8_t kLbIdLen = 8;
 
@@ -51,5 +54,8 @@ std::set<V> UnorderedMapOfSetExtract(std::unordered_map<K, std::set<V>>& map,
   }
   return {};
 };
+
+}  // namespace load_reporter
+}  // namespace grpc
 
 #endif  // GRPC_SRC_CPP_SERVER_LOAD_REPORTER_UTIL_H
