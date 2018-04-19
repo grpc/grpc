@@ -25,7 +25,7 @@ class SimpleFuture(object):
         def wrapped_function():
             try:
                 self._result = function(*args, **kwargs)
-            except Exception as error:
+            except Exception as error:  # pylint: disable=broad-except
                 self._error = error
 
         self._result = None

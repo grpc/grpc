@@ -40,7 +40,6 @@ disable=
 	too-many-locals,
 	redefined-variable-type,
 	redefined-outer-name,
-	broad-except,
 	ungrouped-imports,
 	too-many-branches,
 	too-many-arguments,
