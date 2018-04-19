@@ -49,7 +49,6 @@ disable=
 	too-many-format-args,
 	too-many-return-statements,
 	too-many-statements,
-	function-redefined,
 	wildcard-import,
 	line-too-long,
 	wrong-import-position,
