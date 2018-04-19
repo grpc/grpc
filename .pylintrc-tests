@@ -54,7 +54,6 @@ disable=
 	unnecessary-lambda,
 	wildcard-import,
 	line-too-long,
-	unreachable,
 	wrong-import-position,
 	wrong-import-order,
 	non-iterator-returned,
