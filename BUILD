@@ -483,6 +483,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "census",
+    srcs = [
+        "src/core/ext/filters/census/grpc_context.cc",
+    ],
+    external_deps = [
+        "nanopb",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "include/grpc/census.h",
+    ],
+    deps = [
+        "grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "gpr_base",
     srcs = [
         "src/core/lib/gpr/alloc.cc",
@@ -966,6 +983,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         # standard plugins
+        "census",
         "grpc_deadline_filter",
         "grpc_client_authority_filter",
         "grpc_lb_policy_pick_first",
@@ -1946,6 +1964,7 @@ grpc_cc_library(
         "src/core/ext/filters/census/server_filter.cc",
         "src/core/ext/filters/census/channel_filter.cc",
         "src/core/ext/filters/census/context.cc",
+        "src/core/ext/filters/census/grpc_context.cc",
         "src/core/ext/filters/census/grpc_plugin.cc",
         "src/core/ext/filters/census/measures.cc",
         "src/core/ext/filters/census/rpc_encoding.cc",

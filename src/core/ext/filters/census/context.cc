@@ -20,10 +20,8 @@
 
 #include "src/core/ext/filters/census/context.h"
 
-#include <grpc/census.h>
-#include <grpc/grpc.h>
-#include "src/core/lib/surface/api_trace.h"
-#include "src/core/lib/surface/call.h"
+// #include "src/core/lib/surface/api_trace.h"
+// #include "src/core/lib/surface/call.h"
 
 namespace grpc_core {
 
@@ -124,18 +122,3 @@ absl::string_view StatusCodeToString(grpc_status_code code) {
 }
 
 }  // namespace grpc_core
-
-// These functions are defined in include/grpc/grpc.h within global namespace.
-void grpc_census_call_set_context(grpc_call* call, census_context* context) {
-  GRPC_API_TRACE("grpc_census_call_set_context(call=%p, census_context=%p)", 2,
-                 (call, context));
-  if (context != nullptr) {
-    grpc_call_context_set(call, GRPC_CONTEXT_TRACING, context, nullptr);
-  }
-}
-
-census_context* grpc_census_call_get_context(grpc_call* call) {
-  GRPC_API_TRACE("grpc_census_call_get_context(call=%p)", 1, (call));
-  return static_cast<census_context*>(
-      grpc_call_context_get(call, GRPC_CONTEXT_TRACING));
-}

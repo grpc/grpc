@@ -3553,6 +3553,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
     src/core/ext/filters/load_reporting/server_load_reporting_filter.cc \
     src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc \
+    src/core/ext/filters/census/grpc_context.cc \
     src/core/ext/filters/max_age/max_age_filter.cc \
     src/core/ext/filters/message_size/message_size_filter.cc \
     src/core/ext/filters/http/client_authority_filter.cc \
@@ -3595,6 +3596,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/slice_buffer.h \
     include/grpc/status.h \
     include/grpc/support/workaround_list.h \
+    include/grpc/census.h \
 
 LIBGRPC_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_SRC))))
 
@@ -4819,6 +4821,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
     src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc \
     src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
+    src/core/ext/filters/census/grpc_context.cc \
     src/core/ext/filters/max_age/max_age_filter.cc \
     src/core/ext/filters/message_size/message_size_filter.cc \
     src/core/ext/filters/http/client_authority_filter.cc \
@@ -4860,6 +4863,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/slice_buffer.h \
     include/grpc/status.h \
     include/grpc/support/workaround_list.h \
+    include/grpc/census.h \
 
 LIBGRPC_UNSECURE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC_UNSECURE_SRC))))
 
@@ -5588,6 +5592,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc \
     src/core/ext/transport/chttp2/server/chttp2_server.cc \
+    src/core/ext/filters/census/grpc_context.cc \
 
 PUBLIC_HEADERS_CXX += \
     include/grpc++/alarm.h \
@@ -5792,6 +5797,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/stub_options.h \
     include/grpcpp/impl/codegen/sync_stream.h \
     include/grpcpp/impl/codegen/time.h \
+    include/grpc/census.h \
 
 LIBGRPC++_CRONET_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBGRPC++_CRONET_SRC))))
 

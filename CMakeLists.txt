@@ -1203,6 +1203,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
   src/core/ext/filters/load_reporting/server_load_reporting_filter.cc
   src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc
+  src/core/ext/filters/census/grpc_context.cc
   src/core/ext/filters/max_age/max_age_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/filters/http/client_authority_filter.cc
@@ -1280,6 +1281,7 @@ foreach(_hdr
   include/grpc/slice_buffer.h
   include/grpc/status.h
   include/grpc/support/workaround_list.h
+  include/grpc/census.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -2499,6 +2501,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
+  src/core/ext/filters/census/grpc_context.cc
   src/core/ext/filters/max_age/max_age_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/filters/http/client_authority_filter.cc
@@ -2574,6 +2577,7 @@ foreach(_hdr
   include/grpc/slice_buffer.h
   include/grpc/status.h
   include/grpc/support/workaround_list.h
+  include/grpc/census.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -3275,6 +3279,7 @@ add_library(grpc++_cronet
   src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc
   src/core/ext/transport/chttp2/server/chttp2_server.cc
+  src/core/ext/filters/census/grpc_context.cc
 )
 
 if(WIN32 AND MSVC)
@@ -3515,6 +3520,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/stub_options.h
   include/grpcpp/impl/codegen/sync_stream.h
   include/grpcpp/impl/codegen/time.h
+  include/grpc/census.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
