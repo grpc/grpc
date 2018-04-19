@@ -42,10 +42,11 @@ If you are a user of gRPC C#, go to Usage section above.
 - The easiest way to build is using the `run_tests.py` script that will take care of building the `grpc_csharp_ext` native library:
   ```
   # Install dependencies (Check for similar packages on your OS)
-  $ sudo pacman -S python2 python2-six python2-google-api-python-client
+  $ sudo pacman -S python2 python2-six python2-google-api-python-client dotnet-sdk
   
   # From the gRPC repository root
-  $ python2 tools/run_tests/run_tests.py -c dbg -l csharp --build_only
+  git submodule update --init
+  $ DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1 python2 tools/run_tests/run_tests.py -c dbg -l csharp --build_only --disable_auto_set_flakes
   ```
 
 - Use Visual Studio 2017 (on Windows) to open the solution `Grpc.sln` or use Visual Studio Code with C# extension (on Linux and Mac). gRPC C# code has been migrated to
