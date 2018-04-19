@@ -39,7 +39,6 @@ disable=
 	too-many-public-methods,
 	too-many-locals,
 	redefined-variable-type,
-	old-style-class,
 	redefined-outer-name,
 	bare-except,
 	broad-except,
