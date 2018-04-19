@@ -722,16 +722,24 @@ TEST(AddressSortingTest, TestStableSortV4CompatAndSiteLocalAddresses) {
 }
 
 int main(int argc, char** argv) {
-  const char* resolver = gpr_getenv("GRPC_DNS_RESOLVER");
+  char* resolver = gpr_getenv("GRPC_DNS_RESOLVER");
   if (resolver == nullptr || strlen(resolver) == 0) {
     gpr_setenv("GRPC_DNS_RESOLVER", "ares");
   } else if (strcmp("ares", resolver)) {
     gpr_log(GPR_INFO, "GRPC_DNS_RESOLVER != ares: %s.", resolver);
   }
+  gpr_free(resolver);
   grpc_test_init(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
   auto result = RUN_ALL_TESTS();
+  grpc_shutdown();
+  // Test sequential and nested inits and shutdowns.
+  grpc_init();
+  grpc_init();
+  grpc_shutdown();
+  grpc_shutdown();
+  grpc_init();
   grpc_shutdown();
   return result;
 }
