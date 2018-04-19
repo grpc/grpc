@@ -60,7 +60,6 @@ disable=
 	non-iterator-returned,
 	undefined-loop-variable,
 	raising-bad-type,
-	bad-continuation,
 	# -- END OF TEST-SPECIFIC SUPPRESSIONS --
 
 
