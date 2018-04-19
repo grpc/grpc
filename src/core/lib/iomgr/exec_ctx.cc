@@ -46,11 +46,6 @@ static void exec_ctx_run(grpc_closure* closure, grpc_error* error) {
   GRPC_ERROR_UNREF(error);
 }
 
-static void exec_ctx_sched(grpc_closure* closure, grpc_error* error) {
-  grpc_closure_list_append(grpc_core::ExecCtx::Get()->closure_list(), closure,
-                           error);
-}
-
 static gpr_timespec g_start_time;
 
 static gpr_atm timespec_to_atm_round_down(gpr_timespec ts) {
@@ -102,7 +97,7 @@ grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec ts) {
 }
 
 static const grpc_closure_scheduler_vtable exec_ctx_scheduler_vtable = {
-    exec_ctx_run, exec_ctx_sched, "exec_ctx"};
+    exec_ctx_run, exec_ctx_run, "exec_ctx"};
 static grpc_closure_scheduler exec_ctx_scheduler = {&exec_ctx_scheduler_vtable};
 grpc_closure_scheduler* grpc_schedule_on_exec_ctx = &exec_ctx_scheduler;
 
