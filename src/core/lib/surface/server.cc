@@ -1042,7 +1042,7 @@ void grpc_server_start(grpc_server* server) {
   server->starting = true;
   GRPC_CLOSURE_SCHED(
       GRPC_CLOSURE_CREATE(start_listeners, server,
-                          grpc_executor_scheduler(GRPC_EXECUTOR_SHORT)),
+                          grpc_schedule_on_exec_ctx),
       GRPC_ERROR_NONE);
 }
 
