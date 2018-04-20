@@ -290,7 +290,7 @@ class CLanguage(object):
             self._docker_distro, self._make_options = self._compiler_options(
                 self.args.use_docker, self.args.compiler)
         if args.iomgr_platform == "uv":
-            cflags = '-DGRPC_UV -DGRPC_CUSTOM_IOMGR_THREAD_CHECK -DGRPC_CUSTOM_SOCKET '
+            cflags = '-DGRPC_UV -DGRPC_CUSTOM_IOMGR_THREAD_CHECK -DGRPC_CUSTOM_SOCKET -DGRPC_UV_HOLD_LOOP '
             try:
                 cflags += subprocess.check_output(
                     ['pkg-config', '--cflags', 'libuv']).strip() + ' '
