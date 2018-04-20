@@ -26,7 +26,7 @@
 #include "include/grpc++/grpc++.h"
 #include "opencensus/stats/stats.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
-#include "test/core/ext/census/echo.grpc.pb.h"
+#include "test/cpp/ext/filters/census/echo.grpc.pb.h"
 
 namespace grpc {
 namespace {

@@ -29,9 +29,8 @@ cc_grpc_library(
   use_external = True,
 )
 
-grpc_cc_library(
-    name = "grpc_opencensus_stats_plugin_test_lib",
-    testonly = True,
+grpc_cc_test(
+    name = "grpc_opencensus_plugin_test",
     srcs = [
         "stats_plugin_end2end_test.cc",
     ],
@@ -53,14 +52,7 @@ grpc_cc_library(
 )
 
 grpc_cc_test(
-  name = "grpc_opencensus_stats_plugin_test",
-  deps = [
-    ":grpc_opencensus_stats_plugin_test_lib",
-  ],
-)
-
-grpc_cc_test(
-    name = "grpc_plugin_benchmark",
+    name = "grpc_opencensus_plugin_benchmark",
     srcs = ["grpc_plugin_benchmark.cc"],
     language = "C++",
     deps = [
