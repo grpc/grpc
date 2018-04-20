@@ -50,6 +50,7 @@ some configuration as environment variables that can be set.
   - channel_stack_builder - traces information about channel stacks being built
   - executor - traces grpc's internal thread pool ('the executor')
   - glb - traces the grpclb load balancer
+  - handshaker - traces handshaking state
   - http - traces state in the http2 transport engine
   - http2_stream_state - traces all http2 stream state mutations.
   - http1 - traces HTTP/1.x operations performed by gRPC

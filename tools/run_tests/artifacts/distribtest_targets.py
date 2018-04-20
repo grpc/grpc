@@ -164,7 +164,7 @@ class PythonDistribTest(object):
             self.name,
             'tools/dockerfile/distribtest/python_%s_%s' % (self.docker_suffix,
                                                            self.arch),
-            'test/distrib/python/run_distrib_test.sh',
+            'test/distrib/python/run_binary_distrib_test.sh',
             copy_rel_path='test/distrib')
 
     def __str__(self):

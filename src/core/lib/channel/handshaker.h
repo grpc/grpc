@@ -84,6 +84,9 @@ typedef struct {
                        grpc_tcp_server_acceptor* acceptor,
                        grpc_closure* on_handshake_done,
                        grpc_handshaker_args* args);
+
+  /// The name of the handshaker, for debugging purposes.
+  const char* name;
 } grpc_handshaker_vtable;
 
 /// Base struct.  To subclass, make this the first member of the
@@ -102,6 +105,7 @@ void grpc_handshaker_do_handshake(grpc_handshaker* handshaker,
                                   grpc_tcp_server_acceptor* acceptor,
                                   grpc_closure* on_handshake_done,
                                   grpc_handshaker_args* args);
+const char* grpc_handshaker_name(grpc_handshaker* handshaker);
 
 ///
 /// grpc_handshake_manager

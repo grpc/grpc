@@ -158,6 +158,8 @@ END2END_TESTS = {
         needs_client_channel=True, proxyable=False),
     'retry_non_retriable_status': test_options(needs_client_channel=True,
                                                proxyable=False),
+    'retry_non_retriable_status_before_recv_trailing_metadata_started':
+        test_options(needs_client_channel=True, proxyable=False),
     'retry_recv_initial_metadata': test_options(needs_client_channel=True,
                                                 proxyable=False),
     'retry_recv_message': test_options(needs_client_channel=True,

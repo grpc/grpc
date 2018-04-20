@@ -406,7 +406,7 @@ static void security_handshaker_do_handshake(grpc_handshaker* handshaker,
 
 static const grpc_handshaker_vtable security_handshaker_vtable = {
     security_handshaker_destroy, security_handshaker_shutdown,
-    security_handshaker_do_handshake};
+    security_handshaker_do_handshake, "security"};
 
 static grpc_handshaker* security_handshaker_create(
     tsi_handshaker* handshaker, grpc_security_connector* connector) {
@@ -456,7 +456,7 @@ static void fail_handshaker_do_handshake(grpc_handshaker* handshaker,
 
 static const grpc_handshaker_vtable fail_handshaker_vtable = {
     fail_handshaker_destroy, fail_handshaker_shutdown,
-    fail_handshaker_do_handshake};
+    fail_handshaker_do_handshake, "security_fail"};
 
 static grpc_handshaker* fail_handshaker_create() {
   grpc_handshaker* h = static_cast<grpc_handshaker*>(gpr_malloc(sizeof(*h)));

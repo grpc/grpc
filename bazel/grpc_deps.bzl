@@ -85,8 +85,8 @@ def grpc_deps():
     if "com_google_protobuf" not in native.existing_rules():
         native.http_archive(
             name = "com_google_protobuf",
-            strip_prefix = "protobuf-2761122b810fe8861004ae785cc3ab39f384d342",
-            url = "https://github.com/google/protobuf/archive/2761122b810fe8861004ae785cc3ab39f384d342.tar.gz",
+            strip_prefix = "protobuf-b5fbb742af122b565925987e65c08957739976a7",
+            url = "https://github.com/google/protobuf/archive/b5fbb742af122b565925987e65c08957739976a7.tar.gz",
         )
 
     if "com_github_google_googletest" not in native.existing_rules():
@@ -130,12 +130,12 @@ def grpc_deps():
     if "com_github_bazelbuild_bazeltoolchains" not in native.existing_rules():
         native.http_archive(
             name = "com_github_bazelbuild_bazeltoolchains",
-            strip_prefix = "bazel-toolchains-b850ccdf53fed1ccab7670f52d6b297d74348d1b",
+            strip_prefix = "bazel-toolchains-44200e0c026d86c53470d107b3697a3e46469c43",
             urls = [
-                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/b850ccdf53fed1ccab7670f52d6b297d74348d1b.tar.gz",
-                "https://github.com/bazelbuild/bazel-toolchains/archive/b850ccdf53fed1ccab7670f52d6b297d74348d1b.tar.gz",
+                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/44200e0c026d86c53470d107b3697a3e46469c43.tar.gz",
+                "https://github.com/bazelbuild/bazel-toolchains/archive/44200e0c026d86c53470d107b3697a3e46469c43.tar.gz",
             ],
-            sha256 = "d84d6b2fe88ef99963febf91ddce33503eed14c155ace922e2122271b483be64",
+            sha256 = "699b55a6916c687f4b7dc092dbbf5f64672cde0dc965f79717735ec4e5416556",
         )
 
 # TODO: move some dependencies from "grpc_deps" here?

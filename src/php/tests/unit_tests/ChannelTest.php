@@ -28,6 +28,9 @@ class ChannelTest extends PHPUnit_Framework_TestCase
         if (!empty($this->channel)) {
             $this->channel->close();
         }
+        $channel_clean_persistent =
+            new Grpc\Channel('localhost:50010', []);
+        $channel_clean_persistent->cleanPersistentList();
     }
 
     public function testInsecureCredentials()
@@ -380,6 +383,11 @@ class ChannelTest extends PHPUnit_Framework_TestCase
         // close channel1
         $this->channel1->close();
 
+        // channel2 is now in SHUTDOWN state
+        $state = $this->channel2->getConnectivityState();
+        $this->assertEquals(GRPC\CHANNEL_FATAL_FAILURE, $state);
+
+        // calling it again will result in an exception because the
         // channel is already closed
         $state = $this->channel2->getConnectivityState();
     }

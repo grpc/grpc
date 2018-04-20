@@ -21,6 +21,6 @@ root=$(pwd)
 cd src/php/bin
 source ./determine_extension_dir.sh
 # in some jenkins macos machine, somehow the PHP build script can't find libgrpc.dylib
-export DYLD_LIBRARY_PATH=$root/libs/$config
+export DYLD_LIBRARY_PATH=$root/libs/$CONFIG
 php $extension_dir -d max_execution_time=300 $(which phpunit) -v --debug \
   ../tests/unit_tests

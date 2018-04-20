@@ -23,7 +23,7 @@
 #import "NSDictionary+GRPC.h"
 
 // Used by the setter.
-static void CheckIsNonNilASCII(NSString *name, NSString* value) {
+static void CheckIsNonNilASCII(NSString *name, NSString *value) {
   if (!value) {
     [NSException raise:NSInvalidArgumentException format:@"%@ cannot be nil", name];
   }
@@ -38,14 +38,18 @@ static void CheckKeyValuePairIsValid(NSString *key, id value) {
   if ([key hasSuffix:@"-bin"]) {
     if (![value isKindOfClass:NSData.class]) {
       [NSException raise:NSInvalidArgumentException
-                  format:@"Expected NSData value for header %@ ending in \"-bin\", "
-       @"instead got %@", key, value];
+                  format:
+                      @"Expected NSData value for header %@ ending in \"-bin\", "
+                      @"instead got %@",
+                      key, value];
     }
   } else {
     if (![value isKindOfClass:NSString.class]) {
       [NSException raise:NSInvalidArgumentException
-                  format:@"Expected NSString value for header %@ not ending in \"-bin\", "
-       @"instead got %@", key, value];
+                  format:
+                      @"Expected NSString value for header %@ not ending in \"-bin\", "
+                      @"instead got %@",
+                      key, value];
     }
     CheckIsNonNilASCII(@"Text header value", (NSString *)value);
   }
@@ -85,8 +89,8 @@ static void CheckKeyValuePairIsValid(NSString *key, id value) {
   return self;
 }
 
-- (instancetype)initWithObjects:(const id  _Nonnull __unsafe_unretained *)objects
-                        forKeys:(const id<NSCopying>  _Nonnull __unsafe_unretained *)keys
+- (instancetype)initWithObjects:(const id _Nonnull __unsafe_unretained *)objects
+                        forKeys:(const id<NSCopying> _Nonnull __unsafe_unretained *)keys
                           count:(NSUInteger)cnt {
   return [self init];
 }
@@ -118,7 +122,7 @@ static void CheckKeyValuePairIsValid(NSString *key, id value) {
   return _delegate.count;
 }
 
-- (NSEnumerator * _Nonnull)keyEnumerator {
+- (NSEnumerator *_Nonnull)keyEnumerator {
   return [_delegate keyEnumerator];
 }
 

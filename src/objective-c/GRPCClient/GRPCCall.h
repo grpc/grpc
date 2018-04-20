@@ -147,7 +147,8 @@ typedef NS_ENUM(NSUInteger, GRPCCallSafety) {
   GRPCCallSafetyDefault = 0,
   /** Signal that the call is idempotent. gRPC is free to use PUT verb. */
   GRPCCallSafetyIdempotentRequest = 1,
-  /** Signal that the call is cacheable and will not affect server state. gRPC is free to use GET verb. */
+  /** Signal that the call is cacheable and will not affect server state. gRPC is free to use GET
+     verb. */
   GRPCCallSafetyCacheableRequest = 2,
 };
 
@@ -167,7 +168,7 @@ extern id const kGRPCTrailersKey;
  * The authority for the RPC. If nil, the default authority will be used. This property must be nil
  * when Cronet transport is enabled.
  */
-@property (atomic, copy, readwrite) NSString *serverName;
+@property(atomic, copy, readwrite) NSString *serverName;
 
 /**
  * The timeout for the RPC call in seconds. If set to 0, the call will not timeout. If set to
@@ -265,7 +266,7 @@ extern id const kGRPCTrailersKey;
 
 /** This protocol is kept for backwards compatibility with existing code. */
 DEPRECATED_MSG_ATTRIBUTE("Use NSDictionary or NSMutableDictionary instead.")
-@protocol GRPCRequestHeaders <NSObject>
+@protocol GRPCRequestHeaders<NSObject>
 @property(nonatomic, readonly) NSUInteger count;
 
 - (id)objectForKeyedSubscript:(id)key;
@@ -278,6 +279,6 @@ DEPRECATED_MSG_ATTRIBUTE("Use NSDictionary or NSMutableDictionary instead.")
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated"
 /** This is only needed for backwards-compatibility. */
-@interface NSMutableDictionary (GRPCRequestHeaders) <GRPCRequestHeaders>
+@interface NSMutableDictionary (GRPCRequestHeaders)<GRPCRequestHeaders>
 @end
 #pragma clang diagnostic pop
