@@ -16,41 +16,41 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_FILTERS_CENSUS_CLIENT_FILTER_H
-#define GRPC_CORE_EXT_FILTERS_CENSUS_CLIENT_FILTER_H
+#ifndef GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_SERVER_FILTER_H
+#define GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_SERVER_FILTER_H
 
 #include <grpc/support/port_platform.h>
 
 #include "absl/strings/string_view.h"
+#include "absl/time/clock.h"
 #include "absl/time/time.h"
-#include "src/core/ext/filters/census/channel_filter.h"
-#include "src/core/ext/filters/census/context.h"
+#include "include/grpc/grpc_security.h"
+#include "src/cpp/ext/filters/census/channel_filter.h"
+#include "src/cpp/ext/filters/census/context.h"
 
-namespace grpc_core {
+namespace grpc {
 
 // A CallData class will be created for every grpc call within a channel. It is
-// used to store data and methods specific to that call. CensusClientCallData is
+// used to store data and methods specific to that call. CensusServerCallData is
 // thread-compatible, however typically only 1 thread should be interacting with
 // a call at a time.
-class CensusClientCallData : public grpc::CallData {
+class CensusServerCallData : public grpc::CallData {
  public:
-  // Maximum size of trace context is sent on the wire.
-  static constexpr uint32_t kMaxTraceContextLen = 64;
-  // Maximum size of tags that are sent on the wire.
-  static constexpr uint32_t kMaxTagsLen = 2048;
+  // Maximum size of server stats that are sent on the wire.
+  static constexpr uint32_t kMaxServerStatsLen = 16;
 
-  CensusClientCallData()
-      : recv_trailing_metadata_(nullptr),
-        initial_on_done_recv_trailing_metadata_(nullptr),
+  CensusServerCallData()
+      : gc_(nullptr),
+        auth_context_(nullptr),
+        recv_initial_metadata_(nullptr),
+        initial_on_done_recv_initial_metadata_(nullptr),
         initial_on_done_recv_message_(nullptr),
-        elapsed_time_(0),
         recv_message_(nullptr),
         recv_message_count_(0),
         sent_message_count_(0) {
-    memset(&stats_bin_, 0, sizeof(grpc_linked_mdelem));
-    memset(&tracing_bin_, 0, sizeof(grpc_linked_mdelem));
+    memset(&census_bin_, 0, sizeof(grpc_linked_mdelem));
     memset(&path_, 0, sizeof(grpc_slice));
-    memset(&on_done_recv_trailing_metadata_, 0, sizeof(grpc_closure));
+    memset(&on_done_recv_initial_metadata_, 0, sizeof(grpc_closure));
     memset(&on_done_recv_message_, 0, sizeof(grpc_closure));
   }
 
@@ -63,42 +63,39 @@ class CensusClientCallData : public grpc::CallData {
   void StartTransportStreamOpBatch(grpc_call_element* elem,
                                    grpc::TransportStreamOpBatch* op) override;
 
-  static void OnDoneRecvTrailingMetadataCb(void* user_data, grpc_error* error);
-
-  static void OnDoneSendInitialMetadataCb(void* user_data, grpc_error* error);
+  static void OnDoneRecvInitialMetadataCb(void* user_data, grpc_error* error);
 
   static void OnDoneRecvMessageCb(void* user_data, grpc_error* error);
 
  private:
-  ::opencensus::CensusContext context_;
-  // Metadata elements for tracing and census stats data.
-  grpc_linked_mdelem stats_bin_;
-  grpc_linked_mdelem tracing_bin_;
-  // Client method.
+  CensusContext context_;
+  // server method
   absl::string_view method_;
   std::string qualified_method_;
   grpc_slice path_;
-  // The recv trailing metadata callbacks.
-  grpc_metadata_batch* recv_trailing_metadata_;
-  grpc_closure* initial_on_done_recv_trailing_metadata_;
-  grpc_closure on_done_recv_trailing_metadata_;
+  // Pointer to the grpc_call element
+  grpc_call* gc_;
+  // Authorization context for the call.
+  grpc_auth_context* auth_context_;
+  // Metadata element for census stats.
+  grpc_linked_mdelem census_bin_;
+  // recv callback
+  grpc_metadata_batch* recv_initial_metadata_;
+  grpc_closure* initial_on_done_recv_initial_metadata_;
+  grpc_closure on_done_recv_initial_metadata_;
   // recv message
   grpc_closure* initial_on_done_recv_message_;
   grpc_closure on_done_recv_message_;
-  // Start time (for measuring latency).
   absl::Time start_time_;
-  // Server elapsed time in nanoseconds.
-  uint64_t elapsed_time_;
-  // The received message--may be null.
+  absl::Duration elapsed_time_;
   grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message_;
-  // Number of messages in this RPC.
   uint64_t recv_message_count_;
   uint64_t sent_message_count_;
-  // Buffer needed for grpc_slice to reference when adding trace context
-  // metatdata to outgoing message.
-  char tracing_buf_[kMaxTraceContextLen];
+  // Buffer needed for grpc_slice to reference it when adding metatdata to
+  // response.
+  char stats_buf_[kMaxServerStatsLen];
 };
 
-}  // namespace grpc_core
+}  // namespace grpc
 
-#endif /* GRPC_CORE_EXT_FILTERS_CENSUS_CLIENT_FILTER_H */
+#endif /* GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_SERVER_FILTER_H */

@@ -18,14 +18,10 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/census/context.h"
+#include "src/cpp/ext/filters/census/context.h"
 
-// #include "src/core/lib/surface/api_trace.h"
-// #include "src/core/lib/surface/call.h"
+namespace grpc {
 
-namespace grpc_core {
-
-using ::opencensus::CensusContext;
 using ::opencensus::trace::Span;
 using ::opencensus::trace::SpanContext;
 
@@ -49,6 +45,18 @@ void GenerateClientContext(absl::string_view method, CensusContext* ctxt,
     }
   }
   new (ctxt) CensusContext(method);
+}
+
+size_t TraceContextSerialize(const ::opencensus::trace::SpanContext& context,
+                             char* tracing_buf, size_t tracing_buf_size) {
+  ::grpc::GrpcTraceContext trace_ctxt(context);
+  return ::grpc::TraceContextEncoding::Encode(trace_ctxt, tracing_buf,
+                                              tracing_buf_size);
+}
+
+size_t StatsContextSerialize(size_t max_tags_len, grpc_slice* tags) {
+  // TODO: Add implementation. Waiting on stats tagging to be added.
+  return 0;
 }
 
 size_t ServerStatsSerialize(uint64_t server_elapsed_time, char* buf,
@@ -121,4 +129,4 @@ absl::string_view StatusCodeToString(grpc_status_code code) {
   }
 }
 
-}  // namespace grpc_core
+}  // namespace grpc

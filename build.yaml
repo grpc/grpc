@@ -98,7 +98,7 @@ filegroups:
   public_headers:
   - include/grpc/census.h
   src:
-  - src/core/ext/filters/census/grpc_context.cc
+  - src/cpp/ext/filters/census/grpc_context.cc
   uses:
   - grpc_base
 - name: cmdline

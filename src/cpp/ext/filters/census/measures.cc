@@ -18,12 +18,12 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/census/measures.h"
+#include "src/cpp/ext/filters/census/measures.h"
 
 #include "opencensus/stats/stats.h"
-#include "src/core/ext/filters/census/grpc_plugin.h"
+#include "src/cpp/ext/filters/census/grpc_plugin.h"
 
-namespace grpc_core {
+namespace grpc {
 
 using ::opencensus::stats::MeasureDouble;
 using ::opencensus::stats::MeasureInt64;
@@ -126,4 +126,4 @@ MeasureInt64 RpcServerReceivedMessagesPerRpc() {
   return measure;
 }
 
-}  // namespace grpc_core
+}  // namespace grpc

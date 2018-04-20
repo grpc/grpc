@@ -18,9 +18,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/census/rpc_encoding.h"
+#include "src/cpp/ext/filters/census/rpc_encoding.h"
 
-namespace grpc_core {
+namespace grpc {
 
 constexpr size_t TraceContextEncoding::kGrpcTraceContextSize;
 constexpr size_t TraceContextEncoding::kEncodeDecodeFailure;
@@ -36,4 +36,4 @@ constexpr size_t RpcServerStatsEncoding::kFieldIdSize;
 constexpr size_t RpcServerStatsEncoding::kVersionIdOffset;
 constexpr size_t RpcServerStatsEncoding::kVersionId;
 
-}  // namespace grpc_core
+}  // namespace grpc

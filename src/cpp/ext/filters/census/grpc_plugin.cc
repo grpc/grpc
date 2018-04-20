@@ -18,51 +18,50 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/census/grpc_plugin.h"
+#include "src/cpp/ext/filters/census/grpc_plugin.h"
 
 #include <grpcpp/server_context.h>
 
 #include "opencensus/trace/span.h"
-#include "src/core/ext/filters/census/channel_filter.h"
-#include "src/core/ext/filters/census/client_filter.h"
-#include "src/core/ext/filters/census/measures.h"
-#include "src/core/ext/filters/census/server_filter.h"
+#include "src/cpp/ext/filters/census/channel_filter.h"
+#include "src/cpp/ext/filters/census/client_filter.h"
+#include "src/cpp/ext/filters/census/measures.h"
+#include "src/cpp/ext/filters/census/server_filter.h"
 
 void grpc_census_init() {
-  grpc::RegisterChannelFilter<grpc_core::CensusChannelData,
-                              grpc_core::CensusClientCallData>(
+  grpc::RegisterChannelFilter<grpc::CensusChannelData,
+                              grpc::CensusClientCallData>(
       "opencensus_client", GRPC_CLIENT_CHANNEL, INT_MAX /* priority */,
       nullptr /* condition function */);
-  grpc::RegisterChannelFilter<grpc_core::CensusChannelData,
-                              grpc_core::CensusServerCallData>(
+  grpc::RegisterChannelFilter<grpc::CensusChannelData,
+                              grpc::CensusServerCallData>(
       "opencensus_server", GRPC_SERVER_CHANNEL, INT_MAX /* priority */,
       nullptr /* condition function */);
 
   // Access measures to ensure they are initialized. Otherwise, creating a view
   // before the first RPC would cause an error.
-  grpc_core::RpcClientSentBytesPerRpc();
-  grpc_core::RpcClientReceivedBytesPerRpc();
-  grpc_core::RpcClientRoundtripLatency();
-  grpc_core::RpcClientServerLatency();
-  grpc_core::RpcClientSentMessagesPerRpc();
-  grpc_core::RpcClientReceivedMessagesPerRpc();
+  grpc::RpcClientSentBytesPerRpc();
+  grpc::RpcClientReceivedBytesPerRpc();
+  grpc::RpcClientRoundtripLatency();
+  grpc::RpcClientServerLatency();
+  grpc::RpcClientSentMessagesPerRpc();
+  grpc::RpcClientReceivedMessagesPerRpc();
 
-  grpc_core::RpcServerSentBytesPerRpc();
-  grpc_core::RpcServerReceivedBytesPerRpc();
-  grpc_core::RpcServerServerLatency();
-  grpc_core::RpcServerSentMessagesPerRpc();
-  grpc_core::RpcServerReceivedMessagesPerRpc();
+  grpc::RpcServerSentBytesPerRpc();
+  grpc::RpcServerReceivedBytesPerRpc();
+  grpc::RpcServerServerLatency();
+  grpc::RpcServerSentMessagesPerRpc();
+  grpc::RpcServerReceivedMessagesPerRpc();
 }
 
 // No-op implementation. No way to remove a registered filter at the moment.
 void grpc_census_shutdown() {}
 
-namespace grpc_core {
+namespace grpc {
 
 ::opencensus::trace::Span GetSpanFromServerContext(
     grpc::ServerContext* context) {
-  return reinterpret_cast<const ::opencensus::CensusContext*>(
-             context->census_context())
+  return reinterpret_cast<const CensusContext*>(context->census_context())
       ->Span();
 }
 
@@ -134,4 +133,4 @@ ABSL_CONST_INIT const absl::string_view
 ABSL_CONST_INIT const absl::string_view kRpcServerServerLatencyMeasureName =
     "grpc.io/server/server_latency";
 
-}  // namespace grpc_core
+}  // namespace grpc

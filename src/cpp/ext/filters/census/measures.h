@@ -16,15 +16,15 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_FILTERS_CENSUS_MEASURES_H
-#define GRPC_CORE_EXT_FILTERS_CENSUS_MEASURES_H
+#ifndef GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_MEASURES_H
+#define GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_MEASURES_H
 
 #include <grpc/support/port_platform.h>
 
 #include "opencensus/stats/stats.h"
-#include "src/core/ext/filters/census/grpc_plugin.h"
+#include "src/cpp/ext/filters/census/grpc_plugin.h"
 
-namespace grpc_core {
+namespace grpc {
 
 ::opencensus::stats::MeasureInt64 RpcClientSentMessagesPerRpc();
 ::opencensus::stats::MeasureDouble RpcClientSentBytesPerRpc();
@@ -41,6 +41,6 @@ namespace grpc_core {
 ::opencensus::stats::MeasureDouble RpcServerServerLatency();
 ::opencensus::stats::MeasureInt64 RpcServerCompletedRpcs();
 
-}  // namespace grpc_core
+}  // namespace grpc
 
-#endif /* GRPC_CORE_EXT_FILTERS_CENSUS_MEASURES_H */
+#endif /* GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_MEASURES_H */

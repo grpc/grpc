@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package grpc_core.testing;
+package grpc.testing;
 
 message EchoRequest {
   string message = 1;

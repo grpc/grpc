@@ -18,13 +18,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/census/channel_filter.h"
+#include "src/cpp/ext/filters/census/channel_filter.h"
 
-namespace grpc_core {
+namespace grpc {
 
 grpc_error* CensusChannelData::Init(grpc_channel_element* elem,
                                     grpc_channel_element_args* args) {
   return GRPC_ERROR_NONE;
 }
 
-}  // namespace grpc_core
+}  // namespace grpc

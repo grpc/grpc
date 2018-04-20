@@ -18,14 +18,14 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/census/grpc_plugin.h"
+#include "src/cpp/ext/filters/census/grpc_plugin.h"
 
 #include "absl/time/time.h"
 #include "opencensus/stats/internal/aggregation_window.h"
 #include "opencensus/stats/internal/set_aggregation_window.h"
 #include "opencensus/stats/stats.h"
 
-namespace grpc_core {
+namespace grpc {
 
 using ::opencensus::stats::Aggregation;
 using ::opencensus::stats::AggregationWindow;
@@ -488,4 +488,4 @@ const ViewDescriptor& ServerReceivedMessagesPerRpcHour() {
   return descriptor;
 }
 
-}  // namespace grpc_core
+}  // namespace grpc

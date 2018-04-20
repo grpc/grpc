@@ -18,18 +18,18 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/census/server_filter.h"
+#include "src/cpp/ext/filters/census/server_filter.h"
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "opencensus/stats/stats.h"
-#include "src/core/ext/filters/census/grpc_plugin.h"
-#include "src/core/ext/filters/census/measures.h"
 #include "src/core/lib/surface/call.h"
+#include "src/cpp/ext/filters/census/grpc_plugin.h"
+#include "src/cpp/ext/filters/census/measures.h"
 
-namespace grpc_core {
+namespace grpc {
 
 constexpr uint32_t CensusServerCallData::kMaxServerStatsLen;
 
@@ -195,4 +195,4 @@ void CensusServerCallData::Destroy(grpc_call_element* elem,
   context_.EndSpan();
 }
 
-}  // namespace grpc_core
+}  // namespace grpc

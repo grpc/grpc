@@ -25,10 +25,10 @@
 #include "benchmark/benchmark.h"
 #include "include/grpc++/grpc++.h"
 #include "opencensus/stats/stats.h"
-#include "src/core/ext/filters/census/grpc_plugin.h"
+#include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "test/core/ext/census/echo.grpc.pb.h"
 
-namespace grpc_core {
+namespace grpc {
 namespace {
 
 absl::once_flag once;

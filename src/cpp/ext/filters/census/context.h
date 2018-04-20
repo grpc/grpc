@@ -16,68 +16,61 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_FILTERS_CENSUS_CONTEXT_H
-#define GRPC_CORE_EXT_FILTERS_CENSUS_CONTEXT_H
+#ifndef GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_CONTEXT_H
+#define GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_CONTEXT_H
 
 #include <grpc/support/port_platform.h>
 
 #include <grpc/status.h>
+#include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "opencensus/trace/span.h"
 #include "opencensus/trace/span_context.h"
 #include "opencensus/trace/trace_params.h"
-#include "src/core/ext/filters/census/rpc_encoding.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/cpp/common/channel_filter.h"
+#include "src/cpp/ext/filters/census/rpc_encoding.h"
 
 // This is needed because grpc has hardcoded CensusContext with a
 // forward declaration of 'struct census_context;'
 struct census_context;
 
-namespace opencensus {
+namespace grpc {
 
 // Thread compatible.
 class CensusContext {
  public:
-  CensusContext() {}
+  CensusContext() : span_(::opencensus::trace::Span::BlankSpan()) {}
 
   explicit CensusContext(absl::string_view name)
-      : span_(trace::Span::StartSpan(name)) {}
+      : span_(::opencensus::trace::Span::StartSpan(name)) {}
 
-  CensusContext(absl::string_view name, const trace::Span* parent)
-      : span_(trace::Span::StartSpan(name, parent)) {}
+  CensusContext(absl::string_view name, const ::opencensus::trace::Span* parent)
+      : span_(::opencensus::trace::Span::StartSpan(name, parent)) {}
 
-  CensusContext(absl::string_view name, const trace::SpanContext& parent_ctxt)
-      : span_(trace::Span::StartSpanWithRemoteParent(name, parent_ctxt)) {}
+  CensusContext(absl::string_view name,
+                const ::opencensus::trace::SpanContext& parent_ctxt)
+      : span_(::opencensus::trace::Span::StartSpanWithRemoteParent(
+            name, parent_ctxt)) {}
 
-  // Serializes the outgoing trace context. Field IDs are 1 byte followed by
-  // field data. A 1 byte version ID is always encoded first.
-  size_t TraceContextSerialize(char* tracing_buf, size_t tracing_buf_size) {
-    ::grpc_core::GrpcTraceContext trace_ctxt(span_.context());
-    return ::grpc_core::TraceContextEncoding::Encode(trace_ctxt, tracing_buf,
-                                                     tracing_buf_size);
-  }
-
-  // Serializes the outgoing stats context.  Field IDs are 1 byte followed by
-  // field data. A 1 byte version ID is always encoded first. Tags are directly
-  // serialized into the given grpc_slice.
-  size_t StatsContextSerialize(size_t max_tags_len, grpc_slice* tags) {
-    // TODO: Add implementation. Waiting on stats tagging to be added.
-    return 0;
-  }
-
-  trace::SpanContext Context() const { return span_.context(); }
-  trace::Span Span() const { return span_; }
+  ::opencensus::trace::SpanContext Context() const { return span_.context(); }
+  ::opencensus::trace::Span Span() const { return span_; }
   void EndSpan() { span_.End(); }
 
  private:
-  trace::Span span_;
+  ::opencensus::trace::Span span_;
 };
 
-}  // namespace opencensus
+// Serializes the outgoing trace context. Field IDs are 1 byte followed by
+// field data. A 1 byte version ID is always encoded first.
+size_t TraceContextSerialize(const ::opencensus::trace::SpanContext& context,
+                             char* tracing_buf, size_t tracing_buf_size);
 
-namespace grpc_core {
+// Serializes the outgoing stats context.  Field IDs are 1 byte followed by
+// field data. A 1 byte version ID is always encoded first. Tags are directly
+// serialized into the given grpc_slice.
+size_t StatsContextSerialize(size_t max_tags_len, grpc_slice* tags);
 
 // Serialize outgoing server stats. Returns the number of bytes serialized.
 size_t ServerStatsSerialize(uint64_t server_elapsed_time, char* buf,
@@ -93,15 +86,15 @@ size_t ServerStatsDeserialize(const char* buf, size_t buf_size,
 void GenerateServerContext(absl::string_view tracing, absl::string_view stats,
                            absl::string_view primary_role,
                            absl::string_view method,
-                           ::opencensus::CensusContext* context);
+                           ::grpc::CensusContext* context);
 
 // Creates a new client context that is by default a new root context.
 // If the current context is the default context then the newly created
 // span automatically becomes a root span. This should only be called with a
 // blank CensusContext as it overwrites it.
 void GenerateClientContext(absl::string_view method,
-                           ::opencensus::CensusContext* ctxt,
-                           ::opencensus::CensusContext* parent_ctx);
+                           ::grpc::CensusContext* ctxt,
+                           ::grpc::CensusContext* parent_ctx);
 
 // Returns the incoming data size from the grpc call final info.
 uint64_t GetIncomingDataSize(const grpc_call_final_info* final_info);
@@ -130,6 +123,6 @@ inline absl::string_view GetMethod(const grpc_slice* path) {
                            "/");
 }
 
-}  // namespace grpc_core
+}  // namespace grpc
 
-#endif /* GRPC_CORE_EXT_FILTERS_CENSUS_CONTEXT_H */
+#endif /* GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_CONTEXT_H */

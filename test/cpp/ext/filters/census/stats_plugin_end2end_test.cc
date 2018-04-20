@@ -27,11 +27,11 @@
 #include "include/grpc++/grpc++.h"
 #include "opencensus/stats/stats.h"
 #include "opencensus/stats/testing/test_utils.h"
-#include "src/core/ext/filters/census/grpc_plugin.h"
+#include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "test/core/ext/census/echo.grpc.pb.h"
 #include "test/core/util/test_config.h"
 
-namespace grpc_core {
+namespace grpc {
 namespace testing {
 namespace {
 
@@ -85,8 +85,8 @@ class StatsPluginEnd2EndTest : public ::testing::Test {
 
   void RunServerLoop() { server_->Wait(); }
 
-  const std::string client_method_name_ = "grpc_core.testing.EchoService/Echo";
-  const std::string server_method_name_ = "grpc_core.testing.EchoService/Echo";
+  const std::string client_method_name_ = "grpc.testing.EchoService/Echo";
+  const std::string server_method_name_ = "grpc.testing.EchoService/Echo";
 
   std::string server_address_;
   EchoServer service_;

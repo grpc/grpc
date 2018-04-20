@@ -16,14 +16,14 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_FILTERS_CENSUS_CHANNEL_FILTER_H
-#define GRPC_CORE_EXT_FILTERS_CENSUS_CHANNEL_FILTER_H
+#ifndef GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_CHANNEL_FILTER_H
+#define GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_CHANNEL_FILTER_H
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/census/context.h"
+#include "src/cpp/ext/filters/census/context.h"
 
-namespace grpc_core {
+namespace grpc {
 
 class CensusChannelData : public grpc::ChannelData {
  public:
@@ -31,6 +31,6 @@ class CensusChannelData : public grpc::ChannelData {
                    grpc_channel_element_args* args) override;
 };
 
-}  // namespace grpc_core
+}  // namespace grpc
 
-#endif /* GRPC_CORE_EXT_FILTERS_CENSUS_CHANNEL_FILTER_H */
+#endif /* GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_CHANNEL_FILTER_H */

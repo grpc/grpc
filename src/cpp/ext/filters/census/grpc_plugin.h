@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H
-#define GRPC_CORE_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H
+#ifndef GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H
+#define GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H
 
 #include <grpc/support/port_platform.h>
 
@@ -35,7 +35,7 @@ class ServerContext;
 void grpc_census_init();
 void grpc_census_shutdown();
 
-namespace grpc_core {
+namespace grpc {
 
 // RPC stats definitions, defined by
 // https://github.com/census-instrumentation/opencensus-specs/blob/master/stats/gRPC.md
@@ -122,6 +122,6 @@ const ::opencensus::stats::ViewDescriptor& ServerServerLatencyHour();
 const ::opencensus::stats::ViewDescriptor& ServerStartedCountHour();
 const ::opencensus::stats::ViewDescriptor& ServerCompletedRpcsHour();
 
-}  // namespace grpc_core
+}  // namespace grpc
 
-#endif /* GRPC_CORE_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H */
+#endif /* GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_GRPC_PLUGIN_H */

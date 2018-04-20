@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_FILTERS_CENSUS_RPC_ENCODING_H
-#define GRPC_CORE_EXT_FILTERS_CENSUS_RPC_ENCODING_H
+#ifndef GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_RPC_ENCODING_H
+#define GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_RPC_ENCODING_H
 
 #include <grpc/support/port_platform.h>
 
@@ -29,7 +29,7 @@
 #include "opencensus/trace/span_id.h"
 #include "opencensus/trace/trace_id.h"
 
-namespace grpc_core {
+namespace grpc {
 
 // TODO: Rename to GrpcTraceContextV0.
 struct GrpcTraceContext {
@@ -279,6 +279,6 @@ class RpcServerStatsEncoding {
   RpcServerStatsEncoding operator=(RpcServerStatsEncoding&&) = delete;
 };
 
-}  // namespace grpc_core
+}  // namespace grpc
 
-#endif /* GRPC_CORE_EXT_FILTERS_CENSUS_RPC_ENCODING_H */
+#endif /* GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_RPC_ENCODING_H */

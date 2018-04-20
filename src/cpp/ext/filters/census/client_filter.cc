@@ -18,16 +18,16 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/census/client_filter.h"
+#include "src/cpp/ext/filters/census/client_filter.h"
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "opencensus/stats/stats.h"
-#include "src/core/ext/filters/census/grpc_plugin.h"
-#include "src/core/ext/filters/census/measures.h"
 #include "src/core/lib/surface/call.h"
+#include "src/cpp/ext/filters/census/grpc_plugin.h"
+#include "src/cpp/ext/filters/census/measures.h"
 
-namespace grpc_core {
+namespace grpc {
 
 constexpr uint32_t CensusClientCallData::kMaxTraceContextLen;
 constexpr uint32_t CensusClientCallData::kMaxTagsLen;
@@ -84,11 +84,9 @@ void CensusClientCallData::StartTransportStreamOpBatch(
     census_context* ctxt = op->get_census_context();
     GenerateClientContext(
         qualified_method_, &context_,
-        (ctxt == nullptr)
-            ? nullptr
-            : reinterpret_cast<::opencensus::CensusContext*>(ctxt));
-    size_t tracing_len =
-        context_.TraceContextSerialize(tracing_buf_, kMaxTraceContextLen);
+        (ctxt == nullptr) ? nullptr : reinterpret_cast<CensusContext*>(ctxt));
+    size_t tracing_len = TraceContextSerialize(context_.Context(), tracing_buf_,
+                                               kMaxTraceContextLen);
     if (tracing_len > 0) {
       GRPC_LOG_IF_ERROR(
           "census grpc_filter",
@@ -99,8 +97,8 @@ void CensusClientCallData::StartTransportStreamOpBatch(
                   grpc_slice_from_copied_buffer(tracing_buf_, tracing_len))));
     }
     grpc_slice tags = grpc_empty_slice();
-    size_t encoded_tags_len =
-        context_.StatsContextSerialize(kMaxTagsLen, &tags);
+    // TODO: Add in tagging serialization.
+    size_t encoded_tags_len = StatsContextSerialize(kMaxTagsLen, &tags);
     if (encoded_tags_len > 0) {
       GRPC_LOG_IF_ERROR(
           "census grpc_filter",
@@ -162,4 +160,4 @@ void CensusClientCallData::Destroy(grpc_call_element* elem,
   context_.EndSpan();
 }
 
-}  // namespace grpc_core
+}  // namespace grpc
