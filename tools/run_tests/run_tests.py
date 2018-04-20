@@ -921,9 +921,6 @@ class CSharpLanguage(object):
             if self.platform == 'mac':
                 # TODO(jtattermusch): EMBED_ZLIB=true currently breaks the mac build
                 self._make_options = ['EMBED_OPENSSL=true']
-                if self.args.compiler != 'coreclr':
-                    # On Mac, official distribution of mono is 32bit.
-                    self._make_options += ['ARCH_FLAGS=-m32', 'LDFLAGS=-m32']
             else:
                 self._make_options = ['EMBED_OPENSSL=true', 'EMBED_ZLIB=true']
 
@@ -944,6 +941,9 @@ class CSharpLanguage(object):
             assembly_subdir += '/net45'
             if self.platform == 'windows':
                 runtime_cmd = []
+            elif self.platform == 'mac':
+                # mono before version 5.2 on MacOS defaults to 32bit runtime
+                runtime_cmd = ['mono', '--arch=64']
             else:
                 runtime_cmd = ['mono']
 
