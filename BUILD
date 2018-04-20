@@ -487,9 +487,6 @@ grpc_cc_library(
     srcs = [
         "src/cpp/ext/filters/census/grpc_context.cc",
     ],
-    external_deps = [
-        "nanopb",
-    ],
     language = "c++",
     public_hdrs = [
         "include/grpc/census.h",
