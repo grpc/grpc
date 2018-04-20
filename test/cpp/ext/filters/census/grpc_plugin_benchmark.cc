@@ -118,6 +118,6 @@ void BM_E2eLatencyCensusEnabled(benchmark::State& state) {
 BENCHMARK(BM_E2eLatencyCensusEnabled);
 
 }  // namespace
-}  // namespace grpc_core
+}  // namespace grpc
 
 BENCHMARK_MAIN();

@@ -366,7 +366,7 @@ TEST_F(StatsPluginEnd2EndTest, RequestReceivedMessagesPerRpc) {
 
 }  // namespace
 }  // namespace testing
-}  // namespace grpc_core
+}  // namespace grpc
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
