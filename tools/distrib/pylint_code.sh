@@ -30,10 +30,11 @@ TEST_DIRS=(
 )
 
 VIRTUALENV=python_pylint_venv
+python -m virtualenv $VIRTUALENV
 
-virtualenv $VIRTUALENV
-PYTHON=$(realpath $VIRTUALENV/bin/python)
-$PYTHON -m pip install --upgrade pip==9.0.2
+PYTHON=$VIRTUALENV/bin/python
+
+$PYTHON -m pip install --upgrade pip==10.0.1
 $PYTHON -m pip install pylint==1.6.5
 
 for dir in "${DIRS[@]}"; do
