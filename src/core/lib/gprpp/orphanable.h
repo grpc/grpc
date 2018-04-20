@@ -100,7 +100,7 @@ class InternallyRefCounted : public Orphanable {
 
   void Unref() {
     if (gpr_unref(&refs_)) {
-      Delete(this);
+      Delete(static_cast<Child*>(this));
     }
   }
 
@@ -173,7 +173,7 @@ class InternallyRefCountedWithTracing : public Orphanable {
 
   void Unref() {
     if (gpr_unref(&refs_)) {
-      Delete(this);
+      Delete(static_cast<Child*>(this));
     }
   }
 
