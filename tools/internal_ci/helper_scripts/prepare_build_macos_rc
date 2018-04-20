@@ -33,6 +33,9 @@ sudo systemsetup -settimezone America/Los_Angeles
 sudo systemsetup -setusingnetworktime on
 date
 
+dotnet --version || true
+ls /usr/local/share/dotnet/sdk/ || true
+
 # Add GCP credentials for BQ access
 pip install google-api-python-client --user python
 export GOOGLE_APPLICATION_CREDENTIALS=${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json
