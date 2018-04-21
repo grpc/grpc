@@ -215,8 +215,8 @@ TEST_F(LoadDataStoreTest, HostTemporarilyLoseAllStreams) {
   // Detailed load data won't be kept when the PerBalancerStore is suspended.
   store_lb_id_1->MergeRow(kKey1, LoadRecordValue());
   store_invalid_lb_id_1->MergeRow(kKey1, LoadRecordValue());
-  EXPECT_EQ(store_lb_id_1->container().size(), 0U);
-  EXPECT_EQ(store_invalid_lb_id_1->container().size(), 0U);
+  EXPECT_EQ(store_lb_id_1->load_record_map().size(), 0U);
+  EXPECT_EQ(store_invalid_lb_id_1->load_record_map().size(), 0U);
   // The stores for different hosts won't mix, even if the load key is the same.
   auto assigned_to_lb_id_2 =
       load_data_store.GetAssignedStores(kHostname2, kLbId2);
@@ -232,8 +232,8 @@ TEST_F(LoadDataStoreTest, HostTemporarilyLoseAllStreams) {
   EXPECT_FALSE(store_invalid_lb_id_1->IsSuspended());
   store_lb_id_1->MergeRow(kKey1, LoadRecordValue());
   store_invalid_lb_id_1->MergeRow(kKey1, LoadRecordValue());
-  EXPECT_EQ(store_lb_id_1->container().size(), 1U);
-  EXPECT_EQ(store_invalid_lb_id_1->container().size(), 1U);
+  EXPECT_EQ(store_lb_id_1->load_record_map().size(), 1U);
+  EXPECT_EQ(store_invalid_lb_id_1->load_record_map().size(), 1U);
   // The resumed stores are assigned to the new LB.
   auto assigned_to_lb_id_3 =
       load_data_store.GetAssignedStores(kHostname1, kLbId3);
@@ -319,8 +319,8 @@ TEST_F(LoadDataStoreTest, UnknownBalancerIdTracking) {
   EXPECT_TRUE(load_data_store.IsTrackedUnknownBalancerId(kLbId3));
   // The data kept for a known LB ID is correct.
   auto store_lb_id_1 = load_data_store.FindPerBalancerStore(kHostname1, kLbId1);
-  EXPECT_EQ(store_lb_id_1->container().size(), 1U);
-  EXPECT_EQ(store_lb_id_1->container().find(kKey1)->second.start_count(),
+  EXPECT_EQ(store_lb_id_1->load_record_map().size(), 1U);
+  EXPECT_EQ(store_lb_id_1->load_record_map().find(kKey1)->second.start_count(),
             v1.start_count());
   EXPECT_EQ(store_lb_id_1->GetNumCallsInProgressForReport(), v1.start_count());
   // No PerBalancerStore created for Unknown LB ID.
@@ -329,10 +329,10 @@ TEST_F(LoadDataStoreTest, UnknownBalancerIdTracking) {
   // End all the started RPCs for kLbId1.
   LoadRecordValue v4(0, v1.start_count());
   load_data_store.MergeRow(kHostname1, kKey1, v4);
-  EXPECT_EQ(store_lb_id_1->container().size(), 1U);
-  EXPECT_EQ(store_lb_id_1->container().find(kKey1)->second.start_count(),
+  EXPECT_EQ(store_lb_id_1->load_record_map().size(), 1U);
+  EXPECT_EQ(store_lb_id_1->load_record_map().find(kKey1)->second.start_count(),
             v1.start_count());
-  EXPECT_EQ(store_lb_id_1->container().find(kKey1)->second.ok_count(),
+  EXPECT_EQ(store_lb_id_1->load_record_map().find(kKey1)->second.ok_count(),
             v4.ok_count());
   EXPECT_EQ(store_lb_id_1->GetNumCallsInProgressForReport(), 0U);
   EXPECT_FALSE(load_data_store.IsTrackedUnknownBalancerId(kLbId1));
@@ -354,35 +354,35 @@ TEST_F(PerBalancerStoreTest, Suspend) {
   // Suspend the store.
   per_balancer_store.Suspend();
   EXPECT_TRUE(per_balancer_store.IsSuspended());
-  EXPECT_EQ(0U, per_balancer_store.container().size());
+  EXPECT_EQ(0U, per_balancer_store.load_record_map().size());
   // Data merged when the store is suspended won't be kept.
   LoadRecordValue v1(139, 19);
   per_balancer_store.MergeRow(kKey1, v1);
-  EXPECT_EQ(0U, per_balancer_store.container().size());
+  EXPECT_EQ(0U, per_balancer_store.load_record_map().size());
   // Resume the store.
   per_balancer_store.Resume();
   EXPECT_FALSE(per_balancer_store.IsSuspended());
-  EXPECT_EQ(0U, per_balancer_store.container().size());
+  EXPECT_EQ(0U, per_balancer_store.load_record_map().size());
   // Data merged after the store is resumed will be kept.
   LoadRecordValue v2(23, 0, 51);
   per_balancer_store.MergeRow(kKey1, v2);
-  EXPECT_EQ(1U, per_balancer_store.container().size());
+  EXPECT_EQ(1U, per_balancer_store.load_record_map().size());
   // Suspend the store.
   per_balancer_store.Suspend();
   EXPECT_TRUE(per_balancer_store.IsSuspended());
-  EXPECT_EQ(0U, per_balancer_store.container().size());
+  EXPECT_EQ(0U, per_balancer_store.load_record_map().size());
   // Data merged when the store is suspended won't be kept.
   LoadRecordValue v3(62, 11);
   per_balancer_store.MergeRow(kKey1, v3);
-  EXPECT_EQ(0U, per_balancer_store.container().size());
+  EXPECT_EQ(0U, per_balancer_store.load_record_map().size());
   // Resume the store.
   per_balancer_store.Resume();
   EXPECT_FALSE(per_balancer_store.IsSuspended());
-  EXPECT_EQ(0U, per_balancer_store.container().size());
+  EXPECT_EQ(0U, per_balancer_store.load_record_map().size());
   // Data merged after the store is resumed will be kept.
   LoadRecordValue v4(225, 98);
   per_balancer_store.MergeRow(kKey1, v4);
-  EXPECT_EQ(1U, per_balancer_store.container().size());
+  EXPECT_EQ(1U, per_balancer_store.load_record_map().size());
   // In-progress count is always kept.
   EXPECT_EQ(per_balancer_store.GetNumCallsInProgressForReport(),
             v1.start_count() - v1.ok_count() + v2.start_count() -
@@ -428,7 +428,7 @@ TEST_F(PerBalancerStoreTest, DataAggregation) {
             num_calls_in_progress);
   // LoadRecordValue for kKey1 is aggregated correctly.
   LoadRecordValue value_for_key1 =
-      per_balancer_store.container().find(kKey1)->second;
+      per_balancer_store.load_record_map().find(kKey1)->second;
   EXPECT_EQ(value_for_key1.start_count(), v1.start_count() + v3.start_count());
   EXPECT_EQ(value_for_key1.ok_count(), v1.ok_count() + v3.ok_count());
   EXPECT_EQ(value_for_key1.error_count(), v1.error_count() + v3.error_count());
@@ -448,7 +448,7 @@ TEST_F(PerBalancerStoreTest, DataAggregation) {
             v3.call_metrics().find(kMetric2)->second.total());
   // LoadRecordValue for kKey2 is aggregated (trivially) correctly.
   LoadRecordValue value_for_key2 =
-      per_balancer_store.container().find(kKey2)->second;
+      per_balancer_store.load_record_map().find(kKey2)->second;
   EXPECT_EQ(value_for_key2.start_count(), v2.start_count());
   EXPECT_EQ(value_for_key2.ok_count(), v2.ok_count());
   EXPECT_EQ(value_for_key2.error_count(), v2.error_count());

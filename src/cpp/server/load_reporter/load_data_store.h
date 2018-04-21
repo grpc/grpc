@@ -22,6 +22,8 @@
 #include <grpc/support/port_platform.h>
 
 #include <memory>
+#include <set>
+#include <unordered_map>
 
 #include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/config.h>
@@ -122,7 +124,9 @@ class LoadRecordValue {
     bytes_recv_ += other.bytes_recv_;
     latency_ms_ += other.latency_ms_;
     for (const auto& p : other.call_metrics_) {
-      call_metrics_[p.first].MergeFrom(p.second);
+      const grpc::string& key = p.first;
+      const CallMetricValue& value = p.second;
+      call_metrics_[key].MergeFrom(value);
     }
   }
 
@@ -169,7 +173,7 @@ class LoadRecordValue {
 // Stores the data associated with a particular LB ID.
 class PerBalancerStore {
  public:
-  using LoadRecords =
+  using LoadRecordMap =
       std::unordered_map<LoadRecordKey, LoadRecordValue, LoadRecordKey::Hasher>;
 
   PerBalancerStore(grpc::string lb_id, grpc::string load_key)
@@ -196,18 +200,18 @@ class PerBalancerStore {
            "]";
   }
 
-  void ClearContainer() { container_.clear(); }
+  void ClearLoadRecordMap() { load_record_map_.clear(); }
 
   // Getters.
   const grpc::string& lb_id() const { return lb_id_; }
   const grpc::string& load_key() const { return load_key_; }
-  const LoadRecords& container() const { return container_; }
+  const LoadRecordMap& load_record_map() const { return load_record_map_; }
 
  private:
   grpc::string lb_id_;
   // TODO(juanlishen): Use bytestring protobuf type?
   grpc::string load_key_;
-  LoadRecords container_;
+  LoadRecordMap load_record_map_;
   uint64_t num_calls_in_progress_ = 0;
   uint64_t last_reported_num_calls_in_progress_ = 0;
   bool suspended_ = false;
@@ -232,6 +236,7 @@ class PerHostStore {
 
   PerBalancerStore* FindPerBalancerStore(const grpc::string& lb_id) const;
 
+  // Returns null if lb_id is not found.
   const std::set<PerBalancerStore*>* GetAssignedStores(
       const grpc::string& lb_id) const;
 
@@ -248,11 +253,15 @@ class PerHostStore {
 
   // Key: LB ID. The key set includes all the LB IDs that have been
   // allocated for reporting streams so far.
+  // Value: the unique pointer to the PerBalancerStore of the LB ID.
   std::unordered_map<grpc::string, std::unique_ptr<PerBalancerStore>>
       per_balancer_stores_;
 
   // Key: LB ID. The key set includes the LB IDs of the balancers that are
   // currently receiving report.
+  // Value: the set of raw pointers to the PerBalancerStores assigned to the LB
+  // ID. Note that the sets in assigned_stores_ form a division of the value set
+  // of per_balancer_stores_.
   std::unordered_map<grpc::string, std::set<PerBalancerStore*>>
       assigned_stores_;
 };
@@ -271,6 +280,7 @@ class LoadDataStore {
   PerBalancerStore* FindPerBalancerStore(const grpc::string& hostname,
                                          const grpc::string& lb_id) const;
 
+  // Returns null if hostname or lb_id is not found.
   const std::set<PerBalancerStore*>* GetAssignedStores(const string& hostname,
                                                        const string& lb_id);
 

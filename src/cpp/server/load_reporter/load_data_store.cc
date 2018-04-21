@@ -26,11 +26,50 @@
 namespace grpc {
 namespace load_reporter {
 
+// Some helper functions.
+namespace {
+
+template <typename K, typename V>
+bool UnorderedMapOfSetEraseKeyValue(std::unordered_map<K, std::set<V>>& map,
+                                    const K& key, const V& value) {
+  auto it = map.find(key);
+  if (it != map.end()) {
+    size_t erased = it->second.erase(value);
+    if (it->second.size() == 0) {
+      map.erase(key);
+    }
+    return erased;
+  }
+  return false;
+};
+
+template <typename K, typename V>
+std::set<V> UnorderedMapOfSetExtract(std::unordered_map<K, std::set<V>>& map,
+                                     const K& key) {
+  auto it = map.find(key);
+  if (it != map.end()) {
+    auto set = std::move(map.find(key)->second);
+    map.erase(it);
+    return set;
+  }
+  return {};
+};
+
+template <typename C>
+static const typename C::value_type* RandomElement(const C& container) {
+  GPR_ASSERT(!container.empty());
+  auto it = container.begin();
+  std::advance(it, std::rand() % container.size());
+  return &(*it);
+}
+
+}  // namespace
+
 void PerBalancerStore::MergeRow(const LoadRecordKey& key,
                                 const LoadRecordValue& value) {
   // During suspension, the load data received will be dropped.
   if (!suspended_) {
-    container_[key].MergeFrom(value);
+    load_record_map_[key].MergeFrom(value);
     gpr_log(GPR_DEBUG,
             "[PerBalancerStore %p] Load data merged (Key: %s, Value: %s).",
             this, key.ToString().c_str(), value.ToString().c_str());
@@ -50,7 +89,7 @@ void PerBalancerStore::MergeRow(const LoadRecordKey& key,
 
 void PerBalancerStore::Suspend() {
   suspended_ = true;
-  container_.clear();
+  load_record_map_.clear();
   gpr_log(GPR_DEBUG, "[PerBalancerStore %p] Suspended.", this);
 }
 
@@ -76,8 +115,9 @@ void PerHostStore::ReportStreamCreated(const grpc::string& lb_id,
   // this stream. Need to discuss with LB team.
   if (assigned_stores_.size() == 1) {
     for (const auto& p : per_balancer_stores_) {
-      if (p.first != lb_id) {
-        auto orphaned_store = p.second.get();
+      const grpc::string& other_lb_id = p.first;
+      if (other_lb_id != lb_id) {
+        PerBalancerStore* orphaned_store = p.second.get();
         orphaned_store->Resume();
         AssignOrphanedStore(orphaned_store, lb_id);
       }
@@ -90,14 +130,6 @@ void PerHostStore::ReportStreamCreated(const grpc::string& lb_id,
   }
 }
 
-template <typename C>
-static const typename C::value_type* RandomElement(const C& container) {
-  GPR_ASSERT(!container.empty());
-  auto it = container.begin();
-  std::advance(it, std::rand() % container.size());
-  return &(*it);
-}
-
 void PerHostStore::ReportStreamClosed(const grpc::string& lb_id) {
   auto it_store_for_gone_lb = per_balancer_stores_.find(lb_id);
   GPR_ASSERT(it_store_for_gone_lb != per_balancer_stores_.end());
@@ -105,10 +137,11 @@ void PerHostStore::ReportStreamClosed(const grpc::string& lb_id) {
   GPR_ASSERT(UnorderedMapOfSetEraseKeyValue(
       load_key_to_receiving_lb_ids_, it_store_for_gone_lb->second->load_key(),
       lb_id));
-  auto orphaned_stores = UnorderedMapOfSetExtract(assigned_stores_, lb_id);
+  std::set<PerBalancerStore*> orphaned_stores =
+      UnorderedMapOfSetExtract(assigned_stores_, lb_id);
   // The stores that were assigned to this balancer are orphaned now. They
   // should be re-assigned to other balancers which are still receiving reports.
-  for (auto orphaned_store : orphaned_stores) {
+  for (PerBalancerStore* orphaned_store : orphaned_stores) {
     const grpc::string* new_receiver = nullptr;
     auto it = load_key_to_receiving_lb_ids_.find(orphaned_store->load_key());
     if (it != load_key_to_receiving_lb_ids_.end()) {
@@ -161,12 +194,10 @@ void PerHostStore::InternalAddLb(const grpc::string& lb_id,
   GPR_ASSERT(per_balancer_stores_.find(lb_id) == per_balancer_stores_.end());
   GPR_ASSERT(assigned_stores_.find(lb_id) == assigned_stores_.end());
   load_key_to_receiving_lb_ids_[load_key].insert(lb_id);
-  auto it = per_balancer_stores_
-                .insert(std::make_pair(
-                    lb_id, std::unique_ptr<PerBalancerStore>(
-                               new PerBalancerStore(lb_id, load_key))))
-                .first;
-  assigned_stores_.insert({lb_id, {it->second.get()}});
+  std::unique_ptr<PerBalancerStore> per_balancer_store(
+      new PerBalancerStore(lb_id, load_key));
+  assigned_stores_[lb_id] = {per_balancer_store.get()};
+  per_balancer_stores_[lb_id] = std::move(per_balancer_store);
 }
 
 PerBalancerStore* LoadDataStore::FindPerBalancerStore(
@@ -180,7 +211,8 @@ PerBalancerStore* LoadDataStore::FindPerBalancerStore(
 void LoadDataStore::MergeRow(const grpc::string& hostname,
                              const LoadRecordKey& key,
                              const LoadRecordValue& value) {
-  auto per_balancer_store = FindPerBalancerStore(hostname, key.lb_id());
+  PerBalancerStore* per_balancer_store =
+      FindPerBalancerStore(hostname, key.lb_id());
   if (per_balancer_store != nullptr) {
     per_balancer_store->MergeRow(key, value);
     return;
@@ -216,8 +248,7 @@ const std::set<PerBalancerStore*>* LoadDataStore::GetAssignedStores(
 void LoadDataStore::ReportStreamCreated(const grpc::string& hostname,
                                         const grpc::string& lb_id,
                                         const grpc::string& load_key) {
-  auto rc = per_host_stores_.insert(std::make_pair(hostname, PerHostStore()));
-  rc.first->second.ReportStreamCreated(lb_id, load_key);
+  per_host_stores_[hostname].ReportStreamCreated(lb_id, load_key);
 }
 
 void LoadDataStore::ReportStreamClosed(const grpc::string& hostname,

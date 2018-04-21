@@ -19,41 +19,11 @@
 #ifndef GRPC_SRC_CPP_SERVER_LOAD_REPORTER_UTIL_H
 #define GRPC_SRC_CPP_SERVER_LOAD_REPORTER_UTIL_H
 
-#include <set>
-#include <unordered_map>
-#include <vector>
-
 namespace grpc {
 namespace load_reporter {
 
 const grpc::string kInvalidLbId = "<INVALID_LBID_238dsb234890rb>";
 const uint8_t kLbIdLen = 8;
-
-template <typename K, typename V>
-bool UnorderedMapOfSetEraseKeyValue(std::unordered_map<K, std::set<V>>& map,
-                                    const K& key, const V& value) {
-  auto it = map.find(key);
-  if (it != map.end()) {
-    auto erased = it->second.erase(value);
-    if (it->second.size() == 0) {
-      map.erase(key);
-    }
-    return erased;
-  }
-  return false;
-};
-
-template <typename K, typename V>
-std::set<V> UnorderedMapOfSetExtract(std::unordered_map<K, std::set<V>>& map,
-                                     const K& key) {
-  auto it = map.find(key);
-  if (it != map.end()) {
-    auto set = map.find(key)->second;
-    map.erase(key);
-    return set;
-  }
-  return {};
-};
 
 }  // namespace load_reporter
 }  // namespace grpc
