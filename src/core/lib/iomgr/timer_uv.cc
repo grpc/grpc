@@ -52,6 +52,9 @@ static void timer_start(grpc_custom_timer* t) {
   uv_timer->data = t;
   t->timer = (void*)uv_timer;
   uv_timer_start(uv_timer, run_expired_timer, t->timeout_ms, 0);
+  // Node uses a garbage collector to call destructors, so we don't
+  // want to hold the uv loop open with active gRPC objects.
+  uv_unref((uv_handle_t*)uv_timer);
 }
 
 static void timer_stop(grpc_custom_timer* t) {
