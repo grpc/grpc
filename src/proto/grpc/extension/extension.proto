@@ -1,0 +1,71 @@
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package grpc.extension;
+
+message ApiConfig {
+  // A list of targets point to the same API endpoint.
+  repeated string target = 1;
+
+  // The channel pool configurations.
+  ChannelPoolConfig channel_pool = 2;
+
+  // The extension configurations.
+  repeated MethodConfig extension = 1001;
+}
+
+message ChannelPoolConfig {
+  // The max number of channels in the pool.
+  uint32 max_size = 1;
+  // The idle timeout (seconds) of channels without bound affinity sessions.
+  uint64 idle_timeout = 2;
+  // The max number of concurrent streams in a channel.
+  uint32 max_concurrent_streams = 3;
+}
+
+message MethodConfig {
+  // A fully qualified name of a gRPC method, or a wildcard pattern ending
+  // with .*, such as foo.bar.A, foo.bar.*. Method configs are evaluated
+  // sequentially, and the first one takes precedence.
+  repeated string name = 1;
+
+  // The channel affinity configurations.
+  AffinityConfig affinity = 1001;
+}
+
+message AffinityConfig {
+  enum Command {
+    // The annotated method will be required to be bound to an existing session
+    // to execute the RPC. The corresponding <affinity_key_field_path> will be
+    // used to find the affinity key from the request message.
+    BOUND = 0;
+    // The annotated method will establish the channel affinity with the channel
+    // which is used to execute the RPC. The corresponding
+    // <affinity_key_field_path> will be used to find the affinity key from the
+    // response message.
+    BIND = 1;
+    // The annotated method will remove the channel affinity with the channel
+    // which is used to execute the RPC. The corresponding
+    // <affinity_key_field_path> will be used to find the affinity key from the
+    // request message.
+    UNBIND = 2;
+  }
+  // The affinity command applies on the selected gRPC methods.
+  Command command = 2;
+  // The field path of the affinity key in the request/response message.
+  // For example: "f.a", "f.b.d", etc.
+  string affinity_key = 3;
+}
