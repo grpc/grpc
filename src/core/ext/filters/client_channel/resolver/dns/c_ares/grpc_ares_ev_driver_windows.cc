@@ -100,7 +100,6 @@ class AresEvDriverWindows final : public AresEvDriver {
 };
 
 AresEvDriver* AresEvDriver::Create(grpc_pollset_set* pollset_set) {
-  (void*)pollset_set;
   return grpc_core::New<AresEvDriverWindows>();
 }
 

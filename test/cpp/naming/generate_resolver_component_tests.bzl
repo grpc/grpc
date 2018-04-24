@@ -55,21 +55,6 @@ def generate_resolver_component_tests():
             "//test/cpp/util:test_config",
         ],
     )
-    grpc_cc_library(
-        name = "resolver_component_tests_runner_invoker_portability_header",
-        hdrs = [
-            "resolver_component_tests_runner_invoker.h",
-        ],
-        deps = [
-            "//test/cpp/util:test_util",
-            "//test/core/util:grpc_test_util",
-            "//test/core/util:gpr_test_util",
-            "//:grpc++",
-            "//:grpc",
-            "//:gpr",
-            "//test/cpp/util:test_config",
-        ],
-    )
     grpc_cc_test(
         name = "resolver_component_tests_runner_invoker%s" % unsecure_build_config_suffix,
         srcs = [
