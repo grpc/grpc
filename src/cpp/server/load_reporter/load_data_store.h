@@ -28,10 +28,11 @@
 #include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/config.h>
 
-#include "src/cpp/server/load_reporter/util.h"
-
 namespace grpc {
 namespace load_reporter {
+
+constexpr char kInvalidLbId[] = "<INVALID_LBID_238dsb234890rb>";
+constexpr uint8_t kLbIdLen = 8;
 
 // The load data storage is organized in hierarchy. The LoadDataStore is the
 // top-level data store. In LoadDataStore, for each host we keep a

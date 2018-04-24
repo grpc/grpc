@@ -29,6 +29,10 @@ namespace load_reporter {
 // Some helper functions.
 namespace {
 
+// Given a map from type K to a set of value type V, finds the set associated
+// with the given key and erases the value from the set. If the set becomes
+// empty, also erases the key-set pair. Returns true if the value is erased
+// successfully.
 template <typename K, typename V>
 bool UnorderedMapOfSetEraseKeyValue(std::unordered_map<K, std::set<V>>& map,
                                     const K& key, const V& value) {
@@ -36,27 +40,31 @@ bool UnorderedMapOfSetEraseKeyValue(std::unordered_map<K, std::set<V>>& map,
   if (it != map.end()) {
     size_t erased = it->second.erase(value);
     if (it->second.size() == 0) {
-      map.erase(key);
+      map.erase(it);
     }
     return erased;
   }
   return false;
 };
 
+// Given a map from type K to a set of value type V, removes the given key and
+// the associated set, and returns the set. Returns an empty set if the key is
+// not found.
 template <typename K, typename V>
 std::set<V> UnorderedMapOfSetExtract(std::unordered_map<K, std::set<V>>& map,
                                      const K& key) {
   auto it = map.find(key);
   if (it != map.end()) {
-    auto set = std::move(map.find(key)->second);
+    auto set = std::move(it->second);
     map.erase(it);
     return set;
   }
   return {};
 };
 
+// From a non-empty container, returns a pointer to a random element.
 template <typename C>
-static const typename C::value_type* RandomElement(const C& container) {
+const typename C::value_type* RandomElement(const C& container) {
   GPR_ASSERT(!container.empty());
   auto it = container.begin();
   std::advance(it, std::rand() % container.size());
@@ -117,9 +125,9 @@ void PerHostStore::ReportStreamCreated(const grpc::string& lb_id,
     for (const auto& p : per_balancer_stores_) {
       const grpc::string& other_lb_id = p.first;
       if (other_lb_id != lb_id) {
-        PerBalancerStore* orphaned_store = p.second.get();
+        const std::unique_ptr<PerBalancerStore>& orphaned_store = p.second;
         orphaned_store->Resume();
-        AssignOrphanedStore(orphaned_store, lb_id);
+        AssignOrphanedStore(orphaned_store.get(), lb_id);
       }
     }
   }
