@@ -195,9 +195,10 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.10.0': None
         },
-        {
-            'v1.11.0': None
-        },
+        # TODO: Wait for the fix of #15147
+        #{
+        #    'v1.11.0': None
+        #},
     ],
     'node': [
         {
