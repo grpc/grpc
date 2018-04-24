@@ -54,7 +54,7 @@ class RefCounted {
   // friend of this class.
   void Unref() {
     if (gpr_unref(&refs_)) {
-      Delete(this);
+      Delete(static_cast<Child*>(this));
     }
   }
 
@@ -114,7 +114,7 @@ class RefCountedWithTracing {
 
   void Unref() {
     if (gpr_unref(&refs_)) {
-      Delete(this);
+      Delete(static_cast<Child*>(this));
     }
   }
 

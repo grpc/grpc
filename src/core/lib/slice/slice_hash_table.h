@@ -81,6 +81,10 @@ class SliceHashTable : public RefCounted<SliceHashTable<T>> {
   template <typename T2, typename... Args>
   friend T2* New(Args&&... args);
 
+  // So Delete() can call our private dtor.
+  template <typename T2>
+  friend void Delete(T2*);
+
   SliceHashTable(size_t num_entries, Entry* entries, ValueCmp value_cmp);
   virtual ~SliceHashTable();
 

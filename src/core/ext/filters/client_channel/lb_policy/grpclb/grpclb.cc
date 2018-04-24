@@ -189,6 +189,10 @@ class GrpcLb : public LoadBalancingPolicy {
     bool seen_initial_response() const { return seen_initial_response_; }
 
    private:
+    // So Delete() can access our private dtor.
+    template <typename T>
+    friend void grpc_core::Delete(T*);
+
     ~BalancerCallState();
 
     GrpcLb* grpclb_policy() const {
