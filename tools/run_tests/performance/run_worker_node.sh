@@ -27,4 +27,4 @@ cd "$(dirname "$0")/../../.."
 # Enter the grpc-node repo root (expected to be next to grpc repo root)
 cd ../grpc-node
 
-node -r test/fixtures/$fixture.js tools/run_tests/performance/worker.js $@
+node -r "test/fixtures/$fixture.js" tools/run_tests/performance/worker.js "$@"

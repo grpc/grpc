@@ -1150,6 +1150,7 @@ class GoLanguage:
     def __str__(self):
         return 'go'
 
+
 class NodeLanguage:
 
     def __init__(self, node_purejs=False):
@@ -1163,7 +1164,7 @@ class NodeLanguage:
 
     def worker_port_offset(self):
         if self.node_purejs:
-          return 1100
+            return 1100
         return 1000
 
     def scenarios(self):
@@ -1245,6 +1246,7 @@ class NodeLanguage:
         if self.node_purejs:
             return 'node_purejs'
         return 'node'
+
 
 LANGUAGES = {
     'c++': CXXLanguage(),
