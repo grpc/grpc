@@ -46,9 +46,6 @@ class CallCredentials2Test extends PHPUnit_Framework_TestCase
     {
         unset($this->channel);
         unset($this->server);
-        $channel_clean_persistent =
-            new Grpc\Channel('localhost:50010', []);
-        $channel_clean_persistent->cleanPersistentList();
     }
 
     public function callbackFunc($context)
