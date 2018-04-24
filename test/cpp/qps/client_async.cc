@@ -35,7 +35,7 @@
 #include <grpcpp/generic/generic_stub.h>
 
 #include "src/core/lib/surface/completion_queue.h"
-#include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
+#include "src/proto/grpc/testing/services.grpc.pb.h"
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/usage_timer.h"
 #include "test/cpp/util/create_test_channel.h"

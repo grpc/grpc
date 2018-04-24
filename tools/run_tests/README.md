@@ -14,6 +14,8 @@ Builds gRPC in given language and runs unit tests. Use `tools/run_tests/run_test
 - `--use_docker` Builds a docker container containing all the prerequisites for given language and runs the tests under that container.
 - `--build_only` Only build, do not run the tests.
 
+Note: If you get an error such as `ImportError: No module named httplib2`, then you may be missing some Python modules. Install the module listed in the error and try again. 
+
 Note: some tests may be flaky. Check the "Issues" tab for known flakes and other issues.
 
 The full suite of unit tests will take many minutes to run.

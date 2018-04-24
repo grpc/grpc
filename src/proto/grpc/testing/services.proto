@@ -17,6 +17,7 @@
 syntax = "proto3";
 
 import "src/proto/grpc/testing/messages.proto";
+import "src/proto/grpc/testing/control.proto";
 
 package grpc.testing;
 
@@ -41,4 +42,33 @@ service BenchmarkService {
   // Two-sided unbounded streaming between server to client
   // Both sides send the content of their own choice to the other
   rpc StreamingBothWays(stream SimpleRequest) returns (stream SimpleResponse);
+}
+
+service WorkerService {
+  // Start server with specified workload.
+  // First request sent specifies the ServerConfig followed by ServerStatus
+  // response. After that, a "Mark" can be sent anytime to request the latest
+  // stats. Closing the stream will initiate shutdown of the test server
+  // and once the shutdown has finished, the OK status is sent to terminate
+  // this RPC.
+  rpc RunServer(stream ServerArgs) returns (stream ServerStatus);
+
+  // Start client with specified workload.
+  // First request sent specifies the ClientConfig followed by ClientStatus
+  // response. After that, a "Mark" can be sent anytime to request the latest
+  // stats. Closing the stream will initiate shutdown of the test client
+  // and once the shutdown has finished, the OK status is sent to terminate
+  // this RPC.
+  rpc RunClient(stream ClientArgs) returns (stream ClientStatus);
+
+  // Just return the core count - unary call
+  rpc CoreCount(CoreRequest) returns (CoreResponse);
+
+  // Quit this worker
+  rpc QuitWorker(Void) returns (Void);
+}
+
+service ReportQpsScenarioService {
+  // Report results of a QPS test benchmark scenario.
+  rpc ReportScenario(ScenarioResult) returns (Void);
 }

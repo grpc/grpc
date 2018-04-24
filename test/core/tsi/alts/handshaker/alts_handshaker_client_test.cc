@@ -54,9 +54,11 @@ static alts_tsi_event* alts_tsi_event_create_for_testing(bool is_client) {
                          : grpc_alts_credentials_server_options_create();
   if (is_client) {
     grpc_alts_credentials_client_options_add_target_service_account(
-        e->options, ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT1);
+        reinterpret_cast<grpc_alts_credentials_client_options*>(e->options),
+        ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT1);
     grpc_alts_credentials_client_options_add_target_service_account(
-        e->options, ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT2);
+        reinterpret_cast<grpc_alts_credentials_client_options*>(e->options),
+        ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT2);
   }
   grpc_gcp_rpc_protocol_versions* versions = &e->options->rpc_versions;
   GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_max(

@@ -24,7 +24,7 @@ $LOAD_PATH.unshift(this_dir) unless $LOAD_PATH.include?(this_dir)
 require 'grpc'
 require 'qps-common'
 require 'src/proto/grpc/testing/messages_pb'
-require 'src/proto/grpc/testing/benchmark_service_services_pb'
+require 'src/proto/grpc/testing/services_services_pb'
 require 'src/proto/grpc/testing/stats_pb'
 
 class BenchmarkServiceImpl < Grpc::Testing::BenchmarkService::Service

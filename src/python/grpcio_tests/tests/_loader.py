@@ -54,7 +54,7 @@ class Loader(object):
         for module in modules:
             try:
                 package_paths = module.__path__
-            except AttributeError:
+            except:
                 continue
             self.walk_packages(package_paths)
         coverage_context.stop()

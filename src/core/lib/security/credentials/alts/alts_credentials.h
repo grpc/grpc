@@ -41,6 +41,26 @@ typedef struct grpc_alts_server_credentials {
 } grpc_alts_server_credentials;
 
 /**
+ * This method creates an ALTS channel credential object.
+ *
+ * - options: grpc ALTS credentials options instance for client.
+ *
+ * It returns the created ALTS channel credential object.
+ */
+grpc_channel_credentials* grpc_alts_credentials_create(
+    const grpc_alts_credentials_options* options);
+
+/**
+ * This method creates an ALTS server credential object.
+ *
+ * - options: grpc ALTS credentials options instance for server.
+ *
+ * It returns the created ALTS server credential object.
+ */
+grpc_server_credentials* grpc_alts_server_credentials_create(
+    const grpc_alts_credentials_options* options);
+
+/**
  * This method creates an ALTS channel credential object with customized
  * information provided by caller.
  *

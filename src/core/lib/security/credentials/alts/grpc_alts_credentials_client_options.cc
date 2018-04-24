@@ -44,20 +44,20 @@ static target_service_account* target_service_account_create(
   return sa;
 }
 
-void grpc_alts_credentials_client_options_add_target_service_account(
-    grpc_alts_credentials_options* options, const char* service_account) {
+bool grpc_alts_credentials_client_options_add_target_service_account(
+    grpc_alts_credentials_client_options* options,
+    const char* service_account) {
   if (options == nullptr || service_account == nullptr) {
     gpr_log(
         GPR_ERROR,
         "Invalid nullptr arguments to "
         "grpc_alts_credentials_client_options_add_target_service_account()");
-    return;
+    return false;
   }
-  auto client_options =
-      reinterpret_cast<grpc_alts_credentials_client_options*>(options);
   target_service_account* node = target_service_account_create(service_account);
-  node->next = client_options->target_account_list_head;
-  client_options->target_account_list_head = node;
+  node->next = options->target_account_list_head;
+  options->target_account_list_head = node;
+  return true;
 }
 
 static void target_service_account_destroy(

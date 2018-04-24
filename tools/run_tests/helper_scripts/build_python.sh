@@ -142,11 +142,6 @@ fi
  true)
 VENV_PYTHON=$(script_realpath "$VENV/$VENV_RELATIVE_PYTHON")
 
-# See https://github.com/grpc/grpc/issues/14815 for more context. We cannot rely
-# on pip to upgrade itself because if pip is too old, it may not have the required
-# TLS version to run `pip install`.
-curl https://bootstrap.pypa.io/get-pip.py | $VENV_PYTHON
-
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
 # Python gets confused when parsing paths.
 pip_install_dir() {
@@ -163,7 +158,7 @@ case "$VENV" in
   ;;
 esac
 
-$VENV_PYTHON -m pip install --upgrade pip==10.0.1
+$VENV_PYTHON -m pip install --upgrade pip==9.0.2
 $VENV_PYTHON -m pip install setuptools
 $VENV_PYTHON -m pip install cython
 $VENV_PYTHON -m pip install six enum34 protobuf futures

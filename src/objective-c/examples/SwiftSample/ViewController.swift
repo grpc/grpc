@@ -36,7 +36,7 @@ class ViewController: UIViewController {
     // Example gRPC call using a generated proto client library:
 
     let service = RMTTestService(host: RemoteHost)
-    service.unaryCall(with: request) { response, error in
+    service.unaryCallWithRequest(request) { response, error in
       if let response = response {
         NSLog("1. Finished successfully with response:\n\(response)")
       } else {
@@ -48,7 +48,7 @@ class ViewController: UIViewController {
     // Same but manipulating headers:
 
     var RPC : GRPCProtoCall! // Needed to convince Swift to capture by reference (__block)
-    RPC = service.rpcToUnaryCall(with: request) { response, error in
+    RPC = service.RPCToUnaryCallWithRequest(request) { response, error in
       if let response = response {
         NSLog("2. Finished successfully with response:\n\(response)")
       } else {
@@ -59,23 +59,23 @@ class ViewController: UIViewController {
     }
 
     // TODO(jcanizales): Revert to using subscript syntax once XCode 8 is released.
-    RPC.requestHeaders["My-Header"] = "My value"
+    RPC.requestHeaders.setObject("My value", forKey: "My-Header")
 
     RPC.start()
 
 
     // Same example call using the generic gRPC client library:
 
-    let method = GRPCProtoMethod(package: "grpc.testing", service: "TestService", method: "UnaryCall")!
+    let method = GRPCProtoMethod(package: "grpc.testing", service: "TestService", method: "UnaryCall")
 
     let requestsWriter = GRXWriter(value: request.data())
 
-    let call = GRPCCall(host: RemoteHost, path: method.httpPath, requestsWriter: requestsWriter)!
+    let call = GRPCCall(host: RemoteHost, path: method.HTTPPath, requestsWriter: requestsWriter)
 
-    call.requestHeaders["My-Header"] = "My value"
+    call.requestHeaders.setObject("My value", forKey: "My-Header")
 
-    call.start(with: GRXWriteable { response, error in
-      if let response = response as? Data {
+    call.startWithWriteable(GRXWriteable { response, error in
+      if let response = response as? NSData {
         NSLog("3. Received response:\n\(try! RMTSimpleResponse(data: response))")
       } else {
         NSLog("3. Finished with error: \(error!)")

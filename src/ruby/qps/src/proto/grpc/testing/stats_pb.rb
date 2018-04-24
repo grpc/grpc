@@ -3,16 +3,11 @@
 
 require 'google/protobuf'
 
-require 'src/proto/grpc/core/stats_pb'
 Google::Protobuf::DescriptorPool.generated_pool.build do
   add_message "grpc.testing.ServerStats" do
     optional :time_elapsed, :double, 1
     optional :time_user, :double, 2
     optional :time_system, :double, 3
-    optional :total_cpu_time, :uint64, 4
-    optional :idle_cpu_time, :uint64, 5
-    optional :cq_poll_count, :uint64, 6
-    optional :core_stats, :message, 7, "grpc.core.Stats"
   end
   add_message "grpc.testing.HistogramParams" do
     optional :resolution, :double, 1
@@ -26,18 +21,11 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     optional :sum_of_squares, :double, 5
     optional :count, :double, 6
   end
-  add_message "grpc.testing.RequestResultCount" do
-    optional :status_code, :int32, 1
-    optional :count, :int64, 2
-  end
   add_message "grpc.testing.ClientStats" do
     optional :latencies, :message, 1, "grpc.testing.HistogramData"
     optional :time_elapsed, :double, 2
     optional :time_user, :double, 3
     optional :time_system, :double, 4
-    repeated :request_results, :message, 5, "grpc.testing.RequestResultCount"
-    optional :cq_poll_count, :uint64, 6
-    optional :core_stats, :message, 7, "grpc.core.Stats"
   end
 end
 
@@ -46,7 +34,6 @@ module Grpc
     ServerStats = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ServerStats").msgclass
     HistogramParams = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.HistogramParams").msgclass
     HistogramData = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.HistogramData").msgclass
-    RequestResultCount = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.RequestResultCount").msgclass
     ClientStats = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ClientStats").msgclass
   end
 end

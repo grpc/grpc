@@ -27,7 +27,7 @@
 
 #include <grpcpp/client_context.h>
 #include "src/cpp/util/core_stats.h"
-#include "src/proto/grpc/testing/report_qps_scenario_service.grpc.pb.h"
+#include "src/proto/grpc/testing/services.grpc.pb.h"
 
 namespace grpc {
 namespace testing {

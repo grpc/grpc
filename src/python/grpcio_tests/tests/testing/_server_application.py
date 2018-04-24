@@ -38,7 +38,7 @@ class FirstServiceServicer(services_pb2_grpc.FirstServiceServicer):
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
             context.set_details('Something is wrong with your request!')
         return
-        yield services_pb2.Strange()  # pylint: disable=unreachable
+        yield services_pb2.Strange()
 
     def StreUn(self, request_iterator, context):
         context.send_initial_metadata(((

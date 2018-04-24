@@ -20,14 +20,6 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
   add_message "grpc.testing.SecurityParams" do
     optional :use_test_ca, :bool, 1
     optional :server_host_override, :string, 2
-    optional :cred_type, :string, 3
-  end
-  add_message "grpc.testing.ChannelArg" do
-    optional :name, :string, 1
-    oneof :value do
-      optional :str_value, :string, 2
-      optional :int_value, :int32, 3
-    end
   end
   add_message "grpc.testing.ClientConfig" do
     repeated :server_targets, :string, 1
@@ -43,10 +35,6 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     repeated :core_list, :int32, 13
     optional :core_limit, :int32, 14
     optional :other_client_api, :string, 15
-    repeated :channel_args, :message, 16, "grpc.testing.ChannelArg"
-    optional :threads_per_cq, :int32, 17
-    optional :messages_per_stream, :int32, 18
-    optional :use_coalesce_api, :bool, 19
   end
   add_message "grpc.testing.ClientStatus" do
     optional :stats, :message, 1, "grpc.testing.ClientStats"
@@ -69,9 +57,6 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     optional :payload_config, :message, 9, "grpc.testing.PayloadConfig"
     repeated :core_list, :int32, 10
     optional :other_server_api, :string, 11
-    optional :threads_per_cq, :int32, 12
-    optional :resource_quota_size, :int32, 1001
-    repeated :channel_args, :message, 1002, "grpc.testing.ChannelArg"
   end
   add_message "grpc.testing.ServerArgs" do
     oneof :argtype do
@@ -116,13 +101,6 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     optional :latency_95, :double, 9
     optional :latency_99, :double, 10
     optional :latency_999, :double, 11
-    optional :server_cpu_usage, :double, 12
-    optional :successful_requests_per_second, :double, 13
-    optional :failed_requests_per_second, :double, 14
-    optional :client_polls_per_request, :double, 15
-    optional :server_polls_per_request, :double, 16
-    optional :server_queries_per_cpu_sec, :double, 17
-    optional :client_queries_per_cpu_sec, :double, 18
   end
   add_message "grpc.testing.ScenarioResult" do
     optional :scenario, :message, 1, "grpc.testing.Scenario"
@@ -133,7 +111,6 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     optional :summary, :message, 6, "grpc.testing.ScenarioResultSummary"
     repeated :client_success, :bool, 7
     repeated :server_success, :bool, 8
-    repeated :request_results, :message, 9, "grpc.testing.RequestResultCount"
   end
   add_enum "grpc.testing.ClientType" do
     value :SYNC_CLIENT, 0
@@ -149,9 +126,6 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
   add_enum "grpc.testing.RpcType" do
     value :UNARY, 0
     value :STREAMING, 1
-    value :STREAMING_FROM_CLIENT, 2
-    value :STREAMING_FROM_SERVER, 3
-    value :STREAMING_BOTH_WAYS, 4
   end
 end
 
@@ -161,7 +135,6 @@ module Grpc
     ClosedLoopParams = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ClosedLoopParams").msgclass
     LoadParams = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.LoadParams").msgclass
     SecurityParams = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.SecurityParams").msgclass
-    ChannelArg = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ChannelArg").msgclass
     ClientConfig = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ClientConfig").msgclass
     ClientStatus = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ClientStatus").msgclass
     Mark = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.Mark").msgclass
