@@ -115,7 +115,7 @@ uint64_t PerBalancerStore::GetNumCallsInProgressForReport() {
 void PerHostStore::ReportStreamCreated(const grpc::string& lb_id,
                                        const grpc::string& load_key) {
   GPR_ASSERT(lb_id != kInvalidLbId);
-  InternalAddLb(lb_id, load_key);
+  SetUpForNewLbId(lb_id, load_key);
   // Prior to this one, there was no load balancer receiving report, so we may
   // have unassigned orphaned stores to assign to this new balancer.
   // TODO(juanlishen): If the load key of this new stream is the same with
@@ -124,8 +124,8 @@ void PerHostStore::ReportStreamCreated(const grpc::string& lb_id,
   if (assigned_stores_.size() == 1) {
     for (const auto& p : per_balancer_stores_) {
       const grpc::string& other_lb_id = p.first;
+      const std::unique_ptr<PerBalancerStore>& orphaned_store = p.second;
       if (other_lb_id != lb_id) {
-        const std::unique_ptr<PerBalancerStore>& orphaned_store = p.second;
         orphaned_store->Resume();
         AssignOrphanedStore(orphaned_store.get(), lb_id);
       }
@@ -133,7 +133,7 @@ void PerHostStore::ReportStreamCreated(const grpc::string& lb_id,
   }
   // The first connected balancer will adopt the kInvalidLbId.
   if (per_balancer_stores_.size() == 1) {
-    InternalAddLb(kInvalidLbId, "");
+    SetUpForNewLbId(kInvalidLbId, "");
     ReportStreamClosed(kInvalidLbId);
   }
 }
@@ -195,8 +195,8 @@ void PerHostStore::AssignOrphanedStore(PerBalancerStore* orphaned_store,
           new_receiver.c_str());
 }
 
-void PerHostStore::InternalAddLb(const grpc::string& lb_id,
-                                 const grpc::string& load_key) {
+void PerHostStore::SetUpForNewLbId(const grpc::string& lb_id,
+                                   const grpc::string& load_key) {
   // The top-level caller (i.e., LoadReportService) should guarantee the
   // lb_id is unique for each reporting stream.
   GPR_ASSERT(per_balancer_stores_.find(lb_id) == per_balancer_stores_.end());
@@ -210,10 +210,12 @@ void PerHostStore::InternalAddLb(const grpc::string& lb_id,
 
 PerBalancerStore* LoadDataStore::FindPerBalancerStore(
     const string& hostname, const string& lb_id) const {
-  return per_host_stores_.find(hostname) != per_host_stores_.end()
-             ? per_host_stores_.find(hostname)->second.FindPerBalancerStore(
-                   lb_id)
-             : nullptr;
+  auto it = per_host_stores_.find(hostname);
+  if (it != per_host_stores_.end()) {
+    return it->second.FindPerBalancerStore(lb_id);
+  } else {
+    return nullptr;
+  }
 }
 
 void LoadDataStore::MergeRow(const grpc::string& hostname,

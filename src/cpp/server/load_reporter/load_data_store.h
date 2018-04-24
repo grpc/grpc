@@ -44,21 +44,25 @@ constexpr uint8_t kLbIdLen = 8;
 // The value of a customized call metric.
 class CallMetricValue {
  public:
-  explicit CallMetricValue(uint64_t count = 0, double total = 0)
-      : count_(count), total_(total) {}
+  explicit CallMetricValue(uint64_t num_calls = 0,
+                           double total_metric_value = 0)
+      : num_calls_(num_calls), total_metric_value_(total_metric_value) {}
 
   void MergeFrom(CallMetricValue other) {
-    count_ += other.count_;
-    total_ += other.total_;
+    num_calls_ += other.num_calls_;
+    total_metric_value_ += other.total_metric_value_;
   }
 
   // Getters.
-  uint64_t count() const { return count_; }
-  double total() const { return total_; }
+  uint64_t num_calls() const { return num_calls_; }
+  double total_metric_value() const { return total_metric_value_; }
 
  private:
-  uint64_t count_ = 0;
-  double total_ = 0;
+  // The number of calls that finished with this metric.
+  uint64_t num_calls_ = 0;
+  // The sum of metric values across all the calls that finished with this
+  // metric.
+  double total_metric_value_ = 0;
 };
 
 // The key of a load record.
@@ -89,11 +93,18 @@ class LoadRecordKey {
   const grpc::string& client_ip_hex() const { return client_ip_hex_; }
 
   struct Hasher {
+    void hash_combine(size_t* seed, const grpc::string& k) const {
+      *seed ^= std::hash<grpc::string>()(k) + 0x9e3779b9 + (*seed << 6) +
+               (*seed >> 2);
+    }
+
     size_t operator()(const LoadRecordKey& k) const {
-      return std::hash<grpc::string>()(k.lb_id_) ^
-             std::hash<grpc::string>()(k.lb_tag_) ^
-             std::hash<grpc::string>()(k.user_id_) ^
-             std::hash<grpc::string>()(k.client_ip_hex_);
+      size_t h = 0;
+      hash_combine(&h, k.lb_id_);
+      hash_combine(&h, k.lb_tag_);
+      hash_combine(&h, k.user_id_);
+      hash_combine(&h, k.client_ip_hex_);
+      return h;
     }
   };
 
@@ -184,11 +195,12 @@ class PerBalancerStore {
   // suspended.
   void MergeRow(const LoadRecordKey& key, const LoadRecordValue& value);
 
-  bool IsSuspended() const { return suspended_; }
-
+  // Suspend this store, so that no detailed load data will be recorded.
   void Suspend();
-
+  // Resume this store from suspension.
   void Resume();
+  // Is this store suspended or not?
+  bool IsSuspended() const { return suspended_; }
 
   bool IsNumCallsInProgressChangedSinceLastReport() const {
     return num_calls_in_progress_ != last_reported_num_calls_in_progress_;
@@ -235,16 +247,18 @@ class PerHostStore {
   // resumed.
   void ReportStreamClosed(const grpc::string& lb_id);
 
+  // Returns null if not found. Caller doesn't own the returned store.
   PerBalancerStore* FindPerBalancerStore(const grpc::string& lb_id) const;
 
-  // Returns null if lb_id is not found.
+  // Returns null if lb_id is not found. The returned pointer points to the
+  // underlying data structure, which is not owned by the caller.
   const std::set<PerBalancerStore*>* GetAssignedStores(
       const grpc::string& lb_id) const;
 
  private:
   // Creates a PerBalancerStore for the given LB ID, assigns the store to
   // itself, and records the LB ID to the load key.
-  void InternalAddLb(const grpc::string& lb_id, const grpc::string& load_key);
+  void SetUpForNewLbId(const grpc::string& lb_id, const grpc::string& load_key);
 
   void AssignOrphanedStore(PerBalancerStore* orphaned_store,
                            const grpc::string& new_receiver);
@@ -267,7 +281,7 @@ class PerHostStore {
       assigned_stores_;
 };
 
-// Two-level bookkeeper of all the load data.
+// Thread-unsafe two-level bookkeeper of all the load data.
 // Note: We never remove any store objects from this class, as per the
 // current spec. That's because premature removal of the store objects
 // may lead to loss of critical information, e.g., mapping from lb_id to
@@ -278,10 +292,12 @@ class PerHostStore {
 // PerBalancerStore.
 class LoadDataStore {
  public:
+  // Returns null if not found. Caller doesn't own the returned store.
   PerBalancerStore* FindPerBalancerStore(const grpc::string& hostname,
                                          const grpc::string& lb_id) const;
 
-  // Returns null if hostname or lb_id is not found.
+  // Returns null if hostname or lb_id is not found. The returned pointer points
+  // to the underlying data structure, which is not owned by the caller.
   const std::set<PerBalancerStore*>* GetAssignedStores(const string& hostname,
                                                        const string& lb_id);
 
@@ -291,6 +307,8 @@ class LoadDataStore {
   void MergeRow(const grpc::string& hostname, const LoadRecordKey& key,
                 const LoadRecordValue& value);
 
+  // Is the given lb_id a tracked unknown LB ID (i.e., the LB ID was associated
+  // with some received load data but unknown to this load data store)?
   bool IsTrackedUnknownBalancerId(const grpc::string& lb_id) const {
     return unknown_balancer_id_trackers_.find(lb_id) !=
            unknown_balancer_id_trackers_.end();

@@ -436,16 +436,18 @@ TEST_F(PerBalancerStoreTest, DataAggregation) {
   EXPECT_EQ(value_for_key1.bytes_recv(), v1.bytes_recv() + v3.bytes_recv());
   EXPECT_EQ(value_for_key1.latency_ms(), v1.latency_ms() + v3.latency_ms());
   EXPECT_EQ(value_for_key1.call_metrics().size(), 2U);
-  EXPECT_EQ(value_for_key1.call_metrics().find(kMetric1)->second.count(),
-            v1.call_metrics().find(kMetric1)->second.count() +
-                v3.call_metrics().find(kMetric1)->second.count());
-  EXPECT_EQ(value_for_key1.call_metrics().find(kMetric1)->second.total(),
-            v1.call_metrics().find(kMetric1)->second.total() +
-                v3.call_metrics().find(kMetric1)->second.total());
-  EXPECT_EQ(value_for_key1.call_metrics().find(kMetric2)->second.count(),
-            v3.call_metrics().find(kMetric2)->second.count());
-  EXPECT_EQ(value_for_key1.call_metrics().find(kMetric2)->second.total(),
-            v3.call_metrics().find(kMetric2)->second.total());
+  EXPECT_EQ(value_for_key1.call_metrics().find(kMetric1)->second.num_calls(),
+            v1.call_metrics().find(kMetric1)->second.num_calls() +
+                v3.call_metrics().find(kMetric1)->second.num_calls());
+  EXPECT_EQ(
+      value_for_key1.call_metrics().find(kMetric1)->second.total_metric_value(),
+      v1.call_metrics().find(kMetric1)->second.total_metric_value() +
+          v3.call_metrics().find(kMetric1)->second.total_metric_value());
+  EXPECT_EQ(value_for_key1.call_metrics().find(kMetric2)->second.num_calls(),
+            v3.call_metrics().find(kMetric2)->second.num_calls());
+  EXPECT_EQ(
+      value_for_key1.call_metrics().find(kMetric2)->second.total_metric_value(),
+      v3.call_metrics().find(kMetric2)->second.total_metric_value());
   // LoadRecordValue for kKey2 is aggregated (trivially) correctly.
   LoadRecordValue value_for_key2 =
       per_balancer_store.load_record_map().find(kKey2)->second;
@@ -456,14 +458,16 @@ TEST_F(PerBalancerStoreTest, DataAggregation) {
   EXPECT_EQ(value_for_key2.bytes_recv(), v2.bytes_recv());
   EXPECT_EQ(value_for_key2.latency_ms(), v2.latency_ms());
   EXPECT_EQ(value_for_key2.call_metrics().size(), 2U);
-  EXPECT_EQ(value_for_key2.call_metrics().find(kMetric1)->second.count(),
-            v2.call_metrics().find(kMetric1)->second.count());
-  EXPECT_EQ(value_for_key2.call_metrics().find(kMetric1)->second.total(),
-            v2.call_metrics().find(kMetric1)->second.total());
-  EXPECT_EQ(value_for_key2.call_metrics().find(kMetric2)->second.count(),
-            v2.call_metrics().find(kMetric2)->second.count());
-  EXPECT_EQ(value_for_key2.call_metrics().find(kMetric2)->second.total(),
-            v2.call_metrics().find(kMetric2)->second.total());
+  EXPECT_EQ(value_for_key2.call_metrics().find(kMetric1)->second.num_calls(),
+            v2.call_metrics().find(kMetric1)->second.num_calls());
+  EXPECT_EQ(
+      value_for_key2.call_metrics().find(kMetric1)->second.total_metric_value(),
+      v2.call_metrics().find(kMetric1)->second.total_metric_value());
+  EXPECT_EQ(value_for_key2.call_metrics().find(kMetric2)->second.num_calls(),
+            v2.call_metrics().find(kMetric2)->second.num_calls());
+  EXPECT_EQ(
+      value_for_key2.call_metrics().find(kMetric2)->second.total_metric_value(),
+      v2.call_metrics().find(kMetric2)->second.total_metric_value());
 }
 
 }  // namespace
