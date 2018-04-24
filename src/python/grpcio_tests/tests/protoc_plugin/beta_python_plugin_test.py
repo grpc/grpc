@@ -329,7 +329,9 @@ class PythonPluginTest(unittest.TestCase):
 
         _packagify(self._python_out)
 
-        with _system_path([self._python_out]):
+        with _system_path([
+                self._python_out,
+        ]):
             self._payload_pb2 = importlib.import_module(_PAYLOAD_PB2)
             self._requests_pb2 = importlib.import_module(_REQUESTS_PB2)
             self._responses_pb2 = importlib.import_module(_RESPONSES_PB2)

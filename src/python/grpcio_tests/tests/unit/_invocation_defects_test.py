@@ -165,12 +165,10 @@ class FailAfterFewIterationsCounter(object):
 
     def __next__(self):
         if self._current >= self._high:
-            raise test_control.Defect()
+            raise Exception("This is a deliberate failure in a unit test.")
         else:
             self._current += 1
             return self._bytestring
-
-    next = __next__
 
 
 def _unary_unary_multi_callable(channel):

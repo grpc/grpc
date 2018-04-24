@@ -366,5 +366,4 @@ void address_sorting_shutdown() {
     abort();
   }
   g_current_source_addr_factory->vtable->destroy(g_current_source_addr_factory);
-  g_current_source_addr_factory = NULL;
 }

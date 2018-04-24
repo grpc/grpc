@@ -285,7 +285,7 @@ class ServerClientMixin(object):
         self.assertEqual(5, len(server_event.batch_operations))
         found_server_op_types = set()
         for server_result in server_event.batch_operations:
-            self.assertNotIn(server_result.type(), found_server_op_types)
+            self.assertNotIn(client_result.type(), found_server_op_types)
             found_server_op_types.add(server_result.type())
             if server_result.type() == cygrpc.OperationType.receive_message:
                 self.assertEqual(REQUEST, server_result.message())

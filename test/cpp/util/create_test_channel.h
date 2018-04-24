@@ -26,27 +26,21 @@
 namespace grpc {
 class Channel;
 
-namespace testing {
-
-typedef enum { INSECURE = 0, TLS, ALTS } transport_security;
-
-}  // namespace testing
-
-std::shared_ptr<Channel> CreateTestChannel(
-    const grpc::string& server, testing::transport_security security_type);
+std::shared_ptr<Channel> CreateTestChannel(const grpc::string& server,
+                                           bool enable_ssl);
 
 std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, const grpc::string& override_hostname,
-    testing::transport_security security_type, bool use_prod_roots);
+    bool enable_ssl, bool use_prod_roots);
 
 std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, const grpc::string& override_hostname,
-    testing::transport_security security_type, bool use_prod_roots,
+    bool enable_ssl, bool use_prod_roots,
     const std::shared_ptr<CallCredentials>& creds);
 
 std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, const grpc::string& override_hostname,
-    testing::transport_security security_type, bool use_prod_roots,
+    bool enable_ssl, bool use_prod_roots,
     const std::shared_ptr<CallCredentials>& creds,
     const ChannelArguments& args);
 

@@ -36,7 +36,7 @@
 
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/surface/completion_queue.h"
-#include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
+#include "src/proto/grpc/testing/services.grpc.pb.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/qps/server.h"
 

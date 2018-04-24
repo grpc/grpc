@@ -135,7 +135,6 @@ AresDnsResolver::AresDnsResolver(const ResolverArgs& args)
   if (path[0] == '/') ++path;
   name_to_resolve_ = gpr_strdup(path);
   // Get DNS server from URI authority.
-  dns_server_ = nullptr;
   if (0 != strcmp(args.uri->authority, "")) {
     dns_server_ = gpr_strdup(args.uri->authority);
   }

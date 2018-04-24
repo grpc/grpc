@@ -29,10 +29,10 @@ namespace grpc {
 namespace testing {
 
 const char kInsecureCredentialsType[] = "INSECURE_CREDENTIALS";
+
 // For real credentials, like tls/ssl, this name should match the AuthContext
 // property "transport_security_type".
 const char kTlsCredentialsType[] = "ssl";
-const char kAltsCredentialsType[] = "alts";
 
 // Provide test credentials of a particular type.
 class CredentialTypeProvider {

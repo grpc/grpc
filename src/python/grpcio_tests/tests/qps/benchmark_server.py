@@ -13,10 +13,10 @@
 # limitations under the License.
 
 from src.proto.grpc.testing import messages_pb2
-from src.proto.grpc.testing import benchmark_service_pb2_grpc
+from src.proto.grpc.testing import services_pb2_grpc
 
 
-class BenchmarkServer(benchmark_service_pb2_grpc.BenchmarkServiceServicer):
+class BenchmarkServer(services_pb2_grpc.BenchmarkServiceServicer):
     """Synchronous Server implementation for the Benchmark service."""
 
     def UnaryCall(self, request, context):
@@ -29,8 +29,7 @@ class BenchmarkServer(benchmark_service_pb2_grpc.BenchmarkServiceServicer):
             yield messages_pb2.SimpleResponse(payload=payload)
 
 
-class GenericBenchmarkServer(
-        benchmark_service_pb2_grpc.BenchmarkServiceServicer):
+class GenericBenchmarkServer(services_pb2_grpc.BenchmarkServiceServicer):
     """Generic Server implementation for the Benchmark service."""
 
     def __init__(self, resp_size):

@@ -215,6 +215,30 @@ def _run_infinite_request_stream(stub):
         return _UNSATISFACTORY_OUTCOME
 
 
+def run(scenario, channel):
+    stub = services_pb2_grpc.FirstServiceStub(channel)
+    try:
+        if scenario is Scenario.UNARY_UNARY:
+            return _run_unary_unary(stub)
+        elif scenario is Scenario.UNARY_STREAM:
+            return _run_unary_stream(stub)
+        elif scenario is Scenario.STREAM_UNARY:
+            return _run_stream_unary(stub)
+        elif scenario is Scenario.STREAM_STREAM:
+            return _run_stream_stream(stub)
+        elif scenario is Scenario.CONCURRENT_STREAM_UNARY:
+            return _run_concurrent_stream_unary(stub)
+        elif scenario is Scenario.CONCURRENT_STREAM_STREAM:
+            return _run_concurrent_stream_stream(stub)
+        elif scenario is Scenario.CANCEL_UNARY_UNARY:
+            return _run_cancel_unary_unary(stub)
+        elif scenario is Scenario.INFINITE_REQUEST_STREAM:
+            return _run_infinite_request_stream(stub)
+    except grpc.RpcError as rpc_error:
+        return Outcome(Outcome.Kind.RPC_ERROR, rpc_error.code(),
+                       rpc_error.details())
+
+
 _IMPLEMENTATIONS = {
     Scenario.UNARY_UNARY: _run_unary_unary,
     Scenario.UNARY_STREAM: _run_unary_stream,

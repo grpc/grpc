@@ -38,8 +38,6 @@
 #include "test/cpp/interop/server_helper.h"
 #include "test/cpp/util/test_config.h"
 
-DEFINE_bool(use_alts, false,
-            "Whether to use alts. Enable alts will disable tls.");
 DEFINE_bool(use_tls, false, "Whether to use tls.");
 DEFINE_string(custom_credentials_type, "", "User provided credentials type.");
 DEFINE_int32(port, 0, "Server port.");

@@ -21,9 +21,18 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/grpc_security.h>
+#include <stdbool.h>
 
 #include "src/core/tsi/alts/handshaker/transport_security_common_api.h"
+
+/**
+ * Main interface for ALTS credentials options. The options will contain
+ * information that will be passed from grpc to TSI layer such as RPC protocol
+ * versions. ALTS client (channel) and server credentials will have their own
+ * implementation of this interface. The APIs listed in this header are
+ * thread-compatible.
+ */
+typedef struct grpc_alts_credentials_options grpc_alts_credentials_options;
 
 /* V-table for grpc_alts_credentials_options */
 typedef struct grpc_alts_credentials_options_vtable {
@@ -70,6 +79,34 @@ typedef struct grpc_alts_credentials_server_options {
  */
 grpc_alts_credentials_options* grpc_alts_credentials_options_copy(
     const grpc_alts_credentials_options* options);
+
+/**
+ * This method destroys a grpc_alts_credentials_options instance by
+ * de-allocating all of its occupied memory.
+ *
+ * - options: a grpc_alts_credentials_options instance that needs to be
+ *   destroyed.
+ */
+void grpc_alts_credentials_options_destroy(
+    grpc_alts_credentials_options* options);
+
+/* This method creates a grpc ALTS credentials client options instance. */
+grpc_alts_credentials_options* grpc_alts_credentials_client_options_create();
+
+/* This method creates a grpc ALTS credentials server options instance. */
+grpc_alts_credentials_options* grpc_alts_credentials_server_options_create();
+
+/**
+ * This method adds a target service account to grpc ALTS credentials client
+ * options instance.
+ *
+ * - options: grpc ALTS credentials client options instance.
+ * - service_account: service account of target endpoint.
+ *
+ * It returns true on success and false on failure.
+ */
+bool grpc_alts_credentials_client_options_add_target_service_account(
+    grpc_alts_credentials_client_options* options, const char* service_account);
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_ALTS_GRPC_ALTS_CREDENTIALS_OPTIONS_H \
         */

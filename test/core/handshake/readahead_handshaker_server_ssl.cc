@@ -64,7 +64,7 @@ static void readahead_handshaker_do_handshake(
 
 const grpc_handshaker_vtable readahead_handshaker_vtable = {
     readahead_handshaker_destroy, readahead_handshaker_shutdown,
-    readahead_handshaker_do_handshake, "read_ahead"};
+    readahead_handshaker_do_handshake};
 
 static grpc_handshaker* readahead_handshaker_create() {
   grpc_handshaker* h =

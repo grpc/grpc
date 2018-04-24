@@ -170,9 +170,6 @@ END2END_TESTS = {
                                       proxyable=False),
     'retry_non_retriable_status': default_test_options._replace(
         cpu_cost=LOWCPU, needs_client_channel=True, proxyable=False),
-    'retry_non_retriable_status_before_recv_trailing_metadata_started':
-        default_test_options._replace(
-            cpu_cost=LOWCPU, needs_client_channel=True, proxyable=False),
     'retry_recv_initial_metadata': default_test_options._replace(
         cpu_cost=LOWCPU, needs_client_channel=True, proxyable=False),
     'retry_recv_message': default_test_options._replace(

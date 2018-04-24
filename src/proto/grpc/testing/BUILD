@@ -76,26 +76,11 @@ grpc_proto_library(
 )
 
 grpc_proto_library(
-    name = "benchmark_service_proto",
-    srcs = ["benchmark_service.proto"],
+    name = "services_proto",
+    srcs = ["services.proto"],
     deps = [
-      "messages_proto",
-    ],
-)
-
-grpc_proto_library(
-    name = "report_qps_scenario_service_proto",
-    srcs = ["report_qps_scenario_service.proto"],
-    deps = [
-      "control_proto",
-    ],
-)
-
-grpc_proto_library(
-    name = "worker_service_proto",
-    srcs = ["worker_service.proto"],
-    deps = [
-      "control_proto",
+        "control_proto",
+        "messages_proto",
     ],
 )
 
