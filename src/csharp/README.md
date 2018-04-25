@@ -39,10 +39,14 @@ If you are a user of gRPC C#, go to Usage section above.
 
 **Windows, Linux or Mac OS X**
 
-- The easiest way to build is using the `run_tests.py` script that will take care of building the `grpc_csharp_ext` native library:
+- The easiest way to build is using the `run_tests.py` script that will take care of building the `grpc_csharp_ext` native library.
+  You might first need to install the prerequisites mentioned in [INSTALL.md](../../INSTALL.md#pre-requisites).
   ```
+  # NOTE: make sure all necessary git submodules with dependencies 
+  # are available by running "git submodule update --init"
+  
   # from the gRPC repository root
-  $ python tools/run_tests/run_tests.py -c dbg -l csharp --build_only
+  $ python tools/run_tests/run_tests.py -l csharp -c dbg --build_only
   ```
 
 - Use Visual Studio 2017 (on Windows) to open the solution `Grpc.sln` or use Visual Studio Code with C# extension (on Linux and Mac). gRPC C# code has been migrated to
@@ -57,11 +61,12 @@ gRPC C# is using NUnit as the testing framework.
 Under Visual Studio, make sure NUnit test adapter is installed (under "Extensions and Updates").
 Then you should be able to run all the tests using Test Explorer.
 
-gRPC team uses a Python script to simplify facilitate running tests for
+gRPC team uses a Python script to facilitate running tests for
 different languages.
 
 ```
-tools/run_tests/run_tests.py -l csharp
+# from the gRPC repository root
+$ python tools/run_tests/run_tests.py -l csharp -c dbg
 ```
 
 DOCUMENTATION
