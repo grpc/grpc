@@ -212,7 +212,8 @@ PerBalancerStore* LoadDataStore::FindPerBalancerStore(
     const string& hostname, const string& lb_id) const {
   auto it = per_host_stores_.find(hostname);
   if (it != per_host_stores_.end()) {
-    return it->second.FindPerBalancerStore(lb_id);
+    const PerHostStore& per_host_store = it->second;
+    return per_host_store.FindPerBalancerStore(lb_id);
   } else {
     return nullptr;
   }
