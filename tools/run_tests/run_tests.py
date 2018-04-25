@@ -1420,16 +1420,18 @@ argp.add_argument(
     nargs='?',
     help='Upload test results to a specified BQ table.')
 argp.add_argument(
-    '--disable_auto_set_flakes',
+    '--auto_set_flakes',
     default=False,
     const=True,
     action='store_const',
-    help='Disable rerunning historically flaky tests')
+    help=
+    'Allow repeated runs for tests that have been failing recently (based on BQ historical data).'
+)
 args = argp.parse_args()
 
 flaky_tests = set()
 shortname_to_cpu = {}
-if not args.disable_auto_set_flakes:
+if args.auto_set_flakes:
     try:
         for test in get_bqtest_data():
             if test.flaky: flaky_tests.add(test.name)
