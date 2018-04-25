@@ -18050,7 +18050,7 @@ else
 
 ifeq ($(NO_PROTOBUF),true)
 
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
 $(BINDIR)/$(CONFIG)/lb_load_data_store_test: protobuf_dep_error
 
