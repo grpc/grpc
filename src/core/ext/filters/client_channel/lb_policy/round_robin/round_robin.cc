@@ -134,10 +134,6 @@ class RoundRobin : public LoadBalancingPolicy {
       GRPC_ERROR_UNREF(last_transient_failure_error_);
     }
 
-    // Manages references for connectivity watches.
-    void RefForConnectivityWatch(const char* reason);
-    void UnrefForConnectivityWatch(const char* reason);
-
     // Starts watching the subchannels in this list.
     void StartWatchingLocked();
 
@@ -377,6 +373,7 @@ bool RoundRobin::DoPickLocked(PickState* pick) {
     /* readily available, report right away */
     RoundRobinSubchannelData* sd =
         subchannel_list_->subchannel(next_ready_index);
+    GPR_ASSERT(sd->connected_subchannel() != nullptr);
     pick->connected_subchannel = sd->connected_subchannel()->Ref();
     if (pick->user_data != nullptr) {
       *pick->user_data = sd->user_data();
@@ -422,27 +419,6 @@ bool RoundRobin::PickLocked(PickState* pick) {
   return false;
 }
 
-void RoundRobin::RoundRobinSubchannelList::RefForConnectivityWatch(
-    const char* reason) {
-  // TODO(roth): We currently track these refs manually.  Once the new
-  // ClosureRef API is ready, find a way to pass the RefCountedPtr<>
-  // along with the closures instead of doing this manually.
-  // Ref subchannel list.
-  Ref(DEBUG_LOCATION, reason).release();
-  // Ref LB policy.
-  RoundRobin* p = static_cast<RoundRobin*>(policy());
-  p->Ref(DEBUG_LOCATION, reason).release();
-}
-
-void RoundRobin::RoundRobinSubchannelList::UnrefForConnectivityWatch(
-    const char* reason) {
-  // Unref LB policy.
-  RoundRobin* p = static_cast<RoundRobin*>(policy());
-  p->Unref(DEBUG_LOCATION, reason);
-  // Unref subchannel list.
-  Unref(DEBUG_LOCATION, reason);
-}
-
 void RoundRobin::RoundRobinSubchannelList::StartWatchingLocked() {
   if (num_subchannels() == 0) return;
   // Check current state of each subchannel synchronously, since any
@@ -474,8 +450,7 @@ void RoundRobin::RoundRobinSubchannelList::StartWatchingLocked() {
   // Start connectivity watch for each subchannel.
   for (size_t i = 0; i < num_subchannels(); i++) {
     if (subchannel(i)->subchannel() != nullptr) {
-      RefForConnectivityWatch("connectivity_watch");
-      subchannel(i)->StartConnectivityWatchLocked();
+      subchannel(i)->StartOrRenewConnectivityWatchLocked();
     }
   }
 }
@@ -597,15 +572,6 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
         subchannel_list()->shutting_down(), grpc_error_string(error));
   }
   GPR_ASSERT(subchannel() != nullptr);
-// FIXME: move this to SubchannelData::OnConnectivityChangedLocked()
-  // If the subchannel list is shutting down, stop watching.
-  if (subchannel_list()->shutting_down() || error == GRPC_ERROR_CANCELLED) {
-    StopConnectivityWatchLocked();
-    UnrefSubchannelLocked("rr_sl_shutdown");
-    subchannel_list()->UnrefForConnectivityWatch("rr_sl_shutdown");
-    GRPC_ERROR_UNREF(error);
-    return;
-  }
   // If the new state is TRANSIENT_FAILURE, re-resolve.
   // Only do this if we've started watching, not at startup time.
   // Otherwise, if the subchannel was already in state TRANSIENT_FAILURE
@@ -628,7 +594,7 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
   // If we've started watching, update overall state and renew notification.
   if (subchannel_list()->started_watching()) {
     subchannel_list()->UpdateRoundRobinStateFromSubchannelStateCountsLocked();
-    StartConnectivityWatchLocked();
+    StartOrRenewConnectivityWatchLocked();
   }
   GRPC_ERROR_UNREF(error);
 }

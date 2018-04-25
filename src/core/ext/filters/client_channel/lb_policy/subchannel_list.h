@@ -109,8 +109,8 @@ class SubchannelData {
   // Synchronously checks the subchannel's connectivity state.  Calls
   // ProcessConnectivityChangeLocked() if the state has changed.
   // Must not be called while there is a connectivity notification
-  // pending (i.e., between calling StartConnectivityWatchLocked() and
-  // the resulting invocation of ProcessConnectivityChangeLocked()).
+  // pending (i.e., between calling StartOrRenewConnectivityWatchLocked()
+  // and the resulting invocation of ProcessConnectivityChangeLocked()).
   void CheckConnectivityStateLocked() {
     GPR_ASSERT(!connectivity_notification_pending_);
     grpc_error* error = GRPC_ERROR_NONE;
@@ -133,15 +133,15 @@ class SubchannelData {
   // Starts or renewes watching the connectivity state of the subchannel.
   // ProcessConnectivityChangeLocked() will be called when the
   // connectivity state changes.
-  void StartConnectivityWatchLocked();
+  void StartOrRenewConnectivityWatchLocked();
 
   // Stops watching the connectivity state of the subchannel.
   void StopConnectivityWatchLocked();
 
   // Cancels watching the connectivity state of the subchannel.
   // Must be called only while there is a connectivity notification
-  // pending (i.e., between calling StartConnectivityWatchLocked() and
-  // the resulting invocation of ProcessConnectivityChangeLocked()).
+  // pending (i.e., between calling StartOrRenewConnectivityWatchLocked()
+  // and the resulting invocation of ProcessConnectivityChangeLocked()).
   // From within ProcessConnectivityChangeLocked(), use
   // StopConnectivityWatchLocked() instead.
   void CancelConnectivityWatchLocked(const char* reason);
@@ -159,8 +159,8 @@ class SubchannelData {
 
   virtual ~SubchannelData();
 
-  // After StartConnectivityWatchLocked() is called, this method will be
-  // invoked when the subchannel's connectivity state changes.
+  // After StartOrRenewConnectivityWatchLocked() is called, this method
+  // will be invoked when the subchannel's connectivity state changes.
   // Implementations can use connectivity_state() to get the new
   // connectivity state.
   // Implementations must invoke either StopConnectivityWatch() or again
@@ -302,7 +302,7 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::
 
 template <typename SubchannelListType, typename SubchannelDataType>
 void SubchannelData<SubchannelListType,
-                    SubchannelDataType>::StartConnectivityWatchLocked() {
+                    SubchannelDataType>::StartOrRenewConnectivityWatchLocked() {
   if (subchannel_list_->tracer()->enabled()) {
     gpr_log(GPR_DEBUG,
             "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
@@ -313,7 +313,10 @@ void SubchannelData<SubchannelListType,
             subchannel_,
             grpc_connectivity_state_name(pending_connectivity_state_unsafe_));
   }
-  connectivity_notification_pending_ = true;
+  if (!connectivity_notification_pending_) {
+    subchannel_list()->Ref(DEBUG_LOCATION, "connectivity_watch").release();
+    connectivity_notification_pending_ = true;
+  }
   grpc_subchannel_notify_on_state_change(
       subchannel_, subchannel_list_->policy()->interested_parties(),
       &pending_connectivity_state_unsafe_, &connectivity_changed_closure_);
@@ -332,6 +335,7 @@ void SubchannelData<SubchannelListType,
   }
   GPR_ASSERT(connectivity_notification_pending_);
   connectivity_notification_pending_ = false;
+  subchannel_list()->Unref(DEBUG_LOCATION, "connectivity_watch");
 }
 
 template <typename SubchannelListType, typename SubchannelDataType>
@@ -387,9 +391,14 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::
     OnConnectivityChangedLocked(void* arg, grpc_error* error) {
   SubchannelData* sd = static_cast<SubchannelData*>(arg);
 // FIXME: add trace logging
+  if (sd->subchannel_list()->shutting_down() || error == GRPC_ERROR_CANCELLED) {
+    sd->UnrefSubchannelLocked("connectivity_shutdown");
+    sd->StopConnectivityWatchLocked();
+    return;
+  }
   if (!sd->UpdateConnectedSubchannelLocked()) {
     // We don't want to report this connectivity state, so renew the watch.
-    sd->StartConnectivityWatchLocked();
+    sd->StartOrRenewConnectivityWatchLocked();
     return;
   }
   // Now that we're inside the combiner, copy the pending connectivity
