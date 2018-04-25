@@ -100,11 +100,9 @@ static void simple_request_body(grpc_end2end_test_config config,
   int was_cancelled = 2;
 
   gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(
-      f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-      grpc_slice_from_static_string("/foo"),
-      get_host_override_slice("foo.test.google.fr:1234", config), deadline,
-      nullptr);
+  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
+                               grpc_slice_from_static_string("/foo"), nullptr,
+                               deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -177,8 +175,6 @@ static void simple_request_body(grpc_end2end_test_config config,
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-  validate_host_override_string("foo.test.google.fr:1234", call_details.host,
-                                config);
   GPR_ASSERT(was_cancelled == 1);
 
   grpc_slice_unref(details);
@@ -248,17 +244,13 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   /* start two requests - ensuring that the second is not accepted until
      the first completes */
   deadline = n_seconds_from_now(1000);
-  c1 = grpc_channel_create_call(
-      f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-      grpc_slice_from_static_string("/alpha"),
-      get_host_override_slice("foo.test.google.fr:1234", config), deadline,
-      nullptr);
+  c1 = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS,
+                                f.cq, grpc_slice_from_static_string("/alpha"),
+                                nullptr, deadline, nullptr);
   GPR_ASSERT(c1);
-  c2 = grpc_channel_create_call(
-      f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-      grpc_slice_from_static_string("/beta"),
-      get_host_override_slice("foo.test.google.fr:1234", config), deadline,
-      nullptr);
+  c2 = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS,
+                                f.cq, grpc_slice_from_static_string("/beta"),
+                                nullptr, deadline, nullptr);
   GPR_ASSERT(c2);
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
@@ -494,17 +486,13 @@ static void test_max_concurrent_streams_with_timeout_on_first(
 
   /* start two requests - ensuring that the second is not accepted until
      the first completes */
-  c1 = grpc_channel_create_call(
-      f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-      grpc_slice_from_static_string("/alpha"),
-      get_host_override_slice("foo.test.google.fr:1234", config),
-      n_seconds_from_now(3), nullptr);
+  c1 = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS,
+                                f.cq, grpc_slice_from_static_string("/alpha"),
+                                nullptr, n_seconds_from_now(3), nullptr);
   GPR_ASSERT(c1);
-  c2 = grpc_channel_create_call(
-      f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-      grpc_slice_from_static_string("/beta"),
-      get_host_override_slice("foo.test.google.fr:1234", config),
-      n_seconds_from_now(1000), nullptr);
+  c2 = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS,
+                                f.cq, grpc_slice_from_static_string("/beta"),
+                                nullptr, n_seconds_from_now(1000), nullptr);
   GPR_ASSERT(c2);
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
@@ -694,17 +682,13 @@ static void test_max_concurrent_streams_with_timeout_on_second(
   /* start two requests - ensuring that the second is not accepted until
      the first completes , and the second request will timeout in the
      concurrent_list */
-  c1 = grpc_channel_create_call(
-      f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-      grpc_slice_from_static_string("/alpha"),
-      get_host_override_slice("foo.test.google.fr:1234", config),
-      n_seconds_from_now(1000), nullptr);
+  c1 = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS,
+                                f.cq, grpc_slice_from_static_string("/alpha"),
+                                nullptr, n_seconds_from_now(1000), nullptr);
   GPR_ASSERT(c1);
-  c2 = grpc_channel_create_call(
-      f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-      grpc_slice_from_static_string("/beta"),
-      get_host_override_slice("foo.test.google.fr:1234", config),
-      n_seconds_from_now(3), nullptr);
+  c2 = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS,
+                                f.cq, grpc_slice_from_static_string("/beta"),
+                                nullptr, n_seconds_from_now(3), nullptr);
   GPR_ASSERT(c2);
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(

@@ -57,4 +57,12 @@
   }
 }
 
++ (void)setKeepaliveWithInterval:(int)interval
+                         timeout:(int)timeout
+                         forHost:(nonnull NSString *)host {
+  GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
+  hostConfig.keepaliveInterval = interval;
+  hostConfig.keepaliveTimeout = timeout;
+}
+
 @end

@@ -22,7 +22,9 @@
 #define GRPC_CORE_LIB_IOMGR_PORT_H
 
 #ifdef GRPC_UV
+#ifndef GRPC_CUSTOM_SOCKET
 #define GRPC_CUSTOM_SOCKET
+#endif
 #endif
 #if defined(GRPC_CUSTOM_SOCKET)
 // Do Nothing

@@ -64,11 +64,11 @@ config_setting(
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "gorgeous"
+g_stands_for = "glorious"
 
 core_version = "6.0.0-dev"
 
-version = "1.11.0-dev"
+version = "1.12.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -141,7 +141,6 @@ GRPCXX_SRCS = [
     "src/cpp/server/server_posix.cc",
     "src/cpp/thread_manager/thread_manager.cc",
     "src/cpp/util/byte_buffer_cc.cc",
-    "src/cpp/util/slice_cc.cc",
     "src/cpp/util/status.cc",
     "src/cpp/util/string_ref.cc",
     "src/cpp/util/time_cc.cc",
@@ -245,6 +244,8 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/support/byte_buffer.h",
     "include/grpcpp/support/channel_arguments.h",
     "include/grpcpp/support/config.h",
+    "include/grpcpp/support/proto_buffer_reader.h",
+    "include/grpcpp/support/proto_buffer_writer.h",
     "include/grpcpp/support/slice.h",
     "include/grpcpp/support/status.h",
     "include/grpcpp/support/status_code_enum.h",
@@ -307,12 +308,8 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "grpc_base",
-        "grpc_deadline_filter",
         "grpc_http_filters",
-        "grpc_message_size_filter",
-        "grpc_server_load_reporting",
         "grpc_transport_chttp2_client_secure",
-        "grpc_transport_chttp2_server_secure",
         "grpc_transport_cronet_client_secure",
     ],
 )
@@ -988,6 +985,7 @@ grpc_cc_library(
         # standard plugins
         "census",
         "grpc_deadline_filter",
+        "grpc_client_authority_filter",
         "grpc_lb_policy_pick_first",
         "grpc_lb_policy_round_robin",
         "grpc_server_load_reporting",
@@ -1056,6 +1054,7 @@ grpc_cc_library(
     deps = [
         "gpr_base",
         "grpc_base",
+        "grpc_client_authority_filter",
         "grpc_deadline_filter",
         "inlined_vector",
         "orphanable",
@@ -1085,6 +1084,20 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/ext/filters/deadline/deadline_filter.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_client_authority_filter",
+    srcs = [
+        "src/core/ext/filters/http/client_authority_filter.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/http/client_authority_filter.h",
     ],
     language = "c++",
     deps = [
@@ -1482,9 +1495,11 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_transport_chttp2_client_connector",
     srcs = [
+        "src/core/ext/transport/chttp2/client/authority.cc",
         "src/core/ext/transport/chttp2/client/chttp2_connector.cc",
     ],
     hdrs = [
+        "src/core/ext/transport/chttp2/client/authority.h",
         "src/core/ext/transport/chttp2/client/chttp2_connector.h",
     ],
     language = "c++",
@@ -1871,6 +1886,8 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = [
         "include/grpc++/impl/codegen/proto_utils.h",
+        "include/grpcpp/impl/codegen/proto_buffer_reader.h",
+        "include/grpcpp/impl/codegen/proto_buffer_writer.h",
         "include/grpcpp/impl/codegen/proto_utils.h",
     ],
     deps = [

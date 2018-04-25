@@ -196,9 +196,6 @@ static NSString * const kBearerPrefix = @"Bearer ";
     _state = GRXWriterStateFinished;
   }
 
-  // If the call isn't retained anywhere else, it can be deallocated now.
-  _retainSelf = nil;
-
   // If there were still request messages coming, stop them.
   @synchronized(_requestWriter) {
     _requestWriter.state = GRXWriterStateFinished;
@@ -211,6 +208,9 @@ static NSString * const kBearerPrefix = @"Bearer ";
   }
 
   [GRPCConnectivityMonitor unregisterObserver:self];
+
+  // If the call isn't retained anywhere else, it can be deallocated now.
+  _retainSelf = nil;
 }
 
 - (void)cancelCall {
@@ -355,17 +355,8 @@ static NSString * const kBearerPrefix = @"Bearer ";
   }
 
   dispatch_async(_callQueue, ^{
-    __weak GRPCCall *weakSelf = self;
-    [self writeMessage:value withErrorHandler:^{
-      __strong GRPCCall *strongSelf = weakSelf;
-      if (strongSelf != nil) {
-        [strongSelf maybeFinishWithError:[NSError errorWithDomain:kGRPCErrorDomain
-                                                             code:GRPCErrorCodeInternal
-                                                         userInfo:nil]];
-        // Wrapped call must be canceled when error is reported to upper layers
-        [strongSelf cancelCall];
-      }
-    }];
+    // Write error is not processed here. It is handled by op batch of GRPC_OP_RECV_STATUS_ON_CLIENT
+    [self writeMessage:value withErrorHandler:nil];
   });
 }
 
@@ -387,15 +378,8 @@ static NSString * const kBearerPrefix = @"Bearer ";
     [self cancel];
   } else {
     dispatch_async(_callQueue, ^{
-      __weak GRPCCall *weakSelf = self;
-      [self finishRequestWithErrorHandler:^{
-        __strong GRPCCall *strongSelf = weakSelf;
-        [strongSelf maybeFinishWithError:[NSError errorWithDomain:kGRPCErrorDomain
-                                                             code:GRPCErrorCodeInternal
-                                                         userInfo:nil]];
-        // Wrapped call must be canceled when error is reported to upper layers
-        [strongSelf cancelCall];
-      }];
+      // EOS error is not processed here. It is handled by op batch of GRPC_OP_RECV_STATUS_ON_CLIENT
+      [self finishRequestWithErrorHandler:nil];
     });
   }
 }

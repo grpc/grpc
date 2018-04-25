@@ -10,7 +10,16 @@ def generate_cc_impl(ctx):
   includes = [f for src in ctx.attr.srcs for f in src.proto.transitive_imports]
   outs = []
   # label_len is length of the path from WORKSPACE root to the location of this build file
-  label_len = len(ctx.label.package) + 1
+  label_len = 0
+  # proto_root is the directory relative to which generated include paths should be
+  proto_root = ""
+  if ctx.label.package:
+    # The +1 is for the trailing slash.
+    label_len += len(ctx.label.package) + 1
+  if ctx.label.workspace_root:
+    label_len += len(ctx.label.workspace_root) + 1
+    proto_root = "/" + ctx.label.workspace_root
+
   if ctx.executable.plugin:
     outs += [proto.path[label_len:-len(".proto")] + ".grpc.pb.h" for proto in protos]
     outs += [proto.path[label_len:-len(".proto")] + ".grpc.pb.cc" for proto in protos]
@@ -20,7 +29,7 @@ def generate_cc_impl(ctx):
     outs += [proto.path[label_len:-len(".proto")] + ".pb.h" for proto in protos]
     outs += [proto.path[label_len:-len(".proto")] + ".pb.cc" for proto in protos]
   out_files = [ctx.new_file(out) for out in outs]
-  dir_out = str(ctx.genfiles_dir.path)
+  dir_out = str(ctx.genfiles_dir.path + proto_root)
 
   arguments = []
   if ctx.executable.plugin:
@@ -33,7 +42,20 @@ def generate_cc_impl(ctx):
   else:
     arguments += ["--cpp_out=" + ",".join(ctx.attr.flags) + ":" + dir_out]
     additional_input = []
-  arguments += ["-I{0}={0}".format(include.path) for include in includes]
+
+  # Import protos relative to their workspace root so that protoc prints the
+  # right include paths.
+  for include in includes:
+    directory = include.path
+    if directory.startswith("external"):
+      external_sep = directory.find("/")
+      repository_sep = directory.find("/", external_sep + 1)
+      arguments += ["--proto_path=" + directory[:repository_sep]]
+    else:
+      arguments += ["--proto_path=."]
+  # Include the output directory so that protoc puts the generated code in the
+  # right directory.
+  arguments += ["--proto_path={0}{1}".format(dir_out, proto_root)]
   arguments += [proto.path for proto in protos]
 
   # create a list of well known proto files if the argument is non-None

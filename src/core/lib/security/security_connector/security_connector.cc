@@ -306,6 +306,7 @@ typedef struct {
   char* target;
   char* expected_targets;
   bool is_lb_channel;
+  char* target_name_override;
 } grpc_fake_channel_security_connector;
 
 static void fake_channel_destroy(grpc_security_connector* sc) {
@@ -314,6 +315,7 @@ static void fake_channel_destroy(grpc_security_connector* sc) {
   grpc_call_credentials_unref(c->base.request_metadata_creds);
   gpr_free(c->target);
   gpr_free(c->expected_targets);
+  gpr_free(c->target_name_override);
   gpr_free(c);
 }
 
@@ -465,13 +467,36 @@ static bool fake_channel_check_call_host(grpc_channel_security_connector* sc,
                                          grpc_error** error) {
   grpc_fake_channel_security_connector* c =
       reinterpret_cast<grpc_fake_channel_security_connector*>(sc);
-  if (c->is_lb_channel) {
-    // TODO(dgq): verify that the host (ie, authority header) matches that of
-    // the LB, as opposed to that of the backends.
-  } else {
-    // TODO(dgq): verify that the host (ie, authority header) matches that of
-    // the backend, not the LB's.
+  char* authority_hostname = nullptr;
+  char* authority_ignored_port = nullptr;
+  char* target_hostname = nullptr;
+  char* target_ignored_port = nullptr;
+  gpr_split_host_port(host, &authority_hostname, &authority_ignored_port);
+  gpr_split_host_port(c->target, &target_hostname, &target_ignored_port);
+  if (c->target_name_override != nullptr) {
+    char* fake_security_target_name_override_hostname = nullptr;
+    char* fake_security_target_name_override_ignored_port = nullptr;
+    gpr_split_host_port(c->target_name_override,
+                        &fake_security_target_name_override_hostname,
+                        &fake_security_target_name_override_ignored_port);
+    if (strcmp(authority_hostname,
+               fake_security_target_name_override_hostname) != 0) {
+      gpr_log(GPR_ERROR,
+              "Authority (host) '%s' != Fake Security Target override '%s'",
+              host, fake_security_target_name_override_hostname);
+      abort();
+    }
+    gpr_free(fake_security_target_name_override_hostname);
+    gpr_free(fake_security_target_name_override_ignored_port);
+  } else if (strcmp(authority_hostname, target_hostname) != 0) {
+    gpr_log(GPR_ERROR, "Authority (host) '%s' != Target '%s'",
+            authority_hostname, target_hostname);
+    abort();
   }
+  gpr_free(authority_hostname);
+  gpr_free(authority_ignored_port);
+  gpr_free(target_hostname);
+  gpr_free(target_ignored_port);
   return true;
 }
 
@@ -524,6 +549,12 @@ grpc_channel_security_connector* grpc_fake_channel_security_connector_create(
   const char* expected_targets = grpc_fake_transport_get_expected_targets(args);
   c->expected_targets = gpr_strdup(expected_targets);
   c->is_lb_channel = grpc_core::FindTargetAuthorityTableInArgs(args) != nullptr;
+  const grpc_arg* target_name_override_arg =
+      grpc_channel_args_find(args, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
+  if (target_name_override_arg != nullptr) {
+    c->target_name_override =
+        gpr_strdup(grpc_channel_arg_get_string(target_name_override_arg));
+  }
   return &c->base;
 }
 
@@ -1118,16 +1149,6 @@ const char* DefaultSslRootStore::GetPemRootCerts() {
              ? nullptr
              : reinterpret_cast<const char*>
                    GRPC_SLICE_START_PTR(default_pem_root_certs_);
-}
-
-void DefaultSslRootStore::Initialize() {
-  default_root_store_ = nullptr;
-  default_pem_root_certs_ = grpc_empty_slice();
-}
-
-void DefaultSslRootStore::Destroy() {
-  tsi_ssl_root_certs_store_destroy(default_root_store_);
-  grpc_slice_unref_internal(default_pem_root_certs_);
 }
 
 grpc_slice DefaultSslRootStore::ComputePemRootCerts() {

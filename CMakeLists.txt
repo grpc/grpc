@@ -24,7 +24,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(PACKAGE_NAME      "grpc")
-set(PACKAGE_VERSION   "1.11.0-dev")
+set(PACKAGE_VERSION   "1.12.0-dev")
 set(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
@@ -289,7 +289,6 @@ add_dependencies(buildtests_c grpc_completion_queue_test)
 add_dependencies(buildtests_c grpc_completion_queue_threading_test)
 add_dependencies(buildtests_c grpc_credentials_test)
 add_dependencies(buildtests_c grpc_fetch_oauth2)
-add_dependencies(buildtests_c grpc_invalid_channel_args_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c grpc_json_token_test)
 endif()
@@ -606,6 +605,7 @@ add_dependencies(buildtests_cxx reconnect_interop_client)
 add_dependencies(buildtests_cxx reconnect_interop_server)
 add_dependencies(buildtests_cxx ref_counted_ptr_test)
 add_dependencies(buildtests_cxx ref_counted_test)
+add_dependencies(buildtests_cxx retry_throttle_test)
 add_dependencies(buildtests_cxx secure_auth_context_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx secure_sync_unary_ping_pong_test)
@@ -1149,6 +1149,7 @@ add_library(grpc
   src/core/tsi/transport_security_adapter.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
+  src/core/ext/transport/chttp2/client/authority.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
   src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
@@ -1206,6 +1207,7 @@ add_library(grpc
   src/core/ext/census/grpc_context.cc
   src/core/ext/filters/max_age/max_age_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
+  src/core/ext/filters/http/client_authority_filter.cc
   src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc
   src/core/ext/filters/workarounds/workaround_utils.cc
   src/core/plugin_registry/grpc_plugin_registry.cc
@@ -1450,10 +1452,6 @@ add_library(grpc_cronet
   src/core/lib/transport/transport.cc
   src/core/lib/transport/transport_op_string.cc
   src/core/lib/debug/trace.cc
-  src/core/ext/filters/deadline/deadline_filter.cc
-  src/core/ext/filters/message_size/message_size_filter.cc
-  src/core/ext/filters/load_reporting/server_load_reporting_filter.cc
-  src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc
   src/core/ext/transport/cronet/client/secure/cronet_channel_create.cc
   src/core/ext/transport/cronet/transport/cronet_api_dummy.cc
   src/core/ext/transport/cronet/transport/cronet_transport.cc
@@ -1506,6 +1504,7 @@ add_library(grpc_cronet
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_index.cc
   src/core/ext/filters/client_channel/uri_parser.cc
+  src/core/ext/filters/deadline/deadline_filter.cc
   src/core/lib/http/httpcli_security_connector.cc
   src/core/lib/security/context/security_context.cc
   src/core/lib/security/credentials/alts/alts_credentials.cc
@@ -1570,6 +1569,7 @@ add_library(grpc_cronet
   src/core/tsi/transport_security_adapter.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
+  src/core/ext/transport/chttp2/client/authority.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
   src/core/tsi/alts_transport_security.cc
   src/core/tsi/fake_transport_security.cc
@@ -1578,8 +1578,8 @@ add_library(grpc_cronet
   src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
   src/core/tsi/ssl_transport_security.cc
   src/core/tsi/transport_security_grpc.cc
-  src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc
-  src/core/ext/transport/chttp2/server/chttp2_server.cc
+  src/core/ext/filters/load_reporting/server_load_reporting_filter.cc
+  src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc
   src/core/plugin_registry/grpc_cronet_plugin_registry.cc
 )
 
@@ -1639,20 +1639,9 @@ foreach(_hdr
   include/grpc/impl/codegen/sync_generic.h
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
-  include/grpc/byte_buffer.h
-  include/grpc/byte_buffer_reader.h
-  include/grpc/compression.h
-  include/grpc/fork.h
-  include/grpc/grpc.h
-  include/grpc/grpc_posix.h
-  include/grpc/grpc_security_constants.h
-  include/grpc/load_reporting.h
-  include/grpc/slice.h
-  include/grpc/slice_buffer.h
-  include/grpc/status.h
-  include/grpc/support/workaround_list.h
   include/grpc/grpc_cronet.h
   include/grpc/grpc_security.h
+  include/grpc/grpc_security_constants.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
   get_filename_component(_path ${_path} PATH)
@@ -2466,6 +2455,7 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/server/chttp2_server.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
+  src/core/ext/transport/chttp2/client/authority.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
   src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
@@ -2515,6 +2505,7 @@ add_library(grpc_unsecure
   src/core/ext/census/grpc_context.cc
   src/core/ext/filters/max_age/max_age_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
+  src/core/ext/filters/http/client_authority_filter.cc
   src/core/ext/filters/workarounds/workaround_cronet_compression_filter.cc
   src/core/ext/filters/workarounds/workaround_utils.cc
   src/core/plugin_registry/grpc_unsecure_plugin_registry.cc
@@ -2726,7 +2717,6 @@ add_library(grpc++
   src/cpp/server/server_posix.cc
   src/cpp/thread_manager/thread_manager.cc
   src/cpp/util/byte_buffer_cc.cc
-  src/cpp/util/slice_cc.cc
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
@@ -2851,6 +2841,8 @@ foreach(_hdr
   include/grpcpp/support/byte_buffer.h
   include/grpcpp/support/channel_arguments.h
   include/grpcpp/support/config.h
+  include/grpcpp/support/proto_buffer_reader.h
+  include/grpcpp/support/proto_buffer_writer.h
   include/grpcpp/support/slice.h
   include/grpcpp/support/status.h
   include/grpcpp/support/status_code_enum.h
@@ -2969,6 +2961,8 @@ foreach(_hdr
   include/grpcpp/impl/codegen/sync_stream.h
   include/grpcpp/impl/codegen/time.h
   include/grpc++/impl/codegen/proto_utils.h
+  include/grpcpp/impl/codegen/proto_buffer_reader.h
+  include/grpcpp/impl/codegen/proto_buffer_writer.h
   include/grpcpp/impl/codegen/proto_utils.h
   include/grpc++/impl/codegen/config_protobuf.h
   include/grpcpp/impl/codegen/config_protobuf.h
@@ -3077,13 +3071,13 @@ add_library(grpc++_cronet
   src/cpp/server/server_posix.cc
   src/cpp/thread_manager/thread_manager.cc
   src/cpp/util/byte_buffer_cc.cc
-  src/cpp/util/slice_cc.cc
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
   src/cpp/codegen/codegen_init.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
+  src/core/ext/transport/chttp2/client/authority.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
@@ -3411,6 +3405,8 @@ foreach(_hdr
   include/grpcpp/support/byte_buffer.h
   include/grpcpp/support/channel_arguments.h
   include/grpcpp/support/config.h
+  include/grpcpp/support/proto_buffer_reader.h
+  include/grpcpp/support/proto_buffer_writer.h
   include/grpcpp/support/slice.h
   include/grpcpp/support/status.h
   include/grpcpp/support/status_code_enum.h
@@ -3954,6 +3950,8 @@ foreach(_hdr
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
   include/grpc++/impl/codegen/proto_utils.h
+  include/grpcpp/impl/codegen/proto_buffer_reader.h
+  include/grpcpp/impl/codegen/proto_buffer_writer.h
   include/grpcpp/impl/codegen/proto_utils.h
   include/grpc++/impl/codegen/config_protobuf.h
   include/grpcpp/impl/codegen/config_protobuf.h
@@ -4127,6 +4125,8 @@ foreach(_hdr
   include/grpc/impl/codegen/sync_posix.h
   include/grpc/impl/codegen/sync_windows.h
   include/grpc++/impl/codegen/proto_utils.h
+  include/grpcpp/impl/codegen/proto_buffer_reader.h
+  include/grpcpp/impl/codegen/proto_buffer_writer.h
   include/grpcpp/impl/codegen/proto_utils.h
   include/grpc++/impl/codegen/config_protobuf.h
   include/grpcpp/impl/codegen/config_protobuf.h
@@ -4175,7 +4175,6 @@ add_library(grpc++_unsecure
   src/cpp/server/server_posix.cc
   src/cpp/thread_manager/thread_manager.cc
   src/cpp/util/byte_buffer_cc.cc
-  src/cpp/util/slice_cc.cc
   src/cpp/util/status.cc
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
@@ -4299,6 +4298,8 @@ foreach(_hdr
   include/grpcpp/support/byte_buffer.h
   include/grpcpp/support/channel_arguments.h
   include/grpcpp/support/config.h
+  include/grpcpp/support/proto_buffer_reader.h
+  include/grpcpp/support/proto_buffer_writer.h
   include/grpcpp/support/slice.h
   include/grpcpp/support/status.h
   include/grpcpp/support/status_code_enum.h
@@ -5244,6 +5245,7 @@ add_library(end2end_tests
   test/core/end2end/tests/bad_ping.cc
   test/core/end2end/tests/binary_metadata.cc
   test/core/end2end/tests/call_creds.cc
+  test/core/end2end/tests/call_host_override.cc
   test/core/end2end/tests/cancel_after_accept.cc
   test/core/end2end/tests/cancel_after_client_done.cc
   test/core/end2end/tests/cancel_after_invoke.cc
@@ -5360,6 +5362,7 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/bad_hostname.cc
   test/core/end2end/tests/bad_ping.cc
   test/core/end2end/tests/binary_metadata.cc
+  test/core/end2end/tests/call_host_override.cc
   test/core/end2end/tests/cancel_after_accept.cc
   test/core/end2end/tests/cancel_after_client_done.cc
   test/core/end2end/tests/cancel_after_invoke.cc
@@ -5734,15 +5737,6 @@ target_link_libraries(check_epollexclusive
   grpc
   gpr
 )
-
-
-if (gRPC_INSTALL)
-  install(TARGETS check_epollexclusive EXPORT gRPCTargets
-    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
-  )
-endif()
 
 if (gRPC_BUILD_TESTS)
 
@@ -7019,15 +7013,6 @@ target_link_libraries(grpc_create_jwt
   gpr
 )
 
-
-if (gRPC_INSTALL)
-  install(TARGETS grpc_create_jwt EXPORT gRPCTargets
-    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
-  )
-endif()
-
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_credentials_test
@@ -7076,34 +7061,6 @@ target_include_directories(grpc_fetch_oauth2
 )
 
 target_link_libraries(grpc_fetch_oauth2
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(grpc_invalid_channel_args_test
-  test/core/surface/invalid_channel_args_test.cc
-)
-
-
-target_include_directories(grpc_invalid_channel_args_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-target_link_libraries(grpc_invalid_channel_args_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
@@ -7195,15 +7152,6 @@ target_link_libraries(grpc_print_google_default_creds_token
   gpr
 )
 
-
-if (gRPC_INSTALL)
-  install(TARGETS grpc_print_google_default_creds_token EXPORT gRPCTargets
-    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
-  )
-endif()
-
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_security_connector_test
@@ -7284,15 +7232,6 @@ target_link_libraries(grpc_verify_jwt
   grpc
   gpr
 )
-
-
-if (gRPC_INSTALL)
-  install(TARGETS grpc_verify_jwt EXPORT gRPCTargets
-    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
-  )
-endif()
 
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX)
@@ -13038,6 +12977,43 @@ target_link_libraries(ref_counted_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(retry_throttle_test
+  test/core/client_channel/retry_throttle_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(retry_throttle_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(retry_throttle_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(secure_auth_context_test
   test/cpp/common/secure_auth_context_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -13995,15 +13971,6 @@ target_link_libraries(gen_hpack_tables
 )
 
 
-if (gRPC_INSTALL)
-  install(TARGETS gen_hpack_tables EXPORT gRPCTargets
-    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
-  )
-endif()
-
-
 add_executable(gen_legal_metadata_characters
   tools/codegen/core/gen_legal_metadata_characters.cc
 )
@@ -14026,15 +13993,6 @@ target_link_libraries(gen_legal_metadata_characters
 )
 
 
-if (gRPC_INSTALL)
-  install(TARGETS gen_legal_metadata_characters EXPORT gRPCTargets
-    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
-  )
-endif()
-
-
 add_executable(gen_percent_encoding_tables
   tools/codegen/core/gen_percent_encoding_tables.cc
 )
@@ -14055,15 +14013,6 @@ target_include_directories(gen_percent_encoding_tables
 target_link_libraries(gen_percent_encoding_tables
   ${_gRPC_ALLTARGETS_LIBRARIES}
 )
-
-
-if (gRPC_INSTALL)
-  install(TARGETS gen_percent_encoding_tables EXPORT gRPCTargets
-    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
-  )
-endif()
 
 if (gRPC_BUILD_TESTS)
 

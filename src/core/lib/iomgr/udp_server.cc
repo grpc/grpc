@@ -381,7 +381,6 @@ static int prepare_socket(grpc_socket_factory* socket_factory, int fd,
     }
   }
 
-  GPR_ASSERT(addr->len < ~(socklen_t)0);
   if (bind_socket(socket_factory, fd, addr) < 0) {
     char* addr_str;
     grpc_sockaddr_to_string(&addr_str, addr, 0);

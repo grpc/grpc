@@ -206,7 +206,7 @@ void PrintMethodImplementations(Printer* printer,
     }
   }
   for (auto one_class : classes) {
-    output += "  @class " + one_class + ";\n";
+    output += "@class " + one_class + ";\n";
   }
 
   return output;

@@ -57,6 +57,16 @@ def grpc_deps():
         actual = "@com_github_gflags_gflags//:gflags",
     )
 
+    native.bind(
+        name = "grpc_cpp_plugin",
+        actual = "@com_github_grpc_grpc//:grpc_cpp_plugin"
+    )
+
+    native.bind(
+        name = "grpc++_codegen_proto",
+        actual = "@com_github_grpc_grpc//:grpc++_codegen_proto"
+    )
+
     if "boringssl" not in native.existing_rules():
         native.http_archive(
             name = "boringssl",
@@ -120,12 +130,12 @@ def grpc_deps():
     if "com_github_bazelbuild_bazeltoolchains" not in native.existing_rules():
         native.http_archive(
             name = "com_github_bazelbuild_bazeltoolchains",
-            strip_prefix = "bazel-toolchains-b850ccdf53fed1ccab7670f52d6b297d74348d1b",
+            strip_prefix = "bazel-toolchains-44200e0c026d86c53470d107b3697a3e46469c43",
             urls = [
-                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/b850ccdf53fed1ccab7670f52d6b297d74348d1b.tar.gz",
-                "https://github.com/bazelbuild/bazel-toolchains/archive/b850ccdf53fed1ccab7670f52d6b297d74348d1b.tar.gz",
+                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/44200e0c026d86c53470d107b3697a3e46469c43.tar.gz",
+                "https://github.com/bazelbuild/bazel-toolchains/archive/44200e0c026d86c53470d107b3697a3e46469c43.tar.gz",
             ],
-            sha256 = "d84d6b2fe88ef99963febf91ddce33503eed14c155ace922e2122271b483be64",
+            sha256 = "699b55a6916c687f4b7dc092dbbf5f64672cde0dc965f79717735ec4e5416556",
         )
 
 # TODO: move some dependencies from "grpc_deps" here?

@@ -33,6 +33,7 @@ TEST(InlinedVectorTest, CreateAndIterate) {
   EXPECT_EQ(static_cast<size_t>(kNumElements), v.size());
   for (int i = 0; i < kNumElements; ++i) {
     EXPECT_EQ(i, v[i]);
+    EXPECT_EQ(i, &v[i] - &v[0]);  // Ensure contiguous allocation.
   }
 }
 

@@ -29,7 +29,7 @@ More specifically, we expect the protocol to
 * evolve over time, mainly to optimize for browser clients or support
 web-specific features such as CORS, XSRF
 * become optional (in 1-2 years) when browsers are able to speak the native
-gRPC protocol via the new [whatwg fetch/streams API](https://github.com/whatwg/fetch)
+gRPC protocol via the new [whatwg streams API](https://github.com/whatwg/streams)
 
 # Protocol differences vs [gRPC over HTTP2](PROTOCOL-HTTP2.md)
 
@@ -106,43 +106,12 @@ to security policies with XHR
 
 # Other features
 
-Compression
-
-* Full-body compression is supported and expected for all unary
-requests/responses. The compression/decompression will be done
-by browsers, using standard Content-Encoding headers
-  * “grpc-encoding” header is not used
-  * SDCH, Brotli will be supported
-* Message-level compression for streamed requests/responses is not supported
-because manual compression/decompression is prohibitively expensive using JS
-  * Per-message compression may be feasible in future with wasm
-
----
-
 Retries, caching
 
 * Will spec out the support after their respective gRPC spec extensions
 are finalized
   * Safe retries: PUT
   * Caching: header encoded request and/or a web specific spec
-
----
-
-Security
-
-* XSRF, XSS etc to be specified
-
----
-
-CORS preflight
-
-* Should follow the [CORS spec](https://developer.mozilla.org/en-US/docs/Web/HTTP/Server-Side_Access_Control)
-  * Access-Control-Allow-Credentials to allow Authorization headers
-  * Access-Control-Allow-Methods to allow POST and (preflight) OPTIONS only
-  * Access-Control-Allow-Headers to whatever the preflight request carries
-* The client library may support header overwrites to avoid preflight
-  * https://github.com/whatwg/fetch/issues/210
-* CSP support to be specified
 
 ---
 
@@ -165,3 +134,8 @@ Versioning
 
 * Special headers may be introduced to support features that may break compatiblity.
 
+---
+
+Browser-specific features
+
+* For features that are unique to browser or HTML clients, check the [spec doc](https://github.com/grpc/grpc-web/blob/master/PROTOCOL-WEB.md) published in the grpc/grpc-web repo.
