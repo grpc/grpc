@@ -184,7 +184,7 @@ void grpc_transport_set_pops(grpc_transport* transport, grpc_stream* stream,
              nullptr) {
     transport->vtable->set_pollset_set(transport, stream, pollset_set);
   } else {
-    abort();
+    // No-op for empty pollset
   }
 }
 
