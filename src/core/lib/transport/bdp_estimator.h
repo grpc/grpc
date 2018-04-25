@@ -50,7 +50,7 @@ class BdpEstimator {
   // transport (but not necessarily started)
   void SchedulePing() {
     if (grpc_bdp_estimator_trace.enabled()) {
-      gpr_log(GPR_DEBUG, "bdp[%s]:sched acc=%" PRId64 " est=%" PRId64, name_,
+      gpr_log(GPR_INFO, "bdp[%s]:sched acc=%" PRId64 " est=%" PRId64, name_,
               accumulator_, estimate_);
     }
     GPR_ASSERT(ping_state_ == PingState::UNSCHEDULED);
@@ -63,7 +63,7 @@ class BdpEstimator {
   // the ping is on the wire
   void StartPing() {
     if (grpc_bdp_estimator_trace.enabled()) {
-      gpr_log(GPR_DEBUG, "bdp[%s]:start acc=%" PRId64 " est=%" PRId64, name_,
+      gpr_log(GPR_INFO, "bdp[%s]:start acc=%" PRId64 " est=%" PRId64, name_,
               accumulator_, estimate_);
     }
     GPR_ASSERT(ping_state_ == PingState::SCHEDULED);

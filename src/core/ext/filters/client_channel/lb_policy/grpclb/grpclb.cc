@@ -1247,7 +1247,7 @@ bool GrpcLb::PickLocked(PickState* pick) {
     }
   } else {  // rr_policy_ == NULL
     if (grpc_lb_glb_trace.enabled()) {
-      gpr_log(GPR_DEBUG,
+      gpr_log(GPR_INFO,
               "[grpclb %p] No RR policy. Adding to grpclb's pending picks",
               this);
     }
@@ -1413,14 +1413,13 @@ void GrpcLb::OnFallbackTimerLocked(void* arg, grpc_error* error) {
 void GrpcLb::StartBalancerCallRetryTimerLocked() {
   grpc_millis next_try = lb_call_backoff_.NextAttemptTime();
   if (grpc_lb_glb_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "[grpclb %p] Connection to LB server lost...", this);
+    gpr_log(GPR_INFO, "[grpclb %p] Connection to LB server lost...", this);
     grpc_millis timeout = next_try - ExecCtx::Get()->Now();
     if (timeout > 0) {
-      gpr_log(GPR_DEBUG,
-              "[grpclb %p] ... retry_timer_active in %" PRIuPTR "ms.", this,
-              timeout);
+      gpr_log(GPR_INFO, "[grpclb %p] ... retry_timer_active in %" PRIuPTR "ms.",
+              this, timeout);
     } else {
-      gpr_log(GPR_DEBUG, "[grpclb %p] ... retry_timer_active immediately.",
+      gpr_log(GPR_INFO, "[grpclb %p] ... retry_timer_active immediately.",
               this);
     }
   }
@@ -1728,7 +1727,7 @@ void GrpcLb::CreateOrUpdateRoundRobinPolicyLocked() {
   GPR_ASSERT(args != nullptr);
   if (rr_policy_ != nullptr) {
     if (grpc_lb_glb_trace.enabled()) {
-      gpr_log(GPR_DEBUG, "[grpclb %p] Updating RR policy %p", this,
+      gpr_log(GPR_INFO, "[grpclb %p] Updating RR policy %p", this,
               rr_policy_.get());
     }
     rr_policy_->UpdateLocked(*args);
@@ -1739,7 +1738,7 @@ void GrpcLb::CreateOrUpdateRoundRobinPolicyLocked() {
     lb_policy_args.args = args;
     CreateRoundRobinPolicyLocked(lb_policy_args);
     if (grpc_lb_glb_trace.enabled()) {
-      gpr_log(GPR_DEBUG, "[grpclb %p] Created new RR policy %p", this,
+      gpr_log(GPR_INFO, "[grpclb %p] Created new RR policy %p", this,
               rr_policy_.get());
     }
   }
@@ -1755,7 +1754,7 @@ void GrpcLb::OnRoundRobinRequestReresolutionLocked(void* arg,
   }
   if (grpc_lb_glb_trace.enabled()) {
     gpr_log(
-        GPR_DEBUG,
+        GPR_INFO,
         "[grpclb %p] Re-resolution requested from the internal RR policy (%p).",
         grpclb_policy, grpclb_policy->rr_policy_.get());
   }

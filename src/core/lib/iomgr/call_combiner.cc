@@ -64,7 +64,7 @@ void grpc_call_combiner_start(grpc_call_combiner* call_combiner,
                               const char* reason) {
   GPR_TIMER_SCOPE("call_combiner_start", 0);
   if (grpc_call_combiner_trace.enabled()) {
-    gpr_log(GPR_DEBUG,
+    gpr_log(GPR_INFO,
             "==> grpc_call_combiner_start() [%p] closure=%p [" DEBUG_FMT_STR
             "%s] error=%s",
             call_combiner, closure DEBUG_FMT_ARGS, reason,
@@ -73,7 +73,7 @@ void grpc_call_combiner_start(grpc_call_combiner* call_combiner,
   size_t prev_size = static_cast<size_t>(
       gpr_atm_full_fetch_add(&call_combiner->size, (gpr_atm)1));
   if (grpc_call_combiner_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "  size: %" PRIdPTR " -> %" PRIdPTR, prev_size,
+    gpr_log(GPR_INFO, "  size: %" PRIdPTR " -> %" PRIdPTR, prev_size,
             prev_size + 1);
   }
   GRPC_STATS_INC_CALL_COMBINER_LOCKS_SCHEDULED_ITEMS();
@@ -82,7 +82,7 @@ void grpc_call_combiner_start(grpc_call_combiner* call_combiner,
 
     GPR_TIMER_MARK("call_combiner_initiate", 0);
     if (grpc_call_combiner_trace.enabled()) {
-      gpr_log(GPR_DEBUG, "  EXECUTING IMMEDIATELY");
+      gpr_log(GPR_INFO, "  EXECUTING IMMEDIATELY");
     }
     // Queue was empty, so execute this closure immediately.
     GRPC_CLOSURE_SCHED(closure, error);
@@ -101,21 +101,21 @@ void grpc_call_combiner_stop(grpc_call_combiner* call_combiner DEBUG_ARGS,
                              const char* reason) {
   GPR_TIMER_SCOPE("call_combiner_stop", 0);
   if (grpc_call_combiner_trace.enabled()) {
-    gpr_log(GPR_DEBUG,
+    gpr_log(GPR_INFO,
             "==> grpc_call_combiner_stop() [%p] [" DEBUG_FMT_STR "%s]",
             call_combiner DEBUG_FMT_ARGS, reason);
   }
   size_t prev_size = static_cast<size_t>(
       gpr_atm_full_fetch_add(&call_combiner->size, (gpr_atm)-1));
   if (grpc_call_combiner_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "  size: %" PRIdPTR " -> %" PRIdPTR, prev_size,
+    gpr_log(GPR_INFO, "  size: %" PRIdPTR " -> %" PRIdPTR, prev_size,
             prev_size - 1);
   }
   GPR_ASSERT(prev_size >= 1);
   if (prev_size > 1) {
     while (true) {
       if (grpc_call_combiner_trace.enabled()) {
-        gpr_log(GPR_DEBUG, "  checking queue");
+        gpr_log(GPR_INFO, "  checking queue");
       }
       bool empty;
       grpc_closure* closure = reinterpret_cast<grpc_closure*>(
@@ -124,19 +124,19 @@ void grpc_call_combiner_stop(grpc_call_combiner* call_combiner DEBUG_ARGS,
         // This can happen either due to a race condition within the mpscq
         // code or because of a race with grpc_call_combiner_start().
         if (grpc_call_combiner_trace.enabled()) {
-          gpr_log(GPR_DEBUG, "  queue returned no result; checking again");
+          gpr_log(GPR_INFO, "  queue returned no result; checking again");
         }
         continue;
       }
       if (grpc_call_combiner_trace.enabled()) {
-        gpr_log(GPR_DEBUG, "  EXECUTING FROM QUEUE: closure=%p error=%s",
+        gpr_log(GPR_INFO, "  EXECUTING FROM QUEUE: closure=%p error=%s",
                 closure, grpc_error_string(closure->error_data.error));
       }
       GRPC_CLOSURE_SCHED(closure, closure->error_data.error);
       break;
     }
   } else if (grpc_call_combiner_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "  queue empty");
+    gpr_log(GPR_INFO, "  queue empty");
   }
 }
 
@@ -151,7 +151,7 @@ void grpc_call_combiner_set_notify_on_cancel(grpc_call_combiner* call_combiner,
     // Otherwise, store the new closure.
     if (original_error != GRPC_ERROR_NONE) {
       if (grpc_call_combiner_trace.enabled()) {
-        gpr_log(GPR_DEBUG,
+        gpr_log(GPR_INFO,
                 "call_combiner=%p: scheduling notify_on_cancel callback=%p "
                 "for pre-existing cancellation",
                 call_combiner, closure);
@@ -162,7 +162,7 @@ void grpc_call_combiner_set_notify_on_cancel(grpc_call_combiner* call_combiner,
       if (gpr_atm_full_cas(&call_combiner->cancel_state, original_state,
                            (gpr_atm)closure)) {
         if (grpc_call_combiner_trace.enabled()) {
-          gpr_log(GPR_DEBUG, "call_combiner=%p: setting notify_on_cancel=%p",
+          gpr_log(GPR_INFO, "call_combiner=%p: setting notify_on_cancel=%p",
                   call_combiner, closure);
         }
         // If we replaced an earlier closure, invoke the original
@@ -171,7 +171,7 @@ void grpc_call_combiner_set_notify_on_cancel(grpc_call_combiner* call_combiner,
         if (original_state != 0) {
           closure = (grpc_closure*)original_state;
           if (grpc_call_combiner_trace.enabled()) {
-            gpr_log(GPR_DEBUG,
+            gpr_log(GPR_INFO,
                     "call_combiner=%p: scheduling old cancel callback=%p",
                     call_combiner, closure);
           }
@@ -199,7 +199,7 @@ void grpc_call_combiner_cancel(grpc_call_combiner* call_combiner,
       if (original_state != 0) {
         grpc_closure* notify_on_cancel = (grpc_closure*)original_state;
         if (grpc_call_combiner_trace.enabled()) {
-          gpr_log(GPR_DEBUG,
+          gpr_log(GPR_INFO,
                   "call_combiner=%p: scheduling notify_on_cancel callback=%p",
                   call_combiner, notify_on_cancel);
         }

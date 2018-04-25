@@ -228,7 +228,7 @@ static void on_read(void* arg, grpc_error* err) {
     gpr_asprintf(&name, "tcp-server-connection:%s", addr_str);
 
     if (grpc_tcp_trace.enabled()) {
-      gpr_log(GPR_DEBUG, "SERVER_CONNECT: incoming connection: %s", addr_str);
+      gpr_log(GPR_INFO, "SERVER_CONNECT: incoming connection: %s", addr_str);
     }
 
     grpc_fd* fdobj = grpc_fd_create(fd, name);

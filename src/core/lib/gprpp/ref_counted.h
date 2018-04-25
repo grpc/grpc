@@ -100,7 +100,7 @@ class RefCountedWithTracing {
                            const char* reason) GRPC_MUST_USE_RESULT {
     if (location.Log() && trace_flag_ != nullptr && trace_flag_->enabled()) {
       gpr_atm old_refs = gpr_atm_no_barrier_load(&refs_.count);
-      gpr_log(GPR_DEBUG, "%s:%p %s:%d ref %" PRIdPTR " -> %" PRIdPTR " %s",
+      gpr_log(GPR_INFO, "%s:%p %s:%d ref %" PRIdPTR " -> %" PRIdPTR " %s",
               trace_flag_->name(), this, location.file(), location.line(),
               old_refs, old_refs + 1, reason);
     }
@@ -121,7 +121,7 @@ class RefCountedWithTracing {
   void Unref(const DebugLocation& location, const char* reason) {
     if (location.Log() && trace_flag_ != nullptr && trace_flag_->enabled()) {
       gpr_atm old_refs = gpr_atm_no_barrier_load(&refs_.count);
-      gpr_log(GPR_DEBUG, "%s:%p %s:%d unref %" PRIdPTR " -> %" PRIdPTR " %s",
+      gpr_log(GPR_INFO, "%s:%p %s:%d unref %" PRIdPTR " -> %" PRIdPTR " %s",
               trace_flag_->name(), this, location.file(), location.line(),
               old_refs, old_refs - 1, reason);
     }
