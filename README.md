@@ -40,6 +40,7 @@ Libraries in different languages may be in different states of development. We a
 | Go                      | [grpc-go](http://github.com/grpc/grpc-go)            |
 | NodeJS                  | [grpc-node](https://github.com/grpc/grpc-node)       |
 | Dart                    | [grpc-dart](https://github.com/grpc/grpc-dart)       |
+| WebJS                   | [grpc-web](https://github.com/grpc/grpc-web)       |
 
 See [MANIFEST.md](MANIFEST.md) for a listing of top-level items in the
 repository.
