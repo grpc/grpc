@@ -74,6 +74,7 @@ DEFINE_string(
 DEFINE_string(expected_lb_policy, "",
               "Expected lb policy name that appears in resolver result channel "
               "arg. Empty for none.");
+DEFINE_bool(expect_failure, false, "Expect failure.");
 
 namespace {
 
@@ -120,7 +121,7 @@ vector<GrpcLBAddress> ParseExpectedAddrs(std::string expected_addrs) {
     expected_addrs =
         expected_addrs.substr(next_semicolon + 1, std::string::npos);
   }
-  if (out.size() == 0) {
+  if (out.size() == 0 && !FLAGS_expect_failure) {
     gpr_log(GPR_ERROR,
             "expected_addrs arg should be a semicolon-separated list of "
             "<ip-port>,<bool> pairs");
@@ -236,22 +237,27 @@ void CheckResolverResultLocked(void* argsp, grpc_error* err) {
   grpc_channel_args* channel_args = args->channel_args;
   const grpc_arg* channel_arg =
       grpc_channel_args_find(channel_args, GRPC_ARG_LB_ADDRESSES);
-  GPR_ASSERT(channel_arg != nullptr);
-  GPR_ASSERT(channel_arg->type == GRPC_ARG_POINTER);
-  grpc_lb_addresses* addresses =
-      (grpc_lb_addresses*)channel_arg->value.pointer.p;
-  gpr_log(GPR_INFO, "num addrs found: %" PRIdPTR ". expected %" PRIdPTR,
-          addresses->num_addresses, args->expected_addrs.size());
-  GPR_ASSERT(addresses->num_addresses == args->expected_addrs.size());
   std::vector<GrpcLBAddress> found_lb_addrs;
-  for (size_t i = 0; i < addresses->num_addresses; i++) {
-    grpc_lb_address addr = addresses->addresses[i];
-    char* str;
-    grpc_sockaddr_to_string(&str, &addr.address, 1 /* normalize */);
-    gpr_log(GPR_INFO, "%s", str);
-    found_lb_addrs.emplace_back(
-        GrpcLBAddress(std::string(str), addr.is_balancer));
-    gpr_free(str);
+  if (FLAGS_expect_failure) {
+    GPR_ASSERT(FLAGS_expected_addrs.size() == 0);
+    GPR_ASSERT(channel_arg == nullptr);
+  } else {
+    GPR_ASSERT(channel_arg != nullptr);
+    GPR_ASSERT(channel_arg->type == GRPC_ARG_POINTER);
+    grpc_lb_addresses* addresses =
+        (grpc_lb_addresses*)channel_arg->value.pointer.p;
+    gpr_log(GPR_INFO, "num addrs found: %" PRIdPTR ". expected %" PRIdPTR,
+            addresses->num_addresses, args->expected_addrs.size());
+    GPR_ASSERT(addresses->num_addresses == args->expected_addrs.size());
+    for (size_t i = 0; i < addresses->num_addresses; i++) {
+      grpc_lb_address addr = addresses->addresses[i];
+      char* str;
+      grpc_sockaddr_to_string(&str, &addr.address, 1 /* normalize */);
+      gpr_log(GPR_INFO, "%s", str);
+      found_lb_addrs.emplace_back(
+          GrpcLBAddress(std::string(str), addr.is_balancer));
+      gpr_free(str);
+    }
   }
   if (args->expected_addrs.size() != found_lb_addrs.size()) {
     gpr_log(GPR_DEBUG,
@@ -280,9 +286,9 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
   args.expected_lb_policy = FLAGS_expected_lb_policy;
   // maybe build the address with an authority
   char* whole_uri = nullptr;
-  GPR_ASSERT(asprintf(&whole_uri, "dns://%s/%s",
-                      FLAGS_local_dns_server_address.c_str(),
-                      FLAGS_target_name.c_str()));
+  GPR_ASSERT(gpr_asprintf(&whole_uri, "dns://%s/%s",
+                          FLAGS_local_dns_server_address.c_str(),
+                          FLAGS_target_name.c_str()));
   // create resolver and resolve
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       grpc_core::ResolverRegistry::CreateResolver(whole_uri, nullptr,
@@ -311,6 +317,9 @@ int main(int argc, char** argv) {
   if (FLAGS_local_dns_server_address != "") {
     gpr_log(GPR_INFO, "Specifying authority in uris to: %s",
             FLAGS_local_dns_server_address.c_str());
+  }
+  if (FLAGS_expect_failure) {
+    GPR_ASSERT(FLAGS_expected_addrs.size() == 0);
   }
   auto result = RUN_ALL_TESTS();
   grpc_shutdown();

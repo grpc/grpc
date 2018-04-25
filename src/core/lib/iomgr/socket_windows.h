@@ -108,6 +108,9 @@ void grpc_socket_notify_on_read(grpc_winsocket* winsocket,
 void grpc_socket_become_ready(grpc_winsocket* winsocket,
                               grpc_winsocket_callback_info* ci);
 
+/* Retreive the windows socket wrapped inside the grpc_winsocket object */
+SOCKET grpc_winsocket_wrapped_socket(grpc_winsocket* socket);
+
 #endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKET_WINDOWS_H */

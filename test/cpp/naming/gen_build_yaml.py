@@ -133,6 +133,12 @@ def main():
   with open('test/cpp/naming/resolver_test_record_groups.yaml') as f:
     resolver_component_data = yaml.load(f)
 
+  # TODO(apolcyn): though 'resolver_component_test' is enabled for windows,
+  # it won't get ran automatically on e.g. Kokoro Windows, because its
+  # language is set to c++. Once we are able to run C++ tests on windows, we
+  # need to modify the "resolver_component_tests_runner_invoker" to run on
+  # the "c-ares -> local DNS server" test suite on Windows. It needs to be
+  # manually tested on Windows for now.
   json = {
       'resolver_tests_common_zone_name': resolver_component_data['resolver_tests_common_zone_name'],
       'resolver_gce_integration_tests_zone_id': _gce_dns_zone_id(resolver_component_data),
@@ -148,7 +154,7 @@ def main():
               'gtest': False,
               'run': False,
               'src': ['test/cpp/naming/resolver_component_test.cc'],
-              'platforms': ['linux', 'posix', 'mac'],
+              'platforms': ['linux', 'posix', 'mac', 'windows'],
               'deps': [
                   'grpc++_test_util' + unsecure_build_config_suffix,
                   'grpc_test_util' + unsecure_build_config_suffix,

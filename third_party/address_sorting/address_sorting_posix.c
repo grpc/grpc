@@ -94,4 +94,6 @@ address_sorting_create_source_addr_factory_for_current_platform() {
   return factory;
 }
 
+bool address_sorting_enabled_for_current_platform() { return true; }
+
 #endif  // defined(ADDRESS_SORTING_POSIX)

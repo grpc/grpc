@@ -22,6 +22,7 @@ import tempfile
 import os
 import time
 import signal
+import platform
 
 
 argp = argparse.ArgumentParser(description='Run c-ares resolver tests')
@@ -51,12 +52,17 @@ if cur_resolver and cur_resolver != 'ares':
   sys.exit(1)
 os.environ.update({'GRPC_DNS_RESOLVER': 'ares'})
 
+def maybe_python():
+  if platform.system() == 'Windows':
+    return ['C:\\Python27\\python.exe']
+  return []
+
 def wait_until_dns_server_is_up(args,
                                 dns_server_subprocess,
                                 dns_server_subprocess_output):
   for i in range(0, 30):
     test_runner_log('Health check: attempt to connect to DNS server over TCP.')
-    tcp_connect_subprocess = subprocess.Popen([
+    tcp_connect_subprocess = subprocess.Popen(maybe_python() + [
         args.tcp_connect_bin_path,
         '--server_host', '127.0.0.1',
         '--server_port', str(args.dns_server_port),
@@ -65,7 +71,7 @@ def wait_until_dns_server_is_up(args,
     if tcp_connect_subprocess.returncode == 0:
       test_runner_log(('Health check: attempt to make an A-record '
                        'query to DNS server.'))
-      dns_resolver_subprocess = subprocess.Popen([
+      dns_resolver_subprocess = subprocess.Popen(maybe_python() + [
           args.dns_resolver_bin_path,
           '--qname', 'health-check-local-dns-server-is-alive.resolver-tests.grpctestingexp',
           '--server_host', '127.0.0.1',
@@ -91,7 +97,7 @@ def wait_until_dns_server_is_up(args,
 
 dns_server_subprocess_output = tempfile.mktemp()
 with open(dns_server_subprocess_output, 'w') as l:
-  dns_server_subprocess = subprocess.Popen([
+  dns_server_subprocess = subprocess.Popen(maybe_python() + [
       args.dns_server_bin_path,
       '--port', str(args.dns_server_port),
       '--records_config_path', args.records_config_path],
@@ -111,6 +117,18 @@ wait_until_dns_server_is_up(args,
                             dns_server_subprocess,
                             dns_server_subprocess_output)
 num_test_failures = 0
+
+test_runner_log('Run test with target: %s' % 'no-srv-ipv4-single-target.resolver-tests-version-4.grpctestingexp.')
+current_test_subprocess = subprocess.Popen([
+  args.test_bin_path,
+  '--target_name', 'no-srv-ipv4-single-target.resolver-tests-version-4.grpctestingexp.',
+  '--expected_addrs', '5.5.5.5:443,False',
+  '--expected_chosen_service_config', '',
+  '--expected_lb_policy', '',
+  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+current_test_subprocess.communicate()
+if current_test_subprocess.returncode != 0:
+  num_test_failures += 1
 
 test_runner_log('Run test with target: %s' % 'srv-ipv4-single-target.resolver-tests-version-4.grpctestingexp.')
 current_test_subprocess = subprocess.Popen([
@@ -268,6 +286,23 @@ current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
 
+def run_one_off_tests():
+  num_one_off_test_failures = 0
+  test_runner_log('Test: we can reach the DNS server but nothing resolves')
+  current_test_subprocess = subprocess.Popen([
+    args.test_bin_path,
+    '--target_name', 'non-existant-name.test.com',
+    '--expected_addrs', '',
+    '--expected_chosen_service_config', '',
+    '--expected_lb_policy', '',
+    '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port,
+    '--expect_failure', 'true'])
+  current_test_subprocess.communicate()
+  if current_test_subprocess.returncode != 0:
+    num_one_off_test_failures += 1
+  return num_one_off_test_failures
+
+num_test_failures += run_one_off_tests()
 test_runner_log('now kill DNS server')
 dns_server_subprocess.kill()
 dns_server_subprocess.wait()
