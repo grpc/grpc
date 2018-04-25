@@ -952,6 +952,7 @@ add_library(grpc
   src/core/lib/iomgr/gethostname_sysconf.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
+  src/core/lib/iomgr/iomgr_cfstream.cc
   src/core/lib/iomgr/iomgr_custom.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/iomgr/iomgr_posix.cc
@@ -1347,6 +1348,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/gethostname_sysconf.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
+  src/core/lib/iomgr/iomgr_cfstream.cc
   src/core/lib/iomgr/iomgr_custom.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/iomgr/iomgr_posix.cc
@@ -1732,6 +1734,7 @@ add_library(grpc_test_util
   src/core/lib/iomgr/gethostname_sysconf.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
+  src/core/lib/iomgr/iomgr_cfstream.cc
   src/core/lib/iomgr/iomgr_custom.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/iomgr/iomgr_posix.cc
@@ -2035,6 +2038,7 @@ add_library(grpc_test_util_unsecure
   src/core/lib/iomgr/gethostname_sysconf.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
+  src/core/lib/iomgr/iomgr_cfstream.cc
   src/core/lib/iomgr/iomgr_custom.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/iomgr/iomgr_posix.cc
@@ -2318,6 +2322,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/gethostname_sysconf.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
+  src/core/lib/iomgr/iomgr_cfstream.cc
   src/core/lib/iomgr/iomgr_custom.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/iomgr/iomgr_posix.cc
@@ -3145,6 +3150,7 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/gethostname_sysconf.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
+  src/core/lib/iomgr/iomgr_cfstream.cc
   src/core/lib/iomgr/iomgr_custom.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/iomgr/iomgr_posix.cc
