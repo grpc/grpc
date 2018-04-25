@@ -72,6 +72,8 @@ void address_sorting_shutdown();
 
 struct address_sorting_source_addr_factory;
 
+bool address_sorting_enabled_for_current_platform();
+
 /* The interfaces below are exposed only for testing */
 typedef struct {
   /* Gets the source address that would be used for the passed-in destination

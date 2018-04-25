@@ -23,6 +23,13 @@ gcloud dns record-sets transaction start -z=resolver-tests-version-4-grpctesting
 
 gcloud dns record-sets transaction add \
   -z=resolver-tests-version-4-grpctestingexp-zone-id \
+  --name=no-srv-ipv4-single-target.resolver-tests-version-4.grpctestingexp. \
+  --type=A \
+  --ttl=2100 \
+  "5.5.5.5"
+
+gcloud dns record-sets transaction add \
+  -z=resolver-tests-version-4-grpctestingexp-zone-id \
   --name=_grpclb._tcp.srv-ipv4-single-target.resolver-tests-version-4.grpctestingexp. \
   --type=SRV \
   --ttl=2100 \

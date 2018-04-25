@@ -23,7 +23,6 @@
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
@@ -142,8 +141,8 @@ AresDnsResolver::AresDnsResolver(const ResolverArgs& args)
   channel_args_ = grpc_channel_args_copy(args.args);
   const grpc_arg* arg = grpc_channel_args_find(
       channel_args_, GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION);
-  request_service_config_ = !grpc_channel_arg_get_integer(
-      arg, (grpc_integer_options){false, false, true});
+  grpc_integer_options integer_options = {false, false, true};
+  request_service_config_ = !grpc_channel_arg_get_integer(arg, integer_options);
   arg = grpc_channel_args_find(channel_args_,
                                GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS);
   min_time_between_resolutions_ =
@@ -461,7 +460,9 @@ void grpc_resolver_dns_ares_init() {
   /* TODO(zyc): Turn on c-ares based resolver by default after the address
      sorter and the CNAME support are added. */
   if (resolver_env != nullptr && gpr_stricmp(resolver_env, "ares") == 0) {
-    address_sorting_init();
+    if (address_sorting_enabled_for_current_platform()) {
+      address_sorting_init();
+    }
     grpc_error* error = grpc_ares_init();
     if (error != GRPC_ERROR_NONE) {
       GRPC_LOG_IF_ERROR("ares_library_init() failed", error);
@@ -479,7 +480,9 @@ void grpc_resolver_dns_ares_init() {
 void grpc_resolver_dns_ares_shutdown() {
   char* resolver_env = gpr_getenv("GRPC_DNS_RESOLVER");
   if (resolver_env != nullptr && gpr_stricmp(resolver_env, "ares") == 0) {
-    address_sorting_shutdown();
+    if (address_sorting_enabled_for_current_platform()) {
+      address_sorting_shutdown();
+    }
     grpc_ares_cleanup();
   }
   gpr_free(resolver_env);

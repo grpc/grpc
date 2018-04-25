@@ -148,7 +148,7 @@ def main():
               'gtest': False,
               'run': False,
               'src': ['test/cpp/naming/resolver_component_test.cc'],
-              'platforms': ['linux', 'posix', 'mac'],
+              'platforms': ['linux', 'posix', 'mac', 'windows'],
               'deps': [
                   'grpc++_test_util' + unsecure_build_config_suffix,
                   'grpc_test_util' + unsecure_build_config_suffix,
@@ -166,8 +166,11 @@ def main():
               'language': 'c++',
               'gtest': False,
               'run': True,
-              'src': ['test/cpp/naming/resolver_component_tests_runner_invoker.cc'],
-              'platforms': ['linux', 'posix', 'mac'],
+              'headers': ['test/cpp/naming/resolver_component_tests_runner_invoker.h'],
+              'src': ['test/cpp/naming/resolver_component_tests_runner_invoker.cc',
+                      'test/cpp/naming/resolver_component_tests_runner_invoker_posix.cc',
+                      'test/cpp/naming/resolver_component_tests_runner_invoker_windows.cc'],
+              'platforms': ['linux', 'posix', 'mac', 'windows'],
               'deps': [
                   'grpc++_test_util',
                   'grpc_test_util',

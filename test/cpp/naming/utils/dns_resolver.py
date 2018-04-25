@@ -16,9 +16,16 @@
 """Makes DNS queries for A records to specified servers"""
 
 import argparse
-import signal
+import threading
+import time
 import twisted.internet.task as task
 import twisted.names.client as client
+import twisted.internet.reactor as reactor
+
+def exit_after_timeout(timeout):
+  time.sleep(timeout)
+  print('Time limit reached. Forcing exit')
+  reactor.stop()
 
 def main():
   argp = argparse.ArgumentParser(description='Make DNS queries for A records')
@@ -31,7 +38,6 @@ def main():
   argp.add_argument('-t', '--timeout', default=1, type=int,
                     help=('Force process exit after this number of seconds.'))
   args = argp.parse_args()
-  signal.alarm(args.timeout)
   def OnResolverResultAvailable(result):
     answers, authority, additional = result
     for a in answers:
@@ -42,6 +48,10 @@ def main():
     deferred_result = resolver.lookupAddress(args.qname)
     deferred_result.addCallback(OnResolverResultAvailable)
     return deferred_result
+  # We can't use sigalarm on windows, so start a thread.
+  timeout_thread = threading.Thread(target=exit_after_timeout, args=[args.timeout])
+  timeout_thread.setDaemon(True)
+  timeout_thread.start()
   task.react(BeginQuery, [args.qname])
 
 if __name__ == '__main__':

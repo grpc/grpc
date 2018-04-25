@@ -1,0 +1,4 @@
+%YAML 1.2
+--- |
+  <%namespace file="resolver_component_tests_windows_defs.include" import="*"/>\
+  ${resolver_component_tests_windows(resolver_component_test_cases)}

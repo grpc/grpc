@@ -59,8 +59,11 @@ def generate_resolver_component_tests():
         name = "resolver_component_tests_runner_invoker%s" % unsecure_build_config_suffix,
         srcs = [
             "resolver_component_tests_runner_invoker.cc",
+            "resolver_component_tests_runner_invoker_posix.cc",
+            "resolver_component_tests_runner_invoker_windows.cc",
         ],
         deps = [
+            ":resolver_component_tests_runner_invoker_portability_header",
             "//test/cpp/util:test_util",
             "//test/core/util:grpc_test_util",
             "//test/core/util:gpr_test_util",
