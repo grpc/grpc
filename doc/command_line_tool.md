@@ -38,14 +38,20 @@ In order to build the grpc command line tool from a fresh clone of the grpc
 repository, you need to run the following command to update submodules:
 
 ```
-git submodule update --init
+$ git submodule update --init
 ```
 
 You also need to have the gflags library installed on your system. On Linux
 systems, gflags can be installed with the following command:
 
 ```
-sudo apt-get install libgflags-dev
+$ sudo apt-get install libgflags-dev
+```
+
+On Mac, gflags can be installed via Homebrew:
+
+```
+$ brew install gflags
 ```
 
 Once the prerequisites are satisfied, you can build the command line tool with
