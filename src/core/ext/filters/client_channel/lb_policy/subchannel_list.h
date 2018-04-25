@@ -116,6 +116,7 @@ class SubchannelData {
     grpc_error* error = GRPC_ERROR_NONE;
     pending_connectivity_state_unsafe_ =
         grpc_subchannel_check_connectivity(subchannel(), &error);
+    UpdateConnectedSubchannelLocked();
     if (pending_connectivity_state_unsafe_ != curr_connectivity_state_) {
       curr_connectivity_state_ = pending_connectivity_state_unsafe_;
       ProcessConnectivityChangeLocked(error);
@@ -167,6 +168,9 @@ class SubchannelData {
   virtual void ProcessConnectivityChangeLocked(grpc_error* error) GRPC_ABSTRACT;
 
  private:
+// FIXME: document
+  bool UpdateConnectedSubchannelLocked();
+
   static void OnConnectivityChangedLocked(void* arg, grpc_error* error);
 
   // Backpointer to owning subchannel list.  Not owned.
@@ -346,33 +350,47 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::
 }
 
 template <typename SubchannelListType, typename SubchannelDataType>
+bool SubchannelData<SubchannelListType, SubchannelDataType>::
+    UpdateConnectedSubchannelLocked() {
+// FIXME: add trace logging
+  // If the subchannel is READY, get a ref to the connected subchannel.
+  if (pending_connectivity_state_unsafe_ == GRPC_CHANNEL_READY) {
+    connected_subchannel_ =
+        grpc_subchannel_get_connected_subchannel(subchannel_);
+    // If the subchannel became disconnected between the time that READY
+    // was reported and the time we got here (e.g., between when a
+    // notification callback is scheduled and when it was actually run in
+    // the combiner), then the connected subchannel may have disappeared out
+    // from under us.  In that case, we don't actually want to consider the
+    // subchannel to be in state READY.  Instead, we use IDLE as the
+    // basis for any future connectivity watch; this is the one state that
+    // the subchannel will never transition back into, so this ensures
+    // that we will get a notification for the next state, even if that state
+    // is READY again (e.g., if the subchannel has transitioned back to
+    // READY before the next watch gets requested).
+    if (connected_subchannel_ == nullptr) {
+      pending_connectivity_state_unsafe_ = GRPC_CHANNEL_IDLE;
+      return false;
+    }
+  }
+// FIXME: do this for any other state?
+  // If we get TRANSIENT_FAILURE, unref the connected subchannel.
+  else if (pending_connectivity_state_unsafe_ ==
+           GRPC_CHANNEL_TRANSIENT_FAILURE) {
+    connected_subchannel_.reset();
+  }
+  return true;
+}
+
+template <typename SubchannelListType, typename SubchannelDataType>
 void SubchannelData<SubchannelListType, SubchannelDataType>::
     OnConnectivityChangedLocked(void* arg, grpc_error* error) {
   SubchannelData* sd = static_cast<SubchannelData*>(arg);
 // FIXME: add trace logging
-  // If the subchannel is READY, get a ref to the connected subchannel.
-  if (sd->pending_connectivity_state_unsafe_ == GRPC_CHANNEL_READY) {
-    sd->connected_subchannel_ =
-        grpc_subchannel_get_connected_subchannel(sd->subchannel_);
-    // If the subchannel became disconnected between the time that this
-    // callback was scheduled and the time that it was actually run in the
-    // combiner, then the connected subchannel may have disappeared out from
-    // under us.  In that case, instead of propagating the READY notification,
-    // we simply renew our watch and wait for the next notification.
-    // Note that we start the renewed watch from IDLE to make sure we
-    // get a notification for the next state, even if that state is
-    // READY again (e.g., if the subchannel has transitioned back to
-    // READY before the callback gets scheduled).
-    if (sd->connected_subchannel_ == nullptr) {
-      sd->pending_connectivity_state_unsafe_ = GRPC_CHANNEL_IDLE;
-      sd->StartConnectivityWatchLocked();
-      return;
-    }
-  }
-  // If we get TRANSIENT_FAILURE, unref the connected subchannel.
-  else if (sd->pending_connectivity_state_unsafe_ ==
-           GRPC_CHANNEL_TRANSIENT_FAILURE) {
-    sd->connected_subchannel_.reset();
+  if (!sd->UpdateConnectedSubchannelLocked()) {
+    // We don't want to report this connectivity state, so renew the watch.
+    sd->StartConnectivityWatchLocked();
+    return;
   }
   // Now that we're inside the combiner, copy the pending connectivity
   // state (which was set by the connectivity state watcher) to
