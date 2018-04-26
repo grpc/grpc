@@ -478,7 +478,7 @@ static grpc_ares_request* grpc_dns_lookup_ares_impl(
     grpc_ares_request_ref(r);
     char* config_name;
     gpr_asprintf(&config_name, "_grpc_config.%s", host);
-    ares_search(*channel, config_name, ns_c_in, ns_t_txt, on_txt_done_cb, r);
+    ares_query(*channel, config_name, ns_c_in, ns_t_txt, on_txt_done_cb, r);
     gpr_free(config_name);
   }
   /* TODO(zyc): Handle CNAME records here. */
