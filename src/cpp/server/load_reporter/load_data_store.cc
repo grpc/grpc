@@ -29,6 +29,9 @@ namespace load_reporter {
 // Some helper functions.
 namespace {
 
+const int kIpv4AddressLength = 8;
+const int kIpv6AddressLength = 32;
+
 // Given a map from type K to a set of value type V, finds the set associated
 // with the given key and erases the value from the set. If the set becomes
 // empty, also erases the key-set pair. Returns true if the value is erased
@@ -72,6 +75,52 @@ const typename C::value_type* RandomElement(const C& container) {
 }
 
 }  // namespace
+
+LoadRecordKey::LoadRecordKey(const grpc::string& client_ip_and_token,
+                             grpc::string user_id)
+    : user_id_(std::move(user_id)) {
+  GPR_ASSERT(client_ip_and_token.size() >= 2);
+  int ip_hex_size = std::stoi(client_ip_and_token.substr(0, 2));
+  size_t cur_pos = 2;
+  client_ip_hex_ = client_ip_and_token.substr(cur_pos, ip_hex_size);
+  cur_pos += ip_hex_size;
+  if (client_ip_and_token.size() - cur_pos < kLbIdLen) {
+    lb_id_ = kInvalidLbId;
+    lb_tag_ = "";
+  } else {
+    lb_id_ = client_ip_and_token.substr(cur_pos, kLbIdLen);
+    lb_tag_ = client_ip_and_token.substr(cur_pos + kLbIdLen);
+  }
+}
+
+grpc::string LoadRecordKey::GetClientIpBytes() const {
+  if (client_ip_hex_.empty()) {
+    return "";
+  } else if (client_ip_hex_.size() == kIpv4AddressLength) {
+    uint32_t ip_bytes = static_cast<uint32_t>(std::stoul(client_ip_hex_,
+                                                     nullptr,
+                                                     16));
+    return grpc::string(reinterpret_cast<const char*>(&ip_bytes), sizeof(ip_bytes));
+  } else if (client_ip_hex_.size() == kIpv6AddressLength) {
+    uint64_t ip_bytes[2];
+    ip_bytes[0] = static_cast<uint64_t>(std::stoul(client_ip_hex_.substr(0, 16),
+                                                           nullptr,
+                                                           16));
+    ip_bytes[1] = static_cast<uint64_t>(std::stoul(client_ip_hex_.substr(16),
+                                                              nullptr,
+                                                              16));
+    return grpc::string(reinterpret_cast<const char*>(ip_bytes),
+                        sizeof(ip_bytes));
+  } else {
+    GPR_UNREACHABLE_CODE(return "");
+  }
+}
+
+LoadRecordValue::LoadRecordValue(grpc::string metric_name, uint64_t num_calls,
+                                 double total_metric_value) {
+  call_metrics_.insert(
+      {std::move(metric_name), CallMetricValue(num_calls, total_metric_value)});
+}
 
 void PerBalancerStore::MergeRow(const LoadRecordKey& key,
                                 const LoadRecordValue& value) {

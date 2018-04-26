@@ -1300,6 +1300,29 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "lb_load_reporter",
+    srcs = [
+        "src/cpp/server/load_reporter/get_cpu_stats_linux.cc",
+        "src/cpp/server/load_reporter/get_cpu_stats_macos.cc",
+        "src/cpp/server/load_reporter/get_cpu_stats_unsupported.cc",
+        "src/cpp/server/load_reporter/get_cpu_stats_windows.cc",
+        "src/cpp/server/load_reporter/load_reporter.cc",
+    ],
+    hdrs = [
+        "src/cpp/server/load_reporter/get_cpu_stats.h",
+        "src/cpp/server/load_reporter/load_reporter.h",
+        "src/cpp/server/load_reporter/util.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc++",
+        "lb_load_data_store",
+        "//src/proto/grpc/lb/v1:load_reporter_proto",
+        "@io_opencensus_cpp//opencensus/stats",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_resolver_dns_native",
     srcs = [
         "src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc",

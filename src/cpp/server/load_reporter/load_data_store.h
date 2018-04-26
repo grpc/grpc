@@ -75,6 +75,9 @@ class LoadRecordKey {
         user_id_(std::move(user_id)),
         client_ip_hex_(std::move(client_ip_hex)) {}
 
+  explicit LoadRecordKey(const grpc::string& client_ip_and_token,
+                         grpc::string user_id);
+
   grpc::string ToString() const {
     return "[lb_id_=" + lb_id_ + ", lb_tag_=" + lb_tag_ +
            ", user_id_=" + user_id_ + ", client_ip_hex_=" + client_ip_hex_ +
@@ -85,6 +88,9 @@ class LoadRecordKey {
     return lb_id_ == other.lb_id_ && lb_tag_ == other.lb_tag_ &&
            user_id_ == other.user_id_ && client_ip_hex_ == other.client_ip_hex_;
   }
+
+  // Get the client IP bytes in network order (i.e., big-endian).
+  grpc::string GetClientIpBytes() const;
 
   // Getters.
   const grpc::string& lb_id() const { return lb_id_; }
@@ -127,6 +133,9 @@ class LoadRecordValue {
         bytes_sent_(bytes_sent),
         bytes_recv_(bytes_recv),
         latency_ms_(latency_ms) {}
+
+  explicit LoadRecordValue(grpc::string metric_name, uint64_t num_calls,
+                           double total_metric_value);
 
   void MergeFrom(const LoadRecordValue& other) {
     start_count_ += other.start_count_;

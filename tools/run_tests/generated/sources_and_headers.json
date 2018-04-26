@@ -3904,6 +3904,26 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util", 
+      "lb_load_reporter"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "lb_load_reporter_test", 
+    "src": [
+      "test/cpp/server/load_reporter/load_reporter_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
       "grpc++_test", 
       "grpc_test_util"
     ], 
@@ -7475,6 +7495,33 @@
     "src": [
       "src/cpp/server/load_reporter/load_data_store.cc", 
       "src/cpp/server/load_reporter/load_data_store.h"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "grpc++", 
+      "lb_load_data_store"
+    ], 
+    "headers": [
+      "src/cpp/server/load_reporter/get_cpu_stats.h", 
+      "src/cpp/server/load_reporter/load_reporter.h", 
+      "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h", 
+      "src/proto/grpc/lb/v1/load_reporter.pb.h", 
+      "src/proto/grpc/lb/v1/load_reporter_mock.grpc.pb.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "lb_load_reporter", 
+    "src": [
+      "src/cpp/server/load_reporter/get_cpu_stats.h", 
+      "src/cpp/server/load_reporter/get_cpu_stats_linux.cc", 
+      "src/cpp/server/load_reporter/get_cpu_stats_macos.cc", 
+      "src/cpp/server/load_reporter/get_cpu_stats_unsupported.cc", 
+      "src/cpp/server/load_reporter/get_cpu_stats_windows.cc", 
+      "src/cpp/server/load_reporter/load_reporter.cc", 
+      "src/cpp/server/load_reporter/load_reporter.h"
     ], 
     "third_party": false, 
     "type": "lib"

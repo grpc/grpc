@@ -29,3 +29,20 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "load_reporter_test",
+    srcs = ["load_reporter_test.cc"],
+    external_deps = [
+        "gtest",
+        "gmock",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+        "//:lb_load_reporter",
+        "@io_opencensus_cpp//opencensus/stats:test_utils",
+    ],
+)
