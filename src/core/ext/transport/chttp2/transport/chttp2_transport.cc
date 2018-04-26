@@ -807,7 +807,7 @@ static const char* write_state_name(grpc_chttp2_write_state st) {
 
 static void set_write_state(grpc_chttp2_transport* t,
                             grpc_chttp2_write_state st, const char* reason) {
-  GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_DEBUG, "W:%p %s state %s -> %s [%s]", t,
+  GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "W:%p %s state %s -> %s [%s]", t,
                                  t->is_client ? "CLIENT" : "SERVER",
                                  write_state_name(t->write_state),
                                  write_state_name(st), reason));
@@ -1072,7 +1072,7 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
                                      uint32_t goaway_error,
                                      grpc_slice goaway_text) {
   // GRPC_CHTTP2_IF_TRACING(
-  //     gpr_log(GPR_DEBUG, "got goaway [%d]: %s", goaway_error, msg));
+  //     gpr_log(GPR_INFO, "got goaway [%d]: %s", goaway_error, msg));
 
   // Discard the error from a previous goaway frame (if any)
   if (t->goaway_error != GRPC_ERROR_NONE) {
@@ -1118,7 +1118,7 @@ static void maybe_start_some_streams(grpc_chttp2_transport* t) {
          grpc_chttp2_list_pop_waiting_for_concurrency(t, &s)) {
     /* safe since we can't (legally) be parsing this stream yet */
     GRPC_CHTTP2_IF_TRACING(gpr_log(
-        GPR_DEBUG, "HTTP:%s: Allocating new grpc_chttp2_stream %p to id %d",
+        GPR_INFO, "HTTP:%s: Allocating new grpc_chttp2_stream %p to id %d",
         t->is_client ? "CLI" : "SVR", s, t->next_stream_id));
 
     GPR_ASSERT(s->id == 0);
@@ -1183,7 +1183,7 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
   if (grpc_http_trace.enabled()) {
     const char* errstr = grpc_error_string(error);
     gpr_log(
-        GPR_DEBUG,
+        GPR_INFO,
         "complete_closure_step: t=%p %p refs=%d flags=0x%04x desc=%s err=%s "
         "write_state=%s",
         t, closure,
@@ -1336,7 +1336,7 @@ static void perform_stream_op_locked(void* stream_op,
 
   if (grpc_http_trace.enabled()) {
     char* str = grpc_transport_stream_op_batch_string(op);
-    gpr_log(GPR_DEBUG, "perform_stream_op_locked: %s; on_complete = %p", str,
+    gpr_log(GPR_INFO, "perform_stream_op_locked: %s; on_complete = %p", str,
             op->on_complete);
     gpr_free(str);
     if (op->send_initial_metadata) {
@@ -1638,7 +1638,7 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
 
   if (grpc_http_trace.enabled()) {
     char* str = grpc_transport_stream_op_batch_string(op);
-    gpr_log(GPR_DEBUG, "perform_stream_op[s=%p]: %s", s, str);
+    gpr_log(GPR_INFO, "perform_stream_op[s=%p]: %s", s, str);
     gpr_free(str);
   }
 
@@ -2529,7 +2529,7 @@ static void schedule_bdp_ping_locked(grpc_chttp2_transport* t) {
 static void start_bdp_ping_locked(void* tp, grpc_error* error) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
   if (grpc_http_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "%s: Start BDP ping err=%s", t->peer_string,
+    gpr_log(GPR_INFO, "%s: Start BDP ping err=%s", t->peer_string,
             grpc_error_string(error));
   }
   /* Reset the keepalive ping timer */
@@ -2542,7 +2542,7 @@ static void start_bdp_ping_locked(void* tp, grpc_error* error) {
 static void finish_bdp_ping_locked(void* tp, grpc_error* error) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
   if (grpc_http_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "%s: Complete BDP ping err=%s", t->peer_string,
+    gpr_log(GPR_INFO, "%s: Complete BDP ping err=%s", t->peer_string,
             grpc_error_string(error));
   }
   if (error != GRPC_ERROR_NONE) {
@@ -2716,8 +2716,7 @@ static void keepalive_watchdog_fired_locked(void* arg, grpc_error* error) {
 static void connectivity_state_set(grpc_chttp2_transport* t,
                                    grpc_connectivity_state state,
                                    grpc_error* error, const char* reason) {
-  GRPC_CHTTP2_IF_TRACING(
-      gpr_log(GPR_DEBUG, "set connectivity_state=%d", state));
+  GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "set connectivity_state=%d", state));
   grpc_connectivity_state_set(&t->channel_callback.state_tracker, state, error,
                               reason);
 }
@@ -2984,7 +2983,7 @@ static void benign_reclaimer_locked(void* arg, grpc_error* error) {
     /* Channel with no active streams: send a goaway to try and make it
      * disconnect cleanly */
     if (grpc_resource_quota_trace.enabled()) {
-      gpr_log(GPR_DEBUG, "HTTP2: %s - send goaway to free memory",
+      gpr_log(GPR_INFO, "HTTP2: %s - send goaway to free memory",
               t->peer_string);
     }
     send_goaway(t,
@@ -2992,7 +2991,7 @@ static void benign_reclaimer_locked(void* arg, grpc_error* error) {
                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("Buffers full"),
                     GRPC_ERROR_INT_HTTP2_ERROR, GRPC_HTTP2_ENHANCE_YOUR_CALM));
   } else if (error == GRPC_ERROR_NONE && grpc_resource_quota_trace.enabled()) {
-    gpr_log(GPR_DEBUG,
+    gpr_log(GPR_INFO,
             "HTTP2: %s - skip benign reclamation, there are still %" PRIdPTR
             " streams",
             t->peer_string, grpc_chttp2_stream_map_size(&t->stream_map));
@@ -3013,7 +3012,7 @@ static void destructive_reclaimer_locked(void* arg, grpc_error* error) {
     grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(
         grpc_chttp2_stream_map_rand(&t->stream_map));
     if (grpc_resource_quota_trace.enabled()) {
-      gpr_log(GPR_DEBUG, "HTTP2: %s - abandon stream id %d", t->peer_string,
+      gpr_log(GPR_INFO, "HTTP2: %s - abandon stream id %d", t->peer_string,
               s->id);
     }
     grpc_chttp2_cancel_stream(

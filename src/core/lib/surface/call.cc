@@ -747,10 +747,10 @@ static void get_final_status(
     status[i] = unpack_received_status(gpr_atm_acq_load(&call->status[i]));
   }
   if (grpc_call_error_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "get_final_status %s", call->is_client ? "CLI" : "SVR");
+    gpr_log(GPR_INFO, "get_final_status %s", call->is_client ? "CLI" : "SVR");
     for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
       if (status[i].is_set) {
-        gpr_log(GPR_DEBUG, "  %d: %s", i, grpc_error_string(status[i].error));
+        gpr_log(GPR_INFO, "  %d: %s", i, grpc_error_string(status[i].error));
       }
     }
   }
