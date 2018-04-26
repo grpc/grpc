@@ -758,8 +758,8 @@ def _job_kill_handler(job):
 
 def cloud_to_prod_jobspec(language,
                           test_case,
-                          server_host_name,
-                          server_host_detail,
+                          server_host_nickname,
+                          server_host,
                           docker_image=None,
                           auth=False,
                           manual_cmd_log=None,
@@ -767,9 +767,9 @@ def cloud_to_prod_jobspec(language,
     """Creates jobspec for cloud-to-prod interop test"""
     container_name = None
     cmdargs = [
-        '--server_host=%s' % server_host_detail[0],
-        '--server_host_override=%s' % server_host_detail[1],
-        '--server_port=443', '--use_tls=true',
+        '--server_host=%s' % server_host,
+        '--server_host_override=%s' % server_host, '--server_port=443',
+        '--use_tls=true',
         '--test_case=%s' % test_case
     ]
     environ = dict(language.cloud_to_prod_env(), **language.global_env())
@@ -804,7 +804,7 @@ def cloud_to_prod_jobspec(language,
         cmdline=cmdline,
         cwd=cwd,
         environ=environ,
-        shortname='%s:%s:%s:%s' % (suite_name, language, server_host_name,
+        shortname='%s:%s:%s:%s' % (suite_name, language, server_host_nickname,
                                    test_case),
         timeout_seconds=_TEST_TIMEOUT,
         flake_retries=4 if args.allow_flakes else 0,
@@ -1023,19 +1023,9 @@ def aggregate_http2_results(stdout):
 
 
 # A dictionary of prod servers to test.
-# Format: server_name: (server_host, server_host_override, errors_allowed)
-# TODO(adelez): implement logic for errors_allowed where if the indicated tests
-# fail, they don't impact the overall test result.
 prod_servers = {
-    'default': ('216.239.32.254', 'grpc-test.sandbox.googleapis.com', False),
-    'gateway_v2': ('216.239.32.254', 'grpc-test2.sandbox.googleapis.com', True),
-    'cloud_gateway': ('216.239.32.255', 'grpc-test.sandbox.googleapis.com',
-                      False),
-    'cloud_gateway_v2': ('216.239.32.255', 'grpc-test2.sandbox.googleapis.com',
-                         True),
-    'gateway_v4': ('216.239.32.254', 'grpc-test4.sandbox.googleapis.com', True),
-    'cloud_gateway_v4': ('216.239.32.255', 'grpc-test4.sandbox.googleapis.com',
-                         True),
+    'default': 'grpc-test.sandbox.googleapis.com',
+    'gateway_v4': 'grpc-test4.sandbox.googleapis.com',
 }
 
 argp = argparse.ArgumentParser(description='Run interop tests.')
@@ -1297,7 +1287,7 @@ try:
     if args.cloud_to_prod:
         if args.transport_security != 'tls':
             print('TLS is always enabled for cloud_to_prod scenarios.')
-        for server_host_name in args.prod_servers:
+        for server_host_nickname in args.prod_servers:
             for language in languages:
                 for test_case in _TEST_CASES:
                     if not test_case in language.unimplemented_test_cases():
@@ -1305,8 +1295,8 @@ try:
                             test_job = cloud_to_prod_jobspec(
                                 language,
                                 test_case,
-                                server_host_name,
-                                prod_servers[server_host_name],
+                                server_host_nickname,
+                                prod_servers[server_host_nickname],
                                 docker_image=docker_images.get(str(language)),
                                 manual_cmd_log=client_manual_cmd_log,
                                 service_account_key_file=args.
@@ -1318,8 +1308,8 @@ try:
                     test_job = cloud_to_prod_jobspec(
                         http2Interop,
                         test_case,
-                        server_host_name,
-                        prod_servers[server_host_name],
+                        server_host_nickname,
+                        prod_servers[server_host_nickname],
                         docker_image=docker_images.get(str(http2Interop)),
                         manual_cmd_log=client_manual_cmd_log,
                         service_account_key_file=args.service_account_key_file)
@@ -1328,7 +1318,7 @@ try:
     if args.cloud_to_prod_auth:
         if args.transport_security != 'tls':
             print('TLS is always enabled for cloud_to_prod scenarios.')
-        for server_host_name in args.prod_servers:
+        for server_host_nickname in args.prod_servers:
             for language in languages:
                 for test_case in _AUTH_TEST_CASES:
                     if (not args.skip_compute_engine_creds or
@@ -1338,8 +1328,8 @@ try:
                             test_job = cloud_to_prod_jobspec(
                                 language,
                                 test_case,
-                                server_host_name,
-                                prod_servers[server_host_name],
+                                server_host_nickname,
+                                prod_servers[server_host_nickname],
                                 docker_image=docker_images.get(str(language)),
                                 auth=True,
                                 manual_cmd_log=client_manual_cmd_log,
@@ -1476,12 +1466,6 @@ try:
 
     http2_server_test_cases = (_HTTP2_SERVER_TEST_CASES
                                if args.http2_server_interop else [])
-
-    report_utils.render_interop_html_report(
-        set([str(l) for l in languages]), servers, _TEST_CASES,
-        _AUTH_TEST_CASES, _HTTP2_TEST_CASES, http2_server_test_cases, resultset,
-        num_failures, args.cloud_to_prod_auth or args.cloud_to_prod,
-        args.prod_servers, args.http2_interop)
 
     if num_failures:
         sys.exit(1)

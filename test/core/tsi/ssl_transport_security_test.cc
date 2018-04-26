@@ -34,6 +34,10 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+extern "C" {
+#include <openssl/crypto.h>
+}
+
 #define SSL_TSI_TEST_ALPN1 "foo"
 #define SSL_TSI_TEST_ALPN2 "toto"
 #define SSL_TSI_TEST_ALPN3 "baz"
@@ -41,6 +45,14 @@
 #define SSL_TSI_TEST_SERVER_KEY_CERT_PAIRS_NUM 2
 #define SSL_TSI_TEST_BAD_SERVER_KEY_CERT_PAIRS_NUM 1
 #define SSL_TSI_TEST_CREDENTIALS_DIR "src/core/tsi/test_creds/"
+
+// OpenSSL 1.1 uses AES256 for encryption session ticket by default so specify
+// different STEK size.
+#if OPENSSL_VERSION_NUMBER >= 0x10100000 && !defined(OPENSSL_IS_BORINGSSL)
+const size_t kSessionTicketEncryptionKeySize = 80;
+#else
+const size_t kSessionTicketEncryptionKeySize = 48;
+#endif
 
 typedef enum AlpnMode {
   NO_ALPN,
@@ -624,7 +636,7 @@ void ssl_tsi_test_do_round_trip_odd_buffer_size() {
 
 void ssl_tsi_test_do_handshake_session_cache() {
   tsi_ssl_session_cache* session_cache = tsi_ssl_session_cache_create_lru(16);
-  char session_ticket_key[48];
+  char session_ticket_key[kSessionTicketEncryptionKeySize];
   auto do_handshake = [&session_ticket_key,
                        &session_cache](bool session_reused) {
     tsi_test_fixture* fixture = ssl_tsi_test_fixture_create();
@@ -633,22 +645,22 @@ void ssl_tsi_test_do_handshake_session_cache() {
     ssl_fixture->server_name_indication =
         const_cast<char*>("waterzooi.test.google.be");
     ssl_fixture->session_ticket_key = session_ticket_key;
-    ssl_fixture->session_ticket_key_size = 48;
+    ssl_fixture->session_ticket_key_size = sizeof(session_ticket_key);
     tsi_ssl_session_cache_ref(session_cache);
     ssl_fixture->session_cache = session_cache;
     ssl_fixture->session_reused = session_reused;
     tsi_test_do_round_trip(&ssl_fixture->base);
     tsi_test_fixture_destroy(fixture);
   };
-  memset(session_ticket_key, 'a', 48);
+  memset(session_ticket_key, 'a', sizeof(session_ticket_key));
   do_handshake(false);
   do_handshake(true);
   do_handshake(true);
   // Changing session_ticket_key on server invalidates ticket.
-  memset(session_ticket_key, 'b', 48);
+  memset(session_ticket_key, 'b', sizeof(session_ticket_key));
   do_handshake(false);
   do_handshake(true);
-  memset(session_ticket_key, 'c', 48);
+  memset(session_ticket_key, 'c', sizeof(session_ticket_key));
   do_handshake(false);
   do_handshake(true);
   tsi_ssl_session_cache_unref(session_cache);

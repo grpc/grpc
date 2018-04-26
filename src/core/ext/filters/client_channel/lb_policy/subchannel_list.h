@@ -306,7 +306,7 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::
     UnrefSubchannelLocked(const char* reason) {
   if (subchannel_ != nullptr) {
     if (subchannel_list_->tracer()->enabled()) {
-      gpr_log(GPR_DEBUG,
+      gpr_log(GPR_INFO,
               "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
               " (subchannel %p): unreffing subchannel",
               subchannel_list_->tracer()->name(), subchannel_list_->policy(),
@@ -323,7 +323,7 @@ template <typename SubchannelListType, typename SubchannelDataType>
 void SubchannelData<SubchannelListType,
                     SubchannelDataType>::StartConnectivityWatchLocked() {
   if (subchannel_list_->tracer()->enabled()) {
-    gpr_log(GPR_DEBUG,
+    gpr_log(GPR_INFO,
             "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
             " (subchannel %p): starting watch: requesting connectivity change "
             "notification (from %s)",
@@ -344,7 +344,7 @@ template <typename SubchannelListType, typename SubchannelDataType>
 void SubchannelData<SubchannelListType,
                     SubchannelDataType>::RenewConnectivityWatchLocked() {
   if (subchannel_list_->tracer()->enabled()) {
-    gpr_log(GPR_DEBUG,
+    gpr_log(GPR_INFO,
             "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
             " (subchannel %p): renewing watch: requesting connectivity change "
             "notification (from %s)",
@@ -363,7 +363,7 @@ template <typename SubchannelListType, typename SubchannelDataType>
 void SubchannelData<SubchannelListType,
                     SubchannelDataType>::StopConnectivityWatchLocked() {
   if (subchannel_list_->tracer()->enabled()) {
-    gpr_log(GPR_DEBUG,
+    gpr_log(GPR_INFO,
             "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
             " (subchannel %p): stopping connectivity watch",
             subchannel_list_->tracer()->name(), subchannel_list_->policy(),
@@ -379,7 +379,7 @@ template <typename SubchannelListType, typename SubchannelDataType>
 void SubchannelData<SubchannelListType, SubchannelDataType>::
     CancelConnectivityWatchLocked(const char* reason) {
   if (subchannel_list_->tracer()->enabled()) {
-    gpr_log(GPR_DEBUG,
+    gpr_log(GPR_INFO,
             "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
             " (subchannel %p): canceling connectivity watch (%s)",
             subchannel_list_->tracer()->name(), subchannel_list_->policy(),
@@ -492,7 +492,7 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
       tracer_(tracer),
       combiner_(GRPC_COMBINER_REF(combiner, "subchannel_list")) {
   if (tracer_->enabled()) {
-    gpr_log(GPR_DEBUG,
+    gpr_log(GPR_INFO,
             "[%s %p] Creating subchannel list %p for %" PRIuPTR " subchannels",
             tracer_->name(), policy, this, addresses->num_addresses);
   }
@@ -521,7 +521,7 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
       if (tracer_->enabled()) {
         char* address_uri =
             grpc_sockaddr_to_uri(&addresses->addresses[i].address);
-        gpr_log(GPR_DEBUG,
+        gpr_log(GPR_INFO,
                 "[%s %p] could not create subchannel for address uri %s, "
                 "ignoring",
                 tracer_->name(), policy_, address_uri);
@@ -532,7 +532,7 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
     if (tracer_->enabled()) {
       char* address_uri =
           grpc_sockaddr_to_uri(&addresses->addresses[i].address);
-      gpr_log(GPR_DEBUG,
+      gpr_log(GPR_INFO,
               "[%s %p] subchannel list %p index %" PRIuPTR
               ": Created subchannel %p for address uri %s",
               tracer_->name(), policy_, this, subchannels_.size(), subchannel,
@@ -548,7 +548,7 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
 template <typename SubchannelListType, typename SubchannelDataType>
 SubchannelList<SubchannelListType, SubchannelDataType>::~SubchannelList() {
   if (tracer_->enabled()) {
-    gpr_log(GPR_DEBUG, "[%s %p] Destroying subchannel_list %p", tracer_->name(),
+    gpr_log(GPR_INFO, "[%s %p] Destroying subchannel_list %p", tracer_->name(),
             policy_, this);
   }
   GRPC_COMBINER_UNREF(combiner_, "subchannel_list");
@@ -557,7 +557,7 @@ SubchannelList<SubchannelListType, SubchannelDataType>::~SubchannelList() {
 template <typename SubchannelListType, typename SubchannelDataType>
 void SubchannelList<SubchannelListType, SubchannelDataType>::ShutdownLocked() {
   if (tracer_->enabled()) {
-    gpr_log(GPR_DEBUG, "[%s %p] Shutting down subchannel_list %p",
+    gpr_log(GPR_INFO, "[%s %p] Shutting down subchannel_list %p",
             tracer_->name(), policy_, this);
   }
   GPR_ASSERT(!shutting_down_);

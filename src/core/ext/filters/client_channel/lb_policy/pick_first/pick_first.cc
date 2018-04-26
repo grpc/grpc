@@ -118,7 +118,7 @@ PickFirst::PickFirst(const Args& args) : LoadBalancingPolicy(args) {
   grpc_connectivity_state_init(&state_tracker_, GRPC_CHANNEL_IDLE,
                                "pick_first");
   if (grpc_lb_pick_first_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "Pick First %p created.", this);
+    gpr_log(GPR_INFO, "Pick First %p created.", this);
   }
   UpdateLocked(*args.args);
   grpc_subchannel_index_ref();
@@ -126,7 +126,7 @@ PickFirst::PickFirst(const Args& args) : LoadBalancingPolicy(args) {
 
 PickFirst::~PickFirst() {
   if (grpc_lb_pick_first_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "Destroying Pick First %p", this);
+    gpr_log(GPR_INFO, "Destroying Pick First %p", this);
   }
   GPR_ASSERT(subchannel_list_ == nullptr);
   GPR_ASSERT(latest_pending_subchannel_list_ == nullptr);
@@ -149,7 +149,7 @@ void PickFirst::HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) {
 void PickFirst::ShutdownLocked() {
   grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel shutdown");
   if (grpc_lb_pick_first_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "Pick First %p Shutting down", this);
+    gpr_log(GPR_INFO, "Pick First %p Shutting down", this);
   }
   shutdown_ = true;
   PickState* pick;
@@ -351,7 +351,7 @@ void PickFirst::UpdateLocked(const grpc_channel_args& args) {
     // subchannel list.
     if (latest_pending_subchannel_list_ != nullptr) {
       if (grpc_lb_pick_first_trace.enabled()) {
-        gpr_log(GPR_DEBUG,
+        gpr_log(GPR_INFO,
                 "Pick First %p Shutting down latest pending subchannel list "
                 "%p, about to be replaced by newer latest %p",
                 this, latest_pending_subchannel_list_.get(),
@@ -372,7 +372,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
     grpc_error* error) {
   PickFirst* p = static_cast<PickFirst*>(subchannel_list()->policy());
   if (grpc_lb_pick_first_trace.enabled()) {
-    gpr_log(GPR_DEBUG,
+    gpr_log(GPR_INFO,
             "Pick First %p connectivity changed for subchannel %p (%" PRIuPTR
             " of %" PRIuPTR
             "), subchannel_list %p: state=%s p->shutdown_=%d "
