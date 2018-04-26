@@ -357,6 +357,7 @@ class ClientCallDetails(six.with_metaclass(abc.ABCMeta)):
       metadata: Optional :term:`metadata` to be transmitted to
         the service-side of the RPC.
       credentials: An optional CallCredentials for the RPC.
+      authority: An optional string to override the HTTP/2 :authority field.
     """
 
 
@@ -609,7 +610,12 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
     """Affords invoking a unary-unary RPC from client-side."""
 
     @abc.abstractmethod
-    def __call__(self, request, timeout=None, metadata=None, credentials=None):
+    def __call__(self,
+                 request,
+                 timeout=None,
+                 metadata=None,
+                 credentials=None,
+                 authority=None):
         """Synchronously invokes the underlying RPC.
 
         Args:
@@ -619,6 +625,7 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC.
+          authority: An optional string to override the HTTP/2 :authority field.
 
         Returns:
           The response value for the RPC.
@@ -631,7 +638,12 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def with_call(self, request, timeout=None, metadata=None, credentials=None):
+    def with_call(self,
+                  request,
+                  timeout=None,
+                  metadata=None,
+                  credentials=None,
+                  authority=None):
         """Synchronously invokes the underlying RPC.
 
         Args:
@@ -641,6 +653,7 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC.
+          authority: An optional string to override the HTTP/2 :authority field.
 
         Returns:
           The response value for the RPC and a Call value for the RPC.
@@ -653,7 +666,12 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def future(self, request, timeout=None, metadata=None, credentials=None):
+    def future(self,
+               request,
+               timeout=None,
+               metadata=None,
+               credentials=None,
+               authority=None):
         """Asynchronously invokes the underlying RPC.
 
         Args:
@@ -663,6 +681,7 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC.
+          authority: An optional string to override the HTTP/2 :authority field.
 
         Returns:
             An object that is both a Call for the RPC and a Future.
@@ -678,7 +697,12 @@ class UnaryStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
     """Affords invoking a unary-stream RPC from client-side."""
 
     @abc.abstractmethod
-    def __call__(self, request, timeout=None, metadata=None, credentials=None):
+    def __call__(self,
+                 request,
+                 timeout=None,
+                 metadata=None,
+                 credentials=None,
+                 authority=None):
         """Invokes the underlying RPC.
 
         Args:
@@ -688,6 +712,7 @@ class UnaryStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
           metadata: An optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC.
+          authority: An optional string to override the HTTP/2 :authority field.
 
         Returns:
             An object that is both a Call for the RPC and an iterator of
@@ -706,7 +731,8 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
                  request_iterator,
                  timeout=None,
                  metadata=None,
-                 credentials=None):
+                 credentials=None,
+                 authority=None):
         """Synchronously invokes the underlying RPC.
 
         Args:
@@ -717,6 +743,7 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC.
+          authority: An optional string to override the HTTP/2 :authority field.
 
         Returns:
           The response value for the RPC.
@@ -733,7 +760,8 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
                   request_iterator,
                   timeout=None,
                   metadata=None,
-                  credentials=None):
+                  credentials=None,
+                  authority=None):
         """Synchronously invokes the underlying RPC on the client.
 
         Args:
@@ -744,6 +772,7 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC.
+          authority: An optional string to override the HTTP/2 :authority field.
 
         Returns:
           The response value for the RPC and a Call object for the RPC.
@@ -760,7 +789,8 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
                request_iterator,
                timeout=None,
                metadata=None,
-               credentials=None):
+               credentials=None,
+               authority=None):
         """Asynchronously invokes the underlying RPC on the client.
 
         Args:
@@ -770,6 +800,7 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC.
+          authority: An optional string to override the HTTP/2 :authority field.
 
         Returns:
             An object that is both a Call for the RPC and a Future.
@@ -789,7 +820,8 @@ class StreamStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
                  request_iterator,
                  timeout=None,
                  metadata=None,
-                 credentials=None):
+                 credentials=None,
+                 authority=None):
         """Invokes the underlying RPC on the client.
 
         Args:
@@ -799,6 +831,7 @@ class StreamStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
           credentials: An optional CallCredentials for the RPC.
+          authority: An optional string to override the HTTP/2 :authority field.
 
         Returns:
             An object that is both a Call for the RPC and an iterator of
@@ -985,6 +1018,15 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
 
         Returns:
           A map of strings to an iterable of bytes for each auth property.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def authority(self):
+        """Gets the HTTP/2 :authority for the call.
+
+        Returns:
+          The authority string.
         """
         raise NotImplementedError()
 

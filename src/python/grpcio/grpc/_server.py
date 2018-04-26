@@ -257,6 +257,9 @@ class _Context(grpc.ServicerContext):
                 cygrpc.auth_context(self._rpc_event.call))
         }
 
+    def authority(self):
+        return _common.decode(self._rpc_event.call_details.host)
+
     def send_initial_metadata(self, initial_metadata):
         with self._state.condition:
             if self._state.client is _CANCELLED:

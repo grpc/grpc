@@ -56,6 +56,9 @@ class ServicerContext(grpc.ServicerContext):
     def auth_context(self):
         raise NotImplementedError()
 
+    def authority(self):
+        raise NotImplementedError()
+
     def send_initial_metadata(self, initial_metadata):
         initial_metadata_sent = self._rpc.send_initial_metadata(
             _common.fuss_with_metadata(initial_metadata))

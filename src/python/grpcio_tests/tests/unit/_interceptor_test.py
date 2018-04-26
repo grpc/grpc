@@ -176,7 +176,7 @@ def _stream_stream_multi_callable(channel):
 class _ClientCallDetails(
         collections.namedtuple(
             '_ClientCallDetails',
-            ('method', 'timeout', 'metadata', 'credentials')),
+            ('method', 'timeout', 'metadata', 'credentials', 'authority')),
         grpc.ClientCallDetails):
     pass
 
@@ -281,7 +281,7 @@ def _append_request_header_interceptor(header, value):
         ))
         client_call_details = _ClientCallDetails(
             client_call_details.method, client_call_details.timeout, metadata,
-            client_call_details.credentials)
+            client_call_details.credentials, client_call_details.authority)
         return client_call_details, request_iterator, None
 
     return _GenericClientInterceptor(intercept_call)
