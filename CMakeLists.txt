@@ -9702,6 +9702,7 @@ target_link_libraries(bm_arena
   grpc_unsecure
   gpr_test_util
   gpr
+  grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -9745,6 +9746,7 @@ target_link_libraries(bm_call_create
   grpc_unsecure
   gpr_test_util
   gpr
+  grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -9788,6 +9790,7 @@ target_link_libraries(bm_chttp2_hpack
   grpc_unsecure
   gpr_test_util
   gpr
+  grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -9831,6 +9834,7 @@ target_link_libraries(bm_chttp2_transport
   grpc_unsecure
   gpr_test_util
   gpr
+  grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -9874,6 +9878,7 @@ target_link_libraries(bm_closure
   grpc_unsecure
   gpr_test_util
   gpr
+  grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -9917,6 +9922,7 @@ target_link_libraries(bm_cq
   grpc_unsecure
   gpr_test_util
   gpr
+  grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -9960,6 +9966,7 @@ target_link_libraries(bm_cq_multiple_threads
   grpc_unsecure
   gpr_test_util
   gpr
+  grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -10003,6 +10010,7 @@ target_link_libraries(bm_error
   grpc_unsecure
   gpr_test_util
   gpr
+  grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -10046,6 +10054,7 @@ target_link_libraries(bm_fullstack_streaming_ping_pong
   grpc_unsecure
   gpr_test_util
   gpr
+  grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -10089,6 +10098,7 @@ target_link_libraries(bm_fullstack_streaming_pump
   grpc_unsecure
   gpr_test_util
   gpr
+  grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -10176,6 +10186,7 @@ target_link_libraries(bm_fullstack_unary_ping_pong
   grpc_unsecure
   gpr_test_util
   gpr
+  grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -10219,6 +10230,7 @@ target_link_libraries(bm_metadata
   grpc_unsecure
   gpr_test_util
   gpr
+  grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -10262,6 +10274,7 @@ target_link_libraries(bm_pollset
   grpc_unsecure
   gpr_test_util
   gpr
+  grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
