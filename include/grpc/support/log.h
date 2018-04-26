@@ -99,6 +99,12 @@ GPRAPI void gpr_set_log_function(gpr_log_func func);
     }                                                 \
   } while (0)
 
+#ifndef NDEBUG
+#define GPR_DEBUG_ASSERT(x) GPR_ASSERT(x)
+#else
+#define GPR_DEBUG_ASSERT(x)
+#endif
+
 #ifdef __cplusplus
 }
 #endif
