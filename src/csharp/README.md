@@ -16,16 +16,17 @@ PREREQUISITES
 
 When using gRPC C# under .NET Core you only need to [install .NET Core](https://www.microsoft.com/net/core).
 
-- Windows: .NET Framework 4.5+, Visual Studio 2013, 2015, 2017
-- Linux: Mono 4+, MonoDevelop 5.9+ (with NuGet add-in installed)
-- Mac OS X: Xamarin Studio 5.9+
+In addition to that, you can also use gRPC C# with these runtimes / IDEs
+- Windows: .NET Framework 4.5+, Visual Studio 2013, 2015, 2017, Visual Studio Code
+- Linux: Mono 4+, Visual Studio Code, MonoDevelop 5.9+ 
+- Mac OS X: Mono 4+, Visual Studio Code, Xamarin Studio 5.9+
 
 HOW TO USE
 --------------
 
 **Windows, Linux, Mac OS X**
 
-- Open Visual Studio / MonoDevelop / Xamarin Studio and start a new project/solution.
+- Open Visual Studio / MonoDevelop / Xamarin Studio and start a new project/solution (alternatively, you can create a new project from command line with `dotnet` SDK)
 
 - Add the [Grpc](https://www.nuget.org/packages/Grpc/) NuGet package as a dependency (Project options -> Manage NuGet Packages). 
 
@@ -37,10 +38,17 @@ BUILD FROM SOURCE
 You only need to go through these steps if you are planning to develop gRPC C#.
 If you are a user of gRPC C#, go to Usage section above.
 
+**Prerequisites for contributors**
+
+- [dotnet SDK](https://www.microsoft.com/net/core)
+- [Mono 4+](https://www.mono-project.com/) (only needed for Linux and MacOS)
+- Prerequisites mentioned in [INSTALL.md](../../INSTALL.md#pre-requisites)
+  to be able to compile the native code.
+
 **Windows, Linux or Mac OS X**
 
 - The easiest way to build is using the `run_tests.py` script that will take care of building the `grpc_csharp_ext` native library.
-  You might first need to install the prerequisites mentioned in [INSTALL.md](../../INSTALL.md#pre-requisites).
+  
   ```
   # NOTE: make sure all necessary git submodules with dependencies 
   # are available by running "git submodule update --init"
