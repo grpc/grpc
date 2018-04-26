@@ -174,13 +174,13 @@ class RoundRobin : public LoadBalancingPolicy {
   void UpdateLastReadySubchannelIndexLocked(size_t last_ready_index);
 
   /** list of subchannels */
-  RefCountedPtr<RoundRobinSubchannelList> subchannel_list_;
+  OrphanablePtr<RoundRobinSubchannelList> subchannel_list_;
   /** Latest version of the subchannel list.
    * Subchannel connectivity callbacks will only promote updated subchannel
    * lists if they equal \a latest_pending_subchannel_list. In other words,
    * racing callbacks that reference outdated subchannel lists won't perform any
    * update. */
-  RefCountedPtr<RoundRobinSubchannelList> latest_pending_subchannel_list_;
+  OrphanablePtr<RoundRobinSubchannelList> latest_pending_subchannel_list_;
   /** have we started picking? */
   bool started_picking_ = false;
   /** are we shutting down? */
@@ -303,14 +303,8 @@ void RoundRobin::ShutdownLocked() {
   }
   grpc_connectivity_state_set(&state_tracker_, GRPC_CHANNEL_SHUTDOWN,
                               GRPC_ERROR_REF(error), "rr_shutdown");
-  if (subchannel_list_ != nullptr) {
-    subchannel_list_->ShutdownLocked("rr_shutdown");
-    subchannel_list_.reset();
-  }
-  if (latest_pending_subchannel_list_ != nullptr) {
-    latest_pending_subchannel_list_->ShutdownLocked("rr_shutdown");
-    latest_pending_subchannel_list_.reset();
-  }
+  subchannel_list_.reset();
+  latest_pending_subchannel_list_.reset();
   TryReresolutionLocked(&grpc_lb_round_robin_trace, GRPC_ERROR_CANCELLED);
   GRPC_ERROR_UNREF(error);
 }
@@ -487,7 +481,7 @@ void RoundRobin::RoundRobinSubchannelList::
     MaybeUpdateRoundRobinConnectivityStateLocked() {
   RoundRobin* p = static_cast<RoundRobin*>(policy());
   // Only set connectivity state if this is the current subchannel list.
-  if (p->subchannel_list_ != this) return;
+  if (p->subchannel_list_.get() != this) return;
   /* In priority order. The first rule to match terminates the search (ie, if we
    * are on rule n, all previous rules were unfulfilled).
    *
@@ -523,12 +517,12 @@ void RoundRobin::RoundRobinSubchannelList::
     UpdateRoundRobinStateFromSubchannelStateCountsLocked() {
   RoundRobin* p = static_cast<RoundRobin*>(policy());
   if (num_ready_ > 0) {
-    if (p->subchannel_list_ != this) {
+    if (p->subchannel_list_.get() != this) {
       // Promote this list to p->subchannel_list_.
       // This list must be p->latest_pending_subchannel_list_, because
       // any previous update would have been shut down already and
       // therefore weeded out in ProcessConnectivityChangeLocked().
-      GPR_ASSERT(p->latest_pending_subchannel_list_ == this);
+      GPR_ASSERT(p->latest_pending_subchannel_list_.get() == this);
       GPR_ASSERT(!shutting_down());
       if (grpc_lb_round_robin_trace.enabled()) {
         const size_t old_num_subchannels =
@@ -540,10 +534,6 @@ void RoundRobin::RoundRobinSubchannelList::
                 ") in favor of %p (size %" PRIuPTR ")",
                 p, p->subchannel_list_.get(), old_num_subchannels, this,
                 num_subchannels());
-      }
-      if (p->subchannel_list_ != nullptr) {
-        // Dispose of the current subchannel_list.
-        p->subchannel_list_->ShutdownLocked("sl_phase_out_shutdown");
       }
       p->subchannel_list_ = std::move(p->latest_pending_subchannel_list_);
       p->last_ready_subchannel_index_ = -1;
@@ -652,9 +642,8 @@ void RoundRobin::UpdateLocked(const grpc_channel_args& args) {
               "[RR %p] Shutting down previous pending subchannel list %p", this,
               latest_pending_subchannel_list_.get());
     }
-    latest_pending_subchannel_list_->ShutdownLocked("sl_outdated");
   }
-  latest_pending_subchannel_list_ = MakeRefCounted<RoundRobinSubchannelList>(
+  latest_pending_subchannel_list_ = MakeOrphanable<RoundRobinSubchannelList>(
       this, &grpc_lb_round_robin_trace, addresses, combiner(),
       client_channel_factory(), args);
   // If we haven't started picking yet or the new list is empty,
@@ -666,9 +655,6 @@ void RoundRobin::UpdateLocked(const grpc_channel_args& args) {
           &state_tracker_, GRPC_CHANNEL_TRANSIENT_FAILURE,
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update"),
           "rr_update_empty");
-    }
-    if (subchannel_list_ != nullptr) {
-      subchannel_list_->ShutdownLocked("sl_shutdown_replace_on_update");
     }
     subchannel_list_ = std::move(latest_pending_subchannel_list_);
     last_ready_subchannel_index_ = -1;

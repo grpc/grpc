@@ -31,6 +31,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/inlined_vector.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -118,6 +119,7 @@ class SubchannelData {
     pending_connectivity_state_unsafe_ =
         grpc_subchannel_check_connectivity(subchannel(), &error);
     UpdateConnectedSubchannelLocked();
+// FIXME: move the rest of this into RR
     if (pending_connectivity_state_unsafe_ != curr_connectivity_state_) {
       curr_connectivity_state_ = pending_connectivity_state_unsafe_;
       ProcessConnectivityChangeLocked(error);
@@ -148,7 +150,7 @@ class SubchannelData {
   void CancelConnectivityWatchLocked(const char* reason);
 
   // Cancels any pending connectivity watch and unrefs the subchannel.
-  void ShutdownLocked(const char* reason);
+  void ShutdownLocked();
 
   GRPC_ABSTRACT_BASE_CLASS
 
@@ -199,11 +201,9 @@ class SubchannelData {
 };
 
 // A list of subchannels.
-// FIXME: make this InternallyRefCounted, and have Orphan() do
-// ShutdownLocked()?
-// (also, maybe we don't need to take a ref to the LB policy anymore?)
 template <typename SubchannelListType, typename SubchannelDataType>
-class SubchannelList : public RefCountedWithTracing<SubchannelListType> {
+class SubchannelList
+    : public InternallyRefCountedWithTracing<SubchannelListType> {
  public:
   typedef InlinedVector<SubchannelDataType, 10> SubchannelVector;
 
@@ -213,15 +213,19 @@ class SubchannelList : public RefCountedWithTracing<SubchannelListType> {
   // The data for the subchannel at a particular index.
   SubchannelDataType* subchannel(size_t index) { return &subchannels_[index]; }
 
-  // Marks the subchannel_list as discarded. Unsubscribes all its subchannels.
-  void ShutdownLocked(const char* reason);
-
   // Returns true if the subchannel list is shutting down.
   bool shutting_down() const { return shutting_down_; }
 
   // Accessors.
   LoadBalancingPolicy* policy() const { return policy_; }
   TraceFlag* tracer() const { return tracer_; }
+
+  // Note: Caller must ensure that this is invoked inside of the combiner.
+  void Orphan() override {
+    ShutdownLocked();
+    InternallyRefCountedWithTracing<SubchannelListType>::Unref(DEBUG_LOCATION,
+                                                               "shutdown");
+  }
 
   GRPC_ABSTRACT_BASE_CLASS
 
@@ -237,6 +241,11 @@ class SubchannelList : public RefCountedWithTracing<SubchannelListType> {
   // So New() can call our private ctor.
   template <typename T, typename... Args>
   friend T* New(Args&&... args);
+
+  // For accessing Ref() and Unref().
+  friend class SubchannelData<SubchannelListType, SubchannelDataType>;
+
+  void ShutdownLocked();
 
   // Backpointer to owning policy.
   LoadBalancingPolicy* policy_;
@@ -430,15 +439,14 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::
 }
 
 template <typename SubchannelListType, typename SubchannelDataType>
-void SubchannelData<SubchannelListType, SubchannelDataType>::ShutdownLocked(
-    const char* reason) {
+void SubchannelData<SubchannelListType, SubchannelDataType>::ShutdownLocked() {
   // If there's a pending notification for this subchannel, cancel it;
   // the callback is responsible for unreffing the subchannel.
   // Otherwise, unref the subchannel directly.
   if (connectivity_notification_pending_) {
-    CancelConnectivityWatchLocked(reason);
+    CancelConnectivityWatchLocked("shutdown");
   } else if (subchannel_ != nullptr) {
-    UnrefSubchannelLocked(reason);
+    UnrefSubchannelLocked("shutdown");
   }
 }
 
@@ -452,7 +460,7 @@ SubchannelList<SubchannelListType, SubchannelDataType>::SubchannelList(
     const grpc_lb_addresses* addresses, grpc_combiner* combiner,
     grpc_client_channel_factory* client_channel_factory,
     const grpc_channel_args& args)
-    : RefCountedWithTracing<SubchannelListType>(tracer),
+    : InternallyRefCountedWithTracing<SubchannelListType>(tracer),
       policy_(policy),
       tracer_(tracer) {
   if (tracer_->enabled()) {
@@ -518,17 +526,16 @@ SubchannelList<SubchannelListType, SubchannelDataType>::~SubchannelList() {
 }
 
 template <typename SubchannelListType, typename SubchannelDataType>
-void SubchannelList<SubchannelListType, SubchannelDataType>::ShutdownLocked(
-    const char* reason) {
+void SubchannelList<SubchannelListType, SubchannelDataType>::ShutdownLocked() {
   if (tracer_->enabled()) {
-    gpr_log(GPR_DEBUG, "[%s %p] Shutting down subchannel_list %p (%s)",
-            tracer_->name(), policy_, this, reason);
+    gpr_log(GPR_DEBUG, "[%s %p] Shutting down subchannel_list %p",
+            tracer_->name(), policy_, this);
   }
   GPR_ASSERT(!shutting_down_);
   shutting_down_ = true;
   for (size_t i = 0; i < subchannels_.size(); i++) {
     SubchannelDataType* sd = &subchannels_[i];
-    sd->ShutdownLocked(reason);
+    sd->ShutdownLocked();
   }
 }
 
