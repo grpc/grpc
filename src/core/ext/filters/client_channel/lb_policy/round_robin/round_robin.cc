@@ -444,7 +444,7 @@ void RoundRobin::RoundRobinSubchannelList::StartWatchingLocked() {
   // Start connectivity watch for each subchannel.
   for (size_t i = 0; i < num_subchannels(); i++) {
     if (subchannel(i)->subchannel() != nullptr) {
-      subchannel(i)->StartOrRenewConnectivityWatchLocked();
+      subchannel(i)->StartConnectivityWatchLocked();
     }
   }
 }
@@ -584,7 +584,7 @@ void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
   // If we've started watching, update overall state and renew notification.
   if (subchannel_list()->started_watching()) {
     subchannel_list()->UpdateRoundRobinStateFromSubchannelStateCountsLocked();
-    StartOrRenewConnectivityWatchLocked();
+    RenewConnectivityWatchLocked();
   }
   GRPC_ERROR_UNREF(error);
 }

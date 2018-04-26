@@ -211,7 +211,7 @@ void PickFirst::StartPickingLocked() {
   if (subchannel_list_ != nullptr) {
     for (size_t i = 0; i < subchannel_list_->num_subchannels(); ++i) {
       if (subchannel_list_->subchannel(i)->subchannel() != nullptr) {
-        subchannel_list_->subchannel(i)->StartOrRenewConnectivityWatchLocked();
+        subchannel_list_->subchannel(i)->StartConnectivityWatchLocked();
         break;
       }
     }
@@ -315,7 +315,7 @@ void PickFirst::UpdateLocked(const grpc_channel_args& args) {
     // If we've started picking, start trying to connect to the first
     // subchannel in the new list.
     if (started_picking_) {
-      subchannel_list_->subchannel(0)->StartOrRenewConnectivityWatchLocked();
+      subchannel_list_->subchannel(0)->StartConnectivityWatchLocked();
     }
   } else {
     // We do have a selected subchannel.
@@ -337,7 +337,7 @@ void PickFirst::UpdateLocked(const grpc_channel_args& args) {
         selected_ = sd;
         subchannel_list_ = std::move(subchannel_list);
         DestroyUnselectedSubchannelsLocked();
-        sd->StartOrRenewConnectivityWatchLocked();
+        sd->StartConnectivityWatchLocked();
         // If there was a previously pending update (which may or may
         // not have contained the currently selected subchannel), drop
         // it, so that it doesn't override what we've done here.
@@ -363,7 +363,7 @@ void PickFirst::UpdateLocked(const grpc_channel_args& args) {
     // subchannel in the new list.
     if (started_picking_) {
       latest_pending_subchannel_list_->subchannel(0)
-          ->StartOrRenewConnectivityWatchLocked();
+          ->StartConnectivityWatchLocked();
     }
   }
 }
@@ -420,7 +420,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
         grpc_connectivity_state_set(&p->state_tracker_, connectivity_state(),
                                     GRPC_ERROR_REF(error), "selected_changed");
         // Renew notification.
-        StartOrRenewConnectivityWatchLocked();
+        RenewConnectivityWatchLocked();
       }
     }
     GRPC_ERROR_UNREF(error);
@@ -467,7 +467,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
         GRPC_CLOSURE_SCHED(pick->on_complete, GRPC_ERROR_NONE);
       }
       // Renew notification.
-      StartOrRenewConnectivityWatchLocked();
+      RenewConnectivityWatchLocked();
       break;
     }
     case GRPC_CHANNEL_TRANSIENT_FAILURE: {
@@ -485,7 +485,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
             &p->state_tracker_, GRPC_CHANNEL_TRANSIENT_FAILURE,
             GRPC_ERROR_REF(error), "connecting_transient_failure");
       }
-      sd->StartOrRenewConnectivityWatchLocked();
+      sd->StartConnectivityWatchLocked();
       break;
     }
     case GRPC_CHANNEL_CONNECTING:
@@ -497,7 +497,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
                                     "connecting_changed");
       }
       // Renew notification.
-      StartOrRenewConnectivityWatchLocked();
+      RenewConnectivityWatchLocked();
       break;
     }
     case GRPC_CHANNEL_SHUTDOWN:
