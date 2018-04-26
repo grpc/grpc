@@ -63,13 +63,15 @@ struct grpc_combiner {
   gpr_refcount refs;
 };
 
+static void combiner_run(grpc_closure* closure, grpc_error* error);
 static void combiner_exec(grpc_closure* closure, grpc_error* error);
+static void combiner_finally_run(grpc_closure* closure, grpc_error* error);
 static void combiner_finally_exec(grpc_closure* closure, grpc_error* error);
 
 static const grpc_closure_scheduler_vtable scheduler = {
-    combiner_exec, combiner_exec, "combiner:immediately"};
+    combiner_run, combiner_exec, "combiner:immediately"};
 static const grpc_closure_scheduler_vtable finally_scheduler = {
-    combiner_finally_exec, combiner_finally_exec, "combiner:finally"};
+    combiner_finally_run, combiner_finally_exec, "combiner:finally"};
 
 static void offload(void* arg, grpc_error* error);
 
@@ -341,6 +343,39 @@ static void combiner_finally_exec(grpc_closure* closure, grpc_error* error) {
     gpr_atm_full_fetch_add(&lock->state, STATE_ELEM_COUNT_LOW_BIT);
   }
   grpc_closure_list_append(&lock->final_list, closure, error);
+}
+
+static void combiner_run(grpc_closure* closure, grpc_error* error) {
+#ifndef NDEBUG
+  closure->scheduled = false;
+  grpc_combiner* lock = COMBINER_FROM_CLOSURE_SCHEDULER(closure, scheduler);
+  GRPC_COMBINER_TRACE(gpr_log(
+      GPR_DEBUG,
+      "Combiner:%p grpc_combiner_run closure:%p created [%s:%d] run [%s:%d]",
+      lock, closure, closure->file_created, closure->line_created,
+      closure->file_initiated, closure->line_initiated));
+  GPR_ASSERT(grpc_core::ExecCtx::Get()->combiner_data()->active_combiner ==
+             lock);
+#endif
+  closure->cb(closure->cb_arg, error);
+  GRPC_ERROR_UNREF(error);
+}
+
+static void combiner_finally_run(grpc_closure* closure, grpc_error* error) {
+#ifndef NDEBUG
+  closure->scheduled = false;
+  grpc_combiner* lock =
+      COMBINER_FROM_CLOSURE_SCHEDULER(closure, finally_scheduler);
+  GRPC_COMBINER_TRACE(gpr_log(
+      GPR_DEBUG,
+      "Combiner:%p grpc_combiner_run closure:%p created [%s:%d] run [%s:%d]",
+      lock, closure, closure->file_created, closure->line_created,
+      closure->file_initiated, closure->line_initiated));
+  GPR_ASSERT(grpc_core::ExecCtx::Get()->combiner_data()->active_combiner ==
+             lock);
+#endif
+  closure->cb(closure->cb_arg, error);
+  GRPC_ERROR_UNREF(error);
 }
 
 static void enqueue_finally(void* closure, grpc_error* error) {
