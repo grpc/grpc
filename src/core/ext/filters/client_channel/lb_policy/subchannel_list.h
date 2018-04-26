@@ -358,8 +358,7 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::
 template <typename SubchannelListType, typename SubchannelDataType>
 bool SubchannelData<SubchannelListType, SubchannelDataType>::
     UpdateConnectedSubchannelLocked() {
-// FIXME: add trace logging
-  // If the subchannel is READY, get a ref to the connected subchannel.
+  // If the subchannel is READY, take a ref to the connected subchannel.
   if (pending_connectivity_state_unsafe_ == GRPC_CHANNEL_READY) {
     connected_subchannel_ =
         grpc_subchannel_get_connected_subchannel(subchannel_);
@@ -375,14 +374,20 @@ bool SubchannelData<SubchannelListType, SubchannelDataType>::
     // is READY again (e.g., if the subchannel has transitioned back to
     // READY before the next watch gets requested).
     if (connected_subchannel_ == nullptr) {
+      if (subchannel_list_->tracer()->enabled()) {
+        gpr_log(GPR_INFO,
+                "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
+                " (subchannel %p): state is READY but connected subchannel is "
+                "null; moving to state IDLE",
+                subchannel_list_->tracer()->name(),
+                subchannel_list_->policy(), subchannel_list_, Index(),
+                subchannel_list_->num_subchannels(), subchannel_);
+      }
       pending_connectivity_state_unsafe_ = GRPC_CHANNEL_IDLE;
       return false;
     }
-  }
-// FIXME: do this for any other state?
-  // If we get TRANSIENT_FAILURE, unref the connected subchannel.
-  else if (pending_connectivity_state_unsafe_ ==
-           GRPC_CHANNEL_TRANSIENT_FAILURE) {
+  } else {
+    // For any state other than READY, unref the connected subchannel.
     connected_subchannel_.reset();
   }
   return true;
@@ -392,12 +397,25 @@ template <typename SubchannelListType, typename SubchannelDataType>
 void SubchannelData<SubchannelListType, SubchannelDataType>::
     OnConnectivityChangedLocked(void* arg, grpc_error* error) {
   SubchannelData* sd = static_cast<SubchannelData*>(arg);
-// FIXME: add trace logging
-  if (sd->subchannel_list()->shutting_down() || error == GRPC_ERROR_CANCELLED) {
+  if (sd->subchannel_list_->tracer()->enabled()) {
+    gpr_log(GPR_INFO,
+            "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
+            " (subchannel %p): connectivity changed: state=%s, error=%s, "
+            "shutting_down=%d",
+            sd->subchannel_list_->tracer()->name(),
+            sd->subchannel_list_->policy(), sd->subchannel_list_, sd->Index(),
+            sd->subchannel_list_->num_subchannels(), sd->subchannel_,
+            grpc_connectivity_state_name(
+                sd->pending_connectivity_state_unsafe_),
+            grpc_error_string(error), sd->subchannel_list_->shutting_down());
+  }
+  // If shutting down, unref subchannel and stop watching.
+  if (sd->subchannel_list_->shutting_down() || error == GRPC_ERROR_CANCELLED) {
     sd->UnrefSubchannelLocked("connectivity_shutdown");
     sd->StopConnectivityWatchLocked();
     return;
   }
+  // Get or release ref to connected subchannel.
   if (!sd->UpdateConnectedSubchannelLocked()) {
     // We don't want to report this connectivity state, so renew the watch.
     sd->StartOrRenewConnectivityWatchLocked();
