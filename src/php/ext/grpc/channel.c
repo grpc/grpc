@@ -193,7 +193,6 @@ void create_and_add_channel_to_persistent_list(
   create_channel(channel, target, args, creds);
 
   le->channel = channel->wrapper;
-  le->ref_count = 1;
   new_rsrc.ptr = le;
   gpr_mu_lock(&global_persistent_list_mu);
   PHP_GRPC_PERSISTENT_LIST_UPDATE(&grpc_persistent_list, key, key_len,
@@ -342,7 +341,6 @@ PHP_METHOD(Channel, __construct) {
       free(channel->wrapper->target);
       free(channel->wrapper->args_hashstr);
       free(channel->wrapper);
-      le->ref_count += 1;
       channel->wrapper = le->channel;
       channel->wrapper->ref_count += 1;
     }
@@ -534,53 +532,6 @@ static void php_grpc_channel_plink_dtor(php_grpc_zend_resource *rsrc
   }
 }
 
-/**
- * Clean all channels in the persistent.
- * @return void
- */
-PHP_METHOD(Channel, cleanPersistentList) {
-  zend_hash_clean(&grpc_persistent_list);
-}
-
-/**
- * Return an array of persistent list.
- * @return array
- */
-PHP_METHOD(Channel, getPersistentList) {
-  array_init(return_value);
-  zval *data;
-  PHP_GRPC_HASH_FOREACH_VAL_START(&grpc_persistent_list, data)
-    php_grpc_zend_resource *rsrc  =
-                (php_grpc_zend_resource*) PHP_GRPC_HASH_VALPTR_TO_VAL(data)
-    if (rsrc == NULL) {
-      break;
-    }
-    channel_persistent_le_t* le = rsrc->ptr;
-    zval* ret_arr;
-    PHP_GRPC_MAKE_STD_ZVAL(ret_arr);
-    array_init(ret_arr);
-    // Info about the target
-    PHP_GRPC_ADD_STRING_TO_ARRAY(ret_arr, "target",
-                sizeof("target"), le->channel->target, true);
-    // Info about key
-    PHP_GRPC_ADD_STRING_TO_ARRAY(ret_arr, "key",
-                sizeof("key"), le->channel->key, true);
-    // Info about persistent channel ref_count
-    PHP_GRPC_ADD_LONG_TO_ARRAY(ret_arr, "ref_count",
-                sizeof("ref_count"), le->ref_count);
-    // Info about connectivity status
-    int state =
-        grpc_channel_check_connectivity_state(le->channel->wrapped, (int)0);
-    // It should be set to 'true' in PHP 5.6.33
-    PHP_GRPC_ADD_LONG_TO_ARRAY(ret_arr, "connectivity_status",
-                sizeof("connectivity_status"), state);
-    // Info about the channel is closed or not
-    PHP_GRPC_ADD_BOOL_TO_ARRAY(ret_arr, "is_valid",
-                sizeof("is_valid"), le->channel->is_valid);
-    add_assoc_zval(return_value, le->channel->target, ret_arr);
-  PHP_GRPC_HASH_FOREACH_END()
-}
-
 ZEND_BEGIN_ARG_INFO_EX(arginfo_construct, 0, 0, 2)
   ZEND_ARG_INFO(0, target)
   ZEND_ARG_INFO(0, args)
@@ -601,12 +552,6 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_close, 0, 0, 0)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_INFO_EX(arginfo_cleanPersistentList, 0, 0, 0)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_getPersistentList, 0, 0, 0)
-ZEND_END_ARG_INFO()
-
 static zend_function_entry channel_methods[] = {
   PHP_ME(Channel, __construct, arginfo_construct,
          ZEND_ACC_PUBLIC | ZEND_ACC_CTOR)
@@ -617,10 +562,6 @@ static zend_function_entry channel_methods[] = {
   PHP_ME(Channel, watchConnectivityState, arginfo_watchConnectivityState,
          ZEND_ACC_PUBLIC)
   PHP_ME(Channel, close, arginfo_close,
-         ZEND_ACC_PUBLIC)
-  PHP_ME(Channel, cleanPersistentList, arginfo_cleanPersistentList,
-         ZEND_ACC_PUBLIC)
-  PHP_ME(Channel, getPersistentList, arginfo_getPersistentList,
          ZEND_ACC_PUBLIC)
   PHP_FE_END
 };
