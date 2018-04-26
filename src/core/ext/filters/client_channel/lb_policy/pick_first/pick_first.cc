@@ -294,7 +294,7 @@ void PickFirst::UpdateLocked(const grpc_channel_args& args) {
     return;
   }
   const grpc_lb_addresses* addresses =
-      (const grpc_lb_addresses*)arg->value.pointer.p;
+      static_cast<const grpc_lb_addresses*>(arg->value.pointer.p);
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_INFO,
             "Pick First %p received update with %" PRIuPTR " addresses", this,
@@ -344,7 +344,6 @@ void PickFirst::UpdateLocked(const grpc_channel_args& args) {
                   subchannel_list->num_subchannels());
         }
         if (selected_->connected_subchannel() != nullptr) {
-// FIXME: restructure to work more like RR?
           sd->SetConnectedSubchannelFromLocked(selected_);
         }
         selected_ = sd;

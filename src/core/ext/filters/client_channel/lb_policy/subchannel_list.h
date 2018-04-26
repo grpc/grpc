@@ -94,13 +94,14 @@ class SubchannelData {
     return curr_connectivity_state_;
   }
 
-// FIXME: remove
-  // An alternative to SetConnectedSubchannelFromSubchannelLocked() for
-  // cases where we are retaining a connected subchannel from a previous
-  // subchannel list.  This is slightly more efficient than getting the
-  // connected subchannel from the subchannel, because that approach
-  // requires the use of a mutex, whereas this one only mutates a
-  // refcount.
+  // Used to set the connected subchannel in cases where we are retaining a
+  // subchannel from a previous subchannel list.  This is slightly more
+  // efficient than getting the connected subchannel from the subchannel,
+  // because that approach requires the use of a mutex, whereas this one
+  // only mutates a refcount.
+  // TODO(roth): This method is a bit of a hack and is used only in
+  // pick_first.  When we have time, find a way to remove this, possibly
+  // by making pick_first work more like round_robin.
   void SetConnectedSubchannelFromLocked(SubchannelData* other) {
     GPR_ASSERT(subchannel_ == other->subchannel_);
     connected_subchannel_ = other->connected_subchannel_;  // Adds ref.
@@ -164,11 +165,12 @@ class SubchannelData {
   // Implementations can use connectivity_state() to get the new
   // connectivity state.
   // Implementations must invoke either StopConnectivityWatch() or again
-  // call StartConnectivityWatch() before returning.
+  // call StartOrRenewConnectivityWatch() before returning.
   virtual void ProcessConnectivityChangeLocked(grpc_error* error) GRPC_ABSTRACT;
 
  private:
-// FIXME: document
+  // Updates connected_subchannel_ based on pending_connectivity_state_unsafe_.
+  // Returns true if the connectivity state should be reported.
   bool UpdateConnectedSubchannelLocked();
 
   static void OnConnectivityChangedLocked(void* arg, grpc_error* error);
