@@ -248,7 +248,7 @@ void PrintMethodImplementations(Printer* printer,
                 " */\n");
   printer.Print(vars,
                 "@interface $service_class$ :"
-                " GRPCProtoService<$service_class$>\n");
+                " GRPCProtoService<$service_class$, GRPCProtoServiceInit>\n");
   printer.Print(
       "- (instancetype)initWithHost:(NSString *)host"
       " NS_DESIGNATED_INITIALIZER;\n");
