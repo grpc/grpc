@@ -49,6 +49,7 @@ some configuration as environment variables that can be set.
   - connectivity_state - traces connectivity state changes to channels
   - channel_stack_builder - traces information about channel stacks being built
   - executor - traces grpc's internal thread pool ('the executor')
+  - fd_trace - traces fd creation, shutdown and closure.
   - glb - traces the grpclb load balancer
   - handshaker - traces handshaking state
   - http - traces state in the http2 transport engine

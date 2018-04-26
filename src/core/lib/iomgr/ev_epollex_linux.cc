@@ -447,9 +447,13 @@ static grpc_error* pollable_create(pollable_type type, pollable** p) {
   if (epfd == -1) {
     return GRPC_OS_ERROR(errno, "epoll_create1");
   }
+  GRPC_FD_TRACE("Pollable_create: created epfd: %d (type: %d)", epfd, type);
   *p = static_cast<pollable*>(gpr_malloc(sizeof(**p)));
   grpc_error* err = grpc_wakeup_fd_init(&(*p)->wakeup);
   if (err != GRPC_ERROR_NONE) {
+    GRPC_FD_TRACE(
+        "Pollable_create: closed epfd: %d (type: %d). wakeupfd_init error",
+        epfd, type);
     close(epfd);
     gpr_free(*p);
     *p = nullptr;
@@ -460,6 +464,9 @@ static grpc_error* pollable_create(pollable_type type, pollable** p) {
   ev.data.ptr = (void*)(1 | (intptr_t) & (*p)->wakeup);
   if (epoll_ctl(epfd, EPOLL_CTL_ADD, (*p)->wakeup.read_fd, &ev) != 0) {
     err = GRPC_OS_ERROR(errno, "epoll_ctl");
+    GRPC_FD_TRACE(
+        "Pollable_create: closed epfd: %d (type: %d). epoll_ctl error", epfd,
+        type);
     close(epfd);
     grpc_wakeup_fd_destroy(&(*p)->wakeup);
     gpr_free(*p);
@@ -506,6 +513,7 @@ static void pollable_unref(pollable* p, int line, const char* reason) {
   }
 #endif
   if (p != nullptr && gpr_unref(&p->refs)) {
+    GRPC_FD_TRACE("pollable_unref: Closing epfd: %d", p->epfd);
     close(p->epfd);
     grpc_wakeup_fd_destroy(&p->wakeup);
     gpr_free(p);
