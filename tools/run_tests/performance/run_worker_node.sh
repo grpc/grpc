@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+. "$HOME/.nvm/nvm.sh"
+
 nvm use 9
 
 set -ex
@@ -27,4 +29,4 @@ cd "$(dirname "$0")/../../.."
 # Enter the grpc-node repo root (expected to be next to grpc repo root)
 cd ../grpc-node
 
-node -r "test/fixtures/$fixture.js" tools/run_tests/performance/worker.js "$@"
+node -r "./test/fixtures/$fixture" test/performance/worker.js "$@"

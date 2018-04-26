@@ -1160,7 +1160,8 @@ class NodeLanguage:
 
     def worker_cmdline(self):
         fixture = 'native_js' if self.node_purejs else 'native_native'
-        return ['tools/run_tests/performance/run_worker_node.sh', fixture]
+        return ['tools/run_tests/performance/run_worker_node.sh', fixture,
+                '--benchmark_impl=grpc']
 
     def worker_port_offset(self):
         if self.node_purejs:
@@ -1175,7 +1176,7 @@ class NodeLanguage:
 
             yield _ping_pong_scenario(
                 '%s_to_node_generic_async_streaming_ping_pong_%s' %
-                (secstr, node_implementation),
+                (node_implementation, secstr),
                 rpc_type='STREAMING',
                 client_type='ASYNC_CLIENT',
                 server_type='ASYNC_GENERIC_SERVER',
@@ -1187,7 +1188,7 @@ class NodeLanguage:
 
             yield _ping_pong_scenario(
                 '%s_to_node_protobuf_async_streaming_ping_pong_%s' %
-                (secstr, node_implementation),
+                (node_implementation, secstr),
                 rpc_type='STREAMING',
                 client_type='ASYNC_CLIENT',
                 server_type='ASYNC_SERVER',
@@ -1197,7 +1198,7 @@ class NodeLanguage:
 
             yield _ping_pong_scenario(
                 '%s_to_node_protobuf_async_unary_ping_pong_%s' %
-                (secstr, node_implementation),
+                (node_implementation, secstr),
                 rpc_type='UNARY',
                 client_type='ASYNC_CLIENT',
                 server_type='ASYNC_SERVER',
@@ -1208,7 +1209,7 @@ class NodeLanguage:
 
             yield _ping_pong_scenario(
                 '%s_to_node_protobuf_async_unary_qps_unconstrained_%s' %
-                (secstr, node_implementation),
+                (node_implementation, secstr),
                 rpc_type='UNARY',
                 client_type='ASYNC_CLIENT',
                 server_type='ASYNC_SERVER',
@@ -1219,7 +1220,7 @@ class NodeLanguage:
 
             yield _ping_pong_scenario(
                 '%s_to_node_protobuf_async_streaming_qps_unconstrained_%s' %
-                (secstr, node_implementation),
+                (node_implementation, secstr),
                 rpc_type='STREAMING',
                 client_type='ASYNC_CLIENT',
                 server_type='ASYNC_SERVER',
@@ -1230,7 +1231,7 @@ class NodeLanguage:
 
             yield _ping_pong_scenario(
                 '%s_to_node_generic_async_streaming_qps_unconstrained_%s' %
-                (secstr, node_implementation),
+                (node_implementation, secstr),
                 rpc_type='STREAMING',
                 client_type='ASYNC_CLIENT',
                 server_type='ASYNC_GENERIC_SERVER',

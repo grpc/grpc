@@ -15,6 +15,8 @@
 
 set +ex
 
+. "$HOME/.nvm/nvm.sh"
+
 nvm install 9
 
 set -ex
