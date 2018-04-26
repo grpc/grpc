@@ -1160,8 +1160,10 @@ class NodeLanguage:
 
     def worker_cmdline(self):
         fixture = 'native_js' if self.node_purejs else 'native_native'
-        return ['tools/run_tests/performance/run_worker_node.sh', fixture,
-                '--benchmark_impl=grpc']
+        return [
+            'tools/run_tests/performance/run_worker_node.sh', fixture,
+            '--benchmark_impl=grpc'
+        ]
 
     def worker_port_offset(self):
         if self.node_purejs:
