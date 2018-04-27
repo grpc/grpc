@@ -638,10 +638,10 @@ _LANGUAGES_WITH_HTTP2_CLIENTS_FOR_HTTP2_SERVER_TEST_CASES = [
 ]
 
 #TODO: Add c++ when c++ ALTS interop client is ready.
-_LANGUAGES_FOR_ALTS_TEST_CASES = ['java', 'go', 'c++']
+_LANGUAGES_FOR_ALTS_TEST_CASES = ['java', 'go']
 
 #TODO: Add c++ when c++ ALTS interop server is ready.
-_SERVERS_FOR_ALTS_TEST_CASES = ['java', 'go', 'c++']
+_SERVERS_FOR_ALTS_TEST_CASES = ['java', 'go']
 
 _TRANSPORT_SECURITY_OPTIONS = ['tls', 'alts', 'insecure']
 
