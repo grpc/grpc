@@ -486,8 +486,8 @@ void RoundRobin::RoundRobinSubchannelData::UpdateConnectivityStateLocked(
         grpc_connectivity_state_name(last_connectivity_state_),
         grpc_connectivity_state_name(connectivity_state));
   }
-  subchannel_list()->UpdateStateCountersLocked(
-      last_connectivity_state_, connectivity_state, GRPC_ERROR_REF(error));
+  subchannel_list()->UpdateStateCountersLocked(last_connectivity_state_,
+                                               connectivity_state, error);
   last_connectivity_state_ = connectivity_state;
 }
 
