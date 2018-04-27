@@ -30,11 +30,11 @@ EXCLUSIONS=(
 
 VIRTUALENV=yapf_virtual_environment
 
-virtualenv $VIRTUALENV
-PYTHON=$(realpath "${VIRTUALENV}/bin/python")
-$PYTHON -m pip install --upgrade pip==10.0.1
-$PYTHON -m pip install --upgrade futures
-$PYTHON -m pip install yapf==0.20.0
+python -m virtualenv $VIRTUALENV
+PYTHON=${VIRTUALENV}/bin/python
+"$PYTHON" -m pip install --upgrade pip==10.0.1
+"$PYTHON" -m pip install --upgrade futures
+"$PYTHON" -m pip install yapf==0.20.0
 
 yapf() {
     local exclusion exclusion_args=()
