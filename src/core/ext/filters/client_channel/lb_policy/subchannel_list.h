@@ -89,20 +89,6 @@ class SubchannelData {
     return connected_subchannel_.get();
   }
 
-// FIXME: remove
-  // Used to set the connected subchannel in cases where we are retaining a
-  // subchannel from a previous subchannel list.  This is slightly more
-  // efficient than getting the connected subchannel from the subchannel,
-  // because that approach requires the use of a mutex, whereas this one
-  // only mutates a refcount.
-  // TODO(roth): This method is a bit of a hack and is used only in
-  // pick_first.  When we have time, find a way to remove this, possibly
-  // by making pick_first work more like round_robin.
-  void SetConnectedSubchannelFromLocked(SubchannelData* other) {
-    GPR_ASSERT(subchannel_ == other->subchannel_);
-    connected_subchannel_ = other->connected_subchannel_;  // Adds ref.
-  }
-
   // Synchronously checks the subchannel's connectivity state.
   // Must not be called while there is a connectivity notification
   // pending (i.e., between calling StartConnectivityWatchLocked() or

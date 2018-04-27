@@ -332,18 +332,23 @@ void PickFirst::UpdateLocked(const grpc_channel_args& args) {
                   this, selected_->subchannel(), i,
                   subchannel_list->num_subchannels());
         }
-        if (selected_->connected_subchannel() != nullptr) {
-          sd->SetConnectedSubchannelFromLocked(selected_);
+        // Make sure it's in state READY.  It might not be if we grabbed
+        // the combiner while a connectivity state notification
+        // informing us otherwise is pending.
+        // Note that CheckConnectivityStateLocked() also takes a ref to
+        // the connected subchannel.
+        grpc_error* error = GRPC_ERROR_NONE;
+        if (sd->CheckConnectivityStateLocked(&error) == GRPC_CHANNEL_READY) {
+          selected_ = sd;
+          subchannel_list_ = std::move(subchannel_list);
+          DestroyUnselectedSubchannelsLocked();
+          sd->StartConnectivityWatchLocked();
+          // If there was a previously pending update (which may or may
+          // not have contained the currently selected subchannel), drop
+          // it, so that it doesn't override what we've done here.
+          latest_pending_subchannel_list_.reset();
+          return;
         }
-        selected_ = sd;
-        subchannel_list_ = std::move(subchannel_list);
-        DestroyUnselectedSubchannelsLocked();
-        sd->StartConnectivityWatchLocked();
-        // If there was a previously pending update (which may or may
-        // not have contained the currently selected subchannel), drop
-        // it, so that it doesn't override what we've done here.
-        latest_pending_subchannel_list_.reset();
-        return;
       }
     }
     // Not keeping the previous selected subchannel, so set the latest
