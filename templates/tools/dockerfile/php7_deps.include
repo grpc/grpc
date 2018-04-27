@@ -41,5 +41,9 @@ RUN cd /var/local/git/php-src ${'\\'}
   --with-gmp ${'\\'}
   --with-openssl ${'\\'}
   --with-zlib ${'\\'}
+  --with-fpm ${'\\'}
+  --with-fpm-user=www-data ${'\\'}
+  --with-fpm-group=www-data ${'\\'}
+  --enable-fpm ${'\\'}
   && make ${'\\'}
   && make install

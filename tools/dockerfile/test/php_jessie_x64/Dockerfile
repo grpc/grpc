@@ -76,6 +76,23 @@ RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 t
 RUN apt-get update && apt-get install -y \
     git php5 php5-dev phpunit unzip
 
+# Install nginx
+RUN apt-get install -y nginx-extras --no-install-recommends
+
+# Set the worker process for php-fpm to 1
+RUN sed -i "s|worker_processes 4|worker_processes 1|g" /etc/nginx/nginx.conf
+# Enable php-fpm with nginx and use tcp port
+RUN sed -i "s|#location ~ \\\.php\$ {| location ~ \\\.php\$ {include snippets\/fastcgi-php\.conf;fastcgi_pass 127\.0\.0\.1:9000;}|g" /etc/nginx/sites-available/default
+
+# Create config files for php-fpm and set the path information
+RUN cp /usr/local/etc/php-fpm.conf.default /usr/local/etc/php-fpm.conf
+RUN cp /usr/local/etc/php-fpm.d/www.conf.default /usr/local/etc/php-fpm.d/www.conf
+RUN sed -i "s|include=NONE\/etc|include=etc|g" /usr/local/etc/php-fpm.conf
+
+# Enable gRPC-PHP extension with php-fpm
+RUN echo "extension=grpc.so" >> /usr/local/etc/php.ini
+
+
 # Prepare ccache
 RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
 RUN ln -s /usr/bin/ccache /usr/local/bin/g++

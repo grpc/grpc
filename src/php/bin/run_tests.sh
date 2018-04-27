@@ -28,3 +28,22 @@ php $extension_dir -d max_execution_time=300 $(which phpunit) -v --debug \
 php $extension_dir -d max_execution_time=300 $(which phpunit) -v --debug \
   ../tests/unit_tests/PersistentChannelTests
 
+if [ "$1" = "with-php-fpm-tests" ]; then
+  if [ -e "/usr/local/etc/php.ini" ]; then
+    # start nginx
+    service nginx start
+    # restart php-fpm
+    pkill -o php-fpm
+    php-fpm -c /usr/local/etc
+    cp ../tests/php-fpm-tests/channel1.php /var/www/html/channel1.php
+    cp ../tests/php-fpm-tests/channel2.php /var/www/html/channel2.php
+    curl -o - "localhost/channel1.php"
+    curl -o - "localhost/channel2.php" | tee output
+    res=`head -n 1 output`
+    if [ $res == "0" ]; then
+      exit 0
+    fi
+    exit 1
+  fi
+fi
+

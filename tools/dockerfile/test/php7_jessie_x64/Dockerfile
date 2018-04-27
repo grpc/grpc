@@ -57,8 +57,29 @@ RUN cd /var/local/git/php-src \
   --with-gmp \
   --with-openssl \
   --with-zlib \
+  --with-fpm \
+  --with-fpm-user=www-data \
+  --with-fpm-group=www-data \
+  --enable-fpm \
   && make \
   && make install
+
+# Install nginx
+RUN apt-get install -y nginx-extras --no-install-recommends
+
+# Set the worker process for php-fpm to 1
+RUN sed -i "s|worker_processes 4|worker_processes 1|g" /etc/nginx/nginx.conf
+# Enable php-fpm with nginx and use tcp port
+RUN sed -i "s|#location ~ \\\.php\$ {| location ~ \\\.php\$ {include snippets\/fastcgi-php\.conf;fastcgi_pass 127\.0\.0\.1:9000;}|g" /etc/nginx/sites-available/default
+
+# Create config files for php-fpm and set the path information
+RUN cp /usr/local/etc/php-fpm.conf.default /usr/local/etc/php-fpm.conf
+RUN cp /usr/local/etc/php-fpm.d/www.conf.default /usr/local/etc/php-fpm.d/www.conf
+RUN sed -i "s|include=NONE\/etc|include=etc|g" /usr/local/etc/php-fpm.conf
+
+# Enable gRPC-PHP extension with php-fpm
+RUN echo "extension=grpc.so" >> /usr/local/etc/php.ini
+
 
 # Google Cloud platform API libraries
 RUN apt-get update && apt-get install -y python-pip && apt-get clean

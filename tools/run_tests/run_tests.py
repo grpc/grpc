@@ -621,7 +621,7 @@ class PhpLanguage(object):
     def test_specs(self):
         return [
             self.config.job_spec(
-                ['src/php/bin/run_tests.sh'],
+                ['src/php/bin/run_tests.sh with-php-fpm-tests'],
                 environ=_FORCE_ENVIRON_FOR_WRAPPERS)
         ]
 
