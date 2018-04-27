@@ -117,6 +117,7 @@ function getDistance(start, end) {
   var lat2 = toRadians(end.latitude / COORD_FACTOR);
   var lon1 = toRadians(start.longitude / COORD_FACTOR);
   var lon2 = toRadians(end.longitude / COORD_FACTOR);
+  var dlon = end.longitude - start.longitude;
 
   var deltalat = lat2-lat1;
   var deltalon = lon2-lon1;
