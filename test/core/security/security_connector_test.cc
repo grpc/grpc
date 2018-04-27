@@ -340,6 +340,26 @@ static grpc_ssl_roots_override_result override_roots_permanent_failure(
   return GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY;
 }
 
+static void test_ipv6_address_san(void) {
+  const char* addresses[] = {
+      "2001:db8::1",     "fe80::abcd:ef65:4321%em0", "fd11:feed:beef:0:cafe::4",
+      "128.10.0.1:8888", "[2001:db8::1]:8080",       "[2001:db8::1%em1]:8080",
+  };
+  const char* san_ips[] = {
+      "2001:db8::1", "fe80::abcd:ef65:4321", "fd11:feed:beef:0:cafe::4",
+      "128.10.0.1",  "2001:db8::1",          "2001:db8::1",
+  };
+  tsi_peer peer;
+  GPR_ASSERT(tsi_construct_peer(1, &peer) == TSI_OK);
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(addresses); i++) {
+    GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                   TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, san_ips[i],
+                   &peer.properties[0]) == TSI_OK);
+    GPR_ASSERT(grpc_ssl_host_matches_name(&peer, addresses[i]));
+    tsi_peer_property_destruct(&peer.properties[0]);
+  }
+  tsi_peer_destruct(&peer);
+}
 namespace grpc_core {
 namespace {
 
@@ -416,6 +436,7 @@ int main(int argc, char** argv) {
   test_cn_and_one_san_ssl_peer_to_auth_context();
   test_cn_and_multiple_sans_ssl_peer_to_auth_context();
   test_cn_and_multiple_sans_and_others_ssl_peer_to_auth_context();
+  test_ipv6_address_san();
   test_default_ssl_roots();
 
   grpc_shutdown();
