@@ -805,7 +805,7 @@ int grpc_ssl_host_matches_name(const tsi_peer* peer, const char* peer_name) {
   return r;
 }
 
-grpc_auth_context* tsi_ssl_peer_to_auth_context(const tsi_peer* peer) {
+grpc_auth_context* grpc_ssl_peer_to_auth_context(const tsi_peer* peer) {
   size_t i;
   grpc_auth_context* ctx = nullptr;
   const char* peer_identity_property_name = nullptr;
@@ -869,7 +869,7 @@ static grpc_error* ssl_check_peer(grpc_security_connector* sc,
     gpr_free(msg);
     return error;
   }
-  *auth_context = tsi_ssl_peer_to_auth_context(peer);
+  *auth_context = grpc_ssl_peer_to_auth_context(peer);
   return GRPC_ERROR_NONE;
 }
 
@@ -927,7 +927,7 @@ static void add_shallow_auth_property_to_peer(tsi_peer* peer,
   tsi_prop->value.length = prop->value_length;
 }
 
-tsi_peer tsi_shallow_peer_from_ssl_auth_context(
+tsi_peer grpc_shallow_peer_from_ssl_auth_context(
     const grpc_auth_context* auth_context) {
   size_t max_num_props = 0;
   grpc_auth_property_iterator it;
@@ -958,7 +958,7 @@ tsi_peer tsi_shallow_peer_from_ssl_auth_context(
   return peer;
 }
 
-void tsi_shallow_peer_destruct(tsi_peer* peer) {
+void grpc_shallow_peer_destruct(tsi_peer* peer) {
   if (peer->properties != nullptr) gpr_free(peer->properties);
 }
 
@@ -970,7 +970,7 @@ static bool ssl_channel_check_call_host(grpc_channel_security_connector* sc,
   grpc_ssl_channel_security_connector* c =
       reinterpret_cast<grpc_ssl_channel_security_connector*>(sc);
   grpc_security_status status = GRPC_SECURITY_ERROR;
-  tsi_peer peer = tsi_shallow_peer_from_ssl_auth_context(auth_context);
+  tsi_peer peer = grpc_shallow_peer_from_ssl_auth_context(auth_context);
   if (grpc_ssl_host_matches_name(&peer, host)) status = GRPC_SECURITY_OK;
   /* If the target name was overridden, then the original target_name was
      'checked' transitively during the previous peer check at the end of the
@@ -983,7 +983,7 @@ static bool ssl_channel_check_call_host(grpc_channel_security_connector* sc,
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "call host does not match SSL server name");
   }
-  tsi_shallow_peer_destruct(&peer);
+  grpc_shallow_peer_destruct(&peer);
   return true;
 }
 

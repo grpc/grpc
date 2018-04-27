@@ -87,15 +87,15 @@ static void test_unauthenticated_ssl_peer(void) {
   GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
                  TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_X509_CERTIFICATE_TYPE,
                  &peer.properties[0]) == TSI_OK);
-  ctx = tsi_ssl_peer_to_auth_context(&peer);
+  ctx = grpc_ssl_peer_to_auth_context(&peer);
   GPR_ASSERT(ctx != nullptr);
   GPR_ASSERT(!grpc_auth_context_peer_is_authenticated(ctx));
   GPR_ASSERT(check_transport_security_type(ctx));
 
-  rpeer = tsi_shallow_peer_from_ssl_auth_context(ctx);
+  rpeer = grpc_shallow_peer_from_ssl_auth_context(ctx);
   GPR_ASSERT(check_ssl_peer_equivalence(&peer, &rpeer));
 
-  tsi_shallow_peer_destruct(&rpeer);
+  grpc_shallow_peer_destruct(&rpeer);
   tsi_peer_destruct(&peer);
   GRPC_AUTH_CONTEXT_UNREF(ctx, "test");
 }
@@ -187,7 +187,7 @@ static void test_cn_only_ssl_peer_to_auth_context(void) {
   GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
                  TSI_X509_PEM_CERT_PROPERTY, expected_pem_cert,
                  &peer.properties[2]) == TSI_OK);
-  ctx = tsi_ssl_peer_to_auth_context(&peer);
+  ctx = grpc_ssl_peer_to_auth_context(&peer);
   GPR_ASSERT(ctx != nullptr);
   GPR_ASSERT(grpc_auth_context_peer_is_authenticated(ctx));
   GPR_ASSERT(check_identity(ctx, GRPC_X509_CN_PROPERTY_NAME, &expected_cn, 1));
@@ -195,10 +195,10 @@ static void test_cn_only_ssl_peer_to_auth_context(void) {
   GPR_ASSERT(check_x509_cn(ctx, expected_cn));
   GPR_ASSERT(check_x509_pem_cert(ctx, expected_pem_cert));
 
-  rpeer = tsi_shallow_peer_from_ssl_auth_context(ctx);
+  rpeer = grpc_shallow_peer_from_ssl_auth_context(ctx);
   GPR_ASSERT(check_ssl_peer_equivalence(&peer, &rpeer));
 
-  tsi_shallow_peer_destruct(&rpeer);
+  grpc_shallow_peer_destruct(&rpeer);
   tsi_peer_destruct(&peer);
   GRPC_AUTH_CONTEXT_UNREF(ctx, "test");
 }
@@ -223,7 +223,7 @@ static void test_cn_and_one_san_ssl_peer_to_auth_context(void) {
   GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
                  TSI_X509_PEM_CERT_PROPERTY, expected_pem_cert,
                  &peer.properties[3]) == TSI_OK);
-  ctx = tsi_ssl_peer_to_auth_context(&peer);
+  ctx = grpc_ssl_peer_to_auth_context(&peer);
   GPR_ASSERT(ctx != nullptr);
   GPR_ASSERT(grpc_auth_context_peer_is_authenticated(ctx));
   GPR_ASSERT(
@@ -232,10 +232,10 @@ static void test_cn_and_one_san_ssl_peer_to_auth_context(void) {
   GPR_ASSERT(check_x509_cn(ctx, expected_cn));
   GPR_ASSERT(check_x509_pem_cert(ctx, expected_pem_cert));
 
-  rpeer = tsi_shallow_peer_from_ssl_auth_context(ctx);
+  rpeer = grpc_shallow_peer_from_ssl_auth_context(ctx);
   GPR_ASSERT(check_ssl_peer_equivalence(&peer, &rpeer));
 
-  tsi_shallow_peer_destruct(&rpeer);
+  grpc_shallow_peer_destruct(&rpeer);
   tsi_peer_destruct(&peer);
   GRPC_AUTH_CONTEXT_UNREF(ctx, "test");
 }
@@ -264,7 +264,7 @@ static void test_cn_and_multiple_sans_ssl_peer_to_auth_context(void) {
                    TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
                    expected_sans[i], &peer.properties[3 + i]) == TSI_OK);
   }
-  ctx = tsi_ssl_peer_to_auth_context(&peer);
+  ctx = grpc_ssl_peer_to_auth_context(&peer);
   GPR_ASSERT(ctx != nullptr);
   GPR_ASSERT(grpc_auth_context_peer_is_authenticated(ctx));
   GPR_ASSERT(check_identity(ctx, GRPC_X509_SAN_PROPERTY_NAME, expected_sans,
@@ -273,10 +273,10 @@ static void test_cn_and_multiple_sans_ssl_peer_to_auth_context(void) {
   GPR_ASSERT(check_x509_cn(ctx, expected_cn));
   GPR_ASSERT(check_x509_pem_cert(ctx, expected_pem_cert));
 
-  rpeer = tsi_shallow_peer_from_ssl_auth_context(ctx);
+  rpeer = grpc_shallow_peer_from_ssl_auth_context(ctx);
   GPR_ASSERT(check_ssl_peer_equivalence(&peer, &rpeer));
 
-  tsi_shallow_peer_destruct(&rpeer);
+  grpc_shallow_peer_destruct(&rpeer);
   tsi_peer_destruct(&peer);
   GRPC_AUTH_CONTEXT_UNREF(ctx, "test");
 }
@@ -310,7 +310,7 @@ static void test_cn_and_multiple_sans_and_others_ssl_peer_to_auth_context(
                    TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
                    expected_sans[i], &peer.properties[5 + i]) == TSI_OK);
   }
-  ctx = tsi_ssl_peer_to_auth_context(&peer);
+  ctx = grpc_ssl_peer_to_auth_context(&peer);
   GPR_ASSERT(ctx != nullptr);
   GPR_ASSERT(grpc_auth_context_peer_is_authenticated(ctx));
   GPR_ASSERT(check_identity(ctx, GRPC_X509_SAN_PROPERTY_NAME, expected_sans,
@@ -319,10 +319,10 @@ static void test_cn_and_multiple_sans_and_others_ssl_peer_to_auth_context(
   GPR_ASSERT(check_x509_cn(ctx, expected_cn));
   GPR_ASSERT(check_x509_pem_cert(ctx, expected_pem_cert));
 
-  rpeer = tsi_shallow_peer_from_ssl_auth_context(ctx);
+  rpeer = grpc_shallow_peer_from_ssl_auth_context(ctx);
   GPR_ASSERT(check_ssl_peer_equivalence(&peer, &rpeer));
 
-  tsi_shallow_peer_destruct(&rpeer);
+  grpc_shallow_peer_destruct(&rpeer);
   tsi_peer_destruct(&peer);
   GRPC_AUTH_CONTEXT_UNREF(ctx, "test");
 }
