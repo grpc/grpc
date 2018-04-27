@@ -76,7 +76,8 @@ class PickFirst : public LoadBalancingPolicy {
         : SubchannelData(subchannel_list, user_data_vtable, address, subchannel,
                          combiner) {}
 
-    void ProcessConnectivityChangeLocked(grpc_error* error) override;
+    void ProcessConnectivityChangeLocked(
+        grpc_connectivity_state connectivity_state, grpc_error* error) override;
   };
 
   class PickFirstSubchannelList
@@ -369,7 +370,7 @@ void PickFirst::UpdateLocked(const grpc_channel_args& args) {
 }
 
 void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
-    grpc_error* error) {
+    grpc_connectivity_state connectivity_state, grpc_error* error) {
   PickFirst* p = static_cast<PickFirst*>(subchannel_list()->policy());
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_INFO,
@@ -379,7 +380,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
             "sd->subchannel_list->shutting_down=%d error=%s",
             p, subchannel(), Index(), subchannel_list()->num_subchannels(),
             subchannel_list(),
-            grpc_connectivity_state_name(connectivity_state()), p->shutdown_,
+            grpc_connectivity_state_name(connectivity_state), p->shutdown_,
             subchannel_list()->shutting_down(), grpc_error_string(error));
   }
   // The notification must be for a subchannel in either the current or
@@ -390,7 +391,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
   if (p->selected_ == this) {
     // If the new state is anything other than READY and there is a
     // pending update, switch to the pending update.
-    if (connectivity_state() != GRPC_CHANNEL_READY &&
+    if (connectivity_state != GRPC_CHANNEL_READY &&
         p->latest_pending_subchannel_list_ != nullptr) {
       p->selected_ = nullptr;
       StopConnectivityWatchLocked();
@@ -404,8 +405,8 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
       // re-resolution is introduced. But we need to investigate whether we
       // really want to take any action instead of waiting for the selected
       // subchannel reconnecting.
-      GPR_ASSERT(connectivity_state() != GRPC_CHANNEL_SHUTDOWN);
-      if (connectivity_state() == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+      GPR_ASSERT(connectivity_state != GRPC_CHANNEL_SHUTDOWN);
+      if (connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
         // If the selected channel goes bad, request a re-resolution.
         grpc_connectivity_state_set(&p->state_tracker_, GRPC_CHANNEL_IDLE,
                                     GRPC_ERROR_NONE,
@@ -417,7 +418,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
         UnrefSubchannelLocked("pf_selected_shutdown");
         StopConnectivityWatchLocked();
       } else {
-        grpc_connectivity_state_set(&p->state_tracker_, connectivity_state(),
+        grpc_connectivity_state_set(&p->state_tracker_, connectivity_state,
                                     GRPC_ERROR_REF(error), "selected_changed");
         // Renew notification.
         RenewConnectivityWatchLocked();
@@ -435,7 +436,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
   //    for a subchannel in p->latest_pending_subchannel_list_.  The
   //    goal here is to find a subchannel from the update that we can
   //    select in place of the current one.
-  switch (connectivity_state()) {
+  switch (connectivity_state) {
     case GRPC_CHANNEL_READY: {
       // Case 2.  Promote p->latest_pending_subchannel_list_ to
       // p->subchannel_list_.

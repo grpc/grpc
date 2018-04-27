@@ -49,7 +49,8 @@ class MySubchannelList;  // Forward declaration.
 class MySubchannelData
     : public SubchannelData<MySubchannelList, MySubchannelData> {
  public:
-  void ProcessConnectivityChangeLocked(grpc_error* error) override {
+  void ProcessConnectivityChangeLocked(
+      grpc_connectivity_state connectivity_state, grpc_error* error) override {
     // ...code to handle connectivity changes...
   }
 };
@@ -88,13 +89,7 @@ class SubchannelData {
     return connected_subchannel_.get();
   }
 
-  // The current connectivity state.
-  // May be called from ProcessConnectivityChangeLocked() to determine
-  // the state that the subchannel has transitioned into.
-  grpc_connectivity_state connectivity_state() const {
-    return curr_connectivity_state_;
-  }
-
+// FIXME: remove
   // Used to set the connected subchannel in cases where we are retaining a
   // subchannel from a previous subchannel list.  This is slightly more
   // efficient than getting the connected subchannel from the subchannel,
@@ -108,25 +103,17 @@ class SubchannelData {
     connected_subchannel_ = other->connected_subchannel_;  // Adds ref.
   }
 
-  // Synchronously checks the subchannel's connectivity state.  Calls
-  // ProcessConnectivityChangeLocked() if the state has changed.
+  // Synchronously checks the subchannel's connectivity state.
   // Must not be called while there is a connectivity notification
   // pending (i.e., between calling StartConnectivityWatchLocked() or
   // RenewConnectivityWatchLocked() and the resulting invocation of
   // ProcessConnectivityChangeLocked()).
-  void CheckConnectivityStateLocked() {
+  grpc_connectivity_state CheckConnectivityStateLocked(grpc_error** error) {
     GPR_ASSERT(!connectivity_notification_pending_);
-    grpc_error* error = GRPC_ERROR_NONE;
     pending_connectivity_state_unsafe_ =
-        grpc_subchannel_check_connectivity(subchannel(), &error);
+        grpc_subchannel_check_connectivity(subchannel(), error);
     UpdateConnectedSubchannelLocked();
-// FIXME: move the rest of this into RR
-    if (pending_connectivity_state_unsafe_ != curr_connectivity_state_) {
-      curr_connectivity_state_ = pending_connectivity_state_unsafe_;
-      ProcessConnectivityChangeLocked(error);
-    } else {
-      GRPC_ERROR_UNREF(error);
-    }
+    return pending_connectivity_state_unsafe_;
   }
 
   // Unrefs the subchannel.  May be used if an individual subchannel is
@@ -170,11 +157,11 @@ class SubchannelData {
   // After StartConnectivityWatchLocked() or RenewConnectivityWatchLocked()
   // is called, this method will be invoked when the subchannel's connectivity
   // state changes.
-  // Implementations can use connectivity_state() to get the new
-  // connectivity state.
   // Implementations must invoke either RenewConnectivityWatchLocked() or
   // StopConnectivityWatchLocked() before returning.
-  virtual void ProcessConnectivityChangeLocked(grpc_error* error) GRPC_ABSTRACT;
+  virtual void ProcessConnectivityChangeLocked(
+      grpc_connectivity_state connectivity_state,
+      grpc_error* error) GRPC_ABSTRACT;
 
  private:
   // Updates connected_subchannel_ based on pending_connectivity_state_unsafe_.
@@ -196,14 +183,8 @@ class SubchannelData {
   bool connectivity_notification_pending_ = false;
   // Connectivity state to be updated by
   // grpc_subchannel_notify_on_state_change(), not guarded by
-  // the combiner.  Will be copied to curr_connectivity_state_ by
-  // OnConnectivityChangedLocked().
+  // the combiner.
   grpc_connectivity_state pending_connectivity_state_unsafe_;
-  // Current connectivity state.
-// FIXME: move this into RR, not needed in PF because connectivity_state
-// is only used in ProcessConnectivityChangeLocked()
-// (maybe pass it as a param and eliminate the accessor method?)
-  grpc_connectivity_state curr_connectivity_state_;
 };
 
 // A list of subchannels.
@@ -287,8 +268,7 @@ SubchannelData<SubchannelListType, SubchannelDataType>::SubchannelData(
       subchannel_(subchannel),
       // We assume that the current state is IDLE.  If not, we'll get a
       // callback telling us that.
-      pending_connectivity_state_unsafe_(GRPC_CHANNEL_IDLE),
-      curr_connectivity_state_(GRPC_CHANNEL_IDLE) {
+      pending_connectivity_state_unsafe_(GRPC_CHANNEL_IDLE) {
   GRPC_CLOSURE_INIT(
       &connectivity_changed_closure_,
       (&SubchannelData<SubchannelListType,
@@ -457,12 +437,9 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::
     sd->RenewConnectivityWatchLocked();
     return;
   }
-  // Now that we're inside the combiner, copy the pending connectivity
-  // state (which was set by the connectivity state watcher) to
-  // curr_connectivity_state_, which is what we use inside of the combiner.
-  sd->curr_connectivity_state_ = sd->pending_connectivity_state_unsafe_;
   // Call the subclass's ProcessConnectivityChangeLocked() method.
-  sd->ProcessConnectivityChangeLocked(GRPC_ERROR_REF(error));
+  sd->ProcessConnectivityChangeLocked(sd->pending_connectivity_state_unsafe_,
+                                      GRPC_ERROR_REF(error));
 }
 
 template <typename SubchannelListType, typename SubchannelDataType>
