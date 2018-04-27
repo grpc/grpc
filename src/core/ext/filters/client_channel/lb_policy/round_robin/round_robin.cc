@@ -475,6 +475,17 @@ void RoundRobin::RoundRobinSubchannelList::
 
 void RoundRobin::RoundRobinSubchannelData::UpdateConnectivityStateLocked(
     grpc_connectivity_state connectivity_state, grpc_error* error) {
+  RoundRobin* p = static_cast<RoundRobin*>(subchannel_list()->policy());
+  if (grpc_lb_round_robin_trace.enabled()) {
+    gpr_log(
+        GPR_INFO,
+        "[RR %p] connectivity changed for subchannel %p, subchannel_list %p "
+        "(index %" PRIuPTR " of %" PRIuPTR "): prev_state=%s new_state=%s",
+        p, subchannel(), subchannel_list(), Index(),
+        subchannel_list()->num_subchannels(),
+        grpc_connectivity_state_name(last_connectivity_state_),
+        grpc_connectivity_state_name(connectivity_state));
+  }
   subchannel_list()->UpdateStateCountersLocked(
       last_connectivity_state_, connectivity_state, GRPC_ERROR_REF(error));
   last_connectivity_state_ = connectivity_state;
@@ -483,19 +494,6 @@ void RoundRobin::RoundRobinSubchannelData::UpdateConnectivityStateLocked(
 void RoundRobin::RoundRobinSubchannelData::ProcessConnectivityChangeLocked(
     grpc_connectivity_state connectivity_state, grpc_error* error) {
   RoundRobin* p = static_cast<RoundRobin*>(subchannel_list()->policy());
-  if (grpc_lb_round_robin_trace.enabled()) {
-    gpr_log(
-        GPR_INFO,
-        "[RR %p] connectivity changed for subchannel %p, subchannel_list %p "
-        "(index %" PRIuPTR " of %" PRIuPTR
-        "): prev_state=%s new_state=%s "
-        "p->shutdown=%d sd->subchannel_list->shutting_down=%d error=%s",
-        p, subchannel(), subchannel_list(), Index(),
-        subchannel_list()->num_subchannels(),
-        grpc_connectivity_state_name(last_connectivity_state_),
-        grpc_connectivity_state_name(connectivity_state), p->shutdown_,
-        subchannel_list()->shutting_down(), grpc_error_string(error));
-  }
   GPR_ASSERT(subchannel() != nullptr);
   // If the new state is TRANSIENT_FAILURE, re-resolve.
   // Only do this if we've started watching, not at startup time.

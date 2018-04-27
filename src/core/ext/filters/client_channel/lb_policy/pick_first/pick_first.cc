@@ -377,27 +377,26 @@ void PickFirst::UpdateLocked(const grpc_channel_args& args) {
 void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
     grpc_connectivity_state connectivity_state, grpc_error* error) {
   PickFirst* p = static_cast<PickFirst*>(subchannel_list()->policy());
-  if (grpc_lb_pick_first_trace.enabled()) {
-    gpr_log(GPR_INFO,
-            "Pick First %p connectivity changed for subchannel %p (%" PRIuPTR
-            " of %" PRIuPTR
-            "), subchannel_list %p: state=%s p->shutdown_=%d "
-            "sd->subchannel_list->shutting_down=%d error=%s",
-            p, subchannel(), Index(), subchannel_list()->num_subchannels(),
-            subchannel_list(), grpc_connectivity_state_name(connectivity_state),
-            p->shutdown_, subchannel_list()->shutting_down(),
-            grpc_error_string(error));
-  }
   // The notification must be for a subchannel in either the current or
   // latest pending subchannel lists.
   GPR_ASSERT(subchannel_list() == p->subchannel_list_.get() ||
              subchannel_list() == p->latest_pending_subchannel_list_.get());
   // Handle updates for the currently selected subchannel.
   if (p->selected_ == this) {
+    if (grpc_lb_pick_first_trace.enabled()) {
+      gpr_log(GPR_INFO,
+              "Pick First %p connectivity changed for selected subchannel", p);
+    }
     // If the new state is anything other than READY and there is a
     // pending update, switch to the pending update.
     if (connectivity_state != GRPC_CHANNEL_READY &&
         p->latest_pending_subchannel_list_ != nullptr) {
+      if (grpc_lb_pick_first_trace.enabled()) {
+        gpr_log(GPR_INFO,
+                "Pick First %p promoting pending subchannel list %p to "
+                "replace %p", p, p->latest_pending_subchannel_list_.get(),
+                p->subchannel_list_.get());
+      }
       p->selected_ = nullptr;
       StopConnectivityWatchLocked();
       p->subchannel_list_ = std::move(p->latest_pending_subchannel_list_);
@@ -446,7 +445,12 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
       // Case 2.  Promote p->latest_pending_subchannel_list_ to
       // p->subchannel_list_.
       if (subchannel_list() == p->latest_pending_subchannel_list_.get()) {
-        GPR_ASSERT(p->subchannel_list_ != nullptr);
+        if (grpc_lb_pick_first_trace.enabled()) {
+          gpr_log(GPR_INFO,
+                  "Pick First %p promoting pending subchannel list %p to "
+                  "replace %p", p, p->latest_pending_subchannel_list_.get(),
+                  p->subchannel_list_.get());
+        }
         p->subchannel_list_ = std::move(p->latest_pending_subchannel_list_);
       }
       // Cases 1 and 2.
