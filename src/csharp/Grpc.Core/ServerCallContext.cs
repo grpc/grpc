@@ -36,14 +36,25 @@ namespace Grpc.Core
         private readonly Metadata requestHeaders;
         private readonly CancellationToken cancellationToken;
         private readonly Metadata responseTrailers = new Metadata();
+        private readonly Func<Metadata, Task> writeHeadersFunc;
+        private readonly IHasWriteOptions writeOptionsHolder;
+        private readonly Lazy<AuthContext> authContext;
+        private readonly Func<string> testingOnlyPeerGetter;
+        private readonly Func<AuthContext> testingOnlyAuthContextGetter;
+        private readonly Func<ContextPropagationToken> testingOnlyContextPropagationTokenFactory;
 
         private Status status = Status.DefaultSuccess;
-        private Func<Metadata, Task> writeHeadersFunc;
-        private IHasWriteOptions writeOptionsHolder;
-        private Lazy<AuthContext> authContext;
 
         internal ServerCallContext(CallSafeHandle callHandle, string method, string host, DateTime deadline, Metadata requestHeaders, CancellationToken cancellationToken,
             Func<Metadata, Task> writeHeadersFunc, IHasWriteOptions writeOptionsHolder)
+            : this(callHandle, method, host, deadline, requestHeaders, cancellationToken, writeHeadersFunc, writeOptionsHolder, null, null, null)
+        {
+        }
+
+        // Additional constructor params should be used for testing only
+        internal ServerCallContext(CallSafeHandle callHandle, string method, string host, DateTime deadline, Metadata requestHeaders, CancellationToken cancellationToken,
+            Func<Metadata, Task> writeHeadersFunc, IHasWriteOptions writeOptionsHolder,
+            Func<string> testingOnlyPeerGetter, Func<AuthContext> testingOnlyAuthContextGetter, Func<ContextPropagationToken> testingOnlyContextPropagationTokenFactory)
         {
             this.callHandle = callHandle;
             this.method = method;
@@ -54,6 +65,9 @@ namespace Grpc.Core
             this.writeHeadersFunc = writeHeadersFunc;
             this.writeOptionsHolder = writeOptionsHolder;
             this.authContext = new Lazy<AuthContext>(GetAuthContextEager);
+            this.testingOnlyPeerGetter = testingOnlyPeerGetter;
+            this.testingOnlyAuthContextGetter = testingOnlyAuthContextGetter;
+            this.testingOnlyContextPropagationTokenFactory = testingOnlyContextPropagationTokenFactory;
         }
 
         /// <summary>
@@ -73,6 +87,10 @@ namespace Grpc.Core
         /// </summary>
         public ContextPropagationToken CreatePropagationToken(ContextPropagationOptions options = null)
         {
+            if (testingOnlyContextPropagationTokenFactory != null)
+            {
+                return testingOnlyContextPropagationTokenFactory();
+            }
             return new ContextPropagationToken(callHandle, deadline, cancellationToken, options);
         }
             
@@ -99,6 +117,10 @@ namespace Grpc.Core
         {
             get
             {
+                if (testingOnlyPeerGetter != null)
+                {
+                    return testingOnlyPeerGetter();
+                }
                 // Getting the peer lazily is fine as the native call is guaranteed
                 // not to be disposed before user-supplied server side handler returns.
                 // Most users won't need to read this field anyway.
@@ -182,6 +204,10 @@ namespace Grpc.Core
         {
             get
             {
+                if (testingOnlyAuthContextGetter != null)
+                {
+                    return testingOnlyAuthContextGetter();
+                }
                 return authContext.Value;
             }
         }
@@ -198,7 +224,7 @@ namespace Grpc.Core
     /// <summary>
     /// Allows sharing write options between ServerCallContext and other objects.
     /// </summary>
-    public interface IHasWriteOptions
+    internal interface IHasWriteOptions
     {
         /// <summary>
         /// Gets or sets the write options.
