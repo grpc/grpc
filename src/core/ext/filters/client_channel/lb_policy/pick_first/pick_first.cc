@@ -384,9 +384,9 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
             "), subchannel_list %p: state=%s p->shutdown_=%d "
             "sd->subchannel_list->shutting_down=%d error=%s",
             p, subchannel(), Index(), subchannel_list()->num_subchannels(),
-            subchannel_list(),
-            grpc_connectivity_state_name(connectivity_state), p->shutdown_,
-            subchannel_list()->shutting_down(), grpc_error_string(error));
+            subchannel_list(), grpc_connectivity_state_name(connectivity_state),
+            p->shutdown_, subchannel_list()->shutting_down(),
+            grpc_error_string(error));
   }
   // The notification must be for a subchannel in either the current or
   // latest pending subchannel lists.

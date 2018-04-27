@@ -358,8 +358,8 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::
 }
 
 template <typename SubchannelListType, typename SubchannelDataType>
-bool SubchannelData<SubchannelListType, SubchannelDataType>::
-    UpdateConnectedSubchannelLocked() {
+bool SubchannelData<SubchannelListType,
+                    SubchannelDataType>::UpdateConnectedSubchannelLocked() {
   // If the subchannel is READY, take a ref to the connected subchannel.
   if (pending_connectivity_state_unsafe_ == GRPC_CHANNEL_READY) {
     connected_subchannel_ =
@@ -381,9 +381,9 @@ bool SubchannelData<SubchannelListType, SubchannelDataType>::
                 "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
                 " (subchannel %p): state is READY but connected subchannel is "
                 "null; moving to state IDLE",
-                subchannel_list_->tracer()->name(),
-                subchannel_list_->policy(), subchannel_list_, Index(),
-                subchannel_list_->num_subchannels(), subchannel_);
+                subchannel_list_->tracer()->name(), subchannel_list_->policy(),
+                subchannel_list_, Index(), subchannel_list_->num_subchannels(),
+                subchannel_);
       }
       pending_connectivity_state_unsafe_ = GRPC_CHANNEL_IDLE;
       return false;
@@ -400,16 +400,16 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::
     OnConnectivityChangedLocked(void* arg, grpc_error* error) {
   SubchannelData* sd = static_cast<SubchannelData*>(arg);
   if (sd->subchannel_list_->tracer()->enabled()) {
-    gpr_log(GPR_INFO,
-            "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
-            " (subchannel %p): connectivity changed: state=%s, error=%s, "
-            "shutting_down=%d",
-            sd->subchannel_list_->tracer()->name(),
-            sd->subchannel_list_->policy(), sd->subchannel_list_, sd->Index(),
-            sd->subchannel_list_->num_subchannels(), sd->subchannel_,
-            grpc_connectivity_state_name(
-                sd->pending_connectivity_state_unsafe_),
-            grpc_error_string(error), sd->subchannel_list_->shutting_down());
+    gpr_log(
+        GPR_INFO,
+        "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
+        " (subchannel %p): connectivity changed: state=%s, error=%s, "
+        "shutting_down=%d",
+        sd->subchannel_list_->tracer()->name(), sd->subchannel_list_->policy(),
+        sd->subchannel_list_, sd->Index(),
+        sd->subchannel_list_->num_subchannels(), sd->subchannel_,
+        grpc_connectivity_state_name(sd->pending_connectivity_state_unsafe_),
+        grpc_error_string(error), sd->subchannel_list_->shutting_down());
   }
   // If shutting down, unref subchannel and stop watching.
   if (sd->subchannel_list_->shutting_down() || error == GRPC_ERROR_CANCELLED) {
