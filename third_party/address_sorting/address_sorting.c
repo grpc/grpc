@@ -255,7 +255,7 @@ static int compare_source_dest_labels_match(
     second_label_matches = 1;
   }
   if (first_label_matches != second_label_matches) {
-    return first_label_matches ? 1 : 1;
+    return first_label_matches ? -1 : 1;
   }
   return 0;
 }
