@@ -137,6 +137,8 @@ namespace Grpc.Core
         /// <summary>
         /// <see cref="T:IList`1"/>
         /// </summary>
+        /// <param name="key">Metadata key. Gets converted to lowercase. Must not use suffix indicating a binary valued metadata entry. Can only contain lowercase alphanumeric characters, underscores and hyphens.</param>
+        /// <param name="value">Value string. Only ASCII characters are allowed.</param>
         public void Add(string key, string value)
         {
             Add(new Entry(key, value));
@@ -145,6 +147,8 @@ namespace Grpc.Core
         /// <summary>
         /// <see cref="T:IList`1"/>
         /// </summary>
+        /// <param name="key">Metadata key. Gets converted to lowercase. Needs to have suffix indicating a binary valued metadata entry. Can only contain lowercase alphanumeric characters, underscores and hyphens.</param>
+        /// <param name="valueBytes">Value bytes.</param>
         public void Add(string key, byte[] valueBytes)
         {
             Add(new Entry(key, valueBytes));
@@ -239,7 +243,7 @@ namespace Grpc.Core
             /// <summary>
             /// Initializes a new instance of the <see cref="Grpc.Core.Metadata.Entry"/> struct with a binary value.
             /// </summary>
-            /// <param name="key">Metadata key, needs to have suffix indicating a binary valued metadata entry.</param>
+            /// <param name="key">Metadata key. Gets converted to lowercase. Needs to have suffix indicating a binary valued metadata entry. Can only contain lowercase alphanumeric characters, underscores and hyphens.</param>
             /// <param name="valueBytes">Value bytes.</param>
             public Entry(string key, byte[] valueBytes)
             {
@@ -255,7 +259,7 @@ namespace Grpc.Core
             /// <summary>
             /// Initializes a new instance of the <see cref="Grpc.Core.Metadata.Entry"/> struct holding an ASCII value.
             /// </summary>
-            /// <param name="key">Metadata key, must not use suffix indicating a binary valued metadata entry.</param>
+            /// <param name="key">Metadata key. Gets converted to lowercase. Must not use suffix indicating a binary valued metadata entry. Can only contain lowercase alphanumeric characters, underscores and hyphens.</param>
             /// <param name="value">Value string. Only ASCII characters are allowed.</param>
             public Entry(string key, string value)
             {
