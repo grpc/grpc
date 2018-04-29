@@ -134,7 +134,7 @@ void PrintMessageTransformer(const Descriptor* descriptor, Printer* out) {
              "throw new Error('Expected argument of type $name$');\n");
   out->Outdent();
   out->Print("}\n");
-  out->Print("return new Buffer(arg.serializeBinary());\n");
+  out->Print("return Buffer.from(arg.serializeBinary());\n");
   out->Outdent();
   out->Print("}\n\n");
 
