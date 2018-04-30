@@ -3164,6 +3164,8 @@ static void watch_connectivity_state_locked(void* arg,
   external_connectivity_watcher* found = nullptr;
   if (w->state != nullptr) {
     external_connectivity_watcher_list_append(w->chand, w);
+    // An assumption is being made that the closure is scheduled on the exec ctx
+    // scheduler and that GRPC_CLOSURE_RUN would run the closure immediately.
     GRPC_CLOSURE_RUN(w->watcher_timer_init, GRPC_ERROR_NONE);
     GRPC_CLOSURE_INIT(&w->my_closure, on_external_watch_complete_locked, w,
                       grpc_combiner_scheduler(w->chand->combiner));
