@@ -49,8 +49,7 @@ gcloud compute instances create "$INSTANCE_NAME" \
     --zone "$ZONE" \
     --machine-type "$MACHINE_TYPE" \
     --image-project google.com:kokoro \
-    # The version might need updating.
-    --image kokoro-win7build-v11-prod-debug \
+    --image kokoro-win7build-v9-prod-debug \
     --boot-disk-size 500 \
     --boot-disk-type pd-ssd \
     --tags=allow-ssh \
