@@ -3242,7 +3242,7 @@ static void on_external_watch_complete_locked(void* arg, grpc_error* error) {
                            "external_connectivity_watcher");
   external_connectivity_watcher_list_remove(w->chand, w);
   gpr_free(w);
-  GRPC_CLOSURE_RUN(follow_up, GRPC_ERROR_REF(error));
+  GRPC_CLOSURE_SCHED(follow_up, GRPC_ERROR_REF(error));
 }
 
 static void watch_connectivity_state_locked(void* arg,

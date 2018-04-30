@@ -345,17 +345,17 @@ static void combiner_finally_exec(grpc_closure* closure, grpc_error* error) {
 }
 
 static void combiner_run(grpc_closure* closure, grpc_error* error) {
-#ifndef NDEBUG
   grpc_combiner* lock = COMBINER_FROM_CLOSURE_SCHEDULER(closure, scheduler);
+#ifndef NDEBUG
   closure->scheduled = false;
   GRPC_COMBINER_TRACE(gpr_log(
       GPR_DEBUG,
       "Combiner:%p grpc_combiner_run closure:%p created [%s:%d] run [%s:%d]",
       lock, closure, closure->file_created, closure->line_created,
       closure->file_initiated, closure->line_initiated));
+#endif
   GPR_ASSERT(grpc_core::ExecCtx::Get()->combiner_data()->active_combiner ==
              lock);
-#endif
   closure->cb(closure->cb_arg, error);
   GRPC_ERROR_UNREF(error);
 }
