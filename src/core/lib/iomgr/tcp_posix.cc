@@ -371,7 +371,7 @@ static void call_read_cb(grpc_tcp* tcp, grpc_error* error) {
 
 #define MAX_READ_IOVEC 4
 static void tcp_do_read(grpc_tcp* tcp) {
-  GPR_TIMER_SCOPE("tcp_continue_read", 0);
+  GPR_TIMER_SCOPE("tcp_do_read", 0);
   struct msghdr msg;
   struct iovec iov[MAX_READ_IOVEC];
   ssize_t read_bytes;
