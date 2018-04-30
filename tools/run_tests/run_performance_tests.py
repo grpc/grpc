@@ -194,6 +194,8 @@ def archive_repo(languages):
         cmdline.append('../grpc-java')
     if 'go' in languages:
         cmdline.append('../grpc-go')
+    if 'node' in languages or 'node_purejs' in languages:
+        cmdline.append('../grpc-node')
 
     archive_job = jobset.JobSpec(
         cmdline=cmdline, shortname='archive_repo', timeout_seconds=3 * 60)
