@@ -33,6 +33,19 @@ sudo systemsetup -settimezone America/Los_Angeles
 sudo systemsetup -setusingnetworktime on
 date
 
+# See https://github.com/grpc/grpc/issues/14815 for context.
+# Force-link brew installed over system installed Python versions
+# TODO(matt-kwong): Remove this after CI macOS workers are upgraded
+# to High Sierra.
+sudo ln -sf /usr/local/bin/pip /usr/bin/pip
+sudo ln -sf /usr/local/bin/python /usr/bin/python
+sudo ln -sf /usr/local/bin/python2 /usr/bin/python2
+sudo ln -sf /usr/local/bin/python2.7 /usr/bin/python2.7
+sudo ln -sf /usr/local/bin/python3 /usr/bin/python3
+sudo ln -sf /usr/local/bin/python3.4 /usr/bin/python3.4
+sudo ln -sf /usr/local/bin/python3.5 /usr/bin/python3.5
+sudo ln -sf /usr/local/bin/python3.6 /usr/bin/python3.6
+
 # Add GCP credentials for BQ access
 pip install google-api-python-client --user python
 export GOOGLE_APPLICATION_CREDENTIALS=${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json
