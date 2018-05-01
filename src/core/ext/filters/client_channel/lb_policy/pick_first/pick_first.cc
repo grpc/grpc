@@ -404,7 +404,8 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
       if (grpc_lb_pick_first_trace.enabled()) {
         gpr_log(GPR_INFO,
                 "Pick First %p promoting pending subchannel list %p to "
-                "replace %p", p, p->latest_pending_subchannel_list_.get(),
+                "replace %p",
+                p, p->latest_pending_subchannel_list_.get(),
                 p->subchannel_list_.get());
       }
       p->selected_ = nullptr;
@@ -463,7 +464,8 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
         if (grpc_lb_pick_first_trace.enabled()) {
           gpr_log(GPR_INFO,
                   "Pick First %p promoting pending subchannel list %p to "
-                  "replace %p", p, p->latest_pending_subchannel_list_.get(),
+                  "replace %p",
+                  p, p->latest_pending_subchannel_list_.get(),
                   p->subchannel_list_.get());
         }
         p->subchannel_list_ = std::move(p->latest_pending_subchannel_list_);
