@@ -293,6 +293,14 @@ typedef struct {
  * when possible. */
 #define GRPC_ARG_USE_CRONET_PACKET_COALESCING \
   "grpc.use_cronet_packet_coalescing"
+/** Channel arg indicating if a target is grpclb loadbalancer. The
+ * type of this arg is an integer and the value is treated as a bool. */
+#define GRPC_ARG_TARGET_IS_GRPCLB_LOAD_BALANCER \
+  "grpc.target_is_grpclb_load_balancer"
+/** Channel arg indicating if a target is a backend received from a balancer.
+ * The type of this arg is an integer and the value is treated as a bool. */
+#define GRPC_ARG_TARGET_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER \
+  "grpc.target_is_backend_from_grpclb_load_balancer"
 /** Channel arg (integer) setting how large a slice to try and read from the
    wire each time recvmsg (or equivalent) is called **/
 #define GRPC_ARG_TCP_READ_CHUNK_SIZE "grpc.experimental.tcp_read_chunk_size"

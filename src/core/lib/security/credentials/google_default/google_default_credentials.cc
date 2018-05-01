@@ -26,12 +26,14 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/security/credentials/alts/alts_credentials.h"
 #include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
@@ -59,6 +61,55 @@ typedef struct {
   int success;
   grpc_http_response response;
 } compute_engine_detector;
+
+typedef struct {
+  grpc_channel_credentials base;
+  grpc_channel_credentials* alts_creds;
+  grpc_channel_credentials* ssl_creds;
+} grpc_google_default_channel_credentials;
+
+static void google_default_credentials_destruct(
+    grpc_channel_credentials* creds) {
+  grpc_google_default_channel_credentials* c =
+      reinterpret_cast<grpc_google_default_channel_credentials*>(creds);
+  grpc_channel_credentials_unref(c->alts_creds);
+  grpc_channel_credentials_unref(c->ssl_creds);
+}
+
+static grpc_security_status google_default_create_security_connector(
+    grpc_channel_credentials* creds, grpc_call_credentials* call_creds,
+    const char* target, const grpc_channel_args* args,
+    grpc_channel_security_connector** sc, grpc_channel_args** new_args) {
+  grpc_google_default_channel_credentials* c =
+      reinterpret_cast<grpc_google_default_channel_credentials*>(creds);
+  bool is_grpclb_load_balancer =
+      grpc_channel_args_find(args, GRPC_ARG_TARGET_IS_GRPCLB_LOAD_BALANCER) !=
+      nullptr;
+  bool is_backend_from_grpclb_load_balancer = false;
+  const grpc_arg* arg = grpc_channel_args_find(
+      args, GRPC_ARG_TARGET_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER);
+  if (arg != nullptr) {
+    is_backend_from_grpclb_load_balancer = arg->value.integer;
+  }
+  bool use_alts =
+      is_grpclb_load_balancer || is_backend_from_grpclb_load_balancer;
+  grpc_security_status status = GRPC_SECURITY_ERROR;
+  status = use_alts ? c->alts_creds->vtable->create_security_connector(
+                          c->alts_creds, call_creds, target, args, sc, new_args)
+                    : c->ssl_creds->vtable->create_security_connector(
+                          c->ssl_creds, call_creds, target, args, sc, new_args);
+  static const char* args_to_remove[] = {
+      GRPC_ARG_TARGET_IS_GRPCLB_LOAD_BALANCER,
+      GRPC_ARG_TARGET_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER,
+  };
+  *new_args = grpc_channel_args_copy_and_add_and_remove(
+      args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), nullptr, 0);
+  return status;
+}
+
+static grpc_channel_credentials_vtable google_default_credentials_vtable = {
+    google_default_credentials_destruct,
+    google_default_create_security_connector, nullptr};
 
 static void on_compute_engine_detection_http_response(void* user_data,
                                                       grpc_error* error) {
@@ -269,17 +320,35 @@ grpc_channel_credentials* grpc_google_default_credentials_create(void) {
 end:
   if (result == nullptr) {
     if (call_creds != nullptr) {
-      /* Blend with default ssl credentials and add a global reference so that
-         it
-         can be cached and re-served. */
+      auto creds = static_cast<grpc_google_default_channel_credentials*>(
+          gpr_zalloc(sizeof(grpc_google_default_channel_credentials)));
+      creds->base.vtable = &google_default_credentials_vtable;
+      /* Blend with default alts and ssl credentials and add a global reference
+         so that it can be cached and re-served. */
+      /* Create ssl credentials. */
       grpc_channel_credentials* ssl_creds =
           grpc_ssl_credentials_create(nullptr, nullptr, nullptr);
-      default_credentials = grpc_channel_credentials_ref(
+      creds->ssl_creds = grpc_channel_credentials_ref(
           grpc_composite_channel_credentials_create(ssl_creds, call_creds,
                                                     nullptr));
-      GPR_ASSERT(default_credentials != nullptr);
+      GPR_ASSERT(creds->ssl_creds != nullptr);
       grpc_channel_credentials_unref(ssl_creds);
       grpc_call_credentials_unref(call_creds);
+      /* Create alts credentials. */
+      grpc_alts_credentials_options* options =
+          grpc_alts_credentials_client_options_create();
+      grpc_channel_credentials* alts_creds =
+          grpc_alts_credentials_create(options);
+      creds->alts_creds = grpc_channel_credentials_ref(
+          grpc_composite_channel_credentials_create(alts_creds, call_creds,
+                                                    nullptr));
+      grpc_channel_credentials_unref(alts_creds);
+      grpc_call_credentials_unref(call_creds);
+      grpc_alts_credentials_options_destroy(options);
+      /* Add a global reference. */
+      gpr_ref_init(&creds->base.refcount, 1);
+      default_credentials = grpc_channel_credentials_ref(&creds->base);
+      GPR_ASSERT(default_credentials != nullptr);
       result = default_credentials;
     } else {
       gpr_log(GPR_ERROR, "Could not create google default credentials.");
