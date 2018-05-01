@@ -867,14 +867,17 @@ static void set_google_default_creds_env_var_with_file_contents(
 static void test_google_default_creds_auth_key(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_service_account_jwt_access_credentials* jwt;
+  grpc_google_default_channel_credentials* default_creds;
   grpc_composite_channel_credentials* creds;
   char* json_key = test_json_key_str();
   grpc_flush_cached_google_default_credentials();
   set_google_default_creds_env_var_with_file_contents(
       "json_key_google_default_creds", json_key);
   gpr_free(json_key);
-  creds = reinterpret_cast<grpc_composite_channel_credentials*>(
+  default_creds = reinterpret_cast<grpc_google_default_channel_credentials*>(
       grpc_google_default_credentials_create());
+  creds = reinterpret_cast<grpc_composite_channel_credentials*>(
+      default_creds->ssl_creds);
   GPR_ASSERT(creds != nullptr);
   jwt = reinterpret_cast<grpc_service_account_jwt_access_credentials*>(
       creds->call_creds);
@@ -882,7 +885,7 @@ static void test_google_default_creds_auth_key(void) {
       strcmp(jwt->key.client_id,
              "777-abaslkan11hlb6nmim3bpspl31ud.apps.googleusercontent.com") ==
       0);
-  grpc_channel_credentials_unref(&creds->base);
+  grpc_channel_credentials_unref(&default_creds->base);
   gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
 }
 
@@ -939,9 +942,12 @@ static void test_google_default_creds_gce(void) {
   grpc_httpcli_set_override(
       default_creds_gce_detection_httpcli_get_success_override,
       httpcli_post_should_not_be_called);
+  grpc_google_default_channel_credentials* default_creds =
+      reinterpret_cast<grpc_google_default_channel_credentials*>(
+          grpc_google_default_credentials_create());
   grpc_composite_channel_credentials* creds =
       reinterpret_cast<grpc_composite_channel_credentials*>(
-          grpc_google_default_credentials_create());
+          default_creds->ssl_creds);
 
   /* Verify that the default creds actually embeds a GCE creds. */
   GPR_ASSERT(creds != nullptr);
@@ -958,7 +964,7 @@ static void test_google_default_creds_gce(void) {
                             httpcli_post_should_not_be_called);
   grpc_channel_credentials* cached_creds =
       grpc_google_default_credentials_create();
-  GPR_ASSERT(cached_creds == &creds->base);
+  GPR_ASSERT(cached_creds == &default_creds->base);
 
   /* Cleanup. */
   grpc_channel_credentials_unref(cached_creds);
