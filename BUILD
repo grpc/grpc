@@ -1286,6 +1286,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "lb_load_data_store",
+    srcs = [
+        "src/cpp/server/load_reporter/load_data_store.cc",
+    ],
+    hdrs = [
+        "src/cpp/server/load_reporter/load_data_store.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc++",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_resolver_dns_native",
     srcs = [
         "src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc",

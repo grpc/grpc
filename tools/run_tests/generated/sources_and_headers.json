@@ -3909,6 +3909,26 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util", 
+      "lb_load_data_store"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "lb_load_data_store_test", 
+    "src": [
+      "test/cpp/server/load_reporter/load_data_store_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
       "grpc++_test", 
       "grpc_test_util"
     ], 
@@ -7463,6 +7483,23 @@
     "name": "interop_server_main", 
     "src": [
       "test/cpp/interop/interop_server_bootstrap.cc"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "grpc++"
+    ], 
+    "headers": [
+      "src/cpp/server/load_reporter/load_data_store.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "lb_load_data_store", 
+    "src": [
+      "src/cpp/server/load_reporter/load_data_store.cc", 
+      "src/cpp/server/load_reporter/load_data_store.h"
     ], 
     "third_party": false, 
     "type": "lib"
