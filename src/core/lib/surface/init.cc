@@ -31,8 +31,7 @@
 #include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/fork.h"
-#include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/combiner.h"
@@ -120,7 +119,7 @@ void grpc_init(void) {
 
   gpr_mu_lock(&g_init_mu);
   if (++g_initializations == 1) {
-    grpc_fork_support_init();
+    grpc_core::Fork::GlobalInit();
     grpc_fork_handlers_auto_register();
     gpr_time_init();
     grpc_stats_init();
@@ -176,7 +175,7 @@ void grpc_shutdown(void) {
       grpc_handshaker_factory_registry_shutdown();
       grpc_slice_intern_shutdown();
       grpc_stats_shutdown();
-      grpc_fork_support_destroy();
+      grpc_core::Fork::GlobalShutdown();
     }
     grpc_core::ExecCtx::GlobalShutdown();
   }

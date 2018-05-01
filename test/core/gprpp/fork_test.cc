@@ -16,30 +16,30 @@
  *
  */
 
-#include "src/core/lib/gpr/fork.h"
+#include "src/core/lib/gprpp/fork.h"
 
 #include "src/core/lib/gprpp/thd.h"
 #include "test/core/util/test_config.h"
 
 static void test_init() {
-  GPR_ASSERT(!grpc_fork_support_enabled());
+  GPR_ASSERT(!grpc_core::Fork::Enabled());
 
   // Default fork support (disabled)
-  grpc_fork_support_init();
-  GPR_ASSERT(!grpc_fork_support_enabled());
-  grpc_fork_support_destroy();
+  grpc_core::Fork::GlobalInit();
+  GPR_ASSERT(!grpc_core::Fork::Enabled());
+  grpc_core::Fork::GlobalShutdown();
 
   // Explicitly disabled fork support
-  grpc_enable_fork_support(false);
-  grpc_fork_support_init();
-  GPR_ASSERT(!grpc_fork_support_enabled());
-  grpc_fork_support_destroy();
+  grpc_core::Fork::Enable(false);
+  grpc_core::Fork::GlobalInit();
+  GPR_ASSERT(!grpc_core::Fork::Enabled());
+  grpc_core::Fork::GlobalShutdown();
 
   // Explicitly enabled fork support
-  grpc_enable_fork_support(true);
-  grpc_fork_support_init();
-  GPR_ASSERT(grpc_fork_support_enabled());
-  grpc_fork_support_destroy();
+  grpc_core::Fork::Enable(true);
+  grpc_core::Fork::GlobalInit();
+  GPR_ASSERT(grpc_core::Fork::Enabled());
+  grpc_core::Fork::GlobalShutdown();
 }
 
 #define THREAD_DELAY_MS 3000
@@ -54,13 +54,13 @@ static void sleeping_thd(void* arg) {
 
 static void test_thd_count() {
   // Test no active threads
-  grpc_enable_fork_support(true);
-  grpc_fork_support_init();
-  grpc_fork_await_thds();
-  grpc_fork_support_destroy();
+  grpc_core::Fork::Enable(true);
+  grpc_core::Fork::GlobalInit();
+  grpc_core::Fork::AwaitThreads();
+  grpc_core::Fork::GlobalShutdown();
 
-  grpc_enable_fork_support(true);
-  grpc_fork_support_init();
+  grpc_core::Fork::Enable(true);
+  grpc_core::Fork::GlobalInit();
   grpc_core::Thread thds[CONCURRENT_TEST_THREADS];
   gpr_timespec est_end_time =
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
@@ -74,56 +74,56 @@ static void test_thd_count() {
         grpc_core::Thread("grpc_fork_test", sleeping_thd, (void*)sleep_time_ms);
     thds[i].Start();
   }
-  grpc_fork_await_thds();
+  grpc_core::Fork::AwaitThreads();
   gpr_timespec end_time = gpr_now(GPR_CLOCK_REALTIME);
   for (auto& thd : thds) {
     thd.Join();
   }
   GPR_ASSERT(gpr_time_similar(end_time, est_end_time, tolerance));
-  grpc_fork_support_destroy();
+  grpc_core::Fork::GlobalShutdown();
 }
 
 static void exec_ctx_thread(void* arg) {
   bool* exec_ctx_created = (bool*)arg;
-  grpc_fork_inc_exec_ctx_count();
+  grpc_core::Fork::IncExecCtxCount();
   *exec_ctx_created = true;
 }
 
 static void test_exec_count() {
-  grpc_fork_inc_exec_ctx_count();
-  grpc_enable_fork_support(true);
-  grpc_fork_support_init();
+  grpc_core::Fork::IncExecCtxCount();
+  grpc_core::Fork::Enable(true);
+  grpc_core::Fork::GlobalInit();
 
-  grpc_fork_inc_exec_ctx_count();
-  GPR_ASSERT(grpc_fork_block_exec_ctx());
-  grpc_fork_dec_exec_ctx_count();
-  grpc_fork_allow_exec_ctx();
+  grpc_core::Fork::IncExecCtxCount();
+  GPR_ASSERT(grpc_core::Fork::BlockExecCtx());
+  grpc_core::Fork::DecExecCtxCount();
+  grpc_core::Fork::AllowExecCtx();
 
-  grpc_fork_inc_exec_ctx_count();
-  grpc_fork_inc_exec_ctx_count();
-  GPR_ASSERT(!grpc_fork_block_exec_ctx());
-  grpc_fork_dec_exec_ctx_count();
-  grpc_fork_dec_exec_ctx_count();
+  grpc_core::Fork::IncExecCtxCount();
+  grpc_core::Fork::IncExecCtxCount();
+  GPR_ASSERT(!grpc_core::Fork::BlockExecCtx());
+  grpc_core::Fork::DecExecCtxCount();
+  grpc_core::Fork::DecExecCtxCount();
 
-  grpc_fork_inc_exec_ctx_count();
-  GPR_ASSERT(grpc_fork_block_exec_ctx());
-  grpc_fork_dec_exec_ctx_count();
-  grpc_fork_allow_exec_ctx();
+  grpc_core::Fork::IncExecCtxCount();
+  GPR_ASSERT(grpc_core::Fork::BlockExecCtx());
+  grpc_core::Fork::DecExecCtxCount();
+  grpc_core::Fork::AllowExecCtx();
 
-  // Test that block_exec_ctx() blocks grpc_fork_inc_exec_ctx_count
+  // Test that block_exec_ctx() blocks grpc_core::Fork::IncExecCtxCount
   bool exec_ctx_created = false;
   grpc_core::Thread thd =
       grpc_core::Thread("grpc_fork_test", exec_ctx_thread, &exec_ctx_created);
-  grpc_fork_inc_exec_ctx_count();
-  GPR_ASSERT(grpc_fork_block_exec_ctx());
-  grpc_fork_dec_exec_ctx_count();
+  grpc_core::Fork::IncExecCtxCount();
+  GPR_ASSERT(grpc_core::Fork::BlockExecCtx());
+  grpc_core::Fork::DecExecCtxCount();
   thd.Start();
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                gpr_time_from_seconds(1, GPR_TIMESPAN)));
   GPR_ASSERT(!exec_ctx_created);
-  grpc_fork_allow_exec_ctx();
+  grpc_core::Fork::AllowExecCtx();
   thd.Join();  // This ensure that the call got un-blocked
-  grpc_fork_support_destroy();
+  grpc_core::Fork::GlobalShutdown();
 }
 
 int main(int argc, char* argv[]) {

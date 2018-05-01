@@ -49,7 +49,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gpr/env_linux.cc \
     src/core/lib/gpr/env_posix.cc \
     src/core/lib/gpr/env_windows.cc \
-    src/core/lib/gpr/fork.cc \
     src/core/lib/gpr/host_port.cc \
     src/core/lib/gpr/log.cc \
     src/core/lib/gpr/log_android.cc \
@@ -74,6 +73,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gpr/tmpfile_posix.cc \
     src/core/lib/gpr/tmpfile_windows.cc \
     src/core/lib/gpr/wrap_memcpy.cc \
+    src/core/lib/gprpp/fork.cc \
     src/core/lib/gprpp/thd_posix.cc \
     src/core/lib/gprpp/thd_windows.cc \
     src/core/lib/profiling/basic_timers.cc \

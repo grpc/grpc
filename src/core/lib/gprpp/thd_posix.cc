@@ -32,8 +32,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "src/core/lib/gpr/fork.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/memory.h"
 
 namespace grpc_core {
@@ -63,7 +63,7 @@ class ThreadInternalsPosix
     info->body = thd_body;
     info->arg = arg;
     info->name = thd_name;
-    grpc_fork_inc_thd_count();
+    grpc_core::Fork::IncThreadCount();
 
     GPR_ASSERT(pthread_attr_init(&attr) == 0);
     GPR_ASSERT(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE) ==
@@ -98,7 +98,7 @@ class ThreadInternalsPosix
                           gpr_mu_unlock(&arg.thread->mu_);
 
                           (*arg.body)(arg.arg);
-                          grpc_fork_dec_thd_count();
+                          grpc_core::Fork::DecThreadCount();
                           return nullptr;
                         },
                         info) == 0);
@@ -108,7 +108,7 @@ class ThreadInternalsPosix
     if (!success) {
       /* don't use gpr_free, as this was allocated using malloc (see above) */
       free(info);
-      grpc_fork_dec_thd_count();
+      grpc_core::Fork::DecThreadCount();
     }
   };
 

@@ -3035,7 +3035,6 @@ LIBGPR_SRC = \
     src/core/lib/gpr/env_linux.cc \
     src/core/lib/gpr/env_posix.cc \
     src/core/lib/gpr/env_windows.cc \
-    src/core/lib/gpr/fork.cc \
     src/core/lib/gpr/host_port.cc \
     src/core/lib/gpr/log.cc \
     src/core/lib/gpr/log_android.cc \
@@ -3060,6 +3059,7 @@ LIBGPR_SRC = \
     src/core/lib/gpr/tmpfile_posix.cc \
     src/core/lib/gpr/tmpfile_windows.cc \
     src/core/lib/gpr/wrap_memcpy.cc \
+    src/core/lib/gprpp/fork.cc \
     src/core/lib/gprpp/thd_posix.cc \
     src/core/lib/gprpp/thd_windows.cc \
     src/core/lib/profiling/basic_timers.cc \
@@ -10959,7 +10959,7 @@ endif
 
 
 FORK_TEST_SRC = \
-    test/core/gpr/fork_test.cc \
+    test/core/gprpp/fork_test.cc \
 
 FORK_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(FORK_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10979,7 +10979,7 @@ $(BINDIR)/$(CONFIG)/fork_test: $(FORK_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr_test
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/gpr/fork_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(OBJDIR)/$(CONFIG)/test/core/gprpp/fork_test.o:  $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_fork_test: $(FORK_TEST_OBJS:.o=.dep)
 

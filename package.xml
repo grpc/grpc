@@ -83,7 +83,6 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/arena.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/env.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/fork.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/host_port.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/mpscq.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/murmur_hash.h" role="src" />
@@ -101,6 +100,7 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/atomic.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/atomic_with_atm.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/atomic_with_std.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/fork.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/manual_constructor.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/memory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/thd.h" role="src" />
@@ -115,7 +115,6 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/env_linux.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/env_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/env_windows.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/fork.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/host_port.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/log.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/log_android.cc" role="src" />
@@ -140,6 +139,7 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/tmpfile_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/tmpfile_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/wrap_memcpy.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/fork.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/thd_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/thd_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/basic_timers.cc" role="src" />

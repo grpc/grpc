@@ -1074,8 +1074,6 @@ src/core/lib/gpr/env.h \
 src/core/lib/gpr/env_linux.cc \
 src/core/lib/gpr/env_posix.cc \
 src/core/lib/gpr/env_windows.cc \
-src/core/lib/gpr/fork.cc \
-src/core/lib/gpr/fork.h \
 src/core/lib/gpr/host_port.cc \
 src/core/lib/gpr/host_port.h \
 src/core/lib/gpr/log.cc \
@@ -1119,6 +1117,8 @@ src/core/lib/gprpp/atomic.h \
 src/core/lib/gprpp/atomic_with_atm.h \
 src/core/lib/gprpp/atomic_with_std.h \
 src/core/lib/gprpp/debug_location.h \
+src/core/lib/gprpp/fork.cc \
+src/core/lib/gprpp/fork.h \
 src/core/lib/gprpp/inlined_vector.h \
 src/core/lib/gprpp/manual_constructor.h \
 src/core/lib/gprpp/memory.h \
