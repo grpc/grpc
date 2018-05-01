@@ -32,7 +32,7 @@ var packageDefinition = protoLoader.loadSync(
      defaults: true,
      oneofs: true
     });
-var routeguide = grpc.load(packageDefinition).routeguide;
+var routeguide = grpc.loadPackageDefinition(packageDefinition).routeguide;
 
 var COORD_FACTOR = 1e7;
 
