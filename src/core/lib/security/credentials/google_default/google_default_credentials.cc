@@ -62,12 +62,6 @@ typedef struct {
   grpc_http_response response;
 } compute_engine_detector;
 
-typedef struct {
-  grpc_channel_credentials base;
-  grpc_channel_credentials* alts_creds;
-  grpc_channel_credentials* ssl_creds;
-} grpc_google_default_channel_credentials;
-
 static void google_default_credentials_destruct(
     grpc_channel_credentials* creds) {
   grpc_google_default_channel_credentials* c =
