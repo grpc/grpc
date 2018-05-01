@@ -359,6 +359,7 @@ void PickFirst::UpdateLocked(const grpc_channel_args& args) {
           latest_pending_subchannel_list_.reset();
           return;
         }
+        GRPC_ERROR_UNREF(error);
       }
     }
     // Not keeping the previous selected subchannel, so set the latest
