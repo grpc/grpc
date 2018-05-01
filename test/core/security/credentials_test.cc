@@ -892,18 +892,21 @@ static void test_google_default_creds_auth_key(void) {
 static void test_google_default_creds_refresh_token(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_google_refresh_token_credentials* refresh;
+  grpc_google_default_channel_credentials* default_creds;
   grpc_composite_channel_credentials* creds;
   grpc_flush_cached_google_default_credentials();
   set_google_default_creds_env_var_with_file_contents(
       "refresh_token_google_default_creds", test_refresh_token_str);
-  creds = reinterpret_cast<grpc_composite_channel_credentials*>(
+  default_creds = reinterpret_cast<grpc_google_default_channel_credentials*>(
       grpc_google_default_credentials_create());
+  creds = reinterpret_cast<grpc_composite_channel_credentials*>(
+      default_creds->ssl_creds);
   GPR_ASSERT(creds != nullptr);
   refresh = reinterpret_cast<grpc_google_refresh_token_credentials*>(
       creds->call_creds);
   GPR_ASSERT(strcmp(refresh->refresh_token.client_id,
                     "32555999999.apps.googleusercontent.com") == 0);
-  grpc_channel_credentials_unref(&creds->base);
+  grpc_channel_credentials_unref(&default_creds->base);
   gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
 }
 

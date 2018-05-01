@@ -333,11 +333,13 @@ end:
           grpc_alts_credentials_client_options_create();
       grpc_channel_credentials* alts_creds =
           grpc_alts_credentials_create(options);
-      creds->alts_creds = grpc_channel_credentials_ref(
-          grpc_composite_channel_credentials_create(alts_creds, call_creds,
-                                                    nullptr));
+      if (alts_creds != nullptr) {
+        creds->alts_creds = grpc_channel_credentials_ref(
+            grpc_composite_channel_credentials_create(alts_creds, call_creds,
+                                                      nullptr));
+        grpc_call_credentials_unref(call_creds);
+      }
       grpc_channel_credentials_unref(alts_creds);
-      grpc_call_credentials_unref(call_creds);
       grpc_alts_credentials_options_destroy(options);
       /* Add a global reference. */
       gpr_ref_init(&creds->base.refcount, 1);
