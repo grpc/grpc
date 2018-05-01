@@ -90,7 +90,17 @@ class PickFirst : public LoadBalancingPolicy {
                             grpc_client_channel_factory* client_channel_factory,
                             const grpc_channel_args& args)
         : SubchannelList(policy, tracer, addresses, combiner,
-                         client_channel_factory, args) {}
+                         client_channel_factory, args) {
+      // Need to maintain a ref to the LB policy as long as we maintain
+      // any references to subchannels, since the subchannels'
+      // pollset_sets will include the LB policy's pollset_set.
+      policy->Ref(DEBUG_LOCATION, "subchannel_list").release();
+    }
+
+    ~PickFirstSubchannelList() {
+      PickFirst* p = static_cast<PickFirst*>(policy());
+      p->Unref(DEBUG_LOCATION, "subchannel_list");
+    }
   };
 
   void ShutdownLocked() override;

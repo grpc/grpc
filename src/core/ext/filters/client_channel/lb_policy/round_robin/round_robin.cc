@@ -136,10 +136,17 @@ class RoundRobin : public LoadBalancingPolicy {
         grpc_client_channel_factory* client_channel_factory,
         const grpc_channel_args& args)
         : SubchannelList(policy, tracer, addresses, combiner,
-                         client_channel_factory, args) {}
+                         client_channel_factory, args) {
+      // Need to maintain a ref to the LB policy as long as we maintain
+      // any references to subchannels, since the subchannels'
+      // pollset_sets will include the LB policy's pollset_set.
+      policy->Ref(DEBUG_LOCATION, "subchannel_list").release();
+    }
 
     ~RoundRobinSubchannelList() {
       GRPC_ERROR_UNREF(last_transient_failure_error_);
+      RoundRobin* p = static_cast<RoundRobin*>(policy());
+      p->Unref(DEBUG_LOCATION, "subchannel_list");
     }
 
     // Starts watching the subchannels in this list.
