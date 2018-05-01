@@ -1666,8 +1666,8 @@ static void cancel_pings(grpc_chttp2_transport* t, grpc_error* error) {
 static void send_ping_locked(grpc_chttp2_transport* t,
                              grpc_closure* on_initiate, grpc_closure* on_ack) {
   if (t->closed_with_error != GRPC_ERROR_NONE) {
-    GRPC_CLOSURE_RUN(on_initiate, GRPC_ERROR_REF(t->closed_with_error));
-    GRPC_CLOSURE_RUN(on_ack, GRPC_ERROR_REF(t->closed_with_error));
+    GRPC_CLOSURE_SCHED(on_initiate, GRPC_ERROR_REF(t->closed_with_error));
+    GRPC_CLOSURE_SCHED(on_ack, GRPC_ERROR_REF(t->closed_with_error));
     return;
   }
   grpc_chttp2_ping_queue* pq = &t->ping_queue;
