@@ -402,7 +402,12 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
       p->subchannel_list_ = std::move(p->latest_pending_subchannel_list_);
       grpc_connectivity_state_set(
           &p->state_tracker_, GRPC_CHANNEL_TRANSIENT_FAILURE,
-          GRPC_ERROR_REF(error), "selected_not_ready+switch_to_update");
+          error != GRPC_ERROR_NONE
+              ? GRPC_ERROR_REF(error)
+              : GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                    "selected subchannel not ready; switching to pending "
+                    "update"),
+          "selected_not_ready+switch_to_update");
     } else {
       // TODO(juanlishen): we re-resolve when the selected subchannel goes to
       // TRANSIENT_FAILURE because we used to shut down in this case before
