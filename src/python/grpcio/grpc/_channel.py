@@ -909,5 +909,28 @@ class Channel(grpc.Channel):
             self._channel, _channel_managed_call_management(self._call_state),
             _common.encode(method), request_serializer, response_deserializer)
 
+    def _close(self):
+        self._channel.close(cygrpc.StatusCode.cancelled, 'Channel closed!')
+        _moot(self._connectivity_state)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._close()
+        return False
+
+    def close(self):
+        self._close()
+
     def __del__(self):
+        # TODO(https://github.com/grpc/grpc/issues/12531): Several releases
+        # after 1.12 (1.16 or thereabouts?) add a "self._channel.close" call
+        # here (or more likely, call self._close() here). We don't do this today
+        # because many valid use cases today allow the channel to be deleted
+        # immediately after stubs are created. After a sufficient period of time
+        # has passed for all users to be trusted to hang out to their channels
+        # for as long as they are in use and to close them after using them,
+        # then deletion of this grpc._channel.Channel instance can be made to
+        # effect closure of the underlying cygrpc.Channel instance.
         _moot(self._connectivity_state)
