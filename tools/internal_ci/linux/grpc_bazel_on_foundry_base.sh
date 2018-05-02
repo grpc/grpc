@@ -53,4 +53,14 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
   --crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/debian8_clang/0.3.0/bazel_0.10.0:toolchain \
   --define GRPC_PORT_ISOLATED_RUNTIME=1 \
   $1 \
-  -- //test/...
+  -- //test/... || FAILED="true"
+
+if [ "$UPLOAD_TEST_RESULTS" != "" ]
+then
+  python ./tools/run_tests/python_utils/upload_rbe_results.py
+fi
+
+if [ "$FAILED" != "" ]
+then
+  exit 1
+fi
