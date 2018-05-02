@@ -1230,9 +1230,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_lb_subchannel_list",
-    srcs = [
-        "src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc",
-    ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h",
     ],

@@ -9900,7 +9900,6 @@
     "language": "c", 
     "name": "grpc_lb_subchannel_list", 
     "src": [
-      "src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc", 
       "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
     ], 
     "third_party": false, 
