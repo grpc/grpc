@@ -44,12 +44,12 @@ gcloud compute disks create "$TMP_DISK_NAME" \
 echo 'Created scratch disk, waiting for it to become available.'
 sleep 15
 
+# The image version might need updating.
 gcloud compute instances create "$INSTANCE_NAME" \
     --project="$CLOUD_PROJECT" \
     --zone "$ZONE" \
     --machine-type "$MACHINE_TYPE" \
     --image-project google.com:kokoro \
-    # The version might need updating.
     --image kokoro-win7build-v11-prod-debug \
     --boot-disk-size 500 \
     --boot-disk-type pd-ssd \

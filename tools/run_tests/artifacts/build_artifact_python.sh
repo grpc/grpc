@@ -17,7 +17,6 @@ set -ex
 
 cd "$(dirname "$0")/../../.."
 
-export GRPC_PYTHON_USE_CUSTOM_BDIST=0
 export GRPC_PYTHON_BUILD_WITH_CYTHON=1
 export PYTHON=${PYTHON:-python}
 export PIP=${PIP:-pip}
