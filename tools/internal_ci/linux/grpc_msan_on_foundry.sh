@@ -61,4 +61,13 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
   --action_env=LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH \
   --host_crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/debian8_clang/0.3.0/bazel_0.10.0:toolchain \
   --crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/experimental/debian8_clang/0.3.0/bazel_0.10.0/msan:msan_experimental_toolchain \
-  -- //test/...
+  -- //test/... || FAILED="true"
+
+# Sleep to let ResultStore finish writing results before querying
+sleep 60
+python ./tools/run_tests/python_utils/upload_rbe_results.py
+
+if [ "$FAILED" != "" ]
+then
+  exit 1
+fi
