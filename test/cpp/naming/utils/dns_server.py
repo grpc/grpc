@@ -112,14 +112,11 @@ def start_local_dns_server(args):
   twisted.internet.reactor.suggestThreadPoolSize(1)
   twisted.internet.reactor.run()
 
-def shutdown_process():
+def _quit_on_signal(signum, _frame):
+  print('Received SIGNAL %d. Quitting with exit code 0' % signum)
   twisted.internet.reactor.stop()
   sys.stdout.flush()
   sys.exit(0)
-
-def _quit_on_signal(signum, _frame):
-  print('Received SIGNAL %d. Quitting with exit code 0' % signum)
-  shutdown_process()
 
 def flush_stdout_loop():
   num_timeouts_so_far = 0
@@ -131,7 +128,7 @@ def flush_stdout_loop():
     time.sleep(sleep_time)
     num_timeouts_so_far += 1
   print('Process timeout reached, or cancelled. Exitting 0.')
-  shutdown_process()
+  os.kill(os.getpid(), signal.SIGTERM)
 
 def main():
   argp = argparse.ArgumentParser(description='Local DNS Server for resolver tests')

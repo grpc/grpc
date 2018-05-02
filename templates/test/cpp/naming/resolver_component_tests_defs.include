@@ -41,7 +41,7 @@ argp.add_argument('--tcp_connect_bin_path', default=None, type=str,
 args = argp.parse_args()
 
 def test_runner_log(msg):
-  sys.stderr.write('%s: %s\n' % (__file__, msg))
+  sys.stderr.write('\n%s: %s\n' % (__file__, msg))
 
 cur_resolver = os.environ.get('GRPC_DNS_RESOLVER')
 if cur_resolver and cur_resolver != 'ares':
