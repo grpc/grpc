@@ -3,7 +3,8 @@
 //     source: grpc/health/v1/health.proto
 // </auto-generated>
 // Original file comments:
-// Copyright 2015 gRPC authors.
+// Copyright 2015, gRPC Authors
+// All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +17,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
+// The canonical version of this proto can be found at
+// https://github.com/grpc/grpc-proto/blob/master/grpc/health/v1/health.proto
 //
 #pragma warning disable 1591
 #region Designer generated code
