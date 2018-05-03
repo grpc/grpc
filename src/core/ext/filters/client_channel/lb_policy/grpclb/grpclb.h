@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_H
 
+#include <grpc/support/port_platform.h>
+
 /** Channel arg indicating if a target corresponding to the address is grpclb
  * loadbalancer. The type of this arg is an integer and the value is treated as
  * a bool. */
