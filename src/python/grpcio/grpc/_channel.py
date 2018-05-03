@@ -209,19 +209,8 @@ def _consume_request_iterator(request_iterator, state, call, request_serializer,
                 if operating:
                     state.due.add(cygrpc.OperationType.send_close_from_client)
 
-    def stop_consumption_thread(timeout):  # pylint: disable=unused-argument
-        with state.condition:
-            if state.code is None:
-                code = grpc.StatusCode.CANCELLED
-                details = 'Consumption thread cleaned up!'
-                call.cancel(_common.STATUS_CODE_TO_CYGRPC_STATUS_CODE[code],
-                            details)
-                state.cancelled = True
-                _abort(state, code, details)
-                state.condition.notify_all()
-
-    consumption_thread = _common.CleanupThread(
-        stop_consumption_thread, target=consume_request_iterator)
+    consumption_thread = threading.Thread(target=consume_request_iterator)
+    consumption_thread.daemon = True
     consumption_thread.start()
 
 
@@ -671,13 +660,8 @@ def _run_channel_spin_thread(state):
                     if state.managed_calls == 0:
                         return
 
-    def stop_channel_spin(timeout):  # pylint: disable=unused-argument
-        with state.lock:
-            state.channel.close(cygrpc.StatusCode.cancelled,
-                                'Channel spin thread cleaned up!')
-
-    channel_spin_thread = _common.CleanupThread(
-        stop_channel_spin, target=channel_spin)
+    channel_spin_thread = threading.Thread(target=channel_spin)
+    channel_spin_thread.daemon = True
     channel_spin_thread.start()
 
 
@@ -820,10 +804,10 @@ def _moot(state):
 def _subscribe(state, callback, try_to_connect):
     with state.lock:
         if not state.callbacks_and_connectivities and not state.polling:
-            polling_thread = _common.CleanupThread(
-                lambda timeout: _moot(state),
+            polling_thread = threading.Thread(
                 target=_poll_connectivity,
                 args=(state, state.channel, bool(try_to_connect)))
+            polling_thread.daemon = True
             polling_thread.start()
             state.polling = True
             state.callbacks_and_connectivities.append([callback, None])
