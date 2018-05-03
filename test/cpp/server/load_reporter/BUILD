@@ -12,6 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio_testing/grpc_version.py.template`!!!
+licenses(["notice"])  # Apache v2
 
-VERSION = '1.13.0.dev0'
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_library", "grpc_cc_binary", "grpc_package")
+
+grpc_package(name = "test/cpp/server/load_reporter")
+
+grpc_cc_test(
+    name = "lb_load_data_store_test",
+    srcs = ["load_data_store_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:lb_load_data_store",
+        "//test/core/util:grpc_test_util",
+    ],
+)
