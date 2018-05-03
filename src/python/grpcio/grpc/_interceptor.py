@@ -334,6 +334,19 @@ class _Channel(grpc.Channel):
         else:
             return thunk(method)
 
+    def _close(self):
+        self._channel.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._close()
+        return False
+
+    def close(self):
+        self._channel.close()
+
 
 def intercept_channel(channel, *interceptors):
     for interceptor in reversed(list(interceptors)):
