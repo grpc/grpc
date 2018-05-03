@@ -42,6 +42,7 @@ grpc_cc_library(
         "//:grpc++_unsecure",
         "//src/proto/grpc/testing:echo_proto",
         "//test/core/util:grpc_test_util_unsecure",
+        "//test/cpp/util:test_config",
     ],
 )
 
@@ -113,10 +114,7 @@ grpc_cc_binary(
     name = "bm_fullstack_trickle",
     testonly = 1,
     srcs = ["bm_fullstack_trickle.cc"],
-    deps = [
-        ":helpers",
-        "//test/cpp/util:test_config",
-    ],
+    deps = [":helpers"],
 )
 
 grpc_cc_library(

@@ -137,7 +137,7 @@ void grpc_handshake_manager_add(grpc_handshake_manager* mgr,
                                 grpc_handshaker* handshaker) {
   if (grpc_handshaker_trace.enabled()) {
     gpr_log(
-        GPR_DEBUG,
+        GPR_INFO,
         "handshake_manager %p: adding handshaker %s [%p] at index %" PRIuPTR,
         mgr, grpc_handshaker_name(handshaker), handshaker, mgr->count);
   }
@@ -208,7 +208,7 @@ static bool call_next_handshaker_locked(grpc_handshake_manager* mgr,
                                         grpc_error* error) {
   if (grpc_handshaker_trace.enabled()) {
     char* args_str = handshaker_args_string(&mgr->args);
-    gpr_log(GPR_DEBUG,
+    gpr_log(GPR_INFO,
             "handshake_manager %p: error=%s shutdown=%d index=%" PRIuPTR
             ", args=%s",
             mgr, grpc_error_string(error), mgr->shutdown, mgr->index, args_str);
@@ -221,7 +221,7 @@ static bool call_next_handshaker_locked(grpc_handshake_manager* mgr,
   if (error != GRPC_ERROR_NONE || mgr->shutdown || mgr->args.exit_early ||
       mgr->index == mgr->count) {
     if (grpc_handshaker_trace.enabled()) {
-      gpr_log(GPR_DEBUG, "handshake_manager %p: handshaking complete", mgr);
+      gpr_log(GPR_INFO, "handshake_manager %p: handshaking complete", mgr);
     }
     // Cancel deadline timer, since we're invoking the on_handshake_done
     // callback now.
@@ -231,7 +231,7 @@ static bool call_next_handshaker_locked(grpc_handshake_manager* mgr,
   } else {
     if (grpc_handshaker_trace.enabled()) {
       gpr_log(
-          GPR_DEBUG,
+          GPR_INFO,
           "handshake_manager %p: calling handshaker %s [%p] at index %" PRIuPTR,
           mgr, grpc_handshaker_name(mgr->handshakers[mgr->index]),
           mgr->handshakers[mgr->index], mgr->index);

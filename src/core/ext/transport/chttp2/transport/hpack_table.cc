@@ -247,7 +247,7 @@ void grpc_chttp2_hptbl_set_max_bytes(grpc_chttp2_hptbl* tbl,
     return;
   }
   if (grpc_http_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "Update hpack parser max size to %d", max_bytes);
+    gpr_log(GPR_INFO, "Update hpack parser max size to %d", max_bytes);
   }
   while (tbl->mem_used > max_bytes) {
     evict1(tbl);
@@ -270,7 +270,7 @@ grpc_error* grpc_chttp2_hptbl_set_current_table_size(grpc_chttp2_hptbl* tbl,
     return err;
   }
   if (grpc_http_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "Update hpack parser table size to %d", bytes);
+    gpr_log(GPR_INFO, "Update hpack parser table size to %d", bytes);
   }
   while (tbl->mem_used > bytes) {
     evict1(tbl);

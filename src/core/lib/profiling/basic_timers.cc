@@ -27,6 +27,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 #include <inttypes.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <string.h>
 

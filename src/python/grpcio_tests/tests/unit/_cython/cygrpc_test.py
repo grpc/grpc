@@ -51,8 +51,8 @@ class TypeSmokeTest(unittest.TestCase):
         del server
 
     def testChannelUpDown(self):
-        channel = cygrpc.Channel(b'[::]:0', None)
-        del channel
+        channel = cygrpc.Channel(b'[::]:0', None, None)
+        channel.close(cygrpc.StatusCode.cancelled, 'Test method anyway!')
 
     def test_metadata_plugin_call_credentials_up_down(self):
         cygrpc.MetadataPluginCallCredentials(_metadata_plugin,
@@ -121,7 +121,7 @@ class ServerClientMixin(object):
                                                  client_credentials)
         else:
             self.client_channel = cygrpc.Channel('localhost:{}'.format(
-                self.port).encode(), set())
+                self.port).encode(), set(), None)
         if host_override:
             self.host_argument = None  # default host
             self.expected_host = host_override
@@ -131,17 +131,20 @@ class ServerClientMixin(object):
             self.expected_host = self.host_argument
 
     def tearDownMixin(self):
+        self.client_channel.close(cygrpc.StatusCode.ok, 'test being torn down!')
+        del self.client_channel
         del self.server
         del self.client_completion_queue
         del self.server_completion_queue
 
-    def _perform_operations(self, operations, call, queue, deadline,
-                            description):
-        """Perform the list of operations with given call, queue, and deadline.
+    def _perform_queue_operations(self, operations, call, queue, deadline,
+                                  description):
+        """Perform the operations with given call, queue, and deadline.
 
-    Invocation errors are reported with as an exception with `description` in
-    the message. Performs the operations asynchronously, returning a future.
-    """
+        Invocation errors are reported with as an exception with `description`
+        in the message. Performs the operations asynchronously, returning a
+        future.
+        """
 
         def performer():
             tag = object()
@@ -185,9 +188,6 @@ class ServerClientMixin(object):
         self.assertEqual(cygrpc.CallError.ok, request_call_result)
 
         client_call_tag = object()
-        client_call = self.client_channel.create_call(
-            None, 0, self.client_completion_queue, METHOD, self.host_argument,
-            DEADLINE)
         client_initial_metadata = (
             (
                 CLIENT_METADATA_ASCII_KEY,
@@ -198,18 +198,24 @@ class ServerClientMixin(object):
                 CLIENT_METADATA_BIN_VALUE,
             ),
         )
-        client_start_batch_result = client_call.start_client_batch([
-            cygrpc.SendInitialMetadataOperation(client_initial_metadata,
-                                                _EMPTY_FLAGS),
-            cygrpc.SendMessageOperation(REQUEST, _EMPTY_FLAGS),
-            cygrpc.SendCloseFromClientOperation(_EMPTY_FLAGS),
-            cygrpc.ReceiveInitialMetadataOperation(_EMPTY_FLAGS),
-            cygrpc.ReceiveMessageOperation(_EMPTY_FLAGS),
-            cygrpc.ReceiveStatusOnClientOperation(_EMPTY_FLAGS),
-        ], client_call_tag)
-        self.assertEqual(cygrpc.CallError.ok, client_start_batch_result)
-        client_event_future = test_utilities.CompletionQueuePollFuture(
-            self.client_completion_queue, DEADLINE)
+        client_call = self.client_channel.integrated_call(
+            0, METHOD, self.host_argument, DEADLINE, client_initial_metadata,
+            None, [
+                (
+                    [
+                        cygrpc.SendInitialMetadataOperation(
+                            client_initial_metadata, _EMPTY_FLAGS),
+                        cygrpc.SendMessageOperation(REQUEST, _EMPTY_FLAGS),
+                        cygrpc.SendCloseFromClientOperation(_EMPTY_FLAGS),
+                        cygrpc.ReceiveInitialMetadataOperation(_EMPTY_FLAGS),
+                        cygrpc.ReceiveMessageOperation(_EMPTY_FLAGS),
+                        cygrpc.ReceiveStatusOnClientOperation(_EMPTY_FLAGS),
+                    ],
+                    client_call_tag,
+                ),
+            ])
+        client_event_future = test_utilities.SimpleFuture(
+            self.client_channel.next_call_event)
 
         request_event = self.server_completion_queue.poll(deadline=DEADLINE)
         self.assertEqual(cygrpc.CompletionType.operation_complete,
@@ -304,66 +310,76 @@ class ServerClientMixin(object):
         del client_call
         del server_call
 
-    def test6522(self):
+    def test_6522(self):
         DEADLINE = time.time() + 5
         DEADLINE_TOLERANCE = 0.25
         METHOD = b'twinkies'
 
         empty_metadata = ()
 
+        # Prologue
         server_request_tag = object()
         self.server.request_call(self.server_completion_queue,
                                  self.server_completion_queue,
                                  server_request_tag)
-        client_call = self.client_channel.create_call(
-            None, 0, self.client_completion_queue, METHOD, self.host_argument,
-            DEADLINE)
+        client_call = self.client_channel.segregated_call(
+            0, METHOD, self.host_argument, DEADLINE, None, None, ([(
+                [
+                    cygrpc.SendInitialMetadataOperation(empty_metadata,
+                                                        _EMPTY_FLAGS),
+                    cygrpc.ReceiveInitialMetadataOperation(_EMPTY_FLAGS),
+                ],
+                object(),
+            ), (
+                [
+                    cygrpc.ReceiveStatusOnClientOperation(_EMPTY_FLAGS),
+                ],
+                object(),
+            )]))
 
-        # Prologue
-        def perform_client_operations(operations, description):
-            return self._perform_operations(operations, client_call,
-                                            self.client_completion_queue,
-                                            DEADLINE, description)
-
-        client_event_future = perform_client_operations([
-            cygrpc.SendInitialMetadataOperation(empty_metadata, _EMPTY_FLAGS),
-            cygrpc.ReceiveInitialMetadataOperation(_EMPTY_FLAGS),
-        ], "Client prologue")
+        client_initial_metadata_event_future = test_utilities.SimpleFuture(
+            client_call.next_event)
 
         request_event = self.server_completion_queue.poll(deadline=DEADLINE)
         server_call = request_event.call
 
         def perform_server_operations(operations, description):
-            return self._perform_operations(operations, server_call,
-                                            self.server_completion_queue,
-                                            DEADLINE, description)
+            return self._perform_queue_operations(operations, server_call,
+                                                  self.server_completion_queue,
+                                                  DEADLINE, description)
 
         server_event_future = perform_server_operations([
             cygrpc.SendInitialMetadataOperation(empty_metadata, _EMPTY_FLAGS),
         ], "Server prologue")
 
-        client_event_future.result()  # force completion
+        client_initial_metadata_event_future.result()  # force completion
         server_event_future.result()
 
         # Messaging
         for _ in range(10):
-            client_event_future = perform_client_operations([
+            client_call.operate([
                 cygrpc.SendMessageOperation(b'', _EMPTY_FLAGS),
                 cygrpc.ReceiveMessageOperation(_EMPTY_FLAGS),
             ], "Client message")
+            client_message_event_future = test_utilities.SimpleFuture(
+                client_call.next_event)
             server_event_future = perform_server_operations([
                 cygrpc.SendMessageOperation(b'', _EMPTY_FLAGS),
                 cygrpc.ReceiveMessageOperation(_EMPTY_FLAGS),
             ], "Server receive")
 
-            client_event_future.result()  # force completion
+            client_message_event_future.result()  # force completion
             server_event_future.result()
 
         # Epilogue
-        client_event_future = perform_client_operations([
+        client_call.operate([
             cygrpc.SendCloseFromClientOperation(_EMPTY_FLAGS),
-            cygrpc.ReceiveStatusOnClientOperation(_EMPTY_FLAGS)
         ], "Client epilogue")
+        # One for ReceiveStatusOnClient, one for SendCloseFromClient.
+        client_events_future = test_utilities.SimpleFuture(
+            lambda: {
+                client_call.next_event(),
+                client_call.next_event(),})
 
         server_event_future = perform_server_operations([
             cygrpc.ReceiveCloseOnServerOperation(_EMPTY_FLAGS),
@@ -371,7 +387,7 @@ class ServerClientMixin(object):
                 empty_metadata, cygrpc.StatusCode.ok, b'', _EMPTY_FLAGS)
         ], "Server epilogue")
 
-        client_event_future.result()  # force completion
+        client_events_future.result()  # force completion
         server_event_future.result()
 
 

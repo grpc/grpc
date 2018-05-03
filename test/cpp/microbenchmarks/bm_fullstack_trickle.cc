@@ -458,10 +458,16 @@ BENCHMARK(BM_PumpUnbalancedUnary_Trickle)->Apply(UnaryTrickleArgs);
 
 extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 
+// Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
+// and others do not. This allows us to support both modes.
+namespace benchmark {
+void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
+}  // namespace benchmark
+
 int main(int argc, char** argv) {
   ::benchmark::Initialize(&argc, argv);
   ::grpc::testing::InitTest(&argc, &argv, false);
   grpc_timer_manager_set_threading(false);
   gpr_now_impl = ::grpc::testing::fake_now;
-  ::benchmark::RunSpecifiedBenchmarks();
+  benchmark::RunTheBenchmarksNamespaced();
 }
