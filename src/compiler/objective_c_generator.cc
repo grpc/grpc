@@ -222,7 +222,8 @@ void PrintMethodImplementations(Printer* printer,
   map< ::grpc::string, ::grpc::string> vars = {
       {"service_class", ServiceClassName(service)}};
 
-  printer.Print(vars, "@protocol $service_class$ <NSObject>\n\n");
+  printer.Print(
+      vars, "@protocol $service_class$ <NSObject, GRPCProtoServiceInit>\n\n");
   for (int i = 0; i < service->method_count(); i++) {
     PrintMethodDeclarations(&printer, service->method(i));
   }
@@ -248,7 +249,7 @@ void PrintMethodImplementations(Printer* printer,
                 " */\n");
   printer.Print(vars,
                 "@interface $service_class$ :"
-                " GRPCProtoService<$service_class$, GRPCProtoServiceInit>\n");
+                " GRPCProtoService<$service_class$>\n");
   printer.Print(
       "- (instancetype)initWithHost:(NSString *)host"
       " NS_DESIGNATED_INITIALIZER;\n");
