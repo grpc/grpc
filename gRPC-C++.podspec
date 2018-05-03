@@ -475,6 +475,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/transport_impl.h',
                       'src/core/lib/debug/trace.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h',
+                      'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h',

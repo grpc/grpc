@@ -26,6 +26,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
@@ -90,6 +91,11 @@ static grpc_security_status google_default_create_security_connector(
                           c->alts_creds, call_creds, target, args, sc, new_args)
                     : c->ssl_creds->vtable->create_security_connector(
                           c->ssl_creds, call_creds, target, args, sc, new_args);
+  /* grpclb-specific channel args are removed from the channel args set
+   * to ensure backends and fallback adresses will have the same set of channel
+   * args. By doing that, it guarantees the connections to backends will not be
+   * teared down and re-connected when swiching in and out of fallback mode.
+   */
   static const char* args_to_remove[] = {
       GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER,
       GRPC_ARG_ADDRESS_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER,
@@ -325,13 +331,12 @@ end:
       creds->alts_creds = grpc_alts_credentials_create(options);
       grpc_alts_credentials_options_destroy(options);
       /* Add a global reference so that it can be cached and re-served. */
-      g_default_credentials = grpc_channel_credentials_ref(
-          grpc_composite_channel_credentials_create(&creds->base, call_creds,
-                                                    nullptr));
+      g_default_credentials = grpc_composite_channel_credentials_create(
+          &creds->base, call_creds, nullptr);
       GPR_ASSERT(g_default_credentials != nullptr);
       grpc_channel_credentials_unref(&creds->base);
       grpc_call_credentials_unref(call_creds);
-      result = g_default_credentials;
+      result = grpc_channel_credentials_ref(g_default_credentials);
     } else {
       gpr_log(GPR_ERROR, "Could not create google default credentials.");
     }

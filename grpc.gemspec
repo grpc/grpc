@@ -420,6 +420,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/transport/transport_impl.h )
   s.files += %w( src/core/lib/debug/trace.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h )
+  s.files += %w( src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h )
