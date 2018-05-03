@@ -98,7 +98,7 @@ _EXEMPT = frozenset((
     'src/android/test/interop/gradlew.bat',
 ))
 
-RE_YEAR = r'Copyright (?P<first_year>[0-9]+\-)?(?P<last_year>[0-9]+) gRPC authors.'
+RE_YEAR = r'Copyright (?P<first_year>[0-9]+\-)?(?P<last_year>[0-9]+) ([Tt]he )?gRPC [Aa]uthors(\.|)'
 RE_LICENSE = dict(
     (k, r'\n'.join(LICENSE_PREFIX[k] +
                    (RE_YEAR if re.search(RE_YEAR, line) else re.escape(line))
