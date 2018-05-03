@@ -3,8 +3,7 @@
 //     source: grpc/health/v1/health.proto
 // </auto-generated>
 // Original file comments:
-// Copyright 2015, gRPC Authors
-// All rights reserved.
+// Copyright 2015 The gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
