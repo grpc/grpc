@@ -380,6 +380,7 @@ static void security_handshaker_shutdown(grpc_handshaker* handshaker,
   gpr_mu_lock(&h->mu);
   if (!h->shutdown) {
     h->shutdown = true;
+    GPR_ASSERT(tsi_handshaker_cancel_next(h->handshaker) == TSI_OK);
     grpc_endpoint_shutdown(h->args->endpoint, GRPC_ERROR_REF(why));
     cleanup_args_for_failure_locked(h);
   }

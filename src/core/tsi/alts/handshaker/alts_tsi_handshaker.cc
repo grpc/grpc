@@ -241,6 +241,10 @@ static tsi_result handshaker_next(
     gpr_log(GPR_ERROR, "Invalid arguments to handshaker_next()");
     return TSI_INVALID_ARGUMENT;
   }
+  if (self->handshake_cancelled) {
+    gpr_log(GPR_ERROR, "TSI handshake cancelled");
+    return TSI_CANCELLED;
+  }
   alts_tsi_handshaker* handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(self);
   tsi_result ok = TSI_OK;
@@ -277,6 +281,20 @@ static tsi_result handshaker_next(
   return TSI_ASYNC;
 }
 
+static tsi_result handshaker_cancel_next(tsi_handshaker* self) {
+  if (self == nullptr) {
+    gpr_log(GPR_ERROR, "Invalid arguments to handshaker_cancel_next()");
+    return TSI_INVALID_ARGUMENT;
+  }
+  alts_tsi_handshaker* handshaker =
+      reinterpret_cast<alts_tsi_handshaker*>(self);
+  tsi_result ok = alts_handshaker_client_cancel(handshaker->client);
+  if (ok == TSI_OK) {
+    self->handshake_cancelled = true;
+  }
+  return ok;
+}
+
 static void handshaker_destroy(tsi_handshaker* self) {
   if (self == nullptr) {
     return;
@@ -292,8 +310,10 @@ static void handshaker_destroy(tsi_handshaker* self) {
 }
 
 static const tsi_handshaker_vtable handshaker_vtable = {
-    nullptr,        nullptr, nullptr, nullptr, nullptr, handshaker_destroy,
-    handshaker_next};
+    nullptr,         nullptr,
+    nullptr,         nullptr,
+    nullptr,         handshaker_destroy,
+    handshaker_next, handshaker_cancel_next};
 
 static void thread_worker(void* arg) {
   while (true) {
@@ -401,6 +421,11 @@ void alts_tsi_handshaker_handle_response(alts_tsi_handshaker* handshaker,
     cb(TSI_INTERNAL_ERROR, user_data, nullptr, 0, nullptr);
     return;
   }
+  if (handshaker->base.handshake_cancelled) {
+    gpr_log(GPR_ERROR, "TSI handshake cancelled");
+    cb(TSI_CANCELLED, user_data, nullptr, 0, nullptr);
+    return;
+  }
   /* Failed grpc call check. */
   if (!is_ok || status != GRPC_STATUS_OK) {
     gpr_log(GPR_ERROR, "grpc call made to handshaker service failed");
@@ -477,6 +502,11 @@ void alts_tsi_handshaker_set_client_for_testing(
   GPR_ASSERT(handshaker != nullptr && client != nullptr);
   alts_handshaker_client_destroy(handshaker->client);
   handshaker->client = client;
+}
+
+alts_handshaker_client* alts_tsi_handshaker_get_client_for_testing(
+    alts_tsi_handshaker* handshaker) {
+  return handshaker->client;
 }
 
 }  // namespace internal

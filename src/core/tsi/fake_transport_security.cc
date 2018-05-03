@@ -730,6 +730,11 @@ static tsi_result fake_handshaker_next(
   return result;
 }
 
+static tsi_result fake_handshaker_cancel_next(tsi_handshaker* self) {
+  /* no-op */
+  return TSI_OK;
+}
+
 static const tsi_handshaker_vtable handshaker_vtable = {
     nullptr, /* get_bytes_to_send_to_peer -- deprecated */
     nullptr, /* process_bytes_from_peer   -- deprecated */
@@ -738,6 +743,7 @@ static const tsi_handshaker_vtable handshaker_vtable = {
     nullptr, /* create_frame_protector    -- deprecated */
     fake_handshaker_destroy,
     fake_handshaker_next,
+    fake_handshaker_cancel_next,
 };
 
 tsi_handshaker* tsi_create_fake_handshaker(int is_client) {

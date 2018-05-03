@@ -118,8 +118,7 @@ static grpc_byte_buffer* get_serialized_start_client(alts_tsi_event* event) {
 static tsi_result handshaker_client_start_client(alts_handshaker_client* client,
                                                  alts_tsi_event* event) {
   if (client == nullptr || event == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Invalid arguments to alts_grpc_handshaker_client_start_client()");
+    gpr_log(GPR_ERROR, "Invalid arguments to handshaker_client_start_client()");
     return TSI_INVALID_ARGUMENT;
   }
   grpc_byte_buffer* buffer = get_serialized_start_client(event);
@@ -167,8 +166,7 @@ static tsi_result handshaker_client_start_server(alts_handshaker_client* client,
                                                  alts_tsi_event* event,
                                                  grpc_slice* bytes_received) {
   if (client == nullptr || event == nullptr || bytes_received == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Invalid arguments to alts_grpc_handshaker_client_start_server()");
+    gpr_log(GPR_ERROR, "Invalid arguments to handshaker_client_start_server()");
     return TSI_INVALID_ARGUMENT;
   }
   grpc_byte_buffer* buffer = get_serialized_start_server(event, bytes_received);
@@ -206,8 +204,7 @@ static tsi_result handshaker_client_next(alts_handshaker_client* client,
                                          alts_tsi_event* event,
                                          grpc_slice* bytes_received) {
   if (client == nullptr || event == nullptr || bytes_received == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Invalid arguments to alts_grpc_handshaker_client_next()");
+    gpr_log(GPR_ERROR, "Invalid arguments to handshaker_client_next()");
     return TSI_INVALID_ARGUMENT;
   }
   grpc_byte_buffer* buffer = get_serialized_next(bytes_received);
@@ -223,6 +220,20 @@ static tsi_result handshaker_client_next(alts_handshaker_client* client,
   return result;
 }
 
+static tsi_result handshaker_client_cancel(alts_handshaker_client* client) {
+  if (client == nullptr) {
+    gpr_log(GPR_ERROR, "Invalid arguments to handshaker_client_cancel()");
+    return TSI_INVALID_ARGUMENT;
+  }
+  alts_grpc_handshaker_client* grpc_client =
+      reinterpret_cast<alts_grpc_handshaker_client*>(client);
+  if (grpc_call_cancel(grpc_client->call, nullptr) != GRPC_CALL_OK) {
+    gpr_log(GPR_ERROR, "grpc call cancel failed");
+    return TSI_INTERNAL_ERROR;
+  }
+  return TSI_OK;
+}
+
 static void handshaker_client_destruct(alts_handshaker_client* client) {
   if (client == nullptr) {
     return;
@@ -234,7 +245,8 @@ static void handshaker_client_destruct(alts_handshaker_client* client) {
 
 static const alts_handshaker_client_vtable vtable = {
     handshaker_client_start_client, handshaker_client_start_server,
-    handshaker_client_next, handshaker_client_destruct};
+    handshaker_client_next, handshaker_client_cancel,
+    handshaker_client_destruct};
 
 alts_handshaker_client* alts_grpc_handshaker_client_create(
     grpc_channel* channel, grpc_completion_queue* queue,
@@ -300,6 +312,16 @@ tsi_result alts_handshaker_client_next(alts_handshaker_client* client,
   if (client != nullptr && client->vtable != nullptr &&
       client->vtable->next != nullptr) {
     return client->vtable->next(client, event, bytes_received);
+  }
+  gpr_log(GPR_ERROR,
+          "client or client->vtable has not been initialized properly");
+  return TSI_INVALID_ARGUMENT;
+}
+
+tsi_result alts_handshaker_client_cancel(alts_handshaker_client* client) {
+  if (client != nullptr && client->vtable != nullptr &&
+      client->vtable->cancel != nullptr) {
+    return client->vtable->cancel(client);
   }
   gpr_log(GPR_ERROR,
           "client or client->vtable has not been initialized properly");

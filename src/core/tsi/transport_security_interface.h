@@ -42,7 +42,8 @@ typedef enum {
   TSI_PROTOCOL_FAILURE = 10,
   TSI_HANDSHAKE_IN_PROGRESS = 11,
   TSI_OUT_OF_RESOURCES = 12,
-  TSI_ASYNC = 13
+  TSI_ASYNC = 13,
+  TSI_CANCELLED = 14,
 } tsi_result;
 
 typedef enum {
@@ -439,6 +440,15 @@ tsi_result tsi_handshaker_next(
     size_t received_bytes_size, const unsigned char** bytes_to_send,
     size_t* bytes_to_send_size, tsi_handshaker_result** handshaker_result,
     tsi_handshaker_on_next_done_cb cb, void* user_data);
+
+/* Cancel previously schedulded tsi_handshaker_next requests in asynchronous
+ * TSI handshaker implementation.
+ *
+ * This method will be invoked when TSI handshake should be terminated before
+ * being finished in order to free any resources being used. If there is no
+ * pending async call to tsi_handshaker_next, this will be a no-op.
+ */
+tsi_result tsi_handshaker_cancel_next(tsi_handshaker* self);
 
 /* This method releases the tsi_handshaker object. After this method is called,
    no other method can be called on the object.  */
