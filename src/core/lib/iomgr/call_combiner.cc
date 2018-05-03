@@ -85,7 +85,7 @@ void grpc_call_combiner_start(grpc_call_combiner* call_combiner,
       gpr_log(GPR_DEBUG, "  EXECUTING IMMEDIATELY");
     }
     // Queue was empty, so execute this closure immediately.
-    GRPC_CLOSURE_SCHED(closure, error);
+    GRPC_CLOSURE_RUN(closure, error);
   } else {
     if (grpc_call_combiner_trace.enabled()) {
       gpr_log(GPR_INFO, "  QUEUING");
