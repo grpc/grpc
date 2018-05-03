@@ -47,8 +47,8 @@
 
 /* -- Default credentials. -- */
 
-static grpc_channel_credentials* default_credentials = nullptr;
-static int compute_engine_detection_done = 0;
+static grpc_channel_credentials* g_default_credentials = nullptr;
+static int g_compute_engine_detection_done = 0;
 static gpr_mu g_state_mu;
 static gpr_mu* g_polling_mu;
 static gpr_once g_once = GPR_ONCE_INIT;
@@ -76,15 +76,13 @@ static grpc_security_status google_default_create_security_connector(
     grpc_channel_security_connector** sc, grpc_channel_args** new_args) {
   grpc_google_default_channel_credentials* c =
       reinterpret_cast<grpc_google_default_channel_credentials*>(creds);
-  bool is_grpclb_load_balancer =
-      grpc_channel_args_find(args, GRPC_ARG_TARGET_IS_GRPCLB_LOAD_BALANCER) !=
-      nullptr;
-  bool is_backend_from_grpclb_load_balancer = false;
-  const grpc_arg* arg = grpc_channel_args_find(
-      args, GRPC_ARG_TARGET_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER);
-  if (arg != nullptr) {
-    is_backend_from_grpclb_load_balancer = arg->value.integer;
-  }
+  bool is_grpclb_load_balancer = grpc_channel_arg_get_bool(
+      grpc_channel_args_find(args, GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER),
+      false);
+  bool is_backend_from_grpclb_load_balancer = grpc_channel_arg_get_bool(
+      grpc_channel_args_find(
+          args, GRPC_ARG_ADDRESS_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER),
+      false);
   bool use_alts =
       is_grpclb_load_balancer || is_backend_from_grpclb_load_balancer;
   grpc_security_status status = GRPC_SECURITY_ERROR;
@@ -93,8 +91,8 @@ static grpc_security_status google_default_create_security_connector(
                     : c->ssl_creds->vtable->create_security_connector(
                           c->ssl_creds, call_creds, target, args, sc, new_args);
   static const char* args_to_remove[] = {
-      GRPC_ARG_TARGET_IS_GRPCLB_LOAD_BALANCER,
-      GRPC_ARG_TARGET_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER,
+      GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER,
+      GRPC_ARG_ADDRESS_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER,
   };
   *new_args = grpc_channel_args_copy_and_add_and_remove(
       args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), nullptr, 0);
@@ -279,8 +277,8 @@ grpc_channel_credentials* grpc_google_default_credentials_create(void) {
 
   gpr_mu_lock(&g_state_mu);
 
-  if (default_credentials != nullptr) {
-    result = grpc_channel_credentials_ref(default_credentials);
+  if (g_default_credentials != nullptr) {
+    result = grpc_channel_credentials_ref(g_default_credentials);
     goto end;
   }
 
@@ -298,9 +296,9 @@ grpc_channel_credentials* grpc_google_default_credentials_create(void) {
 
   /* At last try to see if we're on compute engine (do the detection only once
      since it requires a network test). */
-  if (!compute_engine_detection_done) {
+  if (!g_compute_engine_detection_done) {
     int need_compute_engine_creds = is_stack_running_on_compute_engine();
-    compute_engine_detection_done = 1;
+    g_compute_engine_detection_done = 1;
     if (need_compute_engine_creds) {
       call_creds = grpc_google_compute_engine_credentials_create(nullptr);
       if (call_creds == nullptr) {
@@ -314,38 +312,26 @@ grpc_channel_credentials* grpc_google_default_credentials_create(void) {
 end:
   if (result == nullptr) {
     if (call_creds != nullptr) {
+      /* Create google default credentials. */
       auto creds = static_cast<grpc_google_default_channel_credentials*>(
           gpr_zalloc(sizeof(grpc_google_default_channel_credentials)));
       creds->base.vtable = &google_default_credentials_vtable;
-      /* Blend with default alts and ssl credentials and add a global reference
-         so that it can be cached and re-served. */
-      /* Create ssl credentials. */
-      grpc_channel_credentials* ssl_creds =
-          grpc_ssl_credentials_create(nullptr, nullptr, nullptr);
-      creds->ssl_creds = grpc_channel_credentials_ref(
-          grpc_composite_channel_credentials_create(ssl_creds, call_creds,
-                                                    nullptr));
+      creds->base.type = GRPC_CHANNEL_CREDENTIALS_TYPE_GOOGLE_DEFAULT;
+      gpr_ref_init(&creds->base.refcount, 1);
+      creds->ssl_creds = grpc_ssl_credentials_create(nullptr, nullptr, nullptr);
       GPR_ASSERT(creds->ssl_creds != nullptr);
-      grpc_channel_credentials_unref(ssl_creds);
-      grpc_call_credentials_unref(call_creds);
-      /* Create alts credentials. */
       grpc_alts_credentials_options* options =
           grpc_alts_credentials_client_options_create();
-      grpc_channel_credentials* alts_creds =
-          grpc_alts_credentials_create(options);
-      if (alts_creds != nullptr) {
-        creds->alts_creds = grpc_channel_credentials_ref(
-            grpc_composite_channel_credentials_create(alts_creds, call_creds,
-                                                      nullptr));
-        grpc_call_credentials_unref(call_creds);
-      }
-      grpc_channel_credentials_unref(alts_creds);
+      creds->alts_creds = grpc_alts_credentials_create(options);
       grpc_alts_credentials_options_destroy(options);
-      /* Add a global reference. */
-      gpr_ref_init(&creds->base.refcount, 1);
-      default_credentials = grpc_channel_credentials_ref(&creds->base);
-      GPR_ASSERT(default_credentials != nullptr);
-      result = default_credentials;
+      /* Add a global reference so that it can be cached and re-served. */
+      g_default_credentials = grpc_channel_credentials_ref(
+          grpc_composite_channel_credentials_create(&creds->base, call_creds,
+                                                    nullptr));
+      GPR_ASSERT(g_default_credentials != nullptr);
+      grpc_channel_credentials_unref(&creds->base);
+      grpc_call_credentials_unref(call_creds);
+      result = g_default_credentials;
     } else {
       gpr_log(GPR_ERROR, "Could not create google default credentials.");
     }
@@ -364,11 +350,11 @@ void grpc_flush_cached_google_default_credentials(void) {
   grpc_core::ExecCtx exec_ctx;
   gpr_once_init(&g_once, init_default_credentials);
   gpr_mu_lock(&g_state_mu);
-  if (default_credentials != nullptr) {
-    grpc_channel_credentials_unref(default_credentials);
-    default_credentials = nullptr;
+  if (g_default_credentials != nullptr) {
+    grpc_channel_credentials_unref(g_default_credentials);
+    g_default_credentials = nullptr;
   }
-  compute_engine_detection_done = 0;
+  g_compute_engine_detection_done = 0;
   gpr_mu_unlock(&g_state_mu);
 }
 

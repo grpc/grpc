@@ -1005,7 +1005,7 @@ grpc_channel_args* BuildBalancerChannelArgs(
           response_generator),
       // A channel arg indicating the target is a grpclb load balancer.
       grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_TARGET_IS_GRPCLB_LOAD_BALANCER), 1),
+          const_cast<char*>(GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER), 1),
   };
   // Construct channel args.
   grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
@@ -1725,7 +1725,7 @@ grpc_channel_args* GrpcLb::CreateRoundRobinPolicyArgsLocked() {
       // grpclb load balancer.
       grpc_channel_arg_integer_create(
           const_cast<char*>(
-              GRPC_ARG_TARGET_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER),
+              GRPC_ARG_ADDRESS_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER),
           is_backend_from_grpclb_load_balancer),
   };
   grpc_channel_args* args = grpc_channel_args_copy_and_add_and_remove(
