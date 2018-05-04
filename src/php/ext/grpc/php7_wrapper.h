@@ -30,6 +30,8 @@
   add_property_string(arg, name, context, b)
 #define php_grpc_add_property_stringl(res, name, str, len, b) \
   add_property_stringl(res, name, str, len, b)
+#define php_grpc_add_property_zval(res, name, val) \
+  add_property_zval(res, name, val)
 #define php_grpc_add_next_index_stringl(data, str, len, b) \
   add_next_index_stringl(data, str, len, b)
 
@@ -154,6 +156,11 @@ static inline int php_grpc_zend_hash_find(HashTable *ht, char *key, int len,
   add_property_string(arg, name, context)
 #define php_grpc_add_property_stringl(res, name, str, len, b) \
   add_property_stringl(res, name, str, len)
+#define php_grpc_add_property_zval(res, name, val) do { \
+  zval tmp; \
+  tmp = *val; \
+  add_property_zval(res, name, &tmp); \
+  } while(0)
 #define php_grpc_add_next_index_stringl(data, str, len, b) \
   add_next_index_stringl(data, str, len)
 
