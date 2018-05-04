@@ -163,8 +163,8 @@ static VALUE grpc_rb_channel_credentials_init(int argc, VALUE* argv,
   } else {
     key_cert_pair.private_key = RSTRING_PTR(pem_private_key);
     key_cert_pair.cert_chain = RSTRING_PTR(pem_cert_chain);
-    creds =
-        grpc_ssl_credentials_create(pem_root_certs_cstr, &key_cert_pair, NULL, NULL);
+    creds = grpc_ssl_credentials_create(pem_root_certs_cstr, &key_cert_pair,
+                                        NULL, NULL);
   }
   if (creds == NULL) {
     rb_raise(rb_eRuntimeError, "could not create a credentials, not sure why");

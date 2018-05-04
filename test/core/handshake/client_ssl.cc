@@ -251,8 +251,8 @@ static bool client_ssl_test(char* server_alpn_preferred) {
       reinterpret_cast<const char*> GRPC_SLICE_START_PTR(key_slice);
   pem_key_cert_pair.cert_chain =
       reinterpret_cast<const char*> GRPC_SLICE_START_PTR(cert_slice);
-  grpc_channel_credentials* ssl_creds =
-      grpc_ssl_credentials_create(ca_cert, &pem_key_cert_pair, nullptr, nullptr);
+  grpc_channel_credentials* ssl_creds = grpc_ssl_credentials_create(
+      ca_cert, &pem_key_cert_pair, nullptr, nullptr);
 
   // Establish a channel pointing at the TLS server. Since the gRPC runtime is
   // lazy, this won't necessarily establish a connection yet.
