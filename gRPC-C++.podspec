@@ -260,6 +260,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/http/client/http_client_filter.h',
                       'src/core/ext/filters/http/message_compress/message_compress_filter.h',
                       'src/core/ext/filters/http/server/http_server_filter.h',
+                      'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h',
                       'src/core/lib/security/context/security_context.h',
                       'src/core/lib/security/credentials/alts/alts_credentials.h',
                       'src/core/lib/security/credentials/composite/composite_credentials.h',

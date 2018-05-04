@@ -201,6 +201,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/http/client/http_client_filter.h )
   s.files += %w( src/core/ext/filters/http/message_compress/message_compress_filter.h )
   s.files += %w( src/core/ext/filters/http/server/http_server_filter.h )
+  s.files += %w( src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h )
   s.files += %w( src/core/lib/security/context/security_context.h )
   s.files += %w( src/core/lib/security/credentials/alts/alts_credentials.h )
   s.files += %w( src/core/lib/security/credentials/composite/composite_credentials.h )
