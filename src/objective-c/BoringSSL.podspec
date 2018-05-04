@@ -117,17 +117,18 @@ Pod::Spec.new do |s|
   end
   s.subspec 'Implementation' do |ss|
     ss.header_mappings_dir = '.'
-    ss.source_files = 'ssl/*.{h,cc}',
-                      'ssl/**/*.{h,cc}',
-                      '*.{h,c}',
-                      'crypto/*.{h,c}',
-                      'crypto/**/*.{h,c}',
-                      'third_party/fiat/*.{h,c}'
+    ss.source_files = 'ssl/*.cc',
+                      'ssl/**/*.cc',
+                      '*.c',
+                      'crypto/*.c',
+                      'crypto/**/*.c',
+                      'third_party/fiat/*.c'
     ss.private_header_files = 'ssl/*.h',
                               'ssl/**/*.h',
                               '*.h',
                               'crypto/*.h',
-                              'crypto/**/*.h'
+                              'crypto/**/*.h',
+                              'third_party/fiat/*.h'
     # bcm.c includes other source files, creating duplicated symbols. Since it is not used, we
     # explicitly exclude it from the pod.
     # TODO (mxyan): Work with BoringSSL team to remove this hack.
