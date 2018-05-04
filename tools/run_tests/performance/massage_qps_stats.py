@@ -453,6 +453,21 @@ def massage_qps_stats(scenario_result):
         stats[
             "core_http2_send_flowctl_per_write_99p"] = massage_qps_stats_helpers.percentile(
                 h.buckets, 99, h.boundaries)
+        h = massage_qps_stats_helpers.histogram(
+            core_stats, "call_combiner_contention_delay_ms")
+        stats["core_call_combiner_contention_delay_ms"] = ",".join(
+            "%f" % x for x in h.buckets)
+        stats["core_call_combiner_contention_delay_ms_bkts"] = ",".join(
+            "%f" % x for x in h.boundaries)
+        stats[
+            "core_call_combiner_contention_delay_ms_50p"] = massage_qps_stats_helpers.percentile(
+                h.buckets, 50, h.boundaries)
+        stats[
+            "core_call_combiner_contention_delay_ms_95p"] = massage_qps_stats_helpers.percentile(
+                h.buckets, 95, h.boundaries)
+        stats[
+            "core_call_combiner_contention_delay_ms_99p"] = massage_qps_stats_helpers.percentile(
+                h.buckets, 99, h.boundaries)
         h = massage_qps_stats_helpers.histogram(core_stats,
                                                 "server_cqs_checked")
         stats["core_server_cqs_checked"] = ",".join("%f" % x for x in h.buckets)
