@@ -628,6 +628,7 @@ filegroups:
 - name: grpc_lb_policy_grpclb
   headers:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
@@ -648,6 +649,7 @@ filegroups:
 - name: grpc_lb_policy_grpclb_secure
   headers:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
@@ -744,6 +746,7 @@ filegroups:
   public_headers:
   - include/grpc/grpc_security.h
   headers:
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
   - src/core/lib/security/context/security_context.h
   - src/core/lib/security/credentials/alts/alts_credentials.h
   - src/core/lib/security/credentials/composite/composite_credentials.h
