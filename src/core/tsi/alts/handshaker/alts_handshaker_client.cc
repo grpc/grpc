@@ -225,7 +225,6 @@ static void handshaker_client_shutdown(alts_handshaker_client* client) {
   alts_grpc_handshaker_client* grpc_client =
       reinterpret_cast<alts_grpc_handshaker_client*>(client);
   GPR_ASSERT(grpc_call_cancel(grpc_client->call, nullptr) == GRPC_CALL_OK);
-  return;
 }
 
 static void handshaker_client_destruct(alts_handshaker_client* client) {
@@ -319,7 +318,6 @@ void alts_handshaker_client_shutdown(alts_handshaker_client* client) {
   }
   gpr_log(GPR_ERROR,
           "client or client->vtable has not been initialized properly");
-  return;
 }
 
 void alts_handshaker_client_destroy(alts_handshaker_client* client) {

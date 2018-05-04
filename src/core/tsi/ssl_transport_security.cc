@@ -1174,9 +1174,7 @@ static tsi_result ssl_handshaker_create_frame_protector(
 }
 
 static void ssl_handshaker_shutdown(tsi_handshaker* self) {
-  /* no-op */
   self->handshake_shutdown = true;
-  return;
 }
 
 static void ssl_handshaker_destroy(tsi_handshaker* self) {

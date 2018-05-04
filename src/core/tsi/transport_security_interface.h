@@ -444,8 +444,7 @@ tsi_result tsi_handshaker_next(
 /* This method shuts down a TSI handshake that is in progress.
  *
  * This method will be invoked when TSI handshake should be terminated before
- * being finished in order to free any resources being used. It is mainly used
- * for asynchronous TSI handshaker implementation.
+ * being finished in order to free any resources being used.
  */
 void tsi_handshaker_shutdown(tsi_handshaker* self);
 

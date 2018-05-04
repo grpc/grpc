@@ -736,7 +736,6 @@ static tsi_result fake_handshaker_next(
 
 static void fake_handshaker_shutdown(tsi_handshaker* self) {
   self->handshake_shutdown = true;
-  return;
 }
 
 static const tsi_handshaker_vtable handshaker_vtable = {
