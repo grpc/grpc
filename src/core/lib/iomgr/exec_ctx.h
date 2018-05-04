@@ -102,7 +102,7 @@ class ExecCtx {
   ExecCtx& operator=(const ExecCtx&) = delete;
 
   /** Return starting_cpu */
-  unsigned starting_cpu() const { return starting_cpu_; }
+  // unsigned starting_cpu() const { return starting_cpu_; }
 
   struct CombinerData {
     /* currently active combiner: updated only via combiner.c */
@@ -197,7 +197,6 @@ on outside context */
   grpc_closure_list closure_list_ = GRPC_CLOSURE_LIST_INIT;
   CombinerData combiner_data_ = {nullptr, nullptr};
   uintptr_t flags_;
-  unsigned starting_cpu_ = gpr_cpu_current_cpu();
 
   bool now_is_valid_ = false;
   grpc_millis now_ = 0;

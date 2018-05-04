@@ -266,12 +266,11 @@ with open('src/core/lib/debug/stats_data.h', 'w') as H:
     print >> H, "} grpc_stats_histogram_constants;"
 
     for ctr in inst_map['Counter']:
-        print >> H, ("#define GRPC_STATS_INC_%s() " +
-                     "GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_%s)") % (
-                         ctr.name.upper(), ctr.name.upper())
+        print >> H, ("#define GRPC_STATS_INC_%s() ") % (
+                         ctr.name.upper())
     for histogram in inst_map['Histogram']:
-        print >> H, "#define GRPC_STATS_INC_%s(value) grpc_stats_inc_%s( (int)(value))" % (
-            histogram.name.upper(), histogram.name.lower())
+        print >> H, "#define GRPC_STATS_INC_%s(value)" % (
+            histogram.name.upper())
         print >> H, "void grpc_stats_inc_%s(int x);" % histogram.name.lower()
 
     for i, tbl in enumerate(static_tables):
