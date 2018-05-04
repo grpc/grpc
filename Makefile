@@ -3566,19 +3566,20 @@ LIBGRPC_SRC = \
     src/core/tsi/ssl/session_cache/ssl_session_openssl.cc \
     src/core/tsi/ssl_transport_security.cc \
     src/core/tsi/transport_security_grpc.cc \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
+    src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
     src/core/ext/transport/chttp2/server/chttp2_server.cc \
     src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc \
     src/core/ext/transport/inproc/inproc_plugin.cc \
     src/core/ext/transport/inproc/inproc_transport.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
-    src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
     src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
     src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
@@ -3963,6 +3964,13 @@ LIBGRPC_CRONET_SRC = \
     src/core/tsi/ssl/session_cache/ssl_session_openssl.cc \
     src/core/tsi/ssl_transport_security.cc \
     src/core/tsi/transport_security_grpc.cc \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
+    src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
     src/core/ext/filters/load_reporting/server_load_reporting_filter.cc \
     src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc \
     src/core/plugin_registry/grpc_cronet_plugin_registry.cc \

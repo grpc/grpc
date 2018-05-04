@@ -291,6 +291,13 @@
     <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_types.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security_grpc.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/chttp2_server.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/inproc/inproc_transport.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/avl/avl.h" role="src" />
@@ -426,12 +433,6 @@
     <file baseinstalldir="/" name="src/core/lib/transport/transport.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/transport_impl.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/trace.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/subchannel_list.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h" role="src" />
@@ -715,19 +716,20 @@
     <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session_openssl.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl_transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security_grpc.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/chttp2_server.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/inproc/inproc_plugin.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/inproc/inproc_transport.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc" role="src" />

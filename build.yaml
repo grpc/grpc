@@ -628,6 +628,7 @@ filegroups:
 - name: grpc_lb_policy_grpclb
   headers:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
@@ -648,6 +649,7 @@ filegroups:
 - name: grpc_lb_policy_grpclb_secure
   headers:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
@@ -797,6 +799,7 @@ filegroups:
   - alts_tsi
   - grpc_base
   - grpc_transport_chttp2_alpn
+  - grpc_lb_policy_grpclb
   - tsi
 - name: grpc_server_backward_compatibility
   headers:
