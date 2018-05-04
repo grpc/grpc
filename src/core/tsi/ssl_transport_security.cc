@@ -120,12 +120,14 @@ typedef struct {
 /* --- Library Initialization. ---*/
 
 static gpr_once g_init_openssl_once = GPR_ONCE_INIT;
-static gpr_mu* g_openssl_mutexes = nullptr;
 static int g_ssl_ctx_ex_factory_index = -1;
+static const unsigned char kSslSessionIdContext[] = {'g', 'r', 'p', 'c'};
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000
+static gpr_mu* g_openssl_mutexes = nullptr;
 static void openssl_locking_cb(int mode, int type, const char* file,
                                int line) GRPC_UNUSED;
 static unsigned long openssl_thread_id_cb(void) GRPC_UNUSED;
-static const unsigned char kSslSessionIdContext[] = {'g', 'r', 'p', 'c'};
 
 static void openssl_locking_cb(int mode, int type, const char* file, int line) {
   if (mode & CRYPTO_LOCK) {
@@ -138,22 +140,27 @@ static void openssl_locking_cb(int mode, int type, const char* file, int line) {
 static unsigned long openssl_thread_id_cb(void) {
   return static_cast<unsigned long>(gpr_thd_currentid());
 }
+#endif
 
 static void init_openssl(void) {
-  int i;
-  int num_locks;
   SSL_library_init();
   SSL_load_error_strings();
   OpenSSL_add_all_algorithms();
-  num_locks = CRYPTO_num_locks();
-  GPR_ASSERT(num_locks > 0);
-  g_openssl_mutexes = static_cast<gpr_mu*>(
-      gpr_malloc(static_cast<size_t>(num_locks) * sizeof(gpr_mu)));
-  for (i = 0; i < CRYPTO_num_locks(); i++) {
-    gpr_mu_init(&g_openssl_mutexes[i]);
+#if OPENSSL_VERSION_NUMBER < 0x10100000
+  if (!CRYPTO_get_locking_callback()) {
+    int num_locks = CRYPTO_num_locks();
+    GPR_ASSERT(num_locks > 0);
+    g_openssl_mutexes = static_cast<gpr_mu*>(
+        gpr_malloc(static_cast<size_t>(num_locks) * sizeof(gpr_mu)));
+    for (int i = 0; i < num_locks; i++) {
+      gpr_mu_init(&g_openssl_mutexes[i]);
+    }
+    CRYPTO_set_locking_callback(openssl_locking_cb);
+    CRYPTO_set_id_callback(openssl_thread_id_cb);
+  } else {
+    gpr_log(GPR_INFO, "OpenSSL callback has already been set.");
   }
-  CRYPTO_set_locking_callback(openssl_locking_cb);
-  CRYPTO_set_id_callback(openssl_thread_id_cb);
+#endif
   g_ssl_ctx_ex_factory_index =
       SSL_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
   GPR_ASSERT(g_ssl_ctx_ex_factory_index != -1);
