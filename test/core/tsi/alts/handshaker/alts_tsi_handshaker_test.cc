@@ -331,11 +331,7 @@ static tsi_result mock_client_start(alts_handshaker_client* self,
   return TSI_OK;
 }
 
-static tsi_result mock_cancel(alts_handshaker_client* self) {
-  alts_mock_handshaker_client* client =
-      reinterpret_cast<alts_mock_handshaker_client*>(self);
-  return client->used_for_success_test ? TSI_OK : TSI_INTERNAL_ERROR;
-}
+static void mock_shutdown(alts_handshaker_client* self) {}
 
 static tsi_result mock_server_start(alts_handshaker_client* self,
                                     alts_tsi_event* event,
@@ -407,7 +403,7 @@ static tsi_result mock_next(alts_handshaker_client* self, alts_tsi_event* event,
 static void mock_destruct(alts_handshaker_client* client) {}
 
 static const alts_handshaker_client_vtable vtable = {
-    mock_client_start, mock_server_start, mock_next, mock_cancel,
+    mock_client_start, mock_server_start, mock_next, mock_shutdown,
     mock_destruct};
 
 static alts_handshaker_client* alts_mock_handshaker_client_create(
@@ -450,60 +446,38 @@ static void check_handshaker_next_invalid_input() {
   tsi_handshaker_destroy(handshaker);
 }
 
-static void check_handshaker_cancel_next_success() {
+static void check_handshaker_next_fails_after_shutdown() {
   /* Initialization. */
   tsi_handshaker* handshaker = create_test_handshaker(
       true /* used_for_success_test */, true /* is_client*/);
   notification_init(&caller_to_tsi_notification);
-  /* next(success) -- cancel (success) -- next (fail) */
+  /* next(success) -- shutdown(success) -- next (fail) */
+
+  /* Notice that the callback - on_client_start_success_cb will not get invoked.
+   * The reason for passing it (instead of setting to nullptr) is to make sure
+   * tsi_handshaker_next() will succeed. */
   GPR_ASSERT(tsi_handshaker_next(handshaker, nullptr, 0, nullptr, nullptr,
                                  nullptr, on_client_start_success_cb,
                                  nullptr) == TSI_ASYNC);
-  GPR_ASSERT(tsi_handshaker_cancel_next(handshaker) == TSI_OK);
+  tsi_handshaker_shutdown(handshaker);
   GPR_ASSERT(tsi_handshaker_next(
                  handshaker,
                  (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
                  strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
-                 nullptr, on_client_next_success_cb, nullptr) == TSI_CANCELLED);
+                 nullptr, on_client_next_success_cb,
+                 nullptr) == TSI_HANDSHAKE_SHUTDOWN);
   /* Cleanup. */
   notification_destroy(&caller_to_tsi_notification);
   tsi_handshaker_destroy(handshaker);
 }
 
-static void check_handshaker_cancel_next_invalid_input() {
+static void check_handshaker_shutdown_invalid_input() {
   /* Initialization. */
   tsi_handshaker* handshaker = create_test_handshaker(
       false /* used_for_success_test */, true /* is_client */);
   /* Check nullptr handshaker. */
-  GPR_ASSERT(tsi_handshaker_cancel_next(nullptr) == TSI_INVALID_ARGUMENT);
+  tsi_handshaker_shutdown(nullptr);
   /* Cleanup. */
-  tsi_handshaker_destroy(handshaker);
-}
-
-static void check_handshaker_cancel_next_failure() {
-  /* Initialization. */
-  tsi_handshaker* handshaker = create_test_handshaker(
-      true /* used_for_success_test */, true /* is_client*/);
-  notification_init(&caller_to_tsi_notification);
-  alts_tsi_handshaker* alts_handshaker =
-      reinterpret_cast<alts_tsi_handshaker*>(handshaker);
-  alts_mock_handshaker_client* client =
-      reinterpret_cast<alts_mock_handshaker_client*>(
-          alts_tsi_handshaker_get_client_for_testing(alts_handshaker));
-  /* next (success) -- cancel (fail) -- next (success) */
-  GPR_ASSERT(tsi_handshaker_next(handshaker, nullptr, 0, nullptr, nullptr,
-                                 nullptr, on_client_start_success_cb,
-                                 nullptr) == TSI_ASYNC);
-  client->used_for_success_test = false;
-  GPR_ASSERT(tsi_handshaker_cancel_next(handshaker) == TSI_INTERNAL_ERROR);
-  client->used_for_success_test = true;
-  GPR_ASSERT(tsi_handshaker_next(
-                 handshaker,
-                 (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
-                 strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
-                 nullptr, on_client_next_success_cb, nullptr) == TSI_ASYNC);
-  /* Cleanup. */
-  notification_destroy(&caller_to_tsi_notification);
   tsi_handshaker_destroy(handshaker);
 }
 
@@ -712,28 +686,28 @@ static void check_handle_response_failure() {
   tsi_handshaker_destroy(handshaker);
 }
 
-static void on_cancelled_resp_cb(tsi_result status, void* user_data,
-                                 const unsigned char* bytes_to_send,
-                                 size_t bytes_to_send_size,
-                                 tsi_handshaker_result* result) {
-  GPR_ASSERT(status == TSI_CANCELLED);
+static void on_shutdown_resp_cb(tsi_result status, void* user_data,
+                                const unsigned char* bytes_to_send,
+                                size_t bytes_to_send_size,
+                                tsi_handshaker_result* result) {
+  GPR_ASSERT(status == TSI_HANDSHAKE_SHUTDOWN);
   GPR_ASSERT(user_data == nullptr);
   GPR_ASSERT(bytes_to_send == nullptr);
   GPR_ASSERT(bytes_to_send_size == 0);
   GPR_ASSERT(result == nullptr);
 }
 
-static void check_handle_response_after_cancel() {
+static void check_handle_response_after_shutdown() {
   tsi_handshaker* handshaker = create_test_handshaker(
       true /* used_for_success_test */, true /* is_client */);
   alts_tsi_handshaker* alts_handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(handshaker);
   /* Tests. */
-  GPR_ASSERT(tsi_handshaker_cancel_next(handshaker) == TSI_OK);
+  tsi_handshaker_shutdown(handshaker);
   grpc_byte_buffer* recv_buffer = generate_handshaker_response(CLIENT_START);
   alts_tsi_handshaker_handle_response(alts_handshaker, recv_buffer,
                                       GRPC_STATUS_OK, nullptr,
-                                      on_cancelled_resp_cb, nullptr, true);
+                                      on_shutdown_resp_cb, nullptr, true);
   grpc_byte_buffer_destroy(recv_buffer);
   /* Cleanup. */
   tsi_handshaker_destroy(handshaker);
@@ -764,14 +738,13 @@ int main(int argc, char** argv) {
   /* Tests. */
   check_handshaker_success();
   check_handshaker_next_invalid_input();
-  check_handshaker_cancel_next_invalid_input();
-  check_handshaker_cancel_next_success();
-  check_handshaker_cancel_next_failure();
+  check_handshaker_shutdown_invalid_input();
+  check_handshaker_next_fails_after_shutdown();
   check_handshaker_next_failure();
   check_handle_response_invalid_input();
   check_handle_response_invalid_resp();
   check_handle_response_failure();
-  check_handle_response_after_cancel();
+  check_handle_response_after_shutdown();
   /* Cleanup. */
   grpc_shutdown();
   return 0;

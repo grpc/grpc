@@ -220,18 +220,12 @@ static tsi_result handshaker_client_next(alts_handshaker_client* client,
   return result;
 }
 
-static tsi_result handshaker_client_cancel(alts_handshaker_client* client) {
-  if (client == nullptr) {
-    gpr_log(GPR_ERROR, "Invalid arguments to handshaker_client_cancel()");
-    return TSI_INVALID_ARGUMENT;
-  }
+static void handshaker_client_shutdown(alts_handshaker_client* client) {
+  GPR_ASSERT(client != nullptr);
   alts_grpc_handshaker_client* grpc_client =
       reinterpret_cast<alts_grpc_handshaker_client*>(client);
-  if (grpc_call_cancel(grpc_client->call, nullptr) != GRPC_CALL_OK) {
-    gpr_log(GPR_ERROR, "grpc call cancel failed");
-    return TSI_INTERNAL_ERROR;
-  }
-  return TSI_OK;
+  GPR_ASSERT(grpc_call_cancel(grpc_client->call, nullptr) == GRPC_CALL_OK);
+  return;
 }
 
 static void handshaker_client_destruct(alts_handshaker_client* client) {
@@ -245,7 +239,7 @@ static void handshaker_client_destruct(alts_handshaker_client* client) {
 
 static const alts_handshaker_client_vtable vtable = {
     handshaker_client_start_client, handshaker_client_start_server,
-    handshaker_client_next, handshaker_client_cancel,
+    handshaker_client_next, handshaker_client_shutdown,
     handshaker_client_destruct};
 
 alts_handshaker_client* alts_grpc_handshaker_client_create(
@@ -318,14 +312,14 @@ tsi_result alts_handshaker_client_next(alts_handshaker_client* client,
   return TSI_INVALID_ARGUMENT;
 }
 
-tsi_result alts_handshaker_client_cancel(alts_handshaker_client* client) {
+void alts_handshaker_client_shutdown(alts_handshaker_client* client) {
   if (client != nullptr && client->vtable != nullptr &&
-      client->vtable->cancel != nullptr) {
-    return client->vtable->cancel(client);
+      client->vtable->shutdown != nullptr) {
+    return client->vtable->shutdown(client);
   }
   gpr_log(GPR_ERROR,
           "client or client->vtable has not been initialized properly");
-  return TSI_INVALID_ARGUMENT;
+  return;
 }
 
 void alts_handshaker_client_destroy(alts_handshaker_client* client) {

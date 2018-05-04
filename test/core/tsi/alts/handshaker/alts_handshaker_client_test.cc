@@ -326,8 +326,8 @@ static void schedule_request_invalid_arg_test() {
   GPR_ASSERT(alts_handshaker_client_next(nullptr, event, &config->out_frame) ==
              TSI_INVALID_ARGUMENT);
 
-  /* Check cancel. */
-  GPR_ASSERT(alts_handshaker_client_cancel(nullptr) == TSI_INVALID_ARGUMENT);
+  /* Check shutdown. */
+  alts_handshaker_client_shutdown(nullptr);
 
   /* Cleanup. */
   alts_tsi_event_destroy(event);

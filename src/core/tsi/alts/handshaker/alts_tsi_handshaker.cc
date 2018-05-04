@@ -241,9 +241,9 @@ static tsi_result handshaker_next(
     gpr_log(GPR_ERROR, "Invalid arguments to handshaker_next()");
     return TSI_INVALID_ARGUMENT;
   }
-  if (self->handshake_cancelled) {
-    gpr_log(GPR_ERROR, "TSI handshake cancelled");
-    return TSI_CANCELLED;
+  if (self->handshake_shutdown) {
+    gpr_log(GPR_ERROR, "TSI handshake shutdown");
+    return TSI_HANDSHAKE_SHUTDOWN;
   }
   alts_tsi_handshaker* handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(self);
@@ -281,24 +281,22 @@ static tsi_result handshaker_next(
   return TSI_ASYNC;
 }
 
-static tsi_result handshaker_cancel_next(tsi_handshaker* self) {
-  if (self == nullptr) {
-    gpr_log(GPR_ERROR, "Invalid arguments to handshaker_cancel_next()");
-    return TSI_INVALID_ARGUMENT;
+static void handshaker_shutdown(tsi_handshaker* self) {
+  GPR_ASSERT(self != nullptr);
+  if (self->handshake_shutdown) {
+    return;
   }
   alts_tsi_handshaker* handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(self);
-  tsi_result ok = alts_handshaker_client_cancel(handshaker->client);
-  if (ok == TSI_OK) {
-    self->handshake_cancelled = true;
-  }
-  return ok;
+  alts_handshaker_client_shutdown(handshaker->client);
+  self->handshake_shutdown = true;
 }
 
 static void handshaker_destroy(tsi_handshaker* self) {
   if (self == nullptr) {
     return;
   }
+  handshaker_shutdown(self);
   alts_tsi_handshaker* handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(self);
   alts_handshaker_client_destroy(handshaker->client);
@@ -313,7 +311,7 @@ static const tsi_handshaker_vtable handshaker_vtable = {
     nullptr,         nullptr,
     nullptr,         nullptr,
     nullptr,         handshaker_destroy,
-    handshaker_next, handshaker_cancel_next};
+    handshaker_next, handshaker_shutdown};
 
 static void thread_worker(void* arg) {
   while (true) {
@@ -421,9 +419,9 @@ void alts_tsi_handshaker_handle_response(alts_tsi_handshaker* handshaker,
     cb(TSI_INTERNAL_ERROR, user_data, nullptr, 0, nullptr);
     return;
   }
-  if (handshaker->base.handshake_cancelled) {
-    gpr_log(GPR_ERROR, "TSI handshake cancelled");
-    cb(TSI_CANCELLED, user_data, nullptr, 0, nullptr);
+  if (handshaker->base.handshake_shutdown) {
+    gpr_log(GPR_ERROR, "TSI handshake shutdown");
+    cb(TSI_HANDSHAKE_SHUTDOWN, user_data, nullptr, 0, nullptr);
     return;
   }
   /* Failed grpc call check. */

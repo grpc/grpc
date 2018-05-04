@@ -205,10 +205,12 @@ tsi_result tsi_handshaker_next(
                             handshaker_result, cb, user_data);
 }
 
-tsi_result tsi_handshaker_cancel_next(tsi_handshaker* self) {
-  if (self == nullptr || self->vtable == nullptr) return TSI_INVALID_ARGUMENT;
-  if (self->vtable->cancel_next == nullptr) return TSI_UNIMPLEMENTED;
-  return self->vtable->cancel_next(self);
+void tsi_handshaker_shutdown(tsi_handshaker* self) {
+  if (self == nullptr || self->vtable == nullptr ||
+      self->vtable->shutdown == nullptr) {
+    return;
+  }
+  return self->vtable->shutdown(self);
 }
 
 void tsi_handshaker_destroy(tsi_handshaker* self) {

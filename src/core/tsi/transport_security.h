@@ -73,14 +73,14 @@ typedef struct {
                      size_t* bytes_to_send_size,
                      tsi_handshaker_result** handshaker_result,
                      tsi_handshaker_on_next_done_cb cb, void* user_data);
-  tsi_result (*cancel_next)(tsi_handshaker* self);
+  void (*shutdown)(tsi_handshaker* self);
 } tsi_handshaker_vtable;
 
 struct tsi_handshaker {
   const tsi_handshaker_vtable* vtable;
   bool frame_protector_created;
   bool handshaker_result_created;
-  bool handshake_cancelled;
+  bool handshake_shutdown;
 };
 
 /* Base for tsi_handshaker_result implementations.

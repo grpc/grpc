@@ -148,10 +148,10 @@ static void adapter_destroy(tsi_handshaker* self) {
   gpr_free(self);
 }
 
-static tsi_result adapter_cancel_next(tsi_handshaker* self) {
+static void adapter_shutdown(tsi_handshaker* self) {
   tsi_adapter_handshaker* impl =
       reinterpret_cast<tsi_adapter_handshaker*>(self);
-  return tsi_handshaker_cancel_next(impl->wrapped);
+  return tsi_handshaker_shutdown(impl->wrapped);
 }
 
 static tsi_result adapter_next(
@@ -169,6 +169,10 @@ static tsi_result adapter_next(
   /* If there are received bytes, process them first.  */
   tsi_adapter_handshaker* impl =
       reinterpret_cast<tsi_adapter_handshaker*>(self);
+  if (impl->wrapped->handshake_shutdown) {
+    gpr_log(GPR_ERROR, "TSI handshake shutdown");
+    return TSI_HANDSHAKE_SHUTDOWN;
+  }
   tsi_result status = TSI_OK;
   size_t bytes_consumed = received_bytes_size;
   if (received_bytes_size > 0) {
@@ -219,7 +223,7 @@ static const tsi_handshaker_vtable handshaker_vtable = {
     adapter_create_frame_protector,
     adapter_destroy,
     adapter_next,
-    adapter_cancel_next,
+    adapter_shutdown,
 };
 
 tsi_handshaker* tsi_create_adapter_handshaker(tsi_handshaker* wrapped) {

@@ -676,6 +676,10 @@ static tsi_result fake_handshaker_next(
       handshaker_result == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
+  if (self->handshake_shutdown) {
+    gpr_log(GPR_ERROR, "TSI handshake shutdown");
+    return TSI_HANDSHAKE_SHUTDOWN;
+  }
   tsi_fake_handshaker* handshaker =
       reinterpret_cast<tsi_fake_handshaker*>(self);
   tsi_result result = TSI_OK;
@@ -730,9 +734,9 @@ static tsi_result fake_handshaker_next(
   return result;
 }
 
-static tsi_result fake_handshaker_cancel_next(tsi_handshaker* self) {
-  /* no-op */
-  return TSI_OK;
+static void fake_handshaker_shutdown(tsi_handshaker* self) {
+  self->handshake_shutdown = true;
+  return;
 }
 
 static const tsi_handshaker_vtable handshaker_vtable = {
@@ -743,7 +747,7 @@ static const tsi_handshaker_vtable handshaker_vtable = {
     nullptr, /* create_frame_protector    -- deprecated */
     fake_handshaker_destroy,
     fake_handshaker_next,
-    fake_handshaker_cancel_next,
+    fake_handshaker_shutdown,
 };
 
 tsi_handshaker* tsi_create_fake_handshaker(int is_client) {
