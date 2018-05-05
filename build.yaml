@@ -5072,6 +5072,23 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - gpr
+- name: server_builder_with_socket_mutator_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/echo.proto
+  - test/cpp/server/server_builder_with_socket_mutator_test.cc
+  deps:
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - gpr_test_util
+  - grpc++_unsecure
+  - grpc_unsecure
+  - gpr
+  platforms:
+  - posix
 - name: server_context_test_spouse_test
   gtest: true
   build: test

@@ -346,7 +346,8 @@ static grpc_error* clone_port(grpc_tcp_listener* listener, unsigned count) {
     err = grpc_create_dualstack_socket(&listener->addr, SOCK_STREAM, 0, &dsmode,
                                        &fd);
     if (err != GRPC_ERROR_NONE) return err;
-    err = grpc_tcp_server_prepare_socket(fd, &listener->addr, true, &port);
+    err = grpc_tcp_server_prepare_socket(listener->server, fd, &listener->addr,
+                                         true, &port);
     if (err != GRPC_ERROR_NONE) return err;
     listener->server->nports++;
     grpc_sockaddr_to_string(&addr_str, &listener->addr, 1);
