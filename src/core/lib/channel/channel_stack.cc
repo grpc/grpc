@@ -220,10 +220,9 @@ void grpc_call_stack_destroy(grpc_call_stack* stack,
 
   /* destroy per-filter data */
   for (i = 0; i < count; i++) {
-    elems[i].filter->destroy_call_elem(
-        &elems[i], final_info,
-        i == count - 1 ? then_schedule_closure : nullptr);
+    elems[i].filter->destroy_call_elem(&elems[i], final_info, nullptr);
   }
+  GRPC_CLOSURE_SCHED(then_schedule_closure, GRPC_ERROR_NONE);
 }
 
 void grpc_call_next_op(grpc_call_element* elem,
