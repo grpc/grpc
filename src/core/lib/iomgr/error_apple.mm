@@ -46,4 +46,4 @@ grpc_error* grpc_error_create_from_cferror(const char* file, int line, void* arg
   gpr_free(error_msg);
   return return_error;
 }
-#endif // GPR_APPLE
+#endif  // GPR_APPLE

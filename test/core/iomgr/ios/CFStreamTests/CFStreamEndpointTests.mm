@@ -331,7 +331,7 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
 @end
 
 @implementation CFStreamEndpointTests
--(void)setUp {
+- (void)setUp {
   [super setUp];
 }
 
