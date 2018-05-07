@@ -24,11 +24,12 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include "src/core/lib/slice/slice_internal.h"
 
 grpc_slice grpc_chttp2_window_update_create(
     uint32_t id, uint32_t window_update, grpc_transport_one_way_stats* stats) {
   static const size_t frame_size = 13;
-  grpc_slice slice = GRPC_SLICE_MALLOC(frame_size);
+  grpc_slice slice = grpc_slice_malloc_internal(frame_size);
   stats->header_bytes += frame_size;
   uint8_t* p = GRPC_SLICE_START_PTR(slice);
 

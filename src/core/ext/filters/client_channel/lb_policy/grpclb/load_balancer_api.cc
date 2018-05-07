@@ -19,6 +19,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "third_party/nanopb/pb_decode.h"
 #include "third_party/nanopb/pb_encode.h"
 
@@ -139,7 +140,7 @@ grpc_slice grpc_grpclb_request_encode(const grpc_grpclb_request* request) {
   pb_encode(&sizestream, grpc_lb_v1_LoadBalanceRequest_fields, request);
   encoded_length = sizestream.bytes_written;
 
-  slice = GRPC_SLICE_MALLOC(encoded_length);
+  slice = grpc_slice_malloc_internal(encoded_length);
   outputstream =
       pb_ostream_from_buffer(GRPC_SLICE_START_PTR(slice), encoded_length);
   GPR_ASSERT(pb_encode(&outputstream, grpc_lb_v1_LoadBalanceRequest_fields,

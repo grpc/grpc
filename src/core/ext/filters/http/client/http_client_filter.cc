@@ -256,7 +256,7 @@ static grpc_error* update_path_for_get(grpc_call_element* elem,
   estimated_len += grpc_base64_estimate_encoded_size(
       batch->payload->send_message.send_message->length(), true /* url_safe */,
       false /* multi_line */);
-  grpc_slice path_with_query_slice = GRPC_SLICE_MALLOC(estimated_len);
+  grpc_slice path_with_query_slice = grpc_slice_malloc_internal(estimated_len);
   /* memcopy individual pieces into this slice */
   char* write_ptr =
       reinterpret_cast<char*> GRPC_SLICE_START_PTR(path_with_query_slice);

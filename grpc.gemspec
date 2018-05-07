@@ -387,6 +387,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/json/json_writer.h )
   s.files += %w( src/core/lib/slice/b64.h )
   s.files += %w( src/core/lib/slice/percent_encoding.h )
+  s.files += %w( src/core/lib/slice/slice_buffer_internal.h )
   s.files += %w( src/core/lib/slice/slice_hash_table.h )
   s.files += %w( src/core/lib/slice/slice_internal.h )
   s.files += %w( src/core/lib/slice/slice_string_helpers.h )

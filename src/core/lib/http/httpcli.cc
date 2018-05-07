@@ -35,6 +35,7 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/tcp_client.h"
+#include "src/core/lib/slice/slice_buffer_internal.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 typedef struct {
