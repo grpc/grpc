@@ -32,6 +32,8 @@ if [ -d "/var/local/jenkins/grpc" ]; then
   git fetch --tags --progress https://github.com/grpc/grpc.git +refs/pull/*:refs/remotes/origin/pr/*
   git checkout $CURRENT_COMMIT
   git submodule update --init --recursive --reference /var/local/jenkins/grpc
+  cd ../../../..
+  packages/grpc-native-core/tools/buildgen/generate_projects.sh
 fi
 
 # copy service account keys if available
