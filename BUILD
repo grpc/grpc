@@ -1183,6 +1183,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h",
@@ -1211,6 +1212,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h",
@@ -1386,6 +1388,7 @@ grpc_cc_library(
         "src/core/lib/surface/init_secure.cc",
     ],
     hdrs = [
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
         "src/core/lib/security/context/security_context.h",
         "src/core/lib/security/credentials/alts/alts_credentials.h",
         "src/core/lib/security/credentials/composite/composite_credentials.h",
