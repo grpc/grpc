@@ -88,5 +88,8 @@ RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
 
 RUN mkdir /var/local/jenkins
 
+# Install Mako to generate files in grpc/grpc-node
+RUN pip install Mako
+
 # Define the default command.
 CMD ["bash"]
