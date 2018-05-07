@@ -314,7 +314,7 @@ tsi_result alts_handshaker_client_next(alts_handshaker_client* client,
 void alts_handshaker_client_shutdown(alts_handshaker_client* client) {
   if (client != nullptr && client->vtable != nullptr &&
       client->vtable->shutdown != nullptr) {
-    return client->vtable->shutdown(client);
+    client->vtable->shutdown(client);
   }
   gpr_log(GPR_ERROR,
           "client or client->vtable has not been initialized properly");
