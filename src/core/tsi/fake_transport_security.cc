@@ -676,10 +676,6 @@ static tsi_result fake_handshaker_next(
       handshaker_result == nullptr) {
     return TSI_INVALID_ARGUMENT;
   }
-  if (self->handshake_shutdown) {
-    gpr_log(GPR_ERROR, "TSI handshake shutdown");
-    return TSI_HANDSHAKE_SHUTDOWN;
-  }
   tsi_fake_handshaker* handshaker =
       reinterpret_cast<tsi_fake_handshaker*>(self);
   tsi_result result = TSI_OK;
