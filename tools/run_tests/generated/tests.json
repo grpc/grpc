@@ -58026,7 +58026,8 @@
     "defaults": "boringssl", 
     "exclude_configs": [
       "tsan", 
-      "asan"
+      "asan", 
+      "gcov"
     ], 
     "excluded_poll_engines": [], 
     "flaky": false, 
