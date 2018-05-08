@@ -289,7 +289,6 @@ static void handshaker_shutdown(tsi_handshaker* self) {
   alts_tsi_handshaker* handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(self);
   alts_handshaker_client_shutdown(handshaker->client);
-  self->handshake_shutdown = true;
 }
 
 static void handshaker_destroy(tsi_handshaker* self) {

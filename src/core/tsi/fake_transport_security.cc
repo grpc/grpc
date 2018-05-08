@@ -730,9 +730,8 @@ static tsi_result fake_handshaker_next(
   return result;
 }
 
-static void fake_handshaker_shutdown(tsi_handshaker* self) {
-  self->handshake_shutdown = true;
-}
+// no-op
+static void fake_handshaker_shutdown(tsi_handshaker* self) {}
 
 static const tsi_handshaker_vtable handshaker_vtable = {
     nullptr, /* get_bytes_to_send_to_peer -- deprecated */

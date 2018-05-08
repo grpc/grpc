@@ -216,6 +216,7 @@ void tsi_handshaker_shutdown(tsi_handshaker* self) {
       self->vtable->shutdown == nullptr) {
     return;
   }
+  self->handshake_shutdown = true;
   return self->vtable->shutdown(self);
 }
 

@@ -316,8 +316,6 @@ void alts_handshaker_client_shutdown(alts_handshaker_client* client) {
       client->vtable->shutdown != nullptr) {
     client->vtable->shutdown(client);
   }
-  gpr_log(GPR_ERROR,
-          "client or client->vtable has not been initialized properly");
 }
 
 void alts_handshaker_client_destroy(alts_handshaker_client* client) {
