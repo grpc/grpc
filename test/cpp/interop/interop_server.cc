@@ -331,7 +331,7 @@ void grpc::testing::interop::RunServer(
 void grpc::testing::interop::RunServer(
     std::shared_ptr<ServerCredentials> creds, const int port,
     ServerStartedCondition* server_started_condition) {
-  RunServer(creds, FLAGS_port, server_started_condition, nullptr);
+  RunServer(creds, port, server_started_condition, nullptr);
 }
 
 void grpc::testing::interop::RunServer(
