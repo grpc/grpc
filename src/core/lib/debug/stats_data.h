@@ -140,6 +140,7 @@ typedef enum {
   GRPC_STATS_HISTOGRAM_HTTP2_SEND_MESSAGE_PER_WRITE,
   GRPC_STATS_HISTOGRAM_HTTP2_SEND_TRAILING_METADATA_PER_WRITE,
   GRPC_STATS_HISTOGRAM_HTTP2_SEND_FLOWCTL_PER_WRITE,
+  GRPC_STATS_HISTOGRAM_CALL_COMBINER_CONTENTION_DELAY_MS,
   GRPC_STATS_HISTOGRAM_SERVER_CQS_CHECKED,
   GRPC_STATS_HISTOGRAM_COUNT
 } grpc_stats_histograms;
@@ -170,9 +171,11 @@ typedef enum {
   GRPC_STATS_HISTOGRAM_HTTP2_SEND_TRAILING_METADATA_PER_WRITE_BUCKETS = 64,
   GRPC_STATS_HISTOGRAM_HTTP2_SEND_FLOWCTL_PER_WRITE_FIRST_SLOT = 768,
   GRPC_STATS_HISTOGRAM_HTTP2_SEND_FLOWCTL_PER_WRITE_BUCKETS = 64,
-  GRPC_STATS_HISTOGRAM_SERVER_CQS_CHECKED_FIRST_SLOT = 832,
+  GRPC_STATS_HISTOGRAM_CALL_COMBINER_CONTENTION_DELAY_MS_FIRST_SLOT = 832,
+  GRPC_STATS_HISTOGRAM_CALL_COMBINER_CONTENTION_DELAY_MS_BUCKETS = 64,
+  GRPC_STATS_HISTOGRAM_SERVER_CQS_CHECKED_FIRST_SLOT = 896,
   GRPC_STATS_HISTOGRAM_SERVER_CQS_CHECKED_BUCKETS = 8,
-  GRPC_STATS_HISTOGRAM_BUCKETS = 840
+  GRPC_STATS_HISTOGRAM_BUCKETS = 904
 } grpc_stats_histogram_constants;
 #define GRPC_STATS_INC_CLIENT_CALLS_CREATED() \
   GRPC_STATS_INC_COUNTER(GRPC_STATS_COUNTER_CLIENT_CALLS_CREATED)
@@ -424,12 +427,15 @@ void grpc_stats_inc_http2_send_trailing_metadata_per_write(int x);
 #define GRPC_STATS_INC_HTTP2_SEND_FLOWCTL_PER_WRITE(value) \
   grpc_stats_inc_http2_send_flowctl_per_write((int)(value))
 void grpc_stats_inc_http2_send_flowctl_per_write(int x);
+#define GRPC_STATS_INC_CALL_COMBINER_CONTENTION_DELAY_MS(value) \
+  grpc_stats_inc_call_combiner_contention_delay_ms((int)(value))
+void grpc_stats_inc_call_combiner_contention_delay_ms(int x);
 #define GRPC_STATS_INC_SERVER_CQS_CHECKED(value) \
   grpc_stats_inc_server_cqs_checked((int)(value))
 void grpc_stats_inc_server_cqs_checked(int x);
-extern const int grpc_stats_histo_buckets[13];
-extern const int grpc_stats_histo_start[13];
-extern const int* const grpc_stats_histo_bucket_boundaries[13];
-extern void (*const grpc_stats_inc_histogram[13])(int x);
+extern const int grpc_stats_histo_buckets[14];
+extern const int grpc_stats_histo_start[14];
+extern const int* const grpc_stats_histo_bucket_boundaries[14];
+extern void (*const grpc_stats_inc_histogram[14])(int x);
 
 #endif /* GRPC_CORE_LIB_DEBUG_STATS_DATA_H */

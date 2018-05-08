@@ -892,6 +892,31 @@
       }, 
       {
         "mode": "NULLABLE", 
+        "name": "core_call_combiner_contention_delay_ms", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_combiner_contention_delay_ms_bkts", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_combiner_contention_delay_ms_50p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_combiner_contention_delay_ms_95p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_combiner_contention_delay_ms_99p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
         "name": "core_server_cqs_checked", 
         "type": "STRING"
       }, 
@@ -1720,6 +1745,31 @@
       {
         "mode": "NULLABLE", 
         "name": "core_http2_send_flowctl_per_write_99p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_combiner_contention_delay_ms", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_combiner_contention_delay_ms_bkts", 
+        "type": "STRING"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_combiner_contention_delay_ms_50p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_combiner_contention_delay_ms_95p", 
+        "type": "FLOAT"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_call_combiner_contention_delay_ms_99p", 
         "type": "FLOAT"
       }, 
       {

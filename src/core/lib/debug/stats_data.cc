@@ -260,6 +260,7 @@ const char* grpc_stats_histogram_name[GRPC_STATS_HISTOGRAM_COUNT] = {
     "http2_send_message_per_write",
     "http2_send_trailing_metadata_per_write",
     "http2_send_flowctl_per_write",
+    "call_combiner_contention_delay_ms",
     "server_cqs_checked",
 };
 const char* grpc_stats_histogram_doc[GRPC_STATS_HISTOGRAM_COUNT] = {
@@ -275,6 +276,7 @@ const char* grpc_stats_histogram_doc[GRPC_STATS_HISTOGRAM_COUNT] = {
     "Number of streams whose payload was written per TCP write",
     "Number of streams terminated per TCP write",
     "Number of flow control updates written per TCP write",
+    "Amount of delay in ms between starting the call combiner and executing",
     "How many completion queues were checked looking for a CQ that had "
     "requested the incoming call",
 };
@@ -343,8 +345,21 @@ const uint8_t grpc_stats_table_7[102] = {
     23, 24, 24, 24, 25, 26, 27, 27, 28, 28, 29, 29, 30, 30, 31, 31, 32,
     32, 33, 33, 34, 35, 35, 36, 37, 37, 38, 38, 39, 39, 40, 40, 41, 41,
     42, 42, 43, 44, 44, 45, 46, 46, 47, 48, 48, 49, 49, 50, 50, 51, 51};
-const int grpc_stats_table_8[9] = {0, 1, 2, 4, 7, 13, 23, 39, 64};
-const uint8_t grpc_stats_table_9[9] = {0, 0, 1, 2, 2, 3, 4, 4, 5};
+const int grpc_stats_table_8[65] = {
+    0,    1,    2,    3,    4,    5,    6,    7,    8,    10,   12,
+    14,   16,   19,   22,   25,   29,   33,   38,   43,   49,   56,
+    64,   73,   83,   94,   106,  120,  136,  154,  174,  197,  222,
+    251,  283,  319,  360,  406,  458,  516,  581,  655,  738,  831,
+    936,  1054, 1187, 1337, 1505, 1695, 1908, 2148, 2418, 2722, 3064,
+    3449, 3883, 4371, 4920, 5538, 6233, 7015, 7895, 8886, 10000};
+const uint8_t grpc_stats_table_9[80] = {
+    0,  0,  1,  1,  2,  2,  3,  3,  4,  5,  5,  6,  7,  7,  8,  8,
+    9,  10, 11, 11, 12, 12, 13, 13, 14, 15, 16, 17, 17, 18, 18, 19,
+    20, 21, 22, 22, 23, 24, 24, 25, 26, 27, 27, 28, 29, 29, 30, 30,
+    31, 32, 33, 34, 35, 35, 36, 36, 37, 38, 39, 40, 40, 41, 42, 42,
+    43, 44, 45, 46, 46, 47, 47, 48, 49, 50, 51, 51, 52, 53, 53, 54};
+const int grpc_stats_table_10[9] = {0, 1, 2, 4, 7, 13, 23, 39, 64};
+const uint8_t grpc_stats_table_11[9] = {0, 0, 1, 2, 2, 3, 4, 4, 5};
 void grpc_stats_inc_call_initial_size(int value) {
   value = GPR_CLAMP(value, 0, 262144);
   if (value < 6) {
@@ -633,6 +648,31 @@ void grpc_stats_inc_http2_send_flowctl_per_write(int value) {
       GRPC_STATS_HISTOGRAM_HTTP2_SEND_FLOWCTL_PER_WRITE,
       grpc_stats_histo_find_bucket_slow(value, grpc_stats_table_6, 64));
 }
+void grpc_stats_inc_call_combiner_contention_delay_ms(int value) {
+  value = GPR_CLAMP(value, 0, 10000);
+  if (value < 9) {
+    GRPC_STATS_INC_HISTOGRAM(
+        GRPC_STATS_HISTOGRAM_CALL_COMBINER_CONTENTION_DELAY_MS, value);
+    return;
+  }
+  union {
+    double dbl;
+    uint64_t uint;
+  } _val, _bkt;
+  _val.dbl = value;
+  if (_val.uint < 4651655465120301056ull) {
+    int bucket =
+        grpc_stats_table_9[((_val.uint - 4621256167635550208ull) >> 49)] + 9;
+    _bkt.dbl = grpc_stats_table_8[bucket];
+    bucket -= (_val.uint < _bkt.uint);
+    GRPC_STATS_INC_HISTOGRAM(
+        GRPC_STATS_HISTOGRAM_CALL_COMBINER_CONTENTION_DELAY_MS, bucket);
+    return;
+  }
+  GRPC_STATS_INC_HISTOGRAM(
+      GRPC_STATS_HISTOGRAM_CALL_COMBINER_CONTENTION_DELAY_MS,
+      grpc_stats_histo_find_bucket_slow(value, grpc_stats_table_8, 64));
+}
 void grpc_stats_inc_server_cqs_checked(int value) {
   value = GPR_CLAMP(value, 0, 64);
   if (value < 3) {
@@ -646,27 +686,27 @@ void grpc_stats_inc_server_cqs_checked(int value) {
   _val.dbl = value;
   if (_val.uint < 4625196817309499392ull) {
     int bucket =
-        grpc_stats_table_9[((_val.uint - 4613937818241073152ull) >> 51)] + 3;
-    _bkt.dbl = grpc_stats_table_8[bucket];
+        grpc_stats_table_11[((_val.uint - 4613937818241073152ull) >> 51)] + 3;
+    _bkt.dbl = grpc_stats_table_10[bucket];
     bucket -= (_val.uint < _bkt.uint);
     GRPC_STATS_INC_HISTOGRAM(GRPC_STATS_HISTOGRAM_SERVER_CQS_CHECKED, bucket);
     return;
   }
   GRPC_STATS_INC_HISTOGRAM(
       GRPC_STATS_HISTOGRAM_SERVER_CQS_CHECKED,
-      grpc_stats_histo_find_bucket_slow(value, grpc_stats_table_8, 8));
+      grpc_stats_histo_find_bucket_slow(value, grpc_stats_table_10, 8));
 }
-const int grpc_stats_histo_buckets[13] = {64, 128, 64, 64, 64, 64, 64,
-                                          64, 64,  64, 64, 64, 8};
-const int grpc_stats_histo_start[13] = {0,   64,  192, 256, 320, 384, 448,
-                                        512, 576, 640, 704, 768, 832};
-const int* const grpc_stats_histo_bucket_boundaries[13] = {
+const int grpc_stats_histo_buckets[14] = {64, 128, 64, 64, 64, 64, 64,
+                                          64, 64,  64, 64, 64, 64, 8};
+const int grpc_stats_histo_start[14] = {0,   64,  192, 256, 320, 384, 448,
+                                        512, 576, 640, 704, 768, 832, 896};
+const int* const grpc_stats_histo_bucket_boundaries[14] = {
     grpc_stats_table_0, grpc_stats_table_2, grpc_stats_table_4,
     grpc_stats_table_6, grpc_stats_table_4, grpc_stats_table_4,
     grpc_stats_table_6, grpc_stats_table_4, grpc_stats_table_6,
     grpc_stats_table_6, grpc_stats_table_6, grpc_stats_table_6,
-    grpc_stats_table_8};
-void (*const grpc_stats_inc_histogram[13])(int x) = {
+    grpc_stats_table_8, grpc_stats_table_10};
+void (*const grpc_stats_inc_histogram[14])(int x) = {
     grpc_stats_inc_call_initial_size,
     grpc_stats_inc_poll_events_returned,
     grpc_stats_inc_tcp_write_size,
@@ -679,4 +719,5 @@ void (*const grpc_stats_inc_histogram[13])(int x) = {
     grpc_stats_inc_http2_send_message_per_write,
     grpc_stats_inc_http2_send_trailing_metadata_per_write,
     grpc_stats_inc_http2_send_flowctl_per_write,
+    grpc_stats_inc_call_combiner_contention_delay_ms,
     grpc_stats_inc_server_cqs_checked};

@@ -26,6 +26,9 @@
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/profiling/timers.h"
 
+// Uncomment to enable collection of call combiner delay histogram.
+//#define RECORD_CALL_COMBINER_DELAY_STATS
+
 grpc_core::TraceFlag grpc_call_combiner_trace(false, "call_combiner");
 
 static grpc_error* decode_cancel_state_error(gpr_atm cancel_state) {
@@ -79,7 +82,6 @@ void grpc_call_combiner_start(grpc_call_combiner* call_combiner,
   GRPC_STATS_INC_CALL_COMBINER_LOCKS_SCHEDULED_ITEMS();
   if (prev_size == 0) {
     GRPC_STATS_INC_CALL_COMBINER_LOCKS_INITIATED();
-
     GPR_TIMER_MARK("call_combiner_initiate", 0);
     if (grpc_call_combiner_trace.enabled()) {
       gpr_log(GPR_INFO, "  EXECUTING IMMEDIATELY");
@@ -92,6 +94,10 @@ void grpc_call_combiner_start(grpc_call_combiner* call_combiner,
     }
     // Queue was not empty, so add closure to queue.
     closure->error_data.error = error;
+#ifdef RECORD_CALL_COMBINER_DELAY_STATS
+    closure->next_data.scratch =
+        grpc_timespec_to_millis_round_up(gpr_now(GPR_CLOCK_MONOTONIC));
+#endif
     gpr_mpscq_push(&call_combiner->queue,
                    reinterpret_cast<gpr_mpscq_node*>(closure));
   }
@@ -128,6 +134,12 @@ void grpc_call_combiner_stop(grpc_call_combiner* call_combiner DEBUG_ARGS,
         }
         continue;
       }
+#ifdef RECORD_CALL_COMBINER_DELAY_STATS
+      grpc_millis delay =
+          grpc_timespec_to_millis_round_up(gpr_now(GPR_CLOCK_MONOTONIC)) -
+          closure->next_data.scratch;
+      GRPC_STATS_INC_CALL_COMBINER_CONTENTION_DELAY_MS(delay);
+#endif
       if (grpc_call_combiner_trace.enabled()) {
         gpr_log(GPR_INFO, "  EXECUTING FROM QUEUE: closure=%p error=%s",
                 closure, grpc_error_string(closure->error_data.error));
