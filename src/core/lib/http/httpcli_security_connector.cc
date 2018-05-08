@@ -32,7 +32,6 @@
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/ssl_transport_security.h"
-#include "src/core/tsi/transport_security_adapter.h"
 
 typedef struct {
   grpc_channel_security_connector base;
@@ -65,8 +64,7 @@ static void httpcli_ssl_add_handshakers(grpc_channel_security_connector* sc,
     }
   }
   grpc_handshake_manager_add(
-      handshake_mgr, grpc_security_handshaker_create(
-                         tsi_create_adapter_handshaker(handshaker), &sc->base));
+      handshake_mgr, grpc_security_handshaker_create(handshaker, &sc->base));
 }
 
 static void httpcli_ssl_check_peer(grpc_security_connector* sc, tsi_peer peer,

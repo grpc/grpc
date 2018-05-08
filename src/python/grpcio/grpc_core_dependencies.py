@@ -296,7 +296,6 @@ CORE_SOURCE_FILES = [
     'third_party/nanopb/pb_decode.c',
     'third_party/nanopb/pb_encode.c',
     'src/core/tsi/transport_security.cc',
-    'src/core/tsi/transport_security_adapter.cc',
     'src/core/ext/transport/chttp2/client/insecure/channel_create.cc',
     'src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc',
     'src/core/ext/transport/chttp2/client/authority.cc',

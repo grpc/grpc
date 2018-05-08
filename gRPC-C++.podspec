@@ -308,7 +308,6 @@ Pod::Spec.new do |s|
                       'src/core/tsi/alts/handshaker/handshaker.pb.h',
                       'src/core/tsi/alts/handshaker/transport_security_common.pb.h',
                       'src/core/tsi/transport_security.h',
-                      'src/core/tsi/transport_security_adapter.h',
                       'src/core/tsi/transport_security_interface.h',
                       'src/core/ext/transport/chttp2/client/authority.h',
                       'src/core/ext/transport/chttp2/client/chttp2_connector.h',

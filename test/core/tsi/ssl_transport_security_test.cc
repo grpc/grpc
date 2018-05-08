@@ -24,7 +24,6 @@
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
-#include "src/core/tsi/transport_security_adapter.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "test/core/tsi/transport_security_test_lib.h"
 #include "test/core/util/test_config.h"
@@ -164,19 +163,13 @@ static void ssl_test_setup_handshakers(tsi_test_fixture* fixture) {
                  &server_options, &ssl_fixture->server_handshaker_factory) ==
              TSI_OK);
   /* Create server and client handshakers. */
-  tsi_handshaker* client_handshaker = nullptr;
   GPR_ASSERT(tsi_ssl_client_handshaker_factory_create_handshaker(
                  ssl_fixture->client_handshaker_factory,
                  ssl_fixture->server_name_indication,
-                 &client_handshaker) == TSI_OK);
-  ssl_fixture->base.client_handshaker =
-      tsi_create_adapter_handshaker(client_handshaker);
-  tsi_handshaker* server_handshaker = nullptr;
+                 &ssl_fixture->base.client_handshaker) == TSI_OK);
   GPR_ASSERT(tsi_ssl_server_handshaker_factory_create_handshaker(
-                 ssl_fixture->server_handshaker_factory, &server_handshaker) ==
-             TSI_OK);
-  ssl_fixture->base.server_handshaker =
-      tsi_create_adapter_handshaker(server_handshaker);
+                 ssl_fixture->server_handshaker_factory,
+                 &ssl_fixture->base.server_handshaker) == TSI_OK);
 }
 
 static void check_alpn(ssl_tsi_test_fixture* ssl_fixture,
