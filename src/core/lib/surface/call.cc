@@ -610,7 +610,7 @@ grpc_call_error grpc_call_cancel(grpc_call* call, void* reserved) {
 // This is called via the call combiner to start sending a batch down
 // the filter stack.
 static void execute_batch_in_call_combiner(void* arg, grpc_error* ignored) {
-  GPR_TIMER_SCOPE("execute_batch", 0);
+  GPR_TIMER_SCOPE("execute_batch_in_call_combiner", 0);
   grpc_transport_stream_op_batch* batch =
       static_cast<grpc_transport_stream_op_batch*>(arg);
   grpc_call* call = static_cast<grpc_call*>(batch->handler_private.extra_arg);
@@ -747,10 +747,10 @@ static void get_final_status(
     status[i] = unpack_received_status(gpr_atm_acq_load(&call->status[i]));
   }
   if (grpc_call_error_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "get_final_status %s", call->is_client ? "CLI" : "SVR");
+    gpr_log(GPR_INFO, "get_final_status %s", call->is_client ? "CLI" : "SVR");
     for (i = 0; i < STATUS_SOURCE_COUNT; i++) {
       if (status[i].is_set) {
-        gpr_log(GPR_DEBUG, "  %d: %s", i, grpc_error_string(status[i].error));
+        gpr_log(GPR_INFO, "  %d: %s", i, grpc_error_string(status[i].error));
       }
     }
   }
@@ -1539,7 +1539,7 @@ static void free_no_op_completion(void* p, grpc_cq_completion* completion) {
 static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
                                         size_t nops, void* notify_tag,
                                         int is_notify_tag_closure) {
-  GPR_TIMER_SCOPE("grpc_call_start_batch", 0);
+  GPR_TIMER_SCOPE("call_start_batch", 0);
 
   size_t i;
   const grpc_op* op;

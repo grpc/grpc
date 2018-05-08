@@ -813,7 +813,11 @@ class StreamStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
 
 
 class Channel(six.with_metaclass(abc.ABCMeta)):
-    """Affords RPC invocation via generic methods on client-side."""
+    """Affords RPC invocation via generic methods on client-side.
+
+    Channel objects implement the Context Manager type, although they need not
+    support being entered and exited multiple times.
+    """
 
     @abc.abstractmethod
     def subscribe(self, callback, try_to_connect=False):
@@ -923,6 +927,17 @@ class Channel(six.with_metaclass(abc.ABCMeta)):
 
         Returns:
           A StreamStreamMultiCallable value for the named stream-stream method.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def close(self):
+        """Closes this Channel and releases all resources held by it.
+
+        Closing the Channel will immediately terminate all RPCs active with the
+        Channel and it is not valid to invoke new RPCs with the Channel.
+
+        This method is idempotent.
         """
         raise NotImplementedError()
 

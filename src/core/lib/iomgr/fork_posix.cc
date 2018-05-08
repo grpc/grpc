@@ -74,7 +74,6 @@ void grpc_postfork_child() {
     grpc_timer_manager_set_threading(true);
     grpc_core::ExecCtx exec_ctx;
     grpc_executor_set_threading(true);
-    grpc_core::ExecCtx::Get()->Flush();
   }
 }
 

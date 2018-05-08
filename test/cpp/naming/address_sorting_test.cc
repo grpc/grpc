@@ -298,6 +298,29 @@ TEST(AddressSortingTest, TestUsesLabelFromDefaultTable) {
                                 });
 }
 
+/* Flip the input on the test above to reorder the sort function's
+ * comparator's inputs. */
+TEST(AddressSortingTest, TestUsesLabelFromDefaultTableInputFlipped) {
+  bool ipv4_supported = true;
+  bool ipv6_supported = true;
+  OverrideAddressSortingSourceAddrFactory(
+      ipv4_supported, ipv6_supported,
+      {
+          {"[2002::5001]:443", {"[2001::5002]:0", AF_INET6}},
+          {"[2001::5001]:443",
+           {"[2001::5002]:0", AF_INET6}},  // matching labels
+      });
+  grpc_lb_addresses* lb_addrs = BuildLbAddrInputs({
+      {"[2001::5001]:443", AF_INET6},
+      {"[2002::5001]:443", AF_INET6},
+  });
+  grpc_cares_wrapper_test_only_address_sorting_sort(lb_addrs);
+  VerifyLbAddrOutputs(lb_addrs, {
+                                    "[2001::5001]:443",
+                                    "[2002::5001]:443",
+                                });
+}
+
 /* Tests for rule 6 */
 
 TEST(AddressSortingTest,

@@ -234,7 +234,7 @@ static void finish_send_message(grpc_call_element* elem) {
                                              static_cast<float>(before_size);
       GPR_ASSERT(grpc_message_compression_algorithm_name(
           calld->message_compression_algorithm, &algo_name));
-      gpr_log(GPR_DEBUG,
+      gpr_log(GPR_INFO,
               "Compressed[%s] %" PRIuPTR " bytes vs. %" PRIuPTR
               " bytes (%.2f%% savings)",
               algo_name, before_size, after_size, 100 * savings_ratio);
@@ -246,7 +246,7 @@ static void finish_send_message(grpc_call_element* elem) {
       const char* algo_name;
       GPR_ASSERT(grpc_message_compression_algorithm_name(
           calld->message_compression_algorithm, &algo_name));
-      gpr_log(GPR_DEBUG,
+      gpr_log(GPR_INFO,
               "Algorithm '%s' enabled but decided not to compress. Input size: "
               "%" PRIuPTR,
               algo_name, calld->slices.length);

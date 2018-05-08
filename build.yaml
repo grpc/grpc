@@ -13,8 +13,8 @@ settings:
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
   core_version: 6.0.0-dev
-  g_stands_for: glorious
-  version: 1.12.0-dev
+  g_stands_for: gloriosa
+  version: 1.13.0-dev
 filegroups:
 - name: alts_proto
   headers:
@@ -628,6 +628,7 @@ filegroups:
 - name: grpc_lb_policy_grpclb
   headers:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
@@ -648,6 +649,7 @@ filegroups:
 - name: grpc_lb_policy_grpclb_secure
   headers:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
@@ -685,8 +687,6 @@ filegroups:
 - name: grpc_lb_subchannel_list
   headers:
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
-  src:
-  - src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc
   uses:
   - grpc_base
   - grpc_client_channel
@@ -746,6 +746,7 @@ filegroups:
   public_headers:
   - include/grpc/grpc_security.h
   headers:
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
   - src/core/lib/security/context/security_context.h
   - src/core/lib/security/credentials/alts/alts_credentials.h
   - src/core/lib/security/credentials/composite/composite_credentials.h
@@ -1890,6 +1891,15 @@ libs:
   - test/cpp/interop/interop_server_bootstrap.cc
   deps:
   - interop_server_lib
+- name: lb_load_data_store
+  build: private
+  language: c++
+  headers:
+  - src/cpp/server/load_reporter/load_data_store.h
+  src:
+  - src/cpp/server/load_reporter/load_data_store.cc
+  deps:
+  - grpc++
 - name: qps
   build: private
   language: c++
@@ -3812,6 +3822,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   platforms:
@@ -3833,6 +3844,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   platforms:
@@ -3854,6 +3866,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   platforms:
@@ -3875,6 +3888,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   platforms:
@@ -3895,6 +3909,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   platforms:
@@ -3915,6 +3930,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   platforms:
@@ -3935,6 +3951,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   platforms:
@@ -3955,6 +3972,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   platforms:
@@ -3978,6 +3996,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   excluded_poll_engines:
@@ -4004,6 +4023,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   excluded_poll_engines:
@@ -4057,6 +4077,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   excluded_poll_engines:
@@ -4081,6 +4102,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   platforms:
@@ -4102,6 +4124,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   platforms:
@@ -4753,6 +4776,20 @@ targets:
   - mac
   - linux
   - posix
+- name: lb_load_data_store_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/server/load_reporter/load_data_store_test.cc
+  deps:
+  - lb_load_data_store
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: memory_test
   gtest: true
   build: test

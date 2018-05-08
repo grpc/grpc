@@ -44,13 +44,13 @@ void LoadBalancingPolicy::TryReresolutionLocked(
     GRPC_CLOSURE_SCHED(request_reresolution_, error);
     request_reresolution_ = nullptr;
     if (grpc_lb_trace->enabled()) {
-      gpr_log(GPR_DEBUG,
+      gpr_log(GPR_INFO,
               "%s %p: scheduling re-resolution closure with error=%s.",
               grpc_lb_trace->name(), this, grpc_error_string(error));
     }
   } else {
     if (grpc_lb_trace->enabled()) {
-      gpr_log(GPR_DEBUG, "%s %p: no available re-resolution closure.",
+      gpr_log(GPR_INFO, "%s %p: no available re-resolution closure.",
               grpc_lb_trace->name(), this);
     }
   }

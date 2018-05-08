@@ -2669,6 +2669,7 @@
       "benchmark", 
       "gpr", 
       "gpr_test_util", 
+      "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
       "grpc_benchmark", 
@@ -2690,6 +2691,7 @@
       "benchmark", 
       "gpr", 
       "gpr_test_util", 
+      "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
       "grpc_benchmark", 
@@ -2711,6 +2713,7 @@
       "benchmark", 
       "gpr", 
       "gpr_test_util", 
+      "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
       "grpc_benchmark", 
@@ -2732,6 +2735,7 @@
       "benchmark", 
       "gpr", 
       "gpr_test_util", 
+      "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
       "grpc_benchmark", 
@@ -2753,6 +2757,7 @@
       "benchmark", 
       "gpr", 
       "gpr_test_util", 
+      "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
       "grpc_benchmark", 
@@ -2774,6 +2779,7 @@
       "benchmark", 
       "gpr", 
       "gpr_test_util", 
+      "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
       "grpc_benchmark", 
@@ -2795,6 +2801,7 @@
       "benchmark", 
       "gpr", 
       "gpr_test_util", 
+      "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
       "grpc_benchmark", 
@@ -2816,6 +2823,7 @@
       "benchmark", 
       "gpr", 
       "gpr_test_util", 
+      "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
       "grpc_benchmark", 
@@ -2837,6 +2845,7 @@
       "benchmark", 
       "gpr", 
       "gpr_test_util", 
+      "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
       "grpc_benchmark", 
@@ -2861,6 +2870,7 @@
       "benchmark", 
       "gpr", 
       "gpr_test_util", 
+      "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
       "grpc_benchmark", 
@@ -2907,6 +2917,7 @@
       "benchmark", 
       "gpr", 
       "gpr_test_util", 
+      "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
       "grpc_benchmark", 
@@ -2931,6 +2942,7 @@
       "benchmark", 
       "gpr", 
       "gpr_test_util", 
+      "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
       "grpc_benchmark", 
@@ -2952,6 +2964,7 @@
       "benchmark", 
       "gpr", 
       "gpr_test_util", 
+      "grpc++_test_config", 
       "grpc++_test_util_unsecure", 
       "grpc++_unsecure", 
       "grpc_benchmark", 
@@ -3886,6 +3899,26 @@
     "name": "json_run_localhost", 
     "src": [
       "test/cpp/qps/json_run_localhost.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util", 
+      "lb_load_data_store"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "lb_load_data_store_test", 
+    "src": [
+      "test/cpp/server/load_reporter/load_data_store_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -7456,6 +7489,23 @@
   }, 
   {
     "deps": [
+      "grpc++"
+    ], 
+    "headers": [
+      "src/cpp/server/load_reporter/load_data_store.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "lb_load_data_store", 
+    "src": [
+      "src/cpp/server/load_reporter/load_data_store.cc", 
+      "src/cpp/server/load_reporter/load_data_store.h"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
       "grpc", 
       "grpc++", 
       "grpc++_core_stats", 
@@ -9744,6 +9794,7 @@
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h", 
@@ -9756,6 +9807,7 @@
       "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc", 
@@ -9779,6 +9831,7 @@
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h", 
@@ -9791,6 +9844,7 @@
       "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc", 
@@ -9850,7 +9904,6 @@
     "language": "c", 
     "name": "grpc_lb_subchannel_list", 
     "src": [
-      "src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc", 
       "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
     ], 
     "third_party": false, 
@@ -9977,6 +10030,7 @@
     ], 
     "headers": [
       "include/grpc/grpc_security.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h", 
       "src/core/lib/security/context/security_context.h", 
       "src/core/lib/security/credentials/alts/alts_credentials.h", 
       "src/core/lib/security/credentials/composite/composite_credentials.h", 
@@ -10004,6 +10058,7 @@
     "name": "grpc_secure", 
     "src": [
       "include/grpc/grpc_security.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h", 
       "src/core/lib/http/httpcli_security_connector.cc", 
       "src/core/lib/security/context/security_context.cc", 
       "src/core/lib/security/context/security_context.h", 

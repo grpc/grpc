@@ -88,7 +88,6 @@ TEST(SslSessionCacheTest, InitialState) {
   // Verify session initial state.
   {
     tsi::SslSessionPtr tmp_sess = tracker.NewSession(1);
-    EXPECT_EQ(tmp_sess->references, 1);
     EXPECT_TRUE(tracker.IsAlive(1));
     EXPECT_EQ(tracker.AliveCount(), 1);
   }

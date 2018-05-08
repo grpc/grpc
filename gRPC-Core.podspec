@@ -22,7 +22,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.12.0-dev'
+  version = '1.13.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -270,6 +270,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/http/client/http_client_filter.h',
                       'src/core/ext/filters/http/message_compress/message_compress_filter.h',
                       'src/core/ext/filters/http/server/http_server_filter.h',
+                      'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h',
                       'src/core/lib/security/context/security_context.h',
                       'src/core/lib/security/credentials/alts/alts_credentials.h',
                       'src/core/lib/security/credentials/composite/composite_credentials.h',
@@ -784,7 +785,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c',
                       'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc',
                       'src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc',
-                      'src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc',
                       'src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc',
@@ -850,6 +850,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/http/client/http_client_filter.h',
                               'src/core/ext/filters/http/message_compress/message_compress_filter.h',
                               'src/core/ext/filters/http/server/http_server_filter.h',
+                              'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h',
                               'src/core/lib/security/context/security_context.h',
                               'src/core/lib/security/credentials/alts/alts_credentials.h',
                               'src/core/lib/security/credentials/composite/composite_credentials.h',

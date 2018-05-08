@@ -56,6 +56,21 @@ class TestingChannel(grpc_testing.Channel):
                       response_deserializer=None):
         return _multi_callable.StreamStream(method, self._state)
 
+    def _close(self):
+        # TODO(https://github.com/grpc/grpc/issues/12531): Decide what
+        # action to take here, if any?
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._close()
+        return False
+
+    def close(self):
+        self._close()
+
     def take_unary_unary(self, method_descriptor):
         return _channel_rpc.unary_unary(self._state, method_descriptor)
 
