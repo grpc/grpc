@@ -295,7 +295,6 @@ static void handshaker_destroy(tsi_handshaker* self) {
   if (self == nullptr) {
     return;
   }
-  handshaker_shutdown(self);
   alts_tsi_handshaker* handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(self);
   alts_handshaker_client_destroy(handshaker->client);

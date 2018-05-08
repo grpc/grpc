@@ -446,31 +446,6 @@ static void check_handshaker_next_invalid_input() {
   tsi_handshaker_destroy(handshaker);
 }
 
-static void check_handshaker_next_fails_after_shutdown() {
-  /* Initialization. */
-  tsi_handshaker* handshaker = create_test_handshaker(
-      true /* used_for_success_test */, true /* is_client*/);
-  notification_init(&caller_to_tsi_notification);
-  /* next(success) -- shutdown(success) -- next (fail) */
-
-  /* Notice that the callback - on_client_start_success_cb will not get invoked.
-   * The reason for passing it (instead of setting to nullptr) is to make sure
-   * tsi_handshaker_next() will succeed. */
-  GPR_ASSERT(tsi_handshaker_next(handshaker, nullptr, 0, nullptr, nullptr,
-                                 nullptr, on_client_start_success_cb,
-                                 nullptr) == TSI_ASYNC);
-  tsi_handshaker_shutdown(handshaker);
-  GPR_ASSERT(tsi_handshaker_next(
-                 handshaker,
-                 (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
-                 strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
-                 nullptr, on_client_next_success_cb,
-                 nullptr) == TSI_HANDSHAKE_SHUTDOWN);
-  /* Cleanup. */
-  notification_destroy(&caller_to_tsi_notification);
-  tsi_handshaker_destroy(handshaker);
-}
-
 static void check_handshaker_shutdown_invalid_input() {
   /* Initialization. */
   tsi_handshaker* handshaker = create_test_handshaker(
@@ -517,6 +492,33 @@ static void check_handshaker_next_success() {
   /* Cleanup. */
   tsi_handshaker_destroy(server_handshaker);
   tsi_handshaker_destroy(client_handshaker);
+}
+
+static void check_handshaker_next_with_shutdown() {
+  /* Initialization. */
+  tsi_handshaker* handshaker = create_test_handshaker(
+      true /* used_for_success_test */, true /* is_client*/);
+  /* next(success) -- shutdown(success) -- next (fail) */
+  GPR_ASSERT(tsi_handshaker_next(handshaker, nullptr, 0, nullptr, nullptr,
+                                 nullptr, on_client_start_success_cb,
+                                 nullptr) == TSI_ASYNC);
+  wait(&tsi_to_caller_notification);
+  tsi_handshaker_shutdown(handshaker);
+  GPR_ASSERT(tsi_handshaker_next(
+                 handshaker,
+                 (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
+                 strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
+                 nullptr, on_client_next_success_cb,
+                 nullptr) == TSI_HANDSHAKE_SHUTDOWN);
+  /* Cleanup. */
+  tsi_handshaker_destroy(handshaker);
+}
+
+static void check_handle_response_with_shutdown(void* unused) {
+  /* Client start. */
+  wait(&caller_to_tsi_notification);
+  alts_tsi_event_dispatch_to_handshaker(client_start_event, true /* is_ok */);
+  alts_tsi_event_destroy(client_start_event);
 }
 
 static void check_handshaker_next_failure() {
@@ -711,6 +713,22 @@ static void check_handle_response_after_shutdown() {
   grpc_byte_buffer_destroy(recv_buffer);
   /* Cleanup. */
   tsi_handshaker_destroy(handshaker);
+}
+
+void check_handshaker_next_fails_after_shutdown() {
+  /* Initialization. */
+  notification_init(&caller_to_tsi_notification);
+  notification_init(&tsi_to_caller_notification);
+  client_start_event = nullptr;
+  /* Tests. */
+  grpc_core::Thread thd("alts_tsi_handshaker_test",
+                        &check_handle_response_with_shutdown, nullptr);
+  thd.Start();
+  check_handshaker_next_with_shutdown();
+  thd.Join();
+  /* Cleanup. */
+  notification_destroy(&caller_to_tsi_notification);
+  notification_destroy(&tsi_to_caller_notification);
 }
 
 void check_handshaker_success() {
