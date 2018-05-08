@@ -22,12 +22,6 @@
 @protocol GRXWriteable;
 @class GRXWriter;
 
-@protocol GRPCProtoServiceInit
-
-- (instancetype)initWithHost:(NSString *)host;
-
-@end
-
 __attribute__((deprecated("Please use GRPCProtoService."))) @interface ProtoService
     : NSObject -
       (instancetype)initWithHost : (NSString *)host packageName
