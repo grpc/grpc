@@ -454,6 +454,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c h2_uds_nosec_test)
 endif()
 add_dependencies(buildtests_c inproc_nosec_test)
+add_dependencies(buildtests_c alts_credentials_fuzzer_one_entry)
 add_dependencies(buildtests_c api_fuzzer_one_entry)
 add_dependencies(buildtests_c client_fuzzer_one_entry)
 add_dependencies(buildtests_c hpack_parser_fuzzer_test_one_entry)
@@ -1672,6 +1673,7 @@ add_library(grpc_test_util
   test/core/end2end/fixtures/proxy.cc
   test/core/iomgr/endpoint_tests.cc
   test/core/util/debugger_macros.cc
+  test/core/util/fuzzer_util.cc
   test/core/util/grpc_profiler.cc
   test/core/util/histogram.cc
   test/core/util/memory_counters.cc
@@ -1975,6 +1977,7 @@ add_library(grpc_test_util_unsecure
   test/core/end2end/fixtures/proxy.cc
   test/core/iomgr/endpoint_tests.cc
   test/core/util/debugger_macros.cc
+  test/core/util/fuzzer_util.cc
   test/core/util/grpc_profiler.cc
   test/core/util/histogram.cc
   test/core/util/memory_counters.cc
@@ -15709,6 +15712,35 @@ target_link_libraries(address_sorting_test
 )
 
 endif()
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(alts_credentials_fuzzer_one_entry
+  test/core/security/alts_credentials_fuzzer.cc
+  test/core/util/one_corpus_entry_fuzzer.cc
+)
+
+
+target_include_directories(alts_credentials_fuzzer_one_entry
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+)
+
+target_link_libraries(alts_credentials_fuzzer_one_entry
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 

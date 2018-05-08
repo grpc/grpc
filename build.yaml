@@ -827,6 +827,7 @@ filegroups:
   - test/core/end2end/fixtures/proxy.h
   - test/core/iomgr/endpoint_tests.h
   - test/core/util/debugger_macros.h
+  - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
   - test/core/util/histogram.h
   - test/core/util/memory_counters.h
@@ -846,6 +847,7 @@ filegroups:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/iomgr/endpoint_tests.cc
   - test/core/util/debugger_macros.cc
+  - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
   - test/core/util/histogram.cc
   - test/core/util/memory_counters.cc
@@ -1991,6 +1993,19 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: alts_credentials_fuzzer
+  build: fuzzer
+  language: c
+  src:
+  - test/core/security/alts_credentials_fuzzer.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  corpus_dirs:
+  - test/core/security/corpus/alts_credentials_corpus
+  maxlen: 2048
 - name: api_fuzzer
   build: fuzzer
   language: c

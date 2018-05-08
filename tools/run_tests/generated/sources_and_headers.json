@@ -60,6 +60,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "alts_credentials_fuzzer", 
+    "src": [
+      "test/core/security/alts_credentials_fuzzer.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "api_fuzzer", 
     "src": [
       "test/core/end2end/fuzzers/api_fuzzer.cc"
@@ -6459,6 +6476,24 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "alts_credentials_fuzzer_one_entry", 
+    "src": [
+      "test/core/security/alts_credentials_fuzzer.cc", 
+      "test/core/util/one_corpus_entry_fuzzer.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "api_fuzzer_one_entry", 
     "src": [
       "test/core/end2end/fuzzers/api_fuzzer.cc", 
@@ -10165,6 +10200,7 @@
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.h", 
       "test/core/util/debugger_macros.h", 
+      "test/core/util/fuzzer_util.h", 
       "test/core/util/grpc_profiler.h", 
       "test/core/util/histogram.h", 
       "test/core/util/memory_counters.h", 
@@ -10194,6 +10230,8 @@
       "test/core/iomgr/endpoint_tests.h", 
       "test/core/util/debugger_macros.cc", 
       "test/core/util/debugger_macros.h", 
+      "test/core/util/fuzzer_util.cc", 
+      "test/core/util/fuzzer_util.h", 
       "test/core/util/grpc_profiler.cc", 
       "test/core/util/grpc_profiler.h", 
       "test/core/util/histogram.cc", 
