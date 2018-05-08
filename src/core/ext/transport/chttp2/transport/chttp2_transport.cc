@@ -368,7 +368,7 @@ static void init_transport(grpc_chttp2_transport* t,
         const int value =
             grpc_channel_arg_get_integer(&channel_args->args[i], options);
         if (value >= 0) {
-          if (GPR_UNLIKELY((t->next_stream_id & 1) != (value & 1))) {
+          if ((t->next_stream_id & 1) != (value & 1)) {
             gpr_log(GPR_ERROR, "%s: low bit must be %d on %s",
                     GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER,
                     t->next_stream_id & 1, is_client ? "client" : "server");
@@ -447,7 +447,7 @@ static void init_transport(grpc_chttp2_transport* t,
             grpc_channel_arg_get_integer(&channel_args->args[i], {0, 0, 1}));
       } else if (0 == strcmp(channel_args->args[i].key,
                              GRPC_ARG_OPTIMIZATION_TARGET)) {
-        if (GPR_UNLIKELY(channel_args->args[i].type != GRPC_ARG_STRING)) {
+        if (channel_args->args[i].type != GRPC_ARG_STRING) {
           gpr_log(GPR_ERROR, "%s should be a string",
                   GRPC_ARG_OPTIMIZATION_TARGET);
         } else if (0 == strcmp(channel_args->args[i].value.string, "blend")) {

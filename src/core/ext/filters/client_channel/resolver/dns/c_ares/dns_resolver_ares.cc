@@ -225,15 +225,14 @@ bool ValueInJsonArray(grpc_json* array, const char* value) {
 
 char* ChooseServiceConfig(char* service_config_choice_json) {
   grpc_json* choices_json = grpc_json_parse_string(service_config_choice_json);
-  if (GPR_UNLIKELY(choices_json == nullptr ||
-                   choices_json->type != GRPC_JSON_ARRAY)) {
+  if (choices_json == nullptr || choices_json->type != GRPC_JSON_ARRAY) {
     gpr_log(GPR_ERROR, "cannot parse service config JSON string");
     return nullptr;
   }
   char* service_config = nullptr;
   for (grpc_json* choice = choices_json->child; choice != nullptr;
        choice = choice->next) {
-    if (GPR_UNLIKELY(choice->type != GRPC_JSON_OBJECT)) {
+    if (choice->type != GRPC_JSON_OBJECT) {
       gpr_log(GPR_ERROR, "cannot parse service config JSON string");
       break;
     }

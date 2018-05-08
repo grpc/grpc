@@ -54,7 +54,7 @@ static grpc_subchannel* client_channel_factory_create_subchannel(
 static grpc_channel* client_channel_factory_create_channel(
     grpc_client_channel_factory* cc_factory, const char* target,
     grpc_client_channel_type type, const grpc_channel_args* args) {
-  if (GPR_UNLIKELY(target == nullptr)) {
+  if (target == nullptr) {
     gpr_log(GPR_ERROR, "cannot create channel with NULL target name");
     return nullptr;
   }

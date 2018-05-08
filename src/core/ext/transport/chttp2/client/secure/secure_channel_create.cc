@@ -50,15 +50,14 @@ static grpc_subchannel_args* get_secure_naming_subchannel_args(
     const grpc_subchannel_args* args) {
   grpc_channel_credentials* channel_credentials =
       grpc_channel_credentials_find_in_args(args->args);
-  if (GPR_UNLIKELY(channel_credentials == nullptr)) {
+  if (channel_credentials == nullptr) {
     gpr_log(GPR_ERROR,
             "Can't create subchannel: channel credentials missing for secure "
             "channel.");
     return nullptr;
   }
   // Make sure security connector does not already exist in args.
-  if (GPR_UNLIKELY(grpc_security_connector_find_in_args(args->args) !=
-                   nullptr)) {
+  if (grpc_security_connector_find_in_args(args->args) != nullptr) {
     gpr_log(GPR_ERROR,
             "Can't create subchannel: security connector already present in "
             "channel args.");
@@ -118,7 +117,7 @@ static grpc_subchannel_args* get_secure_naming_subchannel_args(
       grpc_channel_credentials_create_security_connector(
           channel_credentials, authority.get(), args_with_authority,
           &subchannel_security_connector, &new_args_from_connector);
-  if (GPR_UNLIKELY(security_status != GRPC_SECURITY_OK)) {
+  if (security_status != GRPC_SECURITY_OK) {
     gpr_log(GPR_ERROR,
             "Failed to create secure subchannel for secure name '%s'",
             authority.get());
@@ -150,7 +149,7 @@ static grpc_subchannel* client_channel_factory_create_subchannel(
     grpc_client_channel_factory* cc_factory, const grpc_subchannel_args* args) {
   grpc_subchannel_args* subchannel_args =
       get_secure_naming_subchannel_args(args);
-  if (GPR_UNLIKELY(subchannel_args == nullptr)) {
+  if (subchannel_args == nullptr) {
     gpr_log(
         GPR_ERROR,
         "Failed to create subchannel arguments during subchannel creation.");
@@ -168,7 +167,7 @@ static grpc_subchannel* client_channel_factory_create_subchannel(
 static grpc_channel* client_channel_factory_create_channel(
     grpc_client_channel_factory* cc_factory, const char* target,
     grpc_client_channel_type type, const grpc_channel_args* args) {
-  if (GPR_UNLIKELY(target == nullptr)) {
+  if (target == nullptr) {
     gpr_log(GPR_ERROR, "cannot create channel with NULL target name");
     return nullptr;
   }

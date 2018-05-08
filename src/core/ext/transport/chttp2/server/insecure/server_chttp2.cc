@@ -35,7 +35,7 @@ int grpc_server_add_insecure_http2_port(grpc_server* server, const char* addr) {
   grpc_error* err = grpc_chttp2_server_add_port(
       server, addr,
       grpc_channel_args_copy(grpc_server_get_channel_args(server)), &port_num);
-  if (GPR_UNLIKELY(err != GRPC_ERROR_NONE)) {
+  if (err != GRPC_ERROR_NONE) {
     const char* msg = grpc_error_string(err);
     gpr_log(GPR_ERROR, "%s", msg);
 

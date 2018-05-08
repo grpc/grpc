@@ -79,7 +79,7 @@ done:
     GRPC_SECURITY_CONNECTOR_UNREF(&sc->base, "server");
   }
 
-  if (GPR_UNLIKELY(err != GRPC_ERROR_NONE)) {
+  if (err != GRPC_ERROR_NONE) {
     const char* msg = grpc_error_string(err);
     gpr_log(GPR_ERROR, "%s", msg);
 

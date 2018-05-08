@@ -61,7 +61,7 @@ static void init_globals() {
   char* env = gpr_getenv("GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS");
   if (env != nullptr) {
     int poll_interval_ms = gpr_parse_nonnegative_int(env);
-    if (GPR_UNLIKELY(poll_interval_ms == -1)) {
+    if (poll_interval_ms == -1) {
       gpr_log(GPR_ERROR,
               "Invalid GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS: %s, "
               "default value %d will be used.",

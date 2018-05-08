@@ -577,7 +577,7 @@ static bool publish_transport_locked(grpc_subchannel* c) {
   grpc_error* error = grpc_channel_stack_builder_finish(
       builder, 0, 1, connection_destroy, nullptr,
       reinterpret_cast<void**>(&stk));
-  if (GPR_UNLIKELY(error != GRPC_ERROR_NONE)) {
+  if (error != GRPC_ERROR_NONE) {
     grpc_transport_destroy(c->connecting_result.transport);
     gpr_log(GPR_ERROR, "error initializing subchannel stack: %s",
             grpc_error_string(error));
