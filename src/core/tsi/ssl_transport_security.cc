@@ -1173,9 +1173,6 @@ static tsi_result ssl_handshaker_create_frame_protector(
   return TSI_OK;
 }
 
-// no-op
-static void ssl_handshaker_shutdown(tsi_handshaker* self) {}
-
 static void ssl_handshaker_destroy(tsi_handshaker* self) {
   tsi_ssl_handshaker* impl = reinterpret_cast<tsi_ssl_handshaker*>(self);
   SSL_free(impl->ssl);
@@ -1192,7 +1189,7 @@ static const tsi_handshaker_vtable handshaker_vtable = {
     ssl_handshaker_create_frame_protector,
     ssl_handshaker_destroy,
     nullptr,
-    ssl_handshaker_shutdown,
+    nullptr,
 };
 
 /* --- tsi_ssl_handshaker_factory common methods. --- */
