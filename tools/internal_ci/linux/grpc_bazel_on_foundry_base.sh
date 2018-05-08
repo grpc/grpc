@@ -37,7 +37,7 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 # TODO(adelez): implement size for test targets and change test_timeout back
 "${KOKORO_GFILE_DIR}/bazel_wrapper.py" \
   --host_jvm_args=-Dbazel.DigestFunction=SHA256 \
-  test --jobs="800" \
+  test --jobs="200" \
   --test_output=errors  \
   --verbose_failures=true  \
   --keep_going  \
