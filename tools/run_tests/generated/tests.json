@@ -63845,7 +63845,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/001b0f1c1fd877209ec330f91ffe9450803f3af1"
+      "test/core/security/corpus/alts_credentials_corpus/0149b46b88d583e05be0fb1423d10f2a14d36c48"
     ], 
     "ci_platforms": [
       "linux"
@@ -63868,7 +63868,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/01a3e90d943f0e4b0b8ec6e21f22a7805a3d55ae"
+      "test/core/security/corpus/alts_credentials_corpus/047fc351e73f760d329d5a8845944720be9ce773"
     ], 
     "ci_platforms": [
       "linux"
@@ -63891,7 +63891,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/02aa629c8b16cd17a44f3a0efec2feed43937642"
+      "test/core/security/corpus/alts_credentials_corpus/04ef96c66d8222d1a2c07e6b2a6548e6a527042b"
     ], 
     "ci_platforms": [
       "linux"
@@ -63914,7 +63914,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/0347878242034088ad7c7c28eb11db03ca822e58"
+      "test/core/security/corpus/alts_credentials_corpus/05a7e16c1d7f92111f43e9c777421879920e79a4"
     ], 
     "ci_platforms": [
       "linux"
@@ -63937,7 +63937,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/0441d29f2bdd1c416f08f727fc6676e52ebc3355"
+      "test/core/security/corpus/alts_credentials_corpus/063eb46f202fdfe7935c30ca38d7eb81c82db419"
     ], 
     "ci_platforms": [
       "linux"
@@ -63960,7 +63960,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/061ea4a089fd8f90f0bc0a6ee9a1eabe92a458cb"
+      "test/core/security/corpus/alts_credentials_corpus/064773597c295fa871c184fc12d17b6de8aab31b"
     ], 
     "ci_platforms": [
       "linux"
@@ -63983,7 +63983,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/066736c74eec62138d0344ff0e16a38793c21e79"
+      "test/core/security/corpus/alts_credentials_corpus/087449740758b114d16790067707934479946bd6"
     ], 
     "ci_platforms": [
       "linux"
@@ -64006,7 +64006,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/078558172f7a3a29d203c50fe9c0be8c806ee2fa"
+      "test/core/security/corpus/alts_credentials_corpus/0a5d068feb57a2782c6eba57b637abe8668ac82f"
     ], 
     "ci_platforms": [
       "linux"
@@ -64029,7 +64029,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/0a561496ff07895c3de6d379c8515400328e8132"
+      "test/core/security/corpus/alts_credentials_corpus/0b81e6d89bf7df80e87e5ee7c49f7cc1431f77e8"
     ], 
     "ci_platforms": [
       "linux"
@@ -64052,7 +64052,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/0de032c15a96c8c6df906845bf46a327c95b4c61"
+      "test/core/security/corpus/alts_credentials_corpus/11409339cec708a5e353893101bfe76364337d5c"
     ], 
     "ci_platforms": [
       "linux"
@@ -64075,7 +64075,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/0fe0afc1eeef58aa25a0332282bec4b23c15ad2c"
+      "test/core/security/corpus/alts_credentials_corpus/147696a264cd6f197adb7c68aff834c30b1b77f8"
     ], 
     "ci_platforms": [
       "linux"
@@ -64098,7 +64098,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/109441567b1fad6198b1a388895a2bd3654483d8"
+      "test/core/security/corpus/alts_credentials_corpus/160e5cac38c5c9e919ed6e4fbafee76907d63044"
     ], 
     "ci_platforms": [
       "linux"
@@ -64121,7 +64121,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/11d890d9004b695f3468cc03179eab06ba2c07fb"
+      "test/core/security/corpus/alts_credentials_corpus/173d02167db431040b0540d98f6fc5e8b456587d"
     ], 
     "ci_platforms": [
       "linux"
@@ -64144,7 +64144,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/1212b598455391501de16b54bddbe4f5343a4a88"
+      "test/core/security/corpus/alts_credentials_corpus/18a3fe239806b3c7d1af24bcd2bd23aeeb072d5c"
     ], 
     "ci_platforms": [
       "linux"
@@ -64167,7 +64167,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/1666e8aa226a18bf64f2785a2f9be28fc4af01cb"
+      "test/core/security/corpus/alts_credentials_corpus/195abd83b2e9d32b1b5b854fe33da44b6db40880"
     ], 
     "ci_platforms": [
       "linux"
@@ -64190,7 +64190,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/16e58db814acc76c24ba50eb3d89b24ddd494454"
+      "test/core/security/corpus/alts_credentials_corpus/19af2509c7d84334b9ec64de4767a07d5294fd72"
     ], 
     "ci_platforms": [
       "linux"
@@ -64213,7 +64213,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/1af35e95ed0090ae0ee489453e850a2600a225c8"
+      "test/core/security/corpus/alts_credentials_corpus/1b9864b948fcf08b062fd4401ef55b214c259535"
     ], 
     "ci_platforms": [
       "linux"
@@ -64236,7 +64236,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/1c654b103763405d321d090adbcda783bf447ef7"
+      "test/core/security/corpus/alts_credentials_corpus/1edddfa67de854d7faaba41418fda845e9c6a89d"
     ], 
     "ci_platforms": [
       "linux"
@@ -64259,7 +64259,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/1c8e404bae365315af2427626ea2f2475e9ae117"
+      "test/core/security/corpus/alts_credentials_corpus/20031bb00e6608e1b570aa96e6afb9de06d42167"
     ], 
     "ci_platforms": [
       "linux"
@@ -64282,7 +64282,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/1e9a89f1f2ad84637da91f9d5d9b2b4201d59079"
+      "test/core/security/corpus/alts_credentials_corpus/22b4c7ce7db99b0df63c9eae9265de484b695922"
     ], 
     "ci_platforms": [
       "linux"
@@ -64305,7 +64305,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/1e9df3bc49997ee68ad2db5bc683067244614b39"
+      "test/core/security/corpus/alts_credentials_corpus/27416437ad287bd3cc1c5efdecebc39f20df73c1"
     ], 
     "ci_platforms": [
       "linux"
@@ -64328,7 +64328,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/289dd2a1b53799f52fed42183165223ac00dd7e2"
+      "test/core/security/corpus/alts_credentials_corpus/27e8cd785c2b9346f68dba75761b52fbabaf2b72"
     ], 
     "ci_platforms": [
       "linux"
@@ -64351,7 +64351,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/292cdfe83a7b50121a9024e70bbef29d9c8bb707"
+      "test/core/security/corpus/alts_credentials_corpus/28236f860d3d8e5ea11176746cb4c1c5c4f1f6c0"
     ], 
     "ci_platforms": [
       "linux"
@@ -64374,7 +64374,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/2ddd9fce413102f816ae577dbf01c2162b6acb3f"
+      "test/core/security/corpus/alts_credentials_corpus/29e15b492c5a409938092a30c003c5c34df7e283"
     ], 
     "ci_platforms": [
       "linux"
@@ -64397,7 +64397,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/2f463a008b3d0ec0dad09ab6f6de99115c440fd6"
+      "test/core/security/corpus/alts_credentials_corpus/2a47864d77749aa042b772895dbdf46f608ccc6d"
     ], 
     "ci_platforms": [
       "linux"
@@ -64420,7 +64420,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/301045841e56d4b43ac01c33b91e7f5ac26124f7"
+      "test/core/security/corpus/alts_credentials_corpus/2cca5cb1b135c35f6e5e1ec4c37deb9e12d37dc0"
     ], 
     "ci_platforms": [
       "linux"
@@ -64443,7 +64443,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/31cf1335ca0ec97cd5d580966c56d6a0a40efd2d"
+      "test/core/security/corpus/alts_credentials_corpus/2df27b6c42dbaee382a29a87338d64ee87354acb"
     ], 
     "ci_platforms": [
       "linux"
@@ -64466,7 +64466,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/3389789f2f4dbe75a101e62e290c7d8e3dc5d5f1"
+      "test/core/security/corpus/alts_credentials_corpus/2e9ddd1339d8e599cef658a08965985c4f45e428"
     ], 
     "ci_platforms": [
       "linux"
@@ -64489,7 +64489,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/33c784ee455251ec8c594944da5c4948fdd8753d"
+      "test/core/security/corpus/alts_credentials_corpus/31a2d12a84a7a56ace831a9668d6ab4847390679"
     ], 
     "ci_platforms": [
       "linux"
@@ -64512,7 +64512,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/33fd34877b43b24c030563a3970377c794013a34"
+      "test/core/security/corpus/alts_credentials_corpus/33cb9ec0ce3538ed6079b5fcb127649a5d05955b"
     ], 
     "ci_platforms": [
       "linux"
@@ -64535,7 +64535,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/3786ba4fc72b15b351d73b5345da16b8f5c8c8bf"
+      "test/core/security/corpus/alts_credentials_corpus/348d9ae6eebb2e1644addf7f07231d108cf6f3b8"
     ], 
     "ci_platforms": [
       "linux"
@@ -64558,7 +64558,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/37b57582d59381ce62f0fd1da7c7e92e709af3b4"
+      "test/core/security/corpus/alts_credentials_corpus/359f76f3c802292e92b0640de2bfe051e780a3b6"
     ], 
     "ci_platforms": [
       "linux"
@@ -64581,7 +64581,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/3950877189aee19ecc4f076733158ebb1a5f42df"
+      "test/core/security/corpus/alts_credentials_corpus/35a479988e965a6e3e75138b64b0bd1f45073e2f"
     ], 
     "ci_platforms": [
       "linux"
@@ -64604,7 +64604,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/3a407d0eea73e0eeb54ed0d1ae2ad73bd978f405"
+      "test/core/security/corpus/alts_credentials_corpus/362b00d713686ff70cb0199f3d7d0058e5a1a27a"
     ], 
     "ci_platforms": [
       "linux"
@@ -64627,7 +64627,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/3a5e866fb1d159bdb2754f11e7e522986dbd5a7f"
+      "test/core/security/corpus/alts_credentials_corpus/3849c1625071791ceae709b9c6c705b28d099d67"
     ], 
     "ci_platforms": [
       "linux"
@@ -64650,7 +64650,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/3cb873e6ef34b5d539699b6082bdddefc8c65838"
+      "test/core/security/corpus/alts_credentials_corpus/39ef03c66ee2d4bcfb6c8da50486dcd40f02fb12"
     ], 
     "ci_platforms": [
       "linux"
@@ -64673,7 +64673,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/43300433c1aee3396a605f1955a3ed75dba52e26"
+      "test/core/security/corpus/alts_credentials_corpus/3a3ca061863499ebc171a4f910fa1b49523baad4"
     ], 
     "ci_platforms": [
       "linux"
@@ -64696,7 +64696,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/4645aa0db937ee4a71a1bae3cbcfb565f564e3d5"
+      "test/core/security/corpus/alts_credentials_corpus/3a890f3fd01b048ac9db65a9a9b4f4443268b91a"
     ], 
     "ci_platforms": [
       "linux"
@@ -64719,7 +64719,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/4a6235246630ab2a427ca69b9c5d0cc0e803ad49"
+      "test/core/security/corpus/alts_credentials_corpus/3b9554038a425bd1fae057ba41f9366bb467e946"
     ], 
     "ci_platforms": [
       "linux"
@@ -64742,7 +64742,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/4a7758e8149ae5cf26c5c6f53d577038e249f0d6"
+      "test/core/security/corpus/alts_credentials_corpus/3ce0ae4aa226f205a3a4e66bbb253419d9d754bf"
     ], 
     "ci_platforms": [
       "linux"
@@ -64765,7 +64765,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/4aef59e34030f8a1e9f265439c2e3db1119f1493"
+      "test/core/security/corpus/alts_credentials_corpus/3dccc5523986c37e27684659bba8a1037e7a92e8"
     ], 
     "ci_platforms": [
       "linux"
@@ -64788,7 +64788,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/4c9fad46c1539bdf3556687883322cf75021f96a"
+      "test/core/security/corpus/alts_credentials_corpus/3e0908c15b1cede4541d25f388b1345e8641e221"
     ], 
     "ci_platforms": [
       "linux"
@@ -64811,7 +64811,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/4d8861033b6a1cd84db5122d138e2da3e53b60f7"
+      "test/core/security/corpus/alts_credentials_corpus/3fcb181ff6a8c8e2ba38ed34cf78f7482eb55cb7"
     ], 
     "ci_platforms": [
       "linux"
@@ -64834,7 +64834,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/53ec92f9c452fa57573a52d98fdc9abcfc3f0371"
+      "test/core/security/corpus/alts_credentials_corpus/41c9b5f720eb8f8fa04c840375a881781a849b43"
     ], 
     "ci_platforms": [
       "linux"
@@ -64857,7 +64857,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/54959ff4b0aae33ec0f7cd1381eb328cdbba19ee"
+      "test/core/security/corpus/alts_credentials_corpus/4257a018f08f13a3a9adc848ef808e1be50bc4cf"
     ], 
     "ci_platforms": [
       "linux"
@@ -64880,7 +64880,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/549dff503b59978a958a9651519af26f037b2d55"
+      "test/core/security/corpus/alts_credentials_corpus/42dfc5c4d13261b7259e65cd692df9c9d607194e"
     ], 
     "ci_platforms": [
       "linux"
@@ -64903,7 +64903,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/54b27d84618d3ee769881b8c49aee7db67b4020c"
+      "test/core/security/corpus/alts_credentials_corpus/43144664aedb585d45d42aa5249ddbfe81afe470"
     ], 
     "ci_platforms": [
       "linux"
@@ -64926,7 +64926,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/562f4112f9ace35951efe6f5b9e87fcbd63b9ecb"
+      "test/core/security/corpus/alts_credentials_corpus/43e5ad495a47593b17dbcbd3e70c2e25a417bb6e"
     ], 
     "ci_platforms": [
       "linux"
@@ -64949,7 +64949,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/57a347cef7b1399eded9599a94f301be9b4df21d"
+      "test/core/security/corpus/alts_credentials_corpus/446614e45b7bef49118b17e031c48faf167ebe3e"
     ], 
     "ci_platforms": [
       "linux"
@@ -64972,7 +64972,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/593f1b85552ff31f587835a52d1277fc73c44c8d"
+      "test/core/security/corpus/alts_credentials_corpus/46492477fa84ca88e85df914801af0b09b0939f6"
     ], 
     "ci_platforms": [
       "linux"
@@ -64995,7 +64995,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/5c67e4584246af2ac0de928e018734261932bf0c"
+      "test/core/security/corpus/alts_credentials_corpus/47157f83b166b57e0052c98a65c6db864fa6cb9b"
     ], 
     "ci_platforms": [
       "linux"
@@ -65018,7 +65018,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/5faa30e5ee6aee2a59168083ef72f3ec2e7567db"
+      "test/core/security/corpus/alts_credentials_corpus/473fc9b6d768a925527d3ad805ca363d490dc741"
     ], 
     "ci_platforms": [
       "linux"
@@ -65041,7 +65041,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/623898e8c98442b00d2f23b1b8bcd13089b32922"
+      "test/core/security/corpus/alts_credentials_corpus/483c0b4015100eee00f6b23d1100d8c4953dd3b1"
     ], 
     "ci_platforms": [
       "linux"
@@ -65064,7 +65064,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/63f05684944d29fdaa31e95eae7b85b12a48879d"
+      "test/core/security/corpus/alts_credentials_corpus/48be2dc4cdc5462407b319caa855d976cda88153"
     ], 
     "ci_platforms": [
       "linux"
@@ -65087,7 +65087,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/6420d3ebda967d432e45e9cbe8a50330140ac318"
+      "test/core/security/corpus/alts_credentials_corpus/4e84eb54a0e438052b0c2e83653135042d9eb59a"
     ], 
     "ci_platforms": [
       "linux"
@@ -65110,7 +65110,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/64b27fcd2a65d61cc6d68cb57e97bd73d124ffb3"
+      "test/core/security/corpus/alts_credentials_corpus/50839d5c8bf33f0970986dcc4b73b024f11a95b7"
     ], 
     "ci_platforms": [
       "linux"
@@ -65133,7 +65133,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/6530639009ae17e56283b0decaf49fba83a63f3e"
+      "test/core/security/corpus/alts_credentials_corpus/523d964986d8ad966ae07e540a608681098813f9"
     ], 
     "ci_platforms": [
       "linux"
@@ -65156,7 +65156,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/672c55e579063079e101b5a0222a2efa02ee294b"
+      "test/core/security/corpus/alts_credentials_corpus/5410b8190c95dacd36d6e6ec75b7538a630e08de"
     ], 
     "ci_platforms": [
       "linux"
@@ -65179,7 +65179,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/67ab9a6bdfab6ac480c65a45fc65cd4f9e4f4e6d"
+      "test/core/security/corpus/alts_credentials_corpus/549b2891ac79f504a7c9ea00f6d7527c34ce04e6"
     ], 
     "ci_platforms": [
       "linux"
@@ -65202,7 +65202,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/6b2c13846e2a8331dfeabcf838db569577eb56bf"
+      "test/core/security/corpus/alts_credentials_corpus/55321649e7b7f1b5664ae20724e683c930643fc4"
     ], 
     "ci_platforms": [
       "linux"
@@ -65225,7 +65225,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/6cb2ae170a663077e9518bf0076238546e371bbe"
+      "test/core/security/corpus/alts_credentials_corpus/55cc52f25865baee3e6e52c3110a9723caa2b3cb"
     ], 
     "ci_platforms": [
       "linux"
@@ -65248,7 +65248,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/6d787a7104ed6f9350ed9d1a3f843e7b42b07687"
+      "test/core/security/corpus/alts_credentials_corpus/56c22410e3295ad03aa31552ab888f581756cc17"
     ], 
     "ci_platforms": [
       "linux"
@@ -65271,7 +65271,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/6dbb2224c3ccd70b9ade387f6373f075f8f504db"
+      "test/core/security/corpus/alts_credentials_corpus/5724a705b62a7548ba2df1abe4ef0c970c4e1bd2"
     ], 
     "ci_platforms": [
       "linux"
@@ -65294,7 +65294,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/71839db8e675da8e2740a5e2643b09d84280ae92"
+      "test/core/security/corpus/alts_credentials_corpus/576a148c107d56861d1611641a6f7c7921061c5c"
     ], 
     "ci_platforms": [
       "linux"
@@ -65317,7 +65317,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/725c32ba1684bc7ed628105091a66fbe940967a0"
+      "test/core/security/corpus/alts_credentials_corpus/5a6b8263e8939f851cf5b1e347a33d97253b7b3d"
     ], 
     "ci_platforms": [
       "linux"
@@ -65340,7 +65340,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/734a25b9c712db908f45e1e32a87333e31c207de"
+      "test/core/security/corpus/alts_credentials_corpus/5ba93c9db0cff93f52b521d7420e43f6eda2784f"
     ], 
     "ci_platforms": [
       "linux"
@@ -65363,7 +65363,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/73751bcbe4443d38a287b93fc910937b9b3f0368"
+      "test/core/security/corpus/alts_credentials_corpus/5bd02a339fd7705449388580c75bfcc597aba954"
     ], 
     "ci_platforms": [
       "linux"
@@ -65386,7 +65386,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/741351dd7d6b01ad8eb0dd5c803067c1668e1f99"
+      "test/core/security/corpus/alts_credentials_corpus/5bd6fb6fc4163bf3a9db6ddaf509dce8df8a5000"
     ], 
     "ci_platforms": [
       "linux"
@@ -65409,7 +65409,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/7463613249480f9ab78c5ec26f785f23a7a3f275"
+      "test/core/security/corpus/alts_credentials_corpus/5d06fc38005503af3d084721c60e574fb9d2f370"
     ], 
     "ci_platforms": [
       "linux"
@@ -65432,7 +65432,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/74679e8d39dee9255516abc6ed24666a3e88e45c"
+      "test/core/security/corpus/alts_credentials_corpus/5ddc10489ff3269bdaa3051b70fb7af455ee1104"
     ], 
     "ci_platforms": [
       "linux"
@@ -65455,7 +65455,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/7474dbc6e6db97ea1b467d3813ab2462953c1d90"
+      "test/core/security/corpus/alts_credentials_corpus/5ea9d515f0d10b04f1356b9463139bfe121a6e4a"
     ], 
     "ci_platforms": [
       "linux"
@@ -65478,7 +65478,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/765e5fedea0337dbf1de4a8b49d81fb17aac81bd"
+      "test/core/security/corpus/alts_credentials_corpus/61c449793347cf2e1ed0c38d54d23c63dfaabeb8"
     ], 
     "ci_platforms": [
       "linux"
@@ -65501,7 +65501,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/77e1bdc71978ad61766aaaec3ccb9e548a6f79d9"
+      "test/core/security/corpus/alts_credentials_corpus/6287389c373e9788dcc04f9747b4be1fd1ef3028"
     ], 
     "ci_platforms": [
       "linux"
@@ -65524,7 +65524,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/787c7e80d62b3d368574ab0f17cbf6ec29489f79"
+      "test/core/security/corpus/alts_credentials_corpus/64d4de4d5aafab7ec388a7fe83066c1a4d1d9d68"
     ], 
     "ci_platforms": [
       "linux"
@@ -65547,7 +65547,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/78e848258de0ef0721b32afbf0cbcab3ba7db273"
+      "test/core/security/corpus/alts_credentials_corpus/651c37806d2ac579dcfc97643c3c1ea74dbb8774"
     ], 
     "ci_platforms": [
       "linux"
@@ -65570,7 +65570,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/79600afed1fb50fdefd5e461d8df7764ab9f8395"
+      "test/core/security/corpus/alts_credentials_corpus/6551d02d20573cfa2944ec1f12b0c01f264a1326"
     ], 
     "ci_platforms": [
       "linux"
@@ -65593,7 +65593,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/79dac7b853495c96cb39a10bbda8f3045cf49358"
+      "test/core/security/corpus/alts_credentials_corpus/65f029414ee10e45ff4b9f305f7b472364cea538"
     ], 
     "ci_platforms": [
       "linux"
@@ -65616,7 +65616,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/7af3d42c9c0e17b942a9e1c83cf48cd56d8314c8"
+      "test/core/security/corpus/alts_credentials_corpus/68b75a17fe2db060df3e61a597650ba99079abbf"
     ], 
     "ci_platforms": [
       "linux"
@@ -65639,7 +65639,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/7b01be9915cdb9d7633d07daf5f5a290b248aa5d"
+      "test/core/security/corpus/alts_credentials_corpus/69e80594dbc5c4c648e39883a650b1760f20ab63"
     ], 
     "ci_platforms": [
       "linux"
@@ -65662,7 +65662,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/7c4d33785daa5c2370201ffa236b427aa37c9996"
+      "test/core/security/corpus/alts_credentials_corpus/6cb47d0e640b4c41e32f13c0d64ee46eae1b80b5"
     ], 
     "ci_platforms": [
       "linux"
@@ -65685,7 +65685,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/7cefdeda0d406ce61bb989b348a58d8cff9cfd4e"
+      "test/core/security/corpus/alts_credentials_corpus/6da5fe063432cb9094c7c083efdbbe5ba4246d18"
     ], 
     "ci_platforms": [
       "linux"
@@ -65708,7 +65708,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/7fdd6a898be020d078dea054ac4e92f956775a0a"
+      "test/core/security/corpus/alts_credentials_corpus/6dd140da774d85f272fb587dc1b2a85d881a7c21"
     ], 
     "ci_platforms": [
       "linux"
@@ -65731,7 +65731,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/80938354d5e18685418deed05044fbf9d3b4fb78"
+      "test/core/security/corpus/alts_credentials_corpus/6ddab273597d73be49e2307d68e00fa18bba4765"
     ], 
     "ci_platforms": [
       "linux"
@@ -65754,7 +65754,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/818ab3833d8173171263de8ef28c0e75d9e7c804"
+      "test/core/security/corpus/alts_credentials_corpus/6eaf85d84fbf47ea0619d0dba8d366f4e3ff0be6"
     ], 
     "ci_platforms": [
       "linux"
@@ -65777,7 +65777,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/834fb1dc07db500d8b3ffef0e6add8bcd8f9953e"
+      "test/core/security/corpus/alts_credentials_corpus/6f751cc09af8113f6ecd491b1830bd8454c4738d"
     ], 
     "ci_platforms": [
       "linux"
@@ -65800,7 +65800,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/835718f279c89f990af7b9d5dfab7e9aab2fc80a"
+      "test/core/security/corpus/alts_credentials_corpus/70d9eb29a70d483d07e2faca6b00098af78d1fff"
     ], 
     "ci_platforms": [
       "linux"
@@ -65823,7 +65823,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/84475df5a9c775171e7c507fa0fc30e7eedc050b"
+      "test/core/security/corpus/alts_credentials_corpus/7192effa1058382b379fb7b87f1acad5ac554d05"
     ], 
     "ci_platforms": [
       "linux"
@@ -65846,7 +65846,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/876bcf8c4e83e6684358ee6ae6a065c990bacb7c"
+      "test/core/security/corpus/alts_credentials_corpus/730e85d6a62e70cb6721009b903782ade4ff73a2"
     ], 
     "ci_platforms": [
       "linux"
@@ -65869,7 +65869,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/88baf260e09ed315576ab4352e59d2c29f91014d"
+      "test/core/security/corpus/alts_credentials_corpus/74002471a854059cb29de7cad8f9fb7adc3c5ec2"
     ], 
     "ci_platforms": [
       "linux"
@@ -65892,7 +65892,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/8a59dd6e84e4ca345410d9d04057acbfc6913d9f"
+      "test/core/security/corpus/alts_credentials_corpus/747f2330cd1fc4a06d54b376a9a6528d0364f0ac"
     ], 
     "ci_platforms": [
       "linux"
@@ -65915,7 +65915,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/8ad72941a8d2b51dc9ff69652c39e4534b85f7e5"
+      "test/core/security/corpus/alts_credentials_corpus/749d5d7a9e0b1545b297117e834462af32b3e230"
     ], 
     "ci_platforms": [
       "linux"
@@ -65938,7 +65938,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/8ae2cd28420c2f39e9ce0990929ef9e89180a5da"
+      "test/core/security/corpus/alts_credentials_corpus/77de0b1de120ac702ca45868b1008a48626daf12"
     ], 
     "ci_platforms": [
       "linux"
@@ -65961,7 +65961,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/8bea6c731ebcc00bc18d5da1a25f124b3f2c5cbc"
+      "test/core/security/corpus/alts_credentials_corpus/792c67398bce19a4eeda32653c994436e79456e5"
     ], 
     "ci_platforms": [
       "linux"
@@ -65984,7 +65984,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/8c687d5146622bf6fc7e7b57c11113e4df45baa8"
+      "test/core/security/corpus/alts_credentials_corpus/7a3022b248c8960289e4c80c7cc8df409499e5da"
     ], 
     "ci_platforms": [
       "linux"
@@ -66007,7 +66007,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/90af9ff504792d98e02ecdbead1625037b2981fa"
+      "test/core/security/corpus/alts_credentials_corpus/7a9372081294a6fbd3fecdd91b99589c98d4948e"
     ], 
     "ci_platforms": [
       "linux"
@@ -66030,7 +66030,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/919ba4880da279183396f9ff4bd1c5d9e3b171ab"
+      "test/core/security/corpus/alts_credentials_corpus/7bbe4ba828947550f4ad089d5989cb695ecbdb1b"
     ], 
     "ci_platforms": [
       "linux"
@@ -66053,7 +66053,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/92e50dbea4a8909b20beccc4c67526a546e67872"
+      "test/core/security/corpus/alts_credentials_corpus/7f1ad514a96f0c3d5ca5d6f7880b929a65eeae96"
     ], 
     "ci_platforms": [
       "linux"
@@ -66076,7 +66076,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/9456897eba5729ca3ad0414d09b982cd25dfca41"
+      "test/core/security/corpus/alts_credentials_corpus/7f2b075f0b6707c38db851747e2578343eeab286"
     ], 
     "ci_platforms": [
       "linux"
@@ -66099,7 +66099,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/9493a1fb29e60e99dd218688803a89407f80a687"
+      "test/core/security/corpus/alts_credentials_corpus/81ebc64bfde3fad37af5a58ef7f1c5c3c54c4b5d"
     ], 
     "ci_platforms": [
       "linux"
@@ -66122,7 +66122,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/94e476f817104a1d90fe755dfb6a42203ec92fb4"
+      "test/core/security/corpus/alts_credentials_corpus/82fae081afaea13831404024d39658344d56e1c6"
     ], 
     "ci_platforms": [
       "linux"
@@ -66145,7 +66145,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/969ac2b1c8c179ff409731ca42a4c46656f4a02c"
+      "test/core/security/corpus/alts_credentials_corpus/83ba41cea1adab707f7f213af5e2ed734bdddc25"
     ], 
     "ci_platforms": [
       "linux"
@@ -66168,7 +66168,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/9747fcc14e8d4610c607adadaad1a38f7e854e65"
+      "test/core/security/corpus/alts_credentials_corpus/841a3f66c94e5acd836a44cd5a8514d4ad45d83e"
     ], 
     "ci_platforms": [
       "linux"
@@ -66191,7 +66191,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/98e6a9db69d8fa44765fb6b55d556abe033dc3b6"
+      "test/core/security/corpus/alts_credentials_corpus/841ef94ee0f1b0b45983d95b75aba25421d73f2c"
     ], 
     "ci_platforms": [
       "linux"
@@ -66214,7 +66214,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/9a121d76889a39e61de76426df8359ec3afcb092"
+      "test/core/security/corpus/alts_credentials_corpus/843b0aad4a9707c5dcc92d12d876b78675cfcb65"
     ], 
     "ci_platforms": [
       "linux"
@@ -66237,7 +66237,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/9b6769b0e3f20a255f81a94de6a04f1aac586a3d"
+      "test/core/security/corpus/alts_credentials_corpus/8483e3d92eda8df504b1d1d0d012f4bcd778cd33"
     ], 
     "ci_platforms": [
       "linux"
@@ -66260,7 +66260,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/9c406c2d51c3647b2512f8ba97a9dc93e2bd3e38"
+      "test/core/security/corpus/alts_credentials_corpus/876830fdff4e59038fa2173b700faef5bffe61de"
     ], 
     "ci_platforms": [
       "linux"
@@ -66283,7 +66283,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/9d1e036d184ca0f15fe4201d1e9ae2ef36c972f8"
+      "test/core/security/corpus/alts_credentials_corpus/87ca3342fdce0c1f678a3f1b62428032ef51442d"
     ], 
     "ci_platforms": [
       "linux"
@@ -66306,7 +66306,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/9e7ad28a70a5545d5440f3414d4ecee3ca27925b"
+      "test/core/security/corpus/alts_credentials_corpus/87d044027cdb7d35fadb56532f497764246946a6"
     ], 
     "ci_platforms": [
       "linux"
@@ -66329,7 +66329,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/a08b39c8d4ed35be02d5d6f8b4594d1ac6e00dbb"
+      "test/core/security/corpus/alts_credentials_corpus/88ce75ba18bdb7e93a81197d850f4e792f6a8155"
     ], 
     "ci_platforms": [
       "linux"
@@ -66352,7 +66352,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/a15449d6a06c870a69debd4ad7236ee4003bc1b9"
+      "test/core/security/corpus/alts_credentials_corpus/89dc55e8e20e811e78c952c8bd2c16f55fe72f57"
     ], 
     "ci_platforms": [
       "linux"
@@ -66375,7 +66375,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/a18344273947dd507dd1aefb5d9089e074be853d"
+      "test/core/security/corpus/alts_credentials_corpus/8a215a58908f44bdced595ceb01a81977f1d72f0"
     ], 
     "ci_platforms": [
       "linux"
@@ -66398,7 +66398,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/a278cf292db732816ce5e3e903743eba002e6e97"
+      "test/core/security/corpus/alts_credentials_corpus/8ac7459e918304ca40b1cf29a3ac0f555eada678"
     ], 
     "ci_platforms": [
       "linux"
@@ -66421,7 +66421,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/a33f5b5fd6b1caddf4a4adee107a3cc91d2d14d2"
+      "test/core/security/corpus/alts_credentials_corpus/8b93e50a911f3ea0e0b0377ba4636574f2ee9a5e"
     ], 
     "ci_platforms": [
       "linux"
@@ -66444,7 +66444,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/a3812f441f50aa305705e81306995fa2774d4258"
+      "test/core/security/corpus/alts_credentials_corpus/8c9ec0ffd803505772693833d56e7a02110645b3"
     ], 
     "ci_platforms": [
       "linux"
@@ -66467,7 +66467,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/a3e7720932526ba34c7533edbdb38ddc35e6fd63"
+      "test/core/security/corpus/alts_credentials_corpus/8e4b361a530dc6825afcfb4106bd482c3fd010fa"
     ], 
     "ci_platforms": [
       "linux"
@@ -66490,7 +66490,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/a40dc8ca42102b7db12aeeae5f5d91a964a588a0"
+      "test/core/security/corpus/alts_credentials_corpus/8f6690d97bcda890f2a5b2930a2b7a4d7b56c6e7"
     ], 
     "ci_platforms": [
       "linux"
@@ -66513,7 +66513,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/a79e215b2de4495ddc4d5c6cd4a87631fbe0d452"
+      "test/core/security/corpus/alts_credentials_corpus/917636de2c14dce2580d4308249a94d61d62c305"
     ], 
     "ci_platforms": [
       "linux"
@@ -66536,7 +66536,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/ac129a90d6c769424bfc00ac761f22a270563890"
+      "test/core/security/corpus/alts_credentials_corpus/91f11008defda918951bda868cc68c6373fb0e6a"
     ], 
     "ci_platforms": [
       "linux"
@@ -66559,7 +66559,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/ac949d39f61b98f560e840fba540343c1c934a70"
+      "test/core/security/corpus/alts_credentials_corpus/92e01a34047b660a798086d55a3d8d7100a01939"
     ], 
     "ci_platforms": [
       "linux"
@@ -66582,7 +66582,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/ac9f9fa757c06e64fd7d285e52d48787b2bde370"
+      "test/core/security/corpus/alts_credentials_corpus/963fafadb4de09dee0e6a852bd61b1740039a465"
     ], 
     "ci_platforms": [
       "linux"
@@ -66605,7 +66605,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/b005508cc4aaafb3bf374c01ca926eaf910736f3"
+      "test/core/security/corpus/alts_credentials_corpus/97bf33ec97b93fcc2449431915911a55b906e3b6"
     ], 
     "ci_platforms": [
       "linux"
@@ -66628,7 +66628,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/b1a7d5e2038e77b6d87ed179edbc1102e7444837"
+      "test/core/security/corpus/alts_credentials_corpus/99e31e12b02b02479d10b2c08426906bd93a0840"
     ], 
     "ci_platforms": [
       "linux"
@@ -66651,7 +66651,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/b1e37dab3982c3c3dd343fdec7f4180f771c3479"
+      "test/core/security/corpus/alts_credentials_corpus/9a75ce693e7259d4d3bb9203dfc0a65f8bbaa466"
     ], 
     "ci_platforms": [
       "linux"
@@ -66674,7 +66674,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/b221415ccaed29a4a4b496203246f485ca329bbd"
+      "test/core/security/corpus/alts_credentials_corpus/9ac0d956f9743e026baad7319ba2a75d9f1a534f"
     ], 
     "ci_platforms": [
       "linux"
@@ -66697,7 +66697,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/b358a21a6ee25cba7b67be4d5396b921f6cc362f"
+      "test/core/security/corpus/alts_credentials_corpus/9ae56d4451dd3e1b66ddc250d84dbf6d8cae0dbd"
     ], 
     "ci_platforms": [
       "linux"
@@ -66720,7 +66720,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/b3b86ddbe133204a26bdab0ffcf4d86d492230f4"
+      "test/core/security/corpus/alts_credentials_corpus/9b9a3a1e4023c9b172060249752a482a3437ef2a"
     ], 
     "ci_platforms": [
       "linux"
@@ -66743,7 +66743,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/b488ab63f7615b054ff9efc67b5ee9be956428f6"
+      "test/core/security/corpus/alts_credentials_corpus/9c81164e10bf612c352dca3ecabf57743b451d42"
     ], 
     "ci_platforms": [
       "linux"
@@ -66766,7 +66766,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/b572d0c7920a35edec344a05ffdb70dd2d5514c4"
+      "test/core/security/corpus/alts_credentials_corpus/9d8b420b5d32deb0140ab91eeebba58ca6163722"
     ], 
     "ci_platforms": [
       "linux"
@@ -66789,7 +66789,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/b6ed275d14cf8503a5a6f0b96a43006b3616d387"
+      "test/core/security/corpus/alts_credentials_corpus/9de687bf1e2cfac54c3b2e2eb85b53014a460ff7"
     ], 
     "ci_platforms": [
       "linux"
@@ -66812,7 +66812,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/b7044e4b4f03442e1b9afd2ee9a3a03574f24a09"
+      "test/core/security/corpus/alts_credentials_corpus/9f3cda19a186bd11bfac361b464f92daa129a33b"
     ], 
     "ci_platforms": [
       "linux"
@@ -66835,7 +66835,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/b87c8464e2786cf99010f1535573cabf19704b11"
+      "test/core/security/corpus/alts_credentials_corpus/a14fc6a608121f8abf0fe25cf466720f00f25653"
     ], 
     "ci_platforms": [
       "linux"
@@ -66858,7 +66858,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/b8b6cc0ba6fb3c6c5de3797fccd5edb95eb9bb91"
+      "test/core/security/corpus/alts_credentials_corpus/a39906074669a6b76a35b0adf2bf36ad751f3b35"
     ], 
     "ci_platforms": [
       "linux"
@@ -66881,7 +66881,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/bbcce69956ddfe9c73b7e90ab1d97c265efe54f3"
+      "test/core/security/corpus/alts_credentials_corpus/a454ca483b4a66b83826d061be2859dd79ff0d6c"
     ], 
     "ci_platforms": [
       "linux"
@@ -66904,7 +66904,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/bcb07db44dfdf159a2ec15c5d624a0ba93b6f8df"
+      "test/core/security/corpus/alts_credentials_corpus/a52df5607370ff0f56d821000f3d5e386a01d489"
     ], 
     "ci_platforms": [
       "linux"
@@ -66927,7 +66927,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/bd1f20176944eea147fa688ac1c83ec40dcde725"
+      "test/core/security/corpus/alts_credentials_corpus/a56eaf47f7c7263e53efdc55ec39063dbb4ae71c"
     ], 
     "ci_platforms": [
       "linux"
@@ -66950,7 +66950,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/c0d578b3da9bb9b937a59341466850d882a0315a"
+      "test/core/security/corpus/alts_credentials_corpus/a79249fb8f7d53f0a280359d2d9df31594adbdfc"
     ], 
     "ci_platforms": [
       "linux"
@@ -66973,7 +66973,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/c2f3d392b91926d88b9fead65581b54fb6ccd719"
+      "test/core/security/corpus/alts_credentials_corpus/aa98a46f25004f7436aadb36ff8b7f07ed7bfce1"
     ], 
     "ci_platforms": [
       "linux"
@@ -66996,7 +66996,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/c39aadb0bb330abe4828809c710308644b13b3ac"
+      "test/core/security/corpus/alts_credentials_corpus/adc83b19e793491b1c6ea0fd8b46cd9f32e592fc"
     ], 
     "ci_platforms": [
       "linux"
@@ -67019,7 +67019,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/c426a2ef2b5c798dd946c4897fdcf47c72437f82"
+      "test/core/security/corpus/alts_credentials_corpus/afd8e19f7bfd6c963f1856be59b75627864821dc"
     ], 
     "ci_platforms": [
       "linux"
@@ -67042,7 +67042,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/c4581dfa596e08d295601a2f4142f04778da72fd"
+      "test/core/security/corpus/alts_credentials_corpus/b3966239b8568442baecbeb0f8a1aa29dcdfd7ed"
     ], 
     "ci_platforms": [
       "linux"
@@ -67065,7 +67065,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/c5a0a2529d2deb60fec041b4fbd722a2ebe31702"
+      "test/core/security/corpus/alts_credentials_corpus/b430d41ef65493b3e917182c23ce90df983e01ab"
     ], 
     "ci_platforms": [
       "linux"
@@ -67088,7 +67088,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/c5c723b98ad1c4de8e24cae27cf51d235aa66519"
+      "test/core/security/corpus/alts_credentials_corpus/b44e715e0cfe05f0c92a9e000ac3c36aae17df9d"
     ], 
     "ci_platforms": [
       "linux"
@@ -67111,7 +67111,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/c7c950b3d997487b659c966704aa7cb63b07dbca"
+      "test/core/security/corpus/alts_credentials_corpus/b4cf4ef7b3f64eff76cf99091fddc04411774708"
     ], 
     "ci_platforms": [
       "linux"
@@ -67134,7 +67134,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/c8d355651b0565b22e7b014531d2b4a19c1a3711"
+      "test/core/security/corpus/alts_credentials_corpus/b53d84468ea93620a9824ca65acf1179f431e763"
     ], 
     "ci_platforms": [
       "linux"
@@ -67157,7 +67157,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/c8e95e0ddf91f4efb3127892dfa5ea167b47c6bc"
+      "test/core/security/corpus/alts_credentials_corpus/b6ac4831cc5baabee9c8ab9af9ca3923f91097a0"
     ], 
     "ci_platforms": [
       "linux"
@@ -67180,7 +67180,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/cbf6012269cda3a536067cf5f692ae96116ad3b4"
+      "test/core/security/corpus/alts_credentials_corpus/b7f4a484866a8050dbc63bc905c9803c6964eda5"
     ], 
     "ci_platforms": [
       "linux"
@@ -67203,7 +67203,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/cc007a1fe922cef3e47a0a58ed4746c2c1d9f36c"
+      "test/core/security/corpus/alts_credentials_corpus/b8f21e59f90431c982d5ec3fb54ae4605f102252"
     ], 
     "ci_platforms": [
       "linux"
@@ -67226,7 +67226,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/cc698e7eec52dca3a51806a81b97deeb89f99cad"
+      "test/core/security/corpus/alts_credentials_corpus/bad10b6581cdead8e7cb96e4f544dcf0ea650fbc"
     ], 
     "ci_platforms": [
       "linux"
@@ -67249,7 +67249,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/ce45e439eef9bd0f7f13c815cd429e1315a7e532"
+      "test/core/security/corpus/alts_credentials_corpus/bb01bed86b43257be9f527388e1183f52438c473"
     ], 
     "ci_platforms": [
       "linux"
@@ -67272,7 +67272,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/cf121df9d71cbed6087bca08847e6b20ae944c3c"
+      "test/core/security/corpus/alts_credentials_corpus/bb7497b00f0d999ef39dbf81c6bd0441e32723b6"
     ], 
     "ci_platforms": [
       "linux"
@@ -67295,7 +67295,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/cf366460d403bb61a5c63f5ae10d357629d6902a"
+      "test/core/security/corpus/alts_credentials_corpus/bf01b72e635deda1b4a8468f1cc36f01a54e1338"
     ], 
     "ci_platforms": [
       "linux"
@@ -67318,7 +67318,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/d00055e1c781c3986f5d5be858acc2c827b3c578"
+      "test/core/security/corpus/alts_credentials_corpus/bf8b4530d8d246dd74ac53a13471bba17941dff7"
     ], 
     "ci_platforms": [
       "linux"
@@ -67341,7 +67341,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/d2a4cc53435d2077a81a5452e27a91a91d90ed3d"
+      "test/core/security/corpus/alts_credentials_corpus/c08bc84ab6a512b901bb730beb05c8394e4f1c5d"
     ], 
     "ci_platforms": [
       "linux"
@@ -67364,7 +67364,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/d4907b83c6c8d551d9631d7d268093735c3afcd4"
+      "test/core/security/corpus/alts_credentials_corpus/c244b635d94e6f5d6b344887434be3e001a04b41"
     ], 
     "ci_platforms": [
       "linux"
@@ -67387,7 +67387,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/d4d2f811468bbb8cc0c5afb1a7607ae37861b71f"
+      "test/core/security/corpus/alts_credentials_corpus/c281efe9620da999a637ff6e9b3279ec613fb992"
     ], 
     "ci_platforms": [
       "linux"
@@ -67410,7 +67410,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/d5005e2f7f9f6134bb29022cdf5483d47e8e6dfe"
+      "test/core/security/corpus/alts_credentials_corpus/c30a212824ee71e215f475f453de17c65a200101"
     ], 
     "ci_platforms": [
       "linux"
@@ -67433,7 +67433,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/d7b867d15d6bb47e0fe4e39189fc6dbf01fb0e0d"
+      "test/core/security/corpus/alts_credentials_corpus/c449427f35b7ecdf5641073629f7723df52c4cb0"
     ], 
     "ci_platforms": [
       "linux"
@@ -67456,7 +67456,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/d9619a45ecc185c14d1540cb8e95985b029bd30e"
+      "test/core/security/corpus/alts_credentials_corpus/c60240cd3b02eb71e2bf5ebd59afa3a5dc9b5e4d"
     ], 
     "ci_platforms": [
       "linux"
@@ -67479,7 +67479,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/da386ee66def6b390a4189ede86d95e6aa69a5b4"
+      "test/core/security/corpus/alts_credentials_corpus/c60cdf9c3fb9060838f445b3bc3852b6f81e1e4c"
     ], 
     "ci_platforms": [
       "linux"
@@ -67502,7 +67502,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/dabc6ebc5cc306fb74f0a70abc4262288ed17fdc"
+      "test/core/security/corpus/alts_credentials_corpus/c72d0501bacadb45242c553ba292591302f12a6a"
     ], 
     "ci_platforms": [
       "linux"
@@ -67525,7 +67525,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/db51663760429a68b95f8b817f5015d67891dd82"
+      "test/core/security/corpus/alts_credentials_corpus/c739e7b5ad999edbdeffdab672dbc30deb3959a0"
     ], 
     "ci_platforms": [
       "linux"
@@ -67548,7 +67548,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/db814e9914dce9bc053e1058fd7e5fcd2b14685f"
+      "test/core/security/corpus/alts_credentials_corpus/c7d73b12a7108d82f8dac6d8a6a34f838601aca6"
     ], 
     "ci_platforms": [
       "linux"
@@ -67571,7 +67571,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/dc89fc5dc1c56f45e743374909b793c34b922ad8"
+      "test/core/security/corpus/alts_credentials_corpus/ca781e1add632433293e847ae9e71649c217ee5f"
     ], 
     "ci_platforms": [
       "linux"
@@ -67594,7 +67594,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/ded5ba42480fe75dcebba1ce068489ff7be2186a"
+      "test/core/security/corpus/alts_credentials_corpus/cc48e916f40e8d69c2d07cfda42c7d3b7fe3447a"
     ], 
     "ci_platforms": [
       "linux"
@@ -67617,7 +67617,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/df0f219315c1ade94de9802803abc43b879bc85c"
+      "test/core/security/corpus/alts_credentials_corpus/cca1aff4c08ee4ccbcb6f80e1cd1480a0a093cfd"
     ], 
     "ci_platforms": [
       "linux"
@@ -67640,7 +67640,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/df58248c414f342c81e056b40bee12d17a08bf61"
+      "test/core/security/corpus/alts_credentials_corpus/cf6ae8bf1d08d25e235b7bee0839984bbc04edf6"
     ], 
     "ci_platforms": [
       "linux"
@@ -67663,7 +67663,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/e17587a8da37991643ed2789a3277db907413d97"
+      "test/core/security/corpus/alts_credentials_corpus/cfc52fa086292c699efd7bf41d2fae3deb449536"
     ], 
     "ci_platforms": [
       "linux"
@@ -67686,7 +67686,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/e5c7471f82c52d5678d0f624c76bc01504576658"
+      "test/core/security/corpus/alts_credentials_corpus/cfe13ef3c6c713a059f231f0001ecec97e2a932d"
     ], 
     "ci_platforms": [
       "linux"
@@ -67709,7 +67709,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/ea2b2e79b6f450856240afcfb8c114195374dbb0"
+      "test/core/security/corpus/alts_credentials_corpus/d14026ac6421bca7161024f4e735cb80a1068d01"
     ], 
     "ci_platforms": [
       "linux"
@@ -67732,7 +67732,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/ea7fa138b0f80ef309ae1906b5a804965eedbc00"
+      "test/core/security/corpus/alts_credentials_corpus/d2fb6e8f7867fc1e2ebe723da2b5246dc9cc6b14"
     ], 
     "ci_platforms": [
       "linux"
@@ -67755,7 +67755,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/eaf8aa1843ef570cb98463c533a66ad2c3e146d0"
+      "test/core/security/corpus/alts_credentials_corpus/d4db7d51bdaa4781cf12c3b59914bad414d2a41e"
     ], 
     "ci_platforms": [
       "linux"
@@ -67778,7 +67778,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/ed7cb2ebccdf551757cb91aece558e1e7c696f34"
+      "test/core/security/corpus/alts_credentials_corpus/d533da0e7f8c1e39bb025b4d7a89613142a6f54e"
     ], 
     "ci_platforms": [
       "linux"
@@ -67801,7 +67801,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/f47869036ebbe00ea23a7ade460833ab2817a889"
+      "test/core/security/corpus/alts_credentials_corpus/d5cf489d01a1b847a7aac5dddabff23fdc218e1e"
     ], 
     "ci_platforms": [
       "linux"
@@ -67824,7 +67824,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/f48e2ea11775727eb080fe31c207fa27da8ae1bd"
+      "test/core/security/corpus/alts_credentials_corpus/d686f8561a249c7c15c78f76a5fceb884286e070"
     ], 
     "ci_platforms": [
       "linux"
@@ -67847,7 +67847,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/f4c2019474e8047db7b62b5fb376120a8bbec3ec"
+      "test/core/security/corpus/alts_credentials_corpus/d92424daad9d96a40e5ab177e3824c36ef51dc0f"
     ], 
     "ci_platforms": [
       "linux"
@@ -67870,7 +67870,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/f963e21e226a0e936e5f55f060fb0b68e50e1834"
+      "test/core/security/corpus/alts_credentials_corpus/db242a11ed88b2b26af46770dd1927d9f35301fb"
     ], 
     "ci_platforms": [
       "linux"
@@ -67893,7 +67893,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/fa33ee34813fc92b0b77902efbf1f2bf96659cd8"
+      "test/core/security/corpus/alts_credentials_corpus/db32eb04db13d58f65f46d262608bd088987c063"
     ], 
     "ci_platforms": [
       "linux"
@@ -67916,7 +67916,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/fc01f450f8e74b8c7e92ad7cef8034c3273bca16"
+      "test/core/security/corpus/alts_credentials_corpus/db39a953317951759e40734de6607a0b4457728e"
     ], 
     "ci_platforms": [
       "linux"
@@ -67939,7 +67939,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/fc0a6fc2aa643adc00490a959a8d12f765f1640b"
+      "test/core/security/corpus/alts_credentials_corpus/dc5e8f3102456bed90d17303bc4cff1a7e076d5d"
     ], 
     "ci_platforms": [
       "linux"
@@ -67962,7 +67962,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/fce52e7c5cb92d24f2949dea9971c8cd4fe3efde"
+      "test/core/security/corpus/alts_credentials_corpus/dd9542bbed8e5dc58da2789edbfb9c38d578d3b4"
     ], 
     "ci_platforms": [
       "linux"
@@ -67985,7 +67985,7 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/ff33b54071da748d62faf2a79e8a07ac66a6a51b"
+      "test/core/security/corpus/alts_credentials_corpus/de2ebb1ed324385de500a1a3308846239857c3c7"
     ], 
     "ci_platforms": [
       "linux"
@@ -68008,7 +68008,651 @@
   }, 
   {
     "args": [
-      "test/core/security/corpus/alts_credentials_corpus/ff5c629ae11892921452922e2f233155c0e01c3c"
+      "test/core/security/corpus/alts_credentials_corpus/de8ba9158254c1cd84b53df1e4cdf1757b1392f1"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "alts_credentials_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/security/corpus/alts_credentials_corpus/e1dd260746f50024822a8b729b89545d26decfb8"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "alts_credentials_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/security/corpus/alts_credentials_corpus/e29add81b20dc570fdc885782689f6dccb1c5fad"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "alts_credentials_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/security/corpus/alts_credentials_corpus/e2e99af62843cd3b29d50daeb118e58830784da9"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "alts_credentials_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/security/corpus/alts_credentials_corpus/e46611c5daf99662e1576147c1623409752a1f39"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "alts_credentials_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/security/corpus/alts_credentials_corpus/e5a1ba11af830e9d2db201c5164f75747a85fe9b"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "alts_credentials_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/security/corpus/alts_credentials_corpus/e6026ee0badf216b326443a5f708446b2f2e579f"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "alts_credentials_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/security/corpus/alts_credentials_corpus/e6c7d2c0038fa1f03fc6590a726abc98f4c641f3"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "alts_credentials_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/security/corpus/alts_credentials_corpus/eafdef6a630bed71bd0e4f3d4a16b5fa0c920651"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "alts_credentials_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/security/corpus/alts_credentials_corpus/ece985b9b82e27281514d460709d7edf8203ded7"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "alts_credentials_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/security/corpus/alts_credentials_corpus/edb8f4259f756c2c4bc731f05beaa36f992cf079"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "alts_credentials_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/security/corpus/alts_credentials_corpus/edce7778c2e1adb81dda3d057a6536759a7cb293"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "alts_credentials_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/security/corpus/alts_credentials_corpus/ee4040c0dd406dd616c49ed2c37b40478dabfe0f"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "alts_credentials_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/security/corpus/alts_credentials_corpus/ee69f2b380663d051a70f30fcfce9f79f5341e5a"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "alts_credentials_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/security/corpus/alts_credentials_corpus/efc6743e47274058771bb6eda1fefa017bde4a95"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "alts_credentials_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/security/corpus/alts_credentials_corpus/f0038e54162000694d882b1acb80930c807b41d2"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "alts_credentials_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/security/corpus/alts_credentials_corpus/f1deb9e388c877337dabe92f31b01e2a019a10f4"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "alts_credentials_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/security/corpus/alts_credentials_corpus/f3a09373e4d3c7310d372089e6deb15d6b22c198"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "alts_credentials_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/security/corpus/alts_credentials_corpus/f3db7ef6495fa1ac5bb4db293fb38dd59122bb7c"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "alts_credentials_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/security/corpus/alts_credentials_corpus/f434bb4ceecc573e085d4c3ef453ef01e93d9c89"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "alts_credentials_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/security/corpus/alts_credentials_corpus/f55bceaad42ddf9d2b37fdfca68255d29a696109"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "alts_credentials_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/security/corpus/alts_credentials_corpus/f62ca5321428a5d23f3c804fb51eb4e65bc58716"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "alts_credentials_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/security/corpus/alts_credentials_corpus/f7c6a558b8d0af64db2b139371a7af7068b01b92"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "alts_credentials_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/security/corpus/alts_credentials_corpus/faa1781e1444bba5b8c677bc5e2a38d023a1ec65"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "alts_credentials_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/security/corpus/alts_credentials_corpus/fceba33ada1dda05fccedfefd331c9a201f1a2e5"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "alts_credentials_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/security/corpus/alts_credentials_corpus/fd668bef6fdaf7f3ffd58d8c60ce550476652e60"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "alts_credentials_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/security/corpus/alts_credentials_corpus/fdf06b928e37e7c4ae59a568b5723ad98bbed6e5"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "alts_credentials_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/security/corpus/alts_credentials_corpus/fe2fc5d499aeb2762387ef2e3ce939280813dec0"
+    ], 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [
+      "tsan"
+    ], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "alts_credentials_fuzzer_one_entry", 
+    "platforms": [
+      "mac", 
+      "linux"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [
+      "test/core/security/corpus/alts_credentials_corpus/ff548d368b090409a138e5cc4afc7f43b4a3fbbd"
     ], 
     "ci_platforms": [
       "linux"
