@@ -223,7 +223,7 @@ tsi_result tsi_handshaker_result_extract_peer(const tsi_handshaker_result* self,
 }
 
 tsi_result tsi_handshaker_result_create_frame_protector(
-    const tsi_handshaker_result* self, size_t* max_protected_frame_size,
+    tsi_handshaker_result* self, size_t* max_protected_frame_size,
     tsi_frame_protector** protector) {
   if (self == nullptr || self->vtable == nullptr || protector == nullptr) {
     return TSI_INVALID_ARGUMENT;

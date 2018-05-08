@@ -514,7 +514,7 @@ static tsi_result fake_handshaker_result_create_zero_copy_grpc_protector(
 }
 
 static tsi_result fake_handshaker_result_create_frame_protector(
-    const tsi_handshaker_result* self, size_t* max_output_protected_frame_size,
+    tsi_handshaker_result* self, size_t* max_output_protected_frame_size,
     tsi_frame_protector** protector) {
   *protector = tsi_create_fake_frame_protector(max_output_protected_frame_size);
   return TSI_OK;

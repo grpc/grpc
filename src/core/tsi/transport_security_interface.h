@@ -220,7 +220,7 @@ tsi_result tsi_handshaker_result_extract_peer(const tsi_handshaker_result* self,
    there is no fatal error.
    The caller is responsible for destroying the protector.  */
 tsi_result tsi_handshaker_result_create_frame_protector(
-    const tsi_handshaker_result* self, size_t* max_output_protected_frame_size,
+    tsi_handshaker_result* self, size_t* max_output_protected_frame_size,
     tsi_frame_protector** protector);
 
 /* This method returns the unused bytes from the handshake. It returns TSI_OK

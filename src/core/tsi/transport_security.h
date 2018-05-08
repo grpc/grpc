@@ -95,7 +95,7 @@ typedef struct {
       const tsi_handshaker_result* self,
       size_t* max_output_protected_frame_size,
       tsi_zero_copy_grpc_protector** protector);
-  tsi_result (*create_frame_protector)(const tsi_handshaker_result* self,
+  tsi_result (*create_frame_protector)(tsi_handshaker_result* self,
                                        size_t* max_output_protected_frame_size,
                                        tsi_frame_protector** protector);
   tsi_result (*get_unused_bytes)(const tsi_handshaker_result* self,

@@ -135,7 +135,7 @@ static tsi_result handshaker_result_create_zero_copy_grpc_protector(
 }
 
 static tsi_result handshaker_result_create_frame_protector(
-    const tsi_handshaker_result* self, size_t* max_output_protected_frame_size,
+    tsi_handshaker_result* self, size_t* max_output_protected_frame_size,
     tsi_frame_protector** protector) {
   if (self == nullptr || protector == nullptr) {
     gpr_log(GPR_ERROR,

@@ -1078,11 +1078,9 @@ filegroups:
 - name: tsi_interface
   headers:
   - src/core/tsi/transport_security.h
-  - src/core/tsi/transport_security_adapter.h
   - src/core/tsi/transport_security_interface.h
   src:
   - src/core/tsi/transport_security.cc
-  - src/core/tsi/transport_security_adapter.cc
   deps:
   - gpr
   secure: true
