@@ -44,6 +44,10 @@ GPRAPI void grpc_slice_buffer_add(grpc_slice_buffer* sb, grpc_slice slice);
    slice added in this fashion. */
 GPRAPI size_t grpc_slice_buffer_add_indexed(grpc_slice_buffer* sb,
                                             grpc_slice slice);
+/** same as above, but mallocs the slice itself to allow for better compiler
+   optimization */
+GPRAPI size_t grpc_slice_buffer_malloc_indexed(grpc_slice_buffer* sb,
+                                               size_t len);
 GPRAPI void grpc_slice_buffer_addn(grpc_slice_buffer* sb, grpc_slice* slices,
                                    size_t n);
 /** add a very small (less than 8 bytes) amount of data to the end of a slice
