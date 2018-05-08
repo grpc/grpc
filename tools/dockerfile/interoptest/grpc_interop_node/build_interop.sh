@@ -17,7 +17,6 @@
 set -e
 
 mkdir -p /var/local/git
-
 git clone /var/local/jenkins/grpc-node /var/local/git/grpc-node
 # clone gRPC submodules, use data from locally cloned submodules where possible
 (cd /var/local/jenkins/grpc-node/ && git submodule foreach 'cd /var/local/git/grpc-node \
