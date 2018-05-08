@@ -23,8 +23,8 @@ mkdir -p ${KOKORO_KEYSTORE_DIR}
 cp ${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json ${KOKORO_KEYSTORE_DIR}/4321_grpc-testing-service
 
 temp_dir=$(mktemp -d)
-ln -f "${KOKORO_GFILE_DIR}/bazel-canary" ${temp_dir}/bazel
-chmod 755 "${KOKORO_GFILE_DIR}/bazel-canary"
+ln -f "${KOKORO_GFILE_DIR}/bazel-release-0.12.0" ${temp_dir}/bazel
+chmod 755 "${KOKORO_GFILE_DIR}/bazel-release-0.12.0"
 export PATH="${temp_dir}:${PATH}"
 # This should show ${temp_dir}/bazel
 which bazel
@@ -37,7 +37,7 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
 "${KOKORO_GFILE_DIR}/bazel_wrapper.py" \
   --host_jvm_args=-Dbazel.DigestFunction=SHA256 \
-  test --jobs="100" \
+  test --jobs="200" \
   --test_timeout="3600,3600,3600,3600" \
   --test_output=errors  \
   --verbose_failures=true  \

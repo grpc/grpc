@@ -38,6 +38,8 @@
 #include "test/cpp/interop/server_helper.h"
 #include "test/cpp/util/test_config.h"
 
+DEFINE_bool(use_alts, false,
+            "Whether to use alts. Enable alts will disable tls.");
 DEFINE_bool(use_tls, false, "Whether to use tls.");
 DEFINE_string(custom_credentials_type, "", "User provided credentials type.");
 DEFINE_int32(port, 0, "Server port.");
@@ -316,12 +318,27 @@ class TestServiceImpl : public TestService::Service {
 
 void grpc::testing::interop::RunServer(
     std::shared_ptr<ServerCredentials> creds) {
-  RunServer(creds, FLAGS_port, nullptr);
+  RunServer(creds, FLAGS_port, nullptr, nullptr);
+}
+
+void grpc::testing::interop::RunServer(
+    std::shared_ptr<ServerCredentials> creds,
+    std::unique_ptr<std::vector<std::unique_ptr<ServerBuilderOption>>>
+        server_options) {
+  RunServer(creds, FLAGS_port, nullptr, std::move(server_options));
 }
 
 void grpc::testing::interop::RunServer(
     std::shared_ptr<ServerCredentials> creds, const int port,
     ServerStartedCondition* server_started_condition) {
+  RunServer(creds, FLAGS_port, server_started_condition, nullptr);
+}
+
+void grpc::testing::interop::RunServer(
+    std::shared_ptr<ServerCredentials> creds, const int port,
+    ServerStartedCondition* server_started_condition,
+    std::unique_ptr<std::vector<std::unique_ptr<ServerBuilderOption>>>
+        server_options) {
   GPR_ASSERT(port != 0);
   std::ostringstream server_address;
   server_address << "0.0.0.0:" << port;
@@ -333,6 +350,11 @@ void grpc::testing::interop::RunServer(
   ServerBuilder builder;
   builder.RegisterService(&service);
   builder.AddListeningPort(server_address.str(), creds);
+  if (server_options != nullptr) {
+    for (size_t i = 0; i < server_options->size(); i++) {
+      builder.SetOption(std::move((*server_options)[i]));
+    }
+  }
   if (FLAGS_max_send_message_size >= 0) {
     builder.SetMaxSendMessageSize(FLAGS_max_send_message_size);
   }

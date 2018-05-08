@@ -60,6 +60,10 @@ class ClientChannelMethodParams : public RefCounted<ClientChannelMethodParams> {
   template <typename T, typename... Args>
   friend T* grpc_core::New(Args&&... args);
 
+  // So Delete() can call our private dtor.
+  template <typename T>
+  friend void grpc_core::Delete(T*);
+
   ClientChannelMethodParams() {}
   virtual ~ClientChannelMethodParams() {}
 

@@ -87,6 +87,9 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.10.0': None
         },
+        {
+            'v1.11.0': None
+        },
     ],
     'go': [
         {
@@ -192,6 +195,9 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.10.0': None
         },
+        {
+            'v1.11.0': None
+        },
     ],
     'node': [
         {
@@ -262,6 +268,9 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.10.0': None
         },
+        {
+            'v1.11.0': None
+        },
     ],
     'php': [
         {
@@ -294,6 +303,9 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.10.0': None
         },
+        {
+            'v1.11.0': None
+        },
     ],
     'csharp': [
         #{'v1.0.1': None},
@@ -324,6 +336,9 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.10.0': None
         },
+        {
+            'v1.11.0': None
+        },
     ],
 }
 
@@ -343,4 +358,14 @@ TESTCASES_VERSION_MATRIX = {
     'ruby_v1.0.1': 'ruby__v1.0.1',
     'csharp_v1.1.4': 'csharp__v1.1.4',
     'csharp_v1.2.5': 'csharp__v1.1.4',
+    'python_v1.0.x': 'python__v1.0.x',
+    'python_v1.1.4': 'python__v1.0.x',
+    'python_v1.2.5': 'python__v1.0.x',
+    'python_v1.3.9': 'python__v1.0.x',
+    'python_v1.4.2': 'python__v1.0.x',
+    'python_v1.6.6': 'python__v1.0.x',
+    'python_v1.7.2': 'python__v1.0.x',
+    'python_v1.8.1': 'python__v1.0.x',
+    'python_v1.9.1': 'python__v1.0.x',
+    'python_v1.10.0': 'python__v1.0.x',
 }

@@ -105,6 +105,10 @@ class Resolver : public InternallyRefCountedWithTracing<Resolver> {
   GRPC_ABSTRACT_BASE_CLASS
 
  protected:
+  // So Delete() can access our protected dtor.
+  template <typename T>
+  friend void Delete(T*);
+
   /// Does NOT take ownership of the reference to \a combiner.
   // TODO(roth): Once we have a C++-like interface for combiners, this
   // API should change to take a RefCountedPtr<>, so that we always take

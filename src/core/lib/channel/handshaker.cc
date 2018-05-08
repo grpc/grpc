@@ -22,10 +22,14 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
+#include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/timer.h"
+
+grpc_core::TraceFlag grpc_handshaker_trace(false, "handshaker");
 
 //
 // grpc_handshaker
@@ -50,6 +54,10 @@ void grpc_handshaker_do_handshake(grpc_handshaker* handshaker,
                                   grpc_handshaker_args* args) {
   handshaker->vtable->do_handshake(handshaker, acceptor, on_handshake_done,
                                    args);
+}
+
+const char* grpc_handshaker_name(grpc_handshaker* handshaker) {
+  return handshaker->vtable->name;
 }
 
 //
@@ -127,6 +135,12 @@ static bool is_power_of_2(size_t n) { return (n & (n - 1)) == 0; }
 
 void grpc_handshake_manager_add(grpc_handshake_manager* mgr,
                                 grpc_handshaker* handshaker) {
+  if (grpc_handshaker_trace.enabled()) {
+    gpr_log(
+        GPR_INFO,
+        "handshake_manager %p: adding handshaker %s [%p] at index %" PRIuPTR,
+        mgr, grpc_handshaker_name(handshaker), handshaker, mgr->count);
+  }
   gpr_mu_lock(&mgr->mu);
   // To avoid allocating memory for each handshaker we add, we double
   // the number of elements every time we need more.
@@ -172,23 +186,56 @@ void grpc_handshake_manager_shutdown(grpc_handshake_manager* mgr,
   GRPC_ERROR_UNREF(why);
 }
 
+static char* handshaker_args_string(grpc_handshaker_args* args) {
+  char* args_str = grpc_channel_args_string(args->args);
+  size_t num_args = args->args != nullptr ? args->args->num_args : 0;
+  size_t read_buffer_length =
+      args->read_buffer != nullptr ? args->read_buffer->length : 0;
+  char* str;
+  gpr_asprintf(&str,
+               "{endpoint=%p, args=%p {size=%" PRIuPTR
+               ": %s}, read_buffer=%p (length=%" PRIuPTR "), exit_early=%d}",
+               args->endpoint, args->args, num_args, args_str,
+               args->read_buffer, read_buffer_length, args->exit_early);
+  gpr_free(args_str);
+  return str;
+}
+
 // Helper function to call either the next handshaker or the
 // on_handshake_done callback.
 // Returns true if we've scheduled the on_handshake_done callback.
 static bool call_next_handshaker_locked(grpc_handshake_manager* mgr,
                                         grpc_error* error) {
+  if (grpc_handshaker_trace.enabled()) {
+    char* args_str = handshaker_args_string(&mgr->args);
+    gpr_log(GPR_INFO,
+            "handshake_manager %p: error=%s shutdown=%d index=%" PRIuPTR
+            ", args=%s",
+            mgr, grpc_error_string(error), mgr->shutdown, mgr->index, args_str);
+    gpr_free(args_str);
+  }
   GPR_ASSERT(mgr->index <= mgr->count);
   // If we got an error or we've been shut down or we're exiting early or
   // we've finished the last handshaker, invoke the on_handshake_done
   // callback.  Otherwise, call the next handshaker.
   if (error != GRPC_ERROR_NONE || mgr->shutdown || mgr->args.exit_early ||
       mgr->index == mgr->count) {
+    if (grpc_handshaker_trace.enabled()) {
+      gpr_log(GPR_INFO, "handshake_manager %p: handshaking complete", mgr);
+    }
     // Cancel deadline timer, since we're invoking the on_handshake_done
     // callback now.
     grpc_timer_cancel(&mgr->deadline_timer);
     GRPC_CLOSURE_SCHED(&mgr->on_handshake_done, error);
     mgr->shutdown = true;
   } else {
+    if (grpc_handshaker_trace.enabled()) {
+      gpr_log(
+          GPR_INFO,
+          "handshake_manager %p: calling handshaker %s [%p] at index %" PRIuPTR,
+          mgr, grpc_handshaker_name(mgr->handshakers[mgr->index]),
+          mgr->handshakers[mgr->index], mgr->index);
+    }
     grpc_handshaker_do_handshake(mgr->handshakers[mgr->index], mgr->acceptor,
                                  &mgr->call_next_handshaker, &mgr->args);
   }

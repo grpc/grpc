@@ -76,6 +76,7 @@
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h"
+#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h"
@@ -189,6 +190,10 @@ class GrpcLb : public LoadBalancingPolicy {
     bool seen_initial_response() const { return seen_initial_response_; }
 
    private:
+    // So Delete() can access our private dtor.
+    template <typename T>
+    friend void grpc_core::Delete(T*);
+
     ~BalancerCallState();
 
     GrpcLb* grpclb_policy() const {
@@ -999,6 +1004,9 @@ grpc_channel_args* BuildBalancerChannelArgs(
       // address updates into the LB channel.
       grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
           response_generator),
+      // A channel arg indicating the target is a grpclb load balancer.
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER), 1),
   };
   // Construct channel args.
   grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
@@ -1243,7 +1251,7 @@ bool GrpcLb::PickLocked(PickState* pick) {
     }
   } else {  // rr_policy_ == NULL
     if (grpc_lb_glb_trace.enabled()) {
-      gpr_log(GPR_DEBUG,
+      gpr_log(GPR_INFO,
               "[grpclb %p] No RR policy. Adding to grpclb's pending picks",
               this);
     }
@@ -1409,13 +1417,13 @@ void GrpcLb::OnFallbackTimerLocked(void* arg, grpc_error* error) {
 void GrpcLb::StartBalancerCallRetryTimerLocked() {
   grpc_millis next_try = lb_call_backoff_.NextAttemptTime();
   if (grpc_lb_glb_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "[grpclb %p] Connection to LB server lost...", this);
+    gpr_log(GPR_INFO, "[grpclb %p] Connection to LB server lost...", this);
     grpc_millis timeout = next_try - ExecCtx::Get()->Now();
     if (timeout > 0) {
-      gpr_log(GPR_DEBUG, "[grpclb %p] ... retry_timer_active in %" PRId64 "ms.",
+      gpr_log(GPR_INFO, "[grpclb %p] ... retry_timer_active in %" PRId64 "ms.",
               this, timeout);
     } else {
-      gpr_log(GPR_DEBUG, "[grpclb %p] ... retry_timer_active immediately.",
+      gpr_log(GPR_INFO, "[grpclb %p] ... retry_timer_active immediately.",
               this);
     }
   }
@@ -1694,9 +1702,11 @@ void GrpcLb::CreateRoundRobinPolicyLocked(const Args& args) {
 
 grpc_channel_args* GrpcLb::CreateRoundRobinPolicyArgsLocked() {
   grpc_lb_addresses* addresses;
+  bool is_backend_from_grpclb_load_balancer = false;
   if (serverlist_ != nullptr) {
     GPR_ASSERT(serverlist_->num_servers > 0);
     addresses = ProcessServerlist(serverlist_);
+    is_backend_from_grpclb_load_balancer = true;
   } else {
     // If CreateOrUpdateRoundRobinPolicyLocked() is invoked when we haven't
     // received any serverlist from the balancer, we use the fallback backends
@@ -1710,9 +1720,18 @@ grpc_channel_args* GrpcLb::CreateRoundRobinPolicyArgsLocked() {
   // Replace the LB addresses in the channel args that we pass down to
   // the subchannel.
   static const char* keys_to_remove[] = {GRPC_ARG_LB_ADDRESSES};
-  const grpc_arg arg = grpc_lb_addresses_create_channel_arg(addresses);
+  const grpc_arg args_to_add[] = {
+      grpc_lb_addresses_create_channel_arg(addresses),
+      // A channel arg indicating if the target is a backend inferred from a
+      // grpclb load balancer.
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(
+              GRPC_ARG_ADDRESS_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER),
+          is_backend_from_grpclb_load_balancer),
+  };
   grpc_channel_args* args = grpc_channel_args_copy_and_add_and_remove(
-      args_, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove), &arg, 1);
+      args_, keys_to_remove, GPR_ARRAY_SIZE(keys_to_remove), args_to_add,
+      GPR_ARRAY_SIZE(args_to_add));
   grpc_lb_addresses_destroy(addresses);
   return args;
 }
@@ -1723,7 +1742,7 @@ void GrpcLb::CreateOrUpdateRoundRobinPolicyLocked() {
   GPR_ASSERT(args != nullptr);
   if (rr_policy_ != nullptr) {
     if (grpc_lb_glb_trace.enabled()) {
-      gpr_log(GPR_DEBUG, "[grpclb %p] Updating RR policy %p", this,
+      gpr_log(GPR_INFO, "[grpclb %p] Updating RR policy %p", this,
               rr_policy_.get());
     }
     rr_policy_->UpdateLocked(*args);
@@ -1734,7 +1753,7 @@ void GrpcLb::CreateOrUpdateRoundRobinPolicyLocked() {
     lb_policy_args.args = args;
     CreateRoundRobinPolicyLocked(lb_policy_args);
     if (grpc_lb_glb_trace.enabled()) {
-      gpr_log(GPR_DEBUG, "[grpclb %p] Created new RR policy %p", this,
+      gpr_log(GPR_INFO, "[grpclb %p] Created new RR policy %p", this,
               rr_policy_.get());
     }
   }
@@ -1750,7 +1769,7 @@ void GrpcLb::OnRoundRobinRequestReresolutionLocked(void* arg,
   }
   if (grpc_lb_glb_trace.enabled()) {
     gpr_log(
-        GPR_DEBUG,
+        GPR_INFO,
         "[grpclb %p] Re-resolution requested from the internal RR policy (%p).",
         grpclb_policy, grpclb_policy->rr_policy_.get());
   }

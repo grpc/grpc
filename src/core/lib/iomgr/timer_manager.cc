@@ -82,7 +82,7 @@ static void start_timer_thread_and_unlock(void) {
   ++g_thread_count;
   gpr_mu_unlock(&g_mu);
   if (grpc_timer_check_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "Spawn timer thread");
+    gpr_log(GPR_INFO, "Spawn timer thread");
   }
   completed_thread* ct =
       static_cast<completed_thread*>(gpr_malloc(sizeof(*ct)));
@@ -108,7 +108,7 @@ static void run_some_timers() {
     // waiter so that the next deadline is not missed
     if (!g_has_timed_waiter) {
       if (grpc_timer_check_trace.enabled()) {
-        gpr_log(GPR_DEBUG, "kick untimed waiter");
+        gpr_log(GPR_INFO, "kick untimed waiter");
       }
       gpr_cv_signal(&g_cv_wait);
     }
@@ -116,7 +116,7 @@ static void run_some_timers() {
   }
   // without our lock, flush the exec_ctx
   if (grpc_timer_check_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "flush exec_ctx");
+    gpr_log(GPR_INFO, "flush exec_ctx");
   }
   grpc_core::ExecCtx::Get()->Flush();
   gpr_mu_lock(&g_mu);
@@ -172,7 +172,7 @@ static bool wait_until(grpc_millis next) {
 
         if (grpc_timer_check_trace.enabled()) {
           grpc_millis wait_time = next - grpc_core::ExecCtx::Get()->Now();
-          gpr_log(GPR_DEBUG, "sleep for a %" PRId64 " milliseconds", wait_time);
+          gpr_log(GPR_INFO, "sleep for a %" PRId64 " milliseconds", wait_time);
         }
       } else {  // g_timed_waiter == true && next >= g_timed_waiter_deadline
         next = GRPC_MILLIS_INF_FUTURE;
@@ -180,14 +180,14 @@ static bool wait_until(grpc_millis next) {
     }
 
     if (grpc_timer_check_trace.enabled() && next == GRPC_MILLIS_INF_FUTURE) {
-      gpr_log(GPR_DEBUG, "sleep until kicked");
+      gpr_log(GPR_INFO, "sleep until kicked");
     }
 
     gpr_cv_wait(&g_cv_wait, &g_mu,
                 grpc_millis_to_timespec(next, GPR_CLOCK_MONOTONIC));
 
     if (grpc_timer_check_trace.enabled()) {
-      gpr_log(GPR_DEBUG, "wait ended: was_timed:%d kicked:%d",
+      gpr_log(GPR_INFO, "wait ended: was_timed:%d kicked:%d",
               my_timed_waiter_generation == g_timed_waiter_generation,
               g_kicked);
     }
@@ -232,7 +232,7 @@ static void timer_main_loop() {
            Consequently, we can just sleep forever here and be happy at some
            saved wakeup cycles. */
         if (grpc_timer_check_trace.enabled()) {
-          gpr_log(GPR_DEBUG, "timers not checked: expect another thread to");
+          gpr_log(GPR_INFO, "timers not checked: expect another thread to");
         }
         next = GRPC_MILLIS_INF_FUTURE;
       /* fall through */
@@ -258,7 +258,7 @@ static void timer_thread_cleanup(completed_thread* ct) {
   g_completed_threads = ct;
   gpr_mu_unlock(&g_mu);
   if (grpc_timer_check_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "End timer thread");
+    gpr_log(GPR_INFO, "End timer thread");
   }
 }
 
@@ -300,18 +300,18 @@ void grpc_timer_manager_init(void) {
 static void stop_threads(void) {
   gpr_mu_lock(&g_mu);
   if (grpc_timer_check_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "stop timer threads: threaded=%d", g_threaded);
+    gpr_log(GPR_INFO, "stop timer threads: threaded=%d", g_threaded);
   }
   if (g_threaded) {
     g_threaded = false;
     gpr_cv_broadcast(&g_cv_wait);
     if (grpc_timer_check_trace.enabled()) {
-      gpr_log(GPR_DEBUG, "num timer threads: %d", g_thread_count);
+      gpr_log(GPR_INFO, "num timer threads: %d", g_thread_count);
     }
     while (g_thread_count > 0) {
       gpr_cv_wait(&g_cv_shutdown, &g_mu, gpr_inf_future(GPR_CLOCK_MONOTONIC));
       if (grpc_timer_check_trace.enabled()) {
-        gpr_log(GPR_DEBUG, "num timer threads: %d", g_thread_count);
+        gpr_log(GPR_INFO, "num timer threads: %d", g_thread_count);
       }
       gc_completed_threads();
     }

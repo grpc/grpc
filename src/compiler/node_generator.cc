@@ -20,6 +20,7 @@
 
 #include "src/compiler/config.h"
 #include "src/compiler/generator_helpers.h"
+#include "src/compiler/node_generator.h"
 #include "src/compiler/node_generator_helpers.h"
 
 using grpc::protobuf::Descriptor;
@@ -119,7 +120,8 @@ grpc::string NodeObjectPath(const Descriptor* descriptor) {
 }
 
 // Prints out the message serializer and deserializer functions
-void PrintMessageTransformer(const Descriptor* descriptor, Printer* out) {
+void PrintMessageTransformer(const Descriptor* descriptor, Printer* out,
+                             const Parameters& params) {
   map<grpc::string, grpc::string> template_vars;
   grpc::string full_name = descriptor->full_name();
   template_vars["identifier_name"] = MessageIdentifierName(full_name);
@@ -134,7 +136,12 @@ void PrintMessageTransformer(const Descriptor* descriptor, Printer* out) {
              "throw new Error('Expected argument of type $name$');\n");
   out->Outdent();
   out->Print("}\n");
-  out->Print("return new Buffer(arg.serializeBinary());\n");
+  if (params.minimum_node_version > 5) {
+    // Node version is > 5, we should use Buffer.from
+    out->Print("return Buffer.from(arg.serializeBinary());\n");
+  } else {
+    out->Print("return new Buffer(arg.serializeBinary());\n");
+  }
   out->Outdent();
   out->Print("}\n\n");
 
@@ -219,12 +226,13 @@ void PrintImports(const FileDescriptor* file, Printer* out) {
   out->Print("\n");
 }
 
-void PrintTransformers(const FileDescriptor* file, Printer* out) {
+void PrintTransformers(const FileDescriptor* file, Printer* out,
+                       const Parameters& params) {
   map<grpc::string, const Descriptor*> messages = GetAllMessages(file);
   for (std::map<grpc::string, const Descriptor*>::iterator it =
            messages.begin();
        it != messages.end(); it++) {
-    PrintMessageTransformer(it->second, out);
+    PrintMessageTransformer(it->second, out, params);
   }
   out->Print("\n");
 }
@@ -236,7 +244,8 @@ void PrintServices(const FileDescriptor* file, Printer* out) {
 }
 }  // namespace
 
-grpc::string GenerateFile(const FileDescriptor* file) {
+grpc::string GenerateFile(const FileDescriptor* file,
+                          const Parameters& params) {
   grpc::string output;
   {
     StringOutputStream output_stream(&output);
@@ -257,7 +266,7 @@ grpc::string GenerateFile(const FileDescriptor* file) {
 
     PrintImports(file, &out);
 
-    PrintTransformers(file, &out);
+    PrintTransformers(file, &out, params);
 
     PrintServices(file, &out);
 

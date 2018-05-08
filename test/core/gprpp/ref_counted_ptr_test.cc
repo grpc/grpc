@@ -88,7 +88,7 @@ TEST(RefCountedPtr, CopyAssignmentWhenEmpty) {
 
 TEST(RefCountedPtr, CopyAssignmentToSelf) {
   RefCountedPtr<Foo> foo(New<Foo>());
-  foo = foo;
+  foo = *&foo;  // The "*&" avoids warnings from LLVM -Wself-assign.
 }
 
 TEST(RefCountedPtr, EnclosedScope) {

@@ -921,9 +921,6 @@ class CSharpLanguage(object):
             if self.platform == 'mac':
                 # TODO(jtattermusch): EMBED_ZLIB=true currently breaks the mac build
                 self._make_options = ['EMBED_OPENSSL=true']
-                if self.args.compiler != 'coreclr':
-                    # On Mac, official distribution of mono is 32bit.
-                    self._make_options += ['ARCH_FLAGS=-m32', 'LDFLAGS=-m32']
             else:
                 self._make_options = ['EMBED_OPENSSL=true', 'EMBED_ZLIB=true']
 
@@ -944,6 +941,9 @@ class CSharpLanguage(object):
             assembly_subdir += '/net45'
             if self.platform == 'windows':
                 runtime_cmd = []
+            elif self.platform == 'mac':
+                # mono before version 5.2 on MacOS defaults to 32bit runtime
+                runtime_cmd = ['mono', '--arch=64']
             else:
                 runtime_cmd = ['mono']
 
@@ -1420,16 +1420,18 @@ argp.add_argument(
     nargs='?',
     help='Upload test results to a specified BQ table.')
 argp.add_argument(
-    '--disable_auto_set_flakes',
+    '--auto_set_flakes',
     default=False,
     const=True,
     action='store_const',
-    help='Disable rerunning historically flaky tests')
+    help=
+    'Allow repeated runs for tests that have been failing recently (based on BQ historical data).'
+)
 args = argp.parse_args()
 
 flaky_tests = set()
 shortname_to_cpu = {}
-if not args.disable_auto_set_flakes:
+if args.auto_set_flakes:
     try:
         for test in get_bqtest_data():
             if test.flaky: flaky_tests.add(test.name)

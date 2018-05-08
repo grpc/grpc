@@ -1,0 +1,108 @@
+[VARIABLES]
+
+# TODO(https://github.com/PyCQA/pylint/issues/1345): How does the inspection
+# not include "unused_" and "ignored_" by default?
+dummy-variables-rgx=^ignored_|^unused_
+
+[DESIGN]
+
+# NOTE(nathaniel): Not particularly attached to this value; it just seems to
+# be what works for us at the moment (excepting the dead-code-walking Beta
+# API).
+max-args=6
+
+[MISCELLANEOUS]
+
+# NOTE(nathaniel): We are big fans of "TODO(<issue link>): " and
+# "NOTE(<username or issue link>): ". We do not allow "TODO:",
+# "TODO(<username>):", "FIXME:", or anything else.
+notes=FIXME,XXX
+
+[MESSAGES CONTROL]
+
+disable=
+	# These suppressions are specific to tests:
+	#
+	# TODO(https://github.com/grpc/grpc/issues/261): investigate
+	# each of the following one by one and consider eliminating
+	# the suppression category.
+	# Eventually, the hope is to eliminate the .pylintrc-tests
+	# altogether and rely on .pylintrc for everything.
+	pointless-statement,
+	no-member,
+	no-self-use,
+	attribute-defined-outside-init,
+	unused-argument,
+	unused-variable,
+	unused-import,
+	redefined-builtin,
+	too-many-public-methods,
+	too-many-locals,
+	redefined-variable-type,
+	redefined-outer-name,
+	ungrouped-imports,
+	too-many-branches,
+	too-many-arguments,
+	too-many-format-args,
+	too-many-return-statements,
+	too-many-statements,
+	line-too-long,
+	wrong-import-position,
+	wrong-import-order,
+	# -- END OF TEST-SPECIFIC SUPPRESSIONS --
+
+
+	# TODO(https://github.com/PyCQA/pylint/issues/59#issuecomment-283774279):
+	# Enable cyclic-import after a 1.7-or-later pylint release that
+	# recognizes our disable=cyclic-import suppressions.
+	cyclic-import,
+	# TODO(https://github.com/grpc/grpc/issues/8622): Enable this after the
+	# Beta API is removed.
+	duplicate-code,
+	# TODO(https://github.com/grpc/grpc/issues/261): Doesn't seem to
+	# understand enum and concurrent.futures; look into this later with the
+	# latest pylint version.
+	import-error,
+	# TODO(https://github.com/grpc/grpc/issues/261): Enable this one.
+	# Should take a little configuration but not much.
+	invalid-name,
+	# TODO(https://github.com/grpc/grpc/issues/261): This doesn't seem to
+	# work for now? Try with a later pylint?
+	locally-disabled,
+	# NOTE(nathaniel): What even is this? *Enabling* an inspection results
+	# in a warning? How does that encourage more analysis and coverage?
+	locally-enabled,
+	# NOTE(nathaniel): We don't write doc strings for most private code
+	# elements.
+	missing-docstring,
+	# NOTE(nathaniel): In numeric comparisons it is better to have the
+	# lesser (or lesser-or-equal-to) quantity on the left when the
+	# expression is true than it is to worry about which is an identifier
+	# and which a literal value.
+	misplaced-comparison-constant,
+	# NOTE(nathaniel): Our completely abstract interface classes don't have
+	# constructors.
+	no-init,
+	# TODO(https://github.com/grpc/grpc/issues/261): Doesn't yet play
+	# nicely with some of our code being implemented in Cython. Maybe in a
+	# later version?
+	no-name-in-module,
+	# TODO(https://github.com/grpc/grpc/issues/261): Suppress these where
+	# the odd shape of the authentication portion of the API forces them on
+	# us and enable everywhere else.
+	protected-access,
+	# NOTE(nathaniel): Pylint and I will probably never agree on this.
+	too-few-public-methods,
+	# NOTE(nathaniel): Pylint and I wil probably never agree on this for
+	# private classes. For public classes maybe?
+	too-many-instance-attributes,
+	# NOTE(nathaniel): Some of our modules have a lot of lines... of
+	# specification and documentation. Maybe if this were
+	# lines-of-code-based we would use it.
+	too-many-lines,
+	# TODO(https://github.com/grpc/grpc/issues/261): Maybe we could have
+	# this one if we extracted just a few more helper functions...
+	too-many-nested-blocks,
+	# NOTE(nathaniel): I have disputed the premise of this inspection from
+	# the beginning and will continue to do so until it goes away for good.
+	useless-else-on-loop,

@@ -27,9 +27,6 @@ class ServerTest extends PHPUnit_Framework_TestCase
     public function tearDown()
     {
         unset($this->server);
-        $channel_clean_persistent =
-            new Grpc\Channel('localhost:50010', []);
-        $channel_clean_persistent->cleanPersistentList();
     }
 
     public function testConstructorWithNull()
@@ -99,6 +96,24 @@ class ServerTest extends PHPUnit_Framework_TestCase
         $this->assertNull($this->server);
     }
 
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidConstructorWithNumKeyOfArray()
+    {
+        $this->server = new Grpc\Server([10 => '127.0.0.1',
+                                         20 => '8080', ]);
+        $this->assertNull($this->server);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInvalidConstructorWithList()
+    {
+        $this->server = new Grpc\Server(['127.0.0.1', '8080']);
+        $this->assertNull($this->server);
+    }
     /**
      * @expectedException InvalidArgumentException
      */

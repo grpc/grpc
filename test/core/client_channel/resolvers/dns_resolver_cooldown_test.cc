@@ -145,7 +145,6 @@ struct OnResolutionCallbackArg {
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver;
   grpc_channel_args* result = nullptr;
   grpc_millis delay_before_second_resolution = 0;
-  bool using_cares = false;
 };
 
 // Counter for the number of times a resolution notification callback has been
@@ -155,81 +154,100 @@ static int g_on_resolution_invocations_count;
 // Set to true by the last callback in the resolution chain.
 bool g_all_callbacks_invoked;
 
-void on_third_resolution(void* arg, grpc_error* error) {
+void on_fourth_resolution(void* arg, grpc_error* error) {
   OnResolutionCallbackArg* cb_arg = static_cast<OnResolutionCallbackArg*>(arg);
+  grpc_channel_args_destroy(cb_arg->result);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   ++g_on_resolution_invocations_count;
-  grpc_channel_args_destroy(cb_arg->result);
   gpr_log(GPR_INFO,
-          "3rd: g_on_resolution_invocations_count: %d, g_resolution_count: %d",
+          "4th: g_on_resolution_invocations_count: %d, g_resolution_count: %d",
           g_on_resolution_invocations_count, g_resolution_count);
   // In this case we expect to have incurred in another system-level resolution
-  // because on_second_resolution slept for longer than the min resolution
+  // because on_third_resolution slept for longer than the min resolution
   // period.
-  GPR_ASSERT(g_on_resolution_invocations_count == 3);
-  GPR_ASSERT(g_resolution_count == 2);
+  GPR_ASSERT(g_on_resolution_invocations_count == 4);
+  GPR_ASSERT(g_resolution_count == 3);
   cb_arg->resolver.reset();
-  if (cb_arg->using_cares) {
-    gpr_atm_rel_store(&g_iomgr_args.done_atm, 1);
-    gpr_mu_lock(g_iomgr_args.mu);
-    GRPC_LOG_IF_ERROR("pollset_kick",
-                      grpc_pollset_kick(g_iomgr_args.pollset, nullptr));
-    gpr_mu_unlock(g_iomgr_args.mu);
-  }
+  gpr_atm_rel_store(&g_iomgr_args.done_atm, 1);
+  gpr_mu_lock(g_iomgr_args.mu);
+  GRPC_LOG_IF_ERROR("pollset_kick",
+                    grpc_pollset_kick(g_iomgr_args.pollset, nullptr));
+  gpr_mu_unlock(g_iomgr_args.mu);
   grpc_core::Delete(cb_arg);
   g_all_callbacks_invoked = true;
 }
 
+void on_third_resolution(void* arg, grpc_error* error) {
+  OnResolutionCallbackArg* cb_arg = static_cast<OnResolutionCallbackArg*>(arg);
+  grpc_channel_args_destroy(cb_arg->result);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  ++g_on_resolution_invocations_count;
+  gpr_log(GPR_INFO,
+          "3rd: g_on_resolution_invocations_count: %d, g_resolution_count: %d",
+          g_on_resolution_invocations_count, g_resolution_count);
+  // The timer set because of the previous re-resolution request fires, so a new
+  // system-level resolution happened.
+  GPR_ASSERT(g_on_resolution_invocations_count == 3);
+  GPR_ASSERT(g_resolution_count == 2);
+  grpc_core::ExecCtx::Get()->TestOnlySetNow(
+      cb_arg->delay_before_second_resolution * 2);
+  cb_arg->resolver->NextLocked(
+      &cb_arg->result,
+      GRPC_CLOSURE_CREATE(on_fourth_resolution, arg,
+                          grpc_combiner_scheduler(g_combiner)));
+  cb_arg->resolver->RequestReresolutionLocked();
+  gpr_mu_lock(g_iomgr_args.mu);
+  GRPC_LOG_IF_ERROR("pollset_kick",
+                    grpc_pollset_kick(g_iomgr_args.pollset, nullptr));
+  gpr_mu_unlock(g_iomgr_args.mu);
+}
+
 void on_second_resolution(void* arg, grpc_error* error) {
   OnResolutionCallbackArg* cb_arg = static_cast<OnResolutionCallbackArg*>(arg);
-  ++g_on_resolution_invocations_count;
   grpc_channel_args_destroy(cb_arg->result);
-
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  ++g_on_resolution_invocations_count;
   gpr_log(GPR_INFO,
           "2nd: g_on_resolution_invocations_count: %d, g_resolution_count: %d",
           g_on_resolution_invocations_count, g_resolution_count);
   // The resolution request for which this function is the callback happened
   // before the min resolution period. Therefore, no new system-level
-  // resolutions happened, as indicated by g_resolution_count.
+  // resolutions happened, as indicated by g_resolution_count. But a resolution
+  // timer was set to fire when the cooldown finishes.
   GPR_ASSERT(g_on_resolution_invocations_count == 2);
   GPR_ASSERT(g_resolution_count == 1);
-  grpc_core::ExecCtx::Get()->TestOnlySetNow(
-      cb_arg->delay_before_second_resolution * 2);
+  // Register a new callback to capture the timer firing.
   cb_arg->resolver->NextLocked(
       &cb_arg->result,
       GRPC_CLOSURE_CREATE(on_third_resolution, arg,
                           grpc_combiner_scheduler(g_combiner)));
-  cb_arg->resolver->RequestReresolutionLocked();
-  if (cb_arg->using_cares) {
-    gpr_mu_lock(g_iomgr_args.mu);
-    GRPC_LOG_IF_ERROR("pollset_kick",
-                      grpc_pollset_kick(g_iomgr_args.pollset, nullptr));
-    gpr_mu_unlock(g_iomgr_args.mu);
-  }
+  gpr_mu_lock(g_iomgr_args.mu);
+  GRPC_LOG_IF_ERROR("pollset_kick",
+                    grpc_pollset_kick(g_iomgr_args.pollset, nullptr));
+  gpr_mu_unlock(g_iomgr_args.mu);
 }
 
 void on_first_resolution(void* arg, grpc_error* error) {
   OnResolutionCallbackArg* cb_arg = static_cast<OnResolutionCallbackArg*>(arg);
-  ++g_on_resolution_invocations_count;
   grpc_channel_args_destroy(cb_arg->result);
+  GPR_ASSERT(error == GRPC_ERROR_NONE);
+  ++g_on_resolution_invocations_count;
+  gpr_log(GPR_INFO,
+          "1st: g_on_resolution_invocations_count: %d, g_resolution_count: %d",
+          g_on_resolution_invocations_count, g_resolution_count);
+  // There's one initial system-level resolution and one invocation of a
+  // notification callback (the current function).
+  GPR_ASSERT(g_on_resolution_invocations_count == 1);
+  GPR_ASSERT(g_resolution_count == 1);
   cb_arg->resolver->NextLocked(
       &cb_arg->result,
       GRPC_CLOSURE_CREATE(on_second_resolution, arg,
                           grpc_combiner_scheduler(g_combiner)));
   cb_arg->resolver->RequestReresolutionLocked();
-  gpr_log(GPR_INFO,
-          "1st: g_on_resolution_invocations_count: %d, g_resolution_count: %d",
-          g_on_resolution_invocations_count, g_resolution_count);
-  // Theres one initial system-level resolution and one invocation of a
-  // notification callback (the current function).
-  GPR_ASSERT(g_on_resolution_invocations_count == 1);
-  GPR_ASSERT(g_resolution_count == 1);
-  if (cb_arg->using_cares) {
-    gpr_mu_lock(g_iomgr_args.mu);
-    GRPC_LOG_IF_ERROR("pollset_kick",
-                      grpc_pollset_kick(g_iomgr_args.pollset, nullptr));
-    gpr_mu_unlock(g_iomgr_args.mu);
-  }
+  gpr_mu_lock(g_iomgr_args.mu);
+  GRPC_LOG_IF_ERROR("pollset_kick",
+                    grpc_pollset_kick(g_iomgr_args.pollset, nullptr));
+  gpr_mu_unlock(g_iomgr_args.mu);
 }
 
 static void start_test_under_combiner(void* arg, grpc_error* error) {
@@ -269,22 +287,19 @@ static void start_test_under_combiner(void* arg, grpc_error* error) {
   grpc_uri_destroy(uri);
 }
 
-static void test_cooldown(bool using_cares) {
+static void test_cooldown() {
   grpc_core::ExecCtx exec_ctx;
-  if (using_cares) iomgr_args_init(&g_iomgr_args);
+  iomgr_args_init(&g_iomgr_args);
   OnResolutionCallbackArg* res_cb_arg =
       grpc_core::New<OnResolutionCallbackArg>();
   res_cb_arg->uri_str = "dns:127.0.0.1";
-  res_cb_arg->using_cares = using_cares;
 
   GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(start_test_under_combiner, res_cb_arg,
                                          grpc_combiner_scheduler(g_combiner)),
                      GRPC_ERROR_NONE);
-  if (using_cares) {
-    grpc_core::ExecCtx::Get()->Flush();
-    poll_pollset_until_request_done(&g_iomgr_args);
-    iomgr_args_finish(&g_iomgr_args);
-  }
+  grpc_core::ExecCtx::Get()->Flush();
+  poll_pollset_until_request_done(&g_iomgr_args);
+  iomgr_args_finish(&g_iomgr_args);
 }
 
 int main(int argc, char** argv) {
@@ -293,16 +308,12 @@ int main(int argc, char** argv) {
 
   g_combiner = grpc_combiner_create();
 
-  bool using_cares = false;
-#if GRPC_ARES == 1
-  using_cares = true;
-#endif
   g_default_dns_lookup_ares = grpc_dns_lookup_ares;
   grpc_dns_lookup_ares = test_dns_lookup_ares;
   default_resolve_address = grpc_resolve_address_impl;
   grpc_set_resolver_impl(&test_resolver);
 
-  test_cooldown(using_cares);
+  test_cooldown();
 
   {
     grpc_core::ExecCtx exec_ctx;

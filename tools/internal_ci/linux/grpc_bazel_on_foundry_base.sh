@@ -22,8 +22,8 @@ mkdir -p ${KOKORO_KEYSTORE_DIR}
 cp ${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json ${KOKORO_KEYSTORE_DIR}/4321_grpc-testing-service
 
 temp_dir=$(mktemp -d)
-ln -f "${KOKORO_GFILE_DIR}/bazel-canary" ${temp_dir}/bazel
-chmod 755 "${KOKORO_GFILE_DIR}/bazel-canary"
+ln -f "${KOKORO_GFILE_DIR}/bazel-release-0.12.0" ${temp_dir}/bazel
+chmod 755 "${KOKORO_GFILE_DIR}/bazel-release-0.12.0"
 export PATH="${temp_dir}:${PATH}"
 # This should show ${temp_dir}/bazel
 which bazel
@@ -37,7 +37,7 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 # TODO(adelez): implement size for test targets and change test_timeout back
 "${KOKORO_GFILE_DIR}/bazel_wrapper.py" \
   --host_jvm_args=-Dbazel.DigestFunction=SHA256 \
-  test --jobs="100" \
+  test --jobs="800" \
   --test_output=errors  \
   --verbose_failures=true  \
   --keep_going  \
@@ -53,4 +53,14 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
   --crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/debian8_clang/0.3.0/bazel_0.10.0:toolchain \
   --define GRPC_PORT_ISOLATED_RUNTIME=1 \
   $1 \
-  -- //test/...
+  -- //test/... || FAILED="true"
+
+if [ "$UPLOAD_TEST_RESULTS" != "" ]
+then
+  python ./tools/run_tests/python_utils/upload_rbe_results.py
+fi
+
+if [ "$FAILED" != "" ]
+then
+  exit 1
+fi
