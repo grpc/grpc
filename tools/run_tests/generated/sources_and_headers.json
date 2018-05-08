@@ -10638,7 +10638,6 @@
     ], 
     "headers": [
       "src/core/tsi/transport_security.h", 
-      "src/core/tsi/transport_security_adapter.h", 
       "src/core/tsi/transport_security_interface.h"
     ], 
     "is_filegroup": true, 
@@ -10647,8 +10646,6 @@
     "src": [
       "src/core/tsi/transport_security.cc", 
       "src/core/tsi/transport_security.h", 
-      "src/core/tsi/transport_security_adapter.cc", 
-      "src/core/tsi/transport_security_adapter.h", 
       "src/core/tsi/transport_security_interface.h"
     ], 
     "third_party": false, 

@@ -1496,8 +1496,6 @@ src/core/tsi/ssl_transport_security.h \
 src/core/tsi/ssl_types.h \
 src/core/tsi/transport_security.cc \
 src/core/tsi/transport_security.h \
-src/core/tsi/transport_security_adapter.cc \
-src/core/tsi/transport_security_adapter.h \
 src/core/tsi/transport_security_grpc.cc \
 src/core/tsi/transport_security_grpc.h \
 src/core/tsi/transport_security_interface.h \
