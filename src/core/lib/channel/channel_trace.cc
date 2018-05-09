@@ -219,7 +219,7 @@ char* ChannelTrace::RenderTrace() const {
       grpc_json_create_child(json_iterator, json, "numEventsLogged",
                              num_events_logged_str, GRPC_JSON_STRING, true);
   json_iterator =
-      grpc_json_create_child(json_iterator, json, "creationTime",
+      grpc_json_create_child(json_iterator, json, "creationTimestamp",
                              fmt_time(time_created_), GRPC_JSON_STRING, true);
   grpc_json* events = grpc_json_create_child(json_iterator, json, "events",
                                              nullptr, GRPC_JSON_ARRAY, false);

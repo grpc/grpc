@@ -69,7 +69,7 @@ void ValidateChannelTraceData(grpc_json* json,
   ASSERT_NE(json, nullptr);
   grpc_json* num_events_logged_json = GetJsonChild(json, "numEventsLogged");
   ASSERT_NE(num_events_logged_json, nullptr);
-  grpc_json* start_time = GetJsonChild(json, "creationTime");
+  grpc_json* start_time = GetJsonChild(json, "creationTimestamp");
   ASSERT_NE(start_time, nullptr);
   size_t num_events_logged =
       (size_t)strtol(num_events_logged_json->value, nullptr, 0);
