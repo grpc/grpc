@@ -184,7 +184,7 @@ int main(int argc, char** argv) {
     std::string const bin_dir = my_bin.substr(0, my_bin.rfind('/'));
     // Invoke the .sh and .py scripts directly where they are in source code.
     grpc::testing::InvokeResolverComponentTestsRunner(
-        "test/cpp/naming/resolver_component_tests_runner.sh",
+        "test/cpp/naming/resolver_component_tests_runner.py",
         bin_dir + "/" + FLAGS_test_bin_name,
         "test/cpp/naming/utils/dns_server.py",
         "test/cpp/naming/resolver_test_record_groups.yaml",
