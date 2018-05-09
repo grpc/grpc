@@ -1981,23 +1981,6 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "sockaddr_resolver_test", 
-    "src": [
-      "test/core/client_channel/resolvers/sockaddr_resolver_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
     "name": "sockaddr_utils_test", 
     "src": [
       "test/core/iomgr/sockaddr_utils_test.cc"
@@ -2324,6 +2307,23 @@
     "name": "udp_server_test", 
     "src": [
       "test/core/iomgr/udp_server_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "unix_resolver_test", 
+    "src": [
+      "test/core/client_channel/resolvers/unix_resolver_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -6821,7 +6821,7 @@
       "grpc_resolver_dns_ares", 
       "grpc_resolver_dns_native", 
       "grpc_resolver_fake", 
-      "grpc_resolver_sockaddr", 
+      "grpc_resolver_unix", 
       "grpc_secure", 
       "grpc_server_backward_compatibility", 
       "grpc_server_load_reporting", 
@@ -6929,7 +6929,7 @@
       "grpc_resolver_dns_ares", 
       "grpc_resolver_dns_native", 
       "grpc_resolver_fake", 
-      "grpc_resolver_sockaddr", 
+      "grpc_resolver_unix", 
       "grpc_server_backward_compatibility", 
       "grpc_server_load_reporting", 
       "grpc_transport_chttp2_client_insecure", 
@@ -10074,9 +10074,9 @@
     "headers": [], 
     "is_filegroup": true, 
     "language": "c", 
-    "name": "grpc_resolver_sockaddr", 
+    "name": "grpc_resolver_unix", 
     "src": [
-      "src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc"
+      "src/core/ext/filters/client_channel/resolver/unix/unix_resolver.cc"
     ], 
     "third_party": false, 
     "type": "filegroup"

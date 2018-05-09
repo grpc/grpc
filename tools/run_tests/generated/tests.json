@@ -2274,30 +2274,6 @@
     "flaky": false, 
     "gtest": false, 
     "language": "c", 
-    "name": "sockaddr_resolver_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "uses_polling": true
-  }, 
-  {
-    "args": [], 
-    "benchmark": false, 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "gtest": false, 
-    "language": "c", 
     "name": "sockaddr_utils_test", 
     "platforms": [
       "linux", 
@@ -2740,6 +2716,30 @@
       "linux", 
       "mac", 
       "posix"
+    ], 
+    "uses_polling": true
+  }, 
+  {
+    "args": [], 
+    "benchmark": false, 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c", 
+    "name": "unix_resolver_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
     ], 
     "uses_polling": true
   }, 
@@ -182659,52 +182659,6 @@
   {
     "args": [
       "test/core/client_channel/uri_corpus/fe0630a3aeed2ec6f474f362e4c839478290d5c4"
-    ], 
-    "ci_platforms": [
-      "linux"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [
-      "tsan"
-    ], 
-    "exclude_iomgrs": [
-      "uv"
-    ], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "uri_fuzzer_test_one_entry", 
-    "platforms": [
-      "mac", 
-      "linux"
-    ], 
-    "uses_polling": false
-  }, 
-  {
-    "args": [
-      "test/core/client_channel/uri_corpus/ipv4.txt"
-    ], 
-    "ci_platforms": [
-      "linux"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [
-      "tsan"
-    ], 
-    "exclude_iomgrs": [
-      "uv"
-    ], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "uri_fuzzer_test_one_entry", 
-    "platforms": [
-      "mac", 
-      "linux"
-    ], 
-    "uses_polling": false
-  }, 
-  {
-    "args": [
-      "test/core/client_channel/uri_corpus/ipv6.txt"
     ], 
     "ci_platforms": [
       "linux"

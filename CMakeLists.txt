@@ -352,7 +352,6 @@ add_dependencies(buildtests_c server_test)
 add_dependencies(buildtests_c slice_buffer_test)
 add_dependencies(buildtests_c slice_string_helpers_test)
 add_dependencies(buildtests_c slice_test)
-add_dependencies(buildtests_c sockaddr_resolver_test)
 add_dependencies(buildtests_c sockaddr_utils_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c socket_utils_test)
@@ -386,6 +385,7 @@ endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c udp_server_test)
 endif()
+add_dependencies(buildtests_c unix_resolver_test)
 add_dependencies(buildtests_c uri_parser_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c wakeup_fd_cv_test)
@@ -1204,7 +1204,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc
   src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
-  src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
+  src/core/ext/filters/client_channel/resolver/unix/unix_resolver.cc
   src/core/ext/filters/load_reporting/server_load_reporting_filter.cc
   src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc
   src/core/ext/census/grpc_context.cc
@@ -2491,7 +2491,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc
   src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
-  src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
+  src/core/ext/filters/client_channel/resolver/unix/unix_resolver.cc
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   src/core/ext/filters/load_reporting/server_load_reporting_filter.cc
   src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc
@@ -8420,34 +8420,6 @@ target_link_libraries(slice_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(sockaddr_resolver_test
-  test/core/client_channel/resolvers/sockaddr_resolver_test.cc
-)
-
-
-target_include_directories(sockaddr_resolver_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-target_link_libraries(sockaddr_resolver_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
 add_executable(sockaddr_utils_test
   test/core/iomgr/sockaddr_utils_test.cc
 )
@@ -8991,6 +8963,34 @@ target_link_libraries(udp_server_test
 )
 
 endif()
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(unix_resolver_test
+  test/core/client_channel/resolvers/unix_resolver_test.cc
+)
+
+
+target_include_directories(unix_resolver_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+)
+
+target_link_libraries(unix_resolver_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 

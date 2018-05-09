@@ -28,6 +28,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/error.h"
@@ -38,6 +39,8 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+
+using grpc_core::FakeResolverResponseGenerator;
 
 /* This test exercises IPv4, IPv6, and dualstack sockets in various ways. */
 
@@ -50,8 +53,6 @@ static void drain_cq(grpc_completion_queue* cq) {
         cq, grpc_timeout_milliseconds_to_deadline(5000), nullptr);
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
-
-static void do_nothing(void* ignored) {}
 
 static void log_resolved_addrs(const char* label, const char* hostname) {
   grpc_resolved_addresses* res = nullptr;
@@ -99,7 +100,10 @@ void test_connect(const char* server_host, const char* client_host, int port,
     picked_port = 1;
   }
 
-  gpr_join_host_port(&server_hostport, server_host, port);
+  gpr_log(GPR_INFO, "Testing with server=%s client=%s port=%d (expecting %s)",
+          server_host, client_host, port, expect_ok ? "success" : "failure");
+  log_resolved_addrs("server resolved addr", server_host);
+  log_resolved_addrs("client resolved addr", client_host);
 
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
@@ -107,6 +111,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
   grpc_call_details_init(&call_details);
 
   /* Create server. */
+  gpr_join_host_port(&server_hostport, server_host, port);
   cq = grpc_completion_queue_create_for_next(nullptr);
   server = grpc_server_create(nullptr, nullptr);
   grpc_server_register_completion_queue(server, cq, nullptr);
@@ -119,46 +124,49 @@ void test_connect(const char* server_host, const char* client_host, int port,
   }
   grpc_server_start(server);
   cqv = cq_verifier_create(cq);
+  gpr_free(server_hostport);
 
   /* Create client. */
+  grpc_core::RefCountedPtr<FakeResolverResponseGenerator> response_generator;
   if (client_host[0] == 'i') {
+    grpc_core::ExecCtx exec_ctx;
+    response_generator =
+        grpc_core::MakeRefCounted<FakeResolverResponseGenerator>();
+    grpc_arg arg =
+        FakeResolverResponseGenerator::MakeChannelArg(response_generator.get());
+    grpc_channel_args args = {1, &arg};
+    client = grpc_insecure_channel_create("fake:host", &args, nullptr);
     /* for ipv4:/ipv6: addresses, concatenate the port to each of the parts */
-    size_t i;
-    grpc_slice uri_slice;
-    grpc_slice_buffer uri_parts;
-    char** hosts_with_port;
-
-    uri_slice = grpc_slice_new(const_cast<char*>(client_host),
-                               strlen(client_host), do_nothing);
-    grpc_slice_buffer_init(&uri_parts);
-    grpc_slice_split(uri_slice, ",", &uri_parts);
-    hosts_with_port =
-        static_cast<char**>(gpr_malloc(sizeof(char*) * uri_parts.count));
-    for (i = 0; i < uri_parts.count; i++) {
-      char* uri_part_str = grpc_slice_to_c_string(uri_parts.slices[i]);
-      gpr_asprintf(&hosts_with_port[i], "%s:%d", uri_part_str, port);
-      gpr_free(uri_part_str);
+    grpc_uri* uri = grpc_uri_parse(client_host, true);
+    GPR_ASSERT(uri != nullptr);
+    char** path_parts;
+    size_t num_parts;
+    gpr_string_split(uri->path, ",", &path_parts, &num_parts);
+    grpc_lb_addresses* addresses = grpc_lb_addresses_create(num_parts, nullptr);
+    for (size_t i = 0; i < num_parts; ++i) {
+      char* address_string;
+      gpr_asprintf(&address_string, "%s:%s:%d", uri->scheme, path_parts[i],
+                   port);
+      grpc_uri* address_uri = grpc_uri_parse(address_string, true);
+      GPR_ASSERT(address_uri != nullptr);
+      grpc_lb_addresses_set_address_from_uri(addresses, i, address_uri,
+                                             false /* is_balancer */,
+                                             nullptr /* balancer_name */,
+                                             nullptr /* user_data */);
+      grpc_uri_destroy(address_uri);
+      gpr_free(address_string);
+      gpr_free(path_parts[i]);
     }
-    client_hostport = gpr_strjoin_sep((const char**)hosts_with_port,
-                                      uri_parts.count, ",", nullptr);
-    for (i = 0; i < uri_parts.count; i++) {
-      gpr_free(hosts_with_port[i]);
-    }
-    gpr_free(hosts_with_port);
-    grpc_slice_buffer_destroy(&uri_parts);
-    grpc_slice_unref(uri_slice);
+    gpr_free(path_parts);
+    grpc_uri_destroy(uri);
+    arg = grpc_lb_addresses_create_channel_arg(addresses);
+    response_generator->SetResponse(&args);
+    grpc_lb_addresses_destroy(addresses);
   } else {
     gpr_join_host_port(&client_hostport, client_host, port);
+    client = grpc_insecure_channel_create(client_hostport, nullptr, nullptr);
+    gpr_free(client_hostport);
   }
-  client = grpc_insecure_channel_create(client_hostport, nullptr, nullptr);
-
-  gpr_log(GPR_INFO, "Testing with server=%s client=%s (expecting %s)",
-          server_hostport, client_hostport, expect_ok ? "success" : "failure");
-  log_resolved_addrs("server resolved addr", server_host);
-  log_resolved_addrs("client resolved addr", client_host);
-
-  gpr_free(client_hostport);
-  gpr_free(server_hostport);
 
   if (expect_ok) {
     /* Normal deadline, shouldn't be reached. */

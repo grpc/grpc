@@ -791,7 +791,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc',
-                      'src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc',
+                      'src/core/ext/filters/client_channel/resolver/unix/unix_resolver.cc',
                       'src/core/ext/filters/load_reporting/server_load_reporting_filter.cc',
                       'src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc',
                       'src/core/ext/census/grpc_context.cc',

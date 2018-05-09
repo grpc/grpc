@@ -736,7 +736,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/unix/unix_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/load_reporting/server_load_reporting_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/census/grpc_context.cc" role="src" />

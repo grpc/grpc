@@ -14,33 +14,30 @@ be plugged in.
 ### Name Syntax
 
 A fully qualified, self contained name used for gRPC channel construction
-uses the syntax:
+uses URI syntax as defined in [RFC 3986](https://tools.ietf.org/html/rfc3986).
 
-```
-scheme://authority/endpoint_name
-```
+The URI scheme indicates what resolver plugin to use.  If no scheme
+prefix is specified or the scheme is unknown, the `dns` scheme is used
+by default.
 
-Here, `scheme` indicates the name-system to be used. Currently, we
-support the following schemes:
+The URI path indicates the name to be resolved.
 
-- `dns`
+We currently support the following URI schemes:
 
-- `ipv4` (IPv4 address)
+- `dns:[//authority/]host[:port]` -- DNS (default)
+  - `host` is the host to resolve via DNS.
+  - `port` is the port to return for each address.  If not specified,
+    443 is used.
+  - `authority` is not supported with the default DNS resolver.  With the
+    c-ares based DNS resolver, the `authority` can be used to indicate
+    which DNS server to query, which can be specified in the form "IP:port".
 
-- `ipv6` (IPv6 address)
-
-- `unix` (path to unix domain socket -- unix systems only)
+- `unix:path` or `unix://absolute_path` -- Unix domain sockets
+  - `path` indicates the location of the desired socket.
+  - In the first form, the path may be relative or absolute; in the
+    second form, the path must be absolute.
 
 In the future, additional schemes such as `etcd` could be added.
-
-The `authority` indicates some scheme-specific bootstrap information, e.g.,
-for DNS, the authority may include the IP[:port] of the DNS server to
-use. Often, a DNS name may be used as the authority, since the ability to
-resolve DNS names is already built into all gRPC client libraries.
-
-Finally, the `endpoint_name` indicates a concrete name to be looked up
-in a given name-system identified by the scheme and the authority. The
-syntax of the endpoint name is dictated by the scheme in use.
 
 ### Resolver Plugins
 

@@ -89,24 +89,13 @@ int main(int argc, char** argv) {
 
   g_combiner = grpc_combiner_create();
 
-  grpc_core::ResolverFactory* ipv4 =
-      grpc_core::ResolverRegistry::LookupResolverFactory("ipv4");
-  grpc_core::ResolverFactory* ipv6 =
-      grpc_core::ResolverRegistry::LookupResolverFactory("ipv6");
+  grpc_core::ResolverFactory* unix =
+      grpc_core::ResolverRegistry::LookupResolverFactory("unix");
 
-  test_fails(ipv4, "ipv4:10.2.1.1");
-  test_succeeds(ipv4, "ipv4:10.2.1.1:1234");
-  test_succeeds(ipv4, "ipv4:10.2.1.1:1234,127.0.0.1:4321");
-  test_fails(ipv4, "ipv4:10.2.1.1:123456");
-  test_fails(ipv4, "ipv4:www.google.com");
-  test_fails(ipv4, "ipv4:[");
-  test_fails(ipv4, "ipv4://8.8.8.8/8.8.8.8:8888");
-
-  test_fails(ipv6, "ipv6:[");
-  test_fails(ipv6, "ipv6:[::]");
-  test_succeeds(ipv6, "ipv6:[::]:1234");
-  test_fails(ipv6, "ipv6:[::]:123456");
-  test_fails(ipv6, "ipv6:www.google.com");
+  test_succeeds(unix, "unix:path");
+  test_succeeds(unix, "unix:/path");
+  test_fails(unix, "unix://path");
+  test_succeeds(unix, "unix:///path");
 
   {
     grpc_core::ExecCtx exec_ctx;
