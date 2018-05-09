@@ -1625,11 +1625,9 @@ grpc_cc_library(
     name = "tsi_interface",
     srcs = [
         "src/core/tsi/transport_security.cc",
-        "src/core/tsi/transport_security_adapter.cc",
     ],
     hdrs = [
         "src/core/tsi/transport_security.h",
-        "src/core/tsi/transport_security_adapter.h",
         "src/core/tsi/transport_security_interface.h",
     ],
     language = "c++",

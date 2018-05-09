@@ -333,6 +333,8 @@ void tsi_handshaker_result_destroy(tsi_handshaker_result* self);
    ------------------------------------------------------------------------   */
 typedef struct tsi_handshaker tsi_handshaker;
 
+/* TODO(jiangtaoli2016): Cleans up deprecated methods when we are ready. */
+
 /* TO BE DEPRECATED SOON. Use tsi_handshaker_next instead.
    Gets bytes that need to be sent to the peer.
    - bytes is the buffer that will be written with the data to be sent to the
