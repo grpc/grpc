@@ -35,6 +35,7 @@ typedef struct testing_pair {
 static testing_pair testing_pairs[] = {
     /* Testing valid parsing. */
     /* Testing trivial parses, with de-indentation. */
+    {"0", "0"},
     {" 0 ", "0"},
     {" 1 ", "1"},
     {" \"    \" ", "\"    \""},
