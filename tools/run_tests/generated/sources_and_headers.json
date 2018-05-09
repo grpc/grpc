@@ -60,6 +60,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "alts_credentials_fuzzer", 
+    "src": [
+      "test/core/security/alts_credentials_fuzzer.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "api_fuzzer", 
     "src": [
       "test/core/end2end/fuzzers/api_fuzzer.cc"
@@ -4378,6 +4395,32 @@
     "deps": [
       "gpr", 
       "gpr_test_util", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [
+      "src/proto/grpc/testing/echo.grpc.pb.h", 
+      "src/proto/grpc/testing/echo.pb.h", 
+      "src/proto/grpc/testing/echo_messages.grpc.pb.h", 
+      "src/proto/grpc/testing/echo_messages.pb.h", 
+      "src/proto/grpc/testing/echo_messages_mock.grpc.pb.h", 
+      "src/proto/grpc/testing/echo_mock.grpc.pb.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "server_builder_with_socket_mutator_test", 
+    "src": [
+      "test/cpp/server/server_builder_with_socket_mutator_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
       "grpc", 
       "grpc++", 
       "grpc++_test", 
@@ -6445,6 +6488,24 @@
     "name": "address_sorting_test", 
     "src": [
       "test/cpp/naming/address_sorting_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "alts_credentials_fuzzer_one_entry", 
+    "src": [
+      "test/core/security/alts_credentials_fuzzer.cc", 
+      "test/core/util/one_corpus_entry_fuzzer.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -10165,6 +10226,7 @@
       "test/core/end2end/fixtures/proxy.h", 
       "test/core/iomgr/endpoint_tests.h", 
       "test/core/util/debugger_macros.h", 
+      "test/core/util/fuzzer_util.h", 
       "test/core/util/grpc_profiler.h", 
       "test/core/util/histogram.h", 
       "test/core/util/memory_counters.h", 
@@ -10194,6 +10256,8 @@
       "test/core/iomgr/endpoint_tests.h", 
       "test/core/util/debugger_macros.cc", 
       "test/core/util/debugger_macros.h", 
+      "test/core/util/fuzzer_util.cc", 
+      "test/core/util/fuzzer_util.h", 
       "test/core/util/grpc_profiler.cc", 
       "test/core/util/grpc_profiler.h", 
       "test/core/util/histogram.cc", 

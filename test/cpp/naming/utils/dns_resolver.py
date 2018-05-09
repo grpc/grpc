@@ -16,9 +16,12 @@
 """Makes DNS queries for A records to specified servers"""
 
 import argparse
-import signal
+import threading
+import time
 import twisted.internet.task as task
 import twisted.names.client as client
+import twisted.internet.reactor as reactor
+
 
 def main():
   argp = argparse.ArgumentParser(description='Make DNS queries for A records')
@@ -31,7 +34,6 @@ def main():
   argp.add_argument('-t', '--timeout', default=1, type=int,
                     help=('Force process exit after this number of seconds.'))
   args = argp.parse_args()
-  signal.alarm(args.timeout)
   def OnResolverResultAvailable(result):
     answers, authority, additional = result
     for a in answers:

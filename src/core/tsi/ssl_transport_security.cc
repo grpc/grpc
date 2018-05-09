@@ -1305,6 +1305,7 @@ static const tsi_handshaker_vtable handshaker_vtable = {
     nullptr, /* create_frame_protector    -- deprecated */
     ssl_handshaker_destroy,
     ssl_handshaker_next,
+    nullptr, /* shutdown */
 };
 
 /* --- tsi_ssl_handshaker_factory common methods. --- */
