@@ -202,7 +202,8 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader* reader) {
                 return GRPC_JSON_PARSE_ERROR;
               }
               if ((c == '}') &&
-                  (reader->state == GRPC_JSON_STATE_OBJECT_KEY_BEGIN) &&
+                  (reader->state == GRPC_JSON_STATE_OBJECT_KEY_BEGIN ||
+                   reader->state == GRPC_JSON_STATE_VALUE_BEGIN) &&
                   !reader->container_just_begun) {
                 return GRPC_JSON_PARSE_ERROR;
               }

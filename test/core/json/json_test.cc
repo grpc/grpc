@@ -117,9 +117,12 @@ static testing_pair testing_pairs[] = {
     /* Testing bad containers. */
     {"{x}", nullptr},
     {"{x=0,y}", nullptr},
+    {"{\"x\":}", nullptr},
+    {"{\"x\":0,\"y\":}", nullptr},
     /* Testing trailing comma. */
     {"{,}", nullptr},
     {"[1,2,3,4,]", nullptr},
+    {"{\"a\":1,}", nullptr},
     {"{\"a\": 1, }", nullptr},
     /* Testing after-ending characters. */
     {"{}x", nullptr},
