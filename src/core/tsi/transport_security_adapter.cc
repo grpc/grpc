@@ -148,6 +148,12 @@ static void adapter_destroy(tsi_handshaker* self) {
   gpr_free(self);
 }
 
+static void adapter_shutdown(tsi_handshaker* self) {
+  tsi_adapter_handshaker* impl =
+      reinterpret_cast<tsi_adapter_handshaker*>(self);
+  tsi_handshaker_shutdown(impl->wrapped);
+}
+
 static tsi_result adapter_next(
     tsi_handshaker* self, const unsigned char* received_bytes,
     size_t received_bytes_size, const unsigned char** bytes_to_send,
@@ -213,6 +219,7 @@ static const tsi_handshaker_vtable handshaker_vtable = {
     adapter_create_frame_protector,
     adapter_destroy,
     adapter_next,
+    adapter_shutdown,
 };
 
 tsi_handshaker* tsi_create_adapter_handshaker(tsi_handshaker* wrapped) {
