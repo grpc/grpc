@@ -294,6 +294,9 @@ GRPCAPI char* grpc_channel_get_trace(grpc_channel* channel);
     later time. */
 GRPCAPI intptr_t grpc_channel_get_uuid(grpc_channel* channel);
 
+/** channelz support */
+GRPCAPI char* grpc_channelz_get_channel(intptr_t channel_id);
+
 /** Error handling for grpc_call
    Most grpc_call functions return a grpc_error. If the error is not GRPC_OK
    then the operation failed due to some unsatisfied precondition.

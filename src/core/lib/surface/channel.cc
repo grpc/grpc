@@ -32,6 +32,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_trace.h"
+#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
@@ -67,6 +68,7 @@ struct grpc_channel {
   registered_call* registered_calls;
 
   grpc_core::RefCountedPtr<grpc_core::ChannelTrace> tracer;
+  grpc_core::RefCountedPtr<grpc_core::channelz::Channel> channelz_channel;
 
   char* target;
 };
@@ -150,6 +152,8 @@ grpc_channel* grpc_channel_create_with_builder(
   channel->tracer->AddTraceEvent(
       grpc_core::ChannelTrace::Severity::Info,
       grpc_slice_from_static_string("Channel created"));
+  channel->channelz_channel =
+      grpc_core::MakeRefCounted<grpc_core::channelz::Channel>(channel);
   return channel;
 }
 
@@ -186,6 +190,15 @@ static grpc_channel_args* build_channel_args(
 
 char* grpc_channel_get_trace(grpc_channel* channel) {
   return channel->tracer->RenderTrace();
+}
+
+char* grpc_channel_render_channelz(grpc_channel* channel) {
+  return channel->channelz_channel->RenderJSON();
+}
+
+grpc_core::channelz::Channel* grpc_channel_get_channelz_channel(
+    grpc_channel* channel) {
+  return channel->channelz_channel.get();
 }
 
 intptr_t grpc_channel_get_uuid(grpc_channel* channel) {

@@ -1077,13 +1077,23 @@ static void recv_trailing_filter(void* args, grpc_metadata_batch* b) {
   if (b->idx.named.grpc_status != nullptr) {
     grpc_status_code status_code =
         grpc_get_status_code_from_metadata(b->idx.named.grpc_status->md);
-    grpc_error* error =
-        status_code == GRPC_STATUS_OK
-            ? GRPC_ERROR_NONE
-            : grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                     "Error received from peer"),
-                                 GRPC_ERROR_INT_GRPC_STATUS,
-                                 static_cast<intptr_t>(status_code));
+    grpc_error* error = GRPC_ERROR_NONE;
+    grpc_core::channelz::Channel* channelz_channel =
+        call->channel != nullptr
+            ? grpc_channel_get_channelz_channel(call->channel)
+            : nullptr;
+    if (status_code == GRPC_STATUS_OK) {
+      if (channelz_channel != nullptr) {
+        channelz_channel->CallSucceeded();
+      }
+    } else {
+      if (channelz_channel != nullptr) {
+        channelz_channel->CallFailed();
+      }
+      error = grpc_error_set_int(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error received from peer"),
+          GRPC_ERROR_INT_GRPC_STATUS, static_cast<intptr_t>(status_code));
+    }
     if (b->idx.named.grpc_message != nullptr) {
       error = grpc_error_set_str(
           error, GRPC_ERROR_STR_GRPC_MESSAGE,
@@ -1665,6 +1675,9 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
           stream_op_payload->send_initial_metadata.peer_string =
               &call->peer_string;
         }
+        grpc_core::channelz::Channel* channelz_channel =
+            grpc_channel_get_channelz_channel(call->channel);
+        channelz_channel->CallStarted();
         break;
       }
       case GRPC_OP_SEND_MESSAGE: {

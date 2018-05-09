@@ -70,6 +70,7 @@ grpc_lame_client_channel_create_type grpc_lame_client_channel_create_import;
 grpc_channel_destroy_type grpc_channel_destroy_import;
 grpc_channel_get_trace_type grpc_channel_get_trace_import;
 grpc_channel_get_uuid_type grpc_channel_get_uuid_import;
+grpc_channelz_get_channel_type grpc_channelz_get_channel_import;
 grpc_call_cancel_type grpc_call_cancel_import;
 grpc_call_cancel_with_status_type grpc_call_cancel_with_status_import;
 grpc_call_ref_type grpc_call_ref_import;
@@ -318,6 +319,7 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_channel_destroy_import = (grpc_channel_destroy_type) GetProcAddress(library, "grpc_channel_destroy");
   grpc_channel_get_trace_import = (grpc_channel_get_trace_type) GetProcAddress(library, "grpc_channel_get_trace");
   grpc_channel_get_uuid_import = (grpc_channel_get_uuid_type) GetProcAddress(library, "grpc_channel_get_uuid");
+  grpc_channelz_get_channel_import = (grpc_channelz_get_channel_type) GetProcAddress(library, "grpc_channelz_get_channel");
   grpc_call_cancel_import = (grpc_call_cancel_type) GetProcAddress(library, "grpc_call_cancel");
   grpc_call_cancel_with_status_import = (grpc_call_cancel_with_status_type) GetProcAddress(library, "grpc_call_cancel_with_status");
   grpc_call_ref_import = (grpc_call_ref_type) GetProcAddress(library, "grpc_call_ref");

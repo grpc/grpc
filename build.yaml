@@ -235,6 +235,7 @@ filegroups:
   - src/core/lib/channel/channel_stack.cc
   - src/core/lib/channel/channel_stack_builder.cc
   - src/core/lib/channel/channel_trace.cc
+  - src/core/lib/channel/channelz.cc
   - src/core/lib/channel/channelz_registry.cc
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/handshaker.cc
@@ -405,6 +406,7 @@ filegroups:
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
   - src/core/lib/channel/channel_trace.h
+  - src/core/lib/channel/channelz.h
   - src/core/lib/channel/channelz_registry.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
@@ -4203,10 +4205,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-  filegroups:
-  - grpc++_channelz_proto
-  uses:
-  - grpc++_test
 - name: channelz_registry_test
   gtest: true
   build: test
@@ -4223,6 +4221,23 @@ targets:
   uses:
   - grpc++_test
   uses_polling: false
+- name: channelz_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/channel/channelz_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  filegroups:
+  - grpc++_channelz_proto
+  uses:
+  - grpc++_test
 - name: check_gcp_environment_linux_test
   build: test
   language: c++

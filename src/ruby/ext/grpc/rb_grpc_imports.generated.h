@@ -185,6 +185,9 @@ extern grpc_channel_get_trace_type grpc_channel_get_trace_import;
 typedef intptr_t(*grpc_channel_get_uuid_type)(grpc_channel* channel);
 extern grpc_channel_get_uuid_type grpc_channel_get_uuid_import;
 #define grpc_channel_get_uuid grpc_channel_get_uuid_import
+typedef char*(*grpc_channelz_get_channel_type)(intptr_t channel_id);
+extern grpc_channelz_get_channel_type grpc_channelz_get_channel_import;
+#define grpc_channelz_get_channel grpc_channelz_get_channel_import
 typedef grpc_call_error(*grpc_call_cancel_type)(grpc_call* call, void* reserved);
 extern grpc_call_cancel_type grpc_call_cancel_import;
 #define grpc_call_cancel grpc_call_cancel_import
