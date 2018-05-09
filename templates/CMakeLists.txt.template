@@ -82,6 +82,7 @@
   set(gRPC_INSTALL_LIBDIR "lib" CACHE STRING "Installation directory for libraries")
   set(gRPC_INSTALL_INCLUDEDIR "include" CACHE STRING "Installation directory for headers")
   set(gRPC_INSTALL_CMAKEDIR "lib/cmake/<%text>${PACKAGE_NAME}</%text>" CACHE STRING "Installation directory for cmake config files")
+  set(gRPC_INSTALL_SHAREDIR "share/grpc" CACHE STRING "Installation directory for root certificates")
 
   # Options
   option(gRPC_BUILD_TESTS "Build tests" OFF)
@@ -507,3 +508,6 @@
       DESTINATION <%text>${gRPC_INSTALL_CMAKEDIR}</%text>
     )
   endforeach()
+  
+  install(FILES <%text>${CMAKE_CURRENT_SOURCE_DIR}/etc/roots.pem</%text>
+    DESTINATION <%text>${gRPC_INSTALL_SHAREDIR}</%text>)

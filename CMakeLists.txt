@@ -34,6 +34,7 @@ set(gRPC_INSTALL_BINDIR "bin" CACHE STRING "Installation directory for executabl
 set(gRPC_INSTALL_LIBDIR "lib" CACHE STRING "Installation directory for libraries")
 set(gRPC_INSTALL_INCLUDEDIR "include" CACHE STRING "Installation directory for headers")
 set(gRPC_INSTALL_CMAKEDIR "lib/cmake/${PACKAGE_NAME}" CACHE STRING "Installation directory for cmake config files")
+set(gRPC_INSTALL_SHAREDIR "share/grpc" CACHE STRING "Installation directory for root certificates")
 
 # Options
 option(gRPC_BUILD_TESTS "Build tests" OFF)
@@ -16166,3 +16167,6 @@ foreach(_config gRPCConfig gRPCConfigVersion)
     DESTINATION ${gRPC_INSTALL_CMAKEDIR}
   )
 endforeach()
+
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/etc/roots.pem
+  DESTINATION ${gRPC_INSTALL_SHAREDIR})
