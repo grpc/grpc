@@ -96,6 +96,11 @@ class ByteBuffer final {
   /// Dump (read) the buffer contents into \a slices.
   Status Dump(std::vector<Slice>* slices) const;
 
+  /// Returns true is buffer only holds one slice.
+  bool IsOneSliceByteBuffer() {
+    return buffer_->data.raw.slice_buffer.count == 1;
+  }
+
   /// Remove all data.
   void Clear() {
     if (buffer_) {
