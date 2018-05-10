@@ -216,12 +216,6 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
     tsi_ssl_session_cache* ssl_session_cache,
     grpc_channel_security_connector** sc);
 
-/* Gets the default ssl roots. Returns NULL if not found. */
-const char* grpc_get_default_ssl_roots(void);
-
-/* Exposed for TESTING ONLY!. */
-grpc_slice grpc_get_default_ssl_roots_for_testing(void);
-
 /* Config for ssl servers. */
 typedef struct {
   tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs;
@@ -245,9 +239,46 @@ const tsi_peer_property* tsi_peer_get_property_by_name(const tsi_peer* peer,
                                                        const char* name);
 
 /* Exposed for testing only. */
-grpc_auth_context* tsi_ssl_peer_to_auth_context(const tsi_peer* peer);
-tsi_peer tsi_shallow_peer_from_ssl_auth_context(
+grpc_auth_context* grpc_ssl_peer_to_auth_context(const tsi_peer* peer);
+tsi_peer grpc_shallow_peer_from_ssl_auth_context(
     const grpc_auth_context* auth_context);
-void tsi_shallow_peer_destruct(tsi_peer* peer);
+void grpc_shallow_peer_destruct(tsi_peer* peer);
+int grpc_ssl_host_matches_name(const tsi_peer* peer, const char* peer_name);
+
+/* --- Default SSL Root Store. --- */
+namespace grpc_core {
+
+// The class implements default SSL root store.
+class DefaultSslRootStore {
+ public:
+  // Gets the default SSL root store. Returns nullptr if not found.
+  static const tsi_ssl_root_certs_store* GetRootStore();
+
+  // Gets the default PEM root certificate.
+  static const char* GetPemRootCerts();
+
+ protected:
+  // Returns default PEM root certificates in nullptr terminated grpc_slice.
+  // This function is protected instead of private, so that it can be tested.
+  static grpc_slice ComputePemRootCerts();
+
+ private:
+  // Construct me not!
+  DefaultSslRootStore();
+
+  // Initialization of default SSL root store.
+  static void InitRootStore();
+
+  // One-time initialization of default SSL root store.
+  static void InitRootStoreOnce();
+
+  // SSL root store in tsi_ssl_root_certs_store object.
+  static tsi_ssl_root_certs_store* default_root_store_;
+
+  // Default PEM root certificates.
+  static grpc_slice default_pem_root_certs_;
+};
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_SECURITY_CONNECTOR_H */

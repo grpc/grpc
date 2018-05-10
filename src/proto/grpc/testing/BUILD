@@ -26,7 +26,7 @@ exports_files([
 grpc_proto_library(
     name = "compiler_test_proto",
     srcs = ["compiler_test.proto"],
-    generate_mock = True,
+    generate_mocks = True,
 )
 
 grpc_proto_library(
@@ -49,7 +49,7 @@ grpc_proto_library(
     name = "echo_proto",
     srcs = ["echo.proto"],
     deps = ["echo_messages_proto"],
-    generate_mock = True,
+    generate_mocks = True,
 )
 
 grpc_proto_library(
@@ -76,11 +76,26 @@ grpc_proto_library(
 )
 
 grpc_proto_library(
-    name = "services_proto",
-    srcs = ["services.proto"],
+    name = "benchmark_service_proto",
+    srcs = ["benchmark_service.proto"],
     deps = [
-        "control_proto",
-        "messages_proto",
+      "messages_proto",
+    ],
+)
+
+grpc_proto_library(
+    name = "report_qps_scenario_service_proto",
+    srcs = ["report_qps_scenario_service.proto"],
+    deps = [
+      "control_proto",
+    ],
+)
+
+grpc_proto_library(
+    name = "worker_service_proto",
+    srcs = ["worker_service.proto"],
+    deps = [
+      "control_proto",
     ],
 )
 

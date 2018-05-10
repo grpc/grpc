@@ -253,8 +253,8 @@ inline void grpc_closure_run(grpc_closure* c, grpc_error* error) {
     c->file_initiated = file;
     c->line_initiated = line;
     c->run = true;
+    GPR_ASSERT(c->cb != nullptr);
 #endif
-    assert(c->cb);
     c->scheduler->vtable->run(c, error);
   } else {
     GRPC_ERROR_UNREF(error);
@@ -292,8 +292,8 @@ inline void grpc_closure_sched(grpc_closure* c, grpc_error* error) {
     c->file_initiated = file;
     c->line_initiated = line;
     c->run = false;
+    GPR_ASSERT(c->cb != nullptr);
 #endif
-    assert(c->cb);
     c->scheduler->vtable->sched(c, error);
   } else {
     GRPC_ERROR_UNREF(error);
@@ -330,8 +330,8 @@ inline void grpc_closure_list_sched(grpc_closure_list* list) {
     c->file_initiated = file;
     c->line_initiated = line;
     c->run = false;
+    GPR_ASSERT(c->cb != nullptr);
 #endif
-    assert(c->cb);
     c->scheduler->vtable->sched(c, c->error_data.error);
     c = next;
   }

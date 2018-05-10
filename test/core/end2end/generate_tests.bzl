@@ -101,6 +101,8 @@ END2END_TESTS = {
     'binary_metadata': test_options(),
     'resource_quota_server': test_options(proxyable=False),
     'call_creds': test_options(secure=True),
+    'call_host_override': test_options(needs_fullstack=True, needs_dns=True,
+                                       needs_names=True),
     'cancel_after_accept': test_options(),
     'cancel_after_client_done': test_options(),
     'cancel_after_invoke': test_options(),
@@ -156,6 +158,8 @@ END2END_TESTS = {
         needs_client_channel=True, proxyable=False),
     'retry_non_retriable_status': test_options(needs_client_channel=True,
                                                proxyable=False),
+    'retry_non_retriable_status_before_recv_trailing_metadata_started':
+        test_options(needs_client_channel=True, proxyable=False),
     'retry_recv_initial_metadata': test_options(needs_client_channel=True,
                                                 proxyable=False),
     'retry_recv_message': test_options(needs_client_channel=True,

@@ -61,6 +61,8 @@ GPRAPI const char* gpr_log_severity_string(gpr_log_severity severity);
 GPRAPI void gpr_log(const char* file, int line, gpr_log_severity severity,
                     const char* format, ...) GPR_PRINT_FORMAT_CHECK(4, 5);
 
+GPRAPI int gpr_should_log(gpr_log_severity severity);
+
 GPRAPI void gpr_log_message(const char* file, int line,
                             gpr_log_severity severity, const char* message);
 
@@ -91,11 +93,17 @@ GPRAPI void gpr_set_log_function(gpr_log_func func);
    an exception in a higher-level language, consider returning error code.  */
 #define GPR_ASSERT(x)                                 \
   do {                                                \
-    if (!(x)) {                                       \
+    if (GPR_UNLIKELY(!(x))) {                         \
       gpr_log(GPR_ERROR, "assertion failed: %s", #x); \
       abort();                                        \
     }                                                 \
   } while (0)
+
+#ifndef NDEBUG
+#define GPR_DEBUG_ASSERT(x) GPR_ASSERT(x)
+#else
+#define GPR_DEBUG_ASSERT(x)
+#endif
 
 #ifdef __cplusplus
 }

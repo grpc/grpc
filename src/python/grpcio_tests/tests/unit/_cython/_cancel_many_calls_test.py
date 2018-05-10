@@ -19,6 +19,7 @@ import unittest
 from grpc._cython import cygrpc
 from grpc.framework.foundation import logging_pool
 from tests.unit.framework.common import test_constants
+from tests.unit._cython import test_utilities
 
 _EMPTY_FLAGS = 0
 _EMPTY_METADATA = ()
@@ -30,6 +31,8 @@ _RECEIVE_MESSAGE_TAG = 'receive_message'
 _SERVER_COMPLETE_CALL_TAG = 'server_complete_call'
 
 _SUCCESS_CALL_FRACTION = 1.0 / 8.0
+_SUCCESSFUL_CALLS = int(test_constants.RPC_CONCURRENCY * _SUCCESS_CALL_FRACTION)
+_UNSUCCESSFUL_CALLS = test_constants.RPC_CONCURRENCY - _SUCCESSFUL_CALLS
 
 
 class _State(object):
@@ -43,7 +46,7 @@ class _State(object):
 
 def _is_cancellation_event(event):
     return (event.tag is _RECEIVE_CLOSE_ON_SERVER_TAG and
-            event.batch_operations[0].received_cancelled)
+            event.batch_operations[0].cancelled())
 
 
 class _Handler(object):
@@ -150,7 +153,8 @@ class CancelManyCallsTest(unittest.TestCase):
         server.register_completion_queue(server_completion_queue)
         port = server.add_http2_port(b'[::]:0')
         server.start()
-        channel = cygrpc.Channel('localhost:{}'.format(port).encode(), None)
+        channel = cygrpc.Channel('localhost:{}'.format(port).encode(), None,
+                                 None)
 
         state = _State()
 
@@ -165,30 +169,32 @@ class CancelManyCallsTest(unittest.TestCase):
 
         client_condition = threading.Condition()
         client_due = set()
-        client_completion_queue = cygrpc.CompletionQueue()
-        client_driver = _QueueDriver(client_condition, client_completion_queue,
-                                     client_due)
-        client_driver.start()
 
         with client_condition:
             client_calls = []
             for index in range(test_constants.RPC_CONCURRENCY):
-                client_call = channel.create_call(None, _EMPTY_FLAGS,
-                                                  client_completion_queue,
-                                                  b'/twinkies', None, None)
-                operations = (
-                    cygrpc.SendInitialMetadataOperation(_EMPTY_METADATA,
-                                                        _EMPTY_FLAGS),
-                    cygrpc.SendMessageOperation(b'\x45\x56', _EMPTY_FLAGS),
-                    cygrpc.SendCloseFromClientOperation(_EMPTY_FLAGS),
-                    cygrpc.ReceiveInitialMetadataOperation(_EMPTY_FLAGS),
-                    cygrpc.ReceiveMessageOperation(_EMPTY_FLAGS),
-                    cygrpc.ReceiveStatusOnClientOperation(_EMPTY_FLAGS),
-                )
                 tag = 'client_complete_call_{0:04d}_tag'.format(index)
-                client_call.start_client_batch(operations, tag)
+                client_call = channel.integrated_call(
+                    _EMPTY_FLAGS, b'/twinkies', None, None, _EMPTY_METADATA,
+                    None, ((
+                        (
+                            cygrpc.SendInitialMetadataOperation(
+                                _EMPTY_METADATA, _EMPTY_FLAGS),
+                            cygrpc.SendMessageOperation(b'\x45\x56',
+                                                        _EMPTY_FLAGS),
+                            cygrpc.SendCloseFromClientOperation(_EMPTY_FLAGS),
+                            cygrpc.ReceiveInitialMetadataOperation(
+                                _EMPTY_FLAGS),
+                            cygrpc.ReceiveMessageOperation(_EMPTY_FLAGS),
+                            cygrpc.ReceiveStatusOnClientOperation(_EMPTY_FLAGS),
+                        ),
+                        tag,
+                    ),))
                 client_due.add(tag)
                 client_calls.append(client_call)
+
+        client_events_future = test_utilities.SimpleFuture(
+            lambda: tuple(channel.next_call_event() for _ in range(_SUCCESSFUL_CALLS)))
 
         with state.condition:
             while True:
@@ -201,12 +207,14 @@ class CancelManyCallsTest(unittest.TestCase):
                     state.condition.notify_all()
                     break
 
-        client_driver.events(
-            test_constants.RPC_CONCURRENCY * _SUCCESS_CALL_FRACTION)
+        client_events_future.result()
         with client_condition:
             for client_call in client_calls:
-                client_call.cancel()
+                client_call.cancel(cygrpc.StatusCode.cancelled, 'Cancelled!')
+        for _ in range(_UNSUCCESSFUL_CALLS):
+            channel.next_call_event()
 
+        channel.close(cygrpc.StatusCode.unknown, 'Cancelled on channel close!')
         with state.condition:
             server.shutdown(server_completion_queue, _SERVER_SHUTDOWN_TAG)
 

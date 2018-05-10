@@ -1,9 +1,5 @@
 #!/usr/bin/env python2.7
 #
-# Convert google-benchmark json output to something that can be uploaded to
-# BigQuery
-#
-#
 # Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +13,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+# Convert google-benchmark json output to something that can be uploaded to
+# BigQuery
 
 import sys
 import json
@@ -54,6 +53,7 @@ if len(sys.argv) > 2:
 else:
     js2 = None
 
+# TODO(jtattermusch): write directly to a file instead of stdout
 writer = csv.DictWriter(sys.stdout, [c for c, t in columns])
 
 for row in bm_json.expand_json(js, js2):

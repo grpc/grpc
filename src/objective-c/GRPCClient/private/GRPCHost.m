@@ -18,10 +18,10 @@
 
 #import "GRPCHost.h"
 
+#import <GRPCClient/GRPCCall+MobileLog.h>
+#import <GRPCClient/GRPCCall.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#import <GRPCClient/GRPCCall.h>
-#import <GRPCClient/GRPCCall+MobileLog.h>
 #ifdef GRPC_COMPILE_WITH_CRONET
 #import <GRPCClient/GRPCCall+ChannelArg.h>
 #import <GRPCClient/GRPCCall+Cronet.h>
@@ -91,16 +91,15 @@ static NSMutableDictionary *kHostCache;
 
 + (void)flushChannelCache {
   @synchronized(kHostCache) {
-    [kHostCache enumerateKeysAndObjectsUsingBlock:^(id  _Nonnull key,
-                                                    GRPCHost * _Nonnull host,
-                                                    BOOL * _Nonnull stop) {
+    [kHostCache enumerateKeysAndObjectsUsingBlock:^(id _Nonnull key, GRPCHost *_Nonnull host,
+                                                    BOOL *_Nonnull stop) {
       [host disconnect];
     }];
   }
 }
 
 + (void)resetAllHostSettings {
-  @synchronized (kHostCache) {
+  @synchronized(kHostCache) {
     kHostCache = [NSMutableDictionary dictionary];
   }
 }
@@ -109,7 +108,10 @@ static NSMutableDictionary *kHostCache;
                                    serverName:(NSString *)serverName
                                       timeout:(NSTimeInterval)timeout
                               completionQueue:(GRPCCompletionQueue *)queue {
-  GRPCChannel *channel;
+  // The __block attribute is to allow channel take refcount inside @synchronized block. Without
+  // this attribute, retain of channel object happens after objc_sync_exit in release builds, which
+  // may result in channel released before used. See grpc/#15033.
+  __block GRPCChannel *channel;
   // This is racing -[GRPCHost disconnect].
   @synchronized(self) {
     if (!_channel) {
@@ -131,38 +133,38 @@ static NSMutableDictionary *kHostCache;
   static NSError *kDefaultRootsError;
   static dispatch_once_t loading;
   dispatch_once(&loading, ^{
-    NSString *defaultPath = @"gRPCCertificates.bundle/roots"; // .pem
+    NSString *defaultPath = @"gRPCCertificates.bundle/roots";  // .pem
     // Do not use NSBundle.mainBundle, as it's nil for tests of library projects.
     NSBundle *bundle = [NSBundle bundleForClass:self.class];
     NSString *path = [bundle pathForResource:defaultPath ofType:@"pem"];
     NSError *error;
     // Files in PEM format can have non-ASCII characters in their comments (e.g. for the name of the
     // issuer). Load them as UTF8 and produce an ASCII equivalent.
-    NSString *contentInUTF8 = [NSString stringWithContentsOfFile:path
-                                                        encoding:NSUTF8StringEncoding
-                                                           error:&error];
+    NSString *contentInUTF8 =
+        [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:&error];
     if (contentInUTF8 == nil) {
       kDefaultRootsError = error;
       return;
     }
-    kDefaultRootsASCII = [contentInUTF8 dataUsingEncoding:NSASCIIStringEncoding
-                                     allowLossyConversion:YES];
+    kDefaultRootsASCII =
+        [contentInUTF8 dataUsingEncoding:NSASCIIStringEncoding allowLossyConversion:YES];
   });
 
   NSData *rootsASCII;
   if (pemRootCerts != nil) {
-    rootsASCII = [pemRootCerts dataUsingEncoding:NSASCIIStringEncoding
-                            allowLossyConversion:YES];
+    rootsASCII = [pemRootCerts dataUsingEncoding:NSASCIIStringEncoding allowLossyConversion:YES];
   } else {
     if (kDefaultRootsASCII == nil) {
       if (errorPtr) {
         *errorPtr = kDefaultRootsError;
       }
-      NSAssert(kDefaultRootsASCII, @"Could not read gRPCCertificates.bundle/roots.pem. This file, "
-               "with the root certificates, is needed to establish secure (TLS) connections. "
-               "Because the file is distributed with the gRPC library, this error is usually a sign "
-               "that the library wasn't configured correctly for your project. Error: %@",
-                kDefaultRootsError);
+      NSAssert(
+          kDefaultRootsASCII,
+          @"Could not read gRPCCertificates.bundle/roots.pem. This file, "
+           "with the root certificates, is needed to establish secure (TLS) connections. "
+           "Because the file is distributed with the gRPC library, this error is usually a sign "
+           "that the library wasn't configured correctly for your project. Error: %@",
+          kDefaultRootsError);
       return NO;
     }
     rootsASCII = kDefaultRootsASCII;
@@ -173,10 +175,10 @@ static NSMutableDictionary *kHostCache;
     creds = grpc_ssl_credentials_create(rootsASCII.bytes, NULL, NULL);
   } else {
     grpc_ssl_pem_key_cert_pair key_cert_pair;
-    NSData *privateKeyASCII = [pemPrivateKey dataUsingEncoding:NSASCIIStringEncoding
-                                       allowLossyConversion:YES];
-    NSData *certChainASCII = [pemCertChain dataUsingEncoding:NSASCIIStringEncoding
-                                     allowLossyConversion:YES];
+    NSData *privateKeyASCII =
+        [pemPrivateKey dataUsingEncoding:NSASCIIStringEncoding allowLossyConversion:YES];
+    NSData *certChainASCII =
+        [pemCertChain dataUsingEncoding:NSASCIIStringEncoding allowLossyConversion:YES];
     key_cert_pair.private_key = privateKeyASCII.bytes;
     key_cert_pair.cert_chain = certChainASCII.bytes;
     creds = grpc_ssl_credentials_create(rootsASCII.bytes, &key_cert_pair, NULL);
@@ -192,7 +194,7 @@ static NSMutableDictionary *kHostCache;
   return YES;
 }
 
-- (NSDictionary *)channelArgs {
+- (NSDictionary *)channelArgsUsingCronet:(BOOL)useCronet {
   NSMutableDictionary *args = [NSMutableDictionary dictionary];
 
   // TODO(jcanizales): Add OS and device information (see
@@ -212,8 +214,12 @@ static NSMutableDictionary *kHostCache;
   }
 
   if (_compressAlgorithm != GRPC_COMPRESS_NONE) {
-    args[@GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM] =
-        [NSNumber numberWithInt:_compressAlgorithm];
+    args[@GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM] = [NSNumber numberWithInt:_compressAlgorithm];
+  }
+
+  if (_keepaliveInterval != 0) {
+    args[@GRPC_ARG_KEEPALIVE_TIME_MS] = [NSNumber numberWithInt:_keepaliveInterval];
+    args[@GRPC_ARG_KEEPALIVE_TIMEOUT_MS] = [NSNumber numberWithInt:_keepaliveTimeout];
   }
 
   id logConfig = [GRPCCall logConfig];
@@ -221,14 +227,19 @@ static NSMutableDictionary *kHostCache;
     args[@GRPC_ARG_MOBILE_LOG_CONFIG] = logConfig;
   }
 
+  if (useCronet) {
+    args[@GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER] = [NSNumber numberWithInt:1];
+  }
+
   return args;
 }
 
 - (GRPCChannel *)newChannel {
-  NSDictionary *args = [self channelArgs];
+  BOOL useCronet = NO;
 #ifdef GRPC_COMPILE_WITH_CRONET
-  BOOL useCronet = [GRPCCall isUsingCronet];
+  useCronet = [GRPCCall isUsingCronet];
 #endif
+  NSDictionary *args = [self channelArgsUsingCronet:useCronet];
   if (_secure) {
     GRPCChannel *channel;
     @synchronized(self) {
@@ -237,14 +248,12 @@ static NSMutableDictionary *kHostCache;
       }
 #ifdef GRPC_COMPILE_WITH_CRONET
       if (useCronet) {
-        channel = [GRPCChannel secureCronetChannelWithHost:_address
-                                               channelArgs:args];
+        channel = [GRPCChannel secureCronetChannelWithHost:_address channelArgs:args];
       } else
 #endif
       {
-        channel = [GRPCChannel secureChannelWithHost:_address
-                                         credentials:_channelCreds
-                                         channelArgs:args];
+        channel =
+            [GRPCChannel secureChannelWithHost:_address credentials:_channelCreds channelArgs:args];
       }
     }
     return channel;

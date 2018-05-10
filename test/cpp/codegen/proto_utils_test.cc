@@ -24,32 +24,42 @@
 #include <gtest/gtest.h>
 
 namespace grpc {
+
 namespace internal {
 
-// Provide access to GrpcBufferWriter internals.
-class GrpcBufferWriterPeer {
+// Provide access to ProtoBufferWriter internals.
+class ProtoBufferWriterPeer {
  public:
-  explicit GrpcBufferWriterPeer(internal::GrpcBufferWriter* writer)
-      : writer_(writer) {}
+  explicit ProtoBufferWriterPeer(ProtoBufferWriter* writer) : writer_(writer) {}
   bool have_backup() const { return writer_->have_backup_; }
   const grpc_slice& backup_slice() const { return writer_->backup_slice_; }
   const grpc_slice& slice() const { return writer_->slice_; }
 
  private:
-  GrpcBufferWriter* writer_;
+  ProtoBufferWriter* writer_;
+};
+
+// Provide access to ByteBuffer internals.
+class GrpcByteBufferPeer {
+ public:
+  explicit GrpcByteBufferPeer(ByteBuffer* bb) : bb_(bb) {}
+  grpc_byte_buffer* c_buffer() { return bb_->c_buffer(); }
+
+ private:
+  ByteBuffer* bb_;
 };
 
 class ProtoUtilsTest : public ::testing::Test {};
 
 // Regression test for a memory corruption bug where a series of
-// GrpcBufferWriter Next()/Backup() invocations could result in a dangling
+// ProtoBufferWriter Next()/Backup() invocations could result in a dangling
 // pointer returned by Next() due to the interaction between grpc_slice inlining
 // and GRPC_SLICE_START_PTR.
 TEST_F(ProtoUtilsTest, TinyBackupThenNext) {
-  grpc_byte_buffer* bp;
+  ByteBuffer bp;
   const int block_size = 1024;
-  GrpcBufferWriter writer(&bp, block_size, 8192);
-  GrpcBufferWriterPeer peer(&writer);
+  ProtoBufferWriter writer(&bp, block_size, 8192);
+  ProtoBufferWriterPeer peer(&writer);
 
   void* data;
   int size;
@@ -63,17 +73,14 @@ TEST_F(ProtoUtilsTest, TinyBackupThenNext) {
   ASSERT_TRUE(writer.Next(&data, &size));
   EXPECT_TRUE(peer.slice().refcount != nullptr);
   EXPECT_EQ(block_size, size);
-
-  // Cleanup.
-  g_core_codegen_interface->grpc_byte_buffer_destroy(bp);
 }
 
 namespace {
 
 // Set backup_size to 0 to indicate no backup is needed.
 void BufferWriterTest(int block_size, int total_size, int backup_size) {
-  grpc_byte_buffer* bp;
-  GrpcBufferWriter writer(&bp, block_size, total_size);
+  ByteBuffer bb;
+  ProtoBufferWriter writer(&bb, block_size, total_size);
 
   int written_size = 0;
   void* data;
@@ -110,10 +117,11 @@ void BufferWriterTest(int block_size, int total_size, int backup_size) {
       writer.BackUp(backup_size);
     }
   }
-  EXPECT_EQ(grpc_byte_buffer_length(bp), (size_t)total_size);
+  EXPECT_EQ(bb.Length(), (size_t)total_size);
 
   grpc_byte_buffer_reader reader;
-  grpc_byte_buffer_reader_init(&reader, bp);
+  GrpcByteBufferPeer peer(&bb);
+  grpc_byte_buffer_reader_init(&reader, peer.c_buffer());
   int read_bytes = 0;
   while (read_bytes < total_size) {
     grpc_slice s;
@@ -126,7 +134,6 @@ void BufferWriterTest(int block_size, int total_size, int backup_size) {
   }
   EXPECT_EQ(read_bytes, total_size);
   grpc_byte_buffer_reader_destroy(&reader);
-  grpc_byte_buffer_destroy(bp);
 }
 
 TEST(WriterTest, TinyBlockTinyBackup) {
@@ -154,7 +161,7 @@ TEST(WriterTest, LargeBlockLargeBackup) { BufferWriterTest(4096, 8192, 4095); }
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  // Ensure the GrpcBufferWriter internals are initialized.
+  // Ensure the ProtoBufferWriter internals are initialized.
   grpc::internal::GrpcLibraryInitializer init;
   init.summon();
   grpc::GrpcLibraryCodegen lib;

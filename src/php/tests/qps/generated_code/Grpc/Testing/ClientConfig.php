@@ -97,6 +97,12 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
      * Generated from protobuf field <code>int32 messages_per_stream = 18;</code>
      */
     private $messages_per_stream = 0;
+    /**
+     * Use coalescing API when possible.
+     *
+     * Generated from protobuf field <code>bool use_coalesce_api = 19;</code>
+     */
+    private $use_coalesce_api = false;
 
     public function __construct() {
         \GPBMetadata\Src\Proto\Grpc\Testing\Control::initOnce();
@@ -491,6 +497,32 @@ class ClientConfig extends \Google\Protobuf\Internal\Message
     {
         GPBUtil::checkInt32($var);
         $this->messages_per_stream = $var;
+
+        return $this;
+    }
+
+    /**
+     * Use coalescing API when possible.
+     *
+     * Generated from protobuf field <code>bool use_coalesce_api = 19;</code>
+     * @return bool
+     */
+    public function getUseCoalesceApi()
+    {
+        return $this->use_coalesce_api;
+    }
+
+    /**
+     * Use coalescing API when possible.
+     *
+     * Generated from protobuf field <code>bool use_coalesce_api = 19;</code>
+     * @param bool $var
+     * @return $this
+     */
+    public function setUseCoalesceApi($var)
+    {
+        GPBUtil::checkBool($var);
+        $this->use_coalesce_api = $var;
 
         return $this;
     }

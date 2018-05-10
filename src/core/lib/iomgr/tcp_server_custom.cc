@@ -222,10 +222,10 @@ static void finish_accept(grpc_tcp_listener* sp, grpc_custom_socket* socket) {
   }
   if (grpc_tcp_trace.enabled()) {
     if (peer_name_string) {
-      gpr_log(GPR_DEBUG, "SERVER_CONNECT: %p accepted connection: %s",
+      gpr_log(GPR_INFO, "SERVER_CONNECT: %p accepted connection: %s",
               sp->server, peer_name_string);
     } else {
-      gpr_log(GPR_DEBUG, "SERVER_CONNECT: %p accepted connection", sp->server);
+      gpr_log(GPR_INFO, "SERVER_CONNECT: %p accepted connection", sp->server);
     }
   }
   ep = custom_tcp_endpoint_create(socket, sp->server->resource_quota,
@@ -377,10 +377,10 @@ static grpc_error* tcp_server_add_port(grpc_tcp_server* s,
     grpc_sockaddr_to_string(&port_string, addr, 0);
     const char* str = grpc_error_string(error);
     if (port_string) {
-      gpr_log(GPR_DEBUG, "SERVER %p add_port %s error=%s", s, port_string, str);
+      gpr_log(GPR_INFO, "SERVER %p add_port %s error=%s", s, port_string, str);
       gpr_free(port_string);
     } else {
-      gpr_log(GPR_DEBUG, "SERVER %p add_port error=%s", s, str);
+      gpr_log(GPR_INFO, "SERVER %p add_port error=%s", s, str);
     }
   }
 
@@ -393,13 +393,6 @@ static grpc_error* tcp_server_add_port(grpc_tcp_server* s,
   grpc_custom_socket_vtable->init(socket, family);
 
   if (error == GRPC_ERROR_NONE) {
-#if defined(GPR_LINUX) && defined(SO_REUSEPORT)
-    if (family == AF_INET || family == AF_INET6) {
-      int enable = 1;
-      grpc_custom_socket_vtable->setsockopt(socket, SOL_SOCKET, SO_REUSEPORT,
-                                            &enable, sizeof(enable));
-    }
-#endif /* GPR_LINUX && SO_REUSEPORT */
     error = add_socket_to_server(s, socket, addr, port_index, &sp);
   }
   gpr_free(allocated_addr);
@@ -426,7 +419,7 @@ static void tcp_server_start(grpc_tcp_server* server, grpc_pollset** pollsets,
   (void)pollset_count;
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "SERVER_START %p", server);
+    gpr_log(GPR_INFO, "SERVER_START %p", server);
   }
   GPR_ASSERT(on_accept_cb);
   GPR_ASSERT(!server->on_accept_cb);

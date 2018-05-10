@@ -21,7 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/status_util.h"
+#include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"  // for grpc_millis
@@ -59,6 +59,10 @@ class ClientChannelMethodParams : public RefCounted<ClientChannelMethodParams> {
   // So New() can call our private ctor.
   template <typename T, typename... Args>
   friend T* grpc_core::New(Args&&... args);
+
+  // So Delete() can call our private dtor.
+  template <typename T>
+  friend void grpc_core::Delete(T*);
 
   ClientChannelMethodParams() {}
   virtual ~ClientChannelMethodParams() {}

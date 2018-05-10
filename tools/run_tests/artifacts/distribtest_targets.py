@@ -146,8 +146,12 @@ class CSharpDistribTest(object):
 class PythonDistribTest(object):
     """Tests Python package"""
 
-    def __init__(self, platform, arch, docker_suffix):
-        self.name = 'python_%s_%s_%s' % (platform, arch, docker_suffix)
+    def __init__(self, platform, arch, docker_suffix, source=False):
+        self.source = source
+        if source:
+            self.name = 'python_dev_%s_%s_%s' % (platform, arch, docker_suffix)
+        else:
+            self.name = 'python_%s_%s_%s' % (platform, arch, docker_suffix)
         self.platform = platform
         self.arch = arch
         self.docker_suffix = docker_suffix
@@ -160,12 +164,20 @@ class PythonDistribTest(object):
         if not self.platform == 'linux':
             raise Exception("Not supported yet.")
 
-        return create_docker_jobspec(
-            self.name,
-            'tools/dockerfile/distribtest/python_%s_%s' % (self.docker_suffix,
-                                                           self.arch),
-            'test/distrib/python/run_distrib_test.sh',
-            copy_rel_path='test/distrib')
+        if self.source:
+            return create_docker_jobspec(
+                self.name,
+                'tools/dockerfile/distribtest/python_dev_%s_%s' %
+                (self.docker_suffix, self.arch),
+                'test/distrib/python/run_source_distrib_test.sh',
+                copy_rel_path='test/distrib')
+        else:
+            return create_docker_jobspec(
+                self.name,
+                'tools/dockerfile/distribtest/python_%s_%s' %
+                (self.docker_suffix, self.arch),
+                'test/distrib/python/run_binary_distrib_test.sh',
+                copy_rel_path='test/distrib')
 
     def __str__(self):
         return self.name
@@ -232,7 +244,7 @@ class PHPDistribTest(object):
                 copy_rel_path='test/distrib')
         elif self.platform == 'macos':
             return create_jobspec(
-                self.name, ['test/distrib/php/run_distrib_test.sh'],
+                self.name, ['test/distrib/php/run_distrib_test_macos.sh'],
                 environ={'EXTERNAL_GIT_ROOT': '../../../..'},
                 use_workspace=True)
         else:
@@ -287,7 +299,10 @@ def targets():
     return [
         CppDistribTest('linux', 'x64', 'jessie', 'routeguide'),
         CppDistribTest('linux', 'x64', 'jessie', 'cmake'),
+        CppDistribTest('linux', 'x64', 'jessie', 'cmake_as_externalproject'),
+        CppDistribTest('linux', 'x64', 'jessie', 'cmake_as_submodule'),
         CppDistribTest('windows', 'x86', testcase='cmake'),
+        CppDistribTest('windows', 'x86', testcase='cmake_as_externalproject'),
         CSharpDistribTest('linux', 'x64', 'wheezy'),
         CSharpDistribTest('linux', 'x64', 'jessie'),
         CSharpDistribTest('linux', 'x86', 'jessie'),
@@ -312,6 +327,14 @@ def targets():
         PythonDistribTest('linux', 'x64', 'ubuntu1204'),
         PythonDistribTest('linux', 'x64', 'ubuntu1404'),
         PythonDistribTest('linux', 'x64', 'ubuntu1604'),
+        PythonDistribTest('linux', 'x64', 'jessie', source=True),
+        PythonDistribTest('linux', 'x86', 'jessie', source=True),
+        PythonDistribTest('linux', 'x64', 'centos7', source=True),
+        PythonDistribTest('linux', 'x64', 'fedora22', source=True),
+        PythonDistribTest('linux', 'x64', 'fedora23', source=True),
+        PythonDistribTest('linux', 'x64', 'arch', source=True),
+        PythonDistribTest('linux', 'x64', 'ubuntu1404', source=True),
+        PythonDistribTest('linux', 'x64', 'ubuntu1604', source=True),
         RubyDistribTest('linux', 'x64', 'wheezy'),
         RubyDistribTest('linux', 'x64', 'jessie'),
         RubyDistribTest('linux', 'x86', 'jessie'),

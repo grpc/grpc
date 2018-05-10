@@ -22,11 +22,10 @@ _AVAILABLE_BENCHMARK_TESTS = [
     'bm_metadata', 'bm_fullstack_trickle'
 ]
 
-_INTERESTING = ('cpu_time', 'real_time', 'call_initial_size-median',
-                'locks_per_iteration', 'allocs_per_iteration',
-                'writes_per_iteration', 'atm_cas_per_iteration',
-                'atm_add_per_iteration', 'nows_per_iteration',
-                'cli_transport_stalls_per_iteration',
+_INTERESTING = ('cpu_time', 'real_time', 'locks_per_iteration',
+                'allocs_per_iteration', 'writes_per_iteration',
+                'atm_cas_per_iteration', 'atm_add_per_iteration',
+                'nows_per_iteration', 'cli_transport_stalls_per_iteration',
                 'cli_stream_stalls_per_iteration',
                 'svr_transport_stalls_per_iteration',
                 'svr_stream_stalls_per_iteration',

@@ -12,8 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Utilities for manipulating JSON data that represents microbenchmark results.
+
 import os
 
+# template arguments and dynamic arguments of individual benchmark types
+# Example benchmark name: "BM_UnaryPingPong<TCP, NoOpMutator, NoOpMutator>/0/0"
 _BM_SPECS = {
     'BM_UnaryPingPong': {
         'tpl': ['fixture', 'client_mutator', 'server_mutator'],
@@ -115,6 +119,7 @@ _BM_SPECS = {
 
 
 def numericalize(s):
+    """Convert abbreviations like '100M' or '10k' to a number."""
     if not s: return ''
     if s[-1] == 'k':
         return float(s[:-1]) * 1024
@@ -159,9 +164,6 @@ def parse_name(name):
         rest = s[0]
         dyn_args = s[1:]
     name = rest
-    print(name)
-    print(dyn_args, _BM_SPECS[name]['dyn'])
-    print(tpl_args, _BM_SPECS[name]['tpl'])
     assert name in _BM_SPECS, '_BM_SPECS needs to be expanded for %s' % name
     assert len(dyn_args) == len(_BM_SPECS[name]['dyn'])
     assert len(tpl_args) == len(_BM_SPECS[name]['tpl'])

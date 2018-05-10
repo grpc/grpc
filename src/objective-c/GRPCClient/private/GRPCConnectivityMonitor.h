@@ -26,7 +26,7 @@ typedef NS_ENUM(NSInteger, GRPCConnectivityStatus) {
   GRPCConnectivityWiFi = 3,
 };
 
-extern NSString * _Nonnull kGRPCConnectivityNotification;
+extern NSString* _Nonnull kGRPCConnectivityNotification;
 
 // This interface monitors OS reachability interface for any network status
 // change. Parties interested in these events should register themselves as
@@ -39,8 +39,7 @@ extern NSString * _Nonnull kGRPCConnectivityNotification;
 // must have a notification method with one parameter of type
 // (NSNotification *) and should pass it to parameter \a selector. The
 // parameter of this notification method is not used for now.
-+ (void)registerObserver:(_Nonnull id)observer
-                selector:(_Nonnull SEL)selector;
++ (void)registerObserver:(_Nonnull id)observer selector:(_Nonnull SEL)selector;
 
 // Ungegister an object from observers of network status change.
 + (void)unregisterObserver:(_Nonnull id)observer;

@@ -108,6 +108,8 @@ END2END_TESTS = {
         proxyable=False, cpu_cost=LOWCPU, exclude_iomgrs=['uv']),
     'default_host': default_test_options._replace(
         needs_fullstack=True, needs_dns=True, needs_names=True),
+    'call_host_override': default_test_options._replace(
+        needs_fullstack=True, needs_dns=True, needs_names=True),
     'disappearing_server': connectivity_test_options._replace(flaky=True,
                                                               needs_names=True),
     'empty_batch': default_test_options._replace(cpu_cost=LOWCPU),
@@ -168,6 +170,9 @@ END2END_TESTS = {
                                       proxyable=False),
     'retry_non_retriable_status': default_test_options._replace(
         cpu_cost=LOWCPU, needs_client_channel=True, proxyable=False),
+    'retry_non_retriable_status_before_recv_trailing_metadata_started':
+        default_test_options._replace(
+            cpu_cost=LOWCPU, needs_client_channel=True, proxyable=False),
     'retry_recv_initial_metadata': default_test_options._replace(
         cpu_cost=LOWCPU, needs_client_channel=True, proxyable=False),
     'retry_recv_message': default_test_options._replace(

@@ -192,9 +192,21 @@ static grpc_error* uv_socket_init_helper(uv_socket_t* uv_socket, int domain) {
   if (status != 0) {
     return tcp_error_create("Failed to initialize UV tcp handle", status);
   }
+#if defined(GPR_LINUX) && defined(SO_REUSEPORT)
+  if (domain == AF_INET || domain == AF_INET6) {
+    int enable = 1;
+    int fd;
+    uv_fileno((uv_handle_t*)tcp, &fd);
+    // TODO Handle error here.
+    setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(enable));
+  }
+#endif
   uv_socket->write_buffers = nullptr;
   uv_socket->read_len = 0;
   uv_tcp_nodelay(uv_socket->handle, 1);
+  // Node uses a garbage collector to call destructors, so we don't
+  // want to hold the uv loop open with active gRPC objects.
+  uv_unref((uv_handle_t*)uv_socket->handle);
   uv_socket->pending_connection = false;
   uv_socket->accept_socket = nullptr;
   uv_socket->accept_error = GRPC_ERROR_NONE;
@@ -299,17 +311,6 @@ static grpc_error* uv_socket_listen(grpc_custom_socket* socket) {
   return tcp_error_create("Failed to listen to port", status);
 }
 
-static grpc_error* uv_socket_setsockopt(grpc_custom_socket* socket, int level,
-                                        int option_name, const void* optval,
-                                        socklen_t option_len) {
-  int fd;
-  uv_socket_t* uv_socket = (uv_socket_t*)socket->impl;
-  uv_fileno((uv_handle_t*)uv_socket->handle, &fd);
-  // TODO Handle error here.  Also, does this work on windows??
-  setsockopt(fd, level, option_name, &optval, (socklen_t)option_len);
-  return GRPC_ERROR_NONE;
-}
-
 static void uv_tc_on_connect(uv_connect_t* req, int status) {
   grpc_custom_socket* socket = (grpc_custom_socket*)req->data;
   uv_socket_t* uv_socket = (uv_socket_t*)socket->impl;
@@ -340,7 +341,6 @@ static void uv_socket_connect(grpc_custom_socket* socket,
 static grpc_resolved_addresses* handle_addrinfo_result(
     struct addrinfo* result) {
   struct addrinfo* resp;
-  struct addrinfo* prev;
   size_t i;
   grpc_resolved_addresses* addresses =
       (grpc_resolved_addresses*)gpr_malloc(sizeof(grpc_resolved_addresses));
@@ -350,16 +350,13 @@ static grpc_resolved_addresses* handle_addrinfo_result(
   }
   addresses->addrs = (grpc_resolved_address*)gpr_malloc(
       sizeof(grpc_resolved_address) * addresses->naddrs);
-  i = 0;
-  resp = result;
-  while (resp != nullptr) {
+  for (resp = result, i = 0; resp != nullptr; resp = resp->ai_next, i++) {
     memcpy(&addresses->addrs[i].addr, resp->ai_addr, resp->ai_addrlen);
     addresses->addrs[i].len = resp->ai_addrlen;
-    i++;
-    prev = resp;
-    resp = resp->ai_next;
-    gpr_free(prev);
   }
+  // addrinfo objects are allocated by libuv (e.g. in uv_getaddrinfo)
+  // and not by gpr_malloc
+  uv_freeaddrinfo(result);
   return addresses;
 }
 
@@ -415,10 +412,9 @@ static void uv_resolve_async(grpc_custom_resolver* r, char* host, char* port) {
 grpc_custom_resolver_vtable uv_resolver_vtable = {uv_resolve, uv_resolve_async};
 
 grpc_socket_vtable grpc_uv_socket_vtable = {
-    uv_socket_init,       uv_socket_connect,     uv_socket_destroy,
-    uv_socket_shutdown,   uv_socket_close,       uv_socket_write,
-    uv_socket_read,       uv_socket_getpeername, uv_socket_getsockname,
-    uv_socket_setsockopt, uv_socket_bind,        uv_socket_listen,
-    uv_socket_accept};
+    uv_socket_init,     uv_socket_connect,     uv_socket_destroy,
+    uv_socket_shutdown, uv_socket_close,       uv_socket_write,
+    uv_socket_read,     uv_socket_getpeername, uv_socket_getsockname,
+    uv_socket_bind,     uv_socket_listen,      uv_socket_accept};
 
 #endif

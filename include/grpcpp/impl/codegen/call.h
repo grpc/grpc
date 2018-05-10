@@ -656,21 +656,6 @@ class CallOpSet : public CallOpSetInterface,
   grpc_call* call_;
 };
 
-/// A CallOpSet that does not post completions to the completion queue.
-///
-/// Allows hiding some completions that the C core must generate from
-/// C++ users.
-template <class Op1 = CallNoOp<1>, class Op2 = CallNoOp<2>,
-          class Op3 = CallNoOp<3>, class Op4 = CallNoOp<4>,
-          class Op5 = CallNoOp<5>, class Op6 = CallNoOp<6>>
-class SneakyCallOpSet : public CallOpSet<Op1, Op2, Op3, Op4, Op5, Op6> {
- public:
-  bool FinalizeResult(void** tag, bool* status) override {
-    typedef CallOpSet<Op1, Op2, Op3, Op4, Op5, Op6> Base;
-    return Base::FinalizeResult(tag, status) && false;
-  }
-};
-
 /// Straightforward wrapping of the C call object
 class Call final {
  public:

@@ -70,11 +70,12 @@ int main(int argc, char** argv) {
 
   test_succeeds(dns, "dns:10.2.1.1");
   test_succeeds(dns, "dns:10.2.1.1:1234");
-  test_succeeds(dns, "ipv4:www.google.com");
+  test_succeeds(dns, "dns:www.google.com");
+  test_succeeds(dns, "dns:///www.google.com");
   if (grpc_resolve_address == grpc_resolve_address_ares) {
-    test_succeeds(dns, "ipv4://8.8.8.8/8.8.8.8:8888");
+    test_succeeds(dns, "dns://8.8.8.8/8.8.8.8:8888");
   } else {
-    test_fails(dns, "ipv4://8.8.8.8/8.8.8.8:8888");
+    test_fails(dns, "dns://8.8.8.8/8.8.8.8:8888");
   }
 
   {

@@ -46,6 +46,7 @@
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/helpers.h"
+#include "test/cpp/util/test_config.h"
 
 auto& force_library_initialization = Library::get();
 
@@ -813,4 +814,15 @@ static void BM_IsolatedCall_StreamingSend(benchmark::State& state) {
 }
 BENCHMARK(BM_IsolatedCall_StreamingSend);
 
-BENCHMARK_MAIN();
+// Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
+// and others do not. This allows us to support both modes.
+namespace benchmark {
+void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
+}  // namespace benchmark
+
+int main(int argc, char** argv) {
+  ::benchmark::Initialize(&argc, argv);
+  ::grpc::testing::InitTest(&argc, &argv, false);
+  benchmark::RunTheBenchmarksNamespaced();
+  return 0;
+}

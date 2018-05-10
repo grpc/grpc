@@ -21,6 +21,7 @@
 #include "src/core/lib/surface/channel.h"
 
 #include <inttypes.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -30,8 +31,12 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -55,12 +60,13 @@ typedef struct registered_call {
 struct grpc_channel {
   int is_client;
   grpc_compression_options compression_options;
-  grpc_mdelem default_authority;
 
   gpr_atm call_size_estimate;
 
   gpr_mu registered_call_mu;
   registered_call* registered_calls;
+
+  grpc_core::RefCountedPtr<grpc_core::ChannelTrace> tracer;
 
   char* target;
 };
@@ -93,12 +99,14 @@ grpc_channel* grpc_channel_create_with_builder(
             grpc_error_string(error));
     GRPC_ERROR_UNREF(error);
     gpr_free(target);
-    goto done;
+    grpc_channel_args_destroy(args);
+    return channel;
   }
 
   memset(channel, 0, sizeof(*channel));
   channel->target = target;
   channel->is_client = grpc_channel_stack_type_is_client(channel_stack_type);
+  size_t channel_tracer_max_nodes = 0;  // default to off
   gpr_mu_init(&channel->registered_call_mu);
   channel->registered_calls = nullptr;
 
@@ -108,40 +116,8 @@ grpc_channel* grpc_channel_create_with_builder(
 
   grpc_compression_options_init(&channel->compression_options);
   for (size_t i = 0; i < args->num_args; i++) {
-    if (0 == strcmp(args->args[i].key, GRPC_ARG_DEFAULT_AUTHORITY)) {
-      if (args->args[i].type != GRPC_ARG_STRING) {
-        gpr_log(GPR_ERROR, "%s ignored: it must be a string",
-                GRPC_ARG_DEFAULT_AUTHORITY);
-      } else {
-        if (!GRPC_MDISNULL(channel->default_authority)) {
-          /* setting this takes precedence over anything else */
-          GRPC_MDELEM_UNREF(channel->default_authority);
-        }
-        channel->default_authority = grpc_mdelem_from_slices(
-            GRPC_MDSTR_AUTHORITY,
-            grpc_slice_intern(
-                grpc_slice_from_static_string(args->args[i].value.string)));
-      }
-    } else if (0 ==
-               strcmp(args->args[i].key, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)) {
-      if (args->args[i].type != GRPC_ARG_STRING) {
-        gpr_log(GPR_ERROR, "%s ignored: it must be a string",
-                GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
-      } else {
-        if (!GRPC_MDISNULL(channel->default_authority)) {
-          /* other ways of setting this (notably ssl) take precedence */
-          gpr_log(GPR_ERROR,
-                  "%s ignored: default host already set some other way",
-                  GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
-        } else {
-          channel->default_authority = grpc_mdelem_from_slices(
-              GRPC_MDSTR_AUTHORITY,
-              grpc_slice_intern(
-                  grpc_slice_from_static_string(args->args[i].value.string)));
-        }
-      }
-    } else if (0 == strcmp(args->args[i].key,
-                           GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL)) {
+    if (0 ==
+        strcmp(args->args[i].key, GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL)) {
       channel->compression_options.default_level.is_set = true;
       channel->compression_options.default_level.level =
           static_cast<grpc_compression_level>(grpc_channel_arg_get_integer(
@@ -161,12 +137,62 @@ grpc_channel* grpc_channel_create_with_builder(
       channel->compression_options.enabled_algorithms_bitset =
           static_cast<uint32_t>(args->args[i].value.integer) |
           0x1; /* always support no compression */
+    } else if (0 == strcmp(args->args[i].key,
+                           GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE)) {
+      GPR_ASSERT(channel_tracer_max_nodes == 0);
+      // max_nodes defaults to 0 (which is off), clamped between 0 and INT_MAX
+      const grpc_integer_options options = {0, 0, INT_MAX};
+      channel_tracer_max_nodes =
+          (size_t)grpc_channel_arg_get_integer(&args->args[i], options);
     }
   }
 
-done:
   grpc_channel_args_destroy(args);
+  channel->tracer = grpc_core::MakeRefCounted<grpc_core::ChannelTrace>(
+      channel_tracer_max_nodes);
+  channel->tracer->AddTraceEvent(
+      grpc_core::ChannelTrace::Severity::Info,
+      grpc_slice_from_static_string("Channel created"));
   return channel;
+}
+
+static grpc_core::UniquePtr<char> get_default_authority(
+    const grpc_channel_args* input_args) {
+  bool has_default_authority = false;
+  char* ssl_override = nullptr;
+  grpc_core::UniquePtr<char> default_authority;
+  const size_t num_args = input_args != nullptr ? input_args->num_args : 0;
+  for (size_t i = 0; i < num_args; ++i) {
+    if (0 == strcmp(input_args->args[i].key, GRPC_ARG_DEFAULT_AUTHORITY)) {
+      has_default_authority = true;
+    } else if (0 == strcmp(input_args->args[i].key,
+                           GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)) {
+      ssl_override = grpc_channel_arg_get_string(&input_args->args[i]);
+    }
+  }
+  if (!has_default_authority && ssl_override != nullptr) {
+    default_authority.reset(gpr_strdup(ssl_override));
+  }
+  return default_authority;
+}
+
+static grpc_channel_args* build_channel_args(
+    const grpc_channel_args* input_args, char* default_authority) {
+  grpc_arg new_args[1];
+  size_t num_new_args = 0;
+  if (default_authority != nullptr) {
+    new_args[num_new_args++] = grpc_channel_arg_string_create(
+        const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), default_authority);
+  }
+  return grpc_channel_args_copy_and_add(input_args, new_args, num_new_args);
+}
+
+char* grpc_channel_get_trace(grpc_channel* channel) {
+  return channel->tracer->RenderTrace();
+}
+
+intptr_t grpc_channel_get_uuid(grpc_channel* channel) {
+  return channel->tracer->GetUuid();
 }
 
 grpc_channel* grpc_channel_create(const char* target,
@@ -174,7 +200,12 @@ grpc_channel* grpc_channel_create(const char* target,
                                   grpc_channel_stack_type channel_stack_type,
                                   grpc_transport* optional_transport) {
   grpc_channel_stack_builder* builder = grpc_channel_stack_builder_create();
-  grpc_channel_stack_builder_set_channel_arguments(builder, input_args);
+  const grpc_core::UniquePtr<char> default_authority =
+      get_default_authority(input_args);
+  grpc_channel_args* args =
+      build_channel_args(input_args, default_authority.get());
+  grpc_channel_stack_builder_set_channel_arguments(builder, args);
+  grpc_channel_args_destroy(args);
   grpc_channel_stack_builder_set_target(builder, target);
   grpc_channel_stack_builder_set_transport(builder, optional_transport);
   if (!grpc_channel_init_create_stack(builder, channel_stack_type)) {
@@ -246,8 +277,6 @@ static grpc_call* grpc_channel_create_call_internal(
   send_metadata[num_metadata++] = path_mdelem;
   if (!GRPC_MDISNULL(authority_mdelem)) {
     send_metadata[num_metadata++] = authority_mdelem;
-  } else if (!GRPC_MDISNULL(channel->default_authority)) {
-    send_metadata[num_metadata++] = GRPC_MDELEM_REF(channel->default_authority);
   }
 
   grpc_call_create_args args;
@@ -377,7 +406,7 @@ static void destroy_channel(void* arg, grpc_error* error) {
     GRPC_MDELEM_UNREF(rc->authority);
     gpr_free(rc);
   }
-  GRPC_MDELEM_UNREF(channel->default_authority);
+  channel->tracer.reset();
   gpr_mu_destroy(&channel->registered_call_mu);
   gpr_free(channel->target);
   gpr_free(channel);

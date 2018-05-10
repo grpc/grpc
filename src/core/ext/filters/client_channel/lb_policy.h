@@ -162,6 +162,10 @@ class LoadBalancingPolicy
   GRPC_ABSTRACT_BASE_CLASS
 
  protected:
+  // So Delete() can access our protected dtor.
+  template <typename T>
+  friend void Delete(T*);
+
   explicit LoadBalancingPolicy(const Args& args);
   virtual ~LoadBalancingPolicy();
 

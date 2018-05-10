@@ -411,3 +411,31 @@ grpc_arg grpc_channel_arg_pointer_create(
   arg.value.pointer.vtable = vtable;
   return arg;
 }
+
+char* grpc_channel_args_string(const grpc_channel_args* args) {
+  if (args == nullptr) return nullptr;
+  gpr_strvec v;
+  gpr_strvec_init(&v);
+  for (size_t i = 0; i < args->num_args; ++i) {
+    const grpc_arg& arg = args->args[i];
+    char* s;
+    switch (arg.type) {
+      case GRPC_ARG_INTEGER:
+        gpr_asprintf(&s, "%s=%d", arg.key, arg.value.integer);
+        break;
+      case GRPC_ARG_STRING:
+        gpr_asprintf(&s, "%s=%s", arg.key, arg.value.string);
+        break;
+      case GRPC_ARG_POINTER:
+        gpr_asprintf(&s, "%s=%p", arg.key, arg.value.pointer.p);
+        break;
+      default:
+        gpr_asprintf(&s, "arg with unknown type");
+    }
+    gpr_strvec_add(&v, s);
+  }
+  char* result =
+      gpr_strjoin_sep(const_cast<const char**>(v.strs), v.count, ", ", nullptr);
+  gpr_strvec_destroy(&v);
+  return result;
+}

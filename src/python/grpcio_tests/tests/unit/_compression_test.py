@@ -32,10 +32,12 @@ def handle_unary(request, servicer_context):
 
 
 def handle_stream(request_iterator, servicer_context):
+    # TODO(issue:#6891) We should be able to remove this loop,
+    # and replace with return; yield
     servicer_context.send_initial_metadata([('grpc-internal-encoding-request',
                                              'gzip')])
-    return
-    yield
+    for request in request_iterator:
+        yield request
 
 
 class _MethodHandler(grpc.RpcMethodHandler):
@@ -50,9 +52,9 @@ class _MethodHandler(grpc.RpcMethodHandler):
         self.stream_unary = None
         self.stream_stream = None
         if self.request_streaming and self.response_streaming:
-            self.stream_stream = lambda x, y: handle_stream(x, y)
+            self.stream_stream = handle_stream
         elif not self.request_streaming and not self.response_streaming:
-            self.unary_unary = lambda x, y: handle_unary(x, y)
+            self.unary_unary = handle_unary
 
 
 class _GenericHandler(grpc.GenericRpcHandler):

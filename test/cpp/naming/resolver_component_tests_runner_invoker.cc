@@ -165,9 +165,9 @@ int main(int argc, char** argv) {
     GPR_ASSERT(FLAGS_grpc_test_directory_relative_to_test_srcdir != "");
     // Use bazel's TEST_SRCDIR environment variable to locate the "test data"
     // binaries.
+    char* test_srcdir = gpr_getenv("TEST_SRCDIR");
     std::string const bin_dir =
-        gpr_getenv("TEST_SRCDIR") +
-        FLAGS_grpc_test_directory_relative_to_test_srcdir +
+        test_srcdir + FLAGS_grpc_test_directory_relative_to_test_srcdir +
         std::string("/test/cpp/naming");
     // Invoke bazel's executeable links to the .sh and .py scripts (don't use
     // the .sh and .py suffixes) to make
@@ -177,6 +177,7 @@ int main(int argc, char** argv) {
         bin_dir + "/" + FLAGS_test_bin_name, bin_dir + "/utils/dns_server",
         bin_dir + "/resolver_test_record_groups.yaml",
         bin_dir + "/utils/dns_resolver", bin_dir + "/utils/tcp_connect");
+    gpr_free(test_srcdir);
   } else {
     // Get the current binary's directory relative to repo root to invoke the
     // correct build config (asan/tsan/dbg, etc.).

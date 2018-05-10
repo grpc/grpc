@@ -206,7 +206,7 @@ void PrintMethodImplementations(Printer* printer,
     }
   }
   for (auto one_class : classes) {
-    output += "  @class " + one_class + ";\n";
+    output += "@class " + one_class + ";\n";
   }
 
   return output;
@@ -222,7 +222,8 @@ void PrintMethodImplementations(Printer* printer,
   map< ::grpc::string, ::grpc::string> vars = {
       {"service_class", ServiceClassName(service)}};
 
-  printer.Print(vars, "@protocol $service_class$ <NSObject>\n\n");
+  printer.Print(
+      vars, "@protocol $service_class$ <NSObject, GRPCProtoServiceInit>\n\n");
   for (int i = 0; i < service->method_count(); i++) {
     PrintMethodDeclarations(&printer, service->method(i));
   }

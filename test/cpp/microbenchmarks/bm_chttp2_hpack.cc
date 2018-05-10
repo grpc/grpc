@@ -33,6 +33,7 @@
 #include "src/core/lib/transport/timeout_encoding.h"
 
 #include "test/cpp/microbenchmarks/helpers.h"
+#include "test/cpp/util/test_config.h"
 
 auto& force_library_initialization = Library::get();
 
@@ -855,4 +856,15 @@ BENCHMARK_TEMPLATE(BM_HpackParserParseHeader, SameDeadline, OnHeaderNew);
 
 }  // namespace hpack_parser_fixtures
 
-BENCHMARK_MAIN();
+// Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
+// and others do not. This allows us to support both modes.
+namespace benchmark {
+void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
+}  // namespace benchmark
+
+int main(int argc, char** argv) {
+  ::benchmark::Initialize(&argc, argv);
+  ::grpc::testing::InitTest(&argc, &argv, false);
+  benchmark::RunTheBenchmarksNamespaced();
+  return 0;
+}

@@ -16,13 +16,17 @@
  *
  */
 
-#include <grpcpp/support/slice.h>
+#include <grpc++/support/slice.h>
+#include <grpcpp/impl/grpc_library.h>
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <gtest/gtest.h>
 
 namespace grpc {
+
+static internal::GrpcLibraryInitializer g_gli_initializer;
+
 namespace {
 
 const char* kContent = "hello xxxxxxxxxxxxxxxxxxxx world";

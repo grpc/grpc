@@ -13,8 +13,8 @@ settings:
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
   core_version: 6.0.0-dev
-  g_stands_for: gorgeous
-  version: 1.11.0-dev
+  g_stands_for: gloriosa
+  version: 1.13.0-dev
 filegroups:
 - name: alts_proto
   headers:
@@ -70,6 +70,8 @@ filegroups:
   - tsi_interface
   - tsi
 - name: alts_util
+  public_headers:
+  - include/grpc/grpc_security.h
   headers:
   - src/core/lib/security/credentials/alts/check_gcp_environment.h
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h
@@ -232,10 +234,13 @@ filegroups:
   - src/core/lib/channel/channel_args.cc
   - src/core/lib/channel/channel_stack.cc
   - src/core/lib/channel/channel_stack_builder.cc
+  - src/core/lib/channel/channel_trace.cc
+  - src/core/lib/channel/channel_trace_registry.cc
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/handshaker.cc
   - src/core/lib/channel/handshaker_factory.cc
   - src/core/lib/channel/handshaker_registry.cc
+  - src/core/lib/channel/status_util.cc
   - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
   - src/core/lib/compression/message_compress.cc
@@ -399,11 +404,14 @@ filegroups:
   - src/core/lib/channel/channel_args.h
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
+  - src/core/lib/channel/channel_trace.h
+  - src/core/lib/channel/channel_trace_registry.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
   - src/core/lib/channel/handshaker.h
   - src/core/lib/channel/handshaker_factory.h
   - src/core/lib/channel/handshaker_registry.h
+  - src/core/lib/channel/status_util.h
   - src/core/lib/compression/algorithm_metadata.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/compression/message_compress.h
@@ -528,6 +536,14 @@ filegroups:
   uses:
   - grpc_codegen
   - grpc_trace_headers
+- name: grpc_client_authority_filter
+  headers:
+  - src/core/ext/filters/http/client_authority_filter.h
+  src:
+  - src/core/ext/filters/http/client_authority_filter.cc
+  plugin: grpc_client_authority_filter
+  uses:
+  - grpc_base
 - name: grpc_client_channel
   headers:
   - src/core/ext/filters/client_channel/backup_poller.h
@@ -547,7 +563,6 @@ filegroups:
   - src/core/ext/filters/client_channel/resolver_factory.h
   - src/core/ext/filters/client_channel/resolver_registry.h
   - src/core/ext/filters/client_channel/retry_throttle.h
-  - src/core/ext/filters/client_channel/status_util.h
   - src/core/ext/filters/client_channel/subchannel.h
   - src/core/ext/filters/client_channel/subchannel_index.h
   - src/core/ext/filters/client_channel/uri_parser.h
@@ -570,7 +585,6 @@ filegroups:
   - src/core/ext/filters/client_channel/resolver.cc
   - src/core/ext/filters/client_channel/resolver_registry.cc
   - src/core/ext/filters/client_channel/retry_throttle.cc
-  - src/core/ext/filters/client_channel/status_util.cc
   - src/core/ext/filters/client_channel/subchannel.cc
   - src/core/ext/filters/client_channel/subchannel_index.cc
   - src/core/ext/filters/client_channel/uri_parser.cc
@@ -614,6 +628,7 @@ filegroups:
 - name: grpc_lb_policy_grpclb
   headers:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
@@ -634,6 +649,7 @@ filegroups:
 - name: grpc_lb_policy_grpclb_secure
   headers:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
@@ -671,8 +687,6 @@ filegroups:
 - name: grpc_lb_subchannel_list
   headers:
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
-  src:
-  - src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc
   uses:
   - grpc_base
   - grpc_client_channel
@@ -732,6 +746,7 @@ filegroups:
   public_headers:
   - include/grpc/grpc_security.h
   headers:
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
   - src/core/lib/security/context/security_context.h
   - src/core/lib/security/credentials/alts/alts_credentials.h
   - src/core/lib/security/credentials/composite/composite_credentials.h
@@ -925,8 +940,10 @@ filegroups:
   - gpr
 - name: grpc_transport_chttp2_client_connector
   headers:
+  - src/core/ext/transport/chttp2/client/authority.h
   - src/core/ext/transport/chttp2/client/chttp2_connector.h
   src:
+  - src/core/ext/transport/chttp2/client/authority.cc
   - src/core/ext/transport/chttp2/client/chttp2_connector.cc
   uses:
   - grpc_transport_chttp2
@@ -1071,6 +1088,10 @@ filegroups:
   secure: true
   uses:
   - grpc_trace
+- name: grpc++_channelz_proto
+  language: c++
+  src:
+  - src/proto/grpc/channelz/channelz.proto
 - name: grpc++_codegen_base
   language: c++
   public_headers:
@@ -1146,6 +1167,8 @@ filegroups:
   language: c++
   public_headers:
   - include/grpc++/impl/codegen/proto_utils.h
+  - include/grpcpp/impl/codegen/proto_buffer_reader.h
+  - include/grpcpp/impl/codegen/proto_buffer_writer.h
   - include/grpcpp/impl/codegen/proto_utils.h
   uses:
   - grpc++_codegen_base
@@ -1236,6 +1259,8 @@ filegroups:
   - include/grpcpp/support/byte_buffer.h
   - include/grpcpp/support/channel_arguments.h
   - include/grpcpp/support/config.h
+  - include/grpcpp/support/proto_buffer_reader.h
+  - include/grpcpp/support/proto_buffer_writer.h
   - include/grpcpp/support/slice.h
   - include/grpcpp/support/status.h
   - include/grpcpp/support/status_code_enum.h
@@ -1282,7 +1307,6 @@ filegroups:
   - src/cpp/server/server_posix.cc
   - src/cpp/thread_manager/thread_manager.cc
   - src/cpp/util/byte_buffer_cc.cc
-  - src/cpp/util/slice_cc.cc
   - src/cpp/util/status.cc
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time_cc.cc
@@ -1312,6 +1336,17 @@ filegroups:
   - grpc++
   - grpc
 libs:
+- name: address_sorting
+  build: all
+  language: c
+  headers:
+  - third_party/address_sorting/address_sorting_internal.h
+  - third_party/address_sorting/include/address_sorting/address_sorting.h
+  src:
+  - third_party/address_sorting/address_sorting.c
+  - third_party/address_sorting/address_sorting_posix.c
+  - third_party/address_sorting/address_sorting_windows.c
+  secure: false
 - name: alts_test_util
   build: private
   language: c
@@ -1370,6 +1405,7 @@ libs:
   - grpc_max_age_filter
   - grpc_message_size_filter
   - grpc_deadline_filter
+  - grpc_client_authority_filter
   - grpc_workaround_cronet_compression_filter
   - grpc_server_backward_compatibility
   generate_plugin_registry: true
@@ -1388,13 +1424,9 @@ libs:
   dll: true
   filegroups:
   - grpc_base
-  - grpc_base_headers
-  - grpc_deadline_filter
-  - grpc_message_size_filter
-  - grpc_server_load_reporting
   - grpc_transport_cronet_client_secure
   - grpc_transport_chttp2_client_secure
-  - grpc_transport_chttp2_server_secure
+  - grpc_server_load_reporting
   generate_plugin_registry: true
   platforms:
   - linux
@@ -1476,6 +1508,7 @@ libs:
   - grpc_max_age_filter
   - grpc_message_size_filter
   - grpc_deadline_filter
+  - grpc_client_authority_filter
   - grpc_workaround_cronet_compression_filter
   - grpc_server_backward_compatibility
   generate_plugin_registry: true
@@ -1623,17 +1656,20 @@ libs:
   headers:
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/util/byte_buffer_proto_helper.h
+  - test/cpp/util/channel_trace_proto_helper.h
   - test/cpp/util/create_test_channel.h
   - test/cpp/util/string_ref_helper.h
   - test/cpp/util/subprocess.h
   - test/cpp/util/test_credentials_provider.h
   src:
+  - src/proto/grpc/channelz/channelz.proto
   - src/proto/grpc/health/v1/health.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/util/byte_buffer_proto_helper.cc
+  - test/cpp/util/channel_trace_proto_helper.cc
   - test/cpp/util/create_test_channel.cc
   - test/cpp/util/string_ref_helper.cc
   - test/cpp/util/subprocess.cc
@@ -1855,6 +1891,15 @@ libs:
   - test/cpp/interop/interop_server_bootstrap.cc
   deps:
   - interop_server_lib
+- name: lb_load_data_store
+  build: private
+  language: c++
+  headers:
+  - src/cpp/server/load_reporter/load_data_store.h
+  src:
+  - src/cpp/server/load_reporter/load_data_store.cc
+  deps:
+  - grpc++
 - name: qps
   build: private
   language: c++
@@ -1875,7 +1920,9 @@ libs:
   - src/proto/grpc/testing/payloads.proto
   - src/proto/grpc/testing/stats.proto
   - src/proto/grpc/testing/control.proto
-  - src/proto/grpc/testing/services.proto
+  - src/proto/grpc/testing/benchmark_service.proto
+  - src/proto/grpc/testing/report_qps_scenario_service.proto
+  - src/proto/grpc/testing/worker_service.proto
   - test/cpp/qps/benchmark_config.cc
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_sync.cc
@@ -2587,17 +2634,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: grpc_invalid_channel_args_test
-  build: test
-  language: c
-  src:
-  - test/core/surface/invalid_channel_args_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
-  uses_polling: false
 - name: grpc_json_token_test
   build: test
   language: c
@@ -3786,6 +3822,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   platforms:
@@ -3807,6 +3844,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   platforms:
@@ -3828,6 +3866,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   platforms:
@@ -3849,6 +3888,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   platforms:
@@ -3869,6 +3909,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   platforms:
@@ -3889,6 +3930,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   platforms:
@@ -3909,6 +3951,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   platforms:
@@ -3929,6 +3972,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   platforms:
@@ -3952,6 +3996,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   excluded_poll_engines:
@@ -3978,6 +4023,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   excluded_poll_engines:
@@ -4031,6 +4077,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   excluded_poll_engines:
@@ -4055,6 +4102,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   platforms:
@@ -4076,6 +4124,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   platforms:
@@ -4115,6 +4164,24 @@ targets:
   - grpc++
   - grpc
   - gpr
+  uses_polling: false
+- name: channel_trace_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/channel/channel_trace_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  filegroups:
+  - grpc++_channelz_proto
+  uses:
+  - grpc++_test
   uses_polling: false
 - name: check_gcp_environment_linux_test
   build: test
@@ -4224,7 +4291,9 @@ targets:
   - src/proto/grpc/testing/control.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/payloads.proto
-  - src/proto/grpc/testing/services.proto
+  - src/proto/grpc/testing/benchmark_service.proto
+  - src/proto/grpc/testing/report_qps_scenario_service.proto
+  - src/proto/grpc/testing/worker_service.proto
   - src/proto/grpc/testing/stats.proto
   - test/cpp/codegen/codegen_test_full.cc
   deps:
@@ -4243,7 +4312,9 @@ targets:
   - src/proto/grpc/testing/control.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/payloads.proto
-  - src/proto/grpc/testing/services.proto
+  - src/proto/grpc/testing/benchmark_service.proto
+  - src/proto/grpc/testing/report_qps_scenario_service.proto
+  - src/proto/grpc/testing/worker_service.proto
   - src/proto/grpc/testing/stats.proto
   - test/cpp/codegen/codegen_test_minimal.cc
   deps:
@@ -4705,6 +4776,20 @@ targets:
   - mac
   - linux
   - posix
+- name: lb_load_data_store_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/server/load_reporter/load_data_store_test.cc
+  deps:
+  - lb_load_data_store
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: memory_test
   gtest: true
   build: test
@@ -4952,6 +5037,18 @@ targets:
   - gpr
   uses:
   - grpc++_test
+- name: retry_throttle_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/client_channel/retry_throttle_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  uses_polling: false
 - name: secure_auth_context_test
   gtest: true
   build: test
@@ -5153,7 +5250,7 @@ targets:
   build: test
   language: c++
   src:
-  - test/core/client_channel/status_util_test.cc
+  - test/core/channel/status_util_test.cc
   deps:
   - grpc
   uses_polling: false
@@ -5471,6 +5568,7 @@ php_config_m4:
   - gpr
   - boringssl
   - z
+  - address_sorting
   headers:
   - src/php/ext/grpc/byte_buffer.h
   - src/php/ext/grpc/call.h
@@ -5502,6 +5600,7 @@ python_dependencies:
   - ares
   - boringssl
   - z
+  - address_sorting
 ruby_gem:
   deps:
   - grpc
@@ -5509,3 +5608,4 @@ ruby_gem:
   - ares
   - boringssl
   - z
+  - address_sorting

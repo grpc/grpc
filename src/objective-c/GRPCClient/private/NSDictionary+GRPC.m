@@ -74,8 +74,7 @@
   NSMutableDictionary *metadata = [NSMutableDictionary dictionaryWithCapacity:count];
   for (grpc_metadata *entry = entries; entry < entries + count; entry++) {
     char *key = grpc_slice_to_c_string(entry->key);
-    NSString *name = [NSString stringWithCString:key
-                                        encoding:NSASCIIStringEncoding];
+    NSString *name = [NSString stringWithCString:key encoding:NSASCIIStringEncoding];
     gpr_free(key);
     if (!name || metadata[name]) {
       // Log if name is nil?
@@ -97,7 +96,7 @@
 - (grpc_metadata *)grpc_metadataArray {
   grpc_metadata *metadata = gpr_malloc([self count] * sizeof(grpc_metadata));
   grpc_metadata *current = metadata;
-  for (NSString* key in self) {
+  for (NSString *key in self) {
     id value = self[key];
     current->key = grpc_slice_from_copied_string(key.UTF8String);
     if ([value respondsToSelector:@selector(grpc_initMetadata:)]) {

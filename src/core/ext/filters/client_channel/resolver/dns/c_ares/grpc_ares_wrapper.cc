@@ -33,6 +33,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
+#include <address_sorting/address_sorting.h>
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/lib/gpr/host_port.h"
@@ -45,6 +46,9 @@
 
 static gpr_once g_basic_init = GPR_ONCE_INIT;
 static gpr_mu g_init_mu;
+
+grpc_core::TraceFlag grpc_trace_cares_address_sorting(false,
+                                                      "cares_address_sorting");
 
 struct grpc_ares_request {
   /** indicates the DNS server to use, if specified */
@@ -96,11 +100,63 @@ static void grpc_ares_request_ref(grpc_ares_request* r) {
   gpr_ref(&r->pending_queries);
 }
 
+static void log_address_sorting_list(grpc_lb_addresses* lb_addrs,
+                                     const char* input_output_str) {
+  for (size_t i = 0; i < lb_addrs->num_addresses; i++) {
+    char* addr_str;
+    if (grpc_sockaddr_to_string(&addr_str, &lb_addrs->addresses[i].address,
+                                true)) {
+      gpr_log(GPR_DEBUG, "c-ares address sorting: %s[%" PRIuPTR "]=%s",
+              input_output_str, i, addr_str);
+      gpr_free(addr_str);
+    } else {
+      gpr_log(GPR_DEBUG,
+              "c-ares address sorting: %s[%" PRIuPTR "]=<unprintable>",
+              input_output_str, i);
+    }
+  }
+}
+
+void grpc_cares_wrapper_address_sorting_sort(grpc_lb_addresses* lb_addrs) {
+  if (grpc_trace_cares_address_sorting.enabled()) {
+    log_address_sorting_list(lb_addrs, "input");
+  }
+  address_sorting_sortable* sortables = (address_sorting_sortable*)gpr_zalloc(
+      sizeof(address_sorting_sortable) * lb_addrs->num_addresses);
+  for (size_t i = 0; i < lb_addrs->num_addresses; i++) {
+    sortables[i].user_data = &lb_addrs->addresses[i];
+    memcpy(&sortables[i].dest_addr.addr, &lb_addrs->addresses[i].address.addr,
+           lb_addrs->addresses[i].address.len);
+    sortables[i].dest_addr.len = lb_addrs->addresses[i].address.len;
+  }
+  address_sorting_rfc_6724_sort(sortables, lb_addrs->num_addresses);
+  grpc_lb_address* sorted_lb_addrs = (grpc_lb_address*)gpr_zalloc(
+      sizeof(grpc_lb_address) * lb_addrs->num_addresses);
+  for (size_t i = 0; i < lb_addrs->num_addresses; i++) {
+    sorted_lb_addrs[i] = *(grpc_lb_address*)sortables[i].user_data;
+  }
+  gpr_free(sortables);
+  gpr_free(lb_addrs->addresses);
+  lb_addrs->addresses = sorted_lb_addrs;
+  if (grpc_trace_cares_address_sorting.enabled()) {
+    log_address_sorting_list(lb_addrs, "output");
+  }
+}
+
+/* Allow tests to access grpc_ares_wrapper_address_sorting_sort */
+void grpc_cares_wrapper_test_only_address_sorting_sort(
+    grpc_lb_addresses* lb_addrs) {
+  grpc_cares_wrapper_address_sorting_sort(lb_addrs);
+}
+
 static void grpc_ares_request_unref(grpc_ares_request* r) {
   /* If there are no pending queries, invoke on_done callback and destroy the
      request */
   if (gpr_unref(&r->pending_queries)) {
-    /* TODO(zyc): Sort results with RFC6724 before invoking on_done. */
+    grpc_lb_addresses* lb_addrs = *(r->lb_addrs_out);
+    if (lb_addrs != nullptr) {
+      grpc_cares_wrapper_address_sorting_sort(lb_addrs);
+    }
     GRPC_CLOSURE_SCHED(r->on_done, r->error);
     gpr_mu_destroy(&r->mu);
     grpc_ares_ev_driver_destroy(r->ev_driver);

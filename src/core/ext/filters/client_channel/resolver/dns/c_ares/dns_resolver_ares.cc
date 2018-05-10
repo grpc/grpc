@@ -28,6 +28,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include <address_sorting/address_sorting.h>
+
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
@@ -133,6 +135,7 @@ AresDnsResolver::AresDnsResolver(const ResolverArgs& args)
   if (path[0] == '/') ++path;
   name_to_resolve_ = gpr_strdup(path);
   // Get DNS server from URI authority.
+  dns_server_ = nullptr;
   if (0 != strcmp(args.uri->authority, "")) {
     dns_server_ = gpr_strdup(args.uri->authority);
   }
@@ -360,6 +363,15 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
 }
 
 void AresDnsResolver::MaybeStartResolvingLocked() {
+  // If there is an existing timer, the time it fires is the earliest time we
+  // can start the next resolution.
+  if (have_next_resolution_timer_) {
+    // TODO(dgq): remove the following two lines once Pick First stops
+    // discarding subchannels after selecting.
+    ++resolved_version_;
+    MaybeFinishNextLocked();
+    return;
+  }
   if (last_resolution_timestamp_ >= 0) {
     const grpc_millis earliest_next_resolution =
         last_resolution_timestamp_ + min_time_between_resolutions_;
@@ -372,17 +384,15 @@ void AresDnsResolver::MaybeStartResolvingLocked() {
               "In cooldown from last resolution (from %" PRIdPTR
               " ms ago). Will resolve again in %" PRIdPTR " ms",
               last_resolution_ago, ms_until_next_resolution);
-      if (!have_next_resolution_timer_) {
-        have_next_resolution_timer_ = true;
-        // TODO(roth): We currently deal with this ref manually.  Once the
-        // new closure API is done, find a way to track this ref with the timer
-        // callback as part of the type system.
-        RefCountedPtr<Resolver> self =
-            Ref(DEBUG_LOCATION, "next_resolution_timer_cooldown");
-        self.release();
-        grpc_timer_init(&next_resolution_timer_, ms_until_next_resolution,
-                        &on_next_resolution_);
-      }
+      have_next_resolution_timer_ = true;
+      // TODO(roth): We currently deal with this ref manually.  Once the
+      // new closure API is done, find a way to track this ref with the timer
+      // callback as part of the type system.
+      RefCountedPtr<Resolver> self =
+          Ref(DEBUG_LOCATION, "next_resolution_timer_cooldown");
+      self.release();
+      grpc_timer_init(&next_resolution_timer_, ms_until_next_resolution,
+                      &on_next_resolution_);
       // TODO(dgq): remove the following two lines once Pick First stops
       // discarding subchannels after selecting.
       ++resolved_version_;
@@ -394,6 +404,7 @@ void AresDnsResolver::MaybeStartResolvingLocked() {
 }
 
 void AresDnsResolver::StartResolvingLocked() {
+  gpr_log(GPR_DEBUG, "Start resolving.");
   // TODO(roth): We currently deal with this ref manually.  Once the
   // new closure API is done, find a way to track this ref with the timer
   // callback as part of the type system.
@@ -458,6 +469,7 @@ void grpc_resolver_dns_ares_init() {
   /* TODO(zyc): Turn on c-ares based resolver by default after the address
      sorter and the CNAME support are added. */
   if (resolver_env != nullptr && gpr_stricmp(resolver_env, "ares") == 0) {
+    address_sorting_init();
     grpc_error* error = grpc_ares_init();
     if (error != GRPC_ERROR_NONE) {
       GRPC_LOG_IF_ERROR("ares_library_init() failed", error);
@@ -475,6 +487,7 @@ void grpc_resolver_dns_ares_init() {
 void grpc_resolver_dns_ares_shutdown() {
   char* resolver_env = gpr_getenv("GRPC_DNS_RESOLVER");
   if (resolver_env != nullptr && gpr_stricmp(resolver_env, "ares") == 0) {
+    address_sorting_shutdown();
     grpc_ares_cleanup();
   }
   gpr_free(resolver_env);

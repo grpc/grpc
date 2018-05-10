@@ -47,7 +47,7 @@ grpc_millis BdpEstimator::CompletePing() {
   double bw = dt > 0 ? (static_cast<double>(accumulator_) / dt) : 0;
   int start_inter_ping_delay = inter_ping_delay_;
   if (grpc_bdp_estimator_trace.enabled()) {
-    gpr_log(GPR_DEBUG,
+    gpr_log(GPR_INFO,
             "bdp[%s]:complete acc=%" PRId64 " est=%" PRId64
             " dt=%lf bw=%lfMbs bw_est=%lfMbs",
             name_, accumulator_, estimate_, dt, bw / 125000.0,
@@ -58,7 +58,7 @@ grpc_millis BdpEstimator::CompletePing() {
     estimate_ = GPR_MAX(accumulator_, estimate_ * 2);
     bw_est_ = bw;
     if (grpc_bdp_estimator_trace.enabled()) {
-      gpr_log(GPR_DEBUG, "bdp[%s]: estimate increased to %" PRId64, name_,
+      gpr_log(GPR_INFO, "bdp[%s]: estimate increased to %" PRId64, name_,
               estimate_);
     }
     inter_ping_delay_ /= 2;  // if the ping estimate changes,
@@ -75,7 +75,7 @@ grpc_millis BdpEstimator::CompletePing() {
   if (start_inter_ping_delay != inter_ping_delay_) {
     stable_estimate_count_ = 0;
     if (grpc_bdp_estimator_trace.enabled()) {
-      gpr_log(GPR_DEBUG, "bdp[%s]:update_inter_time to %dms", name_,
+      gpr_log(GPR_INFO, "bdp[%s]:update_inter_time to %dms", name_,
               inter_ping_delay_);
     }
   }

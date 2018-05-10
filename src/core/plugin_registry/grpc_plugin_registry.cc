@@ -52,6 +52,8 @@ void grpc_max_age_filter_init(void);
 void grpc_max_age_filter_shutdown(void);
 void grpc_message_size_filter_init(void);
 void grpc_message_size_filter_shutdown(void);
+void grpc_client_authority_filter_init(void);
+void grpc_client_authority_filter_shutdown(void);
 void grpc_workaround_cronet_compression_filter_init(void);
 void grpc_workaround_cronet_compression_filter_shutdown(void);
 
@@ -88,6 +90,8 @@ void grpc_register_built_in_plugins(void) {
                        grpc_max_age_filter_shutdown);
   grpc_register_plugin(grpc_message_size_filter_init,
                        grpc_message_size_filter_shutdown);
+  grpc_register_plugin(grpc_client_authority_filter_init,
+                       grpc_client_authority_filter_shutdown);
   grpc_register_plugin(grpc_workaround_cronet_compression_filter_init,
                        grpc_workaround_cronet_compression_filter_shutdown);
 }

@@ -983,7 +983,7 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
       GRPC_SCHEDULING_END_BLOCKING_REGION;
 
       if (grpc_polling_trace.enabled()) {
-        gpr_log(GPR_DEBUG, "%p poll=%d", pollset, r);
+        gpr_log(GPR_INFO, "%p poll=%d", pollset, r);
       }
 
       if (r < 0) {
@@ -1007,7 +1007,7 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
       } else {
         if (pfds[0].revents & POLLIN_CHECK) {
           if (grpc_polling_trace.enabled()) {
-            gpr_log(GPR_DEBUG, "%p: got_wakeup", pollset);
+            gpr_log(GPR_INFO, "%p: got_wakeup", pollset);
           }
           work_combine_error(
               &error, grpc_wakeup_fd_consume_wakeup(&worker.wakeup_fd->fd));
@@ -1017,7 +1017,7 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
             fd_end_poll(&watchers[i], 0, 0, nullptr);
           } else {
             if (grpc_polling_trace.enabled()) {
-              gpr_log(GPR_DEBUG, "%p got_event: %d r:%d w:%d [%d]", pollset,
+              gpr_log(GPR_INFO, "%p got_event: %d r:%d w:%d [%d]", pollset,
                       pfds[i].fd, (pfds[i].revents & POLLIN_CHECK) != 0,
                       (pfds[i].revents & POLLOUT_CHECK) != 0, pfds[i].revents);
             }
@@ -1530,6 +1530,12 @@ static void run_poll(void* args) {
 
 // This function overrides poll() to handle condition variable wakeup fds
 static int cvfd_poll(struct pollfd* fds, nfds_t nfds, int timeout) {
+  if (timeout == 0) {
+    // Don't bother using background threads for polling if timeout is 0,
+    // poll-cv might not wait for a poll to return otherwise.
+    // https://github.com/grpc/grpc/issues/13298
+    return poll(fds, nfds, 0);
+  }
   unsigned int i;
   int res, idx;
   grpc_cv_node* pollcv;

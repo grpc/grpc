@@ -182,6 +182,25 @@ def main():
                   '--running_under_bazel=false',
               ],
           } for unsecure_build_config_suffix in ['_unsecure', '']
+      ] + [
+          {
+              'name': 'address_sorting_test' + unsecure_build_config_suffix,
+              'build': 'test',
+              'language': 'c++',
+              'gtest': True,
+              'run': True,
+              'src': ['test/cpp/naming/address_sorting_test.cc'],
+              'platforms': ['linux', 'posix', 'mac'],
+              'deps': [
+                  'grpc++_test_util' + unsecure_build_config_suffix,
+                  'grpc_test_util' + unsecure_build_config_suffix,
+                  'gpr_test_util',
+                  'grpc++' + unsecure_build_config_suffix,
+                  'grpc' + unsecure_build_config_suffix,
+                  'gpr',
+                  'grpc++_test_config',
+              ],
+          } for unsecure_build_config_suffix in ['_unsecure', '']
       ]
   }
 
