@@ -103,9 +103,11 @@ static void json_writer_output_string(void* userdata, const char* str) {
  */
 static void json_reader_string_clear(void* userdata) {
   json_reader_userdata* state = static_cast<json_reader_userdata*>(userdata);
-  if (state->string) {
+  if (state->string && *state->string_ptr != 0) {
     GPR_ASSERT(state->string_ptr < state->input);
     *state->string_ptr++ = 0;
+  } else if (state->string) {
+    state->string_ptr++;
   }
   state->string = state->string_ptr;
 }
