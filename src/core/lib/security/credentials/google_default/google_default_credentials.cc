@@ -96,12 +96,14 @@ static grpc_security_status google_default_create_security_connector(
    * args. By doing that, it guarantees the connections to backends will not be
    * torn down and re-connected when switching in and out of fallback mode.
    */
-  static const char* args_to_remove[] = {
-      GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER,
-      GRPC_ARG_ADDRESS_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER,
-  };
-  *new_args = grpc_channel_args_copy_and_add_and_remove(
-      args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), nullptr, 0);
+  if (use_alts) {
+    static const char* args_to_remove[] = {
+        GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER,
+        GRPC_ARG_ADDRESS_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER,
+    };
+    *new_args = grpc_channel_args_copy_and_add_and_remove(
+        args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), nullptr, 0);
+  }
   return status;
 }
 
