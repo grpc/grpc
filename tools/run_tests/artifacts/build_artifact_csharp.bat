@@ -15,7 +15,7 @@
 @rem Builds C# artifacts on Windows
 
 set ARCHITECTURE=%1
-
+set GRPC_SKIP_DOTNET_RESTORE=true
 @call tools\run_tests\helper_scripts\pre_build_csharp.bat %ARCHITECTURE% || goto :error
 
 cd cmake\build\%ARCHITECTURE%
