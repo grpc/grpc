@@ -16,36 +16,32 @@
  *
  */
 
-#include <cstdlib>
+#include <benchmark/benchmark.h>
 #include <string>
 #include <thread>  // NOLINT
 
 #include "absl/base/call_once.h"
 #include "absl/strings/str_cat.h"
-#include "benchmark/benchmark.h"
 #include "include/grpc++/grpc++.h"
 #include "opencensus/stats/stats.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 
-namespace grpc {
-namespace {
-
 absl::once_flag once;
-void RegisterOnce() { absl::call_once(once, RegisterOpenCensusPlugin); }
+void RegisterOnce() { absl::call_once(once, grpc::RegisterOpenCensusPlugin); }
 
-class EchoServer final : public testing::EchoTestService::Service {
-  ::grpc::Status Echo(::grpc::ServerContext* context,
-                      const testing::EchoRequest* request,
-                      testing::EchoResponse* response) override {
+class EchoServer final : public grpc::testing::EchoTestService::Service {
+  grpc::Status Echo(grpc::ServerContext* context,
+                    const grpc::testing::EchoRequest* request,
+                    grpc::testing::EchoResponse* response) override {
     if (request->param().expected_error().code() == 0) {
       response->set_message(request->message());
-      return ::grpc::Status::OK;
+      return grpc::Status::OK;
     } else {
-      return ::grpc::Status(static_cast<::grpc::StatusCode>(
-                                request->param().expected_error().code()),
-                            "");
+      return grpc::Status(static_cast<grpc::StatusCode>(
+                              request->param().expected_error().code()),
+                          "");
     }
   }
 };
@@ -55,9 +51,9 @@ class EchoServer final : public testing::EchoTestService::Service {
 class EchoServerThread final {
  public:
   EchoServerThread() {
-    ::grpc::ServerBuilder builder;
+    grpc::ServerBuilder builder;
     int port;
-    builder.AddListeningPort("[::]:0", ::grpc::InsecureServerCredentials(),
+    builder.AddListeningPort("[::]:0", grpc::InsecureServerCredentials(),
                              &port);
     builder.RegisterService(&service_);
     server_ = builder.BuildAndStart();
@@ -84,42 +80,39 @@ class EchoServerThread final {
   std::thread server_thread_;
 };
 
-void BM_E2eLatencyCensusDisabled(benchmark::State& state) {
+static void BM_E2eLatencyCensusDisabled(benchmark::State& state) {
   EchoServerThread server;
-  std::unique_ptr<testing::EchoTestService::Stub> stub =
-      testing::EchoTestService::NewStub(::grpc::CreateChannel(
-          server.address(), ::grpc::InsecureChannelCredentials()));
+  std::unique_ptr<grpc::testing::EchoTestService::Stub> stub =
+      grpc::testing::EchoTestService::NewStub(grpc::CreateChannel(
+          server.address(), grpc::InsecureChannelCredentials()));
 
-  testing::EchoResponse response;
+  grpc::testing::EchoResponse response;
   for (auto _ : state) {
-    testing::EchoRequest request;
-    ::grpc::ClientContext context;
-    ::grpc::Status status = stub->Echo(&context, request, &response);
+    grpc::testing::EchoRequest request;
+    grpc::ClientContext context;
+    grpc::Status status = stub->Echo(&context, request, &response);
   }
 }
 BENCHMARK(BM_E2eLatencyCensusDisabled);
 
-void BM_E2eLatencyCensusEnabled(benchmark::State& state) {
+static void BM_E2eLatencyCensusEnabled(benchmark::State& state) {
   RegisterOnce();
   // This we can safely repeat, and doing so clears accumulated data to avoid
   // initialization costs varying between runs.
-  RegisterGrpcViewsForExport();
+  grpc::RegisterGrpcViewsForExport();
 
   EchoServerThread server;
-  std::unique_ptr<testing::EchoTestService::Stub> stub =
-      testing::EchoTestService::NewStub(::grpc::CreateChannel(
-          server.address(), ::grpc::InsecureChannelCredentials()));
+  std::unique_ptr<grpc::testing::EchoTestService::Stub> stub =
+      grpc::testing::EchoTestService::NewStub(grpc::CreateChannel(
+          server.address(), grpc::InsecureChannelCredentials()));
 
-  testing::EchoResponse response;
+  grpc::testing::EchoResponse response;
   for (auto _ : state) {
-    testing::EchoRequest request;
-    ::grpc::ClientContext context;
-    ::grpc::Status status = stub->Echo(&context, request, &response);
+    grpc::testing::EchoRequest request;
+    grpc::ClientContext context;
+    grpc::Status status = stub->Echo(&context, request, &response);
   }
 }
 BENCHMARK(BM_E2eLatencyCensusEnabled);
-
-}  // namespace
-}  // namespace grpc
 
 BENCHMARK_MAIN();

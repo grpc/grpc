@@ -40,16 +40,3 @@ grpc_cc_test(
         "//test/cpp/util:test_config",
     ],
 )
-
-grpc_cc_test(
-    name = "grpc_opencensus_plugin_benchmark",
-    srcs = ["grpc_plugin_benchmark.cc"],
-    language = "C++",
-    deps = [
-        "//:grpc_opencensus_plugin",
-        "//src/proto/grpc/testing:echo_proto",
-    ],
-    external_deps = [
-        "benchmark",
-    ],
-)
