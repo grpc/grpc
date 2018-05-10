@@ -39,8 +39,8 @@ and then run the following command from a terminal:
  $ [sudo] xcode-select --install
 ```
 
-To build gRPC from source, you may also need to install the following
-packages, which you can get from [Homebrew](https://brew.sh):
+To build gRPC from source, you may need to install the following
+packages from [Homebrew](https://brew.sh):
 
 ```sh
  $ brew install autoconf automake libtool shtool
@@ -66,11 +66,11 @@ By default gRPC uses [protocol buffers](https://github.com/google/protobuf),
 you will need the `protoc` compiler to generate stub server and client code.
 
 If you compile gRPC from source, as described below, the Makefile will
-automatically try and compile the `protoc` in third_party if you cloned the
-repository recursively and it detects that you don't already have it
+automatically try compiling the `protoc` in third_party if you cloned the
+repository recursively and it detects that you do not already have 'protoc' compiler
 installed.
 
-If it hasn't been installed, you can run the following commands to install it.
+If 'protoc' compiler has not been installed, following commands can be used for installation.
 
 ```sh
 $ cd grpc/third_party/protobuf
@@ -79,7 +79,7 @@ $ sudo make install   # 'make' should have been run by core grpc
 
 # Build from Source
 
-For developers who are interested to contribute, here is how to compile the
+For developers who are interested to contribute, the following commands show how to compile the
 gRPC C Core library.
 
 ```sh
@@ -123,7 +123,7 @@ When using the "Visual Studio" generator,
 cmake will generate a solution (`grpc.sln`) that contains a VS project for 
 every target defined in `CMakeLists.txt` (+ few extra convenience projects
 added automatically by cmake). After opening the solution with Visual Studio 
-you will be able to browse and build the code as usual.
+you will be able to browse and build the code.
 ```
 > @rem Run from grpc directory after cloning the repo with --recursive or updating submodules.
 > md .build
@@ -133,7 +133,7 @@ you will be able to browse and build the code as usual.
 ```
 
 #### cmake: Using Ninja (faster build, supports boringssl's assembly optimizations).
-Please note that when using Ninja, you'll still need Visual C++ (part of Visual Studio)
+Please note that when using Ninja, you will still need Visual C++ (part of Visual Studio)
 installed to be able to compile the C/C++ sources.
 ```
 > @rem Run from grpc directory after cloning the repo with --recursive or updating submodules.
@@ -148,7 +148,7 @@ installed to be able to compile the C/C++ sources.
 ### msys2 (with mingw)
 
 The Makefile (and source code) should support msys2's mingw32 and mingw64
-compilers. Building with msys2's native compiler is also possible, but
+compilers. Building with msys2's native compiler is possible, but
 difficult.
 
 This approach requires having [msys2](https://msys2.github.io/) installed.
@@ -165,7 +165,7 @@ MINGW64$ export CPPFLAGS="-D_WIN32_WINNT=0x0600"
 MINGW64$ make
 ```
 
-NOTE: While most of the make targets are buildable under Mingw, some haven't been ported to Windows yet
+NOTE: Though most of the make targets are buildable under Mingw, some haven't been ported to Windows yet
 and may fail to build (mostly trying to include POSIX headers not available on Mingw).
 
 ### Pre-generated Visual Studio solution (DELETED)
