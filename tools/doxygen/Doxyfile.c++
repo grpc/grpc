@@ -777,6 +777,7 @@ doc/cpp/perf_notes.md \
 doc/environment_variables.md \
 doc/epoll-polling-engine.md \
 doc/fail_fast.md \
+doc/fork_support.md \
 doc/g_stands_for.md \
 doc/health-checking.md \
 doc/http-grpc-status-mapping.md \
