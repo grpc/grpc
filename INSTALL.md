@@ -142,7 +142,6 @@ installed to be able to compile the C/C++ sources.
 > call "%VS140COMNTOOLS%..\..\VC\vcvarsall.bat" x64
 > cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release
 > cmake --build .
-> ninja install
 ```
 
 ### msys2 (with mingw)
