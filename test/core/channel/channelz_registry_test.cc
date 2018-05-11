@@ -41,9 +41,7 @@ namespace testing {
 
 // Tests basic ChannelTrace functionality like construction, adding trace, and
 // lookups by uuid.
-TEST(ChannelzRegistryTest, BasicTest) {
-  
-}
+TEST(ChannelzRegistryTest, BasicTest) {}
 
 }  // namespace testing
 }  // namespace grpc_core

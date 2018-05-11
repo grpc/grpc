@@ -21,23 +21,50 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
+#include "src/core/lib/avl/avl.h"
 #include "src/core/lib/channel/channel_trace.h"
 
 #include <stdint.h>
 
-// TODO(ncteisen): convert this file to C++
+namespace grpc_core {
 
-void grpc_channelz_registry_init();
-void grpc_channelz_registry_shutdown();
+// singleton registry object to track all objects that are needed to support
+// channelz bookkeeping. All objects share globally distributed uuids.
+class ChannelzRegistry {
+ public:
+  // These functions ensure singleton like behavior. We cannot use the normal
+  // pattern of a get functions with a static function variable due to build
+  // complications.
 
-// globally registers a ChannelTrace. Returns its unique uuid
-intptr_t grpc_channelz_registry_register_channel_trace(
-    grpc_core::ChannelTrace* channel_trace);
-// globally unregisters the ChannelTrace that is associated to uuid.
-void grpc_channelz_registry_unregister_channel_trace(intptr_t uuid);
-// if object with uuid has previously been registered, returns the ChannelTrace
-// associated with that uuid. Else returns nullptr.
-grpc_core::ChannelTrace* grpc_channelz_registry_get_channel_trace(
-    intptr_t uuid);
+  // To be called in grpc_init()
+  static void Init();
+
+  // To be callen in grpc_shutdown();
+  static void Shutdown();
+
+  // Returned the singleton instance of ChannelzRegistry;
+  static ChannelzRegistry* Default();
+
+  // globally registers a ChannelTrace. Returns its unique uuid
+  intptr_t Register(grpc_core::ChannelTrace* channel_trace);
+  // globally unregisters the ChannelTrace that is associated to uuid.
+  void Unregister(intptr_t uuid);
+  // if object with uuid has previously been registered, returns the
+  // ChannelTrace associated with that uuid. Else returns nullptr.
+  grpc_core::ChannelTrace* Get(intptr_t uuid);
+
+ private:
+  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
+  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
+
+  gpr_mu mu_;
+  grpc_avl avl_;
+  gpr_atm uuid_;
+
+  ChannelzRegistry();
+  ~ChannelzRegistry();
+};
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_CHANNEL_CHANNELz_REGISTRY_H */
