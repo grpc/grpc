@@ -310,7 +310,7 @@ class NativeDnsResolverFactory : public ResolverFactory {
  public:
   OrphanablePtr<Resolver> CreateResolver(
       const ResolverArgs& args) const override {
-    if (0 != strcmp(args.uri->authority, "")) {
+    if (GPR_UNLIKELY(0 != strcmp(args.uri->authority, ""))) {
       gpr_log(GPR_ERROR, "authority based dns uri's not supported");
       return OrphanablePtr<Resolver>(nullptr);
     }

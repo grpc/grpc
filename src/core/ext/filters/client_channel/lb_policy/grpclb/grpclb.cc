@@ -399,7 +399,7 @@ grpc_lb_addresses* ExtractBackendAddresses(const grpc_lb_addresses* addresses) {
 bool IsServerValid(const grpc_grpclb_server* server, size_t idx, bool log) {
   if (server->drop) return false;
   const grpc_grpclb_ip_address* ip = &server->ip_address;
-  if (server->port >> 16 != 0) {
+  if (GPR_UNLIKELY(server->port >> 16 != 0)) {
     if (log) {
       gpr_log(GPR_ERROR,
               "Invalid port '%d' at index %lu of serverlist. Ignoring.",
@@ -407,7 +407,7 @@ bool IsServerValid(const grpc_grpclb_server* server, size_t idx, bool log) {
     }
     return false;
   }
-  if (ip->size != 4 && ip->size != 16) {
+  if (GPR_UNLIKELY(ip->size != 4 && ip->size != 16)) {
     if (log) {
       gpr_log(GPR_ERROR,
               "Expected IP to be 4 or 16 bytes, got %d at index %lu of "
@@ -715,7 +715,7 @@ void GrpcLb::BalancerCallState::SendClientLoadReportLocked() {
                     this, grpc_combiner_scheduler(grpclb_policy()->combiner()));
   grpc_call_error call_error = grpc_call_start_batch_and_execute(
       lb_call_, &op, 1, &client_load_report_closure_);
-  if (call_error != GRPC_CALL_OK) {
+  if (GPR_UNLIKELY(call_error != GRPC_CALL_OK)) {
     gpr_log(GPR_ERROR, "[grpclb %p] call_error=%d", grpclb_policy_.get(),
             call_error);
     GPR_ASSERT(GRPC_CALL_OK == call_error);
@@ -937,7 +937,7 @@ grpc_lb_addresses* ExtractBalancerAddresses(
   size_t lb_addresses_idx = 0;
   for (size_t i = 0; i < addresses->num_addresses; ++i) {
     if (!addresses->addresses[i].is_balancer) continue;
-    if (addresses->addresses[i].user_data != nullptr) {
+    if (GPR_UNLIKELY(addresses->addresses[i].user_data != nullptr)) {
       gpr_log(GPR_ERROR,
               "This LB policy doesn't support user data. It will be ignored");
     }
@@ -1288,7 +1288,7 @@ void GrpcLb::NotifyOnStateChangeLocked(grpc_connectivity_state* current,
 
 void GrpcLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
   const grpc_arg* arg = grpc_channel_args_find(&args, GRPC_ARG_LB_ADDRESSES);
-  if (arg == nullptr || arg->type != GRPC_ARG_POINTER) {
+  if (GPR_UNLIKELY(arg == nullptr || arg->type != GRPC_ARG_POINTER)) {
     // Ignore this update.
     gpr_log(
         GPR_ERROR,
@@ -1524,7 +1524,7 @@ void GrpcLb::PendingPickSetMetadataAndContext(PendingPick* pp) {
    * policy (e.g., all addresses failed to connect). There won't be any
    * user_data/token available */
   if (pp->pick->connected_subchannel != nullptr) {
-    if (!GRPC_MDISNULL(pp->lb_token)) {
+    if (GPR_LIKELY(!GRPC_MDISNULL(pp->lb_token))) {
       AddLbTokenToInitialMetadata(GRPC_MDELEM_REF(pp->lb_token),
                                   &pp->pick->lb_token_mdelem_storage,
                                   pp->pick->initial_metadata);
@@ -1649,7 +1649,7 @@ void GrpcLb::CreateRoundRobinPolicyLocked(const Args& args) {
   GPR_ASSERT(rr_policy_ == nullptr);
   rr_policy_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
       "round_robin", args);
-  if (rr_policy_ == nullptr) {
+  if (GPR_UNLIKELY(rr_policy_ == nullptr)) {
     gpr_log(GPR_ERROR, "[grpclb %p] Failure creating a RoundRobin policy",
             this);
     return;

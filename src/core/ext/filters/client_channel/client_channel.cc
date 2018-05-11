@@ -379,7 +379,7 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
         new_lb_policy =
             grpc_core::LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
                 lb_policy_name, lb_policy_args);
-        if (new_lb_policy == nullptr) {
+        if (GPR_UNLIKELY(new_lb_policy == nullptr)) {
           gpr_log(GPR_ERROR, "could not create LB policy \"%s\"",
                   lb_policy_name);
         } else {
@@ -2200,7 +2200,7 @@ static void add_retriable_send_initial_metadata_op(
         &batch_data->send_initial_metadata_storage[calld->send_initial_metadata
                                                        .list.count],
         retry_md);
-    if (error != GRPC_ERROR_NONE) {
+    if (GPR_UNLIKELY(error != GRPC_ERROR_NONE)) {
       gpr_log(GPR_ERROR, "error adding retry metadata: %s",
               grpc_error_string(error));
       GPR_ASSERT(false);

@@ -718,7 +718,7 @@ static void destroy_stream_locked(void* sp, grpc_error* error) {
   grpc_chttp2_list_remove_stalled_by_stream(t, s);
 
   for (int i = 0; i < STREAM_LIST_COUNT; i++) {
-    if (s->included[i]) {
+    if (GPR_UNLIKELY(s->included[i])) {
       gpr_log(GPR_ERROR, "%s stream %d still included in list %d",
               t->is_client ? "client" : "server", s->id, i);
       abort();
@@ -1088,8 +1088,9 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
    * data equal to "too_many_pings", it should log the occurrence at a log level
    * that is enabled by default and double the configured KEEPALIVE_TIME used
    * for new connections on that channel. */
-  if (t->is_client && goaway_error == GRPC_HTTP2_ENHANCE_YOUR_CALM &&
-      grpc_slice_str_cmp(goaway_text, "too_many_pings") == 0) {
+  if (GPR_UNLIKELY(t->is_client &&
+                   goaway_error == GRPC_HTTP2_ENHANCE_YOUR_CALM &&
+                   grpc_slice_str_cmp(goaway_text, "too_many_pings") == 0)) {
     gpr_log(GPR_ERROR,
             "Received a GOAWAY with error code ENHANCE_YOUR_CALM and debug "
             "data equal to \"too_many_pings\"");
@@ -2701,7 +2702,7 @@ static void keepalive_watchdog_fired_locked(void* arg, grpc_error* error) {
   } else {
     /* The watchdog timer should have been cancelled by
      * finish_keepalive_ping_locked. */
-    if (error != GRPC_ERROR_CANCELLED) {
+    if (GPR_UNLIKELY(error != GRPC_ERROR_CANCELLED)) {
       gpr_log(GPR_ERROR, "keepalive_ping_end state error: %d (expect: %d)",
               t->keepalive_state, GRPC_CHTTP2_KEEPALIVE_STATE_PINGING);
     }
