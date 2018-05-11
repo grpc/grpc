@@ -76,16 +76,16 @@ Status GenericDeserialize(ByteBuffer* buffer, grpc::protobuf::Message* msg) {
   if (buffer == nullptr) {
     return Status(StatusCode::INTERNAL, "No payload");
   }
-  Status result = g_core_codegen_interface->ok();
-  if (buffer->IsOneSliceByteBuffer()) {
+  Status result;
+  if (buffer->Length() < 1024 &&
+      buffer->c_buffer()->data.raw.slice_buffer.count == 1) {
     std::vector<Slice> slices;
     buffer->Dump(&slices);
     GPR_CODEGEN_ASSERT(slices.size() == 1);
-    return msg->ParseFromArray(slices[0].begin(), slices[0].size())
-               ? result
-               : Status(StatusCode::INTERNAL, "ParseFromArray has failed");
-  }
-  {
+    if (!msg->ParseFromArray(slices[0].begin(), slices[0].size())) {
+      result = Status(StatusCode::INTERNAL, "ParseFromArray has failed");
+    }
+  } else {
     ProtoBufferReader reader(buffer);
     if (!reader.status().ok()) {
       return reader.status();
