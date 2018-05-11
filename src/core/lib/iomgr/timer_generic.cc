@@ -429,8 +429,12 @@ static void timer_init(grpc_timer* timer, grpc_millis deadline,
       note_deadline_change(shard);
       if (shard->shard_queue_index == 0 && deadline < old_min_deadline) {
 #if GPR_ARCH_64
-        gpr_atm_no_barrier_store(
-            static_cast<gpr_atm*>(&g_shared_mutables.min_timer), deadline);
+        // TODO: sreek - Using c-style cast here. static_cast<> gives an error
+        // (on mac platforms complaining that gpr_atm* is (long *) while
+        // (&g_shared_mutables.min_timer) is a (long long *). The cast should be
+        // safe since we know that both are pointer types and 64-bit wide.
+        gpr_atm_no_barrier_store((gpr_atm*)(&g_shared_mutables.min_timer),
+                                 deadline);
 #else
         // On 32-bit systems, gpr_atm_no_barrier_store does not work on 64-bit
         // types (like grpc_millis). So all reads and writes to
@@ -578,8 +582,12 @@ static grpc_timer_check_result run_some_expired_timers(grpc_millis now,
   grpc_timer_check_result result = GRPC_TIMERS_NOT_CHECKED;
 
 #if GPR_ARCH_64
-  grpc_millis min_timer = static_cast<grpc_millis>(gpr_atm_no_barrier_load(
-      static_cast<gpr_atm*>(&g_shared_mutables.min_timer)));
+  // TODO: sreek - Using c-style cast here. static_cast<> gives an error (on
+  // mac platforms complaining that gpr_atm* is (long *) while
+  // (&g_shared_mutables.min_timer) is a (long long *). The cast should be
+  // safe since we know that both are pointer types and 64-bit wide
+  grpc_millis min_timer = static_cast<grpc_millis>(
+      gpr_atm_no_barrier_load((gpr_atm*)(&g_shared_mutables.min_timer)));
   gpr_tls_set(&g_last_seen_min_timer, min_timer);
 #else
   // On 32-bit systems, gpr_atm_no_barrier_load does not work on 64-bit types
@@ -639,9 +647,12 @@ static grpc_timer_check_result run_some_expired_timers(grpc_millis now,
     }
 
 #if GPR_ARCH_64
-    gpr_atm_no_barrier_store(
-        static_cast<gpr_atm*>(&g_shared_mutables.min_timer),
-        g_shard_queue[0]->min_deadline);
+    // TODO: sreek - Using c-style cast here. static_cast<> gives an error (on
+    // mac platforms complaining that gpr_atm* is (long *) while
+    // (&g_shared_mutables.min_timer) is a (long long *). The cast should be
+    // safe since we know that both are pointer types and 64-bit wide
+    gpr_atm_no_barrier_store((gpr_atm*)(&g_shared_mutables.min_timer),
+                             g_shard_queue[0]->min_deadline);
 #else
     // On 32-bit systems, gpr_atm_no_barrier_store does not work on 64-bit
     // types (like grpc_millis). So all reads and writes to
@@ -705,8 +716,7 @@ static grpc_timer_check_result timer_check(grpc_millis* next) {
             "TIMER CHECK BEGIN: now=%" PRId64 " next=%s tls_min=%" PRId64
             " glob_min=%" PRId64,
             now, next_str, min_timer,
-            gpr_atm_no_barrier_load(
-                static_cast<gpr_atm*>(&g_shared_mutables.min_timer)));
+            gpr_atm_no_barrier_load((gpr_atm*)(&g_shared_mutables.min_timer)));
 #else
     gpr_log(GPR_INFO, "TIMER CHECK BEGIN: now=%" PRId64 " next=%s min=%" PRId64,
             now, next_str, min_timer);
