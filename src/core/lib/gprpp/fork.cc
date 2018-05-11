@@ -225,12 +225,28 @@ bool Fork::BlockExecCtx() {
   return false;
 }
 
-void Fork::AllowExecCtx() { execCtxState_->AllowExecCtx(); }
+void Fork::AllowExecCtx() {
+  if (supportEnabled_) {
+    execCtxState_->AllowExecCtx();
+  }
+}
 
-void Fork::IncThreadCount() { threadState_->IncThreadCount(); }
+void Fork::IncThreadCount() {
+  if (supportEnabled_) {
+    threadState_->IncThreadCount();
+  }
+}
 
-void Fork::DecThreadCount() { threadState_->DecThreadCount(); }
-void Fork::AwaitThreads() { threadState_->AwaitThreads(); }
+void Fork::DecThreadCount() {
+  if (supportEnabled_) {
+    threadState_->DecThreadCount();
+  }
+}
+void Fork::AwaitThreads() {
+  if (supportEnabled_) {
+    threadState_->AwaitThreads();
+  }
+}
 
 internal::ExecCtxState* Fork::execCtxState_ = nullptr;
 internal::ThreadState* Fork::threadState_ = nullptr;

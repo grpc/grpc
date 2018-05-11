@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_GPR_FORK_H
-#define GRPC_CORE_LIB_GPR_FORK_H
+#ifndef GRPC_CORE_LIB_GPRPP_FORK_H
+#define GRPC_CORE_LIB_GPRPP_FORK_H
 
 /*
  * NOTE: FORKING IS NOT GENERALLY SUPPORTED, THIS IS ONLY INTENDED TO WORK
@@ -76,4 +76,4 @@ class Fork {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_GPR_FORK_H */
+#endif /* GRPC_CORE_LIB_GPRPP_FORK_H */
