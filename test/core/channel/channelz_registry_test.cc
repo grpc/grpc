@@ -32,7 +32,6 @@
 #include "src/core/lib/json/json.h"
 
 #include "test/core/util/test_config.h"
-#include "test/cpp/util/channel_trace_proto_helper.h"
 
 #include <stdlib.h>
 #include <string.h>

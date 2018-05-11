@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_CHANNEL_CHANNELz_REGISTRY_H
-#define GRPC_CORE_LIB_CHANNEL_CHANNELz_REGISTRY_H
+#ifndef GRPC_CORE_LIB_CHANNEL_CHANNELZ_REGISTRY_H
+#define GRPC_CORE_LIB_CHANNEL_CHANNELZ_REGISTRY_H
 
 #include <grpc/impl/codegen/port_platform.h>
 
@@ -83,4 +83,4 @@ class ChannelzRegistry {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_CHANNEL_CHANNELz_REGISTRY_H */
+#endif /* GRPC_CORE_LIB_CHANNEL_CHANNELZ_REGISTRY_H */
