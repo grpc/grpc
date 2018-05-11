@@ -19,19 +19,28 @@
 /* When running tests on remote machines, the framework takes a round-robin pick
  * of a port within certain range. There is no need to recycle ports.
  */
+#include <grpc/support/time.h>
+#include <stdlib.h>
 #include "src/core/lib/iomgr/port.h"
 #include "test/core/util/test_config.h"
 #if defined(GRPC_PORT_ISOLATED_RUNTIME)
 
 #include "test/core/util/port.h"
 
-#define LOWER_PORT 49152
-static int s_allocated_port = LOWER_PORT;
+#define MIN_PORT 49152
+#define MAX_PORT 65536
+
+int get_random_starting_port() {
+  srand(gpr_now(GPR_CLOCK_REALTIME).tv_nsec);
+  return rand() % (MAX_PORT - MIN_PORT + 1) + MIN_PORT;
+}
+
+static int s_allocated_port = get_random_starting_port();
 
 int grpc_pick_unused_port_or_die(void) {
   int allocated_port = s_allocated_port++;
-  if (s_allocated_port == 65536) {
-    s_allocated_port = LOWER_PORT;
+  if (s_allocated_port == MAX_PORT) {
+    s_allocated_port = MIN_PORT;
   }
 
   return allocated_port;
