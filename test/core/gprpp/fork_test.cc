@@ -90,7 +90,6 @@ static void exec_ctx_thread(void* arg) {
 }
 
 static void test_exec_count() {
-  grpc_core::Fork::IncExecCtxCount();
   grpc_core::Fork::Enable(true);
   grpc_core::Fork::GlobalInit();
 
