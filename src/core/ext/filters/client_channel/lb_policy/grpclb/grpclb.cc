@@ -1060,6 +1060,7 @@ GrpcLb::GrpcLb(const grpc_lb_addresses* addresses,
   if (colon == nullptr) {
     server_name_ = gpr_strdup(server_name_begin);
   } else {
+    // Don't include ":port" into the server name.
     const size_t server_name_len = colon - server_name_begin;
     auto buf = static_cast<char*>(gpr_malloc(server_name_len + 1));
     memcpy(buf, server_name_begin, server_name_len);
