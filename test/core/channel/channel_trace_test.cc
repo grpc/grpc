@@ -25,7 +25,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_trace.h"
-#include "src/core/lib/channel/channel_trace_registry.h"
+#include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
@@ -99,8 +99,7 @@ void ValidateTraceDataMatchedUuidLookup(RefCountedPtr<ChannelTrace> tracer) {
   intptr_t uuid = tracer->GetUuid();
   if (uuid == -1) return;  // Doesn't make sense to lookup if tracing disabled
   char* tracer_json_str = tracer->RenderTrace();
-  ChannelTrace* uuid_lookup =
-      grpc_channel_trace_registry_get_channel_trace(uuid);
+  ChannelTrace* uuid_lookup = grpc_channelz_registry_get_channel_trace(uuid);
   char* uuid_lookup_json_str = uuid_lookup->RenderTrace();
   EXPECT_EQ(strcmp(tracer_json_str, uuid_lookup_json_str), 0);
   gpr_free(tracer_json_str);

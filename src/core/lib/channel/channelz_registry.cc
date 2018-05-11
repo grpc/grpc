@@ -20,7 +20,7 @@
 
 #include "src/core/lib/avl/avl.h"
 #include "src/core/lib/channel/channel_trace.h"
-#include "src/core/lib/channel/channel_trace_registry.h"
+#include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/gpr/useful.h"
 
 #include <grpc/support/alloc.h>
@@ -45,17 +45,17 @@ static const grpc_avl_vtable avl_vtable = {
     destroy_intptr, copy_intptr, compare_intptr, destroy_channel_trace,
     copy_channel_trace};
 
-void grpc_channel_trace_registry_init() {
+void grpc_channelz_registry_init() {
   gpr_mu_init(&g_mu);
   g_avl = grpc_avl_create(&avl_vtable);
 }
 
-void grpc_channel_trace_registry_shutdown() {
+void grpc_channelz_registry_shutdown() {
   grpc_avl_unref(g_avl, nullptr);
   gpr_mu_destroy(&g_mu);
 }
 
-intptr_t grpc_channel_trace_registry_register_channel_trace(
+intptr_t grpc_channelz_registry_register_channel_trace(
     grpc_core::ChannelTrace* channel_trace) {
   intptr_t prior = gpr_atm_no_barrier_fetch_add(&g_uuid, 1);
   gpr_mu_lock(&g_mu);
@@ -64,13 +64,13 @@ intptr_t grpc_channel_trace_registry_register_channel_trace(
   return prior;
 }
 
-void grpc_channel_trace_registry_unregister_channel_trace(intptr_t uuid) {
+void grpc_channelz_registry_unregister_channel_trace(intptr_t uuid) {
   gpr_mu_lock(&g_mu);
   g_avl = grpc_avl_remove(g_avl, (void*)uuid, nullptr);
   gpr_mu_unlock(&g_mu);
 }
 
-grpc_core::ChannelTrace* grpc_channel_trace_registry_get_channel_trace(
+grpc_core::ChannelTrace* grpc_channelz_registry_get_channel_trace(
     intptr_t uuid) {
   gpr_mu_lock(&g_mu);
   grpc_core::ChannelTrace* ret = static_cast<grpc_core::ChannelTrace*>(
