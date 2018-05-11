@@ -71,7 +71,7 @@ class Fork {
   static internal::ExecCtxState* execCtxState_;
   static internal::ThreadState* threadState_;
   static bool supportEnabled_;
-  static int overrideEnabled_;
+  static bool overrideEnabled_;
 };
 
 }  // namespace grpc_core

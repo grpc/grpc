@@ -56,7 +56,7 @@ class ExecCtxState {
   }
 
   void IncExecCtxCount() {
-    intptr_t count = static_cast<intptr_t>(gpr_atm_no_barrier_load(&count_));
+    gpr_atm count = gpr_atm_no_barrier_load(&count_);
     while (true) {
       if (count <= BLOCKED(1)) {
         // This only occurs if we are trying to fork.  Wait until the fork()
@@ -80,7 +80,9 @@ class ExecCtxState {
   bool BlockExecCtx() {
     // Assumes there is an active ExecCtx when this function is called
     if (gpr_atm_no_barrier_cas(&count_, UNBLOCKED(1), BLOCKED(1))) {
+      gpr_mu_lock(&mu_);
       fork_complete_ = false;
+      gpr_mu_unlock(&mu_);
       return true;
     }
     return false;
@@ -155,38 +157,37 @@ class ThreadState {
 }  // namespace
 
 void Fork::GlobalInit() {
+  if (!overrideEnabled_) {
 #ifdef GRPC_ENABLE_FORK_SUPPORT
-  supportEnabled_ = true;
+    supportEnabled_ = true;
 #else
-  supportEnabled_ = false;
+    supportEnabled_ = false;
 #endif
-  bool env_var_set = false;
-  char* env = gpr_getenv("GRPC_ENABLE_FORK_SUPPORT");
-  if (env != nullptr) {
-    static const char* truthy[] = {"yes",  "Yes",  "YES", "true",
-                                   "True", "TRUE", "1"};
-    static const char* falsey[] = {"no",    "No",    "NO", "false",
-                                   "False", "FALSE", "0"};
-    for (size_t i = 0; i < GPR_ARRAY_SIZE(truthy); i++) {
-      if (0 == strcmp(env, truthy[i])) {
-        supportEnabled_ = true;
-        env_var_set = true;
-        break;
-      }
-    }
-    if (!env_var_set) {
-      for (size_t i = 0; i < GPR_ARRAY_SIZE(falsey); i++) {
-        if (0 == strcmp(env, falsey[i])) {
-          supportEnabled_ = false;
+    bool env_var_set = false;
+    char* env = gpr_getenv("GRPC_ENABLE_FORK_SUPPORT");
+    if (env != nullptr) {
+      static const char* truthy[] = {"yes",  "Yes",  "YES", "true",
+                                     "True", "TRUE", "1"};
+      static const char* falsey[] = {"no",    "No",    "NO", "false",
+                                     "False", "FALSE", "0"};
+      for (size_t i = 0; i < GPR_ARRAY_SIZE(truthy); i++) {
+        if (0 == strcmp(env, truthy[i])) {
+          supportEnabled_ = true;
           env_var_set = true;
           break;
         }
       }
+      if (!env_var_set) {
+        for (size_t i = 0; i < GPR_ARRAY_SIZE(falsey); i++) {
+          if (0 == strcmp(env, falsey[i])) {
+            supportEnabled_ = false;
+            env_var_set = true;
+            break;
+          }
+        }
+      }
+      gpr_free(env);
     }
-    gpr_free(env);
-  }
-  if (overrideEnabled_ != -1) {
-    supportEnabled_ = (overrideEnabled_ == 1);
   }
   if (supportEnabled_) {
     execCtxState_ = grpc_core::New<internal::ExecCtxState>();
@@ -204,7 +205,10 @@ void Fork::GlobalShutdown() {
 bool Fork::Enabled() { return supportEnabled_; }
 
 // Testing Only
-void Fork::Enable(bool enable) { overrideEnabled_ = enable ? 1 : 0; }
+void Fork::Enable(bool enable) {
+  overrideEnabled_ = true;
+  supportEnabled_ = enable;
+}
 
 void Fork::IncExecCtxCount() {
   if (supportEnabled_) {
@@ -251,6 +255,6 @@ void Fork::AwaitThreads() {
 internal::ExecCtxState* Fork::execCtxState_ = nullptr;
 internal::ThreadState* Fork::threadState_ = nullptr;
 bool Fork::supportEnabled_ = false;
-int Fork::overrideEnabled_ = -1;
+bool Fork::overrideEnabled_ = false;
 
 }  // namespace grpc_core
