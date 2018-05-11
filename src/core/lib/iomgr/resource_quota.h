@@ -24,7 +24,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/closure.h"
 
 /** \file Tracks resource usage against a pool.
 
@@ -138,9 +138,5 @@ void grpc_resource_user_slice_allocator_init(
 void grpc_resource_user_alloc_slices(
     grpc_resource_user_slice_allocator* slice_allocator, size_t length,
     size_t count, grpc_slice_buffer* dest);
-
-/* Allocate one slice of length \a size synchronously. */
-grpc_slice grpc_resource_user_slice_malloc(grpc_resource_user* resource_user,
-                                           size_t size);
 
 #endif /* GRPC_CORE_LIB_IOMGR_RESOURCE_QUOTA_H */

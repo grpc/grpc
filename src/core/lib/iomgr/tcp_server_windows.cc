@@ -50,7 +50,7 @@ typedef struct grpc_tcp_listener grpc_tcp_listener;
 struct grpc_tcp_listener {
   /* This seemingly magic number comes from AcceptEx's documentation. each
      address buffer needs to have at least 16 more bytes at their end. */
-  uint8_t addresses[(sizeof(struct sockaddr_in6) + 16) * 2];
+  uint8_t addresses[(sizeof(grpc_sockaddr_in6) + 16) * 2];
   /* This will hold the socket for the next accept. */
   SOCKET new_socket;
   /* The listener winsocket. */
@@ -96,9 +96,9 @@ struct grpc_tcp_server {
 
 /* Public function. Allocates the proper data structures to hold a
    grpc_tcp_server. */
-grpc_error* grpc_tcp_server_create(grpc_closure* shutdown_complete,
-                                   const grpc_channel_args* args,
-                                   grpc_tcp_server** server) {
+static grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
+                                     const grpc_channel_args* args,
+                                     grpc_tcp_server** server) {
   grpc_tcp_server* s = (grpc_tcp_server*)gpr_malloc(sizeof(grpc_tcp_server));
   s->channel_args = grpc_channel_args_copy(args);
   gpr_ref_init(&s->refs, 1);
@@ -129,6 +129,7 @@ static void destroy_server(void* arg, grpc_error* error) {
     gpr_free(sp);
   }
   grpc_channel_args_destroy(s->channel_args);
+  gpr_mu_destroy(&s->mu);
   gpr_free(s);
 }
 
@@ -142,13 +143,13 @@ static void finish_shutdown_locked(grpc_tcp_server* s) {
       GRPC_ERROR_NONE);
 }
 
-grpc_tcp_server* grpc_tcp_server_ref(grpc_tcp_server* s) {
+static grpc_tcp_server* tcp_server_ref(grpc_tcp_server* s) {
   gpr_ref_non_zero(&s->refs);
   return s;
 }
 
-void grpc_tcp_server_shutdown_starting_add(grpc_tcp_server* s,
-                                           grpc_closure* shutdown_starting) {
+static void tcp_server_shutdown_starting_add(grpc_tcp_server* s,
+                                             grpc_closure* shutdown_starting) {
   gpr_mu_lock(&s->mu);
   grpc_closure_list_append(&s->shutdown_starting, shutdown_starting,
                            GRPC_ERROR_NONE);
@@ -172,7 +173,7 @@ static void tcp_server_destroy(grpc_tcp_server* s) {
   gpr_mu_unlock(&s->mu);
 }
 
-void grpc_tcp_server_unref(grpc_tcp_server* s) {
+static void tcp_server_unref(grpc_tcp_server* s) {
   if (gpr_unref(&s->refs)) {
     grpc_tcp_server_shutdown_listeners(s);
     gpr_mu_lock(&s->mu);
@@ -195,7 +196,7 @@ static grpc_error* prepare_socket(SOCKET sock,
     goto failure;
   }
 
-  if (bind(sock, (const struct sockaddr*)addr->addr, (int)addr->len) ==
+  if (bind(sock, (const grpc_sockaddr*)addr->addr, (int)addr->len) ==
       SOCKET_ERROR) {
     error = GRPC_WSA_ERROR(WSAGetLastError(), "bind");
     goto failure;
@@ -207,7 +208,7 @@ static grpc_error* prepare_socket(SOCKET sock,
   }
 
   sockname_temp_len = sizeof(struct sockaddr_storage);
-  if (getsockname(sock, (struct sockaddr*)sockname_temp.addr,
+  if (getsockname(sock, (grpc_sockaddr*)sockname_temp.addr,
                   &sockname_temp_len) == SOCKET_ERROR) {
     error = GRPC_WSA_ERROR(WSAGetLastError(), "getsockname");
     goto failure;
@@ -245,7 +246,7 @@ static void decrement_active_ports_and_notify_locked(grpc_tcp_listener* sp) {
 static grpc_error* start_accept_locked(grpc_tcp_listener* port) {
   SOCKET sock = INVALID_SOCKET;
   BOOL success;
-  DWORD addrlen = sizeof(struct sockaddr_in6) + 16;
+  DWORD addrlen = sizeof(grpc_sockaddr_in6) + 16;
   DWORD bytes_received = 0;
   grpc_error* error = GRPC_ERROR_NONE;
 
@@ -343,7 +344,7 @@ static void on_accept(void* arg, grpc_error* error) {
         gpr_free(utf8_message);
       }
       int peer_name_len = (int)peer_name.len;
-      err = getpeername(sock, (struct sockaddr*)peer_name.addr, &peer_name_len);
+      err = getpeername(sock, (grpc_sockaddr*)peer_name.addr, &peer_name_len);
       peer_name.len = (size_t)peer_name_len;
       if (!err) {
         peer_name_string = grpc_sockaddr_to_uri(&peer_name);
@@ -442,9 +443,9 @@ static grpc_error* add_socket_to_server(grpc_tcp_server* s, SOCKET sock,
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* grpc_tcp_server_add_port(grpc_tcp_server* s,
-                                     const grpc_resolved_address* addr,
-                                     int* port) {
+static grpc_error* tcp_server_add_port(grpc_tcp_server* s,
+                                       const grpc_resolved_address* addr,
+                                       int* port) {
   grpc_tcp_listener* sp = NULL;
   SOCKET sock;
   grpc_resolved_address addr6_v4mapped;
@@ -464,7 +465,7 @@ grpc_error* grpc_tcp_server_add_port(grpc_tcp_server* s,
     for (sp = s->head; sp; sp = sp->next) {
       int sockname_temp_len = sizeof(struct sockaddr_storage);
       if (0 == getsockname(sp->socket->socket,
-                           (struct sockaddr*)sockname_temp.addr,
+                           (grpc_sockaddr*)sockname_temp.addr,
                            &sockname_temp_len)) {
         sockname_temp.len = (size_t)sockname_temp_len;
         *port = grpc_sockaddr_get_port(&sockname_temp);
@@ -516,10 +517,10 @@ done:
   return error;
 }
 
-void grpc_tcp_server_start(grpc_tcp_server* s, grpc_pollset** pollset,
-                           size_t pollset_count,
-                           grpc_tcp_server_cb on_accept_cb,
-                           void* on_accept_cb_arg) {
+static void tcp_server_start(grpc_tcp_server* s, grpc_pollset** pollset,
+                             size_t pollset_count,
+                             grpc_tcp_server_cb on_accept_cb,
+                             void* on_accept_cb_arg) {
   grpc_tcp_listener* sp;
   GPR_ASSERT(on_accept_cb);
   gpr_mu_lock(&s->mu);
@@ -534,6 +535,26 @@ void grpc_tcp_server_start(grpc_tcp_server* s, grpc_pollset** pollset,
   gpr_mu_unlock(&s->mu);
 }
 
-void grpc_tcp_server_shutdown_listeners(grpc_tcp_server* s) {}
+static unsigned tcp_server_port_fd_count(grpc_tcp_server* s,
+                                         unsigned port_index) {
+  return 0;
+}
 
+static int tcp_server_port_fd(grpc_tcp_server* s, unsigned port_index,
+                              unsigned fd_index) {
+  return -1;
+}
+
+static void tcp_server_shutdown_listeners(grpc_tcp_server* s) {}
+
+grpc_tcp_server_vtable grpc_windows_tcp_server_vtable = {
+    tcp_server_create,
+    tcp_server_start,
+    tcp_server_add_port,
+    tcp_server_port_fd_count,
+    tcp_server_port_fd,
+    tcp_server_ref,
+    tcp_server_shutdown_starting_add,
+    tcp_server_unref,
+    tcp_server_shutdown_listeners};
 #endif /* GRPC_WINSOCK_SOCKET */

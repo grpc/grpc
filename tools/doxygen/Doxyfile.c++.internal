@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.11.0-dev
+PROJECT_NUMBER         = 1.13.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -777,6 +777,7 @@ doc/cpp/perf_notes.md \
 doc/environment_variables.md \
 doc/epoll-polling-engine.md \
 doc/fail_fast.md \
+doc/fork_support.md \
 doc/g_stands_for.md \
 doc/health-checking.md \
 doc/http-grpc-status-mapping.md \
@@ -956,6 +957,8 @@ include/grpcpp/impl/codegen/create_auth_context.h \
 include/grpcpp/impl/codegen/grpc_library.h \
 include/grpcpp/impl/codegen/metadata_map.h \
 include/grpcpp/impl/codegen/method_handler_impl.h \
+include/grpcpp/impl/codegen/proto_buffer_reader.h \
+include/grpcpp/impl/codegen/proto_buffer_writer.h \
 include/grpcpp/impl/codegen/proto_utils.h \
 include/grpcpp/impl/codegen/rpc_method.h \
 include/grpcpp/impl/codegen/rpc_service_method.h \
@@ -994,6 +997,8 @@ include/grpcpp/support/async_unary_call.h \
 include/grpcpp/support/byte_buffer.h \
 include/grpcpp/support/channel_arguments.h \
 include/grpcpp/support/config.h \
+include/grpcpp/support/proto_buffer_reader.h \
+include/grpcpp/support/proto_buffer_writer.h \
 include/grpcpp/support/slice.h \
 include/grpcpp/support/status.h \
 include/grpcpp/support/status_code_enum.h \
@@ -1007,11 +1012,14 @@ src/core/lib/backoff/backoff.h \
 src/core/lib/channel/channel_args.h \
 src/core/lib/channel/channel_stack.h \
 src/core/lib/channel/channel_stack_builder.h \
+src/core/lib/channel/channel_trace.h \
+src/core/lib/channel/channel_trace_registry.h \
 src/core/lib/channel/connected_channel.h \
 src/core/lib/channel/context.h \
 src/core/lib/channel/handshaker.h \
 src/core/lib/channel/handshaker_factory.h \
 src/core/lib/channel/handshaker_registry.h \
+src/core/lib/channel/status_util.h \
 src/core/lib/compression/algorithm_metadata.h \
 src/core/lib/compression/compression_internal.h \
 src/core/lib/compression/message_compress.h \
@@ -1070,9 +1078,9 @@ src/core/lib/iomgr/executor.h \
 src/core/lib/iomgr/gethostname.h \
 src/core/lib/iomgr/iocp_windows.h \
 src/core/lib/iomgr/iomgr.h \
+src/core/lib/iomgr/iomgr_custom.h \
 src/core/lib/iomgr/iomgr_internal.h \
 src/core/lib/iomgr/iomgr_posix.h \
-src/core/lib/iomgr/iomgr_uv.h \
 src/core/lib/iomgr/is_epollexclusive_available.h \
 src/core/lib/iomgr/load_file.h \
 src/core/lib/iomgr/lockfree_event.h \
@@ -1080,14 +1088,17 @@ src/core/lib/iomgr/nameser.h \
 src/core/lib/iomgr/network_status_tracker.h \
 src/core/lib/iomgr/polling_entity.h \
 src/core/lib/iomgr/pollset.h \
+src/core/lib/iomgr/pollset_custom.h \
 src/core/lib/iomgr/pollset_set.h \
+src/core/lib/iomgr/pollset_set_custom.h \
 src/core/lib/iomgr/pollset_set_windows.h \
-src/core/lib/iomgr/pollset_uv.h \
 src/core/lib/iomgr/pollset_windows.h \
 src/core/lib/iomgr/port.h \
 src/core/lib/iomgr/resolve_address.h \
+src/core/lib/iomgr/resolve_address_custom.h \
 src/core/lib/iomgr/resource_quota.h \
 src/core/lib/iomgr/sockaddr.h \
+src/core/lib/iomgr/sockaddr_custom.h \
 src/core/lib/iomgr/sockaddr_posix.h \
 src/core/lib/iomgr/sockaddr_utils.h \
 src/core/lib/iomgr/sockaddr_windows.h \
@@ -1099,17 +1110,16 @@ src/core/lib/iomgr/socket_windows.h \
 src/core/lib/iomgr/sys_epoll_wrapper.h \
 src/core/lib/iomgr/tcp_client.h \
 src/core/lib/iomgr/tcp_client_posix.h \
+src/core/lib/iomgr/tcp_custom.h \
 src/core/lib/iomgr/tcp_posix.h \
 src/core/lib/iomgr/tcp_server.h \
 src/core/lib/iomgr/tcp_server_utils_posix.h \
-src/core/lib/iomgr/tcp_uv.h \
 src/core/lib/iomgr/tcp_windows.h \
 src/core/lib/iomgr/time_averaged_stats.h \
 src/core/lib/iomgr/timer.h \
-src/core/lib/iomgr/timer_generic.h \
+src/core/lib/iomgr/timer_custom.h \
 src/core/lib/iomgr/timer_heap.h \
 src/core/lib/iomgr/timer_manager.h \
-src/core/lib/iomgr/timer_uv.h \
 src/core/lib/iomgr/udp_server.h \
 src/core/lib/iomgr/unix_sockets_posix.h \
 src/core/lib/iomgr/wakeup_fd_cv.h \
@@ -1204,7 +1214,6 @@ src/cpp/server/thread_pool_interface.h \
 src/cpp/thread_manager/thread_manager.cc \
 src/cpp/thread_manager/thread_manager.h \
 src/cpp/util/byte_buffer_cc.cc \
-src/cpp/util/slice_cc.cc \
 src/cpp/util/status.cc \
 src/cpp/util/string_ref.cc \
 src/cpp/util/time_cc.cc \

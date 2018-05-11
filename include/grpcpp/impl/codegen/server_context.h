@@ -88,8 +88,8 @@ class ServerContextTestSpouse;
 ///
 /// Context settings are only relevant to the call handler they are supplied to,
 /// that is to say, they aren't sticky across multiple calls. Some of these
-/// settings, such as the compression options, can be made persistant at server
-/// construction time by specifying the approriate \a ChannelArguments
+/// settings, such as the compression options, can be made persistent at server
+/// construction time by specifying the appropriate \a ChannelArguments
 /// to a \a grpc::ServerBuilder, via \a ServerBuilder::AddChannelArgument.
 ///
 /// \warning ServerContext instances should \em not be reused across rpcs.

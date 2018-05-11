@@ -63,6 +63,11 @@ def guess_cpu(scenario_json, is_tsan):
   return (scenario_json['num_clients'] * client +
           scenario_json['num_servers'] * server)
 
+def maybe_exclude_gcov(scenario_json):
+  if scenario_json['client_config']['client_channels'] > 100:
+    return ['gcov']
+  return []
+
 print yaml.dump({
   'tests': [
     {
@@ -76,7 +81,7 @@ print yaml.dump({
       'boringssl': True,
       'defaults': 'boringssl',
       'cpu_cost': guess_cpu(scenario_json, False),
-      'exclude_configs': ['tsan', 'asan'],
+      'exclude_configs': ['tsan', 'asan'] + maybe_exclude_gcov(scenario_json),
       'timeout_seconds': 2*60,
       'excluded_poll_engines': scenario_json.get('EXCLUDED_POLL_ENGINES', []),
       'auto_timeout_scaling': False
@@ -101,26 +106,24 @@ print yaml.dump({
     }
     for scenario_json in scenario_config.CXXLanguage().scenarios()
     if 'inproc' in scenario_json.get('CATEGORIES', [])
+  ] + [
+    {
+      'name': 'json_run_localhost',
+      'shortname': 'json_run_localhost:%s_low_thread_count' % scenario_json['name'],
+      'args': ['--scenarios_json', _scenario_json_string(scenario_json, True)],
+      'ci_platforms': ['linux'],
+      'platforms': ['linux'],
+      'flaky': False,
+      'language': 'c++',
+      'boringssl': True,
+      'defaults': 'boringssl',
+      'cpu_cost': guess_cpu(scenario_json, True),
+      'exclude_configs': sorted(c for c in configs_from_yaml if c not in ('tsan', 'asan')),
+      'timeout_seconds': 10*60,
+      'excluded_poll_engines': scenario_json.get('EXCLUDED_POLL_ENGINES', []),
+      'auto_timeout_scaling': False
+   }
+    for scenario_json in scenario_config.CXXLanguage().scenarios()
+    if 'scalable' in scenario_json.get('CATEGORIES', [])
   ]
-  # Disabled until https://github.com/grpc/grpc/issues/13122 is resolved.
-  # + [
-  #   {
-  #     'name': 'json_run_localhost',
-  #     'shortname': 'json_run_localhost:%s_low_thread_count' % scenario_json['name'],
-  #     'args': ['--scenarios_json', _scenario_json_string(scenario_json, True)],
-  #     'ci_platforms': ['linux'],
-  #     'platforms': ['linux'],
-  #     'flaky': False,
-  #     'language': 'c++',
-  #     'boringssl': True,
-  #     'defaults': 'boringssl',
-  #     'cpu_cost': guess_cpu(scenario_json, True),
-  #     'exclude_configs': sorted(c for c in configs_from_yaml if c not in ('tsan', 'asan')),
-  #     'timeout_seconds': 10*60,
-  #     'excluded_poll_engines': scenario_json.get('EXCLUDED_POLL_ENGINES', []),
-  #     'auto_timeout_scaling': False
-  #  }
-  #   for scenario_json in scenario_config.CXXLanguage().scenarios()
-  #   if 'scalable' in scenario_json.get('CATEGORIES', [])
-  # ]
 })

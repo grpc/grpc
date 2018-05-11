@@ -27,11 +27,11 @@ want_submodules=$(mktemp /tmp/submXXXXXX)
 git submodule | awk '{ print $1 }' | sort > "$submodules"
 cat << EOF | awk '{ print $1 }' | sort > "$want_submodules"
  5b7683f49e1e9223cf9927b24f6fd3d6bd82e3f8 third_party/benchmark (v1.2.0)
- 4d7ba4e4e57195fcebdabe01489534b446ad02cb third_party/boringssl (heads/chromium-stable)
+ a20bb7ff8bb5057065a2e7941249773f9676cf45 third_party/boringssl (heads/chromium-stable)
  886e7d75368e3f4fab3f4d0d3584e4abfc557755 third_party/boringssl-with-bazel (version_for_cocoapods_7.0-857-g886e7d7)
  30dbc81fb5ffdc98ea9b14b1918bfe4e8779b26e third_party/gflags (v2.2.0)
  ec44c6c1675c25b9827aacd08c02433cccde7780 third_party/googletest (release-1.8.0)
- 2761122b810fe8861004ae785cc3ab39f384d342 third_party/protobuf (v3.5.0)
+ b5fbb742af122b565925987e65c08957739976a7 third_party/protobuf (v3.5.2)
  cacf7f1d4e3d44d871b605da3b647f07d718623f third_party/zlib (v1.2.11)
  3be1924221e1326df520f8498d704a5c4c8d0cce third_party/cares/cares (cares-1_13_0)
  73594cde8c9a52a102c4341c244c833aa61b9c06 third_party/bloaty

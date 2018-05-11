@@ -21,11 +21,12 @@
 #include <memory>
 
 #include <gflags/gflags.h>
-#include <grpc++/security/server_credentials.h>
+#include <grpcpp/security/server_credentials.h>
 
 #include "src/core/lib/surface/call_test_only.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
+DECLARE_bool(use_alts);
 DECLARE_bool(use_tls);
 DECLARE_string(custom_credentials_type);
 
@@ -36,6 +37,8 @@ std::shared_ptr<ServerCredentials> CreateInteropServerCredentials() {
   if (!FLAGS_custom_credentials_type.empty()) {
     return GetCredentialsProvider()->GetServerCredentials(
         FLAGS_custom_credentials_type);
+  } else if (FLAGS_use_alts) {
+    return GetCredentialsProvider()->GetServerCredentials(kAltsCredentialsType);
   } else if (FLAGS_use_tls) {
     return GetCredentialsProvider()->GetServerCredentials(kTlsCredentialsType);
   } else {

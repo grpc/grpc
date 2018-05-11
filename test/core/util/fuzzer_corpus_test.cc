@@ -20,6 +20,7 @@
 
 #include <dirent.h>
 #include <gflags/gflags.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <gtest/gtest.h>
 #include <stdio.h>
@@ -91,6 +92,7 @@ class ExampleGenerator
           perror("Couldn't open the directory");
           abort();
         }
+        gpr_free(test_srcdir);
       }
     }
   }

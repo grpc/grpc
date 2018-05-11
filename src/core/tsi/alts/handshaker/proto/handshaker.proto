@@ -18,7 +18,7 @@ import "transport_security_common.proto";
 
 package grpc.gcp;
 
-option java_package = "io.grpc.alts";
+option java_package = "io.grpc.alts.internal";
 
 enum HandshakeProtocol {
   // Default value.
@@ -85,7 +85,7 @@ message StartClientHandshakeReq {
   Endpoint local_endpoint = 6;
 
   // (Optional) Endpoint information of the remote server, such as IP address,
-  // port number, and network protocool.
+  // port number, and network protocol.
   Endpoint remote_endpoint = 7;
 
   // (Optional) If target name is provided, a secure naming check is performed
@@ -128,7 +128,7 @@ message StartServerHandshakeReq {
   Endpoint local_endpoint = 4;
 
   // (Optional) Endpoint information of the remote client, such as IP address,
-  // port number, and network protocool.
+  // port number, and network protocol.
   Endpoint remote_endpoint = 5;
 
   // (Optional) RPC protocol versions supported by the server.
@@ -212,8 +212,12 @@ message HandshakerResp {
 }
 
 service HandshakerService {
-  // Accepts a stream of handshaker request, returning a stream of handshaker
-  // response.
+  // Handshaker service accepts a stream of handshaker request, returning a
+  // stream of handshaker response. Client is expected to send exactly one
+  // message with either client_start or server_start followed by one or more
+  // messages with next. Each time client sends a request, the handshaker
+  // service expects to respond. Client does not have to wait for service's
+  // response before sending next request.
   rpc DoHandshake(stream HandshakerReq)
       returns (stream HandshakerResp) {
   }

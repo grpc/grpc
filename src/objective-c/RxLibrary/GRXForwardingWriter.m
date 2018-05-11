@@ -18,7 +18,7 @@
 
 #import "GRXForwardingWriter.h"
 
-@interface GRXForwardingWriter () <GRXWriteable>
+@interface GRXForwardingWriter ()<GRXWriteable>
 @end
 
 @implementation GRXForwardingWriter {

@@ -394,13 +394,13 @@ static void BM_PumpUnbalancedUnary_Trickle(benchmark::State& state) {
         stub->AsyncEcho(&cli_ctx, send_request, fixture->cq()));
     void* t;
     bool ok;
+    response_reader->Finish(&recv_response, &recv_status, tag(4));
     TrickleCQNext(fixture.get(), &t, &ok, in_warmup ? -1 : state.iterations());
     GPR_ASSERT(ok);
     GPR_ASSERT(t == tag(0) || t == tag(1));
     intptr_t slot = reinterpret_cast<intptr_t>(t);
     ServerEnv* senv = server_env[slot];
     senv->response_writer.Finish(send_response, Status::OK, tag(3));
-    response_reader->Finish(&recv_response, &recv_status, tag(4));
     for (int i = (1 << 3) | (1 << 4); i != 0;) {
       TrickleCQNext(fixture.get(), &t, &ok,
                     in_warmup ? -1 : state.iterations());
@@ -458,10 +458,16 @@ BENCHMARK(BM_PumpUnbalancedUnary_Trickle)->Apply(UnaryTrickleArgs);
 
 extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 
+// Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
+// and others do not. This allows us to support both modes.
+namespace benchmark {
+void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
+}  // namespace benchmark
+
 int main(int argc, char** argv) {
   ::benchmark::Initialize(&argc, argv);
   ::grpc::testing::InitTest(&argc, &argv, false);
   grpc_timer_manager_set_threading(false);
   gpr_now_impl = ::grpc::testing::fake_now;
-  ::benchmark::RunSpecifiedBenchmarks();
+  benchmark::RunTheBenchmarksNamespaced();
 }

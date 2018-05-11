@@ -41,7 +41,7 @@ INSTALL_REQUIRES = (
     'grpcio>={version}'.format(version=grpc_version.VERSION),
     'grpcio-tools>={version}'.format(version=grpc_version.VERSION),
     'grpcio-health-checking>={version}'.format(version=grpc_version.VERSION),
-    'oauth2client>=1.4.7', 'protobuf>=3.5.0.post1', 'six>=1.10',
+    'oauth2client>=1.4.7', 'protobuf>=3.5.2.post1', 'six>=1.10',
     'google-auth>=1.0.0', 'requests>=2.14.2')
 
 COMMAND_CLASS = {
@@ -50,7 +50,8 @@ COMMAND_CLASS = {
     'build_package_protos': grpc_tools.command.BuildPackageProtos,
     'build_py': commands.BuildPy,
     'run_interop': commands.RunInterop,
-    'test_lite': commands.TestLite
+    'test_lite': commands.TestLite,
+    'test_gevent': commands.TestGevent,
 }
 
 PACKAGE_DATA = {

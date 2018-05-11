@@ -16,13 +16,15 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_p
 
 licenses(["notice"])  # Apache v2
 
-grpc_package(name = "frame_protector")
+grpc_package(name = "test/core/tsi/alts/frame_protector")
 
 grpc_cc_test(
     name = "alts_counter_test",
     srcs = ["alts_counter_test.cc"],
     language = "C++",
     deps = [
+        "//:alts_frame_protector",
+        "//:gpr",
         "//:grpc",
         "//test/core/tsi/alts/crypt:alts_crypt_test_util",
     ],
@@ -33,6 +35,8 @@ grpc_cc_test(
     srcs = ["alts_crypter_test.cc"],
     language = "C++",
     deps = [
+        "//:alts_frame_protector",
+        "//:gpr",
         "//:grpc",
         "//test/core/tsi/alts/crypt:alts_crypt_test_util",
     ],
@@ -43,7 +47,11 @@ grpc_cc_test(
     srcs = ["alts_frame_protector_test.cc"],
     language = "C++",
     deps = [
+        "//:alts_frame_protector",
+        "//:gpr",
         "//:grpc",
+        "//:tsi",
+        "//:tsi_interface",
         "//test/core/tsi/alts/crypt:alts_crypt_test_util",
         "//test/core/tsi:transport_security_test_lib",
     ],
@@ -54,6 +62,9 @@ grpc_cc_test(
     srcs = ["frame_handler_test.cc"],
     language = "C++",
     deps = [
+        "//:alts_frame_protector",
+        "//:gpr",
+        "//:gpr_base",
         "//:grpc",
         "//test/core/tsi/alts/crypt:alts_crypt_test_util",
     ],

@@ -25,15 +25,24 @@ DIRS=(
     'src/python/grpcio_testing/grpc_testing'
 )
 
-VIRTUALENV=python_pylint_venv
+TEST_DIRS=(
+    'src/python/grpcio_tests/tests'
+)
 
-virtualenv $VIRTUALENV
-PYTHON=$(realpath $VIRTUALENV/bin/python)
-$PYTHON -m pip install --upgrade pip==9.0.1
+VIRTUALENV=python_pylint_venv
+python -m virtualenv $VIRTUALENV
+
+PYTHON=$VIRTUALENV/bin/python
+
+$PYTHON -m pip install --upgrade pip==10.0.1
 $PYTHON -m pip install pylint==1.6.5
 
 for dir in "${DIRS[@]}"; do
   $PYTHON -m pylint --rcfile=.pylintrc -rn "$dir" || exit $?
+done
+
+for dir in "${TEST_DIRS[@]}"; do
+  $PYTHON -m pylint --rcfile=.pylintrc-tests -rn "$dir" || exit $?
 done
 
 exit 0

@@ -867,6 +867,7 @@ static void set_google_default_creds_env_var_with_file_contents(
 static void test_google_default_creds_auth_key(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_service_account_jwt_access_credentials* jwt;
+  grpc_google_default_channel_credentials* default_creds;
   grpc_composite_channel_credentials* creds;
   char* json_key = test_json_key_str();
   grpc_flush_cached_google_default_credentials();
@@ -875,7 +876,9 @@ static void test_google_default_creds_auth_key(void) {
   gpr_free(json_key);
   creds = reinterpret_cast<grpc_composite_channel_credentials*>(
       grpc_google_default_credentials_create());
-  GPR_ASSERT(creds != nullptr);
+  default_creds = reinterpret_cast<grpc_google_default_channel_credentials*>(
+      creds->inner_creds);
+  GPR_ASSERT(default_creds->ssl_creds != nullptr);
   jwt = reinterpret_cast<grpc_service_account_jwt_access_credentials*>(
       creds->call_creds);
   GPR_ASSERT(
@@ -889,13 +892,16 @@ static void test_google_default_creds_auth_key(void) {
 static void test_google_default_creds_refresh_token(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_google_refresh_token_credentials* refresh;
+  grpc_google_default_channel_credentials* default_creds;
   grpc_composite_channel_credentials* creds;
   grpc_flush_cached_google_default_credentials();
   set_google_default_creds_env_var_with_file_contents(
       "refresh_token_google_default_creds", test_refresh_token_str);
   creds = reinterpret_cast<grpc_composite_channel_credentials*>(
       grpc_google_default_credentials_create());
-  GPR_ASSERT(creds != nullptr);
+  default_creds = reinterpret_cast<grpc_google_default_channel_credentials*>(
+      creds->inner_creds);
+  GPR_ASSERT(default_creds->ssl_creds != nullptr);
   refresh = reinterpret_cast<grpc_google_refresh_token_credentials*>(
       creds->call_creds);
   GPR_ASSERT(strcmp(refresh->refresh_token.client_id,

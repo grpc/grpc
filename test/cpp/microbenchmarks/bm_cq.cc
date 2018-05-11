@@ -20,11 +20,12 @@
  * working */
 
 #include <benchmark/benchmark.h>
-#include <grpc++/completion_queue.h>
-#include <grpc++/impl/grpc_library.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+#include <grpcpp/completion_queue.h>
+#include <grpcpp/impl/grpc_library.h>
 #include "test/cpp/microbenchmarks/helpers.h"
+#include "test/cpp/util/test_config.h"
 
 #include "src/core/lib/surface/completion_queue.h"
 
@@ -148,4 +149,15 @@ BENCHMARK(BM_EmptyCore);
 }  // namespace testing
 }  // namespace grpc
 
-BENCHMARK_MAIN();
+// Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
+// and others do not. This allows us to support both modes.
+namespace benchmark {
+void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
+}  // namespace benchmark
+
+int main(int argc, char** argv) {
+  ::benchmark::Initialize(&argc, argv);
+  ::grpc::testing::InitTest(&argc, &argv, false);
+  benchmark::RunTheBenchmarksNamespaced();
+  return 0;
+}

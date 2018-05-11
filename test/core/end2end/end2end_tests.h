@@ -52,6 +52,11 @@ struct grpc_end2end_test_config {
   /* Which features are supported by this fixture. See feature flags above. */
   uint32_t feature_mask;
 
+  /* If the call host is setup by the fixture (for example, via the
+   * GRPC_SSL_TARGET_NAME_OVERRIDE_ARG channel arg), which value should the test
+   * expect to find in call_details.host */
+  const char* overridden_call_host;
+
   grpc_end2end_test_fixture (*create_fixture)(grpc_channel_args* client_args,
                                               grpc_channel_args* server_args);
   void (*init_client)(grpc_end2end_test_fixture* f,

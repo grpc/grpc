@@ -72,7 +72,7 @@ sudo apt-get install -y netperf
 sudo apt-get install -y libgflags-dev libgtest-dev libc++-dev clang
 
 # Python dependencies
-sudo pip install --upgrade pip==9.0.1
+sudo pip install --upgrade pip==10.0.1
 sudo pip install tabulate
 sudo pip install google-api-python-client
 sudo pip install virtualenv

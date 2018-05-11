@@ -44,7 +44,6 @@
 #include "src/core/lib/security/transport/target_authority_table.h"
 #include "src/core/tsi/fake_transport_security.h"
 #include "src/core/tsi/ssl_transport_security.h"
-#include "src/core/tsi/transport_security_adapter.h"
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_security_connector_refcount(
     false, "security_connector_refcount");
@@ -306,6 +305,7 @@ typedef struct {
   char* target;
   char* expected_targets;
   bool is_lb_channel;
+  char* target_name_override;
 } grpc_fake_channel_security_connector;
 
 static void fake_channel_destroy(grpc_security_connector* sc) {
@@ -314,6 +314,7 @@ static void fake_channel_destroy(grpc_security_connector* sc) {
   grpc_call_credentials_unref(c->base.request_metadata_creds);
   gpr_free(c->target);
   gpr_free(c->expected_targets);
+  gpr_free(c->target_name_override);
   gpr_free(c);
 }
 
@@ -465,13 +466,36 @@ static bool fake_channel_check_call_host(grpc_channel_security_connector* sc,
                                          grpc_error** error) {
   grpc_fake_channel_security_connector* c =
       reinterpret_cast<grpc_fake_channel_security_connector*>(sc);
-  if (c->is_lb_channel) {
-    // TODO(dgq): verify that the host (ie, authority header) matches that of
-    // the LB, as opposed to that of the backends.
-  } else {
-    // TODO(dgq): verify that the host (ie, authority header) matches that of
-    // the backend, not the LB's.
+  char* authority_hostname = nullptr;
+  char* authority_ignored_port = nullptr;
+  char* target_hostname = nullptr;
+  char* target_ignored_port = nullptr;
+  gpr_split_host_port(host, &authority_hostname, &authority_ignored_port);
+  gpr_split_host_port(c->target, &target_hostname, &target_ignored_port);
+  if (c->target_name_override != nullptr) {
+    char* fake_security_target_name_override_hostname = nullptr;
+    char* fake_security_target_name_override_ignored_port = nullptr;
+    gpr_split_host_port(c->target_name_override,
+                        &fake_security_target_name_override_hostname,
+                        &fake_security_target_name_override_ignored_port);
+    if (strcmp(authority_hostname,
+               fake_security_target_name_override_hostname) != 0) {
+      gpr_log(GPR_ERROR,
+              "Authority (host) '%s' != Fake Security Target override '%s'",
+              host, fake_security_target_name_override_hostname);
+      abort();
+    }
+    gpr_free(fake_security_target_name_override_hostname);
+    gpr_free(fake_security_target_name_override_ignored_port);
+  } else if (strcmp(authority_hostname, target_hostname) != 0) {
+    gpr_log(GPR_ERROR, "Authority (host) '%s' != Target '%s'",
+            authority_hostname, target_hostname);
+    abort();
   }
+  gpr_free(authority_hostname);
+  gpr_free(authority_ignored_port);
+  gpr_free(target_hostname);
+  gpr_free(target_ignored_port);
   return true;
 }
 
@@ -524,6 +548,12 @@ grpc_channel_security_connector* grpc_fake_channel_security_connector_create(
   const char* expected_targets = grpc_fake_transport_get_expected_targets(args);
   c->expected_targets = gpr_strdup(expected_targets);
   c->is_lb_channel = grpc_core::FindTargetAuthorityTableInArgs(args) != nullptr;
+  const grpc_arg* target_name_override_arg =
+      grpc_channel_args_find(args, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG);
+  if (target_name_override_arg != nullptr) {
+    c->target_name_override =
+        gpr_strdup(grpc_channel_arg_get_string(target_name_override_arg));
+  }
   return &c->base;
 }
 
@@ -541,6 +571,46 @@ grpc_server_security_connector* grpc_fake_server_security_connector_create(
 }
 
 /* --- Ssl implementation. --- */
+
+grpc_ssl_session_cache* grpc_ssl_session_cache_create_lru(size_t capacity) {
+  tsi_ssl_session_cache* cache = tsi_ssl_session_cache_create_lru(capacity);
+  return reinterpret_cast<grpc_ssl_session_cache*>(cache);
+}
+
+void grpc_ssl_session_cache_destroy(grpc_ssl_session_cache* cache) {
+  tsi_ssl_session_cache* tsi_cache =
+      reinterpret_cast<tsi_ssl_session_cache*>(cache);
+  tsi_ssl_session_cache_unref(tsi_cache);
+}
+
+static void* grpc_ssl_session_cache_arg_copy(void* p) {
+  tsi_ssl_session_cache* tsi_cache =
+      reinterpret_cast<tsi_ssl_session_cache*>(p);
+  // destroy call below will unref the pointer.
+  tsi_ssl_session_cache_ref(tsi_cache);
+  return p;
+}
+
+static void grpc_ssl_session_cache_arg_destroy(void* p) {
+  tsi_ssl_session_cache* tsi_cache =
+      reinterpret_cast<tsi_ssl_session_cache*>(p);
+  tsi_ssl_session_cache_unref(tsi_cache);
+}
+
+static int grpc_ssl_session_cache_arg_cmp(void* p, void* q) {
+  return GPR_ICMP(p, q);
+}
+
+grpc_arg grpc_ssl_session_cache_create_channel_arg(
+    grpc_ssl_session_cache* cache) {
+  static const grpc_arg_pointer_vtable vtable = {
+      grpc_ssl_session_cache_arg_copy,
+      grpc_ssl_session_cache_arg_destroy,
+      grpc_ssl_session_cache_arg_cmp,
+  };
+  return grpc_channel_arg_pointer_create(
+      const_cast<char*>(GRPC_SSL_SESSION_CACHE_ARG), cache, &vtable);
+}
 
 typedef struct {
   grpc_channel_security_connector base;
@@ -602,8 +672,7 @@ static void ssl_channel_add_handshakers(grpc_channel_security_connector* sc,
   }
   // Create handshakers.
   grpc_handshake_manager_add(
-      handshake_mgr, grpc_security_handshaker_create(
-                         tsi_create_adapter_handshaker(tsi_hs), &sc->base));
+      handshake_mgr, grpc_security_handshaker_create(tsi_hs, &sc->base));
 }
 
 static const char** fill_alpn_protocol_strings(size_t* num_alpn_protocols) {
@@ -711,27 +780,29 @@ static void ssl_server_add_handshakers(grpc_server_security_connector* sc,
   }
   // Create handshakers.
   grpc_handshake_manager_add(
-      handshake_mgr, grpc_security_handshaker_create(
-                         tsi_create_adapter_handshaker(tsi_hs), &sc->base));
+      handshake_mgr, grpc_security_handshaker_create(tsi_hs, &sc->base));
 }
 
-static int ssl_host_matches_name(const tsi_peer* peer, const char* peer_name) {
+int grpc_ssl_host_matches_name(const tsi_peer* peer, const char* peer_name) {
   char* allocated_name = nullptr;
   int r;
 
-  if (strchr(peer_name, ':') != nullptr) {
-    char* ignored_port;
-    gpr_split_host_port(peer_name, &allocated_name, &ignored_port);
-    gpr_free(ignored_port);
-    peer_name = allocated_name;
-    if (!peer_name) return 0;
-  }
+  char* ignored_port;
+  gpr_split_host_port(peer_name, &allocated_name, &ignored_port);
+  gpr_free(ignored_port);
+  peer_name = allocated_name;
+  if (!peer_name) return 0;
+
+  // IPv6 zone-id should not be included in comparisons.
+  char* const zone_id = strchr(allocated_name, '%');
+  if (zone_id != nullptr) *zone_id = '\0';
+
   r = tsi_ssl_peer_matches_name(peer, peer_name);
   gpr_free(allocated_name);
   return r;
 }
 
-grpc_auth_context* tsi_ssl_peer_to_auth_context(const tsi_peer* peer) {
+grpc_auth_context* grpc_ssl_peer_to_auth_context(const tsi_peer* peer) {
   size_t i;
   grpc_auth_context* ctx = nullptr;
   const char* peer_identity_property_name = nullptr;
@@ -760,6 +831,9 @@ grpc_auth_context* tsi_ssl_peer_to_auth_context(const tsi_peer* peer) {
     } else if (strcmp(prop->name, TSI_X509_PEM_CERT_PROPERTY) == 0) {
       grpc_auth_context_add_property(ctx, GRPC_X509_PEM_CERT_PROPERTY_NAME,
                                      prop->value.data, prop->value.length);
+    } else if (strcmp(prop->name, TSI_SSL_SESSION_REUSED_PEER_PROPERTY) == 0) {
+      grpc_auth_context_add_property(ctx, GRPC_SSL_SESSION_REUSED_PROPERTY,
+                                     prop->value.data, prop->value.length);
     }
   }
   if (peer_identity_property_name != nullptr) {
@@ -785,14 +859,14 @@ static grpc_error* ssl_check_peer(grpc_security_connector* sc,
   }
 
   /* Check the peer name if specified. */
-  if (peer_name != nullptr && !ssl_host_matches_name(peer, peer_name)) {
+  if (peer_name != nullptr && !grpc_ssl_host_matches_name(peer, peer_name)) {
     char* msg;
     gpr_asprintf(&msg, "Peer name %s is not in peer certificate", peer_name);
     grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
     gpr_free(msg);
     return error;
   }
-  *auth_context = tsi_ssl_peer_to_auth_context(peer);
+  *auth_context = grpc_ssl_peer_to_auth_context(peer);
   return GRPC_ERROR_NONE;
 }
 
@@ -850,7 +924,7 @@ static void add_shallow_auth_property_to_peer(tsi_peer* peer,
   tsi_prop->value.length = prop->value_length;
 }
 
-tsi_peer tsi_shallow_peer_from_ssl_auth_context(
+tsi_peer grpc_shallow_peer_from_ssl_auth_context(
     const grpc_auth_context* auth_context) {
   size_t max_num_props = 0;
   grpc_auth_property_iterator it;
@@ -881,7 +955,7 @@ tsi_peer tsi_shallow_peer_from_ssl_auth_context(
   return peer;
 }
 
-void tsi_shallow_peer_destruct(tsi_peer* peer) {
+void grpc_shallow_peer_destruct(tsi_peer* peer) {
   if (peer->properties != nullptr) gpr_free(peer->properties);
 }
 
@@ -893,8 +967,8 @@ static bool ssl_channel_check_call_host(grpc_channel_security_connector* sc,
   grpc_ssl_channel_security_connector* c =
       reinterpret_cast<grpc_ssl_channel_security_connector*>(sc);
   grpc_security_status status = GRPC_SECURITY_ERROR;
-  tsi_peer peer = tsi_shallow_peer_from_ssl_auth_context(auth_context);
-  if (ssl_host_matches_name(&peer, host)) status = GRPC_SECURITY_OK;
+  tsi_peer peer = grpc_shallow_peer_from_ssl_auth_context(auth_context);
+  if (grpc_ssl_host_matches_name(&peer, host)) status = GRPC_SECURITY_OK;
   /* If the target name was overridden, then the original target_name was
      'checked' transitively during the previous peer check at the end of the
      handshake. */
@@ -906,7 +980,7 @@ static bool ssl_channel_check_call_host(grpc_channel_security_connector* sc,
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "call host does not match SSL server name");
   }
-  tsi_shallow_peer_destruct(&peer);
+  grpc_shallow_peer_destruct(&peer);
   return true;
 }
 
@@ -922,91 +996,37 @@ static grpc_security_connector_vtable ssl_channel_vtable = {
 static grpc_security_connector_vtable ssl_server_vtable = {
     ssl_server_destroy, ssl_server_check_peer, ssl_server_cmp};
 
-/* returns a NULL terminated slice. */
-static grpc_slice compute_default_pem_root_certs_once(void) {
-  grpc_slice result = grpc_empty_slice();
-
-  /* First try to load the roots from the environment. */
-  char* default_root_certs_path =
-      gpr_getenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR);
-  if (default_root_certs_path != nullptr) {
-    GRPC_LOG_IF_ERROR("load_file",
-                      grpc_load_file(default_root_certs_path, 1, &result));
-    gpr_free(default_root_certs_path);
-  }
-
-  /* Try overridden roots if needed. */
-  grpc_ssl_roots_override_result ovrd_res = GRPC_SSL_ROOTS_OVERRIDE_FAIL;
-  if (GRPC_SLICE_IS_EMPTY(result) && ssl_roots_override_cb != nullptr) {
-    char* pem_root_certs = nullptr;
-    ovrd_res = ssl_roots_override_cb(&pem_root_certs);
-    if (ovrd_res == GRPC_SSL_ROOTS_OVERRIDE_OK) {
-      GPR_ASSERT(pem_root_certs != nullptr);
-      result = grpc_slice_from_copied_buffer(
-          pem_root_certs,
-          strlen(pem_root_certs) + 1);  // NULL terminator.
-    }
-    gpr_free(pem_root_certs);
-  }
-
-  /* Fall back to installed certs if needed. */
-  if (GRPC_SLICE_IS_EMPTY(result) &&
-      ovrd_res != GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY) {
-    GRPC_LOG_IF_ERROR("load_file",
-                      grpc_load_file(installed_roots_path, 1, &result));
-  }
-  return result;
-}
-
-static grpc_slice default_pem_root_certs;
-
-static void init_default_pem_root_certs(void) {
-  default_pem_root_certs = compute_default_pem_root_certs_once();
-}
-
-grpc_slice grpc_get_default_ssl_roots_for_testing(void) {
-  return compute_default_pem_root_certs_once();
-}
-
-const char* grpc_get_default_ssl_roots(void) {
-  /* TODO(jboeuf@google.com): Maybe revisit the approach which consists in
-     loading all the roots once for the lifetime of the process. */
-  static gpr_once once = GPR_ONCE_INIT;
-  gpr_once_init(&once, init_default_pem_root_certs);
-  return GRPC_SLICE_IS_EMPTY(default_pem_root_certs)
-             ? nullptr
-             : reinterpret_cast<const char*>
-                   GRPC_SLICE_START_PTR(default_pem_root_certs);
-}
-
 grpc_security_status grpc_ssl_channel_security_connector_create(
     grpc_channel_credentials* channel_creds,
     grpc_call_credentials* request_metadata_creds,
     const grpc_ssl_config* config, const char* target_name,
-    const char* overridden_target_name, grpc_channel_security_connector** sc) {
-  size_t num_alpn_protocols = 0;
-  const char** alpn_protocol_strings =
-      fill_alpn_protocol_strings(&num_alpn_protocols);
+    const char* overridden_target_name,
+    tsi_ssl_session_cache* ssl_session_cache,
+    grpc_channel_security_connector** sc) {
   tsi_result result = TSI_OK;
   grpc_ssl_channel_security_connector* c;
-  const char* pem_root_certs;
   char* port;
   bool has_key_cert_pair;
+  tsi_ssl_client_handshaker_options options;
+  memset(&options, 0, sizeof(options));
+  options.alpn_protocols =
+      fill_alpn_protocol_strings(&options.num_alpn_protocols);
 
   if (config == nullptr || target_name == nullptr) {
     gpr_log(GPR_ERROR, "An ssl channel needs a config and a target name.");
     goto error;
   }
   if (config->pem_root_certs == nullptr) {
-    pem_root_certs = grpc_get_default_ssl_roots();
-    if (pem_root_certs == nullptr) {
+    // Use default root certificates.
+    options.pem_root_certs = grpc_core::DefaultSslRootStore::GetPemRootCerts();
+    options.root_store = grpc_core::DefaultSslRootStore::GetRootStore();
+    if (options.pem_root_certs == nullptr) {
       gpr_log(GPR_ERROR, "Could not get default pem root certs.");
       goto error;
     }
   } else {
-    pem_root_certs = config->pem_root_certs;
+    options.pem_root_certs = config->pem_root_certs;
   }
-
   c = static_cast<grpc_ssl_channel_security_connector*>(
       gpr_zalloc(sizeof(grpc_ssl_channel_security_connector)));
 
@@ -1028,10 +1048,13 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
   has_key_cert_pair = config->pem_key_cert_pair != nullptr &&
                       config->pem_key_cert_pair->private_key != nullptr &&
                       config->pem_key_cert_pair->cert_chain != nullptr;
-  result = tsi_create_ssl_client_handshaker_factory(
-      has_key_cert_pair ? config->pem_key_cert_pair : nullptr, pem_root_certs,
-      ssl_cipher_suites(), alpn_protocol_strings,
-      static_cast<uint16_t>(num_alpn_protocols), &c->client_handshaker_factory);
+  if (has_key_cert_pair) {
+    options.pem_key_cert_pair = config->pem_key_cert_pair;
+  }
+  options.cipher_suites = ssl_cipher_suites();
+  options.session_cache = ssl_session_cache;
+  result = tsi_create_ssl_client_handshaker_factory_with_options(
+      &options, &c->client_handshaker_factory);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
             tsi_result_to_string(result));
@@ -1040,11 +1063,11 @@ grpc_security_status grpc_ssl_channel_security_connector_create(
     goto error;
   }
   *sc = &c->base;
-  gpr_free((void*)alpn_protocol_strings);
+  gpr_free((void*)options.alpn_protocols);
   return GRPC_SECURITY_OK;
 
 error:
-  gpr_free((void*)alpn_protocol_strings);
+  gpr_free((void*)options.alpn_protocols);
   return GRPC_SECURITY_ERROR;
 }
 
@@ -1109,3 +1132,69 @@ grpc_security_status grpc_ssl_server_security_connector_create(
   }
   return retval;
 }
+
+namespace grpc_core {
+
+tsi_ssl_root_certs_store* DefaultSslRootStore::default_root_store_;
+grpc_slice DefaultSslRootStore::default_pem_root_certs_;
+
+const tsi_ssl_root_certs_store* DefaultSslRootStore::GetRootStore() {
+  InitRootStore();
+  return default_root_store_;
+}
+
+const char* DefaultSslRootStore::GetPemRootCerts() {
+  InitRootStore();
+  return GRPC_SLICE_IS_EMPTY(default_pem_root_certs_)
+             ? nullptr
+             : reinterpret_cast<const char*>
+                   GRPC_SLICE_START_PTR(default_pem_root_certs_);
+}
+
+grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
+  grpc_slice result = grpc_empty_slice();
+  // First try to load the roots from the environment.
+  char* default_root_certs_path =
+      gpr_getenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR);
+  if (default_root_certs_path != nullptr) {
+    GRPC_LOG_IF_ERROR("load_file",
+                      grpc_load_file(default_root_certs_path, 1, &result));
+    gpr_free(default_root_certs_path);
+  }
+  // Try overridden roots if needed.
+  grpc_ssl_roots_override_result ovrd_res = GRPC_SSL_ROOTS_OVERRIDE_FAIL;
+  if (GRPC_SLICE_IS_EMPTY(result) && ssl_roots_override_cb != nullptr) {
+    char* pem_root_certs = nullptr;
+    ovrd_res = ssl_roots_override_cb(&pem_root_certs);
+    if (ovrd_res == GRPC_SSL_ROOTS_OVERRIDE_OK) {
+      GPR_ASSERT(pem_root_certs != nullptr);
+      result = grpc_slice_from_copied_buffer(
+          pem_root_certs,
+          strlen(pem_root_certs) + 1);  // nullptr terminator.
+    }
+    gpr_free(pem_root_certs);
+  }
+  // Fall back to installed certs if needed.
+  if (GRPC_SLICE_IS_EMPTY(result) &&
+      ovrd_res != GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY) {
+    GRPC_LOG_IF_ERROR("load_file",
+                      grpc_load_file(installed_roots_path, 1, &result));
+  }
+  return result;
+}
+
+void DefaultSslRootStore::InitRootStore() {
+  static gpr_once once = GPR_ONCE_INIT;
+  gpr_once_init(&once, DefaultSslRootStore::InitRootStoreOnce);
+}
+
+void DefaultSslRootStore::InitRootStoreOnce() {
+  default_pem_root_certs_ = ComputePemRootCerts();
+  if (!GRPC_SLICE_IS_EMPTY(default_pem_root_certs_)) {
+    default_root_store_ =
+        tsi_ssl_root_certs_store_create(reinterpret_cast<const char*>(
+            GRPC_SLICE_START_PTR(default_pem_root_certs_)));
+  }
+}
+
+}  // namespace grpc_core

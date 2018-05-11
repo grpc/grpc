@@ -16,6 +16,9 @@ if (PHP_GRPC != "no") {
     "src\\php\\ext\\grpc\\server.c " +
     "src\\php\\ext\\grpc\\server_credentials.c " +
     "src\\php\\ext\\grpc\\timeval.c " +
+    "third_party\\address_sorting\\address_sorting.c " +
+    "third_party\\address_sorting\\address_sorting_posix.c " +
+    "third_party\\address_sorting\\address_sorting_windows.c " +
     "src\\core\\lib\\gpr\\alloc.cc " +
     "src\\core\\lib\\gpr\\arena.cc " +
     "src\\core\\lib\\gpr\\atm.cc " +
@@ -61,10 +64,13 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\channel\\channel_args.cc " +
     "src\\core\\lib\\channel\\channel_stack.cc " +
     "src\\core\\lib\\channel\\channel_stack_builder.cc " +
+    "src\\core\\lib\\channel\\channel_trace.cc " +
+    "src\\core\\lib\\channel\\channel_trace_registry.cc " +
     "src\\core\\lib\\channel\\connected_channel.cc " +
     "src\\core\\lib\\channel\\handshaker.cc " +
     "src\\core\\lib\\channel\\handshaker_factory.cc " +
     "src\\core\\lib\\channel\\handshaker_registry.cc " +
+    "src\\core\\lib\\channel\\status_util.cc " +
     "src\\core\\lib\\compression\\compression.cc " +
     "src\\core\\lib\\compression\\compression_internal.cc " +
     "src\\core\\lib\\compression\\message_compress.cc " +
@@ -98,6 +104,8 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\iomgr\\gethostname_sysconf.cc " +
     "src\\core\\lib\\iomgr\\iocp_windows.cc " +
     "src\\core\\lib\\iomgr\\iomgr.cc " +
+    "src\\core\\lib\\iomgr\\iomgr_custom.cc " +
+    "src\\core\\lib\\iomgr\\iomgr_internal.cc " +
     "src\\core\\lib\\iomgr\\iomgr_posix.cc " +
     "src\\core\\lib\\iomgr\\iomgr_uv.cc " +
     "src\\core\\lib\\iomgr\\iomgr_windows.cc " +
@@ -106,12 +114,16 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\iomgr\\lockfree_event.cc " +
     "src\\core\\lib\\iomgr\\network_status_tracker.cc " +
     "src\\core\\lib\\iomgr\\polling_entity.cc " +
-    "src\\core\\lib\\iomgr\\pollset_set_uv.cc " +
+    "src\\core\\lib\\iomgr\\pollset.cc " +
+    "src\\core\\lib\\iomgr\\pollset_custom.cc " +
+    "src\\core\\lib\\iomgr\\pollset_set.cc " +
+    "src\\core\\lib\\iomgr\\pollset_set_custom.cc " +
     "src\\core\\lib\\iomgr\\pollset_set_windows.cc " +
     "src\\core\\lib\\iomgr\\pollset_uv.cc " +
     "src\\core\\lib\\iomgr\\pollset_windows.cc " +
+    "src\\core\\lib\\iomgr\\resolve_address.cc " +
+    "src\\core\\lib\\iomgr\\resolve_address_custom.cc " +
     "src\\core\\lib\\iomgr\\resolve_address_posix.cc " +
-    "src\\core\\lib\\iomgr\\resolve_address_uv.cc " +
     "src\\core\\lib\\iomgr\\resolve_address_windows.cc " +
     "src\\core\\lib\\iomgr\\resource_quota.cc " +
     "src\\core\\lib\\iomgr\\sockaddr_utils.cc " +
@@ -123,19 +135,24 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\iomgr\\socket_utils_uv.cc " +
     "src\\core\\lib\\iomgr\\socket_utils_windows.cc " +
     "src\\core\\lib\\iomgr\\socket_windows.cc " +
+    "src\\core\\lib\\iomgr\\tcp_client.cc " +
+    "src\\core\\lib\\iomgr\\tcp_client_custom.cc " +
     "src\\core\\lib\\iomgr\\tcp_client_posix.cc " +
-    "src\\core\\lib\\iomgr\\tcp_client_uv.cc " +
     "src\\core\\lib\\iomgr\\tcp_client_windows.cc " +
+    "src\\core\\lib\\iomgr\\tcp_custom.cc " +
     "src\\core\\lib\\iomgr\\tcp_posix.cc " +
+    "src\\core\\lib\\iomgr\\tcp_server.cc " +
+    "src\\core\\lib\\iomgr\\tcp_server_custom.cc " +
     "src\\core\\lib\\iomgr\\tcp_server_posix.cc " +
     "src\\core\\lib\\iomgr\\tcp_server_utils_posix_common.cc " +
     "src\\core\\lib\\iomgr\\tcp_server_utils_posix_ifaddrs.cc " +
     "src\\core\\lib\\iomgr\\tcp_server_utils_posix_noifaddrs.cc " +
-    "src\\core\\lib\\iomgr\\tcp_server_uv.cc " +
     "src\\core\\lib\\iomgr\\tcp_server_windows.cc " +
     "src\\core\\lib\\iomgr\\tcp_uv.cc " +
     "src\\core\\lib\\iomgr\\tcp_windows.cc " +
     "src\\core\\lib\\iomgr\\time_averaged_stats.cc " +
+    "src\\core\\lib\\iomgr\\timer.cc " +
+    "src\\core\\lib\\iomgr\\timer_custom.cc " +
     "src\\core\\lib\\iomgr\\timer_generic.cc " +
     "src\\core\\lib\\iomgr\\timer_heap.cc " +
     "src\\core\\lib\\iomgr\\timer_manager.cc " +
@@ -280,9 +297,9 @@ if (PHP_GRPC != "no") {
     "third_party\\nanopb\\pb_decode.c " +
     "third_party\\nanopb\\pb_encode.c " +
     "src\\core\\tsi\\transport_security.cc " +
-    "src\\core\\tsi\\transport_security_adapter.cc " +
     "src\\core\\ext\\transport\\chttp2\\client\\insecure\\channel_create.cc " +
     "src\\core\\ext\\transport\\chttp2\\client\\insecure\\channel_create_posix.cc " +
+    "src\\core\\ext\\transport\\chttp2\\client\\authority.cc " +
     "src\\core\\ext\\transport\\chttp2\\client\\chttp2_connector.cc " +
     "src\\core\\ext\\filters\\client_channel\\backup_poller.cc " +
     "src\\core\\ext\\filters\\client_channel\\channel_connectivity.cc " +
@@ -302,13 +319,15 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\filters\\client_channel\\resolver.cc " +
     "src\\core\\ext\\filters\\client_channel\\resolver_registry.cc " +
     "src\\core\\ext\\filters\\client_channel\\retry_throttle.cc " +
-    "src\\core\\ext\\filters\\client_channel\\status_util.cc " +
     "src\\core\\ext\\filters\\client_channel\\subchannel.cc " +
     "src\\core\\ext\\filters\\client_channel\\subchannel_index.cc " +
     "src\\core\\ext\\filters\\client_channel\\uri_parser.cc " +
     "src\\core\\ext\\filters\\deadline\\deadline_filter.cc " +
     "src\\core\\tsi\\alts_transport_security.cc " +
     "src\\core\\tsi\\fake_transport_security.cc " +
+    "src\\core\\tsi\\ssl\\session_cache\\ssl_session_boringssl.cc " +
+    "src\\core\\tsi\\ssl\\session_cache\\ssl_session_cache.cc " +
+    "src\\core\\tsi\\ssl\\session_cache\\ssl_session_openssl.cc " +
     "src\\core\\tsi\\ssl_transport_security.cc " +
     "src\\core\\tsi\\transport_security_grpc.cc " +
     "src\\core\\ext\\transport\\chttp2\\server\\chttp2_server.cc " +
@@ -325,7 +344,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\proto\\grpc\\lb\\v1\\load_balancer.pb.c " +
     "src\\core\\ext\\filters\\client_channel\\resolver\\fake\\fake_resolver.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\pick_first\\pick_first.cc " +
-    "src\\core\\ext\\filters\\client_channel\\lb_policy\\subchannel_list.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\round_robin\\round_robin.cc " +
     "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\c_ares\\dns_resolver_ares.cc " +
     "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\c_ares\\grpc_ares_ev_driver_posix.cc " +
@@ -338,6 +356,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\census\\grpc_context.cc " +
     "src\\core\\ext\\filters\\max_age\\max_age_filter.cc " +
     "src\\core\\ext\\filters\\message_size\\message_size_filter.cc " +
+    "src\\core\\ext\\filters\\http\\client_authority_filter.cc " +
     "src\\core\\ext\\filters\\workarounds\\workaround_cronet_compression_filter.cc " +
     "src\\core\\ext\\filters\\workarounds\\workaround_utils.cc " +
     "src\\core\\plugin_registry\\grpc_plugin_registry.cc " +
@@ -410,7 +429,6 @@ if (PHP_GRPC != "no") {
     "third_party\\boringssl\\crypto\\cpu-intel.c " +
     "third_party\\boringssl\\crypto\\cpu-ppc64le.c " +
     "third_party\\boringssl\\crypto\\crypto.c " +
-    "third_party\\boringssl\\crypto\\curve25519\\curve25519.c " +
     "third_party\\boringssl\\crypto\\curve25519\\spake25519.c " +
     "third_party\\boringssl\\crypto\\curve25519\\x25519-x86_64.c " +
     "third_party\\boringssl\\crypto\\dh\\check.c " +
@@ -596,6 +614,7 @@ if (PHP_GRPC != "no") {
     "third_party\\boringssl\\ssl\\tls13_server.cc " +
     "third_party\\boringssl\\ssl\\tls_method.cc " +
     "third_party\\boringssl\\ssl\\tls_record.cc " +
+    "third_party\\boringssl\\third_party\\fiat\\curve25519.c " +
     "third_party\\zlib\\adler32.c " +
     "third_party\\zlib\\compress.c " +
     "third_party\\zlib\\crc32.c " +
@@ -616,11 +635,13 @@ if (PHP_GRPC != "no") {
   EXTENSION("grpc", grpc_source, null,
     "/DOPENSSL_NO_ASM /D_GNU_SOURCE /DWIN32_LEAN_AND_MEAN "+
     "/D_HAS_EXCEPTIONS=0 /DNOMINMAX /DGRPC_ARES=0 /D_WIN32_WINNT=0x600 "+
+    "/DPB_FIELD_16BIT "+
     "/I"+configure_module_dirname+" "+
     "/I"+configure_module_dirname+"\\include "+
     "/I"+configure_module_dirname+"\\src\\php\\ext\\grpc "+
     "/I"+configure_module_dirname+"\\third_party\\boringssl\\include "+
-    "/I"+configure_module_dirname+"\\third_party\\zlib");
+    "/I"+configure_module_dirname+"\\third_party\\zlib "+
+    "/I"+configure_module_dirname+"\\third_party\\address_sorting\\include");
 
   base_dir = get_define('BUILD_DIR');
   FSO.CreateFolder(base_dir+"\\ext");
@@ -703,10 +724,13 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\tsi\\alts\\frame_protector");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\tsi\\alts\\handshaker");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\tsi\\alts\\zero_copy_frame_protector");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\tsi\\ssl");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\tsi\\ssl\\session_cache");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\php");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\php\\ext");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\php\\ext\\grpc");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\address_sorting");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\asn1");
@@ -745,6 +769,8 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\x509");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\crypto\\x509v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\ssl");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\third_party");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\third_party\\fiat");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\nanopb");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\zlib");
   _build_dirs = new Array();

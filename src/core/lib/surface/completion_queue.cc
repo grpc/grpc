@@ -390,7 +390,6 @@ static bool cq_event_queue_push(grpc_cq_event_queue* q, grpc_cq_completion* c) {
 
 static grpc_cq_completion* cq_event_queue_pop(grpc_cq_event_queue* q) {
   grpc_cq_completion* c = nullptr;
-  grpc_core::ExecCtx exec_ctx;
 
   if (gpr_spinlock_trylock(&q->queue_lock)) {
     GRPC_STATS_INC_CQ_EV_QUEUE_TRYLOCK_SUCCESSES();

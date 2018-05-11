@@ -26,7 +26,6 @@
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include "src/core/ext/transport/chttp2/transport/frame.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -40,8 +39,9 @@ typedef enum {
   GRPC_CHTTP2_DATA_ERROR
 } grpc_chttp2_stream_state;
 
-typedef struct grpc_chttp2_incoming_byte_stream
-    grpc_chttp2_incoming_byte_stream;
+namespace grpc_core {
+class Chttp2IncomingByteStream;
+}  // namespace grpc_core
 
 typedef struct {
   grpc_chttp2_stream_state state;
@@ -50,7 +50,7 @@ typedef struct {
   grpc_error* error;
 
   bool is_frame_compressed;
-  grpc_chttp2_incoming_byte_stream* parsing_frame;
+  grpc_core::Chttp2IncomingByteStream* parsing_frame;
 } grpc_chttp2_data_parser;
 
 /* initialize per-stream state for data frame parsing */
@@ -79,6 +79,6 @@ void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer* inbuf,
 grpc_error* grpc_deframe_unprocessed_incoming_frames(
     grpc_chttp2_data_parser* p, grpc_chttp2_stream* s,
     grpc_slice_buffer* slices, grpc_slice* slice_out,
-    grpc_byte_stream** stream_out);
+    grpc_core::OrphanablePtr<grpc_core::ByteStream>* stream_out);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_DATA_H */

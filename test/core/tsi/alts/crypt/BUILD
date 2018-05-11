@@ -16,16 +16,7 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_p
 
 licenses(["notice"])  # Apache v2
 
-grpc_package(name = "crypt", visibility = "public")
-
-grpc_cc_library(
-    name = "alts_crypt_test_util",
-    srcs = ["gsec_test_util.cc"],
-    hdrs = ["gsec_test_util.h"],
-    deps = [
-        "//:grpc",
-    ],
-)
+grpc_package(name = "test/core/tsi/alts/crypt", visibility = "public")
 
 grpc_cc_test(
     name = "alts_crypt_test",
@@ -33,6 +24,19 @@ grpc_cc_test(
     language = "C++",
     deps = [
         ":alts_crypt_test_util",
+        "//:alts_frame_protector",
+        "//:gpr",
         "//:grpc",
     ],
 )
+
+grpc_cc_library(
+    name = "alts_crypt_test_util",
+    srcs = ["gsec_test_util.cc"],
+    hdrs = ["gsec_test_util.h"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+    ],
+)
+

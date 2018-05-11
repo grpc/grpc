@@ -160,8 +160,17 @@ namespace Grpc.Core
             var deadlineTimespec = deadline.HasValue ? Timespec.FromDateTime(deadline.Value) : Timespec.InfFuture;
             lock (myLock)
             {
-                // pass "tcs" as "state" for WatchConnectivityStateHandler.
-                handle.WatchConnectivityState(lastObservedState, deadlineTimespec, completionQueue, WatchConnectivityStateHandler, tcs);
+                if (handle.IsClosed)
+                {
+                    // If channel has been already shutdown and handle was disposed, we would end up with
+                    // an abandoned completion added to the completion registry. Instead, we make sure we fail early.
+                    throw new ObjectDisposedException(nameof(handle), "Channel handle has already been disposed.");
+                }
+                else
+                {
+                    // pass "tcs" as "state" for WatchConnectivityStateHandler.
+                    handle.WatchConnectivityState(lastObservedState, deadlineTimespec, completionQueue, WatchConnectivityStateHandler, tcs);
+                }
             }
             return tcs.Task;
         }

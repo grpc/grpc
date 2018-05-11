@@ -112,10 +112,6 @@ export CFLAGS="-I$ROOT/include -std=gnu99 -fno-wrapv $CFLAGS"
 export GRPC_PYTHON_BUILD_WITH_CYTHON=1
 export LANG=en_US.UTF-8
 
-# Default python on the host to fall back to when instantiating e.g. the
-# virtualenv.
-HOST_PYTHON=${HOST_PYTHON:-python}
-
 # If ccache is available on Linux, use it.
 if [ "$(is_linux)" ]; then
   # We're not on Darwin (Mac OS X)
@@ -132,15 +128,15 @@ fi
 # Perform build operations #
 ############################
 
-# Instnatiate the virtualenv, preferring to do so from the relevant python
-# version. Even if these commands fail (e.g. on Windows due to name conflicts)
-# it's possible that the virtualenv is still usable and we trust the tester to
-# be able to 'figure it out' instead of us e.g. doing potentially expensive and
-# unnecessary error recovery by `rm -rf`ing the virtualenv.
-($PYTHON -m virtualenv "$VENV" ||
- $HOST_PYTHON -m virtualenv -p "$PYTHON" "$VENV" ||
- true)
+# Instantiate the virtualenv from the Python version passed in.
+$PYTHON -m pip install virtualenv
+$PYTHON -m virtualenv "$VENV"
 VENV_PYTHON=$(script_realpath "$VENV/$VENV_RELATIVE_PYTHON")
+
+# See https://github.com/grpc/grpc/issues/14815 for more context. We cannot rely
+# on pip to upgrade itself because if pip is too old, it may not have the required
+# TLS version to run `pip install`.
+curl https://bootstrap.pypa.io/get-pip.py | $VENV_PYTHON
 
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
 # Python gets confused when parsing paths.
@@ -152,7 +148,13 @@ pip_install_dir() {
   cd "$PWD"
 }
 
-$VENV_PYTHON -m pip install --upgrade pip==9.0.1
+case "$VENV" in
+  *gevent*)
+  $VENV_PYTHON -m pip install gevent
+  ;;
+esac
+
+$VENV_PYTHON -m pip install --upgrade pip==10.0.1
 $VENV_PYTHON -m pip install setuptools
 $VENV_PYTHON -m pip install cython
 $VENV_PYTHON -m pip install six enum34 protobuf futures

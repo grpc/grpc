@@ -20,6 +20,53 @@ import time
 cdef int _INTERRUPT_CHECK_PERIOD_MS = 200
 
 
+cdef grpc_event _next(grpc_completion_queue *c_completion_queue, deadline):
+  cdef gpr_timespec c_increment
+  cdef gpr_timespec c_timeout
+  cdef gpr_timespec c_deadline
+  c_increment = gpr_time_from_millis(_INTERRUPT_CHECK_PERIOD_MS, GPR_TIMESPAN)
+  if deadline is None:
+    c_deadline = gpr_inf_future(GPR_CLOCK_REALTIME)
+  else:
+    c_deadline = _timespec_from_time(deadline)
+
+  with nogil:
+    while True:
+      c_timeout = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), c_increment)
+      if gpr_time_cmp(c_timeout, c_deadline) > 0:
+        c_timeout = c_deadline
+      c_event = grpc_completion_queue_next(c_completion_queue, c_timeout, NULL)
+      if (c_event.type != GRPC_QUEUE_TIMEOUT or
+          gpr_time_cmp(c_timeout, c_deadline) == 0):
+        break
+
+      # Handle any signals
+      with gil:
+        cpython.PyErr_CheckSignals()
+  return c_event
+
+
+cdef _interpret_event(grpc_event c_event):
+  cdef _Tag tag
+  if c_event.type == GRPC_QUEUE_TIMEOUT:
+    # NOTE(nathaniel): For now we coopt ConnectivityEvent here.
+    return None, ConnectivityEvent(GRPC_QUEUE_TIMEOUT, False, None)
+  elif c_event.type == GRPC_QUEUE_SHUTDOWN:
+    # NOTE(nathaniel): For now we coopt ConnectivityEvent here.
+    return None, ConnectivityEvent(GRPC_QUEUE_SHUTDOWN, False, None)
+  else:
+    tag = <_Tag>c_event.tag
+    # We receive event tags only after they've been inc-ref'd elsewhere in
+    # the code.
+    cpython.Py_DECREF(tag)
+    return tag, tag.event(c_event)
+
+
+cdef _latent_event(grpc_completion_queue *c_completion_queue, object deadline):
+  cdef grpc_event c_event = _next(c_completion_queue, deadline)
+  return _interpret_event(c_event)
+
+
 cdef class CompletionQueue:
 
   def __cinit__(self, shutdown_cq=False):
@@ -36,48 +83,16 @@ cdef class CompletionQueue:
     self.is_shutting_down = False
     self.is_shutdown = False
 
-  cdef _interpret_event(self, grpc_event event):
-    cdef _Tag tag = None
-    if event.type == GRPC_QUEUE_TIMEOUT:
-      # NOTE(nathaniel): For now we coopt ConnectivityEvent here.
-      return ConnectivityEvent(GRPC_QUEUE_TIMEOUT, False, None)
-    elif event.type == GRPC_QUEUE_SHUTDOWN:
+  cdef _interpret_event(self, grpc_event c_event):
+    unused_tag, event = _interpret_event(c_event)
+    if event.completion_type == GRPC_QUEUE_SHUTDOWN:
       self.is_shutdown = True
-      # NOTE(nathaniel): For now we coopt ConnectivityEvent here.
-      return ConnectivityEvent(GRPC_QUEUE_TIMEOUT, True, None)
-    else:
-      tag = <_Tag>event.tag
-      # We receive event tags only after they've been inc-ref'd elsewhere in
-      # the code.
-      cpython.Py_DECREF(tag)
-      return tag.event(event)
+    return event
 
+  # We name this 'poll' to avoid problems with CPython's expectations for
+  # 'special' methods (like next and __next__).
   def poll(self, deadline=None):
-    # We name this 'poll' to avoid problems with CPython's expectations for
-    # 'special' methods (like next and __next__).
-    cdef gpr_timespec c_increment
-    cdef gpr_timespec c_timeout
-    cdef gpr_timespec c_deadline
-    if deadline is None:
-      c_deadline = gpr_inf_future(GPR_CLOCK_REALTIME)
-    else:
-      c_deadline = _timespec_from_time(deadline)
-    with nogil:
-      c_increment = gpr_time_from_millis(_INTERRUPT_CHECK_PERIOD_MS, GPR_TIMESPAN)
-
-      while True:
-        c_timeout = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), c_increment)
-        if gpr_time_cmp(c_timeout, c_deadline) > 0:
-          c_timeout = c_deadline
-        event = grpc_completion_queue_next(
-          self.c_completion_queue, c_timeout, NULL)
-        if event.type != GRPC_QUEUE_TIMEOUT or gpr_time_cmp(c_timeout, c_deadline) == 0:
-          break;
-
-        # Handle any signals
-        with gil:
-          cpython.PyErr_CheckSignals()
-    return self._interpret_event(event)
+    return self._interpret_event(_next(self.c_completion_queue, deadline))
 
   def shutdown(self):
     with nogil:

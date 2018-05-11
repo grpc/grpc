@@ -32,6 +32,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
+#include <inttypes.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -43,6 +44,10 @@ static long gettid(void) { return syscall(__NR_gettid); }
 
 void gpr_log(const char* file, int line, gpr_log_severity severity,
              const char* format, ...) {
+  /* Avoid message construction if gpr_log_message won't log */
+  if (gpr_should_log(severity) == 0) {
+    return;
+  }
   char* message = nullptr;
   va_list args;
   va_start(args, format);

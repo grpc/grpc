@@ -177,8 +177,6 @@ static void simple_request_body(grpc_end2end_test_config config,
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-  validate_host_override_string("foo.test.google.fr:1234", call_details.host,
-                                config);
   GPR_ASSERT(was_cancelled == 1);
 
   grpc_slice_unref(details);
@@ -196,9 +194,7 @@ static void simple_request_body(grpc_end2end_test_config config,
 static void test_invoke_simple_request(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f =
       begin_test(config, "test_invoke_simple_request", nullptr, nullptr);
-  void* rc = grpc_channel_register_call(
-      f.client, "/foo",
-      get_host_override_string("foo.test.google.fr:1234", config), nullptr);
+  void* rc = grpc_channel_register_call(f.client, "/foo", nullptr, nullptr);
 
   simple_request_body(config, f, rc);
   end_test(&f);
@@ -209,9 +205,7 @@ static void test_invoke_10_simple_requests(grpc_end2end_test_config config) {
   int i;
   grpc_end2end_test_fixture f =
       begin_test(config, "test_invoke_10_simple_requests", nullptr, nullptr);
-  void* rc = grpc_channel_register_call(
-      f.client, "/foo",
-      get_host_override_string("foo.test.google.fr:1234", config), nullptr);
+  void* rc = grpc_channel_register_call(f.client, "/foo", nullptr, nullptr);
 
   for (i = 0; i < 10; i++) {
     simple_request_body(config, f, rc);

@@ -168,11 +168,8 @@ def _run_request_pipe_thread(request_iterator, request_consumer,
                 return
         request_consumer.terminate()
 
-    def stop_request_pipe(timeout):  # pylint: disable=unused-argument
-        thread_joined.set()
-
-    request_pipe_thread = _common.CleanupThread(
-        stop_request_pipe, target=pipe_requests)
+    request_pipe_thread = threading.Thread(target=pipe_requests)
+    request_pipe_thread.daemon = True
     request_pipe_thread.start()
 
 

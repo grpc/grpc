@@ -45,6 +45,8 @@ EXPORTS
     grpc_insecure_channel_create
     grpc_lame_client_channel_create
     grpc_channel_destroy
+    grpc_channel_get_trace
+    grpc_channel_get_uuid
     grpc_call_cancel
     grpc_call_cancel_with_status
     grpc_call_ref
@@ -83,6 +85,9 @@ EXPORTS
     grpc_auth_context_add_property
     grpc_auth_context_add_cstring_property
     grpc_auth_context_set_peer_identity_property_name
+    grpc_ssl_session_cache_create_lru
+    grpc_ssl_session_cache_destroy
+    grpc_ssl_session_cache_create_channel_arg
     grpc_channel_credentials_release
     grpc_google_default_credentials_create
     grpc_set_ssl_roots_override_callback
@@ -110,6 +115,12 @@ EXPORTS
     grpc_server_add_secure_http2_port
     grpc_call_set_credentials
     grpc_server_credentials_set_auth_metadata_processor
+    grpc_alts_credentials_client_options_create
+    grpc_alts_credentials_server_options_create
+    grpc_alts_credentials_client_options_add_target_service_account
+    grpc_alts_credentials_options_destroy
+    grpc_alts_credentials_create
+    grpc_alts_server_credentials_create
     grpc_raw_byte_buffer_create
     grpc_raw_compressed_byte_buffer_create
     grpc_byte_buffer_copy
@@ -180,6 +191,7 @@ EXPORTS
     gpr_cpu_current_cpu
     gpr_log_severity_string
     gpr_log
+    gpr_should_log
     gpr_log_message
     gpr_set_log_verbosity
     gpr_log_verbosity_init

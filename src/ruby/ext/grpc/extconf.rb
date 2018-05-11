@@ -84,7 +84,7 @@ if grpc_config == 'gcov'
 end
 
 if grpc_config == 'dbg'
-  $CFLAGS << ' -O0'
+  $CFLAGS << ' -O0 -ggdb3'
 end
 
 $LDFLAGS << ' -Wl,-wrap,memcpy' if RUBY_PLATFORM =~ /linux/
@@ -94,7 +94,6 @@ $CFLAGS << ' -std=c99 '
 $CFLAGS << ' -Wall '
 $CFLAGS << ' -Wextra '
 $CFLAGS << ' -pedantic '
-$CFLAGS << ' -Wno-format '
 
 output = File.join('grpc', 'grpc_c')
 puts 'Generating Makefile for ' + output

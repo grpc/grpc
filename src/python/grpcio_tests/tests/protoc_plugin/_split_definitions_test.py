@@ -271,6 +271,7 @@ class _Test(six.with_metaclass(abc.ABCMeta, unittest.TestCase)):
             stub = services_module.TestServiceStub(channel)
             response = stub.Call(self._messages_pb2.Request())
             self.assertEqual(self._messages_pb2.Response(), response)
+            server.stop(None)
 
 
 def _create_test_case_class(split_proto, protoc_style):

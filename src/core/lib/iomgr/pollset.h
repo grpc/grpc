@@ -38,6 +38,24 @@ extern grpc_core::DebugOnlyTraceFlag grpc_trace_fd_refcount;
 typedef struct grpc_pollset grpc_pollset;
 typedef struct grpc_pollset_worker grpc_pollset_worker;
 
+typedef struct grpc_pollset_vtable {
+  void (*global_init)(void);
+  void (*global_shutdown)(void);
+  void (*init)(grpc_pollset* pollset, gpr_mu** mu);
+  void (*shutdown)(grpc_pollset* pollset, grpc_closure* closure);
+  void (*destroy)(grpc_pollset* pollset);
+  grpc_error* (*work)(grpc_pollset* pollset, grpc_pollset_worker** worker,
+                      grpc_millis deadline);
+  grpc_error* (*kick)(grpc_pollset* pollset,
+                      grpc_pollset_worker* specific_worker);
+  size_t (*pollset_size)(void);
+} grpc_pollset_vtable;
+
+void grpc_set_pollset_vtable(grpc_pollset_vtable* vtable);
+
+void grpc_pollset_global_init(void);
+void grpc_pollset_global_shutdown(void);
+
 size_t grpc_pollset_size(void);
 /* Initialize a pollset: assumes *pollset contains all zeros */
 void grpc_pollset_init(grpc_pollset* pollset, gpr_mu** mu);

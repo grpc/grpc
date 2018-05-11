@@ -22,10 +22,10 @@
 #include <sstream>
 #include <string>
 
-#include <grpc++/channel.h>
-#include <grpc++/client_context.h>
-#include <grpc++/create_channel.h>
 #include <grpc/support/log.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/create_channel.h>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 

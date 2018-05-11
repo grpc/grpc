@@ -117,7 +117,7 @@ static grpc_end2end_test_config configs[] = {
          FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
          FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
-     chttp2_create_fixture_fullstack, chttp2_init_client_fullstack,
+     nullptr, chttp2_create_fixture_fullstack, chttp2_init_client_fullstack,
      chttp2_init_server_fullstack, chttp2_tear_down_fullstack},
 };
 

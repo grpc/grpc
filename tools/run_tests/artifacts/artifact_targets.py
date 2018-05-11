@@ -31,7 +31,8 @@ def create_docker_jobspec(name,
                           timeout_retries=0,
                           timeout_seconds=30 * 60,
                           docker_base_image=None,
-                          extra_docker_args=None):
+                          extra_docker_args=None,
+                          verbose_success=False):
     """Creates jobspec for a task running under docker."""
     environ = environ.copy()
     environ['RUN_COMMAND'] = shell_command
@@ -57,7 +58,8 @@ def create_docker_jobspec(name,
         shortname='build_artifact.%s' % (name),
         timeout_seconds=timeout_seconds,
         flake_retries=flake_retries,
-        timeout_retries=timeout_retries)
+        timeout_retries=timeout_retries,
+        verbose_success=verbose_success)
     return jobspec
 
 
@@ -69,7 +71,8 @@ def create_jobspec(name,
                    timeout_retries=0,
                    timeout_seconds=30 * 60,
                    use_workspace=False,
-                   cpu_cost=1.0):
+                   cpu_cost=1.0,
+                   verbose_success=False):
     """Creates jobspec."""
     environ = environ.copy()
     if use_workspace:
@@ -88,7 +91,8 @@ def create_jobspec(name,
         flake_retries=flake_retries,
         timeout_retries=timeout_retries,
         shell=shell,
-        cpu_cost=cpu_cost)
+        cpu_cost=cpu_cost,
+        verbose_success=verbose_success)
     return jobspec
 
 
@@ -177,7 +181,7 @@ class PythonArtifact:
                 self.name,
                 ['tools/run_tests/artifacts/build_artifact_python.sh'],
                 environ=environ,
-                timeout_seconds=60 * 60,
+                timeout_seconds=60 * 60 * 2,
                 use_workspace=True)
 
     def __str__(self):
@@ -218,7 +222,13 @@ class CSharpExtArtifact:
         return []
 
     def build_jobspec(self):
-        if self.platform == 'windows':
+        if self.arch == 'android':
+            return create_docker_jobspec(
+                self.name,
+                'tools/dockerfile/grpc_artifact_android_ndk',
+                'tools/run_tests/artifacts/build_artifact_csharp_android.sh',
+                environ={})
+        elif self.platform == 'windows':
             cmake_arch_option = 'Win32' if self.arch == 'x86' else self.arch
             return create_jobspec(
                 self.name, [
@@ -317,6 +327,7 @@ class ProtocArtifact:
                     self.name,
                     ['tools/run_tests/artifacts/build_artifact_protoc.sh'],
                     environ=environ,
+                    timeout_seconds=60 * 60,
                     use_workspace=True)
         else:
             generator = 'Visual Studio 14 2015 Win64' if self.arch == 'x64' else 'Visual Studio 14 2015'
@@ -337,6 +348,7 @@ def targets():
         for Cls in (CSharpExtArtifact, ProtocArtifact)
         for platform in ('linux', 'macos', 'windows') for arch in ('x86', 'x64')
     ] + [
+        CSharpExtArtifact('linux', 'android'),
         PythonArtifact('linux', 'x86', 'cp27-cp27m'),
         PythonArtifact('linux', 'x86', 'cp27-cp27mu'),
         PythonArtifact('linux', 'x86', 'cp34-cp34m'),

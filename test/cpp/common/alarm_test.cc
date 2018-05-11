@@ -16,8 +16,8 @@
  *
  */
 
-#include <grpc++/alarm.h>
-#include <grpc++/completion_queue.h>
+#include <grpcpp/alarm.h>
+#include <grpcpp/completion_queue.h>
 #include <thread>
 
 #include <gtest/gtest.h>
@@ -36,7 +36,7 @@ TEST(AlarmTest, RegularExpiry) {
   void* output_tag;
   bool ok;
   const CompletionQueue::NextStatus status =
-      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(2));
+      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
 
   EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
   EXPECT_TRUE(ok);
@@ -57,7 +57,7 @@ TEST(AlarmTest, MultithreadedRegularExpiry) {
 
   std::thread t2([&cq, &ok, &output_tag, &status] {
     status =
-        cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(2));
+        cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
   });
 
   t1.join();
@@ -75,7 +75,7 @@ TEST(AlarmTest, DeprecatedRegularExpiry) {
   void* output_tag;
   bool ok;
   const CompletionQueue::NextStatus status =
-      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(2));
+      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
 
   EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
   EXPECT_TRUE(ok);
@@ -91,7 +91,7 @@ TEST(AlarmTest, MoveConstructor) {
   void* output_tag;
   bool ok;
   const CompletionQueue::NextStatus status =
-      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(2));
+      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
   EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
   EXPECT_TRUE(ok);
   EXPECT_EQ(junk, output_tag);
@@ -108,7 +108,7 @@ TEST(AlarmTest, MoveAssignment) {
   void* output_tag;
   bool ok;
   const CompletionQueue::NextStatus status =
-      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(2));
+      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
 
   EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
   EXPECT_TRUE(ok);
@@ -126,7 +126,7 @@ TEST(AlarmTest, RegularExpiryChrono) {
   void* output_tag;
   bool ok;
   const CompletionQueue::NextStatus status =
-      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(2));
+      cq.AsyncNext(&output_tag, &ok, grpc_timeout_seconds_to_deadline(10));
 
   EXPECT_EQ(status, CompletionQueue::GOT_EVENT);
   EXPECT_TRUE(ok);
@@ -169,7 +169,7 @@ TEST(AlarmTest, Cancellation) {
   CompletionQueue cq;
   void* junk = reinterpret_cast<void*>(1618033);
   Alarm alarm;
-  alarm.Set(&cq, grpc_timeout_seconds_to_deadline(2), junk);
+  alarm.Set(&cq, grpc_timeout_seconds_to_deadline(10), junk);
   alarm.Cancel();
 
   void* output_tag;
@@ -187,7 +187,7 @@ TEST(AlarmTest, SetDestruction) {
   void* junk = reinterpret_cast<void*>(1618033);
   {
     Alarm alarm;
-    alarm.Set(&cq, grpc_timeout_seconds_to_deadline(2), junk);
+    alarm.Set(&cq, grpc_timeout_seconds_to_deadline(10), junk);
   }
 
   void* output_tag;

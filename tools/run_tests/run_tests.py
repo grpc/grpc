@@ -204,19 +204,28 @@ def _is_use_docker_child():
 
 
 _PythonConfigVars = collections.namedtuple('_ConfigVars', [
-    'shell', 'builder', 'builder_prefix_arguments', 'venv_relative_python',
-    'toolchain', 'runner'
+    'shell',
+    'builder',
+    'builder_prefix_arguments',
+    'venv_relative_python',
+    'toolchain',
+    'runner',
+    'test_name',
+    'iomgr_platform',
 ])
 
 
 def _python_config_generator(name, major, minor, bits, config_vars):
+    name += '_' + config_vars.iomgr_platform
     return PythonConfig(
         name, config_vars.shell + config_vars.builder +
         config_vars.builder_prefix_arguments + [
             _python_pattern_function(major=major, minor=minor, bits=bits)
         ] + [name] + config_vars.venv_relative_python + config_vars.toolchain,
-        config_vars.shell + config_vars.runner +
-        [os.path.join(name, config_vars.venv_relative_python[0])])
+        config_vars.shell + config_vars.runner + [
+            os.path.join(name, config_vars.venv_relative_python[0]),
+            config_vars.test_name
+        ])
 
 
 def _pypy_config_generator(name, major, config_vars):
@@ -281,7 +290,7 @@ class CLanguage(object):
             self._docker_distro, self._make_options = self._compiler_options(
                 self.args.use_docker, self.args.compiler)
         if args.iomgr_platform == "uv":
-            cflags = '-DGRPC_UV -DGRPC_UV_THREAD_CHECK'
+            cflags = '-DGRPC_UV -DGRPC_CUSTOM_IOMGR_THREAD_CHECK -DGRPC_CUSTOM_SOCKET '
             try:
                 cflags += subprocess.check_output(
                     ['pkg-config', '--cflags', 'libuv']).strip() + ' '
@@ -770,12 +779,16 @@ class PythonLanguage(object):
             venv_relative_python = ['bin/python']
             toolchain = ['unix']
 
+        test_command = 'test_lite'
+        if args.iomgr_platform == 'gevent':
+            test_command = 'test_gevent'
         runner = [
             os.path.abspath('tools/run_tests/helper_scripts/run_python.sh')
         ]
-        config_vars = _PythonConfigVars(shell, builder,
-                                        builder_prefix_arguments,
-                                        venv_relative_python, toolchain, runner)
+
+        config_vars = _PythonConfigVars(
+            shell, builder, builder_prefix_arguments, venv_relative_python,
+            toolchain, runner, test_command, args.iomgr_platform)
         python27_config = _python_config_generator(
             name='py27',
             major='2',
@@ -908,9 +921,6 @@ class CSharpLanguage(object):
             if self.platform == 'mac':
                 # TODO(jtattermusch): EMBED_ZLIB=true currently breaks the mac build
                 self._make_options = ['EMBED_OPENSSL=true']
-                if self.args.compiler != 'coreclr':
-                    # On Mac, official distribution of mono is 32bit.
-                    self._make_options += ['ARCH_FLAGS=-m32', 'LDFLAGS=-m32']
             else:
                 self._make_options = ['EMBED_OPENSSL=true', 'EMBED_ZLIB=true']
 
@@ -931,6 +941,9 @@ class CSharpLanguage(object):
             assembly_subdir += '/net45'
             if self.platform == 'windows':
                 runtime_cmd = []
+            elif self.platform == 'mac':
+                # mono before version 5.2 on MacOS defaults to 32bit runtime
+                runtime_cmd = ['mono', '--arch=64']
             else:
                 runtime_cmd = ['mono']
 
@@ -1341,7 +1354,7 @@ argp.add_argument(
 )
 argp.add_argument(
     '--iomgr_platform',
-    choices=['native', 'uv'],
+    choices=['native', 'uv', 'gevent'],
     default='native',
     help='Selects iomgr platform to build on')
 argp.add_argument(
@@ -1407,16 +1420,18 @@ argp.add_argument(
     nargs='?',
     help='Upload test results to a specified BQ table.')
 argp.add_argument(
-    '--disable_auto_set_flakes',
+    '--auto_set_flakes',
     default=False,
     const=True,
     action='store_const',
-    help='Disable rerunning historically flaky tests')
+    help=
+    'Allow repeated runs for tests that have been failing recently (based on BQ historical data).'
+)
 args = argp.parse_args()
 
 flaky_tests = set()
 shortname_to_cpu = {}
-if not args.disable_auto_set_flakes:
+if args.auto_set_flakes:
     try:
         for test in get_bqtest_data():
             if test.flaky: flaky_tests.add(test.name)

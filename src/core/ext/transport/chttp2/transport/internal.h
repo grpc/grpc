@@ -203,18 +203,58 @@ typedef struct grpc_chttp2_write_cb {
   struct grpc_chttp2_write_cb* next;
 } grpc_chttp2_write_cb;
 
-/* forward declared in frame_data.h */
-struct grpc_chttp2_incoming_byte_stream {
-  grpc_byte_stream base;
-  gpr_refcount refs;
+namespace grpc_core {
 
-  grpc_chttp2_transport* transport; /* immutable */
-  grpc_chttp2_stream* stream;       /* immutable */
+class Chttp2IncomingByteStream : public ByteStream {
+ public:
+  Chttp2IncomingByteStream(grpc_chttp2_transport* transport,
+                           grpc_chttp2_stream* stream, uint32_t frame_size,
+                           uint32_t flags);
+
+  void Orphan() override;
+
+  bool Next(size_t max_size_hint, grpc_closure* on_complete) override;
+  grpc_error* Pull(grpc_slice* slice) override;
+  void Shutdown(grpc_error* error) override;
+
+  // TODO(roth): When I converted this class to C++, I wanted to make it
+  // inherit from RefCounted or InternallyRefCounted instead of continuing
+  // to use its own custom ref-counting code.  However, that would require
+  // using multiple inheritence, which sucks in general.  And to make matters
+  // worse, it causes problems with our New<> and Delete<> wrappers.
+  // Specifically, unless RefCounted is first in the list of parent classes,
+  // it will see a different value of the address of the object than the one
+  // we actually allocated, in which case gpr_free() will be called on a
+  // different address than the one we got from gpr_malloc(), thus causing a
+  // crash.  Given the fragility of depending on that, as well as a desire to
+  // avoid multiple inheritence in general, I've decided to leave this
+  // alone for now.  We can revisit this once we're able to link against
+  // libc++, at which point we can eliminate New<> and Delete<> and
+  // switch to std::shared_ptr<>.
+  void Ref();
+  void Unref();
+
+  void PublishError(grpc_error* error);
+
+  grpc_error* Push(grpc_slice slice, grpc_slice* slice_out);
+
+  grpc_error* Finished(grpc_error* error, bool reset_on_error);
+
+  uint32_t remaining_bytes() const { return remaining_bytes_; }
+
+ private:
+  static void NextLocked(void* arg, grpc_error* error_ignored);
+  static void OrphanLocked(void* arg, grpc_error* error_ignored);
+
+  grpc_chttp2_transport* transport_;  // Immutable.
+  grpc_chttp2_stream* stream_;        // Immutable.
+
+  gpr_refcount refs_;
 
   /* Accessed only by transport thread when stream->pending_byte_stream == false
    * Accessed only by application thread when stream->pending_byte_stream ==
    * true */
-  uint32_t remaining_bytes;
+  uint32_t remaining_bytes_;
 
   /* Accessed only by transport thread when stream->pending_byte_stream == false
    * Accessed only by application thread when stream->pending_byte_stream ==
@@ -223,10 +263,11 @@ struct grpc_chttp2_incoming_byte_stream {
     grpc_closure closure;
     size_t max_size_hint;
     grpc_closure* on_complete;
-  } next_action;
-  grpc_closure destroy_action;
-  grpc_closure finished_action;
+  } next_action_;
+  grpc_closure destroy_action_;
 };
+
+}  // namespace grpc_core
 
 typedef enum {
   GRPC_CHTTP2_KEEPALIVE_STATE_WAITING,
@@ -456,7 +497,7 @@ struct grpc_chttp2_stream {
   grpc_metadata_batch* send_trailing_metadata;
   grpc_closure* send_trailing_metadata_finished;
 
-  grpc_byte_stream* fetching_send_message;
+  grpc_core::OrphanablePtr<grpc_core::ByteStream> fetching_send_message;
   uint32_t fetched_send_message_length;
   grpc_slice fetching_slice;
   int64_t next_message_end_offset;
@@ -468,7 +509,7 @@ struct grpc_chttp2_stream {
   grpc_metadata_batch* recv_initial_metadata;
   grpc_closure* recv_initial_metadata_ready;
   bool* trailing_metadata_available;
-  grpc_byte_stream** recv_message;
+  grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message;
   grpc_closure* recv_message_ready;
   grpc_metadata_batch* recv_trailing_metadata;
   grpc_closure* recv_trailing_metadata_finished;
@@ -509,6 +550,11 @@ struct grpc_chttp2_stream {
   grpc_slice_buffer unprocessed_incoming_frames_buffer;
   grpc_closure* on_next;    /* protected by t combiner */
   bool pending_byte_stream; /* protected by t combiner */
+  // cached length of buffer to be used by the transport thread in cases where
+  // stream->pending_byte_stream == true. The value is saved before
+  // application threads are allowed to modify
+  // unprocessed_incoming_frames_buffer
+  size_t unprocessed_incoming_frames_buffer_cached_length;
   grpc_closure reset_byte_stream;
   grpc_error* byte_stream_error; /* protected by t combiner */
   bool received_last_frame;      /* protected by t combiner */
@@ -718,18 +764,6 @@ void grpc_chttp2_ref_transport(grpc_chttp2_transport* t, const char* reason,
 void grpc_chttp2_unref_transport(grpc_chttp2_transport* t);
 void grpc_chttp2_ref_transport(grpc_chttp2_transport* t);
 #endif
-
-grpc_chttp2_incoming_byte_stream* grpc_chttp2_incoming_byte_stream_create(
-    grpc_chttp2_transport* t, grpc_chttp2_stream* s, uint32_t frame_size,
-    uint32_t flags);
-grpc_error* grpc_chttp2_incoming_byte_stream_push(
-    grpc_chttp2_incoming_byte_stream* bs, grpc_slice slice,
-    grpc_slice* slice_out);
-grpc_error* grpc_chttp2_incoming_byte_stream_finished(
-    grpc_chttp2_incoming_byte_stream* bs, grpc_error* error,
-    bool reset_on_error);
-void grpc_chttp2_incoming_byte_stream_notify(
-    grpc_chttp2_incoming_byte_stream* bs, grpc_error* error);
 
 void grpc_chttp2_ack_ping(grpc_chttp2_transport* t, uint64_t id);
 

@@ -23,7 +23,10 @@ mkdir -p artifacts/
 
 # All the ruby packages have been built in the artifact phase already
 # and we only collect them here to deliver them to the distribtest phase.
-cp -r "$EXTERNAL_GIT_ROOT"/platform={windows,linux,macos}/artifacts/ruby_native_gem_*/* artifacts/ || true
+# Jenkins flow (deprecated)
+cp -r "${EXTERNAL_GIT_ROOT}"/platform={windows,linux,macos}/artifacts/ruby_native_gem_*/* artifacts/ || true
+# Kokoro flow
+cp -r "${EXTERNAL_GIT_ROOT}"/input_artifacts/ruby_native_gem_*/* artifacts/ || true
 
 well_known_protos=( any api compiler/plugin descriptor duration empty field_mask source_context struct timestamp type wrappers )
 
@@ -41,12 +44,20 @@ for arch in {x86,x64}; do
       ;;
   esac
   for plat in {windows,linux,macos}; do
-    input_dir="$EXTERNAL_GIT_ROOT/platform=${plat}/artifacts/protoc_${plat}_${arch}"
+    if [ "${KOKORO_JOB_NAME}" != "" ]
+    then
+      input_dir="${EXTERNAL_GIT_ROOT}/input_artifacts/protoc_${plat}_${arch}"
+    else
+      input_dir="${EXTERNAL_GIT_ROOT}/platform=${plat}/artifacts/protoc_${plat}_${arch}"
+    fi
     output_dir="$base/src/ruby/tools/bin/${ruby_arch}-${plat}"
     mkdir -p "$output_dir"/google/protobuf
     mkdir -p "$output_dir"/google/protobuf/compiler  # needed for plugin.proto
-    cp "$input_dir"/protoc* "$output_dir"/
-    cp "$input_dir"/grpc_ruby_plugin* "$output_dir"/
+    cp "$input_dir"/protoc* "$input_dir"/grpc_ruby_plugin* "$output_dir/"
+    if [[ "$plat" != "windows" ]]
+    then
+      chmod +x "$output_dir/protoc" "$output_dir/grpc_ruby_plugin"
+    fi
     for proto in "${well_known_protos[@]}"; do
       cp "$base/third_party/protobuf/src/google/protobuf/$proto.proto" "$output_dir/google/protobuf/$proto.proto"
     done

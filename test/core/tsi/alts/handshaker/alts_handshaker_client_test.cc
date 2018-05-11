@@ -54,11 +54,9 @@ static alts_tsi_event* alts_tsi_event_create_for_testing(bool is_client) {
                          : grpc_alts_credentials_server_options_create();
   if (is_client) {
     grpc_alts_credentials_client_options_add_target_service_account(
-        reinterpret_cast<grpc_alts_credentials_client_options*>(e->options),
-        ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT1);
+        e->options, ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT1);
     grpc_alts_credentials_client_options_add_target_service_account(
-        reinterpret_cast<grpc_alts_credentials_client_options*>(e->options),
-        ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT2);
+        e->options, ALTS_HANDSHAKER_CLIENT_TEST_TARGET_SERVICE_ACCOUNT2);
   }
   grpc_gcp_rpc_protocol_versions* versions = &e->options->rpc_versions;
   GPR_ASSERT(grpc_gcp_rpc_protocol_versions_set_max(
@@ -327,6 +325,9 @@ static void schedule_request_invalid_arg_test() {
              TSI_INVALID_ARGUMENT);
   GPR_ASSERT(alts_handshaker_client_next(nullptr, event, &config->out_frame) ==
              TSI_INVALID_ARGUMENT);
+
+  /* Check shutdown. */
+  alts_handshaker_client_shutdown(nullptr);
 
   /* Cleanup. */
   alts_tsi_event_destroy(event);
