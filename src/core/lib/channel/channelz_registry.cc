@@ -68,26 +68,10 @@ ChannelzRegistry::~ChannelzRegistry() {
   gpr_mu_destroy(&mu_);
 }
 
-intptr_t ChannelzRegistry::Register(grpc_core::ChannelTrace* channel_trace) {
-  intptr_t prior = gpr_atm_no_barrier_fetch_add(&uuid_, 1);
-  gpr_mu_lock(&mu_);
-  avl_ = grpc_avl_add(avl_, (void*)prior, channel_trace, nullptr);
-  gpr_mu_unlock(&mu_);
-  return prior;
-}
-
 void ChannelzRegistry::Unregister(intptr_t uuid) {
   gpr_mu_lock(&mu_);
   avl_ = grpc_avl_remove(avl_, (void*)uuid, nullptr);
   gpr_mu_unlock(&mu_);
-}
-
-grpc_core::ChannelTrace* ChannelzRegistry::Get(intptr_t uuid) {
-  gpr_mu_lock(&mu_);
-  grpc_core::ChannelTrace* ret = static_cast<grpc_core::ChannelTrace*>(
-      grpc_avl_get(avl_, (void*)uuid, nullptr));
-  gpr_mu_unlock(&mu_);
-  return ret;
 }
 
 }  // namespace grpc_core

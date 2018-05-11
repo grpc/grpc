@@ -45,13 +45,29 @@ class ChannelzRegistry {
   // Returned the singleton instance of ChannelzRegistry;
   static ChannelzRegistry* Default();
 
-  // globally registers a ChannelTrace. Returns its unique uuid
-  intptr_t Register(grpc_core::ChannelTrace* channel_trace);
-  // globally unregisters the ChannelTrace that is associated to uuid.
+  // globally registers a channelz Object. Returns its unique uuid
+  template <typename Object>
+  intptr_t Register(Object* object) {
+    intptr_t prior = gpr_atm_no_barrier_fetch_add(&uuid_, 1);
+    gpr_mu_lock(&mu_);
+    avl_ = grpc_avl_add(avl_, (void*)prior, object, nullptr);
+    gpr_mu_unlock(&mu_);
+    return prior;
+  }
+
+  // globally unregisters the object that is associated to uuid.
   void Unregister(intptr_t uuid);
+
   // if object with uuid has previously been registered, returns the
-  // ChannelTrace associated with that uuid. Else returns nullptr.
-  grpc_core::ChannelTrace* Get(intptr_t uuid);
+  // Object associated with that uuid. Else returns nullptr.
+  template <typename Object>
+  Object* Get(intptr_t uuid) {
+    gpr_mu_lock(&mu_);
+    Object* ret =
+        static_cast<Object*>(grpc_avl_get(avl_, (void*)uuid, nullptr));
+    gpr_mu_unlock(&mu_);
+    return ret;
+  }
 
  private:
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
