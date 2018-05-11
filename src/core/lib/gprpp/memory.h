@@ -27,6 +27,17 @@
 #include <memory>
 #include <utility>
 
+// Add this to a class that want to use Delete(), but has a private or
+// protected destructor.
+#define GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE \
+  template <typename T>                           \
+  friend void Delete(T*);
+// Add this to a class that want to use New(), but has a private or
+// protected constructor.
+#define GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW \
+  template <typename T, typename... Args>      \
+  friend T* New(Args&&...);
+
 namespace grpc_core {
 
 // The alignment of memory returned by gpr_malloc().
