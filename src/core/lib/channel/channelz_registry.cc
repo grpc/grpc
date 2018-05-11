@@ -18,63 +18,76 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
-#include "src/core/lib/avl/avl.h"
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/memory.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-// file global lock and avl.
-static gpr_mu g_mu;
-static grpc_avl g_avl;
-static gpr_atm g_uuid = 0;
+namespace grpc_core {
+namespace {
 
-// avl vtable for uuid (intptr_t) -> ChannelTrace
+// singleton instance of the registry.
+ChannelzRegistry* g_channelz_registry = nullptr;
+
+// avl vtable for uuid (intptr_t) -> channelz_obj (void*)
 // this table is only looking, it does not own anything.
-static void destroy_intptr(void* not_used, void* user_data) {}
-static void* copy_intptr(void* key, void* user_data) { return key; }
-static long compare_intptr(void* key1, void* key2, void* user_data) {
+void destroy_intptr(void* not_used, void* user_data) {}
+void* copy_intptr(void* key, void* user_data) { return key; }
+long compare_intptr(void* key1, void* key2, void* user_data) {
   return GPR_ICMP(key1, key2);
 }
 
-static void destroy_channel_trace(void* trace, void* user_data) {}
-static void* copy_channel_trace(void* trace, void* user_data) { return trace; }
-static const grpc_avl_vtable avl_vtable = {
-    destroy_intptr, copy_intptr, compare_intptr, destroy_channel_trace,
-    copy_channel_trace};
+void destroy_channelz_obj(void* channelz_obj, void* user_data) {}
+void* copy_channelz_obj(void* channelz_obj, void* user_data) {
+  return channelz_obj;
+}
+const grpc_avl_vtable avl_vtable = {destroy_intptr, copy_intptr, compare_intptr,
+                                    destroy_channelz_obj, copy_channelz_obj};
 
-void grpc_channelz_registry_init() {
-  gpr_mu_init(&g_mu);
-  g_avl = grpc_avl_create(&avl_vtable);
+}  // anonymous namespace
+
+void ChannelzRegistry::Init() { g_channelz_registry = New<ChannelzRegistry>(); }
+
+void ChannelzRegistry::Shutdown() { Delete(g_channelz_registry); }
+
+ChannelzRegistry* ChannelzRegistry::Default() {
+  GPR_DEBUG_ASSERT(g_channelz_registry != nullptr);
+  return g_channelz_registry;
 }
 
-void grpc_channelz_registry_shutdown() {
-  grpc_avl_unref(g_avl, nullptr);
-  gpr_mu_destroy(&g_mu);
+ChannelzRegistry::ChannelzRegistry() : uuid_(1) {
+  gpr_mu_init(&mu_);
+  avl_ = grpc_avl_create(&avl_vtable);
 }
 
-intptr_t grpc_channelz_registry_register_channel_trace(
-    grpc_core::ChannelTrace* channel_trace) {
-  intptr_t prior = gpr_atm_no_barrier_fetch_add(&g_uuid, 1);
-  gpr_mu_lock(&g_mu);
-  g_avl = grpc_avl_add(g_avl, (void*)prior, channel_trace, nullptr);
-  gpr_mu_unlock(&g_mu);
+ChannelzRegistry::~ChannelzRegistry() {
+  grpc_avl_unref(avl_, nullptr);
+  gpr_mu_destroy(&mu_);
+}
+
+intptr_t ChannelzRegistry::Register(grpc_core::ChannelTrace* channel_trace) {
+  intptr_t prior = gpr_atm_no_barrier_fetch_add(&uuid_, 1);
+  gpr_mu_lock(&mu_);
+  avl_ = grpc_avl_add(avl_, (void*)prior, channel_trace, nullptr);
+  gpr_mu_unlock(&mu_);
   return prior;
 }
 
-void grpc_channelz_registry_unregister_channel_trace(intptr_t uuid) {
-  gpr_mu_lock(&g_mu);
-  g_avl = grpc_avl_remove(g_avl, (void*)uuid, nullptr);
-  gpr_mu_unlock(&g_mu);
+void ChannelzRegistry::Unregister(intptr_t uuid) {
+  gpr_mu_lock(&mu_);
+  avl_ = grpc_avl_remove(avl_, (void*)uuid, nullptr);
+  gpr_mu_unlock(&mu_);
 }
 
-grpc_core::ChannelTrace* grpc_channelz_registry_get_channel_trace(
-    intptr_t uuid) {
-  gpr_mu_lock(&g_mu);
+grpc_core::ChannelTrace* ChannelzRegistry::Get(intptr_t uuid) {
+  gpr_mu_lock(&mu_);
   grpc_core::ChannelTrace* ret = static_cast<grpc_core::ChannelTrace*>(
-      grpc_avl_get(g_avl, (void*)uuid, nullptr));
-  gpr_mu_unlock(&g_mu);
+      grpc_avl_get(avl_, (void*)uuid, nullptr));
+  gpr_mu_unlock(&mu_);
   return ret;
 }
+
+}  // namespace grpc_core

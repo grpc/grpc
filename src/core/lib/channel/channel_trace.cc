@@ -70,7 +70,7 @@ ChannelTrace::ChannelTrace(size_t max_events)
       tail_trace_(nullptr) {
   if (max_list_size_ == 0) return;  // tracing is disabled if max_events == 0
   gpr_mu_init(&tracer_mu_);
-  channel_uuid_ = grpc_channelz_registry_register_channel_trace(this);
+  channel_uuid_ = ChannelzRegistry::Default()->Register(this);
   time_created_ = grpc_millis_to_timespec(grpc_core::ExecCtx::Get()->Now(),
                                           GPR_CLOCK_REALTIME);
 }
@@ -83,7 +83,7 @@ ChannelTrace::~ChannelTrace() {
     it = it->next();
     Delete<TraceEvent>(to_free);
   }
-  grpc_channelz_registry_unregister_channel_trace(channel_uuid_);
+  ChannelzRegistry::Default()->Unregister(channel_uuid_);
   gpr_mu_destroy(&tracer_mu_);
 }
 
