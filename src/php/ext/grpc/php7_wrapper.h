@@ -46,6 +46,8 @@
    add_assoc_long_ex(val, key, key_len, str);
 #define PHP_GRPC_ADD_BOOL_TO_ARRAY(val, key, key_len, str) \
    add_assoc_bool_ex(val, key, key_len, str);
+#define PHP_GRPC_ADD_LONG_TO_RETVAL(val, key, key_len, str) \
+   add_assoc_long_ex(val, key, key_len+1, str);
 
 #define RETURN_DESTROY_ZVAL(val) \
   RETURN_ZVAL(val, false /* Don't execute copy constructor */, \
@@ -140,7 +142,7 @@ static inline int php_grpc_zend_hash_find(HashTable *ht, char *key, int len,
   zend_hash_update(plist, key, len+1, rsrc, sizeof(php_grpc_zend_resource), \
                    NULL)
 #define PHP_GRPC_PERSISTENT_LIST_SIZE(plist) \
-  plist.nTableSize
+  *plist.nNumOfElements
 
 #define PHP_GRPC_GET_CLASS_ENTRY(object) zend_get_class_entry(object TSRMLS_CC)
 
@@ -176,6 +178,8 @@ static inline int php_grpc_zend_hash_find(HashTable *ht, char *key, int len,
    add_assoc_long_ex(val, key, key_len - 1, str);
 #define PHP_GRPC_ADD_BOOL_TO_ARRAY(val, key, key_len, str) \
    add_assoc_bool_ex(val, key, key_len - 1, str);
+#define PHP_GRPC_ADD_LONG_TO_RETVAL(val, key, key_len, str) \
+   add_assoc_long_ex(val, key, key_len, str);
 
 #define RETURN_DESTROY_ZVAL(val) \
   RETVAL_ZVAL(val, false /* Don't execute copy constructor */, \

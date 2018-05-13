@@ -39,12 +39,8 @@ typedef struct _grpc_channel_wrapper {
   char *target;
   char *args_hashstr;
   char *creds_hashstr;
-  gpr_mu mu;
-  // is_valid is used to check the wrapped channel has been freed
-  // before to avoid double free.
-  bool is_valid;
-  // ref_count is used to let the last wrapper free related channel and key.
   size_t ref_count;
+  gpr_mu mu;
 } grpc_channel_wrapper;
 
 /* Wrapper struct for grpc_channel that can be associated with a PHP object */
@@ -86,5 +82,9 @@ typedef struct _channel_persistent_le {
   grpc_channel_wrapper *channel;
 } channel_persistent_le_t;
 
+typedef struct _target_bound_le {
+  int upper_bound;
+  int current_count;
+} target_bound_le_t;
 
 #endif /* NET_GRPC_PHP_GRPC_CHANNEL_H_ */
