@@ -734,7 +734,7 @@ def parse_args
     opts.on('--use_tls USE_TLS', ['false', 'true'],
             'require a secure connection?') do |v|
       args['secure'] = v == 'true'
-p    end
+    end
     opts.on('--use_test_ca USE_TEST_CA', ['false', 'true'],
             'if secure, use the test certificate?') do |v|
       args['use_test_ca'] = v == 'true'
