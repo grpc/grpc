@@ -113,20 +113,18 @@ wait_until_dns_server_is_up(args,
 num_test_failures = 0
 
 % for test in tests:
-test_runner_log('Run test with target: %s' % '${test['target_name']}')\
+test_runner_log('Run test with target: %s' % '${test['test_title']}')\
 
 current_test_subprocess = subprocess.Popen([\
 
   args.test_bin_path,\
 
-  '--target_name', '${test['target_name']}',\
+  % for arg_name_and_value in test['arg_names_and_values']:
+\
+  '--${arg_name_and_value[0]}', '${arg_name_and_value[1]}',\
 
-  '--expected_addrs', '${test['expected_addrs']}',\
-
-  '--expected_chosen_service_config', '${test['expected_chosen_service_config']}',\
-
-  '--expected_lb_policy', '${test['expected_lb_policy']}',\
-
+\
+  % endfor
   '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])\
 
 current_test_subprocess.communicate()\
