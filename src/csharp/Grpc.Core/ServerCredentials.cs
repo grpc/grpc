@@ -58,41 +58,105 @@ namespace Grpc.Core
     }
 
     /// <summary>
+    /// Modes of requesting client's SSL certificate by the server.
+    /// Corresponds to <c>grpc_ssl_client_certificate_request_type</c>.
+    /// </summary>
+    public enum SslClientCertificateRequestType {
+        /// <summary>
+        /// Server does not request client certificate.
+        /// The certificate presented by the client is not checked by the server at
+        /// all. (A client may present a self signed or signed certificate or not
+        /// present a certificate at all and any of those option would be accepted)
+        /// </summary>
+        DontRequestClientCertificate = 0,
+        /// <summary>
+        /// Server requests client certificate but does not enforce that the client
+        /// presents a certificate.
+        /// If the client presents a certificate, the client authentication is left to
+        /// the application (the necessary metadata will be available to the
+        /// application via authentication context properties, see grpc_auth_context).
+        /// The client's key certificate pair must be valid for the SSL connection to
+        /// be established.
+        ///</summary>
+        RequestClientCertificateButDontVerify,
+        /// <summary>
+        /// Server requests client certificate but does not enforce that the client
+        /// presents a certificate.
+        /// If the client presents a certificate, the client authentication is done by
+        /// the gRPC framework. (For a successful connection the client needs to either
+        /// present a certificate that can be verified against the root certificate
+        /// configured by the server or not present a certificate at all)
+        /// The client's key certificate pair must be valid for the SSL connection to
+        /// be established.
+        /// </summary>
+        RequestClientCertificateAndVerify,
+        /// <summary>
+        /// Server requests client certificate and enforces that the client presents a
+        /// certificate.
+        /// If the client presents a certificate, the client authentication is left to
+        /// the application (the necessary metadata will be available to the
+        /// application via authentication context properties, see grpc_auth_context).
+        /// The client's key certificate pair must be valid for the SSL connection to
+        /// be established.
+        ///</summary>
+        RequestAndRequireClientCertificateButDontVerify,
+        /// <summary>
+        /// Server requests client certificate and enforces that the client presents a
+        /// certificate.
+        /// The cerificate presented by the client is verified by the gRPC framework.
+        /// (For a successful connection the client needs to present a certificate that
+        /// can be verified against the root certificate configured by the server)
+        /// The client's key certificate pair must be valid for the SSL connection to
+        /// be established.
+        /// </summary>
+        RequestAndRequireClientCertificateAndVerify,
+    }
+    /// <summary>
     /// Server-side SSL credentials.
     /// </summary>
     public class SslServerCredentials : ServerCredentials
     {
         readonly IList<KeyCertificatePair> keyCertificatePairs;
         readonly string rootCertificates;
-        readonly bool forceClientAuth;
+        readonly SslClientCertificateRequestType clientCertificateRequest;
 
         /// <summary>
         /// Creates server-side SSL credentials.
         /// </summary>
         /// <param name="keyCertificatePairs">Key-certificates to use.</param>
         /// <param name="rootCertificates">PEM encoded client root certificates used to authenticate client.</param>
-        /// <param name="forceClientAuth">If true, client will be rejected unless it proves its unthenticity using against rootCertificates.</param>
+        /// <param name="forceClientAuth">Deprecated, use clientCertificateRequest overload instead.</param>
         public SslServerCredentials(IEnumerable<KeyCertificatePair> keyCertificatePairs, string rootCertificates, bool forceClientAuth)
+            : this(keyCertificatePairs, rootCertificates, forceClientAuth ? SslClientCertificateRequestType.RequestAndRequireClientCertificateAndVerify : SslClientCertificateRequestType.DontRequestClientCertificate)
         {
-            this.keyCertificatePairs = new List<KeyCertificatePair>(keyCertificatePairs).AsReadOnly();
-            GrpcPreconditions.CheckArgument(this.keyCertificatePairs.Count > 0,
-                "At least one KeyCertificatePair needs to be provided.");
-            if (forceClientAuth)
-            {
-                GrpcPreconditions.CheckNotNull(rootCertificates,
-                    "Cannot force client authentication unless you provide rootCertificates.");
-            }
-            this.rootCertificates = rootCertificates;
-            this.forceClientAuth = forceClientAuth;
         }
 
         /// <summary>
         /// Creates server-side SSL credentials.
-        /// This constructor should be use if you do not wish to autheticate client
-        /// using client root certificates.
         /// </summary>
         /// <param name="keyCertificatePairs">Key-certificates to use.</param>
-        public SslServerCredentials(IEnumerable<KeyCertificatePair> keyCertificatePairs) : this(keyCertificatePairs, null, false)
+        /// <param name="rootCertificates">PEM encoded client root certificates used to authenticate client.</param>
+        /// <param name="clientCertificateRequest">Options for requesting and verification of client certificate.</param>
+        public SslServerCredentials(IEnumerable<KeyCertificatePair> keyCertificatePairs, string rootCertificates, SslClientCertificateRequestType clientCertificateRequest)
+        {
+            this.keyCertificatePairs = new List<KeyCertificatePair>(keyCertificatePairs).AsReadOnly();
+            GrpcPreconditions.CheckArgument(this.keyCertificatePairs.Count > 0,
+                "At least one KeyCertificatePair needs to be provided.");
+            if (clientCertificateRequest == SslClientCertificateRequestType.RequestAndRequireClientCertificateAndVerify)
+            {
+                GrpcPreconditions.CheckNotNull(rootCertificates,
+                    "Cannot require and verify client certificate unless you provide rootCertificates.");
+            }
+            this.rootCertificates = rootCertificates;
+            this.clientCertificateRequest = clientCertificateRequest;
+        }
+
+        /// <summary>
+        /// Creates server-side SSL credentials.
+        /// This constructor should be use if you do not wish to autheticate client at all.
+        /// </summary>
+        /// <param name="keyCertificatePairs">Key-certificates to use.</param>
+        public SslServerCredentials(IEnumerable<KeyCertificatePair> keyCertificatePairs) : this(keyCertificatePairs, null, SslClientCertificateRequestType.DontRequestClientCertificate)
         {
         }
 
@@ -119,13 +183,24 @@ namespace Grpc.Core
         }
 
         /// <summary>
-        /// If true, the authenticity of client check will be enforced.
+        /// Deprecated. If true, the authenticity of client check will be enforced.
         /// </summary>
         public bool ForceClientAuthentication
         {
             get
             {
-                return this.forceClientAuth;
+                return this.clientCertificateRequest == SslClientCertificateRequestType.RequestAndRequireClientCertificateAndVerify;
+            }
+        }
+
+        /// <summary>
+        /// Mode of requesting certificate from client by the server.
+        /// </summary>
+        public SslClientCertificateRequestType ClientCertificateRequest
+        {
+            get
+            {
+                return this.clientCertificateRequest;
             }
         }
 
@@ -139,7 +214,7 @@ namespace Grpc.Core
                 certChains[i] = keyCertificatePairs[i].CertificateChain;
                 keys[i] = keyCertificatePairs[i].PrivateKey;
             }
-            return ServerCredentialsSafeHandle.CreateSslCredentials(rootCertificates, certChains, keys, forceClientAuth);
+            return ServerCredentialsSafeHandle.CreateSslCredentials(rootCertificates, certChains, keys, clientCertificateRequest);
         }
     }
 }

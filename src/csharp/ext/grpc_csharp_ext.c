@@ -964,7 +964,7 @@ GPR_EXPORT grpc_server_credentials* GPR_CALLTYPE
 grpcsharp_ssl_server_credentials_create(
     const char* pem_root_certs, const char** key_cert_pair_cert_chain_array,
     const char** key_cert_pair_private_key_array, size_t num_key_cert_pairs,
-    int force_client_auth) {
+    grpc_ssl_client_certificate_request_type client_request_type) {
   size_t i;
   grpc_server_credentials* creds;
   grpc_ssl_pem_key_cert_pair* key_cert_pairs =
@@ -981,9 +981,7 @@ grpcsharp_ssl_server_credentials_create(
   }
   creds = grpc_ssl_server_credentials_create_ex(
       pem_root_certs, key_cert_pairs, num_key_cert_pairs,
-      force_client_auth
-          ? GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
-          : GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
+      client_request_type,
       NULL);
   gpr_free(key_cert_pairs);
   return creds;

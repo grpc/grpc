@@ -37,20 +37,24 @@ namespace Grpc.IntegrationTesting
     public class SslCredentialsTest
     {
         const string Host = "localhost";
+        const string IsPeerAuthenticatedMetadataKey = "test_only_is_peer_authenticated";
         Server server;
         Channel channel;
         TestService.TestServiceClient client;
 
-        [OneTimeSetUp]
-        public void Init()
+        string rootCert;
+        KeyCertificatePair keyCertPair;
+
+        public void InitClientAndServer(bool clientAddKeyCertPair,
+                SslClientCertificateRequestType clientCertRequestType)
         {
-            var rootCert = File.ReadAllText(TestCredentials.ClientCertAuthorityPath);
-            var keyCertPair = new KeyCertificatePair(
+            rootCert = File.ReadAllText(TestCredentials.ClientCertAuthorityPath);
+            keyCertPair = new KeyCertificatePair(
                 File.ReadAllText(TestCredentials.ServerCertChainPath),
                 File.ReadAllText(TestCredentials.ServerPrivateKeyPath));
 
-            var serverCredentials = new SslServerCredentials(new[] { keyCertPair }, rootCert, true);
-            var clientCredentials = new SslCredentials(rootCert, keyCertPair);
+            var serverCredentials = new SslServerCredentials(new[] { keyCertPair }, rootCert, clientCertRequestType);
+            var clientCredentials = clientAddKeyCertPair ? new SslCredentials(rootCert, keyCertPair) : new SslCredentials(rootCert);
 
             // Disable SO_REUSEPORT to prevent https://github.com/grpc/grpc/issues/10755
             server = new Server(new[] { new ChannelOption(ChannelOptions.SoReuseport, 0) })
@@ -72,19 +76,133 @@ namespace Grpc.IntegrationTesting
         [OneTimeTearDown]
         public void Cleanup()
         {
-            channel.ShutdownAsync().Wait();
-            server.ShutdownAsync().Wait();
+            if (channel != null)
+            {
+                channel.ShutdownAsync().Wait();
+            }
+            if (server != null)
+            {
+                server.ShutdownAsync().Wait();
+            }
         }
 
         [Test]
-        public void AuthenticatedClientAndServer()
+        public async Task NoClientCert_DontRequestClientCertificate_Accepted()
         {
-            var response = client.UnaryCall(new SimpleRequest { ResponseSize = 10 });
-            Assert.AreEqual(10, response.Payload.Body.Length);
+            InitClientAndServer(
+                clientAddKeyCertPair: false,
+                clientCertRequestType: SslClientCertificateRequestType.DontRequestClientCertificate);
+
+            await CheckAccepted(expectPeerAuthenticated: false);
         }
 
         [Test]
-        public async Task AuthContextIsPopulated()
+        public async Task ClientWithCert_DontRequestClientCertificate_AcceptedButPeerNotAuthenticated()
+        {
+            InitClientAndServer(
+                clientAddKeyCertPair: true,
+                clientCertRequestType: SslClientCertificateRequestType.DontRequestClientCertificate);
+
+            await CheckAccepted(expectPeerAuthenticated: false);
+        }
+
+        [Test]
+        public async Task NoClientCert_RequestClientCertificateButDontVerify_Accepted()
+        {
+            InitClientAndServer(
+                clientAddKeyCertPair: false,
+                clientCertRequestType: SslClientCertificateRequestType.RequestClientCertificateButDontVerify);
+
+            await CheckAccepted(expectPeerAuthenticated: false);
+        }
+
+        [Test]
+        public async Task NoClientCert_RequestClientCertificateAndVerify_Accepted()
+        {
+            InitClientAndServer(
+                clientAddKeyCertPair: false,
+                clientCertRequestType: SslClientCertificateRequestType.RequestClientCertificateAndVerify);
+
+            await CheckAccepted(expectPeerAuthenticated: false);
+        }
+
+        [Test]
+        public async Task ClientWithCert_RequestAndRequireClientCertificateButDontVerify_Accepted()
+        {
+            InitClientAndServer(
+                clientAddKeyCertPair: true,
+                clientCertRequestType: SslClientCertificateRequestType.RequestAndRequireClientCertificateButDontVerify);
+
+            await CheckAccepted(expectPeerAuthenticated: true);
+            await CheckAuthContextIsPopulated();
+        }
+
+        [Test]
+        public async Task ClientWithCert_RequestAndRequireClientCertificateAndVerify_Accepted()
+        {
+            InitClientAndServer(
+                clientAddKeyCertPair: true,
+                clientCertRequestType: SslClientCertificateRequestType.RequestAndRequireClientCertificateAndVerify);
+
+            await CheckAccepted(expectPeerAuthenticated: true);
+            await CheckAuthContextIsPopulated();
+        }
+
+        [Test]
+        public void NoClientCert_RequestAndRequireClientCertificateButDontVerify_Rejected()
+        {
+            InitClientAndServer(
+                clientAddKeyCertPair: false,
+                clientCertRequestType: SslClientCertificateRequestType.RequestAndRequireClientCertificateButDontVerify);
+
+            CheckRejected();
+        }
+
+        [Test]
+        public void NoClientCert_RequestAndRequireClientCertificateAndVerify_Rejected()
+        {
+            InitClientAndServer(
+                clientAddKeyCertPair: false,
+                clientCertRequestType: SslClientCertificateRequestType.RequestAndRequireClientCertificateAndVerify);
+
+            CheckRejected();
+        }
+
+        [Test]
+        public void Constructor_LegacyForceClientAuth()
+        {
+            var creds = new SslServerCredentials(new[] { keyCertPair }, rootCert, true);
+            Assert.AreEqual(SslClientCertificateRequestType.RequestAndRequireClientCertificateAndVerify, creds.ClientCertificateRequest);
+
+            var creds2 = new SslServerCredentials(new[] { keyCertPair }, rootCert, false);
+            Assert.AreEqual(SslClientCertificateRequestType.DontRequestClientCertificate, creds2.ClientCertificateRequest);
+        }
+
+        [Test]
+        public void Constructor_NullRootCerts()
+        {
+            var keyCertPairs = new[] { keyCertPair };
+            new SslServerCredentials(keyCertPairs, null, SslClientCertificateRequestType.DontRequestClientCertificate);
+            new SslServerCredentials(keyCertPairs, null, SslClientCertificateRequestType.RequestClientCertificateAndVerify);
+            new SslServerCredentials(keyCertPairs, null, SslClientCertificateRequestType.RequestAndRequireClientCertificateButDontVerify);
+            Assert.Throws(typeof(ArgumentNullException), () => new SslServerCredentials(keyCertPairs, null, SslClientCertificateRequestType.RequestAndRequireClientCertificateAndVerify));
+        }
+
+        private async Task CheckAccepted(bool expectPeerAuthenticated)
+        {
+            var call = client.UnaryCallAsync(new SimpleRequest { ResponseSize = 10 });
+            var response = await call;
+            Assert.AreEqual(10, response.Payload.Body.Length);
+            Assert.AreEqual(expectPeerAuthenticated.ToString(), call.GetTrailers().First((entry) => entry.Key == IsPeerAuthenticatedMetadataKey).Value);
+        }
+
+        private void CheckRejected()
+        {
+            var ex = Assert.Throws<RpcException>(() => client.UnaryCall(new SimpleRequest { ResponseSize = 10 }));
+            Assert.AreEqual(StatusCode.Unavailable, ex.Status.StatusCode);
+        }
+
+        private async Task CheckAuthContextIsPopulated()
         {
             var call = client.StreamingInputCall();
             await call.RequestStream.CompleteAsync();
@@ -96,6 +214,7 @@ namespace Grpc.IntegrationTesting
         {
             public override Task<SimpleResponse> UnaryCall(SimpleRequest request, ServerCallContext context)
             {
+                context.ResponseTrailers.Add(IsPeerAuthenticatedMetadataKey, context.AuthContext.IsPeerAuthenticated.ToString());
                 return Task.FromResult(new SimpleResponse { Payload = CreateZerosPayload(request.ResponseSize) });
             }
 
