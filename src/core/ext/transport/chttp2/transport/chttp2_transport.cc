@@ -1801,8 +1801,11 @@ static void perform_transport_op_locked(void* stream_op,
 
 static void perform_transport_op(grpc_transport* gt, grpc_transport_op* op) {
   grpc_chttp2_transport* t = reinterpret_cast<grpc_chttp2_transport*>(gt);
-  char* msg = grpc_transport_op_string(op);
-  gpr_free(msg);
+  if (grpc_http_trace.enabled()) {
+    char* msg = grpc_transport_op_string(op);
+    gpr_log(GPR_INFO, "perform_transport_op[t=%p]: %s", t, msg);
+    gpr_free(msg);
+  }
   op->handler_private.extra_arg = gt;
   GRPC_CHTTP2_REF_TRANSPORT(t, "transport_op");
   GRPC_CLOSURE_SCHED(GRPC_CLOSURE_INIT(&op->handler_private.closure,
