@@ -277,8 +277,7 @@ with open('src/core/lib/debug/stats_data.h', 'w') as H:
 
     print >> H, "#else"
     for ctr in inst_map['Counter']:
-        print >> H, ("#define GRPC_STATS_INC_%s() ") % (
-                         ctr.name.upper())
+        print >> H, ("#define GRPC_STATS_INC_%s() ") % (ctr.name.upper())
     for histogram in inst_map['Histogram']:
         print >> H, "#define GRPC_STATS_INC_%s(value)" % (
             histogram.name.upper())
