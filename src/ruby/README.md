@@ -48,7 +48,7 @@ $ gem install bundler
 ```sh
 $ # from this directory
 $ bundle install  # creates the ruby bundle, including building the grpc extension
-$ rake  # runs the unit tests, see rake -T for other options
+$ CONFIG='build config subdirectory' rake  # runs the unit tests, see rake -T for other options
 ```
 
 DOCUMENTATION
