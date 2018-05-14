@@ -142,9 +142,14 @@ INSTANTIATE_TEST_CASE_P(HistogramTestCases, HistogramTest,
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+/* Only run this test if GRPC_COLLECT_STATS is defined or if it is a debug
+ * build.
+ */
+#if defined(GRPC_COLLECT_STATS) || !defined(NDEBUG)
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
   int ret = RUN_ALL_TESTS();
   grpc_shutdown();
   return ret;
+#endif
 }
