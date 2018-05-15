@@ -16,29 +16,17 @@
  *
  */
 
-#include "call.h"
+#include "server.h"
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#include <php.h>
-#include <php_ini.h>
-#include <ext/standard/info.h>
 #include <ext/spl/spl_exceptions.h>
-#include "php_grpc.h"
-
 #include <zend_exceptions.h>
 
-#include <stdbool.h>
-
-#include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 
+#include "call.h"
 #include "completion_queue.h"
-#include "server.h"
 #include "channel.h"
 #include "server_credentials.h"
 #include "timeval.h"
