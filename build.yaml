@@ -12,9 +12,9 @@ settings:
   '#08': Use "-preN" suffixes to identify pre-release versions
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
-  core_version: 6.0.0-pre1
+  core_version: 6.0.0
   g_stands_for: glorious
-  version: 1.12.0-pre1
+  version: 1.12.0
 filegroups:
 - name: alts_proto
   headers:
