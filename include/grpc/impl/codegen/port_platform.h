@@ -173,7 +173,11 @@
 #endif /* _LP64 */
 #ifdef __GLIBC__
 #define GPR_POSIX_CRASH_HANDLER 1
+#ifdef __GLIBC_PREREQ
+#if __GLIBC_PREREQ(2, 11)
 #define GPR_LINUX_PTHREAD_NAME 1
+#endif
+#endif
 #else /* musl libc */
 #define GPR_MUSL_LIBC_COMPAT 1
 #endif
