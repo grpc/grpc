@@ -65,8 +65,8 @@ for root, dirs, files in os.walk('src/core'):
                 errors += 1
 
 assert errors == 0
-# this check comes about from this issue:
+# This check comes about from this issue:
 # https://github.com/grpc/grpc/issues/15381
-# basically, a change rendered this script useless and we did not realize.
-# This dumb check ensures that type of issue doesn't occur again.
+# Basically, a change rendered this script useless and we did not realize it.
+# This dumb check ensures that this type of issue doesn't occur again.
 assert num_files > 300  # we definitely have more than 300 files
