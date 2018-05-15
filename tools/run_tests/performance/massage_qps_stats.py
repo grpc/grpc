@@ -24,10 +24,12 @@ def massage_qps_stats(scenario_result):
             # that correspond to columns in the bigquery schema.
             core_stats = stats["coreStats"]
             del stats["coreStats"]
-            stats["core_client_calls_created"] = massage_qps_stats_helpers.counter(
-                core_stats, "client_calls_created")
-            stats["core_server_calls_created"] = massage_qps_stats_helpers.counter(
-                core_stats, "server_calls_created")
+            stats[
+                "core_client_calls_created"] = massage_qps_stats_helpers.counter(
+                    core_stats, "client_calls_created")
+            stats[
+                "core_server_calls_created"] = massage_qps_stats_helpers.counter(
+                    core_stats, "server_calls_created")
             stats["core_cqs_created"] = massage_qps_stats_helpers.counter(
                 core_stats, "cqs_created")
             stats[
@@ -48,8 +50,9 @@ def massage_qps_stats(scenario_result):
             stats[
                 "core_pollset_kicked_without_poller"] = massage_qps_stats_helpers.counter(
                     core_stats, "pollset_kicked_without_poller")
-            stats["core_pollset_kicked_again"] = massage_qps_stats_helpers.counter(
-                core_stats, "pollset_kicked_again")
+            stats[
+                "core_pollset_kicked_again"] = massage_qps_stats_helpers.counter(
+                    core_stats, "pollset_kicked_again")
             stats[
                 "core_pollset_kick_wakeup_fd"] = massage_qps_stats_helpers.counter(
                     core_stats, "pollset_kick_wakeup_fd")
@@ -79,33 +82,38 @@ def massage_qps_stats(scenario_result):
             stats[
                 "core_http2_op_send_initial_metadata"] = massage_qps_stats_helpers.counter(
                     core_stats, "http2_op_send_initial_metadata")
-            stats["core_http2_op_send_message"] = massage_qps_stats_helpers.counter(
-                core_stats, "http2_op_send_message")
+            stats[
+                "core_http2_op_send_message"] = massage_qps_stats_helpers.counter(
+                    core_stats, "http2_op_send_message")
             stats[
                 "core_http2_op_send_trailing_metadata"] = massage_qps_stats_helpers.counter(
                     core_stats, "http2_op_send_trailing_metadata")
             stats[
                 "core_http2_op_recv_initial_metadata"] = massage_qps_stats_helpers.counter(
                     core_stats, "http2_op_recv_initial_metadata")
-            stats["core_http2_op_recv_message"] = massage_qps_stats_helpers.counter(
-                core_stats, "http2_op_recv_message")
+            stats[
+                "core_http2_op_recv_message"] = massage_qps_stats_helpers.counter(
+                    core_stats, "http2_op_recv_message")
             stats[
                 "core_http2_op_recv_trailing_metadata"] = massage_qps_stats_helpers.counter(
                     core_stats, "http2_op_recv_trailing_metadata")
-            stats["core_http2_settings_writes"] = massage_qps_stats_helpers.counter(
-                core_stats, "http2_settings_writes")
+            stats[
+                "core_http2_settings_writes"] = massage_qps_stats_helpers.counter(
+                    core_stats, "http2_settings_writes")
             stats["core_http2_pings_sent"] = massage_qps_stats_helpers.counter(
                 core_stats, "http2_pings_sent")
-            stats["core_http2_writes_begun"] = massage_qps_stats_helpers.counter(
-                core_stats, "http2_writes_begun")
+            stats[
+                "core_http2_writes_begun"] = massage_qps_stats_helpers.counter(
+                    core_stats, "http2_writes_begun")
             stats[
                 "core_http2_writes_offloaded"] = massage_qps_stats_helpers.counter(
                     core_stats, "http2_writes_offloaded")
             stats[
                 "core_http2_writes_continued"] = massage_qps_stats_helpers.counter(
                     core_stats, "http2_writes_continued")
-            stats["core_http2_partial_writes"] = massage_qps_stats_helpers.counter(
-                core_stats, "http2_partial_writes")
+            stats[
+                "core_http2_partial_writes"] = massage_qps_stats_helpers.counter(
+                    core_stats, "http2_partial_writes")
             stats[
                 "core_http2_initiate_write_due_to_initial_write"] = massage_qps_stats_helpers.counter(
                     core_stats, "http2_initiate_write_due_to_initial_write")
@@ -117,7 +125,8 @@ def massage_qps_stats(scenario_result):
                     core_stats, "http2_initiate_write_due_to_send_message")
             stats[
                 "core_http2_initiate_write_due_to_send_initial_metadata"] = massage_qps_stats_helpers.counter(
-                    core_stats, "http2_initiate_write_due_to_send_initial_metadata")
+                    core_stats,
+                    "http2_initiate_write_due_to_send_initial_metadata")
             stats[
                 "core_http2_initiate_write_due_to_send_trailing_metadata"] = massage_qps_stats_helpers.counter(
                     core_stats,
@@ -139,7 +148,8 @@ def massage_qps_stats(scenario_result):
                     core_stats, "http2_initiate_write_due_to_close_from_api")
             stats[
                 "core_http2_initiate_write_due_to_stream_flow_control"] = massage_qps_stats_helpers.counter(
-                    core_stats, "http2_initiate_write_due_to_stream_flow_control")
+                    core_stats,
+                    "http2_initiate_write_due_to_stream_flow_control")
             stats[
                 "core_http2_initiate_write_due_to_transport_flow_control"] = massage_qps_stats_helpers.counter(
                     core_stats,
@@ -149,15 +159,18 @@ def massage_qps_stats(scenario_result):
                     core_stats, "http2_initiate_write_due_to_send_settings")
             stats[
                 "core_http2_initiate_write_due_to_bdp_estimator_ping"] = massage_qps_stats_helpers.counter(
-                    core_stats, "http2_initiate_write_due_to_bdp_estimator_ping")
+                    core_stats,
+                    "http2_initiate_write_due_to_bdp_estimator_ping")
             stats[
                 "core_http2_initiate_write_due_to_flow_control_unstalled_by_setting"] = massage_qps_stats_helpers.counter(
                     core_stats,
-                    "http2_initiate_write_due_to_flow_control_unstalled_by_setting")
+                    "http2_initiate_write_due_to_flow_control_unstalled_by_setting"
+                )
             stats[
                 "core_http2_initiate_write_due_to_flow_control_unstalled_by_update"] = massage_qps_stats_helpers.counter(
                     core_stats,
-                    "http2_initiate_write_due_to_flow_control_unstalled_by_update")
+                    "http2_initiate_write_due_to_flow_control_unstalled_by_update"
+                )
             stats[
                 "core_http2_initiate_write_due_to_application_ping"] = massage_qps_stats_helpers.counter(
                     core_stats, "http2_initiate_write_due_to_application_ping")
@@ -167,7 +180,8 @@ def massage_qps_stats(scenario_result):
             stats[
                 "core_http2_initiate_write_due_to_transport_flow_control_unstalled"] = massage_qps_stats_helpers.counter(
                     core_stats,
-                    "http2_initiate_write_due_to_transport_flow_control_unstalled")
+                    "http2_initiate_write_due_to_transport_flow_control_unstalled"
+                )
             stats[
                 "core_http2_initiate_write_due_to_ping_response"] = massage_qps_stats_helpers.counter(
                     core_stats, "http2_initiate_write_due_to_ping_response")
@@ -177,8 +191,9 @@ def massage_qps_stats(scenario_result):
             stats[
                 "core_http2_spurious_writes_begun"] = massage_qps_stats_helpers.counter(
                     core_stats, "http2_spurious_writes_begun")
-            stats["core_hpack_recv_indexed"] = massage_qps_stats_helpers.counter(
-                core_stats, "hpack_recv_indexed")
+            stats[
+                "core_hpack_recv_indexed"] = massage_qps_stats_helpers.counter(
+                    core_stats, "hpack_recv_indexed")
             stats[
                 "core_hpack_recv_lithdr_incidx"] = massage_qps_stats_helpers.counter(
                     core_stats, "hpack_recv_lithdr_incidx")
@@ -200,15 +215,17 @@ def massage_qps_stats(scenario_result):
             stats[
                 "core_hpack_recv_uncompressed"] = massage_qps_stats_helpers.counter(
                     core_stats, "hpack_recv_uncompressed")
-            stats["core_hpack_recv_huffman"] = massage_qps_stats_helpers.counter(
-                core_stats, "hpack_recv_huffman")
+            stats[
+                "core_hpack_recv_huffman"] = massage_qps_stats_helpers.counter(
+                    core_stats, "hpack_recv_huffman")
             stats["core_hpack_recv_binary"] = massage_qps_stats_helpers.counter(
                 core_stats, "hpack_recv_binary")
             stats[
                 "core_hpack_recv_binary_base64"] = massage_qps_stats_helpers.counter(
                     core_stats, "hpack_recv_binary_base64")
-            stats["core_hpack_send_indexed"] = massage_qps_stats_helpers.counter(
-                core_stats, "hpack_send_indexed")
+            stats[
+                "core_hpack_send_indexed"] = massage_qps_stats_helpers.counter(
+                    core_stats, "hpack_send_indexed")
             stats[
                 "core_hpack_send_lithdr_incidx"] = massage_qps_stats_helpers.counter(
                     core_stats, "hpack_send_lithdr_incidx")
@@ -230,8 +247,9 @@ def massage_qps_stats(scenario_result):
             stats[
                 "core_hpack_send_uncompressed"] = massage_qps_stats_helpers.counter(
                     core_stats, "hpack_send_uncompressed")
-            stats["core_hpack_send_huffman"] = massage_qps_stats_helpers.counter(
-                core_stats, "hpack_send_huffman")
+            stats[
+                "core_hpack_send_huffman"] = massage_qps_stats_helpers.counter(
+                    core_stats, "hpack_send_huffman")
             stats["core_hpack_send_binary"] = massage_qps_stats_helpers.counter(
                 core_stats, "hpack_send_binary")
             stats[
@@ -276,8 +294,9 @@ def massage_qps_stats(scenario_result):
             stats[
                 "core_executor_queue_drained"] = massage_qps_stats_helpers.counter(
                     core_stats, "executor_queue_drained")
-            stats["core_executor_push_retries"] = massage_qps_stats_helpers.counter(
-                core_stats, "executor_push_retries")
+            stats[
+                "core_executor_push_retries"] = massage_qps_stats_helpers.counter(
+                    core_stats, "executor_push_retries")
             stats[
                 "core_server_requested_calls"] = massage_qps_stats_helpers.counter(
                     core_stats, "server_requested_calls")
@@ -293,8 +312,10 @@ def massage_qps_stats(scenario_result):
             stats[
                 "core_cq_ev_queue_transient_pop_failures"] = massage_qps_stats_helpers.counter(
                     core_stats, "cq_ev_queue_transient_pop_failures")
-            h = massage_qps_stats_helpers.histogram(core_stats, "call_initial_size")
-            stats["core_call_initial_size"] = ",".join("%f" % x for x in h.buckets)
+            h = massage_qps_stats_helpers.histogram(core_stats,
+                                                    "call_initial_size")
+            stats["core_call_initial_size"] = ",".join(
+                "%f" % x for x in h.buckets)
             stats["core_call_initial_size_bkts"] = ",".join(
                 "%f" % x for x in h.boundaries)
             stats[
@@ -321,19 +342,24 @@ def massage_qps_stats(scenario_result):
             stats[
                 "core_poll_events_returned_99p"] = massage_qps_stats_helpers.percentile(
                     h.buckets, 99, h.boundaries)
-            h = massage_qps_stats_helpers.histogram(core_stats, "tcp_write_size")
+            h = massage_qps_stats_helpers.histogram(core_stats,
+                                                    "tcp_write_size")
             stats["core_tcp_write_size"] = ",".join("%f" % x for x in h.buckets)
             stats["core_tcp_write_size_bkts"] = ",".join(
                 "%f" % x for x in h.boundaries)
-            stats["core_tcp_write_size_50p"] = massage_qps_stats_helpers.percentile(
-                h.buckets, 50, h.boundaries)
-            stats["core_tcp_write_size_95p"] = massage_qps_stats_helpers.percentile(
-                h.buckets, 95, h.boundaries)
-            stats["core_tcp_write_size_99p"] = massage_qps_stats_helpers.percentile(
-                h.buckets, 99, h.boundaries)
+            stats[
+                "core_tcp_write_size_50p"] = massage_qps_stats_helpers.percentile(
+                    h.buckets, 50, h.boundaries)
+            stats[
+                "core_tcp_write_size_95p"] = massage_qps_stats_helpers.percentile(
+                    h.buckets, 95, h.boundaries)
+            stats[
+                "core_tcp_write_size_99p"] = massage_qps_stats_helpers.percentile(
+                    h.buckets, 99, h.boundaries)
             h = massage_qps_stats_helpers.histogram(core_stats,
                                                     "tcp_write_iov_size")
-            stats["core_tcp_write_iov_size"] = ",".join("%f" % x for x in h.buckets)
+            stats["core_tcp_write_iov_size"] = ",".join(
+                "%f" % x for x in h.buckets)
             stats["core_tcp_write_iov_size_bkts"] = ",".join(
                 "%f" % x for x in h.boundaries)
             stats[
@@ -349,22 +375,29 @@ def massage_qps_stats(scenario_result):
             stats["core_tcp_read_size"] = ",".join("%f" % x for x in h.buckets)
             stats["core_tcp_read_size_bkts"] = ",".join(
                 "%f" % x for x in h.boundaries)
-            stats["core_tcp_read_size_50p"] = massage_qps_stats_helpers.percentile(
-                h.buckets, 50, h.boundaries)
-            stats["core_tcp_read_size_95p"] = massage_qps_stats_helpers.percentile(
-                h.buckets, 95, h.boundaries)
-            stats["core_tcp_read_size_99p"] = massage_qps_stats_helpers.percentile(
-                h.buckets, 99, h.boundaries)
-            h = massage_qps_stats_helpers.histogram(core_stats, "tcp_read_offer")
+            stats[
+                "core_tcp_read_size_50p"] = massage_qps_stats_helpers.percentile(
+                    h.buckets, 50, h.boundaries)
+            stats[
+                "core_tcp_read_size_95p"] = massage_qps_stats_helpers.percentile(
+                    h.buckets, 95, h.boundaries)
+            stats[
+                "core_tcp_read_size_99p"] = massage_qps_stats_helpers.percentile(
+                    h.buckets, 99, h.boundaries)
+            h = massage_qps_stats_helpers.histogram(core_stats,
+                                                    "tcp_read_offer")
             stats["core_tcp_read_offer"] = ",".join("%f" % x for x in h.buckets)
             stats["core_tcp_read_offer_bkts"] = ",".join(
                 "%f" % x for x in h.boundaries)
-            stats["core_tcp_read_offer_50p"] = massage_qps_stats_helpers.percentile(
-                h.buckets, 50, h.boundaries)
-            stats["core_tcp_read_offer_95p"] = massage_qps_stats_helpers.percentile(
-                h.buckets, 95, h.boundaries)
-            stats["core_tcp_read_offer_99p"] = massage_qps_stats_helpers.percentile(
-                h.buckets, 99, h.boundaries)
+            stats[
+                "core_tcp_read_offer_50p"] = massage_qps_stats_helpers.percentile(
+                    h.buckets, 50, h.boundaries)
+            stats[
+                "core_tcp_read_offer_95p"] = massage_qps_stats_helpers.percentile(
+                    h.buckets, 95, h.boundaries)
+            stats[
+                "core_tcp_read_offer_99p"] = massage_qps_stats_helpers.percentile(
+                    h.buckets, 99, h.boundaries)
             h = massage_qps_stats_helpers.histogram(core_stats,
                                                     "tcp_read_offer_iov_size")
             stats["core_tcp_read_offer_iov_size"] = ",".join(
@@ -410,8 +443,8 @@ def massage_qps_stats(scenario_result):
             stats[
                 "core_http2_send_initial_metadata_per_write_99p"] = massage_qps_stats_helpers.percentile(
                     h.buckets, 99, h.boundaries)
-            h = massage_qps_stats_helpers.histogram(core_stats,
-                                                    "http2_send_message_per_write")
+            h = massage_qps_stats_helpers.histogram(
+                core_stats, "http2_send_message_per_write")
             stats["core_http2_send_message_per_write"] = ",".join(
                 "%f" % x for x in h.buckets)
             stats["core_http2_send_message_per_write_bkts"] = ",".join(
@@ -429,8 +462,9 @@ def massage_qps_stats(scenario_result):
                 core_stats, "http2_send_trailing_metadata_per_write")
             stats["core_http2_send_trailing_metadata_per_write"] = ",".join(
                 "%f" % x for x in h.buckets)
-            stats["core_http2_send_trailing_metadata_per_write_bkts"] = ",".join(
-                "%f" % x for x in h.boundaries)
+            stats[
+                "core_http2_send_trailing_metadata_per_write_bkts"] = ",".join(
+                    "%f" % x for x in h.boundaries)
             stats[
                 "core_http2_send_trailing_metadata_per_write_50p"] = massage_qps_stats_helpers.percentile(
                     h.buckets, 50, h.boundaries)
@@ -440,8 +474,8 @@ def massage_qps_stats(scenario_result):
             stats[
                 "core_http2_send_trailing_metadata_per_write_99p"] = massage_qps_stats_helpers.percentile(
                     h.buckets, 99, h.boundaries)
-            h = massage_qps_stats_helpers.histogram(core_stats,
-                                                    "http2_send_flowctl_per_write")
+            h = massage_qps_stats_helpers.histogram(
+                core_stats, "http2_send_flowctl_per_write")
             stats["core_http2_send_flowctl_per_write"] = ",".join(
                 "%f" % x for x in h.buckets)
             stats["core_http2_send_flowctl_per_write_bkts"] = ",".join(
@@ -457,7 +491,8 @@ def massage_qps_stats(scenario_result):
                     h.buckets, 99, h.boundaries)
             h = massage_qps_stats_helpers.histogram(core_stats,
                                                     "server_cqs_checked")
-            stats["core_server_cqs_checked"] = ",".join("%f" % x for x in h.buckets)
+            stats["core_server_cqs_checked"] = ",".join(
+                "%f" % x for x in h.buckets)
             stats["core_server_cqs_checked_bkts"] = ",".join(
                 "%f" % x for x in h.boundaries)
             stats[
