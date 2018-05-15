@@ -714,7 +714,7 @@ static grpc_timer_check_result timer_check(grpc_millis* next) {
 #if GPR_ARCH_64
     gpr_log(GPR_INFO,
             "TIMER CHECK BEGIN: now=%" PRId64 " next=%s tls_min=%" PRId64
-            " glob_min=%" PRId64,
+            " glob_min=%" PRIdPTR,
             now, next_str, min_timer,
             gpr_atm_no_barrier_load((gpr_atm*)(&g_shared_mutables.min_timer)));
 #else
