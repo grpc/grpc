@@ -39,8 +39,8 @@ static void do_plugin_list_init(void) {
 }
 
 ServerBuilder::ServerBuilder()
-    : max_receive_message_size_(-1),
-      max_send_message_size_(-1),
+    : max_receive_message_size_(-2),  // -1 is unlimited and is not the default
+      max_send_message_size_(-1),     // -1 is unlimited and is the default
       sync_server_settings_(SyncServerSettings()),
       resource_quota_(nullptr),
       generic_service_(nullptr) {
@@ -186,7 +186,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     (*plugin)->UpdateChannelArguments(&args);
   }
 
-  if (max_receive_message_size_ >= 0) {
+  if (max_receive_message_size_ >= -1) {
     args.SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, max_receive_message_size_);
   }
 
