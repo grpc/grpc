@@ -274,6 +274,7 @@ filegroups:
   - src/core/lib/iomgr/gethostname_sysconf.cc
   - src/core/lib/iomgr/iocp_windows.cc
   - src/core/lib/iomgr/iomgr.cc
+  - src/core/lib/iomgr/iomgr_cfstream.cc
   - src/core/lib/iomgr/iomgr_custom.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/iomgr/iomgr_posix.cc
@@ -446,6 +447,7 @@ filegroups:
   - src/core/lib/iomgr/gethostname.h
   - src/core/lib/iomgr/iocp_windows.h
   - src/core/lib/iomgr/iomgr.h
+  - src/core/lib/iomgr/iomgr_cfstream.h
   - src/core/lib/iomgr/iomgr_custom.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/iomgr/iomgr_posix.h
@@ -1334,6 +1336,20 @@ filegroups:
   deps:
   - grpc++
   - grpc
+- name: grpc_cfstream
+  language: objc++
+  headers:
+  - src/core/lib/iomgr/error_apple.h
+  - src/core/lib/iomgr/tcp_cfstream.h
+  - src/core/lib/iomgr/tcp_cfstream_sync.h
+  src:
+  - src/core/lib/iomgr/error_apple.mm
+  - src/core/lib/iomgr/tcp_cfstream.mm
+  - src/core/lib/iomgr/tcp_cfstream_sync.mm
+  - src/core/lib/iomgr/tcp_client_cfstream.mm
+  uses:
+  - gpr_base_headers
+  - grpc_base_headers
 libs:
 - name: address_sorting
   build: all
