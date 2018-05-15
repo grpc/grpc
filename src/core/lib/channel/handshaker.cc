@@ -220,8 +220,14 @@ static bool call_next_handshaker_locked(grpc_handshake_manager* mgr,
   // callback.  Otherwise, call the next handshaker.
   if (error != GRPC_ERROR_NONE || mgr->shutdown || mgr->args.exit_early ||
       mgr->index == mgr->count) {
+    if (error == GRPC_ERROR_NONE && mgr->shutdown) {
+      error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("handshaker shutdown");
+    }
     if (grpc_handshaker_trace.enabled()) {
-      gpr_log(GPR_INFO, "handshake_manager %p: handshaking complete", mgr);
+      gpr_log(GPR_INFO,
+              "handshake_manager %p: handshaking complete -- scheduling "
+              "on_handshake_done with error=%s",
+              mgr, grpc_error_string(error));
     }
     // Cancel deadline timer, since we're invoking the on_handshake_done
     // callback now.
