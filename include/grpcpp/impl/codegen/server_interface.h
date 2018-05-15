@@ -49,12 +49,28 @@ class ServerInterface : public internal::CallHook {
  public:
   virtual ~ServerInterface() {}
 
-  /// Shutdown the server, blocking until all rpc processing finishes.
-  /// Forcefully terminate pending calls after \a deadline expires.
+  /// \a Shutdown does the following things:
+  /// 1. Shutdown the server: deactivate all listening ports, mark it in
+  ///    "shutdown mode" so that further call Request's or incoming RPC matches
+  ///    are no longer allowed. Also return all Request'ed-but-not-yet-active
+  ///    calls as failed (!ok): note that this would even include default calls
+  ///    added automatically by the C++ API without the user's input.
+  ///
+  /// 2. Block until all rpc method handlers invoked automatically by the sync
+  ///    API finish.
+  ///
+  /// 3. If all pending calls complete (and all their operations are
+  ///    retrieved by Next) before \a deadline expires, this finishes
+  ///    gracefully. Otherwise, forcefully cancel all pending calls associated
+  ///    with the server after \a deadline expires. In the case of the sync API,
+  ///    if the RPC function for a streaming call has already been started an
+  ///    takes a week to complete, the RPC function won't be forcefully
+  ///    terminated (since that would leave state corrupt and incomplete).
   ///
   /// All completion queue associated with the server (for example, for async
   /// serving) must be shutdown *after* this method has returned:
   /// See \a ServerBuilder::AddCompletionQueue for details.
+  /// They must also be drained (by repeated Next) after being shutdown.
   ///
   /// \param deadline How long to wait until pending rpcs are forcefully
   /// terminated.
@@ -63,7 +79,7 @@ class ServerInterface : public internal::CallHook {
     ShutdownInternal(TimePoint<T>(deadline).raw_time());
   }
 
-  /// Shutdown the server, waiting for all rpc processing to finish.
+  /// Shutdown the server without a deadline and forced cancellation.
   ///
   /// All completion queue associated with the server (for example, for async
   /// serving) must be shutdown *after* this method has returned:
