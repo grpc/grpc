@@ -26,6 +26,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/tls.h"
+#include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/iomgr/closure.h"
 
 typedef gpr_atm grpc_millis;
@@ -85,16 +86,23 @@ class ExecCtx {
  public:
   /** Default Constructor */
 
-  ExecCtx() : flags_(GRPC_EXEC_CTX_FLAG_IS_FINISHED) { Set(this); }
+  ExecCtx() : flags_(GRPC_EXEC_CTX_FLAG_IS_FINISHED) {
+    grpc_core::Fork::IncExecCtxCount();
+    Set(this);
+  }
 
   /** Parameterised Constructor */
-  ExecCtx(uintptr_t fl) : flags_(fl) { Set(this); }
+  ExecCtx(uintptr_t fl) : flags_(fl) {
+    grpc_core::Fork::IncExecCtxCount();
+    Set(this);
+  }
 
   /** Destructor */
   virtual ~ExecCtx() {
     flags_ |= GRPC_EXEC_CTX_FLAG_IS_FINISHED;
     Flush();
     Set(last_exec_ctx_);
+    grpc_core::Fork::DecExecCtxCount();
   }
 
   /** Disallow copy and assignment operators */
