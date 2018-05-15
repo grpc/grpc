@@ -19,17 +19,9 @@
 #ifndef NET_GRPC_PHP_GRPC_CALL_H_
 #define NET_GRPC_PHP_GRPC_CALL_H_
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#include <php.h>
-#include <php_ini.h>
-#include <ext/standard/info.h>
 #include "php_grpc.h"
-#include "channel.h"
 
-#include <grpc/grpc.h>
+#include "channel.h"
 
 /* Class entry for the Call PHP class */
 extern zend_class_entry *grpc_ce_call;
