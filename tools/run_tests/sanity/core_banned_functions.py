@@ -26,7 +26,8 @@ BANNED_EXCEPT = {
     'grpc_resource_quota_ref(': ['src/core/lib/iomgr/resource_quota.cc'],
     'grpc_resource_quota_unref(': ['src/core/lib/iomgr/resource_quota.cc'],
     'grpc_slice_buffer_destroy(': ['src/core/lib/slice/slice_buffer.cc'],
-    'grpc_slice_buffer_reset_and_unref(': ['src/core/lib/slice/slice_buffer.cc'],
+    'grpc_slice_buffer_reset_and_unref(':
+    ['src/core/lib/slice/slice_buffer.cc'],
     'grpc_slice_ref(': ['src/core/lib/slice/slice.cc'],
     'grpc_slice_unref(': ['src/core/lib/slice/slice.cc'],
     'grpc_error_create(': ['src/core/lib/iomgr/error.cc'],
@@ -48,9 +49,11 @@ BANNED_EXCEPT = {
 }
 
 errors = 0
+num_files = 0
 for root, dirs, files in os.walk('src/core'):
     if root.startswith('src/core/tsi'): continue
     for filename in files:
+        num_files += 1
         path = os.path.join(root, filename)
         if os.path.splitext(path)[1] != '.cc': continue
         with open(path) as f:
@@ -62,3 +65,4 @@ for root, dirs, files in os.walk('src/core'):
                 errors += 1
 
 assert errors == 0
+assert num_files > 300  # we definitely have more than 300 files
