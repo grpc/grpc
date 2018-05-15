@@ -133,7 +133,7 @@ grpc_security_status grpc_alts_auth_context_from_tsi_peer(
       rpc_versions_prop->value.data, rpc_versions_prop->value.length);
   bool decode_result =
       grpc_gcp_rpc_protocol_versions_decode(slice, &peer_versions);
-  grpc_slice_unref(slice);
+  grpc_slice_unref_internal(slice);
   if (!decode_result) {
     gpr_log(GPR_ERROR, "Invalid peer rpc protocol versions.");
     return GRPC_SECURITY_ERROR;

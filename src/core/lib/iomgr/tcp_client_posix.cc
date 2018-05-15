@@ -233,7 +233,7 @@ finish:
     error = grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS,
                                addr_str_slice /* takes ownership */);
   } else {
-    grpc_slice_unref(addr_str_slice);
+    grpc_slice_unref_internal(addr_str_slice);
   }
   if (done) {
     // This is safe even outside the lock, because "done", the sentinel, is

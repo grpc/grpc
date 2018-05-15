@@ -59,8 +59,9 @@ void authority_start_transport_stream_op_batch(
       initial_metadata->idx.named.authority == nullptr) {
     grpc_error* error = grpc_metadata_batch_add_head(
         initial_metadata, &calld->authority_storage,
-        grpc_mdelem_from_slices(GRPC_MDSTR_AUTHORITY,
-                                grpc_slice_ref(chand->default_authority)));
+        grpc_mdelem_from_slices(
+            GRPC_MDSTR_AUTHORITY,
+            grpc_slice_ref_internal(chand->default_authority)));
     if (error != GRPC_ERROR_NONE) {
       grpc_transport_stream_op_batch_finish_with_failure(batch, error,
                                                          calld->call_combiner);
@@ -110,7 +111,7 @@ grpc_error* init_channel_elem(grpc_channel_element* elem,
 /* Destructor for channel data */
 void destroy_channel_elem(grpc_channel_element* elem) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  grpc_slice_unref(chand->default_authority);
+  grpc_slice_unref_internal(chand->default_authority);
 }
 }  // namespace
 
