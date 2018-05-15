@@ -182,6 +182,16 @@
       }, 
       {
         "mode": "NULLABLE", 
+        "name": "core_syscall_epoll_ctl", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_pollset_fd_cache_hits", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
         "name": "core_histogram_slow_lookups", 
         "type": "INTEGER"
       }, 
@@ -1010,6 +1020,16 @@
       {
         "mode": "NULLABLE", 
         "name": "core_pollset_kick_own_thread", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_syscall_epoll_ctl", 
+        "type": "INTEGER"
+      }, 
+      {
+        "mode": "NULLABLE", 
+        "name": "core_pollset_fd_cache_hits", 
         "type": "INTEGER"
       }, 
       {
