@@ -45,6 +45,7 @@
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
+#include "src/core/lib/slice/slice_internal.h"
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 

@@ -30,6 +30,7 @@
 
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 
