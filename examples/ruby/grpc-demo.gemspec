@@ -18,7 +18,6 @@ Gem::Specification.new do |s|
   s.platform      = Gem::Platform::RUBY
 
   s.add_dependency 'grpc', '~> 1.0'
-  s.add_dependency 'googleauth', '>= 0.5.1', '< 0.7'
 
   s.add_development_dependency 'bundler', '~> 1.7'
 end
