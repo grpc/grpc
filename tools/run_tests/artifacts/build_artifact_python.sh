@@ -91,6 +91,12 @@ fi
 if [ "$GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS" != "" ]
 then
   "${PIP}" install -rrequirements.txt
+
+  if [ "$("$PYTHON" -c "import sys; print(sys.version_info[0])")" == "2" ]
+  then
+    "${PIP}" install futures>=2.2.0
+  fi
+
   "${PIP}" install grpcio --no-index --find-links "file://$ARTIFACT_DIR/"
   "${PIP}" install grpcio-tools --no-index --find-links "file://$ARTIFACT_DIR/"
 
