@@ -69,6 +69,18 @@ class BaseStub
             return;
         }
 
+        $this->channel = static::getDefaultChannel($opts);
+    }
+
+    /**
+     * Creates and returns the default Channel
+     *
+     * @param array $opts Channel constructor options
+     *
+     * @return Channel The channel
+     */
+    public static function getDefaultChannel(array $opts)
+    {
         $package_config = json_decode(
             file_get_contents(dirname(__FILE__).'/../../composer.json'),
             true
@@ -85,7 +97,7 @@ class BaseStub
                 'required. Please see one of the '.
                 'ChannelCredentials::create methods');
         }
-        $this->channel = new Channel($hostname, $opts);
+        return new Channel($hostname, $opts);
     }
 
     /**
