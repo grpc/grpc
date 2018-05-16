@@ -1,0 +1,35 @@
+#!/bin/bash
+# Copyright 2017 gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Source this rc script to prepare the environment for MacOS interop
+# builds. This rc script must be used in the root directory of gRPC
+# and is expected to be used before prepare_build_macos_rc
+
+export CONFIG=opt
+
+# Move gRPC repo to directory that Docker for Mac has drive access to
+mkdir /Users/kbuilder/workspace
+cp -R ./ /Users/kbuilder/workspace/grpc
+cd /Users/kbuilder/workspace/grpc
+
+# Needed for identifying Docker image sha1
+brew update
+brew install md5sha1sum
+
+# Set up gRPC-Go and gRPC-Java to test
+git clone --recursive https://github.com/grpc/grpc-go ./../grpc-go
+git clone --recursive https://github.com/grpc/grpc-java ./../grpc-java
+git clone --recursive https://github.com/grpc/grpc-node ./../grpc-node
+git clone --recursive https://github.com/grpc/grpc-dart ./../grpc-dart

@@ -19,9 +19,10 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_RST_STREAM_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_RST_STREAM_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/slice.h>
 #include "src/core/ext/transport/chttp2/transport/frame.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/transport.h"
 
 typedef struct {
@@ -30,14 +31,13 @@ typedef struct {
 } grpc_chttp2_rst_stream_parser;
 
 grpc_slice grpc_chttp2_rst_stream_create(uint32_t stream_id, uint32_t code,
-                                         grpc_transport_one_way_stats *stats);
+                                         grpc_transport_one_way_stats* stats);
 
-grpc_error *grpc_chttp2_rst_stream_parser_begin_frame(
-    grpc_chttp2_rst_stream_parser *parser, uint32_t length, uint8_t flags);
-grpc_error *grpc_chttp2_rst_stream_parser_parse(grpc_exec_ctx *exec_ctx,
-                                                void *parser,
-                                                grpc_chttp2_transport *t,
-                                                grpc_chttp2_stream *s,
+grpc_error* grpc_chttp2_rst_stream_parser_begin_frame(
+    grpc_chttp2_rst_stream_parser* parser, uint32_t length, uint8_t flags);
+grpc_error* grpc_chttp2_rst_stream_parser_parse(void* parser,
+                                                grpc_chttp2_transport* t,
+                                                grpc_chttp2_stream* s,
                                                 grpc_slice slice, int is_last);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_RST_STREAM_H */

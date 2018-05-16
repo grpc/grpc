@@ -137,6 +137,39 @@ describe GRPC::Core::Call do
     end
   end
 
+  describe '#cancel' do
+    it 'completes ok' do
+      call = make_test_call
+      expect { call.cancel }.not_to raise_error
+    end
+
+    it 'completes ok when the call is closed' do
+      call = make_test_call
+      call.close
+      expect { call.cancel }.not_to raise_error
+    end
+  end
+
+  describe '#cancel_with_status' do
+    it 'completes ok' do
+      call = make_test_call
+      expect do
+        call.cancel_with_status(0, 'test status')
+      end.not_to raise_error
+      expect do
+        call.cancel_with_status(0, nil)
+      end.to raise_error(TypeError)
+    end
+
+    it 'completes ok when the call is closed' do
+      call = make_test_call
+      call.close
+      expect do
+        call.cancel_with_status(0, 'test status')
+      end.not_to raise_error
+    end
+  end
+
   def make_test_call
     @ch.create_call(nil, nil, 'dummy_method', nil, deadline)
   end

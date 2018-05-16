@@ -10,30 +10,52 @@ def generate_cc_impl(ctx):
   includes = [f for src in ctx.attr.srcs for f in src.proto.transitive_imports]
   outs = []
   # label_len is length of the path from WORKSPACE root to the location of this build file
-  label_len = len(ctx.label.package) + 1
+  label_len = 0
+  # proto_root is the directory relative to which generated include paths should be
+  proto_root = ""
+  if ctx.label.package:
+    # The +1 is for the trailing slash.
+    label_len += len(ctx.label.package) + 1
+  if ctx.label.workspace_root:
+    label_len += len(ctx.label.workspace_root) + 1
+    proto_root = "/" + ctx.label.workspace_root
+
   if ctx.executable.plugin:
     outs += [proto.path[label_len:-len(".proto")] + ".grpc.pb.h" for proto in protos]
     outs += [proto.path[label_len:-len(".proto")] + ".grpc.pb.cc" for proto in protos]
-    if ctx.attr.generate_mock:
+    if ctx.attr.generate_mocks:
       outs += [proto.path[label_len:-len(".proto")] + "_mock.grpc.pb.h" for proto in protos]
   else:
     outs += [proto.path[label_len:-len(".proto")] + ".pb.h" for proto in protos]
     outs += [proto.path[label_len:-len(".proto")] + ".pb.cc" for proto in protos]
   out_files = [ctx.new_file(out) for out in outs]
-  dir_out = str(ctx.genfiles_dir.path)
+  dir_out = str(ctx.genfiles_dir.path + proto_root)
 
   arguments = []
   if ctx.executable.plugin:
     arguments += ["--plugin=protoc-gen-PLUGIN=" + ctx.executable.plugin.path]
     flags = list(ctx.attr.flags)
-    if ctx.attr.generate_mock:
+    if ctx.attr.generate_mocks:
       flags.append("generate_mock_code=true")
     arguments += ["--PLUGIN_out=" + ",".join(flags) + ":" + dir_out]
     additional_input = [ctx.executable.plugin]
   else:
     arguments += ["--cpp_out=" + ",".join(ctx.attr.flags) + ":" + dir_out]
     additional_input = []
-  arguments += ["-I{0}={0}".format(include.path) for include in includes]
+
+  # Import protos relative to their workspace root so that protoc prints the
+  # right include paths.
+  for include in includes:
+    directory = include.path
+    if directory.startswith("external"):
+      external_sep = directory.find("/")
+      repository_sep = directory.find("/", external_sep + 1)
+      arguments += ["--proto_path=" + directory[:repository_sep]]
+    else:
+      arguments += ["--proto_path=."]
+  # Include the output directory so that protoc puts the generated code in the
+  # right directory.
+  arguments += ["--proto_path={0}{1}".format(dir_out, proto_root)]
   arguments += [proto.path for proto in protos]
 
   # create a list of well known proto files if the argument is non-None
@@ -55,9 +77,9 @@ def generate_cc_impl(ctx):
       arguments = arguments,
   )
 
-  return struct(files=set(out_files))
+  return struct(files=depset(out_files))
 
-generate_cc = rule(
+_generate_cc = rule(
     attrs = {
         "srcs": attr.label_list(
             mandatory = True,
@@ -76,7 +98,7 @@ generate_cc = rule(
         "well_known_protos" : attr.label(
             mandatory = False,
         ),
-        "generate_mock" : attr.bool(
+        "generate_mocks" : attr.bool(
             default = False,
             mandatory = False,
         ),
@@ -90,3 +112,9 @@ generate_cc = rule(
     output_to_genfiles = True,
     implementation = generate_cc_impl,
 )
+
+def generate_cc(well_known_protos, **kwargs):
+  if well_known_protos:
+    _generate_cc(well_known_protos="@com_google_protobuf//:well_known_protos", **kwargs)
+  else:
+    _generate_cc(**kwargs)

@@ -23,7 +23,7 @@ $LOAD_PATH.unshift(this_dir) unless $LOAD_PATH.include?(this_dir)
 
 require 'grpc'
 require 'histogram'
-require 'src/proto/grpc/testing/services_services_pb'
+require 'src/proto/grpc/testing/benchmark_service_services_pb'
 
 class Poisson
   def interarrival

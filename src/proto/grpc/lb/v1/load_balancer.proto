@@ -67,6 +67,15 @@ message InitialLoadBalanceRequest {
   string name = 1;
 }
 
+// Contains the number of calls finished for a particular load balance token.
+message ClientStatsPerToken {
+  // See Server.load_balance_token.
+  string load_balance_token = 1;
+
+  // The total number of RPCs that finished associated with the token.
+  int64 num_calls = 2;
+}
+
 // Contains client level statistics that are useful to load balancing. Each
 // count except the timestamp should be reset to zero after reporting the stats.
 message ClientStats {
@@ -79,20 +88,17 @@ message ClientStats {
   // The total number of RPCs that finished.
   int64 num_calls_finished = 3;
 
-  // The total number of RPCs that were dropped by the client because of rate
-  // limiting.
-  int64 num_calls_finished_with_drop_for_rate_limiting = 4;
-
-  // The total number of RPCs that were dropped by the client because of load
-  // balancing.
-  int64 num_calls_finished_with_drop_for_load_balancing = 5;
-
   // The total number of RPCs that failed to reach a server except dropped RPCs.
   int64 num_calls_finished_with_client_failed_to_send = 6;
 
   // The total number of RPCs that finished and are known to have been received
   // by a server.
   int64 num_calls_finished_known_received = 7;
+
+  // The list of dropped calls.
+  repeated ClientStatsPerToken calls_finished_with_drop = 8;
+
+  reserved 4, 5;
 }
 
 message LoadBalanceResponse {
@@ -127,17 +133,12 @@ message ServerList {
   // unless instructed otherwise via the client_config.
   repeated Server servers = 1;
 
-  // Indicates the amount of time that the client should consider this server
-  // list as valid. It may be considered stale after waiting this interval of
-  // time after receiving the list. If the interval is not positive, the
-  // client can assume the list is valid until the next list is received.
-  Duration expiration_interval = 3;
+  // Was google.protobuf.Duration expiration_interval.
+  reserved 3;
 }
 
-// Contains server information. When none of the [drop_for_*] fields are true,
-// use the other fields. When drop_for_rate_limiting is true, ignore all other
-// fields. Use drop_for_load_balancing only when it is true and
-// drop_for_rate_limiting is false.
+// Contains server information. When the drop field is not true, use the other
+// fields.
 message Server {
   // A resolved address for the server, serialized in network-byte-order. It may
   // either be an IPv4 or IPv6 address.
@@ -149,16 +150,16 @@ message Server {
   // An opaque but printable token given to the frontend for each pick. All
   // frontend requests for that pick must include the token in its initial
   // metadata. The token is used by the backend to verify the request and to
-  // allow the backend to report load to the gRPC LB system.
+  // allow the backend to report load to the gRPC LB system. The token is also
+  // used in client stats for reporting dropped calls.
   //
   // Its length is variable but less than 50 bytes.
   string load_balance_token = 3;
 
-  // Indicates whether this particular request should be dropped by the client
-  // for rate limiting.
-  bool drop_for_rate_limiting = 4;
+  // Indicates whether this particular request should be dropped by the client.
+  // If the request is dropped, there will be a corresponding entry in
+  // ClientStats.calls_finished_with_drop.
+  bool drop = 4;
 
-  // Indicates whether this particular request should be dropped by the client
-  // for load balancing.
-  bool drop_for_load_balancing = 5;
+  reserved 5;
 }

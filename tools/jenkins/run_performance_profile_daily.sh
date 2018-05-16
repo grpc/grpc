@@ -27,4 +27,8 @@ else
   PYTHON=python2.7
 fi
 
-$PYTHON tools/run_tests/run_microbenchmark.py --collect summary perf latency
+BENCHMARKS_TO_RUN="bm_fullstack_unary_ping_pong bm_fullstack_streaming_ping_pong bm_fullstack_streaming_pump bm_closure bm_cq bm_call_create bm_error bm_chttp2_hpack bm_chttp2_transport bm_pollset bm_metadata"
+
+./tools/run_tests/start_port_server.py || true
+
+$PYTHON tools/run_tests/run_microbenchmark.py --collect summary perf latency -b $BENCHMARKS_TO_RUN

@@ -16,7 +16,6 @@
 import unittest
 
 import grpc
-from grpc.framework.foundation import logging_pool
 from grpc_reflection.v1alpha import reflection
 from grpc_reflection.v1alpha import reflection_pb2
 from grpc_reflection.v1alpha import reflection_pb2_grpc
@@ -27,14 +26,20 @@ from google.protobuf import descriptor_pb2
 from src.proto.grpc.testing import empty_pb2
 from src.proto.grpc.testing.proto2 import empty2_extensions_pb2
 
-from tests.unit.framework.common import test_constants
+from tests.unit import test_common
 
 _EMPTY_PROTO_FILE_NAME = 'src/proto/grpc/testing/empty.proto'
 _EMPTY_PROTO_SYMBOL_NAME = 'grpc.testing.Empty'
 _SERVICE_NAMES = ('Angstrom', 'Bohr', 'Curie', 'Dyson', 'Einstein', 'Feynman',
                   'Galilei')
 _EMPTY_EXTENSIONS_SYMBOL_NAME = 'grpc.testing.proto2.EmptyWithExtensions'
-_EMPTY_EXTENSIONS_NUMBERS = (124, 125, 126, 127, 128,)
+_EMPTY_EXTENSIONS_NUMBERS = (
+    124,
+    125,
+    126,
+    127,
+    128,
+)
 
 
 def _file_descriptor_to_proto(descriptor):
@@ -46,8 +51,7 @@ def _file_descriptor_to_proto(descriptor):
 class ReflectionServicerTest(unittest.TestCase):
 
     def setUp(self):
-        server_pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
-        self._server = grpc.server(server_pool)
+        self._server = test_common.test_server()
         reflection.enable_server_reflection(_SERVICE_NAMES, self._server)
         port = self._server.add_insecure_port('[::]:0')
         self._server.start()
@@ -56,10 +60,12 @@ class ReflectionServicerTest(unittest.TestCase):
         self._stub = reflection_pb2_grpc.ServerReflectionStub(channel)
 
     def testFileByName(self):
-        requests = (reflection_pb2.ServerReflectionRequest(
-            file_by_filename=_EMPTY_PROTO_FILE_NAME),
-                    reflection_pb2.ServerReflectionRequest(
-                        file_by_filename='i-donut-exist'),)
+        requests = (
+            reflection_pb2.ServerReflectionRequest(
+                file_by_filename=_EMPTY_PROTO_FILE_NAME),
+            reflection_pb2.ServerReflectionRequest(
+                file_by_filename='i-donut-exist'),
+        )
         responses = tuple(self._stub.ServerReflectionInfo(iter(requests)))
         expected_responses = (
             reflection_pb2.ServerReflectionResponse(
@@ -72,14 +78,18 @@ class ReflectionServicerTest(unittest.TestCase):
                 error_response=reflection_pb2.ErrorResponse(
                     error_code=grpc.StatusCode.NOT_FOUND.value[0],
                     error_message=grpc.StatusCode.NOT_FOUND.value[1].encode(),
-                )),)
+                )),
+        )
         self.assertSequenceEqual(expected_responses, responses)
 
     def testFileBySymbol(self):
-        requests = (reflection_pb2.ServerReflectionRequest(
-            file_containing_symbol=_EMPTY_PROTO_SYMBOL_NAME
-        ), reflection_pb2.ServerReflectionRequest(
-            file_containing_symbol='i.donut.exist.co.uk.org.net.me.name.foo'),)
+        requests = (
+            reflection_pb2.ServerReflectionRequest(
+                file_containing_symbol=_EMPTY_PROTO_SYMBOL_NAME),
+            reflection_pb2.ServerReflectionRequest(
+                file_containing_symbol='i.donut.exist.co.uk.org.net.me.name.foo'
+            ),
+        )
         responses = tuple(self._stub.ServerReflectionInfo(iter(requests)))
         expected_responses = (
             reflection_pb2.ServerReflectionResponse(
@@ -92,21 +102,23 @@ class ReflectionServicerTest(unittest.TestCase):
                 error_response=reflection_pb2.ErrorResponse(
                     error_code=grpc.StatusCode.NOT_FOUND.value[0],
                     error_message=grpc.StatusCode.NOT_FOUND.value[1].encode(),
-                )),)
+                )),
+        )
         self.assertSequenceEqual(expected_responses, responses)
 
-    @unittest.skip(
-        'TODO(mmx): enable when (pure) python protobuf issue is fixed'
-        '(see https://github.com/google/protobuf/issues/2882)')
     def testFileContainingExtension(self):
-        requests = (reflection_pb2.ServerReflectionRequest(
-            file_containing_extension=reflection_pb2.ExtensionRequest(
-                containing_type=_EMPTY_EXTENSIONS_SYMBOL_NAME,
-                extension_number=125,),
-        ), reflection_pb2.ServerReflectionRequest(
-            file_containing_extension=reflection_pb2.ExtensionRequest(
-                containing_type='i.donut.exist.co.uk.org.net.me.name.foo',
-                extension_number=55,),),)
+        requests = (
+            reflection_pb2.ServerReflectionRequest(
+                file_containing_extension=reflection_pb2.ExtensionRequest(
+                    containing_type=_EMPTY_EXTENSIONS_SYMBOL_NAME,
+                    extension_number=125,
+                ),),
+            reflection_pb2.ServerReflectionRequest(
+                file_containing_extension=reflection_pb2.ExtensionRequest(
+                    containing_type='i.donut.exist.co.uk.org.net.me.name.foo',
+                    extension_number=55,
+                ),),
+        )
         responses = tuple(self._stub.ServerReflectionInfo(iter(requests)))
         expected_responses = (
             reflection_pb2.ServerReflectionResponse(
@@ -119,14 +131,18 @@ class ReflectionServicerTest(unittest.TestCase):
                 error_response=reflection_pb2.ErrorResponse(
                     error_code=grpc.StatusCode.NOT_FOUND.value[0],
                     error_message=grpc.StatusCode.NOT_FOUND.value[1].encode(),
-                )),)
+                )),
+        )
         self.assertSequenceEqual(expected_responses, responses)
 
     def testExtensionNumbersOfType(self):
-        requests = (reflection_pb2.ServerReflectionRequest(
-            all_extension_numbers_of_type=_EMPTY_EXTENSIONS_SYMBOL_NAME
-        ), reflection_pb2.ServerReflectionRequest(
-            all_extension_numbers_of_type='i.donut.exist.co.uk.net.name.foo'),)
+        requests = (
+            reflection_pb2.ServerReflectionRequest(
+                all_extension_numbers_of_type=_EMPTY_EXTENSIONS_SYMBOL_NAME),
+            reflection_pb2.ServerReflectionRequest(
+                all_extension_numbers_of_type='i.donut.exist.co.uk.net.name.foo'
+            ),
+        )
         responses = tuple(self._stub.ServerReflectionInfo(iter(requests)))
         expected_responses = (
             reflection_pb2.ServerReflectionResponse(
@@ -140,12 +156,12 @@ class ReflectionServicerTest(unittest.TestCase):
                 error_response=reflection_pb2.ErrorResponse(
                     error_code=grpc.StatusCode.NOT_FOUND.value[0],
                     error_message=grpc.StatusCode.NOT_FOUND.value[1].encode(),
-                )),)
+                )),
+        )
         self.assertSequenceEqual(expected_responses, responses)
 
     def testListServices(self):
-        requests = (reflection_pb2.ServerReflectionRequest(
-            list_services='',),)
+        requests = (reflection_pb2.ServerReflectionRequest(list_services='',),)
         responses = tuple(self._stub.ServerReflectionInfo(iter(requests)))
         expected_responses = (reflection_pb2.ServerReflectionResponse(
             valid_host='',

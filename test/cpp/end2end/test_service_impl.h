@@ -21,16 +21,16 @@
 #include <memory>
 #include <mutex>
 
-#include <grpc++/server_context.h>
 #include <grpc/grpc.h>
+#include <grpcpp/server_context.h>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 
 namespace grpc {
 namespace testing {
 
-const int kNumResponseStreamsMsgs = 3;
-const char* const kServerCancelAfterReads = "cancel_after_reads";
+const int kServerDefaultResponseStreamsToSend = 3;
+const char* const kServerResponseStreamsToSend = "server_responses_to_send";
 const char* const kServerTryCancelRequest = "server_try_cancel";
 const char* const kDebugInfoTrailerKey = "debug-info-bin";
 const char* const kServerFinishAfterNReads = "server_finish_after_n_reads";

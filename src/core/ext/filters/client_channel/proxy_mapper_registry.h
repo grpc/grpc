@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_PROXY_MAPPER_REGISTRY_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_PROXY_MAPPER_REGISTRY_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/filters/client_channel/proxy_mapper.h"
 
 void grpc_proxy_mapper_registry_init();
@@ -29,14 +31,12 @@ void grpc_proxy_mapper_registry_shutdown();
 /// the list.  Otherwise, it will be added to the end.
 void grpc_proxy_mapper_register(bool at_start, grpc_proxy_mapper* mapper);
 
-bool grpc_proxy_mappers_map_name(grpc_exec_ctx* exec_ctx,
-                                 const char* server_uri,
+bool grpc_proxy_mappers_map_name(const char* server_uri,
                                  const grpc_channel_args* args,
                                  char** name_to_resolve,
                                  grpc_channel_args** new_args);
 
-bool grpc_proxy_mappers_map_address(grpc_exec_ctx* exec_ctx,
-                                    const grpc_resolved_address* address,
+bool grpc_proxy_mappers_map_address(const grpc_resolved_address* address,
                                     const grpc_channel_args* args,
                                     grpc_resolved_address** new_address,
                                     grpc_channel_args** new_args);

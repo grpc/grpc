@@ -18,25 +18,12 @@
 
 #include "call.h"
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#include <php.h>
-#include <php_ini.h>
-#include <ext/standard/info.h>
 #include <ext/spl/spl_exceptions.h>
-#include "php_grpc.h"
-#include "call_credentials.h"
-
 #include <zend_exceptions.h>
-#include <zend_hash.h>
-
-#include <stdbool.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/grpc.h>
 
+#include "call_credentials.h"
 #include "completion_queue.h"
 #include "timeval.h"
 #include "channel.h"
@@ -99,6 +86,7 @@ zval *grpc_parse_metadata_array(grpc_metadata_array
                              1 TSRMLS_CC);
         efree(str_key);
         efree(str_val);
+        PHP_GRPC_FREE_STD_ZVAL(array);
         return NULL;
       }
       php_grpc_add_next_index_stringl(data, str_val,
@@ -127,10 +115,12 @@ bool create_metadata_array(zval *array, grpc_metadata_array *metadata) {
   HashTable *inner_array_hash;
   zval *value;
   zval *inner_array;
+  grpc_metadata_array_init(metadata);
+  metadata->count = 0;
+  metadata->metadata = NULL;
   if (Z_TYPE_P(array) != IS_ARRAY) {
     return false;
   }
-  grpc_metadata_array_init(metadata);
   array_hash = Z_ARRVAL_P(array);
 
   char *key;
@@ -174,6 +164,18 @@ bool create_metadata_array(zval *array, grpc_metadata_array *metadata) {
   return true;
 }
 
+void grpc_php_metadata_array_destroy_including_entries(
+    grpc_metadata_array* array) {
+  size_t i;
+  if (array->metadata) {
+    for (i = 0; i < array->count; i++) {
+      grpc_slice_unref(array->metadata[i].key);
+      grpc_slice_unref(array->metadata[i].value);
+    }
+  }
+  grpc_metadata_array_destroy(array);
+}
+
 /* Wraps a grpc_call struct in a PHP object. Owned indicates whether the
    struct should be destroyed at the end of the object's lifecycle */
 zval *grpc_php_wrap_call(grpc_call *wrapped, bool owned TSRMLS_DC) {
@@ -214,10 +216,12 @@ PHP_METHOD(Call, __construct) {
     return;
   }
   wrapped_grpc_channel *channel = Z_WRAPPED_GRPC_CHANNEL_P(channel_obj);
-  if (channel->wrapped == NULL) {
+  gpr_mu_lock(&channel->wrapper->mu);
+  if (channel->wrapper == NULL || channel->wrapper->wrapped == NULL) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
                          "Call cannot be constructed from a closed Channel",
                          1 TSRMLS_CC);
+    gpr_mu_unlock(&channel->wrapper->mu);
     return;
   }
   add_property_zval(getThis(), "channel", channel_obj);
@@ -226,13 +230,16 @@ PHP_METHOD(Call, __construct) {
   grpc_slice host_slice = host_override != NULL ?
       grpc_slice_from_copied_string(host_override) : grpc_empty_slice();
   call->wrapped =
-    grpc_channel_create_call(channel->wrapped, NULL, GRPC_PROPAGATE_DEFAULTS,
+    grpc_channel_create_call(channel->wrapper->wrapped, NULL,
+                             GRPC_PROPAGATE_DEFAULTS,
                              completion_queue, method_slice,
                              host_override != NULL ? &host_slice : NULL,
                              deadline->wrapped, NULL);
   grpc_slice_unref(method_slice);
   grpc_slice_unref(host_slice);
   call->owned = true;
+  call->channel = channel;
+  gpr_mu_unlock(&channel->wrapper->mu);
 }
 
 /**
@@ -251,6 +258,15 @@ PHP_METHOD(Call, startBatch) {
   zval *message_value;
   zval *message_flags;
   wrapped_grpc_call *call = Z_WRAPPED_GRPC_CALL_P(getThis());
+  if (call->channel) {
+    // startBatch in gRPC PHP server doesn't have channel in it.
+    if (call->channel->wrapper == NULL ||
+        call->channel->wrapper->wrapped == NULL) {
+      zend_throw_exception(spl_ce_RuntimeException,
+                           "startBatch Error. Channel is closed",
+                           1 TSRMLS_CC);
+    }
+  }
   
   grpc_op ops[8];
   size_t op_num = 0;
@@ -297,6 +313,11 @@ PHP_METHOD(Call, startBatch) {
                            "batch keys must be integers", 1 TSRMLS_CC);
       goto cleanup;
     }
+
+    ops[op_num].op = (grpc_op_type)index;
+    ops[op_num].flags = 0;
+    ops[op_num].reserved = NULL;
+
     switch(index) {
     case GRPC_OP_SEND_INITIAL_METADATA:
       if (!create_metadata_array(value, &metadata)) {
@@ -410,9 +431,6 @@ PHP_METHOD(Call, startBatch) {
                            "Unrecognized key in batch", 1 TSRMLS_CC);
       goto cleanup;
     }
-    ops[op_num].op = (grpc_op_type)index;
-    ops[op_num].flags = 0;
-    ops[op_num].reserved = NULL;
     op_num++;
   PHP_GRPC_HASH_FOREACH_END()
 
@@ -498,8 +516,8 @@ PHP_METHOD(Call, startBatch) {
   }
 
 cleanup:
-  grpc_metadata_array_destroy(&metadata);
-  grpc_metadata_array_destroy(&trailing_metadata);
+  grpc_php_metadata_array_destroy_including_entries(&metadata);
+  grpc_php_metadata_array_destroy_including_entries(&trailing_metadata);
   grpc_metadata_array_destroy(&recv_metadata);
   grpc_metadata_array_destroy(&recv_trailing_metadata);
   grpc_slice_unref(recv_status_details);
@@ -522,7 +540,9 @@ cleanup:
  */
 PHP_METHOD(Call, getPeer) {
   wrapped_grpc_call *call = Z_WRAPPED_GRPC_CALL_P(getThis());
-  PHP_GRPC_RETURN_STRING(grpc_call_get_peer(call->wrapped), 1);
+  char *peer = grpc_call_get_peer(call->wrapped);
+  PHP_GRPC_RETVAL_STRING(peer, 1);
+  gpr_free(peer);
 }
 
 /**

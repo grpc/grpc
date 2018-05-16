@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2017 gRPC authors.
+ * Copyright 2018 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,13 @@
  *
  */
 
+// DEPRECATED: The headers in include/grpc++ are deprecated. Please include the
+// headers in include/grpcpp instead. This header exists only for backwards
+// compatibility.
+
 #ifndef GRPCXX_IMPL_CHANNEL_ARGUMENT_OPTION_H
 #define GRPCXX_IMPL_CHANNEL_ARGUMENT_OPTION_H
 
-#include <map>
-#include <memory>
-
-#include <grpc++/impl/server_builder_option.h>
-#include <grpc++/support/channel_arguments.h>
-
-namespace grpc {
-
-std::unique_ptr<ServerBuilderOption> MakeChannelArgumentOption(
-    const grpc::string &name, const grpc::string &value);
-std::unique_ptr<ServerBuilderOption> MakeChannelArgumentOption(
-    const grpc::string &name, int value);
-
-}  // namespace grpc
+#include <grpcpp/impl/channel_argument_option.h>
 
 #endif  // GRPCXX_IMPL_CHANNEL_ARGUMENT_OPTION_H

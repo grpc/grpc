@@ -46,7 +46,7 @@ class CaseResult(
       None.
   """
 
-    class Kind:
+    class Kind(object):
         UNTESTED = 'untested'
         RUNNING = 'running'
         ERROR = 'error'
@@ -215,7 +215,8 @@ class AugmentedResult(unittest.TestResult):
     Args:
       filter (callable): A unary predicate to filter over CaseResult objects.
     """
-        return (self.cases[case_id] for case_id in self.cases
+        return (self.cases[case_id]
+                for case_id in self.cases
                 if filter(self.cases[case_id]))
 
 
@@ -256,7 +257,7 @@ class CoverageResult(AugmentedResult):
         #coverage.Coverage().combine()
 
 
-class _Colors:
+class _Colors(object):
     """Namespaced constants for terminal color magic numbers."""
     HEADER = '\033[95m'
     INFO = '\033[94m'
@@ -285,8 +286,8 @@ class TerminalResult(CoverageResult):
     def startTestRun(self):
         """See unittest.TestResult.startTestRun."""
         super(TerminalResult, self).startTestRun()
-        self.out.write(_Colors.HEADER + 'Testing gRPC Python...\n' +
-                       _Colors.END)
+        self.out.write(
+            _Colors.HEADER + 'Testing gRPC Python...\n' + _Colors.END)
 
     def stopTestRun(self):
         """See unittest.TestResult.stopTestRun."""
@@ -297,43 +298,43 @@ class TerminalResult(CoverageResult):
     def addError(self, test, error):
         """See unittest.TestResult.addError."""
         super(TerminalResult, self).addError(test, error)
-        self.out.write(_Colors.FAIL + 'ERROR         {}\n'.format(test.id()) +
-                       _Colors.END)
+        self.out.write(
+            _Colors.FAIL + 'ERROR         {}\n'.format(test.id()) + _Colors.END)
         self.out.flush()
 
     def addFailure(self, test, error):
         """See unittest.TestResult.addFailure."""
         super(TerminalResult, self).addFailure(test, error)
-        self.out.write(_Colors.FAIL + 'FAILURE       {}\n'.format(test.id()) +
-                       _Colors.END)
+        self.out.write(
+            _Colors.FAIL + 'FAILURE       {}\n'.format(test.id()) + _Colors.END)
         self.out.flush()
 
     def addSuccess(self, test):
         """See unittest.TestResult.addSuccess."""
         super(TerminalResult, self).addSuccess(test)
-        self.out.write(_Colors.OK + 'SUCCESS       {}\n'.format(test.id()) +
-                       _Colors.END)
+        self.out.write(
+            _Colors.OK + 'SUCCESS       {}\n'.format(test.id()) + _Colors.END)
         self.out.flush()
 
     def addSkip(self, test, reason):
         """See unittest.TestResult.addSkip."""
         super(TerminalResult, self).addSkip(test, reason)
-        self.out.write(_Colors.INFO + 'SKIP          {}\n'.format(test.id()) +
-                       _Colors.END)
+        self.out.write(
+            _Colors.INFO + 'SKIP          {}\n'.format(test.id()) + _Colors.END)
         self.out.flush()
 
     def addExpectedFailure(self, test, error):
         """See unittest.TestResult.addExpectedFailure."""
         super(TerminalResult, self).addExpectedFailure(test, error)
-        self.out.write(_Colors.INFO + 'FAILURE_OK    {}\n'.format(test.id()) +
-                       _Colors.END)
+        self.out.write(
+            _Colors.INFO + 'FAILURE_OK    {}\n'.format(test.id()) + _Colors.END)
         self.out.flush()
 
     def addUnexpectedSuccess(self, test):
         """See unittest.TestResult.addUnexpectedSuccess."""
         super(TerminalResult, self).addUnexpectedSuccess(test)
-        self.out.write(_Colors.INFO + 'UNEXPECTED_OK {}\n'.format(test.id()) +
-                       _Colors.END)
+        self.out.write(
+            _Colors.INFO + 'UNEXPECTED_OK {}\n'.format(test.id()) + _Colors.END)
         self.out.flush()
 
 

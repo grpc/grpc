@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_SURFACE_CHANNEL_STACK_TYPE_H
 #define GRPC_CORE_LIB_SURFACE_CHANNEL_STACK_TYPE_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stdbool.h>
 
 typedef enum {
@@ -40,6 +42,6 @@ typedef enum {
 
 bool grpc_channel_stack_type_is_client(grpc_channel_stack_type type);
 
-const char *grpc_channel_stack_type_string(grpc_channel_stack_type type);
+const char* grpc_channel_stack_type_string(grpc_channel_stack_type type);
 
 #endif /* GRPC_CORE_LIB_SURFACE_CHANNEL_STACK_TYPE_H */

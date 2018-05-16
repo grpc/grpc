@@ -19,29 +19,29 @@
 #import "GRPCWrappedCall.h"
 
 #import <Foundation/Foundation.h>
-#include <grpc/grpc.h>
 #include <grpc/byte_buffer.h>
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 
 #import "GRPCCompletionQueue.h"
 #import "GRPCHost.h"
-#import "NSDictionary+GRPC.h"
 #import "NSData+GRPC.h"
+#import "NSDictionary+GRPC.h"
 #import "NSError+GRPC.h"
 
 #import "GRPCOpBatchLog.h"
 
 @implementation GRPCOperation {
-@protected
+ @protected
   // Most operation subclasses don't set any flags in the grpc_op, and rely on the flag member being
   // initialized to zero.
   grpc_op _op;
-  void(^_handler)();
+  void (^_handler)(void);
 }
 
 - (void)finish {
   if (_handler) {
-    void(^handler)() = _handler;
+    void (^handler)(void) = _handler;
     _handler = nil;
     handler();
   }
@@ -54,14 +54,13 @@
   return [self initWithMetadata:nil flags:0 handler:nil];
 }
 
-- (instancetype)initWithMetadata:(NSDictionary *)metadata
-                         handler:(void (^)())handler {
+- (instancetype)initWithMetadata:(NSDictionary *)metadata handler:(void (^)(void))handler {
   return [self initWithMetadata:metadata flags:0 handler:handler];
 }
 
 - (instancetype)initWithMetadata:(NSDictionary *)metadata
                            flags:(uint32_t)flags
-                         handler:(void (^)())handler {
+                         handler:(void (^)(void))handler {
   if (self = [super init]) {
     _op.op = GRPC_OP_SEND_INITIAL_METADATA;
     _op.data.send_initial_metadata.count = metadata.count;
@@ -75,6 +74,10 @@
 }
 
 - (void)dealloc {
+  for (int i = 0; i < _op.data.send_initial_metadata.count; i++) {
+    grpc_slice_unref(_op.data.send_initial_metadata.metadata[i].key);
+    grpc_slice_unref(_op.data.send_initial_metadata.metadata[i].value);
+  }
   gpr_free(_op.data.send_initial_metadata.metadata);
 }
 
@@ -86,7 +89,7 @@
   return [self initWithMessage:nil handler:nil];
 }
 
-- (instancetype)initWithMessage:(NSData *)message handler:(void (^)())handler {
+- (instancetype)initWithMessage:(NSData *)message handler:(void (^)(void))handler {
   if (!message) {
     [NSException raise:NSInvalidArgumentException format:@"message cannot be nil"];
   }
@@ -110,7 +113,7 @@
   return [self initWithHandler:nil];
 }
 
-- (instancetype)initWithHandler:(void (^)())handler {
+- (instancetype)initWithHandler:(void (^)(void))handler {
   if (self = [super init]) {
     _op.op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
     _handler = handler;
@@ -124,11 +127,11 @@
   grpc_metadata_array _headers;
 }
 
-- (instancetype) init {
+- (instancetype)init {
   return [self initWithHandler:nil];
 }
 
-- (instancetype) initWithHandler:(void (^)(NSDictionary *))handler {
+- (instancetype)initWithHandler:(void (^)(NSDictionary *))handler {
   if (self = [super init]) {
     _op.op = GRPC_OP_RECV_INITIAL_METADATA;
     grpc_metadata_array_init(&_headers);
@@ -138,8 +141,8 @@
       __weak typeof(self) weakSelf = self;
       _handler = ^{
         __strong typeof(self) strongSelf = weakSelf;
-        NSDictionary *metadata = [NSDictionary
-                                  grpc_dictionaryFromMetadataArray:strongSelf->_headers];
+        NSDictionary *metadata =
+            [NSDictionary grpc_dictionaryFromMetadataArray:strongSelf->_headers];
         handler(metadata);
       };
     }
@@ -153,7 +156,7 @@
 
 @end
 
-@implementation GRPCOpRecvMessage{
+@implementation GRPCOpRecvMessage {
   grpc_byte_buffer *_receivedMessage;
 }
 
@@ -179,18 +182,18 @@
 
 @end
 
-@implementation GRPCOpRecvStatus{
+@implementation GRPCOpRecvStatus {
   grpc_status_code _statusCode;
   grpc_slice _details;
   size_t _detailsCapacity;
   grpc_metadata_array _trailers;
 }
 
-- (instancetype) init {
+- (instancetype)init {
   return [self initWithHandler:nil];
 }
 
-- (instancetype) initWithHandler:(void (^)(NSError *, NSDictionary *))handler {
+- (instancetype)initWithHandler:(void (^)(NSError *, NSDictionary *))handler {
   if (self = [super init]) {
     _op.op = GRPC_OP_RECV_STATUS_ON_CLIENT;
     _op.data.recv_status_on_client.status = &_statusCode;
@@ -204,10 +207,10 @@
         __strong typeof(self) strongSelf = weakSelf;
         if (strongSelf) {
           char *details = grpc_slice_to_c_string(strongSelf->_details);
-          NSError *error = [NSError grpc_errorFromStatusCode:strongSelf->_statusCode
-                                                     details:details];
-          NSDictionary *trailers = [NSDictionary
-                                    grpc_dictionaryFromMetadataArray:strongSelf->_trailers];
+          NSError *error =
+              [NSError grpc_errorFromStatusCode:strongSelf->_statusCode details:details];
+          NSDictionary *trailers =
+              [NSDictionary grpc_dictionaryFromMetadataArray:strongSelf->_trailers];
           handler(error, trailers);
           gpr_free(details);
         }
@@ -232,14 +235,15 @@
 }
 
 - (instancetype)init {
-  return [self initWithHost:nil path:nil];
+  return [self initWithHost:nil serverName:nil path:nil timeout:0];
 }
 
 - (instancetype)initWithHost:(NSString *)host
-                        path:(NSString *)path {
+                  serverName:(NSString *)serverName
+                        path:(NSString *)path
+                     timeout:(NSTimeInterval)timeout {
   if (!path || !host) {
-    [NSException raise:NSInvalidArgumentException
-                format:@"path and host cannot be nil."];
+    [NSException raise:NSInvalidArgumentException format:@"path and host cannot be nil."];
   }
 
   if (self = [super init]) {
@@ -248,7 +252,10 @@
     // queue. Currently we use a singleton queue.
     _queue = [GRPCCompletionQueue completionQueue];
 
-    _call = [[GRPCHost hostWithAddress:host] unmanagedCallWithPath:path completionQueue:_queue];
+    _call = [[GRPCHost hostWithAddress:host] unmanagedCallWithPath:path
+                                                        serverName:serverName
+                                                           timeout:timeout
+                                                   completionQueue:_queue];
     if (_call == NULL) {
       return nil;
     }
@@ -260,9 +267,9 @@
   [self startBatchWithOperations:operations errorHandler:nil];
 }
 
-- (void)startBatchWithOperations:(NSArray *)operations errorHandler:(void (^)())errorHandler {
-  // Keep logs of op batches when we are running tests. Disabled when in production for improved
-  // performance.
+- (void)startBatchWithOperations:(NSArray *)operations errorHandler:(void (^)(void))errorHandler {
+// Keep logs of op batches when we are running tests. Disabled when in production for improved
+// performance.
 #ifdef GRPC_TEST_OBJC
   [GRPCOpBatchLog addOpBatchToLog:operations];
 #endif
@@ -273,25 +280,26 @@
   for (GRPCOperation *operation in operations) {
     ops_array[i++] = operation.op;
   }
-  grpc_call_error error = grpc_call_start_batch(_call, ops_array, nops,
-                                                (__bridge_retained void *)(^(bool success){
-    if (!success) {
-      if (errorHandler) {
-        errorHandler();
-      } else {
-        return;
-      }
-    }
-    for (GRPCOperation *operation in operations) {
-      [operation finish];
-    }
-  }), NULL);
+  grpc_call_error error =
+      grpc_call_start_batch(_call, ops_array, nops, (__bridge_retained void *)(^(bool success) {
+                              if (!success) {
+                                if (errorHandler) {
+                                  errorHandler();
+                                } else {
+                                  return;
+                                }
+                              }
+                              for (GRPCOperation *operation in operations) {
+                                [operation finish];
+                              }
+                            }),
+                            NULL);
   gpr_free(ops_array);
 
   if (error != GRPC_CALL_OK) {
-    [NSException raise:NSInternalInconsistencyException
-                format:@"A precondition for calling grpc_call_start_batch wasn't met. Error %i",
-     error];
+    [NSException
+         raise:NSInternalInconsistencyException
+        format:@"A precondition for calling grpc_call_start_batch wasn't met. Error %i", error];
   }
 }
 

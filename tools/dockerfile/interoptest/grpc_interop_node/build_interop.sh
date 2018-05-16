@@ -17,17 +17,18 @@
 set -e
 
 mkdir -p /var/local/git
-git clone /var/local/jenkins/grpc /var/local/git/grpc
+git clone /var/local/jenkins/grpc-node /var/local/git/grpc-node
 # clone gRPC submodules, use data from locally cloned submodules where possible
-(cd /var/local/jenkins/grpc/ && git submodule foreach 'cd /var/local/git/grpc \
-&& git submodule update --init --reference /var/local/jenkins/grpc/${name} \
+(cd /var/local/jenkins/grpc-node/ && git submodule foreach 'cd /var/local/git/grpc-node \
+&& git submodule update --init --recursive --reference /var/local/jenkins/grpc-node/${name} \
 ${name}')
 
 # copy service account keys if available
 cp -r /var/local/jenkins/service_account $HOME || true
 
-cd /var/local/git/grpc
+cd /var/local/git/grpc-node
 
 # build Node interop client & server
-npm install -g node-gyp
-npm install --unsafe-perm --build-from-source
+npm install -g node-gyp gulp
+npm install
+gulp setup

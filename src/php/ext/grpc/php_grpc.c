@@ -16,6 +16,8 @@
  *
  */
 
+#include "php_grpc.h"
+
 #include "call.h"
 #include "channel.h"
 #include "server.h"
@@ -25,17 +27,10 @@
 #include "server_credentials.h"
 #include "completion_queue.h"
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#include <php.h>
-#include <php_ini.h>
-#include <ext/standard/info.h>
-#include "php_grpc.h"
-
-// ZEND_DECLARE_MODULE_GLOBALS(grpc)
-
+ZEND_DECLARE_MODULE_GLOBALS(grpc)
+static PHP_GINIT_FUNCTION(grpc);
+HashTable grpc_persistent_list;
+HashTable grpc_target_upper_bound_map;
 /* {{{ grpc_functions[]
  *
  * Every user visible function must have an entry in grpc_functions[].
@@ -48,20 +43,20 @@ const zend_function_entry grpc_functions[] = {
 /* {{{ grpc_module_entry
  */
 zend_module_entry grpc_module_entry = {
-#if ZEND_MODULE_API_NO >= 20010901
   STANDARD_MODULE_HEADER,
-#endif
   "grpc",
   grpc_functions,
   PHP_MINIT(grpc),
   PHP_MSHUTDOWN(grpc),
-  NULL,
+  PHP_RINIT(grpc),
   NULL,
   PHP_MINFO(grpc),
-#if ZEND_MODULE_API_NO >= 20010901
   PHP_GRPC_VERSION,
-#endif
-  STANDARD_MODULE_PROPERTIES};
+  PHP_MODULE_GLOBALS(grpc),
+  PHP_GINIT(grpc),
+  NULL,
+  NULL,
+  STANDARD_MODULE_PROPERTIES_EX};
 /* }}} */
 
 #ifdef COMPILE_DL_GRPC
@@ -99,7 +94,6 @@ PHP_MINIT_FUNCTION(grpc) {
      REGISTER_INI_ENTRIES();
   */
   /* Register call error constants */
-  grpc_init();
   REGISTER_LONG_CONSTANT("Grpc\\CALL_OK", GRPC_CALL_OK,
                          CONST_CS | CONST_PERSISTENT);
   REGISTER_LONG_CONSTANT("Grpc\\CALL_ERROR", GRPC_CALL_ERROR,
@@ -221,13 +215,12 @@ PHP_MINIT_FUNCTION(grpc) {
                          CONST_CS | CONST_PERSISTENT);
 
   grpc_init_call(TSRMLS_C);
-  grpc_init_channel(TSRMLS_C);
+  GRPC_STARTUP(channel);
   grpc_init_server(TSRMLS_C);
   grpc_init_timeval(TSRMLS_C);
   grpc_init_channel_credentials(TSRMLS_C);
   grpc_init_call_credentials(TSRMLS_C);
   grpc_init_server_credentials(TSRMLS_C);
-  grpc_php_init_completion_queue(TSRMLS_C);
   return SUCCESS;
 }
 /* }}} */
@@ -240,9 +233,16 @@ PHP_MSHUTDOWN_FUNCTION(grpc) {
   */
   // WARNING: This function IS being called by PHP when the extension
   // is unloaded but the logs were somehow suppressed.
-  grpc_shutdown_timeval(TSRMLS_C);
-  grpc_php_shutdown_completion_queue(TSRMLS_C);
-  grpc_shutdown();
+  if (GRPC_G(initialized)) {
+    zend_hash_clean(&grpc_persistent_list);
+    zend_hash_destroy(&grpc_persistent_list);
+    zend_hash_clean(&grpc_target_upper_bound_map);
+    zend_hash_destroy(&grpc_target_upper_bound_map);
+    grpc_shutdown_timeval(TSRMLS_C);
+    grpc_php_shutdown_completion_queue(TSRMLS_C);
+    grpc_shutdown();
+    GRPC_G(initialized) = 0;
+  }
   return SUCCESS;
 }
 /* }}} */
@@ -251,14 +251,34 @@ PHP_MSHUTDOWN_FUNCTION(grpc) {
  */
 PHP_MINFO_FUNCTION(grpc) {
   php_info_print_table_start();
-  php_info_print_table_header(2, "grpc support", "enabled");
+  php_info_print_table_row(2, "grpc support", "enabled");
+  php_info_print_table_row(2, "grpc module version", PHP_GRPC_VERSION);
   php_info_print_table_end();
-
   /* Remove comments if you have entries in php.ini
      DISPLAY_INI_ENTRIES();
   */
 }
 /* }}} */
+
+/* {{{ PHP_RINIT_FUNCTION
+ */
+PHP_RINIT_FUNCTION(grpc) {
+  if (!GRPC_G(initialized)) {
+    grpc_init();
+    grpc_php_init_completion_queue(TSRMLS_C);
+    GRPC_G(initialized) = 1;
+  }
+  return SUCCESS;
+}
+/* }}} */
+
+/* {{{ PHP_GINIT_FUNCTION
+ */
+static PHP_GINIT_FUNCTION(grpc) {
+  grpc_globals->initialized = 0;
+}
+/* }}} */
+
 /* The previous line is meant for vim and emacs, so it can correctly fold and
    unfold functions in source code. See the corresponding marks just before
    function definition, where the functions purpose is also documented. Please

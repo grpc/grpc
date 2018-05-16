@@ -29,6 +29,7 @@ extern "C" {
 #define GRPC_X509_CN_PROPERTY_NAME "x509_common_name"
 #define GRPC_X509_SAN_PROPERTY_NAME "x509_subject_alternative_name"
 #define GRPC_X509_PEM_CERT_PROPERTY_NAME "x509_pem_cert"
+#define GRPC_SSL_SESSION_REUSED_PROPERTY "ssl_session_reused"
 
 /** Environment variable that points to the default SSL roots file. This file
    must be a PEM encoded file with all the roots such as the one that can be
@@ -47,6 +48,13 @@ typedef enum {
   GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY, /** Do not try fallback options. */
   GRPC_SSL_ROOTS_OVERRIDE_FAIL
 } grpc_ssl_roots_override_result;
+
+/** Callback results for dynamically loading a SSL certificate config. */
+typedef enum {
+  GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED,
+  GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW,
+  GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL
+} grpc_ssl_certificate_config_reload_status;
 
 typedef enum {
   /** Server does not request client certificate. A client can present a self

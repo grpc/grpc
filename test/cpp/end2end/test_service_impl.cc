@@ -21,9 +21,9 @@
 #include <string>
 #include <thread>
 
-#include <grpc++/security/credentials.h>
-#include <grpc++/server_context.h>
 #include <grpc/support/log.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/server_context.h>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/util/string_ref_helper.h"
@@ -73,6 +73,14 @@ void CheckServerAuthContext(
 
 Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
                              EchoResponse* response) {
+  // A bit of sleep to make sure that short deadline tests fail
+  if (request->has_param() && request->param().server_sleep_us() > 0) {
+    gpr_sleep_until(
+        gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                     gpr_time_from_micros(request->param().server_sleep_us(),
+                                          GPR_TIMESPAN)));
+  }
+
   if (request->has_param() && request->param().server_die()) {
     gpr_log(GPR_ERROR, "The request should not reach application handler.");
     GPR_ASSERT(0);
@@ -173,13 +181,6 @@ Status TestServiceImpl::RequestStream(ServerContext* context,
   int server_try_cancel = GetIntValueFromMetadata(
       kServerTryCancelRequest, context->client_metadata(), DO_NOT_CANCEL);
 
-  // If 'cancel_after_reads' is set in the metadata AND non-zero, the server
-  // will cancel the RPC (by just returning Status::CANCELLED - doesn't call
-  // ServerContext::TryCancel()) after reading the number of records specified
-  // by the 'cancel_after_reads' value set in the metadata.
-  int cancel_after_reads = GetIntValueFromMetadata(
-      kServerCancelAfterReads, context->client_metadata(), 0);
-
   EchoRequest request;
   response->set_message("");
 
@@ -196,12 +197,6 @@ Status TestServiceImpl::RequestStream(ServerContext* context,
 
   int num_msgs_read = 0;
   while (reader->Read(&request)) {
-    if (cancel_after_reads == 1) {
-      gpr_log(GPR_INFO, "return cancel status");
-      return Status::CANCELLED;
-    } else if (cancel_after_reads > 0) {
-      cancel_after_reads--;
-    }
     response->mutable_message()->append(request.message());
   }
   gpr_log(GPR_INFO, "Read: %d messages", num_msgs_read);
@@ -239,6 +234,10 @@ Status TestServiceImpl::ResponseStream(ServerContext* context,
   int server_coalescing_api = GetIntValueFromMetadata(
       kServerUseCoalescingApi, context->client_metadata(), 0);
 
+  int server_responses_to_send = GetIntValueFromMetadata(
+      kServerResponseStreamsToSend, context->client_metadata(),
+      kServerDefaultResponseStreamsToSend);
+
   if (server_try_cancel == CANCEL_BEFORE_PROCESSING) {
     ServerTryCancel(context);
     return Status::CANCELLED;
@@ -251,9 +250,9 @@ Status TestServiceImpl::ResponseStream(ServerContext* context,
         new std::thread(&TestServiceImpl::ServerTryCancel, this, context);
   }
 
-  for (int i = 0; i < kNumResponseStreamsMsgs; i++) {
+  for (int i = 0; i < server_responses_to_send; i++) {
     response.set_message(request->message() + grpc::to_string(i));
-    if (i == kNumResponseStreamsMsgs - 1 && server_coalescing_api != 0) {
+    if (i == server_responses_to_send - 1 && server_coalescing_api != 0) {
       writer->WriteLast(response, WriteOptions());
     } else {
       writer->Write(response);

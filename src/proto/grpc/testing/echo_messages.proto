@@ -45,6 +45,7 @@ message RequestParams {
   bool server_die = 12; // Server should not see a request with this set.
   string binary_error_details = 13;
   ErrorStatus expected_error = 14;
+  int32 server_sleep_us = 15; // Amount to sleep when invoking server
 }
 
 message EchoRequest {

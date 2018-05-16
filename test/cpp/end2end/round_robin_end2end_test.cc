@@ -20,14 +20,14 @@
 #include <mutex>
 #include <thread>
 
-#include <grpc++/channel.h>
-#include <grpc++/client_context.h>
-#include <grpc++/create_channel.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -73,9 +73,12 @@ class RoundRobinEnd2endTest : public ::testing::Test {
  protected:
   RoundRobinEnd2endTest() : server_host_("localhost") {}
 
-  void StartServers(int num_servers) {
-    for (int i = 0; i < num_servers; ++i) {
-      servers_.emplace_back(new ServerData(server_host_));
+  void StartServers(size_t num_servers,
+                    std::vector<int> ports = std::vector<int>()) {
+    for (size_t i = 0; i < num_servers; ++i) {
+      int port = 0;
+      if (ports.size() == num_servers) port = ports[i];
+      servers_.emplace_back(new ServerData(server_host_, port));
     }
   }
 
@@ -99,15 +102,19 @@ class RoundRobinEnd2endTest : public ::testing::Test {
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
-  void SendRpc(int num_rpcs) {
+  void SendRpc(int num_rpcs, bool expect_ok = true) {
     EchoRequest request;
     EchoResponse response;
     request.set_message("Live long and prosper.");
     for (int i = 0; i < num_rpcs; i++) {
       ClientContext context;
       Status status = stub_->Echo(&context, request, &response);
-      EXPECT_TRUE(status.ok());
-      EXPECT_EQ(response.message(), request.message());
+      if (expect_ok) {
+        EXPECT_TRUE(status.ok());
+        EXPECT_EQ(response.message(), request.message());
+      } else {
+        EXPECT_FALSE(status.ok());
+      }
     }
   }
 
@@ -116,8 +123,8 @@ class RoundRobinEnd2endTest : public ::testing::Test {
     std::unique_ptr<Server> server_;
     MyTestServiceImpl service_;
 
-    explicit ServerData(const grpc::string& server_host) {
-      port_ = grpc_pick_unused_port_or_die();
+    explicit ServerData(const grpc::string& server_host, int port = 0) {
+      port_ = port > 0 ? port : grpc_pick_unused_port_or_die();
       gpr_log(GPR_INFO, "starting server on port %d", port_);
       std::ostringstream server_address;
       server_address << server_host << ":" << port_;
@@ -174,6 +181,38 @@ TEST_F(RoundRobinEnd2endTest, RoundRobin) {
   }
   // Check LB policy name for the channel.
   EXPECT_EQ("round_robin", channel_->GetLoadBalancingPolicyName());
+}
+
+TEST_F(RoundRobinEnd2endTest, RoundRobinReconnect) {
+  // Start servers and send one RPC per server.
+  const int kNumServers = 1;
+  std::vector<int> ports;
+  ports.push_back(grpc_pick_unused_port_or_die());
+  StartServers(kNumServers, ports);
+  ResetStub(true /* round_robin */);
+  // Send one RPC per backend and make sure they are used in order.
+  // Note: This relies on the fact that the subchannels are reported in
+  // state READY in the order in which the addresses are specified,
+  // which is only true because the backends are all local.
+  for (size_t i = 0; i < servers_.size(); ++i) {
+    SendRpc(1);
+    EXPECT_EQ(1, servers_[i]->service_.request_count()) << "for backend #" << i;
+  }
+  // Check LB policy name for the channel.
+  EXPECT_EQ("round_robin", channel_->GetLoadBalancingPolicyName());
+
+  // Kill all servers
+  for (size_t i = 0; i < servers_.size(); ++i) {
+    servers_[i]->Shutdown();
+  }
+  // Client request should fail.
+  SendRpc(1, false);
+
+  // Bring servers back up on the same port (we aren't recreating the channel).
+  StartServers(kNumServers, ports);
+
+  // Client request should succeed.
+  SendRpc(1);
 }
 
 }  // namespace

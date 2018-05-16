@@ -19,8 +19,9 @@
 #ifndef GRPC_CORE_LIB_HTTP_PARSER_H
 #define GRPC_CORE_LIB_HTTP_PARSER_H
 
-#include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
+
+#include <grpc/slice.h>
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/error.h"
 
@@ -29,8 +30,8 @@
 
 /* A single header to be passed in a request */
 typedef struct grpc_http_header {
-  char *key;
-  char *value;
+  char* key;
+  char* value;
 } grpc_http_header;
 
 typedef enum {
@@ -53,17 +54,17 @@ typedef enum {
 /* A request */
 typedef struct grpc_http_request {
   /* Method of the request (e.g. GET, POST) */
-  char *method;
+  char* method;
   /* The path of the resource to fetch */
-  char *path;
+  char* path;
   /* HTTP version to use */
   grpc_http_version version;
   /* Headers attached to the request */
   size_t hdr_count;
-  grpc_http_header *hdrs;
+  grpc_http_header* hdrs;
   /* Body: length and contents; contents are NOT null-terminated */
   size_t body_length;
-  char *body;
+  char* body;
 } grpc_http_request;
 
 /* A response */
@@ -72,10 +73,10 @@ typedef struct grpc_http_response {
   int status;
   /* Headers: count and key/values */
   size_t hdr_count;
-  grpc_http_header *hdrs;
+  grpc_http_header* hdrs;
   /* Body: length and contents; contents are NOT null-terminated */
   size_t body_length;
-  char *body;
+  char* body;
 } grpc_http_response;
 
 typedef struct {
@@ -83,9 +84,9 @@ typedef struct {
   grpc_http_type type;
 
   union {
-    grpc_http_response *response;
-    grpc_http_request *request;
-    void *request_or_response;
+    grpc_http_response* response;
+    grpc_http_request* request;
+    void* request_or_response;
   } http;
   size_t body_capacity;
   size_t hdr_capacity;
@@ -95,18 +96,18 @@ typedef struct {
   size_t cur_line_end_length;
 } grpc_http_parser;
 
-void grpc_http_parser_init(grpc_http_parser *parser, grpc_http_type type,
-                           void *request_or_response);
-void grpc_http_parser_destroy(grpc_http_parser *parser);
+void grpc_http_parser_init(grpc_http_parser* parser, grpc_http_type type,
+                           void* request_or_response);
+void grpc_http_parser_destroy(grpc_http_parser* parser);
 
 /* Sets \a start_of_body to the offset in \a slice of the start of the body. */
-grpc_error *grpc_http_parser_parse(grpc_http_parser *parser, grpc_slice slice,
-                                   size_t *start_of_body);
-grpc_error *grpc_http_parser_eof(grpc_http_parser *parser);
+grpc_error* grpc_http_parser_parse(grpc_http_parser* parser, grpc_slice slice,
+                                   size_t* start_of_body);
+grpc_error* grpc_http_parser_eof(grpc_http_parser* parser);
 
-void grpc_http_request_destroy(grpc_http_request *request);
-void grpc_http_response_destroy(grpc_http_response *response);
+void grpc_http_request_destroy(grpc_http_request* request);
+void grpc_http_response_destroy(grpc_http_response* response);
 
-extern grpc_tracer_flag grpc_http1_trace;
+extern grpc_core::TraceFlag grpc_http1_trace;
 
 #endif /* GRPC_CORE_LIB_HTTP_PARSER_H */

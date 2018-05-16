@@ -19,14 +19,15 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_SERVER_CHTTP2_SERVER_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_SERVER_CHTTP2_SERVER_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/impl/codegen/grpc_types.h>
 
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/error.h"
 
 /// Adds a port to \a server.  Sets \a port_num to the port number.
 /// Takes ownership of \a args.
-grpc_error *grpc_chttp2_server_add_port(grpc_exec_ctx *exec_ctx,
-                                        grpc_server *server, const char *addr,
-                                        grpc_channel_args *args, int *port_num);
+grpc_error* grpc_chttp2_server_add_port(grpc_server* server, const char* addr,
+                                        grpc_channel_args* args, int* port_num);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_SERVER_CHTTP2_SERVER_H */

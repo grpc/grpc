@@ -24,6 +24,7 @@
 #include "src/compiler/php_generator.h"
 #include "src/compiler/php_generator_helpers.h"
 
+using google::protobuf::compiler::ParseGeneratorParameter;
 using grpc_php_generator::GenerateFile;
 using grpc_php_generator::GetPHPServiceFilename;
 
@@ -32,19 +33,33 @@ class PHPGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   PHPGrpcGenerator() {}
   ~PHPGrpcGenerator() {}
 
-  bool Generate(const grpc::protobuf::FileDescriptor *file,
-                const grpc::string &parameter,
-                grpc::protobuf::compiler::GeneratorContext *context,
-                grpc::string *error) const {
+  bool Generate(const grpc::protobuf::FileDescriptor* file,
+                const grpc::string& parameter,
+                grpc::protobuf::compiler::GeneratorContext* context,
+                grpc::string* error) const {
     if (file->service_count() == 0) {
       return true;
     }
 
+    std::vector<std::pair<grpc::string, grpc::string> > options;
+    ParseGeneratorParameter(parameter, &options);
+
+    grpc::string class_suffix;
+    for (size_t i = 0; i < options.size(); ++i) {
+      if (options[i].first == "class_suffix") {
+        class_suffix = options[i].second;
+      } else {
+        *error = "unsupported options: " + options[i].first;
+        return false;
+      }
+    }
+
     for (int i = 0; i < file->service_count(); i++) {
-      grpc::string code = GenerateFile(file, file->service(i));
+      grpc::string code = GenerateFile(file, file->service(i), class_suffix);
 
       // Get output file name
-      grpc::string file_name = GetPHPServiceFilename(file, file->service(i));
+      grpc::string file_name =
+          GetPHPServiceFilename(file, file->service(i), class_suffix);
 
       std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> output(
           context->Open(file_name));
@@ -56,7 +71,7 @@ class PHPGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   }
 };
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   PHPGrpcGenerator generator;
   return grpc::protobuf::compiler::PluginMain(argc, argv, &generator);
 }

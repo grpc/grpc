@@ -2,7 +2,7 @@
 ---
 foreach: libs
 cond: selected.get('generate_plugin_registry', False)
-output_name: ${selected.name}_plugin_registry.c
+output_name: ${selected.name}_plugin_registry.cc
 template: |
   /*
    *
@@ -22,11 +22,13 @@ template: |
    *
    */
 
+  #include <grpc/support/port_platform.h>
+
   #include <grpc/grpc.h>
 
   %for plugin in selected.plugins:
-  extern void ${plugin}_init(void);
-  extern void ${plugin}_shutdown(void);
+  void ${plugin}_init(void);
+  void ${plugin}_shutdown(void);
   %endfor
 
   void grpc_register_built_in_plugins(void) {

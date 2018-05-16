@@ -3,7 +3,7 @@ Pod::Spec.new do |s|
   s.version  = "0.0.1"
   s.license  = "Apache License, Version 2.0"
   s.authors  = { 'gRPC contributors' => 'grpc-io@googlegroups.com' }
-  s.homepage = "http://www.grpc.io/"
+  s.homepage = "https://grpc.io/"
   s.summary = "AuthTestService example"
   s.source = { :git => 'https://github.com/grpc/grpc.git' }
 

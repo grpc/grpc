@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary", "grpc_package")
+
+grpc_package(name = "test/core/fling")
 
 licenses(["notice"])  # Apache v2
 
@@ -21,8 +23,8 @@ load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 grpc_cc_binary(
     name = "client",
     testonly = 1,
-    srcs = ["client.c"],
-    language = "C",
+    srcs = ["client.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -35,8 +37,8 @@ grpc_cc_binary(
 grpc_cc_binary(
     name = "server",
     testonly = 1,
-    srcs = ["server.c"],
-    language = "C",
+    srcs = ["server.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -48,7 +50,7 @@ grpc_cc_binary(
 
 grpc_cc_test(
     name = "fling",
-    srcs = ["fling_test.c"],
+    srcs = ["fling_test.cc"],
     data = [
         ":client",
         ":server",
@@ -64,7 +66,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "fling_stream",
-    srcs = ["fling_stream_test.c"],
+    srcs = ["fling_stream_test.cc"],
     data = [
         ":client",
         ":server",

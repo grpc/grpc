@@ -21,25 +21,20 @@ from grpc._cython import cygrpc
 from tests.unit.framework.common import test_constants
 
 
-def _channel_and_completion_queue():
-    channel = cygrpc.Channel(b'localhost:54321', cygrpc.ChannelArgs(()))
-    completion_queue = cygrpc.CompletionQueue()
-    return channel, completion_queue
+def _channel():
+    return cygrpc.Channel(b'localhost:54321', (), None)
 
 
-def _connectivity_loop(channel, completion_queue):
+def _connectivity_loop(channel):
     for _ in range(100):
         connectivity = channel.check_connectivity_state(True)
-        channel.watch_connectivity_state(connectivity,
-                                         cygrpc.Timespec(time.time() + 0.2),
-                                         completion_queue, None)
-        completion_queue.poll(deadline=cygrpc.Timespec(float('+inf')))
+        channel.watch_connectivity_state(connectivity, time.time() + 0.2)
 
 
 def _create_loop_destroy():
-    channel, completion_queue = _channel_and_completion_queue()
-    _connectivity_loop(channel, completion_queue)
-    completion_queue.shutdown()
+    channel = _channel()
+    _connectivity_loop(channel)
+    channel.close(cygrpc.StatusCode.ok, 'Channel close!')
 
 
 def _in_parallel(behavior, arguments):
@@ -55,9 +50,9 @@ def _in_parallel(behavior, arguments):
 class ChannelTest(unittest.TestCase):
 
     def test_single_channel_lonely_connectivity(self):
-        channel, completion_queue = _channel_and_completion_queue()
-        _in_parallel(_connectivity_loop, (channel, completion_queue,))
-        completion_queue.shutdown()
+        channel = _channel()
+        _connectivity_loop(channel)
+        channel.close(cygrpc.StatusCode.ok, 'Channel close!')
 
     def test_multiple_channels_lonely_connectivity(self):
         _in_parallel(_create_loop_destroy, ())

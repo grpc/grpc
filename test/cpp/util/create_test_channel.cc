@@ -18,9 +18,9 @@
 
 #include "test/cpp/util/create_test_channel.h"
 
-#include <grpc++/create_channel.h>
-#include <grpc++/security/credentials.h>
 #include <grpc/support/log.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/security/credentials.h>
 
 #include "test/cpp/util/test_credentials_provider.h"
 
@@ -51,29 +51,31 @@ void AddProdSslType() {
 
 }  // namespace
 
-// When ssl is enabled, if server is empty, override_hostname is used to
+// When cred_type is 'ssl', if server is empty, override_hostname is used to
 // create channel. Otherwise, connect to server and override hostname if
 // override_hostname is provided.
-// When ssl is not enabled, override_hostname is ignored.
+// When cred_type is not 'ssl', override_hostname is ignored.
 // Set use_prod_root to true to use the SSL root for connecting to google.
 // In this case, path to the roots pem file must be set via environment variable
 // GRPC_DEFAULT_SSL_ROOTS_FILE_PATH.
 // Otherwise, root for test SSL cert will be used.
-// creds will be used to create a channel when enable_ssl is true.
+// creds will be used to create a channel when cred_type is 'ssl'.
 // Use examples:
 //   CreateTestChannel(
-//       "1.1.1.1:12345", "override.hostname.com", true, false, creds);
-//   CreateTestChannel("test.google.com:443", "", true, true, creds);
+//       "1.1.1.1:12345", "ssl", "override.hostname.com", false, creds);
+//   CreateTestChannel("test.google.com:443", "ssl", "", true, creds);
 //   same as above
-//   CreateTestChannel("", "test.google.com:443", true, true, creds);
+//   CreateTestChannel("", "ssl", "test.google.com:443", true, creds);
 std::shared_ptr<Channel> CreateTestChannel(
-    const grpc::string& server, const grpc::string& override_hostname,
-    bool enable_ssl, bool use_prod_roots,
+    const grpc::string& server, const grpc::string& cred_type,
+    const grpc::string& override_hostname, bool use_prod_roots,
     const std::shared_ptr<CallCredentials>& creds,
     const ChannelArguments& args) {
   ChannelArguments channel_args(args);
   std::shared_ptr<ChannelCredentials> channel_creds;
-  if (enable_ssl) {
+  if (cred_type.empty()) {
+    return CreateCustomChannel(server, InsecureChannelCredentials(), args);
+  } else if (cred_type == testing::kTlsCredentialsType) {  // cred_type == "ssl"
     if (use_prod_roots) {
       gpr_once_init(&g_once_init_add_prod_ssl_provider, &AddProdSslType);
       channel_creds = testing::GetCredentialsProvider()->GetChannelCredentials(
@@ -95,29 +97,47 @@ std::shared_ptr<Channel> CreateTestChannel(
     }
     return CreateCustomChannel(connect_to, channel_creds, channel_args);
   } else {
-    return CreateChannel(server, InsecureChannelCredentials());
+    channel_creds = testing::GetCredentialsProvider()->GetChannelCredentials(
+        cred_type, &channel_args);
+    GPR_ASSERT(channel_creds != nullptr);
+
+    return CreateCustomChannel(server, channel_creds, args);
   }
 }
 
 std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, const grpc::string& override_hostname,
-    bool enable_ssl, bool use_prod_roots,
+    testing::transport_security security_type, bool use_prod_roots,
+    const std::shared_ptr<CallCredentials>& creds,
+    const ChannelArguments& args) {
+  grpc::string type =
+      security_type == testing::ALTS
+          ? testing::kAltsCredentialsType
+          : (security_type == testing::TLS ? testing::kTlsCredentialsType
+                                           : testing::kInsecureCredentialsType);
+  return CreateTestChannel(server, type, override_hostname, use_prod_roots,
+                           creds, args);
+}
+
+std::shared_ptr<Channel> CreateTestChannel(
+    const grpc::string& server, const grpc::string& override_hostname,
+    testing::transport_security security_type, bool use_prod_roots,
     const std::shared_ptr<CallCredentials>& creds) {
-  return CreateTestChannel(server, override_hostname, enable_ssl,
+  return CreateTestChannel(server, override_hostname, security_type,
                            use_prod_roots, creds, ChannelArguments());
 }
 
 std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, const grpc::string& override_hostname,
-    bool enable_ssl, bool use_prod_roots) {
-  return CreateTestChannel(server, override_hostname, enable_ssl,
+    testing::transport_security security_type, bool use_prod_roots) {
+  return CreateTestChannel(server, override_hostname, security_type,
                            use_prod_roots, std::shared_ptr<CallCredentials>());
 }
 
 // Shortcut for end2end and interop tests.
-std::shared_ptr<Channel> CreateTestChannel(const grpc::string& server,
-                                           bool enable_ssl) {
-  return CreateTestChannel(server, "foo.test.google.fr", enable_ssl, false);
+std::shared_ptr<Channel> CreateTestChannel(
+    const grpc::string& server, testing::transport_security security_type) {
+  return CreateTestChannel(server, "foo.test.google.fr", security_type, false);
 }
 
 std::shared_ptr<Channel> CreateTestChannel(

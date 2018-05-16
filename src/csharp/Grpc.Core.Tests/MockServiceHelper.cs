@@ -37,7 +37,6 @@ namespace Grpc.Core.Tests
         public const string ServiceName = "tests.Test";
 
         readonly string host;
-        readonly ServerServiceDefinition serviceDefinition;
         readonly IEnumerable<ChannelOption> channelOptions;
 
         readonly Method<string, string> unaryMethod;
@@ -87,7 +86,7 @@ namespace Grpc.Core.Tests
                 marshaller,
                 marshaller);
 
-            serviceDefinition = ServerServiceDefinition.CreateBuilder()
+            ServiceDefinition = ServerServiceDefinition.CreateBuilder()
                 .AddMethod(unaryMethod, (request, context) => unaryHandler(request, context))
                 .AddMethod(clientStreamingMethod, (requestStream, context) => clientStreamingHandler(requestStream, context))
                 .AddMethod(serverStreamingMethod, (request, responseStream, context) => serverStreamingHandler(request, responseStream, context))
@@ -96,26 +95,28 @@ namespace Grpc.Core.Tests
 
             var defaultStatus = new Status(StatusCode.Unknown, "Default mock implementation. Please provide your own.");
 
-            unaryHandler = new UnaryServerMethod<string, string>(async (request, context) =>
+            unaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
                 context.Status = defaultStatus;
-                return "";
+                return Task.FromResult("");
             });
 
-            clientStreamingHandler = new ClientStreamingServerMethod<string, string>(async (requestStream, context) =>
+            clientStreamingHandler = new ClientStreamingServerMethod<string, string>((requestStream, context) =>
             {
                 context.Status = defaultStatus;
-                return "";
+                return Task.FromResult("");
             });
 
-            serverStreamingHandler = new ServerStreamingServerMethod<string, string>(async (request, responseStream, context) =>
+            serverStreamingHandler = new ServerStreamingServerMethod<string, string>((request, responseStream, context) =>
             {
                 context.Status = defaultStatus;
+                return TaskUtils.CompletedTask;
             });
 
-            duplexStreamingHandler = new DuplexStreamingServerMethod<string, string>(async (requestStream, responseStream, context) =>
+            duplexStreamingHandler = new DuplexStreamingServerMethod<string, string>((requestStream, responseStream, context) =>
             {
                 context.Status = defaultStatus;
+                return TaskUtils.CompletedTask;
             });
         }
 
@@ -129,7 +130,7 @@ namespace Grpc.Core.Tests
                 // Disable SO_REUSEPORT to prevent https://github.com/grpc/grpc/issues/10755
                 server = new Server(new[] { new ChannelOption(ChannelOptions.SoReuseport, 0) })
                 {
-                    Services = { serviceDefinition },
+                    Services = { ServiceDefinition },
                     Ports = { { Host, ServerPort.PickUnused, ServerCredentials.Insecure } }
                 };
             }
@@ -176,13 +177,7 @@ namespace Grpc.Core.Tests
             }
         }
 
-        public ServerServiceDefinition ServiceDefinition
-        {
-            get
-            {
-                return this.serviceDefinition;
-            }
-        }
+        public ServerServiceDefinition ServiceDefinition { get; set; }
       
         public UnaryServerMethod<string, string> UnaryHandler
         {

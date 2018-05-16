@@ -14,7 +14,7 @@
 
 _BEFORE_IMPORT = tuple(globals())
 
-from grpc import *
+from grpc import *  # pylint: disable=wildcard-import
 
 _AFTER_IMPORT = tuple(globals())
 

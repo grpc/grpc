@@ -25,22 +25,23 @@
 #include <thread>
 #include <vector>
 
-#include <grpc++/client_context.h>
-#include <grpc++/security/server_credentials.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
-#include <grpc/support/histogram.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
 
-#include "src/proto/grpc/testing/services.pb.h"
+#include "src/core/lib/gpr/host_port.h"
+#include "src/proto/grpc/testing/worker_service.grpc.pb.h"
 #include "test/core/util/grpc_profiler.h"
+#include "test/core/util/histogram.h"
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/server.h"
 #include "test/cpp/util/create_test_channel.h"
+#include "test/cpp/util/test_credentials_provider.h"
 
 namespace grpc {
 namespace testing {
@@ -224,11 +225,14 @@ class WorkerServiceImpl final : public WorkerService::Service {
     if (!args.has_setup()) {
       return Status(StatusCode::INVALID_ARGUMENT, "Bad server creation args");
     }
-    if (server_port_ != 0) {
+    if (server_port_ > 0) {
       args.mutable_setup()->set_port(server_port_);
     }
     gpr_log(GPR_INFO, "RunServerBody: about to create server");
     auto server = CreateServer(args.setup());
+    if (g_inproc_servers != nullptr) {
+      g_inproc_servers->push_back(server.get());
+    }
     if (!server) {
       return Status(StatusCode::INVALID_ARGUMENT, "Couldn't create server");
     }
@@ -263,18 +267,21 @@ class WorkerServiceImpl final : public WorkerService::Service {
   QpsWorker* worker_;
 };
 
-QpsWorker::QpsWorker(int driver_port, int server_port) {
+QpsWorker::QpsWorker(int driver_port, int server_port,
+                     const grpc::string& credential_type) {
   impl_.reset(new WorkerServiceImpl(server_port, this));
   gpr_atm_rel_store(&done_, static_cast<gpr_atm>(0));
 
-  char* server_address = NULL;
-  gpr_join_host_port(&server_address, "::", driver_port);
-
   ServerBuilder builder;
-  builder.AddListeningPort(server_address, InsecureServerCredentials());
+  if (driver_port >= 0) {
+    char* server_address = nullptr;
+    gpr_join_host_port(&server_address, "::", driver_port);
+    builder.AddListeningPort(
+        server_address,
+        GetCredentialsProvider()->GetServerCredentials(credential_type));
+    gpr_free(server_address);
+  }
   builder.RegisterService(impl_.get());
-
-  gpr_free(server_address);
 
   server_ = builder.BuildAndStart();
 }

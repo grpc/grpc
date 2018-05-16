@@ -8,8 +8,7 @@
     <AssemblyName>Grpc.Core.Tests</AssemblyName>
     <OutputType>Exe</OutputType>
     <PackageId>Grpc.Core.Tests</PackageId>
-    <PackageTargetFallback Condition=" '$(TargetFramework)' == 'netcoreapp1.0' ">$(PackageTargetFallback);portable-net45</PackageTargetFallback>
-    <RuntimeFrameworkVersion Condition=" '$(TargetFramework)' == 'netcoreapp1.0' ">1.0.4</RuntimeFrameworkVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,7 +19,6 @@
     <PackageReference Include="Newtonsoft.Json" Version="9.0.1" />
     <PackageReference Include="NUnit" Version="3.6.0" />
     <PackageReference Include="NUnitLite" Version="3.6.0" />
-    <PackageReference Include="NUnit.ConsoleRunner" Version="3.6.0" />
     <PackageReference Include="OpenCover" Version="4.6.519" />
     <PackageReference Include="ReportGenerator" Version="2.4.4.0" />
   </ItemGroup>

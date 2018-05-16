@@ -16,15 +16,15 @@
  *
  */
 
-#include <grpc++/server_builder.h>
+#include <grpcpp/server_builder.h>
 
-#include <grpc++/impl/service_type.h>
-#include <grpc++/resource_quota.h>
-#include <grpc++/server.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
-#include <grpc/support/useful.h>
+#include <grpcpp/impl/service_type.h>
+#include <grpcpp/resource_quota.h>
+#include <grpcpp/server.h>
 
+#include "src/core/lib/gpr/useful.h"
 #include "src/cpp/server/thread_pool_interface.h"
 
 namespace grpc {
@@ -248,14 +248,6 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
       has_sync_methods && num_frequently_polled_cqs > 0;
 
   if (has_sync_methods) {
-    // This is a Sync server
-    gpr_log(GPR_INFO,
-            "Synchronous server. Num CQs: %d, Min pollers: %d, Max Pollers: "
-            "%d, CQ timeout (msec): %d",
-            sync_server_settings_.num_cqs, sync_server_settings_.min_pollers,
-            sync_server_settings_.max_pollers,
-            sync_server_settings_.cq_timeout_msec);
-
     grpc_cq_polling_type polling_type =
         is_hybrid_server ? GRPC_CQ_NON_POLLING : GRPC_CQ_DEFAULT_POLLING;
 
@@ -269,6 +261,16 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
       max_receive_message_size_, &args, sync_server_cqs,
       sync_server_settings_.min_pollers, sync_server_settings_.max_pollers,
       sync_server_settings_.cq_timeout_msec));
+
+  if (has_sync_methods) {
+    // This is a Sync server
+    gpr_log(GPR_INFO,
+            "Synchronous server. Num CQs: %d, Min pollers: %d, Max Pollers: "
+            "%d, CQ timeout (msec): %d",
+            sync_server_settings_.num_cqs, sync_server_settings_.min_pollers,
+            sync_server_settings_.max_pollers,
+            sync_server_settings_.cq_timeout_msec);
+  }
 
   ServerInitializer* initializer = server->initializer();
 

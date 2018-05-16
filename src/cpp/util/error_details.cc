@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc++/support/error_details.h>
+#include <grpcpp/support/error_details.h>
 
 #include "src/proto/grpc/status/status.pb.h"
 
@@ -37,7 +37,8 @@ Status SetErrorDetails(const ::google::rpc::Status& from, Status* to) {
     return Status(StatusCode::FAILED_PRECONDITION, "");
   }
   StatusCode code = StatusCode::UNKNOWN;
-  if (from.code() >= StatusCode::OK && from.code() <= StatusCode::DATA_LOSS) {
+  if (from.code() >= StatusCode::OK &&
+      from.code() <= StatusCode::UNAUTHENTICATED) {
     code = static_cast<StatusCode>(from.code());
   }
   *to = Status(code, from.message(), from.SerializeAsString());

@@ -5,21 +5,17 @@
 namespace Grpc\Testing;
 
 /**
- * <pre>
  * DEPRECATED, don't use. To be removed shortly.
  * The type of payload that should be returned.
- * </pre>
  *
- * Protobuf enum <code>grpc.testing.PayloadType</code>
+ * Protobuf enum <code>Grpc\Testing\PayloadType</code>
  */
 class PayloadType
 {
     /**
-     * <pre>
      * Compressable text format.
-     * </pre>
      *
-     * <code>COMPRESSABLE = 0;</code>
+     * Generated from protobuf enum <code>COMPRESSABLE = 0;</code>
      */
     const COMPRESSABLE = 0;
 }

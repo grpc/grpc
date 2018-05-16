@@ -36,24 +36,28 @@ BANNED_EXCEPT = {
     'grpc_wsa_error(': ['src/core/lib/iomgr/error.c'],
     'grpc_log_if_error(': ['src/core/lib/iomgr/error.c'],
     'grpc_slice_malloc(': ['src/core/lib/slice/slice.c'],
-    'grpc_closure_create(' : ['src/core/lib/iomgr/closure.c'],
-    'grpc_closure_init(' : ['src/core/lib/iomgr/closure.c'],
-    'grpc_closure_sched(' : ['src/core/lib/iomgr/closure.c'],
-    'grpc_closure_run(' : ['src/core/lib/iomgr/closure.c'],
-    'grpc_closure_list_sched(' : ['src/core/lib/iomgr/closure.c'],
+    'grpc_closure_create(': ['src/core/lib/iomgr/closure.c'],
+    'grpc_closure_init(': ['src/core/lib/iomgr/closure.c'],
+    'grpc_closure_sched(': ['src/core/lib/iomgr/closure.c'],
+    'grpc_closure_run(': ['src/core/lib/iomgr/closure.c'],
+    'grpc_closure_list_sched(': ['src/core/lib/iomgr/closure.c'],
+    'gpr_getenv_silent(': [
+        'src/core/lib/gpr/log.c', 'src/core/lib/gpr/env_linux.c',
+        'src/core/lib/gpr/env_posix.c', 'src/core/lib/gpr/env_windows.c'
+    ],
 }
 
 errors = 0
 for root, dirs, files in os.walk('src/core'):
-  for filename in files:
-    path = os.path.join(root, filename)
-    if os.path.splitext(path)[1] != '.c': continue
-    with open(path) as f:
-      text = f.read()
-    for banned, exceptions in BANNED_EXCEPT.items():
-      if path in exceptions: continue
-      if banned in text:
-        print('Illegal use of "%s" in %s' % (banned, path))
-        errors += 1
+    for filename in files:
+        path = os.path.join(root, filename)
+        if os.path.splitext(path)[1] != '.c': continue
+        with open(path) as f:
+            text = f.read()
+        for banned, exceptions in BANNED_EXCEPT.items():
+            if path in exceptions: continue
+            if banned in text:
+                print('Illegal use of "%s" in %s' % (banned, path))
+                errors += 1
 
 assert errors == 0

@@ -12,15 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary", "grpc_package")
 
 licenses(["notice"])  # Apache v2
+
+grpc_package(name = "test/core/transport/chttp2")
 
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_fuzzer(
     name = "hpack_parser_fuzzer",
-    srcs = ["hpack_parser_fuzzer_test.c"],
+    srcs = ["hpack_parser_fuzzer_test.cc"],
     corpus = "hpack_parser_corpus",
     deps = [
         "//:grpc",
@@ -30,8 +32,8 @@ grpc_fuzzer(
 
 grpc_cc_test(
     name = "alpn_test",
-    srcs = ["alpn_test.c"],
-    language = "C",
+    srcs = ["alpn_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -42,8 +44,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "bin_decoder_test",
-    srcs = ["bin_decoder_test.c"],
-    language = "C",
+    srcs = ["bin_decoder_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -54,8 +56,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "bin_encoder_test",
-    srcs = ["bin_encoder_test.c"],
-    language = "C",
+    srcs = ["bin_encoder_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -66,8 +68,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "hpack_encoder_test",
-    srcs = ["hpack_encoder_test.c"],
-    language = "C",
+    srcs = ["hpack_encoder_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -78,8 +80,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "hpack_parser_test",
-    srcs = ["hpack_parser_test.c"],
-    language = "C",
+    srcs = ["hpack_parser_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -90,8 +92,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "hpack_table_test",
-    srcs = ["hpack_table_test.c"],
-    language = "C",
+    srcs = ["hpack_table_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -102,8 +104,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "stream_map_test",
-    srcs = ["stream_map_test.c"],
-    language = "C",
+    srcs = ["stream_map_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -113,9 +115,24 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "settings_timeout_test",
+    srcs = ["settings_timeout_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+)
+
+grpc_cc_test(
     name = "varint_test",
-    srcs = ["varint_test.c"],
-    language = "C",
+    srcs = ["varint_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",

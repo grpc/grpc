@@ -21,25 +21,64 @@ import setuptools
 # Ensure we're in the proper directory whether or not we're being used by pip.
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-# Break import-style to ensure we can actually find our commands module.
-import reflection_commands
+# Break import-style to ensure we can actually find our local modules.
 import grpc_version
+
+
+class _NoOpCommand(setuptools.Command):
+    """No-op command."""
+
+    description = ''
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        pass
+
+
+CLASSIFIERS = [
+    'Development Status :: 5 - Production/Stable',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 2',
+    'Programming Language :: Python :: 2.7',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.4',
+    'Programming Language :: Python :: 3.5',
+    'Programming Language :: Python :: 3.6',
+    'License :: OSI Approved :: Apache Software License',
+]
 
 PACKAGE_DIRECTORIES = {
     '': '.',
 }
 
-SETUP_REQUIRES = (
-    'grpcio-tools>={version}'.format(version=grpc_version.VERSION),)
+INSTALL_REQUIRES = (
+    'protobuf>=3.5.2.post1',
+    'grpcio>={version}'.format(version=grpc_version.VERSION),
+)
 
-INSTALL_REQUIRES = ('protobuf>=3.3.0',
-                    'grpcio>={version}'.format(version=grpc_version.VERSION),)
-
-COMMAND_CLASS = {
-    # Run preprocess from the repository *before* doing any packaging!
-    'preprocess': reflection_commands.CopyProtoModules,
-    'build_package_protos': reflection_commands.BuildPackageProtos,
-}
+try:
+    import reflection_commands as _reflection_commands
+    # we are in the build environment, otherwise the above import fails
+    SETUP_REQUIRES = (
+        'grpcio-tools=={version}'.format(version=grpc_version.VERSION),)
+    COMMAND_CLASS = {
+        # Run preprocess from the repository *before* doing any packaging!
+        'preprocess': _reflection_commands.CopyProtoModules,
+        'build_package_protos': _reflection_commands.BuildPackageProtos,
+    }
+except ImportError:
+    SETUP_REQUIRES = ()
+    COMMAND_CLASS = {
+        # wire up commands to no-op not to break the external dependencies
+        'preprocess': _NoOpCommand,
+        'build_package_protos': _NoOpCommand,
+    }
 
 setuptools.setup(
     name='grpcio-reflection',
@@ -48,7 +87,8 @@ setuptools.setup(
     description='Standard Protobuf Reflection Service for gRPC',
     author='The gRPC Authors',
     author_email='grpc-io@googlegroups.com',
-    url='http://www.grpc.io',
+    classifiers=CLASSIFIERS,
+    url='https://grpc.io',
     package_dir=PACKAGE_DIRECTORIES,
     packages=setuptools.find_packages('.'),
     install_requires=INSTALL_REQUIRES,

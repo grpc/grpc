@@ -27,7 +27,8 @@ namespace Grpc.Core.Internal
 
     internal class NativeMetadataCredentialsPlugin
     {
-        const string GetMetadataExceptionMsg = "Exception occured in metadata credentials plugin.";
+        const string GetMetadataExceptionStatusMsg = "Exception occurred in metadata credentials plugin.";
+        const string GetMetadataExceptionLogMsg = GetMetadataExceptionStatusMsg + " This is likely not a problem with gRPC itself. Please verify that the code supplying the metadata (usually an authentication token) works correctly.";
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<NativeMetadataCredentialsPlugin>();
         static readonly NativeMethods Native = NativeMethods.Get();
 
@@ -61,17 +62,14 @@ namespace Grpc.Core.Internal
 
             try
             {
-                var context = new AuthInterceptorContext(Marshal.PtrToStringAnsi(serviceUrlPtr),
-                                                         Marshal.PtrToStringAnsi(methodNamePtr));
-                // Don't await, we are in a native callback and need to return.
-                #pragma warning disable 4014
-                GetMetadataAsync(context, callbackPtr, userDataPtr);
-                #pragma warning restore 4014
+                var context = new AuthInterceptorContext(Marshal.PtrToStringAnsi(serviceUrlPtr), Marshal.PtrToStringAnsi(methodNamePtr));
+                // Make a guarantee that credentials_notify_from_plugin is invoked async to be compliant with c-core API.
+                ThreadPool.QueueUserWorkItem(async (stateInfo) => await GetMetadataAsync(context, callbackPtr, userDataPtr));
             }
             catch (Exception e)
             {
-                Native.grpcsharp_metadata_credentials_notify_from_plugin(callbackPtr, userDataPtr, MetadataArraySafeHandle.Create(Metadata.Empty), StatusCode.Unknown, GetMetadataExceptionMsg);
-                Logger.Error(e, GetMetadataExceptionMsg);
+                Native.grpcsharp_metadata_credentials_notify_from_plugin(callbackPtr, userDataPtr, MetadataArraySafeHandle.Create(Metadata.Empty), StatusCode.Unknown, GetMetadataExceptionStatusMsg);
+                Logger.Error(e, GetMetadataExceptionLogMsg);
             }
         }
 
@@ -89,8 +87,8 @@ namespace Grpc.Core.Internal
             }
             catch (Exception e)
             {
-                Native.grpcsharp_metadata_credentials_notify_from_plugin(callbackPtr, userDataPtr, MetadataArraySafeHandle.Create(Metadata.Empty), StatusCode.Unknown, GetMetadataExceptionMsg);
-                Logger.Error(e, GetMetadataExceptionMsg);
+                Native.grpcsharp_metadata_credentials_notify_from_plugin(callbackPtr, userDataPtr, MetadataArraySafeHandle.Create(Metadata.Empty), StatusCode.Unknown, GetMetadataExceptionStatusMsg);
+                Logger.Error(e, GetMetadataExceptionLogMsg);
             }
         }
     }

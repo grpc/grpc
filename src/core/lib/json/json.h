@@ -19,6 +19,9 @@
 #ifndef GRPC_CORE_LIB_JSON_JSON_H
 #define GRPC_CORE_LIB_JSON_JSON_H
 
+#include <grpc/support/port_platform.h>
+
+#include <stdbool.h>
 #include <stdlib.h>
 
 #include "src/core/lib/json/json_common.h"
@@ -35,6 +38,9 @@ typedef struct grpc_json {
   grpc_json_type type;
   const char* key;
   const char* value;
+
+  /* if set, destructor will free value */
+  bool owns_value;
 } grpc_json;
 
 /* The next two functions are going to parse the input string, and
@@ -65,9 +71,24 @@ char* grpc_json_dump_to_string(grpc_json* json, int indent);
 
 /* Use these to create or delete a grpc_json object.
  * Deletion is recursive. We will not attempt to free any of the strings
- * in any of the objects of that tree.
+ * in any of the objects of that tree, unless the boolean, owns_value,
+ * is true.
  */
 grpc_json* grpc_json_create(grpc_json_type type);
 void grpc_json_destroy(grpc_json* json);
+
+/* Links the child json object into the parent's json tree. If the parent
+ * already has children, then passing in the most recently added child as the
+ * sibling parameter is an optimization. For if sibling is NULL, this function
+ * will manually traverse the tree in order to find the right most sibling.
+ */
+grpc_json* grpc_json_link_child(grpc_json* parent, grpc_json* child,
+                                grpc_json* sibling);
+
+/* Creates a child json object into the parent's json tree then links it in
+ * as described above. */
+grpc_json* grpc_json_create_child(grpc_json* sibling, grpc_json* parent,
+                                  const char* key, const char* value,
+                                  grpc_json_type type, bool owns_value);
 
 #endif /* GRPC_CORE_LIB_JSON_JSON_H */

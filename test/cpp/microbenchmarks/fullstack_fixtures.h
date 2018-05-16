@@ -19,15 +19,15 @@
 #ifndef TEST_CPP_MICROBENCHMARKS_FULLSTACK_FIXTURES_H
 #define TEST_CPP_MICROBENCHMARKS_FULLSTACK_FIXTURES_H
 
-#include <grpc++/channel.h>
-#include <grpc++/create_channel.h>
-#include <grpc++/security/credentials.h>
-#include <grpc++/security/server_credentials.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
+#include <grpc/support/atm.h>
 #include <grpc/support/log.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
 
-extern "C" {
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -39,8 +39,8 @@ extern "C" {
 #include "src/core/lib/surface/server.h"
 #include "test/core/util/passthru_endpoint.h"
 #include "test/core/util/port.h"
-}
 
+#include "src/cpp/client/create_channel_internal.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 
 namespace grpc {
@@ -61,23 +61,43 @@ class FixtureConfiguration {
 
 class BaseFixture : public TrackCounters {};
 
+// Special tag to be used in Server shutdown. This tag is *NEVER* returned when
+// Cq->Next() API is called (This is because FinalizeResult() function in this
+// class always returns 'false'). This is intentional and makes writing shutdown
+// code easier.
+class ShutdownTag : public internal::CompletionQueueTag {
+ public:
+  bool FinalizeResult(void** tag, bool* status) { return false; }
+};
+
 class FullstackFixture : public BaseFixture {
  public:
   FullstackFixture(Service* service, const FixtureConfiguration& config,
                    const grpc::string& address) {
     ServerBuilder b;
-    b.AddListeningPort(address, InsecureServerCredentials());
+    if (address.length() > 0) {
+      b.AddListeningPort(address, InsecureServerCredentials());
+    }
     cq_ = b.AddCompletionQueue(true);
     b.RegisterService(service);
     config.ApplyCommonServerBuilderConfig(&b);
     server_ = b.BuildAndStart();
     ChannelArguments args;
     config.ApplyCommonChannelArguments(&args);
-    channel_ = CreateCustomChannel(address, InsecureChannelCredentials(), args);
+    if (address.length() > 0) {
+      channel_ =
+          CreateCustomChannel(address, InsecureChannelCredentials(), args);
+    } else {
+      channel_ = server_->InProcessChannel(args);
+    }
   }
 
   virtual ~FullstackFixture() {
-    server_->Shutdown();
+    // Dummy shutdown tag (this tag is swallowed by cq->Next() and is not
+    // returned to the user) see ShutdownTag definition for more details
+    ShutdownTag shutdown_tag;
+    grpc_server_shutdown_and_notify(server_->c_server(), cq_->cq(),
+                                    &shutdown_tag);
     cq_->Shutdown();
     void* tag;
     bool ok;
@@ -88,7 +108,8 @@ class FullstackFixture : public BaseFixture {
   void AddToLabel(std::ostream& out, benchmark::State& state) {
     BaseFixture::AddToLabel(out, state);
     out << " polls/iter:"
-        << (double)grpc_get_cq_poll_num(this->cq()->cq()) / state.iterations();
+        << static_cast<double>(grpc_get_cq_poll_num(this->cq()->cq())) /
+               state.iterations();
   }
 
   ServerCompletionQueue* cq() { return cq_.get(); }
@@ -139,6 +160,15 @@ class UDS : public FullstackFixture {
   }
 };
 
+class InProcess : public FullstackFixture {
+ public:
+  InProcess(Service* service,
+            const FixtureConfiguration& fixture_configuration =
+                FixtureConfiguration())
+      : FullstackFixture(service, fixture_configuration, "") {}
+  ~InProcess() {}
+};
+
 class EndpointPairFixture : public BaseFixture {
  public:
   EndpointPairFixture(Service* service, grpc_endpoint_pair endpoints,
@@ -150,7 +180,7 @@ class EndpointPairFixture : public BaseFixture {
     fixture_configuration.ApplyCommonServerBuilderConfig(&b);
     server_ = b.BuildAndStart();
 
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_core::ExecCtx exec_ctx;
 
     /* add server endpoint to server_
      * */
@@ -158,19 +188,19 @@ class EndpointPairFixture : public BaseFixture {
       const grpc_channel_args* server_args =
           grpc_server_get_channel_args(server_->c_server());
       server_transport_ = grpc_create_chttp2_transport(
-          &exec_ctx, server_args, endpoints.server, 0 /* is_client */);
+          server_args, endpoints.server, false /* is_client */);
 
       grpc_pollset** pollsets;
       size_t num_pollsets = 0;
       grpc_server_get_pollsets(server_->c_server(), &pollsets, &num_pollsets);
 
       for (size_t i = 0; i < num_pollsets; i++) {
-        grpc_endpoint_add_to_pollset(&exec_ctx, endpoints.server, pollsets[i]);
+        grpc_endpoint_add_to_pollset(endpoints.server, pollsets[i]);
       }
 
-      grpc_server_setup_transport(&exec_ctx, server_->c_server(),
-                                  server_transport_, NULL, server_args);
-      grpc_chttp2_transport_start_reading(&exec_ctx, server_transport_, NULL);
+      grpc_server_setup_transport(server_->c_server(), server_transport_,
+                                  nullptr, server_args);
+      grpc_chttp2_transport_start_reading(server_transport_, nullptr, nullptr);
     }
 
     /* create channel */
@@ -181,21 +211,22 @@ class EndpointPairFixture : public BaseFixture {
 
       grpc_channel_args c_args = args.c_channel_args();
       client_transport_ =
-          grpc_create_chttp2_transport(&exec_ctx, &c_args, endpoints.client, 1);
+          grpc_create_chttp2_transport(&c_args, endpoints.client, true);
       GPR_ASSERT(client_transport_);
-      grpc_channel* channel =
-          grpc_channel_create(&exec_ctx, "target", &c_args,
-                              GRPC_CLIENT_DIRECT_CHANNEL, client_transport_);
-      grpc_chttp2_transport_start_reading(&exec_ctx, client_transport_, NULL);
+      grpc_channel* channel = grpc_channel_create(
+          "target", &c_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport_);
+      grpc_chttp2_transport_start_reading(client_transport_, nullptr, nullptr);
 
       channel_ = CreateChannelInternal("", channel);
     }
-
-    grpc_exec_ctx_finish(&exec_ctx);
   }
 
   virtual ~EndpointPairFixture() {
-    server_->Shutdown();
+    // Dummy shutdown tag (this tag is swallowed by cq->Next() and is not
+    // returned to the user) see ShutdownTag definition for more details
+    ShutdownTag shutdown_tag;
+    grpc_server_shutdown_and_notify(server_->c_server(), cq_->cq(),
+                                    &shutdown_tag);
     cq_->Shutdown();
     void* tag;
     bool ok;
@@ -206,7 +237,8 @@ class EndpointPairFixture : public BaseFixture {
   void AddToLabel(std::ostream& out, benchmark::State& state) {
     BaseFixture::AddToLabel(out, state);
     out << " polls/iter:"
-        << (double)grpc_get_cq_poll_num(this->cq()->cq()) / state.iterations();
+        << static_cast<double>(grpc_get_cq_poll_num(this->cq()->cq())) /
+               state.iterations();
   }
 
   ServerCompletionQueue* cq() { return cq_.get(); }
@@ -228,32 +260,55 @@ class SockPair : public EndpointPairFixture {
   SockPair(Service* service, const FixtureConfiguration& fixture_configuration =
                                  FixtureConfiguration())
       : EndpointPairFixture(service,
-                            grpc_iomgr_create_endpoint_pair("test", NULL),
+                            grpc_iomgr_create_endpoint_pair("test", nullptr),
                             fixture_configuration) {}
 };
 
-class InProcessCHTTP2 : public EndpointPairFixture {
+/* Use InProcessCHTTP2 instead. This class (with stats as an explicit parameter)
+   is here only to be able to initialize both the base class and stats_ with the
+   same stats instance without accessing the stats_ fields before the object is
+   properly initialized. */
+class InProcessCHTTP2WithExplicitStats : public EndpointPairFixture {
  public:
-  InProcessCHTTP2(Service* service,
-                  const FixtureConfiguration& fixture_configuration =
-                      FixtureConfiguration())
-      : EndpointPairFixture(service, MakeEndpoints(), fixture_configuration) {}
+  InProcessCHTTP2WithExplicitStats(
+      Service* service, grpc_passthru_endpoint_stats* stats,
+      const FixtureConfiguration& fixture_configuration)
+      : EndpointPairFixture(service, MakeEndpoints(stats),
+                            fixture_configuration),
+        stats_(stats) {}
+
+  virtual ~InProcessCHTTP2WithExplicitStats() {
+    if (stats_ != nullptr) {
+      grpc_passthru_endpoint_stats_destroy(stats_);
+    }
+  }
 
   void AddToLabel(std::ostream& out, benchmark::State& state) {
     EndpointPairFixture::AddToLabel(out, state);
     out << " writes/iter:"
-        << (double)stats_.num_writes / (double)state.iterations();
+        << static_cast<double>(gpr_atm_no_barrier_load(&stats_->num_writes)) /
+               static_cast<double>(state.iterations());
   }
 
  private:
-  grpc_passthru_endpoint_stats stats_;
+  grpc_passthru_endpoint_stats* stats_;
 
-  grpc_endpoint_pair MakeEndpoints() {
+  static grpc_endpoint_pair MakeEndpoints(grpc_passthru_endpoint_stats* stats) {
     grpc_endpoint_pair p;
     grpc_passthru_endpoint_create(&p.client, &p.server, Library::get().rq(),
-                                  &stats_);
+                                  stats);
     return p;
   }
+};
+
+class InProcessCHTTP2 : public InProcessCHTTP2WithExplicitStats {
+ public:
+  InProcessCHTTP2(Service* service,
+                  const FixtureConfiguration& fixture_configuration =
+                      FixtureConfiguration())
+      : InProcessCHTTP2WithExplicitStats(service,
+                                         grpc_passthru_endpoint_stats_create(),
+                                         fixture_configuration) {}
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -279,6 +334,7 @@ class MinStackize : public Base {
 
 typedef MinStackize<TCP> MinTCP;
 typedef MinStackize<UDS> MinUDS;
+typedef MinStackize<InProcess> MinInProcess;
 typedef MinStackize<SockPair> MinSockPair;
 typedef MinStackize<InProcessCHTTP2> MinInProcessCHTTP2;
 

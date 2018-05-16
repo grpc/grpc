@@ -16,20 +16,20 @@
  *
  */
 
-#include <grpc++/server_context.h>
+#include <grpcpp/server_context.h>
 
 #include <algorithm>
 #include <mutex>
 #include <utility>
 
-#include <grpc++/completion_queue.h>
-#include <grpc++/impl/call.h>
-#include <grpc++/support/time.h>
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/load_reporting.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpcpp/completion_queue.h>
+#include <grpcpp/impl/call.h>
+#include <grpcpp/support/time.h>
 
 #include "src/core/lib/surface/call.h"
 
@@ -37,7 +37,7 @@ namespace grpc {
 
 // CompletionOp
 
-class ServerContext::CompletionOp final : public CallOpSetInterface {
+class ServerContext::CompletionOp final : public internal::CallOpSetInterface {
  public:
   // initial refs: one in the server context, one in the cq
   CompletionOp()
@@ -90,7 +90,7 @@ void ServerContext::CompletionOp::FillOps(grpc_call* call, grpc_op* ops,
   ops->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   ops->data.recv_close_on_server.cancelled = &cancelled_;
   ops->flags = 0;
-  ops->reserved = NULL;
+  ops->reserved = nullptr;
   *nops = 1;
 }
 
@@ -120,7 +120,8 @@ ServerContext::ServerContext()
       call_(nullptr),
       cq_(nullptr),
       sent_initial_metadata_(false),
-      compression_level_set_(false) {}
+      compression_level_set_(false),
+      has_pending_ops_(false) {}
 
 ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata_array* arr)
     : completion_op_(nullptr),
@@ -130,7 +131,8 @@ ServerContext::ServerContext(gpr_timespec deadline, grpc_metadata_array* arr)
       call_(nullptr),
       cq_(nullptr),
       sent_initial_metadata_(false),
-      compression_level_set_(false) {
+      compression_level_set_(false),
+      has_pending_ops_(false) {
   std::swap(*client_metadata_.arr(), *arr);
   client_metadata_.FillMap();
 }
@@ -144,7 +146,7 @@ ServerContext::~ServerContext() {
   }
 }
 
-void ServerContext::BeginCompletionOp(Call* call) {
+void ServerContext::BeginCompletionOp(internal::Call* call) {
   GPR_ASSERT(!completion_op_);
   completion_op_ = new CompletionOp();
   if (has_notify_when_done_tag_) {
@@ -153,8 +155,8 @@ void ServerContext::BeginCompletionOp(Call* call) {
   call->PerformOps(completion_op_);
 }
 
-CompletionQueueTag* ServerContext::GetCompletionOpTag() {
-  return static_cast<CompletionQueueTag*>(completion_op_);
+internal::CompletionQueueTag* ServerContext::GetCompletionOpTag() {
+  return static_cast<internal::CompletionQueueTag*>(completion_op_);
 }
 
 void ServerContext::AddInitialMetadata(const grpc::string& key,
@@ -169,7 +171,7 @@ void ServerContext::AddTrailingMetadata(const grpc::string& key,
 
 void ServerContext::TryCancel() const {
   grpc_call_error err = grpc_call_cancel_with_status(
-      call_, GRPC_STATUS_CANCELLED, "Cancelled on the server side", NULL);
+      call_, GRPC_STATUS_CANCELLED, "Cancelled on the server side", nullptr);
   if (err != GRPC_CALL_OK) {
     gpr_log(GPR_ERROR, "TryCancel failed with: %d", err);
   }
@@ -188,13 +190,14 @@ bool ServerContext::IsCancelled() const {
 
 void ServerContext::set_compression_algorithm(
     grpc_compression_algorithm algorithm) {
-  char* algorithm_name = NULL;
+  compression_algorithm_ = algorithm;
+  const char* algorithm_name = nullptr;
   if (!grpc_compression_algorithm_name(algorithm, &algorithm_name)) {
     gpr_log(GPR_ERROR, "Name for compression algorithm '%d' unknown.",
             algorithm);
     abort();
   }
-  GPR_ASSERT(algorithm_name != NULL);
+  GPR_ASSERT(algorithm_name != nullptr);
   AddInitialMetadata(GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY, algorithm_name);
 }
 

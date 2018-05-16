@@ -19,23 +19,17 @@
 #ifndef GRPC_CORE_LIB_IOMGR_LOAD_FILE_H
 #define GRPC_CORE_LIB_IOMGR_LOAD_FILE_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stdio.h>
 
 #include <grpc/slice.h>
 
 #include "src/core/lib/iomgr/error.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* Loads the content of a file into a slice. add_null_terminator will add
    a NULL terminator if non-zero. */
-grpc_error *grpc_load_file(const char *filename, int add_null_terminator,
-                           grpc_slice *slice);
-
-#ifdef __cplusplus
-}
-#endif
+grpc_error* grpc_load_file(const char* filename, int add_null_terminator,
+                           grpc_slice* slice);
 
 #endif /* GRPC_CORE_LIB_IOMGR_LOAD_FILE_H */

@@ -12,19 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
 
-def grpc_fuzzer(name, corpus, srcs = [], deps = [], **kwargs):
-  grpc_cc_binary(
-    name = '%s/one_entry.bin' % name,
+def grpc_fuzzer(name, corpus, srcs = [], deps = [], size = "large", timeout = "long", **kwargs):
+  grpc_cc_test(
+    name = name,
     srcs = srcs,
-    deps = deps + ["//test/core/util:one_corpus_entry_fuzzer"],
+    deps = deps + ["//test/core/util:fuzzer_corpus_test"],
+    data = native.glob([corpus + "/**"]),
+    external_deps = [
+      'gtest',
+    ],
+    size = size,
+    timeout = timeout,
+    args = ["--directory=" + native.package_name() + "/" + corpus,],
     **kwargs
   )
-  for entry in native.glob(['%s/*' % corpus]):
-    native.sh_test(
-      name = '%s/one_entry/%s' % (name, entry),
-      data = [':%s/one_entry.bin' % name, entry],
-      srcs = ['//test/core/util:fuzzer_one_entry_runner'],
-      args = ['$(location :%s/one_entry.bin)' % name, '$(location %s)' % entry]
-    )

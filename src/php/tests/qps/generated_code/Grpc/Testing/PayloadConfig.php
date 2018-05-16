@@ -9,7 +9,7 @@ use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * Protobuf type <code>grpc.testing.PayloadConfig</code>
+ * Generated from protobuf message <code>grpc.testing.PayloadConfig</code>
  */
 class PayloadConfig extends \Google\Protobuf\Internal\Message
 {
@@ -21,7 +21,8 @@ class PayloadConfig extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <code>.grpc.testing.ByteBufferParams bytebuf_params = 1;</code>
+     * Generated from protobuf field <code>.grpc.testing.ByteBufferParams bytebuf_params = 1;</code>
+     * @return \Grpc\Testing\ByteBufferParams
      */
     public function getBytebufParams()
     {
@@ -29,16 +30,21 @@ class PayloadConfig extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <code>.grpc.testing.ByteBufferParams bytebuf_params = 1;</code>
+     * Generated from protobuf field <code>.grpc.testing.ByteBufferParams bytebuf_params = 1;</code>
+     * @param \Grpc\Testing\ByteBufferParams $var
+     * @return $this
      */
-    public function setBytebufParams(&$var)
+    public function setBytebufParams($var)
     {
         GPBUtil::checkMessage($var, \Grpc\Testing\ByteBufferParams::class);
         $this->writeOneof(1, $var);
+
+        return $this;
     }
 
     /**
-     * <code>.grpc.testing.SimpleProtoParams simple_params = 2;</code>
+     * Generated from protobuf field <code>.grpc.testing.SimpleProtoParams simple_params = 2;</code>
+     * @return \Grpc\Testing\SimpleProtoParams
      */
     public function getSimpleParams()
     {
@@ -46,16 +52,21 @@ class PayloadConfig extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <code>.grpc.testing.SimpleProtoParams simple_params = 2;</code>
+     * Generated from protobuf field <code>.grpc.testing.SimpleProtoParams simple_params = 2;</code>
+     * @param \Grpc\Testing\SimpleProtoParams $var
+     * @return $this
      */
-    public function setSimpleParams(&$var)
+    public function setSimpleParams($var)
     {
         GPBUtil::checkMessage($var, \Grpc\Testing\SimpleProtoParams::class);
         $this->writeOneof(2, $var);
+
+        return $this;
     }
 
     /**
-     * <code>.grpc.testing.ComplexProtoParams complex_params = 3;</code>
+     * Generated from protobuf field <code>.grpc.testing.ComplexProtoParams complex_params = 3;</code>
+     * @return \Grpc\Testing\ComplexProtoParams
      */
     public function getComplexParams()
     {
@@ -63,14 +74,21 @@ class PayloadConfig extends \Google\Protobuf\Internal\Message
     }
 
     /**
-     * <code>.grpc.testing.ComplexProtoParams complex_params = 3;</code>
+     * Generated from protobuf field <code>.grpc.testing.ComplexProtoParams complex_params = 3;</code>
+     * @param \Grpc\Testing\ComplexProtoParams $var
+     * @return $this
      */
-    public function setComplexParams(&$var)
+    public function setComplexParams($var)
     {
         GPBUtil::checkMessage($var, \Grpc\Testing\ComplexProtoParams::class);
         $this->writeOneof(3, $var);
+
+        return $this;
     }
 
+    /**
+     * @return string
+     */
     public function getPayload()
     {
         return $this->whichOneof("payload");

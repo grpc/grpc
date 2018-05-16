@@ -17,6 +17,7 @@
 #endregion
 
 using System;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core
 {
@@ -26,6 +27,7 @@ namespace Grpc.Core
     public class RpcException : Exception
     {
         private readonly Status status;
+        private readonly Metadata trailers;
 
         /// <summary>
         /// Creates a new <c>RpcException</c> associated with given status.
@@ -34,6 +36,7 @@ namespace Grpc.Core
         public RpcException(Status status) : base(status.ToString())
         {
             this.status = status;
+            this.trailers = Metadata.Empty;
         }
 
         /// <summary>
@@ -44,6 +47,18 @@ namespace Grpc.Core
         public RpcException(Status status, string message) : base(message)
         {
             this.status = status;
+            this.trailers = Metadata.Empty;
+        }
+
+        /// <summary>
+        /// Creates a new <c>RpcException</c> associated with given status and trailing response metadata.
+        /// </summary>
+        /// <param name="status">Resulting status of a call.</param>
+        /// <param name="trailers">Response trailing metadata.</param> 
+        public RpcException(Status status, Metadata trailers) : base(status.ToString())
+        {
+            this.status = status;
+            this.trailers = GrpcPreconditions.CheckNotNull(trailers);
         }
 
         /// <summary>
@@ -54,6 +69,30 @@ namespace Grpc.Core
             get
             {
                 return status;
+            }
+        }
+
+        /// <summary>
+        /// Returns the status code of the call, as a convenient alternative to <see cref="StatusCode">Status.StatusCode</see>.
+        /// </summary>
+        public StatusCode StatusCode
+        {
+            get
+            {
+                return status.StatusCode;
+            }
+        }
+
+        /// <summary>
+        /// Gets the call trailing metadata.
+        /// Trailers only have meaningful content for client-side calls (in which case they represent the trailing metadata sent by the server when closing the call).
+        /// Instances of <c>RpcException</c> thrown by the server-side part of the stack will have trailers always set to empty.
+        /// </summary>
+        public Metadata Trailers
+        {
+            get
+            {
+                return trailers;
             }
         }
     }

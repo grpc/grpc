@@ -57,6 +57,8 @@ typedef enum {
   GRPC_COMPRESS_NONE = 0,
   GRPC_COMPRESS_DEFLATE,
   GRPC_COMPRESS_GZIP,
+  /* EXPERIMENTAL: Stream compression is currently experimental. */
+  GRPC_COMPRESS_STREAM_GZIP,
   /* TODO(ctiller): snappy */
   GRPC_COMPRESS_ALGORITHMS_COUNT
 } grpc_compression_algorithm;
@@ -79,24 +81,23 @@ typedef struct grpc_compression_options {
    */
   uint32_t enabled_algorithms_bitset;
 
-  /** The default channel compression level. It'll be used in the absence of
-   * call specific settings. This option corresponds to the channel argument key
-   * behind \a GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL. If present, takes
-   * precedence over \a default_algorithm.
+  /** The default compression level. It'll be used in the absence of call
+   * specific settings. This option corresponds to the channel
+   * argument key behind \a GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL. If present,
+   * takes precedence over \a default_algorithm.
    * TODO(dgq): currently only available for server channels. */
-  struct {
+  struct grpc_compression_options_default_level {
     int is_set;
     grpc_compression_level level;
   } default_level;
 
-  /** The default channel compression algorithm. It'll be used in the absence of
+  /** The default message compression algorithm. It'll be used in the absence of
    * call specific settings. This option corresponds to the channel argument key
    * behind \a GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM. */
-  struct {
+  struct grpc_compression_options_default_algorithm {
     int is_set;
     grpc_compression_algorithm algorithm;
   } default_algorithm;
-
 } grpc_compression_options;
 
 #ifdef __cplusplus

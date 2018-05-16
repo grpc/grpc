@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Grpc.Core.Interceptors;
 using Grpc.Core.Internal;
 using Grpc.Core.Logging;
 using Grpc.Core.Utils;
@@ -30,6 +31,7 @@ namespace Grpc.Core.Internal
     internal interface IServerCallHandler
     {
         Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq);
+        IServerCallHandler Intercept(Interceptor interceptor);
     }
 
     internal class UnaryServerCallHandler<TRequest, TResponse> : IServerCallHandler
@@ -60,7 +62,7 @@ namespace Grpc.Core.Internal
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
             Status status;
-            Tuple<TResponse,WriteFlags> responseTuple = null;
+            AsyncCallServer<TRequest,TResponse>.ResponseWithFlags? responseWithFlags = null;
             var context = HandlerUtils.NewContext(newRpc, responseStream, asyncCall.CancellationToken);
             try
             {
@@ -68,19 +70,19 @@ namespace Grpc.Core.Internal
                 var request = requestStream.Current;
                 var response = await handler(request, context).ConfigureAwait(false);
                 status = context.Status;
-                responseTuple = Tuple.Create(response, HandlerUtils.GetWriteFlags(context.WriteOptions));
+                responseWithFlags = new AsyncCallServer<TRequest, TResponse>.ResponseWithFlags(response, HandlerUtils.GetWriteFlags(context.WriteOptions));
             } 
             catch (Exception e)
             {
                 if (!(e is RpcException))
                 {
-                    Logger.Warning(e, "Exception occured in handler.");
+                    Logger.Warning(e, "Exception occurred in the handler or an interceptor.");
                 }
-                status = HandlerUtils.StatusFromException(e);
+                status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
             }
             try
             {
-                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseTuple).ConfigureAwait(false);
+                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseWithFlags).ConfigureAwait(false);
             }
             catch (Exception)
             {
@@ -88,6 +90,11 @@ namespace Grpc.Core.Internal
                 throw;
             }
             await finishedTask.ConfigureAwait(false);
+        }
+
+        public IServerCallHandler Intercept(Interceptor interceptor)
+        {
+            return new UnaryServerCallHandler<TRequest, TResponse>(method, (request, context) => interceptor.UnaryServerHandler(request, context, handler));
         }
     }
 
@@ -131,9 +138,9 @@ namespace Grpc.Core.Internal
             {
                 if (!(e is RpcException))
                 {
-                    Logger.Warning(e, "Exception occured in handler.");
+                    Logger.Warning(e, "Exception occurred in the handler or an interceptor.");
                 }
-                status = HandlerUtils.StatusFromException(e);
+                status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
             }
 
             try
@@ -146,6 +153,11 @@ namespace Grpc.Core.Internal
                 throw;
             }
             await finishedTask.ConfigureAwait(false);
+        }
+
+        public IServerCallHandler Intercept(Interceptor interceptor)
+        {
+            return new ServerStreamingServerCallHandler<TRequest, TResponse>(method, (request, responseStream, context) => interceptor.ServerStreamingServerHandler(request, responseStream, context, handler));
         }
     }
 
@@ -177,26 +189,26 @@ namespace Grpc.Core.Internal
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
             Status status;
-            Tuple<TResponse,WriteFlags> responseTuple = null;
+            AsyncCallServer<TRequest, TResponse>.ResponseWithFlags? responseWithFlags = null;
             var context = HandlerUtils.NewContext(newRpc, responseStream, asyncCall.CancellationToken);
             try
             {
                 var response = await handler(requestStream, context).ConfigureAwait(false);
                 status = context.Status;
-                responseTuple = Tuple.Create(response, HandlerUtils.GetWriteFlags(context.WriteOptions));
+                responseWithFlags = new AsyncCallServer<TRequest, TResponse>.ResponseWithFlags(response, HandlerUtils.GetWriteFlags(context.WriteOptions));
             }
             catch (Exception e)
             {
                 if (!(e is RpcException))
                 {
-                    Logger.Warning(e, "Exception occured in handler.");
+                    Logger.Warning(e, "Exception occurred in the handler or an interceptor.");
                 }
-                status = HandlerUtils.StatusFromException(e);
+                status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
             }
 
             try
             {
-                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseTuple).ConfigureAwait(false);
+                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseWithFlags).ConfigureAwait(false);
             }
             catch (Exception)
             {
@@ -204,6 +216,11 @@ namespace Grpc.Core.Internal
                 throw;
             }
             await finishedTask.ConfigureAwait(false);
+        }
+
+        public IServerCallHandler Intercept(Interceptor interceptor)
+        {
+            return new ClientStreamingServerCallHandler<TRequest, TResponse>(method, (requestStream, context) => interceptor.ClientStreamingServerHandler(requestStream, context, handler));
         }
     }
 
@@ -245,9 +262,9 @@ namespace Grpc.Core.Internal
             {
                 if (!(e is RpcException))
                 {
-                    Logger.Warning(e, "Exception occured in handler.");
+                    Logger.Warning(e, "Exception occurred in the handler or an interceptor.");
                 }
-                status = HandlerUtils.StatusFromException(e);
+                status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
             }
             try
             {
@@ -259,6 +276,11 @@ namespace Grpc.Core.Internal
                 throw;
             }
             await finishedTask.ConfigureAwait(false);
+        }
+
+        public IServerCallHandler Intercept(Interceptor interceptor)
+        {
+            return new DuplexStreamingServerCallHandler<TRequest, TResponse>(method, (requestStream, responseStream, context) => interceptor.DuplexStreamingServerHandler(requestStream, responseStream, context, handler));
         }
     }
 
@@ -288,15 +310,29 @@ namespace Grpc.Core.Internal
         {
             return callHandlerImpl.HandleCall(newRpc, cq);
         }
+
+        public IServerCallHandler Intercept(Interceptor interceptor)
+        {
+            return this;  // Do not intercept unimplemented methods.
+        }
     }
 
     internal static class HandlerUtils
     {
-        public static Status StatusFromException(Exception e)
+        public static Status GetStatusFromExceptionAndMergeTrailers(Exception e, Metadata callContextResponseTrailers)
         {
             var rpcException = e as RpcException;
             if (rpcException != null)
             {
+                // There are two sources of metadata entries on the server-side:
+                // 1. serverCallContext.ResponseTrailers
+                // 2. trailers in RpcException thrown by user code in server side handler.
+                // As metadata allows duplicate keys, the logical thing to do is
+                // to just merge trailers from RpcException into serverCallContext.ResponseTrailers.
+                foreach (var entry in rpcException.Trailers)
+                {
+                    callContextResponseTrailers.Add(entry);
+                }
                 // use the status thrown by handler.
                 return rpcException.Status;
             }

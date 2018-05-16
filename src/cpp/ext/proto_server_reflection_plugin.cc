@@ -16,10 +16,10 @@
  *
  */
 
-#include <grpc++/ext/proto_server_reflection_plugin.h>
-#include <grpc++/impl/server_builder_plugin.h>
-#include <grpc++/impl/server_initializer.h>
-#include <grpc++/server.h>
+#include <grpcpp/ext/proto_server_reflection_plugin.h>
+#include <grpcpp/impl/server_builder_plugin.h>
+#include <grpcpp/impl/server_initializer.h>
+#include <grpcpp/server.h>
 
 #include "src/cpp/ext/proto_server_reflection.h"
 

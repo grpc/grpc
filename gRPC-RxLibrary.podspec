@@ -21,10 +21,10 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-RxLibrary'
-  version = '1.5.0-dev'
+  version = '1.13.0-dev'
   s.version  = version
   s.summary  = 'Reactive Extensions library for iOS/OSX.'
-  s.homepage = 'http://www.grpc.io'
+  s.homepage = 'https://grpc.io'
   s.license  = 'Apache License, Version 2.0'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
@@ -44,4 +44,8 @@ Pod::Spec.new do |s|
   s.source_files = "#{src_dir}/*.{h,m}", "#{src_dir}/**/*.{h,m}"
   s.private_header_files = "#{src_dir}/private/*.h"
   s.header_mappings_dir = "#{src_dir}"
+
+  s.pod_target_xcconfig = {
+    'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
+  }
 end

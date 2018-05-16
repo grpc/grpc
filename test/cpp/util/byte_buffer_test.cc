@@ -17,15 +17,20 @@
  */
 
 #include <grpc++/support/byte_buffer.h>
+#include <grpcpp/impl/grpc_library.h>
 
 #include <cstring>
 #include <vector>
 
-#include <grpc++/support/slice.h>
+#include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <grpcpp/support/slice.h>
 #include <gtest/gtest.h>
 
 namespace grpc {
+
+static internal::GrpcLibraryInitializer g_gli_initializer;
+
 namespace {
 
 const char* kContent1 = "hello xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
@@ -34,33 +39,30 @@ const char* kContent2 = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy world";
 class ByteBufferTest : public ::testing::Test {};
 
 TEST_F(ByteBufferTest, CreateFromSingleSlice) {
-  grpc_slice hello = grpc_slice_from_copied_string(kContent1);
-  Slice s(hello, Slice::STEAL_REF);
+  Slice s(kContent1);
   ByteBuffer buffer(&s, 1);
+  EXPECT_EQ(strlen(kContent1), buffer.Length());
 }
 
 TEST_F(ByteBufferTest, CreateFromVector) {
-  grpc_slice hello = grpc_slice_from_copied_string(kContent1);
-  grpc_slice world = grpc_slice_from_copied_string(kContent2);
   std::vector<Slice> slices;
-  slices.push_back(Slice(hello, Slice::STEAL_REF));
-  slices.push_back(Slice(world, Slice::STEAL_REF));
+  slices.emplace_back(kContent1);
+  slices.emplace_back(kContent2);
   ByteBuffer buffer(&slices[0], 2);
+  EXPECT_EQ(strlen(kContent1) + strlen(kContent2), buffer.Length());
 }
 
 TEST_F(ByteBufferTest, Clear) {
-  grpc_slice hello = grpc_slice_from_copied_string(kContent1);
-  Slice s(hello, Slice::STEAL_REF);
+  Slice s(kContent1);
   ByteBuffer buffer(&s, 1);
   buffer.Clear();
+  EXPECT_EQ(static_cast<size_t>(0), buffer.Length());
 }
 
 TEST_F(ByteBufferTest, Length) {
-  grpc_slice hello = grpc_slice_from_copied_string(kContent1);
-  grpc_slice world = grpc_slice_from_copied_string(kContent2);
   std::vector<Slice> slices;
-  slices.push_back(Slice(hello, Slice::STEAL_REF));
-  slices.push_back(Slice(world, Slice::STEAL_REF));
+  slices.emplace_back(kContent1);
+  slices.emplace_back(kContent2);
   ByteBuffer buffer(&slices[0], 2);
   EXPECT_EQ(strlen(kContent1) + strlen(kContent2), buffer.Length());
 }
@@ -96,7 +98,7 @@ TEST_F(ByteBufferTest, SerializationMakesCopy) {
   std::vector<Slice> slices;
   slices.push_back(Slice(hello, Slice::STEAL_REF));
   slices.push_back(Slice(world, Slice::STEAL_REF));
-  grpc_byte_buffer* send_buffer = nullptr;
+  ByteBuffer send_buffer;
   bool owned = false;
   ByteBuffer buffer(&slices[0], 2);
   slices.clear();
@@ -104,8 +106,7 @@ TEST_F(ByteBufferTest, SerializationMakesCopy) {
       buffer, &send_buffer, &owned);
   EXPECT_TRUE(status.ok());
   EXPECT_TRUE(owned);
-  EXPECT_TRUE(send_buffer != nullptr);
-  grpc_byte_buffer_destroy(send_buffer);
+  EXPECT_TRUE(send_buffer.Valid());
 }
 
 }  // namespace
@@ -113,5 +114,8 @@ TEST_F(ByteBufferTest, SerializationMakesCopy) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  grpc_init();
+  int ret = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return ret;
 }

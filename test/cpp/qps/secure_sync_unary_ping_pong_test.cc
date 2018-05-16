@@ -23,6 +23,9 @@
 #include "test/cpp/qps/benchmark_config.h"
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/report.h"
+#include "test/cpp/qps/server.h"
+#include "test/cpp/util/test_config.h"
+#include "test/cpp/util/test_credentials_provider.h"
 
 namespace grpc {
 namespace testing {
@@ -51,7 +54,8 @@ static void RunSynchronousUnaryPingPong() {
   server_config.mutable_security_params()->CopyFrom(security);
 
   const auto result =
-      RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2);
+      RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2, "",
+                  kInsecureCredentialsType, false);
 
   GetReporter()->ReportQPS(*result);
   GetReporter()->ReportLatency(*result);
@@ -61,7 +65,7 @@ static void RunSynchronousUnaryPingPong() {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::testing::InitBenchmark(&argc, &argv, true);
+  grpc::testing::InitTest(&argc, &argv, true);
 
   grpc::testing::RunSynchronousUnaryPingPong();
 

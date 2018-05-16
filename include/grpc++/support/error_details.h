@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2017 gRPC authors.
+ * Copyright 2018 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,31 +16,13 @@
  *
  */
 
+// DEPRECATED: The headers in include/grpc++ are deprecated. Please include the
+// headers in include/grpcpp instead. This header exists only for backwards
+// compatibility.
+
 #ifndef GRPCXX_SUPPORT_ERROR_DETAILS_H
 #define GRPCXX_SUPPORT_ERROR_DETAILS_H
 
-#include <grpc++/support/status.h>
-
-namespace google {
-namespace rpc {
-class Status;
-}  // namespace rpc
-}  // namespace google
-
-namespace grpc {
-
-/// Map a \a grpc::Status to a \a google::rpc::Status.
-/// The given \a to object will be cleared.
-/// On success, returns status with OK.
-/// Returns status with \a INVALID_ARGUMENT, if failed to deserialize.
-/// Returns status with \a FAILED_PRECONDITION, if \a to is nullptr.
-Status ExtractErrorDetails(const Status& from, ::google::rpc::Status* to);
-
-/// Map \a google::rpc::Status to a \a grpc::Status.
-/// Returns OK on success.
-/// Returns status with \a FAILED_PRECONDITION if \a to is nullptr.
-Status SetErrorDetails(const ::google::rpc::Status& from, Status* to);
-
-}  // namespace grpc
+#include <grpcpp/support/error_details.h>
 
 #endif  // GRPCXX_SUPPORT_ERROR_DETAILS_H

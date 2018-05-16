@@ -61,7 +61,7 @@ class GoogleCallCredentialsTest(unittest.TestCase):
         self.assertTrue(callback_event.wait(1.0))
 
 
-class AccessTokenCallCredentialsTest(unittest.TestCase):
+class AccessTokenAuthMetadataPluginTest(unittest.TestCase):
 
     def test_google_call_credentials_success(self):
         callback_event = threading.Event()
@@ -71,8 +71,8 @@ class AccessTokenCallCredentialsTest(unittest.TestCase):
             self.assertIsNone(error)
             callback_event.set()
 
-        call_creds = _auth.AccessTokenCallCredentials('token')
-        call_creds(None, mock_callback)
+        metadata_plugin = _auth.AccessTokenAuthMetadataPlugin('token')
+        metadata_plugin(None, mock_callback)
         self.assertTrue(callback_event.wait(1.0))
 
 

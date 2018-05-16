@@ -19,11 +19,13 @@
 #ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_IAM_IAM_CREDENTIALS_H
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_IAM_IAM_CREDENTIALS_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/security/credentials/credentials.h"
 
 typedef struct {
   grpc_call_credentials base;
-  grpc_credentials_md_store *iam_md;
+  grpc_credentials_mdelem_array md_array;
 } grpc_google_iam_credentials;
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_IAM_IAM_CREDENTIALS_H */

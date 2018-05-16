@@ -16,20 +16,48 @@
  *
  */
 
-#include <grpc++/generic/generic_stub.h>
+#include <grpcpp/generic/generic_stub.h>
 
-#include <grpc++/impl/rpc_method.h>
+#include <grpcpp/impl/rpc_method.h>
 
 namespace grpc {
+
+namespace {
+std::unique_ptr<GenericClientAsyncReaderWriter> CallInternal(
+    ChannelInterface* channel, ClientContext* context,
+    const grpc::string& method, CompletionQueue* cq, bool start, void* tag) {
+  return std::unique_ptr<GenericClientAsyncReaderWriter>(
+      internal::ClientAsyncReaderWriterFactory<ByteBuffer, ByteBuffer>::Create(
+          channel, cq,
+          internal::RpcMethod(method.c_str(),
+                              internal::RpcMethod::BIDI_STREAMING),
+          context, start, tag));
+}
+
+}  // namespace
 
 // begin a call to a named method
 std::unique_ptr<GenericClientAsyncReaderWriter> GenericStub::Call(
     ClientContext* context, const grpc::string& method, CompletionQueue* cq,
     void* tag) {
-  return std::unique_ptr<GenericClientAsyncReaderWriter>(
-      GenericClientAsyncReaderWriter::Create(
+  return CallInternal(channel_.get(), context, method, cq, true, tag);
+}
+
+// setup a call to a named method
+std::unique_ptr<GenericClientAsyncReaderWriter> GenericStub::PrepareCall(
+    ClientContext* context, const grpc::string& method, CompletionQueue* cq) {
+  return CallInternal(channel_.get(), context, method, cq, false, nullptr);
+}
+
+// setup a unary call to a named method
+std::unique_ptr<GenericClientAsyncResponseReader> GenericStub::PrepareUnaryCall(
+    ClientContext* context, const grpc::string& method,
+    const ByteBuffer& request, CompletionQueue* cq) {
+  return std::unique_ptr<GenericClientAsyncResponseReader>(
+      internal::ClientAsyncResponseReaderFactory<ByteBuffer>::Create(
           channel_.get(), cq,
-          RpcMethod(method.c_str(), RpcMethod::BIDI_STREAMING), context, tag));
+          internal::RpcMethod(method.c_str(), internal::RpcMethod::NORMAL_RPC),
+          context, request, false));
 }
 
 }  // namespace grpc

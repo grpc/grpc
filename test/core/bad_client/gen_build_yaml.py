@@ -27,6 +27,7 @@ default_test_options = TestOptions(False, 1.0)
 BAD_CLIENT_TESTS = {
     'badreq': default_test_options,
     'connection_prefix': default_test_options._replace(cpu_cost=0.2),
+    'duplicate_header': default_test_options,
     'headers': default_test_options._replace(cpu_cost=0.2),
     'initial_settings_frame': default_test_options._replace(cpu_cost=0.2),
     'head_of_line_blocking': default_test_options,
@@ -46,7 +47,7 @@ def main():
             'build': 'private',
             'language': 'c',
             'src': [
-              'test/core/bad_client/bad_client.c'
+              'test/core/bad_client/bad_client.cc'
             ],
             'headers': [
               'test/core/bad_client/bad_client.h'
@@ -66,7 +67,7 @@ def main():
               'build': 'test',
               'language': 'c',
               'secure': 'no',
-              'src': ['test/core/bad_client/tests/%s.c' % t],
+              'src': ['test/core/bad_client/tests/%s.cc' % t],
               'vs_proj_dir': 'test',
               'exclude_iomgrs': ['uv'],
               'deps': [

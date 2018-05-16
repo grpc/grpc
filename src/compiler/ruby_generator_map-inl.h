@@ -36,7 +36,7 @@ namespace grpc_ruby_generator {
 // Converts an initializer list of the form { key0, value0, key1, value1, ... }
 // into a map of key* to value*. Is merely a readability helper for later code.
 inline std::map<grpc::string, grpc::string> ListToDict(
-    const initializer_list<grpc::string> &values) {
+    const initializer_list<grpc::string>& values) {
   if (values.size() % 2 != 0) {
     std::cerr << "Not every 'key' has a value in `values`." << std::endl;
   }

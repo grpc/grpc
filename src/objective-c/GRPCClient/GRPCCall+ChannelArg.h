@@ -19,6 +19,12 @@
 
 #include <AvailabilityMacros.h>
 
+typedef NS_ENUM(NSInteger, GRPCCompressAlgorithm) {
+  GRPCCompressNone,
+  GRPCCompressDeflate,
+  GRPCCompressGzip,
+};
+
 /**
  * Methods to configure GRPC channel options.
  */
@@ -33,7 +39,20 @@
 /** The default response size limit is 4MB. Set this to override that default. */
 + (void)setResponseSizeLimit:(NSUInteger)limit forHost:(nonnull NSString *)host;
 
-+ (void)closeOpenConnections DEPRECATED_MSG_ATTRIBUTE("The API for this feature is experimental, "
-                                                      "and might be removed or modified at any "
-                                                      "time.");
++ (void)closeOpenConnections DEPRECATED_MSG_ATTRIBUTE(
+    "The API for this feature is experimental, "
+    "and might be removed or modified at any "
+    "time.");
+
++ (void)setDefaultCompressMethod:(GRPCCompressAlgorithm)algorithm forhost:(nonnull NSString *)host;
+
+/** Enable keepalive and configure keepalive parameters. A user should call this function once to
+ * enable keepalive for a particular host. gRPC client sends a ping after every \a interval ms to
+ * check if the transport is still alive. After waiting for \a timeout ms, if the client does not
+ * receive the ping ack, it closes the transport; all pending calls to this host will fail with
+ * error GRPC_STATUS_INTERNAL with error information "keepalive watchdog timeout". */
++ (void)setKeepaliveWithInterval:(int)interval
+                         timeout:(int)timeout
+                         forHost:(nonnull NSString *)host;
+
 @end

@@ -19,33 +19,32 @@
 #ifndef GRPC_CORE_LIB_CHANNEL_HANDSHAKER_FACTORY_H
 #define GRPC_CORE_LIB_CHANNEL_HANDSHAKER_FACTORY_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/lib/channel/handshaker.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 
 // A handshaker factory is used to create handshakers.
 
 typedef struct grpc_handshaker_factory grpc_handshaker_factory;
 
 typedef struct {
-  void (*add_handshakers)(grpc_exec_ctx *exec_ctx,
-                          grpc_handshaker_factory *handshaker_factory,
-                          const grpc_channel_args *args,
-                          grpc_handshake_manager *handshake_mgr);
-  void (*destroy)(grpc_exec_ctx *exec_ctx,
-                  grpc_handshaker_factory *handshaker_factory);
+  void (*add_handshakers)(grpc_handshaker_factory* handshaker_factory,
+                          const grpc_channel_args* args,
+                          grpc_handshake_manager* handshake_mgr);
+  void (*destroy)(grpc_handshaker_factory* handshaker_factory);
 } grpc_handshaker_factory_vtable;
 
 struct grpc_handshaker_factory {
-  const grpc_handshaker_factory_vtable *vtable;
+  const grpc_handshaker_factory_vtable* vtable;
 };
 
 void grpc_handshaker_factory_add_handshakers(
-    grpc_exec_ctx *exec_ctx, grpc_handshaker_factory *handshaker_factory,
-    const grpc_channel_args *args, grpc_handshake_manager *handshake_mgr);
+    grpc_handshaker_factory* handshaker_factory, const grpc_channel_args* args,
+    grpc_handshake_manager* handshake_mgr);
 
 void grpc_handshaker_factory_destroy(
-    grpc_exec_ctx *exec_ctx, grpc_handshaker_factory *handshaker_factory);
+    grpc_handshaker_factory* handshaker_factory);
 
 #endif /* GRPC_CORE_LIB_CHANNEL_HANDSHAKER_FACTORY_H */

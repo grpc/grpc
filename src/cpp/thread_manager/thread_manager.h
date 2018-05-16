@@ -23,9 +23,10 @@
 #include <list>
 #include <memory>
 #include <mutex>
-#include <thread>
 
-#include <grpc++/support/config.h>
+#include <grpcpp/support/config.h>
+
+#include "src/core/lib/gprpp/thd.h"
 
 namespace grpc {
 
@@ -84,8 +85,8 @@ class ThreadManager {
   virtual void Wait();
 
  private:
-  // Helper wrapper class around std::thread. This takes a ThreadManager object
-  // and starts a new std::thread to calls the Run() function.
+  // Helper wrapper class around grpc_core::Thread. Takes a ThreadManager object
+  // and starts a new grpc_core::Thread to calls the Run() function.
   //
   // The Run() function calls ThreadManager::MainWorkLoop() function and once
   // that completes, it marks the WorkerThread completed by calling
@@ -100,8 +101,8 @@ class ThreadManager {
     // thd_mgr_>MarkAsCompleted(this) to mark the thread as completed
     void Run();
 
-    ThreadManager* thd_mgr_;
-    std::thread thd_;
+    ThreadManager* const thd_mgr_;
+    grpc_core::Thread thd_;
   };
 
   // The main funtion in ThreadManager

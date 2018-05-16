@@ -15,6 +15,7 @@
 syntax = "proto3";
 
 import "src/proto/grpc/testing/control.proto";
+import "src/proto/grpc/testing/stats.proto";
 
 package grpc.testing;
 
@@ -25,5 +26,6 @@ message ProxyStat {
 service ProxyClientService {
   rpc GetConfig(Void) returns (ClientConfig);
   rpc ReportTime(stream ProxyStat) returns (Void);
+  rpc ReportHist(stream HistogramData) returns (Void);
 }
 

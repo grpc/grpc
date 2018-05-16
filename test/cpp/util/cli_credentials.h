@@ -19,8 +19,8 @@
 #ifndef GRPC_TEST_CPP_UTIL_CLI_CREDENTIALS_H
 #define GRPC_TEST_CPP_UTIL_CLI_CREDENTIALS_H
 
-#include <grpc++/security/credentials.h>
-#include <grpc++/support/config.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/support/config.h>
 
 namespace grpc {
 namespace testing {

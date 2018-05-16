@@ -13,10 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-PHP_TARGET_ARCH=$1
 set -ex
 
-cd $(dirname $0)/../../..
+cd "$(dirname "$0")/../../.."
 
 mkdir -p "${ARTIFACTS_OUT}"
 

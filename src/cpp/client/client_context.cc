@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc++/client_context.h>
+#include <grpcpp/client_context.h>
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
@@ -24,9 +24,10 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include <grpc++/security/credentials.h>
-#include <grpc++/server_context.h>
-#include <grpc++/support/time.h>
+#include <grpcpp/impl/grpc_library.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/server_context.h>
+#include <grpcpp/support/time.h>
 
 namespace grpc {
 
@@ -38,6 +39,7 @@ class DefaultGlobalClientCallbacks final
   void Destructor(ClientContext* context) override {}
 };
 
+static internal::GrpcLibraryInitializer g_gli_initializer;
 static DefaultGlobalClientCallbacks g_default_client_callbacks;
 static ClientContext::GlobalCallbacks* g_client_callbacks =
     &g_default_client_callbacks;
@@ -94,7 +96,8 @@ void ClientContext::set_call(grpc_call* call,
 
 void ClientContext::set_compression_algorithm(
     grpc_compression_algorithm algorithm) {
-  char* algorithm_name = nullptr;
+  compression_algorithm_ = algorithm;
+  const char* algorithm_name = nullptr;
   if (!grpc_compression_algorithm_name(algorithm, &algorithm_name)) {
     gpr_log(GPR_ERROR, "Name for compression algorithm '%d' unknown.",
             algorithm);
@@ -125,7 +128,7 @@ grpc::string ClientContext::peer() const {
 
 void ClientContext::SetGlobalCallbacks(GlobalCallbacks* client_callbacks) {
   GPR_ASSERT(g_client_callbacks == &g_default_client_callbacks);
-  GPR_ASSERT(client_callbacks != NULL);
+  GPR_ASSERT(client_callbacks != nullptr);
   GPR_ASSERT(client_callbacks != &g_default_client_callbacks);
   g_client_callbacks = client_callbacks;
 }

@@ -33,12 +33,18 @@ namespace Grpc.Core.Internal
     internal class GrpcThreadPool
     {
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<GrpcThreadPool>();
+        const int FinishContinuationsSleepMillis = 10;
+        const int MaxFinishContinuationsSleepTotalMillis = 10000;
 
         readonly GrpcEnvironment environment;
         readonly object myLock = new object();
         readonly List<Thread> threads = new List<Thread>();
         readonly int poolSize;
         readonly int completionQueueCount;
+        readonly bool inlineHandlers;
+        readonly WaitCallback runCompletionQueueEventCallbackSuccess;
+        readonly WaitCallback runCompletionQueueEventCallbackFailure;
+        readonly AtomicCounter queuedContinuationCounter = new AtomicCounter();
 
         readonly List<BasicProfiler> threadProfilers = new List<BasicProfiler>();  // profilers assigned to threadpool threads
 
@@ -52,13 +58,18 @@ namespace Grpc.Core.Internal
         /// <param name="environment">Environment.</param>
         /// <param name="poolSize">Pool size.</param>
         /// <param name="completionQueueCount">Completion queue count.</param>
-        public GrpcThreadPool(GrpcEnvironment environment, int poolSize, int completionQueueCount)
+        /// <param name="inlineHandlers">Handler inlining.</param>
+        public GrpcThreadPool(GrpcEnvironment environment, int poolSize, int completionQueueCount, bool inlineHandlers)
         {
             this.environment = environment;
             this.poolSize = poolSize;
             this.completionQueueCount = completionQueueCount;
+            this.inlineHandlers = inlineHandlers;
             GrpcPreconditions.CheckArgument(poolSize >= completionQueueCount,
                 "Thread pool size cannot be smaller than the number of completion queues used.");
+
+            this.runCompletionQueueEventCallbackSuccess = new WaitCallback((callback) => RunCompletionQueueEventCallback((IOpCompletionCallback) callback, true));
+            this.runCompletionQueueEventCallbackFailure = new WaitCallback((callback) => RunCompletionQueueEventCallback((IOpCompletionCallback) callback, false));
         }
 
         public void Start()
@@ -165,15 +176,42 @@ namespace Grpc.Core.Internal
                     try
                     {
                         var callback = cq.CompletionRegistry.Extract(tag);
-                        callback(success);
+                        queuedContinuationCounter.Increment();
+                        if (!inlineHandlers)
+                        {
+                            // Use cached delegates to avoid unnecessary allocations
+                            ThreadPool.QueueUserWorkItem(success ? runCompletionQueueEventCallbackSuccess : runCompletionQueueEventCallbackFailure, callback);
+                        }
+                        else
+                        {
+                            RunCompletionQueueEventCallback(callback, success);
+                        }
                     }
                     catch (Exception e)
                     {
-                        Logger.Error(e, "Exception occured while invoking completion delegate");
+                        Logger.Error(e, "Exception occured while extracting event from completion registry.");
                     }
                 }
             }
             while (ev.type != CompletionQueueEvent.CompletionType.Shutdown);
+
+            // Continuations are running on default threadpool that consists of background threads.
+            // GrpcThreadPool thread (a foreground thread) will not exit unless all queued work had
+            // been finished to prevent terminating the continuations queued prematurely.
+            int sleepIterations = 0;
+            while (queuedContinuationCounter.Count != 0)
+            {
+                // Only happens on shutdown and having pending continuations shouldn't very common,
+                // so sleeping here for a little bit is fine.
+                if (sleepIterations >= MaxFinishContinuationsSleepTotalMillis / FinishContinuationsSleepMillis)
+                {
+                    Logger.Warning("Shutting down gRPC thread [{0}] with unfinished callbacks (Timed out waiting for callbacks to finish).",
+                        Thread.CurrentThread.Name);
+                    break;
+                }
+                Thread.Sleep(FinishContinuationsSleepMillis);
+                sleepIterations ++;
+            }
         }
 
         private static IReadOnlyCollection<CompletionQueueSafeHandle> CreateCompletionQueueList(GrpcEnvironment environment, int completionQueueCount)
@@ -181,10 +219,26 @@ namespace Grpc.Core.Internal
             var list = new List<CompletionQueueSafeHandle>();
             for (int i = 0; i < completionQueueCount; i++)
             {
-                var completionRegistry = new CompletionRegistry(environment);
+                var completionRegistry = new CompletionRegistry(environment, () => environment.BatchContextPool.Lease(), () => environment.RequestCallContextPool.Lease());
                 list.Add(CompletionQueueSafeHandle.CreateAsync(completionRegistry));
             }
             return list.AsReadOnly();
+        }
+
+        private void RunCompletionQueueEventCallback(IOpCompletionCallback callback, bool success)
+        {
+            try
+            {
+                callback.OnComplete(success);
+            }
+            catch (Exception e)
+            {
+                Logger.Error(e, "Exception occured while invoking completion delegate");
+            }
+            finally
+            {
+                queuedContinuationCounter.Decrement();
+            }
         }
     }
 }

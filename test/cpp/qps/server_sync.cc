@@ -19,17 +19,14 @@
 #include <atomic>
 #include <thread>
 
-#include <grpc++/resource_quota.h>
-#include <grpc++/security/server_credentials.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
-#include <grpc++/server_context.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
-#include <grpc/support/log.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_context.h>
 
-#include "src/proto/grpc/testing/services.grpc.pb.h"
+#include "src/core/lib/gpr/host_port.h"
+#include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "test/cpp/qps/server.h"
 #include "test/cpp/qps/usage_timer.h"
 
@@ -115,8 +112,8 @@ class BenchmarkServiceImpl final : public BenchmarkService::Service {
   }
 
  private:
-  static Status ClientPull(ServerContext* context,
-                           ReaderInterface<SimpleRequest>* stream,
+  template <class R>
+  static Status ClientPull(ServerContext* context, R* stream,
                            SimpleResponse* response) {
     SimpleRequest request;
     while (stream->Read(&request)) {
@@ -129,8 +126,8 @@ class BenchmarkServiceImpl final : public BenchmarkService::Service {
     }
     return Status::OK;
   }
-  static Status ServerPush(ServerContext* context,
-                           WriterInterface<SimpleResponse>* stream,
+  template <class W>
+  static Status ServerPush(ServerContext* context, W* stream,
                            const SimpleResponse& response,
                            std::function<bool()> done) {
     while ((done == nullptr) || !done()) {
@@ -159,21 +156,26 @@ class SynchronousServer final : public grpc::testing::Server {
   explicit SynchronousServer(const ServerConfig& config) : Server(config) {
     ServerBuilder builder;
 
-    char* server_address = NULL;
-
-    gpr_join_host_port(&server_address, "::", port());
-    builder.AddListeningPort(server_address,
-                             Server::CreateServerCredentials(config));
-    gpr_free(server_address);
-
-    if (config.resource_quota_size() > 0) {
-      builder.SetResourceQuota(ResourceQuota("AsyncQpsServerTest")
-                                   .Resize(config.resource_quota_size()));
+    auto port_num = port();
+    // Negative port number means inproc server, so no listen port needed
+    if (port_num >= 0) {
+      char* server_address = nullptr;
+      gpr_join_host_port(&server_address, "::", port_num);
+      builder.AddListeningPort(server_address,
+                               Server::CreateServerCredentials(config));
+      gpr_free(server_address);
     }
+
+    ApplyConfigToBuilder(config, &builder);
 
     builder.RegisterService(&service_);
 
     impl_ = builder.BuildAndStart();
+  }
+
+  std::shared_ptr<Channel> InProcessChannel(
+      const ChannelArguments& args) override {
+    return impl_->InProcessChannel(args);
   }
 
  private:

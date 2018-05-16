@@ -20,7 +20,20 @@
 #ifndef PHP_GRPC_H
 #define PHP_GRPC_H
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdbool.h>
+
+#include <php.h>
+#include <php_ini.h>
+#include <ext/standard/info.h>
+
+#include <grpc/grpc.h>
+
+#include "php7_wrapper.h"
+#include "version.h"
 
 extern zend_module_entry grpc_module_entry;
 #define phpext_grpc_ptr &grpc_module_entry
@@ -37,11 +50,6 @@ extern zend_module_entry grpc_module_entry;
 #include "TSRM.h"
 #endif
 
-#include "php.h"
-#include "php7_wrapper.h"
-#include "grpc/grpc.h"
-#include "version.h"
-
 /* These are all function declarations */
 /* Code that runs at module initialization */
 PHP_MINIT_FUNCTION(grpc);
@@ -49,14 +57,16 @@ PHP_MINIT_FUNCTION(grpc);
 PHP_MSHUTDOWN_FUNCTION(grpc);
 /* Displays information about the module */
 PHP_MINFO_FUNCTION(grpc);
+/* Code that runs at request start */
+PHP_RINIT_FUNCTION(grpc);
 
 /*
   Declare any global variables you may need between the BEGIN
   and END macros here:
-
-ZEND_BEGIN_MODULE_GLOBALS(grpc)
-ZEND_END_MODULE_GLOBALS(grpc)
 */
+ZEND_BEGIN_MODULE_GLOBALS(grpc)
+  zend_bool initialized;
+ZEND_END_MODULE_GLOBALS(grpc)
 
 /* In every utility function you add that needs to use variables
    in php_grpc_globals, call TSRMLS_FETCH(); after declaring other
@@ -73,5 +83,9 @@ ZEND_END_MODULE_GLOBALS(grpc)
 #else
 #define GRPC_G(v) (grpc_globals.v)
 #endif
+
+#define GRPC_STARTUP_FUNCTION(module)  ZEND_MINIT_FUNCTION(grpc_##module)
+#define GRPC_STARTUP(module)           \
+  ZEND_MODULE_STARTUP_N(grpc_##module)(INIT_FUNC_ARGS_PASSTHRU)
 
 #endif /* PHP_GRPC_H */

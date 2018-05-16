@@ -19,16 +19,20 @@
 #ifndef TEST_QPS_SERVER_H
 #define TEST_QPS_SERVER_H
 
-#include <grpc++/security/server_credentials.h>
 #include <grpc/support/cpu.h>
+#include <grpc/support/log.h>
+#include <grpcpp/resource_quota.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/server_builder.h>
 #include <vector>
 
-#include "src/core/lib/surface/completion_queue.h"
+#include "src/cpp/util/core_stats.h"
 #include "src/proto/grpc/testing/control.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
 #include "test/cpp/qps/usage_timer.h"
+#include "test/cpp/util/test_credentials_provider.h"
 
 namespace grpc {
 namespace testing {
@@ -38,10 +42,9 @@ class Server {
   explicit Server(const ServerConfig& config)
       : timer_(new UsageTimer), last_reset_poll_count_(0) {
     cores_ = gpr_cpu_num_cores();
-    if (config.port()) {
+    if (config.port()) {  // positive for a fixed port, negative for inproc
       port_ = config.port();
-
-    } else {
+    } else {  // zero for dynamic port
       port_ = grpc_pick_unused_port_or_die();
     }
   }
@@ -60,6 +63,9 @@ class Server {
       timer_result = timer_->Mark();
     }
 
+    grpc_stats_data core_stats;
+    grpc_stats_collect(&core_stats);
+
     ServerStats stats;
     stats.set_time_elapsed(timer_result.wall);
     stats.set_time_system(timer_result.system);
@@ -67,6 +73,7 @@ class Server {
     stats.set_total_cpu_time(timer_result.total_cpu_time);
     stats.set_idle_cpu_time(timer_result.idle_cpu_time);
     stats.set_cq_poll_count(poll_count);
+    CoreStatsToProto(core_stats, stats.mutable_core_stats());
     return stats;
   }
 
@@ -76,8 +83,11 @@ class Server {
       return false;
     }
     payload->set_type(type);
-    std::unique_ptr<char[]> body(new char[size]());
-    payload->set_body(body.get(), size);
+    // Don't waste time creating a new payload of identical size.
+    if (payload->body().length() != static_cast<size_t>(size)) {
+      std::unique_ptr<char[]> body(new char[size]());
+      payload->set_body(body.get(), size);
+    }
     return true;
   }
 
@@ -86,12 +96,14 @@ class Server {
   static std::shared_ptr<ServerCredentials> CreateServerCredentials(
       const ServerConfig& config) {
     if (config.has_security_params()) {
-      SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key,
-                                                          test_server1_cert};
-      SslServerCredentialsOptions ssl_opts;
-      ssl_opts.pem_root_certs = "";
-      ssl_opts.pem_key_cert_pairs.push_back(pkcp);
-      return SslServerCredentials(ssl_opts);
+      grpc::string type;
+      if (config.security_params().cred_type().empty()) {
+        type = kTlsCredentialsType;
+      } else {
+        type = config.security_params().cred_type();
+      }
+
+      return GetCredentialsProvider()->GetServerCredentials(type);
     } else {
       return InsecureServerCredentials();
     }
@@ -100,6 +112,34 @@ class Server {
   virtual int GetPollCount() {
     // For sync server.
     return 0;
+  }
+
+  virtual std::shared_ptr<Channel> InProcessChannel(
+      const ChannelArguments& args) = 0;
+
+ protected:
+  static void ApplyConfigToBuilder(const ServerConfig& config,
+                                   ServerBuilder* builder) {
+    if (config.resource_quota_size() > 0) {
+      builder->SetResourceQuota(ResourceQuota("AsyncQpsServerTest")
+                                    .Resize(config.resource_quota_size()));
+    }
+    for (const auto& channel_arg : config.channel_args()) {
+      switch (channel_arg.value_case()) {
+        case ChannelArg::kStrValue:
+          builder->AddChannelArgument(channel_arg.name(),
+                                      channel_arg.str_value());
+          break;
+        case ChannelArg::kIntValue:
+          builder->AddChannelArgument(channel_arg.name(),
+                                      channel_arg.int_value());
+          break;
+        case ChannelArg::VALUE_NOT_SET:
+          gpr_log(GPR_ERROR, "Channel arg '%s' does not have a value",
+                  channel_arg.name().c_str());
+          break;
+      }
+    }
   }
 
  private:

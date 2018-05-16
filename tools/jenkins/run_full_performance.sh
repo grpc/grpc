@@ -21,7 +21,7 @@ cd $(dirname $0)/../..
 
 # run 8core client vs 8core server
 tools/run_tests/run_performance_tests.py \
-    -l c++ csharp node ruby java python go node_express \
+    -l c++ csharp ruby java python go php7 php7_protobuf_c \
     --netperf \
     --category scalable \
     --bq_result_table performance_test.performance_experiment \

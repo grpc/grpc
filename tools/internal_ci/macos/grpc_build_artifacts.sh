@@ -18,6 +18,18 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
-git submodule update --init
+source tools/internal_ci/helper_scripts/prepare_build_macos_rc
+
+# install cython for all python versions
+python2.7 -m pip install cython setuptools wheel
+python3.4 -m pip install cython setuptools wheel
+python3.5 -m pip install cython setuptools wheel
+python3.6 -m pip install cython setuptools wheel
+
+# needed to build ruby artifacts
+time bash tools/distrib/build_ruby_environment_macos.sh
+
+gem install rubygems-update
+update_rubygems
 
 tools/run_tests/task_runner.py -f artifact macos

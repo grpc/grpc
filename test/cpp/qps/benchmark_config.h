@@ -20,14 +20,11 @@
 #define GRPC_TEST_CPP_UTIL_BENCHMARK_CONFIG_H
 
 #include <memory>
-#include <vector>
 
 #include "test/cpp/qps/report.h"
 
 namespace grpc {
 namespace testing {
-
-void InitBenchmark(int* argc, char*** argv, bool remove_flags);
 
 /** Returns the benchmark Reporter instance.
  *

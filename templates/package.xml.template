@@ -12,25 +12,19 @@
     <email>grpc-packages@google.com</email>
     <active>yes</active>
    </lead>
-   <date>2017-05-22</date>
+   <date>2018-01-19</date>
    <time>16:06:07</time>
    <version>
     <release>${settings.php_version.php()}</release>
     <api>${settings.php_version.php()}</api>
    </version>
    <stability>
-    <release>beta</release>
-    <api>beta</api>
+    <release>${settings.php_version.php_stability()}</release>
+    <api>${settings.php_version.php_stability()}</api>
    </stability>
    <license>Apache 2.0</license>
    <notes>
-  - Fixed some memory leaks #9559, #10996
-  - Disabled cares dependency from gRPC C Core #10940
-  - De-coupled protobuf dependency #11112
-  - Fixed extension reported version #10842
-  - Added config.w32 for Windows support #8161
-  - Fixed PHP distrib test after cc files were added #11193
-  - Fixed protoc plugin comment escape bug #11025
+  - TBD
    </notes>
    <contents>
     <dir baseinstalldir="/" name="/">

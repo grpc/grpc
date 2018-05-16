@@ -17,21 +17,22 @@
 
 set -ex
 
-cd $(dirname $0)
+cd "$(dirname "$0")"
 
 CLOUD_PROJECT=grpc-testing
 ZONE=us-central1-a
 
 INSTANCE_NAME="${1:-grpc-jenkins-worker1}"
 
-gcloud compute instances create $INSTANCE_NAME \
+gcloud compute instances create "$INSTANCE_NAME" \
     --project="$CLOUD_PROJECT" \
     --zone "$ZONE" \
     --machine-type n1-standard-16 \
     --image=ubuntu-1510 \
     --image-project=grpc-testing \
     --boot-disk-size 1000 \
-    --scopes https://www.googleapis.com/auth/bigquery
+    --scopes https://www.googleapis.com/auth/bigquery \
+    --tags=allow-ssh
 
 echo 'Created GCE instance, waiting 60 seconds for it to come online.'
 sleep 60
@@ -39,9 +40,9 @@ sleep 60
 gcloud compute copy-files \
     --project="$CLOUD_PROJECT" \
     --zone "$ZONE" \
-    jenkins_master.pub linux_worker_init.sh ${INSTANCE_NAME}:~
+    jenkins_master.pub linux_worker_init.sh "${INSTANCE_NAME}":~
 
 gcloud compute ssh \
     --project="$CLOUD_PROJECT" \
     --zone "$ZONE" \
-    $INSTANCE_NAME --command "./linux_worker_init.sh"
+    "$INSTANCE_NAME" --command "./linux_worker_init.sh"

@@ -19,16 +19,9 @@
 #ifndef NET_GRPC_PHP_GRPC_CALL_H_
 #define NET_GRPC_PHP_GRPC_CALL_H_
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#include <php.h>
-#include <php_ini.h>
-#include <ext/standard/info.h>
 #include "php_grpc.h"
 
-#include <grpc/grpc.h>
+#include "channel.h"
 
 /* Class entry for the Call PHP class */
 extern zend_class_entry *grpc_ce_call;
@@ -37,6 +30,7 @@ extern zend_class_entry *grpc_ce_call;
 PHP_GRPC_WRAP_OBJECT_START(wrapped_grpc_call)
   bool owned;
   grpc_call *wrapped;
+  wrapped_grpc_channel* channel;
 PHP_GRPC_WRAP_OBJECT_END(wrapped_grpc_call)
 
 #if PHP_MAJOR_VERSION < 7
@@ -69,5 +63,6 @@ void grpc_init_call(TSRMLS_D);
 /* Populates a grpc_metadata_array with the data in a PHP array object.
    Returns true on success and false on failure */
 bool create_metadata_array(zval *array, grpc_metadata_array *metadata);
-
+void grpc_php_metadata_array_destroy_including_entries(
+    grpc_metadata_array* array);
 #endif /* NET_GRPC_PHP_GRPC_CHANNEL_H_ */

@@ -16,14 +16,15 @@
  *is % allowed in string
  */
 
+#include <inttypes.h>
 #include <ctime>
 #include <memory>
 #include <string>
 
 #include <gflags/gflags.h>
-#include <grpc++/grpc++.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
+#include <grpcpp/grpcpp.h>
 
 #include "src/cpp/thread_manager/thread_manager.h"
 #include "test/cpp/util/test_config.h"
@@ -37,8 +38,8 @@ class ThreadManagerTest final : public grpc::ThreadManager {
         num_poll_for_work_(0),
         num_work_found_(0) {}
 
-  grpc::ThreadManager::WorkStatus PollForWork(void **tag, bool *ok) override;
-  void DoWork(void *tag, bool ok) override;
+  grpc::ThreadManager::WorkStatus PollForWork(void** tag, bool* ok) override;
+  void DoWork(void* tag, bool ok) override;
   void PerformTest();
 
  private:
@@ -65,8 +66,8 @@ void ThreadManagerTest::SleepForMs(int duration_ms) {
   gpr_sleep_until(sleep_time);
 }
 
-grpc::ThreadManager::WorkStatus ThreadManagerTest::PollForWork(void **tag,
-                                                               bool *ok) {
+grpc::ThreadManager::WorkStatus ThreadManagerTest::PollForWork(void** tag,
+                                                               bool* ok) {
   int call_num = gpr_atm_no_barrier_fetch_add(&num_poll_for_work_, 1);
 
   if (call_num >= kMaxNumPollForWork) {
@@ -89,7 +90,7 @@ grpc::ThreadManager::WorkStatus ThreadManagerTest::PollForWork(void **tag,
   }
 }
 
-void ThreadManagerTest::DoWork(void *tag, bool ok) {
+void ThreadManagerTest::DoWork(void* tag, bool ok) {
   gpr_atm_no_barrier_fetch_add(&num_do_work_, 1);
   SleepForMs(kDoWorkDurationMsec);  // Simulate doing work by sleeping
 }
@@ -110,8 +111,8 @@ void ThreadManagerTest::PerformTest() {
 }
 }  // namespace grpc
 
-int main(int argc, char **argv) {
-  std::srand(std::time(NULL));
+int main(int argc, char** argv) {
+  std::srand(std::time(nullptr));
 
   grpc::testing::InitTest(&argc, &argv, true);
   grpc::ThreadManagerTest test_rpc_manager;

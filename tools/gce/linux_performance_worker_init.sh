@@ -72,6 +72,7 @@ sudo apt-get install -y netperf
 sudo apt-get install -y libgflags-dev libgtest-dev libc++-dev clang
 
 # Python dependencies
+sudo pip install --upgrade pip==10.0.1
 sudo pip install tabulate
 sudo pip install google-api-python-client
 sudo pip install virtualenv
@@ -80,10 +81,11 @@ sudo pip install virtualenv
 # is not available on Ubuntu 16.10, so install from source
 curl -O https://www.python.org/ftp/python/3.4.6/Python-3.4.6.tgz
 tar xzvf Python-3.4.6.tgz
-cd Python-3.4.6
+(
+cd Python-3.4.6 || exit
 ./configure --enable-shared --prefix=/usr/local LDFLAGS="-Wl,--rpath=/usr/local/lib"
 sudo make altinstall
-cd ..
+)
 rm Python-3.4.6.tgz
 
 curl -O https://bootstrap.pypa.io/get-pip.py
@@ -94,6 +96,8 @@ sudo pip install google-api-python-client
 # Node dependencies (nvm has to be installed under user jenkins)
 touch .profile
 curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.25.4/install.sh | bash
+# silence shellcheck warning as it cannot follow the `source` path statically:
+# shellcheck disable=SC1090
 source ~/.nvm/nvm.sh
 nvm install 0.12 && npm config set cache /tmp/npm-cache
 nvm install 4 && npm config set cache /tmp/npm-cache
@@ -128,6 +132,11 @@ ruby -v
 # Install bundler (prerequisite for gRPC Ruby)
 gem install bundler
 
+# PHP dependencies
+sudo apt-get install -y php php-dev phpunit php-pear unzip zlib1g-dev
+curl -sS https://getcomposer.org/installer | php
+sudo mv composer.phar /usr/local/bin/composer
+
 # Java dependencies - nothing as we already have Java JDK 8
 
 # Go dependencies
@@ -145,7 +154,7 @@ sudo ln -s /usr/local/go/bin/go /usr/bin/go
 rm go$GO_VERSION.$OS-$ARCH.tar.gz
 
 # Install perf, to profile benchmarks. (need to get the right linux-tools-<> for kernel version)
-sudo apt-get install -y linux-tools-common linux-tools-generic linux-tools-`uname -r`
+sudo apt-get install -y linux-tools-common linux-tools-generic "linux-tools-$(uname -r)"
 # see http://unix.stackexchange.com/questions/14227/do-i-need-root-admin-permissions-to-run-userspace-perf-tool-perf-events-ar
 echo 0 | sudo tee /proc/sys/kernel/perf_event_paranoid
 # see http://stackoverflow.com/questions/21284906/perf-couldnt-record-kernel-reference-relocation-symbol
@@ -165,7 +174,9 @@ sudo apt-get install -y python-scipy python-numpy
 # Add pubkey of jenkins@grpc-jenkins-master to authorized keys of jenkins@
 # This needs to happen as the last step to prevent Jenkins master from connecting
 # to a machine that hasn't been properly setup yet.
-cat jenkins_master.pub | sudo tee --append ~jenkins/.ssh/authorized_keys
+# silence false-positive shellcheck warning ("< redirect does not affect sudo")
+# shellcheck disable=SC2024
+sudo tee --append ~jenkins/.ssh/authorized_keys < jenkins_master.pub
 
 # Restart for VM to pick up kernel update
 echo 'Successfully initialized the linux worker, going for reboot in 10 seconds'

@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+licenses(["notice"])  # 3-clause BSD
+
 package(default_visibility = ["//visibility:public"])
 
 load("//bazel:grpc_build_system.bzl", "grpc_proto_library")
@@ -40,12 +42,12 @@ cc_binary(
     name = "greeter_client",
     srcs = ["cpp/helloworld/greeter_client.cc"],
     defines = ["BAZEL_BUILD"],
-    deps = [":helloworld"],
+    deps = [":helloworld", "//:grpc++"],
 )
 
 cc_binary(
     name = "greeter_server",
     srcs = ["cpp/helloworld/greeter_server.cc"],
     defines = ["BAZEL_BUILD"],
-    deps = [":helloworld"],
+    deps = [":helloworld", "//:grpc++"],
 )

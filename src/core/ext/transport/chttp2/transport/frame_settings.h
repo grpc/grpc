@@ -19,11 +19,11 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_SETTINGS_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_SETTINGS_H
 
-#include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
+
+#include <grpc/slice.h>
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 
 typedef enum {
   GRPC_CHTTP2_SPS_ID0,
@@ -36,7 +36,7 @@ typedef enum {
 
 typedef struct {
   grpc_chttp2_settings_parse_state state;
-  uint32_t *target_settings;
+  uint32_t* target_settings;
   uint8_t is_ack;
   uint16_t id;
   uint32_t value;
@@ -44,18 +44,17 @@ typedef struct {
 } grpc_chttp2_settings_parser;
 
 /* Create a settings frame by diffing old & new, and updating old to be new */
-grpc_slice grpc_chttp2_settings_create(uint32_t *old, const uint32_t *newval,
+grpc_slice grpc_chttp2_settings_create(uint32_t* old, const uint32_t* newval,
                                        uint32_t force_mask, size_t count);
 /* Create an ack settings frame */
 grpc_slice grpc_chttp2_settings_ack_create(void);
 
-grpc_error *grpc_chttp2_settings_parser_begin_frame(
-    grpc_chttp2_settings_parser *parser, uint32_t length, uint8_t flags,
-    uint32_t *settings);
-grpc_error *grpc_chttp2_settings_parser_parse(grpc_exec_ctx *exec_ctx,
-                                              void *parser,
-                                              grpc_chttp2_transport *t,
-                                              grpc_chttp2_stream *s,
+grpc_error* grpc_chttp2_settings_parser_begin_frame(
+    grpc_chttp2_settings_parser* parser, uint32_t length, uint8_t flags,
+    uint32_t* settings);
+grpc_error* grpc_chttp2_settings_parser_parse(void* parser,
+                                              grpc_chttp2_transport* t,
+                                              grpc_chttp2_stream* s,
                                               grpc_slice slice, int is_last);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_SETTINGS_H */

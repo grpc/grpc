@@ -1,42 +1,6 @@
 EXPORTS
-    grpc_raw_byte_buffer_create
-    grpc_raw_compressed_byte_buffer_create
-    grpc_byte_buffer_copy
-    grpc_byte_buffer_length
-    grpc_byte_buffer_destroy
-    grpc_byte_buffer_reader_init
-    grpc_byte_buffer_reader_destroy
-    grpc_byte_buffer_reader_next
-    grpc_byte_buffer_reader_readall
-    grpc_raw_byte_buffer_from_reader
-    census_initialize
-    census_shutdown
-    census_supported
-    census_enabled
-    census_context_create
-    census_context_destroy
-    census_context_get_status
-    census_context_initialize_iterator
-    census_context_next_tag
-    census_context_get_tag
-    census_context_encode
-    census_context_decode
-    census_trace_mask
-    census_set_trace_mask
-    census_start_rpc_op_timestamp
-    census_start_client_rpc_op
-    census_set_rpc_client_peer
-    census_start_server_rpc_op
-    census_start_op
-    census_end_op
-    census_trace_print
-    census_trace_scan_start
-    census_get_trace_record
-    census_trace_scan_end
-    census_define_resource
-    census_delete_resource
-    census_resource_id
-    census_record_values
+    grpc_compression_algorithm_is_message
+    grpc_compression_algorithm_is_stream
     grpc_compression_algorithm_parse
     grpc_compression_algorithm_name
     grpc_compression_algorithm_for_level
@@ -61,12 +25,12 @@ EXPORTS
     grpc_completion_queue_pluck
     grpc_completion_queue_shutdown
     grpc_completion_queue_destroy
-    grpc_alarm_create
-    grpc_alarm_cancel
-    grpc_alarm_destroy
+    grpc_completion_queue_thread_local_cache_init
+    grpc_completion_queue_thread_local_cache_flush
     grpc_channel_check_connectivity_state
     grpc_channel_num_external_connectivity_watchers
     grpc_channel_watch_connectivity_state
+    grpc_channel_support_connectivity_watcher
     grpc_channel_create_call
     grpc_channel_ping
     grpc_channel_register_call
@@ -81,6 +45,8 @@ EXPORTS
     grpc_insecure_channel_create
     grpc_lame_client_channel_create
     grpc_channel_destroy
+    grpc_channel_get_trace
+    grpc_channel_get_uuid
     grpc_call_cancel
     grpc_call_cancel_with_status
     grpc_call_ref
@@ -119,6 +85,9 @@ EXPORTS
     grpc_auth_context_add_property
     grpc_auth_context_add_cstring_property
     grpc_auth_context_set_peer_identity_property_name
+    grpc_ssl_session_cache_create_lru
+    grpc_ssl_session_cache_destroy
+    grpc_ssl_session_cache_create_channel_arg
     grpc_channel_credentials_release
     grpc_google_default_credentials_create
     grpc_set_ssl_roots_override_callback
@@ -135,11 +104,33 @@ EXPORTS
     grpc_metadata_credentials_create_from_plugin
     grpc_secure_channel_create
     grpc_server_credentials_release
+    grpc_ssl_server_certificate_config_create
+    grpc_ssl_server_certificate_config_destroy
     grpc_ssl_server_credentials_create
     grpc_ssl_server_credentials_create_ex
+    grpc_ssl_server_credentials_create_options_using_config
+    grpc_ssl_server_credentials_create_options_using_config_fetcher
+    grpc_ssl_server_credentials_options_destroy
+    grpc_ssl_server_credentials_create_with_options
     grpc_server_add_secure_http2_port
     grpc_call_set_credentials
     grpc_server_credentials_set_auth_metadata_processor
+    grpc_alts_credentials_client_options_create
+    grpc_alts_credentials_server_options_create
+    grpc_alts_credentials_client_options_add_target_service_account
+    grpc_alts_credentials_options_destroy
+    grpc_alts_credentials_create
+    grpc_alts_server_credentials_create
+    grpc_raw_byte_buffer_create
+    grpc_raw_compressed_byte_buffer_create
+    grpc_byte_buffer_copy
+    grpc_byte_buffer_length
+    grpc_byte_buffer_destroy
+    grpc_byte_buffer_reader_init
+    grpc_byte_buffer_reader_destroy
+    grpc_byte_buffer_reader_next
+    grpc_byte_buffer_reader_readall
+    grpc_raw_byte_buffer_from_reader
     grpc_slice_ref
     grpc_slice_unref
     grpc_slice_copy
@@ -164,7 +155,6 @@ EXPORTS
     grpc_slice_eq
     grpc_slice_cmp
     grpc_slice_str_cmp
-    grpc_slice_buf_cmp
     grpc_slice_buf_start_eq
     grpc_slice_rchr
     grpc_slice_chr
@@ -197,44 +187,11 @@ EXPORTS
     gpr_free_aligned
     gpr_set_allocation_functions
     gpr_get_allocation_functions
-    gpr_avl_create
-    gpr_avl_ref
-    gpr_avl_unref
-    gpr_avl_add
-    gpr_avl_remove
-    gpr_avl_get
-    gpr_avl_maybe_get
-    gpr_avl_is_empty
-    gpr_cmdline_create
-    gpr_cmdline_add_int
-    gpr_cmdline_add_flag
-    gpr_cmdline_add_string
-    gpr_cmdline_on_extra_arg
-    gpr_cmdline_set_survive_failure
-    gpr_cmdline_parse
-    gpr_cmdline_destroy
-    gpr_cmdline_usage_string
     gpr_cpu_num_cores
     gpr_cpu_current_cpu
-    gpr_histogram_create
-    gpr_histogram_destroy
-    gpr_histogram_add
-    gpr_histogram_merge
-    gpr_histogram_percentile
-    gpr_histogram_mean
-    gpr_histogram_stddev
-    gpr_histogram_variance
-    gpr_histogram_maximum
-    gpr_histogram_minimum
-    gpr_histogram_count
-    gpr_histogram_sum
-    gpr_histogram_sum_of_squares
-    gpr_histogram_get_contents
-    gpr_histogram_merge_contents
-    gpr_join_host_port
-    gpr_split_host_port
     gpr_log_severity_string
     gpr_log
+    gpr_should_log
     gpr_log_message
     gpr_set_log_verbosity
     gpr_log_verbosity_init
@@ -242,11 +199,6 @@ EXPORTS
     gpr_format_message
     gpr_strdup
     gpr_asprintf
-    gpr_subprocess_binary_extension
-    gpr_subprocess_create
-    gpr_subprocess_destroy
-    gpr_subprocess_join
-    gpr_subprocess_interrupt
     gpr_mu_init
     gpr_mu_destroy
     gpr_mu_lock
@@ -271,14 +223,7 @@ EXPORTS
     gpr_stats_init
     gpr_stats_inc
     gpr_stats_read
-    gpr_thd_new
-    gpr_thd_options_default
-    gpr_thd_options_set_detached
-    gpr_thd_options_set_joinable
-    gpr_thd_options_is_detached
-    gpr_thd_options_is_joinable
     gpr_thd_currentid
-    gpr_thd_join
     gpr_time_0
     gpr_inf_future
     gpr_inf_past

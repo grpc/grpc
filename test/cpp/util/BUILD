@@ -14,17 +14,11 @@
 
 licenses(["notice"])  # Apache v2
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_binary")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_binary", "grpc_cc_test", "grpc_package")
 
-package(default_visibility = ["//visibility:public"])
-
-# The following builds a shared-object to confirm that grpc++_unsecure
-# builds properly. Build-only is sufficient here
-grpc_cc_binary(
-    name = "testso.so",
-    srcs = [],
-    linkshared = 1,
-    deps = ["//:grpc++_unsecure"],
+grpc_package(
+    name = "test/cpp/util",
+    visibility = "public",
 )
 
 grpc_cc_library(
@@ -52,34 +46,73 @@ grpc_cc_library(
         "proto_reflection_descriptor_database.h",
     ],
     deps = [
+        "//:grpc++",
         "//:grpc++_config_proto",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
     ],
 )
 
+GRPCXX_TESTUTIL_SRCS = [
+    "byte_buffer_proto_helper.cc",
+    "string_ref_helper.cc",
+    "subprocess.cc",
+]
+
+GRPCXX_TESTUTIL_HDRS = [
+    "byte_buffer_proto_helper.h",
+    "string_ref_helper.h",
+    "subprocess.h",
+]
+
 grpc_cc_library(
     name = "test_util",
-    srcs = [
-        "byte_buffer_proto_helper.cc",
+    srcs = GRPCXX_TESTUTIL_SRCS + [
         "create_test_channel.cc",
-        "string_ref_helper.cc",
-        "subprocess.cc",
         "test_credentials_provider.cc",
     ],
-    hdrs = [
-        "byte_buffer_proto_helper.h",
+    hdrs = GRPCXX_TESTUTIL_HDRS + [
         "create_test_channel.h",
-        "string_ref_helper.h",
-        "subprocess.h",
         "test_credentials_provider.h",
+    ],
+    external_deps = [
+        "protobuf",
     ],
     deps = [
         "//:grpc++",
         "//test/core/end2end:ssl_test_data",
-        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_library(
+    name = "channel_trace_proto_helper",
+    testonly = 1,
+    srcs = [
+        "channel_trace_proto_helper.cc",
+    ],
+    hdrs = [
+        "channel_trace_proto_helper.h",
+    ],
+    deps = [
+        "//:grpc++",
+        "//src/proto/grpc/channelz:channelz_proto",
     ],
     external_deps = [
+        "gtest",
         "protobuf",
+    ],
+)
+
+grpc_cc_library(
+    name = "test_util_unsecure",
+    srcs = GRPCXX_TESTUTIL_SRCS,
+    hdrs = GRPCXX_TESTUTIL_HDRS,
+    external_deps = [
+        "protobuf",
+    ],
+    deps = [
+        "//:grpc++_unsecure",
+        "//test/core/util:grpc_test_util_unsecure",
     ],
 )
 
@@ -100,15 +133,15 @@ grpc_cc_library(
         "proto_file_parser.h",
         "service_describer.h",
     ],
-    deps = [
-        "//:grpc++",
-        "//src/proto/grpc/reflection/v1alpha:reflection_proto",
-        ":grpc++_proto_reflection_desc_db",
-    ],
     external_deps = [
         "gflags",
         "protobuf",
         "protobuf_clib",
+    ],
+    deps = [
+        ":grpc++_proto_reflection_desc_db",
+        "//:grpc++",
+        "//src/proto/grpc/reflection/v1alpha:reflection_proto",
     ],
 )
 
@@ -121,24 +154,116 @@ grpc_cc_library(
         "metrics_server.h",
     ],
     deps = [
+        "//:grpc++",
         "//src/proto/grpc/testing:metrics_proto",
+    ],
+)
+
+grpc_cc_test(
+    name = "grpc_tool_test",
+    srcs = [
+        "grpc_tool_test.cc",
+    ],
+    data = [
+        "//src/proto/grpc/testing:echo.proto",
+        "//src/proto/grpc/testing:echo_messages.proto",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        ":grpc_cli_libs",
+        ":test_util",
+        "//:grpc++_reflection",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "byte_buffer_test",
+    srcs = [
+        "byte_buffer_test.cc",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        ":test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "slice_test",
+    srcs = [
+        "slice_test.cc",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        ":test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "string_ref_test",
+    srcs = [
+        "string_ref_test.cc",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
         "//:grpc++",
     ],
 )
 
-cc_test(
+grpc_cc_test(
+    name = "time_test",
+    srcs = [
+        "time_test.cc",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        ":test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "cli_call_test",
+    srcs = [
+        "cli_call_test.cc",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        ":grpc_cli_libs",
+        ":test_util",
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "error_details_test",
     srcs = [
         "error_details_test.cc",
     ],
+    external_deps = [
+        "gtest",
+    ],
     deps = [
         "//:grpc++_error_details",
-        "//external:gtest",
         "//src/proto/grpc/testing:echo_messages_proto",
     ],
 )
 
-cc_binary(
+grpc_cc_binary(
     name = "grpc_cli",
     srcs = [
         "cli_call.cc",
@@ -158,9 +283,11 @@ cc_binary(
         "test_config.h",
         "test_config_cc.cc",
     ],
+    external_deps = [
+        "gflags",
+    ],
     deps = [
         "//:grpc++",
-        "//external:gflags",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
     ],
 )

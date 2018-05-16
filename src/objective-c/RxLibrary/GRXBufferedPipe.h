@@ -27,8 +27,8 @@
  * immediately, unless flow control prevents it.
  * If it is throttled and keeps receiving values, as well as if it receives values before being
  * started, it will buffer them and propagate them in order as soon as its state becomes Started.
- * If it receives an error (via -writesFinishedWithError:), it will drop any buffered values and
- * propagate the error immediately.
+ * If it receives an end of stream (via -writesFinishedWithError:), it will buffer the EOS after the
+ * last buffered value and issue it to the writeable after all buffered values are issued.
  *
  * Beware that a pipe of this type can't prevent receiving more values when it is paused (for
  * example if used to write data to a congested network connection). Because in such situations the

@@ -19,19 +19,19 @@
 #ifndef GRPC_SUPPORT_ALLOC_H
 #define GRPC_SUPPORT_ALLOC_H
 
-#include <stddef.h>
+#include <grpc/support/port_platform.h>
 
-#include <grpc/impl/codegen/port_platform.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef struct gpr_allocation_functions {
-  void *(*malloc_fn)(size_t size);
-  void *(*zalloc_fn)(size_t size); /** if NULL, uses malloc_fn then memset */
-  void *(*realloc_fn)(void *ptr, size_t size);
-  void (*free_fn)(void *ptr);
+  void* (*malloc_fn)(size_t size);
+  void* (*zalloc_fn)(size_t size); /** if NULL, uses malloc_fn then memset */
+  void* (*realloc_fn)(void* ptr, size_t size);
+  void (*free_fn)(void* ptr);
 } gpr_allocation_functions;
 
 /** malloc.
@@ -39,17 +39,18 @@ typedef struct gpr_allocation_functions {
  * The pointer returned is suitably aligned for any kind of variable it could
  * contain.
  */
-GPRAPI void *gpr_malloc(size_t size);
+GPRAPI void* gpr_malloc(size_t size);
 /** like malloc, but zero all bytes before returning them */
-GPRAPI void *gpr_zalloc(size_t size);
+GPRAPI void* gpr_zalloc(size_t size);
 /** free */
-GPRAPI void gpr_free(void *ptr);
+GPRAPI void gpr_free(void* ptr);
 /** realloc, never returns NULL */
-GPRAPI void *gpr_realloc(void *p, size_t size);
-/** aligned malloc, never returns NULL, will align to 1 << alignment_log */
-GPRAPI void *gpr_malloc_aligned(size_t size, size_t alignment_log);
+GPRAPI void* gpr_realloc(void* p, size_t size);
+/** aligned malloc, never returns NULL, will align to alignment, which
+ * must be a power of 2. */
+GPRAPI void* gpr_malloc_aligned(size_t size, size_t alignment);
 /** free memory allocated by gpr_malloc_aligned */
-GPRAPI void gpr_free_aligned(void *ptr);
+GPRAPI void gpr_free_aligned(void* ptr);
 
 /** Request the family of allocation functions in \a functions be used. NOTE
  * that this request will be honored in a *best effort* basis and that no
@@ -58,7 +59,7 @@ GPRAPI void gpr_free_aligned(void *ptr);
 GPRAPI void gpr_set_allocation_functions(gpr_allocation_functions functions);
 
 /** Return the family of allocation functions currently in effect. */
-GPRAPI gpr_allocation_functions gpr_get_allocation_functions();
+GPRAPI gpr_allocation_functions gpr_get_allocation_functions(void);
 
 #ifdef __cplusplus
 }

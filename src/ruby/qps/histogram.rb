@@ -16,6 +16,8 @@
 
 # Histogram class for use in performance testing and measurement
 
+require 'thread'
+
 class Histogram
   # Determine the bucket index for a given value
   # @param {number} value The value to check
@@ -27,6 +29,7 @@ class Histogram
   # @param {number} resolution The resolution of the histogram
   # @param {number} max_possible The maximum value for the histogram
   def initialize(resolution, max_possible)
+    @lock = Mutex.new
     @resolution=resolution
     @max_possible=max_possible
     @sum=0
@@ -69,5 +72,17 @@ class Histogram
   end
   def contents
     @buckets
+  end
+
+  def merge(hist)
+    @lock.synchronize do
+      @min_seen = hist.min_seen
+      @max_seen = hist.max_seen
+      @sum += hist.sum
+      @sum_of_squares += hist.sum_of_squares
+      @count += hist.count
+      received_bucket = hist.bucket.to_a
+      @buckets = @buckets.map.with_index{ |m,i| m + received_bucket[i].to_i }
+    end
   end
 end

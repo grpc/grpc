@@ -44,23 +44,40 @@ static VALUE id_insecure_server;
 /* grpc_rb_server wraps a grpc_server. */
 typedef struct grpc_rb_server {
   /* The actual server */
-  grpc_server *wrapped;
-  grpc_completion_queue *queue;
-  gpr_atm shutdown_started;
+  grpc_server* wrapped;
+  grpc_completion_queue* queue;
+  int shutdown_and_notify_done;
+  int destroy_done;
 } grpc_rb_server;
 
-static void destroy_server(grpc_rb_server *server, gpr_timespec deadline) {
+static void grpc_rb_server_maybe_shutdown_and_notify(grpc_rb_server* server,
+                                                     gpr_timespec deadline) {
   grpc_event ev;
-  // This can be started by app or implicitly by GC. Avoid a race between these.
-  if (gpr_atm_full_fetch_add(&server->shutdown_started, (gpr_atm)1) == 0) {
+  void* tag = &ev;
+  if (!server->shutdown_and_notify_done) {
+    server->shutdown_and_notify_done = 1;
     if (server->wrapped != NULL) {
-      grpc_server_shutdown_and_notify(server->wrapped, server->queue, NULL);
-      ev = rb_completion_queue_pluck(server->queue, NULL, deadline, NULL);
+      grpc_server_shutdown_and_notify(server->wrapped, server->queue, tag);
+      ev = rb_completion_queue_pluck(server->queue, tag, deadline, NULL);
       if (ev.type == GRPC_QUEUE_TIMEOUT) {
         grpc_server_cancel_all_calls(server->wrapped);
-        rb_completion_queue_pluck(server->queue, NULL,
-                                  gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+        ev = rb_completion_queue_pluck(
+            server->queue, tag, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
       }
+      if (ev.type != GRPC_OP_COMPLETE) {
+        gpr_log(GPR_INFO,
+                "GRPC_RUBY: bad grpc_server_shutdown_and_notify result:%d",
+                ev.type);
+      }
+    }
+  }
+}
+
+static void grpc_rb_server_maybe_destroy(grpc_rb_server* server) {
+  // This can be started by app or implicitly by GC. Avoid a race between these.
+  if (!server->destroy_done) {
+    server->destroy_done = 1;
+    if (server->wrapped != NULL) {
       grpc_server_destroy(server->wrapped);
       grpc_rb_completion_queue_destroy(server->queue);
       server->wrapped = NULL;
@@ -70,18 +87,19 @@ static void destroy_server(grpc_rb_server *server, gpr_timespec deadline) {
 }
 
 /* Destroys server instances. */
-static void grpc_rb_server_free(void *p) {
-  grpc_rb_server *svr = NULL;
+static void grpc_rb_server_free(void* p) {
+  grpc_rb_server* svr = NULL;
   gpr_timespec deadline;
   if (p == NULL) {
     return;
   };
-  svr = (grpc_rb_server *)p;
+  svr = (grpc_rb_server*)p;
 
   deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                           gpr_time_from_seconds(2, GPR_TIMESPAN));
 
-  destroy_server(svr, deadline);
+  grpc_rb_server_maybe_shutdown_and_notify(svr, deadline);
+  grpc_rb_server_maybe_destroy(svr);
 
   xfree(p);
 }
@@ -105,9 +123,10 @@ static const rb_data_type_t grpc_rb_server_data_type = {
 
 /* Allocates grpc_rb_server instances. */
 static VALUE grpc_rb_server_alloc(VALUE cls) {
-  grpc_rb_server *wrapper = ALLOC(grpc_rb_server);
+  grpc_rb_server* wrapper = ALLOC(grpc_rb_server);
   wrapper->wrapped = NULL;
-  wrapper->shutdown_started = (gpr_atm)0;
+  wrapper->destroy_done = 0;
+  wrapper->shutdown_and_notify_done = 0;
   return TypedData_Wrap_Struct(cls, &grpc_rb_server_data_type, wrapper);
 }
 
@@ -117,9 +136,9 @@ static VALUE grpc_rb_server_alloc(VALUE cls) {
 
   Initializes server instances. */
 static VALUE grpc_rb_server_init(VALUE self, VALUE channel_args) {
-  grpc_completion_queue *cq = NULL;
-  grpc_rb_server *wrapper = NULL;
-  grpc_server *srv = NULL;
+  grpc_completion_queue* cq = NULL;
+  grpc_rb_server* wrapper = NULL;
+  grpc_server* srv = NULL;
   grpc_channel_args args;
   MEMZERO(&args, grpc_channel_args, 1);
 
@@ -153,7 +172,7 @@ typedef struct request_call_stack {
 
 /* grpc_request_call_stack_init ensures the request_call_stack is properly
  * initialized */
-static void grpc_request_call_stack_init(request_call_stack *st) {
+static void grpc_request_call_stack_init(request_call_stack* st) {
   MEMZERO(st, request_call_stack, 1);
   grpc_metadata_array_init(&st->md_ary);
   grpc_call_details_init(&st->details);
@@ -161,7 +180,7 @@ static void grpc_request_call_stack_init(request_call_stack *st) {
 
 /* grpc_request_call_stack_cleanup ensures the request_call_stack is properly
  * cleaned up */
-static void grpc_request_call_stack_cleanup(request_call_stack *st) {
+static void grpc_request_call_stack_cleanup(request_call_stack* st) {
   grpc_metadata_array_destroy(&st->md_ary);
   grpc_call_details_destroy(&st->details);
 }
@@ -171,14 +190,14 @@ static void grpc_request_call_stack_cleanup(request_call_stack *st) {
 
    Requests notification of a new call on a server. */
 static VALUE grpc_rb_server_request_call(VALUE self) {
-  grpc_rb_server *s = NULL;
-  grpc_call *call = NULL;
+  grpc_rb_server* s = NULL;
+  grpc_call* call = NULL;
   grpc_event ev;
   grpc_call_error err;
   request_call_stack st;
   VALUE result;
-  void *tag = (void *)&st;
-  grpc_completion_queue *call_queue =
+  void* tag = (void*)&st;
+  grpc_completion_queue* call_queue =
       grpc_completion_queue_create_for_pluck(NULL);
   gpr_timespec deadline;
 
@@ -222,7 +241,7 @@ static VALUE grpc_rb_server_request_call(VALUE self) {
 }
 
 static VALUE grpc_rb_server_start(VALUE self) {
-  grpc_rb_server *s = NULL;
+  grpc_rb_server* s = NULL;
   TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type, s);
   if (s->wrapped == NULL) {
     rb_raise(rb_eRuntimeError, "destroyed!");
@@ -232,25 +251,10 @@ static VALUE grpc_rb_server_start(VALUE self) {
   return Qnil;
 }
 
-/*
-  call-seq:
-    server = Server.new({'arg1': 'value1'})
-    ... // do stuff with server
-    ...
-    ... // to shutdown the server
-    server.destroy()
-
-    ... // to shutdown the server with a timeout
-    server.destroy(timeout)
-
-  Destroys server instances. */
-static VALUE grpc_rb_server_destroy(int argc, VALUE *argv, VALUE self) {
-  VALUE timeout = Qnil;
+static VALUE grpc_rb_server_shutdown_and_notify(VALUE self, VALUE timeout) {
   gpr_timespec deadline;
-  grpc_rb_server *s = NULL;
+  grpc_rb_server* s = NULL;
 
-  /* "01" == 0 mandatory args, 1 (timeout) is optional */
-  rb_scan_args(argc, argv, "01", &timeout);
   TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type, s);
   if (TYPE(timeout) == T_NIL) {
     deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
@@ -258,8 +262,26 @@ static VALUE grpc_rb_server_destroy(int argc, VALUE *argv, VALUE self) {
     deadline = grpc_rb_time_timeval(timeout, /* absolute time*/ 0);
   }
 
-  destroy_server(s, deadline);
+  grpc_rb_server_maybe_shutdown_and_notify(s, deadline);
 
+  return Qnil;
+}
+
+/*
+  call-seq:
+    server = Server.new({'arg1': 'value1'})
+    ... // do stuff with server
+    ...
+    ... // initiate server shutdown
+    server.shutdown_and_notify(timeout)
+    ... // to shutdown the server
+    server.destroy()
+
+  Destroys server instances. */
+static VALUE grpc_rb_server_destroy(VALUE self) {
+  grpc_rb_server* s = NULL;
+  TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type, s);
+  grpc_rb_server_maybe_destroy(s);
   return Qnil;
 }
 
@@ -277,8 +299,8 @@ static VALUE grpc_rb_server_destroy(int argc, VALUE *argv, VALUE self) {
     Adds a http2 port to server */
 static VALUE grpc_rb_server_add_http2_port(VALUE self, VALUE port,
                                            VALUE rb_creds) {
-  grpc_rb_server *s = NULL;
-  grpc_server_credentials *creds = NULL;
+  grpc_rb_server* s = NULL;
+  grpc_server_credentials* creds = NULL;
   int recvd_port = 0;
 
   TypedData_Get_Struct(self, grpc_rb_server, &grpc_rb_server_data_type, s);
@@ -326,7 +348,9 @@ void Init_grpc_server() {
   rb_define_method(grpc_rb_cServer, "request_call", grpc_rb_server_request_call,
                    0);
   rb_define_method(grpc_rb_cServer, "start", grpc_rb_server_start, 0);
-  rb_define_method(grpc_rb_cServer, "destroy", grpc_rb_server_destroy, -1);
+  rb_define_method(grpc_rb_cServer, "shutdown_and_notify",
+                   grpc_rb_server_shutdown_and_notify, 1);
+  rb_define_method(grpc_rb_cServer, "destroy", grpc_rb_server_destroy, 0);
   rb_define_alias(grpc_rb_cServer, "close", "destroy");
   rb_define_method(grpc_rb_cServer, "add_http2_port",
                    grpc_rb_server_add_http2_port, 2);
@@ -335,8 +359,8 @@ void Init_grpc_server() {
 }
 
 /* Gets the wrapped server from the ruby wrapper */
-grpc_server *grpc_rb_get_wrapped_server(VALUE v) {
-  grpc_rb_server *wrapper = NULL;
+grpc_server* grpc_rb_get_wrapped_server(VALUE v) {
+  grpc_rb_server* wrapper = NULL;
   TypedData_Get_Struct(v, grpc_rb_server, &grpc_rb_server_data_type, wrapper);
   return wrapper->wrapped;
 }

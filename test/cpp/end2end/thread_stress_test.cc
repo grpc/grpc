@@ -19,15 +19,14 @@
 #include <mutex>
 #include <thread>
 
-#include <grpc++/channel.h>
-#include <grpc++/client_context.h>
-#include <grpc++/create_channel.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
-#include <grpc++/server_context.h>
 #include <grpc/grpc.h>
-#include <grpc/support/thd.h>
 #include <grpc/support/time.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/server_context.h>
 
 #include "src/core/lib/surface/api_trace.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
@@ -50,23 +49,6 @@ const int kNumRpcs = 1000;  // Number of RPCs per thread
 namespace grpc {
 namespace testing {
 
-namespace {
-
-// When echo_deadline is requested, deadline seen in the ServerContext is set in
-// the response in seconds.
-void MaybeEchoDeadline(ServerContext* context, const EchoRequest* request,
-                       EchoResponse* response) {
-  if (request->has_param() && request->param().echo_deadline()) {
-    gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
-    if (context->deadline() != system_clock::time_point::max()) {
-      Timepoint2Timespec(context->deadline(), &deadline);
-    }
-    response->mutable_param()->set_request_deadline(deadline.tv_sec);
-  }
-}
-
-}  // namespace
-
 class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
   TestServiceImpl() : signal_client_(false) {}
@@ -74,29 +56,6 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
     response->set_message(request->message());
-    MaybeEchoDeadline(context, request, response);
-    if (request->has_param() && request->param().client_cancel_after_us()) {
-      {
-        std::unique_lock<std::mutex> lock(mu_);
-        signal_client_ = true;
-      }
-      while (!context->IsCancelled()) {
-        gpr_sleep_until(gpr_time_add(
-            gpr_now(GPR_CLOCK_REALTIME),
-            gpr_time_from_micros(request->param().client_cancel_after_us(),
-                                 GPR_TIMESPAN)));
-      }
-      return Status::CANCELLED;
-    } else if (request->has_param() &&
-               request->param().server_cancel_after_us()) {
-      gpr_sleep_until(gpr_time_add(
-          gpr_now(GPR_CLOCK_REALTIME),
-          gpr_time_from_micros(request->param().server_cancel_after_us(),
-                               GPR_TIMESPAN)));
-      return Status::CANCELLED;
-    } else {
-      EXPECT_FALSE(context->IsCancelled());
-    }
     return Status::OK;
   }
 
@@ -151,16 +110,6 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
   std::mutex mu_;
 };
 
-class TestServiceImplDupPkg
-    : public ::grpc::testing::duplicate::EchoTestService::Service {
- public:
-  Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) override {
-    response->set_message("no package");
-    return Status::OK;
-  }
-};
-
 template <class Service>
 class CommonStressTest {
  public:
@@ -168,63 +117,92 @@ class CommonStressTest {
   virtual ~CommonStressTest() {}
   virtual void SetUp() = 0;
   virtual void TearDown() = 0;
-  void ResetStub() {
-    std::shared_ptr<Channel> channel =
-        CreateChannel(server_address_.str(), InsecureChannelCredentials());
-    stub_ = grpc::testing::EchoTestService::NewStub(channel);
-  }
+  virtual void ResetStub() = 0;
   grpc::testing::EchoTestService::Stub* GetStub() { return stub_.get(); }
 
  protected:
-  void SetUpStart(ServerBuilder* builder, Service* service) {
-    int port = grpc_pick_unused_port_or_die();
-    server_address_ << "localhost:" << port;
-    // Setup server
-    builder->AddListeningPort(server_address_.str(),
-                              InsecureServerCredentials());
+  std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
+  std::unique_ptr<Server> server_;
+
+  virtual void SetUpStart(ServerBuilder* builder, Service* service) = 0;
+  void SetUpStartCommon(ServerBuilder* builder, Service* service) {
     builder->RegisterService(service);
     builder->SetMaxMessageSize(
         kMaxMessageSize_);  // For testing max message size.
-    builder->RegisterService(&dup_pkg_service_);
   }
   void SetUpEnd(ServerBuilder* builder) { server_ = builder->BuildAndStart(); }
   void TearDownStart() { server_->Shutdown(); }
   void TearDownEnd() {}
 
  private:
-  std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
-  std::unique_ptr<Server> server_;
-  std::ostringstream server_address_;
   const int kMaxMessageSize_;
-  TestServiceImplDupPkg dup_pkg_service_;
 };
 
-class CommonStressTestSyncServer : public CommonStressTest<TestServiceImpl> {
+template <class Service>
+class CommonStressTestInsecure : public CommonStressTest<Service> {
+ public:
+  void ResetStub() override {
+    std::shared_ptr<Channel> channel =
+        CreateChannel(server_address_.str(), InsecureChannelCredentials());
+    this->stub_ = grpc::testing::EchoTestService::NewStub(channel);
+  }
+
+ protected:
+  void SetUpStart(ServerBuilder* builder, Service* service) override {
+    int port = grpc_pick_unused_port_or_die();
+    this->server_address_ << "localhost:" << port;
+    // Setup server
+    builder->AddListeningPort(server_address_.str(),
+                              InsecureServerCredentials());
+    this->SetUpStartCommon(builder, service);
+  }
+
+ private:
+  std::ostringstream server_address_;
+};
+
+template <class Service>
+class CommonStressTestInproc : public CommonStressTest<Service> {
+ public:
+  void ResetStub() override {
+    ChannelArguments args;
+    std::shared_ptr<Channel> channel = this->server_->InProcessChannel(args);
+    this->stub_ = grpc::testing::EchoTestService::NewStub(channel);
+  }
+
+ protected:
+  void SetUpStart(ServerBuilder* builder, Service* service) override {
+    this->SetUpStartCommon(builder, service);
+  }
+};
+
+template <class BaseClass>
+class CommonStressTestSyncServer : public BaseClass {
  public:
   void SetUp() override {
     ServerBuilder builder;
-    SetUpStart(&builder, &service_);
-    SetUpEnd(&builder);
+    this->SetUpStart(&builder, &service_);
+    this->SetUpEnd(&builder);
   }
   void TearDown() override {
-    TearDownStart();
-    TearDownEnd();
+    this->TearDownStart();
+    this->TearDownEnd();
   }
 
  private:
   TestServiceImpl service_;
 };
 
-class CommonStressTestAsyncServer
-    : public CommonStressTest<grpc::testing::EchoTestService::AsyncService> {
+template <class BaseClass>
+class CommonStressTestAsyncServer : public BaseClass {
  public:
   CommonStressTestAsyncServer() : contexts_(kNumAsyncServerThreads * 100) {}
   void SetUp() override {
     shutting_down_ = false;
     ServerBuilder builder;
-    SetUpStart(&builder, &service_);
+    this->SetUpStart(&builder, &service_);
     cq_ = builder.AddCompletionQueue();
-    SetUpEnd(&builder);
+    this->SetUpEnd(&builder);
     for (int i = 0; i < kNumAsyncServerThreads * 100; i++) {
       RefreshContext(i);
     }
@@ -236,7 +214,7 @@ class CommonStressTestAsyncServer
   void TearDown() override {
     {
       std::unique_lock<std::mutex> l(mu_);
-      TearDownStart();
+      this->TearDownStart();
       shutting_down_ = true;
       cq_->Shutdown();
     }
@@ -249,7 +227,7 @@ class CommonStressTestAsyncServer
     bool ignored_ok;
     while (cq_->Next(&ignored_tag, &ignored_ok))
       ;
-    TearDownEnd();
+    this->TearDownEnd();
   }
 
  private:
@@ -286,7 +264,7 @@ class CommonStressTestAsyncServer
       service_.RequestEcho(contexts_[i].srv_ctx.get(),
                            &contexts_[i].recv_request,
                            contexts_[i].response_writer.get(), cq_.get(),
-                           cq_.get(), (void*)(intptr_t)i);
+                           cq_.get(), (void*)static_cast<intptr_t>(i));
     }
   }
   struct Context {
@@ -332,8 +310,13 @@ static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs) {
   }
 }
 
-typedef ::testing::Types<CommonStressTestSyncServer,
-                         CommonStressTestAsyncServer>
+typedef ::testing::Types<
+    CommonStressTestSyncServer<CommonStressTestInsecure<TestServiceImpl>>,
+    CommonStressTestSyncServer<CommonStressTestInproc<TestServiceImpl>>,
+    CommonStressTestAsyncServer<
+        CommonStressTestInsecure<grpc::testing::EchoTestService::AsyncService>>,
+    CommonStressTestAsyncServer<
+        CommonStressTestInproc<grpc::testing::EchoTestService::AsyncService>>>
     CommonTypes;
 TYPED_TEST_CASE(End2endTest, CommonTypes);
 TYPED_TEST(End2endTest, ThreadStress) {

@@ -104,8 +104,8 @@ def _get_grpc_custom_bdist(decorated_basename, target_bdist_basename):
         with open(bdist_path, 'w') as bdist_file:
             bdist_file.write(bdist_data)
     except IOError as error:
-        raise CommandError('{}\n\nCould not write grpcio bdist: {}'
-                           .format(traceback.format_exc(), error.message))
+        raise CommandError('{}\n\nCould not write grpcio bdist: {}'.format(
+            traceback.format_exc(), error.message))
     return bdist_path
 
 
@@ -141,7 +141,8 @@ class SphinxDocumentation(setuptools.Command):
         with open(glossary_filepath, 'a') as glossary_filepath:
             glossary_filepath.write(API_GLOSSARY)
         sphinx.main(
-            ['', os.path.join('doc', 'src'), os.path.join('doc', 'build')])
+            ['', os.path.join('doc', 'src'),
+             os.path.join('doc', 'build')])
 
 
 class BuildProjectMetadata(setuptools.Command):
@@ -189,10 +190,11 @@ def check_and_update_cythonization(extensions):
         for source in extension.sources:
             base, file_ext = os.path.splitext(source)
             if file_ext == '.pyx':
-                generated_pyx_source = next((base + gen_ext
-                                             for gen_ext in ('.c', '.cpp',)
-                                             if os.path.isfile(base + gen_ext)),
-                                            None)
+                generated_pyx_source = next(
+                    (base + gen_ext for gen_ext in (
+                        '.c',
+                        '.cpp',
+                    ) if os.path.isfile(base + gen_ext)), None)
                 if generated_pyx_source:
                     generated_pyx_sources.append(generated_pyx_source)
                 else:
@@ -299,10 +301,10 @@ class Gather(setuptools.Command):
     """Command to gather project dependencies."""
 
     description = 'gather dependencies for grpcio'
-    user_options = [
-        ('test', 't', 'flag indicating to gather test dependencies'),
-        ('install', 'i', 'flag indicating to gather install dependencies')
-    ]
+    user_options = [('test', 't',
+                     'flag indicating to gather test dependencies'),
+                    ('install', 'i',
+                     'flag indicating to gather install dependencies')]
 
     def initialize_options(self):
         self.test = False

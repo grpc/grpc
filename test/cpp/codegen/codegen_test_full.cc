@@ -16,8 +16,8 @@
  *
  */
 
-#include <grpc++/completion_queue.h>
 #include <grpc/support/time.h>
+#include <grpcpp/completion_queue.h>
 #include <gtest/gtest.h>
 
 namespace grpc {
@@ -27,8 +27,8 @@ class CodegenTestFull : public ::testing::Test {};
 
 TEST_F(CodegenTestFull, Init) {
   grpc::CompletionQueue cq;
-  void* tag;
-  bool ok;
+  void* tag = nullptr;
+  bool ok = false;
   cq.AsyncNext(&tag, &ok, gpr_time_0(GPR_CLOCK_REALTIME));
   ASSERT_FALSE(ok);
 }
