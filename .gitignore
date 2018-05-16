@@ -73,7 +73,7 @@ out
 .ycm_extra_conf.py
 
 # XCode
-^build/
+build/
 *.pbxuser
 !default.pbxuser
 *.mode1v3
