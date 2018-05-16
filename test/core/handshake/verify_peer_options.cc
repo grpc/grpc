@@ -196,18 +196,24 @@ static bool verify_peer_options_test(verify_peer_options* verify_options) {
 }
 
 static int callback_return_value = 0;
-static char* callback_target_host = nullptr;
-static char* callback_target_pem = nullptr;
+static char callback_target_host[4096];
+static char callback_target_pem[4096];
 static void* callback_userdata = nullptr;
 static void* destruct_userdata = nullptr;
 
 static int verify_callback(const char* target_host, const char* target_pem,
                            void* userdata) {
   if (target_host != nullptr) {
-    GPR_ASSERT((callback_target_host = gpr_strdup(target_host)) != nullptr);
+    snprintf(callback_target_host, sizeof(callback_target_host), "%s",
+             target_host);
+  } else {
+    callback_target_host[0] = '\0';
   }
   if (target_pem != nullptr) {
-    GPR_ASSERT((callback_target_pem = gpr_strdup(target_pem)) != nullptr);
+    snprintf(callback_target_pem, sizeof(callback_target_pem), "%s",
+             target_pem);
+  } else {
+    callback_target_pem[0] = '\0';
   }
   callback_userdata = userdata;
   return callback_return_value;
@@ -231,8 +237,8 @@ int main(int argc, char* argv[]) {
   verify_options.verify_peer_callback_userdata = nullptr;
   verify_options.verify_peer_destruct = nullptr;
   GPR_ASSERT(verify_peer_options_test(&verify_options));
-  GPR_ASSERT(callback_target_host == nullptr);
-  GPR_ASSERT(callback_target_pem == nullptr);
+  GPR_ASSERT(strlen(callback_target_host) == 0);
+  GPR_ASSERT(strlen(callback_target_pem) == 0);
   GPR_ASSERT(callback_userdata == nullptr);
   GPR_ASSERT(destruct_userdata == nullptr);
 
@@ -245,14 +251,10 @@ int main(int argc, char* argv[]) {
   GPR_ASSERT(strcmp(callback_target_pem, server_cert) == 0);
   GPR_ASSERT(callback_userdata == static_cast<void*>(&userdata));
   GPR_ASSERT(destruct_userdata == static_cast<void*>(&userdata));
-  gpr_free(callback_target_host);
-  gpr_free(callback_target_pem);
 
   // If the callback returns non-zero, initializing the channel should fail.
   callback_return_value = 1;
   GPR_ASSERT(!verify_peer_options_test(&verify_options));
-  gpr_free(callback_target_host);
-  gpr_free(callback_target_pem);
 
   grpc_slice_unref(cert_slice);
 
