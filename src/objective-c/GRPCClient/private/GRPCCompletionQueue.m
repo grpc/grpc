@@ -43,7 +43,6 @@ const grpc_completion_queue_attributes kCompletionQueueAttr = {
   if ((self = [super init])) {
     _unmanagedQueue = grpc_completion_queue_create(
         grpc_completion_queue_factory_lookup(&kCompletionQueueAttr), &kCompletionQueueAttr, NULL);
-    //_unmanagedQueue = grpc_completion_queue_create_for_next(NULL);
 
     // This is for the following block to capture the pointer by value (instead
     // of retaining self and doing self->_unmanagedQueue). This is essential

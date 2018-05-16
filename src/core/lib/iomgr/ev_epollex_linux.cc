@@ -1508,6 +1508,6 @@ const grpc_event_engine_vtable* grpc_init_epollex_linux(
     bool explicitly_requested) {
   return nullptr;
 }
-#endif /* defined(GRPC_POSIX_SOCKET) */
+#endif /* defined(GRPC_POSIX_SOCKET_EV_EPOLLEX) */
 
 #endif /* !defined(GRPC_LINUX_EPOLL_CREATE1) */

@@ -1761,4 +1761,4 @@ const grpc_event_engine_vtable* grpc_init_poll_cv_posix(bool explicit_request) {
   return &vtable;
 }
 
-#endif
+#endif /* GRPC_POSIX_SOCKET_EV_POLL */

@@ -558,4 +558,4 @@ grpc_tcp_server_vtable grpc_posix_tcp_server_vtable = {
     tcp_server_shutdown_starting_add,
     tcp_server_unref,
     tcp_server_shutdown_listeners};
-#endif
+#endif /* GRPC_POSIX_SOCKET_TCP_SERVER */

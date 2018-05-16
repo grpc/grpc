@@ -811,4 +811,4 @@ void grpc_tcp_destroy_and_release_fd(grpc_endpoint* ep, int* fd,
   TCP_UNREF(tcp, "destroy");
 }
 
-#endif
+#endif /* GRPC_POSIX_SOCKET_TCP */
