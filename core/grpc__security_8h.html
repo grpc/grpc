@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">6.0.0</span>
+   &#160;<span id="projectnumber">6.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -144,6 +144,9 @@ Typedefs</h2></td></tr>
 <tr class="memitem:a34b93b8c1e0dbdaae9dc11bbce706cb4"><td class="memItemLeft" align="right" valign="top">typedef void(*&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a34b93b8c1e0dbdaae9dc11bbce706cb4">grpc_process_auth_metadata_done_cb</a>) (void *user_data, const <a class="el" href="structgrpc__metadata.html">grpc_metadata</a> *consumed_md, size_t num_consumed_md, const <a class="el" href="structgrpc__metadata.html">grpc_metadata</a> *response_md, size_t num_response_md, <a class="el" href="impl_2codegen_2status_8h.html#a35ab2a68917eb836de84cb23253108eb">grpc_status_code</a> status, const char *error_details)</td></tr>
 <tr class="memdesc:a34b93b8c1e0dbdaae9dc11bbce706cb4"><td class="mdescLeft">&#160;</td><td class="mdescRight">&mdash; Auth Metadata Processing &mdash;  <a href="#a34b93b8c1e0dbdaae9dc11bbce706cb4">More...</a><br /></td></tr>
 <tr class="separator:a34b93b8c1e0dbdaae9dc11bbce706cb4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a196ff73c6ff0dc0d7846635e02016b0f"><td class="memItemLeft" align="right" valign="top">typedef struct <a class="el" href="grpc__security_8h.html#a196ff73c6ff0dc0d7846635e02016b0f">grpc_alts_credentials_options</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a196ff73c6ff0dc0d7846635e02016b0f">grpc_alts_credentials_options</a></td></tr>
+<tr class="memdesc:a196ff73c6ff0dc0d7846635e02016b0f"><td class="mdescLeft">&#160;</td><td class="mdescRight">&mdash; ALTS channel/server credentials &mdash;  <a href="#a196ff73c6ff0dc0d7846635e02016b0f">More...</a><br /></td></tr>
+<tr class="separator:a196ff73c6ff0dc0d7846635e02016b0f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
@@ -268,6 +271,24 @@ Functions</h2></td></tr>
 <tr class="separator:ab065a653f78111065e91a579fd2ce2d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a37da13e43ccc9b19e9f1a6051feaedc3"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a37da13e43ccc9b19e9f1a6051feaedc3">grpc_server_credentials_set_auth_metadata_processor</a> (<a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *creds, <a class="el" href="structgrpc__auth__metadata__processor.html">grpc_auth_metadata_processor</a> processor)</td></tr>
 <tr class="separator:a37da13e43ccc9b19e9f1a6051feaedc3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2f7a9d868aed28dae93e41ea1ee053cd"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#a196ff73c6ff0dc0d7846635e02016b0f">grpc_alts_credentials_options</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a2f7a9d868aed28dae93e41ea1ee053cd">grpc_alts_credentials_client_options_create</a> ()</td></tr>
+<tr class="memdesc:a2f7a9d868aed28dae93e41ea1ee053cd"><td class="mdescLeft">&#160;</td><td class="mdescRight">This method creates a grpc ALTS credentials client options instance.  <a href="#a2f7a9d868aed28dae93e41ea1ee053cd">More...</a><br /></td></tr>
+<tr class="separator:a2f7a9d868aed28dae93e41ea1ee053cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a005a0d762b53293959d3137f576f2617"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#a196ff73c6ff0dc0d7846635e02016b0f">grpc_alts_credentials_options</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a005a0d762b53293959d3137f576f2617">grpc_alts_credentials_server_options_create</a> ()</td></tr>
+<tr class="memdesc:a005a0d762b53293959d3137f576f2617"><td class="mdescLeft">&#160;</td><td class="mdescRight">This method creates a grpc ALTS credentials server options instance.  <a href="#a005a0d762b53293959d3137f576f2617">More...</a><br /></td></tr>
+<tr class="separator:a005a0d762b53293959d3137f576f2617"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9915a0aad4c5b287af506f1ebe3ad505"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a9915a0aad4c5b287af506f1ebe3ad505">grpc_alts_credentials_client_options_add_target_service_account</a> (<a class="el" href="grpc__security_8h.html#a196ff73c6ff0dc0d7846635e02016b0f">grpc_alts_credentials_options</a> *options, const char *service_account)</td></tr>
+<tr class="memdesc:a9915a0aad4c5b287af506f1ebe3ad505"><td class="mdescLeft">&#160;</td><td class="mdescRight">This method adds a target service account to grpc client's ALTS credentials options instance.  <a href="#a9915a0aad4c5b287af506f1ebe3ad505">More...</a><br /></td></tr>
+<tr class="separator:a9915a0aad4c5b287af506f1ebe3ad505"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3a78f4ff1575a2c9e4a3d547b9aa2bb0"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a3a78f4ff1575a2c9e4a3d547b9aa2bb0">grpc_alts_credentials_options_destroy</a> (<a class="el" href="grpc__security_8h.html#a196ff73c6ff0dc0d7846635e02016b0f">grpc_alts_credentials_options</a> *options)</td></tr>
+<tr class="memdesc:a3a78f4ff1575a2c9e4a3d547b9aa2bb0"><td class="mdescLeft">&#160;</td><td class="mdescRight">This method destroys a grpc_alts_credentials_options instance by de-allocating all of its occupied memory.  <a href="#a3a78f4ff1575a2c9e4a3d547b9aa2bb0">More...</a><br /></td></tr>
+<tr class="separator:a3a78f4ff1575a2c9e4a3d547b9aa2bb0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ade3f89f1532e030b8f2afcf0df17b2fe"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#ade3f89f1532e030b8f2afcf0df17b2fe">grpc_alts_credentials_create</a> (const <a class="el" href="grpc__security_8h.html#a196ff73c6ff0dc0d7846635e02016b0f">grpc_alts_credentials_options</a> *options)</td></tr>
+<tr class="memdesc:ade3f89f1532e030b8f2afcf0df17b2fe"><td class="mdescLeft">&#160;</td><td class="mdescRight">This method creates an ALTS channel credential object.  <a href="#ade3f89f1532e030b8f2afcf0df17b2fe">More...</a><br /></td></tr>
+<tr class="separator:ade3f89f1532e030b8f2afcf0df17b2fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5dde4a563a9f7b8b1fc595ecd8d357fa"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a5dde4a563a9f7b8b1fc595ecd8d357fa">grpc_alts_server_credentials_create</a> (const <a class="el" href="grpc__security_8h.html#a196ff73c6ff0dc0d7846635e02016b0f">grpc_alts_credentials_options</a> *options)</td></tr>
+<tr class="memdesc:a5dde4a563a9f7b8b1fc595ecd8d357fa"><td class="mdescLeft">&#160;</td><td class="mdescRight">This method creates an ALTS server credential object.  <a href="#a5dde4a563a9f7b8b1fc595ecd8d357fa">More...</a><br /></td></tr>
+<tr class="separator:a5dde4a563a9f7b8b1fc595ecd8d357fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
 <a id="a33e259900dbbac0ea018352adf1a4af7"></a>
@@ -287,6 +308,23 @@ Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Typedef Documentation</h2>
+<a id="a196ff73c6ff0dc0d7846635e02016b0f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a196ff73c6ff0dc0d7846635e02016b0f">&#9670;&nbsp;</a></span>grpc_alts_credentials_options</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef struct <a class="el" href="grpc__security_8h.html#a196ff73c6ff0dc0d7846635e02016b0f">grpc_alts_credentials_options</a> <a class="el" href="grpc__security_8h.html#a196ff73c6ff0dc0d7846635e02016b0f">grpc_alts_credentials_options</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>&mdash; ALTS channel/server credentials &mdash; </p>
+<p>Main interface for ALTS credentials options. The options will contain information that will be passed from grpc to TSI layer such as RPC protocol versions. ALTS client (channel) and server credentials will have their own implementation of this interface. The APIs listed in this header are thread-compatible. It is used for experimental purpose for now and subject to change. </p>
+
+</div>
+</div>
 <a id="aa13f0724cb7ff99995d7f0881c01d553"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aa13f0724cb7ff99995d7f0881c01d553">&#9670;&nbsp;</a></span>grpc_auth_context</h2>
 
@@ -547,6 +585,155 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Creates an Oauth2 Access Token credentials with an access token that was aquired by an out of band mechanism. </p>
+
+</div>
+</div>
+<a id="a9915a0aad4c5b287af506f1ebe3ad505"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9915a0aad4c5b287af506f1ebe3ad505">&#9670;&nbsp;</a></span>grpc_alts_credentials_client_options_add_target_service_account()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void grpc_alts_credentials_client_options_add_target_service_account </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__security_8h.html#a196ff73c6ff0dc0d7846635e02016b0f">grpc_alts_credentials_options</a> *&#160;</td>
+          <td class="paramname"><em>options</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const char *&#160;</td>
+          <td class="paramname"><em>service_account</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>This method adds a target service account to grpc client's ALTS credentials options instance. </p>
+<p>It is used for experimental purpose for now and subject to change.</p>
+<ul>
+<li>options: grpc ALTS credentials options instance.</li>
+<li>service_account: service account of target endpoint. </li>
+</ul>
+
+</div>
+</div>
+<a id="a2f7a9d868aed28dae93e41ea1ee053cd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2f7a9d868aed28dae93e41ea1ee053cd">&#9670;&nbsp;</a></span>grpc_alts_credentials_client_options_create()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#a196ff73c6ff0dc0d7846635e02016b0f">grpc_alts_credentials_options</a>* grpc_alts_credentials_client_options_create </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>This method creates a grpc ALTS credentials client options instance. </p>
+<p>It is used for experimental purpose for now and subject to change. </p>
+
+</div>
+</div>
+<a id="ade3f89f1532e030b8f2afcf0df17b2fe"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ade3f89f1532e030b8f2afcf0df17b2fe">&#9670;&nbsp;</a></span>grpc_alts_credentials_create()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a>* grpc_alts_credentials_create </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="grpc__security_8h.html#a196ff73c6ff0dc0d7846635e02016b0f">grpc_alts_credentials_options</a> *&#160;</td>
+          <td class="paramname"><em>options</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>This method creates an ALTS channel credential object. </p>
+<p>It is used for experimental purpose for now and subject to change.</p>
+<ul>
+<li>options: grpc ALTS credentials options instance for client.</li>
+</ul>
+<p>It returns the created ALTS channel credential object. </p>
+
+</div>
+</div>
+<a id="a3a78f4ff1575a2c9e4a3d547b9aa2bb0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3a78f4ff1575a2c9e4a3d547b9aa2bb0">&#9670;&nbsp;</a></span>grpc_alts_credentials_options_destroy()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void grpc_alts_credentials_options_destroy </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__security_8h.html#a196ff73c6ff0dc0d7846635e02016b0f">grpc_alts_credentials_options</a> *&#160;</td>
+          <td class="paramname"><em>options</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>This method destroys a grpc_alts_credentials_options instance by de-allocating all of its occupied memory. </p>
+<p>It is used for experimental purpose for now and subject to change.</p>
+<ul>
+<li>options: a grpc_alts_credentials_options instance that needs to be destroyed. </li>
+</ul>
+
+</div>
+</div>
+<a id="a005a0d762b53293959d3137f576f2617"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a005a0d762b53293959d3137f576f2617">&#9670;&nbsp;</a></span>grpc_alts_credentials_server_options_create()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#a196ff73c6ff0dc0d7846635e02016b0f">grpc_alts_credentials_options</a>* grpc_alts_credentials_server_options_create </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>This method creates a grpc ALTS credentials server options instance. </p>
+<p>It is used for experimental purpose for now and subject to change. </p>
+
+</div>
+</div>
+<a id="a5dde4a563a9f7b8b1fc595ecd8d357fa"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5dde4a563a9f7b8b1fc595ecd8d357fa">&#9670;&nbsp;</a></span>grpc_alts_server_credentials_create()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#aa724192e56fdc03827846f16752deccc">grpc_server_credentials</a>* grpc_alts_server_credentials_create </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="grpc__security_8h.html#a196ff73c6ff0dc0d7846635e02016b0f">grpc_alts_credentials_options</a> *&#160;</td>
+          <td class="paramname"><em>options</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>This method creates an ALTS server credential object. </p>
+<p>It is used for experimental purpose for now and subject to change.</p>
+<ul>
+<li>options: grpc ALTS credentials options instance for server.</li>
+</ul>
+<p>It returns the created ALTS server credential object. </p>
 
 </div>
 </div>
@@ -1715,7 +1902,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Apr 13 2018 15:03:52 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue May 15 2018 17:01:00 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

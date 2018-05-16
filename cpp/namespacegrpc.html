@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.11.0</span>
+   &#160;<span id="projectnumber">1.13.0-dev</span>
    </div>
   </td>
  </tr>
@@ -76,6 +76,8 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
 Namespaces</h2></td></tr>
+<tr class="memitem:namespacegrpc_1_1experimental"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html">experimental</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:namespacegrpc_1_1internal"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1internal.html">internal</a></td></tr>
 <tr class="memdesc:namespacegrpc_1_1internal"><td class="mdescLeft">&#160;</td><td class="mdescRight">Models a gRPC server. <br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -190,6 +192,12 @@ Data Structures</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_propagation_options.html">PropagationOptions</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Options for <em><a class="el" href="classgrpc_1_1_client_context.html#a88cbf7ae863d5fcb382c9e22160f4707" title="Create a new ClientContext as a child of an incoming server call, according to options (...">ClientContext::FromServerContext</a></em> specifying which traits from the <em><a class="el" href="classgrpc_1_1_server_context.html" title="A ServerContext allows the person implementing a service handler to: ">ServerContext</a></em> to propagate (copy) from it into a new <em><a class="el" href="classgrpc_1_1_client_context.html" title="A ClientContext allows the person implementing a service client to: ">ClientContext</a></em>.  <a href="classgrpc_1_1_propagation_options.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_proto_buffer_reader.html">ProtoBufferReader</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">This is a specialization of the protobuf class ZeroCopyInputStream The principle is to get one chunk of data at a time from the proto layer, with options to backup (re-see some bytes) or skip (forward past some bytes)  <a href="classgrpc_1_1_proto_buffer_reader.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_proto_buffer_writer.html">ProtoBufferWriter</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">This is a specialization of the protobuf class ZeroCopyOutputStream.  <a href="classgrpc_1_1_proto_buffer_writer.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_resource_quota.html">ResourceQuota</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classgrpc_1_1_resource_quota.html" title="ResourceQuota represents a bound on memory usage by the gRPC library. ">ResourceQuota</a> represents a bound on memory usage by the gRPC library.  <a href="classgrpc_1_1_resource_quota.html#details">More...</a><br /></td></tr>
@@ -364,6 +372,12 @@ Functions</h2></td></tr>
 <tr class="separator:afb308dc55d176f32000bb02296dee630"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a15df427a035a58013d9db2f432ebda33"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; const <a class="el" href="classgrpc_1_1_auth_context.html">AuthContext</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a15df427a035a58013d9db2f432ebda33">CreateAuthContext</a> (<a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *call)</td></tr>
 <tr class="separator:a15df427a035a58013d9db2f432ebda33"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac3419b30c5e7059c1e33ac33cc4ab0a2"><td class="memTemplParams" colspan="2">template&lt;class ProtoBufferWriter , class T &gt; </td></tr>
+<tr class="memitem:ac3419b30c5e7059c1e33ac33cc4ab0a2"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#ac3419b30c5e7059c1e33ac33cc4ab0a2">GenericSerialize</a> (const <a class="el" href="namespacegrpc_1_1protobuf.html#a58557bfd4af54f1c54a6de69ab1fb43c">grpc::protobuf::Message</a> &amp;msg, <a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a> *bb, bool *own_buffer)</td></tr>
+<tr class="separator:ac3419b30c5e7059c1e33ac33cc4ab0a2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acbbacdc28c43db71e93a94754f8ff89a"><td class="memTemplParams" colspan="2">template&lt;class ProtoBufferReader , class T &gt; </td></tr>
+<tr class="memitem:acbbacdc28c43db71e93a94754f8ff89a"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#acbbacdc28c43db71e93a94754f8ff89a">GenericDeserialize</a> (<a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a> *buffer, <a class="el" href="namespacegrpc_1_1protobuf.html#a58557bfd4af54f1c54a6de69ab1fb43c">grpc::protobuf::Message</a> *msg)</td></tr>
+<tr class="separator:acbbacdc28c43db71e93a94754f8ff89a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1e21a88e0fbe61d11824bc0109aa1378"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1string__ref.html">grpc::string_ref</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a1e21a88e0fbe61d11824bc0109aa1378">StringRefFromSlice</a> (const <a class="el" href="structgrpc__slice.html">grpc_slice</a> *slice)</td></tr>
 <tr class="separator:a1e21a88e0fbe61d11824bc0109aa1378"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a08d4d679b9fc411457fa04fad82ba5c1"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a08d4d679b9fc411457fa04fad82ba5c1">StringFromCopiedSlice</a> (<a class="el" href="structgrpc__slice.html">grpc_slice</a> slice)</td></tr>
@@ -444,12 +458,17 @@ Variables</h2></td></tr>
 <tr class="memitem:ae98af9599a8d1a02e75bae1a9250e1dc"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_grpc_library_interface.html">GrpcLibraryInterface</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#ae98af9599a8d1a02e75bae1a9250e1dc">g_glip</a></td></tr>
 <tr class="memdesc:ae98af9599a8d1a02e75bae1a9250e1dc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialized by <em>grpc::GrpcLibraryInitializer</em> from &lt;<a class="el" href="grpcpp_2impl_2grpc__library_8h.html">grpcpp/impl/grpc_library.h</a>&gt;  <a href="#ae98af9599a8d1a02e75bae1a9250e1dc">More...</a><br /></td></tr>
 <tr class="separator:ae98af9599a8d1a02e75bae1a9250e1dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9e62f19b6ee525513cb6259988c319a6"><td class="memItemLeft" align="right" valign="top">const int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a9e62f19b6ee525513cb6259988c319a6">kProtoBufferWriterMaxBufferLength</a> = 1024 * 1024</td></tr>
+<tr class="separator:a9e62f19b6ee525513cb6259988c319a6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9b65a618d145857974b7defb40bed7a0"><td class="memItemLeft" align="right" valign="top">constexpr long&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a9b65a618d145857974b7defb40bed7a0">kMaxAuthTokenLifetimeSecs</a> = 3600</td></tr>
 <tr class="memdesc:a9b65a618d145857974b7defb40bed7a0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constant for maximum auth token lifetime.  <a href="#a9b65a618d145857974b7defb40bed7a0">More...</a><br /></td></tr>
 <tr class="separator:a9b65a618d145857974b7defb40bed7a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>An <a class="el" href="classgrpc_1_1_alarm.html" title="A thin wrapper around grpc_alarm (see / / src/core/surface/alarm.h). ">Alarm</a> posts the user provided tag to its associated completion queue upon expiry or cancellation. </p>
+<p>This header provides serialization and deserialization between gRPC messages serialized using protobuf and the C++ objects they represent.</p>
+<p>This header provides an object that writes bytes directly into a <a class="el" href="classgrpc_1_1_byte_buffer.html" title="A sequence of bytes. ">grpc::ByteBuffer</a>, via the ZeroCopyOutputStream interface.</p>
+<p>This header provides an object that reads bytes directly from a <a class="el" href="classgrpc_1_1_byte_buffer.html" title="A sequence of bytes. ">grpc::ByteBuffer</a>, via the ZeroCopyInputStream interface.</p>
 </div><h2 class="groupheader">Typedef Documentation</h2>
 <a id="a3a61e9fd24c9d1cea5eaaabc58525d0e"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3a61e9fd24c9d1cea5eaaabc58525d0e">&#9670;&nbsp;</a></span>AuthProperty</h2>
@@ -829,6 +848,72 @@ Variables</h2></td></tr>
 
 <p>Enable/disable the default health checking service. </p>
 <p>This applies to all C++ servers created afterwards. For each server, user can override the default with a <a class="el" href="classgrpc_1_1_health_check_service_server_builder_option.html">HealthCheckServiceServerBuilderOption</a>. NOT thread safe. </p>
+
+</div>
+</div>
+<a id="acbbacdc28c43db71e93a94754f8ff89a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acbbacdc28c43db71e93a94754f8ff89a">&#9670;&nbsp;</a></span>GenericDeserialize()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class ProtoBufferReader , class T &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classgrpc_1_1_status.html">Status</a> grpc::GenericDeserialize </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a> *&#160;</td>
+          <td class="paramname"><em>buffer</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="namespacegrpc_1_1protobuf.html#a58557bfd4af54f1c54a6de69ab1fb43c">grpc::protobuf::Message</a> *&#160;</td>
+          <td class="paramname"><em>msg</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ac3419b30c5e7059c1e33ac33cc4ab0a2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac3419b30c5e7059c1e33ac33cc4ab0a2">&#9670;&nbsp;</a></span>GenericSerialize()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;class ProtoBufferWriter , class T &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classgrpc_1_1_status.html">Status</a> grpc::GenericSerialize </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="namespacegrpc_1_1protobuf.html#a58557bfd4af54f1c54a6de69ab1fb43c">grpc::protobuf::Message</a> &amp;&#160;</td>
+          <td class="paramname"><em>msg</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_byte_buffer.html">ByteBuffer</a> *&#160;</td>
+          <td class="paramname"><em>bb</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool *&#160;</td>
+          <td class="paramname"><em>own_buffer</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
 
 </div>
 </div>
@@ -1620,10 +1705,24 @@ Variables</h2></td></tr>
 
 </div>
 </div>
+<a id="a9e62f19b6ee525513cb6259988c319a6"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9e62f19b6ee525513cb6259988c319a6">&#9670;&nbsp;</a></span>kProtoBufferWriterMaxBufferLength</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">const int grpc::kProtoBufferWriterMaxBufferLength = 1024 * 1024</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Apr 13 2018 15:03:53 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue May 15 2018 17:01:01 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

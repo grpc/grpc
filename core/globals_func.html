@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">6.0.0</span>
+   &#160;<span id="projectnumber">6.0.0-dev</span>
    </div>
   </td>
  </tr>
@@ -126,7 +126,7 @@ $(function() {
 : <a class="el" href="log_8h.html#a938a283d9a10c3ddfe46dfc22e21077f">log.h</a>
 </li>
 <li>gpr_log_message()
-: <a class="el" href="log_8h.html#aef4961ab05362b455a3e89c06343ef74">log.h</a>
+: <a class="el" href="log_8h.html#a182dc49f7d429e28b35cb78133e542d8">log.h</a>
 </li>
 <li>gpr_log_severity_string()
 : <a class="el" href="log_8h.html#ae794448965328d305d0b44417199a915">log.h</a>
@@ -187,6 +187,9 @@ $(function() {
 </li>
 <li>gpr_set_log_verbosity()
 : <a class="el" href="log_8h.html#aec0c537cb1e244060c65d9d9d153979f">log.h</a>
+</li>
+<li>gpr_should_log()
+: <a class="el" href="log_8h.html#a7fb54337c9f6a34074ab181eb98ace47">log.h</a>
 </li>
 <li>gpr_sleep_until()
 : <a class="el" href="time_8h.html#aa4c20e6c9119819de6c2d53b3dae39ef">time.h</a>
@@ -262,6 +265,24 @@ $(function() {
 </li>
 <li>grpc_access_token_credentials_create()
 : <a class="el" href="grpc__security_8h.html#aa64d5173a15c51fdb2d80c3c187157ca">grpc_security.h</a>
+</li>
+<li>grpc_alts_credentials_client_options_add_target_service_account()
+: <a class="el" href="grpc__security_8h.html#a9915a0aad4c5b287af506f1ebe3ad505">grpc_security.h</a>
+</li>
+<li>grpc_alts_credentials_client_options_create()
+: <a class="el" href="grpc__security_8h.html#a2f7a9d868aed28dae93e41ea1ee053cd">grpc_security.h</a>
+</li>
+<li>grpc_alts_credentials_create()
+: <a class="el" href="grpc__security_8h.html#ade3f89f1532e030b8f2afcf0df17b2fe">grpc_security.h</a>
+</li>
+<li>grpc_alts_credentials_options_destroy()
+: <a class="el" href="grpc__security_8h.html#a3a78f4ff1575a2c9e4a3d547b9aa2bb0">grpc_security.h</a>
+</li>
+<li>grpc_alts_credentials_server_options_create()
+: <a class="el" href="grpc__security_8h.html#a005a0d762b53293959d3137f576f2617">grpc_security.h</a>
+</li>
+<li>grpc_alts_server_credentials_create()
+: <a class="el" href="grpc__security_8h.html#a5dde4a563a9f7b8b1fc595ecd8d357fa">grpc_security.h</a>
 </li>
 <li>grpc_auth_context_add_cstring_property()
 : <a class="el" href="grpc__security_8h.html#a73068ca89b430bb9004f8c3e86a2886a">grpc_security.h</a>
@@ -468,7 +489,7 @@ $(function() {
 : <a class="el" href="slice_8h.html#a5deea1b06b3f4830c91e910cd4379004">slice.h</a>
 </li>
 <li>grpc_fork_handlers_auto_register()
-: <a class="el" href="impl_2codegen_2fork_8h.html#a46892c005745fbe0e68910ebd664be10">fork.h</a>
+: <a class="el" href="impl_2codegen_2fork_8h.html#af297152d9157a027414989e892531fc0">fork.h</a>
 </li>
 <li>grpc_g_stands_for()
 : <a class="el" href="grpc_8h.html#a62cdc0eb52e0d7742c2f1b72e4cb4850">grpc.h</a>
@@ -519,13 +540,13 @@ $(function() {
 : <a class="el" href="grpc__security_8h.html#aed07d29d954508e9f9da66b547660160">grpc_security.h</a>
 </li>
 <li>grpc_postfork_child()
-: <a class="el" href="impl_2codegen_2fork_8h.html#a68a5250f3e3642bdcc8b574fc6b3b1db">fork.h</a>
+: <a class="el" href="impl_2codegen_2fork_8h.html#aa05d1f5928dfcfe76a733f1dcfdc2ff3">fork.h</a>
 </li>
 <li>grpc_postfork_parent()
-: <a class="el" href="impl_2codegen_2fork_8h.html#a1b058da83d00b21f330a3cef892c63d9">fork.h</a>
+: <a class="el" href="impl_2codegen_2fork_8h.html#aa8c18e7610bc7a87aff916d56ef19e0b">fork.h</a>
 </li>
 <li>grpc_prefork()
-: <a class="el" href="impl_2codegen_2fork_8h.html#a45af85c12915966d690317baf8d66394">fork.h</a>
+: <a class="el" href="impl_2codegen_2fork_8h.html#a450c01a1187f69112a22058bf690e2a0">fork.h</a>
 </li>
 <li>grpc_raw_byte_buffer_create()
 : <a class="el" href="impl_2codegen_2byte__buffer_8h.html#a5ab72d6615ee89c975c46ad4e50c1387">byte_buffer.h</a>
@@ -798,7 +819,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Apr 13 2018 15:03:52 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue May 15 2018 17:01:00 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

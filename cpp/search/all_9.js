@@ -7,7 +7,6 @@ var searchData=
   ['has_5fsync_5fmethods',['has_sync_methods',['../classgrpc_1_1_server_builder_plugin.html#a89727883dd80f7a5f8e3d07e7df13f28',1,'grpc::ServerBuilderPlugin']]],
   ['has_5fsynchronous_5fmethods',['has_synchronous_methods',['../classgrpc_1_1_service.html#aed30c12de2f309ae0716c3e436bdcb51',1,'grpc::Service']]],
   ['hash',['hash',['../structgrpc__slice__refcount__vtable.html#a497f51ccb0631966ae530a8e18737da2',1,'grpc_slice_refcount_vtable']]],
-  ['have_5fbackup_5f',['have_backup_',['../classgrpc_1_1internal_1_1_grpc_buffer_writer.html#a349050d8575a87cfd0979866f23f9649',1,'grpc::internal::GrpcBufferWriter']]],
   ['health_2dchecking_2emd',['health-checking.md',['../health-checking_8md.html',1,'']]],
   ['health_5fcheck_5fservice_5finterface_2eh',['health_check_service_interface.h',['../grpc_09_09_2health__check__service__interface_8h.html',1,'(Global Namespace)'],['../grpcpp_2health__check__service__interface_8h.html',1,'(Global Namespace)']]],
   ['health_5fcheck_5fservice_5fserver_5fbuilder_5foption_2eh',['health_check_service_server_builder_option.h',['../grpc_09_09_2ext_2health__check__service__server__builder__option_8h.html',1,'(Global Namespace)'],['../grpcpp_2ext_2health__check__service__server__builder__option_8h.html',1,'(Global Namespace)']]],
