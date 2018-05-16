@@ -75,10 +75,10 @@ class Interceptor
     {
         if (is_array($interceptors)) {
             for ($i = count($interceptors) - 1; $i >= 0; $i--) {
-                $channel = new InterceptorChannel($channel, $interceptors[$i]);
+                $channel = new Internal\InterceptorChannel($channel, $interceptors[$i]);
             }
         } else {
-            $channel =  new InterceptorChannel($channel, $interceptors);
+            $channel =  new Internal\InterceptorChannel($channel, $interceptors);
         }
         return $channel;
     }
