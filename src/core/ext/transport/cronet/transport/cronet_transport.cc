@@ -736,7 +736,7 @@ static void convert_metadata_to_cronet_headers(
     if (grpc_is_binary_header(GRPC_MDKEY(mdelem))) {
       grpc_slice wire_value = grpc_chttp2_base64_encode(GRPC_MDVALUE(mdelem));
       value = grpc_slice_to_c_string(wire_value);
-      grpc_slice_unref(wire_value);
+      grpc_slice_unref_internal(wire_value);
     } else {
       value = grpc_slice_to_c_string(GRPC_MDVALUE(mdelem));
     }
