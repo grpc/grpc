@@ -152,6 +152,9 @@ RUN python3.4 -m pip install virtualenv
 RUN pip install coverage
 ENV PATH ~/.local/bin:$PATH
 
+# Install Mako to generate files in grpc/grpc-node
+RUN pip install Mako
+
 # Prepare ccache
 RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
 RUN ln -s /usr/bin/ccache /usr/local/bin/g++

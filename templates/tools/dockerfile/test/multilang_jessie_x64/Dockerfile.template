@@ -33,6 +33,9 @@
   RUN pip install coverage
   ENV PATH ~/.local/bin:$PATH
 
+  # Install Mako to generate files in grpc/grpc-node
+  RUN pip install Mako
+
   <%include file="../../run_tests_addons.include"/>
   # Define the default command.
   CMD ["bash"]
