@@ -47,5 +47,16 @@ typedef struct {
 
 void grpc_flush_cached_google_default_credentials(void);
 
+namespace grpc_core {
+namespace internal {
+
+grpc_channel_credentials* grpc_google_default_credentials_create_impl(
+    bool used_for_testing);
+
+void set_gce_tenancy_for_testing(bool gce_tenancy);
+
+}  // namespace internal
+}  // namespace grpc_core
+
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_GOOGLE_DEFAULT_GOOGLE_DEFAULT_CREDENTIALS_H \
         */

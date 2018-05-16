@@ -43,6 +43,9 @@
 #include "src/core/lib/security/transport/auth_filters.h"
 #include "test/core/util/test_config.h"
 
+using grpc_core::internal::grpc_google_default_credentials_create_impl;
+using grpc_core::internal::set_gce_tenancy_for_testing;
+
 /* -- Mock channel credentials. -- */
 
 static grpc_channel_credentials* grpc_mock_channel_credentials_create(
@@ -910,22 +913,6 @@ static void test_google_default_creds_refresh_token(void) {
   gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
 }
 
-static int default_creds_gce_detection_httpcli_get_success_override(
-    const grpc_httpcli_request* request, grpc_millis deadline,
-    grpc_closure* on_done, grpc_httpcli_response* response) {
-  *response = http_response(200, "");
-  grpc_http_header* headers =
-      static_cast<grpc_http_header*>(gpr_malloc(sizeof(*headers) * 1));
-  headers[0].key = gpr_strdup("Metadata-Flavor");
-  headers[0].value = gpr_strdup("Google");
-  response->hdr_count = 1;
-  response->hdrs = headers;
-  GPR_ASSERT(strcmp(request->http.path, "/") == 0);
-  GPR_ASSERT(strcmp(request->host, "metadata.google.internal") == 0);
-  GRPC_CLOSURE_SCHED(on_done, GRPC_ERROR_NONE);
-  return 1;
-}
-
 static char* null_well_known_creds_path_getter(void) { return nullptr; }
 
 static void test_google_default_creds_gce(void) {
@@ -942,12 +929,10 @@ static void test_google_default_creds_gce(void) {
       null_well_known_creds_path_getter);
 
   /* Simulate a successful detection of GCE. */
-  grpc_httpcli_set_override(
-      default_creds_gce_detection_httpcli_get_success_override,
-      httpcli_post_should_not_be_called);
+  set_gce_tenancy_for_testing(true);
   grpc_composite_channel_credentials* creds =
       reinterpret_cast<grpc_composite_channel_credentials*>(
-          grpc_google_default_credentials_create());
+          grpc_google_default_credentials_create_impl(true));
 
   /* Verify that the default creds actually embeds a GCE creds. */
   GPR_ASSERT(creds != nullptr);
@@ -960,10 +945,9 @@ static void test_google_default_creds_gce(void) {
   /* Check that we get a cached creds if we call
      grpc_google_default_credentials_create again.
      GCE detection should not occur anymore either. */
-  grpc_httpcli_set_override(httpcli_get_should_not_be_called,
-                            httpcli_post_should_not_be_called);
+  set_gce_tenancy_for_testing(false);
   grpc_channel_credentials* cached_creds =
-      grpc_google_default_credentials_create();
+      grpc_google_default_credentials_create_impl(true);
   GPR_ASSERT(cached_creds == &creds->base);
 
   /* Cleanup. */
@@ -973,17 +957,6 @@ static void test_google_default_creds_gce(void) {
   grpc_override_well_known_credentials_path_getter(nullptr);
 }
 
-static int default_creds_gce_detection_httpcli_get_failure_override(
-    const grpc_httpcli_request* request, grpc_millis deadline,
-    grpc_closure* on_done, grpc_httpcli_response* response) {
-  /* No magic header. */
-  GPR_ASSERT(strcmp(request->http.path, "/") == 0);
-  GPR_ASSERT(strcmp(request->host, "metadata.google.internal") == 0);
-  *response = http_response(200, "");
-  GRPC_CLOSURE_SCHED(on_done, GRPC_ERROR_NONE);
-  return 1;
-}
-
 static void test_no_google_default_creds(void) {
   grpc_flush_cached_google_default_credentials();
   gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
@@ -991,18 +964,14 @@ static void test_no_google_default_creds(void) {
       null_well_known_creds_path_getter);
 
   /* Simulate a successful detection of GCE. */
-  grpc_httpcli_set_override(
-      default_creds_gce_detection_httpcli_get_failure_override,
-      httpcli_post_should_not_be_called);
-  GPR_ASSERT(grpc_google_default_credentials_create() == nullptr);
+  set_gce_tenancy_for_testing(false);
+  GPR_ASSERT(grpc_google_default_credentials_create_impl(true) == nullptr);
 
   /* Try a cached one. GCE detection should not occur anymore. */
-  grpc_httpcli_set_override(httpcli_get_should_not_be_called,
-                            httpcli_post_should_not_be_called);
-  GPR_ASSERT(grpc_google_default_credentials_create() == nullptr);
+  set_gce_tenancy_for_testing(true);
+  GPR_ASSERT(grpc_google_default_credentials_create_impl(true) == nullptr);
 
   /* Cleanup. */
-  grpc_httpcli_set_override(nullptr, nullptr);
   grpc_override_well_known_credentials_path_getter(nullptr);
 }
 
