@@ -123,6 +123,12 @@ CFStreamSync::CFStreamSync(CFReadStreamRef read_stream, CFWriteStreamRef write_s
   CFWriteStreamScheduleWithRunLoop(write_stream, CFRunLoopGetMain(), kCFRunLoopCommonModes);
 }
 
+CFStreamSync::~CFStreamSync() {
+  open_event_.DestroyEvent();
+  read_event_.DestroyEvent();
+  write_event_.DestroyEvent();
+}
+
 void CFStreamSync::NotifyOnOpen(grpc_closure* closure) { open_event_.NotifyOn(closure); }
 
 void CFStreamSync::NotifyOnRead(grpc_closure* closure) { read_event_.NotifyOn(closure); }
@@ -130,9 +136,9 @@ void CFStreamSync::NotifyOnRead(grpc_closure* closure) { read_event_.NotifyOn(cl
 void CFStreamSync::NotifyOnWrite(grpc_closure* closure) { write_event_.NotifyOn(closure); }
 
 void CFStreamSync::Shutdown(grpc_error* error) {
-  open_event_.SetShutdown(error);
-  read_event_.SetShutdown(error);
-  write_event_.SetShutdown(error);
+  open_event_.SetShutdown(GRPC_ERROR_REF(error));
+  read_event_.SetShutdown(GRPC_ERROR_REF(error));
+  write_event_.SetShutdown(GRPC_ERROR_REF(error));
   GRPC_ERROR_UNREF(error);
 }
 

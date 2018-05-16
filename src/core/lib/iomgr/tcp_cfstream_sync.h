@@ -33,7 +33,7 @@ class CFStreamSync final {
  public:
   static CFStreamSync* CreateStreamSync(CFReadStreamRef read_stream,
                                         CFWriteStreamRef write_stream);
-  ~CFStreamSync() {}
+  ~CFStreamSync();
   CFStreamSync(const CFReadStreamRef& ref) = delete;
   CFStreamSync(CFReadStreamRef&& ref) = delete;
   CFStreamSync& operator=(const CFStreamSync& rhs) = delete;
