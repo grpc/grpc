@@ -1,33 +1,18 @@
 #region Copyright notice and license
 
-// Copyright 2015, Google Inc.
-// All rights reserved.
+// Copyright 2015 gRPC authors.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #endregion
 
@@ -48,23 +33,33 @@ namespace Grpc.Core
     public class GrpcEnvironment
     {
         const int MinDefaultThreadPoolSize = 4;
+        const int DefaultBatchContextPoolSharedCapacity = 10000;
+        const int DefaultBatchContextPoolThreadLocalCapacity = 64;
+        const int DefaultRequestCallContextPoolSharedCapacity = 10000;
+        const int DefaultRequestCallContextPoolThreadLocalCapacity = 64;
 
         static object staticLock = new object();
         static GrpcEnvironment instance;
         static int refCount;
         static int? customThreadPoolSize;
         static int? customCompletionQueueCount;
+        static bool inlineHandlers;
+        static int batchContextPoolSharedCapacity = DefaultBatchContextPoolSharedCapacity;
+        static int batchContextPoolThreadLocalCapacity = DefaultBatchContextPoolThreadLocalCapacity;
+        static int requestCallContextPoolSharedCapacity = DefaultRequestCallContextPoolSharedCapacity;
+        static int requestCallContextPoolThreadLocalCapacity = DefaultRequestCallContextPoolThreadLocalCapacity;
         static readonly HashSet<Channel> registeredChannels = new HashSet<Channel>();
         static readonly HashSet<Server> registeredServers = new HashSet<Server>();
 
-        static ILogger logger = new NullLogger();
+        static ILogger logger = new LogLevelFilterLogger(new ConsoleLogger(), LogLevel.Off, true);
 
-        readonly object myLock = new object();
+        readonly IObjectPool<BatchContextSafeHandle> batchContextPool;
+        readonly IObjectPool<RequestCallContextSafeHandle> requestCallContextPool;
         readonly GrpcThreadPool threadPool;
         readonly DebugStats debugStats = new DebugStats();
         readonly AtomicCounter cqPickerCounter = new AtomicCounter();
 
-        bool isClosed;
+        bool isShutdown;
 
         /// <summary>
         /// Returns a reference-counted instance of initialized gRPC environment.
@@ -201,7 +196,7 @@ namespace Grpc.Core
 
         /// <summary>
         /// Sets the number of threads in the gRPC thread pool that polls for internal RPC events.
-        /// Can be only invoke before the <c>GrpcEnviroment</c> is started and cannot be changed afterwards.
+        /// Can be only invoked before the <c>GrpcEnviroment</c> is started and cannot be changed afterwards.
         /// Setting thread pool size is an advanced setting and you should only use it if you know what you are doing.
         /// Most users should rely on the default value provided by gRPC library.
         /// Note: this method is part of an experimental API that can change or be removed without any prior notice.
@@ -218,7 +213,7 @@ namespace Grpc.Core
 
         /// <summary>
         /// Sets the number of completion queues in the  gRPC thread pool that polls for internal RPC events.
-        /// Can be only invoke before the <c>GrpcEnviroment</c> is started and cannot be changed afterwards.
+        /// Can be only invoked before the <c>GrpcEnviroment</c> is started and cannot be changed afterwards.
         /// Setting the number of completions queues is an advanced setting and you should only use it if you know what you are doing.
         /// Most users should rely on the default value provided by gRPC library.
         /// Note: this method is part of an experimental API that can change or be removed without any prior notice.
@@ -234,12 +229,79 @@ namespace Grpc.Core
         }
 
         /// <summary>
+        /// By default, gRPC's internal event handlers get offloaded to .NET default thread pool thread (<c>inlineHandlers=false</c>).
+        /// Setting <c>inlineHandlers</c> to <c>true</c> will allow scheduling the event handlers directly to
+        /// <c>GrpcThreadPool</c> internal threads. That can lead to significant performance gains in some situations,
+        /// but requires user to never block in async code (incorrectly written code can easily lead to deadlocks).
+        /// Inlining handlers is an advanced setting and you should only use it if you know what you are doing.
+        /// Most users should rely on the default value provided by gRPC library.
+        /// Note: this method is part of an experimental API that can change or be removed without any prior notice.
+        /// Note: <c>inlineHandlers=true</c> was the default in gRPC C# v1.4.x and earlier.
+        /// </summary>
+        public static void SetHandlerInlining(bool inlineHandlers)
+        {
+            lock (staticLock)
+            {
+                GrpcPreconditions.CheckState(instance == null, "Can only be set before GrpcEnvironment is initialized");
+                GrpcEnvironment.inlineHandlers = inlineHandlers;
+            }
+        }
+
+        /// <summary>
+        /// Sets the parameters for a pool that caches batch context instances. Reusing batch context instances
+        /// instead of creating a new one for every C core operation helps reducing the GC pressure.
+        /// Can be only invoked before the <c>GrpcEnviroment</c> is started and cannot be changed afterwards.
+        /// This is an advanced setting and you should only use it if you know what you are doing.
+        /// Most users should rely on the default value provided by gRPC library.
+        /// Note: this method is part of an experimental API that can change or be removed without any prior notice.
+        /// </summary>
+        public static void SetBatchContextPoolParams(int sharedCapacity, int threadLocalCapacity)
+        {
+            lock (staticLock)
+            {
+                GrpcPreconditions.CheckState(instance == null, "Can only be set before GrpcEnvironment is initialized");
+                GrpcPreconditions.CheckArgument(sharedCapacity >= 0, "Shared capacity needs to be a non-negative number");
+                GrpcPreconditions.CheckArgument(threadLocalCapacity >= 0, "Thread local capacity needs to be a non-negative number");
+                batchContextPoolSharedCapacity = sharedCapacity;
+                batchContextPoolThreadLocalCapacity = threadLocalCapacity;
+            }
+        }
+
+        /// <summary>
+        /// Sets the parameters for a pool that caches request call context instances. Reusing request call context instances
+        /// instead of creating a new one for every requested call in C core helps reducing the GC pressure.
+        /// Can be only invoked before the <c>GrpcEnviroment</c> is started and cannot be changed afterwards.
+        /// This is an advanced setting and you should only use it if you know what you are doing.
+        /// Most users should rely on the default value provided by gRPC library.
+        /// Note: this method is part of an experimental API that can change or be removed without any prior notice.
+        /// </summary>
+        public static void SetRequestCallContextPoolParams(int sharedCapacity, int threadLocalCapacity)
+        {
+            lock (staticLock)
+            {
+                GrpcPreconditions.CheckState(instance == null, "Can only be set before GrpcEnvironment is initialized");
+                GrpcPreconditions.CheckArgument(sharedCapacity >= 0, "Shared capacity needs to be a non-negative number");
+                GrpcPreconditions.CheckArgument(threadLocalCapacity >= 0, "Thread local capacity needs to be a non-negative number");
+                requestCallContextPoolSharedCapacity = sharedCapacity;
+                requestCallContextPoolThreadLocalCapacity = threadLocalCapacity;
+            }
+        }
+
+        /// <summary>
+        /// Occurs when <c>GrpcEnvironment</c> is about the start the shutdown logic.
+        /// If <c>GrpcEnvironment</c> is later initialized and shutdown, the event will be fired again (unless unregistered first).
+        /// </summary>
+        public static event EventHandler ShuttingDown;
+
+        /// <summary>
         /// Creates gRPC environment.
         /// </summary>
         private GrpcEnvironment()
         {
             GrpcNativeInit();
-            threadPool = new GrpcThreadPool(this, GetThreadPoolSizeOrDefault(), GetCompletionQueueCountOrDefault());
+            batchContextPool = new DefaultObjectPool<BatchContextSafeHandle>(() => BatchContextSafeHandle.Create(), batchContextPoolSharedCapacity, batchContextPoolThreadLocalCapacity);
+            requestCallContextPool = new DefaultObjectPool<RequestCallContextSafeHandle>(() => RequestCallContextSafeHandle.Create(), requestCallContextPoolSharedCapacity, requestCallContextPoolThreadLocalCapacity);
+            threadPool = new GrpcThreadPool(this, GetThreadPoolSizeOrDefault(), GetCompletionQueueCountOrDefault(), inlineHandlers);
             threadPool.Start();
         }
 
@@ -253,6 +315,10 @@ namespace Grpc.Core
                 return this.threadPool.CompletionQueues;
             }
         }
+
+        internal IObjectPool<BatchContextSafeHandle> BatchContextPool => batchContextPool;
+
+        internal IObjectPool<RequestCallContextSafeHandle> RequestCallContextPool => requestCallContextPool;
 
         internal bool IsAlive
         {
@@ -307,13 +373,18 @@ namespace Grpc.Core
         /// </summary>
         private async Task ShutdownAsync()
         {
-            if (isClosed)
+            if (isShutdown)
             {
-                throw new InvalidOperationException("Close has already been called");
+                throw new InvalidOperationException("ShutdownAsync has already been called");
             }
+
+            await Task.Run(() => ShuttingDown?.Invoke(this, null)).ConfigureAwait(false);
+
             await threadPool.StopAsync().ConfigureAwait(false);
+            requestCallContextPool.Dispose();
+            batchContextPool.Dispose();
             GrpcNativeShutdown();
-            isClosed = true;
+            isShutdown = true;
 
             debugStats.CheckOK();
         }

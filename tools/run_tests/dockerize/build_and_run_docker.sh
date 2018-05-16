@@ -1,39 +1,24 @@
 #!/bin/bash
-# Copyright 2016, Google Inc.
-# All rights reserved.
+# Copyright 2016 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 #
 # Builds docker image and runs a command under it.
 # You should never need to call this script on your own.
 
 set -ex
 
-cd $(dirname $0)/../../..
+cd "$(dirname "$0")/../../.."
 git_root=$(pwd)
 cd -
 
@@ -41,27 +26,48 @@ cd -
 # DOCKERFILE_DIR - Directory in which Dockerfile file is located.
 # DOCKER_RUN_SCRIPT - Script to run under docker (relative to grpc repo root)
 # OUTPUT_DIR - Directory that will be copied from inside docker after finishing.
+# DOCKERHUB_ORGANIZATION - If set, pull a prebuilt image from given dockerhub org.
+# DOCKER_BASE_IMAGE - If set, pull the latest base image.
 # $@ - Extra args to pass to docker run
 
 # Use image name based on Dockerfile location checksum
-DOCKER_IMAGE_NAME=$(basename $DOCKERFILE_DIR)_$(sha1sum $DOCKERFILE_DIR/Dockerfile | cut -f1 -d\ )
+DOCKER_IMAGE_NAME=$(basename "$DOCKERFILE_DIR")_$(sha1sum "$DOCKERFILE_DIR/Dockerfile" | cut -f1 -d\ )
 
-# Make sure docker image has been built. Should be instantaneous if so.
-docker build -t $DOCKER_IMAGE_NAME $DOCKERFILE_DIR
+# Pull the base image to force an update
+if [ "$DOCKER_BASE_IMAGE" != "" ]
+then
+  time docker pull "$DOCKER_BASE_IMAGE"
+fi
+
+if [ "$DOCKERHUB_ORGANIZATION" != "" ]
+then
+  DOCKER_IMAGE_NAME=$DOCKERHUB_ORGANIZATION/$DOCKER_IMAGE_NAME
+  time docker pull "$DOCKER_IMAGE_NAME"
+else
+  # Make sure docker image has been built. Should be instantaneous if so.
+  docker build -t "$DOCKER_IMAGE_NAME" "$DOCKERFILE_DIR"
+fi
 
 # Choose random name for docker container
 CONTAINER_NAME="build_and_run_docker_$(uuidgen)"
 
 # Run command inside docker
+# TODO: use a proper array instead of $EXTRA_DOCKER_ARGS
+# shellcheck disable=SC2086
 docker run \
   "$@" \
   -e EXTERNAL_GIT_ROOT="/var/local/jenkins/grpc" \
   -e THIS_IS_REALLY_NEEDED='see https://github.com/docker/docker/issues/14203 for why docker is awful' \
+  -e "KOKORO_BUILD_ID=$KOKORO_BUILD_ID" \
+  -e "KOKORO_BUILD_NUMBER=$KOKORO_BUILD_NUMBER" \
+  -e "KOKORO_BUILD_URL=$KOKORO_BUILD_URL" \
+  -e "KOKORO_JOB_NAME=$KOKORO_JOB_NAME" \
   -v "$git_root:/var/local/jenkins/grpc:ro" \
   -w /var/local/git/grpc \
-  --name=$CONTAINER_NAME \
-  $DOCKER_IMAGE_NAME \
-  bash -l "/var/local/jenkins/grpc/$DOCKER_RUN_SCRIPT" || FAILED="true"
+  --name="$CONTAINER_NAME" \
+  $EXTRA_DOCKER_ARGS \
+  "$DOCKER_IMAGE_NAME" \
+  /bin/bash -l "/var/local/jenkins/grpc/$DOCKER_RUN_SCRIPT" || FAILED="true"
 
 # Copy output artifacts
 if [ "$OUTPUT_DIR" != "" ]
@@ -70,7 +76,7 @@ then
 fi
 
 # remove the container, possibly killing it first
-docker rm -f $CONTAINER_NAME || true
+docker rm -f "$CONTAINER_NAME" || true
 
 if [ "$FAILED" != "" ]
 then

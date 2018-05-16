@@ -1,0 +1,98 @@
+// Custom options for defining:
+// - Maximum size of string/bytes
+// - Maximum number of elements in array
+//
+// These are used by nanopb to generate statically allocable structures
+// for memory-limited environments.
+
+syntax = "proto2";
+import "google/protobuf/descriptor.proto";
+
+option java_package = "fi.kapsi.koti.jpa.nanopb";
+
+enum FieldType {
+    FT_DEFAULT = 0; // Automatically decide field type, generate static field if possible.
+    FT_CALLBACK = 1; // Always generate a callback field.
+    FT_POINTER = 4; // Always generate a dynamically allocated field.
+    FT_STATIC = 2; // Generate a static field or raise an exception if not possible.
+    FT_IGNORE = 3; // Ignore the field completely.
+    FT_INLINE = 5; // Always generate an inline array of fixed size.
+}
+
+enum IntSize {
+    IS_DEFAULT = 0; // Default, 32/64bit based on type in .proto
+    IS_8 = 8;
+    IS_16 = 16;
+    IS_32 = 32;
+    IS_64 = 64;
+}
+
+// This is the inner options message, which basically defines options for
+// a field. When it is used in message or file scope, it applies to all
+// fields.
+message NanoPBOptions {
+  // Allocated size for 'bytes' and 'string' fields.
+  optional int32 max_size = 1;
+  
+  // Allocated number of entries in arrays ('repeated' fields)
+  optional int32 max_count = 2;
+  
+  // Size of integer fields. Can save some memory if you don't need
+  // full 32 bits for the value.
+  optional IntSize int_size = 7 [default = IS_DEFAULT];
+
+  // Force type of field (callback or static allocation)
+  optional FieldType type = 3 [default = FT_DEFAULT];
+  
+  // Use long names for enums, i.e. EnumName_EnumValue.
+  optional bool long_names = 4 [default = true];
+  
+  // Add 'packed' attribute to generated structs.
+  // Note: this cannot be used on CPUs that break on unaligned
+  // accesses to variables.
+  optional bool packed_struct = 5 [default = false];
+  
+  // Add 'packed' attribute to generated enums.
+  optional bool packed_enum = 10 [default = false];
+  
+  // Skip this message
+  optional bool skip_message = 6 [default = false];
+
+  // Generate oneof fields as normal optional fields instead of union.
+  optional bool no_unions = 8 [default = false];
+
+  // integer type tag for a message
+  optional uint32 msgid = 9;
+
+  // decode oneof as anonymous union
+  optional bool anonymous_oneof = 11 [default = false];
+}
+
+// Extensions to protoc 'Descriptor' type in order to define options
+// inside a .proto file.
+//
+// Protocol Buffers extension number registry
+// --------------------------------
+// Project:  Nanopb
+// Contact:  Petteri Aimonen <jpa@kapsi.fi>
+// Web site: http://kapsi.fi/~jpa/nanopb
+// Extensions: 1010 (all types)
+// --------------------------------
+
+extend google.protobuf.FileOptions {
+    optional NanoPBOptions nanopb_fileopt = 1010;
+}
+
+extend google.protobuf.MessageOptions {
+    optional NanoPBOptions nanopb_msgopt = 1010;
+}
+
+extend google.protobuf.EnumOptions {
+    optional NanoPBOptions nanopb_enumopt = 1010;
+}
+
+extend google.protobuf.FieldOptions {
+    optional NanoPBOptions nanopb = 1010;
+}
+
+

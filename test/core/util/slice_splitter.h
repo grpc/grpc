@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -37,8 +22,8 @@
 /* utility function to split/merge slices together to help create test
    cases */
 
-#include <grpc/support/slice.h>
-#include <grpc/support/slice_buffer.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
 
 typedef enum {
   /* merge all input slices into a single slice */
@@ -51,18 +36,18 @@ typedef enum {
 
 /* allocates *dst_slices; caller must unref all slices in dst_slices then free
    it */
-void grpc_split_slices(grpc_slice_split_mode mode, gpr_slice *src_slices,
-                       size_t src_slice_count, gpr_slice **dst_slices,
-                       size_t *dst_slice_count);
+void grpc_split_slices(grpc_slice_split_mode mode, grpc_slice* src_slices,
+                       size_t src_slice_count, grpc_slice** dst_slices,
+                       size_t* dst_slice_count);
 
 void grpc_split_slices_to_buffer(grpc_slice_split_mode mode,
-                                 gpr_slice *src_slices, size_t src_slice_count,
-                                 gpr_slice_buffer *dst);
-void grpc_split_slice_buffer(grpc_slice_split_mode mode, gpr_slice_buffer *src,
-                             gpr_slice_buffer *dst);
+                                 grpc_slice* src_slices, size_t src_slice_count,
+                                 grpc_slice_buffer* dst);
+void grpc_split_slice_buffer(grpc_slice_split_mode mode, grpc_slice_buffer* src,
+                             grpc_slice_buffer* dst);
 
-gpr_slice grpc_slice_merge(gpr_slice *slices, size_t nslices);
+grpc_slice grpc_slice_merge(grpc_slice* slices, size_t nslices);
 
-const char *grpc_slice_split_mode_name(grpc_slice_split_mode mode);
+const char* grpc_slice_split_mode_name(grpc_slice_split_mode mode);
 
 #endif /* GRPC_TEST_CORE_UTIL_SLICE_SPLITTER_H */

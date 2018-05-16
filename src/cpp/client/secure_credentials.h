@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -36,53 +21,60 @@
 
 #include <grpc/grpc_security.h>
 
-#include <grpc++/security/credentials.h>
-#include <grpc++/support/config.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/support/config.h>
 
 #include "src/cpp/server/thread_pool_interface.h"
 
 namespace grpc {
 
-class SecureChannelCredentials GRPC_FINAL : public ChannelCredentials {
+class SecureChannelCredentials final : public ChannelCredentials {
  public:
   explicit SecureChannelCredentials(grpc_channel_credentials* c_creds);
   ~SecureChannelCredentials() { grpc_channel_credentials_release(c_creds_); }
   grpc_channel_credentials* GetRawCreds() { return c_creds_; }
 
   std::shared_ptr<grpc::Channel> CreateChannel(
-      const string& target, const grpc::ChannelArguments& args) GRPC_OVERRIDE;
-  SecureChannelCredentials* AsSecureCredentials() GRPC_OVERRIDE { return this; }
+      const string& target, const grpc::ChannelArguments& args) override;
+  SecureChannelCredentials* AsSecureCredentials() override { return this; }
 
  private:
   grpc_channel_credentials* const c_creds_;
 };
 
-class SecureCallCredentials GRPC_FINAL : public CallCredentials {
+class SecureCallCredentials final : public CallCredentials {
  public:
   explicit SecureCallCredentials(grpc_call_credentials* c_creds);
   ~SecureCallCredentials() { grpc_call_credentials_release(c_creds_); }
   grpc_call_credentials* GetRawCreds() { return c_creds_; }
 
-  bool ApplyToCall(grpc_call* call) GRPC_OVERRIDE;
-  SecureCallCredentials* AsSecureCredentials() GRPC_OVERRIDE { return this; }
+  bool ApplyToCall(grpc_call* call) override;
+  SecureCallCredentials* AsSecureCredentials() override { return this; }
 
  private:
   grpc_call_credentials* const c_creds_;
 };
 
-class MetadataCredentialsPluginWrapper GRPC_FINAL {
+class MetadataCredentialsPluginWrapper final : private GrpcLibraryCodegen {
  public:
   static void Destroy(void* wrapper);
-  static void GetMetadata(void* wrapper, grpc_auth_metadata_context context,
-                          grpc_credentials_plugin_metadata_cb cb,
-                          void* user_data);
+  static int GetMetadata(
+      void* wrapper, grpc_auth_metadata_context context,
+      grpc_credentials_plugin_metadata_cb cb, void* user_data,
+      grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
+      size_t* num_creds_md, grpc_status_code* status,
+      const char** error_details);
 
   explicit MetadataCredentialsPluginWrapper(
       std::unique_ptr<MetadataCredentialsPlugin> plugin);
 
  private:
-  void InvokePlugin(grpc_auth_metadata_context context,
-                    grpc_credentials_plugin_metadata_cb cb, void* user_data);
+  void InvokePlugin(
+      grpc_auth_metadata_context context,
+      grpc_credentials_plugin_metadata_cb cb, void* user_data,
+      grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
+      size_t* num_creds_md, grpc_status_code* status_code,
+      const char** error_details);
   std::unique_ptr<ThreadPoolInterface> thread_pool_;
   std::unique_ptr<MetadataCredentialsPlugin> plugin_;
 };

@@ -1,74 +1,93 @@
 # How to contribute
 
-We definitely welcome patches and contribution to grpc! Here is some guideline
-and information about how to do so.
+We definitely welcome your patches and contributions to gRPC!
 
-## Getting started
+If you are new to github, please start by reading [Pull Request
+howto](https://help.github.com/articles/about-pull-requests/)
 
-### Legal requirements
+## Legal requirements
 
 In order to protect both you and ourselves, you will need to sign the
-[Contributor License Agreement](https://cla.developers.google.com/clas).
+[Contributor License
+Agreement](https://identity.linuxfoundation.org/projects/cncf).
 
-### Technical requirements
+## Running tests
 
-You will need several tools to work with this repository. In addition to all of
-the packages described in the [INSTALL](INSTALL.md) file, you will also need
-python, and the mako template renderer. To install the latter, using pip, one
-should simply be able to do `pip install mako`.
+Use `tools/run_tests/run_tests.py` script to run the unit tests.  See
+[tools/run_tests](tools/run_tests) for how to run tests for a given language.
 
-In order to run all of the tests we provide, you will need valgrind and clang.
-More specifically, under debian, you will need the package libc++-dev to
-properly run all the tests.
+Prerequisites for building and running tests are listed in
+[INSTALL.md](INSTALL.md) and in `src/YOUR-LANGUAGE` (e.g. `src/csharp`)
 
-Compiling and running grpc C++ tests depend on protobuf 3.0.0, gtest and gflags.
-Although gflags is provided in third_party, you will need to manually install
-that dependency on your system to run these tests. Under a Debian or Ubuntu
-system, you can install the gtests and gflags packages using apt-get:
+## Generated project files
 
-```sh
- $ [sudo] apt-get install libgflags-dev libgtest-dev
-```
+To ease maintenance of language- and platform- specific build systems, many
+projects files are generated using templates and should not be edited by hand.
+Run `tools/buildgen/generate_projects.sh` to regenerate.  See
+[templates](templates) for details.
 
-If you are planning to work on any of the languages other than C and C++, you
-will also need their appropriate development environments.
+As a rule of thumb, if you see the "sanity tests" failing you've most likely
+edited generated files or you didn't regenerate the projects properly (or your
+code formatting doesn't match our code style).
 
-If you want to work under Windows, we recommend the use of Visual Studio 2013.
-The [Community or Express editions](http://www.visualstudio.com/en-us/downloads/download-visual-studio-vs.aspx)
-are free and suitable for developing with grpc. Note however that our test
-environment and tools are available for Unix environments only at the moment.
+## Guidelines for Pull Requests
+How to get your contributions merged smoothly and quickly.
+ 
+- Create **small PRs** that are narrowly focused on **addressing a single
+  concern**.  We often times receive PRs that are trying to fix several things
+  at a time, but only one fix is considered acceptable, nothing gets merged and
+  both author's & review's time is wasted.  Create more PRs to address different
+  concerns and everyone will be happy.
+ 
+- For speculative changes, consider opening an issue and discussing it first.
+  If you are suggesting a behavioral or API change, consider starting with a
+  [gRFC proposal](https://github.com/grpc/proposal).
+ 
+- Provide a good **PR description** as a record of **what** change is being made
+  and **why** it was made.  Link to a GitHub issue if it exists.
+ 
+- Don't fix code style and formatting unless you are already changing that line
+  to address an issue.  PRs with irrelevant changes won't be merged.  If you do
+  want to fix formatting or style, do that in a separate PR.
+ 
+- Unless your PR is trivial, you should expect there will be reviewer comments
+  that you'll need to address before merging.  We expect you to be reasonably
+  responsive to those comments, otherwise the PR will be closed after 2-3 weeks
+  of inactivity.
 
-## Testing your changes
+- If you have non-trivial contributions, please consider adding an entry to [the
+  AUTHORS file](https://github.com/grpc/grpc/blob/master/AUTHORS) listing the
+  copyright holder for the contribution (yourself, if you are signing the
+  individual CLA, or your company, for corporate CLAs) in the same PR as your
+  contribution.  This needs to be done only once, for each company, or
+  individual.
+ 
+- Maintain **clean commit history** and use **meaningful commit messages**.
+  PRs with messy commit history are difficult to review and won't be merged.
+  Use `rebase -i upstream/master` to curate your commit history and/or to
+  bring in latest changes from master (but avoid rebasing in the middle of
+  a code review).
+ 
+- Keep your PR up to date with upstream/master (if there are merge conflicts,
+  we can't really merge your change).
+ 
+- If you are regenerating the projects using
+  `tools/buildgen/generate_projects.sh`, make changes to generated files a
+  separate commit with commit message `regenerate projects`.  Mixing changes
+  to generated and hand-written files make your PR difficult to review.
+  Note that running this script requires the installation of Python packages
+  `pyyaml` and `mako` (typically installed using `pip`) as well as a recent
+  version of [`go`](https://golang.org/doc/install#install).
+ 
+- **All tests need to be passing** before your change can be merged.
+  We recommend you **run tests locally** before creating your PR to catch
+  breakages early on (see [tools/run_tests](tools/run_tests).  Ultimately, the
+  green signal will be provided by our testing infrastructure.  The reviewer
+  will help you if there are test failures that seem not related to the change
+  you are making.
+ 
+- Exceptions to the rules can be made if there's a compelling reason for doing
+  so.
 
-We provide a tool to help run the suite of tests in various environments.
-In order to run most of the available tests, one would need to run:
 
-`./tools/run_tests/run_tests.py`
 
-If you want to run tests for any of the languages {c, c++, csharp, node, objc, php, python, ruby}, do this:
-
-`./tools/run_tests/run_tests.py -l <lang>`
-
-To know about the list of available commands, do this:
-
-`./tools/run_tests/run_tests.py -h`
-
-If you are running tests for ObjC on osx, follow these steps before running tests:
-* install Xcode command-line tools by running
-`sudo xcode-select --install`
-* install macports from https://www.macports.org/install.php
-* install autoconf, automake, libtool, gflags, cmake using macports
-* restart your terminal window or run source ~/.bash_profile to pick up the new PATH changes.
-
-## Adding or removing source code
-
-Each language uses its own build system to work. Currently, the root's Makefile
-and the Visual Studio project files are building only the C and C++ source code.
-In order to ease the maintenance of these files, we have a
-template system. Please do not contribute manual changes to any of the generated
-files. Instead, modify the template files, or the build.yaml file, and
-re-generate the project files using the following command:
-
-`./tools/buildgen/generate_projects.sh`
-
-You'll find more information about this in the [templates](templates) folder.

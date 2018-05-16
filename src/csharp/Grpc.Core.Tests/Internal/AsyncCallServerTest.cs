@@ -1,38 +1,24 @@
 #region Copyright notice and license
 
-// Copyright 2015, Google Inc.
-// All rights reserved.
+// Copyright 2015 gRPC authors.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #endregion
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
@@ -78,7 +64,7 @@ namespace Grpc.Core.Internal.Tests
         public void CancelNotificationAfterStartDisposes()
         {
             var finishedTask = asyncCallServer.ServerSideCallAsync();
-            fakeCall.ReceivedCloseOnServerHandler(true, cancelled: true);
+            fakeCall.ReceivedCloseOnServerCallback.OnReceivedCloseOnServer(true, cancelled: true);
             AssertFinished(asyncCallServer, fakeCall, finishedTask);
         }
 
@@ -90,8 +76,8 @@ namespace Grpc.Core.Internal.Tests
 
             var moveNextTask = requestStream.MoveNext();
 
-            fakeCall.ReceivedCloseOnServerHandler(true, cancelled: true);
-            fakeCall.ReceivedMessageHandler(true, null);
+            fakeCall.ReceivedCloseOnServerCallback.OnReceivedCloseOnServer(true, cancelled: true);
+            fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, null);
             Assert.IsFalse(moveNextTask.Result);
 
             AssertFinished(asyncCallServer, fakeCall, finishedTask);
@@ -103,7 +89,7 @@ namespace Grpc.Core.Internal.Tests
             var finishedTask = asyncCallServer.ServerSideCallAsync();
             var requestStream = new ServerRequestStream<string, string>(asyncCallServer);
 
-            fakeCall.ReceivedCloseOnServerHandler(true, cancelled: true);
+            fakeCall.ReceivedCloseOnServerCallback.OnReceivedCloseOnServer(true, cancelled: true);
 
             // Check that starting a read after cancel notification has been processed is legal.
             var moveNextTask = requestStream.MoveNext();
@@ -121,10 +107,10 @@ namespace Grpc.Core.Internal.Tests
             // if a read completion's success==false, the request stream will silently finish
             // and we rely on C core cancelling the call.
             var moveNextTask = requestStream.MoveNext();
-            fakeCall.ReceivedMessageHandler(false, null);
+            fakeCall.ReceivedMessageCallback.OnReceivedMessage(false, null);
             Assert.IsFalse(moveNextTask.Result);
 
-            fakeCall.ReceivedCloseOnServerHandler(true, cancelled: true);
+            fakeCall.ReceivedCloseOnServerCallback.OnReceivedCloseOnServer(true, cancelled: true);
             AssertFinished(asyncCallServer, fakeCall, finishedTask);
         }
 
@@ -134,7 +120,7 @@ namespace Grpc.Core.Internal.Tests
             var finishedTask = asyncCallServer.ServerSideCallAsync();
             var responseStream = new ServerResponseStream<string, string>(asyncCallServer);
 
-            fakeCall.ReceivedCloseOnServerHandler(true, cancelled: true);
+            fakeCall.ReceivedCloseOnServerCallback.OnReceivedCloseOnServer(true, cancelled: true);
 
             // TODO(jtattermusch): should we throw a different exception type instead?
             Assert.Throws(typeof(InvalidOperationException), () => responseStream.WriteAsync("request1"));
@@ -148,11 +134,10 @@ namespace Grpc.Core.Internal.Tests
             var responseStream = new ServerResponseStream<string, string>(asyncCallServer);
 
             var writeTask = responseStream.WriteAsync("request1");
-            fakeCall.SendCompletionHandler(false);
-            // TODO(jtattermusch): should we throw a different exception type instead?
-            Assert.ThrowsAsync(typeof(InvalidOperationException), async () => await writeTask);
+            fakeCall.SendCompletionCallback.OnSendCompletion(false);
+            Assert.ThrowsAsync(typeof(IOException), async () => await writeTask);
 
-            fakeCall.ReceivedCloseOnServerHandler(true, cancelled: true);
+            fakeCall.ReceivedCloseOnServerCallback.OnReceivedCloseOnServer(true, cancelled: true);
             AssertFinished(asyncCallServer, fakeCall, finishedTask);
         }
 
@@ -165,13 +150,13 @@ namespace Grpc.Core.Internal.Tests
             var writeTask = responseStream.WriteAsync("request1");
             var writeStatusTask = asyncCallServer.SendStatusFromServerAsync(Status.DefaultSuccess, new Metadata(), null);
 
-            fakeCall.SendCompletionHandler(true);
-            fakeCall.SendStatusFromServerHandler(true);
+            fakeCall.SendCompletionCallback.OnSendCompletion(true);
+            fakeCall.SendStatusFromServerCallback.OnSendStatusFromServerCompletion(true);
 
             Assert.DoesNotThrowAsync(async () => await writeTask);
             Assert.DoesNotThrowAsync(async () => await writeStatusTask);
 
-            fakeCall.ReceivedCloseOnServerHandler(true, cancelled: true);
+            fakeCall.ReceivedCloseOnServerCallback.OnReceivedCloseOnServer(true, cancelled: true);
 
             AssertFinished(asyncCallServer, fakeCall, finishedTask);
         }
@@ -185,8 +170,8 @@ namespace Grpc.Core.Internal.Tests
             asyncCallServer.SendStatusFromServerAsync(Status.DefaultSuccess, new Metadata(), null);
             Assert.ThrowsAsync(typeof(InvalidOperationException), async () => await responseStream.WriteAsync("request1"));
 
-            fakeCall.SendStatusFromServerHandler(true);
-            fakeCall.ReceivedCloseOnServerHandler(true, cancelled: true);
+            fakeCall.SendStatusFromServerCallback.OnSendStatusFromServerCompletion(true);
+            fakeCall.ReceivedCloseOnServerCallback.OnReceivedCloseOnServer(true, cancelled: true);
 
             AssertFinished(asyncCallServer, fakeCall, finishedTask);
         }

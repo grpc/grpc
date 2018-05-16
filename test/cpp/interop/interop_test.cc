@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -44,16 +29,18 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include <gflags/gflags.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include "test/core/util/port.h"
+#include "test/cpp/util/test_config.h"
 
-extern "C" {
+#include "src/core/lib/gpr/host_port.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
-#include "src/core/lib/support/string.h"
-}
+
+DEFINE_string(extra_server_flags, "", "Extra flags to pass to server.");
 
 int test_client(const char* root, const char* host, int port) {
   int status;
@@ -80,6 +67,7 @@ int test_client(const char* root, const char* host, int port) {
 }
 
 int main(int argc, char** argv) {
+  grpc::testing::InitTest(&argc, &argv, true);
   char* me = argv[0];
   char* lslash = strrchr(me, '/');
   char root[1024];
@@ -105,19 +93,23 @@ int main(int argc, char** argv) {
   /* start the server */
   svr = fork();
   if (svr == 0) {
-    char* binary_path;
-    char* port_arg;
-    gpr_asprintf(&binary_path, "%s/interop_server", root);
-    gpr_asprintf(&port_arg, "--port=%d", port);
-
-    execl(binary_path, binary_path, port_arg, NULL);
-
-    gpr_free(binary_path);
-    gpr_free(port_arg);
+    const size_t num_args = 3 + !FLAGS_extra_server_flags.empty();
+    char** args = (char**)gpr_malloc(sizeof(char*) * num_args);
+    memset(args, 0, sizeof(char*) * num_args);
+    gpr_asprintf(&args[0], "%s/interop_server", root);
+    gpr_asprintf(&args[1], "--port=%d", port);
+    if (!FLAGS_extra_server_flags.empty()) {
+      args[2] = gpr_strdup(FLAGS_extra_server_flags.c_str());
+    }
+    execv(args[0], args);
+    for (size_t i = 0; i < num_args - 1; ++i) {
+      gpr_free(args[i]);
+    }
+    gpr_free(args);
     return 1;
   }
   /* wait a little */
-  sleep(2);
+  sleep(10);
   /* start the clients */
   ret = test_client(root, "127.0.0.1", port);
   if (ret != 0) return ret;

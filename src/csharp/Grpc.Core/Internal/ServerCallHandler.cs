@@ -1,33 +1,18 @@
 #region Copyright notice and license
 
-// Copyright 2015, Google Inc.
-// All rights reserved.
+// Copyright 2015 gRPC authors.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #endregion
 
@@ -36,6 +21,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Grpc.Core.Interceptors;
 using Grpc.Core.Internal;
 using Grpc.Core.Logging;
 using Grpc.Core.Utils;
@@ -45,6 +31,7 @@ namespace Grpc.Core.Internal
     internal interface IServerCallHandler
     {
         Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq);
+        IServerCallHandler Intercept(Interceptor interceptor);
     }
 
     internal class UnaryServerCallHandler<TRequest, TResponse> : IServerCallHandler
@@ -75,27 +62,27 @@ namespace Grpc.Core.Internal
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
             Status status;
-            Tuple<TResponse,WriteFlags> responseTuple = null;
-            var context = HandlerUtils.NewContext(newRpc, asyncCall.Peer, responseStream, asyncCall.CancellationToken);
+            AsyncCallServer<TRequest,TResponse>.ResponseWithFlags? responseWithFlags = null;
+            var context = HandlerUtils.NewContext(newRpc, responseStream, asyncCall.CancellationToken);
             try
             {
                 GrpcPreconditions.CheckArgument(await requestStream.MoveNext().ConfigureAwait(false));
                 var request = requestStream.Current;
                 var response = await handler(request, context).ConfigureAwait(false);
                 status = context.Status;
-                responseTuple = Tuple.Create(response, HandlerUtils.GetWriteFlags(context.WriteOptions));
+                responseWithFlags = new AsyncCallServer<TRequest, TResponse>.ResponseWithFlags(response, HandlerUtils.GetWriteFlags(context.WriteOptions));
             } 
             catch (Exception e)
             {
                 if (!(e is RpcException))
                 {
-                    Logger.Warning(e, "Exception occured in handler.");
+                    Logger.Warning(e, "Exception occurred in the handler or an interceptor.");
                 }
-                status = HandlerUtils.StatusFromException(e);
+                status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
             }
             try
             {
-                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseTuple).ConfigureAwait(false);
+                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseWithFlags).ConfigureAwait(false);
             }
             catch (Exception)
             {
@@ -103,6 +90,11 @@ namespace Grpc.Core.Internal
                 throw;
             }
             await finishedTask.ConfigureAwait(false);
+        }
+
+        public IServerCallHandler Intercept(Interceptor interceptor)
+        {
+            return new UnaryServerCallHandler<TRequest, TResponse>(method, (request, context) => interceptor.UnaryServerHandler(request, context, handler));
         }
     }
 
@@ -134,7 +126,7 @@ namespace Grpc.Core.Internal
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
             Status status;
-            var context = HandlerUtils.NewContext(newRpc, asyncCall.Peer, responseStream, asyncCall.CancellationToken);
+            var context = HandlerUtils.NewContext(newRpc, responseStream, asyncCall.CancellationToken);
             try
             {
                 GrpcPreconditions.CheckArgument(await requestStream.MoveNext().ConfigureAwait(false));
@@ -146,9 +138,9 @@ namespace Grpc.Core.Internal
             {
                 if (!(e is RpcException))
                 {
-                    Logger.Warning(e, "Exception occured in handler.");
+                    Logger.Warning(e, "Exception occurred in the handler or an interceptor.");
                 }
-                status = HandlerUtils.StatusFromException(e);
+                status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
             }
 
             try
@@ -161,6 +153,11 @@ namespace Grpc.Core.Internal
                 throw;
             }
             await finishedTask.ConfigureAwait(false);
+        }
+
+        public IServerCallHandler Intercept(Interceptor interceptor)
+        {
+            return new ServerStreamingServerCallHandler<TRequest, TResponse>(method, (request, responseStream, context) => interceptor.ServerStreamingServerHandler(request, responseStream, context, handler));
         }
     }
 
@@ -192,26 +189,26 @@ namespace Grpc.Core.Internal
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
             Status status;
-            Tuple<TResponse,WriteFlags> responseTuple = null;
-            var context = HandlerUtils.NewContext(newRpc, asyncCall.Peer, responseStream, asyncCall.CancellationToken);
+            AsyncCallServer<TRequest, TResponse>.ResponseWithFlags? responseWithFlags = null;
+            var context = HandlerUtils.NewContext(newRpc, responseStream, asyncCall.CancellationToken);
             try
             {
                 var response = await handler(requestStream, context).ConfigureAwait(false);
                 status = context.Status;
-                responseTuple = Tuple.Create(response, HandlerUtils.GetWriteFlags(context.WriteOptions));
+                responseWithFlags = new AsyncCallServer<TRequest, TResponse>.ResponseWithFlags(response, HandlerUtils.GetWriteFlags(context.WriteOptions));
             }
             catch (Exception e)
             {
                 if (!(e is RpcException))
                 {
-                    Logger.Warning(e, "Exception occured in handler.");
+                    Logger.Warning(e, "Exception occurred in the handler or an interceptor.");
                 }
-                status = HandlerUtils.StatusFromException(e);
+                status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
             }
 
             try
             {
-                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseTuple).ConfigureAwait(false);
+                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseWithFlags).ConfigureAwait(false);
             }
             catch (Exception)
             {
@@ -219,6 +216,11 @@ namespace Grpc.Core.Internal
                 throw;
             }
             await finishedTask.ConfigureAwait(false);
+        }
+
+        public IServerCallHandler Intercept(Interceptor interceptor)
+        {
+            return new ClientStreamingServerCallHandler<TRequest, TResponse>(method, (requestStream, context) => interceptor.ClientStreamingServerHandler(requestStream, context, handler));
         }
     }
 
@@ -250,7 +252,7 @@ namespace Grpc.Core.Internal
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
             Status status;
-            var context = HandlerUtils.NewContext(newRpc, asyncCall.Peer, responseStream, asyncCall.CancellationToken);
+            var context = HandlerUtils.NewContext(newRpc, responseStream, asyncCall.CancellationToken);
             try
             {
                 await handler(requestStream, responseStream, context).ConfigureAwait(false);
@@ -260,9 +262,9 @@ namespace Grpc.Core.Internal
             {
                 if (!(e is RpcException))
                 {
-                    Logger.Warning(e, "Exception occured in handler.");
+                    Logger.Warning(e, "Exception occurred in the handler or an interceptor.");
                 }
-                status = HandlerUtils.StatusFromException(e);
+                status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
             }
             try
             {
@@ -275,32 +277,62 @@ namespace Grpc.Core.Internal
             }
             await finishedTask.ConfigureAwait(false);
         }
+
+        public IServerCallHandler Intercept(Interceptor interceptor)
+        {
+            return new DuplexStreamingServerCallHandler<TRequest, TResponse>(method, (requestStream, responseStream, context) => interceptor.DuplexStreamingServerHandler(requestStream, responseStream, context, handler));
+        }
     }
 
-    internal class NoSuchMethodCallHandler : IServerCallHandler
+    internal class UnimplementedMethodCallHandler : IServerCallHandler
     {
-        public static readonly NoSuchMethodCallHandler Instance = new NoSuchMethodCallHandler();
+        public static readonly UnimplementedMethodCallHandler Instance = new UnimplementedMethodCallHandler();
 
-        public async Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
+        DuplexStreamingServerCallHandler<byte[], byte[]> callHandlerImpl;
+
+        public UnimplementedMethodCallHandler()
         {
-            // We don't care about the payload type here.
-            var asyncCall = new AsyncCallServer<byte[], byte[]>(
-                (payload) => payload, (payload) => payload, newRpc.Server);
-            
-            asyncCall.Initialize(newRpc.Call, cq);
-            var finishedTask = asyncCall.ServerSideCallAsync();
-            await asyncCall.SendStatusFromServerAsync(new Status(StatusCode.Unimplemented, ""), Metadata.Empty, null).ConfigureAwait(false);
-            await finishedTask.ConfigureAwait(false);
+            var marshaller = new Marshaller<byte[]>((payload) => payload, (payload) => payload);
+            var method = new Method<byte[], byte[]>(MethodType.DuplexStreaming, "", "", marshaller, marshaller);
+            this.callHandlerImpl = new DuplexStreamingServerCallHandler<byte[], byte[]>(method, new DuplexStreamingServerMethod<byte[], byte[]>(UnimplementedMethod));
+        }
+
+        /// <summary>
+        /// Handler used for unimplemented method.
+        /// </summary>
+        private Task UnimplementedMethod(IAsyncStreamReader<byte[]> requestStream, IServerStreamWriter<byte[]> responseStream, ServerCallContext ctx)
+        {
+            ctx.Status = new Status(StatusCode.Unimplemented, "");
+            return TaskUtils.CompletedTask;
+        }
+
+        public Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
+        {
+            return callHandlerImpl.HandleCall(newRpc, cq);
+        }
+
+        public IServerCallHandler Intercept(Interceptor interceptor)
+        {
+            return this;  // Do not intercept unimplemented methods.
         }
     }
 
     internal static class HandlerUtils
     {
-        public static Status StatusFromException(Exception e)
+        public static Status GetStatusFromExceptionAndMergeTrailers(Exception e, Metadata callContextResponseTrailers)
         {
             var rpcException = e as RpcException;
             if (rpcException != null)
             {
+                // There are two sources of metadata entries on the server-side:
+                // 1. serverCallContext.ResponseTrailers
+                // 2. trailers in RpcException thrown by user code in server side handler.
+                // As metadata allows duplicate keys, the logical thing to do is
+                // to just merge trailers from RpcException into serverCallContext.ResponseTrailers.
+                foreach (var entry in rpcException.Trailers)
+                {
+                    callContextResponseTrailers.Add(entry);
+                }
                 // use the status thrown by handler.
                 return rpcException.Status;
             }
@@ -313,13 +345,13 @@ namespace Grpc.Core.Internal
             return writeOptions != null ? writeOptions.Flags : default(WriteFlags);
         }
 
-        public static ServerCallContext NewContext<TRequest, TResponse>(ServerRpcNew newRpc, string peer, ServerResponseStream<TRequest, TResponse> serverResponseStream, CancellationToken cancellationToken)
+        public static ServerCallContext NewContext<TRequest, TResponse>(ServerRpcNew newRpc, ServerResponseStream<TRequest, TResponse> serverResponseStream, CancellationToken cancellationToken)
             where TRequest : class
             where TResponse : class
         {
             DateTime realtimeDeadline = newRpc.Deadline.ToClockType(ClockType.Realtime).ToDateTime();
 
-            return new ServerCallContext(newRpc.Call, newRpc.Method, newRpc.Host, peer, realtimeDeadline,
+            return new ServerCallContext(newRpc.Call, newRpc.Method, newRpc.Host, realtimeDeadline,
                 newRpc.RequestMetadata, cancellationToken, serverResponseStream.WriteResponseHeadersAsync, serverResponseStream);
         }
     }

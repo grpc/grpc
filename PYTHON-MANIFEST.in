@@ -4,7 +4,9 @@ graft src/python/grpcio/grpcio.egg-info
 graft src/core
 graft src/boringssl
 graft include/grpc
+graft third_party/address_sorting
 graft third_party/boringssl
+graft third_party/cares
 graft third_party/nanopb
 graft third_party/zlib
 include src/python/grpcio/_spawn_patch.py
@@ -16,3 +18,4 @@ include src/python/grpcio/support.py
 include src/python/grpcio/README.rst
 include requirements.txt
 include etc/roots.pem
+include Makefile

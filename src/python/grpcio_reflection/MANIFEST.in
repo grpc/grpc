@@ -1,0 +1,3 @@
+include grpc_version.py
+recursive-include grpc_reflection *.py
+global-exclude *.pyc

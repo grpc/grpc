@@ -1,48 +1,51 @@
-[![Build Status](https://grpc-testing.appspot.com/job/gRPC_master/badge/icon)](https://grpc-testing.appspot.com/job/gRPC_master)
-
 [gRPC - An RPC library and framework](http://github.com/grpc/grpc)
 ===================================
 
 [![Join the chat at https://gitter.im/grpc/grpc](https://badges.gitter.im/grpc/grpc.svg)](https://gitter.im/grpc/grpc?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-Copyright 2015 Google Inc.
+Copyright 2015
+[The gRPC Authors](https://github.com/grpc/grpc/blob/master/AUTHORS)
 
-#Documentation
+# Documentation
 
 You can find more detailed documentation and examples in the [doc](doc) and [examples](examples) directories respectively.
 
-#Installation & Testing
+# Installation & Testing
 
 See [INSTALL](INSTALL.md) for installation instructions for various platforms.
 
 See [tools/run_tests](tools/run_tests) for more guidance on how to run various test suites (e.g. unit tests, interop tests, benchmarks)
 
-#Repository Structure & Status
+See [Performance dashboard](http://performance-dot-grpc-testing.appspot.com/explore?dashboard=5636470266134528) for the performance numbers for the latest released version.
 
-This repository contains source code for gRPC libraries for multiple languages written on top of shared C core library [src/core] (src/core).
+# Repository Structure & Status
 
-Libraries in different languages are in different states of development. We are seeking contributions for all of these libraries.
+This repository contains source code for gRPC libraries for multiple languages written on top of shared C core library [src/core](src/core).
 
-| Language                | Source                              | Status  |
-|-------------------------|-------------------------------------|---------|
-| Shared C [core library] | [src/core] (src/core)               | 1.0     |
-| C++                     | [src/cpp] (src/cpp)                 | 1.0     |
-| Ruby                    | [src/ruby] (src/ruby)               | 1.0     |
-| NodeJS                  | [src/node] (src/node)               | 1.0     |
-| Python                  | [src/python] (src/python)           | 1.0     |
-| PHP                     | [src/php] (src/php)                 | 1.0     |
-| C#                      | [src/csharp] (src/csharp)           | 1.0     |
-| Objective-C             | [src/objective-c] (src/objective-c) | 1.0     |
+Libraries in different languages may be in different states of development. We are seeking contributions for all of these libraries.
 
-<small>
-Java source code is in the [grpc-java] (http://github.com/grpc/grpc-java) repository.
-Go source code is in the [grpc-go] (http://github.com/grpc/grpc-go) repository.
-</small>
+| Language                | Source                              |
+|-------------------------|-------------------------------------|
+| Shared C [core library] | [src/core](src/core)                |
+| C++                     | [src/cpp](src/cpp)                  |
+| Ruby                    | [src/ruby](src/ruby)                |
+| Python                  | [src/python](src/python)            |
+| PHP                     | [src/php](src/php)                  |
+| C#                      | [src/csharp](src/csharp)            |
+| Objective-C             | [src/objective-c](src/objective-c)  |
+
+| Language                | Source repo                                          |
+|-------------------------|------------------------------------------------------|
+| Java                    | [grpc-java](http://github.com/grpc/grpc-java)        |
+| Go                      | [grpc-go](http://github.com/grpc/grpc-go)            |
+| NodeJS                  | [grpc-node](https://github.com/grpc/grpc-node)       |
+| WebJS                   | [grpc-web](https://github.com/grpc/grpc-web)         |
+| Dart                    | [grpc-dart](https://github.com/grpc/grpc-dart)       |
 
 See [MANIFEST.md](MANIFEST.md) for a listing of top-level items in the
 repository.
 
-#Overview
+# Overview
 
 
 Remote Procedure Calls (RPCs) provide a useful abstraction for building
@@ -52,7 +55,7 @@ These libraries enable communication between clients and servers using any
 combination of the supported languages.
 
 
-##Interface
+## Interface
 
 
 Developers using gRPC typically start with the description of an RPC service
@@ -64,7 +67,7 @@ Interface Definition Language (IDL) for describing both the service interface
 and the structure of the payload messages. It is possible to use other
 alternatives if desired.
 
-###Surface API
+### Surface API
 Starting from an interface definition in a .proto file, gRPC provides
 Protocol Compiler plugins that generate Client- and Server-side APIs.
 gRPC users typically call into these APIs on the Client side and implement
@@ -92,7 +95,7 @@ the client and the server can send a stream of messages to each other. The strea
 messages are delivered in the order they were sent.
 
 
-#Protocol
+# Protocol
 
 The [gRPC protocol](doc/PROTOCOL-HTTP2.md) specifies the abstract requirements for communication between
 clients and servers. A concrete embedding over HTTP/2 completes the picture by

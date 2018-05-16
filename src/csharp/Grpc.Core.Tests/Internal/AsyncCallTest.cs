@@ -1,33 +1,18 @@
 #region Copyright notice and license
 
-// Copyright 2015, Google Inc.
-// All rights reserved.
+// Copyright 2015 gRPC authors.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #endregion
 
@@ -88,7 +73,7 @@ namespace Grpc.Core.Internal.Tests
         public void AsyncUnary_Success()
         {
             var resultTask = asyncCall.UnaryCallAsync("request1");
-            fakeCall.UnaryResponseClientHandler(true,
+            fakeCall.UnaryResponseClientCallback.OnUnaryResponseClient(true,
                 new ClientSideStatus(Status.DefaultSuccess, new Metadata()),
                 CreateResponsePayload(),
                 new Metadata());
@@ -100,7 +85,7 @@ namespace Grpc.Core.Internal.Tests
         public void AsyncUnary_NonSuccessStatusCode()
         {
             var resultTask = asyncCall.UnaryCallAsync("request1");
-            fakeCall.UnaryResponseClientHandler(true,
+            fakeCall.UnaryResponseClientCallback.OnUnaryResponseClient(true,
                 CreateClientSideStatus(StatusCode.InvalidArgument),
                 null,
                 new Metadata());
@@ -112,7 +97,7 @@ namespace Grpc.Core.Internal.Tests
         public void AsyncUnary_NullResponsePayload()
         {
             var resultTask = asyncCall.UnaryCallAsync("request1");
-            fakeCall.UnaryResponseClientHandler(true,
+            fakeCall.UnaryResponseClientCallback.OnUnaryResponseClient(true,
                 new ClientSideStatus(Status.DefaultSuccess, new Metadata()),
                 null,
                 new Metadata());
@@ -133,7 +118,7 @@ namespace Grpc.Core.Internal.Tests
         public void ClientStreaming_NoRequest_Success()
         {
             var resultTask = asyncCall.ClientStreamingCallAsync();
-            fakeCall.UnaryResponseClientHandler(true,
+            fakeCall.UnaryResponseClientCallback.OnUnaryResponseClient(true,
                 new ClientSideStatus(Status.DefaultSuccess, new Metadata()),
                 CreateResponsePayload(),
                 new Metadata());
@@ -145,7 +130,7 @@ namespace Grpc.Core.Internal.Tests
         public void ClientStreaming_NoRequest_NonSuccessStatusCode()
         {
             var resultTask = asyncCall.ClientStreamingCallAsync();
-            fakeCall.UnaryResponseClientHandler(true,
+            fakeCall.UnaryResponseClientCallback.OnUnaryResponseClient(true,
                 CreateClientSideStatus(StatusCode.InvalidArgument),
                 null,
                 new Metadata());
@@ -160,18 +145,18 @@ namespace Grpc.Core.Internal.Tests
             var requestStream = new ClientRequestStream<string, string>(asyncCall);
 
             var writeTask = requestStream.WriteAsync("request1");
-            fakeCall.SendCompletionHandler(true);
+            fakeCall.SendCompletionCallback.OnSendCompletion(true);
             writeTask.Wait();
 
             var writeTask2 = requestStream.WriteAsync("request2");
-            fakeCall.SendCompletionHandler(true);
+            fakeCall.SendCompletionCallback.OnSendCompletion(true);
             writeTask2.Wait();
 
             var completeTask = requestStream.CompleteAsync();
-            fakeCall.SendCompletionHandler(true);
+            fakeCall.SendCompletionCallback.OnSendCompletion(true);
             completeTask.Wait();
 
-            fakeCall.UnaryResponseClientHandler(true,
+            fakeCall.UnaryResponseClientCallback.OnUnaryResponseClient(true,
                 new ClientSideStatus(Status.DefaultSuccess, new Metadata()),
                 CreateResponsePayload(),
                 new Metadata());
@@ -180,20 +165,73 @@ namespace Grpc.Core.Internal.Tests
         }
 
         [Test]
-        public void ClientStreaming_WriteCompletionFailure()
+        public void ClientStreaming_WriteFailureThrowsRpcException()
         {
             var resultTask = asyncCall.ClientStreamingCallAsync();
             var requestStream = new ClientRequestStream<string, string>(asyncCall);
 
             var writeTask = requestStream.WriteAsync("request1");
-            fakeCall.SendCompletionHandler(false);
-            // TODO: maybe IOException or waiting for RPCException is more appropriate here.
-            Assert.ThrowsAsync(typeof(InvalidOperationException), async () => await writeTask);
+            fakeCall.SendCompletionCallback.OnSendCompletion(false);
 
-            fakeCall.UnaryResponseClientHandler(true,
+            // The write will wait for call to finish to receive the status code.
+            Assert.IsFalse(writeTask.IsCompleted);
+
+            fakeCall.UnaryResponseClientCallback.OnUnaryResponseClient(true,
                 CreateClientSideStatus(StatusCode.Internal),
                 null,
                 new Metadata());
+
+            var ex = Assert.ThrowsAsync<RpcException>(async () => await writeTask);
+            Assert.AreEqual(StatusCode.Internal, ex.Status.StatusCode);
+
+            AssertUnaryResponseError(asyncCall, fakeCall, resultTask, StatusCode.Internal);
+        }
+
+        [Test]
+        public void ClientStreaming_WriteFailureThrowsRpcException2()
+        {
+            var resultTask = asyncCall.ClientStreamingCallAsync();
+            var requestStream = new ClientRequestStream<string, string>(asyncCall);
+
+            var writeTask = requestStream.WriteAsync("request1");
+
+            fakeCall.UnaryResponseClientCallback.OnUnaryResponseClient(true,
+                CreateClientSideStatus(StatusCode.Internal),
+                null,
+                new Metadata());
+
+            fakeCall.SendCompletionCallback.OnSendCompletion(false);
+
+            var ex = Assert.ThrowsAsync<RpcException>(async () => await writeTask);
+            Assert.AreEqual(StatusCode.Internal, ex.Status.StatusCode);
+
+            AssertUnaryResponseError(asyncCall, fakeCall, resultTask, StatusCode.Internal);
+        }
+
+        [Test]
+        public void ClientStreaming_WriteFailureThrowsRpcException3()
+        {
+            var resultTask = asyncCall.ClientStreamingCallAsync();
+            var requestStream = new ClientRequestStream<string, string>(asyncCall);
+
+            var writeTask = requestStream.WriteAsync("request1");
+            fakeCall.SendCompletionCallback.OnSendCompletion(false);
+
+            // Until the delayed write completion has been triggered,
+            // we still act as if there was an active write.
+            Assert.Throws(typeof(InvalidOperationException), () => requestStream.WriteAsync("request2"));
+
+            fakeCall.UnaryResponseClientCallback.OnUnaryResponseClient(true,
+                CreateClientSideStatus(StatusCode.Internal),
+                null,
+                new Metadata());
+
+            var ex = Assert.ThrowsAsync<RpcException>(async () => await writeTask);
+            Assert.AreEqual(StatusCode.Internal, ex.Status.StatusCode);
+
+            // Following attempts to write keep delivering the same status
+            var ex2 = Assert.ThrowsAsync<RpcException>(async () => await requestStream.WriteAsync("after call has finished"));
+            Assert.AreEqual(StatusCode.Internal, ex2.Status.StatusCode);
 
             AssertUnaryResponseError(asyncCall, fakeCall, resultTask, StatusCode.Internal);
         }
@@ -204,7 +242,7 @@ namespace Grpc.Core.Internal.Tests
             var resultTask = asyncCall.ClientStreamingCallAsync();
             var requestStream = new ClientRequestStream<string, string>(asyncCall);
 
-            fakeCall.UnaryResponseClientHandler(true,
+            fakeCall.UnaryResponseClientCallback.OnUnaryResponseClient(true,
                 new ClientSideStatus(Status.DefaultSuccess, new Metadata()),
                 CreateResponsePayload(),
                 new Metadata());
@@ -222,7 +260,7 @@ namespace Grpc.Core.Internal.Tests
             var resultTask = asyncCall.ClientStreamingCallAsync();
             var requestStream = new ClientRequestStream<string, string>(asyncCall);
 
-            fakeCall.UnaryResponseClientHandler(true,
+            fakeCall.UnaryResponseClientCallback.OnUnaryResponseClient(true,
                 new ClientSideStatus(new Status(StatusCode.OutOfRange, ""), new Metadata()),
                 CreateResponsePayload(),
                 new Metadata());
@@ -244,9 +282,9 @@ namespace Grpc.Core.Internal.Tests
 
             Assert.Throws(typeof(InvalidOperationException), () => requestStream.WriteAsync("request1"));
 
-            fakeCall.SendCompletionHandler(true);
+            fakeCall.SendCompletionCallback.OnSendCompletion(true);
 
-            fakeCall.UnaryResponseClientHandler(true,
+            fakeCall.UnaryResponseClientCallback.OnUnaryResponseClient(true,
                 new ClientSideStatus(Status.DefaultSuccess, new Metadata()),
                 CreateResponsePayload(),
                 new Metadata());
@@ -260,7 +298,7 @@ namespace Grpc.Core.Internal.Tests
             var resultTask = asyncCall.ClientStreamingCallAsync();
             var requestStream = new ClientRequestStream<string, string>(asyncCall);
 
-            fakeCall.UnaryResponseClientHandler(true,
+            fakeCall.UnaryResponseClientCallback.OnUnaryResponseClient(true,
                 new ClientSideStatus(Status.DefaultSuccess, new Metadata()),
                 CreateResponsePayload(),
                 new Metadata());
@@ -281,7 +319,7 @@ namespace Grpc.Core.Internal.Tests
             var writeTask = requestStream.WriteAsync("request1");
             Assert.ThrowsAsync(typeof(TaskCanceledException), async () => await writeTask);
 
-            fakeCall.UnaryResponseClientHandler(true,
+            fakeCall.UnaryResponseClientCallback.OnUnaryResponseClient(true,
                 CreateClientSideStatus(StatusCode.Cancelled),
                 null,
                 new Metadata());
@@ -304,11 +342,11 @@ namespace Grpc.Core.Internal.Tests
             var responseStream = new ClientResponseStream<string, string>(asyncCall);
             var readTask = responseStream.MoveNext();
 
-            fakeCall.ReceivedResponseHeadersHandler(true, new Metadata());
+            fakeCall.ReceivedResponseHeadersCallback.OnReceivedResponseHeaders(true, new Metadata());
             Assert.AreEqual(0, asyncCall.ResponseHeadersAsync.Result.Count);
 
-            fakeCall.ReceivedMessageHandler(true, null);
-            fakeCall.ReceivedStatusOnClientHandler(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
+            fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, null);
+            fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
 
             AssertStreamingResponseSuccess(asyncCall, fakeCall, readTask);
         }
@@ -321,8 +359,8 @@ namespace Grpc.Core.Internal.Tests
             var readTask = responseStream.MoveNext();
 
             // try alternative order of completions
-            fakeCall.ReceivedStatusOnClientHandler(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
-            fakeCall.ReceivedMessageHandler(true, null);
+            fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
+            fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, null);
 
             AssertStreamingResponseSuccess(asyncCall, fakeCall, readTask);
         }
@@ -334,8 +372,8 @@ namespace Grpc.Core.Internal.Tests
             var responseStream = new ClientResponseStream<string, string>(asyncCall);
             var readTask = responseStream.MoveNext();
 
-            fakeCall.ReceivedMessageHandler(false, null);  // after a failed read, we rely on C core to deliver appropriate status code.
-            fakeCall.ReceivedStatusOnClientHandler(true, CreateClientSideStatus(StatusCode.Internal));
+            fakeCall.ReceivedMessageCallback.OnReceivedMessage(false, null);  // after a failed read, we rely on C core to deliver appropriate status code.
+            fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, CreateClientSideStatus(StatusCode.Internal));
 
             AssertStreamingResponseError(asyncCall, fakeCall, readTask, StatusCode.Internal);
         }
@@ -347,18 +385,18 @@ namespace Grpc.Core.Internal.Tests
             var responseStream = new ClientResponseStream<string, string>(asyncCall);
 
             var readTask1 = responseStream.MoveNext();
-            fakeCall.ReceivedMessageHandler(true, CreateResponsePayload());
+            fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, CreateResponsePayload());
             Assert.IsTrue(readTask1.Result);
             Assert.AreEqual("response1", responseStream.Current);
 
             var readTask2 = responseStream.MoveNext();
-            fakeCall.ReceivedMessageHandler(true, CreateResponsePayload());
+            fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, CreateResponsePayload());
             Assert.IsTrue(readTask2.Result);
             Assert.AreEqual("response1", responseStream.Current);
 
             var readTask3 = responseStream.MoveNext();
-            fakeCall.ReceivedStatusOnClientHandler(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
-            fakeCall.ReceivedMessageHandler(true, null);
+            fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
+            fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, null);
 
             AssertStreamingResponseSuccess(asyncCall, fakeCall, readTask3);
         }
@@ -371,12 +409,12 @@ namespace Grpc.Core.Internal.Tests
             var responseStream = new ClientResponseStream<string, string>(asyncCall);
 
             var writeTask1 = requestStream.CompleteAsync();
-            fakeCall.SendCompletionHandler(true);
+            fakeCall.SendCompletionCallback.OnSendCompletion(true);
             Assert.DoesNotThrowAsync(async () => await writeTask1);
 
             var readTask = responseStream.MoveNext();
-            fakeCall.ReceivedMessageHandler(true, null);
-            fakeCall.ReceivedStatusOnClientHandler(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
+            fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, null);
+            fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
 
             AssertStreamingResponseSuccess(asyncCall, fakeCall, readTask);
         }
@@ -389,8 +427,8 @@ namespace Grpc.Core.Internal.Tests
             var responseStream = new ClientResponseStream<string, string>(asyncCall);
 
             var readTask = responseStream.MoveNext();
-            fakeCall.ReceivedMessageHandler(true, null);
-            fakeCall.ReceivedStatusOnClientHandler(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
+            fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, null);
+            fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
 
             AssertStreamingResponseSuccess(asyncCall, fakeCall, readTask);
 
@@ -407,12 +445,55 @@ namespace Grpc.Core.Internal.Tests
             var responseStream = new ClientResponseStream<string, string>(asyncCall);
 
             var readTask = responseStream.MoveNext();
-            fakeCall.ReceivedMessageHandler(true, null);
-            fakeCall.ReceivedStatusOnClientHandler(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
+            fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, null);
+            fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, new ClientSideStatus(Status.DefaultSuccess, new Metadata()));
 
             AssertStreamingResponseSuccess(asyncCall, fakeCall, readTask);
 
             Assert.DoesNotThrowAsync(async () => await requestStream.CompleteAsync());
+        }
+
+        [Test]
+        public void DuplexStreaming_WriteFailureThrowsRpcException()
+        {
+            asyncCall.StartDuplexStreamingCall();
+            var requestStream = new ClientRequestStream<string, string>(asyncCall);
+            var responseStream = new ClientResponseStream<string, string>(asyncCall);
+
+            var writeTask = requestStream.WriteAsync("request1");
+            fakeCall.SendCompletionCallback.OnSendCompletion(false);
+
+            // The write will wait for call to finish to receive the status code.
+            Assert.IsFalse(writeTask.IsCompleted);
+
+            var readTask = responseStream.MoveNext();
+            fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, null);
+            fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, CreateClientSideStatus(StatusCode.PermissionDenied));
+
+            var ex = Assert.ThrowsAsync<RpcException>(async () => await writeTask);
+            Assert.AreEqual(StatusCode.PermissionDenied, ex.Status.StatusCode);
+
+            AssertStreamingResponseError(asyncCall, fakeCall, readTask, StatusCode.PermissionDenied);
+        }
+
+        [Test]
+        public void DuplexStreaming_WriteFailureThrowsRpcException2()
+        {
+            asyncCall.StartDuplexStreamingCall();
+            var requestStream = new ClientRequestStream<string, string>(asyncCall);
+            var responseStream = new ClientResponseStream<string, string>(asyncCall);
+
+            var writeTask = requestStream.WriteAsync("request1");
+
+            var readTask = responseStream.MoveNext();
+            fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, null);
+            fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, CreateClientSideStatus(StatusCode.PermissionDenied));
+            fakeCall.SendCompletionCallback.OnSendCompletion(false);
+
+            var ex = Assert.ThrowsAsync<RpcException>(async () => await writeTask);
+            Assert.AreEqual(StatusCode.PermissionDenied, ex.Status.StatusCode);
+
+            AssertStreamingResponseError(asyncCall, fakeCall, readTask, StatusCode.PermissionDenied);
         }
 
         [Test]
@@ -429,8 +510,8 @@ namespace Grpc.Core.Internal.Tests
             Assert.ThrowsAsync(typeof(TaskCanceledException), async () => await writeTask);
 
             var readTask = responseStream.MoveNext();
-            fakeCall.ReceivedMessageHandler(true, null);
-            fakeCall.ReceivedStatusOnClientHandler(true, CreateClientSideStatus(StatusCode.Cancelled));
+            fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, null);
+            fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, CreateClientSideStatus(StatusCode.Cancelled));
 
             AssertStreamingResponseError(asyncCall, fakeCall, readTask, StatusCode.Cancelled);
         }
@@ -445,13 +526,13 @@ namespace Grpc.Core.Internal.Tests
             Assert.IsTrue(fakeCall.IsCancelled);
 
             var readTask1 = responseStream.MoveNext();
-            fakeCall.ReceivedMessageHandler(true, CreateResponsePayload());
+            fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, CreateResponsePayload());
             Assert.IsTrue(readTask1.Result);
             Assert.AreEqual("response1", responseStream.Current);
 
             var readTask2 = responseStream.MoveNext();
-            fakeCall.ReceivedMessageHandler(true, null);
-            fakeCall.ReceivedStatusOnClientHandler(true, CreateClientSideStatus(StatusCode.Cancelled));
+            fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, null);
+            fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, CreateClientSideStatus(StatusCode.Cancelled));
 
             AssertStreamingResponseError(asyncCall, fakeCall, readTask2, StatusCode.Cancelled);
         }
@@ -466,13 +547,13 @@ namespace Grpc.Core.Internal.Tests
             asyncCall.Cancel();
             Assert.IsTrue(fakeCall.IsCancelled);
 
-            fakeCall.ReceivedMessageHandler(true, CreateResponsePayload());
+            fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, CreateResponsePayload());
             Assert.IsTrue(readTask1.Result);
             Assert.AreEqual("response1", responseStream.Current);
 
             var readTask2 = responseStream.MoveNext();
-            fakeCall.ReceivedMessageHandler(true, null);
-            fakeCall.ReceivedStatusOnClientHandler(true, CreateClientSideStatus(StatusCode.Cancelled));
+            fakeCall.ReceivedMessageCallback.OnReceivedMessage(true, null);
+            fakeCall.ReceivedStatusOnClientCallback.OnReceivedStatusOnClient(true, CreateClientSideStatus(StatusCode.Cancelled));
 
             AssertStreamingResponseError(asyncCall, fakeCall, readTask2, StatusCode.Cancelled);
         }

@@ -36,7 +36,7 @@ Pod::Spec.new do |s|
   # exclamation mark ensures that other "regular" pods will be able to find it as it'll be installed
   # before them.
   s.name     = '!ProtoCompiler'
-  v = '3.0.0'
+  v = '3.5.0'
   s.version  = v
   s.summary  = 'The Protobuf Compiler (protoc) generates Objective-C files from .proto files'
   s.description = <<-DESC
@@ -110,7 +110,7 @@ Pod::Spec.new do |s|
   # Restrict the protobuf runtime version to the one supported by this version of protoc.
   s.dependency 'Protobuf', '~> 3.0'
   # For the Protobuf dependency not to complain:
-  s.ios.deployment_target = '7.1'
+  s.ios.deployment_target = '7.0'
   s.osx.deployment_target = '10.9'
 
   # This is only for local development of protoc: If the Podfile brings this pod from a local

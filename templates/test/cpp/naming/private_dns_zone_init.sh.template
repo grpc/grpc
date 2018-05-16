@@ -1,0 +1,4 @@
+%YAML 1.2
+--- |
+  <%namespace file="private_dns_zone_init_defs.include" import="*"/>\
+  ${private_dns_zone_init(all_integration_test_records, resolver_gce_integration_tests_zone_id, resolver_tests_common_zone_name)}

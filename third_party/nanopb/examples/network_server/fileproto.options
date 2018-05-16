@@ -1,0 +1,13 @@
+# This file defines the nanopb-specific options for the messages defined
+# in fileproto.proto.
+#
+# If you come from high-level programming background, the hardcoded
+# maximum lengths may disgust you. However, if your microcontroller only
+# has a few kB of ram to begin with, setting reasonable limits for
+# filenames is ok.
+#
+# On the other hand, using the callback interface, it is not necessary
+# to set a limit on the number of files in the response.
+
+ListFilesRequest.path 	max_size:128
+FileInfo.name 		max_size:128

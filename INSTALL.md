@@ -1,4 +1,4 @@
-#If you are in a hurry
+# If you are in a hurry
 
 For language-specific installation instructions for gRPC runtime, please
 refer to these documents
@@ -14,96 +14,159 @@ refer to these documents
  * [Ruby](src/ruby): `gem install grpc`
 
 
-#Pre-requisites
+# Pre-requisites
 
-##Linux
+## Linux
 
 ```sh
- $ [sudo] apt-get install build-essential autoconf libtool
+ $ [sudo] apt-get install build-essential autoconf libtool pkg-config
 ```
 
-##Mac OSX
+If you plan to build from source and run tests, install the following as well:
+```sh
+ $ [sudo] apt-get install libgflags-dev libgtest-dev
+ $ [sudo] apt-get install clang libc++-dev
+```
 
-For a Mac system, git is not available by default. You will first need to
-install Xcode from the Mac AppStore and then run the following command from a
-terminal:
+## macOS 
+
+On a Mac, you will first need to
+install Xcode or
+[Command Line Tools for Xcode](https://developer.apple.com/download/more/)
+and then run the following command from a terminal:
 
 ```sh
  $ [sudo] xcode-select --install
 ```
 
-##Protoc
+To build gRPC from source, you may need to install the following
+packages from [Homebrew](https://brew.sh):
+
+```sh
+ $ brew install autoconf automake libtool shtool
+```
+
+If you plan to build from source and run tests, install the following as well:
+```sh
+ $ brew install gflags
+```
+
+*Tip*: when building, 
+you *may* want to explicitly set the `LIBTOOL` and `LIBTOOLIZE`
+environment variables when running `make` to ensure the version
+installed by `brew` is being used:
+
+```sh
+ $ LIBTOOL=glibtool LIBTOOLIZE=glibtoolize make
+```
+
+## Protoc
 
 By default gRPC uses [protocol buffers](https://github.com/google/protobuf),
 you will need the `protoc` compiler to generate stub server and client code.
 
 If you compile gRPC from source, as described below, the Makefile will
-automatically try and compile the `protoc` in third_party if you cloned the
-repository recursively and it detects that you don't already have it
+automatically try compiling the `protoc` in third_party if you cloned the
+repository recursively and it detects that you do not already have 'protoc' compiler
 installed.
 
+If 'protoc' compiler has not been installed, following commands can be used for installation.
 
-#Build from Source
+```sh
+$ cd grpc/third_party/protobuf
+$ sudo make install   # 'make' should have been run by core grpc
+```
 
-For developers who are interested to contribute, here is how to compile the
+# Build from Source
+
+For developers who are interested to contribute, the following commands show how to compile the
 gRPC C Core library.
 
 ```sh
- $ git clone -b $(curl -L http://grpc.io/release) https://github.com/grpc/grpc
+ $ git clone -b $(curl -L https://grpc.io/release) https://github.com/grpc/grpc
  $ cd grpc
  $ git submodule update --init
  $ make
  $ [sudo] make install
 ```
 
-##Windows
+## Windows
 
 There are several ways to build under Windows, of varying complexity depending
 on experience with the tools involved.
 
-<!--
-###Visual Studio
 
-Versions 2013 and 2015 are both supported. You can use [their respective
-community
-editions](https://www.visualstudio.com/en-us/downloads/download-visual-studio-vs.aspx).
 
-Building the C Core:
-- Open [grpc.sln](https://github.com/grpc/grpc/blob/master/vsprojects/grpc.sln).
-- Select your build target.
-- Build the `grpc` project.
+### Building using CMake (RECOMMENDED)
 
-Building the C++ runtime:
-- You need [CMake](https://cmake.org/) on your path to build protobuf (see below
-  for building using solely CMake).
-- Run `vsprojects/build_protos.bat` (needs `cmake.exe` in your path).
-- Open [buildtests_cxx.sln]()
-- Select your build target.
-- build the `grpc++` project.
--->
+Builds gRPC C and C++ with boringssl.
+- Install Visual Studio 2015 or 2017 (Visual C++ compiler will be used).
+- Install [Git](https://git-scm.com/).
+- Install [CMake](https://cmake.org/download/).
+- Install [Active State Perl](https://www.activestate.com/activeperl/) (`choco install activeperl`) - *required by boringssl*
+- Install [Go](https://golang.org/dl/) (`choco install golang`) - *required by boringssl*
+- Install [yasm](http://yasm.tortall.net/) and add it to `PATH` (`choco install yasm`) - *required by boringssl*
+- (Optional) Install [Ninja](https://ninja-build.org/) (`choco install ninja`)
 
-###msys2
+#### Clone grpc sources including submodules
+Before building, you need to clone the gRPC github repository and download submodules containing source code 
+for gRPC's dependencies (that's done by the `submodule` command).
+```
+> @rem You can also do just "git clone --recursive -b THE_BRANCH_YOU_WANT https://github.com/grpc/grpc"
+> powershell git clone --recursive -b ((New-Object System.Net.WebClient).DownloadString(\"https://grpc.io/release\").Trim()) https://github.com/grpc/grpc
+> cd grpc
+> @rem To update submodules at later time, run "git submodule update --init"
+```
+
+#### cmake: Using Visual Studio 2015 or 2017 (can only build with OPENSSL_NO_ASM).
+When using the "Visual Studio" generator,
+cmake will generate a solution (`grpc.sln`) that contains a VS project for 
+every target defined in `CMakeLists.txt` (+ few extra convenience projects
+added automatically by cmake). After opening the solution with Visual Studio 
+you will be able to browse and build the code.
+```
+> @rem Run from grpc directory after cloning the repo with --recursive or updating submodules.
+> md .build
+> cd .build
+> cmake .. -G "Visual Studio 14 2015" -DCMAKE_BUILD_TYPE=Release
+> cmake --build .
+```
+
+#### cmake: Using Ninja (faster build, supports boringssl's assembly optimizations).
+Please note that when using Ninja, you will still need Visual C++ (part of Visual Studio)
+installed to be able to compile the C/C++ sources.
+```
+> @rem Run from grpc directory after cloning the repo with --recursive or updating submodules.
+> md .build
+> cd .build
+> call "%VS140COMNTOOLS%..\..\VC\vcvarsall.bat" x64
+> cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release
+> cmake --build .
+```
+
+### msys2 (with mingw)
+
+The Makefile (and source code) should support msys2's mingw32 and mingw64
+compilers. Building with msys2's native compiler is possible, but
+difficult.
 
 This approach requires having [msys2](https://msys2.github.io/) installed.
 
-- The Makefile (and source code) should support msys2's mingw32 and mingw64
-  compilers. Building with msys2's native compiler is also possible, but
-  difficult.
-- The Makefile is expecting the Windows versions of OpenSSL (see
-  https://slproweb.com/products/Win32OpenSSL.html). It's also possible to build
-  the Windows version of OpenSSL from scratch. The output should be `libeay32`
-  and `ssleay32`.
-- If you are not installing the above files under msys2's path, you may specify
-  it, for instance, in the following way:
-  ```CPPFLAGS=”-I/c/OpenSSL-Win32/include” LDFLAGS=”-L/c/OpenSSL-Win32/lib” make static_c```
-- [protobuf3](https://github.com/google/protobuf/blob/master/src/README.md#c-installation---windows)
-  must be installed on the msys2 path.
+```
+# Install prerequisites
+MSYS2$ pacman -S autoconf automake gcc libtool mingw-w64-x86_64-toolchain perl pkg-config zlib
+MSYS2$ pacman -S mingw-w64-x86_64-gflags
+```
 
-###Cmake (experimental)
+```
+# From mingw shell
+MINGW64$ export CPPFLAGS="-D_WIN32_WINNT=0x0600"
+MINGW64$ make
+```
 
-- Install [CMake](https://cmake.org/download/).
-- Run it over [grpc's
-  CMakeLists.txt](https://github.com/grpc/grpc/blob/master/CMakeLists.txt) to
-  generate "projects" for your compiler.
-- Build with your compiler of choice. The generated build files should have the
-  protobuf3 dependency baked in.
+NOTE: Though most of the make targets are buildable under Mingw, some haven't been ported to Windows yet
+and may fail to build (mostly trying to include POSIX headers not available on Mingw).
+
+### Pre-generated Visual Studio solution (DELETED)
+
+*WARNING: This used to be the recommended way to build on Windows, but because of significant limitations (hard to build dependencies including boringssl, .proto codegen is hard to support, ..) we are no longer providing them. Use cmake to build on Windows instead.*

@@ -1,49 +1,75 @@
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 cimport cpython
 
+import logging
 import time
+import grpc
 
+cdef grpc_ssl_certificate_config_reload_status _server_cert_config_fetcher_wrapper(
+        void* user_data, grpc_ssl_server_certificate_config **config) with gil:
+  # This is a credentials.ServerCertificateConfig
+  cdef ServerCertificateConfig cert_config = None
+  if not user_data:
+    raise ValueError('internal error: user_data must be specified')
+  credentials = <ServerCredentials>user_data
+  if not credentials.initial_cert_config_fetched:
+    # C-core is asking for the initial cert config
+    credentials.initial_cert_config_fetched = True
+    cert_config = credentials.initial_cert_config._certificate_configuration
+  else:
+    user_cb = credentials.cert_config_fetcher
+    try:
+      cert_config_wrapper = user_cb()
+    except Exception:
+      logging.exception('Error fetching certificate config')
+      return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL
+    if cert_config_wrapper is None:
+      return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED
+    elif not isinstance(
+        cert_config_wrapper, grpc.ServerCertificateConfiguration):
+      logging.error(
+          'Error fetching certificate configuration: certificate '
+          'configuration must be of type grpc.ServerCertificateConfiguration, '
+          'not %s' % type(cert_config_wrapper).__name__)
+      return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL
+    else:
+      cert_config = cert_config_wrapper._certificate_configuration
+  config[0] = <grpc_ssl_server_certificate_config*>cert_config.c_cert_config
+  # our caller will assume ownership of memory, so we have to recreate
+  # a copy of c_cert_config here
+  cert_config.c_cert_config = grpc_ssl_server_certificate_config_create(
+      cert_config.c_pem_root_certs, cert_config.c_ssl_pem_key_cert_pairs,
+      cert_config.c_ssl_pem_key_cert_pairs_count)
+  return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW
 
 cdef class Server:
 
-  def __cinit__(self, ChannelArgs arguments=None):
+  def __cinit__(self, object arguments):
     grpc_init()
-    cdef grpc_channel_args *c_arguments = NULL
     self.references = []
     self.registered_completion_queues = []
-    if arguments is not None:
-      c_arguments = &arguments.c_args
-      self.references.append(arguments)
-    with nogil:
-      self.c_server = grpc_server_create(c_arguments, NULL)
+    self._vtable.copy = &_copy_pointer
+    self._vtable.destroy = &_destroy_pointer
+    self._vtable.cmp = &_compare_pointer
+    cdef _ArgumentsProcessor arguments_processor = _ArgumentsProcessor(
+        arguments)
+    cdef grpc_channel_args *c_arguments = arguments_processor.c(&self._vtable)
+    self.c_server = grpc_server_create(c_arguments, NULL)
+    arguments_processor.un_c()
+    self.references.append(arguments)
     self.is_started = False
     self.is_shutting_down = False
     self.is_shutdown = False
@@ -55,23 +81,15 @@ cdef class Server:
       raise ValueError("server must be started and not shutting down")
     if server_queue not in self.registered_completion_queues:
       raise ValueError("server_queue must be a registered completion queue")
-    cdef grpc_call_error result
-    cdef OperationTag operation_tag = OperationTag(tag)
-    operation_tag.operation_call = Call()
-    operation_tag.request_call_details = CallDetails()
-    operation_tag.request_metadata = Metadata([])
-    operation_tag.references.extend([self, call_queue, server_queue])
-    operation_tag.is_new_request = True
-    operation_tag.batch_operations = Operations([])
-    cpython.Py_INCREF(operation_tag)
-    with nogil:
-      result = grpc_server_request_call(
-          self.c_server, &operation_tag.operation_call.c_call,
-          &operation_tag.request_call_details.c_details,
-          &operation_tag.request_metadata.c_metadata_array,
-          call_queue.c_completion_queue, server_queue.c_completion_queue,
-          <cpython.PyObject *>operation_tag)
-    return result
+    cdef _RequestCallTag request_call_tag = _RequestCallTag(tag)
+    request_call_tag.prepare()
+    cpython.Py_INCREF(request_call_tag)
+    return grpc_server_request_call(
+        self.c_server, &request_call_tag.call.c_call,
+        &request_call_tag.call_details.c_details,
+        &request_call_tag.c_invocation_metadata,
+        call_queue.c_completion_queue, server_queue.c_completion_queue,
+        <cpython.PyObject *>request_call_tag)
 
   def register_completion_queue(
       self, CompletionQueue queue not None):
@@ -82,25 +100,16 @@ cdef class Server:
           self.c_server, queue.c_completion_queue, NULL)
     self.registered_completion_queues.append(queue)
 
-  def register_non_listening_completion_queue(
-      self, CompletionQueue queue not None):
-    if self.is_started:
-      raise ValueError("cannot register completion queues after start")
-    with nogil:
-      grpc_server_register_non_listening_completion_queue(
-          self.c_server, queue.c_completion_queue, NULL)
-    self.registered_completion_queues.append(queue)
-
   def start(self):
     if self.is_started:
       raise ValueError("the server has already started")
-    self.backup_shutdown_queue = CompletionQueue()
-    self.register_non_listening_completion_queue(self.backup_shutdown_queue)
+    self.backup_shutdown_queue = CompletionQueue(shutdown_cq=True)
+    self.register_completion_queue(self.backup_shutdown_queue)
     self.is_started = True
     with nogil:
       grpc_server_start(self.c_server)
     # Ensure the core has gotten a chance to do the start-up work
-    self.backup_shutdown_queue.poll(Timespec(None))
+    self.backup_shutdown_queue.poll(deadline=time.time())
 
   def add_http2_port(self, bytes address,
                      ServerCredentials server_credentials=None):
@@ -121,16 +130,14 @@ cdef class Server:
 
   cdef _c_shutdown(self, CompletionQueue queue, tag):
     self.is_shutting_down = True
-    operation_tag = OperationTag(tag)
-    operation_tag.shutting_down_server = self
-    cpython.Py_INCREF(operation_tag)
+    cdef _ServerShutdownTag server_shutdown_tag = _ServerShutdownTag(tag, self)
+    cpython.Py_INCREF(server_shutdown_tag)
     with nogil:
       grpc_server_shutdown_and_notify(
           self.c_server, queue.c_completion_queue,
-          <cpython.PyObject *>operation_tag)
+          <cpython.PyObject *>server_shutdown_tag)
 
   def shutdown(self, CompletionQueue queue not None, tag):
-    cdef OperationTag operation_tag
     if queue.is_shutting_down:
       raise ValueError("queue must be live")
     elif not self.is_started:
@@ -143,7 +150,8 @@ cdef class Server:
       self._c_shutdown(queue, tag)
 
   cdef notify_shutdown_complete(self):
-    # called only by a completion queue on receiving our shutdown operation tag
+    # called only after our server shutdown tag has emerged from a completion
+    # queue.
     self.is_shutdown = True
 
   def cancel_all_calls(self):

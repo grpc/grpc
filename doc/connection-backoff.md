@@ -7,9 +7,10 @@ requests) and instead do some form of exponential backoff.
 
 We have several parameters:
  1. INITIAL_BACKOFF (how long to wait after the first failure before retrying)
- 2. MULTIPLIER (factor with which to multiply backoff after a failed retry)
- 3. MAX_BACKOFF (upper bound on backoff)
- 4. MIN_CONNECT_TIMEOUT (minimum time we're willing to give a connection to
+ 1. MULTIPLIER (factor with which to multiply backoff after a failed retry)
+ 1. JITTER (by how much to randomize backoffs).
+ 1. MAX_BACKOFF (upper bound on backoff)
+ 1. MIN_CONNECT_TIMEOUT (minimum time we're willing to give a connection to
     complete)
 
 ## Proposed Backoff Algorithm

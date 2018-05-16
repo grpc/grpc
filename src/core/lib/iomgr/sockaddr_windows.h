@@ -1,43 +1,55 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 #ifndef GRPC_CORE_LIB_IOMGR_SOCKADDR_WINDOWS_H
 #define GRPC_CORE_LIB_IOMGR_SOCKADDR_WINDOWS_H
 
+#include <grpc/support/port_platform.h>
+
+#include "src/core/lib/iomgr/port.h"
+
+#ifdef GRPC_WINSOCK_SOCKET
+
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
 // must be included after the above
 #include <mswsock.h>
+
+typedef struct sockaddr grpc_sockaddr;
+typedef struct sockaddr_in grpc_sockaddr_in;
+typedef struct in_addr grpc_in_addr;
+typedef struct sockaddr_in6 grpc_sockaddr_in6;
+typedef struct in6_addr grpc_in6_addr;
+
+#define GRPC_INET_ADDRSTRLEN INET_ADDRSTRLEN
+#define GRPC_INET6_ADDRSTRLEN INET6_ADDRSTRLEN
+
+#define GRPC_SOCK_STREAM SOCK_STREAM
+#define GRPC_SOCK_DGRAM SOCK_DGRAM
+
+#define GRPC_AF_UNSPEC AF_UNSPEC
+#define GRPC_AF_UNIX AF_UNIX
+#define GRPC_AF_INET AF_INET
+#define GRPC_AF_INET6 AF_INET6
+
+#define GRPC_AI_PASSIVE AI_PASSIVE
+
+#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKADDR_WINDOWS_H */

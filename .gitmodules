@@ -1,10 +1,14 @@
 [submodule "third_party/zlib"]
 	path = third_party/zlib
 	url = https://github.com/madler/zlib
+	# When using CMake to build, the zlib submodule ends up with a
+	# generated file that makes Git consider the submodule dirty. This
+	# state can be ignored for day-to-day development on gRPC.
+	ignore = dirty
 [submodule "third_party/protobuf"]
 	path = third_party/protobuf
 	url = https://github.com/google/protobuf.git
-	branch = 3.0.0-GA
+	branch = 3.0.x
 [submodule "third_party/gflags"]
 	path = third_party/gflags
 	url = https://github.com/gflags/gflags.git
@@ -14,9 +18,19 @@
 [submodule "third_party/boringssl"]
 	path = third_party/boringssl
 	url = https://github.com/google/boringssl.git
-[submodule "third_party/nanopb"]
-	path = third_party/nanopb
-	url = https://github.com/nanopb/nanopb.git
-[submodule "third_party/thrift"]
-	path = third_party/thrift
-	url = https://github.com/apache/thrift.git
+[submodule "third_party/benchmark"]
+	path = third_party/benchmark
+	url = https://github.com/google/benchmark
+[submodule "third_party/boringssl-with-bazel"]
+	path = third_party/boringssl-with-bazel
+	url = https://github.com/google/boringssl.git
+[submodule "third_party/cares/cares"]
+	path = third_party/cares/cares
+	url = https://github.com/c-ares/c-ares.git
+	branch = cares-1_12_0
+[submodule "third_party/bloaty"]
+	path = third_party/bloaty
+	url = https://github.com/google/bloaty.git
+[submodule "third_party/abseil-cpp"]
+	path = third_party/abseil-cpp
+	url = https://github.com/abseil/abseil-cpp

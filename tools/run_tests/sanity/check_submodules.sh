@@ -1,56 +1,43 @@
 #!/bin/sh
 
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 
 set -e
 
 export TEST=true
 
-cd `dirname $0`/../../..
+cd "$(dirname "$0")/../../.."
 
-submodules=`mktemp /tmp/submXXXXXX`
-want_submodules=`mktemp /tmp/submXXXXXX`
+submodules=$(mktemp /tmp/submXXXXXX)
+want_submodules=$(mktemp /tmp/submXXXXXX)
 
-git submodule | awk '{ print $1 }' | sort > $submodules
-cat << EOF | awk '{ print $1 }' | sort > $want_submodules
- c880e42ba1c8032d4cdde2aba0541d8a9d9fa2e9 third_party/boringssl (version_for_cocoapods_2.0-100-gc880e42)
- 05b155ff59114735ec8cd089f669c4c3d8f59029 third_party/gflags (v2.1.0-45-g05b155f)
- c99458533a9b4c743ed51537e25989ea55944908 third_party/googletest (release-1.7.0)
- 68a86e96481e6bea987df8de47027847b30c325b third_party/nanopb (nanopb-0.3.6-6-g68a86e9)
- bba446bbf2ac7b0b9923d4eb07d5acd0665a8cf0 third_party/protobuf (v3.0.0-beta-4-160-gbba446b)
- 50893291621658f355bc5b4d450a8d06a563053d third_party/zlib (v1.2.8)
- bcad91771b7f0bff28a1cac1981d7ef2b9bcef3c third_party/thrift
+git submodule | awk '{ print $1 }' | sort > "$submodules"
+cat << EOF | awk '{ print $1 }' | sort > "$want_submodules"
+ 5b7683f49e1e9223cf9927b24f6fd3d6bd82e3f8 third_party/benchmark (v1.2.0)
+ a20bb7ff8bb5057065a2e7941249773f9676cf45 third_party/boringssl (heads/chromium-stable)
+ dcd3e6e6ecddf059adb48fca45bc7346a108bdd9 third_party/boringssl-with-bazel (version_for_cocoapods_10.0-369-gdcd3e6e6)
+ 30dbc81fb5ffdc98ea9b14b1918bfe4e8779b26e third_party/gflags (v2.2.0)
+ ec44c6c1675c25b9827aacd08c02433cccde7780 third_party/googletest (release-1.8.0)
+ b5fbb742af122b565925987e65c08957739976a7 third_party/protobuf (v3.5.2)
+ cacf7f1d4e3d44d871b605da3b647f07d718623f third_party/zlib (v1.2.11)
+ 3be1924221e1326df520f8498d704a5c4c8d0cce third_party/cares/cares (cares-1_13_0)
+ 73594cde8c9a52a102c4341c244c833aa61b9c06 third_party/bloaty
+ cc4bed2d74f7c8717e31f9579214ab52a9c9c610 third_party/abseil-cpp
 EOF
 
-diff -u $submodules $want_submodules
+diff -u "$submodules" "$want_submodules"
 
-rm $submodules $want_submodules
-
+rm "$submodules" "$want_submodules"

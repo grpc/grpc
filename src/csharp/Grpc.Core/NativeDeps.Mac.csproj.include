@@ -1,0 +1,9 @@
+<Project>
+  <ItemGroup>
+    <Content Include="..\..\..\libs\$(NativeDependenciesConfigurationUnix)\libgrpc_csharp_ext.dylib">
+      <Link>libgrpc_csharp_ext.x64.dylib</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Pack>false</Pack>
+    </Content>
+  </ItemGroup>
+</Project>

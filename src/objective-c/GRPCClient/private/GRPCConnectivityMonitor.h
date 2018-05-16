@@ -1,77 +1,47 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 #import <Foundation/Foundation.h>
 #import <SystemConfiguration/SystemConfiguration.h>
 
-@interface GRPCReachabilityFlags : NSObject
+typedef NS_ENUM(NSInteger, GRPCConnectivityStatus) {
+  GRPCConnectivityUnknown = 0,
+  GRPCConnectivityNoNetwork = 1,
+  GRPCConnectivityCellular = 2,
+  GRPCConnectivityWiFi = 3,
+};
 
-+ (nonnull instancetype)flagsWithFlags:(SCNetworkReachabilityFlags)flags;
+extern NSString* _Nonnull kGRPCConnectivityNotification;
 
-/**
- * One accessor method to query each of the different flags. Example:
-
-@property(nonatomic, readonly) BOOL isCell;
-
- */
-#define GRPC_XMACRO_ITEM(methodName, FlagName) \
-@property(nonatomic, readonly) BOOL methodName;
-
-#include "GRPCReachabilityFlagNames.xmacro.h"
-#undef GRPC_XMACRO_ITEM
-
-@property(nonatomic, readonly) BOOL isHostReachable;
-@end
-
-
+// This interface monitors OS reachability interface for any network status
+// change. Parties interested in these events should register themselves as
+// observer.
 @interface GRPCConnectivityMonitor : NSObject
-
-+ (nullable instancetype)monitorWithHost:(nonnull NSString *)hostName;
 
 - (nonnull instancetype)init NS_UNAVAILABLE;
 
-/**
- * Queue on which callbacks will be dispatched. Default is the main queue. Set it before calling
- * handleLossWithHandler:.
- */
-// TODO(jcanizales): Default to a serial background queue instead.
-@property(nonatomic, strong, null_resettable) dispatch_queue_t queue;
+// Register an object as observer of network status change. \a observer
+// must have a notification method with one parameter of type
+// (NSNotification *) and should pass it to parameter \a selector. The
+// parameter of this notification method is not used for now.
++ (void)registerObserver:(_Nonnull id)observer selector:(_Nonnull SEL)selector;
 
-/**
- * Calls handler every time the connectivity to this instance's host is lost. If this instance is
- * released before that happens, the handler won't be called.
- * Only one handler is active at a time, so if this method is called again before the previous
- * handler has been called, it might never be called at all (or yes, if it has already been queued).
- */
-- (void)handleLossWithHandler:(nonnull void (^)())handler;
+// Ungegister an object from observers of network status change.
++ (void)unregisterObserver:(_Nonnull id)observer;
+
 @end

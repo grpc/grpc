@@ -1,0 +1,50 @@
+build --client_env=CC=clang
+build --copt -DGRPC_BAZEL_BUILD
+build --copt -Wframe-larger-than=16384
+
+build:asan --strip=never
+build:asan --copt -fsanitize-coverage=edge
+build:asan --copt -fsanitize=address
+build:asan --copt -O0
+build:asan --copt -fno-omit-frame-pointer
+build:asan --copt -DGPR_NO_DIRECT_SYSCALLS
+build:asan --linkopt -fsanitize=address
+build:asan --action_env=ASAN_OPTIONS=detect_leaks=1:color=always
+build:asan --action_env=LSAN_OPTIONS=suppressions=lsan_suppressions.txt:report_objects=1
+
+build:msan --strip=never
+build:msan --copt -fsanitize-coverage=edge
+build:msan --copt -fsanitize=memory
+build:msan --copt -O0
+build:msan --copt -fsanitize-memory-track-origins
+build:msan --copt -fsanitize-memory-use-after-dtor
+build:msan --copt -fno-omit-frame-pointer
+build:msan --copt -fPIE
+build:msan --copt -DGPR_NO_DIRECT_SYSCALLS
+build:msan --linkopt -fsanitize=memory
+build:msan --linkopt -fPIE
+build:msan --action_env=MSAN_OPTIONS=poison_in_dtor=1
+
+build:tsan --strip=never
+build:tsan --copt -fsanitize=thread
+build:tsan --copt -fno-omit-frame-pointer
+build:tsan --copt -DGPR_NO_DIRECT_SYSCALLS
+build:tsan --copt -DGRPC_TSAN
+build:tsan --linkopt -fsanitize=thread
+build:tsan --action_env=TSAN_OPTIONS=suppressions=tools/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
+
+build:ubsan --strip=never
+build:ubsan --copt -fsanitize-coverage=edge
+build:ubsan --copt -fsanitize=undefined
+build:ubsan --copt -fno-omit-frame-pointer
+build:ubsan --copt -DGRPC_UBSAN
+build:ubsan --copt -DNDEBUG
+build:ubsan --copt -fno-sanitize=function,vptr
+build:ubsan --linkopt -fsanitize=undefined
+build:ubsan --action_env=UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1:suppressions=tools/ubsan_suppressions.txt
+
+build:basicprof --strip=never
+build:basicprof --copt -DNDEBUG
+build:basicprof --copt -O2
+build:basicprof --copt -DGRPC_BASIC_PROFILER
+build:basicprof --copt -DGRPC_TIMERS_RDTSC

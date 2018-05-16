@@ -1,46 +1,34 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 #include <ruby/ruby.h>
 
+#include "rb_byte_buffer.h"
 #include "rb_compression_options.h"
 #include "rb_grpc_imports.generated.h"
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <string.h>
 
 #include "rb_grpc.h"
@@ -61,17 +49,17 @@ static VALUE id_compress_level_high = Qnil;
  * Ruby objects and don't have a mark for GC. */
 typedef struct grpc_rb_compression_options {
   /* The actual compression options that's being wrapped */
-  grpc_compression_options *wrapped;
+  grpc_compression_options* wrapped;
 } grpc_rb_compression_options;
 
 /* Destroys the compression options instances and free the
  * wrapped grpc compression options. */
-static void grpc_rb_compression_options_free(void *p) {
-  grpc_rb_compression_options *wrapper = NULL;
+static void grpc_rb_compression_options_free(void* p) {
+  grpc_rb_compression_options* wrapper = NULL;
   if (p == NULL) {
     return;
   };
-  wrapper = (grpc_rb_compression_options *)p;
+  wrapper = (grpc_rb_compression_options*)p;
 
   if (wrapper->wrapped != NULL) {
     gpr_free(wrapper->wrapped);
@@ -99,8 +87,11 @@ static rb_data_type_t grpc_rb_compression_options_data_type = {
    Allocate the wrapped grpc compression options and
    initialize it here too. */
 static VALUE grpc_rb_compression_options_alloc(VALUE cls) {
-  grpc_rb_compression_options *wrapper =
-      gpr_malloc(sizeof(grpc_rb_compression_options));
+  grpc_rb_compression_options* wrapper = NULL;
+
+  grpc_ruby_once_init();
+
+  wrapper = gpr_malloc(sizeof(grpc_rb_compression_options));
   wrapper->wrapped = NULL;
   wrapper->wrapped = gpr_malloc(sizeof(grpc_compression_options));
   grpc_compression_options_init(wrapper->wrapped);
@@ -114,7 +105,7 @@ static VALUE grpc_rb_compression_options_alloc(VALUE cls) {
 VALUE grpc_rb_compression_options_disable_compression_algorithm_internal(
     VALUE self, VALUE algorithm_to_disable) {
   grpc_compression_algorithm compression_algorithm = 0;
-  grpc_rb_compression_options *wrapper = NULL;
+  grpc_rb_compression_options* wrapper = NULL;
 
   TypedData_Get_Struct(self, grpc_rb_compression_options,
                        &grpc_rb_compression_options_data_type, wrapper);
@@ -156,7 +147,7 @@ grpc_compression_level grpc_rb_compression_options_level_name_to_value_internal(
 /* Sets the default compression level, given the name of a compression level.
  * Throws an error if no algorithm matched. */
 void grpc_rb_compression_options_set_default_level(
-    grpc_compression_options *options, VALUE new_level_name) {
+    grpc_compression_options* options, VALUE new_level_name) {
   options->default_level.level =
       grpc_rb_compression_options_level_name_to_value_internal(new_level_name);
   options->default_level.is_set = 1;
@@ -167,9 +158,8 @@ void grpc_rb_compression_options_set_default_level(
  * algorithm_value is an out parameter.
  * Raises an error if the name of the algorithm passed in is invalid. */
 void grpc_rb_compression_options_algorithm_name_to_value_internal(
-    grpc_compression_algorithm *algorithm_value, VALUE algorithm_name) {
-  char *name_str = NULL;
-  long name_len = 0;
+    grpc_compression_algorithm* algorithm_value, VALUE algorithm_name) {
+  grpc_slice name_slice;
   VALUE algorithm_name_as_string = Qnil;
 
   Check_Type(algorithm_name, T_SYMBOL);
@@ -178,23 +168,35 @@ void grpc_rb_compression_options_algorithm_name_to_value_internal(
    * correct C string out of it. */
   algorithm_name_as_string = rb_funcall(algorithm_name, rb_intern("to_s"), 0);
 
-  name_str = RSTRING_PTR(algorithm_name_as_string);
-  name_len = RSTRING_LEN(algorithm_name_as_string);
+  name_slice =
+      grpc_slice_from_copied_buffer(RSTRING_PTR(algorithm_name_as_string),
+                                    RSTRING_LEN(algorithm_name_as_string));
 
   /* Raise an error if the name isn't recognized as a compression algorithm by
    * the algorithm parse function
    * in GRPC core. */
-  if (!grpc_compression_algorithm_parse(name_str, name_len, algorithm_value)) {
-    rb_raise(rb_eNameError, "Invalid compression algorithm name: %s",
-             StringValueCStr(algorithm_name_as_string));
+  if (!grpc_compression_algorithm_parse(name_slice, algorithm_value)) {
+    char* name_slice_str = grpc_slice_to_c_string(name_slice);
+    char* error_message_str = NULL;
+    VALUE error_message_ruby_str = Qnil;
+    GPR_ASSERT(gpr_asprintf(&error_message_str,
+                            "Invalid compression algorithm name: %s",
+                            name_slice_str) != -1);
+    gpr_free(name_slice_str);
+    error_message_ruby_str =
+        rb_str_new(error_message_str, strlen(error_message_str));
+    gpr_free(error_message_str);
+    rb_raise(rb_eNameError, "%s", StringValueCStr(error_message_ruby_str));
   }
+
+  grpc_slice_unref(name_slice);
 }
 
 /* Indicates whether a given algorithm is enabled on this instance, given the
  * readable algorithm name. */
 VALUE grpc_rb_compression_options_is_algorithm_enabled(VALUE self,
                                                        VALUE algorithm_name) {
-  grpc_rb_compression_options *wrapper = NULL;
+  grpc_rb_compression_options* wrapper = NULL;
   grpc_compression_algorithm internal_algorithm_value;
 
   TypedData_Get_Struct(self, grpc_rb_compression_options,
@@ -212,7 +214,7 @@ VALUE grpc_rb_compression_options_is_algorithm_enabled(VALUE self,
 /* Sets the default algorithm to the name of the algorithm passed in.
  * Raises an error if the name is not a valid compression algorithm name. */
 void grpc_rb_compression_options_set_default_algorithm(
-    grpc_compression_options *options, VALUE algorithm_name) {
+    grpc_compression_options* options, VALUE algorithm_name) {
   grpc_rb_compression_options_algorithm_name_to_value_internal(
       &options->default_algorithm.algorithm, algorithm_name);
   options->default_algorithm.is_set = 1;
@@ -222,7 +224,7 @@ void grpc_rb_compression_options_set_default_algorithm(
  * algorithm.
  * Fails if the algorithm name is invalid. */
 void grpc_rb_compression_options_disable_algorithm(
-    grpc_compression_options *compression_options, VALUE algorithm_name) {
+    grpc_compression_options* compression_options, VALUE algorithm_name) {
   grpc_compression_algorithm internal_algorithm_value;
 
   grpc_rb_compression_options_algorithm_name_to_value_internal(
@@ -234,8 +236,8 @@ void grpc_rb_compression_options_disable_algorithm(
 /* Provides a ruby hash of GRPC core channel argument key-values that
  * correspond to the compression settings on this instance. */
 VALUE grpc_rb_compression_options_to_hash(VALUE self) {
-  grpc_rb_compression_options *wrapper = NULL;
-  grpc_compression_options *compression_options = NULL;
+  grpc_rb_compression_options* wrapper = NULL;
+  grpc_compression_options* compression_options = NULL;
   VALUE channel_arg_hash = rb_hash_new();
   VALUE key = Qnil;
   VALUE value = Qnil;
@@ -283,6 +285,8 @@ VALUE grpc_rb_compression_options_level_value_to_name_internal(
           rb_eArgError,
           "Failed to convert compression level value to name for value: %d",
           (int)compression_value);
+      /* return something to avoid compiler error about no return */
+      return Qnil;
   }
 }
 
@@ -290,7 +294,7 @@ VALUE grpc_rb_compression_options_level_value_to_name_internal(
  * Fails if the enum value is invalid. */
 VALUE grpc_rb_compression_options_algorithm_value_to_name_internal(
     grpc_compression_algorithm internal_value) {
-  char *algorithm_name = NULL;
+  char* algorithm_name = NULL;
 
   if (!grpc_compression_algorithm_name(internal_value, &algorithm_name)) {
     rb_raise(rb_eArgError, "Failed to convert algorithm value to name");
@@ -303,7 +307,7 @@ VALUE grpc_rb_compression_options_algorithm_value_to_name_internal(
  * Returns nil if no algorithm has been set. */
 VALUE grpc_rb_compression_options_get_default_algorithm(VALUE self) {
   grpc_compression_algorithm internal_value;
-  grpc_rb_compression_options *wrapper = NULL;
+  grpc_rb_compression_options* wrapper = NULL;
 
   TypedData_Get_Struct(self, grpc_rb_compression_options,
                        &grpc_rb_compression_options_data_type, wrapper);
@@ -322,7 +326,7 @@ VALUE grpc_rb_compression_options_get_default_algorithm(VALUE self) {
  * A nil return value means that it hasn't been set. */
 VALUE grpc_rb_compression_options_get_default_level(VALUE self) {
   grpc_compression_level internal_value;
-  grpc_rb_compression_options *wrapper = NULL;
+  grpc_rb_compression_options* wrapper = NULL;
 
   TypedData_Get_Struct(self, grpc_rb_compression_options,
                        &grpc_rb_compression_options_data_type, wrapper);
@@ -341,7 +345,7 @@ VALUE grpc_rb_compression_options_get_default_level(VALUE self) {
 VALUE grpc_rb_compression_options_get_disabled_algorithms(VALUE self) {
   VALUE disabled_algorithms = rb_ary_new();
   grpc_compression_algorithm internal_value;
-  grpc_rb_compression_options *wrapper = NULL;
+  grpc_rb_compression_options* wrapper = NULL;
 
   TypedData_Get_Struct(self, grpc_rb_compression_options,
                        &grpc_rb_compression_options_data_type, wrapper);
@@ -369,8 +373,8 @@ VALUE grpc_rb_compression_options_get_disabled_algorithms(VALUE self) {
  *   channel_arg hash = Hash.new[...]
  *   channel_arg_hash_with_compression_options = channel_arg_hash.merge(options)
  */
-VALUE grpc_rb_compression_options_init(int argc, VALUE *argv, VALUE self) {
-  grpc_rb_compression_options *wrapper = NULL;
+VALUE grpc_rb_compression_options_init(int argc, VALUE* argv, VALUE self) {
+  grpc_rb_compression_options* wrapper = NULL;
   VALUE default_algorithm = Qnil;
   VALUE default_level = Qnil;
   VALUE disabled_algorithms = Qnil;

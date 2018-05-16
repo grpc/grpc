@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\Grpc.Core\Version.csproj.include" />
+  <Import Project="..\Grpc.Core\Common.csproj.include" />
+
+  <PropertyGroup>
+    <TargetFrameworks>net45;netcoreapp1.0</TargetFrameworks>
+    <AssemblyName>Grpc.Reflection.Tests</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <PackageId>Grpc.Reflection.Tests</PackageId>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Grpc.Reflection/Grpc.Reflection.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NUnit" Version="3.6.0" />
+    <PackageReference Include="NUnitLite" Version="3.6.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
+    <Reference Include="System" />
+    <Reference Include="Microsoft.CSharp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Grpc.Core\Version.cs" />
+  </ItemGroup>
+
+</Project>

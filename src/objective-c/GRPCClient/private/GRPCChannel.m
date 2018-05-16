@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -46,6 +31,22 @@
 #import <GRPCClient/GRPCCall+Cronet.h>
 #endif
 #import "GRPCCompletionQueue.h"
+
+static void *copy_pointer_arg(void *p) {
+  // Add ref count to the object when making copy
+  id obj = (__bridge id)p;
+  return (__bridge_retained void *)obj;
+}
+
+static void destroy_pointer_arg(void *p) {
+  // Decrease ref count to the object when destroying
+  CFRelease((CFTreeRef)p);
+}
+
+static int cmp_pointer_arg(void *p, void *q) { return p == q; }
+
+static const grpc_arg_pointer_vtable objc_arg_vtable = {copy_pointer_arg, destroy_pointer_arg,
+                                                        cmp_pointer_arg};
 
 static void FreeChannelArgs(grpc_channel_args *channel_args) {
   for (size_t i = 0; i < channel_args->num_args; ++i) {
@@ -90,6 +91,10 @@ static grpc_channel_args *BuildChannelArgs(NSDictionary *dictionary) {
     } else if ([value respondsToSelector:@selector(intValue)]) {
       arg->type = GRPC_ARG_INTEGER;
       arg->value.integer = [value intValue];
+    } else if (value != nil) {
+      arg->type = GRPC_ARG_POINTER;
+      arg->value.pointer.p = (__bridge_retained void *)value;
+      arg->value.pointer.vtable = &objc_arg_vtable;
     } else {
       [NSException raise:NSInvalidArgumentException
                   format:@"Invalid value type: %@", [value class]];
@@ -108,7 +113,7 @@ static grpc_channel_args *BuildChannelArgs(NSDictionary *dictionary) {
 
 #ifdef GRPC_COMPILE_WITH_CRONET
 - (instancetype)initWithHost:(NSString *)host
-                cronetEngine:(cronet_engine *)cronetEngine
+                cronetEngine:(stream_engine *)cronetEngine
                  channelArgs:(NSDictionary *)channelArgs {
   if (!host) {
     [NSException raise:NSInvalidArgumentException format:@"host argument missing"];
@@ -117,10 +122,8 @@ static grpc_channel_args *BuildChannelArgs(NSDictionary *dictionary) {
   if (self = [super init]) {
     _channelArgs = BuildChannelArgs(channelArgs);
     _host = [host copy];
-    _unmanagedChannel = grpc_cronet_secure_channel_create(cronetEngine,
-                                                          _host.UTF8String,
-                                                          _channelArgs,
-                                                          NULL);
+    _unmanagedChannel =
+        grpc_cronet_secure_channel_create(cronetEngine, _host.UTF8String, _channelArgs, NULL);
   }
 
   return self;
@@ -143,8 +146,8 @@ static grpc_channel_args *BuildChannelArgs(NSDictionary *dictionary) {
     _channelArgs = BuildChannelArgs(channelArgs);
     _host = [host copy];
     if (secure) {
-      _unmanagedChannel = grpc_secure_channel_create(credentials, _host.UTF8String, _channelArgs,
-                                                     NULL);
+      _unmanagedChannel =
+          grpc_secure_channel_create(credentials, _host.UTF8String, _channelArgs, NULL);
     } else {
       _unmanagedChannel = grpc_insecure_channel_create(_host.UTF8String, _channelArgs, NULL);
     }
@@ -163,10 +166,9 @@ static grpc_channel_args *BuildChannelArgs(NSDictionary *dictionary) {
 #ifdef GRPC_COMPILE_WITH_CRONET
 + (GRPCChannel *)secureCronetChannelWithHost:(NSString *)host
                                  channelArgs:(NSDictionary *)channelArgs {
-  cronet_engine *engine = [GRPCCall cronetEngine];
+  stream_engine *engine = [GRPCCall cronetEngine];
   if (!engine) {
-    [NSException raise:NSInvalidArgumentException
-                format:@"cronet_engine is NULL. Set it first."];
+    [NSException raise:NSInvalidArgumentException format:@"cronet_engine is NULL. Set it first."];
     return nil;
   }
   return [[GRPCChannel alloc] initWithHost:host cronetEngine:engine channelArgs:channelArgs];
@@ -184,25 +186,37 @@ static grpc_channel_args *BuildChannelArgs(NSDictionary *dictionary) {
                                     secure:YES
                                credentials:credentials
                                channelArgs:channelArgs];
-
 }
 
-+ (GRPCChannel *)insecureChannelWithHost:(NSString *)host
-                             channelArgs:(NSDictionary *)channelArgs {
-  return [[GRPCChannel alloc] initWithHost:host
-                                    secure:NO
-                               credentials:NULL
-                               channelArgs:channelArgs];
++ (GRPCChannel *)insecureChannelWithHost:(NSString *)host channelArgs:(NSDictionary *)channelArgs {
+  return [[GRPCChannel alloc] initWithHost:host secure:NO credentials:NULL channelArgs:channelArgs];
 }
 
 - (grpc_call *)unmanagedCallWithPath:(NSString *)path
+                          serverName:(NSString *)serverName
+                             timeout:(NSTimeInterval)timeout
                      completionQueue:(GRPCCompletionQueue *)queue {
-  return grpc_channel_create_call(_unmanagedChannel,
-                                  NULL, GRPC_PROPAGATE_DEFAULTS,
-                                  queue.unmanagedQueue,
-                                  path.UTF8String,
-                                  NULL, // Passing NULL for host
-                                  gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+  GPR_ASSERT(timeout >= 0);
+  if (timeout < 0) {
+    timeout = 0;
+  }
+  grpc_slice host_slice = grpc_empty_slice();
+  if (serverName) {
+    host_slice = grpc_slice_from_copied_string(serverName.UTF8String);
+  }
+  grpc_slice path_slice = grpc_slice_from_copied_string(path.UTF8String);
+  gpr_timespec deadline_ms =
+      timeout == 0 ? gpr_inf_future(GPR_CLOCK_REALTIME)
+                   : gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                  gpr_time_from_millis((int64_t)(timeout * 1000), GPR_TIMESPAN));
+  grpc_call *call = grpc_channel_create_call(_unmanagedChannel, NULL, GRPC_PROPAGATE_DEFAULTS,
+                                             queue.unmanagedQueue, path_slice,
+                                             serverName ? &host_slice : NULL, deadline_ms, NULL);
+  if (serverName) {
+    grpc_slice_unref(host_slice);
+  }
+  grpc_slice_unref(path_slice);
+  return call;
 }
 
 @end

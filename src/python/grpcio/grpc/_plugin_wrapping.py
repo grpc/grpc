@@ -1,33 +1,19 @@
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import collections
+import logging
 import threading
 
 import grpc
@@ -35,89 +21,80 @@ from grpc import _common
 from grpc._cython import cygrpc
 
 
-class AuthMetadataContext(
-    collections.namedtuple(
-        'AuthMetadataContext', ('service_url', 'method_name',)),
-    grpc.AuthMetadataContext):
-  pass
+class _AuthMetadataContext(
+        collections.namedtuple('AuthMetadataContext', (
+            'service_url',
+            'method_name',
+        )), grpc.AuthMetadataContext):
+    pass
 
 
-class AuthMetadataPluginCallback(grpc.AuthMetadataContext):
+class _CallbackState(object):
 
-  def __init__(self, callback):
-    self._callback = callback
+    def __init__(self):
+        self.lock = threading.Lock()
+        self.called = False
+        self.exception = None
 
-  def __call__(self, metadata, error):
-    self._callback(metadata, error)
+
+class _AuthMetadataPluginCallback(grpc.AuthMetadataPluginCallback):
+
+    def __init__(self, state, callback):
+        self._state = state
+        self._callback = callback
+
+    def __call__(self, metadata, error):
+        with self._state.lock:
+            if self._state.exception is None:
+                if self._state.called:
+                    raise RuntimeError(
+                        'AuthMetadataPluginCallback invoked more than once!')
+                else:
+                    self._state.called = True
+            else:
+                raise RuntimeError(
+                    'AuthMetadataPluginCallback raised exception "{}"!'.format(
+                        self._state.exception))
+        if error is None:
+            self._callback(metadata, cygrpc.StatusCode.ok, None)
+        else:
+            self._callback(None, cygrpc.StatusCode.internal,
+                           _common.encode(str(error)))
 
 
-class _WrappedCygrpcCallback(object):
+class _Plugin(object):
 
-  def __init__(self, cygrpc_callback):
-    self.is_called = False
-    self.error = None
-    self.is_called_lock = threading.Lock()
-    self.cygrpc_callback = cygrpc_callback
+    def __init__(self, metadata_plugin):
+        self._metadata_plugin = metadata_plugin
 
-  def _invoke_failure(self, error):
-    # TODO(atash) translate different Exception superclasses into different
-    # status codes.
-    self.cygrpc_callback(
-        _common.EMPTY_METADATA, cygrpc.StatusCode.internal,
-        _common.encode(str(error)))
+    def __call__(self, service_url, method_name, callback):
+        context = _AuthMetadataContext(
+            _common.decode(service_url), _common.decode(method_name))
+        callback_state = _CallbackState()
+        try:
+            self._metadata_plugin(context,
+                                  _AuthMetadataPluginCallback(
+                                      callback_state, callback))
+        except Exception as exception:  # pylint: disable=broad-except
+            logging.exception(
+                'AuthMetadataPluginCallback "%s" raised exception!',
+                self._metadata_plugin)
+            with callback_state.lock:
+                callback_state.exception = exception
+                if callback_state.called:
+                    return
+            callback(None, cygrpc.StatusCode.internal,
+                     _common.encode(str(exception)))
 
-  def _invoke_success(self, metadata):
-    try:
-      cygrpc_metadata = _common.cygrpc_metadata(metadata)
-    except Exception as error:
-      self._invoke_failure(error)
-      return
-    self.cygrpc_callback(cygrpc_metadata, cygrpc.StatusCode.ok, b'')
 
-  def __call__(self, metadata, error):
-    with self.is_called_lock:
-      if self.is_called:
-        raise RuntimeError('callback should only ever be invoked once')
-      if self.error:
-        self._invoke_failure(self.error)
-        return
-      self.is_called = True
-    if error is None:
-      self._invoke_success(metadata)
+def metadata_plugin_call_credentials(metadata_plugin, name):
+    if name is None:
+        try:
+            effective_name = metadata_plugin.__name__
+        except AttributeError:
+            effective_name = metadata_plugin.__class__.__name__
     else:
-      self._invoke_failure(error)
-
-  def notify_failure(self, error):
-    with self.is_called_lock:
-      if not self.is_called:
-        self.error = error
-
-
-class _WrappedPlugin(object):
-
-  def __init__(self, plugin):
-    self.plugin = plugin
-
-  def __call__(self, context, cygrpc_callback):
-    wrapped_cygrpc_callback = _WrappedCygrpcCallback(cygrpc_callback)
-    wrapped_context = AuthMetadataContext(
-        _common.decode(context.service_url), _common.decode(context.method_name))
-    try:
-      self.plugin(
-          wrapped_context, AuthMetadataPluginCallback(wrapped_cygrpc_callback))
-    except Exception as error:
-      wrapped_cygrpc_callback.notify_failure(error)
-      raise
-
-
-def call_credentials_metadata_plugin(plugin, name):
-  """
-  Args:
-    plugin: A callable accepting a grpc.AuthMetadataContext
-      object and a callback (itself accepting a list of metadata key/value
-      2-tuples and a None-able exception value). The callback must be eventually
-      called, but need not be called in plugin's invocation.
-      plugin's invocation must be non-blocking.
-  """
-  return cygrpc.call_credentials_metadata_plugin(
-      cygrpc.CredentialsMetadataPlugin(_WrappedPlugin(plugin), _common.encode(name)))
+        effective_name = name
+    return grpc.CallCredentials(
+        cygrpc.MetadataPluginCallCredentials(
+            _Plugin(metadata_plugin), _common.encode(effective_name)))

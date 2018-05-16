@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyTitle>GreeterClient</AssemblyTitle>
+    <TargetFrameworks>netcoreapp1.0</TargetFrameworks>
+    <DebugType>portable</DebugType>
+    <AssemblyName>GreeterClient</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <PackageId>GreeterClient</PackageId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Greeter\Greeter.csproj" />
+  </ItemGroup>
+
+</Project>

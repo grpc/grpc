@@ -1,60 +1,45 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 #include <ruby/ruby.h>
 
-#include "rb_grpc_imports.generated.h"
 #include "rb_event_thread.h"
+#include "rb_grpc_imports.generated.h"
 
 #include <stdbool.h>
 
-#include <ruby/thread.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
-#include <grpc/support/log.h>
+#include <ruby/thread.h>
 
 typedef struct grpc_rb_event {
   // callback will be called with argument while holding the GVL
   void (*callback)(void*);
-  void *argument;
+  void* argument;
 
-  struct grpc_rb_event *next;
+  struct grpc_rb_event* next;
 } grpc_rb_event;
 
 typedef struct grpc_rb_event_queue {
-  grpc_rb_event *head;
-  grpc_rb_event *tail;
+  grpc_rb_event* head;
+  grpc_rb_event* tail;
 
   gpr_mu mu;
   gpr_cv cv;
@@ -65,9 +50,8 @@ typedef struct grpc_rb_event_queue {
 
 static grpc_rb_event_queue event_queue;
 
-void grpc_rb_event_queue_enqueue(void (*callback)(void*),
-                                 void *argument) {
-  grpc_rb_event *event = gpr_malloc(sizeof(grpc_rb_event));
+void grpc_rb_event_queue_enqueue(void (*callback)(void*), void* argument) {
+  grpc_rb_event* event = gpr_malloc(sizeof(grpc_rb_event));
   event->callback = callback;
   event->argument = argument;
   event->next = NULL;
@@ -82,8 +66,8 @@ void grpc_rb_event_queue_enqueue(void (*callback)(void*),
   gpr_mu_unlock(&event_queue.mu);
 }
 
-static grpc_rb_event *grpc_rb_event_queue_dequeue() {
-  grpc_rb_event *event;
+static grpc_rb_event* grpc_rb_event_queue_dequeue() {
+  grpc_rb_event* event;
   if (event_queue.head == NULL) {
     event = NULL;
   } else {
@@ -102,24 +86,23 @@ static void grpc_rb_event_queue_destroy() {
   gpr_cv_destroy(&event_queue.cv);
 }
 
-static void *grpc_rb_wait_for_event_no_gil(void *param) {
-  grpc_rb_event *event = NULL;
+static void* grpc_rb_wait_for_event_no_gil(void* param) {
+  grpc_rb_event* event = NULL;
   (void)param;
   gpr_mu_lock(&event_queue.mu);
-  while ((event = grpc_rb_event_queue_dequeue()) == NULL) {
-    gpr_cv_wait(&event_queue.cv,
-                &event_queue.mu,
-                gpr_inf_future(GPR_CLOCK_REALTIME));
-    if (event_queue.abort) {
+  while (!event_queue.abort) {
+    if ((event = grpc_rb_event_queue_dequeue()) != NULL) {
       gpr_mu_unlock(&event_queue.mu);
-      return NULL;
+      return event;
     }
+    gpr_cv_wait(&event_queue.cv, &event_queue.mu,
+                gpr_inf_future(GPR_CLOCK_REALTIME));
   }
   gpr_mu_unlock(&event_queue.mu);
-  return event;
+  return NULL;
 }
 
-static void grpc_rb_event_unblocking_func(void *arg) {
+static void grpc_rb_event_unblocking_func(void* arg) {
   (void)arg;
   gpr_mu_lock(&event_queue.mu);
   event_queue.abort = true;
@@ -130,12 +113,12 @@ static void grpc_rb_event_unblocking_func(void *arg) {
 /* This is the implementation of the thread that handles auth metadata plugin
  * events */
 static VALUE grpc_rb_event_thread(VALUE arg) {
-  grpc_rb_event *event;
+  grpc_rb_event* event;
   (void)arg;
-  while(true) {
+  while (true) {
     event = (grpc_rb_event*)rb_thread_call_without_gvl(
-        grpc_rb_wait_for_event_no_gil, NULL,
-        grpc_rb_event_unblocking_func, NULL);
+        grpc_rb_wait_for_event_no_gil, NULL, grpc_rb_event_unblocking_func,
+        NULL);
     if (event == NULL) {
       // Indicates that the thread needs to shut down
       break;

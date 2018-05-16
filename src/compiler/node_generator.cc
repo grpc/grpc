@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -35,12 +20,13 @@
 
 #include "src/compiler/config.h"
 #include "src/compiler/generator_helpers.h"
+#include "src/compiler/node_generator.h"
 #include "src/compiler/node_generator_helpers.h"
 
-using grpc::protobuf::FileDescriptor;
-using grpc::protobuf::ServiceDescriptor;
-using grpc::protobuf::MethodDescriptor;
 using grpc::protobuf::Descriptor;
+using grpc::protobuf::FileDescriptor;
+using grpc::protobuf::MethodDescriptor;
+using grpc::protobuf::ServiceDescriptor;
 using grpc::protobuf::io::Printer;
 using grpc::protobuf::io::StringOutputStream;
 using std::map;
@@ -62,20 +48,21 @@ grpc::string ModuleAlias(const grpc::string filename) {
   grpc::string basename = grpc_generator::StripProto(filename);
   basename = grpc_generator::StringReplace(basename, "-", "$");
   basename = grpc_generator::StringReplace(basename, "/", "_");
+  basename = grpc_generator::StringReplace(basename, ".", "_");
   return basename + "_pb";
 }
 
 // Given a filename like foo/bar/baz.proto, returns the corresponding JavaScript
 // message file foo/bar/baz.js
-grpc::string GetJSMessageFilename(const grpc::string &filename) {
+grpc::string GetJSMessageFilename(const grpc::string& filename) {
   grpc::string name = filename;
   return grpc_generator::StripProto(name) + "_pb.js";
 }
 
 // Given a filename like foo/bar/baz.proto, returns the root directory
 // path ../../
-grpc::string GetRootPath(const grpc::string &from_filename,
-                         const grpc::string &to_filename) {
+grpc::string GetRootPath(const grpc::string& from_filename,
+                         const grpc::string& to_filename) {
   if (to_filename.find("google/protobuf") == 0) {
     // Well-known types (.proto files in the google/protobuf directory) are
     // assumed to come from the 'google-protobuf' npm package.  We may want to
@@ -96,24 +83,24 @@ grpc::string GetRootPath(const grpc::string &from_filename,
 
 // Return the relative path to load to_file from the directory containing
 // from_file, assuming that both paths are relative to the same directory
-grpc::string GetRelativePath(const grpc::string &from_file,
-                             const grpc::string &to_file) {
+grpc::string GetRelativePath(const grpc::string& from_file,
+                             const grpc::string& to_file) {
   return GetRootPath(from_file, to_file) + to_file;
 }
 
 /* Finds all message types used in all services in the file, and returns them
  * as a map of fully qualified message type name to message descriptor */
-map<grpc::string, const Descriptor *> GetAllMessages(
-    const FileDescriptor *file) {
-  map<grpc::string, const Descriptor *> message_types;
+map<grpc::string, const Descriptor*> GetAllMessages(
+    const FileDescriptor* file) {
+  map<grpc::string, const Descriptor*> message_types;
   for (int service_num = 0; service_num < file->service_count();
        service_num++) {
-    const ServiceDescriptor *service = file->service(service_num);
+    const ServiceDescriptor* service = file->service(service_num);
     for (int method_num = 0; method_num < service->method_count();
          method_num++) {
-      const MethodDescriptor *method = service->method(method_num);
-      const Descriptor *input_type = method->input_type();
-      const Descriptor *output_type = method->output_type();
+      const MethodDescriptor* method = service->method(method_num);
+      const Descriptor* input_type = method->input_type();
+      const Descriptor* output_type = method->output_type();
       message_types[input_type->full_name()] = input_type;
       message_types[output_type->full_name()] = output_type;
     }
@@ -121,11 +108,11 @@ map<grpc::string, const Descriptor *> GetAllMessages(
   return message_types;
 }
 
-grpc::string MessageIdentifierName(const grpc::string &name) {
+grpc::string MessageIdentifierName(const grpc::string& name) {
   return grpc_generator::StringReplace(name, ".", "_");
 }
 
-grpc::string NodeObjectPath(const Descriptor *descriptor) {
+grpc::string NodeObjectPath(const Descriptor* descriptor) {
   grpc::string module_alias = ModuleAlias(descriptor->file()->name());
   grpc::string name = descriptor->full_name();
   grpc_generator::StripPrefix(&name, descriptor->file()->package() + ".");
@@ -133,7 +120,8 @@ grpc::string NodeObjectPath(const Descriptor *descriptor) {
 }
 
 // Prints out the message serializer and deserializer functions
-void PrintMessageTransformer(const Descriptor *descriptor, Printer *out) {
+void PrintMessageTransformer(const Descriptor* descriptor, Printer* out,
+                             const Parameters& params) {
   map<grpc::string, grpc::string> template_vars;
   grpc::string full_name = descriptor->full_name();
   template_vars["identifier_name"] = MessageIdentifierName(full_name);
@@ -148,7 +136,12 @@ void PrintMessageTransformer(const Descriptor *descriptor, Printer *out) {
              "throw new Error('Expected argument of type $name$');\n");
   out->Outdent();
   out->Print("}\n");
-  out->Print("return new Buffer(arg.serializeBinary());\n");
+  if (params.minimum_node_version > 5) {
+    // Node version is > 5, we should use Buffer.from
+    out->Print("return Buffer.from(arg.serializeBinary());\n");
+  } else {
+    out->Print("return new Buffer(arg.serializeBinary());\n");
+  }
   out->Outdent();
   out->Print("}\n\n");
 
@@ -163,9 +156,9 @@ void PrintMessageTransformer(const Descriptor *descriptor, Printer *out) {
   out->Print("}\n\n");
 }
 
-void PrintMethod(const MethodDescriptor *method, Printer *out) {
-  const Descriptor *input_type = method->input_type();
-  const Descriptor *output_type = method->output_type();
+void PrintMethod(const MethodDescriptor* method, Printer* out) {
+  const Descriptor* input_type = method->input_type();
+  const Descriptor* output_type = method->output_type();
   map<grpc::string, grpc::string> vars;
   vars["service_name"] = method->service()->full_name();
   vars["name"] = method->name();
@@ -191,7 +184,7 @@ void PrintMethod(const MethodDescriptor *method, Printer *out) {
 }
 
 // Prints out the service descriptor object
-void PrintService(const ServiceDescriptor *service, Printer *out) {
+void PrintService(const ServiceDescriptor* service, Printer* out) {
   map<grpc::string, grpc::string> template_vars;
   out->Print(GetNodeComments(service, true).c_str());
   template_vars["name"] = service->name();
@@ -214,7 +207,7 @@ void PrintService(const ServiceDescriptor *service, Printer *out) {
   out->Print(GetNodeComments(service, false).c_str());
 }
 
-void PrintImports(const FileDescriptor *file, Printer *out) {
+void PrintImports(const FileDescriptor* file, Printer* out) {
   out->Print("var grpc = require('grpc');\n");
   if (file->message_type_count() > 0) {
     grpc::string file_path =
@@ -233,24 +226,26 @@ void PrintImports(const FileDescriptor *file, Printer *out) {
   out->Print("\n");
 }
 
-void PrintTransformers(const FileDescriptor *file, Printer *out) {
-  map<grpc::string, const Descriptor *> messages = GetAllMessages(file);
-  for (std::map<grpc::string, const Descriptor *>::iterator it =
+void PrintTransformers(const FileDescriptor* file, Printer* out,
+                       const Parameters& params) {
+  map<grpc::string, const Descriptor*> messages = GetAllMessages(file);
+  for (std::map<grpc::string, const Descriptor*>::iterator it =
            messages.begin();
        it != messages.end(); it++) {
-    PrintMessageTransformer(it->second, out);
+    PrintMessageTransformer(it->second, out, params);
   }
   out->Print("\n");
 }
 
-void PrintServices(const FileDescriptor *file, Printer *out) {
+void PrintServices(const FileDescriptor* file, Printer* out) {
   for (int i = 0; i < file->service_count(); i++) {
     PrintService(file->service(i), out);
   }
 }
-}
+}  // namespace
 
-grpc::string GenerateFile(const FileDescriptor *file) {
+grpc::string GenerateFile(const FileDescriptor* file,
+                          const Parameters& params) {
   grpc::string output;
   {
     StringOutputStream output_stream(&output);
@@ -264,14 +259,14 @@ grpc::string GenerateFile(const FileDescriptor *file) {
     grpc::string leading_comments = GetNodeComments(file, true);
     if (!leading_comments.empty()) {
       out.Print("// Original file comments:\n");
-      out.Print(leading_comments.c_str());
+      out.PrintRaw(leading_comments.c_str());
     }
 
     out.Print("'use strict';\n");
 
     PrintImports(file, &out);
 
-    PrintTransformers(file, &out);
+    PrintTransformers(file, &out, params);
 
     PrintServices(file, &out);
 

@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -118,7 +103,7 @@ function listFeatures(call) {
 
 /**
  * Calculate the distance between two points using the "haversine" formula.
- * This code was taken from http://www.movable-type.co.uk/scripts/latlong.html.
+ * The formula is based on http://mathforum.org/library/drmath/view/51879.html.
  * @param start The starting point
  * @param end The end point
  * @return The distance between the points in meters
@@ -127,21 +112,18 @@ function getDistance(start, end) {
   function toRadians(num) {
     return num * Math.PI / 180;
   }
-  var lat1 = start.latitude / COORD_FACTOR;
-  var lat2 = end.latitude / COORD_FACTOR;
-  var lon1 = start.longitude / COORD_FACTOR;
-  var lon2 = end.longitude / COORD_FACTOR;
-  var R = 6371000; // metres
-  var φ1 = toRadians(lat1);
-  var φ2 = toRadians(lat2);
-  var Δφ = toRadians(lat2-lat1);
-  var Δλ = toRadians(lon2-lon1);
+  var R = 6371000;  // earth radius in metres
+  var lat1 = toRadians(start.latitude / COORD_FACTOR);
+  var lat2 = toRadians(end.latitude / COORD_FACTOR);
+  var lon1 = toRadians(start.longitude / COORD_FACTOR);
+  var lon2 = toRadians(end.longitude / COORD_FACTOR);
 
-  var a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-      Math.cos(φ1) * Math.cos(φ2) *
-      Math.sin(Δλ/2) * Math.sin(Δλ/2);
+  var deltalat = lat2-lat1;
+  var deltalon = lon2-lon1;
+  var a = Math.sin(deltalat/2) * Math.sin(deltalat/2) +
+      Math.cos(lat1) * Math.cos(lat2) *
+      Math.sin(deltalon/2) * Math.sin(deltalon/2);
   var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-
   return R * c;
 }
 

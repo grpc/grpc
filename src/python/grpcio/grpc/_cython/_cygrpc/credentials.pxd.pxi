@@ -1,45 +1,85 @@
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-cimport cpython
-
-
-cdef class ChannelCredentials:
-
-  cdef grpc_channel_credentials *c_credentials
-  cdef grpc_ssl_pem_key_cert_pair c_ssl_pem_key_cert_pair
-  cdef list references
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 
 cdef class CallCredentials:
 
+  cdef grpc_call_credentials *c(self)
+
+  # TODO(https://github.com/grpc/grpc/issues/12531): remove.
   cdef grpc_call_credentials *c_credentials
+
+
+cdef int _get_metadata(
+    void *state, grpc_auth_metadata_context context,
+    grpc_credentials_plugin_metadata_cb cb, void *user_data,
+    grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
+    size_t *num_creds_md, grpc_status_code *status,
+    const char **error_details) with gil
+
+cdef void _destroy(void *state) with gil
+
+
+cdef class MetadataPluginCallCredentials(CallCredentials):
+
+  cdef readonly object _metadata_plugin
+  cdef readonly bytes _name
+
+  cdef grpc_call_credentials *c(self)
+
+
+cdef grpc_call_credentials *_composition(call_credentialses)
+
+
+cdef class CompositeCallCredentials(CallCredentials):
+
+  cdef readonly tuple _call_credentialses
+
+  cdef grpc_call_credentials *c(self)
+
+
+cdef class ChannelCredentials:
+
+  cdef grpc_channel_credentials *c(self)
+
+  # TODO(https://github.com/grpc/grpc/issues/12531): remove.
+  cdef grpc_channel_credentials *c_credentials
+
+
+cdef class SSLChannelCredentials(ChannelCredentials):
+
+  cdef readonly object _pem_root_certificates
+  cdef readonly object _private_key
+  cdef readonly object _certificate_chain
+
+  cdef grpc_channel_credentials *c(self)
+
+
+cdef class CompositeChannelCredentials(ChannelCredentials):
+
+  cdef readonly tuple _call_credentialses
+  cdef readonly ChannelCredentials _channel_credentials
+
+  cdef grpc_channel_credentials *c(self)
+
+
+cdef class ServerCertificateConfig:
+
+  cdef grpc_ssl_server_certificate_config *c_cert_config
+  cdef const char *c_pem_root_certs
+  cdef grpc_ssl_pem_key_cert_pair *c_ssl_pem_key_cert_pairs
+  cdef size_t c_ssl_pem_key_cert_pairs_count
   cdef list references
 
 
@@ -49,23 +89,9 @@ cdef class ServerCredentials:
   cdef grpc_ssl_pem_key_cert_pair *c_ssl_pem_key_cert_pairs
   cdef size_t c_ssl_pem_key_cert_pairs_count
   cdef list references
-
-
-cdef class CredentialsMetadataPlugin:
-
-  cdef object plugin_callback
-  cdef bytes plugin_name
-
-  cdef grpc_metadata_credentials_plugin make_c_plugin(self)
-
-
-cdef class AuthMetadataContext:
-
-  cdef grpc_auth_metadata_context context
-
-
-cdef void plugin_get_metadata(
-    void *state, grpc_auth_metadata_context context,
-    grpc_credentials_plugin_metadata_cb cb, void *user_data) with gil
-
-cdef void plugin_destroy_c_plugin_state(void *state) with gil
+  # the cert config related state is used only if this credentials is
+  # created with cert config/fetcher
+  cdef object initial_cert_config
+  cdef object cert_config_fetcher
+  # whether C-core has asked for the initial_cert_config
+  cdef bint initial_cert_config_fetched

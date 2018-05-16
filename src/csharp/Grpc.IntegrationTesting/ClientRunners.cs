@@ -1,33 +1,18 @@
 #region Copyright notice and license
 
-// Copyright 2015, Google Inc.
-// All rights reserved.
+// Copyright 2015 gRPC authors.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #endregion
 
@@ -87,7 +72,7 @@ namespace Grpc.IntegrationTesting
                 Logger.Warning("ClientConfig.CoreList is not supported for C#. Ignoring the value");
             }
 
-            var channels = CreateChannels(config.ClientChannels, config.ServerTargets, config.SecurityParams);
+            var channels = CreateChannels(config.ClientChannels, config.ServerTargets, config.SecurityParams, config.ChannelArgs);
 
             return new ClientRunnerImpl(channels,
                 config.ClientType,
@@ -99,19 +84,20 @@ namespace Grpc.IntegrationTesting
                 () => GetNextProfiler());
         }
 
-        private static List<Channel> CreateChannels(int clientChannels, IEnumerable<string> serverTargets, SecurityParams securityParams)
+        private static List<Channel> CreateChannels(int clientChannels, IEnumerable<string> serverTargets, SecurityParams securityParams, IEnumerable<ChannelArg> channelArguments)
         {
             GrpcPreconditions.CheckArgument(clientChannels > 0, "clientChannels needs to be at least 1.");
             GrpcPreconditions.CheckArgument(serverTargets.Count() > 0, "at least one serverTarget needs to be specified.");
 
             var credentials = securityParams != null ? TestCredentials.CreateSslCredentials() : ChannelCredentials.Insecure;
-            List<ChannelOption> channelOptions = null;
+            var channelOptions = new List<ChannelOption>();
             if (securityParams != null && securityParams.ServerHostOverride != "")
             {
-                channelOptions = new List<ChannelOption>
-                {
-                    new ChannelOption(ChannelOptions.SslTargetNameOverride, securityParams.ServerHostOverride)
-                };
+                channelOptions.Add(new ChannelOption(ChannelOptions.SslTargetNameOverride, securityParams.ServerHostOverride));
+            }
+            foreach (var channelArgument in channelArguments)
+            {
+                channelOptions.Add(channelArgument.ToChannelOption());
             }
 
             var result = new List<Channel>();
@@ -140,11 +126,12 @@ namespace Grpc.IntegrationTesting
         readonly ClientType clientType;
         readonly RpcType rpcType;
         readonly PayloadConfig payloadConfig;
-        readonly Histogram histogram;
+        readonly Lazy<byte[]> cachedByteBufferRequest;
+        readonly ThreadLocal<Histogram> threadLocalHistogram;
 
         readonly List<Task> runnerTasks;
         readonly CancellationTokenSource stoppedCts = new CancellationTokenSource();
-        readonly WallClockStopwatch wallClockStopwatch = new WallClockStopwatch();
+        readonly TimeStats timeStats = new TimeStats();
         readonly AtomicCounter statsResetCount = new AtomicCounter();
         
         public ClientRunnerImpl(List<Channel> channels, ClientType clientType, RpcType rpcType, int outstandingRpcsPerChannel, LoadParams loadParams, PayloadConfig payloadConfig, HistogramParams histogramParams, Func<BasicProfiler> profilerFactory)
@@ -155,7 +142,8 @@ namespace Grpc.IntegrationTesting
             this.clientType = clientType;
             this.rpcType = rpcType;
             this.payloadConfig = payloadConfig;
-            this.histogram = new Histogram(histogramParams.Resolution, histogramParams.MaxPossible);
+            this.cachedByteBufferRequest = new Lazy<byte[]>(() => new byte[payloadConfig.BytebufParams.ReqSize]);
+            this.threadLocalHistogram = new ThreadLocal<Histogram>(() => new Histogram(histogramParams.Resolution, histogramParams.MaxPossible), true);
 
             this.runnerTasks = new List<Task>();
             foreach (var channel in this.channels)
@@ -171,21 +159,28 @@ namespace Grpc.IntegrationTesting
 
         public ClientStats GetStats(bool reset)
         {
-            var histogramData = histogram.GetSnapshot(reset);
-            var secondsElapsed = wallClockStopwatch.GetElapsedSnapshot(reset).TotalSeconds;
+            var histogramData = new HistogramData();
+            foreach (var hist in threadLocalHistogram.Values)
+            {
+                hist.GetSnapshot(histogramData, reset);
+            }
+
+            var timeSnapshot = timeStats.GetSnapshot(reset);
 
             if (reset)
             {
                 statsResetCount.Increment();
             }
 
-            // TODO: populate user time and system time
+            GrpcEnvironment.Logger.Info("[ClientRunnerImpl.GetStats] GC collection counts: gen0 {0}, gen1 {1}, gen2 {2}, (histogram reset count:{3}, seconds since reset: {4})",
+                GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2), statsResetCount.Count, timeSnapshot.WallClockTime.TotalSeconds);
+
             return new ClientStats
             {
                 Latencies = histogramData,
-                TimeElapsed = secondsElapsed,
-                TimeUser = 0,
-                TimeSystem = 0
+                TimeElapsed = timeSnapshot.WallClockTime.TotalSeconds,
+                TimeUser = timeSnapshot.UserProcessorTime.TotalSeconds,
+                TimeSystem = timeSnapshot.PrivilegedProcessorTime.TotalSeconds
             };
         }
 
@@ -229,7 +224,7 @@ namespace Grpc.IntegrationTesting
                 stopwatch.Stop();
 
                 // spec requires data point in nanoseconds.
-                histogram.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
+                threadLocalHistogram.Value.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
 
                 timer.WaitForNext();
             }
@@ -248,7 +243,7 @@ namespace Grpc.IntegrationTesting
                 stopwatch.Stop();
 
                 // spec requires data point in nanoseconds.
-                histogram.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
+                threadLocalHistogram.Value.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
 
                 await timer.WaitForNextAsync();
             }
@@ -270,7 +265,7 @@ namespace Grpc.IntegrationTesting
                     stopwatch.Stop();
 
                     // spec requires data point in nanoseconds.
-                    histogram.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
+                    threadLocalHistogram.Value.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
 
                     await timer.WaitForNextAsync();
                 }
@@ -283,7 +278,7 @@ namespace Grpc.IntegrationTesting
 
         private async Task RunGenericStreamingAsync(Channel channel, IInterarrivalTimer timer)
         {
-            var request = CreateByteBufferRequest();
+            var request = cachedByteBufferRequest.Value;
             var stopwatch = new Stopwatch();
 
             var callDetails = new CallInvocationDetails<byte[], byte[]>(channel, GenericService.StreamingCallMethod, new CallOptions());
@@ -298,7 +293,7 @@ namespace Grpc.IntegrationTesting
                     stopwatch.Stop();
 
                     // spec requires data point in nanoseconds.
-                    histogram.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
+                    threadLocalHistogram.Value.AddObservation(stopwatch.Elapsed.TotalSeconds * SecondsToNanos);
 
                     await timer.WaitForNextAsync();
                 }
@@ -346,11 +341,6 @@ namespace Grpc.IntegrationTesting
                 Payload = CreateZerosPayload(payloadConfig.SimpleParams.ReqSize),
                 ResponseSize = payloadConfig.SimpleParams.RespSize
             };
-        }
-
-        private byte[] CreateByteBufferRequest()
-        {
-            return new byte[payloadConfig.BytebufParams.ReqSize];
         }
 
         private static Payload CreateZerosPayload(int size)

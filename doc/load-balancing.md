@@ -1,12 +1,20 @@
 Load Balancing in gRPC
-=======================
+======================
 
-# Objective
+# Scope
 
-To design a load balancing API between a gRPC client and a Load Balancer to
-instruct the client how to send load to multiple backend servers.
+This document explains the design for load balancing within gRPC.
 
 # Background
+
+## Per-Call Load Balancing
+
+It is worth noting that load-balancing within gRPC happens on a per-call
+basis, not a per-connection basis.  In other words, even if all requests
+come from a single client, we still want them to be load-balanced across
+all servers.
+
+## Approaches to Load Balancing
 
 Prior to any gRPC specifics, we explore some usual ways to approach load
 balancing.
@@ -44,30 +52,31 @@ list of servers to the client.
 ### External Load Balancing Service
 
 The client load balancing code is kept simple and portable, implementing
-well-known algorithms (ie, Round Robin) for server selection.
-Complex load balancing algorithms are instead provided by the load balancer. The
-client relies on the load balancer to provide _load balancing configuration_ and
-_the list of servers_ to which the client should send requests. The balancer
-updates the server list as needed to balance the load as well as handle server
+well-known algorithms (e.g., Round Robin) for server selection.
+Complex load balancing algorithms are instead provided by the load
+balancer. The client relies on the load balancer to provide _load
+balancing configuration_ and _the list of servers_ to which the client
+should send requests. The balancer updates the server list as needed
+to balance the load as well as handle server unavailability or health
+issues. The load balancer will make any necessary complex decisions and
+inform the client. The load balancer may communicate with the backend
+servers to collect load and health information.
+
+# Requirements
+
+## Simple API and client
+
+The gRPC client load balancing code must be simple and portable. The
+client should only contain simple algorithms (e.g., Round Robin) for
+server selection.  For complex algorithms, the client should rely on
+a load balancer to provide load balancing configuration and the list of
+servers to which the client should send requests. The balancer will update
+the server list as needed to balance the load as well as handle server
 unavailability or health issues. The load balancer will make any necessary
-complex decisions and inform the client. The load balancer may communicate with
-the backend servers to collect load and health information.
+complex decisions and inform the client. The load balancer may communicate
+with the backend servers to collect load and health information.
 
-
-## Requirements
-
-#### Simple API and client
-
-The gRPC client load balancing code must be simple and portable. The client
-should only contain simple algorithms (ie Round Robin) for server selection. For
-complex algorithms, the client should rely on a load balancer to provide load
-balancing configuration and the list of servers to which the client should send
-requests. The balancer will update the server list as needed to balance the load
-as well as handle server unavailability or health issues. The load balancer will
-make any necessary complex decisions and inform the client. The load balancer
-may communicate with the backend servers to collect load and health information.
-
-#### Security
+## Security
 
 The load balancer may be separate from the actual server backends and a
 compromise of the load balancer should only lead to a compromise of the
@@ -75,70 +84,63 @@ loadbalancing functionality. In other words, a compromised load balancer should
 not be able to cause a client to trust a (potentially malicious) backend server
 any more than in a comparable situation without loadbalancing.
 
-# Proposed Architecture
+# Architecture
 
-The gRPC load balancing implements the external load balancing server approach:
-an external load balancer provides simple clients with an up-to-date list of
-servers.
+## Overview
 
-![image](images/load_balancing_design.png)
+The primary mechanism for load-balancing in gRPC is external
+load-balancing, where an external load balancer provides simple clients
+with an up-to-date list of servers.
 
-1. On startup, the gRPC client issues a name resolution request for the service.
-   The name will resolve to one or more IP addresses to gRPC servers, a hint on
-   whether the IP address(es) point to a load balancer or not, and also return a
-   client config.
-2. The gRPC client connects to a gRPC Server.
-   1. If the name resolution has hinted that the endpoint is a load balancer,
-      the client's gRPC LB policy will attempt to open a stream to the load
-      balancer service. The server may respond in only one of the following
-      ways.
-      1. `status::UNIMPLEMENTED`. There is no loadbalancing in use. The client
-         call will fail.
-      2. "I am a Load Balancer and here is the server list." (Goto Step 4.)
-      3. "Please contact Load Balancer X" (See Step 3.) The client will close
-         this connection and cancel the stream.
-      4. If the server fails to respond, the client will wait for some timeout
-         and then re-resolve the name (process to Step 1 above).
-   2. If the name resolution has not hinted that the endpoint is a load
-      balancer, the client connects directly to the service it wants to talk to.
-3. The gRPC client's gRPC LB policy opens a separate connection to the Load
-   Balancer. If this fails, it will go back to step 1 and try another address.
-   1. During channel initialization to the Load Balancer, the client will
-      attempt to open a stream to the Load Balancer service.
-   2. The Load Balancer will return a server list to the gRPC client. If the
-      server list is empty, the call will wait until a non-empty one is
-      received. Optional: The Load Balancer will also open channels to the gRPC
-      servers if load reporting is needed.
-4. The gRPC client will send RPCs to the gRPC servers contained in the server
-   list from the Load Balancer.
-5. Optional: The gRPC servers may periodically report load to the Load Balancer.
+The gRPC client does support an API for built-in load balancing policies.
+However, there are only a small number of these (one of which is the
+`grpclb` policy, which implements external load balancing), and users
+are discouraged from trying to extend gRPC by adding more.  Instead, new
+load balancing policies should be implemented in external load balancers.
 
-## Client
+## Workflow
 
-When establishing a gRPC _stream_ to the balancer, the client will send an initial
-request to the load balancer (via a regular gRPC message). The load balancer
-will respond with client config (including, for example, settings for flow
-control, RPC deadlines, etc.) or a redirect to another load balancer. If the
-balancer did not redirect the client, it will then send a list of servers to the
-client. The client will contain simple load balancing logic for choosing the
-next server when it needs to send a request.
+Load-balancing policies fit into the gRPC client workflow in between
+name resolution and the connection to the server.  Here's how it all
+works:
 
-## Load Balancer
+![image](images/load-balancing.png)
 
-The Load Balancer is responsible for providing the client with a list of servers
-and client RPC parameters. The balancer chooses when to update the list of
-servers and can decide whether to provide a complete list, a subset, or a
-specific list of “picked” servers in a particular order. The balancer can
-optionally provide an expiration interval after which the server list should no
-longer be trusted and should be updated by the balancer.
-
-The load balancer may open reporting streams to each server contained in the
-server list. These streams are primarily used for load reporting. For example,
-Weighted Round Robin requires that the servers report utilization to the load
-balancer in order to compute the next list of servers.
-
-## Server
-
-The gRPC Server is responsible for answering RPC requests and providing
-responses to the client. The server will also report load to the load balancer
-if a reporting stream was opened for this purpose.
+1. On startup, the gRPC client issues a [name resolution](naming.md) request
+   for the server name.  The name will resolve to one or more IP addresses,
+   each of which will indicate whether it is a server address or
+   a load balancer address, and a [service config](service_config.md)
+   that indicates which client-side load-balancing policy to use (e.g.,
+   `round_robin` or `grpclb`).
+2. The client instantiates the load balancing policy.
+   - Note: If any one of the addresses returned by the resolver is a balancer
+     address, then the client will use the `grpclb` policy, regardless
+     of what load-balancing policy was requested by the service config.
+     Otherwise, the client will use the load-balancing policy requested
+     by the service config.  If no load-balancing policy is requested
+     by the service config, then the client will default to a policy
+     that picks the first available server address.
+3. The load balancing policy creates a subchannel to each server address.
+   - For all policies *except* `grpclb`, this means one subchannel for each
+     address returned by the resolver. Note that these policies
+     ignore any balancer addresses returned by the resolver.
+   - In the case of the `grpclb` policy, the workflow is as follows:
+     1. The policy opens a stream to one of the balancer addresses returned
+        by the resolver. It asks the balancer for the server addresses to
+        use for the server name originally requested by the client (i.e.,
+        the same one originally passed to the name resolver).
+        - Note: In the `grpclb` policy, the non-balancer addresses returned
+          by the resolver are used as a fallback in case no balancers can be
+          contacted when the LB policy is started.
+     2. The gRPC servers to which the load balancer is directing the client
+        may report load to the load balancers, if that information is needed
+        by the load balancer's configuration.
+     3. The load balancer returns a server list to the gRPC client's `grpclb`
+        policy. The `grpclb` policy will then create a subchannel to each of
+        server in the list.
+4. For each RPC sent, the load balancing policy decides which
+   subchannel (i.e., which server) the RPC should be sent to.
+   - In the case of the `grpclb` policy, the client will send requests
+     to the servers in the order in which they were returned by the load
+     balancer.  If the server list is empty, the call will block until a
+     non-empty one is received.

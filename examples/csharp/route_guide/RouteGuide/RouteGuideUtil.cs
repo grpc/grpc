@@ -1,31 +1,16 @@
-﻿// Copyright 2015, Google Inc.
-// All rights reserved.
+// Copyright 2015 gRPC authors.
 //
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are
-// met:
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-//     * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-//     * Redistributions in binary form must reproduce the above
-// copyright notice, this list of conditions and the following disclaimer
-// in the documentation and/or other materials provided with the
-// distribution.
-//     * Neither the name of Google Inc. nor the names of its
-// contributors may be used to endorse or promote products derived from
-// this software without specific prior written permission.
+//     http://www.apache.org/licenses/LICENSE-2.0
 //
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -67,26 +52,23 @@ namespace Routeguide
 
         /// <summary>
         /// Calculate the distance between two points using the "haversine" formula.
-        /// This code was taken from http://www.movable-type.co.uk/scripts/latlong.html.
+        /// The formula is based on http://mathforum.org/library/drmath/view/51879.html
         /// </summary>
         /// <param name="start">the starting point</param>
         /// <param name="end">the end point</param>
         /// <returns>the distance between the points in meters</returns>
         public static double GetDistance(this Point start, Point end)
         {
-            double lat1 = start.GetLatitude();
-            double lat2 = end.GetLatitude();
-            double lon1 = start.GetLongitude();
-            double lon2 = end.GetLongitude();
-            int r = 6371000; // metres
-            double phi1 = ToRadians(lat1);
-            double phi2 = ToRadians(lat2);
-            double deltaPhi = ToRadians(lat2 - lat1);
-            double deltaLambda = ToRadians(lon2 - lon1);
+            int r = 6371000;  // earth radius in metres
+            double lat1 = ToRadians(start.GetLatitude());
+            double lat2 = ToRadians(end.GetLatitude());
+            double lon1 = ToRadians(start.GetLongitude());
+            double lon2 = ToRadians(end.GetLongitude());
+            double deltalat = lat2 - lat1;
+            double deltalon = lon2 - lon1;
 
-            double a = Math.Sin(deltaPhi / 2) * Math.Sin(deltaPhi / 2) + Math.Cos(phi1) * Math.Cos(phi2) * Math.Sin(deltaLambda / 2) * Math.Sin(deltaLambda / 2);
+            double a = Math.Sin(deltalat / 2) * Math.Sin(deltalat / 2) + Math.Cos(lat1) * Math.Cos(lat2) * Math.Sin(deltalon / 2) * Math.Sin(deltalon / 2);
             double c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-
             return r * c;
         }
 

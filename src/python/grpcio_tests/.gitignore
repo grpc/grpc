@@ -1,4 +1,1 @@
-proto/
-src/
-*_pb2.py
-*.egg-info/
+/src/

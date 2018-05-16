@@ -1,32 +1,16 @@
-# Copyright 2015, Google Inc.
-# All rights reserved.
+# Copyright 2015 gRPC authors.
 #
-# Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions are
-# met:
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-#     * Redistributions of source code must retain the above copyright
-# notice, this list of conditions and the following disclaimer.
-#     * Redistributions in binary form must reproduce the above
-# copyright notice, this list of conditions and the following disclaimer
-# in the documentation and/or other materials provided with the
-# distribution.
-#     * Neither the name of Google Inc. nor the names of its
-# contributors may be used to endorse or promote products derived from
-# this software without specific prior written permission.
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-# OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-# LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-# DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-# THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 """The base interface of RPC Framework.
 
 Implementations of this interface support the conduct of "operations":
@@ -47,32 +31,35 @@ import six
 # abandonment is referenced from specification in this module.
 from grpc.framework.foundation import abandonment  # pylint: disable=unused-import
 
+# pylint: disable=too-many-arguments
+
 
 class NoSuchMethodError(Exception):
-  """Indicates that an unrecognized operation has been called.
+    """Indicates that an unrecognized operation has been called.
 
-  Attributes:
-    code: A code value to communicate to the other side of the operation along
-      with indication of operation termination. May be None.
-    details: A details value to communicate to the other side of the operation
-      along with indication of operation termination. May be None.
-  """
-
-  def __init__(self, code, details):
-    """Constructor.
-
-    Args:
+    Attributes:
       code: A code value to communicate to the other side of the operation
         along with indication of operation termination. May be None.
       details: A details value to communicate to the other side of the
         operation along with indication of operation termination. May be None.
     """
-    self.code = code
-    self.details = details
+
+    def __init__(self, code, details):
+        """Constructor.
+
+        Args:
+          code: A code value to communicate to the other side of the operation
+            along with indication of operation termination. May be None.
+          details: A details value to communicate to the other side of the
+            operation along with indication of operation termination. May be None.
+        """
+        super(NoSuchMethodError, self).__init__()
+        self.code = code
+        self.details = details
 
 
 class Outcome(object):
-  """The outcome of an operation.
+    """The outcome of an operation.
 
   Attributes:
     kind: A Kind value coarsely identifying how the operation terminated.
@@ -82,23 +69,23 @@ class Outcome(object):
       provided.
   """
 
-  @enum.unique
-  class Kind(enum.Enum):
-    """Ways in which an operation can terminate."""
+    @enum.unique
+    class Kind(enum.Enum):
+        """Ways in which an operation can terminate."""
 
-    COMPLETED = 'completed'
-    CANCELLED = 'cancelled'
-    EXPIRED = 'expired'
-    LOCAL_SHUTDOWN = 'local shutdown'
-    REMOTE_SHUTDOWN = 'remote shutdown'
-    RECEPTION_FAILURE = 'reception failure'
-    TRANSMISSION_FAILURE = 'transmission failure'
-    LOCAL_FAILURE = 'local failure'
-    REMOTE_FAILURE = 'remote failure'
+        COMPLETED = 'completed'
+        CANCELLED = 'cancelled'
+        EXPIRED = 'expired'
+        LOCAL_SHUTDOWN = 'local shutdown'
+        REMOTE_SHUTDOWN = 'remote shutdown'
+        RECEPTION_FAILURE = 'reception failure'
+        TRANSMISSION_FAILURE = 'transmission failure'
+        LOCAL_FAILURE = 'local failure'
+        REMOTE_FAILURE = 'remote failure'
 
 
 class Completion(six.with_metaclass(abc.ABCMeta)):
-  """An aggregate of the values exchanged upon operation completion.
+    """An aggregate of the values exchanged upon operation completion.
 
   Attributes:
     terminal_metadata: A terminal metadata value for the operaton.
@@ -108,21 +95,21 @@ class Completion(six.with_metaclass(abc.ABCMeta)):
 
 
 class OperationContext(six.with_metaclass(abc.ABCMeta)):
-  """Provides operation-related information and action."""
+    """Provides operation-related information and action."""
 
-  @abc.abstractmethod
-  def outcome(self):
-    """Indicates the operation's outcome (or that the operation is ongoing).
+    @abc.abstractmethod
+    def outcome(self):
+        """Indicates the operation's outcome (or that the operation is ongoing).
 
     Returns:
       None if the operation is still active or the Outcome value for the
         operation if it has terminated.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def add_termination_callback(self, callback):
-    """Adds a function to be called upon operation termination.
+    @abc.abstractmethod
+    def add_termination_callback(self, callback):
+        """Adds a function to be called upon operation termination.
 
     Args:
       callback: A callable to be passed an Outcome value on operation
@@ -134,42 +121,44 @@ class OperationContext(six.with_metaclass(abc.ABCMeta)):
         terminated an Outcome value describing the operation termination and the
         passed callback will not be called as a result of this method call.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def time_remaining(self):
-    """Describes the length of allowed time remaining for the operation.
+    @abc.abstractmethod
+    def time_remaining(self):
+        """Describes the length of allowed time remaining for the operation.
 
     Returns:
       A nonnegative float indicating the length of allowed time in seconds
       remaining for the operation to complete before it is considered to have
       timed out. Zero is returned if the operation has terminated.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def cancel(self):
-    """Cancels the operation if the operation has not yet terminated."""
-    raise NotImplementedError()
+    @abc.abstractmethod
+    def cancel(self):
+        """Cancels the operation if the operation has not yet terminated."""
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def fail(self, exception):
-    """Indicates that the operation has failed.
+    @abc.abstractmethod
+    def fail(self, exception):
+        """Indicates that the operation has failed.
 
     Args:
       exception: An exception germane to the operation failure. May be None.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
 
 
 class Operator(six.with_metaclass(abc.ABCMeta)):
-  """An interface through which to participate in an operation."""
+    """An interface through which to participate in an operation."""
 
-  @abc.abstractmethod
-  def advance(
-      self, initial_metadata=None, payload=None, completion=None,
-      allowance=None):
-    """Progresses the operation.
+    @abc.abstractmethod
+    def advance(self,
+                initial_metadata=None,
+                payload=None,
+                completion=None,
+                allowance=None):
+        """Progresses the operation.
 
     Args:
       initial_metadata: An initial metadata value. Only one may ever be
@@ -181,23 +170,24 @@ class Operator(six.with_metaclass(abc.ABCMeta)):
       allowance: A positive integer communicating the number of additional
         payloads allowed to be passed by the remote side of the operation.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
+
 
 class ProtocolReceiver(six.with_metaclass(abc.ABCMeta)):
-  """A means of receiving protocol values during an operation."""
+    """A means of receiving protocol values during an operation."""
 
-  @abc.abstractmethod
-  def context(self, protocol_context):
-    """Accepts the protocol context object for the operation.
+    @abc.abstractmethod
+    def context(self, protocol_context):
+        """Accepts the protocol context object for the operation.
 
     Args:
       protocol_context: The protocol context object for the operation.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
 
 
 class Subscription(six.with_metaclass(abc.ABCMeta)):
-  """Describes customer code's interest in values from the other side.
+    """Describes customer code's interest in values from the other side.
 
   Attributes:
     kind: A Kind value describing the overall kind of this value.
@@ -215,20 +205,20 @@ class Subscription(six.with_metaclass(abc.ABCMeta)):
       Kind.FULL.
   """
 
-  @enum.unique
-  class Kind(enum.Enum):
+    @enum.unique
+    class Kind(enum.Enum):
 
-    NONE = 'none'
-    TERMINATION_ONLY = 'termination only'
-    FULL = 'full'
+        NONE = 'none'
+        TERMINATION_ONLY = 'termination only'
+        FULL = 'full'
 
 
 class Servicer(six.with_metaclass(abc.ABCMeta)):
-  """Interface for service implementations."""
+    """Interface for service implementations."""
 
-  @abc.abstractmethod
-  def service(self, group, method, context, output_operator):
-    """Services an operation.
+    @abc.abstractmethod
+    def service(self, group, method, context, output_operator):
+        """Services an operation.
 
     Args:
       group: The group identifier of the operation to be serviced.
@@ -248,20 +238,20 @@ class Servicer(six.with_metaclass(abc.ABCMeta)):
       abandonment.Abandoned: If the operation has been aborted and there no
         longer is any reason to service the operation.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
 
 
 class End(six.with_metaclass(abc.ABCMeta)):
-  """Common type for entry-point objects on both sides of an operation."""
+    """Common type for entry-point objects on both sides of an operation."""
 
-  @abc.abstractmethod
-  def start(self):
-    """Starts this object's service of operations."""
-    raise NotImplementedError()
+    @abc.abstractmethod
+    def start(self):
+        """Starts this object's service of operations."""
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def stop(self, grace):
-    """Stops this object's service of operations.
+    @abc.abstractmethod
+    def stop(self, grace):
+        """Stops this object's service of operations.
 
     This object will refuse service of new operations as soon as this method is
     called but operations under way at the time of the call may be given a
@@ -281,13 +271,19 @@ class End(six.with_metaclass(abc.ABCMeta)):
         much sooner (if for example this End had no operations in progress at
         the time its stop method was called).
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def operate(
-      self, group, method, subscription, timeout, initial_metadata=None,
-      payload=None, completion=None, protocol_options=None):
-    """Commences an operation.
+    @abc.abstractmethod
+    def operate(self,
+                group,
+                method,
+                subscription,
+                timeout,
+                initial_metadata=None,
+                payload=None,
+                completion=None,
+                protocol_options=None):
+        """Commences an operation.
 
     Args:
       group: The group identifier of the invoked operation.
@@ -312,23 +308,23 @@ class End(six.with_metaclass(abc.ABCMeta)):
         returned pair is an Operator to which operation values not passed in
         this call should later be passed.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def operation_stats(self):
-    """Reports the number of terminated operations broken down by outcome.
+    @abc.abstractmethod
+    def operation_stats(self):
+        """Reports the number of terminated operations broken down by outcome.
 
     Returns:
       A dictionary from Outcome.Kind value to an integer identifying the number
         of operations that terminated with that outcome kind.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()
 
-  @abc.abstractmethod
-  def add_idle_action(self, action):
-    """Adds an action to be called when this End has no ongoing operations.
+    @abc.abstractmethod
+    def add_idle_action(self, action):
+        """Adds an action to be called when this End has no ongoing operations.
 
     Args:
       action: A callable that accepts no arguments.
     """
-    raise NotImplementedError()
+        raise NotImplementedError()

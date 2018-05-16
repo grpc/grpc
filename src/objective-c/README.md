@@ -1,5 +1,12 @@
 [![Cocoapods](https://img.shields.io/cocoapods/v/gRPC.svg)](https://cocoapods.org/pods/gRPC)
 # gRPC for Objective-C
+gRPC Objective C library provides Objective C API for users to make gRPC calls on iOS or OS X
+platforms. Currently, the minimum supported iOS version is 7.0 and OS X version is 10.9 (Mavericks).
+
+While gRPC doesn't require the use of an IDL to describe the API of services, using one simplifies
+usage and adds some interoperability guarantees. Here we use [Protocol Buffers][], and provide a
+plugin for the Protobuf Compiler (_protoc_) to generate client libraries to communicate with gRPC
+services.
 
 - [Write your API declaration in proto format](#write-protos)
 - [Integrate a proto library in your project](#cocoapods)
@@ -9,11 +16,6 @@
     - [Install protoc with the gRPC plugin](#install)
     - [Install protoc and the gRPC plugin without using Homebrew](#no-homebrew)
     - [Integrate the generated gRPC library without using Cocoapods](#no-cocoapods)
-
-While gRPC doesn't require the use of an IDL to describe the API of services, using one simplifies
-usage and adds some interoperability guarantees. Here we use [Protocol Buffers][], and provide a
-plugin for the Protobuf Compiler (_protoc_) to generate client libraries to communicate with gRPC
-services.
 
 <a name="write-protos"></a>
 ## Write your API declaration in proto format
@@ -112,7 +114,7 @@ the sample Podspec above. For example, you could use:
 ```ruby
   s.prepare_command = <<-CMD
     ...
-        #{src}/*.proto #{src}/**/*.proto
+        `find . -name *.proto -print | xargs`
   CMD
   ...
     ms.source_files = "#{dir}/*.pbobjc.{h,m}", "#{dir}/**/*.pbobjc.{h,m}"

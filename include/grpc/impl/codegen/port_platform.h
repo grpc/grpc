@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -90,7 +75,6 @@
 #endif
 #define GPR_PLATFORM_STRING "windows"
 #define GPR_WINDOWS 1
-#define GPR_WINSOCK_SOCKET 1
 #define GPR_WINDOWS_SUBPROCESS 1
 #define GPR_WINDOWS_ENV
 #ifdef __MSYS__
@@ -124,24 +108,14 @@
 #define GPR_GCC_TLS 1
 #define GPR_LINUX 1
 #define GPR_LINUX_LOG 1
-#define GPR_POSIX_SOCKET 1
-#define GPR_POSIX_WAKEUP_FD 1
-#define GPR_POSIX_SOCKETADDR 1
-#define GPR_POSIX_NO_SPECIAL_WAKEUP_FD 1
-#define GPR_POSIX_SOCKETUTILS 1
 #define GPR_SUPPORT_CHANNELS_FROM_FD 1
-#define GPR_HAVE_UNIX_SOCKET 1
-#define GPR_HAVE_IP_PKTINFO 1
-#define GPR_HAVE_IPV6_RECVPKTINFO 1
 #define GPR_LINUX_ENV 1
-#define GPR_POSIX_FILE 1
 #define GPR_POSIX_TMPFILE 1
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
 #define GPR_GETPID_IN_UNISTD_H 1
-#define GPR_HAVE_MSG_NOSIGNAL 1
 #ifdef _LP64
 #define GPR_ARCH_64 1
 #else /* _LP64 */
@@ -155,31 +129,19 @@
 #else /* _LP64 */
 #define GPR_ARCH_32 1
 #endif /* _LP64 */
-#define GPR_CPU_LINUX 1
+#define GPR_CPU_POSIX 1
 #define GPR_GCC_SYNC 1
 #define GPR_GCC_TLS 1
-#define GPR_POSIX_MULTIPOLL_WITH_POLL 1
-#define GPR_POSIX_WAKEUP_FD 1
-#define GPR_LINUX_EVENTFD 1
-#define GPR_POSIX_SOCKET 1
-#define GPR_POSIX_SOCKETADDR 1
-#define GPR_POSIX_SOCKETUTILS 1
 #define GPR_POSIX_ENV 1
-#define GPR_POSIX_FILE 1
 #define GPR_POSIX_TMPFILE 1
-#define GPR_POSIX_LOG
+#define GPR_ANDROID_LOG 1
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
 #define GPR_GETPID_IN_UNISTD_H 1
 #define GPR_SUPPORT_CHANNELS_FROM_FD 1
-#define GPR_HAVE_MSG_NOSIGNAL 1
-#define GPR_HAVE_UNIX_SOCKET 1
-#define GPR_HAVE_IP_PKTINFO 1
-#define GPR_HAVE_IPV6_RECVPKTINFO 1
 #elif defined(__linux__)
-#define GPR_POSIX_CRASH_HANDLER 1
 #define GPR_PLATFORM_STRING "linux"
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
@@ -196,52 +158,32 @@
 #define GPR_GCC_TLS 1
 #define GPR_LINUX 1
 #define GPR_LINUX_LOG
-#define GPR_LINUX_MULTIPOLL_WITH_EPOLL 1
-#define GPR_POSIX_WAKEUP_FD 1
-#define GPR_POSIX_SOCKET 1
-#define GPR_POSIX_SOCKETADDR 1
 #define GPR_SUPPORT_CHANNELS_FROM_FD 1
-#define GPR_HAVE_UNIX_SOCKET 1
-#define GPR_HAVE_IP_PKTINFO 1
-#define GPR_HAVE_IPV6_RECVPKTINFO 1
-#ifdef __GLIBC_PREREQ
-#if __GLIBC_PREREQ(2, 9)
-#define GPR_LINUX_EVENTFD 1
-#define GPR_LINUX_EPOLL 1
-#endif
-#if __GLIBC_PREREQ(2, 10)
-#define GPR_LINUX_SOCKETUTILS 1
-#endif
-#endif
 #define GPR_LINUX_ENV 1
-#ifndef GPR_LINUX_EVENTFD
-#define GPR_POSIX_NO_SPECIAL_WAKEUP_FD 1
-#endif
-#ifndef GPR_LINUX_SOCKETUTILS
-#define GPR_POSIX_SOCKETUTILS
-#endif
-#define GPR_POSIX_FILE 1
 #define GPR_POSIX_TMPFILE 1
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
 #define GPR_GETPID_IN_UNISTD_H 1
-#define GPR_HAVE_MSG_NOSIGNAL 1
 #ifdef _LP64
 #define GPR_ARCH_64 1
 #else /* _LP64 */
 #define GPR_ARCH_32 1
 #endif /* _LP64 */
+#ifdef __GLIBC__
+#define GPR_POSIX_CRASH_HANDLER 1
+#define GPR_LINUX_PTHREAD_NAME 1
+#else /* musl libc */
+#define GPR_MUSL_LIBC_COMPAT 1
+#endif
 #elif defined(__APPLE__)
 #include <Availability.h>
 #include <TargetConditionals.h>
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
 #endif
-#define GPR_MSG_IOVLEN_TYPE int
 #if TARGET_OS_IPHONE
-#define GPR_FORBID_UNREACHABLE_CODE 1
 #define GPR_PLATFORM_STRING "ios"
 #define GPR_CPU_IPHONE 1
 #define GPR_PTHREAD_TLS 1
@@ -253,24 +195,32 @@
 #define GPR_PTHREAD_TLS 1
 #else /* __MAC_OS_X_VERSION_MIN_REQUIRED < __MAC_10_7 */
 #define GPR_CPU_POSIX 1
+/* TODO(vjpai): there is a reported issue in bazel build for Mac where __thread
+   in a header is currently not working (bazelbuild/bazel#4341). Remove
+   the following conditional and use GPR_GCC_TLS when that is fixed */
+#ifndef GRPC_BAZEL_BUILD
 #define GPR_GCC_TLS 1
+#else /* GRPC_BAZEL_BUILD */
+#define GPR_PTHREAD_TLS 1
+#endif /* GRPC_BAZEL_BUILD */
+#define GPR_APPLE_PTHREAD_NAME 1
 #endif
 #else /* __MAC_OS_X_VERSION_MIN_REQUIRED */
 #define GPR_CPU_POSIX 1
+/* TODO(vjpai): Remove the following conditional and use only GPR_GCC_TLS
+   when bazelbuild/bazel#4341 is fixed */
+#ifndef GRPC_BAZEL_BUILD
 #define GPR_GCC_TLS 1
+#else /* GRPC_BAZEL_BUILD */
+#define GPR_PTHREAD_TLS 1
+#endif /* GRPC_BAZEL_BUILD */
 #endif
 #define GPR_POSIX_CRASH_HANDLER 1
 #endif
+#define GPR_APPLE 1
 #define GPR_GCC_ATOMIC 1
 #define GPR_POSIX_LOG 1
-#define GPR_POSIX_MULTIPOLL_WITH_POLL 1
-#define GPR_POSIX_WAKEUP_FD 1
-#define GPR_POSIX_NO_SPECIAL_WAKEUP_FD 1
-#define GPR_POSIX_SOCKET 1
-#define GPR_POSIX_SOCKETADDR 1
-#define GPR_POSIX_SOCKETUTILS 1
 #define GPR_POSIX_ENV 1
-#define GPR_POSIX_FILE 1
 #define GPR_POSIX_TMPFILE 1
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_SUBPROCESS 1
@@ -278,9 +228,6 @@
 #define GPR_POSIX_TIME 1
 #define GPR_GETPID_IN_UNISTD_H 1
 #define GPR_SUPPORT_CHANNELS_FROM_FD 1
-#define GPR_HAVE_SO_NOSIGPIPE 1
-#define GPR_HAVE_UNIX_SOCKET 1
-#define GPR_HAVE_IP_PKTINFO 1
 #ifdef _LP64
 #define GPR_ARCH_64 1
 #else /* _LP64 */
@@ -291,18 +238,12 @@
 #ifndef _BSD_SOURCE
 #define _BSD_SOURCE
 #endif
+#define GPR_FREEBSD 1
 #define GPR_CPU_POSIX 1
 #define GPR_GCC_ATOMIC 1
 #define GPR_GCC_TLS 1
 #define GPR_POSIX_LOG 1
-#define GPR_POSIX_MULTIPOLL_WITH_POLL 1
-#define GPR_POSIX_WAKEUP_FD 1
-#define GPR_POSIX_NO_SPECIAL_WAKEUP_FD 1
-#define GPR_POSIX_SOCKET 1
-#define GPR_POSIX_SOCKETADDR 1
-#define GPR_POSIX_SOCKETUTILS 1
 #define GPR_POSIX_ENV 1
-#define GPR_POSIX_FILE 1
 #define GPR_POSIX_TMPFILE 1
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_SUBPROCESS 1
@@ -310,10 +251,29 @@
 #define GPR_POSIX_TIME 1
 #define GPR_GETPID_IN_UNISTD_H 1
 #define GPR_SUPPORT_CHANNELS_FROM_FD 1
-#define GPR_HAVE_SO_NOSIGPIPE 1
-#define GPR_HAVE_UNIX_SOCKET 1
-#define GPR_HAVE_IP_PKTINFO 1
-#define GPR_HAVE_IPV6_RECVPKTINFO 1
+#ifdef _LP64
+#define GPR_ARCH_64 1
+#else /* _LP64 */
+#define GPR_ARCH_32 1
+#endif /* _LP64 */
+#elif defined(__OpenBSD__)
+#define GPR_PLATFORM_STRING "openbsd"
+#ifndef _BSD_SOURCE
+#define _BSD_SOURCE
+#endif
+#define GPR_OPENBSD 1
+#define GPR_CPU_POSIX 1
+#define GPR_GCC_ATOMIC 1
+#define GPR_GCC_TLS 1
+#define GPR_POSIX_LOG 1
+#define GPR_POSIX_ENV 1
+#define GPR_POSIX_TMPFILE 1
+#define GPR_POSIX_STRING 1
+#define GPR_POSIX_SUBPROCESS 1
+#define GPR_POSIX_SYNC 1
+#define GPR_POSIX_TIME 1
+#define GPR_GETPID_IN_UNISTD_H 1
+#define GPR_SUPPORT_CHANNELS_FROM_FD 1
 #ifdef _LP64
 #define GPR_ARCH_64 1
 #else /* _LP64 */
@@ -330,18 +290,12 @@
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
+#define GPR_NACL 1
 #define GPR_CPU_POSIX 1
 #define GPR_GCC_ATOMIC 1
 #define GPR_GCC_TLS 1
 #define GPR_POSIX_LOG 1
-#define GPR_POSIX_MULTIPOLL_WITH_POLL 1
-#define GPR_POSIX_WAKEUP_FD 1
-#define GPR_POSIX_NO_SPECIAL_WAKEUP_FD 1
-#define GPR_POSIX_SOCKET 1
-#define GPR_POSIX_SOCKETADDR 1
-#define GPR_POSIX_SOCKETUTILS 1
 #define GPR_POSIX_ENV 1
-#define GPR_POSIX_FILE 1
 #define GPR_POSIX_TMPFILE 1
 #define GPR_POSIX_STRING 1
 #define GPR_POSIX_SUBPROCESS 1
@@ -357,6 +311,36 @@
 #error "Could not auto-detect platform"
 #endif
 #endif /* GPR_NO_AUTODETECT_PLATFORM */
+
+/*
+ *  There are platforms for which TLS should not be used even though the
+ * compiler makes it seem like it's supported (Android NDK < r12b for example).
+ * This is primarily because of linker problems and toolchain misconfiguration:
+ * TLS isn't supported until NDK r12b per
+ * https://developer.android.com/ndk/downloads/revision_history.html
+ * TLS also does not work with Android NDK if GCC is being used as the compiler
+ * instead of Clang.
+ * Since NDK r16, `__NDK_MAJOR__` and `__NDK_MINOR__` are defined in
+ * <android/ndk-version.h>. For NDK < r16, users should define these macros,
+ * e.g. `-D__NDK_MAJOR__=11 -D__NKD_MINOR__=0` for NDK r11. */
+#if defined(__ANDROID__) && defined(GPR_GCC_TLS)
+#if __has_include(<android/ndk-version.h>)
+#include <android/ndk-version.h>
+#endif /* __has_include(<android/ndk-version.h>) */
+#if (defined(__clang__) && defined(__NDK_MAJOR__) && defined(__NDK_MINOR__) && \
+     ((__NDK_MAJOR__ < 12) ||                                                  \
+      ((__NDK_MAJOR__ == 12) && (__NDK_MINOR__ < 1)))) ||                      \
+    (defined(__GNUC__) && !defined(__clang__))
+#undef GPR_GCC_TLS
+#define GPR_PTHREAD_TLS 1
+#endif
+#endif /*defined(__ANDROID__) && defined(GPR_GCC_TLS) */
+
+#if defined(__has_include)
+#if __has_include(<atomic>)
+#define GRPC_HAS_CXX11_ATOMIC
+#endif /* __has_include(<atomic>) */
+#endif /* defined(__has_include) */
 
 #ifndef GPR_PLATFORM_STRING
 #warning "GPR_PLATFORM_STRING not auto-detected"
@@ -422,16 +406,6 @@ typedef unsigned __int64 uint64_t;
 #error Must define exactly one of GPR_CPU_LINUX, GPR_CPU_POSIX, GPR_WINDOWS, GPR_CPU_IPHONE, GPR_CPU_CUSTOM
 #endif
 
-#if defined(GPR_POSIX_MULTIPOLL_WITH_POLL) && !defined(GPR_POSIX_SOCKET)
-#error Must define GPR_POSIX_SOCKET to use GPR_POSIX_MULTIPOLL_WITH_POLL
-#endif
-
-#if defined(GPR_POSIX_SOCKET) + defined(GPR_WINSOCK_SOCKET) + \
-        defined(GPR_CUSTOM_SOCKET) !=                         \
-    1
-#error Must define exactly one of GPR_POSIX_SOCKET, GPR_WINSOCK_SOCKET, GPR_CUSTOM_SOCKET
-#endif
-
 #if defined(GPR_MSVC_TLS) + defined(GPR_GCC_TLS) + defined(GPR_PTHREAD_TLS) + \
         defined(GPR_CUSTOM_TLS) !=                                            \
     1
@@ -442,22 +416,40 @@ typedef unsigned __int64 uint64_t;
    power of two */
 #define GPR_MAX_ALIGNMENT 16
 
-#ifndef GRPC_MUST_USE_RESULT
-#ifdef __GNUC__
-#define GRPC_MUST_USE_RESULT __attribute__((warn_unused_result))
+#ifndef GRPC_ARES
+#ifdef GPR_WINDOWS
+#define GRPC_ARES 0
 #else
-#define GRPC_MUST_USE_RESULT
+#define GRPC_ARES 1
 #endif
 #endif
 
-#ifndef GPRC_PRINT_FORMAT_CHECK
+#ifndef GRPC_MUST_USE_RESULT
+#if defined(__GNUC__) && !defined(__MINGW32__)
+#define GRPC_MUST_USE_RESULT __attribute__((warn_unused_result))
+#define GPR_ALIGN_STRUCT(n) __attribute__((aligned(n)))
+#else
+#define GRPC_MUST_USE_RESULT
+#define GPR_ALIGN_STRUCT(n)
+#endif
+#endif
+
+#ifndef GRPC_UNUSED
+#if defined(__GNUC__) && !defined(__MINGW32__)
+#define GRPC_UNUSED __attribute__((unused))
+#else
+#define GRPC_UNUSED
+#endif
+#endif
+
+#ifndef GPR_PRINT_FORMAT_CHECK
 #ifdef __GNUC__
-#define GPRC_PRINT_FORMAT_CHECK(FORMAT_STR, ARGS) \
+#define GPR_PRINT_FORMAT_CHECK(FORMAT_STR, ARGS) \
   __attribute__((format(printf, FORMAT_STR, ARGS)))
 #else
-#define GPRC_PRINT_FORMAT_CHECK(FORMAT_STR, ARGS)
+#define GPR_PRINT_FORMAT_CHECK(FORMAT_STR, ARGS)
 #endif
-#endif /* GPRC_PRINT_FORMAT_CHECK */
+#endif /* GPR_PRINT_FORMAT_CHECK */
 
 #if GPR_FORBID_UNREACHABLE_CODE
 #define GPR_UNREACHABLE_CODE(STATEMENT)
@@ -480,6 +472,47 @@ typedef unsigned __int64 uint64_t;
 
 #ifndef CENSUSAPI
 #define CENSUSAPI GRPCAPI
+#endif
+
+#ifndef GPR_ATTRIBUTE_NO_TSAN /* (1) */
+#if defined(__has_feature)
+#if __has_feature(thread_sanitizer)
+#define GPR_ATTRIBUTE_NO_TSAN __attribute__((no_sanitize("thread")))
+#endif                        /* __has_feature(thread_sanitizer) */
+#endif                        /* defined(__has_feature) */
+#ifndef GPR_ATTRIBUTE_NO_TSAN /* (2) */
+#define GPR_ATTRIBUTE_NO_TSAN
+#endif /* GPR_ATTRIBUTE_NO_TSAN (2) */
+#endif /* GPR_ATTRIBUTE_NO_TSAN (1) */
+
+/* GRPC_ALLOW_EXCEPTIONS should be 0 or 1 if exceptions are allowed or not */
+#ifndef GRPC_ALLOW_EXCEPTIONS
+/* If not already set, set to 1 on Windows (style guide standard) but to
+ * 0 on non-Windows platforms unless the compiler defines __EXCEPTIONS */
+#ifdef GPR_WINDOWS
+#define GRPC_ALLOW_EXCEPTIONS 1
+#else /* GPR_WINDOWS */
+#ifdef __EXCEPTIONS
+#define GRPC_ALLOW_EXCEPTIONS 1
+#else /* __EXCEPTIONS */
+#define GRPC_ALLOW_EXCEPTIONS 0
+#endif /* __EXCEPTIONS */
+#endif /* __GPR_WINDOWS */
+#endif /* GRPC_ALLOW_EXCEPTIONS */
+
+/* Use GPR_LIKELY only in cases where you are sure that a certain outcome is the
+ * most likely. Ideally, also collect performance numbers to justify the claim.
+ */
+#ifdef __GNUC__
+#define GPR_LIKELY(x) __builtin_expect((x), 1)
+#define GPR_UNLIKELY(x) __builtin_expect((x), 0)
+#else /* __GNUC__ */
+#define GPR_LIKELY(x) (x)
+#define GPR_UNLIKELY(x) (x)
+#endif /* __GNUC__ */
+
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS
 #endif
 
 #endif /* GRPC_IMPL_CODEGEN_PORT_PLATFORM_H */

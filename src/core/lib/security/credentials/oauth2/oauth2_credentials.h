@@ -1,85 +1,82 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 #ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_OAUTH2_OAUTH2_CREDENTIALS_H
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_OAUTH2_OAUTH2_CREDENTIALS_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/security/credentials/credentials.h"
 
 // auth_refresh_token parsing.
 typedef struct {
-  const char *type;
-  char *client_id;
-  char *client_secret;
-  char *refresh_token;
+  const char* type;
+  char* client_id;
+  char* client_secret;
+  char* refresh_token;
 } grpc_auth_refresh_token;
 
 /// Returns 1 if the object is valid, 0 otherwise.
 int grpc_auth_refresh_token_is_valid(
-    const grpc_auth_refresh_token *refresh_token);
+    const grpc_auth_refresh_token* refresh_token);
 
 /// Creates a refresh token object from string. Returns an invalid object if a
 /// parsing error has been encountered.
 grpc_auth_refresh_token grpc_auth_refresh_token_create_from_string(
-    const char *json_string);
+    const char* json_string);
 
 /// Creates a refresh token object from parsed json. Returns an invalid object
 /// if a parsing error has been encountered.
 grpc_auth_refresh_token grpc_auth_refresh_token_create_from_json(
-    const grpc_json *json);
+    const grpc_json* json);
 
 /// Destructs the object.
-void grpc_auth_refresh_token_destruct(grpc_auth_refresh_token *refresh_token);
+void grpc_auth_refresh_token_destruct(grpc_auth_refresh_token* refresh_token);
 
 // -- Oauth2 Token Fetcher credentials --
 //
 //  This object is a base for credentials that need to acquire an oauth2 token
 //  from an http service.
 
-typedef void (*grpc_fetch_oauth2_func)(grpc_exec_ctx *exec_ctx,
-                                       grpc_credentials_metadata_request *req,
-                                       grpc_httpcli_context *http_context,
-                                       grpc_polling_entity *pollent,
+typedef void (*grpc_fetch_oauth2_func)(grpc_credentials_metadata_request* req,
+                                       grpc_httpcli_context* http_context,
+                                       grpc_polling_entity* pollent,
                                        grpc_iomgr_cb_func cb,
-                                       gpr_timespec deadline);
+                                       grpc_millis deadline);
+
+typedef struct grpc_oauth2_pending_get_request_metadata {
+  grpc_credentials_mdelem_array* md_array;
+  grpc_closure* on_request_metadata;
+  grpc_polling_entity* pollent;
+  struct grpc_oauth2_pending_get_request_metadata* next;
+} grpc_oauth2_pending_get_request_metadata;
+
 typedef struct {
   grpc_call_credentials base;
   gpr_mu mu;
-  grpc_credentials_md_store *access_token_md;
-  gpr_timespec token_expiration;
+  grpc_mdelem access_token_md;
+  grpc_millis token_expiration;
+  bool token_fetch_pending;
+  grpc_oauth2_pending_get_request_metadata* pending_requests;
   grpc_httpcli_context httpcli_context;
   grpc_fetch_oauth2_func fetch_func;
+  grpc_polling_entity pollent;
 } grpc_oauth2_token_fetcher_credentials;
 
 // Google refresh token credentials.
@@ -91,19 +88,19 @@ typedef struct {
 // Access token credentials.
 typedef struct {
   grpc_call_credentials base;
-  grpc_credentials_md_store *access_token_md;
+  grpc_mdelem access_token_md;
 } grpc_access_token_credentials;
 
 // Private constructor for refresh token credentials from an already parsed
 // refresh token. Takes ownership of the refresh token.
-grpc_call_credentials *
+grpc_call_credentials*
 grpc_refresh_token_credentials_create_from_auth_refresh_token(
     grpc_auth_refresh_token token);
 
 // Exposed for testing only.
 grpc_credentials_status
 grpc_oauth2_token_fetcher_credentials_parse_server_response(
-    const struct grpc_http_response *response,
-    grpc_credentials_md_store **token_md, gpr_timespec *token_lifetime);
+    const struct grpc_http_response* response, grpc_mdelem* token_md,
+    grpc_millis* token_lifetime);
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_OAUTH2_OAUTH2_CREDENTIALS_H */

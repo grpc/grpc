@@ -8,16 +8,20 @@ objs
 # Python items
 cython_debug/
 python_build/
+yapf_virtual_environment/
+python_pylint_venv/
 .coverage*
 .eggs
 htmlcov/
 dist/
 *.egg
-py27/
-py34/
+py27_gevent/
+py27_native/
+py3[0-9]_gevent/
+py3[0-9]_native/
 
 # Node installation output
-^node_modules
+node_modules
 src/node/extension_binary/
 
 # gcov coverage data
@@ -31,7 +35,7 @@ coverage
 # python compiled objects
 *.pyc
 
-#eclipse project files
+# eclipse project files
 .cproject
 .project
 .settings
@@ -54,6 +58,7 @@ Gemfile.lock
 
 # Temporary test reports
 report.xml
+*/sponge_log.xml
 latency_trace.txt
 latency_trace.*.txt
 
@@ -91,15 +96,41 @@ DerivedData
 *.pbrpc.*
 
 # Cocoapods artifacts
-# Podfile.lock and the workspace file are tracked, to ease deleting them. That's
-# needed to trigger "pod install" to rerun the preinstall commands.
 Pods/
+Podfile.lock
+*.xcworkspace
 
 # Artifacts directory
-artifacts/
+/artifacts/
 
 # Git generated files for conflicting
 *.orig
 
 # IDE specific folder for JetBrains IDEs
 .idea/
+
+# Blaze files
+bazel-bin
+bazel-genfiles
+bazel-grpc
+bazel-out
+bazel-testlogs
+
+# Debug output
+gdb.txt
+
+# ctags file
+tags
+
+# perf data
+memory_usage.csv
+perf.data
+perf.data.old
+
+# bm_diff
+bm_diff_new/
+bm_diff_old/
+bm_*.json
+
+# cmake build files
+/cmake/build

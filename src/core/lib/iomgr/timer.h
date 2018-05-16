@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -35,28 +20,57 @@
 #define GRPC_CORE_LIB_IOMGR_TIMER_H
 
 #include <grpc/support/port_platform.h>
+
+#include "src/core/lib/iomgr/port.h"
+
 #include <grpc/support/time.h>
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 
 typedef struct grpc_timer {
-  gpr_timespec deadline;
+  gpr_atm deadline;
   uint32_t heap_index; /* INVALID_HEAP_INDEX if not in heap */
-  int triggered;
-  struct grpc_timer *next;
-  struct grpc_timer *prev;
-  grpc_closure closure;
+  bool pending;
+  struct grpc_timer* next;
+  struct grpc_timer* prev;
+  grpc_closure* closure;
+#ifndef NDEBUG
+  struct grpc_timer* hash_table_next;
+#endif
+
+  // Optional field used by custom timers
+  void* custom_timer;
 } grpc_timer;
 
-/* Initialize *timer. When expired or canceled, timer_cb will be called with
-   *timer_cb_arg and status to indicate if it expired (SUCCESS) or was
-   canceled (CANCELLED). timer_cb is guaranteed to be called exactly once,
-   and application code should check the status to determine how it was
-   invoked. The application callback is also responsible for maintaining
-   information about when to free up any user-level state. */
-void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
-                     gpr_timespec deadline, grpc_iomgr_cb_func timer_cb,
-                     void *timer_cb_arg, gpr_timespec now);
+typedef enum {
+  GRPC_TIMERS_NOT_CHECKED,
+  GRPC_TIMERS_CHECKED_AND_EMPTY,
+  GRPC_TIMERS_FIRED,
+} grpc_timer_check_result;
+
+typedef struct grpc_timer_vtable {
+  void (*init)(grpc_timer* timer, grpc_millis, grpc_closure* closure);
+  void (*cancel)(grpc_timer* timer);
+
+  /* Internal API */
+  grpc_timer_check_result (*check)(grpc_millis* next);
+  void (*list_init)();
+  void (*list_shutdown)(void);
+  void (*consume_kick)(void);
+} grpc_timer_vtable;
+
+/* Initialize *timer. When expired or canceled, closure will be called with
+   error set to indicate if it expired (GRPC_ERROR_NONE) or was canceled
+   (GRPC_ERROR_CANCELLED). timer_cb is guaranteed to be called exactly once, and
+   application code should check the error to determine how it was invoked. The
+   application callback is also responsible for maintaining information about
+   when to free up any user-level state. */
+void grpc_timer_init(grpc_timer* timer, grpc_millis deadline,
+                     grpc_closure* closure);
+
+/* Initialize *timer without setting it. This can later be passed through
+   the regular init or cancel */
+void grpc_timer_init_unset(grpc_timer* timer);
 
 /* Note that there is no timer destroy function. This is because the
    timer is a one-time occurrence with a guarantee that the callback will
@@ -74,8 +88,8 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
 
    In all of these cases, the cancellation is still considered successful.
    They are essentially distinguished in that the timer_cb will be run
-   exactly once from either the cancellation (with status CANCELLED)
-   or from the activation (with status SUCCESS)
+   exactly once from either the cancellation (with error GRPC_ERROR_CANCELLED)
+   or from the activation (with error GRPC_ERROR_NONE).
 
    Note carefully that the callback function MAY occur in the same callstack
    as grpc_timer_cancel. It's expected that most timers will be cancelled (their
@@ -83,26 +97,29 @@ void grpc_timer_init(grpc_exec_ctx *exec_ctx, grpc_timer *timer,
    that cancellation costs as little as possible. Making callbacks run inline
    matches this aim.
 
-   Requires:  cancel() must happen after add() on a given timer */
-void grpc_timer_cancel(grpc_exec_ctx *exec_ctx, grpc_timer *timer);
+   Requires: cancel() must happen after init() on a given timer */
+void grpc_timer_cancel(grpc_timer* timer);
 
 /* iomgr internal api for dealing with timers */
 
 /* Check for timers to be run, and run them.
    Return true if timer callbacks were executed.
-   Drops drop_mu if it is non-null before executing callbacks.
    If next is non-null, TRY to update *next with the next running timer
    IF that timer occurs before *next current value.
    *next is never guaranteed to be updated on any given execution; however,
    with high probability at least one thread in the system will see an update
    at any time slice. */
-bool grpc_timer_check(grpc_exec_ctx *exec_ctx, gpr_timespec now,
-                      gpr_timespec *next);
-void grpc_timer_list_init(gpr_timespec now);
-void grpc_timer_list_shutdown(grpc_exec_ctx *exec_ctx);
+grpc_timer_check_result grpc_timer_check(grpc_millis* next);
+void grpc_timer_list_init();
+void grpc_timer_list_shutdown();
+
+/* Consume a kick issued by grpc_kick_poller */
+void grpc_timer_consume_kick(void);
 
 /* the following must be implemented by each iomgr implementation */
-
 void grpc_kick_poller(void);
+
+/* Sets the timer implementation */
+void grpc_set_timer_impl(grpc_timer_vtable* vtable);
 
 #endif /* GRPC_CORE_LIB_IOMGR_TIMER_H */

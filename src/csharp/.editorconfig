@@ -1,0 +1,8 @@
+root = true
+[**]
+charset = utf-8  ; Implies no BOM.
+end_of_line = LF
+indent_style = space
+indent_size = 4
+insert_final_newline = true
+tab_width = 4

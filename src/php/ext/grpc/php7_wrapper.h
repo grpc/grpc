@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -45,12 +30,28 @@
   add_property_string(arg, name, context, b)
 #define php_grpc_add_property_stringl(res, name, str, len, b) \
   add_property_stringl(res, name, str, len, b)
+#define php_grpc_add_property_zval(res, name, val) \
+  add_property_zval(res, name, val)
 #define php_grpc_add_next_index_stringl(data, str, len, b) \
   add_next_index_stringl(data, str, len, b)
 
+#define PHP_GRPC_RETVAL_STRING(val, dup) RETVAL_STRING(val, dup)
 #define PHP_GRPC_RETURN_STRING(val, dup) RETURN_STRING(val, dup)
 #define PHP_GRPC_MAKE_STD_ZVAL(pzv) MAKE_STD_ZVAL(pzv)
+#define PHP_GRPC_FREE_STD_ZVAL(pzv)
 #define PHP_GRPC_DELREF(zv) Z_DELREF_P(zv)
+#define PHP_GRPC_ADD_STRING_TO_ARRAY(val, key, key_len, str, dup) \
+   add_assoc_string_ex(val, key, key_len , str, dup);
+#define PHP_GRPC_ADD_LONG_TO_ARRAY(val, key, key_len, str) \
+   add_assoc_long_ex(val, key, key_len, str);
+#define PHP_GRPC_ADD_BOOL_TO_ARRAY(val, key, key_len, str) \
+   add_assoc_bool_ex(val, key, key_len, str);
+#define PHP_GRPC_ADD_LONG_TO_RETVAL(val, key, key_len, str) \
+   add_assoc_long_ex(val, key, key_len+1, str);
+
+#define RETURN_DESTROY_ZVAL(val) \
+  RETURN_ZVAL(val, false /* Don't execute copy constructor */, \
+              true /* Dealloc original before returning */)
 
 #define PHP_GRPC_WRAP_OBJECT_START(name) \
   typedef struct name { \
@@ -97,6 +98,9 @@
                                          0, NULL); \
     data = *tmp##key;
 
+#define PHP_GRPC_HASH_VALPTR_TO_VAL(data) \
+  &data;
+
 #define PHP_GRPC_HASH_FOREACH_LONG_KEY_VAL_START(ht, key, key_type, index,\
                                                  data) \
   zval **tmp##key = NULL; \
@@ -123,6 +127,22 @@ static inline int php_grpc_zend_hash_find(HashTable *ht, char *key, int len,
 }
 
 #define php_grpc_zend_hash_del zend_hash_del
+#define php_grpc_zend_resource zend_rsrc_list_entry
+
+#define PHP_GRPC_BVAL_IS_TRUE(zv) Z_LVAL_P(zv)
+#define PHP_GRPC_VAR_SERIALIZE(buf, zv, hash) \
+  php_var_serialize(buf, &zv, hash TSRMLS_CC)
+#define PHP_GRPC_SERIALIZED_BUF_STR(buf) buf.c
+#define PHP_GRPC_SERIALIZED_BUF_LEN(buf) buf.len
+#define PHP_GRPC_SHA1Update(cxt, str, len)     \
+  PHP_SHA1Update(cxt, (const unsigned char *)str, len)
+#define PHP_GRPC_PERSISTENT_LIST_FIND(plist, key, len, rsrc) \
+  zend_hash_find(plist, key, len+1, (void **)&rsrc) != FAILURE
+#define PHP_GRPC_PERSISTENT_LIST_UPDATE(plist, key, len, rsrc) \
+  zend_hash_update(plist, key, len+1, rsrc, sizeof(php_grpc_zend_resource), \
+                   NULL)
+#define PHP_GRPC_PERSISTENT_LIST_SIZE(plist) \
+  *plist.nNumOfElements
 
 #define PHP_GRPC_GET_CLASS_ENTRY(object) zend_get_class_entry(object TSRMLS_CC)
 
@@ -138,13 +158,34 @@ static inline int php_grpc_zend_hash_find(HashTable *ht, char *key, int len,
   add_property_string(arg, name, context)
 #define php_grpc_add_property_stringl(res, name, str, len, b) \
   add_property_stringl(res, name, str, len)
+#define php_grpc_add_property_zval(res, name, val) do { \
+  zval tmp; \
+  tmp = *val; \
+  add_property_zval(res, name, &tmp); \
+  } while(0)
 #define php_grpc_add_next_index_stringl(data, str, len, b) \
   add_next_index_stringl(data, str, len)
 
+#define PHP_GRPC_RETVAL_STRING(val, dup) RETVAL_STRING(val)
 #define PHP_GRPC_RETURN_STRING(val, dup) RETURN_STRING(val)
 #define PHP_GRPC_MAKE_STD_ZVAL(pzv) \
   pzv = (zval *)emalloc(sizeof(zval));
+#define PHP_GRPC_FREE_STD_ZVAL(pzv) efree(pzv);
 #define PHP_GRPC_DELREF(zv)
+#define PHP_GRPC_ADD_STRING_TO_ARRAY(val, key, key_len, str, dup) \
+   add_assoc_string_ex(val, key, key_len - 1, str);
+#define PHP_GRPC_ADD_LONG_TO_ARRAY(val, key, key_len, str) \
+   add_assoc_long_ex(val, key, key_len - 1, str);
+#define PHP_GRPC_ADD_BOOL_TO_ARRAY(val, key, key_len, str) \
+   add_assoc_bool_ex(val, key, key_len - 1, str);
+#define PHP_GRPC_ADD_LONG_TO_RETVAL(val, key, key_len, str) \
+   add_assoc_long_ex(val, key, key_len, str);
+
+#define RETURN_DESTROY_ZVAL(val) \
+  RETVAL_ZVAL(val, false /* Don't execute copy constructor */, \
+              true /* Dealloc original before returning */); \
+  efree(val); \
+  return
 
 #define PHP_GRPC_WRAP_OBJECT_START(name) \
   typedef struct name {
@@ -180,6 +221,9 @@ static inline int php_grpc_zend_hash_find(HashTable *ht, char *key, int len,
     if ((zs_##key) == NULL) {key = NULL; key_type = HASH_KEY_IS_LONG;} \
     else {key = (zs_##key)->val; key_type = HASH_KEY_IS_STRING;}
 
+#define PHP_GRPC_HASH_VALPTR_TO_VAL(data) \
+  Z_PTR_P(data);
+
 #define PHP_GRPC_HASH_FOREACH_LONG_KEY_VAL_START(ht, key, key_type, index, \
                                                  data) \
   zend_string *(zs_##key); \
@@ -203,6 +247,22 @@ static inline int php_grpc_zend_hash_find(HashTable *ht, char *key, int len,
 static inline int php_grpc_zend_hash_del(HashTable *ht, char *key, int len) {
   return zend_hash_str_del(ht, key, len - 1);
 }
+#define php_grpc_zend_resource zend_resource
+
+#define PHP_GRPC_BVAL_IS_TRUE(zv) Z_TYPE_P(zv) == IS_TRUE
+#define PHP_GRPC_VAR_SERIALIZE(buf, zv, hash)   \
+  php_var_serialize(buf, zv, hash)
+#define PHP_GRPC_SERIALIZED_BUF_STR(buf) ZSTR_VAL(buf.s)
+#define PHP_GRPC_SERIALIZED_BUF_LEN(buf) ZSTR_LEN(buf.s)
+#define PHP_GRPC_SHA1Update(cxt, str, len)      \
+  PHP_SHA1Update(cxt, (unsigned char *)str, len)
+#define PHP_GRPC_PERSISTENT_LIST_FIND(plist, key, len, rsrc) \
+  (rsrc = zend_hash_str_find_ptr(plist, key, len)) != NULL
+#define PHP_GRPC_PERSISTENT_LIST_UPDATE(plist, key, len, rsrc) \
+  zend_hash_str_update_mem(plist, key, len, rsrc, \
+                           sizeof(php_grpc_zend_resource))
+#define PHP_GRPC_PERSISTENT_LIST_SIZE(plist) \
+  zend_array_count(plist)
 
 #define PHP_GRPC_GET_CLASS_ENTRY(object) Z_OBJ_P(object)->ce
 

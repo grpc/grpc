@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -41,92 +26,127 @@
 
 #include <google/protobuf/compiler/objectivec/objectivec_helpers.h>
 
-using ::google::protobuf::compiler::objectivec::ProtobufLibraryFrameworkName;
 using ::google::protobuf::compiler::objectivec::
     IsProtobufLibraryBundledProtoFile;
+using ::google::protobuf::compiler::objectivec::ProtobufLibraryFrameworkName;
+using ::grpc_objective_c_generator::LocalImport;
+using ::grpc_objective_c_generator::PreprocIfElse;
+using ::grpc_objective_c_generator::PreprocIfNot;
+using ::grpc_objective_c_generator::SystemImport;
+
+namespace {
+
+inline ::grpc::string ImportProtoHeaders(
+    const grpc::protobuf::FileDescriptor* dep, const char* indent) {
+  ::grpc::string header = grpc_objective_c_generator::MessageHeaderName(dep);
+
+  if (!IsProtobufLibraryBundledProtoFile(dep)) {
+    return indent + LocalImport(header);
+  }
+
+  ::grpc::string base_name = header;
+  grpc_generator::StripPrefix(&base_name, "google/protobuf/");
+  // create the import code snippet
+  ::grpc::string framework_header =
+      ::grpc::string(ProtobufLibraryFrameworkName) + "/" + base_name;
+
+  static const ::grpc::string kFrameworkImportsCondition =
+      "GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS";
+  return PreprocIfElse(kFrameworkImportsCondition,
+                       indent + SystemImport(framework_header),
+                       indent + LocalImport(header));
+}
+
+}  // namespace
 
 class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
  public:
   ObjectiveCGrpcGenerator() {}
   virtual ~ObjectiveCGrpcGenerator() {}
 
-  virtual bool Generate(const grpc::protobuf::FileDescriptor *file,
-                        const ::grpc::string &parameter,
-                        grpc::protobuf::compiler::GeneratorContext *context,
-                        ::grpc::string *error) const {
+ public:
+  virtual bool Generate(const grpc::protobuf::FileDescriptor* file,
+                        const ::grpc::string& parameter,
+                        grpc::protobuf::compiler::GeneratorContext* context,
+                        ::grpc::string* error) const {
     if (file->service_count() == 0) {
       // No services.  Do nothing.
       return true;
     }
 
-    ::grpc::string file_name = grpc_generator::FileNameInUpperCamel(file);
-    ::grpc::string prefix = file->options().objc_class_prefix();
+    static const ::grpc::string kNonNullBegin = "NS_ASSUME_NONNULL_BEGIN\n";
+    static const ::grpc::string kNonNullEnd = "NS_ASSUME_NONNULL_END\n";
+    static const ::grpc::string kProtocolOnly = "GPB_GRPC_PROTOCOL_ONLY";
+    static const ::grpc::string kForwardDeclare =
+        "GPB_GRPC_FORWARD_DECLARE_MESSAGE_PROTO";
+
+    ::grpc::string file_name =
+        google::protobuf::compiler::objectivec::FilePath(file);
 
     {
       // Generate .pbrpc.h
 
-      ::grpc::string imports = ::grpc::string("#import \"") + file_name +
-                               ".pbobjc.h\"\n\n"
-                               "#import <ProtoRPC/ProtoService.h>\n"
-                               "#import <RxLibrary/GRXWriteable.h>\n"
-                               "#import <RxLibrary/GRXWriter.h>\n";
+      ::grpc::string imports = LocalImport(file_name + ".pbobjc.h");
 
-      // TODO(jcanizales): Instead forward-declare the input and output types
-      // and import the files in the .pbrpc.m
-      ::grpc::string proto_imports;
+      ::grpc::string system_imports = SystemImport("ProtoRPC/ProtoService.h") +
+                                      SystemImport("ProtoRPC/ProtoRPC.h") +
+                                      SystemImport("RxLibrary/GRXWriteable.h") +
+                                      SystemImport("RxLibrary/GRXWriter.h");
+
+      ::grpc::string forward_declarations = "@class GRPCProtoCall;\n\n";
+
+      ::grpc::string class_declarations =
+          grpc_objective_c_generator::GetAllMessageClasses(file);
+
+      ::grpc::string class_imports;
       for (int i = 0; i < file->dependency_count(); i++) {
-        ::grpc::string header =
-            grpc_objective_c_generator::MessageHeaderName(file->dependency(i));
-        const grpc::protobuf::FileDescriptor *dependency = file->dependency(i);
-        if (IsProtobufLibraryBundledProtoFile(dependency)) {
-          ::grpc::string base_name = header;
-          grpc_generator::StripPrefix(&base_name, "google/protobuf/");
-          // create the import code snippet
-          proto_imports +=
-              "#if GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS\n"
-              "  #import <" +
-              ::grpc::string(ProtobufLibraryFrameworkName) + "/" + base_name +
-              ">\n"
-              "#else\n"
-              "  #import \"" +
-              header +
-              "\"\n"
-              "#endif\n";
-        } else {
-          proto_imports += ::grpc::string("#import \"") + header + "\"\n";
-        }
+        class_imports += ImportProtoHeaders(file->dependency(i), "  ");
       }
 
-      ::grpc::string declarations;
+      ::grpc::string protocols;
       for (int i = 0; i < file->service_count(); i++) {
-        const grpc::protobuf::ServiceDescriptor *service = file->service(i);
-        declarations += grpc_objective_c_generator::GetHeader(service);
+        const grpc::protobuf::ServiceDescriptor* service = file->service(i);
+        protocols += grpc_objective_c_generator::GetProtocol(service);
       }
 
-      static const ::grpc::string kNonNullBegin =
-          "\nNS_ASSUME_NONNULL_BEGIN\n\n";
-      static const ::grpc::string kNonNullEnd = "\nNS_ASSUME_NONNULL_END\n";
+      ::grpc::string interfaces;
+      for (int i = 0; i < file->service_count(); i++) {
+        const grpc::protobuf::ServiceDescriptor* service = file->service(i);
+        interfaces += grpc_objective_c_generator::GetInterface(service);
+      }
 
-      Write(context, file_name + ".pbrpc.h", imports + '\n' + proto_imports +
-                                                 '\n' + kNonNullBegin +
-                                                 declarations + kNonNullEnd);
+      Write(context, file_name + ".pbrpc.h",
+            PreprocIfNot(kForwardDeclare, imports) + "\n" +
+                PreprocIfNot(kProtocolOnly, system_imports) + "\n" +
+                class_declarations + "\n" +
+                PreprocIfNot(kForwardDeclare, class_imports) + "\n" +
+                forward_declarations + "\n" + kNonNullBegin + "\n" + protocols +
+                "\n" + PreprocIfNot(kProtocolOnly, interfaces) + "\n" +
+                kNonNullEnd + "\n");
     }
 
     {
       // Generate .pbrpc.m
 
-      ::grpc::string imports = ::grpc::string("#import \"") + file_name +
-                               ".pbrpc.h\"\n\n"
-                               "#import <ProtoRPC/ProtoRPC.h>\n"
-                               "#import <RxLibrary/GRXWriter+Immediate.h>\n";
+      ::grpc::string imports = LocalImport(file_name + ".pbrpc.h") +
+                               LocalImport(file_name + ".pbobjc.h") +
+                               SystemImport("ProtoRPC/ProtoRPC.h") +
+                               SystemImport("RxLibrary/GRXWriter+Immediate.h");
+
+      ::grpc::string class_imports;
+      for (int i = 0; i < file->dependency_count(); i++) {
+        class_imports += ImportProtoHeaders(file->dependency(i), "");
+      }
 
       ::grpc::string definitions;
       for (int i = 0; i < file->service_count(); i++) {
-        const grpc::protobuf::ServiceDescriptor *service = file->service(i);
+        const grpc::protobuf::ServiceDescriptor* service = file->service(i);
         definitions += grpc_objective_c_generator::GetSource(service);
       }
 
-      Write(context, file_name + ".pbrpc.m", imports + '\n' + definitions);
+      Write(context, file_name + ".pbrpc.m",
+            PreprocIfNot(kProtocolOnly,
+                         imports + "\n" + class_imports + "\n" + definitions));
     }
 
     return true;
@@ -134,8 +154,8 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
 
  private:
   // Write the given code into the given file.
-  void Write(grpc::protobuf::compiler::GeneratorContext *context,
-             const ::grpc::string &filename, const ::grpc::string &code) const {
+  void Write(grpc::protobuf::compiler::GeneratorContext* context,
+             const ::grpc::string& filename, const ::grpc::string& code) const {
     std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> output(
         context->Open(filename));
     grpc::protobuf::io::CodedOutputStream coded_out(output.get());
@@ -143,7 +163,7 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   }
 };
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   ObjectiveCGrpcGenerator generator;
   return grpc::protobuf::compiler::PluginMain(argc, argv, &generator);
 }

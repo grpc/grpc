@@ -1,33 +1,18 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
@@ -35,33 +20,77 @@
 #define GRPC_TEST_CORE_BAD_CLIENT_BAD_CLIENT_H
 
 #include <grpc/grpc.h>
+
+#include <stdbool.h>
+
 #include "test/core/util/test_config.h"
 
 #define GRPC_BAD_CLIENT_REGISTERED_METHOD "/registered/bar"
 #define GRPC_BAD_CLIENT_REGISTERED_HOST "localhost"
 
-typedef void (*grpc_bad_client_server_side_validator)(grpc_server *server,
-                                                      grpc_completion_queue *cq,
-                                                      void *registered_method);
+/* The server side validator function to run */
+typedef void (*grpc_bad_client_server_side_validator)(grpc_server* server,
+                                                      grpc_completion_queue* cq,
+                                                      void* registered_method);
 
-typedef void (*grpc_bad_client_client_stream_validator)(
-    gpr_slice_buffer *incoming);
+/* Returns false if we need to read more data. */
+typedef bool (*grpc_bad_client_client_stream_validator)(
+    grpc_slice_buffer* incoming, void* arg);
 
+struct grpc_bad_client_arg {
+  grpc_bad_client_client_stream_validator client_validator;
+  void* client_validator_arg;
+  const char* client_payload;
+  size_t client_payload_length;
+};
+
+/* Flags for grpc_run_bad_client_test */
 #define GRPC_BAD_CLIENT_DISCONNECT 1
+#define GRPC_BAD_CLIENT_LARGE_REQUEST 2
 
 /* Test runner.
-
-   Create a server, and send client_payload to it as bytes from a client.
-   Execute server_validator in a separate thread to assert that the bytes are
-   handled as expected. */
+ *
+ * Create a server, and for each arg in \a args send client_payload. For each
+ * payload, run client_validator to make sure that the response is as expected.
+ * Also execute \a server_validator in a separate thread to assert that the
+ * bytes are handled as expected.
+ *
+ * The flags are only applicable to the last validator in the array. (This can
+ * be changed in the future if necessary)
+ */
 void grpc_run_bad_client_test(
     grpc_bad_client_server_side_validator server_validator,
-    grpc_bad_client_client_stream_validator client_validator,
-    const char *client_payload, size_t client_payload_length, uint32_t flags);
+    grpc_bad_client_arg args[], int num_args, uint32_t flags);
 
-#define GRPC_RUN_BAD_CLIENT_TEST(server_validator, client_validator, payload, \
-                                 flags)                                       \
-  grpc_run_bad_client_test(server_validator, client_validator, payload,       \
-                           sizeof(payload) - 1, flags)
+/* A hack to let old tests work as before. In these tests, instead of an array,
+ * the tests provide a single client_validator and payload
+ */
+#define COMBINE1(X, Y) X##Y
+#define COMBINE(X, Y) COMBINE1(X, Y)
 
+#define GRPC_RUN_BAD_CLIENT_TEST(server_validator, client_validator, payload,  \
+                                 flags)                                        \
+  grpc_bad_client_arg COMBINE(bca, __LINE__) = {client_validator, nullptr,     \
+                                                payload, sizeof(payload) - 1}; \
+  grpc_run_bad_client_test(server_validator, &COMBINE(bca, __LINE__), 1, flags)
+
+/* Helper validator functions */
+/* Client side validator for connection preface from server. \a arg is unused */
+bool client_connection_preface_validator(grpc_slice_buffer* incoming,
+                                         void* arg);
+
+/* Client side validator for checking if reset stream is present at the end
+ * of the buffer. \a arg is unused.
+ */
+bool rst_stream_client_validator(grpc_slice_buffer* incoming, void* arg);
+
+/* Helper grpc_bad_client_arg arguments for direct use */
+/* Sends a connection preface from the client with an empty settings frame */
+extern grpc_bad_client_arg connection_preface_arg;
+
+/* Server side verifier function that performs a
+ *  single grpc_server_request_call */
+void server_verifier_request_call(grpc_server* server,
+                                  grpc_completion_queue* cq,
+                                  void* registered_method);
 #endif /* GRPC_TEST_CORE_BAD_CLIENT_BAD_CLIENT_H */

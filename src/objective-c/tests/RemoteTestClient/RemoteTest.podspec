@@ -1,9 +1,9 @@
 Pod::Spec.new do |s|
   s.name     = "RemoteTest"
   s.version  = "0.0.1"
-  s.license  = "New BSD"
+  s.license  = "Apache License, Version 2.0"
   s.authors  = { 'gRPC contributors' => 'grpc-io@googlegroups.com' }
-  s.homepage = "http://www.grpc.io/"
+  s.homepage = "https://grpc.io/"
   s.summary = "RemoteTest example"
   s.source = { :git => 'https://github.com/grpc/grpc.git' }
 
@@ -47,7 +47,7 @@ Pod::Spec.new do |s|
 
   s.pod_target_xcconfig = {
     # This is needed by all pods that depend on Protobuf:
-    'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=1',
+    'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=1 GPB_GRPC_FORWARD_DECLARE_MESSAGE_PROTO=1',
     # This is needed by all pods that depend on gRPC-RxLibrary:
     'CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES' => 'YES',
   }

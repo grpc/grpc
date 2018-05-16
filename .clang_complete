@@ -1,8 +1,17 @@
+-Wall
+-Wc++-compat
 -Ithird_party/googletest/include
 -Ithird_party/googletest
 -Iinclude
 -Igens
 -I.
 -Ithird_party/boringssl/include
+-Ithird_party/benchmark/include
 -Ithird_party/zlib
 -Ithird_party/protobuf/src
+-Ithird_party/abseil-cpp
+-Ithird_party/cares/cares
+-Ithird_party/cares
+-Ithird_party/googletest/googletest/include
+-Ithird_party/googletest/googlemock/include
+

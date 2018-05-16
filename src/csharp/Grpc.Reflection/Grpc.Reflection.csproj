@@ -1,0 +1,42 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\Grpc.Core\Version.csproj.include" />
+  <Import Project="..\Grpc.Core\Common.csproj.include" />
+
+  <PropertyGroup>
+    <Copyright>Copyright 2016, Google Inc.</Copyright>
+    <AssemblyTitle>gRPC C# Reflection</AssemblyTitle>
+    <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
+    <Authors>Google Inc.</Authors>
+    <TargetFrameworks>net45;netstandard1.5</TargetFrameworks>
+    <AssemblyName>Grpc.Reflection</AssemblyName>
+    <PackageId>Grpc.Reflection</PackageId>
+    <PackageTags>gRPC reflection</PackageTags>
+    <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
+    <PackageLicenseUrl>https://github.com/grpc/grpc/blob/master/LICENSE</PackageLicenseUrl>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <Import Project="..\Grpc.Core\SourceLink.csproj.include" />
+
+  <ItemGroup>
+    <Compile Include="..\Grpc.Core\Version.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Grpc.Core/Grpc.Core.csproj">
+      <PrivateAssets>None</PrivateAssets>
+    </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google.Protobuf" Version="$(GoogleProtobufVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
+    <Reference Include="System" />
+    <Reference Include="Microsoft.CSharp" />
+  </ItemGroup>
+
+</Project>

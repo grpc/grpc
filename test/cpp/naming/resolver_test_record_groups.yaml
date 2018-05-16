@@ -1,0 +1,155 @@
+resolver_tests_common_zone_name: resolver-tests-version-4.grpctestingexp.
+resolver_component_tests:
+- expected_addrs:
+  - {address: '1.2.3.4:1234', is_balancer: true}
+  expected_chosen_service_config: null
+  expected_lb_policy: null
+  record_to_resolve: srv-ipv4-single-target
+  records:
+    _grpclb._tcp.srv-ipv4-single-target:
+    - {TTL: '2100', data: 0 0 1234 ipv4-single-target, type: SRV}
+    ipv4-single-target:
+    - {TTL: '2100', data: 1.2.3.4, type: A}
+- expected_addrs:
+  - {address: '1.2.3.5:1234', is_balancer: true}
+  - {address: '1.2.3.6:1234', is_balancer: true}
+  - {address: '1.2.3.7:1234', is_balancer: true}
+  expected_chosen_service_config: null
+  expected_lb_policy: null
+  record_to_resolve: srv-ipv4-multi-target
+  records:
+    _grpclb._tcp.srv-ipv4-multi-target:
+    - {TTL: '2100', data: 0 0 1234 ipv4-multi-target, type: SRV}
+    ipv4-multi-target:
+    - {TTL: '2100', data: 1.2.3.5, type: A}
+    - {TTL: '2100', data: 1.2.3.6, type: A}
+    - {TTL: '2100', data: 1.2.3.7, type: A}
+- expected_addrs:
+  - {address: '[2607:f8b0:400a:801::1001]:1234', is_balancer: true}
+  expected_chosen_service_config: null
+  expected_lb_policy: null
+  record_to_resolve: srv-ipv6-single-target
+  records:
+    _grpclb._tcp.srv-ipv6-single-target:
+    - {TTL: '2100', data: 0 0 1234 ipv6-single-target, type: SRV}
+    ipv6-single-target:
+    - {TTL: '2100', data: '2607:f8b0:400a:801::1001', type: AAAA}
+- expected_addrs:
+  - {address: '[2607:f8b0:400a:801::1002]:1234', is_balancer: true}
+  - {address: '[2607:f8b0:400a:801::1003]:1234', is_balancer: true}
+  - {address: '[2607:f8b0:400a:801::1004]:1234', is_balancer: true}
+  expected_chosen_service_config: null
+  expected_lb_policy: null
+  record_to_resolve: srv-ipv6-multi-target
+  records:
+    _grpclb._tcp.srv-ipv6-multi-target:
+    - {TTL: '2100', data: 0 0 1234 ipv6-multi-target, type: SRV}
+    ipv6-multi-target:
+    - {TTL: '2100', data: '2607:f8b0:400a:801::1002', type: AAAA}
+    - {TTL: '2100', data: '2607:f8b0:400a:801::1003', type: AAAA}
+    - {TTL: '2100', data: '2607:f8b0:400a:801::1004', type: AAAA}
+- expected_addrs:
+  - {address: '1.2.3.4:1234', is_balancer: true}
+  expected_chosen_service_config: '{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService","waitForReady":true}]}]}'
+  expected_lb_policy: round_robin
+  record_to_resolve: srv-ipv4-simple-service-config
+  records:
+    _grpclb._tcp.srv-ipv4-simple-service-config:
+    - {TTL: '2100', data: 0 0 1234 ipv4-simple-service-config, type: SRV}
+    ipv4-simple-service-config:
+    - {TTL: '2100', data: 1.2.3.4, type: A}
+    _grpc_config.srv-ipv4-simple-service-config:
+    - {TTL: '2100', data: 'grpc_config=[{"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService","waitForReady":true}]}]}}]',
+      type: TXT}
+- expected_addrs:
+  - {address: '1.2.3.4:443', is_balancer: false}
+  expected_chosen_service_config: '{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"NoSrvSimpleService","waitForReady":true}]}]}'
+  expected_lb_policy: round_robin
+  record_to_resolve: ipv4-no-srv-simple-service-config
+  records:
+    ipv4-no-srv-simple-service-config:
+    - {TTL: '2100', data: 1.2.3.4, type: A}
+    _grpc_config.ipv4-no-srv-simple-service-config:
+    - {TTL: '2100', data: 'grpc_config=[{"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"NoSrvSimpleService","waitForReady":true}]}]}}]',
+      type: TXT}
+- expected_addrs:
+  - {address: '1.2.3.4:443', is_balancer: false}
+  expected_chosen_service_config: null
+  expected_lb_policy: null
+  record_to_resolve: ipv4-no-config-for-cpp
+  records:
+    ipv4-no-config-for-cpp:
+    - {TTL: '2100', data: 1.2.3.4, type: A}
+    _grpc_config.ipv4-no-config-for-cpp:
+    - {TTL: '2100', data: 'grpc_config=[{"clientLanguage":["python"],"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"PythonService","waitForReady":true}]}]}}]',
+      type: TXT}
+- expected_addrs:
+  - {address: '1.2.3.4:443', is_balancer: false}
+  expected_chosen_service_config: null
+  expected_lb_policy: null
+  record_to_resolve: ipv4-cpp-config-has-zero-percentage
+  records:
+    ipv4-cpp-config-has-zero-percentage:
+    - {TTL: '2100', data: 1.2.3.4, type: A}
+    _grpc_config.ipv4-cpp-config-has-zero-percentage:
+    - {TTL: '2100', data: 'grpc_config=[{"percentage":0,"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"CppService","waitForReady":true}]}]}}]',
+      type: TXT}
+- expected_addrs:
+  - {address: '1.2.3.4:443', is_balancer: false}
+  expected_chosen_service_config: '{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"CppService","waitForReady":true}]}]}'
+  expected_lb_policy: round_robin
+  record_to_resolve: ipv4-second-language-is-cpp
+  records:
+    ipv4-second-language-is-cpp:
+    - {TTL: '2100', data: 1.2.3.4, type: A}
+    _grpc_config.ipv4-second-language-is-cpp:
+    - {TTL: '2100', data: 'grpc_config=[{"clientLanguage":["go"],"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"GoService","waitForReady":true}]}]}},{"clientLanguage":["c++"],"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"CppService","waitForReady":true}]}]}}]',
+      type: TXT}
+- expected_addrs:
+  - {address: '1.2.3.4:443', is_balancer: false}
+  expected_chosen_service_config: '{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"AlwaysPickedService","waitForReady":true}]}]}'
+  expected_lb_policy: round_robin
+  record_to_resolve: ipv4-config-with-percentages
+  records:
+    ipv4-config-with-percentages:
+    - {TTL: '2100', data: 1.2.3.4, type: A}
+    _grpc_config.ipv4-config-with-percentages:
+    - {TTL: '2100', data: 'grpc_config=[{"percentage":0,"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"NeverPickedService","waitForReady":true}]}]}},{"percentage":100,"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"AlwaysPickedService","waitForReady":true}]}]}}]',
+      type: TXT}
+- expected_addrs:
+  - {address: '1.2.3.4:1234', is_balancer: true}
+  - {address: '1.2.3.4:443', is_balancer: false}
+  expected_chosen_service_config: null
+  expected_lb_policy: null
+  record_to_resolve: srv-ipv4-target-has-backend-and-balancer
+  records:
+    _grpclb._tcp.srv-ipv4-target-has-backend-and-balancer:
+    - {TTL: '2100', data: 0 0 1234 balancer-for-ipv4-has-backend-and-balancer, type: SRV}
+    balancer-for-ipv4-has-backend-and-balancer:
+    - {TTL: '2100', data: 1.2.3.4, type: A}
+    srv-ipv4-target-has-backend-and-balancer:
+    - {TTL: '2100', data: 1.2.3.4, type: A}
+- expected_addrs:
+  - {address: '[2607:f8b0:400a:801::1002]:1234', is_balancer: true}
+  - {address: '[2607:f8b0:400a:801::1002]:443', is_balancer: false}
+  expected_chosen_service_config: null
+  expected_lb_policy: null
+  record_to_resolve: srv-ipv6-target-has-backend-and-balancer
+  records:
+    _grpclb._tcp.srv-ipv6-target-has-backend-and-balancer:
+    - {TTL: '2100', data: 0 0 1234 balancer-for-ipv6-has-backend-and-balancer, type: SRV}
+    balancer-for-ipv6-has-backend-and-balancer:
+    - {TTL: '2100', data: '2607:f8b0:400a:801::1002', type: AAAA}
+    srv-ipv6-target-has-backend-and-balancer:
+    - {TTL: '2100', data: '2607:f8b0:400a:801::1002', type: AAAA}
+- expected_addrs:
+  - {address: '1.2.3.4:443', is_balancer: false}
+  expected_chosen_service_config: '{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwo","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooThree","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooFour","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooFive","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooSix","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooSeven","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooEight","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooNine","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTen","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooEleven","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]}]}'
+  expected_lb_policy: null
+  record_to_resolve: ipv4-config-causing-fallback-to-tcp
+  records:
+    ipv4-config-causing-fallback-to-tcp:
+    - {TTL: '2100', data: 1.2.3.4, type: A}
+    _grpc_config.ipv4-config-causing-fallback-to-tcp:
+    - {TTL: '2100', data: 'grpc_config=[{"serviceConfig":{"loadBalancingPolicy":"round_robin","methodConfig":[{"name":[{"method":"Foo","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwo","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooThree","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooFour","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooFive","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooSix","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooSeven","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooEight","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooNine","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTen","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooEleven","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]},{"name":[{"method":"FooTwelve","service":"SimpleService","waitForReady":true}]}]}}]',
+      type: TXT}

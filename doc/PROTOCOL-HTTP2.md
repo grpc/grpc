@@ -1,7 +1,7 @@
 # gRPC over HTTP2
 
 ## Introduction
-This document serves as a detailed description for an implementation of gRPC carried over HTTP2 draft 17 framing. It assumes familiarity with the HTTP2 specification.
+This document serves as a detailed description for an implementation of gRPC carried over <a href="https://tools.ietf.org/html/rfc7540">HTTP2 framing</a>. It assumes familiarity with the HTTP2 specification.
 
 ## Protocol
 Production rules are using <a href="http://tools.ietf.org/html/rfc5234">ABNF syntax</a>.
@@ -24,7 +24,8 @@ Request-Headers are delivered as HTTP2 headers in HEADERS + CONTINUATION frames.
 * **Call-Definition** → Method Scheme Path TE [Authority] [Timeout] Content-Type [Message-Type] [Message-Encoding] [Message-Accept-Encoding] [User-Agent]
 * **Method** →  ":method POST"
 * **Scheme** → ":scheme "  ("http" / "https")
-* **Path** → ":path"  {_path identifying method within exposed API_}
+* **Path** → ":path" "/" Service-Name "/" {_method name_}  # But see note below.
+* **Service-Name** → {_IDL-specific service name_}
 * **Authority** → ":authority" {_virtual host name of authority_}
 * **TE** → "te" "trailers"  # Used to detect incompatible proxies
 * **Timeout** → "grpc-timeout" TimeoutValue TimeoutUnit
@@ -50,6 +51,13 @@ Request-Headers are delivered as HTTP2 headers in HEADERS + CONTINUATION frames.
 
 
 HTTP2 requires that reserved headers, ones starting with ":" appear before all other headers. Additionally implementations should send **Timeout** immediately after the reserved headers and they should send the **Call-Definition** headers before sending **Custom-Metadata**.
+
+Some gRPC implementations may allow the **Path** format shown above
+to be overridden, but this functionality is strongly discouraged.
+gRPC does not go out of its way to break users that are using this kind
+of override, but we do not actively support it, and some functionality
+(e.g., service config support) will not work when the path is not of
+the form shown above.
 
 If **Timeout** is omitted a server should assume an infinite timeout. Client implementations are free to send a default minimum timeout based on their deployment requirements.
 
@@ -91,7 +99,7 @@ A **Compressed-Flag** value of 1 indicates that the binary octet sequence of **M
 
 For requests, **EOS** (end-of-stream) is indicated by the presence of the END_STREAM flag on the last received DATA frame. In scenarios where the **Request** stream needs to be closed but no data remains to be sent implementations MUST send an empty DATA frame with this flag set.
 
-###Responses
+### Responses
 
 * **Response** → (Response-Headers \*Length-Prefixed-Message Trailers) / Trailers-Only
 * **Response-Headers** → HTTP-Status [Message-Encoding] [Message-Accept-Encoding] Content-Type \*Custom-Metadata
@@ -128,7 +136,7 @@ implementation can decode valid portions while leaving broken %-encodings as-is
 or replacing them with a replacement character (e.g., '?' or the Unicode
 replacement character).
 
-####Example
+#### Example
 
 Sample unary-call showing HTTP2 framing sequence
 
@@ -153,6 +161,7 @@ DATA (flags = END_STREAM)
 HEADERS (flags = END_HEADERS)
 :status = 200
 grpc-encoding = gzip
+content-type = application/grpc+proto
 
 DATA
 <Length-Prefixed Message>
@@ -161,7 +170,8 @@ HEADERS (flags = END_STREAM, END_HEADERS)
 grpc-status = 0 # OK
 trace-proto-bin = jher831yy13JHy3hc
 ```
-####User Agents
+
+#### User Agents
 
 While the protocol does not require a user-agent to function it is recommended that clients provide a structured user-agent string that provides a basic description of the calling library, version & platform to facilitate issue diagnosis in heterogeneous environments. The following structure is recommended to library developers
 ```
@@ -175,15 +185,25 @@ grpc-ruby/1.2.3
 grpc-ruby-jruby/1.3.4
 grpc-java-android/0.9.1 (gingerbread/1.2.4; nexus5; tmobile)
 ```
-####HTTP2 Transport Mapping
 
-#####Stream Identification
-All GRPC calls need to specify an internal ID. We will use HTTP2 stream-ids as call identifiers in this scheme. NOTE: These id’s are contextual to an open HTTP2 session and will not be unique within a given process that is handling more than one HTTP2 session nor can they be used as GUIDs.
+#### Idempotency and Retries
 
-#####Data Frames
+Unless explicitly defined to be, gRPC Calls are not assumed to be idempotent.  Specifically:
+
+* Calls that cannot be proven to have started will not be retried.
+* There is no mechanism for duplicate suppression as it is not necessary.
+* Calls that are marked as idempotent may be sent multiple times.
+
+
+#### HTTP2 Transport Mapping
+
+##### Stream Identification
+All GRPC calls need to specify an internal ID. We will use HTTP2 stream-ids as call identifiers in this scheme. NOTE: These ids are contextual to an open HTTP2 session and will not be unique within a given process that is handling more than one HTTP2 session nor can they be used as GUIDs.
+
+##### Data Frames
 DATA frame boundaries have no relation to **Length-Prefixed-Message** boundaries and implementations should make no assumptions about their alignment.
 
-#####Errors
+##### Errors
 
 When an application or runtime error occurs during an RPC a **Status** and **Status-Message** are delivered in **Trailers**.
 
@@ -208,29 +228,30 @@ ENHANCE_YOUR_CALM|RESOURCE_EXHAUSTED ...with additional error detail provided by
 INADEQUATE_SECURITY| PERMISSION_DENIED … with additional detail indicating that permission was denied as protocol is not secure enough for call.
 
 
-#####Security
+##### Security
 
 The HTTP2 specification mandates the use of TLS 1.2 or higher when TLS is used with HTTP2. It also places some additional constraints on the allowed ciphers in deployments to avoid known-problems as well as requiring SNI support. It is also expected that HTTP2 will be used in conjunction with proprietary transport security mechanisms about which the specification can make no meaningful recommendations.
 
-#####Connection Management
-######GOAWAY Frame
+##### Connection Management
+
+###### GOAWAY Frame
 Sent by servers to clients to indicate that they will no longer accept any new streams on the associated connections. This frame includes the id of the last successfully accepted stream by the server. Clients should consider any stream initiated after the last successfully accepted stream as UNAVAILABLE and retry the call elsewhere. Clients are free to continue working with the already accepted streams until they complete or the connection is terminated.
 
 Servers should send GOAWAY before terminating a connection to reliably inform clients which work has been accepted by the server and is being executed.
 
-######PING Frame
+###### PING Frame
 Both clients and servers can send a PING frame that the peer must respond to by precisely echoing what they received. This is used to assert that the connection is still live as well as providing a means to estimate end-to-end latency. If a server initiated PING does not receive a response within the deadline expected by the runtime all outstanding calls on the server will be closed with a CANCELLED status. An expired client initiated PING will cause all calls to be closed with an UNAVAILABLE status. Note that the frequency of PINGs is highly dependent on the network environment, implementations are free to adjust PING frequency based on network and application requirements.
 
-######Connection failure
+###### Connection failure
 If a detectable connection failure occurs on the client all calls will be closed with an UNAVAILABLE status. For servers open calls will be closed with a CANCELLED status.
 
 
 ### Appendix A - GRPC for Protobuf
 
-The service interfaces declared by protobuf are easily mapped onto GRPC by code generation extensions to protoc. The following defines the mapping to be used
+The service interfaces declared by protobuf are easily mapped onto GRPC by
+code generation extensions to protoc. The following defines the mapping
+to be used.
 
-
-* **Path** → / Service-Name / {_method name_}
 * **Service-Name** → ?( {_proto package name_} "." ) {_service name_}
 * **Message-Type** → {_fully qualified proto message name_}
 * **Content-Type** → "application/grpc+proto"

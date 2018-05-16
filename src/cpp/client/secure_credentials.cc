@@ -1,41 +1,27 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 #include "src/cpp/client/secure_credentials.h"
-#include <grpc++/channel.h>
-#include <grpc++/impl/grpc_library.h>
-#include <grpc++/support/channel_arguments.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/impl/grpc_library.h>
+#include <grpcpp/support/channel_arguments.h>
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/cpp/common/secure_auth_context.h"
 
@@ -70,14 +56,16 @@ bool SecureCallCredentials::ApplyToCall(grpc_call* call) {
 namespace {
 std::shared_ptr<ChannelCredentials> WrapChannelCredentials(
     grpc_channel_credentials* creds) {
-  return creds == nullptr ? nullptr : std::shared_ptr<ChannelCredentials>(
-                                          new SecureChannelCredentials(creds));
+  return creds == nullptr ? nullptr
+                          : std::shared_ptr<ChannelCredentials>(
+                                new SecureChannelCredentials(creds));
 }
 
 std::shared_ptr<CallCredentials> WrapCallCredentials(
     grpc_call_credentials* creds) {
-  return creds == nullptr ? nullptr : std::shared_ptr<CallCredentials>(
-                                          new SecureCallCredentials(creds));
+  return creds == nullptr ? nullptr
+                          : std::shared_ptr<CallCredentials>(
+                                new SecureCallCredentials(creds));
 }
 }  // namespace
 
@@ -98,6 +86,27 @@ std::shared_ptr<ChannelCredentials> SslCredentials(
       options.pem_private_key.empty() ? nullptr : &pem_key_cert_pair, nullptr);
   return WrapChannelCredentials(c_creds);
 }
+
+namespace experimental {
+
+// Builds ALTS Credentials given ALTS specific options
+std::shared_ptr<ChannelCredentials> AltsCredentials(
+    const AltsCredentialsOptions& options) {
+  GrpcLibraryCodegen init;  // To call grpc_init().
+  grpc_alts_credentials_options* c_options =
+      grpc_alts_credentials_client_options_create();
+  for (auto service_account = options.target_service_accounts.begin();
+       service_account != options.target_service_accounts.end();
+       service_account++) {
+    grpc_alts_credentials_client_options_add_target_service_account(
+        c_options, service_account->c_str());
+  }
+  grpc_channel_credentials* c_creds = grpc_alts_credentials_create(c_options);
+  grpc_alts_credentials_options_destroy(c_options);
+  return WrapChannelCredentials(c_creds);
+}
+
+}  // namespace experimental
 
 // Builds credentials for use when running in GCE
 std::shared_ptr<CallCredentials> GoogleComputeEngineCredentials() {
@@ -165,35 +174,69 @@ std::shared_ptr<ChannelCredentials> CompositeChannelCredentials(
   return nullptr;
 }
 
+std::shared_ptr<CallCredentials> CompositeCallCredentials(
+    const std::shared_ptr<CallCredentials>& creds1,
+    const std::shared_ptr<CallCredentials>& creds2) {
+  SecureCallCredentials* s_creds1 = creds1->AsSecureCredentials();
+  SecureCallCredentials* s_creds2 = creds2->AsSecureCredentials();
+  if (s_creds1 != nullptr && s_creds2 != nullptr) {
+    return WrapCallCredentials(grpc_composite_call_credentials_create(
+        s_creds1->GetRawCreds(), s_creds2->GetRawCreds(), nullptr));
+  }
+  return nullptr;
+}
+
 void MetadataCredentialsPluginWrapper::Destroy(void* wrapper) {
   if (wrapper == nullptr) return;
   MetadataCredentialsPluginWrapper* w =
-      reinterpret_cast<MetadataCredentialsPluginWrapper*>(wrapper);
+      static_cast<MetadataCredentialsPluginWrapper*>(wrapper);
   delete w;
 }
 
-void MetadataCredentialsPluginWrapper::GetMetadata(
+int MetadataCredentialsPluginWrapper::GetMetadata(
     void* wrapper, grpc_auth_metadata_context context,
-    grpc_credentials_plugin_metadata_cb cb, void* user_data) {
+    grpc_credentials_plugin_metadata_cb cb, void* user_data,
+    grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
+    size_t* num_creds_md, grpc_status_code* status,
+    const char** error_details) {
   GPR_ASSERT(wrapper);
   MetadataCredentialsPluginWrapper* w =
-      reinterpret_cast<MetadataCredentialsPluginWrapper*>(wrapper);
+      static_cast<MetadataCredentialsPluginWrapper*>(wrapper);
   if (!w->plugin_) {
-    cb(user_data, NULL, 0, GRPC_STATUS_OK, NULL);
-    return;
+    *num_creds_md = 0;
+    *status = GRPC_STATUS_OK;
+    *error_details = nullptr;
+    return true;
   }
   if (w->plugin_->IsBlocking()) {
+    // Asynchronous return.
     w->thread_pool_->Add(
         std::bind(&MetadataCredentialsPluginWrapper::InvokePlugin, w, context,
-                  cb, user_data));
+                  cb, user_data, nullptr, nullptr, nullptr, nullptr));
+    return 0;
   } else {
-    w->InvokePlugin(context, cb, user_data);
+    // Synchronous return.
+    w->InvokePlugin(context, cb, user_data, creds_md, num_creds_md, status,
+                    error_details);
+    return 1;
   }
 }
 
+namespace {
+
+void UnrefMetadata(const std::vector<grpc_metadata>& md) {
+  for (auto it = md.begin(); it != md.end(); ++it) {
+    grpc_slice_unref(it->key);
+    grpc_slice_unref(it->value);
+  }
+}
+
+}  // namespace
+
 void MetadataCredentialsPluginWrapper::InvokePlugin(
     grpc_auth_metadata_context context, grpc_credentials_plugin_metadata_cb cb,
-    void* user_data) {
+    void* user_data, grpc_metadata creds_md[4], size_t* num_creds_md,
+    grpc_status_code* status_code, const char** error_details) {
   std::multimap<grpc::string, grpc::string> metadata;
 
   // const_cast is safe since the SecureAuthContext does not take owndership and
@@ -206,15 +249,37 @@ void MetadataCredentialsPluginWrapper::InvokePlugin(
   std::vector<grpc_metadata> md;
   for (auto it = metadata.begin(); it != metadata.end(); ++it) {
     grpc_metadata md_entry;
-    md_entry.key = it->first.c_str();
-    md_entry.value = it->second.data();
-    md_entry.value_length = it->second.size();
+    md_entry.key = SliceFromCopiedString(it->first);
+    md_entry.value = SliceFromCopiedString(it->second);
     md_entry.flags = 0;
     md.push_back(md_entry);
   }
-  cb(user_data, md.empty() ? nullptr : &md[0], md.size(),
-     static_cast<grpc_status_code>(status.error_code()),
-     status.error_message().c_str());
+  if (creds_md != nullptr) {
+    // Synchronous return.
+    if (md.size() > GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX) {
+      *num_creds_md = 0;
+      *status_code = GRPC_STATUS_INTERNAL;
+      *error_details = gpr_strdup(
+          "blocking plugin credentials returned too many metadata keys");
+      UnrefMetadata(md);
+    } else {
+      for (const auto& elem : md) {
+        creds_md[*num_creds_md].key = elem.key;
+        creds_md[*num_creds_md].value = elem.value;
+        creds_md[*num_creds_md].flags = elem.flags;
+        ++(*num_creds_md);
+      }
+      *status_code = static_cast<grpc_status_code>(status.error_code());
+      *error_details =
+          status.ok() ? nullptr : gpr_strdup(status.error_message().c_str());
+    }
+  } else {
+    // Asynchronous return.
+    cb(user_data, md.empty() ? nullptr : &md[0], md.size(),
+       static_cast<grpc_status_code>(status.error_code()),
+       status.error_message().c_str());
+    UnrefMetadata(md);
+  }
 }
 
 MetadataCredentialsPluginWrapper::MetadataCredentialsPluginWrapper(

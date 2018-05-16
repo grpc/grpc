@@ -16,7 +16,7 @@ reconnect, or in the case of HTTP/2 GO_AWAY, re-resolve the name and reconnect.
 
 To hide the details of all this activity from the user of the gRPC API (i.e.,
 application code) while exposing meaningful information about the state of a
-channel, we use a state machine with four states, defined below:
+channel, we use a state machine with five states, defined below:
 
 CONNECTING: The channel is trying to establish a connection and is waiting to
 make progress on one of the steps involved in name resolution, TCP connection
@@ -115,8 +115,14 @@ Channel State API
 -----------------
 
 All gRPC libraries will expose a channel-level API method to poll the current
-state of a channel. In C++, this method is called GetCurrentState and returns
-an enum for one of the four legal states.
+state of a channel. In C++, this method is called GetState and returns an enum
+for one of the five legal states. It also accepts a boolean `try_to_connect` to
+transition to CONNECTING if the channel is currently IDLE. The boolean should
+act as if an RPC occurred, so it should also reset IDLE_TIMEOUT.
+
+```cpp
+grpc_connectivity_state GetState(bool try_to_connect);
+```
 
 All libraries should also expose an API that enables the application (user of
 the gRPC API) to be notified when the channel state changes. Since state
@@ -127,11 +133,11 @@ the user to poll the channel for the current state.
 The synchronous version of this API is:
 
 ```cpp
-bool WaitForStateChange(gpr_timespec deadline, ChannelState source_state);
+bool WaitForStateChange(grpc_connectivity_state source_state, gpr_timespec deadline);
 ```
 
-which returns true when the state changes to something other than the
-source_state and false if the deadline expires. Asynchronous and futures based
+which returns `true` when the state is something other than the
+`source_state` and `false` if the deadline expires. Asynchronous- and futures-based
 APIs should have a corresponding method that allows the application to be
 notified when the state of a channel changes.
 

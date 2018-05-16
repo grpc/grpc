@@ -1,125 +1,229 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 #ifndef GRPC_CORE_LIB_IOMGR_EXEC_CTX_H
 #define GRPC_CORE_LIB_IOMGR_EXEC_CTX_H
 
+#include <grpc/support/port_platform.h>
+
+#include <grpc/support/atm.h>
+#include <grpc/support/cpu.h>
+#include <grpc/support/log.h>
+
+#include "src/core/lib/gpr/tls.h"
+#include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/iomgr/closure.h"
 
-/* #define GRPC_EXECUTION_CONTEXT_SANITIZER 1 */
+typedef gpr_atm grpc_millis;
+
+#define GRPC_MILLIS_INF_FUTURE GPR_ATM_MAX
+#define GRPC_MILLIS_INF_PAST GPR_ATM_MIN
 
 /** A workqueue represents a list of work to be executed asynchronously.
     Forward declared here to avoid a circular dependency with workqueue.h. */
 typedef struct grpc_workqueue grpc_workqueue;
 typedef struct grpc_combiner grpc_combiner;
 
-#ifndef GRPC_EXECUTION_CONTEXT_SANITIZER
+/* This exec_ctx is ready to return: either pre-populated, or cached as soon as
+   the finish_check returns true */
+#define GRPC_EXEC_CTX_FLAG_IS_FINISHED 1
+/* The exec_ctx's thread is (potentially) owned by a call or channel: care
+   should be given to not delete said call/channel from this exec_ctx */
+#define GRPC_EXEC_CTX_FLAG_THREAD_RESOURCE_LOOP 2
+
+extern grpc_closure_scheduler* grpc_schedule_on_exec_ctx;
+
+gpr_timespec grpc_millis_to_timespec(grpc_millis millis, gpr_clock_type clock);
+grpc_millis grpc_timespec_to_millis_round_down(gpr_timespec timespec);
+grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec timespec);
+
+namespace grpc_core {
 /** Execution context.
  *  A bag of data that collects information along a callstack.
- *  Generally created at public API entry points, and passed down as
- *  pointer to child functions that manipulate it.
+ *  It is created on the stack at public API entry points, and stored internally
+ *  as a thread-local variable.
+ *
+ *  Generally, to create an exec_ctx instance, add the following line at the top
+ *  of the public API entry point or at the start of a thread's work function :
+ *
+ *  grpc_core::ExecCtx exec_ctx;
+ *
+ *  Access the created ExecCtx instance using :
+ *  grpc_core::ExecCtx::Get()
  *
  *  Specific responsibilities (this may grow in the future):
  *  - track a list of work that needs to be delayed until the top of the
  *    call stack (this provides a convenient mechanism to run callbacks
  *    without worrying about locking issues)
- *  - provide a decision maker (via grpc_exec_ctx_ready_to_finish) that provides
+ *  - provide a decision maker (via IsReadyToFinish) that provides a
  *    signal as to whether a borrowed thread should continue to do work or
  *    should actively try to finish up and get this thread back to its owner
  *
  *  CONVENTIONS:
- *  Instance of this must ALWAYS be constructed on the stack, never
- *  heap allocated. Instances and pointers to them must always be called
- *  exec_ctx. Instances are always passed as the first argument
- *  to a function that takes it, and always as a pointer (grpc_exec_ctx
- *  is never copied).
+ *  - Instance of this must ALWAYS be constructed on the stack, never
+ *    heap allocated.
+ *  - Exactly one instance of ExecCtx must be created per thread. Instances must
+ *    always be called exec_ctx.
+ *  - Do not pass exec_ctx as a parameter to a function. Always access it using
+ *    grpc_core::ExecCtx::Get().
  */
-struct grpc_exec_ctx {
-  grpc_closure_list closure_list;
-  /** currently active combiner: updated only via combiner.c */
-  grpc_combiner *active_combiner;
-  bool cached_ready_to_finish;
-  void *check_ready_to_finish_arg;
-  bool (*check_ready_to_finish)(grpc_exec_ctx *exec_ctx, void *arg);
+class ExecCtx {
+ public:
+  /** Default Constructor */
+
+  ExecCtx() : flags_(GRPC_EXEC_CTX_FLAG_IS_FINISHED) {
+    grpc_core::Fork::IncExecCtxCount();
+    Set(this);
+  }
+
+  /** Parameterised Constructor */
+  ExecCtx(uintptr_t fl) : flags_(fl) {
+    grpc_core::Fork::IncExecCtxCount();
+    Set(this);
+  }
+
+  /** Destructor */
+  virtual ~ExecCtx() {
+    flags_ |= GRPC_EXEC_CTX_FLAG_IS_FINISHED;
+    Flush();
+    Set(last_exec_ctx_);
+    grpc_core::Fork::DecExecCtxCount();
+  }
+
+  /** Disallow copy and assignment operators */
+  ExecCtx(const ExecCtx&) = delete;
+  ExecCtx& operator=(const ExecCtx&) = delete;
+
+  /** Return starting_cpu. This is only required for stats collection and is
+   *  hence only defined if GRPC_COLLECT_STATS is enabled.
+   */
+#if defined(GRPC_COLLECT_STATS) || !defined(NDEBUG)
+  unsigned starting_cpu() const { return starting_cpu_; }
+#endif /* defined(GRPC_COLLECT_STATS) || !defined(NDEBUG) */
+
+  struct CombinerData {
+    /* currently active combiner: updated only via combiner.c */
+    grpc_combiner* active_combiner;
+    /* last active combiner in the active combiner list */
+    grpc_combiner* last_combiner;
+  };
+
+  /** Only to be used by grpc-combiner code */
+  CombinerData* combiner_data() { return &combiner_data_; }
+
+  /** Return pointer to grpc_closure_list */
+  grpc_closure_list* closure_list() { return &closure_list_; }
+
+  /** Return flags */
+  uintptr_t flags() { return flags_; }
+
+  /** Checks if there is work to be done */
+  bool HasWork() {
+    return combiner_data_.active_combiner != nullptr ||
+           !grpc_closure_list_empty(closure_list_);
+  }
+
+  /** Flush any work that has been enqueued onto this grpc_exec_ctx.
+   *  Caller must guarantee that no interfering locks are held.
+   *  Returns true if work was performed, false otherwise.
+   */
+  bool Flush();
+
+  /** Returns true if we'd like to leave this execution context as soon as
+   *  possible: useful for deciding whether to do something more or not
+   *  depending on outside context.
+   */
+  bool IsReadyToFinish() {
+    if ((flags_ & GRPC_EXEC_CTX_FLAG_IS_FINISHED) == 0) {
+      if (CheckReadyToFinish()) {
+        flags_ |= GRPC_EXEC_CTX_FLAG_IS_FINISHED;
+        return true;
+      }
+      return false;
+    } else {
+      return true;
+    }
+  }
+
+  /** Returns the stored current time relative to start if valid,
+   *  otherwise refreshes the stored time, sets it valid and returns the new
+   *  value.
+   */
+  grpc_millis Now();
+
+  /** Invalidates the stored time value. A new time value will be set on calling
+   *  Now().
+   */
+  void InvalidateNow() { now_is_valid_ = false; }
+
+  /** To be used only by shutdown code in iomgr */
+  void SetNowIomgrShutdown() {
+    now_ = GRPC_MILLIS_INF_FUTURE;
+    now_is_valid_ = true;
+  }
+
+  /** To be used only for testing.
+   *  Sets the now value.
+   */
+  void TestOnlySetNow(grpc_millis new_val) {
+    now_ = new_val;
+    now_is_valid_ = true;
+  }
+
+  /** Global initialization for ExecCtx. Called by iomgr. */
+  static void GlobalInit(void);
+
+  /** Global shutdown for ExecCtx. Called by iomgr. */
+  static void GlobalShutdown(void) { gpr_tls_destroy(&exec_ctx_); }
+
+  /** Gets pointer to current exec_ctx. */
+  static ExecCtx* Get() {
+    return reinterpret_cast<ExecCtx*>(gpr_tls_get(&exec_ctx_));
+  }
+
+  static void Set(ExecCtx* exec_ctx) {
+    gpr_tls_set(&exec_ctx_, reinterpret_cast<intptr_t>(exec_ctx));
+  }
+
+ protected:
+  /** Check if ready to finish. */
+  virtual bool CheckReadyToFinish() { return false; }
+
+  /** Disallow delete on ExecCtx. */
+  static void operator delete(void* p) { abort(); }
+
+ private:
+  /** Set exec_ctx_ to exec_ctx. */
+
+  grpc_closure_list closure_list_ = GRPC_CLOSURE_LIST_INIT;
+  CombinerData combiner_data_ = {nullptr, nullptr};
+  uintptr_t flags_;
+
+#if defined(GRPC_COLLECT_STATS) || !defined(NDEBUG)
+  unsigned starting_cpu_ = gpr_cpu_current_cpu();
+#endif /* defined(GRPC_COLLECT_STATS) || !defined(NDEBUG) */
+
+  bool now_is_valid_ = false;
+  grpc_millis now_ = 0;
+
+  GPR_TLS_CLASS_DECL(exec_ctx_);
+  ExecCtx* last_exec_ctx_ = Get();
 };
-
-#define GRPC_EXEC_CTX_INIT_WITH_FINISH_CHECK(finish_check, finish_check_arg) \
-  { GRPC_CLOSURE_LIST_INIT, NULL, false, finish_check_arg, finish_check }
-#else
-struct grpc_exec_ctx {
-  bool cached_ready_to_finish;
-  void *check_ready_to_finish_arg;
-  bool (*check_ready_to_finish)(grpc_exec_ctx *exec_ctx, void *arg);
-};
-#define GRPC_EXEC_CTX_INIT_WITH_FINISH_CHECK(finish_check, finish_check_arg) \
-  { false, finish_check_arg, finish_check }
-#endif
-
-#define GRPC_EXEC_CTX_INIT \
-  GRPC_EXEC_CTX_INIT_WITH_FINISH_CHECK(grpc_never_ready_to_finish, NULL)
-
-/** Flush any work that has been enqueued onto this grpc_exec_ctx.
- *  Caller must guarantee that no interfering locks are held.
- *  Returns true if work was performed, false otherwise. */
-bool grpc_exec_ctx_flush(grpc_exec_ctx *exec_ctx);
-/** Finish any pending work for a grpc_exec_ctx. Must be called before
- *  the instance is destroyed, or work may be lost. */
-void grpc_exec_ctx_finish(grpc_exec_ctx *exec_ctx);
-/** Add a closure to be executed in the future.
-    If \a offload_target_or_null is NULL, the closure will be executed at the
-    next exec_ctx.{finish,flush} point.
-    If \a offload_target_or_null is non-NULL, the closure will be scheduled
-    against the workqueue, and a reference to the workqueue will be consumed. */
-void grpc_exec_ctx_sched(grpc_exec_ctx *exec_ctx, grpc_closure *closure,
-                         grpc_error *error,
-                         grpc_workqueue *offload_target_or_null);
-/** Returns true if we'd like to leave this execution context as soon as
-    possible: useful for deciding whether to do something more or not depending
-    on outside context */
-bool grpc_exec_ctx_ready_to_finish(grpc_exec_ctx *exec_ctx);
-/** A finish check that is never ready to finish */
-bool grpc_never_ready_to_finish(grpc_exec_ctx *exec_ctx, void *arg_ignored);
-/** A finish check that is always ready to finish */
-bool grpc_always_ready_to_finish(grpc_exec_ctx *exec_ctx, void *arg_ignored);
-/** Add a list of closures to be executed at the next flush/finish point.
- *  Leaves \a list empty. */
-void grpc_exec_ctx_enqueue_list(grpc_exec_ctx *exec_ctx,
-                                grpc_closure_list *list,
-                                grpc_workqueue *offload_target_or_null);
-
-void grpc_exec_ctx_global_init(void);
-
-void grpc_exec_ctx_global_init(void);
-void grpc_exec_ctx_global_shutdown(void);
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_IOMGR_EXEC_CTX_H */

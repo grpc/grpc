@@ -1,50 +1,37 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
-#include <grpc++/support/channel_arguments.h>
+#include <grpcpp/support/channel_arguments.h>
 
 #include <sstream>
 
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/resource_quota.h>
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/socket_mutator.h"
 
 namespace grpc {
 
 ChannelArguments::ChannelArguments() {
-  std::ostringstream user_agent_prefix;
-  user_agent_prefix << "grpc-c++/" << grpc_version_string();
   // This will be ignored if used on the server side.
-  SetString(GRPC_ARG_PRIMARY_USER_AGENT_STRING, user_agent_prefix.str());
+  SetString(GRPC_ARG_PRIMARY_USER_AGENT_STRING, "grpc-c++/" + Version());
 }
 
 ChannelArguments::ChannelArguments(const ChannelArguments& other)
@@ -78,6 +65,15 @@ ChannelArguments::ChannelArguments(const ChannelArguments& other)
   }
 }
 
+ChannelArguments::~ChannelArguments() {
+  grpc_core::ExecCtx exec_ctx;
+  for (auto it = args_.begin(); it != args_.end(); ++it) {
+    if (it->type == GRPC_ARG_POINTER) {
+      it->value.pointer.vtable->destroy(it->value.pointer.p);
+    }
+  }
+}
+
 void ChannelArguments::Swap(ChannelArguments& other) {
   args_.swap(other.args_);
   strings_.swap(other.strings_);
@@ -86,6 +82,32 @@ void ChannelArguments::Swap(ChannelArguments& other) {
 void ChannelArguments::SetCompressionAlgorithm(
     grpc_compression_algorithm algorithm) {
   SetInt(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM, algorithm);
+}
+
+void ChannelArguments::SetGrpclbFallbackTimeout(int fallback_timeout) {
+  SetInt(GRPC_ARG_GRPCLB_FALLBACK_TIMEOUT_MS, fallback_timeout);
+}
+
+void ChannelArguments::SetSocketMutator(grpc_socket_mutator* mutator) {
+  if (!mutator) {
+    return;
+  }
+  grpc_arg mutator_arg = grpc_socket_mutator_to_arg(mutator);
+  bool replaced = false;
+  grpc_core::ExecCtx exec_ctx;
+  for (auto it = args_.begin(); it != args_.end(); ++it) {
+    if (it->type == mutator_arg.type &&
+        grpc::string(it->key) == grpc::string(mutator_arg.key)) {
+      GPR_ASSERT(!replaced);
+      it->value.pointer.vtable->destroy(it->value.pointer.p);
+      it->value.pointer = mutator_arg.value.pointer;
+      replaced = true;
+    }
+  }
+
+  if (!replaced) {
+    args_.push_back(mutator_arg);
+  }
 }
 
 // Note: a second call to this will add in front the result of the first call.
@@ -98,19 +120,49 @@ void ChannelArguments::SetUserAgentPrefix(
     return;
   }
   bool replaced = false;
+  auto strings_it = strings_.begin();
   for (auto it = args_.begin(); it != args_.end(); ++it) {
     const grpc_arg& arg = *it;
-    if (arg.type == GRPC_ARG_STRING &&
-        grpc::string(arg.key) == GRPC_ARG_PRIMARY_USER_AGENT_STRING) {
-      strings_.push_back(user_agent_prefix + " " + arg.value.string);
-      it->value.string = const_cast<char*>(strings_.back().c_str());
-      replaced = true;
-      break;
+    ++strings_it;
+    if (arg.type == GRPC_ARG_STRING) {
+      if (grpc::string(arg.key) == GRPC_ARG_PRIMARY_USER_AGENT_STRING) {
+        GPR_ASSERT(arg.value.string == strings_it->c_str());
+        *(strings_it) = user_agent_prefix + " " + arg.value.string;
+        it->value.string = const_cast<char*>(strings_it->c_str());
+        replaced = true;
+        break;
+      }
+      ++strings_it;
     }
   }
   if (!replaced) {
     SetString(GRPC_ARG_PRIMARY_USER_AGENT_STRING, user_agent_prefix);
   }
+}
+
+void ChannelArguments::SetResourceQuota(
+    const grpc::ResourceQuota& resource_quota) {
+  SetPointerWithVtable(GRPC_ARG_RESOURCE_QUOTA,
+                       resource_quota.c_resource_quota(),
+                       grpc_resource_quota_arg_vtable());
+}
+
+void ChannelArguments::SetMaxReceiveMessageSize(int size) {
+  SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, size);
+}
+
+void ChannelArguments::SetMaxSendMessageSize(int size) {
+  SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, size);
+}
+
+void ChannelArguments::SetLoadBalancingPolicyName(
+    const grpc::string& lb_policy_name) {
+  SetString(GRPC_ARG_LB_POLICY_NAME, lb_policy_name);
+}
+
+void ChannelArguments::SetServiceConfigJSON(
+    const grpc::string& service_config_json) {
+  SetString(GRPC_ARG_SERVICE_CONFIG, service_config_json);
 }
 
 void ChannelArguments::SetInt(const grpc::string& key, int value) {
@@ -127,12 +179,18 @@ void ChannelArguments::SetPointer(const grpc::string& key, void* value) {
   static const grpc_arg_pointer_vtable vtable = {
       &PointerVtableMembers::Copy, &PointerVtableMembers::Destroy,
       &PointerVtableMembers::Compare};
+  SetPointerWithVtable(key, value, &vtable);
+}
+
+void ChannelArguments::SetPointerWithVtable(
+    const grpc::string& key, void* value,
+    const grpc_arg_pointer_vtable* vtable) {
   grpc_arg arg;
   arg.type = GRPC_ARG_POINTER;
   strings_.push_back(key);
   arg.key = const_cast<char*>(strings_.back().c_str());
-  arg.value.pointer.p = value;
-  arg.value.pointer.vtable = &vtable;
+  arg.value.pointer.p = vtable->copy(value);
+  arg.value.pointer.vtable = vtable;
   args_.push_back(arg);
 }
 

@@ -1,192 +1,90 @@
 /*
  *
- * Copyright 2016, Google Inc.
- * All rights reserved.
+ * Copyright 2016 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 #import "GRPCConnectivityMonitor.h"
 
-#pragma mark Flags
+#include <netinet/in.h>
 
-@implementation GRPCReachabilityFlags {
-  SCNetworkReachabilityFlags _flags;
-}
+NSString *kGRPCConnectivityNotification = @"kGRPCConnectivityNotification";
 
-+ (instancetype)flagsWithFlags:(SCNetworkReachabilityFlags)flags {
-  return [[self alloc] initWithFlags:flags];
-}
+static SCNetworkReachabilityRef reachability;
+static GRPCConnectivityStatus currentStatus;
 
-- (instancetype)initWithFlags:(SCNetworkReachabilityFlags)flags {
-  if ((self = [super init])) {
-    _flags = flags;
+// Aggregate information in flags into network status.
+GRPCConnectivityStatus CalculateConnectivityStatus(SCNetworkReachabilityFlags flags) {
+  GRPCConnectivityStatus result = GRPCConnectivityUnknown;
+  if (((flags & kSCNetworkReachabilityFlagsReachable) == 0) ||
+      ((flags & kSCNetworkReachabilityFlagsConnectionRequired) != 0)) {
+    return GRPCConnectivityNoNetwork;
   }
-  return self;
-}
-
-/*
- * One accessor method implementation per flag. Example:
-
-- (BOOL)isCell { \
-  return !!(_flags & kSCNetworkReachabilityFlagsIsWWAN); \
-}
-
- */
-#define GRPC_XMACRO_ITEM(methodName, FlagName) \
-- (BOOL)methodName { \
-  return !!(_flags & kSCNetworkReachabilityFlags ## FlagName); \
-}
-#include "GRPCReachabilityFlagNames.xmacro.h"
-#undef GRPC_XMACRO_ITEM
-
-- (BOOL)isHostReachable {
-  // Note: connectionOnDemand means it'll be reachable only if using the CFSocketStream API or APIs
-  // on top of it.
-  // connectionRequired means we can't tell until a connection is attempted (e.g. for VPN on
-  // demand).
-  return self.reachable && !self.interventionRequired && !self.connectionOnDemand;
-}
-
-- (NSString *)description {
-  NSMutableArray *activeOptions = [NSMutableArray arrayWithCapacity:9];
-
-  /*
-   * For each flag, add its name to the array if it's ON. Example:
-
-  if (self.isCell) {
-    [activeOptions addObject:@"isCell"];
+  result = GRPCConnectivityWiFi;
+#if TARGET_OS_IPHONE
+  if (flags & kSCNetworkReachabilityFlagsIsWWAN) {
+    return result = GRPCConnectivityCellular;
   }
+#endif
+  return result;
+}
 
-   */
-#define GRPC_XMACRO_ITEM(methodName, FlagName) \
-  if (self.methodName) { \
-    [activeOptions addObject:@#methodName]; \
+static void ReachabilityCallback(SCNetworkReachabilityRef target, SCNetworkReachabilityFlags flags,
+                                 void *info) {
+  GRPCConnectivityStatus newStatus = CalculateConnectivityStatus(flags);
+
+  if (newStatus != currentStatus) {
+    [[NSNotificationCenter defaultCenter] postNotificationName:kGRPCConnectivityNotification
+                                                        object:nil];
+    currentStatus = newStatus;
   }
-#include "GRPCReachabilityFlagNames.xmacro.h"
-#undef GRPC_XMACRO_ITEM
-
-  return activeOptions.count == 0 ? @"(none)" : [activeOptions componentsJoinedByString:@", "];
 }
 
-- (BOOL)isEqual:(id)object {
-  return [object isKindOfClass:[GRPCReachabilityFlags class]] &&
-      _flags == ((GRPCReachabilityFlags *)object)->_flags;
-}
+@implementation GRPCConnectivityMonitor
 
-- (NSUInteger)hash {
-  return _flags;
-}
-@end
++ (void)initialize {
+  if (self == [GRPCConnectivityMonitor self]) {
+    struct sockaddr_in addr = {0};
+    addr.sin_len = sizeof(addr);
+    addr.sin_family = AF_INET;
+    reachability = SCNetworkReachabilityCreateWithAddress(NULL, (struct sockaddr *)&addr);
+    currentStatus = GRPCConnectivityUnknown;
 
-#pragma mark Connectivity Monitor
-
-// Assumes the third argument is a block that accepts a GRPCReachabilityFlags object, and passes the
-// received ones to it.
-static void PassFlagsToContextInfoBlock(SCNetworkReachabilityRef target,
-                                        SCNetworkReachabilityFlags flags,
-                                        void *info) {
-  #pragma unused (target)
-  // This can be called many times with the same info. The info is retained by SCNetworkReachability
-  // while this function is being executed.
-  void (^handler)(GRPCReachabilityFlags *) = (__bridge void (^)(GRPCReachabilityFlags *))info;
-  handler([[GRPCReachabilityFlags alloc] initWithFlags:flags]);
-}
-
-@implementation GRPCConnectivityMonitor {
-  SCNetworkReachabilityRef _reachabilityRef;
-}
-
-- (nullable instancetype)initWithReachability:(nullable SCNetworkReachabilityRef)reachability {
-  if (!reachability) {
-    return nil;
-  }
-  if ((self = [super init])) {
-    _reachabilityRef = CFRetain(reachability);
-    _queue = dispatch_get_main_queue();
-  }
-  return self;
-}
-
-+ (nullable instancetype)monitorWithHost:(nonnull NSString *)host {
-  const char *hostName = host.UTF8String;
-  if (!hostName) {
-    [NSException raise:NSInvalidArgumentException
-                format:@"host.UTF8String returns NULL for %@", host];
-  }
-  SCNetworkReachabilityRef reachability =
-      SCNetworkReachabilityCreateWithName(NULL, hostName);
-
-  GRPCConnectivityMonitor *returnValue = [[self alloc] initWithReachability:reachability];
-  if (reachability) {
-    CFRelease(reachability);
-  }
-  return returnValue;
-}
-
-- (void)handleLossWithHandler:(void (^)())handler {
-  [self startListeningWithHandler:^(GRPCReachabilityFlags *flags) {
-    if (!flags.isHostReachable) {
-      handler();
+    SCNetworkConnectionFlags flags;
+    if (SCNetworkReachabilityGetFlags(reachability, &flags)) {
+      currentStatus = CalculateConnectivityStatus(flags);
     }
-  }];
-}
 
-- (void)startListeningWithHandler:(void (^)(GRPCReachabilityFlags *))handler {
-  // Copy to ensure the handler block is in the heap (and so can't be deallocated when this method
-  // returns).
-  void (^copiedHandler)(GRPCReachabilityFlags *) = [handler copy];
-  SCNetworkReachabilityContext context = {
-    .version = 0,
-    .info = (__bridge void *)copiedHandler,
-    .retain = CFRetain,
-    .release = CFRelease,
-  };
-  // The following will retain context.info, and release it when the callback is set to NULL.
-  SCNetworkReachabilitySetCallback(_reachabilityRef, PassFlagsToContextInfoBlock, &context);
-  SCNetworkReachabilitySetDispatchQueue(_reachabilityRef, _queue);
-}
-
-- (void)stopListening {
-  // This releases the block on context.info.
-  SCNetworkReachabilitySetCallback(_reachabilityRef, NULL, NULL);
-  SCNetworkReachabilitySetDispatchQueue(_reachabilityRef, NULL);
-}
-
-- (void)setQueue:(dispatch_queue_t)queue {
-  _queue = queue ?: dispatch_get_main_queue();
-}
-
-- (void)dealloc {
-  if (_reachabilityRef) {
-    [self stopListening];
-    CFRelease(_reachabilityRef);
+    SCNetworkReachabilityContext context = {0, (__bridge void *)(self), NULL, NULL, NULL};
+    if (!SCNetworkReachabilitySetCallback(reachability, ReachabilityCallback, &context) ||
+        !SCNetworkReachabilityScheduleWithRunLoop(reachability, CFRunLoopGetMain(),
+                                                  kCFRunLoopCommonModes)) {
+      NSLog(@"gRPC connectivity monitor fail to set");
+    }
   }
+}
+
++ (void)registerObserver:(_Nonnull id)observer selector:(SEL)selector {
+  [[NSNotificationCenter defaultCenter] addObserver:observer
+                                           selector:selector
+                                               name:kGRPCConnectivityNotification
+                                             object:nil];
+}
+
++ (void)unregisterObserver:(_Nonnull id)observer {
+  [[NSNotificationCenter defaultCenter] removeObserver:observer];
 }
 
 @end

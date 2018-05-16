@@ -1,38 +1,25 @@
 /*
  *
- * Copyright 2015, Google Inc.
- * All rights reserved.
+ * Copyright 2015 gRPC authors.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *     * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
- *     * Neither the name of Google Inc. nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  */
 
 #ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_CREDENTIALS_H
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_CREDENTIALS_H
+
+#include <grpc/support/port_platform.h>
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -42,7 +29,7 @@
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/security/transport/security_connector.h"
+#include "src/core/lib/security/security_connector/security_connector.h"
 
 struct grpc_http_response;
 
@@ -58,6 +45,7 @@ typedef enum {
 #define GRPC_CHANNEL_CREDENTIALS_TYPE_SSL "Ssl"
 #define GRPC_CHANNEL_CREDENTIALS_TYPE_FAKE_TRANSPORT_SECURITY \
   "FakeTransportSecurity"
+#define GRPC_CHANNEL_CREDENTIALS_TYPE_GOOGLE_DEFAULT "GoogleDefault"
 
 #define GRPC_CALL_CREDENTIALS_TYPE_OAUTH2 "Oauth2"
 #define GRPC_CALL_CREDENTIALS_TYPE_JWT "Jwt"
@@ -71,7 +59,7 @@ typedef enum {
 
 #define GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS 60
 
-#define GRPC_COMPUTE_ENGINE_METADATA_HOST "metadata"
+#define GRPC_COMPUTE_ENGINE_METADATA_HOST "metadata.google.internal"
 #define GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH \
   "/computeMetadata/v1/instance/service-accounts/default/token"
 
@@ -88,151 +76,172 @@ typedef enum {
 /* --- Google utils --- */
 
 /* It is the caller's responsibility to gpr_free the result if not NULL. */
-char *grpc_get_well_known_google_credentials_file_path(void);
+char* grpc_get_well_known_google_credentials_file_path(void);
 
 /* Implementation function for the different platforms. */
-char *grpc_get_well_known_google_credentials_file_path_impl(void);
+char* grpc_get_well_known_google_credentials_file_path_impl(void);
 
 /* Override for testing only. Not thread-safe */
-typedef char *(*grpc_well_known_credentials_path_getter)(void);
+typedef char* (*grpc_well_known_credentials_path_getter)(void);
 void grpc_override_well_known_credentials_path_getter(
     grpc_well_known_credentials_path_getter getter);
 
 /* --- grpc_channel_credentials. --- */
 
+#define GRPC_ARG_CHANNEL_CREDENTIALS "grpc.channel_credentials"
+
 typedef struct {
-  void (*destruct)(grpc_channel_credentials *c);
+  void (*destruct)(grpc_channel_credentials* c);
 
   grpc_security_status (*create_security_connector)(
-      grpc_channel_credentials *c, grpc_call_credentials *call_creds,
-      const char *target, const grpc_channel_args *args,
-      grpc_channel_security_connector **sc, grpc_channel_args **new_args);
+      grpc_channel_credentials* c, grpc_call_credentials* call_creds,
+      const char* target, const grpc_channel_args* args,
+      grpc_channel_security_connector** sc, grpc_channel_args** new_args);
+
+  grpc_channel_credentials* (*duplicate_without_call_credentials)(
+      grpc_channel_credentials* c);
 } grpc_channel_credentials_vtable;
 
 struct grpc_channel_credentials {
-  const grpc_channel_credentials_vtable *vtable;
-  const char *type;
+  const grpc_channel_credentials_vtable* vtable;
+  const char* type;
   gpr_refcount refcount;
 };
 
-grpc_channel_credentials *grpc_channel_credentials_ref(
-    grpc_channel_credentials *creds);
-void grpc_channel_credentials_unref(grpc_channel_credentials *creds);
+grpc_channel_credentials* grpc_channel_credentials_ref(
+    grpc_channel_credentials* creds);
+void grpc_channel_credentials_unref(grpc_channel_credentials* creds);
 
 /* Creates a security connector for the channel. May also create new channel
    args for the channel to be used in place of the passed in const args if
    returned non NULL. In that case the caller is responsible for destroying
    new_args after channel creation. */
 grpc_security_status grpc_channel_credentials_create_security_connector(
-    grpc_channel_credentials *creds, const char *target,
-    const grpc_channel_args *args, grpc_channel_security_connector **sc,
-    grpc_channel_args **new_args);
+    grpc_channel_credentials* creds, const char* target,
+    const grpc_channel_args* args, grpc_channel_security_connector** sc,
+    grpc_channel_args** new_args);
 
-/* --- grpc_credentials_md. --- */
+/* Creates a version of the channel credentials without any attached call
+   credentials. This can be used in order to open a channel to a non-trusted
+   gRPC load balancer. */
+grpc_channel_credentials*
+grpc_channel_credentials_duplicate_without_call_credentials(
+    grpc_channel_credentials* creds);
+
+/* Util to encapsulate the channel credentials in a channel arg. */
+grpc_arg grpc_channel_credentials_to_arg(grpc_channel_credentials* credentials);
+
+/* Util to get the channel credentials from a channel arg. */
+grpc_channel_credentials* grpc_channel_credentials_from_arg(
+    const grpc_arg* arg);
+
+/* Util to find the channel credentials from channel args. */
+grpc_channel_credentials* grpc_channel_credentials_find_in_args(
+    const grpc_channel_args* args);
+
+/* --- grpc_credentials_mdelem_array. --- */
 
 typedef struct {
-  gpr_slice key;
-  gpr_slice value;
-} grpc_credentials_md;
+  grpc_mdelem* md;
+  size_t size;
+} grpc_credentials_mdelem_array;
 
-typedef struct {
-  grpc_credentials_md *entries;
-  size_t num_entries;
-  size_t allocated;
-  gpr_refcount refcount;
-} grpc_credentials_md_store;
+/// Takes a new ref to \a md.
+void grpc_credentials_mdelem_array_add(grpc_credentials_mdelem_array* list,
+                                       grpc_mdelem md);
 
-grpc_credentials_md_store *grpc_credentials_md_store_create(
-    size_t initial_capacity);
+/// Appends all elements from \a src to \a dst, taking a new ref to each one.
+void grpc_credentials_mdelem_array_append(grpc_credentials_mdelem_array* dst,
+                                          grpc_credentials_mdelem_array* src);
 
-/* Will ref key and value. */
-void grpc_credentials_md_store_add(grpc_credentials_md_store *store,
-                                   gpr_slice key, gpr_slice value);
-void grpc_credentials_md_store_add_cstrings(grpc_credentials_md_store *store,
-                                            const char *key, const char *value);
-grpc_credentials_md_store *grpc_credentials_md_store_ref(
-    grpc_credentials_md_store *store);
-void grpc_credentials_md_store_unref(grpc_credentials_md_store *store);
+void grpc_credentials_mdelem_array_destroy(grpc_credentials_mdelem_array* list);
 
 /* --- grpc_call_credentials. --- */
 
-/* error_details must be NULL if status is GRPC_CREDENTIALS_OK. */
-typedef void (*grpc_credentials_metadata_cb)(
-    grpc_exec_ctx *exec_ctx, void *user_data, grpc_credentials_md *md_elems,
-    size_t num_md, grpc_credentials_status status, const char *error_details);
-
 typedef struct {
-  void (*destruct)(grpc_call_credentials *c);
-  void (*get_request_metadata)(grpc_exec_ctx *exec_ctx,
-                               grpc_call_credentials *c,
-                               grpc_polling_entity *pollent,
+  void (*destruct)(grpc_call_credentials* c);
+  bool (*get_request_metadata)(grpc_call_credentials* c,
+                               grpc_polling_entity* pollent,
                                grpc_auth_metadata_context context,
-                               grpc_credentials_metadata_cb cb,
-                               void *user_data);
+                               grpc_credentials_mdelem_array* md_array,
+                               grpc_closure* on_request_metadata,
+                               grpc_error** error);
+  void (*cancel_get_request_metadata)(grpc_call_credentials* c,
+                                      grpc_credentials_mdelem_array* md_array,
+                                      grpc_error* error);
 } grpc_call_credentials_vtable;
 
 struct grpc_call_credentials {
-  const grpc_call_credentials_vtable *vtable;
-  const char *type;
+  const grpc_call_credentials_vtable* vtable;
+  const char* type;
   gpr_refcount refcount;
 };
 
-grpc_call_credentials *grpc_call_credentials_ref(grpc_call_credentials *creds);
-void grpc_call_credentials_unref(grpc_call_credentials *creds);
-void grpc_call_credentials_get_request_metadata(
-    grpc_exec_ctx *exec_ctx, grpc_call_credentials *creds,
-    grpc_polling_entity *pollent, grpc_auth_metadata_context context,
-    grpc_credentials_metadata_cb cb, void *user_data);
+grpc_call_credentials* grpc_call_credentials_ref(grpc_call_credentials* creds);
+void grpc_call_credentials_unref(grpc_call_credentials* creds);
+
+/// Returns true if completed synchronously, in which case \a error will
+/// be set to indicate the result.  Otherwise, \a on_request_metadata will
+/// be invoked asynchronously when complete.  \a md_array will be populated
+/// with the resulting metadata once complete.
+bool grpc_call_credentials_get_request_metadata(
+    grpc_call_credentials* creds, grpc_polling_entity* pollent,
+    grpc_auth_metadata_context context, grpc_credentials_mdelem_array* md_array,
+    grpc_closure* on_request_metadata, grpc_error** error);
+
+/// Cancels a pending asynchronous operation started by
+/// grpc_call_credentials_get_request_metadata() with the corresponding
+/// value of \a md_array.
+void grpc_call_credentials_cancel_get_request_metadata(
+    grpc_call_credentials* c, grpc_credentials_mdelem_array* md_array,
+    grpc_error* error);
 
 /* Metadata-only credentials with the specified key and value where
    asynchronicity can be simulated for testing. */
-grpc_call_credentials *grpc_md_only_test_credentials_create(
-    const char *md_key, const char *md_value, int is_async);
+grpc_call_credentials* grpc_md_only_test_credentials_create(
+    const char* md_key, const char* md_value, bool is_async);
 
 /* --- grpc_server_credentials. --- */
 
 typedef struct {
-  void (*destruct)(grpc_server_credentials *c);
+  void (*destruct)(grpc_server_credentials* c);
   grpc_security_status (*create_security_connector)(
-      grpc_server_credentials *c, grpc_server_security_connector **sc);
+      grpc_server_credentials* c, grpc_server_security_connector** sc);
 } grpc_server_credentials_vtable;
 
 struct grpc_server_credentials {
-  const grpc_server_credentials_vtable *vtable;
-  const char *type;
+  const grpc_server_credentials_vtable* vtable;
+  const char* type;
   gpr_refcount refcount;
   grpc_auth_metadata_processor processor;
 };
 
 grpc_security_status grpc_server_credentials_create_security_connector(
-    grpc_server_credentials *creds, grpc_server_security_connector **sc);
+    grpc_server_credentials* creds, grpc_server_security_connector** sc);
 
-grpc_server_credentials *grpc_server_credentials_ref(
-    grpc_server_credentials *creds);
+grpc_server_credentials* grpc_server_credentials_ref(
+    grpc_server_credentials* creds);
 
-void grpc_server_credentials_unref(grpc_server_credentials *creds);
+void grpc_server_credentials_unref(grpc_server_credentials* creds);
 
 #define GRPC_SERVER_CREDENTIALS_ARG "grpc.server_credentials"
 
-grpc_arg grpc_server_credentials_to_arg(grpc_server_credentials *c);
-grpc_server_credentials *grpc_server_credentials_from_arg(const grpc_arg *arg);
-grpc_server_credentials *grpc_find_server_credentials_in_args(
-    const grpc_channel_args *args);
+grpc_arg grpc_server_credentials_to_arg(grpc_server_credentials* c);
+grpc_server_credentials* grpc_server_credentials_from_arg(const grpc_arg* arg);
+grpc_server_credentials* grpc_find_server_credentials_in_args(
+    const grpc_channel_args* args);
 
 /* -- Credentials Metadata Request. -- */
 
 typedef struct {
-  grpc_call_credentials *creds;
-  grpc_credentials_metadata_cb cb;
+  grpc_call_credentials* creds;
   grpc_http_response response;
-  void *user_data;
 } grpc_credentials_metadata_request;
 
-grpc_credentials_metadata_request *grpc_credentials_metadata_request_create(
-    grpc_call_credentials *creds, grpc_credentials_metadata_cb cb,
-    void *user_data);
+grpc_credentials_metadata_request* grpc_credentials_metadata_request_create(
+    grpc_call_credentials* creds);
 
 void grpc_credentials_metadata_request_destroy(
-    grpc_credentials_metadata_request *r);
+    grpc_credentials_metadata_request* r);
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_CREDENTIALS_H */
