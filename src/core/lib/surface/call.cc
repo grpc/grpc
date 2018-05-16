@@ -1259,6 +1259,10 @@ static void post_batch_completion(batch_control* bctl) {
   if (bctl->completion_data.notify_tag.is_closure) {
     /* unrefs bctl->error */
     bctl->call = nullptr;
+    /* This closure may be meant to be run within some combiner. Since we aren't
+     * running in any combiner here, we need to use GRPC_CLOSURE_SCHED instead
+     * of GRPC_CLOSURE_RUN.
+     */
     GRPC_CLOSURE_SCHED((grpc_closure*)bctl->completion_data.notify_tag.tag,
                        error);
     GRPC_CALL_INTERNAL_UNREF(call, "completion");
