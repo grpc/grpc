@@ -58,7 +58,7 @@ class InterceptorClient extends Grpc\BaseStub
 
     /**
      * A simple RPC.
-     * @param \Routeguide\Point $argument input argument
+     * @param SimpleRequest $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
      */
@@ -221,15 +221,11 @@ class InterceptorTest extends PHPUnit_Framework_TestCase
         $req_text = 'client_request';
         $channel_matadata_interceptor = new ChangeMetadataInterceptor();
         $intercept_channel = Grpc\Interceptor::intercept($this->channel, $channel_matadata_interceptor);
-        echo "create Client\n";
         $client = new InterceptorClient('localhost:'.$this->port, [
             'credentials' => Grpc\ChannelCredentials::createInsecure(),
         ], $intercept_channel);
-        echo "create Call\n";
         $req = new SimpleRequest($req_text);
-        echo "Call created\n";
         $unary_call = $client->UnaryCall($req);
-        echo "start call\n";
         $event = $this->server->requestCall();
         $this->assertSame('/dummy_method', $event->method);
         $this->assertSame(['interceptor_from_unary_request'], $event->metadata['foo']);
