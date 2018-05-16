@@ -120,7 +120,12 @@ size_t grpc_slice_buffer_add_indexed(grpc_slice_buffer* sb, grpc_slice s) {
 size_t grpc_slice_buffer_malloc_indexed(grpc_slice_buffer* sb, size_t len) {
   size_t out = sb->count;
   maybe_embiggen(sb);
-  sb->slices[out] = GRPC_SLICE_MALLOC(len);
+  if (len <= GRPC_SLICE_INLINED_SIZE) {
+    sb->slices[out].refcount = nullptr;
+    sb->slices[out].data.inlined.length = len;
+  } else {
+    sb->slices[out] = GRPC_SLICE_MALLOC(len);
+  }
   sb->length += len;
   sb->count = out + 1;
   return out;
