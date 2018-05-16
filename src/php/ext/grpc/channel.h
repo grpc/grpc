@@ -19,16 +19,7 @@
 #ifndef NET_GRPC_PHP_GRPC_CHANNEL_H_
 #define NET_GRPC_PHP_GRPC_CHANNEL_H_
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#include <php.h>
-#include <php_ini.h>
-#include <ext/standard/info.h>
 #include "php_grpc.h"
-
-#include <grpc/grpc.h>
 
 /* Class entry for the PHP Channel class */
 extern zend_class_entry *grpc_ce_channel;

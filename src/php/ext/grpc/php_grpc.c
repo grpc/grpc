@@ -16,6 +16,8 @@
  *
  */
 
+#include "php_grpc.h"
+
 #include "call.h"
 #include "channel.h"
 #include "server.h"
@@ -24,15 +26,6 @@
 #include "call_credentials.h"
 #include "server_credentials.h"
 #include "completion_queue.h"
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#include <php.h>
-#include <php_ini.h>
-#include <ext/standard/info.h>
-#include "php_grpc.h"
 
 ZEND_DECLARE_MODULE_GLOBALS(grpc)
 static PHP_GINIT_FUNCTION(grpc);
