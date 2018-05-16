@@ -160,7 +160,7 @@ pip_install_dir() {
 case "$VENV" in
   *gevent*)
   # TODO(https://github.com/grpc/grpc/issues/15411) unpin this
-  $VENV_PYTHON -m pip install gevent==1.3.b2
+  $VENV_PYTHON -m pip install gevent==1.3.a2
   ;;
 esac
 
