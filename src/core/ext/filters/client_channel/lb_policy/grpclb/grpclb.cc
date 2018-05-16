@@ -1053,7 +1053,20 @@ GrpcLb::GrpcLb(const grpc_lb_addresses* addresses,
   GPR_ASSERT(server_uri != nullptr);
   grpc_uri* uri = grpc_uri_parse(server_uri, true);
   GPR_ASSERT(uri->path[0] != '\0');
-  server_name_ = gpr_strdup(uri->path[0] == '/' ? uri->path + 1 : uri->path);
+  const char* server_name_begin =
+      uri->path[0] == '/' ? uri->path + 1 : uri->path;
+  const char* colon = static_cast<char*>(
+      gpr_memrchr(server_name_begin, ':', strlen(server_name_begin)));
+  if (colon == nullptr) {
+    server_name_ = gpr_strdup(server_name_begin);
+  } else {
+    // Don't include ":port" into the server name.
+    const size_t server_name_len = colon - server_name_begin;
+    auto buf = static_cast<char*>(gpr_malloc(server_name_len + 1));
+    memcpy(buf, server_name_begin, server_name_len);
+    buf[server_name_len] = '\0';
+    server_name_ = buf;
+  }
   if (grpc_lb_glb_trace.enabled()) {
     gpr_log(GPR_INFO,
             "[grpclb %p] Will use '%s' as the server name for LB request.",
