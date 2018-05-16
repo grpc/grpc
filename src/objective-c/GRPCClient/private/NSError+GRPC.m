@@ -27,7 +27,7 @@ NSString *const kGRPCErrorDomain = @"io.grpc";
   if (statusCode == GRPC_STATUS_OK) {
     return nil;
   }
-  NSString *message = [NSString stringWithCString:details encoding:NSASCIIStringEncoding];
+  NSString *message = [NSString stringWithCString:details encoding:NSUTF8StringEncoding];
   return [NSError errorWithDomain:kGRPCErrorDomain
                              code:statusCode
                          userInfo:@{NSLocalizedDescriptionKey : message}];
