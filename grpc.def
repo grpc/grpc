@@ -167,6 +167,7 @@ EXPORTS
     grpc_slice_buffer_destroy
     grpc_slice_buffer_add
     grpc_slice_buffer_add_indexed
+    grpc_slice_buffer_malloc_indexed
     grpc_slice_buffer_addn
     grpc_slice_buffer_tiny_add
     grpc_slice_buffer_pop

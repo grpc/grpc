@@ -225,6 +225,7 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_slice_buffer_destroy);
   printf("%lx", (unsigned long) grpc_slice_buffer_add);
   printf("%lx", (unsigned long) grpc_slice_buffer_add_indexed);
+  printf("%lx", (unsigned long) grpc_slice_buffer_malloc_indexed);
   printf("%lx", (unsigned long) grpc_slice_buffer_addn);
   printf("%lx", (unsigned long) grpc_slice_buffer_tiny_add);
   printf("%lx", (unsigned long) grpc_slice_buffer_pop);
