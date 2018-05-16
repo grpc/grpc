@@ -22,7 +22,7 @@ namespace Grpc\Internal;
 /**
  * This is a PRIVATE API and can change without notice.
  */
-class InterceptorChannel
+class InterceptorChannel extends \Grpc\Channel
 {
     private $next = null;
     private $interceptor;
