@@ -129,7 +129,7 @@ fi
 ############################
 
 # Instantiate the virtualenv from the Python version passed in.
-$PYTHON -m pip install virtualenv
+$PYTHON -m pip install --user virtualenv
 $PYTHON -m virtualenv "$VENV"
 VENV_PYTHON=$(script_realpath "$VENV/$VENV_RELATIVE_PYTHON")
 
