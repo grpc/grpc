@@ -187,11 +187,6 @@ static void on_read(void* arg, grpc_error* err) {
     goto error;
   }
 
-  read_notifier_pollset =
-      sp->server->pollsets[static_cast<size_t>(gpr_atm_no_barrier_fetch_add(
-                               &sp->server->next_pollset_to_assign, 1)) %
-                           sp->server->pollset_count];
-
   /* loop until accept4 returns EAGAIN, and then re-arm notification */
   for (;;) {
     grpc_resolved_address addr;
@@ -232,6 +227,11 @@ static void on_read(void* arg, grpc_error* err) {
     }
 
     grpc_fd* fdobj = grpc_fd_create(fd, name);
+
+    read_notifier_pollset =
+        sp->server->pollsets[static_cast<size_t>(gpr_atm_no_barrier_fetch_add(
+                                 &sp->server->next_pollset_to_assign, 1)) %
+                             sp->server->pollset_count];
 
     grpc_pollset_add_fd(read_notifier_pollset, fdobj);
 
