@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.11.0</span>
+   &#160;<span id="projectnumber">1.13.0-dev</span>
    </div>
   </td>
  </tr>
@@ -63,14 +63,11 @@ $(function() {
 
 <h3><a id="index_b"></a>- b -</h3><ul>
 <li>BackUp()
-: <a class="el" href="classgrpc_1_1internal_1_1_grpc_buffer_reader.html#a724c133b537616eee22562b3e89885c8">grpc::internal::GrpcBufferReader</a>
-, <a class="el" href="classgrpc_1_1internal_1_1_grpc_buffer_writer.html#a4890fb61a71f4aa0404412d1bb5e6f94">grpc::internal::GrpcBufferWriter</a>
+: <a class="el" href="classgrpc_1_1_proto_buffer_reader.html#adb77905f9cecd961c6066dc78d93a60c">grpc::ProtoBufferReader</a>
+, <a class="el" href="classgrpc_1_1_proto_buffer_writer.html#afebe85844c62f4aa47cc4e6e19af8400">grpc::ProtoBufferWriter</a>
 </li>
-<li>backup_count_
-: <a class="el" href="classgrpc_1_1internal_1_1_grpc_buffer_reader.html#a1ea14debdd9fb96f8f94e755aea5904c">grpc::internal::GrpcBufferReader</a>
-</li>
-<li>backup_slice_
-: <a class="el" href="classgrpc_1_1internal_1_1_grpc_buffer_writer.html#a235799e9806853f0f32e5a078d9eddd0">grpc::internal::GrpcBufferWriter</a>
+<li>backup_count()
+: <a class="el" href="classgrpc_1_1_proto_buffer_reader.html#ac9dad34d4b14195b85d5cd019ba5d7d1">grpc::ProtoBufferReader</a>
 </li>
 <li>base_slices
 : <a class="el" href="structgrpc__slice__buffer.html#a52a8e83b31006d685d98ce4db16520d8">grpc_slice_buffer</a>
@@ -89,9 +86,6 @@ $(function() {
 <li>BidiStreamingHandler()
 : <a class="el" href="classgrpc_1_1internal_1_1_bidi_streaming_handler.html#a9a3351529eb5b2dd8e2e680ed1e33be0">grpc::internal::BidiStreamingHandler&lt; ServiceType, RequestType, ResponseType &gt;</a>
 </li>
-<li>block_size_
-: <a class="el" href="classgrpc_1_1internal_1_1_grpc_buffer_writer.html#aba847098b0e3f0f72abed7e66be4b04a">grpc::internal::GrpcBufferWriter</a>
-</li>
 <li>BlockingUnaryCallImpl()
 : <a class="el" href="classgrpc_1_1internal_1_1_blocking_unary_call_impl.html#a0e4479a420ea883bfaf35733030e85dd">grpc::internal::BlockingUnaryCallImpl&lt; InputMessage, OutputMessage &gt;</a>
 </li>
@@ -104,17 +98,13 @@ $(function() {
 <li>BuildAndStart()
 : <a class="el" href="classgrpc_1_1_server_builder.html#aa3966340091070dd68fa831a03e1e6ef">grpc::ServerBuilder</a>
 </li>
-<li>byte_count_
-: <a class="el" href="classgrpc_1_1internal_1_1_grpc_buffer_reader.html#a0a6a65ef8eb5b5bb3d39a7b935ba78ab">grpc::internal::GrpcBufferReader</a>
-, <a class="el" href="classgrpc_1_1internal_1_1_grpc_buffer_writer.html#af6c83780e775e99b9208302e76a820b1">grpc::internal::GrpcBufferWriter</a>
-</li>
 <li>ByteBuffer()
-: <a class="el" href="classgrpc_1_1_byte_buffer.html#aa3037355cbd37dce99c97e5c3700a76b">grpc::ByteBuffer</a>
+: <a class="el" href="classgrpc_1_1_byte_buffer.html#a67fdf624e23dbd80d84e3e85e1d5b176">grpc::ByteBuffer</a>
 , <a class="el" href="classgrpc_1_1_slice.html#ac6c83f28f4b17ae317094a794e92e99e">grpc::Slice</a>
 </li>
 <li>ByteCount()
-: <a class="el" href="classgrpc_1_1internal_1_1_grpc_buffer_reader.html#acc660ae3172f370d7d2538f9fb9067b1">grpc::internal::GrpcBufferReader</a>
-, <a class="el" href="classgrpc_1_1internal_1_1_grpc_buffer_writer.html#af7b145efa2ac6b4a3a72a331af9d6466">grpc::internal::GrpcBufferWriter</a>
+: <a class="el" href="classgrpc_1_1_proto_buffer_reader.html#a6998c79bf27db27ab0fe35ab1be5c972">grpc::ProtoBufferReader</a>
+, <a class="el" href="classgrpc_1_1_proto_buffer_writer.html#aa01b3b5000b9e318e2e1f27d6c6bd633">grpc::ProtoBufferWriter</a>
 </li>
 <li>bytes
 : <a class="el" href="structgrpc__slice_1_1grpc__slice__data_1_1grpc__slice__inlined.html#ae4d2db52d28392a565aae5d5ba698c28">grpc_slice::grpc_slice_data::grpc_slice_inlined</a>
@@ -124,7 +114,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Apr 13 2018 15:03:53 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue May 15 2018 17:01:01 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

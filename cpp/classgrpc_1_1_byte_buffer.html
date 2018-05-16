@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.11.0</span>
+   &#160;<span id="projectnumber">1.13.0-dev</span>
    </div>
   </td>
  </tr>
@@ -138,6 +138,12 @@ Friends</h2></td></tr>
 <tr class="memitem:a8575cd74967bac70dad4afbf830db64c"><td class="memTemplParams" colspan="2">template&lt;class R &gt; </td></tr>
 <tr class="memitem:a8575cd74967bac70dad4afbf830db64c"><td class="memTemplItemLeft" align="right" valign="top">class&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html#a8575cd74967bac70dad4afbf830db64c">internal::DeserializeFuncType</a></td></tr>
 <tr class="separator:a8575cd74967bac70dad4afbf830db64c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1278d8ce6e19fac8aabb59d1a17240bf"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html#a1278d8ce6e19fac8aabb59d1a17240bf">ProtoBufferReader</a></td></tr>
+<tr class="separator:a1278d8ce6e19fac8aabb59d1a17240bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2d4cd35e8ba80deb9d72f2f570d71962"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html#a2d4cd35e8ba80deb9d72f2f570d71962">ProtoBufferWriter</a></td></tr>
+<tr class="separator:a2d4cd35e8ba80deb9d72f2f570d71962"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a26d1eb015b546436fbfb535a20e2f115"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_byte_buffer.html#a26d1eb015b546436fbfb535a20e2f115">internal::GrpcByteBufferPeer</a></td></tr>
+<tr class="separator:a26d1eb015b546436fbfb535a20e2f115"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>A sequence of bytes. </p>
@@ -174,6 +180,9 @@ Friends</h2></td></tr>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
           <td class="memname">grpc::ByteBuffer::ByteBuffer </td>
@@ -193,6 +202,11 @@ Friends</h2></td></tr>
           <td></td><td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 <p>Construct buffer from <em>slices</em>, of which there are <em>nslices</em>. </p>
@@ -326,6 +340,9 @@ Friends</h2></td></tr>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
           <td class="memname">size_t grpc::ByteBuffer::Length </td>
@@ -334,6 +351,11 @@ Friends</h2></td></tr>
           <td> const</td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 <p>Buffer size in bytes. </p>
@@ -390,6 +412,9 @@ Friends</h2></td></tr>
 
 <div class="memitem">
 <div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
           <td class="memname">void grpc::ByteBuffer::Swap </td>
@@ -399,6 +424,11 @@ Friends</h2></td></tr>
           <td></td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 <p>Swap the state of *this and *other. </p>
@@ -525,6 +555,28 @@ template&lt;class R &gt; </div>
 
 </div>
 </div>
+<a id="a26d1eb015b546436fbfb535a20e2f115"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a26d1eb015b546436fbfb535a20e2f115">&#9670;&nbsp;</a></span>internal::GrpcByteBufferPeer</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class internal::GrpcByteBufferPeer</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a499997f007ce7afcc7ca7adb69a0bebf"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a499997f007ce7afcc7ca7adb69a0bebf">&#9670;&nbsp;</a></span>internal::MethodHandler</h2>
 
@@ -595,6 +647,50 @@ template&lt;class ServiceType , class RequestType , class ResponseType &gt; </di
 
 </div>
 </div>
+<a id="a1278d8ce6e19fac8aabb59d1a17240bf"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1278d8ce6e19fac8aabb59d1a17240bf">&#9670;&nbsp;</a></span>ProtoBufferReader</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1_proto_buffer_reader.html">ProtoBufferReader</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a2d4cd35e8ba80deb9d72f2f570d71962"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2d4cd35e8ba80deb9d72f2f570d71962">&#9670;&nbsp;</a></span>ProtoBufferWriter</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1_proto_buffer_writer.html">ProtoBufferWriter</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="ab90fe50537dd6fe009b7b913652420f0"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ab90fe50537dd6fe009b7b913652420f0">&#9670;&nbsp;</a></span>SerializationTraits< ByteBuffer, void ></h2>
 
@@ -645,7 +741,7 @@ template&lt;class ServiceType , class RequestType , class ResponseType &gt; </di
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Apr 13 2018 15:03:53 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue May 15 2018 17:01:01 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

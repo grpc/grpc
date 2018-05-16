@@ -47,8 +47,6 @@ var searchData=
   ['grpc_5fslice_5frefcount',['grpc_slice_refcount',['../structgrpc__slice__refcount.html',1,'']]],
   ['grpc_5fslice_5frefcount_5fvtable',['grpc_slice_refcount_vtable',['../structgrpc__slice__refcount__vtable.html',1,'']]],
   ['grpc_5fslice_5frefcounted',['grpc_slice_refcounted',['../structgrpc__slice_1_1grpc__slice__data_1_1grpc__slice__refcounted.html',1,'grpc_slice::grpc_slice_data']]],
-  ['grpcbufferreader',['GrpcBufferReader',['../classgrpc_1_1internal_1_1_grpc_buffer_reader.html',1,'grpc::internal']]],
-  ['grpcbufferwriter',['GrpcBufferWriter',['../classgrpc_1_1internal_1_1_grpc_buffer_writer.html',1,'grpc::internal']]],
   ['grpclibrary',['GrpcLibrary',['../classgrpc_1_1internal_1_1_grpc_library.html',1,'grpc::internal']]],
   ['grpclibrarycodegen',['GrpcLibraryCodegen',['../classgrpc_1_1_grpc_library_codegen.html',1,'grpc']]],
   ['grpclibraryinitializer',['GrpcLibraryInitializer',['../classgrpc_1_1internal_1_1_grpc_library_initializer.html',1,'grpc::internal']]],

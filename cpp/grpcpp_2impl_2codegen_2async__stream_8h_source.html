@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.11.0</span>
+   &#160;<span id="projectnumber">1.13.0-dev</span>
    </div>
   </td>
  </tr>
@@ -72,7 +72,7 @@ $(function() {
 <div class="ttc" id="grpcpp_2impl_2codegen_2service__type_8h_html"><div class="ttname"><a href="grpcpp_2impl_2codegen_2service__type_8h.html">service_type.h</a></div></div>
 <div class="ttc" id="classgrpc_1_1_server_async_reader_html_aefbe83b79433a6ae85f9f1ce913997c1"><div class="ttname"><a href="classgrpc_1_1_server_async_reader.html#aefbe83b79433a6ae85f9f1ce913997c1">grpc::ServerAsyncReader::Read</a></div><div class="ttdeci">void Read(R *msg, void *tag) override</div><div class="ttdoc">Read a message of type R into msg. </div><div class="ttdef"><b>Definition:</b> async_stream.h:686</div></div>
 <div class="ttc" id="classgrpc_1_1_write_options_html_aecd282a8c7424e4b0c1a5f512c44b8a8"><div class="ttname"><a href="classgrpc_1_1_write_options.html#aecd282a8c7424e4b0c1a5f512c44b8a8">grpc::WriteOptions::set_buffer_hint</a></div><div class="ttdeci">WriteOptions &amp; set_buffer_hint()</div><div class="ttdoc">Sets flag indicating that the write may be buffered and need not go out on the wire immediately...</div><div class="ttdef"><b>Definition:</b> call.h:123</div></div>
-<div class="ttc" id="grpcpp_2impl_2codegen_2core__codegen__interface_8h_html_a39c1421e7081b57c503487659e2653a5"><div class="ttname"><a href="grpcpp_2impl_2codegen_2core__codegen__interface_8h.html#a39c1421e7081b57c503487659e2653a5">GPR_CODEGEN_ASSERT</a></div><div class="ttdeci">#define GPR_CODEGEN_ASSERT(x)</div><div class="ttdoc">Codegen specific version of GPR_ASSERT. </div><div class="ttdef"><b>Definition:</b> core_codegen_interface.h:133</div></div>
+<div class="ttc" id="grpcpp_2impl_2codegen_2core__codegen__interface_8h_html_a39c1421e7081b57c503487659e2653a5"><div class="ttname"><a href="grpcpp_2impl_2codegen_2core__codegen__interface_8h.html#a39c1421e7081b57c503487659e2653a5">GPR_CODEGEN_ASSERT</a></div><div class="ttdeci">#define GPR_CODEGEN_ASSERT(x)</div><div class="ttdoc">Codegen specific version of GPR_ASSERT. </div><div class="ttdef"><b>Definition:</b> core_codegen_interface.h:138</div></div>
 <div class="ttc" id="classgrpc_1_1_client_async_reader_html_a309d69e7e6ab1491b2e93d3716d0f680"><div class="ttname"><a href="classgrpc_1_1_client_async_reader.html#a309d69e7e6ab1491b2e93d3716d0f680">grpc::ClientAsyncReader::Read</a></div><div class="ttdeci">void Read(R *msg, void *tag) override</div><div class="ttdoc">Read a message of type R into msg. </div><div class="ttdef"><b>Definition:</b> async_stream.h:221</div></div>
 <div class="ttc" id="grpcpp_2impl_2codegen_2server__context_8h_html"><div class="ttname"><a href="grpcpp_2impl_2codegen_2server__context_8h.html">server_context.h</a></div></div>
 <div class="ttc" id="classgrpc_1_1internal_1_1_client_async_writer_factory_html_a9b58936fe2060e7c11c8022a7d45d474"><div class="ttname"><a href="classgrpc_1_1internal_1_1_client_async_writer_factory.html#a9b58936fe2060e7c11c8022a7d45d474">grpc::internal::ClientAsyncWriterFactory::Create</a></div><div class="ttdeci">static ClientAsyncWriter&lt; W &gt; * Create(ChannelInterface *channel, CompletionQueue *cq, const ::grpc::internal::RpcMethod &amp;method, ClientContext *context, R *response, bool start, void *tag)</div><div class="ttdoc">Create a stream object. </div><div class="ttdef"><b>Definition:</b> async_stream.h:315</div></div>
@@ -119,7 +119,7 @@ $(function() {
 <div class="ttc" id="classgrpc_1_1internal_1_1_async_writer_interface_html_a02565abb7c6b4a7a49c0b29159194b66"><div class="ttname"><a href="classgrpc_1_1internal_1_1_async_writer_interface.html#a02565abb7c6b4a7a49c0b29159194b66">grpc::internal::AsyncWriterInterface::WriteLast</a></div><div class="ttdeci">void WriteLast(const W &amp;msg, WriteOptions options, void *tag)</div><div class="ttdoc">Request the writing of msg and coalesce it with the writing of trailing metadata, using WriteOptions ...</div><div class="ttdef"><b>Definition:</b> async_stream.h:150</div></div>
 <div class="ttc" id="classgrpc_1_1_client_async_writer_html"><div class="ttname"><a href="classgrpc_1_1_client_async_writer.html">grpc::ClientAsyncWriter</a></div><div class="ttdoc">Async API on the client side for doing client-streaming RPCs, where the outgoing message stream going...</div><div class="ttdef"><b>Definition:</b> async_stream.h:332</div></div>
 <div class="ttc" id="classgrpc_1_1_server_async_reader_writer_interface_html"><div class="ttname"><a href="classgrpc_1_1_server_async_reader_writer_interface.html">grpc::ServerAsyncReaderWriterInterface</a></div><div class="ttdoc">Server-side interface for asynchronous bi-directional streaming. </div><div class="ttdef"><b>Definition:</b> async_stream.h:905</div></div>
-<div class="ttc" id="classgrpc_1_1internal_1_1_call_op_recv_message_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_recv_message.html">grpc::internal::CallOpRecvMessage</a></div><div class="ttdef"><b>Definition:</b> byte_buffer.h:39</div></div>
+<div class="ttc" id="classgrpc_1_1internal_1_1_call_op_recv_message_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_recv_message.html">grpc::internal::CallOpRecvMessage</a></div><div class="ttdef"><b>Definition:</b> byte_buffer.h:41</div></div>
 <div class="ttc" id="classgrpc_1_1_client_async_reader_writer_html_af3e090a0801f6bc524f959cd93e4cddc"><div class="ttname"><a href="classgrpc_1_1_client_async_reader_writer.html#af3e090a0801f6bc524f959cd93e4cddc">grpc::ClientAsyncReaderWriter::WritesDone</a></div><div class="ttdeci">void WritesDone(void *tag) override</div><div class="ttdoc">Signal the client is done with the writes (half-close the client stream). </div><div class="ttdef"><b>Definition:</b> async_stream.h:551</div></div>
 <div class="ttc" id="classgrpc_1_1_server_context_html"><div class="ttname"><a href="classgrpc_1_1_server_context.html">grpc::ServerContext</a></div><div class="ttdoc">A ServerContext allows the person implementing a service handler to: </div><div class="ttdef"><b>Definition:</b> server_context.h:96</div></div>
 <div class="ttc" id="classgrpc_1_1_server_async_reader_html_a3158928c9f07d695b3deeb39e5dd0982"><div class="ttname"><a href="classgrpc_1_1_server_async_reader.html#a3158928c9f07d695b3deeb39e5dd0982">grpc::ServerAsyncReader::SendInitialMetadata</a></div><div class="ttdeci">void SendInitialMetadata(void *tag) override</div><div class="ttdoc">See ServerAsyncStreamingInterface::SendInitialMetadata for semantics. </div><div class="ttdef"><b>Definition:</b> async_stream.h:673</div></div>
@@ -165,7 +165,7 @@ $(function() {
 </div><!-- fragment --></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Apr 13 2018 15:03:52 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue May 15 2018 17:01:01 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

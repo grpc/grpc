@@ -125,8 +125,8 @@ var menudata={children:[
 {text:"a",url:"functions_rela.html#index_a"},
 {text:"b",url:"functions_rela.html#index_b"},
 {text:"c",url:"functions_rela.html#index_c"},
-{text:"g",url:"functions_rela.html#index_g"},
 {text:"i",url:"functions_rela.html#index_i"},
+{text:"p",url:"functions_rela.html#index_p"},
 {text:"s",url:"functions_rela.html#index_s"},
 {text:"t",url:"functions_rela.html#index_t"}]}]}]},
 {text:"Files",url:"files.html",children:[

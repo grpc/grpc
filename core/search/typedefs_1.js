@@ -11,6 +11,7 @@ var searchData=
   ['gpr_5fthd_5fid',['gpr_thd_id',['../thd__id_8h.html#a568f2dcd15b98e9e93063eb04ad36a90',1,'thd_id.h']]],
   ['gpr_5ftimespec',['gpr_timespec',['../gpr__types_8h.html#a7dd12c72fcf53ebecfdfc13632914c45',1,'gpr_types.h']]],
   ['grpc_5falarm',['grpc_alarm',['../grpc__types_8h.html#a09ce3d7fa6473ac1cb39692adf257a13',1,'grpc_types.h']]],
+  ['grpc_5falts_5fcredentials_5foptions',['grpc_alts_credentials_options',['../grpc__security_8h.html#a196ff73c6ff0dc0d7846635e02016b0f',1,'grpc_security.h']]],
   ['grpc_5farg_5fpointer_5fvtable',['grpc_arg_pointer_vtable',['../grpc__types_8h.html#a8499b89a510e8a3d4e76e011776a1548',1,'grpc_types.h']]],
   ['grpc_5fauth_5fcontext',['grpc_auth_context',['../grpc__security_8h.html#aa13f0724cb7ff99995d7f0881c01d553',1,'grpc_security.h']]],
   ['grpc_5fauth_5fproperty',['grpc_auth_property',['../grpc__security_8h.html#a010fe7d27deaa2ea50b765b48dbad429',1,'grpc_security.h']]],

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.11.0</span>
+   &#160;<span id="projectnumber">1.13.0-dev</span>
    </div>
   </td>
  </tr>
@@ -140,8 +140,15 @@ $(function() {
 <li>set_authority()
 : <a class="el" href="classgrpc_1_1_client_context.html#a43bb17bbd6ab49face3793e8883c5682">grpc::ClientContext</a>
 </li>
+<li>set_backup_count()
+: <a class="el" href="classgrpc_1_1_proto_buffer_reader.html#a56f59bca6804e19d0f780c80ccbca031">grpc::ProtoBufferReader</a>
+</li>
 <li>set_buffer_hint()
 : <a class="el" href="classgrpc_1_1_write_options.html#aecd282a8c7424e4b0c1a5f512c44b8a8">grpc::WriteOptions</a>
+</li>
+<li>set_byte_count()
+: <a class="el" href="classgrpc_1_1_proto_buffer_reader.html#a9fa8b889f80d4bf56f6915ad9245ac3b">grpc::ProtoBufferReader</a>
+, <a class="el" href="classgrpc_1_1_proto_buffer_writer.html#a656f1f4835a8f4e2944cb6ce92454c8b">grpc::ProtoBufferWriter</a>
 </li>
 <li>set_cacheable()
 : <a class="el" href="classgrpc_1_1_client_context.html#a09c0b94c1542706eb5a518dab8425ebc">grpc::ClientContext</a>
@@ -299,16 +306,22 @@ $(function() {
 , <a class="el" href="classgrpc_1_1string__ref.html#a86d9d471e8e6b4e992f4a1a70545ffdc">grpc::string_ref</a>
 </li>
 <li>Skip()
-: <a class="el" href="classgrpc_1_1internal_1_1_grpc_buffer_reader.html#a7aad5fe555993d8f86380e3b4c65db1c">grpc::internal::GrpcBufferReader</a>
+: <a class="el" href="classgrpc_1_1_proto_buffer_reader.html#a6f9fdfde9953f08b5ca247e6e1b2f02b">grpc::ProtoBufferReader</a>
+</li>
+<li>slice()
+: <a class="el" href="classgrpc_1_1_proto_buffer_reader.html#a0874823748781629e0b2bde470d78bf3">grpc::ProtoBufferReader</a>
 </li>
 <li>Slice()
-: <a class="el" href="classgrpc_1_1_slice.html#a4ee777ba961557d8e0bc39c15e749a6e">grpc::Slice</a>
+: <a class="el" href="classgrpc_1_1_slice.html#ad180398d3b0a83a1c8fbff9aed4aff48">grpc::Slice</a>
+</li>
+<li>slice_buffer()
+: <a class="el" href="classgrpc_1_1_proto_buffer_writer.html#a2735ca72a039d465dd538c6f3fa06e20">grpc::ProtoBufferWriter</a>
 </li>
 <li>SplitServerStreamingHandler()
 : <a class="el" href="classgrpc_1_1internal_1_1_split_server_streaming_handler.html#a61ae16d66133d5caa66087e57416298b">grpc::internal::SplitServerStreamingHandler&lt; RequestType, ResponseType &gt;</a>
 </li>
 <li>SslServerCredentialsOptions()
-: <a class="el" href="structgrpc_1_1_ssl_server_credentials_options.html#a00650afd8a132f271b068d17da446679">grpc::SslServerCredentialsOptions</a>
+: <a class="el" href="structgrpc_1_1_ssl_server_credentials_options.html#ae85661f17b0dd9f4fc27275203e5f105">grpc::SslServerCredentialsOptions</a>
 </li>
 <li>Start()
 : <a class="el" href="classgrpc_1_1_server.html#affff5d179b3a71617cbb02062f49eea4">grpc::Server</a>
@@ -327,16 +340,16 @@ $(function() {
 </li>
 <li>status()
 : <a class="el" href="classgrpc_1_1internal_1_1_blocking_unary_call_impl.html#a491e063c02fec7250d87f8f573ef7685">grpc::internal::BlockingUnaryCallImpl&lt; InputMessage, OutputMessage &gt;</a>
-, <a class="el" href="classgrpc_1_1internal_1_1_grpc_buffer_reader.html#a34cf482f798ff91efce00096851f787b">grpc::internal::GrpcBufferReader</a>
+, <a class="el" href="classgrpc_1_1_proto_buffer_reader.html#a50b5c353ac2d915b09e68bf9c1f7136e">grpc::ProtoBufferReader</a>
 </li>
 <li>Status()
-: <a class="el" href="classgrpc_1_1_status.html#a3b224f643a5a4bb1fb4244abe3bd48ab">grpc::Status</a>
+: <a class="el" href="classgrpc_1_1_status.html#a46537b45349a95126a16dcd67b5cf54c">grpc::Status</a>
 </li>
 <li>StreamedUnaryHandler()
 : <a class="el" href="classgrpc_1_1internal_1_1_streamed_unary_handler.html#ac01ea3100141d3c12807a6e9f91065db">grpc::internal::StreamedUnaryHandler&lt; RequestType, ResponseType &gt;</a>
 </li>
 <li>string_ref()
-: <a class="el" href="classgrpc_1_1string__ref.html#ab929e0c1cff6f7ab4f4d9e4b5734b18c">grpc::string_ref</a>
+: <a class="el" href="classgrpc_1_1string__ref.html#a0631f7099a7fc8b1bbf16f3353074400">grpc::string_ref</a>
 </li>
 <li>substr()
 : <a class="el" href="classgrpc_1_1string__ref.html#ae9c7f6a6af76030d720b135cc251c08b">grpc::string_ref</a>
@@ -352,7 +365,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Apr 13 2018 15:03:53 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue May 15 2018 17:01:01 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

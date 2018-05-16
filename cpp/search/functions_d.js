@@ -11,5 +11,7 @@ var searchData=
   ['preserverstart',['PreServerStart',['../classgrpc_1_1_server_1_1_global_callbacks.html#a0700ca2be64da5a8caf318ed99dff165',1,'grpc::Server::GlobalCallbacks']]],
   ['presynchronousrequest',['PreSynchronousRequest',['../classgrpc_1_1_server_1_1_global_callbacks.html#a15b846ff19bee0bf9a3b929efc4b7e11',1,'grpc::Server::GlobalCallbacks']]],
   ['process',['Process',['../classgrpc_1_1_auth_metadata_processor.html#adc0db66aa261c59bd29f81c53f466303',1,'grpc::AuthMetadataProcessor']]],
-  ['propagationoptions',['PropagationOptions',['../classgrpc_1_1_propagation_options.html#a450cdedbc72cbda17cb8d93f31c0f878',1,'grpc::PropagationOptions']]]
+  ['propagationoptions',['PropagationOptions',['../classgrpc_1_1_propagation_options.html#a450cdedbc72cbda17cb8d93f31c0f878',1,'grpc::PropagationOptions']]],
+  ['protobufferreader',['ProtoBufferReader',['../classgrpc_1_1_proto_buffer_reader.html#aa00588464b3586ea57b8d4f20b526934',1,'grpc::ProtoBufferReader']]],
+  ['protobufferwriter',['ProtoBufferWriter',['../classgrpc_1_1_proto_buffer_writer.html#a2197d65d98500d488c8edbca3d4e77e2',1,'grpc::ProtoBufferWriter']]]
 ];
