@@ -15,7 +15,7 @@
 
 set -ex
 
-cd $(dirname $0)/../..
+cd $(dirname $0)/../../..
 
 # try to use pypy for generating reports
 # each trace dumps 7-8gig of text to disk, and processing this into a report is

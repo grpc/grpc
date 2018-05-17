@@ -15,7 +15,7 @@
 
 set -ex
 
-cd $(dirname $0)/../..
+cd $(dirname $0)/../../..
 
 ./tools/run_tests/start_port_server.py || true
 
