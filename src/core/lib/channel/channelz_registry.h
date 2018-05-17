@@ -32,41 +32,26 @@ namespace grpc_core {
 // channelz bookkeeping. All objects share globally distributed uuids.
 class ChannelzRegistry {
  public:
-  // These functions ensure singleton like behavior. We cannot use the normal
-  // pattern of a get functions with a static function variable due to build
-  // complications.
-
   // To be called in grpc_init()
   static void Init();
 
   // To be callen in grpc_shutdown();
   static void Shutdown();
 
-  // Returned the singleton instance of ChannelzRegistry;
-  static ChannelzRegistry* Default();
-
   // globally registers a channelz Object. Returns its unique uuid
   template <typename Object>
-  intptr_t Register(Object* object) {
-    intptr_t prior = gpr_atm_no_barrier_fetch_add(&uuid_, 1);
-    gpr_mu_lock(&mu_);
-    avl_ = grpc_avl_add(avl_, (void*)prior, object, nullptr);
-    gpr_mu_unlock(&mu_);
-    return prior;
+  static intptr_t Register(Object* object) {
+    return Default()->InternalRegister(object);
   }
 
   // globally unregisters the object that is associated to uuid.
-  void Unregister(intptr_t uuid);
+  static void Unregister(intptr_t uuid) { Default()->InternalUnregister(uuid); }
 
   // if object with uuid has previously been registered, returns the
   // Object associated with that uuid. Else returns nullptr.
   template <typename Object>
-  Object* Get(intptr_t uuid) {
-    gpr_mu_lock(&mu_);
-    Object* ret =
-        static_cast<Object*>(grpc_avl_get(avl_, (void*)uuid, nullptr));
-    gpr_mu_unlock(&mu_);
-    return ret;
+  static Object* Get(intptr_t uuid) {
+    return Default()->InternalGet<Object>(uuid);
   }
 
  private:
@@ -76,6 +61,33 @@ class ChannelzRegistry {
   gpr_mu mu_;
   grpc_avl avl_;
   gpr_atm uuid_;
+
+  // Returned the singleton instance of ChannelzRegistry;
+  static ChannelzRegistry* Default();
+
+  // globally registers a channelz Object. Returns its unique uuid
+  template <typename Object>
+  intptr_t InternalRegister(Object* object) {
+    intptr_t prior = gpr_atm_no_barrier_fetch_add(&uuid_, 1);
+    gpr_mu_lock(&mu_);
+    avl_ = grpc_avl_add(avl_, (void*)prior, object, nullptr);
+    gpr_mu_unlock(&mu_);
+    return prior;
+  }
+
+  // globally unregisters the object that is associated to uuid.
+  void InternalUnregister(intptr_t uuid);
+
+  // if object with uuid has previously been registered, returns the
+  // Object associated with that uuid. Else returns nullptr.
+  template <typename Object>
+  Object* InternalGet(intptr_t uuid) {
+    gpr_mu_lock(&mu_);
+    Object* ret =
+        static_cast<Object*>(grpc_avl_get(avl_, (void*)uuid, nullptr));
+    gpr_mu_unlock(&mu_);
+    return ret;
+  }
 
   ChannelzRegistry();
   ~ChannelzRegistry();

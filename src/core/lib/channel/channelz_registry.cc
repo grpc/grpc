@@ -68,7 +68,7 @@ ChannelzRegistry::~ChannelzRegistry() {
   gpr_mu_destroy(&mu_);
 }
 
-void ChannelzRegistry::Unregister(intptr_t uuid) {
+void ChannelzRegistry::InternalUnregister(intptr_t uuid) {
   gpr_mu_lock(&mu_);
   avl_ = grpc_avl_remove(avl_, (void*)uuid, nullptr);
   gpr_mu_unlock(&mu_);

@@ -43,12 +43,12 @@ namespace testing {
 // lookups by uuid.
 TEST(ChannelzRegistryTest, UuidStartsAboveZeroTest) {
   int object_to_register;
-  intptr_t uuid = ChannelzRegistry::Default()->Register(&object_to_register);
+  intptr_t uuid = ChannelzRegistry::Register(&object_to_register);
   EXPECT_GT(uuid, 0) << "First uuid chose must be greater than zero. Zero if "
                         "reserved according to "
                         "https://github.com/grpc/proposal/blob/master/"
                         "A14-channelz.md";
-  ChannelzRegistry::Default()->Unregister(uuid);
+  ChannelzRegistry::Unregister(uuid);
 }
 
 TEST(ChannelzRegistryTest, UuidsAreIncreasing) {
@@ -56,7 +56,7 @@ TEST(ChannelzRegistryTest, UuidsAreIncreasing) {
   std::vector<intptr_t> uuids;
   for (int i = 0; i < 10; ++i) {
     // reregister the same object. It's ok since we are just testing uuids
-    uuids.push_back(ChannelzRegistry::Default()->Register(&object_to_register));
+    uuids.push_back(ChannelzRegistry::Register(&object_to_register));
   }
   for (size_t i = 1; i < uuids.size(); ++i) {
     EXPECT_LT(uuids[i - 1], uuids[i]) << "Uuids must always be increasing";
@@ -65,22 +65,19 @@ TEST(ChannelzRegistryTest, UuidsAreIncreasing) {
 
 TEST(ChannelzRegistryTest, RegisterGetTest) {
   int object_to_register = 42;
-  intptr_t uuid = ChannelzRegistry::Default()->Register(&object_to_register);
-  int* retrieved = ChannelzRegistry::Default()->Get<int>(uuid);
+  intptr_t uuid = ChannelzRegistry::Register(&object_to_register);
+  int* retrieved = ChannelzRegistry::Get<int>(uuid);
   EXPECT_EQ(&object_to_register, retrieved);
 }
 
 TEST(ChannelzRegistryTest, MultipleTypeTest) {
   int int_to_register = 42;
-  intptr_t int_uuid = ChannelzRegistry::Default()->Register(&int_to_register);
+  intptr_t int_uuid = ChannelzRegistry::Register(&int_to_register);
   std::string str_to_register = "hello world";
-  intptr_t str_uuid = ChannelzRegistry::Default()->Register(&str_to_register);
-  int* retrieved_int = ChannelzRegistry::Default()->Get<int>(int_uuid);
-  std::string* retrieved_str =
-      ChannelzRegistry::Default()->Get<std::string>(str_uuid);
-  EXPECT_EQ(int_to_register, *retrieved_int);
+  intptr_t str_uuid = ChannelzRegistry::Register(&str_to_register);
+  int* retrieved_int = ChannelzRegistry::Get<int>(int_uuid);
+  std::string* retrieved_str = ChannelzRegistry::Get<std::string>(str_uuid);
   EXPECT_EQ(&int_to_register, retrieved_int);
-  EXPECT_STREQ(str_to_register.c_str(), (*retrieved_str).c_str());
   EXPECT_EQ(&str_to_register, retrieved_str);
 }
 
@@ -94,18 +91,18 @@ class Foo {
 TEST(ChannelzRegistryTest, CustomObjectTest) {
   Foo* foo = New<Foo>();
   foo->bar = 1024;
-  intptr_t uuid = ChannelzRegistry::Default()->Register(foo);
-  Foo* retrieved = ChannelzRegistry::Default()->Get<Foo>(uuid);
+  intptr_t uuid = ChannelzRegistry::Register(foo);
+  Foo* retrieved = ChannelzRegistry::Get<Foo>(uuid);
   EXPECT_EQ(foo, retrieved);
 }
 
 TEST(ChannelzRegistryTest, NullIfNotPresentTest) {
   int object_to_register = 42;
-  intptr_t uuid = ChannelzRegistry::Default()->Register(&object_to_register);
+  intptr_t uuid = ChannelzRegistry::Register(&object_to_register);
   // try to pull out a uuid that does not exist.
-  int* nonexistant = ChannelzRegistry::Default()->Get<int>(uuid + 1);
+  int* nonexistant = ChannelzRegistry::Get<int>(uuid + 1);
   EXPECT_EQ(nonexistant, nullptr);
-  int* retrieved = ChannelzRegistry::Default()->Get<int>(uuid);
+  int* retrieved = ChannelzRegistry::Get<int>(uuid);
   EXPECT_EQ(object_to_register, *retrieved);
   EXPECT_EQ(&object_to_register, retrieved);
 }
