@@ -21,6 +21,7 @@
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET)
 
 #include <ares.h>
+#include <string.h>
 #include <sys/ioctl.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
@@ -127,7 +128,10 @@ grpc_error* grpc_ares_ev_driver_create(grpc_ares_ev_driver** ev_driver,
                                        grpc_pollset_set* pollset_set) {
   *ev_driver = static_cast<grpc_ares_ev_driver*>(
       gpr_malloc(sizeof(grpc_ares_ev_driver)));
-  int status = ares_init(&(*ev_driver)->channel);
+  ares_options opts;
+  memset(&opts, 0, sizeof(opts));
+  opts.flags |= ARES_FLAG_STAYOPEN;
+  int status = ares_init_options(&(*ev_driver)->channel, &opts, ARES_OPT_FLAGS);
   gpr_log(GPR_DEBUG, "grpc_ares_ev_driver_create");
   if (status != ARES_SUCCESS) {
     char* err_msg;
