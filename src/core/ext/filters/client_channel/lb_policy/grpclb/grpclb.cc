@@ -159,9 +159,8 @@ class GrpcLb : public LoadBalancingPolicy {
     // The LB token associated with the pick.  This is set via user_data in
     // the pick.
     grpc_mdelem lb_token;
-    // Stats for client-side load reporting. Note that this holds a
-    // reference, which must be either passed on via context or unreffed.
-    grpc_grpclb_client_stats* client_stats = nullptr;
+    // Stats for client-side load reporting.
+    RefCountedPtr<GrpcLbClientStats> client_stats;
     // Next pending pick.
     PendingPick* next = nullptr;
   };
@@ -186,7 +185,8 @@ class GrpcLb : public LoadBalancingPolicy {
 
     void StartQuery();
 
-    grpc_grpclb_client_stats* client_stats() const { return client_stats_; }
+    GrpcLbClientStats* client_stats() const { return client_stats_.get(); }
+
     bool seen_initial_response() const { return seen_initial_response_; }
 
    private:
@@ -237,7 +237,7 @@ class GrpcLb : public LoadBalancingPolicy {
 
     // The stats for client-side load reporting associated with this LB call.
     // Created after the first serverlist is received.
-    grpc_grpclb_client_stats* client_stats_ = nullptr;
+    RefCountedPtr<GrpcLbClientStats> client_stats_;
     grpc_millis client_stats_report_interval_ = 0;
     grpc_timer client_load_report_timer_;
     bool client_load_report_timer_callback_pending_ = false;
@@ -548,9 +548,6 @@ GrpcLb::BalancerCallState::~BalancerCallState() {
   grpc_byte_buffer_destroy(send_message_payload_);
   grpc_byte_buffer_destroy(recv_message_payload_);
   grpc_slice_unref_internal(lb_call_status_details_);
-  if (client_stats_ != nullptr) {
-    grpc_grpclb_client_stats_unref(client_stats_);
-  }
 }
 
 void GrpcLb::BalancerCallState::Orphan() {
@@ -673,22 +670,22 @@ void GrpcLb::BalancerCallState::MaybeSendClientLoadReportLocked(
 
 bool GrpcLb::BalancerCallState::LoadReportCountersAreZero(
     grpc_grpclb_request* request) {
-  grpc_grpclb_dropped_call_counts* drop_entries =
-      static_cast<grpc_grpclb_dropped_call_counts*>(
+  GrpcLbClientStats::DroppedCallCounts* drop_entries =
+      static_cast<GrpcLbClientStats::DroppedCallCounts*>(
           request->client_stats.calls_finished_with_drop.arg);
   return request->client_stats.num_calls_started == 0 &&
          request->client_stats.num_calls_finished == 0 &&
          request->client_stats.num_calls_finished_with_client_failed_to_send ==
              0 &&
          request->client_stats.num_calls_finished_known_received == 0 &&
-         (drop_entries == nullptr || drop_entries->num_entries == 0);
+         (drop_entries == nullptr || drop_entries->size() == 0);
 }
 
 void GrpcLb::BalancerCallState::SendClientLoadReportLocked() {
   // Construct message payload.
   GPR_ASSERT(send_message_payload_ == nullptr);
   grpc_grpclb_request* request =
-      grpc_grpclb_load_report_request_create_locked(client_stats_);
+      grpc_grpclb_load_report_request_create_locked(client_stats_.get());
   // Skip client load report if the counters were all zero in the last
   // report and they are still zero in this one.
   if (LoadReportCountersAreZero(request)) {
@@ -814,7 +811,7 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
       // serverlist returned from the current LB call.
       if (lb_calld->client_stats_report_interval_ > 0 &&
           lb_calld->client_stats_ == nullptr) {
-        lb_calld->client_stats_ = grpc_grpclb_client_stats_create();
+        lb_calld->client_stats_.reset(New<GrpcLbClientStats>());
         // TODO(roth): We currently track this ref manually.  Once the
         // ClosureRef API is ready, we should pass the RefCountedPtr<> along
         // with the callback.
@@ -1516,7 +1513,7 @@ grpc_error* AddLbTokenToInitialMetadata(
 
 // Destroy function used when embedding client stats in call context.
 void DestroyClientStats(void* arg) {
-  grpc_grpclb_client_stats_unref(static_cast<grpc_grpclb_client_stats*>(arg));
+  static_cast<GrpcLbClientStats*>(arg)->Unref();
 }
 
 void GrpcLb::PendingPickSetMetadataAndContext(PendingPick* pp) {
@@ -1537,14 +1534,12 @@ void GrpcLb::PendingPickSetMetadataAndContext(PendingPick* pp) {
     // Pass on client stats via context. Passes ownership of the reference.
     if (pp->client_stats != nullptr) {
       pp->pick->subchannel_call_context[GRPC_GRPCLB_CLIENT_STATS].value =
-          pp->client_stats;
+          pp->client_stats.release();
       pp->pick->subchannel_call_context[GRPC_GRPCLB_CLIENT_STATS].destroy =
           DestroyClientStats;
     }
   } else {
-    if (pp->client_stats != nullptr) {
-      grpc_grpclb_client_stats_unref(pp->client_stats);
-    }
+    pp->client_stats.reset();
   }
 }
 
@@ -1610,8 +1605,8 @@ bool GrpcLb::PickFromRoundRobinPolicyLocked(bool force_async, PendingPick* pp) {
       // subchannel call (and therefore no client_load_reporting filter)
       // for dropped calls.
       if (lb_calld_ != nullptr && lb_calld_->client_stats() != nullptr) {
-        grpc_grpclb_client_stats_add_call_dropped_locked(
-            server->load_balance_token, lb_calld_->client_stats());
+        lb_calld_->client_stats()->AddCallDroppedLocked(
+            server->load_balance_token);
       }
       if (force_async) {
         GRPC_CLOSURE_SCHED(pp->original_on_complete, GRPC_ERROR_NONE);
@@ -1624,7 +1619,7 @@ bool GrpcLb::PickFromRoundRobinPolicyLocked(bool force_async, PendingPick* pp) {
   }
   // Set client_stats and user_data.
   if (lb_calld_ != nullptr && lb_calld_->client_stats() != nullptr) {
-    pp->client_stats = grpc_grpclb_client_stats_ref(lb_calld_->client_stats());
+    pp->client_stats = lb_calld_->client_stats()->Ref();
   }
   GPR_ASSERT(pp->pick->user_data == nullptr);
   pp->pick->user_data = (void**)&pp->lb_token;

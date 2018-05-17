@@ -55,6 +55,7 @@ inline T* New(Args&&... args) {
 // Alternative to delete, since we cannot use it (for fear of libstdc++)
 template <typename T>
 inline void Delete(T* p) {
+  if (p == nullptr) return;
   p->~T();
   if (alignof(T) > kAlignmentForDefaultAllocationInBytes) {
     gpr_free_aligned(p);
