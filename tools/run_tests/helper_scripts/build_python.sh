@@ -150,7 +150,8 @@ pip_install_dir() {
 
 case "$VENV" in
   *gevent*)
-  $VENV_PYTHON -m pip install gevent
+  # TODO(https://github.com/grpc/grpc/issues/15411) unpin this
+  $VENV_PYTHON -m pip install gevent==1.3.b1
   ;;
 esac
 
