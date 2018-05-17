@@ -95,14 +95,6 @@ RUN pyenv local 3.5-dev 3.6-dev pypy-5.3.1
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3.4
 RUN python3.4 -m pip install virtualenv
 
-# Prepare ccache
-RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
-RUN ln -s /usr/bin/ccache /usr/local/bin/g++
-RUN ln -s /usr/bin/ccache /usr/local/bin/cc
-RUN ln -s /usr/bin/ccache /usr/local/bin/c++
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
-
 
 RUN mkdir /var/local/jenkins
 
