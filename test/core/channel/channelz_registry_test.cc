@@ -44,7 +44,7 @@ namespace testing {
 TEST(ChannelzRegistryTest, UuidStartsAboveZeroTest) {
   int object_to_register;
   intptr_t uuid = ChannelzRegistry::Default()->Register(&object_to_register);
-  ASSERT_GT(uuid, 0) << "First uuid chose must be greater than zero. Zero if "
+  EXPECT_GT(uuid, 0) << "First uuid chose must be greater than zero. Zero if "
                         "reserved according to "
                         "https://github.com/grpc/proposal/blob/master/"
                         "A14-channelz.md";
@@ -59,7 +59,7 @@ TEST(ChannelzRegistryTest, UuidsAreIncreasing) {
     uuids.push_back(ChannelzRegistry::Default()->Register(&object_to_register));
   }
   for (size_t i = 1; i < uuids.size(); ++i) {
-    ASSERT_LT(uuids[i - 1], uuids[i]) << "Uuids must always be increasing";
+    EXPECT_LT(uuids[i - 1], uuids[i]) << "Uuids must always be increasing";
   }
 }
 
@@ -67,8 +67,7 @@ TEST(ChannelzRegistryTest, RegisterGetTest) {
   int object_to_register = 42;
   intptr_t uuid = ChannelzRegistry::Default()->Register(&object_to_register);
   int* retrieved = ChannelzRegistry::Default()->Get<int>(uuid);
-  ASSERT_EQ(object_to_register, *retrieved);
-  ASSERT_EQ(&object_to_register, retrieved);
+  EXPECT_EQ(&object_to_register, retrieved);
 }
 
 TEST(ChannelzRegistryTest, MultipleTypeTest) {
@@ -79,10 +78,10 @@ TEST(ChannelzRegistryTest, MultipleTypeTest) {
   int* retrieved_int = ChannelzRegistry::Default()->Get<int>(int_uuid);
   std::string* retrieved_str =
       ChannelzRegistry::Default()->Get<std::string>(str_uuid);
-  ASSERT_EQ(int_to_register, *retrieved_int);
-  ASSERT_EQ(&int_to_register, retrieved_int);
-  ASSERT_STREQ(str_to_register.c_str(), (*retrieved_str).c_str());
-  ASSERT_EQ(&str_to_register, retrieved_str);
+  EXPECT_EQ(int_to_register, *retrieved_int);
+  EXPECT_EQ(&int_to_register, retrieved_int);
+  EXPECT_STREQ(str_to_register.c_str(), (*retrieved_str).c_str());
+  EXPECT_EQ(&str_to_register, retrieved_str);
 }
 
 namespace {
@@ -97,19 +96,18 @@ TEST(ChannelzRegistryTest, CustomObjectTest) {
   foo->bar = 1024;
   intptr_t uuid = ChannelzRegistry::Default()->Register(foo);
   Foo* retrieved = ChannelzRegistry::Default()->Get<Foo>(uuid);
-  ASSERT_EQ(foo, retrieved);
-  ASSERT_EQ(foo->bar, retrieved->bar);
+  EXPECT_EQ(foo, retrieved);
 }
 
 TEST(ChannelzRegistryTest, NullIfNotPresentTest) {
   int object_to_register = 42;
   intptr_t uuid = ChannelzRegistry::Default()->Register(&object_to_register);
   // try to pull out a uuid that does not exist.
-  int* nonexistant = ChannelzRegistry::Default()->Get<int>(1234);
-  ASSERT_EQ(nonexistant, nullptr);
+  int* nonexistant = ChannelzRegistry::Default()->Get<int>(uuid + 1);
+  EXPECT_EQ(nonexistant, nullptr);
   int* retrieved = ChannelzRegistry::Default()->Get<int>(uuid);
-  ASSERT_EQ(object_to_register, *retrieved);
-  ASSERT_EQ(&object_to_register, retrieved);
+  EXPECT_EQ(object_to_register, *retrieved);
+  EXPECT_EQ(&object_to_register, retrieved);
 }
 
 }  // namespace testing
