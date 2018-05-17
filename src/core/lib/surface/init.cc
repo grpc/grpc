@@ -32,8 +32,7 @@
 #include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/fork.h"
-#include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/combiner.h"
@@ -65,12 +64,10 @@ static int g_initializations;
 
 static void do_basic_init(void) {
   gpr_log_verbosity_init();
-  grpc_fork_support_init();
   gpr_mu_init(&g_init_mu);
   grpc_register_built_in_plugins();
   grpc_cq_global_init();
   g_initializations = 0;
-  grpc_fork_handlers_auto_register();
 }
 
 static bool append_filter(grpc_channel_stack_builder* builder, void* arg) {
@@ -123,8 +120,9 @@ void grpc_init(void) {
 
   gpr_mu_lock(&g_init_mu);
   if (++g_initializations == 1) {
+    grpc_core::Fork::GlobalInit();
+    grpc_fork_handlers_auto_register();
     gpr_time_init();
-    grpc_core::Thread::Init();
     grpc_stats_init();
     grpc_slice_intern_init();
     grpc_mdctx_global_init();
@@ -180,6 +178,7 @@ void grpc_shutdown(void) {
       grpc_slice_intern_shutdown();
       grpc_core::ChannelzRegistry::Shutdown();
       grpc_stats_shutdown();
+      grpc_core::Fork::GlobalShutdown();
     }
     grpc_core::ExecCtx::GlobalShutdown();
   }

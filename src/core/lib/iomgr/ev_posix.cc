@@ -40,6 +40,9 @@
 
 grpc_core::TraceFlag grpc_polling_trace(false,
                                         "polling"); /* Disabled by default */
+
+/* Traces fd create/close operations */
+grpc_core::TraceFlag grpc_fd_trace(false, "fd_trace");
 grpc_core::DebugOnlyTraceFlag grpc_trace_fd_refcount(false, "fd_refcount");
 grpc_core::DebugOnlyTraceFlag grpc_polling_api_trace(false, "polling_api");
 
@@ -192,6 +195,7 @@ void grpc_event_engine_shutdown(void) {
 
 grpc_fd* grpc_fd_create(int fd, const char* name) {
   GRPC_POLLING_API_TRACE("fd_create(%d, %s)", fd, name);
+  GRPC_FD_TRACE("fd_create(%d, %s)", fd, name);
   return g_event_engine->fd_create(fd, name);
 }
 
@@ -204,11 +208,14 @@ void grpc_fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
   GRPC_POLLING_API_TRACE("fd_orphan(%d, %p, %p, %d, %s)",
                          grpc_fd_wrapped_fd(fd), on_done, release_fd,
                          already_closed, reason);
+  GRPC_FD_TRACE("grpc_fd_orphan, fd:%d closed", grpc_fd_wrapped_fd(fd));
+
   g_event_engine->fd_orphan(fd, on_done, release_fd, already_closed, reason);
 }
 
 void grpc_fd_shutdown(grpc_fd* fd, grpc_error* why) {
   GRPC_POLLING_API_TRACE("fd_shutdown(%d)", grpc_fd_wrapped_fd(fd));
+  GRPC_FD_TRACE("fd_shutdown(%d)", grpc_fd_wrapped_fd(fd));
   g_event_engine->fd_shutdown(fd, why);
 }
 

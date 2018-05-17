@@ -35,6 +35,9 @@ extern grpc_stats_data* grpc_stats_per_cpu_storage;
 #define GRPC_THREAD_STATS_DATA() \
   (&grpc_stats_per_cpu_storage[grpc_core::ExecCtx::Get()->starting_cpu()])
 
+/* Only collect stats if GRPC_COLLECT_STATS is defined or it is a debug build.
+ */
+#if defined(GRPC_COLLECT_STATS) || !defined(NDEBUG)
 #define GRPC_STATS_INC_COUNTER(ctr) \
   (gpr_atm_no_barrier_fetch_add(&GRPC_THREAD_STATS_DATA()->counters[(ctr)], 1))
 
@@ -42,6 +45,10 @@ extern grpc_stats_data* grpc_stats_per_cpu_storage;
   (gpr_atm_no_barrier_fetch_add(                                               \
       &GRPC_THREAD_STATS_DATA()->histograms[histogram##_FIRST_SLOT + (index)], \
       1))
+#else /* defined(GRPC_COLLECT_STATS) || !defined(NDEBUG) */
+#define GRPC_STATS_INC_COUNTER(ctr)
+#define GRPC_STATS_INC_HISTOGRAM(histogram, index)
+#endif /* defined(GRPC_COLLECT_STATS) || !defined(NDEBUG) */
 
 void grpc_stats_init(void);
 void grpc_stats_shutdown(void);

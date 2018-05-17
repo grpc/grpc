@@ -1031,7 +1031,6 @@ src/core/lib/debug/stats_data.h \
 src/core/lib/debug/trace.h \
 src/core/lib/gpr/arena.h \
 src/core/lib/gpr/env.h \
-src/core/lib/gpr/fork.h \
 src/core/lib/gpr/host_port.h \
 src/core/lib/gpr/mpscq.h \
 src/core/lib/gpr/murmur_hash.h \
@@ -1050,6 +1049,7 @@ src/core/lib/gprpp/atomic.h \
 src/core/lib/gprpp/atomic_with_atm.h \
 src/core/lib/gprpp/atomic_with_std.h \
 src/core/lib/gprpp/debug_location.h \
+src/core/lib/gprpp/fork.h \
 src/core/lib/gprpp/inlined_vector.h \
 src/core/lib/gprpp/manual_constructor.h \
 src/core/lib/gprpp/memory.h \

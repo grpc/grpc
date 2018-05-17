@@ -48,15 +48,15 @@ echo "Sanity check PASSED. Run resolver tests:"
 ONE_FAILED=0
 bins/$CONFIG/resolver_component_test \\
 
-  --target_name='${test['target_name']}' \\
+  % for arg_name_and_value in test['arg_names_and_values'][0:-1]:
+\
+  --${arg_name_and_value[0]}='${arg_name_and_value[1]}' \\
 
-  --expected_addrs='${test['expected_addrs']}' \\
-
-  --expected_chosen_service_config='${test['expected_chosen_service_config']}' \\
-
-  --expected_lb_policy='${test['expected_lb_policy']}' || ONE_FAILED=1
+\
+  % endfor
+  --${test['arg_names_and_values'][-1][0]}='${test['arg_names_and_values'][-1][1]}' || ONE_FAILED=1
 if [[ "$ONE_FAILED" != 0 ]]; then
-  echo "Test based on target record: ${test['target_name']} FAILED"
+  echo "Test based on target record: ${test['test_title']} FAILED"
   EXIT_CODE=1
 fi
 

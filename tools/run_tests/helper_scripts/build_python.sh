@@ -129,7 +129,7 @@ fi
 ############################
 
 # Instantiate the virtualenv from the Python version passed in.
-$PYTHON -m pip install virtualenv
+$PYTHON -m pip install --user virtualenv
 $PYTHON -m virtualenv "$VENV"
 VENV_PYTHON=$(script_realpath "$VENV/$VENV_RELATIVE_PYTHON")
 
@@ -150,14 +150,21 @@ pip_install_dir() {
 
 case "$VENV" in
   *gevent*)
-  $VENV_PYTHON -m pip install gevent
+  # TODO(https://github.com/grpc/grpc/issues/15411) unpin this
+  $VENV_PYTHON -m pip install gevent==1.3.b1
   ;;
 esac
 
 $VENV_PYTHON -m pip install --upgrade pip==10.0.1
 $VENV_PYTHON -m pip install setuptools
 $VENV_PYTHON -m pip install cython
-$VENV_PYTHON -m pip install six enum34 protobuf futures
+$VENV_PYTHON -m pip install six enum34 protobuf
+
+if [ "$("$VENV_PYTHON" -c "import sys; print(sys.version_info[0])")" == "2" ]
+then
+  $VENV_PYTHON -m pip install futures
+fi
+
 pip_install_dir "$ROOT"
 
 $VENV_PYTHON "$ROOT/tools/distrib/python/make_grpcio_tools.py"

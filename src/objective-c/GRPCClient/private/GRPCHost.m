@@ -50,6 +50,7 @@ static NSMutableDictionary *kHostCache;
   if (_channelCreds != nil) {
     grpc_channel_credentials_release(_channelCreds);
   }
+  [GRPCConnectivityMonitor unregisterObserver:self];
 }
 
 // Default initializer.
@@ -278,7 +279,7 @@ static NSMutableDictionary *kHostCache;
 // and Cellular data, so that a new call will use a new channel. Otherwise, a new call will still
 // use the cached channel which is no longer available and will cause gRPC to hang.
 - (void)connectivityChange:(NSNotification *)note {
-  [GRPCHost flushChannelCache];
+  [self disconnect];
 }
 
 @end

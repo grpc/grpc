@@ -60,7 +60,7 @@ class BaseStub
         }
         if ($channel) {
             if (!is_a($channel, 'Grpc\Channel') &&
-                !is_a($channel, 'Grpc\InterceptorChannel')) {
+                !is_a($channel, 'Grpc\Internal\InterceptorChannel')) {
                 throw new \Exception('The channel argument is not a Channel object '.
                     'or an InterceptorChannel object created by '.
                     'Interceptor::intercept($channel, Interceptor|Interceptor[] $interceptors)');
@@ -69,6 +69,18 @@ class BaseStub
             return;
         }
 
+        $this->channel = static::getDefaultChannel($hostname, $opts);
+    }
+
+    /**
+     * Creates and returns the default Channel
+     *
+     * @param array $opts Channel constructor options
+     *
+     * @return Channel The channel
+     */
+    public static function getDefaultChannel($hostname, array $opts)
+    {
         $package_config = json_decode(
             file_get_contents(dirname(__FILE__).'/../../composer.json'),
             true
@@ -85,7 +97,7 @@ class BaseStub
                 'required. Please see one of the '.
                 'ChannelCredentials::create methods');
         }
-        $this->channel = new Channel($hostname, $opts);
+        return new Channel($hostname, $opts);
     }
 
     /**
@@ -365,7 +377,7 @@ class BaseStub
      */
     private function _UnaryUnaryCallFactory($channel, $deserialize)
     {
-        if (is_a($channel, 'Grpc\InterceptorChannel')) {
+        if (is_a($channel, 'Grpc\Internal\InterceptorChannel')) {
             return function ($method,
                              $argument,
                              array $metadata = [],
@@ -392,7 +404,7 @@ class BaseStub
      */
     private function _UnaryStreamCallFactory($channel, $deserialize)
     {
-        if (is_a($channel, 'Grpc\InterceptorChannel')) {
+        if (is_a($channel, 'Grpc\Internal\InterceptorChannel')) {
             return function ($method,
                              $argument,
                              array $metadata = [],
@@ -419,7 +431,7 @@ class BaseStub
      */
     private function _StreamUnaryCallFactory($channel, $deserialize)
     {
-        if (is_a($channel, 'Grpc\InterceptorChannel')) {
+        if (is_a($channel, 'Grpc\Internal\InterceptorChannel')) {
             return function ($method,
                              array $metadata = [],
                              array $options = []) use ($channel, $deserialize) {
@@ -444,7 +456,7 @@ class BaseStub
      */
     private function _StreamStreamCallFactory($channel, $deserialize)
     {
-        if (is_a($channel, 'Grpc\InterceptorChannel')) {
+        if (is_a($channel, 'Grpc\Internal\InterceptorChannel')) {
             return function ($method,
                              array $metadata = [],
                              array $options = []) use ($channel, $deserialize) {

@@ -123,7 +123,6 @@ filegroups:
   - src/core/lib/gpr/env_linux.cc
   - src/core/lib/gpr/env_posix.cc
   - src/core/lib/gpr/env_windows.cc
-  - src/core/lib/gpr/fork.cc
   - src/core/lib/gpr/host_port.cc
   - src/core/lib/gpr/log.cc
   - src/core/lib/gpr/log_android.cc
@@ -148,6 +147,7 @@ filegroups:
   - src/core/lib/gpr/tmpfile_posix.cc
   - src/core/lib/gpr/tmpfile_windows.cc
   - src/core/lib/gpr/wrap_memcpy.cc
+  - src/core/lib/gprpp/fork.cc
   - src/core/lib/gprpp/thd_posix.cc
   - src/core/lib/gprpp/thd_windows.cc
   - src/core/lib/profiling/basic_timers.cc
@@ -176,7 +176,6 @@ filegroups:
   headers:
   - src/core/lib/gpr/arena.h
   - src/core/lib/gpr/env.h
-  - src/core/lib/gpr/fork.h
   - src/core/lib/gpr/host_port.h
   - src/core/lib/gpr/mpscq.h
   - src/core/lib/gpr/murmur_hash.h
@@ -194,6 +193,7 @@ filegroups:
   - src/core/lib/gprpp/atomic.h
   - src/core/lib/gprpp/atomic_with_atm.h
   - src/core/lib/gprpp/atomic_with_std.h
+  - src/core/lib/gprpp/fork.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/memory.h
   - src/core/lib/gprpp/thd.h
@@ -2387,6 +2387,18 @@ targets:
   - mac
   - linux
   - posix
+- name: fork_test
+  build: test
+  language: c
+  src:
+  - test/core/gprpp/fork_test.cc
+  deps:
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  uses_polling: false
 - name: goaway_server_test
   cpu_cost: 0.1
   build: test

@@ -19,17 +19,9 @@
 #ifndef NET_GRPC_PHP_GRPC_CALL_CREDENTIALS_H_
 #define NET_GRPC_PHP_GRPC_CALL_CREDENTIALS_H_
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#include "php.h"
-#include "php_ini.h"
-#include "ext/standard/info.h"
 #include "php_grpc.h"
 
-#include "grpc/grpc.h"
-#include "grpc/grpc_security.h"
+#include <grpc/grpc_security.h>
 
 /* Class entry for the CallCredentials PHP class */
 extern zend_class_entry *grpc_ce_call_credentials;

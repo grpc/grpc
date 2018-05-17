@@ -111,9 +111,6 @@ class Thread {
     }
   };
 
-  static void Init();
-  static bool AwaitAll(gpr_timespec deadline);
-
  private:
   Thread(const Thread&) = delete;
   Thread& operator=(const Thread&) = delete;

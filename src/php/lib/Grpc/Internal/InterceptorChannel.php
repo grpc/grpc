@@ -17,12 +17,12 @@
  *
  */
 
-namespace Grpc;
+namespace Grpc\Internal;
 
 /**
  * This is a PRIVATE API and can change without notice.
  */
-class InterceptorChannel
+class InterceptorChannel extends \Grpc\Channel
 {
     private $next = null;
     private $interceptor;
@@ -35,7 +35,7 @@ class InterceptorChannel
     public function __construct($channel, $interceptor)
     {
         if (!is_a($channel, 'Grpc\Channel') &&
-            !is_a($channel, 'Grpc\InterceptorChannel')) {
+            !is_a($channel, 'Grpc\Internal\InterceptorChannel')) {
             throw new \Exception('The channel argument is not a Channel object '.
                 'or an InterceptorChannel object created by '.
                 'Interceptor::intercept($channel, Interceptor|Interceptor[] $interceptors)');

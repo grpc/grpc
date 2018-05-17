@@ -422,7 +422,8 @@ static void on_initial_header(void* tp, grpc_mdelem md) {
     if (cached_timeout != nullptr) {
       timeout = *cached_timeout;
     } else {
-      if (!grpc_http2_decode_timeout(GRPC_MDVALUE(md), &timeout)) {
+      if (GPR_UNLIKELY(
+              !grpc_http2_decode_timeout(GRPC_MDVALUE(md), &timeout))) {
         char* val = grpc_slice_to_c_string(GRPC_MDVALUE(md));
         gpr_log(GPR_ERROR, "Ignoring bad timeout value '%s'", val);
         gpr_free(val);
@@ -550,15 +551,15 @@ static grpc_error* init_header_frame_parser(grpc_chttp2_transport* t,
   /* could be a new grpc_chttp2_stream or an existing grpc_chttp2_stream */
   s = grpc_chttp2_parsing_lookup_stream(t, t->incoming_stream_id);
   if (s == nullptr) {
-    if (is_continuation) {
+    if (GPR_UNLIKELY(is_continuation)) {
       GRPC_CHTTP2_IF_TRACING(
           gpr_log(GPR_ERROR,
                   "grpc_chttp2_stream disbanded before CONTINUATION received"));
       return init_skip_frame_parser(t, 1);
     }
     if (t->is_client) {
-      if ((t->incoming_stream_id & 1) &&
-          t->incoming_stream_id < t->next_stream_id) {
+      if (GPR_LIKELY((t->incoming_stream_id & 1) &&
+                     t->incoming_stream_id < t->next_stream_id)) {
         /* this is an old (probably cancelled) grpc_chttp2_stream */
       } else {
         GRPC_CHTTP2_IF_TRACING(gpr_log(
@@ -569,7 +570,7 @@ static grpc_error* init_header_frame_parser(grpc_chttp2_transport* t,
         grpc_chttp2_hpack_parser_set_has_priority(&t->hpack_parser);
       }
       return err;
-    } else if (t->last_new_stream_id >= t->incoming_stream_id) {
+    } else if (GPR_UNLIKELY(t->last_new_stream_id >= t->incoming_stream_id)) {
       GRPC_CHTTP2_IF_TRACING(gpr_log(
           GPR_ERROR,
           "ignoring out of order new grpc_chttp2_stream request on server; "
@@ -577,21 +578,22 @@ static grpc_error* init_header_frame_parser(grpc_chttp2_transport* t,
           "id=%d, new grpc_chttp2_stream id=%d",
           t->last_new_stream_id, t->incoming_stream_id));
       return init_skip_frame_parser(t, 1);
-    } else if ((t->incoming_stream_id & 1) == 0) {
+    } else if (GPR_UNLIKELY((t->incoming_stream_id & 1) == 0)) {
       GRPC_CHTTP2_IF_TRACING(gpr_log(
           GPR_ERROR,
           "ignoring grpc_chttp2_stream with non-client generated index %d",
           t->incoming_stream_id));
       return init_skip_frame_parser(t, 1);
-    } else if (grpc_chttp2_stream_map_size(&t->stream_map) >=
-               t->settings[GRPC_ACKED_SETTINGS]
-                          [GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS]) {
+    } else if (GPR_UNLIKELY(
+                   grpc_chttp2_stream_map_size(&t->stream_map) >=
+                   t->settings[GRPC_ACKED_SETTINGS]
+                              [GRPC_CHTTP2_SETTINGS_MAX_CONCURRENT_STREAMS])) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Max stream count exceeded");
     }
     t->last_new_stream_id = t->incoming_stream_id;
     s = t->incoming_stream =
         grpc_chttp2_parsing_accept_stream(t, t->incoming_stream_id);
-    if (s == nullptr) {
+    if (GPR_UNLIKELY(s == nullptr)) {
       GRPC_CHTTP2_IF_TRACING(
           gpr_log(GPR_ERROR, "grpc_chttp2_stream not accepted"));
       return init_skip_frame_parser(t, 1);
@@ -601,7 +603,7 @@ static grpc_error* init_header_frame_parser(grpc_chttp2_transport* t,
   }
   GPR_ASSERT(s != nullptr);
   s->stats.incoming.framing_bytes += 9;
-  if (s->read_closed) {
+  if (GPR_UNLIKELY(s->read_closed)) {
     GRPC_CHTTP2_IF_TRACING(gpr_log(
         GPR_ERROR, "skipping already closed grpc_chttp2_stream header"));
     t->incoming_stream = nullptr;
@@ -723,7 +725,7 @@ static grpc_error* parse_frame_slice(grpc_chttp2_transport* t, grpc_slice slice,
                                      int is_last) {
   grpc_chttp2_stream* s = t->incoming_stream;
   grpc_error* err = t->parser(t->parser_data, t, s, slice, is_last);
-  if (err == GRPC_ERROR_NONE) {
+  if (GPR_LIKELY(err == GRPC_ERROR_NONE)) {
     return err;
   } else if (grpc_error_get_int(err, GRPC_ERROR_INT_STREAM_ID, nullptr)) {
     if (grpc_http_trace.enabled()) {
