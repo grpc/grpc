@@ -21,7 +21,6 @@
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET)
 
 #include <ares.h>
-#include <string.h>
 #include <sys/ioctl.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
@@ -56,10 +55,8 @@ typedef struct fd_node {
   bool readable_registered;
   /** if the writable closure has been registered */
   bool writable_registered;
-  /** has this fd node been shutdown yet */
-  bool already_shutdown;
-  /** refcount of the fd node*/
-  gpr_refcount refs;
+  /** is c-ares interested in events/data on this fd */
+  bool ares_library_is_interested;
 } fd_node;
 
 struct grpc_ares_ev_driver {
@@ -82,27 +79,6 @@ struct grpc_ares_ev_driver {
 
 static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver);
 
-static void grpc_ares_fd_node_ref(fd_node* fdn) {
-  gpr_log(GPR_DEBUG, "Ref fd_node: %d", grpc_fd_wrapped_fd(fdn->fd));
-  gpr_ref(&fdn->refs);
-}
-
-static void grpc_ares_fd_node_unref(fd_node* fdn) {
-  gpr_log(GPR_DEBUG, "Unref fd_node: %d", grpc_fd_wrapped_fd(fdn->fd));
-  if (gpr_unref(&fdn->refs)) {
-    gpr_log(GPR_DEBUG, "delete fd: %d", grpc_fd_wrapped_fd(fdn->fd));
-    GPR_ASSERT(!fdn->readable_registered);
-    GPR_ASSERT(!fdn->writable_registered);
-    gpr_mu_destroy(&fdn->mu);
-    /* c-ares library has closed the fd inside grpc_fd. This fd may be picked up
-       immediately by another thread, and should not be closed by the following
-       grpc_fd_orphan. */
-    grpc_fd_orphan(fdn->fd, nullptr, nullptr, true /* already_closed */,
-                   "c-ares query finished");
-    gpr_free(fdn);
-  }
-}
-
 static grpc_ares_ev_driver* grpc_ares_ev_driver_ref(
     grpc_ares_ev_driver* ev_driver) {
   gpr_log(GPR_DEBUG, "Ref ev_driver %" PRIuPTR, (uintptr_t)ev_driver);
@@ -121,26 +97,37 @@ static void grpc_ares_ev_driver_unref(grpc_ares_ev_driver* ev_driver) {
   }
 }
 
-static void fd_node_shutdown(fd_node* fdn, const char* reason) {
+static void fd_node_destroy(fd_node* fdn) {
+  gpr_log(GPR_DEBUG, "delete fd: %d", grpc_fd_wrapped_fd(fdn->fd));
+  GPR_ASSERT(!fdn->readable_registered);
+  GPR_ASSERT(!fdn->writable_registered);
+  gpr_mu_destroy(&fdn->mu);
+  /* c-ares library has closed the fd inside grpc_fd. This fd may be picked up
+     immediately by another thread, and should not be closed by the following
+     grpc_fd_orphan. */
+  grpc_fd_orphan(fdn->fd, nullptr, nullptr, true /* already_closed */,
+                 "c-ares query finished");
+  gpr_free(fdn);
+}
+
+static void fd_node_lose_interest(fd_node* fdn) {
   gpr_mu_lock(&fdn->mu);
-  if (!fdn->already_shutdown) {
-    fdn->already_shutdown = true;
-    grpc_fd_shutdown(fdn->fd, GRPC_ERROR_CREATE_FROM_STATIC_STRING(reason));
+  fdn->ares_library_is_interested = false;
+  if (!fdn->readable_registered && !fdn->writable_registered) {
+    gpr_mu_unlock(&fdn->mu);
+    fd_node_destroy(fdn);
+  } else {
+    grpc_fd_shutdown(
+        fdn->fd, GRPC_ERROR_CREATE_FROM_STATIC_STRING("c-ares fd shutdown"));
+    gpr_mu_unlock(&fdn->mu);
   }
-  gpr_mu_unlock(&fdn->mu);
 }
 
 grpc_error* grpc_ares_ev_driver_create(grpc_ares_ev_driver** ev_driver,
                                        grpc_pollset_set* pollset_set) {
   *ev_driver = static_cast<grpc_ares_ev_driver*>(
       gpr_malloc(sizeof(grpc_ares_ev_driver)));
-  ares_options opts;
-  memset(&opts, 0, sizeof(opts));
-  // Pass ARES_FLAGS_STAYOPEN: defer closing of fd's that were
-  // opened by c-ares until "ares_destroy" is called, to avoid operating
-  // on closed fd's.
-  opts.flags |= ARES_FLAG_STAYOPEN;
-  int status = ares_init_options(&(*ev_driver)->channel, &opts, ARES_OPT_FLAGS);
+  int status = ares_init(&(*ev_driver)->channel);
   gpr_log(GPR_DEBUG, "grpc_ares_ev_driver_create");
   if (status != ARES_SUCCESS) {
     char* err_msg;
@@ -177,7 +164,8 @@ void grpc_ares_ev_driver_shutdown(grpc_ares_ev_driver* ev_driver) {
   ev_driver->shutting_down = true;
   fd_node* fn = ev_driver->fds;
   while (fn != nullptr) {
-    fd_node_shutdown(fn, "grpc_ares_ev_driver_shutdown");
+    grpc_fd_shutdown(fn->fd, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                 "grpc_ares_ev_driver_shutdown"));
     fn = fn->next;
   }
   gpr_mu_unlock(&ev_driver->mu);
@@ -214,7 +202,14 @@ static void on_readable_cb(void* arg, grpc_error* error) {
   gpr_mu_lock(&fdn->mu);
   const int fd = grpc_fd_wrapped_fd(fdn->fd);
   fdn->readable_registered = false;
+  if (!fdn->ares_library_is_interested && !fdn->writable_registered) {
+    gpr_mu_unlock(&fdn->mu);
+    fd_node_destroy(fdn);
+    grpc_ares_ev_driver_unref(ev_driver);
+    return;
+  }
   gpr_mu_unlock(&fdn->mu);
+
   gpr_log(GPR_DEBUG, "readable on %d", fd);
   if (error == GRPC_ERROR_NONE) {
     do {
@@ -233,7 +228,6 @@ static void on_readable_cb(void* arg, grpc_error* error) {
   grpc_ares_notify_on_event_locked(ev_driver);
   gpr_mu_unlock(&ev_driver->mu);
   grpc_ares_ev_driver_unref(ev_driver);
-  grpc_ares_fd_node_unref(fdn);
 }
 
 static void on_writable_cb(void* arg, grpc_error* error) {
@@ -242,6 +236,12 @@ static void on_writable_cb(void* arg, grpc_error* error) {
   gpr_mu_lock(&fdn->mu);
   const int fd = grpc_fd_wrapped_fd(fdn->fd);
   fdn->writable_registered = false;
+  if (!fdn->ares_library_is_interested && !fdn->readable_registered) {
+    gpr_mu_unlock(&fdn->mu);
+    fd_node_destroy(fdn);
+    grpc_ares_ev_driver_unref(ev_driver);
+    return;
+  }
   gpr_mu_unlock(&fdn->mu);
 
   gpr_log(GPR_DEBUG, "writable on %d", fd);
@@ -260,7 +260,6 @@ static void on_writable_cb(void* arg, grpc_error* error) {
   grpc_ares_notify_on_event_locked(ev_driver);
   gpr_mu_unlock(&ev_driver->mu);
   grpc_ares_ev_driver_unref(ev_driver);
-  grpc_ares_fd_node_unref(fdn);
 }
 
 ares_channel* grpc_ares_ev_driver_get_channel(grpc_ares_ev_driver* ev_driver) {
@@ -289,8 +288,7 @@ static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver) {
           fdn->ev_driver = ev_driver;
           fdn->readable_registered = false;
           fdn->writable_registered = false;
-          fdn->already_shutdown = false;
-          gpr_ref_init(&fdn->refs, 1);
+          fdn->ares_library_is_interested = true;
           gpr_mu_init(&fdn->mu);
           GRPC_CLOSURE_INIT(&fdn->read_closure, on_readable_cb, fdn,
                             grpc_schedule_on_exec_ctx);
@@ -308,7 +306,6 @@ static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver) {
             !fdn->readable_registered) {
           grpc_ares_ev_driver_ref(ev_driver);
           gpr_log(GPR_DEBUG, "notify read on: %d", grpc_fd_wrapped_fd(fdn->fd));
-          grpc_ares_fd_node_ref(fdn);
           grpc_fd_notify_on_read(fdn->fd, &fdn->read_closure);
           fdn->readable_registered = true;
         }
@@ -319,7 +316,6 @@ static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver) {
           gpr_log(GPR_DEBUG, "notify write on: %d",
                   grpc_fd_wrapped_fd(fdn->fd));
           grpc_ares_ev_driver_ref(ev_driver);
-          grpc_ares_fd_node_ref(fdn);
           grpc_fd_notify_on_write(fdn->fd, &fdn->write_closure);
           fdn->writable_registered = true;
         }
@@ -333,8 +329,7 @@ static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver) {
   while (ev_driver->fds != nullptr) {
     fd_node* cur = ev_driver->fds;
     ev_driver->fds = ev_driver->fds->next;
-    fd_node_shutdown(cur, "shutdown c-ares fd node");
-    grpc_ares_fd_node_unref(cur);
+    fd_node_lose_interest(cur);
   }
   ev_driver->fds = new_list;
   // If the ev driver has no working fd, all the tasks are done.
