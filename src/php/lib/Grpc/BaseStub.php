@@ -69,7 +69,7 @@ class BaseStub
             return;
         }
 
-        $this->channel = static::getDefaultChannel($opts);
+        $this->channel = static::getDefaultChannel($hostname, $opts);
     }
 
     /**
@@ -79,7 +79,7 @@ class BaseStub
      *
      * @return Channel The channel
      */
-    public static function getDefaultChannel(array $opts)
+    public static function getDefaultChannel($hostname, array $opts)
     {
         $package_config = json_decode(
             file_get_contents(dirname(__FILE__).'/../../composer.json'),
