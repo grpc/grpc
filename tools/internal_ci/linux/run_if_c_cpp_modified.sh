@@ -13,13 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# This script is invoked by a Jenkins pull request job and executes all
+# This script is invoked by a pull request job and executes all
 # args passed to this script if the pull request affect C/C++ code
 set -ex
 
 # Enter the gRPC repo root
-cd $(dirname $0)/../..
+cd $(dirname $0)/../../..
 
+# TODO(jtattermusch): the "ghprbTargetBranch" is Jenkins specific and probably
+# does not work on kokoro?
 AFFECTS_C_CPP=`python -c 'import os; \
                import sys; \
                sys.path.insert(0, "tools/run_tests/python_utils"); \
