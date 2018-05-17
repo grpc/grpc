@@ -47,7 +47,6 @@ some configuration as environment variables that can be set.
   - combiner - traces combiner lock state
   - compression - traces compression operations
   - connectivity_state - traces connectivity state changes to channels
-  - channel_stack_builder - traces information about channel stacks being built
   - executor - traces grpc's internal thread pool ('the executor')
   - fd_trace - traces fd create(), shutdown() and close() calls for channel fds.
     Also traces epoll fd create()/close() calls in epollex polling engine
