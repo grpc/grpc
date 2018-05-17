@@ -225,6 +225,7 @@ class RPCTest(unittest.TestCase):
 
         self.assertEqual(expected_response, response)
         self.assertIs(grpc.StatusCode.OK, call.code())
+        self.assertEqual("", call.debug_error_string())
 
     def testSuccessfulUnaryRequestFutureUnaryResponse(self):
         request = b'\x07\x08'
@@ -706,6 +707,13 @@ class RPCTest(unittest.TestCase):
 
         self.assertIs(grpc.StatusCode.UNKNOWN,
                       exception_context.exception.code())
+        # sanity checks on to make sure returned string contains default members
+        # of the error
+        debug_error_string = exception_context.exception.debug_error_string()
+        self.assertIn("created", debug_error_string)
+        self.assertIn("description", debug_error_string)
+        self.assertIn("file", debug_error_string)
+        self.assertIn("file_line", debug_error_string)
 
     def testFailedUnaryRequestFutureUnaryResponse(self):
         request = b'\x37\x17'
