@@ -1013,7 +1013,7 @@ src/core/lib/channel/channel_args.h \
 src/core/lib/channel/channel_stack.h \
 src/core/lib/channel/channel_stack_builder.h \
 src/core/lib/channel/channel_trace.h \
-src/core/lib/channel/channelz_registry.h \
+src/core/lib/channel/channel_trace_registry.h \
 src/core/lib/channel/connected_channel.h \
 src/core/lib/channel/context.h \
 src/core/lib/channel/handshaker.h \

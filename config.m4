@@ -89,7 +89,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/channel/channel_stack.cc \
     src/core/lib/channel/channel_stack_builder.cc \
     src/core/lib/channel/channel_trace.cc \
-    src/core/lib/channel/channelz_registry.cc \
+    src/core/lib/channel/channel_trace_registry.cc \
     src/core/lib/channel/connected_channel.cc \
     src/core/lib/channel/handshaker.cc \
     src/core/lib/channel/handshaker_factory.cc \

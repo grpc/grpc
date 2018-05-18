@@ -299,7 +299,7 @@
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack_builder.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_trace.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/channelz_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/channel_trace_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/connected_channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/context.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker.h" role="src" />
@@ -449,7 +449,7 @@
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_stack_builder.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/channel_trace.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/channel/channelz_registry.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/channel_trace_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/connected_channel.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker_factory.cc" role="src" />
