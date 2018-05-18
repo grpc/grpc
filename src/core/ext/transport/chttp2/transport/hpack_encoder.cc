@@ -451,7 +451,7 @@ static uint32_t dynidx(grpc_chttp2_hpack_compressor* c, uint32_t elem_index) {
 /* encode an mdelem */
 static void hpack_enc(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
                       framer_state* st) {
-  GPR_ASSERT(GRPC_SLICE_LENGTH(GRPC_MDKEY(elem)) > 0);
+  GPR_DEBUG_ASSERT(GRPC_SLICE_LENGTH(GRPC_MDKEY(elem)) > 0);
   if (GRPC_SLICE_START_PTR(GRPC_MDKEY(elem))[0] != ':') { /* regular header */
     st->seen_regular_header = 1;
   } else {
