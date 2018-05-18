@@ -95,7 +95,7 @@ static void tcp_ref(CFStreamTCP* tcp, const char* reason, const char* file, int 
 #define TCP_UNREF(tcp, reason) tcp_unref((tcp))
 static void tcp_unref(CFStreamTCP* tcp) {
   if (gpr_unref(&tcp->refcount)) {
-    tcp_free(tcp);
+    TCPFree(tcp);
   }
 }
 static void tcp_ref(CFStreamTCP* tcp) { gpr_ref(&tcp->refcount); }
