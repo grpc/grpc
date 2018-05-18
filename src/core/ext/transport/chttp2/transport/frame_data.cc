@@ -77,7 +77,7 @@ void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer* inbuf,
   uint8_t* p;
   static const size_t header_size = 9;
 
-  hdr = GRPC_SLICE_MALLOC(header_size);
+  hdr = grpc_slice_malloc_internal(header_size);
   p = GRPC_SLICE_START_PTR(hdr);
   GPR_ASSERT(write_bytes < (1 << 24));
   *p++ = static_cast<uint8_t>(write_bytes >> 16);

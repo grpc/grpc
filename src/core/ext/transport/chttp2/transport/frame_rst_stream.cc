@@ -26,12 +26,13 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/http2_errors.h"
 
 grpc_slice grpc_chttp2_rst_stream_create(uint32_t id, uint32_t code,
                                          grpc_transport_one_way_stats* stats) {
   static const size_t frame_size = 13;
-  grpc_slice slice = GRPC_SLICE_MALLOC(frame_size);
+  grpc_slice slice = grpc_slice_malloc_internal(frame_size);
   stats->framing_bytes += frame_size;
   uint8_t* p = GRPC_SLICE_START_PTR(slice);
 

@@ -35,6 +35,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_table.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/slice/slice_buffer_internal.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/metadata.h"
@@ -110,8 +111,8 @@ static void finish_frame(framer_state* st, int is_header_boundary,
 /* begin a new frame: reserve off header space, remember how many bytes we'd
    output before beginning */
 static void begin_frame(framer_state* st) {
-  st->header_idx =
-      grpc_slice_buffer_add_indexed(st->output, GRPC_SLICE_MALLOC(9));
+  st->header_idx = grpc_slice_buffer_add_indexed_internal(
+      st->output, grpc_slice_malloc_internal(9));
   st->output_length_at_start_of_frame = st->output->length;
 }
 

@@ -30,6 +30,7 @@
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/http2_errors.h"
 
 static uint8_t* fill_header(uint8_t* out, uint32_t length, uint8_t flags) {
@@ -57,7 +58,7 @@ grpc_slice grpc_chttp2_settings_create(uint32_t* old_settings,
     n += (new_settings[i] != old_settings[i] || (force_mask & (1u << i)) != 0);
   }
 
-  output = GRPC_SLICE_MALLOC(9 + 6 * n);
+  output = grpc_slice_malloc_internal(9 + 6 * n);
   p = fill_header(GRPC_SLICE_START_PTR(output), 6 * n, 0);
 
   for (i = 0; i < count; i++) {
@@ -78,7 +79,7 @@ grpc_slice grpc_chttp2_settings_create(uint32_t* old_settings,
 }
 
 grpc_slice grpc_chttp2_settings_ack_create(void) {
-  grpc_slice output = GRPC_SLICE_MALLOC(9);
+  grpc_slice output = grpc_slice_malloc_internal(9);
   fill_header(GRPC_SLICE_START_PTR(output), 0, GRPC_CHTTP2_FLAG_ACK);
   return output;
 }

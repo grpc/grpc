@@ -2215,7 +2215,7 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
      the time we got around to sending this, so instead we ignore HPACK
      compression and just write the uncompressed bytes onto the wire. */
   if (!s->sent_initial_metadata) {
-    http_status_hdr = GRPC_SLICE_MALLOC(13);
+    http_status_hdr = grpc_slice_malloc_internal(13);
     p = GRPC_SLICE_START_PTR(http_status_hdr);
     *p++ = 0x00;
     *p++ = 7;
@@ -2233,7 +2233,7 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
     GPR_ASSERT(p == GRPC_SLICE_END_PTR(http_status_hdr));
     len += static_cast<uint32_t> GRPC_SLICE_LENGTH(http_status_hdr);
 
-    content_type_hdr = GRPC_SLICE_MALLOC(31);
+    content_type_hdr = grpc_slice_malloc_internal(31);
     p = GRPC_SLICE_START_PTR(content_type_hdr);
     *p++ = 0x00;
     *p++ = 12;
@@ -2270,7 +2270,7 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
     len += static_cast<uint32_t> GRPC_SLICE_LENGTH(content_type_hdr);
   }
 
-  status_hdr = GRPC_SLICE_MALLOC(15 + (grpc_status >= 10));
+  status_hdr = grpc_slice_malloc_internal(15 + (grpc_status >= 10));
   p = GRPC_SLICE_START_PTR(status_hdr);
   *p++ = 0x00; /* literal header, not indexed */
   *p++ = 11;   /* len(grpc-status) */
@@ -2299,7 +2299,7 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   size_t msg_len = GRPC_SLICE_LENGTH(slice);
   GPR_ASSERT(msg_len <= UINT32_MAX);
   uint32_t msg_len_len = GRPC_CHTTP2_VARINT_LENGTH((uint32_t)msg_len, 1);
-  message_pfx = GRPC_SLICE_MALLOC(14 + msg_len_len);
+  message_pfx = grpc_slice_malloc_internal(14 + msg_len_len);
   p = GRPC_SLICE_START_PTR(message_pfx);
   *p++ = 0x00; /* literal header, not indexed */
   *p++ = 12;   /* len(grpc-message) */
@@ -2321,7 +2321,7 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   len += static_cast<uint32_t> GRPC_SLICE_LENGTH(message_pfx);
   len += static_cast<uint32_t>(msg_len);
 
-  hdr = GRPC_SLICE_MALLOC(9);
+  hdr = grpc_slice_malloc_internal(9);
   p = GRPC_SLICE_START_PTR(hdr);
   *p++ = static_cast<uint8_t>(len >> 16);
   *p++ = static_cast<uint8_t>(len >> 8);
