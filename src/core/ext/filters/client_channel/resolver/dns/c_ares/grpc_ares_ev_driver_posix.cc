@@ -55,8 +55,8 @@ typedef struct fd_node {
   bool readable_registered;
   /** if the writable closure has been registered */
   bool writable_registered;
-  /** if the fd is being shut down */
-  bool shutting_down;
+  /** is c-ares interested in events/data on this fd */
+  bool ares_library_is_interested;
 } fd_node;
 
 struct grpc_ares_ev_driver {
@@ -110,9 +110,9 @@ static void fd_node_destroy(fd_node* fdn) {
   gpr_free(fdn);
 }
 
-static void fd_node_shutdown(fd_node* fdn) {
+static void fd_node_lose_interest(fd_node* fdn) {
   gpr_mu_lock(&fdn->mu);
-  fdn->shutting_down = true;
+  fdn->ares_library_is_interested = false;
   if (!fdn->readable_registered && !fdn->writable_registered) {
     gpr_mu_unlock(&fdn->mu);
     fd_node_destroy(fdn);
@@ -202,7 +202,7 @@ static void on_readable_cb(void* arg, grpc_error* error) {
   gpr_mu_lock(&fdn->mu);
   const int fd = grpc_fd_wrapped_fd(fdn->fd);
   fdn->readable_registered = false;
-  if (fdn->shutting_down && !fdn->writable_registered) {
+  if (!fdn->ares_library_is_interested && !fdn->writable_registered) {
     gpr_mu_unlock(&fdn->mu);
     fd_node_destroy(fdn);
     grpc_ares_ev_driver_unref(ev_driver);
@@ -236,7 +236,7 @@ static void on_writable_cb(void* arg, grpc_error* error) {
   gpr_mu_lock(&fdn->mu);
   const int fd = grpc_fd_wrapped_fd(fdn->fd);
   fdn->writable_registered = false;
-  if (fdn->shutting_down && !fdn->readable_registered) {
+  if (!fdn->ares_library_is_interested && !fdn->readable_registered) {
     gpr_mu_unlock(&fdn->mu);
     fd_node_destroy(fdn);
     grpc_ares_ev_driver_unref(ev_driver);
@@ -288,7 +288,7 @@ static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver) {
           fdn->ev_driver = ev_driver;
           fdn->readable_registered = false;
           fdn->writable_registered = false;
-          fdn->shutting_down = false;
+          fdn->ares_library_is_interested = true;
           gpr_mu_init(&fdn->mu);
           GRPC_CLOSURE_INIT(&fdn->read_closure, on_readable_cb, fdn,
                             grpc_schedule_on_exec_ctx);
@@ -329,7 +329,7 @@ static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver) {
   while (ev_driver->fds != nullptr) {
     fd_node* cur = ev_driver->fds;
     ev_driver->fds = ev_driver->fds->next;
-    fd_node_shutdown(cur);
+    fd_node_lose_interest(cur);
   }
   ev_driver->fds = new_list;
   // If the ev driver has no working fd, all the tasks are done.
