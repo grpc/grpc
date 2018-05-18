@@ -3086,6 +3086,26 @@
   {
     "deps": [
       "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "channelz_registry_test", 
+    "src": [
+      "test/core/channel/channelz_registry_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc"
     ], 
     "headers": [], 
@@ -9242,7 +9262,7 @@
       "src/core/lib/channel/channel_stack.cc", 
       "src/core/lib/channel/channel_stack_builder.cc", 
       "src/core/lib/channel/channel_trace.cc", 
-      "src/core/lib/channel/channel_trace_registry.cc", 
+      "src/core/lib/channel/channelz_registry.cc", 
       "src/core/lib/channel/connected_channel.cc", 
       "src/core/lib/channel/handshaker.cc", 
       "src/core/lib/channel/handshaker_factory.cc", 
@@ -9413,7 +9433,7 @@
       "src/core/lib/channel/channel_stack.h", 
       "src/core/lib/channel/channel_stack_builder.h", 
       "src/core/lib/channel/channel_trace.h", 
-      "src/core/lib/channel/channel_trace_registry.h", 
+      "src/core/lib/channel/channelz_registry.h", 
       "src/core/lib/channel/connected_channel.h", 
       "src/core/lib/channel/context.h", 
       "src/core/lib/channel/handshaker.h", 
@@ -9562,7 +9582,7 @@
       "src/core/lib/channel/channel_stack.h", 
       "src/core/lib/channel/channel_stack_builder.h", 
       "src/core/lib/channel/channel_trace.h", 
-      "src/core/lib/channel/channel_trace_registry.h", 
+      "src/core/lib/channel/channelz_registry.h", 
       "src/core/lib/channel/connected_channel.h", 
       "src/core/lib/channel/context.h", 
       "src/core/lib/channel/handshaker.h", 
