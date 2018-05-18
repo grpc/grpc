@@ -56,6 +56,8 @@ typedef struct fd_node {
   bool readable_registered;
   /** if the writable closure has been registered */
   bool writable_registered;
+  /** if the fd has been shutdown yet from grpc iomgr perspective */
+  bool already_shutdown;
   /** is c-ares interested in events/data on this fd */
   bool ares_library_is_interested;
 } fd_node;
@@ -102,6 +104,8 @@ static void fd_node_destroy(fd_node* fdn) {
   gpr_log(GPR_DEBUG, "delete fd: %d", grpc_fd_wrapped_fd(fdn->fd));
   GPR_ASSERT(!fdn->readable_registered);
   GPR_ASSERT(!fdn->writable_registered);
+  GPR_ASSERT(!fdn->ares_library_is_interested);
+  GPR_ASSERT(fdn->already_shutdown);
   gpr_mu_destroy(&fdn->mu);
   /* c-ares library has closed the fd inside grpc_fd. This fd may be picked up
      immediately by another thread, and should not be closed by the following
@@ -111,16 +115,11 @@ static void fd_node_destroy(fd_node* fdn) {
   gpr_free(fdn);
 }
 
-static void fd_node_lose_interest(fd_node* fdn) {
-  gpr_mu_lock(&fdn->mu);
-  fdn->ares_library_is_interested = false;
-  if (!fdn->readable_registered && !fdn->writable_registered) {
-    gpr_mu_unlock(&fdn->mu);
-    fd_node_destroy(fdn);
-  } else {
+static void fd_node_shutdown_locked(fd_node* fdn, const char* reason) {
+  if (!fdn->already_shutdown) {
+    fdn->already_shutdown = true;
     grpc_fd_shutdown(
         fdn->fd, GRPC_ERROR_CREATE_FROM_STATIC_STRING("c-ares fd shutdown"));
-    gpr_mu_unlock(&fdn->mu);
   }
 }
 
@@ -168,8 +167,9 @@ void grpc_ares_ev_driver_shutdown(grpc_ares_ev_driver* ev_driver) {
   ev_driver->shutting_down = true;
   fd_node* fn = ev_driver->fds;
   while (fn != nullptr) {
-    grpc_fd_shutdown(fn->fd, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                 "grpc_ares_ev_driver_shutdown"));
+    gpr_mu_lock(&fn->mu);
+    fd_node_shutdown_locked(fn, "grpc_ares_ev_driver_shutdown");
+    gpr_mu_unlock(&fn->mu);
     fn = fn->next;
   }
   gpr_mu_unlock(&ev_driver->mu);
@@ -293,6 +293,7 @@ static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver) {
           fdn->readable_registered = false;
           fdn->writable_registered = false;
           fdn->ares_library_is_interested = true;
+          fdn->already_shutdown = false;
           gpr_mu_init(&fdn->mu);
           GRPC_CLOSURE_INIT(&fdn->read_closure, on_readable_cb, fdn,
                             grpc_schedule_on_exec_ctx);
@@ -333,7 +334,15 @@ static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver) {
   while (ev_driver->fds != nullptr) {
     fd_node* cur = ev_driver->fds;
     ev_driver->fds = ev_driver->fds->next;
-    fd_node_lose_interest(cur);
+    gpr_mu_lock(&cur->mu);
+    cur->ares_library_is_interested = false;
+    fd_node_shutdown_locked(cur, "c-ares fd shutdown");
+    if (!cur->readable_registered && !cur->writable_registered) {
+      gpr_mu_unlock(&cur->mu);
+      fd_node_destroy(cur);
+    } else {
+      gpr_mu_unlock(&cur->mu);
+    }
   }
   ev_driver->fds = new_list;
   // If the ev driver has no working fd, all the tasks are done.
