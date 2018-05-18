@@ -22,7 +22,7 @@
 
 #ifdef GRPC_CFSTREAM_TCP_CLIENT
 
-#include <Foundation/Foundation.h>
+#include <CoreFoundation/CoreFoundation.h>
 
 #include <string.h>
 

@@ -19,7 +19,7 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_APPLE
-#import <Foundation/Foundation.h>
+#include <CoreFoundation/CoreFoundation.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>

@@ -21,7 +21,7 @@
 
 #ifdef GRPC_CFSTREAM_TCP
 
-#import <Foundation/Foundation.h>
+#import <CoreFoundation/CoreFoundation.h>
 #import "src/core/lib/iomgr/tcp_cfstream.h"
 
 #include <grpc/slice_buffer.h>
