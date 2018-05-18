@@ -18,6 +18,8 @@
 
 #include <php.h>
 
+// The include file must place here under <php.h> for fixing compile error.
+// See: https://github.com/grpc/grpc/pull/12360#issuecomment-326484589
 #include "byte_buffer.h"
 
 #include <grpc/byte_buffer_reader.h>
