@@ -176,7 +176,7 @@ end:
   return error;
 }
 
-grpc_channel_credentials* grpc_google_default_credentials_create() {
+grpc_channel_credentials* grpc_google_default_credentials_create(void) {
   grpc_channel_credentials* result = nullptr;
   grpc_call_credentials* call_creds = nullptr;
   grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
