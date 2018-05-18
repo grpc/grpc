@@ -45,7 +45,7 @@ _RELEASES = sorted(
             client_matrix.get_release_tag_name(info)
             for lang in client_matrix.LANG_RELEASE_MATRIX.values()
             for info in lang)))
-_TEST_TIMEOUT = 30
+_TEST_TIMEOUT = 60
 
 argp = argparse.ArgumentParser(description='Run interop tests.')
 argp.add_argument('-j', '--jobs', default=multiprocessing.cpu_count(), type=int)
