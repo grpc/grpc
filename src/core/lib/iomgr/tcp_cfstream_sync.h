@@ -24,7 +24,7 @@
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_CFSTREAM
-#import <Foundation/Foundation.h>
+#import <CoreFoundation/CoreFoundation.h>
 
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/lockfree_event.h"

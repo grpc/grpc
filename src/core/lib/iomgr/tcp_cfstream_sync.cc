@@ -20,7 +20,7 @@
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_CFSTREAM
-#import <Foundation/Foundation.h>
+#import <CoreFoundation/CoreFoundation.h>
 #import "src/core/lib/iomgr/tcp_cfstream_sync.h"
 
 #include <grpc/support/atm.h>
