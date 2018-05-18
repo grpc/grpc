@@ -36,9 +36,7 @@
 #include "timeval.h"
 
 zend_class_entry *grpc_ce_channel;
-#if PHP_MAJOR_VERSION >= 7
-static zend_object_handlers channel_ce_handlers;
-#endif
+PHP_GRPC_DECLARE_OBJECT_HANDLER(channel_ce_handlers)
 static gpr_mu global_persistent_list_mu;
 int le_plink;
 int le_bound;
@@ -297,7 +295,8 @@ void create_and_add_channel_to_persistent_list(
  * @param array $args_array The arguments to pass to the Channel
  */
 PHP_METHOD(Channel, __construct) {
-  wrapped_grpc_channel *channel = Z_WRAPPED_GRPC_CHANNEL_P(getThis());
+  wrapped_grpc_channel *channel =
+    PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_channel, getThis());
   zval *creds_obj = NULL;
   char *target;
   php_grpc_int target_length;
@@ -330,7 +329,8 @@ PHP_METHOD(Channel, __construct) {
                            1 TSRMLS_CC);
       return;
     } else {
-      creds = Z_WRAPPED_GRPC_CHANNEL_CREDS_P(creds_obj);
+      creds = PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_channel_credentials,
+                                          creds_obj);
       php_grpc_zend_hash_del(array_hash, "credentials", sizeof("credentials"));
     }
   }
@@ -440,7 +440,8 @@ PHP_METHOD(Channel, __construct) {
  * @return string The URI of the endpoint
  */
 PHP_METHOD(Channel, getTarget) {
-  wrapped_grpc_channel *channel = Z_WRAPPED_GRPC_CHANNEL_P(getThis());
+  wrapped_grpc_channel *channel =
+    PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_channel, getThis());
   if (channel->wrapper == NULL) {
     zend_throw_exception(spl_ce_RuntimeException,
                          "getTarget error."
@@ -460,7 +461,8 @@ PHP_METHOD(Channel, getTarget) {
  * @return long The grpc connectivity state
  */
 PHP_METHOD(Channel, getConnectivityState) {
-  wrapped_grpc_channel *channel = Z_WRAPPED_GRPC_CHANNEL_P(getThis());
+  wrapped_grpc_channel *channel =
+    PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_channel, getThis());
   if (channel->wrapper == NULL) {
     zend_throw_exception(spl_ce_RuntimeException,
                          "getConnectivityState error."
@@ -491,7 +493,8 @@ PHP_METHOD(Channel, getConnectivityState) {
  *              before deadline
  */
 PHP_METHOD(Channel, watchConnectivityState) {
-  wrapped_grpc_channel *channel = Z_WRAPPED_GRPC_CHANNEL_P(getThis());
+  wrapped_grpc_channel *channel =
+    PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_channel, getThis());
   if (channel->wrapper == NULL) {
     zend_throw_exception(spl_ce_RuntimeException,
                          "watchConnectivityState error"
@@ -513,7 +516,8 @@ PHP_METHOD(Channel, watchConnectivityState) {
     return;
   }
 
-  wrapped_grpc_timeval *deadline = Z_WRAPPED_GRPC_TIMEVAL_P(deadline_obj);
+  wrapped_grpc_timeval *deadline =
+    PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_timeval, deadline_obj);
   grpc_channel_watch_connectivity_state(channel->wrapper->wrapped,
                                         (grpc_connectivity_state)last_state,
                                         deadline->wrapped, completion_queue,
@@ -530,7 +534,8 @@ PHP_METHOD(Channel, watchConnectivityState) {
  * @return void
  */
 PHP_METHOD(Channel, close) {
-  wrapped_grpc_channel *channel = Z_WRAPPED_GRPC_CHANNEL_P(getThis());
+  wrapped_grpc_channel *channel =
+    PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_channel, getThis());
   if (channel->wrapper != NULL) {
     php_grpc_channel_unref(channel->wrapper);
     channel->wrapper = NULL;
@@ -608,7 +613,8 @@ char *grpc_connectivity_state_name(grpc_connectivity_state state) {
 * @return array
 */
 PHP_METHOD(Channel, getChannelInfo) {
-  wrapped_grpc_channel *channel = Z_WRAPPED_GRPC_CHANNEL_P(getThis());
+  wrapped_grpc_channel *channel =
+    PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_channel, getThis());
   array_init(return_value);
    // Info about the target
   PHP_GRPC_ADD_STRING_TO_ARRAY(return_value, "target",

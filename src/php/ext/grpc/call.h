@@ -33,22 +33,11 @@ PHP_GRPC_WRAP_OBJECT_START(wrapped_grpc_call)
   wrapped_grpc_channel* channel;
 PHP_GRPC_WRAP_OBJECT_END(wrapped_grpc_call)
 
-#if PHP_MAJOR_VERSION < 7
-
-#define Z_WRAPPED_GRPC_CALL_P(zv) \
-  (wrapped_grpc_call *)zend_object_store_get_object(zv TSRMLS_CC)
-
-#else
-
 static inline wrapped_grpc_call
 *wrapped_grpc_call_from_obj(zend_object *obj) {
   return (wrapped_grpc_call*)((char*)(obj) -
                               XtOffsetOf(wrapped_grpc_call, std));
 }
-
-#define Z_WRAPPED_GRPC_CALL_P(zv) wrapped_grpc_call_from_obj(Z_OBJ_P((zv)))
-
-#endif /* PHP_MAJOR_VERSION */
 
 /* Creates and returns a PHP associative array of metadata from a C array of
  * call metadata */
