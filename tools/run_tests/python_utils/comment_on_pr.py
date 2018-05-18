@@ -16,19 +16,22 @@ import os
 import json
 import urllib2
 
+
 def comment_on_pr(text):
-  if 'JENKINS_OAUTH_TOKEN' not in os.environ:
-    print 'Missing JENKINS_OAUTH_TOKEN env var: not commenting'
-    return
-  if 'ghprbPullId' not in os.environ:
-    print 'Missing ghprbPullId env var: not commenting'
-    return
-  req = urllib2.Request(
-      url = 'https://api.github.com/repos/grpc/grpc/issues/%s/comments' %
-          os.environ['ghprbPullId'],
-      data = json.dumps({'body': text}),
-      headers = {
-        'Authorization': 'token %s' % os.environ['JENKINS_OAUTH_TOKEN'],
-        'Content-Type': 'application/json',
-      })
-  print urllib2.urlopen(req).read()
+    if 'JENKINS_OAUTH_TOKEN' not in os.environ:
+        print 'Missing JENKINS_OAUTH_TOKEN env var: not commenting'
+        return
+    if 'ghprbPullId' not in os.environ:
+        print 'Missing ghprbPullId env var: not commenting'
+        return
+    req = urllib2.Request(
+        url='https://api.github.com/repos/grpc/grpc/issues/%s/comments' %
+        os.environ['ghprbPullId'],
+        data=json.dumps({
+            'body': text
+        }),
+        headers={
+            'Authorization': 'token %s' % os.environ['JENKINS_OAUTH_TOKEN'],
+            'Content-Type': 'application/json',
+        })
+    print urllib2.urlopen(req).read()

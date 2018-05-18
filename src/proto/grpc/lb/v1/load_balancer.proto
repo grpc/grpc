@@ -62,8 +62,10 @@ message LoadBalanceRequest {
 }
 
 message InitialLoadBalanceRequest {
-  // Name of load balanced service (IE, balancer.service.com)
-  // length should be less than 256 bytes.
+  // The name of the load balanced service (e.g., balancer.service.com). The max
+  // length of the name is 256 bytes.
+  // The name might include a port number. How to handle the port number is up
+  // to the balancer.
   string name = 1;
 }
 
@@ -133,11 +135,8 @@ message ServerList {
   // unless instructed otherwise via the client_config.
   repeated Server servers = 1;
 
-  // Indicates the amount of time that the client should consider this server
-  // list as valid. It may be considered stale after waiting this interval of
-  // time after receiving the list. If the interval is not positive, the
-  // client can assume the list is valid until the next list is received.
-  Duration expiration_interval = 3;
+  // Was google.protobuf.Duration expiration_interval.
+  reserved 3;
 }
 
 // Contains server information. When the drop field is not true, use the other

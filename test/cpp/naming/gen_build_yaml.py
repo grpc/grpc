@@ -119,12 +119,19 @@ def _resolver_test_cases(resolver_component_data, records_to_skip):
   for test_case in resolver_component_data['resolver_component_tests']:
     if test_case['record_to_resolve'] in records_to_skip:
       continue
+    target_name = _append_zone_name(
+        test_case['record_to_resolve'],
+        resolver_component_data['resolver_tests_common_zone_name'])
     out.append({
-      'target_name': _append_zone_name(test_case['record_to_resolve'],
-                                       resolver_component_data['resolver_tests_common_zone_name']),
-      'expected_addrs': _build_expected_addrs_cmd_arg(test_case['expected_addrs']),
-      'expected_chosen_service_config': (test_case['expected_chosen_service_config'] or ''),
-      'expected_lb_policy': (test_case['expected_lb_policy'] or ''),
+        'test_title': target_name,
+        'arg_names_and_values': [
+            ('target_name', target_name),
+            ('expected_addrs',
+             _build_expected_addrs_cmd_arg(test_case['expected_addrs'])),
+            ('expected_chosen_service_config',
+             (test_case['expected_chosen_service_config'] or '')),
+            ('expected_lb_policy', (test_case['expected_lb_policy'] or '')),
+        ],
     })
   return out
 
@@ -180,6 +187,25 @@ def main():
               'args': [
                   '--test_bin_name=resolver_component_test%s' % unsecure_build_config_suffix,
                   '--running_under_bazel=false',
+              ],
+          } for unsecure_build_config_suffix in ['_unsecure', '']
+      ] + [
+          {
+              'name': 'address_sorting_test' + unsecure_build_config_suffix,
+              'build': 'test',
+              'language': 'c++',
+              'gtest': True,
+              'run': True,
+              'src': ['test/cpp/naming/address_sorting_test.cc'],
+              'platforms': ['linux', 'posix', 'mac'],
+              'deps': [
+                  'grpc++_test_util' + unsecure_build_config_suffix,
+                  'grpc_test_util' + unsecure_build_config_suffix,
+                  'gpr_test_util',
+                  'grpc++' + unsecure_build_config_suffix,
+                  'grpc' + unsecure_build_config_suffix,
+                  'gpr',
+                  'grpc++_test_config',
               ],
           } for unsecure_build_config_suffix in ['_unsecure', '']
       ]

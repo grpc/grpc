@@ -22,28 +22,17 @@ package(
 
 licenses(["notice"])  # Apache v2
 
-load("//bazel:grpc_build_system.bzl", "grpc_sh_binary", "grpc_py_binary")
+load("//bazel:grpc_build_system.bzl", "grpc_py_binary")
 
 load(":generate_resolver_component_tests.bzl", "generate_resolver_component_tests")
 
 # Meant to be invoked only through the top-level shell script driver.
-grpc_sh_binary(
+grpc_py_binary(
     name = "resolver_component_tests_runner",
     srcs = [
-        "resolver_component_tests_runner.sh",
+        "resolver_component_tests_runner.py",
     ],
-)
-
-grpc_py_binary(
-  name = "test_dns_server",
-  srcs = ["test_dns_server.py"],
-  data = [
-      "resolver_test_record_groups.yaml",
-  ],
-  deps = [
-      "twisted",
-      "yaml",
-  ]
+    testonly = True,
 )
 
 generate_resolver_component_tests()

@@ -29,10 +29,10 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   CSharpGrpcGenerator() {}
   ~CSharpGrpcGenerator() {}
 
-  bool Generate(const grpc::protobuf::FileDescriptor *file,
-                const grpc::string &parameter,
-                grpc::protobuf::compiler::GeneratorContext *context,
-                grpc::string *error) const {
+  bool Generate(const grpc::protobuf::FileDescriptor* file,
+                const grpc::string& parameter,
+                grpc::protobuf::compiler::GeneratorContext* context,
+                grpc::string* error) const {
     std::vector<std::pair<grpc::string, grpc::string> > options;
     grpc::protobuf::compiler::ParseGeneratorParameter(parameter, &options);
 
@@ -71,7 +71,7 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   }
 };
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   CSharpGrpcGenerator generator;
   return grpc::protobuf::compiler::PluginMain(argc, argv, &generator);
 }

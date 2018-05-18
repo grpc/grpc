@@ -32,6 +32,22 @@
 #endif
 #import "GRPCCompletionQueue.h"
 
+static void *copy_pointer_arg(void *p) {
+  // Add ref count to the object when making copy
+  id obj = (__bridge id)p;
+  return (__bridge_retained void *)obj;
+}
+
+static void destroy_pointer_arg(void *p) {
+  // Decrease ref count to the object when destroying
+  CFRelease((CFTreeRef)p);
+}
+
+static int cmp_pointer_arg(void *p, void *q) { return p == q; }
+
+static const grpc_arg_pointer_vtable objc_arg_vtable = {copy_pointer_arg, destroy_pointer_arg,
+                                                        cmp_pointer_arg};
+
 static void FreeChannelArgs(grpc_channel_args *channel_args) {
   for (size_t i = 0; i < channel_args->num_args; ++i) {
     grpc_arg *arg = &channel_args->args[i];
@@ -40,6 +56,7 @@ static void FreeChannelArgs(grpc_channel_args *channel_args) {
       gpr_free(arg->value.string);
     }
   }
+  gpr_free(channel_args->args);
   gpr_free(channel_args);
 }
 
@@ -75,6 +92,10 @@ static grpc_channel_args *BuildChannelArgs(NSDictionary *dictionary) {
     } else if ([value respondsToSelector:@selector(intValue)]) {
       arg->type = GRPC_ARG_INTEGER;
       arg->value.integer = [value intValue];
+    } else if (value != nil) {
+      arg->type = GRPC_ARG_POINTER;
+      arg->value.pointer.p = (__bridge_retained void *)value;
+      arg->value.pointer.vtable = &objc_arg_vtable;
     } else {
       [NSException raise:NSInvalidArgumentException
                   format:@"Invalid value type: %@", [value class]];
@@ -102,10 +123,8 @@ static grpc_channel_args *BuildChannelArgs(NSDictionary *dictionary) {
   if (self = [super init]) {
     _channelArgs = BuildChannelArgs(channelArgs);
     _host = [host copy];
-    _unmanagedChannel = grpc_cronet_secure_channel_create(cronetEngine,
-                                                          _host.UTF8String,
-                                                          _channelArgs,
-                                                          NULL);
+    _unmanagedChannel =
+        grpc_cronet_secure_channel_create(cronetEngine, _host.UTF8String, _channelArgs, NULL);
   }
 
   return self;
@@ -128,8 +147,8 @@ static grpc_channel_args *BuildChannelArgs(NSDictionary *dictionary) {
     _channelArgs = BuildChannelArgs(channelArgs);
     _host = [host copy];
     if (secure) {
-      _unmanagedChannel = grpc_secure_channel_create(credentials, _host.UTF8String, _channelArgs,
-                                                     NULL);
+      _unmanagedChannel =
+          grpc_secure_channel_create(credentials, _host.UTF8String, _channelArgs, NULL);
     } else {
       _unmanagedChannel = grpc_insecure_channel_create(_host.UTF8String, _channelArgs, NULL);
     }
@@ -150,8 +169,7 @@ static grpc_channel_args *BuildChannelArgs(NSDictionary *dictionary) {
                                  channelArgs:(NSDictionary *)channelArgs {
   stream_engine *engine = [GRPCCall cronetEngine];
   if (!engine) {
-    [NSException raise:NSInvalidArgumentException
-                format:@"cronet_engine is NULL. Set it first."];
+    [NSException raise:NSInvalidArgumentException format:@"cronet_engine is NULL. Set it first."];
     return nil;
   }
   return [[GRPCChannel alloc] initWithHost:host cronetEngine:engine channelArgs:channelArgs];
@@ -169,15 +187,10 @@ static grpc_channel_args *BuildChannelArgs(NSDictionary *dictionary) {
                                     secure:YES
                                credentials:credentials
                                channelArgs:channelArgs];
-
 }
 
-+ (GRPCChannel *)insecureChannelWithHost:(NSString *)host
-                             channelArgs:(NSDictionary *)channelArgs {
-  return [[GRPCChannel alloc] initWithHost:host
-                                    secure:NO
-                               credentials:NULL
-                               channelArgs:channelArgs];
++ (GRPCChannel *)insecureChannelWithHost:(NSString *)host channelArgs:(NSDictionary *)channelArgs {
+  return [[GRPCChannel alloc] initWithHost:host secure:NO credentials:NULL channelArgs:channelArgs];
 }
 
 - (grpc_call *)unmanagedCallWithPath:(NSString *)path
@@ -188,22 +201,18 @@ static grpc_channel_args *BuildChannelArgs(NSDictionary *dictionary) {
   if (timeout < 0) {
     timeout = 0;
   }
-  grpc_slice host_slice;
+  grpc_slice host_slice = grpc_empty_slice();
   if (serverName) {
     host_slice = grpc_slice_from_copied_string(serverName.UTF8String);
   }
   grpc_slice path_slice = grpc_slice_from_copied_string(path.UTF8String);
-  gpr_timespec deadline_ms = timeout == 0 ?
-                                gpr_inf_future(GPR_CLOCK_REALTIME) :
-                                gpr_time_add(
-                                    gpr_now(GPR_CLOCK_MONOTONIC),
-                                    gpr_time_from_millis((int64_t)(timeout * 1000), GPR_TIMESPAN));
-  grpc_call *call = grpc_channel_create_call(_unmanagedChannel,
-                                             NULL, GRPC_PROPAGATE_DEFAULTS,
-                                             queue.unmanagedQueue,
-                                             path_slice,
-                                             serverName ? &host_slice : NULL,
-                                             deadline_ms, NULL);
+  gpr_timespec deadline_ms =
+      timeout == 0 ? gpr_inf_future(GPR_CLOCK_REALTIME)
+                   : gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                  gpr_time_from_millis((int64_t)(timeout * 1000), GPR_TIMESPAN));
+  grpc_call *call = grpc_channel_create_call(_unmanagedChannel, NULL, GRPC_PROPAGATE_DEFAULTS,
+                                             queue.unmanagedQueue, path_slice,
+                                             serverName ? &host_slice : NULL, deadline_ms, NULL);
   if (serverName) {
     grpc_slice_unref(host_slice);
   }

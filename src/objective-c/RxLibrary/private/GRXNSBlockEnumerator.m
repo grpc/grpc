@@ -19,14 +19,14 @@
 #import "GRXNSBlockEnumerator.h"
 
 @implementation GRXNSBlockEnumerator {
-  id (^_block)();
+  id (^_block)(void);
 }
 
 - (instancetype)init {
   return [self initWithValueSupplier:nil];
 }
 
-- (instancetype)initWithValueSupplier:(id (^)())block {
+- (instancetype)initWithValueSupplier:(id (^)(void))block {
   if ((self = [super init])) {
     _block = block;
   }

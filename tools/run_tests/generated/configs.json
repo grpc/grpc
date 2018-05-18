@@ -20,7 +20,10 @@
     }
   }, 
   {
-    "config": "msan"
+    "config": "msan", 
+    "environ": {
+      "MSAN_OPTIONS": "poison_in_dtor=1"
+    }
   }, 
   {
     "config": "basicprof"
@@ -39,7 +42,7 @@
     }
   }, 
   {
-    "config": "c++-compat"
+    "config": "noexcept"
   }, 
   {
     "config": "ubsan", 
@@ -69,6 +72,9 @@
   }, 
   {
     "config": "lto"
+  }, 
+  {
+    "config": "c++-compat"
   }, 
   {
     "config": "mutrace"

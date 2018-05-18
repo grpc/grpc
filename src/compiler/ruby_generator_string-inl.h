@@ -31,8 +31,8 @@ using std::transform;
 namespace grpc_ruby_generator {
 
 // Split splits a string using char into elems.
-inline std::vector<grpc::string> &Split(const grpc::string &s, char delim,
-                                        std::vector<grpc::string> *elems) {
+inline std::vector<grpc::string>& Split(const grpc::string& s, char delim,
+                                        std::vector<grpc::string>* elems) {
   std::stringstream ss(s);
   grpc::string item;
   while (getline(ss, item, delim)) {
@@ -42,15 +42,15 @@ inline std::vector<grpc::string> &Split(const grpc::string &s, char delim,
 }
 
 // Split splits a string using char, returning the result in a vector.
-inline std::vector<grpc::string> Split(const grpc::string &s, char delim) {
+inline std::vector<grpc::string> Split(const grpc::string& s, char delim) {
   std::vector<grpc::string> elems;
   Split(s, delim, &elems);
   return elems;
 }
 
 // Replace replaces from with to in s.
-inline grpc::string Replace(grpc::string s, const grpc::string &from,
-                            const grpc::string &to) {
+inline grpc::string Replace(grpc::string s, const grpc::string& from,
+                            const grpc::string& to) {
   size_t start_pos = s.find(from);
   if (start_pos == grpc::string::npos) {
     return s;
@@ -60,8 +60,8 @@ inline grpc::string Replace(grpc::string s, const grpc::string &from,
 }
 
 // ReplaceAll replaces all instances of search with replace in s.
-inline grpc::string ReplaceAll(grpc::string s, const grpc::string &search,
-                               const grpc::string &replace) {
+inline grpc::string ReplaceAll(grpc::string s, const grpc::string& search,
+                               const grpc::string& replace) {
   size_t pos = 0;
   while ((pos = s.find(search, pos)) != grpc::string::npos) {
     s.replace(pos, search.length(), replace);
@@ -71,8 +71,8 @@ inline grpc::string ReplaceAll(grpc::string s, const grpc::string &search,
 }
 
 // ReplacePrefix replaces from with to in s if search is a prefix of s.
-inline bool ReplacePrefix(grpc::string *s, const grpc::string &from,
-                          const grpc::string &to) {
+inline bool ReplacePrefix(grpc::string* s, const grpc::string& from,
+                          const grpc::string& to) {
   size_t start_pos = s->find(from);
   if (start_pos == grpc::string::npos || start_pos != 0) {
     return false;
@@ -81,18 +81,28 @@ inline bool ReplacePrefix(grpc::string *s, const grpc::string &from,
   return true;
 }
 
-// CapitalizeFirst capitalizes the first char in a string.
-inline grpc::string CapitalizeFirst(grpc::string s) {
+// Modularize converts a string into a ruby module compatible name
+inline grpc::string Modularize(grpc::string s) {
   if (s.empty()) {
     return s;
   }
-  s[0] = ::toupper(s[0]);
-  return s;
+  grpc::string new_string = "";
+  bool was_last_underscore = false;
+  new_string.append(1, ::toupper(s[0]));
+  for (grpc::string::size_type i = 1; i < s.size(); ++i) {
+    if (was_last_underscore && s[i] != '_') {
+      new_string.append(1, ::toupper(s[i]));
+    } else if (s[i] != '_') {
+      new_string.append(1, s[i]);
+    }
+    was_last_underscore = s[i] == '_';
+  }
+  return new_string;
 }
 
 // RubyTypeOf updates a proto type to the required ruby equivalent.
-inline grpc::string RubyTypeOf(const grpc::string &a_type,
-                               const grpc::string &package) {
+inline grpc::string RubyTypeOf(const grpc::string& a_type,
+                               const grpc::string& package) {
   grpc::string res(a_type);
   ReplacePrefix(&res, package, "");  // remove the leading package if present
   ReplacePrefix(&res, ".", "");      // remove the leading . (no package)
@@ -106,7 +116,7 @@ inline grpc::string RubyTypeOf(const grpc::string &a_type,
         res += "::";  // switch '.' to the ruby module delim
       }
       if (i < prefixes_and_type.size() - 1) {
-        res += CapitalizeFirst(prefixes_and_type[i]);  // capitalize pkgs
+        res += Modularize(prefixes_and_type[i]);  // capitalize pkgs
       } else {
         res += prefixes_and_type[i];
       }

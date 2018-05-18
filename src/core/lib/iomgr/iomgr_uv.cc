@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016 gRPC authors.
+ * Copyright 2018 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,27 +16,25 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_UV
+#if defined(GRPC_CUSTOM_SOCKET) && defined(GRPC_UV)
 
-#include "src/core/lib/debug/trace.h"
-#include "src/core/lib/iomgr/executor.h"
-#include "src/core/lib/iomgr/iomgr_uv.h"
-#include "src/core/lib/iomgr/pollset_uv.h"
-#include "src/core/lib/iomgr/tcp_uv.h"
+#include "src/core/lib/iomgr/iomgr_custom.h"
+#include "src/core/lib/iomgr/iomgr_internal.h"
+#include "src/core/lib/iomgr/pollset_custom.h"
+#include "src/core/lib/iomgr/tcp_custom.h"
+#include "src/core/lib/iomgr/timer_custom.h"
 
-gpr_thd_id g_init_thread;
+extern grpc_socket_vtable grpc_uv_socket_vtable;
+extern grpc_custom_resolver_vtable uv_resolver_vtable;
+extern grpc_custom_timer_vtable uv_timer_vtable;
+extern grpc_custom_poller_vtable uv_pollset_vtable;
 
-void grpc_iomgr_platform_init(void) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  grpc_pollset_global_init();
-  grpc_register_tracer(&grpc_tcp_trace);
-  grpc_executor_set_threading(&exec_ctx, false);
-  g_init_thread = gpr_thd_currentid();
-  grpc_exec_ctx_finish(&exec_ctx);
+void grpc_set_default_iomgr_platform() {
+  grpc_custom_iomgr_init(&grpc_uv_socket_vtable, &uv_resolver_vtable,
+                         &uv_timer_vtable, &uv_pollset_vtable);
 }
-void grpc_iomgr_platform_flush(void) {}
-void grpc_iomgr_platform_shutdown(void) { grpc_pollset_global_shutdown(); }
-
-#endif /* GRPC_UV */
+#endif

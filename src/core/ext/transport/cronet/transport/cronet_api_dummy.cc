@@ -19,6 +19,8 @@
 /* This file has empty implementation of all the functions exposed by the cronet
 library, so we can build it in all environments */
 
+#include <grpc/support/port_platform.h>
+
 #include <stdbool.h>
 
 #include <grpc/support/log.h>
@@ -33,7 +35,7 @@ bidirectional_stream* bidirectional_stream_create(
     stream_engine* engine, void* annotation,
     bidirectional_stream_callback* callback) {
   GPR_ASSERT(0);
-  return NULL;
+  return nullptr;
 }
 
 int bidirectional_stream_destroy(bidirectional_stream* stream) {

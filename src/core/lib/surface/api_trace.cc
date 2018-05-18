@@ -16,7 +16,9 @@
  *
  */
 
-#include "src/core/lib/surface/api_trace.h"
-#include "src/core/lib/debug/trace.h"
+#include <grpc/support/port_platform.h>
 
-grpc_tracer_flag grpc_api_trace = GRPC_TRACER_INITIALIZER(false, "api");
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/surface/api_trace.h"
+
+grpc_core::TraceFlag grpc_api_trace(false, "api");

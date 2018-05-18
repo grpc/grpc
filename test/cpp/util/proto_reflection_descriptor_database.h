@@ -23,8 +23,8 @@
 #include <unordered_set>
 #include <vector>
 
-#include <grpc++/grpc++.h>
-#include <grpc++/impl/codegen/config_protobuf.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/impl/codegen/config_protobuf.h>
 #include "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h"
 
 namespace grpc {

@@ -16,20 +16,20 @@
  *
  */
 
-#include <grpc++/server_context.h>
+#include <grpcpp/server_context.h>
 
 #include <algorithm>
 #include <mutex>
 #include <utility>
 
-#include <grpc++/completion_queue.h>
-#include <grpc++/impl/call.h>
-#include <grpc++/support/time.h>
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/load_reporting.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpcpp/completion_queue.h>
+#include <grpcpp/impl/call.h>
+#include <grpcpp/support/time.h>
 
 #include "src/core/lib/surface/call.h"
 
@@ -90,7 +90,7 @@ void ServerContext::CompletionOp::FillOps(grpc_call* call, grpc_op* ops,
   ops->op = GRPC_OP_RECV_CLOSE_ON_SERVER;
   ops->data.recv_close_on_server.cancelled = &cancelled_;
   ops->flags = 0;
-  ops->reserved = NULL;
+  ops->reserved = nullptr;
   *nops = 1;
 }
 
@@ -171,7 +171,7 @@ void ServerContext::AddTrailingMetadata(const grpc::string& key,
 
 void ServerContext::TryCancel() const {
   grpc_call_error err = grpc_call_cancel_with_status(
-      call_, GRPC_STATUS_CANCELLED, "Cancelled on the server side", NULL);
+      call_, GRPC_STATUS_CANCELLED, "Cancelled on the server side", nullptr);
   if (err != GRPC_CALL_OK) {
     gpr_log(GPR_ERROR, "TryCancel failed with: %d", err);
   }
@@ -190,13 +190,14 @@ bool ServerContext::IsCancelled() const {
 
 void ServerContext::set_compression_algorithm(
     grpc_compression_algorithm algorithm) {
-  const char* algorithm_name = NULL;
+  compression_algorithm_ = algorithm;
+  const char* algorithm_name = nullptr;
   if (!grpc_compression_algorithm_name(algorithm, &algorithm_name)) {
     gpr_log(GPR_ERROR, "Name for compression algorithm '%d' unknown.",
             algorithm);
     abort();
   }
-  GPR_ASSERT(algorithm_name != NULL);
+  GPR_ASSERT(algorithm_name != nullptr);
   AddInitialMetadata(GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY, algorithm_name);
 }
 

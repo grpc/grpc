@@ -139,6 +139,7 @@ class ResourceExhaustedTest(unittest.TestCase):
         self._server = grpc.server(
             self._server_pool,
             handlers=(_GenericHandler(self._trigger),),
+            options=(('grpc.so_reuseport', 0),),
             maximum_concurrent_rpcs=test_constants.THREAD_CONCURRENCY)
         port = self._server.add_insecure_port('[::]:0')
         self._server.start()

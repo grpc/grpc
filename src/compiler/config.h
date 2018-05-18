@@ -19,7 +19,7 @@
 #ifndef SRC_COMPILER_CONFIG_H
 #define SRC_COMPILER_CONFIG_H
 
-#include <grpc++/impl/codegen/config_protobuf.h>
+#include <grpcpp/impl/codegen/config_protobuf.h>
 
 #ifndef GRPC_CUSTOM_CODEGENERATOR
 #include <google/protobuf/compiler/code_generator.h>

@@ -17,11 +17,11 @@
 
 set -ex
 
-cd $(dirname $0)/../../..
+cd "$(dirname "$0")/../../.."
 
 gcloud alpha dns managed-zones create \
-  resolver-tests-version-1-grpctestingexp-zone-id \
-  --dns-name=resolver-tests-version-1.grpctestingexp. \
+  resolver-tests-version-4-grpctestingexp-zone-id \
+  --dns-name=resolver-tests-version-4.grpctestingexp. \
   --description="GCE-DNS-private-zone-for-GRPC-testing" \
   --visibility=private \
   --networks=default

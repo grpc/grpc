@@ -16,9 +16,9 @@
  *
  */
 
-#include <grpc++/generic/generic_stub.h>
+#include <grpcpp/generic/generic_stub.h>
 
-#include <grpc++/impl/rpc_method.h>
+#include <grpcpp/impl/rpc_method.h>
 
 namespace grpc {
 
@@ -28,8 +28,9 @@ std::unique_ptr<GenericClientAsyncReaderWriter> CallInternal(
     const grpc::string& method, CompletionQueue* cq, bool start, void* tag) {
   return std::unique_ptr<GenericClientAsyncReaderWriter>(
       internal::ClientAsyncReaderWriterFactory<ByteBuffer, ByteBuffer>::Create(
-          channel, cq, internal::RpcMethod(method.c_str(),
-                                           internal::RpcMethod::BIDI_STREAMING),
+          channel, cq,
+          internal::RpcMethod(method.c_str(),
+                              internal::RpcMethod::BIDI_STREAMING),
           context, start, tag));
 }
 

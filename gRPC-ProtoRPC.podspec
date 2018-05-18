@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-ProtoRPC'
-  version = '1.8.0-dev'
+  version = '1.13.0-dev'
   s.version  = version
   s.summary  = 'RPC library for Protocol Buffers, based on gRPC'
   s.homepage = 'https://grpc.io'
@@ -52,5 +52,6 @@ Pod::Spec.new do |s|
     'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=1',
     # This is needed by all pods that depend on gRPC-RxLibrary:
     'CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES' => 'YES',
+    'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
   }
 end

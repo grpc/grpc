@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Constants and functions for data used in interoperability testing."""
+"""Constants and functions for data used in testing."""
 
 import os
 
@@ -34,3 +34,83 @@ def private_key():
 def certificate_chain():
     return pkg_resources.resource_string(__name__,
                                          _CERTIFICATE_CHAIN_RESOURCE_PATH)
+
+
+def cert_hier_1_root_ca_cert():
+    return pkg_resources.resource_string(
+        __name__, 'credentials/certificate_hierarchy_1/certs/ca.cert.pem')
+
+
+def cert_hier_1_intermediate_ca_cert():
+    return pkg_resources.resource_string(
+        __name__,
+        'credentials/certificate_hierarchy_1/intermediate/certs/intermediate.cert.pem'
+    )
+
+
+def cert_hier_1_client_1_key():
+    return pkg_resources.resource_string(
+        __name__,
+        'credentials/certificate_hierarchy_1/intermediate/private/client.key.pem'
+    )
+
+
+def cert_hier_1_client_1_cert():
+    return pkg_resources.resource_string(
+        __name__,
+        'credentials/certificate_hierarchy_1/intermediate/certs/client.cert.pem'
+    )
+
+
+def cert_hier_1_server_1_key():
+    return pkg_resources.resource_string(
+        __name__,
+        'credentials/certificate_hierarchy_1/intermediate/private/localhost-1.key.pem'
+    )
+
+
+def cert_hier_1_server_1_cert():
+    return pkg_resources.resource_string(
+        __name__,
+        'credentials/certificate_hierarchy_1/intermediate/certs/localhost-1.cert.pem'
+    )
+
+
+def cert_hier_2_root_ca_cert():
+    return pkg_resources.resource_string(
+        __name__, 'credentials/certificate_hierarchy_2/certs/ca.cert.pem')
+
+
+def cert_hier_2_intermediate_ca_cert():
+    return pkg_resources.resource_string(
+        __name__,
+        'credentials/certificate_hierarchy_2/intermediate/certs/intermediate.cert.pem'
+    )
+
+
+def cert_hier_2_client_1_key():
+    return pkg_resources.resource_string(
+        __name__,
+        'credentials/certificate_hierarchy_2/intermediate/private/client.key.pem'
+    )
+
+
+def cert_hier_2_client_1_cert():
+    return pkg_resources.resource_string(
+        __name__,
+        'credentials/certificate_hierarchy_2/intermediate/certs/client.cert.pem'
+    )
+
+
+def cert_hier_2_server_1_key():
+    return pkg_resources.resource_string(
+        __name__,
+        'credentials/certificate_hierarchy_2/intermediate/private/localhost-1.key.pem'
+    )
+
+
+def cert_hier_2_server_1_cert():
+    return pkg_resources.resource_string(
+        __name__,
+        'credentials/certificate_hierarchy_2/intermediate/certs/localhost-1.cert.pem'
+    )

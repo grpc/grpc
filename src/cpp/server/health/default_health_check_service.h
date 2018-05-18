@@ -21,9 +21,9 @@
 
 #include <mutex>
 
-#include <grpc++/health_check_service_interface.h>
-#include <grpc++/impl/codegen/service_type.h>
-#include <grpc++/support/byte_buffer.h>
+#include <grpcpp/health_check_service_interface.h>
+#include <grpcpp/impl/codegen/service_type.h>
+#include <grpcpp/support/byte_buffer.h>
 
 namespace grpc {
 

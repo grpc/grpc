@@ -19,6 +19,7 @@ require_relative '../pb/src/proto/grpc/testing/messages_pb'
 require 'google/protobuf/well_known_types'
 
 include GRPC::Core
+include GRPC::Spec::Helpers
 
 describe 'conversion from a status struct to a google protobuf status' do
   it 'fails if the input is not a status struct' do
@@ -150,7 +151,7 @@ GoogleRpcStatusTestStub = GoogleRpcStatusTestService.rpc_stub_class
 
 describe 'receving a google rpc status from a remote endpoint' do
   def start_server(encoded_rpc_status)
-    @srv = GRPC::RpcServer.new(pool_size: 1)
+    @srv = new_rpc_server_for_testing(pool_size: 1)
     @server_port = @srv.add_http2_port('localhost:0',
                                        :this_port_is_insecure)
     @srv.handle(GoogleRpcStatusTestService.new(encoded_rpc_status))
@@ -238,7 +239,7 @@ NoStatusDetailsBinTestServiceStub = NoStatusDetailsBinTestService.rpc_stub_class
 
 describe 'when the endpoint doesnt send grpc-status-details-bin' do
   def start_server
-    @srv = GRPC::RpcServer.new(pool_size: 1)
+    @srv = new_rpc_server_for_testing(pool_size: 1)
     @server_port = @srv.add_http2_port('localhost:0',
                                        :this_port_is_insecure)
     @srv.handle(NoStatusDetailsBinTestService)

@@ -54,7 +54,7 @@ class Loader(object):
         for module in modules:
             try:
                 package_paths = module.__path__
-            except:
+            except AttributeError:
                 continue
             self.walk_packages(package_paths)
         coverage_context.stop()
@@ -101,5 +101,5 @@ def iterate_suite_cases(suite):
         elif isinstance(item, unittest.TestCase):
             yield item
         else:
-            raise ValueError(
-                'unexpected suite item of type {}'.format(type(item)))
+            raise ValueError('unexpected suite item of type {}'.format(
+                type(item)))

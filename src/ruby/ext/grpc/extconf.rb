@@ -61,7 +61,7 @@ ENV['EMBED_ZLIB'] = 'true'
 ENV['EMBED_CARES'] = 'true'
 ENV['ARCH_FLAGS'] = RbConfig::CONFIG['ARCH_FLAG']
 ENV['ARCH_FLAGS'] = '-arch i386 -arch x86_64' if RUBY_PLATFORM =~ /darwin/
-ENV['CFLAGS'] = '-DGPR_BACKWARDS_COMPATIBILITY_MODE'
+ENV['CPPFLAGS'] = '-DGPR_BACKWARDS_COMPATIBILITY_MODE'
 
 output_dir = File.expand_path(RbConfig::CONFIG['topdir'])
 grpc_lib_dir = File.join(output_dir, 'libs', grpc_config)
@@ -84,7 +84,7 @@ if grpc_config == 'gcov'
 end
 
 if grpc_config == 'dbg'
-  $CFLAGS << ' -O0'
+  $CFLAGS << ' -O0 -ggdb3'
 end
 
 $LDFLAGS << ' -Wl,-wrap,memcpy' if RUBY_PLATFORM =~ /linux/
@@ -94,7 +94,6 @@ $CFLAGS << ' -std=c99 '
 $CFLAGS << ' -Wall '
 $CFLAGS << ' -Wextra '
 $CFLAGS << ' -pedantic '
-$CFLAGS << ' -Wno-format '
 
 output = File.join('grpc', 'grpc_c')
 puts 'Generating Makefile for ' + output

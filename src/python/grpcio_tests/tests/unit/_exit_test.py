@@ -49,7 +49,7 @@ def cleanup_processes():
         for process in processes:
             try:
                 process.kill()
-            except Exception:
+            except Exception:  # pylint: disable=broad-except
                 pass
 
 

@@ -21,9 +21,7 @@
 
 #include "src/proto/grpc/core/stats.pb.h"
 
-extern "C" {
 #include "src/core/lib/debug/stats.h"
-}
 
 namespace grpc {
 

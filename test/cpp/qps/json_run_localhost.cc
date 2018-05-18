@@ -26,7 +26,7 @@
 
 #include <grpc/support/log.h>
 
-#include "src/core/lib/support/env.h"
+#include "src/core/lib/gpr/env.h"
 #include "test/core/util/port.h"
 #include "test/cpp/util/subprocess.h"
 
@@ -46,7 +46,7 @@ std::string as_string(const T& val) {
 
 static void sighandler(int sig) {
   const int errno_saved = errno;
-  if (g_driver != NULL) g_driver->Interrupt();
+  if (g_driver != nullptr) g_driver->Interrupt();
   for (int i = 0; i < kNumWorkers; ++i) {
     if (g_workers[i]) g_workers[i]->Interrupt();
   }
@@ -58,8 +58,8 @@ static void register_sighandler() {
   memset(&act, 0, sizeof(act));
   act.sa_handler = sighandler;
 
-  sigaction(SIGINT, &act, NULL);
-  sigaction(SIGTERM, &act, NULL);
+  sigaction(SIGINT, &act, nullptr);
+  sigaction(SIGTERM, &act, nullptr);
 }
 
 static void LogStatus(int status, const char* label) {

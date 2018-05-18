@@ -42,8 +42,8 @@ typedef enum {
 } grpc_context_index;
 
 typedef struct {
-  void *value;
-  void (*destroy)(void *);
+  void* value;
+  void (*destroy)(void*);
 } grpc_call_context_element;
 
 #endif /* GRPC_CORE_LIB_CHANNEL_CONTEXT_H */

@@ -542,7 +542,7 @@ end
 describe 'the http client/server' do
   before(:example) do
     server_host = '0.0.0.0:0'
-    @server = GRPC::Core::Server.new(nil)
+    @server = new_core_server_for_testing(nil)
     server_port = @server.add_http2_port(server_host, :this_port_is_insecure)
     @server.start
     @ch = Channel.new("0.0.0.0:#{server_port}", nil, :this_channel_is_insecure)
@@ -550,7 +550,8 @@ describe 'the http client/server' do
 
   after(:example) do
     @ch.close
-    @server.close(deadline)
+    @server.shutdown_and_notify(deadline)
+    @server.close
   end
 
   it_behaves_like 'basic GRPC message delivery is OK' do
@@ -574,7 +575,7 @@ describe 'the secure http client/server' do
     server_host = '0.0.0.0:0'
     server_creds = GRPC::Core::ServerCredentials.new(
       nil, [{ private_key: certs[1], cert_chain: certs[2] }], false)
-    @server = GRPC::Core::Server.new(nil)
+    @server = new_core_server_for_testing(nil)
     server_port = @server.add_http2_port(server_host, server_creds)
     @server.start
     args = { Channel::SSL_TARGET => 'foo.test.google.fr' }
@@ -583,7 +584,8 @@ describe 'the secure http client/server' do
   end
 
   after(:example) do
-    @server.close(deadline)
+    @server.shutdown_and_notify(deadline)
+    @server.close
   end
 
   it_behaves_like 'basic GRPC message delivery is OK' do

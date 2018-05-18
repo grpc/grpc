@@ -16,7 +16,8 @@
  *
  */
 
-#include <grpc++/impl/codegen/config.h>
+#include <grpc/grpc.h>
+#include <grpcpp/impl/codegen/config.h>
 #include <gtest/gtest.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h"
@@ -48,7 +49,7 @@ grpc::string PackedStringToIp(const grpc_grpclb_ip_address& pb_ip) {
   } else {
     abort();
   }
-  GPR_ASSERT(inet_ntop(af, (void*)pb_ip.bytes, ip_str, 46) != NULL);
+  GPR_ASSERT(inet_ntop(af, (void*)pb_ip.bytes, ip_str, 46) != nullptr);
   return ip_str;
 }
 
@@ -98,9 +99,6 @@ TEST_F(GrpclbTest, ParseResponseServerList) {
   server->set_port(54321);
   server->set_load_balance_token("load_balancing");
   server->set_drop(true);
-  auto* expiration_interval = serverlist->mutable_expiration_interval();
-  expiration_interval->set_seconds(888);
-  expiration_interval->set_nanos(999);
 
   const grpc::string encoded_response = response.SerializeAsString();
   const grpc_slice encoded_slice = grpc_slice_from_copied_buffer(
@@ -121,11 +119,6 @@ TEST_F(GrpclbTest, ParseResponseServerList) {
   EXPECT_STREQ(c_serverlist->servers[1]->load_balance_token, "load_balancing");
   EXPECT_TRUE(c_serverlist->servers[1]->drop);
 
-  EXPECT_TRUE(c_serverlist->expiration_interval.has_seconds);
-  EXPECT_EQ(c_serverlist->expiration_interval.seconds, 888);
-  EXPECT_TRUE(c_serverlist->expiration_interval.has_nanos);
-  EXPECT_EQ(c_serverlist->expiration_interval.nanos, 999);
-
   grpc_slice_unref(encoded_slice);
   grpc_grpclb_destroy_serverlist(c_serverlist);
 }
@@ -135,5 +128,8 @@ TEST_F(GrpclbTest, ParseResponseServerList) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  grpc_init();
+  int ret = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return ret;
 }

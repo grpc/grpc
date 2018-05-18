@@ -21,7 +21,7 @@
 #include <memory>
 #include <set>
 
-#include <grpc++/impl/codegen/config_protobuf.h>
+#include <grpcpp/impl/codegen/config_protobuf.h>
 
 #include <gflags/gflags.h>
 #include <grpc/support/log.h>
@@ -181,7 +181,7 @@ static bool QpsDriver() {
   if (scfile) {
     // Read the json data from disk
     FILE* json_file = fopen(FLAGS_scenarios_file.c_str(), "r");
-    GPR_ASSERT(json_file != NULL);
+    GPR_ASSERT(json_file != nullptr);
     fseek(json_file, 0, SEEK_END);
     long len = ftell(json_file);
     char* data = new char[len];

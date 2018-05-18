@@ -1,9 +1,5 @@
 #!/usr/bin/env python2.7
 #
-# Convert google-benchmark json output to something that can be uploaded to
-# BigQuery
-#
-#
 # Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Convert google-benchmark json output to something that can be uploaded to
+# BigQuery
+
 import sys
 import json
 import csv
@@ -28,37 +27,39 @@ import subprocess
 columns = []
 
 for row in json.loads(
-    subprocess.check_output([
-      'bq','--format=json','show','microbenchmarks.microbenchmarks']))['schema']['fields']:
-  columns.append((row['name'], row['type'].lower()))
+        subprocess.check_output(
+            ['bq', '--format=json', 'show',
+             'microbenchmarks.microbenchmarks']))['schema']['fields']:
+    columns.append((row['name'], row['type'].lower()))
 
 SANITIZE = {
-  'integer': int,
-  'float': float,
-  'boolean': bool,
-  'string': str,
-  'timestamp': str,
+    'integer': int,
+    'float': float,
+    'boolean': bool,
+    'string': str,
+    'timestamp': str,
 }
 
 if sys.argv[1] == '--schema':
-  print ',\n'.join('%s:%s' % (k, t.upper()) for k, t in columns)
-  sys.exit(0)
+    print ',\n'.join('%s:%s' % (k, t.upper()) for k, t in columns)
+    sys.exit(0)
 
 with open(sys.argv[1]) as f:
-  js = json.loads(f.read())
+    js = json.loads(f.read())
 
 if len(sys.argv) > 2:
-  with open(sys.argv[2]) as f:
-    js2 = json.loads(f.read())
+    with open(sys.argv[2]) as f:
+        js2 = json.loads(f.read())
 else:
-  js2 = None
+    js2 = None
 
-writer = csv.DictWriter(sys.stdout, [c for c,t in columns])
+# TODO(jtattermusch): write directly to a file instead of stdout
+writer = csv.DictWriter(sys.stdout, [c for c, t in columns])
 
 for row in bm_json.expand_json(js, js2):
-  sane_row = {}
-  for name, sql_type in columns:
-    if name in row:
-      if row[name] == '': continue
-      sane_row[name] = SANITIZE[sql_type](row[name])
-  writer.writerow(sane_row)
+    sane_row = {}
+    for name, sql_type in columns:
+        if name in row:
+            if row[name] == '': continue
+            sane_row[name] = SANITIZE[sql_type](row[name])
+    writer.writerow(sane_row)

@@ -18,6 +18,8 @@
 
 #import <Foundation/Foundation.h>
 
+#import <grpc/impl/codegen/compression_types.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class GRPCCompletionQueue;
@@ -32,6 +34,9 @@ struct grpc_channel_credentials;
 @property(nonatomic, readonly) NSString *address;
 @property(nonatomic, copy, nullable) NSString *userAgentPrefix;
 @property(nonatomic, nullable) struct grpc_channel_credentials *channelCreds;
+@property(nonatomic) grpc_compression_algorithm compressAlgorithm;
+@property(nonatomic) int keepaliveInterval;
+@property(nonatomic) int keepaliveTimeout;
 
 /** The following properties should only be modified for testing: */
 
@@ -41,7 +46,6 @@ struct grpc_channel_credentials;
 
 /** The default response size limit is 4MB. Set this to override that default. */
 @property(nonatomic, strong, nullable) NSNumber *responseSizeLimitOverride;
-
 
 - (nullable instancetype)init NS_UNAVAILABLE;
 /** Host objects initialized with the same address are the same. */

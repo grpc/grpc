@@ -83,7 +83,7 @@ class ChannelConnectivityTest(unittest.TestCase):
 
     def test_immediately_connectable_channel_connectivity(self):
         thread_pool = _thread_pool.RecordingThreadPool(max_workers=None)
-        server = grpc.server(thread_pool)
+        server = grpc.server(thread_pool, options=(('grpc.so_reuseport', 0),))
         port = server.add_insecure_port('[::]:0')
         server.start()
         first_callback = _Callback()
@@ -125,7 +125,7 @@ class ChannelConnectivityTest(unittest.TestCase):
 
     def test_reachable_then_unreachable_channel_connectivity(self):
         thread_pool = _thread_pool.RecordingThreadPool(max_workers=None)
-        server = grpc.server(thread_pool)
+        server = grpc.server(thread_pool, options=(('grpc.so_reuseport', 0),))
         port = server.add_insecure_port('[::]:0')
         server.start()
         callback = _Callback()

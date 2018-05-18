@@ -15,6 +15,10 @@
     <ProjectReference Include="../Grpc.Core/Grpc.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.1.1-beta" />
+  </ItemGroup>
+
   <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
     <Reference Include="System" />
     <Reference Include="Microsoft.CSharp" />

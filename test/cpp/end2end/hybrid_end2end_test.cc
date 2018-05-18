@@ -19,14 +19,14 @@
 #include <memory>
 #include <thread>
 
-#include <grpc++/channel.h>
-#include <grpc++/client_context.h>
-#include <grpc++/create_channel.h>
-#include <grpc++/generic/async_generic_service.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
-#include <grpc++/server_context.h>
 #include <grpc/grpc.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/generic/async_generic_service.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/server_context.h>
 
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -42,7 +42,7 @@ namespace testing {
 
 namespace {
 
-void* tag(int i) { return (void*)(intptr_t)i; }
+void* tag(int i) { return (void*)static_cast<intptr_t>(i); }
 
 bool VerifyReturnSuccess(CompletionQueue* cq, int i) {
   void* got_tag;

@@ -17,6 +17,7 @@ cimport libc.time
 
 # Typedef types with approximately the same semantics to provide their names to
 # Cython
+ctypedef unsigned char uint8_t
 ctypedef int int32_t
 ctypedef unsigned uint32_t
 ctypedef long int64_t
@@ -25,6 +26,7 @@ ctypedef long int64_t
 cdef extern from "grpc/support/alloc.h":
 
   void *gpr_malloc(size_t size) nogil
+  void *gpr_zalloc(size_t size) nogil
   void gpr_free(void *ptr) nogil
   void *gpr_realloc(void *p, size_t size) nogil
 
@@ -32,13 +34,6 @@ cdef extern from "grpc/support/alloc.h":
 cdef extern from "grpc/byte_buffer_reader.h":
 
   struct grpc_byte_buffer_reader:
-    # We don't care about the internals
-    pass
-
-
-cdef extern from "grpc/impl/codegen/exec_ctx_fwd.h":
-
-  struct grpc_exec_ctx:
     # We don't care about the internals
     pass
 
@@ -169,7 +164,7 @@ cdef extern from "grpc/grpc.h":
 
   ctypedef struct grpc_arg_pointer_vtable:
     void *(*copy)(void *)
-    void (*destroy)(grpc_exec_ctx *, void *)
+    void (*destroy)(void *)
     int (*cmp)(void *, void *)
 
   ctypedef struct grpc_arg_value_pointer:
@@ -189,6 +184,18 @@ cdef extern from "grpc/grpc.h":
   ctypedef struct grpc_channel_args:
     size_t arguments_length "num_args"
     grpc_arg *arguments "args"
+
+  ctypedef enum grpc_compression_level:
+    GRPC_COMPRESS_LEVEL_NONE
+    GRPC_COMPRESS_LEVEL_LOW
+    GRPC_COMPRESS_LEVEL_MED
+    GRPC_COMPRESS_LEVEL_HIGH
+
+  ctypedef enum grpc_stream_compression_level:
+    GRPC_STREAM_COMPRESS_LEVEL_NONE
+    GRPC_STREAM_COMPRESS_LEVEL_LOW
+    GRPC_STREAM_COMPRESS_LEVEL_MED
+    GRPC_STREAM_COMPRESS_LEVEL_HIGH
 
   ctypedef enum grpc_call_error:
     GRPC_CALL_OK
@@ -265,9 +272,14 @@ cdef extern from "grpc/grpc.h":
     GRPC_OP_RECV_STATUS_ON_CLIENT
     GRPC_OP_RECV_CLOSE_ON_SERVER
 
+  ctypedef struct grpc_op_send_initial_metadata_maybe_compression_level:
+    uint8_t is_set
+    grpc_compression_level level
+
   ctypedef struct grpc_op_data_send_initial_metadata:
     size_t count
     grpc_metadata *metadata
+    grpc_op_send_initial_metadata_maybe_compression_level maybe_compression_level
 
   ctypedef struct grpc_op_data_send_status_from_server:
     size_t trailing_metadata_count
@@ -279,6 +291,7 @@ cdef extern from "grpc/grpc.h":
     grpc_metadata_array *trailing_metadata
     grpc_status_code *status
     grpc_slice *status_details
+    char** error_string
 
   ctypedef struct grpc_op_data_recv_close_on_server:
     int *cancelled
@@ -391,6 +404,42 @@ cdef extern from "grpc/grpc_security.h":
     GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY
     GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
 
+  ctypedef enum grpc_ssl_certificate_config_reload_status:
+    GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED
+    GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW
+    GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL
+
+  ctypedef struct grpc_ssl_server_certificate_config:
+    # We don't care about the internals
+    pass
+
+  ctypedef struct grpc_ssl_server_credentials_options:
+    # We don't care about the internals
+    pass
+
+  grpc_ssl_server_certificate_config * grpc_ssl_server_certificate_config_create(
+    const char *pem_root_certs,
+    const grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
+    size_t num_key_cert_pairs)
+
+  void grpc_ssl_server_certificate_config_destroy(grpc_ssl_server_certificate_config *config)
+
+  ctypedef grpc_ssl_certificate_config_reload_status (*grpc_ssl_server_certificate_config_callback)(
+    void *user_data,
+    grpc_ssl_server_certificate_config **config)
+
+  grpc_ssl_server_credentials_options *grpc_ssl_server_credentials_create_options_using_config(
+    grpc_ssl_client_certificate_request_type client_certificate_request,
+    grpc_ssl_server_certificate_config *certificate_config)
+
+  grpc_ssl_server_credentials_options* grpc_ssl_server_credentials_create_options_using_config_fetcher(
+    grpc_ssl_client_certificate_request_type client_certificate_request,
+    grpc_ssl_server_certificate_config_callback cb,
+    void *user_data)
+
+  grpc_server_credentials *grpc_ssl_server_credentials_create_with_options(
+      grpc_ssl_server_credentials_options *options)
+
   ctypedef struct grpc_ssl_pem_key_cert_pair:
     const char *private_key
     const char *certificate_chain "cert_chain"
@@ -440,10 +489,6 @@ cdef extern from "grpc/grpc_security.h":
     # We don't care about the internals (and in fact don't know them)
     pass
 
-  grpc_server_credentials *grpc_ssl_server_credentials_create(
-      const char *pem_root_certs,
-      grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
-      size_t num_key_cert_pairs, int force_client_auth, void *reserved)
   void grpc_server_credentials_release(grpc_server_credentials *creds) nogil
 
   int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
@@ -492,7 +537,7 @@ cdef extern from "grpc/grpc_security.h":
 
   grpc_auth_property_iterator grpc_auth_context_property_iterator(
       const grpc_auth_context *ctx)
- 
+
   grpc_auth_property_iterator grpc_auth_context_peer_identity(
       const grpc_auth_context *ctx)
 
@@ -515,6 +560,7 @@ cdef extern from "grpc/compression.h":
     GRPC_COMPRESS_NONE
     GRPC_COMPRESS_DEFLATE
     GRPC_COMPRESS_GZIP
+    GRPC_COMPRESS_STREAM_GZIP
     GRPC_COMPRESS_ALGORITHMS_COUNT
 
   ctypedef enum grpc_compression_level:

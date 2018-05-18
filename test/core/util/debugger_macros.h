@@ -19,14 +19,6 @@
 #ifndef GRPC_TEST_CORE_UTIL_DEBUGGER_MACROS_H
 #define GRPC_TEST_CORE_UTIL_DEBUGGER_MACROS_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif /*  __cplusplus */
-
 void grpc_summon_debugger_macros();
-
-#ifdef __cplusplus
-}
-#endif /*  __cplusplus */
 
 #endif /* GRPC_TEST_CORE_UTIL_DEBUGGER_MACROS_H */

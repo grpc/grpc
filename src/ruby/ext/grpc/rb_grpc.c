@@ -90,9 +90,9 @@ static ID id_tv_nsec;
  */
 gpr_timespec grpc_rb_time_timeval(VALUE time, int interval) {
   gpr_timespec t;
-  gpr_timespec *time_const;
-  const char *tstr = interval ? "time interval" : "time";
-  const char *want = " want <secs from epoch>|<Time>|<GRPC::TimeConst.*>";
+  gpr_timespec* time_const;
+  const char* tstr = interval ? "time interval" : "time";
+  const char* want = " want <secs from epoch>|<Time>|<GRPC::TimeConst.*>";
 
   t.clock_type = GPR_CLOCK_REALTIME;
   switch (TYPE(time)) {
@@ -201,7 +201,7 @@ static ID id_to_s;
 
 /* Converts a wrapped time constant to a standard time. */
 static VALUE grpc_rb_time_val_to_time(VALUE self) {
-  gpr_timespec *time_const = NULL;
+  gpr_timespec* time_const = NULL;
   gpr_timespec real_time;
   TypedData_Get_Struct(self, gpr_timespec, &grpc_rb_timespec_data_type,
                        time_const);
@@ -236,15 +236,15 @@ static void Init_grpc_time_consts() {
   rb_define_const(
       grpc_rb_mTimeConsts, "ZERO",
       TypedData_Wrap_Struct(grpc_rb_cTimeVal, &grpc_rb_timespec_data_type,
-                            (void *)&zero_realtime));
+                            (void*)&zero_realtime));
   rb_define_const(
       grpc_rb_mTimeConsts, "INFINITE_FUTURE",
       TypedData_Wrap_Struct(grpc_rb_cTimeVal, &grpc_rb_timespec_data_type,
-                            (void *)&inf_future_realtime));
+                            (void*)&inf_future_realtime));
   rb_define_const(
       grpc_rb_mTimeConsts, "INFINITE_PAST",
       TypedData_Wrap_Struct(grpc_rb_cTimeVal, &grpc_rb_timespec_data_type,
-                            (void *)&inf_past_realtime));
+                            (void*)&inf_past_realtime));
   rb_define_method(grpc_rb_cTimeVal, "to_time", grpc_rb_time_val_to_time, 0);
   rb_define_method(grpc_rb_cTimeVal, "inspect", grpc_rb_time_val_inspect, 0);
   rb_define_method(grpc_rb_cTimeVal, "to_s", grpc_rb_time_val_to_s, 0);

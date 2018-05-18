@@ -16,22 +16,24 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/support/env.h"
-#include "src/core/lib/support/string.h"
+#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/string.h"
 
-char *grpc_get_well_known_google_credentials_file_path_impl(void) {
-  char *result = NULL;
-  char *base = gpr_getenv(GRPC_GOOGLE_CREDENTIALS_PATH_ENV_VAR);
-  if (base == NULL) {
-    gpr_log(GPR_ERROR, "Could not get " GRPC_GOOGLE_CREDENTIALS_ENV_VAR
+char* grpc_get_well_known_google_credentials_file_path_impl(void) {
+  char* result = nullptr;
+  char* base = gpr_getenv(GRPC_GOOGLE_CREDENTIALS_PATH_ENV_VAR);
+  if (base == nullptr) {
+    gpr_log(GPR_ERROR, "Could not get " GRPC_GOOGLE_CREDENTIALS_PATH_ENV_VAR
                        " environment variable.");
-    return NULL;
+    return nullptr;
   }
   gpr_asprintf(&result, "%s/%s", base, GRPC_GOOGLE_CREDENTIALS_PATH_SUFFIX);
   gpr_free(base);

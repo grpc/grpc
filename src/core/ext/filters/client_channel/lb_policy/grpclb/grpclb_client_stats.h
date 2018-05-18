@@ -19,13 +19,11 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_CLIENT_STATS_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_CLIENT_STATS_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stdbool.h>
 
 #include <grpc/impl/codegen/grpc_types.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 typedef struct grpc_grpclb_client_stats grpc_grpclb_client_stats;
 
@@ -65,9 +63,5 @@ void grpc_grpclb_client_stats_get_locked(
 void grpc_grpclb_dropped_call_counts_destroy(
     grpc_grpclb_dropped_call_counts* drop_entries);
 
-#ifdef __cplusplus
-}
-#endif
-
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_CLIENT_STATS_H \
-          */
+        */

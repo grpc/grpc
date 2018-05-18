@@ -16,43 +16,41 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/endpoint.h"
 
-void grpc_endpoint_read(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
-                        grpc_slice_buffer* slices, grpc_closure* cb) {
-  ep->vtable->read(exec_ctx, ep, slices, cb);
+grpc_core::TraceFlag grpc_tcp_trace(false, "tcp");
+
+void grpc_endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
+                        grpc_closure* cb) {
+  ep->vtable->read(ep, slices, cb);
 }
 
-void grpc_endpoint_write(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
-                         grpc_slice_buffer* slices, grpc_closure* cb) {
-  ep->vtable->write(exec_ctx, ep, slices, cb);
+void grpc_endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
+                         grpc_closure* cb) {
+  ep->vtable->write(ep, slices, cb);
 }
 
-void grpc_endpoint_add_to_pollset(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
-                                  grpc_pollset* pollset) {
-  ep->vtable->add_to_pollset(exec_ctx, ep, pollset);
+void grpc_endpoint_add_to_pollset(grpc_endpoint* ep, grpc_pollset* pollset) {
+  ep->vtable->add_to_pollset(ep, pollset);
 }
 
-void grpc_endpoint_add_to_pollset_set(grpc_exec_ctx* exec_ctx,
-                                      grpc_endpoint* ep,
+void grpc_endpoint_add_to_pollset_set(grpc_endpoint* ep,
                                       grpc_pollset_set* pollset_set) {
-  ep->vtable->add_to_pollset_set(exec_ctx, ep, pollset_set);
+  ep->vtable->add_to_pollset_set(ep, pollset_set);
 }
 
-void grpc_endpoint_delete_from_pollset_set(grpc_exec_ctx* exec_ctx,
-                                           grpc_endpoint* ep,
+void grpc_endpoint_delete_from_pollset_set(grpc_endpoint* ep,
                                            grpc_pollset_set* pollset_set) {
-  ep->vtable->delete_from_pollset_set(exec_ctx, ep, pollset_set);
+  ep->vtable->delete_from_pollset_set(ep, pollset_set);
 }
 
-void grpc_endpoint_shutdown(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep,
-                            grpc_error* why) {
-  ep->vtable->shutdown(exec_ctx, ep, why);
+void grpc_endpoint_shutdown(grpc_endpoint* ep, grpc_error* why) {
+  ep->vtable->shutdown(ep, why);
 }
 
-void grpc_endpoint_destroy(grpc_exec_ctx* exec_ctx, grpc_endpoint* ep) {
-  ep->vtable->destroy(exec_ctx, ep);
-}
+void grpc_endpoint_destroy(grpc_endpoint* ep) { ep->vtable->destroy(ep); }
 
 char* grpc_endpoint_get_peer(grpc_endpoint* ep) {
   return ep->vtable->get_peer(ep);

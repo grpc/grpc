@@ -16,8 +16,10 @@
  *
  */
 
-#include "src/core/lib/iomgr/network_status_tracker.h"
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/network_status_tracker.h"
 
 void grpc_network_status_shutdown(void) {}
 
@@ -27,8 +29,8 @@ void grpc_network_status_init(void) {
 
 void grpc_destroy_network_status_monitor() {}
 
-void grpc_network_status_register_endpoint(grpc_endpoint *ep) { (void)ep; }
+void grpc_network_status_register_endpoint(grpc_endpoint* ep) { (void)ep; }
 
-void grpc_network_status_unregister_endpoint(grpc_endpoint *ep) { (void)ep; }
+void grpc_network_status_unregister_endpoint(grpc_endpoint* ep) { (void)ep; }
 
 void grpc_network_status_shutdown_all_endpoints() {}

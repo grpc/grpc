@@ -25,15 +25,11 @@ cp -R ./ /Users/kbuilder/workspace/grpc
 cd /Users/kbuilder/workspace/grpc
 
 # Needed for identifying Docker image sha1
+brew update
 brew install md5sha1sum
 
 # Set up gRPC-Go and gRPC-Java to test
 git clone --recursive https://github.com/grpc/grpc-go ./../grpc-go
 git clone --recursive https://github.com/grpc/grpc-java ./../grpc-java
 git clone --recursive https://github.com/grpc/grpc-node ./../grpc-node
-
-# Set up Docker for Mac
-docker-machine create -d virtualbox --virtualbox-share-folder "/Users/kbuilder/workspace:" default
-docker-machine env default
-eval $(docker-machine env default)
-
+git clone --recursive https://github.com/grpc/grpc-dart ./../grpc-dart

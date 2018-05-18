@@ -19,10 +19,10 @@
 #include <memory>
 #include <mutex>
 
-#include <grpc++/impl/codegen/method_handler_impl.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpcpp/impl/codegen/method_handler_impl.h>
 
 #include "src/cpp/server/health/default_health_check_service.h"
 #include "src/cpp/server/health/health.pb.h"

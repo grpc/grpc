@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/http/format_request.h"
 
 #include <stdarg.h>
@@ -25,11 +27,10 @@
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/useful.h>
-#include "src/core/lib/support/string.h"
+#include "src/core/lib/gpr/string.h"
 
-static void fill_common_header(const grpc_httpcli_request *request,
-                               gpr_strvec *buf, bool connection_close) {
+static void fill_common_header(const grpc_httpcli_request* request,
+                               gpr_strvec* buf, bool connection_close) {
   size_t i;
   gpr_strvec_add(buf, gpr_strdup(request->http.path));
   gpr_strvec_add(buf, gpr_strdup(" HTTP/1.0\r\n"));
@@ -51,9 +52,9 @@ static void fill_common_header(const grpc_httpcli_request *request,
 }
 
 grpc_slice grpc_httpcli_format_get_request(
-    const grpc_httpcli_request *request) {
+    const grpc_httpcli_request* request) {
   gpr_strvec out;
-  char *flat;
+  char* flat;
   size_t flat_len;
 
   gpr_strvec_init(&out);
@@ -67,11 +68,11 @@ grpc_slice grpc_httpcli_format_get_request(
   return grpc_slice_new(flat, flat_len, gpr_free);
 }
 
-grpc_slice grpc_httpcli_format_post_request(const grpc_httpcli_request *request,
-                                            const char *body_bytes,
+grpc_slice grpc_httpcli_format_post_request(const grpc_httpcli_request* request,
+                                            const char* body_bytes,
                                             size_t body_size) {
   gpr_strvec out;
-  char *tmp;
+  char* tmp;
   size_t out_len;
   size_t i;
 
@@ -90,7 +91,8 @@ grpc_slice grpc_httpcli_format_post_request(const grpc_httpcli_request *request,
     if (!has_content_type) {
       gpr_strvec_add(&out, gpr_strdup("Content-Type: text/plain\r\n"));
     }
-    gpr_asprintf(&tmp, "Content-Length: %lu\r\n", (unsigned long)body_size);
+    gpr_asprintf(&tmp, "Content-Length: %lu\r\n",
+                 static_cast<unsigned long>(body_size));
     gpr_strvec_add(&out, tmp);
   }
   gpr_strvec_add(&out, gpr_strdup("\r\n"));
@@ -98,7 +100,7 @@ grpc_slice grpc_httpcli_format_post_request(const grpc_httpcli_request *request,
   gpr_strvec_destroy(&out);
 
   if (body_bytes) {
-    tmp = (char *)gpr_realloc(tmp, out_len + body_size);
+    tmp = static_cast<char*>(gpr_realloc(tmp, out_len + body_size));
     memcpy(tmp + out_len, body_bytes, body_size);
     out_len += body_size;
   }
@@ -107,14 +109,14 @@ grpc_slice grpc_httpcli_format_post_request(const grpc_httpcli_request *request,
 }
 
 grpc_slice grpc_httpcli_format_connect_request(
-    const grpc_httpcli_request *request) {
+    const grpc_httpcli_request* request) {
   gpr_strvec out;
   gpr_strvec_init(&out);
   gpr_strvec_add(&out, gpr_strdup("CONNECT "));
   fill_common_header(request, &out, false);
   gpr_strvec_add(&out, gpr_strdup("\r\n"));
   size_t flat_len;
-  char *flat = gpr_strvec_flatten(&out, &flat_len);
+  char* flat = gpr_strvec_flatten(&out, &flat_len);
   gpr_strvec_destroy(&out);
   return grpc_slice_new(flat, flat_len, gpr_free);
 }

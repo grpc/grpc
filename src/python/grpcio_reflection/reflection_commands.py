@@ -19,7 +19,7 @@ import shutil
 import setuptools
 
 ROOT_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
-HEALTH_PROTO = os.path.join(
+REFLECTION_PROTO = os.path.join(
     ROOT_DIR, '../../proto/grpc/reflection/v1alpha/reflection.proto')
 
 
@@ -36,9 +36,9 @@ class CopyProtoModules(setuptools.Command):
         pass
 
     def run(self):
-        if os.path.isfile(HEALTH_PROTO):
+        if os.path.isfile(REFLECTION_PROTO):
             shutil.copyfile(
-                HEALTH_PROTO,
+                REFLECTION_PROTO,
                 os.path.join(ROOT_DIR,
                              'grpc_reflection/v1alpha/reflection.proto'))
 

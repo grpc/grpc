@@ -19,14 +19,6 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_HTTP_PROXY_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_HTTP_PROXY_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 void grpc_register_http_proxy_mapper();
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_HTTP_PROXY_H */

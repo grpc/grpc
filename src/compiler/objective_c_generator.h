@@ -23,20 +23,25 @@
 
 namespace grpc_objective_c_generator {
 
-using ::grpc::protobuf::ServiceDescriptor;
 using ::grpc::protobuf::FileDescriptor;
+using ::grpc::protobuf::FileDescriptor;
+using ::grpc::protobuf::ServiceDescriptor;
 using ::grpc::string;
 
 // Returns forward declaration of classes in the generated header file.
-string GetAllMessageClasses(const FileDescriptor *file);
+string GetAllMessageClasses(const FileDescriptor* file);
 
-// Returns the content to be included in the "global_scope" insertion point of
-// the generated header file.
-string GetHeader(const ServiceDescriptor *service);
+// Returns the content to be included defining the @protocol segment at the
+// insertion point of the generated implementation file.
+string GetProtocol(const ServiceDescriptor* service);
+
+// Returns the content to be included defining the @interface segment at the
+// insertion point of the generated implementation file.
+string GetInterface(const ServiceDescriptor* service);
 
 // Returns the content to be included in the "global_scope" insertion point of
 // the generated implementation file.
-string GetSource(const ServiceDescriptor *service);
+string GetSource(const ServiceDescriptor* service);
 
 }  // namespace grpc_objective_c_generator
 

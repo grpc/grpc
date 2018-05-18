@@ -16,6 +16,8 @@
 
 #endregion
 
+using System;
+using Grpc.Core.Interceptors;
 using Grpc.Core.Internal;
 using Grpc.Core.Utils;
 
@@ -147,6 +149,52 @@ namespace Grpc.Core
         /// </summary>
         protected internal class ClientBaseConfiguration
         {
+            private class ClientBaseConfigurationInterceptor : Interceptor
+            {
+                readonly Func<IMethod, string, CallOptions, Tuple<string, CallOptions>> interceptor;
+
+                /// <summary>
+                /// Creates a new instance of ClientBaseConfigurationInterceptor given the specified header and host interceptor function.
+                /// </summary>
+                public ClientBaseConfigurationInterceptor(Func<IMethod, string, CallOptions, Tuple<string, CallOptions>> interceptor)
+                {
+                    this.interceptor = GrpcPreconditions.CheckNotNull(interceptor, nameof(interceptor));
+                }
+
+                private ClientInterceptorContext<TRequest, TResponse> GetNewContext<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context)
+                    where TRequest : class
+                    where TResponse : class
+                {
+                    var newHostAndCallOptions = interceptor(context.Method, context.Host, context.Options);
+                    return new ClientInterceptorContext<TRequest, TResponse>(context.Method, newHostAndCallOptions.Item1, newHostAndCallOptions.Item2);
+                }
+
+                public override TResponse BlockingUnaryCall<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context, BlockingUnaryCallContinuation<TRequest, TResponse> continuation)
+                {
+                    return continuation(request, GetNewContext(context));
+                }
+
+                public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context, AsyncUnaryCallContinuation<TRequest, TResponse> continuation)
+                {
+                    return continuation(request, GetNewContext(context));
+                }
+
+                public override AsyncServerStreamingCall<TResponse> AsyncServerStreamingCall<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context, AsyncServerStreamingCallContinuation<TRequest, TResponse> continuation)
+                {
+                    return continuation(request, GetNewContext(context));
+                }
+
+                public override AsyncClientStreamingCall<TRequest, TResponse> AsyncClientStreamingCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context, AsyncClientStreamingCallContinuation<TRequest, TResponse> continuation)
+                {
+                    return continuation(GetNewContext(context));
+                }
+
+                public override AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse> context, AsyncDuplexStreamingCallContinuation<TRequest, TResponse> continuation)
+                {
+                    return continuation(GetNewContext(context));
+                }
+            }
+
             readonly CallInvoker undecoratedCallInvoker;
             readonly string host;
 
@@ -158,12 +206,12 @@ namespace Grpc.Core
 
             internal CallInvoker CreateDecoratedCallInvoker()
             {
-                return new InterceptingCallInvoker(undecoratedCallInvoker, hostInterceptor: (h) => host);
+                return undecoratedCallInvoker.Intercept(new ClientBaseConfigurationInterceptor((method, host, options) => Tuple.Create(this.host, options)));
             }
 
             internal ClientBaseConfiguration WithHost(string host)
             {
-                GrpcPreconditions.CheckNotNull(host, "host");
+                GrpcPreconditions.CheckNotNull(host, nameof(host));
                 return new ClientBaseConfiguration(this.undecoratedCallInvoker, host);
             }
         }

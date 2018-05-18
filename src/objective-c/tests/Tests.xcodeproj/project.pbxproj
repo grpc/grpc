@@ -14,7 +14,7 @@
 		20DFDF829DD993A4A00D5662 /* libPods-RxLibraryUnitTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = A58BE6DF1C62D1739EBB2C78 /* libPods-RxLibraryUnitTests.a */; };
 		333E8FC01C8285B7C547D799 /* libPods-InteropTestsLocalCleartext.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FD346DB2C23F676C4842F3FF /* libPods-InteropTestsLocalCleartext.a */; };
 		3D7C85F6AA68C4A205E3BA16 /* libPods-Tests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 20DFF2F3C97EF098FE5A3171 /* libPods-Tests.a */; };
-		5E8A5DA71D3840B4000F8BC4 /* CoreCronetEnd2EndTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E8A5DA61D3840B4000F8BC4 /* CoreCronetEnd2EndTests.m */; };
+		5E8A5DA71D3840B4000F8BC4 /* CoreCronetEnd2EndTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5E8A5DA61D3840B4000F8BC4 /* CoreCronetEnd2EndTests.mm */; };
 		5E8A5DA91D3840B4000F8BC4 /* libTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 635697C71B14FC11007A7283 /* libTests.a */; };
 		5EAD6D271E27047400002378 /* CronetUnitTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 5EAD6D261E27047400002378 /* CronetUnitTests.m */; };
 		5EAD6D291E27047400002378 /* libTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 635697C71B14FC11007A7283 /* libTests.a */; };
@@ -140,7 +140,7 @@
 		573450F334B331D0BED8B961 /* Pods-CoreCronetEnd2EndTests.cronet.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CoreCronetEnd2EndTests.cronet.xcconfig"; path = "Pods/Target Support Files/Pods-CoreCronetEnd2EndTests/Pods-CoreCronetEnd2EndTests.cronet.xcconfig"; sourceTree = "<group>"; };
 		5761E98978DDDF136A58CB7E /* Pods-AllTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AllTests.release.xcconfig"; path = "Pods/Target Support Files/Pods-AllTests/Pods-AllTests.release.xcconfig"; sourceTree = "<group>"; };
 		5E8A5DA41D3840B4000F8BC4 /* CoreCronetEnd2EndTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CoreCronetEnd2EndTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		5E8A5DA61D3840B4000F8BC4 /* CoreCronetEnd2EndTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CoreCronetEnd2EndTests.m; sourceTree = "<group>"; };
+		5E8A5DA61D3840B4000F8BC4 /* CoreCronetEnd2EndTests.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = CoreCronetEnd2EndTests.mm; sourceTree = "<group>"; };
 		5EAD6D241E27047400002378 /* CronetUnitTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CronetUnitTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5EAD6D261E27047400002378 /* CronetUnitTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CronetUnitTests.m; sourceTree = "<group>"; };
 		5EAD6D281E27047400002378 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -343,7 +343,7 @@
 		5E8A5DA51D3840B4000F8BC4 /* CoreCronetEnd2EndTests */ = {
 			isa = PBXGroup;
 			children = (
-				5E8A5DA61D3840B4000F8BC4 /* CoreCronetEnd2EndTests.m */,
+				5E8A5DA61D3840B4000F8BC4 /* CoreCronetEnd2EndTests.mm */,
 			);
 			path = CoreCronetEnd2EndTests;
 			sourceTree = "<group>";
@@ -743,11 +743,11 @@
 			);
 			inputPaths = (
 				"${SRCROOT}/Pods/Target Support Files/Pods-CronetUnitTests/Pods-CronetUnitTests-resources.sh",
-				$PODS_CONFIGURATION_BUILD_DIR/gRPC/gRPCCertificates.bundle,
+				"${PODS_CONFIGURATION_BUILD_DIR}/gRPC/gRPCCertificates.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
 			outputPaths = (
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/gRPCCertificates.bundle",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -845,11 +845,11 @@
 			);
 			inputPaths = (
 				"${SRCROOT}/Pods/Target Support Files/Pods-InteropTestsLocalSSL/Pods-InteropTestsLocalSSL-resources.sh",
-				$PODS_CONFIGURATION_BUILD_DIR/gRPC/gRPCCertificates.bundle,
+				"${PODS_CONFIGURATION_BUILD_DIR}/gRPC/gRPCCertificates.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
 			outputPaths = (
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/gRPCCertificates.bundle",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -863,11 +863,11 @@
 			);
 			inputPaths = (
 				"${SRCROOT}/Pods/Target Support Files/Pods-CoreCronetEnd2EndTests/Pods-CoreCronetEnd2EndTests-resources.sh",
-				$PODS_CONFIGURATION_BUILD_DIR/gRPC/gRPCCertificates.bundle,
+				"${PODS_CONFIGURATION_BUILD_DIR}/gRPC/gRPCCertificates.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
 			outputPaths = (
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/gRPCCertificates.bundle",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -935,11 +935,11 @@
 			);
 			inputPaths = (
 				"${SRCROOT}/Pods/Target Support Files/Pods-InteropTestsLocalCleartext/Pods-InteropTestsLocalCleartext-resources.sh",
-				$PODS_CONFIGURATION_BUILD_DIR/gRPC/gRPCCertificates.bundle,
+				"${PODS_CONFIGURATION_BUILD_DIR}/gRPC/gRPCCertificates.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
 			outputPaths = (
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/gRPCCertificates.bundle",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -986,11 +986,11 @@
 			);
 			inputPaths = (
 				"${SRCROOT}/Pods/Target Support Files/Pods-AllTests/Pods-AllTests-resources.sh",
-				$PODS_CONFIGURATION_BUILD_DIR/gRPC/gRPCCertificates.bundle,
+				"${PODS_CONFIGURATION_BUILD_DIR}/gRPC/gRPCCertificates.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
 			outputPaths = (
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/gRPCCertificates.bundle",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -1037,11 +1037,11 @@
 			);
 			inputPaths = (
 				"${SRCROOT}/Pods/Target Support Files/Pods-Tests/Pods-Tests-resources.sh",
-				$PODS_CONFIGURATION_BUILD_DIR/gRPC/gRPCCertificates.bundle,
+				"${PODS_CONFIGURATION_BUILD_DIR}/gRPC/gRPCCertificates.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
 			outputPaths = (
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/gRPCCertificates.bundle",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -1091,11 +1091,11 @@
 			);
 			inputPaths = (
 				"${SRCROOT}/Pods/Target Support Files/Pods-InteropTestsRemote/Pods-InteropTestsRemote-resources.sh",
-				$PODS_CONFIGURATION_BUILD_DIR/gRPC/gRPCCertificates.bundle,
+				"${PODS_CONFIGURATION_BUILD_DIR}/gRPC/gRPCCertificates.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
 			outputPaths = (
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/gRPCCertificates.bundle",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -1124,11 +1124,11 @@
 			);
 			inputPaths = (
 				"${SRCROOT}/Pods/Target Support Files/Pods-RxLibraryUnitTests/Pods-RxLibraryUnitTests-resources.sh",
-				$PODS_CONFIGURATION_BUILD_DIR/gRPC/gRPCCertificates.bundle,
+				"${PODS_CONFIGURATION_BUILD_DIR}/gRPC/gRPCCertificates.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
 			outputPaths = (
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/gRPCCertificates.bundle",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -1142,11 +1142,11 @@
 			);
 			inputPaths = (
 				"${SRCROOT}/Pods/Target Support Files/Pods-InteropTestsRemoteWithCronet/Pods-InteropTestsRemoteWithCronet-resources.sh",
-				$PODS_CONFIGURATION_BUILD_DIR/gRPC/gRPCCertificates.bundle,
+				"${PODS_CONFIGURATION_BUILD_DIR}/gRPC/gRPCCertificates.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
 			outputPaths = (
-				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/gRPCCertificates.bundle",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -1196,7 +1196,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5E8A5DA71D3840B4000F8BC4 /* CoreCronetEnd2EndTests.m in Sources */,
+				5E8A5DA71D3840B4000F8BC4 /* CoreCronetEnd2EndTests.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1518,6 +1518,7 @@
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_TESTABILITY = YES;
+				GCC_INPUT_FILETYPE = sourcecode.cpp.objcpp;
 				INFOPLIST_FILE = CronetUnitTests/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
@@ -1538,6 +1539,18 @@
 				INFOPLIST_FILE = CoreCronetEnd2EndTests/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"${PODS_CONFIGURATION_BUILD_DIR}/BoringSSL\"",
+					"\"${PODS_CONFIGURATION_BUILD_DIR}/Protobuf\"",
+					"\"${PODS_CONFIGURATION_BUILD_DIR}/RemoteTest\"",
+					"\"${PODS_CONFIGURATION_BUILD_DIR}/gRPC\"",
+					"\"${PODS_CONFIGURATION_BUILD_DIR}/gRPC-Core-072e2d32\"",
+					"\"${PODS_CONFIGURATION_BUILD_DIR}/gRPC-ProtoRPC\"",
+					"\"${PODS_CONFIGURATION_BUILD_DIR}/gRPC-RxLibrary\"",
+					"\"${PODS_CONFIGURATION_BUILD_DIR}/nanopb\"",
+					"\"${PODS_CONFIGURATION_BUILD_DIR}/gRPC-Core\"",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = io.grpc.CoreCronetEnd2EndTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				USER_HEADER_SEARCH_PATHS = "$(inherited) \"${PODS_ROOT}/../../../..\"";
@@ -1567,6 +1580,7 @@
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_TESTABILITY = YES;
+				GCC_INPUT_FILETYPE = sourcecode.cpp.objcpp;
 				INFOPLIST_FILE = CronetUnitTests/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
@@ -1582,6 +1596,7 @@
 			buildSettings = {
 				CLANG_ANALYZER_NONNULL = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				GCC_INPUT_FILETYPE = sourcecode.cpp.objcpp;
 				INFOPLIST_FILE = CronetUnitTests/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
@@ -1597,6 +1612,7 @@
 			buildSettings = {
 				CLANG_ANALYZER_NONNULL = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				GCC_INPUT_FILETYPE = sourcecode.cpp.objcpp;
 				INFOPLIST_FILE = CronetUnitTests/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";

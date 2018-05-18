@@ -19,13 +19,14 @@
 #ifndef GRPC_CORE_LIB_IOMGR_POLLSET_WINDOWS_H
 #define GRPC_CORE_LIB_IOMGR_POLLSET_WINDOWS_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/iomgr/socket_windows.h"
+#include "src/core/lib/iomgr/port.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#ifdef GRPC_WINSOCK_SOCKET
+#include "src/core/lib/iomgr/socket_windows.h"
 
 /* There isn't really any such thing as a pollset under Windows, due to the
    nature of the IO completion ports. A Windows "pollset" is merely a mutex
@@ -39,8 +40,8 @@ typedef enum {
 } grpc_pollset_worker_link_type;
 
 typedef struct grpc_pollset_worker_link {
-  struct grpc_pollset_worker *next;
-  struct grpc_pollset_worker *prev;
+  struct grpc_pollset_worker* next;
+  struct grpc_pollset_worker* prev;
 } grpc_pollset_worker_link;
 
 struct grpc_pollset;
@@ -49,7 +50,7 @@ typedef struct grpc_pollset grpc_pollset;
 typedef struct grpc_pollset_worker {
   gpr_cv cv;
   int kicked;
-  struct grpc_pollset *pollset;
+  struct grpc_pollset* pollset;
   grpc_pollset_worker_link links[GRPC_POLLSET_WORKER_LINK_TYPES];
 } grpc_pollset_worker;
 
@@ -58,14 +59,12 @@ struct grpc_pollset {
   int kicked_without_pollers;
   int is_iocp_worker;
   grpc_pollset_worker root_worker;
-  grpc_closure *on_shutdown;
+  grpc_closure* on_shutdown;
 };
 
 void grpc_pollset_global_init(void);
 void grpc_pollset_global_shutdown(void);
 
-#ifdef __cplusplus
-}
 #endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_POLLSET_WINDOWS_H */

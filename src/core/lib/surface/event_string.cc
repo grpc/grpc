@@ -16,33 +16,35 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/surface/event_string.h"
 
 #include <stdio.h>
 
 #include <grpc/byte_buffer.h>
 #include <grpc/support/string_util.h>
-#include "src/core/lib/support/string.h"
+#include "src/core/lib/gpr/string.h"
 
-static void addhdr(gpr_strvec *buf, grpc_event *ev) {
-  char *tmp;
+static void addhdr(gpr_strvec* buf, grpc_event* ev) {
+  char* tmp;
   gpr_asprintf(&tmp, "tag:%p", ev->tag);
   gpr_strvec_add(buf, tmp);
 }
 
-static const char *errstr(int success) { return success ? "OK" : "ERROR"; }
+static const char* errstr(int success) { return success ? "OK" : "ERROR"; }
 
-static void adderr(gpr_strvec *buf, int success) {
-  char *tmp;
+static void adderr(gpr_strvec* buf, int success) {
+  char* tmp;
   gpr_asprintf(&tmp, " %s", errstr(success));
   gpr_strvec_add(buf, tmp);
 }
 
-char *grpc_event_string(grpc_event *ev) {
-  char *out;
+char* grpc_event_string(grpc_event* ev) {
+  char* out;
   gpr_strvec buf;
 
-  if (ev == NULL) return gpr_strdup("null");
+  if (ev == nullptr) return gpr_strdup("null");
 
   gpr_strvec_init(&buf);
 
@@ -60,7 +62,7 @@ char *grpc_event_string(grpc_event *ev) {
       break;
   }
 
-  out = gpr_strvec_flatten(&buf, NULL);
+  out = gpr_strvec_flatten(&buf, nullptr);
   gpr_strvec_destroy(&buf);
   return out;
 }

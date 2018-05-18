@@ -25,7 +25,7 @@
 // in turn derived from environment variable of the same name.
 #define NSStringize_helper(x) #x
 #define NSStringize(x) @NSStringize_helper(x)
-static NSString * const kRemoteSSLHost = NSStringize(HOST_PORT_REMOTE);
+static NSString *const kRemoteSSLHost = NSStringize(HOST_PORT_REMOTE);
 
 // The Protocol Buffers encoding overhead of remote interop server. Acquired
 // by experiment. Adjust this when server's proto file changes.
@@ -42,7 +42,7 @@ static int32_t kRemoteInteropServerOverhead = 12;
 }
 
 - (int32_t)encodingOverhead {
-  return kRemoteInteropServerOverhead; // bytes
+  return kRemoteInteropServerOverhead;  // bytes
 }
 
 @end

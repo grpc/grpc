@@ -17,16 +17,10 @@
 #ifndef GRPC_CORE_EXT_FILTERS_MAX_AGE_MAX_AGE_FILTER_H
 #define GRPC_CORE_EXT_FILTERS_MAX_AGE_MAX_AGE_FILTER_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/channel/channel_stack.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 extern const grpc_channel_filter grpc_max_age_filter;
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_EXT_FILTERS_MAX_AGE_MAX_AGE_FILTER_H */

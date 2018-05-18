@@ -29,11 +29,6 @@ extern "C" {
  * algorithm */
 #define GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY \
   "grpc-internal-encoding-request"
-/** To be used as initial metadata key for the request of a concrete stream
- * compression
- * algorithm */
-#define GRPC_STREAM_COMPRESSION_REQUEST_ALGORITHM_MD_KEY \
-  "grpc-internal-stream-encoding-request"
 
 /** To be used in channel arguments.
  *
@@ -43,17 +38,9 @@ extern "C" {
  * Its value is an int from the \a grpc_compression_algorithm enum. */
 #define GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM \
   "grpc.default_compression_algorithm"
-/** Default stream compression algorithm for the channel.
- * Its value is an int from the \a grpc_stream_compression_algorithm enum. */
-#define GRPC_STREAM_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM \
-  "grpc.default_stream_compression_algorithm"
 /** Default compression level for the channel.
  * Its value is an int from the \a grpc_compression_level enum. */
 #define GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL "grpc.default_compression_level"
-/** Default stream compression level for the channel.
- * Its value is an int from the \a grpc_stream_compression_level enum. */
-#define GRPC_STREAM_COMPRESSION_CHANNEL_DEFAULT_LEVEL \
-  "grpc.default_stream_compression_level"
 /** Compression algorithms supported by the channel.
  * Its value is a bitset (an int). Bits correspond to algorithms in \a
  * grpc_compression_algorithm. For example, its LSB corresponds to
@@ -63,15 +50,6 @@ extern "C" {
  * be ignored). */
 #define GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET \
   "grpc.compression_enabled_algorithms_bitset"
-/** Stream compression algorithms supported by the channel.
- * Its value is a bitset (an int). Bits correspond to algorithms in \a
- * grpc_stream_compression_algorithm. For example, its LSB corresponds to
- * GRPC_STREAM_COMPRESS_NONE, the next bit to GRPC_STREAM_COMPRESS_DEFLATE, etc.
- * Unset bits disable support for the algorithm. By default all algorithms are
- * supported. It's not possible to disable GRPC_STREAM_COMPRESS_NONE (the
- * attempt will be ignored). */
-#define GRPC_STREAM_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET \
-  "grpc.stream_compression_enabled_algorithms_bitset"
 /** \} */
 
 /** The various compression algorithms supported by gRPC */
@@ -79,16 +57,11 @@ typedef enum {
   GRPC_COMPRESS_NONE = 0,
   GRPC_COMPRESS_DEFLATE,
   GRPC_COMPRESS_GZIP,
+  /* EXPERIMENTAL: Stream compression is currently experimental. */
+  GRPC_COMPRESS_STREAM_GZIP,
   /* TODO(ctiller): snappy */
   GRPC_COMPRESS_ALGORITHMS_COUNT
 } grpc_compression_algorithm;
-
-/** Stream compresssion algorithms supported by gRPC */
-typedef enum {
-  GRPC_STREAM_COMPRESS_NONE = 0,
-  GRPC_STREAM_COMPRESS_GZIP,
-  GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT
-} grpc_stream_compression_algorithm;
 
 /** Compression levels allow a party with knowledge of its peer's accepted
  * encodings to request compression in an abstract way. The level-algorithm
@@ -102,40 +75,21 @@ typedef enum {
   GRPC_COMPRESS_LEVEL_COUNT
 } grpc_compression_level;
 
-/** Compression levels for stream compression algorithms */
-typedef enum {
-  GRPC_STREAM_COMPRESS_LEVEL_NONE = 0,
-  GRPC_STREAM_COMPRESS_LEVEL_LOW,
-  GRPC_STREAM_COMPRESS_LEVEL_MED,
-  GRPC_STREAM_COMPRESS_LEVEL_HIGH,
-  GRPC_STREAM_COMPRESS_LEVEL_COUNT
-} grpc_stream_compression_level;
-
 typedef struct grpc_compression_options {
   /** All algs are enabled by default. This option corresponds to the channel
    * argument key behind \a GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET
    */
   uint32_t enabled_algorithms_bitset;
-  uint32_t enabled_stream_compression_algorithms_bitset;
 
-  /** The default message-wise compression level. It'll be used in the absence
-   * of * call specific settings. This option corresponds to the channel
+  /** The default compression level. It'll be used in the absence of call
+   * specific settings. This option corresponds to the channel
    * argument key behind \a GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL. If present,
-   * takes precedence over \a default_algorithm and \a
-   * default_stream_compression_algorithm.
+   * takes precedence over \a default_algorithm.
    * TODO(dgq): currently only available for server channels. */
   struct grpc_compression_options_default_level {
     int is_set;
     grpc_compression_level level;
   } default_level;
-
-  /** The default stream compression level. It'll be used in the absence of call
-   * specefic settings. If present, takes precedence over \a default_level,
-   * \a default_algorithm and \a default_stream_compression_algorithm. */
-  struct grpc_stream_compression_options_default_level {
-    int is_set;
-    grpc_stream_compression_level level;
-  } default_stream_compression_level;
 
   /** The default message compression algorithm. It'll be used in the absence of
    * call specific settings. This option corresponds to the channel argument key
@@ -144,17 +98,6 @@ typedef struct grpc_compression_options {
     int is_set;
     grpc_compression_algorithm algorithm;
   } default_algorithm;
-
-  /** The default stream compression algorithm. It'll be used in the absence of
-   * call specific settings. If present, takes precedence over \a
-   * default_algorithm. This option corresponds to the channel
-   * argument key behind \a GRPC_STREAM_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM.
-   */
-  struct grpc_stream_compression_options_default_algorithm {
-    int is_set;
-    grpc_stream_compression_algorithm algorithm;
-  } default_stream_compression_algorithm;
-
 } grpc_compression_options;
 
 #ifdef __cplusplus

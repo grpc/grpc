@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/grpc.h>
 
 #include <grpc/support/log.h>
@@ -25,20 +27,19 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
 
-int grpc_server_add_insecure_http2_port(grpc_server *server, const char *addr) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+int grpc_server_add_insecure_http2_port(grpc_server* server, const char* addr) {
+  grpc_core::ExecCtx exec_ctx;
   int port_num = 0;
   GRPC_API_TRACE("grpc_server_add_insecure_http2_port(server=%p, addr=%s)", 2,
                  (server, addr));
-  grpc_error *err = grpc_chttp2_server_add_port(
-      &exec_ctx, server, addr,
+  grpc_error* err = grpc_chttp2_server_add_port(
+      server, addr,
       grpc_channel_args_copy(grpc_server_get_channel_args(server)), &port_num);
   if (err != GRPC_ERROR_NONE) {
-    const char *msg = grpc_error_string(err);
+    const char* msg = grpc_error_string(err);
     gpr_log(GPR_ERROR, "%s", msg);
 
     GRPC_ERROR_UNREF(err);
   }
-  grpc_exec_ctx_finish(&exec_ctx);
   return port_num;
 }

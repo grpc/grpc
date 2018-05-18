@@ -16,17 +16,20 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/transport/metadata.h"
 
-extern "C" void grpc_chttp2_plugin_init(void) {
-  grpc_register_tracer(&grpc_http_trace);
-  grpc_register_tracer(&grpc_flowctl_trace);
-  grpc_register_tracer(&grpc_trace_http2_stream_state);
-#ifndef NDEBUG
-  grpc_register_tracer(&grpc_trace_chttp2_refcount);
-#endif
+void grpc_chttp2_plugin_init(void) {
+  g_flow_control_enabled = true;
+  char* env_variable = gpr_getenv("GRPC_EXPERIMENTAL_DISABLE_FLOW_CONTROL");
+  if (env_variable != nullptr) {
+    g_flow_control_enabled = false;
+    gpr_free(env_variable);
+  }
 }
 
-extern "C" void grpc_chttp2_plugin_shutdown(void) {}
+void grpc_chttp2_plugin_shutdown(void) {}

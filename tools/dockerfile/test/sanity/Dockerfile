@@ -64,9 +64,13 @@ RUN apt-get update && apt-get install -y \
     python-pip
 
 # Install Python packages from PyPI
-RUN pip install --upgrade pip==9.0.1
+RUN pip install --upgrade pip==10.0.1
 RUN pip install virtualenv
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.2.0 six==1.10.0 twisted==17.5.0
+RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 twisted==17.5.0
+
+#=================
+# C++ dependencies
+RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
 
 #========================
 # Sanity test dependencies
@@ -77,7 +81,8 @@ RUN apt-get update && apt-get install -y \
       libtool \
       curl \
       python-virtualenv \
-      python-lxml
+      python-lxml \
+      shellcheck
 RUN pip install simplejson mako
 
 #======================================
@@ -93,18 +98,20 @@ RUN curl https://bazel.build/bazel-release.pub.gpg | apt-key add -
 RUN apt-get -y update
 RUN apt-get -y install bazel
 
-# Pin Bazel to 0.4.4
-# Installing Bazel via apt-get first is required before installing 0.4.4 to
+# Pin Bazel to 0.9.0
+# Installing Bazel via apt-get first is required before installing 0.9.0 to
 # allow gRPC to build without errors. See https://github.com/grpc/grpc/issues/10553
-RUN curl -fSsL -O https://github.com/bazelbuild/bazel/releases/download/0.4.4/bazel-0.4.4-installer-linux-x86_64.sh
-RUN chmod +x ./bazel-0.4.4-installer-linux-x86_64.sh
-RUN ./bazel-0.4.4-installer-linux-x86_64.sh
+RUN curl -fSsL -O https://github.com/bazelbuild/bazel/releases/download/0.9.0/bazel-0.9.0-installer-linux-x86_64.sh
+RUN chmod +x ./bazel-0.9.0-installer-linux-x86_64.sh
+RUN ./bazel-0.9.0-installer-linux-x86_64.sh
 
-RUN apt-get update && apt-get -y install wget
-RUN echo "deb http://llvm.org/apt/jessie/ llvm-toolchain-jessie-3.8 main" >> /etc/apt/sources.list
-RUN echo "deb-src http://llvm.org/apt/jessie/ llvm-toolchain-jessie-3.8 main" >> /etc/apt/sources.list
-RUN wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key | apt-key add -
-RUN apt-get update && apt-get -y install clang-format-3.8
+RUN apt-get update && apt-get -y install wget xz-utils
+RUN wget http://releases.llvm.org/5.0.0/clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz
+RUN tar xf clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz
+RUN ln -s /clang+llvm-5.0.0-linux-x86_64-ubuntu14.04/bin/clang-format /usr/local/bin/clang-format
+ENV CLANG_FORMAT=clang-format
+RUN ln -s /clang+llvm-5.0.0-linux-x86_64-ubuntu14.04/bin/clang-tidy /usr/local/bin/clang-tidy
+ENV CLANG_TIDY=clang-tidy
 
 # Prepare ccache
 RUN ln -s /usr/bin/ccache /usr/local/bin/gcc

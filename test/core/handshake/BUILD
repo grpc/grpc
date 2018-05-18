@@ -20,8 +20,8 @@ licenses(["notice"])  # Apache v2
 
 grpc_cc_test(
     name = "client_ssl",
-    srcs = ["client_ssl.c"],
-    language = "C",
+    srcs = ["client_ssl.cc"],
+    language = "C++",
     data = [
         "//src/core/tsi/test_creds:ca.pem",
         "//src/core/tsi/test_creds:server1.key",
@@ -35,16 +35,47 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_library(
+    name = "server_ssl_common",
+    hdrs = ["server_ssl_common.h"],
+    srcs = ["server_ssl_common.cc"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
 grpc_cc_test(
     name = "server_ssl",
-    srcs = ["server_ssl.c"],
-    language = "C",
+    srcs = ["server_ssl.cc"],
+    language = "C++",
     data = [
         "//src/core/tsi/test_creds:ca.pem",
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
     ],
     deps = [
+        ":server_ssl_common",
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "handshake_server_with_readahead_handshaker",
+    srcs = ["readahead_handshaker_server_ssl.cc"],
+    language = "C++",
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
+    deps = [
+        ":server_ssl_common",
         "//:gpr",
         "//:grpc",
         "//test/core/util:gpr_test_util",

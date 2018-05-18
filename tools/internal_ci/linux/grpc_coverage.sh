@@ -21,10 +21,9 @@ cd $(dirname $0)/../../..
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
 python tools/run_tests/run_tests.py \
-  --use_docker				        \
+  --use_docker                      \
   -t                                \
   -l all                            \
   -c gcov                           \
-  -x report.xml                     \
+  -x sponge_log.xml                 \
   -j 16
-  

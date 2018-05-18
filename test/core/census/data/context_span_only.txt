@@ -1,2 +1,0 @@
-span_id : 7
-span_options : 1

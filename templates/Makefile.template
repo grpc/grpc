@@ -215,11 +215,13 @@
   ifeq ($(SYSTEM),Darwin)
   CXXFLAGS += -stdlib=libc++
   endif
-  % for arg in ['CFLAGS', 'CXXFLAGS', 'CPPFLAGS', 'LDFLAGS', 'DEFINES']:
+  % for arg in ['CFLAGS', 'CXXFLAGS', 'CPPFLAGS', 'COREFLAGS', 'LDFLAGS', 'DEFINES']:
   %  if defaults.get('global', []).get(arg, None) is not None:
   ${arg} += ${defaults.get('global').get(arg)}
   %  endif
   % endfor
+
+  DEFINES += PB_FIELD_16BIT
 
   CPPFLAGS += $(CPPFLAGS_$(CONFIG))
   CFLAGS += $(CFLAGS_$(CONFIG))
@@ -414,7 +416,7 @@
   OPENSSL_ALPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.2 openssl
   OPENSSL_NPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.1 openssl
   ZLIB_CHECK_CMD = $(PKG_CONFIG) --exists zlib
-  PROTOBUF_CHECK_CMD = $(PKG_CONFIG) --atleast-version=3.0.0 protobuf
+  PROTOBUF_CHECK_CMD = $(PKG_CONFIG) --atleast-version=3.5.0 protobuf
   CARES_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.11.0 libcares
   else # HAS_PKG_CONFIG
 
@@ -563,7 +565,6 @@
   ZLIB_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libz.a
   ZLIB_MERGE_OBJS = $(LIBZ_OBJS)
   CPPFLAGS += -Ithird_party/zlib
-  LDFLAGS += -L$(LIBDIR)/$(CONFIG)/zlib
   else
   ifeq ($(HAS_PKG_CONFIG),true)
   CPPFLAGS += $(shell $(PKG_CONFIG) --cflags zlib)
@@ -589,12 +590,16 @@
   EMBED_CARES ?= false
   endif
 
+  ADDRESS_SORTING_DEP = $(LIBDIR)/$(CONFIG)/libaddress_sorting.a
+  ADDRESS_SORTING_MERGE_OBJS = $(LIBADDRESS_SORTING_OBJS)
+  ADDRESS_SORTING_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libaddress_sorting.a
+  CPPFLAGS := -Ithird_party/address_sorting/include $(CPPFLAGS)
+
   ifeq ($(EMBED_CARES),true)
   CARES_DEP = $(LIBDIR)/$(CONFIG)/libares.a
   CARES_MERGE_OBJS = $(LIBARES_OBJS)
   CARES_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libares.a
   CPPFLAGS := -Ithird_party/cares -Ithird_party/cares/cares $(CPPFLAGS)
-  LDFLAGS := -L$(LIBDIR)/$(CONFIG)/c-ares $(LDFLAGS)
   else
   ifeq ($(HAS_PKG_CONFIG),true)
   PC_REQUIRES_GRPC += libcares
@@ -839,7 +844,7 @@
   	@echo
   	@echo "DEPENDENCY ERROR"
   	@echo
-  	@echo "The target you are trying to run requires protobuf 3.0.0+"
+  	@echo "The target you are trying to run requires protobuf 3.5.0+"
   	@echo "Your system doesn't have it, and neither does the third_party directory."
   	@echo
   	@echo "Please consult INSTALL to get more information."
@@ -853,7 +858,7 @@
   	@echo
   	@echo "DEPENDENCY ERROR"
   	@echo
-  	@echo "The target you are trying to run requires protobuf-compiler 3.0.0+"
+  	@echo "The target you are trying to run requires protobuf-compiler 3.5.0+"
   	@echo "Your system doesn't have it, and neither does the third_party directory."
   	@echo
   	@echo "Please consult INSTALL to get more information."
@@ -896,10 +901,10 @@
 
   $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
   	$(E) "[MAKE]    Building protobuf"
+  	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/protobuf
   	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g $(PROTOBUF_LDFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g $(PROTOBUF_CPPFLAGS_EXTRA)" ./configure --disable-shared --enable-static $(PROTOBUF_CONFIG_OPTS))
   	$(Q)$(MAKE) -C third_party/protobuf clean
   	$(Q)$(MAKE) -C third_party/protobuf
-  	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/protobuf
   	$(Q)mkdir -p $(BINDIR)/$(CONFIG)/protobuf
   	$(Q)cp third_party/protobuf/src/.libs/libprotoc.a $(LIBDIR)/$(CONFIG)/protobuf
   	$(Q)cp third_party/protobuf/src/.libs/libprotobuf.a $(LIBDIR)/$(CONFIG)/protobuf
@@ -1268,6 +1273,16 @@
   	$(Q) mkdir -p `dirname $@`
   	$(Q) $(HOST_CXX) $(HOST_CXXFLAGS) $(HOST_CPPFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
+  $(OBJDIR)/$(CONFIG)/src/core/%.o : src/core/%.cc
+  	$(E) "[CXX]     Compiling $<"
+  	$(Q) mkdir -p `dirname $@`
+  	$(Q) $(CXX) $(CPPFLAGS) $(CXXFLAGS) $(COREFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
+
+  $(OBJDIR)/$(CONFIG)/test/core/%.o : test/core/%.cc
+  	$(E) "[CXX]     Compiling $<"
+  	$(Q) mkdir -p `dirname $@`
+  	$(Q) $(CXX) $(CPPFLAGS) $(CXXFLAGS) $(COREFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
+
   $(OBJDIR)/$(CONFIG)/%.o : %.cc
   	$(E) "[CXX]     Compiling $<"
   	$(Q) mkdir -p `dirname $@`
@@ -1370,17 +1385,22 @@
   % endif
   % endfor
 
+  install-grpc-cli: grpc_cli
+  	$(E) "[INSTALL] Installing grpc cli"
+  	$(Q) $(INSTALL) -d $(prefix)/bin
+  	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_cli $(prefix)/bin/grpc_cli
+
   install-pkg-config_c: pc_c pc_c_unsecure
   	$(E) "[INSTALL] Installing C pkg-config files"
   	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(prefix)/lib/pkgconfig/grpc.pc
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(prefix)/lib/pkgconfig/grpc_unsecure.pc
+  	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(prefix)/lib/pkgconfig/grpc.pc
+  	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(prefix)/lib/pkgconfig/grpc_unsecure.pc
 
   install-pkg-config_cxx: pc_cxx pc_cxx_unsecure
   	$(E) "[INSTALL] Installing C++ pkg-config files"
   	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc $(prefix)/lib/pkgconfig/grpc++.pc
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc $(prefix)/lib/pkgconfig/grpc++_unsecure.pc
+  	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc $(prefix)/lib/pkgconfig/grpc++.pc
+  	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc $(prefix)/lib/pkgconfig/grpc++_unsecure.pc
 
   install-certs: etc/roots.pem
   	$(E) "[INSTALL] Installing root certificates"
@@ -1465,7 +1485,7 @@
   else
   % endif
 
-  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP)\
+  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP)\
   ## The else here corresponds to the if secure earlier.
   % else:
   % if lib.language == 'c++':
@@ -1483,11 +1503,10 @@
 
   % endif
   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: \
-  % if lib.name != 'z':
+  % if lib.name not in ['z', 'ares', 'address_sorting']:
   $(ZLIB_DEP) \
-  % endif
-  % if lib.name != 'ares':
   $(CARES_DEP) \
+  $(ADDRESS_SORTING_DEP) \
   % endif
   % endif
   % if lib.language == 'c++':
@@ -1498,6 +1517,7 @@
    $(LIBGPR_OBJS) \
    $(ZLIB_MERGE_OBJS) \
    $(CARES_MERGE_OBJS) \
+   $(ADDRESS_SORTING_MERGE_OBJS) \
   % if lib.get('secure', 'check') == True:
    $(OPENSSL_MERGE_OBJS) \
   % endif
@@ -1511,6 +1531,7 @@
    $(LIBGPR_OBJS) \
    $(ZLIB_MERGE_OBJS) \
    $(CARES_MERGE_OBJS) \
+   $(ADDRESS_SORTING_MERGE_OBJS) \
   % if lib.get('secure', 'check') == True:
    $(OPENSSL_MERGE_OBJS) \
   % endif
@@ -1533,9 +1554,9 @@
     common = '$(LIB' + lib.name.upper() + '_OBJS)'
 
     link_libs = ''
-    lib_deps = ' $(ZLIB_DEP) $(CARES_DEP)'
+    lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP)'
     mingw_libs = ''
-    mingw_lib_deps = ' $(ZLIB_DEP) $(CARES_DEP)'
+    mingw_lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP)'
     if lib.language == 'c++':
       lib_deps += ' $(PROTOBUF_DEP)'
       mingw_lib_deps += ' $(PROTOBUF_DEP)'
@@ -1560,7 +1581,7 @@
     security = lib.get('secure', 'check')
     if security == True:
       common = common + ' $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE)'
-    common = common + ' $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS)'
+    common = common + ' $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS)'
 
     if security in [True, 'check']:
       for src in lib.src:
@@ -1611,7 +1632,7 @@
   % endif
   % if lib.language == 'c++':
   ## If the lib was C++, we have to close the Makefile's if that tested
-  ## the presence of protobuf 3.0.0+
+  ## the presence of protobuf 3.5.0+
 
   endif
   % endif
@@ -1677,7 +1698,7 @@
 
   ifeq ($(NO_PROTOBUF),true)
 
-  # You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+  # You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
   $(BINDIR)/$(CONFIG)/${tgt.name}: protobuf_dep_error
 

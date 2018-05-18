@@ -16,24 +16,26 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/channel/handshaker_factory.h"
 
 #include <grpc/support/log.h>
 
 void grpc_handshaker_factory_add_handshakers(
-    grpc_exec_ctx *exec_ctx, grpc_handshaker_factory *handshaker_factory,
-    const grpc_channel_args *args, grpc_handshake_manager *handshake_mgr) {
-  if (handshaker_factory != NULL) {
-    GPR_ASSERT(handshaker_factory->vtable != NULL);
-    handshaker_factory->vtable->add_handshakers(exec_ctx, handshaker_factory,
-                                                args, handshake_mgr);
+    grpc_handshaker_factory* handshaker_factory, const grpc_channel_args* args,
+    grpc_handshake_manager* handshake_mgr) {
+  if (handshaker_factory != nullptr) {
+    GPR_ASSERT(handshaker_factory->vtable != nullptr);
+    handshaker_factory->vtable->add_handshakers(handshaker_factory, args,
+                                                handshake_mgr);
   }
 }
 
 void grpc_handshaker_factory_destroy(
-    grpc_exec_ctx *exec_ctx, grpc_handshaker_factory *handshaker_factory) {
-  if (handshaker_factory != NULL) {
-    GPR_ASSERT(handshaker_factory->vtable != NULL);
-    handshaker_factory->vtable->destroy(exec_ctx, handshaker_factory);
+    grpc_handshaker_factory* handshaker_factory) {
+  if (handshaker_factory != nullptr) {
+    GPR_ASSERT(handshaker_factory->vtable != nullptr);
+    handshaker_factory->vtable->destroy(handshaker_factory);
   }
 }
