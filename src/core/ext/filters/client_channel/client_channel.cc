@@ -416,7 +416,7 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
             grpc_uri* uri = grpc_uri_parse(server_uri, true);
             GPR_ASSERT(uri->path[0] != '\0');
             service_config_parsing_state parsing_state;
-            memset(&parsing_state, 0, sizeof(parsing_state));
+            memset(reinterpret_cast<void *>(&parsing_state), 0, sizeof(parsing_state));
             parsing_state.server_name =
                 uri->path[0] == '/' ? uri->path + 1 : uri->path;
             service_config->ParseGlobalParams(parse_retry_throttle_params,

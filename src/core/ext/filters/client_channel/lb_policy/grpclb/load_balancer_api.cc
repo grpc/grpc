@@ -68,7 +68,8 @@ grpc_grpclb_request* grpc_grpclb_request_create(const char* lb_service_name) {
   req->has_initial_request = true;
   req->initial_request.has_name = true;
   strncpy(req->initial_request.name, lb_service_name,
-          GRPC_GRPCLB_SERVICE_NAME_MAX_LENGTH);
+          GRPC_GRPCLB_SERVICE_NAME_MAX_LENGTH-1);
+  req->initial_request.name[GRPC_GRPCLB_SERVICE_NAME_MAX_LENGTH] = '\0';
   return req;
 }
 
