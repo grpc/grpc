@@ -91,7 +91,9 @@ grpc_json* add_num_str(grpc_json* parent, grpc_json* it, const char* name,
 
 }  // namespace
 
-Channel::Channel(grpc_channel* channel) : channel_(channel) {
+Channel::Channel(grpc_channel* channel, size_t channel_tracer_max_nodes)
+    : channel_(channel) {
+  trace_.Init(channel_tracer_max_nodes);
   target_ = grpc_channel_get_target(channel_);
   channel_uuid_ = ChannelzRegistry::Register(this);
 }
@@ -103,8 +105,8 @@ Channel::~Channel() {
 
 void Channel::CallStarted() {
   calls_started_++;
-  last_call_started_timestamp_ = grpc_millis_to_timespec(
-      grpc_core::ExecCtx::Get()->Now(), GPR_CLOCK_REALTIME);
+  last_call_started_timestamp_ =
+      grpc_millis_to_timespec(ExecCtx::Get()->Now(), GPR_CLOCK_REALTIME);
 }
 
 grpc_connectivity_state Channel::GetConnectivityState() {
@@ -153,6 +155,11 @@ char* Channel::RenderJSON() {
       grpc_json_create_child(json_iterator, json, "state",
                              grpc_connectivity_state_name(connectivity_state),
                              GRPC_JSON_STRING, false);
+  char* trace = trace_->RenderTrace();
+  if (trace != nullptr) {
+    json_iterator = grpc_json_create_child(json_iterator, json, "trace", trace,
+                                           GRPC_JSON_STRING, true);
+  }
 
   // render and return the over json object
   char* json_str = grpc_json_dump_to_string(top_level_json, 0);

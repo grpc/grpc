@@ -67,7 +67,6 @@ struct grpc_channel {
   gpr_mu registered_call_mu;
   registered_call* registered_calls;
 
-  grpc_core::RefCountedPtr<grpc_core::ChannelTrace> tracer;
   grpc_core::RefCountedPtr<grpc_core::channelz::Channel> channelz_channel;
 
   char* target;
@@ -147,13 +146,13 @@ grpc_channel* grpc_channel_create_with_builder(
   }
 
   grpc_channel_args_destroy(args);
-  channel->tracer = grpc_core::MakeRefCounted<grpc_core::ChannelTrace>(
-      channel_tracer_max_nodes);
-  channel->tracer->AddTraceEvent(
-      grpc_core::ChannelTrace::Severity::Info,
-      grpc_slice_from_static_string("Channel created"));
+  channel_tracer_max_nodes = 10;
   channel->channelz_channel =
-      grpc_core::MakeRefCounted<grpc_core::channelz::Channel>(channel);
+      grpc_core::MakeRefCounted<grpc_core::channelz::Channel>(
+          channel, channel_tracer_max_nodes);
+  channel->channelz_channel->Trace()->AddTraceEvent(
+      grpc_core::channelz::ChannelTrace::Severity::Info,
+      grpc_slice_from_static_string("Channel created"));
   return channel;
 }
 
@@ -189,7 +188,7 @@ static grpc_channel_args* build_channel_args(
 }
 
 char* grpc_channel_get_trace(grpc_channel* channel) {
-  return channel->tracer->RenderTrace();
+  return channel->channelz_channel->Trace()->RenderTrace();
 }
 
 char* grpc_channel_render_channelz(grpc_channel* channel) {
@@ -202,7 +201,7 @@ grpc_core::channelz::Channel* grpc_channel_get_channelz_channel(
 }
 
 intptr_t grpc_channel_get_uuid(grpc_channel* channel) {
-  return channel->tracer->GetUuid();
+  return channel->channelz_channel->Trace()->GetUuid();
 }
 
 grpc_channel* grpc_channel_create(const char* target,
@@ -416,7 +415,7 @@ static void destroy_channel(void* arg, grpc_error* error) {
     GRPC_MDELEM_UNREF(rc->authority);
     gpr_free(rc);
   }
-  channel->tracer.reset();
+  channel->channelz_channel.reset();
   gpr_mu_destroy(&channel->registered_call_mu);
   gpr_free(channel->target);
   gpr_free(channel);

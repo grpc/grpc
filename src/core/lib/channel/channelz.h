@@ -24,6 +24,8 @@
 #include <grpc/grpc.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/lib/channel/channel_trace.h"
+#include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
@@ -35,7 +37,7 @@ namespace channelz {
 // owned by the client_channel that it points to and tracks
 class Channel : public RefCounted<Channel> {
  public:
-  Channel(grpc_channel* channel);
+  Channel(grpc_channel* channel, size_t channel_tracer_max_nodes);
   ~Channel();
 
   void CallStarted();
@@ -44,10 +46,14 @@ class Channel : public RefCounted<Channel> {
 
   char* RenderJSON();
 
+  ChannelTrace* Trace() { return trace_.get(); }
+
   void set_channel_destroyed() {
     GPR_ASSERT(!channel_destroyed_);
     channel_destroyed_ = true;
   }
+
+  intptr_t channel_uuid() { return channel_uuid_; }
 
  private:
   bool channel_destroyed_ = false;
@@ -58,6 +64,7 @@ class Channel : public RefCounted<Channel> {
   uint64_t calls_failed_ = 0;
   gpr_timespec last_call_started_timestamp_;
   intptr_t channel_uuid_;
+  ManualConstructor<ChannelTrace> trace_;
 
   grpc_connectivity_state GetConnectivityState();
 };
