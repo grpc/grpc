@@ -64,8 +64,7 @@ void GrpcLbClientStats::AddCallDroppedLocked(char* token) {
 namespace {
 
 void AtomicGetAndResetCounter(int64_t* value, gpr_atm* counter) {
-  *value = static_cast<int64_t>(gpr_atm_acq_load(counter));
-  gpr_atm_full_fetch_add(counter, (gpr_atm)(-*value));
+  *value = static_cast<int64_t>(gpr_atm_full_xchg(counter, (gpr_atm)0));
 }
 
 }  // namespace
