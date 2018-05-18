@@ -67,6 +67,9 @@
 
 #define MAX_SEND_EXTRA_METADATA_COUNT 3
 
+// Used to create arena for the first call.
+#define ESTIMATED_MDELEM_COUNT 16
+
 /* Status data for a request can come from several sources; this
    enumerates them all, and acts as a priority sorting for which
    status to return to the application - earlier entries override
@@ -321,6 +324,11 @@ static parent_call* get_or_create_parent_call(grpc_call* call) {
 
 static parent_call* get_parent_call(grpc_call* call) {
   return (parent_call*)gpr_atm_acq_load(&call->parent_call_atm);
+}
+
+size_t grpc_call_get_initial_size_estimate() {
+  return sizeof(grpc_call) + sizeof(batch_control) * MAX_CONCURRENT_BATCHES +
+         sizeof(grpc_linked_mdelem) * ESTIMATED_MDELEM_COUNT;
 }
 
 grpc_error* grpc_call_create(const grpc_call_create_args* args,
@@ -1144,9 +1152,9 @@ static int batch_slot_for_op(grpc_op_type type) {
   GPR_UNREACHABLE_CODE(return 123456789);
 }
 
-static batch_control* allocate_batch_control(grpc_call* call,
-                                             const grpc_op* ops,
-                                             size_t num_ops) {
+static batch_control* reuse_or_allocate_batch_control(grpc_call* call,
+                                                      const grpc_op* ops,
+                                                      size_t num_ops) {
   int slot = batch_slot_for_op(ops[0].op);
   batch_control** pslot = &call->active_batches[slot];
   if (*pslot == nullptr) {
@@ -1569,7 +1577,7 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
     goto done;
   }
 
-  bctl = allocate_batch_control(call, ops, nops);
+  bctl = reuse_or_allocate_batch_control(call, ops, nops);
   if (bctl == nullptr) {
     return GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
   }
