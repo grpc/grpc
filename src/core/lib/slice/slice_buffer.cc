@@ -117,6 +117,15 @@ size_t grpc_slice_buffer_add_indexed(grpc_slice_buffer* sb, grpc_slice s) {
   return out;
 }
 
+size_t grpc_slice_buffer_malloc_indexed(grpc_slice_buffer* sb, size_t len) {
+  size_t out = sb->count;
+  maybe_embiggen(sb);
+  sb->slices[out] = GRPC_SLICE_MALLOC(len);
+  sb->length += len;
+  sb->count = out + 1;
+  return out;
+}
+
 void grpc_slice_buffer_add(grpc_slice_buffer* sb, grpc_slice s) {
   size_t n = sb->count;
   /* if both the last slice in the slice buffer and the slice being added
