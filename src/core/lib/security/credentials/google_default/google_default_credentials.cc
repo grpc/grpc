@@ -53,7 +53,7 @@ static grpc_channel_credentials* g_default_credentials = nullptr;
 static int g_compute_engine_detection_done = 0;
 static gpr_mu g_state_mu;
 static gpr_once g_once = GPR_ONCE_INIT;
-static grpc_gce_tenancy_checker g_gce_tenancy_checker =
+static grpc_core::internal::grpc_gce_tenancy_checker g_gce_tenancy_checker =
     grpc_alts_is_running_on_gcp;
 
 static void init_default_credentials(void) { gpr_mu_init(&g_state_mu); }
@@ -261,7 +261,8 @@ end:
 namespace grpc_core {
 namespace internal {
 
-void set_gce_tenancy_checker_for_testing(grpc_gce_tenancy_checker checker) {
+void set_gce_tenancy_checker_for_testing(
+    grpc_core::internal::grpc_gce_tenancy_checker checker) {
   g_gce_tenancy_checker = checker;
 }
 

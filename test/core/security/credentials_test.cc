@@ -122,9 +122,11 @@ static const char other_test_service_url[] = "https://bar.com/bar.v1";
 
 static const char test_method[] = "ThisIsNotAMethod";
 
-static bool test_is_on_gce = false;
+/*  -- global state flags. -- */
 
-static bool test_gce_tenancy_checker_called = false;
+static bool g_test_is_on_gce = false;
+
+static bool g_test_gce_tenancy_checker_called = false;
 
 /* -- Utils. -- */
 
@@ -919,10 +921,8 @@ static void test_google_default_creds_refresh_token(void) {
 static char* null_well_known_creds_path_getter(void) { return nullptr; }
 
 static bool test_gce_tenancy_checker(void) {
-  bool result =
-      test_gce_tenancy_checker_called ? !test_is_on_gce : test_is_on_gce;
-  test_gce_tenancy_checker_called = true;
-  return result;
+  g_test_gce_tenancy_checker_called = true;
+  return g_test_is_on_gce;
 }
 
 static void test_google_default_creds_gce(void) {
@@ -938,8 +938,8 @@ static void test_google_default_creds_gce(void) {
   grpc_override_well_known_credentials_path_getter(
       null_well_known_creds_path_getter);
   set_gce_tenancy_checker_for_testing(test_gce_tenancy_checker);
-  test_gce_tenancy_checker_called = false;
-  test_is_on_gce = true;
+  g_test_gce_tenancy_checker_called = false;
+  g_test_is_on_gce = true;
 
   /* Simulate a successful detection of GCE. */
   grpc_composite_channel_credentials* creds =
@@ -957,9 +957,11 @@ static void test_google_default_creds_gce(void) {
   /* Check that we get a cached creds if we call
      grpc_google_default_credentials_create again.
      GCE detection should not occur anymore either. */
+  g_test_gce_tenancy_checker_called = false;
   grpc_channel_credentials* cached_creds =
       grpc_google_default_credentials_create();
   GPR_ASSERT(cached_creds == &creds->base);
+  GPR_ASSERT(g_test_gce_tenancy_checker_called == false);
 
   /* Cleanup. */
   grpc_channel_credentials_unref(cached_creds);
@@ -975,14 +977,16 @@ static void test_no_google_default_creds(void) {
       null_well_known_creds_path_getter);
 
   set_gce_tenancy_checker_for_testing(test_gce_tenancy_checker);
-  test_gce_tenancy_checker_called = false;
-  test_is_on_gce = false;
+  g_test_gce_tenancy_checker_called = false;
+  g_test_is_on_gce = false;
 
   /* Simulate a successful detection of GCE. */
   GPR_ASSERT(grpc_google_default_credentials_create() == nullptr);
 
   /* Try a cached one. GCE detection should not occur anymore. */
+  g_test_gce_tenancy_checker_called = false;
   GPR_ASSERT(grpc_google_default_credentials_create() == nullptr);
+  GPR_ASSERT(g_test_gce_tenancy_checker_called == false);
 
   /* Cleanup. */
   grpc_override_well_known_credentials_path_getter(nullptr);
