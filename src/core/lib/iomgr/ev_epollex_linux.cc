@@ -440,7 +440,8 @@ static void fd_shutdown(grpc_fd* fd, grpc_error* why) {
   if (fd->read_closure->SetShutdown(GRPC_ERROR_REF(why))) {
     if (shutdown(fd->fd, SHUT_RDWR)) {
       if (errno != ENOTCONN) {
-        gpr_log(GPR_ERROR, "Error shutting down fd. errno: %d", errno);
+        gpr_log(GPR_ERROR, "Error shutting down fd %d. errno: %d",
+                grpc_fd_wrapped_fd(fd), errno);
       }
     }
     fd->write_closure->SetShutdown(GRPC_ERROR_REF(why));

@@ -24,8 +24,10 @@
 #include <grpc/support/time.h>
 #include <string.h>
 
+#include <errno.h>
 #include <gflags/gflags.h>
 #include <gmock/gmock.h>
+#include <thread>
 #include <vector>
 
 #include "test/cpp/util/subprocess.h"
@@ -47,6 +49,12 @@
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+
+// TODO: pull in different headers when enabling this
+// test on windows. Also set BAD_SOCKET_RETURN_VAL
+// to INVALID_SOCKET on windows.
+#include "src/core/lib/iomgr/sockaddr_posix.h"
+#define BAD_SOCKET_RETURN_VAL -1
 
 using grpc::SubProcess;
 using std::vector;
@@ -74,9 +82,6 @@ DEFINE_string(
 DEFINE_string(expected_lb_policy, "",
               "Expected lb policy name that appears in resolver result channel "
               "arg. Empty for none.");
-
-// Taken from no_logging.cc test, to sometimes override the logger
-void gpr_default_log(gpr_log_func_args* args);
 
 namespace {
 
@@ -234,6 +239,64 @@ void CheckLBPolicyResultLocked(grpc_channel_args* channel_args,
   }
 }
 
+void OpenAndCloseSocketsStressLoop() {
+  // The goal of this loop is to catch socket
+  // "use after close" bugs within the c-ares resolver by acting
+  // like some separate thread doing I/O.
+  // It's goal is to try to hit race conditions whereby:
+  //    1) The c-ares resolver closes a socket.
+  //    2) This loop opens a socket with (coincidentally) the same handle.
+  //    3) the c-ares resolver mistakenly uses that same socket without
+  //       realizing that its closed.
+  //    4) This loop performs an operation on that socket that should
+  //       succeed but instead fails because of what the c-ares
+  //       resolver did in the meantime.
+  int dummy_port = grpc_pick_unused_port_or_die();
+  sockaddr_in6 addr;
+  memset(&addr, 0, sizeof(addr));
+  addr.sin6_family = AF_INET6;
+  addr.sin6_port = htons(dummy_port);
+  ((char*)&addr.sin6_addr)[15] = 1;
+  for (size_t k = 0; k < 5; k++) {
+    std::vector<int> sockets;
+    // First open a bunch of sockets, bind and listen
+    for (size_t i = 0; i < 100; i++) {
+      int s = socket(AF_INET6, SOCK_STREAM, 0);
+      int val = 1;
+      setsockopt(s, SOL_SOCKET, SO_REUSEPORT, &val, sizeof(val));
+      if (s == BAD_SOCKET_RETURN_VAL) {
+        gpr_log(GPR_DEBUG, "Failed to create TCP ipv6 socket");
+        abort();
+      }
+      gpr_log(GPR_DEBUG, "Opened fd: %d", s);
+      if (bind(s, (const sockaddr*)&addr, sizeof(addr)) != 0) {
+        gpr_log(GPR_DEBUG, "Failed to bind socket %d to [::1]:%d. errno: %d",
+                sockets[i], dummy_port, errno);
+        abort();
+      }
+      if (listen(s, 1)) {
+        gpr_log(GPR_DEBUG, "Failed to listen on socket %d. errno: %d",
+                sockets[i], errno);
+        abort();
+      }
+      sockets.push_back(s);
+    }
+    // Now shutdown and close all of those sockets.
+    // Do this in a separate loop to try to induce a time window to hit races.
+    for (size_t i = 0; i < sockets.size(); i++) {
+      gpr_log(GPR_DEBUG, "shutdown and close %d", sockets[i]);
+      if (shutdown(sockets[i], SHUT_RDWR)) {
+        gpr_log(GPR_DEBUG,
+                "OpenAndCloseSocketsStressLoop failed to shutdown socket %d. "
+                "errno: %d. Socket use-after-close bugs are likely.",
+                sockets[i], errno);
+        abort();
+      }
+      close(sockets[i]);
+    }
+  }
+}
+
 void CheckResolverResultLocked(void* argsp, grpc_error* err) {
   ArgsStruct* args = (ArgsStruct*)argsp;
   grpc_channel_args* channel_args = args->channel_args;
@@ -272,19 +335,6 @@ void CheckResolverResultLocked(void* argsp, grpc_error* err) {
   gpr_mu_lock(args->mu);
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
   gpr_mu_unlock(args->mu);
-}
-
-void LogAbortOnError(gpr_log_func_args* args) {
-  if (args->severity == GPR_LOG_SEVERITY_ERROR) {
-    char* message = nullptr;
-    gpr_asprintf(&message, "Unwanted ERROR log: %s", args->message);
-    args->message = message;
-    gpr_default_log(args);
-    gpr_free(message);
-    abort();
-  } else {
-    gpr_default_log(args);
-  }
 }
 
 TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
@@ -328,9 +378,9 @@ int main(int argc, char** argv) {
     gpr_log(GPR_INFO, "Specifying authority in uris to: %s",
             FLAGS_local_dns_server_address.c_str());
   }
-  // Fail on log messages of severity ERROR
-  gpr_set_log_function(LogAbortOnError);
+  std::thread g_open_close_sockets_thread(OpenAndCloseSocketsStressLoop);
   auto result = RUN_ALL_TESTS();
+  g_open_close_sockets_thread.join();
   grpc_shutdown();
   return result;
 }
