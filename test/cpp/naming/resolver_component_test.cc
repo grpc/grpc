@@ -75,6 +75,9 @@ DEFINE_string(expected_lb_policy, "",
               "Expected lb policy name that appears in resolver result channel "
               "arg. Empty for none.");
 
+// Taken from no_logging.cc test, to sometimes override the logger
+void gpr_default_log(gpr_log_func_args* args);
+
 namespace {
 
 class GrpcLBAddress final {
@@ -271,6 +274,19 @@ void CheckResolverResultLocked(void* argsp, grpc_error* err) {
   gpr_mu_unlock(args->mu);
 }
 
+void LogAbortOnError(gpr_log_func_args* args) {
+  if (args->severity == GPR_LOG_SEVERITY_ERROR) {
+    char* message = nullptr;
+    gpr_asprintf(&message, "Unwanted ERROR log: %s", args->message);
+    args->message = message;
+    gpr_default_log(args);
+    gpr_free(message);
+    abort();
+  } else {
+    gpr_default_log(args);
+  }
+}
+
 TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
   grpc_core::ExecCtx exec_ctx;
   ArgsStruct args;
@@ -312,6 +328,8 @@ int main(int argc, char** argv) {
     gpr_log(GPR_INFO, "Specifying authority in uris to: %s",
             FLAGS_local_dns_server_address.c_str());
   }
+  // Fail on log messages of severity ERROR
+  gpr_set_log_function(LogAbortOnError);
   auto result = RUN_ALL_TESTS();
   grpc_shutdown();
   return result;
