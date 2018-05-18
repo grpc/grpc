@@ -386,7 +386,7 @@ static bool rq_reclaim(grpc_resource_quota* resource_quota, bool destructive) {
   resource_quota->debug_only_last_reclaimer_resource_user = resource_user;
   resource_quota->debug_only_last_initiated_reclaimer = c;
   resource_user->reclaimers[destructive] = nullptr;
-  GRPC_CLOSURE_RUN(c, GRPC_ERROR_NONE);
+  GRPC_CLOSURE_SCHED(c, GRPC_ERROR_NONE);
   return true;
 }
 

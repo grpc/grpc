@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # Copyright 2016 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,18 +12,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-# This script is invoked by Jenkins and runs interop test suite.
+
 set -ex
 
-export LANG=en_US.UTF-8
+cd $(dirname $0)/../../..
 
-# Enter the gRPC repo root
-cd $(dirname $0)/../..
+./tools/run_tests/start_port_server.py || true
 
-tools/run_tests/run_interop_tests.py \
-    -l all \
-    --cloud_to_prod \
-    --cloud_to_prod_auth \
-    --prod_servers default cloud_gateway gateway_v4 cloud_gateway_v4 \
-    --use_docker -t -j 12 $@ || true
+CPUS=`python -c 'import multiprocessing; print multiprocessing.cpu_count()'`
+
+make CONFIG=opt memory_profile_test memory_profile_client memory_profile_server -j $CPUS
+bins/opt/memory_profile_test
+bq load microbenchmarks.memory memory_usage.csv
+
+tools/run_tests/run_microbenchmark.py --collect summary --bigquery_upload

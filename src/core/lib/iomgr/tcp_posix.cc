@@ -366,7 +366,7 @@ static void call_read_cb(grpc_tcp* tcp, grpc_error* error) {
 
   tcp->read_cb = nullptr;
   tcp->incoming_buffer = nullptr;
-  GRPC_CLOSURE_RUN(cb, error);
+  GRPC_CLOSURE_SCHED(cb, error);
 }
 
 #define MAX_READ_IOVEC 4
@@ -629,7 +629,7 @@ static void tcp_handle_write(void* arg /* grpc_tcp */, grpc_error* error) {
       gpr_log(GPR_INFO, "write: %s", str);
     }
 
-    GRPC_CLOSURE_RUN(cb, error);
+    GRPC_CLOSURE_SCHED(cb, error);
     TCP_UNREF(tcp, "write");
   }
 }

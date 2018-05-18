@@ -28,6 +28,7 @@
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/slice/slice_internal.h"
 
 grpc_core::TraceFlag grpc_handshaker_trace(false, "handshaker");
 
@@ -220,8 +221,26 @@ static bool call_next_handshaker_locked(grpc_handshake_manager* mgr,
   // callback.  Otherwise, call the next handshaker.
   if (error != GRPC_ERROR_NONE || mgr->shutdown || mgr->args.exit_early ||
       mgr->index == mgr->count) {
+    if (error == GRPC_ERROR_NONE && mgr->shutdown) {
+      error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("handshaker shutdown");
+      // TODO(roth): It is currently necessary to shutdown endpoints
+      // before destroying then, even when we know that there are no
+      // pending read/write callbacks.  This should be fixed, at which
+      // point this can be removed.
+      grpc_endpoint_shutdown(mgr->args.endpoint, GRPC_ERROR_REF(error));
+      grpc_endpoint_destroy(mgr->args.endpoint);
+      mgr->args.endpoint = nullptr;
+      grpc_channel_args_destroy(mgr->args.args);
+      mgr->args.args = nullptr;
+      grpc_slice_buffer_destroy_internal(mgr->args.read_buffer);
+      gpr_free(mgr->args.read_buffer);
+      mgr->args.read_buffer = nullptr;
+    }
     if (grpc_handshaker_trace.enabled()) {
-      gpr_log(GPR_INFO, "handshake_manager %p: handshaking complete", mgr);
+      gpr_log(GPR_INFO,
+              "handshake_manager %p: handshaking complete -- scheduling "
+              "on_handshake_done with error=%s",
+              mgr, grpc_error_string(error));
     }
     // Cancel deadline timer, since we're invoking the on_handshake_done
     // callback now.

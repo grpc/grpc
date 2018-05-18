@@ -91,9 +91,11 @@ cdef class ReceiveStatusOnClientOperation(Operation):
   cdef grpc_metadata_array _c_trailing_metadata
   cdef grpc_status_code _c_code
   cdef grpc_slice _c_details
+  cdef const char* _c_error_string
   cdef tuple _trailing_metadata
   cdef object _code
   cdef str _details
+  cdef str _error_string
 
   cdef void c(self)
   cdef void un_c(self)
