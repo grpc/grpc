@@ -545,6 +545,9 @@ extern grpc_slice_buffer_add_type grpc_slice_buffer_add_import;
 typedef size_t(*grpc_slice_buffer_add_indexed_type)(grpc_slice_buffer* sb, grpc_slice slice);
 extern grpc_slice_buffer_add_indexed_type grpc_slice_buffer_add_indexed_import;
 #define grpc_slice_buffer_add_indexed grpc_slice_buffer_add_indexed_import
+typedef size_t(*grpc_slice_buffer_malloc_indexed_type)(grpc_slice_buffer* sb, size_t len);
+extern grpc_slice_buffer_malloc_indexed_type grpc_slice_buffer_malloc_indexed_import;
+#define grpc_slice_buffer_malloc_indexed grpc_slice_buffer_malloc_indexed_import
 typedef void(*grpc_slice_buffer_addn_type)(grpc_slice_buffer* sb, grpc_slice* slices, size_t n);
 extern grpc_slice_buffer_addn_type grpc_slice_buffer_addn_import;
 #define grpc_slice_buffer_addn grpc_slice_buffer_addn_import

@@ -110,8 +110,7 @@ static void finish_frame(framer_state* st, int is_header_boundary,
 /* begin a new frame: reserve off header space, remember how many bytes we'd
    output before beginning */
 static void begin_frame(framer_state* st) {
-  st->header_idx =
-      grpc_slice_buffer_add_indexed(st->output, GRPC_SLICE_MALLOC(9));
+  st->header_idx = grpc_slice_buffer_malloc_indexed(st->output, 9);
   st->output_length_at_start_of_frame = st->output->length;
 }
 
@@ -452,7 +451,7 @@ static uint32_t dynidx(grpc_chttp2_hpack_compressor* c, uint32_t elem_index) {
 /* encode an mdelem */
 static void hpack_enc(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
                       framer_state* st) {
-  GPR_ASSERT(GRPC_SLICE_LENGTH(GRPC_MDKEY(elem)) > 0);
+  GPR_DEBUG_ASSERT(GRPC_SLICE_LENGTH(GRPC_MDKEY(elem)) > 0);
   if (GRPC_SLICE_START_PTR(GRPC_MDKEY(elem))[0] != ':') { /* regular header */
     st->seen_regular_header = 1;
   } else {
