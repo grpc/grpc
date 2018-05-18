@@ -190,6 +190,7 @@ grpc_slice_buffer_init_type grpc_slice_buffer_init_import;
 grpc_slice_buffer_destroy_type grpc_slice_buffer_destroy_import;
 grpc_slice_buffer_add_type grpc_slice_buffer_add_import;
 grpc_slice_buffer_add_indexed_type grpc_slice_buffer_add_indexed_import;
+grpc_slice_buffer_malloc_indexed_type grpc_slice_buffer_malloc_indexed_import;
 grpc_slice_buffer_addn_type grpc_slice_buffer_addn_import;
 grpc_slice_buffer_tiny_add_type grpc_slice_buffer_tiny_add_import;
 grpc_slice_buffer_pop_type grpc_slice_buffer_pop_import;
@@ -438,6 +439,7 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_slice_buffer_destroy_import = (grpc_slice_buffer_destroy_type) GetProcAddress(library, "grpc_slice_buffer_destroy");
   grpc_slice_buffer_add_import = (grpc_slice_buffer_add_type) GetProcAddress(library, "grpc_slice_buffer_add");
   grpc_slice_buffer_add_indexed_import = (grpc_slice_buffer_add_indexed_type) GetProcAddress(library, "grpc_slice_buffer_add_indexed");
+  grpc_slice_buffer_malloc_indexed_import = (grpc_slice_buffer_malloc_indexed_type) GetProcAddress(library, "grpc_slice_buffer_malloc_indexed");
   grpc_slice_buffer_addn_import = (grpc_slice_buffer_addn_type) GetProcAddress(library, "grpc_slice_buffer_addn");
   grpc_slice_buffer_tiny_add_import = (grpc_slice_buffer_tiny_add_type) GetProcAddress(library, "grpc_slice_buffer_tiny_add");
   grpc_slice_buffer_pop_import = (grpc_slice_buffer_pop_type) GetProcAddress(library, "grpc_slice_buffer_pop");
