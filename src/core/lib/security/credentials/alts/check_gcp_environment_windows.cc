@@ -95,6 +95,7 @@ static bool run_powershell() {
   CloseHandle(pi.hProcess);
   CloseHandle(pi.hThread);
   CloseHandle(h);
+  GPR_ASSERT(false);
   return true;
 }
 

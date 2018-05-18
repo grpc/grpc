@@ -937,7 +937,7 @@ static void test_google_default_creds_gce(void) {
   gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
   grpc_override_well_known_credentials_path_getter(
       null_well_known_creds_path_getter);
-  set_gce_tenancy_checker_for_testing(test_gce_tenancy_checker);
+  // set_gce_tenancy_checker_for_testing(test_gce_tenancy_checker);
   g_test_gce_tenancy_checker_called = false;
   g_test_is_on_gce = true;
 
@@ -953,7 +953,6 @@ static void test_google_default_creds_gce(void) {
                             httpcli_post_should_not_be_called);
   run_request_metadata_test(creds->call_creds, auth_md_ctx, state);
   grpc_core::ExecCtx::Get()->Flush();
-  GPR_ASSERT(false);
 
   /* Check that we get a cached creds if we call
      grpc_google_default_credentials_create again.
