@@ -3319,6 +3319,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/endpoint_pair_uv.cc \
     src/core/lib/iomgr/endpoint_pair_windows.cc \
     src/core/lib/iomgr/error.cc \
+    src/core/lib/iomgr/error_apple.cc \
     src/core/lib/iomgr/ev_epoll1_linux.cc \
     src/core/lib/iomgr/ev_epollex_linux.cc \
     src/core/lib/iomgr/ev_epollsig_linux.cc \
@@ -3334,7 +3335,6 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/gethostname_sysconf.cc \
     src/core/lib/iomgr/iocp_windows.cc \
     src/core/lib/iomgr/iomgr.cc \
-    src/core/lib/iomgr/iomgr_cfstream.cc \
     src/core/lib/iomgr/iomgr_custom.cc \
     src/core/lib/iomgr/iomgr_internal.cc \
     src/core/lib/iomgr/iomgr_posix.cc \
@@ -3366,7 +3366,10 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/socket_utils_uv.cc \
     src/core/lib/iomgr/socket_utils_windows.cc \
     src/core/lib/iomgr/socket_windows.cc \
+    src/core/lib/iomgr/tcp_cfstream.cc \
+    src/core/lib/iomgr/tcp_cfstream_sync.cc \
     src/core/lib/iomgr/tcp_client.cc \
+    src/core/lib/iomgr/tcp_client_cfstream.cc \
     src/core/lib/iomgr/tcp_client_custom.cc \
     src/core/lib/iomgr/tcp_client_posix.cc \
     src/core/lib/iomgr/tcp_client_windows.cc \
@@ -3715,6 +3718,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/endpoint_pair_uv.cc \
     src/core/lib/iomgr/endpoint_pair_windows.cc \
     src/core/lib/iomgr/error.cc \
+    src/core/lib/iomgr/error_apple.cc \
     src/core/lib/iomgr/ev_epoll1_linux.cc \
     src/core/lib/iomgr/ev_epollex_linux.cc \
     src/core/lib/iomgr/ev_epollsig_linux.cc \
@@ -3730,7 +3734,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/gethostname_sysconf.cc \
     src/core/lib/iomgr/iocp_windows.cc \
     src/core/lib/iomgr/iomgr.cc \
-    src/core/lib/iomgr/iomgr_cfstream.cc \
     src/core/lib/iomgr/iomgr_custom.cc \
     src/core/lib/iomgr/iomgr_internal.cc \
     src/core/lib/iomgr/iomgr_posix.cc \
@@ -3762,7 +3765,10 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/socket_utils_uv.cc \
     src/core/lib/iomgr/socket_utils_windows.cc \
     src/core/lib/iomgr/socket_windows.cc \
+    src/core/lib/iomgr/tcp_cfstream.cc \
+    src/core/lib/iomgr/tcp_cfstream_sync.cc \
     src/core/lib/iomgr/tcp_client.cc \
+    src/core/lib/iomgr/tcp_client_cfstream.cc \
     src/core/lib/iomgr/tcp_client_custom.cc \
     src/core/lib/iomgr/tcp_client_posix.cc \
     src/core/lib/iomgr/tcp_client_windows.cc \
@@ -4100,6 +4106,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/endpoint_pair_uv.cc \
     src/core/lib/iomgr/endpoint_pair_windows.cc \
     src/core/lib/iomgr/error.cc \
+    src/core/lib/iomgr/error_apple.cc \
     src/core/lib/iomgr/ev_epoll1_linux.cc \
     src/core/lib/iomgr/ev_epollex_linux.cc \
     src/core/lib/iomgr/ev_epollsig_linux.cc \
@@ -4115,7 +4122,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/gethostname_sysconf.cc \
     src/core/lib/iomgr/iocp_windows.cc \
     src/core/lib/iomgr/iomgr.cc \
-    src/core/lib/iomgr/iomgr_cfstream.cc \
     src/core/lib/iomgr/iomgr_custom.cc \
     src/core/lib/iomgr/iomgr_internal.cc \
     src/core/lib/iomgr/iomgr_posix.cc \
@@ -4147,7 +4153,10 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/socket_utils_uv.cc \
     src/core/lib/iomgr/socket_utils_windows.cc \
     src/core/lib/iomgr/socket_windows.cc \
+    src/core/lib/iomgr/tcp_cfstream.cc \
+    src/core/lib/iomgr/tcp_cfstream_sync.cc \
     src/core/lib/iomgr/tcp_client.cc \
+    src/core/lib/iomgr/tcp_client_cfstream.cc \
     src/core/lib/iomgr/tcp_client_custom.cc \
     src/core/lib/iomgr/tcp_client_posix.cc \
     src/core/lib/iomgr/tcp_client_windows.cc \
@@ -4396,6 +4405,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/iomgr/endpoint_pair_uv.cc \
     src/core/lib/iomgr/endpoint_pair_windows.cc \
     src/core/lib/iomgr/error.cc \
+    src/core/lib/iomgr/error_apple.cc \
     src/core/lib/iomgr/ev_epoll1_linux.cc \
     src/core/lib/iomgr/ev_epollex_linux.cc \
     src/core/lib/iomgr/ev_epollsig_linux.cc \
@@ -4411,7 +4421,6 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/iomgr/gethostname_sysconf.cc \
     src/core/lib/iomgr/iocp_windows.cc \
     src/core/lib/iomgr/iomgr.cc \
-    src/core/lib/iomgr/iomgr_cfstream.cc \
     src/core/lib/iomgr/iomgr_custom.cc \
     src/core/lib/iomgr/iomgr_internal.cc \
     src/core/lib/iomgr/iomgr_posix.cc \
@@ -4443,7 +4452,10 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/iomgr/socket_utils_uv.cc \
     src/core/lib/iomgr/socket_utils_windows.cc \
     src/core/lib/iomgr/socket_windows.cc \
+    src/core/lib/iomgr/tcp_cfstream.cc \
+    src/core/lib/iomgr/tcp_cfstream_sync.cc \
     src/core/lib/iomgr/tcp_client.cc \
+    src/core/lib/iomgr/tcp_client_cfstream.cc \
     src/core/lib/iomgr/tcp_client_custom.cc \
     src/core/lib/iomgr/tcp_client_posix.cc \
     src/core/lib/iomgr/tcp_client_windows.cc \
@@ -4659,6 +4671,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/endpoint_pair_uv.cc \
     src/core/lib/iomgr/endpoint_pair_windows.cc \
     src/core/lib/iomgr/error.cc \
+    src/core/lib/iomgr/error_apple.cc \
     src/core/lib/iomgr/ev_epoll1_linux.cc \
     src/core/lib/iomgr/ev_epollex_linux.cc \
     src/core/lib/iomgr/ev_epollsig_linux.cc \
@@ -4674,7 +4687,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/gethostname_sysconf.cc \
     src/core/lib/iomgr/iocp_windows.cc \
     src/core/lib/iomgr/iomgr.cc \
-    src/core/lib/iomgr/iomgr_cfstream.cc \
     src/core/lib/iomgr/iomgr_custom.cc \
     src/core/lib/iomgr/iomgr_internal.cc \
     src/core/lib/iomgr/iomgr_posix.cc \
@@ -4706,7 +4718,10 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/socket_utils_uv.cc \
     src/core/lib/iomgr/socket_utils_windows.cc \
     src/core/lib/iomgr/socket_windows.cc \
+    src/core/lib/iomgr/tcp_cfstream.cc \
+    src/core/lib/iomgr/tcp_cfstream_sync.cc \
     src/core/lib/iomgr/tcp_client.cc \
+    src/core/lib/iomgr/tcp_client_cfstream.cc \
     src/core/lib/iomgr/tcp_client_custom.cc \
     src/core/lib/iomgr/tcp_client_posix.cc \
     src/core/lib/iomgr/tcp_client_windows.cc \
@@ -5480,6 +5495,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/iomgr/endpoint_pair_uv.cc \
     src/core/lib/iomgr/endpoint_pair_windows.cc \
     src/core/lib/iomgr/error.cc \
+    src/core/lib/iomgr/error_apple.cc \
     src/core/lib/iomgr/ev_epoll1_linux.cc \
     src/core/lib/iomgr/ev_epollex_linux.cc \
     src/core/lib/iomgr/ev_epollsig_linux.cc \
@@ -5495,7 +5511,6 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/iomgr/gethostname_sysconf.cc \
     src/core/lib/iomgr/iocp_windows.cc \
     src/core/lib/iomgr/iomgr.cc \
-    src/core/lib/iomgr/iomgr_cfstream.cc \
     src/core/lib/iomgr/iomgr_custom.cc \
     src/core/lib/iomgr/iomgr_internal.cc \
     src/core/lib/iomgr/iomgr_posix.cc \
@@ -5527,7 +5542,10 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/iomgr/socket_utils_uv.cc \
     src/core/lib/iomgr/socket_utils_windows.cc \
     src/core/lib/iomgr/socket_windows.cc \
+    src/core/lib/iomgr/tcp_cfstream.cc \
+    src/core/lib/iomgr/tcp_cfstream_sync.cc \
     src/core/lib/iomgr/tcp_client.cc \
+    src/core/lib/iomgr/tcp_client_cfstream.cc \
     src/core/lib/iomgr/tcp_client_custom.cc \
     src/core/lib/iomgr/tcp_client_posix.cc \
     src/core/lib/iomgr/tcp_client_windows.cc \
