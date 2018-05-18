@@ -31,7 +31,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'BoringSSL'
-  version = '10.0.2'
+  version = '10.0.3'
   s.version  = version
   s.summary  = 'BoringSSL is a fork of OpenSSL that is designed to meet Google’s needs.'
   # Adapted from the homepage:
@@ -68,7 +68,7 @@ Pod::Spec.new do |s|
   s.authors  = 'Adam Langley', 'David Benjamin', 'Matt Braithwaite'
 
   s.source = {
-    :git => 'https://boringssl.googlesource.com/boringssl',
+    :git => 'https://github.com/google/boringssl.git',
     :commit => "a20bb7ff8bb5057065a2e7941249773f9676cf45",
   }
 
