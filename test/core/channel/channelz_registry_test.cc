@@ -94,6 +94,7 @@ TEST(ChannelzRegistryTest, CustomObjectTest) {
   intptr_t uuid = ChannelzRegistry::Register(foo);
   Foo* retrieved = ChannelzRegistry::Get<Foo>(uuid);
   EXPECT_EQ(foo, retrieved);
+  Delete(foo);
 }
 
 TEST(ChannelzRegistryTest, NullIfNotPresentTest) {
