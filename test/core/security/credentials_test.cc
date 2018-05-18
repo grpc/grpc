@@ -43,8 +43,7 @@
 #include "src/core/lib/security/transport/auth_filters.h"
 #include "test/core/util/test_config.h"
 
-using grpc_core::internal::grpc_google_default_credentials_create_impl;
-using grpc_core::internal::set_gce_tenancy_for_testing;
+using grpc_core::internal::set_gce_tenancy_checker_for_testing;
 
 /* -- Mock channel credentials. -- */
 
@@ -122,6 +121,10 @@ static const char test_service_url[] = "https://foo.com/foo.v1";
 static const char other_test_service_url[] = "https://bar.com/bar.v1";
 
 static const char test_method[] = "ThisIsNotAMethod";
+
+static bool test_is_on_gce = false;
+
+static bool test_gce_tenancy_checker_called = false;
 
 /* -- Utils. -- */
 
@@ -915,6 +918,13 @@ static void test_google_default_creds_refresh_token(void) {
 
 static char* null_well_known_creds_path_getter(void) { return nullptr; }
 
+static bool test_gce_tenancy_checker(void) {
+  bool result =
+      test_gce_tenancy_checker_called ? !test_is_on_gce : test_is_on_gce;
+  test_gce_tenancy_checker_called = true;
+  return result;
+}
+
 static void test_google_default_creds_gce(void) {
   grpc_core::ExecCtx exec_ctx;
   expected_md emd[] = {
@@ -927,12 +937,14 @@ static void test_google_default_creds_gce(void) {
   gpr_setenv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, ""); /* Reset. */
   grpc_override_well_known_credentials_path_getter(
       null_well_known_creds_path_getter);
+  set_gce_tenancy_checker_for_testing(test_gce_tenancy_checker);
+  test_gce_tenancy_checker_called = false;
+  test_is_on_gce = true;
 
   /* Simulate a successful detection of GCE. */
-  set_gce_tenancy_for_testing(true);
   grpc_composite_channel_credentials* creds =
       reinterpret_cast<grpc_composite_channel_credentials*>(
-          grpc_google_default_credentials_create_impl(true));
+          grpc_google_default_credentials_create());
 
   /* Verify that the default creds actually embeds a GCE creds. */
   GPR_ASSERT(creds != nullptr);
@@ -945,9 +957,8 @@ static void test_google_default_creds_gce(void) {
   /* Check that we get a cached creds if we call
      grpc_google_default_credentials_create again.
      GCE detection should not occur anymore either. */
-  set_gce_tenancy_for_testing(false);
   grpc_channel_credentials* cached_creds =
-      grpc_google_default_credentials_create_impl(true);
+      grpc_google_default_credentials_create();
   GPR_ASSERT(cached_creds == &creds->base);
 
   /* Cleanup. */
@@ -963,13 +974,15 @@ static void test_no_google_default_creds(void) {
   grpc_override_well_known_credentials_path_getter(
       null_well_known_creds_path_getter);
 
+  set_gce_tenancy_checker_for_testing(test_gce_tenancy_checker);
+  test_gce_tenancy_checker_called = false;
+  test_is_on_gce = false;
+
   /* Simulate a successful detection of GCE. */
-  set_gce_tenancy_for_testing(false);
-  GPR_ASSERT(grpc_google_default_credentials_create_impl(true) == nullptr);
+  GPR_ASSERT(grpc_google_default_credentials_create() == nullptr);
 
   /* Try a cached one. GCE detection should not occur anymore. */
-  set_gce_tenancy_for_testing(true);
-  GPR_ASSERT(grpc_google_default_credentials_create_impl(true) == nullptr);
+  GPR_ASSERT(grpc_google_default_credentials_create() == nullptr);
 
   /* Cleanup. */
   grpc_override_well_known_credentials_path_getter(nullptr);

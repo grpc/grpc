@@ -53,7 +53,8 @@ static grpc_channel_credentials* g_default_credentials = nullptr;
 static int g_compute_engine_detection_done = 0;
 static gpr_mu g_state_mu;
 static gpr_once g_once = GPR_ONCE_INIT;
-static bool g_gce_tenancy_for_testing = false;
+static grpc_gce_tenancy_checker g_gce_tenancy_checker =
+    grpc_alts_is_running_on_gcp;
 
 static void init_default_credentials(void) { gpr_mu_init(&g_state_mu); }
 
@@ -175,11 +176,7 @@ end:
   return error;
 }
 
-namespace grpc_core {
-namespace internal {
-
-grpc_channel_credentials* grpc_google_default_credentials_create_impl(
-    bool used_for_testing) {
+grpc_channel_credentials* grpc_google_default_credentials_create() {
   grpc_channel_credentials* result = nullptr;
   grpc_call_credentials* call_creds = nullptr;
   grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -213,9 +210,7 @@ grpc_channel_credentials* grpc_google_default_credentials_create_impl(
   /* At last try to see if we're on compute engine (do the detection only once
      since it requires a network test). */
   if (!g_compute_engine_detection_done) {
-    int need_compute_engine_creds = used_for_testing
-                                        ? g_gce_tenancy_for_testing
-                                        : grpc_alts_is_running_on_gcp();
+    int need_compute_engine_creds = g_gce_tenancy_checker();
     g_compute_engine_detection_done = 1;
     if (need_compute_engine_creds) {
       call_creds = grpc_google_compute_engine_credentials_create(nullptr);
@@ -263,17 +258,15 @@ end:
   return result;
 }
 
-void set_gce_tenancy_for_testing(bool gce_tenancy) {
-  g_gce_tenancy_for_testing = gce_tenancy;
+namespace grpc_core {
+namespace internal {
+
+void set_gce_tenancy_checker_for_testing(grpc_gce_tenancy_checker checker) {
+  g_gce_tenancy_checker = checker;
 }
 
 }  // namespace internal
 }  // namespace grpc_core
-
-grpc_channel_credentials* grpc_google_default_credentials_create() {
-  return grpc_core::internal::grpc_google_default_credentials_create_impl(
-      false);
-}
 
 void grpc_flush_cached_google_default_credentials(void) {
   grpc_core::ExecCtx exec_ctx;

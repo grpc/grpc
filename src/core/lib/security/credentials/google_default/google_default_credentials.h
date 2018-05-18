@@ -45,15 +45,14 @@ typedef struct {
   grpc_channel_credentials* ssl_creds;
 } grpc_google_default_channel_credentials;
 
+typedef bool (*grpc_gce_tenancy_checker)(void);
+
 void grpc_flush_cached_google_default_credentials(void);
 
 namespace grpc_core {
 namespace internal {
 
-grpc_channel_credentials* grpc_google_default_credentials_create_impl(
-    bool used_for_testing);
-
-void set_gce_tenancy_for_testing(bool gce_tenancy);
+void set_gce_tenancy_checker_for_testing(grpc_gce_tenancy_checker checker);
 
 }  // namespace internal
 }  // namespace grpc_core
