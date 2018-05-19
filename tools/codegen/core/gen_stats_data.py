@@ -445,18 +445,20 @@ with open('tools/run_tests/performance/massage_qps_stats.py', 'w') as P:
 
     print >> P, 'def massage_qps_stats(scenario_result):'
     print >> P, '  for stats in scenario_result["serverStats"] + scenario_result["clientStats"]:'
-    print >> P, '    if "coreStats" not in stats: return'
-    print >> P, '    core_stats = stats["coreStats"]'
-    print >> P, '    del stats["coreStats"]'
+    print >> P, '    if "coreStats" in stats:'
+    print >> P, '      # Get rid of the "coreStats" element and replace it by statistics'
+    print >> P, '      # that correspond to columns in the bigquery schema.'
+    print >> P, '      core_stats = stats["coreStats"]'
+    print >> P, '      del stats["coreStats"]'
     for counter in inst_map['Counter']:
-        print >> P, '    stats["core_%s"] = massage_qps_stats_helpers.counter(core_stats, "%s")' % (
+        print >> P, '      stats["core_%s"] = massage_qps_stats_helpers.counter(core_stats, "%s")' % (
             counter.name, counter.name)
     for i, histogram in enumerate(inst_map['Histogram']):
-        print >> P, '    h = massage_qps_stats_helpers.histogram(core_stats, "%s")' % histogram.name
-        print >> P, '    stats["core_%s"] = ",".join("%%f" %% x for x in h.buckets)' % histogram.name
-        print >> P, '    stats["core_%s_bkts"] = ",".join("%%f" %% x for x in h.boundaries)' % histogram.name
+        print >> P, '      h = massage_qps_stats_helpers.histogram(core_stats, "%s")' % histogram.name
+        print >> P, '      stats["core_%s"] = ",".join("%%f" %% x for x in h.buckets)' % histogram.name
+        print >> P, '      stats["core_%s_bkts"] = ",".join("%%f" %% x for x in h.boundaries)' % histogram.name
         for pctl in RECORD_EXPLICIT_PERCENTILES:
-            print >> P, '    stats["core_%s_%dp"] = massage_qps_stats_helpers.percentile(h.buckets, %d, h.boundaries)' % (
+            print >> P, '      stats["core_%s_%dp"] = massage_qps_stats_helpers.percentile(h.buckets, %d, h.boundaries)' % (
                 histogram.name, pctl, pctl)
 
 with open('src/core/lib/debug/stats_data_bq_schema.sql', 'w') as S:

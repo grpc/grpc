@@ -112,7 +112,8 @@ grpc_channel* grpc_channel_create_with_builder(
 
   gpr_atm_no_barrier_store(
       &channel->call_size_estimate,
-      (gpr_atm)CHANNEL_STACK_FROM_CHANNEL(channel)->call_stack_size);
+      (gpr_atm)CHANNEL_STACK_FROM_CHANNEL(channel)->call_stack_size +
+          grpc_call_get_initial_size_estimate());
 
   grpc_compression_options_init(&channel->compression_options);
   for (size_t i = 0; i < args->num_args; i++) {

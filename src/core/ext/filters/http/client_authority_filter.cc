@@ -103,7 +103,7 @@ grpc_error* init_channel_elem(grpc_channel_element* elem,
         "GRPC_ARG_DEFAULT_AUTHORITY channel arg. must be a string");
   }
   chand->default_authority =
-      grpc_slice_from_copied_string(default_authority_str);
+      grpc_slice_intern(grpc_slice_from_static_string(default_authority_str));
   GPR_ASSERT(!args->is_last);
   return GRPC_ERROR_NONE;
 }

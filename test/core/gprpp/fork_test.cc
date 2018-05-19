@@ -42,8 +42,12 @@ static void test_init() {
   grpc_core::Fork::GlobalShutdown();
 }
 
-#define THREAD_DELAY_MS 3000
-#define THREAD_DELAY_EPSILON 500
+// This spawns CONCURRENT_TEST_THREADS that last up to
+// THREAD_DELAY_MS, and checks that the Fork::AwaitThreads()
+// returns roughly after THREAD_DELAY_MS.  The epsilon is high
+// because tsan threads can take a while to spawn/join.
+#define THREAD_DELAY_MS 6000
+#define THREAD_DELAY_EPSILON 1500
 #define CONCURRENT_TEST_THREADS 100
 
 static void sleeping_thd(void* arg) {
