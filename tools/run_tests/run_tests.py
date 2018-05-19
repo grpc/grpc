@@ -1490,7 +1490,7 @@ else:
     lang_list = args.language
 # We don't support code coverage on some languages
 if 'gcov' in args.config:
-    for bad in ['objc', 'sanity']:
+    for bad in ['grpc-node', 'objc', 'sanity']:
         if bad in lang_list:
             lang_list.remove(bad)
 
