@@ -108,6 +108,9 @@ bool grpc_alts_is_running_on_gcp() {
     g_compute_engine_detection_done = true;
   }
   gpr_mu_unlock(&g_mu);
+  if (g_is_on_compute_engine) {
+    GPR_ASSERT(false);
+  }
   return g_is_on_compute_engine;
 }
 
