@@ -23,20 +23,6 @@ a.disable:hover {
   color: #000000;
 }
 
-/* workaround for leave space for fixed navbar with # anchor url*/
-
-h1:before,
-h2:before,
-h3:before,
-h4:before {
-    content: '';
-    display: block;
-    position: relative;
-    width: 0;
-    height: 100px;
-    margin-top: -100px;
-}
-
 h1, h2, h3, h4, h5, h6, .text-break {
     word-wrap: break-word;
     word-break: break-word;
@@ -120,6 +106,12 @@ table p {
 table a {
   display: inline-block;
 }
+
+/* Make hidden attribute compatible with old browser.*/
+[hidden] {
+  display: none !important;
+}
+
 h1,
 .h1,
 h2,
@@ -360,6 +352,28 @@ article section {
 
 #search-results p {
   text-align: center;
+}
+
+#search-results p .index-loading {
+  animation: index-loading 1.5s infinite linear;
+  -webkit-animation: index-loading 1.5s infinite linear;
+  -o-animation: index-loading 1.5s infinite linear;
+  font-size: 2.5rem;
+}
+
+@keyframes index-loading {
+    from { transform: scale(1) rotate(0deg);}
+    to { transform: scale(1) rotate(360deg);}
+}
+
+@-webkit-keyframes index-loading {
+    from { -webkit-transform: rotate(0deg);}
+    to { -webkit-transform: rotate(360deg);}
+}
+
+@-o-keyframes index-loading {
+    from { -o-transform: rotate(0deg);}
+    to { -o-transform: rotate(360deg);}
 }
 
 #search-results .sr-items {
@@ -893,3 +907,51 @@ div.embeddedvideo iframe {
     display: none;
   }
 }
+
+/* For tabbed content */
+
+.tabGroup {
+  margin-top: 1rem; }
+  .tabGroup ul[role="tablist"] {
+    margin: 0;
+    padding: 0;
+    list-style: none; }
+    .tabGroup ul[role="tablist"] > li {
+      list-style: none;
+      display: inline-block; }
+  .tabGroup a[role="tab"] {
+    color: #6e6e6e;
+    box-sizing: border-box;
+    display: inline-block;
+    padding: 5px 7.5px;
+    text-decoration: none;
+    border-bottom: 2px solid #fff; }
+    .tabGroup a[role="tab"]:hover, .tabGroup a[role="tab"]:focus, .tabGroup a[role="tab"][aria-selected="true"] {
+      border-bottom: 2px solid #0050C5; }
+    .tabGroup a[role="tab"][aria-selected="true"] {
+      color: #222; }
+    .tabGroup a[role="tab"]:hover, .tabGroup a[role="tab"]:focus {
+      color: #0050C5; }
+    .tabGroup a[role="tab"]:focus {
+      outline: 1px solid #0050C5;
+      outline-offset: -1px; }
+  @media (min-width: 768px) {
+    .tabGroup a[role="tab"] {
+      padding: 5px 15px; } }
+  .tabGroup section[role="tabpanel"] {
+    border: 1px solid #e0e0e0;
+    padding: 15px;
+    margin: 0;
+    overflow: hidden; }
+    .tabGroup section[role="tabpanel"] > .codeHeader,
+    .tabGroup section[role="tabpanel"] > pre {
+      margin-left: -16px;
+      margin-right: -16px; }
+    .tabGroup section[role="tabpanel"] > :first-child {
+      margin-top: 0; }
+    .tabGroup section[role="tabpanel"] > pre:last-child {
+      display: block;
+      margin-bottom: -16px; }
+
+.mainContainer[dir='rtl'] main ul[role="tablist"] {
+  margin: 0; }

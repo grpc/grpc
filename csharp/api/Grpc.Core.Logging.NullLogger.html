@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Class NullLogger
    | gRPC C# ">
-    <meta name="generator" content="docfx 2.23.1.0">
+    <meta name="generator" content="docfx 2.36.0.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -18,10 +18,11 @@
     <link rel="stylesheet" href="../styles/main.css">
     <meta property="docfx:navrel" content="../toc.html">
     <meta property="docfx:tocrel" content="toc.html">
+    
     <meta property="docfx:rel" content="../">
     
   </head>
-  <body data-spy="scroll" data-target="#affix">
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
     <div id="wrapper">
       <header>
         
@@ -61,7 +62,9 @@
         
         <div id="search-results">
           <div class="search-list"></div>
-          <div class="sr-items"></div>
+          <div class="sr-items">
+            <p><i class="glyphicon glyphicon-refresh index-loading"></i></p>
+          </div>
           <ul id="pagination"></ul>
         </div>
       </div>
@@ -87,6 +90,10 @@
     <h5>Inheritance</h5>
     <div class="level0"><span class="xref">System.Object</span></div>
     <div class="level1"><span class="xref">NullLogger</span></div>
+  </div>
+  <div classs="implements">
+    <h5>Implements</h5>
+    <div><a class="xref" href="Grpc.Core.Logging.ILogger.html">ILogger</a></div>
   </div>
   <div class="inheritedMembers">
     <h5>Inherited Members</h5>
@@ -146,8 +153,6 @@
       </tr>
     </tbody>
   </table>
-  <h5 class="implements">Implements</h5>
-      <div><a class="xref" href="Grpc.Core.Logging.ILogger.html#Grpc_Core_Logging_ILogger_Debug_System_String_">ILogger.Debug(String)</a></div>
   <a id="Grpc_Core_Logging_NullLogger_Debug_" data-uid="Grpc.Core.Logging.NullLogger.Debug*"></a>
   <h4 id="Grpc_Core_Logging_NullLogger_Debug_System_String_System_Object___" data-uid="Grpc.Core.Logging.NullLogger.Debug(System.String,System.Object[])">Debug(String, Object[])</h4>
   <div class="markdown level1 summary"><p>As with all logging calls on this logger, this method is a no-op.</p>
@@ -179,8 +184,6 @@
       </tr>
     </tbody>
   </table>
-  <h5 class="implements">Implements</h5>
-      <div><a class="xref" href="Grpc.Core.Logging.ILogger.html#Grpc_Core_Logging_ILogger_Debug_System_String_System_Object___">ILogger.Debug(String, Object[])</a></div>
   <a id="Grpc_Core_Logging_NullLogger_Error_" data-uid="Grpc.Core.Logging.NullLogger.Error*"></a>
   <h4 id="Grpc_Core_Logging_NullLogger_Error_System_Exception_System_String_" data-uid="Grpc.Core.Logging.NullLogger.Error(System.Exception,System.String)">Error(Exception, String)</h4>
   <div class="markdown level1 summary"><p>As with all logging calls on this logger, this method is a no-op.</p>
@@ -212,8 +215,6 @@
       </tr>
     </tbody>
   </table>
-  <h5 class="implements">Implements</h5>
-      <div><a class="xref" href="Grpc.Core.Logging.ILogger.html#Grpc_Core_Logging_ILogger_Error_System_Exception_System_String_">ILogger.Error(Exception, String)</a></div>
   <a id="Grpc_Core_Logging_NullLogger_Error_" data-uid="Grpc.Core.Logging.NullLogger.Error*"></a>
   <h4 id="Grpc_Core_Logging_NullLogger_Error_System_String_" data-uid="Grpc.Core.Logging.NullLogger.Error(System.String)">Error(String)</h4>
   <div class="markdown level1 summary"><p>As with all logging calls on this logger, this method is a no-op.</p>
@@ -240,8 +241,6 @@
       </tr>
     </tbody>
   </table>
-  <h5 class="implements">Implements</h5>
-      <div><a class="xref" href="Grpc.Core.Logging.ILogger.html#Grpc_Core_Logging_ILogger_Error_System_String_">ILogger.Error(String)</a></div>
   <a id="Grpc_Core_Logging_NullLogger_Error_" data-uid="Grpc.Core.Logging.NullLogger.Error*"></a>
   <h4 id="Grpc_Core_Logging_NullLogger_Error_System_String_System_Object___" data-uid="Grpc.Core.Logging.NullLogger.Error(System.String,System.Object[])">Error(String, Object[])</h4>
   <div class="markdown level1 summary"><p>As with all logging calls on this logger, this method is a no-op.</p>
@@ -273,8 +272,6 @@
       </tr>
     </tbody>
   </table>
-  <h5 class="implements">Implements</h5>
-      <div><a class="xref" href="Grpc.Core.Logging.ILogger.html#Grpc_Core_Logging_ILogger_Error_System_String_System_Object___">ILogger.Error(String, Object[])</a></div>
   <a id="Grpc_Core_Logging_NullLogger_ForType_" data-uid="Grpc.Core.Logging.NullLogger.ForType*"></a>
   <h4 id="Grpc_Core_Logging_NullLogger_ForType__1" data-uid="Grpc.Core.Logging.NullLogger.ForType``1">ForType&lt;T&gt;()</h4>
   <div class="markdown level1 summary"><p>Returns a reference to the instance on which the method is called, as
@@ -315,8 +312,6 @@ instances aren&apos;t associated with specific types.</p>
       </tr>
     </tbody>
   </table>
-  <h5 class="implements">Implements</h5>
-      <div><a class="xref" href="Grpc.Core.Logging.ILogger.html#Grpc_Core_Logging_ILogger_ForType__1">ILogger.ForType&lt;T&gt;()</a></div>
   <a id="Grpc_Core_Logging_NullLogger_Info_" data-uid="Grpc.Core.Logging.NullLogger.Info*"></a>
   <h4 id="Grpc_Core_Logging_NullLogger_Info_System_String_" data-uid="Grpc.Core.Logging.NullLogger.Info(System.String)">Info(String)</h4>
   <div class="markdown level1 summary"><p>As with all logging calls on this logger, this method is a no-op.</p>
@@ -343,8 +338,6 @@ instances aren&apos;t associated with specific types.</p>
       </tr>
     </tbody>
   </table>
-  <h5 class="implements">Implements</h5>
-      <div><a class="xref" href="Grpc.Core.Logging.ILogger.html#Grpc_Core_Logging_ILogger_Info_System_String_">ILogger.Info(String)</a></div>
   <a id="Grpc_Core_Logging_NullLogger_Info_" data-uid="Grpc.Core.Logging.NullLogger.Info*"></a>
   <h4 id="Grpc_Core_Logging_NullLogger_Info_System_String_System_Object___" data-uid="Grpc.Core.Logging.NullLogger.Info(System.String,System.Object[])">Info(String, Object[])</h4>
   <div class="markdown level1 summary"><p>As with all logging calls on this logger, this method is a no-op.</p>
@@ -376,8 +369,6 @@ instances aren&apos;t associated with specific types.</p>
       </tr>
     </tbody>
   </table>
-  <h5 class="implements">Implements</h5>
-      <div><a class="xref" href="Grpc.Core.Logging.ILogger.html#Grpc_Core_Logging_ILogger_Info_System_String_System_Object___">ILogger.Info(String, Object[])</a></div>
   <a id="Grpc_Core_Logging_NullLogger_Warning_" data-uid="Grpc.Core.Logging.NullLogger.Warning*"></a>
   <h4 id="Grpc_Core_Logging_NullLogger_Warning_System_Exception_System_String_" data-uid="Grpc.Core.Logging.NullLogger.Warning(System.Exception,System.String)">Warning(Exception, String)</h4>
   <div class="markdown level1 summary"><p>As with all logging calls on this logger, this method is a no-op.</p>
@@ -409,8 +400,6 @@ instances aren&apos;t associated with specific types.</p>
       </tr>
     </tbody>
   </table>
-  <h5 class="implements">Implements</h5>
-      <div><a class="xref" href="Grpc.Core.Logging.ILogger.html#Grpc_Core_Logging_ILogger_Warning_System_Exception_System_String_">ILogger.Warning(Exception, String)</a></div>
   <a id="Grpc_Core_Logging_NullLogger_Warning_" data-uid="Grpc.Core.Logging.NullLogger.Warning*"></a>
   <h4 id="Grpc_Core_Logging_NullLogger_Warning_System_String_" data-uid="Grpc.Core.Logging.NullLogger.Warning(System.String)">Warning(String)</h4>
   <div class="markdown level1 summary"><p>As with all logging calls on this logger, this method is a no-op.</p>
@@ -437,8 +426,6 @@ instances aren&apos;t associated with specific types.</p>
       </tr>
     </tbody>
   </table>
-  <h5 class="implements">Implements</h5>
-      <div><a class="xref" href="Grpc.Core.Logging.ILogger.html#Grpc_Core_Logging_ILogger_Warning_System_String_">ILogger.Warning(String)</a></div>
   <a id="Grpc_Core_Logging_NullLogger_Warning_" data-uid="Grpc.Core.Logging.NullLogger.Warning*"></a>
   <h4 id="Grpc_Core_Logging_NullLogger_Warning_System_String_System_Object___" data-uid="Grpc.Core.Logging.NullLogger.Warning(System.String,System.Object[])">Warning(String, Object[])</h4>
   <div class="markdown level1 summary"><p>As with all logging calls on this logger, this method is a no-op.</p>
@@ -470,8 +457,10 @@ instances aren&apos;t associated with specific types.</p>
       </tr>
     </tbody>
   </table>
-  <h5 class="implements">Implements</h5>
-      <div><a class="xref" href="Grpc.Core.Logging.ILogger.html#Grpc_Core_Logging_ILogger_Warning_System_String_System_Object___">ILogger.Warning(String, Object[])</a></div>
+  <h3 id="implements">Implements</h3>
+  <div>
+      <a class="xref" href="Grpc.Core.Logging.ILogger.html">ILogger</a>
+  </div>
 </article>
           </div>
           
@@ -493,7 +482,7 @@ instances aren&apos;t associated with specific types.</p>
               <a href="#top">Back to top</a>
             </span>
             
-            <span>Copyright © 2015-2017 Microsoft<br>Generated by <strong>DocFX</strong></span>
+            <span>Generated by <strong>DocFX</strong></span>
           </div>
         </div>
       </footer>

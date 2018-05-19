@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Class AsyncClientStreamingCall&lt;TRequest, TResponse&gt;
    | gRPC C# ">
-    <meta name="generator" content="docfx 2.23.1.0">
+    <meta name="generator" content="docfx 2.36.0.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -18,10 +18,11 @@
     <link rel="stylesheet" href="../styles/main.css">
     <meta property="docfx:navrel" content="../toc.html">
     <meta property="docfx:tocrel" content="toc.html">
+    
     <meta property="docfx:rel" content="../">
     
   </head>
-  <body data-spy="scroll" data-target="#affix">
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
     <div id="wrapper">
       <header>
         
@@ -61,7 +62,9 @@
         
         <div id="search-results">
           <div class="search-list"></div>
-          <div class="sr-items"></div>
+          <div class="sr-items">
+            <p><i class="glyphicon glyphicon-refresh index-loading"></i></p>
+          </div>
           <ul id="pagination"></ul>
         </div>
       </div>
@@ -87,6 +90,10 @@
     <h5>Inheritance</h5>
     <div class="level0"><span class="xref">System.Object</span></div>
     <div class="level1"><span class="xref">AsyncClientStreamingCall&lt;TRequest, TResponse&gt;</span></div>
+  </div>
+  <div classs="implements">
+    <h5>Implements</h5>
+    <div><span class="xref">System.IDisposable</span></div>
   </div>
   <div class="inheritedMembers">
     <h5>Inherited Members</h5>
@@ -135,6 +142,65 @@
       <tr>
         <td><span class="parametername">TResponse</span></td>
         <td><p>Response message type for this call.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="constructors">Constructors
+  </h3>
+  <a id="Grpc_Core_AsyncClientStreamingCall_2__ctor_" data-uid="Grpc.Core.AsyncClientStreamingCall`2.#ctor*"></a>
+  <h4 id="Grpc_Core_AsyncClientStreamingCall_2__ctor_Grpc_Core_IClientStreamWriter__0__System_Threading_Tasks_Task__1__System_Threading_Tasks_Task_Grpc_Core_Metadata__System_Func_Grpc_Core_Status__System_Func_Grpc_Core_Metadata__System_Action_" data-uid="Grpc.Core.AsyncClientStreamingCall`2.#ctor(Grpc.Core.IClientStreamWriter{`0},System.Threading.Tasks.Task{`1},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)">AsyncClientStreamingCall(IClientStreamWriter&lt;TRequest&gt;, Task&lt;TResponse&gt;, Task&lt;Metadata&gt;, Func&lt;Status&gt;, Func&lt;Metadata&gt;, Action)</h4>
+  <div class="markdown level1 summary"><p>Creates a new AsyncClientStreamingCall object with the specified properties.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public AsyncClientStreamingCall(IClientStreamWriter&lt;TRequest&gt; requestStream, Task&lt;TResponse&gt; responseAsync, Task&lt;Metadata&gt; responseHeadersAsync, Func&lt;Status&gt; getStatusFunc, Func&lt;Metadata&gt; getTrailersFunc, Action disposeAction)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.IClientStreamWriter-1.html">IClientStreamWriter</a>&lt;TRequest&gt;</td>
+        <td><span class="parametername">requestStream</span></td>
+        <td><p>Stream of request values.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;TResponse&gt;</td>
+        <td><span class="parametername">responseAsync</span></td>
+        <td><p>The response of the asynchronous call.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<a class="xref" href="Grpc.Core.Metadata.html">Metadata</a>&gt;</td>
+        <td><span class="parametername">responseHeadersAsync</span></td>
+        <td><p>Response headers of the asynchronous call.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<a class="xref" href="Grpc.Core.Status.html">Status</a>&gt;</td>
+        <td><span class="parametername">getStatusFunc</span></td>
+        <td><p>Delegate returning the status of the call.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Func</span>&lt;<a class="xref" href="Grpc.Core.Metadata.html">Metadata</a>&gt;</td>
+        <td><span class="parametername">getTrailersFunc</span></td>
+        <td><p>Delegate returning the trailing metadata of the call.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Action</span></td>
+        <td><span class="parametername">disposeAction</span></td>
+        <td><p>Delegate to invoke when Dispose is called on the call object.</p>
 </td>
       </tr>
     </tbody>
@@ -227,8 +293,6 @@ As a result, all resources being used by the call should be released eventually.
   <div class="codewrapper">
     <pre><code class="lang-csharp hljs">public void Dispose()</code></pre>
   </div>
-  <h5 class="implements">Implements</h5>
-      <div><span class="xref">System.IDisposable.Dispose()</span></div>
   <h5 id="Grpc_Core_AsyncClientStreamingCall_2_Dispose_remarks">Remarks</h5>
   <div class="markdown level1 remarks"><p>Normally, there is no need for you to dispose the call unless you want to utilize the
 &quot;Cancel&quot; semantics of invoking <code>Dispose</code>.</p>
@@ -307,6 +371,10 @@ Throws InvalidOperationException otherwise.</p>
       </tr>
     </tbody>
   </table>
+  <h3 id="implements">Implements</h3>
+  <div>
+      <span class="xref">System.IDisposable</span>
+  </div>
 </article>
           </div>
           
@@ -328,7 +396,7 @@ Throws InvalidOperationException otherwise.</p>
               <a href="#top">Back to top</a>
             </span>
             
-            <span>Copyright © 2015-2017 Microsoft<br>Generated by <strong>DocFX</strong></span>
+            <span>Generated by <strong>DocFX</strong></span>
           </div>
         </div>
       </footer>
