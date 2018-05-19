@@ -205,7 +205,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
 
     test_jobs += _generate_jobs(
         languages=['python'],
-        configs=['opt'],
+        configs=['dbg', 'opt'],
         platforms=['linux', 'macos', 'windows'],
         iomgr_platforms=['native', 'gevent'],
         labels=['basictests', 'multilang'],
