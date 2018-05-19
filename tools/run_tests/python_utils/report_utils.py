@@ -50,10 +50,12 @@ def new_junit_xml_tree():
 def render_junit_xml_report(resultset,
                             report_file,
                             suite_package='grpc',
-                            suite_name='tests'):
+                            suite_name='tests',
+                            replace_dots=True):
     """Generate JUnit-like XML report."""
     tree = new_junit_xml_tree()
-    append_junit_xml_results(tree, resultset, suite_package, suite_name, '1')
+    append_junit_xml_results(tree, resultset, suite_package, suite_name, '1',
+                             replace_dots)
     create_xml_report_file(tree, report_file)
 
 
@@ -66,8 +68,18 @@ def create_xml_report_file(tree, report_file):
     tree.write(report_file, encoding='UTF-8')
 
 
-def append_junit_xml_results(tree, resultset, suite_package, suite_name, id):
+def append_junit_xml_results(tree,
+                             resultset,
+                             suite_package,
+                             suite_name,
+                             id,
+                             replace_dots=True):
     """Append a JUnit-like XML report tree with test results as a new suite."""
+    if replace_dots:
+        # ResultStore UI displays test suite names containing dots only as the component
+        # after the last dot, which results bad info being displayed in the UI.
+        # We replace dots by another character to avoid this problem.
+        suite_name = suite_name.replace('.', '_')
     testsuite = ET.SubElement(
         tree.getroot(),
         'testsuite',
