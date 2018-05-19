@@ -124,7 +124,7 @@ static void CallReadCB(CFStreamTCP* tcp, grpc_error* error) {
   grpc_closure* cb = tcp->read_cb;
   tcp->read_cb = nullptr;
   tcp->read_slices = nullptr;
-  GRPC_CLOSURE_RUN(cb, error);
+  GRPC_CLOSURE_SCHED(cb, error);
 }
 
 static void CallWriteCB(CFStreamTCP* tcp, grpc_error* error) {
@@ -137,7 +137,7 @@ static void CallWriteCB(CFStreamTCP* tcp, grpc_error* error) {
   grpc_closure* cb = tcp->write_cb;
   tcp->write_cb = nullptr;
   tcp->write_slices = nullptr;
-  GRPC_CLOSURE_RUN(cb, error);
+  GRPC_CLOSURE_SCHED(cb, error);
 }
 
 static void ReadAction(void* arg, grpc_error* error) {
