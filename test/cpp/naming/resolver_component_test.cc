@@ -22,9 +22,11 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
+
 #include <string.h>
 
 #include <errno.h>
+#include <fcntl.h>
 #include <gflags/gflags.h>
 #include <gmock/gmock.h>
 #include <thread>
@@ -239,7 +241,8 @@ void CheckLBPolicyResultLocked(grpc_channel_args* channel_args,
   }
 }
 
-void OpenAndCloseSocketsStressLoop() {
+void OpenAndCloseSocketsStressLoop(int dummy_port, gpr_mu* done_mu,
+                                   bool* done) {
   // The goal of this loop is to catch socket
   // "use after close" bugs within the c-ares resolver by acting
   // like some separate thread doing I/O.
@@ -251,19 +254,27 @@ void OpenAndCloseSocketsStressLoop() {
   //    4) This loop performs an operation on that socket that should
   //       succeed but instead fails because of what the c-ares
   //       resolver did in the meantime.
-  int dummy_port = grpc_pick_unused_port_or_die();
   sockaddr_in6 addr;
   memset(&addr, 0, sizeof(addr));
   addr.sin6_family = AF_INET6;
   addr.sin6_port = htons(dummy_port);
   ((char*)&addr.sin6_addr)[15] = 1;
-  for (size_t k = 0; k < 5; k++) {
+  for (;;) {
+    gpr_mu_lock(done_mu);
+    if (*done) {
+      gpr_mu_unlock(done_mu);
+      return;
+    }
+    gpr_mu_unlock(done_mu);
     std::vector<int> sockets;
     // First open a bunch of sockets, bind and listen
-    for (size_t i = 0; i < 100; i++) {
+    // '50' is an arbitrary number that, experimentally,
+    // has a good chance of catching bugs.
+    for (size_t i = 0; i < 50; i++) {
       int s = socket(AF_INET6, SOCK_STREAM, 0);
       int val = 1;
       setsockopt(s, SOL_SOCKET, SO_REUSEPORT, &val, sizeof(val));
+      fcntl(s, F_SETFL, O_NONBLOCK);
       if (s == BAD_SOCKET_RETURN_VAL) {
         gpr_log(GPR_DEBUG, "Failed to create TCP ipv6 socket");
         abort();
@@ -281,16 +292,21 @@ void OpenAndCloseSocketsStressLoop() {
       }
       sockets.push_back(s);
     }
-    // Now shutdown and close all of those sockets.
+    // Do a non-blocking accept followed by a close on all of those sockets.
     // Do this in a separate loop to try to induce a time window to hit races.
     for (size_t i = 0; i < sockets.size(); i++) {
-      gpr_log(GPR_DEBUG, "shutdown and close %d", sockets[i]);
-      if (shutdown(sockets[i], SHUT_RDWR)) {
-        gpr_log(GPR_DEBUG,
-                "OpenAndCloseSocketsStressLoop failed to shutdown socket %d. "
-                "errno: %d. Socket use-after-close bugs are likely.",
-                sockets[i], errno);
-        abort();
+      gpr_log(GPR_DEBUG, "non-blocking accept then close on %d", sockets[i]);
+      if (accept(sockets[i], nullptr, nullptr)) {
+        // If e.g. a "shutdown" was called on this fd from another thread,
+        // then this accept call should fail with an unexpected error.
+        if (errno != EAGAIN && errno != EWOULDBLOCK) {
+          gpr_log(GPR_DEBUG,
+                  "OpenAndCloseSocketsStressLoop accept on socket %d failed in "
+                  "an unexpected way. "
+                  "errno: %d. Socket use-after-close bugs are likely.",
+                  sockets[i], errno);
+          abort();
+        }
       }
       close(sockets[i]);
     }
@@ -349,6 +365,13 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
   GPR_ASSERT(asprintf(&whole_uri, "dns://%s/%s",
                       FLAGS_local_dns_server_address.c_str(),
                       FLAGS_target_name.c_str()));
+  // Start up background stress thread
+  int dummy_port = grpc_pick_unused_port_or_die();
+  gpr_mu done_mu;
+  gpr_mu_init(&done_mu);
+  bool done = false;
+  std::thread socket_stress_thread(OpenAndCloseSocketsStressLoop, dummy_port,
+                                   &done_mu, &done);
   // create resolver and resolve
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       grpc_core::ResolverRegistry::CreateResolver(whole_uri, nullptr,
@@ -361,6 +384,12 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
   grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone(&args);
   ArgsFinish(&args);
+  // Shutdown and join stress thread
+  gpr_mu_lock(&done_mu);
+  done = true;
+  gpr_mu_unlock(&done_mu);
+  socket_stress_thread.join();
+  gpr_mu_destroy(&done_mu);
 }
 
 }  // namespace
@@ -378,9 +407,7 @@ int main(int argc, char** argv) {
     gpr_log(GPR_INFO, "Specifying authority in uris to: %s",
             FLAGS_local_dns_server_address.c_str());
   }
-  std::thread g_open_close_sockets_thread(OpenAndCloseSocketsStressLoop);
   auto result = RUN_ALL_TESTS();
-  g_open_close_sockets_thread.join();
   grpc_shutdown();
   return result;
 }
