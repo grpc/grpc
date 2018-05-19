@@ -68,6 +68,14 @@ RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 t
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3.4
 RUN python3.4 -m pip install virtualenv
 
+# Prepare ccache
+RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
+RUN ln -s /usr/bin/ccache /usr/local/bin/g++
+RUN ln -s /usr/bin/ccache /usr/local/bin/cc
+RUN ln -s /usr/bin/ccache /usr/local/bin/c++
+RUN ln -s /usr/bin/ccache /usr/local/bin/clang
+RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
+
 
 RUN mkdir /var/local/jenkins
 
