@@ -33,6 +33,7 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/compression/algorithm_metadata.h"
+#include "src/core/lib/debug/latency_estimator.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/arena.h"
 #include "src/core/lib/gpr/string.h"
@@ -1097,6 +1098,9 @@ static void recv_trailing_filter(void* args, grpc_metadata_batch* b) {
     grpc_metadata_batch_remove(b, b->idx.named.grpc_status);
   }
   publish_app_metadata(call, b, true);
+  if (grpc_latency_estimator_trace.enabled()) {
+    gpr_log(GPR_INFO, "latency_estimator:client_inbound_processing:end");
+  }
 }
 
 grpc_call_stack* grpc_call_get_call_stack(grpc_call* call) {
@@ -1897,6 +1901,11 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
   gpr_atm_rel_store(&call->any_ops_sent_atm, 1);
 
   execute_batch(call, stream_op, &bctl->start_batch);
+  
+  if (grpc_latency_estimator_trace.enabled() && op->op == GRPC_OP_RECV_MESSAGE) {
+    gpr_log(GPR_INFO, "latency_estimator:server_inbound_processing:end");
+    gpr_log(GPR_INFO, "latency_estimator:server_outbound:start");
+  }
 
 done:
   return error;

@@ -40,6 +40,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/debug/latency_estimator.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/spinlock.h"
 #include "src/core/lib/gpr/tls.h"
@@ -767,6 +768,10 @@ static int poll_deadline_to_millis_timeout(grpc_millis millis) {
 }
 
 static void fd_become_readable(grpc_fd* fd, grpc_pollset* notifier) {
+  if (grpc_latency_estimator_trace.enabled()) {
+    gpr_log(GPR_INFO, "latency_estimator:server_inbound_reading:start");
+    gpr_log(GPR_INFO, "latency_estimator:client_inbound_reading:start");
+  }
   fd->read_closure->SetReady();
 
   /* Note, it is possible that fd_become_readable might be called twice with
@@ -818,6 +823,9 @@ static void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
 static grpc_error* pollable_process_events(grpc_pollset* pollset,
                                            pollable* pollable_obj, bool drain) {
   GPR_TIMER_SCOPE("pollable_process_events", 0);
+  if (grpc_latency_estimator_trace.enabled()) {
+    gpr_log(GPR_INFO, "latency_estimator:server_inbound:start");
+  }
   static const char* err_desc = "pollset_process_events";
   // Use a simple heuristic to determine how many fd events to process
   // per loop iteration.  (events/workers)

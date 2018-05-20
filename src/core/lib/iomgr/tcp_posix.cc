@@ -41,6 +41,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/debug/latency_estimator.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/string.h"
@@ -402,6 +403,13 @@ static void tcp_do_read(grpc_tcp* tcp) {
     read_bytes = recvmsg(tcp->fd, &msg, 0);
   } while (read_bytes < 0 && errno == EINTR);
 
+  if (grpc_latency_estimator_trace.enabled()) {
+    gpr_log(GPR_INFO, "latency_estimator:server_inbound_reading:end");
+    gpr_log(GPR_INFO, "latency_estimator:server_inbound_processing:start");
+    gpr_log(GPR_INFO, "latency_estimator:client_inbound_reading:end");
+    gpr_log(GPR_INFO, "latency_estimator:client_inbound_processing:start");
+  }
+
   if (read_bytes < 0) {
     /* NB: After calling call_read_cb a parallel call of the read handler may
      * be running. */
@@ -558,6 +566,11 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error** error) {
       GRPC_STATS_INC_SYSCALL_WRITE();
       sent_length = sendmsg(tcp->fd, &msg, SENDMSG_FLAGS);
     } while (sent_length < 0 && errno == EINTR);
+
+  if (grpc_latency_estimator_trace.enabled()) {
+    gpr_log(GPR_INFO, "latency_estimator:client_outbound:end");
+    gpr_log(GPR_INFO, "latency_estimator:server_outbound:end");
+  }
 
     if (sent_length < 0) {
       if (errno == EAGAIN) {

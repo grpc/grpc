@@ -40,6 +40,7 @@
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/time.h>
+#include "src/core/lib/debug/latency_estimator.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -87,6 +88,9 @@ grpc::string Channel::GetServiceConfigJSON() const {
 internal::Call Channel::CreateCall(const internal::RpcMethod& method,
                                    ClientContext* context,
                                    CompletionQueue* cq) {
+  if (grpc_latency_estimator_trace.enabled()) {
+    gpr_log(GPR_INFO, "latency_estimator:client_outbound:start");
+  }
   const bool kRegistered = method.channel_tag() && context->authority().empty();
   grpc_call* c_call = nullptr;
   if (kRegistered) {
