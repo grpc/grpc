@@ -1132,7 +1132,7 @@ static bool are_initial_metadata_flags_valid(uint32_t flags, bool is_client) {
   return !(flags & invalid_positions);
 }
 
-static int batch_slot_for_op(grpc_op_type type) {
+static size_t batch_slot_for_op(grpc_op_type type) {
   switch (type) {
     case GRPC_OP_SEND_INITIAL_METADATA:
       return 0;
@@ -1155,17 +1155,20 @@ static int batch_slot_for_op(grpc_op_type type) {
 static batch_control* reuse_or_allocate_batch_control(grpc_call* call,
                                                       const grpc_op* ops,
                                                       size_t num_ops) {
-  int slot = batch_slot_for_op(ops[0].op);
-  batch_control** pslot = &call->active_batches[slot];
-  if (*pslot == nullptr) {
-    *pslot = static_cast<batch_control*>(
+  size_t slot_idx = batch_slot_for_op(ops[0].op);
+  batch_control** pslot = &call->active_batches[slot_idx];
+  batch_control* bctl;
+  if (*pslot != nullptr) {
+    bctl = *pslot;
+    if (bctl->call != nullptr) {
+      return nullptr;
+    }
+    memset(bctl, 0, sizeof(*bctl));
+  } else {
+    bctl = static_cast<batch_control*>(
         gpr_arena_alloc(call->arena, sizeof(batch_control)));
+    *pslot = bctl;
   }
-  batch_control* bctl = *pslot;
-  if (bctl->call != nullptr) {
-    return nullptr;
-  }
-  memset(bctl, 0, sizeof(*bctl));
   bctl->call = call;
   bctl->op.payload = &call->stream_op_payload;
   return bctl;
