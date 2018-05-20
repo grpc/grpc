@@ -52,7 +52,7 @@ if not templates:
             templates.append(os.path.join(root, f))
 
 pre_jobs = []
-base_cmd = ['python2.7', 'tools/buildgen/mako_renderer.py']
+base_cmd = [sys.executable, 'tools/buildgen/mako_renderer.py']
 cmd = base_cmd[:]
 for plugin in plugins:
     cmd.append('-p')
