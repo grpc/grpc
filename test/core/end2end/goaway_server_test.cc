@@ -44,11 +44,11 @@ static void* tag(intptr_t i) { return (void*)i; }
 static gpr_mu g_mu;
 static int g_resolve_port = -1;
 
-static grpc_ares_request* (*iomgr_dns_lookup_ares)(
+static grpc_ares_request* (*iomgr_dns_lookup_ares_locked)(
     const char* dns_server, const char* addr, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     grpc_lb_addresses** addresses, bool check_grpclb,
-    char** service_config_json);
+    char** service_config_json, grpc_combiner* combiner);
 
 static void set_resolve_port(int port) {
   gpr_mu_lock(&g_mu);
@@ -98,15 +98,15 @@ static grpc_error* my_blocking_resolve_address(
 static grpc_address_resolver_vtable test_resolver = {
     my_resolve_address, my_blocking_resolve_address};
 
-static grpc_ares_request* my_dns_lookup_ares(
+static grpc_ares_request* my_dns_lookup_ares_locked(
     const char* dns_server, const char* addr, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    grpc_lb_addresses** lb_addrs, bool check_grpclb,
-    char** service_config_json) {
+    grpc_lb_addresses** lb_addrs, bool check_grpclb, char** service_config_json,
+    grpc_combiner* combiner) {
   if (0 != strcmp(addr, "test")) {
-    return iomgr_dns_lookup_ares(dns_server, addr, default_port,
-                                 interested_parties, on_done, lb_addrs,
-                                 check_grpclb, service_config_json);
+    return iomgr_dns_lookup_ares_locked(
+        dns_server, addr, default_port, interested_parties, on_done, lb_addrs,
+        check_grpclb, service_config_json, combiner);
   }
 
   grpc_error* error = GRPC_ERROR_NONE;
@@ -142,8 +142,8 @@ int main(int argc, char** argv) {
   grpc_init();
   default_resolver = grpc_resolve_address_impl;
   grpc_set_resolver_impl(&test_resolver);
-  iomgr_dns_lookup_ares = grpc_dns_lookup_ares;
-  grpc_dns_lookup_ares = my_dns_lookup_ares;
+  iomgr_dns_lookup_ares_locked = grpc_dns_lookup_ares_locked;
+  grpc_dns_lookup_ares_locked = my_dns_lookup_ares_locked;
 
   int was_cancelled1;
   int was_cancelled2;
