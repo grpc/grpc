@@ -28,11 +28,18 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include "include/grpc/support/string_util.h"
+#include "src/core/ext/filters/client_channel/resolver.h"
+#include "src/core/ext/filters/client_channel/resolver_registry.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/iomgr/combiner.h"
+#include "src/core/lib/iomgr/pollset.h"
+#include "src/core/lib/iomgr/pollset_set.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/cmdline.h"
 #include "test/core/util/port.h"
@@ -89,6 +96,98 @@ class FakeNonResponsiveDNSServer {
  private:
   int socket_;
 };
+
+struct ArgsStruct {
+  gpr_atm done_atm;
+  gpr_mu* mu;
+  grpc_pollset* pollset;
+  grpc_pollset_set* pollset_set;
+  grpc_combiner* lock;
+  grpc_channel_args* channel_args;
+};
+
+void ArgsInit(ArgsStruct* args) {
+  args->pollset = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
+  grpc_pollset_init(args->pollset, &args->mu);
+  args->pollset_set = grpc_pollset_set_create();
+  grpc_pollset_set_add_pollset(args->pollset_set, args->pollset);
+  args->lock = grpc_combiner_create();
+  gpr_atm_rel_store(&args->done_atm, 0);
+  args->channel_args = nullptr;
+}
+
+void DoNothing(void* arg, grpc_error* error) {}
+
+void ArgsFinish(ArgsStruct* args) {
+  grpc_pollset_set_del_pollset(args->pollset_set, args->pollset);
+  grpc_pollset_set_destroy(args->pollset_set);
+  grpc_closure DoNothing_cb;
+  GRPC_CLOSURE_INIT(&DoNothing_cb, DoNothing, nullptr,
+                    grpc_schedule_on_exec_ctx);
+  grpc_pollset_shutdown(args->pollset, &DoNothing_cb);
+  // exec_ctx needs to be flushed before calling grpc_pollset_destroy()
+  grpc_channel_args_destroy(args->channel_args);
+  grpc_core::ExecCtx::Get()->Flush();
+  grpc_pollset_destroy(args->pollset);
+  gpr_free(args->pollset);
+  GRPC_COMBINER_UNREF(args->lock, nullptr);
+}
+
+void PollPollsetUntilRequestDone(ArgsStruct* args) {
+  while (true) {
+    bool done = gpr_atm_acq_load(&args->done_atm) != 0;
+    if (done) {
+      break;
+    }
+    grpc_pollset_worker* worker = nullptr;
+    grpc_core::ExecCtx exec_ctx;
+    gpr_mu_lock(args->mu);
+    GRPC_LOG_IF_ERROR(
+        "pollset_work",
+        grpc_pollset_work(args->pollset, &worker,
+                          grpc_timespec_to_millis_round_up(
+                              gpr_inf_future(GPR_CLOCK_REALTIME))));
+    gpr_mu_unlock(args->mu);
+  }
+}
+
+void CheckResolverResultAssertFailureLocked(void* arg, grpc_error* error) {
+  EXPECT_NE(error, GRPC_ERROR_NONE);
+  ArgsStruct* args = static_cast<ArgsStruct*>(arg);
+  gpr_atm_rel_store(&args->done_atm, 1);
+  gpr_mu_lock(args->mu);
+  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
+  gpr_mu_unlock(args->mu);
+}
+
+TEST(CancelDuringAresQuery, TestCancelActiveDNSQuery) {
+  grpc_core::ExecCtx exec_ctx;
+  ArgsStruct args;
+  ArgsInit(&args);
+  int fake_dns_port = grpc_pick_unused_port_or_die();
+  FakeNonResponsiveDNSServer fake_dns_server(fake_dns_port);
+  char* client_target;
+  GPR_ASSERT(gpr_asprintf(
+      &client_target,
+      "dns://[::1]:%d/dont-care-since-wont-be-resolved.test.com:1234",
+      fake_dns_port));
+  // create resolver and resolve
+  grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
+      grpc_core::ResolverRegistry::CreateResolver(client_target, nullptr,
+                                                  args.pollset_set, args.lock);
+  gpr_free(client_target);
+  grpc_closure on_resolver_result_changed;
+  GRPC_CLOSURE_INIT(&on_resolver_result_changed,
+                    CheckResolverResultAssertFailureLocked, (void*)&args,
+                    grpc_combiner_scheduler(args.lock));
+  resolver->NextLocked(&args.channel_args, &on_resolver_result_changed);
+  // Without resetting and causing resolver shutdown, the
+  // PollPollsetUntilRequestDone call should never finish.
+  resolver.reset();
+  grpc_core::ExecCtx::Get()->Flush();
+  PollPollsetUntilRequestDone(&args);
+  ArgsFinish(&args);
+}
 
 TEST(CancelDuringAresQuery,
      TestHitDeadlineAndDestroyChannelDuringAresResolutionIsGraceful) {
