@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright 2017 gRPC authors.
+# Copyright 2018 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 set -ex
 
 # change to grpc repo root
-cd $(dirname $0)/../../..
+cd "$(dirname "$0")/../../.."
 
 # After kokoro build finishes, the workspace gets rsync'ed to another machine,
 # from where the artifacts and reports are processed.
