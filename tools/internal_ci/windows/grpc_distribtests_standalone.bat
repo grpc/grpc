@@ -24,8 +24,9 @@ cd /d %~dp0\..\..\..
 
 call tools/internal_ci/helper_scripts/prepare_build_windows.bat
 
-python tools/run_tests/task_runner.py -f distribtest windows cpp -j 4 || goto :error
-goto :EOF
+python tools/run_tests/task_runner.py -f distribtest windows cpp -j 4
+set RUNTESTS_EXITCODE=%errorlevel%
 
-:error
-exit /b %errorlevel%
+bash tools/internal_ci/helper_scripts/delete_nonartifacts.sh
+
+exit /b %RUNTESTS_EXITCODE%
