@@ -5524,7 +5524,7 @@ defaults:
     COREFLAGS: -fno-rtti -fno-exceptions
     CPPFLAGS: -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1
       -Wno-deprecated-declarations
-    LDFLAGS: -g
+    LDFLAGS: -g $(if $(subst Darwin,,$(SYSTEM)),,-framework CoreFoundation)
   zlib:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration
       -Wno-implicit-fallthrough $(W_NO_SHIFT_NEGATIVE_VALUE) -fvisibility=hidden
