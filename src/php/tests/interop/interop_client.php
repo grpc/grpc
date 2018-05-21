@@ -373,6 +373,8 @@ function cancelAfterFirstResponse($stub)
     $response = $call->read();
 
     $call->cancel();
+    $response = $call->read();
+
     hardAssert($call->getStatus()->code === Grpc\STATUS_CANCELLED,
                'Call status was not CANCELLED');
 }
@@ -447,6 +449,7 @@ function customMetadata($stub)
     $streaming_call->writesDone();
     $result = $streaming_call->read();
 
+    $streaming_call->read();
     hardAssertIfStatusOk($streaming_call->getStatus());
 
     $streaming_initial_metadata = $streaming_call->getMetadata();
