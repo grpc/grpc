@@ -1861,7 +1861,8 @@ static void add_closures_for_deferred_recv_callbacks(
     closure_to_execute* closures, size_t* num_closures) {
   if (batch_data->batch.recv_trailing_metadata) {
     // Add closure for deferred recv_initial_metadata_ready.
-    if (retry_state->recv_initial_metadata_ready_deferred_batch != nullptr) {
+    if (GPR_UNLIKELY(retry_state->recv_initial_metadata_ready_deferred_batch !=
+                     nullptr)) {
       closure_to_execute* closure = &closures[(*num_closures)++];
       closure->closure = GRPC_CLOSURE_INIT(
           &batch_data->recv_initial_metadata_ready,
@@ -2951,7 +2952,7 @@ static void start_pick_locked(void* arg, grpc_error* ignored) {
                        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Disconnected"));
       return;
     }
-    if (!chand->started_resolving) {
+    if (GPR_LIKELY(!chand->started_resolving)) {
       start_resolving_locked(chand);
     }
     pick_after_resolver_result_start_locked(elem);
@@ -2974,7 +2975,7 @@ static void cc_start_transport_stream_op_batch(
   GPR_TIMER_SCOPE("cc_start_transport_stream_op_batch", 0);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  if (chand->deadline_checking_enabled) {
+  if (GPR_LIKELY(chand->deadline_checking_enabled)) {
     grpc_deadline_state_client_start_transport_stream_op_batch(elem, batch);
   }
   // If we've previously been cancelled, immediately fail any new batches.
@@ -2989,7 +2990,7 @@ static void cc_start_transport_stream_op_batch(
     return;
   }
   // Handle cancellation.
-  if (batch->cancel_stream) {
+  if (GPR_UNLIKELY(batch->cancel_stream)) {
     // Stash a copy of cancel_error in our call data, so that we can use
     // it for subsequent operations.  This ensures that if the call is
     // cancelled before any batches are passed down (e.g., if the deadline
@@ -3068,7 +3069,7 @@ static grpc_error* cc_init_call_elem(grpc_call_element* elem,
   calld->arena = args->arena;
   calld->owning_call = args->call_stack;
   calld->call_combiner = args->call_combiner;
-  if (chand->deadline_checking_enabled) {
+  if (GPR_LIKELY(chand->deadline_checking_enabled)) {
     grpc_deadline_state_init(elem, args->call_stack, args->call_combiner,
                              calld->deadline);
   }
@@ -3083,7 +3084,7 @@ static void cc_destroy_call_elem(grpc_call_element* elem,
                                  grpc_closure* then_schedule_closure) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  if (chand->deadline_checking_enabled) {
+  if (GPR_LIKELY(chand->deadline_checking_enabled)) {
     grpc_deadline_state_destroy(elem);
   }
   grpc_slice_unref_internal(calld->path);
