@@ -62,6 +62,10 @@
     ],
     'ldflags': [
       '-g',
+      '$(if',
+      '$(subst',
+      'Darwin,,$(SYSTEM)),,-framework',
+      'CoreFoundation)',
     ],
     'cflags_c': [
       '-Werror',

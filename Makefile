@@ -336,7 +336,7 @@ CXXFLAGS += -stdlib=libc++
 endif
 CPPFLAGS += -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1 -Wno-deprecated-declarations
 COREFLAGS += -fno-rtti -fno-exceptions
-LDFLAGS += -g
+LDFLAGS += -g $(if $(subst Darwin,,$(SYSTEM)),,-framework CoreFoundation)
 
 DEFINES += PB_FIELD_16BIT
 
