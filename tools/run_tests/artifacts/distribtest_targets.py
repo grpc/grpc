@@ -327,6 +327,7 @@ def targets():
         PythonDistribTest('linux', 'x64', 'ubuntu1204'),
         PythonDistribTest('linux', 'x64', 'ubuntu1404'),
         PythonDistribTest('linux', 'x64', 'ubuntu1604'),
+        PythonDistribTest('linux', 'x64', 'alpine3.7', source=True),
         PythonDistribTest('linux', 'x64', 'jessie', source=True),
         PythonDistribTest('linux', 'x86', 'jessie', source=True),
         PythonDistribTest('linux', 'x64', 'centos7', source=True),
