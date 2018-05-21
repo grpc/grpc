@@ -56,6 +56,7 @@ CONTAINER_NAME="build_and_run_docker_$(uuidgen)"
 # shellcheck disable=SC2086
 docker run \
   "$@" \
+  --cap-add SYS_PTRACE \
   -e EXTERNAL_GIT_ROOT="/var/local/jenkins/grpc" \
   -e THIS_IS_REALLY_NEEDED='see https://github.com/docker/docker/issues/14203 for why docker is awful' \
   -e "KOKORO_BUILD_ID=$KOKORO_BUILD_ID" \
