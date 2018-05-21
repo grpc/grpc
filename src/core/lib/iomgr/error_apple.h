@@ -19,13 +19,13 @@
 #ifndef GRPC_CORE_LIB_IOMGR_ERROR_APPLE_H
 #define GRPC_CORE_LIB_IOMGR_ERROR_APPLE_H
 
-#ifdef GPR_APPLE
+#ifdef GRPC_CFSTREAM
 // Create an error from Apple Core Foundation CFError object
 #define GRPC_ERROR_CREATE_FROM_CFERROR(error, desc)  \
   grpc_error_create_from_cferror(__FILE__, __LINE__, \
                                  static_cast<void*>((error)), (desc))
 grpc_error* grpc_error_create_from_cferror(const char* file, int line,
                                            void* arg, const char* desc);
-#endif
+#endif /* GRPC_CFSTREAM */
 
 #endif /* GRPC_CORE_LIB_IOMGR_ERROR_APPLE_H */
