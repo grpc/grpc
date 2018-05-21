@@ -19,3 +19,9 @@ RUN apk add --update build-base python python-dev py-pip
 RUN pip install --upgrade pip
 
 RUN pip install virtualenv
+
+# bash is required for our test script invocation
+# ideally, we want to fix the invocation mechanism
+# so we can remove this, but it has to be here for
+# now:
+RUN apk add --update bash
