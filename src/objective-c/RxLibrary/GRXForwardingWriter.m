@@ -68,6 +68,10 @@
   [_writeable writeValue:value];
 }
 
+- (void)writeValue:(id)value completionHandler:(void (^)(void))completionHandler {
+    [_writeable writeValue:value completionHandler:completionHandler];
+}
+
 - (void)writesFinishedWithError:(NSError *)errorOrNil {
   _writer = nil;
   [self finishOutputWithError:errorOrNil];

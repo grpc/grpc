@@ -22,7 +22,19 @@
 @property(atomic) id<GRXWriteable> writeable;
 @end
 
+typedef void (^GRXBufferedPipeCompletionHandler)(void);
+
+@interface GRXBufferedPipeWriteOperation : NSObject
+@property(nonatomic, strong) id value;
+@property(nonatomic, strong) GRXBufferedPipeCompletionHandler completionHandler;
+@end
+
+@implementation GRXBufferedPipeWriteOperation
+@end
+
 @implementation GRXBufferedPipe {
+  BOOL _writing;
+  NSMutableArray *_queue;
   NSError *_errorOrNil;
   dispatch_queue_t _writeQueue;
 }
@@ -37,6 +49,8 @@
   if (self = [super init]) {
     _state = GRXWriterStateNotStarted;
     _writeQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
+    _writing = NO;
+    _queue = [NSMutableArray array];
     dispatch_suspend(_writeQueue);
   }
   return self;
@@ -45,15 +59,60 @@
 #pragma mark GRXWriteable implementation
 
 - (void)writeValue:(id)value {
+  [self writeValue:value completionHandler:nil];
+}
+
+- (void)writeValue:(id)value completionHandler:(void (^)(void))completionHandler {
   if ([value respondsToSelector:@selector(copy)]) {
     // Even if we're paused and with enqueued values, we can't excert back-pressure to our writer.
     // So just buffer the new value.
     // We need a copy, so that it doesn't mutate before it's written at the other end of the pipe.
     value = [value copy];
   }
+
+  GRXBufferedPipeWriteOperation *writeOp = [[GRXBufferedPipeWriteOperation alloc] init];
+  writeOp.value = value;
+  writeOp.completionHandler = completionHandler;
+
+  @synchronized(self) {
+    if (_writing) {
+      [_queue addObject:writeOp];
+      return;
+    } else {
+      _writing = YES;
+    }
+  }
+  [self startWriteOperation:writeOp];
+}
+
+/**
+ * grpc_call allows only one operation by each op type.
+ * Otherwise, grpc_call will raise an error. 
+ * To avoid the error, use a queue and completion handler to perform operations one by one.
+**/
+- (void)startWriteOperation:(GRXBufferedPipeWriteOperation *)writeOp {
   __weak GRXBufferedPipe *weakSelf = self;
+  GRXBufferedPipeCompletionHandler completionHandler = writeOp.completionHandler;
   dispatch_async(_writeQueue, ^(void) {
-    [weakSelf.writeable writeValue:value];
+    [weakSelf.writeable writeValue:writeOp.value completionHandler:^(void) {
+      if (completionHandler) {
+        completionHandler();
+      }
+
+      GRXBufferedPipe *strongSelf = weakSelf;
+      if (strongSelf) {
+        GRXBufferedPipeWriteOperation *nextWriteOp;
+        @synchronized(strongSelf) {
+          if (strongSelf->_queue.count == 0) {
+            strongSelf->_writing = NO;
+            return;
+          }
+          nextWriteOp = strongSelf->_queue[0];
+          [strongSelf->_queue removeObjectAtIndex:0];
+        }
+        [strongSelf startWriteOperation:nextWriteOp];
+      }
+    }];
   });
 }
 
@@ -113,6 +172,7 @@
 - (void)dealloc {
   GRXWriterState state = self.state;
   if (state == GRXWriterStateNotStarted || state == GRXWriterStatePaused) {
+    [_queue removeAllObjects];
     dispatch_resume(_writeQueue);
   }
 }

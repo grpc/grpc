@@ -27,6 +27,9 @@
 /** Push the next value of the sequence to the receiving object. */
 - (void)writeValue:(id)value;
 
+/** Push the next value of the sequence to the receiving object with completionHandler. */
+- (void)writeValue:(id)value completionHandler:(void (^)(void))completionHandler;
+
 /**
  * Signal that the sequence is completed, or that an error ocurred. After this
  * message is sent to the instance, neither it nor writeValue: may be

@@ -329,7 +329,9 @@ static NSString *const kBearerPrefix = @"Bearer ";
 // network queue if the write didn't succeed.
 // If the call is a unary call, parameter \a errorHandler will be ignored and
 // the error handler of GRPCOpSendClose will be executed in case of error.
-- (void)writeMessage:(NSData *)message withErrorHandler:(void (^)(void))errorHandler {
+- (void)writeMessage:(NSData *)message 
+    withErrorHandler:(void (^)(void))errorHandler
+   completionHandler:(void (^)(void))completionHandler {
   __weak GRPCCall *weakSelf = self;
   void (^resumingHandler)(void) = ^{
     // Resume the request writer.
@@ -338,6 +340,9 @@ static NSString *const kBearerPrefix = @"Bearer ";
       @synchronized(strongSelf->_requestWriter) {
         strongSelf->_requestWriter.state = GRXWriterStateStarted;
       }
+    }
+    if (completionHandler) {
+      completionHandler();
     }
   };
 
@@ -353,6 +358,10 @@ static NSString *const kBearerPrefix = @"Bearer ";
 }
 
 - (void)writeValue:(id)value {
+  [self writeValue:value completionHandler:nil];
+}
+
+- (void)writeValue:(id)value completionHandler:(void (^)(void))completionHandler {
   // TODO(jcanizales): Throw/assert if value isn't NSData.
 
   // Pause the input and only resume it when the C layer notifies us that writes
@@ -363,7 +372,7 @@ static NSString *const kBearerPrefix = @"Bearer ";
 
   dispatch_async(_callQueue, ^{
     // Write error is not processed here. It is handled by op batch of GRPC_OP_RECV_STATUS_ON_CLIENT
-    [self writeMessage:value withErrorHandler:nil];
+    [self writeMessage:value withErrorHandler:nil completionHandler:completionHandler];
   });
 }
 

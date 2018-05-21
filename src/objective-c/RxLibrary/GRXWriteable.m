@@ -98,6 +98,15 @@
   }
 }
 
+- (void)writeValue:(id)value completionHandler:(void (^)(void))completionHandler {
+  if (_valueHandler) {
+    _valueHandler(value);
+  }
+  if (completionHandler) {
+    completionHandler();
+  }
+}
+
 - (void)writesFinishedWithError:(NSError *)errorOrNil {
   if (_completionHandler) {
     _completionHandler(errorOrNil);

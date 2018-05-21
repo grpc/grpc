@@ -43,4 +43,8 @@
 - (void)writeValue:(id)value {
   [super writeValue:_map(value)];
 }
+
+- (void)writeValue:(id)value completionHandler:(void (^)(void))completionHandler {
+  [super writeValue:_map(value) completionHandler:completionHandler];
+}
 @end
