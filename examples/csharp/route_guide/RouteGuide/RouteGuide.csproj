@@ -70,7 +70,7 @@
       <Link>generate_protos.bat</Link>
     </None>
     <None Include="packages.config" />
-    <None Include="route_guide_db.json">
+    <None Include="..\..\..\json\route_guide_db.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
