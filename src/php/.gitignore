@@ -23,3 +23,5 @@ vendor/
 
 *.pb.php
 *_grpc_pb.php
+
+*.php_cs.cache

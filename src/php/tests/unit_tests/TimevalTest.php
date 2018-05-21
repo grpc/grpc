@@ -152,7 +152,7 @@ class TimevalTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testConstructorInvalidParam()
     {
@@ -160,7 +160,7 @@ class TimevalTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testAddInvalidParam()
     {
@@ -169,7 +169,7 @@ class TimevalTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testSubtractInvalidParam()
     {
@@ -178,7 +178,7 @@ class TimevalTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testCompareInvalidParam()
     {
@@ -186,7 +186,7 @@ class TimevalTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testSimilarInvalidParam()
     {

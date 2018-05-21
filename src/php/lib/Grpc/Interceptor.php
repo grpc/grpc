@@ -64,23 +64,23 @@ class Interceptor
     }
 
     /**
-     * Intercept the methods with Channel
+     * Intercept the methods with Channel.
      *
-     * @param Channel|InterceptorChannel $channel An already created Channel or InterceptorChannel object (optional)
-     * @param Interceptor|Interceptor[] $interceptors interceptors to be added
+     * @param Channel|InterceptorChannel $channel      An already created Channel or InterceptorChannel object (optional)
+     * @param Interceptor|Interceptor[]  $interceptors interceptors to be added
      *
      * @return InterceptorChannel
      */
     public static function intercept($channel, $interceptors)
     {
         if (is_array($interceptors)) {
-            for ($i = count($interceptors) - 1; $i >= 0; $i--) {
+            for ($i = count($interceptors) - 1; $i >= 0; --$i) {
                 $channel = new Internal\InterceptorChannel($channel, $interceptors[$i]);
             }
         } else {
-            $channel =  new Internal\InterceptorChannel($channel, $interceptors);
+            $channel = new Internal\InterceptorChannel($channel, $interceptors);
         }
+
         return $channel;
     }
 }
-

@@ -47,7 +47,7 @@ class ChanellCredentialsTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testInvalidCreateSsl()
     {
@@ -55,7 +55,7 @@ class ChanellCredentialsTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testInvalidCreateComposite()
     {

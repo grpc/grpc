@@ -17,9 +17,9 @@
  *
  */
 
-# Fix the following line to point to your installation
-# This assumes that you are using protoc 3.2.0+ and the generated stubs
-# were being autoloaded via composer.
+// Fix the following line to point to your installation
+// This assumes that you are using protoc 3.2.0+ and the generated stubs
+// were being autoloaded via composer.
 include 'vendor/autoload.php';
 
 function p($line)

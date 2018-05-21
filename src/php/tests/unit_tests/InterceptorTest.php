@@ -19,24 +19,27 @@
 /**
  * Interface exported by the server.
  */
-require_once(dirname(__FILE__).'/../../lib/Grpc/BaseStub.php');
-require_once(dirname(__FILE__).'/../../lib/Grpc/AbstractCall.php');
-require_once(dirname(__FILE__).'/../../lib/Grpc/UnaryCall.php');
-require_once(dirname(__FILE__).'/../../lib/Grpc/ClientStreamingCall.php');
-require_once(dirname(__FILE__).'/../../lib/Grpc/Interceptor.php');
-require_once(dirname(__FILE__).'/../../lib/Grpc/Internal/InterceptorChannel.php');
+require_once dirname(__FILE__).'/../../lib/Grpc/BaseStub.php';
+require_once dirname(__FILE__).'/../../lib/Grpc/AbstractCall.php';
+require_once dirname(__FILE__).'/../../lib/Grpc/UnaryCall.php';
+require_once dirname(__FILE__).'/../../lib/Grpc/ClientStreamingCall.php';
+require_once dirname(__FILE__).'/../../lib/Grpc/Interceptor.php';
+require_once dirname(__FILE__).'/../../lib/Grpc/Internal/InterceptorChannel.php';
 
 class SimpleRequest
 {
     private $data;
+
     public function __construct($data)
     {
         $this->data = $data;
     }
+
     public function setData($data)
     {
         $this->data = $data;
     }
+
     public function serializeToString()
     {
         return $this->data;
@@ -45,11 +48,10 @@ class SimpleRequest
 
 class InterceptorClient extends Grpc\BaseStub
 {
-
     /**
-     * @param string $hostname hostname
-     * @param array $opts channel options
-     * @param Channel|InterceptorChannel $channel (optional) re-use channel object
+     * @param string                     $hostname hostname
+     * @param array                      $opts     channel options
+     * @param Channel|InterceptorChannel $channel  (optional) re-use channel object
      */
     public function __construct($hostname, $opts, $channel = null)
     {
@@ -58,9 +60,10 @@ class InterceptorClient extends Grpc\BaseStub
 
     /**
      * A simple RPC.
+     *
      * @param SimpleRequest $argument input argument
-     * @param array $metadata metadata
-     * @param array $options call options
+     * @param array         $metadata metadata
+     * @param array         $options  call options
      */
     public function UnaryCall(
         SimpleRequest $argument,
@@ -78,8 +81,9 @@ class InterceptorClient extends Grpc\BaseStub
 
     /**
      * A client-to-server streaming RPC.
+     *
      * @param array $metadata metadata
-     * @param array $options call options
+     * @param array $options  call options
      */
     public function StreamCall(
         $metadata = [],
@@ -89,7 +93,6 @@ class InterceptorClient extends Grpc\BaseStub
     }
 }
 
-
 class ChangeMetadataInterceptor extends Grpc\Interceptor
 {
     public function interceptUnaryUnary($method,
@@ -98,12 +101,15 @@ class ChangeMetadataInterceptor extends Grpc\Interceptor
                                         array $options = [],
                                         $continuation)
     {
-        $metadata["foo"] = array('interceptor_from_unary_request');
+        $metadata['foo'] = array('interceptor_from_unary_request');
+
         return $continuation($method, $argument, $metadata, $options);
     }
+
     public function interceptStreamUnary($method, array $metadata = [], array $options = [], $continuation)
     {
-        $metadata["foo"] = array('interceptor_from_stream_request');
+        $metadata['foo'] = array('interceptor_from_stream_request');
+
         return $continuation($method, $metadata, $options);
     }
 }
@@ -119,10 +125,12 @@ class ChangeMetadataInterceptor2 extends Grpc\Interceptor
         if (array_key_exists('foo', $metadata)) {
             $metadata['bar'] = array('ChangeMetadataInterceptor should be executed first');
         } else {
-            $metadata["bar"] = array('interceptor_from_unary_request');
+            $metadata['bar'] = array('interceptor_from_unary_request');
         }
+
         return $continuation($method, $argument, $metadata, $options);
     }
+
     public function interceptStreamUnary($method,
                                          array $metadata = [],
                                          array $options = [],
@@ -131,8 +139,9 @@ class ChangeMetadataInterceptor2 extends Grpc\Interceptor
         if (array_key_exists('foo', $metadata)) {
             $metadata['bar'] = array('ChangeMetadataInterceptor should be executed first');
         } else {
-            $metadata["bar"] = array('interceptor_from_stream_request');
+            $metadata['bar'] = array('interceptor_from_stream_request');
         }
+
         return $continuation($method, $metadata, $options);
     }
 }
@@ -145,6 +154,7 @@ class ChangeRequestCall
     {
         $this->call = $call;
     }
+
     public function getCall()
     {
         return $this->call;
@@ -171,8 +181,10 @@ class ChangeRequestInterceptor extends Grpc\Interceptor
                                         $continuation)
     {
         $argument->setData('intercepted_unary_request');
+
         return $continuation($method, $argument, $metadata, $options);
     }
+
     public function interceptStreamUnary($method, array $metadata = [], array $options = [], $continuation)
     {
         return new ChangeRequestCall(
@@ -189,14 +201,15 @@ class StopCallInterceptor extends Grpc\Interceptor
                                         array $options = [],
                                         $continuation)
     {
-        $metadata["foo"] = array('interceptor_from_request_response');
+        $metadata['foo'] = array('interceptor_from_request_response');
     }
+
     public function interceptStreamUnary($method,
                                          array $metadata = [],
                                          array $options = [],
                                          $continuation)
     {
-        $metadata["foo"] = array('interceptor_from_request_response');
+        $metadata['foo'] = array('interceptor_from_request_response');
     }
 }
 
@@ -214,7 +227,6 @@ class InterceptorTest extends PHPUnit_Framework_TestCase
     {
         $this->channel->close();
     }
-
 
     public function testClientChangeMetadataOneInterceptor()
     {
@@ -361,7 +373,6 @@ class InterceptorTest extends PHPUnit_Framework_TestCase
         $unary_call = $client->UnaryCall($req);
         $this->assertNull($unary_call);
 
-
         $stream_call = $client->StreamCall();
         $this->assertNull($stream_call);
 
@@ -390,7 +401,7 @@ class InterceptorTest extends PHPUnit_Framework_TestCase
         );
         $interceptor_channel = Grpc\Interceptor::intercept($channel, new Grpc\Interceptor());
         $now = Grpc\Timeval::now();
-        $deadline = $now->add(new Grpc\Timeval(100*1000));
+        $deadline = $now->add(new Grpc\Timeval(100 * 1000));
         $state = $interceptor_channel->watchConnectivityState(1, $deadline);
         $this->assertTrue($state);
         unset($time);

@@ -18,76 +18,87 @@
  */
 
 // Histogram class for use in performance testing and measurement
-class Histogram {
-  private $resolution;
-  private $max_possible;
-  private $sum;
-  private $sum_of_squares;
-  private $multiplier;
-  private $count;
-  private $min_seen;
-  private $max_seen;
-  private $buckets;
+class Histogram
+{
+    private $resolution;
+    private $max_possible;
+    private $sum;
+    private $sum_of_squares;
+    private $multiplier;
+    private $count;
+    private $min_seen;
+    private $max_seen;
+    private $buckets;
 
-  private function bucket_for($value) {
-    return (int)(log($value) / log($this->multiplier));
-  }
-
-  public function __construct($resolution, $max_possible) {
-    $this->resolution = $resolution;
-    $this->max_possible = $max_possible;
-    $this->sum = 0;
-    $this->sum_of_squares = 0;
-    $this->multiplier = 1+$resolution;
-    $this->count = 0;
-    $this->min_seen = $max_possible;
-    $this->max_seen = 0;
-    $this->buckets = array_fill(0, $this->bucket_for($max_possible)+1, 0);
-  }
-
-  public function add($value) {
-    $this->sum += $value;
-    $this->sum_of_squares += $value * $value;
-    $this->count += 1;
-    if ($value < $this->min_seen) {
-      $this->min_seen = $value;
+    private function bucket_for($value)
+    {
+        return (int) (log($value) / log($this->multiplier));
     }
-    if ($value > $this->max_seen) {
-      $this->max_seen = $value;
+
+    public function __construct($resolution, $max_possible)
+    {
+        $this->resolution = $resolution;
+        $this->max_possible = $max_possible;
+        $this->sum = 0;
+        $this->sum_of_squares = 0;
+        $this->multiplier = 1 + $resolution;
+        $this->count = 0;
+        $this->min_seen = $max_possible;
+        $this->max_seen = 0;
+        $this->buckets = array_fill(0, $this->bucket_for($max_possible) + 1, 0);
     }
-    $this->buckets[$this->bucket_for($value)] += 1;
-  }
 
-  public function minimum() {
-    return $this->min_seen;
-  }
+    public function add($value)
+    {
+        $this->sum += $value;
+        $this->sum_of_squares += $value * $value;
+        ++$this->count;
+        if ($value < $this->min_seen) {
+            $this->min_seen = $value;
+        }
+        if ($value > $this->max_seen) {
+            $this->max_seen = $value;
+        }
+        ++$this->buckets[$this->bucket_for($value)];
+    }
 
-  public function maximum() {
-    return $this->max_seen;
-  }
+    public function minimum()
+    {
+        return $this->min_seen;
+    }
 
-  public function sum() {
-    return $this->sum;
-  }
+    public function maximum()
+    {
+        return $this->max_seen;
+    }
 
-  public function sum_of_squares() {
-    return $this->sum_of_squares;
-  }
+    public function sum()
+    {
+        return $this->sum;
+    }
 
-  public function count() {
-    return $this->count;
-  }
+    public function sum_of_squares()
+    {
+        return $this->sum_of_squares;
+    }
 
-  public function contents() {
-    return $this->buckets;
-  }
+    public function count()
+    {
+        return $this->count;
+    }
 
-  public function clean() {
-    $this->sum = 0;
-    $this->sum_of_squares = 0;
-    $this->count = 0;
-    $this->min_seen = $this->max_possible;
-    $this->max_seen = 0;
-    $this->buckets = array_fill(0, $this->bucket_for($this->max_possible)+1, 0);
-  }
+    public function contents()
+    {
+        return $this->buckets;
+    }
+
+    public function clean()
+    {
+        $this->sum = 0;
+        $this->sum_of_squares = 0;
+        $this->count = 0;
+        $this->min_seen = $this->max_possible;
+        $this->max_seen = 0;
+        $this->buckets = array_fill(0, $this->bucket_for($this->max_possible) + 1, 0);
+    }
 }

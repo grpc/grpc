@@ -80,6 +80,7 @@ class UnaryCall extends AbstractCall
             $event = $this->call->startBatch([OP_RECV_INITIAL_METADATA => true]);
             $this->metadata = $event->metadata;
         }
+
         return $this->metadata;
     }
 }

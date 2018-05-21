@@ -19,7 +19,4 @@ command -v php-cs-fixer > /dev/null || {
   exit 1
 }
 cd $(dirname $0)/..
-php-cs-fixer fix lib/Grpc || true
-php-cs-fixer fix tests/generated_code || true
-php-cs-fixer fix tests/interop || true
-php-cs-fixer fix tests/unit_tests || true
+php-cs-fixer fix || true

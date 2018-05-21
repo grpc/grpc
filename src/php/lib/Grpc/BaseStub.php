@@ -33,12 +33,12 @@ class BaseStub
     private $update_metadata;
 
     /**
-     * @param string  $hostname
-     * @param array   $opts
-     *  - 'update_metadata': (optional) a callback function which takes in a
-     * metadata array, and returns an updated metadata array
-     *  - 'grpc.primary_user_agent': (optional) a user-agent string
-     * @param Channel|InterceptorChannel $channel An already created Channel or InterceptorChannel object (optional)
+     * @param string                     $hostname
+     * @param array                      $opts
+     *                                             - 'update_metadata': (optional) a callback function which takes in a
+     *                                             metadata array, and returns an updated metadata array
+     *                                             - 'grpc.primary_user_agent': (optional) a user-agent string
+     * @param Channel|InterceptorChannel $channel  An already created Channel or InterceptorChannel object (optional)
      */
     public function __construct($hostname, $opts, $channel = null)
     {
@@ -66,6 +66,7 @@ class BaseStub
                     'Interceptor::intercept($channel, Interceptor|Interceptor[] $interceptors)');
             }
             $this->channel = $channel;
+
             return;
         }
 
@@ -73,7 +74,7 @@ class BaseStub
     }
 
     /**
-     * Creates and returns the default Channel
+     * Creates and returns the default Channel.
      *
      * @param array $opts Channel constructor options
      *
@@ -97,6 +98,7 @@ class BaseStub
                 'required. Please see one of the '.
                 'ChannelCredentials::create methods');
         }
+
         return new Channel($hostname, $opts);
     }
 
@@ -225,10 +227,10 @@ class BaseStub
     }
 
     /**
-     * Create a function which can be used to create UnaryCall
+     * Create a function which can be used to create UnaryCall.
      *
-     * @param Channel|InterceptorChannel   $channel
-     * @param callable $deserialize A function that deserializes the response
+     * @param Channel|InterceptorChannel $channel
+     * @param callable                   $deserialize A function that deserializes the response
      *
      * @return \Closure
      */
@@ -256,15 +258,16 @@ class BaseStub
                 $metadata
             );
             $call->start($argument, $metadata, $options);
+
             return $call;
         };
     }
 
     /**
-     * Create a function which can be used to create ServerStreamingCall
+     * Create a function which can be used to create ServerStreamingCall.
      *
-     * @param Channel|InterceptorChannel   $channel
-     * @param callable $deserialize A function that deserializes the response
+     * @param Channel|InterceptorChannel $channel
+     * @param callable                   $deserialize A function that deserializes the response
      *
      * @return \Closure
      */
@@ -291,15 +294,16 @@ class BaseStub
                 $metadata
             );
             $call->start($metadata);
+
             return $call;
         };
     }
 
     /**
-     * Create a function which can be used to create ClientStreamingCall
+     * Create a function which can be used to create ClientStreamingCall.
      *
-     * @param Channel|InterceptorChannel   $channel
-     * @param callable $deserialize A function that deserializes the response
+     * @param Channel|InterceptorChannel $channel
+     * @param callable                   $deserialize A function that deserializes the response
      *
      * @return \Closure
      */
@@ -327,15 +331,16 @@ class BaseStub
                 $metadata
             );
             $call->start($argument, $metadata, $options);
+
             return $call;
         };
     }
 
     /**
-     * Create a function which can be used to create BidiStreamingCall
+     * Create a function which can be used to create BidiStreamingCall.
      *
-     * @param Channel|InterceptorChannel   $channel
-     * @param callable $deserialize A function that deserializes the response
+     * @param Channel|InterceptorChannel $channel
+     * @param callable                   $deserialize A function that deserializes the response
      *
      * @return \Closure
      */
@@ -368,10 +373,10 @@ class BaseStub
     }
 
     /**
-     * Create a function which can be used to create UnaryCall
+     * Create a function which can be used to create UnaryCall.
      *
-     * @param Channel|InterceptorChannel   $channel
-     * @param callable $deserialize A function that deserializes the response
+     * @param Channel|InterceptorChannel $channel
+     * @param callable                   $deserialize A function that deserializes the response
      *
      * @return \Closure
      */
@@ -391,14 +396,15 @@ class BaseStub
                 );
             };
         }
+
         return $this->_GrpcUnaryUnary($channel, $deserialize);
     }
 
     /**
-     * Create a function which can be used to create ServerStreamingCall
+     * Create a function which can be used to create ServerStreamingCall.
      *
-     * @param Channel|InterceptorChannel   $channel
-     * @param callable $deserialize A function that deserializes the response
+     * @param Channel|InterceptorChannel $channel
+     * @param callable                   $deserialize A function that deserializes the response
      *
      * @return \Closure
      */
@@ -418,14 +424,15 @@ class BaseStub
                 );
             };
         }
+
         return $this->_GrpcUnaryStream($channel, $deserialize);
     }
 
     /**
-     * Create a function which can be used to create ClientStreamingCall
+     * Create a function which can be used to create ClientStreamingCall.
      *
-     * @param Channel|InterceptorChannel   $channel
-     * @param callable $deserialize A function that deserializes the response
+     * @param Channel|InterceptorChannel $channel
+     * @param callable                   $deserialize A function that deserializes the response
      *
      * @return \Closure
      */
@@ -443,14 +450,15 @@ class BaseStub
                 );
             };
         }
+
         return $this->_GrpcStreamUnary($channel, $deserialize);
     }
 
     /**
-     * Create a function which can be used to create BidiStreamingCall
+     * Create a function which can be used to create BidiStreamingCall.
      *
-     * @param Channel|InterceptorChannel   $channel
-     * @param callable $deserialize A function that deserializes the response
+     * @param Channel|InterceptorChannel $channel
+     * @param callable                   $deserialize A function that deserializes the response
      *
      * @return \Closure
      */
@@ -468,11 +476,13 @@ class BaseStub
                 );
             };
         }
+
         return $this->_GrpcStreamStream($channel, $deserialize);
     }
 
     /* This class is intended to be subclassed by generated code, so
      * all functions begin with "_" to avoid name collisions. */
+
     /**
      * Call a remote method that takes a single argument and has a
      * single output.
@@ -495,6 +505,7 @@ class BaseStub
     ) {
         $call_factory = $this->_UnaryUnaryCallFactory($this->channel, $deserialize);
         $call = $call_factory($method, $argument, $metadata, $options);
+
         return $call;
     }
 
@@ -518,6 +529,7 @@ class BaseStub
     ) {
         $call_factory = $this->_StreamUnaryCallFactory($this->channel, $deserialize);
         $call = $call_factory($method, $metadata, $options);
+
         return $call;
     }
 
@@ -543,6 +555,7 @@ class BaseStub
     ) {
         $call_factory = $this->_UnaryStreamCallFactory($this->channel, $deserialize);
         $call = $call_factory($method, $argument, $metadata, $options);
+
         return $call;
     }
 
@@ -565,6 +578,7 @@ class BaseStub
     ) {
         $call_factory = $this->_StreamStreamCallFactory($this->channel, $deserialize);
         $call = $call_factory($method, $metadata, $options);
+
         return $call;
     }
 }

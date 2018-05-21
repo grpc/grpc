@@ -1,0 +1,19 @@
+<?php
+
+$finder = PhpCsFixer\Finder::create()
+    ->exclude('bin')
+    ->exclude('ext')
+    ->exclude('tests/data')
+    ->exclude('tests/qps/generated_code')
+    ->in(__DIR__)
+;
+
+return PhpCsFixer\Config::create()
+    ->setUsingCache(false)
+    ->setRules([
+        '@Symfony' => true,
+        'phpdoc_no_package' => false,
+        'yoda_style' => false,
+    ])
+    ->setFinder($finder)
+;

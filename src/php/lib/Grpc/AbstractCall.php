@@ -21,6 +21,7 @@ namespace Grpc;
 
 /**
  * Class AbstractCall.
+ *
  * @package Grpc
  */
 abstract class AbstractCall
@@ -39,7 +40,7 @@ abstract class AbstractCall
      * @param Channel  $channel     The channel to communicate on
      * @param string   $method      The method to call on the
      *                              remote server
-     * @param callback $deserialize A callback function to deserialize
+     * @param callable $deserialize A callback function to deserialize
      *                              the response
      * @param array    $options     Call options (optional)
      */

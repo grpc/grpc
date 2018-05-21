@@ -28,9 +28,9 @@ class InterceptorChannel extends \Grpc\Channel
     private $interceptor;
 
     /**
-     * @param Channel|InterceptorChannel $channel An already created Channel
-     * or InterceptorChannel object (optional)
-     * @param Interceptor  $interceptor
+     * @param Channel|InterceptorChannel $channel     An already created Channel
+     *                                                or InterceptorChannel object (optional)
+     * @param Interceptor                $interceptor
      */
     public function __construct($channel, $interceptor)
     {

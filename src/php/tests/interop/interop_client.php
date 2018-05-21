@@ -259,7 +259,7 @@ function clientStreaming($stub)
 /**
  * Run the server_streaming test.
  *
- * @param $stub Stub object that has service methods.
+ * @param $stub stub object that has service methods
  */
 function serverStreaming($stub)
 {
@@ -283,7 +283,7 @@ function serverStreaming($stub)
             'Payload '.$i.' had the wrong type');
         hardAssert(strlen($payload->getBody()) === $sizes[$i],
                    'Response '.$i.' had the wrong length');
-        $i += 1;
+        ++$i;
     }
     hardAssertIfStatusOk($call->getStatus());
 }
@@ -291,7 +291,7 @@ function serverStreaming($stub)
 /**
  * Run the ping_pong test.
  *
- * @param $stub Stub object that has service methods.
+ * @param $stub stub object that has service methods
  */
 function pingPong($stub)
 {
@@ -328,7 +328,7 @@ function pingPong($stub)
 /**
  * Run the empty_stream test.
  *
- * @param $stub Stub object that has service methods.
+ * @param $stub stub object that has service methods
  */
 function emptyStream($stub)
 {
@@ -341,7 +341,7 @@ function emptyStream($stub)
 /**
  * Run the cancel_after_begin test.
  *
- * @param $stub Stub object that has service methods.
+ * @param $stub stub object that has service methods
  */
 function cancelAfterBegin($stub)
 {
@@ -355,7 +355,7 @@ function cancelAfterBegin($stub)
 /**
  * Run the cancel_after_first_response test.
  *
- * @param $stub Stub object that has service methods.
+ * @param $stub stub object that has service methods
  */
 function cancelAfterFirstResponse($stub)
 {
@@ -500,7 +500,7 @@ function statusCodeAndMessage($stub)
                $status->details);
 }
 
-# NOTE: the stub input to this function is from UnimplementedService
+// NOTE: the stub input to this function is from UnimplementedService
 function unimplementedService($stub)
 {
     $call = $stub->UnimplementedCall(new Grpc\Testing\EmptyMessage());
@@ -509,7 +509,7 @@ function unimplementedService($stub)
                'Received unexpected status code');
 }
 
-# NOTE: the stub input to this function is from TestService
+// NOTE: the stub input to this function is from TestService
 function unimplementedMethod($stub)
 {
     $call = $stub->UnimplementedCall(new Grpc\Testing\EmptyMessage());

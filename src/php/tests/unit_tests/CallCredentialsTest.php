@@ -138,7 +138,7 @@ class CallCredentialsTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testCreateFromPluginInvalidParam()
     {
@@ -148,7 +148,7 @@ class CallCredentialsTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testCreateCompositeInvalidParam()
     {

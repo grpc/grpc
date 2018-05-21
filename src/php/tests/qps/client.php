@@ -33,7 +33,7 @@
  *
  * This test only supports a single channel since threading/async is not idiomatic
  * This test supports unary or streaming ping-pongs, as well as open-loop
- * 
+ *
  */
 
 require dirname(__FILE__).'/vendor/autoload.php';
@@ -64,7 +64,8 @@ function hardAssertIfStatusOk($status)
 }
 
 /* Start the actual client */
-function qps_client_main($proxy_address, $server_ind) {
+function qps_client_main($proxy_address, $server_ind)
+{
     echo "[php-client] Initiating php client\n";
 
     $proxystubopts = [];
@@ -72,9 +73,9 @@ function qps_client_main($proxy_address, $server_ind) {
     $proxystub = new Grpc\Testing\ProxyClientServiceClient($proxy_address, $proxystubopts);
     list($config, $status) = $proxystub->GetConfig(new Grpc\Testing\Void())->wait();
     hardAssertIfStatusOk($status);
-    hardAssert($config->getOutstandingRpcsPerChannel() == 1, "Only 1 outstanding RPC supported");
+    hardAssert($config->getOutstandingRpcsPerChannel() == 1, 'Only 1 outstanding RPC supported');
 
-    echo "[php-client] Got configuration from proxy, target is '$server_ind'th server" . $config->getServerTargets()[$server_ind] . "\n";
+    echo "[php-client] Got configuration from proxy, target is '$server_ind'th server".$config->getServerTargets()[$server_ind]."\n";
     $histres = $config->getHistogramParams()->getResolution();
     $histmax = $config->getHistogramParams()->getMaxPossible();
 
@@ -109,40 +110,40 @@ function qps_client_main($proxy_address, $server_ind) {
 
     /* TODO(stanley-cheung): Enable the following by removing the 0&& once protobuf
      * properly supports oneof in PHP */
-    if (0 && $config->getLoadParams()->getLoad() == "poisson") {
+    if (0 && $config->getLoadParams()->getLoad() == 'poisson') {
         $poisson = true;
-        $lamrecip = 1.0/($config->getLoadParams()->getPoisson()->getOfferedLoad());
-        $issue = microtime(true) + $lamrecip * -log(1.0-rand()/(getrandmax()+1));
+        $lamrecip = 1.0 / ($config->getLoadParams()->getPoisson()->getOfferedLoad());
+        $issue = microtime(true) + $lamrecip * -log(1.0 - rand() / (getrandmax() + 1));
     } else {
         $poisson = false;
     }
     $histogram = new Histogram($histres, $histmax);
     $histogram->clean();
     $count = 0;
-    $histogram_result = new Grpc\Testing\HistogramData;
+    $histogram_result = new Grpc\Testing\HistogramData();
     $telehist = $proxystub->ReportHist();
     if ($config->getRpcType() == Grpc\Testing\RpcType::UNARY) {
         while (1) {
             if ($poisson) {
                 time_sleep_until($issue);
-                $issue = $issue + $lamrecip * -log(1.0-rand()/(getrandmax()+1));
+                $issue = $issue + $lamrecip * -log(1.0 - rand() / (getrandmax() + 1));
             }
             $startreq = microtime(true);
-            list($resp,$status) = $stub->UnaryCall($req)->wait();
+            list($resp, $status) = $stub->UnaryCall($req)->wait();
             hardAssertIfStatusOk($status);
-            $histogram->add((microtime(true)-$startreq)*1e9);
-            $count += 1;
+            $histogram->add((microtime(true) - $startreq) * 1e9);
+            ++$count;
             if ($count == 2000) {
-              $contents = $histogram->contents();
-              $histogram_result->setBucket($contents);
-              $histogram_result->setMinSeen($histogram->minimum());
-              $histogram_result->setMaxSeen($histogram->maximum());
-              $histogram_result->setSum($histogram->sum());
-              $histogram_result->setSumOfSquares($histogram->sum_of_squares());
-              $histogram_result->setCount($histogram->count());
-              $telehist->write($histogram_result);
-              $histogram->clean();
-              $count = 0;
+                $contents = $histogram->contents();
+                $histogram_result->setBucket($contents);
+                $histogram_result->setMinSeen($histogram->minimum());
+                $histogram_result->setMaxSeen($histogram->maximum());
+                $histogram_result->setSum($histogram->sum());
+                $histogram_result->setSumOfSquares($histogram->sum_of_squares());
+                $histogram_result->setCount($histogram->count());
+                $telehist->write($histogram_result);
+                $histogram->clean();
+                $count = 0;
             }
         }
     } else {
@@ -150,25 +151,25 @@ function qps_client_main($proxy_address, $server_ind) {
         while (1) {
             if ($poisson) {
                 time_sleep_until($issue);
-                $issue = $issue + $lamrecip * -log(1.0-rand()/(getrandmax()+1));
+                $issue = $issue + $lamrecip * -log(1.0 - rand() / (getrandmax() + 1));
             }
             $startreq = microtime(true);
             $stream->write($req);
             $resp = $stream->read();
-            $histogram->add((microtime(true)-$startreq)*1e9);
-            $count += 1;
+            $histogram->add((microtime(true) - $startreq) * 1e9);
+            ++$count;
             if ($count == 2000) {
-              $contents = $histogram->contents();
-              $histogram_result->setBucket($contents);
-              $histogram_result->setMinSeen($histogram->minimum());
-              $histogram_result->setMaxSeen($histogram->maximum());
-              $histogram_result->setSum($histogram->sum());
-              $histogram_result->setSumOfSquares($histogram->sum_of_squares());
-              $histogram_result->setCount($histogram->count());
-              $telehist->write($histogram_result);
-              $histogram->clean();
-              $count = 0;
-          }
+                $contents = $histogram->contents();
+                $histogram_result->setBucket($contents);
+                $histogram_result->setMinSeen($histogram->minimum());
+                $histogram_result->setMaxSeen($histogram->maximum());
+                $histogram_result->setSum($histogram->sum());
+                $histogram_result->setSumOfSquares($histogram->sum_of_squares());
+                $histogram_result->setCount($histogram->count());
+                $telehist->write($histogram_result);
+                $histogram->clean();
+                $count = 0;
+            }
         }
     }
 }

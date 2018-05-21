@@ -53,7 +53,7 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testClose()
     {
@@ -63,7 +63,7 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testInvalidMetadata()
     {
@@ -124,7 +124,7 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testInvalidMethodName()
     {
@@ -136,7 +136,7 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException Exception
+     * @expectedException \Exception
      */
     public function testMissingCredentials()
     {
@@ -221,8 +221,8 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
         $this->assertTrue(is_string($call->getPeer()));
         $result_array = iterator_to_array($call->responses());
         $extract_num = function ($num) {
-                         return $num->getNum();
-                       };
+            return $num->getNum();
+        };
         $values = array_map($extract_num, $result_array);
         $this->assertSame([1, 1, 2, 3, 5, 8, 13], $values);
         $status = $call->getStatus();

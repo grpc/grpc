@@ -186,7 +186,7 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testInvalidClientMessageArray()
     {
@@ -207,7 +207,7 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testInvalidClientMessageString()
     {
@@ -228,7 +228,7 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testInvalidClientMessageFlags()
     {
@@ -251,7 +251,7 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testInvalidServerStatusMetadata()
     {
@@ -292,7 +292,7 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testInvalidServerStatusCode()
     {
@@ -333,7 +333,7 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testMissingServerStatusCode()
     {
@@ -373,7 +373,7 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testInvalidServerStatusDetails()
     {
@@ -414,7 +414,7 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testMissingServerStatusDetails()
     {
@@ -454,7 +454,7 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testInvalidStartBatchKey()
     {
@@ -473,7 +473,7 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException LogicException
+     * @expectedException \LogicException
      */
     public function testInvalidStartBatch()
     {
@@ -555,7 +555,7 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testGetConnectivityStateInvalidParam()
     {
@@ -564,7 +564,7 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testWatchConnectivityStateInvalidParam()
     {
@@ -573,7 +573,7 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testChannelConstructorInvalidParam()
     {

@@ -44,7 +44,7 @@ class ServerTest extends PHPUnit_Framework_TestCase
     public function testConstructorWithArray()
     {
         // key of array must be string
-         $this->server = new Grpc\Server(['ip' => '127.0.0.1',
+        $this->server = new Grpc\Server(['ip' => '127.0.0.1',
                                           'port' => '8080', ]);
         $this->assertNotNull($this->server);
     }
@@ -88,7 +88,7 @@ class ServerTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testInvalidConstructor()
     {
@@ -97,7 +97,7 @@ class ServerTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testInvalidConstructorWithNumKeyOfArray()
     {
@@ -107,15 +107,16 @@ class ServerTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testInvalidConstructorWithList()
     {
         $this->server = new Grpc\Server(['127.0.0.1', '8080']);
         $this->assertNull($this->server);
     }
+
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testInvalidAddHttp2Port()
     {
@@ -124,7 +125,7 @@ class ServerTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testInvalidAddSecureHttp2Port()
     {
@@ -133,7 +134,7 @@ class ServerTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testInvalidAddSecureHttp2Port2()
     {
@@ -142,7 +143,7 @@ class ServerTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * @expectedException \InvalidArgumentException
      */
     public function testInvalidAddSecureHttp2Port3()
     {

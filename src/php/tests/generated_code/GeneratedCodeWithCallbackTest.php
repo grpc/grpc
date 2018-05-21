@@ -27,11 +27,11 @@ class GeneratedCodeWithCallbackTest extends AbstractGeneratedCodeTest
         ['credentials' => Grpc\ChannelCredentials::createInsecure(),
          'update_metadata' => function ($a_hash,
                                         $client = []) {
-                                $a_copy = $a_hash;
-                                $a_copy['foo'] = ['bar'];
+             $a_copy = $a_hash;
+             $a_copy['foo'] = ['bar'];
 
-                                return $a_copy;
-                              },
+             return $a_copy;
+         },
          ]);
     }
 
