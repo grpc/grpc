@@ -44,15 +44,6 @@ to BigQuery.
 ###### Useful options
 - `--regex` use regex to select particular scenarios to run.
 
-# Stress tests (run_stress_tests.py)
-
-Runs modified interop tests clients and servers under heavy load for an extended period of time to discover potential stability issues.
-The tests are internally using Kubernetes to run the client and server on GKE and upload statistics to BigQuery.
-
-`tools/run_tests/stress_test/run_on_gke.py --gcp_project_id=<google-cloud-platform-project-id> --config_file=<path-to-config-file>` 
-
-The directory `tools/run_tests/stress_test/configs/` contains the config files for several scenarios
-
 # Artifacts & Packages (task_runner.py)
 
 A generalized framework for running predefined tasks based on their labels. We use this to building binary artifacts & distrib packages and testing them)
