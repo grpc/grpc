@@ -50,6 +50,14 @@ RUN git clone https://github.com/gflags/gflags.git && cd gflags && git checkout 
 RUN cd gflags && cmake . && make && make install
 RUN ln -s /usr/local/include/gflags /usr/include/gflags
 
+# Prepare ccache
+RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
+RUN ln -s /usr/bin/ccache /usr/local/bin/g++
+RUN ln -s /usr/bin/ccache /usr/local/bin/cc
+RUN ln -s /usr/bin/ccache /usr/local/bin/c++
+RUN ln -s /usr/bin/ccache /usr/local/bin/clang
+RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
+
 
 RUN mkdir /var/local/jenkins
 
