@@ -72,10 +72,6 @@ struct grpc_channel {
 };
 
 #define CHANNEL_STACK_FROM_CHANNEL(c) ((grpc_channel_stack*)((c) + 1))
-#define CHANNEL_FROM_CHANNEL_STACK(channel_stack) \
-  (((grpc_channel*)(channel_stack)) - 1)
-#define CHANNEL_FROM_TOP_ELEM(top_elem) \
-  CHANNEL_FROM_CHANNEL_STACK(grpc_channel_stack_from_top_element(top_elem))
 
 static void destroy_channel(void* arg, grpc_error* error);
 
