@@ -792,7 +792,6 @@ doc/server_side_auth.md \
 doc/service_config.md \
 doc/status_ordering.md \
 doc/statuscodes.md \
-doc/stress_test_framework.md \
 doc/unit_testing.md \
 doc/wait-for-ready.md \
 doc/workarounds.md \
