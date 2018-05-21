@@ -13,8 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -exu -o pipefail
-
 # This script finds all html files in the current directory, and adds the
 # GA tracking snippet to them.
 
