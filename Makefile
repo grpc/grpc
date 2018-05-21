@@ -240,6 +240,7 @@ prefix ?= /usr/local
 
 PROTOC ?= protoc
 DTRACE ?= dtrace
+LDCONFIG ?= ldconfig
 CONFIG ?= opt
 # Doing X ?= Y is the same as:
 # ifeq ($(origin X), undefined)
@@ -524,9 +525,9 @@ endif # HAS_PKG_CONFIG
 
 PERFTOOLS_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/perftools.c -lprofiler $(LDFLAGS)
 
-PROTOC_CHECK_CMD = which protoc > /dev/null
-PROTOC_CHECK_VERSION_CMD = protoc --version | grep -q libprotoc.3
-DTRACE_CHECK_CMD = which dtrace > /dev/null
+PROTOC_CHECK_CMD = which $(PROTOC) > /dev/null
+PROTOC_CHECK_VERSION_CMD = $(PROTOC) --version | grep -q libprotoc.3
+DTRACE_CHECK_CMD = which $(DTRACE) > /dev/null
 SYSTEMTAP_HEADERS_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/systemtap.c $(LDFLAGS)
 
 ifndef REQUIRE_CUSTOM_LIBRARIES_$(CONFIG)
@@ -2968,7 +2969,7 @@ else ifneq ($(SYSTEM),Darwin)
 endif
 ifneq ($(SYSTEM),MINGW32)
 ifneq ($(SYSTEM),Darwin)
-	$(Q) ldconfig || true
+	$(Q) $(LDCONFIG) || true
 endif
 endif
 
@@ -3021,7 +3022,7 @@ else ifneq ($(SYSTEM),Darwin)
 endif
 ifneq ($(SYSTEM),MINGW32)
 ifneq ($(SYSTEM),Darwin)
-	$(Q) ldconfig || true
+	$(Q) $(LDCONFIG) || true
 endif
 endif
 
@@ -3038,7 +3039,7 @@ else ifneq ($(SYSTEM),Darwin)
 endif
 ifneq ($(SYSTEM),MINGW32)
 ifneq ($(SYSTEM),Darwin)
-	$(Q) ldconfig || true
+	$(Q) $(LDCONFIG) || true
 endif
 endif
 
