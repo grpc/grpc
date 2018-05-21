@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Class GrpcEnvironment
    | gRPC C# ">
-    <meta name="generator" content="docfx 2.23.1.0">
+    <meta name="generator" content="docfx 2.36.0.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -18,10 +18,11 @@
     <link rel="stylesheet" href="../styles/main.css">
     <meta property="docfx:navrel" content="../toc.html">
     <meta property="docfx:tocrel" content="toc.html">
+    
     <meta property="docfx:rel" content="../">
     
-  </head>
-  <body data-spy="scroll" data-target="#affix">
+  <script type="text/javascript">     (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){     (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),     m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)     })(window,document,'script','//www.google-analytics.com/analytics.js','ga');      ga('create', 'UA-60127042-1', 'auto');     ga('send', 'pageview'); </script> </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
     <div id="wrapper">
       <header>
         
@@ -61,7 +62,9 @@
         
         <div id="search-results">
           <div class="search-list"></div>
-          <div class="sr-items"></div>
+          <div class="sr-items">
+            <p><i class="glyphicon glyphicon-refresh index-loading"></i></p>
+          </div>
           <ul id="pagination"></ul>
         </div>
       </div>
@@ -171,10 +174,46 @@
       </tr>
     </tbody>
   </table>
+  <a id="Grpc_Core_GrpcEnvironment_SetBatchContextPoolParams_" data-uid="Grpc.Core.GrpcEnvironment.SetBatchContextPoolParams*"></a>
+  <h4 id="Grpc_Core_GrpcEnvironment_SetBatchContextPoolParams_System_Int32_System_Int32_" data-uid="Grpc.Core.GrpcEnvironment.SetBatchContextPoolParams(System.Int32,System.Int32)">SetBatchContextPoolParams(Int32, Int32)</h4>
+  <div class="markdown level1 summary"><p>Sets the parameters for a pool that caches batch context instances. Reusing batch context instances
+instead of creating a new one for every C core operation helps reducing the GC pressure.
+Can be only invoked before the <code>GrpcEnviroment</code> is started and cannot be changed afterwards.
+This is an advanced setting and you should only use it if you know what you are doing.
+Most users should rely on the default value provided by gRPC library.
+Note: this method is part of an experimental API that can change or be removed without any prior notice.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void SetBatchContextPoolParams(int sharedCapacity, int threadLocalCapacity)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">sharedCapacity</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">threadLocalCapacity</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <a id="Grpc_Core_GrpcEnvironment_SetCompletionQueueCount_" data-uid="Grpc.Core.GrpcEnvironment.SetCompletionQueueCount*"></a>
   <h4 id="Grpc_Core_GrpcEnvironment_SetCompletionQueueCount_System_Int32_" data-uid="Grpc.Core.GrpcEnvironment.SetCompletionQueueCount(System.Int32)">SetCompletionQueueCount(Int32)</h4>
   <div class="markdown level1 summary"><p>Sets the number of completion queues in the  gRPC thread pool that polls for internal RPC events.
-Can be only invoke before the <code>GrpcEnviroment</code> is started and cannot be changed afterwards.
+Can be only invoked before the <code>GrpcEnviroment</code> is started and cannot be changed afterwards.
 Setting the number of completions queues is an advanced setting and you should only use it if you know what you are doing.
 Most users should rely on the default value provided by gRPC library.
 Note: this method is part of an experimental API that can change or be removed without any prior notice.</p>
@@ -260,10 +299,46 @@ Note: <code>inlineHandlers=true</code> was the default in gRPC C# v1.4.x and ear
       </tr>
     </tbody>
   </table>
+  <a id="Grpc_Core_GrpcEnvironment_SetRequestCallContextPoolParams_" data-uid="Grpc.Core.GrpcEnvironment.SetRequestCallContextPoolParams*"></a>
+  <h4 id="Grpc_Core_GrpcEnvironment_SetRequestCallContextPoolParams_System_Int32_System_Int32_" data-uid="Grpc.Core.GrpcEnvironment.SetRequestCallContextPoolParams(System.Int32,System.Int32)">SetRequestCallContextPoolParams(Int32, Int32)</h4>
+  <div class="markdown level1 summary"><p>Sets the parameters for a pool that caches request call context instances. Reusing request call context instances
+instead of creating a new one for every requested call in C core helps reducing the GC pressure.
+Can be only invoked before the <code>GrpcEnviroment</code> is started and cannot be changed afterwards.
+This is an advanced setting and you should only use it if you know what you are doing.
+Most users should rely on the default value provided by gRPC library.
+Note: this method is part of an experimental API that can change or be removed without any prior notice.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static void SetRequestCallContextPoolParams(int sharedCapacity, int threadLocalCapacity)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">sharedCapacity</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td><span class="parametername">threadLocalCapacity</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
   <a id="Grpc_Core_GrpcEnvironment_SetThreadPoolSize_" data-uid="Grpc.Core.GrpcEnvironment.SetThreadPoolSize*"></a>
   <h4 id="Grpc_Core_GrpcEnvironment_SetThreadPoolSize_System_Int32_" data-uid="Grpc.Core.GrpcEnvironment.SetThreadPoolSize(System.Int32)">SetThreadPoolSize(Int32)</h4>
   <div class="markdown level1 summary"><p>Sets the number of threads in the gRPC thread pool that polls for internal RPC events.
-Can be only invoke before the <code>GrpcEnviroment</code> is started and cannot be changed afterwards.
+Can be only invoked before the <code>GrpcEnviroment</code> is started and cannot be changed afterwards.
 Setting thread pool size is an advanced setting and you should only use it if you know what you are doing.
 Most users should rely on the default value provided by gRPC library.
 Note: this method is part of an experimental API that can change or be removed without any prior notice.</p>
@@ -361,7 +436,7 @@ If <code>GrpcEnvironment</code> is later initialized and shutdown, the event wil
               <a href="#top">Back to top</a>
             </span>
             
-            <span>Copyright © 2015-2017 Microsoft<br>Generated by <strong>DocFX</strong></span>
+            <span>Generated by <strong>DocFX</strong></span>
           </div>
         </div>
       </footer>

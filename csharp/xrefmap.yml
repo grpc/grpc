@@ -23,18 +23,20 @@ references:
   name: FromAccessToken
   href: api/Grpc.Auth.GoogleAuthInterceptors.html#Grpc_Auth_GoogleAuthInterceptors_FromAccessToken_
   commentId: Overload:Grpc.Auth.GoogleAuthInterceptors.FromAccessToken
+  isSpec: "True"
   fullName: Grpc.Auth.GoogleAuthInterceptors.FromAccessToken
   nameWithType: GoogleAuthInterceptors.FromAccessToken
-- uid: Grpc.Auth.GoogleAuthInterceptors.FromCredential(Google.Apis.Auth.OAuth2.ITokenAccess)
+- uid: Grpc.Auth.GoogleAuthInterceptors.FromCredential(ITokenAccess)
   name: FromCredential(ITokenAccess)
-  href: api/Grpc.Auth.GoogleAuthInterceptors.html#Grpc_Auth_GoogleAuthInterceptors_FromCredential_Google_Apis_Auth_OAuth2_ITokenAccess_
-  commentId: M:Grpc.Auth.GoogleAuthInterceptors.FromCredential(Google.Apis.Auth.OAuth2.ITokenAccess)
-  fullName: Grpc.Auth.GoogleAuthInterceptors.FromCredential(Google.Apis.Auth.OAuth2.ITokenAccess)
+  href: api/Grpc.Auth.GoogleAuthInterceptors.html#Grpc_Auth_GoogleAuthInterceptors_FromCredential_ITokenAccess_
+  commentId: M:Grpc.Auth.GoogleAuthInterceptors.FromCredential(ITokenAccess)
+  fullName: Grpc.Auth.GoogleAuthInterceptors.FromCredential(ITokenAccess)
   nameWithType: GoogleAuthInterceptors.FromCredential(ITokenAccess)
 - uid: Grpc.Auth.GoogleAuthInterceptors.FromCredential*
   name: FromCredential
   href: api/Grpc.Auth.GoogleAuthInterceptors.html#Grpc_Auth_GoogleAuthInterceptors_FromCredential_
   commentId: Overload:Grpc.Auth.GoogleAuthInterceptors.FromCredential
+  isSpec: "True"
   fullName: Grpc.Auth.GoogleAuthInterceptors.FromCredential
   nameWithType: GoogleAuthInterceptors.FromCredential
 - uid: Grpc.Auth.GoogleGrpcCredentials
@@ -53,6 +55,7 @@ references:
   name: FromAccessToken
   href: api/Grpc.Auth.GoogleGrpcCredentials.html#Grpc_Auth_GoogleGrpcCredentials_FromAccessToken_
   commentId: Overload:Grpc.Auth.GoogleGrpcCredentials.FromAccessToken
+  isSpec: "True"
   fullName: Grpc.Auth.GoogleGrpcCredentials.FromAccessToken
   nameWithType: GoogleGrpcCredentials.FromAccessToken
 - uid: Grpc.Auth.GoogleGrpcCredentials.GetApplicationDefaultAsync
@@ -65,30 +68,33 @@ references:
   name: GetApplicationDefaultAsync
   href: api/Grpc.Auth.GoogleGrpcCredentials.html#Grpc_Auth_GoogleGrpcCredentials_GetApplicationDefaultAsync_
   commentId: Overload:Grpc.Auth.GoogleGrpcCredentials.GetApplicationDefaultAsync
+  isSpec: "True"
   fullName: Grpc.Auth.GoogleGrpcCredentials.GetApplicationDefaultAsync
   nameWithType: GoogleGrpcCredentials.GetApplicationDefaultAsync
-- uid: Grpc.Auth.GoogleGrpcCredentials.ToCallCredentials(Google.Apis.Auth.OAuth2.ITokenAccess)
+- uid: Grpc.Auth.GoogleGrpcCredentials.ToCallCredentials(ITokenAccess)
   name: ToCallCredentials(ITokenAccess)
-  href: api/Grpc.Auth.GoogleGrpcCredentials.html#Grpc_Auth_GoogleGrpcCredentials_ToCallCredentials_Google_Apis_Auth_OAuth2_ITokenAccess_
-  commentId: M:Grpc.Auth.GoogleGrpcCredentials.ToCallCredentials(Google.Apis.Auth.OAuth2.ITokenAccess)
-  fullName: Grpc.Auth.GoogleGrpcCredentials.ToCallCredentials(Google.Apis.Auth.OAuth2.ITokenAccess)
+  href: api/Grpc.Auth.GoogleGrpcCredentials.html#Grpc_Auth_GoogleGrpcCredentials_ToCallCredentials_ITokenAccess_
+  commentId: M:Grpc.Auth.GoogleGrpcCredentials.ToCallCredentials(ITokenAccess)
+  fullName: Grpc.Auth.GoogleGrpcCredentials.ToCallCredentials(ITokenAccess)
   nameWithType: GoogleGrpcCredentials.ToCallCredentials(ITokenAccess)
 - uid: Grpc.Auth.GoogleGrpcCredentials.ToCallCredentials*
   name: ToCallCredentials
   href: api/Grpc.Auth.GoogleGrpcCredentials.html#Grpc_Auth_GoogleGrpcCredentials_ToCallCredentials_
   commentId: Overload:Grpc.Auth.GoogleGrpcCredentials.ToCallCredentials
+  isSpec: "True"
   fullName: Grpc.Auth.GoogleGrpcCredentials.ToCallCredentials
   nameWithType: GoogleGrpcCredentials.ToCallCredentials
-- uid: Grpc.Auth.GoogleGrpcCredentials.ToChannelCredentials(Google.Apis.Auth.OAuth2.ITokenAccess)
+- uid: Grpc.Auth.GoogleGrpcCredentials.ToChannelCredentials(ITokenAccess)
   name: ToChannelCredentials(ITokenAccess)
-  href: api/Grpc.Auth.GoogleGrpcCredentials.html#Grpc_Auth_GoogleGrpcCredentials_ToChannelCredentials_Google_Apis_Auth_OAuth2_ITokenAccess_
-  commentId: M:Grpc.Auth.GoogleGrpcCredentials.ToChannelCredentials(Google.Apis.Auth.OAuth2.ITokenAccess)
-  fullName: Grpc.Auth.GoogleGrpcCredentials.ToChannelCredentials(Google.Apis.Auth.OAuth2.ITokenAccess)
+  href: api/Grpc.Auth.GoogleGrpcCredentials.html#Grpc_Auth_GoogleGrpcCredentials_ToChannelCredentials_ITokenAccess_
+  commentId: M:Grpc.Auth.GoogleGrpcCredentials.ToChannelCredentials(ITokenAccess)
+  fullName: Grpc.Auth.GoogleGrpcCredentials.ToChannelCredentials(ITokenAccess)
   nameWithType: GoogleGrpcCredentials.ToChannelCredentials(ITokenAccess)
 - uid: Grpc.Auth.GoogleGrpcCredentials.ToChannelCredentials*
   name: ToChannelCredentials
   href: api/Grpc.Auth.GoogleGrpcCredentials.html#Grpc_Auth_GoogleGrpcCredentials_ToChannelCredentials_
   commentId: Overload:Grpc.Auth.GoogleGrpcCredentials.ToChannelCredentials
+  isSpec: "True"
   fullName: Grpc.Auth.GoogleGrpcCredentials.ToChannelCredentials
   nameWithType: GoogleGrpcCredentials.ToChannelCredentials
 - uid: Grpc.Core
@@ -112,6 +118,24 @@ references:
   fullName.vb: Grpc.Core.AsyncClientStreamingCall(Of TRequest, TResponse)
   nameWithType: AsyncClientStreamingCall<TRequest, TResponse>
   nameWithType.vb: AsyncClientStreamingCall(Of TRequest, TResponse)
+- uid: Grpc.Core.AsyncClientStreamingCall`2.#ctor(Grpc.Core.IClientStreamWriter{`0},System.Threading.Tasks.Task{`1},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)
+  name: AsyncClientStreamingCall(IClientStreamWriter<TRequest>, Task<TResponse>, Task<Metadata>, Func<Status>, Func<Metadata>, Action)
+  href: api/Grpc.Core.AsyncClientStreamingCall-2.html#Grpc_Core_AsyncClientStreamingCall_2__ctor_Grpc_Core_IClientStreamWriter__0__System_Threading_Tasks_Task__1__System_Threading_Tasks_Task_Grpc_Core_Metadata__System_Func_Grpc_Core_Status__System_Func_Grpc_Core_Metadata__System_Action_
+  commentId: M:Grpc.Core.AsyncClientStreamingCall`2.#ctor(Grpc.Core.IClientStreamWriter{`0},System.Threading.Tasks.Task{`1},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)
+  name.vb: AsyncClientStreamingCall(IClientStreamWriter(Of TRequest), Task(Of TResponse), Task(Of Metadata), Func(Of Status), Func(Of Metadata), Action)
+  fullName: Grpc.Core.AsyncClientStreamingCall<TRequest, TResponse>.AsyncClientStreamingCall(Grpc.Core.IClientStreamWriter<TRequest>, System.Threading.Tasks.Task<TResponse>, System.Threading.Tasks.Task<Grpc.Core.Metadata>, System.Func<Grpc.Core.Status>, System.Func<Grpc.Core.Metadata>, System.Action)
+  fullName.vb: Grpc.Core.AsyncClientStreamingCall(Of TRequest, TResponse).AsyncClientStreamingCall(Grpc.Core.IClientStreamWriter(Of TRequest), System.Threading.Tasks.Task(Of TResponse), System.Threading.Tasks.Task(Of Grpc.Core.Metadata), System.Func(Of Grpc.Core.Status), System.Func(Of Grpc.Core.Metadata), System.Action)
+  nameWithType: AsyncClientStreamingCall<TRequest, TResponse>.AsyncClientStreamingCall(IClientStreamWriter<TRequest>, Task<TResponse>, Task<Metadata>, Func<Status>, Func<Metadata>, Action)
+  nameWithType.vb: AsyncClientStreamingCall(Of TRequest, TResponse).AsyncClientStreamingCall(IClientStreamWriter(Of TRequest), Task(Of TResponse), Task(Of Metadata), Func(Of Status), Func(Of Metadata), Action)
+- uid: Grpc.Core.AsyncClientStreamingCall`2.#ctor*
+  name: AsyncClientStreamingCall
+  href: api/Grpc.Core.AsyncClientStreamingCall-2.html#Grpc_Core_AsyncClientStreamingCall_2__ctor_
+  commentId: Overload:Grpc.Core.AsyncClientStreamingCall`2.#ctor
+  isSpec: "True"
+  fullName: Grpc.Core.AsyncClientStreamingCall<TRequest, TResponse>.AsyncClientStreamingCall
+  fullName.vb: Grpc.Core.AsyncClientStreamingCall(Of TRequest, TResponse).AsyncClientStreamingCall
+  nameWithType: AsyncClientStreamingCall<TRequest, TResponse>.AsyncClientStreamingCall
+  nameWithType.vb: AsyncClientStreamingCall(Of TRequest, TResponse).AsyncClientStreamingCall
 - uid: Grpc.Core.AsyncClientStreamingCall`2.Dispose
   name: Dispose()
   href: api/Grpc.Core.AsyncClientStreamingCall-2.html#Grpc_Core_AsyncClientStreamingCall_2_Dispose
@@ -124,6 +148,7 @@ references:
   name: Dispose
   href: api/Grpc.Core.AsyncClientStreamingCall-2.html#Grpc_Core_AsyncClientStreamingCall_2_Dispose_
   commentId: Overload:Grpc.Core.AsyncClientStreamingCall`2.Dispose
+  isSpec: "True"
   fullName: Grpc.Core.AsyncClientStreamingCall<TRequest, TResponse>.Dispose
   fullName.vb: Grpc.Core.AsyncClientStreamingCall(Of TRequest, TResponse).Dispose
   nameWithType: AsyncClientStreamingCall<TRequest, TResponse>.Dispose
@@ -140,6 +165,7 @@ references:
   name: GetAwaiter
   href: api/Grpc.Core.AsyncClientStreamingCall-2.html#Grpc_Core_AsyncClientStreamingCall_2_GetAwaiter_
   commentId: Overload:Grpc.Core.AsyncClientStreamingCall`2.GetAwaiter
+  isSpec: "True"
   fullName: Grpc.Core.AsyncClientStreamingCall<TRequest, TResponse>.GetAwaiter
   fullName.vb: Grpc.Core.AsyncClientStreamingCall(Of TRequest, TResponse).GetAwaiter
   nameWithType: AsyncClientStreamingCall<TRequest, TResponse>.GetAwaiter
@@ -156,6 +182,7 @@ references:
   name: GetStatus
   href: api/Grpc.Core.AsyncClientStreamingCall-2.html#Grpc_Core_AsyncClientStreamingCall_2_GetStatus_
   commentId: Overload:Grpc.Core.AsyncClientStreamingCall`2.GetStatus
+  isSpec: "True"
   fullName: Grpc.Core.AsyncClientStreamingCall<TRequest, TResponse>.GetStatus
   fullName.vb: Grpc.Core.AsyncClientStreamingCall(Of TRequest, TResponse).GetStatus
   nameWithType: AsyncClientStreamingCall<TRequest, TResponse>.GetStatus
@@ -172,6 +199,7 @@ references:
   name: GetTrailers
   href: api/Grpc.Core.AsyncClientStreamingCall-2.html#Grpc_Core_AsyncClientStreamingCall_2_GetTrailers_
   commentId: Overload:Grpc.Core.AsyncClientStreamingCall`2.GetTrailers
+  isSpec: "True"
   fullName: Grpc.Core.AsyncClientStreamingCall<TRequest, TResponse>.GetTrailers
   fullName.vb: Grpc.Core.AsyncClientStreamingCall(Of TRequest, TResponse).GetTrailers
   nameWithType: AsyncClientStreamingCall<TRequest, TResponse>.GetTrailers
@@ -188,6 +216,7 @@ references:
   name: RequestStream
   href: api/Grpc.Core.AsyncClientStreamingCall-2.html#Grpc_Core_AsyncClientStreamingCall_2_RequestStream_
   commentId: Overload:Grpc.Core.AsyncClientStreamingCall`2.RequestStream
+  isSpec: "True"
   fullName: Grpc.Core.AsyncClientStreamingCall<TRequest, TResponse>.RequestStream
   fullName.vb: Grpc.Core.AsyncClientStreamingCall(Of TRequest, TResponse).RequestStream
   nameWithType: AsyncClientStreamingCall<TRequest, TResponse>.RequestStream
@@ -204,6 +233,7 @@ references:
   name: ResponseAsync
   href: api/Grpc.Core.AsyncClientStreamingCall-2.html#Grpc_Core_AsyncClientStreamingCall_2_ResponseAsync_
   commentId: Overload:Grpc.Core.AsyncClientStreamingCall`2.ResponseAsync
+  isSpec: "True"
   fullName: Grpc.Core.AsyncClientStreamingCall<TRequest, TResponse>.ResponseAsync
   fullName.vb: Grpc.Core.AsyncClientStreamingCall(Of TRequest, TResponse).ResponseAsync
   nameWithType: AsyncClientStreamingCall<TRequest, TResponse>.ResponseAsync
@@ -220,6 +250,7 @@ references:
   name: ResponseHeadersAsync
   href: api/Grpc.Core.AsyncClientStreamingCall-2.html#Grpc_Core_AsyncClientStreamingCall_2_ResponseHeadersAsync_
   commentId: Overload:Grpc.Core.AsyncClientStreamingCall`2.ResponseHeadersAsync
+  isSpec: "True"
   fullName: Grpc.Core.AsyncClientStreamingCall<TRequest, TResponse>.ResponseHeadersAsync
   fullName.vb: Grpc.Core.AsyncClientStreamingCall(Of TRequest, TResponse).ResponseHeadersAsync
   nameWithType: AsyncClientStreamingCall<TRequest, TResponse>.ResponseHeadersAsync
@@ -233,6 +264,24 @@ references:
   fullName.vb: Grpc.Core.AsyncDuplexStreamingCall(Of TRequest, TResponse)
   nameWithType: AsyncDuplexStreamingCall<TRequest, TResponse>
   nameWithType.vb: AsyncDuplexStreamingCall(Of TRequest, TResponse)
+- uid: Grpc.Core.AsyncDuplexStreamingCall`2.#ctor(Grpc.Core.IClientStreamWriter{`0},Grpc.Core.IAsyncStreamReader{`1},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)
+  name: AsyncDuplexStreamingCall(IClientStreamWriter<TRequest>, IAsyncStreamReader<TResponse>, Task<Metadata>, Func<Status>, Func<Metadata>, Action)
+  href: api/Grpc.Core.AsyncDuplexStreamingCall-2.html#Grpc_Core_AsyncDuplexStreamingCall_2__ctor_Grpc_Core_IClientStreamWriter__0__Grpc_Core_IAsyncStreamReader__1__System_Threading_Tasks_Task_Grpc_Core_Metadata__System_Func_Grpc_Core_Status__System_Func_Grpc_Core_Metadata__System_Action_
+  commentId: M:Grpc.Core.AsyncDuplexStreamingCall`2.#ctor(Grpc.Core.IClientStreamWriter{`0},Grpc.Core.IAsyncStreamReader{`1},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)
+  name.vb: AsyncDuplexStreamingCall(IClientStreamWriter(Of TRequest), IAsyncStreamReader(Of TResponse), Task(Of Metadata), Func(Of Status), Func(Of Metadata), Action)
+  fullName: Grpc.Core.AsyncDuplexStreamingCall<TRequest, TResponse>.AsyncDuplexStreamingCall(Grpc.Core.IClientStreamWriter<TRequest>, Grpc.Core.IAsyncStreamReader<TResponse>, System.Threading.Tasks.Task<Grpc.Core.Metadata>, System.Func<Grpc.Core.Status>, System.Func<Grpc.Core.Metadata>, System.Action)
+  fullName.vb: Grpc.Core.AsyncDuplexStreamingCall(Of TRequest, TResponse).AsyncDuplexStreamingCall(Grpc.Core.IClientStreamWriter(Of TRequest), Grpc.Core.IAsyncStreamReader(Of TResponse), System.Threading.Tasks.Task(Of Grpc.Core.Metadata), System.Func(Of Grpc.Core.Status), System.Func(Of Grpc.Core.Metadata), System.Action)
+  nameWithType: AsyncDuplexStreamingCall<TRequest, TResponse>.AsyncDuplexStreamingCall(IClientStreamWriter<TRequest>, IAsyncStreamReader<TResponse>, Task<Metadata>, Func<Status>, Func<Metadata>, Action)
+  nameWithType.vb: AsyncDuplexStreamingCall(Of TRequest, TResponse).AsyncDuplexStreamingCall(IClientStreamWriter(Of TRequest), IAsyncStreamReader(Of TResponse), Task(Of Metadata), Func(Of Status), Func(Of Metadata), Action)
+- uid: Grpc.Core.AsyncDuplexStreamingCall`2.#ctor*
+  name: AsyncDuplexStreamingCall
+  href: api/Grpc.Core.AsyncDuplexStreamingCall-2.html#Grpc_Core_AsyncDuplexStreamingCall_2__ctor_
+  commentId: Overload:Grpc.Core.AsyncDuplexStreamingCall`2.#ctor
+  isSpec: "True"
+  fullName: Grpc.Core.AsyncDuplexStreamingCall<TRequest, TResponse>.AsyncDuplexStreamingCall
+  fullName.vb: Grpc.Core.AsyncDuplexStreamingCall(Of TRequest, TResponse).AsyncDuplexStreamingCall
+  nameWithType: AsyncDuplexStreamingCall<TRequest, TResponse>.AsyncDuplexStreamingCall
+  nameWithType.vb: AsyncDuplexStreamingCall(Of TRequest, TResponse).AsyncDuplexStreamingCall
 - uid: Grpc.Core.AsyncDuplexStreamingCall`2.Dispose
   name: Dispose()
   href: api/Grpc.Core.AsyncDuplexStreamingCall-2.html#Grpc_Core_AsyncDuplexStreamingCall_2_Dispose
@@ -245,6 +294,7 @@ references:
   name: Dispose
   href: api/Grpc.Core.AsyncDuplexStreamingCall-2.html#Grpc_Core_AsyncDuplexStreamingCall_2_Dispose_
   commentId: Overload:Grpc.Core.AsyncDuplexStreamingCall`2.Dispose
+  isSpec: "True"
   fullName: Grpc.Core.AsyncDuplexStreamingCall<TRequest, TResponse>.Dispose
   fullName.vb: Grpc.Core.AsyncDuplexStreamingCall(Of TRequest, TResponse).Dispose
   nameWithType: AsyncDuplexStreamingCall<TRequest, TResponse>.Dispose
@@ -261,6 +311,7 @@ references:
   name: GetStatus
   href: api/Grpc.Core.AsyncDuplexStreamingCall-2.html#Grpc_Core_AsyncDuplexStreamingCall_2_GetStatus_
   commentId: Overload:Grpc.Core.AsyncDuplexStreamingCall`2.GetStatus
+  isSpec: "True"
   fullName: Grpc.Core.AsyncDuplexStreamingCall<TRequest, TResponse>.GetStatus
   fullName.vb: Grpc.Core.AsyncDuplexStreamingCall(Of TRequest, TResponse).GetStatus
   nameWithType: AsyncDuplexStreamingCall<TRequest, TResponse>.GetStatus
@@ -277,6 +328,7 @@ references:
   name: GetTrailers
   href: api/Grpc.Core.AsyncDuplexStreamingCall-2.html#Grpc_Core_AsyncDuplexStreamingCall_2_GetTrailers_
   commentId: Overload:Grpc.Core.AsyncDuplexStreamingCall`2.GetTrailers
+  isSpec: "True"
   fullName: Grpc.Core.AsyncDuplexStreamingCall<TRequest, TResponse>.GetTrailers
   fullName.vb: Grpc.Core.AsyncDuplexStreamingCall(Of TRequest, TResponse).GetTrailers
   nameWithType: AsyncDuplexStreamingCall<TRequest, TResponse>.GetTrailers
@@ -293,6 +345,7 @@ references:
   name: RequestStream
   href: api/Grpc.Core.AsyncDuplexStreamingCall-2.html#Grpc_Core_AsyncDuplexStreamingCall_2_RequestStream_
   commentId: Overload:Grpc.Core.AsyncDuplexStreamingCall`2.RequestStream
+  isSpec: "True"
   fullName: Grpc.Core.AsyncDuplexStreamingCall<TRequest, TResponse>.RequestStream
   fullName.vb: Grpc.Core.AsyncDuplexStreamingCall(Of TRequest, TResponse).RequestStream
   nameWithType: AsyncDuplexStreamingCall<TRequest, TResponse>.RequestStream
@@ -309,6 +362,7 @@ references:
   name: ResponseHeadersAsync
   href: api/Grpc.Core.AsyncDuplexStreamingCall-2.html#Grpc_Core_AsyncDuplexStreamingCall_2_ResponseHeadersAsync_
   commentId: Overload:Grpc.Core.AsyncDuplexStreamingCall`2.ResponseHeadersAsync
+  isSpec: "True"
   fullName: Grpc.Core.AsyncDuplexStreamingCall<TRequest, TResponse>.ResponseHeadersAsync
   fullName.vb: Grpc.Core.AsyncDuplexStreamingCall(Of TRequest, TResponse).ResponseHeadersAsync
   nameWithType: AsyncDuplexStreamingCall<TRequest, TResponse>.ResponseHeadersAsync
@@ -325,6 +379,7 @@ references:
   name: ResponseStream
   href: api/Grpc.Core.AsyncDuplexStreamingCall-2.html#Grpc_Core_AsyncDuplexStreamingCall_2_ResponseStream_
   commentId: Overload:Grpc.Core.AsyncDuplexStreamingCall`2.ResponseStream
+  isSpec: "True"
   fullName: Grpc.Core.AsyncDuplexStreamingCall<TRequest, TResponse>.ResponseStream
   fullName.vb: Grpc.Core.AsyncDuplexStreamingCall(Of TRequest, TResponse).ResponseStream
   nameWithType: AsyncDuplexStreamingCall<TRequest, TResponse>.ResponseStream
@@ -338,6 +393,24 @@ references:
   fullName.vb: Grpc.Core.AsyncServerStreamingCall(Of TResponse)
   nameWithType: AsyncServerStreamingCall<TResponse>
   nameWithType.vb: AsyncServerStreamingCall(Of TResponse)
+- uid: Grpc.Core.AsyncServerStreamingCall`1.#ctor(Grpc.Core.IAsyncStreamReader{`0},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)
+  name: AsyncServerStreamingCall(IAsyncStreamReader<TResponse>, Task<Metadata>, Func<Status>, Func<Metadata>, Action)
+  href: api/Grpc.Core.AsyncServerStreamingCall-1.html#Grpc_Core_AsyncServerStreamingCall_1__ctor_Grpc_Core_IAsyncStreamReader__0__System_Threading_Tasks_Task_Grpc_Core_Metadata__System_Func_Grpc_Core_Status__System_Func_Grpc_Core_Metadata__System_Action_
+  commentId: M:Grpc.Core.AsyncServerStreamingCall`1.#ctor(Grpc.Core.IAsyncStreamReader{`0},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)
+  name.vb: AsyncServerStreamingCall(IAsyncStreamReader(Of TResponse), Task(Of Metadata), Func(Of Status), Func(Of Metadata), Action)
+  fullName: Grpc.Core.AsyncServerStreamingCall<TResponse>.AsyncServerStreamingCall(Grpc.Core.IAsyncStreamReader<TResponse>, System.Threading.Tasks.Task<Grpc.Core.Metadata>, System.Func<Grpc.Core.Status>, System.Func<Grpc.Core.Metadata>, System.Action)
+  fullName.vb: Grpc.Core.AsyncServerStreamingCall(Of TResponse).AsyncServerStreamingCall(Grpc.Core.IAsyncStreamReader(Of TResponse), System.Threading.Tasks.Task(Of Grpc.Core.Metadata), System.Func(Of Grpc.Core.Status), System.Func(Of Grpc.Core.Metadata), System.Action)
+  nameWithType: AsyncServerStreamingCall<TResponse>.AsyncServerStreamingCall(IAsyncStreamReader<TResponse>, Task<Metadata>, Func<Status>, Func<Metadata>, Action)
+  nameWithType.vb: AsyncServerStreamingCall(Of TResponse).AsyncServerStreamingCall(IAsyncStreamReader(Of TResponse), Task(Of Metadata), Func(Of Status), Func(Of Metadata), Action)
+- uid: Grpc.Core.AsyncServerStreamingCall`1.#ctor*
+  name: AsyncServerStreamingCall
+  href: api/Grpc.Core.AsyncServerStreamingCall-1.html#Grpc_Core_AsyncServerStreamingCall_1__ctor_
+  commentId: Overload:Grpc.Core.AsyncServerStreamingCall`1.#ctor
+  isSpec: "True"
+  fullName: Grpc.Core.AsyncServerStreamingCall<TResponse>.AsyncServerStreamingCall
+  fullName.vb: Grpc.Core.AsyncServerStreamingCall(Of TResponse).AsyncServerStreamingCall
+  nameWithType: AsyncServerStreamingCall<TResponse>.AsyncServerStreamingCall
+  nameWithType.vb: AsyncServerStreamingCall(Of TResponse).AsyncServerStreamingCall
 - uid: Grpc.Core.AsyncServerStreamingCall`1.Dispose
   name: Dispose()
   href: api/Grpc.Core.AsyncServerStreamingCall-1.html#Grpc_Core_AsyncServerStreamingCall_1_Dispose
@@ -350,6 +423,7 @@ references:
   name: Dispose
   href: api/Grpc.Core.AsyncServerStreamingCall-1.html#Grpc_Core_AsyncServerStreamingCall_1_Dispose_
   commentId: Overload:Grpc.Core.AsyncServerStreamingCall`1.Dispose
+  isSpec: "True"
   fullName: Grpc.Core.AsyncServerStreamingCall<TResponse>.Dispose
   fullName.vb: Grpc.Core.AsyncServerStreamingCall(Of TResponse).Dispose
   nameWithType: AsyncServerStreamingCall<TResponse>.Dispose
@@ -366,6 +440,7 @@ references:
   name: GetStatus
   href: api/Grpc.Core.AsyncServerStreamingCall-1.html#Grpc_Core_AsyncServerStreamingCall_1_GetStatus_
   commentId: Overload:Grpc.Core.AsyncServerStreamingCall`1.GetStatus
+  isSpec: "True"
   fullName: Grpc.Core.AsyncServerStreamingCall<TResponse>.GetStatus
   fullName.vb: Grpc.Core.AsyncServerStreamingCall(Of TResponse).GetStatus
   nameWithType: AsyncServerStreamingCall<TResponse>.GetStatus
@@ -382,6 +457,7 @@ references:
   name: GetTrailers
   href: api/Grpc.Core.AsyncServerStreamingCall-1.html#Grpc_Core_AsyncServerStreamingCall_1_GetTrailers_
   commentId: Overload:Grpc.Core.AsyncServerStreamingCall`1.GetTrailers
+  isSpec: "True"
   fullName: Grpc.Core.AsyncServerStreamingCall<TResponse>.GetTrailers
   fullName.vb: Grpc.Core.AsyncServerStreamingCall(Of TResponse).GetTrailers
   nameWithType: AsyncServerStreamingCall<TResponse>.GetTrailers
@@ -398,6 +474,7 @@ references:
   name: ResponseHeadersAsync
   href: api/Grpc.Core.AsyncServerStreamingCall-1.html#Grpc_Core_AsyncServerStreamingCall_1_ResponseHeadersAsync_
   commentId: Overload:Grpc.Core.AsyncServerStreamingCall`1.ResponseHeadersAsync
+  isSpec: "True"
   fullName: Grpc.Core.AsyncServerStreamingCall<TResponse>.ResponseHeadersAsync
   fullName.vb: Grpc.Core.AsyncServerStreamingCall(Of TResponse).ResponseHeadersAsync
   nameWithType: AsyncServerStreamingCall<TResponse>.ResponseHeadersAsync
@@ -414,6 +491,7 @@ references:
   name: ResponseStream
   href: api/Grpc.Core.AsyncServerStreamingCall-1.html#Grpc_Core_AsyncServerStreamingCall_1_ResponseStream_
   commentId: Overload:Grpc.Core.AsyncServerStreamingCall`1.ResponseStream
+  isSpec: "True"
   fullName: Grpc.Core.AsyncServerStreamingCall<TResponse>.ResponseStream
   fullName.vb: Grpc.Core.AsyncServerStreamingCall(Of TResponse).ResponseStream
   nameWithType: AsyncServerStreamingCall<TResponse>.ResponseStream
@@ -427,6 +505,24 @@ references:
   fullName.vb: Grpc.Core.AsyncUnaryCall(Of TResponse)
   nameWithType: AsyncUnaryCall<TResponse>
   nameWithType.vb: AsyncUnaryCall(Of TResponse)
+- uid: Grpc.Core.AsyncUnaryCall`1.#ctor(System.Threading.Tasks.Task{`0},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)
+  name: AsyncUnaryCall(Task<TResponse>, Task<Metadata>, Func<Status>, Func<Metadata>, Action)
+  href: api/Grpc.Core.AsyncUnaryCall-1.html#Grpc_Core_AsyncUnaryCall_1__ctor_System_Threading_Tasks_Task__0__System_Threading_Tasks_Task_Grpc_Core_Metadata__System_Func_Grpc_Core_Status__System_Func_Grpc_Core_Metadata__System_Action_
+  commentId: M:Grpc.Core.AsyncUnaryCall`1.#ctor(System.Threading.Tasks.Task{`0},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)
+  name.vb: AsyncUnaryCall(Task(Of TResponse), Task(Of Metadata), Func(Of Status), Func(Of Metadata), Action)
+  fullName: Grpc.Core.AsyncUnaryCall<TResponse>.AsyncUnaryCall(System.Threading.Tasks.Task<TResponse>, System.Threading.Tasks.Task<Grpc.Core.Metadata>, System.Func<Grpc.Core.Status>, System.Func<Grpc.Core.Metadata>, System.Action)
+  fullName.vb: Grpc.Core.AsyncUnaryCall(Of TResponse).AsyncUnaryCall(System.Threading.Tasks.Task(Of TResponse), System.Threading.Tasks.Task(Of Grpc.Core.Metadata), System.Func(Of Grpc.Core.Status), System.Func(Of Grpc.Core.Metadata), System.Action)
+  nameWithType: AsyncUnaryCall<TResponse>.AsyncUnaryCall(Task<TResponse>, Task<Metadata>, Func<Status>, Func<Metadata>, Action)
+  nameWithType.vb: AsyncUnaryCall(Of TResponse).AsyncUnaryCall(Task(Of TResponse), Task(Of Metadata), Func(Of Status), Func(Of Metadata), Action)
+- uid: Grpc.Core.AsyncUnaryCall`1.#ctor*
+  name: AsyncUnaryCall
+  href: api/Grpc.Core.AsyncUnaryCall-1.html#Grpc_Core_AsyncUnaryCall_1__ctor_
+  commentId: Overload:Grpc.Core.AsyncUnaryCall`1.#ctor
+  isSpec: "True"
+  fullName: Grpc.Core.AsyncUnaryCall<TResponse>.AsyncUnaryCall
+  fullName.vb: Grpc.Core.AsyncUnaryCall(Of TResponse).AsyncUnaryCall
+  nameWithType: AsyncUnaryCall<TResponse>.AsyncUnaryCall
+  nameWithType.vb: AsyncUnaryCall(Of TResponse).AsyncUnaryCall
 - uid: Grpc.Core.AsyncUnaryCall`1.Dispose
   name: Dispose()
   href: api/Grpc.Core.AsyncUnaryCall-1.html#Grpc_Core_AsyncUnaryCall_1_Dispose
@@ -439,6 +535,7 @@ references:
   name: Dispose
   href: api/Grpc.Core.AsyncUnaryCall-1.html#Grpc_Core_AsyncUnaryCall_1_Dispose_
   commentId: Overload:Grpc.Core.AsyncUnaryCall`1.Dispose
+  isSpec: "True"
   fullName: Grpc.Core.AsyncUnaryCall<TResponse>.Dispose
   fullName.vb: Grpc.Core.AsyncUnaryCall(Of TResponse).Dispose
   nameWithType: AsyncUnaryCall<TResponse>.Dispose
@@ -455,6 +552,7 @@ references:
   name: GetAwaiter
   href: api/Grpc.Core.AsyncUnaryCall-1.html#Grpc_Core_AsyncUnaryCall_1_GetAwaiter_
   commentId: Overload:Grpc.Core.AsyncUnaryCall`1.GetAwaiter
+  isSpec: "True"
   fullName: Grpc.Core.AsyncUnaryCall<TResponse>.GetAwaiter
   fullName.vb: Grpc.Core.AsyncUnaryCall(Of TResponse).GetAwaiter
   nameWithType: AsyncUnaryCall<TResponse>.GetAwaiter
@@ -471,6 +569,7 @@ references:
   name: GetStatus
   href: api/Grpc.Core.AsyncUnaryCall-1.html#Grpc_Core_AsyncUnaryCall_1_GetStatus_
   commentId: Overload:Grpc.Core.AsyncUnaryCall`1.GetStatus
+  isSpec: "True"
   fullName: Grpc.Core.AsyncUnaryCall<TResponse>.GetStatus
   fullName.vb: Grpc.Core.AsyncUnaryCall(Of TResponse).GetStatus
   nameWithType: AsyncUnaryCall<TResponse>.GetStatus
@@ -487,6 +586,7 @@ references:
   name: GetTrailers
   href: api/Grpc.Core.AsyncUnaryCall-1.html#Grpc_Core_AsyncUnaryCall_1_GetTrailers_
   commentId: Overload:Grpc.Core.AsyncUnaryCall`1.GetTrailers
+  isSpec: "True"
   fullName: Grpc.Core.AsyncUnaryCall<TResponse>.GetTrailers
   fullName.vb: Grpc.Core.AsyncUnaryCall(Of TResponse).GetTrailers
   nameWithType: AsyncUnaryCall<TResponse>.GetTrailers
@@ -503,6 +603,7 @@ references:
   name: ResponseAsync
   href: api/Grpc.Core.AsyncUnaryCall-1.html#Grpc_Core_AsyncUnaryCall_1_ResponseAsync_
   commentId: Overload:Grpc.Core.AsyncUnaryCall`1.ResponseAsync
+  isSpec: "True"
   fullName: Grpc.Core.AsyncUnaryCall<TResponse>.ResponseAsync
   fullName.vb: Grpc.Core.AsyncUnaryCall(Of TResponse).ResponseAsync
   nameWithType: AsyncUnaryCall<TResponse>.ResponseAsync
@@ -519,6 +620,7 @@ references:
   name: ResponseHeadersAsync
   href: api/Grpc.Core.AsyncUnaryCall-1.html#Grpc_Core_AsyncUnaryCall_1_ResponseHeadersAsync_
   commentId: Overload:Grpc.Core.AsyncUnaryCall`1.ResponseHeadersAsync
+  isSpec: "True"
   fullName: Grpc.Core.AsyncUnaryCall<TResponse>.ResponseHeadersAsync
   fullName.vb: Grpc.Core.AsyncUnaryCall(Of TResponse).ResponseHeadersAsync
   nameWithType: AsyncUnaryCall<TResponse>.ResponseHeadersAsync
@@ -539,6 +641,7 @@ references:
   name: FindPropertiesByName
   href: api/Grpc.Core.AuthContext.html#Grpc_Core_AuthContext_FindPropertiesByName_
   commentId: Overload:Grpc.Core.AuthContext.FindPropertiesByName
+  isSpec: "True"
   fullName: Grpc.Core.AuthContext.FindPropertiesByName
   nameWithType: AuthContext.FindPropertiesByName
 - uid: Grpc.Core.AuthContext.IsPeerAuthenticated
@@ -551,6 +654,7 @@ references:
   name: IsPeerAuthenticated
   href: api/Grpc.Core.AuthContext.html#Grpc_Core_AuthContext_IsPeerAuthenticated_
   commentId: Overload:Grpc.Core.AuthContext.IsPeerAuthenticated
+  isSpec: "True"
   fullName: Grpc.Core.AuthContext.IsPeerAuthenticated
   nameWithType: AuthContext.IsPeerAuthenticated
 - uid: Grpc.Core.AuthContext.PeerIdentity
@@ -563,6 +667,7 @@ references:
   name: PeerIdentity
   href: api/Grpc.Core.AuthContext.html#Grpc_Core_AuthContext_PeerIdentity_
   commentId: Overload:Grpc.Core.AuthContext.PeerIdentity
+  isSpec: "True"
   fullName: Grpc.Core.AuthContext.PeerIdentity
   nameWithType: AuthContext.PeerIdentity
 - uid: Grpc.Core.AuthContext.PeerIdentityPropertyName
@@ -575,6 +680,7 @@ references:
   name: PeerIdentityPropertyName
   href: api/Grpc.Core.AuthContext.html#Grpc_Core_AuthContext_PeerIdentityPropertyName_
   commentId: Overload:Grpc.Core.AuthContext.PeerIdentityPropertyName
+  isSpec: "True"
   fullName: Grpc.Core.AuthContext.PeerIdentityPropertyName
   nameWithType: AuthContext.PeerIdentityPropertyName
 - uid: Grpc.Core.AuthContext.Properties
@@ -587,6 +693,7 @@ references:
   name: Properties
   href: api/Grpc.Core.AuthContext.html#Grpc_Core_AuthContext_Properties_
   commentId: Overload:Grpc.Core.AuthContext.Properties
+  isSpec: "True"
   fullName: Grpc.Core.AuthContext.Properties
   nameWithType: AuthContext.Properties
 - uid: Grpc.Core.AuthInterceptorContext
@@ -605,6 +712,7 @@ references:
   name: AuthInterceptorContext
   href: api/Grpc.Core.AuthInterceptorContext.html#Grpc_Core_AuthInterceptorContext__ctor_
   commentId: Overload:Grpc.Core.AuthInterceptorContext.#ctor
+  isSpec: "True"
   fullName: Grpc.Core.AuthInterceptorContext.AuthInterceptorContext
   nameWithType: AuthInterceptorContext.AuthInterceptorContext
 - uid: Grpc.Core.AuthInterceptorContext.MethodName
@@ -617,6 +725,7 @@ references:
   name: MethodName
   href: api/Grpc.Core.AuthInterceptorContext.html#Grpc_Core_AuthInterceptorContext_MethodName_
   commentId: Overload:Grpc.Core.AuthInterceptorContext.MethodName
+  isSpec: "True"
   fullName: Grpc.Core.AuthInterceptorContext.MethodName
   nameWithType: AuthInterceptorContext.MethodName
 - uid: Grpc.Core.AuthInterceptorContext.ServiceUrl
@@ -629,6 +738,7 @@ references:
   name: ServiceUrl
   href: api/Grpc.Core.AuthInterceptorContext.html#Grpc_Core_AuthInterceptorContext_ServiceUrl_
   commentId: Overload:Grpc.Core.AuthInterceptorContext.ServiceUrl
+  isSpec: "True"
   fullName: Grpc.Core.AuthInterceptorContext.ServiceUrl
   nameWithType: AuthInterceptorContext.ServiceUrl
 - uid: Grpc.Core.AuthProperty
@@ -650,6 +760,7 @@ references:
   name: Create
   href: api/Grpc.Core.AuthProperty.html#Grpc_Core_AuthProperty_Create_
   commentId: Overload:Grpc.Core.AuthProperty.Create
+  isSpec: "True"
   fullName: Grpc.Core.AuthProperty.Create
   nameWithType: AuthProperty.Create
 - uid: Grpc.Core.AuthProperty.Name
@@ -662,6 +773,7 @@ references:
   name: Name
   href: api/Grpc.Core.AuthProperty.html#Grpc_Core_AuthProperty_Name_
   commentId: Overload:Grpc.Core.AuthProperty.Name
+  isSpec: "True"
   fullName: Grpc.Core.AuthProperty.Name
   nameWithType: AuthProperty.Name
 - uid: Grpc.Core.AuthProperty.Value
@@ -674,6 +786,7 @@ references:
   name: Value
   href: api/Grpc.Core.AuthProperty.html#Grpc_Core_AuthProperty_Value_
   commentId: Overload:Grpc.Core.AuthProperty.Value
+  isSpec: "True"
   fullName: Grpc.Core.AuthProperty.Value
   nameWithType: AuthProperty.Value
 - uid: Grpc.Core.AuthProperty.ValueBytes
@@ -686,6 +799,7 @@ references:
   name: ValueBytes
   href: api/Grpc.Core.AuthProperty.html#Grpc_Core_AuthProperty_ValueBytes_
   commentId: Overload:Grpc.Core.AuthProperty.ValueBytes
+  isSpec: "True"
   fullName: Grpc.Core.AuthProperty.ValueBytes
   nameWithType: AuthProperty.ValueBytes
 - uid: Grpc.Core.CallCredentials
@@ -707,6 +821,7 @@ references:
   name: Compose
   href: api/Grpc.Core.CallCredentials.html#Grpc_Core_CallCredentials_Compose_
   commentId: Overload:Grpc.Core.CallCredentials.Compose
+  isSpec: "True"
   fullName: Grpc.Core.CallCredentials.Compose
   nameWithType: CallCredentials.Compose
 - uid: Grpc.Core.CallCredentials.FromInterceptor(Grpc.Core.AsyncAuthInterceptor)
@@ -719,6 +834,7 @@ references:
   name: FromInterceptor
   href: api/Grpc.Core.CallCredentials.html#Grpc_Core_CallCredentials_FromInterceptor_
   commentId: Overload:Grpc.Core.CallCredentials.FromInterceptor
+  isSpec: "True"
   fullName: Grpc.Core.CallCredentials.FromInterceptor
   nameWithType: CallCredentials.FromInterceptor
 - uid: Grpc.Core.CallInvocationDetails`2
@@ -761,6 +877,7 @@ references:
   name: CallInvocationDetails
   href: api/Grpc.Core.CallInvocationDetails-2.html#Grpc_Core_CallInvocationDetails_2__ctor_
   commentId: Overload:Grpc.Core.CallInvocationDetails`2.#ctor
+  isSpec: "True"
   fullName: Grpc.Core.CallInvocationDetails<TRequest, TResponse>.CallInvocationDetails
   fullName.vb: Grpc.Core.CallInvocationDetails(Of TRequest, TResponse).CallInvocationDetails
   nameWithType: CallInvocationDetails<TRequest, TResponse>.CallInvocationDetails
@@ -777,6 +894,7 @@ references:
   name: Channel
   href: api/Grpc.Core.CallInvocationDetails-2.html#Grpc_Core_CallInvocationDetails_2_Channel_
   commentId: Overload:Grpc.Core.CallInvocationDetails`2.Channel
+  isSpec: "True"
   fullName: Grpc.Core.CallInvocationDetails<TRequest, TResponse>.Channel
   fullName.vb: Grpc.Core.CallInvocationDetails(Of TRequest, TResponse).Channel
   nameWithType: CallInvocationDetails<TRequest, TResponse>.Channel
@@ -793,6 +911,7 @@ references:
   name: Host
   href: api/Grpc.Core.CallInvocationDetails-2.html#Grpc_Core_CallInvocationDetails_2_Host_
   commentId: Overload:Grpc.Core.CallInvocationDetails`2.Host
+  isSpec: "True"
   fullName: Grpc.Core.CallInvocationDetails<TRequest, TResponse>.Host
   fullName.vb: Grpc.Core.CallInvocationDetails(Of TRequest, TResponse).Host
   nameWithType: CallInvocationDetails<TRequest, TResponse>.Host
@@ -809,6 +928,7 @@ references:
   name: Method
   href: api/Grpc.Core.CallInvocationDetails-2.html#Grpc_Core_CallInvocationDetails_2_Method_
   commentId: Overload:Grpc.Core.CallInvocationDetails`2.Method
+  isSpec: "True"
   fullName: Grpc.Core.CallInvocationDetails<TRequest, TResponse>.Method
   fullName.vb: Grpc.Core.CallInvocationDetails(Of TRequest, TResponse).Method
   nameWithType: CallInvocationDetails<TRequest, TResponse>.Method
@@ -825,6 +945,7 @@ references:
   name: Options
   href: api/Grpc.Core.CallInvocationDetails-2.html#Grpc_Core_CallInvocationDetails_2_Options_
   commentId: Overload:Grpc.Core.CallInvocationDetails`2.Options
+  isSpec: "True"
   fullName: Grpc.Core.CallInvocationDetails<TRequest, TResponse>.Options
   fullName.vb: Grpc.Core.CallInvocationDetails(Of TRequest, TResponse).Options
   nameWithType: CallInvocationDetails<TRequest, TResponse>.Options
@@ -841,6 +962,7 @@ references:
   name: RequestMarshaller
   href: api/Grpc.Core.CallInvocationDetails-2.html#Grpc_Core_CallInvocationDetails_2_RequestMarshaller_
   commentId: Overload:Grpc.Core.CallInvocationDetails`2.RequestMarshaller
+  isSpec: "True"
   fullName: Grpc.Core.CallInvocationDetails<TRequest, TResponse>.RequestMarshaller
   fullName.vb: Grpc.Core.CallInvocationDetails(Of TRequest, TResponse).RequestMarshaller
   nameWithType: CallInvocationDetails<TRequest, TResponse>.RequestMarshaller
@@ -857,6 +979,7 @@ references:
   name: ResponseMarshaller
   href: api/Grpc.Core.CallInvocationDetails-2.html#Grpc_Core_CallInvocationDetails_2_ResponseMarshaller_
   commentId: Overload:Grpc.Core.CallInvocationDetails`2.ResponseMarshaller
+  isSpec: "True"
   fullName: Grpc.Core.CallInvocationDetails<TRequest, TResponse>.ResponseMarshaller
   fullName.vb: Grpc.Core.CallInvocationDetails(Of TRequest, TResponse).ResponseMarshaller
   nameWithType: CallInvocationDetails<TRequest, TResponse>.ResponseMarshaller
@@ -873,6 +996,7 @@ references:
   name: WithOptions
   href: api/Grpc.Core.CallInvocationDetails-2.html#Grpc_Core_CallInvocationDetails_2_WithOptions_
   commentId: Overload:Grpc.Core.CallInvocationDetails`2.WithOptions
+  isSpec: "True"
   fullName: Grpc.Core.CallInvocationDetails<TRequest, TResponse>.WithOptions
   fullName.vb: Grpc.Core.CallInvocationDetails(Of TRequest, TResponse).WithOptions
   nameWithType: CallInvocationDetails<TRequest, TResponse>.WithOptions
@@ -887,6 +1011,7 @@ references:
   name: AsyncClientStreamingCall
   href: api/Grpc.Core.CallInvoker.html#Grpc_Core_CallInvoker_AsyncClientStreamingCall_
   commentId: Overload:Grpc.Core.CallInvoker.AsyncClientStreamingCall
+  isSpec: "True"
   fullName: Grpc.Core.CallInvoker.AsyncClientStreamingCall
   nameWithType: CallInvoker.AsyncClientStreamingCall
 - uid: Grpc.Core.CallInvoker.AsyncClientStreamingCall``2(Grpc.Core.Method{``0,``1},System.String,Grpc.Core.CallOptions)
@@ -902,6 +1027,7 @@ references:
   name: AsyncDuplexStreamingCall
   href: api/Grpc.Core.CallInvoker.html#Grpc_Core_CallInvoker_AsyncDuplexStreamingCall_
   commentId: Overload:Grpc.Core.CallInvoker.AsyncDuplexStreamingCall
+  isSpec: "True"
   fullName: Grpc.Core.CallInvoker.AsyncDuplexStreamingCall
   nameWithType: CallInvoker.AsyncDuplexStreamingCall
 - uid: Grpc.Core.CallInvoker.AsyncDuplexStreamingCall``2(Grpc.Core.Method{``0,``1},System.String,Grpc.Core.CallOptions)
@@ -917,6 +1043,7 @@ references:
   name: AsyncServerStreamingCall
   href: api/Grpc.Core.CallInvoker.html#Grpc_Core_CallInvoker_AsyncServerStreamingCall_
   commentId: Overload:Grpc.Core.CallInvoker.AsyncServerStreamingCall
+  isSpec: "True"
   fullName: Grpc.Core.CallInvoker.AsyncServerStreamingCall
   nameWithType: CallInvoker.AsyncServerStreamingCall
 - uid: Grpc.Core.CallInvoker.AsyncServerStreamingCall``2(Grpc.Core.Method{``0,``1},System.String,Grpc.Core.CallOptions,``0)
@@ -932,6 +1059,7 @@ references:
   name: AsyncUnaryCall
   href: api/Grpc.Core.CallInvoker.html#Grpc_Core_CallInvoker_AsyncUnaryCall_
   commentId: Overload:Grpc.Core.CallInvoker.AsyncUnaryCall
+  isSpec: "True"
   fullName: Grpc.Core.CallInvoker.AsyncUnaryCall
   nameWithType: CallInvoker.AsyncUnaryCall
 - uid: Grpc.Core.CallInvoker.AsyncUnaryCall``2(Grpc.Core.Method{``0,``1},System.String,Grpc.Core.CallOptions,``0)
@@ -947,6 +1075,7 @@ references:
   name: BlockingUnaryCall
   href: api/Grpc.Core.CallInvoker.html#Grpc_Core_CallInvoker_BlockingUnaryCall_
   commentId: Overload:Grpc.Core.CallInvoker.BlockingUnaryCall
+  isSpec: "True"
   fullName: Grpc.Core.CallInvoker.BlockingUnaryCall
   nameWithType: CallInvoker.BlockingUnaryCall
 - uid: Grpc.Core.CallInvoker.BlockingUnaryCall``2(Grpc.Core.Method{``0,``1},System.String,Grpc.Core.CallOptions,``0)
@@ -977,6 +1106,7 @@ references:
   name: CallOptions
   href: api/Grpc.Core.CallOptions.html#Grpc_Core_CallOptions__ctor_
   commentId: Overload:Grpc.Core.CallOptions.#ctor
+  isSpec: "True"
   fullName: Grpc.Core.CallOptions.CallOptions
   nameWithType: CallOptions.CallOptions
 - uid: Grpc.Core.CallOptions.CancellationToken
@@ -989,6 +1119,7 @@ references:
   name: CancellationToken
   href: api/Grpc.Core.CallOptions.html#Grpc_Core_CallOptions_CancellationToken_
   commentId: Overload:Grpc.Core.CallOptions.CancellationToken
+  isSpec: "True"
   fullName: Grpc.Core.CallOptions.CancellationToken
   nameWithType: CallOptions.CancellationToken
 - uid: Grpc.Core.CallOptions.Credentials
@@ -1001,6 +1132,7 @@ references:
   name: Credentials
   href: api/Grpc.Core.CallOptions.html#Grpc_Core_CallOptions_Credentials_
   commentId: Overload:Grpc.Core.CallOptions.Credentials
+  isSpec: "True"
   fullName: Grpc.Core.CallOptions.Credentials
   nameWithType: CallOptions.Credentials
 - uid: Grpc.Core.CallOptions.Deadline
@@ -1013,6 +1145,7 @@ references:
   name: Deadline
   href: api/Grpc.Core.CallOptions.html#Grpc_Core_CallOptions_Deadline_
   commentId: Overload:Grpc.Core.CallOptions.Deadline
+  isSpec: "True"
   fullName: Grpc.Core.CallOptions.Deadline
   nameWithType: CallOptions.Deadline
 - uid: Grpc.Core.CallOptions.Headers
@@ -1025,6 +1158,7 @@ references:
   name: Headers
   href: api/Grpc.Core.CallOptions.html#Grpc_Core_CallOptions_Headers_
   commentId: Overload:Grpc.Core.CallOptions.Headers
+  isSpec: "True"
   fullName: Grpc.Core.CallOptions.Headers
   nameWithType: CallOptions.Headers
 - uid: Grpc.Core.CallOptions.IsWaitForReady
@@ -1037,6 +1171,7 @@ references:
   name: IsWaitForReady
   href: api/Grpc.Core.CallOptions.html#Grpc_Core_CallOptions_IsWaitForReady_
   commentId: Overload:Grpc.Core.CallOptions.IsWaitForReady
+  isSpec: "True"
   fullName: Grpc.Core.CallOptions.IsWaitForReady
   nameWithType: CallOptions.IsWaitForReady
 - uid: Grpc.Core.CallOptions.PropagationToken
@@ -1049,6 +1184,7 @@ references:
   name: PropagationToken
   href: api/Grpc.Core.CallOptions.html#Grpc_Core_CallOptions_PropagationToken_
   commentId: Overload:Grpc.Core.CallOptions.PropagationToken
+  isSpec: "True"
   fullName: Grpc.Core.CallOptions.PropagationToken
   nameWithType: CallOptions.PropagationToken
 - uid: Grpc.Core.CallOptions.WithCancellationToken(System.Threading.CancellationToken)
@@ -1061,6 +1197,7 @@ references:
   name: WithCancellationToken
   href: api/Grpc.Core.CallOptions.html#Grpc_Core_CallOptions_WithCancellationToken_
   commentId: Overload:Grpc.Core.CallOptions.WithCancellationToken
+  isSpec: "True"
   fullName: Grpc.Core.CallOptions.WithCancellationToken
   nameWithType: CallOptions.WithCancellationToken
 - uid: Grpc.Core.CallOptions.WithCredentials(Grpc.Core.CallCredentials)
@@ -1073,6 +1210,7 @@ references:
   name: WithCredentials
   href: api/Grpc.Core.CallOptions.html#Grpc_Core_CallOptions_WithCredentials_
   commentId: Overload:Grpc.Core.CallOptions.WithCredentials
+  isSpec: "True"
   fullName: Grpc.Core.CallOptions.WithCredentials
   nameWithType: CallOptions.WithCredentials
 - uid: Grpc.Core.CallOptions.WithDeadline(System.DateTime)
@@ -1085,6 +1223,7 @@ references:
   name: WithDeadline
   href: api/Grpc.Core.CallOptions.html#Grpc_Core_CallOptions_WithDeadline_
   commentId: Overload:Grpc.Core.CallOptions.WithDeadline
+  isSpec: "True"
   fullName: Grpc.Core.CallOptions.WithDeadline
   nameWithType: CallOptions.WithDeadline
 - uid: Grpc.Core.CallOptions.WithHeaders(Grpc.Core.Metadata)
@@ -1097,6 +1236,7 @@ references:
   name: WithHeaders
   href: api/Grpc.Core.CallOptions.html#Grpc_Core_CallOptions_WithHeaders_
   commentId: Overload:Grpc.Core.CallOptions.WithHeaders
+  isSpec: "True"
   fullName: Grpc.Core.CallOptions.WithHeaders
   nameWithType: CallOptions.WithHeaders
 - uid: Grpc.Core.CallOptions.WithPropagationToken(Grpc.Core.ContextPropagationToken)
@@ -1109,6 +1249,7 @@ references:
   name: WithPropagationToken
   href: api/Grpc.Core.CallOptions.html#Grpc_Core_CallOptions_WithPropagationToken_
   commentId: Overload:Grpc.Core.CallOptions.WithPropagationToken
+  isSpec: "True"
   fullName: Grpc.Core.CallOptions.WithPropagationToken
   nameWithType: CallOptions.WithPropagationToken
 - uid: Grpc.Core.CallOptions.WithWaitForReady(System.Boolean)
@@ -1121,6 +1262,7 @@ references:
   name: WithWaitForReady
   href: api/Grpc.Core.CallOptions.html#Grpc_Core_CallOptions_WithWaitForReady_
   commentId: Overload:Grpc.Core.CallOptions.WithWaitForReady
+  isSpec: "True"
   fullName: Grpc.Core.CallOptions.WithWaitForReady
   nameWithType: CallOptions.WithWaitForReady
 - uid: Grpc.Core.CallOptions.WithWriteOptions(Grpc.Core.WriteOptions)
@@ -1133,6 +1275,7 @@ references:
   name: WithWriteOptions
   href: api/Grpc.Core.CallOptions.html#Grpc_Core_CallOptions_WithWriteOptions_
   commentId: Overload:Grpc.Core.CallOptions.WithWriteOptions
+  isSpec: "True"
   fullName: Grpc.Core.CallOptions.WithWriteOptions
   nameWithType: CallOptions.WithWriteOptions
 - uid: Grpc.Core.CallOptions.WriteOptions
@@ -1145,6 +1288,7 @@ references:
   name: WriteOptions
   href: api/Grpc.Core.CallOptions.html#Grpc_Core_CallOptions_WriteOptions_
   commentId: Overload:Grpc.Core.CallOptions.WriteOptions
+  isSpec: "True"
   fullName: Grpc.Core.CallOptions.WriteOptions
   nameWithType: CallOptions.WriteOptions
 - uid: Grpc.Core.Calls
@@ -1157,6 +1301,7 @@ references:
   name: AsyncClientStreamingCall
   href: api/Grpc.Core.Calls.html#Grpc_Core_Calls_AsyncClientStreamingCall_
   commentId: Overload:Grpc.Core.Calls.AsyncClientStreamingCall
+  isSpec: "True"
   fullName: Grpc.Core.Calls.AsyncClientStreamingCall
   nameWithType: Calls.AsyncClientStreamingCall
 - uid: Grpc.Core.Calls.AsyncClientStreamingCall``2(Grpc.Core.CallInvocationDetails{``0,``1})
@@ -1172,6 +1317,7 @@ references:
   name: AsyncDuplexStreamingCall
   href: api/Grpc.Core.Calls.html#Grpc_Core_Calls_AsyncDuplexStreamingCall_
   commentId: Overload:Grpc.Core.Calls.AsyncDuplexStreamingCall
+  isSpec: "True"
   fullName: Grpc.Core.Calls.AsyncDuplexStreamingCall
   nameWithType: Calls.AsyncDuplexStreamingCall
 - uid: Grpc.Core.Calls.AsyncDuplexStreamingCall``2(Grpc.Core.CallInvocationDetails{``0,``1})
@@ -1187,6 +1333,7 @@ references:
   name: AsyncServerStreamingCall
   href: api/Grpc.Core.Calls.html#Grpc_Core_Calls_AsyncServerStreamingCall_
   commentId: Overload:Grpc.Core.Calls.AsyncServerStreamingCall
+  isSpec: "True"
   fullName: Grpc.Core.Calls.AsyncServerStreamingCall
   nameWithType: Calls.AsyncServerStreamingCall
 - uid: Grpc.Core.Calls.AsyncServerStreamingCall``2(Grpc.Core.CallInvocationDetails{``0,``1},``0)
@@ -1202,6 +1349,7 @@ references:
   name: AsyncUnaryCall
   href: api/Grpc.Core.Calls.html#Grpc_Core_Calls_AsyncUnaryCall_
   commentId: Overload:Grpc.Core.Calls.AsyncUnaryCall
+  isSpec: "True"
   fullName: Grpc.Core.Calls.AsyncUnaryCall
   nameWithType: Calls.AsyncUnaryCall
 - uid: Grpc.Core.Calls.AsyncUnaryCall``2(Grpc.Core.CallInvocationDetails{``0,``1},``0)
@@ -1217,6 +1365,7 @@ references:
   name: BlockingUnaryCall
   href: api/Grpc.Core.Calls.html#Grpc_Core_Calls_BlockingUnaryCall_
   commentId: Overload:Grpc.Core.Calls.BlockingUnaryCall
+  isSpec: "True"
   fullName: Grpc.Core.Calls.BlockingUnaryCall
   nameWithType: Calls.BlockingUnaryCall
 - uid: Grpc.Core.Calls.BlockingUnaryCall``2(Grpc.Core.CallInvocationDetails{``0,``1},``0)
@@ -1268,6 +1417,7 @@ references:
   name: Channel
   href: api/Grpc.Core.Channel.html#Grpc_Core_Channel__ctor_
   commentId: Overload:Grpc.Core.Channel.#ctor
+  isSpec: "True"
   fullName: Grpc.Core.Channel.Channel
   nameWithType: Channel.Channel
 - uid: Grpc.Core.Channel.ConnectAsync(System.Nullable{System.DateTime})
@@ -1283,6 +1433,7 @@ references:
   name: ConnectAsync
   href: api/Grpc.Core.Channel.html#Grpc_Core_Channel_ConnectAsync_
   commentId: Overload:Grpc.Core.Channel.ConnectAsync
+  isSpec: "True"
   fullName: Grpc.Core.Channel.ConnectAsync
   nameWithType: Channel.ConnectAsync
 - uid: Grpc.Core.Channel.ResolvedTarget
@@ -1295,6 +1446,7 @@ references:
   name: ResolvedTarget
   href: api/Grpc.Core.Channel.html#Grpc_Core_Channel_ResolvedTarget_
   commentId: Overload:Grpc.Core.Channel.ResolvedTarget
+  isSpec: "True"
   fullName: Grpc.Core.Channel.ResolvedTarget
   nameWithType: Channel.ResolvedTarget
 - uid: Grpc.Core.Channel.ShutdownAsync
@@ -1307,6 +1459,7 @@ references:
   name: ShutdownAsync
   href: api/Grpc.Core.Channel.html#Grpc_Core_Channel_ShutdownAsync_
   commentId: Overload:Grpc.Core.Channel.ShutdownAsync
+  isSpec: "True"
   fullName: Grpc.Core.Channel.ShutdownAsync
   nameWithType: Channel.ShutdownAsync
 - uid: Grpc.Core.Channel.ShutdownToken
@@ -1319,6 +1472,7 @@ references:
   name: ShutdownToken
   href: api/Grpc.Core.Channel.html#Grpc_Core_Channel_ShutdownToken_
   commentId: Overload:Grpc.Core.Channel.ShutdownToken
+  isSpec: "True"
   fullName: Grpc.Core.Channel.ShutdownToken
   nameWithType: Channel.ShutdownToken
 - uid: Grpc.Core.Channel.State
@@ -1331,6 +1485,7 @@ references:
   name: State
   href: api/Grpc.Core.Channel.html#Grpc_Core_Channel_State_
   commentId: Overload:Grpc.Core.Channel.State
+  isSpec: "True"
   fullName: Grpc.Core.Channel.State
   nameWithType: Channel.State
 - uid: Grpc.Core.Channel.Target
@@ -1343,6 +1498,7 @@ references:
   name: Target
   href: api/Grpc.Core.Channel.html#Grpc_Core_Channel_Target_
   commentId: Overload:Grpc.Core.Channel.Target
+  isSpec: "True"
   fullName: Grpc.Core.Channel.Target
   nameWithType: Channel.Target
 - uid: Grpc.Core.Channel.WaitForStateChangedAsync(Grpc.Core.ChannelState,System.Nullable{System.DateTime})
@@ -1358,6 +1514,7 @@ references:
   name: WaitForStateChangedAsync
   href: api/Grpc.Core.Channel.html#Grpc_Core_Channel_WaitForStateChangedAsync_
   commentId: Overload:Grpc.Core.Channel.WaitForStateChangedAsync
+  isSpec: "True"
   fullName: Grpc.Core.Channel.WaitForStateChangedAsync
   nameWithType: Channel.WaitForStateChangedAsync
 - uid: Grpc.Core.ChannelCredentials
@@ -1376,6 +1533,7 @@ references:
   name: Create
   href: api/Grpc.Core.ChannelCredentials.html#Grpc_Core_ChannelCredentials_Create_
   commentId: Overload:Grpc.Core.ChannelCredentials.Create
+  isSpec: "True"
   fullName: Grpc.Core.ChannelCredentials.Create
   nameWithType: ChannelCredentials.Create
 - uid: Grpc.Core.ChannelCredentials.Insecure
@@ -1388,6 +1546,7 @@ references:
   name: Insecure
   href: api/Grpc.Core.ChannelCredentials.html#Grpc_Core_ChannelCredentials_Insecure_
   commentId: Overload:Grpc.Core.ChannelCredentials.Insecure
+  isSpec: "True"
   fullName: Grpc.Core.ChannelCredentials.Insecure
   nameWithType: ChannelCredentials.Insecure
 - uid: Grpc.Core.ChannelOption
@@ -1412,6 +1571,7 @@ references:
   name: ChannelOption
   href: api/Grpc.Core.ChannelOption.html#Grpc_Core_ChannelOption__ctor_
   commentId: Overload:Grpc.Core.ChannelOption.#ctor
+  isSpec: "True"
   fullName: Grpc.Core.ChannelOption.ChannelOption
   nameWithType: ChannelOption.ChannelOption
 - uid: Grpc.Core.ChannelOption.IntValue
@@ -1424,6 +1584,7 @@ references:
   name: IntValue
   href: api/Grpc.Core.ChannelOption.html#Grpc_Core_ChannelOption_IntValue_
   commentId: Overload:Grpc.Core.ChannelOption.IntValue
+  isSpec: "True"
   fullName: Grpc.Core.ChannelOption.IntValue
   nameWithType: ChannelOption.IntValue
 - uid: Grpc.Core.ChannelOption.Name
@@ -1436,6 +1597,7 @@ references:
   name: Name
   href: api/Grpc.Core.ChannelOption.html#Grpc_Core_ChannelOption_Name_
   commentId: Overload:Grpc.Core.ChannelOption.Name
+  isSpec: "True"
   fullName: Grpc.Core.ChannelOption.Name
   nameWithType: ChannelOption.Name
 - uid: Grpc.Core.ChannelOption.OptionType
@@ -1466,6 +1628,7 @@ references:
   name: StringValue
   href: api/Grpc.Core.ChannelOption.html#Grpc_Core_ChannelOption_StringValue_
   commentId: Overload:Grpc.Core.ChannelOption.StringValue
+  isSpec: "True"
   fullName: Grpc.Core.ChannelOption.StringValue
   nameWithType: ChannelOption.StringValue
 - uid: Grpc.Core.ChannelOption.Type
@@ -1478,6 +1641,7 @@ references:
   name: Type
   href: api/Grpc.Core.ChannelOption.html#Grpc_Core_ChannelOption_Type_
   commentId: Overload:Grpc.Core.ChannelOption.Type
+  isSpec: "True"
   fullName: Grpc.Core.ChannelOption.Type
   nameWithType: ChannelOption.Type
 - uid: Grpc.Core.ChannelOptions
@@ -1622,6 +1786,7 @@ references:
   name: ClientBase
   href: api/Grpc.Core.ClientBase.html#Grpc_Core_ClientBase__ctor_
   commentId: Overload:Grpc.Core.ClientBase.#ctor
+  isSpec: "True"
   fullName: Grpc.Core.ClientBase.ClientBase
   nameWithType: ClientBase.ClientBase
 - uid: Grpc.Core.ClientBase.CallInvoker
@@ -1634,6 +1799,7 @@ references:
   name: CallInvoker
   href: api/Grpc.Core.ClientBase.html#Grpc_Core_ClientBase_CallInvoker_
   commentId: Overload:Grpc.Core.ClientBase.CallInvoker
+  isSpec: "True"
   fullName: Grpc.Core.ClientBase.CallInvoker
   nameWithType: ClientBase.CallInvoker
 - uid: Grpc.Core.ClientBase.ClientBaseConfiguration
@@ -1687,6 +1853,7 @@ references:
   name: ClientBase
   href: api/Grpc.Core.ClientBase-1.html#Grpc_Core_ClientBase_1__ctor_
   commentId: Overload:Grpc.Core.ClientBase`1.#ctor
+  isSpec: "True"
   fullName: Grpc.Core.ClientBase<T>.ClientBase
   fullName.vb: Grpc.Core.ClientBase(Of T).ClientBase
   nameWithType: ClientBase<T>.ClientBase
@@ -1703,6 +1870,7 @@ references:
   name: NewInstance
   href: api/Grpc.Core.ClientBase-1.html#Grpc_Core_ClientBase_1_NewInstance_
   commentId: Overload:Grpc.Core.ClientBase`1.NewInstance
+  isSpec: "True"
   fullName: Grpc.Core.ClientBase<T>.NewInstance
   fullName.vb: Grpc.Core.ClientBase(Of T).NewInstance
   nameWithType: ClientBase<T>.NewInstance
@@ -1719,6 +1887,7 @@ references:
   name: WithHost
   href: api/Grpc.Core.ClientBase-1.html#Grpc_Core_ClientBase_1_WithHost_
   commentId: Overload:Grpc.Core.ClientBase`1.WithHost
+  isSpec: "True"
   fullName: Grpc.Core.ClientBase<T>.WithHost
   fullName.vb: Grpc.Core.ClientBase(Of T).WithHost
   nameWithType: ClientBase<T>.WithHost
@@ -1778,6 +1947,7 @@ references:
   name: ContextPropagationOptions
   href: api/Grpc.Core.ContextPropagationOptions.html#Grpc_Core_ContextPropagationOptions__ctor_
   commentId: Overload:Grpc.Core.ContextPropagationOptions.#ctor
+  isSpec: "True"
   fullName: Grpc.Core.ContextPropagationOptions.ContextPropagationOptions
   nameWithType: ContextPropagationOptions.ContextPropagationOptions
 - uid: Grpc.Core.ContextPropagationOptions.Default
@@ -1796,6 +1966,7 @@ references:
   name: IsPropagateCancellation
   href: api/Grpc.Core.ContextPropagationOptions.html#Grpc_Core_ContextPropagationOptions_IsPropagateCancellation_
   commentId: Overload:Grpc.Core.ContextPropagationOptions.IsPropagateCancellation
+  isSpec: "True"
   fullName: Grpc.Core.ContextPropagationOptions.IsPropagateCancellation
   nameWithType: ContextPropagationOptions.IsPropagateCancellation
 - uid: Grpc.Core.ContextPropagationOptions.IsPropagateDeadline
@@ -1808,6 +1979,7 @@ references:
   name: IsPropagateDeadline
   href: api/Grpc.Core.ContextPropagationOptions.html#Grpc_Core_ContextPropagationOptions_IsPropagateDeadline_
   commentId: Overload:Grpc.Core.ContextPropagationOptions.IsPropagateDeadline
+  isSpec: "True"
   fullName: Grpc.Core.ContextPropagationOptions.IsPropagateDeadline
   nameWithType: ContextPropagationOptions.IsPropagateDeadline
 - uid: Grpc.Core.ContextPropagationToken
@@ -1832,12 +2004,14 @@ references:
   name: DefaultCallInvoker
   href: api/Grpc.Core.DefaultCallInvoker.html#Grpc_Core_DefaultCallInvoker__ctor_
   commentId: Overload:Grpc.Core.DefaultCallInvoker.#ctor
+  isSpec: "True"
   fullName: Grpc.Core.DefaultCallInvoker.DefaultCallInvoker
   nameWithType: DefaultCallInvoker.DefaultCallInvoker
 - uid: Grpc.Core.DefaultCallInvoker.AsyncClientStreamingCall*
   name: AsyncClientStreamingCall
   href: api/Grpc.Core.DefaultCallInvoker.html#Grpc_Core_DefaultCallInvoker_AsyncClientStreamingCall_
   commentId: Overload:Grpc.Core.DefaultCallInvoker.AsyncClientStreamingCall
+  isSpec: "True"
   fullName: Grpc.Core.DefaultCallInvoker.AsyncClientStreamingCall
   nameWithType: DefaultCallInvoker.AsyncClientStreamingCall
 - uid: Grpc.Core.DefaultCallInvoker.AsyncClientStreamingCall``2(Grpc.Core.Method{``0,``1},System.String,Grpc.Core.CallOptions)
@@ -1853,6 +2027,7 @@ references:
   name: AsyncDuplexStreamingCall
   href: api/Grpc.Core.DefaultCallInvoker.html#Grpc_Core_DefaultCallInvoker_AsyncDuplexStreamingCall_
   commentId: Overload:Grpc.Core.DefaultCallInvoker.AsyncDuplexStreamingCall
+  isSpec: "True"
   fullName: Grpc.Core.DefaultCallInvoker.AsyncDuplexStreamingCall
   nameWithType: DefaultCallInvoker.AsyncDuplexStreamingCall
 - uid: Grpc.Core.DefaultCallInvoker.AsyncDuplexStreamingCall``2(Grpc.Core.Method{``0,``1},System.String,Grpc.Core.CallOptions)
@@ -1868,6 +2043,7 @@ references:
   name: AsyncServerStreamingCall
   href: api/Grpc.Core.DefaultCallInvoker.html#Grpc_Core_DefaultCallInvoker_AsyncServerStreamingCall_
   commentId: Overload:Grpc.Core.DefaultCallInvoker.AsyncServerStreamingCall
+  isSpec: "True"
   fullName: Grpc.Core.DefaultCallInvoker.AsyncServerStreamingCall
   nameWithType: DefaultCallInvoker.AsyncServerStreamingCall
 - uid: Grpc.Core.DefaultCallInvoker.AsyncServerStreamingCall``2(Grpc.Core.Method{``0,``1},System.String,Grpc.Core.CallOptions,``0)
@@ -1883,6 +2059,7 @@ references:
   name: AsyncUnaryCall
   href: api/Grpc.Core.DefaultCallInvoker.html#Grpc_Core_DefaultCallInvoker_AsyncUnaryCall_
   commentId: Overload:Grpc.Core.DefaultCallInvoker.AsyncUnaryCall
+  isSpec: "True"
   fullName: Grpc.Core.DefaultCallInvoker.AsyncUnaryCall
   nameWithType: DefaultCallInvoker.AsyncUnaryCall
 - uid: Grpc.Core.DefaultCallInvoker.AsyncUnaryCall``2(Grpc.Core.Method{``0,``1},System.String,Grpc.Core.CallOptions,``0)
@@ -1898,6 +2075,7 @@ references:
   name: BlockingUnaryCall
   href: api/Grpc.Core.DefaultCallInvoker.html#Grpc_Core_DefaultCallInvoker_BlockingUnaryCall_
   commentId: Overload:Grpc.Core.DefaultCallInvoker.BlockingUnaryCall
+  isSpec: "True"
   fullName: Grpc.Core.DefaultCallInvoker.BlockingUnaryCall
   nameWithType: DefaultCallInvoker.BlockingUnaryCall
 - uid: Grpc.Core.DefaultCallInvoker.BlockingUnaryCall``2(Grpc.Core.Method{``0,``1},System.String,Grpc.Core.CallOptions,``0)
@@ -1913,6 +2091,7 @@ references:
   name: CreateCall
   href: api/Grpc.Core.DefaultCallInvoker.html#Grpc_Core_DefaultCallInvoker_CreateCall_
   commentId: Overload:Grpc.Core.DefaultCallInvoker.CreateCall
+  isSpec: "True"
   fullName: Grpc.Core.DefaultCallInvoker.CreateCall
   nameWithType: DefaultCallInvoker.CreateCall
 - uid: Grpc.Core.DefaultCallInvoker.CreateCall``2(Grpc.Core.Method{``0,``1},System.String,Grpc.Core.CallOptions)
@@ -1949,6 +2128,7 @@ references:
   name: KillServersAsync
   href: api/Grpc.Core.GrpcEnvironment.html#Grpc_Core_GrpcEnvironment_KillServersAsync_
   commentId: Overload:Grpc.Core.GrpcEnvironment.KillServersAsync
+  isSpec: "True"
   fullName: Grpc.Core.GrpcEnvironment.KillServersAsync
   nameWithType: GrpcEnvironment.KillServersAsync
 - uid: Grpc.Core.GrpcEnvironment.Logger
@@ -1961,8 +2141,22 @@ references:
   name: Logger
   href: api/Grpc.Core.GrpcEnvironment.html#Grpc_Core_GrpcEnvironment_Logger_
   commentId: Overload:Grpc.Core.GrpcEnvironment.Logger
+  isSpec: "True"
   fullName: Grpc.Core.GrpcEnvironment.Logger
   nameWithType: GrpcEnvironment.Logger
+- uid: Grpc.Core.GrpcEnvironment.SetBatchContextPoolParams(System.Int32,System.Int32)
+  name: SetBatchContextPoolParams(Int32, Int32)
+  href: api/Grpc.Core.GrpcEnvironment.html#Grpc_Core_GrpcEnvironment_SetBatchContextPoolParams_System_Int32_System_Int32_
+  commentId: M:Grpc.Core.GrpcEnvironment.SetBatchContextPoolParams(System.Int32,System.Int32)
+  fullName: Grpc.Core.GrpcEnvironment.SetBatchContextPoolParams(System.Int32, System.Int32)
+  nameWithType: GrpcEnvironment.SetBatchContextPoolParams(Int32, Int32)
+- uid: Grpc.Core.GrpcEnvironment.SetBatchContextPoolParams*
+  name: SetBatchContextPoolParams
+  href: api/Grpc.Core.GrpcEnvironment.html#Grpc_Core_GrpcEnvironment_SetBatchContextPoolParams_
+  commentId: Overload:Grpc.Core.GrpcEnvironment.SetBatchContextPoolParams
+  isSpec: "True"
+  fullName: Grpc.Core.GrpcEnvironment.SetBatchContextPoolParams
+  nameWithType: GrpcEnvironment.SetBatchContextPoolParams
 - uid: Grpc.Core.GrpcEnvironment.SetCompletionQueueCount(System.Int32)
   name: SetCompletionQueueCount(Int32)
   href: api/Grpc.Core.GrpcEnvironment.html#Grpc_Core_GrpcEnvironment_SetCompletionQueueCount_System_Int32_
@@ -1973,6 +2167,7 @@ references:
   name: SetCompletionQueueCount
   href: api/Grpc.Core.GrpcEnvironment.html#Grpc_Core_GrpcEnvironment_SetCompletionQueueCount_
   commentId: Overload:Grpc.Core.GrpcEnvironment.SetCompletionQueueCount
+  isSpec: "True"
   fullName: Grpc.Core.GrpcEnvironment.SetCompletionQueueCount
   nameWithType: GrpcEnvironment.SetCompletionQueueCount
 - uid: Grpc.Core.GrpcEnvironment.SetHandlerInlining(System.Boolean)
@@ -1985,6 +2180,7 @@ references:
   name: SetHandlerInlining
   href: api/Grpc.Core.GrpcEnvironment.html#Grpc_Core_GrpcEnvironment_SetHandlerInlining_
   commentId: Overload:Grpc.Core.GrpcEnvironment.SetHandlerInlining
+  isSpec: "True"
   fullName: Grpc.Core.GrpcEnvironment.SetHandlerInlining
   nameWithType: GrpcEnvironment.SetHandlerInlining
 - uid: Grpc.Core.GrpcEnvironment.SetLogger(Grpc.Core.Logging.ILogger)
@@ -1997,8 +2193,22 @@ references:
   name: SetLogger
   href: api/Grpc.Core.GrpcEnvironment.html#Grpc_Core_GrpcEnvironment_SetLogger_
   commentId: Overload:Grpc.Core.GrpcEnvironment.SetLogger
+  isSpec: "True"
   fullName: Grpc.Core.GrpcEnvironment.SetLogger
   nameWithType: GrpcEnvironment.SetLogger
+- uid: Grpc.Core.GrpcEnvironment.SetRequestCallContextPoolParams(System.Int32,System.Int32)
+  name: SetRequestCallContextPoolParams(Int32, Int32)
+  href: api/Grpc.Core.GrpcEnvironment.html#Grpc_Core_GrpcEnvironment_SetRequestCallContextPoolParams_System_Int32_System_Int32_
+  commentId: M:Grpc.Core.GrpcEnvironment.SetRequestCallContextPoolParams(System.Int32,System.Int32)
+  fullName: Grpc.Core.GrpcEnvironment.SetRequestCallContextPoolParams(System.Int32, System.Int32)
+  nameWithType: GrpcEnvironment.SetRequestCallContextPoolParams(Int32, Int32)
+- uid: Grpc.Core.GrpcEnvironment.SetRequestCallContextPoolParams*
+  name: SetRequestCallContextPoolParams
+  href: api/Grpc.Core.GrpcEnvironment.html#Grpc_Core_GrpcEnvironment_SetRequestCallContextPoolParams_
+  commentId: Overload:Grpc.Core.GrpcEnvironment.SetRequestCallContextPoolParams
+  isSpec: "True"
+  fullName: Grpc.Core.GrpcEnvironment.SetRequestCallContextPoolParams
+  nameWithType: GrpcEnvironment.SetRequestCallContextPoolParams
 - uid: Grpc.Core.GrpcEnvironment.SetThreadPoolSize(System.Int32)
   name: SetThreadPoolSize(Int32)
   href: api/Grpc.Core.GrpcEnvironment.html#Grpc_Core_GrpcEnvironment_SetThreadPoolSize_System_Int32_
@@ -2009,6 +2219,7 @@ references:
   name: SetThreadPoolSize
   href: api/Grpc.Core.GrpcEnvironment.html#Grpc_Core_GrpcEnvironment_SetThreadPoolSize_
   commentId: Overload:Grpc.Core.GrpcEnvironment.SetThreadPoolSize
+  isSpec: "True"
   fullName: Grpc.Core.GrpcEnvironment.SetThreadPoolSize
   nameWithType: GrpcEnvironment.SetThreadPoolSize
 - uid: Grpc.Core.GrpcEnvironment.ShutdownChannelsAsync
@@ -2021,6 +2232,7 @@ references:
   name: ShutdownChannelsAsync
   href: api/Grpc.Core.GrpcEnvironment.html#Grpc_Core_GrpcEnvironment_ShutdownChannelsAsync_
   commentId: Overload:Grpc.Core.GrpcEnvironment.ShutdownChannelsAsync
+  isSpec: "True"
   fullName: Grpc.Core.GrpcEnvironment.ShutdownChannelsAsync
   nameWithType: GrpcEnvironment.ShutdownChannelsAsync
 - uid: Grpc.Core.GrpcEnvironment.ShuttingDown
@@ -2059,6 +2271,7 @@ references:
   name: WriteAsync
   href: api/Grpc.Core.IAsyncStreamWriter-1.html#Grpc_Core_IAsyncStreamWriter_1_WriteAsync_
   commentId: Overload:Grpc.Core.IAsyncStreamWriter`1.WriteAsync
+  isSpec: "True"
   fullName: Grpc.Core.IAsyncStreamWriter<T>.WriteAsync
   fullName.vb: Grpc.Core.IAsyncStreamWriter(Of T).WriteAsync
   nameWithType: IAsyncStreamWriter<T>.WriteAsync
@@ -2075,6 +2288,7 @@ references:
   name: WriteOptions
   href: api/Grpc.Core.IAsyncStreamWriter-1.html#Grpc_Core_IAsyncStreamWriter_1_WriteOptions_
   commentId: Overload:Grpc.Core.IAsyncStreamWriter`1.WriteOptions
+  isSpec: "True"
   fullName: Grpc.Core.IAsyncStreamWriter<T>.WriteOptions
   fullName.vb: Grpc.Core.IAsyncStreamWriter(Of T).WriteOptions
   nameWithType: IAsyncStreamWriter<T>.WriteOptions
@@ -2100,6 +2314,7 @@ references:
   name: CompleteAsync
   href: api/Grpc.Core.IClientStreamWriter-1.html#Grpc_Core_IClientStreamWriter_1_CompleteAsync_
   commentId: Overload:Grpc.Core.IClientStreamWriter`1.CompleteAsync
+  isSpec: "True"
   fullName: Grpc.Core.IClientStreamWriter<T>.CompleteAsync
   fullName.vb: Grpc.Core.IClientStreamWriter(Of T).CompleteAsync
   nameWithType: IClientStreamWriter<T>.CompleteAsync
@@ -2120,6 +2335,7 @@ references:
   name: WriteOptions
   href: api/Grpc.Core.IHasWriteOptions.html#Grpc_Core_IHasWriteOptions_WriteOptions_
   commentId: Overload:Grpc.Core.IHasWriteOptions.WriteOptions
+  isSpec: "True"
   fullName: Grpc.Core.IHasWriteOptions.WriteOptions
   nameWithType: IHasWriteOptions.WriteOptions
 - uid: Grpc.Core.IMethod
@@ -2138,6 +2354,7 @@ references:
   name: FullName
   href: api/Grpc.Core.IMethod.html#Grpc_Core_IMethod_FullName_
   commentId: Overload:Grpc.Core.IMethod.FullName
+  isSpec: "True"
   fullName: Grpc.Core.IMethod.FullName
   nameWithType: IMethod.FullName
 - uid: Grpc.Core.IMethod.Name
@@ -2150,6 +2367,7 @@ references:
   name: Name
   href: api/Grpc.Core.IMethod.html#Grpc_Core_IMethod_Name_
   commentId: Overload:Grpc.Core.IMethod.Name
+  isSpec: "True"
   fullName: Grpc.Core.IMethod.Name
   nameWithType: IMethod.Name
 - uid: Grpc.Core.IMethod.ServiceName
@@ -2162,6 +2380,7 @@ references:
   name: ServiceName
   href: api/Grpc.Core.IMethod.html#Grpc_Core_IMethod_ServiceName_
   commentId: Overload:Grpc.Core.IMethod.ServiceName
+  isSpec: "True"
   fullName: Grpc.Core.IMethod.ServiceName
   nameWithType: IMethod.ServiceName
 - uid: Grpc.Core.IMethod.Type
@@ -2174,8 +2393,390 @@ references:
   name: Type
   href: api/Grpc.Core.IMethod.html#Grpc_Core_IMethod_Type_
   commentId: Overload:Grpc.Core.IMethod.Type
+  isSpec: "True"
   fullName: Grpc.Core.IMethod.Type
   nameWithType: IMethod.Type
+- uid: Grpc.Core.Interceptors
+  name: Grpc.Core.Interceptors
+  href: api/Grpc.Core.Interceptors.html
+  commentId: N:Grpc.Core.Interceptors
+  fullName: Grpc.Core.Interceptors
+  nameWithType: Grpc.Core.Interceptors
+- uid: Grpc.Core.Interceptors.CallInvokerExtensions
+  name: CallInvokerExtensions
+  href: api/Grpc.Core.Interceptors.CallInvokerExtensions.html
+  commentId: T:Grpc.Core.Interceptors.CallInvokerExtensions
+  fullName: Grpc.Core.Interceptors.CallInvokerExtensions
+  nameWithType: CallInvokerExtensions
+- uid: Grpc.Core.Interceptors.CallInvokerExtensions.Intercept(Grpc.Core.CallInvoker,Grpc.Core.Interceptors.Interceptor)
+  name: Intercept(CallInvoker, Interceptor)
+  href: api/Grpc.Core.Interceptors.CallInvokerExtensions.html#Grpc_Core_Interceptors_CallInvokerExtensions_Intercept_Grpc_Core_CallInvoker_Grpc_Core_Interceptors_Interceptor_
+  commentId: M:Grpc.Core.Interceptors.CallInvokerExtensions.Intercept(Grpc.Core.CallInvoker,Grpc.Core.Interceptors.Interceptor)
+  fullName: Grpc.Core.Interceptors.CallInvokerExtensions.Intercept(Grpc.Core.CallInvoker, Grpc.Core.Interceptors.Interceptor)
+  nameWithType: CallInvokerExtensions.Intercept(CallInvoker, Interceptor)
+- uid: Grpc.Core.Interceptors.CallInvokerExtensions.Intercept(Grpc.Core.CallInvoker,Grpc.Core.Interceptors.Interceptor[])
+  name: Intercept(CallInvoker, Interceptor[])
+  href: api/Grpc.Core.Interceptors.CallInvokerExtensions.html#Grpc_Core_Interceptors_CallInvokerExtensions_Intercept_Grpc_Core_CallInvoker_Grpc_Core_Interceptors_Interceptor___
+  commentId: M:Grpc.Core.Interceptors.CallInvokerExtensions.Intercept(Grpc.Core.CallInvoker,Grpc.Core.Interceptors.Interceptor[])
+  name.vb: Intercept(CallInvoker, Interceptor())
+  fullName: Grpc.Core.Interceptors.CallInvokerExtensions.Intercept(Grpc.Core.CallInvoker, Grpc.Core.Interceptors.Interceptor[])
+  fullName.vb: Grpc.Core.Interceptors.CallInvokerExtensions.Intercept(Grpc.Core.CallInvoker, Grpc.Core.Interceptors.Interceptor())
+  nameWithType: CallInvokerExtensions.Intercept(CallInvoker, Interceptor[])
+  nameWithType.vb: CallInvokerExtensions.Intercept(CallInvoker, Interceptor())
+- uid: Grpc.Core.Interceptors.CallInvokerExtensions.Intercept(Grpc.Core.CallInvoker,System.Func{Grpc.Core.Metadata,Grpc.Core.Metadata})
+  name: Intercept(CallInvoker, Func<Metadata, Metadata>)
+  href: api/Grpc.Core.Interceptors.CallInvokerExtensions.html#Grpc_Core_Interceptors_CallInvokerExtensions_Intercept_Grpc_Core_CallInvoker_System_Func_Grpc_Core_Metadata_Grpc_Core_Metadata__
+  commentId: M:Grpc.Core.Interceptors.CallInvokerExtensions.Intercept(Grpc.Core.CallInvoker,System.Func{Grpc.Core.Metadata,Grpc.Core.Metadata})
+  name.vb: Intercept(CallInvoker, Func(Of Metadata, Metadata))
+  fullName: Grpc.Core.Interceptors.CallInvokerExtensions.Intercept(Grpc.Core.CallInvoker, System.Func<Grpc.Core.Metadata, Grpc.Core.Metadata>)
+  fullName.vb: Grpc.Core.Interceptors.CallInvokerExtensions.Intercept(Grpc.Core.CallInvoker, System.Func(Of Grpc.Core.Metadata, Grpc.Core.Metadata))
+  nameWithType: CallInvokerExtensions.Intercept(CallInvoker, Func<Metadata, Metadata>)
+  nameWithType.vb: CallInvokerExtensions.Intercept(CallInvoker, Func(Of Metadata, Metadata))
+- uid: Grpc.Core.Interceptors.CallInvokerExtensions.Intercept*
+  name: Intercept
+  href: api/Grpc.Core.Interceptors.CallInvokerExtensions.html#Grpc_Core_Interceptors_CallInvokerExtensions_Intercept_
+  commentId: Overload:Grpc.Core.Interceptors.CallInvokerExtensions.Intercept
+  isSpec: "True"
+  fullName: Grpc.Core.Interceptors.CallInvokerExtensions.Intercept
+  nameWithType: CallInvokerExtensions.Intercept
+- uid: Grpc.Core.Interceptors.ChannelExtensions
+  name: ChannelExtensions
+  href: api/Grpc.Core.Interceptors.ChannelExtensions.html
+  commentId: T:Grpc.Core.Interceptors.ChannelExtensions
+  fullName: Grpc.Core.Interceptors.ChannelExtensions
+  nameWithType: ChannelExtensions
+- uid: Grpc.Core.Interceptors.ChannelExtensions.Intercept(Grpc.Core.Channel,Grpc.Core.Interceptors.Interceptor)
+  name: Intercept(Channel, Interceptor)
+  href: api/Grpc.Core.Interceptors.ChannelExtensions.html#Grpc_Core_Interceptors_ChannelExtensions_Intercept_Grpc_Core_Channel_Grpc_Core_Interceptors_Interceptor_
+  commentId: M:Grpc.Core.Interceptors.ChannelExtensions.Intercept(Grpc.Core.Channel,Grpc.Core.Interceptors.Interceptor)
+  fullName: Grpc.Core.Interceptors.ChannelExtensions.Intercept(Grpc.Core.Channel, Grpc.Core.Interceptors.Interceptor)
+  nameWithType: ChannelExtensions.Intercept(Channel, Interceptor)
+- uid: Grpc.Core.Interceptors.ChannelExtensions.Intercept(Grpc.Core.Channel,Grpc.Core.Interceptors.Interceptor[])
+  name: Intercept(Channel, Interceptor[])
+  href: api/Grpc.Core.Interceptors.ChannelExtensions.html#Grpc_Core_Interceptors_ChannelExtensions_Intercept_Grpc_Core_Channel_Grpc_Core_Interceptors_Interceptor___
+  commentId: M:Grpc.Core.Interceptors.ChannelExtensions.Intercept(Grpc.Core.Channel,Grpc.Core.Interceptors.Interceptor[])
+  name.vb: Intercept(Channel, Interceptor())
+  fullName: Grpc.Core.Interceptors.ChannelExtensions.Intercept(Grpc.Core.Channel, Grpc.Core.Interceptors.Interceptor[])
+  fullName.vb: Grpc.Core.Interceptors.ChannelExtensions.Intercept(Grpc.Core.Channel, Grpc.Core.Interceptors.Interceptor())
+  nameWithType: ChannelExtensions.Intercept(Channel, Interceptor[])
+  nameWithType.vb: ChannelExtensions.Intercept(Channel, Interceptor())
+- uid: Grpc.Core.Interceptors.ChannelExtensions.Intercept(Grpc.Core.Channel,System.Func{Grpc.Core.Metadata,Grpc.Core.Metadata})
+  name: Intercept(Channel, Func<Metadata, Metadata>)
+  href: api/Grpc.Core.Interceptors.ChannelExtensions.html#Grpc_Core_Interceptors_ChannelExtensions_Intercept_Grpc_Core_Channel_System_Func_Grpc_Core_Metadata_Grpc_Core_Metadata__
+  commentId: M:Grpc.Core.Interceptors.ChannelExtensions.Intercept(Grpc.Core.Channel,System.Func{Grpc.Core.Metadata,Grpc.Core.Metadata})
+  name.vb: Intercept(Channel, Func(Of Metadata, Metadata))
+  fullName: Grpc.Core.Interceptors.ChannelExtensions.Intercept(Grpc.Core.Channel, System.Func<Grpc.Core.Metadata, Grpc.Core.Metadata>)
+  fullName.vb: Grpc.Core.Interceptors.ChannelExtensions.Intercept(Grpc.Core.Channel, System.Func(Of Grpc.Core.Metadata, Grpc.Core.Metadata))
+  nameWithType: ChannelExtensions.Intercept(Channel, Func<Metadata, Metadata>)
+  nameWithType.vb: ChannelExtensions.Intercept(Channel, Func(Of Metadata, Metadata))
+- uid: Grpc.Core.Interceptors.ChannelExtensions.Intercept*
+  name: Intercept
+  href: api/Grpc.Core.Interceptors.ChannelExtensions.html#Grpc_Core_Interceptors_ChannelExtensions_Intercept_
+  commentId: Overload:Grpc.Core.Interceptors.ChannelExtensions.Intercept
+  isSpec: "True"
+  fullName: Grpc.Core.Interceptors.ChannelExtensions.Intercept
+  nameWithType: ChannelExtensions.Intercept
+- uid: Grpc.Core.Interceptors.ClientInterceptorContext`2
+  name: ClientInterceptorContext<TRequest, TResponse>
+  href: api/Grpc.Core.Interceptors.ClientInterceptorContext-2.html
+  commentId: T:Grpc.Core.Interceptors.ClientInterceptorContext`2
+  name.vb: ClientInterceptorContext(Of TRequest, TResponse)
+  fullName: Grpc.Core.Interceptors.ClientInterceptorContext<TRequest, TResponse>
+  fullName.vb: Grpc.Core.Interceptors.ClientInterceptorContext(Of TRequest, TResponse)
+  nameWithType: ClientInterceptorContext<TRequest, TResponse>
+  nameWithType.vb: ClientInterceptorContext(Of TRequest, TResponse)
+- uid: Grpc.Core.Interceptors.ClientInterceptorContext`2.#ctor(Grpc.Core.Method{`0,`1},System.String,Grpc.Core.CallOptions)
+  name: ClientInterceptorContext(Method<TRequest, TResponse>, String, CallOptions)
+  href: api/Grpc.Core.Interceptors.ClientInterceptorContext-2.html#Grpc_Core_Interceptors_ClientInterceptorContext_2__ctor_Grpc_Core_Method__0__1__System_String_Grpc_Core_CallOptions_
+  commentId: M:Grpc.Core.Interceptors.ClientInterceptorContext`2.#ctor(Grpc.Core.Method{`0,`1},System.String,Grpc.Core.CallOptions)
+  name.vb: ClientInterceptorContext(Method(Of TRequest, TResponse), String, CallOptions)
+  fullName: Grpc.Core.Interceptors.ClientInterceptorContext<TRequest, TResponse>.ClientInterceptorContext(Grpc.Core.Method<TRequest, TResponse>, System.String, Grpc.Core.CallOptions)
+  fullName.vb: Grpc.Core.Interceptors.ClientInterceptorContext(Of TRequest, TResponse).ClientInterceptorContext(Grpc.Core.Method(Of TRequest, TResponse), System.String, Grpc.Core.CallOptions)
+  nameWithType: ClientInterceptorContext<TRequest, TResponse>.ClientInterceptorContext(Method<TRequest, TResponse>, String, CallOptions)
+  nameWithType.vb: ClientInterceptorContext(Of TRequest, TResponse).ClientInterceptorContext(Method(Of TRequest, TResponse), String, CallOptions)
+- uid: Grpc.Core.Interceptors.ClientInterceptorContext`2.#ctor*
+  name: ClientInterceptorContext
+  href: api/Grpc.Core.Interceptors.ClientInterceptorContext-2.html#Grpc_Core_Interceptors_ClientInterceptorContext_2__ctor_
+  commentId: Overload:Grpc.Core.Interceptors.ClientInterceptorContext`2.#ctor
+  isSpec: "True"
+  fullName: Grpc.Core.Interceptors.ClientInterceptorContext<TRequest, TResponse>.ClientInterceptorContext
+  fullName.vb: Grpc.Core.Interceptors.ClientInterceptorContext(Of TRequest, TResponse).ClientInterceptorContext
+  nameWithType: ClientInterceptorContext<TRequest, TResponse>.ClientInterceptorContext
+  nameWithType.vb: ClientInterceptorContext(Of TRequest, TResponse).ClientInterceptorContext
+- uid: Grpc.Core.Interceptors.ClientInterceptorContext`2.Host
+  name: Host
+  href: api/Grpc.Core.Interceptors.ClientInterceptorContext-2.html#Grpc_Core_Interceptors_ClientInterceptorContext_2_Host
+  commentId: P:Grpc.Core.Interceptors.ClientInterceptorContext`2.Host
+  fullName: Grpc.Core.Interceptors.ClientInterceptorContext<TRequest, TResponse>.Host
+  fullName.vb: Grpc.Core.Interceptors.ClientInterceptorContext(Of TRequest, TResponse).Host
+  nameWithType: ClientInterceptorContext<TRequest, TResponse>.Host
+  nameWithType.vb: ClientInterceptorContext(Of TRequest, TResponse).Host
+- uid: Grpc.Core.Interceptors.ClientInterceptorContext`2.Host*
+  name: Host
+  href: api/Grpc.Core.Interceptors.ClientInterceptorContext-2.html#Grpc_Core_Interceptors_ClientInterceptorContext_2_Host_
+  commentId: Overload:Grpc.Core.Interceptors.ClientInterceptorContext`2.Host
+  isSpec: "True"
+  fullName: Grpc.Core.Interceptors.ClientInterceptorContext<TRequest, TResponse>.Host
+  fullName.vb: Grpc.Core.Interceptors.ClientInterceptorContext(Of TRequest, TResponse).Host
+  nameWithType: ClientInterceptorContext<TRequest, TResponse>.Host
+  nameWithType.vb: ClientInterceptorContext(Of TRequest, TResponse).Host
+- uid: Grpc.Core.Interceptors.ClientInterceptorContext`2.Method
+  name: Method
+  href: api/Grpc.Core.Interceptors.ClientInterceptorContext-2.html#Grpc_Core_Interceptors_ClientInterceptorContext_2_Method
+  commentId: P:Grpc.Core.Interceptors.ClientInterceptorContext`2.Method
+  fullName: Grpc.Core.Interceptors.ClientInterceptorContext<TRequest, TResponse>.Method
+  fullName.vb: Grpc.Core.Interceptors.ClientInterceptorContext(Of TRequest, TResponse).Method
+  nameWithType: ClientInterceptorContext<TRequest, TResponse>.Method
+  nameWithType.vb: ClientInterceptorContext(Of TRequest, TResponse).Method
+- uid: Grpc.Core.Interceptors.ClientInterceptorContext`2.Method*
+  name: Method
+  href: api/Grpc.Core.Interceptors.ClientInterceptorContext-2.html#Grpc_Core_Interceptors_ClientInterceptorContext_2_Method_
+  commentId: Overload:Grpc.Core.Interceptors.ClientInterceptorContext`2.Method
+  isSpec: "True"
+  fullName: Grpc.Core.Interceptors.ClientInterceptorContext<TRequest, TResponse>.Method
+  fullName.vb: Grpc.Core.Interceptors.ClientInterceptorContext(Of TRequest, TResponse).Method
+  nameWithType: ClientInterceptorContext<TRequest, TResponse>.Method
+  nameWithType.vb: ClientInterceptorContext(Of TRequest, TResponse).Method
+- uid: Grpc.Core.Interceptors.ClientInterceptorContext`2.Options
+  name: Options
+  href: api/Grpc.Core.Interceptors.ClientInterceptorContext-2.html#Grpc_Core_Interceptors_ClientInterceptorContext_2_Options
+  commentId: P:Grpc.Core.Interceptors.ClientInterceptorContext`2.Options
+  fullName: Grpc.Core.Interceptors.ClientInterceptorContext<TRequest, TResponse>.Options
+  fullName.vb: Grpc.Core.Interceptors.ClientInterceptorContext(Of TRequest, TResponse).Options
+  nameWithType: ClientInterceptorContext<TRequest, TResponse>.Options
+  nameWithType.vb: ClientInterceptorContext(Of TRequest, TResponse).Options
+- uid: Grpc.Core.Interceptors.ClientInterceptorContext`2.Options*
+  name: Options
+  href: api/Grpc.Core.Interceptors.ClientInterceptorContext-2.html#Grpc_Core_Interceptors_ClientInterceptorContext_2_Options_
+  commentId: Overload:Grpc.Core.Interceptors.ClientInterceptorContext`2.Options
+  isSpec: "True"
+  fullName: Grpc.Core.Interceptors.ClientInterceptorContext<TRequest, TResponse>.Options
+  fullName.vb: Grpc.Core.Interceptors.ClientInterceptorContext(Of TRequest, TResponse).Options
+  nameWithType: ClientInterceptorContext<TRequest, TResponse>.Options
+  nameWithType.vb: ClientInterceptorContext(Of TRequest, TResponse).Options
+- uid: Grpc.Core.Interceptors.Interceptor
+  name: Interceptor
+  href: api/Grpc.Core.Interceptors.Interceptor.html
+  commentId: T:Grpc.Core.Interceptors.Interceptor
+  fullName: Grpc.Core.Interceptors.Interceptor
+  nameWithType: Interceptor
+- uid: Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCall*
+  name: AsyncClientStreamingCall
+  href: api/Grpc.Core.Interceptors.Interceptor.html#Grpc_Core_Interceptors_Interceptor_AsyncClientStreamingCall_
+  commentId: Overload:Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCall
+  isSpec: "True"
+  fullName: Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCall
+  nameWithType: Interceptor.AsyncClientStreamingCall
+- uid: Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCall``2(Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCallContinuation{``0,``1})
+  name: AsyncClientStreamingCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse>, Interceptor.AsyncClientStreamingCallContinuation<TRequest, TResponse>)
+  href: api/Grpc.Core.Interceptors.Interceptor.html#Grpc_Core_Interceptors_Interceptor_AsyncClientStreamingCall__2_Grpc_Core_Interceptors_ClientInterceptorContext___0___1__Grpc_Core_Interceptors_Interceptor_AsyncClientStreamingCallContinuation___0___1__
+  commentId: M:Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCall``2(Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCallContinuation{``0,``1})
+  name.vb: AsyncClientStreamingCall(Of TRequest, TResponse)(ClientInterceptorContext(Of TRequest, TResponse), Interceptor.AsyncClientStreamingCallContinuation(Of TRequest, TResponse))
+  fullName: Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCall<TRequest, TResponse>(Grpc.Core.Interceptors.ClientInterceptorContext<TRequest, TResponse>, Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCallContinuation<TRequest, TResponse>)
+  fullName.vb: Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCall(Of TRequest, TResponse)(Grpc.Core.Interceptors.ClientInterceptorContext(Of TRequest, TResponse), Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCallContinuation(Of TRequest, TResponse))
+  nameWithType: Interceptor.AsyncClientStreamingCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse>, Interceptor.AsyncClientStreamingCallContinuation<TRequest, TResponse>)
+  nameWithType.vb: Interceptor.AsyncClientStreamingCall(Of TRequest, TResponse)(ClientInterceptorContext(Of TRequest, TResponse), Interceptor.AsyncClientStreamingCallContinuation(Of TRequest, TResponse))
+- uid: Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCallContinuation`2
+  name: Interceptor.AsyncClientStreamingCallContinuation<TRequest, TResponse>
+  href: api/Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCallContinuation-2.html
+  commentId: T:Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCallContinuation`2
+  name.vb: Interceptor.AsyncClientStreamingCallContinuation(Of TRequest, TResponse)
+  fullName: Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCallContinuation<TRequest, TResponse>
+  fullName.vb: Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCallContinuation(Of TRequest, TResponse)
+  nameWithType: Interceptor.AsyncClientStreamingCallContinuation<TRequest, TResponse>
+  nameWithType.vb: Interceptor.AsyncClientStreamingCallContinuation(Of TRequest, TResponse)
+- uid: Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCall*
+  name: AsyncDuplexStreamingCall
+  href: api/Grpc.Core.Interceptors.Interceptor.html#Grpc_Core_Interceptors_Interceptor_AsyncDuplexStreamingCall_
+  commentId: Overload:Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCall
+  isSpec: "True"
+  fullName: Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCall
+  nameWithType: Interceptor.AsyncDuplexStreamingCall
+- uid: Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCall``2(Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCallContinuation{``0,``1})
+  name: AsyncDuplexStreamingCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse>, Interceptor.AsyncDuplexStreamingCallContinuation<TRequest, TResponse>)
+  href: api/Grpc.Core.Interceptors.Interceptor.html#Grpc_Core_Interceptors_Interceptor_AsyncDuplexStreamingCall__2_Grpc_Core_Interceptors_ClientInterceptorContext___0___1__Grpc_Core_Interceptors_Interceptor_AsyncDuplexStreamingCallContinuation___0___1__
+  commentId: M:Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCall``2(Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCallContinuation{``0,``1})
+  name.vb: AsyncDuplexStreamingCall(Of TRequest, TResponse)(ClientInterceptorContext(Of TRequest, TResponse), Interceptor.AsyncDuplexStreamingCallContinuation(Of TRequest, TResponse))
+  fullName: Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCall<TRequest, TResponse>(Grpc.Core.Interceptors.ClientInterceptorContext<TRequest, TResponse>, Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCallContinuation<TRequest, TResponse>)
+  fullName.vb: Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCall(Of TRequest, TResponse)(Grpc.Core.Interceptors.ClientInterceptorContext(Of TRequest, TResponse), Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCallContinuation(Of TRequest, TResponse))
+  nameWithType: Interceptor.AsyncDuplexStreamingCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse>, Interceptor.AsyncDuplexStreamingCallContinuation<TRequest, TResponse>)
+  nameWithType.vb: Interceptor.AsyncDuplexStreamingCall(Of TRequest, TResponse)(ClientInterceptorContext(Of TRequest, TResponse), Interceptor.AsyncDuplexStreamingCallContinuation(Of TRequest, TResponse))
+- uid: Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCallContinuation`2
+  name: Interceptor.AsyncDuplexStreamingCallContinuation<TRequest, TResponse>
+  href: api/Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCallContinuation-2.html
+  commentId: T:Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCallContinuation`2
+  name.vb: Interceptor.AsyncDuplexStreamingCallContinuation(Of TRequest, TResponse)
+  fullName: Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCallContinuation<TRequest, TResponse>
+  fullName.vb: Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCallContinuation(Of TRequest, TResponse)
+  nameWithType: Interceptor.AsyncDuplexStreamingCallContinuation<TRequest, TResponse>
+  nameWithType.vb: Interceptor.AsyncDuplexStreamingCallContinuation(Of TRequest, TResponse)
+- uid: Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCall*
+  name: AsyncServerStreamingCall
+  href: api/Grpc.Core.Interceptors.Interceptor.html#Grpc_Core_Interceptors_Interceptor_AsyncServerStreamingCall_
+  commentId: Overload:Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCall
+  isSpec: "True"
+  fullName: Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCall
+  nameWithType: Interceptor.AsyncServerStreamingCall
+- uid: Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCall``2(``0,Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCallContinuation{``0,``1})
+  name: AsyncServerStreamingCall<TRequest, TResponse>(TRequest, ClientInterceptorContext<TRequest, TResponse>, Interceptor.AsyncServerStreamingCallContinuation<TRequest, TResponse>)
+  href: api/Grpc.Core.Interceptors.Interceptor.html#Grpc_Core_Interceptors_Interceptor_AsyncServerStreamingCall__2___0_Grpc_Core_Interceptors_ClientInterceptorContext___0___1__Grpc_Core_Interceptors_Interceptor_AsyncServerStreamingCallContinuation___0___1__
+  commentId: M:Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCall``2(``0,Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCallContinuation{``0,``1})
+  name.vb: AsyncServerStreamingCall(Of TRequest, TResponse)(TRequest, ClientInterceptorContext(Of TRequest, TResponse), Interceptor.AsyncServerStreamingCallContinuation(Of TRequest, TResponse))
+  fullName: Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCall<TRequest, TResponse>(TRequest, Grpc.Core.Interceptors.ClientInterceptorContext<TRequest, TResponse>, Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCallContinuation<TRequest, TResponse>)
+  fullName.vb: Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCall(Of TRequest, TResponse)(TRequest, Grpc.Core.Interceptors.ClientInterceptorContext(Of TRequest, TResponse), Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCallContinuation(Of TRequest, TResponse))
+  nameWithType: Interceptor.AsyncServerStreamingCall<TRequest, TResponse>(TRequest, ClientInterceptorContext<TRequest, TResponse>, Interceptor.AsyncServerStreamingCallContinuation<TRequest, TResponse>)
+  nameWithType.vb: Interceptor.AsyncServerStreamingCall(Of TRequest, TResponse)(TRequest, ClientInterceptorContext(Of TRequest, TResponse), Interceptor.AsyncServerStreamingCallContinuation(Of TRequest, TResponse))
+- uid: Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCallContinuation`2
+  name: Interceptor.AsyncServerStreamingCallContinuation<TRequest, TResponse>
+  href: api/Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCallContinuation-2.html
+  commentId: T:Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCallContinuation`2
+  name.vb: Interceptor.AsyncServerStreamingCallContinuation(Of TRequest, TResponse)
+  fullName: Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCallContinuation<TRequest, TResponse>
+  fullName.vb: Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCallContinuation(Of TRequest, TResponse)
+  nameWithType: Interceptor.AsyncServerStreamingCallContinuation<TRequest, TResponse>
+  nameWithType.vb: Interceptor.AsyncServerStreamingCallContinuation(Of TRequest, TResponse)
+- uid: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCall*
+  name: AsyncUnaryCall
+  href: api/Grpc.Core.Interceptors.Interceptor.html#Grpc_Core_Interceptors_Interceptor_AsyncUnaryCall_
+  commentId: Overload:Grpc.Core.Interceptors.Interceptor.AsyncUnaryCall
+  isSpec: "True"
+  fullName: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCall
+  nameWithType: Interceptor.AsyncUnaryCall
+- uid: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCall``2(``0,Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation{``0,``1})
+  name: AsyncUnaryCall<TRequest, TResponse>(TRequest, ClientInterceptorContext<TRequest, TResponse>, Interceptor.AsyncUnaryCallContinuation<TRequest, TResponse>)
+  href: api/Grpc.Core.Interceptors.Interceptor.html#Grpc_Core_Interceptors_Interceptor_AsyncUnaryCall__2___0_Grpc_Core_Interceptors_ClientInterceptorContext___0___1__Grpc_Core_Interceptors_Interceptor_AsyncUnaryCallContinuation___0___1__
+  commentId: M:Grpc.Core.Interceptors.Interceptor.AsyncUnaryCall``2(``0,Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation{``0,``1})
+  name.vb: AsyncUnaryCall(Of TRequest, TResponse)(TRequest, ClientInterceptorContext(Of TRequest, TResponse), Interceptor.AsyncUnaryCallContinuation(Of TRequest, TResponse))
+  fullName: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCall<TRequest, TResponse>(TRequest, Grpc.Core.Interceptors.ClientInterceptorContext<TRequest, TResponse>, Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation<TRequest, TResponse>)
+  fullName.vb: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCall(Of TRequest, TResponse)(TRequest, Grpc.Core.Interceptors.ClientInterceptorContext(Of TRequest, TResponse), Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation(Of TRequest, TResponse))
+  nameWithType: Interceptor.AsyncUnaryCall<TRequest, TResponse>(TRequest, ClientInterceptorContext<TRequest, TResponse>, Interceptor.AsyncUnaryCallContinuation<TRequest, TResponse>)
+  nameWithType.vb: Interceptor.AsyncUnaryCall(Of TRequest, TResponse)(TRequest, ClientInterceptorContext(Of TRequest, TResponse), Interceptor.AsyncUnaryCallContinuation(Of TRequest, TResponse))
+- uid: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation`2
+  name: Interceptor.AsyncUnaryCallContinuation<TRequest, TResponse>
+  href: api/Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation-2.html
+  commentId: T:Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation`2
+  name.vb: Interceptor.AsyncUnaryCallContinuation(Of TRequest, TResponse)
+  fullName: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation<TRequest, TResponse>
+  fullName.vb: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation(Of TRequest, TResponse)
+  nameWithType: Interceptor.AsyncUnaryCallContinuation<TRequest, TResponse>
+  nameWithType.vb: Interceptor.AsyncUnaryCallContinuation(Of TRequest, TResponse)
+- uid: Grpc.Core.Interceptors.Interceptor.BlockingUnaryCall*
+  name: BlockingUnaryCall
+  href: api/Grpc.Core.Interceptors.Interceptor.html#Grpc_Core_Interceptors_Interceptor_BlockingUnaryCall_
+  commentId: Overload:Grpc.Core.Interceptors.Interceptor.BlockingUnaryCall
+  isSpec: "True"
+  fullName: Grpc.Core.Interceptors.Interceptor.BlockingUnaryCall
+  nameWithType: Interceptor.BlockingUnaryCall
+- uid: Grpc.Core.Interceptors.Interceptor.BlockingUnaryCall``2(``0,Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.BlockingUnaryCallContinuation{``0,``1})
+  name: BlockingUnaryCall<TRequest, TResponse>(TRequest, ClientInterceptorContext<TRequest, TResponse>, Interceptor.BlockingUnaryCallContinuation<TRequest, TResponse>)
+  href: api/Grpc.Core.Interceptors.Interceptor.html#Grpc_Core_Interceptors_Interceptor_BlockingUnaryCall__2___0_Grpc_Core_Interceptors_ClientInterceptorContext___0___1__Grpc_Core_Interceptors_Interceptor_BlockingUnaryCallContinuation___0___1__
+  commentId: M:Grpc.Core.Interceptors.Interceptor.BlockingUnaryCall``2(``0,Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.BlockingUnaryCallContinuation{``0,``1})
+  name.vb: BlockingUnaryCall(Of TRequest, TResponse)(TRequest, ClientInterceptorContext(Of TRequest, TResponse), Interceptor.BlockingUnaryCallContinuation(Of TRequest, TResponse))
+  fullName: Grpc.Core.Interceptors.Interceptor.BlockingUnaryCall<TRequest, TResponse>(TRequest, Grpc.Core.Interceptors.ClientInterceptorContext<TRequest, TResponse>, Grpc.Core.Interceptors.Interceptor.BlockingUnaryCallContinuation<TRequest, TResponse>)
+  fullName.vb: Grpc.Core.Interceptors.Interceptor.BlockingUnaryCall(Of TRequest, TResponse)(TRequest, Grpc.Core.Interceptors.ClientInterceptorContext(Of TRequest, TResponse), Grpc.Core.Interceptors.Interceptor.BlockingUnaryCallContinuation(Of TRequest, TResponse))
+  nameWithType: Interceptor.BlockingUnaryCall<TRequest, TResponse>(TRequest, ClientInterceptorContext<TRequest, TResponse>, Interceptor.BlockingUnaryCallContinuation<TRequest, TResponse>)
+  nameWithType.vb: Interceptor.BlockingUnaryCall(Of TRequest, TResponse)(TRequest, ClientInterceptorContext(Of TRequest, TResponse), Interceptor.BlockingUnaryCallContinuation(Of TRequest, TResponse))
+- uid: Grpc.Core.Interceptors.Interceptor.BlockingUnaryCallContinuation`2
+  name: Interceptor.BlockingUnaryCallContinuation<TRequest, TResponse>
+  href: api/Grpc.Core.Interceptors.Interceptor.BlockingUnaryCallContinuation-2.html
+  commentId: T:Grpc.Core.Interceptors.Interceptor.BlockingUnaryCallContinuation`2
+  name.vb: Interceptor.BlockingUnaryCallContinuation(Of TRequest, TResponse)
+  fullName: Grpc.Core.Interceptors.Interceptor.BlockingUnaryCallContinuation<TRequest, TResponse>
+  fullName.vb: Grpc.Core.Interceptors.Interceptor.BlockingUnaryCallContinuation(Of TRequest, TResponse)
+  nameWithType: Interceptor.BlockingUnaryCallContinuation<TRequest, TResponse>
+  nameWithType.vb: Interceptor.BlockingUnaryCallContinuation(Of TRequest, TResponse)
+- uid: Grpc.Core.Interceptors.Interceptor.ClientStreamingServerHandler*
+  name: ClientStreamingServerHandler
+  href: api/Grpc.Core.Interceptors.Interceptor.html#Grpc_Core_Interceptors_Interceptor_ClientStreamingServerHandler_
+  commentId: Overload:Grpc.Core.Interceptors.Interceptor.ClientStreamingServerHandler
+  isSpec: "True"
+  fullName: Grpc.Core.Interceptors.Interceptor.ClientStreamingServerHandler
+  nameWithType: Interceptor.ClientStreamingServerHandler
+- uid: Grpc.Core.Interceptors.Interceptor.ClientStreamingServerHandler``2(Grpc.Core.IAsyncStreamReader{``0},Grpc.Core.ServerCallContext,Grpc.Core.ClientStreamingServerMethod{``0,``1})
+  name: ClientStreamingServerHandler<TRequest, TResponse>(IAsyncStreamReader<TRequest>, ServerCallContext, ClientStreamingServerMethod<TRequest, TResponse>)
+  href: api/Grpc.Core.Interceptors.Interceptor.html#Grpc_Core_Interceptors_Interceptor_ClientStreamingServerHandler__2_Grpc_Core_IAsyncStreamReader___0__Grpc_Core_ServerCallContext_Grpc_Core_ClientStreamingServerMethod___0___1__
+  commentId: M:Grpc.Core.Interceptors.Interceptor.ClientStreamingServerHandler``2(Grpc.Core.IAsyncStreamReader{``0},Grpc.Core.ServerCallContext,Grpc.Core.ClientStreamingServerMethod{``0,``1})
+  name.vb: ClientStreamingServerHandler(Of TRequest, TResponse)(IAsyncStreamReader(Of TRequest), ServerCallContext, ClientStreamingServerMethod(Of TRequest, TResponse))
+  fullName: Grpc.Core.Interceptors.Interceptor.ClientStreamingServerHandler<TRequest, TResponse>(Grpc.Core.IAsyncStreamReader<TRequest>, Grpc.Core.ServerCallContext, Grpc.Core.ClientStreamingServerMethod<TRequest, TResponse>)
+  fullName.vb: Grpc.Core.Interceptors.Interceptor.ClientStreamingServerHandler(Of TRequest, TResponse)(Grpc.Core.IAsyncStreamReader(Of TRequest), Grpc.Core.ServerCallContext, Grpc.Core.ClientStreamingServerMethod(Of TRequest, TResponse))
+  nameWithType: Interceptor.ClientStreamingServerHandler<TRequest, TResponse>(IAsyncStreamReader<TRequest>, ServerCallContext, ClientStreamingServerMethod<TRequest, TResponse>)
+  nameWithType.vb: Interceptor.ClientStreamingServerHandler(Of TRequest, TResponse)(IAsyncStreamReader(Of TRequest), ServerCallContext, ClientStreamingServerMethod(Of TRequest, TResponse))
+- uid: Grpc.Core.Interceptors.Interceptor.DuplexStreamingServerHandler*
+  name: DuplexStreamingServerHandler
+  href: api/Grpc.Core.Interceptors.Interceptor.html#Grpc_Core_Interceptors_Interceptor_DuplexStreamingServerHandler_
+  commentId: Overload:Grpc.Core.Interceptors.Interceptor.DuplexStreamingServerHandler
+  isSpec: "True"
+  fullName: Grpc.Core.Interceptors.Interceptor.DuplexStreamingServerHandler
+  nameWithType: Interceptor.DuplexStreamingServerHandler
+- uid: Grpc.Core.Interceptors.Interceptor.DuplexStreamingServerHandler``2(Grpc.Core.IAsyncStreamReader{``0},Grpc.Core.IServerStreamWriter{``1},Grpc.Core.ServerCallContext,Grpc.Core.DuplexStreamingServerMethod{``0,``1})
+  name: DuplexStreamingServerHandler<TRequest, TResponse>(IAsyncStreamReader<TRequest>, IServerStreamWriter<TResponse>, ServerCallContext, DuplexStreamingServerMethod<TRequest, TResponse>)
+  href: api/Grpc.Core.Interceptors.Interceptor.html#Grpc_Core_Interceptors_Interceptor_DuplexStreamingServerHandler__2_Grpc_Core_IAsyncStreamReader___0__Grpc_Core_IServerStreamWriter___1__Grpc_Core_ServerCallContext_Grpc_Core_DuplexStreamingServerMethod___0___1__
+  commentId: M:Grpc.Core.Interceptors.Interceptor.DuplexStreamingServerHandler``2(Grpc.Core.IAsyncStreamReader{``0},Grpc.Core.IServerStreamWriter{``1},Grpc.Core.ServerCallContext,Grpc.Core.DuplexStreamingServerMethod{``0,``1})
+  name.vb: DuplexStreamingServerHandler(Of TRequest, TResponse)(IAsyncStreamReader(Of TRequest), IServerStreamWriter(Of TResponse), ServerCallContext, DuplexStreamingServerMethod(Of TRequest, TResponse))
+  fullName: Grpc.Core.Interceptors.Interceptor.DuplexStreamingServerHandler<TRequest, TResponse>(Grpc.Core.IAsyncStreamReader<TRequest>, Grpc.Core.IServerStreamWriter<TResponse>, Grpc.Core.ServerCallContext, Grpc.Core.DuplexStreamingServerMethod<TRequest, TResponse>)
+  fullName.vb: Grpc.Core.Interceptors.Interceptor.DuplexStreamingServerHandler(Of TRequest, TResponse)(Grpc.Core.IAsyncStreamReader(Of TRequest), Grpc.Core.IServerStreamWriter(Of TResponse), Grpc.Core.ServerCallContext, Grpc.Core.DuplexStreamingServerMethod(Of TRequest, TResponse))
+  nameWithType: Interceptor.DuplexStreamingServerHandler<TRequest, TResponse>(IAsyncStreamReader<TRequest>, IServerStreamWriter<TResponse>, ServerCallContext, DuplexStreamingServerMethod<TRequest, TResponse>)
+  nameWithType.vb: Interceptor.DuplexStreamingServerHandler(Of TRequest, TResponse)(IAsyncStreamReader(Of TRequest), IServerStreamWriter(Of TResponse), ServerCallContext, DuplexStreamingServerMethod(Of TRequest, TResponse))
+- uid: Grpc.Core.Interceptors.Interceptor.ServerStreamingServerHandler*
+  name: ServerStreamingServerHandler
+  href: api/Grpc.Core.Interceptors.Interceptor.html#Grpc_Core_Interceptors_Interceptor_ServerStreamingServerHandler_
+  commentId: Overload:Grpc.Core.Interceptors.Interceptor.ServerStreamingServerHandler
+  isSpec: "True"
+  fullName: Grpc.Core.Interceptors.Interceptor.ServerStreamingServerHandler
+  nameWithType: Interceptor.ServerStreamingServerHandler
+- uid: Grpc.Core.Interceptors.Interceptor.ServerStreamingServerHandler``2(``0,Grpc.Core.IServerStreamWriter{``1},Grpc.Core.ServerCallContext,Grpc.Core.ServerStreamingServerMethod{``0,``1})
+  name: ServerStreamingServerHandler<TRequest, TResponse>(TRequest, IServerStreamWriter<TResponse>, ServerCallContext, ServerStreamingServerMethod<TRequest, TResponse>)
+  href: api/Grpc.Core.Interceptors.Interceptor.html#Grpc_Core_Interceptors_Interceptor_ServerStreamingServerHandler__2___0_Grpc_Core_IServerStreamWriter___1__Grpc_Core_ServerCallContext_Grpc_Core_ServerStreamingServerMethod___0___1__
+  commentId: M:Grpc.Core.Interceptors.Interceptor.ServerStreamingServerHandler``2(``0,Grpc.Core.IServerStreamWriter{``1},Grpc.Core.ServerCallContext,Grpc.Core.ServerStreamingServerMethod{``0,``1})
+  name.vb: ServerStreamingServerHandler(Of TRequest, TResponse)(TRequest, IServerStreamWriter(Of TResponse), ServerCallContext, ServerStreamingServerMethod(Of TRequest, TResponse))
+  fullName: Grpc.Core.Interceptors.Interceptor.ServerStreamingServerHandler<TRequest, TResponse>(TRequest, Grpc.Core.IServerStreamWriter<TResponse>, Grpc.Core.ServerCallContext, Grpc.Core.ServerStreamingServerMethod<TRequest, TResponse>)
+  fullName.vb: Grpc.Core.Interceptors.Interceptor.ServerStreamingServerHandler(Of TRequest, TResponse)(TRequest, Grpc.Core.IServerStreamWriter(Of TResponse), Grpc.Core.ServerCallContext, Grpc.Core.ServerStreamingServerMethod(Of TRequest, TResponse))
+  nameWithType: Interceptor.ServerStreamingServerHandler<TRequest, TResponse>(TRequest, IServerStreamWriter<TResponse>, ServerCallContext, ServerStreamingServerMethod<TRequest, TResponse>)
+  nameWithType.vb: Interceptor.ServerStreamingServerHandler(Of TRequest, TResponse)(TRequest, IServerStreamWriter(Of TResponse), ServerCallContext, ServerStreamingServerMethod(Of TRequest, TResponse))
+- uid: Grpc.Core.Interceptors.Interceptor.UnaryServerHandler*
+  name: UnaryServerHandler
+  href: api/Grpc.Core.Interceptors.Interceptor.html#Grpc_Core_Interceptors_Interceptor_UnaryServerHandler_
+  commentId: Overload:Grpc.Core.Interceptors.Interceptor.UnaryServerHandler
+  isSpec: "True"
+  fullName: Grpc.Core.Interceptors.Interceptor.UnaryServerHandler
+  nameWithType: Interceptor.UnaryServerHandler
+- uid: Grpc.Core.Interceptors.Interceptor.UnaryServerHandler``2(``0,Grpc.Core.ServerCallContext,Grpc.Core.UnaryServerMethod{``0,``1})
+  name: UnaryServerHandler<TRequest, TResponse>(TRequest, ServerCallContext, UnaryServerMethod<TRequest, TResponse>)
+  href: api/Grpc.Core.Interceptors.Interceptor.html#Grpc_Core_Interceptors_Interceptor_UnaryServerHandler__2___0_Grpc_Core_ServerCallContext_Grpc_Core_UnaryServerMethod___0___1__
+  commentId: M:Grpc.Core.Interceptors.Interceptor.UnaryServerHandler``2(``0,Grpc.Core.ServerCallContext,Grpc.Core.UnaryServerMethod{``0,``1})
+  name.vb: UnaryServerHandler(Of TRequest, TResponse)(TRequest, ServerCallContext, UnaryServerMethod(Of TRequest, TResponse))
+  fullName: Grpc.Core.Interceptors.Interceptor.UnaryServerHandler<TRequest, TResponse>(TRequest, Grpc.Core.ServerCallContext, Grpc.Core.UnaryServerMethod<TRequest, TResponse>)
+  fullName.vb: Grpc.Core.Interceptors.Interceptor.UnaryServerHandler(Of TRequest, TResponse)(TRequest, Grpc.Core.ServerCallContext, Grpc.Core.UnaryServerMethod(Of TRequest, TResponse))
+  nameWithType: Interceptor.UnaryServerHandler<TRequest, TResponse>(TRequest, ServerCallContext, UnaryServerMethod<TRequest, TResponse>)
+  nameWithType.vb: Interceptor.UnaryServerHandler(Of TRequest, TResponse)(TRequest, ServerCallContext, UnaryServerMethod(Of TRequest, TResponse))
+- uid: Grpc.Core.Interceptors.ServerServiceDefinitionExtensions
+  name: ServerServiceDefinitionExtensions
+  href: api/Grpc.Core.Interceptors.ServerServiceDefinitionExtensions.html
+  commentId: T:Grpc.Core.Interceptors.ServerServiceDefinitionExtensions
+  fullName: Grpc.Core.Interceptors.ServerServiceDefinitionExtensions
+  nameWithType: ServerServiceDefinitionExtensions
+- uid: Grpc.Core.Interceptors.ServerServiceDefinitionExtensions.Intercept(Grpc.Core.ServerServiceDefinition,Grpc.Core.Interceptors.Interceptor)
+  name: Intercept(ServerServiceDefinition, Interceptor)
+  href: api/Grpc.Core.Interceptors.ServerServiceDefinitionExtensions.html#Grpc_Core_Interceptors_ServerServiceDefinitionExtensions_Intercept_Grpc_Core_ServerServiceDefinition_Grpc_Core_Interceptors_Interceptor_
+  commentId: M:Grpc.Core.Interceptors.ServerServiceDefinitionExtensions.Intercept(Grpc.Core.ServerServiceDefinition,Grpc.Core.Interceptors.Interceptor)
+  fullName: Grpc.Core.Interceptors.ServerServiceDefinitionExtensions.Intercept(Grpc.Core.ServerServiceDefinition, Grpc.Core.Interceptors.Interceptor)
+  nameWithType: ServerServiceDefinitionExtensions.Intercept(ServerServiceDefinition, Interceptor)
+- uid: Grpc.Core.Interceptors.ServerServiceDefinitionExtensions.Intercept(Grpc.Core.ServerServiceDefinition,Grpc.Core.Interceptors.Interceptor[])
+  name: Intercept(ServerServiceDefinition, Interceptor[])
+  href: api/Grpc.Core.Interceptors.ServerServiceDefinitionExtensions.html#Grpc_Core_Interceptors_ServerServiceDefinitionExtensions_Intercept_Grpc_Core_ServerServiceDefinition_Grpc_Core_Interceptors_Interceptor___
+  commentId: M:Grpc.Core.Interceptors.ServerServiceDefinitionExtensions.Intercept(Grpc.Core.ServerServiceDefinition,Grpc.Core.Interceptors.Interceptor[])
+  name.vb: Intercept(ServerServiceDefinition, Interceptor())
+  fullName: Grpc.Core.Interceptors.ServerServiceDefinitionExtensions.Intercept(Grpc.Core.ServerServiceDefinition, Grpc.Core.Interceptors.Interceptor[])
+  fullName.vb: Grpc.Core.Interceptors.ServerServiceDefinitionExtensions.Intercept(Grpc.Core.ServerServiceDefinition, Grpc.Core.Interceptors.Interceptor())
+  nameWithType: ServerServiceDefinitionExtensions.Intercept(ServerServiceDefinition, Interceptor[])
+  nameWithType.vb: ServerServiceDefinitionExtensions.Intercept(ServerServiceDefinition, Interceptor())
+- uid: Grpc.Core.Interceptors.ServerServiceDefinitionExtensions.Intercept*
+  name: Intercept
+  href: api/Grpc.Core.Interceptors.ServerServiceDefinitionExtensions.html#Grpc_Core_Interceptors_ServerServiceDefinitionExtensions_Intercept_
+  commentId: Overload:Grpc.Core.Interceptors.ServerServiceDefinitionExtensions.Intercept
+  isSpec: "True"
+  fullName: Grpc.Core.Interceptors.ServerServiceDefinitionExtensions.Intercept
+  nameWithType: ServerServiceDefinitionExtensions.Intercept
 - uid: Grpc.Core.IServerStreamWriter`1
   name: IServerStreamWriter<T>
   href: api/Grpc.Core.IServerStreamWriter-1.html
@@ -2201,6 +2802,7 @@ references:
   name: KeyCertificatePair
   href: api/Grpc.Core.KeyCertificatePair.html#Grpc_Core_KeyCertificatePair__ctor_
   commentId: Overload:Grpc.Core.KeyCertificatePair.#ctor
+  isSpec: "True"
   fullName: Grpc.Core.KeyCertificatePair.KeyCertificatePair
   nameWithType: KeyCertificatePair.KeyCertificatePair
 - uid: Grpc.Core.KeyCertificatePair.CertificateChain
@@ -2213,6 +2815,7 @@ references:
   name: CertificateChain
   href: api/Grpc.Core.KeyCertificatePair.html#Grpc_Core_KeyCertificatePair_CertificateChain_
   commentId: Overload:Grpc.Core.KeyCertificatePair.CertificateChain
+  isSpec: "True"
   fullName: Grpc.Core.KeyCertificatePair.CertificateChain
   nameWithType: KeyCertificatePair.CertificateChain
 - uid: Grpc.Core.KeyCertificatePair.PrivateKey
@@ -2225,6 +2828,7 @@ references:
   name: PrivateKey
   href: api/Grpc.Core.KeyCertificatePair.html#Grpc_Core_KeyCertificatePair_PrivateKey_
   commentId: Overload:Grpc.Core.KeyCertificatePair.PrivateKey
+  isSpec: "True"
   fullName: Grpc.Core.KeyCertificatePair.PrivateKey
   nameWithType: KeyCertificatePair.PrivateKey
 - uid: Grpc.Core.Logging
@@ -2249,12 +2853,14 @@ references:
   name: ConsoleLogger
   href: api/Grpc.Core.Logging.ConsoleLogger.html#Grpc_Core_Logging_ConsoleLogger__ctor_
   commentId: Overload:Grpc.Core.Logging.ConsoleLogger.#ctor
+  isSpec: "True"
   fullName: Grpc.Core.Logging.ConsoleLogger.ConsoleLogger
   nameWithType: ConsoleLogger.ConsoleLogger
 - uid: Grpc.Core.Logging.ConsoleLogger.ForType*
   name: ForType
   href: api/Grpc.Core.Logging.ConsoleLogger.html#Grpc_Core_Logging_ConsoleLogger_ForType_
   commentId: Overload:Grpc.Core.Logging.ConsoleLogger.ForType
+  isSpec: "True"
   fullName: Grpc.Core.Logging.ConsoleLogger.ForType
   nameWithType: ConsoleLogger.ForType
 - uid: Grpc.Core.Logging.ConsoleLogger.ForType``1
@@ -2291,6 +2897,7 @@ references:
   name: Debug
   href: api/Grpc.Core.Logging.ILogger.html#Grpc_Core_Logging_ILogger_Debug_
   commentId: Overload:Grpc.Core.Logging.ILogger.Debug
+  isSpec: "True"
   fullName: Grpc.Core.Logging.ILogger.Debug
   nameWithType: ILogger.Debug
 - uid: Grpc.Core.Logging.ILogger.Error(System.Exception,System.String)
@@ -2318,12 +2925,14 @@ references:
   name: Error
   href: api/Grpc.Core.Logging.ILogger.html#Grpc_Core_Logging_ILogger_Error_
   commentId: Overload:Grpc.Core.Logging.ILogger.Error
+  isSpec: "True"
   fullName: Grpc.Core.Logging.ILogger.Error
   nameWithType: ILogger.Error
 - uid: Grpc.Core.Logging.ILogger.ForType*
   name: ForType
   href: api/Grpc.Core.Logging.ILogger.html#Grpc_Core_Logging_ILogger_ForType_
   commentId: Overload:Grpc.Core.Logging.ILogger.ForType
+  isSpec: "True"
   fullName: Grpc.Core.Logging.ILogger.ForType
   nameWithType: ILogger.ForType
 - uid: Grpc.Core.Logging.ILogger.ForType``1
@@ -2354,6 +2963,7 @@ references:
   name: Info
   href: api/Grpc.Core.Logging.ILogger.html#Grpc_Core_Logging_ILogger_Info_
   commentId: Overload:Grpc.Core.Logging.ILogger.Info
+  isSpec: "True"
   fullName: Grpc.Core.Logging.ILogger.Info
   nameWithType: ILogger.Info
 - uid: Grpc.Core.Logging.ILogger.Warning(System.Exception,System.String)
@@ -2381,6 +2991,7 @@ references:
   name: Warning
   href: api/Grpc.Core.Logging.ILogger.html#Grpc_Core_Logging_ILogger_Warning_
   commentId: Overload:Grpc.Core.Logging.ILogger.Warning
+  isSpec: "True"
   fullName: Grpc.Core.Logging.ILogger.Warning
   nameWithType: ILogger.Warning
 - uid: Grpc.Core.Logging.LogLevel
@@ -2407,6 +3018,12 @@ references:
   commentId: F:Grpc.Core.Logging.LogLevel.Info
   fullName: Grpc.Core.Logging.LogLevel.Info
   nameWithType: LogLevel.Info
+- uid: Grpc.Core.Logging.LogLevel.Off
+  name: Off
+  href: api/Grpc.Core.Logging.LogLevel.html#Grpc_Core_Logging_LogLevel_Off
+  commentId: F:Grpc.Core.Logging.LogLevel.Off
+  fullName: Grpc.Core.Logging.LogLevel.Off
+  nameWithType: LogLevel.Off
 - uid: Grpc.Core.Logging.LogLevel.Warning
   name: Warning
   href: api/Grpc.Core.Logging.LogLevel.html#Grpc_Core_Logging_LogLevel_Warning
@@ -2425,10 +3042,17 @@ references:
   commentId: M:Grpc.Core.Logging.LogLevelFilterLogger.#ctor(Grpc.Core.Logging.ILogger,Grpc.Core.Logging.LogLevel)
   fullName: Grpc.Core.Logging.LogLevelFilterLogger.LogLevelFilterLogger(Grpc.Core.Logging.ILogger, Grpc.Core.Logging.LogLevel)
   nameWithType: LogLevelFilterLogger.LogLevelFilterLogger(ILogger, LogLevel)
+- uid: Grpc.Core.Logging.LogLevelFilterLogger.#ctor(Grpc.Core.Logging.ILogger,Grpc.Core.Logging.LogLevel,System.Boolean)
+  name: LogLevelFilterLogger(ILogger, LogLevel, Boolean)
+  href: api/Grpc.Core.Logging.LogLevelFilterLogger.html#Grpc_Core_Logging_LogLevelFilterLogger__ctor_Grpc_Core_Logging_ILogger_Grpc_Core_Logging_LogLevel_System_Boolean_
+  commentId: M:Grpc.Core.Logging.LogLevelFilterLogger.#ctor(Grpc.Core.Logging.ILogger,Grpc.Core.Logging.LogLevel,System.Boolean)
+  fullName: Grpc.Core.Logging.LogLevelFilterLogger.LogLevelFilterLogger(Grpc.Core.Logging.ILogger, Grpc.Core.Logging.LogLevel, System.Boolean)
+  nameWithType: LogLevelFilterLogger.LogLevelFilterLogger(ILogger, LogLevel, Boolean)
 - uid: Grpc.Core.Logging.LogLevelFilterLogger.#ctor*
   name: LogLevelFilterLogger
   href: api/Grpc.Core.Logging.LogLevelFilterLogger.html#Grpc_Core_Logging_LogLevelFilterLogger__ctor_
   commentId: Overload:Grpc.Core.Logging.LogLevelFilterLogger.#ctor
+  isSpec: "True"
   fullName: Grpc.Core.Logging.LogLevelFilterLogger.LogLevelFilterLogger
   nameWithType: LogLevelFilterLogger.LogLevelFilterLogger
 - uid: Grpc.Core.Logging.LogLevelFilterLogger.Debug(System.String)
@@ -2450,6 +3074,7 @@ references:
   name: Debug
   href: api/Grpc.Core.Logging.LogLevelFilterLogger.html#Grpc_Core_Logging_LogLevelFilterLogger_Debug_
   commentId: Overload:Grpc.Core.Logging.LogLevelFilterLogger.Debug
+  isSpec: "True"
   fullName: Grpc.Core.Logging.LogLevelFilterLogger.Debug
   nameWithType: LogLevelFilterLogger.Debug
 - uid: Grpc.Core.Logging.LogLevelFilterLogger.Error(System.Exception,System.String)
@@ -2477,12 +3102,14 @@ references:
   name: Error
   href: api/Grpc.Core.Logging.LogLevelFilterLogger.html#Grpc_Core_Logging_LogLevelFilterLogger_Error_
   commentId: Overload:Grpc.Core.Logging.LogLevelFilterLogger.Error
+  isSpec: "True"
   fullName: Grpc.Core.Logging.LogLevelFilterLogger.Error
   nameWithType: LogLevelFilterLogger.Error
 - uid: Grpc.Core.Logging.LogLevelFilterLogger.ForType*
   name: ForType
   href: api/Grpc.Core.Logging.LogLevelFilterLogger.html#Grpc_Core_Logging_LogLevelFilterLogger_ForType_
   commentId: Overload:Grpc.Core.Logging.LogLevelFilterLogger.ForType
+  isSpec: "True"
   fullName: Grpc.Core.Logging.LogLevelFilterLogger.ForType
   nameWithType: LogLevelFilterLogger.ForType
 - uid: Grpc.Core.Logging.LogLevelFilterLogger.ForType``1
@@ -2513,6 +3140,7 @@ references:
   name: Info
   href: api/Grpc.Core.Logging.LogLevelFilterLogger.html#Grpc_Core_Logging_LogLevelFilterLogger_Info_
   commentId: Overload:Grpc.Core.Logging.LogLevelFilterLogger.Info
+  isSpec: "True"
   fullName: Grpc.Core.Logging.LogLevelFilterLogger.Info
   nameWithType: LogLevelFilterLogger.Info
 - uid: Grpc.Core.Logging.LogLevelFilterLogger.Warning(System.Exception,System.String)
@@ -2540,6 +3168,7 @@ references:
   name: Warning
   href: api/Grpc.Core.Logging.LogLevelFilterLogger.html#Grpc_Core_Logging_LogLevelFilterLogger_Warning_
   commentId: Overload:Grpc.Core.Logging.LogLevelFilterLogger.Warning
+  isSpec: "True"
   fullName: Grpc.Core.Logging.LogLevelFilterLogger.Warning
   nameWithType: LogLevelFilterLogger.Warning
 - uid: Grpc.Core.Logging.NullLogger
@@ -2567,6 +3196,7 @@ references:
   name: Debug
   href: api/Grpc.Core.Logging.NullLogger.html#Grpc_Core_Logging_NullLogger_Debug_
   commentId: Overload:Grpc.Core.Logging.NullLogger.Debug
+  isSpec: "True"
   fullName: Grpc.Core.Logging.NullLogger.Debug
   nameWithType: NullLogger.Debug
 - uid: Grpc.Core.Logging.NullLogger.Error(System.Exception,System.String)
@@ -2594,12 +3224,14 @@ references:
   name: Error
   href: api/Grpc.Core.Logging.NullLogger.html#Grpc_Core_Logging_NullLogger_Error_
   commentId: Overload:Grpc.Core.Logging.NullLogger.Error
+  isSpec: "True"
   fullName: Grpc.Core.Logging.NullLogger.Error
   nameWithType: NullLogger.Error
 - uid: Grpc.Core.Logging.NullLogger.ForType*
   name: ForType
   href: api/Grpc.Core.Logging.NullLogger.html#Grpc_Core_Logging_NullLogger_ForType_
   commentId: Overload:Grpc.Core.Logging.NullLogger.ForType
+  isSpec: "True"
   fullName: Grpc.Core.Logging.NullLogger.ForType
   nameWithType: NullLogger.ForType
 - uid: Grpc.Core.Logging.NullLogger.ForType``1
@@ -2630,6 +3262,7 @@ references:
   name: Info
   href: api/Grpc.Core.Logging.NullLogger.html#Grpc_Core_Logging_NullLogger_Info_
   commentId: Overload:Grpc.Core.Logging.NullLogger.Info
+  isSpec: "True"
   fullName: Grpc.Core.Logging.NullLogger.Info
   nameWithType: NullLogger.Info
 - uid: Grpc.Core.Logging.NullLogger.Warning(System.Exception,System.String)
@@ -2657,6 +3290,7 @@ references:
   name: Warning
   href: api/Grpc.Core.Logging.NullLogger.html#Grpc_Core_Logging_NullLogger_Warning_
   commentId: Overload:Grpc.Core.Logging.NullLogger.Warning
+  isSpec: "True"
   fullName: Grpc.Core.Logging.NullLogger.Warning
   nameWithType: NullLogger.Warning
 - uid: Grpc.Core.Logging.TextWriterLogger
@@ -2693,6 +3327,7 @@ references:
   name: TextWriterLogger
   href: api/Grpc.Core.Logging.TextWriterLogger.html#Grpc_Core_Logging_TextWriterLogger__ctor_
   commentId: Overload:Grpc.Core.Logging.TextWriterLogger.#ctor
+  isSpec: "True"
   fullName: Grpc.Core.Logging.TextWriterLogger.TextWriterLogger
   nameWithType: TextWriterLogger.TextWriterLogger
 - uid: Grpc.Core.Logging.TextWriterLogger.AssociatedType
@@ -2705,6 +3340,7 @@ references:
   name: AssociatedType
   href: api/Grpc.Core.Logging.TextWriterLogger.html#Grpc_Core_Logging_TextWriterLogger_AssociatedType_
   commentId: Overload:Grpc.Core.Logging.TextWriterLogger.AssociatedType
+  isSpec: "True"
   fullName: Grpc.Core.Logging.TextWriterLogger.AssociatedType
   nameWithType: TextWriterLogger.AssociatedType
 - uid: Grpc.Core.Logging.TextWriterLogger.Debug(System.String)
@@ -2726,6 +3362,7 @@ references:
   name: Debug
   href: api/Grpc.Core.Logging.TextWriterLogger.html#Grpc_Core_Logging_TextWriterLogger_Debug_
   commentId: Overload:Grpc.Core.Logging.TextWriterLogger.Debug
+  isSpec: "True"
   fullName: Grpc.Core.Logging.TextWriterLogger.Debug
   nameWithType: TextWriterLogger.Debug
 - uid: Grpc.Core.Logging.TextWriterLogger.Error(System.Exception,System.String)
@@ -2753,12 +3390,14 @@ references:
   name: Error
   href: api/Grpc.Core.Logging.TextWriterLogger.html#Grpc_Core_Logging_TextWriterLogger_Error_
   commentId: Overload:Grpc.Core.Logging.TextWriterLogger.Error
+  isSpec: "True"
   fullName: Grpc.Core.Logging.TextWriterLogger.Error
   nameWithType: TextWriterLogger.Error
 - uid: Grpc.Core.Logging.TextWriterLogger.ForType*
   name: ForType
   href: api/Grpc.Core.Logging.TextWriterLogger.html#Grpc_Core_Logging_TextWriterLogger_ForType_
   commentId: Overload:Grpc.Core.Logging.TextWriterLogger.ForType
+  isSpec: "True"
   fullName: Grpc.Core.Logging.TextWriterLogger.ForType
   nameWithType: TextWriterLogger.ForType
 - uid: Grpc.Core.Logging.TextWriterLogger.ForType``1
@@ -2789,6 +3428,7 @@ references:
   name: Info
   href: api/Grpc.Core.Logging.TextWriterLogger.html#Grpc_Core_Logging_TextWriterLogger_Info_
   commentId: Overload:Grpc.Core.Logging.TextWriterLogger.Info
+  isSpec: "True"
   fullName: Grpc.Core.Logging.TextWriterLogger.Info
   nameWithType: TextWriterLogger.Info
 - uid: Grpc.Core.Logging.TextWriterLogger.Warning(System.Exception,System.String)
@@ -2816,6 +3456,7 @@ references:
   name: Warning
   href: api/Grpc.Core.Logging.TextWriterLogger.html#Grpc_Core_Logging_TextWriterLogger_Warning_
   commentId: Overload:Grpc.Core.Logging.TextWriterLogger.Warning
+  isSpec: "True"
   fullName: Grpc.Core.Logging.TextWriterLogger.Warning
   nameWithType: TextWriterLogger.Warning
 - uid: Grpc.Core.Marshaller`1
@@ -2840,6 +3481,7 @@ references:
   name: Marshaller
   href: api/Grpc.Core.Marshaller-1.html#Grpc_Core_Marshaller_1__ctor_
   commentId: Overload:Grpc.Core.Marshaller`1.#ctor
+  isSpec: "True"
   fullName: Grpc.Core.Marshaller<T>.Marshaller
   fullName.vb: Grpc.Core.Marshaller(Of T).Marshaller
   nameWithType: Marshaller<T>.Marshaller
@@ -2856,6 +3498,7 @@ references:
   name: Deserializer
   href: api/Grpc.Core.Marshaller-1.html#Grpc_Core_Marshaller_1_Deserializer_
   commentId: Overload:Grpc.Core.Marshaller`1.Deserializer
+  isSpec: "True"
   fullName: Grpc.Core.Marshaller<T>.Deserializer
   fullName.vb: Grpc.Core.Marshaller(Of T).Deserializer
   nameWithType: Marshaller<T>.Deserializer
@@ -2872,6 +3515,7 @@ references:
   name: Serializer
   href: api/Grpc.Core.Marshaller-1.html#Grpc_Core_Marshaller_1_Serializer_
   commentId: Overload:Grpc.Core.Marshaller`1.Serializer
+  isSpec: "True"
   fullName: Grpc.Core.Marshaller<T>.Serializer
   fullName.vb: Grpc.Core.Marshaller(Of T).Serializer
   nameWithType: Marshaller<T>.Serializer
@@ -2886,6 +3530,7 @@ references:
   name: Create
   href: api/Grpc.Core.Marshallers.html#Grpc_Core_Marshallers_Create_
   commentId: Overload:Grpc.Core.Marshallers.Create
+  isSpec: "True"
   fullName: Grpc.Core.Marshallers.Create
   nameWithType: Marshallers.Create
 - uid: Grpc.Core.Marshallers.Create``1(System.Func{``0,System.Byte[]},System.Func{System.Byte[],``0})
@@ -2907,6 +3552,7 @@ references:
   name: StringMarshaller
   href: api/Grpc.Core.Marshallers.html#Grpc_Core_Marshallers_StringMarshaller_
   commentId: Overload:Grpc.Core.Marshallers.StringMarshaller
+  isSpec: "True"
   fullName: Grpc.Core.Marshallers.StringMarshaller
   nameWithType: Marshallers.StringMarshaller
 - uid: Grpc.Core.Metadata
@@ -2925,6 +3571,7 @@ references:
   name: Metadata
   href: api/Grpc.Core.Metadata.html#Grpc_Core_Metadata__ctor_
   commentId: Overload:Grpc.Core.Metadata.#ctor
+  isSpec: "True"
   fullName: Grpc.Core.Metadata.Metadata
   nameWithType: Metadata.Metadata
 - uid: Grpc.Core.Metadata.Add(Grpc.Core.Metadata.Entry)
@@ -2952,6 +3599,7 @@ references:
   name: Add
   href: api/Grpc.Core.Metadata.html#Grpc_Core_Metadata_Add_
   commentId: Overload:Grpc.Core.Metadata.Add
+  isSpec: "True"
   fullName: Grpc.Core.Metadata.Add
   nameWithType: Metadata.Add
 - uid: Grpc.Core.Metadata.BinaryHeaderSuffix
@@ -2970,6 +3618,7 @@ references:
   name: Clear
   href: api/Grpc.Core.Metadata.html#Grpc_Core_Metadata_Clear_
   commentId: Overload:Grpc.Core.Metadata.Clear
+  isSpec: "True"
   fullName: Grpc.Core.Metadata.Clear
   nameWithType: Metadata.Clear
 - uid: Grpc.Core.Metadata.Contains(Grpc.Core.Metadata.Entry)
@@ -2982,6 +3631,7 @@ references:
   name: Contains
   href: api/Grpc.Core.Metadata.html#Grpc_Core_Metadata_Contains_
   commentId: Overload:Grpc.Core.Metadata.Contains
+  isSpec: "True"
   fullName: Grpc.Core.Metadata.Contains
   nameWithType: Metadata.Contains
 - uid: Grpc.Core.Metadata.CopyTo(Grpc.Core.Metadata.Entry[],System.Int32)
@@ -2997,6 +3647,7 @@ references:
   name: CopyTo
   href: api/Grpc.Core.Metadata.html#Grpc_Core_Metadata_CopyTo_
   commentId: Overload:Grpc.Core.Metadata.CopyTo
+  isSpec: "True"
   fullName: Grpc.Core.Metadata.CopyTo
   nameWithType: Metadata.CopyTo
 - uid: Grpc.Core.Metadata.Count
@@ -3009,6 +3660,7 @@ references:
   name: Count
   href: api/Grpc.Core.Metadata.html#Grpc_Core_Metadata_Count_
   commentId: Overload:Grpc.Core.Metadata.Count
+  isSpec: "True"
   fullName: Grpc.Core.Metadata.Count
   nameWithType: Metadata.Count
 - uid: Grpc.Core.Metadata.Empty
@@ -3042,6 +3694,7 @@ references:
   name: Entry
   href: api/Grpc.Core.Metadata.Entry.html#Grpc_Core_Metadata_Entry__ctor_
   commentId: Overload:Grpc.Core.Metadata.Entry.#ctor
+  isSpec: "True"
   fullName: Grpc.Core.Metadata.Entry.Entry
   nameWithType: Metadata.Entry.Entry
 - uid: Grpc.Core.Metadata.Entry.IsBinary
@@ -3054,6 +3707,7 @@ references:
   name: IsBinary
   href: api/Grpc.Core.Metadata.Entry.html#Grpc_Core_Metadata_Entry_IsBinary_
   commentId: Overload:Grpc.Core.Metadata.Entry.IsBinary
+  isSpec: "True"
   fullName: Grpc.Core.Metadata.Entry.IsBinary
   nameWithType: Metadata.Entry.IsBinary
 - uid: Grpc.Core.Metadata.Entry.Key
@@ -3066,6 +3720,7 @@ references:
   name: Key
   href: api/Grpc.Core.Metadata.Entry.html#Grpc_Core_Metadata_Entry_Key_
   commentId: Overload:Grpc.Core.Metadata.Entry.Key
+  isSpec: "True"
   fullName: Grpc.Core.Metadata.Entry.Key
   nameWithType: Metadata.Entry.Key
 - uid: Grpc.Core.Metadata.Entry.ToString
@@ -3078,6 +3733,7 @@ references:
   name: ToString
   href: api/Grpc.Core.Metadata.Entry.html#Grpc_Core_Metadata_Entry_ToString_
   commentId: Overload:Grpc.Core.Metadata.Entry.ToString
+  isSpec: "True"
   fullName: Grpc.Core.Metadata.Entry.ToString
   nameWithType: Metadata.Entry.ToString
 - uid: Grpc.Core.Metadata.Entry.Value
@@ -3090,6 +3746,7 @@ references:
   name: Value
   href: api/Grpc.Core.Metadata.Entry.html#Grpc_Core_Metadata_Entry_Value_
   commentId: Overload:Grpc.Core.Metadata.Entry.Value
+  isSpec: "True"
   fullName: Grpc.Core.Metadata.Entry.Value
   nameWithType: Metadata.Entry.Value
 - uid: Grpc.Core.Metadata.Entry.ValueBytes
@@ -3102,6 +3759,7 @@ references:
   name: ValueBytes
   href: api/Grpc.Core.Metadata.Entry.html#Grpc_Core_Metadata_Entry_ValueBytes_
   commentId: Overload:Grpc.Core.Metadata.Entry.ValueBytes
+  isSpec: "True"
   fullName: Grpc.Core.Metadata.Entry.ValueBytes
   nameWithType: Metadata.Entry.ValueBytes
 - uid: Grpc.Core.Metadata.GetEnumerator
@@ -3114,6 +3772,7 @@ references:
   name: GetEnumerator
   href: api/Grpc.Core.Metadata.html#Grpc_Core_Metadata_GetEnumerator_
   commentId: Overload:Grpc.Core.Metadata.GetEnumerator
+  isSpec: "True"
   fullName: Grpc.Core.Metadata.GetEnumerator
   nameWithType: Metadata.GetEnumerator
 - uid: Grpc.Core.Metadata.IndexOf(Grpc.Core.Metadata.Entry)
@@ -3126,6 +3785,7 @@ references:
   name: IndexOf
   href: api/Grpc.Core.Metadata.html#Grpc_Core_Metadata_IndexOf_
   commentId: Overload:Grpc.Core.Metadata.IndexOf
+  isSpec: "True"
   fullName: Grpc.Core.Metadata.IndexOf
   nameWithType: Metadata.IndexOf
 - uid: Grpc.Core.Metadata.Insert(System.Int32,Grpc.Core.Metadata.Entry)
@@ -3138,6 +3798,7 @@ references:
   name: Insert
   href: api/Grpc.Core.Metadata.html#Grpc_Core_Metadata_Insert_
   commentId: Overload:Grpc.Core.Metadata.Insert
+  isSpec: "True"
   fullName: Grpc.Core.Metadata.Insert
   nameWithType: Metadata.Insert
 - uid: Grpc.Core.Metadata.IsReadOnly
@@ -3150,6 +3811,7 @@ references:
   name: IsReadOnly
   href: api/Grpc.Core.Metadata.html#Grpc_Core_Metadata_IsReadOnly_
   commentId: Overload:Grpc.Core.Metadata.IsReadOnly
+  isSpec: "True"
   fullName: Grpc.Core.Metadata.IsReadOnly
   nameWithType: Metadata.IsReadOnly
 - uid: Grpc.Core.Metadata.Item(System.Int32)
@@ -3165,6 +3827,7 @@ references:
   name: Item
   href: api/Grpc.Core.Metadata.html#Grpc_Core_Metadata_Item_
   commentId: Overload:Grpc.Core.Metadata.Item
+  isSpec: "True"
   fullName: Grpc.Core.Metadata.Item
   nameWithType: Metadata.Item
 - uid: Grpc.Core.Metadata.Remove(Grpc.Core.Metadata.Entry)
@@ -3177,6 +3840,7 @@ references:
   name: Remove
   href: api/Grpc.Core.Metadata.html#Grpc_Core_Metadata_Remove_
   commentId: Overload:Grpc.Core.Metadata.Remove
+  isSpec: "True"
   fullName: Grpc.Core.Metadata.Remove
   nameWithType: Metadata.Remove
 - uid: Grpc.Core.Metadata.RemoveAt(System.Int32)
@@ -3189,6 +3853,7 @@ references:
   name: RemoveAt
   href: api/Grpc.Core.Metadata.html#Grpc_Core_Metadata_RemoveAt_
   commentId: Overload:Grpc.Core.Metadata.RemoveAt
+  isSpec: "True"
   fullName: Grpc.Core.Metadata.RemoveAt
   nameWithType: Metadata.RemoveAt
 - uid: Grpc.Core.Metadata.System#Collections#IEnumerable#GetEnumerator
@@ -3203,6 +3868,7 @@ references:
   name: IEnumerable.GetEnumerator
   href: api/Grpc.Core.Metadata.html#Grpc_Core_Metadata_System_Collections_IEnumerable_GetEnumerator_
   commentId: Overload:Grpc.Core.Metadata.System#Collections#IEnumerable#GetEnumerator
+  isSpec: "True"
   name.vb: System.Collections.IEnumerable.GetEnumerator
   fullName: Grpc.Core.Metadata.System.Collections.IEnumerable.GetEnumerator
   nameWithType: Metadata.IEnumerable.GetEnumerator
@@ -3229,6 +3895,7 @@ references:
   name: Method
   href: api/Grpc.Core.Method-2.html#Grpc_Core_Method_2__ctor_
   commentId: Overload:Grpc.Core.Method`2.#ctor
+  isSpec: "True"
   fullName: Grpc.Core.Method<TRequest, TResponse>.Method
   fullName.vb: Grpc.Core.Method(Of TRequest, TResponse).Method
   nameWithType: Method<TRequest, TResponse>.Method
@@ -3245,6 +3912,7 @@ references:
   name: FullName
   href: api/Grpc.Core.Method-2.html#Grpc_Core_Method_2_FullName_
   commentId: Overload:Grpc.Core.Method`2.FullName
+  isSpec: "True"
   fullName: Grpc.Core.Method<TRequest, TResponse>.FullName
   fullName.vb: Grpc.Core.Method(Of TRequest, TResponse).FullName
   nameWithType: Method<TRequest, TResponse>.FullName
@@ -3261,6 +3929,7 @@ references:
   name: Name
   href: api/Grpc.Core.Method-2.html#Grpc_Core_Method_2_Name_
   commentId: Overload:Grpc.Core.Method`2.Name
+  isSpec: "True"
   fullName: Grpc.Core.Method<TRequest, TResponse>.Name
   fullName.vb: Grpc.Core.Method(Of TRequest, TResponse).Name
   nameWithType: Method<TRequest, TResponse>.Name
@@ -3277,6 +3946,7 @@ references:
   name: RequestMarshaller
   href: api/Grpc.Core.Method-2.html#Grpc_Core_Method_2_RequestMarshaller_
   commentId: Overload:Grpc.Core.Method`2.RequestMarshaller
+  isSpec: "True"
   fullName: Grpc.Core.Method<TRequest, TResponse>.RequestMarshaller
   fullName.vb: Grpc.Core.Method(Of TRequest, TResponse).RequestMarshaller
   nameWithType: Method<TRequest, TResponse>.RequestMarshaller
@@ -3293,6 +3963,7 @@ references:
   name: ResponseMarshaller
   href: api/Grpc.Core.Method-2.html#Grpc_Core_Method_2_ResponseMarshaller_
   commentId: Overload:Grpc.Core.Method`2.ResponseMarshaller
+  isSpec: "True"
   fullName: Grpc.Core.Method<TRequest, TResponse>.ResponseMarshaller
   fullName.vb: Grpc.Core.Method(Of TRequest, TResponse).ResponseMarshaller
   nameWithType: Method<TRequest, TResponse>.ResponseMarshaller
@@ -3309,6 +3980,7 @@ references:
   name: ServiceName
   href: api/Grpc.Core.Method-2.html#Grpc_Core_Method_2_ServiceName_
   commentId: Overload:Grpc.Core.Method`2.ServiceName
+  isSpec: "True"
   fullName: Grpc.Core.Method<TRequest, TResponse>.ServiceName
   fullName.vb: Grpc.Core.Method(Of TRequest, TResponse).ServiceName
   nameWithType: Method<TRequest, TResponse>.ServiceName
@@ -3325,6 +3997,7 @@ references:
   name: Type
   href: api/Grpc.Core.Method-2.html#Grpc_Core_Method_2_Type_
   commentId: Overload:Grpc.Core.Method`2.Type
+  isSpec: "True"
   fullName: Grpc.Core.Method<TRequest, TResponse>.Type
   fullName.vb: Grpc.Core.Method(Of TRequest, TResponse).Type
   nameWithType: Method<TRequest, TResponse>.Type
@@ -3387,6 +4060,7 @@ references:
   name: RpcException
   href: api/Grpc.Core.RpcException.html#Grpc_Core_RpcException__ctor_
   commentId: Overload:Grpc.Core.RpcException.#ctor
+  isSpec: "True"
   fullName: Grpc.Core.RpcException.RpcException
   nameWithType: RpcException.RpcException
 - uid: Grpc.Core.RpcException.Status
@@ -3399,8 +4073,22 @@ references:
   name: Status
   href: api/Grpc.Core.RpcException.html#Grpc_Core_RpcException_Status_
   commentId: Overload:Grpc.Core.RpcException.Status
+  isSpec: "True"
   fullName: Grpc.Core.RpcException.Status
   nameWithType: RpcException.Status
+- uid: Grpc.Core.RpcException.StatusCode
+  name: StatusCode
+  href: api/Grpc.Core.RpcException.html#Grpc_Core_RpcException_StatusCode
+  commentId: P:Grpc.Core.RpcException.StatusCode
+  fullName: Grpc.Core.RpcException.StatusCode
+  nameWithType: RpcException.StatusCode
+- uid: Grpc.Core.RpcException.StatusCode*
+  name: StatusCode
+  href: api/Grpc.Core.RpcException.html#Grpc_Core_RpcException_StatusCode_
+  commentId: Overload:Grpc.Core.RpcException.StatusCode
+  isSpec: "True"
+  fullName: Grpc.Core.RpcException.StatusCode
+  nameWithType: RpcException.StatusCode
 - uid: Grpc.Core.RpcException.Trailers
   name: Trailers
   href: api/Grpc.Core.RpcException.html#Grpc_Core_RpcException_Trailers
@@ -3411,6 +4099,7 @@ references:
   name: Trailers
   href: api/Grpc.Core.RpcException.html#Grpc_Core_RpcException_Trailers_
   commentId: Overload:Grpc.Core.RpcException.Trailers
+  isSpec: "True"
   fullName: Grpc.Core.RpcException.Trailers
   nameWithType: RpcException.Trailers
 - uid: Grpc.Core.Server
@@ -3438,6 +4127,7 @@ references:
   name: Server
   href: api/Grpc.Core.Server.html#Grpc_Core_Server__ctor_
   commentId: Overload:Grpc.Core.Server.#ctor
+  isSpec: "True"
   fullName: Grpc.Core.Server.Server
   nameWithType: Server.Server
 - uid: Grpc.Core.Server.KillAsync
@@ -3450,6 +4140,7 @@ references:
   name: KillAsync
   href: api/Grpc.Core.Server.html#Grpc_Core_Server_KillAsync_
   commentId: Overload:Grpc.Core.Server.KillAsync
+  isSpec: "True"
   fullName: Grpc.Core.Server.KillAsync
   nameWithType: Server.KillAsync
 - uid: Grpc.Core.Server.Ports
@@ -3462,6 +4153,7 @@ references:
   name: Ports
   href: api/Grpc.Core.Server.html#Grpc_Core_Server_Ports_
   commentId: Overload:Grpc.Core.Server.Ports
+  isSpec: "True"
   fullName: Grpc.Core.Server.Ports
   nameWithType: Server.Ports
 - uid: Grpc.Core.Server.RequestCallTokensPerCompletionQueue
@@ -3474,6 +4166,7 @@ references:
   name: RequestCallTokensPerCompletionQueue
   href: api/Grpc.Core.Server.html#Grpc_Core_Server_RequestCallTokensPerCompletionQueue_
   commentId: Overload:Grpc.Core.Server.RequestCallTokensPerCompletionQueue
+  isSpec: "True"
   fullName: Grpc.Core.Server.RequestCallTokensPerCompletionQueue
   nameWithType: Server.RequestCallTokensPerCompletionQueue
 - uid: Grpc.Core.Server.ServerPortCollection
@@ -3498,6 +4191,7 @@ references:
   name: Add
   href: api/Grpc.Core.Server.ServerPortCollection.html#Grpc_Core_Server_ServerPortCollection_Add_
   commentId: Overload:Grpc.Core.Server.ServerPortCollection.Add
+  isSpec: "True"
   fullName: Grpc.Core.Server.ServerPortCollection.Add
   nameWithType: Server.ServerPortCollection.Add
 - uid: Grpc.Core.Server.ServerPortCollection.GetEnumerator
@@ -3510,6 +4204,7 @@ references:
   name: GetEnumerator
   href: api/Grpc.Core.Server.ServerPortCollection.html#Grpc_Core_Server_ServerPortCollection_GetEnumerator_
   commentId: Overload:Grpc.Core.Server.ServerPortCollection.GetEnumerator
+  isSpec: "True"
   fullName: Grpc.Core.Server.ServerPortCollection.GetEnumerator
   nameWithType: Server.ServerPortCollection.GetEnumerator
 - uid: Grpc.Core.Server.ServerPortCollection.System#Collections#IEnumerable#GetEnumerator
@@ -3524,6 +4219,7 @@ references:
   name: IEnumerable.GetEnumerator
   href: api/Grpc.Core.Server.ServerPortCollection.html#Grpc_Core_Server_ServerPortCollection_System_Collections_IEnumerable_GetEnumerator_
   commentId: Overload:Grpc.Core.Server.ServerPortCollection.System#Collections#IEnumerable#GetEnumerator
+  isSpec: "True"
   name.vb: System.Collections.IEnumerable.GetEnumerator
   fullName: Grpc.Core.Server.ServerPortCollection.System.Collections.IEnumerable.GetEnumerator
   nameWithType: Server.ServerPortCollection.IEnumerable.GetEnumerator
@@ -3544,6 +4240,7 @@ references:
   name: Add
   href: api/Grpc.Core.Server.ServiceDefinitionCollection.html#Grpc_Core_Server_ServiceDefinitionCollection_Add_
   commentId: Overload:Grpc.Core.Server.ServiceDefinitionCollection.Add
+  isSpec: "True"
   fullName: Grpc.Core.Server.ServiceDefinitionCollection.Add
   nameWithType: Server.ServiceDefinitionCollection.Add
 - uid: Grpc.Core.Server.ServiceDefinitionCollection.GetEnumerator
@@ -3556,6 +4253,7 @@ references:
   name: GetEnumerator
   href: api/Grpc.Core.Server.ServiceDefinitionCollection.html#Grpc_Core_Server_ServiceDefinitionCollection_GetEnumerator_
   commentId: Overload:Grpc.Core.Server.ServiceDefinitionCollection.GetEnumerator
+  isSpec: "True"
   fullName: Grpc.Core.Server.ServiceDefinitionCollection.GetEnumerator
   nameWithType: Server.ServiceDefinitionCollection.GetEnumerator
 - uid: Grpc.Core.Server.ServiceDefinitionCollection.System#Collections#IEnumerable#GetEnumerator
@@ -3570,6 +4268,7 @@ references:
   name: IEnumerable.GetEnumerator
   href: api/Grpc.Core.Server.ServiceDefinitionCollection.html#Grpc_Core_Server_ServiceDefinitionCollection_System_Collections_IEnumerable_GetEnumerator_
   commentId: Overload:Grpc.Core.Server.ServiceDefinitionCollection.System#Collections#IEnumerable#GetEnumerator
+  isSpec: "True"
   name.vb: System.Collections.IEnumerable.GetEnumerator
   fullName: Grpc.Core.Server.ServiceDefinitionCollection.System.Collections.IEnumerable.GetEnumerator
   nameWithType: Server.ServiceDefinitionCollection.IEnumerable.GetEnumerator
@@ -3584,6 +4283,7 @@ references:
   name: Services
   href: api/Grpc.Core.Server.html#Grpc_Core_Server_Services_
   commentId: Overload:Grpc.Core.Server.Services
+  isSpec: "True"
   fullName: Grpc.Core.Server.Services
   nameWithType: Server.Services
 - uid: Grpc.Core.Server.ShutdownAsync
@@ -3596,6 +4296,7 @@ references:
   name: ShutdownAsync
   href: api/Grpc.Core.Server.html#Grpc_Core_Server_ShutdownAsync_
   commentId: Overload:Grpc.Core.Server.ShutdownAsync
+  isSpec: "True"
   fullName: Grpc.Core.Server.ShutdownAsync
   nameWithType: Server.ShutdownAsync
 - uid: Grpc.Core.Server.ShutdownTask
@@ -3608,6 +4309,7 @@ references:
   name: ShutdownTask
   href: api/Grpc.Core.Server.html#Grpc_Core_Server_ShutdownTask_
   commentId: Overload:Grpc.Core.Server.ShutdownTask
+  isSpec: "True"
   fullName: Grpc.Core.Server.ShutdownTask
   nameWithType: Server.ShutdownTask
 - uid: Grpc.Core.Server.Start
@@ -3620,6 +4322,7 @@ references:
   name: Start
   href: api/Grpc.Core.Server.html#Grpc_Core_Server_Start_
   commentId: Overload:Grpc.Core.Server.Start
+  isSpec: "True"
   fullName: Grpc.Core.Server.Start
   nameWithType: Server.Start
 - uid: Grpc.Core.ServerCallContext
@@ -3638,6 +4341,7 @@ references:
   name: AuthContext
   href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_AuthContext_
   commentId: Overload:Grpc.Core.ServerCallContext.AuthContext
+  isSpec: "True"
   fullName: Grpc.Core.ServerCallContext.AuthContext
   nameWithType: ServerCallContext.AuthContext
 - uid: Grpc.Core.ServerCallContext.CancellationToken
@@ -3650,6 +4354,7 @@ references:
   name: CancellationToken
   href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_CancellationToken_
   commentId: Overload:Grpc.Core.ServerCallContext.CancellationToken
+  isSpec: "True"
   fullName: Grpc.Core.ServerCallContext.CancellationToken
   nameWithType: ServerCallContext.CancellationToken
 - uid: Grpc.Core.ServerCallContext.CreatePropagationToken(Grpc.Core.ContextPropagationOptions)
@@ -3662,6 +4367,7 @@ references:
   name: CreatePropagationToken
   href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_CreatePropagationToken_
   commentId: Overload:Grpc.Core.ServerCallContext.CreatePropagationToken
+  isSpec: "True"
   fullName: Grpc.Core.ServerCallContext.CreatePropagationToken
   nameWithType: ServerCallContext.CreatePropagationToken
 - uid: Grpc.Core.ServerCallContext.Deadline
@@ -3674,6 +4380,7 @@ references:
   name: Deadline
   href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_Deadline_
   commentId: Overload:Grpc.Core.ServerCallContext.Deadline
+  isSpec: "True"
   fullName: Grpc.Core.ServerCallContext.Deadline
   nameWithType: ServerCallContext.Deadline
 - uid: Grpc.Core.ServerCallContext.Host
@@ -3686,6 +4393,7 @@ references:
   name: Host
   href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_Host_
   commentId: Overload:Grpc.Core.ServerCallContext.Host
+  isSpec: "True"
   fullName: Grpc.Core.ServerCallContext.Host
   nameWithType: ServerCallContext.Host
 - uid: Grpc.Core.ServerCallContext.Method
@@ -3698,6 +4406,7 @@ references:
   name: Method
   href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_Method_
   commentId: Overload:Grpc.Core.ServerCallContext.Method
+  isSpec: "True"
   fullName: Grpc.Core.ServerCallContext.Method
   nameWithType: ServerCallContext.Method
 - uid: Grpc.Core.ServerCallContext.Peer
@@ -3710,6 +4419,7 @@ references:
   name: Peer
   href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_Peer_
   commentId: Overload:Grpc.Core.ServerCallContext.Peer
+  isSpec: "True"
   fullName: Grpc.Core.ServerCallContext.Peer
   nameWithType: ServerCallContext.Peer
 - uid: Grpc.Core.ServerCallContext.RequestHeaders
@@ -3722,6 +4432,7 @@ references:
   name: RequestHeaders
   href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_RequestHeaders_
   commentId: Overload:Grpc.Core.ServerCallContext.RequestHeaders
+  isSpec: "True"
   fullName: Grpc.Core.ServerCallContext.RequestHeaders
   nameWithType: ServerCallContext.RequestHeaders
 - uid: Grpc.Core.ServerCallContext.ResponseTrailers
@@ -3734,6 +4445,7 @@ references:
   name: ResponseTrailers
   href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_ResponseTrailers_
   commentId: Overload:Grpc.Core.ServerCallContext.ResponseTrailers
+  isSpec: "True"
   fullName: Grpc.Core.ServerCallContext.ResponseTrailers
   nameWithType: ServerCallContext.ResponseTrailers
 - uid: Grpc.Core.ServerCallContext.Status
@@ -3746,6 +4458,7 @@ references:
   name: Status
   href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_Status_
   commentId: Overload:Grpc.Core.ServerCallContext.Status
+  isSpec: "True"
   fullName: Grpc.Core.ServerCallContext.Status
   nameWithType: ServerCallContext.Status
 - uid: Grpc.Core.ServerCallContext.WriteOptions
@@ -3758,6 +4471,7 @@ references:
   name: WriteOptions
   href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_WriteOptions_
   commentId: Overload:Grpc.Core.ServerCallContext.WriteOptions
+  isSpec: "True"
   fullName: Grpc.Core.ServerCallContext.WriteOptions
   nameWithType: ServerCallContext.WriteOptions
 - uid: Grpc.Core.ServerCallContext.WriteResponseHeadersAsync(Grpc.Core.Metadata)
@@ -3770,6 +4484,7 @@ references:
   name: WriteResponseHeadersAsync
   href: api/Grpc.Core.ServerCallContext.html#Grpc_Core_ServerCallContext_WriteResponseHeadersAsync_
   commentId: Overload:Grpc.Core.ServerCallContext.WriteResponseHeadersAsync
+  isSpec: "True"
   fullName: Grpc.Core.ServerCallContext.WriteResponseHeadersAsync
   nameWithType: ServerCallContext.WriteResponseHeadersAsync
 - uid: Grpc.Core.ServerCredentials
@@ -3788,6 +4503,7 @@ references:
   name: Insecure
   href: api/Grpc.Core.ServerCredentials.html#Grpc_Core_ServerCredentials_Insecure_
   commentId: Overload:Grpc.Core.ServerCredentials.Insecure
+  isSpec: "True"
   fullName: Grpc.Core.ServerCredentials.Insecure
   nameWithType: ServerCredentials.Insecure
 - uid: Grpc.Core.ServerPort
@@ -3806,6 +4522,7 @@ references:
   name: ServerPort
   href: api/Grpc.Core.ServerPort.html#Grpc_Core_ServerPort__ctor_
   commentId: Overload:Grpc.Core.ServerPort.#ctor
+  isSpec: "True"
   fullName: Grpc.Core.ServerPort.ServerPort
   nameWithType: ServerPort.ServerPort
 - uid: Grpc.Core.ServerPort.BoundPort
@@ -3818,6 +4535,7 @@ references:
   name: BoundPort
   href: api/Grpc.Core.ServerPort.html#Grpc_Core_ServerPort_BoundPort_
   commentId: Overload:Grpc.Core.ServerPort.BoundPort
+  isSpec: "True"
   fullName: Grpc.Core.ServerPort.BoundPort
   nameWithType: ServerPort.BoundPort
 - uid: Grpc.Core.ServerPort.Credentials
@@ -3830,6 +4548,7 @@ references:
   name: Credentials
   href: api/Grpc.Core.ServerPort.html#Grpc_Core_ServerPort_Credentials_
   commentId: Overload:Grpc.Core.ServerPort.Credentials
+  isSpec: "True"
   fullName: Grpc.Core.ServerPort.Credentials
   nameWithType: ServerPort.Credentials
 - uid: Grpc.Core.ServerPort.Host
@@ -3842,6 +4561,7 @@ references:
   name: Host
   href: api/Grpc.Core.ServerPort.html#Grpc_Core_ServerPort_Host_
   commentId: Overload:Grpc.Core.ServerPort.Host
+  isSpec: "True"
   fullName: Grpc.Core.ServerPort.Host
   nameWithType: ServerPort.Host
 - uid: Grpc.Core.ServerPort.PickUnused
@@ -3860,6 +4580,7 @@ references:
   name: Port
   href: api/Grpc.Core.ServerPort.html#Grpc_Core_ServerPort_Port_
   commentId: Overload:Grpc.Core.ServerPort.Port
+  isSpec: "True"
   fullName: Grpc.Core.ServerPort.Port
   nameWithType: ServerPort.Port
 - uid: Grpc.Core.ServerServiceDefinition
@@ -3884,12 +4605,14 @@ references:
   name: Builder
   href: api/Grpc.Core.ServerServiceDefinition.Builder.html#Grpc_Core_ServerServiceDefinition_Builder__ctor_
   commentId: Overload:Grpc.Core.ServerServiceDefinition.Builder.#ctor
+  isSpec: "True"
   fullName: Grpc.Core.ServerServiceDefinition.Builder.Builder
   nameWithType: ServerServiceDefinition.Builder.Builder
 - uid: Grpc.Core.ServerServiceDefinition.Builder.AddMethod*
   name: AddMethod
   href: api/Grpc.Core.ServerServiceDefinition.Builder.html#Grpc_Core_ServerServiceDefinition_Builder_AddMethod_
   commentId: Overload:Grpc.Core.ServerServiceDefinition.Builder.AddMethod
+  isSpec: "True"
   fullName: Grpc.Core.ServerServiceDefinition.Builder.AddMethod
   nameWithType: ServerServiceDefinition.Builder.AddMethod
 - uid: Grpc.Core.ServerServiceDefinition.Builder.AddMethod``2(Grpc.Core.Method{``0,``1},Grpc.Core.ClientStreamingServerMethod{``0,``1})
@@ -3938,6 +4661,7 @@ references:
   name: Build
   href: api/Grpc.Core.ServerServiceDefinition.Builder.html#Grpc_Core_ServerServiceDefinition_Builder_Build_
   commentId: Overload:Grpc.Core.ServerServiceDefinition.Builder.Build
+  isSpec: "True"
   fullName: Grpc.Core.ServerServiceDefinition.Builder.Build
   nameWithType: ServerServiceDefinition.Builder.Build
 - uid: Grpc.Core.ServerServiceDefinition.CreateBuilder
@@ -3950,6 +4674,7 @@ references:
   name: CreateBuilder
   href: api/Grpc.Core.ServerServiceDefinition.html#Grpc_Core_ServerServiceDefinition_CreateBuilder_
   commentId: Overload:Grpc.Core.ServerServiceDefinition.CreateBuilder
+  isSpec: "True"
   fullName: Grpc.Core.ServerServiceDefinition.CreateBuilder
   nameWithType: ServerServiceDefinition.CreateBuilder
 - uid: Grpc.Core.ServerStreamingServerMethod`2
@@ -3989,6 +4714,7 @@ references:
   name: SslCredentials
   href: api/Grpc.Core.SslCredentials.html#Grpc_Core_SslCredentials__ctor_
   commentId: Overload:Grpc.Core.SslCredentials.#ctor
+  isSpec: "True"
   fullName: Grpc.Core.SslCredentials.SslCredentials
   nameWithType: SslCredentials.SslCredentials
 - uid: Grpc.Core.SslCredentials.KeyCertificatePair
@@ -4001,6 +4727,7 @@ references:
   name: KeyCertificatePair
   href: api/Grpc.Core.SslCredentials.html#Grpc_Core_SslCredentials_KeyCertificatePair_
   commentId: Overload:Grpc.Core.SslCredentials.KeyCertificatePair
+  isSpec: "True"
   fullName: Grpc.Core.SslCredentials.KeyCertificatePair
   nameWithType: SslCredentials.KeyCertificatePair
 - uid: Grpc.Core.SslCredentials.RootCertificates
@@ -4013,6 +4740,7 @@ references:
   name: RootCertificates
   href: api/Grpc.Core.SslCredentials.html#Grpc_Core_SslCredentials_RootCertificates_
   commentId: Overload:Grpc.Core.SslCredentials.RootCertificates
+  isSpec: "True"
   fullName: Grpc.Core.SslCredentials.RootCertificates
   nameWithType: SslCredentials.RootCertificates
 - uid: Grpc.Core.SslServerCredentials
@@ -4043,6 +4771,7 @@ references:
   name: SslServerCredentials
   href: api/Grpc.Core.SslServerCredentials.html#Grpc_Core_SslServerCredentials__ctor_
   commentId: Overload:Grpc.Core.SslServerCredentials.#ctor
+  isSpec: "True"
   fullName: Grpc.Core.SslServerCredentials.SslServerCredentials
   nameWithType: SslServerCredentials.SslServerCredentials
 - uid: Grpc.Core.SslServerCredentials.ForceClientAuthentication
@@ -4055,6 +4784,7 @@ references:
   name: ForceClientAuthentication
   href: api/Grpc.Core.SslServerCredentials.html#Grpc_Core_SslServerCredentials_ForceClientAuthentication_
   commentId: Overload:Grpc.Core.SslServerCredentials.ForceClientAuthentication
+  isSpec: "True"
   fullName: Grpc.Core.SslServerCredentials.ForceClientAuthentication
   nameWithType: SslServerCredentials.ForceClientAuthentication
 - uid: Grpc.Core.SslServerCredentials.KeyCertificatePairs
@@ -4067,6 +4797,7 @@ references:
   name: KeyCertificatePairs
   href: api/Grpc.Core.SslServerCredentials.html#Grpc_Core_SslServerCredentials_KeyCertificatePairs_
   commentId: Overload:Grpc.Core.SslServerCredentials.KeyCertificatePairs
+  isSpec: "True"
   fullName: Grpc.Core.SslServerCredentials.KeyCertificatePairs
   nameWithType: SslServerCredentials.KeyCertificatePairs
 - uid: Grpc.Core.SslServerCredentials.RootCertificates
@@ -4079,6 +4810,7 @@ references:
   name: RootCertificates
   href: api/Grpc.Core.SslServerCredentials.html#Grpc_Core_SslServerCredentials_RootCertificates_
   commentId: Overload:Grpc.Core.SslServerCredentials.RootCertificates
+  isSpec: "True"
   fullName: Grpc.Core.SslServerCredentials.RootCertificates
   nameWithType: SslServerCredentials.RootCertificates
 - uid: Grpc.Core.Status
@@ -4097,6 +4829,7 @@ references:
   name: Status
   href: api/Grpc.Core.Status.html#Grpc_Core_Status__ctor_
   commentId: Overload:Grpc.Core.Status.#ctor
+  isSpec: "True"
   fullName: Grpc.Core.Status.Status
   nameWithType: Status.Status
 - uid: Grpc.Core.Status.DefaultCancelled
@@ -4121,6 +4854,7 @@ references:
   name: Detail
   href: api/Grpc.Core.Status.html#Grpc_Core_Status_Detail_
   commentId: Overload:Grpc.Core.Status.Detail
+  isSpec: "True"
   fullName: Grpc.Core.Status.Detail
   nameWithType: Status.Detail
 - uid: Grpc.Core.Status.StatusCode
@@ -4133,6 +4867,7 @@ references:
   name: StatusCode
   href: api/Grpc.Core.Status.html#Grpc_Core_Status_StatusCode_
   commentId: Overload:Grpc.Core.Status.StatusCode
+  isSpec: "True"
   fullName: Grpc.Core.Status.StatusCode
   nameWithType: Status.StatusCode
 - uid: Grpc.Core.Status.ToString
@@ -4145,6 +4880,7 @@ references:
   name: ToString
   href: api/Grpc.Core.Status.html#Grpc_Core_Status_ToString_
   commentId: Overload:Grpc.Core.Status.ToString
+  isSpec: "True"
   fullName: Grpc.Core.Status.ToString
   nameWithType: Status.ToString
 - uid: Grpc.Core.StatusCode
@@ -4271,6 +5007,7 @@ references:
   name: AsyncClientStreamingCall
   href: api/Grpc.Core.Testing.TestCalls.html#Grpc_Core_Testing_TestCalls_AsyncClientStreamingCall_
   commentId: Overload:Grpc.Core.Testing.TestCalls.AsyncClientStreamingCall
+  isSpec: "True"
   fullName: Grpc.Core.Testing.TestCalls.AsyncClientStreamingCall
   nameWithType: TestCalls.AsyncClientStreamingCall
 - uid: Grpc.Core.Testing.TestCalls.AsyncClientStreamingCall``2(Grpc.Core.IClientStreamWriter{``0},System.Threading.Tasks.Task{``1},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)
@@ -4286,6 +5023,7 @@ references:
   name: AsyncDuplexStreamingCall
   href: api/Grpc.Core.Testing.TestCalls.html#Grpc_Core_Testing_TestCalls_AsyncDuplexStreamingCall_
   commentId: Overload:Grpc.Core.Testing.TestCalls.AsyncDuplexStreamingCall
+  isSpec: "True"
   fullName: Grpc.Core.Testing.TestCalls.AsyncDuplexStreamingCall
   nameWithType: TestCalls.AsyncDuplexStreamingCall
 - uid: Grpc.Core.Testing.TestCalls.AsyncDuplexStreamingCall``2(Grpc.Core.IClientStreamWriter{``1},Grpc.Core.IAsyncStreamReader{``0},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)
@@ -4301,6 +5039,7 @@ references:
   name: AsyncServerStreamingCall
   href: api/Grpc.Core.Testing.TestCalls.html#Grpc_Core_Testing_TestCalls_AsyncServerStreamingCall_
   commentId: Overload:Grpc.Core.Testing.TestCalls.AsyncServerStreamingCall
+  isSpec: "True"
   fullName: Grpc.Core.Testing.TestCalls.AsyncServerStreamingCall
   nameWithType: TestCalls.AsyncServerStreamingCall
 - uid: Grpc.Core.Testing.TestCalls.AsyncServerStreamingCall``1(Grpc.Core.IAsyncStreamReader{``0},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)
@@ -4316,6 +5055,7 @@ references:
   name: AsyncUnaryCall
   href: api/Grpc.Core.Testing.TestCalls.html#Grpc_Core_Testing_TestCalls_AsyncUnaryCall_
   commentId: Overload:Grpc.Core.Testing.TestCalls.AsyncUnaryCall
+  isSpec: "True"
   fullName: Grpc.Core.Testing.TestCalls.AsyncUnaryCall
   nameWithType: TestCalls.AsyncUnaryCall
 - uid: Grpc.Core.Testing.TestCalls.AsyncUnaryCall``1(System.Threading.Tasks.Task{``0},System.Threading.Tasks.Task{Grpc.Core.Metadata},System.Func{Grpc.Core.Status},System.Func{Grpc.Core.Metadata},System.Action)
@@ -4352,6 +5092,7 @@ references:
   name: ForEachAsync
   href: api/Grpc.Core.Utils.AsyncStreamExtensions.html#Grpc_Core_Utils_AsyncStreamExtensions_ForEachAsync_
   commentId: Overload:Grpc.Core.Utils.AsyncStreamExtensions.ForEachAsync
+  isSpec: "True"
   fullName: Grpc.Core.Utils.AsyncStreamExtensions.ForEachAsync
   nameWithType: AsyncStreamExtensions.ForEachAsync
 - uid: Grpc.Core.Utils.AsyncStreamExtensions.ForEachAsync``1(Grpc.Core.IAsyncStreamReader{``0},System.Func{``0,System.Threading.Tasks.Task})
@@ -4367,6 +5108,7 @@ references:
   name: ToListAsync
   href: api/Grpc.Core.Utils.AsyncStreamExtensions.html#Grpc_Core_Utils_AsyncStreamExtensions_ToListAsync_
   commentId: Overload:Grpc.Core.Utils.AsyncStreamExtensions.ToListAsync
+  isSpec: "True"
   fullName: Grpc.Core.Utils.AsyncStreamExtensions.ToListAsync
   nameWithType: AsyncStreamExtensions.ToListAsync
 - uid: Grpc.Core.Utils.AsyncStreamExtensions.ToListAsync``1(Grpc.Core.IAsyncStreamReader{``0})
@@ -4382,6 +5124,7 @@ references:
   name: WriteAllAsync
   href: api/Grpc.Core.Utils.AsyncStreamExtensions.html#Grpc_Core_Utils_AsyncStreamExtensions_WriteAllAsync_
   commentId: Overload:Grpc.Core.Utils.AsyncStreamExtensions.WriteAllAsync
+  isSpec: "True"
   fullName: Grpc.Core.Utils.AsyncStreamExtensions.WriteAllAsync
   nameWithType: AsyncStreamExtensions.WriteAllAsync
 - uid: Grpc.Core.Utils.AsyncStreamExtensions.WriteAllAsync``1(Grpc.Core.IClientStreamWriter{``0},System.Collections.Generic.IEnumerable{``0},System.Boolean)
@@ -4418,6 +5161,7 @@ references:
   name: RunBenchmark
   href: api/Grpc.Core.Utils.BenchmarkUtil.html#Grpc_Core_Utils_BenchmarkUtil_RunBenchmark_
   commentId: Overload:Grpc.Core.Utils.BenchmarkUtil.RunBenchmark
+  isSpec: "True"
   fullName: Grpc.Core.Utils.BenchmarkUtil.RunBenchmark
   nameWithType: BenchmarkUtil.RunBenchmark
 - uid: Grpc.Core.Utils.GrpcPreconditions
@@ -4442,12 +5186,14 @@ references:
   name: CheckArgument
   href: api/Grpc.Core.Utils.GrpcPreconditions.html#Grpc_Core_Utils_GrpcPreconditions_CheckArgument_
   commentId: Overload:Grpc.Core.Utils.GrpcPreconditions.CheckArgument
+  isSpec: "True"
   fullName: Grpc.Core.Utils.GrpcPreconditions.CheckArgument
   nameWithType: GrpcPreconditions.CheckArgument
 - uid: Grpc.Core.Utils.GrpcPreconditions.CheckNotNull*
   name: CheckNotNull
   href: api/Grpc.Core.Utils.GrpcPreconditions.html#Grpc_Core_Utils_GrpcPreconditions_CheckNotNull_
   commentId: Overload:Grpc.Core.Utils.GrpcPreconditions.CheckNotNull
+  isSpec: "True"
   fullName: Grpc.Core.Utils.GrpcPreconditions.CheckNotNull
   nameWithType: GrpcPreconditions.CheckNotNull
 - uid: Grpc.Core.Utils.GrpcPreconditions.CheckNotNull``1(``0)
@@ -4484,6 +5230,7 @@ references:
   name: CheckState
   href: api/Grpc.Core.Utils.GrpcPreconditions.html#Grpc_Core_Utils_GrpcPreconditions_CheckState_
   commentId: Overload:Grpc.Core.Utils.GrpcPreconditions.CheckState
+  isSpec: "True"
   fullName: Grpc.Core.Utils.GrpcPreconditions.CheckState
   nameWithType: GrpcPreconditions.CheckState
 - uid: Grpc.Core.Utils.TaskUtils
@@ -4502,6 +5249,7 @@ references:
   name: CompletedTask
   href: api/Grpc.Core.Utils.TaskUtils.html#Grpc_Core_Utils_TaskUtils_CompletedTask_
   commentId: Overload:Grpc.Core.Utils.TaskUtils.CompletedTask
+  isSpec: "True"
   fullName: Grpc.Core.Utils.TaskUtils.CompletedTask
   nameWithType: TaskUtils.CompletedTask
 - uid: Grpc.Core.VersionInfo
@@ -4562,6 +5310,7 @@ references:
   name: WriteOptions
   href: api/Grpc.Core.WriteOptions.html#Grpc_Core_WriteOptions__ctor_
   commentId: Overload:Grpc.Core.WriteOptions.#ctor
+  isSpec: "True"
   fullName: Grpc.Core.WriteOptions.WriteOptions
   nameWithType: WriteOptions.WriteOptions
 - uid: Grpc.Core.WriteOptions.Default
@@ -4580,6 +5329,7 @@ references:
   name: Flags
   href: api/Grpc.Core.WriteOptions.html#Grpc_Core_WriteOptions_Flags_
   commentId: Overload:Grpc.Core.WriteOptions.Flags
+  isSpec: "True"
   fullName: Grpc.Core.WriteOptions.Flags
   nameWithType: WriteOptions.Flags
 - uid: Grpc.Health.V1
@@ -4604,6 +5354,7 @@ references:
   name: BindService
   href: api/Grpc.Health.V1.Health.html#Grpc_Health_V1_Health_BindService_
   commentId: Overload:Grpc.Health.V1.Health.BindService
+  isSpec: "True"
   fullName: Grpc.Health.V1.Health.BindService
   nameWithType: Health.BindService
 - uid: Grpc.Health.V1.Health.Descriptor
@@ -4616,6 +5367,7 @@ references:
   name: Descriptor
   href: api/Grpc.Health.V1.Health.html#Grpc_Health_V1_Health_Descriptor_
   commentId: Overload:Grpc.Health.V1.Health.Descriptor
+  isSpec: "True"
   fullName: Grpc.Health.V1.Health.Descriptor
   nameWithType: Health.Descriptor
 - uid: Grpc.Health.V1.Health.HealthBase
@@ -4634,6 +5386,7 @@ references:
   name: Check
   href: api/Grpc.Health.V1.Health.HealthBase.html#Grpc_Health_V1_Health_HealthBase_Check_
   commentId: Overload:Grpc.Health.V1.Health.HealthBase.Check
+  isSpec: "True"
   fullName: Grpc.Health.V1.Health.HealthBase.Check
   nameWithType: Health.HealthBase.Check
 - uid: Grpc.Health.V1.Health.HealthClient
@@ -4670,6 +5423,7 @@ references:
   name: HealthClient
   href: api/Grpc.Health.V1.Health.HealthClient.html#Grpc_Health_V1_Health_HealthClient__ctor_
   commentId: Overload:Grpc.Health.V1.Health.HealthClient.#ctor
+  isSpec: "True"
   fullName: Grpc.Health.V1.Health.HealthClient.HealthClient
   nameWithType: Health.HealthClient.HealthClient
 - uid: Grpc.Health.V1.Health.HealthClient.Check(Grpc.Health.V1.HealthCheckRequest,Grpc.Core.CallOptions)
@@ -4691,6 +5445,7 @@ references:
   name: Check
   href: api/Grpc.Health.V1.Health.HealthClient.html#Grpc_Health_V1_Health_HealthClient_Check_
   commentId: Overload:Grpc.Health.V1.Health.HealthClient.Check
+  isSpec: "True"
   fullName: Grpc.Health.V1.Health.HealthClient.Check
   nameWithType: Health.HealthClient.Check
 - uid: Grpc.Health.V1.Health.HealthClient.CheckAsync(Grpc.Health.V1.HealthCheckRequest,Grpc.Core.CallOptions)
@@ -4712,6 +5467,7 @@ references:
   name: CheckAsync
   href: api/Grpc.Health.V1.Health.HealthClient.html#Grpc_Health_V1_Health_HealthClient_CheckAsync_
   commentId: Overload:Grpc.Health.V1.Health.HealthClient.CheckAsync
+  isSpec: "True"
   fullName: Grpc.Health.V1.Health.HealthClient.CheckAsync
   nameWithType: Health.HealthClient.CheckAsync
 - uid: Grpc.Health.V1.Health.HealthClient.NewInstance(Grpc.Core.ClientBase.ClientBaseConfiguration)
@@ -4724,6 +5480,7 @@ references:
   name: NewInstance
   href: api/Grpc.Health.V1.Health.HealthClient.html#Grpc_Health_V1_Health_HealthClient_NewInstance_
   commentId: Overload:Grpc.Health.V1.Health.HealthClient.NewInstance
+  isSpec: "True"
   fullName: Grpc.Health.V1.Health.HealthClient.NewInstance
   nameWithType: Health.HealthClient.NewInstance
 - uid: Grpc.Health.V1.HealthCheckRequest
@@ -4748,6 +5505,7 @@ references:
   name: HealthCheckRequest
   href: api/Grpc.Health.V1.HealthCheckRequest.html#Grpc_Health_V1_HealthCheckRequest__ctor_
   commentId: Overload:Grpc.Health.V1.HealthCheckRequest.#ctor
+  isSpec: "True"
   fullName: Grpc.Health.V1.HealthCheckRequest.HealthCheckRequest
   nameWithType: HealthCheckRequest.HealthCheckRequest
 - uid: Grpc.Health.V1.HealthCheckRequest.CalculateSize
@@ -4760,6 +5518,7 @@ references:
   name: CalculateSize
   href: api/Grpc.Health.V1.HealthCheckRequest.html#Grpc_Health_V1_HealthCheckRequest_CalculateSize_
   commentId: Overload:Grpc.Health.V1.HealthCheckRequest.CalculateSize
+  isSpec: "True"
   fullName: Grpc.Health.V1.HealthCheckRequest.CalculateSize
   nameWithType: HealthCheckRequest.CalculateSize
 - uid: Grpc.Health.V1.HealthCheckRequest.Clone
@@ -4772,6 +5531,7 @@ references:
   name: Clone
   href: api/Grpc.Health.V1.HealthCheckRequest.html#Grpc_Health_V1_HealthCheckRequest_Clone_
   commentId: Overload:Grpc.Health.V1.HealthCheckRequest.Clone
+  isSpec: "True"
   fullName: Grpc.Health.V1.HealthCheckRequest.Clone
   nameWithType: HealthCheckRequest.Clone
 - uid: Grpc.Health.V1.HealthCheckRequest.Descriptor
@@ -4784,6 +5544,7 @@ references:
   name: Descriptor
   href: api/Grpc.Health.V1.HealthCheckRequest.html#Grpc_Health_V1_HealthCheckRequest_Descriptor_
   commentId: Overload:Grpc.Health.V1.HealthCheckRequest.Descriptor
+  isSpec: "True"
   fullName: Grpc.Health.V1.HealthCheckRequest.Descriptor
   nameWithType: HealthCheckRequest.Descriptor
 - uid: Grpc.Health.V1.HealthCheckRequest.Equals(Grpc.Health.V1.HealthCheckRequest)
@@ -4802,6 +5563,7 @@ references:
   name: Equals
   href: api/Grpc.Health.V1.HealthCheckRequest.html#Grpc_Health_V1_HealthCheckRequest_Equals_
   commentId: Overload:Grpc.Health.V1.HealthCheckRequest.Equals
+  isSpec: "True"
   fullName: Grpc.Health.V1.HealthCheckRequest.Equals
   nameWithType: HealthCheckRequest.Equals
 - uid: Grpc.Health.V1.HealthCheckRequest.GetHashCode
@@ -4814,32 +5576,15 @@ references:
   name: GetHashCode
   href: api/Grpc.Health.V1.HealthCheckRequest.html#Grpc_Health_V1_HealthCheckRequest_GetHashCode_
   commentId: Overload:Grpc.Health.V1.HealthCheckRequest.GetHashCode
+  isSpec: "True"
   fullName: Grpc.Health.V1.HealthCheckRequest.GetHashCode
   nameWithType: HealthCheckRequest.GetHashCode
-- uid: Grpc.Health.V1.HealthCheckRequest.Google#Protobuf#IMessage#Descriptor
-  name: IMessage.Descriptor
-  href: api/Grpc.Health.V1.HealthCheckRequest.html#Grpc_Health_V1_HealthCheckRequest_Google_Protobuf_IMessage_Descriptor
-  commentId: P:Grpc.Health.V1.HealthCheckRequest.Google#Protobuf#IMessage#Descriptor
-  name.vb: pb::Google.Protobuf.IMessage.Descriptor
-  fullName: Grpc.Health.V1.HealthCheckRequest.Google.Protobuf.IMessage.Descriptor
-  fullName.vb: Grpc.Health.V1.HealthCheckRequest.pb::Google.Protobuf.IMessage.Descriptor
-  nameWithType: HealthCheckRequest.IMessage.Descriptor
-  nameWithType.vb: HealthCheckRequest.pb::Google.Protobuf.IMessage.Descriptor
-- uid: Grpc.Health.V1.HealthCheckRequest.Google#Protobuf#IMessage#Descriptor*
-  name: IMessage.Descriptor
-  href: api/Grpc.Health.V1.HealthCheckRequest.html#Grpc_Health_V1_HealthCheckRequest_Google_Protobuf_IMessage_Descriptor_
-  commentId: Overload:Grpc.Health.V1.HealthCheckRequest.Google#Protobuf#IMessage#Descriptor
-  name.vb: pb::Google.Protobuf.IMessage.Descriptor
-  fullName: Grpc.Health.V1.HealthCheckRequest.Google.Protobuf.IMessage.Descriptor
-  fullName.vb: Grpc.Health.V1.HealthCheckRequest.pb::Google.Protobuf.IMessage.Descriptor
-  nameWithType: HealthCheckRequest.IMessage.Descriptor
-  nameWithType.vb: HealthCheckRequest.pb::Google.Protobuf.IMessage.Descriptor
 - uid: Grpc.Health.V1.HealthCheckRequest.MergeFrom(Google.Protobuf.CodedInputStream)
-  name: MergeFrom(CodedInputStream)
+  name: MergeFrom(Google.Protobuf.CodedInputStream)
   href: api/Grpc.Health.V1.HealthCheckRequest.html#Grpc_Health_V1_HealthCheckRequest_MergeFrom_Google_Protobuf_CodedInputStream_
   commentId: M:Grpc.Health.V1.HealthCheckRequest.MergeFrom(Google.Protobuf.CodedInputStream)
   fullName: Grpc.Health.V1.HealthCheckRequest.MergeFrom(Google.Protobuf.CodedInputStream)
-  nameWithType: HealthCheckRequest.MergeFrom(CodedInputStream)
+  nameWithType: HealthCheckRequest.MergeFrom(Google.Protobuf.CodedInputStream)
 - uid: Grpc.Health.V1.HealthCheckRequest.MergeFrom(Grpc.Health.V1.HealthCheckRequest)
   name: MergeFrom(HealthCheckRequest)
   href: api/Grpc.Health.V1.HealthCheckRequest.html#Grpc_Health_V1_HealthCheckRequest_MergeFrom_Grpc_Health_V1_HealthCheckRequest_
@@ -4850,6 +5595,7 @@ references:
   name: MergeFrom
   href: api/Grpc.Health.V1.HealthCheckRequest.html#Grpc_Health_V1_HealthCheckRequest_MergeFrom_
   commentId: Overload:Grpc.Health.V1.HealthCheckRequest.MergeFrom
+  isSpec: "True"
   fullName: Grpc.Health.V1.HealthCheckRequest.MergeFrom
   nameWithType: HealthCheckRequest.MergeFrom
 - uid: Grpc.Health.V1.HealthCheckRequest.Parser
@@ -4862,6 +5608,7 @@ references:
   name: Parser
   href: api/Grpc.Health.V1.HealthCheckRequest.html#Grpc_Health_V1_HealthCheckRequest_Parser_
   commentId: Overload:Grpc.Health.V1.HealthCheckRequest.Parser
+  isSpec: "True"
   fullName: Grpc.Health.V1.HealthCheckRequest.Parser
   nameWithType: HealthCheckRequest.Parser
 - uid: Grpc.Health.V1.HealthCheckRequest.Service
@@ -4874,6 +5621,7 @@ references:
   name: Service
   href: api/Grpc.Health.V1.HealthCheckRequest.html#Grpc_Health_V1_HealthCheckRequest_Service_
   commentId: Overload:Grpc.Health.V1.HealthCheckRequest.Service
+  isSpec: "True"
   fullName: Grpc.Health.V1.HealthCheckRequest.Service
   nameWithType: HealthCheckRequest.Service
 - uid: Grpc.Health.V1.HealthCheckRequest.ServiceFieldNumber
@@ -4892,18 +5640,20 @@ references:
   name: ToString
   href: api/Grpc.Health.V1.HealthCheckRequest.html#Grpc_Health_V1_HealthCheckRequest_ToString_
   commentId: Overload:Grpc.Health.V1.HealthCheckRequest.ToString
+  isSpec: "True"
   fullName: Grpc.Health.V1.HealthCheckRequest.ToString
   nameWithType: HealthCheckRequest.ToString
 - uid: Grpc.Health.V1.HealthCheckRequest.WriteTo(Google.Protobuf.CodedOutputStream)
-  name: WriteTo(CodedOutputStream)
+  name: WriteTo(Google.Protobuf.CodedOutputStream)
   href: api/Grpc.Health.V1.HealthCheckRequest.html#Grpc_Health_V1_HealthCheckRequest_WriteTo_Google_Protobuf_CodedOutputStream_
   commentId: M:Grpc.Health.V1.HealthCheckRequest.WriteTo(Google.Protobuf.CodedOutputStream)
   fullName: Grpc.Health.V1.HealthCheckRequest.WriteTo(Google.Protobuf.CodedOutputStream)
-  nameWithType: HealthCheckRequest.WriteTo(CodedOutputStream)
+  nameWithType: HealthCheckRequest.WriteTo(Google.Protobuf.CodedOutputStream)
 - uid: Grpc.Health.V1.HealthCheckRequest.WriteTo*
   name: WriteTo
   href: api/Grpc.Health.V1.HealthCheckRequest.html#Grpc_Health_V1_HealthCheckRequest_WriteTo_
   commentId: Overload:Grpc.Health.V1.HealthCheckRequest.WriteTo
+  isSpec: "True"
   fullName: Grpc.Health.V1.HealthCheckRequest.WriteTo
   nameWithType: HealthCheckRequest.WriteTo
 - uid: Grpc.Health.V1.HealthCheckResponse
@@ -4928,6 +5678,7 @@ references:
   name: HealthCheckResponse
   href: api/Grpc.Health.V1.HealthCheckResponse.html#Grpc_Health_V1_HealthCheckResponse__ctor_
   commentId: Overload:Grpc.Health.V1.HealthCheckResponse.#ctor
+  isSpec: "True"
   fullName: Grpc.Health.V1.HealthCheckResponse.HealthCheckResponse
   nameWithType: HealthCheckResponse.HealthCheckResponse
 - uid: Grpc.Health.V1.HealthCheckResponse.CalculateSize
@@ -4940,6 +5691,7 @@ references:
   name: CalculateSize
   href: api/Grpc.Health.V1.HealthCheckResponse.html#Grpc_Health_V1_HealthCheckResponse_CalculateSize_
   commentId: Overload:Grpc.Health.V1.HealthCheckResponse.CalculateSize
+  isSpec: "True"
   fullName: Grpc.Health.V1.HealthCheckResponse.CalculateSize
   nameWithType: HealthCheckResponse.CalculateSize
 - uid: Grpc.Health.V1.HealthCheckResponse.Clone
@@ -4952,6 +5704,7 @@ references:
   name: Clone
   href: api/Grpc.Health.V1.HealthCheckResponse.html#Grpc_Health_V1_HealthCheckResponse_Clone_
   commentId: Overload:Grpc.Health.V1.HealthCheckResponse.Clone
+  isSpec: "True"
   fullName: Grpc.Health.V1.HealthCheckResponse.Clone
   nameWithType: HealthCheckResponse.Clone
 - uid: Grpc.Health.V1.HealthCheckResponse.Descriptor
@@ -4964,6 +5717,7 @@ references:
   name: Descriptor
   href: api/Grpc.Health.V1.HealthCheckResponse.html#Grpc_Health_V1_HealthCheckResponse_Descriptor_
   commentId: Overload:Grpc.Health.V1.HealthCheckResponse.Descriptor
+  isSpec: "True"
   fullName: Grpc.Health.V1.HealthCheckResponse.Descriptor
   nameWithType: HealthCheckResponse.Descriptor
 - uid: Grpc.Health.V1.HealthCheckResponse.Equals(Grpc.Health.V1.HealthCheckResponse)
@@ -4982,6 +5736,7 @@ references:
   name: Equals
   href: api/Grpc.Health.V1.HealthCheckResponse.html#Grpc_Health_V1_HealthCheckResponse_Equals_
   commentId: Overload:Grpc.Health.V1.HealthCheckResponse.Equals
+  isSpec: "True"
   fullName: Grpc.Health.V1.HealthCheckResponse.Equals
   nameWithType: HealthCheckResponse.Equals
 - uid: Grpc.Health.V1.HealthCheckResponse.GetHashCode
@@ -4994,32 +5749,15 @@ references:
   name: GetHashCode
   href: api/Grpc.Health.V1.HealthCheckResponse.html#Grpc_Health_V1_HealthCheckResponse_GetHashCode_
   commentId: Overload:Grpc.Health.V1.HealthCheckResponse.GetHashCode
+  isSpec: "True"
   fullName: Grpc.Health.V1.HealthCheckResponse.GetHashCode
   nameWithType: HealthCheckResponse.GetHashCode
-- uid: Grpc.Health.V1.HealthCheckResponse.Google#Protobuf#IMessage#Descriptor
-  name: IMessage.Descriptor
-  href: api/Grpc.Health.V1.HealthCheckResponse.html#Grpc_Health_V1_HealthCheckResponse_Google_Protobuf_IMessage_Descriptor
-  commentId: P:Grpc.Health.V1.HealthCheckResponse.Google#Protobuf#IMessage#Descriptor
-  name.vb: pb::Google.Protobuf.IMessage.Descriptor
-  fullName: Grpc.Health.V1.HealthCheckResponse.Google.Protobuf.IMessage.Descriptor
-  fullName.vb: Grpc.Health.V1.HealthCheckResponse.pb::Google.Protobuf.IMessage.Descriptor
-  nameWithType: HealthCheckResponse.IMessage.Descriptor
-  nameWithType.vb: HealthCheckResponse.pb::Google.Protobuf.IMessage.Descriptor
-- uid: Grpc.Health.V1.HealthCheckResponse.Google#Protobuf#IMessage#Descriptor*
-  name: IMessage.Descriptor
-  href: api/Grpc.Health.V1.HealthCheckResponse.html#Grpc_Health_V1_HealthCheckResponse_Google_Protobuf_IMessage_Descriptor_
-  commentId: Overload:Grpc.Health.V1.HealthCheckResponse.Google#Protobuf#IMessage#Descriptor
-  name.vb: pb::Google.Protobuf.IMessage.Descriptor
-  fullName: Grpc.Health.V1.HealthCheckResponse.Google.Protobuf.IMessage.Descriptor
-  fullName.vb: Grpc.Health.V1.HealthCheckResponse.pb::Google.Protobuf.IMessage.Descriptor
-  nameWithType: HealthCheckResponse.IMessage.Descriptor
-  nameWithType.vb: HealthCheckResponse.pb::Google.Protobuf.IMessage.Descriptor
 - uid: Grpc.Health.V1.HealthCheckResponse.MergeFrom(Google.Protobuf.CodedInputStream)
-  name: MergeFrom(CodedInputStream)
+  name: MergeFrom(Google.Protobuf.CodedInputStream)
   href: api/Grpc.Health.V1.HealthCheckResponse.html#Grpc_Health_V1_HealthCheckResponse_MergeFrom_Google_Protobuf_CodedInputStream_
   commentId: M:Grpc.Health.V1.HealthCheckResponse.MergeFrom(Google.Protobuf.CodedInputStream)
   fullName: Grpc.Health.V1.HealthCheckResponse.MergeFrom(Google.Protobuf.CodedInputStream)
-  nameWithType: HealthCheckResponse.MergeFrom(CodedInputStream)
+  nameWithType: HealthCheckResponse.MergeFrom(Google.Protobuf.CodedInputStream)
 - uid: Grpc.Health.V1.HealthCheckResponse.MergeFrom(Grpc.Health.V1.HealthCheckResponse)
   name: MergeFrom(HealthCheckResponse)
   href: api/Grpc.Health.V1.HealthCheckResponse.html#Grpc_Health_V1_HealthCheckResponse_MergeFrom_Grpc_Health_V1_HealthCheckResponse_
@@ -5030,6 +5768,7 @@ references:
   name: MergeFrom
   href: api/Grpc.Health.V1.HealthCheckResponse.html#Grpc_Health_V1_HealthCheckResponse_MergeFrom_
   commentId: Overload:Grpc.Health.V1.HealthCheckResponse.MergeFrom
+  isSpec: "True"
   fullName: Grpc.Health.V1.HealthCheckResponse.MergeFrom
   nameWithType: HealthCheckResponse.MergeFrom
 - uid: Grpc.Health.V1.HealthCheckResponse.Parser
@@ -5042,6 +5781,7 @@ references:
   name: Parser
   href: api/Grpc.Health.V1.HealthCheckResponse.html#Grpc_Health_V1_HealthCheckResponse_Parser_
   commentId: Overload:Grpc.Health.V1.HealthCheckResponse.Parser
+  isSpec: "True"
   fullName: Grpc.Health.V1.HealthCheckResponse.Parser
   nameWithType: HealthCheckResponse.Parser
 - uid: Grpc.Health.V1.HealthCheckResponse.Status
@@ -5054,6 +5794,7 @@ references:
   name: Status
   href: api/Grpc.Health.V1.HealthCheckResponse.html#Grpc_Health_V1_HealthCheckResponse_Status_
   commentId: Overload:Grpc.Health.V1.HealthCheckResponse.Status
+  isSpec: "True"
   fullName: Grpc.Health.V1.HealthCheckResponse.Status
   nameWithType: HealthCheckResponse.Status
 - uid: Grpc.Health.V1.HealthCheckResponse.StatusFieldNumber
@@ -5072,6 +5813,7 @@ references:
   name: ToString
   href: api/Grpc.Health.V1.HealthCheckResponse.html#Grpc_Health_V1_HealthCheckResponse_ToString_
   commentId: Overload:Grpc.Health.V1.HealthCheckResponse.ToString
+  isSpec: "True"
   fullName: Grpc.Health.V1.HealthCheckResponse.ToString
   nameWithType: HealthCheckResponse.ToString
 - uid: Grpc.Health.V1.HealthCheckResponse.Types
@@ -5105,15 +5847,16 @@ references:
   fullName: Grpc.Health.V1.HealthCheckResponse.Types.ServingStatus.Unknown
   nameWithType: HealthCheckResponse.Types.ServingStatus.Unknown
 - uid: Grpc.Health.V1.HealthCheckResponse.WriteTo(Google.Protobuf.CodedOutputStream)
-  name: WriteTo(CodedOutputStream)
+  name: WriteTo(Google.Protobuf.CodedOutputStream)
   href: api/Grpc.Health.V1.HealthCheckResponse.html#Grpc_Health_V1_HealthCheckResponse_WriteTo_Google_Protobuf_CodedOutputStream_
   commentId: M:Grpc.Health.V1.HealthCheckResponse.WriteTo(Google.Protobuf.CodedOutputStream)
   fullName: Grpc.Health.V1.HealthCheckResponse.WriteTo(Google.Protobuf.CodedOutputStream)
-  nameWithType: HealthCheckResponse.WriteTo(CodedOutputStream)
+  nameWithType: HealthCheckResponse.WriteTo(Google.Protobuf.CodedOutputStream)
 - uid: Grpc.Health.V1.HealthCheckResponse.WriteTo*
   name: WriteTo
   href: api/Grpc.Health.V1.HealthCheckResponse.html#Grpc_Health_V1_HealthCheckResponse_WriteTo_
   commentId: Overload:Grpc.Health.V1.HealthCheckResponse.WriteTo
+  isSpec: "True"
   fullName: Grpc.Health.V1.HealthCheckResponse.WriteTo
   nameWithType: HealthCheckResponse.WriteTo
 - uid: Grpc.Health.V1.HealthReflection
@@ -5132,6 +5875,7 @@ references:
   name: Descriptor
   href: api/Grpc.Health.V1.HealthReflection.html#Grpc_Health_V1_HealthReflection_Descriptor_
   commentId: Overload:Grpc.Health.V1.HealthReflection.Descriptor
+  isSpec: "True"
   fullName: Grpc.Health.V1.HealthReflection.Descriptor
   nameWithType: HealthReflection.Descriptor
 - uid: Grpc.HealthCheck
@@ -5156,6 +5900,7 @@ references:
   name: Check
   href: api/Grpc.HealthCheck.HealthServiceImpl.html#Grpc_HealthCheck_HealthServiceImpl_Check_
   commentId: Overload:Grpc.HealthCheck.HealthServiceImpl.Check
+  isSpec: "True"
   fullName: Grpc.HealthCheck.HealthServiceImpl.Check
   nameWithType: HealthServiceImpl.Check
 - uid: Grpc.HealthCheck.HealthServiceImpl.ClearAll
@@ -5168,6 +5913,7 @@ references:
   name: ClearAll
   href: api/Grpc.HealthCheck.HealthServiceImpl.html#Grpc_HealthCheck_HealthServiceImpl_ClearAll_
   commentId: Overload:Grpc.HealthCheck.HealthServiceImpl.ClearAll
+  isSpec: "True"
   fullName: Grpc.HealthCheck.HealthServiceImpl.ClearAll
   nameWithType: HealthServiceImpl.ClearAll
 - uid: Grpc.HealthCheck.HealthServiceImpl.ClearStatus(System.String)
@@ -5180,6 +5926,7 @@ references:
   name: ClearStatus
   href: api/Grpc.HealthCheck.HealthServiceImpl.html#Grpc_HealthCheck_HealthServiceImpl_ClearStatus_
   commentId: Overload:Grpc.HealthCheck.HealthServiceImpl.ClearStatus
+  isSpec: "True"
   fullName: Grpc.HealthCheck.HealthServiceImpl.ClearStatus
   nameWithType: HealthServiceImpl.ClearStatus
 - uid: Grpc.HealthCheck.HealthServiceImpl.SetStatus(System.String,Grpc.Health.V1.HealthCheckResponse.Types.ServingStatus)
@@ -5192,5 +5939,6 @@ references:
   name: SetStatus
   href: api/Grpc.HealthCheck.HealthServiceImpl.html#Grpc_HealthCheck_HealthServiceImpl_SetStatus_
   commentId: Overload:Grpc.HealthCheck.HealthServiceImpl.SetStatus
+  isSpec: "True"
   fullName: Grpc.HealthCheck.HealthServiceImpl.SetStatus
   nameWithType: HealthServiceImpl.SetStatus

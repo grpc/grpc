@@ -10,7 +10,7 @@
     <meta name="viewport" content="width=device-width">
     <meta name="title" content="Class Metadata
    | gRPC C# ">
-    <meta name="generator" content="docfx 2.23.1.0">
+    <meta name="generator" content="docfx 2.36.0.0">
     
     <link rel="shortcut icon" href="../favicon.ico">
     <link rel="stylesheet" href="../styles/docfx.vendor.css">
@@ -18,10 +18,11 @@
     <link rel="stylesheet" href="../styles/main.css">
     <meta property="docfx:navrel" content="../toc.html">
     <meta property="docfx:tocrel" content="toc.html">
+    
     <meta property="docfx:rel" content="../">
     
-  </head>
-  <body data-spy="scroll" data-target="#affix">
+  <script type="text/javascript">     (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){     (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),     m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)     })(window,document,'script','//www.google-analytics.com/analytics.js','ga');      ga('create', 'UA-60127042-1', 'auto');     ga('send', 'pageview'); </script> </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
     <div id="wrapper">
       <header>
         
@@ -61,7 +62,9 @@
         
         <div id="search-results">
           <div class="search-list"></div>
-          <div class="sr-items"></div>
+          <div class="sr-items">
+            <p><i class="glyphicon glyphicon-refresh index-loading"></i></p>
+          </div>
           <ul id="pagination"></ul>
         </div>
       </div>
@@ -89,6 +92,13 @@ gRPC supports these types of metadata:
     <h5>Inheritance</h5>
     <div class="level0"><span class="xref">System.Object</span></div>
     <div class="level1"><span class="xref">Metadata</span></div>
+  </div>
+  <div classs="implements">
+    <h5>Implements</h5>
+    <div><span class="xref">System.Collections.Generic.IList</span>&lt;<a class="xref" href="Grpc.Core.Metadata.Entry.html">Metadata.Entry</a>&gt;</div>
+    <div><span class="xref">System.Collections.Generic.ICollection</span>&lt;<a class="xref" href="Grpc.Core.Metadata.Entry.html">Metadata.Entry</a>&gt;</div>
+    <div><span class="xref">System.Collections.Generic.IEnumerable</span>&lt;<a class="xref" href="Grpc.Core.Metadata.Entry.html">Metadata.Entry</a>&gt;</div>
+    <div><span class="xref">System.Collections.IEnumerable</span></div>
   </div>
   <div class="inheritedMembers">
     <h5>Inherited Members</h5>
@@ -205,8 +215,6 @@ gRPC supports these types of metadata:
       </tr>
     </tbody>
   </table>
-  <h5 class="implements">Implements</h5>
-      <div><span class="xref">System.Collections.Generic.ICollection&lt;T&gt;.Count</span></div>
   <a id="Grpc_Core_Metadata_IsReadOnly_" data-uid="Grpc.Core.Metadata.IsReadOnly*"></a>
   <h4 id="Grpc_Core_Metadata_IsReadOnly" data-uid="Grpc.Core.Metadata.IsReadOnly">IsReadOnly</h4>
   <div class="markdown level1 summary"><span class="xref">IList`1</span>
@@ -231,8 +239,6 @@ gRPC supports these types of metadata:
       </tr>
     </tbody>
   </table>
-  <h5 class="implements">Implements</h5>
-      <div><span class="xref">System.Collections.Generic.ICollection&lt;T&gt;.IsReadOnly</span></div>
   <a id="Grpc_Core_Metadata_Item_" data-uid="Grpc.Core.Metadata.Item*"></a>
   <h4 id="Grpc_Core_Metadata_Item_System_Int32_" data-uid="Grpc.Core.Metadata.Item(System.Int32)">Item[Int32]</h4>
   <div class="markdown level1 summary"><span class="xref">IList`1</span>
@@ -274,8 +280,6 @@ gRPC supports these types of metadata:
       </tr>
     </tbody>
   </table>
-  <h5 class="implements">Implements</h5>
-      <div><span class="xref">System.Collections.Generic.IList&lt;T&gt;.Item[System.Int32]</span></div>
   <h3 id="methods">Methods
   </h3>
   <a id="Grpc_Core_Metadata_Add_" data-uid="Grpc.Core.Metadata.Add*"></a>
@@ -304,8 +308,6 @@ gRPC supports these types of metadata:
       </tr>
     </tbody>
   </table>
-  <h5 class="implements">Implements</h5>
-      <div><span class="xref">System.Collections.Generic.ICollection&lt;T&gt;.Add(T)</span></div>
   <a id="Grpc_Core_Metadata_Add_" data-uid="Grpc.Core.Metadata.Add*"></a>
   <h4 id="Grpc_Core_Metadata_Add_System_String_System_Byte___" data-uid="Grpc.Core.Metadata.Add(System.String,System.Byte[])">Add(String, Byte[])</h4>
   <div class="markdown level1 summary"><span class="xref">IList`1</span>
@@ -377,8 +379,6 @@ gRPC supports these types of metadata:
   <div class="codewrapper">
     <pre><code class="lang-csharp hljs">public void Clear()</code></pre>
   </div>
-  <h5 class="implements">Implements</h5>
-      <div><span class="xref">System.Collections.Generic.ICollection&lt;T&gt;.Clear()</span></div>
   <a id="Grpc_Core_Metadata_Contains_" data-uid="Grpc.Core.Metadata.Contains*"></a>
   <h4 id="Grpc_Core_Metadata_Contains_Grpc_Core_Metadata_Entry_" data-uid="Grpc.Core.Metadata.Contains(Grpc.Core.Metadata.Entry)">Contains(Metadata.Entry)</h4>
   <div class="markdown level1 summary"><span class="xref">IList`1</span>
@@ -420,8 +420,6 @@ gRPC supports these types of metadata:
       </tr>
     </tbody>
   </table>
-  <h5 class="implements">Implements</h5>
-      <div><span class="xref">System.Collections.Generic.ICollection&lt;T&gt;.Contains(T)</span></div>
   <a id="Grpc_Core_Metadata_CopyTo_" data-uid="Grpc.Core.Metadata.CopyTo*"></a>
   <h4 id="Grpc_Core_Metadata_CopyTo_Grpc_Core_Metadata_Entry___System_Int32_" data-uid="Grpc.Core.Metadata.CopyTo(Grpc.Core.Metadata.Entry[],System.Int32)">CopyTo(Metadata.Entry[], Int32)</h4>
   <div class="markdown level1 summary"><span class="xref">IList`1</span>
@@ -453,8 +451,6 @@ gRPC supports these types of metadata:
       </tr>
     </tbody>
   </table>
-  <h5 class="implements">Implements</h5>
-      <div><span class="xref">System.Collections.Generic.ICollection&lt;T&gt;.CopyTo(T[], System.Int32)</span></div>
   <a id="Grpc_Core_Metadata_GetEnumerator_" data-uid="Grpc.Core.Metadata.GetEnumerator*"></a>
   <h4 id="Grpc_Core_Metadata_GetEnumerator" data-uid="Grpc.Core.Metadata.GetEnumerator">GetEnumerator()</h4>
   <div class="markdown level1 summary"><span class="xref">IList`1</span>
@@ -479,8 +475,6 @@ gRPC supports these types of metadata:
       </tr>
     </tbody>
   </table>
-  <h5 class="implements">Implements</h5>
-      <div><span class="xref">System.Collections.Generic.IEnumerable&lt;T&gt;.GetEnumerator()</span></div>
   <a id="Grpc_Core_Metadata_IndexOf_" data-uid="Grpc.Core.Metadata.IndexOf*"></a>
   <h4 id="Grpc_Core_Metadata_IndexOf_Grpc_Core_Metadata_Entry_" data-uid="Grpc.Core.Metadata.IndexOf(Grpc.Core.Metadata.Entry)">IndexOf(Metadata.Entry)</h4>
   <div class="markdown level1 summary"><span class="xref">IList`1</span>
@@ -522,8 +516,6 @@ gRPC supports these types of metadata:
       </tr>
     </tbody>
   </table>
-  <h5 class="implements">Implements</h5>
-      <div><span class="xref">System.Collections.Generic.IList&lt;T&gt;.IndexOf(T)</span></div>
   <a id="Grpc_Core_Metadata_Insert_" data-uid="Grpc.Core.Metadata.Insert*"></a>
   <h4 id="Grpc_Core_Metadata_Insert_System_Int32_Grpc_Core_Metadata_Entry_" data-uid="Grpc.Core.Metadata.Insert(System.Int32,Grpc.Core.Metadata.Entry)">Insert(Int32, Metadata.Entry)</h4>
   <div class="markdown level1 summary"><span class="xref">IList`1</span>
@@ -555,8 +547,6 @@ gRPC supports these types of metadata:
       </tr>
     </tbody>
   </table>
-  <h5 class="implements">Implements</h5>
-      <div><span class="xref">System.Collections.Generic.IList&lt;T&gt;.Insert(System.Int32, T)</span></div>
   <a id="Grpc_Core_Metadata_Remove_" data-uid="Grpc.Core.Metadata.Remove*"></a>
   <h4 id="Grpc_Core_Metadata_Remove_Grpc_Core_Metadata_Entry_" data-uid="Grpc.Core.Metadata.Remove(Grpc.Core.Metadata.Entry)">Remove(Metadata.Entry)</h4>
   <div class="markdown level1 summary"><span class="xref">IList`1</span>
@@ -598,8 +588,6 @@ gRPC supports these types of metadata:
       </tr>
     </tbody>
   </table>
-  <h5 class="implements">Implements</h5>
-      <div><span class="xref">System.Collections.Generic.ICollection&lt;T&gt;.Remove(T)</span></div>
   <a id="Grpc_Core_Metadata_RemoveAt_" data-uid="Grpc.Core.Metadata.RemoveAt*"></a>
   <h4 id="Grpc_Core_Metadata_RemoveAt_System_Int32_" data-uid="Grpc.Core.Metadata.RemoveAt(System.Int32)">RemoveAt(Int32)</h4>
   <div class="markdown level1 summary"><span class="xref">IList`1</span>
@@ -626,8 +614,6 @@ gRPC supports these types of metadata:
       </tr>
     </tbody>
   </table>
-  <h5 class="implements">Implements</h5>
-      <div><span class="xref">System.Collections.Generic.IList&lt;T&gt;.RemoveAt(System.Int32)</span></div>
   <h3 id="eii">Explicit Interface Implementations
   </h3>
   <a id="Grpc_Core_Metadata_System_Collections_IEnumerable_GetEnumerator_" data-uid="Grpc.Core.Metadata.System#Collections#IEnumerable#GetEnumerator*"></a>
@@ -653,8 +639,19 @@ gRPC supports these types of metadata:
       </tr>
     </tbody>
   </table>
-  <h5 class="implements">Implements</h5>
-      <div><span class="xref">System.Collections.IEnumerable.GetEnumerator()</span></div>
+  <h3 id="implements">Implements</h3>
+  <div>
+      <span class="xref">System.Collections.Generic.IList&lt;T&gt;</span>
+  </div>
+  <div>
+      <span class="xref">System.Collections.Generic.ICollection&lt;T&gt;</span>
+  </div>
+  <div>
+      <span class="xref">System.Collections.Generic.IEnumerable&lt;T&gt;</span>
+  </div>
+  <div>
+      <span class="xref">System.Collections.IEnumerable</span>
+  </div>
 </article>
           </div>
           
@@ -676,7 +673,7 @@ gRPC supports these types of metadata:
               <a href="#top">Back to top</a>
             </span>
             
-            <span>Copyright © 2015-2017 Microsoft<br>Generated by <strong>DocFX</strong></span>
+            <span>Generated by <strong>DocFX</strong></span>
           </div>
         </div>
       </footer>
