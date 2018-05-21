@@ -237,6 +237,9 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.10.0': None
         },
+        {
+            'v1.11.2': None
+        }
     ],
     'ruby': [
         {
