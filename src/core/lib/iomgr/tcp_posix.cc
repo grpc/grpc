@@ -567,10 +567,10 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error** error) {
       sent_length = sendmsg(tcp->fd, &msg, SENDMSG_FLAGS);
     } while (sent_length < 0 && errno == EINTR);
 
-  if (grpc_latency_estimator_trace.enabled()) {
-    gpr_log(GPR_INFO, "latency_estimator:client_outbound:end");
-    gpr_log(GPR_INFO, "latency_estimator:server_outbound:end");
-  }
+    if (grpc_latency_estimator_trace.enabled()) {
+      gpr_log(GPR_INFO, "latency_estimator:client_outbound:end");
+      gpr_log(GPR_INFO, "latency_estimator:server_outbound:end");
+    }
 
     if (sent_length < 0) {
       if (errno == EAGAIN) {

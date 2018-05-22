@@ -25,7 +25,6 @@
 #include <map>
 #include <memory>
 
-
 #include <grpcpp/impl/codegen/byte_buffer.h>
 #include <grpcpp/impl/codegen/call_hook.h>
 #include <grpcpp/impl/codegen/client_context.h>

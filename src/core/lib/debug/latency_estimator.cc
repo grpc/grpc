@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/debug/latency_estimator.h"
 #include "src/core/lib/debug/trace.h"
 

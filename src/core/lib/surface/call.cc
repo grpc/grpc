@@ -1901,8 +1901,9 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
   gpr_atm_rel_store(&call->any_ops_sent_atm, 1);
 
   execute_batch(call, stream_op, &bctl->start_batch);
-  
-  if (grpc_latency_estimator_trace.enabled() && op->op == GRPC_OP_RECV_MESSAGE) {
+
+  if (grpc_latency_estimator_trace.enabled() &&
+      op->op == GRPC_OP_RECV_MESSAGE) {
     gpr_log(GPR_INFO, "latency_estimator:server_inbound_processing:end");
     gpr_log(GPR_INFO, "latency_estimator:server_outbound:start");
   }

@@ -312,6 +312,7 @@
     <file baseinstalldir="/" name="src/core/lib/compression/stream_compression.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/stream_compression_gzip.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/stream_compression_identity.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/debug/latency_estimator.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/stats_data.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/debug_location.h" role="src" />
@@ -461,6 +462,7 @@
     <file baseinstalldir="/" name="src/core/lib/compression/stream_compression.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/stream_compression_gzip.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/stream_compression_identity.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/debug/latency_estimator.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/stats.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/stats_data.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/format_request.cc" role="src" />

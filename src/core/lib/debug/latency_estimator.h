@@ -16,11 +16,13 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_GPR_LATENCY_ESTIMATOR_H
-#define GRPC_CORE_LIB_GPR_LATENCY_ESTIMATOR_H
+#ifndef GRPC_CORE_LIB_DEBUG_LATENCY_ESTIMATOR_H 
+#define GRPC_CORE_LIB_DEBUG_LATENCY_ESTIMATOR_H 
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
 
 extern grpc_core::TraceFlag grpc_latency_estimator_trace;
 
-#endif /* GRPC_CORE_LIB_GPR_LATENCY_ESTIMATOR_H */
+#endif /* GRPC_CORE_LIB_DEBUG_LATENCY_ESTIMATOR_H */

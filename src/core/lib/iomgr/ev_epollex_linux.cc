@@ -823,9 +823,6 @@ static void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
 static grpc_error* pollable_process_events(grpc_pollset* pollset,
                                            pollable* pollable_obj, bool drain) {
   GPR_TIMER_SCOPE("pollable_process_events", 0);
-  if (grpc_latency_estimator_trace.enabled()) {
-    gpr_log(GPR_INFO, "latency_estimator:server_inbound:start");
-  }
   static const char* err_desc = "pollset_process_events";
   // Use a simple heuristic to determine how many fd events to process
   // per loop iteration.  (events/workers)
