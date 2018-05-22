@@ -103,7 +103,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_metadata_array_destroy(&request_metadata1);
     grpc_server_shutdown_and_notify(server, cq, tag(0xdead));
     grpc_server_cancel_all_calls(server);
-    grpc_millis deadline = grpc_core::ExecCtx::Get()->Now() + 100;
+    grpc_millis deadline = grpc_core::ExecCtx::Get()->Now() + 5000;
     for (int i = 0; i <= requested_calls; i++) {
       do {
         ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
