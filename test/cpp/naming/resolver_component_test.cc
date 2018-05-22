@@ -346,7 +346,7 @@ void CheckResolverResultLocked(void* argsp, grpc_error* err) {
   gpr_mu_unlock(args->mu);
 }
 
-TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
+void RunResolvesRelevantRecordsTest() {
   grpc_core::ExecCtx exec_ctx;
   ArgsStruct args;
   ArgsInit(&args);
@@ -358,12 +358,6 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
   GPR_ASSERT(asprintf(&whole_uri, "dns://%s/%s",
                       FLAGS_local_dns_server_address.c_str(),
                       FLAGS_target_name.c_str()));
-  // Start up background stress thread
-  int dummy_port = grpc_pick_unused_port_or_die();
-  gpr_event done_ev;
-  gpr_event_init(&done_ev);
-  std::thread socket_stress_thread(OpenAndCloseSocketsStressLoop, dummy_port,
-                                   &done_ev);
   // create resolver and resolve
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       grpc_core::ResolverRegistry::CreateResolver(whole_uri, nullptr,
@@ -376,6 +370,21 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
   grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone(&args);
   ArgsFinish(&args);
+}
+
+TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
+  RunResolvesRelevantRecordsTest();
+}
+
+TEST(ResolverComponentTest, TestResolvesRelevantRecordsWithConcurrentFdStress) {
+  // Start up background stress thread
+  int dummy_port = grpc_pick_unused_port_or_die();
+  gpr_event done_ev;
+  gpr_event_init(&done_ev);
+  std::thread socket_stress_thread(OpenAndCloseSocketsStressLoop, dummy_port,
+                                   &done_ev);
+  // Run the resolver test
+  RunResolvesRelevantRecordsTest();
   // Shutdown and join stress thread
   gpr_event_set(&done_ev, (void*)1);
   socket_stress_thread.join();
