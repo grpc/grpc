@@ -490,7 +490,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
         if (grpc_lb_pick_first_trace.enabled()) {
           gpr_log(GPR_INFO,
                   "Servicing pending pick with selected subchannel %p",
-                  p->selected_);
+                  p->selected_->subchannel());
         }
         GRPC_CLOSURE_SCHED(pick->on_complete, GRPC_ERROR_NONE);
       }
