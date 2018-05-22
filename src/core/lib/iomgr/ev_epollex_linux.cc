@@ -1066,7 +1066,7 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
 #endif
   if (grpc_polling_trace.enabled()) {
     gpr_log(GPR_INFO,
-            "PS:%p work hdl=%p worker=%p now=%" PRIdPTR " deadline=%" PRIdPTR
+            "PS:%p work hdl=%p worker=%p now=%" PRId64 " deadline=%" PRId64
             " kwp=%d pollable=%p",
             pollset, worker_hdl, WORKER_PTR, grpc_core::ExecCtx::Get()->Now(),
             deadline, pollset->kicked_without_poller, pollset->active_pollable);
