@@ -105,6 +105,13 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_server_cancel_all_calls(server);
     grpc_millis deadline = grpc_core::ExecCtx::Get()->Now() + 5000;
     for (int i = 0; i <= requested_calls; i++) {
+      // A single grpc_completion_queue_next might not be sufficient for getting
+      // the tag from shutdown, because we might potentially get blocked by
+      // an operation happening on the timer thread.
+      // For example, the deadline timer might expire, leading to the timer
+      // thread trying to cancel the RPC and thereby acquiring a few references
+      // to the call. This will prevent the shutdown to complete till the timer
+      // thread releases those references.
       do {
         ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
                                         nullptr);
