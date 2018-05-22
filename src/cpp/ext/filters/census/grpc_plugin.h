@@ -22,27 +22,13 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/strings/string_view.h"
+#include "include/grpcpp/opencensus.h"
 #include "opencensus/stats/stats.h"
 #include "opencensus/trace/span.h"
 
 namespace grpc {
+
 class ServerContext;
-}
-
-namespace grpc {
-
-// Registers the OpenCensus plugin with gRPC, so that it will be used for future
-// RPCs. This must be called before any views are created on the measures
-// defined below.
-void RegisterOpenCensusPlugin();
-
-// RPC stats definitions, defined by
-// https://github.com/census-instrumentation/opencensus-specs/blob/master/stats/gRPC.md
-
-// Registers the cumulative gRPC views so that they will be exported by any
-// registered stats exporter.
-// For on-task stats, construct a View using the ViewDescriptors below.
-void RegisterGrpcViewsForExport();
 
 // Returns the tracing Span for the current RPC.
 ::opencensus::trace::Span GetSpanFromServerContext(ServerContext* context);

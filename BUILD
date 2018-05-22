@@ -1968,6 +1968,7 @@ grpc_cc_library(
         "src/cpp/ext/filters/census/views.cc",
     ],
     hdrs = [
+        "include/grpcpp/opencensus.h",
         "src/cpp/ext/filters/census/client_filter.h",
         "src/cpp/ext/filters/census/server_filter.h",
         "src/cpp/ext/filters/census/channel_filter.h",
