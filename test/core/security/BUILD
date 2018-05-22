@@ -21,6 +21,18 @@ grpc_package(name = "test/core/security")
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_fuzzer(
+    name = "alts_credentials_fuzzer",
+    srcs = ["alts_credentials_fuzzer.cc"],
+    language = "C++",
+    corpus = "corpus/alts_credentials_corpus",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_fuzzer(
     name = "ssl_server_fuzzer",
     srcs = ["ssl_server_fuzzer.cc"],
     language = "C++",

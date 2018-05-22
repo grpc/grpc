@@ -144,9 +144,16 @@ RUN pip install --upgrade pip==10.0.1
 RUN pip install virtualenv
 RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 twisted==17.5.0
 
+# Install pip and virtualenv for Python 3.4
+RUN curl https://bootstrap.pypa.io/get-pip.py | python3.4
+RUN python3.4 -m pip install virtualenv
+
 # Install coverage for Python test coverage reporting
 RUN pip install coverage
 ENV PATH ~/.local/bin:$PATH
+
+# Install Mako to generate files in grpc/grpc-node
+RUN pip install Mako
 
 # Prepare ccache
 RUN ln -s /usr/bin/ccache /usr/local/bin/gcc

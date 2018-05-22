@@ -72,10 +72,6 @@ struct grpc_channel {
 };
 
 #define CHANNEL_STACK_FROM_CHANNEL(c) ((grpc_channel_stack*)((c) + 1))
-#define CHANNEL_FROM_CHANNEL_STACK(channel_stack) \
-  (((grpc_channel*)(channel_stack)) - 1)
-#define CHANNEL_FROM_TOP_ELEM(top_elem) \
-  CHANNEL_FROM_CHANNEL_STACK(grpc_channel_stack_from_top_element(top_elem))
 
 static void destroy_channel(void* arg, grpc_error* error);
 
@@ -112,7 +108,8 @@ grpc_channel* grpc_channel_create_with_builder(
 
   gpr_atm_no_barrier_store(
       &channel->call_size_estimate,
-      (gpr_atm)CHANNEL_STACK_FROM_CHANNEL(channel)->call_stack_size);
+      (gpr_atm)CHANNEL_STACK_FROM_CHANNEL(channel)->call_stack_size +
+          grpc_call_get_initial_size_estimate());
 
   grpc_compression_options_init(&channel->compression_options);
   for (size_t i = 0; i < args->num_args; i++) {

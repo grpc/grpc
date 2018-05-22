@@ -983,7 +983,7 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
       GRPC_SCHEDULING_END_BLOCKING_REGION;
 
       if (grpc_polling_trace.enabled()) {
-        gpr_log(GPR_DEBUG, "%p poll=%d", pollset, r);
+        gpr_log(GPR_INFO, "%p poll=%d", pollset, r);
       }
 
       if (r < 0) {
@@ -1007,7 +1007,7 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
       } else {
         if (pfds[0].revents & POLLIN_CHECK) {
           if (grpc_polling_trace.enabled()) {
-            gpr_log(GPR_DEBUG, "%p: got_wakeup", pollset);
+            gpr_log(GPR_INFO, "%p: got_wakeup", pollset);
           }
           work_combine_error(
               &error, grpc_wakeup_fd_consume_wakeup(&worker.wakeup_fd->fd));
@@ -1017,7 +1017,7 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
             fd_end_poll(&watchers[i], 0, 0, nullptr);
           } else {
             if (grpc_polling_trace.enabled()) {
-              gpr_log(GPR_DEBUG, "%p got_event: %d r:%d w:%d [%d]", pollset,
+              gpr_log(GPR_INFO, "%p got_event: %d r:%d w:%d [%d]", pollset,
                       pfds[i].fd, (pfds[i].revents & POLLIN_CHECK) != 0,
                       (pfds[i].revents & POLLOUT_CHECK) != 0, pfds[i].revents);
             }

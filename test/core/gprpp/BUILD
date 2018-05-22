@@ -19,6 +19,16 @@ licenses(["notice"])  # Apache v2
 grpc_package(name = "test/core/gprpp")
 
 grpc_cc_test(
+    name = "fork_test",
+    srcs = ["fork_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//test/core/util:gpr_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "manual_constructor_test",
     srcs = ["manual_constructor_test.cc"],
     language = "C++",

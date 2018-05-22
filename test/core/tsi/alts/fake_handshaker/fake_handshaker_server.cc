@@ -146,7 +146,7 @@ class FakeHandshakerService : public HandshakerService::Service {
       return Status(StatusCode::INVALID_ARGUMENT,
                     "At least one application protocol needed.");
     }
-    if (request.handshake_parameters().size() == 0) {
+    if (request.handshake_parameters().empty()) {
       return Status(StatusCode::INVALID_ARGUMENT,
                     "At least one set of handshake parameters needed.");
     }

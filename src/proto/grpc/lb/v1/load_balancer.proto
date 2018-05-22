@@ -62,8 +62,10 @@ message LoadBalanceRequest {
 }
 
 message InitialLoadBalanceRequest {
-  // Name of load balanced service (IE, balancer.service.com)
-  // length should be less than 256 bytes.
+  // The name of the load balanced service (e.g., balancer.service.com). The max
+  // length of the name is 256 bytes.
+  // The name might include a port number. How to handle the port number is up
+  // to the balancer.
   string name = 1;
 }
 

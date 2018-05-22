@@ -31,7 +31,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'BoringSSL'
-  version = '10.0'
+  version = '10.0.3'
   s.version  = version
   s.summary  = 'BoringSSL is a fork of OpenSSL that is designed to meet Google’s needs.'
   # Adapted from the homepage:
@@ -67,11 +67,9 @@ Pod::Spec.new do |s|
   # "The name and email addresses of the library maintainers, not the Podspec maintainer."
   s.authors  = 'Adam Langley', 'David Benjamin', 'Matt Braithwaite'
 
-  versions = version.split('.')
-  major_version = versions[0] + '.0'
   s.source = {
-    :git => 'https://boringssl.googlesource.com/boringssl',
-    :tag => "version_for_cocoapods_#{major_version}",
+    :git => 'https://github.com/google/boringssl.git',
+    :commit => "a20bb7ff8bb5057065a2e7941249773f9676cf45",
   }
 
   s.ios.deployment_target = '5.0'
@@ -123,7 +121,8 @@ Pod::Spec.new do |s|
                       'ssl/**/*.{h,cc}',
                       '*.{h,c}',
                       'crypto/*.{h,c}',
-                      'crypto/**/*.{h,c}'
+                      'crypto/**/*.{h,c}',
+                      'third_party/fiat/*.{h,c}'
     ss.private_header_files = 'ssl/*.h',
                               'ssl/**/*.h',
                               '*.h',

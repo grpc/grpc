@@ -55,7 +55,7 @@ static bool input_is_valid(uint8_t* input_ptr, size_t length) {
   size_t i;
 
   for (i = 0; i < length; ++i) {
-    if ((decode_table[input_ptr[i]] & 0xC0) != 0) {
+    if (GPR_UNLIKELY((decode_table[input_ptr[i]] & 0xC0) != 0)) {
       gpr_log(GPR_ERROR,
               "Base64 decoding failed, invalid character '%c' in base64 "
               "input.\n",
@@ -86,14 +86,14 @@ size_t grpc_chttp2_base64_infer_length_after_decode(const grpc_slice& slice) {
   while (len > 0 && bytes[len - 1] == '=') {
     len--;
   }
-  if (GRPC_SLICE_LENGTH(slice) - len > 2) {
+  if (GPR_UNLIKELY(GRPC_SLICE_LENGTH(slice) - len > 2)) {
     gpr_log(GPR_ERROR,
             "Base64 decoding failed. Input has more than 2 paddings.");
     return 0;
   }
   size_t tuples = len / 4;
   size_t tail_case = len % 4;
-  if (tail_case == 1) {
+  if (GPR_UNLIKELY(tail_case == 1)) {
     gpr_log(GPR_ERROR,
             "Base64 decoding failed. Input has a length of %zu (without"
             " padding), which is invalid.\n",
@@ -164,7 +164,7 @@ grpc_slice grpc_chttp2_base64_decode(grpc_slice input) {
   struct grpc_base64_decode_context ctx;
   grpc_slice output;
 
-  if (input_length % 4 != 0) {
+  if (GPR_UNLIKELY(input_length % 4 != 0)) {
     gpr_log(GPR_ERROR,
             "Base64 decoding failed, input of "
             "grpc_chttp2_base64_decode has a length of %d, which is not a "
@@ -190,7 +190,7 @@ grpc_slice grpc_chttp2_base64_decode(grpc_slice input) {
   ctx.output_end = GRPC_SLICE_END_PTR(output);
   ctx.contains_tail = false;
 
-  if (!grpc_base64_decode_partial(&ctx)) {
+  if (GPR_UNLIKELY(!grpc_base64_decode_partial(&ctx))) {
     char* s = grpc_slice_to_c_string(input);
     gpr_log(GPR_ERROR, "Base64 decoding failed, input string:\n%s\n", s);
     gpr_free(s);
@@ -209,7 +209,7 @@ grpc_slice grpc_chttp2_base64_decode_with_length(grpc_slice input,
   struct grpc_base64_decode_context ctx;
 
   // The length of a base64 string cannot be 4 * n + 1
-  if (input_length % 4 == 1) {
+  if (GPR_UNLIKELY(input_length % 4 == 1)) {
     gpr_log(GPR_ERROR,
             "Base64 decoding failed, input of "
             "grpc_chttp2_base64_decode_with_length has a length of %d, which "
@@ -219,7 +219,8 @@ grpc_slice grpc_chttp2_base64_decode_with_length(grpc_slice input,
     return grpc_empty_slice();
   }
 
-  if (output_length > input_length / 4 * 3 + tail_xtra[input_length % 4]) {
+  if (GPR_UNLIKELY(output_length >
+                   input_length / 4 * 3 + tail_xtra[input_length % 4])) {
     gpr_log(
         GPR_ERROR,
         "Base64 decoding failed, output_length %d is longer "
@@ -236,7 +237,7 @@ grpc_slice grpc_chttp2_base64_decode_with_length(grpc_slice input,
   ctx.output_end = GRPC_SLICE_END_PTR(output);
   ctx.contains_tail = true;
 
-  if (!grpc_base64_decode_partial(&ctx)) {
+  if (GPR_UNLIKELY(!grpc_base64_decode_partial(&ctx))) {
     char* s = grpc_slice_to_c_string(input);
     gpr_log(GPR_ERROR, "Base64 decoding failed, input string:\n%s\n", s);
     gpr_free(s);

@@ -69,6 +69,11 @@ export PYTHONPATH=/Library/Python/3.4/site-packages
 # set xcode version for Obj-C tests
 sudo xcode-select -switch /Applications/Xcode_9.2.app/Contents/Developer/
 
+# Disable some unwanted dotnet options
+export NUGET_XMLDOC_MODE=skip
+export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
+export DOTNET_CLI_TELEMETRY_OPTOUT=true
+
 # TODO(jtattermusch): better debugging of clock skew, remove once not needed
 date
 

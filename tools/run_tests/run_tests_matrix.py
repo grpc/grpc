@@ -529,7 +529,6 @@ if __name__ == "__main__":
         extra_args.append('--bq_result_table')
         extra_args.append('%s' % args.bq_result_table)
         extra_args.append('--measure_cpu_costs')
-        extra_args.append('--disable_auto_set_flakes')
 
     all_jobs = _create_test_jobs(extra_args=extra_args, inner_jobs=args.inner_jobs) + \
                _create_portability_test_jobs(extra_args=extra_args, inner_jobs=args.inner_jobs)

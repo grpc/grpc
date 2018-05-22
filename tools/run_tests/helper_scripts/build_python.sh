@@ -112,10 +112,6 @@ export CFLAGS="-I$ROOT/include -std=gnu99 -fno-wrapv $CFLAGS"
 export GRPC_PYTHON_BUILD_WITH_CYTHON=1
 export LANG=en_US.UTF-8
 
-# Default python on the host to fall back to when instantiating e.g. the
-# virtualenv.
-HOST_PYTHON=${HOST_PYTHON:-python}
-
 # If ccache is available on Linux, use it.
 if [ "$(is_linux)" ]; then
   # We're not on Darwin (Mac OS X)
@@ -132,14 +128,9 @@ fi
 # Perform build operations #
 ############################
 
-# Instantiate the virtualenv, preferring to do so from the relevant python
-# version. Even if these commands fail (e.g. on Windows due to name conflicts)
-# it's possible that the virtualenv is still usable and we trust the tester to
-# be able to 'figure it out' instead of us e.g. doing potentially expensive and
-# unnecessary error recovery by `rm -rf`ing the virtualenv.
-($PYTHON -m virtualenv "$VENV" ||
- $HOST_PYTHON -m virtualenv -p "$PYTHON" "$VENV" ||
- true)
+# Instantiate the virtualenv from the Python version passed in.
+$PYTHON -m pip install --user virtualenv
+$PYTHON -m virtualenv "$VENV"
 VENV_PYTHON=$(script_realpath "$VENV/$VENV_RELATIVE_PYTHON")
 
 # See https://github.com/grpc/grpc/issues/14815 for more context. We cannot rely
@@ -159,14 +150,21 @@ pip_install_dir() {
 
 case "$VENV" in
   *gevent*)
-  $VENV_PYTHON -m pip install gevent
+  # TODO(https://github.com/grpc/grpc/issues/15411) unpin this
+  $VENV_PYTHON -m pip install gevent==1.3.b1
   ;;
 esac
 
 $VENV_PYTHON -m pip install --upgrade pip==10.0.1
 $VENV_PYTHON -m pip install setuptools
 $VENV_PYTHON -m pip install cython
-$VENV_PYTHON -m pip install six enum34 protobuf futures
+$VENV_PYTHON -m pip install six enum34 protobuf
+
+if [ "$("$VENV_PYTHON" -c "import sys; print(sys.version_info[0])")" == "2" ]
+then
+  $VENV_PYTHON -m pip install futures
+fi
+
 pip_install_dir "$ROOT"
 
 $VENV_PYTHON "$ROOT/tools/distrib/python/make_grpcio_tools.py"

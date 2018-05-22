@@ -31,7 +31,9 @@ import errno
 measure_cpu_costs = False
 
 _DEFAULT_MAX_JOBS = 16 * multiprocessing.cpu_count()
-_MAX_RESULT_SIZE = 8192
+# Maximum number of bytes of job's stdout that will be stored in the result.
+# Only last N bytes of stdout will be kept if the actual output longer.
+_MAX_RESULT_SIZE = 64 * 1024
 
 
 # NOTE: If you change this, please make sure to test reviewing the

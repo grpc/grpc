@@ -1503,13 +1503,9 @@
 
   % endif
   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: \
-  % if lib.name != 'z':
+  % if lib.name not in ['z', 'ares', 'address_sorting']:
   $(ZLIB_DEP) \
-  % endif
-  % if lib.name != 'ares':
   $(CARES_DEP) \
-  % endif
-  % if lib.name != 'address_sorting':
   $(ADDRESS_SORTING_DEP) \
   % endif
   % endif
