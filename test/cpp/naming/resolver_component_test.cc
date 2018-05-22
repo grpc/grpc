@@ -307,6 +307,7 @@ void OpenAndCloseSocketsStressLoop(int dummy_port, gpr_event* done_ev) {
 }
 
 void CheckResolverResultLocked(void* argsp, grpc_error* err) {
+  EXPECT_EQ(err, GRPC_ERROR_NONE);
   ArgsStruct* args = (ArgsStruct*)argsp;
   grpc_channel_args* channel_args = args->channel_args;
   const grpc_arg* channel_arg =
@@ -346,7 +347,17 @@ void CheckResolverResultLocked(void* argsp, grpc_error* err) {
   gpr_mu_unlock(args->mu);
 }
 
-void RunResolvesRelevantRecordsTest() {
+void CheckResolvedWithoutErrorLocked(void* argsp, grpc_error* err) {
+  EXPECT_EQ(err, GRPC_ERROR_NONE);
+  ArgsStruct* args = (ArgsStruct*)argsp;
+  gpr_atm_rel_store(&args->done_atm, 1);
+  gpr_mu_lock(args->mu);
+  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
+  gpr_mu_unlock(args->mu);
+}
+
+void RunResolvesRelevantRecordsTest(void (*OnDoneLocked)(void* arg,
+                                                         grpc_error* error)) {
   grpc_core::ExecCtx exec_ctx;
   ArgsStruct args;
   ArgsInit(&args);
@@ -364,8 +375,8 @@ void RunResolvesRelevantRecordsTest() {
                                                   args.pollset_set, args.lock);
   gpr_free(whole_uri);
   grpc_closure on_resolver_result_changed;
-  GRPC_CLOSURE_INIT(&on_resolver_result_changed, CheckResolverResultLocked,
-                    (void*)&args, grpc_combiner_scheduler(args.lock));
+  GRPC_CLOSURE_INIT(&on_resolver_result_changed, OnDoneLocked, (void*)&args,
+                    grpc_combiner_scheduler(args.lock));
   resolver->NextLocked(&args.channel_args, &on_resolver_result_changed);
   grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone(&args);
@@ -373,7 +384,7 @@ void RunResolvesRelevantRecordsTest() {
 }
 
 TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
-  RunResolvesRelevantRecordsTest();
+  RunResolvesRelevantRecordsTest(CheckResolverResultLocked);
 }
 
 TEST(ResolverComponentTest, TestResolvesRelevantRecordsWithConcurrentFdStress) {
@@ -384,7 +395,7 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecordsWithConcurrentFdStress) {
   std::thread socket_stress_thread(OpenAndCloseSocketsStressLoop, dummy_port,
                                    &done_ev);
   // Run the resolver test
-  RunResolvesRelevantRecordsTest();
+  RunResolvesRelevantRecordsTest(CheckResolvedWithoutErrorLocked);
   // Shutdown and join stress thread
   gpr_event_set(&done_ev, (void*)1);
   socket_stress_thread.join();
