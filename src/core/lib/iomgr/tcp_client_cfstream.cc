@@ -18,6 +18,7 @@
  */
 
 #include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_CFSTREAM_TCP_CLIENT
@@ -88,12 +89,13 @@ static void OnAlarm(void* arg, grpc_error* error) {
   connect->closure = nil;
   const bool done = (--connect->refs == 0);
   gpr_mu_unlock(&connect->mu);
-  // Only schedule a callback once, by either on_timer or on_connected. The first one issues
-  // callback while the second one does cleanup.
+  // Only schedule a callback once, by either on_timer or on_connected. The
+  // first one issues callback while the second one does cleanup.
   if (done) {
     TCPConnectCleanup(connect);
   } else {
-    grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("connect() timed out");
+    grpc_error* error =
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("connect() timed out");
     GRPC_CLOSURE_SCHED(closure, error);
   }
 }
@@ -125,8 +127,9 @@ static void OnOpen(void* arg, grpc_error* error) {
         CFRelease(stream_error);
       }
       if (error == GRPC_ERROR_NONE) {
-        *endpoint = grpc_tcp_create(connect->read_stream, connect->write_stream, connect->addr_name,
-                                    connect->resource_quota, connect->stream_sync);
+        *endpoint = grpc_tcp_create(connect->read_stream, connect->write_stream,
+                                    connect->addr_name, connect->resource_quota,
+                                    connect->stream_sync);
       }
     }
     gpr_mu_unlock(&connect->mu);
@@ -134,7 +137,8 @@ static void OnOpen(void* arg, grpc_error* error) {
   }
 }
 
-static void ParseResolvedAddress(const grpc_resolved_address* addr, CFStringRef* host, int* port) {
+static void ParseResolvedAddress(const grpc_resolved_address* addr,
+                                 CFStringRef* host, int* port) {
   char *host_port, *host_string, *port_string;
   grpc_sockaddr_to_string(&host_port, addr, 1);
   gpr_split_host_port(host_port, &host_string, &port_string);
@@ -148,7 +152,8 @@ static void ParseResolvedAddress(const grpc_resolved_address* addr, CFStringRef*
 static void TCPClientConnect(grpc_closure* closure, grpc_endpoint** ep,
                              grpc_pollset_set* interested_parties,
                              const grpc_channel_args* channel_args,
-                             const grpc_resolved_address* resolved_addr, grpc_millis deadline) {
+                             const grpc_resolved_address* resolved_addr,
+                             grpc_millis deadline) {
   CFStreamTCPConnect* connect;
 
   connect = (CFStreamTCPConnect*)gpr_zalloc(sizeof(CFStreamTCPConnect));
@@ -161,7 +166,8 @@ static void TCPClientConnect(grpc_closure* closure, grpc_endpoint** ep,
   gpr_mu_init(&connect->mu);
 
   if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: asynchronously connecting", connect->addr_name);
+    gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: asynchronously connecting",
+            connect->addr_name);
   }
 
   grpc_resource_quota* resource_quota = grpc_resource_quota_create(NULL);
@@ -182,15 +188,18 @@ static void TCPClientConnect(grpc_closure* closure, grpc_endpoint** ep,
   CFStringRef host;
   int port;
   ParseResolvedAddress(resolved_addr, &host, &port);
-  CFStreamCreatePairWithSocketToHost(NULL, host, port, &read_stream, &write_stream);
+  CFStreamCreatePairWithSocketToHost(NULL, host, port, &read_stream,
+                                     &write_stream);
   CFRelease(host);
   connect->read_stream = read_stream;
   connect->write_stream = write_stream;
-  connect->stream_sync = CFStreamSync::CreateStreamSync(read_stream, write_stream);
+  connect->stream_sync =
+      CFStreamSync::CreateStreamSync(read_stream, write_stream);
   GRPC_CLOSURE_INIT(&connect->on_open, OnOpen, static_cast<void*>(connect),
                     grpc_schedule_on_exec_ctx);
   connect->stream_sync->NotifyOnOpen(&connect->on_open);
-  GRPC_CLOSURE_INIT(&connect->on_alarm, OnAlarm, connect, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&connect->on_alarm, OnAlarm, connect,
+                    grpc_schedule_on_exec_ctx);
   gpr_mu_lock(&connect->mu);
   CFReadStreamOpen(read_stream);
   CFWriteStreamOpen(write_stream);

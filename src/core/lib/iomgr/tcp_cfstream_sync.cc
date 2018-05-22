@@ -17,6 +17,7 @@
  */
 
 #include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_CFSTREAM
@@ -52,75 +53,85 @@ void CFStreamSync::ReadCallback(CFReadStreamRef stream, CFStreamEventType type,
                                 void* client_callback_info) {
   CFStreamSync* sync = static_cast<CFStreamSync*>(client_callback_info);
   CFSTREAM_SYNC_REF(sync, "read callback");
-  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-    grpc_core::ExecCtx exec_ctx;
-    if (grpc_tcp_trace.enabled()) {
-      gpr_log(GPR_DEBUG, "TCP ReadCallback (%p, %lu, %p)", stream, type, client_callback_info);
-    }
-    switch (type) {
-      case kCFStreamEventOpenCompleted:
-        sync->open_event_.SetReady();
-        break;
-      case kCFStreamEventHasBytesAvailable:
-      case kCFStreamEventEndEncountered:
-        sync->read_event_.SetReady();
-        break;
-      case kCFStreamEventErrorOccurred:
-        sync->open_event_.SetReady();
-        sync->read_event_.SetReady();
-        break;
-      default:
-        // Impossible
-        abort();
-    }
-    CFSTREAM_SYNC_UNREF(sync, "read callback");
-  });
+  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
+                 ^{
+                   grpc_core::ExecCtx exec_ctx;
+                   if (grpc_tcp_trace.enabled()) {
+                     gpr_log(GPR_DEBUG, "TCP ReadCallback (%p, %lu, %p)",
+                             stream, type, client_callback_info);
+                   }
+                   switch (type) {
+                     case kCFStreamEventOpenCompleted:
+                       sync->open_event_.SetReady();
+                       break;
+                     case kCFStreamEventHasBytesAvailable:
+                     case kCFStreamEventEndEncountered:
+                       sync->read_event_.SetReady();
+                       break;
+                     case kCFStreamEventErrorOccurred:
+                       sync->open_event_.SetReady();
+                       sync->read_event_.SetReady();
+                       break;
+                     default:
+                       // Impossible
+                       abort();
+                   }
+                   CFSTREAM_SYNC_UNREF(sync, "read callback");
+                 });
 }
-void CFStreamSync::WriteCallback(CFWriteStreamRef stream, CFStreamEventType type,
+void CFStreamSync::WriteCallback(CFWriteStreamRef stream,
+                                 CFStreamEventType type,
                                  void* clientCallBackInfo) {
   CFStreamSync* sync = static_cast<CFStreamSync*>(clientCallBackInfo);
   CFSTREAM_SYNC_REF(sync, "write callback");
-  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-    grpc_core::ExecCtx exec_ctx;
-    if (grpc_tcp_trace.enabled()) {
-      gpr_log(GPR_DEBUG, "TCP WriteCallback (%p, %lu, %p)", stream, type, clientCallBackInfo);
-    }
-    switch (type) {
-      case kCFStreamEventOpenCompleted:
-        sync->open_event_.SetReady();
-        break;
-      case kCFStreamEventCanAcceptBytes:
-      case kCFStreamEventEndEncountered:
-        sync->write_event_.SetReady();
-        break;
-      case kCFStreamEventErrorOccurred:
-        sync->open_event_.SetReady();
-        sync->write_event_.SetReady();
-        break;
-      default:
-        // Impossible
-        abort();
-    }
-    CFSTREAM_SYNC_UNREF(sync, "write callback");
-  });
+  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
+                 ^{
+                   grpc_core::ExecCtx exec_ctx;
+                   if (grpc_tcp_trace.enabled()) {
+                     gpr_log(GPR_DEBUG, "TCP WriteCallback (%p, %lu, %p)",
+                             stream, type, clientCallBackInfo);
+                   }
+                   switch (type) {
+                     case kCFStreamEventOpenCompleted:
+                       sync->open_event_.SetReady();
+                       break;
+                     case kCFStreamEventCanAcceptBytes:
+                     case kCFStreamEventEndEncountered:
+                       sync->write_event_.SetReady();
+                       break;
+                     case kCFStreamEventErrorOccurred:
+                       sync->open_event_.SetReady();
+                       sync->write_event_.SetReady();
+                       break;
+                     default:
+                       // Impossible
+                       abort();
+                   }
+                   CFSTREAM_SYNC_UNREF(sync, "write callback");
+                 });
 }
 
-CFStreamSync::CFStreamSync(CFReadStreamRef read_stream, CFWriteStreamRef write_stream) {
+CFStreamSync::CFStreamSync(CFReadStreamRef read_stream,
+                           CFWriteStreamRef write_stream) {
   gpr_ref_init(&refcount_, 1);
   open_event_.InitEvent();
   read_event_.InitEvent();
   write_event_.InitEvent();
   CFStreamClientContext ctx = {0, static_cast<void*>(this), nil, nil, nil};
-  CFReadStreamSetClient(read_stream,
-                        kCFStreamEventOpenCompleted | kCFStreamEventHasBytesAvailable |
-                            kCFStreamEventErrorOccurred | kCFStreamEventEndEncountered,
-                        CFStreamSync::ReadCallback, &ctx);
-  CFWriteStreamSetClient(write_stream,
-                         kCFStreamEventOpenCompleted | kCFStreamEventCanAcceptBytes |
-                             kCFStreamEventErrorOccurred | kCFStreamEventEndEncountered,
-                         CFStreamSync::WriteCallback, &ctx);
-  CFReadStreamScheduleWithRunLoop(read_stream, CFRunLoopGetMain(), kCFRunLoopCommonModes);
-  CFWriteStreamScheduleWithRunLoop(write_stream, CFRunLoopGetMain(), kCFRunLoopCommonModes);
+  CFReadStreamSetClient(
+      read_stream,
+      kCFStreamEventOpenCompleted | kCFStreamEventHasBytesAvailable |
+          kCFStreamEventErrorOccurred | kCFStreamEventEndEncountered,
+      CFStreamSync::ReadCallback, &ctx);
+  CFWriteStreamSetClient(
+      write_stream,
+      kCFStreamEventOpenCompleted | kCFStreamEventCanAcceptBytes |
+          kCFStreamEventErrorOccurred | kCFStreamEventEndEncountered,
+      CFStreamSync::WriteCallback, &ctx);
+  CFReadStreamScheduleWithRunLoop(read_stream, CFRunLoopGetMain(),
+                                  kCFRunLoopCommonModes);
+  CFWriteStreamScheduleWithRunLoop(write_stream, CFRunLoopGetMain(),
+                                   kCFRunLoopCommonModes);
 }
 
 CFStreamSync::~CFStreamSync() {
@@ -129,11 +140,17 @@ CFStreamSync::~CFStreamSync() {
   write_event_.DestroyEvent();
 }
 
-void CFStreamSync::NotifyOnOpen(grpc_closure* closure) { open_event_.NotifyOn(closure); }
+void CFStreamSync::NotifyOnOpen(grpc_closure* closure) {
+  open_event_.NotifyOn(closure);
+}
 
-void CFStreamSync::NotifyOnRead(grpc_closure* closure) { read_event_.NotifyOn(closure); }
+void CFStreamSync::NotifyOnRead(grpc_closure* closure) {
+  read_event_.NotifyOn(closure);
+}
 
-void CFStreamSync::NotifyOnWrite(grpc_closure* closure) { write_event_.NotifyOn(closure); }
+void CFStreamSync::NotifyOnWrite(grpc_closure* closure) {
+  write_event_.NotifyOn(closure);
+}
 
 void CFStreamSync::Shutdown(grpc_error* error) {
   open_event_.SetShutdown(GRPC_ERROR_REF(error));
@@ -145,8 +162,9 @@ void CFStreamSync::Shutdown(grpc_error* error) {
 void CFStreamSync::Ref(const char* file, int line, const char* reason) {
   if (grpc_tcp_trace.enabled()) {
     gpr_atm val = gpr_atm_no_barrier_load(&refcount_.count);
-    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "TCP SYNC ref %p : %s %" PRIdPTR " -> %" PRIdPTR,
-            this, reason, val, val + 1);
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "TCP SYNC ref %p : %s %" PRIdPTR " -> %" PRIdPTR, this, reason, val,
+            val + 1);
   }
   gpr_ref(&refcount_);
 }
@@ -154,8 +172,8 @@ void CFStreamSync::Ref(const char* file, int line, const char* reason) {
 void CFStreamSync::Unref(const char* file, int line, const char* reason) {
   if (grpc_tcp_trace.enabled()) {
     gpr_atm val = gpr_atm_no_barrier_load(&refcount_.count);
-    gpr_log(GPR_ERROR, "TCP SYNC unref %p : %s %" PRIdPTR " -> %" PRIdPTR, this, reason, val,
-            val - 1);
+    gpr_log(GPR_ERROR, "TCP SYNC unref %p : %s %" PRIdPTR " -> %" PRIdPTR, this,
+            reason, val, val - 1);
   }
   if (gpr_unref(&refcount_)) {
     delete this;

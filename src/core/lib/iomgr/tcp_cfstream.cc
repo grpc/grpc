@@ -17,6 +17,7 @@
  */
 
 #include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_CFSTREAM_TCP
@@ -72,21 +73,25 @@ static void TCPFree(CFStreamTCP* tcp) {
 #ifndef NDEBUG
 #define TCP_REF(tcp, reason) tcp_ref((tcp), (reason), __FILE__, __LINE__)
 #define TCP_UNREF(tcp, reason) tcp_unref((tcp), (reason), __FILE__, __LINE__)
-static void tcp_unref(CFStreamTCP* tcp, const char* reason, const char* file, int line) {
+static void tcp_unref(CFStreamTCP* tcp, const char* reason, const char* file,
+                      int line) {
   if (grpc_tcp_trace.enabled()) {
     gpr_atm val = gpr_atm_no_barrier_load(&tcp->refcount.count);
-    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "TCP unref %p : %s %" PRIdPTR " -> %" PRIdPTR, tcp,
-            reason, val, val - 1);
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "TCP unref %p : %s %" PRIdPTR " -> %" PRIdPTR, tcp, reason, val,
+            val - 1);
   }
   if (gpr_unref(&tcp->refcount)) {
     TCPFree(tcp);
   }
 }
-static void tcp_ref(CFStreamTCP* tcp, const char* reason, const char* file, int line) {
+static void tcp_ref(CFStreamTCP* tcp, const char* reason, const char* file,
+                    int line) {
   if (grpc_tcp_trace.enabled()) {
     gpr_atm val = gpr_atm_no_barrier_load(&tcp->refcount.count);
-    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG, "TCP   ref %p : %s %" PRIdPTR " -> %" PRIdPTR, tcp,
-            reason, val, val + 1);
+    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+            "TCP   ref %p : %s %" PRIdPTR " -> %" PRIdPTR, tcp, reason, val,
+            val + 1);
   }
   gpr_ref(&tcp->refcount);
 }
@@ -103,20 +108,23 @@ static void tcp_ref(CFStreamTCP* tcp) { gpr_ref(&tcp->refcount); }
 
 static grpc_error* TCPAnnotateError(grpc_error* src_error, CFStreamTCP* tcp) {
   return grpc_error_set_str(
-      grpc_error_set_int(src_error, GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
-      GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(tcp->peer_string));
+      grpc_error_set_int(src_error, GRPC_ERROR_INT_GRPC_STATUS,
+                         GRPC_STATUS_UNAVAILABLE),
+      GRPC_ERROR_STR_TARGET_ADDRESS,
+      grpc_slice_from_copied_string(tcp->peer_string));
 }
 
 static void CallReadCB(CFStreamTCP* tcp, grpc_error* error) {
   if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "TCP:%p call_read_cb %p %p:%p", tcp, tcp->read_cb, tcp->read_cb->cb,
-            tcp->read_cb->cb_arg);
+    gpr_log(GPR_DEBUG, "TCP:%p call_read_cb %p %p:%p", tcp, tcp->read_cb,
+            tcp->read_cb->cb, tcp->read_cb->cb_arg);
     size_t i;
     const char* str = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "read: error=%s", str);
 
     for (i = 0; i < tcp->read_slices->count; i++) {
-      char* dump = grpc_dump_slice(tcp->read_slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
+      char* dump = grpc_dump_slice(tcp->read_slices->slices[i],
+                                   GPR_DUMP_HEX | GPR_DUMP_ASCII);
       gpr_log(GPR_DEBUG, "READ %p (peer=%s): %s", tcp, tcp->peer_string, dump);
       gpr_free(dump);
     }
@@ -129,8 +137,8 @@ static void CallReadCB(CFStreamTCP* tcp, grpc_error* error) {
 
 static void CallWriteCB(CFStreamTCP* tcp, grpc_error* error) {
   if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "TCP:%p call_write_cb %p %p:%p", tcp, tcp->write_cb, tcp->write_cb->cb,
-            tcp->write_cb->cb_arg);
+    gpr_log(GPR_DEBUG, "TCP:%p call_write_cb %p %p:%p", tcp, tcp->write_cb,
+            tcp->write_cb->cb, tcp->write_cb->cb_arg);
     const char* str = grpc_error_string(error);
     gpr_log(GPR_DEBUG, "write: error=%s", str);
   }
@@ -153,17 +161,21 @@ static void ReadAction(void* arg, grpc_error* error) {
   GPR_ASSERT(tcp->read_slices->count == 1);
   grpc_slice slice = tcp->read_slices->slices[0];
   size_t len = GRPC_SLICE_LENGTH(slice);
-  CFIndex read_size = CFReadStreamRead(tcp->read_stream, GRPC_SLICE_START_PTR(slice), len);
+  CFIndex read_size =
+      CFReadStreamRead(tcp->read_stream, GRPC_SLICE_START_PTR(slice), len);
   if (read_size == -1) {
     grpc_slice_buffer_reset_and_unref_internal(tcp->read_slices);
     CFErrorRef stream_error = CFReadStreamCopyError(tcp->read_stream);
-    CallReadCB(tcp,
-               TCPAnnotateError(GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "Read error"), tcp));
+    CallReadCB(tcp, TCPAnnotateError(GRPC_ERROR_CREATE_FROM_CFERROR(
+                                         stream_error, "Read error"),
+                                     tcp));
     CFRelease(stream_error);
     TCP_UNREF(tcp, "read");
   } else if (read_size == 0) {
     grpc_slice_buffer_reset_and_unref_internal(tcp->read_slices);
-    CallReadCB(tcp, TCPAnnotateError(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Socket closed"), tcp));
+    CallReadCB(tcp,
+               TCPAnnotateError(
+                   GRPC_ERROR_CREATE_FROM_STATIC_STRING("Socket closed"), tcp));
     TCP_UNREF(tcp, "read");
   } else {
     if (read_size < len) {
@@ -186,19 +198,20 @@ static void WriteAction(void* arg, grpc_error* error) {
 
   grpc_slice slice = grpc_slice_buffer_take_first(tcp->write_slices);
   size_t slice_len = GRPC_SLICE_LENGTH(slice);
-  CFIndex write_size =
-      CFWriteStreamWrite(tcp->write_stream, GRPC_SLICE_START_PTR(slice), slice_len);
+  CFIndex write_size = CFWriteStreamWrite(
+      tcp->write_stream, GRPC_SLICE_START_PTR(slice), slice_len);
   if (write_size == -1) {
     grpc_slice_buffer_reset_and_unref_internal(tcp->write_slices);
     CFErrorRef stream_error = CFWriteStreamCopyError(tcp->write_stream);
-    CallWriteCB(
-        tcp, TCPAnnotateError(GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "write failed."), tcp));
+    CallWriteCB(tcp, TCPAnnotateError(GRPC_ERROR_CREATE_FROM_CFERROR(
+                                          stream_error, "write failed."),
+                                      tcp));
     CFRelease(stream_error);
     TCP_UNREF(tcp, "write");
   } else {
     if (write_size < GRPC_SLICE_LENGTH(slice)) {
-      grpc_slice_buffer_undo_take_first(tcp->write_slices,
-                                        grpc_slice_sub(slice, write_size, slice_len));
+      grpc_slice_buffer_undo_take_first(
+          tcp->write_slices, grpc_slice_sub(slice, write_size, slice_len));
     }
     if (tcp->write_slices->length > 0) {
       tcp->stream_sync->NotifyOnWrite(&tcp->write_action);
@@ -212,10 +225,10 @@ static void WriteAction(void* arg, grpc_error* error) {
       char* dump = grpc_dump_slice(trace_slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
       gpr_log(GPR_DEBUG, "WRITE %p (peer=%s): %s", tcp, tcp->peer_string, dump);
       gpr_free(dump);
-      grpc_slice_unref(trace_slice);
+      grpc_slice_unref_internal(trace_slice);
     }
   }
-  grpc_slice_unref(slice);
+  grpc_slice_unref_internal(slice);
 }
 
 static void TCPReadAllocationDone(void* arg, grpc_error* error) {
@@ -229,24 +242,29 @@ static void TCPReadAllocationDone(void* arg, grpc_error* error) {
   }
 }
 
-static void TCPRead(grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb) {
+static void TCPRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
+                    grpc_closure* cb) {
   CFStreamTCP* tcp = reinterpret_cast<CFStreamTCP*>(ep);
   if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "tcp:%p read (%p, %p) length:%zu", tcp, slices, cb, slices->length);
+    gpr_log(GPR_DEBUG, "tcp:%p read (%p, %p) length:%zu", tcp, slices, cb,
+            slices->length);
   }
   GPR_ASSERT(tcp->read_cb == nullptr);
   tcp->read_cb = cb;
   tcp->read_slices = slices;
   grpc_slice_buffer_reset_and_unref_internal(slices);
-  grpc_resource_user_alloc_slices(&tcp->slice_allocator, GRPC_TCP_DEFAULT_READ_SLICE_SIZE, 1,
+  grpc_resource_user_alloc_slices(&tcp->slice_allocator,
+                                  GRPC_TCP_DEFAULT_READ_SLICE_SIZE, 1,
                                   tcp->read_slices);
   TCP_REF(tcp, "read");
 }
 
-static void TCPWrite(grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb) {
+static void TCPWrite(grpc_endpoint* ep, grpc_slice_buffer* slices,
+                     grpc_closure* cb) {
   CFStreamTCP* tcp = reinterpret_cast<CFStreamTCP*>(ep);
   if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "tcp:%p write (%p, %p) length:%zu", tcp, slices, cb, slices->length);
+    gpr_log(GPR_DEBUG, "tcp:%p write (%p, %p) length:%zu", tcp, slices, cb,
+            slices->length);
   }
   GPR_ASSERT(tcp->write_cb == nullptr);
   tcp->write_cb = cb;
@@ -290,17 +308,26 @@ void TCPAddToPollset(grpc_endpoint* ep, grpc_pollset* pollset) {}
 void TCPAddToPollsetSet(grpc_endpoint* ep, grpc_pollset_set* pollset) {}
 void TCPDeleteFromPollsetSet(grpc_endpoint* ep, grpc_pollset_set* pollset) {}
 
-static const grpc_endpoint_vtable vtable = {
-    TCPRead,     TCPWrite,   TCPAddToPollset,    TCPAddToPollsetSet, TCPDeleteFromPollsetSet,
-    TCPShutdown, TCPDestroy, TCPGetResourceUser, TCPGetPeer,         TCPGetFD};
+static const grpc_endpoint_vtable vtable = {TCPRead,
+                                            TCPWrite,
+                                            TCPAddToPollset,
+                                            TCPAddToPollsetSet,
+                                            TCPDeleteFromPollsetSet,
+                                            TCPShutdown,
+                                            TCPDestroy,
+                                            TCPGetResourceUser,
+                                            TCPGetPeer,
+                                            TCPGetFD};
 
-grpc_endpoint* grpc_tcp_create(CFReadStreamRef read_stream, CFWriteStreamRef write_stream,
-                               const char* peer_string, grpc_resource_quota* resource_quota,
+grpc_endpoint* grpc_tcp_create(CFReadStreamRef read_stream,
+                               CFWriteStreamRef write_stream,
+                               const char* peer_string,
+                               grpc_resource_quota* resource_quota,
                                CFStreamSync* stream_sync) {
   CFStreamTCP* tcp = static_cast<CFStreamTCP*>(gpr_malloc(sizeof(CFStreamTCP)));
   if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "tcp:%p create readStream:%p writeStream: %p", tcp, read_stream,
-            write_stream);
+    gpr_log(GPR_DEBUG, "tcp:%p create readStream:%p writeStream: %p", tcp,
+            read_stream, write_stream);
   }
   tcp->base.vtable = &vtable;
   gpr_ref_init(&tcp->refcount, 1);
@@ -321,8 +348,8 @@ grpc_endpoint* grpc_tcp_create(CFReadStreamRef read_stream, CFWriteStreamRef wri
   GRPC_CLOSURE_INIT(&tcp->write_action, WriteAction, static_cast<void*>(tcp),
                     grpc_schedule_on_exec_ctx);
   tcp->resource_user = grpc_resource_user_create(resource_quota, peer_string);
-  grpc_resource_user_slice_allocator_init(&tcp->slice_allocator, tcp->resource_user,
-                                          TCPReadAllocationDone, tcp);
+  grpc_resource_user_slice_allocator_init(
+      &tcp->slice_allocator, tcp->resource_user, TCPReadAllocationDone, tcp);
 
   return &tcp->base;
 }
