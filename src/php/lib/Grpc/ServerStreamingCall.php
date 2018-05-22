@@ -25,6 +25,7 @@ namespace Grpc;
  */
 class ServerStreamingCall extends AbstractCall
 {
+    private $status;
     /**
      * Start the call.
      *
@@ -67,6 +68,12 @@ class ServerStreamingCall extends AbstractCall
                 OP_RECV_MESSAGE => true,
             ])->message;
         }
+        $status_event = $this->call->startBatch([
+          OP_RECV_STATUS_ON_CLIENT => true,
+        ]);
+
+        $this->trailing_metadata = $status_event->status->metadata;
+        $this->status = $status_event->status;
     }
 
     /**
@@ -77,13 +84,16 @@ class ServerStreamingCall extends AbstractCall
      */
     public function getStatus()
     {
-        $status_event = $this->call->startBatch([
-            OP_RECV_STATUS_ON_CLIENT => true,
-        ]);
-
-        $this->trailing_metadata = $status_event->status->metadata;
-
-        return $status_event->status;
+        // For the backward compatibility, the user can still call it
+        // to call startBatch with OP_RECV_STATUS_ON_CLIENT tag.
+        if ($this->status == NULL) {
+            $status_event = $this->call->startBatch([
+                OP_RECV_STATUS_ON_CLIENT => true,
+            ]);
+            $this->trailing_metadata = $status_event->status->metadata;
+            $this->status = $status_event->status;
+        }
+        return $this->status;
     }
 
     /**
