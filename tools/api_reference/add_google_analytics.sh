@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Copyright 2018 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,12 +28,13 @@ read -r -d '' SNIPPET << EOF
 </script>
 EOF
 
-S="$(echo -n $SNIPPET | tr '\n' ' ')"
+S=$(echo -n "$SNIPPET" | tr '\n' ' ')
 
-for M in $(find -name \*.html);
+while IFS= read -r -d '' M
 do
-  grep -q "i,s,o,g,r,a,m" "$M"
-  if [[ $? -ne 0 ]]; then
+  if grep -q "i,s,o,g,r,a,m" "$M"; then
+    :
+  else
     sed -i "s_</head>_${S}</head>_" "$M"
   fi
-done;
+done < <(find . -name \*.html -print0)
