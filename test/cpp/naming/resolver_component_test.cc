@@ -241,8 +241,7 @@ void CheckLBPolicyResultLocked(grpc_channel_args* channel_args,
   }
 }
 
-void OpenAndCloseSocketsStressLoop(int dummy_port, gpr_mu* done_mu,
-                                   bool* done) {
+void OpenAndCloseSocketsStressLoop(int dummy_port, gpr_event* done_ev) {
   // The goal of this loop is to catch socket
   // "use after close" bugs within the c-ares resolver by acting
   // like some separate thread doing I/O.
@@ -260,12 +259,9 @@ void OpenAndCloseSocketsStressLoop(int dummy_port, gpr_mu* done_mu,
   addr.sin6_port = htons(dummy_port);
   ((char*)&addr.sin6_addr)[15] = 1;
   for (;;) {
-    gpr_mu_lock(done_mu);
-    if (*done) {
-      gpr_mu_unlock(done_mu);
+    if (gpr_event_get(done_ev)) {
       return;
     }
-    gpr_mu_unlock(done_mu);
     std::vector<int> sockets;
     // First open a bunch of sockets, bind and listen
     // '50' is an arbitrary number that, experimentally,
@@ -275,21 +271,16 @@ void OpenAndCloseSocketsStressLoop(int dummy_port, gpr_mu* done_mu,
       int val = 1;
       setsockopt(s, SOL_SOCKET, SO_REUSEPORT, &val, sizeof(val));
       fcntl(s, F_SETFL, O_NONBLOCK);
-      if (s == BAD_SOCKET_RETURN_VAL) {
-        gpr_log(GPR_DEBUG, "Failed to create TCP ipv6 socket");
-        abort();
-      }
+      ASSERT_TRUE(s != BAD_SOCKET_RETURN_VAL)
+          << "Failed to create TCP ipv6 socket";
       gpr_log(GPR_DEBUG, "Opened fd: %d", s);
-      if (bind(s, (const sockaddr*)&addr, sizeof(addr)) != 0) {
-        gpr_log(GPR_DEBUG, "Failed to bind socket %d to [::1]:%d. errno: %d",
-                sockets[i], dummy_port, errno);
-        abort();
-      }
-      if (listen(s, 1)) {
-        gpr_log(GPR_DEBUG, "Failed to listen on socket %d. errno: %d",
-                sockets[i], errno);
-        abort();
-      }
+      ASSERT_TRUE(bind(s, (const sockaddr*)&addr, sizeof(addr)) == 0)
+          << "Failed to bind socket " + std::to_string(s) +
+                 " to [::1]:" + std::to_string(dummy_port) +
+                 ". errno: " + std::to_string(errno);
+      ASSERT_TRUE(listen(s, 1) == 0) << "Failed to listen on socket " +
+                                            std::to_string(s) +
+                                            ". errno: " + std::to_string(errno);
       sockets.push_back(s);
     }
     // Do a non-blocking accept followed by a close on all of those sockets.
@@ -299,16 +290,18 @@ void OpenAndCloseSocketsStressLoop(int dummy_port, gpr_mu* done_mu,
       if (accept(sockets[i], nullptr, nullptr)) {
         // If e.g. a "shutdown" was called on this fd from another thread,
         // then this accept call should fail with an unexpected error.
-        if (errno != EAGAIN && errno != EWOULDBLOCK) {
-          gpr_log(GPR_DEBUG,
-                  "OpenAndCloseSocketsStressLoop accept on socket %d failed in "
-                  "an unexpected way. "
-                  "errno: %d. Socket use-after-close bugs are likely.",
-                  sockets[i], errno);
-          abort();
-        }
+        ASSERT_TRUE(errno == EAGAIN || errno == EWOULDBLOCK)
+            << "OpenAndCloseSocketsStressLoop accept on socket " +
+                   std::to_string(sockets[i]) +
+                   " failed in "
+                   "an unexpected way. "
+                   "errno: " +
+                   std::to_string(errno) +
+                   ". Socket use-after-close bugs are likely.";
       }
-      close(sockets[i]);
+      ASSERT_TRUE(close(sockets[i]) == 0)
+          << "Failed to close socket: " + std::to_string(sockets[i]) +
+                 ". errno: " + std::to_string(errno);
     }
   }
 }
@@ -367,11 +360,10 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
                       FLAGS_target_name.c_str()));
   // Start up background stress thread
   int dummy_port = grpc_pick_unused_port_or_die();
-  gpr_mu done_mu;
-  gpr_mu_init(&done_mu);
-  bool done = false;
+  gpr_event done_ev;
+  gpr_event_init(&done_ev);
   std::thread socket_stress_thread(OpenAndCloseSocketsStressLoop, dummy_port,
-                                   &done_mu, &done);
+                                   &done_ev);
   // create resolver and resolve
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       grpc_core::ResolverRegistry::CreateResolver(whole_uri, nullptr,
@@ -385,11 +377,8 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
   PollPollsetUntilRequestDone(&args);
   ArgsFinish(&args);
   // Shutdown and join stress thread
-  gpr_mu_lock(&done_mu);
-  done = true;
-  gpr_mu_unlock(&done_mu);
+  gpr_event_set(&done_ev, (void*)1);
   socket_stress_thread.join();
-  gpr_mu_destroy(&done_mu);
 }
 
 }  // namespace
