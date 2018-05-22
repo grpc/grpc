@@ -534,8 +534,7 @@ class CLanguage(object):
         elif compiler == 'clang7.0':
             # clang++-7.0 alias doesn't exist and there are no other clang versions
             # installed.
-            return ('sanitizers_jessie',
-                    self._clang_make_options())
+            return ('sanitizers_jessie', self._clang_make_options())
         else:
             raise Exception('Compiler %s not supported.' % compiler)
 
