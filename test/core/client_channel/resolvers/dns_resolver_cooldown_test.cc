@@ -33,10 +33,11 @@ static grpc_address_resolver_vtable* default_resolve_address;
 
 static grpc_combiner* g_combiner;
 
-grpc_ares_request* (*g_default_dns_lookup_ares)(
+grpc_ares_request* (*g_default_dns_lookup_ares_locked)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    grpc_lb_addresses** addrs, bool check_grpclb, char** service_config_json);
+    grpc_lb_addresses** addrs, bool check_grpclb, char** service_config_json,
+    grpc_combiner* combiner);
 
 // Counter incremented by test_resolve_address_impl indicating the number of
 // times a system-level resolution has happened.
@@ -72,13 +73,14 @@ static grpc_error* test_blocking_resolve_address_impl(
 static grpc_address_resolver_vtable test_resolver = {
     test_resolve_address_impl, test_blocking_resolve_address_impl};
 
-grpc_ares_request* test_dns_lookup_ares(
+grpc_ares_request* test_dns_lookup_ares_locked(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    grpc_lb_addresses** addrs, bool check_grpclb, char** service_config_json) {
-  grpc_ares_request* result = g_default_dns_lookup_ares(
+    grpc_lb_addresses** addrs, bool check_grpclb, char** service_config_json,
+    grpc_combiner* combiner) {
+  grpc_ares_request* result = g_default_dns_lookup_ares_locked(
       dns_server, name, default_port, g_iomgr_args.pollset_set, on_done, addrs,
-      check_grpclb, service_config_json);
+      check_grpclb, service_config_json, combiner);
   ++g_resolution_count;
   return result;
 }
@@ -308,8 +310,8 @@ int main(int argc, char** argv) {
 
   g_combiner = grpc_combiner_create();
 
-  g_default_dns_lookup_ares = grpc_dns_lookup_ares;
-  grpc_dns_lookup_ares = test_dns_lookup_ares;
+  g_default_dns_lookup_ares_locked = grpc_dns_lookup_ares_locked;
+  grpc_dns_lookup_ares_locked = test_dns_lookup_ares_locked;
   default_resolve_address = grpc_resolve_address_impl;
   grpc_set_resolver_impl(&test_resolver);
 

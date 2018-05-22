@@ -72,7 +72,7 @@ struct grpc_ares_request {
 };
 
 typedef struct grpc_ares_hostbyname_request {
-  /** following members are set in create_hostbyname_request_under_ares_combiner
+  /** following members are set in create_hostbyname_request_locked
    */
   /** the top-level request instance */
   grpc_ares_request* parent_request;
@@ -144,11 +144,11 @@ void grpc_cares_wrapper_test_only_address_sorting_sort(
   grpc_cares_wrapper_address_sorting_sort(lb_addrs);
 }
 
-static void grpc_ares_request_ref(grpc_ares_request* r) {
+static void grpc_ares_request_ref_locked(grpc_ares_request* r) {
   gpr_ref(&r->pending_queries);
 }
 
-static void grpc_ares_request_unref(grpc_ares_request* r) {
+static void grpc_ares_request_unref_locked(grpc_ares_request* r) {
   /* If there are no pending queries, invoke on_done callback and destroy the
      request */
   if (gpr_unref(&r->pending_queries)) {
@@ -157,40 +157,33 @@ static void grpc_ares_request_unref(grpc_ares_request* r) {
       grpc_cares_wrapper_address_sorting_sort(lb_addrs);
     }
     GRPC_CLOSURE_SCHED(r->on_done, r->error);
-    GRPC_CLOSURE_SCHED(
-        GRPC_CLOSURE_CREATE(
-            grpc_ares_ev_driver_destroy_under_ares_combiner, r->ev_driver,
-            grpc_combiner_scheduler(
-                grpc_ares_ev_driver_get_combiner(r->ev_driver))),
-        GRPC_ERROR_NONE);
+    grpc_ares_ev_driver_destroy_locked(r->ev_driver);
     gpr_free(r);
   }
 }
 
-static grpc_ares_hostbyname_request*
-create_hostbyname_request_under_ares_combiner(grpc_ares_request* parent_request,
-                                              char* host, uint16_t port,
-                                              bool is_balancer) {
+static grpc_ares_hostbyname_request* create_hostbyname_request_locked(
+    grpc_ares_request* parent_request, char* host, uint16_t port,
+    bool is_balancer) {
   grpc_ares_hostbyname_request* hr = static_cast<grpc_ares_hostbyname_request*>(
       gpr_zalloc(sizeof(grpc_ares_hostbyname_request)));
   hr->parent_request = parent_request;
   hr->host = gpr_strdup(host);
   hr->port = port;
   hr->is_balancer = is_balancer;
-  grpc_ares_request_ref(parent_request);
+  grpc_ares_request_ref_locked(parent_request);
   return hr;
 }
 
-static void destroy_hostbyname_request_under_ares_combiner(
+static void destroy_hostbyname_request_locked(
     grpc_ares_hostbyname_request* hr) {
-  grpc_ares_request_unref(hr->parent_request);
+  grpc_ares_request_unref_locked(hr->parent_request);
   gpr_free(hr->host);
   gpr_free(hr);
 }
 
-static void on_hostbyname_done_under_ares_combiner(void* arg, int status,
-                                                   int timeouts,
-                                                   struct hostent* hostent) {
+static void on_hostbyname_done_locked(void* arg, int status, int timeouts,
+                                      struct hostent* hostent) {
   grpc_ares_hostbyname_request* hr =
       static_cast<grpc_ares_hostbyname_request*>(arg);
   grpc_ares_request* r = hr->parent_request;
@@ -268,17 +261,15 @@ static void on_hostbyname_done_under_ares_combiner(void* arg, int status,
       r->error = grpc_error_add_child(error, r->error);
     }
   }
-  destroy_hostbyname_request_under_ares_combiner(hr);
+  destroy_hostbyname_request_locked(hr);
 }
 
-static void on_srv_query_done_under_ares_combiner(void* arg, int status,
-                                                  int timeouts,
-                                                  unsigned char* abuf,
-                                                  int alen) {
+static void on_srv_query_done_locked(void* arg, int status, int timeouts,
+                                     unsigned char* abuf, int alen) {
   grpc_ares_request* r = static_cast<grpc_ares_request*>(arg);
-  gpr_log(GPR_DEBUG, "on_query_srv_done_under_ares_combiner");
+  gpr_log(GPR_DEBUG, "on_query_srv_done_locked");
   if (status == ARES_SUCCESS) {
-    gpr_log(GPR_DEBUG, "on_query_srv_done_under_ares_combiner ARES_SUCCESS");
+    gpr_log(GPR_DEBUG, "on_query_srv_done_locked ARES_SUCCESS");
     struct ares_srv_reply* reply;
     const int parse_status = ares_parse_srv_reply(abuf, alen, &reply);
     if (parse_status == ARES_SUCCESS) {
@@ -286,18 +277,16 @@ static void on_srv_query_done_under_ares_combiner(void* arg, int status,
       for (struct ares_srv_reply* srv_it = reply; srv_it != nullptr;
            srv_it = srv_it->next) {
         if (grpc_ipv6_loopback_available()) {
-          grpc_ares_hostbyname_request* hr =
-              create_hostbyname_request_under_ares_combiner(
-                  r, srv_it->host, htons(srv_it->port), true /* is_balancer */);
+          grpc_ares_hostbyname_request* hr = create_hostbyname_request_locked(
+              r, srv_it->host, htons(srv_it->port), true /* is_balancer */);
           ares_gethostbyname(*channel, hr->host, AF_INET6,
-                             on_hostbyname_done_under_ares_combiner, hr);
+                             on_hostbyname_done_locked, hr);
         }
-        grpc_ares_hostbyname_request* hr =
-            create_hostbyname_request_under_ares_combiner(
-                r, srv_it->host, htons(srv_it->port), true /* is_balancer */);
+        grpc_ares_hostbyname_request* hr = create_hostbyname_request_locked(
+            r, srv_it->host, htons(srv_it->port), true /* is_balancer */);
         ares_gethostbyname(*channel, hr->host, AF_INET,
-                           on_hostbyname_done_under_ares_combiner, hr);
-        grpc_ares_ev_driver_start_under_ares_combiner(r->ev_driver);
+                           on_hostbyname_done_locked, hr);
+        grpc_ares_ev_driver_start_locked(r->ev_driver);
       }
     }
     if (reply != nullptr) {
@@ -315,14 +304,14 @@ static void on_srv_query_done_under_ares_combiner(void* arg, int status,
       r->error = grpc_error_add_child(error, r->error);
     }
   }
-  grpc_ares_request_unref(r);
+  grpc_ares_request_unref_locked(r);
 }
 
 static const char g_service_config_attribute_prefix[] = "grpc_config=";
 
-static void on_txt_done_under_ares_combiner(void* arg, int status, int timeouts,
-                                            unsigned char* buf, int len) {
-  gpr_log(GPR_DEBUG, "on_txt_done_under_ares_combiner");
+static void on_txt_done_locked(void* arg, int status, int timeouts,
+                               unsigned char* buf, int len) {
+  gpr_log(GPR_DEBUG, "on_txt_done_locked");
   char* error_msg;
   grpc_ares_request* r = static_cast<grpc_ares_request*>(arg);
   const size_t prefix_len = sizeof(g_service_config_attribute_prefix) - 1;
@@ -373,72 +362,18 @@ fail:
     r->error = grpc_error_add_child(error, r->error);
   }
 done:
-  grpc_ares_request_unref(r);
+  grpc_ares_request_unref_locked(r);
 }
 
-typedef struct grpc_ares_start_queries_under_ares_combiner_args {
-  grpc_ares_request* r;
-  char* host;
-  char* port;
-  bool check_grpclb;
-} grpc_ares_start_queries_under_ares_combiner_args;
-
-static void grpc_ares_start_queries_under_ares_combiner(
-    void* args, grpc_error* unused_error) {
-  grpc_ares_start_queries_under_ares_combiner_args*
-      start_queries_under_ares_combiner_args =
-          static_cast<grpc_ares_start_queries_under_ares_combiner_args*>(args);
-  grpc_ares_request* r = start_queries_under_ares_combiner_args->r;
-  char* host = start_queries_under_ares_combiner_args->host;
-  char* port = start_queries_under_ares_combiner_args->port;
-  bool check_grpclb = start_queries_under_ares_combiner_args->check_grpclb;
-  ares_channel* channel = grpc_ares_ev_driver_get_channel(r->ev_driver);
-  grpc_ares_hostbyname_request* hr = nullptr;
-  gpr_ref_init(&r->pending_queries, 1);
-  if (grpc_ipv6_loopback_available()) {
-    hr = create_hostbyname_request_under_ares_combiner(r, host, strhtons(port),
-                                                       false /* is_balancer */);
-    ares_gethostbyname(*channel, hr->host, AF_INET6,
-                       on_hostbyname_done_under_ares_combiner, hr);
-  }
-  hr = create_hostbyname_request_under_ares_combiner(r, host, strhtons(port),
-                                                     false /* is_balancer */);
-  ares_gethostbyname(*channel, hr->host, AF_INET,
-                     on_hostbyname_done_under_ares_combiner, hr);
-  if (check_grpclb) {
-    /* Query the SRV record */
-    grpc_ares_request_ref(r);
-    char* service_name;
-    gpr_asprintf(&service_name, "_grpclb._tcp.%s", host);
-    ares_query(*channel, service_name, ns_c_in, ns_t_srv,
-               on_srv_query_done_under_ares_combiner, r);
-    gpr_free(service_name);
-  }
-  if (r->service_config_json_out != nullptr) {
-    grpc_ares_request_ref(r);
-    char* config_name;
-    gpr_asprintf(&config_name, "_grpc_config.%s", host);
-    ares_search(*channel, config_name, ns_c_in, ns_t_txt,
-                on_txt_done_under_ares_combiner, r);
-    gpr_free(config_name);
-  }
-  /* TODO(zyc): Handle CNAME records here. */
-  grpc_ares_ev_driver_start_under_ares_combiner(r->ev_driver);
-  grpc_ares_request_unref(r);
-  gpr_free(start_queries_under_ares_combiner_args->host);
-  gpr_free(start_queries_under_ares_combiner_args->port);
-  gpr_free(start_queries_under_ares_combiner_args);
-}
-
-static grpc_ares_request* grpc_dns_lookup_ares_impl(
+static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    grpc_lb_addresses** addrs, bool check_grpclb, char** service_config_json) {
+    grpc_lb_addresses** addrs, bool check_grpclb, char** service_config_json,
+    grpc_combiner* combiner) {
   grpc_error* error = GRPC_ERROR_NONE;
+  grpc_ares_hostbyname_request* hr = nullptr;
   grpc_ares_request* r = nullptr;
   ares_channel* channel = nullptr;
-  grpc_ares_start_queries_under_ares_combiner_args*
-      start_queries_under_ares_combiner_args = nullptr;
   /* TODO(zyc): Enable tracing after #9603 is checked in */
   /* if (grpc_dns_trace) {
       gpr_log(GPR_DEBUG, "resolve_address (blocking): name=%s, default_port=%s",
@@ -464,7 +399,7 @@ static grpc_ares_request* grpc_dns_lookup_ares_impl(
     port = gpr_strdup(default_port);
   }
   grpc_ares_ev_driver* ev_driver;
-  error = grpc_ares_ev_driver_create(&ev_driver, interested_parties);
+  error = grpc_ares_ev_driver_create(&ev_driver, interested_parties, combiner);
   if (error != GRPC_ERROR_NONE) goto error_cleanup;
 
   r = static_cast<grpc_ares_request*>(gpr_zalloc(sizeof(grpc_ares_request)));
@@ -514,19 +449,39 @@ static grpc_ares_request* grpc_dns_lookup_ares_impl(
       goto error_cleanup;
     }
   }
-  start_queries_under_ares_combiner_args =
-      static_cast<grpc_ares_start_queries_under_ares_combiner_args*>(
-          gpr_zalloc(sizeof(grpc_ares_start_queries_under_ares_combiner_args)));
-  start_queries_under_ares_combiner_args->r = r;
-  start_queries_under_ares_combiner_args->host = host;
-  start_queries_under_ares_combiner_args->port = port;
-  start_queries_under_ares_combiner_args->check_grpclb = check_grpclb;
-  GRPC_CLOSURE_SCHED(
-      GRPC_CLOSURE_CREATE(grpc_ares_start_queries_under_ares_combiner,
-                          start_queries_under_ares_combiner_args,
-                          grpc_combiner_scheduler(
-                              grpc_ares_ev_driver_get_combiner(r->ev_driver))),
-      GRPC_ERROR_NONE);
+  gpr_ref_init(&r->pending_queries, 1);
+  if (grpc_ipv6_loopback_available()) {
+    hr = create_hostbyname_request_locked(r, host, strhtons(port),
+                                          false /* is_balancer */);
+    ares_gethostbyname(*channel, hr->host, AF_INET6, on_hostbyname_done_locked,
+                       hr);
+  }
+  hr = create_hostbyname_request_locked(r, host, strhtons(port),
+                                        false /* is_balancer */);
+  ares_gethostbyname(*channel, hr->host, AF_INET, on_hostbyname_done_locked,
+                     hr);
+  if (check_grpclb) {
+    /* Query the SRV record */
+    grpc_ares_request_ref_locked(r);
+    char* service_name;
+    gpr_asprintf(&service_name, "_grpclb._tcp.%s", host);
+    ares_query(*channel, service_name, ns_c_in, ns_t_srv,
+               on_srv_query_done_locked, r);
+    gpr_free(service_name);
+  }
+  if (service_config_json != nullptr) {
+    grpc_ares_request_ref_locked(r);
+    char* config_name;
+    gpr_asprintf(&config_name, "_grpc_config.%s", host);
+    ares_search(*channel, config_name, ns_c_in, ns_t_txt, on_txt_done_locked,
+                r);
+    gpr_free(config_name);
+  }
+  /* TODO(zyc): Handle CNAME records here. */
+  grpc_ares_ev_driver_start_locked(r->ev_driver);
+  grpc_ares_request_unref_locked(r);
+  gpr_free(host);
+  gpr_free(port);
   return r;
 
 error_cleanup:
@@ -536,25 +491,15 @@ error_cleanup:
   return nullptr;
 }
 
-grpc_ares_request* (*grpc_dns_lookup_ares)(
+grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    grpc_lb_addresses** addrs, bool check_grpclb,
-    char** service_config_json) = grpc_dns_lookup_ares_impl;
-
-static void grpc_cancel_ares_request_under_ares_combiner(
-    void* arg, grpc_error* unused_error) {
-  grpc_ares_request* r = static_cast<grpc_ares_request*>(arg);
-  grpc_ares_ev_driver_shutdown_under_ares_combiner(r->ev_driver);
-}
+    grpc_lb_addresses** addrs, bool check_grpclb, char** service_config_json,
+    grpc_combiner* combiner) = grpc_dns_lookup_ares_locked_impl;
 
 void grpc_cancel_ares_request(grpc_ares_request* r) {
-  if (grpc_dns_lookup_ares == grpc_dns_lookup_ares_impl) {
-    GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(
-                           grpc_cancel_ares_request_under_ares_combiner, r,
-                           grpc_combiner_scheduler(
-                               grpc_ares_ev_driver_get_combiner(r->ev_driver))),
-                       GRPC_ERROR_NONE);
+  if (grpc_dns_lookup_ares_locked == grpc_dns_lookup_ares_locked_impl) {
+    grpc_ares_ev_driver_shutdown_locked(r->ev_driver);
   }
 }
 
@@ -586,6 +531,8 @@ void grpc_ares_cleanup(void) {
  */
 
 typedef struct grpc_resolve_address_ares_request {
+  /* combiner that queries and related callbacks run under */
+  grpc_combiner* combiner;
   /** the pointer to receive the resolved addresses */
   grpc_resolved_addresses** addrs_out;
   /** currently resolving lb addresses */
@@ -593,7 +540,7 @@ typedef struct grpc_resolve_address_ares_request {
   /** closure to call when the resolve_address_ares request completes */
   grpc_closure* on_resolve_address_done;
   /** a closure wrapping on_dns_lookup_done_cb, which should be invoked when the
-      grpc_dns_lookup_ares operation is done. */
+      grpc_dns_lookup_ares_locked operation is done. */
   grpc_closure on_dns_lookup_done;
 } grpc_resolve_address_ares_request;
 
@@ -618,7 +565,33 @@ static void on_dns_lookup_done_cb(void* arg, grpc_error* error) {
   }
   GRPC_CLOSURE_SCHED(r->on_resolve_address_done, GRPC_ERROR_REF(error));
   if (r->lb_addrs != nullptr) grpc_lb_addresses_destroy(r->lb_addrs);
+  GRPC_COMBINER_UNREF(r->combiner, "on_dns_lookup_done_cb");
   gpr_free(r);
+}
+
+typedef struct grpc_resolve_address_invoke_dns_lookup_ares_locked_args {
+  const char* dns_server;
+  const char* name;
+  const char* default_port;
+  grpc_pollset_set* interested_parties;
+  grpc_closure* on_done;
+  grpc_lb_addresses** addrs;
+  bool check_grpclb;
+  char** service_config_json;
+  grpc_combiner* combiner;
+} grpc_resolve_address_invoke_dns_lookup_ares_locked_args;
+
+static void grpc_resolve_address_invoke_dns_lookup_ares_locked(
+    void* args, grpc_error* unused_error) {
+  grpc_resolve_address_invoke_dns_lookup_ares_locked_args* locked_args =
+      static_cast<grpc_resolve_address_invoke_dns_lookup_ares_locked_args*>(
+          args);
+  grpc_dns_lookup_ares_locked(
+      locked_args->dns_server, locked_args->name, locked_args->default_port,
+      locked_args->interested_parties, locked_args->on_done, locked_args->addrs,
+      locked_args->check_grpclb, locked_args->service_config_json,
+      locked_args->combiner);
+  gpr_free(locked_args);
 }
 
 static void grpc_resolve_address_ares_impl(const char* name,
@@ -629,14 +602,28 @@ static void grpc_resolve_address_ares_impl(const char* name,
   grpc_resolve_address_ares_request* r =
       static_cast<grpc_resolve_address_ares_request*>(
           gpr_zalloc(sizeof(grpc_resolve_address_ares_request)));
+  r->combiner = grpc_combiner_create();
   r->addrs_out = addrs;
   r->on_resolve_address_done = on_done;
   GRPC_CLOSURE_INIT(&r->on_dns_lookup_done, on_dns_lookup_done_cb, r,
                     grpc_schedule_on_exec_ctx);
-  grpc_dns_lookup_ares(nullptr /* dns_server */, name, default_port,
-                       interested_parties, &r->on_dns_lookup_done, &r->lb_addrs,
-                       false /* check_grpclb */,
-                       nullptr /* service_config_json */);
+  grpc_resolve_address_invoke_dns_lookup_ares_locked_args* locked_args =
+      static_cast<grpc_resolve_address_invoke_dns_lookup_ares_locked_args*>(
+          gpr_zalloc(
+              sizeof(grpc_resolve_address_invoke_dns_lookup_ares_locked_args)));
+  locked_args->dns_server = nullptr;
+  locked_args->name = name;
+  locked_args->default_port = default_port;
+  locked_args->interested_parties = interested_parties;
+  locked_args->on_done = &r->on_dns_lookup_done;
+  locked_args->addrs = &r->lb_addrs;
+  locked_args->check_grpclb = false;
+  locked_args->service_config_json = nullptr;
+  locked_args->combiner = r->combiner;
+  GRPC_CLOSURE_SCHED(
+      GRPC_CLOSURE_CREATE(grpc_resolve_address_invoke_dns_lookup_ares_locked,
+                          locked_args, grpc_combiner_scheduler(r->combiner)),
+      GRPC_ERROR_NONE);
 }
 
 void (*grpc_resolve_address_ares)(
