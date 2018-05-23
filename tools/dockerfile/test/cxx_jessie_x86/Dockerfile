@@ -75,6 +75,13 @@ RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev c
 
 RUN mkdir /var/local/jenkins
 
+#=================
+# Use cmake 3.6 from jessie-backports
+# should only be used for images based on debian jessie.
+
+RUN echo "deb http://ftp.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie-backports.list
+RUN apt-get update && apt-get install -t jessie-backports -y cmake && apt-get clean
+
 
 # Install gcc-4.8 and other relevant items
 RUN apt-get update && apt-get -y install gcc-4.8 gcc-4.8-multilib g++-4.8 g++-4.8-multilib && apt-get clean

@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2018 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:jessie
+# This is the base Docker image we use for running tests on RBE
+FROM gcr.io/cloud-marketplace/google/rbe-debian8@sha256:1ede2a929b44d629ec5abe86eee6d7ffea1d5a4d247489a8867d46cfde3e38bd
 
 # Install Git and basic packages.
 RUN apt-get update && apt-get install -y \
@@ -69,25 +70,11 @@ RUN pip install virtualenv
 RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 twisted==17.5.0
 
 #=================
-# C++ dependencies
-RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
+# C++ dependencies (purposely excluding Clang because it's part of the base image)
+RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev && apt-get clean
 
-#=================
-# Use cmake 3.6 from jessie-backports
-# should only be used for images based on debian jessie.
-
-RUN echo "deb http://ftp.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie-backports.list
-RUN apt-get update && apt-get install -t jessie-backports -y cmake && apt-get clean
-
-
-RUN mkdir /var/local/jenkins
-
-#================
-# libuv
-RUN cd /tmp     && wget http://dist.libuv.org/dist/v1.9.1/libuv-v1.9.1.tar.gz     && tar -xf libuv-v1.9.1.tar.gz     && cd libuv-v1.9.1     && sh autogen.sh && ./configure --prefix=/usr && make && make install
-
-# Install gcc-4.8 and other relevant items
-RUN apt-get update && apt-get -y install gcc-4.8 gcc-4.8-multilib g++-4.8 g++-4.8-multilib && apt-get clean
+# Link llvm-symbolizer to where our test scripts expect to find it
+RUN ln -s /usr/local/bin/llvm-symbolizer /usr/bin/llvm-symbolizer
 
 # Define the default command.
 CMD ["bash"]
