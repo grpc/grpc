@@ -98,11 +98,6 @@ void* grpc_call_context_get(grpc_call* call, grpc_context_index elem);
 
 uint8_t grpc_call_is_client(grpc_call* call);
 
-/* Get the estimated memory size for a call BESIDES the call stack. Combined
- * with the size of the call stack, it helps estimate the arena size for the
- * initial call. */
-size_t grpc_call_get_initial_size_estimate();
-
 /* Return an appropriate compression algorithm for the requested compression \a
  * level in the context of \a call. */
 grpc_compression_algorithm grpc_call_compression_for_level(
