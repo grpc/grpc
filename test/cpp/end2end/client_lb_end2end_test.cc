@@ -198,7 +198,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
 
   bool SendRpc(
       const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
-      EchoResponse* response = nullptr, int timeout_ms = 1000) {
+      EchoResponse* response = nullptr, int timeout_ms = 1000,
+      Status* result = nullptr) {
     const bool local_response = (response == nullptr);
     if (local_response) response = new EchoResponse;
     EchoRequest request;
@@ -206,6 +207,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
     ClientContext context;
     context.set_deadline(grpc_timeout_milliseconds_to_deadline(timeout_ms));
     Status status = stub->Echo(&context, request, response);
+    if (result != nullptr) *result = status;
     if (local_response) delete response;
     return status.ok();
   }
@@ -214,12 +216,15 @@ class ClientLbEnd2endTest : public ::testing::Test {
       const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
       const grpc_core::DebugLocation& location) {
     EchoResponse response;
-    const bool success = SendRpc(stub, &response);
-    if (!success) abort();
-    ASSERT_TRUE(success) << "From " << location.file() << ":"
-                         << location.line();
+    Status status;
+    const bool success = SendRpc(stub, &response, 2000, &status);
+    ASSERT_TRUE(success) << "From " << location.file() << ":" << location.line()
+                         << "\n"
+                         << "Error: " << status.error_message() << " "
+                         << status.error_details();
     ASSERT_EQ(response.message(), kRequestMessage_)
         << "From " << location.file() << ":" << location.line();
+    if (!success) abort();
   }
 
   void CheckRpcSendFailure(
