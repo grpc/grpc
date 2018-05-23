@@ -2952,7 +2952,7 @@ static void start_pick_locked(void* arg, grpc_error* ignored) {
                        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Disconnected"));
       return;
     }
-    if (GPR_LIKELY(!chand->started_resolving)) {
+    if (GPR_UNLIKELY(!chand->started_resolving)) {
       start_resolving_locked(chand);
     }
     pick_after_resolver_result_start_locked(elem);
