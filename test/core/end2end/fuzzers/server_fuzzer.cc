@@ -103,15 +103,33 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_metadata_array_destroy(&request_metadata1);
     grpc_server_shutdown_and_notify(server, cq, tag(0xdead));
     grpc_server_cancel_all_calls(server);
+    grpc_millis deadline = grpc_core::ExecCtx::Get()->Now() + 5000;
     for (int i = 0; i <= requested_calls; i++) {
-      ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
-                                      nullptr);
+      // A single grpc_completion_queue_next might not be sufficient for getting
+      // the tag from shutdown, because we might potentially get blocked by
+      // an operation happening on the timer thread.
+      // For example, the deadline timer might expire, leading to the timer
+      // thread trying to cancel the RPC and thereby acquiring a few references
+      // to the call. This will prevent the shutdown to complete till the timer
+      // thread releases those references.
+      // As a solution, we are going to keep performing a cq_next for a
+      // liberal period of 5 seconds for the timer thread to complete its work.
+      do {
+        ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
+                                        nullptr);
+        grpc_core::ExecCtx::Get()->InvalidateNow();
+      } while (ev.type != GRPC_OP_COMPLETE &&
+               grpc_core::ExecCtx::Get()->Now() < deadline);
       GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
     }
     grpc_completion_queue_shutdown(cq);
     for (int i = 0; i <= requested_calls; i++) {
-      ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
-                                      nullptr);
+      do {
+        ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
+                                        nullptr);
+        grpc_core::ExecCtx::Get()->InvalidateNow();
+      } while (ev.type != GRPC_QUEUE_SHUTDOWN &&
+               grpc_core::ExecCtx::Get()->Now() < deadline);
       GPR_ASSERT(ev.type == GRPC_QUEUE_SHUTDOWN);
     }
     grpc_server_destroy(server);
