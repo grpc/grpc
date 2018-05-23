@@ -57,8 +57,8 @@ void CFStreamSync::ReadCallback(CFReadStreamRef stream, CFStreamEventType type,
                  ^{
                    grpc_core::ExecCtx exec_ctx;
                    if (grpc_tcp_trace.enabled()) {
-                     gpr_log(GPR_DEBUG, "TCP ReadCallback (%p, %lu, %p)",
-                             stream, type, client_callback_info);
+                     gpr_log(GPR_DEBUG, "TCP ReadCallback (%p, %p, %lu, %p)",
+                             sync, stream, type, client_callback_info);
                    }
                    switch (type) {
                      case kCFStreamEventOpenCompleted:
@@ -88,8 +88,8 @@ void CFStreamSync::WriteCallback(CFWriteStreamRef stream,
                  ^{
                    grpc_core::ExecCtx exec_ctx;
                    if (grpc_tcp_trace.enabled()) {
-                     gpr_log(GPR_DEBUG, "TCP WriteCallback (%p, %lu, %p)",
-                             stream, type, clientCallBackInfo);
+                     gpr_log(GPR_DEBUG, "TCP WriteCallback (%p, %p, %lu, %p)",
+                             sync, stream, type, clientCallBackInfo);
                    }
                    switch (type) {
                      case kCFStreamEventOpenCompleted:

@@ -166,10 +166,15 @@ static void ReadAction(void* arg, grpc_error* error) {
   if (read_size == -1) {
     grpc_slice_buffer_reset_and_unref_internal(tcp->read_slices);
     CFErrorRef stream_error = CFReadStreamCopyError(tcp->read_stream);
-    CallReadCB(tcp, TCPAnnotateError(GRPC_ERROR_CREATE_FROM_CFERROR(
-                                         stream_error, "Read error"),
-                                     tcp));
-    CFRelease(stream_error);
+    if (stream_error != nullptr) {
+      error = TCPAnnotateError(GRPC_ERROR_CREATE_FROM_CFERROR(
+                                   stream_error, "Read error"),
+                               tcp);
+      CFRelease(stream_error);
+    } else {
+      error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Read error");
+    }
+    CallReadCB(tcp, error);
     TCP_UNREF(tcp, "read");
   } else if (read_size == 0) {
     grpc_slice_buffer_reset_and_unref_internal(tcp->read_slices);
@@ -203,10 +208,15 @@ static void WriteAction(void* arg, grpc_error* error) {
   if (write_size == -1) {
     grpc_slice_buffer_reset_and_unref_internal(tcp->write_slices);
     CFErrorRef stream_error = CFWriteStreamCopyError(tcp->write_stream);
-    CallWriteCB(tcp, TCPAnnotateError(GRPC_ERROR_CREATE_FROM_CFERROR(
-                                          stream_error, "write failed."),
-                                      tcp));
-    CFRelease(stream_error);
+    if (stream_error != nullptr) {
+      error = TCPAnnotateError(GRPC_ERROR_CREATE_FROM_CFERROR(
+                                   stream_error, "write failed."),
+                               tcp);
+      CFRelease(stream_error);
+    } else {
+      error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("write failed.");
+    }
+    CallWriteCB(tcp, error);
     TCP_UNREF(tcp, "write");
   } else {
     if (write_size < GRPC_SLICE_LENGTH(slice)) {
