@@ -57,7 +57,7 @@ class TraceFlag {
 
   const char* name() const { return name_; }
 
-// This following define may be commented out to ensure that the compiler
+// This following define may be uncommented to ensure that the compiler
 // deletes any "if (tracer.enabled()) {...}" codeblocks. This is useful to
 // test the performance impact tracers have on the system.
 //
