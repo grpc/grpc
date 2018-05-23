@@ -490,6 +490,14 @@ class CLanguage(object):
             return 'Makefile'
 
     def _clang_make_options(self, version_suffix=''):
+        if self.args.config == 'ubsan':
+            return [
+                'CC=clang%s' % version_suffix,
+                'CXX=clang++%s' % version_suffix,
+                'LD=clang++%s' % version_suffix,
+                'LDXX=clang++%s' % version_suffix
+            ]
+
         return [
             'CC=clang%s' % version_suffix,
             'CXX=clang++%s' % version_suffix,
