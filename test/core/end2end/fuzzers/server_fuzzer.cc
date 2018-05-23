@@ -112,6 +112,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
       // thread trying to cancel the RPC and thereby acquiring a few references
       // to the call. This will prevent the shutdown to complete till the timer
       // thread releases those references.
+      // As a solution, we are going to keep performing a cq_next for a
+      // liberal period of 5 seconds for the timer thread to complete its work.
       do {
         ev = grpc_completion_queue_next(cq, gpr_inf_past(GPR_CLOCK_REALTIME),
                                         nullptr);
