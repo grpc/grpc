@@ -110,14 +110,6 @@ RUN cd llvm-build && cmake \
   ../llvm
 RUN make -C llvm-build -j 12 && make -C llvm-build install && rm -rf llvm-build
 
-# Prepare ccache
-RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
-RUN ln -s /usr/bin/ccache /usr/local/bin/g++
-RUN ln -s /usr/bin/ccache /usr/local/bin/cc
-RUN ln -s /usr/bin/ccache /usr/local/bin/c++
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
-
 
 RUN mkdir /var/local/jenkins
 
