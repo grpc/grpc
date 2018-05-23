@@ -167,9 +167,8 @@ static void ReadAction(void* arg, grpc_error* error) {
     grpc_slice_buffer_reset_and_unref_internal(tcp->read_slices);
     CFErrorRef stream_error = CFReadStreamCopyError(tcp->read_stream);
     if (stream_error != nullptr) {
-      error = TCPAnnotateError(GRPC_ERROR_CREATE_FROM_CFERROR(
-                                   stream_error, "Read error"),
-                               tcp);
+      error = TCPAnnotateError(
+          GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "Read error"), tcp);
       CFRelease(stream_error);
     } else {
       error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Read error");
@@ -209,9 +208,8 @@ static void WriteAction(void* arg, grpc_error* error) {
     grpc_slice_buffer_reset_and_unref_internal(tcp->write_slices);
     CFErrorRef stream_error = CFWriteStreamCopyError(tcp->write_stream);
     if (stream_error != nullptr) {
-      error = TCPAnnotateError(GRPC_ERROR_CREATE_FROM_CFERROR(
-                                   stream_error, "write failed."),
-                               tcp);
+      error = TCPAnnotateError(
+          GRPC_ERROR_CREATE_FROM_CFERROR(stream_error, "write failed."), tcp);
       CFRelease(stream_error);
     } else {
       error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("write failed.");
@@ -292,6 +290,9 @@ void TCPShutdown(grpc_endpoint* ep, grpc_error* why) {
   CFWriteStreamClose(tcp->write_stream);
   tcp->stream_sync->Shutdown(why);
   grpc_resource_user_shutdown(tcp->resource_user);
+  if (grpc_tcp_trace.enabled()) {
+    gpr_log(GPR_DEBUG, "tcp:%p shutdown DONE (%p)", tcp, why);
+  }
 }
 
 void TCPDestroy(grpc_endpoint* ep) {

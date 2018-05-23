@@ -30,7 +30,8 @@ BANNED_EXCEPT = {
     ['src/core/lib/slice/slice_buffer.cc'],
     'grpc_slice_ref(': ['src/core/lib/slice/slice.cc'],
     'grpc_slice_unref(': ['src/core/lib/slice/slice.cc'],
-    'grpc_error_create(': ['src/core/lib/iomgr/error.cc','src/core/lib/iomgr/error_apple.cc'],
+    'grpc_error_create(':
+    ['src/core/lib/iomgr/error.cc', 'src/core/lib/iomgr/error_apple.cc'],
     'grpc_error_ref(': ['src/core/lib/iomgr/error.cc'],
     'grpc_error_unref(': ['src/core/lib/iomgr/error.cc'],
     'grpc_os_error(': ['src/core/lib/iomgr/error.cc'],
