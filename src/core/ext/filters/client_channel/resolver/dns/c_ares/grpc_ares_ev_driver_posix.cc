@@ -256,11 +256,6 @@ ares_channel* grpc_ares_ev_driver_get_channel(grpc_ares_ev_driver* ev_driver) {
   return &ev_driver->channel;
 }
 
-grpc_combiner* grpc_ares_ev_driver_get_combiner(
-    grpc_ares_ev_driver* ev_driver) {
-  return ev_driver->combiner;
-}
-
 // Get the file descriptors used by the ev_driver's ares channel, register
 // driver_closure with these filedescriptors.
 static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver) {
