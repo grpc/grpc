@@ -339,6 +339,7 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
   gpr_ref_init(&call->ext_ref, 1);
   call->arena = arena;
   grpc_call_combiner_init(&call->call_combiner);
+  call->call_combiner.call = call;
   *out_call = call;
   call->channel = args->channel;
   call->cq = args->cq;
