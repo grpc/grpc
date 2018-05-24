@@ -28,9 +28,14 @@ tools/buildgen/generate_projects.sh
 
 if [ "$RUN_TESTS_FLAGS" == "protobuf" ]
 then
-  # this either requires bazel (tested with 0.13.1) to be available on kokoro worker
-  # or we need to fallback to bazel dockerimage, but we want prevent building it from
-  # scratch.
+  # Upgrade bazel.
+  # make_grpcio_tools.py requires bazel >=0.13.1 to run (Kokoro workers only have bazel 0.9)
+  curl -fSsL -O https://github.com/bazelbuild/bazel/releases/download/0.13.1/bazel-0.13.1-installer-linux-x86_64.sh
+  chmod +x ./bazel-0.13.1-installer-linux-x86_64.sh
+  ./bazel-0.13.1-installer-linux-x86_64.sh --user
+  rm -f ./bazel-0.13.1-installer-linux-x86_64.sh
+  export PATH="$PATH:$HOME/bin"
+
   tools/distrib/python/make_grpcio_tools.py
 fi
 
