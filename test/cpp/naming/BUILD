@@ -35,6 +35,14 @@ grpc_py_binary(
     testonly = True,
 )
 
+grpc_py_binary(
+    name = "resolver_component_stress_tests_runner",
+    srcs = [
+        "resolver_component_stress_tests_runner.py",
+    ],
+    testonly = True,
+)
+
 grpc_cc_test(
     name = "cancel_ares_query_test",
     srcs = ["cancel_ares_query_test.cc"],
