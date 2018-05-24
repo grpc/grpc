@@ -28,6 +28,7 @@
 #define GPR_ROTL(x, n) (((x) << (n)) | ((x) >> (sizeof(x) * 8 - (n))))
 #define GPR_ROTR(x, n) (((x) >> (n)) | ((x) << (sizeof(x) * 8 - (n))))
 
+// TODO: this division triggers -Werror=sizeof-pointer-div
 #define GPR_ARRAY_SIZE(array) (sizeof(array) / sizeof(*(array)))
 
 #define GPR_SWAP(type, a, b) \

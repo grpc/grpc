@@ -289,6 +289,18 @@ def _create_portability_test_jobs(extra_args=[],
         extra_args=extra_args,
         inner_jobs=inner_jobs)
 
+    # portability C on x64, TODO: also build lang c++ here
+    test_jobs += _generate_jobs(
+        languages=['c'],
+        configs=['dbg'],
+        platforms=['linux'],
+        arch='x64',
+        compiler='gcc8.1',
+        labels=['portability', 'corelang'],
+        extra_args=extra_args,
+        inner_jobs=inner_jobs,
+        timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
+
     # portability C and C++ on x64
     for compiler in [
             'gcc4.8', 'gcc5.3', 'gcc7.2', 'gcc_musl', 'clang3.5', 'clang3.6',

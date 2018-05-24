@@ -526,6 +526,8 @@ class CLanguage(object):
             return ('ubuntu1604', [])
         elif compiler == 'gcc7.2':
             return ('ubuntu1710', [])
+        elif compiler == 'gcc8.1':
+            return ('fedora28', [])
         elif compiler == 'gcc_musl':
             return ('alpine', [])
         elif compiler == 'clang3.4':
@@ -1355,10 +1357,10 @@ argp.add_argument(
     '--compiler',
     choices=[
         'default', 'gcc4.4', 'gcc4.6', 'gcc4.8', 'gcc4.9', 'gcc5.3', 'gcc7.2',
-        'gcc_musl', 'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7', 'clang7.0',
-        'python2.7', 'python3.4', 'python3.5', 'python3.6', 'pypy', 'pypy3',
-        'python_alpine', 'all_the_cpythons', 'electron1.3', 'electron1.6',
-        'coreclr', 'cmake', 'cmake_vs2015', 'cmake_vs2017'
+        'gcc8.1', 'gcc_musl', 'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7',
+        'clang7.0', 'python2.7', 'python3.4', 'python3.5', 'python3.6', 'pypy',
+        'pypy3', 'python_alpine', 'all_the_cpythons', 'electron1.3',
+        'electron1.6', 'coreclr', 'cmake', 'cmake_vs2015', 'cmake_vs2017'
     ],
     default='default',
     help=

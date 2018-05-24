@@ -67,6 +67,7 @@ grpc_grpclb_request* grpc_grpclb_request_create(const char* lb_service_name) {
   req->has_client_stats = false;
   req->has_initial_request = true;
   req->initial_request.has_name = true;
+  // TODO: this copy triggers -Werror=stringop-truncation
   strncpy(req->initial_request.name, lb_service_name,
           GRPC_GRPCLB_SERVICE_NAME_MAX_LENGTH);
   return req;
