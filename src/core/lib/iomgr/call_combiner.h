@@ -28,6 +28,8 @@
 #include "src/core/lib/gpr/mpscq.h"
 #include "src/core/lib/iomgr/closure.h"
 
+struct grpc_call;
+
 // A simple, lock-free mechanism for serializing activity related to a
 // single call.  This is similar to a combiner but is more lightweight.
 //
@@ -46,6 +48,7 @@ typedef struct {
   // a grpc_closure* (if the lowest bit is 0),
   // or a grpc_error* (if the lowest bit is 1).
   gpr_atm cancel_state;
+  grpc_call* call;
 } grpc_call_combiner;
 
 // Assumes memory was initialized to zero.

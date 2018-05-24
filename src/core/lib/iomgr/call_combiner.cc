@@ -25,6 +25,7 @@
 #include <grpc/support/log.h>
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/profiling/timers.h"
+#include "src/core/lib/surface/call.h"
 
 grpc_core::TraceFlag grpc_call_combiner_trace(false, "call_combiner");
 
@@ -62,6 +63,20 @@ void grpc_call_combiner_start(grpc_call_combiner* call_combiner,
                               grpc_closure* closure,
                               grpc_error* error DEBUG_ARGS,
                               const char* reason) {
+  gpr_atm call_internal_ref = gpr_atm_no_barrier_load(
+      &grpc_call_get_call_stack(call_combiner->call)->refcount.refs.count);
+  if (call_internal_ref == static_cast<gpr_atm>(0)) {
+    if (grpc_call_combiner_trace.enabled()) {
+      gpr_log(GPR_INFO,
+              "==> grpc_call_combiner_start() will return immediately because "
+              "call's internal ref is 0 [%p] closure=%p [" DEBUG_FMT_STR
+              "%s] error=%s",
+              call_combiner, closure DEBUG_FMT_ARGS, reason,
+              grpc_error_string(error));
+    }
+    return;
+  }
+  GRPC_CALL_INTERNAL_REF(call_combiner->call, "combiner");
   GPR_TIMER_SCOPE("call_combiner_start", 0);
   if (grpc_call_combiner_trace.enabled()) {
     gpr_log(GPR_INFO,
@@ -79,7 +94,6 @@ void grpc_call_combiner_start(grpc_call_combiner* call_combiner,
   GRPC_STATS_INC_CALL_COMBINER_LOCKS_SCHEDULED_ITEMS();
   if (prev_size == 0) {
     GRPC_STATS_INC_CALL_COMBINER_LOCKS_INITIATED();
-
     GPR_TIMER_MARK("call_combiner_initiate", 0);
     if (grpc_call_combiner_trace.enabled()) {
       gpr_log(GPR_INFO, "  EXECUTING IMMEDIATELY");
@@ -138,6 +152,7 @@ void grpc_call_combiner_stop(grpc_call_combiner* call_combiner DEBUG_ARGS,
   } else if (grpc_call_combiner_trace.enabled()) {
     gpr_log(GPR_INFO, "  queue empty");
   }
+  GRPC_CALL_INTERNAL_UNREF(call_combiner->call, "combiner");
 }
 
 void grpc_call_combiner_set_notify_on_cancel(grpc_call_combiner* call_combiner,
