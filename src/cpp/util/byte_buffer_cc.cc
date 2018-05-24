@@ -43,8 +43,9 @@ Status ByteBuffer::Dump(std::vector<Slice>* slices) const {
   return Status::OK;
 }
 
-ByteBuffer::ByteBuffer(const ByteBuffer& buf)
-    : buffer_(grpc_byte_buffer_copy(buf.buffer_)) {}
+ByteBuffer::ByteBuffer(const ByteBuffer& buf) : buffer_(nullptr) {
+  operator=(buf);
+}
 
 ByteBuffer& ByteBuffer::operator=(const ByteBuffer& buf) {
   if (this != &buf) {
