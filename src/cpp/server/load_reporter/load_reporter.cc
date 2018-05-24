@@ -21,9 +21,11 @@
 #include <iomanip>
 #include <sstream>
 
-#include "opencensus/stats/internal/set_aggregation_window.h"
 #include "src/cpp/server/load_reporter/get_cpu_stats.h"
 #include "src/cpp/server/load_reporter/load_reporter.h"
+#include "src/cpp/server/load_reporter/util.h"
+
+#include "opencensus/stats/internal/set_aggregation_window.h"
 
 namespace grpc {
 namespace load_reporter {

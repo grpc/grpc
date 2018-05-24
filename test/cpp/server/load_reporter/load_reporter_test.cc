@@ -28,6 +28,7 @@
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/cpp/server/load_reporter/load_reporter.h"
+#include "src/cpp/server/load_reporter/util.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 

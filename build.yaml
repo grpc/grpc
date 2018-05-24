@@ -1896,26 +1896,13 @@ libs:
   language: c++
   headers:
   - src/cpp/server/load_reporter/load_data_store.h
+  - src/cpp/server/load_reporter/util.h
   src:
   - src/cpp/server/load_reporter/load_data_store.cc
+  - src/cpp/server/load_reporter/util.cc
   deps:
   - grpc++
-- name: lb_load_reporter
-  build: all
-  language: c++
-  headers:
-  - src/cpp/server/load_reporter/get_cpu_stats.h
-  - src/cpp/server/load_reporter/load_reporter.h
-  src:
-  - src/proto/grpc/lb/v1/load_reporter.proto
-  - src/cpp/server/load_reporter/get_cpu_stats_linux.cc
-  - src/cpp/server/load_reporter/get_cpu_stats_macos.cc
-  - src/cpp/server/load_reporter/get_cpu_stats_unsupported.cc
-  - src/cpp/server/load_reporter/get_cpu_stats_windows.cc
-  - src/cpp/server/load_reporter/load_reporter.cc
-  deps:
-  - grpc++
-  - lb_load_data_store
+  - @io_opencensus_cpp//opencensus/stats
 - name: qps
   build: private
   language: c++

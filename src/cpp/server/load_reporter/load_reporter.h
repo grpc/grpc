@@ -30,8 +30,9 @@
 #include <grpcpp/impl/codegen/config.h>
 
 #include "src/cpp/server/load_reporter/load_data_store.h"
-#include "src/cpp/server/load_reporter/util.h"
 #include "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h"
+
+#include "opencensus/stats/stats.h"
 
 namespace grpc {
 namespace load_reporter {

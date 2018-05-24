@@ -19,12 +19,10 @@
 #ifndef GRPC_SRC_CPP_SERVER_LOAD_REPORTER_UTIL_H
 #define GRPC_SRC_CPP_SERVER_LOAD_REPORTER_UTIL_H
 
-#include "opencensus/stats/stats.h"
-
 namespace grpc {
 namespace load_reporter {
 
-constexpr uint8_t kLbIdLength = 8;
+constexpr size_t kLbIdLength = 8;
 constexpr size_t kIpv4AddressLength = 8;
 constexpr size_t kIpv6AddressLength = 32;
 
@@ -62,15 +60,6 @@ constexpr char kViewOtherCallMetricCount[] =
     "grpc.io/lb_view/other_call_metric_count";
 constexpr char kViewOtherCallMetricValue[] =
     "grpc.io/lb_view/other_call_metric_value";
-
-// Measures.
-
-::opencensus::stats::MeasureInt64 MeasureStartCount();
-::opencensus::stats::MeasureInt64 MeasureEndCount();
-::opencensus::stats::MeasureDouble MeasureEndBytesSent();
-::opencensus::stats::MeasureDouble MeasureEndBytesReceived();
-::opencensus::stats::MeasureDouble MeasureEndLatencyMs();
-::opencensus::stats::MeasureDouble MeasureOtherCallMetric();
 
 }  // namespace load_reporter
 }  // namespace grpc
