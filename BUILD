@@ -1288,13 +1288,16 @@ grpc_cc_library(
     name = "lb_load_data_store",
     srcs = [
         "src/cpp/server/load_reporter/load_data_store.cc",
+        "src/cpp/server/load_reporter/util.cc",
     ],
     hdrs = [
         "src/cpp/server/load_reporter/load_data_store.h",
+        "src/cpp/server/load_reporter/util.h",
     ],
     language = "c++",
     deps = [
         "grpc++",
+        "@io_opencensus_cpp//opencensus/stats",
     ],
 )
 
@@ -1310,14 +1313,11 @@ grpc_cc_library(
     hdrs = [
         "src/cpp/server/load_reporter/get_cpu_stats.h",
         "src/cpp/server/load_reporter/load_reporter.h",
-        "src/cpp/server/load_reporter/util.h",
     ],
     language = "c++",
     deps = [
-        "grpc++",
         "lb_load_data_store",
         "//src/proto/grpc/lb/v1:load_reporter_proto",
-        "@io_opencensus_cpp//opencensus/stats",
     ],
 )
 

@@ -58,6 +58,15 @@ class CensusViewProvider {
     return it->second;
   }
 
+  // Get a row with the input tag values from the view data. Only used when we
+  // know that row must exist because we have seen a row with the same tag
+  // values in a related view data. Several ViewData's are considered related if
+  // their views are based on the measures that are always recorded at the same
+  // time.
+  double static GetRelatedViewDataRowDouble(
+      ViewDataMap& view_data_map, const char* view_name, size_t view_name_len,
+      const std::vector<grpc::string>& tag_values);
+
  protected:
   // Tag keys.
   ::opencensus::stats::TagKey tag_key_token_;

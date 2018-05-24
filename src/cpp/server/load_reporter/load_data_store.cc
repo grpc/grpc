@@ -22,15 +22,13 @@
 #include <vector>
 
 #include "src/cpp/server/load_reporter/load_data_store.h"
+#include "src/cpp/server/load_reporter/util.h"
 
 namespace grpc {
 namespace load_reporter {
 
 // Some helper functions.
 namespace {
-
-const int kIpv4AddressLength = 8;
-const int kIpv6AddressLength = 32;
 
 // Given a map from type K to a set of value type V, finds the set associated
 // with the given key and erases the value from the set. If the set becomes
@@ -84,12 +82,12 @@ LoadRecordKey::LoadRecordKey(const grpc::string& client_ip_and_token,
   size_t cur_pos = 2;
   client_ip_hex_ = client_ip_and_token.substr(cur_pos, ip_hex_size);
   cur_pos += ip_hex_size;
-  if (client_ip_and_token.size() - cur_pos < kLbIdLen) {
+  if (client_ip_and_token.size() - cur_pos < kLbIdLength) {
     lb_id_ = kInvalidLbId;
     lb_tag_ = "";
   } else {
-    lb_id_ = client_ip_and_token.substr(cur_pos, kLbIdLen);
-    lb_tag_ = client_ip_and_token.substr(cur_pos + kLbIdLen);
+    lb_id_ = client_ip_and_token.substr(cur_pos, kLbIdLength);
+    lb_tag_ = client_ip_and_token.substr(cur_pos + kLbIdLength);
   }
 }
 
@@ -97,18 +95,16 @@ grpc::string LoadRecordKey::GetClientIpBytes() const {
   if (client_ip_hex_.empty()) {
     return "";
   } else if (client_ip_hex_.size() == kIpv4AddressLength) {
-    uint32_t ip_bytes = static_cast<uint32_t>(std::stoul(client_ip_hex_,
-                                                     nullptr,
-                                                     16));
-    return grpc::string(reinterpret_cast<const char*>(&ip_bytes), sizeof(ip_bytes));
+    uint32_t ip_bytes =
+        static_cast<uint32_t>(std::stoul(client_ip_hex_, nullptr, 16));
+    return grpc::string(reinterpret_cast<const char*>(&ip_bytes),
+                        sizeof(ip_bytes));
   } else if (client_ip_hex_.size() == kIpv6AddressLength) {
     uint64_t ip_bytes[2];
-    ip_bytes[0] = static_cast<uint64_t>(std::stoul(client_ip_hex_.substr(0, 16),
-                                                           nullptr,
-                                                           16));
-    ip_bytes[1] = static_cast<uint64_t>(std::stoul(client_ip_hex_.substr(16),
-                                                              nullptr,
-                                                              16));
+    ip_bytes[0] = static_cast<uint64_t>(
+        std::stoul(client_ip_hex_.substr(0, 16), nullptr, 16));
+    ip_bytes[1] = static_cast<uint64_t>(
+        std::stoul(client_ip_hex_.substr(16), nullptr, 16));
     return grpc::string(reinterpret_cast<const char*>(ip_bytes),
                         sizeof(ip_bytes));
   } else {

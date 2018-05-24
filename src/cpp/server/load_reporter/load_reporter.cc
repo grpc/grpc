@@ -156,6 +156,16 @@ CensusViewProvider::CensusViewProvider()
   view_descriptor_map_.insert({kViewOtherCallMetricValue, vd_metric_value});
 }
 
+double CensusViewProvider::GetRelatedViewDataRowDouble(
+    ViewDataMap& view_data_map, const char* view_name, size_t view_name_len,
+    const std::vector<grpc::string>& tag_values) {
+  auto it_vd = view_data_map.find(grpc::string(view_name, view_name_len - 1));
+  GPR_ASSERT(it_vd != view_data_map.end());
+  auto it_row = it_vd->second.double_data().find(tag_values);
+  GPR_ASSERT(it_row != it_vd->second.double_data().end());
+  return it_row->second;
+}
+
 CensusViewProviderDefaultImpl::CensusViewProviderDefaultImpl() {
   for (const auto& p : view_descriptor_map_) {
     const grpc::string& view_name = p.first;
@@ -195,7 +205,7 @@ grpc::string LoadReporter::GenerateLbId() {
     // Convert to padded hex string for a 32-bit LB ID. E.g, "0000ca5b".
     ss << std::setfill('0') << std::setw(8) << std::hex << lb_id;
     grpc::string lb_id_str = ss.str();
-    GPR_ASSERT(kLbIdLen == lb_id_str.length());
+    GPR_ASSERT(kLbIdLength == lb_id_str.length());
     // The client may send requests with LB ID that has never been allocated
     // by this load reporter. Those IDs are tracked and will be skipped when
     // we generate a new ID.
@@ -390,21 +400,16 @@ void LoadReporter::FetchAndSample() {
         continue;
       }
       LoadRecordKey key(client_ip_and_token, user_id);
-      auto it = view_data_map.find(kMeasureEndBytesSent);
-      const double bytes_sent =
-          it != view_data_map.end()
-              ? it->second.double_data().find(tag_values)->second
-              : 0;
-      it = view_data_map.find(kViewEndBytesReceived);
+      const double bytes_sent = CensusViewProvider::GetRelatedViewDataRowDouble(
+          view_data_map, kViewEndBytesSent, sizeof(kViewEndBytesSent),
+          tag_values);
       const double bytes_received =
-          it != view_data_map.end()
-              ? it->second.double_data().find(tag_values)->second
-              : 0;
-      it = view_data_map.find(kViewEndLatencyMs);
-      const double latency_ms =
-          it != view_data_map.end()
-              ? it->second.double_data().find(tag_values)->second
-              : 0;
+          CensusViewProvider::GetRelatedViewDataRowDouble(
+              view_data_map, kViewEndBytesReceived,
+              sizeof(kViewEndBytesReceived), tag_values);
+      const double latency_ms = CensusViewProvider::GetRelatedViewDataRowDouble(
+          view_data_map, kViewEndLatencyMs, sizeof(kViewEndLatencyMs),
+          tag_values);
       double ok_count = 0;
       double error_count = 0;
       total_end_count += end_count;
@@ -436,10 +441,9 @@ void LoadReporter::FetchAndSample() {
       const grpc::string& metric_name = tag_values[3];
       LoadRecordKey key(client_ip_and_token, user_id);
       const double total_metric_value =
-          view_data_map.find(kViewOtherCallMetricValue)
-              ->second.double_data()
-              .find(tag_values)
-              ->second;
+          CensusViewProvider::GetRelatedViewDataRowDouble(
+              view_data_map, kViewOtherCallMetricValue,
+              sizeof(kViewOtherCallMetricValue), tag_values);
       LoadRecordValue value = LoadRecordValue(
           metric_name, static_cast<uint64_t>(num_calls), total_metric_value);
       {

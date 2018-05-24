@@ -24,9 +24,17 @@
 namespace grpc {
 namespace load_reporter {
 
+constexpr uint8_t kLbIdLength = 8;
+constexpr size_t kIpv4AddressLength = 8;
+constexpr size_t kIpv6AddressLength = 32;
+
+// Call statuses.
+
 constexpr char kCallStatusOk[] = "OK";
 constexpr char kCallStatusServerError[] = "5XX";
 constexpr char kCallStatusClientError[] = "4XX";
+
+// Tag keys.
 
 constexpr char kTagKeyToken[] = "token";
 constexpr char kTagKeyHost[] = "host";
@@ -34,12 +42,16 @@ constexpr char kTagKeyUserId[] = "user_id";
 constexpr char kTagKeyStatus[] = "status";
 constexpr char kTagKeyMetricName[] = "metric_name";
 
+// Measure names.
+
 constexpr char kMeasureStartCount[] = "grpc.io/lb/start_count";
 constexpr char kMeasureEndCount[] = "grpc.io/lb/end_count";
 constexpr char kMeasureEndBytesSent[] = "grpc.io/lb/bytes_sent";
 constexpr char kMeasureEndBytesReceived[] = "grpc.io/lb/bytes_received";
 constexpr char kMeasureEndLatencyMs[] = "grpc.io/lb/latency_ms";
 constexpr char kMeasureOtherCallMetric[] = "grpc.io/lb/other_call_metric";
+
+// View names.
 
 constexpr char kViewStartCount[] = "grpc.io/lb_view/start_count";
 constexpr char kViewEndCount[] = "grpc.io/lb_view/end_count";
@@ -53,52 +65,12 @@ constexpr char kViewOtherCallMetricValue[] =
 
 // Measures.
 
-::opencensus::stats::MeasureInt64 GetMeasureStartCount() {
-  static const ::opencensus::stats::MeasureInt64 start_count =
-      ::opencensus::stats::MeasureInt64::Register(
-          grpc::string(kMeasureStartCount), kMeasureStartCount,
-          kMeasureStartCount);
-  return start_count;
-}
-
-::opencensus::stats::MeasureInt64 GetMeasureEndCount() {
-  static const ::opencensus::stats::MeasureInt64 end_count =
-      ::opencensus::stats::MeasureInt64::Register(
-          grpc::string(kMeasureEndCount), kMeasureEndCount, kMeasureEndCount);
-  return end_count;
-}
-
-::opencensus::stats::MeasureDouble MeasureEndBytesSent() {
-  static const ::opencensus::stats::MeasureDouble end_bytes_sent =
-      ::opencensus::stats::MeasureDouble::Register(
-          grpc::string(kMeasureEndBytesSent), kMeasureEndBytesSent,
-          kMeasureEndBytesSent);
-  return end_bytes_sent;
-}
-
-::opencensus::stats::MeasureDouble MeasureEndBytesReceived() {
-  static const ::opencensus::stats::MeasureDouble end_bytes_received =
-      ::opencensus::stats::MeasureDouble::Register(
-          grpc::string(kMeasureEndBytesReceived), kMeasureEndBytesReceived,
-          kMeasureEndBytesReceived);
-  return end_bytes_received;
-}
-
-::opencensus::stats::MeasureDouble MeasureEndLatencyMs() {
-  static const ::opencensus::stats::MeasureDouble end_latency_ms =
-      ::opencensus::stats::MeasureDouble::Register(
-          grpc::string(kMeasureEndLatencyMs), kMeasureEndLatencyMs,
-          kMeasureEndLatencyMs);
-  return end_latency_ms;
-}
-
-::opencensus::stats::MeasureDouble MeasureOtherCallMetric() {
-  static const ::opencensus::stats::MeasureDouble other_call_metric =
-      ::opencensus::stats::MeasureDouble::Register(
-          grpc::string(kMeasureOtherCallMetric), kMeasureOtherCallMetric,
-          kMeasureOtherCallMetric);
-  return other_call_metric;
-}
+::opencensus::stats::MeasureInt64 MeasureStartCount();
+::opencensus::stats::MeasureInt64 MeasureEndCount();
+::opencensus::stats::MeasureDouble MeasureEndBytesSent();
+::opencensus::stats::MeasureDouble MeasureEndBytesReceived();
+::opencensus::stats::MeasureDouble MeasureEndLatencyMs();
+::opencensus::stats::MeasureDouble MeasureOtherCallMetric();
 
 }  // namespace load_reporter
 }  // namespace grpc
