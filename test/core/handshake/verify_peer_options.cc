@@ -81,8 +81,10 @@ static void server_thread(void* arg) {
   grpc_server_start(server);
 
   // Wait a bounded number of time until client_handshake_complete is set,
-  // sleeping between polls.
-  int retries = 10;
+  // sleeping between polls. The total time spent (deadline * retries)
+  // should be strictly greater than the client retry limit so that the
+  // client will always timeout first.
+  int retries = 60;
   while (!gpr_event_get(&client_handshake_complete) && retries-- > 0) {
     const gpr_timespec cq_deadline = grpc_timeout_seconds_to_deadline(1);
     grpc_event ev = grpc_completion_queue_next(cq, cq_deadline, nullptr);
@@ -162,7 +164,8 @@ static bool verify_peer_options_test(verify_peer_options* verify_options) {
 
   // Wait a bounded number of times for the channel to be ready. When the
   // channel is ready, the initial TLS handshake will have successfully
-  // completed and we know that the client's ALPN list satisfied the server.
+  // completed. The total time spent on the client side (retries * deadline)
+  // should be greater than the server side time limit.
   int retries = 10;
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
