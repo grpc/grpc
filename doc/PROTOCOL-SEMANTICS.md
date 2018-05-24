@@ -8,9 +8,9 @@ RPCs. The goal of this document is defining the semantics of gRPC's RPCs.
 Most implementations will have Channel and Server concepts. A Channel is a
 virtual connection to an endpoint, capable of sending RPCs. Channel is "virtual"
 because the Channel is free to have zero or many actual connections. A Channel
-is free to determine which actual endpoints to use and may change it every RPC,
-permitting client-side load balancing. A Server would be capable of receiving
-incoming connections and receiving RPCs.
+is free to determine which actual endpoint to use and may change it every RPC,
+permitting client-side load balancing. A Server is capable of receiving incoming
+connections and receiving RPCs.
 
 A "connection" is not a gRPC semantic concept and thus users should not assume a
 correlation between connections and RPCs. Although, practically, users should be
@@ -34,8 +34,8 @@ Method does, intended for a developer. gRPC itself is not generally aware of the
 intended operation.
 
 A Method has a request message type and a separate response message type. gRPC
-is only aware of these types well enough to serialize and deserialize them. They
-are largely considered "binary blobs" to gRPC itself.
+is only aware of these types well enough to serialize and deserialize them.
+Messages are considered opaque byte sequences of a known length to gRPC itself.
 
 A Method's request and response each have a cardinality: either one ("unary"),
 or zero to many (a "stream"). This produces four possible configurations which,
@@ -63,42 +63,51 @@ separator is a "full method name".
 ## Calls
 
 RPCs, or "Calls," are initiated by a client to a server, typically via a
-Channel. The initiation is with Request Headers, within which the client
+Channel. There may be multiple servers that _could_ have received the Call (as
+is common for load balancing), but only a single server may process an
+individual Call. Calls are assumed to be non-idempotent and may not be
+"replayed" except for when gRPC is explicitly informed it is safe to do so.
+
+Calls are natively two independent streams (i.e., full duplex bidirectional) of
+Messages. The request stream is started with Request Headers and ended by Half
+Close. The response stream is started with Response Headers and ended by
+Trailers, or consistes only of Trailers. Messages may exist between the headers
+and the end of the stream. Request Headers, Response Headers, Messages, Half
+Close, and Trailers are the units of communication and, absent the Call's
+termination, will be communicated to the remote without the need to send further
+units on the stream. However, see the optimizations permitted for unary Calls
+below.
+
+Request Headers contain the Full Method Name and Metadata. Response Headers
+contain Metadata. Trailers contain the Status and Metadata. Messages contain the
+Message Payload. These contents are not exhaustive; gRPC features may extend
+these concepts. It is quite common for features to add additional fields to
+Request Headers, Response Headers, and Trailers.
+
+The Call initiation is with Request Headers, within which the client
 indicates the method to be run by its Full Method Name. The Call is gracefully
 completed when the server responds with Trailers, which contains a Status
-communicating the success or failure of the RPC. Note that on the server there
-is a period of time between when the server application responds with a Trailers
-and when that Trailers is actually sent; the Call is only truly complete when
-the Trailers is sent. Similarly, on the client there is a period between the
-gRPC implementation receiving the Trailers and when the application receives the
+communicating the success or failure of the RPC. If a server responds with
+Trailers before receiving the client's Half Close, then any unprocessed
+client-sent Messages and Half Close is lost. Note that on the server there is a
+period of time between when the server application responds with a Trailers and
+when that Trailers is actually sent; the Call is only truly complete when the
+Trailers is sent. Similarly, on the client there is a period between the gRPC
+implementation receiving the Trailers and when the application receives the
 Trailers; the Call is only truly complete when the Trailers is received by the
 application.
 
 Calls may terminate early by being "cancelled." Implementations must allow
 clients to cancel Calls, but cancellations may occur in other ways like I/O
-failures. A cancellation appears as a Trailers to clients and is a special state
-on servers. Cancellation is an abrupt killing of the Call; inbound and outbound
-buffered data should be cleared. Cancellation trumps graceful completion; if the
-client gRPC implementation received the Trailers before the cancellation, yet
-the client application has not received the Trailers, then cancellation
-generally should win. No auxilary information is included in cancellation
-signals between the client and server. Server implementations may fail a Call
-and respond with Trailers while claiming to the server application that the Call
-was cancelled.
-
-There may be multiple servers that _could_ have received the Call (as is common
-for load balancing), but only a single server may process an individual Call.
-Calls are assumed to be non-idempotent and may not be "replayed" except for when
-gRPC is explicitly informed it is safe to do so.
-
-Calls are natively two independent streams (i.e., full duplex bidirectional) of
-Messages. The streams are each started with Headers. The end of the request
-stream is delimited by Half Close. The end of the response stream is delimited
-by Trailers. Messages may exist between the Headers and the end of the stream.
-Headers, Messages, Half Close, and Trailers are the units of communication and,
-absent the Call's termination, will be communicated to the remote without
-the need to send further units on the stream. However, see the optimizations
-permitted for unary Calls below.
+failures. A cancellation appears as a Trailers with a Status Code of CANCELLED
+to clients and is a special state on servers. Cancellation is an abrupt killing
+of the Call; inbound and outbound buffered data should be cleared. Cancellation
+trumps graceful completion; if the client gRPC implementation received the
+Trailers before the cancellation, yet the client application has not received
+the Trailers, then cancellation generally should win. No auxilary information is
+included in cancellation signals between the client and server. Server
+implementations may fail a Call and respond with Trailers while claiming to the
+server application that the Call was cancelled.
 
 The two independent streams are each unidirectional and do not provide any
 information in the reverse direction other than Flow Control. Flow Control
@@ -181,6 +190,43 @@ The position of the Metadata in either Headers or Trailers is semantically
 important. Metadata from a Headers may not be moved to Trailers or vise-versa
 without additional knowledge of the individual key semantics.
 
+## Additional Features
+
+Although these are "additional" features, that does not make them unimportant.
+The are additional because they do not need to be represented as a fundamental
+gRPC protocol concept.
+
+### Deadline Propagation
+
+It is a common concept for RPCs to have a Deadline, a point in time by which the
+Call needs to complete before the client will give up. If the Client has a
+Deadline for the Call it should be included in the Request Headers. Calls are
+not required to have a Deadline. If a Call has a Deadline, both the client and
+server should track the Deadline and Cancel the Call when the Deadline is
+reached. When the client Cancels the Call, it should report a Trailers
+containing a Status Code of DEADLINE_EXCEEDED.
+
+While the feature is called "Deadline" and involves Deadlines from the user's
+perspective, it is generally communicated with a timeout, which is a duration
+instead of a point in time. Communicating a duration avoids the need for civil
+time clock synchronization between the client and server.
+
+By its very nature, the client and server's Deadline will be slightly different
+and their detection of its expiration will race. When clients receive a
+Cancellation on a Call with a Deadline, they should double-check whether the
+Deadline has passed. If it has passed, they should override the cancellation
+with Trailers with one that has a Status Code of DEADLINE_EXCEEDED.
+
+### Authority
+
+Virtual hosting is a common concept where a server supports multiple identities
+and supports different services depending on the identity. "Identity" is a
+server name, in "host" or "host:port" form as found for the "authority" portion
+of URIs. Transports able to support virtual hosting should transmit the
+authority the client identifies the service as and make that available to the
+server application. The authority would appear to be included in the Request
+Headers to the server application.
+
 # Appendix
 
 ## Appendix A: Call ABNF
@@ -213,7 +259,8 @@ ascii-value       = 1*(SP / VCHAR)
 binary-key        = 1*metadata-key-char "-bin"
 binary-value      = 1*OCTET ; TODO: do we support zero-length values?
 
-message           = *OCTET ; zero-byte messages are supported
+message           = message-payload
+message-payload   = *OCTET ; zero-byte payloads are supported
 
 status            = status-code [status-desc]
 status-code       = <see enumeration in Status section>
