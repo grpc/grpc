@@ -85,18 +85,6 @@ RUN apt-get update && apt-get install -y \
       shellcheck
 RUN pip install simplejson mako
 
-#======================================
-# More sanity test dependencies (bazel)
-RUN echo "deb http://http.debian.net/debian jessie-backports main" >> /etc/apt/sources.list
-RUN apt-get update
-RUN apt-get install -y -t jessie-backports openjdk-8-jdk
-
-#========================
-# Bazel installation
-RUN echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8" > /etc/apt/sources.list.d/bazel.list
-RUN curl https://bazel.build/bazel-release.pub.gpg | apt-key add -
-RUN apt-get -y update && apt-get -y install bazel=0.13.1 && apt-get clean
-
 RUN apt-get update && apt-get -y install wget xz-utils
 RUN wget http://releases.llvm.org/5.0.0/clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz
 RUN tar xf clang+llvm-5.0.0-linux-x86_64-ubuntu14.04.tar.xz
