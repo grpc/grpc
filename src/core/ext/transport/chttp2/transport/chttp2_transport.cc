@@ -1605,7 +1605,8 @@ static void perform_stream_op_locked(void* stream_op,
   if (op->recv_trailing_metadata) {
     GRPC_STATS_INC_HTTP2_OP_RECV_TRAILING_METADATA();
     GPR_ASSERT(s->recv_trailing_metadata_finished == nullptr);
-    s->recv_trailing_metadata_finished = add_closure_barrier(on_complete);
+    s->recv_trailing_metadata_finished =
+        op_payload->recv_trailing_metadata.recv_trailing_metadata_ready;
     s->recv_trailing_metadata =
         op_payload->recv_trailing_metadata.recv_trailing_metadata;
     s->final_metadata_requested = true;
@@ -1966,9 +1967,8 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
         s->recv_trailing_metadata_finished != nullptr) {
       grpc_chttp2_incoming_metadata_buffer_publish(&s->metadata_buffer[1],
                                                    s->recv_trailing_metadata);
-      grpc_chttp2_complete_closure_step(
-          t, s, &s->recv_trailing_metadata_finished, GRPC_ERROR_NONE,
-          "recv_trailing_metadata_finished");
+      null_then_run_closure(&s->recv_trailing_metadata_finished,
+                            GRPC_ERROR_NONE);
     }
   }
 }

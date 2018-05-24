@@ -223,6 +223,8 @@ struct grpc_transport_stream_op_batch_payload {
 
   struct {
     grpc_metadata_batch* recv_trailing_metadata;
+    /** Should be enqueued when initial metadata is ready to be processed. */
+    grpc_closure* recv_trailing_metadata_ready;
   } recv_trailing_metadata;
 
   struct {

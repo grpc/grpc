@@ -1284,6 +1284,9 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
       grpc_chttp2_incoming_metadata_buffer_publish(
           &oas->s->state.rs.trailing_metadata,
           stream_op->payload->recv_trailing_metadata.recv_trailing_metadata);
+      GRPC_CLOSURE_SCHED(stream_op->payload->recv_trailing_metadata
+                             .recv_trailing_metadata_ready,
+                         GRPC_ERROR_NONE);
       stream_state->rs.trailing_metadata_valid = false;
     }
     stream_state->state_op_done[OP_RECV_TRAILING_METADATA] = true;
@@ -1397,6 +1400,11 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
     if (op->recv_message) {
       GRPC_CLOSURE_SCHED(op->payload->recv_message.recv_message_ready,
                          GRPC_ERROR_CANCELLED);
+    }
+    if (op->recv_trailing_metadata) {
+      GRPC_CLOSURE_SCHED(
+          op->payload->recv_trailing_metadata.recv_trailing_metadata_ready,
+          GRPC_ERROR_CANCELLED);
     }
     GRPC_CLOSURE_SCHED(op->on_complete, GRPC_ERROR_CANCELLED);
     return;

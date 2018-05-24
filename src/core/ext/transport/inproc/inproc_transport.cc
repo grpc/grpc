@@ -496,6 +496,11 @@ static void fail_helper_locked(inproc_stream* s, grpc_error* error) {
     s->send_trailing_md_op = nullptr;
   }
   if (s->recv_trailing_md_op) {
+    INPROC_LOG(GPR_INFO, "fail_helper %p scheduling trailing-metadata-ready %p",
+               s, error);
+    GRPC_CLOSURE_SCHED(s->recv_initial_md_op->payload->recv_trailing_metadata
+                           .recv_trailing_metadata_ready,
+                       GRPC_ERROR_REF(error));
     INPROC_LOG(GPR_INFO, "fail_helper %p scheduling trailing-md-on-complete %p",
                s, error);
     complete_if_batch_end_locked(
@@ -711,6 +716,12 @@ static void op_state_machine(void* arg, grpc_error* error) {
   }
   if (s->recv_trailing_md_op && s->t->is_client && other &&
       other->send_message_op) {
+    INPROC_LOG(GPR_INFO,
+               "op_state_machine %p scheduling trailing-metadata-ready %p", s,
+               GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(s->recv_initial_md_op->payload->recv_trailing_metadata
+                           .recv_trailing_metadata_ready,
+                       GRPC_ERROR_NONE);
     maybe_schedule_op_closure_locked(other, GRPC_ERROR_NONE);
   }
   if (s->to_read_trailing_md_filled) {
@@ -766,6 +777,10 @@ static void op_state_machine(void* arg, grpc_error* error) {
         INPROC_LOG(GPR_INFO,
                    "op_state_machine %p scheduling trailing-md-on-complete %p",
                    s, new_err);
+        GRPC_CLOSURE_SCHED(
+            s->recv_trailing_md_op->payload->recv_trailing_metadata
+                .recv_trailing_metadata_ready,
+            GRPC_ERROR_REF(new_err));
         GRPC_CLOSURE_SCHED(s->recv_trailing_md_op->on_complete,
                            GRPC_ERROR_REF(new_err));
         s->recv_trailing_md_op = nullptr;
@@ -1025,6 +1040,15 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
             error);
         GRPC_CLOSURE_SCHED(op->payload->recv_message.recv_message_ready,
                            GRPC_ERROR_REF(error));
+      }
+      if (op->recv_trailing_metadata) {
+        INPROC_LOG(
+            GPR_INFO,
+            "perform_stream_op error %p scheduling trailing-metadata-ready %p",
+            s, error);
+        GRPC_CLOSURE_SCHED(
+            op->payload->recv_trailing_metadata.recv_trailing_metadata_ready,
+            GRPC_ERROR_REF(error));
       }
     }
     INPROC_LOG(GPR_INFO, "perform_stream_op %p scheduling on_complete %p", s,
