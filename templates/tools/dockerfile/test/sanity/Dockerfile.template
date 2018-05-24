@@ -33,13 +33,6 @@
         shellcheck
   RUN pip install simplejson mako
   
-  #======================================
-  # More sanity test dependencies (bazel)
-  RUN echo "deb http://http.debian.net/debian jessie-backports main" >> /etc/apt/sources.list
-  RUN apt-get update
-  RUN apt-get install -y -t jessie-backports openjdk-8-jdk
-  
-  <%include file="../../bazel.include"/>
   <%include file="../../clang5.include"/>
   <%include file="../../run_tests_addons.include"/>
   
