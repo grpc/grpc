@@ -191,6 +191,9 @@ struct grpc_udp_server {
   size_t pollset_count;
   /* opaque object to pass to callbacks */
   void* user_data;
+
+  /* latch has_so_reuseport during server creation */
+  bool so_reuseport;
 };
 
 static grpc_socket_factory* get_socket_factory(const grpc_channel_args* args) {
@@ -214,6 +217,7 @@ grpc_udp_server* grpc_udp_server_create(const grpc_channel_args* args) {
   s->active_ports = 0;
   s->destroyed_ports = 0;
   s->shutdown = 0;
+  s->so_reuseport = grpc_is_socket_reuse_port_supported();
   return s;
 }
 
@@ -353,7 +357,7 @@ static int bind_socket(grpc_socket_factory* socket_factory, int sockfd,
 /* Prepare a recently-created socket for listening. */
 static int prepare_socket(grpc_socket_factory* socket_factory, int fd,
                           const grpc_resolved_address* addr, int rcv_buf_size,
-                          int snd_buf_size) {
+                          int snd_buf_size, bool so_reuseport) {
   grpc_resolved_address sockname_temp;
   grpc_sockaddr* addr_ptr =
       reinterpret_cast<grpc_sockaddr*>(const_cast<char*>(addr->addr));
@@ -381,21 +385,6 @@ static int prepare_socket(grpc_socket_factory* socket_factory, int fd,
     }
   }
 
-  if (bind_socket(socket_factory, fd, addr) < 0) {
-    char* addr_str;
-    grpc_sockaddr_to_string(&addr_str, addr, 0);
-    gpr_log(GPR_ERROR, "bind addr=%s: %s", addr_str, strerror(errno));
-    gpr_free(addr_str);
-    goto error;
-  }
-
-  sockname_temp.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
-
-  if (getsockname(fd, reinterpret_cast<grpc_sockaddr*>(sockname_temp.addr),
-                  &sockname_temp.len) < 0) {
-    goto error;
-  }
-
   if (grpc_set_socket_sndbuf(fd, snd_buf_size) != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "Failed to set send buffer size to %d bytes",
             snd_buf_size);
@@ -415,6 +404,30 @@ static int prepare_socket(grpc_socket_factory* socket_factory, int fd,
       gpr_log(GPR_INFO, "Failed to set socket overflow support");
     }
   }
+
+  if (so_reuseport && !grpc_is_unix_socket(addr) &&
+      grpc_set_socket_reuse_port(fd, 1) != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR, "Failed to set SO_REUSEPORT for fd %d", fd);
+    goto error;
+  }
+
+  if (bind_socket(socket_factory, fd, addr) < 0) {
+    char* addr_str;
+    grpc_sockaddr_to_string(&addr_str, addr, 0);
+    gpr_log(GPR_ERROR, "bind addr=%s: %s", addr_str, strerror(errno));
+    gpr_free(addr_str);
+    goto error;
+  }
+
+  sockname_temp.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
+
+  if (getsockname(fd, reinterpret_cast<grpc_sockaddr*>(sockname_temp.addr),
+                  &sockname_temp.len) < 0) {
+    gpr_log(GPR_ERROR, "Unable to get the address socket %d is bound to: %s",
+            fd, strerror(errno));
+    goto error;
+  }
+
   return grpc_sockaddr_get_port(&sockname_temp);
 
 error:
@@ -541,8 +554,8 @@ static int add_socket_to_server(grpc_udp_server* s, int fd,
                                 int rcv_buf_size, int snd_buf_size) {
   gpr_log(GPR_DEBUG, "add socket %d to server", fd);
 
-  int port =
-      prepare_socket(s->socket_factory, fd, addr, rcv_buf_size, snd_buf_size);
+  int port = prepare_socket(s->socket_factory, fd, addr, rcv_buf_size,
+                            snd_buf_size, s->so_reuseport);
   if (port >= 0) {
     gpr_mu_lock(&s->mu);
     s->listeners.emplace_back(s, fd, addr);
@@ -557,7 +570,18 @@ static int add_socket_to_server(grpc_udp_server* s, int fd,
 int grpc_udp_server_add_port(grpc_udp_server* s,
                              const grpc_resolved_address* addr,
                              int rcv_buf_size, int snd_buf_size,
-                             GrpcUdpHandlerFactory* handler_factory) {
+                             GrpcUdpHandlerFactory* handler_factory,
+                             size_t num_listeners) {
+  if (num_listeners > 1 && !s->so_reuseport) {
+    gpr_log(GPR_ERROR,
+            "Try to have multiple listeners on same port, but SO_REUSEPORT is "
+            "not supported. Only create 1 listener.");
+  }
+  char* addr_str;
+  grpc_sockaddr_to_string(&addr_str, addr, 1);
+  gpr_log(GPR_DEBUG, "add address: %s to server", addr_str);
+  gpr_free(addr_str);
+
   int allocated_port1 = -1;
   int allocated_port2 = -1;
   int fd;
@@ -568,11 +592,12 @@ int grpc_udp_server_add_port(grpc_udp_server* s,
   grpc_resolved_address addr4_copy;
   grpc_resolved_address* allocated_addr = nullptr;
   grpc_resolved_address sockname_temp;
-  int port;
+  int port = 0;
 
   /* Check if this is a wildcard port, and if so, try to keep the port the same
      as some previously created listener. */
   if (grpc_sockaddr_get_port(addr) == 0) {
+    /* Loop through existing listeners to find the port in use. */
     for (size_t i = 0; i < s->listeners.size(); ++i) {
       sockname_temp.len =
           static_cast<socklen_t>(sizeof(struct sockaddr_storage));
@@ -581,6 +606,7 @@ int grpc_udp_server_add_port(grpc_udp_server* s,
                            &sockname_temp.len)) {
         port = grpc_sockaddr_get_port(&sockname_temp);
         if (port > 0) {
+          /* Found such a port, update |addr| to reflects this port. */
           allocated_addr = static_cast<grpc_resolved_address*>(
               gpr_malloc(sizeof(grpc_resolved_address)));
           memcpy(allocated_addr, addr, sizeof(grpc_resolved_address));
@@ -597,44 +623,73 @@ int grpc_udp_server_add_port(grpc_udp_server* s,
   }
 
   s->handler_factory = handler_factory;
-  /* Treat :: or 0.0.0.0 as a family-agnostic wildcard. */
-  if (grpc_sockaddr_is_wildcard(addr, &port)) {
-    grpc_sockaddr_make_wildcards(port, &wild4, &wild6);
+  for (size_t i = 0; i < num_listeners; ++i) {
+    /* Treat :: or 0.0.0.0 as a family-agnostic wildcard. */
+    if (grpc_sockaddr_is_wildcard(addr, &port)) {
+      grpc_sockaddr_make_wildcards(port, &wild4, &wild6);
 
-    /* Try listening on IPv6 first. */
-    addr = &wild6;
+      /* Try listening on IPv6 first. */
+      addr = &wild6;
+      // TODO(rjshade): Test and propagate the returned grpc_error*:
+      GRPC_ERROR_UNREF(grpc_create_dualstack_socket_using_factory(
+          s->socket_factory, addr, SOCK_DGRAM, IPPROTO_UDP, &dsmode, &fd));
+      allocated_port1 =
+          add_socket_to_server(s, fd, addr, rcv_buf_size, snd_buf_size);
+      if (fd >= 0 && dsmode == GRPC_DSMODE_DUALSTACK) {
+        if (port == 0) {
+          /* This is the first time to bind to |addr|. If its port is still
+           * wildcard port, update |addr| with the ephermeral port returned by
+           * kernel. Thus |addr| can have a specific port in following
+           * iterations. */
+          grpc_sockaddr_set_port(addr, allocated_port1);
+          port = allocated_port1;
+        } else if (allocated_port1 >= 0) {
+          /* The following sucessfully created socket should have same port as
+           * the first one. */
+          GPR_ASSERT(port == allocated_port1);
+        }
+        /* A dualstack socket is created, no need to create corresponding IPV4
+         * socket. */
+        continue;
+      }
+
+      /* If we didn't get a dualstack socket, also listen on 0.0.0.0. */
+      if (port == 0 && allocated_port1 > 0) {
+        /* |port| hasn't been assigned to an emphemeral port yet, |wild4| must
+         * have a wildcard port. Update it with the emphemeral port created
+         * during binding.*/
+        grpc_sockaddr_set_port(&wild4, allocated_port1);
+        port = allocated_port1;
+      }
+      /* |wild4| should have been updated with an emphemeral port by now. Use
+       * this IPV4 address to create a IPV4 socket. */
+      addr = &wild4;
+    }
+
     // TODO(rjshade): Test and propagate the returned grpc_error*:
     GRPC_ERROR_UNREF(grpc_create_dualstack_socket_using_factory(
         s->socket_factory, addr, SOCK_DGRAM, IPPROTO_UDP, &dsmode, &fd));
-    allocated_port1 =
+    if (fd < 0) {
+      gpr_log(GPR_ERROR, "Unable to create socket: %s", strerror(errno));
+    }
+    if (dsmode == GRPC_DSMODE_IPV4 &&
+        grpc_sockaddr_is_v4mapped(addr, &addr4_copy)) {
+      addr = &addr4_copy;
+    }
+    allocated_port2 =
         add_socket_to_server(s, fd, addr, rcv_buf_size, snd_buf_size);
-    if (fd >= 0 && dsmode == GRPC_DSMODE_DUALSTACK) {
-      goto done;
+    if (port == 0) {
+      /* Update |addr| with the ephermeral port returned by kernel. So |addr|
+       * can have a specific port in following iterations. */
+      grpc_sockaddr_set_port(addr, allocated_port2);
+      port = allocated_port2;
+    } else if (allocated_port2 >= 0) {
+      GPR_ASSERT(port == allocated_port2);
     }
-
-    /* If we didn't get a dualstack socket, also listen on 0.0.0.0. */
-    if (port == 0 && allocated_port1 > 0) {
-      grpc_sockaddr_set_port(&wild4, allocated_port1);
-    }
-    addr = &wild4;
   }
 
-  // TODO(rjshade): Test and propagate the returned grpc_error*:
-  GRPC_ERROR_UNREF(grpc_create_dualstack_socket_using_factory(
-      s->socket_factory, addr, SOCK_DGRAM, IPPROTO_UDP, &dsmode, &fd));
-  if (fd < 0) {
-    gpr_log(GPR_ERROR, "Unable to create socket: %s", strerror(errno));
-  }
-  if (dsmode == GRPC_DSMODE_IPV4 &&
-      grpc_sockaddr_is_v4mapped(addr, &addr4_copy)) {
-    addr = &addr4_copy;
-  }
-  allocated_port2 =
-      add_socket_to_server(s, fd, addr, rcv_buf_size, snd_buf_size);
-
-done:
   gpr_free(allocated_addr);
-  return allocated_port1 >= 0 ? allocated_port1 : allocated_port2;
+  return port;
 }
 
 int grpc_udp_server_get_fd(grpc_udp_server* s, unsigned port_index) {

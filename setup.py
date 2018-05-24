@@ -239,9 +239,6 @@ PACKAGE_DIRECTORIES = {
 
 INSTALL_REQUIRES = (
     'six>=1.5.2',
-    # TODO(atash): eventually split the grpcio package into a metapackage
-    # depending on protobuf and the runtime component (independent of protobuf)
-    'protobuf>=3.5.0.post1',
 )
 
 if not PY3:

@@ -13,8 +13,8 @@ settings:
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
   core_version: 6.0.0-dev
-  g_stands_for: glorious
-  version: 1.12.0-dev
+  g_stands_for: gloriosa
+  version: 1.13.0-dev
 filegroups:
 - name: alts_proto
   headers:
@@ -70,6 +70,8 @@ filegroups:
   - tsi_interface
   - tsi
 - name: alts_util
+  public_headers:
+  - include/grpc/grpc_security.h
   headers:
   - src/core/lib/security/credentials/alts/check_gcp_environment.h
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h
@@ -121,7 +123,6 @@ filegroups:
   - src/core/lib/gpr/env_linux.cc
   - src/core/lib/gpr/env_posix.cc
   - src/core/lib/gpr/env_windows.cc
-  - src/core/lib/gpr/fork.cc
   - src/core/lib/gpr/host_port.cc
   - src/core/lib/gpr/log.cc
   - src/core/lib/gpr/log_android.cc
@@ -146,6 +147,7 @@ filegroups:
   - src/core/lib/gpr/tmpfile_posix.cc
   - src/core/lib/gpr/tmpfile_windows.cc
   - src/core/lib/gpr/wrap_memcpy.cc
+  - src/core/lib/gprpp/fork.cc
   - src/core/lib/gprpp/thd_posix.cc
   - src/core/lib/gprpp/thd_windows.cc
   - src/core/lib/profiling/basic_timers.cc
@@ -174,7 +176,6 @@ filegroups:
   headers:
   - src/core/lib/gpr/arena.h
   - src/core/lib/gpr/env.h
-  - src/core/lib/gpr/fork.h
   - src/core/lib/gpr/host_port.h
   - src/core/lib/gpr/mpscq.h
   - src/core/lib/gpr/murmur_hash.h
@@ -192,6 +193,7 @@ filegroups:
   - src/core/lib/gprpp/atomic.h
   - src/core/lib/gprpp/atomic_with_atm.h
   - src/core/lib/gprpp/atomic_with_std.h
+  - src/core/lib/gprpp/fork.h
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/memory.h
   - src/core/lib/gprpp/thd.h
@@ -233,7 +235,7 @@ filegroups:
   - src/core/lib/channel/channel_stack.cc
   - src/core/lib/channel/channel_stack_builder.cc
   - src/core/lib/channel/channel_trace.cc
-  - src/core/lib/channel/channel_trace_registry.cc
+  - src/core/lib/channel/channelz_registry.cc
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/handshaker.cc
   - src/core/lib/channel/handshaker_factory.cc
@@ -403,7 +405,7 @@ filegroups:
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
   - src/core/lib/channel/channel_trace.h
-  - src/core/lib/channel/channel_trace_registry.h
+  - src/core/lib/channel/channelz_registry.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
   - src/core/lib/channel/handshaker.h
@@ -626,6 +628,7 @@ filegroups:
 - name: grpc_lb_policy_grpclb
   headers:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
@@ -646,6 +649,7 @@ filegroups:
 - name: grpc_lb_policy_grpclb_secure
   headers:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
@@ -683,8 +687,6 @@ filegroups:
 - name: grpc_lb_subchannel_list
   headers:
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
-  src:
-  - src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc
   uses:
   - grpc_base
   - grpc_client_channel
@@ -744,6 +746,7 @@ filegroups:
   public_headers:
   - include/grpc/grpc_security.h
   headers:
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h
   - src/core/lib/security/context/security_context.h
   - src/core/lib/security/credentials/alts/alts_credentials.h
   - src/core/lib/security/credentials/composite/composite_credentials.h
@@ -824,6 +827,7 @@ filegroups:
   - test/core/end2end/fixtures/proxy.h
   - test/core/iomgr/endpoint_tests.h
   - test/core/util/debugger_macros.h
+  - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
   - test/core/util/histogram.h
   - test/core/util/memory_counters.h
@@ -843,6 +847,7 @@ filegroups:
   - test/core/end2end/fixtures/proxy.cc
   - test/core/iomgr/endpoint_tests.cc
   - test/core/util/debugger_macros.cc
+  - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
   - test/core/util/histogram.cc
   - test/core/util/memory_counters.cc
@@ -1075,11 +1080,9 @@ filegroups:
 - name: tsi_interface
   headers:
   - src/core/tsi/transport_security.h
-  - src/core/tsi/transport_security_adapter.h
   - src/core/tsi/transport_security_interface.h
   src:
   - src/core/tsi/transport_security.cc
-  - src/core/tsi/transport_security_adapter.cc
   deps:
   - gpr
   secure: true
@@ -1933,7 +1936,9 @@ libs:
   - src/proto/grpc/testing/payloads.proto
   - src/proto/grpc/testing/stats.proto
   - src/proto/grpc/testing/control.proto
-  - src/proto/grpc/testing/services.proto
+  - src/proto/grpc/testing/benchmark_service.proto
+  - src/proto/grpc/testing/report_qps_scenario_service.proto
+  - src/proto/grpc/testing/worker_service.proto
   - test/cpp/qps/benchmark_config.cc
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_sync.cc
@@ -2002,6 +2007,19 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+- name: alts_credentials_fuzzer
+  build: fuzzer
+  language: c
+  src:
+  - test/core/security/alts_credentials_fuzzer.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  corpus_dirs:
+  - test/core/security/corpus/alts_credentials_corpus
+  maxlen: 2048
 - name: api_fuzzer
   build: fuzzer
   language: c
@@ -2385,6 +2403,18 @@ targets:
   - mac
   - linux
   - posix
+- name: fork_test
+  build: test
+  language: c
+  src:
+  - test/core/gprpp/fork_test.cc
+  deps:
+  - gpr_test_util
+  - gpr
+  platforms:
+  - mac
+  - linux
+  uses_polling: false
 - name: goaway_server_test
   cpu_cost: 0.1
   build: test
@@ -3833,6 +3863,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   platforms:
@@ -3854,6 +3885,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   platforms:
@@ -3875,6 +3907,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   platforms:
@@ -3896,6 +3929,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   platforms:
@@ -3916,6 +3950,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   platforms:
@@ -3936,6 +3971,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   platforms:
@@ -3956,6 +3992,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   platforms:
@@ -3976,6 +4013,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   platforms:
@@ -3999,6 +4037,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   excluded_poll_engines:
@@ -4025,6 +4064,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   excluded_poll_engines:
@@ -4078,6 +4118,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   excluded_poll_engines:
@@ -4102,6 +4143,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   platforms:
@@ -4123,6 +4165,7 @@ targets:
   - grpc_unsecure
   - gpr_test_util
   - gpr
+  - grpc++_test_config
   benchmark: true
   defaults: benchmark
   platforms:
@@ -4178,6 +4221,21 @@ targets:
   - gpr
   filegroups:
   - grpc++_channelz_proto
+  uses:
+  - grpc++_test
+- name: channelz_registry_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/channel/channelz_registry_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
   uses:
   - grpc++_test
   uses_polling: false
@@ -4289,7 +4347,9 @@ targets:
   - src/proto/grpc/testing/control.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/payloads.proto
-  - src/proto/grpc/testing/services.proto
+  - src/proto/grpc/testing/benchmark_service.proto
+  - src/proto/grpc/testing/report_qps_scenario_service.proto
+  - src/proto/grpc/testing/worker_service.proto
   - src/proto/grpc/testing/stats.proto
   - test/cpp/codegen/codegen_test_full.cc
   deps:
@@ -4308,7 +4368,9 @@ targets:
   - src/proto/grpc/testing/control.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/payloads.proto
-  - src/proto/grpc/testing/services.proto
+  - src/proto/grpc/testing/benchmark_service.proto
+  - src/proto/grpc/testing/report_qps_scenario_service.proto
+  - src/proto/grpc/testing/worker_service.proto
   - src/proto/grpc/testing/stats.proto
   - test/cpp/codegen/codegen_test_minimal.cc
   deps:
@@ -5117,6 +5179,23 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - gpr
+- name: server_builder_with_socket_mutator_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/echo.proto
+  - test/cpp/server/server_builder_with_socket_mutator_test.cc
+  deps:
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - gpr_test_util
+  - grpc++_unsecure
+  - grpc_unsecure
+  - gpr
+  platforms:
+  - posix
 - name: server_context_test_spouse_test
   gtest: true
   build: test
@@ -5421,7 +5500,7 @@ vspackages:
 configs:
   asan:
     CC: clang
-    CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=address -fno-omit-frame-pointer
+    CPPFLAGS: -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer
       -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     LD: clang++
@@ -5433,7 +5512,7 @@ configs:
       LSAN_OPTIONS: suppressions=tools/lsan_suppressions.txt:report_objects=1
   asan-noleaks:
     CC: clang
-    CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=address -fno-omit-frame-pointer
+    CPPFLAGS: -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer
       -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     LD: clang++
@@ -5444,8 +5523,9 @@ configs:
       ASAN_OPTIONS: detect_leaks=0:color=always
   asan-trace-cmp:
     CC: clang
-    CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize-coverage=trace-cmp -fsanitize=address
-      -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+    CPPFLAGS: -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize-coverage=trace-cmp
+      -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
+      -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     LD: clang++
     LDFLAGS: -fsanitize=address
@@ -5490,7 +5570,7 @@ configs:
     valgrind: --tool=memcheck --leak-check=full
   msan:
     CC: clang
-    CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=memory -fsanitize-memory-track-origins
+    CPPFLAGS: -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=memory -fsanitize-memory-track-origins
       -fsanitize-memory-use-after-dtor -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0
       -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
@@ -5530,7 +5610,7 @@ configs:
       TSAN_OPTIONS: suppressions=tools/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
   ubsan:
     CC: clang
-    CPPFLAGS: -O0 -fsanitize-coverage=edge -fsanitize=undefined -fno-omit-frame-pointer
+    CPPFLAGS: -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=undefined -fno-omit-frame-pointer
       -Wno-unused-command-line-argument -Wvarargs
     CXX: clang++
     DEFINES: NDEBUG GRPC_UBSAN

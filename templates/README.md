@@ -1,6 +1,6 @@
 # Regenerating project files
 
-Prerequisites: `python`, `pip install mako`
+Prerequisites: `python`, `pip install mako`, `go`
 
 ```
 # Regenerate the projects files using templates

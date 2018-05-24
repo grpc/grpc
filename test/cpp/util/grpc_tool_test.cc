@@ -22,6 +22,7 @@
 
 #include <gflags/gflags.h>
 #include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -738,6 +739,8 @@ TEST_F(GrpcToolTest, CallCommandWithBadMetadata) {
 
   FLAGS_metadata = "";
   FLAGS_protofiles = "";
+
+  gpr_free(test_srcdir);
 }
 
 }  // namespace testing

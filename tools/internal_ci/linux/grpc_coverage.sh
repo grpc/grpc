@@ -26,4 +26,16 @@ python tools/run_tests/run_tests.py \
   -l all                            \
   -c gcov                           \
   -x sponge_log.xml                 \
-  -j 16
+  -j 16 || FAILED="true"
+  
+# HTML reports can't be easily displayed in GCS, so create a zip archive
+# and put it under reports directory to get it uploaded as an artifact.
+zip -q -r coverage_report.zip reports || true
+rm -rf reports || true
+mkdir reports  || true
+mv coverage_report.zip reports || true
+
+if [ "$FAILED" != "" ]
+then
+  exit 1
+fi

@@ -23,7 +23,6 @@
 @class GRPCCompletionQueue;
 struct grpc_channel_credentials;
 
-
 /**
  * Each separate instance of this class represents at least one TCP connection to the provided host.
  */
@@ -52,8 +51,9 @@ struct grpc_channel_credentials;
  * @c channelArgs. Only in tests should @c GRPC_SSL_TARGET_NAME_OVERRIDE_ARG channel arg be set.
  */
 + (nonnull GRPCChannel *)secureChannelWithHost:(nonnull NSString *)host
-    credentials:(nonnull struct grpc_channel_credentials *)credentials
-    channelArgs:(nullable NSDictionary *)channelArgs;
+                                   credentials:
+                                       (nonnull struct grpc_channel_credentials *)credentials
+                                   channelArgs:(nullable NSDictionary *)channelArgs;
 
 /**
  * Creates an insecure channel to the specified @c host using the specified @c channelArgs.

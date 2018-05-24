@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_sh_binary", "grpc_cc_test", "grpc_cc_binary")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_binary")
 
 def generate_resolver_component_tests():
   for unsecure_build_config_suffix in ['_unsecure', '']:

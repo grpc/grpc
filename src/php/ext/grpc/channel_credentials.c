@@ -17,32 +17,19 @@
  */
 
 #include "channel_credentials.h"
-#include "call_credentials.h"
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#include <php.h>
-#include <php_ini.h>
-#include <ext/standard/info.h>
 #include <ext/standard/sha1.h>
 #include <ext/spl/spl_exceptions.h>
-#include "channel.h"
-#include "php_grpc.h"
-
 #include <zend_exceptions.h>
-#include <zend_hash.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
+
+#include "call_credentials.h"
+#include "channel.h"
 
 zend_class_entry *grpc_ce_channel_credentials;
-#if PHP_MAJOR_VERSION >= 7
-static zend_object_handlers channel_credentials_ce_handlers;
-#endif
+PHP_GRPC_DECLARE_OBJECT_HANDLER(channel_credentials_ce_handlers)
 static char *default_pem_root_certs = NULL;
 
 static grpc_ssl_roots_override_result get_ssl_roots_override(
@@ -85,7 +72,8 @@ zval *grpc_php_wrap_channel_credentials(grpc_channel_credentials *wrapped,
   PHP_GRPC_MAKE_STD_ZVAL(credentials_object);
   object_init_ex(credentials_object, grpc_ce_channel_credentials);
   wrapped_grpc_channel_credentials *credentials =
-    Z_WRAPPED_GRPC_CHANNEL_CREDS_P(credentials_object);
+    PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_channel_credentials,
+                                credentials_object);
   credentials->wrapped = wrapped;
   credentials->hashstr = hashstr;
   credentials->has_call_creds = has_call_creds;
@@ -198,20 +186,19 @@ PHP_METHOD(ChannelCredentials, createComposite) {
     return;
   }
   wrapped_grpc_channel_credentials *cred1 =
-    Z_WRAPPED_GRPC_CHANNEL_CREDS_P(cred1_obj);
+    PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_channel_credentials, cred1_obj);
   wrapped_grpc_call_credentials *cred2 =
-    Z_WRAPPED_GRPC_CALL_CREDS_P(cred2_obj);
+    PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_call_credentials, cred2_obj);
   grpc_channel_credentials *creds =
-      grpc_composite_channel_credentials_create(cred1->wrapped, cred2->wrapped,
-                                                NULL);
+    grpc_composite_channel_credentials_create(cred1->wrapped, cred2->wrapped,
+                                              NULL);
   // wrapped_grpc_channel_credentials object should keeps it's own
   // allocation. Otherwise it conflicts free hashstr with call.c.
   php_grpc_int cred1_len = strlen(cred1->hashstr);
   char *cred1_hashstr = malloc(cred1_len+1);
   strcpy(cred1_hashstr, cred1->hashstr);
   zval *creds_object =
-      grpc_php_wrap_channel_credentials(creds, cred1_hashstr, true
-                                        TSRMLS_CC);
+    grpc_php_wrap_channel_credentials(creds, cred1_hashstr, true TSRMLS_CC);
   RETURN_DESTROY_ZVAL(creds_object);
 }
 

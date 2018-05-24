@@ -60,8 +60,7 @@ Status GenericSerialize(const grpc::protobuf::Message& msg, ByteBuffer* bb,
 
     return g_core_codegen_interface->ok();
   }
-  ProtoBufferWriter writer(bb, kGrpcProtoBufferWriterMaxBufferLength,
-                           byte_size);
+  ProtoBufferWriter writer(bb, kProtoBufferWriterMaxBufferLength, byte_size);
   return msg.SerializeToZeroCopyStream(&writer)
              ? g_core_codegen_interface->ok()
              : Status(StatusCode::INTERNAL, "Failed to serialize message");
@@ -108,11 +107,11 @@ class SerializationTraits<T, typename std::enable_if<std::is_base_of<
  public:
   static Status Serialize(const grpc::protobuf::Message& msg, ByteBuffer* bb,
                           bool* own_buffer) {
-    return GenericSerialize<GrpcProtoBufferWriter, T>(msg, bb, own_buffer);
+    return GenericSerialize<ProtoBufferWriter, T>(msg, bb, own_buffer);
   }
 
   static Status Deserialize(ByteBuffer* buffer, grpc::protobuf::Message* msg) {
-    return GenericDeserialize<GrpcProtoBufferReader, T>(buffer, msg);
+    return GenericDeserialize<ProtoBufferReader, T>(buffer, msg);
   }
 };
 #endif

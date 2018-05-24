@@ -55,39 +55,18 @@
 #include "src/core/lib/iomgr/tcp_server_utils_posix.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 
-static gpr_once check_init = GPR_ONCE_INIT;
-static bool has_so_reuseport = false;
-
-static void init(void) {
-#ifndef GPR_MANYLINUX1
-  int s = socket(AF_INET, SOCK_STREAM, 0);
-  if (s < 0) {
-    /* This might be an ipv6-only environment in which case 'socket(AF_INET,..)'
-       call would fail. Try creating IPv6 socket in that case */
-    s = socket(AF_INET6, SOCK_STREAM, 0);
-  }
-  if (s >= 0) {
-    has_so_reuseport = GRPC_LOG_IF_ERROR("check for SO_REUSEPORT",
-                                         grpc_set_socket_reuse_port(s, 1));
-    close(s);
-  }
-#endif
-}
-
 static grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
                                      const grpc_channel_args* args,
                                      grpc_tcp_server** server) {
-  gpr_once_init(&check_init, init);
-
   grpc_tcp_server* s =
       static_cast<grpc_tcp_server*>(gpr_zalloc(sizeof(grpc_tcp_server)));
-  s->so_reuseport = has_so_reuseport;
+  s->so_reuseport = grpc_is_socket_reuse_port_supported();
   s->expand_wildcard_addrs = false;
   for (size_t i = 0; i < (args == nullptr ? 0 : args->num_args); i++) {
     if (0 == strcmp(GRPC_ARG_ALLOW_REUSEPORT, args->args[i].key)) {
       if (args->args[i].type == GRPC_ARG_INTEGER) {
-        s->so_reuseport =
-            has_so_reuseport && (args->args[i].value.integer != 0);
+        s->so_reuseport = grpc_is_socket_reuse_port_supported() &&
+                          (args->args[i].value.integer != 0);
       } else {
         gpr_free(s);
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(GRPC_ARG_ALLOW_REUSEPORT
@@ -208,11 +187,6 @@ static void on_read(void* arg, grpc_error* err) {
     goto error;
   }
 
-  read_notifier_pollset =
-      sp->server->pollsets[static_cast<size_t>(gpr_atm_no_barrier_fetch_add(
-                               &sp->server->next_pollset_to_assign, 1)) %
-                           sp->server->pollset_count];
-
   /* loop until accept4 returns EAGAIN, and then re-arm notification */
   for (;;) {
     grpc_resolved_address addr;
@@ -249,10 +223,15 @@ static void on_read(void* arg, grpc_error* err) {
     gpr_asprintf(&name, "tcp-server-connection:%s", addr_str);
 
     if (grpc_tcp_trace.enabled()) {
-      gpr_log(GPR_DEBUG, "SERVER_CONNECT: incoming connection: %s", addr_str);
+      gpr_log(GPR_INFO, "SERVER_CONNECT: incoming connection: %s", addr_str);
     }
 
     grpc_fd* fdobj = grpc_fd_create(fd, name);
+
+    read_notifier_pollset =
+        sp->server->pollsets[static_cast<size_t>(gpr_atm_no_barrier_fetch_add(
+                                 &sp->server->next_pollset_to_assign, 1)) %
+                             sp->server->pollset_count];
 
     grpc_pollset_add_fd(read_notifier_pollset, fdobj);
 
@@ -367,7 +346,8 @@ static grpc_error* clone_port(grpc_tcp_listener* listener, unsigned count) {
     err = grpc_create_dualstack_socket(&listener->addr, SOCK_STREAM, 0, &dsmode,
                                        &fd);
     if (err != GRPC_ERROR_NONE) return err;
-    err = grpc_tcp_server_prepare_socket(fd, &listener->addr, true, &port);
+    err = grpc_tcp_server_prepare_socket(listener->server, fd, &listener->addr,
+                                         true, &port);
     if (err != GRPC_ERROR_NONE) return err;
     listener->server->nports++;
     grpc_sockaddr_to_string(&addr_str, &listener->addr, 1);

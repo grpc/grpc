@@ -27,17 +27,16 @@ namespace grpc {
 
 namespace internal {
 
-// Provide access to GrpcProtoBufferWriter internals.
-class GrpcProtoBufferWriterPeer {
+// Provide access to ProtoBufferWriter internals.
+class ProtoBufferWriterPeer {
  public:
-  explicit GrpcProtoBufferWriterPeer(GrpcProtoBufferWriter* writer)
-      : writer_(writer) {}
+  explicit ProtoBufferWriterPeer(ProtoBufferWriter* writer) : writer_(writer) {}
   bool have_backup() const { return writer_->have_backup_; }
   const grpc_slice& backup_slice() const { return writer_->backup_slice_; }
   const grpc_slice& slice() const { return writer_->slice_; }
 
  private:
-  GrpcProtoBufferWriter* writer_;
+  ProtoBufferWriter* writer_;
 };
 
 // Provide access to ByteBuffer internals.
@@ -53,14 +52,14 @@ class GrpcByteBufferPeer {
 class ProtoUtilsTest : public ::testing::Test {};
 
 // Regression test for a memory corruption bug where a series of
-// GrpcProtoBufferWriter Next()/Backup() invocations could result in a dangling
+// ProtoBufferWriter Next()/Backup() invocations could result in a dangling
 // pointer returned by Next() due to the interaction between grpc_slice inlining
 // and GRPC_SLICE_START_PTR.
 TEST_F(ProtoUtilsTest, TinyBackupThenNext) {
   ByteBuffer bp;
   const int block_size = 1024;
-  GrpcProtoBufferWriter writer(&bp, block_size, 8192);
-  GrpcProtoBufferWriterPeer peer(&writer);
+  ProtoBufferWriter writer(&bp, block_size, 8192);
+  ProtoBufferWriterPeer peer(&writer);
 
   void* data;
   int size;
@@ -81,7 +80,7 @@ namespace {
 // Set backup_size to 0 to indicate no backup is needed.
 void BufferWriterTest(int block_size, int total_size, int backup_size) {
   ByteBuffer bb;
-  GrpcProtoBufferWriter writer(&bb, block_size, total_size);
+  ProtoBufferWriter writer(&bb, block_size, total_size);
 
   int written_size = 0;
   void* data;
@@ -162,7 +161,7 @@ TEST(WriterTest, LargeBlockLargeBackup) { BufferWriterTest(4096, 8192, 4095); }
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  // Ensure the GrpcProtoBufferWriter internals are initialized.
+  // Ensure the ProtoBufferWriter internals are initialized.
   grpc::internal::GrpcLibraryInitializer init;
   init.summon();
   grpc::GrpcLibraryCodegen lib;

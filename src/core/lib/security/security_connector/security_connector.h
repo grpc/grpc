@@ -239,10 +239,11 @@ const tsi_peer_property* tsi_peer_get_property_by_name(const tsi_peer* peer,
                                                        const char* name);
 
 /* Exposed for testing only. */
-grpc_auth_context* tsi_ssl_peer_to_auth_context(const tsi_peer* peer);
-tsi_peer tsi_shallow_peer_from_ssl_auth_context(
+grpc_auth_context* grpc_ssl_peer_to_auth_context(const tsi_peer* peer);
+tsi_peer grpc_shallow_peer_from_ssl_auth_context(
     const grpc_auth_context* auth_context);
-void tsi_shallow_peer_destruct(tsi_peer* peer);
+void grpc_shallow_peer_destruct(tsi_peer* peer);
+int grpc_ssl_host_matches_name(const tsi_peer* peer, const char* peer_name);
 
 /* --- Default SSL Root Store. --- */
 namespace grpc_core {

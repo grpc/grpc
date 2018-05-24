@@ -780,14 +780,8 @@ def _start(state):
         state.stage = _ServerStage.STARTED
         _request_call(state)
 
-        def cleanup_server(timeout):
-            if timeout is None:
-                _stop(state, _UNEXPECTED_EXIT_SERVER_GRACE).wait()
-            else:
-                _stop(state, timeout).wait()
-
-        thread = _common.CleanupThread(
-            cleanup_server, target=_serve, args=(state,))
+        thread = threading.Thread(target=_serve, args=(state,))
+        thread.daemon = True
         thread.start()
 
 

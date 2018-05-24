@@ -360,7 +360,7 @@ static void remove_from_storage(struct stream_obj* s,
                    s->storage.num_pending_ops);
         gpr_free(oas);
         break;
-      } else if (curr->next == nullptr) {
+      } else if (GPR_UNLIKELY(curr->next == nullptr)) {
         CRONET_LOG(GPR_ERROR, "Reached end of LL and did not find op to free");
       }
     }
@@ -736,7 +736,7 @@ static void convert_metadata_to_cronet_headers(
     if (grpc_is_binary_header(GRPC_MDKEY(mdelem))) {
       grpc_slice wire_value = grpc_chttp2_base64_encode(GRPC_MDVALUE(mdelem));
       value = grpc_slice_to_c_string(wire_value);
-      grpc_slice_unref(wire_value);
+      grpc_slice_unref_internal(wire_value);
     } else {
       value = grpc_slice_to_c_string(GRPC_MDVALUE(mdelem));
     }
@@ -1054,7 +1054,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
         GPR_ASSERT(false);
       }
       grpc_slice_buffer_add(&write_slice_buffer, slice);
-      if (write_slice_buffer.count != 1) {
+      if (GPR_UNLIKELY(write_slice_buffer.count != 1)) {
         /* Empty request not handled yet */
         gpr_log(GPR_ERROR, "Empty request is not supported");
         GPR_ASSERT(write_slice_buffer.count == 1);
@@ -1455,7 +1455,7 @@ grpc_transport* grpc_create_cronet_transport(void* engine, const char* target,
     for (size_t i = 0; i < args->num_args; i++) {
       if (0 ==
           strcmp(args->args[i].key, GRPC_ARG_USE_CRONET_PACKET_COALESCING)) {
-        if (args->args[i].type != GRPC_ARG_INTEGER) {
+        if (GPR_UNLIKELY(args->args[i].type != GRPC_ARG_INTEGER)) {
           gpr_log(GPR_ERROR, "%s ignored: it must be an integer",
                   GRPC_ARG_USE_CRONET_PACKET_COALESCING);
         } else {

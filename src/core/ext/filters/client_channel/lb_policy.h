@@ -162,6 +162,8 @@ class LoadBalancingPolicy
   GRPC_ABSTRACT_BASE_CLASS
 
  protected:
+  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
+
   explicit LoadBalancingPolicy(const Args& args);
   virtual ~LoadBalancingPolicy();
 

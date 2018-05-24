@@ -30,6 +30,7 @@
 
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 
@@ -133,7 +134,7 @@ grpc_security_status grpc_alts_auth_context_from_tsi_peer(
       rpc_versions_prop->value.data, rpc_versions_prop->value.length);
   bool decode_result =
       grpc_gcp_rpc_protocol_versions_decode(slice, &peer_versions);
-  grpc_slice_unref(slice);
+  grpc_slice_unref_internal(slice);
   if (!decode_result) {
     gpr_log(GPR_ERROR, "Invalid peer rpc protocol versions.");
     return GRPC_SECURITY_ERROR;

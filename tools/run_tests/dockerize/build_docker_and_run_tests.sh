@@ -53,6 +53,7 @@ DOCKER_EXIT_CODE=0
 # TODO: silence complaint about $TTY_FLAG expansion in some other way
 # shellcheck disable=SC2086
 docker run \
+  --cap-add SYS_PTRACE \
   -e "RUN_TESTS_COMMAND=$RUN_TESTS_COMMAND" \
   -e "config=$config" \
   -e "arch=$arch" \

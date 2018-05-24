@@ -1,8 +1,6 @@
 #=================
 # Update clang to a version with improved tsan and fuzzing capabilities
 
-RUN apt-get update && apt-get -y install python cmake && apt-get clean
-
 RUN git clone -n -b release_38 http://llvm.org/git/llvm.git && ${'\\'}
   cd llvm && git checkout ad57503 && cd ..
 RUN git clone -n -b release_38 http://llvm.org/git/clang.git && ${'\\'}

@@ -408,7 +408,7 @@ static void on_external_state_watcher_done(void* arg, grpc_error* error) {
   gpr_mu_unlock(&w->subchannel->mu);
   GRPC_SUBCHANNEL_WEAK_UNREF(w->subchannel, "external_state_watcher");
   gpr_free(w);
-  GRPC_CLOSURE_RUN(follow_up, GRPC_ERROR_REF(error));
+  GRPC_CLOSURE_SCHED(follow_up, GRPC_ERROR_REF(error));
 }
 
 static void on_alarm(void* arg, grpc_error* error) {
@@ -467,7 +467,7 @@ static void maybe_start_connecting_locked(grpc_subchannel* c) {
     if (time_til_next <= 0) {
       gpr_log(GPR_INFO, "Subchannel %p: Retry immediately", c);
     } else {
-      gpr_log(GPR_INFO, "Subchannel %p: Retry in %" PRIdPTR " milliseconds", c,
+      gpr_log(GPR_INFO, "Subchannel %p: Retry in %" PRId64 " milliseconds", c,
               time_til_next);
     }
     GRPC_CLOSURE_INIT(&c->on_alarm, on_alarm, c, grpc_schedule_on_exec_ctx);
@@ -803,7 +803,7 @@ grpc_error* ConnectedSubchannel::CreateCall(const CallArgs& args,
   };
   grpc_error* error = grpc_call_stack_init(
       channel_stack_, 1, subchannel_call_destroy, *call, &call_args);
-  if (error != GRPC_ERROR_NONE) {
+  if (GPR_UNLIKELY(error != GRPC_ERROR_NONE)) {
     const char* error_string = grpc_error_string(error);
     gpr_log(GPR_ERROR, "error: %s", error_string);
     return error;

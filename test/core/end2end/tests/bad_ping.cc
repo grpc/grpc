@@ -355,6 +355,11 @@ static void test_pings_without_data(grpc_end2end_test_config config) {
 
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(0xdead));
   CQ_EXPECT_COMPLETION(cqv, tag(0xdead), 1);
+
+  // Also expect the previously blocked pings to complete with an error
+  CQ_EXPECT_COMPLETION(cqv, tag(200 + MAX_PING_STRIKES + 1), 0);
+  CQ_EXPECT_COMPLETION(cqv, tag(200 + MAX_PING_STRIKES + 2), 0);
+
   cq_verify(cqv);
 
   grpc_call_unref(s);

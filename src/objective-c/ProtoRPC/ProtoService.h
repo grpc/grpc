@@ -22,19 +22,16 @@
 @protocol GRXWriteable;
 @class GRXWriter;
 
-
-__attribute__((deprecated("Please use GRPCProtoService.")))
-@interface ProtoService : NSObject
-- (instancetype)initWithHost:(NSString *)host
-                 packageName:(NSString *)packageName
-                 serviceName:(NSString *)serviceName NS_DESIGNATED_INITIALIZER;
+__attribute__((deprecated("Please use GRPCProtoService."))) @interface ProtoService
+    : NSObject -
+      (instancetype)initWithHost : (NSString *)host packageName
+    : (NSString *)packageName serviceName : (NSString *)serviceName NS_DESIGNATED_INITIALIZER;
 
 - (GRPCProtoCall *)RPCToMethod:(NSString *)method
-           requestsWriter:(GRXWriter *)requestsWriter
-  	        responseClass:(Class)responseClass
-  	   responsesWriteable:(id<GRXWriteable>)responsesWriteable;
+                requestsWriter:(GRXWriter *)requestsWriter
+                 responseClass:(Class)responseClass
+            responsesWriteable:(id<GRXWriteable>)responsesWriteable;
 @end
-
 
 /**
  * This subclass is empty now. Eventually we'll remove ProtoService class
@@ -42,7 +39,7 @@ __attribute__((deprecated("Please use GRPCProtoService.")))
  */
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-@interface GRPCProtoService : ProtoService
+    @interface GRPCProtoService : ProtoService
 #pragma clang diagnostic pop
 
-@end
+                                  @end

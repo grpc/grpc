@@ -136,6 +136,7 @@ tsi_result tsi_handshaker_get_bytes_to_send_to_peer(tsi_handshaker* self,
     return TSI_INVALID_ARGUMENT;
   }
   if (self->frame_protector_created) return TSI_FAILED_PRECONDITION;
+  if (self->handshake_shutdown) return TSI_HANDSHAKE_SHUTDOWN;
   if (self->vtable->get_bytes_to_send_to_peer == nullptr)
     return TSI_UNIMPLEMENTED;
   return self->vtable->get_bytes_to_send_to_peer(self, bytes, bytes_size);
@@ -149,6 +150,7 @@ tsi_result tsi_handshaker_process_bytes_from_peer(tsi_handshaker* self,
     return TSI_INVALID_ARGUMENT;
   }
   if (self->frame_protector_created) return TSI_FAILED_PRECONDITION;
+  if (self->handshake_shutdown) return TSI_HANDSHAKE_SHUTDOWN;
   if (self->vtable->process_bytes_from_peer == nullptr)
     return TSI_UNIMPLEMENTED;
   return self->vtable->process_bytes_from_peer(self, bytes, bytes_size);
@@ -157,6 +159,7 @@ tsi_result tsi_handshaker_process_bytes_from_peer(tsi_handshaker* self,
 tsi_result tsi_handshaker_get_result(tsi_handshaker* self) {
   if (self == nullptr || self->vtable == nullptr) return TSI_INVALID_ARGUMENT;
   if (self->frame_protector_created) return TSI_FAILED_PRECONDITION;
+  if (self->handshake_shutdown) return TSI_HANDSHAKE_SHUTDOWN;
   if (self->vtable->get_result == nullptr) return TSI_UNIMPLEMENTED;
   return self->vtable->get_result(self);
 }
@@ -167,6 +170,7 @@ tsi_result tsi_handshaker_extract_peer(tsi_handshaker* self, tsi_peer* peer) {
   }
   memset(peer, 0, sizeof(tsi_peer));
   if (self->frame_protector_created) return TSI_FAILED_PRECONDITION;
+  if (self->handshake_shutdown) return TSI_HANDSHAKE_SHUTDOWN;
   if (tsi_handshaker_get_result(self) != TSI_OK) {
     return TSI_FAILED_PRECONDITION;
   }
@@ -182,6 +186,7 @@ tsi_result tsi_handshaker_create_frame_protector(
     return TSI_INVALID_ARGUMENT;
   }
   if (self->frame_protector_created) return TSI_FAILED_PRECONDITION;
+  if (self->handshake_shutdown) return TSI_HANDSHAKE_SHUTDOWN;
   if (tsi_handshaker_get_result(self) != TSI_OK) return TSI_FAILED_PRECONDITION;
   if (self->vtable->create_frame_protector == nullptr) return TSI_UNIMPLEMENTED;
   result = self->vtable->create_frame_protector(self, max_protected_frame_size,
@@ -199,10 +204,19 @@ tsi_result tsi_handshaker_next(
     tsi_handshaker_on_next_done_cb cb, void* user_data) {
   if (self == nullptr || self->vtable == nullptr) return TSI_INVALID_ARGUMENT;
   if (self->handshaker_result_created) return TSI_FAILED_PRECONDITION;
+  if (self->handshake_shutdown) return TSI_HANDSHAKE_SHUTDOWN;
   if (self->vtable->next == nullptr) return TSI_UNIMPLEMENTED;
   return self->vtable->next(self, received_bytes, received_bytes_size,
                             bytes_to_send, bytes_to_send_size,
                             handshaker_result, cb, user_data);
+}
+
+void tsi_handshaker_shutdown(tsi_handshaker* self) {
+  if (self == nullptr || self->vtable == nullptr) return;
+  self->handshake_shutdown = true;
+  if (self->vtable->shutdown != nullptr) {
+    self->vtable->shutdown(self);
+  }
 }
 
 void tsi_handshaker_destroy(tsi_handshaker* self) {

@@ -364,7 +364,8 @@ module GRPC
       # sent yet
       c = ActiveCall.new(an_rpc.call, noop, noop, an_rpc.deadline,
                          metadata_received: true, started: false)
-      c.send_status(GRPC::Core::StatusCodes::RESOURCE_EXHAUSTED, '')
+      c.send_status(GRPC::Core::StatusCodes::RESOURCE_EXHAUSTED,
+                    'No free threads in thread pool')
       nil
     end
 

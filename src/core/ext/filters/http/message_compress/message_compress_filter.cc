@@ -116,8 +116,8 @@ static grpc_error* process_send_initial_metadata(
   if (initial_metadata->idx.named.grpc_internal_encoding_request != nullptr) {
     grpc_mdelem md =
         initial_metadata->idx.named.grpc_internal_encoding_request->md;
-    if (!grpc_compression_algorithm_parse(GRPC_MDVALUE(md),
-                                          &compression_algorithm)) {
+    if (GPR_UNLIKELY(!grpc_compression_algorithm_parse(
+            GRPC_MDVALUE(md), &compression_algorithm))) {
       char* val = grpc_slice_to_c_string(GRPC_MDVALUE(md));
       gpr_log(GPR_ERROR,
               "Invalid compression algorithm: '%s' (unknown). Ignoring.", val);
@@ -125,8 +125,8 @@ static grpc_error* process_send_initial_metadata(
       calld->message_compression_algorithm = GRPC_MESSAGE_COMPRESS_NONE;
       stream_compression_algorithm = GRPC_STREAM_COMPRESS_NONE;
     }
-    if (!GPR_BITGET(channeld->enabled_algorithms_bitset,
-                    compression_algorithm)) {
+    if (GPR_UNLIKELY(!GPR_BITGET(channeld->enabled_algorithms_bitset,
+                                 compression_algorithm))) {
       char* val = grpc_slice_to_c_string(GRPC_MDVALUE(md));
       gpr_log(GPR_ERROR,
               "Invalid compression algorithm: '%s' (previously disabled). "
@@ -234,7 +234,7 @@ static void finish_send_message(grpc_call_element* elem) {
                                              static_cast<float>(before_size);
       GPR_ASSERT(grpc_message_compression_algorithm_name(
           calld->message_compression_algorithm, &algo_name));
-      gpr_log(GPR_DEBUG,
+      gpr_log(GPR_INFO,
               "Compressed[%s] %" PRIuPTR " bytes vs. %" PRIuPTR
               " bytes (%.2f%% savings)",
               algo_name, before_size, after_size, 100 * savings_ratio);
@@ -246,7 +246,7 @@ static void finish_send_message(grpc_call_element* elem) {
       const char* algo_name;
       GPR_ASSERT(grpc_message_compression_algorithm_name(
           calld->message_compression_algorithm, &algo_name));
-      gpr_log(GPR_DEBUG,
+      gpr_log(GPR_INFO,
               "Algorithm '%s' enabled but decided not to compress. Input size: "
               "%" PRIuPTR,
               algo_name, calld->slices.length);

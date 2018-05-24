@@ -40,7 +40,7 @@ grpc_connectivity_state grpc_channel_check_connectivity_state(
   GRPC_API_TRACE(
       "grpc_channel_check_connectivity_state(channel=%p, try_to_connect=%d)", 2,
       (channel, try_to_connect));
-  if (client_channel_elem->filter == &grpc_client_channel_filter) {
+  if (GPR_LIKELY(client_channel_elem->filter == &grpc_client_channel_filter)) {
     state = grpc_client_channel_check_connectivity_state(client_channel_elem,
                                                          try_to_connect);
 

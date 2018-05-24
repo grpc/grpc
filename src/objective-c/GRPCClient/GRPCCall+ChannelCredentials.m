@@ -28,24 +28,23 @@
                    forHost:(nonnull NSString *)host
                      error:(NSError **)errorPtr {
   if (!host) {
-    [NSException raise:NSInvalidArgumentException
-                format:@"host must be provided."];
+    [NSException raise:NSInvalidArgumentException format:@"host must be provided."];
   }
   GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
   return [hostConfig setTLSPEMRootCerts:pemRootCerts
-                 withPrivateKey:pemPrivateKey
-                  withCertChain:pemCertChain
-                          error:errorPtr];
+                         withPrivateKey:pemPrivateKey
+                          withCertChain:pemCertChain
+                                  error:errorPtr];
 }
 
 + (BOOL)setTLSPEMRootCerts:(nullable NSString *)pemRootCerts
                    forHost:(nonnull NSString *)host
                      error:(NSError **)errorPtr {
   return [GRPCCall setTLSPEMRootCerts:pemRootCerts
-               withPrivateKey:nil
-                withCertChain:nil
-                      forHost:host
-                      error:errorPtr];
+                       withPrivateKey:nil
+                        withCertChain:nil
+                              forHost:host
+                                error:errorPtr];
 }
 
 @end

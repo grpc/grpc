@@ -24,7 +24,7 @@
 cmake_minimum_required(VERSION 2.8)
 
 set(PACKAGE_NAME      "grpc")
-set(PACKAGE_VERSION   "1.12.0-dev")
+set(PACKAGE_VERSION   "1.13.0-dev")
 set(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
@@ -34,6 +34,7 @@ set(gRPC_INSTALL_BINDIR "bin" CACHE STRING "Installation directory for executabl
 set(gRPC_INSTALL_LIBDIR "lib" CACHE STRING "Installation directory for libraries")
 set(gRPC_INSTALL_INCLUDEDIR "include" CACHE STRING "Installation directory for headers")
 set(gRPC_INSTALL_CMAKEDIR "lib/cmake/${PACKAGE_NAME}" CACHE STRING "Installation directory for cmake config files")
+set(gRPC_INSTALL_SHAREDIR "share/grpc" CACHE STRING "Installation directory for root certificates")
 
 # Options
 option(gRPC_BUILD_TESTS "Build tests" OFF)
@@ -263,6 +264,9 @@ endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c fling_test)
 endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC)
+add_dependencies(buildtests_c fork_test)
+endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c goaway_server_test)
 endif()
@@ -454,6 +458,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c h2_uds_nosec_test)
 endif()
 add_dependencies(buildtests_c inproc_nosec_test)
+add_dependencies(buildtests_c alts_credentials_fuzzer_one_entry)
 add_dependencies(buildtests_c api_fuzzer_one_entry)
 add_dependencies(buildtests_c client_fuzzer_one_entry)
 add_dependencies(buildtests_c hpack_parser_fuzzer_test_one_entry)
@@ -533,6 +538,7 @@ add_dependencies(buildtests_cxx byte_stream_test)
 add_dependencies(buildtests_cxx channel_arguments_test)
 add_dependencies(buildtests_cxx channel_filter_test)
 add_dependencies(buildtests_cxx channel_trace_test)
+add_dependencies(buildtests_cxx channelz_registry_test)
 add_dependencies(buildtests_cxx check_gcp_environment_linux_test)
 add_dependencies(buildtests_cxx check_gcp_environment_windows_test)
 add_dependencies(buildtests_cxx chttp2_settings_timeout_test)
@@ -613,6 +619,9 @@ add_dependencies(buildtests_cxx secure_sync_unary_ping_pong_test)
 endif()
 add_dependencies(buildtests_cxx server_builder_plugin_test)
 add_dependencies(buildtests_cxx server_builder_test)
+if(_gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_cxx server_builder_with_socket_mutator_test)
+endif()
 add_dependencies(buildtests_cxx server_context_test_spouse_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx server_crash_test)
@@ -756,7 +765,6 @@ add_library(gpr
   src/core/lib/gpr/env_linux.cc
   src/core/lib/gpr/env_posix.cc
   src/core/lib/gpr/env_windows.cc
-  src/core/lib/gpr/fork.cc
   src/core/lib/gpr/host_port.cc
   src/core/lib/gpr/log.cc
   src/core/lib/gpr/log_android.cc
@@ -781,6 +789,7 @@ add_library(gpr
   src/core/lib/gpr/tmpfile_posix.cc
   src/core/lib/gpr/tmpfile_windows.cc
   src/core/lib/gpr/wrap_memcpy.cc
+  src/core/lib/gprpp/fork.cc
   src/core/lib/gprpp/thd_posix.cc
   src/core/lib/gprpp/thd_windows.cc
   src/core/lib/profiling/basic_timers.cc
@@ -915,7 +924,7 @@ add_library(grpc
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
   src/core/lib/channel/channel_trace.cc
-  src/core/lib/channel/channel_trace_registry.cc
+  src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
@@ -1147,7 +1156,6 @@ add_library(grpc
   third_party/nanopb/pb_decode.c
   third_party/nanopb/pb_encode.c
   src/core/tsi/transport_security.cc
-  src/core/tsi/transport_security_adapter.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
   src/core/ext/transport/chttp2/client/authority.cc
@@ -1195,7 +1203,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
-  src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc
@@ -1310,7 +1317,7 @@ add_library(grpc_cronet
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
   src/core/lib/channel/channel_trace.cc
-  src/core/lib/channel/channel_trace_registry.cc
+  src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
@@ -1567,7 +1574,6 @@ add_library(grpc_cronet
   third_party/nanopb/pb_decode.c
   third_party/nanopb/pb_encode.c
   src/core/tsi/transport_security.cc
-  src/core/tsi/transport_security_adapter.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
   src/core/ext/transport/chttp2/client/authority.cc
@@ -1674,6 +1680,7 @@ add_library(grpc_test_util
   test/core/end2end/fixtures/proxy.cc
   test/core/iomgr/endpoint_tests.cc
   test/core/util/debugger_macros.cc
+  test/core/util/fuzzer_util.cc
   test/core/util/grpc_profiler.cc
   test/core/util/histogram.cc
   test/core/util/memory_counters.cc
@@ -1695,7 +1702,7 @@ add_library(grpc_test_util
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
   src/core/lib/channel/channel_trace.cc
-  src/core/lib/channel/channel_trace_registry.cc
+  src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
@@ -1977,6 +1984,7 @@ add_library(grpc_test_util_unsecure
   test/core/end2end/fixtures/proxy.cc
   test/core/iomgr/endpoint_tests.cc
   test/core/util/debugger_macros.cc
+  test/core/util/fuzzer_util.cc
   test/core/util/grpc_profiler.cc
   test/core/util/histogram.cc
   test/core/util/memory_counters.cc
@@ -1998,7 +2006,7 @@ add_library(grpc_test_util_unsecure
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
   src/core/lib/channel/channel_trace.cc
-  src/core/lib/channel/channel_trace_registry.cc
+  src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
@@ -2281,7 +2289,7 @@ add_library(grpc_unsecure
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
   src/core/lib/channel/channel_trace.cc
-  src/core/lib/channel/channel_trace_registry.cc
+  src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
@@ -2501,7 +2509,6 @@ add_library(grpc_unsecure
   third_party/nanopb/pb_decode.c
   third_party/nanopb/pb_encode.c
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
-  src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   src/core/ext/census/grpc_context.cc
   src/core/ext/filters/max_age/max_age_filter.cc
@@ -3108,7 +3115,7 @@ add_library(grpc++_cronet
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
   src/core/lib/channel/channel_trace.cc
-  src/core/lib/channel/channel_trace_registry.cc
+  src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/handshaker.cc
   src/core/lib/channel/handshaker_factory.cc
@@ -5098,10 +5105,18 @@ add_library(qps
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/control.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/control.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/control.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/services.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/services.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/services.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/services.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/report_qps_scenario_service.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/report_qps_scenario_service.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/report_qps_scenario_service.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/report_qps_scenario_service.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.grpc.pb.h
   test/cpp/qps/benchmark_config.cc
   test/cpp/qps/client_async.cc
   test/cpp/qps/client_sync.cc
@@ -5138,7 +5153,13 @@ protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/control.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/services.proto
+  src/proto/grpc/testing/benchmark_service.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/report_qps_scenario_service.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/worker_service.proto
 )
 
 target_include_directories(qps
@@ -5353,6 +5374,7 @@ add_library(end2end_tests
   test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
   test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
   test/core/end2end/tests/retry_non_retriable_status.cc
+  test/core/end2end/tests/retry_non_retriable_status_before_recv_trailing_metadata_started.cc
   test/core/end2end/tests/retry_recv_initial_metadata.cc
   test/core/end2end/tests/retry_recv_message.cc
   test/core/end2end/tests/retry_server_pushback_delay.cc
@@ -5470,6 +5492,7 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
   test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
   test/core/end2end/tests/retry_non_retriable_status.cc
+  test/core/end2end/tests/retry_non_retriable_status_before_recv_trailing_metadata_started.cc
   test/core/end2end/tests/retry_recv_initial_metadata.cc
   test/core/end2end/tests/retry_recv_message.cc
   test/core/end2end/tests/retry_server_pushback_delay.cc
@@ -6450,6 +6473,34 @@ target_link_libraries(fling_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
+  gpr_test_util
+  gpr
+)
+
+endif()
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC)
+
+add_executable(fork_test
+  test/core/gprpp/fork_test.cc
+)
+
+
+target_include_directories(fork_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+)
+
+target_link_libraries(fork_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr_test_util
   gpr
 )
@@ -9791,6 +9842,7 @@ target_link_libraries(bm_arena
   grpc_unsecure
   gpr_test_util
   gpr
+  grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -9834,6 +9886,7 @@ target_link_libraries(bm_call_create
   grpc_unsecure
   gpr_test_util
   gpr
+  grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -9877,6 +9930,7 @@ target_link_libraries(bm_chttp2_hpack
   grpc_unsecure
   gpr_test_util
   gpr
+  grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -9920,6 +9974,7 @@ target_link_libraries(bm_chttp2_transport
   grpc_unsecure
   gpr_test_util
   gpr
+  grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -9963,6 +10018,7 @@ target_link_libraries(bm_closure
   grpc_unsecure
   gpr_test_util
   gpr
+  grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -10006,6 +10062,7 @@ target_link_libraries(bm_cq
   grpc_unsecure
   gpr_test_util
   gpr
+  grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -10049,6 +10106,7 @@ target_link_libraries(bm_cq_multiple_threads
   grpc_unsecure
   gpr_test_util
   gpr
+  grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -10092,6 +10150,7 @@ target_link_libraries(bm_error
   grpc_unsecure
   gpr_test_util
   gpr
+  grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -10135,6 +10194,7 @@ target_link_libraries(bm_fullstack_streaming_ping_pong
   grpc_unsecure
   gpr_test_util
   gpr
+  grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -10178,6 +10238,7 @@ target_link_libraries(bm_fullstack_streaming_pump
   grpc_unsecure
   gpr_test_util
   gpr
+  grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -10265,6 +10326,7 @@ target_link_libraries(bm_fullstack_unary_ping_pong
   grpc_unsecure
   gpr_test_util
   gpr
+  grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -10308,6 +10370,7 @@ target_link_libraries(bm_metadata
   grpc_unsecure
   gpr_test_util
   gpr
+  grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -10351,6 +10414,7 @@ target_link_libraries(bm_pollset
   grpc_unsecure
   gpr_test_util
   gpr
+  grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
@@ -10499,6 +10563,45 @@ target_include_directories(channel_trace_test
 )
 
 target_link_libraries(channel_trace_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc++_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(channelz_registry_test
+  test/core/channel/channelz_registry_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(channelz_registry_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(channelz_registry_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -10838,10 +10941,18 @@ add_executable(codegen_test_full
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/payloads.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/payloads.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/payloads.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/services.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/services.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/services.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/services.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/report_qps_scenario_service.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/report_qps_scenario_service.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/report_qps_scenario_service.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/report_qps_scenario_service.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.pb.h
@@ -10861,7 +10972,13 @@ protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/payloads.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/services.proto
+  src/proto/grpc/testing/benchmark_service.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/report_qps_scenario_service.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/worker_service.proto
 )
 protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/stats.proto
@@ -10910,10 +11027,18 @@ add_executable(codegen_test_minimal
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/payloads.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/payloads.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/payloads.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/services.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/services.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/services.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/services.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/report_qps_scenario_service.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/report_qps_scenario_service.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/report_qps_scenario_service.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/report_qps_scenario_service.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.pb.h
@@ -10934,7 +11059,13 @@ protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/payloads.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/services.proto
+  src/proto/grpc/testing/benchmark_service.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/report_qps_scenario_service.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/worker_service.proto
 )
 protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/stats.proto
@@ -13287,6 +13418,61 @@ target_link_libraries(server_builder_test
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_POSIX)
+
+add_executable(server_builder_with_socket_mutator_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
+  test/cpp/server/server_builder_with_socket_mutator_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/echo_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/echo.proto
+)
+
+target_include_directories(server_builder_with_socket_mutator_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(server_builder_with_socket_mutator_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util_unsecure
+  grpc_test_util_unsecure
+  gpr_test_util
+  grpc++_unsecure
+  grpc_unsecure
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
@@ -15758,6 +15944,35 @@ endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(alts_credentials_fuzzer_one_entry
+  test/core/security/alts_credentials_fuzzer.cc
+  test/core/util/one_corpus_entry_fuzzer.cc
+)
+
+
+target_include_directories(alts_credentials_fuzzer_one_entry
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+)
+
+target_link_libraries(alts_credentials_fuzzer_one_entry
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(api_fuzzer_one_entry
   test/core/end2end/fuzzers/api_fuzzer.cc
   test/core/util/one_corpus_entry_fuzzer.cc
@@ -16154,3 +16369,6 @@ foreach(_config gRPCConfig gRPCConfigVersion)
     DESTINATION ${gRPC_INSTALL_CMAKEDIR}
   )
 endforeach()
+
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/etc/roots.pem
+  DESTINATION ${gRPC_INSTALL_SHAREDIR})

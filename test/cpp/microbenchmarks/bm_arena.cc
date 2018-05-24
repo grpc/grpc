@@ -18,9 +18,10 @@
 
 /* Benchmark arenas */
 
+#include <benchmark/benchmark.h>
 #include "src/core/lib/gpr/arena.h"
 #include "test/cpp/microbenchmarks/helpers.h"
-#include "third_party/benchmark/include/benchmark/benchmark.h"
+#include "test/cpp/util/test_config.h"
 
 static void BM_Arena_NoOp(benchmark::State& state) {
   while (state.KeepRunning()) {
@@ -56,4 +57,15 @@ static void BM_Arena_Batch(benchmark::State& state) {
 }
 BENCHMARK(BM_Arena_Batch)->Ranges({{1, 64 * 1024}, {1, 64}, {1, 1024}});
 
-BENCHMARK_MAIN();
+// Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
+// and others do not. This allows us to support both modes.
+namespace benchmark {
+void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
+}  // namespace benchmark
+
+int main(int argc, char** argv) {
+  ::benchmark::Initialize(&argc, argv);
+  ::grpc::testing::InitTest(&argc, &argv, false);
+  benchmark::RunTheBenchmarksNamespaced();
+  return 0;
+}

@@ -38,8 +38,7 @@
   [GRPCHost flushChannelCache];
 }
 
-+ (void)setDefaultCompressMethod:(GRPCCompressAlgorithm)algorithm
-                         forhost:(nonnull NSString *)host {
++ (void)setDefaultCompressMethod:(GRPCCompressAlgorithm)algorithm forhost:(nonnull NSString *)host {
   GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
   switch (algorithm) {
     case GRPCCompressNone:

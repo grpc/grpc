@@ -291,6 +291,7 @@ cdef extern from "grpc/grpc.h":
     grpc_metadata_array *trailing_metadata
     grpc_status_code *status
     grpc_slice *status_details
+    char** error_string
 
   ctypedef struct grpc_op_data_recv_close_on_server:
     int *cancelled
