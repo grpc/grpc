@@ -30,10 +30,19 @@ SYSTEM ?= $(HOST_SYSTEM)
 ifeq ($(SYSTEM),MSYS)
 SYSTEM = MINGW32
 endif
+ifeq ($(SYSTEM),CYGWIN)
+SYSTEM = MINGW32
+endif
 ifeq ($(SYSTEM),MINGW64)
 SYSTEM = MINGW32
 endif
 
+# add a function we can use to work around cygwin path fixing heuristics which makes hash out of this due to the ':' delimiter mostly: `--grpc_out=generate_mock_code=true:WINDOWSPATH`
+# see http://www.mingw.org/wiki/Posix_path_conversion
+GRPC_FIXPATH = $(1)
+ifeq ($(SYSTEM),MINGW32)
+GRPC_FIXPATH = $(shell cygpath -w $(1))
+endif
 
 MAKEFILE_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 ifndef BUILDDIR
@@ -2621,7 +2630,7 @@ $(GENDIR)/src/proto/grpc/testing/compiler_test.pb.cc: src/proto/grpc/testing/com
 $(GENDIR)/src/proto/grpc/testing/compiler_test.grpc.pb.cc: src/proto/grpc/testing/compiler_test.proto $(GENDIR)/src/proto/grpc/testing/compiler_test.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=generate_mock_code=true:$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=generate_mock_code=true:$(call GRPC_FIXPATH,$(GENDIR)) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
 endif
 
 ifeq ($(NO_PROTOC),true)
@@ -2670,7 +2679,7 @@ $(GENDIR)/src/proto/grpc/testing/echo.pb.cc: src/proto/grpc/testing/echo.proto $
 $(GENDIR)/src/proto/grpc/testing/echo.grpc.pb.cc: src/proto/grpc/testing/echo.proto $(GENDIR)/src/proto/grpc/testing/echo.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) $(GENDIR)/src/proto/grpc/testing/echo_messages.pb.cc $(GENDIR)/src/proto/grpc/testing/echo_messages.grpc.pb.cc
 	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=generate_mock_code=true:$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=generate_mock_code=true:$(call GRPC_FIXPATH,$(GENDIR)) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
 endif
 
 ifeq ($(NO_PROTOC),true)
