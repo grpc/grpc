@@ -90,6 +90,12 @@ BUILD_WITH_CYTHON = os.environ.get('GRPC_PYTHON_BUILD_WITH_CYTHON', False)
 BUILD_WITH_SYSTEM_OPENSSL = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_OPENSSL',
                                            False)
 
+# Export this variable to use the system installation of zlib. You need to
+# have the header files installed (in /usr/include/) and during
+# runtime, the shared libary must be installed
+BUILD_WITH_SYSTEM_ZLIB = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_ZLIB',
+                                        False)
+
 # Environment variable to determine whether or not to enable coverage analysis
 # in Cython modules.
 ENABLE_CYTHON_TRACING = os.environ.get(
@@ -159,6 +165,10 @@ if BUILD_WITH_SYSTEM_OPENSSL:
   CORE_C_FILES = filter(lambda x: 'src/boringssl' not in x, CORE_C_FILES)
   SSL_INCLUDE = (os.path.join('/usr', 'include', 'openssl'),)
 
+if BUILD_WITH_SYSTEM_ZLIB:
+  CORE_C_FILES = filter(lambda x: 'third_party/zlib' not in x, CORE_C_FILES)
+  ZLIB_INCLUDE = (os.path.join('/usr', 'include'),)
+
 EXTENSION_INCLUDE_DIRECTORIES = (
     (PYTHON_STEM,) + CORE_INCLUDE + SSL_INCLUDE + ZLIB_INCLUDE +
     CARES_INCLUDE + ADDRESS_SORTING_INCLUDE)
@@ -172,6 +182,8 @@ if "win32" in sys.platform:
   EXTENSION_LIBRARIES += ('advapi32', 'ws2_32',)
 if BUILD_WITH_SYSTEM_OPENSSL:
   EXTENSION_LIBRARIES += ('ssl', 'crypto',)
+if BUILD_WITH_SYSTEM_ZLIB:
+  EXTENSION_LIBRARIES += ('z',)
 
 DEFINE_MACROS = (
     ('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600),
