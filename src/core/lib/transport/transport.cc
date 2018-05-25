@@ -28,6 +28,7 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -211,27 +212,44 @@ void grpc_transport_stream_op_batch_finish_with_failure(
   if (batch->send_message) {
     batch->payload->send_message.send_message.reset();
   }
-  if (batch->recv_initial_metadata) {
-    GRPC_CALL_COMBINER_START(
-        call_combiner,
-        batch->payload->recv_initial_metadata.recv_initial_metadata_ready,
-        GRPC_ERROR_REF(error), "failing recv_initial_metadata_ready");
-  }
-  if (batch->recv_message) {
-    GRPC_CALL_COMBINER_START(
-        call_combiner, batch->payload->recv_message.recv_message_ready,
-        GRPC_ERROR_REF(error), "failing recv_message_ready");
-  }
-  if (batch->recv_trailing_metadata) {
-    GRPC_CALL_COMBINER_START(
-        call_combiner,
-        batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready,
-        GRPC_ERROR_REF(error), "failing recv_trailing_metadata_ready");
-  }
-  GRPC_CLOSURE_SCHED(batch->on_complete, error);
   if (batch->cancel_stream) {
     GRPC_ERROR_UNREF(batch->payload->cancel_stream.cancel_error);
   }
+  // Construct a list of closures to execute.
+  struct ClosureToExecute {
+    grpc_closure* closure;
+    const char* reason;
+    ClosureToExecute(grpc_closure* closure, const char* reason)
+        : closure(closure), reason(reason) {}
+  };
+  grpc_core::InlinedVector<ClosureToExecute, 4> closures;
+  if (batch->recv_initial_metadata) {
+    closures.emplace_back(
+        batch->payload->recv_initial_metadata.recv_initial_metadata_ready,
+        "failing recv_initial_metadata_ready");
+  }
+  if (batch->recv_message) {
+    closures.emplace_back(batch->payload->recv_message.recv_message_ready,
+                          "failing recv_message_ready");
+  }
+  if (batch->recv_trailing_metadata) {
+    closures.emplace_back(
+        batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready,
+        "failing recv_trailing_metadata_ready");
+  }
+  if (batch->on_complete != nullptr) {
+    closures.emplace_back(batch->on_complete, "failing on_complete");
+  }
+  // We are already holding the call combiner, but we may have more than one
+  // closure to return to the surface, and the surface will yield the
+  // call combiner for each one it receives.  So we need to re-enter the
+  // call combiner for all but one closure.
+  GPR_ASSERT(closures.size() > 0);
+  for (size_t i = 0; i < closures.size() - 1; ++i) {
+    GRPC_CALL_COMBINER_START(call_combiner, closures[i].closure,
+                             GRPC_ERROR_REF(error), closures[i].reason);
+  }
+  GRPC_CLOSURE_SCHED(closures[closures.size() - 1].closure, error);
 }
 
 typedef struct {
