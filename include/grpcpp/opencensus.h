@@ -32,7 +32,7 @@ void RegisterOpenCensusPlugin();
 // Registers the cumulative gRPC views so that they will be exported by any
 // registered stats exporter.
 // For on-task stats, construct a View using the ViewDescriptors below.
-void RegisterGrpcViewsForExport();
+void RegisterOpenCensusViewsForExport();
 
 }  // namespace grpc
 

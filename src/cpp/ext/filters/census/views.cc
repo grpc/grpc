@@ -71,7 +71,7 @@ ViewDescriptor HourDescriptor() {
 
 }  // namespace
 
-void RegisterGrpcViewsForExport() {
+void RegisterOpenCensusViewsForExport() {
   ClientSentMessagesPerRpcCumulative().RegisterForExport();
   ClientSentBytesPerRpcCumulative().RegisterForExport();
   ClientReceivedMessagesPerRpcCumulative().RegisterForExport();
