@@ -1758,7 +1758,6 @@
         'third_party/boringssl/crypto/chacha/chacha.c',
         'third_party/boringssl/crypto/cipher_extra/cipher_extra.c',
         'third_party/boringssl/crypto/cipher_extra/derive_key.c',
-        'third_party/boringssl/crypto/cipher_extra/e_aesccm.c',
         'third_party/boringssl/crypto/cipher_extra/e_aesctrhmac.c',
         'third_party/boringssl/crypto/cipher_extra/e_aesgcmsiv.c',
         'third_party/boringssl/crypto/cipher_extra/e_chacha20poly1305.c',
@@ -1770,7 +1769,6 @@
         'third_party/boringssl/crypto/cipher_extra/tls_cbc.c',
         'third_party/boringssl/crypto/cmac/cmac.c',
         'third_party/boringssl/crypto/conf/conf.c',
-        'third_party/boringssl/crypto/cpu-aarch64-fuchsia.c',
         'third_party/boringssl/crypto/cpu-aarch64-linux.c',
         'third_party/boringssl/crypto/cpu-arm-linux.c',
         'third_party/boringssl/crypto/cpu-arm.c',
@@ -1778,6 +1776,7 @@
         'third_party/boringssl/crypto/cpu-ppc64le.c',
         'third_party/boringssl/crypto/crypto.c',
         'third_party/boringssl/crypto/curve25519/spake25519.c',
+        'third_party/boringssl/crypto/curve25519/x25519-x86_64.c',
         'third_party/boringssl/crypto/dh/check.c',
         'third_party/boringssl/crypto/dh/dh.c',
         'third_party/boringssl/crypto/dh/dh_asn1.c',
@@ -1933,7 +1932,6 @@
         'third_party/boringssl/ssl/d1_srtp.cc',
         'third_party/boringssl/ssl/dtls_method.cc',
         'third_party/boringssl/ssl/dtls_record.cc',
-        'third_party/boringssl/ssl/handoff.cc',
         'third_party/boringssl/ssl/handshake.cc',
         'third_party/boringssl/ssl/handshake_client.cc',
         'third_party/boringssl/ssl/handshake_server.cc',
@@ -2436,17 +2434,6 @@
       ],
       'sources': [
         'third_party/boringssl/crypto/rsa_extra/rsa_test.cc',
-      ],
-    },
-    {
-      'target_name': 'boringssl_self_test_lib',
-      'type': 'static_library',
-      'dependencies': [
-        'boringssl_test_util',
-        'boringssl',
-      ],
-      'sources': [
-        'third_party/boringssl/crypto/self_test.cc',
       ],
     },
     {
