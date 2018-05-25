@@ -46,3 +46,18 @@ grpc_cc_test(
         "@io_opencensus_cpp//opencensus/stats:test_utils",
     ],
 )
+
+grpc_cc_test(
+    name = "get_cpu_stats_test",
+    srcs = ["get_cpu_stats_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+        "//:lb_get_cpu_stats",
+    ],
+)
