@@ -23,15 +23,17 @@ namespace grpc {
 
 // Registers the OpenCensus plugin with gRPC, so that it will be used for future
 // RPCs. This must be called before any views are created on the measures
-// defined below.
+// defined below. This will only be enabled if the binary includes the
+// grpc_opencensus_plugin build target as a dependency. At the moment it is only
+// setup to be built with Bazel.
 void RegisterOpenCensusPlugin();
 
 // RPC stats definitions, defined by
 // https://github.com/census-instrumentation/opencensus-specs/blob/master/stats/gRPC.md
 
 // Registers the cumulative gRPC views so that they will be exported by any
-// registered stats exporter.
-// For on-task stats, construct a View using the ViewDescriptors below.
+// registered stats exporter. For on-task stats, construct a View using the
+// ViewDescriptors below.
 void RegisterOpenCensusViewsForExport();
 
 }  // namespace grpc
