@@ -16,6 +16,7 @@
  *
  */
 
+#include <stdint.h>
 #include <chrono>
 #include <ctime>
 #include <iomanip>
@@ -29,9 +30,6 @@
 
 namespace grpc {
 namespace load_reporter {
-
-using ::opencensus::stats::View;
-using ::opencensus::stats::ViewData;
 
 CpuStatsProvider::CpuStatsSample CpuStatsProviderDefaultImpl::GetCpuStats() {
   return get_cpu_stats();
@@ -58,7 +56,7 @@ CensusViewProvider::CensusViewProvider()
               "user_id>.");
   ::opencensus::stats::SetAggregationWindow(
       ::opencensus::stats::AggregationWindow::Delta(), &vd_start_count);
-  view_descriptor_map_.insert({(kViewStartCount), vd_start_count});
+  view_descriptor_map_.emplace(kViewStartCount, vd_start_count);
   // Four views related to ending a call.
   // If this view is set as Count of kMeasureEndBytesSent (in hope of saving one
   // measure), it's infeasible to prepare fake data for testing. That's because
@@ -78,7 +76,7 @@ CensusViewProvider::CensusViewProvider()
               "user_id, status>.");
   ::opencensus::stats::SetAggregationWindow(
       ::opencensus::stats::AggregationWindow::Delta(), &vd_end_count);
-  view_descriptor_map_.insert({kViewEndCount, vd_end_count});
+  view_descriptor_map_.emplace(kViewEndCount, vd_end_count);
   auto vd_end_bytes_sent =
       ::opencensus::stats::ViewDescriptor()
           .set_name((kViewEndBytesSent))
@@ -93,7 +91,7 @@ CensusViewProvider::CensusViewProvider()
               "status>.");
   ::opencensus::stats::SetAggregationWindow(
       ::opencensus::stats::AggregationWindow::Delta(), &vd_end_bytes_sent);
-  view_descriptor_map_.insert({kViewEndBytesSent, vd_end_bytes_sent});
+  view_descriptor_map_.emplace(kViewEndBytesSent, vd_end_bytes_sent);
   auto vd_end_bytes_received =
       ::opencensus::stats::ViewDescriptor()
           .set_name((kViewEndBytesReceived))
@@ -108,7 +106,7 @@ CensusViewProvider::CensusViewProvider()
               "user_id, status>.");
   ::opencensus::stats::SetAggregationWindow(
       ::opencensus::stats::AggregationWindow::Delta(), &vd_end_bytes_received);
-  view_descriptor_map_.insert({kViewEndBytesReceived, vd_end_bytes_received});
+  view_descriptor_map_.emplace(kViewEndBytesReceived, vd_end_bytes_received);
   auto vd_end_latency_ms =
       ::opencensus::stats::ViewDescriptor()
           .set_name((kViewEndLatencyMs))
@@ -123,7 +121,7 @@ CensusViewProvider::CensusViewProvider()
               "user_id, status>.");
   ::opencensus::stats::SetAggregationWindow(
       ::opencensus::stats::AggregationWindow::Delta(), &vd_end_latency_ms);
-  view_descriptor_map_.insert({kViewEndLatencyMs, vd_end_latency_ms});
+  view_descriptor_map_.emplace(kViewEndLatencyMs, vd_end_latency_ms);
   // Two views related to other call metrics.
   auto vd_metric_call_count =
       ::opencensus::stats::ViewDescriptor()
@@ -139,8 +137,7 @@ CensusViewProvider::CensusViewProvider()
               "metric_name>.");
   ::opencensus::stats::SetAggregationWindow(
       ::opencensus::stats::AggregationWindow::Delta(), &vd_metric_call_count);
-  view_descriptor_map_.insert(
-      {kViewOtherCallMetricCount, vd_metric_call_count});
+  view_descriptor_map_.emplace(kViewOtherCallMetricCount, vd_metric_call_count);
   auto vd_metric_value =
       ::opencensus::stats::ViewDescriptor()
           .set_name((kViewOtherCallMetricValue))
@@ -155,13 +152,13 @@ CensusViewProvider::CensusViewProvider()
               "by <token, host, user_id, metric_name>.");
   ::opencensus::stats::SetAggregationWindow(
       ::opencensus::stats::AggregationWindow::Delta(), &vd_metric_value);
-  view_descriptor_map_.insert({kViewOtherCallMetricValue, vd_metric_value});
+  view_descriptor_map_.emplace(kViewOtherCallMetricValue, vd_metric_value);
 }
 
 double CensusViewProvider::GetRelatedViewDataRowDouble(
-    ViewDataMap& view_data_map, const char* view_name, size_t view_name_len,
-    const std::vector<grpc::string>& tag_values) {
-  auto it_vd = view_data_map.find(grpc::string(view_name, view_name_len - 1));
+    const ViewDataMap& view_data_map, const char* view_name,
+    size_t view_name_len, const std::vector<grpc::string>& tag_values) {
+  auto it_vd = view_data_map.find(grpc::string(view_name, view_name_len));
   GPR_ASSERT(it_vd != view_data_map.end());
   auto it_row = it_vd->second.double_data().find(tag_values);
   GPR_ASSERT(it_row != it_vd->second.double_data().end());
@@ -172,6 +169,8 @@ CensusViewProviderDefaultImpl::CensusViewProviderDefaultImpl() {
   for (const auto& p : view_descriptor_map_) {
     const grpc::string& view_name = p.first;
     const ::opencensus::stats::ViewDescriptor& vd = p.second;
+    // We need to use pair's piecewise ctor here, otherwise the deleted copy
+    // ctor of View will be called.
     view_map_.emplace(std::piecewise_construct,
                       std::forward_as_tuple(view_name),
                       std::forward_as_tuple(vd));
@@ -200,14 +199,18 @@ CensusViewProvider::ViewDataMap CensusViewProviderDefaultImpl::FetchViewData() {
 
 grpc::string LoadReporter::GenerateLbId() {
   while (true) {
+    if (next_lb_id_ > UINT32_MAX) {
+      gpr_log(GPR_ERROR, "[LR %p] The LB ID exceeds the max valid value!",
+              this);
+      return "";
+    }
     int64_t lb_id = next_lb_id_++;
-    // Check that there is no overflow.
+    // Overflow should never happen.
     GPR_ASSERT(lb_id >= 0);
     std::stringstream ss;
     // Convert to padded hex string for a 32-bit LB ID. E.g, "0000ca5b".
-    ss << std::setfill('0') << std::setw(8) << std::hex << lb_id;
+    ss << std::setfill('0') << std::setw(kLbIdLength) << std::hex << lb_id;
     grpc::string lb_id_str = ss.str();
-    GPR_ASSERT(kLbIdLength == lb_id_str.length());
     // The client may send requests with LB ID that has never been allocated
     // by this load reporter. Those IDs are tracked and will be skipped when
     // we generate a new ID.
@@ -237,17 +240,15 @@ LoadReporter::GenerateLoadBalancingFeedback() {
       last->cpu_limit == first->cpu_limit) {
     return ::grpc::lb::v1::LoadBalancingFeedback::default_instance();
   }
-  uint64_t rpcs = 0;
-  uint64_t errors = 0;
+  double rpcs = 0;
+  double errors = 0;
   for (LoadBalancingFeedbackRecord* p = last; p != first; --p) {
     // Because these two numbers are counters, the first record shouldn't be
     // included.
     rpcs += p->rpcs;
     errors += p->errors;
   }
-  double cpu_usage = fake_cpu_usage_per_rpc_ < 0
-                         ? last->cpu_usage - first->cpu_usage
-                         : rpcs * fake_cpu_usage_per_rpc_;
+  double cpu_usage = last->cpu_usage - first->cpu_usage;
   double cpu_limit = last->cpu_limit - first->cpu_limit;
   std::chrono::duration<double> duration_seconds =
       last->end_time - first->end_time;
@@ -269,39 +270,42 @@ LoadReporter::GenerateLoads(const grpc::string& hostname,
   GPR_ASSERT(assigned_stores != nullptr);
   GPR_ASSERT(!assigned_stores->empty());
   ::google::protobuf::RepeatedPtrField<::grpc::lb::v1::Load> loads;
-  for (auto& per_balancer_store : *assigned_stores) {
+  for (PerBalancerStore* per_balancer_store : *assigned_stores) {
     GPR_ASSERT(!per_balancer_store->IsSuspended());
     if (!per_balancer_store->load_record_map().empty()) {
-      for (const auto& entry : per_balancer_store->load_record_map()) {
-        const auto& key = entry.first;
-        const auto& value = entry.second;
+      for (const auto& p : per_balancer_store->load_record_map()) {
+        const auto& key = p.first;
+        const auto& value = p.second;
         auto load = loads.Add();
         load->set_load_balance_tag(key.lb_tag());
         load->set_user_id(key.user_id());
         load->set_client_ip_address(key.GetClientIpBytes());
-        load->set_num_calls_started(value.start_count());
-        load->set_num_calls_finished_without_error(value.ok_count());
-        load->set_num_calls_finished_with_error(value.error_count());
+        load->set_num_calls_started(static_cast<int64_t>(value.start_count()));
+        load->set_num_calls_finished_without_error(
+            static_cast<int64_t>(value.ok_count()));
+        load->set_num_calls_finished_with_error(
+            static_cast<int64_t>(value.error_count()));
         load->set_total_bytes_sent(static_cast<int64_t>(value.bytes_sent()));
         load->set_total_bytes_received(
             static_cast<int64_t>(value.bytes_recv()));
         load->mutable_total_latency()->set_seconds(
             static_cast<int64_t>(value.latency_ms() / 1000));
         load->mutable_total_latency()->set_nanos(
-            (static_cast<int32_t>(value.latency_ms()) % 1000) * 1000);
-        for (const auto& call_metric : value.call_metrics()) {
+            (static_cast<int32_t>(value.latency_ms()) % 1000) * 1000000);
+        for (const auto& p : value.call_metrics()) {
+          const grpc::string& metric_name = p.first;
+          const CallMetricValue& metric_value = p.second;
           auto call_metric_data = load->add_metric_data();
-          call_metric_data->set_metric_name(call_metric.first);
+          call_metric_data->set_metric_name(metric_name);
           call_metric_data->set_num_calls_finished_with_metric(
-              call_metric.second.num_calls());
+              metric_value.num_calls());
           call_metric_data->set_total_metric_value(
-              call_metric.second.total_metric_value());
+              metric_value.total_metric_value());
         }
         if (per_balancer_store->lb_id() != lb_id) {
           // This per-balancer store is an orphan assigned to this receiving
-          // balancer. Extract an OrphanedLoadIdentifier from the
-          // per-balancer store and attach it to the load.
-          AttachOrphanLoadId(load, per_balancer_store);
+          // balancer.
+          AttachOrphanLoadId(load, *per_balancer_store);
         }
       }
       per_balancer_store->ClearLoadRecordMap();
@@ -311,23 +315,25 @@ LoadReporter::GenerateLoads(const grpc::string& hostname,
       load->set_num_calls_in_progress(
           per_balancer_store->GetNumCallsInProgressForReport());
       if (per_balancer_store->lb_id() != lb_id) {
-        AttachOrphanLoadId(load, per_balancer_store);
+        // This per-balancer store is an orphan assigned to this receiving
+        // balancer.
+        AttachOrphanLoadId(load, *per_balancer_store);
       }
     }
   }
   return loads;
 }
 
-void LoadReporter::AttachOrphanLoadId(::grpc::lb::v1::Load* load,
-                                      PerBalancerStore* per_balancer_store) {
-  if (per_balancer_store->lb_id() == kInvalidLbId) {
+void LoadReporter::AttachOrphanLoadId(
+    ::grpc::lb::v1::Load* load, const PerBalancerStore& per_balancer_store) {
+  if (per_balancer_store.lb_id() == kInvalidLbId) {
     load->set_load_key_unknown(true);
   } else {
     load->set_load_key_unknown(false);
     load->mutable_orphaned_load_identifier()->set_load_key(
-        per_balancer_store->load_key());
+        per_balancer_store.load_key());
     load->mutable_orphaned_load_identifier()->set_load_balancer_id(
-        per_balancer_store->lb_id());
+        per_balancer_store.lb_id());
   }
 }
 
@@ -353,6 +359,8 @@ void LoadReporter::ReportStreamClosed(const grpc::string& hostname,
                                       const grpc::string& lb_id) {
   std::lock_guard<std::mutex> lock(store_mu_);
   load_data_store_.ReportStreamClosed(hostname, lb_id);
+  gpr_log(GPR_INFO, "[LR %p] Report stream closed (host: %s, LB ID: %s).", this,
+          hostname.c_str(), lb_id.c_str());
 }
 
 void LoadReporter::FetchAndSample() {
@@ -362,32 +370,35 @@ void LoadReporter::FetchAndSample() {
           this);
   CensusViewProvider::ViewDataMap view_data_map =
       census_view_provider_->FetchViewData();
-  // Process START_CALL view data.
-  if (view_data_map.find(kViewStartCount) != view_data_map.end()) {
-    for (const auto& p :
-         view_data_map.find(kViewStartCount)->second.double_data()) {
+  // Process view data about starting call.
+  auto it = view_data_map.find(kViewStartCount);
+  if (it != view_data_map.end()) {
+    // Note that the data type for any Sum view is double, whatever the data
+    // type of the original measure.
+    for (const auto& p : it->second.double_data()) {
       const std::vector<grpc::string>& tag_values = p.first;
-      const int64_t start_count = p.second;
+      const double start_count = p.second;
       const grpc::string& client_ip_and_token = tag_values[0];
       const grpc::string& host = tag_values[1];
       const grpc::string& user_id = tag_values[2];
       LoadRecordKey key(client_ip_and_token, user_id);
-      LoadRecordValue value =
-          LoadRecordValue(static_cast<uint64_t>(start_count));
+      LoadRecordValue value = LoadRecordValue(start_count);
       {
         std::unique_lock<std::mutex> lock(store_mu_);
         load_data_store_.MergeRow(host, key, value);
       }
     }
   }
-  // Process END_CALL view data.
+  // Process view data about ending call.
   double total_end_count = 0;
   double total_error_count = 0;
-  if (view_data_map.find(kViewEndCount) != view_data_map.end()) {
-    for (const auto& p :
-         view_data_map.find(kViewEndCount)->second.double_data()) {
+  it = view_data_map.find(kViewEndCount);
+  if (it != view_data_map.end()) {
+    // Note that the data type for any Sum view is double, whatever the data
+    // type of the original measure.
+    for (const auto& p : it->second.double_data()) {
       const std::vector<grpc::string>& tag_values = p.first;
-      const int64_t end_count = p.second;
+      const double end_count = p.second;
       const grpc::string& client_ip_and_token = tag_values[0];
       const grpc::string& host = tag_values[1];
       const grpc::string& user_id = tag_values[2];
@@ -403,14 +414,14 @@ void LoadReporter::FetchAndSample() {
       }
       LoadRecordKey key(client_ip_and_token, user_id);
       const double bytes_sent = CensusViewProvider::GetRelatedViewDataRowDouble(
-          view_data_map, kViewEndBytesSent, sizeof(kViewEndBytesSent),
+          view_data_map, kViewEndBytesSent, sizeof(kViewEndBytesSent) - 1,
           tag_values);
       const double bytes_received =
           CensusViewProvider::GetRelatedViewDataRowDouble(
               view_data_map, kViewEndBytesReceived,
-              sizeof(kViewEndBytesReceived), tag_values);
+              sizeof(kViewEndBytesReceived) - 1, tag_values);
       const double latency_ms = CensusViewProvider::GetRelatedViewDataRowDouble(
-          view_data_map, kViewEndLatencyMs, sizeof(kViewEndLatencyMs),
+          view_data_map, kViewEndLatencyMs, sizeof(kViewEndLatencyMs) - 1,
           tag_values);
       double ok_count = 0;
       double error_count = 0;
@@ -421,20 +432,20 @@ void LoadReporter::FetchAndSample() {
         error_count = end_count;
         total_error_count += end_count;
       }
-      LoadRecordValue value =
-          LoadRecordValue(0, static_cast<uint64_t>(ok_count),
-                          static_cast<uint64_t>(error_count), bytes_sent,
-                          bytes_received, latency_ms);
+      LoadRecordValue value = LoadRecordValue(
+          0, ok_count, error_count, bytes_sent, bytes_received, latency_ms);
       {
         std::unique_lock<std::mutex> lock(store_mu_);
         load_data_store_.MergeRow(host, key, value);
       }
     }
   }
-  // Process other metrics.
-  if (view_data_map.find(kViewOtherCallMetricCount) != view_data_map.end()) {
-    for (const auto& p :
-         view_data_map.find(kViewOtherCallMetricCount)->second.int_data()) {
+  // Append a load balancing feedback record.
+  AppendNewFeedbackRecord(total_end_count, total_error_count);
+  // Process view data about other metrics.
+  it = view_data_map.find(kViewOtherCallMetricCount);
+  if (it != view_data_map.end()) {
+    for (const auto& p : it->second.int_data()) {
       const std::vector<grpc::string>& tag_values = p.first;
       const int64_t num_calls = p.second;
       const grpc::string& client_ip_and_token = tag_values[0];
@@ -445,7 +456,7 @@ void LoadReporter::FetchAndSample() {
       const double total_metric_value =
           CensusViewProvider::GetRelatedViewDataRowDouble(
               view_data_map, kViewOtherCallMetricValue,
-              sizeof(kViewOtherCallMetricValue), tag_values);
+              sizeof(kViewOtherCallMetricValue) - 1, tag_values);
       LoadRecordValue value = LoadRecordValue(
           metric_name, static_cast<uint64_t>(num_calls), total_metric_value);
       {
@@ -454,8 +465,6 @@ void LoadReporter::FetchAndSample() {
       }
     }
   }
-  // Append a load balancing feedback record.
-  AppendNewFeedbackRecord(total_end_count, total_error_count);
 }
 
 }  // namespace load_reporter

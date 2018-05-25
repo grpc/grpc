@@ -114,8 +114,8 @@ grpc::string LoadRecordKey::GetClientIpBytes() const {
 
 LoadRecordValue::LoadRecordValue(grpc::string metric_name, uint64_t num_calls,
                                  double total_metric_value) {
-  call_metrics_.insert(
-      {std::move(metric_name), CallMetricValue(num_calls, total_metric_value)});
+  call_metrics_.emplace(std::move(metric_name),
+                        CallMetricValue(num_calls, total_metric_value));
 }
 
 void PerBalancerStore::MergeRow(const LoadRecordKey& key,

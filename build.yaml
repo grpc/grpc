@@ -1899,10 +1899,8 @@ libs:
   - src/cpp/server/load_reporter/util.h
   src:
   - src/cpp/server/load_reporter/load_data_store.cc
-  - src/cpp/server/load_reporter/util.cc
   deps:
   - grpc++
-  - @io_opencensus_cpp//opencensus/stats
 - name: qps
   build: private
   language: c++
@@ -4827,20 +4825,6 @@ targets:
   - test/cpp/server/load_reporter/load_data_store_test.cc
   deps:
   - lb_load_data_store
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr_test_util
-  - gpr
-- name: lb_load_reporter_test
-  gtest: true
-  build: test
-  language: c++
-  src:
-  - test/cpp/server/load_reporter/load_reporter_test.cc
-  deps:
-  - lb_load_reporter
   - grpc++_test_util
   - grpc_test_util
   - grpc++

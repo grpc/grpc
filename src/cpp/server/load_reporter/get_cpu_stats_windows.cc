@@ -20,6 +20,8 @@
 
 #ifdef GPR_WINDOWS
 
+// TODO(juanlishen): Verify correctness.
+
 #include "src/cpp/server/load_reporter/get_cpu_stats.h"
 
 namespace grpc {

@@ -24,8 +24,8 @@
 namespace grpc {
 namespace load_reporter {
 
-// Reads the CPU stats (in a pair of busy and total number of counts) from the
-// system. The units of the stats should be the same.
+// Reads the CPU stats (in a pair of busy and total numbers) from the system.
+// The units of the stats should be the same.
 std::pair<uint64_t, uint64_t> get_cpu_stats();
 
 }  // namespace load_reporter

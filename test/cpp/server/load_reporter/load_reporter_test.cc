@@ -56,6 +56,13 @@ constexpr uint64_t kNumFeedbackSamplesInWindow =
 class MockCensusViewProvider : public CensusViewProvider {
  public:
   MOCK_METHOD0(FetchViewData, CensusViewProvider::ViewDataMap());
+
+  const ::opencensus::stats::ViewDescriptor& FindViewDescriptor(
+      const grpc::string& view_name) {
+    auto it = view_descriptor_map_.find(view_name);
+    GPR_ASSERT(it != view_descriptor_map_.end());
+    return it->second;
+  }
 };
 
 class MockCpuStatsProvider : public CpuStatsProvider {
@@ -67,63 +74,28 @@ class LoadReporterTest : public ::testing::Test {
  public:
   LoadReporterTest() {}
 
-  // Note that [start, start + count) of the fake samples (maybe plus the
-  // initial record) are in the window now.
-  void VerifyLbFeedback(const LoadBalancingFeedback& lb_feedback, size_t start,
-                        size_t count) {
-    const CpuStatsProvider::CpuStatsSample* base =
-        start == 0 ? &initial_cpu_stats_ : &kCpuStatsSamples[start - 1];
-    double expected_cpu_util =
-        static_cast<double>(kCpuStatsSamples[start + count - 1].first -
-                            base->first) /
-        static_cast<double>(kCpuStatsSamples[start + count - 1].second -
-                            base->second);
-    ASSERT_TRUE(std::abs(lb_feedback.server_utilization() - expected_cpu_util) <
-                0.00001);
-    double qps_sum = 0, eps_sum = 0;
-    for (size_t i = 0; i < count; ++i) {
-      qps_sum += kQpsEpsSamples[start + i].first;
-      eps_sum += kQpsEpsSamples[start + i].second;
-    }
-    double expected_qps = qps_sum / count;
-    double expected_eps = eps_sum / count;
-    ASSERT_TRUE(std::abs(lb_feedback.calls_per_second() - expected_qps) < 1.5);
-    ASSERT_TRUE(std::abs(lb_feedback.errors_per_second() - expected_eps) < 1.5);
-    gpr_log(GPR_INFO,
-            "Verified LB feedback matches the samples of index [%lu, %lu).",
-            start, start + count);
-  }
-
-  void PrepareCpuExpectation(size_t call_num) {
-    ::testing::InSequence s;
-    for (size_t i = 0; i < call_num; ++i) {
-      EXPECT_CALL(*mock_cpu_stats_provider(), GetCpuStats())
-          .WillOnce(Return(kCpuStatsSamples[i]))
-          .RetiresOnSaturation();
-    }
-  }
-
   MockCensusViewProvider* mock_census_view_provider() {
     return static_cast<MockCensusViewProvider*>(
         load_reporter_->census_view_provider());
   }
 
-  MockCpuStatsProvider* mock_cpu_stats_provider() {
-    return static_cast<MockCpuStatsProvider*>(
+  void PrepareCpuExpectation(size_t call_num) {
+    auto mock_cpu_stats_provider = static_cast<MockCpuStatsProvider*>(
         load_reporter_->cpu_stats_provider());
+    ::testing::InSequence s;
+    for (size_t i = 0; i < call_num; ++i) {
+      EXPECT_CALL(*mock_cpu_stats_provider, GetCpuStats())
+          .WillOnce(Return(kCpuStatsSamples[i]))
+          .RetiresOnSaturation();
+    }
   }
 
+  CpuStatsProvider::CpuStatsSample initial_cpu_stats_{2, 20};
+  const std::vector<CpuStatsProvider::CpuStatsSample> kCpuStatsSamples = {
+      {13, 53},    {64, 96},     {245, 345},  {314, 785},
+      {874, 1230}, {1236, 2145}, {1864, 2974}};
+
   std::unique_ptr<LoadReporter> load_reporter_;
-
-  const std::vector<std::pair<double, double>> kQpsEpsSamples = {
-      {546.1, 153.1},  {62.1, 54.1},   {578.1, 154.2}, {978.1, 645.1},
-      {1132.1, 846.4}, {531.5, 315.4}, {874.1, 324.9}};
-
-  ::grpc::load_reporter::CpuStatsProvider::CpuStatsSample initial_cpu_stats_{
-      2, 20};
-  const std::vector<::grpc::load_reporter::CpuStatsProvider::CpuStatsSample>
-      kCpuStatsSamples = {{13, 53},    {64, 96},     {245, 345},  {314, 785},
-                          {874, 1230}, {1236, 2145}, {1864, 2974}};
 
   const grpc::string kHostname1 = "kHostname1";
   const grpc::string kHostname2 = "kHostname2";
@@ -166,7 +138,39 @@ class LoadReporterTest : public ::testing::Test {
   }
 };
 
-using LbFeedbackTest = LoadReporterTest;
+class LbFeedbackTest : public LoadReporterTest {
+ public:
+  // Note that [start, start + count) of the fake samples (maybe plus the
+  // initial record) are in the window now.
+  void VerifyLbFeedback(const LoadBalancingFeedback& lb_feedback, size_t start,
+                        size_t count) {
+    const CpuStatsProvider::CpuStatsSample* base =
+        start == 0 ? &initial_cpu_stats_ : &kCpuStatsSamples[start - 1];
+    double expected_cpu_util =
+        static_cast<double>(kCpuStatsSamples[start + count - 1].first -
+                            base->first) /
+        static_cast<double>(kCpuStatsSamples[start + count - 1].second -
+                            base->second);
+    ASSERT_TRUE(std::abs(lb_feedback.server_utilization() - expected_cpu_util) <
+                0.00001);
+    double qps_sum = 0, eps_sum = 0;
+    for (size_t i = 0; i < count; ++i) {
+      qps_sum += kQpsEpsSamples[start + i].first;
+      eps_sum += kQpsEpsSamples[start + i].second;
+    }
+    double expected_qps = qps_sum / count;
+    double expected_eps = eps_sum / count;
+    ASSERT_TRUE(std::abs(lb_feedback.calls_per_second() - expected_qps) < 1.5);
+    ASSERT_TRUE(std::abs(lb_feedback.errors_per_second() - expected_eps) < 1.5);
+    gpr_log(GPR_INFO,
+            "Verified LB feedback matches the samples of index [%lu, %lu).",
+            start, start + count);
+  }
+
+  const std::vector<std::pair<double, double>> kQpsEpsSamples = {
+      {546.1, 153.1},  {62.1, 54.1},   {578.1, 154.2}, {978.1, 645.1},
+      {1132.1, 846.4}, {531.5, 315.4}, {874.1, 324.9}};
+};
 
 TEST_F(LbFeedbackTest, ZeroDuration) {
   PrepareCpuExpectation(kCpuStatsSamples.size());

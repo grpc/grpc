@@ -20,6 +20,8 @@
 
 #ifdef GPR_APPLE
 
+// TODO(juanlishen): Verify correctness.
+
 #include "src/cpp/server/load_reporter/get_cpu_stats.h"
 
 namespace grpc {
