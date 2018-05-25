@@ -385,6 +385,7 @@ static void BM_ClosureReschedOnExecCtx(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   Rescheduler r(state, grpc_schedule_on_exec_ctx);
   r.ScheduleFirst();
+  grpc_core::ExecCtx::Get()->Flush();
 
   track_counters.Finish(state);
 }
