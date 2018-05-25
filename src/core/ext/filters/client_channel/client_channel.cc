@@ -816,8 +816,8 @@ typedef struct {
   grpc_core::OrphanablePtr<grpc_core::ByteStream> recv_message;
   // For intercepting recv_trailing_metadata.
   grpc_metadata_batch recv_trailing_metadata;
-  grpc_closure recv_trailing_metadata_ready;
   grpc_transport_stream_stats collect_stats;
+  grpc_closure recv_trailing_metadata_ready;
   // For intercepting on_complete.
   grpc_closure on_complete;
 } subchannel_batch_data;
@@ -2285,15 +2285,14 @@ static void add_retriable_recv_trailing_metadata_op(
   grpc_metadata_batch_init(&batch_data->recv_trailing_metadata);
   batch_data->batch.payload->recv_trailing_metadata.recv_trailing_metadata =
       &batch_data->recv_trailing_metadata;
+  batch_data->batch.payload->recv_trailing_metadata.collect_stats =
+      &batch_data->collect_stats;
   GRPC_CLOSURE_INIT(&batch_data->recv_trailing_metadata_ready,
                     recv_trailing_metadata_ready, batch_data,
                     grpc_schedule_on_exec_ctx);
   batch_data->batch.payload->recv_trailing_metadata
       .recv_trailing_metadata_ready =
           &batch_data->recv_trailing_metadata_ready;
-  batch_data->batch.collect_stats = true;
-  batch_data->batch.payload->collect_stats.collect_stats =
-      &batch_data->collect_stats;
 }
 
 // Helper function used to start a recv_trailing_metadata batch.  This
@@ -2497,7 +2496,6 @@ static void add_subchannel_batches_for_pending_batches(
     }
     // recv_trailing_metadata.
     if (batch->recv_trailing_metadata) {
-      GPR_ASSERT(batch->collect_stats);
       add_retriable_recv_trailing_metadata_op(calld, retry_state, batch_data);
     }
     add_closure_for_subchannel_batch(calld, &batch_data->batch, closures,

@@ -1361,12 +1361,6 @@ static void perform_stream_op_locked(void* stream_op,
   on_complete->next_data.scratch = CLOSURE_BARRIER_FIRST_REF_BIT;
   on_complete->error_data.error = GRPC_ERROR_NONE;
 
-  if (op->collect_stats) {
-    GPR_ASSERT(s->collecting_stats == nullptr);
-    s->collecting_stats = op_payload->collect_stats.collect_stats;
-    on_complete->next_data.scratch |= CLOSURE_BARRIER_STATS_BIT;
-  }
-
   if (op->cancel_stream) {
     GRPC_STATS_INC_HTTP2_OP_CANCEL();
     grpc_chttp2_cancel_stream(t, s, op_payload->cancel_stream.cancel_error);
@@ -1604,6 +1598,9 @@ static void perform_stream_op_locked(void* stream_op,
 
   if (op->recv_trailing_metadata) {
     GRPC_STATS_INC_HTTP2_OP_RECV_TRAILING_METADATA();
+    GPR_ASSERT(s->collecting_stats == nullptr);
+    s->collecting_stats = op_payload->recv_trailing_metadata.collect_stats;
+    on_complete->next_data.scratch |= CLOSURE_BARRIER_STATS_BIT;
     GPR_ASSERT(s->recv_trailing_metadata_finished == nullptr);
     s->recv_trailing_metadata_finished =
         op_payload->recv_trailing_metadata.recv_trailing_metadata_ready;

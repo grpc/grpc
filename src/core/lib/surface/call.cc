@@ -1856,16 +1856,15 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         call->final_op.client.error_string =
             op->data.recv_status_on_client.error_string;
         stream_op->recv_trailing_metadata = true;
-        stream_op->collect_stats = true;
         stream_op_payload->recv_trailing_metadata.recv_trailing_metadata =
             &call->metadata_batch[1 /* is_receiving */][1 /* is_trailing */];
+        stream_op_payload->recv_trailing_metadata.collect_stats =
+            &call->final_info.stats.transport_stream_stats;
         GRPC_CLOSURE_INIT(&call->receiving_trailing_metadata_ready,
                           receiving_trailing_metadata_ready, bctl,
                           grpc_schedule_on_exec_ctx);
         stream_op_payload->recv_trailing_metadata.recv_trailing_metadata_ready =
             &call->receiving_trailing_metadata_ready;
-        stream_op_payload->collect_stats.collect_stats =
-            &call->final_info.stats.transport_stream_stats;
         ++num_recv_ops;
         break;
       }
@@ -1887,16 +1886,15 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         call->final_op.server.cancelled =
             op->data.recv_close_on_server.cancelled;
         stream_op->recv_trailing_metadata = true;
-        stream_op->collect_stats = true;
         stream_op_payload->recv_trailing_metadata.recv_trailing_metadata =
             &call->metadata_batch[1 /* is_receiving */][1 /* is_trailing */];
+        stream_op_payload->recv_trailing_metadata.collect_stats =
+            &call->final_info.stats.transport_stream_stats;
         GRPC_CLOSURE_INIT(&call->receiving_trailing_metadata_ready,
                           receiving_trailing_metadata_ready, bctl,
                           grpc_schedule_on_exec_ctx);
         stream_op_payload->recv_trailing_metadata.recv_trailing_metadata_ready =
             &call->receiving_trailing_metadata_ready;
-        stream_op_payload->collect_stats.collect_stats =
-            &call->final_info.stats.transport_stream_stats;
         ++num_recv_ops;
         break;
       }
