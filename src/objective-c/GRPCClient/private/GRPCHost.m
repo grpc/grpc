@@ -126,6 +126,13 @@ static NSMutableDictionary *kHostCache;
                         completionQueue:queue];
 }
 
+- (NSData *)dataWithNsString:(NSString *)string {
+  NSData *data = [string dataUsingEncoding:NSASCIIStringEncoding allowLossyConversion:YES];
+  NSMutableData *nullTerminated = [NSMutableData dataWithData: data];
+  [nullTerminated appendBytes:"\0" length:1];
+  return nullTerminated;
+}
+
 - (BOOL)setTLSPEMRootCerts:(nullable NSString *)pemRootCerts
             withPrivateKey:(nullable NSString *)pemPrivateKey
              withCertChain:(nullable NSString *)pemCertChain
@@ -147,13 +154,12 @@ static NSMutableDictionary *kHostCache;
       kDefaultRootsError = error;
       return;
     }
-    kDefaultRootsASCII =
-        [contentInUTF8 dataUsingEncoding:NSASCIIStringEncoding allowLossyConversion:YES];
+    kDefaultRootsASCII = [self dataWithNsString:contentInUTF8];
   });
 
   NSData *rootsASCII;
   if (pemRootCerts != nil) {
-    rootsASCII = [pemRootCerts dataUsingEncoding:NSASCIIStringEncoding allowLossyConversion:YES];
+    rootsASCII = [self dataWithNsString:pemRootCerts];
   } else {
     if (kDefaultRootsASCII == nil) {
       if (errorPtr) {
@@ -176,10 +182,8 @@ static NSMutableDictionary *kHostCache;
     creds = grpc_ssl_credentials_create(rootsASCII.bytes, NULL, NULL);
   } else {
     grpc_ssl_pem_key_cert_pair key_cert_pair;
-    NSData *privateKeyASCII =
-        [pemPrivateKey dataUsingEncoding:NSASCIIStringEncoding allowLossyConversion:YES];
-    NSData *certChainASCII =
-        [pemCertChain dataUsingEncoding:NSASCIIStringEncoding allowLossyConversion:YES];
+    NSData *privateKeyASCII = [self dataWithNsString:pemPrivateKey];
+    NSData *certChainASCII = [self dataWithNsString:pemCertChain];
     key_cert_pair.private_key = privateKeyASCII.bytes;
     key_cert_pair.cert_chain = certChainASCII.bytes;
     creds = grpc_ssl_credentials_create(rootsASCII.bytes, &key_cert_pair, NULL);
