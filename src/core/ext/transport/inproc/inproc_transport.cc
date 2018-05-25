@@ -498,7 +498,7 @@ static void fail_helper_locked(inproc_stream* s, grpc_error* error) {
   if (s->recv_trailing_md_op) {
     INPROC_LOG(GPR_INFO, "fail_helper %p scheduling trailing-metadata-ready %p",
                s, error);
-    GRPC_CLOSURE_SCHED(s->recv_initial_md_op->payload->recv_trailing_metadata
+    GRPC_CLOSURE_SCHED(s->recv_trailing_md_op->payload->recv_trailing_metadata
                            .recv_trailing_metadata_ready,
                        GRPC_ERROR_REF(error));
     INPROC_LOG(GPR_INFO, "fail_helper %p scheduling trailing-md-on-complete %p",
@@ -644,6 +644,12 @@ static void op_state_machine(void* arg, grpc_error* error) {
       s->trailing_md_sent = true;
       if (!s->t->is_client && s->trailing_md_recvd && s->recv_trailing_md_op) {
         INPROC_LOG(GPR_INFO,
+                   "op_state_machine %p scheduling trailing-metadata-ready", s);
+        GRPC_CLOSURE_SCHED(
+            s->recv_trailing_md_op->payload->recv_trailing_metadata
+                .recv_trailing_metadata_ready,
+            GRPC_ERROR_NONE);
+        INPROC_LOG(GPR_INFO,
                    "op_state_machine %p scheduling trailing-md-on-complete", s);
         GRPC_CLOSURE_SCHED(s->recv_trailing_md_op->on_complete,
                            GRPC_ERROR_NONE);
@@ -719,7 +725,7 @@ static void op_state_machine(void* arg, grpc_error* error) {
     INPROC_LOG(GPR_INFO,
                "op_state_machine %p scheduling trailing-metadata-ready %p", s,
                GRPC_ERROR_NONE);
-    GRPC_CLOSURE_SCHED(s->recv_initial_md_op->payload->recv_trailing_metadata
+    GRPC_CLOSURE_SCHED(s->recv_trailing_md_op->payload->recv_trailing_metadata
                            .recv_trailing_metadata_ready,
                        GRPC_ERROR_NONE);
     maybe_schedule_op_closure_locked(other, GRPC_ERROR_NONE);
@@ -874,6 +880,9 @@ static bool cancel_stream_locked(inproc_stream* s, grpc_error* error) {
     // couldn't complete that because we hadn't yet sent out trailing
     // md, now's the chance
     if (!s->t->is_client && s->trailing_md_recvd && s->recv_trailing_md_op) {
+      GRPC_CLOSURE_SCHED(s->recv_trailing_md_op->payload->recv_trailing_metadata
+                             .recv_trailing_metadata_ready,
+                         GRPC_ERROR_REF(s->cancel_self_error));
       complete_if_batch_end_locked(
           s, s->cancel_self_error, s->recv_trailing_md_op,
           "cancel_stream scheduling trailing-md-on-complete");
