@@ -50,7 +50,7 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
   --strategy=Closure=remote  \
   --genrule_strategy=remote  \
   --experimental_strict_action_env=true \
-  --experimental_remote_platform_override='properties:{name:"container-image" value:"docker://gcr.io/asci-toolchain/nosla-debian8-clang-msan@sha256:8f381d55c0456fb65821c90ada902c2584977e03a1eaca8fba8ce77e644c775b" }' \
+  --experimental_remote_platform_override='properties:{name:"container-image" value:"docker://gcr.io/cloud-marketplace/google/rbe-ubuntu16-04@sha256:59bf0e191a6b5cc1ab62c2224c810681d1326bad5a27b1d36c9f40113e79da7f" }' \
   --define GRPC_PORT_ISOLATED_RUNTIME=1 \
   --copt=-gmlt \
   --strip=never \
@@ -59,8 +59,8 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
   --linkopt=-fsanitize=memory \
   --copt=-fsanitize-memory-track-origins \
   --action_env=LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH \
-  --host_crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/debian8_clang/0.3.0/bazel_0.10.0:toolchain \
-  --crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/experimental/debian8_clang/0.3.0/bazel_0.10.0/msan:msan_experimental_toolchain \
+  --host_crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0/bazel_0.13.0/default:toolchain \
+  --crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0/bazel_0.13.0/msan:toolchain \
   -- //test/... || FAILED="true"
 
 # Sleep to let ResultStore finish writing results before querying
