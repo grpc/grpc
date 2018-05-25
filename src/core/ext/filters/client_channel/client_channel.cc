@@ -1320,8 +1320,8 @@ static pending_batch* pending_batch_find(
     if (batch != nullptr && predicate(batch, user_data)) {
       if (grpc_client_channel_trace.enabled()) {
         gpr_log(GPR_INFO,
-                "chand=%p calld=%p: %s pending batch at index %" PRIuPTR,
-                chand, calld, log_message, i);
+                "chand=%p calld=%p: %s pending batch at index %" PRIuPTR, chand,
+                calld, log_message, i);
       }
       return pending;
     }
@@ -1620,9 +1620,10 @@ static void invoke_recv_initial_metadata_callback(void* arg,
       batch_data->elem, "invoking recv_initial_metadata_ready for",
       [](grpc_transport_stream_op_batch* batch, void* unused) {
         return batch->recv_initial_metadata &&
-               batch->payload->recv_initial_metadata.recv_initial_metadata_ready
-                   != nullptr;
-      }, nullptr);
+               batch->payload->recv_initial_metadata
+                       .recv_initial_metadata_ready != nullptr;
+      },
+      nullptr);
   GPR_ASSERT(pending != nullptr);
   // Return metadata.
   grpc_metadata_batch_move(
@@ -1713,7 +1714,8 @@ static void invoke_recv_message_callback(void* arg, grpc_error* error) {
       [](grpc_transport_stream_op_batch* batch, void* unused) {
         return batch->recv_message &&
                batch->payload->recv_message.recv_message_ready != nullptr;
-      }, nullptr);
+      },
+      nullptr);
   GPR_ASSERT(pending != nullptr);
   // Return payload.
   *pending->batch->payload->recv_message.recv_message =
@@ -1779,9 +1781,8 @@ static void recv_message_ready(void* arg, grpc_error* error) {
     // error.
     invoke_recv_message_callback(batch_data, error);
   } else {
-    GRPC_CALL_COMBINER_STOP(
-        calld->call_combiner,
-        "recv_message_ready after retry dispatched");
+    GRPC_CALL_COMBINER_STOP(calld->call_combiner,
+                            "recv_message_ready after retry dispatched");
   }
 }
 
@@ -1800,8 +1801,9 @@ static void add_closure_for_recv_trailing_metadata_ready(
       [](grpc_transport_stream_op_batch* batch, void* unused) {
         return batch->recv_trailing_metadata &&
                batch->payload->recv_trailing_metadata
-                   .recv_trailing_metadata_ready != nullptr;
-      }, nullptr);
+                       .recv_trailing_metadata_ready != nullptr;
+      },
+      nullptr);
   // If we generated the recv_trailing_metadata op internally via
   // start_internal_recv_trailing_metadata(), then there will be no
   // pending batch.
@@ -1936,8 +1938,8 @@ static void recv_trailing_metadata_ready(void* arg, grpc_error* error) {
         batch_data->batch.payload->recv_trailing_metadata
             .recv_trailing_metadata;
     GPR_ASSERT(md_batch->idx.named.grpc_status != nullptr);
-    status = grpc_get_status_code_from_metadata(
-        md_batch->idx.named.grpc_status->md);
+    status =
+        grpc_get_status_code_from_metadata(md_batch->idx.named.grpc_status->md);
     if (md_batch->idx.named.grpc_retry_pushback_ms != nullptr) {
       server_pushback_md = &md_batch->idx.named.grpc_retry_pushback_ms->md;
     }
@@ -2006,11 +2008,11 @@ static void add_closure_for_completed_pending_batch(
         return batch->on_complete != nullptr &&
                batch_data->batch.send_initial_metadata ==
                    batch->send_initial_metadata &&
-               batch_data->batch.send_message ==
-                   batch->send_message &&
+               batch_data->batch.send_message == batch->send_message &&
                batch_data->batch.send_trailing_metadata ==
                    batch->send_trailing_metadata;
-      }, batch_data);
+      },
+      batch_data);
   // If batch_data is a replay batch, then there will be no pending
   // batch to complete.
   if (pending == nullptr) {
@@ -2310,8 +2312,7 @@ static void add_retriable_recv_trailing_metadata_op(
                     recv_trailing_metadata_ready, batch_data,
                     grpc_schedule_on_exec_ctx);
   batch_data->batch.payload->recv_trailing_metadata
-      .recv_trailing_metadata_ready =
-          &batch_data->recv_trailing_metadata_ready;
+      .recv_trailing_metadata_ready = &batch_data->recv_trailing_metadata_ready;
 }
 
 // Helper function used to start a recv_trailing_metadata batch.  This
@@ -2485,9 +2486,9 @@ static void add_subchannel_batches_for_pending_batches(
       continue;
     }
     // Create batch with the right number of callbacks.
-    const int num_callbacks =
-        1 + batch->recv_initial_metadata + batch->recv_message +
-        batch->recv_trailing_metadata;
+    const int num_callbacks = 1 + batch->recv_initial_metadata +
+                              batch->recv_message +
+                              batch->recv_trailing_metadata;
     subchannel_batch_data* batch_data = batch_data_create(elem, num_callbacks);
     // Cache send ops if needed.
     maybe_cache_send_ops_for_batch(calld, pending);

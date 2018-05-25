@@ -139,8 +139,7 @@ static void recv_trailing_metadata_ready(void* arg, grpc_error* error) {
 
 // Inject our own recv_trailing_metadata_ready callback into op.
 static void inject_recv_trailing_metadata_ready(
-    grpc_deadline_state* deadline_state,
-    grpc_transport_stream_op_batch* op) {
+    grpc_deadline_state* deadline_state, grpc_transport_stream_op_batch* op) {
   deadline_state->original_recv_trailing_metadata_ready =
       op->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
   GRPC_CLOSURE_INIT(&deadline_state->recv_trailing_metadata_ready,
