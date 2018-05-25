@@ -197,13 +197,13 @@ TEST_F(LbFeedbackTest, Normal) {
     auto end_count_vd = ::opencensus::stats::testing::TestUtils::MakeViewData(
         mock_census_view_provider()->FindViewDescriptor(
             ::grpc::load_reporter::kViewEndCount),
-        {{{grpc::string(kClientIp0) + kLbToken1, kHostname1, kUser1,
+        {{{kClientIp0 + kLbToken1, kHostname1, kUser1,
            ::grpc::load_reporter::kCallStatusOk},
           ok_count_1},
-         {{grpc::string(kClientIp0) + kLbToken1, kHostname1, kUser2,
+         {{kClientIp0 + kLbToken1, kHostname1, kUser2,
            ::grpc::load_reporter::kCallStatusOk},
           ok_count_2},
-         {{grpc::string(kClientIp0) + kLbToken1, kHostname1, kUser1,
+         {{kClientIp0 + kLbToken1, kHostname1, kUser1,
            ::grpc::load_reporter::kCallStatusClientError},
           error_count}});
     // Values for other view data don't matter.
@@ -211,38 +211,38 @@ TEST_F(LbFeedbackTest, Normal) {
         ::opencensus::stats::testing::TestUtils::MakeViewData(
             mock_census_view_provider()->FindViewDescriptor(
                 ::grpc::load_reporter::kViewEndBytesSent),
-            {{{grpc::string(kClientIp0) + kLbToken1, kHostname1, kUser1,
+            {{{kClientIp0 + kLbToken1, kHostname1, kUser1,
                ::grpc::load_reporter::kCallStatusOk},
               0},
-             {{grpc::string(kClientIp0) + kLbToken1, kHostname1, kUser2,
+             {{kClientIp0 + kLbToken1, kHostname1, kUser2,
                ::grpc::load_reporter::kCallStatusOk},
               0},
-             {{grpc::string(kClientIp0) + kLbToken1, kHostname1, kUser1,
+             {{kClientIp0 + kLbToken1, kHostname1, kUser1,
                ::grpc::load_reporter::kCallStatusClientError},
               0}});
     auto end_bytes_received_vd =
         ::opencensus::stats::testing::TestUtils::MakeViewData(
             mock_census_view_provider()->FindViewDescriptor(
                 ::grpc::load_reporter::kViewEndBytesReceived),
-            {{{grpc::string(kClientIp0) + kLbToken1, kHostname1, kUser1,
+            {{{kClientIp0 + kLbToken1, kHostname1, kUser1,
                ::grpc::load_reporter::kCallStatusOk},
               0},
-             {{grpc::string(kClientIp0) + kLbToken1, kHostname1, kUser2,
+             {{kClientIp0 + kLbToken1, kHostname1, kUser2,
                ::grpc::load_reporter::kCallStatusOk},
               0},
-             {{grpc::string(kClientIp0) + kLbToken1, kHostname1, kUser1,
+             {{kClientIp0 + kLbToken1, kHostname1, kUser1,
                ::grpc::load_reporter::kCallStatusClientError},
               0}});
     auto end_latency_vd = ::opencensus::stats::testing::TestUtils::MakeViewData(
         mock_census_view_provider()->FindViewDescriptor(
             ::grpc::load_reporter::kViewEndLatencyMs),
-        {{{grpc::string(kClientIp0) + kLbToken1, kHostname1, kUser1,
+        {{{kClientIp0 + kLbToken1, kHostname1, kUser1,
            ::grpc::load_reporter::kCallStatusOk},
           0},
-         {{grpc::string(kClientIp0) + kLbToken1, kHostname1, kUser2,
+         {{kClientIp0 + kLbToken1, kHostname1, kUser2,
            ::grpc::load_reporter::kCallStatusOk},
           0},
-         {{grpc::string(kClientIp0) + kLbToken1, kHostname1, kUser1,
+         {{kClientIp0 + kLbToken1, kHostname1, kUser1,
            ::grpc::load_reporter::kCallStatusClientError},
           0}});
     view_data_map_list.push_back(
@@ -297,117 +297,107 @@ TEST_F(LoadReportTest, BasicReport) {
       ::opencensus::stats::testing::TestUtils::MakeViewData(
           mock_census_view_provider()->FindViewDescriptor(
               ::grpc::load_reporter::kViewStartCount),
-          {{{grpc::string(kClientIp1) + kLbToken1, kHostname1, kUser1}, 1234},
-           {{grpc::string(kClientIp2) + kLbToken1, kHostname1, kUser1}, 1225},
-           {{grpc::string(kClientIp0) + kLbToken1, kHostname1, kUser1}, 10},
-           {{grpc::string(kClientIp2) + kLbToken1, kHostname1, kUser2}, 464},
-           {{grpc::string(kClientIp1) + kLbId2 + kLbTag1, kHostname2, kUser3},
-            101},
-           {{grpc::string(kClientIp1) + kLbToken2, kHostname2, kUser3}, 17},
-           {{grpc::string(kClientIp2) + kLbId3 + kLbTag2, kHostname2, kUser3},
-            23}}));
+          {{{kClientIp1 + kLbToken1, kHostname1, kUser1}, 1234},
+           {{kClientIp2 + kLbToken1, kHostname1, kUser1}, 1225},
+           {{kClientIp0 + kLbToken1, kHostname1, kUser1}, 10},
+           {{kClientIp2 + kLbToken1, kHostname1, kUser2}, 464},
+           {{kClientIp1 + kLbId2 + kLbTag1, kHostname2, kUser3}, 101},
+           {{kClientIp1 + kLbToken2, kHostname2, kUser3}, 17},
+           {{kClientIp2 + kLbId3 + kLbTag2, kHostname2, kUser3}, 23}}));
   vdm1.emplace(::grpc::load_reporter::kViewEndCount,
                ::opencensus::stats::testing::TestUtils::MakeViewData(
                    mock_census_view_provider()->FindViewDescriptor(
                        ::grpc::load_reporter::kViewEndCount),
-                   {{{grpc::string(kClientIp1) + kLbToken1, kHostname1, kUser1,
+                   {{{kClientIp1 + kLbToken1, kHostname1, kUser1,
                       ::grpc::load_reporter::kCallStatusOk},
                      641},
-                    {{grpc::string(kClientIp2) + kLbToken1, kHostname1, kUser1,
+                    {{kClientIp2 + kLbToken1, kHostname1, kUser1,
                       ::grpc::load_reporter::kCallStatusClientError},
                      272},
-                    {{grpc::string(kClientIp2) + kLbToken1, kHostname1, kUser2,
+                    {{kClientIp2 + kLbToken1, kHostname1, kUser2,
                       ::grpc::load_reporter::kCallStatusOk},
                      996},
-                    {{grpc::string(kClientIp1) + kLbId2 + kLbTag1, kHostname2,
-                      kUser3, ::grpc::load_reporter::kCallStatusClientError},
+                    {{kClientIp1 + kLbId2 + kLbTag1, kHostname2, kUser3,
+                      ::grpc::load_reporter::kCallStatusClientError},
                      34},
-                    {{grpc::string(kClientIp1) + kLbToken2, kHostname2, kUser2,
+                    {{kClientIp1 + kLbToken2, kHostname2, kUser2,
                       ::grpc::load_reporter::kCallStatusOk},
                      18}}));
   vdm1.emplace(::grpc::load_reporter::kViewEndBytesSent,
                ::opencensus::stats::testing::TestUtils::MakeViewData(
                    mock_census_view_provider()->FindViewDescriptor(
                        ::grpc::load_reporter::kViewEndBytesSent),
-                   {{{grpc::string(kClientIp1) + kLbToken1, kHostname1, kUser1,
+                   {{{kClientIp1 + kLbToken1, kHostname1, kUser1,
                       ::grpc::load_reporter::kCallStatusOk},
                      8977},
-                    {{grpc::string(kClientIp2) + kLbToken1, kHostname1, kUser1,
+                    {{kClientIp2 + kLbToken1, kHostname1, kUser1,
                       ::grpc::load_reporter::kCallStatusClientError},
                      266},
-                    {{grpc::string(kClientIp2) + kLbToken1, kHostname1, kUser2,
+                    {{kClientIp2 + kLbToken1, kHostname1, kUser2,
                       ::grpc::load_reporter::kCallStatusOk},
                      1276},
-                    {{grpc::string(kClientIp1) + kLbId2 + kLbTag1, kHostname2,
-                      kUser3, ::grpc::load_reporter::kCallStatusClientError},
+                    {{kClientIp1 + kLbId2 + kLbTag1, kHostname2, kUser3,
+                      ::grpc::load_reporter::kCallStatusClientError},
                      77823},
-                    {{grpc::string(kClientIp1) + kLbToken2, kHostname2, kUser2,
+                    {{kClientIp1 + kLbToken2, kHostname2, kUser2,
                       ::grpc::load_reporter::kCallStatusOk},
                      48}}));
   vdm1.emplace(::grpc::load_reporter::kViewEndBytesReceived,
                ::opencensus::stats::testing::TestUtils::MakeViewData(
                    mock_census_view_provider()->FindViewDescriptor(
                        ::grpc::load_reporter::kViewEndBytesReceived),
-                   {{{grpc::string(kClientIp1) + kLbToken1, kHostname1, kUser1,
+                   {{{kClientIp1 + kLbToken1, kHostname1, kUser1,
                       ::grpc::load_reporter::kCallStatusOk},
                      2341},
-                    {{grpc::string(kClientIp2) + kLbToken1, kHostname1, kUser1,
+                    {{kClientIp2 + kLbToken1, kHostname1, kUser1,
                       ::grpc::load_reporter::kCallStatusClientError},
                      466},
-                    {{grpc::string(kClientIp2) + kLbToken1, kHostname1, kUser2,
+                    {{kClientIp2 + kLbToken1, kHostname1, kUser2,
                       ::grpc::load_reporter::kCallStatusOk},
                      518},
-                    {{grpc::string(kClientIp1) + kLbId2 + kLbTag1, kHostname2,
-                      kUser3, ::grpc::load_reporter::kCallStatusClientError},
+                    {{kClientIp1 + kLbId2 + kLbTag1, kHostname2, kUser3,
+                      ::grpc::load_reporter::kCallStatusClientError},
                      81},
-                    {{grpc::string(kClientIp1) + kLbToken2, kHostname2, kUser2,
+                    {{kClientIp1 + kLbToken2, kHostname2, kUser2,
                       ::grpc::load_reporter::kCallStatusOk},
                      27}}));
   vdm1.emplace(::grpc::load_reporter::kViewEndLatencyMs,
                ::opencensus::stats::testing::TestUtils::MakeViewData(
                    mock_census_view_provider()->FindViewDescriptor(
                        ::grpc::load_reporter::kViewEndLatencyMs),
-                   {{{grpc::string(kClientIp1) + kLbToken1, kHostname1, kUser1,
+                   {{{kClientIp1 + kLbToken1, kHostname1, kUser1,
                       ::grpc::load_reporter::kCallStatusOk},
                      3.14},
-                    {{grpc::string(kClientIp2) + kLbToken1, kHostname1, kUser1,
+                    {{kClientIp2 + kLbToken1, kHostname1, kUser1,
                       ::grpc::load_reporter::kCallStatusClientError},
                      5.26},
-                    {{grpc::string(kClientIp2) + kLbToken1, kHostname1, kUser2,
+                    {{kClientIp2 + kLbToken1, kHostname1, kUser2,
                       ::grpc::load_reporter::kCallStatusOk},
                      45.4},
-                    {{grpc::string(kClientIp1) + kLbId2 + kLbTag1, kHostname2,
-                      kUser3, ::grpc::load_reporter::kCallStatusClientError},
+                    {{kClientIp1 + kLbId2 + kLbTag1, kHostname2, kUser3,
+                      ::grpc::load_reporter::kCallStatusClientError},
                      4.4},
-                    {{grpc::string(kClientIp1) + kLbToken2, kHostname2, kUser2,
+                    {{kClientIp1 + kLbToken2, kHostname2, kUser2,
                       ::grpc::load_reporter::kCallStatusOk},
                      2348.0}}));
-  vdm1.emplace(::grpc::load_reporter::kViewOtherCallMetricCount,
-               ::opencensus::stats::testing::TestUtils::MakeViewData(
-                   mock_census_view_provider()->FindViewDescriptor(
-                       ::grpc::load_reporter::kViewOtherCallMetricCount),
-                   {{{grpc::string(kClientIp1) + kLbToken1, kHostname1, kUser2,
-                      kMetric1},
-                     1},
-                    {{grpc::string(kClientIp1) + kLbToken1, kHostname1, kUser2,
-                      kMetric1},
-                     1},
-                    {{grpc::string(kClientIp1) + kLbId2 + kLbTag1, kHostname2,
-                      kUser3, kMetric2},
-                     1}}));
-  vdm1.emplace(::grpc::load_reporter::kViewOtherCallMetricValue,
-               ::opencensus::stats::testing::TestUtils::MakeViewData(
-                   mock_census_view_provider()->FindViewDescriptor(
-                       ::grpc::load_reporter::kViewOtherCallMetricValue),
-                   {{{grpc::string(kClientIp1) + kLbToken1, kHostname1, kUser2,
-                      kMetric1},
-                     1.2},
-                    {{grpc::string(kClientIp1) + kLbToken1, kHostname1, kUser2,
-                      kMetric1},
-                     1.2},
-                    {{grpc::string(kClientIp1) + kLbId2 + kLbTag1, kHostname2,
-                      kUser3, kMetric2},
-                     3.2}}));
+  vdm1.emplace(
+      ::grpc::load_reporter::kViewOtherCallMetricCount,
+      ::opencensus::stats::testing::TestUtils::MakeViewData(
+          mock_census_view_provider()->FindViewDescriptor(
+              ::grpc::load_reporter::kViewOtherCallMetricCount),
+          {{{kClientIp1 + kLbToken1, kHostname1, kUser2, kMetric1}, 1},
+           {{kClientIp1 + kLbToken1, kHostname1, kUser2, kMetric1}, 1},
+           {{kClientIp1 + kLbId2 + kLbTag1, kHostname2, kUser3, kMetric2},
+            1}}));
+  vdm1.emplace(
+      ::grpc::load_reporter::kViewOtherCallMetricValue,
+      ::opencensus::stats::testing::TestUtils::MakeViewData(
+          mock_census_view_provider()->FindViewDescriptor(
+              ::grpc::load_reporter::kViewOtherCallMetricValue),
+          {{{kClientIp1 + kLbToken1, kHostname1, kUser2, kMetric1}, 1.2},
+           {{kClientIp1 + kLbToken1, kHostname1, kUser2, kMetric1}, 1.2},
+           {{kClientIp1 + kLbId2 + kLbTag1, kHostname2, kUser3, kMetric2},
+            3.2}}));
   // Make up the second view data map.
   CensusViewProvider::ViewDataMap vdm2;
   vdm2.emplace(
@@ -415,69 +405,64 @@ TEST_F(LoadReportTest, BasicReport) {
       ::opencensus::stats::testing::TestUtils::MakeViewData(
           mock_census_view_provider()->FindViewDescriptor(
               ::grpc::load_reporter::kViewStartCount),
-          {{{grpc::string(kClientIp2) + kLbToken1, kHostname1, kUser1}, 3},
-           {{grpc::string(kClientIp1) + kLbId2 + kLbTag1, kHostname2, kUser3},
-            778}}));
+          {{{kClientIp2 + kLbToken1, kHostname1, kUser1}, 3},
+           {{kClientIp1 + kLbId2 + kLbTag1, kHostname2, kUser3}, 778}}));
   vdm2.emplace(::grpc::load_reporter::kViewEndCount,
                ::opencensus::stats::testing::TestUtils::MakeViewData(
                    mock_census_view_provider()->FindViewDescriptor(
                        ::grpc::load_reporter::kViewEndCount),
-                   {{{grpc::string(kClientIp1) + kLbToken1, kHostname1, kUser1,
+                   {{{kClientIp1 + kLbToken1, kHostname1, kUser1,
                       ::grpc::load_reporter::kCallStatusOk},
                      24},
-                    {{grpc::string(kClientIp1) + kLbToken2, kHostname2, kUser3,
+                    {{kClientIp1 + kLbToken2, kHostname2, kUser3,
                       ::grpc::load_reporter::kCallStatusClientError},
                      546}}));
   vdm2.emplace(::grpc::load_reporter::kViewEndBytesSent,
                ::opencensus::stats::testing::TestUtils::MakeViewData(
                    mock_census_view_provider()->FindViewDescriptor(
                        ::grpc::load_reporter::kViewEndBytesSent),
-                   {{{grpc::string(kClientIp1) + kLbToken1, kHostname1, kUser1,
+                   {{{kClientIp1 + kLbToken1, kHostname1, kUser1,
                       ::grpc::load_reporter::kCallStatusOk},
                      747},
-                    {{grpc::string(kClientIp1) + kLbToken2, kHostname2, kUser3,
+                    {{kClientIp1 + kLbToken2, kHostname2, kUser3,
                       ::grpc::load_reporter::kCallStatusClientError},
                      229}}));
   vdm2.emplace(::grpc::load_reporter::kViewEndBytesReceived,
                ::opencensus::stats::testing::TestUtils::MakeViewData(
                    mock_census_view_provider()->FindViewDescriptor(
                        ::grpc::load_reporter::kViewEndBytesReceived),
-                   {{{grpc::string(kClientIp1) + kLbToken1, kHostname1, kUser1,
+                   {{{kClientIp1 + kLbToken1, kHostname1, kUser1,
                       ::grpc::load_reporter::kCallStatusOk},
                      173},
-                    {{grpc::string(kClientIp1) + kLbToken2, kHostname2, kUser3,
+                    {{kClientIp1 + kLbToken2, kHostname2, kUser3,
                       ::grpc::load_reporter::kCallStatusClientError},
                      438}}));
   vdm2.emplace(::grpc::load_reporter::kViewEndLatencyMs,
                ::opencensus::stats::testing::TestUtils::MakeViewData(
                    mock_census_view_provider()->FindViewDescriptor(
                        ::grpc::load_reporter::kViewEndLatencyMs),
-                   {{{grpc::string(kClientIp1) + kLbToken1, kHostname1, kUser1,
+                   {{{kClientIp1 + kLbToken1, kHostname1, kUser1,
                       ::grpc::load_reporter::kCallStatusOk},
                      187},
-                    {{grpc::string(kClientIp1) + kLbToken2, kHostname2, kUser3,
+                    {{kClientIp1 + kLbToken2, kHostname2, kUser3,
                       ::grpc::load_reporter::kCallStatusClientError},
                      34}}));
-  vdm2.emplace(::grpc::load_reporter::kViewOtherCallMetricCount,
-               ::opencensus::stats::testing::TestUtils::MakeViewData(
-                   mock_census_view_provider()->FindViewDescriptor(
-                       ::grpc::load_reporter::kViewOtherCallMetricCount),
-                   {{{grpc::string(kClientIp1) + kLbId2 + kLbTag1, kHostname2,
-                      kUser3, kMetric1},
-                     1},
-                    {{grpc::string(kClientIp1) + kLbId2 + kLbTag1, kHostname2,
-                      kUser3, kMetric2},
-                     1}}));
-  vdm2.emplace(::grpc::load_reporter::kViewOtherCallMetricValue,
-               ::opencensus::stats::testing::TestUtils::MakeViewData(
-                   mock_census_view_provider()->FindViewDescriptor(
-                       ::grpc::load_reporter::kViewOtherCallMetricValue),
-                   {{{grpc::string(kClientIp1) + kLbId2 + kLbTag1, kHostname2,
-                      kUser3, kMetric1},
-                     9.6},
-                    {{grpc::string(kClientIp1) + kLbId2 + kLbTag1, kHostname2,
-                      kUser3, kMetric2},
-                     5.7}}));
+  vdm2.emplace(
+      ::grpc::load_reporter::kViewOtherCallMetricCount,
+      ::opencensus::stats::testing::TestUtils::MakeViewData(
+          mock_census_view_provider()->FindViewDescriptor(
+              ::grpc::load_reporter::kViewOtherCallMetricCount),
+          {{{kClientIp1 + kLbId2 + kLbTag1, kHostname2, kUser3, kMetric1}, 1},
+           {{kClientIp1 + kLbId2 + kLbTag1, kHostname2, kUser3, kMetric2},
+            1}}));
+  vdm2.emplace(
+      ::grpc::load_reporter::kViewOtherCallMetricValue,
+      ::opencensus::stats::testing::TestUtils::MakeViewData(
+          mock_census_view_provider()->FindViewDescriptor(
+              ::grpc::load_reporter::kViewOtherCallMetricValue),
+          {{{kClientIp1 + kLbId2 + kLbTag1, kHostname2, kUser3, kMetric1}, 9.6},
+           {{kClientIp1 + kLbId2 + kLbTag1, kHostname2, kUser3, kMetric2},
+            5.7}}));
   // Set up mock expectation.
   EXPECT_CALL(*mock_census_view_provider(), FetchViewData())
       .WillOnce(Return(vdm1))
