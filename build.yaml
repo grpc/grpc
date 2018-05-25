@@ -1891,6 +1891,18 @@ libs:
   - test/cpp/interop/interop_server_bootstrap.cc
   deps:
   - interop_server_lib
+- name: lb_get_cpu_stats
+  build: private
+  language: c++
+  headers:
+  - src/cpp/server/load_reporter/get_cpu_stats.h
+  src:
+  - src/cpp/server/load_reporter/get_cpu_stats_linux.cc
+  - src/cpp/server/load_reporter/get_cpu_stats_macos.cc
+  - src/cpp/server/load_reporter/get_cpu_stats_unsupported.cc
+  - src/cpp/server/load_reporter/get_cpu_stats_windows.cc
+  deps:
+  - grpc++
 - name: lb_load_data_store
   build: private
   language: c++
@@ -4817,6 +4829,20 @@ targets:
   - mac
   - linux
   - posix
+- name: lb_get_cpu_stats_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/server/load_reporter/get_cpu_stats_test.cc
+  deps:
+  - lb_get_cpu_stats
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: lb_load_data_store_test
   gtest: true
   build: test

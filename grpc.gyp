@@ -1637,6 +1637,19 @@
       ],
     },
     {
+      'target_name': 'lb_get_cpu_stats',
+      'type': 'static_library',
+      'dependencies': [
+        'grpc++',
+      ],
+      'sources': [
+        'src/cpp/server/load_reporter/get_cpu_stats_linux.cc',
+        'src/cpp/server/load_reporter/get_cpu_stats_macos.cc',
+        'src/cpp/server/load_reporter/get_cpu_stats_unsupported.cc',
+        'src/cpp/server/load_reporter/get_cpu_stats_windows.cc',
+      ],
+    },
+    {
       'target_name': 'lb_load_data_store',
       'type': 'static_library',
       'dependencies': [

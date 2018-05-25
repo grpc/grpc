@@ -233,25 +233,32 @@ LoadReporter::GenerateLoadBalancingFeedback() {
   if (feedback_records_.size() < 2) {
     return ::grpc::lb::v1::LoadBalancingFeedback::default_instance();
   }
-  LoadBalancingFeedbackRecord* first = &feedback_records_[0];
-  LoadBalancingFeedbackRecord* last =
+  // Find the longest range with valid ends.
+  LoadBalancingFeedbackRecord* oldest = &feedback_records_[0];
+  LoadBalancingFeedbackRecord* newest =
       &feedback_records_[feedback_records_.size() - 1];
-  if (first->end_time == last->end_time ||
-      last->cpu_limit == first->cpu_limit) {
+  while (newest > oldest) {
+    // A zero limit means that the system info reading was failed, so these
+    // records can't be used to calculate CPU utilization.
+    if (newest->cpu_limit == 0) --newest;
+    if (oldest->cpu_limit == 0) ++oldest;
+  }
+  if (newest - oldest < 1 || oldest->end_time == newest->end_time ||
+      newest->cpu_limit == oldest->cpu_limit) {
     return ::grpc::lb::v1::LoadBalancingFeedback::default_instance();
   }
   double rpcs = 0;
   double errors = 0;
-  for (LoadBalancingFeedbackRecord* p = last; p != first; --p) {
-    // Because these two numbers are counters, the first record shouldn't be
+  for (LoadBalancingFeedbackRecord* p = newest; p != oldest; --p) {
+    // Because these two numbers are counters, the oldest record shouldn't be
     // included.
     rpcs += p->rpcs;
     errors += p->errors;
   }
-  double cpu_usage = last->cpu_usage - first->cpu_usage;
-  double cpu_limit = last->cpu_limit - first->cpu_limit;
+  double cpu_usage = newest->cpu_usage - oldest->cpu_usage;
+  double cpu_limit = newest->cpu_limit - oldest->cpu_limit;
   std::chrono::duration<double> duration_seconds =
-      last->end_time - first->end_time;
+      newest->end_time - oldest->end_time;
   lock.unlock();
   ::grpc::lb::v1::LoadBalancingFeedback feedback;
   feedback.set_server_utilization(static_cast<float>(cpu_usage / cpu_limit));

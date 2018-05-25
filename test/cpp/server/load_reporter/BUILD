@@ -31,7 +31,7 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "load_reporter_test",
+    name = "lb_load_reporter_test",
     srcs = ["load_reporter_test.cc"],
     external_deps = [
         "gtest",
@@ -48,7 +48,7 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "get_cpu_stats_test",
+    name = "lb_get_cpu_stats_test",
     srcs = ["get_cpu_stats_test.cc"],
     external_deps = [
         "gtest",
