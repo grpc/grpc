@@ -96,6 +96,12 @@ BUILD_WITH_SYSTEM_OPENSSL = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_OPENSSL',
 BUILD_WITH_SYSTEM_ZLIB = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_ZLIB',
                                         False)
 
+# Export this variable to use the system installation of cares. You need to
+# have the header files installed (in /usr/include/) and during
+# runtime, the shared libary must be installed
+BUILD_WITH_SYSTEM_CARES = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_CARES',
+                                         False)
+
 # Environment variable to determine whether or not to enable coverage analysis
 # in Cython modules.
 ENABLE_CYTHON_TRACING = os.environ.get(
@@ -169,6 +175,10 @@ if BUILD_WITH_SYSTEM_ZLIB:
   CORE_C_FILES = filter(lambda x: 'third_party/zlib' not in x, CORE_C_FILES)
   ZLIB_INCLUDE = (os.path.join('/usr', 'include'),)
 
+if BUILD_WITH_SYSTEM_CARES:
+  CORE_C_FILES = filter(lambda x: 'third_party/cares' not in x, CORE_C_FILES)
+  CARES_INCLUDE = (os.path.join('/usr', 'include'),)
+
 EXTENSION_INCLUDE_DIRECTORIES = (
     (PYTHON_STEM,) + CORE_INCLUDE + SSL_INCLUDE + ZLIB_INCLUDE +
     CARES_INCLUDE + ADDRESS_SORTING_INCLUDE)
@@ -184,6 +194,8 @@ if BUILD_WITH_SYSTEM_OPENSSL:
   EXTENSION_LIBRARIES += ('ssl', 'crypto',)
 if BUILD_WITH_SYSTEM_ZLIB:
   EXTENSION_LIBRARIES += ('z',)
+if BUILD_WITH_SYSTEM_CARES:
+  EXTENSION_LIBRARIES += ('cares',)
 
 DEFINE_MACROS = (
     ('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600),
