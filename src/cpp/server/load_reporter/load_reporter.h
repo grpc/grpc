@@ -64,9 +64,12 @@ class CensusViewProvider {
       size_t view_name_len, const std::vector<grpc::string>& tag_values);
 
  protected:
-  ViewDescriptorMap view_descriptor_map_;
+  const ViewDescriptorMap& view_descriptor_map() const {
+    return view_descriptor_map_;
+  }
 
  private:
+  ViewDescriptorMap view_descriptor_map_;
   // Tag keys.
   ::opencensus::stats::TagKey tag_key_token_;
   ::opencensus::stats::TagKey tag_key_host_;

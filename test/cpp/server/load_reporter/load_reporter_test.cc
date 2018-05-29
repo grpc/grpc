@@ -26,8 +26,8 @@
 #include <gtest/gtest.h>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/cpp/server/load_reporter/constants.h"
 #include "src/cpp/server/load_reporter/load_reporter.h"
-#include "src/cpp/server/load_reporter/util.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -58,8 +58,8 @@ class MockCensusViewProvider : public CensusViewProvider {
 
   const ::opencensus::stats::ViewDescriptor& FindViewDescriptor(
       const grpc::string& view_name) {
-    auto it = view_descriptor_map_.find(view_name);
-    GPR_ASSERT(it != view_descriptor_map_.end());
+    auto it = view_descriptor_map().find(view_name);
+    GPR_ASSERT(it != view_descriptor_map().end());
     return it->second;
   }
 };

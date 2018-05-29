@@ -67,16 +67,15 @@ class CallMetricValue {
 // The key of a load record.
 class LoadRecordKey {
  public:
-  explicit LoadRecordKey(grpc::string lb_id, grpc::string lb_tag,
-                         grpc::string user_id, grpc::string client_ip_hex)
+  LoadRecordKey(grpc::string lb_id, grpc::string lb_tag, grpc::string user_id,
+                grpc::string client_ip_hex)
       : lb_id_(std::move(lb_id)),
         lb_tag_(std::move(lb_tag)),
         user_id_(std::move(user_id)),
         client_ip_hex_(std::move(client_ip_hex)) {}
 
   // Parses the input client_ip_and_token to set client IP, LB ID, and LB tag.
-  explicit LoadRecordKey(const grpc::string& client_ip_and_token,
-                         grpc::string user_id);
+  LoadRecordKey(const grpc::string& client_ip_and_token, grpc::string user_id);
 
   grpc::string ToString() const {
     return "[lb_id_=" + lb_id_ + ", lb_tag_=" + lb_tag_ +
@@ -134,8 +133,8 @@ class LoadRecordValue {
         bytes_recv_(bytes_recv),
         latency_ms_(latency_ms) {}
 
-  explicit LoadRecordValue(grpc::string metric_name, uint64_t num_calls,
-                           double total_metric_value);
+  LoadRecordValue(grpc::string metric_name, uint64_t num_calls,
+                  double total_metric_value);
 
   void MergeFrom(const LoadRecordValue& other) {
     start_count_ += other.start_count_;

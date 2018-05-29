@@ -17,14 +17,13 @@
  */
 
 #include <stdint.h>
+#include <stdio.h>
 #include <chrono>
 #include <ctime>
-#include <iomanip>
-#include <sstream>
 
+#include "src/cpp/server/load_reporter/constants.h"
 #include "src/cpp/server/load_reporter/get_cpu_stats.h"
 #include "src/cpp/server/load_reporter/load_reporter.h"
-#include "src/cpp/server/load_reporter/util.h"
 
 #include "opencensus/stats/internal/set_aggregation_window.h"
 
@@ -32,7 +31,7 @@ namespace grpc {
 namespace load_reporter {
 
 CpuStatsProvider::CpuStatsSample CpuStatsProviderDefaultImpl::GetCpuStats() {
-  return get_cpu_stats();
+  return GetCpuStatsImpl();
 }
 
 CensusViewProvider::CensusViewProvider()
@@ -166,7 +165,7 @@ double CensusViewProvider::GetRelatedViewDataRowDouble(
 }
 
 CensusViewProviderDefaultImpl::CensusViewProviderDefaultImpl() {
-  for (const auto& p : view_descriptor_map_) {
+  for (const auto& p : view_descriptor_map()) {
     const grpc::string& view_name = p.first;
     const ::opencensus::stats::ViewDescriptor& vd = p.second;
     // We need to use pair's piecewise ctor here, otherwise the deleted copy
@@ -207,10 +206,10 @@ grpc::string LoadReporter::GenerateLbId() {
     int64_t lb_id = next_lb_id_++;
     // Overflow should never happen.
     GPR_ASSERT(lb_id >= 0);
-    std::stringstream ss;
     // Convert to padded hex string for a 32-bit LB ID. E.g, "0000ca5b".
-    ss << std::setfill('0') << std::setw(kLbIdLength) << std::hex << lb_id;
-    grpc::string lb_id_str = ss.str();
+    char buf[kLbIdLength];
+    sprintf(buf, "%08lx", lb_id);
+    grpc::string lb_id_str(buf, kLbIdLength);
     // The client may send requests with LB ID that has never been allocated
     // by this load reporter. Those IDs are tracked and will be skipped when
     // we generate a new ID.

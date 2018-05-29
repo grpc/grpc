@@ -1291,7 +1291,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/cpp/server/load_reporter/load_data_store.h",
-        "src/cpp/server/load_reporter/util.h",
+        "src/cpp/server/load_reporter/constants.h",
     ],
     language = "c++",
     deps = [
@@ -1323,7 +1323,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/cpp/server/load_reporter/load_reporter.h",
-        "src/cpp/server/load_reporter/util.h",
+        "src/cpp/server/load_reporter/constants.h",
     ],
     language = "c++",
     deps = [

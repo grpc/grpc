@@ -27,7 +27,7 @@
 namespace grpc {
 namespace load_reporter {
 
-std::pair<uint64_t, uint64_t> get_cpu_stats() {
+std::pair<uint64_t, uint64_t> GetCpuStatsImpl() {
   uint64_t busy = 0, total = 0;
   host_cpu_load_info_data_t cpuinfo;
   mach_msg_type_number_t count = HOST_CPU_LOAD_INFO_COUNT;
