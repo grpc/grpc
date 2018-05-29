@@ -24,4 +24,11 @@ source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 mv ${KOKORO_GFILE_DIR}/github/grpc/artifacts input_artifacts || true
 ls -R input_artifacts || true
 
-tools/run_tests/task_runner.py -f distribtest macos
+tools/run_tests/task_runner.py -f distribtest macos || FAILED="true"
+
+tools/internal_ci/helper_scripts/delete_nonartifacts.sh || true
+
+if [ "$FAILED" != "" ]
+then
+  exit 1
+fi
