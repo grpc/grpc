@@ -67,6 +67,9 @@
 
 #define MAX_SEND_EXTRA_METADATA_COUNT 3
 
+// Used to create arena for the first call.
+#define ESTIMATED_MDELEM_COUNT 16
+
 /* Status data for a request can come from several sources; this
    enumerates them all, and acts as a priority sorting for which
    status to return to the application - earlier entries override
@@ -322,6 +325,11 @@ static parent_call* get_or_create_parent_call(grpc_call* call) {
 
 static parent_call* get_parent_call(grpc_call* call) {
   return (parent_call*)gpr_atm_acq_load(&call->parent_call_atm);
+}
+
+size_t grpc_call_get_initial_size_estimate() {
+  return sizeof(grpc_call) + sizeof(batch_control) * MAX_CONCURRENT_BATCHES +
+         sizeof(grpc_linked_mdelem) * ESTIMATED_MDELEM_COUNT;
 }
 
 grpc_error* grpc_call_create(const grpc_call_create_args* args,

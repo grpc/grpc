@@ -388,5 +388,5 @@ TESTCASES_VERSION_MATRIX = {
     'python_v1.7.2': 'python__v1.0.x',
     'python_v1.8.1': 'python__v1.0.x',
     'python_v1.9.1': 'python__v1.0.x',
-    'python_v1.10.0': 'python__v1.0.x',
+    'python_v1.10.1': 'python__v1.0.x',
 }
