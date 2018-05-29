@@ -23,7 +23,7 @@ mkdir -p build
 cd build
 
 # set to the location where Android SDK is installed
-ANDROID_NDK_PATH="$HOME/android-ndk-r16b"
+# e.g. ANDROID_NDK_PATH="$HOME/android-ndk-r16b"
 
 cmake ../.. \
   -DCMAKE_SYSTEM_NAME=Android \

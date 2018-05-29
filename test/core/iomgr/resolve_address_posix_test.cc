@@ -91,7 +91,7 @@ static void actually_poll(void* argsp) {
       break;
     }
     grpc_millis time_left = deadline - grpc_core::ExecCtx::Get()->Now();
-    gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRIdPTR, done, time_left);
+    gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, done, time_left);
     GPR_ASSERT(time_left >= 0);
     grpc_pollset_worker* worker = nullptr;
     gpr_mu_lock(args->mu);

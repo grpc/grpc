@@ -51,6 +51,7 @@ typedef struct alts_handshaker_client_vtable {
                              alts_tsi_event* event, grpc_slice* bytes_received);
   tsi_result (*next)(alts_handshaker_client* client, alts_tsi_event* event,
                      grpc_slice* bytes_received);
+  void (*shutdown)(alts_handshaker_client* client);
   void (*destruct)(alts_handshaker_client* client);
 } alts_handshaker_client_vtable;
 
@@ -98,6 +99,15 @@ tsi_result alts_handshaker_client_start_server(alts_handshaker_client* client,
 tsi_result alts_handshaker_client_next(alts_handshaker_client* client,
                                        alts_tsi_event* event,
                                        grpc_slice* bytes_received);
+
+/**
+ * This method cancels previously scheduled, but yet executed handshaker
+ * requests to ALTS handshaker service. After this operation, the handshake
+ * will be shutdown, and no more handshaker requests will get scheduled.
+ *
+ * - client: ALTS handshaker client instance.
+ */
+void alts_handshaker_client_shutdown(alts_handshaker_client* client);
 
 /**
  * This method destroys a ALTS handshaker client.

@@ -73,6 +73,17 @@ namespace Grpc.Core
         }
 
         /// <summary>
+        /// Returns the status code of the call, as a convenient alternative to <see cref="StatusCode">Status.StatusCode</see>.
+        /// </summary>
+        public StatusCode StatusCode
+        {
+            get
+            {
+                return status.StatusCode;
+            }
+        }
+
+        /// <summary>
         /// Gets the call trailing metadata.
         /// Trailers only have meaningful content for client-side calls (in which case they represent the trailing metadata sent by the server when closing the call).
         /// Instances of <c>RpcException</c> thrown by the server-side part of the stack will have trailers always set to empty.

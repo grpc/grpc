@@ -21,13 +21,8 @@ import grpc_testing
 from tests.testing import _application_common
 from tests.testing import _application_testing_common
 from tests.testing import _server_application
-from tests.testing.proto import services_pb2
 
 
-# TODO(https://github.com/google/protobuf/issues/3452): Drop this skip.
-@unittest.skipIf(
-    services_pb2.DESCRIPTOR.services_by_name.get('FirstService') is None,
-    'Fix protobuf issue 3452!')
 class FirstServiceServicerTest(unittest.TestCase):
 
     def setUp(self):

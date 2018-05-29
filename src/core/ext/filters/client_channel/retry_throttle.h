@@ -42,6 +42,10 @@ class ServerRetryThrottleData : public RefCounted<ServerRetryThrottleData> {
   intptr_t milli_token_ratio() const { return milli_token_ratio_; }
 
  private:
+  // So Delete() can call our private dtor.
+  template <typename T>
+  friend void grpc_core::Delete(T*);
+
   ~ServerRetryThrottleData();
 
   void GetReplacementThrottleDataIfNeeded(

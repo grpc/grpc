@@ -53,24 +53,24 @@ static void exec_ctx_sched(grpc_closure* closure, grpc_error* error) {
 
 static gpr_timespec g_start_time;
 
-static gpr_atm timespec_to_atm_round_down(gpr_timespec ts) {
+static grpc_millis timespec_to_millis_round_down(gpr_timespec ts) {
   ts = gpr_time_sub(ts, g_start_time);
   double x = GPR_MS_PER_SEC * static_cast<double>(ts.tv_sec) +
              static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS;
   if (x < 0) return 0;
-  if (x > GPR_ATM_MAX) return GPR_ATM_MAX;
-  return static_cast<gpr_atm>(x);
+  if (x > GRPC_MILLIS_INF_FUTURE) return GRPC_MILLIS_INF_FUTURE;
+  return static_cast<grpc_millis>(x);
 }
 
-static gpr_atm timespec_to_atm_round_up(gpr_timespec ts) {
+static grpc_millis timespec_to_millis_round_up(gpr_timespec ts) {
   ts = gpr_time_sub(ts, g_start_time);
   double x = GPR_MS_PER_SEC * static_cast<double>(ts.tv_sec) +
              static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS +
              static_cast<double>(GPR_NS_PER_SEC - 1) /
                  static_cast<double>(GPR_NS_PER_SEC);
   if (x < 0) return 0;
-  if (x > GPR_ATM_MAX) return GPR_ATM_MAX;
-  return static_cast<gpr_atm>(x);
+  if (x > GRPC_MILLIS_INF_FUTURE) return GRPC_MILLIS_INF_FUTURE;
+  return static_cast<grpc_millis>(x);
 }
 
 gpr_timespec grpc_millis_to_timespec(grpc_millis millis,
@@ -92,12 +92,12 @@ gpr_timespec grpc_millis_to_timespec(grpc_millis millis,
 }
 
 grpc_millis grpc_timespec_to_millis_round_down(gpr_timespec ts) {
-  return timespec_to_atm_round_down(
+  return timespec_to_millis_round_down(
       gpr_convert_clock_type(ts, g_start_time.clock_type));
 }
 
 grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec ts) {
-  return timespec_to_atm_round_up(
+  return timespec_to_millis_round_up(
       gpr_convert_clock_type(ts, g_start_time.clock_type));
 }
 
@@ -138,7 +138,7 @@ bool ExecCtx::Flush() {
 
 grpc_millis ExecCtx::Now() {
   if (!now_is_valid_) {
-    now_ = timespec_to_atm_round_down(gpr_now(GPR_CLOCK_MONOTONIC));
+    now_ = timespec_to_millis_round_down(gpr_now(GPR_CLOCK_MONOTONIC));
     now_is_valid_ = true;
   }
   return now_;

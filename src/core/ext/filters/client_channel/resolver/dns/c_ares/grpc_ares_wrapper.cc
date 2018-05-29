@@ -153,7 +153,10 @@ static void grpc_ares_request_unref(grpc_ares_request* r) {
   /* If there are no pending queries, invoke on_done callback and destroy the
      request */
   if (gpr_unref(&r->pending_queries)) {
-    grpc_cares_wrapper_address_sorting_sort(*(r->lb_addrs_out));
+    grpc_lb_addresses* lb_addrs = *(r->lb_addrs_out);
+    if (lb_addrs != nullptr) {
+      grpc_cares_wrapper_address_sorting_sort(lb_addrs);
+    }
     GRPC_CLOSURE_SCHED(r->on_done, r->error);
     gpr_mu_destroy(&r->mu);
     grpc_ares_ev_driver_destroy(r->ev_driver);
@@ -267,7 +270,6 @@ static void on_hostbyname_done_cb(void* arg, int status, int timeouts,
 static void on_srv_query_done_cb(void* arg, int status, int timeouts,
                                  unsigned char* abuf, int alen) {
   grpc_ares_request* r = static_cast<grpc_ares_request*>(arg);
-  grpc_core::ExecCtx exec_ctx;
   gpr_log(GPR_DEBUG, "on_query_srv_done_cb");
   if (status == ARES_SUCCESS) {
     gpr_log(GPR_DEBUG, "on_query_srv_done_cb ARES_SUCCESS");

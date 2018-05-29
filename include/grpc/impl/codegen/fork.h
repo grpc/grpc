@@ -37,12 +37,12 @@
  * }
  */
 
-void grpc_prefork();
+void grpc_prefork(void);
 
-void grpc_postfork_parent();
+void grpc_postfork_parent(void);
 
-void grpc_postfork_child();
+void grpc_postfork_child(void);
 
-void grpc_fork_handlers_auto_register();
+void grpc_fork_handlers_auto_register(void);
 
 #endif /* GRPC_IMPL_CODEGEN_FORK_H */

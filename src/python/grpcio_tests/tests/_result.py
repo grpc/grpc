@@ -46,7 +46,7 @@ class CaseResult(
       None.
   """
 
-    class Kind:
+    class Kind(object):
         UNTESTED = 'untested'
         RUNNING = 'running'
         ERROR = 'error'
@@ -257,7 +257,7 @@ class CoverageResult(AugmentedResult):
         #coverage.Coverage().combine()
 
 
-class _Colors:
+class _Colors(object):
     """Namespaced constants for terminal color magic numbers."""
     HEADER = '\033[95m'
     INFO = '\033[94m'

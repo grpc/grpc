@@ -56,6 +56,9 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       const grpc::string& type, ChannelArguments* args) override {
     if (type == grpc::testing::kInsecureCredentialsType) {
       return InsecureChannelCredentials();
+    } else if (type == grpc::testing::kAltsCredentialsType) {
+      grpc::experimental::AltsCredentialsOptions alts_opts;
+      return grpc::experimental::AltsCredentials(alts_opts);
     } else if (type == grpc::testing::kTlsCredentialsType) {
       SslCredentialsOptions ssl_opts = {test_root_cert, "", ""};
       args->SetSslTargetNameOverride("foo.test.google.fr");
@@ -77,6 +80,9 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       const grpc::string& type) override {
     if (type == grpc::testing::kInsecureCredentialsType) {
       return InsecureServerCredentials();
+    } else if (type == grpc::testing::kAltsCredentialsType) {
+      grpc::experimental::AltsServerCredentialsOptions alts_opts;
+      return grpc::experimental::AltsServerCredentials(alts_opts);
     } else if (type == grpc::testing::kTlsCredentialsType) {
       SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key,
                                                           test_server1_cert};

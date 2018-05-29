@@ -133,7 +133,7 @@ static void call_read_cb(secure_endpoint* ep, grpc_error* error) {
     for (i = 0; i < ep->read_buffer->count; i++) {
       char* data = grpc_dump_slice(ep->read_buffer->slices[i],
                                    GPR_DUMP_HEX | GPR_DUMP_ASCII);
-      gpr_log(GPR_DEBUG, "READ %p: %s", ep, data);
+      gpr_log(GPR_INFO, "READ %p: %s", ep, data);
       gpr_free(data);
     }
   }
@@ -269,7 +269,7 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
     for (i = 0; i < slices->count; i++) {
       char* data =
           grpc_dump_slice(slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
-      gpr_log(GPR_DEBUG, "WRITE %p: %s", ep, data);
+      gpr_log(GPR_INFO, "WRITE %p: %s", ep, data);
       gpr_free(data);
     }
   }
