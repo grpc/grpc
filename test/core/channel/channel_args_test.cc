@@ -148,6 +148,88 @@ static void test_set_socket_mutator(void) {
   }
 }
 
+struct fake_class {
+  int foo;
+};
+
+static void* fake_pointer_arg_copy(void* arg) {
+  gpr_log(GPR_DEBUG, "fake_pointer_arg_copy");
+  fake_class* fc = static_cast<fake_class*>(arg);
+  fake_class* new_fc = static_cast<fake_class*>(gpr_malloc(sizeof(fake_class)));
+  new_fc->foo = fc->foo;
+  return new_fc;
+}
+
+static void fake_pointer_arg_destroy(void* arg) {
+  gpr_log(GPR_DEBUG, "fake_pointer_arg_destroy");
+  fake_class* fc = static_cast<fake_class*>(arg);
+  gpr_free(fc);
+}
+
+static int fake_pointer_cmp(void* a, void* b) { return GPR_ICMP(a, b); }
+
+static const grpc_arg_pointer_vtable fake_pointer_arg_vtable = {
+    fake_pointer_arg_copy, fake_pointer_arg_destroy, fake_pointer_cmp};
+
+static void test_channel_create_with_args(void) {
+  grpc_arg client_a[3];
+
+  // adds integer arg
+  client_a[0].type = GRPC_ARG_INTEGER;
+  client_a[0].key = const_cast<char*>("arg_int");
+  client_a[0].value.integer = 0;
+
+  // adds const str arg
+  client_a[1].type = GRPC_ARG_STRING;
+  client_a[1].key = const_cast<char*>("arg_str");
+  client_a[1].value.string = const_cast<char*>("arg_str_val");
+
+  // allocated and adds custom pointer arg
+  fake_class* fc = static_cast<fake_class*>(gpr_malloc(sizeof(fake_class)));
+  fc->foo = 42;
+  client_a[2].type = GRPC_ARG_POINTER;
+  client_a[2].key = const_cast<char*>("arg_pointer");
+  client_a[2].value.pointer.vtable = &fake_pointer_arg_vtable;
+  client_a[2].value.pointer.p = fc;
+
+  // creates channel
+  grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
+  grpc_channel* c =
+      grpc_insecure_channel_create("fake_target", &client_args, nullptr);
+  // user is can free the memory they allocated here
+  gpr_free(fc);
+  grpc_channel_destroy(c);
+}
+
+static void test_server_create_with_args(void) {
+  grpc_arg server_a[3];
+
+  // adds integer arg
+  server_a[0].type = GRPC_ARG_INTEGER;
+  server_a[0].key = const_cast<char*>("arg_int");
+  server_a[0].value.integer = 0;
+
+  // adds const str arg
+  server_a[1].type = GRPC_ARG_STRING;
+  server_a[1].key = const_cast<char*>("arg_str");
+  server_a[1].value.string = const_cast<char*>("arg_str_val");
+
+  // allocated and adds custom pointer arg
+  fake_class* fc = static_cast<fake_class*>(gpr_malloc(sizeof(fake_class)));
+  fc->foo = 42;
+  server_a[2].type = GRPC_ARG_POINTER;
+  server_a[2].key = const_cast<char*>("arg_pointer");
+  server_a[2].value.pointer.vtable = &fake_pointer_arg_vtable;
+  server_a[2].value.pointer.p = fc;
+
+  // creates server
+  grpc_channel_args server_args = {GPR_ARRAY_SIZE(server_a), server_a};
+  grpc_server* s = grpc_server_create(&server_args, nullptr);
+  // user is can free the memory they allocated here
+  gpr_free(fc);
+  grpc_server_destroy(s);
+}
+
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
   grpc_init();
@@ -155,6 +237,8 @@ int main(int argc, char** argv) {
   test_set_compression_algorithm();
   test_compression_algorithm_states();
   test_set_socket_mutator();
+  test_channel_create_with_args();
+  test_server_create_with_args();
   grpc_shutdown();
   return 0;
 }
