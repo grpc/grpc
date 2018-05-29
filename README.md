@@ -41,6 +41,7 @@ Libraries in different languages may be in different states of development. We a
 | NodeJS                  | [grpc-node](https://github.com/grpc/grpc-node)       |
 | WebJS                   | [grpc-web](https://github.com/grpc/grpc-web)         |
 | Dart                    | [grpc-dart](https://github.com/grpc/grpc-dart)       |
+| Swift                   | [grpc-swift](https://github.com/grpc/grpc-swift)       |
 
 See [MANIFEST.md](MANIFEST.md) for a listing of top-level items in the
 repository.
