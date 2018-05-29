@@ -44,10 +44,6 @@ DEFINE_bool(
 DEFINE_string(test_bin_name, "",
               "Name, without the preceding path, of the test binary");
 
-DEFINE_string(test_runner_name, "",
-              "Name, without the preceding path, of the test script that "
-              "invokes the test binary for each test case");
-
 DEFINE_string(grpc_test_directory_relative_to_test_srcdir,
               "/com_github_grpc_grpc",
               "This flag only applies if runner_under_bazel is true. This "
@@ -177,7 +173,7 @@ int main(int argc, char** argv) {
     // the .sh and .py suffixes) to make
     // sure that we're using bazel's test environment.
     grpc::testing::InvokeResolverComponentTestsRunner(
-        bin_dir + "/" + FLAGS_test_runner_name,
+        bin_dir + "/resolver_component_tests_runner",
         bin_dir + "/" + FLAGS_test_bin_name, bin_dir + "/utils/dns_server",
         bin_dir + "/resolver_test_record_groups.yaml",
         bin_dir + "/utils/dns_resolver", bin_dir + "/utils/tcp_connect");
@@ -188,7 +184,7 @@ int main(int argc, char** argv) {
     std::string const bin_dir = my_bin.substr(0, my_bin.rfind('/'));
     // Invoke the .sh and .py scripts directly where they are in source code.
     grpc::testing::InvokeResolverComponentTestsRunner(
-        "test/cpp/naming/" + FLAGS_test_runner_name + ".py",
+        "test/cpp/naming/resolver_component_tests_runner.py",
         bin_dir + "/" + FLAGS_test_bin_name,
         "test/cpp/naming/utils/dns_server.py",
         "test/cpp/naming/resolver_test_record_groups.yaml",

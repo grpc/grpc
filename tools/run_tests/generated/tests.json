@@ -5523,7 +5523,6 @@
   {
     "args": [
       "--test_bin_name=resolver_component_test_unsecure", 
-      "--test_runner_name=resolver_component_tests_runner", 
       "--running_under_bazel=false"
     ], 
     "benchmark": false, 
@@ -5549,7 +5548,6 @@
   {
     "args": [
       "--test_bin_name=resolver_component_test", 
-      "--test_runner_name=resolver_component_tests_runner", 
       "--running_under_bazel=false"
     ], 
     "benchmark": false, 
@@ -5565,58 +5563,6 @@
     "gtest": false, 
     "language": "c++", 
     "name": "resolver_component_tests_runner_invoker", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "uses_polling": true
-  }, 
-  {
-    "args": [
-      "--test_bin_name=resolver_component_stress_test_unsecure", 
-      "--test_runner_name=resolver_component_stress_tests_runner", 
-      "--running_under_bazel=false"
-    ], 
-    "benchmark": false, 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "gtest": false, 
-    "language": "c++", 
-    "name": "resolver_component_stress_tests_runner_invoker_unsecure", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "uses_polling": true
-  }, 
-  {
-    "args": [
-      "--test_bin_name=resolver_component_stress_test", 
-      "--test_runner_name=resolver_component_stress_tests_runner", 
-      "--running_under_bazel=false"
-    ], 
-    "benchmark": false, 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "gtest": false, 
-    "language": "c++", 
-    "name": "resolver_component_stress_tests_runner_invoker", 
     "platforms": [
       "linux", 
       "mac", 

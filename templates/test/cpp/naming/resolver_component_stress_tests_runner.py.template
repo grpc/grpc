@@ -1,4 +1,0 @@
-%YAML 1.2
---- |
-  <%namespace file="resolver_component_tests_defs.include" import="*"/>\
-  ${resolver_component_tests(resolver_component_stress_test_cases)}

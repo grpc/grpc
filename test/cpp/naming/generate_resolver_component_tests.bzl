@@ -55,25 +55,6 @@ def generate_resolver_component_tests():
             "//test/cpp/util:test_config",
         ],
     )
-    grpc_cc_binary(
-        name = "resolver_component_stress_test%s" % unsecure_build_config_suffix,
-        testonly = 1,
-        srcs = [
-            "resolver_component_stress_test.cc",
-        ],
-        external_deps = [
-            "gmock",
-        ],
-        deps = [
-            "//test/cpp/util:test_util%s" % unsecure_build_config_suffix,
-            "//test/core/util:grpc_test_util%s" % unsecure_build_config_suffix,
-            "//test/core/util:gpr_test_util",
-            "//:grpc++%s" % unsecure_build_config_suffix,
-            "//:grpc%s" % unsecure_build_config_suffix,
-            "//:gpr",
-            "//test/cpp/util:test_config",
-        ],
-    )
     grpc_cc_test(
         name = "resolver_component_tests_runner_invoker%s" % unsecure_build_config_suffix,
         srcs = [
@@ -98,35 +79,6 @@ def generate_resolver_component_tests():
         ],
         args = [
             "--test_bin_name=resolver_component_test%s" % unsecure_build_config_suffix,
-            "--test_runner_name=resolver_component_tests_runner",
-            "--running_under_bazel=true",
-        ]
-    )
-    grpc_cc_test(
-        name = "resolver_component_stress_tests_runner_invoker%s" % unsecure_build_config_suffix,
-        srcs = [
-            "resolver_component_tests_runner_invoker.cc",
-        ],
-        deps = [
-            "//test/cpp/util:test_util",
-            "//test/core/util:grpc_test_util",
-            "//test/core/util:gpr_test_util",
-            "//:grpc++",
-            "//:grpc",
-            "//:gpr",
-            "//test/cpp/util:test_config",
-        ],
-        data = [
-            ":resolver_component_stress_tests_runner",
-            ":resolver_component_stress_test%s" % unsecure_build_config_suffix,
-            "//test/cpp/naming/utils:dns_server",
-            "//test/cpp/naming/utils:dns_resolver",
-            "//test/cpp/naming/utils:tcp_connect",
-            "resolver_test_record_groups.yaml", # include the transitive dependency so that the dns sever py binary can locate this
-        ],
-        args = [
-            "--test_bin_name=resolver_component_stress_test%s" % unsecure_build_config_suffix,
-            "--test_runner_name=resolver_component_stress_tests_runner",
             "--running_under_bazel=true",
         ]
     )

@@ -30,13 +30,6 @@ _TARGET_RECORDS_TO_SKIP_AGAINST_GCE = [
   'ipv4-config-causing-fallback-to-tcp',
 ]
 
-# Run a small sample of tests under the fd stressor
-_TESTS_TO_RUN_WITH_FD_STRESSOR = [
-  'srv-ipv6-single-target',
-  'srv-ipv4-simple-service-config',
-  'ipv4-config-causing-fallback-to-tcp',
-]
-
 def _append_zone_name(name, zone_name):
   return '%s.%s' % (name, zone_name)
 
@@ -142,22 +135,6 @@ def _resolver_test_cases(resolver_component_data, records_to_skip):
     })
   return out
 
-def _resolver_stress_test_cases(resolver_component_data):
-  out = []
-  for test_case in resolver_component_data['resolver_component_tests']:
-    if test_case['record_to_resolve'] not in _TESTS_TO_RUN_WITH_FD_STRESSOR:
-      continue
-    target_name = _append_zone_name(
-        test_case['record_to_resolve'],
-        resolver_component_data['resolver_tests_common_zone_name'])
-    out.append({
-        'test_title': target_name,
-        'arg_names_and_values': [
-            ('target_name', target_name),
-        ],
-    })
-  return out
-
 def main():
   resolver_component_data = ''
   with open('test/cpp/naming/resolver_test_record_groups.yaml') as f:
@@ -170,7 +147,6 @@ def main():
                                                               resolver_component_data['resolver_tests_common_zone_name']),
       'resolver_gce_integration_test_cases': _resolver_test_cases(resolver_component_data, _TARGET_RECORDS_TO_SKIP_AGAINST_GCE),
       'resolver_component_test_cases': _resolver_test_cases(resolver_component_data, []),
-      'resolver_component_stress_test_cases': _resolver_stress_test_cases(resolver_component_data),
       'targets': [
           {
               'name': 'resolver_component_test' + unsecure_build_config_suffix,
@@ -179,25 +155,6 @@ def main():
               'gtest': False,
               'run': False,
               'src': ['test/cpp/naming/resolver_component_test.cc'],
-              'platforms': ['linux', 'posix', 'mac'],
-              'deps': [
-                  'grpc++_test_util' + unsecure_build_config_suffix,
-                  'grpc_test_util' + unsecure_build_config_suffix,
-                  'gpr_test_util',
-                  'grpc++' + unsecure_build_config_suffix,
-                  'grpc' + unsecure_build_config_suffix,
-                  'gpr',
-                  'grpc++_test_config',
-              ],
-          } for unsecure_build_config_suffix in ['_unsecure', '']
-      ] + [
-          {
-              'name': 'resolver_component_stress_test' + unsecure_build_config_suffix,
-              'build': 'test',
-              'language': 'c++',
-              'gtest': False,
-              'run': False,
-              'src': ['test/cpp/naming/resolver_component_stress_test.cc'],
               'platforms': ['linux', 'posix', 'mac'],
               'deps': [
                   'grpc++_test_util' + unsecure_build_config_suffix,
@@ -229,31 +186,6 @@ def main():
               ],
               'args': [
                   '--test_bin_name=resolver_component_test%s' % unsecure_build_config_suffix,
-                  '--test_runner_name=resolver_component_tests_runner',
-                  '--running_under_bazel=false',
-              ],
-          } for unsecure_build_config_suffix in ['_unsecure', '']
-      ] + [
-          {
-              'name': 'resolver_component_stress_tests_runner_invoker' + unsecure_build_config_suffix,
-              'build': 'test',
-              'language': 'c++',
-              'gtest': False,
-              'run': True,
-              'src': ['test/cpp/naming/resolver_component_tests_runner_invoker.cc'],
-              'platforms': ['linux', 'posix', 'mac'],
-              'deps': [
-                  'grpc++_test_util',
-                  'grpc_test_util',
-                  'gpr_test_util',
-                  'grpc++',
-                  'grpc',
-                  'gpr',
-                  'grpc++_test_config',
-              ],
-              'args': [
-                  '--test_bin_name=resolver_component_stress_test%s' % unsecure_build_config_suffix,
-                  '--test_runner_name=resolver_component_stress_tests_runner',
                   '--running_under_bazel=false',
               ],
           } for unsecure_build_config_suffix in ['_unsecure', '']
