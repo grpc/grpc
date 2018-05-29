@@ -124,8 +124,8 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
     while (!gpr_event_get(&done_write)) {
       GPR_ASSERT(
           grpc_completion_queue_next(
-          client_cq, grpc_timeout_milliseconds_to_deadline(100), nullptr)
-            .type == GRPC_QUEUE_TIMEOUT);
+              client_cq, grpc_timeout_milliseconds_to_deadline(100), nullptr)
+              .type == GRPC_QUEUE_TIMEOUT);
     }
   }
 
