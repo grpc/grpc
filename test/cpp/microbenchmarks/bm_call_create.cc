@@ -621,18 +621,41 @@ typedef struct {
 static void StartTransportStreamOp(grpc_call_element* elem,
                                    grpc_transport_stream_op_batch* op) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
+  // Construct list of closures to return.
+  struct ClosureToExecute {
+    grpc_closure* closure;
+    const char* reason;
+    ClosureToExecute(grpc_closure* closure, const char* reason)
+        : closure(closure), reason(reason) {}
+  };
+  std::vector<ClosureToExecute> closures;
   if (op->recv_initial_metadata) {
-    GRPC_CALL_COMBINER_START(
-        calld->call_combiner,
+    closures.emplace_back(
         op->payload->recv_initial_metadata.recv_initial_metadata_ready,
-        GRPC_ERROR_NONE, "recv_initial_metadata");
+        "recv_initial_metadata");
   }
   if (op->recv_message) {
-    GRPC_CALL_COMBINER_START(calld->call_combiner,
-                             op->payload->recv_message.recv_message_ready,
-                             GRPC_ERROR_NONE, "recv_message");
+    closures.emplace_back(op->payload->recv_message.recv_message_ready,
+                          "recv_message");
   }
-  GRPC_CLOSURE_SCHED(op->on_complete, GRPC_ERROR_NONE);
+  if (op->recv_trailing_metadata) {
+    closures.emplace_back(
+        op->payload->recv_trailing_metadata.recv_trailing_metadata_ready,
+        "recv_trailing_metadata");
+  }
+  if (op->on_complete != nullptr) {
+    closures.emplace_back(op->on_complete, "on_complete");
+  }
+  // We are already holding the call combiner, but we may have more than one
+  // closure to return to the surface, and the surface will yield the
+  // call combiner for each one it receives.  So we need to re-enter the
+  // call combiner for all but one closure.
+  GPR_ASSERT(closures.size() > 0);
+  for (size_t i = 0; i < closures.size() - 1; ++i) {
+    GRPC_CALL_COMBINER_START(calld->call_combiner, closures[i].closure,
+                             GRPC_ERROR_NONE, closures[i].reason);
+  }
+  GRPC_CLOSURE_SCHED(closures[closures.size() - 1].closure, GRPC_ERROR_NONE);
 }
 
 static void StartTransportOp(grpc_channel_element* elem,
