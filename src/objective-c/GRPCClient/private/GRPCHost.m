@@ -18,7 +18,6 @@
 
 #import "GRPCHost.h"
 
-#import <GRPCClient/GRPCCall+MobileLog.h>
 #import <GRPCClient/GRPCCall.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -223,9 +222,9 @@ static NSMutableDictionary *kHostCache;
     args[@GRPC_ARG_KEEPALIVE_TIMEOUT_MS] = [NSNumber numberWithInt:_keepaliveTimeout];
   }
 
-  id logConfig = [GRPCCall logConfig];
-  if (logConfig != nil) {
-    args[@GRPC_ARG_MOBILE_LOG_CONFIG] = logConfig;
+  id logContext = self.logContext;
+  if (logContext != nil) {
+    args[@GRPC_ARG_MOBILE_LOG_CONTEXT] = logContext;
   }
 
   if (useCronet) {
