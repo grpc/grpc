@@ -120,7 +120,6 @@ typedef struct inproc_stream {
   struct inproc_stream* stream_list_next;
 } inproc_stream;
 
-static grpc_closure do_nothing_closure;
 static bool cancel_stream_locked(inproc_stream* s, grpc_error* error);
 static void op_state_machine(void* arg, grpc_error* error);
 
@@ -897,6 +896,8 @@ static bool cancel_stream_locked(inproc_stream* s, grpc_error* error) {
   return ret;
 }
 
+static void do_nothing(void* arg, grpc_error* error) {}
+
 static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
                               grpc_transport_stream_op_batch* op) {
   INPROC_LOG(GPR_INFO, "perform_stream_op %p %p %p", gt, gs, op);
@@ -916,8 +917,14 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
   }
   grpc_error* error = GRPC_ERROR_NONE;
   grpc_closure* on_complete = op->on_complete;
+  // TODO(roth): This is a hack needed because we use data inside of the
+  // closure itself to do the barrier calculation (i.e., to ensure that
+  // we don't schedule the closure until all ops in the batch have been
+  // completed).  This can go away once we move to a new C++ closure API
+  // that provides the ability to create a barrier closure.
   if (on_complete == nullptr) {
-    on_complete = &do_nothing_closure;
+    on_complete = GRPC_CLOSURE_INIT(&op->handler_private.closure, do_nothing,
+                                    nullptr, grpc_schedule_on_exec_ctx);
   }
 
   if (op->cancel_stream) {
@@ -1162,12 +1169,8 @@ static grpc_endpoint* get_endpoint(grpc_transport* t) { return nullptr; }
 /*******************************************************************************
  * GLOBAL INIT AND DESTROY
  */
-static void do_nothing(void* arg, grpc_error* error) {}
-
 void grpc_inproc_transport_init(void) {
   grpc_core::ExecCtx exec_ctx;
-  GRPC_CLOSURE_INIT(&do_nothing_closure, do_nothing, nullptr,
-                    grpc_schedule_on_exec_ctx);
   g_empty_slice = grpc_slice_from_static_buffer(nullptr, 0);
 
   grpc_slice key_tmp = grpc_slice_from_static_string(":path");
