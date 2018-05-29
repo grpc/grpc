@@ -237,7 +237,8 @@ LoadReporter::GenerateLoadBalancingFeedback() {
   LoadBalancingFeedbackRecord* oldest = &feedback_records_[0];
   LoadBalancingFeedbackRecord* newest =
       &feedback_records_[feedback_records_.size() - 1];
-  while (newest > oldest) {
+  while (newest > oldest &&
+         (newest->cpu_limit == 0 || oldest->cpu_limit == 0)) {
     // A zero limit means that the system info reading was failed, so these
     // records can't be used to calculate CPU utilization.
     if (newest->cpu_limit == 0) --newest;
@@ -345,7 +346,13 @@ void LoadReporter::AttachOrphanLoadId(
 }
 
 void LoadReporter::AppendNewFeedbackRecord(double rpcs, double errors) {
-  auto cpu_stats = cpu_stats_provider_->GetCpuStats();
+  CpuStatsProvider::CpuStatsSample cpu_stats;
+  if (cpu_stats_provider_ != nullptr) {
+    cpu_stats = cpu_stats_provider_->GetCpuStats();
+  } else {
+    // This will make the load balancing feedback generation a no-op.
+    cpu_stats = {0, 0};
+  }
   std::unique_lock<std::mutex> lock(feedback_mu_);
   feedback_records_.push_back(
       LoadBalancingFeedbackRecord{std::chrono::system_clock::now(), rpcs,
