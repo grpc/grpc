@@ -121,8 +121,12 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
   /* Await completion, unless the request is large and write may not finish
    * before the peer shuts down. */
   if (!(flags & GRPC_BAD_CLIENT_LARGE_REQUEST)) {
-    GPR_ASSERT(
-        gpr_event_wait(&done_write, grpc_timeout_seconds_to_deadline(5)));
+    while (!gpr_event_get(&done_write)) {
+      GPR_ASSERT(
+          grpc_completion_queue_next(
+          client_cq, grpc_timeout_milliseconds_to_deadline(100), nullptr)
+            .type == GRPC_QUEUE_TIMEOUT);
+    }
   }
 
   if (flags & GRPC_BAD_CLIENT_DISCONNECT) {

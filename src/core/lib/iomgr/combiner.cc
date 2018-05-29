@@ -59,7 +59,6 @@ struct grpc_combiner {
   gpr_atm state;
   bool time_to_execute_final_list;
   grpc_closure_list final_list;
-  grpc_closure offload;
   gpr_refcount refs;
 };
 
@@ -72,8 +71,6 @@ static const grpc_closure_scheduler_vtable scheduler = {
 static const grpc_closure_scheduler_vtable finally_scheduler = {
     combiner_finally_exec, combiner_finally_exec, "combiner:finally"};
 
-static void offload(void* arg, grpc_error* error);
-
 grpc_combiner* grpc_combiner_create(void) {
   grpc_combiner* lock = static_cast<grpc_combiner*>(gpr_zalloc(sizeof(*lock)));
   gpr_ref_init(&lock->refs, 1);
@@ -82,8 +79,6 @@ grpc_combiner* grpc_combiner_create(void) {
   gpr_atm_no_barrier_store(&lock->state, STATE_UNORPHANED);
   gpr_mpscq_init(&lock->queue);
   grpc_closure_list_init(&lock->final_list);
-  GRPC_CLOSURE_INIT(&lock->offload, offload, lock,
-                    grpc_executor_scheduler(GRPC_EXECUTOR_SHORT));
   GRPC_COMBINER_TRACE(gpr_log(GPR_INFO, "C:%p create", lock));
   return lock;
 }
@@ -196,18 +191,6 @@ static void move_next() {
   }
 }
 
-static void offload(void* arg, grpc_error* error) {
-  grpc_combiner* lock = static_cast<grpc_combiner*>(arg);
-  push_last_on_exec_ctx(lock);
-}
-
-static void queue_offload(grpc_combiner* lock) {
-  GRPC_STATS_INC_COMBINER_LOCKS_OFFLOADED();
-  move_next();
-  GRPC_COMBINER_TRACE(gpr_log(GPR_INFO, "C:%p queue_offload", lock));
-  GRPC_CLOSURE_SCHED(&lock->offload, GRPC_ERROR_NONE);
-}
-
 bool grpc_combiner_continue_exec_ctx() {
   GPR_TIMER_SCOPE("combiner.continue_exec_ctx", 0);
   grpc_combiner* lock =
@@ -228,15 +211,6 @@ bool grpc_combiner_continue_exec_ctx() {
                               grpc_core::ExecCtx::Get()->IsReadyToFinish(),
                               lock->time_to_execute_final_list));
 
-  if (contended && grpc_core::ExecCtx::Get()->IsReadyToFinish() &&
-      grpc_executor_is_threaded()) {
-    GPR_TIMER_MARK("offload_from_finished_exec_ctx", 0);
-    // this execution context wants to move on: schedule remaining work to be
-    // picked up on the executor
-    queue_offload(lock);
-    return true;
-  }
-
   if (!lock->time_to_execute_final_list ||
       // peek to see if something new has shown up, and execute that with
       // priority
@@ -244,12 +218,9 @@ bool grpc_combiner_continue_exec_ctx() {
     gpr_mpscq_node* n = gpr_mpscq_pop(&lock->queue);
     GRPC_COMBINER_TRACE(
         gpr_log(GPR_INFO, "C:%p maybe_finish_one n=%p", lock, n));
-    if (n == nullptr) {
-      // queue is in an inconsistent state: use this as a cue that we should
-      // go off and do something else for a while (and come back later)
-      GPR_TIMER_MARK("delay_busy", 0);
-      queue_offload(lock);
-      return true;
+    while (n == nullptr) {
+      // Spinlock
+      n = gpr_mpscq_pop(&lock->queue);
     }
     GPR_TIMER_SCOPE("combiner.exec1", 0);
     grpc_closure* cl = reinterpret_cast<grpc_closure*>(n);
