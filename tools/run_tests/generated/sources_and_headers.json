@@ -5473,6 +5473,20 @@
   {
     "deps": [
       "boringssl", 
+      "boringssl_self_test_lib", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_self_test", 
+    "src": [], 
+    "third_party": true, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
       "boringssl_file_test_gtest_lib", 
       "boringssl_test_util"
     ], 
@@ -7782,18 +7796,18 @@
       "third_party/boringssl/crypto/fipsmodule/ec/internal.h", 
       "third_party/boringssl/crypto/fipsmodule/ec/oct.c", 
       "third_party/boringssl/crypto/fipsmodule/ec/p224-64.c", 
-      "third_party/boringssl/crypto/fipsmodule/ec/p256-64.c", 
       "third_party/boringssl/crypto/fipsmodule/ec/p256-x86_64-table.h", 
       "third_party/boringssl/crypto/fipsmodule/ec/p256-x86_64.c", 
       "third_party/boringssl/crypto/fipsmodule/ec/p256-x86_64.h", 
       "third_party/boringssl/crypto/fipsmodule/ec/simple.c", 
-      "third_party/boringssl/crypto/fipsmodule/ec/util-64.c", 
+      "third_party/boringssl/crypto/fipsmodule/ec/util.c", 
       "third_party/boringssl/crypto/fipsmodule/ec/wnaf.c", 
       "third_party/boringssl/crypto/fipsmodule/ecdsa/ecdsa.c", 
       "third_party/boringssl/crypto/fipsmodule/hmac/hmac.c", 
       "third_party/boringssl/crypto/fipsmodule/md4/md4.c", 
       "third_party/boringssl/crypto/fipsmodule/md5/md5.c", 
       "third_party/boringssl/crypto/fipsmodule/modes/cbc.c", 
+      "third_party/boringssl/crypto/fipsmodule/modes/ccm.c", 
       "third_party/boringssl/crypto/fipsmodule/modes/cfb.c", 
       "third_party/boringssl/crypto/fipsmodule/modes/ctr.c", 
       "third_party/boringssl/crypto/fipsmodule/modes/gcm.c", 
@@ -7809,10 +7823,13 @@
       "third_party/boringssl/crypto/fipsmodule/rsa/padding.c", 
       "third_party/boringssl/crypto/fipsmodule/rsa/rsa.c", 
       "third_party/boringssl/crypto/fipsmodule/rsa/rsa_impl.c", 
+      "third_party/boringssl/crypto/fipsmodule/self_check/self_check.c", 
       "third_party/boringssl/crypto/fipsmodule/sha/sha1-altivec.c", 
       "third_party/boringssl/crypto/fipsmodule/sha/sha1.c", 
       "third_party/boringssl/crypto/fipsmodule/sha/sha256.c", 
       "third_party/boringssl/crypto/fipsmodule/sha/sha512.c", 
+      "third_party/boringssl/crypto/fipsmodule/tls/internal.h", 
+      "third_party/boringssl/crypto/fipsmodule/tls/kdf.c", 
       "third_party/boringssl/crypto/internal.h", 
       "third_party/boringssl/crypto/obj/obj_dat.h", 
       "third_party/boringssl/crypto/pkcs7/internal.h", 
@@ -7898,7 +7915,9 @@
       "third_party/boringssl/include/openssl/x509_vfy.h", 
       "third_party/boringssl/include/openssl/x509v3.h", 
       "third_party/boringssl/ssl/internal.h", 
-      "third_party/boringssl/third_party/fiat/internal.h"
+      "third_party/boringssl/third_party/fiat/curve25519_tables.h", 
+      "third_party/boringssl/third_party/fiat/internal.h", 
+      "third_party/boringssl/third_party/fiat/p256.c"
     ], 
     "is_filegroup": false, 
     "language": "c", 
@@ -8463,6 +8482,19 @@
     "is_filegroup": false, 
     "language": "c++", 
     "name": "boringssl_rsa_test_lib", 
+    "src": [], 
+    "third_party": true, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
+      "boringssl", 
+      "boringssl_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "boringssl_self_test_lib", 
     "src": [], 
     "third_party": true, 
     "type": "lib"
