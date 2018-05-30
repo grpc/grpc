@@ -97,6 +97,11 @@ argp.add_argument(
     'reusing the repo can cause git checkout error if you switch '
     'between releases.')
 
+argp.add_argument(
+    '--upload_images',
+    action='store_true',
+    help='If set, images will be uploaded to container registry after building.')
+
 args = argp.parse_args()
 
 
@@ -166,8 +171,9 @@ def build_all_images_for_lang(lang):
     """Build all docker images for a language across releases and runtimes."""
     if not args.git_checkout:
         if args.release != 'master':
-            print('WARNING: --release is set but will be ignored\n')
-        releases = ['master']
+            print('Cannot use --release without also enabling --git_checkout.\n')
+            sys.exit(1)
+        releases = [args.release]
     else:
         if args.release == 'all':
             releases = client_matrix.get_release_tags(lang)
@@ -334,8 +340,12 @@ languages = args.language if args.language != ['all'] else _LANGUAGES
 for lang in languages:
     docker_images = build_all_images_for_lang(lang)
     for image in docker_images:
-        jobset.message('START', 'Uploading %s' % image, do_newline=True)
-        # docker image name must be in the format <gcr_path>/<image>:<gcr_tag>
-        assert image.startswith(args.gcr_path) and image.find(':') != -1
+        if args.upload_images:
+            jobset.message('START', 'Uploading %s' % image, do_newline=True)
+            # docker image name must be in the format <gcr_path>/<image>:<gcr_tag>
+            assert image.startswith(args.gcr_path) and image.find(':') != -1
+            subprocess.call(['gcloud', 'docker', '--', 'push', image])
+        else:
+            # Uploading (and overwriting images) by default can easily break things.
+            print('Not uploading image %s, run with --upload_images to upload.' % image)
 
-        subprocess.call(['gcloud', 'docker', '--', 'push', image])
