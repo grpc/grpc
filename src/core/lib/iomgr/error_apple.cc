@@ -31,7 +31,8 @@
 grpc_error* grpc_error_create_from_cferror(const char* file, int line,
                                            void* arg, const char* custom_desc) {
   CFErrorRef error = static_cast<CFErrorRef>(arg);
-  char buf_domain[MAX_ERROR_DESCRIPTION], buf_desc[MAX_ERROR_DESCRIPTION];
+  char buf_domain[MAX_ERROR_DESCRIPTION];
+  char buf_desc[MAX_ERROR_DESCRIPTION];
   char* error_msg;
   CFErrorDomain domain = CFErrorGetDomain((error));
   CFIndex code = CFErrorGetCode((error));

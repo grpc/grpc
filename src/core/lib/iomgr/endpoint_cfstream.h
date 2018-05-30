@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_TCP_CFSTREAM_H
-#define GRPC_CORE_LIB_IOMGR_TCP_CFSTREAM_H
+#ifndef GRPC_CORE_LIB_IOMGR_ENDPOINT_CFSTREAM_H
+#define GRPC_CORE_LIB_IOMGR_ENDPOINT_CFSTREAM_H
 /*
    Low level TCP "bottom half" implementation, for use by transports built on
    top of a TCP connection.
@@ -36,17 +36,14 @@
 #import <CoreFoundation/CoreFoundation.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/iomgr/cfstream_handle.h"
 #include "src/core/lib/iomgr/endpoint.h"
-#include "src/core/lib/iomgr/tcp_cfstream_sync.h"
 
-extern grpc_core::TraceFlag grpc_tcp_trace;
-
-grpc_endpoint* grpc_tcp_create(CFReadStreamRef read_stream,
-                               CFWriteStreamRef write_stream,
-                               const char* peer_string,
-                               grpc_resource_quota* resource_quota,
-                               CFStreamSync* stream_sync);
+grpc_endpoint* grpc_cfstream_endpoint_create(
+    CFReadStreamRef read_stream, CFWriteStreamRef write_stream,
+    const char* peer_string, grpc_resource_quota* resource_quota,
+    CFStreamHandle* stream_sync);
 
 #endif /* GRPC_CFSTREAM */
 
-#endif /* GRPC_CORE_LIB_IOMGR_TCP_CFSTREAM_H */
+#endif /* GRPC_CORE_LIB_IOMGR_ENDPOINT_CFSTREAM_H */

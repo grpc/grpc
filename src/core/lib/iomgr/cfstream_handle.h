@@ -16,8 +16,11 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_TCP_CFSTREAM_SYNC_H
-#define GRPC_CORE_LIB_IOMGR_TCP_CFSTREAM_SYNC_H
+/* The CFStream handle acts as an event synchronization entity for
+ * read/write/open/error/eos events happening on CFStream streams. */
+
+#ifndef GRPC_CORE_LIB_IOMGR_CFSTREAM_HANDLE_H
+#define GRPC_CORE_LIB_IOMGR_CFSTREAM_HANDLE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -29,14 +32,14 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/lockfree_event.h"
 
-class CFStreamSync final {
+class CFStreamHandle final {
  public:
-  static CFStreamSync* CreateStreamSync(CFReadStreamRef read_stream,
-                                        CFWriteStreamRef write_stream);
-  ~CFStreamSync();
-  CFStreamSync(const CFReadStreamRef& ref) = delete;
-  CFStreamSync(CFReadStreamRef&& ref) = delete;
-  CFStreamSync& operator=(const CFStreamSync& rhs) = delete;
+  static CFStreamHandle* CreateStreamSync(CFReadStreamRef read_stream,
+                                          CFWriteStreamRef write_stream);
+  ~CFStreamHandle();
+  CFStreamHandle(const CFReadStreamRef& ref) = delete;
+  CFStreamHandle(CFReadStreamRef&& ref) = delete;
+  CFStreamHandle& operator=(const CFStreamHandle& rhs) = delete;
 
   void NotifyOnOpen(grpc_closure* closure);
   void NotifyOnRead(grpc_closure* closure);
@@ -49,7 +52,7 @@ class CFStreamSync final {
              const char* reason = nullptr);
 
  private:
-  CFStreamSync(CFReadStreamRef read_stream, CFWriteStreamRef write_stream);
+  CFStreamHandle(CFReadStreamRef read_stream, CFWriteStreamRef write_stream);
   static void ReadCallback(CFReadStreamRef stream, CFStreamEventType type,
                            void* client_callback_info);
   static void WriteCallback(CFWriteStreamRef stream, CFStreamEventType type,
@@ -76,4 +79,4 @@ class CFStreamSync final {
 
 #endif
 
-#endif /* GRPC_CORE_LIB_IOMGR_TCP_CFSTREAM_SYNC_H */
+#endif /* GRPC_CORE_LIB_IOMGR_CFSTREAM_HANDLE_H */

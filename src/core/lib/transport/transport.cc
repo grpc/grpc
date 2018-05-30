@@ -185,7 +185,8 @@ void grpc_transport_set_pops(grpc_transport* transport, grpc_stream* stream,
     transport->vtable->set_pollset_set(transport, stream, pollset_set);
   } else {
 #ifdef GRPC_CFSTREAM
-  // No-op for empty pollset
+  // No-op for empty pollset. CFStream does not use file destriptors. When
+  // CFStream is used, the fd pollset is possible to be null.
 #else
     abort();
 #endif

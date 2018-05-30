@@ -324,9 +324,11 @@
     <file baseinstalldir="/" name="src/core/lib/http/parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/block_annotate.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/call_combiner.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/cfstream_handle.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/closure.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/combiner.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_cfstream.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/error.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/error_apple.h" role="src" />
@@ -371,8 +373,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/sys_epoll_wrapper.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_cfstream.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_cfstream_sync.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_custom.h" role="src" />
@@ -470,8 +470,10 @@
     <file baseinstalldir="/" name="src/core/lib/http/httpcli.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/http/parser.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/call_combiner.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/cfstream_handle.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/combiner.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_cfstream.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair_uv.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair_windows.cc" role="src" />
@@ -523,8 +525,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_uv.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_windows.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_cfstream.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_cfstream_sync.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client_cfstream.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/tcp_client_custom.cc" role="src" />

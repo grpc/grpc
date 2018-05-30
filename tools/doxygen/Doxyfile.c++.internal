@@ -1061,9 +1061,11 @@ src/core/lib/http/httpcli.h \
 src/core/lib/http/parser.h \
 src/core/lib/iomgr/block_annotate.h \
 src/core/lib/iomgr/call_combiner.h \
+src/core/lib/iomgr/cfstream_handle.h \
 src/core/lib/iomgr/closure.h \
 src/core/lib/iomgr/combiner.h \
 src/core/lib/iomgr/endpoint.h \
+src/core/lib/iomgr/endpoint_cfstream.h \
 src/core/lib/iomgr/endpoint_pair.h \
 src/core/lib/iomgr/error.h \
 src/core/lib/iomgr/error_apple.h \
@@ -1108,8 +1110,6 @@ src/core/lib/iomgr/socket_utils.h \
 src/core/lib/iomgr/socket_utils_posix.h \
 src/core/lib/iomgr/socket_windows.h \
 src/core/lib/iomgr/sys_epoll_wrapper.h \
-src/core/lib/iomgr/tcp_cfstream.h \
-src/core/lib/iomgr/tcp_cfstream_sync.h \
 src/core/lib/iomgr/tcp_client.h \
 src/core/lib/iomgr/tcp_client_posix.h \
 src/core/lib/iomgr/tcp_custom.h \
