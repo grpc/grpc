@@ -1991,8 +1991,8 @@ static void recv_trailing_metadata_ready(void* arg, grpc_error* error) {
   // Don't need batch_data anymore.
   batch_data_unref(batch_data);
   // Schedule all of the closures identified above.
-  execute_closures_in_call_combiner(elem, "on_complete", closures,
-                                    num_closures);
+  execute_closures_in_call_combiner(elem, "recv_trailing_metadata_ready",
+                                    closures, num_closures);
 }
 
 //
