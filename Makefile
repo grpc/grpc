@@ -3610,8 +3610,6 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc \
     src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc \
     src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
-    src/core/ext/filters/load_reporting/server_load_reporting_filter.cc \
-    src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc \
     src/core/ext/census/grpc_context.cc \
     src/core/ext/filters/max_age/max_age_filter.cc \
     src/core/ext/filters/message_size/message_size_filter.cc \
@@ -3985,8 +3983,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/tsi/ssl/session_cache/ssl_session_openssl.cc \
     src/core/tsi/ssl_transport_security.cc \
     src/core/tsi/transport_security_grpc.cc \
-    src/core/ext/filters/load_reporting/server_load_reporting_filter.cc \
-    src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc \
     src/core/plugin_registry/grpc_cronet_plugin_registry.cc \
 
 PUBLIC_HEADERS_C += \
@@ -4867,8 +4863,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc \
     src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
     src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
-    src/core/ext/filters/load_reporting/server_load_reporting_filter.cc \
-    src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc \

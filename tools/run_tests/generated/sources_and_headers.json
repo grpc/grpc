@@ -6893,7 +6893,6 @@
       "grpc_resolver_sockaddr", 
       "grpc_secure", 
       "grpc_server_backward_compatibility", 
-      "grpc_server_load_reporting", 
       "grpc_transport_chttp2_client_insecure", 
       "grpc_transport_chttp2_client_secure", 
       "grpc_transport_chttp2_server_insecure", 
@@ -6915,7 +6914,6 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_server_load_reporting", 
       "grpc_transport_chttp2_client_secure", 
       "grpc_transport_cronet_client_secure"
     ], 
@@ -7000,7 +6998,6 @@
       "grpc_resolver_fake", 
       "grpc_resolver_sockaddr", 
       "grpc_server_backward_compatibility", 
-      "grpc_server_load_reporting", 
       "grpc_transport_chttp2_client_insecure", 
       "grpc_transport_chttp2_server_insecure", 
       "grpc_transport_inproc", 
@@ -10294,27 +10291,6 @@
     "src": [
       "src/core/ext/filters/workarounds/workaround_utils.cc", 
       "src/core/ext/filters/workarounds/workaround_utils.h"
-    ], 
-    "third_party": false, 
-    "type": "filegroup"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "grpc_base"
-    ], 
-    "headers": [
-      "src/core/ext/filters/load_reporting/server_load_reporting_filter.h", 
-      "src/core/ext/filters/load_reporting/server_load_reporting_plugin.h"
-    ], 
-    "is_filegroup": true, 
-    "language": "c", 
-    "name": "grpc_server_load_reporting", 
-    "src": [
-      "src/core/ext/filters/load_reporting/server_load_reporting_filter.cc", 
-      "src/core/ext/filters/load_reporting/server_load_reporting_filter.h", 
-      "src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc", 
-      "src/core/ext/filters/load_reporting/server_load_reporting_plugin.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
