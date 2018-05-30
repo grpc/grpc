@@ -1907,8 +1907,8 @@ libs:
   build: private
   language: c++
   headers:
+  - src/cpp/server/load_reporter/constants.h
   - src/cpp/server/load_reporter/load_data_store.h
-  - src/cpp/server/load_reporter/util.h
   src:
   - src/cpp/server/load_reporter/load_data_store.cc
   deps:
