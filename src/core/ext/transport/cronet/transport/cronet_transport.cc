@@ -1290,9 +1290,9 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
           stream_op->payload->recv_trailing_metadata.recv_trailing_metadata);
       stream_state->rs.trailing_metadata_valid = false;
     }
-    GRPC_CLOSURE_SCHED(stream_op->payload->recv_trailing_metadata
-                           .recv_trailing_metadata_ready,
-                       GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(
+        stream_op->payload->recv_trailing_metadata.recv_trailing_metadata_ready,
+        GRPC_ERROR_NONE);
     stream_state->state_op_done[OP_RECV_TRAILING_METADATA] = true;
     result = ACTION_TAKEN_NO_CALLBACK;
   } else if (stream_op->cancel_stream &&
