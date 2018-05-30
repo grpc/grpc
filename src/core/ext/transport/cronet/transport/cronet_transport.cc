@@ -925,6 +925,10 @@ static bool op_can_be_run(grpc_transport_stream_op_batch* curr_op,
       result = false;
     }
     /* Check if every op that was asked for is done. */
+    /* TODO(muxi): We should not consider the recv ops here, since they
+     * have their own callbacks.  We should invoke a batch's on_complete
+     * as soon as all of the batch's send ops are complete, even if
+     * there are still recv ops pending. */
     else if (curr_op->send_initial_metadata &&
              !stream_state->state_callback_received[OP_SEND_INITIAL_METADATA]) {
       CRONET_LOG(GPR_DEBUG, "Because");

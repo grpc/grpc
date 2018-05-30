@@ -372,6 +372,10 @@ static void complete_if_batch_end_locked(inproc_stream* s, grpc_error* error,
                                          const char* msg) {
   int is_sm = static_cast<int>(op == s->send_message_op);
   int is_stm = static_cast<int>(op == s->send_trailing_md_op);
+  // TODO(vjpai): We should not consider the recv ops here, since they
+  // have their own callbacks.  We should invoke a batch's on_complete
+  // as soon as all of the batch's send ops are complete, even if there
+  // are still recv ops pending.
   int is_rim = static_cast<int>(op == s->recv_initial_md_op);
   int is_rm = static_cast<int>(op == s->recv_message_op);
   int is_rtm = static_cast<int>(op == s->recv_trailing_md_op);
