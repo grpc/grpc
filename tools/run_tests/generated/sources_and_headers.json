@@ -6002,24 +6002,6 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
-    "src": [
-      "test/core/end2end/fixtures/h2_load_reporting.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "end2end_tests", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
     "name": "h2_oauth2_test", 
     "src": [
       "test/core/end2end/fixtures/h2_oauth2.cc"
@@ -6311,24 +6293,6 @@
     "name": "h2_http_proxy_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_http_proxy.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "end2end_nosec_tests", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "src": [
-      "test/core/end2end/fixtures/h2_load_reporting.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -8778,7 +8742,6 @@
       "test/core/end2end/tests/invoke_large_request.cc", 
       "test/core/end2end/tests/keepalive_timeout.cc", 
       "test/core/end2end/tests/large_metadata.cc", 
-      "test/core/end2end/tests/load_reporting_hook.cc", 
       "test/core/end2end/tests/max_concurrent_streams.cc", 
       "test/core/end2end/tests/max_connection_age.cc", 
       "test/core/end2end/tests/max_connection_idle.cc", 
@@ -8877,7 +8840,6 @@
       "test/core/end2end/tests/invoke_large_request.cc", 
       "test/core/end2end/tests/keepalive_timeout.cc", 
       "test/core/end2end/tests/large_metadata.cc", 
-      "test/core/end2end/tests/load_reporting_hook.cc", 
       "test/core/end2end/tests/max_concurrent_streams.cc", 
       "test/core/end2end/tests/max_connection_age.cc", 
       "test/core/end2end/tests/max_connection_idle.cc", 

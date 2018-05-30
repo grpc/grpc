@@ -1277,11 +1277,12 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/load_reporting/server_load_reporting_filter.h",
         "src/core/ext/filters/load_reporting/server_load_reporting_plugin.h",
+        "src/core/ext/filters/load_reporting/registered_opencensus_objects.h",
         "src/cpp/server/load_reporter/constants.h",
     ],
     language = "c++",
     deps = [
-        "grpc_base",
+        "grpc_secure",
         "@io_opencensus_cpp//opencensus/stats",
     ],
 )

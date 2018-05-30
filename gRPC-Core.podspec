@@ -1185,7 +1185,6 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/invoke_large_request.cc',
                       'test/core/end2end/tests/keepalive_timeout.cc',
                       'test/core/end2end/tests/large_metadata.cc',
-                      'test/core/end2end/tests/load_reporting_hook.cc',
                       'test/core/end2end/tests/max_concurrent_streams.cc',
                       'test/core/end2end/tests/max_connection_age.cc',
                       'test/core/end2end/tests/max_connection_idle.cc',

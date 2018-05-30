@@ -25,11 +25,10 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
 
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/uri_parser.h"
+#include "src/core/ext/filters/load_reporting/registered_opencensus_objects.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gpr/string.h"
@@ -40,9 +39,6 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/static_metadata.h"
-#include "src/cpp/server/load_reporter/constants.h"
-
-#include "opencensus/stats/stats.h"
 
 namespace {
 
@@ -141,8 +137,7 @@ void get_census_safe_client_ip_string(const call_data* calld,
   }
   // Convert the socket address in the grpc_resolved_address into a hex string
   // according to the address family.
-  const grpc_sockaddr* addr =
-      reinterpret_cast<const grpc_sockaddr*>(resolved_address.addr);
+  grpc_sockaddr* addr = reinterpret_cast<grpc_sockaddr*>(resolved_address.addr);
   if (addr->sa_family == GRPC_AF_INET) {
     grpc_sockaddr_in* addr4 = reinterpret_cast<grpc_sockaddr_in*>(addr);
     gpr_asprintf(client_ip_string, "%08x", addr4->sin_addr);
