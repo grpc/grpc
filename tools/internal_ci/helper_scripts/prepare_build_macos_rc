@@ -78,3 +78,5 @@ export DOTNET_CLI_TELEMETRY_OPTOUT=true
 date
 
 git submodule update --init
+
+cp -f google3/googlemac/iPhone/Shared/ProvisioningProfiles/Google_Development.mobileprovision  "$HOME/Library/MobileDevice/Provisioning Profiles"
