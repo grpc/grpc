@@ -274,6 +274,13 @@ def maybe_apply_patches_on_git_tag(stack_base, lang, release):
         sys.exit(1)
     subprocess.check_output(
         ['git', 'apply', patch_file], cwd=stack_base, stderr=subprocess.STDOUT)
+
+    # TODO(jtattermusch): this really would need simplification and refactoring
+    # - "git add" and "git commit" can easily be done in a single command
+    # - it looks like the only reason for the existence of the "files_to_patch"
+    #   entry is to perform "git add" - which is clumsy and fragile.
+    # - we only allow a single patch with name "git_repo.patch". A better design
+    #   would be to allow multiple patches that can have more descriptive names.
     for repo_relative_path in files_to_patch:
         subprocess.check_output(
             ['git', 'add', repo_relative_path],
