@@ -321,8 +321,7 @@ static const cq_vtable g_cq_vtable[] = {
 #define POLLSET_FROM_CQ(cq) \
   ((grpc_pollset*)(cq->vtable->data_size + (char*)DATA_FROM_CQ(cq)))
 
-grpc_core::TraceFlag grpc_cq_pluck_trace(true, "queue_pluck");
-grpc_core::TraceFlag grpc_cq_event_timeout_trace(true, "queue_timeout");
+grpc_core::TraceFlag grpc_cq_pluck_trace(false, "queue_pluck");
 
 #define GRPC_SURFACE_TRACE_RETURNED_EVENT(cq, event)                       \
   if (grpc_api_trace.enabled() && (grpc_cq_pluck_trace.enabled() ||        \
