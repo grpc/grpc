@@ -28,7 +28,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
@@ -63,15 +62,13 @@ ChannelTrace::TraceEvent::TraceEvent(Severity severity, grpc_slice data)
 ChannelTrace::TraceEvent::~TraceEvent() { grpc_slice_unref_internal(data_); }
 
 ChannelTrace::ChannelTrace(size_t max_events)
-    : channel_uuid_(-1),
-      num_events_logged_(0),
+    : num_events_logged_(0),
       list_size_(0),
       max_list_size_(max_events),
       head_trace_(nullptr),
       tail_trace_(nullptr) {
   if (max_list_size_ == 0) return;  // tracing is disabled if max_events == 0
   gpr_mu_init(&tracer_mu_);
-  channel_uuid_ = ChannelzRegistry::Register(this);
   time_created_ = grpc_millis_to_timespec(grpc_core::ExecCtx::Get()->Now(),
                                           GPR_CLOCK_REALTIME);
 }
@@ -84,11 +81,8 @@ ChannelTrace::~ChannelTrace() {
     it = it->next();
     Delete<TraceEvent>(to_free);
   }
-  ChannelzRegistry::Unregister(channel_uuid_);
   gpr_mu_destroy(&tracer_mu_);
 }
-
-intptr_t ChannelTrace::GetUuid() const { return channel_uuid_; }
 
 void ChannelTrace::AddTraceEventHelper(TraceEvent* new_trace_event) {
   ++num_events_logged_;
@@ -212,7 +206,7 @@ void ChannelTrace::TraceEvent::RenderTraceEvent(grpc_json* json) const {
   }
 }
 
-char* ChannelTrace::RenderTrace() const {
+grpc_json* ChannelTrace::RenderJSON() const {
   if (!max_list_size_)
     return nullptr;  // tracing is disabled if max_events == 0
   grpc_json* json = grpc_json_create(GRPC_JSON_OBJECT);
@@ -235,6 +229,12 @@ char* ChannelTrace::RenderTrace() const {
     it->RenderTraceEvent(json_iterator);
     it = it->next();
   }
+  return json;
+}
+
+char* ChannelTrace::RenderTrace() const {
+  grpc_json* json = RenderJSON();
+  if (json == nullptr) return nullptr;
   char* json_str = grpc_json_dump_to_string(json, 0);
   grpc_json_destroy(json);
   return json_str;

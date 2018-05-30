@@ -59,9 +59,9 @@ class Channel : public RefCounted<Channel> {
   bool channel_destroyed_ = false;
   grpc_channel* channel_;
   const char* target_;
-  uint64_t calls_started_ = 0;
-  uint64_t calls_succeeded_ = 0;
-  uint64_t calls_failed_ = 0;
+  int64_t calls_started_ = 0;
+  int64_t calls_succeeded_ = 0;
+  int64_t calls_failed_ = 0;
   gpr_timespec last_call_started_timestamp_;
   intptr_t channel_uuid_;
   ManualConstructor<ChannelTrace> trace_;

@@ -40,9 +40,6 @@ class ChannelTrace {
   ChannelTrace(size_t max_events);
   ~ChannelTrace();
 
-  // returns the tracer's uuid
-  intptr_t GetUuid() const;
-
   enum Severity {
     Unset = 0,  // never to be used
     Info,       // we start at 1 to avoid using proto default values
@@ -72,8 +69,13 @@ class ChannelTrace {
       Severity severity, grpc_slice data,
       RefCountedPtr<Channel> referenced_tracer);
 
-  // Returns the tracing data rendered as a grpc json string.
-  // The string is owned by the caller and must be freed.
+  // Creates and returns the raw grpc_json object, so a parent channelz
+  // object may incorporate the json before rendering.
+  grpc_json* RenderJSON() const;
+
+  // Returns the tracing data rendered as a grpc json string. The string
+  // is owned by the caller and must be freed. This is used for testing only
+  // so that we may unit test ChannelTrace in isolation.
   char* RenderTrace() const;
 
  private:
@@ -117,7 +119,6 @@ class ChannelTrace {
   void AddTraceEventHelper(TraceEvent* new_trace_event);
 
   gpr_mu tracer_mu_;
-  intptr_t channel_uuid_;
   uint64_t num_events_logged_;
   size_t list_size_;
   size_t max_list_size_;

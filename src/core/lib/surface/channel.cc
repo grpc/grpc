@@ -146,7 +146,6 @@ grpc_channel* grpc_channel_create_with_builder(
   }
 
   grpc_channel_args_destroy(args);
-  channel_tracer_max_nodes = 10;
   channel->channelz_channel =
       grpc_core::MakeRefCounted<grpc_core::channelz::Channel>(
           channel, channel_tracer_max_nodes);
@@ -201,7 +200,7 @@ grpc_core::channelz::Channel* grpc_channel_get_channelz_channel(
 }
 
 intptr_t grpc_channel_get_uuid(grpc_channel* channel) {
-  return channel->channelz_channel->Trace()->GetUuid();
+  return channel->channelz_channel->channel_uuid();
 }
 
 grpc_channel* grpc_channel_create(const char* target,
@@ -430,6 +429,8 @@ void grpc_channel_destroy(grpc_channel* channel) {
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel Destroyed");
   elem = grpc_channel_stack_element(CHANNEL_STACK_FROM_CHANNEL(channel), 0);
   elem->filter->start_transport_op(elem, op);
+  channel->channelz_channel->set_channel_destroyed();
+  channel->channelz_channel.reset();
 
   GRPC_CHANNEL_INTERNAL_UNREF(channel, "channel");
 }

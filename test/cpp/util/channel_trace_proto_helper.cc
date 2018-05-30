@@ -45,16 +45,21 @@ void VaidateProtoJsonTranslation(char* json_c_str) {
   // then compare the output, and determine what fields are missing.
   //
   // parse_options.ignore_unknown_fields = true;
-  ASSERT_EQ(google::protobuf::util::JsonStringToMessage(json_str, &msg,
+  EXPECT_EQ(google::protobuf::util::JsonStringToMessage(json_str, &msg,
                                                         parse_options),
             google::protobuf::util::Status::OK);
   std::string proto_json_str;
-  ASSERT_EQ(google::protobuf::util::MessageToJsonString(msg, &proto_json_str),
+  google::protobuf::util::JsonPrintOptions print_options;
+  // We usually do not want this to be true, however it can be helpful to
+  // uncomment and see the output produced then all fields are printed.
+  // print_options.always_print_primitive_fields = true;
+  EXPECT_EQ(google::protobuf::util::MessageToJsonString(msg, &proto_json_str,
+                                                        print_options),
             google::protobuf::util::Status::OK);
   // uncomment these to compare the the json strings.
   // gpr_log(GPR_ERROR, "tracer json: %s", json_str.c_str());
   // gpr_log(GPR_ERROR, "proto  json: %s", proto_json_str.c_str());
-  ASSERT_EQ(json_str, proto_json_str);
+  EXPECT_EQ(json_str, proto_json_str);
 }
 
 }  // namespace
