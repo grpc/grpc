@@ -1284,7 +1284,12 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
              op_can_be_run(stream_op, s, &oas->state,
                            OP_RECV_TRAILING_METADATA)) {
     CRONET_LOG(GPR_DEBUG, "running: %p  OP_RECV_TRAILING_METADATA", oas);
-    if (oas->s->state.rs.trailing_metadata_valid) {
+    grpc_error* error = GRPC_ERROR_NONE;
+    if (stream_state->state_op_done[OP_CANCEL_ERROR]) {
+      error = GRPC_ERROR_REF(stream_state->cancel_error);
+    } else if (stream_state->state_op_done[OP_FAILED]) {
+      error = make_error_with_desc(GRPC_STATUS_UNAVAILABLE, "Unavailable.");
+    } else if (oas->s->state.rs.trailing_metadata_valid) {
       grpc_chttp2_incoming_metadata_buffer_publish(
           &oas->s->state.rs.trailing_metadata,
           stream_op->payload->recv_trailing_metadata.recv_trailing_metadata);
@@ -1292,7 +1297,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
     }
     GRPC_CLOSURE_SCHED(
         stream_op->payload->recv_trailing_metadata.recv_trailing_metadata_ready,
-        GRPC_ERROR_NONE);
+        error);
     stream_state->state_op_done[OP_RECV_TRAILING_METADATA] = true;
     result = ACTION_TAKEN_NO_CALLBACK;
   } else if (stream_op->cancel_stream &&
