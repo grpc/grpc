@@ -67,7 +67,6 @@ some configuration as environment variables that can be set.
   - resource_quota - trace resource quota objects internals
   - round_robin - traces the round_robin load balancing policy
   - queue_pluck
-  - queue_timeout
   - server_channel - lightweight trace of significant server channel events
   - secure_endpoint - traces bytes flowing through encrypted channels
   - timer - timers (alarms) in the grpc internals
