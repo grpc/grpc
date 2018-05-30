@@ -104,8 +104,8 @@ to clients and is a special state on servers. Cancellation is an abrupt killing
 of the Call; inbound and outbound buffered data should be cleared. Cancellation
 trumps graceful completion; if the client gRPC implementation received the
 Trailers before the cancellation, yet the client application has not received
-the Trailers, then cancellation generally should win. No auxilary information is
-included in cancellation signals between the client and server. Server
+the Trailers, then cancellation generally should win. No auxiliary information
+is included in cancellation signals between the client and server. Server
 implementations may fail a Call and respond with Trailers while claiming to the
 server application that the Call was cancelled.
 
