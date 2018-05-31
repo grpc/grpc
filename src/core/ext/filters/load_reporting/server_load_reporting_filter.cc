@@ -16,9 +16,6 @@
  *
  */
 
-#include <ctype.h>
-#include <string.h>
-
 #include <grpc/grpc_security.h>
 #include <grpc/load_reporting.h>
 #include <grpc/slice.h>
@@ -26,6 +23,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/filters/load_reporting/server_load_reporting_filter.h"
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/uri_parser.h"
 #include "src/core/ext/filters/load_reporting/registered_opencensus_objects.h"
