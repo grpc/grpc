@@ -42,6 +42,8 @@ xcodebuild \
     build \
     -workspace *.xcworkspace \
     -scheme $SCHEME \
-    -destination name="iPhone 6" \
+    -destination generic/platform=iOS \
+    CODE_SIGN_IDENTITY="iPhone Developer: Google Development" \
+    OTHER_CODE_SIGN_FLAGS="--keychain ${HOME}/Library/Keychains/iPhoneDeveloperSigning.keychain" \
     | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v "^$" -
