@@ -44,7 +44,6 @@ some configuration as environment variables that can be set.
   - channel - traces operations on the C core channel stack
   - client_channel - traces client channel activity, including resolver
     and load balancing policy interaction
-  - combiner - traces combiner lock state
   - compression - traces compression operations
   - connectivity_state - traces connectivity state changes to channels
   - executor - traces grpc's internal thread pool ('the executor')
@@ -79,6 +78,7 @@ some configuration as environment variables that can be set.
   accomplished by invoking `CONFIG=dbg make <target>`
   - alarm_refcount - refcounting traces for grpc_alarm structure
   - metadata - tracks creation and mutation of metadata
+  - combiner - traces combiner lock state
   - closure - tracks closure creation, scheduling, and completion
   - pending_tags - traces still-in-progress tags on completion queues
   - polling - traces the selected polling engine
