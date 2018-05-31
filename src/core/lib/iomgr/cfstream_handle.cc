@@ -74,8 +74,7 @@ void CFStreamHandle::ReadCallback(CFReadStreamRef stream,
             handle->read_event_.SetReady();
             break;
           default:
-            // Impossible
-            abort();
+            GPR_UNREACHABLE_CODE(return );
         }
         CFSTREAM_HANDLE_UNREF(handle, "read callback");
       });
@@ -105,8 +104,7 @@ void CFStreamHandle::WriteCallback(CFWriteStreamRef stream,
             handle->write_event_.SetReady();
             break;
           default:
-            // Impossible
-            abort();
+            GPR_UNREACHABLE_CODE(return );
         }
         CFSTREAM_HANDLE_UNREF(handle, "write callback");
       });

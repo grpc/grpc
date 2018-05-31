@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#ifdef GRPC_CFSTREAM
+#ifdef GPR_APPLE
 #include <CoreFoundation/CoreFoundation.h>
 
 #include <grpc/support/alloc.h>
@@ -49,4 +49,4 @@ grpc_error* grpc_error_create_from_cferror(const char* file, int line,
   gpr_free(error_msg);
   return return_error;
 }
-#endif /* GRPC_CFSTREAM */
+#endif /* GPR_APPLE */

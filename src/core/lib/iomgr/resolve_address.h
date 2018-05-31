@@ -33,11 +33,7 @@
 #include <ws2tcpip.h>
 #endif
 
-#ifdef GRPC_POSIX_SOCKET
-#include <sys/socket.h>
-#endif
-
-#ifdef GRPC_CFSTREAM
+#if defined(GRPC_POSIX_SOCKET) || defined(GRPC_CFSTREAM)
 #include <sys/socket.h>
 #endif
 
