@@ -1149,12 +1149,10 @@ static void maybe_start_some_streams(grpc_chttp2_transport* t) {
   }
 }
 
-/* Flag that this closure barrier wants stats to be updated before finishing */
-#define CLOSURE_BARRIER_STATS_BIT (1 << 0)
 /* Flag that this closure barrier may be covering a write in a pollset, and so
    we should not complete this closure until we can prove that the write got
    scheduled */
-#define CLOSURE_BARRIER_MAY_COVER_WRITE (1 << 1)
+#define CLOSURE_BARRIER_MAY_COVER_WRITE (1 << 0)
 /* First bit of the reference count, stored in the high order bits (with the low
    bits being used for flags defined above) */
 #define CLOSURE_BARRIER_FIRST_REF_BIT (1 << 16)
@@ -1206,10 +1204,6 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
         grpc_error_add_child(closure->error_data.error, error);
   }
   if (closure->next_data.scratch < CLOSURE_BARRIER_FIRST_REF_BIT) {
-    if (closure->next_data.scratch & CLOSURE_BARRIER_STATS_BIT) {
-      grpc_transport_move_stats(&s->stats, s->collecting_stats);
-      s->collecting_stats = nullptr;
-    }
     if ((t->write_state == GRPC_CHTTP2_WRITE_STATE_IDLE) ||
         !(closure->next_data.scratch & CLOSURE_BARRIER_MAY_COVER_WRITE)) {
       GRPC_CLOSURE_RUN(closure, closure->error_data.error);
@@ -1605,7 +1599,6 @@ static void perform_stream_op_locked(void* stream_op,
     GRPC_STATS_INC_HTTP2_OP_RECV_TRAILING_METADATA();
     GPR_ASSERT(s->collecting_stats == nullptr);
     s->collecting_stats = op_payload->recv_trailing_metadata.collect_stats;
-    on_complete->next_data.scratch |= CLOSURE_BARRIER_STATS_BIT;
     GPR_ASSERT(s->recv_trailing_metadata_finished == nullptr);
     s->recv_trailing_metadata_finished =
         op_payload->recv_trailing_metadata.recv_trailing_metadata_ready;
@@ -1967,6 +1960,8 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
     }
     if (s->read_closed && s->frame_storage.length == 0 && !pending_data &&
         s->recv_trailing_metadata_finished != nullptr) {
+      grpc_transport_move_stats(&s->stats, s->collecting_stats);
+      s->collecting_stats = nullptr;
       grpc_chttp2_incoming_metadata_buffer_publish(&s->metadata_buffer[1],
                                                    s->recv_trailing_metadata);
       null_then_run_closure(&s->recv_trailing_metadata_finished,
