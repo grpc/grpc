@@ -100,7 +100,8 @@ argp.add_argument(
 argp.add_argument(
     '--upload_images',
     action='store_true',
-    help='If set, images will be uploaded to container registry after building.')
+    help='If set, images will be uploaded to container registry after building.'
+)
 
 args = argp.parse_args()
 
@@ -171,7 +172,8 @@ def build_all_images_for_lang(lang):
     """Build all docker images for a language across releases and runtimes."""
     if not args.git_checkout:
         if args.release != 'master':
-            print('Cannot use --release without also enabling --git_checkout.\n')
+            print(
+                'Cannot use --release without also enabling --git_checkout.\n')
             sys.exit(1)
         releases = [args.release]
     else:
@@ -354,5 +356,5 @@ for lang in languages:
             subprocess.call(['gcloud', 'docker', '--', 'push', image])
         else:
             # Uploading (and overwriting images) by default can easily break things.
-            print('Not uploading image %s, run with --upload_images to upload.' % image)
-
+            print('Not uploading image %s, run with --upload_images to upload.'
+                  % image)
