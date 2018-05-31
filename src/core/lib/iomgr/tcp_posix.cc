@@ -295,7 +295,7 @@ static void tcp_shutdown(grpc_endpoint* ep, grpc_error* why) {
 
 static void tcp_free(grpc_tcp* tcp) {
   grpc_fd_orphan(tcp->em_fd, tcp->release_fd_cb, tcp->release_fd,
-                 false /* already_closed */, "tcp_unref_orphan");
+                 "tcp_unref_orphan");
   grpc_slice_buffer_destroy_internal(&tcp->last_read_buffer);
   grpc_resource_user_unref(tcp->resource_user);
   gpr_free(tcp->peer_string);

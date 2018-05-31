@@ -104,17 +104,10 @@ static void fd_node_destroy(fd_node* fdn) {
   GPR_ASSERT(!fdn->writable_registered);
   GPR_ASSERT(fdn->already_shutdown);
   gpr_mu_destroy(&fdn->mu);
-  /* TODO: we need to pass a non-null "release_fd" parameter to
-   * grpc_fd_orphan because "epollsig" iomgr will close the fd
-   * even if "already_closed" is true, and it only leaves it open
-   * if "release_fd" is non-null. This is unlike the rest of the
-   * pollers, should this be changed within epollsig? */
   int dummy_release_fd;
-  /* c-ares library has closed the fd inside grpc_fd. This fd may be picked up
-     immediately by another thread, and should not be closed by the following
-     grpc_fd_orphan. */
-  grpc_fd_orphan(fdn->fd, nullptr, &dummy_release_fd, true /* already_closed */,
-                 "c-ares query finished");
+  /* c-ares library will close the fd inside grpc_fd, don't close it in
+     in the following grpc_fd_orphan. */
+  grpc_fd_orphan(fdn->fd, nullptr, &dummy_release_fd, "c-ares query finished");
   gpr_free(fdn);
 }
 
