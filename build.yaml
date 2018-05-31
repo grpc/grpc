@@ -4205,6 +4205,10 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
+  filegroups:
+  - grpc++_channelz_proto
+  uses:
+  - grpc++_test
 - name: channelz_registry_test
   gtest: true
   build: test

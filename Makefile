@@ -16307,6 +16307,7 @@ endif
 
 CHANNEL_TRACE_TEST_SRC = \
     test/core/channel/channel_trace_test.cc \
+    $(GENDIR)/src/proto/grpc/channelz/channelz.pb.cc $(GENDIR)/src/proto/grpc/channelz/channelz.grpc.pb.cc \
 
 CHANNEL_TRACE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHANNEL_TRACE_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -16339,6 +16340,8 @@ endif
 
 $(OBJDIR)/$(CONFIG)/test/core/channel/channel_trace_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/channelz/channelz.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 deps_channel_trace_test: $(CHANNEL_TRACE_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
@@ -16346,6 +16349,7 @@ ifneq ($(NO_DEPS),true)
 -include $(CHANNEL_TRACE_TEST_OBJS:.o=.dep)
 endif
 endif
+$(OBJDIR)/$(CONFIG)/test/core/channel/channel_trace_test.o: $(GENDIR)/src/proto/grpc/channelz/channelz.pb.cc $(GENDIR)/src/proto/grpc/channelz/channelz.grpc.pb.cc
 
 
 CHANNELZ_REGISTRY_TEST_SRC = \

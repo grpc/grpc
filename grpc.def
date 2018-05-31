@@ -47,7 +47,6 @@ EXPORTS
     grpc_channel_destroy
     grpc_channel_get_trace
     grpc_channel_get_uuid
-    grpc_channelz_get_channel
     grpc_call_cancel
     grpc_call_cancel_with_status
     grpc_call_ref

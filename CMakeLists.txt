@@ -10479,10 +10479,17 @@ if (gRPC_BUILD_TESTS)
 
 add_executable(channel_trace_test
   test/core/channel/channel_trace_test.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.h
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/channelz/channelz.proto
+)
 
 target_include_directories(channel_trace_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
