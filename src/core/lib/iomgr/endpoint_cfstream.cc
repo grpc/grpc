@@ -64,7 +64,7 @@ static void CFStreamFree(CFStreamEndpoint* ep) {
   grpc_resource_user_unref(ep->resource_user);
   CFRelease(ep->read_stream);
   CFRelease(ep->write_stream);
-  CFSTREAM_SYNC_UNREF(ep->stream_sync, "free");
+  CFSTREAM_HANDLE_UNREF(ep->stream_sync, "free");
   gpr_free(ep->peer_string);
   gpr_free(ep);
 }
@@ -349,7 +349,7 @@ grpc_endpoint* grpc_cfstream_endpoint_create(
   CFRetain(read_stream);
   CFRetain(write_stream);
   ep_impl->stream_sync = stream_sync;
-  CFSTREAM_SYNC_REF(ep_impl->stream_sync, "endpoint create");
+  CFSTREAM_HANDLE_REF(ep_impl->stream_sync, "endpoint create");
 
   ep_impl->peer_string = gpr_strdup(peer_string);
   ep_impl->read_cb = nil;

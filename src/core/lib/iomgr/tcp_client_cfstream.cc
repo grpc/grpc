@@ -71,7 +71,7 @@ typedef struct CFStreamConnect {
 
 static void CFStreamConnectCleanup(CFStreamConnect* connect) {
   grpc_resource_quota_unref_internal(connect->resource_quota);
-  CFSTREAM_SYNC_UNREF(connect->stream_sync, "async connect clean up");
+  CFSTREAM_HANDLE_UNREF(connect->stream_sync, "async connect clean up");
   CFRelease(connect->read_stream);
   CFRelease(connect->write_stream);
   gpr_mu_destroy(&connect->mu);
@@ -194,7 +194,7 @@ static void CFStreamClientConnect(grpc_closure* closure, grpc_endpoint** ep,
   connect->read_stream = read_stream;
   connect->write_stream = write_stream;
   connect->stream_sync =
-      CFStreamHandle::CreateStreamSync(read_stream, write_stream);
+      CFStreamHandle::CreateStreamHandle(read_stream, write_stream);
   GRPC_CLOSURE_INIT(&connect->on_open, OnOpen, static_cast<void*>(connect),
                     grpc_schedule_on_exec_ctx);
   connect->stream_sync->NotifyOnOpen(&connect->on_open);

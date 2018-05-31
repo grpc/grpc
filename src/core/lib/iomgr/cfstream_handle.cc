@@ -35,16 +35,16 @@ extern grpc_core::TraceFlag grpc_tcp_trace;
 
 void* CFStreamHandle::Retain(void* info) {
   CFStreamHandle* handle = static_cast<CFStreamHandle*>(info);
-  CFSTREAM_SYNC_REF(handle, "retain");
+  CFSTREAM_HANDLE_REF(handle, "retain");
   return info;
 }
 
 void CFStreamHandle::Release(void* info) {
   CFStreamHandle* handle = static_cast<CFStreamHandle*>(info);
-  CFSTREAM_SYNC_UNREF(handle, "release");
+  CFSTREAM_HANDLE_UNREF(handle, "release");
 }
 
-CFStreamHandle* CFStreamHandle::CreateStreamSync(
+CFStreamHandle* CFStreamHandle::CreateStreamHandle(
     CFReadStreamRef read_stream, CFWriteStreamRef write_stream) {
   return new CFStreamHandle(read_stream, write_stream);
 }
@@ -53,7 +53,7 @@ void CFStreamHandle::ReadCallback(CFReadStreamRef stream,
                                   CFStreamEventType type,
                                   void* client_callback_info) {
   CFStreamHandle* handle = static_cast<CFStreamHandle*>(client_callback_info);
-  CFSTREAM_SYNC_REF(handle, "read callback");
+  CFSTREAM_HANDLE_REF(handle, "read callback");
   dispatch_async(
       dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         grpc_core::ExecCtx exec_ctx;
@@ -77,14 +77,14 @@ void CFStreamHandle::ReadCallback(CFReadStreamRef stream,
             // Impossible
             abort();
         }
-        CFSTREAM_SYNC_UNREF(handle, "read callback");
+        CFSTREAM_HANDLE_UNREF(handle, "read callback");
       });
 }
 void CFStreamHandle::WriteCallback(CFWriteStreamRef stream,
                                    CFStreamEventType type,
                                    void* clientCallBackInfo) {
   CFStreamHandle* handle = static_cast<CFStreamHandle*>(clientCallBackInfo);
-  CFSTREAM_SYNC_REF(handle, "write callback");
+  CFSTREAM_HANDLE_REF(handle, "write callback");
   dispatch_async(
       dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
         grpc_core::ExecCtx exec_ctx;
@@ -108,7 +108,7 @@ void CFStreamHandle::WriteCallback(CFWriteStreamRef stream,
             // Impossible
             abort();
         }
-        CFSTREAM_SYNC_UNREF(handle, "write callback");
+        CFSTREAM_HANDLE_UNREF(handle, "write callback");
       });
 }
 

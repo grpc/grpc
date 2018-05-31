@@ -34,8 +34,8 @@
 
 class CFStreamHandle final {
  public:
-  static CFStreamHandle* CreateStreamSync(CFReadStreamRef read_stream,
-                                          CFWriteStreamRef write_stream);
+  static CFStreamHandle* CreateStreamHandle(CFReadStreamRef read_stream,
+                                            CFWriteStreamRef write_stream);
   ~CFStreamHandle();
   CFStreamHandle(const CFReadStreamRef& ref) = delete;
   CFStreamHandle(CFReadStreamRef&& ref) = delete;
@@ -68,13 +68,13 @@ class CFStreamHandle final {
 };
 
 #ifndef NDEBUG
-#define CFSTREAM_SYNC_REF(sync, reason) \
-  (sync)->Ref(__FILE__, __LINE__, (reason))
-#define CFSTREAM_SYNC_UNREF(sync, reason) \
-  (sync)->Unref(__FILE__, __LINE__, (reason))
+#define CFSTREAM_HANDLE_REF(handle, reason) \
+  (handle)->Ref(__FILE__, __LINE__, (reason))
+#define CFSTREAM_HANDLE_UNREF(handle, reason) \
+  (handle)->Unref(__FILE__, __LINE__, (reason))
 #else
-#define CFSTREAM_SYNC_REF(sync, reason) (sync)->Ref()
-#define CFSTREAM_SYNC_UNREF(sync, reason) (sync)->Unref()
+#define CFSTREAM_HANDLE_REF(handle, reason) (handle)->Ref()
+#define CFSTREAM_HANDLE_UNREF(handle, reason) (handle)->Unref()
 #endif
 
 #endif
