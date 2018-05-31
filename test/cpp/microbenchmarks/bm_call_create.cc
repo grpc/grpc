@@ -606,10 +606,11 @@ BENCHMARK_TEMPLATE(BM_IsolatedFilter, MessageSizeFilter, NoOp);
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, MessageSizeFilter, SendEmptyMetadata);
 // This cmake target is disabled for now because it depends on OpenCensus, which
 // is Bazel-only.
-//typedef Fixture<&grpc_server_load_reporting_filter, CHECKS_NOT_LAST>
+// typedef Fixture<&grpc_server_load_reporting_filter, CHECKS_NOT_LAST>
 //    LoadReportingFilter;
-//BENCHMARK_TEMPLATE(BM_IsolatedFilter, LoadReportingFilter, NoOp);
-//BENCHMARK_TEMPLATE(BM_IsolatedFilter, LoadReportingFilter, SendEmptyMetadata);
+// BENCHMARK_TEMPLATE(BM_IsolatedFilter, LoadReportingFilter, NoOp);
+// BENCHMARK_TEMPLATE(BM_IsolatedFilter, LoadReportingFilter,
+// SendEmptyMetadata);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Benchmarks isolating grpc_call
