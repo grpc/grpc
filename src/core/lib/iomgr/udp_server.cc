@@ -300,8 +300,7 @@ void GrpcUdpListener::OrphanFd() {
                     grpc_schedule_on_exec_ctx);
   /* Because at this point, all listening sockets have been shutdown already, no
    * need to call OnFdAboutToOrphan() to notify the handler again. */
-  grpc_fd_orphan(emfd_, &destroyed_closure_, nullptr,
-                 false /* already_closed */, "udp_listener_shutdown");
+  grpc_fd_orphan(emfd_, &destroyed_closure_, nullptr, "udp_listener_shutdown");
 }
 
 void grpc_udp_server_destroy(grpc_udp_server* s, grpc_closure* on_done) {

@@ -79,8 +79,7 @@ static void test_fd_cleanup(test_fd* tfds, int num_fds) {
                      GRPC_ERROR_CREATE_FROM_STATIC_STRING("test_fd_cleanup"));
     grpc_core::ExecCtx::Get()->Flush();
 
-    grpc_fd_orphan(tfds[i].fd, nullptr, &release_fd, false /* already_closed */,
-                   "test_fd_cleanup");
+    grpc_fd_orphan(tfds[i].fd, nullptr, &release_fd, "test_fd_cleanup");
     grpc_core::ExecCtx::Get()->Flush();
 
     GPR_ASSERT(release_fd == tfds[i].inner_fd);
@@ -287,8 +286,7 @@ static void test_threading(void) {
   {
     grpc_core::ExecCtx exec_ctx;
     grpc_fd_shutdown(shared.wakeup_desc, GRPC_ERROR_CANCELLED);
-    grpc_fd_orphan(shared.wakeup_desc, nullptr, nullptr,
-                   false /* already_closed */, "done");
+    grpc_fd_orphan(shared.wakeup_desc, nullptr, nullptr, "done");
     grpc_pollset_shutdown(shared.pollset,
                           GRPC_CLOSURE_CREATE(destroy_pollset, shared.pollset,
                                               grpc_schedule_on_exec_ctx));

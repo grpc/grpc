@@ -211,8 +211,7 @@ static void on_writable(void* acp, grpc_error* error) {
 finish:
   if (fd != nullptr) {
     grpc_pollset_set_del_fd(ac->interested_parties, fd);
-    grpc_fd_orphan(fd, nullptr, nullptr, false /* already_closed */,
-                   "tcp_client_orphan");
+    grpc_fd_orphan(fd, nullptr, nullptr, "tcp_client_orphan");
     fd = nullptr;
   }
   done = (--ac->refs == 0);
@@ -305,8 +304,7 @@ void grpc_tcp_client_create_from_prepared_fd(
     return;
   }
   if (errno != EWOULDBLOCK && errno != EINPROGRESS) {
-    grpc_fd_orphan(fdobj, nullptr, nullptr, false /* already_closed */,
-                   "tcp_client_connect_error");
+    grpc_fd_orphan(fdobj, nullptr, nullptr, "tcp_client_connect_error");
     GRPC_CLOSURE_SCHED(closure, GRPC_OS_ERROR(errno, "connect"));
     return;
   }

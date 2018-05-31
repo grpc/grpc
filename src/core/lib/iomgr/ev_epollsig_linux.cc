@@ -435,7 +435,6 @@ static void polling_island_remove_all_fds_locked(polling_island* pi,
 
 /* The caller is expected to hold pi->mu lock before calling this function */
 static void polling_island_remove_fd_locked(polling_island* pi, grpc_fd* fd,
-                                            bool is_fd_closed,
                                             grpc_error** error) {
   int err;
   size_t i;
@@ -444,16 +443,14 @@ static void polling_island_remove_fd_locked(polling_island* pi, grpc_fd* fd,
 
   /* If fd is already closed, then it would have been automatically been removed
      from the epoll set */
-  if (!is_fd_closed) {
-    err = epoll_ctl(pi->epoll_fd, EPOLL_CTL_DEL, fd->fd, nullptr);
-    if (err < 0 && errno != ENOENT) {
-      gpr_asprintf(
-          &err_msg,
-          "epoll_ctl (epoll_fd: %d) del fd: %d failed with error: %d (%s)",
-          pi->epoll_fd, fd->fd, errno, strerror(errno));
-      append_error(error, GRPC_OS_ERROR(errno, err_msg), err_desc);
-      gpr_free(err_msg);
-    }
+  err = epoll_ctl(pi->epoll_fd, EPOLL_CTL_DEL, fd->fd, nullptr);
+  if (err < 0 && errno != ENOENT) {
+    gpr_asprintf(
+        &err_msg,
+        "epoll_ctl (epoll_fd: %d) del fd: %d failed with error: %d (%s)",
+        pi->epoll_fd, fd->fd, errno, strerror(errno));
+    append_error(error, GRPC_OS_ERROR(errno, err_msg), err_desc);
+    gpr_free(err_msg);
   }
 
   for (i = 0; i < pi->fd_cnt; i++) {
@@ -863,7 +860,7 @@ static int fd_wrapped_fd(grpc_fd* fd) {
 }
 
 static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
-                      bool already_closed, const char* reason) {
+                      const char* reason) {
   grpc_error* error = GRPC_ERROR_NONE;
   polling_island* unref_pi = nullptr;
 
@@ -884,7 +881,7 @@ static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
        before doing this.) */
   if (fd->po.pi != nullptr) {
     polling_island* pi_latest = polling_island_lock(fd->po.pi);
-    polling_island_remove_fd_locked(pi_latest, fd, already_closed, &error);
+    polling_island_remove_fd_locked(pi_latest, fd, &error);
     gpr_mu_unlock(&pi_latest->mu);
 
     unref_pi = fd->po.pi;

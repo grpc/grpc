@@ -337,7 +337,7 @@ static void fd_shutdown(grpc_fd* fd, grpc_error* why) {
 }
 
 static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
-                      bool already_closed, const char* reason) {
+                      const char* reason) {
   grpc_error* error = GRPC_ERROR_NONE;
   bool is_release_fd = (release_fd != nullptr);
 
@@ -350,7 +350,7 @@ static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
      descriptor fd->fd (but we still own the grpc_fd structure). */
   if (is_release_fd) {
     *release_fd = fd->fd;
-  } else if (!already_closed) {
+  } else {
     close(fd->fd);
   }
 
