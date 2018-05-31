@@ -1514,8 +1514,9 @@ static bool maybe_retry(grpc_call_element* elem,
 // subchannel_batch_data
 //
 
-static subchannel_batch_data* batch_data_create(
-    grpc_call_element* elem, int refcount, bool set_on_complete) {
+static subchannel_batch_data* batch_data_create(grpc_call_element* elem,
+                                                int refcount,
+                                                bool set_on_complete) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   subchannel_call_retry_state* retry_state =
       static_cast<subchannel_call_retry_state*>(
@@ -2388,8 +2389,8 @@ static subchannel_batch_data* maybe_create_subchannel_batch_for_replay(
               chand, calld);
     }
     if (replay_batch_data == nullptr) {
-      replay_batch_data = batch_data_create(elem, 1,
-                                            true /* set_on_complete */);
+      replay_batch_data =
+          batch_data_create(elem, 1, true /* set_on_complete */);
     }
     add_retriable_send_message_op(elem, retry_state, replay_batch_data);
   }
@@ -2408,8 +2409,8 @@ static subchannel_batch_data* maybe_create_subchannel_batch_for_replay(
               chand, calld);
     }
     if (replay_batch_data == nullptr) {
-      replay_batch_data = batch_data_create(elem, 1,
-                                            true /* set_on_complete */);
+      replay_batch_data =
+          batch_data_create(elem, 1, true /* set_on_complete */);
     }
     add_retriable_send_trailing_metadata_op(calld, retry_state,
                                             replay_batch_data);
