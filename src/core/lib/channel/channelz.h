@@ -23,7 +23,6 @@
 
 #include <grpc/grpc.h>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -34,7 +33,6 @@
 namespace grpc_core {
 namespace channelz {
 
-// owned by the client_channel that it points to and tracks
 class Channel : public RefCounted<Channel> {
  public:
   Channel(grpc_channel* channel, size_t channel_tracer_max_nodes);

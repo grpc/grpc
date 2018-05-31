@@ -21,7 +21,6 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/lib/surface/channel.h"
 
 #include <grpc/byte_buffer.h>
@@ -201,10 +200,6 @@ static void simple_request_body(grpc_end2end_test_config config,
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
-  char* json = grpc_channel_render_channelz(f.client);
-  gpr_log(GPR_ERROR, "%s", json);
-  gpr_free(json);
-
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
   // the following sanity check makes sure that the requested error string is
@@ -259,6 +254,16 @@ static void test_invoke_simple_request(grpc_end2end_test_config config) {
 
   f = begin_test(config, "test_invoke_simple_request", nullptr, nullptr);
   simple_request_body(config, f);
+
+  // The following is a quick sanity check on channelz functionality. It
+  // ensures that core properly tracked the one call that occurred in this
+  // simple end2end test.
+  char* json = grpc_channel_render_channelz(f.client);
+  GPR_ASSERT(nullptr != strstr(json, "\"callsStarted\":\"1\""));
+  GPR_ASSERT(nullptr != strstr(json, "\"callsFailed\":\"1\""));
+  GPR_ASSERT(nullptr != strstr(json, "\"callsSucceeded\":\"-1\""));
+  gpr_free(json);
+
   end_test(&f);
   config.tear_down_data(&f);
 }
@@ -271,6 +276,14 @@ static void test_invoke_10_simple_requests(grpc_end2end_test_config config) {
     simple_request_body(config, f);
     gpr_log(GPR_INFO, "Running test: Passed simple request %d", i);
   }
+
+  // The following is a quick sanity check on channelz functionality. It
+  // ensures that core properly tracked the ten calls that occurred.
+  char* json = grpc_channel_render_channelz(f.client);
+  GPR_ASSERT(nullptr != strstr(json, "\"callsStarted\":\"10\""));
+  GPR_ASSERT(nullptr != strstr(json, "\"callsFailed\":\"10\""));
+  GPR_ASSERT(nullptr != strstr(json, "\"callsSucceeded\":\"-1\""));
+  gpr_free(json);
   end_test(&f);
   config.tear_down_data(&f);
 }
