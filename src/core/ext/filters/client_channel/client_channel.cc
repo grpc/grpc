@@ -1514,8 +1514,8 @@ static bool maybe_retry(grpc_call_element* elem,
 // subchannel_batch_data
 //
 
-static subchannel_batch_data* batch_data_create(grpc_call_element* elem,
-                                                int refcount) {
+static subchannel_batch_data* batch_data_create(
+    grpc_call_element* elem, int refcount, bool set_on_complete) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   subchannel_call_retry_state* retry_state =
       static_cast<subchannel_call_retry_state*>(
@@ -1528,9 +1528,11 @@ static subchannel_batch_data* batch_data_create(grpc_call_element* elem,
       GRPC_SUBCHANNEL_CALL_REF(calld->subchannel_call, "batch_data_create");
   batch_data->batch.payload = &retry_state->batch_payload;
   gpr_ref_init(&batch_data->refs, refcount);
-  GRPC_CLOSURE_INIT(&batch_data->on_complete, on_complete, batch_data,
-                    grpc_schedule_on_exec_ctx);
-  batch_data->batch.on_complete = &batch_data->on_complete;
+  if (set_on_complete) {
+    GRPC_CLOSURE_INIT(&batch_data->on_complete, on_complete, batch_data,
+                      grpc_schedule_on_exec_ctx);
+    batch_data->batch.on_complete = &batch_data->on_complete;
+  }
   GRPC_CALL_STACK_REF(calld->owning_call, "batch_data");
   return batch_data;
 }
@@ -2337,10 +2339,12 @@ static void start_internal_recv_trailing_metadata(grpc_call_element* elem) {
       static_cast<subchannel_call_retry_state*>(
           grpc_connected_subchannel_call_get_parent_data(
               calld->subchannel_call));
-  // Create batch_data with 3 refs, since this batch will be unreffed thrice:
-  // once for each of the callbacks when the subchannel batch returns, and
-  // again when we actually get a recv_trailing_metadata op from the surface.
-  subchannel_batch_data* batch_data = batch_data_create(elem, 3);
+  // Create batch_data with 2 refs, since this batch will be unreffed twice:
+  // once for the recv_trailing_metadata_ready callback when the subchannel
+  // batch returns, and again when we actually get a recv_trailing_metadata
+  // op from the surface.
+  subchannel_batch_data* batch_data =
+      batch_data_create(elem, 2, false /* set_on_complete */);
   add_retriable_recv_trailing_metadata_op(calld, retry_state, batch_data);
   retry_state->recv_trailing_metadata_internal_batch = batch_data;
   // Note: This will release the call combiner.
@@ -2365,7 +2369,7 @@ static subchannel_batch_data* maybe_create_subchannel_batch_for_replay(
               "send_initial_metadata op",
               chand, calld);
     }
-    replay_batch_data = batch_data_create(elem, 1);
+    replay_batch_data = batch_data_create(elem, 1, true /* set_on_complete */);
     add_retriable_send_initial_metadata_op(calld, retry_state,
                                            replay_batch_data);
   }
@@ -2382,7 +2386,8 @@ static subchannel_batch_data* maybe_create_subchannel_batch_for_replay(
               chand, calld);
     }
     if (replay_batch_data == nullptr) {
-      replay_batch_data = batch_data_create(elem, 1);
+      replay_batch_data = batch_data_create(elem, 1,
+                                            true /* set_on_complete */);
     }
     add_retriable_send_message_op(elem, retry_state, replay_batch_data);
   }
@@ -2401,7 +2406,8 @@ static subchannel_batch_data* maybe_create_subchannel_batch_for_replay(
               chand, calld);
     }
     if (replay_batch_data == nullptr) {
-      replay_batch_data = batch_data_create(elem, 1);
+      replay_batch_data = batch_data_create(elem, 1,
+                                            true /* set_on_complete */);
     }
     add_retriable_send_trailing_metadata_op(calld, retry_state,
                                             replay_batch_data);
@@ -2492,10 +2498,14 @@ static void add_subchannel_batches_for_pending_batches(
       continue;
     }
     // Create batch with the right number of callbacks.
-    const int num_callbacks = 1 + batch->recv_initial_metadata +
+    const bool has_send_ops = batch->send_initial_metadata ||
+                              batch->send_message ||
+                              batch->send_trailing_metadata;
+    const int num_callbacks = has_send_ops + batch->recv_initial_metadata +
                               batch->recv_message +
                               batch->recv_trailing_metadata;
-    subchannel_batch_data* batch_data = batch_data_create(elem, num_callbacks);
+    subchannel_batch_data* batch_data = batch_data_create(
+        elem, num_callbacks, has_send_ops /* set_on_complete */);
     // Cache send ops if needed.
     maybe_cache_send_ops_for_batch(calld, pending);
     // send_initial_metadata.
