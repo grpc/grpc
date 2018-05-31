@@ -20,7 +20,7 @@
 // An integration test service that covers all the method signature permutations
 // of unary/streaming requests/responses.
 //
-#pragma warning disable 1591
+#pragma warning disable 0414, 1591
 #region Designer generated code
 
 using grpc = global::Grpc.Core;
