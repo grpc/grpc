@@ -395,8 +395,8 @@ static int fd_wrapped_fd(grpc_fd* fd) {
 }
 
 static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
-                      bool already_closed, const char* reason) {
-  bool is_fd_closed = already_closed;
+                      const char* reason) {
+  bool is_fd_closed = false;
 
   gpr_mu_lock(&fd->orphan_mu);
 
@@ -406,7 +406,7 @@ static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
      descriptor fd->fd (but we still own the grpc_fd structure). */
   if (release_fd != nullptr) {
     *release_fd = fd->fd;
-  } else if (!is_fd_closed) {
+  } else {
     close(fd->fd);
     is_fd_closed = true;
   }

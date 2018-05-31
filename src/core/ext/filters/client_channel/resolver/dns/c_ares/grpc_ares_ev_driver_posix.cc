@@ -102,11 +102,10 @@ static void fd_node_destroy(fd_node* fdn) {
   GPR_ASSERT(!fdn->readable_registered);
   GPR_ASSERT(!fdn->writable_registered);
   gpr_mu_destroy(&fdn->mu);
-  /* c-ares library has closed the fd inside grpc_fd. This fd may be picked up
-     immediately by another thread, and should not be closed by the following
-     grpc_fd_orphan. */
-  grpc_fd_orphan(fdn->fd, nullptr, nullptr, true /* already_closed */,
-                 "c-ares query finished");
+  int dummy_release_fd;
+  /* c-ares library will close the fd inside grpc_fd, don't close it in
+     in the following grpc_fd_orphan. */
+  grpc_fd_orphan(fdn->fd, nullptr, &dummy_release_fd, "c-ares query finished");
   gpr_free(fdn);
 }
 
