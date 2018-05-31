@@ -2121,8 +2121,10 @@ static void on_complete(void* arg, grpc_error* error) {
                                             &num_closures);
     // If needed, add a callback to start_retriable_subchannel_batches() to
     // start any replay or pending send ops on the subchannel call.
-    add_closures_for_replay_or_pending_send_ops(elem, batch_data, retry_state,
-                                                closures, &num_closures);
+    if (!retry_state->completed_recv_trailing_metadata) {
+      add_closures_for_replay_or_pending_send_ops(elem, batch_data, retry_state,
+                                                  closures, &num_closures);
+    }
   }
   // Track number of pending subchannel send batches and determine if this
   // was the last one.
