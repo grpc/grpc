@@ -2,6 +2,12 @@
 
 def grpc_deps():
     """Loads dependencies need to compile and test the grpc library."""
+
+    native.bind(
+        name = "nanopb",
+        actual = "@com_github_grpc_grpc//third_party/nanopb:nanopb",
+    )
+
     native.bind(
         name = "libssl",
         actual = "@boringssl//:ssl",
@@ -59,12 +65,12 @@ def grpc_deps():
 
     native.bind(
         name = "grpc_cpp_plugin",
-        actual = "@com_github_grpc_grpc//:grpc_cpp_plugin"
+        actual = "@com_github_grpc_grpc//:grpc_cpp_plugin",
     )
 
     native.bind(
         name = "grpc++_codegen_proto",
-        actual = "@com_github_grpc_grpc//:grpc++_codegen_proto"
+        actual = "@com_github_grpc_grpc//:grpc++_codegen_proto",
     )
 
     if "boringssl" not in native.existing_rules():

@@ -30,7 +30,6 @@ load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
     "grpc_proto_plugin",
-    "grpc_generate_one_off_targets",
 )
 
 config_setting(
@@ -1969,5 +1968,3 @@ grpc_cc_library(
         "//src/proto/grpc/core:stats_proto",
     ],
 )
-
-grpc_generate_one_off_targets()
