@@ -338,7 +338,9 @@ CPPFLAGS += -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSAT
 COREFLAGS += -fno-rtti -fno-exceptions
 LDFLAGS += -g
 
-DEFINES += PB_FIELD_16BIT
+# nanopb tweaks
+DEFINES += PB_FIELD_32BIT
+CPPFLAGS += -Ithird_party/nanopb
 
 CPPFLAGS += $(CPPFLAGS_$(CONFIG))
 CFLAGS += $(CFLAGS_$(CONFIG))
