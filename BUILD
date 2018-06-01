@@ -66,7 +66,7 @@ config_setting(
 # This should be updated along with build.yaml
 g_stands_for = "gloriosa"
 
-core_version = "6.0.0-dev"
+core_version = "6.0.0"
 
 version = "1.13.0-dev"
 
