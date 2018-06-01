@@ -158,6 +158,8 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
     linkopts = if_not_windows(["-pthread"]) + linkopts,
   )
 
+def grpc_generate_one_off_targets(): pass
+
 def grpc_sh_test(name, srcs, args = [], data = []):
   native.sh_test(
     name = name,
