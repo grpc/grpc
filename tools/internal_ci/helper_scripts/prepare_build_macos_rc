@@ -34,7 +34,7 @@ sudo systemsetup -setusingnetworktime on
 date
 
 # Add GCP credentials for BQ access
-pip install google-api-python-client --user python
+pip install --upgrade google-api-python-client --user python
 export GOOGLE_APPLICATION_CREDENTIALS=${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json
 
 # If this is a PR using RUN_TESTS_FLAGS var, then add flags to filter tests
