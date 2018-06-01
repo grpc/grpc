@@ -3,7 +3,7 @@
 
 #ifndef PB_GRPC_HEALTH_V1_HEALTH_PB_H_INCLUDED
 #define PB_GRPC_HEALTH_V1_HEALTH_PB_H_INCLUDED
-#include "pb.h"
+#include <pb.h>
 /* @@protoc_insertion_point(includes) */
 #if PB_PROTO_HEADER_VERSION != 30
 #error Regenerate this file with the current version of nanopb generator.

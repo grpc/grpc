@@ -24,8 +24,8 @@
 #include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/method_handler_impl.h>
 
-#include "pb_decode.h"
-#include "pb_encode.h"
+#include <pb_decode.h>
+#include <pb_encode.h>
 #include "src/cpp/server/health/default_health_check_service.h"
 #include "src/cpp/server/health/health.pb.h"
 
