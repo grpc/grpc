@@ -131,9 +131,11 @@ static void OnOpen(void* arg, grpc_error* error) {
             connect->read_stream, connect->write_stream, connect->addr_name,
             connect->resource_quota, connect->stream_sync);
       }
+    } else {
+      GRPC_ERROR_REF(error);
     }
     gpr_mu_unlock(&connect->mu);
-    GRPC_CLOSURE_SCHED(closure, GRPC_ERROR_REF(error));
+    GRPC_CLOSURE_SCHED(closure, error);
   }
 }
 
