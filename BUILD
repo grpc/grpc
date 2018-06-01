@@ -994,7 +994,7 @@ grpc_cc_library(
         "grpc_resolver_dns_ares",
         "grpc_resolver_fake",
         "grpc_resolver_dns_native",
-        "grpc_resolver_sockaddr",
+        "grpc_resolver_unix",
         "grpc_transport_chttp2_client_insecure",
         "grpc_transport_chttp2_server_insecure",
         "grpc_transport_inproc",
@@ -1334,9 +1334,9 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_resolver_sockaddr",
+    name = "grpc_resolver_unix",
     srcs = [
-        "src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc",
+        "src/core/ext/filters/client_channel/resolver/unix/unix_resolver.cc",
     ],
     language = "c++",
     deps = [

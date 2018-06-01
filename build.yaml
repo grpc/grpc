@@ -735,10 +735,10 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_channel
-- name: grpc_resolver_sockaddr
+- name: grpc_resolver_unix
   src:
-  - src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
-  plugin: grpc_resolver_sockaddr
+  - src/core/ext/filters/client_channel/resolver/unix/unix_resolver.cc
+  plugin: grpc_resolver_unix
   uses:
   - grpc_base
   - grpc_client_channel
@@ -1397,7 +1397,7 @@ libs:
   - grpc_lb_policy_round_robin
   - grpc_resolver_dns_ares
   - grpc_resolver_dns_native
-  - grpc_resolver_sockaddr
+  - grpc_resolver_unix
   - grpc_resolver_fake
   - grpc_server_load_reporting
   - grpc_secure
@@ -1498,7 +1498,7 @@ libs:
   - grpc_transport_inproc
   - grpc_resolver_dns_ares
   - grpc_resolver_dns_native
-  - grpc_resolver_sockaddr
+  - grpc_resolver_unix
   - grpc_resolver_fake
   - grpc_server_load_reporting
   - grpc_lb_policy_grpclb
@@ -3341,16 +3341,6 @@ targets:
   - gpr_test_util
   - gpr
   uses_polling: false
-- name: sockaddr_resolver_test
-  build: test
-  language: c
-  src:
-  - test/core/client_channel/resolvers/sockaddr_resolver_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr_test_util
-  - gpr
 - name: sockaddr_utils_test
   build: test
   language: c
@@ -3611,6 +3601,16 @@ targets:
   - mac
   - linux
   - posix
+- name: unix_resolver_test
+  build: test
+  language: c
+  src:
+  - test/core/client_channel/resolvers/unix_resolver_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: uri_fuzzer_test
   build: fuzzer
   language: c

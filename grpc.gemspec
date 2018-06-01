@@ -727,7 +727,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc )
-  s.files += %w( src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc )
+  s.files += %w( src/core/ext/filters/client_channel/resolver/unix/unix_resolver.cc )
   s.files += %w( src/core/ext/filters/load_reporting/server_load_reporting_filter.cc )
   s.files += %w( src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc )
   s.files += %w( src/core/ext/census/grpc_context.cc )
