@@ -89,7 +89,7 @@ static void OnAlarm(void* arg, grpc_error* error) {
   connect->closure = nil;
   const bool done = (--connect->refs == 0);
   gpr_mu_unlock(&connect->mu);
-  // Only schedule a callback once, by either on_timer or on_connected. The
+  // Only schedule a callback once, by either OnAlarm or OnOpen. The
   // first one issues callback while the second one does cleanup.
   if (done) {
     CFStreamConnectCleanup(connect);
@@ -113,6 +113,8 @@ static void OnOpen(void* arg, grpc_error* error) {
   bool done = (--connect->refs == 0);
   grpc_endpoint** endpoint = connect->endpoint;
 
+  // Only schedule a callback once, by either OnAlarm or OnOpen. The
+  // first one issues callback while the second one does cleanup.
   if (done) {
     gpr_mu_unlock(&connect->mu);
     CFStreamConnectCleanup(connect);
