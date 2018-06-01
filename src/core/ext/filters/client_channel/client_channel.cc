@@ -1762,11 +1762,10 @@ static void add_closures_for_deferred_recv_callbacks(
     // Add closure for deferred recv_initial_metadata_ready.
     if (GPR_UNLIKELY(retry_state->recv_initial_metadata_ready_deferred_batch !=
                      nullptr)) {
-      GRPC_CLOSURE_INIT(
-          &batch_data->recv_initial_metadata_ready,
-          invoke_recv_initial_metadata_callback,
-          retry_state->recv_initial_metadata_ready_deferred_batch,
-          grpc_schedule_on_exec_ctx);
+      GRPC_CLOSURE_INIT(&batch_data->recv_initial_metadata_ready,
+                        invoke_recv_initial_metadata_callback,
+                        retry_state->recv_initial_metadata_ready_deferred_batch,
+                        grpc_schedule_on_exec_ctx);
       closures->Add(&batch_data->recv_initial_metadata_ready,
                     retry_state->recv_initial_metadata_error,
                     "resuming recv_initial_metadata_ready");
@@ -1775,10 +1774,10 @@ static void add_closures_for_deferred_recv_callbacks(
     // Add closure for deferred recv_message_ready.
     if (GPR_UNLIKELY(retry_state->recv_message_ready_deferred_batch !=
                      nullptr)) {
-      GRPC_CLOSURE_INIT(
-          &batch_data->recv_message_ready, invoke_recv_message_callback,
-          retry_state->recv_message_ready_deferred_batch,
-          grpc_schedule_on_exec_ctx);
+      GRPC_CLOSURE_INIT(&batch_data->recv_message_ready,
+                        invoke_recv_message_callback,
+                        retry_state->recv_message_ready_deferred_batch,
+                        grpc_schedule_on_exec_ctx);
       closures->Add(&batch_data->recv_message_ready,
                     retry_state->recv_message_error,
                     "resuming recv_message_ready");
@@ -1977,9 +1976,9 @@ static void add_closures_for_replay_or_pending_send_ops(
               "chand=%p calld=%p: starting next batch for pending send op(s)",
               chand, calld);
     }
-    GRPC_CLOSURE_INIT(
-        &batch_data->batch.handler_private.closure,
-        start_retriable_subchannel_batches, elem, grpc_schedule_on_exec_ctx);
+    GRPC_CLOSURE_INIT(&batch_data->batch.handler_private.closure,
+                      start_retriable_subchannel_batches, elem,
+                      grpc_schedule_on_exec_ctx);
     closures->Add(&batch_data->batch.handler_private.closure, GRPC_ERROR_NONE,
                   "starting next batch for send_* op(s)");
   }
@@ -2075,8 +2074,8 @@ static void add_closure_for_subchannel_batch(
                     grpc_schedule_on_exec_ctx);
   if (grpc_client_channel_trace.enabled()) {
     char* batch_str = grpc_transport_stream_op_batch_string(batch);
-    gpr_log(GPR_INFO, "chand=%p calld=%p: starting subchannel batch: %s",
-            chand, calld, batch_str);
+    gpr_log(GPR_INFO, "chand=%p calld=%p: starting subchannel batch: %s", chand,
+            calld, batch_str);
     gpr_free(batch_str);
   }
   closures->Add(&batch->handler_private.closure, GRPC_ERROR_NONE,

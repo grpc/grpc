@@ -624,9 +624,8 @@ static void StartTransportStreamOp(grpc_call_element* elem,
   // Construct list of closures to return.
   grpc_core::CallCombinerClosureList closures;
   if (op->recv_initial_metadata) {
-    closures.Add(
-        op->payload->recv_initial_metadata.recv_initial_metadata_ready,
-        GRPC_ERROR_NONE, "recv_initial_metadata");
+    closures.Add(op->payload->recv_initial_metadata.recv_initial_metadata_ready,
+                 GRPC_ERROR_NONE, "recv_initial_metadata");
   }
   if (op->recv_message) {
     closures.Add(op->payload->recv_message.recv_message_ready, GRPC_ERROR_NONE,
