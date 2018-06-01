@@ -1250,19 +1250,20 @@ class Server(six.with_metaclass(abc.ABCMeta)):
         """Stops this Server.
 
         This method immediately stop service of new RPCs in all cases.
+
         If a grace period is specified, this method returns immediately
         and all RPCs active at the end of the grace period are aborted.
-
-        If a grace period is not specified, then all existing RPCs are
-        teriminated immediately and the this method blocks until the last
-        RPC handler terminates.
+        If a grace period is not specified (by passing None for `grace`),
+        all existing RPCs are aborted immediately and this method
+        blocks until the last RPC handler terminates.
 
         This method is idempotent and may be called at any time.
-        Passing a smaller grace value in subsequent call will have
-        the effect of stopping the Server sooner. Passing a larger
-        grace value in subsequent call *will not* have the effect of
-        stopping the server later (i.e. the most restrictive grace
-        value is used).
+        Passing a smaller grace value in a subsequent call will have
+        the effect of stopping the Server sooner (passing None will
+        have the effect of stopping the server immediately). Passing
+        a larger grace value in a subsequent call *will not* have the
+        effect of stopping the server later (i.e. the most restrictive
+        grace value is used).
 
         Args:
           grace: A duration of time in seconds or None.

@@ -31,7 +31,7 @@
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/profiling/timers.h"
 
-grpc_core::TraceFlag grpc_combiner_trace(false, "combiner");
+grpc_core::DebugOnlyTraceFlag grpc_combiner_trace(false, "combiner");
 
 #define GRPC_COMBINER_TRACE(fn)          \
   do {                                   \

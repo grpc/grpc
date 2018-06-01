@@ -23,7 +23,7 @@
 // Currently, 'Gauge' (i.e a metric that represents the measured value of
 // something at an instant of time) is the only metric type supported by the
 // service.
-#pragma warning disable 1591
+#pragma warning disable 0414, 1591
 #region Designer generated code
 
 using grpc = global::Grpc.Core;
