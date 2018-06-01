@@ -18,9 +18,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h"
 #include "pb_decode.h"
 #include "pb_encode.h"
+#include "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h"
 
 #include <grpc/support/alloc.h>
 
