@@ -50,6 +50,7 @@ static NSMutableDictionary *kHostCache;
   if (_channelCreds != nil) {
     grpc_channel_credentials_release(_channelCreds);
   }
+  [GRPCConnectivityMonitor unregisterObserver:self];
 }
 
 // Default initializer.
@@ -108,7 +109,10 @@ static NSMutableDictionary *kHostCache;
                                    serverName:(NSString *)serverName
                                       timeout:(NSTimeInterval)timeout
                               completionQueue:(GRPCCompletionQueue *)queue {
-  GRPCChannel *channel;
+  // The __block attribute is to allow channel take refcount inside @synchronized block. Without
+  // this attribute, retain of channel object happens after objc_sync_exit in release builds, which
+  // may result in channel released before used. See grpc/#15033.
+  __block GRPCChannel *channel;
   // This is racing -[GRPCHost disconnect].
   @synchronized(self) {
     if (!_channel) {
@@ -275,7 +279,7 @@ static NSMutableDictionary *kHostCache;
 // and Cellular data, so that a new call will use a new channel. Otherwise, a new call will still
 // use the cached channel which is no longer available and will cause gRPC to hang.
 - (void)connectivityChange:(NSNotification *)note {
-  [GRPCHost flushChannelCache];
+  [self disconnect];
 }
 
 @end

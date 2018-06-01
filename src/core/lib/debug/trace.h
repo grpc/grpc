@@ -57,13 +57,24 @@ class TraceFlag {
 
   const char* name() const { return name_; }
 
+// Use the symbol GRPC_USE_TRACERS to determine if tracers will be enabled in
+// opt builds (tracers are always on in dbg builds). The default in OSS is for
+// tracers to be on since we support binary distributions of gRPC for the
+// wrapped language (wr don't want to force recompilation to get tracing).
+// Internally, however, for performance reasons, we compile them out by
+// default, since internal build systems make recompiling trivial.
+#define GRPC_USE_TRACERS  // tracers on by default in OSS
+#if defined(GRPC_USE_TRACERS) || !defined(NDEBUG)
   bool enabled() {
 #ifdef GRPC_THREADSAFE_TRACER
     return gpr_atm_no_barrier_load(&value_) != 0;
 #else
     return value_;
-#endif
+#endif  // GRPC_THREADSAFE_TRACER
   }
+#else
+  bool enabled() { return false; }
+#endif /* defined(GRPC_USE_TRACERS) || !defined(NDEBUG) */
 
  private:
   friend void grpc_core::testing::grpc_tracer_enable_flag(TraceFlag* flag);

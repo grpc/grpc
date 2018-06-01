@@ -218,7 +218,7 @@ void NativeDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
         r->Ref(DEBUG_LOCATION, "next_resolution_timer");
     self.release();
     if (timeout > 0) {
-      gpr_log(GPR_DEBUG, "retrying in %" PRIdPTR " milliseconds", timeout);
+      gpr_log(GPR_DEBUG, "retrying in %" PRId64 " milliseconds", timeout);
     } else {
       gpr_log(GPR_DEBUG, "retrying immediately");
     }
@@ -236,6 +236,15 @@ void NativeDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
 }
 
 void NativeDnsResolver::MaybeStartResolvingLocked() {
+  // If there is an existing timer, the time it fires is the earliest time we
+  // can start the next resolution.
+  if (have_next_resolution_timer_) {
+    // TODO(dgq): remove the following two lines once Pick First stops
+    // discarding subchannels after selecting.
+    ++resolved_version_;
+    MaybeFinishNextLocked();
+    return;
+  }
   if (last_resolution_timestamp_ >= 0) {
     const grpc_millis earliest_next_resolution =
         last_resolution_timestamp_ + min_time_between_resolutions_;
@@ -245,20 +254,18 @@ void NativeDnsResolver::MaybeStartResolvingLocked() {
       const grpc_millis last_resolution_ago =
           grpc_core::ExecCtx::Get()->Now() - last_resolution_timestamp_;
       gpr_log(GPR_DEBUG,
-              "In cooldown from last resolution (from %" PRIdPTR
-              " ms ago). Will resolve again in %" PRIdPTR " ms",
+              "In cooldown from last resolution (from %" PRId64
+              " ms ago). Will resolve again in %" PRId64 " ms",
               last_resolution_ago, ms_until_next_resolution);
-      if (!have_next_resolution_timer_) {
-        have_next_resolution_timer_ = true;
-        // TODO(roth): We currently deal with this ref manually.  Once the
-        // new closure API is done, find a way to track this ref with the timer
-        // callback as part of the type system.
-        RefCountedPtr<Resolver> self =
-            Ref(DEBUG_LOCATION, "next_resolution_timer_cooldown");
-        self.release();
-        grpc_timer_init(&next_resolution_timer_, ms_until_next_resolution,
-                        &on_next_resolution_);
-      }
+      have_next_resolution_timer_ = true;
+      // TODO(roth): We currently deal with this ref manually.  Once the
+      // new closure API is done, find a way to track this ref with the timer
+      // callback as part of the type system.
+      RefCountedPtr<Resolver> self =
+          Ref(DEBUG_LOCATION, "next_resolution_timer_cooldown");
+      self.release();
+      grpc_timer_init(&next_resolution_timer_, ms_until_next_resolution,
+                      &on_next_resolution_);
       // TODO(dgq): remove the following two lines once Pick First stops
       // discarding subchannels after selecting.
       ++resolved_version_;
@@ -270,6 +277,7 @@ void NativeDnsResolver::MaybeStartResolvingLocked() {
 }
 
 void NativeDnsResolver::StartResolvingLocked() {
+  gpr_log(GPR_DEBUG, "Start resolving.");
   // TODO(roth): We currently deal with this ref manually.  Once the
   // new closure API is done, find a way to track this ref with the timer
   // callback as part of the type system.
@@ -302,7 +310,7 @@ class NativeDnsResolverFactory : public ResolverFactory {
  public:
   OrphanablePtr<Resolver> CreateResolver(
       const ResolverArgs& args) const override {
-    if (0 != strcmp(args.uri->authority, "")) {
+    if (GPR_UNLIKELY(0 != strcmp(args.uri->authority, ""))) {
       gpr_log(GPR_ERROR, "authority based dns uri's not supported");
       return OrphanablePtr<Resolver>(nullptr);
     }

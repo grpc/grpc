@@ -232,6 +232,10 @@ static grpc_error* on_handshake_next_done_locked(
     const unsigned char* bytes_to_send, size_t bytes_to_send_size,
     tsi_handshaker_result* handshaker_result) {
   grpc_error* error = GRPC_ERROR_NONE;
+  // Handshaker was shutdown.
+  if (h->shutdown) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Handshaker shutdown");
+  }
   // Read more if we need to.
   if (result == TSI_INCOMPLETE_DATA) {
     GPR_ASSERT(bytes_to_send_size == 0);
@@ -376,6 +380,7 @@ static void security_handshaker_shutdown(grpc_handshaker* handshaker,
   gpr_mu_lock(&h->mu);
   if (!h->shutdown) {
     h->shutdown = true;
+    tsi_handshaker_shutdown(h->handshaker);
     grpc_endpoint_shutdown(h->args->endpoint, GRPC_ERROR_REF(why));
     cleanup_args_for_failure_locked(h);
   }
@@ -406,7 +411,7 @@ static void security_handshaker_do_handshake(grpc_handshaker* handshaker,
 
 static const grpc_handshaker_vtable security_handshaker_vtable = {
     security_handshaker_destroy, security_handshaker_shutdown,
-    security_handshaker_do_handshake};
+    security_handshaker_do_handshake, "security"};
 
 static grpc_handshaker* security_handshaker_create(
     tsi_handshaker* handshaker, grpc_security_connector* connector) {
@@ -456,7 +461,7 @@ static void fail_handshaker_do_handshake(grpc_handshaker* handshaker,
 
 static const grpc_handshaker_vtable fail_handshaker_vtable = {
     fail_handshaker_destroy, fail_handshaker_shutdown,
-    fail_handshaker_do_handshake};
+    fail_handshaker_do_handshake, "security_fail"};
 
 static grpc_handshaker* fail_handshaker_create() {
   grpc_handshaker* h = static_cast<grpc_handshaker*>(gpr_malloc(sizeof(*h)));

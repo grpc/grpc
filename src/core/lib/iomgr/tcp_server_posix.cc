@@ -187,11 +187,6 @@ static void on_read(void* arg, grpc_error* err) {
     goto error;
   }
 
-  read_notifier_pollset =
-      sp->server->pollsets[static_cast<size_t>(gpr_atm_no_barrier_fetch_add(
-                               &sp->server->next_pollset_to_assign, 1)) %
-                           sp->server->pollset_count];
-
   /* loop until accept4 returns EAGAIN, and then re-arm notification */
   for (;;) {
     grpc_resolved_address addr;
@@ -228,10 +223,15 @@ static void on_read(void* arg, grpc_error* err) {
     gpr_asprintf(&name, "tcp-server-connection:%s", addr_str);
 
     if (grpc_tcp_trace.enabled()) {
-      gpr_log(GPR_DEBUG, "SERVER_CONNECT: incoming connection: %s", addr_str);
+      gpr_log(GPR_INFO, "SERVER_CONNECT: incoming connection: %s", addr_str);
     }
 
     grpc_fd* fdobj = grpc_fd_create(fd, name, false);
+
+    read_notifier_pollset =
+        sp->server->pollsets[static_cast<size_t>(gpr_atm_no_barrier_fetch_add(
+                                 &sp->server->next_pollset_to_assign, 1)) %
+                             sp->server->pollset_count];
 
     grpc_pollset_add_fd(read_notifier_pollset, fdobj);
 
@@ -346,7 +346,8 @@ static grpc_error* clone_port(grpc_tcp_listener* listener, unsigned count) {
     err = grpc_create_dualstack_socket(&listener->addr, SOCK_STREAM, 0, &dsmode,
                                        &fd);
     if (err != GRPC_ERROR_NONE) return err;
-    err = grpc_tcp_server_prepare_socket(fd, &listener->addr, true, &port);
+    err = grpc_tcp_server_prepare_socket(listener->server, fd, &listener->addr,
+                                         true, &port);
     if (err != GRPC_ERROR_NONE) return err;
     listener->server->nports++;
     grpc_sockaddr_to_string(&addr_str, &listener->addr, 1);

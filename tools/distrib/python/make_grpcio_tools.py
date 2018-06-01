@@ -98,6 +98,7 @@ def protobuf_submodule_commit_hash():
 
 
 def bazel_query(query):
+    print('Running "bazel query %s"' % query)
     output = subprocess.check_output([BAZEL_DEPS, query])
     return output.splitlines()
 
@@ -156,6 +157,7 @@ def main():
                 shutil.copyfile(source_file, target_file)
 
     try:
+        print('Invoking "bazel query" to gather the protobuf dependencies.')
         protoc_lib_deps_content = get_deps()
     except Exception as error:
         # We allow this script to succeed even if we couldn't get the dependencies,
@@ -167,6 +169,8 @@ def main():
     # If we successfully got the dependencies, truncate and rewrite the deps file.
     with open(GRPC_PYTHON_PROTOC_LIB_DEPS, 'w') as deps_file:
         deps_file.write(protoc_lib_deps_content)
+    print('File "%s" updated.' % GRPC_PYTHON_PROTOC_LIB_DEPS)
+    print('Done.')
 
 
 if __name__ == '__main__':

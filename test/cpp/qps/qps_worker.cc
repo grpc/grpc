@@ -35,7 +35,7 @@
 #include <grpcpp/server_builder.h>
 
 #include "src/core/lib/gpr/host_port.h"
-#include "src/proto/grpc/testing/services.pb.h"
+#include "src/proto/grpc/testing/worker_service.grpc.pb.h"
 #include "test/core/util/grpc_profiler.h"
 #include "test/core/util/histogram.h"
 #include "test/cpp/qps/client.h"

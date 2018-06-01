@@ -30,15 +30,8 @@ RUN apt-get update && apt-get -y install \
 # Bazel installation
 RUN echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8" > /etc/apt/sources.list.d/bazel.list
 RUN curl https://bazel.build/bazel-release.pub.gpg | apt-key add -
-RUN apt-get -y update
-RUN apt-get -y install bazel
+RUN apt-get -y update && apt-get -y install bazel=0.13.1 && apt-get clean
 
-# Pin Bazel to 0.9.0
-# Installing Bazel via apt-get first is required before installing 0.9.0 to
-# allow gRPC to build without errors. See https://github.com/grpc/grpc/issues/10553
-RUN curl -fSsL -O https://github.com/bazelbuild/bazel/releases/download/0.9.0/bazel-0.9.0-installer-linux-x86_64.sh
-RUN chmod +x ./bazel-0.9.0-installer-linux-x86_64.sh
-RUN ./bazel-0.9.0-installer-linux-x86_64.sh
 
 RUN mkdir -p /var/local/jenkins
 

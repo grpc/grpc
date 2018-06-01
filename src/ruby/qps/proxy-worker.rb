@@ -27,7 +27,7 @@ require 'histogram'
 require 'etc'
 require 'facter'
 require 'qps-common'
-require 'src/proto/grpc/testing/services_services_pb'
+require 'src/proto/grpc/testing/worker_service_services_pb'
 require 'src/proto/grpc/testing/proxy-service_services_pb'
 
 class ProxyBenchmarkClientServiceImpl < Grpc::Testing::ProxyClientService::Service

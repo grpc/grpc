@@ -30,6 +30,8 @@
   add_property_string(arg, name, context, b)
 #define php_grpc_add_property_stringl(res, name, str, len, b) \
   add_property_stringl(res, name, str, len, b)
+#define php_grpc_add_property_zval(res, name, val) \
+  add_property_zval(res, name, val)
 #define php_grpc_add_next_index_stringl(data, str, len, b) \
   add_next_index_stringl(data, str, len, b)
 
@@ -44,6 +46,8 @@
    add_assoc_long_ex(val, key, key_len, str);
 #define PHP_GRPC_ADD_BOOL_TO_ARRAY(val, key, key_len, str) \
    add_assoc_bool_ex(val, key, key_len, str);
+#define PHP_GRPC_ADD_LONG_TO_RETVAL(val, key, key_len, str) \
+   add_assoc_long_ex(val, key, key_len+1, str);
 
 #define RETURN_DESTROY_ZVAL(val) \
   RETURN_ZVAL(val, false /* Don't execute copy constructor */, \
@@ -138,11 +142,16 @@ static inline int php_grpc_zend_hash_find(HashTable *ht, char *key, int len,
   zend_hash_update(plist, key, len+1, rsrc, sizeof(php_grpc_zend_resource), \
                    NULL)
 #define PHP_GRPC_PERSISTENT_LIST_SIZE(plist) \
-  plist.nTableSize
+  *plist.nNumOfElements
 
 #define PHP_GRPC_GET_CLASS_ENTRY(object) zend_get_class_entry(object TSRMLS_CC)
 
 #define PHP_GRPC_INIT_HANDLER(class_object, handler_name)
+
+#define PHP_GRPC_DECLARE_OBJECT_HANDLER(handler_name)
+
+#define PHP_GRPC_GET_WRAPPED_OBJECT(class_object, zv) \
+  (class_object *)zend_object_store_get_object(zv TSRMLS_CC)
 
 #else
 
@@ -154,6 +163,11 @@ static inline int php_grpc_zend_hash_find(HashTable *ht, char *key, int len,
   add_property_string(arg, name, context)
 #define php_grpc_add_property_stringl(res, name, str, len, b) \
   add_property_stringl(res, name, str, len)
+#define php_grpc_add_property_zval(res, name, val) do { \
+  zval tmp; \
+  tmp = *val; \
+  add_property_zval(res, name, &tmp); \
+  } while(0)
 #define php_grpc_add_next_index_stringl(data, str, len, b) \
   add_next_index_stringl(data, str, len)
 
@@ -169,6 +183,8 @@ static inline int php_grpc_zend_hash_find(HashTable *ht, char *key, int len,
    add_assoc_long_ex(val, key, key_len - 1, str);
 #define PHP_GRPC_ADD_BOOL_TO_ARRAY(val, key, key_len, str) \
    add_assoc_bool_ex(val, key, key_len - 1, str);
+#define PHP_GRPC_ADD_LONG_TO_RETVAL(val, key, key_len, str) \
+   add_assoc_long_ex(val, key, key_len, str);
 
 #define RETURN_DESTROY_ZVAL(val) \
   RETVAL_ZVAL(val, false /* Don't execute copy constructor */, \
@@ -260,6 +276,12 @@ static inline int php_grpc_zend_hash_del(HashTable *ht, char *key, int len) {
          sizeof(zend_object_handlers)); \
   handler_name.offset = XtOffsetOf(class_object, std); \
   handler_name.free_obj = free_##class_object
+
+#define PHP_GRPC_DECLARE_OBJECT_HANDLER(handler_name) \
+  static zend_object_handlers handler_name;
+
+#define PHP_GRPC_GET_WRAPPED_OBJECT(class_object, zv) \
+  class_object##_from_obj(Z_OBJ_P((zv)))
 
 #endif /* PHP_MAJOR_VERSION */
 

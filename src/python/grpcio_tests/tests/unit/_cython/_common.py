@@ -100,7 +100,8 @@ class RpcTest(object):
         self.server.register_completion_queue(self.server_completion_queue)
         port = self.server.add_http2_port(b'[::]:0')
         self.server.start()
-        self.channel = cygrpc.Channel('localhost:{}'.format(port).encode(), [])
+        self.channel = cygrpc.Channel('localhost:{}'.format(port).encode(), [],
+                                      None)
 
         self._server_shutdown_tag = 'server_shutdown_tag'
         self.server_condition = threading.Condition()

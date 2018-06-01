@@ -99,18 +99,24 @@ DEFINE_bool(do_not_abort_on_transient_failures, true,
 
 // Options from client.cc (for compatibility with interop test).
 // TODO(sreek): Consolidate overlapping options
+DEFINE_bool(use_alts, false,
+            "Whether to use alts. Enable alts will disable tls.");
 DEFINE_bool(use_tls, false, "Whether to use tls.");
 DEFINE_bool(use_test_ca, false, "False to use SSL roots for google");
 DEFINE_string(server_host_override, "foo.test.google.fr",
               "Override the server host which is sent in HTTP header");
 
+using grpc::testing::ALTS;
+using grpc::testing::INSECURE;
 using grpc::testing::MetricsService;
 using grpc::testing::MetricsServiceImpl;
 using grpc::testing::StressTestInteropClient;
+using grpc::testing::TLS;
 using grpc::testing::TestCaseType;
 using grpc::testing::UNKNOWN_TEST;
 using grpc::testing::WeightedRandomTestSelector;
 using grpc::testing::kTestCaseList;
+using grpc::testing::transport_security;
 
 static int log_level = GPR_LOG_SEVERITY_DEBUG;
 
@@ -268,6 +274,8 @@ int main(int argc, char** argv) {
   int thread_idx = 0;
   int server_idx = -1;
   char buffer[256];
+  transport_security security_type =
+      FLAGS_use_alts ? ALTS : (FLAGS_use_tls ? TLS : INSECURE);
   for (auto it = server_addresses.begin(); it != server_addresses.end(); it++) {
     ++server_idx;
     // Create channel(s) for each server
@@ -276,7 +284,7 @@ int main(int argc, char** argv) {
       gpr_log(GPR_INFO, "Starting test with %s channel_idx=%d..", it->c_str(),
               channel_idx);
       std::shared_ptr<grpc::Channel> channel = grpc::CreateTestChannel(
-          *it, FLAGS_server_host_override, FLAGS_use_tls, !FLAGS_use_test_ca);
+          *it, FLAGS_server_host_override, security_type, !FLAGS_use_test_ca);
 
       // Create stub(s) for each channel
       for (int stub_idx = 0; stub_idx < FLAGS_num_stubs_per_channel;

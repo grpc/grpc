@@ -20,6 +20,8 @@ import sys
 import yaml
 import signal
 import os
+import threading
+import time
 
 import twisted
 import twisted.internet
@@ -33,6 +35,7 @@ import twisted.names.dns
 import twisted.names.server
 from twisted.names import client, server, common, authority, dns
 import argparse
+import platform
 
 _SERVER_HEALTH_CHECK_RECORD_NAME = 'health-check-local-dns-server-is-alive.resolver-tests.grpctestingexp' # missing end '.' for twisted syntax
 _SERVER_HEALTH_CHECK_RECORD_DATA = '123.123.123.123'
@@ -115,6 +118,18 @@ def _quit_on_signal(signum, _frame):
   sys.stdout.flush()
   sys.exit(0)
 
+def flush_stdout_loop():
+  num_timeouts_so_far = 0
+  sleep_time = 1
+  # Prevent zombies. Tests that use this server are short-lived.
+  max_timeouts = 60 * 2
+  while num_timeouts_so_far < max_timeouts:
+    sys.stdout.flush()
+    time.sleep(sleep_time)
+    num_timeouts_so_far += 1
+  print('Process timeout reached, or cancelled. Exitting 0.')
+  os.kill(os.getpid(), signal.SIGTERM)
+
 def main():
   argp = argparse.ArgumentParser(description='Local DNS Server for resolver tests')
   argp.add_argument('-p', '--port', default=None, type=int,
@@ -123,11 +138,11 @@ def main():
                     help=('Directory of resolver_test_record_groups.yaml file. '
                           'Defauls to path needed when the test is invoked as part of run_tests.py.'))
   args = argp.parse_args()
-  signal.signal(signal.SIGALRM, _quit_on_signal)
   signal.signal(signal.SIGTERM, _quit_on_signal)
   signal.signal(signal.SIGINT, _quit_on_signal)
-  # Prevent zombies. Tests that use this server are short-lived.
-  signal.alarm(2 * 60)
+  output_flush_thread = threading.Thread(target=flush_stdout_loop)
+  output_flush_thread.setDaemon(True)
+  output_flush_thread.start()
   start_local_dns_server(args)
 
 if __name__ == '__main__':

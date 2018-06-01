@@ -52,7 +52,7 @@ static void put_metadata_list(gpr_strvec* b, grpc_metadata_batch md) {
   }
   if (md.deadline != GRPC_MILLIS_INF_FUTURE) {
     char* tmp;
-    gpr_asprintf(&tmp, " deadline=%" PRIdPTR, md.deadline);
+    gpr_asprintf(&tmp, " deadline=%" PRId64, md.deadline);
     gpr_strvec_add(b, tmp);
   }
 }

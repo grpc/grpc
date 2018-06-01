@@ -20,7 +20,8 @@ import time
 from concurrent import futures
 import grpc
 from src.proto.grpc.testing import control_pb2
-from src.proto.grpc.testing import services_pb2_grpc
+from src.proto.grpc.testing import benchmark_service_pb2_grpc
+from src.proto.grpc.testing import worker_service_pb2_grpc
 from src.proto.grpc.testing import stats_pb2
 
 from tests.qps import benchmark_client
@@ -31,7 +32,7 @@ from tests.unit import resources
 from tests.unit import test_common
 
 
-class WorkerServer(services_pb2_grpc.WorkerServiceServicer):
+class WorkerServer(worker_service_pb2_grpc.WorkerServiceServicer):
     """Python Worker Server implementation."""
 
     def __init__(self):
@@ -72,7 +73,7 @@ class WorkerServer(services_pb2_grpc.WorkerServiceServicer):
         server = test_common.test_server(max_workers=server_threads)
         if config.server_type == control_pb2.ASYNC_SERVER:
             servicer = benchmark_server.BenchmarkServer()
-            services_pb2_grpc.add_BenchmarkServiceServicer_to_server(
+            benchmark_service_pb2_grpc.add_BenchmarkServiceServicer_to_server(
                 servicer, server)
         elif config.server_type == control_pb2.ASYNC_GENERIC_SERVER:
             resp_size = config.payload_config.bytebuf_params.resp_size

@@ -32,17 +32,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "src/core/lib/gpr/fork.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/memory.h"
 
 namespace grpc_core {
 namespace {
-gpr_mu g_mu;
-gpr_cv g_cv;
-int g_thread_count;
-int g_awaiting_threads;
-
 class ThreadInternalsPosix;
 struct thd_arg {
   ThreadInternalsPosix* thread;
@@ -68,7 +63,7 @@ class ThreadInternalsPosix
     info->body = thd_body;
     info->arg = arg;
     info->name = thd_name;
-    inc_thd_count();
+    grpc_core::Fork::IncThreadCount();
 
     GPR_ASSERT(pthread_attr_init(&attr) == 0);
     GPR_ASSERT(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE) ==
@@ -103,7 +98,7 @@ class ThreadInternalsPosix
                           gpr_mu_unlock(&arg.thread->mu_);
 
                           (*arg.body)(arg.arg);
-                          dec_thd_count();
+                          grpc_core::Fork::DecThreadCount();
                           return nullptr;
                         },
                         info) == 0);
@@ -113,7 +108,7 @@ class ThreadInternalsPosix
     if (!success) {
       /* don't use gpr_free, as this was allocated using malloc (see above) */
       free(info);
-      dec_thd_count();
+      grpc_core::Fork::DecThreadCount();
     }
   };
 
@@ -132,29 +127,6 @@ class ThreadInternalsPosix
   void Join() override { pthread_join(pthread_id_, nullptr); }
 
  private:
-  /*****************************************
-   * Only used when fork support is enabled
-   */
-
-  static void inc_thd_count() {
-    if (grpc_fork_support_enabled()) {
-      gpr_mu_lock(&g_mu);
-      g_thread_count++;
-      gpr_mu_unlock(&g_mu);
-    }
-  }
-
-  static void dec_thd_count() {
-    if (grpc_fork_support_enabled()) {
-      gpr_mu_lock(&g_mu);
-      g_thread_count--;
-      if (g_awaiting_threads && g_thread_count == 0) {
-        gpr_cv_signal(&g_cv);
-      }
-      gpr_mu_unlock(&g_mu);
-    }
-  }
-
   gpr_mu mu_;
   gpr_cv ready_;
   bool started_;
@@ -180,27 +152,6 @@ Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
     *success = outcome;
   }
 }
-
-void Thread::Init() {
-  gpr_mu_init(&g_mu);
-  gpr_cv_init(&g_cv);
-  g_thread_count = 0;
-  g_awaiting_threads = 0;
-}
-
-bool Thread::AwaitAll(gpr_timespec deadline) {
-  gpr_mu_lock(&g_mu);
-  g_awaiting_threads = 1;
-  int res = 0;
-  while ((g_thread_count > 0) &&
-         (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0)) {
-    res = gpr_cv_wait(&g_cv, &g_mu, deadline);
-  }
-  g_awaiting_threads = 0;
-  gpr_mu_unlock(&g_mu);
-  return res == 0;
-}
-
 }  // namespace grpc_core
 
 // The following is in the external namespace as it is exposed as C89 API

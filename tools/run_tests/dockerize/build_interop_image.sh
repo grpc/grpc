@@ -104,6 +104,7 @@ CONTAINER_NAME="build_${BASE_NAME}_$(uuidgen)"
 # Same for $TTY_FLAG
 # shellcheck disable=SC2086
 (docker run \
+  --cap-add SYS_PTRACE \
   -e CCACHE_DIR=/tmp/ccache \
   -e THIS_IS_REALLY_NEEDED='see https://github.com/docker/docker/issues/14203 for why docker is awful' \
   -e THIS_IS_REALLY_NEEDED_ONCE_AGAIN='For issue 4835. See https://github.com/docker/docker/issues/14203 for why docker is awful' \

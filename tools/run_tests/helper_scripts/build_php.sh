@@ -30,8 +30,8 @@ cd src/php
 cd ext/grpc
 phpize
 if [ "$CONFIG" != "gcov" ] ; then
-  ./configure --enable-grpc="$root"
+  ./configure --enable-grpc="$root" --enable-tests
 else
-  ./configure --enable-grpc="$root" --enable-coverage
+  ./configure --enable-grpc="$root" --enable-coverage --enable-tests
 fi
 make

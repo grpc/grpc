@@ -70,7 +70,7 @@ function qps_client_main($proxy_address, $server_ind) {
     $proxystubopts = [];
     $proxystubopts['credentials'] = Grpc\ChannelCredentials::createInsecure();
     $proxystub = new Grpc\Testing\ProxyClientServiceClient($proxy_address, $proxystubopts);
-    list($config, $status) = $proxystub->GetConfig(new Grpc\Testing\Void())->wait();
+    list($config, $status) = $proxystub->GetConfig(new Grpc\Testing\PBVoid())->wait();
     hardAssertIfStatusOk($status);
     hardAssert($config->getOutstandingRpcsPerChannel() == 1, "Only 1 outstanding RPC supported");
 

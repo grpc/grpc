@@ -64,9 +64,9 @@ RUN apt-get update && apt-get install -y \
     python-pip
 
 # Install Python packages from PyPI
-RUN pip install --upgrade pip==9.0.2
+RUN pip install --upgrade pip==10.0.1
 RUN pip install virtualenv
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.0.post1 six==1.10.0 twisted==17.5.0
+RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 twisted==17.5.0
 
 # Install dependencies for pyenv
 RUN apt-get update && apt-get install -y \
@@ -91,13 +91,9 @@ RUN pyenv install 3.6-dev
 RUN pyenv install pypy-5.3.1
 RUN pyenv local 3.5-dev 3.6-dev pypy-5.3.1
 
-# Prepare ccache
-RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
-RUN ln -s /usr/bin/ccache /usr/local/bin/g++
-RUN ln -s /usr/bin/ccache /usr/local/bin/cc
-RUN ln -s /usr/bin/ccache /usr/local/bin/c++
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
+# Install pip and virtualenv for Python 3.4
+RUN curl https://bootstrap.pypa.io/get-pip.py | python3.4
+RUN python3.4 -m pip install virtualenv
 
 
 RUN mkdir /var/local/jenkins

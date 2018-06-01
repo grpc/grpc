@@ -38,6 +38,13 @@ const char* kContent2 = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy world";
 
 class ByteBufferTest : public ::testing::Test {};
 
+TEST_F(ByteBufferTest, CopyCtor) {
+  ByteBuffer buffer1;
+  EXPECT_FALSE(buffer1.Valid());
+  ByteBuffer buffer2 = buffer1;
+  EXPECT_FALSE(buffer2.Valid());
+}
+
 TEST_F(ByteBufferTest, CreateFromSingleSlice) {
   Slice s(kContent1);
   ByteBuffer buffer(&s, 1);

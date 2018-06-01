@@ -64,11 +64,11 @@ config_setting(
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "glorious"
+g_stands_for = "gloriosa"
 
 core_version = "6.0.0-dev"
 
-version = "1.12.0-dev"
+version = "1.13.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -512,7 +512,6 @@ grpc_cc_library(
         "src/core/lib/gpr/env_linux.cc",
         "src/core/lib/gpr/env_posix.cc",
         "src/core/lib/gpr/env_windows.cc",
-        "src/core/lib/gpr/fork.cc",
         "src/core/lib/gpr/host_port.cc",
         "src/core/lib/gpr/log.cc",
         "src/core/lib/gpr/log_android.cc",
@@ -537,6 +536,7 @@ grpc_cc_library(
         "src/core/lib/gpr/tmpfile_posix.cc",
         "src/core/lib/gpr/tmpfile_windows.cc",
         "src/core/lib/gpr/wrap_memcpy.cc",
+        "src/core/lib/gprpp/fork.cc",
         "src/core/lib/gprpp/thd_posix.cc",
         "src/core/lib/gprpp/thd_windows.cc",
         "src/core/lib/profiling/basic_timers.cc",
@@ -545,7 +545,6 @@ grpc_cc_library(
     hdrs = [
         "src/core/lib/gpr/arena.h",
         "src/core/lib/gpr/env.h",
-        "src/core/lib/gpr/fork.h",
         "src/core/lib/gpr/host_port.h",
         "src/core/lib/gpr/mpscq.h",
         "src/core/lib/gpr/murmur_hash.h",
@@ -560,6 +559,7 @@ grpc_cc_library(
         "src/core/lib/gpr/tmpfile.h",
         "src/core/lib/gpr/useful.h",
         "src/core/lib/gprpp/abstract.h",
+        "src/core/lib/gprpp/fork.h",
         "src/core/lib/gprpp/manual_constructor.h",
         "src/core/lib/gprpp/memory.h",
         "src/core/lib/gprpp/thd.h",
@@ -678,7 +678,7 @@ grpc_cc_library(
         "src/core/lib/channel/channel_stack.cc",
         "src/core/lib/channel/channel_stack_builder.cc",
         "src/core/lib/channel/channel_trace.cc",
-        "src/core/lib/channel/channel_trace_registry.cc",
+        "src/core/lib/channel/channelz_registry.cc",
         "src/core/lib/channel/connected_channel.cc",
         "src/core/lib/channel/handshaker.cc",
         "src/core/lib/channel/handshaker_factory.cc",
@@ -825,7 +825,7 @@ grpc_cc_library(
         "src/core/lib/channel/channel_stack.h",
         "src/core/lib/channel/channel_stack_builder.h",
         "src/core/lib/channel/channel_trace.h",
-        "src/core/lib/channel/channel_trace_registry.h",
+        "src/core/lib/channel/channelz_registry.h",
         "src/core/lib/channel/connected_channel.h",
         "src/core/lib/channel/context.h",
         "src/core/lib/channel/handshaker.h",
@@ -1183,6 +1183,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h",
@@ -1211,6 +1212,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h",
@@ -1230,9 +1232,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_lb_subchannel_list",
-    srcs = [
-        "src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc",
-    ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h",
     ],
@@ -1282,6 +1281,20 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "grpc_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "lb_load_data_store",
+    srcs = [
+        "src/cpp/server/load_reporter/load_data_store.cc",
+    ],
+    hdrs = [
+        "src/cpp/server/load_reporter/load_data_store.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc++",
     ],
 )
 
@@ -1375,6 +1388,7 @@ grpc_cc_library(
         "src/core/lib/surface/init_secure.cc",
     ],
     hdrs = [
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
         "src/core/lib/security/context/security_context.h",
         "src/core/lib/security/credentials/alts/alts_credentials.h",
         "src/core/lib/security/credentials/composite/composite_credentials.h",
@@ -1611,11 +1625,9 @@ grpc_cc_library(
     name = "tsi_interface",
     srcs = [
         "src/core/tsi/transport_security.cc",
-        "src/core/tsi/transport_security_adapter.cc",
     ],
     hdrs = [
         "src/core/tsi/transport_security.h",
-        "src/core/tsi/transport_security_adapter.h",
         "src/core/tsi/transport_security_interface.h",
     ],
     language = "c++",

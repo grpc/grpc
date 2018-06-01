@@ -45,7 +45,7 @@ SliceBufferByteStream::SliceBufferByteStream(grpc_slice_buffer* slice_buffer,
 SliceBufferByteStream::~SliceBufferByteStream() {}
 
 void SliceBufferByteStream::Orphan() {
-  grpc_slice_buffer_destroy(&backing_buffer_);
+  grpc_slice_buffer_destroy_internal(&backing_buffer_);
   GRPC_ERROR_UNREF(shutdown_error_);
   // Note: We do not actually delete the object here, since
   // SliceBufferByteStream is usually allocated as part of a larger

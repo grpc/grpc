@@ -44,12 +44,14 @@ some configuration as environment variables that can be set.
   - channel - traces operations on the C core channel stack
   - client_channel - traces client channel activity, including resolver
     and load balancing policy interaction
-  - combiner - traces combiner lock state
   - compression - traces compression operations
   - connectivity_state - traces connectivity state changes to channels
-  - channel_stack_builder - traces information about channel stacks being built
   - executor - traces grpc's internal thread pool ('the executor')
+  - fd_trace - traces fd create(), shutdown() and close() calls for channel fds.
+    Also traces epoll fd create()/close() calls in epollex polling engine
+    traces epoll-fd creation/close calls for epollex polling engine
   - glb - traces the grpclb load balancer
+  - handshaker - traces handshaking state
   - http - traces state in the http2 transport engine
   - http2_stream_state - traces all http2 stream state mutations.
   - http1 - traces HTTP/1.x operations performed by gRPC
@@ -64,7 +66,6 @@ some configuration as environment variables that can be set.
   - resource_quota - trace resource quota objects internals
   - round_robin - traces the round_robin load balancing policy
   - queue_pluck
-  - queue_timeout
   - server_channel - lightweight trace of significant server channel events
   - secure_endpoint - traces bytes flowing through encrypted channels
   - timer - timers (alarms) in the grpc internals
@@ -77,6 +78,7 @@ some configuration as environment variables that can be set.
   accomplished by invoking `CONFIG=dbg make <target>`
   - alarm_refcount - refcounting traces for grpc_alarm structure
   - metadata - tracks creation and mutation of metadata
+  - combiner - traces combiner lock state
   - closure - tracks closure creation, scheduling, and completion
   - pending_tags - traces still-in-progress tags on completion queues
   - polling - traces the selected polling engine

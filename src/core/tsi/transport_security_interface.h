@@ -42,7 +42,8 @@ typedef enum {
   TSI_PROTOCOL_FAILURE = 10,
   TSI_HANDSHAKE_IN_PROGRESS = 11,
   TSI_OUT_OF_RESOURCES = 12,
-  TSI_ASYNC = 13
+  TSI_ASYNC = 13,
+  TSI_HANDSHAKE_SHUTDOWN = 14,
 } tsi_result;
 
 typedef enum {
@@ -332,6 +333,8 @@ void tsi_handshaker_result_destroy(tsi_handshaker_result* self);
    ------------------------------------------------------------------------   */
 typedef struct tsi_handshaker tsi_handshaker;
 
+/* TODO(jiangtaoli2016): Cleans up deprecated methods when we are ready. */
+
 /* TO BE DEPRECATED SOON. Use tsi_handshaker_next instead.
    Gets bytes that need to be sent to the peer.
    - bytes is the buffer that will be written with the data to be sent to the
@@ -439,6 +442,13 @@ tsi_result tsi_handshaker_next(
     size_t received_bytes_size, const unsigned char** bytes_to_send,
     size_t* bytes_to_send_size, tsi_handshaker_result** handshaker_result,
     tsi_handshaker_on_next_done_cb cb, void* user_data);
+
+/* This method shuts down a TSI handshake that is in progress.
+ *
+ * This method will be invoked when TSI handshake should be terminated before
+ * being finished in order to free any resources being used.
+ */
+void tsi_handshaker_shutdown(tsi_handshaker* self);
 
 /* This method releases the tsi_handshaker object. After this method is called,
    no other method can be called on the object.  */

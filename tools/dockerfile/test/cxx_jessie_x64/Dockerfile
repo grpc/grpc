@@ -64,54 +64,20 @@ RUN apt-get update && apt-get install -y \
     python-pip
 
 # Install Python packages from PyPI
-RUN pip install --upgrade pip==9.0.2
+RUN pip install --upgrade pip==10.0.1
 RUN pip install virtualenv
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.0.post1 six==1.10.0 twisted==17.5.0
+RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 twisted==17.5.0
 
 #=================
 # C++ dependencies
 RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev clang && apt-get clean
 
 #=================
-# Update clang to a version with improved tsan and fuzzing capabilities
+# Use cmake 3.6 from jessie-backports
+# should only be used for images based on debian jessie.
 
-RUN apt-get update && apt-get -y install python cmake && apt-get clean
-
-RUN git clone -n -b release_38 http://llvm.org/git/llvm.git && \
-  cd llvm && git checkout ad57503 && cd ..
-RUN git clone -n -b release_38 http://llvm.org/git/clang.git && \
-  cd clang && git checkout ad2c56e && cd ..
-RUN git clone -n -b release_38 http://llvm.org/git/compiler-rt.git && \
-  cd compiler-rt && git checkout 3176922 && cd ..
-RUN git clone -n -b release_38 \
-  http://llvm.org/git/clang-tools-extra.git && cd clang-tools-extra && \
-  git checkout c288525 && cd ..
-RUN git clone -n -b release_38 http://llvm.org/git/libcxx.git && \
-  cd libcxx && git checkout fda3549  && cd ..
-RUN git clone -n -b release_38 http://llvm.org/git/libcxxabi.git && \
-  cd libcxxabi && git checkout 8d4e51d && cd ..
-
-RUN mv clang llvm/tools
-RUN mv compiler-rt llvm/projects
-RUN mv clang-tools-extra llvm/tools/clang/tools
-RUN mv libcxx llvm/projects
-RUN mv libcxxabi llvm/projects
-
-RUN mkdir llvm-build
-RUN cd llvm-build && cmake \
-  -DCMAKE_BUILD_TYPE:STRING=Release \
-  -DCMAKE_INSTALL_PREFIX:STRING=/usr \
-  -DLLVM_TARGETS_TO_BUILD:STRING=X86 \
-  ../llvm
-RUN make -C llvm-build -j 12 && make -C llvm-build install && rm -rf llvm-build
-
-# Prepare ccache
-RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
-RUN ln -s /usr/bin/ccache /usr/local/bin/g++
-RUN ln -s /usr/bin/ccache /usr/local/bin/cc
-RUN ln -s /usr/bin/ccache /usr/local/bin/c++
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
+RUN echo "deb http://ftp.debian.org/debian jessie-backports main" | tee /etc/apt/sources.list.d/jessie-backports.list
+RUN apt-get update && apt-get install -t jessie-backports -y cmake && apt-get clean
 
 
 RUN mkdir /var/local/jenkins

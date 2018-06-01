@@ -193,18 +193,13 @@ void grpc_call_stack_set_pollset_or_pollset_set(grpc_call_stack* call_stack,
                                                 grpc_polling_entity* pollent) {
   size_t count = call_stack->count;
   grpc_call_element* call_elems;
-  char* user_data;
   size_t i;
 
   call_elems = CALL_ELEMS_FROM_STACK(call_stack);
-  user_data = (reinterpret_cast<char*>(call_elems)) +
-              ROUND_UP_TO_ALIGNMENT_SIZE(count * sizeof(grpc_call_element));
 
   /* init per-filter data */
   for (i = 0; i < count; i++) {
     call_elems[i].filter->set_pollset_or_pollset_set(&call_elems[i], pollent);
-    user_data +=
-        ROUND_UP_TO_ALIGNMENT_SIZE(call_elems[i].filter->sizeof_call_data);
   }
 }
 

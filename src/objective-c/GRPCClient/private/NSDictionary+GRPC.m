@@ -54,7 +54,7 @@
 + (instancetype)grpc_stringFromMetadataValue:(grpc_metadata *)metadata {
   return [[self alloc] initWithBytes:GRPC_SLICE_START_PTR(metadata->value)
                               length:GRPC_SLICE_LENGTH(metadata->value)
-                            encoding:NSASCIIStringEncoding];
+                            encoding:NSUTF8StringEncoding];
 }
 
 // Precondition: This object contains only ASCII characters.
