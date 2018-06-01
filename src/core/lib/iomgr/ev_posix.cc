@@ -200,8 +200,8 @@ bool grpc_event_engine_can_track_errors(void) {
 grpc_fd* grpc_fd_create(int fd, const char* name, bool track_err) {
   GRPC_POLLING_API_TRACE("fd_create(%d, %s, %d)", fd, name, track_err);
   GRPC_FD_TRACE("fd_create(%d, %s, %d)", fd, name, track_err);
-  GPR_DEBUG_ASSERT(!track_err || g_event_engine->can_track_err);
-  return g_event_engine->fd_create(fd, name, track_err);
+  return g_event_engine->fd_create(fd, name,
+                                   track_err && g_event_engine->can_track_err);
 }
 
 int grpc_fd_wrapped_fd(grpc_fd* fd) {

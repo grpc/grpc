@@ -31,7 +31,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/iomgr/port.h"
+
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 
@@ -53,5 +56,10 @@ int grpc_tcp_fd(grpc_endpoint* ep);
  * Requires: ep must be a tcp endpoint and fd must not be NULL. */
 void grpc_tcp_destroy_and_release_fd(grpc_endpoint* ep, int* fd,
                                      grpc_closure* done);
+
+/** Sets the callback function to call when timestamps for a write are
+ *  collected. */
+void grpc_tcp_set_write_timestamps_callback(void (*fn)(void*,
+                                                       grpc_core::Timestamps*));
 
 #endif /* GRPC_CORE_LIB_IOMGR_TCP_POSIX_H */

@@ -296,7 +296,7 @@ static void on_write(void* tcpp, grpc_error* error) {
 
 /* Initiates a write. */
 static void win_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                      grpc_closure* cb) {
+                      grpc_closure* cb, void* arg) {
   grpc_tcp* tcp = (grpc_tcp*)ep;
   grpc_winsocket* socket = tcp->socket;
   grpc_winsocket_callback_info* info = &socket->write_info;

@@ -228,6 +228,9 @@ add_dependencies(buildtests_c avl_test)
 add_dependencies(buildtests_c bad_server_response_test)
 add_dependencies(buildtests_c bin_decoder_test)
 add_dependencies(buildtests_c bin_encoder_test)
+if(_gRPC_PLATFORM_LINUX)
+add_dependencies(buildtests_c buffer_list_test)
+endif()
 add_dependencies(buildtests_c channel_create_test)
 add_dependencies(buildtests_c chttp2_hpack_encoder_test)
 add_dependencies(buildtests_c chttp2_stream_map_test)
@@ -963,6 +966,7 @@ add_library(grpc
   src/core/lib/http/format_request.cc
   src/core/lib/http/httpcli.cc
   src/core/lib/http/parser.cc
+  src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/endpoint.cc
@@ -983,6 +987,7 @@ add_library(grpc
   src/core/lib/iomgr/gethostname_fallback.cc
   src/core/lib/iomgr/gethostname_host_name_max.cc
   src/core/lib/iomgr/gethostname_sysconf.cc
+  src/core/lib/iomgr/internal_errqueue.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
   src/core/lib/iomgr/iomgr_custom.cc
@@ -1364,6 +1369,7 @@ add_library(grpc_cronet
   src/core/lib/http/format_request.cc
   src/core/lib/http/httpcli.cc
   src/core/lib/http/parser.cc
+  src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/endpoint.cc
@@ -1384,6 +1390,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/gethostname_fallback.cc
   src/core/lib/iomgr/gethostname_host_name_max.cc
   src/core/lib/iomgr/gethostname_sysconf.cc
+  src/core/lib/iomgr/internal_errqueue.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
   src/core/lib/iomgr/iomgr_custom.cc
@@ -1754,6 +1761,7 @@ add_library(grpc_test_util
   src/core/lib/http/format_request.cc
   src/core/lib/http/httpcli.cc
   src/core/lib/http/parser.cc
+  src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/endpoint.cc
@@ -1774,6 +1782,7 @@ add_library(grpc_test_util
   src/core/lib/iomgr/gethostname_fallback.cc
   src/core/lib/iomgr/gethostname_host_name_max.cc
   src/core/lib/iomgr/gethostname_sysconf.cc
+  src/core/lib/iomgr/internal_errqueue.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
   src/core/lib/iomgr/iomgr_custom.cc
@@ -2062,6 +2071,7 @@ add_library(grpc_test_util_unsecure
   src/core/lib/http/format_request.cc
   src/core/lib/http/httpcli.cc
   src/core/lib/http/parser.cc
+  src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/endpoint.cc
@@ -2082,6 +2092,7 @@ add_library(grpc_test_util_unsecure
   src/core/lib/iomgr/gethostname_fallback.cc
   src/core/lib/iomgr/gethostname_host_name_max.cc
   src/core/lib/iomgr/gethostname_sysconf.cc
+  src/core/lib/iomgr/internal_errqueue.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
   src/core/lib/iomgr/iomgr_custom.cc
@@ -2349,6 +2360,7 @@ add_library(grpc_unsecure
   src/core/lib/http/format_request.cc
   src/core/lib/http/httpcli.cc
   src/core/lib/http/parser.cc
+  src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/endpoint.cc
@@ -2369,6 +2381,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/gethostname_fallback.cc
   src/core/lib/iomgr/gethostname_host_name_max.cc
   src/core/lib/iomgr/gethostname_sysconf.cc
+  src/core/lib/iomgr/internal_errqueue.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
   src/core/lib/iomgr/iomgr_custom.cc
@@ -3186,6 +3199,7 @@ add_library(grpc++_cronet
   src/core/lib/http/format_request.cc
   src/core/lib/http/httpcli.cc
   src/core/lib/http/parser.cc
+  src/core/lib/iomgr/buffer_list.cc
   src/core/lib/iomgr/call_combiner.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/endpoint.cc
@@ -3206,6 +3220,7 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/gethostname_fallback.cc
   src/core/lib/iomgr/gethostname_host_name_max.cc
   src/core/lib/iomgr/gethostname_sysconf.cc
+  src/core/lib/iomgr/internal_errqueue.cc
   src/core/lib/iomgr/iocp_windows.cc
   src/core/lib/iomgr/iomgr.cc
   src/core/lib/iomgr/iomgr_custom.cc
@@ -5761,6 +5776,37 @@ target_link_libraries(bin_encoder_test
   grpc
 )
 
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX)
+
+add_executable(buffer_list_test
+  test/core/iomgr/buffer_list_test.cc
+)
+
+
+target_include_directories(buffer_list_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+)
+
+target_link_libraries(buffer_list_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
