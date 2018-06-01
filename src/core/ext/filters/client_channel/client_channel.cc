@@ -1588,6 +1588,14 @@ static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
           grpc_connected_subchannel_call_get_parent_data(
               batch_data->subchannel_call));
   retry_state->completed_recv_initial_metadata = true;
+  // If a retry was already dispatched, then we're not going to use the
+  // result of this recv_initial_metadata op, so do nothing.
+  if (retry_state->retry_dispatched) {
+    GRPC_CALL_COMBINER_STOP(
+        calld->call_combiner,
+        "recv_initial_metadata_ready after retry dispatched");
+    return;
+  }
   // If we got an error or a Trailers-Only response and have not yet gotten
   // the recv_trailing_metadata_ready callback, then defer propagating this
   // callback back to the surface.  We can evaluate whether to retry when
@@ -1614,20 +1622,11 @@ static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
     }
     return;
   }
-  // If a retry was already dispatched, that means we saw
-  // recv_trailing_metadata before this, so we do nothing here.
-  // Otherwise, invoke the callback to return the result to the surface.
-  if (!retry_state->retry_dispatched) {
-    // Received valid initial metadata, so commit the call.
-    retry_commit(elem, retry_state);
-    // Manually invoking a callback function; it does not take ownership of
-    // error.
-    invoke_recv_initial_metadata_callback(batch_data, error);
-  } else {
-    GRPC_CALL_COMBINER_STOP(
-        calld->call_combiner,
-        "recv_initial_metadata_ready after retry dispatched");
-  }
+  // Received valid initial metadata, so commit the call.
+  retry_commit(elem, retry_state);
+  // Invoke the callback to return the result to the surface.
+  // Manually invoking a callback function; it does not take ownership of error.
+  invoke_recv_initial_metadata_callback(batch_data, error);
 }
 
 //
@@ -1677,6 +1676,13 @@ static void recv_message_ready(void* arg, grpc_error* error) {
           grpc_connected_subchannel_call_get_parent_data(
               batch_data->subchannel_call));
   ++retry_state->completed_recv_message_count;
+  // If a retry was already dispatched, then we're not going to use the
+  // result of this recv_message op, so do nothing.
+  if (retry_state->retry_dispatched) {
+    GRPC_CALL_COMBINER_STOP(calld->call_combiner,
+                            "recv_message_ready after retry dispatched");
+    return;
+  }
   // If we got an error or the payload was nullptr and we have not yet gotten
   // the recv_trailing_metadata_ready callback, then defer propagating this
   // callback back to the surface.  We can evaluate whether to retry when
@@ -1701,19 +1707,11 @@ static void recv_message_ready(void* arg, grpc_error* error) {
     }
     return;
   }
-  // If a retry was already dispatched, that means we saw
-  // recv_trailing_metadata before this, so we do nothing here.
-  // Otherwise, invoke the callback to return the result to the surface.
-  if (!retry_state->retry_dispatched) {
-    // Received a valid message, so commit the call.
-    retry_commit(elem, retry_state);
-    // Manually invoking a callback function; it does not take ownership of
-    // error.
-    invoke_recv_message_callback(batch_data, error);
-  } else {
-    GRPC_CALL_COMBINER_STOP(calld->call_combiner,
-                            "recv_message_ready after retry dispatched");
-  }
+  // Received a valid message, so commit the call.
+  retry_commit(elem, retry_state);
+  // Invoke the callback to return the result to the surface.
+  // Manually invoking a callback function; it does not take ownership of error.
+  invoke_recv_message_callback(batch_data, error);
 }
 
 //
@@ -1858,7 +1856,7 @@ static void recv_trailing_metadata_ready(void* arg, grpc_error* error) {
   // Get the call's status and check for server pushback metadata.
   grpc_status_code status = GRPC_STATUS_OK;
   grpc_mdelem* server_pushback_md = nullptr;
-  if (error != GRPC_ERROR_NONE) {  // Case (a).
+  if (error != GRPC_ERROR_NONE) {
     grpc_error_get_status(error, calld->deadline, &status, nullptr, nullptr,
                           nullptr);
   } else {
