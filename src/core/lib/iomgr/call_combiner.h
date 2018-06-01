@@ -176,8 +176,6 @@ class CallCombinerClosureList {
     CallCombinerClosure(grpc_closure* closure, grpc_error* error,
                         const char* reason)
         : closure(closure), error(error), reason(reason) {}
-
-    ~CallCombinerClosure() { GRPC_ERROR_UNREF(error); }
   };
 
   // There are generally a maximum of 6 closures to run in the call
