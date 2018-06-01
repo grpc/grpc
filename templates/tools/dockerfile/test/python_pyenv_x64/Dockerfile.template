@@ -20,9 +20,9 @@
   <%include file="../../gcp_api_libraries.include"/>
   <%include file="../../python_deps.include"/>
   <%include file="../../apt_get_pyenv.include"/>
-  # Install pip and virtualenv for Python 3.4
-  RUN curl https://bootstrap.pypa.io/get-pip.py | python3.4
-  RUN python3.4 -m pip install virtualenv
+  # Install pip and virtualenv for Python 3.5
+  RUN curl https://bootstrap.pypa.io/get-pip.py | python3.5
+  RUN python3.5 -m pip install virtualenv
 
   <%include file="../../run_tests_addons.include"/>
   # Define the default command.
