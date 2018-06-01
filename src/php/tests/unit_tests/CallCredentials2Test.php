@@ -35,6 +35,7 @@ class CallCredentials2Test extends PHPUnit_Framework_TestCase
         $this->channel = new Grpc\Channel(
             'localhost:'.$this->port,
             [
+            'force_new' => true,
             'grpc.ssl_target_name_override' => $this->host_override,
             'grpc.default_authority' => $this->host_override,
             'credentials' => $credentials,
