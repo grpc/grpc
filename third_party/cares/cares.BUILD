@@ -3,6 +3,11 @@ config_setting(
     values = {"cpu": "darwin"},
 )
 
+config_setting(
+    name = "windows",
+    values = {"cpu": "x64_windows"},
+)
+
 # Android is not officially supported through C++.
 # This just helps with the build for now.
 config_setting(
@@ -49,6 +54,7 @@ genrule(
         ":ios_armv7s": ["@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h"],
         ":ios_arm64": ["@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h"],
         ":darwin": ["@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h"],
+        ":windows": ["@com_github_grpc_grpc//third_party/cares:config_windows/ares_config.h"],
         ":android": ["@com_github_grpc_grpc//third_party/cares:config_android/ares_config.h"],
         "//conditions:default": ["@com_github_grpc_grpc//third_party/cares:config_linux/ares_config.h"],
     }),
@@ -138,10 +144,23 @@ cc_library(
     copts = [
         "-D_GNU_SOURCE",
         "-D_HAS_EXCEPTIONS=0",
-        "-DNOMINMAX",
         "-DHAVE_CONFIG_H",
-    ],
+    ] + select({
+        ":windows": [
+            "-DNOMINMAX",
+            "-DWIN32_LEAN_AND_MEAN",
+            "-D_CRT_SECURE_NO_DEPRECATE",
+            "-D_CRT_NONSTDC_NO_DEPRECATE",
+            "-D_WIN32_WINNT=0x0600",
+        ],
+        "//conditions:default": [],
+    }),
+    defines = ["CARES_STATICLIB"],
     includes = ["."],
+    linkopts = select({
+        ":windows": ["-defaultlib:ws2_32.lib"],
+        "//conditions:default": [],
+    }),
     linkstatic = 1,
     visibility = [
         "//visibility:public",
