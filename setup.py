@@ -37,6 +37,7 @@ PYTHON_STEM = os.path.join('src', 'python', 'grpcio')
 CORE_INCLUDE = ('include', '.',)
 BORINGSSL_INCLUDE = (os.path.join('third_party', 'boringssl', 'include'),)
 ZLIB_INCLUDE = (os.path.join('third_party', 'zlib'),)
+NANOPB_INCLUDE = (os.path.join('third_party', 'nanopb'),)
 CARES_INCLUDE = (
     os.path.join('third_party', 'cares'),
     os.path.join('third_party', 'cares', 'cares'),)
@@ -150,7 +151,7 @@ if "win32" in sys.platform:
 
 EXTENSION_INCLUDE_DIRECTORIES = (
     (PYTHON_STEM,) + CORE_INCLUDE + BORINGSSL_INCLUDE + ZLIB_INCLUDE +
-    CARES_INCLUDE + ADDRESS_SORTING_INCLUDE)
+    NANOPB_INCLUDE + CARES_INCLUDE + ADDRESS_SORTING_INCLUDE)
 
 EXTENSION_LIBRARIES = ()
 if "linux" in sys.platform:
