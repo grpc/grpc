@@ -273,7 +273,8 @@ static void on_srv_query_done_locked(void* arg, int status, int timeouts,
     struct ares_srv_reply* reply;
     const int parse_status = ares_parse_srv_reply(abuf, alen, &reply);
     if (parse_status == ARES_SUCCESS) {
-      ares_channel* channel = grpc_ares_ev_driver_get_channel(r->ev_driver);
+      ares_channel* channel =
+          grpc_ares_ev_driver_get_channel_locked(r->ev_driver);
       for (struct ares_srv_reply* srv_it = reply; srv_it != nullptr;
            srv_it = srv_it->next) {
         if (grpc_ipv6_loopback_available()) {
@@ -399,7 +400,8 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
     port = gpr_strdup(default_port);
   }
   grpc_ares_ev_driver* ev_driver;
-  error = grpc_ares_ev_driver_create(&ev_driver, interested_parties, combiner);
+  error = grpc_ares_ev_driver_create_locked(&ev_driver, interested_parties,
+                                            combiner);
   if (error != GRPC_ERROR_NONE) goto error_cleanup;
 
   r = static_cast<grpc_ares_request*>(gpr_zalloc(sizeof(grpc_ares_request)));
@@ -409,7 +411,7 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
   r->service_config_json_out = service_config_json;
   r->success = false;
   r->error = GRPC_ERROR_NONE;
-  channel = grpc_ares_ev_driver_get_channel(r->ev_driver);
+  channel = grpc_ares_ev_driver_get_channel_locked(r->ev_driver);
 
   // If dns_server is specified, use it.
   if (dns_server != nullptr) {
