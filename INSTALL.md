@@ -28,6 +28,24 @@ If you plan to build from source and run tests, install the following as well:
  $ [sudo] apt-get install clang libc++-dev
 ```
 
+### For Cross Compilation
+ - First, clone and make install of grpc using the native compilers for the host.
+ - Also, install protoc (e.g., from a package like apt-get or compile and install)
+ - Then clone a fresh grpc for the actual cross-compiled build
+ - Set the environment variable GRPC_CROSS_COMPILE to true
+ - Set CC, CXX, LD, LDXX, AR, and STRIP to the cross-compiling binaries
+ - Also set PROTOBUF_CONFIG_OPTS to indicate cross-compilation to protobuf
+   * e.g.,PROTOBUF_CONFIG_OPTS="--host=arm-linux --with-protoc=/usr/local/bin/protoc"
+ - Set HAS_PKG_CONFIG=false
+ - To build tests, go to third_party/gflags and follow its ccmake instructions
+ - Make sure that you enable building shared libraries and set your prefix to 
+   something useful like /usr/local/cross or toolchain path
+ - You will also need to set GRPC_CROSS_LDOPTS and GRPC_CROSS_AROPTS to hold 
+   additional required arguments for LD and AR (examples below) 
+   * e.g., LD arguments. GRPC_CROSS_LDOPTS="-L/usr/local/lib -L/usr/local/cross/lib"
+   * e.g., AR arguments. GRPC_CROSS_AROPTS="rc --target=elf32-little"
+ - Then you can do a make from the fresh clone to get Cross Compiled Libraries and Binaries!
+
 ## macOS 
 
 On a Mac, you will first need to
