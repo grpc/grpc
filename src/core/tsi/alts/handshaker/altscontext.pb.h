@@ -3,7 +3,7 @@
 
 #ifndef PB_GRPC_GCP_ALTSCONTEXT_PB_H_INCLUDED
 #define PB_GRPC_GCP_ALTSCONTEXT_PB_H_INCLUDED
-#include <pb.h>
+#include "pb.h"
 #include "src/core/tsi/alts/handshaker/transport_security_common.pb.h"
 
 /* @@protoc_insertion_point(includes) */

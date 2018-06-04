@@ -74,7 +74,7 @@ pushd "$(dirname $INPUT_PROTO)" > /dev/null
 
 protoc \
 --plugin=protoc-gen-nanopb="$GRPC_ROOT/third_party/nanopb/generator/protoc-gen-nanopb" \
---nanopb_out='-T -L#include\ \<pb.h\>'":$OUTPUT_DIR" "$(basename $INPUT_PROTO)"
+--nanopb_out='-T -L#include\ \"pb.h\"'":$OUTPUT_DIR" "$(basename $INPUT_PROTO)"
 
 readonly PROTO_BASENAME=$(basename $INPUT_PROTO .proto)
 sed -i "s:$PROTO_BASENAME.pb.h:${GRPC_OUTPUT_DIR}/$PROTO_BASENAME.pb.h:g" \
