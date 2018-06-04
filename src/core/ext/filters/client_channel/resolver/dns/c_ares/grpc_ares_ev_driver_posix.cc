@@ -116,16 +116,16 @@ static void fd_node_shutdown_locked(fd_node* fdn, const char* reason) {
   }
 }
 
-grpc_error* grpc_ares_ev_driver_create(grpc_ares_ev_driver** ev_driver,
-                                       grpc_pollset_set* pollset_set,
-                                       grpc_combiner* combiner) {
+grpc_error* grpc_ares_ev_driver_create_locked(grpc_ares_ev_driver** ev_driver,
+                                              grpc_pollset_set* pollset_set,
+                                              grpc_combiner* combiner) {
   *ev_driver = static_cast<grpc_ares_ev_driver*>(
       gpr_malloc(sizeof(grpc_ares_ev_driver)));
   ares_options opts;
   memset(&opts, 0, sizeof(opts));
   opts.flags |= ARES_FLAG_STAYOPEN;
   int status = ares_init_options(&(*ev_driver)->channel, &opts, ARES_OPT_FLAGS);
-  gpr_log(GPR_DEBUG, "grpc_ares_ev_driver_create");
+  gpr_log(GPR_DEBUG, "grpc_ares_ev_driver_create_locked");
   if (status != ARES_SUCCESS) {
     char* err_msg;
     gpr_asprintf(&err_msg, "Failed to init ares channel. C-ares error: %s",
@@ -230,7 +230,8 @@ static void on_writable_locked(void* arg, grpc_error* error) {
   grpc_ares_ev_driver_unref(ev_driver);
 }
 
-ares_channel* grpc_ares_ev_driver_get_channel(grpc_ares_ev_driver* ev_driver) {
+ares_channel* grpc_ares_ev_driver_get_channel_locked(
+    grpc_ares_ev_driver* ev_driver) {
   return &ev_driver->channel;
 }
 
