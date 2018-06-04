@@ -244,8 +244,7 @@ def run_tests_for_lang(lang, runtime, images):
     pull_images_for_lang(lang, images)
 
     total_num_failures = 0
-    for image_tuple in images:
-        release, image = image_tuple
+    for release, image in images:
         jobset.message('START', 'Testing %s' % image, do_newline=True)
 
         suite_name = '%s__%s_%s' % (lang, runtime, release)
