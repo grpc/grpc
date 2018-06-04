@@ -639,11 +639,11 @@ static void BM_StartTransportStreamOpBatch(benchmark::State& state) {
   }
 
   if (fixture.flags & CHECKS_NOT_LAST) {
+    // Some filters assert they are not the last in the stack, so we add a 
+    // dummy filter after them so they won't complain
     filters.push_back(&dummy_filter::dummy_filter);
     label << " #has_dummy_filter";
-  } else {
-    // put in dummy transport
-  }
+  } 
 
   grpc_core::ExecCtx exec_ctx;
   size_t channel_size = grpc_channel_stack_size(
@@ -731,8 +731,8 @@ typedef Fixture<nullptr, 0> NoFilter;
 BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, NoFilter);
 typedef Fixture<&dummy_filter::dummy_filter, 0> DummyFilter;
 BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, DummyFilter);
-//typedef Fixture<&grpc_client_channel_filter, 0> ClientChannelFilter;
-//BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, ClientChannelFilter);
+typedef Fixture<&grpc_client_channel_filter, 0> ClientChannelFilter;
+BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, ClientChannelFilter);
 //typedef Fixture<&grpc_message_compress_filter, CHECKS_NOT_LAST> CompressFilter;
 //BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, CompressFilter);
 
