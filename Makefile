@@ -1126,6 +1126,7 @@ bm_closure: $(BINDIR)/$(CONFIG)/bm_closure
 bm_cq: $(BINDIR)/$(CONFIG)/bm_cq
 bm_cq_multiple_threads: $(BINDIR)/$(CONFIG)/bm_cq_multiple_threads
 bm_error: $(BINDIR)/$(CONFIG)/bm_error
+bm_filters: $(BINDIR)/$(CONFIG)/bm_filters
 bm_fullstack_streaming_ping_pong: $(BINDIR)/$(CONFIG)/bm_fullstack_streaming_ping_pong
 bm_fullstack_streaming_pump: $(BINDIR)/$(CONFIG)/bm_fullstack_streaming_pump
 bm_fullstack_trickle: $(BINDIR)/$(CONFIG)/bm_fullstack_trickle
@@ -1622,6 +1623,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/bm_cq \
   $(BINDIR)/$(CONFIG)/bm_cq_multiple_threads \
   $(BINDIR)/$(CONFIG)/bm_error \
+  $(BINDIR)/$(CONFIG)/bm_filters \
   $(BINDIR)/$(CONFIG)/bm_fullstack_streaming_ping_pong \
   $(BINDIR)/$(CONFIG)/bm_fullstack_streaming_pump \
   $(BINDIR)/$(CONFIG)/bm_fullstack_trickle \
@@ -1797,6 +1799,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/bm_cq \
   $(BINDIR)/$(CONFIG)/bm_cq_multiple_threads \
   $(BINDIR)/$(CONFIG)/bm_error \
+  $(BINDIR)/$(CONFIG)/bm_filters \
   $(BINDIR)/$(CONFIG)/bm_fullstack_streaming_ping_pong \
   $(BINDIR)/$(CONFIG)/bm_fullstack_streaming_pump \
   $(BINDIR)/$(CONFIG)/bm_fullstack_trickle \
@@ -2221,6 +2224,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/bm_cq_multiple_threads || ( echo test bm_cq_multiple_threads failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_error"
 	$(Q) $(BINDIR)/$(CONFIG)/bm_error || ( echo test bm_error failed ; exit 1 )
+	$(E) "[RUN]     Testing bm_filters"
+	$(Q) $(BINDIR)/$(CONFIG)/bm_filters || ( echo test bm_filters failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_fullstack_streaming_ping_pong"
 	$(Q) $(BINDIR)/$(CONFIG)/bm_fullstack_streaming_ping_pong || ( echo test bm_fullstack_streaming_ping_pong failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_fullstack_streaming_pump"
@@ -15912,6 +15917,50 @@ deps_bm_error: $(BM_ERROR_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(BM_ERROR_OBJS:.o=.dep)
+endif
+endif
+
+
+BM_FILTERS_SRC = \
+    test/cpp/microbenchmarks/bm_filters.cc \
+
+BM_FILTERS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BM_FILTERS_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/bm_filters: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/bm_filters: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/bm_filters: $(PROTOBUF_DEP) $(BM_FILTERS_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BM_FILTERS_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/bm_filters
+
+endif
+
+endif
+
+$(BM_FILTERS_OBJS): CPPFLAGS += -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
+$(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/bm_filters.o:  $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+
+deps_bm_filters: $(BM_FILTERS_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BM_FILTERS_OBJS:.o=.dep)
 endif
 endif
 
