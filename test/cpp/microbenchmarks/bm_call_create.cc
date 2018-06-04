@@ -496,9 +496,9 @@ class SendEmptyMetadata {
   grpc_closure closure_;
 };
 
-// Test a filter in isolation. Fixture specifies the filter under test (use the
-// Fixture<> template to specify this), and TestOp defines some unit of work to
-// perform on said filter.
+// Test a filter's call_stack_init in isolation. Fixture specifies the filter 
+// under test (use the Fixture<> template to specify this), and TestOp defines 
+// some unit of work to perform on said filter.
 template <class Fixture, class TestOp>
 static void BM_IsolatedFilter(benchmark::State& state) {
   TrackCounters track_counters;
@@ -608,6 +608,115 @@ typedef Fixture<&grpc_server_load_reporting_filter, CHECKS_NOT_LAST>
     LoadReportingFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, LoadReportingFilter, NoOp);
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, LoadReportingFilter, SendEmptyMetadata);
+
+// Test a filter's start_transport_stream_op_batch in isolation. Fixture 
+// specifies the filter under test (use the Fixture<> template to specify this).
+template <class Fixture>
+static void BM_StartTransportStreamOpBatch(benchmark::State& state) {
+  TrackCounters track_counters;
+  Fixture fixture;
+  std::ostringstream label;
+
+  std::vector<grpc_arg> args;
+  FakeClientChannelFactory fake_client_channel_factory;
+  args.push_back(grpc_client_channel_factory_create_channel_arg(
+      &fake_client_channel_factory));
+  args.push_back(StringArg(GRPC_ARG_SERVER_URI, "localhost"));
+
+  grpc_channel_args channel_args = {args.size(), &args[0]};
+
+  std::vector<const grpc_channel_filter*> filters;
+  if (fixture.filter != nullptr) {
+    filters.push_back(fixture.filter);
+  }
+
+  // Add dummy transport to bottom of stack
+  filters.push_back(&dummy_transport::dummy_transport);
+
+  grpc_core::ExecCtx exec_ctx;
+  size_t channel_size = grpc_channel_stack_size(
+      filters.size() == 0 ? nullptr : &filters[0], filters.size());
+  grpc_channel_stack* channel_stack =
+      static_cast<grpc_channel_stack*>(gpr_zalloc(channel_size));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "channel_stack_init",
+      grpc_channel_stack_init(1, FilterDestroy, channel_stack, &filters[0],
+                              filters.size(), &channel_args,
+                              fixture.flags & REQUIRES_TRANSPORT
+                                  ? &dummy_transport::dummy_transport
+                                  : nullptr,
+                              "CHANNEL", channel_stack)));
+  grpc_core::ExecCtx::Get()->Flush();
+  grpc_call_stack* call_stack =
+      static_cast<grpc_call_stack*>(gpr_zalloc(channel_stack->call_stack_size));
+  grpc_millis deadline = GRPC_MILLIS_INF_FUTURE;
+  gpr_timespec start_time = gpr_now(GPR_CLOCK_MONOTONIC);
+  grpc_slice method = grpc_slice_from_static_string("/foo/bar");
+  grpc_call_final_info final_info;
+  grpc_call_element_args call_args;
+  call_args.call_stack = call_stack;
+  call_args.server_transport_data = nullptr;
+  call_args.context = nullptr;
+  call_args.path = method;
+  call_args.start_time = start_time;
+  call_args.deadline = deadline;
+  const int kArenaSize = 4096;
+  call_args.arena = gpr_arena_create(kArenaSize);
+  GRPC_ERROR_UNREF(
+        grpc_call_stack_init(channel_stack, 1, DoNothing, nullptr, &call_args));
+  
+  while (state.KeepRunning()) {
+    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
+    /* Create new payload */
+    grpc_transport_stream_op_batch_payload payload = {};
+    grpc_metadata_batch metadata_batch = {};
+    payload.send_initial_metadata.send_initial_metadata = &metadata_batch;
+    payload.send_initial_metadata.send_initial_metadata_flags = 0;
+    // TODO(hcaseyal): set payload send_initial_metadata peer_string?
+    payload.send_trailing_metadata.send_trailing_metadata = &metadata_batch;
+    payload.recv_initial_metadata.recv_initial_metadata = &metadata_batch;
+    payload.recv_initial_metadata.recv_initial_metadata_ready = &metadata_batch;
+    // TODO(hcaseyal): set recv_initial_metadata peer_string?
+    payload.recv_message.recv_message = nullptr;
+    payload.recv_message.recv_message_ready = nullptr;
+    payload.recv_trailing_metadata.recv_trailing_metadata = &metadata_batch;
+    grpc_transport_stream_stats stats = {};
+    payload.collect_stats.collect_stats = &stats;
+    payload.recv_trailing_metadata.recv_trailing_metadata = &metadata_batch;
+
+    /* Create new batch with all 6 ops */
+    grpc_transport_stream_op_batch batch;
+    batch.on_complete = nullptr;
+    batch.payload = &payload;
+    batch.send_initial_metadata = true;
+    batch.send_trailing_metadata = true;
+    batch.send_message = true;
+    batch.recv_initial_metadata = true;
+    batch.recv_message = true;
+    batch.recv_trailing_metadata = true;
+    batch.collect_stats = true;
+    batch.cancel_stream = false;
+    
+    if (fixture.filter != nullptr) {
+      fixture->filter->start_transport_stream_op_batch(elem, &batch);
+    }
+  }
+  grpc_call_stack_destroy(call_stack, &final_info, nullptr);
+  grpc_core::ExecCtx::Get()->Flush();
+
+  gpr_arena_destroy(call_args.arena);
+  grpc_channel_stack_destroy(channel_stack);
+
+  gpr_free(channel_stack);
+  gpr_free(call_stack);
+
+  state.SetLabel(label.str());
+  track_counters.Finish(state);
+}
+typedef Fixture<nullptr, 0> NoFilter;
+BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, NoFilter);
+typedef Fixture<&dummy_filter::dummy_filter, 0> DummyFilter;
+BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, DummyFilter);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Benchmarks isolating grpc_call
