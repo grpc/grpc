@@ -638,9 +638,12 @@ static void BM_StartTransportStreamOpBatch(benchmark::State& state) {
     filters.push_back(fixture.filter);
   }
 
-  // Add dummy filter to bottom of stack, which will do nothing when its 
-  // start_transport_stream_op_batch fn is called
-  filters.push_back(&dummy_filter::dummy_filter);
+  if (fixture.flags & CHECKS_NOT_LAST) {
+    filters.push_back(&dummy_filter::dummy_filter);
+    label << " #has_dummy_filter";
+  } else {
+    // put in dummy transport
+  }
 
   grpc_core::ExecCtx exec_ctx;
   size_t channel_size = grpc_channel_stack_size(
@@ -728,6 +731,10 @@ typedef Fixture<nullptr, 0> NoFilter;
 BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, NoFilter);
 typedef Fixture<&dummy_filter::dummy_filter, 0> DummyFilter;
 BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, DummyFilter);
+//typedef Fixture<&grpc_client_channel_filter, 0> ClientChannelFilter;
+//BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, ClientChannelFilter);
+//typedef Fixture<&grpc_message_compress_filter, CHECKS_NOT_LAST> CompressFilter;
+//BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, CompressFilter);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Benchmarks isolating grpc_call
