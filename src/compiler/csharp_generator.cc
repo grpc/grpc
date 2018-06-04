@@ -590,19 +590,16 @@ void GenerateBindServiceMethod(Printer* out, const ServiceDescriptor* service) {
   out->Print("{\n");
   out->Indent();
 
-  out->Print("return grpc::ServerServiceDefinition.CreateBuilder()\n");
+  out->Print("return grpc::ServerServiceDefinition.CreateBuilder()");
   out->Indent();
   out->Indent();
   for (int i = 0; i < service->method_count(); i++) {
     const MethodDescriptor* method = service->method(i);
-    out->Print(".AddMethod($methodfield$, serviceImpl.$methodname$)",
+    out->Print("\n.AddMethod($methodfield$, serviceImpl.$methodname$)",
                "methodfield", GetMethodFieldName(method), "methodname",
                method->name());
-    if (i == service->method_count() - 1) {
-      out->Print(".Build();");
-    }
-    out->Print("\n");
   }
+  out->Print(".Build();\n");
   out->Outdent();
   out->Outdent();
 
@@ -676,7 +673,8 @@ grpc::string GetServices(const FileDescriptor* file, bool generate_client,
       out.PrintRaw(leading_comments.c_str());
     }
 
-    out.Print("#pragma warning disable 1591\n");
+    out.Print("#pragma warning disable 0414, 1591\n");
+
     out.Print("#region Designer generated code\n");
     out.Print("\n");
     out.Print("using grpc = global::Grpc.Core;\n");

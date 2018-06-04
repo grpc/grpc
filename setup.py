@@ -35,7 +35,7 @@ egg_info.manifest_maker.template = 'PYTHON-MANIFEST.in'
 PY3 = sys.version_info.major == 3
 PYTHON_STEM = os.path.join('src', 'python', 'grpcio')
 CORE_INCLUDE = ('include', '.',)
-BORINGSSL_INCLUDE = (os.path.join('third_party', 'boringssl', 'include'),)
+SSL_INCLUDE = (os.path.join('third_party', 'boringssl', 'include'),)
 ZLIB_INCLUDE = (os.path.join('third_party', 'zlib'),)
 NANOPB_INCLUDE = (os.path.join('third_party', 'nanopb'),)
 CARES_INCLUDE = (
@@ -84,6 +84,24 @@ CLASSIFIERS = [
 # is set to false, if the script detects that the generated `.c` file isn't
 # present, then it will still attempt to use Cython.
 BUILD_WITH_CYTHON = os.environ.get('GRPC_PYTHON_BUILD_WITH_CYTHON', False)
+
+# Export this variable to use the system installation of openssl. You need to
+# have the header files installed (in /usr/include/openssl) and during
+# runtime, the shared libary must be installed
+BUILD_WITH_SYSTEM_OPENSSL = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_OPENSSL',
+                                           False)
+
+# Export this variable to use the system installation of zlib. You need to
+# have the header files installed (in /usr/include/) and during
+# runtime, the shared libary must be installed
+BUILD_WITH_SYSTEM_ZLIB = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_ZLIB',
+                                        False)
+
+# Export this variable to use the system installation of cares. You need to
+# have the header files installed (in /usr/include/) and during
+# runtime, the shared libary must be installed
+BUILD_WITH_SYSTEM_CARES = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_CARES',
+                                         False)
 
 # Environment variable to determine whether or not to enable coverage analysis
 # in Cython modules.
@@ -149,8 +167,21 @@ CORE_C_FILES = tuple(grpc_core_dependencies.CORE_SOURCE_FILES)
 if "win32" in sys.platform:
   CORE_C_FILES = filter(lambda x: 'third_party/cares' not in x, CORE_C_FILES)
 
+if BUILD_WITH_SYSTEM_OPENSSL:
+  CORE_C_FILES = filter(lambda x: 'third_party/boringssl' not in x, CORE_C_FILES)
+  CORE_C_FILES = filter(lambda x: 'src/boringssl' not in x, CORE_C_FILES)
+  SSL_INCLUDE = (os.path.join('/usr', 'include', 'openssl'),)
+
+if BUILD_WITH_SYSTEM_ZLIB:
+  CORE_C_FILES = filter(lambda x: 'third_party/zlib' not in x, CORE_C_FILES)
+  ZLIB_INCLUDE = (os.path.join('/usr', 'include'),)
+
+if BUILD_WITH_SYSTEM_CARES:
+  CORE_C_FILES = filter(lambda x: 'third_party/cares' not in x, CORE_C_FILES)
+  CARES_INCLUDE = (os.path.join('/usr', 'include'),)
+
 EXTENSION_INCLUDE_DIRECTORIES = (
-    (PYTHON_STEM,) + CORE_INCLUDE + BORINGSSL_INCLUDE + ZLIB_INCLUDE +
+    (PYTHON_STEM,) + CORE_INCLUDE + SSL_INCLUDE + ZLIB_INCLUDE +
     NANOPB_INCLUDE + CARES_INCLUDE + ADDRESS_SORTING_INCLUDE)
 
 EXTENSION_LIBRARIES = ()
@@ -160,6 +191,12 @@ if not "win32" in sys.platform:
   EXTENSION_LIBRARIES += ('m',)
 if "win32" in sys.platform:
   EXTENSION_LIBRARIES += ('advapi32', 'ws2_32',)
+if BUILD_WITH_SYSTEM_OPENSSL:
+  EXTENSION_LIBRARIES += ('ssl', 'crypto',)
+if BUILD_WITH_SYSTEM_ZLIB:
+  EXTENSION_LIBRARIES += ('z',)
+if BUILD_WITH_SYSTEM_CARES:
+  EXTENSION_LIBRARIES += ('cares',)
 
 DEFINE_MACROS = (
     ('OPENSSL_NO_ASM', 1), ('_WIN32_WINNT', 0x600),

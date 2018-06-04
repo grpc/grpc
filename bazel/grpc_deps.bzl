@@ -144,12 +144,12 @@ def grpc_deps():
     if "com_github_bazelbuild_bazeltoolchains" not in native.existing_rules():
         native.http_archive(
             name = "com_github_bazelbuild_bazeltoolchains",
-            strip_prefix = "bazel-toolchains-09c850dbb8e785ded3d23a7003e9a0168fe1fb2f",
+            strip_prefix = "bazel-toolchains-4653c01284d8a4a536f8f9bb47b7d10f94c549e7",
             urls = [
-                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/09c850dbb8e785ded3d23a7003e9a0168fe1fb2f.tar.gz",
-                "https://github.com/bazelbuild/bazel-toolchains/archive/09c850dbb8e785ded3d23a7003e9a0168fe1fb2f.tar.gz",
+                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/4653c01284d8a4a536f8f9bb47b7d10f94c549e7.tar.gz",
+                "https://github.com/bazelbuild/bazel-toolchains/archive/4653c01284d8a4a536f8f9bb47b7d10f94c549e7.tar.gz",
             ],
-            sha256 = "08e521cf2d0998e3d27a16c2e2542ebf4d3857b3ddadcfd145d128140754d7bd",
+            sha256 = "1c4a532b396c698e6467a1548554571cb85fa091e472b05e398ebc836c315d77",
         )
 
 # TODO: move some dependencies from "grpc_deps" here?
