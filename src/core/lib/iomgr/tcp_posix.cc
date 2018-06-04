@@ -70,7 +70,9 @@ struct grpc_tcp {
   grpc_endpoint base;
   grpc_fd* em_fd;
   int fd;
-  bool finished_edge;
+  /* Used by the endpoint read function to distinguish the very first read call
+   * from the rest */
+  bool is_first_read;
   double target_length;
   double bytes_read_this_round;
   gpr_refcount refcount;
@@ -377,7 +379,6 @@ static void tcp_do_read(grpc_tcp* tcp) {
   ssize_t read_bytes;
   size_t i;
 
-  GPR_ASSERT(!tcp->finished_edge);
   GPR_ASSERT(tcp->incoming_buffer->count <= MAX_READ_IOVEC);
 
   for (i = 0; i < tcp->incoming_buffer->count; i++) {
@@ -473,7 +474,6 @@ static void tcp_continue_read(grpc_tcp* tcp) {
 
 static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error* error) {
   grpc_tcp* tcp = static_cast<grpc_tcp*>(arg);
-  GPR_ASSERT(!tcp->finished_edge);
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_INFO, "TCP:%p got_read: %s", tcp, grpc_error_string(error));
   }
@@ -497,10 +497,17 @@ static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
   grpc_slice_buffer_reset_and_unref_internal(incoming_buffer);
   grpc_slice_buffer_swap(incoming_buffer, &tcp->last_read_buffer);
   TCP_REF(tcp, "read");
-  if (tcp->finished_edge) {
-    tcp->finished_edge = false;
+  if (tcp->is_first_read) {
+    /* Endpoint read called for the very first time. Register read callback with
+     * the polling engine */
+    tcp->is_first_read = false;
     notify_on_read(tcp);
   } else {
+    /* Not the first time. We may or may not have more bytes available. In any
+     * case call tcp->read_done_closure (i.e tcp_handle_read()) which does the
+     * right thing (i.e calls tcp_do_read() which either reads the available
+     * bytes or calls notify_on_read() to be notified when new bytes become
+     * available */
     GRPC_CLOSURE_SCHED(&tcp->read_done_closure, GRPC_ERROR_NONE);
   }
 }
@@ -778,7 +785,8 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->min_read_chunk_size = tcp_min_read_chunk_size;
   tcp->max_read_chunk_size = tcp_max_read_chunk_size;
   tcp->bytes_read_this_round = 0;
-  tcp->finished_edge = true;
+  /* Will be set to false by the very first endpoint read function */
+  tcp->is_first_read = true;
   /* paired with unref in grpc_tcp_destroy */
   gpr_ref_init(&tcp->refcount, 1);
   gpr_atm_no_barrier_store(&tcp->shutdown_count, 0);
