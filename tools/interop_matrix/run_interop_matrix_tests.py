@@ -46,6 +46,7 @@ _RELEASES = sorted(
             for lang in client_matrix.LANG_RELEASE_MATRIX.values()
             for info in lang)))
 _TEST_TIMEOUT = 60
+_PULL_IMAGE_TIMEOUT_SECONDS = 10 * 60
 
 argp = argparse.ArgumentParser(description='Run interop tests.')
 argp.add_argument('-j', '--jobs', default=multiprocessing.cpu_count(), type=int)
@@ -209,17 +210,44 @@ def find_test_cases(lang, runtime, release, suite_name):
 _xml_report_tree = report_utils.new_junit_xml_tree()
 
 
+def pull_images_for_lang(lang, images):
+    """Pull all images for given lang from container registry."""
+    jobset.message(
+        'START', 'Downloading images for language "%s"' % lang, do_newline=True)
+    download_specs = []
+    for release, image in images:
+        spec = jobset.JobSpec(
+            cmdline=['gcloud docker -- pull %s' % image],
+            shortname='pull_image_%s' % (image),
+            timeout_seconds=_PULL_IMAGE_TIMEOUT_SECONDS,
+            shell=True)
+        download_specs.append(spec)
+    num_failures, resultset = jobset.run(
+        download_specs, newline_on_success=True, maxjobs=args.jobs)
+    if num_failures:
+        jobset.message(
+            'FAILED', 'Failed to download some images', do_newline=True)
+        return False
+    else:
+        jobset.message(
+            'SUCCESS', 'All images downloaded successfully.', do_newline=True)
+        return True
+
+
 def run_tests_for_lang(lang, runtime, images):
     """Find and run all test cases for a language.
 
   images is a list of (<release-tag>, <image-full-path>) tuple.
   """
+    # Fine to ignore return value as failure to download will result in test failure
+    # later anyway.
+    pull_images_for_lang(lang, images)
+
     total_num_failures = 0
     for image_tuple in images:
         release, image = image_tuple
         jobset.message('START', 'Testing %s' % image, do_newline=True)
-        # Download the docker image before running each test case.
-        subprocess.check_call(['gcloud', 'docker', '--', 'pull', image])
+
         suite_name = '%s__%s_%s' % (lang, runtime, release)
         job_spec_list = find_test_cases(lang, runtime, release, suite_name)
 
