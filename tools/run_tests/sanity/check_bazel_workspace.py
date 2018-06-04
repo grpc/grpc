@@ -21,6 +21,7 @@ import os
 import re
 import subprocess
 import sys
+import pdb
 
 os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '../../..'))
 
@@ -121,9 +122,12 @@ names_without_bazel_only_deps = names_and_urls.keys()
 for dep_name in _GRPC_BAZEL_ONLY_DEPS:
     names_without_bazel_only_deps.remove(dep_name)
 archive_urls = [names_and_urls[name] for name in names_without_bazel_only_deps]
+# Exclude nanopb from the check: it's not a submodule for distribution reasons,
+# but it's a workspace dependency to enable users to use their own version.
 workspace_git_hashes = {
     re.search(git_hash_pattern, url).group()
     for url in archive_urls
+    if 'nanopb' not in url
 }
 if len(workspace_git_hashes) == 0:
     print("(Likely) parse error, did not find any bazel git dependencies.")
