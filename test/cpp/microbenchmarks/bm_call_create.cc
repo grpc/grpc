@@ -48,6 +48,14 @@
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
+#define CALL_ELEMS_FROM_STACK(stk)     \
+  ((grpc_call_element*)((char*)(stk) + \
+                        ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call_stack))))
+
+/* Given a size, round up to the next multiple of sizeof(void*) */
+#define ROUND_UP_TO_ALIGNMENT_SIZE(x) \
+  (((x) + GPR_MAX_ALIGNMENT - 1u) & ~(GPR_MAX_ALIGNMENT - 1u))
+
 auto& force_library_initialization = Library::get();
 
 void BM_Zalloc(benchmark::State& state) {
@@ -630,8 +638,9 @@ static void BM_StartTransportStreamOpBatch(benchmark::State& state) {
     filters.push_back(fixture.filter);
   }
 
-  // Add dummy transport to bottom of stack
-  filters.push_back(&dummy_transport::dummy_transport);
+  // Add dummy filter to bottom of stack, which will do nothing when its 
+  // start_transport_stream_op_batch fn is called
+  filters.push_back(&dummy_filter::dummy_filter);
 
   grpc_core::ExecCtx exec_ctx;
   size_t channel_size = grpc_channel_stack_size(
@@ -670,19 +679,19 @@ static void BM_StartTransportStreamOpBatch(benchmark::State& state) {
     /* Create new payload */
     grpc_transport_stream_op_batch_payload payload = {};
     grpc_metadata_batch metadata_batch = {};
+    grpc_metadata_batch_init(&metadata_batch);
     payload.send_initial_metadata.send_initial_metadata = &metadata_batch;
     payload.send_initial_metadata.send_initial_metadata_flags = 0;
     // TODO(hcaseyal): set payload send_initial_metadata peer_string?
     payload.send_trailing_metadata.send_trailing_metadata = &metadata_batch;
     payload.recv_initial_metadata.recv_initial_metadata = &metadata_batch;
-    payload.recv_initial_metadata.recv_initial_metadata_ready = &metadata_batch;
+    payload.recv_initial_metadata.recv_initial_metadata_ready = nullptr;
     // TODO(hcaseyal): set recv_initial_metadata peer_string?
     payload.recv_message.recv_message = nullptr;
     payload.recv_message.recv_message_ready = nullptr;
-    payload.recv_trailing_metadata.recv_trailing_metadata = &metadata_batch;
+    payload.recv_trailing_metadata.recv_trailing_metadata = nullptr;
     grpc_transport_stream_stats stats = {};
     payload.collect_stats.collect_stats = &stats;
-    payload.recv_trailing_metadata.recv_trailing_metadata = &metadata_batch;
 
     /* Create new batch with all 6 ops */
     grpc_transport_stream_op_batch batch;
@@ -697,8 +706,10 @@ static void BM_StartTransportStreamOpBatch(benchmark::State& state) {
     batch.collect_stats = true;
     batch.cancel_stream = false;
     
-    if (fixture.filter != nullptr) {
-      fixture->filter->start_transport_stream_op_batch(elem, &batch);
+     grpc_call_element call_elem = CALL_ELEMS_FROM_STACK(call_args.call_stack)[0];
+
+    if (fixture.filter != nullptr) {      
+      fixture.filter->start_transport_stream_op_batch(&call_elem, &batch);
     }
   }
   grpc_call_stack_destroy(call_stack, &final_info, nullptr);
