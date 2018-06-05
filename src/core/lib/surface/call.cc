@@ -1913,7 +1913,7 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
   if (!is_notify_tag_closure) {
     GPR_ASSERT(grpc_cq_begin_op(call->cq, notify_tag));
   }
-  gpr_ref_init(&bctl->steps_to_complete, has_send_ops + num_recv_ops);
+  gpr_ref_init(&bctl->steps_to_complete, (has_send_ops ? 1 : 0) + num_recv_ops);
 
   if (has_send_ops) {
     GRPC_CLOSURE_INIT(&bctl->finish_batch, finish_batch, bctl,
