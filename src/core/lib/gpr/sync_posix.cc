@@ -44,7 +44,11 @@ void gpr_mu_lock(gpr_mu* mu) {
   GPR_ATM_INC_COUNTER(gpr_mu_locks);
 #endif
   GPR_TIMER_SCOPE("gpr_mu_lock", 0);
-  GPR_ASSERT(pthread_mutex_lock(mu) == 0);
+  int res = pthread_mutex_lock(mu);
+  if (res != 0) {
+    gpr_log(GPR_INFO, "pthread_mutex_lock returned %d", res);
+    GPR_ASSERT(res == 0);
+  }
 }
 
 void gpr_mu_unlock(gpr_mu* mu) {
