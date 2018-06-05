@@ -86,7 +86,11 @@ void grpc_event_engine_shutdown(void);
 /* Return the name of the poll strategy */
 const char* grpc_get_poll_strategy_name();
 
-/* Returns true if polling engine can track errors separately, false otherwise
+/* Returns true if polling engine can track errors separately, false otherwise.
+ * If this is true, fd can be created with track_err set. After this, error
+ * events will be reported using fd_notify_on_error. If it is not set, errors
+ * will continue to be reported through fd_notify_on_read and
+ * fd_notify_on_write.
  */
 bool grpc_event_engine_can_track_errors();
 
