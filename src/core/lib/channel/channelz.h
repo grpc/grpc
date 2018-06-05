@@ -39,8 +39,12 @@ class Channel : public RefCounted<Channel> {
   ~Channel();
 
   void CallStarted();
-  void CallFailed() { calls_failed_++; }
-  void CallSucceeded() { calls_succeeded_++; }
+  void CallFailed() {
+    gpr_atm_no_barrier_fetch_add(&calls_failed_, (gpr_atm(1)));
+  }
+  void CallSucceeded() {
+    gpr_atm_no_barrier_fetch_add(&calls_succeeded_, (gpr_atm(1)));
+  }
 
   char* RenderJSON();
 
@@ -54,13 +58,24 @@ class Channel : public RefCounted<Channel> {
   intptr_t channel_uuid() { return channel_uuid_; }
 
  private:
+  class AtomicTimespec {
+   public:
+    AtomicTimespec();
+    void Update(gpr_timespec ts);
+    gpr_timespec Get();
+
+   private:
+    gpr_atm tv_sec_;
+    gpr_atm tv_nsec_;
+  };
+
   bool channel_destroyed_ = false;
   grpc_channel* channel_;
   const char* target_;
-  int64_t calls_started_ = 0;
-  int64_t calls_succeeded_ = 0;
-  int64_t calls_failed_ = 0;
-  gpr_timespec last_call_started_timestamp_;
+  gpr_atm calls_started_ = 0;
+  gpr_atm calls_succeeded_ = 0;
+  gpr_atm calls_failed_ = 0;
+  AtomicTimespec last_call_started_timestamp_;
   intptr_t channel_uuid_;
   ManualConstructor<ChannelTrace> trace_;
 

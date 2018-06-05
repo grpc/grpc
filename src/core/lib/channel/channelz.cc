@@ -93,8 +93,6 @@ Channel::Channel(grpc_channel* channel, size_t channel_tracer_max_nodes)
   trace_.Init(channel_tracer_max_nodes);
   target_ = grpc_channel_get_target(channel_);
   channel_uuid_ = ChannelzRegistry::Register(this);
-  last_call_started_timestamp_ =
-      grpc_millis_to_timespec(ExecCtx::Get()->Now(), GPR_CLOCK_REALTIME);
 }
 
 Channel::~Channel() {
@@ -103,10 +101,28 @@ Channel::~Channel() {
   ChannelzRegistry::Unregister(channel_uuid_);
 }
 
+Channel::AtomicTimespec::AtomicTimespec() {
+  gpr_atm_no_barrier_store(&tv_sec_, (gpr_atm)0);
+  gpr_atm_no_barrier_store(&tv_nsec_, (gpr_atm)0);
+}
+
+void Channel::AtomicTimespec::Update(gpr_timespec ts) {
+  gpr_atm_no_barrier_store(&tv_sec_, (gpr_atm)ts.tv_sec);
+  gpr_atm_no_barrier_store(&tv_nsec_, (gpr_atm)ts.tv_nsec);
+}
+
+gpr_timespec Channel::AtomicTimespec::Get() {
+  gpr_timespec out;
+  out.clock_type = GPR_CLOCK_REALTIME;
+  out.tv_sec = static_cast<int64_t>(gpr_atm_no_barrier_load(&tv_sec_));
+  out.tv_nsec = static_cast<int32_t>(gpr_atm_no_barrier_load(&tv_nsec_));
+  return out;
+}
+
 void Channel::CallStarted() {
-  calls_started_++;
-  last_call_started_timestamp_ =
-      grpc_millis_to_timespec(ExecCtx::Get()->Now(), GPR_CLOCK_REALTIME);
+  gpr_atm_no_barrier_fetch_add(&calls_started_, (gpr_atm)1);
+  last_call_started_timestamp_.Update(
+      grpc_millis_to_timespec(ExecCtx::Get()->Now(), GPR_CLOCK_REALTIME));
 }
 
 grpc_connectivity_state Channel::GetConnectivityState() {
@@ -181,7 +197,7 @@ char* Channel::RenderJSON() {
                               calls_failed_ ? calls_failed_ : -1);
   json_iterator = grpc_json_create_child(
       json_iterator, json, "lastCallStartedTimestamp",
-      fmt_time(last_call_started_timestamp_), GRPC_JSON_STRING, true);
+      fmt_time(last_call_started_timestamp_.Get()), GRPC_JSON_STRING, true);
 
   // render and return the over json object
   char* json_str = grpc_json_dump_to_string(top_level_json, 0);
