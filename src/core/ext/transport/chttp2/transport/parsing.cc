@@ -107,6 +107,20 @@ grpc_error* grpc_chttp2_perform_read(grpc_chttp2_transport* t,
     /* fallthrough */
     dts_fh_0:
     case GRPC_DTS_FH_0:
+      if (GPR_LIKELY((end - cur) >= 9)) {
+        // fastpath without checking end condition for every byte
+        t->incoming_frame_size = *cur++;
+        t->incoming_frame_size = (t->incoming_frame_size << 8) | *cur++;
+        t->incoming_frame_size = (t->incoming_frame_size << 8) | *cur++;
+        t->incoming_frame_type = *cur++;
+        t->incoming_frame_flags = *cur++;
+        t->incoming_stream_id = (*cur++) & 0x7f;
+        t->incoming_stream_id = (t->incoming_stream_id << 8) | *cur++;
+        t->incoming_stream_id = (t->incoming_stream_id << 8) | *cur++;
+        t->incoming_stream_id <<= 8;
+        // last byte will be added after goto.
+        goto dts_fh_8; // fast-forward
+      }
       GPR_ASSERT(cur < end);
       t->incoming_frame_size = (static_cast<uint32_t>(*cur)) << 16;
       if (++cur == end) {
@@ -170,6 +184,7 @@ grpc_error* grpc_chttp2_perform_read(grpc_chttp2_transport* t,
         return GRPC_ERROR_NONE;
       }
     /* fallthrough */
+    dts_fh_8:
     case GRPC_DTS_FH_8:
       GPR_ASSERT(cur < end);
       t->incoming_stream_id |= (static_cast<uint32_t>(*cur));
