@@ -253,15 +253,12 @@ filegroups:
   - src/core/lib/http/httpcli.cc
   - src/core/lib/http/parser.cc
   - src/core/lib/iomgr/call_combiner.cc
-  - src/core/lib/iomgr/cfstream_handle.cc
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/endpoint.cc
-  - src/core/lib/iomgr/endpoint_cfstream.cc
   - src/core/lib/iomgr/endpoint_pair_posix.cc
   - src/core/lib/iomgr/endpoint_pair_uv.cc
   - src/core/lib/iomgr/endpoint_pair_windows.cc
   - src/core/lib/iomgr/error.cc
-  - src/core/lib/iomgr/error_apple.cc
   - src/core/lib/iomgr/ev_epoll1_linux.cc
   - src/core/lib/iomgr/ev_epollex_linux.cc
   - src/core/lib/iomgr/ev_epollsig_linux.cc
@@ -309,7 +306,6 @@ filegroups:
   - src/core/lib/iomgr/socket_utils_windows.cc
   - src/core/lib/iomgr/socket_windows.cc
   - src/core/lib/iomgr/tcp_client.cc
-  - src/core/lib/iomgr/tcp_client_cfstream.cc
   - src/core/lib/iomgr/tcp_client_custom.cc
   - src/core/lib/iomgr/tcp_client_posix.cc
   - src/core/lib/iomgr/tcp_client_windows.cc
@@ -434,14 +430,11 @@ filegroups:
   - src/core/lib/http/parser.h
   - src/core/lib/iomgr/block_annotate.h
   - src/core/lib/iomgr/call_combiner.h
-  - src/core/lib/iomgr/cfstream_handle.h
   - src/core/lib/iomgr/closure.h
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/endpoint.h
-  - src/core/lib/iomgr/endpoint_cfstream.h
   - src/core/lib/iomgr/endpoint_pair.h
   - src/core/lib/iomgr/error.h
-  - src/core/lib/iomgr/error_apple.h
   - src/core/lib/iomgr/error_internal.h
   - src/core/lib/iomgr/ev_epoll1_linux.h
   - src/core/lib/iomgr/ev_epollex_linux.h
@@ -543,6 +536,19 @@ filegroups:
   uses:
   - grpc_codegen
   - grpc_trace_headers
+- name: grpc_cfstream
+  headers:
+  - src/core/lib/iomgr/cfstream_handle.h
+  - src/core/lib/iomgr/endpoint_cfstream.h
+  - src/core/lib/iomgr/error_cfstream.h
+  src:
+  - src/core/lib/iomgr/cfstream_handle.cc
+  - src/core/lib/iomgr/endpoint_cfstream.cc
+  - src/core/lib/iomgr/error_cfstream.cc
+  - src/core/lib/iomgr/tcp_client_cfstream.cc
+  uses:
+  - grpc_base_headers
+  - gpr_base_headers
 - name: grpc_client_authority_filter
   headers:
   - src/core/ext/filters/http/client_authority_filter.h
@@ -5618,7 +5624,7 @@ defaults:
     COREFLAGS: -fno-rtti -fno-exceptions
     CPPFLAGS: -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1
       -Wno-deprecated-declarations
-    LDFLAGS: -g $(if $(subst Darwin,,$(SYSTEM)),,-framework CoreFoundation)
+    LDFLAGS: -g
   zlib:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration
       -Wno-implicit-fallthrough $(W_NO_SHIFT_NEGATIVE_VALUE) -fvisibility=hidden

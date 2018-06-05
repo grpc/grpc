@@ -941,15 +941,12 @@ add_library(grpc
   src/core/lib/http/httpcli.cc
   src/core/lib/http/parser.cc
   src/core/lib/iomgr/call_combiner.cc
-  src/core/lib/iomgr/cfstream_handle.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/endpoint.cc
-  src/core/lib/iomgr/endpoint_cfstream.cc
   src/core/lib/iomgr/endpoint_pair_posix.cc
   src/core/lib/iomgr/endpoint_pair_uv.cc
   src/core/lib/iomgr/endpoint_pair_windows.cc
   src/core/lib/iomgr/error.cc
-  src/core/lib/iomgr/error_apple.cc
   src/core/lib/iomgr/ev_epoll1_linux.cc
   src/core/lib/iomgr/ev_epollex_linux.cc
   src/core/lib/iomgr/ev_epollsig_linux.cc
@@ -997,7 +994,6 @@ add_library(grpc
   src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/iomgr/socket_windows.cc
   src/core/lib/iomgr/tcp_client.cc
-  src/core/lib/iomgr/tcp_client_cfstream.cc
   src/core/lib/iomgr/tcp_client_custom.cc
   src/core/lib/iomgr/tcp_client_posix.cc
   src/core/lib/iomgr/tcp_client_windows.cc
@@ -1338,15 +1334,12 @@ add_library(grpc_cronet
   src/core/lib/http/httpcli.cc
   src/core/lib/http/parser.cc
   src/core/lib/iomgr/call_combiner.cc
-  src/core/lib/iomgr/cfstream_handle.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/endpoint.cc
-  src/core/lib/iomgr/endpoint_cfstream.cc
   src/core/lib/iomgr/endpoint_pair_posix.cc
   src/core/lib/iomgr/endpoint_pair_uv.cc
   src/core/lib/iomgr/endpoint_pair_windows.cc
   src/core/lib/iomgr/error.cc
-  src/core/lib/iomgr/error_apple.cc
   src/core/lib/iomgr/ev_epoll1_linux.cc
   src/core/lib/iomgr/ev_epollex_linux.cc
   src/core/lib/iomgr/ev_epollsig_linux.cc
@@ -1394,7 +1387,6 @@ add_library(grpc_cronet
   src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/iomgr/socket_windows.cc
   src/core/lib/iomgr/tcp_client.cc
-  src/core/lib/iomgr/tcp_client_cfstream.cc
   src/core/lib/iomgr/tcp_client_custom.cc
   src/core/lib/iomgr/tcp_client_posix.cc
   src/core/lib/iomgr/tcp_client_windows.cc
@@ -1727,15 +1719,12 @@ add_library(grpc_test_util
   src/core/lib/http/httpcli.cc
   src/core/lib/http/parser.cc
   src/core/lib/iomgr/call_combiner.cc
-  src/core/lib/iomgr/cfstream_handle.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/endpoint.cc
-  src/core/lib/iomgr/endpoint_cfstream.cc
   src/core/lib/iomgr/endpoint_pair_posix.cc
   src/core/lib/iomgr/endpoint_pair_uv.cc
   src/core/lib/iomgr/endpoint_pair_windows.cc
   src/core/lib/iomgr/error.cc
-  src/core/lib/iomgr/error_apple.cc
   src/core/lib/iomgr/ev_epoll1_linux.cc
   src/core/lib/iomgr/ev_epollex_linux.cc
   src/core/lib/iomgr/ev_epollsig_linux.cc
@@ -1783,7 +1772,6 @@ add_library(grpc_test_util
   src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/iomgr/socket_windows.cc
   src/core/lib/iomgr/tcp_client.cc
-  src/core/lib/iomgr/tcp_client_cfstream.cc
   src/core/lib/iomgr/tcp_client_custom.cc
   src/core/lib/iomgr/tcp_client_posix.cc
   src/core/lib/iomgr/tcp_client_windows.cc
@@ -2035,15 +2023,12 @@ add_library(grpc_test_util_unsecure
   src/core/lib/http/httpcli.cc
   src/core/lib/http/parser.cc
   src/core/lib/iomgr/call_combiner.cc
-  src/core/lib/iomgr/cfstream_handle.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/endpoint.cc
-  src/core/lib/iomgr/endpoint_cfstream.cc
   src/core/lib/iomgr/endpoint_pair_posix.cc
   src/core/lib/iomgr/endpoint_pair_uv.cc
   src/core/lib/iomgr/endpoint_pair_windows.cc
   src/core/lib/iomgr/error.cc
-  src/core/lib/iomgr/error_apple.cc
   src/core/lib/iomgr/ev_epoll1_linux.cc
   src/core/lib/iomgr/ev_epollex_linux.cc
   src/core/lib/iomgr/ev_epollsig_linux.cc
@@ -2091,7 +2076,6 @@ add_library(grpc_test_util_unsecure
   src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/iomgr/socket_windows.cc
   src/core/lib/iomgr/tcp_client.cc
-  src/core/lib/iomgr/tcp_client_cfstream.cc
   src/core/lib/iomgr/tcp_client_custom.cc
   src/core/lib/iomgr/tcp_client_posix.cc
   src/core/lib/iomgr/tcp_client_windows.cc
@@ -2322,15 +2306,12 @@ add_library(grpc_unsecure
   src/core/lib/http/httpcli.cc
   src/core/lib/http/parser.cc
   src/core/lib/iomgr/call_combiner.cc
-  src/core/lib/iomgr/cfstream_handle.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/endpoint.cc
-  src/core/lib/iomgr/endpoint_cfstream.cc
   src/core/lib/iomgr/endpoint_pair_posix.cc
   src/core/lib/iomgr/endpoint_pair_uv.cc
   src/core/lib/iomgr/endpoint_pair_windows.cc
   src/core/lib/iomgr/error.cc
-  src/core/lib/iomgr/error_apple.cc
   src/core/lib/iomgr/ev_epoll1_linux.cc
   src/core/lib/iomgr/ev_epollex_linux.cc
   src/core/lib/iomgr/ev_epollsig_linux.cc
@@ -2378,7 +2359,6 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/iomgr/socket_windows.cc
   src/core/lib/iomgr/tcp_client.cc
-  src/core/lib/iomgr/tcp_client_cfstream.cc
   src/core/lib/iomgr/tcp_client_custom.cc
   src/core/lib/iomgr/tcp_client_posix.cc
   src/core/lib/iomgr/tcp_client_windows.cc
@@ -3152,15 +3132,12 @@ add_library(grpc++_cronet
   src/core/lib/http/httpcli.cc
   src/core/lib/http/parser.cc
   src/core/lib/iomgr/call_combiner.cc
-  src/core/lib/iomgr/cfstream_handle.cc
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/endpoint.cc
-  src/core/lib/iomgr/endpoint_cfstream.cc
   src/core/lib/iomgr/endpoint_pair_posix.cc
   src/core/lib/iomgr/endpoint_pair_uv.cc
   src/core/lib/iomgr/endpoint_pair_windows.cc
   src/core/lib/iomgr/error.cc
-  src/core/lib/iomgr/error_apple.cc
   src/core/lib/iomgr/ev_epoll1_linux.cc
   src/core/lib/iomgr/ev_epollex_linux.cc
   src/core/lib/iomgr/ev_epollsig_linux.cc
@@ -3208,7 +3185,6 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/iomgr/socket_windows.cc
   src/core/lib/iomgr/tcp_client.cc
-  src/core/lib/iomgr/tcp_client_cfstream.cc
   src/core/lib/iomgr/tcp_client_custom.cc
   src/core/lib/iomgr/tcp_client_posix.cc
   src/core/lib/iomgr/tcp_client_windows.cc
