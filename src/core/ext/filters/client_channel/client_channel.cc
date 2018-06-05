@@ -1207,7 +1207,11 @@ static void pending_batches_fail(grpc_call_element* elem, grpc_error* error,
       pending_batch_clear(calld, pending);
     }
   }
-  closures.RunClosures(calld->call_combiner, yield_call_combiner);
+  if (yield_call_combiner) {
+    closures.RunClosures(calld->call_combiner);
+  } else {
+    closures.RunClosuresWithoutYielding(calld->call_combiner);
+  }
   GRPC_ERROR_UNREF(error);
 }
 
@@ -1256,7 +1260,7 @@ static void pending_batches_resume(grpc_call_element* elem) {
     }
   }
   // Note: This will release the call combiner.
-  closures.RunClosures(calld->call_combiner, true /* yield_call_combiner */);
+  closures.RunClosures(calld->call_combiner);
 }
 
 static void maybe_clear_pending_batch(grpc_call_element* elem,
@@ -1905,7 +1909,7 @@ static void recv_trailing_metadata_ready(void* arg, grpc_error* error) {
   batch_data_unref(batch_data);
   // Schedule all of the closures identified above.
   // Note: This will release the call combiner.
-  closures.RunClosures(calld->call_combiner, true /* yield_call_combiner */);
+  closures.RunClosures(calld->call_combiner);
 }
 
 //
@@ -2041,7 +2045,7 @@ static void on_complete(void* arg, grpc_error* error) {
   batch_data_unref(batch_data);
   // Schedule all of the closures identified above.
   // Note: This yeilds the call combiner.
-  closures.RunClosures(calld->call_combiner, true /* yield_call_combiner */);
+  closures.RunClosures(calld->call_combiner);
   // If this was the last subchannel send batch, unref the call stack.
   if (last_callback_complete) {
     GRPC_CALL_STACK_UNREF(calld->owning_call, "subchannel_send_batches");
@@ -2486,7 +2490,7 @@ static void start_retriable_subchannel_batches(void* arg, grpc_error* ignored) {
             chand, calld, closures.size(), calld->subchannel_call);
   }
   // Note: This will yield the call combiner.
-  closures.RunClosures(calld->call_combiner, true /* yield_call_combiner */);
+  closures.RunClosures(calld->call_combiner);
 }
 
 //

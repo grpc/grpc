@@ -129,38 +129,42 @@ class CallCombinerClosureList {
     closures_.emplace_back(closure, error, reason);
   }
 
-  // Runs all closures in the call combiner.
+  // Runs all closures in the call combiner and yields the call combiner.
   //
-  // If yield_call_combiner is true, then the call combiner will be yielded.
-  // In this case, all but one of the closures will be scheduled via
-  // CALL_COMBINER_START(), and the remaining closure will be scheduled
-  // directly via GRPC_CLOSURE_SCHED(), which will eventually result in
+  // All but one of the closures in the list will be scheduled via
+  // GRPC_CALL_COMBINER_START(), and the remaining closure will be
+  // scheduled via GRPC_CLOSURE_SCHED(), which will eventually result in
   // yielding the call combiner.  If the list is empty, then the call
   // combiner will be yielded immediately.
-  //
-  // If yield_call_combiner is false, then the call combiner will not be
-  // yielded.  All callbacks will be scheduled via GRPC_CALL_COMBINER_START().
-  void RunClosures(grpc_call_combiner* call_combiner,
-                   bool yield_call_combiner) {
-    for (size_t i = yield_call_combiner ? 1 : 0; i < closures_.size(); ++i) {
+  void RunClosures(grpc_call_combiner* call_combiner) {
+    for (size_t i = 1; i < closures_.size(); ++i) {
       auto& closure = closures_[i];
       GRPC_CALL_COMBINER_START(call_combiner, closure.closure, closure.error,
                                closure.reason);
     }
-    if (yield_call_combiner) {
-      if (closures_.size() > 0) {
-        if (grpc_call_combiner_trace.enabled()) {
-          gpr_log(GPR_INFO,
-                  "CallCombinerClosureList executing closure while already "
-                  "holding call_combiner %p: closure=%p error=%s reason=%s",
-                  call_combiner, closures_[0].closure,
-                  grpc_error_string(closures_[0].error), closures_[0].reason);
-        }
-        // This will release the call combiner.
-        GRPC_CLOSURE_SCHED(closures_[0].closure, closures_[0].error);
-      } else {
-        GRPC_CALL_COMBINER_STOP(call_combiner, "no closures to schedule");
+    if (closures_.size() > 0) {
+      if (grpc_call_combiner_trace.enabled()) {
+        gpr_log(GPR_INFO,
+                "CallCombinerClosureList executing closure while already "
+                "holding call_combiner %p: closure=%p error=%s reason=%s",
+                call_combiner, closures_[0].closure,
+                grpc_error_string(closures_[0].error), closures_[0].reason);
       }
+      // This will release the call combiner.
+      GRPC_CLOSURE_SCHED(closures_[0].closure, closures_[0].error);
+    } else {
+      GRPC_CALL_COMBINER_STOP(call_combiner, "no closures to schedule");
+    }
+    closures_.clear();
+  }
+
+  // Runs all closures in the call combiner, but does NOT yield the call
+  // combiner.  All closures will be scheduled via GRPC_CALL_COMBINER_START().
+  void RunClosuresWithoutYielding(grpc_call_combiner* call_combiner) {
+    for (size_t i = 0; i < closures_.size(); ++i) {
+      auto& closure = closures_[i];
+      GRPC_CALL_COMBINER_START(call_combiner, closure.closure, closure.error,
+                               closure.reason);
     }
     closures_.clear();
   }

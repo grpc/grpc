@@ -640,7 +640,7 @@ static void StartTransportStreamOp(grpc_call_element* elem,
     closures.Add(op->on_complete, GRPC_ERROR_NONE, "on_complete");
   }
   // Execute closures.
-  closures.RunClosures(calld->call_combiner, true /* yield_call_combiner */);
+  closures.RunClosures(calld->call_combiner);
 }
 
 static void StartTransportOp(grpc_channel_element* elem,

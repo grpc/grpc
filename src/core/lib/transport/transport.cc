@@ -236,7 +236,7 @@ void grpc_transport_stream_op_batch_finish_with_failure(
                  "failing on_complete");
   }
   // Execute closures.
-  closures.RunClosures(call_combiner, true /* yield_call_combiner */);
+  closures.RunClosures(call_combiner);
   GRPC_ERROR_UNREF(error);
 }
 
