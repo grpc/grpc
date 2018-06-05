@@ -504,7 +504,7 @@ class SendEmptyMetadata {
   grpc_closure closure_;
 };
 
-// Test a filter's call_stack_init in isolation. Fixture specifies the filter 
+// Test a filter in isolation. Fixture specifies the filter 
 // under test (use the Fixture<> template to specify this), and TestOp defines 
 // some unit of work to perform on said filter.
 template <class Fixture, class TestOp>
@@ -617,6 +617,108 @@ typedef Fixture<&grpc_server_load_reporting_filter, CHECKS_NOT_LAST>
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, LoadReportingFilter, NoOp);
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, LoadReportingFilter, SendEmptyMetadata);
 
+// Test a filter's call stack init in isolation. Fixture specifies the filter 
+// under test (use the Fixture<> template to specify this)
+template <class Fixture>
+static void BM_CallStackInit(benchmark::State& state) {
+  TrackCounters track_counters;
+  Fixture fixture;
+  std::ostringstream label;
+
+  std::vector<grpc_arg> args;
+  FakeClientChannelFactory fake_client_channel_factory;
+  args.push_back(grpc_client_channel_factory_create_channel_arg(
+      &fake_client_channel_factory));
+  args.push_back(StringArg(GRPC_ARG_SERVER_URI, "localhost"));
+
+  grpc_channel_args channel_args = {args.size(), &args[0]};
+
+  std::vector<const grpc_channel_filter*> filters;
+  if (fixture.filter != nullptr) {
+    filters.push_back(fixture.filter);
+    if (fixture.flags & CHECKS_NOT_LAST) {
+      filters.push_back(&dummy_filter::dummy_filter);
+    } else {
+      filters.insert(filters.begin(), &dummy_filter::dummy_filter);
+    }
+  }
+
+
+  grpc_core::ExecCtx exec_ctx;
+  size_t channel_size = grpc_channel_stack_size(
+      filters.size() == 0 ? nullptr : &filters[0], filters.size());
+  grpc_channel_stack* channel_stack =
+      static_cast<grpc_channel_stack*>(gpr_zalloc(channel_size));
+  GPR_ASSERT(GRPC_LOG_IF_ERROR(
+      "channel_stack_init",
+      grpc_channel_stack_init(1, FilterDestroy, channel_stack, &filters[0],
+                              filters.size(), &channel_args,
+                              fixture.flags & REQUIRES_TRANSPORT
+                                  ? &dummy_transport::dummy_transport
+                                  : nullptr,
+                              "CHANNEL", channel_stack)));
+  grpc_core::ExecCtx::Get()->Flush();
+  grpc_call_stack* call_stack =
+      static_cast<grpc_call_stack*>(gpr_zalloc(channel_stack->call_stack_size));
+  grpc_millis deadline = GRPC_MILLIS_INF_FUTURE;
+  gpr_timespec start_time = gpr_now(GPR_CLOCK_MONOTONIC);
+  grpc_slice method = grpc_slice_from_static_string("/foo/bar");
+  grpc_call_final_info final_info;
+  grpc_call_element_args call_args;
+  call_args.call_stack = call_stack;
+  call_args.server_transport_data = nullptr;
+  call_args.context = nullptr;
+  call_args.path = method;
+  call_args.start_time = start_time;
+  call_args.deadline = deadline;
+  const int kArenaSize = 4096;
+  call_args.arena = gpr_arena_create(kArenaSize);
+  while (state.KeepRunning()) {
+    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
+    GRPC_ERROR_UNREF(
+        grpc_call_stack_init(channel_stack, 1, DoNothing, nullptr, &call_args));
+    grpc_call_stack_destroy(call_stack, &final_info, nullptr);
+    // recreate arena every 64k iterations to avoid oom
+    if (0 == (state.iterations() & 0xffff)) {
+      gpr_arena_destroy(call_args.arena);
+      call_args.arena = gpr_arena_create(kArenaSize);
+    }
+  }
+  gpr_arena_destroy(call_args.arena);
+  grpc_channel_stack_destroy(channel_stack);
+
+  gpr_free(channel_stack);
+  gpr_free(call_stack);
+
+  state.SetLabel(label.str());
+  track_counters.Finish(state);
+}
+
+typedef Fixture<nullptr, 0> NoFilter;
+BENCHMARK_TEMPLATE(BM_CallStackInit, NoFilter);
+typedef Fixture<&dummy_filter::dummy_filter, 0> DummyFilter;
+BENCHMARK_TEMPLATE(BM_CallStackInit, DummyFilter);
+typedef Fixture<&grpc_client_channel_filter, 0> ClientChannelFilter;
+BENCHMARK_TEMPLATE(BM_CallStackInit, ClientChannelFilter);
+typedef Fixture<&grpc_message_compress_filter, CHECKS_NOT_LAST> CompressFilter;
+BENCHMARK_TEMPLATE(BM_CallStackInit, CompressFilter);
+typedef Fixture<&grpc_client_deadline_filter, CHECKS_NOT_LAST>
+    ClientDeadlineFilter;
+BENCHMARK_TEMPLATE(BM_CallStackInit, ClientDeadlineFilter);
+typedef Fixture<&grpc_server_deadline_filter, CHECKS_NOT_LAST>
+    ServerDeadlineFilter;
+BENCHMARK_TEMPLATE(BM_CallStackInit, ServerDeadlineFilter);
+typedef Fixture<&grpc_http_client_filter, CHECKS_NOT_LAST | REQUIRES_TRANSPORT>
+    HttpClientFilter;
+BENCHMARK_TEMPLATE(BM_CallStackInit, HttpClientFilter);
+typedef Fixture<&grpc_http_server_filter, CHECKS_NOT_LAST> HttpServerFilter;
+BENCHMARK_TEMPLATE(BM_CallStackInit, HttpServerFilter);
+typedef Fixture<&grpc_message_size_filter, CHECKS_NOT_LAST> MessageSizeFilter;
+BENCHMARK_TEMPLATE(BM_CallStackInit, MessageSizeFilter);
+typedef Fixture<&grpc_server_load_reporting_filter, CHECKS_NOT_LAST>
+    LoadReportingFilter;
+BENCHMARK_TEMPLATE(BM_CallStackInit, LoadReportingFilter);
+
 // Test a filter's start_transport_stream_op_batch in isolation. Fixture 
 // specifies the filter under test (use the Fixture<> template to specify this).
 template <class Fixture>
@@ -636,14 +738,12 @@ static void BM_StartTransportStreamOpBatch(benchmark::State& state) {
   std::vector<const grpc_channel_filter*> filters;
   if (fixture.filter != nullptr) {
     filters.push_back(fixture.filter);
+    if (fixture.flags & CHECKS_NOT_LAST) {
+      filters.push_back(&dummy_filter::dummy_filter);
+    } else {
+      filters.insert(filters.begin(), &dummy_filter::dummy_filter);
+    }
   }
-
-  if (fixture.flags & CHECKS_NOT_LAST) {
-    // Some filters assert they are not the last in the stack, so we add a 
-    // dummy filter after them so they won't complain
-    filters.push_back(&dummy_filter::dummy_filter);
-    label << " #has_dummy_filter";
-  } 
 
   grpc_core::ExecCtx exec_ctx;
   size_t channel_size = grpc_channel_stack_size(
@@ -695,7 +795,8 @@ static void BM_StartTransportStreamOpBatch(benchmark::State& state) {
     payload.recv_trailing_metadata.recv_trailing_metadata = nullptr;
     grpc_transport_stream_stats stats = {};
     payload.collect_stats.collect_stats = &stats;
-
+    std::unique_ptr<grpc_core::ByteStream>
+    
     /* Create new batch with all 6 ops */
     grpc_transport_stream_op_batch batch;
     batch.on_complete = nullptr;
