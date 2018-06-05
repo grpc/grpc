@@ -221,10 +221,6 @@
   %  endif
   % endfor
 
-  # nanopb tweaks
-  DEFINES += PB_FIELD_32BIT
-  CPPFLAGS += -Ithird_party/nanopb
-
   CPPFLAGS += $(CPPFLAGS_$(CONFIG))
   CFLAGS += $(CFLAGS_$(CONFIG))
   CXXFLAGS += $(CXXFLAGS_$(CONFIG))

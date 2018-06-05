@@ -334,13 +334,9 @@ CXXFLAGS += -std=c++11
 ifeq ($(SYSTEM),Darwin)
 CXXFLAGS += -stdlib=libc++
 endif
-CPPFLAGS += -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1 -Wno-deprecated-declarations
+CPPFLAGS += -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1 -Wno-deprecated-declarations -Ithird_party/nanopb -DPB_FIELD_32BIT
 COREFLAGS += -fno-rtti -fno-exceptions
 LDFLAGS += -g
-
-# nanopb tweaks
-DEFINES += PB_FIELD_32BIT
-CPPFLAGS += -Ithird_party/nanopb
 
 CPPFLAGS += $(CPPFLAGS_$(CONFIG))
 CFLAGS += $(CFLAGS_$(CONFIG))
