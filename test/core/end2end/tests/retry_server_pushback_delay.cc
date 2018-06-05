@@ -249,7 +249,7 @@ static void test_retry_server_pushback_delay(grpc_end2end_test_config config) {
           retry_delay.tv_sec, retry_delay.tv_nsec);
   GPR_ASSERT(retry_delay.tv_sec >= 1);
   if (retry_delay.tv_sec == 1) {
-    GPR_ASSERT(retry_delay.tv_nsec >= 900000000);
+    GPR_ASSERT(retry_delay.tv_nsec >= 700000000);
   }
 
   peer = grpc_call_get_peer(s);
