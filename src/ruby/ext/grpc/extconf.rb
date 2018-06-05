@@ -69,6 +69,10 @@ ENV['BUILDDIR'] = output_dir
 
 unless windows
   puts 'Building internal gRPC into ' + grpc_lib_dir
+
+  system('git submodule update --init')
+  exit 1 unless $? == 0
+
   nproc = 4
   nproc = Etc.nprocessors * 2 if Etc.respond_to? :nprocessors
   make = bsd ? 'gmake' : 'make'
