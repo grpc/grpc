@@ -21,7 +21,7 @@ import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
 
-// See go/grpc-channelz.
+// See https://github.com/grpc/proposal/blob/master/A14-channelz.md.
 
 // Channel is a logical grouping of channels, subchannels, and sockets.
 message Channel {
