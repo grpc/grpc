@@ -792,8 +792,6 @@ static void BM_StartTransportStreamOpBatch(benchmark::State& state) {
     payload.recv_initial_metadata.recv_initial_metadata_ready = nullptr;
     // TODO(hcaseyal): set recv_initial_metadata peer_string?
 
-    grpc_core::OrphanablePtr<grpc_core::ByteStream> recv_message_container;
-    payload.recv_message.recv_message = std::move(recv_message_container);
     payload.recv_message.recv_message_ready = nullptr;
     payload.recv_trailing_metadata.recv_trailing_metadata = nullptr;
     grpc_transport_stream_stats stats = {};
@@ -805,7 +803,8 @@ static void BM_StartTransportStreamOpBatch(benchmark::State& state) {
 
     grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream> 
         byte_stream_recv;
-    payload.recv_message.recv_message->reset(byte_stream_recv.get());
+    *payload.recv_message.recv_message = std::move(byte_stream_recv.get());
+    //payload.recv_message.recv_message->reset(byte_stream_recv.get());
 
     /* Create new batch with all 6 ops */
     grpc_transport_stream_op_batch batch;
