@@ -808,7 +808,8 @@ static void BM_StartTransportStreamOpBatch(benchmark::State& state) {
     grpc_core::OrphanablePtr<grpc_core::ByteStream> op;
     payload.recv_message.recv_message = &op;
 
-    grpc_transport_stream_stats stats = {};
+    grpc_transport_stream_stats stats;
+    memset(&stats, 0, sizeof(grpc_transport_stream_stats));
     payload.collect_stats.collect_stats = &stats;
 
     grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream> 
@@ -825,7 +826,7 @@ static void BM_StartTransportStreamOpBatch(benchmark::State& state) {
 
     /* Create new batch with all 6 ops */
     grpc_transport_stream_op_batch batch;
-    batch.on_complete = nullptr;
+    memset(&batch, 0, sizeof(grpc_transport_stream_op_batch));
     batch.payload = &payload;
     batch.send_initial_metadata = true;
     batch.send_trailing_metadata = true;
@@ -834,14 +835,12 @@ static void BM_StartTransportStreamOpBatch(benchmark::State& state) {
     batch.recv_message = true;
     batch.recv_trailing_metadata = true;
     batch.collect_stats = true;
-    batch.cancel_stream = false;
     
      grpc_call_element call_elem = CALL_ELEMS_FROM_STACK(call_args.call_stack)[0];
 
     if (fixture.filter != nullptr) {      
       fixture.filter->start_transport_stream_op_batch(&call_elem, &batch);
     }
-    op.reset();
   }
   grpc_call_stack_destroy(call_stack, &final_info, nullptr);
   grpc_core::ExecCtx::Get()->Flush();
