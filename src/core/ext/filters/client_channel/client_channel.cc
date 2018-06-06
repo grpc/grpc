@@ -1722,8 +1722,7 @@ static void recv_message_ready(void* arg, grpc_error* error) {
 // recv_trailing_metadata handling
 //
 
-// Adds recv_trailing_metadata_ready closure to closures, updating
-// *num_closures as needed.
+// Adds recv_trailing_metadata_ready closure to closures.
 static void add_closure_for_recv_trailing_metadata_ready(
     grpc_call_element* elem, subchannel_batch_data* batch_data,
     grpc_error* error, grpc_core::CallCombinerClosureList* closures) {
@@ -1758,7 +1757,7 @@ static void add_closure_for_recv_trailing_metadata_ready(
 }
 
 // Adds any necessary closures for deferred recv_initial_metadata and
-// recv_message callbacks to closures, updating *num_closures as needed.
+// recv_message callbacks to closures.
 static void add_closures_for_deferred_recv_callbacks(
     subchannel_batch_data* batch_data, subchannel_call_retry_state* retry_state,
     grpc_core::CallCombinerClosureList* closures) {
@@ -1814,8 +1813,7 @@ static bool pending_batch_is_unstarted(
 }
 
 // For any pending batch containing an op that has not yet been started,
-// adds the pending batch's completion closures to closures, updating
-// *num_closures as needed.
+// adds the pending batch's completion closures to closures.
 static void add_closures_to_fail_unstarted_pending_batches(
     grpc_call_element* elem, subchannel_call_retry_state* retry_state,
     grpc_error* error, grpc_core::CallCombinerClosureList* closures) {
@@ -1917,7 +1915,7 @@ static void recv_trailing_metadata_ready(void* arg, grpc_error* error) {
 //
 
 // For any pending batch completed in batch_data, adds the necessary
-// completion closures to closures, updating *num_closures as needed.
+// completion closures to closures.
 static void add_closure_for_completed_pending_batch(
     grpc_call_element* elem, subchannel_batch_data* batch_data,
     subchannel_call_retry_state* retry_state, grpc_error* error,
@@ -1950,7 +1948,7 @@ static void add_closure_for_completed_pending_batch(
 
 // If there are any cached ops to replay or pending ops to start on the
 // subchannel call, adds a closure to closures to invoke
-// start_retriable_subchannel_batches(), updating *num_closures as needed.
+// start_retriable_subchannel_batches().
 static void add_closures_for_replay_or_pending_send_ops(
     grpc_call_element* elem, subchannel_batch_data* batch_data,
     subchannel_call_retry_state* retry_state,
