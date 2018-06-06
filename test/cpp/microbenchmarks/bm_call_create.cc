@@ -38,6 +38,7 @@
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/connected_channel.h"
+#include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/surface/channel.h"
@@ -532,7 +533,7 @@ static void BM_IsolatedFilter(benchmark::State& state) {
 
   grpc_core::ExecCtx exec_ctx;
   size_t channel_size = grpc_channel_stack_size(
-      filters.size() == 0 ? nullptr : &filters[0], filters.size());
+      filters.data(), filters.size());
   grpc_channel_stack* channel_stack =
       static_cast<grpc_channel_stack*>(gpr_zalloc(channel_size));
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
@@ -646,7 +647,7 @@ static void BM_CallStackInit(benchmark::State& state) {
 
   grpc_core::ExecCtx exec_ctx;
   size_t channel_size = grpc_channel_stack_size(
-      filters.size() == 0 ? nullptr : &filters[0], filters.size());
+      filters.data(), filters.size());
   grpc_channel_stack* channel_stack =
       static_cast<grpc_channel_stack*>(gpr_zalloc(channel_size));
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
@@ -747,7 +748,7 @@ static void BM_StartTransportStreamOpBatch(benchmark::State& state) {
 
   grpc_core::ExecCtx exec_ctx;
   size_t channel_size = grpc_channel_stack_size(
-      filters.size() == 0 ? nullptr : &filters[0], filters.size());
+      filters.data(), filters.size());
   grpc_channel_stack* channel_stack =
       static_cast<grpc_channel_stack*>(gpr_zalloc(channel_size));
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
@@ -790,13 +791,22 @@ static void BM_StartTransportStreamOpBatch(benchmark::State& state) {
     payload.recv_initial_metadata.recv_initial_metadata = &metadata_batch;
     payload.recv_initial_metadata.recv_initial_metadata_ready = nullptr;
     // TODO(hcaseyal): set recv_initial_metadata peer_string?
-    payload.recv_message.recv_message = nullptr;
+
+    grpc_core::OrphanablePtr<grpc_core::ByteStream> recv_message_container;
+    payload.recv_message.recv_message = std::move(recv_message_container);
     payload.recv_message.recv_message_ready = nullptr;
     payload.recv_trailing_metadata.recv_trailing_metadata = nullptr;
     grpc_transport_stream_stats stats = {};
     payload.collect_stats.collect_stats = &stats;
-    std::unique_ptr<grpc_core::ByteStream>
-    
+
+    grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream> 
+        byte_stream_send;
+    payload.send_message.send_message.reset(byte_stream_send.get());
+
+    grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream> 
+        byte_stream_recv;
+    payload.recv_message.recv_message->reset(byte_stream_recv.get());
+
     /* Create new batch with all 6 ops */
     grpc_transport_stream_op_batch batch;
     batch.on_complete = nullptr;
