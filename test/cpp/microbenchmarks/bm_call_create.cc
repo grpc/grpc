@@ -778,7 +778,8 @@ static void BM_StartTransportStreamOpBatch(benchmark::State& state) {
   const int kArenaSize = 4096;
   call_args.arena = gpr_arena_create(kArenaSize);
   
-  while (state.KeepRunning()) {
+  while(state.KeepRunning()) {
+    //state.PauseTiming();
     GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     memset(call_stack, 0, channel_stack->call_stack_size);
     GRPC_ERROR_UNREF(
@@ -840,11 +841,11 @@ static void BM_StartTransportStreamOpBatch(benchmark::State& state) {
     batch.collect_stats = true;
     
     grpc_call_element* call_elem = CALL_ELEMS_FROM_STACK(call_args.call_stack);
-    //TODO(hcaseyal): Start measurement
+    //state.ResumeTiming();
     if (fixture.filter != nullptr) {      
       fixture.filter->start_transport_stream_op_batch(call_elem, &batch);
     }
-    //TODO(hcaseyal): End measurement
+    //state.PauseTiming();
 
     GRPC_CLOSURE_RUN(batch.on_complete, GRPC_ERROR_NONE);
     GRPC_CLOSURE_RUN(batch.payload->recv_initial_metadata.recv_initial_metadata_ready, GRPC_ERROR_NONE);
@@ -878,10 +879,10 @@ BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, CompressFilter);
 typedef Fixture<&grpc_http_client_filter, CHECKS_NOT_LAST | REQUIRES_TRANSPORT>
     HttpClientFilter;
 BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, HttpClientFilter);
-typedef Fixture<&grpc_http_server_filter, CHECKS_NOT_LAST> HttpServerFilter;
-BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, HttpServerFilter);
-typedef Fixture<&grpc_message_size_filter, CHECKS_NOT_LAST> MessageSizeFilter;
-BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, MessageSizeFilter);
+// typedef Fixture<&grpc_http_server_filter, CHECKS_NOT_LAST> HttpServerFilter;
+//BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, HttpServerFilter);
+//typedef Fixture<&grpc_message_size_filter, CHECKS_NOT_LAST> MessageSizeFilter;
+//BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, MessageSizeFilter);
 typedef Fixture<&grpc_server_load_reporting_filter, CHECKS_NOT_LAST>
     LoadReportingFilter;
 BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, LoadReportingFilter);
