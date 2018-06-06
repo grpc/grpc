@@ -422,7 +422,7 @@ def _compute_engine_creds(stub, args):
 
 def _oauth2_auth_token(stub, args):
     json_key_filename = os.environ[google_auth_environment_vars.CREDENTIALS]
-    wanted_email = json.load(open(json_key_filename, 'rb'))['client_email']
+    wanted_email = json.load(open(json_key_filename, 'r'))['client_email']
     response = _large_unary_common_behavior(stub, True, True, None)
     if wanted_email != response.username:
         raise ValueError('expected username %s, got %s' % (wanted_email,
@@ -435,7 +435,7 @@ def _oauth2_auth_token(stub, args):
 
 def _jwt_token_creds(stub, args):
     json_key_filename = os.environ[google_auth_environment_vars.CREDENTIALS]
-    wanted_email = json.load(open(json_key_filename, 'rb'))['client_email']
+    wanted_email = json.load(open(json_key_filename, 'r'))['client_email']
     response = _large_unary_common_behavior(stub, True, False, None)
     if wanted_email != response.username:
         raise ValueError('expected username %s, got %s' % (wanted_email,
@@ -444,7 +444,7 @@ def _jwt_token_creds(stub, args):
 
 def _per_rpc_creds(stub, args):
     json_key_filename = os.environ[google_auth_environment_vars.CREDENTIALS]
-    wanted_email = json.load(open(json_key_filename, 'rb'))['client_email']
+    wanted_email = json.load(open(json_key_filename, 'r'))['client_email']
     google_credentials, unused_project_id = google_auth.default(
         scopes=[args.oauth_scope])
     call_credentials = grpc.metadata_call_credentials(
