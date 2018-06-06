@@ -46,9 +46,9 @@ class CFStreamHandle final {
   void NotifyOnWrite(grpc_closure* closure);
   void Shutdown(grpc_error* error);
 
-  void Ref(const char* file = nullptr, int line = 0,
+  void Ref(const char* file = "", int line = 0,
            const char* reason = nullptr);
-  void Unref(const char* file = nullptr, int line = 0,
+  void Unref(const char* file = "", int line = 0,
              const char* reason = nullptr);
 
  private:
