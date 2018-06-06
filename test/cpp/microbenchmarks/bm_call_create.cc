@@ -751,7 +751,6 @@ static void BM_StartTransportStreamOpBatch(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   size_t channel_size = grpc_channel_stack_size(
       filters.data(), filters.size());
-  std::cout << "Channel size: " << channel_size << std::endl;
   grpc_channel_stack* channel_stack =
       static_cast<grpc_channel_stack*>(gpr_zalloc(channel_size));
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
@@ -870,12 +869,12 @@ typedef Fixture<&dummy_filter::dummy_filter, 0> DummyFilter;
 BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, DummyFilter);
 typedef Fixture<&grpc_message_compress_filter, CHECKS_NOT_LAST> CompressFilter;
 BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, CompressFilter);
-typedef Fixture<&grpc_client_deadline_filter, CHECKS_NOT_LAST>
-    ClientDeadlineFilter;
-BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, ClientDeadlineFilter);
-typedef Fixture<&grpc_server_deadline_filter, CHECKS_NOT_LAST>
-    ServerDeadlineFilter;
-BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, ServerDeadlineFilter);
+//typedef Fixture<&grpc_client_deadline_filter, CHECKS_NOT_LAST>
+   // ClientDeadlineFilter;
+//BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, ClientDeadlineFilter);
+//typedef Fixture<&grpc_server_deadline_filter, CHECKS_NOT_LAST>
+  //  ServerDeadlineFilter;
+//BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, ServerDeadlineFilter);
 typedef Fixture<&grpc_http_client_filter, CHECKS_NOT_LAST | REQUIRES_TRANSPORT>
     HttpClientFilter;
 BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, HttpClientFilter);
