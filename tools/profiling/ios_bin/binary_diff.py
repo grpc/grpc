@@ -30,7 +30,7 @@ import comment_on_pr
 
 size_labels = ('Core', 'ObjC', 'BoringSSL', 'Protobuf', 'Total')
 
-argp = argparse.ArgumentParser(description='Perform diff on microbenchmarks')
+argp = argparse.ArgumentParser(description='Binary size diff of gRPC Objective-C sample')
 
 argp.add_argument(
     '-d',
