@@ -21,7 +21,6 @@ RUN echo "deb https://download.mono-project.com/repo/ubuntu stable-trusty main" 
 
 RUN apt-get update && apt-get install -y \
     mono-devel \
-    ca-certificates-mono \
     nuget \
     && apt-get clean
 
