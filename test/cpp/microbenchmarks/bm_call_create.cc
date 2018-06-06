@@ -794,9 +794,11 @@ static void BM_StartTransportStreamOpBatch(benchmark::State& state) {
 
     grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream> 
         recv_message_stream;
+    //payload.recv_message.recv_message = 
+      //&grpc_core::MakeOrphanable<grpc_core::ByteStream>(recv_message_stream.get());
     payload.recv_message.recv_message = 
-      &grpc_core::MakeOrphanable<grpc_core::SliceBufferByteStream>(recv_message_stream.get());
-    
+      std::move(recv_message_stream.get());
+
     payload.recv_message.recv_message_ready = nullptr;
     payload.recv_trailing_metadata.recv_trailing_metadata = nullptr;
     grpc_transport_stream_stats stats = {};
