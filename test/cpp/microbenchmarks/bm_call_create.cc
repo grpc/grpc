@@ -792,6 +792,8 @@ static void BM_StartTransportStreamOpBatch(benchmark::State& state) {
     payload.recv_initial_metadata.recv_initial_metadata_ready = nullptr;
     // TODO(hcaseyal): set recv_initial_metadata peer_string?
 
+    OrphanablePtr<grpc_core::ByteStream> recv_message_stream;
+    payload.recv_message.recv_message = &recv_message_stream;
     payload.recv_message.recv_message_ready = nullptr;
     payload.recv_trailing_metadata.recv_trailing_metadata = nullptr;
     grpc_transport_stream_stats stats = {};
@@ -803,8 +805,7 @@ static void BM_StartTransportStreamOpBatch(benchmark::State& state) {
 
     grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream> 
         byte_stream_recv;
-    *payload.recv_message.recv_message = std::move(byte_stream_recv.get());
-    //payload.recv_message.recv_message->reset(byte_stream_recv.get());
+    payload.recv_message.recv_message->reset(byte_stream_recv.get());
 
     /* Create new batch with all 6 ops */
     grpc_transport_stream_op_batch batch;
@@ -824,6 +825,7 @@ static void BM_StartTransportStreamOpBatch(benchmark::State& state) {
     if (fixture.filter != nullptr) {      
       fixture.filter->start_transport_stream_op_batch(&call_elem, &batch);
     }
+    free(payload.recv_message.recv_message);
   }
   grpc_call_stack_destroy(call_stack, &final_info, nullptr);
   grpc_core::ExecCtx::Get()->Flush();
