@@ -1495,6 +1495,10 @@ static bool maybe_retry(grpc_call_element* elem,
 // subchannel_batch_data
 //
 
+// Creates a subchannel_batch_data object on the call's arena with the
+// specified refcount.  If set_on_complete is true, the batch's
+// on_complete callback will be set to point to on_complete();
+// otherwise, the batch's on_complete callback will be null.
 static subchannel_batch_data* batch_data_create(grpc_call_element* elem,
                                                 int refcount,
                                                 bool set_on_complete) {
