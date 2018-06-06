@@ -30,7 +30,8 @@ import comment_on_pr
 
 size_labels = ('Core', 'ObjC', 'BoringSSL', 'Protobuf', 'Total')
 
-argp = argparse.ArgumentParser(description='Binary size diff of gRPC Objective-C sample')
+argp = argparse.ArgumentParser(
+    description='Binary size diff of gRPC Objective-C sample')
 
 argp.add_argument(
     '-d',
@@ -40,6 +41,7 @@ argp.add_argument(
 
 args = argp.parse_args()
 
+
 def dir_size(dir):
     total = 0
     for dirpath, dirnames, filenames in os.walk(dir):
@@ -48,6 +50,7 @@ def dir_size(dir):
             total += os.stat(fp).st_size
     return total
 
+
 def get_size(where, frameworks):
     build_dir = 'src/objective-c/examples/Sample/Build-%s/' % where
     if not frameworks:
@@ -55,19 +58,30 @@ def get_size(where, frameworks):
         return parse_link_map(build_dir + link_map_filename)
     else:
         framework_dir = 'Build/Products/Release-iphoneos/Sample.app/Frameworks/'
-        boringssl_size = dir_size(build_dir + framework_dir + 'openssl.framework')
+        boringssl_size = dir_size(
+            build_dir + framework_dir + 'openssl.framework')
         core_size = dir_size(build_dir + framework_dir + 'grpc.framework')
         objc_size = dir_size(build_dir + framework_dir + 'GRPCClient.framework') + \
                     dir_size(build_dir + framework_dir + 'RxLibrary.framework') + \
                     dir_size(build_dir + framework_dir + 'ProtoRPC.framework')
-        protobuf_size = dir_size(build_dir + framework_dir + 'Protobuf.framework')
-        app_size = dir_size(build_dir + 'Build/Products/Release-iphoneos/Sample.app')
+        protobuf_size = dir_size(
+            build_dir + framework_dir + 'Protobuf.framework')
+        app_size = dir_size(
+            build_dir + 'Build/Products/Release-iphoneos/Sample.app')
         return core_size, objc_size, boringssl_size, protobuf_size, app_size
 
+
 def build(where, frameworks):
-    shutil.rmtree('src/objective-c/examples/Sample/Build-%s' % where, ignore_errors=True)
-    subprocess.check_call('CONFIG=opt EXAMPLE_PATH=src/objective-c/examples/Sample SCHEME=Sample FRAMEWORKS=%s ./build_one_example.sh' % ('YES' if frameworks else 'NO'), shell=True, cwd='src/objective-c/tests')
-    os.rename('src/objective-c/examples/Sample/Build', 'src/objective-c/examples/Sample/Build-%s' % where)
+    shutil.rmtree(
+        'src/objective-c/examples/Sample/Build-%s' % where, ignore_errors=True)
+    subprocess.check_call(
+        'CONFIG=opt EXAMPLE_PATH=src/objective-c/examples/Sample SCHEME=Sample FRAMEWORKS=%s ./build_one_example.sh'
+        % ('YES' if frameworks else 'NO'),
+        shell=True,
+        cwd='src/objective-c/tests')
+    os.rename('src/objective-c/examples/Sample/Build',
+              'src/objective-c/examples/Sample/Build-%s' % where)
+
 
 text = ''
 for frameworks in [False, True]:
@@ -90,11 +104,22 @@ for frameworks in [False, True]:
             subprocess.check_call(['git', 'checkout', where_am_i])
             subprocess.check_call(['git', 'submodule', 'update'])
 
-    text += ('****************FRAMEWORKS*****************\n' if frameworks else '******************STATIC*******************\n')
+    text += ('****************FRAMEWORKS*****************\n'
+             if frameworks else '******************STATIC*******************\n')
     row_format = "{:>10}{:>15}{:>15}" + '\n'
     text += row_format.format('New size', '', 'Old size')
     for i in range(0, len(size_labels)):
-        text += ('\n' if i == len(size_labels) - 1 else '') + row_format.format('{:,}'.format(new_size[i]), size_labels[i], '{:,}'.format(old_size[i]) if old_size != None else '')
+        if old_size == None:
+            diff_sign = ' '
+        elif new_size[i] == old_size[i]:
+            diff_sign = ' (=)'
+        elif new_size[i] > old_size[i]:
+            diff_sign = ' (>)'
+        else:
+            diff_sign = ' (<)'
+        text += ('\n' if i == len(size_labels) - 1 else '') + row_format.format(
+            '{:,}'.format(new_size[i]), size_labels[i] + diff_sign,
+            '{:,}'.format(old_size[i]) if old_size != None else '')
     text += '\n'
 
 print text
