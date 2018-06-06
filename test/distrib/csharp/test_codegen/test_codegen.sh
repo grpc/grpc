@@ -17,15 +17,13 @@ set -ex
 
 cd "$(dirname "$0")"
 
-unzip -o "$EXTERNAL_GIT_ROOT/input_artifacts/csharp_nugets_windows_dotnetcli.zip" -d TestNugetFeed
+ls -lR ../packages/Grpc.Tools.__GRPC_NUGET_VERSION__/tools
 
-./update_version.sh auto
+PROTOC=../packages/Grpc.Tools.__GRPC_NUGET_VERSION__/tools/linux_x64/protoc
+PLUGIN=../packages/Grpc.Tools.__GRPC_NUGET_VERSION__/tools/linux_x64/grpc_csharp_plugin
 
-nuget restore
+$PROTOC --plugin=protoc-gen-grpc=$PLUGIN --csharp_out=. --grpc_out=. -I . helloworld.proto
 
-xbuild DistribTest.sln
+ls *.cs
 
-mono DistribTest/bin/Debug/DistribTest.exe
-
-# test that codegen work
-test_codegen/test_codegen.sh
+echo 'Code generation works.'
