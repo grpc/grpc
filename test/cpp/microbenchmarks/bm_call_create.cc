@@ -378,6 +378,7 @@ static void StartTransportOp(grpc_channel_element* elem,
 
 static grpc_error* InitCallElem(grpc_call_element* elem,
                                 const grpc_call_element_args* args) {
+  gpr_log(GPR_INFO, "InitCallelem filter: %p", elem->filter);
   return GRPC_ERROR_NONE;
 }
 
@@ -742,6 +743,8 @@ static void BM_StartTransportStreamOpBatch(benchmark::State& state) {
     if (fixture.flags & CHECKS_NOT_LAST) {
       filters.push_back(&dummy_filter::dummy_filter);
     } else {
+      // Add another dummy filter so that all the benchmarked filters 
+      // have a dummy filter on the stack. For consistency. 
       filters.insert(filters.begin(), &dummy_filter::dummy_filter);
     }
   }
@@ -749,11 +752,12 @@ static void BM_StartTransportStreamOpBatch(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   size_t channel_size = grpc_channel_stack_size(
       filters.data(), filters.size());
+  std::cout << "Channel size: " << channel_size << std::endl;
   grpc_channel_stack* channel_stack =
       static_cast<grpc_channel_stack*>(gpr_zalloc(channel_size));
   GPR_ASSERT(GRPC_LOG_IF_ERROR(
       "channel_stack_init",
-      grpc_channel_stack_init(1, FilterDestroy, channel_stack, &filters[0],
+      grpc_channel_stack_init(1, FilterDestroy, channel_stack, filters.data(),
                               filters.size(), &channel_args,
                               fixture.flags & REQUIRES_TRANSPORT
                                   ? &dummy_transport::dummy_transport
@@ -778,6 +782,7 @@ static void BM_StartTransportStreamOpBatch(benchmark::State& state) {
   
   while (state.KeepRunning()) {
     GPR_TIMER_SCOPE("BenchmarkCycle", 0);
+    memset(call_stack, 0, channel_stack->call_stack_size);
     GRPC_ERROR_UNREF(
       grpc_call_stack_init(channel_stack, 1, DoNothing, nullptr, &call_args));
 
@@ -793,6 +798,7 @@ static void BM_StartTransportStreamOpBatch(benchmark::State& state) {
     grpc_metadata_batch_init(&metadata_batch_send_trailing);
     grpc_metadata_batch_init(&metadata_batch_recv_trailing);
     payload.send_initial_metadata.send_initial_metadata = &metadata_batch_send_init;
+    gpr_log(GPR_INFO, "InitCallelem filter: %p", CALL_ELEMS_FROM_STACK(call_args.call_stack)[1].filter);
 
     payload.send_trailing_metadata.send_trailing_metadata = &metadata_batch_send_trailing;
     payload.recv_initial_metadata.recv_initial_metadata = &metadata_batch_recv_init;
@@ -836,17 +842,25 @@ static void BM_StartTransportStreamOpBatch(benchmark::State& state) {
     batch.recv_trailing_metadata = true;
     batch.collect_stats = true;
     
-     grpc_call_element call_elem = CALL_ELEMS_FROM_STACK(call_args.call_stack)[0];
-
+    gpr_log(GPR_INFO, "InitCallelem filter: %p", CALL_ELEMS_FROM_STACK(call_args.call_stack)[1].filter);
+    grpc_call_element* call_elem = CALL_ELEMS_FROM_STACK(call_args.call_stack);
+    //TODO(hcaseyal): Start measurement
     if (fixture.filter != nullptr) {      
-      fixture.filter->start_transport_stream_op_batch(&call_elem, &batch);
+      fixture.filter->start_transport_stream_op_batch(call_elem, &batch);
+      gpr_log(GPR_INFO, "After start_transport_stream: %p", CALL_ELEMS_FROM_STACK(call_args.call_stack)[1].filter);
     }
+    //TODO(hcaseyal): End measurement
+
+    GRPC_CLOSURE_RUN(batch.on_complete, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_RUN(batch.payload->recv_initial_metadata.recv_initial_metadata_ready, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_RUN(batch.payload->recv_message.recv_message_ready, GRPC_ERROR_NONE);
   }
+
   grpc_call_stack_destroy(call_stack, &final_info, nullptr);
   grpc_core::ExecCtx::Get()->Flush();
 
-  gpr_arena_destroy(call_args.arena);
   grpc_channel_stack_destroy(channel_stack);
+  gpr_arena_destroy(call_args.arena);
 
   gpr_free(channel_stack);
   gpr_free(call_stack);
@@ -858,10 +872,24 @@ typedef Fixture<nullptr, 0> NoFilter;
 BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, NoFilter);
 typedef Fixture<&dummy_filter::dummy_filter, 0> DummyFilter;
 BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, DummyFilter);
-typedef Fixture<&grpc_client_channel_filter, 0> ClientChannelFilter;
-BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, ClientChannelFilter);
-//typedef Fixture<&grpc_message_compress_filter, CHECKS_NOT_LAST> CompressFilter;
-//BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, CompressFilter);
+typedef Fixture<&grpc_message_compress_filter, CHECKS_NOT_LAST> CompressFilter;
+BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, CompressFilter);
+typedef Fixture<&grpc_client_deadline_filter, CHECKS_NOT_LAST>
+    ClientDeadlineFilter;
+BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, ClientDeadlineFilter);
+typedef Fixture<&grpc_server_deadline_filter, CHECKS_NOT_LAST>
+    ServerDeadlineFilter;
+BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, ServerDeadlineFilter);
+typedef Fixture<&grpc_http_client_filter, CHECKS_NOT_LAST | REQUIRES_TRANSPORT>
+    HttpClientFilter;
+BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, HttpClientFilter);
+typedef Fixture<&grpc_http_server_filter, CHECKS_NOT_LAST> HttpServerFilter;
+BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, HttpServerFilter);
+typedef Fixture<&grpc_message_size_filter, CHECKS_NOT_LAST> MessageSizeFilter;
+BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, MessageSizeFilter);
+typedef Fixture<&grpc_server_load_reporting_filter, CHECKS_NOT_LAST>
+    LoadReportingFilter;
+BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, LoadReportingFilter);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Benchmarks isolating grpc_call
