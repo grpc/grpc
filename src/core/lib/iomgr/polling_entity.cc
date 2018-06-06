@@ -61,8 +61,14 @@ bool grpc_polling_entity_is_empty(const grpc_polling_entity* pollent) {
 void grpc_polling_entity_add_to_pollset_set(grpc_polling_entity* pollent,
                                             grpc_pollset_set* pss_dst) {
   if (pollent->tag == GRPC_POLLS_POLLSET) {
+#ifdef GRPC_CFSTREAM
+    if (pollent->pollent.pollset != nullptr) {
+      grpc_pollset_set_add_pollset(pss_dst, pollent->pollent.pollset);
+    }
+#else
     GPR_ASSERT(pollent->pollent.pollset != nullptr);
     grpc_pollset_set_add_pollset(pss_dst, pollent->pollent.pollset);
+#endif
   } else if (pollent->tag == GRPC_POLLS_POLLSET_SET) {
     GPR_ASSERT(pollent->pollent.pollset_set != nullptr);
     grpc_pollset_set_add_pollset_set(pss_dst, pollent->pollent.pollset_set);
@@ -75,8 +81,14 @@ void grpc_polling_entity_add_to_pollset_set(grpc_polling_entity* pollent,
 void grpc_polling_entity_del_from_pollset_set(grpc_polling_entity* pollent,
                                               grpc_pollset_set* pss_dst) {
   if (pollent->tag == GRPC_POLLS_POLLSET) {
+#ifdef GRPC_CFSTREAM
+    if (pollent->pollent.pollset != nullptr) {
+      grpc_pollset_set_del_pollset(pss_dst, pollent->pollent.pollset);
+    }
+#else
     GPR_ASSERT(pollent->pollent.pollset != nullptr);
     grpc_pollset_set_del_pollset(pss_dst, pollent->pollent.pollset);
+#endif
   } else if (pollent->tag == GRPC_POLLS_POLLSET_SET) {
     GPR_ASSERT(pollent->pollent.pollset_set != nullptr);
     grpc_pollset_set_del_pollset_set(pss_dst, pollent->pollent.pollset_set);

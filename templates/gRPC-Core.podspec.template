@@ -175,6 +175,14 @@
       ss.private_header_files = ${ruby_multiline_list(grpc_private_headers(libs), 30)}
     end
 
+    s.subspec 'CFStream-Implementation' do |ss|
+      ss.header_mappings_dir = '.'
+      ss.dependency "#{s.name}/Implementation", version
+      ss.pod_target_xcconfig = {
+        'GCC_PREPROCESSOR_DEFINITIONS' => 'GRPC_CFSTREAM=1'
+      }
+    end
+
     s.subspec 'Cronet-Interface' do |ss|
       ss.header_mappings_dir = 'include/grpc'
       ss.source_files = ${ruby_multiline_list(grpc_cronet_public_headers(libs), 22)}

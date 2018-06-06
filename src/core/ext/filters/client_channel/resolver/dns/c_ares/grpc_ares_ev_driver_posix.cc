@@ -18,7 +18,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"
-#if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET)
+#if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
 
 #include <ares.h>
 #include <sys/ioctl.h>
@@ -348,4 +348,4 @@ void grpc_ares_ev_driver_start(grpc_ares_ev_driver* ev_driver) {
   gpr_mu_unlock(&ev_driver->mu);
 }
 
-#endif /* GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET) */
+#endif /* GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER) */

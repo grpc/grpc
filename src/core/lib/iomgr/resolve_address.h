@@ -37,6 +37,10 @@
 #include <sys/socket.h>
 #endif
 
+#ifdef GRPC_CFSTREAM
+#include <sys/socket.h>
+#endif
+
 #include "src/core/lib/iomgr/pollset_set.h"
 
 #define GRPC_MAX_SOCKADDR_SIZE 128

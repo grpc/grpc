@@ -20,7 +20,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_TCP
 
 #include "src/core/lib/iomgr/network_status_tracker.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
@@ -819,4 +819,4 @@ void grpc_tcp_destroy_and_release_fd(grpc_endpoint* ep, int* fd,
   TCP_UNREF(tcp, "destroy");
 }
 
-#endif
+#endif /* GRPC_POSIX_SOCKET_TCP */
