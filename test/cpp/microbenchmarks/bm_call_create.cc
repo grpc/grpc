@@ -378,7 +378,6 @@ static void StartTransportOp(grpc_channel_element* elem,
 
 static grpc_error* InitCallElem(grpc_call_element* elem,
                                 const grpc_call_element_args* args) {
-  gpr_log(GPR_INFO, "InitCallelem filter: %p", elem->filter);
   return GRPC_ERROR_NONE;
 }
 
@@ -798,7 +797,6 @@ static void BM_StartTransportStreamOpBatch(benchmark::State& state) {
     grpc_metadata_batch_init(&metadata_batch_send_trailing);
     grpc_metadata_batch_init(&metadata_batch_recv_trailing);
     payload.send_initial_metadata.send_initial_metadata = &metadata_batch_send_init;
-    gpr_log(GPR_INFO, "InitCallelem filter: %p", CALL_ELEMS_FROM_STACK(call_args.call_stack)[1].filter);
 
     payload.send_trailing_metadata.send_trailing_metadata = &metadata_batch_send_trailing;
     payload.recv_initial_metadata.recv_initial_metadata = &metadata_batch_recv_init;
@@ -842,12 +840,10 @@ static void BM_StartTransportStreamOpBatch(benchmark::State& state) {
     batch.recv_trailing_metadata = true;
     batch.collect_stats = true;
     
-    gpr_log(GPR_INFO, "InitCallelem filter: %p", CALL_ELEMS_FROM_STACK(call_args.call_stack)[1].filter);
     grpc_call_element* call_elem = CALL_ELEMS_FROM_STACK(call_args.call_stack);
     //TODO(hcaseyal): Start measurement
     if (fixture.filter != nullptr) {      
       fixture.filter->start_transport_stream_op_batch(call_elem, &batch);
-      gpr_log(GPR_INFO, "After start_transport_stream: %p", CALL_ELEMS_FROM_STACK(call_args.call_stack)[1].filter);
     }
     //TODO(hcaseyal): End measurement
 
