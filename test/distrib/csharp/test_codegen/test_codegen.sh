@@ -17,12 +17,18 @@ set -ex
 
 cd "$(dirname "$0")"
 
-ls -lR ../packages/Grpc.Tools.__GRPC_NUGET_VERSION__/tools
+ls -lR "../packages/Grpc.Tools.__GRPC_NUGET_VERSION__/tools"
 
-PROTOC=../packages/Grpc.Tools.__GRPC_NUGET_VERSION__/tools/linux_x64/protoc
-PLUGIN=../packages/Grpc.Tools.__GRPC_NUGET_VERSION__/tools/linux_x64/grpc_csharp_plugin
+PLATFORM_ARCH=linux_x64
+if [ "$(getconf LONG_BIT)" == "32" ]
+then
+  PLATFORM_ARCH=linux_x86
+fi
 
-$PROTOC --plugin=protoc-gen-grpc=$PLUGIN --csharp_out=. --grpc_out=. -I . helloworld.proto
+PROTOC="../packages/Grpc.Tools.__GRPC_NUGET_VERSION__/tools/${PLATFORM_ARCH}/protoc"
+PLUGIN="../packages/Grpc.Tools.__GRPC_NUGET_VERSION__/tools/${PLATFORM_ARCH}/grpc_csharp_plugin"
+
+$PROTOC --plugin="protoc-gen-grpc=${PLUGIN}" --csharp_out=. --grpc_out=. -I . helloworld.proto
 
 ls *.cs
 
