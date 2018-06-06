@@ -46,7 +46,28 @@ void gpr_mu_lock(gpr_mu* mu) {
   GPR_TIMER_SCOPE("gpr_mu_lock", 0);
   int res = pthread_mutex_lock(mu);
   if (res != 0) {
-    gpr_log(GPR_INFO, "pthread_mutex_lock returned %d", res);
+    gpr_log(GPR_ERROR, "pthread_mutex_lock returned %d", res);
+    gpr_log(GPR_ERROR, "pthread_mutex_lock returned %d", res);
+    gpr_log(GPR_ERROR, "pthread_mutex_lock returned %d", res);
+    gpr_log(GPR_ERROR, "pthread_mutex_lock returned %d", res);
+    gpr_log(GPR_ERROR, "pthread_mutex_lock returned %d", res);
+    gpr_log(GPR_ERROR, "pthread_mutex_lock returned %d", res);
+    gpr_log(GPR_ERROR, "pthread_mutex_lock returned %d", res);
+    gpr_log(GPR_ERROR, "pthread_mutex_lock returned %d", res);
+    gpr_log(GPR_ERROR, "pthread_mutex_lock returned %d", res);
+    gpr_log(GPR_ERROR, "pthread_mutex_lock returned %d", res);
+    gpr_log(GPR_ERROR, "pthread_mutex_lock returned %d", res);
+    gpr_log(GPR_ERROR, "pthread_mutex_lock returned %d", res);
+    gpr_log(GPR_ERROR, "pthread_mutex_lock returned %d", res);
+    gpr_log(GPR_ERROR, "pthread_mutex_lock returned %d", res);
+    gpr_log(GPR_ERROR, "pthread_mutex_lock returned %d", res);
+    gpr_log(GPR_ERROR, "pthread_mutex_lock returned %d", res);
+    gpr_log(GPR_ERROR, "pthread_mutex_lock returned %d", res);
+    gpr_log(GPR_ERROR, "pthread_mutex_lock returned %d", res);
+    gpr_log(GPR_ERROR, "pthread_mutex_lock returned %d", res);
+    gpr_log(GPR_ERROR, "pthread_mutex_lock returned %d", res);
+    gpr_log(GPR_ERROR, "pthread_mutex_lock returned %d", res);
+    gpr_log(GPR_ERROR, "pthread_mutex_lock returned %d", res);
     GPR_ASSERT(res == 0);
   }
 }
