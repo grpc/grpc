@@ -775,28 +775,39 @@ static void BM_StartTransportStreamOpBatch(benchmark::State& state) {
   call_args.deadline = deadline;
   const int kArenaSize = 4096;
   call_args.arena = gpr_arena_create(kArenaSize);
-  GRPC_ERROR_UNREF(
-        grpc_call_stack_init(channel_stack, 1, DoNothing, nullptr, &call_args));
   
   while (state.KeepRunning()) {
     GPR_TIMER_SCOPE("BenchmarkCycle", 0);
+    GRPC_ERROR_UNREF(
+      grpc_call_stack_init(channel_stack, 1, DoNothing, nullptr, &call_args));
+
     /* Create new payload */
     grpc_transport_stream_op_batch_payload payload;
-    grpc_metadata_batch metadata_batch;
-    grpc_metadata_batch_init(&metadata_batch);
-    payload.send_initial_metadata.send_initial_metadata = &metadata_batch;
-    payload.send_initial_metadata.send_initial_metadata_flags = 0;
-    // TODO(hcaseyal): set payload send_initial_metadata peer_string?
-    payload.send_trailing_metadata.send_trailing_metadata = &metadata_batch;
-    payload.recv_initial_metadata.recv_initial_metadata = &metadata_batch;
-    payload.recv_initial_metadata.recv_initial_metadata_ready = nullptr;
-    // TODO(hcaseyal): set recv_initial_metadata peer_string?
+    memset(&payload, 0, sizeof(grpc_transport_stream_op_batch_payload));
+    grpc_metadata_batch metadata_batch_send_init;
+    grpc_metadata_batch metadata_batch_recv_init;
+    grpc_metadata_batch metadata_batch_send_trailing;
+    grpc_metadata_batch metadata_batch_recv_trailing;
+    grpc_metadata_batch_init(&metadata_batch_send_init);
+    grpc_metadata_batch_init(&metadata_batch_recv_init);
+    grpc_metadata_batch_init(&metadata_batch_send_trailing);
+    grpc_metadata_batch_init(&metadata_batch_recv_trailing);
+    payload.send_initial_metadata.send_initial_metadata = &metadata_batch_send_init;
+
+    payload.send_trailing_metadata.send_trailing_metadata = &metadata_batch_send_trailing;
+    payload.recv_initial_metadata.recv_initial_metadata = &metadata_batch_recv_init;
+   
+    gpr_atm peer_address_atm;
+    payload.recv_initial_metadata.peer_string = &peer_address_atm;
+    std::string peer_address_string = "Unknown.";
+    gpr_atm_rel_store(payload.recv_initial_metadata.peer_string, 
+                  (gpr_atm)gpr_strdup(peer_address_string.data()));
+
+    payload.recv_trailing_metadata.recv_trailing_metadata = &metadata_batch_recv_trailing;
 
     grpc_core::OrphanablePtr<grpc_core::ByteStream> op;
     payload.recv_message.recv_message = &op;
 
-    payload.recv_message.recv_message_ready = nullptr;
-    payload.recv_trailing_metadata.recv_trailing_metadata = nullptr;
     grpc_transport_stream_stats stats = {};
     payload.collect_stats.collect_stats = &stats;
 
