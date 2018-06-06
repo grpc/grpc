@@ -826,7 +826,6 @@ static void BM_StartTransportStreamOpBatch(benchmark::State& state) {
     if (fixture.filter != nullptr) {      
       fixture.filter->start_transport_stream_op_batch(&call_elem, &batch);
     }
-    free(payload.recv_message.recv_message);
   }
   grpc_call_stack_destroy(call_stack, &final_info, nullptr);
   grpc_core::ExecCtx::Get()->Flush();
