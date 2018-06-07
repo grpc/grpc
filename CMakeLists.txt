@@ -700,6 +700,7 @@ target_include_directories(address_sorting
 )
 
 target_link_libraries(address_sorting
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
 )
 
