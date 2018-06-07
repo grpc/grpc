@@ -800,7 +800,9 @@ static void BM_StartTransportStreamOpBatch(benchmark::State& state) {
 
     payload.send_trailing_metadata.send_trailing_metadata = &metadata_batch_send_trailing;
     payload.recv_initial_metadata.recv_initial_metadata = &metadata_batch_recv_init;
-   
+    uint32_t recv_flags = 0;
+    payload.recv_initial_metadata.recv_flags = &recv_flags;
+
     gpr_atm peer_address_atm;
     payload.recv_initial_metadata.peer_string = &peer_address_atm;
     std::string peer_address_string = "Unknown.";
@@ -870,19 +872,19 @@ typedef Fixture<&dummy_filter::dummy_filter, 0> DummyFilter;
 BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, DummyFilter);
 typedef Fixture<&grpc_message_compress_filter, CHECKS_NOT_LAST> CompressFilter;
 BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, CompressFilter);
-//typedef Fixture<&grpc_client_deadline_filter, CHECKS_NOT_LAST>
-   // ClientDeadlineFilter;
-//BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, ClientDeadlineFilter);
-//typedef Fixture<&grpc_server_deadline_filter, CHECKS_NOT_LAST>
-  //  ServerDeadlineFilter;
-//BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, ServerDeadlineFilter);
+typedef Fixture<&grpc_client_deadline_filter, CHECKS_NOT_LAST>
+    ClientDeadlineFilter;
+BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, ClientDeadlineFilter);
+typedef Fixture<&grpc_server_deadline_filter, CHECKS_NOT_LAST>
+    ServerDeadlineFilter;
+BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, ServerDeadlineFilter);
 typedef Fixture<&grpc_http_client_filter, CHECKS_NOT_LAST | REQUIRES_TRANSPORT>
     HttpClientFilter;
 BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, HttpClientFilter);
-// typedef Fixture<&grpc_http_server_filter, CHECKS_NOT_LAST> HttpServerFilter;
-//BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, HttpServerFilter);
-//typedef Fixture<&grpc_message_size_filter, CHECKS_NOT_LAST> MessageSizeFilter;
-//BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, MessageSizeFilter);
+ typedef Fixture<&grpc_http_server_filter, CHECKS_NOT_LAST> HttpServerFilter;
+BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, HttpServerFilter);
+typedef Fixture<&grpc_message_size_filter, CHECKS_NOT_LAST> MessageSizeFilter;
+BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, MessageSizeFilter);
 typedef Fixture<&grpc_server_load_reporting_filter, CHECKS_NOT_LAST>
     LoadReportingFilter;
 BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, LoadReportingFilter);

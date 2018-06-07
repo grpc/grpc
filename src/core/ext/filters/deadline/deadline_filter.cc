@@ -292,8 +292,11 @@ static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
   // Get deadline from metadata and start the timer if needed.
   start_timer_if_needed(elem, calld->recv_initial_metadata->deadline);
   // Invoke the next callback.
-  calld->next_recv_initial_metadata_ready->cb(
-      calld->next_recv_initial_metadata_ready->cb_arg, error);
+  // TODO(hcaseyal): use GRPC_CLOSURE_RUN?
+  if (calld->next_recv_initial_metadata_ready != nullptr) {
+    calld->next_recv_initial_metadata_ready->cb(
+        calld->next_recv_initial_metadata_ready->cb_arg, error);
+  }
 }
 
 // Method for starting a call op for server filter.
