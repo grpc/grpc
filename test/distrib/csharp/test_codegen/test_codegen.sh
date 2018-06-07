@@ -31,7 +31,7 @@ fi
 PROTOC="../packages/Grpc.Tools.__GRPC_NUGET_VERSION__/tools/${PLATFORM_ARCH}/protoc"
 PLUGIN="../packages/Grpc.Tools.__GRPC_NUGET_VERSION__/tools/${PLATFORM_ARCH}/grpc_csharp_plugin"
 
-$PROTOC --plugin="protoc-gen-grpc=${PLUGIN}" --csharp_out=. --grpc_out=. -I . helloworld.proto
+$PROTOC --plugin="protoc-gen-grpc=${PLUGIN}" --csharp_out=. --grpc_out=. -I . testcodegen.proto
 
 ls *.cs
 
