@@ -42,9 +42,10 @@
 namespace grpc_core {
 namespace channelz {
 
-// TODO(ncteisen): more this functions to a loc where it can be used
 namespace {
 
+// TODO(ncteisen): move this function to a common helper location.
+//
 // returns an allocated string that represents tm according to RFC-3339, and,
 // more specifically, follows:
 // https://developers.google.com/protocol-buffers/docs/proto3#json
@@ -89,14 +90,12 @@ grpc_json* add_num_str(grpc_json* parent, grpc_json* it, const char* name,
 }  // namespace
 
 Channel::Channel(grpc_channel* channel, size_t channel_tracer_max_nodes)
-    : channel_(channel) {
+    : channel_(channel), target_(UniquePtr<char>(grpc_channel_get_target(channel_))), channel_uuid_(ChannelzRegistry::Register(this)) {
   trace_.Init(channel_tracer_max_nodes);
-  target_ = grpc_channel_get_target(channel_);
-  channel_uuid_ = ChannelzRegistry::Register(this);
+  gpr_atm_no_barrier_store(&last_call_started_millis_, (gpr_atm)ExecCtx::Get()->Now());
 }
 
 Channel::~Channel() {
-  gpr_free(const_cast<char*>(target_));
   trace_.Destroy();
   ChannelzRegistry::Unregister(channel_uuid_);
 }
@@ -107,7 +106,7 @@ void Channel::RecordCallStarted() {
 }
 
 grpc_connectivity_state Channel::GetConnectivityState() {
-  if (channel_destroyed_) {
+  if (channel_ == nullptr) {
     return GRPC_CHANNEL_SHUTDOWN;
   } else {
     return grpc_channel_check_connectivity_state(channel_, false);
@@ -119,25 +118,20 @@ char* Channel::RenderJSON() {
   grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
   grpc_json* json = top_level_json;
   grpc_json* json_iterator = nullptr;
-
   // create and fill the ref child
   json_iterator = grpc_json_create_child(json_iterator, json, "ref", nullptr,
                                          GRPC_JSON_OBJECT, false);
   json = json_iterator;
   json_iterator = nullptr;
   json_iterator = add_num_str(json, json_iterator, "channelId", channel_uuid_);
-
   // reset json iterators to top level object
   json = top_level_json;
   json_iterator = nullptr;
-
   // create and fill the data child.
   grpc_json* data = grpc_json_create_child(json_iterator, json, "data", nullptr,
                                            GRPC_JSON_OBJECT, false);
-
   json = data;
   json_iterator = nullptr;
-
   // create and fill the connectivity state child.
   grpc_connectivity_state connectivity_state = GetConnectivityState();
   json_iterator = grpc_json_create_child(json_iterator, json, "state", nullptr,
@@ -146,12 +140,10 @@ char* Channel::RenderJSON() {
   grpc_json_create_child(nullptr, json, "state",
                          grpc_connectivity_state_name(connectivity_state),
                          GRPC_JSON_STRING, false);
-
   // reset the parent to be the data object.
   json = data;
-  json_iterator = grpc_json_create_child(json_iterator, json, "target", target_,
+  json_iterator = grpc_json_create_child(json_iterator, json, "target", target_.get(),
                                          GRPC_JSON_STRING, false);
-
   // fill in the channel trace if applicable
   grpc_json* trace = trace_->RenderJSON();
   if (trace != nullptr) {
@@ -163,11 +155,9 @@ char* Channel::RenderJSON() {
     trace->key = "trace";
     trace->owns_value = false;
   }
-
   // reset the parent to be the data object.
   json = data;
   json_iterator = nullptr;
-
   // We use -1 as sentinel values since proto default value for integers is
   // zero, and the confuses the parser into thinking the value weren't present
   json_iterator = add_num_str(json, json_iterator, "callsStarted",
@@ -180,7 +170,6 @@ char* Channel::RenderJSON() {
   json_iterator = grpc_json_create_child(
       json_iterator, json, "lastCallStartedTimestamp",
       fmt_time(ts), GRPC_JSON_STRING, true);
-
   // render and return the over json object
   char* json_str = grpc_json_dump_to_string(top_level_json, 0);
   grpc_json_destroy(top_level_json);

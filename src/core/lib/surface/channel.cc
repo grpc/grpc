@@ -186,18 +186,11 @@ static grpc_channel_args* build_channel_args(
   return grpc_channel_args_copy_and_add(input_args, new_args, num_new_args);
 }
 
-char* grpc_channel_get_trace(grpc_channel* channel) {
-  grpc_json* json = channel->channelz_channel->trace()->RenderJSON();
-  char* json_str = grpc_json_dump_to_string(json, 0);
-  grpc_json_destroy(json);
-  return json_str;
-}
-
 char* grpc_channel_render_channelz(grpc_channel* channel) {
   return channel->channelz_channel->RenderJSON();
 }
 
-grpc_core::channelz::Channel* grpc_channel_get_channelz_channel(
+grpc_core::channelz::Channel* grpc_channel_get_channelz_channel_node(
     grpc_channel* channel) {
   return channel->channelz_channel.get();
 }
@@ -417,7 +410,6 @@ static void destroy_channel(void* arg, grpc_error* error) {
     GRPC_MDELEM_UNREF(rc->authority);
     gpr_free(rc);
   }
-  channel->channelz_channel.reset();
   gpr_mu_destroy(&channel->registered_call_mu);
   gpr_free(channel->target);
   gpr_free(channel);

@@ -258,7 +258,8 @@ static void test_invoke_simple_request(grpc_end2end_test_config config) {
   // The following is a quick sanity check on channelz functionality. It
   // ensures that core properly tracked the one call that occurred in this
   // simple end2end test.
-  char* json = grpc_channel_render_channelz(f.client);
+  grpc_core::channelz::Channel* channelz_channel = grpc_channel_get_channelz_channel_node(f.client);
+  char* json = channelz_channel->RenderJSON();
   GPR_ASSERT(nullptr != strstr(json, "\"callsStarted\":\"1\""));
   GPR_ASSERT(nullptr != strstr(json, "\"callsFailed\":\"1\""));
   GPR_ASSERT(nullptr != strstr(json, "\"callsSucceeded\":\"-1\""));
@@ -279,7 +280,8 @@ static void test_invoke_10_simple_requests(grpc_end2end_test_config config) {
 
   // The following is a quick sanity check on channelz functionality. It
   // ensures that core properly tracked the ten calls that occurred.
-  char* json = grpc_channel_render_channelz(f.client);
+  grpc_core::channelz::Channel* channelz_channel = grpc_channel_get_channelz_channel_node(f.client);
+  char* json = channelz_channel->RenderJSON();
   GPR_ASSERT(nullptr != strstr(json, "\"callsStarted\":\"10\""));
   GPR_ASSERT(nullptr != strstr(json, "\"callsFailed\":\"10\""));
   GPR_ASSERT(nullptr != strstr(json, "\"callsSucceeded\":\"-1\""));

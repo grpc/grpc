@@ -151,32 +151,27 @@ TEST_P(ChannelzChannelTest, BasicChannelAPIFunctionality) {
   ValidateChannel(channelz_channel, {3, 3, 3});
 }
 
-TEST_P(ChannelzChannelTest, LastCallStartedTimestamp) {
+TEST_P(ChannelzChannelTest, LastCallStartedMillis) {
   grpc_core::ExecCtx exec_ctx;
   ChannelFixture channel(GetParam());
   intptr_t uuid = grpc_channel_get_uuid(channel.channel());
   Channel* channelz_channel = ChannelzRegistry::Get<Channel>(uuid);
-
   // start a call to set the last call started timestamp
   channelz_channel->RecordCallStarted();
   grpc_millis millis1 = GetLastCallStartedMillis(channelz_channel);
-
   // time gone by should not affect the timestamp
   ChannelzSleep(100);
   grpc_millis millis2 = GetLastCallStartedMillis(channelz_channel);
   EXPECT_EQ(millis1, millis2);
-
   // calls succeeded or failed should not affect the timestamp
   ChannelzSleep(100);
   channelz_channel->RecordCallFailed();
   channelz_channel->RecordCallSucceeded();
   grpc_millis millis3 = GetLastCallStartedMillis(channelz_channel);
   EXPECT_EQ(millis1, millis3);
-
   // another call started should affect the timestamp
   // sleep for extra long to avoid flakes (since we cache Now())
   ChannelzSleep(5000);
-  grpc_core::ExecCtx::Get()->InvalidateNow();
   channelz_channel->RecordCallStarted();
   grpc_millis millis4 = GetLastCallStartedMillis(channelz_channel);
   EXPECT_NE(millis1, millis4);

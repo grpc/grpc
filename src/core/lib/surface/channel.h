@@ -51,9 +51,8 @@ grpc_call* grpc_channel_create_pollset_set_call(
 /** Get a (borrowed) pointer to this channels underlying channel stack */
 grpc_channel_stack* grpc_channel_get_channel_stack(grpc_channel* channel);
 
-grpc_core::channelz::Channel* grpc_channel_get_channelz_channel(
+grpc_core::channelz::Channel* grpc_channel_get_channelz_channel_node(
     grpc_channel* channel);
-char* grpc_channel_render_channelz(grpc_channel* channel);
 
 /** Get a grpc_mdelem of grpc-status: X where X is the numeric value of
     status_code.

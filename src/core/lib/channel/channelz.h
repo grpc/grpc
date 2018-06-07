@@ -56,8 +56,8 @@ class Channel : public RefCounted<Channel> {
   ChannelTrace* trace() { return trace_.get(); }
 
   void set_channel_destroyed() {
-    GPR_ASSERT(!channel_destroyed_);
-    channel_destroyed_ = true;
+    GPR_ASSERT(channel_ != nullptr);
+    channel_ = nullptr;
   }
 
   intptr_t channel_uuid() { return channel_uuid_; }
@@ -66,17 +66,18 @@ class Channel : public RefCounted<Channel> {
   // testing peer friend.
   friend class testing::ChannelPeer;
 
-  bool channel_destroyed_ = false;
+  // helper for getting connectivity state.
+  grpc_connectivity_state GetConnectivityState();
+
+  // Not owned. Will be set to nullptr when the channel is destroyed.
   grpc_channel* channel_;
-  const char* target_;
+  UniquePtr<char> target_;
   gpr_atm calls_started_ = 0;
   gpr_atm calls_succeeded_ = 0;
   gpr_atm calls_failed_ = 0;
   gpr_atm last_call_started_millis_;
-  intptr_t channel_uuid_;
+  const intptr_t channel_uuid_;
   ManualConstructor<ChannelTrace> trace_;
-
-  grpc_connectivity_state GetConnectivityState();
 };
 
 }  // namespace channelz

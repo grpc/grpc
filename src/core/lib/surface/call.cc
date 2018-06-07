@@ -478,6 +478,10 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
                                                &call->pollent);
   }
 
+  grpc_core::channelz::Channel* channelz_channel =
+      grpc_channel_get_channelz_channel_node(call->channel);
+  channelz_channel->RecordCallStarted();
+
   grpc_slice_unref_internal(path);
 
   return error;
@@ -1078,18 +1082,7 @@ static void recv_trailing_filter(void* args, grpc_metadata_batch* b) {
     grpc_status_code status_code =
         grpc_get_status_code_from_metadata(b->idx.named.grpc_status->md);
     grpc_error* error = GRPC_ERROR_NONE;
-    grpc_core::channelz::Channel* channelz_channel =
-        call->channel != nullptr
-            ? grpc_channel_get_channelz_channel(call->channel)
-            : nullptr;
-    if (status_code == GRPC_STATUS_OK) {
-      if (channelz_channel != nullptr) {
-        channelz_channel->RecordCallSucceeded();
-      }
-    } else {
-      if (channelz_channel != nullptr) {
-        channelz_channel->RecordCallFailed();
-      }
+    if (status_code != GRPC_STATUS_OK) {
       error = grpc_error_set_int(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error received from peer"),
           GRPC_ERROR_INT_GRPC_STATUS, static_cast<intptr_t>(status_code));
@@ -1267,6 +1260,16 @@ static void post_batch_completion(batch_control* bctl) {
       get_final_status(call, set_cancelled_value,
                        call->final_op.server.cancelled, nullptr, nullptr);
     }
+
+    if (call->channel != nullptr) {
+      grpc_core::channelz::Channel* channelz_channel = grpc_channel_get_channelz_channel_node(call->channel);
+      if (*call->final_op.client.status != GRPC_STATUS_OK) {
+        channelz_channel->RecordCallFailed();
+      } else {
+        channelz_channel->RecordCallSucceeded();
+      }
+    }
+
 
     GRPC_ERROR_UNREF(error);
     error = GRPC_ERROR_NONE;
@@ -1675,9 +1678,6 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
           stream_op_payload->send_initial_metadata.peer_string =
               &call->peer_string;
         }
-        grpc_core::channelz::Channel* channelz_channel =
-            grpc_channel_get_channelz_channel(call->channel);
-        channelz_channel->RecordCallStarted();
         break;
       }
       case GRPC_OP_SEND_MESSAGE: {
