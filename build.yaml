@@ -536,6 +536,19 @@ filegroups:
   uses:
   - grpc_codegen
   - grpc_trace_headers
+- name: grpc_cfstream
+  headers:
+  - src/core/lib/iomgr/cfstream_handle.h
+  - src/core/lib/iomgr/endpoint_cfstream.h
+  - src/core/lib/iomgr/error_cfstream.h
+  src:
+  - src/core/lib/iomgr/cfstream_handle.cc
+  - src/core/lib/iomgr/endpoint_cfstream.cc
+  - src/core/lib/iomgr/error_cfstream.cc
+  - src/core/lib/iomgr/tcp_client_cfstream.cc
+  uses:
+  - grpc_base_headers
+  - gpr_base_headers
 - name: grpc_client_authority_filter
   headers:
   - src/core/ext/filters/http/client_authority_filter.h

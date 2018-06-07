@@ -9747,6 +9747,32 @@
   {
     "deps": [
       "gpr", 
+      "gpr_base_headers", 
+      "grpc_base_headers"
+    ], 
+    "headers": [
+      "src/core/lib/iomgr/cfstream_handle.h", 
+      "src/core/lib/iomgr/endpoint_cfstream.h", 
+      "src/core/lib/iomgr/error_cfstream.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_cfstream", 
+    "src": [
+      "src/core/lib/iomgr/cfstream_handle.cc", 
+      "src/core/lib/iomgr/cfstream_handle.h", 
+      "src/core/lib/iomgr/endpoint_cfstream.cc", 
+      "src/core/lib/iomgr/endpoint_cfstream.h", 
+      "src/core/lib/iomgr/error_cfstream.cc", 
+      "src/core/lib/iomgr/error_cfstream.h", 
+      "src/core/lib/iomgr/tcp_client_cfstream.cc"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc_base"
     ], 
     "headers": [

@@ -1080,6 +1080,24 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/workarounds/workaround_utils.h'
   end
 
+  s.subspec 'CFStream-Implementation' do |ss|
+    ss.header_mappings_dir = '.'
+    ss.dependency "#{s.name}/Implementation", version
+    ss.pod_target_xcconfig = {
+      'GCC_PREPROCESSOR_DEFINITIONS' => 'GRPC_CFSTREAM=1'
+    }
+    ss.source_files = 'src/core/lib/iomgr/cfstream_handle.cc',
+                      'src/core/lib/iomgr/endpoint_cfstream.cc',
+                      'src/core/lib/iomgr/error_cfstream.cc',
+                      'src/core/lib/iomgr/tcp_client_cfstream.cc',
+                      'src/core/lib/iomgr/cfstream_handle.h',
+                      'src/core/lib/iomgr/endpoint_cfstream.h',
+                      'src/core/lib/iomgr/error_cfstream.h'
+    ss.private_header_files = 'src/core/lib/iomgr/cfstream_handle.h',
+                              'src/core/lib/iomgr/endpoint_cfstream.h',
+                              'src/core/lib/iomgr/error_cfstream.h'
+  end
+
   s.subspec 'Cronet-Interface' do |ss|
     ss.header_mappings_dir = 'include/grpc'
     ss.source_files = 'include/grpc/grpc_cronet.h'
