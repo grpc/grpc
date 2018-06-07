@@ -105,6 +105,19 @@ $ sudo make install
 
 #### Build and install gRPC PHP extension
 
+Prerequisite for Max OSX:
+```
+# You can follow this document where problems have been encountered
+# https://github.com/kevinabtasty/guides-how-to/blob/master/how-to-install-grpc-php-macosx.md
+
+# Install xcode dev tools (error php.h missing)
+$ xcode-select --install
+# Install missing libraries with homebrew (error aclocal command not found)
+$ brew install autoconf automake libtool
+$ brew doctor
+$ brew prune
+```
+
 Compile the gRPC PHP extension
 
 ```sh
@@ -129,6 +142,8 @@ depending on where your PHP installation is.
 
 ```sh
 extension=grpc.so
+# Or link the absolute link path (on mac if it is not installed in the right folder)
+# extension=/Users/toto/tmp/grpc/src/php/ext/grpc/modules/grpc.so
 ```
 
 **Add the gRPC PHP library as a Composer dependency**
