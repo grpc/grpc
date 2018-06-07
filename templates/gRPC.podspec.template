@@ -65,8 +65,8 @@
       ss.dependency 'gRPC-Core', version
     end
 
+    # This subspec is mutually exclusive with the `Main` subspec
     s.subspec 'CFStream' do |ss|
-      ss.header_mappings_dir = "#{src_dir}"
       ss.dependency 'gRPC-Core/CFStream-Implementation', version
       ss.dependency "#{s.name}/Main", version
 
