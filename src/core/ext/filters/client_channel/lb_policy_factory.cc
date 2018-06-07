@@ -149,7 +149,5 @@ grpc_lb_addresses* grpc_lb_addresses_find_channel_arg(
     const grpc_channel_args* channel_args) {
   const grpc_arg* lb_addresses_arg =
       grpc_channel_args_find(channel_args, GRPC_ARG_LB_ADDRESSES);
-  if (lb_addresses_arg == nullptr || lb_addresses_arg->type != GRPC_ARG_POINTER)
-    return nullptr;
-  return static_cast<grpc_lb_addresses*>(lb_addresses_arg->value.pointer.p);
+  return grpc_channel_arg_get_pointer<grpc_lb_addresses>(lb_addresses_arg);
 }

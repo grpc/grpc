@@ -60,14 +60,12 @@ static grpc_security_status ssl_create_security_connector(
   tsi_ssl_session_cache* ssl_session_cache = nullptr;
   for (size_t i = 0; args && i < args->num_args; i++) {
     grpc_arg* arg = &args->args[i];
-    if (strcmp(arg->key, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG) == 0 &&
-        arg->type == GRPC_ARG_STRING) {
-      overridden_target_name = arg->value.string;
+    if (strcmp(arg->key, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG) == 0) {
+      overridden_target_name = grpc_channel_arg_get_string(arg);
     }
-    if (strcmp(arg->key, GRPC_SSL_SESSION_CACHE_ARG) == 0 &&
-        arg->type == GRPC_ARG_POINTER) {
+    if (strcmp(arg->key, GRPC_SSL_SESSION_CACHE_ARG) == 0) {
       ssl_session_cache =
-          static_cast<tsi_ssl_session_cache*>(arg->value.pointer.p);
+          grpc_channel_arg_get_pointer<tsi_ssl_session_cache>(arg);
     }
   }
   status = grpc_ssl_channel_security_connector_create(
