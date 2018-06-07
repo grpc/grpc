@@ -282,7 +282,9 @@ void PickFirst::PingOneLocked(grpc_closure* on_initiate, grpc_closure* on_ack) {
 
 void PickFirst::UpdateLocked(const grpc_channel_args& args) {
   const grpc_arg* arg = grpc_channel_args_find(&args, GRPC_ARG_LB_ADDRESSES);
-  if (arg == nullptr || arg->type != GRPC_ARG_POINTER) {
+  const grpc_lb_addresses* addresses =
+      static_cast<const grpc_lb_addresses*>(grpc_channel_arg_get_pointer(arg));
+  if (addresses == nullptr) {
     if (subchannel_list_ == nullptr) {
       // If we don't have a current subchannel list, go into TRANSIENT FAILURE.
       grpc_connectivity_state_set(
@@ -298,8 +300,6 @@ void PickFirst::UpdateLocked(const grpc_channel_args& args) {
     }
     return;
   }
-  const grpc_lb_addresses* addresses =
-      static_cast<const grpc_lb_addresses*>(arg->value.pointer.p);
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_INFO,
             "Pick First %p received update with %" PRIuPTR " addresses", this,

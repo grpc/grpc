@@ -264,8 +264,8 @@ FakeResolverResponseGenerator* FakeResolverResponseGenerator::GetFromArgs(
     const grpc_channel_args* args) {
   const grpc_arg* arg =
       grpc_channel_args_find(args, GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR);
-  if (arg == nullptr || arg->type != GRPC_ARG_POINTER) return nullptr;
-  return static_cast<FakeResolverResponseGenerator*>(arg->value.pointer.p);
+  return static_cast<FakeResolverResponseGenerator*>(
+      grpc_channel_arg_get_pointer(arg));
 }
 
 //

@@ -363,6 +363,16 @@ char* grpc_channel_arg_get_string(const grpc_arg* arg) {
   return arg->value.string;
 }
 
+void* grpc_channel_arg_get_pointer(const grpc_arg* arg) {
+  if (arg == nullptr) return nullptr;
+  if (arg->type != GRPC_ARG_POINTER) {
+    gpr_log(GPR_ERROR, "%s ignored: it must be an pointer", arg->key);
+    return nullptr;
+  }
+  GPR_ASSERT(arg->value.pointer.p != nullptr);
+  return arg->value.pointer.p;
+}
+
 bool grpc_channel_arg_get_bool(const grpc_arg* arg, bool default_value) {
   if (arg == nullptr) return default_value;
   if (arg->type != GRPC_ARG_INTEGER) {

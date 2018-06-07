@@ -116,6 +116,11 @@ int grpc_channel_arg_get_integer(const grpc_arg* arg,
     If arg is nullptr, returns nullptr, and does not emit a warning. */
 char* grpc_channel_arg_get_string(const grpc_arg* arg);
 
+/** Returns the value of \a arg if \a arg is of type GRPC_ARG_POINTER
+    Otherwise, emits a warning log, and returns nullptr.
+    If arg is nullptr, returns nullptr, and does not emit a warning. */
+void* grpc_channel_arg_get_pointer(const grpc_arg* arg);
+
 bool grpc_channel_arg_get_bool(const grpc_arg* arg, bool default_value);
 
 // Helpers for creating channel args.
