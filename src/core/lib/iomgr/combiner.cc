@@ -215,13 +215,16 @@ bool grpc_combiner_continue_exec_ctx() {
       // peek to see if something new has shown up, and execute that with
       // priority
       (gpr_atm_acq_load(&lock->state) >> 1) > 1) {
-    gpr_mpscq_node* n = gpr_mpscq_pop(&lock->queue);
+    gpr_mpscq_node* n = nullptr;
+    bool empty = false;
+    while (!empty && n == nullptr) {
+      gpr_mpscq_node* n = gpr_mpscq_pop_and_check_end(&lock->queue);
+    }
+    if (empty) {
+      return false;
+    }
     GRPC_COMBINER_TRACE(
         gpr_log(GPR_INFO, "C:%p maybe_finish_one n=%p", lock, n));
-    while (n == nullptr) {
-      // Spinlock
-      n = gpr_mpscq_pop(&lock->queue);
-    }
     GPR_TIMER_SCOPE("combiner.exec1", 0);
     grpc_closure* cl = reinterpret_cast<grpc_closure*>(n);
     grpc_error* cl_err = cl->error_data.error;
