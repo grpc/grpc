@@ -39,8 +39,8 @@ static void do_plugin_list_init(void) {
 }
 
 ServerBuilder::ServerBuilder()
-    : max_receive_message_size_(-2),  // -1 is unlimited and is not the default
-      max_send_message_size_(-1),     // -1 is unlimited and is the default
+    : max_receive_message_size_(INT_MIN),
+      max_send_message_size_(INT_MIN),
       sync_server_settings_(SyncServerSettings()),
       resource_quota_(nullptr),
       generic_service_(nullptr) {
@@ -190,6 +190,8 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
     args.SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, max_receive_message_size_);
   }
 
+  // The default message size is -1 (max), so no need to explicitly set it for
+  // -1.
   if (max_send_message_size_ >= 0) {
     args.SetInt(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, max_send_message_size_);
   }
