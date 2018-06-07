@@ -218,7 +218,7 @@ bool grpc_combiner_continue_exec_ctx() {
     gpr_mpscq_node* n = nullptr;
     bool empty = false;
     while (!empty && n == nullptr) {
-      gpr_mpscq_node* n = gpr_mpscq_pop_and_check_end(&lock->queue, &empty);
+      n = gpr_mpscq_pop_and_check_end(&lock->queue, &empty);
     }
     if (empty) {
       return false;
