@@ -46,8 +46,12 @@ namespace testing {
 // testing peer to access channel internals
 class ChannelPeer {
  public:
-  ChannelPeer (Channel* channel) : channel_(channel) {}
-  grpc_millis last_call_started_millis() { return (grpc_millis)gpr_atm_no_barrier_load(&channel_->last_call_started_millis_); }
+  ChannelPeer(Channel* channel) : channel_(channel) {}
+  grpc_millis last_call_started_millis() {
+    return (grpc_millis)gpr_atm_no_barrier_load(
+        &channel_->last_call_started_millis_);
+  }
+
  private:
   Channel* channel_;
 };

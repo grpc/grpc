@@ -1262,14 +1262,14 @@ static void post_batch_completion(batch_control* bctl) {
     }
 
     if (call->channel != nullptr) {
-      grpc_core::channelz::Channel* channelz_channel = grpc_channel_get_channelz_channel_node(call->channel);
+      grpc_core::channelz::Channel* channelz_channel =
+          grpc_channel_get_channelz_channel_node(call->channel);
       if (*call->final_op.client.status != GRPC_STATUS_OK) {
         channelz_channel->RecordCallFailed();
       } else {
         channelz_channel->RecordCallSucceeded();
       }
     }
-
 
     GRPC_ERROR_UNREF(error);
     error = GRPC_ERROR_NONE;

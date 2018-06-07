@@ -90,9 +90,12 @@ grpc_json* add_num_str(grpc_json* parent, grpc_json* it, const char* name,
 }  // namespace
 
 Channel::Channel(grpc_channel* channel, size_t channel_tracer_max_nodes)
-    : channel_(channel), target_(UniquePtr<char>(grpc_channel_get_target(channel_))), channel_uuid_(ChannelzRegistry::Register(this)) {
+    : channel_(channel),
+      target_(UniquePtr<char>(grpc_channel_get_target(channel_))),
+      channel_uuid_(ChannelzRegistry::Register(this)) {
   trace_.Init(channel_tracer_max_nodes);
-  gpr_atm_no_barrier_store(&last_call_started_millis_, (gpr_atm)ExecCtx::Get()->Now());
+  gpr_atm_no_barrier_store(&last_call_started_millis_,
+                           (gpr_atm)ExecCtx::Get()->Now());
 }
 
 Channel::~Channel() {
@@ -102,7 +105,8 @@ Channel::~Channel() {
 
 void Channel::RecordCallStarted() {
   gpr_atm_no_barrier_fetch_add(&calls_started_, (gpr_atm)1);
-  gpr_atm_no_barrier_store(&last_call_started_millis_, (gpr_atm)ExecCtx::Get()->Now());
+  gpr_atm_no_barrier_store(&last_call_started_millis_,
+                           (gpr_atm)ExecCtx::Get()->Now());
 }
 
 grpc_connectivity_state Channel::GetConnectivityState() {
@@ -142,8 +146,8 @@ char* Channel::RenderJSON() {
                          GRPC_JSON_STRING, false);
   // reset the parent to be the data object.
   json = data;
-  json_iterator = grpc_json_create_child(json_iterator, json, "target", target_.get(),
-                                         GRPC_JSON_STRING, false);
+  json_iterator = grpc_json_create_child(
+      json_iterator, json, "target", target_.get(), GRPC_JSON_STRING, false);
   // fill in the channel trace if applicable
   grpc_json* trace = trace_->RenderJSON();
   if (trace != nullptr) {
@@ -166,10 +170,11 @@ char* Channel::RenderJSON() {
                               calls_succeeded_ ? calls_succeeded_ : -1);
   json_iterator = add_num_str(json, json_iterator, "callsFailed",
                               calls_failed_ ? calls_failed_ : -1);
-  gpr_timespec ts = grpc_millis_to_timespec(last_call_started_millis_, GPR_CLOCK_REALTIME);
-  json_iterator = grpc_json_create_child(
-      json_iterator, json, "lastCallStartedTimestamp",
-      fmt_time(ts), GRPC_JSON_STRING, true);
+  gpr_timespec ts =
+      grpc_millis_to_timespec(last_call_started_millis_, GPR_CLOCK_REALTIME);
+  json_iterator =
+      grpc_json_create_child(json_iterator, json, "lastCallStartedTimestamp",
+                             fmt_time(ts), GRPC_JSON_STRING, true);
   // render and return the over json object
   char* json_str = grpc_json_dump_to_string(top_level_json, 0);
   grpc_json_destroy(top_level_json);

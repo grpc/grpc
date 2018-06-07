@@ -35,7 +35,7 @@ namespace grpc_core {
 namespace channelz {
 
 namespace testing {
-  class ChannelPeer;
+class ChannelPeer;
 }
 
 class Channel : public RefCounted<Channel> {
