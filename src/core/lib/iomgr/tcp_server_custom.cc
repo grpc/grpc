@@ -26,6 +26,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_custom.h"
@@ -80,21 +81,10 @@ static grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
                                      const grpc_channel_args* args,
                                      grpc_tcp_server** server) {
   grpc_tcp_server* s = (grpc_tcp_server*)gpr_malloc(sizeof(grpc_tcp_server));
-  s->resource_quota = grpc_resource_quota_create(nullptr);
-  for (size_t i = 0; i < (args == nullptr ? 0 : args->num_args); i++) {
-    if (0 == strcmp(GRPC_ARG_RESOURCE_QUOTA, args->args[i].key)) {
-      if (args->args[i].type == GRPC_ARG_POINTER) {
-        grpc_resource_quota_unref_internal(s->resource_quota);
-        s->resource_quota = grpc_resource_quota_ref_internal(
-            (grpc_resource_quota*)args->args[i].value.pointer.p);
-      } else {
-        grpc_resource_quota_unref_internal(s->resource_quota);
-        gpr_free(s);
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            GRPC_ARG_RESOURCE_QUOTA " must be a pointer to a buffer pool");
-      }
-    }
-  }
+  const grpc_arg* arg = grpc_channel_args_find(args, GRPC_ARG_RESOURCE_QUOTA);
+  grpc_resource_quota* rq =
+      grpc_channel_arg_get_pointer<grpc_resource_quota>(arg);
+  s->resource_quota = rq == nullptr ? grpc_resource_quota_create(nullptr) : rq;
   gpr_ref_init(&s->refs, 1);
   s->on_accept_cb = nullptr;
   s->on_accept_cb_arg = nullptr;

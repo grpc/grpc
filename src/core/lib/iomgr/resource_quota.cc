@@ -30,6 +30,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/combiner.h"
 
@@ -670,18 +671,11 @@ size_t grpc_resource_quota_peek_size(grpc_resource_quota* resource_quota) {
 
 grpc_resource_quota* grpc_resource_quota_from_channel_args(
     const grpc_channel_args* channel_args) {
-  for (size_t i = 0; i < channel_args->num_args; i++) {
-    if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
-      if (channel_args->args[i].type == GRPC_ARG_POINTER) {
-        return grpc_resource_quota_ref_internal(
-            static_cast<grpc_resource_quota*>(
-                channel_args->args[i].value.pointer.p));
-      } else {
-        gpr_log(GPR_DEBUG, GRPC_ARG_RESOURCE_QUOTA " should be a pointer");
-      }
-    }
-  }
-  return grpc_resource_quota_create(nullptr);
+  const grpc_arg* arg =
+      grpc_channel_args_find(channel_args, GRPC_ARG_RESOURCE_QUOTA);
+  grpc_resource_quota* rq =
+      grpc_channel_arg_get_pointer<grpc_resource_quota>(arg);
+  return rq == nullptr ? grpc_resource_quota_create(nullptr) : rq;
 }
 
 static void* rq_copy(void* rq) {

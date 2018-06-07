@@ -34,6 +34,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
@@ -171,14 +172,13 @@ grpc_error* grpc_tcp_server_prepare_socket(grpc_tcp_server* s, int fd,
   if (err != GRPC_ERROR_NONE) goto error;
 
   if (s->channel_args) {
-    for (size_t i = 0; i < s->channel_args->num_args; i++) {
-      if (0 == strcmp(s->channel_args->args[i].key, GRPC_ARG_SOCKET_MUTATOR)) {
-        GPR_ASSERT(s->channel_args->args[i].type == GRPC_ARG_POINTER);
-        grpc_socket_mutator* mutator = static_cast<grpc_socket_mutator*>(
-            s->channel_args->args[i].value.pointer.p);
-        err = grpc_set_socket_with_mutator(fd, mutator);
-        if (err != GRPC_ERROR_NONE) goto error;
-      }
+    const grpc_arg* arg =
+        grpc_channel_args_find(s->channel_args, GRPC_ARG_SOCKET_MUTATOR);
+    grpc_socket_mutator* mutator =
+        grpc_channel_arg_get_pointer<grpc_socket_mutator>(arg);
+    if (mutator) {
+      err = grpc_set_socket_with_mutator(fd, mutator);
+      if (err != GRPC_ERROR_NONE) goto error;
     }
   }
 

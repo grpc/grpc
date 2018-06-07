@@ -1285,7 +1285,9 @@ void GrpcLb::NotifyOnStateChangeLocked(grpc_connectivity_state* current,
 
 void GrpcLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
   const grpc_arg* arg = grpc_channel_args_find(&args, GRPC_ARG_LB_ADDRESSES);
-  if (GPR_UNLIKELY(arg == nullptr || arg->type != GRPC_ARG_POINTER)) {
+  const grpc_lb_addresses* addresses =
+      grpc_channel_arg_get_pointer<grpc_lb_addresses>(arg);
+  if (GPR_UNLIKELY(addresses == nullptr)) {
     // Ignore this update.
     gpr_log(
         GPR_ERROR,
@@ -1293,8 +1295,6 @@ void GrpcLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
         this);
     return;
   }
-  const grpc_lb_addresses* addresses =
-      static_cast<const grpc_lb_addresses*>(arg->value.pointer.p);
   // Update fallback address list.
   if (fallback_backend_addresses_ != nullptr) {
     grpc_lb_addresses_destroy(fallback_backend_addresses_);
@@ -1862,11 +1862,11 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
     /* Count the number of gRPC-LB addresses. There must be at least one. */
     const grpc_arg* arg =
         grpc_channel_args_find(args.args, GRPC_ARG_LB_ADDRESSES);
-    if (arg == nullptr || arg->type != GRPC_ARG_POINTER) {
+    grpc_lb_addresses* addresses =
+        grpc_channel_arg_get_pointer<grpc_lb_addresses>(arg);
+    if (addresses) {
       return nullptr;
     }
-    grpc_lb_addresses* addresses =
-        static_cast<grpc_lb_addresses*>(arg->value.pointer.p);
     size_t num_grpclb_addrs = 0;
     for (size_t i = 0; i < addresses->num_addresses; ++i) {
       if (addresses->addresses[i].is_balancer) ++num_grpclb_addrs;
@@ -1895,8 +1895,8 @@ bool maybe_add_client_load_reporting_filter(grpc_channel_stack_builder* builder,
       grpc_channel_stack_builder_get_channel_arguments(builder);
   const grpc_arg* channel_arg =
       grpc_channel_args_find(args, GRPC_ARG_LB_POLICY_NAME);
-  if (channel_arg != nullptr && channel_arg->type == GRPC_ARG_STRING &&
-      strcmp(channel_arg->value.string, "grpclb") == 0) {
+  const char* lb_policy = grpc_channel_arg_get_string(channel_arg);
+  if (lb_policy != nullptr && strcmp(lb_policy, "grpclb") == 0) {
     return grpc_channel_stack_builder_append_filter(
         builder, (const grpc_channel_filter*)arg, nullptr, nullptr);
   }

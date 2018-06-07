@@ -168,27 +168,11 @@ grpc_arg grpc_channel_credentials_to_arg(
                                          &credentials_pointer_vtable);
 }
 
-grpc_channel_credentials* grpc_channel_credentials_from_arg(
-    const grpc_arg* arg) {
-  if (strcmp(arg->key, GRPC_ARG_CHANNEL_CREDENTIALS)) return nullptr;
-  if (arg->type != GRPC_ARG_POINTER) {
-    gpr_log(GPR_ERROR, "Invalid type %d for arg %s", arg->type,
-            GRPC_ARG_CHANNEL_CREDENTIALS);
-    return nullptr;
-  }
-  return static_cast<grpc_channel_credentials*>(arg->value.pointer.p);
-}
-
 grpc_channel_credentials* grpc_channel_credentials_find_in_args(
-    const grpc_channel_args* args) {
-  size_t i;
-  if (args == nullptr) return nullptr;
-  for (i = 0; i < args->num_args; i++) {
-    grpc_channel_credentials* credentials =
-        grpc_channel_credentials_from_arg(&args->args[i]);
-    if (credentials != nullptr) return credentials;
-  }
-  return nullptr;
+    const grpc_channel_args* channel_args) {
+  const grpc_arg* arg =
+      grpc_channel_args_find(channel_args, GRPC_ARG_CHANNEL_CREDENTIALS);
+  return grpc_channel_arg_get_pointer<grpc_channel_credentials>(arg);
 }
 
 grpc_server_credentials* grpc_server_credentials_ref(
@@ -263,24 +247,9 @@ grpc_arg grpc_server_credentials_to_arg(grpc_server_credentials* p) {
                                          &cred_ptr_vtable);
 }
 
-grpc_server_credentials* grpc_server_credentials_from_arg(const grpc_arg* arg) {
-  if (strcmp(arg->key, GRPC_SERVER_CREDENTIALS_ARG) != 0) return nullptr;
-  if (arg->type != GRPC_ARG_POINTER) {
-    gpr_log(GPR_ERROR, "Invalid type %d for arg %s", arg->type,
-            GRPC_SERVER_CREDENTIALS_ARG);
-    return nullptr;
-  }
-  return static_cast<grpc_server_credentials*>(arg->value.pointer.p);
-}
-
 grpc_server_credentials* grpc_find_server_credentials_in_args(
-    const grpc_channel_args* args) {
-  size_t i;
-  if (args == nullptr) return nullptr;
-  for (i = 0; i < args->num_args; i++) {
-    grpc_server_credentials* p =
-        grpc_server_credentials_from_arg(&args->args[i]);
-    if (p != nullptr) return p;
-  }
-  return nullptr;
+    const grpc_channel_args* channel_args) {
+  const grpc_arg* arg =
+      grpc_channel_args_find(channel_args, GRPC_SERVER_CREDENTIALS_ARG);
+  return grpc_channel_arg_get_pointer<grpc_server_credentials>(arg);
 }

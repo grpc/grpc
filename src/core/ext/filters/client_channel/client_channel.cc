@@ -334,9 +334,9 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
       // the grpclb policy, regardless of what the resolver actually specified.
       channel_arg =
           grpc_channel_args_find(chand->resolver_result, GRPC_ARG_LB_ADDRESSES);
-      if (channel_arg != nullptr && channel_arg->type == GRPC_ARG_POINTER) {
-        grpc_lb_addresses* addresses =
-            static_cast<grpc_lb_addresses*>(channel_arg->value.pointer.p);
+      grpc_lb_addresses* addresses =
+          grpc_channel_arg_get_pointer<grpc_lb_addresses>(channel_arg);
+      if (addresses != nullptr) {
         bool found_balancer_address = false;
         for (size_t i = 0; i < addresses->num_addresses; ++i) {
           if (addresses->addresses[i].is_balancer) {
@@ -658,18 +658,15 @@ static grpc_error* cc_init_channel_elem(grpc_channel_element* elem,
   // Record client channel factory.
   arg = grpc_channel_args_find(args->channel_args,
                                GRPC_ARG_CLIENT_CHANNEL_FACTORY);
-  if (arg == nullptr) {
+  grpc_client_channel_factory* client_channel_factory =
+      grpc_channel_arg_get_pointer<grpc_client_channel_factory>(arg);
+  if (client_channel_factory == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Missing client channel factory in args for client channel filter");
+        "Missing or malformed client channel factory in args for client "
+        "channel filter");
   }
-  if (arg->type != GRPC_ARG_POINTER) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "client channel factory arg must be a pointer");
-  }
-  grpc_client_channel_factory_ref(
-      static_cast<grpc_client_channel_factory*>(arg->value.pointer.p));
-  chand->client_channel_factory =
-      static_cast<grpc_client_channel_factory*>(arg->value.pointer.p);
+  grpc_client_channel_factory_ref(client_channel_factory);
+  chand->client_channel_factory = client_channel_factory;
   // Get server name to resolve, using proxy mapper if needed.
   arg = grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVER_URI);
   if (arg == nullptr) {

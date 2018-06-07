@@ -255,26 +255,11 @@ grpc_arg grpc_security_connector_to_arg(grpc_security_connector* sc) {
                                          &connector_arg_vtable);
 }
 
-grpc_security_connector* grpc_security_connector_from_arg(const grpc_arg* arg) {
-  if (strcmp(arg->key, GRPC_ARG_SECURITY_CONNECTOR)) return nullptr;
-  if (arg->type != GRPC_ARG_POINTER) {
-    gpr_log(GPR_ERROR, "Invalid type %d for arg %s", arg->type,
-            GRPC_ARG_SECURITY_CONNECTOR);
-    return nullptr;
-  }
-  return static_cast<grpc_security_connector*>(arg->value.pointer.p);
-}
-
 grpc_security_connector* grpc_security_connector_find_in_args(
-    const grpc_channel_args* args) {
-  size_t i;
-  if (args == nullptr) return nullptr;
-  for (i = 0; i < args->num_args; i++) {
-    grpc_security_connector* sc =
-        grpc_security_connector_from_arg(&args->args[i]);
-    if (sc != nullptr) return sc;
-  }
-  return nullptr;
+    const grpc_channel_args* channel_args) {
+  const grpc_arg* arg =
+      grpc_channel_args_find(channel_args, GRPC_ARG_SECURITY_CONNECTOR);
+  return grpc_channel_arg_get_pointer<grpc_security_connector>(arg);
 }
 
 static tsi_client_certificate_request_type

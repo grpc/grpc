@@ -23,6 +23,7 @@
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
+#include <grpc/support/log.h>
 #include "src/core/lib/iomgr/socket_mutator.h"
 
 // Channel args are intentionally immutable, to avoid the need for locking.
@@ -115,6 +116,19 @@ int grpc_channel_arg_get_integer(const grpc_arg* arg,
     Otherwise, emits a warning log, and returns nullptr.
     If arg is nullptr, returns nullptr, and does not emit a warning. */
 char* grpc_channel_arg_get_string(const grpc_arg* arg);
+
+/** Returns the value of \a arg if \a arg is of type GRPC_ARG_POINTER
+    Otherwise, emits a warning log, and returns nullptr.
+    If arg is nullptr, returns nullptr, and does not emit a warning. */
+template <typename Type>
+Type* grpc_channel_arg_get_pointer(const grpc_arg* arg) {
+  if (arg == nullptr) return nullptr;
+  if (arg->type != GRPC_ARG_POINTER) {
+    gpr_log(GPR_ERROR, "%s ignored: it must be an pointer", arg->key);
+    return nullptr;
+  }
+  return static_cast<Type*>(arg->value.pointer.p);
+}
 
 bool grpc_channel_arg_get_bool(const grpc_arg* arg, bool default_value);
 
