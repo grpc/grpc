@@ -28,27 +28,32 @@
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
 
 namespace grpc_core {
 namespace channelz {
+
+namespace testing {
+  class ChannelPeer;
+}
 
 class Channel : public RefCounted<Channel> {
  public:
   Channel(grpc_channel* channel, size_t channel_tracer_max_nodes);
   ~Channel();
 
-  void CallStarted();
-  void CallFailed() {
+  void RecordCallStarted();
+  void RecordCallFailed() {
     gpr_atm_no_barrier_fetch_add(&calls_failed_, (gpr_atm(1)));
   }
-  void CallSucceeded() {
+  void RecordCallSucceeded() {
     gpr_atm_no_barrier_fetch_add(&calls_succeeded_, (gpr_atm(1)));
   }
 
   char* RenderJSON();
 
-  ChannelTrace* Trace() { return trace_.get(); }
+  ChannelTrace* trace() { return trace_.get(); }
 
   void set_channel_destroyed() {
     GPR_ASSERT(!channel_destroyed_);
@@ -58,16 +63,8 @@ class Channel : public RefCounted<Channel> {
   intptr_t channel_uuid() { return channel_uuid_; }
 
  private:
-  class AtomicTimespec {
-   public:
-    AtomicTimespec();
-    void Update(gpr_timespec ts);
-    gpr_timespec Get();
-
-   private:
-    gpr_atm tv_sec_;
-    gpr_atm tv_nsec_;
-  };
+  // testing peer friend.
+  friend class testing::ChannelPeer;
 
   bool channel_destroyed_ = false;
   grpc_channel* channel_;
@@ -75,7 +72,7 @@ class Channel : public RefCounted<Channel> {
   gpr_atm calls_started_ = 0;
   gpr_atm calls_succeeded_ = 0;
   gpr_atm calls_failed_ = 0;
-  AtomicTimespec last_call_started_timestamp_;
+  gpr_atm last_call_started_millis_;
   intptr_t channel_uuid_;
   ManualConstructor<ChannelTrace> trace_;
 

@@ -121,11 +121,11 @@ void ChannelTrace::AddTraceEventReferencingChannel(
 
 void ChannelTrace::AddTraceEventReferencingSubchannel(
     Severity severity, grpc_slice data,
-    RefCountedPtr<Channel> referenced_channel) {
+    RefCountedPtr<Channel> referenced_subchannel) {
   if (max_list_size_ == 0) return;  // tracing is disabled if max_events == 0
   // create and fill up the new event
   AddTraceEventHelper(New<TraceEvent>(severity, data,
-                                      std::move(referenced_channel),
+                                      std::move(referenced_subchannel),
                                       ReferencedType::Subchannel));
 }
 
@@ -230,14 +230,6 @@ grpc_json* ChannelTrace::RenderJSON() const {
     it = it->next();
   }
   return json;
-}
-
-char* ChannelTrace::RenderTrace() const {
-  grpc_json* json = RenderJSON();
-  if (json == nullptr) return nullptr;
-  char* json_str = grpc_json_dump_to_string(json, 0);
-  grpc_json_destroy(json);
-  return json_str;
 }
 
 }  // namespace channelz

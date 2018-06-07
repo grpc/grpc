@@ -149,7 +149,7 @@ grpc_channel* grpc_channel_create_with_builder(
   channel->channelz_channel =
       grpc_core::MakeRefCounted<grpc_core::channelz::Channel>(
           channel, channel_tracer_max_nodes);
-  channel->channelz_channel->Trace()->AddTraceEvent(
+  channel->channelz_channel->trace()->AddTraceEvent(
       grpc_core::channelz::ChannelTrace::Severity::Info,
       grpc_slice_from_static_string("Channel created"));
   return channel;
@@ -187,7 +187,10 @@ static grpc_channel_args* build_channel_args(
 }
 
 char* grpc_channel_get_trace(grpc_channel* channel) {
-  return channel->channelz_channel->Trace()->RenderTrace();
+  grpc_json* json = channel->channelz_channel->trace()->RenderJSON();
+  char* json_str = grpc_json_dump_to_string(json, 0);
+  grpc_json_destroy(json);
+  return json_str;
 }
 
 char* grpc_channel_render_channelz(grpc_channel* channel) {

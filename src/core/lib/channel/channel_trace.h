@@ -22,10 +22,12 @@
 #include <grpc/impl/codegen/port_platform.h>
 
 #include <grpc/grpc.h>
+// #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
+
 
 namespace grpc_core {
 namespace channelz {
@@ -64,19 +66,14 @@ class ChannelTrace {
   // slice.
   void AddTraceEventReferencingChannel(
       Severity severity, grpc_slice data,
-      RefCountedPtr<Channel> referenced_tracer);
+      RefCountedPtr<Channel> referenced_channel);
   void AddTraceEventReferencingSubchannel(
       Severity severity, grpc_slice data,
-      RefCountedPtr<Channel> referenced_tracer);
+      RefCountedPtr<Channel> referenced_subchannel);
 
   // Creates and returns the raw grpc_json object, so a parent channelz
   // object may incorporate the json before rendering.
   grpc_json* RenderJSON() const;
-
-  // Returns the tracing data rendered as a grpc json string. The string
-  // is owned by the caller and must be freed. This is used for testing only
-  // so that we may unit test ChannelTrace in isolation.
-  char* RenderTrace() const;
 
  private:
   // Types of objects that can be references by trace events.
@@ -87,7 +84,7 @@ class ChannelTrace {
    public:
     // Constructor for a TraceEvent that references a different channel.
     TraceEvent(Severity severity, grpc_slice data,
-               RefCountedPtr<Channel> referenced_tracer, ReferencedType type);
+               RefCountedPtr<Channel> referenced_channel, ReferencedType type);
 
     // Constructor for a TraceEvent that does not reverence a different
     // channel.

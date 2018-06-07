@@ -42,6 +42,16 @@
 namespace grpc_core {
 namespace channelz {
 namespace testing {
+
+// testing peer to access channel internals
+class ChannelPeer {
+ public:
+  ChannelPeer (Channel* channel) : channel_(channel) {}
+  grpc_millis last_call_started_millis() { return (grpc_millis)gpr_atm_no_barrier_load(&channel_->last_call_started_millis_); }
+ private:
+  Channel* channel_;
+};
+
 namespace {
 
 grpc_json* GetJsonChild(grpc_json* parent, const char* key) {
@@ -100,15 +110,9 @@ void ValidateChannel(Channel* channel, validate_channel_data_args args) {
   gpr_free(json_str);
 }
 
-char* GetLastCallStartedTimestamp(Channel* channel) {
-  char* json_str = channel->RenderJSON();
-  grpc_json* json = grpc_json_parse_string(json_str);
-  grpc_json* data = GetJsonChild(json, "data");
-  grpc_json* timestamp = GetJsonChild(data, "lastCallStartedTimestamp");
-  char* ts_str = grpc_json_dump_to_string(timestamp, 0);
-  grpc_json_destroy(json);
-  gpr_free(json_str);
-  return ts_str;
+grpc_millis GetLastCallStartedMillis(Channel* channel) {
+  ChannelPeer peer(channel);
+  return peer.last_call_started_millis();
 }
 
 void ChannelzSleep(int64_t sleep_us) {
@@ -134,16 +138,16 @@ TEST_P(ChannelzChannelTest, BasicChannelAPIFunctionality) {
   ChannelFixture channel(GetParam());
   intptr_t uuid = grpc_channel_get_uuid(channel.channel());
   Channel* channelz_channel = ChannelzRegistry::Get<Channel>(uuid);
-  channelz_channel->CallStarted();
-  channelz_channel->CallFailed();
-  channelz_channel->CallSucceeded();
+  channelz_channel->RecordCallStarted();
+  channelz_channel->RecordCallFailed();
+  channelz_channel->RecordCallSucceeded();
   ValidateChannel(channelz_channel, {1, 1, 1});
-  channelz_channel->CallStarted();
-  channelz_channel->CallFailed();
-  channelz_channel->CallSucceeded();
-  channelz_channel->CallStarted();
-  channelz_channel->CallFailed();
-  channelz_channel->CallSucceeded();
+  channelz_channel->RecordCallStarted();
+  channelz_channel->RecordCallFailed();
+  channelz_channel->RecordCallSucceeded();
+  channelz_channel->RecordCallStarted();
+  channelz_channel->RecordCallFailed();
+  channelz_channel->RecordCallSucceeded();
   ValidateChannel(channelz_channel, {3, 3, 3});
 }
 
@@ -154,34 +158,28 @@ TEST_P(ChannelzChannelTest, LastCallStartedTimestamp) {
   Channel* channelz_channel = ChannelzRegistry::Get<Channel>(uuid);
 
   // start a call to set the last call started timestamp
-  channelz_channel->CallStarted();
-  char* ts1 = GetLastCallStartedTimestamp(channelz_channel);
+  channelz_channel->RecordCallStarted();
+  grpc_millis millis1 = GetLastCallStartedMillis(channelz_channel);
 
   // time gone by should not affect the timestamp
   ChannelzSleep(100);
-  char* ts2 = GetLastCallStartedTimestamp(channelz_channel);
-  EXPECT_STREQ(ts1, ts2);
+  grpc_millis millis2 = GetLastCallStartedMillis(channelz_channel);
+  EXPECT_EQ(millis1, millis2);
 
   // calls succeeded or failed should not affect the timestamp
   ChannelzSleep(100);
-  channelz_channel->CallFailed();
-  channelz_channel->CallSucceeded();
-  char* ts3 = GetLastCallStartedTimestamp(channelz_channel);
-  EXPECT_STREQ(ts1, ts3);
+  channelz_channel->RecordCallFailed();
+  channelz_channel->RecordCallSucceeded();
+  grpc_millis millis3 = GetLastCallStartedMillis(channelz_channel);
+  EXPECT_EQ(millis1, millis3);
 
   // another call started should affect the timestamp
   // sleep for extra long to avoid flakes (since we cache Now())
   ChannelzSleep(5000);
   grpc_core::ExecCtx::Get()->InvalidateNow();
-  channelz_channel->CallStarted();
-  char* ts4 = GetLastCallStartedTimestamp(channelz_channel);
-  EXPECT_STRNE(ts1, ts4);
-
-  // clean up
-  gpr_free(ts1);
-  gpr_free(ts2);
-  gpr_free(ts3);
-  gpr_free(ts4);
+  channelz_channel->RecordCallStarted();
+  grpc_millis millis4 = GetLastCallStartedMillis(channelz_channel);
+  EXPECT_NE(millis1, millis4);
 }
 
 INSTANTIATE_TEST_CASE_P(ChannelzChannelTestSweep, ChannelzChannelTest,
