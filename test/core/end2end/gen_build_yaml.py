@@ -138,6 +138,7 @@ END2END_TESTS = {
     'max_message_length': default_test_options._replace(cpu_cost=LOWCPU),
     'negative_deadline': default_test_options,
     'network_status_change': default_test_options._replace(cpu_cost=LOWCPU),
+    'no_error_on_hotpath': default_test_options,
     'no_logging': default_test_options._replace(traceable=False),
     'no_op': default_test_options,
     'payload': default_test_options,
