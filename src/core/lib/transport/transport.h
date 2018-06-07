@@ -168,13 +168,11 @@ struct grpc_transport_stream_op_batch_payload {
     /** Iff send_initial_metadata != NULL, flags associated with
         send_initial_metadata: a bitfield of GRPC_INITIAL_METADATA_xxx */
     uint32_t send_initial_metadata_flags;
-    // If non-NULL, will be set by the transport to the peer string
-    // (a char*, which the caller takes ownership of).
+    // If non-NULL, will be set by the transport to the peer string (a char*).
+    // The transport retains ownership of the string.
     // Note: This pointer may be used by the transport after the
     // send_initial_metadata op is completed.  It must remain valid
     // until the call is destroyed.
-    // Note: When a transport sets this, it must free the previous
-    // value, if any.
     gpr_atm* peer_string;
   } send_initial_metadata;
 
@@ -202,13 +200,11 @@ struct grpc_transport_stream_op_batch_payload {
     // immediately available.  This may be a signal that we received a
     // Trailers-Only response.
     bool* trailing_metadata_available;
-    // If non-NULL, will be set by the transport to the peer string
-    // (a char*, which the caller takes ownership of).
+    // If non-NULL, will be set by the transport to the peer string (a char*).
+    // The transport retains ownership of the string.
     // Note: This pointer may be used by the transport after the
     // recv_initial_metadata op is completed.  It must remain valid
     // until the call is destroyed.
-    // Note: When a transport sets this, it must free the previous
-    // value, if any.
     gpr_atm* peer_string;
   } recv_initial_metadata;
 
