@@ -20,7 +20,10 @@ cd "$(dirname "$0")"
 ls -lR "../packages/Grpc.Tools.__GRPC_NUGET_VERSION__/tools"
 
 PLATFORM_ARCH=linux_x64
-if [ "$(getconf LONG_BIT)" == "32" ]
+if [ "$(uname)" == "Darwin" ]
+then
+  PLATFORM_ARCH=macosx_x64
+elif [ "$(getconf LONG_BIT)" == "32" ]
 then
   PLATFORM_ARCH=linux_x86
 fi
