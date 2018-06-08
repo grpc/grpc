@@ -48,7 +48,8 @@ class Loader(object):
         # measure unnecessarily suffers)
         coverage_context = coverage.Coverage(data_suffix=True)
         coverage_context.start()
-        imported_modules = tuple(importlib.import_module(name) for name in names)
+        imported_modules = tuple(
+            importlib.import_module(name) for name in names)
         for imported_module in imported_modules:
             self.visit_module(imported_module)
         for imported_module in imported_modules:
