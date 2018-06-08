@@ -144,7 +144,7 @@ def _large_unary_common_behavior(stub, fill_username, fill_oauth_scope,
 def _empty_unary(stub):
     response = stub.EmptyCall(empty_pb2.Empty())
     if not isinstance(response, empty_pb2.Empty):
-        raise TypeError('response is of type "%s", not empty_pb2.Empty!',
+        raise TypeError('response is of type "%s", not empty_pb2.Empty!' %
                         type(response))
 
 
