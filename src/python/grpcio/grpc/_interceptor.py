@@ -288,11 +288,11 @@ class _Channel(grpc.Channel):
         self._channel = channel
         self._interceptor = interceptor
 
-    def subscribe(self, *args, **kwargs):
-        self._channel.subscribe(*args, **kwargs)
+    def subscribe(self, callback, try_to_connect=False):
+        self._channel.subscribe(callback, try_to_connect=try_to_connect)
 
-    def unsubscribe(self, *args, **kwargs):
-        self._channel.unsubscribe(*args, **kwargs)
+    def unsubscribe(self, callback):
+        self._channel.unsubscribe(callback)
 
     def unary_unary(self,
                     method,
