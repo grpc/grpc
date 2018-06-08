@@ -190,7 +190,7 @@ char* grpc_channel_render_channelz(grpc_channel* channel) {
   return channel->channelz_channel->RenderJSON();
 }
 
-grpc_core::channelz::Channel* grpc_channel_get_channelz_channel_node(
+grpc_core::channelz::Channel* grpc_channel_get_channelz_node(
     grpc_channel* channel) {
   return channel->channelz_channel.get();
 }

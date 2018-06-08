@@ -479,7 +479,7 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
   }
 
   grpc_core::channelz::Channel* channelz_channel =
-      grpc_channel_get_channelz_channel_node(call->channel);
+      grpc_channel_get_channelz_node(call->channel);
   channelz_channel->RecordCallStarted();
 
   grpc_slice_unref_internal(path);
@@ -525,7 +525,6 @@ static void release_call(void* call, grpc_error* error) {
   GRPC_CHANNEL_INTERNAL_UNREF(channel, "call");
 }
 
-static void set_status_value_directly(grpc_status_code status, void* dest);
 static void destroy_call(void* call, grpc_error* error) {
   GPR_TIMER_SCOPE("destroy_call", 0);
   size_t i;
@@ -1261,14 +1260,12 @@ static void post_batch_completion(batch_control* bctl) {
                        call->final_op.server.cancelled, nullptr, nullptr);
     }
 
-    if (call->channel != nullptr) {
-      grpc_core::channelz::Channel* channelz_channel =
-          grpc_channel_get_channelz_channel_node(call->channel);
-      if (*call->final_op.client.status != GRPC_STATUS_OK) {
-        channelz_channel->RecordCallFailed();
-      } else {
-        channelz_channel->RecordCallSucceeded();
-      }
+    grpc_core::channelz::Channel* channelz_channel =
+        grpc_channel_get_channelz_node(call->channel);
+    if (*call->final_op.client.status != GRPC_STATUS_OK) {
+      channelz_channel->RecordCallFailed();
+    } else {
+      channelz_channel->RecordCallSucceeded();
     }
 
     GRPC_ERROR_UNREF(error);
