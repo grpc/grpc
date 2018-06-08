@@ -37,12 +37,13 @@ PYTHON=$VIRTUALENV/bin/python
 $PYTHON -m pip install --upgrade pip==10.0.1
 $PYTHON -m pip install pylint==1.9.2
 
+EXIT=0
 for dir in "${DIRS[@]}"; do
-  $PYTHON -m pylint --rcfile=.pylintrc -rn "$dir" || exit $?
+  $PYTHON -m pylint --rcfile=.pylintrc -rn "$dir" || EXIT=1
 done
 
 for dir in "${TEST_DIRS[@]}"; do
-  $PYTHON -m pylint --rcfile=.pylintrc-tests -rn "$dir" || exit $?
+  $PYTHON -m pylint --rcfile=.pylintrc-tests -rn "$dir" || EXIT=1
 done
 
-exit 0
+exit $EXIT
