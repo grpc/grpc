@@ -42,7 +42,8 @@
   ],
   "Grpc.Examples.Tests": [
     "Math.Tests.MathClientMockableTest",
-    "Math.Tests.MathClientServerTest"
+    "Math.Tests.MathClientServerTest",
+    "Math.Tests.MathServiceImplTestabilityTest"
   ],
   "Grpc.HealthCheck.Tests": [
     "Grpc.HealthCheck.Tests.HealthClientServerTest",
