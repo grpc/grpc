@@ -33,6 +33,6 @@ PLUGIN=../packages/Grpc.Tools.__GRPC_NUGET_VERSION__/tools/${PLATFORM_ARCH}/grpc
 
 "${PROTOC}" --plugin="protoc-gen-grpc=${PLUGIN}" --csharp_out=. --grpc_out=. -I . testcodegen.proto
 
-ls *.cs
+ls ./*.cs
 
 echo 'Code generation works.'
