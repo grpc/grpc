@@ -75,3 +75,9 @@ disable=
 	# NOTE(nathaniel): I have disputed the premise of this inspection from
 	# the beginning and will continue to do so until it goes away for good.
 	useless-else-on-loop,
+	# NOTE(mmx): Our existing code is written to favor explicit else over
+	# relying on return within a branch.
+	no-else-return,
+	# NOTE(mmx): Disable unnecessary super-init requirement for abstract
+	# class implementations.
+	super-init-not-called,
