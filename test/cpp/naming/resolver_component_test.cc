@@ -269,8 +269,14 @@ void OpenAndCloseSocketsStressLoop(int dummy_port, gpr_event* done_ev) {
     for (size_t i = 0; i < 50; i++) {
       int s = socket(AF_INET6, SOCK_STREAM, 0);
       int val = 1;
-      setsockopt(s, SOL_SOCKET, SO_REUSEPORT, &val, sizeof(val));
-      fcntl(s, F_SETFL, O_NONBLOCK);
+      ASSERT_TRUE(setsockopt(s, SOL_SOCKET, SO_REUSEPORT, &val, sizeof(val)) ==
+                  0)
+          << "Failed to set socketopt reuseport";
+      ASSERT_TRUE(setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) ==
+                  0)
+          << "Failed to set socket reuseaddr";
+      ASSERT_TRUE(fcntl(s, F_SETFL, O_NONBLOCK) == 0)
+          << "Failed to set socket non-blocking";
       ASSERT_TRUE(s != BAD_SOCKET_RETURN_VAL)
           << "Failed to create TCP ipv6 socket";
       gpr_log(GPR_DEBUG, "Opened fd: %d", s);
