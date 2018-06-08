@@ -621,26 +621,18 @@ typedef struct {
 static void StartTransportStreamOp(grpc_call_element* elem,
                                    grpc_transport_stream_op_batch* op) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
-  // Construct list of closures to return.
-  grpc_core::CallCombinerClosureList closures;
   if (op->recv_initial_metadata) {
-    closures.Add(op->payload->recv_initial_metadata.recv_initial_metadata_ready,
-                 GRPC_ERROR_NONE, "recv_initial_metadata");
+    GRPC_CALL_COMBINER_START(
+        calld->call_combiner,
+        op->payload->recv_initial_metadata.recv_initial_metadata_ready,
+        GRPC_ERROR_NONE, "recv_initial_metadata");
   }
   if (op->recv_message) {
-    closures.Add(op->payload->recv_message.recv_message_ready, GRPC_ERROR_NONE,
-                 "recv_message");
+    GRPC_CALL_COMBINER_START(calld->call_combiner,
+                             op->payload->recv_message.recv_message_ready,
+                             GRPC_ERROR_NONE, "recv_message");
   }
-  if (op->recv_trailing_metadata) {
-    closures.Add(
-        op->payload->recv_trailing_metadata.recv_trailing_metadata_ready,
-        GRPC_ERROR_NONE, "recv_trailing_metadata");
-  }
-  if (op->on_complete != nullptr) {
-    closures.Add(op->on_complete, GRPC_ERROR_NONE, "on_complete");
-  }
-  // Execute closures.
-  closures.RunClosures(calld->call_combiner);
+  GRPC_CLOSURE_SCHED(op->on_complete, GRPC_ERROR_NONE);
 }
 
 static void StartTransportOp(grpc_channel_element* elem,
