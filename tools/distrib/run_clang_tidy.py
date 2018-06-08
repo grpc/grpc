@@ -28,6 +28,7 @@ GRPC_CHECKS = [
     'modernize-use-nullptr',
     'google-build-namespaces',
     'google-build-explicit-make-pair',
+    'readability-function-size',
 ]
 
 extra_args = [
