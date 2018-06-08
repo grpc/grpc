@@ -100,6 +100,12 @@ class _LocalFailure(grpc.RpcError, grpc.Future, grpc.Call):
     def cancelled(self):
         return False
 
+    def is_active(self):
+        return False
+
+    def time_remaining(self):
+        return None
+
     def running(self):
         return False
 
@@ -114,6 +120,9 @@ class _LocalFailure(grpc.RpcError, grpc.Future, grpc.Call):
 
     def traceback(self, ignored_timeout=None):
         return self._traceback
+
+    def add_callback(self, callback):
+        return False
 
     def add_done_callback(self, fn):
         fn(self)
