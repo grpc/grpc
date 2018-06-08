@@ -151,19 +151,19 @@ class AugmentedResult(unittest.TestResult):
         self.cases[case_id] = CaseResult(
             id=case_id, name=test.id(), kind=CaseResult.Kind.RUNNING)
 
-    def addError(self, test, error):
+    def addError(self, test, err):
         """See unittest.TestResult.addError."""
-        super(AugmentedResult, self).addError(test, error)
+        super(AugmentedResult, self).addError(test, err)
         case_id = self.id_map(test)
         self.cases[case_id] = self.cases[case_id].updated(
-            kind=CaseResult.Kind.ERROR, traceback=error)
+            kind=CaseResult.Kind.ERROR, traceback=err)
 
-    def addFailure(self, test, error):
+    def addFailure(self, test, err):
         """See unittest.TestResult.addFailure."""
-        super(AugmentedResult, self).addFailure(test, error)
+        super(AugmentedResult, self).addFailure(test, err)
         case_id = self.id_map(test)
         self.cases[case_id] = self.cases[case_id].updated(
-            kind=CaseResult.Kind.FAILURE, traceback=error)
+            kind=CaseResult.Kind.FAILURE, traceback=err)
 
     def addSuccess(self, test):
         """See unittest.TestResult.addSuccess."""
@@ -179,12 +179,12 @@ class AugmentedResult(unittest.TestResult):
         self.cases[case_id] = self.cases[case_id].updated(
             kind=CaseResult.Kind.SKIP, skip_reason=reason)
 
-    def addExpectedFailure(self, test, error):
+    def addExpectedFailure(self, test, err):
         """See unittest.TestResult.addExpectedFailure."""
-        super(AugmentedResult, self).addExpectedFailure(test, error)
+        super(AugmentedResult, self).addExpectedFailure(test, err)
         case_id = self.id_map(test)
         self.cases[case_id] = self.cases[case_id].updated(
-            kind=CaseResult.Kind.EXPECTED_FAILURE, traceback=error)
+            kind=CaseResult.Kind.EXPECTED_FAILURE, traceback=err)
 
     def addUnexpectedSuccess(self, test):
         """See unittest.TestResult.addUnexpectedSuccess."""
@@ -284,16 +284,16 @@ class TerminalResult(CoverageResult):
         self.out.write(summary(self))
         self.out.flush()
 
-    def addError(self, test, error):
+    def addError(self, test, err):
         """See unittest.TestResult.addError."""
-        super(TerminalResult, self).addError(test, error)
+        super(TerminalResult, self).addError(test, err)
         self.out.write(
             _Colors.FAIL + 'ERROR         {}\n'.format(test.id()) + _Colors.END)
         self.out.flush()
 
-    def addFailure(self, test, error):
+    def addFailure(self, test, err):
         """See unittest.TestResult.addFailure."""
-        super(TerminalResult, self).addFailure(test, error)
+        super(TerminalResult, self).addFailure(test, err)
         self.out.write(
             _Colors.FAIL + 'FAILURE       {}\n'.format(test.id()) + _Colors.END)
         self.out.flush()
@@ -312,9 +312,9 @@ class TerminalResult(CoverageResult):
             _Colors.INFO + 'SKIP          {}\n'.format(test.id()) + _Colors.END)
         self.out.flush()
 
-    def addExpectedFailure(self, test, error):
+    def addExpectedFailure(self, test, err):
         """See unittest.TestResult.addExpectedFailure."""
-        super(TerminalResult, self).addExpectedFailure(test, error)
+        super(TerminalResult, self).addExpectedFailure(test, err)
         self.out.write(
             _Colors.INFO + 'FAILURE_OK    {}\n'.format(test.id()) + _Colors.END)
         self.out.flush()
