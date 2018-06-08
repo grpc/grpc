@@ -792,14 +792,17 @@ grpc_error* ConnectedSubchannel::CreateCall(const CallArgs& args,
   connection.release();  // Ref is passed to the grpc_subchannel_call object.
   (*call)->connection = this;
   const grpc_call_element_args call_args = {
-      callstk,           /* call_stack */
-      nullptr,           /* server_transport_data */
-      args.context,      /* context */
-      args.path,         /* path */
-      args.start_time,   /* start_time */
-      args.deadline,     /* deadline */
-      args.arena,        /* arena */
-      args.call_combiner /* call_combiner */
+      callstk,
+      nullptr,
+      args.context,
+      args.path,
+      args.start_time,
+      args.deadline,
+      args.arena,
+      args.call_combiner,
+      args.recv_payload,
+      args.recv_func,
+      args.recv_func_arg,
   };
   grpc_error* error = grpc_call_stack_init(
       channel_stack_, 1, subchannel_call_destroy, *call, &call_args);

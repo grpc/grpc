@@ -235,6 +235,16 @@ void grpc_deadline_state_client_start_transport_stream_op_batch(
   }
 }
 
+void grpc_deadline_state_client_start_transport_stream_recv_op_batch(
+    grpc_call_element* elem, grpc_transport_stream_recv_op_batch* batch,
+    grpc_error* error) {
+  grpc_deadline_state* deadline_state =
+      static_cast<grpc_deadline_state*>(elem->call_data);
+  if (batch->recv_trailing_metadata) {
+    cancel_timer_if_needed(deadline_state);
+  }
+}
+
 //
 // filter code
 //
@@ -289,6 +299,16 @@ static void client_start_transport_stream_op_batch(
   grpc_call_next_op(elem, op);
 }
 
+// Method for starting a call recv op for client filter.
+static void client_start_transport_stream_recv_op_batch(
+    grpc_call_element* elem, grpc_transport_stream_recv_op_batch* batch,
+    grpc_error* error) {
+  grpc_deadline_state_client_start_transport_stream_recv_op_batch(elem, batch,
+                                                                  error);
+  // Chain to previous filter.
+  grpc_call_prev_filter_recv_op_batch(elem, batch, error);
+}
+
 // Callback for receiving initial metadata on the server.
 static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
@@ -334,8 +354,28 @@ static void server_start_transport_stream_op_batch(
   grpc_call_next_op(elem, op);
 }
 
+// Method for starting a call recv op for server filter.
+static void server_start_transport_stream_recv_op_batch(
+    grpc_call_element* elem, grpc_transport_stream_recv_op_batch* batch,
+    grpc_error* error) {
+  grpc_deadline_state* deadline_state =
+      static_cast<grpc_deadline_state*>(elem->call_data);
+  if (batch->recv_initial_metadata) {
+    // Get deadline from metadata and start the timer if needed.
+    start_timer_if_needed(
+        elem,
+        batch->payload->recv_initial_metadata.recv_initial_metadata->deadline);
+  }
+  if (batch->recv_trailing_metadata) {
+    cancel_timer_if_needed(deadline_state);
+  }
+  // Chain to previous filter.
+  grpc_call_prev_filter_recv_op_batch(elem, batch, error);
+}
+
 const grpc_channel_filter grpc_client_deadline_filter = {
     client_start_transport_stream_op_batch,
+    client_start_transport_stream_recv_op_batch,
     grpc_channel_next_op,
     sizeof(base_call_data),
     init_call_elem,
@@ -350,6 +390,7 @@ const grpc_channel_filter grpc_client_deadline_filter = {
 
 const grpc_channel_filter grpc_server_deadline_filter = {
     server_start_transport_stream_op_batch,
+    server_start_transport_stream_recv_op_batch,
     grpc_channel_next_op,
     sizeof(server_call_data),
     init_call_elem,

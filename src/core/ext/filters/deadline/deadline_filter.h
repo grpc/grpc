@@ -81,6 +81,18 @@ void grpc_deadline_state_reset(grpc_call_element* elem,
 void grpc_deadline_state_client_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* op);
 
+// To be called from the client-side filter's
+// start_transport_stream_recv_op_batch() method.  Ensures that the deadline
+// timer is cancelled when the call is completed.
+//
+// Note: It is the caller's responsibility to chain to the next filter if
+// necessary after this function returns.
+//
+// Note: Must be called while holding the call combiner.
+void grpc_deadline_state_client_start_transport_stream_recv_op_batch(
+    grpc_call_element* elem, grpc_transport_stream_recv_op_batch* batch,
+    grpc_error* error);
+
 // Should deadline checking be performed (according to channel args)
 bool grpc_deadline_checking_enabled(const grpc_channel_args* args);
 

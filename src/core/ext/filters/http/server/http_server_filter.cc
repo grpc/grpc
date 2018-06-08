@@ -60,6 +60,7 @@ struct call_data {
   grpc_closure recv_message_ready;
   grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message;
   bool seen_recv_message_ready;
+  grpc_transport_stream_recv_op_batch* recv_message_batch;
 };
 
 }  // namespace
@@ -379,6 +380,58 @@ static void hs_start_transport_stream_op_batch(
   }
 }
 
+static void hs_start_transport_stream_recv_op_batch(
+    grpc_call_element* elem, grpc_transport_stream_recv_op_batch* batch,
+    grpc_error* error) {
+  call_data* calld = static_cast<call_data*>(elem->call_data);
+  if (batch->recv_initial_metadata) {
+    calld->seen_recv_initial_metadata_ready = true;
+    if (error == GRPC_ERROR_NONE) {
+      error = hs_filter_incoming_metadata(
+          elem, batch->payload->recv_initial_metadata.recv_initial_metadata);
+      if (calld->recv_message_batch != nullptr) {
+        // We've already seen the recv_message callback, but we previously
+        // deferred it, so we need to return it with this batch.
+        // Replace the recv_message byte stream if needed.
+        if (calld->have_read_stream) {
+          calld->recv_message->reset(calld->read_stream.get());
+          calld->have_read_stream = false;
+        }
+        // Add recv_message op to current batch.
+        batch->recv_message = true;
+      }
+    }
+  }
+  if (calld->recv_message_batch == nullptr && batch->recv_message) {
+    calld->recv_message_batch = batch;
+    if (calld->seen_recv_initial_metadata_ready) {
+      // We've already seen the recv_initial_metadata op, so replace the
+      // recv_message byte stream if needed.
+      if (calld->have_read_stream) {
+        calld->recv_message->reset(calld->read_stream.get());
+        calld->have_read_stream = false;
+      }
+    } else {
+      // We have not yet seen the recv_initial_metadata callback, so we
+      // need to wait to see if this is a GET request.
+      if (batch->recv_initial_metadata || batch->recv_trailing_metadata) {
+        // Remove recv_message from batch and let the other ops proceed
+        // up the stack.
+        batch->recv_message = false;
+      } else {
+        // recv_message is the only op in this batch, so stop here.
+        // Note that we release the call combiner here, so that other
+        // callbacks can run.
+        GRPC_CALL_COMBINER_STOP(
+            calld->call_combiner,
+            "pausing recv_message_ready until recv_initial_metadata_ready");
+        return;
+      }
+    }
+  }
+  grpc_call_prev_filter_recv_op_batch(elem, batch, error);
+}
+
 /* Constructor for call_data */
 static grpc_error* hs_init_call_elem(grpc_call_element* elem,
                                      const grpc_call_element_args* args) {
@@ -414,6 +467,7 @@ static void hs_destroy_channel_elem(grpc_channel_element* elem) {}
 
 const grpc_channel_filter grpc_http_server_filter = {
     hs_start_transport_stream_op_batch,
+    hs_start_transport_stream_recv_op_batch,
     grpc_channel_next_op,
     sizeof(call_data),
     hs_init_call_elem,

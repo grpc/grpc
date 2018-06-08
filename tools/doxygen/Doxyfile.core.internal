@@ -1049,6 +1049,8 @@ src/core/lib/channel/handshaker_factory.cc \
 src/core/lib/channel/handshaker_factory.h \
 src/core/lib/channel/handshaker_registry.cc \
 src/core/lib/channel/handshaker_registry.h \
+src/core/lib/channel/recv_filter.cc \
+src/core/lib/channel/recv_filter.h \
 src/core/lib/channel/status_util.cc \
 src/core/lib/channel/status_util.h \
 src/core/lib/compression/algorithm_metadata.h \

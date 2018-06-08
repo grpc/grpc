@@ -30,6 +30,7 @@
 #include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/channel/handshaker_registry.h"
+#include "src/core/lib/channel/recv_filter.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/fork.h"
@@ -93,6 +94,12 @@ static void register_builtin_channel_init() {
   grpc_channel_init_register_stage(GRPC_CLIENT_LAME_CHANNEL,
                                    GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
                                    append_filter, (void*)&grpc_lame_filter);
+  grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MAX,
+                                   prepend_filter, (void*)&grpc_recv_filter);
+  grpc_channel_init_register_stage(GRPC_CLIENT_SUBCHANNEL, INT_MAX,
+                                   prepend_filter, (void*)&grpc_recv_filter);
+  grpc_channel_init_register_stage(GRPC_CLIENT_DIRECT_CHANNEL, INT_MAX,
+                                   prepend_filter, (void*)&grpc_recv_filter);
   grpc_channel_init_register_stage(GRPC_SERVER_CHANNEL, INT_MAX, prepend_filter,
                                    (void*)&grpc_server_top_filter);
 }

@@ -103,6 +103,28 @@ static void start_transport_stream_op_batch(
   grpc_call_next_op(elem, op);
 }
 
+static void start_transport_stream_recv_op_batch(
+    grpc_call_element* elem, grpc_transport_stream_recv_op_batch* batch,
+    grpc_error* error) {
+  call_data* calld = static_cast<call_data*>(elem->call_data);
+  if (batch->recv_initial_metadata) {
+    if (error == GRPC_ERROR_NONE) {
+      grpc_mdelem md;
+      if (get_user_agent_mdelem(
+              batch->payload->recv_initial_metadata.recv_initial_metadata,
+              &md)) {
+        grpc_workaround_user_agent_md* user_agent_md =
+            grpc_parse_user_agent(md);
+        if (user_agent_md
+                ->workaround_active[GRPC_WORKAROUND_ID_CRONET_COMPRESSION]) {
+          calld->workaround_active = true;
+        }
+      }
+    }
+  }
+  grpc_call_prev_filter_recv_op_batch(elem, batch, error);
+}
+
 // Constructor for call_data.
 static grpc_error* init_call_elem(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
@@ -170,6 +192,7 @@ static bool parse_user_agent(grpc_mdelem md) {
 
 const grpc_channel_filter grpc_workaround_cronet_compression_filter = {
     start_transport_stream_op_batch,
+    start_transport_stream_recv_op_batch,
     grpc_channel_next_op,
     sizeof(call_data),
     init_call_elem,

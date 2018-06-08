@@ -414,6 +414,7 @@ static void destroy_channel_elem(grpc_channel_element* elem) {}
 
 static const grpc_channel_filter test_filter = {
     grpc_call_next_op,
+    grpc_call_prev_filter_recv_op_batch,
     grpc_channel_next_op,
     0,
     init_call_elem,

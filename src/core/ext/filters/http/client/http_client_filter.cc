@@ -413,6 +413,24 @@ done:
   }
 }
 
+static void hc_start_transport_stream_recv_op_batch(
+    grpc_call_element* elem, grpc_transport_stream_recv_op_batch* batch,
+    grpc_error* error) {
+  if (batch->recv_initial_metadata) {
+    if (error == GRPC_ERROR_NONE) {
+      error = client_filter_incoming_metadata(
+          elem, batch->payload->recv_initial_metadata.recv_initial_metadata);
+    }
+  }
+  if (batch->recv_trailing_metadata) {
+    if (error == GRPC_ERROR_NONE) {
+      error = client_filter_incoming_metadata(
+          elem, batch->payload->recv_trailing_metadata.recv_trailing_metadata);
+    }
+  }
+  grpc_call_prev_filter_recv_op_batch(elem, batch, error);
+}
+
 /* Constructor for call_data */
 static grpc_error* init_call_elem(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
@@ -547,6 +565,7 @@ static void destroy_channel_elem(grpc_channel_element* elem) {
 
 const grpc_channel_filter grpc_http_client_filter = {
     hc_start_transport_stream_op_batch,
+    hc_start_transport_stream_recv_op_batch,
     grpc_channel_next_op,
     sizeof(call_data),
     init_call_elem,

@@ -176,6 +176,35 @@ static void start_transport_stream_op_batch(
   grpc_call_next_op(elem, op);
 }
 
+static void start_transport_stream_recv_op_batch(
+    grpc_call_element* elem, grpc_transport_stream_recv_op_batch* batch,
+    grpc_error* error) {
+  call_data* calld = static_cast<call_data*>(elem->call_data);
+  if (batch->recv_message) {
+    grpc_core::ByteStream* recv_message =
+        batch->payload->recv_message.recv_message->get();
+    if (recv_message != nullptr && calld->limits.max_recv_size >= 0 &&
+        recv_message->length() >
+            static_cast<size_t>(calld->limits.max_recv_size)) {
+      char* message_string;
+      gpr_asprintf(&message_string,
+                   "Received message larger than max (%u vs. %d)",
+                   recv_message->length(), calld->limits.max_recv_size);
+      grpc_error* new_error = grpc_error_set_int(
+          GRPC_ERROR_CREATE_FROM_COPIED_STRING(message_string),
+          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED);
+      if (error == GRPC_ERROR_NONE) {
+        error = new_error;
+      } else {
+        error = grpc_error_add_child(error, new_error);
+        GRPC_ERROR_UNREF(new_error);
+      }
+      gpr_free(message_string);
+    }
+  }
+  grpc_call_prev_filter_recv_op_batch(elem, batch, error);
+}
+
 // Constructor for call_data.
 static grpc_error* init_call_elem(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
@@ -276,6 +305,7 @@ static void destroy_channel_elem(grpc_channel_element* elem) {
 
 const grpc_channel_filter grpc_message_size_filter = {
     start_transport_stream_op_batch,
+    start_transport_stream_recv_op_batch,
     grpc_channel_next_op,
     sizeof(call_data),
     init_call_elem,

@@ -59,6 +59,12 @@ static void call_func(grpc_call_element* elem,
   ++*static_cast<int*>(elem->call_data);
 }
 
+static void call_recv_func(grpc_call_element* elem,
+                           grpc_transport_stream_recv_op_batch* batch,
+                           grpc_error* error) {
+  ++*static_cast<int*>(elem->call_data);
+}
+
 static void channel_func(grpc_channel_element* elem, grpc_transport_op* op) {
   ++*static_cast<int*>(elem->channel_data);
 }
@@ -76,6 +82,7 @@ static void free_call(void* arg, grpc_error* error) {
 static void test_create_channel_stack(void) {
   const grpc_channel_filter filter = {
       call_func,
+      call_recv_func,
       channel_func,
       sizeof(int),
       call_init_func,
@@ -124,7 +131,10 @@ static void test_create_channel_stack(void) {
       gpr_now(GPR_CLOCK_MONOTONIC), /* start_time */
       GRPC_MILLIS_INF_FUTURE,       /* deadline */
       nullptr,                      /* arena */
-      nullptr                       /* call_combiner */
+      nullptr,                      /* call_combiner */
+      nullptr,                      /* recv_payload */
+      nullptr,                      /* recv_batch_func */
+      nullptr,                      /* recv_batch_arg */
   };
   grpc_error* error =
       grpc_call_stack_init(channel_stack, 1, free_call, call_stack, &args);

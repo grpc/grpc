@@ -218,6 +218,18 @@ static void start_transport_stream_op_batch(
   grpc_call_next_op(elem, op);
 }
 
+static void start_transport_stream_op_recv_batch(
+    grpc_call_element* elem, grpc_transport_stream_recv_op_batch* batch,
+    grpc_error* error) {
+  if (batch->recv_initial_metadata) {
+    error = grpc_error_set_int(
+        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+            "Failure that's not preventable.", &error, 1),
+        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_PERMISSION_DENIED);
+  }
+  grpc_call_prev_filter_recv_op_batch(elem, batch, error);
+}
+
 static grpc_error* init_call_elem(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
   return GRPC_ERROR_NONE;
@@ -236,6 +248,7 @@ static void destroy_channel_elem(grpc_channel_element* elem) {}
 
 static const grpc_channel_filter test_filter = {
     start_transport_stream_op_batch,
+    start_transport_stream_op_recv_batch,
     grpc_channel_next_op,
     sizeof(call_data),
     init_call_elem,

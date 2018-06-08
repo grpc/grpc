@@ -86,6 +86,8 @@ static void lame_start_transport_stream_op_batch(
     fill_metadata(elem,
                   op->payload->recv_trailing_metadata.recv_trailing_metadata);
   }
+// FIXME: initiate recv_{initial,trailing}_metadata completions when we
+// see the first batch
   grpc_transport_stream_op_batch_finish_with_failure(
       op, GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"),
       calld->call_combiner);
@@ -145,6 +147,7 @@ static void destroy_channel_elem(grpc_channel_element* elem) {}
 
 const grpc_channel_filter grpc_lame_filter = {
     grpc_core::lame_start_transport_stream_op_batch,
+    grpc_call_prev_filter_recv_op_batch,
     grpc_core::lame_start_transport_op,
     sizeof(grpc_core::CallData),
     grpc_core::init_call_elem,

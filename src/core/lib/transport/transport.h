@@ -133,7 +133,7 @@ typedef struct grpc_transport_stream_op_batch {
       only recv ops, on_complete can be null. */
   grpc_closure* on_complete;
 
-  /** Values for the stream op (fields set are determined by flags above) */
+  /** Values for the stream op (fields set are determined by flags below) */
   grpc_transport_stream_op_batch_payload* payload;
 
   /** Send initial metadata to the peer, from the provided metadata batch. */
@@ -247,6 +247,67 @@ struct grpc_transport_stream_op_batch_payload {
   grpc_call_context_element* context;
 };
 
+// FIXME:
+typedef struct grpc_transport_stream_recv_op_batch_payload
+    grpc_transport_stream_recv_op_batch_payload;
+
+// FIXME: document
+typedef struct grpc_transport_stream_recv_op_batch {
+  /** Values for the stream op (fields set are determined by flags below) */
+  grpc_transport_stream_recv_op_batch_payload* payload;
+
+  /** Receive initial metadata from the stream, into provided metadata batch. */
+  bool recv_initial_metadata : 1;
+
+  /** Receive message data from the stream, into provided byte stream. */
+  bool recv_message : 1;
+
+  /** Receive trailing metadata from the stream, into provided metadata batch.
+   */
+  bool recv_trailing_metadata : 1;
+
+  /***************************************************************************
+   * remaining fields are initialized and used at the discretion of the
+   * current handler of the op */
+  grpc_handler_private_op_data handler_private;
+} grpc_transport_stream_recv_op_batch;
+
+// A function to handle an incoming grpc_transport_stream_recv_op_batch.
+typedef void (*grpc_transport_stream_recv_op_batch_func)(
+    grpc_transport_stream_recv_op_batch* batch, void* arg, grpc_error* error);
+
+struct grpc_transport_stream_recv_op_batch_payload {
+  struct {
+    grpc_metadata_batch* recv_initial_metadata;
+    // Flags are used only on the server side.  If non-null, will be set to
+    // a bitfield of the GRPC_INITIAL_METADATA_xxx macros (e.g., to
+    // indicate if the call is idempotent).
+    uint32_t* recv_flags;
+    // If not NULL, will be set to true if trailing metadata is
+    // immediately available.  This may be a signal that we received a
+    // Trailers-Only response.
+    bool* trailing_metadata_available;
+    // If non-NULL, will be set by the transport to the peer string (a char*).
+    // The transport retains ownership of the string.
+    // Note: This pointer may be used by the transport after the
+    // recv_initial_metadata op is completed.  It must remain valid
+    // until the call is destroyed.
+    gpr_atm* peer_string;
+  } recv_initial_metadata;
+
+  struct {
+    // Will be set by the transport to point to the byte stream
+    // containing a received message.
+    // Will be NULL if trailing metadata is received instead of a message.
+    grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message;
+  } recv_message;
+
+  struct {
+    grpc_metadata_batch* recv_trailing_metadata;
+    grpc_transport_stream_stats* collect_stats;
+  } recv_trailing_metadata;
+};
+
 /** Transport op: a set of operations to perform on a transport as a whole */
 typedef struct grpc_transport_op {
   /** Called when processing of this op is done. */
@@ -304,9 +365,13 @@ size_t grpc_transport_stream_size(grpc_transport* transport);
      stream      - a pointer to uninitialized memory to initialize
      server_data - either NULL for a client initiated stream, or a pointer
                    supplied from the accept_stream callback function */
-int grpc_transport_init_stream(grpc_transport* transport, grpc_stream* stream,
-                               grpc_stream_refcount* refcount,
-                               const void* server_data, gpr_arena* arena);
+// FIXME: document new params
+int grpc_transport_init_stream(
+    grpc_transport* transport, grpc_stream* stream,
+    grpc_stream_refcount* refcount, const void* server_data, gpr_arena* arena,
+    grpc_transport_stream_recv_op_batch_payload* recv_payload,
+    grpc_transport_stream_recv_op_batch_func recv_batch_func,
+    void* recv_batch_arg);
 
 void grpc_transport_set_pops(grpc_transport* transport, grpc_stream* stream,
                              grpc_polling_entity* pollent);

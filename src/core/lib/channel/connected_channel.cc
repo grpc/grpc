@@ -137,6 +137,28 @@ static void con_start_transport_stream_op_batch(
   GRPC_CALL_COMBINER_STOP(calld->call_combiner, "passed batch to transport");
 }
 
+static void start_transport_stream_recv_op_batch_in_call_combiner(
+    void* arg, grpc_error* error) {
+  grpc_transport_stream_recv_op_batch* batch =
+      static_cast<grpc_transport_stream_recv_op_batch*>(arg);
+  grpc_call_element* elem =
+      static_cast<grpc_call_element*>(batch->handler_private.extra_arg);
+  grpc_call_prev_filter_recv_op_batch(elem, batch, error);
+}
+
+static void con_start_transport_stream_recv_op_batch(
+    grpc_transport_stream_recv_op_batch* batch, void* arg, grpc_error* error) {
+  grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
+  call_data* calld = static_cast<call_data*>(elem->call_data);
+  batch->handler_private.extra_arg = elem;
+  GRPC_CLOSURE_INIT(&batch->handler_private.closure,
+                    start_transport_stream_recv_op_batch_in_call_combiner,
+                    batch, grpc_schedule_on_exec_ctx);
+  GRPC_CALL_COMBINER_START(calld->call_combiner,
+                           &batch->handler_private.closure, error,
+                           "recv_batch");
+}
+
 static void con_start_transport_op(grpc_channel_element* elem,
                                    grpc_transport_op* op) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
@@ -151,7 +173,8 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
   calld->call_combiner = args->call_combiner;
   int r = grpc_transport_init_stream(
       chand->transport, TRANSPORT_STREAM_FROM_CALL_DATA(calld),
-      &args->call_stack->refcount, args->server_transport_data, args->arena);
+      &args->call_stack->refcount, args->server_transport_data, args->arena,
+      args->recv_payload, con_start_transport_stream_recv_op_batch, elem);
   return r == 0 ? GRPC_ERROR_NONE
                 : GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                       "transport stream initialization failed");
@@ -199,6 +222,7 @@ static void con_get_channel_info(grpc_channel_element* elem,
 
 const grpc_channel_filter grpc_connected_filter = {
     con_start_transport_stream_op_batch,
+    nullptr,  // start_transport_stream_recv_op_batch()
     con_start_transport_op,
     sizeof(call_data),
     init_call_elem,

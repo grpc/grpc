@@ -128,6 +128,9 @@ typedef struct request_matcher request_matcher;
 struct call_data {
   grpc_call* call;
 
+  grpc_transport_stream_recv_op_batch_func recv_func;
+  void* recv_func_arg;
+
   gpr_atm state;
 
   bool path_set;
@@ -753,6 +756,44 @@ static void server_start_transport_stream_op_batch(
   grpc_call_next_op(elem, op);
 }
 
+static void server_start_transport_stream_recv_op_batch(
+    grpc_call_element* elem, grpc_transport_stream_recv_op_batch* batch,
+    grpc_error* error) {
+  call_data* calld = static_cast<call_data*>(elem->call_data);
+  if (batch->recv_initial_metadata) {
+    grpc_millis op_deadline;
+    grpc_metadata_batch* recv_initial_metadata =
+        batch->payload->recv_initial_metadata.recv_initial_metadata;
+    if (error == GRPC_ERROR_NONE) {
+      GPR_ASSERT(recv_initial_metadata->idx.named.path != nullptr);
+      GPR_ASSERT(recv_initial_metadata->idx.named.authority != nullptr);
+      calld->path = grpc_slice_ref_internal(
+          GRPC_MDVALUE(recv_initial_metadata->idx.named.path->md));
+      calld->host = grpc_slice_ref_internal(
+          GRPC_MDVALUE(recv_initial_metadata->idx.named.authority->md));
+      calld->path_set = true;
+      calld->host_set = true;
+      grpc_metadata_batch_remove(recv_initial_metadata,
+                                 recv_initial_metadata->idx.named.path);
+      grpc_metadata_batch_remove(recv_initial_metadata,
+                                 recv_initial_metadata->idx.named.authority);
+    }
+    op_deadline = recv_initial_metadata->deadline;
+    if (op_deadline != GRPC_MILLIS_INF_FUTURE) {
+      calld->deadline = op_deadline;
+    }
+    if (calld->host_set && calld->path_set) {
+      /* do nothing */
+    } else {
+      grpc_error* src_error = error;
+      error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+          "Missing :authority or :path", &error, 1);
+      GRPC_ERROR_UNREF(src_error);
+    }
+  }
+  calld->recv_func(batch, calld->recv_func_arg, error);
+}
+
 static void got_initial_metadata(void* ptr, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(ptr);
   call_data* calld = static_cast<call_data*>(elem->call_data);
@@ -821,7 +862,8 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  memset(calld, 0, sizeof(call_data));
+  calld->recv_func = args->recv_func;
+  calld->recv_func_arg = args->recv_func_arg;
   calld->deadline = GRPC_MILLIS_INF_FUTURE;
   calld->call = grpc_call_from_top_element(elem);
 
@@ -894,6 +936,7 @@ static void destroy_channel_elem(grpc_channel_element* elem) {
 
 const grpc_channel_filter grpc_server_top_filter = {
     server_start_transport_stream_op_batch,
+    server_start_transport_stream_recv_op_batch,
     grpc_channel_next_op,
     sizeof(call_data),
     init_call_elem,

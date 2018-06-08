@@ -364,6 +364,10 @@ namespace dummy_filter {
 static void StartTransportStreamOp(grpc_call_element* elem,
                                    grpc_transport_stream_op_batch* op) {}
 
+static void StartTransportStreamRecvOp(grpc_call_element* elem,
+                                       grpc_transport_stream_recv_op_batch* op,
+                                       grpc_error* error) {}
+
 static void StartTransportOp(grpc_channel_element* elem,
                              grpc_transport_op* op) {}
 
@@ -390,6 +394,7 @@ void GetChannelInfo(grpc_channel_element* elem,
                     const grpc_channel_info* channel_info) {}
 
 static const grpc_channel_filter dummy_filter = {StartTransportStreamOp,
+                                                 StartTransportStreamRecvOp,
                                                  StartTransportOp,
                                                  0,
                                                  InitCallElem,
@@ -621,6 +626,7 @@ typedef struct {
 static void StartTransportStreamOp(grpc_call_element* elem,
                                    grpc_transport_stream_op_batch* op) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
+// FIXME: initiate recv batch completion as soon as we see the first batch
   // Construct list of closures to return.
   grpc_core::CallCombinerClosureList closures;
   if (op->recv_initial_metadata) {
@@ -679,6 +685,7 @@ void GetChannelInfo(grpc_channel_element* elem,
 
 static const grpc_channel_filter isolated_call_filter = {
     StartTransportStreamOp,
+    grpc_call_prev_filter_recv_op_batch,
     StartTransportOp,
     sizeof(call_data),
     InitCallElem,

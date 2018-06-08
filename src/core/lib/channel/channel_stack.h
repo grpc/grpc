@@ -71,6 +71,9 @@ typedef struct {
   grpc_millis deadline;
   gpr_arena* arena;
   grpc_call_combiner* call_combiner;
+  grpc_transport_stream_recv_op_batch_payload* recv_payload;
+  grpc_transport_stream_recv_op_batch_func recv_func;
+  void* recv_func_arg;
 } grpc_call_element_args;
 
 typedef struct {
@@ -100,6 +103,14 @@ typedef struct {
      See grpc_call_next_op on how to call the next element in the stack */
   void (*start_transport_stream_op_batch)(grpc_call_element* elem,
                                           grpc_transport_stream_op_batch* op);
+
+  /* Called to receive data on a call.
+     See grpc_call_prev_filter_recv_op_batch() for how to call the
+     previous element in the stack. */
+  void (*start_transport_stream_recv_op_batch)(
+      grpc_call_element* elem, grpc_transport_stream_recv_op_batch* batch,
+      grpc_error* error);
+
   /* Called to handle channel level operations - e.g. new calls, or transport
      closure.
      See grpc_channel_next_op on how to call the next element in the stack */
@@ -255,6 +266,10 @@ void grpc_call_stack_ignore_set_pollset_or_pollset_set(
 /* Call the next operation in a call stack */
 void grpc_call_next_op(grpc_call_element* elem,
                        grpc_transport_stream_op_batch* op);
+// Call the next filter in a call stack for a recv batch.
+void grpc_call_prev_filter_recv_op_batch(
+    grpc_call_element* elem, grpc_transport_stream_recv_op_batch* batch,
+    grpc_error* error);
 /* Call the next operation (depending on call directionality) in a channel
    stack */
 void grpc_channel_next_op(grpc_channel_element* elem, grpc_transport_op* op);

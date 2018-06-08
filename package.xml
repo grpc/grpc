@@ -305,6 +305,7 @@
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/recv_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/status_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/algorithm_metadata.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression_internal.h" role="src" />
@@ -454,6 +455,7 @@
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/handshaker_registry.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/channel/recv_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/channel/status_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/compression/compression_internal.cc" role="src" />

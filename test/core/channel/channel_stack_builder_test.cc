@@ -78,6 +78,7 @@ static void test_channel_stack_builder_filter_replace(void) {
 
 const grpc_channel_filter replacement_filter = {
     call_func,
+    grpc_call_prev_filter_recv_op_batch,
     channel_func,
     0,
     call_init_func,
@@ -91,6 +92,7 @@ const grpc_channel_filter replacement_filter = {
 
 const grpc_channel_filter original_filter = {
     call_func,
+    grpc_call_prev_filter_recv_op_batch,
     channel_func,
     0,
     call_init_func,

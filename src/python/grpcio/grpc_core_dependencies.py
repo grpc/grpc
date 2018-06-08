@@ -69,6 +69,7 @@ CORE_SOURCE_FILES = [
     'src/core/lib/channel/handshaker.cc',
     'src/core/lib/channel/handshaker_factory.cc',
     'src/core/lib/channel/handshaker_registry.cc',
+    'src/core/lib/channel/recv_filter.cc',
     'src/core/lib/channel/status_util.cc',
     'src/core/lib/compression/compression.cc',
     'src/core/lib/compression/compression_internal.cc',

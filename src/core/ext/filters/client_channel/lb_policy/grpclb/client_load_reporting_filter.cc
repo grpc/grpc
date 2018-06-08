@@ -126,8 +126,21 @@ static void start_transport_stream_op_batch(
   grpc_call_next_op(elem, batch);
 }
 
+static void start_transport_stream_recv_op_batch(
+    grpc_call_element* elem, grpc_transport_stream_recv_op_batch* batch,
+    grpc_error* error) {
+  call_data* calld = static_cast<call_data*>(elem->call_data);
+  if (batch->recv_initial_metadata) {
+    if (error == GRPC_ERROR_NONE) {
+      calld->recv_initial_metadata_succeeded = true;
+    }
+  }
+  grpc_call_prev_filter_recv_op_batch(elem, batch, error);
+}
+
 const grpc_channel_filter grpc_client_load_reporting_filter = {
     start_transport_stream_op_batch,
+    start_transport_stream_recv_op_batch,
     grpc_channel_next_op,
     sizeof(call_data),
     init_call_elem,

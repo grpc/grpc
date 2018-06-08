@@ -156,11 +156,15 @@ void grpc_transport_destroy(grpc_transport* transport) {
   transport->vtable->destroy(transport);
 }
 
-int grpc_transport_init_stream(grpc_transport* transport, grpc_stream* stream,
-                               grpc_stream_refcount* refcount,
-                               const void* server_data, gpr_arena* arena) {
+int grpc_transport_init_stream(
+    grpc_transport* transport, grpc_stream* stream,
+    grpc_stream_refcount* refcount, const void* server_data, gpr_arena* arena,
+    grpc_transport_stream_recv_op_batch_payload* recv_payload,
+    grpc_transport_stream_recv_op_batch_func recv_batch_func,
+    void* recv_batch_arg) {
   return transport->vtable->init_stream(transport, stream, refcount,
-                                        server_data, arena);
+                                        server_data, arena, recv_payload,
+                                        recv_batch_func, recv_batch_arg);
 }
 
 void grpc_transport_perform_stream_op(grpc_transport* transport,

@@ -878,6 +878,7 @@ typedef struct client_channel_call_data {
   gpr_arena* arena;
   grpc_call_stack* owning_call;
   grpc_call_combiner* call_combiner;
+  grpc_transport_stream_recv_op_batch_payload* recv_payload;
 
   grpc_core::RefCountedPtr<ServerRetryThrottleData> retry_throttle_data;
   grpc_core::RefCountedPtr<ClientChannelMethodParams> method_params;
@@ -952,6 +953,8 @@ static void start_internal_recv_trailing_metadata(grpc_call_element* elem);
 static void on_complete(void* arg, grpc_error* error);
 static void start_retriable_subchannel_batches(void* arg, grpc_error* ignored);
 static void start_pick_locked(void* arg, grpc_error* ignored);
+static void cc_start_transport_stream_recv_op_batch(
+    grpc_transport_stream_recv_op_batch* batch, void* arg, grpc_error* error);
 
 //
 // send op data caching
@@ -2497,14 +2500,17 @@ static void create_subchannel_call(grpc_call_element* elem, grpc_error* error) {
   const size_t parent_data_size =
       calld->enable_retries ? sizeof(subchannel_call_retry_state) : 0;
   const grpc_core::ConnectedSubchannel::CallArgs call_args = {
-      calld->pollent,                       // pollent
-      calld->path,                          // path
-      calld->call_start_time,               // start_time
-      calld->deadline,                      // deadline
-      calld->arena,                         // arena
-      calld->pick.subchannel_call_context,  // context
-      calld->call_combiner,                 // call_combiner
-      parent_data_size                      // parent_data_size
+      calld->pollent,
+      calld->path,
+      calld->call_start_time,
+      calld->deadline,
+      calld->arena,
+      calld->pick.subchannel_call_context,
+      calld->call_combiner,
+      calld->recv_payload,
+      cc_start_transport_stream_recv_op_batch,
+      elem,
+      parent_data_size,
   };
   grpc_error* new_error = calld->pick.connected_subchannel->CreateCall(
       call_args, &calld->subchannel_call);
@@ -3023,6 +3029,21 @@ static void cc_start_transport_stream_op_batch(
   }
 }
 
+static void cc_start_transport_stream_recv_op_batch(
+    grpc_transport_stream_recv_op_batch* batch, void* arg, grpc_error* error) {
+  grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
+  call_data* calld = static_cast<call_data*>(elem->call_data);
+  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
+  if (GPR_LIKELY(chand->deadline_checking_enabled)) {
+    grpc_deadline_state_client_start_transport_stream_recv_op_batch(
+        elem, batch, error);
+  }
+  if (calld->enable_retries) {
+// FIXME: handle retry stuff here
+  }
+  grpc_call_prev_filter_recv_op_batch(elem, batch, error);
+}
+
 /* Constructor for call_data */
 static grpc_error* cc_init_call_elem(grpc_call_element* elem,
                                      const grpc_call_element_args* args) {
@@ -3035,6 +3056,7 @@ static grpc_error* cc_init_call_elem(grpc_call_element* elem,
   calld->arena = args->arena;
   calld->owning_call = args->call_stack;
   calld->call_combiner = args->call_combiner;
+  calld->recv_payload = args->recv_payload;
   if (GPR_LIKELY(chand->deadline_checking_enabled)) {
     grpc_deadline_state_init(elem, args->call_stack, args->call_combiner,
                              calld->deadline);
@@ -3092,6 +3114,7 @@ static void cc_set_pollset_or_pollset_set(grpc_call_element* elem,
 
 const grpc_channel_filter grpc_client_channel_filter = {
     cc_start_transport_stream_op_batch,
+    nullptr,  // start_transport_stream_recv_op_batch()
     cc_start_transport_op,
     sizeof(call_data),
     cc_init_call_elem,

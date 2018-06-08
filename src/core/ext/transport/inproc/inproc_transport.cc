@@ -221,9 +221,13 @@ static grpc_error* fill_in_metadata(inproc_stream* s,
   return error;
 }
 
-static int init_stream(grpc_transport* gt, grpc_stream* gs,
-                       grpc_stream_refcount* refcount, const void* server_data,
-                       gpr_arena* arena) {
+// FIXME: use recv_* args here
+static int init_stream(
+    grpc_transport* gt, grpc_stream* gs, grpc_stream_refcount* refcount,
+    const void* server_data, gpr_arena* arena,
+    grpc_transport_stream_recv_op_batch_payload* recv_payload,
+    grpc_transport_stream_recv_op_batch_func recv_batch_func,
+    void* recv_batch_arg) {
   INPROC_LOG(GPR_INFO, "init_stream %p %p %p", gt, gs, server_data);
   inproc_transport* t = reinterpret_cast<inproc_transport*>(gt);
   inproc_stream* s = reinterpret_cast<inproc_stream*>(gs);

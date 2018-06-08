@@ -208,8 +208,36 @@ static void lr_start_transport_stream_op_batch(
   grpc_call_next_op(elem, op);
 }
 
+static void lr_start_transport_stream_recv_op_batch(
+    grpc_call_element* elem, grpc_transport_stream_recv_op_batch* batch,
+    grpc_error* error) {
+  call_data* calld = static_cast<call_data*>(elem->call_data);
+  if (batch->recv_initial_metadata) {
+    if (error == GRPC_ERROR_NONE) {
+      grpc_metadata_batch* recv_initial_metadata =
+          batch->payload->recv_initial_metadata.recv_initial_metadata;
+      if (recv_initial_metadata->idx.named.path != nullptr) {
+        calld->service_method = grpc_slice_ref_internal(
+            GRPC_MDVALUE(recv_initial_metadata->idx.named.path->md));
+        calld->have_service_method = true;
+      } else {
+        error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing :path header");
+      }
+      if (recv_initial_metadata->idx.named.lb_token != nullptr) {
+        calld->initial_md_string = grpc_slice_ref_internal(
+            GRPC_MDVALUE(recv_initial_metadata->idx.named.lb_token->md));
+        calld->have_initial_md_string = true;
+        grpc_metadata_batch_remove(recv_initial_metadata,
+                                   recv_initial_metadata->idx.named.lb_token);
+      }
+    }
+  }
+  grpc_call_prev_filter_recv_op_batch(elem, batch, error);
+}
+
 const grpc_channel_filter grpc_server_load_reporting_filter = {
     lr_start_transport_stream_op_batch,
+    lr_start_transport_stream_recv_op_batch,
     grpc_channel_next_op,
     sizeof(call_data),
     init_call_elem,

@@ -1018,6 +1018,7 @@ src/core/lib/channel/context.h \
 src/core/lib/channel/handshaker.h \
 src/core/lib/channel/handshaker_factory.h \
 src/core/lib/channel/handshaker_registry.h \
+src/core/lib/channel/recv_filter.h \
 src/core/lib/channel/status_util.h \
 src/core/lib/compression/algorithm_metadata.h \
 src/core/lib/compression/compression_internal.h \

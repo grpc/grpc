@@ -81,6 +81,9 @@ class ConnectedSubchannel : public RefCountedWithTracing<ConnectedSubchannel> {
     gpr_arena* arena;
     grpc_call_context_element* context;
     grpc_call_combiner* call_combiner;
+    grpc_transport_stream_recv_op_batch_payload* recv_payload;
+    grpc_transport_stream_recv_op_batch_func recv_func;
+    void* recv_func_arg;
     size_t parent_data_size;
   };
 
