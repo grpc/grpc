@@ -85,8 +85,9 @@ static grpc_filtered_mdelem remove_consumed_md(void* user_data,
   for (i = 0; i < calld->num_consumed_md; i++) {
     const grpc_metadata* consumed_md = &calld->consumed_md[i];
     if (grpc_slice_eq(GRPC_MDKEY(md), consumed_md->key) &&
-        grpc_slice_eq(GRPC_MDVALUE(md), consumed_md->value))
+        grpc_slice_eq(GRPC_MDVALUE(md), consumed_md->value)) {
       return GRPC_FILTERED_REMOVE();
+    }
   }
   return GRPC_FILTERED_MDELEM(md);
 }

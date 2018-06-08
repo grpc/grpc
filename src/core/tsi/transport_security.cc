@@ -137,8 +137,9 @@ tsi_result tsi_handshaker_get_bytes_to_send_to_peer(tsi_handshaker* self,
   }
   if (self->frame_protector_created) return TSI_FAILED_PRECONDITION;
   if (self->handshake_shutdown) return TSI_HANDSHAKE_SHUTDOWN;
-  if (self->vtable->get_bytes_to_send_to_peer == nullptr)
+  if (self->vtable->get_bytes_to_send_to_peer == nullptr) {
     return TSI_UNIMPLEMENTED;
+  }
   return self->vtable->get_bytes_to_send_to_peer(self, bytes, bytes_size);
 }
 
@@ -151,8 +152,9 @@ tsi_result tsi_handshaker_process_bytes_from_peer(tsi_handshaker* self,
   }
   if (self->frame_protector_created) return TSI_FAILED_PRECONDITION;
   if (self->handshake_shutdown) return TSI_HANDSHAKE_SHUTDOWN;
-  if (self->vtable->process_bytes_from_peer == nullptr)
+  if (self->vtable->process_bytes_from_peer == nullptr) {
     return TSI_UNIMPLEMENTED;
+  }
   return self->vtable->process_bytes_from_peer(self, bytes, bytes_size);
 }
 

@@ -137,8 +137,8 @@ static void cleanup_test() {
   grpc_completion_queue_shutdown(g_state.cq);
   while (grpc_completion_queue_next(g_state.cq,
                                     gpr_inf_future(GPR_CLOCK_REALTIME), nullptr)
-             .type != GRPC_QUEUE_SHUTDOWN)
-    ;
+             .type != GRPC_QUEUE_SHUTDOWN) {
+  }
   grpc_completion_queue_destroy(g_state.cq);
 }
 

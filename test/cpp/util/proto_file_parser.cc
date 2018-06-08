@@ -282,7 +282,7 @@ grpc::string ProtoFileParser::GetTextFormatFromMessageType(
     return "";
   }
   grpc::string text_format;
-  if (!protobuf::TextFormat::PrintToString(*msg.get(), &text_format)) {
+  if (!protobuf::TextFormat::PrintToString(*msg, &text_format)) {
     LogError("Failed to print proto message to text format");
     return "";
   }

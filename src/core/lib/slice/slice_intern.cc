@@ -84,8 +84,8 @@ static void interned_slice_destroy(interned_slice_refcount* s) {
   interned_slice_refcount* cur;
   for (prev_next = &shard->strs[TABLE_IDX(s->hash, shard->capacity)],
       cur = *prev_next;
-       cur != s; prev_next = &cur->bucket_next, cur = cur->bucket_next)
-    ;
+       cur != s; prev_next = &cur->bucket_next, cur = cur->bucket_next) {
+  }
   *prev_next = cur->bucket_next;
   shard->count--;
   gpr_free(s);

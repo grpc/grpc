@@ -71,7 +71,8 @@ int main(int argc, char** argv) {
   if (FLAGS_generated_file_path.empty()) {
     FLAGS_generated_file_path = "gens/src/proto/grpc/testing/";
   }
-  if (FLAGS_generated_file_path.back() != '/')
+  if (FLAGS_generated_file_path.back() != '/') {
     FLAGS_generated_file_path.append("/");
+  }
   return RUN_ALL_TESTS();
 }

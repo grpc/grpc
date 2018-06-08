@@ -92,8 +92,9 @@ uint8_t* grpc_slice_buffer_tiny_add(grpc_slice_buffer* sb, size_t n) {
   if (sb->count == 0) goto add_new;
   back = &sb->slices[sb->count - 1];
   if (back->refcount) goto add_new;
-  if ((back->data.inlined.length + n) > sizeof(back->data.inlined.bytes))
+  if ((back->data.inlined.length + n) > sizeof(back->data.inlined.bytes)) {
     goto add_new;
+  }
   out = back->data.inlined.bytes + back->data.inlined.length;
   back->data.inlined.length =
       static_cast<uint8_t>(back->data.inlined.length + n);

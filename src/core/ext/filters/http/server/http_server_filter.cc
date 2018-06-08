@@ -206,8 +206,8 @@ static grpc_error* hs_filter_incoming_metadata(grpc_call_element* elem,
     /* offset of the character '?' */
     size_t offset = 0;
     for (offset = 0; offset < path_length && *path_ptr != k_query_separator;
-         path_ptr++, offset++)
-      ;
+         path_ptr++, offset++) {
+    }
     if (offset < path_length) {
       grpc_slice query_slice =
           grpc_slice_sub(path_slice, offset + 1, path_length);

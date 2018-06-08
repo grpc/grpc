@@ -197,8 +197,8 @@ static void server_thread(void* arg) {
 
   // Wait until the client drops its connection.
   char buf;
-  while (SSL_read(ssl, &buf, sizeof(buf)) > 0)
-    ;
+  while (SSL_read(ssl, &buf, sizeof(buf)) > 0) {
+  }
 
   SSL_free(ssl);
   close(client);

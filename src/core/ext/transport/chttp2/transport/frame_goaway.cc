@@ -130,9 +130,10 @@ grpc_error* grpc_chttp2_goaway_parser_parse(void* parser,
       ++cur;
     /* fallthrough */
     case GRPC_CHTTP2_GOAWAY_DEBUG:
-      if (end != cur)
+      if (end != cur) {
         memcpy(p->debug_data + p->debug_pos, cur,
                static_cast<size_t>(end - cur));
+      }
       GPR_ASSERT((size_t)(end - cur) < UINT32_MAX - p->debug_pos);
       p->debug_pos += static_cast<uint32_t>(end - cur);
       p->state = GRPC_CHTTP2_GOAWAY_DEBUG;

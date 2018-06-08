@@ -89,8 +89,8 @@ class NonblockingTest : public ::testing::Test {
     void* ignored_tag;
     bool ignored_ok;
     cq_->Shutdown();
-    while (LoopForTag(&ignored_tag, &ignored_ok))
-      ;
+    while (LoopForTag(&ignored_tag, &ignored_ok)) {
+    }
     stub_.reset();
     grpc_recycle_unused_port(port_);
   }

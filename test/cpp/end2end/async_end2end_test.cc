@@ -263,8 +263,8 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
     void* ignored_tag;
     bool ignored_ok;
     cq_->Shutdown();
-    while (cq_->Next(&ignored_tag, &ignored_ok))
-      ;
+    while (cq_->Next(&ignored_tag, &ignored_ok)) {
+    }
     stub_.reset();
     grpc_recycle_unused_port(port_);
   }
@@ -371,8 +371,8 @@ TEST_P(AsyncEnd2endTest, ReconnectChannel) {
   void* ignored_tag;
   bool ignored_ok;
   cq_->Shutdown();
-  while (cq_->Next(&ignored_tag, &ignored_ok))
-    ;
+  while (cq_->Next(&ignored_tag, &ignored_ok)) {
+  }
   BuildAndStartServer();
   // It needs more than GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS time to
   // reconnect the channel.

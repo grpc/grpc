@@ -565,8 +565,8 @@ static grpc_error* pollset_kick_all(grpc_pollset* pollset) {
       worker = worker->next;
     } while (worker != pollset->root_worker);
   }
-  // TODO: sreek.  Check if we need to set 'kicked_without_poller' to true here
-  // in the else case
+  // TODO(sreek): Check if we need to set 'kicked_without_poller' to
+  // true here in the else case
   return error;
 }
 

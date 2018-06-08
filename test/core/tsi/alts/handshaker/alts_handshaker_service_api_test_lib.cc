@@ -546,8 +546,9 @@ bool grpc_gcp_handshaker_server_start_req_equals(
                          static_cast<grpc_slice*>(r_req->in_bytes.arg));
   if ((l_req->has_local_endpoint ^ r_req->has_local_endpoint) |
       (l_req->has_remote_endpoint ^ r_req->has_remote_endpoint) |
-      (l_req->has_rpc_versions ^ r_req->has_rpc_versions))
+      (l_req->has_rpc_versions ^ r_req->has_rpc_versions)) {
     return false;
+  }
   if (l_req->has_local_endpoint) {
     result &= handshaker_endpoint_equals(&l_req->local_endpoint,
                                          &r_req->local_endpoint);

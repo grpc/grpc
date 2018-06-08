@@ -58,8 +58,8 @@ BENCHMARK(BM_CreateDestroyCpp2);
 static void BM_CreateDestroyCore(benchmark::State& state) {
   TrackCounters track_counters;
   while (state.KeepRunning()) {
-    // TODO: sreek Templatize this benchmark and pass completion type and
-    // polling type as parameters
+    // TODO(sreek): Templatize this benchmark and pass completion type
+    // and polling type as parameters
     grpc_completion_queue_destroy(
         grpc_completion_queue_create_for_next(nullptr));
   }
@@ -97,7 +97,8 @@ BENCHMARK(BM_Pass1Cpp);
 
 static void BM_Pass1Core(benchmark::State& state) {
   TrackCounters track_counters;
-  // TODO: sreek Templatize this benchmark and pass polling_type as a param
+  // TODO(sreek): Templatize this benchmark and pass polling_type as a
+  // param
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   while (state.KeepRunning()) {
@@ -116,7 +117,8 @@ BENCHMARK(BM_Pass1Core);
 
 static void BM_Pluck1Core(benchmark::State& state) {
   TrackCounters track_counters;
-  // TODO: sreek Templatize this benchmark and pass polling_type as a param
+  // TODO(sreek): Templatize this benchmark and pass polling_type as a
+  // param
   grpc_completion_queue* cq = grpc_completion_queue_create_for_pluck(nullptr);
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
   while (state.KeepRunning()) {
@@ -135,7 +137,8 @@ BENCHMARK(BM_Pluck1Core);
 
 static void BM_EmptyCore(benchmark::State& state) {
   TrackCounters track_counters;
-  // TODO: sreek Templatize this benchmark and pass polling_type as a param
+  // TODO(sreek): Templatize this benchmark and pass polling_type as a
+  // param
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   gpr_timespec deadline = gpr_inf_past(GPR_CLOCK_MONOTONIC);
   while (state.KeepRunning()) {

@@ -195,9 +195,10 @@ static const char* read_cred_artifact(cred_artifact_ctx* ctx, input_stream* inp,
                                       size_t num_builtins) {
   uint8_t b = grpc_fuzzer_get_next_byte(inp);
   if (b == 0) return nullptr;
-  if (b == 1)
+  if (b == 1) {
     return ctx->release[ctx->num_release++] =
                grpc_fuzzer_get_next_string(inp, nullptr);
+  }
   if (b >= num_builtins + 1) {
     end(inp);
     return nullptr;

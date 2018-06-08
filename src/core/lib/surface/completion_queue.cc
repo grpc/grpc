@@ -117,8 +117,8 @@ static grpc_error* non_polling_poller_work(grpc_pollset* pollset,
   gpr_timespec deadline_ts =
       grpc_millis_to_timespec(deadline, GPR_CLOCK_MONOTONIC);
   while (!npp->shutdown && !w.kicked &&
-         !gpr_cv_wait(&w.cv, &npp->mu, deadline_ts))
-    ;
+         !gpr_cv_wait(&w.cv, &npp->mu, deadline_ts)) {
+  }
   grpc_core::ExecCtx::Get()->InvalidateNow();
   if (&w == npp->root) {
     npp->root = w.next;
@@ -139,8 +139,9 @@ static grpc_error* non_polling_poller_work(grpc_pollset* pollset,
 static grpc_error* non_polling_poller_kick(
     grpc_pollset* pollset, grpc_pollset_worker* specific_worker) {
   non_polling_poller* p = reinterpret_cast<non_polling_poller*>(pollset);
-  if (specific_worker == nullptr)
+  if (specific_worker == nullptr) {
     specific_worker = reinterpret_cast<grpc_pollset_worker*>(p->root);
+  }
   if (specific_worker != nullptr) {
     non_polling_worker* w =
         reinterpret_cast<non_polling_worker*>(specific_worker);

@@ -33,10 +33,12 @@
 
 grpc_message_compression_algorithm
 grpc_message_compression_algorithm_from_slice(grpc_slice str) {
-  if (grpc_slice_eq(str, GRPC_MDSTR_IDENTITY))
+  if (grpc_slice_eq(str, GRPC_MDSTR_IDENTITY)) {
     return GRPC_MESSAGE_COMPRESS_NONE;
-  if (grpc_slice_eq(str, GRPC_MDSTR_DEFLATE))
+  }
+  if (grpc_slice_eq(str, GRPC_MDSTR_DEFLATE)) {
     return GRPC_MESSAGE_COMPRESS_DEFLATE;
+  }
   if (grpc_slice_eq(str, GRPC_MDSTR_GZIP)) return GRPC_MESSAGE_COMPRESS_GZIP;
   return GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT;
 }

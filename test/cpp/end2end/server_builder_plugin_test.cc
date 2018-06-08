@@ -232,8 +232,8 @@ class ServerBuilderPluginTest : public ::testing::TestWithParam<bool> {
   void RunCQ() {
     void* tag;
     bool ok;
-    while (cq_->Next(&tag, &ok))
-      ;
+    while (cq_->Next(&tag, &ok)) {
+    }
   }
 };
 

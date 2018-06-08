@@ -100,12 +100,12 @@ static void run_test(const test_fixture* fixture) {
 
   while (grpc_completion_queue_next(server_cq,
                                     gpr_inf_future(GPR_CLOCK_REALTIME), nullptr)
-             .type != GRPC_QUEUE_SHUTDOWN)
-    ;
+             .type != GRPC_QUEUE_SHUTDOWN) {
+  }
   while (grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
                                     nullptr)
-             .type != GRPC_QUEUE_SHUTDOWN)
-    ;
+             .type != GRPC_QUEUE_SHUTDOWN) {
+  }
 
   for (size_t i = 0; i < NUM_CONNECTIONS; i++) {
     grpc_channel_destroy(channels[i]);

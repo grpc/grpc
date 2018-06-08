@@ -104,7 +104,7 @@ class StressTestInteropClient {
   bool RunTest(TestCaseType test_case);
 
   int test_id_;
-  const grpc::string& server_address_;
+  grpc::string server_address_;
   std::shared_ptr<Channel> channel_;
   std::unique_ptr<InteropClient> interop_client_;
   const WeightedRandomTestSelector& test_selector_;

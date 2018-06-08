@@ -51,6 +51,7 @@ using std::vector;
 
 namespace grpc {
 namespace testing {
+
 static std::string get_host(const std::string& worker) {
   char* host;
   char* port;

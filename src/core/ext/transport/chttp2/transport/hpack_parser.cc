@@ -1271,12 +1271,13 @@ static grpc_error* append_string(grpc_chttp2_hpack_parser* p,
       }
       bits = inverse_base64[*cur];
       ++cur;
-      if (bits == 255)
+      if (bits == 255) {
         return parse_error(
             p, cur, end,
             GRPC_ERROR_CREATE_FROM_STATIC_STRING("Illegal base64 character"));
-      else if (bits == 64)
+      } else if (bits == 64) {
         goto b64_byte0;
+      }
       p->base64_buffer = bits << 18;
     /* fallthrough */
     b64_byte1:
@@ -1287,12 +1288,13 @@ static grpc_error* append_string(grpc_chttp2_hpack_parser* p,
       }
       bits = inverse_base64[*cur];
       ++cur;
-      if (bits == 255)
+      if (bits == 255) {
         return parse_error(
             p, cur, end,
             GRPC_ERROR_CREATE_FROM_STATIC_STRING("Illegal base64 character"));
-      else if (bits == 64)
+      } else if (bits == 64) {
         goto b64_byte1;
+      }
       p->base64_buffer |= bits << 12;
     /* fallthrough */
     b64_byte2:
@@ -1303,12 +1305,13 @@ static grpc_error* append_string(grpc_chttp2_hpack_parser* p,
       }
       bits = inverse_base64[*cur];
       ++cur;
-      if (bits == 255)
+      if (bits == 255) {
         return parse_error(
             p, cur, end,
             GRPC_ERROR_CREATE_FROM_STATIC_STRING("Illegal base64 character"));
-      else if (bits == 64)
+      } else if (bits == 64) {
         goto b64_byte2;
+      }
       p->base64_buffer |= bits << 6;
     /* fallthrough */
     b64_byte3:
@@ -1319,12 +1322,13 @@ static grpc_error* append_string(grpc_chttp2_hpack_parser* p,
       }
       bits = inverse_base64[*cur];
       ++cur;
-      if (bits == 255)
+      if (bits == 255) {
         return parse_error(
             p, cur, end,
             GRPC_ERROR_CREATE_FROM_STATIC_STRING("Illegal base64 character"));
-      else if (bits == 64)
+      } else if (bits == 64) {
         goto b64_byte3;
+      }
       p->base64_buffer |= bits;
       bits = p->base64_buffer;
       decoded[0] = static_cast<uint8_t>(bits >> 16);

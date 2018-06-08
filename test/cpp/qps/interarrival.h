@@ -92,8 +92,9 @@ class InterarrivalTimer {
 
   int64_t next(int thread_num) {
     auto ret = *(thread_posns_[thread_num]++);
-    if (thread_posns_[thread_num] == random_table_.end())
+    if (thread_posns_[thread_num] == random_table_.end()) {
       thread_posns_[thread_num] = random_table_.begin();
+    }
     return ret;
   }
 

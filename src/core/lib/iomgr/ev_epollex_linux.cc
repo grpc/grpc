@@ -822,12 +822,13 @@ static void pollset_init(grpc_pollset* pollset, gpr_mu** mu) {
 static int poll_deadline_to_millis_timeout(grpc_millis millis) {
   if (millis == GRPC_MILLIS_INF_FUTURE) return -1;
   grpc_millis delta = millis - grpc_core::ExecCtx::Get()->Now();
-  if (delta > INT_MAX)
+  if (delta > INT_MAX) {
     return INT_MAX;
-  else if (delta < 0)
+  } else if (delta < 0) {
     return 0;
-  else
+  } else {
     return static_cast<int>(delta);
+  }
 }
 
 static void fd_become_readable(grpc_fd* fd, grpc_pollset* notifier) {

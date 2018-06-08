@@ -22,7 +22,6 @@
 #include <grpc/support/port_platform.h>
 
 #include <inttypes.h>
-#include <stdbool.h>  // TODO, do we need this?
 
 #include <grpc/support/sync.h>
 #include "src/core/lib/iomgr/error.h"

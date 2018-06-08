@@ -74,10 +74,11 @@ void gpr_default_log(gpr_log_func_args* args) {
 
   timer = static_cast<time_t>(now.tv_sec);
   final_slash = strrchr(args->file, '/');
-  if (final_slash == nullptr)
+  if (final_slash == nullptr) {
     display_file = args->file;
-  else
+  } else {
     display_file = final_slash + 1;
+  }
 
   if (!localtime_r(&timer, &tm)) {
     strcpy(time_buffer, "error:localtime");

@@ -41,8 +41,7 @@ static const int kPregenerateKeyCount = 100000;
 
 template <class F>
 auto MakeVector(size_t length, F f) -> std::vector<decltype(f())> {
-  std::vector<decltype(f())> out;
-  out.reserve(length);
+  std::vector<decltype(f())> out(length);
   for (size_t i = 0; i < length; i++) {
     out.push_back(f());
   }

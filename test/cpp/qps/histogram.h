@@ -27,7 +27,7 @@ namespace testing {
 
 class Histogram {
  public:
-  // TODO: look into making histogram params not hardcoded for C++
+  // TODO(vpai): look into making histogram params not hardcoded for C++
   Histogram()
       : impl_(grpc_histogram_create(default_resolution(),
                                     default_max_possible())) {}

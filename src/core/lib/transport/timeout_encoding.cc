@@ -95,8 +95,8 @@ int grpc_http2_decode_timeout(grpc_slice text, grpc_millis* timeout) {
   const uint8_t* end = GRPC_SLICE_END_PTR(text);
   int have_digit = 0;
   /* skip whitespace */
-  for (; p != end && *p == ' '; p++)
-    ;
+  for (; p != end && *p == ' '; p++) {
+  }
   /* decode numeric part */
   for (; p != end && *p >= '0' && *p <= '9'; p++) {
     int32_t digit = static_cast<int32_t>(*p - static_cast<uint8_t>('0'));
@@ -112,8 +112,8 @@ int grpc_http2_decode_timeout(grpc_slice text, grpc_millis* timeout) {
   }
   if (!have_digit) return 0;
   /* skip whitespace */
-  for (; p != end && *p == ' '; p++)
-    ;
+  for (; p != end && *p == ' '; p++) {
+  }
   if (p == end) return 0;
   /* decode unit specifier */
   switch (*p) {

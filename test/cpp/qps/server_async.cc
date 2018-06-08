@@ -172,8 +172,8 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
     for (auto cq = srv_cqs_.begin(); cq != srv_cqs_.end(); ++cq) {
       bool ok;
       void* got_tag;
-      while ((*cq)->Next(&got_tag, &ok))
-        ;
+      while ((*cq)->Next(&got_tag, &ok)) {
+      }
     }
     shutdown_thread.join();
   }

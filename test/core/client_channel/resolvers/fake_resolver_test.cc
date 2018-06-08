@@ -122,7 +122,7 @@ static void test_fake_resolver() {
           grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       build_fake_resolver(combiner, response_generator.get());
-  GPR_ASSERT(resolver.get() != nullptr);
+  GPR_ASSERT(resolver != nullptr);
   // Test 1: normal resolution.
   // next_results != NULL, reresolution_results == NULL, last_used_results ==
   // NULL. Expected response is next_results.

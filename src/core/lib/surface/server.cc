@@ -1111,8 +1111,8 @@ void grpc_server_setup_transport(grpc_server* s, grpc_transport* transport,
                                 grpc_slice_hash(method));
       for (probes = 0; chand->registered_methods[(hash + probes) % slots]
                            .server_registered_method != nullptr;
-           probes++)
-        ;
+           probes++) {
+      }
       if (probes > max_probes) max_probes = probes;
       crm = &chand->registered_methods[(hash + probes) % slots];
       crm->server_registered_method = rm;

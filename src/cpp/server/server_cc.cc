@@ -474,7 +474,7 @@ bool Server::RegisterService(const grpc::string* host, Service* service) {
   const char* method_name = nullptr;
   for (auto it = service->methods_.begin(); it != service->methods_.end();
        ++it) {
-    if (it->get() == nullptr) {  // Handled by generic service if any.
+    if (*it == nullptr) {  // Handled by generic service if any.
       continue;
     }
 

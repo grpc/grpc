@@ -112,7 +112,7 @@ class ThreadManager {
   void CleanupCompletedThreads();
 
   // Protects shutdown_, num_pollers_ and num_threads_
-  // TODO: sreek - Change num_pollers and num_threads_ to atomics
+  // TODO(sreek): Change num_pollers and num_threads_ to atomics
   std::mutex mu_;
 
   bool shutdown_;

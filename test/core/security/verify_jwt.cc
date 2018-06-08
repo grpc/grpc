@@ -105,8 +105,9 @@ int main(int argc, char** argv) {
     grpc_pollset_worker* worker = nullptr;
     if (!GRPC_LOG_IF_ERROR(
             "pollset_work",
-            grpc_pollset_work(sync.pollset, &worker, GRPC_MILLIS_INF_FUTURE)))
+            grpc_pollset_work(sync.pollset, &worker, GRPC_MILLIS_INF_FUTURE))) {
       sync.is_done = true;
+    }
     gpr_mu_unlock(sync.mu);
     grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(sync.mu);

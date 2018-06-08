@@ -452,8 +452,9 @@ int grpc_slice_buf_start_eq(grpc_slice a, const void* b, size_t len) {
 int grpc_slice_rchr(grpc_slice s, char c) {
   const char* b = reinterpret_cast<const char*> GRPC_SLICE_START_PTR(s);
   int i;
-  for (i = static_cast<int> GRPC_SLICE_LENGTH(s) - 1; i != -1 && b[i] != c; i--)
-    ;
+  for (i = static_cast<int> GRPC_SLICE_LENGTH(s) - 1; i != -1 && b[i] != c;
+       i--) {
+  }
   return i;
 }
 
@@ -471,10 +472,12 @@ int grpc_slice_slice(grpc_slice haystack, grpc_slice needle) {
 
   if (haystack_len == 0 || needle_len == 0) return -1;
   if (haystack_len < needle_len) return -1;
-  if (haystack_len == needle_len)
+  if (haystack_len == needle_len) {
     return grpc_slice_eq(haystack, needle) ? 0 : -1;
-  if (needle_len == 1)
+  }
+  if (needle_len == 1) {
     return grpc_slice_chr(haystack, static_cast<char>(*needle_bytes));
+  }
 
   const uint8_t* last = haystack_bytes + haystack_len - needle_len;
   for (const uint8_t* cur = haystack_bytes; cur != last; ++cur) {

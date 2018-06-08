@@ -159,8 +159,9 @@ static void json_writer_escape_string(grpc_json_writer* writer,
        * Any other range is technically reserved for future usage, so if we
        * don't want the software to break in the future, we have to allow
        * anything else. The first non-unicode character is 0x110000. */
-      if (((utf32 >= 0xd800) && (utf32 <= 0xdfff)) || (utf32 >= 0x110000))
+      if (((utf32 >= 0xd800) && (utf32 <= 0xdfff)) || (utf32 >= 0x110000)) {
         break;
+      }
       if (utf32 >= 0x10000) {
         /* If utf32 contains a character that is above 0xffff, it needs to be
          * broken down into a utf-16 surrogate pair. A surrogate pair is first
@@ -204,8 +205,9 @@ void grpc_json_writer_container_begins(grpc_json_writer* writer,
 
 void grpc_json_writer_container_ends(grpc_json_writer* writer,
                                      grpc_json_type type) {
-  if (writer->indent && !writer->container_empty)
+  if (writer->indent && !writer->container_empty) {
     json_writer_output_char(writer, '\n');
+  }
   writer->depth--;
   if (!writer->container_empty) json_writer_output_indent(writer);
   json_writer_output_char(writer, type == GRPC_JSON_OBJECT ? '}' : ']');

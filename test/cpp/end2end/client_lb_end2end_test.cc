@@ -684,13 +684,11 @@ TEST_F(ClientLbEnd2endTest, RoundRobinConcurrentUpdates) {
 TEST_F(ClientLbEnd2endTest, RoundRobinReresolve) {
   // Start servers and send one RPC per server.
   const int kNumServers = 3;
-  std::vector<int> first_ports;
-  std::vector<int> second_ports;
-  first_ports.reserve(kNumServers);
+  std::vector<int> first_ports(kNumServers);
+  std::vector<int> second_ports(kNumServers);
   for (int i = 0; i < kNumServers; ++i) {
     first_ports.push_back(grpc_pick_unused_port_or_die());
   }
-  second_ports.reserve(kNumServers);
   for (int i = 0; i < kNumServers; ++i) {
     second_ports.push_back(grpc_pick_unused_port_or_die());
   }
@@ -741,8 +739,9 @@ TEST_F(ClientLbEnd2endTest, RoundRobinSingleReconnect) {
   auto channel = BuildChannel("round_robin");
   auto stub = BuildStub(channel);
   SetNextResolution(ports);
-  for (size_t i = 0; i < kNumServers; ++i)
+  for (size_t i = 0; i < kNumServers; ++i) {
     WaitForServer(stub, i, DEBUG_LOCATION);
+  }
   for (size_t i = 0; i < servers_.size(); ++i) {
     CheckRpcSendOk(stub, DEBUG_LOCATION);
     EXPECT_EQ(1, servers_[i]->service_.request_count()) << "for backend #" << i;

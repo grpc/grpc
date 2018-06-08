@@ -38,8 +38,9 @@ static void fill_common_header(const grpc_httpcli_request* request,
   gpr_strvec_add(buf, gpr_strdup("Host: "));
   gpr_strvec_add(buf, gpr_strdup(request->host));
   gpr_strvec_add(buf, gpr_strdup("\r\n"));
-  if (connection_close)
+  if (connection_close) {
     gpr_strvec_add(buf, gpr_strdup("Connection: close\r\n"));
+  }
   gpr_strvec_add(buf,
                  gpr_strdup("User-Agent: " GRPC_HTTPCLI_USER_AGENT "\r\n"));
   /* user supplied headers */

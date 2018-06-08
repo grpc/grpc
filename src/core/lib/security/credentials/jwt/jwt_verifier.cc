@@ -258,16 +258,19 @@ grpc_jwt_claims* grpc_jwt_claims_from_json(grpc_json* json, grpc_slice buffer) {
       if (claims->jti == nullptr) goto error;
     } else if (strcmp(cur->key, "iat") == 0) {
       claims->iat = validate_time_field(cur, "iat");
-      if (gpr_time_cmp(claims->iat, gpr_time_0(GPR_CLOCK_REALTIME)) == 0)
+      if (gpr_time_cmp(claims->iat, gpr_time_0(GPR_CLOCK_REALTIME)) == 0) {
         goto error;
+      }
     } else if (strcmp(cur->key, "exp") == 0) {
       claims->exp = validate_time_field(cur, "exp");
-      if (gpr_time_cmp(claims->exp, gpr_time_0(GPR_CLOCK_REALTIME)) == 0)
+      if (gpr_time_cmp(claims->exp, gpr_time_0(GPR_CLOCK_REALTIME)) == 0) {
         goto error;
+      }
     } else if (strcmp(cur->key, "nbf") == 0) {
       claims->nbf = validate_time_field(cur, "nbf");
-      if (gpr_time_cmp(claims->nbf, gpr_time_0(GPR_CLOCK_REALTIME)) == 0)
+      if (gpr_time_cmp(claims->nbf, gpr_time_0(GPR_CLOCK_REALTIME)) == 0) {
         goto error;
+      }
     }
   }
   return claims;

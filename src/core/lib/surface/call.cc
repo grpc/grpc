@@ -309,8 +309,9 @@ static void add_batch_error(batch_control* bctl, grpc_error* error,
 
 static void add_init_error(grpc_error** composite, grpc_error* new_err) {
   if (new_err == GRPC_ERROR_NONE) return;
-  if (*composite == GRPC_ERROR_NONE)
+  if (*composite == GRPC_ERROR_NONE) {
     *composite = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Call creation failed");
+  }
   *composite = grpc_error_add_child(*composite, new_err);
 }
 

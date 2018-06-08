@@ -225,8 +225,8 @@ class CommonStressTestAsyncServer : public BaseClass {
 
     void* ignored_tag;
     bool ignored_ok;
-    while (cq_->Next(&ignored_tag, &ignored_ok))
-      ;
+    while (cq_->Next(&ignored_tag, &ignored_ok)) {
+    }
     this->TearDownEnd();
   }
 
@@ -321,8 +321,7 @@ typedef ::testing::Types<
 TYPED_TEST_CASE(End2endTest, CommonTypes);
 TYPED_TEST(End2endTest, ThreadStress) {
   this->common_.ResetStub();
-  std::vector<std::thread> threads;
-  threads.reserve(kNumThreads);
+  std::vector<std::thread> threads(kNumThreads);
   for (int i = 0; i < kNumThreads; ++i) {
     threads.emplace_back(SendRpc, this->common_.GetStub(), kNumRpcs);
   }
@@ -340,8 +339,8 @@ class AsyncClientEnd2endTest : public ::testing::Test {
   void TearDown() override {
     void* ignored_tag;
     bool ignored_ok;
-    while (cq_.Next(&ignored_tag, &ignored_ok))
-      ;
+    while (cq_.Next(&ignored_tag, &ignored_ok)) {
+    }
     common_.TearDown();
   }
 

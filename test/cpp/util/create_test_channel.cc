@@ -92,7 +92,7 @@ std::shared_ptr<Channel> CreateTestChannel(
 
     const grpc::string& connect_to =
         server.empty() ? override_hostname : server;
-    if (creds.get()) {
+    if (creds) {
       channel_creds = CompositeChannelCredentials(channel_creds, creds);
     }
     return CreateCustomChannel(connect_to, channel_creds, channel_args);
@@ -148,7 +148,7 @@ std::shared_ptr<Channel> CreateTestChannel(
       testing::GetCredentialsProvider()->GetChannelCredentials(credential_type,
                                                                &channel_args);
   GPR_ASSERT(channel_creds != nullptr);
-  if (creds.get()) {
+  if (creds) {
     channel_creds = CompositeChannelCredentials(channel_creds, creds);
   }
   return CreateCustomChannel(server, channel_creds, channel_args);

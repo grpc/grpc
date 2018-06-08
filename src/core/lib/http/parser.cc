@@ -42,36 +42,48 @@ static grpc_error* handle_response_line(grpc_http_parser* parser) {
   uint8_t* cur = beg;
   uint8_t* end = beg + parser->cur_line_length;
 
-  if (cur == end || *cur++ != 'H')
+  if (cur == end || *cur++ != 'H') {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected 'H'");
-  if (cur == end || *cur++ != 'T')
+  }
+  if (cur == end || *cur++ != 'T') {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected 'T'");
-  if (cur == end || *cur++ != 'T')
+  }
+  if (cur == end || *cur++ != 'T') {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected 'T'");
-  if (cur == end || *cur++ != 'P')
+  }
+  if (cur == end || *cur++ != 'P') {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected 'P'");
-  if (cur == end || *cur++ != '/')
+  }
+  if (cur == end || *cur++ != '/') {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected '/'");
-  if (cur == end || *cur++ != '1')
+  }
+  if (cur == end || *cur++ != '1') {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected '1'");
-  if (cur == end || *cur++ != '.')
+  }
+  if (cur == end || *cur++ != '.') {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected '.'");
+  }
   if (cur == end || *cur < '0' || *cur++ > '1') {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Expected HTTP/1.0 or HTTP/1.1");
   }
-  if (cur == end || *cur++ != ' ')
+  if (cur == end || *cur++ != ' ') {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected ' '");
-  if (cur == end || *cur < '1' || *cur++ > '9')
+  }
+  if (cur == end || *cur < '1' || *cur++ > '9') {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected status code");
-  if (cur == end || *cur < '0' || *cur++ > '9')
+  }
+  if (cur == end || *cur < '0' || *cur++ > '9') {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected status code");
-  if (cur == end || *cur < '0' || *cur++ > '9')
+  }
+  if (cur == end || *cur < '0' || *cur++ > '9') {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected status code");
+  }
   parser->http.response->status =
       (cur[-3] - '0') * 100 + (cur[-2] - '0') * 10 + (cur[-1] - '0');
-  if (cur == end || *cur++ != ' ')
+  if (cur == end || *cur++ != ' ') {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected ' '");
+  }
 
   /* we don't really care about the status code message */
 
@@ -85,36 +97,44 @@ static grpc_error* handle_request_line(grpc_http_parser* parser) {
   uint8_t vers_major = 0;
   uint8_t vers_minor = 0;
 
-  while (cur != end && *cur++ != ' ')
-    ;
-  if (cur == end)
+  while (cur != end && *cur++ != ' ') {
+  }
+  if (cur == end) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "No method on HTTP request line");
+  }
   parser->http.request->method =
       buf2str(beg, static_cast<size_t>(cur - beg - 1));
 
   beg = cur;
-  while (cur != end && *cur++ != ' ')
-    ;
-  if (cur == end)
+  while (cur != end && *cur++ != ' ') {
+  }
+  if (cur == end) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No path on HTTP request line");
+  }
   parser->http.request->path = buf2str(beg, static_cast<size_t>(cur - beg - 1));
 
-  if (cur == end || *cur++ != 'H')
+  if (cur == end || *cur++ != 'H') {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected 'H'");
-  if (cur == end || *cur++ != 'T')
+  }
+  if (cur == end || *cur++ != 'T') {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected 'T'");
-  if (cur == end || *cur++ != 'T')
+  }
+  if (cur == end || *cur++ != 'T') {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected 'T'");
-  if (cur == end || *cur++ != 'P')
+  }
+  if (cur == end || *cur++ != 'P') {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected 'P'");
-  if (cur == end || *cur++ != '/')
+  }
+  if (cur == end || *cur++ != '/') {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected '/'");
+  }
   vers_major = static_cast<uint8_t>(*cur++ - '1' + 1);
   ++cur;
-  if (cur == end)
+  if (cur == end) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "End of line in HTTP version string");
+  }
   vers_minor = static_cast<uint8_t>(*cur++ - '1' + 1);
 
   if (vers_major == 1) {
@@ -300,9 +320,10 @@ static grpc_error* addbyte(grpc_http_parser* parser, uint8_t byte,
     case GRPC_HTTP_FIRST_LINE:
     case GRPC_HTTP_HEADERS:
       if (parser->cur_line_length >= GRPC_HTTP_PARSER_MAX_HEADER_LENGTH) {
-        if (grpc_http1_trace.enabled())
+        if (grpc_http1_trace.enabled()) {
           gpr_log(GPR_ERROR, "HTTP header max line length (%d) exceeded",
                   GRPC_HTTP_PARSER_MAX_HEADER_LENGTH);
+        }
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "HTTP header max line length exceeded");
       }

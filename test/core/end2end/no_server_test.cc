@@ -96,8 +96,8 @@ void run_test(bool wait_for_ready) {
   grpc_completion_queue_shutdown(cq);
   while (grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
                                     nullptr)
-             .type != GRPC_QUEUE_SHUTDOWN)
-    ;
+             .type != GRPC_QUEUE_SHUTDOWN) {
+  }
   grpc_completion_queue_destroy(cq);
   grpc_call_unref(call);
   grpc_channel_destroy(chan);

@@ -82,10 +82,10 @@ class GenericEnd2endTest : public ::testing::Test {
     bool ignored_ok;
     cli_cq_.Shutdown();
     srv_cq_->Shutdown();
-    while (cli_cq_.Next(&ignored_tag, &ignored_ok))
-      ;
-    while (srv_cq_->Next(&ignored_tag, &ignored_ok))
-      ;
+    while (cli_cq_.Next(&ignored_tag, &ignored_ok)) {
+    }
+    while (srv_cq_->Next(&ignored_tag, &ignored_ok)) {
+    }
   }
 
   void ResetStub() {
@@ -218,8 +218,8 @@ TEST_F(GenericEnd2endTest, SequentialUnaryRpcs) {
         SerializeToByteBuffer(&send_request);
     // Use the same cq as server so that events can be polled in time.
     std::unique_ptr<GenericClientAsyncResponseReader> call =
-        generic_stub_->PrepareUnaryCall(&cli_ctx, kMethodName,
-                                        *cli_send_buffer.get(), srv_cq_.get());
+        generic_stub_->PrepareUnaryCall(&cli_ctx, kMethodName, *cli_send_buffer,
+                                        srv_cq_.get());
     call->StartCall();
     ByteBuffer cli_recv_buffer;
     call->Finish(&cli_recv_buffer, &recv_status, tag(1));

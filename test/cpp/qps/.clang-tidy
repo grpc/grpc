@@ -1,0 +1,6 @@
+---
+Checks: modernize-use-nullptr,google-build-namespaces,google-build-explicit-make-pair,readability-function-size,performance-*,google-*,-google-readability-casting,-google-runtime-references,-google-runtime-int,-google-build-using-namespace,-google-explicit-constructor,-google-readability-namespace-comments
+WarningsAsErrors: modernize-use-nullptr,google-build-namespaces,google-build-explicit-make-pair,readability-function-size,performance-*,google-*,-google-readability-casting,-google-runtime-references,-google-runtime-int,-google-build-using-namespace,-google-explicit-constructor,-google-readability-namespace-comments
+CheckOptions:
+  - key:    readability-function-size.StatementThreshold
+    value:  '450'

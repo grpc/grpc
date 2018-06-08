@@ -86,8 +86,9 @@ bool encode_repeated_identity_cb(pb_ostream_t* stream, const pb_field_t* field,
   while (var != nullptr) {
     if (!pb_encode_tag_for_field(stream, field)) return false;
     if (!pb_encode_submessage(stream, grpc_gcp_Identity_fields,
-                              (grpc_gcp_identity*)var->data))
+                              (grpc_gcp_identity*)var->data)) {
       return false;
+    }
     var = var->next;
   }
   return true;
@@ -100,8 +101,9 @@ bool encode_repeated_string_cb(pb_ostream_t* stream, const pb_field_t* field,
     if (!pb_encode_tag_for_field(stream, field)) return false;
     const grpc_slice* slice = static_cast<const grpc_slice*>(var->data);
     if (!pb_encode_string(stream, GRPC_SLICE_START_PTR(*slice),
-                          GRPC_SLICE_LENGTH(*slice)))
+                          GRPC_SLICE_LENGTH(*slice))) {
       return false;
+    }
     var = var->next;
   }
   return true;
@@ -113,8 +115,9 @@ bool decode_string_or_bytes_cb(pb_istream_t* stream, const pb_field_t* field,
   grpc_slice* cb_slice =
       static_cast<grpc_slice*>(gpr_zalloc(sizeof(*cb_slice)));
   memcpy(cb_slice, &slice, sizeof(*cb_slice));
-  if (!pb_read(stream, GRPC_SLICE_START_PTR(*cb_slice), stream->bytes_left))
+  if (!pb_read(stream, GRPC_SLICE_START_PTR(*cb_slice), stream->bytes_left)) {
     return false;
+  }
   *arg = cb_slice;
   return true;
 }
@@ -136,8 +139,9 @@ bool decode_repeated_string_cb(pb_istream_t* stream, const pb_field_t* field,
   grpc_slice* cb_slice =
       static_cast<grpc_slice*>(gpr_zalloc(sizeof(*cb_slice)));
   memcpy(cb_slice, &slice, sizeof(grpc_slice));
-  if (!pb_read(stream, GRPC_SLICE_START_PTR(*cb_slice), stream->bytes_left))
+  if (!pb_read(stream, GRPC_SLICE_START_PTR(*cb_slice), stream->bytes_left)) {
     return false;
+  }
   add_repeated_field(reinterpret_cast<repeated_field**>(arg), cb_slice);
   return true;
 }

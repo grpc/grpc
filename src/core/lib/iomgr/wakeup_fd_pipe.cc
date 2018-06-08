@@ -71,8 +71,8 @@ static grpc_error* pipe_consume(grpc_wakeup_fd* fd_info) {
 
 static grpc_error* pipe_wakeup(grpc_wakeup_fd* fd_info) {
   char c = 0;
-  while (write(fd_info->write_fd, &c, 1) != 1 && errno == EINTR)
-    ;
+  while (write(fd_info->write_fd, &c, 1) != 1 && errno == EINTR) {
+  }
   return GRPC_ERROR_NONE;
 }
 

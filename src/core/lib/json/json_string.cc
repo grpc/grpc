@@ -320,9 +320,10 @@ static void json_dump_recursive(grpc_json_writer* writer, grpc_json* json,
       case GRPC_JSON_OBJECT:
       case GRPC_JSON_ARRAY:
         grpc_json_writer_container_begins(writer, json->type);
-        if (json->child)
+        if (json->child) {
           json_dump_recursive(writer, json->child,
                               json->type == GRPC_JSON_OBJECT);
+        }
         grpc_json_writer_container_ends(writer, json->type);
         break;
       case GRPC_JSON_STRING:
