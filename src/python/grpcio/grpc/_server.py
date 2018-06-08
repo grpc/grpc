@@ -329,7 +329,8 @@ class _RequestIterator(object):
             request = self._state.request
             self._state.request = None
             return request
-        raise Exception('gRPC Error: Invalid _state')
+
+        raise AssertionError()  # should never run
 
     def _next(self):
         with self._state.condition:
