@@ -398,6 +398,8 @@ void grpc_channel_internal_unref(grpc_channel* c REF_ARG) {
 
 static void destroy_channel(void* arg, grpc_error* error) {
   grpc_channel* channel = static_cast<grpc_channel*>(arg);
+  channel->channelz_channel->set_channel_destroyed();
+  channel->channelz_channel.reset();
   grpc_channel_stack_destroy(CHANNEL_STACK_FROM_CHANNEL(channel));
   while (channel->registered_calls) {
     registered_call* rc = channel->registered_calls;
@@ -420,8 +422,6 @@ void grpc_channel_destroy(grpc_channel* channel) {
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel Destroyed");
   elem = grpc_channel_stack_element(CHANNEL_STACK_FROM_CHANNEL(channel), 0);
   elem->filter->start_transport_op(elem, op);
-  channel->channelz_channel->set_channel_destroyed();
-  channel->channelz_channel.reset();
 
   GRPC_CHANNEL_INTERNAL_UNREF(channel, "channel");
 }
