@@ -164,12 +164,12 @@ char* Channel::RenderJSON() {
   json_iterator = nullptr;
   // We use -1 as sentinel values since proto default value for integers is
   // zero, and the confuses the parser into thinking the value weren't present
-  json_iterator = add_num_str(json, json_iterator, "callsStarted",
-                              calls_started_);
-  json_iterator = add_num_str(json, json_iterator, "callsSucceeded",
-                              calls_succeeded_);
-  json_iterator = add_num_str(json, json_iterator, "callsFailed",
-                              calls_failed_);
+  json_iterator =
+      add_num_str(json, json_iterator, "callsStarted", calls_started_);
+  json_iterator =
+      add_num_str(json, json_iterator, "callsSucceeded", calls_succeeded_);
+  json_iterator =
+      add_num_str(json, json_iterator, "callsFailed", calls_failed_);
   gpr_timespec ts =
       grpc_millis_to_timespec(last_call_started_millis_, GPR_CLOCK_REALTIME);
   json_iterator =

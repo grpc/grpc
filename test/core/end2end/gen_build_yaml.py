@@ -106,6 +106,7 @@ END2END_TESTS = {
                                                         needs_compression=True),
     'connectivity': connectivity_test_options._replace(needs_names=True,
         proxyable=False, cpu_cost=LOWCPU, exclude_iomgrs=['uv']),
+    'channelz': default_test_options,
     'default_host': default_test_options._replace(
         needs_fullstack=True, needs_dns=True, needs_names=True),
     'call_host_override': default_test_options._replace(

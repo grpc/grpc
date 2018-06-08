@@ -116,7 +116,6 @@ void ValidateChannel(Channel* channel, validate_channel_data_args args) {
   grpc::testing::ValidateChannelProtoJsonTranslation(json_str);
   ValidateCounters(json_str, args);
   gpr_free(json_str);
-
 }
 
 grpc_millis GetLastCallStartedMillis(Channel* channel) {

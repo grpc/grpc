@@ -113,6 +113,7 @@ END2END_TESTS = {
     'compressed_payload': test_options(proxyable=False, exclude_inproc=True),
     'connectivity': test_options(needs_fullstack=True, needs_names=True,
                                  proxyable=False),
+    'channelz': test_options(),
     'default_host': test_options(needs_fullstack=True, needs_dns=True,
                                  needs_names=True),
     'disappearing_server': test_options(needs_fullstack=True,needs_names=True),
