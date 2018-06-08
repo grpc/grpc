@@ -144,10 +144,6 @@ class AugmentedResult(unittest.TestResult):
         super(AugmentedResult, self).startTestRun()
         self.cases = dict()
 
-    def stopTestRun(self):
-        """See unittest.TestResult.stopTestRun."""
-        super(AugmentedResult, self).stopTestRun()
-
     def startTest(self, test):
         """See unittest.TestResult.startTest."""
         super(AugmentedResult, self).startTest(test)
@@ -248,13 +244,6 @@ class CoverageResult(AugmentedResult):
         self.coverage_context.stop()
         self.coverage_context.save()
         self.coverage_context = None
-
-    def stopTestRun(self):
-        """See unittest.TestResult.stopTestRun."""
-        super(CoverageResult, self).stopTestRun()
-        # TODO(atash): Dig deeper into why the following line fails to properly
-        # combine coverage data from the Cython plugin.
-        #coverage.Coverage().combine()
 
 
 class _Colors(object):
