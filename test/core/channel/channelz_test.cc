@@ -101,9 +101,7 @@ void ValidateChildInteger(grpc_json* json, int64_t expect, const char* key) {
   EXPECT_EQ(gotten_number, expect);
 }
 
-void ValidateChannel(Channel* channel, validate_channel_data_args args) {
-  char* json_str = channel->RenderJSON();
-  grpc::testing::ValidateChannelProtoJsonTranslation(json_str);
+void ValidateCounters(char* json_str, validate_channel_data_args args) {
   grpc_json* json = grpc_json_parse_string(json_str);
   EXPECT_NE(json, nullptr);
   grpc_json* data = GetJsonChild(json, "data");
@@ -111,7 +109,14 @@ void ValidateChannel(Channel* channel, validate_channel_data_args args) {
   ValidateChildInteger(data, args.calls_failed, "callsFailed");
   ValidateChildInteger(data, args.calls_succeeded, "callsSucceeded");
   grpc_json_destroy(json);
+}
+
+void ValidateChannel(Channel* channel, validate_channel_data_args args) {
+  char* json_str = channel->RenderJSON();
+  grpc::testing::ValidateChannelProtoJsonTranslation(json_str);
+  ValidateCounters(json_str, args);
   gpr_free(json_str);
+
 }
 
 grpc_millis GetLastCallStartedMillis(Channel* channel) {
@@ -134,7 +139,9 @@ TEST_P(ChannelzChannelTest, BasicChannel) {
   ChannelFixture channel(GetParam());
   intptr_t uuid = grpc_channel_get_uuid(channel.channel());
   Channel* channelz_channel = ChannelzRegistry::Get<Channel>(uuid);
-  ValidateChannel(channelz_channel, {-1, -1, -1});
+  char* json_str = channelz_channel->RenderJSON();
+  ValidateCounters(json_str, {0, 0, 0});
+  gpr_free(json_str);
 }
 
 TEST_P(ChannelzChannelTest, BasicChannelAPIFunctionality) {

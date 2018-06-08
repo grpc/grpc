@@ -263,7 +263,7 @@ static void test_invoke_simple_request(grpc_end2end_test_config config) {
   char* json = channelz_channel->RenderJSON();
   GPR_ASSERT(nullptr != strstr(json, "\"callsStarted\":\"1\""));
   GPR_ASSERT(nullptr != strstr(json, "\"callsFailed\":\"1\""));
-  GPR_ASSERT(nullptr != strstr(json, "\"callsSucceeded\":\"-1\""));
+  GPR_ASSERT(nullptr != strstr(json, "\"callsSucceeded\":\"0\""));
   gpr_free(json);
 
   end_test(&f);
@@ -286,7 +286,7 @@ static void test_invoke_10_simple_requests(grpc_end2end_test_config config) {
   char* json = channelz_channel->RenderJSON();
   GPR_ASSERT(nullptr != strstr(json, "\"callsStarted\":\"10\""));
   GPR_ASSERT(nullptr != strstr(json, "\"callsFailed\":\"10\""));
-  GPR_ASSERT(nullptr != strstr(json, "\"callsSucceeded\":\"-1\""));
+  GPR_ASSERT(nullptr != strstr(json, "\"callsSucceeded\":\"0\""));
   gpr_free(json);
   end_test(&f);
   config.tear_down_data(&f);
