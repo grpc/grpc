@@ -195,10 +195,6 @@ grpc_core::channelz::ChannelNode* grpc_channel_get_channelz_node(
   return channel->channelz_channel.get();
 }
 
-intptr_t grpc_channel_get_uuid(grpc_channel* channel) {
-  return channel->channelz_channel->channel_uuid();
-}
-
 grpc_channel* grpc_channel_create(const char* target,
                                   const grpc_channel_args* input_args,
                                   grpc_channel_stack_type channel_stack_type,

@@ -136,8 +136,8 @@ class ChannelzChannelTest : public ::testing::TestWithParam<size_t> {};
 TEST_P(ChannelzChannelTest, BasicChannel) {
   grpc_core::ExecCtx exec_ctx;
   ChannelFixture channel(GetParam());
-  intptr_t uuid = grpc_channel_get_uuid(channel.channel());
-  ChannelNode* channelz_channel = ChannelzRegistry::Get<ChannelNode>(uuid);
+  ChannelNode* channelz_channel =
+      grpc_channel_get_channelz_node(channel.channel());
   char* json_str = channelz_channel->RenderJSON();
   ValidateCounters(json_str, {0, 0, 0});
   gpr_free(json_str);
@@ -146,8 +146,8 @@ TEST_P(ChannelzChannelTest, BasicChannel) {
 TEST_P(ChannelzChannelTest, BasicChannelAPIFunctionality) {
   grpc_core::ExecCtx exec_ctx;
   ChannelFixture channel(GetParam());
-  intptr_t uuid = grpc_channel_get_uuid(channel.channel());
-  ChannelNode* channelz_channel = ChannelzRegistry::Get<ChannelNode>(uuid);
+  ChannelNode* channelz_channel =
+      grpc_channel_get_channelz_node(channel.channel());
   channelz_channel->RecordCallStarted();
   channelz_channel->RecordCallFailed();
   channelz_channel->RecordCallSucceeded();
@@ -164,8 +164,8 @@ TEST_P(ChannelzChannelTest, BasicChannelAPIFunctionality) {
 TEST_P(ChannelzChannelTest, LastCallStartedMillis) {
   grpc_core::ExecCtx exec_ctx;
   ChannelFixture channel(GetParam());
-  intptr_t uuid = grpc_channel_get_uuid(channel.channel());
-  ChannelNode* channelz_channel = ChannelzRegistry::Get<ChannelNode>(uuid);
+  ChannelNode* channelz_channel =
+      grpc_channel_get_channelz_node(channel.channel());
   // start a call to set the last call started timestamp
   channelz_channel->RecordCallStarted();
   grpc_millis millis1 = GetLastCallStartedMillis(channelz_channel);

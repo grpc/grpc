@@ -286,10 +286,6 @@ GRPCAPI grpc_channel* grpc_lame_client_channel_create(
 /** Close and destroy a grpc channel */
 GRPCAPI void grpc_channel_destroy(grpc_channel* channel);
 
-/** Returns the channel uuid, which can be used to look up its trace at a
-    later time. */
-GRPCAPI intptr_t grpc_channel_get_uuid(grpc_channel* channel);
-
 /** Error handling for grpc_call
    Most grpc_call functions return a grpc_error. If the error is not GRPC_OK
    then the operation failed due to some unsatisfied precondition.
