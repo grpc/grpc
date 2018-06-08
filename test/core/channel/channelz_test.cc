@@ -44,16 +44,16 @@ namespace channelz {
 namespace testing {
 
 // testing peer to access channel internals
-class ChannelPeer {
+class ChannelNodePeer {
  public:
-  ChannelPeer(Channel* channel) : channel_(channel) {}
+  ChannelNodePeer(ChannelNode* channel) : channel_(channel) {}
   grpc_millis last_call_started_millis() {
     return (grpc_millis)gpr_atm_no_barrier_load(
         &channel_->last_call_started_millis_);
   }
 
  private:
-  Channel* channel_;
+  ChannelNode* channel_;
 };
 
 namespace {
@@ -111,15 +111,15 @@ void ValidateCounters(char* json_str, validate_channel_data_args args) {
   grpc_json_destroy(json);
 }
 
-void ValidateChannel(Channel* channel, validate_channel_data_args args) {
+void ValidateChannel(ChannelNode* channel, validate_channel_data_args args) {
   char* json_str = channel->RenderJSON();
   grpc::testing::ValidateChannelProtoJsonTranslation(json_str);
   ValidateCounters(json_str, args);
   gpr_free(json_str);
 }
 
-grpc_millis GetLastCallStartedMillis(Channel* channel) {
-  ChannelPeer peer(channel);
+grpc_millis GetLastCallStartedMillis(ChannelNode* channel) {
+  ChannelNodePeer peer(channel);
   return peer.last_call_started_millis();
 }
 
@@ -137,7 +137,7 @@ TEST_P(ChannelzChannelTest, BasicChannel) {
   grpc_core::ExecCtx exec_ctx;
   ChannelFixture channel(GetParam());
   intptr_t uuid = grpc_channel_get_uuid(channel.channel());
-  Channel* channelz_channel = ChannelzRegistry::Get<Channel>(uuid);
+  ChannelNode* channelz_channel = ChannelzRegistry::Get<ChannelNode>(uuid);
   char* json_str = channelz_channel->RenderJSON();
   ValidateCounters(json_str, {0, 0, 0});
   gpr_free(json_str);
@@ -147,7 +147,7 @@ TEST_P(ChannelzChannelTest, BasicChannelAPIFunctionality) {
   grpc_core::ExecCtx exec_ctx;
   ChannelFixture channel(GetParam());
   intptr_t uuid = grpc_channel_get_uuid(channel.channel());
-  Channel* channelz_channel = ChannelzRegistry::Get<Channel>(uuid);
+  ChannelNode* channelz_channel = ChannelzRegistry::Get<ChannelNode>(uuid);
   channelz_channel->RecordCallStarted();
   channelz_channel->RecordCallFailed();
   channelz_channel->RecordCallSucceeded();
@@ -165,7 +165,7 @@ TEST_P(ChannelzChannelTest, LastCallStartedMillis) {
   grpc_core::ExecCtx exec_ctx;
   ChannelFixture channel(GetParam());
   intptr_t uuid = grpc_channel_get_uuid(channel.channel());
-  Channel* channelz_channel = ChannelzRegistry::Get<Channel>(uuid);
+  ChannelNode* channelz_channel = ChannelzRegistry::Get<ChannelNode>(uuid);
   // start a call to set the last call started timestamp
   channelz_channel->RecordCallStarted();
   grpc_millis millis1 = GetLastCallStartedMillis(channelz_channel);

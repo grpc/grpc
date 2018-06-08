@@ -30,7 +30,7 @@
 namespace grpc_core {
 namespace channelz {
 
-class Channel;
+class ChannelNode;
 
 // Object used to hold live data for a channel. This data is exposed via the
 // channelz service:
@@ -64,10 +64,10 @@ class ChannelTrace {
   // slice.
   void AddTraceEventReferencingChannel(
       Severity severity, grpc_slice data,
-      RefCountedPtr<Channel> referenced_channel);
+      RefCountedPtr<ChannelNode> referenced_channel);
   void AddTraceEventReferencingSubchannel(
       Severity severity, grpc_slice data,
-      RefCountedPtr<Channel> referenced_subchannel);
+      RefCountedPtr<ChannelNode> referenced_subchannel);
 
   // Creates and returns the raw grpc_json object, so a parent channelz
   // object may incorporate the json before rendering.
@@ -82,7 +82,8 @@ class ChannelTrace {
    public:
     // Constructor for a TraceEvent that references a different channel.
     TraceEvent(Severity severity, grpc_slice data,
-               RefCountedPtr<Channel> referenced_channel, ReferencedType type);
+               RefCountedPtr<ChannelNode> referenced_channel,
+               ReferencedType type);
 
     // Constructor for a TraceEvent that does not reverence a different
     // channel.
@@ -104,7 +105,7 @@ class ChannelTrace {
     gpr_timespec timestamp_;
     TraceEvent* next_;
     // the tracer object for the (sub)channel that this trace event refers to.
-    RefCountedPtr<Channel> referenced_channel_;
+    RefCountedPtr<ChannelNode> referenced_channel_;
     // the type that the referenced tracer points to. Unused if this trace
     // does not point to any channel or subchannel
     ReferencedType referenced_type_;

@@ -35,13 +35,13 @@ namespace grpc_core {
 namespace channelz {
 
 namespace testing {
-class ChannelPeer;
+class ChannelNodePeer;
 }
 
-class Channel : public RefCounted<Channel> {
+class ChannelNode : public RefCounted<ChannelNode> {
  public:
-  Channel(grpc_channel* channel, size_t channel_tracer_max_nodes);
-  ~Channel();
+  ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes);
+  ~ChannelNode();
 
   void RecordCallStarted();
   void RecordCallFailed() {
@@ -64,7 +64,7 @@ class Channel : public RefCounted<Channel> {
 
  private:
   // testing peer friend.
-  friend class testing::ChannelPeer;
+  friend class testing::ChannelNodePeer;
 
   // helper for getting connectivity state.
   grpc_connectivity_state GetConnectivityState();

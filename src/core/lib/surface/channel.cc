@@ -67,7 +67,7 @@ struct grpc_channel {
   gpr_mu registered_call_mu;
   registered_call* registered_calls;
 
-  grpc_core::RefCountedPtr<grpc_core::channelz::Channel> channelz_channel;
+  grpc_core::RefCountedPtr<grpc_core::channelz::ChannelNode> channelz_channel;
 
   char* target;
 };
@@ -147,7 +147,7 @@ grpc_channel* grpc_channel_create_with_builder(
 
   grpc_channel_args_destroy(args);
   channel->channelz_channel =
-      grpc_core::MakeRefCounted<grpc_core::channelz::Channel>(
+      grpc_core::MakeRefCounted<grpc_core::channelz::ChannelNode>(
           channel, channel_tracer_max_nodes);
   channel->channelz_channel->trace()->AddTraceEvent(
       grpc_core::channelz::ChannelTrace::Severity::Info,
@@ -190,7 +190,7 @@ char* grpc_channel_render_channelz(grpc_channel* channel) {
   return channel->channelz_channel->RenderJSON();
 }
 
-grpc_core::channelz::Channel* grpc_channel_get_channelz_node(
+grpc_core::channelz::ChannelNode* grpc_channel_get_channelz_node(
     grpc_channel* channel) {
   return channel->channelz_channel.get();
 }

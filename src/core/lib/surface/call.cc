@@ -478,7 +478,7 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
                                                &call->pollent);
   }
 
-  grpc_core::channelz::Channel* channelz_channel =
+  grpc_core::channelz::ChannelNode* channelz_channel =
       grpc_channel_get_channelz_node(call->channel);
   channelz_channel->RecordCallStarted();
 
@@ -1260,7 +1260,7 @@ static void post_batch_completion(batch_control* bctl) {
                        call->final_op.server.cancelled, nullptr, nullptr);
     }
 
-    grpc_core::channelz::Channel* channelz_channel =
+    grpc_core::channelz::ChannelNode* channelz_channel =
         grpc_channel_get_channelz_node(call->channel);
     if (*call->final_op.client.status != GRPC_STATUS_OK) {
       channelz_channel->RecordCallFailed();

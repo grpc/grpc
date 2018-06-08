@@ -41,9 +41,9 @@
 namespace grpc_core {
 namespace channelz {
 
-ChannelTrace::TraceEvent::TraceEvent(Severity severity, grpc_slice data,
-                                     RefCountedPtr<Channel> referenced_channel,
-                                     ReferencedType type)
+ChannelTrace::TraceEvent::TraceEvent(
+    Severity severity, grpc_slice data,
+    RefCountedPtr<ChannelNode> referenced_channel, ReferencedType type)
     : severity_(severity),
       data_(data),
       timestamp_(grpc_millis_to_timespec(grpc_core::ExecCtx::Get()->Now(),
@@ -112,7 +112,7 @@ void ChannelTrace::AddTraceEvent(Severity severity, grpc_slice data) {
 
 void ChannelTrace::AddTraceEventReferencingChannel(
     Severity severity, grpc_slice data,
-    RefCountedPtr<Channel> referenced_channel) {
+    RefCountedPtr<ChannelNode> referenced_channel) {
   if (max_list_size_ == 0) return;  // tracing is disabled if max_events == 0
   // create and fill up the new event
   AddTraceEventHelper(New<TraceEvent>(
@@ -121,7 +121,7 @@ void ChannelTrace::AddTraceEventReferencingChannel(
 
 void ChannelTrace::AddTraceEventReferencingSubchannel(
     Severity severity, grpc_slice data,
-    RefCountedPtr<Channel> referenced_subchannel) {
+    RefCountedPtr<ChannelNode> referenced_subchannel) {
   if (max_list_size_ == 0) return;  // tracing is disabled if max_events == 0
   // create and fill up the new event
   AddTraceEventHelper(New<TraceEvent>(severity, data,

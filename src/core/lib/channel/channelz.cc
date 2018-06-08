@@ -89,7 +89,7 @@ grpc_json* add_num_str(grpc_json* parent, grpc_json* it, const char* name,
 
 }  // namespace
 
-Channel::Channel(grpc_channel* channel, size_t channel_tracer_max_nodes)
+ChannelNode::ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes)
     : channel_(channel),
       target_(UniquePtr<char>(grpc_channel_get_target(channel_))),
       channel_uuid_(ChannelzRegistry::Register(this)) {
@@ -98,18 +98,18 @@ Channel::Channel(grpc_channel* channel, size_t channel_tracer_max_nodes)
                            (gpr_atm)ExecCtx::Get()->Now());
 }
 
-Channel::~Channel() {
+ChannelNode::~ChannelNode() {
   trace_.Destroy();
   ChannelzRegistry::Unregister(channel_uuid_);
 }
 
-void Channel::RecordCallStarted() {
+void ChannelNode::RecordCallStarted() {
   gpr_atm_no_barrier_fetch_add(&calls_started_, (gpr_atm)1);
   gpr_atm_no_barrier_store(&last_call_started_millis_,
                            (gpr_atm)ExecCtx::Get()->Now());
 }
 
-grpc_connectivity_state Channel::GetConnectivityState() {
+grpc_connectivity_state ChannelNode::GetConnectivityState() {
   if (channel_ == nullptr) {
     return GRPC_CHANNEL_SHUTDOWN;
   } else {
@@ -117,7 +117,7 @@ grpc_connectivity_state Channel::GetConnectivityState() {
   }
 }
 
-char* Channel::RenderJSON() {
+char* ChannelNode::RenderJSON() {
   // We need to track these three json objects to build our object
   grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
   grpc_json* json = top_level_json;
