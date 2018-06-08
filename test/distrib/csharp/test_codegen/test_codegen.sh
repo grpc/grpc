@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015 gRPC authors.
+# Copyright 2018 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,10 +28,10 @@ then
   PLATFORM_ARCH=linux_x86
 fi
 
-PROTOC="../packages/Grpc.Tools.__GRPC_NUGET_VERSION__/tools/${PLATFORM_ARCH}/protoc"
-PLUGIN="../packages/Grpc.Tools.__GRPC_NUGET_VERSION__/tools/${PLATFORM_ARCH}/grpc_csharp_plugin"
+PROTOC=../packages/Grpc.Tools.__GRPC_NUGET_VERSION__/tools/${PLATFORM_ARCH}/protoc
+PLUGIN=../packages/Grpc.Tools.__GRPC_NUGET_VERSION__/tools/${PLATFORM_ARCH}/grpc_csharp_plugin
 
-$PROTOC --plugin="protoc-gen-grpc=${PLUGIN}" --csharp_out=. --grpc_out=. -I . testcodegen.proto
+"${PROTOC}" --plugin="protoc-gen-grpc=${PLUGIN}" --csharp_out=. --grpc_out=. -I . testcodegen.proto
 
 ls *.cs
 
