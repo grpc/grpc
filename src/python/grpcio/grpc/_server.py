@@ -330,6 +330,8 @@ class _RequestIterator(object):
             self._state.request = None
             return request
 
+        raise AssertionError()  # should never run
+
     def _next(self):
         with self._state.condition:
             self._raise_or_start_receive_message()

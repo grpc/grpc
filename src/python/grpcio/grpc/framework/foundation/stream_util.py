@@ -47,10 +47,10 @@ class IterableConsumer(stream.Consumer):
         self._values = []
         self._active = True
 
-    def consume(self, stock_reply):
+    def consume(self, value):
         with self._condition:
             if self._active:
-                self._values.append(stock_reply)
+                self._values.append(value)
                 self._condition.notify()
 
     def terminate(self):
@@ -58,10 +58,10 @@ class IterableConsumer(stream.Consumer):
             self._active = False
             self._condition.notify()
 
-    def consume_and_terminate(self, stock_reply):
+    def consume_and_terminate(self, value):
         with self._condition:
             if self._active:
-                self._values.append(stock_reply)
+                self._values.append(value)
                 self._active = False
                 self._condition.notify()
 
