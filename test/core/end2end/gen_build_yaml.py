@@ -57,6 +57,8 @@ END2END_FIXTURES = {
     'h2_full+workarounds': default_unsecure_fixture_options,
     'h2_http_proxy': default_unsecure_fixture_options._replace(
         ci_mac=False, exclude_iomgrs=['uv'], supports_proxy_auth=True),
+    'h2_https_proxy': default_secure_fixture_options._replace(
+        ci_mac=False, exclude_iomgrs=['uv'], supports_proxy_auth=True),
     'h2_oauth2': default_secure_fixture_options._replace(
         ci_mac=False, exclude_iomgrs=['uv']),
     'h2_proxy': default_unsecure_fixture_options._replace(

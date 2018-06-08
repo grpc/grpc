@@ -19,6 +19,8 @@
 #ifndef GRPC_TEST_CORE_END2END_FIXTURES_HTTP_PROXY_FIXTURE_H
 #define GRPC_TEST_CORE_END2END_FIXTURES_HTTP_PROXY_FIXTURE_H
 
+#include "test/core/end2end/end2end_tests.h"
+
 #include <grpc/grpc.h>
 
 /* The test credentials being used for HTTP Proxy Authorization */
@@ -32,6 +34,14 @@
 
 typedef struct grpc_end2end_http_proxy grpc_end2end_http_proxy;
 
+typedef struct fullstack_fixture_data {
+  char* server_addr;
+  grpc_end2end_http_proxy* proxy;
+} fullstack_fixture_data;
+
+/* These helper functions are common to h2_http_proxy and h2_https_proxy
+ * fixtures. */
+
 grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
     grpc_channel_args* args);
 
@@ -39,5 +49,14 @@ void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy);
 
 const char* grpc_end2end_http_proxy_get_proxy_name(
     grpc_end2end_http_proxy* proxy);
+
+grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
+    grpc_channel_args* client_args, grpc_channel_args* server_args);
+
+/* Sets 'http_proxy' if channel is insecure, otherwise sets 'https_proxy' */
+void set_http_proxy(const char* proxy_name,
+                    const grpc_channel_args* client_args, bool secure);
+
+void chttp2_tear_down_fullstack(grpc_end2end_test_fixture* f);
 
 #endif /* GRPC_TEST_CORE_END2END_FIXTURES_HTTP_PROXY_FIXTURE_H */
