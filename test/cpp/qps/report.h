@@ -129,7 +129,7 @@ class JsonReporter : public Reporter {
 
 class RpcReporter : public Reporter {
  public:
-  RpcReporter(const string& name, std::shared_ptr<grpc::Channel> channel)
+  RpcReporter(const string& name, const std::shared_ptr<grpc::Channel>& channel)
       : Reporter(name), stub_(ReportQpsScenarioService::NewStub(channel)) {}
 
  private:

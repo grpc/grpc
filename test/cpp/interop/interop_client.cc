@@ -19,6 +19,7 @@
 #include <cinttypes>
 #include <fstream>
 #include <memory>
+#include <utility>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -73,7 +74,7 @@ void UnaryCompressionChecks(const InteropClientContextInspector& inspector,
 }
 }  // namespace
 
-InteropClient::ServiceStub::ServiceStub(std::shared_ptr<Channel> channel,
+InteropClient::ServiceStub::ServiceStub(const std::shared_ptr<Channel>& channel,
                                         bool new_stub_every_call)
     : channel_(channel), new_stub_every_call_(new_stub_every_call) {
   // If new_stub_every_call is false, then this is our chance to initialize
@@ -99,7 +100,8 @@ InteropClient::ServiceStub::GetUnimplementedServiceStub() {
   return unimplemented_service_stub_.get();
 }
 
-void InteropClient::ServiceStub::Reset(std::shared_ptr<Channel> channel) {
+void InteropClient::ServiceStub::Reset(
+    const std::shared_ptr<Channel>& channel) {
   channel_ = channel;
 
   // Update stub_ as well. Note: If new_stub_every_call_ is true, we can reset
@@ -112,13 +114,13 @@ void InteropClient::ServiceStub::Reset(std::shared_ptr<Channel> channel) {
 }
 
 void InteropClient::Reset(std::shared_ptr<Channel> channel) {
-  serviceStub_.Reset(channel);
+  serviceStub_.Reset(std::move(channel));
 }
 
 InteropClient::InteropClient(std::shared_ptr<Channel> channel,
                              bool new_stub_every_test_case,
                              bool do_not_abort_on_transient_failures)
-    : serviceStub_(channel, new_stub_every_test_case),
+    : serviceStub_(std::move(channel), new_stub_every_test_case),
       do_not_abort_on_transient_failures_(do_not_abort_on_transient_failures) {}
 
 bool InteropClient::AssertStatusOk(const Status& s,
@@ -180,7 +182,7 @@ bool InteropClient::PerformLargeUnary(SimpleRequest* request,
 
 bool InteropClient::PerformLargeUnary(SimpleRequest* request,
                                       SimpleResponse* response,
-                                      CheckerFn custom_checks_fn) {
+                                      const CheckerFn& custom_checks_fn) {
   ClientContext context;
   InteropClientContextInspector inspector(context);
   request->set_response_size(kLargeResponseSize);

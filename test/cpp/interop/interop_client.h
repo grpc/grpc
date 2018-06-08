@@ -83,12 +83,13 @@ class InteropClient {
    public:
     // If new_stub_every_call = true, pointer to a new instance of
     // TestServce::Stub is returned by Get() everytime it is called
-    ServiceStub(std::shared_ptr<Channel> channel, bool new_stub_every_call);
+    ServiceStub(const std::shared_ptr<Channel>& channel,
+                bool new_stub_every_call);
 
     TestService::Stub* Get();
     UnimplementedService::Stub* GetUnimplementedServiceStub();
 
-    void Reset(std::shared_ptr<Channel> channel);
+    void Reset(const std::shared_ptr<Channel>& channel);
 
    private:
     std::unique_ptr<TestService::Stub> stub_;
@@ -102,7 +103,7 @@ class InteropClient {
 
   /// Run \a custom_check_fn as an additional check.
   bool PerformLargeUnary(SimpleRequest* request, SimpleResponse* response,
-                         CheckerFn custom_checks_fn);
+                         const CheckerFn& custom_checks_fn);
   bool AssertStatusOk(const Status& s,
                       const grpc::string& optional_debug_string);
   bool AssertStatusCode(const Status& s, StatusCode expected_code,

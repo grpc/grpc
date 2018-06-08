@@ -192,7 +192,7 @@ class SynchronousStreamingClient : public SynchronousClient {
     new (&context_[thread_idx]) ClientContext();
   }
 
-  void CleanupAllStreams(std::function<void(size_t)> cleaner) {
+  void CleanupAllStreams(const std::function<void(size_t)>& cleaner) {
     std::vector<std::thread> cleanup_threads;
     for (size_t i = 0; i < num_threads_; i++) {
       cleanup_threads.emplace_back([this, i, cleaner] {

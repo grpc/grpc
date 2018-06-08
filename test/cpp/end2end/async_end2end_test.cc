@@ -142,7 +142,7 @@ class Verifier {
   // to call the lambda
   void Verify(CompletionQueue* cq,
               std::chrono::system_clock::time_point deadline,
-              std::function<void(void)> lambda) {
+              const std::function<void(void)>& lambda) {
     if (expectations_.empty()) {
       bool ok;
       void* got_tag;

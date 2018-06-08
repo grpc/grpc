@@ -24,6 +24,7 @@
 #include <sstream>
 #include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #include <grpc/grpc.h>
@@ -78,7 +79,7 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
         response_(),
         next_state_(State::READY),
         callback_(on_done),
-        next_issue_(next_issue),
+        next_issue_(std::move(next_issue)),
         prepare_req_(prepare_req) {}
   ~ClientRpcContextUnaryImpl() override {}
   void Start(CompletionQueue* cq, const ClientConfig& config) override {
@@ -326,7 +327,7 @@ class AsyncUnaryClient final
                                     std::function<gpr_timespec()> next_issue,
                                     const SimpleRequest& req) {
     return new ClientRpcContextUnaryImpl<SimpleRequest, SimpleResponse>(
-        stub, req, next_issue, AsyncUnaryClient::PrepareReq,
+        stub, req, std::move(next_issue), AsyncUnaryClient::PrepareReq,
         AsyncUnaryClient::CheckDone);
   }
 };
@@ -349,7 +350,7 @@ class ClientRpcContextStreamingPingPongImpl : public ClientRpcContext {
         response_(),
         next_state_(State::INVALID),
         callback_(on_done),
-        next_issue_(next_issue),
+        next_issue_(std::move(next_issue)),
         prepare_req_(prepare_req),
         coalesce_(false) {}
   ~ClientRpcContextStreamingPingPongImpl() override {}
@@ -510,7 +511,8 @@ class AsyncStreamingPingPongClient final
                                     const SimpleRequest& req) {
     return new ClientRpcContextStreamingPingPongImpl<SimpleRequest,
                                                      SimpleResponse>(
-        stub, req, next_issue, AsyncStreamingPingPongClient::PrepareReq,
+        stub, req, std::move(next_issue),
+        AsyncStreamingPingPongClient::PrepareReq,
         AsyncStreamingPingPongClient::CheckDone);
   }
 };
@@ -533,7 +535,7 @@ class ClientRpcContextStreamingFromClientImpl : public ClientRpcContext {
         response_(),
         next_state_(State::INVALID),
         callback_(on_done),
-        next_issue_(next_issue),
+        next_issue_(std::move(next_issue)),
         prepare_req_(prepare_req) {}
   ~ClientRpcContextStreamingFromClientImpl() override {}
   void Start(CompletionQueue* cq, const ClientConfig& config) override {
@@ -640,7 +642,8 @@ class AsyncStreamingFromClientClient final
                                     const SimpleRequest& req) {
     return new ClientRpcContextStreamingFromClientImpl<SimpleRequest,
                                                        SimpleResponse>(
-        stub, req, next_issue, AsyncStreamingFromClientClient::PrepareReq,
+        stub, req, std::move(next_issue),
+        AsyncStreamingFromClientClient::PrepareReq,
         AsyncStreamingFromClientClient::CheckDone);
   }
 };
@@ -663,7 +666,7 @@ class ClientRpcContextStreamingFromServerImpl : public ClientRpcContext {
         response_(),
         next_state_(State::INVALID),
         callback_(on_done),
-        next_issue_(next_issue),
+        next_issue_(std::move(next_issue)),
         prepare_req_(prepare_req) {}
   ~ClientRpcContextStreamingFromServerImpl() override {}
   void Start(CompletionQueue* cq, const ClientConfig& config) override {
@@ -754,7 +757,8 @@ class AsyncStreamingFromServerClient final
                                     const SimpleRequest& req) {
     return new ClientRpcContextStreamingFromServerImpl<SimpleRequest,
                                                        SimpleResponse>(
-        stub, req, next_issue, AsyncStreamingFromServerClient::PrepareReq,
+        stub, req, std::move(next_issue),
+        AsyncStreamingFromServerClient::PrepareReq,
         AsyncStreamingFromServerClient::CheckDone);
   }
 };
@@ -775,9 +779,9 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
         req_(req),
         response_(),
         next_state_(State::INVALID),
-        callback_(on_done),
-        next_issue_(next_issue),
-        prepare_req_(prepare_req) {}
+        callback_(std::move(on_done)),
+        next_issue_(std::move(next_issue)),
+        prepare_req_(std::move(prepare_req)) {}
   ~ClientRpcContextGenericStreamingImpl() override {}
   void Start(CompletionQueue* cq, const ClientConfig& config) override {
     GPR_ASSERT(!config.use_coalesce_api());  // not supported yet.
@@ -918,7 +922,8 @@ class GenericAsyncStreamingClient final
                                     std::function<gpr_timespec()> next_issue,
                                     const ByteBuffer& req) {
     return new ClientRpcContextGenericStreamingImpl(
-        stub, req, next_issue, GenericAsyncStreamingClient::PrepareReq,
+        stub, req, std::move(next_issue),
+        GenericAsyncStreamingClient::PrepareReq,
         GenericAsyncStreamingClient::CheckDone);
   }
 };
