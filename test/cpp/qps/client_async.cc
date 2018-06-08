@@ -299,7 +299,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
 };
 
 static std::unique_ptr<BenchmarkService::Stub> BenchmarkStubCreator(
-    std::shared_ptr<Channel> ch) {
+    const std::shared_ptr<Channel>& ch) {
   return BenchmarkService::NewStub(ch);
 }
 
@@ -314,7 +314,7 @@ class AsyncUnaryClient final
   ~AsyncUnaryClient() override {}
 
  private:
-  static void CheckDone(grpc::Status s, SimpleResponse* response,
+  static void CheckDone(const grpc::Status& s, SimpleResponse* response,
                         HistogramEntry* entry) {
     entry->set_status(s.error_code());
   }
@@ -498,7 +498,7 @@ class AsyncStreamingPingPongClient final
   ~AsyncStreamingPingPongClient() override {}
 
  private:
-  static void CheckDone(grpc::Status s, SimpleResponse* response) {}
+  static void CheckDone(const grpc::Status& s, SimpleResponse* response) {}
   static std::unique_ptr<
       grpc::ClientAsyncReaderWriter<SimpleRequest, SimpleResponse>>
   PrepareReq(BenchmarkService::Stub* stub, grpc::ClientContext* ctx,
@@ -630,7 +630,7 @@ class AsyncStreamingFromClientClient final
   ~AsyncStreamingFromClientClient() override {}
 
  private:
-  static void CheckDone(grpc::Status s, SimpleResponse* response) {}
+  static void CheckDone(const grpc::Status& s, SimpleResponse* response) {}
   static std::unique_ptr<grpc::ClientAsyncWriter<SimpleRequest>> PrepareReq(
       BenchmarkService::Stub* stub, grpc::ClientContext* ctx,
       SimpleResponse* resp, CompletionQueue* cq) {
@@ -745,7 +745,7 @@ class AsyncStreamingFromServerClient final
   ~AsyncStreamingFromServerClient() override {}
 
  private:
-  static void CheckDone(grpc::Status s, SimpleResponse* response) {}
+  static void CheckDone(const grpc::Status& s, SimpleResponse* response) {}
   static std::unique_ptr<grpc::ClientAsyncReader<SimpleResponse>> PrepareReq(
       BenchmarkService::Stub* stub, grpc::ClientContext* ctx,
       const SimpleRequest& req, CompletionQueue* cq) {
@@ -895,7 +895,7 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
 };
 
 static std::unique_ptr<grpc::GenericStub> GenericStubCreator(
-    std::shared_ptr<Channel> ch) {
+    const std::shared_ptr<Channel>& ch) {
   return std::unique_ptr<grpc::GenericStub>(new grpc::GenericStub(ch));
 }
 
@@ -911,7 +911,7 @@ class GenericAsyncStreamingClient final
   ~GenericAsyncStreamingClient() override {}
 
  private:
-  static void CheckDone(grpc::Status s, ByteBuffer* response) {}
+  static void CheckDone(const grpc::Status& s, ByteBuffer* response) {}
   static std::unique_ptr<grpc::GenericClientAsyncReaderWriter> PrepareReq(
       grpc::GenericStub* stub, grpc::ClientContext* ctx,
       const grpc::string& method_name, CompletionQueue* cq) {

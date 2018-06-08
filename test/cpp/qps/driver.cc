@@ -217,7 +217,6 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // To be added to the result, containing the final configuration used for
   // client and config (including host, etc.)
   ClientConfig result_client_config;
-  const ServerConfig& result_server_config = initial_server_config;
 
   // Get client, server lists; ignore if inproc test
   auto workers = (!run_inproc) ? get_workers("QPS_WORKERS") : deque<string>();

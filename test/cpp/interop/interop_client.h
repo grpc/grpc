@@ -40,12 +40,12 @@ class InteropClient {
   /// created for every test case
   /// If do_not_abort_on_transient_failures is true, abort() is not called in
   /// case of transient failures (like connection failures)
-  explicit InteropClient(std::shared_ptr<Channel> channel,
+  explicit InteropClient(const std::shared_ptr<Channel>& channel,
                          bool new_stub_every_test_case,
                          bool do_not_abort_on_transient_failures);
   ~InteropClient() {}
 
-  void Reset(std::shared_ptr<Channel> channel);
+  void Reset(const std::shared_ptr<Channel>& channel);
 
   bool DoEmpty();
   bool DoLargeUnary();

@@ -44,7 +44,7 @@ namespace grpc {
 namespace testing {
 
 static std::unique_ptr<BenchmarkService::Stub> BenchmarkStubCreator(
-    std::shared_ptr<Channel> ch) {
+    const std::shared_ptr<Channel>& ch) {
   return BenchmarkService::NewStub(ch);
 }
 

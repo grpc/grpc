@@ -113,11 +113,11 @@ void InteropClient::ServiceStub::Reset(
   }
 }
 
-void InteropClient::Reset(std::shared_ptr<Channel> channel) {
+void InteropClient::Reset(const std::shared_ptr<Channel>& channel) {
   serviceStub_.Reset(std::move(channel));
 }
 
-InteropClient::InteropClient(std::shared_ptr<Channel> channel,
+InteropClient::InteropClient(const std::shared_ptr<Channel>& channel,
                              bool new_stub_every_test_case,
                              bool do_not_abort_on_transient_failures)
     : serviceStub_(std::move(channel), new_stub_every_test_case),
