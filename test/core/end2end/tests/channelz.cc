@@ -199,7 +199,7 @@ static void test_channelz(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f;
 
   f = begin_test(config, "test_channelz", nullptr, nullptr);
-  grpc_core::channelz::Channel* channelz_channel =
+  grpc_core::channelz::ChannelNode* channelz_channel =
       grpc_channel_get_channelz_node(f.client);
 
   char* json = channelz_channel->RenderJSON();
@@ -242,7 +242,7 @@ static void test_channelz_with_channel_trace(grpc_end2end_test_config config) {
 
   f = begin_test(config, "test_channelz_with_channel_trace", &client_args,
                  nullptr);
-  grpc_core::channelz::Channel* channelz_channel =
+  grpc_core::channelz::ChannelNode* channelz_channel =
       grpc_channel_get_channelz_node(f.client);
 
   char* json = channelz_channel->RenderJSON();
