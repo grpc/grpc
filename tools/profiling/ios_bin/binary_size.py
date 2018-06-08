@@ -28,6 +28,9 @@ sys.path.append(
         os.path.dirname(sys.argv[0]), '..', '..', 'run_tests', 'python_utils'))
 import comment_on_pr
 
+# Only show diff 1KB or greater
+diff_threshold = 1000
+
 size_labels = ('Core', 'ObjC', 'BoringSSL', 'Protobuf', 'Total')
 
 argp = argparse.ArgumentParser(
@@ -104,22 +107,39 @@ for frameworks in [False, True]:
             subprocess.check_call(['git', 'checkout', where_am_i])
             subprocess.check_call(['git', 'submodule', 'update'])
 
-    text += ('****************FRAMEWORKS*****************\n'
-             if frameworks else '******************STATIC*******************\n')
+    text += ('***************FRAMEWORKS****************\n'
+             if frameworks else '*****************STATIC******************\n')
     row_format = "{:>10}{:>15}{:>15}" + '\n'
     text += row_format.format('New size', '', 'Old size')
-    for i in range(0, len(size_labels)):
-        if old_size == None:
-            diff_sign = ' '
-        elif new_size[i] == old_size[i]:
-            diff_sign = ' (=)'
-        elif new_size[i] > old_size[i]:
+    if old_size == None:
+        for i in range(0, len(size_labels)):
+            text += ('\n' if i == len(size_labels) - 1 else '') + row_format.format(
+                '{:,}'.format(new_size[i]), size_labels[i], '')
+    else:
+        has_diff = False
+        for i in range(0, len(size_labels) - 1):
+            if abs(new_size[i] - old_size[i]) < diff_threshold:
+                continue
+            if new_size[i] > old_size[i]:
+                diff_sign = ' (>)'
+            else:
+                diff_sign = ' (<)'
+            has_diff = True
+            text += row_format.format(
+                '{:,}'.format(new_size[i]), size_labels[i] + diff_sign,
+                '{:,}'.format(old_size[i]))
+        i = len(size_labels) - 1
+        if new_size[i] > old_size[i]:
             diff_sign = ' (>)'
-        else:
+        elif new_size[i] < old_size[i]:
             diff_sign = ' (<)'
-        text += ('\n' if i == len(size_labels) - 1 else '') + row_format.format(
+        else:
+            diff_sign = ' (=)'
+        text += ('\n' if has_diff else '') + row_format.format(
             '{:,}'.format(new_size[i]), size_labels[i] + diff_sign,
-            '{:,}'.format(old_size[i]) if old_size != None else '')
+            '{:,}'.format(old_size[i]))
+        if not has_diff:
+            text += '\n No significant differences in binary sizes\n'
     text += '\n'
 
 print text
