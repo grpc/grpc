@@ -594,7 +594,8 @@ static grpc_error* pollable_add_fd(pollable* p, grpc_fd* fd) {
       static_cast<uint32_t>(EPOLLET | EPOLLIN | EPOLLOUT | EPOLLEXCLUSIVE);
   /* Use the second least significant bit of ev_fd.data.ptr to store track_err
    * to avoid synchronization issues when accessing it after receiving an event.
-   */
+   * Accessing fd would be a data race there because the fd might have been
+   * returned to the free list at that point. */
   ev_fd.data.ptr = reinterpret_cast<void*>(reinterpret_cast<intptr_t>(fd) |
                                            (fd->track_err ? 2 : 0));
   GRPC_STATS_INC_SYSCALL_EPOLL_CTL();

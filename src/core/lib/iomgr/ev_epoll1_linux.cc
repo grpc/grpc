@@ -311,7 +311,9 @@ static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
   ev.events = static_cast<uint32_t>(EPOLLIN | EPOLLOUT | EPOLLET);
   /* Use the least significant bit of ev.data.ptr to store track_err. We expect
    * the addresses to be word aligned. We need to store track_err to avoid
-   * synchronization issues when accessing it after receiving an event. */
+   * synchronization issues when accessing it after receiving an event.
+   * Accessing fd would be a data race there because the fd might have been
+   * returned to the free list at that point. */
   ev.data.ptr = reinterpret_cast<void*>(reinterpret_cast<intptr_t>(new_fd) |
                                         (track_err ? 1 : 0));
   if (epoll_ctl(g_epoll_set.epfd, EPOLL_CTL_ADD, fd, &ev) != 0) {
