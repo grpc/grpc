@@ -22,7 +22,6 @@ import collections
 import hashlib
 import json
 
-_LOCAL_DNS_SERVER_ADDRESS = '127.0.0.1:15353'
 
 def _append_zone_name(name, zone_name):
   return '%s.%s' % (name, zone_name)
@@ -121,25 +120,6 @@ def main():
                   'grpc++_test_config',
               ],
           } for unsecure_build_config_suffix in ['_unsecure', '']
-      ] + [
-          {
-          'name': 'cancel_ares_query_test',
-          'build': 'test',
-          'language': 'c++',
-          'gtest': True,
-          'run': True,
-          'src': ['test/cpp/naming/cancel_ares_query_test.cc'],
-          'platforms': ['linux', 'posix', 'mac'],
-          'deps': [
-              'grpc++_test_util',
-              'grpc_test_util',
-              'gpr_test_util',
-              'grpc++',
-              'grpc',
-              'gpr',
-              'grpc++_test_config',
-          ],
-          },
       ]
   }
 

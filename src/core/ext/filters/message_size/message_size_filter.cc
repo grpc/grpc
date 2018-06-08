@@ -198,8 +198,10 @@ static void start_transport_stream_op_batch(
   }
   // Inject callback for receiving trailing metadata.
   if (op->recv_trailing_metadata) {
-    calld->next_recv_trailing_metadata = op->on_complete;
-    op->on_complete = &calld->recv_trailing_metadata;
+    calld->next_recv_trailing_metadata =
+        op->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
+    op->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
+        &calld->recv_trailing_metadata;
   }
   // Chain to the next filter.
   grpc_call_next_op(elem, op);

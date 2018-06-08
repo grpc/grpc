@@ -24,6 +24,8 @@ from grpc import _grpcio_metadata
 from grpc._cython import cygrpc
 from grpc.framework.foundation import callable_util
 
+_LOGGER = logging.getLogger(__name__)
+
 _USER_AGENT = 'grpc-python/{}'.format(_grpcio_metadata.__version__)
 
 _EMPTY_FLAGS = 0
@@ -181,7 +183,7 @@ def _consume_request_iterator(request_iterator, state, call, request_serializer,
             except Exception:  # pylint: disable=broad-except
                 code = grpc.StatusCode.UNKNOWN
                 details = 'Exception iterating requests!'
-                logging.exception(details)
+                _LOGGER.exception(details)
                 call.cancel(_common.STATUS_CODE_TO_CYGRPC_STATUS_CODE[code],
                             details)
                 _abort(state, code, details)
