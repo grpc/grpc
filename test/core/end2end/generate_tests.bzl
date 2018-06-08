@@ -55,6 +55,7 @@ END2END_FIXTURES = {
     'h2_full+trace': fixture_options(tracing=True),
     'h2_full+workarounds': fixture_options(),
     'h2_http_proxy': fixture_options(supports_proxy_auth=True),
+    'h2_https_proxy': fixture_options(supports_proxy_auth=True, secure=True),
     'h2_oauth2': fixture_options(),
     'h2_proxy': fixture_options(includes_proxy=True),
     'h2_sockpair_1byte': fixture_options(fullstack=False, dns_resolver=False,

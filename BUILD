@@ -1068,6 +1068,10 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/subchannel.h",
         "src/core/ext/filters/client_channel/subchannel_index.h",
         "src/core/ext/filters/client_channel/uri_parser.h",
+        "src/core/lib/security/credentials/credentials.h",
+        "src/core/lib/security/security_connector/security_connector.h",
+        "src/core/tsi/ssl_transport_security.h",
+        "src/core/tsi/transport_security_interface.h",
     ],
     language = "c++",
     deps = [

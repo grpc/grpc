@@ -34,18 +34,33 @@
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/b64.h"
 
 /**
- * Parses the 'http_proxy' env var and returns the proxy hostname to resolve or
- * nullptr on error. Also sets 'user_cred' to user credentials if present in the
- * 'http_proxy' env var, otherwise leaves it unchanged. It is caller's
- * responsibility to gpr_free user_cred.
+ * Parses the 'http_proxy' env var (or 'https_proxy', if it is a secure channel)
+ * and returns the proxy hostname to resolve or nullptr on error. Also sets
+ * 'user_cred' to user credentials if present in the 'http_proxy' env var,
+ * otherwise leaves it unchanged. It is caller's responsibility to gpr_free
+ * user_cred.
  */
-static char* get_http_proxy_server(char** user_cred) {
+static char* get_http_proxy_server(char** user_cred,
+                                   const grpc_channel_args* args) {
   GPR_ASSERT(user_cred != nullptr);
+  char* uri_str = nullptr;
+  /* Prefer using 'https_proxy' for secure channels and 'http_proxy' for
+   * insecure channels. Fallback on the other one if it is not set. The fallback
+   * behavior can be removed if there's a demand for it.
+   */
+  if (grpc_channel_args_find(args, (char*)GRPC_ARG_CHANNEL_CREDENTIALS) !=
+      nullptr) {
+    uri_str = gpr_getenv("https_proxy");
+    if (uri_str == nullptr) gpr_getenv("http_proxy");
+  } else {
+    uri_str = gpr_getenv("http_proxy");
+    if (uri_str == nullptr) gpr_getenv("https_proxy");
+  }
   char* proxy_name = nullptr;
-  char* uri_str = gpr_getenv("http_proxy");
   char** authority_strs = nullptr;
   size_t authority_nstrs;
   if (uri_str == nullptr) return nullptr;
@@ -102,7 +117,7 @@ static bool proxy_mapper_map_name(grpc_proxy_mapper* mapper,
     return false;
   }
   char* user_cred = nullptr;
-  *name_to_resolve = get_http_proxy_server(&user_cred);
+  *name_to_resolve = get_http_proxy_server(&user_cred, args);
   if (*name_to_resolve == nullptr) return false;
   char* no_proxy_str = nullptr;
   grpc_uri* uri = grpc_uri_parse(server_uri, false /* suppress_errors */);
