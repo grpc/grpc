@@ -16,6 +16,8 @@
  *
  */
 
+/* This fixture runs the end to end tests with an http proxy in between. */
+
 #include <string.h>
 
 #include <grpc/support/alloc.h>
