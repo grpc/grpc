@@ -103,11 +103,11 @@ def start_local_dns_server(args):
   server = twisted.names.server.DNSServerFactory(
       authorities=[test_domain_com], verbose=2)
   server.noisy = 2
-  twisted.internet.reactor.listenTCP(args.port, server, interface='::1')
+  twisted.internet.reactor.listenTCP(args.port, server)
   dns_proto = twisted.names.dns.DNSDatagramProtocol(server)
   dns_proto.noisy = 2
-  twisted.internet.reactor.listenUDP(args.port, dns_proto, interface='::1')
-  print('starting local dns server on [::1]:%s' % args.port)
+  twisted.internet.reactor.listenUDP(args.port, dns_proto)
+  print('starting local dns server on 127.0.0.1:%s' % args.port)
   print('starting twisted.internet.reactor')
   twisted.internet.reactor.suggestThreadPoolSize(1)
   twisted.internet.reactor.run()

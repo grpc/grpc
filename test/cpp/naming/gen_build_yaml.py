@@ -22,6 +22,7 @@ import collections
 import hashlib
 import json
 
+_LOCAL_DNS_SERVER_ADDRESS = '127.0.0.1:15353'
 
 def _append_zone_name(name, zone_name):
   return '%s.%s' % (name, zone_name)
