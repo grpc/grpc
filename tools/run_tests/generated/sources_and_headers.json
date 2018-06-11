@@ -6564,26 +6564,6 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
-      "grpc++", 
-      "grpc++_test_config", 
-      "grpc++_test_util", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "cancel_ares_query_test", 
-    "src": [
-      "test/cpp/naming/cancel_ares_query_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -8784,6 +8764,7 @@
       "test/core/end2end/tests/max_message_length.cc", 
       "test/core/end2end/tests/negative_deadline.cc", 
       "test/core/end2end/tests/network_status_change.cc", 
+      "test/core/end2end/tests/no_error_on_hotpath.cc", 
       "test/core/end2end/tests/no_logging.cc", 
       "test/core/end2end/tests/no_op.cc", 
       "test/core/end2end/tests/payload.cc", 
@@ -8883,6 +8864,7 @@
       "test/core/end2end/tests/max_message_length.cc", 
       "test/core/end2end/tests/negative_deadline.cc", 
       "test/core/end2end/tests/network_status_change.cc", 
+      "test/core/end2end/tests/no_error_on_hotpath.cc", 
       "test/core/end2end/tests/no_logging.cc", 
       "test/core/end2end/tests/no_op.cc", 
       "test/core/end2end/tests/payload.cc", 

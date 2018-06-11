@@ -42,6 +42,7 @@ Pod::Spec.new do |s|
 
   src_dir = 'src/objective-c/ProtoRPC'
 
+  s.default_subspec = 'Main'
 
   s.subspec 'Main' do |ss|
     ss.header_mappings_dir = "#{src_dir}"

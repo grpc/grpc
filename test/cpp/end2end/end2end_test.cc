@@ -1209,8 +1209,13 @@ TEST_P(End2endTest, ExpectErrorTest) {
   std::vector<ErrorStatus> expected_status;
   expected_status.emplace_back();
   expected_status.back().set_code(13);  // INTERNAL
+  // No Error message or details
+
+  expected_status.emplace_back();
+  expected_status.back().set_code(13);  // INTERNAL
   expected_status.back().set_error_message("text error message");
   expected_status.back().set_binary_error_details("text error details");
+
   expected_status.emplace_back();
   expected_status.back().set_code(13);  // INTERNAL
   expected_status.back().set_error_message("text error message");

@@ -664,9 +664,6 @@ endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx address_sorting_test)
 endif()
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-add_dependencies(buildtests_cxx cancel_ares_query_test)
-endif()
 
 add_custom_target(buildtests
   DEPENDS buildtests_c buildtests_cxx)
@@ -5302,6 +5299,7 @@ add_library(end2end_tests
   test/core/end2end/tests/max_message_length.cc
   test/core/end2end/tests/negative_deadline.cc
   test/core/end2end/tests/network_status_change.cc
+  test/core/end2end/tests/no_error_on_hotpath.cc
   test/core/end2end/tests/no_logging.cc
   test/core/end2end/tests/no_op.cc
   test/core/end2end/tests/payload.cc
@@ -5420,6 +5418,7 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/max_message_length.cc
   test/core/end2end/tests/negative_deadline.cc
   test/core/end2end/tests/network_status_change.cc
+  test/core/end2end/tests/no_error_on_hotpath.cc
   test/core/end2end/tests/no_logging.cc
   test/core/end2end/tests/no_op.cc
   test/core/end2end/tests/payload.cc
@@ -15861,48 +15860,6 @@ target_include_directories(address_sorting_test
 )
 
 target_link_libraries(address_sorting_test
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++_test_util
-  grpc_test_util
-  gpr_test_util
-  grpc++
-  grpc
-  gpr
-  grpc++_test_config
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-endif()
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-
-add_executable(cancel_ares_query_test
-  test/cpp/naming/cancel_ares_query_test.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-
-target_include_directories(cancel_ares_query_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-  PRIVATE third_party/googletest/googletest/include
-  PRIVATE third_party/googletest/googletest
-  PRIVATE third_party/googletest/googlemock/include
-  PRIVATE third_party/googletest/googlemock
-  PRIVATE ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(cancel_ares_query_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util

@@ -27,6 +27,8 @@ from grpc import _interceptor
 from grpc._cython import cygrpc
 from grpc.framework.foundation import callable_util
 
+_LOGGER = logging.getLogger(__name__)
+
 _SHUTDOWN_TAG = 'shutdown'
 _REQUEST_CALL_TAG = 'request_call'
 
@@ -279,7 +281,7 @@ class _Context(grpc.ServicerContext):
     def abort(self, code, details):
         # treat OK like other invalid arguments: fail the RPC
         if code == grpc.StatusCode.OK:
-            logging.error(
+            _LOGGER.error(
                 'abort() called with StatusCode.OK; returning UNKNOWN')
             code = grpc.StatusCode.UNKNOWN
             details = ''
@@ -327,6 +329,8 @@ class _RequestIterator(object):
             request = self._state.request
             self._state.request = None
             return request
+
+        raise AssertionError()  # should never run
 
     def _next(self):
         with self._state.condition:
@@ -390,7 +394,7 @@ def _call_behavior(rpc_event, state, behavior, argument, request_deserializer):
                        b'RPC Aborted')
             elif exception not in state.rpc_errors:
                 details = 'Exception calling application: {}'.format(exception)
-                logging.exception(details)
+                _LOGGER.exception(details)
                 _abort(state, rpc_event.call, cygrpc.StatusCode.unknown,
                        _common.encode(details))
         return None, False
@@ -408,7 +412,7 @@ def _take_response_from_response_iterator(rpc_event, state, response_iterator):
                        b'RPC Aborted')
             elif exception not in state.rpc_errors:
                 details = 'Exception iterating responses: {}'.format(exception)
-                logging.exception(details)
+                _LOGGER.exception(details)
                 _abort(state, rpc_event.call, cygrpc.StatusCode.unknown,
                        _common.encode(details))
         return None, False
@@ -617,7 +621,7 @@ def _handle_call(rpc_event, generic_handlers, interceptor_pipeline, thread_pool,
                                                   interceptor_pipeline)
         except Exception as exception:  # pylint: disable=broad-except
             details = 'Exception servicing handler: {}'.format(exception)
-            logging.exception(details)
+            _LOGGER.exception(details)
             return _reject_rpc(rpc_event, cygrpc.StatusCode.unknown,
                                b'Error in service handler!'), None
         if method_handler is None:
