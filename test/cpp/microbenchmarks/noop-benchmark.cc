@@ -22,9 +22,7 @@
 #include <benchmark/benchmark.h>
 
 static void BM_NoOp(benchmark::State& state) {
-  int i = 0;
   while (state.KeepRunning()) {
-    i++;
   }
 }
 BENCHMARK(BM_NoOp);
