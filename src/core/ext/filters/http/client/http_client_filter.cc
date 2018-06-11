@@ -23,6 +23,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "src/core/ext/filters/http/client/http_client_filter.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/profiling/timers.h"
@@ -435,20 +436,18 @@ static void destroy_call_elem(grpc_call_element* elem,
                               const grpc_call_final_info* final_info,
                               grpc_closure* ignored) {}
 
-static grpc_mdelem scheme_from_args(const grpc_channel_args* args) {
-  unsigned i;
-  size_t j;
+static grpc_mdelem scheme_from_args(const grpc_channel_args* channel_args) {
+  size_t i;
   grpc_mdelem valid_schemes[] = {GRPC_MDELEM_SCHEME_HTTP,
                                  GRPC_MDELEM_SCHEME_HTTPS};
-  if (args != nullptr) {
-    for (i = 0; i < args->num_args; ++i) {
-      if (args->args[i].type == GRPC_ARG_STRING &&
-          strcmp(args->args[i].key, GRPC_ARG_HTTP2_SCHEME) == 0) {
-        for (j = 0; j < GPR_ARRAY_SIZE(valid_schemes); j++) {
-          if (0 == grpc_slice_str_cmp(GRPC_MDVALUE(valid_schemes[j]),
-                                      args->args[i].value.string)) {
-            return valid_schemes[j];
-          }
+  if (channel_args != nullptr) {
+    const grpc_arg* arg =
+        grpc_channel_args_find(channel_args, GRPC_ARG_HTTP2_SCHEME);
+    char* scheme = grpc_channel_arg_get_string(arg);
+    if (scheme != nullptr) {
+      for (i = 0; i < GPR_ARRAY_SIZE(valid_schemes); i++) {
+        if (0 == grpc_slice_str_cmp(GRPC_MDVALUE(valid_schemes[i]), scheme)) {
+          return valid_schemes[i];
         }
       }
     }
@@ -475,24 +474,19 @@ static size_t max_payload_size_from_args(const grpc_channel_args* args) {
 static grpc_slice user_agent_from_args(const grpc_channel_args* args,
                                        const char* transport_name) {
   gpr_strvec v;
-  size_t i;
   int is_first = 1;
   char* tmp;
   grpc_slice result;
 
   gpr_strvec_init(&v);
 
-  for (i = 0; args && i < args->num_args; i++) {
-    if (0 == strcmp(args->args[i].key, GRPC_ARG_PRIMARY_USER_AGENT_STRING)) {
-      if (args->args[i].type != GRPC_ARG_STRING) {
-        gpr_log(GPR_ERROR, "Channel argument '%s' should be a string",
-                GRPC_ARG_PRIMARY_USER_AGENT_STRING);
-      } else {
-        if (!is_first) gpr_strvec_add(&v, gpr_strdup(" "));
-        is_first = 0;
-        gpr_strvec_add(&v, gpr_strdup(args->args[i].value.string));
-      }
-    }
+  const grpc_arg* arg =
+      grpc_channel_args_find(args, GRPC_ARG_PRIMARY_USER_AGENT_STRING);
+  char* user_agent_str = grpc_channel_arg_get_string(arg);
+  if (user_agent_str != nullptr) {
+    if (!is_first) gpr_strvec_add(&v, gpr_strdup(" "));
+    is_first = 0;
+    gpr_strvec_add(&v, gpr_strdup(user_agent_str));
   }
 
   gpr_asprintf(&tmp, "%sgrpc-c/%s (%s; %s; %s)", is_first ? "" : " ",
@@ -501,17 +495,11 @@ static grpc_slice user_agent_from_args(const grpc_channel_args* args,
   is_first = 0;
   gpr_strvec_add(&v, tmp);
 
-  for (i = 0; args && i < args->num_args; i++) {
-    if (0 == strcmp(args->args[i].key, GRPC_ARG_SECONDARY_USER_AGENT_STRING)) {
-      if (args->args[i].type != GRPC_ARG_STRING) {
-        gpr_log(GPR_ERROR, "Channel argument '%s' should be a string",
-                GRPC_ARG_SECONDARY_USER_AGENT_STRING);
-      } else {
-        if (!is_first) gpr_strvec_add(&v, gpr_strdup(" "));
-        is_first = 0;
-        gpr_strvec_add(&v, gpr_strdup(args->args[i].value.string));
-      }
-    }
+  arg = grpc_channel_args_find(args, GRPC_ARG_SECONDARY_USER_AGENT_STRING);
+  user_agent_str = grpc_channel_arg_get_string(arg);
+  if (user_agent_str != nullptr) {
+    gpr_strvec_add(&v, gpr_strdup(" "));
+    gpr_strvec_add(&v, gpr_strdup(user_agent_str));
   }
 
   tmp = gpr_strvec_flatten(&v, nullptr);
