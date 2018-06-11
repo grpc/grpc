@@ -128,7 +128,7 @@ cdef class TimerWrapper:
 
   cdef grpc_custom_timer *c_timer
   cdef object timer
-  cdef object event
+  cdef object cancel_event
 
 cdef class SocketWrapper:
   cdef object sockopts

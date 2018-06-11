@@ -342,23 +342,33 @@ cdef grpc_error* socket_resolve(char* host, char* port,
 ### timer implementation ######
 ###############################
 
+cdef _run_timer(TimerWrapper timer_wrapper):  
+  timer_wrapper.timer.start()
+  try:
+    timer_wrapper.cancel_event.wait()
+  except gevent_g.Timeout:
+    timer_wrapper.on_finish()
+  finally:
+    timer_wrapper.timer.close()
+
+
 cdef class TimerWrapper:
   def __cinit__(self, deadline):
-    self.timer = gevent_hub.get_hub().loop.timer(deadline)
-    self.event = None
+    self.cancel_event = gevent_event.Event()
+    self.timer = gevent_g.Timeout(deadline)
 
   def start(self):
-    self.event = gevent_event.Event()
-    self.timer.start(self.on_finish)
+    _spawn_greenlet(_run_timer, self)
 
   def on_finish(self):
-    grpc_custom_timer_callback(self.c_timer, grpc_error_none())
-    self.timer.stop()
-    g_event.set()
+    if self.c_timer != NULL:
+      grpc_custom_timer_callback(self.c_timer, grpc_error_none())
+      self.c_timer.timer = NULL
 
   def stop(self):
-    self.event.set()
-    self.timer.stop()
+    self.c_timer = NULL
+    self.cancel_event.set()
+
 
 cdef void timer_start(grpc_custom_timer* t) with gil:
   timer = TimerWrapper(t.timeout_ms / 1000.0)
@@ -367,8 +377,10 @@ cdef void timer_start(grpc_custom_timer* t) with gil:
   timer.start()
 
 cdef void timer_stop(grpc_custom_timer* t) with gil:
-  time_wrapper = <object>t.timer
-  time_wrapper.stop()
+  if t.timer != NULL:
+    timer_wrapper = <object>t.timer
+    t.timer = NULL
+    timer_wrapper.stop()
 
 ###############################
 ### pollset implementation ###
