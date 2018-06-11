@@ -22,4 +22,4 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-tools/interop_matrix/run_interop_matrix_tests.py $RUN_TESTS_FLAGS
+tools/interop_matrix/run_interop_matrix_tests.py --language=all --release=all --allow_flakes --report_file=sponge_log.xml --bq_result_table interop_results $@
