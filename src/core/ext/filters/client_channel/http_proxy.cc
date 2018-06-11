@@ -58,7 +58,6 @@ static char* get_http_proxy_server(char** user_cred,
     if (uri_str == nullptr) gpr_getenv("http_proxy");
   } else {
     uri_str = gpr_getenv("http_proxy");
-    if (uri_str == nullptr) gpr_getenv("https_proxy");
   }
   char* proxy_name = nullptr;
   char** authority_strs = nullptr;
