@@ -669,21 +669,18 @@ static grpc_error* cc_init_channel_elem(grpc_channel_element* elem,
   chand->client_channel_factory = client_channel_factory;
   // Get server name to resolve, using proxy mapper if needed.
   arg = grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVER_URI);
-  if (arg == nullptr) {
+  char* server_uri = grpc_channel_arg_get_string(arg);
+  if (server_uri == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Missing server uri in args for client channel filter");
-  }
-  if (arg->type != GRPC_ARG_STRING) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "server uri arg must be a string");
+        "Missing or malformed server uri in args for client channel filter");
   }
   char* proxy_name = nullptr;
   grpc_channel_args* new_args = nullptr;
-  grpc_proxy_mappers_map_name(arg->value.string, args->channel_args,
-                              &proxy_name, &new_args);
+  grpc_proxy_mappers_map_name(server_uri, args->channel_args, &proxy_name,
+                              &new_args);
   // Instantiate resolver.
   chand->resolver = grpc_core::ResolverRegistry::CreateResolver(
-      proxy_name != nullptr ? proxy_name : arg->value.string,
+      proxy_name != nullptr ? proxy_name : server_uri,
       new_args != nullptr ? new_args : args->channel_args,
       chand->interested_parties, chand->combiner);
   if (proxy_name != nullptr) gpr_free(proxy_name);
