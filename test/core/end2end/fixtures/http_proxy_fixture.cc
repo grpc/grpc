@@ -411,9 +411,8 @@ static void on_read_request_done(void* arg, grpc_error* error) {
     return;
   }
   // If proxy auth is being used, check if the header is present and as expected
-  const grpc_arg* proxy_auth_arg = grpc_channel_args_find(
+  char* proxy_auth_str = grpc_channel_args_get_string(
       conn->proxy->channel_args, GRPC_ARG_HTTP_PROXY_AUTH_CREDS);
-  char* proxy_auth_str = grpc_channel_arg_get_string(proxy_auth_arg);
   if (proxy_auth_str != nullptr) {
     bool client_authenticated = false;
     for (size_t i = 0; i < conn->http_request.hdr_count; i++) {

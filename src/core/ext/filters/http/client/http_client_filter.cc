@@ -437,18 +437,14 @@ static void destroy_call_elem(grpc_call_element* elem,
                               grpc_closure* ignored) {}
 
 static grpc_mdelem scheme_from_args(const grpc_channel_args* channel_args) {
-  size_t i;
   grpc_mdelem valid_schemes[] = {GRPC_MDELEM_SCHEME_HTTP,
                                  GRPC_MDELEM_SCHEME_HTTPS};
-  if (channel_args != nullptr) {
-    const grpc_arg* arg =
-        grpc_channel_args_find(channel_args, GRPC_ARG_HTTP2_SCHEME);
-    char* scheme = grpc_channel_arg_get_string(arg);
-    if (scheme != nullptr) {
-      for (i = 0; i < GPR_ARRAY_SIZE(valid_schemes); i++) {
-        if (0 == grpc_slice_str_cmp(GRPC_MDVALUE(valid_schemes[i]), scheme)) {
-          return valid_schemes[i];
-        }
+  char* scheme =
+      grpc_channel_args_get_string(channel_args, GRPC_ARG_HTTP2_SCHEME);
+  if (scheme != nullptr) {
+    for (size_t i = 0; i < GPR_ARRAY_SIZE(valid_schemes); i++) {
+      if (0 == grpc_slice_str_cmp(GRPC_MDVALUE(valid_schemes[i]), scheme)) {
+        return valid_schemes[i];
       }
     }
   }
@@ -457,14 +453,9 @@ static grpc_mdelem scheme_from_args(const grpc_channel_args* channel_args) {
 
 static size_t max_payload_size_from_args(
     const grpc_channel_args* channel_args) {
-  if (channel_args != nullptr) {
-    const grpc_arg* arg =
-        grpc_channel_args_find(channel_args, GRPC_ARG_MAX_PAYLOAD_SIZE_FOR_GET);
-    // TODO(mark): is 0 a correct minimum for this value?
-    return grpc_channel_arg_get_integer(
-        arg, {kMaxPayloadSizeForGet, 0, kMaxPayloadSizeForGet});
-  }
-  return kMaxPayloadSizeForGet;
+  return grpc_channel_args_get_integer(
+      channel_args, GRPC_ARG_MAX_PAYLOAD_SIZE_FOR_GET,
+      {kMaxPayloadSizeForGet, 0, kMaxPayloadSizeForGet});
 }
 
 static grpc_slice user_agent_from_args(const grpc_channel_args* args,
@@ -476,9 +467,8 @@ static grpc_slice user_agent_from_args(const grpc_channel_args* args,
 
   gpr_strvec_init(&v);
 
-  const grpc_arg* arg =
-      grpc_channel_args_find(args, GRPC_ARG_PRIMARY_USER_AGENT_STRING);
-  char* user_agent_str = grpc_channel_arg_get_string(arg);
+  char* user_agent_str =
+      grpc_channel_args_get_string(args, GRPC_ARG_PRIMARY_USER_AGENT_STRING);
   if (user_agent_str != nullptr) {
     if (!is_first) gpr_strvec_add(&v, gpr_strdup(" "));
     is_first = 0;
@@ -491,8 +481,8 @@ static grpc_slice user_agent_from_args(const grpc_channel_args* args,
   is_first = 0;
   gpr_strvec_add(&v, tmp);
 
-  arg = grpc_channel_args_find(args, GRPC_ARG_SECONDARY_USER_AGENT_STRING);
-  user_agent_str = grpc_channel_arg_get_string(arg);
+  user_agent_str =
+      grpc_channel_args_get_string(args, GRPC_ARG_SECONDARY_USER_AGENT_STRING);
   if (user_agent_str != nullptr) {
     gpr_strvec_add(&v, gpr_strdup(" "));
     gpr_strvec_add(&v, gpr_strdup(user_agent_str));

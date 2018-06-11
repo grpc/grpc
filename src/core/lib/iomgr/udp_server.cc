@@ -197,11 +197,8 @@ struct grpc_udp_server {
 };
 
 static grpc_socket_factory* get_socket_factory(const grpc_channel_args* args) {
-  if (args) {
-    const grpc_arg* arg = grpc_channel_args_find(args, GRPC_ARG_SOCKET_FACTORY);
-    return grpc_channel_arg_get_pointer<grpc_socket_factory>(arg);
-  }
-  return nullptr;
+  return grpc_channel_args_get_pointer<grpc_socket_factory>(
+      args, GRPC_ARG_SOCKET_FACTORY);
 }
 
 grpc_udp_server* grpc_udp_server_create(const grpc_channel_args* args) {

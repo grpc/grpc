@@ -150,6 +150,7 @@ grpc_error* grpc_tcp_server_prepare_socket(grpc_tcp_server* s, int fd,
                                            bool so_reuseport, int* port) {
   grpc_resolved_address sockname_temp;
   grpc_error* err = GRPC_ERROR_NONE;
+  grpc_socket_mutator* mutator = nullptr;
 
   GPR_ASSERT(fd >= 0);
 
@@ -170,16 +171,11 @@ grpc_error* grpc_tcp_server_prepare_socket(grpc_tcp_server* s, int fd,
   }
   err = grpc_set_socket_no_sigpipe_if_possible(fd);
   if (err != GRPC_ERROR_NONE) goto error;
-
-  if (s->channel_args) {
-    const grpc_arg* arg =
-        grpc_channel_args_find(s->channel_args, GRPC_ARG_SOCKET_MUTATOR);
-    grpc_socket_mutator* mutator =
-        grpc_channel_arg_get_pointer<grpc_socket_mutator>(arg);
-    if (mutator) {
-      err = grpc_set_socket_with_mutator(fd, mutator);
-      if (err != GRPC_ERROR_NONE) goto error;
-    }
+  mutator = grpc_channel_args_get_pointer<grpc_socket_mutator>(
+      s->channel_args, GRPC_ARG_SOCKET_MUTATOR);
+  if (mutator != nullptr) {
+    err = grpc_set_socket_with_mutator(fd, mutator);
+    if (err != GRPC_ERROR_NONE) goto error;
   }
 
   if (bind(fd, reinterpret_cast<grpc_sockaddr*>(const_cast<char*>(addr->addr)),

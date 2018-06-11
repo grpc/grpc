@@ -607,9 +607,9 @@ void RoundRobin::PingOneLocked(grpc_closure* on_initiate,
 }
 
 void RoundRobin::UpdateLocked(const grpc_channel_args& args) {
-  const grpc_arg* arg = grpc_channel_args_find(&args, GRPC_ARG_LB_ADDRESSES);
   grpc_lb_addresses* addresses =
-      grpc_channel_arg_get_pointer<grpc_lb_addresses>(arg);
+      grpc_channel_args_get_pointer<grpc_lb_addresses>(&args,
+                                                       GRPC_ARG_LB_ADDRESSES);
   if (GPR_UNLIKELY(addresses == nullptr)) {
     gpr_log(GPR_ERROR, "[RR %p] update provided no addresses; ignoring", this);
     // If we don't have a current subchannel list, go into TRANSIENT_FAILURE.

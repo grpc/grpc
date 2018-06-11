@@ -111,17 +111,29 @@ typedef struct grpc_integer_options {
 /** Returns the value of \a arg, subject to the contraints in \a options. */
 int grpc_channel_arg_get_integer(const grpc_arg* arg,
                                  const grpc_integer_options options);
+/** convinience helper for the above that finds the arg first. */
+inline int grpc_channel_args_get_integer(const grpc_channel_args* args,
+                                         const char* name,
+                                         const grpc_integer_options options) {
+  return grpc_channel_arg_get_integer(grpc_channel_args_find(args, name),
+                                      options);
+}
 
 /** Returns the value of \a arg if \a arg is of type GRPC_ARG_STRING.
     Otherwise, emits a warning log, and returns nullptr.
     If arg is nullptr, returns nullptr, and does not emit a warning. */
 char* grpc_channel_arg_get_string(const grpc_arg* arg);
+/** convinience helper for the above that finds the arg first. */
+inline char* grpc_channel_args_get_string(const grpc_channel_args* args,
+                                          const char* name) {
+  return grpc_channel_arg_get_string(grpc_channel_args_find(args, name));
+}
 
 /** Returns the value of \a arg if \a arg is of type GRPC_ARG_POINTER
     Otherwise, emits a warning log, and returns nullptr.
     If arg is nullptr, returns nullptr, and does not emit a warning. */
 template <typename Type>
-Type* grpc_channel_arg_get_pointer(const grpc_arg* arg) {
+inline Type* grpc_channel_arg_get_pointer(const grpc_arg* arg) {
   if (arg == nullptr) return nullptr;
   if (arg->type != GRPC_ARG_POINTER) {
     gpr_log(GPR_ERROR, "%s ignored: it must be an pointer", arg->key);
@@ -129,8 +141,19 @@ Type* grpc_channel_arg_get_pointer(const grpc_arg* arg) {
   }
   return static_cast<Type*>(arg->value.pointer.p);
 }
+/** convinience helper for the above that finds the arg first. */
+template <typename Type>
+inline Type* grpc_channel_args_get_pointer(const grpc_channel_args* args,
+                                           const char* name) {
+  return grpc_channel_arg_get_pointer<Type>(grpc_channel_args_find(args, name));
+}
 
 bool grpc_channel_arg_get_bool(const grpc_arg* arg, bool default_value);
+inline bool grpc_channel_args_get_bool(const grpc_channel_args* args,
+                                       const char* name, bool default_value) {
+  return grpc_channel_arg_get_bool(grpc_channel_args_find(args, name),
+                                   default_value);
+}
 
 // Helpers for creating channel args.
 grpc_arg grpc_channel_arg_string_create(char* name, char* value);
