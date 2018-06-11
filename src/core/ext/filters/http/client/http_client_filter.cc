@@ -455,18 +455,14 @@ static grpc_mdelem scheme_from_args(const grpc_channel_args* channel_args) {
   return GRPC_MDELEM_SCHEME_HTTP;
 }
 
-static size_t max_payload_size_from_args(const grpc_channel_args* args) {
-  if (args != nullptr) {
-    for (size_t i = 0; i < args->num_args; ++i) {
-      if (0 == strcmp(args->args[i].key, GRPC_ARG_MAX_PAYLOAD_SIZE_FOR_GET)) {
-        if (args->args[i].type != GRPC_ARG_INTEGER) {
-          gpr_log(GPR_ERROR, "%s: must be an integer",
-                  GRPC_ARG_MAX_PAYLOAD_SIZE_FOR_GET);
-        } else {
-          return static_cast<size_t>(args->args[i].value.integer);
-        }
-      }
-    }
+static size_t max_payload_size_from_args(
+    const grpc_channel_args* channel_args) {
+  if (channel_args != nullptr) {
+    const grpc_arg* arg =
+        grpc_channel_args_find(channel_args, GRPC_ARG_MAX_PAYLOAD_SIZE_FOR_GET);
+    // TODO(mark): is 0 a correct minimum for this value?
+    return grpc_channel_arg_get_integer(
+        arg, {kMaxPayloadSizeForGet, 0, kMaxPayloadSizeForGet});
   }
   return kMaxPayloadSizeForGet;
 }

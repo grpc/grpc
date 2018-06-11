@@ -63,23 +63,14 @@ static grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
   s->so_reuseport = grpc_is_socket_reuse_port_supported();
   s->expand_wildcard_addrs = false;
   for (size_t i = 0; i < (args == nullptr ? 0 : args->num_args); i++) {
+    // TODO(roth): I chose that these both default to true. Is this reasonable?
+    // Before they would create errors, so this is actually making the
+    // restrictions more lenient.
     if (0 == strcmp(GRPC_ARG_ALLOW_REUSEPORT, args->args[i].key)) {
-      if (args->args[i].type == GRPC_ARG_INTEGER) {
-        s->so_reuseport = grpc_is_socket_reuse_port_supported() &&
-                          (args->args[i].value.integer != 0);
-      } else {
-        gpr_free(s);
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(GRPC_ARG_ALLOW_REUSEPORT
-                                                    " must be an integer");
-      }
+      s->so_reuseport = grpc_channel_arg_get_bool(&args->args[i], true);
     } else if (0 == strcmp(GRPC_ARG_EXPAND_WILDCARD_ADDRS, args->args[i].key)) {
-      if (args->args[i].type == GRPC_ARG_INTEGER) {
-        s->expand_wildcard_addrs = (args->args[i].value.integer != 0);
-      } else {
-        gpr_free(s);
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            GRPC_ARG_EXPAND_WILDCARD_ADDRS " must be an integer");
-      }
+      s->expand_wildcard_addrs =
+          grpc_channel_arg_get_bool(&args->args[i], true);
     }
   }
   gpr_ref_init(&s->refs, 1);
