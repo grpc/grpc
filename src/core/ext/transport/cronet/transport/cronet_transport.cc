@@ -1452,17 +1452,9 @@ grpc_transport* grpc_create_cronet_transport(void* engine, const char* target,
 
   ct->use_packet_coalescing = true;
   if (args) {
-    for (size_t i = 0; i < args->num_args; i++) {
-      if (0 ==
-          strcmp(args->args[i].key, GRPC_ARG_USE_CRONET_PACKET_COALESCING)) {
-        if (GPR_UNLIKELY(args->args[i].type != GRPC_ARG_INTEGER)) {
-          gpr_log(GPR_ERROR, "%s ignored: it must be an integer",
-                  GRPC_ARG_USE_CRONET_PACKET_COALESCING);
-        } else {
-          ct->use_packet_coalescing = (args->args[i].value.integer != 0);
-        }
-      }
-    }
+    const grpc_arg* arg =
+        grpc_channel_args_find(args, GRPC_ARG_USE_CRONET_PACKET_COALESCING);
+    ct->use_packet_coalescing = grpc_channel_arg_get_bool(arg, false);
   }
 
   return &ct->base;

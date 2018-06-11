@@ -30,6 +30,7 @@ _EXCEPTIONS = set([
 _BANNED = set([
     "GRPC_ARG_POINTER",
     "GRPC_ARG_STRING",
+    "GRPC_ARG_INTEGER",
 ])
 
 errors = 0
