@@ -247,8 +247,8 @@ LoadReporter::GenerateLoadBalancingFeedback() {
       newest->cpu_limit == oldest->cpu_limit) {
     return ::grpc::lb::v1::LoadBalancingFeedback::default_instance();
   }
-  double rpcs = 0;
-  double errors = 0;
+  uint64_t rpcs = 0;
+  uint64_t errors = 0;
   for (LoadBalancingFeedbackRecord* p = newest; p != oldest; --p) {
     // Because these two numbers are counters, the oldest record shouldn't be
     // included.
@@ -344,7 +344,7 @@ void LoadReporter::AttachOrphanLoadId(
   }
 }
 
-void LoadReporter::AppendNewFeedbackRecord(double rpcs, double errors) {
+void LoadReporter::AppendNewFeedbackRecord(uint64_t rpcs, uint64_t errors) {
   CpuStatsProvider::CpuStatsSample cpu_stats;
   if (cpu_stats_provider_ != nullptr) {
     cpu_stats = cpu_stats_provider_->GetCpuStats();
@@ -390,7 +390,7 @@ void LoadReporter::FetchAndSample() {
     // type of the original measure.
     for (const auto& p : it->second.double_data()) {
       const std::vector<grpc::string>& tag_values = p.first;
-      const double start_count = p.second;
+      const uint64_t start_count = static_cast<uint64_t>(p.second);
       const grpc::string& client_ip_and_token = tag_values[0];
       const grpc::string& host = tag_values[1];
       const grpc::string& user_id = tag_values[2];
@@ -403,15 +403,15 @@ void LoadReporter::FetchAndSample() {
     }
   }
   // Process view data about ending call.
-  double total_end_count = 0;
-  double total_error_count = 0;
+  uint64_t total_end_count = 0;
+  uint64_t total_error_count = 0;
   it = view_data_map.find(kViewEndCount);
   if (it != view_data_map.end()) {
     // Note that the data type for any Sum view is double, whatever the data
     // type of the original measure.
     for (const auto& p : it->second.double_data()) {
       const std::vector<grpc::string>& tag_values = p.first;
-      const double end_count = p.second;
+      const uint64_t end_count = static_cast<uint64_t>(p.second);
       const grpc::string& client_ip_and_token = tag_values[0];
       const grpc::string& host = tag_values[1];
       const grpc::string& user_id = tag_values[2];
@@ -436,8 +436,8 @@ void LoadReporter::FetchAndSample() {
       const double latency_ms = CensusViewProvider::GetRelatedViewDataRowDouble(
           view_data_map, kViewEndLatencyMs, sizeof(kViewEndLatencyMs) - 1,
           tag_values);
-      double ok_count = 0;
-      double error_count = 0;
+      uint64_t ok_count = 0;
+      uint64_t error_count = 0;
       total_end_count += end_count;
       if (std::strcmp(status.c_str(), kCallStatusOk) == 0) {
         ok_count = end_count;

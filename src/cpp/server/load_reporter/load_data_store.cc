@@ -80,7 +80,8 @@ LoadRecordKey::LoadRecordKey(const grpc::string& client_ip_and_token,
     : user_id_(std::move(user_id)) {
   GPR_ASSERT(client_ip_and_token.size() >= 2);
   int ip_hex_size;
-  sscanf(client_ip_and_token.substr(0, 2).c_str(), "%d", &ip_hex_size);
+  GPR_ASSERT(sscanf(client_ip_and_token.substr(0, 2).c_str(), "%d",
+                    &ip_hex_size) == 1);
   GPR_ASSERT(ip_hex_size == 0 || ip_hex_size == kIpv4AddressLength ||
              ip_hex_size == kIpv6AddressLength);
   size_t cur_pos = 2;
@@ -100,13 +101,15 @@ grpc::string LoadRecordKey::GetClientIpBytes() const {
     return "";
   } else if (client_ip_hex_.size() == kIpv4AddressLength) {
     uint32_t ip_bytes;
-    sscanf(client_ip_hex_.c_str(), "%x", &ip_bytes);
+    GPR_ASSERT(sscanf(client_ip_hex_.c_str(), "%x", &ip_bytes) == 1);
     return grpc::string(reinterpret_cast<const char*>(&ip_bytes),
                         sizeof(ip_bytes));
   } else if (client_ip_hex_.size() == kIpv6AddressLength) {
     uint64_t ip_bytes[2];
-    sscanf(client_ip_hex_.substr(0, 16).c_str(), "%lx", ip_bytes);
-    sscanf(client_ip_hex_.substr(16).c_str(), "%lx", ip_bytes + 1);
+    GPR_ASSERT(sscanf(client_ip_hex_.substr(0, 16).c_str(), "%lx", ip_bytes) ==
+               1);
+    GPR_ASSERT(sscanf(client_ip_hex_.substr(16).c_str(), "%lx", ip_bytes + 1) ==
+               1);
     return grpc::string(reinterpret_cast<const char*>(ip_bytes),
                         sizeof(ip_bytes));
   } else {

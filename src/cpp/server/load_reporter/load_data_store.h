@@ -123,8 +123,8 @@ class LoadRecordKey {
 // The value of a load record.
 class LoadRecordValue {
  public:
-  explicit LoadRecordValue(double start_count = 0, double ok_count = 0,
-                           double error_count = 0, double bytes_sent = 0,
+  explicit LoadRecordValue(uint64_t start_count = 0, uint64_t ok_count = 0,
+                           uint64_t error_count = 0, double bytes_sent = 0,
                            double bytes_recv = 0, double latency_ms = 0)
       : start_count_(start_count),
         ok_count_(ok_count),
@@ -169,9 +169,9 @@ class LoadRecordValue {
   }
 
   // Getters.
-  double start_count() const { return start_count_; }
-  double ok_count() const { return ok_count_; }
-  double error_count() const { return error_count_; }
+  uint64_t start_count() const { return start_count_; }
+  uint64_t ok_count() const { return ok_count_; }
+  uint64_t error_count() const { return error_count_; }
   double bytes_sent() const { return bytes_sent_; }
   double bytes_recv() const { return bytes_recv_; }
   double latency_ms() const { return latency_ms_; }
@@ -181,9 +181,9 @@ class LoadRecordValue {
   }
 
  private:
-  double start_count_ = 0;
-  double ok_count_ = 0;
-  double error_count_ = 0;
+  uint64_t start_count_ = 0;
+  uint64_t ok_count_ = 0;
+  uint64_t error_count_ = 0;
   double bytes_sent_ = 0;
   double bytes_recv_ = 0;
   double latency_ms_ = 0;

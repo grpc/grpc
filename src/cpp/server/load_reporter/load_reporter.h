@@ -167,8 +167,8 @@ class LoadReporter {
  private:
   struct LoadBalancingFeedbackRecord {
     std::chrono::system_clock::time_point end_time;
-    double rpcs;
-    double errors;
+    uint64_t rpcs;
+    uint64_t errors;
     uint64_t cpu_usage;
     uint64_t cpu_limit;
   };
@@ -178,7 +178,7 @@ class LoadReporter {
     return record.end_time > now - feedback_sample_window_seconds_;
   }
 
-  void AppendNewFeedbackRecord(double rpcs, double errors);
+  void AppendNewFeedbackRecord(uint64_t rpcs, uint64_t errors);
 
   // Extracts an OrphanedLoadIdentifier from the per-balancer store and attaches
   // it to the load.
