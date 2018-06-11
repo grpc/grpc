@@ -34,6 +34,16 @@ config_setting(
     values = {"cpu": "ios_arm64"},
 )
 
+config_setting(
+    name = "windows",
+    values = {"cpu": "x64_windows"},
+)
+
+config_setting(
+    name = "windows_msvc",
+    values = {"cpu": "x64_windows_msvc"},
+)
+
 genrule(
     name = "ares_build_h",
     srcs = ["@com_github_grpc_grpc//third_party/cares:ares_build.h"],
@@ -139,8 +149,11 @@ cc_library(
         "-D_GNU_SOURCE",
         "-D_HAS_EXCEPTIONS=0",
         "-DNOMINMAX",
-        "-DHAVE_CONFIG_H",
-    ],
+    ] + select({
+        ":windows": [],
+        ":windows_msvc": [],
+        "//conditions:default": ["-DHAVE_CONFIG_H"],
+    }),
     includes = ["."],
     linkstatic = 1,
     visibility = [
