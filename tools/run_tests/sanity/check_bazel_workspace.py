@@ -21,7 +21,6 @@ import os
 import re
 import subprocess
 import sys
-import pdb
 
 os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '../../..'))
 
