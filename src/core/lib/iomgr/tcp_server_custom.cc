@@ -81,9 +81,9 @@ static grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
                                      const grpc_channel_args* args,
                                      grpc_tcp_server** server) {
   grpc_tcp_server* s = (grpc_tcp_server*)gpr_malloc(sizeof(grpc_tcp_server));
-  const grpc_arg* arg = grpc_channel_args_find(args, GRPC_ARG_RESOURCE_QUOTA);
   grpc_resource_quota* rq =
-      grpc_channel_arg_get_pointer<grpc_resource_quota>(arg);
+      grpc_channel_arg_find_and_get_pointer<grpc_resource_quota>(
+          args, GRPC_ARG_RESOURCE_QUOTA);
   s->resource_quota = rq == nullptr ? grpc_resource_quota_create(nullptr) : rq;
   gpr_ref_init(&s->refs, 1);
   s->on_accept_cb = nullptr;

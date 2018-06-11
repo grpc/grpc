@@ -257,9 +257,8 @@ grpc_arg grpc_security_connector_to_arg(grpc_security_connector* sc) {
 
 grpc_security_connector* grpc_security_connector_find_in_args(
     const grpc_channel_args* channel_args) {
-  const grpc_arg* arg =
-      grpc_channel_args_find(channel_args, GRPC_ARG_SECURITY_CONNECTOR);
-  return grpc_channel_arg_get_pointer<grpc_security_connector>(arg);
+  return grpc_channel_arg_find_and_get_pointer<grpc_security_connector>(
+      channel_args, GRPC_ARG_SECURITY_CONNECTOR);
 }
 
 static tsi_client_certificate_request_type

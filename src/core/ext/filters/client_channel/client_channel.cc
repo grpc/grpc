@@ -327,15 +327,13 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
   if (chand->resolver_result != nullptr) {
     if (chand->resolver != nullptr) {
       // Find LB policy name.
-      const grpc_arg* channel_arg = grpc_channel_args_find(
+      const char* lb_policy_name = grpc_channel_arg_find_and_get_string(
           chand->resolver_result, GRPC_ARG_LB_POLICY_NAME);
-      const char* lb_policy_name = grpc_channel_arg_get_string(channel_arg);
       // Special case: If at least one balancer address is present, we use
       // the grpclb policy, regardless of what the resolver actually specified.
-      channel_arg =
-          grpc_channel_args_find(chand->resolver_result, GRPC_ARG_LB_ADDRESSES);
       grpc_lb_addresses* addresses =
-          grpc_channel_arg_get_pointer<grpc_lb_addresses>(channel_arg);
+          grpc_channel_arg_find_and_get_pointer<grpc_lb_addresses>(
+              chand->resolver_result, GRPC_ARG_LB_ADDRESSES);
       if (addresses != nullptr) {
         bool found_balancer_address = false;
         for (size_t i = 0; i < addresses->num_addresses; ++i) {
@@ -400,18 +398,15 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
       // The copy will be saved in chand->lb_policy_name below.
       lb_policy_name_dup = gpr_strdup(lb_policy_name);
       // Find service config.
-      channel_arg = grpc_channel_args_find(chand->resolver_result,
-                                           GRPC_ARG_SERVICE_CONFIG);
-      service_config_json =
-          gpr_strdup(grpc_channel_arg_get_string(channel_arg));
+      service_config_json = gpr_strdup(grpc_channel_arg_find_and_get_string(
+          chand->resolver_result, GRPC_ARG_SERVICE_CONFIG));
       if (service_config_json != nullptr) {
         grpc_core::UniquePtr<grpc_core::ServiceConfig> service_config =
             grpc_core::ServiceConfig::Create(service_config_json);
         if (service_config != nullptr) {
           if (chand->enable_retries) {
-            channel_arg = grpc_channel_args_find(chand->resolver_result,
-                                                 GRPC_ARG_SERVER_URI);
-            const char* server_uri = grpc_channel_arg_get_string(channel_arg);
+            const char* server_uri = grpc_channel_arg_find_and_get_string(
+                chand->resolver_result, GRPC_ARG_SERVER_URI);
             GPR_ASSERT(server_uri != nullptr);
             grpc_uri* uri = grpc_uri_parse(server_uri, true);
             GPR_ASSERT(uri->path[0] != '\0');
@@ -648,18 +643,17 @@ static grpc_error* cc_init_channel_elem(grpc_channel_element* elem,
                                "client_channel");
   grpc_client_channel_start_backup_polling(chand->interested_parties);
   // Record max per-RPC retry buffer size.
-  const grpc_arg* arg = grpc_channel_args_find(
-      args->channel_args, GRPC_ARG_PER_RPC_RETRY_BUFFER_SIZE);
-  chand->per_rpc_retry_buffer_size = (size_t)grpc_channel_arg_get_integer(
-      arg, {DEFAULT_PER_RPC_RETRY_BUFFER_SIZE, 0, INT_MAX});
+  chand->per_rpc_retry_buffer_size =
+      (size_t)grpc_channel_arg_find_and_get_integer(
+          args->channel_args, GRPC_ARG_PER_RPC_RETRY_BUFFER_SIZE,
+          {DEFAULT_PER_RPC_RETRY_BUFFER_SIZE, 0, INT_MAX});
   // Record enable_retries.
-  arg = grpc_channel_args_find(args->channel_args, GRPC_ARG_ENABLE_RETRIES);
-  chand->enable_retries = grpc_channel_arg_get_bool(arg, true);
+  chand->enable_retries = grpc_channel_arg_find_and_get_bool(
+      args->channel_args, GRPC_ARG_ENABLE_RETRIES, true);
   // Record client channel factory.
-  arg = grpc_channel_args_find(args->channel_args,
-                               GRPC_ARG_CLIENT_CHANNEL_FACTORY);
   grpc_client_channel_factory* client_channel_factory =
-      grpc_channel_arg_get_pointer<grpc_client_channel_factory>(arg);
+      grpc_channel_arg_find_and_get_pointer<grpc_client_channel_factory>(
+          args->channel_args, GRPC_ARG_CLIENT_CHANNEL_FACTORY);
   if (client_channel_factory == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Missing or malformed client channel factory in args for client "
@@ -668,8 +662,8 @@ static grpc_error* cc_init_channel_elem(grpc_channel_element* elem,
   grpc_client_channel_factory_ref(client_channel_factory);
   chand->client_channel_factory = client_channel_factory;
   // Get server name to resolve, using proxy mapper if needed.
-  arg = grpc_channel_args_find(args->channel_args, GRPC_ARG_SERVER_URI);
-  char* server_uri = grpc_channel_arg_get_string(arg);
+  char* server_uri = grpc_channel_arg_find_and_get_string(args->channel_args,
+                                                          GRPC_ARG_SERVER_URI);
   if (server_uri == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Missing or malformed server uri in args for client channel filter");
