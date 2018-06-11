@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2015 gRPC authors.
+# Copyright 2018 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,15 +17,22 @@ set -ex
 
 cd "$(dirname "$0")"
 
-unzip -o "$EXTERNAL_GIT_ROOT/input_artifacts/csharp_nugets_windows_dotnetcli.zip" -d TestNugetFeed
+ls -lR "../packages/Grpc.Tools.__GRPC_NUGET_VERSION__/tools"
 
-./update_version.sh auto
+PLATFORM_ARCH=linux_x64
+if [ "$(uname)" == "Darwin" ]
+then
+  PLATFORM_ARCH=macosx_x64
+elif [ "$(getconf LONG_BIT)" == "32" ]
+then
+  PLATFORM_ARCH=linux_x86
+fi
 
-nuget restore
+PROTOC=../packages/Grpc.Tools.__GRPC_NUGET_VERSION__/tools/${PLATFORM_ARCH}/protoc
+PLUGIN=../packages/Grpc.Tools.__GRPC_NUGET_VERSION__/tools/${PLATFORM_ARCH}/grpc_csharp_plugin
 
-xbuild DistribTest.sln
+"${PROTOC}" --plugin="protoc-gen-grpc=${PLUGIN}" --csharp_out=. --grpc_out=. -I . testcodegen.proto
 
-mono DistribTest/bin/Debug/DistribTest.exe
+ls ./*.cs
 
-# test that codegen work
-test_codegen/test_codegen.sh
+echo 'Code generation works.'
