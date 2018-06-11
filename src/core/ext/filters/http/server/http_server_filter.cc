@@ -90,28 +90,29 @@ static void hs_add_error(const char* error_name, grpc_error** cumulative,
   *cumulative = grpc_error_add_child(*cumulative, new_err);
 }
 
-static grpc_error* hs_filter_incoming_metadata(grpc_call_element* elem,
-                                               grpc_metadata_batch* b) {
+static grpc_error* hs_filter_incoming_metadata(
+    grpc_call_element* elem, grpc_metadata_batch* b,
+    uint32_t* recv_initial_metadata_flags) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   grpc_error* error = GRPC_ERROR_NONE;
   static const char* error_name = "Failed processing incoming headers";
 
   if (b->idx.named.method != nullptr) {
     if (grpc_mdelem_eq(b->idx.named.method->md, GRPC_MDELEM_METHOD_POST)) {
-      *calld->recv_initial_metadata_flags &=
+      *recv_initial_metadata_flags &=
           ~(GRPC_INITIAL_METADATA_CACHEABLE_REQUEST |
             GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST);
     } else if (grpc_mdelem_eq(b->idx.named.method->md,
                               GRPC_MDELEM_METHOD_PUT)) {
-      *calld->recv_initial_metadata_flags &=
+      *recv_initial_metadata_flags &=
           ~GRPC_INITIAL_METADATA_CACHEABLE_REQUEST;
-      *calld->recv_initial_metadata_flags |=
+      *recv_initial_metadata_flags |=
           GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST;
     } else if (grpc_mdelem_eq(b->idx.named.method->md,
                               GRPC_MDELEM_METHOD_GET)) {
-      *calld->recv_initial_metadata_flags |=
+      *recv_initial_metadata_flags |=
           GRPC_INITIAL_METADATA_CACHEABLE_REQUEST;
-      *calld->recv_initial_metadata_flags &=
+      *recv_initial_metadata_flags &=
           ~GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST;
     } else {
       hs_add_error(error_name, &error,
@@ -196,7 +197,7 @@ static grpc_error* hs_filter_incoming_metadata(grpc_call_element* elem,
         grpc_error_set_str(
             GRPC_ERROR_CREATE_FROM_STATIC_STRING("Missing header"),
             GRPC_ERROR_STR_KEY, grpc_slice_from_static_string(":path")));
-  } else if (*calld->recv_initial_metadata_flags &
+  } else if (*recv_initial_metadata_flags &
              GRPC_INITIAL_METADATA_CACHEABLE_REQUEST) {
     /* We have a cacheable request made with GET verb. The path contains the
      * query parameter which is base64 encoded request payload. */
@@ -262,6 +263,7 @@ static grpc_error* hs_filter_incoming_metadata(grpc_call_element* elem,
   return error;
 }
 
+#if 0
 static void hs_recv_initial_metadata_ready(void* user_data, grpc_error* err) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
@@ -313,6 +315,7 @@ static void hs_recv_message_ready(void* user_data, grpc_error* err) {
         "pausing recv_message_ready until recv_initial_metadata_ready");
   }
 }
+#endif
 
 static grpc_error* hs_mutate_op(grpc_call_element* elem,
                                 grpc_transport_stream_op_batch* op) {
@@ -338,6 +341,7 @@ static grpc_error* hs_mutate_op(grpc_call_element* elem,
     if (error != GRPC_ERROR_NONE) return error;
   }
 
+#if 0
   if (op->recv_initial_metadata) {
     /* substitute our callback for the higher callback */
     GPR_ASSERT(op->payload->recv_initial_metadata.recv_flags != nullptr);
@@ -357,6 +361,7 @@ static grpc_error* hs_mutate_op(grpc_call_element* elem,
         op->payload->recv_message.recv_message_ready;
     op->payload->recv_message.recv_message_ready = &calld->recv_message_ready;
   }
+#endif
 
   if (op->send_trailing_metadata) {
     grpc_error* error = hs_filter_outgoing_metadata(
@@ -388,13 +393,15 @@ static void hs_start_transport_stream_recv_op_batch(
     calld->seen_recv_initial_metadata_ready = true;
     if (error == GRPC_ERROR_NONE) {
       error = hs_filter_incoming_metadata(
-          elem, batch->payload->recv_initial_metadata.recv_initial_metadata);
+          elem, batch->payload->recv_initial_metadata.recv_initial_metadata,
+          batch->payload->recv_initial_metadata.recv_flags);
       if (calld->recv_message_batch != nullptr) {
         // We've already seen the recv_message callback, but we previously
         // deferred it, so we need to return it with this batch.
         // Replace the recv_message byte stream if needed.
         if (calld->have_read_stream) {
-          calld->recv_message->reset(calld->read_stream.get());
+          batch->payload->recv_message.recv_message->reset(
+              calld->read_stream.get());
           calld->have_read_stream = false;
         }
         // Add recv_message op to current batch.
@@ -408,7 +415,8 @@ static void hs_start_transport_stream_recv_op_batch(
       // We've already seen the recv_initial_metadata op, so replace the
       // recv_message byte stream if needed.
       if (calld->have_read_stream) {
-        calld->recv_message->reset(calld->read_stream.get());
+        batch->payload->recv_message.recv_message->reset(
+            calld->read_stream.get());
         calld->have_read_stream = false;
       }
     } else {
@@ -437,11 +445,13 @@ static grpc_error* hs_init_call_elem(grpc_call_element* elem,
                                      const grpc_call_element_args* args) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->call_combiner = args->call_combiner;
+#if 0
   GRPC_CLOSURE_INIT(&calld->recv_initial_metadata_ready,
                     hs_recv_initial_metadata_ready, elem,
                     grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&calld->recv_message_ready, hs_recv_message_ready, elem,
                     grpc_schedule_on_exec_ctx);
+#endif
   return GRPC_ERROR_NONE;
 }
 

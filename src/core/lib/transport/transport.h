@@ -192,37 +192,37 @@ struct grpc_transport_stream_op_batch_payload {
   } send_message;
 
   struct {
-    grpc_metadata_batch* recv_initial_metadata;
+//    grpc_metadata_batch* recv_initial_metadata;
     // Flags are used only on the server side.  If non-null, will be set to
     // a bitfield of the GRPC_INITIAL_METADATA_xxx macros (e.g., to
     // indicate if the call is idempotent).
-    uint32_t* recv_flags;
+//    uint32_t* recv_flags;
     /** Should be enqueued when initial metadata is ready to be processed. */
     grpc_closure* recv_initial_metadata_ready;
     // If not NULL, will be set to true if trailing metadata is
     // immediately available.  This may be a signal that we received a
     // Trailers-Only response.
-    bool* trailing_metadata_available;
+//    bool* trailing_metadata_available;
     // If non-NULL, will be set by the transport to the peer string (a char*).
     // The transport retains ownership of the string.
     // Note: This pointer may be used by the transport after the
     // recv_initial_metadata op is completed.  It must remain valid
     // until the call is destroyed.
-    gpr_atm* peer_string;
+//    gpr_atm* peer_string;
   } recv_initial_metadata;
 
   struct {
     // Will be set by the transport to point to the byte stream
     // containing a received message.
     // Will be NULL if trailing metadata is received instead of a message.
-    grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message;
+//    grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message;
     /** Should be enqueued when one message is ready to be processed. */
     grpc_closure* recv_message_ready;
   } recv_message;
 
   struct {
-    grpc_metadata_batch* recv_trailing_metadata;
-    grpc_transport_stream_stats* collect_stats;
+//    grpc_metadata_batch* recv_trailing_metadata;
+//    grpc_transport_stream_stats* collect_stats;
     /** Should be enqueued when initial metadata is ready to be processed. */
     grpc_closure* recv_trailing_metadata_ready;
   } recv_trailing_metadata;

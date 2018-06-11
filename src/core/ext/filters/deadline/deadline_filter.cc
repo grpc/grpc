@@ -309,6 +309,7 @@ static void client_start_transport_stream_recv_op_batch(
   grpc_call_prev_filter_recv_op_batch(elem, batch, error);
 }
 
+#if 0
 // Callback for receiving initial metadata on the server.
 static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
@@ -319,6 +320,7 @@ static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
   calld->next_recv_initial_metadata_ready->cb(
       calld->next_recv_initial_metadata_ready->cb_arg, error);
 }
+#endif
 
 // Method for starting a call op for server filter.
 static void server_start_transport_stream_op_batch(
@@ -326,6 +328,7 @@ static void server_start_transport_stream_op_batch(
   server_call_data* calld = static_cast<server_call_data*>(elem->call_data);
   if (op->cancel_stream) {
     cancel_timer_if_needed(&calld->base.deadline_state);
+#if 0
   } else {
     // If we're receiving initial metadata, we need to get the deadline
     // from the recv_initial_metadata_ready callback.  So we inject our
@@ -349,6 +352,7 @@ static void server_start_transport_stream_op_batch(
     if (op->recv_trailing_metadata) {
       inject_recv_trailing_metadata_ready(&calld->base.deadline_state, op);
     }
+#endif
   }
   // Chain to next filter.
   grpc_call_next_op(elem, op);

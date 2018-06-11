@@ -733,6 +733,8 @@ static void server_on_recv_initial_metadata(void* ptr, grpc_error* error) {
   GRPC_CLOSURE_RUN(calld->on_done_recv_initial_metadata, error);
 }
 
+// FIXME: remove
+#if 0
 static void server_mutate_op(grpc_call_element* elem,
                              grpc_transport_stream_op_batch* op) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
@@ -749,10 +751,12 @@ static void server_mutate_op(grpc_call_element* elem,
         &calld->recv_initial_metadata_flags;
   }
 }
+#endif
 
+// FIXME: remove -- not needed in this filter
 static void server_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
-  server_mutate_op(elem, op);
+//  server_mutate_op(elem, op);
   grpc_call_next_op(elem, op);
 }
 
@@ -866,6 +870,9 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
   calld->recv_func_arg = args->recv_func_arg;
   calld->deadline = GRPC_MILLIS_INF_FUTURE;
   calld->call = grpc_call_from_top_element(elem);
+
+  args->recv_payload->recv_initial_metadata.recv_flags =
+      &calld->recv_initial_metadata_flags;
 
   GRPC_CLOSURE_INIT(&calld->server_on_recv_initial_metadata,
                     server_on_recv_initial_metadata, elem,

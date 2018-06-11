@@ -65,8 +65,23 @@ typedef struct inproc_transport {
   struct inproc_stream* stream_list;
 } inproc_transport;
 
+typedef enum {
+  INPROC_RECV_INITIAL_METADATA,
+  INPROC_RECV_MESSAGE,
+  INPROC_RECV_TRAILING_METADATA,
+  INPROC_RECV_OP_COUNT
+} inproc_recv_op_index;
+
 typedef struct inproc_stream {
   inproc_transport* t;
+
+  grpc_transport_stream_recv_op_batch_payload* recv_payload;
+  grpc_transport_stream_recv_op_batch_func recv_batch_func;
+  void* recv_batch_arg;
+
+  // Batches used for sending receive ops up the stack.
+  grpc_transport_stream_recv_op_batch recv_batches[INPROC_RECV_OP_COUNT];
+
   grpc_metadata_batch to_read_initial_md;
   uint32_t to_read_initial_md_flags;
   bool to_read_initial_md_filled;
@@ -448,22 +463,21 @@ static void fail_helper_locked(inproc_stream* s, grpc_error* error) {
 
       fill_in_metadata(
           s, &fake_md, 0,
-          s->recv_initial_md_op->payload->recv_initial_metadata
-              .recv_initial_metadata,
-          s->recv_initial_md_op->payload->recv_initial_metadata.recv_flags,
+          s->recv_payload->recv_initial_metadata.recv_initial_metadata,
+          s->recv_payload->recv_initial_metadata.recv_flags,
           nullptr);
       grpc_metadata_batch_destroy(&fake_md);
       err = GRPC_ERROR_NONE;
     } else {
       err = GRPC_ERROR_REF(error);
     }
-    if (s->recv_initial_md_op->payload->recv_initial_metadata
-            .trailing_metadata_available != nullptr) {
+    if (s->recv_payload->recv_initial_metadata.trailing_metadata_available !=
+        nullptr) {
       // Set to true unconditionally, because we're failing the call, so even
       // if we haven't actually seen the send_trailing_metadata op from the
       // other side, we're going to return trailing metadata anyway.
-      *s->recv_initial_md_op->payload->recv_initial_metadata
-           .trailing_metadata_available = true;
+      *s->recv_payload->recv_initial_metadata.trailing_metadata_available =
+          true;
     }
     INPROC_LOG(GPR_INFO,
                "fail_helper %p scheduling initial-metadata-ready %p %p", s,
@@ -558,7 +572,7 @@ static void message_transfer_locked(inproc_stream* sender,
   sender->send_message_op->payload->send_message.send_message.reset();
 
   receiver->recv_stream.Init(&receiver->recv_message, 0);
-  receiver->recv_message_op->payload->recv_message.recv_message->reset(
+  receiver->recv_payload->recv_message.recv_message->reset(
       receiver->recv_stream.get());
   INPROC_LOG(GPR_INFO, "message_transfer_locked %p scheduling message-ready",
              receiver);
@@ -687,16 +701,14 @@ static void op_state_machine(void* arg, grpc_error* error) {
       s->initial_md_recvd = true;
       new_err = fill_in_metadata(
           s, &s->to_read_initial_md, s->to_read_initial_md_flags,
-          s->recv_initial_md_op->payload->recv_initial_metadata
-              .recv_initial_metadata,
-          s->recv_initial_md_op->payload->recv_initial_metadata.recv_flags,
+          s->recv_payload->recv_initial_metadata.recv_initial_metadata,
+          s->recv_payload->recv_initial_metadata.recv_flags,
           nullptr);
-      s->recv_initial_md_op->payload->recv_initial_metadata
-          .recv_initial_metadata->deadline = s->deadline;
-      if (s->recv_initial_md_op->payload->recv_initial_metadata
-              .trailing_metadata_available != nullptr) {
-        *s->recv_initial_md_op->payload->recv_initial_metadata
-             .trailing_metadata_available =
+      s->recv_payload->recv_initial_metadata.recv_initial_metadata->deadline =
+          s->deadline;
+      if (s->recv_payload->recv_initial_metadata.trailing_metadata_available !=
+          nullptr) {
+        *s->recv_payload->recv_initial_metadata.trailing_metadata_available =
             (other != nullptr && other->send_trailing_md_op != nullptr);
       }
       grpc_metadata_batch_clear(&s->to_read_initial_md);
@@ -773,11 +785,10 @@ static void op_state_machine(void* arg, grpc_error* error) {
     if (s->recv_trailing_md_op != nullptr) {
       // We wanted trailing metadata and we got it
       s->trailing_md_recvd = true;
-      new_err =
-          fill_in_metadata(s, &s->to_read_trailing_md, 0,
-                           s->recv_trailing_md_op->payload
-                               ->recv_trailing_metadata.recv_trailing_metadata,
-                           nullptr, nullptr);
+      new_err = fill_in_metadata(
+          s, &s->to_read_trailing_md, 0,
+          s->recv_payload->recv_trailing_metadata.recv_trailing_metadata,
+          nullptr, nullptr);
       grpc_metadata_batch_clear(&s->to_read_trailing_md);
       s->to_read_trailing_md_filled = false;
 
@@ -1040,13 +1051,13 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
     if (error != GRPC_ERROR_NONE) {
       // Schedule op's closures that we didn't push to op state machine
       if (op->recv_initial_metadata) {
-        if (op->payload->recv_initial_metadata.trailing_metadata_available !=
-            nullptr) {
+        if (s->recv_payload->recv_initial_metadata.trailing_metadata_available
+            != nullptr) {
           // Set to true unconditionally, because we're failing the call, so
           // even if we haven't actually seen the send_trailing_metadata op
           // from the other side, we're going to return trailing metadata
           // anyway.
-          *op->payload->recv_initial_metadata.trailing_metadata_available =
+          *s->recv_payload->recv_initial_metadata.trailing_metadata_available =
               true;
         }
         INPROC_LOG(

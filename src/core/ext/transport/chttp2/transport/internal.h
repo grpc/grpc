@@ -478,9 +478,23 @@ typedef enum {
   GPRC_METADATA_PUBLISHED_AT_CLOSE
 } grpc_published_metadata_method;
 
+typedef enum {
+  GRPC_RECV_INITIAL_METADATA,
+  GRPC_RECV_MESSAGE,
+  GRPC_RECV_TRAILING_METADATA,
+  GRPC_RECV_OP_COUNT
+} grpc_recv_op_index;
+
 struct grpc_chttp2_stream {
   grpc_chttp2_transport* t;
   grpc_stream_refcount* refcount;
+
+  grpc_transport_stream_recv_op_batch_payload* recv_payload;
+  grpc_transport_stream_recv_op_batch_func recv_batch_func;
+  void* recv_batch_arg;
+
+  // Batches used for sending receive ops up the stack.
+  grpc_transport_stream_recv_op_batch recv_batches[GRPC_RECV_OP_COUNT];
 
   grpc_closure destroy_stream;
   grpc_closure* destroy_stream_arg;

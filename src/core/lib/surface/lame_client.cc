@@ -79,18 +79,32 @@ static void fill_metadata(grpc_call_element* elem, grpc_metadata_batch* mdb) {
 static void lame_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
   CallData* calld = static_cast<CallData*>(elem->call_data);
-  if (op->recv_initial_metadata) {
-    fill_metadata(elem,
-                  op->payload->recv_initial_metadata.recv_initial_metadata);
-  } else if (op->recv_trailing_metadata) {
-    fill_metadata(elem,
-                  op->payload->recv_trailing_metadata.recv_trailing_metadata);
-  }
+//  if (op->recv_initial_metadata) {
+//    fill_metadata(elem,
+//                  op->payload->recv_initial_metadata.recv_initial_metadata);
+//  } else if (op->recv_trailing_metadata) {
+//    fill_metadata(elem,
+//                  op->payload->recv_trailing_metadata.recv_trailing_metadata);
+//  }
 // FIXME: initiate recv_{initial,trailing}_metadata completions when we
 // see the first batch
   grpc_transport_stream_op_batch_finish_with_failure(
       op, GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"),
       calld->call_combiner);
+}
+
+static void lame_start_transport_stream_recv_op_batch(
+    grpc_call_element* elem, grpc_transport_stream_recv_op_batch* batch,
+    grpc_error* error) {
+  if (batch->recv_initial_metadata) {
+    fill_metadata(elem,
+                  batch->payload->recv_initial_metadata.recv_initial_metadata);
+  }
+  if (batch->recv_trailing_metadata) {
+    fill_metadata(
+        elem, batch->payload->recv_trailing_metadata.recv_trailing_metadata);
+  }
+  grpc_call_prev_filter_recv_op_batch(elem, batch, error);
 }
 
 static void lame_get_channel_info(grpc_channel_element* elem,
@@ -147,7 +161,7 @@ static void destroy_channel_elem(grpc_channel_element* elem) {}
 
 const grpc_channel_filter grpc_lame_filter = {
     grpc_core::lame_start_transport_stream_op_batch,
-    grpc_call_prev_filter_recv_op_batch,
+    grpc_core::lame_start_transport_stream_recv_op_batch,
     grpc_core::lame_start_transport_op,
     sizeof(grpc_core::CallData),
     grpc_core::init_call_elem,

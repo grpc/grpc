@@ -297,6 +297,7 @@ static void hc_start_transport_stream_op_batch(
   channel_data* channeld = static_cast<channel_data*>(elem->channel_data);
   GPR_TIMER_SCOPE("hc_start_transport_stream_op_batch", 0);
 
+#if 0
   if (batch->recv_initial_metadata) {
     /* substitute our callback for the higher callback */
     calld->recv_initial_metadata =
@@ -316,6 +317,7 @@ static void hc_start_transport_stream_op_batch(
     batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
         &calld->recv_trailing_metadata_ready;
   }
+#endif
 
   grpc_error* error = GRPC_ERROR_NONE;
   bool batch_will_be_handled_asynchronously = false;

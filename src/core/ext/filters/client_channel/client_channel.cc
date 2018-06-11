@@ -947,11 +947,13 @@ typedef struct client_channel_call_data {
 } call_data;
 
 // Forward declarations.
+#if 0
 static void retry_commit(grpc_call_element* elem,
                          subchannel_call_retry_state* retry_state);
 static void start_internal_recv_trailing_metadata(grpc_call_element* elem);
 static void on_complete(void* arg, grpc_error* error);
 static void start_retriable_subchannel_batches(void* arg, grpc_error* ignored);
+#endif
 static void start_pick_locked(void* arg, grpc_error* ignored);
 static void cc_start_transport_stream_recv_op_batch(
     grpc_transport_stream_recv_op_batch* batch, void* arg, grpc_error* error);
@@ -960,6 +962,7 @@ static void cc_start_transport_stream_recv_op_batch(
 // send op data caching
 //
 
+#if 0
 // Caches data for send ops so that it can be retried later, if not
 // already cached.
 static void maybe_cache_send_ops_for_batch(call_data* calld,
@@ -1076,6 +1079,7 @@ static void free_cached_send_op_data_for_completed_batch(
     free_cached_send_trailing_metadata(chand, calld);
   }
 }
+#endif
 
 //
 // pending_batches management
@@ -1108,6 +1112,7 @@ static void pending_batches_add(grpc_call_element* elem,
   pending_batch* pending = &calld->pending_batches[idx];
   GPR_ASSERT(pending->batch == nullptr);
   pending->batch = batch;
+#if 0
   pending->send_ops_cached = false;
   if (calld->enable_retries) {
     // Update state in calld about pending batches.
@@ -1153,6 +1158,7 @@ static void pending_batches_add(grpc_call_element* elem,
       }
     }
   }
+#endif
 }
 
 static void pending_batch_clear(call_data* calld, pending_batch* pending) {
@@ -1233,10 +1239,12 @@ static void resume_pending_batch_in_call_combiner(void* arg,
 static void pending_batches_resume(grpc_call_element* elem) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
+#if 0
   if (calld->enable_retries) {
     start_retriable_subchannel_batches(elem, GRPC_ERROR_NONE);
     return;
   }
+#endif
   // Retries not enabled; send down batches as-is.
   if (grpc_client_channel_trace.enabled()) {
     size_t num_batches = 0;
@@ -1266,6 +1274,7 @@ static void pending_batches_resume(grpc_call_element* elem) {
   closures.RunClosures(calld->call_combiner);
 }
 
+#if 0
 static void maybe_clear_pending_batch(grpc_call_element* elem,
                                       pending_batch* pending) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
@@ -2517,6 +2526,7 @@ static void start_retriable_subchannel_batches(void* arg, grpc_error* ignored) {
   // Note: This will yield the call combiner.
   closures.RunClosures(calld->call_combiner);
 }
+#endif
 
 //
 // LB pick
@@ -2574,9 +2584,13 @@ static void pick_done(void* arg, grpc_error* error) {
     grpc_status_code status = GRPC_STATUS_OK;
     grpc_error_get_status(error, calld->deadline, &status, nullptr, nullptr,
                           nullptr);
-    if (error == GRPC_ERROR_NONE || !calld->enable_retries ||
+    if (error == GRPC_ERROR_NONE
+#if 0
+        || !calld->enable_retries ||
         !maybe_retry(elem, nullptr /* batch_data */, status,
-                     nullptr /* server_pushback_md */)) {
+                     nullptr /* server_pushback_md */)
+#endif
+                     ) {
       grpc_error* new_error =
           error == GRPC_ERROR_NONE
               ? GRPC_ERROR_CREATE_FROM_STATIC_STRING(

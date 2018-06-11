@@ -187,6 +187,7 @@ static grpc_filtered_mdelem lr_trailing_md_filter(void* user_data,
 static void lr_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
   GPR_TIMER_SCOPE("lr_start_transport_stream_op_batch", 0);
+#if 0
   call_data* calld = static_cast<call_data*>(elem->call_data);
 
   if (op->recv_initial_metadata) {
@@ -197,7 +198,9 @@ static void lr_start_transport_stream_op_batch(
         op->payload->recv_initial_metadata.recv_initial_metadata_ready;
     op->payload->recv_initial_metadata.recv_initial_metadata_ready =
         &calld->on_initial_md_ready;
-  } else if (op->send_trailing_metadata) {
+  } else
+#endif
+  if (op->send_trailing_metadata) {
     GRPC_LOG_IF_ERROR(
         "grpc_metadata_batch_filter",
         grpc_metadata_batch_filter(

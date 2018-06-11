@@ -79,6 +79,7 @@ static void start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
 
+#if 0
   // Inject callback for receiving initial metadata
   if (op->recv_initial_metadata) {
     calld->next_recv_initial_metadata_ready =
@@ -88,6 +89,7 @@ static void start_transport_stream_op_batch(
     calld->recv_initial_metadata =
         op->payload->recv_initial_metadata.recv_initial_metadata;
   }
+#endif
 
   if (op->send_message) {
     /* Send message happens after client's user-agent (initial metadata) is

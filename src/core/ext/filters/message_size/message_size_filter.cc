@@ -165,6 +165,7 @@ static void start_transport_stream_op_batch(
     gpr_free(message_string);
     return;
   }
+#if 0
   // Inject callback for receiving a message.
   if (op->recv_message) {
     calld->next_recv_message_ready =
@@ -172,6 +173,7 @@ static void start_transport_stream_op_batch(
     calld->recv_message = op->payload->recv_message.recv_message;
     op->payload->recv_message.recv_message_ready = &calld->recv_message_ready;
   }
+#endif
   // Chain to the next filter.
   grpc_call_next_op(elem, op);
 }
