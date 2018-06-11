@@ -21,7 +21,13 @@
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
 
 #include <ares.h>
+#ifdef GPR_SOLARIS
+#include <unistd.h>
+#include <stropts.h>
+#include <sys/filio.h>
+#else
 #include <sys/ioctl.h>
+#endif
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 
