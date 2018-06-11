@@ -1741,8 +1741,7 @@ static void recv_message_ready(void* arg, grpc_error* error) {
 
 // Sets *status and *server_pushback_md based on batch_data and error.
 static void get_call_status(subchannel_batch_data* batch_data,
-                            grpc_error* error,
-                            grpc_status_code* status,
+                            grpc_error* error, grpc_status_code* status,
                             grpc_mdelem** server_pushback_md) {
   grpc_call_element* elem = batch_data->elem;
   call_data* calld = static_cast<call_data*>(elem->call_data);
