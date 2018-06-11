@@ -46,6 +46,16 @@
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
+#define CALL_ELEMS_FROM_STACK(stk)     \
+  ((grpc_call_element*)((char*)(stk) + \
+                        ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call_stack))))
+
+/* Given a size, round up to the next multiple of sizeof(void*) */
+#define ROUND_UP_TO_ALIGNMENT_SIZE(x) \
+  (((x) + GPR_MAX_ALIGNMENT - 1u) & ~(GPR_MAX_ALIGNMENT - 1u))
+
+auto& force_library_initialization = Library::get();
+
 static void FilterDestroy(void* arg, grpc_error* error) { gpr_free(arg); }
 
 static void DoNothing(void* arg, grpc_error* error) {}
