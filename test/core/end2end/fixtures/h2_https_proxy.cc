@@ -17,6 +17,7 @@
  */
 
 /* This fixture runs end to end tests over a SSL connection with an http proxy.
+ */
 
 #include "test/core/end2end/end2end_tests.h"
 
