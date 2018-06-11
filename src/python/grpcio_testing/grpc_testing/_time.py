@@ -21,13 +21,15 @@ import time as _time
 import grpc
 import grpc_testing
 
+_LOGGER = logging.getLogger(__name__)
+
 
 def _call(behaviors):
     for behavior in behaviors:
         try:
             behavior()
         except Exception:  # pylint: disable=broad-except
-            logging.exception('Exception calling behavior "%r"!', behavior)
+            _LOGGER.exception('Exception calling behavior "%r"!', behavior)
 
 
 def _call_in_thread(behaviors):

@@ -20,6 +20,8 @@ import six
 import grpc
 from grpc._cython import cygrpc
 
+_LOGGER = logging.getLogger(__name__)
+
 CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY = {
     cygrpc.ConnectivityState.idle:
     grpc.ChannelConnectivity.IDLE,
@@ -73,7 +75,7 @@ def decode(b):
         try:
             return b.decode('utf8')
         except UnicodeDecodeError:
-            logging.exception('Invalid encoding on %s', b)
+            _LOGGER.exception('Invalid encoding on %s', b)
             return b.decode('latin1')
 
 
@@ -84,7 +86,7 @@ def _transform(message, transformer, exception_message):
         try:
             return transformer(message)
         except Exception:  # pylint: disable=broad-except
-            logging.exception(exception_message)
+            _LOGGER.exception(exception_message)
             return None
 
 

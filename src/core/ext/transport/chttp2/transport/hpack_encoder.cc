@@ -41,14 +41,18 @@
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 
-#define HASH_FRAGMENT_1(x) ((x)&255)
-#define HASH_FRAGMENT_2(x) ((x >> 8) & 255)
-#define HASH_FRAGMENT_3(x) ((x >> 16) & 255)
-#define HASH_FRAGMENT_4(x) ((x >> 24) & 255)
+#define HASH_FRAGMENT_MASK (GRPC_CHTTP2_HPACKC_NUM_VALUES - 1)
+#define HASH_FRAGMENT_1(x) ((x)&HASH_FRAGMENT_MASK)
+#define HASH_FRAGMENT_2(x) \
+  (((x) >> GRPC_CHTTP2_HPACKC_NUM_VALUES_BITS) & HASH_FRAGMENT_MASK)
+#define HASH_FRAGMENT_3(x) \
+  (((x) >> (GRPC_CHTTP2_HPACKC_NUM_VALUES_BITS * 2)) & HASH_FRAGMENT_MASK)
+#define HASH_FRAGMENT_4(x) \
+  (((x) >> (GRPC_CHTTP2_HPACKC_NUM_VALUES_BITS * 3)) & HASH_FRAGMENT_MASK)
 
 /* if the probability of this item being seen again is < 1/x then don't add
    it to the table */
-#define ONE_ON_ADD_PROBABILITY 128
+#define ONE_ON_ADD_PROBABILITY (GRPC_CHTTP2_HPACKC_NUM_VALUES >> 1)
 /* don't consider adding anything bigger than this to the hpack table */
 #define MAX_DECODER_SPACE_USAGE 512
 
@@ -135,7 +139,7 @@ static void inc_filter(uint8_t idx, uint32_t* sum, uint8_t* elems) {
   } else {
     int i;
     *sum = 0;
-    for (i = 0; i < GRPC_CHTTP2_HPACKC_NUM_FILTERS; i++) {
+    for (i = 0; i < GRPC_CHTTP2_HPACKC_NUM_VALUES; i++) {
       elems[i] /= 2;
       (*sum) += elems[i];
     }

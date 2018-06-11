@@ -131,6 +131,7 @@ cdef extern from "grpc/grpc.h":
   const char *GRPC_ARG_PRIMARY_USER_AGENT_STRING
   const char *GRPC_ARG_SECONDARY_USER_AGENT_STRING
   const char *GRPC_SSL_TARGET_NAME_OVERRIDE_ARG
+  const char *GRPC_SSL_SESSION_CACHE_ARG
   const char *GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM
   const char *GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL
   const char *GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET
@@ -452,7 +453,15 @@ cdef extern from "grpc/grpc_security.h":
     # We don't care about the internals (and in fact don't know them)
     pass
 
+
+  ctypedef struct grpc_ssl_session_cache:
+    # We don't care about the internals (and in fact don't know them)
+    pass
+
   ctypedef void (*grpc_ssl_roots_override_callback)(char **pem_root_certs)
+
+  grpc_ssl_session_cache *grpc_ssl_session_cache_create_lru(size_t capacity)
+  void grpc_ssl_session_cache_destroy(grpc_ssl_session_cache* cache)
 
   void grpc_set_ssl_roots_override_callback(
       grpc_ssl_roots_override_callback cb) nogil

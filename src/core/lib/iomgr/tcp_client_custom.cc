@@ -140,12 +140,12 @@ static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
             socket, connect->addr_name);
   }
 
-  grpc_custom_socket_vtable->connect(
-      socket, (const grpc_sockaddr*)resolved_addr->addr, resolved_addr->len,
-      custom_connect_callback);
   GRPC_CLOSURE_INIT(&connect->on_alarm, on_alarm, socket,
                     grpc_schedule_on_exec_ctx);
   grpc_timer_init(&connect->alarm, deadline, &connect->on_alarm);
+  grpc_custom_socket_vtable->connect(
+      socket, (const grpc_sockaddr*)resolved_addr->addr, resolved_addr->len,
+      custom_connect_callback);
 }
 
 grpc_tcp_client_vtable custom_tcp_client_vtable = {tcp_connect};

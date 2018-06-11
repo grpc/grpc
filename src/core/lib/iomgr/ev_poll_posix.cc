@@ -20,7 +20,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_EV_POLL
 
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 
@@ -1769,4 +1769,4 @@ const grpc_event_engine_vtable* grpc_init_poll_cv_posix(bool explicit_request) {
   return &vtable;
 }
 
-#endif
+#endif /* GRPC_POSIX_SOCKET_EV_POLL */

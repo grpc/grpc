@@ -25,7 +25,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_TCP_SERVER
 
 #include "src/core/lib/iomgr/tcp_server.h"
 
@@ -559,4 +559,4 @@ grpc_tcp_server_vtable grpc_posix_tcp_server_vtable = {
     tcp_server_shutdown_starting_add,
     tcp_server_unref,
     tcp_server_shutdown_listeners};
-#endif
+#endif /* GRPC_POSIX_SOCKET_TCP_SERVER */

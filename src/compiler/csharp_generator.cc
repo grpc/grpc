@@ -590,19 +590,16 @@ void GenerateBindServiceMethod(Printer* out, const ServiceDescriptor* service) {
   out->Print("{\n");
   out->Indent();
 
-  out->Print("return grpc::ServerServiceDefinition.CreateBuilder()\n");
+  out->Print("return grpc::ServerServiceDefinition.CreateBuilder()");
   out->Indent();
   out->Indent();
   for (int i = 0; i < service->method_count(); i++) {
     const MethodDescriptor* method = service->method(i);
-    out->Print(".AddMethod($methodfield$, serviceImpl.$methodname$)",
+    out->Print("\n.AddMethod($methodfield$, serviceImpl.$methodname$)",
                "methodfield", GetMethodFieldName(method), "methodname",
                method->name());
-    if (i == service->method_count() - 1) {
-      out->Print(".Build();");
-    }
-    out->Print("\n");
   }
+  out->Print(".Build();\n");
   out->Outdent();
   out->Outdent();
 
@@ -676,20 +673,26 @@ grpc::string GetServices(const FileDescriptor* file, bool generate_client,
       out.PrintRaw(leading_comments.c_str());
     }
 
-    out.Print("#pragma warning disable 1591\n");
+    out.Print("#pragma warning disable 0414, 1591\n");
+
     out.Print("#region Designer generated code\n");
     out.Print("\n");
     out.Print("using grpc = global::Grpc.Core;\n");
     out.Print("\n");
 
-    out.Print("namespace $namespace$ {\n", "namespace", GetFileNamespace(file));
-    out.Indent();
+    grpc::string file_namespace = GetFileNamespace(file);
+    if (file_namespace != "") {
+      out.Print("namespace $namespace$ {\n", "namespace", file_namespace);
+      out.Indent();
+    }
     for (int i = 0; i < file->service_count(); i++) {
       GenerateService(&out, file->service(i), generate_client, generate_server,
                       internal_access);
     }
-    out.Outdent();
-    out.Print("}\n");
+    if (file_namespace != "") {
+      out.Outdent();
+      out.Print("}\n");
+    }
     out.Print("#endregion\n");
   }
   return output;

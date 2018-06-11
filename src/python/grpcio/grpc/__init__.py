@@ -1250,19 +1250,20 @@ class Server(six.with_metaclass(abc.ABCMeta)):
         """Stops this Server.
 
         This method immediately stop service of new RPCs in all cases.
+
         If a grace period is specified, this method returns immediately
         and all RPCs active at the end of the grace period are aborted.
-
-        If a grace period is not specified, then all existing RPCs are
-        teriminated immediately and the this method blocks until the last
-        RPC handler terminates.
+        If a grace period is not specified (by passing None for `grace`),
+        all existing RPCs are aborted immediately and this method
+        blocks until the last RPC handler terminates.
 
         This method is idempotent and may be called at any time.
-        Passing a smaller grace value in subsequent call will have
-        the effect of stopping the Server sooner. Passing a larger
-        grace value in subsequent call *will not* have the effect of
-        stopping the server later (i.e. the most restrictive grace
-        value is used).
+        Passing a smaller grace value in a subsequent call will have
+        the effect of stopping the Server sooner (passing None will
+        have the effect of stopping the server immediately). Passing
+        a larger grace value in a subsequent call *will not* have the
+        effect of stopping the server later (i.e. the most restrictive
+        grace value is used).
 
         Args:
           grace: A duration of time in seconds or None.
@@ -1481,7 +1482,7 @@ def ssl_server_credentials(private_key_certificate_chain_pairs,
       A ServerCredentials for use with an SSL-enabled Server. Typically, this
       object is an argument to add_secure_port() method during server setup.
     """
-    if len(private_key_certificate_chain_pairs) == 0:
+    if not private_key_certificate_chain_pairs:
         raise ValueError(
             'At least one private key-certificate chain pair is required!')
     elif require_client_auth and root_certificates is None:
@@ -1511,15 +1512,15 @@ def ssl_server_certificate_configuration(private_key_certificate_chain_pairs,
       A ServerCertificateConfiguration that can be returned in the certificate
         configuration fetching callback.
     """
-    if len(private_key_certificate_chain_pairs) == 0:
-        raise ValueError(
-            'At least one private key-certificate chain pair is required!')
-    else:
+    if private_key_certificate_chain_pairs:
         return ServerCertificateConfiguration(
             _cygrpc.server_certificate_config_ssl(root_certificates, [
                 _cygrpc.SslPemKeyCertPair(key, pem)
                 for key, pem in private_key_certificate_chain_pairs
             ]))
+    else:
+        raise ValueError(
+            'At least one private key-certificate chain pair is required!')
 
 
 def dynamic_ssl_server_credentials(initial_certificate_configuration,
