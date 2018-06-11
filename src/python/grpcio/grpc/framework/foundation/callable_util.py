@@ -21,6 +21,8 @@ import logging
 
 import six
 
+_LOGGER = logging.getLogger(__name__)
+
 
 class Outcome(six.with_metaclass(abc.ABCMeta)):
     """A sum type describing the outcome of some call.
@@ -53,7 +55,7 @@ def _call_logging_exceptions(behavior, message, *args, **kwargs):
         return _EasyOutcome(Outcome.Kind.RETURNED, behavior(*args, **kwargs),
                             None)
     except Exception as e:  # pylint: disable=broad-except
-        logging.exception(message)
+        _LOGGER.exception(message)
         return _EasyOutcome(Outcome.Kind.RAISED, None, e)
 
 

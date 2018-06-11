@@ -9989,6 +9989,7 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/max_message_length.cc \
     test/core/end2end/tests/negative_deadline.cc \
     test/core/end2end/tests/network_status_change.cc \
+    test/core/end2end/tests/no_error_on_hotpath.cc \
     test/core/end2end/tests/no_logging.cc \
     test/core/end2end/tests/no_op.cc \
     test/core/end2end/tests/payload.cc \
@@ -10105,6 +10106,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/max_message_length.cc \
     test/core/end2end/tests/negative_deadline.cc \
     test/core/end2end/tests/network_status_change.cc \
+    test/core/end2end/tests/no_error_on_hotpath.cc \
     test/core/end2end/tests/no_logging.cc \
     test/core/end2end/tests/no_op.cc \
     test/core/end2end/tests/payload.cc \

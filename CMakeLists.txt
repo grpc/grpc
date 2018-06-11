@@ -702,6 +702,7 @@ target_include_directories(address_sorting
 )
 
 target_link_libraries(address_sorting
+  ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
 )
 
@@ -5333,6 +5334,7 @@ add_library(end2end_tests
   test/core/end2end/tests/max_message_length.cc
   test/core/end2end/tests/negative_deadline.cc
   test/core/end2end/tests/network_status_change.cc
+  test/core/end2end/tests/no_error_on_hotpath.cc
   test/core/end2end/tests/no_logging.cc
   test/core/end2end/tests/no_op.cc
   test/core/end2end/tests/payload.cc
@@ -5452,6 +5454,7 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/max_message_length.cc
   test/core/end2end/tests/negative_deadline.cc
   test/core/end2end/tests/network_status_change.cc
+  test/core/end2end/tests/no_error_on_hotpath.cc
   test/core/end2end/tests/no_logging.cc
   test/core/end2end/tests/no_op.cc
   test/core/end2end/tests/payload.cc

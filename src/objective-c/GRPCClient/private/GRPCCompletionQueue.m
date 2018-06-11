@@ -20,6 +20,14 @@
 
 #import <grpc/grpc.h>
 
+#ifdef GRPC_CFSTREAM
+const grpc_completion_queue_attributes kCompletionQueueAttr = {GRPC_CQ_CURRENT_VERSION,
+                                                               GRPC_CQ_NEXT, GRPC_CQ_NON_POLLING};
+#else
+const grpc_completion_queue_attributes kCompletionQueueAttr = {
+    GRPC_CQ_CURRENT_VERSION, GRPC_CQ_NEXT, GRPC_CQ_DEFAULT_POLLING};
+#endif
+
 @implementation GRPCCompletionQueue
 
 + (instancetype)completionQueue {
@@ -33,7 +41,8 @@
 
 - (instancetype)init {
   if ((self = [super init])) {
-    _unmanagedQueue = grpc_completion_queue_create_for_next(NULL);
+    _unmanagedQueue = grpc_completion_queue_create(
+        grpc_completion_queue_factory_lookup(&kCompletionQueueAttr), &kCompletionQueueAttr, NULL);
 
     // This is for the following block to capture the pointer by value (instead
     // of retaining self and doing self->_unmanagedQueue). This is essential

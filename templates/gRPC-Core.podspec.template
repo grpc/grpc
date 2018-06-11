@@ -68,6 +68,14 @@
     excl = grpc_private_files(libs)
     return [file for file in out if not file in excl]
 
+  def cfstream_private_headers(libs):
+    out = grpc_lib_files(libs, ("grpc_cfstream",), ("own_headers",))
+    return out
+
+  def cfstream_private_files(libs):
+    out = grpc_lib_files(libs, ("grpc_cfstream",), ("own_src", "own_headers"))
+    return out
+
   def ruby_multiline_list(files, indent):
     return (',\n' + indent*' ').join('\'%s\'' % f for f in files)
   %>
@@ -173,6 +181,16 @@
       ss.source_files = ${ruby_multiline_list(grpc_private_files(libs), 22)}
 
       ss.private_header_files = ${ruby_multiline_list(grpc_private_headers(libs), 30)}
+    end
+
+    s.subspec 'CFStream-Implementation' do |ss|
+      ss.header_mappings_dir = '.'
+      ss.dependency "#{s.name}/Implementation", version
+      ss.pod_target_xcconfig = {
+        'GCC_PREPROCESSOR_DEFINITIONS' => 'GRPC_CFSTREAM=1'
+      }
+      ss.source_files = ${ruby_multiline_list(cfstream_private_files(filegroups), 22)}
+      ss.private_header_files = ${ruby_multiline_list(cfstream_private_headers(filegroups), 30)}
     end
 
     s.subspec 'Cronet-Interface' do |ss|

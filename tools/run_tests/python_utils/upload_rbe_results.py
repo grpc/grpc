@@ -175,8 +175,8 @@ if __name__ == "__main__":
                     'build_id':
                     os.getenv('KOKORO_BUILD_NUMBER'),
                     'build_url':
-                    'https://sponge.corp.google.com/invocation?id=%s' %
-                    os.getenv('KOKORO_BUILD_ID'),
+                    'https://source.cloud.google.com/results/invocations/%s' %
+                    invocation_id,
                     'test_target':
                     action['id']['targetId'],
                     'test_case':

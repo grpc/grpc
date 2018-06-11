@@ -35,7 +35,7 @@
 
   def get_deps(target_dict):
     deps = []
-    if target_dict.get('baselib', False):
+    if target_dict.get('baselib', False) or target_dict['name'] == 'address_sorting':
       deps.append("${_gRPC_BASELIB_LIBRARIES}")
     if target_dict.get('build', None) in ['protoc']:
       deps.append("${_gRPC_PROTOBUF_PROTOC_LIBRARIES}")
