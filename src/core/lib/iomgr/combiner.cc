@@ -221,7 +221,7 @@ bool grpc_combiner_continue_exec_ctx() {
       n = gpr_mpscq_pop_and_check_end(&lock->queue, &empty);
     }
     if (empty) {
-      return false;
+      return true;
     }
     GRPC_COMBINER_TRACE(
         gpr_log(GPR_INFO, "C:%p maybe_finish_one n=%p", lock, n));
