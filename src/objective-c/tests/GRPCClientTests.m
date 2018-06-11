@@ -525,7 +525,8 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
 - (void)testErrorCode {
   int port = [self findFreePort];
   NSString *const kDummyAddress = [NSString stringWithFormat:@"localhost:%d", port];
-  __weak XCTestExpectation *completion = [self expectationWithDescription:@"Empty RPC completed."];
+  __weak XCTestExpectation *completion =
+      [self expectationWithDescription:@"Received correct error code."];
 
   GRPCCall *call = [[GRPCCall alloc] initWithHost:kDummyAddress
                                              path:kEmptyCallMethod.HTTPPath
