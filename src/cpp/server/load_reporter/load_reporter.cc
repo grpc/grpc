@@ -207,8 +207,8 @@ grpc::string LoadReporter::GenerateLbId() {
     // Overflow should never happen.
     GPR_ASSERT(lb_id >= 0);
     // Convert to padded hex string for a 32-bit LB ID. E.g, "0000ca5b".
-    char buf[kLbIdLength];
-    sprintf(buf, "%08lx", lb_id);
+    char buf[kLbIdLength + 1];
+    snprintf(buf, sizeof(buf), "%08lx", lb_id);
     grpc::string lb_id_str(buf, kLbIdLength);
     // The client may send requests with LB ID that has never been allocated
     // by this load reporter. Those IDs are tracked and will be skipped when
