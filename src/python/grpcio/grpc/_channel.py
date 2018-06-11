@@ -192,7 +192,7 @@ def _consume_request_iterator(request_iterator, state, call, request_serializer,
             with state.condition:
                 if state.code is None and not state.cancelled:
                     if serialized_request is None:
-                        code = grpc.StatusCode.INTERNAL  # pylint: disable=redefined-variable-type
+                        code = grpc.StatusCode.INTERNAL
                         details = 'Exception serializing request!'
                         call.cancel(
                             _common.STATUS_CODE_TO_CYGRPC_STATUS_CODE[code],
@@ -813,10 +813,7 @@ def _poll_connectivity(state, channel, initial_try_to_connect):
                     _common.CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY[
                         connectivity])
                 if not state.delivering:
-                    # NOTE(nathaniel): The field is only ever used as a
-                    # sequence so it's fine that both lists and tuples are
-                    # assigned to it.
-                    callbacks = _deliveries(state)  # pylint: disable=redefined-variable-type
+                    callbacks = _deliveries(state)
                     if callbacks:
                         _spawn_delivery(state, callbacks)
 

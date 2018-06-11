@@ -105,10 +105,10 @@ class _Handler(Handler):
                 self._expiration_future.cancel()
             self._condition.notify_all()
 
-    def add_termination_callback(self, termination_callback):
+    def add_termination_callback(self, callback):
         with self._condition:
             if self._code is None:
-                self._termination_callbacks.append(termination_callback)
+                self._termination_callbacks.append(callback)
                 return True
             else:
                 return False

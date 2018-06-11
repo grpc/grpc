@@ -100,6 +100,12 @@ class _LocalFailure(grpc.RpcError, grpc.Future, grpc.Call):
     def cancelled(self):
         return False
 
+    def is_active(self):
+        return False
+
+    def time_remaining(self):
+        return None
+
     def running(self):
         return False
 
@@ -114,6 +120,9 @@ class _LocalFailure(grpc.RpcError, grpc.Future, grpc.Call):
 
     def traceback(self, ignored_timeout=None):
         return self._traceback
+
+    def add_callback(self, callback):
+        return False
 
     def add_done_callback(self, fn):
         fn(self)
@@ -288,11 +297,11 @@ class _Channel(grpc.Channel):
         self._channel = channel
         self._interceptor = interceptor
 
-    def subscribe(self, *args, **kwargs):
-        self._channel.subscribe(*args, **kwargs)
+    def subscribe(self, callback, try_to_connect=False):
+        self._channel.subscribe(callback, try_to_connect=try_to_connect)
 
-    def unsubscribe(self, *args, **kwargs):
-        self._channel.unsubscribe(*args, **kwargs)
+    def unsubscribe(self, callback):
+        self._channel.unsubscribe(callback)
 
     def unary_unary(self,
                     method,

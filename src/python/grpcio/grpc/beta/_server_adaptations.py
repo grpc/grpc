@@ -305,6 +305,7 @@ def _simple_method_handler(implementation, request_deserializer,
                                         response_serializer, None, None, None,
                                         _adapt_stream_stream_event(
                                             implementation.stream_stream_event))
+    raise ValueError()
 
 
 def _flatten_method_pair_map(method_pair_map):
