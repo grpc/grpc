@@ -82,7 +82,7 @@ static void on_initial_md_ready(void* user_data, grpc_error* err) {
   } else {
     GRPC_ERROR_REF(err);
   }
-  GRPC_CLOSURE_RUN(calld->ops_recv_initial_metadata_ready, error);
+  GRPC_CLOSURE_RUN(calld->ops_recv_initial_metadata_ready, err);
 }
 
 /* Constructor for call_data */
