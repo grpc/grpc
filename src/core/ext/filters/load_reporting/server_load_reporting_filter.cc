@@ -82,12 +82,7 @@ static void on_initial_md_ready(void* user_data, grpc_error* err) {
   } else {
     GRPC_ERROR_REF(err);
   }
-  // TODO(hcaseyal): use grpc_closure_run?
-  if (calld->ops_recv_initial_metadata_ready != nullptr) {
-    calld->ops_recv_initial_metadata_ready->cb(
-        calld->ops_recv_initial_metadata_ready->cb_arg, err);
-    GRPC_ERROR_UNREF(err);
-  }
+  GRPC_CLOSURE_RUN(calld->ops_recv_initial_metadata_ready, error);
 }
 
 /* Constructor for call_data */
