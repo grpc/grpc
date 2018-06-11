@@ -96,6 +96,9 @@ struct grpc_resource_user {
      list, false otherwise */
   bool added_to_free_pool;
 
+  /* The number of threads currently allocated to this resource user */
+  gpr_atm num_threads;
+
   /* Reclaimers: index 0 is the benign reclaimer, 1 is the destructive reclaimer
    */
   grpc_closure* reclaimers[2];
@@ -135,12 +138,21 @@ struct grpc_resource_quota {
 
   gpr_atm last_size;
 
+  /* Max number of threads allowed */
+  int max_threads;
+
+  /* Number of threads currently allocated via this resource_quota object */
+  gpr_atm num_threads;
+
   /* Has rq_step been scheduled to occur? */
   bool step_scheduled;
+
   /* Are we currently reclaiming memory */
   bool reclaiming;
+
   /* Closure around rq_step */
   grpc_closure rq_step_closure;
+
   /* Closure around rq_reclamation_done */
   grpc_closure rq_reclamation_done_closure;
 
@@ -594,6 +606,8 @@ grpc_resource_quota* grpc_resource_quota_create(const char* name) {
   resource_quota->free_pool = INT64_MAX;
   resource_quota->size = INT64_MAX;
   gpr_atm_no_barrier_store(&resource_quota->last_size, GPR_ATM_MAX);
+  resource_quota->max_threads = INT_MAX;
+  gpr_atm_no_barrier_store(&resource_quota->num_threads, 0);
   resource_quota->step_scheduled = false;
   resource_quota->reclaiming = false;
   gpr_atm_no_barrier_store(&resource_quota->memory_usage_estimation, 0);
@@ -645,6 +659,10 @@ double grpc_resource_quota_get_memory_pressure(
              &resource_quota->memory_usage_estimation))) /
          (static_cast<double>(MEMORY_USAGE_ESTIMATION_MAX));
 }
+
+/* Public API */
+void grpc_resource_quota_set_max_threads(grpc_resource_quota* resource_quota,
+                                         int new_max_threads) {}
 
 /* Public API */
 void grpc_resource_quota_resize(grpc_resource_quota* resource_quota,
@@ -731,6 +749,7 @@ grpc_resource_user* grpc_resource_user_create(
   grpc_closure_list_init(&resource_user->on_allocated);
   resource_user->allocating = false;
   resource_user->added_to_free_pool = false;
+  gpr_atm_no_barrier_store(&resource_user->num_threads, 0);
   resource_user->reclaimers[0] = nullptr;
   resource_user->reclaimers[1] = nullptr;
   resource_user->new_reclaimers[0] = nullptr;
@@ -784,6 +803,14 @@ void grpc_resource_user_shutdown(grpc_resource_user* resource_user) {
         GRPC_ERROR_NONE);
   }
 }
+
+bool grpc_resource_user_alloc_threads(grpc_resource_user* resource_user,
+                                      int thd_count) {
+  return true;
+}
+
+void grpc_resource_user_free_threads(grpc_resource_user* resource_user,
+                                     int thd_count) {}
 
 void grpc_resource_user_alloc(grpc_resource_user* resource_user, size_t size,
                               grpc_closure* optional_on_done) {

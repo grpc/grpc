@@ -44,6 +44,16 @@ class ResourceQuota final : private GrpcLibraryCodegen {
   /// No time bound is given for this to occur however.
   ResourceQuota& Resize(size_t new_size);
 
+  /// Set the max number of threads that can be allocated from this
+  /// ResourceQuota object.
+  ///
+  /// If the new_max_threads value is smaller than the current value, no new
+  /// threads are allocated until the number of active threads fall below
+  /// new_max_threads. There is no time bound on when this may happen i.e none
+  /// of the current threads are forcefully destroyed and all threads run their
+  /// normal course.
+  ResourceQuota& SetMaxThreads(int new_max_threads);
+
   grpc_resource_quota* c_resource_quota() const { return impl_; }
 
  private:
