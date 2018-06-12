@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/grpc_security.h>
 #include <grpc/load_reporting.h>
 #include <grpc/slice.h>

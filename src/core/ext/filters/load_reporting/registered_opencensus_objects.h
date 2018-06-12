@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_EXT_FILTERS_LOAD_REPORTING_REGISTERED_OPENCENSUS_OBJECTS_H
 #define GRPC_CORE_EXT_FILTERS_LOAD_REPORTING_REGISTERED_OPENCENSUS_OBJECTS_H
 
+#include <grpc/support/port_platform.h>
+
 #include "opencensus/stats/stats.h"
 
 #include "src/cpp/server/load_reporter/constants.h"
