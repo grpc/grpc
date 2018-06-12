@@ -39,12 +39,13 @@
 #include <grpc/impl/codegen/atm.h>
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
+#include <grpcpp/export.h>
 
 namespace grpc {
 
 class ByteBuffer;
 class CompletionQueue;
-extern CoreCodegenInterface* g_core_codegen_interface;
+extern GRPCXX_EXPORT CoreCodegenInterface* g_core_codegen_interface;
 
 namespace internal {
 class Call;

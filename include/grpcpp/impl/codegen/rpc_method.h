@@ -22,11 +22,12 @@
 #include <memory>
 
 #include <grpcpp/impl/codegen/channel_interface.h>
+#include <grpcpp/export.h>
 
 namespace grpc {
 namespace internal {
 /// Descriptor of an RPC method
-class RpcMethod {
+class GRPCXX_EXPORT RpcMethod {
  public:
   enum RpcType {
     NORMAL_RPC = 0,

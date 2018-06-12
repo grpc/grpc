@@ -22,6 +22,7 @@
 #include <grpc/impl/codegen/connectivity_state.h>
 #include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/time.h>
+#include <grpcpp/export.h>
 
 namespace grpc {
 class ChannelInterface;
@@ -52,7 +53,7 @@ class ClientAsyncResponseReaderFactory;
 }  // namespace internal
 
 /// Codegen interface for \a grpc::Channel.
-class ChannelInterface {
+class GRPCXX_EXPORT ChannelInterface {
  public:
   virtual ~ChannelInterface() {}
   /// Get the current channel state. If the channel is in IDLE and

@@ -35,6 +35,7 @@
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/status.h>
+#include <grpcpp/export.h>
 
 struct grpc_server;
 
@@ -49,7 +50,7 @@ class ServerInitializer;
 ///
 /// Use a \a grpc::ServerBuilder to create, configure, and start
 /// \a Server instances.
-class Server : public ServerInterface, private GrpcLibraryCodegen {
+class GRPCXX_EXPORT Server : public ServerInterface, private GrpcLibraryCodegen {
  public:
   ~Server();
 

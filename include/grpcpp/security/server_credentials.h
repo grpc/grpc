@@ -25,6 +25,7 @@
 #include <grpc/grpc_security_constants.h>
 #include <grpcpp/security/auth_metadata_processor.h>
 #include <grpcpp/support/config.h>
+#include <grpcpp/export.h>
 
 struct grpc_server;
 
@@ -32,7 +33,7 @@ namespace grpc {
 class Server;
 
 /// Wrapper around \a grpc_server_credentials, a way to authenticate a server.
-class ServerCredentials {
+class GRPCXX_EXPORT ServerCredentials {
  public:
   virtual ~ServerCredentials();
 
@@ -54,7 +55,7 @@ class ServerCredentials {
 };
 
 /// Options to create ServerCredentials with SSL
-struct SslServerCredentialsOptions {
+struct GRPCXX_EXPORT SslServerCredentialsOptions {
   /// \warning Deprecated
   SslServerCredentialsOptions()
       : force_client_auth(false),
@@ -80,11 +81,11 @@ struct SslServerCredentialsOptions {
 };
 
 /// Builds SSL ServerCredentials given SSL specific options
-std::shared_ptr<ServerCredentials> SslServerCredentials(
+GRPCXX_EXPORT std::shared_ptr<ServerCredentials> SslServerCredentials(
     const SslServerCredentialsOptions& options);
 
 /// Builds insecure server credentials.
-std::shared_ptr<ServerCredentials> InsecureServerCredentials();
+GRPCXX_EXPORT std::shared_ptr<ServerCredentials> InsecureServerCredentials();
 
 namespace experimental {
 

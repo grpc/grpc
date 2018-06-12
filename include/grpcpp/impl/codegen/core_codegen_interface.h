@@ -24,6 +24,7 @@
 #include <grpc/impl/codegen/sync.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/status.h>
+#include <grpcpp/export.h>
 
 namespace grpc {
 
@@ -132,7 +133,7 @@ class CoreCodegenInterface {
   virtual gpr_timespec gpr_time_0(gpr_clock_type type) = 0;
 };
 
-extern CoreCodegenInterface* g_core_codegen_interface;
+extern GRPCXX_EXPORT CoreCodegenInterface* g_core_codegen_interface;
 
 /// Codegen specific version of \a GPR_ASSERT.
 #define GPR_CODEGEN_ASSERT(x)                                              \

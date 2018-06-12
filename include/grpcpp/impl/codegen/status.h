@@ -22,6 +22,7 @@
 #include <grpc/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/status_code_enum.h>
+#include <grpcpp/export.h>
 
 namespace grpc {
 
@@ -31,7 +32,7 @@ namespace grpc {
 class Status {
  public:
   /// Construct an OK instance.
-  Status() : code_(StatusCode::OK) {
+  GRPCXX_EXPORT Status() : code_(StatusCode::OK) {
     // Static assertions to make sure that the C++ API value correctly
     // maps to the core surface API value
     static_assert(StatusCode::OK == static_cast<StatusCode>(GRPC_STATUS_OK),
@@ -88,13 +89,13 @@ class Status {
 
   /// Construct an instance with associated \a code and \a error_message.
   /// It is an error to construct an OK status with non-empty \a error_message.
-  Status(StatusCode code, const grpc::string& error_message)
+  GRPCXX_EXPORT Status(StatusCode code, const grpc::string& error_message)
       : code_(code), error_message_(error_message) {}
 
   /// Construct an instance with \a code,  \a error_message and
   /// \a error_details. It is an error to construct an OK status with non-empty
   /// \a error_message and/or \a error_details.
-  Status(StatusCode code, const grpc::string& error_message,
+  GRPCXX_EXPORT Status(StatusCode code, const grpc::string& error_message,
          const grpc::string& error_details)
       : code_(code),
         error_message_(error_message),
@@ -102,25 +103,25 @@ class Status {
 
   // Pre-defined special status objects.
   /// An OK pre-defined instance.
-  static const Status& OK;
+  GRPCXX_EXPORT static const Status& OK;
   /// A CANCELLED pre-defined instance.
-  static const Status& CANCELLED;
+  GRPCXX_EXPORT static const Status& CANCELLED;
 
   /// Return the instance's error code.
-  StatusCode error_code() const { return code_; }
+  GRPCXX_EXPORT StatusCode error_code() const { return code_; }
   /// Return the instance's error message.
-  grpc::string error_message() const { return error_message_; }
+  GRPCXX_EXPORT grpc::string error_message() const { return error_message_; }
   /// Return the (binary) error details.
   // Usually it contains a serialized google.rpc.Status proto.
-  grpc::string error_details() const { return binary_error_details_; }
+  GRPCXX_EXPORT grpc::string error_details() const { return binary_error_details_; }
 
   /// Is the status OK?
-  bool ok() const { return code_ == StatusCode::OK; }
+  GRPCXX_EXPORT bool ok() const { return code_ == StatusCode::OK; }
 
   // Ignores any errors. This method does nothing except potentially suppress
   // complaints from any tools that are checking that errors are not dropped on
   // the floor.
-  void IgnoreError() const {}
+  GRPCXX_EXPORT void IgnoreError() const {}
 
  private:
   StatusCode code_;

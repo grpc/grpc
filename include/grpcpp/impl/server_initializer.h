@@ -23,13 +23,14 @@
 #include <vector>
 
 #include <grpcpp/server.h>
+#include <grpcpp/export.h>
 
 namespace grpc {
 
 class Server;
 class Service;
 
-class ServerInitializer {
+class GRPCXX_EXPORT ServerInitializer {
  public:
   ServerInitializer(Server* server) : server_(server) {}
 

@@ -25,11 +25,12 @@
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
+#include <grpcpp/export.h>
 
 namespace grpc {
 
 namespace internal {
-class GrpcLibrary final : public GrpcLibraryInterface {
+class GRPCXX_EXPORT GrpcLibrary final : public GrpcLibraryInterface {
  public:
   void init() override { grpc_init(); }
   void shutdown() override { grpc_shutdown(); }
@@ -39,7 +40,7 @@ static GrpcLibrary g_gli;
 static CoreCodegen g_core_codegen;
 
 /// Instantiating this class ensures the proper initialization of gRPC.
-class GrpcLibraryInitializer final {
+class GRPCXX_EXPORT GrpcLibraryInitializer final {
  public:
   GrpcLibraryInitializer() {
     if (grpc::g_glip == nullptr) {

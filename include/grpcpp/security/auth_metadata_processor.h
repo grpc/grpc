@@ -24,13 +24,14 @@
 #include <grpcpp/security/auth_context.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
+#include <grpcpp/export.h>
 
 namespace grpc {
 
 /// Interface allowing custom server-side authorization based on credentials
 /// encoded in metadata.  Objects of this type can be passed to
 /// \a ServerCredentials::SetAuthMetadataProcessor().
-class AuthMetadataProcessor {
+class GRPCXX_EXPORT AuthMetadataProcessor {
  public:
   typedef std::multimap<grpc::string_ref, grpc::string_ref> InputMetadata;
   typedef std::multimap<grpc::string, grpc::string> OutputMetadata;

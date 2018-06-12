@@ -27,6 +27,7 @@
 #include <grpcpp/security/auth_context.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
+#include <grpcpp/export.h>
 
 struct grpc_call;
 
@@ -43,7 +44,7 @@ class SecureCallCredentials;
 /// for all the calls on that channel.
 ///
 /// \see https://grpc.io/docs/guides/auth.html
-class ChannelCredentials : private GrpcLibraryCodegen {
+class GRPCXX_EXPORT ChannelCredentials : private GrpcLibraryCodegen {
  public:
   ChannelCredentials();
   ~ChannelCredentials();
@@ -69,7 +70,7 @@ class ChannelCredentials : private GrpcLibraryCodegen {
 /// authenticate with a server for a given call on a channel.
 ///
 /// \see https://grpc.io/docs/guides/auth.html
-class CallCredentials : private GrpcLibraryCodegen {
+class GRPCXX_EXPORT CallCredentials : private GrpcLibraryCodegen {
  public:
   CallCredentials();
   ~CallCredentials();
@@ -90,7 +91,7 @@ class CallCredentials : private GrpcLibraryCodegen {
 };
 
 /// Options used to build SslCredentials.
-struct SslCredentialsOptions {
+struct GRPCXX_EXPORT SslCredentialsOptions {
   /// The buffer containing the PEM encoding of the server root certificates. If
   /// this parameter is empty, the default roots will be used.  The default
   /// roots can be overridden using the \a GRPC_DEFAULT_SSL_ROOTS_FILE_PATH
@@ -119,10 +120,10 @@ struct SslCredentialsOptions {
 /// Using these credentials to connect to any other service may result in this
 /// service being able to impersonate your client for requests to Google
 /// services.
-std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials();
+GRPCXX_EXPORT std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials();
 
 /// Builds SSL Credentials given SSL specific options
-std::shared_ptr<ChannelCredentials> SslCredentials(
+GRPCXX_EXPORT std::shared_ptr<ChannelCredentials> SslCredentials(
     const SslCredentialsOptions& options);
 
 /// Builds credentials for use when running in GCE
@@ -131,7 +132,7 @@ std::shared_ptr<ChannelCredentials> SslCredentials(
 /// Using these credentials to connect to any other service may result in this
 /// service being able to impersonate your client for requests to Google
 /// services.
-std::shared_ptr<CallCredentials> GoogleComputeEngineCredentials();
+GRPCXX_EXPORT std::shared_ptr<CallCredentials> GoogleComputeEngineCredentials();
 
 /// Constant for maximum auth token lifetime.
 constexpr long kMaxAuthTokenLifetimeSecs = 3600;
@@ -141,7 +142,7 @@ constexpr long kMaxAuthTokenLifetimeSecs = 3600;
 /// token_lifetime_seconds is the lifetime in seconds of each Json Web Token
 /// (JWT) created with this credentials. It should not exceed
 /// \a kMaxAuthTokenLifetimeSecs or will be cropped to this value.
-std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
+GRPCXX_EXPORT std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
     const grpc::string& json_key,
     long token_lifetime_seconds = kMaxAuthTokenLifetimeSecs);
 
@@ -153,7 +154,7 @@ std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
 /// Using these credentials to connect to any other service may result in this
 /// service being able to impersonate your client for requests to Google
 /// services.
-std::shared_ptr<CallCredentials> GoogleRefreshTokenCredentials(
+GRPCXX_EXPORT std::shared_ptr<CallCredentials> GoogleRefreshTokenCredentials(
     const grpc::string& json_refresh_token);
 
 /// Builds access token credentials.
@@ -164,7 +165,7 @@ std::shared_ptr<CallCredentials> GoogleRefreshTokenCredentials(
 /// Using these credentials to connect to any other service may result in this
 /// service being able to impersonate your client for requests to Google
 /// services.
-std::shared_ptr<CallCredentials> AccessTokenCredentials(
+GRPCXX_EXPORT std::shared_ptr<CallCredentials> AccessTokenCredentials(
     const grpc::string& access_token);
 
 /// Builds IAM credentials.
@@ -173,7 +174,7 @@ std::shared_ptr<CallCredentials> AccessTokenCredentials(
 /// Using these credentials to connect to any other service may result in this
 /// service being able to impersonate your client for requests to Google
 /// services.
-std::shared_ptr<CallCredentials> GoogleIAMCredentials(
+GRPCXX_EXPORT std::shared_ptr<CallCredentials> GoogleIAMCredentials(
     const grpc::string& authorization_token,
     const grpc::string& authority_selector);
 
@@ -189,13 +190,13 @@ std::shared_ptr<CallCredentials> CompositeCallCredentials(
     const std::shared_ptr<CallCredentials>& creds2);
 
 /// Credentials for an unencrypted, unauthenticated channel
-std::shared_ptr<ChannelCredentials> InsecureChannelCredentials();
+GRPCXX_EXPORT std::shared_ptr<ChannelCredentials> InsecureChannelCredentials();
 
 /// Credentials for a channel using Cronet.
-std::shared_ptr<ChannelCredentials> CronetChannelCredentials(void* engine);
+GRPCXX_EXPORT std::shared_ptr<ChannelCredentials> CronetChannelCredentials(void* engine);
 
 /// User defined metadata credentials.
-class MetadataCredentialsPlugin {
+class GRPCXX_EXPORT MetadataCredentialsPlugin {
  public:
   virtual ~MetadataCredentialsPlugin() {}
 
@@ -217,7 +218,7 @@ class MetadataCredentialsPlugin {
       std::multimap<grpc::string, grpc::string>* metadata) = 0;
 };
 
-std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
+GRPCXX_EXPORT std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
     std::unique_ptr<MetadataCredentialsPlugin> plugin);
 
 namespace experimental {

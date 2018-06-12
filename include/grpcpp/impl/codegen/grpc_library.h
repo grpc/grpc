@@ -20,6 +20,7 @@
 #define GRPCPP_IMPL_CODEGEN_GRPC_LIBRARY_H
 
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
+#include <grpcpp/export.h>
 
 namespace grpc {
 
@@ -32,7 +33,7 @@ class GrpcLibraryInterface {
 
 /// Initialized by \a grpc::GrpcLibraryInitializer from
 /// <grpcpp/impl/grpc_library.h>
-extern GrpcLibraryInterface* g_glip;
+extern GRPCXX_EXPORT GrpcLibraryInterface* g_glip;
 
 /// Classes that require gRPC to be initialized should inherit from this class.
 class GrpcLibraryCodegen {

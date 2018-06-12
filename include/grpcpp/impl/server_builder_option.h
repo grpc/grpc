@@ -24,11 +24,12 @@
 
 #include <grpcpp/impl/server_builder_plugin.h>
 #include <grpcpp/support/channel_arguments.h>
+#include <grpcpp/export.h>
 
 namespace grpc {
 
 /// Interface to pass an option to a \a ServerBuilder.
-class ServerBuilderOption {
+class GRPCXX_EXPORT ServerBuilderOption {
  public:
   virtual ~ServerBuilderOption() {}
   /// Alter the \a ChannelArguments used to create the gRPC server.

@@ -38,6 +38,7 @@ set(gRPC_INSTALL_SHAREDIR "share/grpc" CACHE STRING "Installation directory for 
 
 # Options
 option(gRPC_BUILD_TESTS "Build tests" OFF)
+option(gRPC_BUILD_SHARED "Build grpc++ as shared library including grpc and gpr libraries." OFF)
 option(gRPC_BUILD_CODEGEN "Build codegen" ON)
 
 set(gRPC_INSTALL_default ON)
@@ -95,7 +96,13 @@ set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 add_definitions(-DPB_FIELD_16BIT)
 
 if (MSVC)
-  include(cmake/msvc_static_runtime.cmake)
+  if (gRPC_BUILD_SHARED)
+    include(cmake/msvc_dynamic_runtime.cmake)
+    # need to build shared lib
+    add_definitions(/wd4091)
+  else (gRPC_BUILD_SHARED)
+    include(cmake/msvc_static_runtime.cmake)
+  endif (gRPC_BUILD_SHARED)
   add_definitions(-D_WIN32_WINNT=0x600 -D_SCL_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS)
   # needed to compile protobuf
   add_definitions(/wd4065 /wd4506)
@@ -2686,7 +2693,7 @@ target_link_libraries(test_tcp_server
 
 endif (gRPC_BUILD_TESTS)
 
-add_library(grpc++
+set(grpc++_source_files
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
   src/cpp/common/auth_property_iterator.cc
@@ -2730,6 +2737,17 @@ add_library(grpc++
   src/cpp/util/time_cc.cc
   src/cpp/codegen/codegen_init.cc
 )
+
+if (gRPC_BUILD_SHARED)
+  add_library(grpc++ SHARED ${grpc++_source_files})
+  target_compile_definitions(grpc++ PRIVATE -DGRPC_USE_DLLS)
+else (gRPC_BUILD_SHARED)
+  if(WIN32 AND MSVC)
+    add_library(grpc++ STATIC ${grpc++_source_files})
+  else (WIN32 AND MSVC)
+    add_library(grpc++ ${grpc++_source_files})
+  endif (WIN32 AND MSVC)
+endif (gRPC_BUILD_SHARED)
 
 if(WIN32 AND MSVC)
   set_target_properties(grpc++ PROPERTIES COMPILE_PDB_NAME "grpc++"
@@ -3550,6 +3568,8 @@ if (gRPC_INSTALL)
   )
 endif()
 
+# grpc++_error_details do not compiled with dynamic libprotoc library.
+if (NOT gRPC_BUILD_SHARED)
 
 if (gRPC_BUILD_CODEGEN)
 add_library(grpc++_error_details
@@ -3616,6 +3636,8 @@ if (gRPC_INSTALL)
   )
 endif()
 
+endif (NOT gRPC_BUILD_SHARED)
+
 if (gRPC_BUILD_TESTS)
 
 if (gRPC_BUILD_CODEGEN)
@@ -3680,7 +3702,11 @@ endif (gRPC_BUILD_CODEGEN)
 
 endif (gRPC_BUILD_TESTS)
 
+# grpc++_reflection do not compiled with dynamic libprotoc library.
+if (NOT gRPC_BUILD_SHARED)
+
 if (gRPC_BUILD_CODEGEN)
+
 add_library(grpc++_reflection
   src/cpp/ext/proto_server_reflection.cc
   src/cpp/ext/proto_server_reflection_plugin.cc
@@ -3745,6 +3771,8 @@ if (gRPC_INSTALL)
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
 endif()
+
+endif (NOT gRPC_BUILD_SHARED)
 
 if (gRPC_BUILD_TESTS)
 
@@ -11577,6 +11605,12 @@ if (gRPC_INSTALL)
 endif()
 
 endif (gRPC_BUILD_CODEGEN)
+
+# CSharp do not compiled with dynamic libprotoc library.
+# Remove this if..endif when libprotoc updated to new version.
+# In new libprotoc version its fixed.
+if (NOT gRPC_BUILD_SHARED)
+
 if (gRPC_BUILD_CODEGEN)
 
 add_executable(grpc_csharp_plugin
@@ -11613,7 +11647,11 @@ if (gRPC_INSTALL)
   )
 endif()
 
+
 endif (gRPC_BUILD_CODEGEN)
+
+endif (NOT gRPC_BUILD_SHARED)
+
 if (gRPC_BUILD_CODEGEN)
 
 add_executable(grpc_node_plugin
@@ -11688,6 +11726,12 @@ if (gRPC_INSTALL)
 endif()
 
 endif (gRPC_BUILD_CODEGEN)
+
+# PHP plugin do not compiled with dynamic libprotoc library.
+# Remove this if..endif when libprotoc updated to new version.
+# In new libprotoc version its fixed.
+if (NOT gRPC_BUILD_SHARED)
+
 if (gRPC_BUILD_CODEGEN)
 
 add_executable(grpc_php_plugin
@@ -11725,6 +11769,9 @@ if (gRPC_INSTALL)
 endif()
 
 endif (gRPC_BUILD_CODEGEN)
+
+endif (NOT gRPC_BUILD_SHARED)
+
 if (gRPC_BUILD_CODEGEN)
 
 add_executable(grpc_python_plugin

@@ -24,17 +24,18 @@
 
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/string_ref.h>
+#include <grpcpp/export.h>
 
 struct grpc_auth_context;
 struct grpc_auth_property;
 struct grpc_auth_property_iterator;
 
 namespace grpc {
-class SecureAuthContext;
+class GRPCXX_EXPORT SecureAuthContext;
 
 typedef std::pair<grpc::string_ref, grpc::string_ref> AuthProperty;
 
-class AuthPropertyIterator
+class GRPCXX_EXPORT AuthPropertyIterator
     : public std::iterator<std::input_iterator_tag, const AuthProperty> {
  public:
   ~AuthPropertyIterator();
@@ -62,7 +63,7 @@ class AuthPropertyIterator
 ///
 /// It includes the secure identity of the peer, the type of secure transport
 /// used as well as any other properties required by the authorization layer.
-class AuthContext {
+class GRPCXX_EXPORT AuthContext {
  public:
   virtual ~AuthContext() {}
 

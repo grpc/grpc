@@ -20,6 +20,7 @@
 #define GRPCPP_HEALTH_CHECK_SERVICE_INTERFACE_H
 
 #include <grpcpp/support/config.h>
+#include <grpcpp/export.h>
 
 namespace grpc {
 
@@ -28,7 +29,7 @@ const char kHealthCheckServiceInterfaceArg[] =
 
 /// The gRPC server uses this interface to expose the health checking service
 /// without depending on protobuf.
-class HealthCheckServiceInterface {
+class GRPCXX_EXPORT HealthCheckServiceInterface {
  public:
   virtual ~HealthCheckServiceInterface() {}
 
@@ -43,11 +44,11 @@ class HealthCheckServiceInterface {
 /// servers created afterwards. For each server, user can override the default
 /// with a HealthCheckServiceServerBuilderOption.
 /// NOT thread safe.
-void EnableDefaultHealthCheckService(bool enable);
+GRPCXX_EXPORT void EnableDefaultHealthCheckService(bool enable);
 
 /// Returns whether the default health checking service is enabled.
 /// NOT thread safe.
-bool DefaultHealthCheckServiceEnabled();
+GRPCXX_EXPORT bool DefaultHealthCheckServiceEnabled();
 
 }  // namespace grpc
 

@@ -31,6 +31,7 @@
 #include <grpcpp/impl/server_builder_option.h>
 #include <grpcpp/impl/server_builder_plugin.h>
 #include <grpcpp/support/config.h>
+#include <grpcpp/export.h>
 
 struct grpc_resource_quota;
 
@@ -51,8 +52,8 @@ class ServerBuilderPluginTest;
 /// A builder class for the creation and startup of \a grpc::Server instances.
 class ServerBuilder {
  public:
-  ServerBuilder();
-  virtual ~ServerBuilder();
+  GRPCXX_EXPORT ServerBuilder();
+  GRPCXX_EXPORT virtual ~ServerBuilder();
 
   //////////////////////////////////////////////////////////////////////////////
   // Primary API's
@@ -65,13 +66,13 @@ class ServerBuilder {
   ///     traffic (via AddListeningPort)
   ///  3. [for async api only] completion queues have been added via
   ///     AddCompletionQueue
-  virtual std::unique_ptr<Server> BuildAndStart();
+  GRPCXX_EXPORT virtual std::unique_ptr<Server> BuildAndStart();
 
   /// Register a service. This call does not take ownership of the service.
   /// The service must exist for the lifetime of the \a Server instance returned
   /// by \a BuildAndStart().
   /// Matches requests with any :authority
-  ServerBuilder& RegisterService(Service* service);
+  GRPCXX_EXPORT ServerBuilder& RegisterService(Service* service);
 
   /// Enlists an endpoint \a addr (port with an optional IP address) to
   /// bind the \a grpc::Server object to be created to.
@@ -88,7 +89,7 @@ class ServerBuilder {
   /// number bound to the \a grpc::Server for the corresponding endpoint after
   /// it is successfully bound, 0 otherwise.
   ///
-  ServerBuilder& AddListeningPort(const grpc::string& addr_uri,
+  GRPCXX_EXPORT ServerBuilder& AddListeningPort(const grpc::string& addr_uri,
                                   std::shared_ptr<ServerCredentials> creds,
                                   int* selected_port = nullptr);
 
@@ -122,7 +123,7 @@ class ServerBuilder {
   /// not polling the completion queue frequently) will have a significantly
   /// negative performance impact and hence should not be used in production
   /// use cases.
-  std::unique_ptr<ServerCompletionQueue> AddCompletionQueue(
+  GRPCXX_EXPORT std::unique_ptr<ServerCompletionQueue> AddCompletionQueue(
       bool is_frequently_polled = true);
 
   //////////////////////////////////////////////////////////////////////////////
@@ -132,31 +133,31 @@ class ServerBuilder {
   /// The service must exist for the lifetime of the \a Server instance returned
   /// by \a BuildAndStart().
   /// Only matches requests with :authority \a host
-  ServerBuilder& RegisterService(const grpc::string& host, Service* service);
+  GRPCXX_EXPORT ServerBuilder& RegisterService(const grpc::string& host, Service* service);
 
   /// Register a generic service.
   /// Matches requests with any :authority
   /// This is mostly useful for writing generic gRPC Proxies where the exact
   /// serialization format is unknown
-  ServerBuilder& RegisterAsyncGenericService(AsyncGenericService* service);
+  GRPCXX_EXPORT ServerBuilder& RegisterAsyncGenericService(AsyncGenericService* service);
 
   //////////////////////////////////////////////////////////////////////////////
   // Fine control knobs
 
   /// Set max receive message size in bytes.
-  ServerBuilder& SetMaxReceiveMessageSize(int max_receive_message_size) {
+  GRPCXX_EXPORT ServerBuilder& SetMaxReceiveMessageSize(int max_receive_message_size) {
     max_receive_message_size_ = max_receive_message_size;
     return *this;
   }
 
   /// Set max send message size in bytes.
-  ServerBuilder& SetMaxSendMessageSize(int max_send_message_size) {
+  GRPCXX_EXPORT ServerBuilder& SetMaxSendMessageSize(int max_send_message_size) {
     max_send_message_size_ = max_send_message_size;
     return *this;
   }
 
   /// \deprecated For backward compatibility.
-  ServerBuilder& SetMaxMessageSize(int max_message_size) {
+  GRPCXX_EXPORT ServerBuilder& SetMaxMessageSize(int max_message_size) {
     return SetMaxReceiveMessageSize(max_message_size);
   }
 
@@ -165,23 +166,23 @@ class ServerBuilder {
   ///
   /// Incoming calls compressed with an unsupported algorithm will fail with
   /// \a GRPC_STATUS_UNIMPLEMENTED.
-  ServerBuilder& SetCompressionAlgorithmSupportStatus(
+  GRPCXX_EXPORT ServerBuilder& SetCompressionAlgorithmSupportStatus(
       grpc_compression_algorithm algorithm, bool enabled);
 
   /// The default compression level to use for all channel calls in the
   /// absence of a call-specific level.
-  ServerBuilder& SetDefaultCompressionLevel(grpc_compression_level level);
+  GRPCXX_EXPORT ServerBuilder& SetDefaultCompressionLevel(grpc_compression_level level);
 
   /// The default compression algorithm to use for all channel calls in the
   /// absence of a call-specific level. Note that it overrides any compression
   /// level set by \a SetDefaultCompressionLevel.
-  ServerBuilder& SetDefaultCompressionAlgorithm(
+  GRPCXX_EXPORT ServerBuilder& SetDefaultCompressionAlgorithm(
       grpc_compression_algorithm algorithm);
 
   /// Set the attached buffer pool for this server
-  ServerBuilder& SetResourceQuota(const ResourceQuota& resource_quota);
+  GRPCXX_EXPORT ServerBuilder& SetResourceQuota(const ResourceQuota& resource_quota);
 
-  ServerBuilder& SetOption(std::unique_ptr<ServerBuilderOption> option);
+  GRPCXX_EXPORT ServerBuilder& SetOption(std::unique_ptr<ServerBuilderOption> option);
 
   /// Options for synchronous servers.
   enum SyncServerOption {
@@ -192,7 +193,7 @@ class ServerBuilder {
   };
 
   /// Only useful if this is a Synchronous server.
-  ServerBuilder& SetSyncServerOption(SyncServerOption option, int value);
+  GRPCXX_EXPORT ServerBuilder& SetSyncServerOption(SyncServerOption option, int value);
 
   /// Add a channel argument (an escape hatch to tuning core library parameters
   /// directly)
@@ -202,13 +203,13 @@ class ServerBuilder {
   }
 
   /// For internal use only: Register a ServerBuilderPlugin factory function.
-  static void InternalAddPluginFactory(
+  GRPCXX_EXPORT static void InternalAddPluginFactory(
       std::unique_ptr<ServerBuilderPlugin> (*CreatePlugin)());
 
   /// Enable a server workaround. Do not use unless you know what the workaround
   /// does. For explanation and detailed descriptions of workarounds, see
   /// doc/workarounds.md.
-  ServerBuilder& EnableWorkaround(grpc_workaround_list id);
+  GRPCXX_EXPORT ServerBuilder& EnableWorkaround(grpc_workaround_list id);
 
  protected:
   /// Experimental, to be deprecated

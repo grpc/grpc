@@ -33,6 +33,7 @@
 #include <grpcpp/impl/codegen/security/auth_context.h>
 #include <grpcpp/impl/codegen/string_ref.h>
 #include <grpcpp/impl/codegen/time.h>
+#include <grpcpp/export.h>
 
 struct grpc_metadata;
 struct grpc_call;
@@ -93,7 +94,7 @@ class ServerContextTestSpouse;
 /// to a \a grpc::ServerBuilder, via \a ServerBuilder::AddChannelArgument.
 ///
 /// \warning ServerContext instances should \em not be reused across rpcs.
-class ServerContext {
+class GRPCXX_EXPORT ServerContext {
  public:
   ServerContext();  // for async calls
   ~ServerContext();

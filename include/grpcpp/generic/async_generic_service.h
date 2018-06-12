@@ -21,6 +21,7 @@
 
 #include <grpcpp/support/async_stream.h>
 #include <grpcpp/support/byte_buffer.h>
+#include <grpcpp/export.h>
 
 struct grpc_server;
 
@@ -29,7 +30,7 @@ namespace grpc {
 typedef ServerAsyncReaderWriter<ByteBuffer, ByteBuffer>
     GenericServerAsyncReaderWriter;
 
-class GenericServerContext final : public ServerContext {
+class GRPCXX_EXPORT GenericServerContext final : public ServerContext {
  public:
   const grpc::string& method() const { return method_; }
   const grpc::string& host() const { return host_; }
@@ -59,7 +60,7 @@ class GenericServerContext final : public ServerContext {
 //
 // When tag is retrieved from cq->Next(), context.method() can be used to look
 // at the method and the RPC can be handled accordingly.
-class AsyncGenericService final {
+class GRPCXX_EXPORT AsyncGenericService final {
  public:
   AsyncGenericService() : server_(nullptr) {}
 

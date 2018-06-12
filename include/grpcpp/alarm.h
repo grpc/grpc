@@ -27,11 +27,12 @@
 #include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/impl/codegen/time.h>
 #include <grpcpp/impl/grpc_library.h>
+#include <grpcpp/export.h>
 
 namespace grpc {
 
 /// A thin wrapper around \a grpc_alarm (see / \a / src/core/surface/alarm.h).
-class Alarm : private GrpcLibraryCodegen {
+class GRPCXX_EXPORT Alarm : private GrpcLibraryCodegen {
  public:
   /// Create an unset completion queue alarm
   Alarm();

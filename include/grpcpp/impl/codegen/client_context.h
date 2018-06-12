@@ -50,6 +50,7 @@
 #include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/string_ref.h>
 #include <grpcpp/impl/codegen/time.h>
+#include <grpcpp/export.h>
 
 struct census_context;
 struct grpc_call;
@@ -91,7 +92,7 @@ class ServerContext;
 /// ClientContext.
 ///
 /// \see ClientContext::FromServerContext
-class PropagationOptions {
+class GRPCXX_EXPORT PropagationOptions {
  public:
   PropagationOptions() : propagate_(GRPC_PROPAGATE_DEFAULTS) {}
 
@@ -159,7 +160,7 @@ class InteropClientContextInspector;
 /// (see \a grpc::CreateCustomChannel).
 ///
 /// \warning ClientContext instances should \em not be reused across rpcs.
-class ClientContext {
+class GRPCXX_EXPORT ClientContext {
  public:
   ClientContext();
   ~ClientContext();
