@@ -106,10 +106,10 @@ grpc::string LoadRecordKey::GetClientIpBytes() const {
                         sizeof(ip_bytes));
   } else if (client_ip_hex_.size() == kIpv6AddressLength) {
     uint64_t ip_bytes[2];
-    GPR_ASSERT(sscanf(client_ip_hex_.substr(0, 16).c_str(), "%lx", ip_bytes) ==
+    GPR_ASSERT(sscanf(client_ip_hex_.substr(0, 16).c_str(), "%llx", ip_bytes) ==
                1);
-    GPR_ASSERT(sscanf(client_ip_hex_.substr(16).c_str(), "%lx", ip_bytes + 1) ==
-               1);
+    GPR_ASSERT(
+        sscanf(client_ip_hex_.substr(16).c_str(), "%llx", ip_bytes + 1) == 1);
     return grpc::string(reinterpret_cast<const char*>(ip_bytes),
                         sizeof(ip_bytes));
   } else {
