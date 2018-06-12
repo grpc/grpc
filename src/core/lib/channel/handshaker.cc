@@ -223,18 +223,23 @@ static bool call_next_handshaker_locked(grpc_handshake_manager* mgr,
       mgr->index == mgr->count) {
     if (error == GRPC_ERROR_NONE && mgr->shutdown) {
       error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("handshaker shutdown");
-      // TODO(roth): It is currently necessary to shutdown endpoints
-      // before destroying then, even when we know that there are no
-      // pending read/write callbacks.  This should be fixed, at which
-      // point this can be removed.
-      grpc_endpoint_shutdown(mgr->args.endpoint, GRPC_ERROR_REF(error));
-      grpc_endpoint_destroy(mgr->args.endpoint);
-      mgr->args.endpoint = nullptr;
-      grpc_channel_args_destroy(mgr->args.args);
-      mgr->args.args = nullptr;
-      grpc_slice_buffer_destroy_internal(mgr->args.read_buffer);
-      gpr_free(mgr->args.read_buffer);
-      mgr->args.read_buffer = nullptr;
+      // It is possible that the endpoint has already been destroyed by
+      // a shutdown call while this callback was sitting on the ExecCtx
+      // with no error.
+      if (mgr->args.endpoint != nullptr) {
+        // TODO(roth): It is currently necessary to shutdown endpoints
+        // before destroying then, even when we know that there are no
+        // pending read/write callbacks.  This should be fixed, at which
+        // point this can be removed.
+        grpc_endpoint_shutdown(mgr->args.endpoint, GRPC_ERROR_REF(error));
+        grpc_endpoint_destroy(mgr->args.endpoint);
+        mgr->args.endpoint = nullptr;
+        grpc_channel_args_destroy(mgr->args.args);
+        mgr->args.args = nullptr;
+        grpc_slice_buffer_destroy_internal(mgr->args.read_buffer);
+        gpr_free(mgr->args.read_buffer);
+        mgr->args.read_buffer = nullptr;
+      }
     }
     if (grpc_handshaker_trace.enabled()) {
       gpr_log(GPR_INFO,
