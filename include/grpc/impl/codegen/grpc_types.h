@@ -336,6 +336,8 @@ typedef struct {
 /** If non-zero, client authority filter is disabled for the channel */
 #define GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER \
   "grpc.disable_client_authority_filter"
+/** If set to zero, disables use of http proxies. Enabled by default. */
+#define GRPC_ARG_ENABLE_HTTP_PROXY "grpc.enable_http_proxy"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
