@@ -49,7 +49,9 @@ static NSMutableDictionary *kHostCache;
   if (_channelCreds != nil) {
     grpc_channel_credentials_release(_channelCreds);
   }
+#ifndef GRPC_CFSTREAM
   [GRPCConnectivityMonitor unregisterObserver:self];
+#endif
 }
 
 // Default initializer.
@@ -84,7 +86,9 @@ static NSMutableDictionary *kHostCache;
       kHostCache[address] = self;
       _compressAlgorithm = GRPC_COMPRESS_NONE;
     }
+#ifndef GRPC_CFSTREAM
     [GRPCConnectivityMonitor registerObserver:self selector:@selector(connectivityChange:)];
+#endif
   }
   return self;
 }
