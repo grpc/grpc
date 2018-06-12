@@ -207,6 +207,12 @@ class TransportStreamOpBatch {
         op_->payload->context[GRPC_CONTEXT_TRACING].value);
   }
 
+  const gpr_atm* get_peer_string() const {
+    return op_->recv_initial_metadata
+               ? op_->payload->recv_initial_metadata.peer_string
+               : nullptr;
+  }
+
  private:
   grpc_transport_stream_op_batch* op_;  // Not owned.
   MetadataBatch send_initial_metadata_;
