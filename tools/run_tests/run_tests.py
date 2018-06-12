@@ -883,7 +883,7 @@ class RubyLanguage(object):
         tests.append(
             self.config.job_spec(
                 ['tools/run_tests/helper_scripts/run_ruby_end2end_tests.sh'],
-                timeout_seconds=10 * 60,
+                timeout_seconds=20 * 60,
                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
         return tests
 
