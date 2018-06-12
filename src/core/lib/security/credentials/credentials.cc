@@ -170,7 +170,7 @@ grpc_arg grpc_channel_credentials_to_arg(
 
 grpc_channel_credentials* grpc_channel_credentials_find_in_args(
     const grpc_channel_args* channel_args) {
-  return grpc_channel_arg_find_and_get_pointer<grpc_channel_credentials>(
+  return grpc_channel_args_get_pointer<grpc_channel_credentials>(
       channel_args, GRPC_ARG_CHANNEL_CREDENTIALS);
 }
 
@@ -248,6 +248,6 @@ grpc_arg grpc_server_credentials_to_arg(grpc_server_credentials* p) {
 
 grpc_server_credentials* grpc_find_server_credentials_in_args(
     const grpc_channel_args* channel_args) {
-  return grpc_channel_arg_find_and_get_pointer<grpc_server_credentials>(
+  return grpc_channel_args_get_pointer<grpc_server_credentials>(
       channel_args, GRPC_SERVER_CREDENTIALS_ARG);
 }

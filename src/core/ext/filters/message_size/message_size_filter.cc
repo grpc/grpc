@@ -254,8 +254,8 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   chand->limits = get_message_size_limits(args->channel_args);
   // Get method config table from channel args.
-  const char* service_config_str = grpc_channel_arg_find_and_get_string(
-      args->channel_args, GRPC_ARG_SERVICE_CONFIG);
+  const char* service_config_str =
+      grpc_channel_args_get_string(args->channel_args, GRPC_ARG_SERVICE_CONFIG);
   if (service_config_str != nullptr) {
     grpc_core::UniquePtr<grpc_core::ServiceConfig> service_config =
         grpc_core::ServiceConfig::Create(service_config_str);

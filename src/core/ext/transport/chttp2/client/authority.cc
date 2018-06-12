@@ -29,7 +29,7 @@ grpc_channel_args* grpc_default_authority_add_if_not_present(
   grpc_core::UniquePtr<char> default_authority;
   if (!has_default_authority) {
     const char* server_uri_str =
-        grpc_channel_arg_find_and_get_string(args, GRPC_ARG_SERVER_URI);
+        grpc_channel_args_get_string(args, GRPC_ARG_SERVER_URI);
     GPR_ASSERT(server_uri_str != nullptr);
     default_authority =
         grpc_core::ResolverRegistry::GetDefaultAuthority(server_uri_str);

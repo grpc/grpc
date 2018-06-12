@@ -73,8 +73,8 @@ grpc_channel_args* grpc_lb_policy_grpclb_modify_lb_channel_args(
   size_t num_args_to_add = 0;
   // Add arg for targets info table.
   grpc_lb_addresses* addresses =
-      grpc_channel_arg_find_and_get_pointer<grpc_lb_addresses>(
-          args, GRPC_ARG_LB_ADDRESSES);
+      grpc_channel_args_get_pointer<grpc_lb_addresses>(args,
+                                                       GRPC_ARG_LB_ADDRESSES);
   GPR_ASSERT(addresses != nullptr);
   grpc_core::RefCountedPtr<grpc_core::TargetAuthorityTable>
       target_authority_table = grpc_core::CreateTargetAuthorityTable(addresses);

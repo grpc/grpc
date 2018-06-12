@@ -171,7 +171,7 @@ grpc_error* grpc_tcp_server_prepare_socket(grpc_tcp_server* s, int fd,
   }
   err = grpc_set_socket_no_sigpipe_if_possible(fd);
   if (err != GRPC_ERROR_NONE) goto error;
-  mutator = grpc_channel_arg_find_and_get_pointer<grpc_socket_mutator>(
+  mutator = grpc_channel_args_get_pointer<grpc_socket_mutator>(
       s->channel_args, GRPC_ARG_SOCKET_MUTATOR);
   if (mutator != nullptr) {
     err = grpc_set_socket_with_mutator(fd, mutator);

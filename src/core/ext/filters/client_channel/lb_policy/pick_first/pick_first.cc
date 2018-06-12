@@ -282,7 +282,7 @@ void PickFirst::PingOneLocked(grpc_closure* on_initiate, grpc_closure* on_ack) {
 
 void PickFirst::UpdateLocked(const grpc_channel_args& args) {
   const grpc_lb_addresses* addresses =
-      grpc_channel_arg_find_and_get_pointer<const grpc_lb_addresses>(
+      grpc_channel_args_get_pointer<const grpc_lb_addresses>(
           &args, GRPC_ARG_LB_ADDRESSES);
   if (addresses == nullptr) {
     if (subchannel_list_ == nullptr) {

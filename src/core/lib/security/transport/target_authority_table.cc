@@ -59,7 +59,7 @@ grpc_arg CreateTargetAuthorityTableChannelArg(TargetAuthorityTable* table) {
 
 TargetAuthorityTable* FindTargetAuthorityTableInArgs(
     const grpc_channel_args* args) {
-  return grpc_channel_arg_find_and_get_pointer<TargetAuthorityTable>(
+  return grpc_channel_args_get_pointer<TargetAuthorityTable>(
       args, GRPC_ARG_TARGET_AUTHORITY_TABLE);
 }
 

@@ -112,9 +112,9 @@ typedef struct grpc_integer_options {
 int grpc_channel_arg_get_integer(const grpc_arg* arg,
                                  const grpc_integer_options options);
 /** convinience helper for the above that finds the arg first. */
-inline int grpc_channel_arg_find_and_get_integer(
-    const grpc_channel_args* args, const char* name,
-    const grpc_integer_options options) {
+inline int grpc_channel_args_get_integer(const grpc_channel_args* args,
+                                         const char* name,
+                                         const grpc_integer_options options) {
   return grpc_channel_arg_get_integer(grpc_channel_args_find(args, name),
                                       options);
 }
@@ -124,8 +124,8 @@ inline int grpc_channel_arg_find_and_get_integer(
     If arg is nullptr, returns nullptr, and does not emit a warning. */
 char* grpc_channel_arg_get_string(const grpc_arg* arg);
 /** convinience helper for the above that finds the arg first. */
-inline char* grpc_channel_arg_find_and_get_string(const grpc_channel_args* args,
-                                                  const char* name) {
+inline char* grpc_channel_args_get_string(const grpc_channel_args* args,
+                                          const char* name) {
   return grpc_channel_arg_get_string(grpc_channel_args_find(args, name));
 }
 
@@ -143,15 +143,14 @@ inline Type* grpc_channel_arg_get_pointer(const grpc_arg* arg) {
 }
 /** convinience helper for the above that finds the arg first. */
 template <typename Type>
-inline Type* grpc_channel_arg_find_and_get_pointer(
-    const grpc_channel_args* args, const char* name) {
+inline Type* grpc_channel_args_get_pointer(const grpc_channel_args* args,
+                                           const char* name) {
   return grpc_channel_arg_get_pointer<Type>(grpc_channel_args_find(args, name));
 }
 
 bool grpc_channel_arg_get_bool(const grpc_arg* arg, bool default_value);
-inline bool grpc_channel_arg_find_and_get_bool(const grpc_channel_args* args,
-                                               const char* name,
-                                               bool default_value) {
+inline bool grpc_channel_args_get_bool(const grpc_channel_args* args,
+                                       const char* name, bool default_value) {
   return grpc_channel_arg_get_bool(grpc_channel_args_find(args, name),
                                    default_value);
 }

@@ -116,7 +116,7 @@ NativeDnsResolver::NativeDnsResolver(const ResolverArgs& args)
   if (path[0] == '/') ++path;
   name_to_resolve_ = gpr_strdup(path);
   channel_args_ = grpc_channel_args_copy(args.args);
-  min_time_between_resolutions_ = grpc_channel_arg_find_and_get_integer(
+  min_time_between_resolutions_ = grpc_channel_args_get_integer(
       args.args, GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS,
       {1000, 0, INT_MAX});
   interested_parties_ = grpc_pollset_set_create();

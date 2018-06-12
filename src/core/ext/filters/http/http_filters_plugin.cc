@@ -48,7 +48,7 @@ static bool maybe_add_optional_filter(grpc_channel_stack_builder* builder,
   optional_filter* filtarg = static_cast<optional_filter*>(arg);
   const grpc_channel_args* channel_args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
-  bool enable = grpc_channel_arg_find_and_get_bool(
+  bool enable = grpc_channel_args_get_bool(
       channel_args, filtarg->control_channel_arg,
       !grpc_channel_args_want_minimal_stack(channel_args));
   return enable ? grpc_channel_stack_builder_prepend_filter(

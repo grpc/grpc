@@ -671,9 +671,8 @@ size_t grpc_resource_quota_peek_size(grpc_resource_quota* resource_quota) {
 
 grpc_resource_quota* grpc_resource_quota_from_channel_args(
     const grpc_channel_args* channel_args) {
-  grpc_resource_quota* rq =
-      grpc_channel_arg_find_and_get_pointer<grpc_resource_quota>(
-          channel_args, GRPC_ARG_RESOURCE_QUOTA);
+  grpc_resource_quota* rq = grpc_channel_args_get_pointer<grpc_resource_quota>(
+      channel_args, GRPC_ARG_RESOURCE_QUOTA);
   return rq == nullptr ? grpc_resource_quota_create(nullptr) : rq;
 }
 

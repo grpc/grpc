@@ -257,7 +257,7 @@ grpc_arg grpc_security_connector_to_arg(grpc_security_connector* sc) {
 
 grpc_security_connector* grpc_security_connector_find_in_args(
     const grpc_channel_args* channel_args) {
-  return grpc_channel_arg_find_and_get_pointer<grpc_security_connector>(
+  return grpc_channel_args_get_pointer<grpc_security_connector>(
       channel_args, GRPC_ARG_SECURITY_CONNECTOR);
 }
 
