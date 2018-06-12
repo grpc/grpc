@@ -118,7 +118,7 @@ static void init_test_fds(test_fd* tfds, const int num_fds) {
   for (int i = 0; i < num_fds; i++) {
     GPR_ASSERT(GRPC_ERROR_NONE == grpc_wakeup_fd_init(&tfds[i].wakeup_fd));
     tfds[i].fd = grpc_fd_create(GRPC_WAKEUP_FD_GET_READ_FD(&tfds[i].wakeup_fd),
-                                "test_fd");
+                                "test_fd", false);
     reset_test_fd(&tfds[i]);
   }
 }

@@ -141,7 +141,7 @@ static void BM_PollAddFd(benchmark::State& state) {
   grpc_wakeup_fd wakeup_fd;
   GPR_ASSERT(
       GRPC_LOG_IF_ERROR("wakeup_fd_init", grpc_wakeup_fd_init(&wakeup_fd)));
-  grpc_fd* fd = grpc_fd_create(wakeup_fd.read_fd, "xxx");
+  grpc_fd* fd = grpc_fd_create(wakeup_fd.read_fd, "xxx", false);
   while (state.KeepRunning()) {
     grpc_pollset_add_fd(ps, fd);
     grpc_core::ExecCtx::Get()->Flush();
@@ -222,7 +222,7 @@ static void BM_SingleThreadPollOneFd(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   grpc_wakeup_fd wakeup_fd;
   GRPC_ERROR_UNREF(grpc_wakeup_fd_init(&wakeup_fd));
-  grpc_fd* wakeup = grpc_fd_create(wakeup_fd.read_fd, "wakeup_read");
+  grpc_fd* wakeup = grpc_fd_create(wakeup_fd.read_fd, "wakeup_read", false);
   grpc_pollset_add_fd(ps, wakeup);
   bool done = false;
   Closure* continue_closure = MakeClosure(

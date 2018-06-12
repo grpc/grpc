@@ -204,7 +204,7 @@ static void listen_cb(void* arg, /*=sv_arg*/
   fcntl(fd, F_SETFL, flags | O_NONBLOCK);
   se = static_cast<session*>(gpr_malloc(sizeof(*se)));
   se->sv = sv;
-  se->em_fd = grpc_fd_create(fd, "listener");
+  se->em_fd = grpc_fd_create(fd, "listener", false);
   grpc_pollset_add_fd(g_pollset, se->em_fd);
   GRPC_CLOSURE_INIT(&se->session_read_closure, session_read_cb, se,
                     grpc_schedule_on_exec_ctx);
@@ -233,7 +233,7 @@ static int server_start(server* sv) {
   port = ntohs(sin.sin_port);
   GPR_ASSERT(listen(fd, MAX_NUM_FD) == 0);
 
-  sv->em_fd = grpc_fd_create(fd, "server");
+  sv->em_fd = grpc_fd_create(fd, "server", false);
   grpc_pollset_add_fd(g_pollset, sv->em_fd);
   /* Register to be interested in reading from listen_fd. */
   GRPC_CLOSURE_INIT(&sv->listen_closure, listen_cb, sv,
@@ -353,7 +353,7 @@ static void client_start(client* cl, int port) {
     }
   }
 
-  cl->em_fd = grpc_fd_create(fd, "client");
+  cl->em_fd = grpc_fd_create(fd, "client", false);
   grpc_pollset_add_fd(g_pollset, cl->em_fd);
 
   client_session_write(cl, GRPC_ERROR_NONE);
@@ -454,7 +454,7 @@ static void test_grpc_fd_change(void) {
   flags = fcntl(sv[1], F_GETFL, 0);
   GPR_ASSERT(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK) == 0);
 
-  em_fd = grpc_fd_create(sv[0], "test_grpc_fd_change");
+  em_fd = grpc_fd_create(sv[0], "test_grpc_fd_change", false);
   grpc_pollset_add_fd(g_pollset, em_fd);
 
   /* Register the first callback, then make its FD readable */
