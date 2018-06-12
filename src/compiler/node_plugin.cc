@@ -32,11 +32,31 @@ class NodeGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   NodeGrpcGenerator() {}
   ~NodeGrpcGenerator() {}
 
-  bool Generate(const grpc::protobuf::FileDescriptor *file,
-                const grpc::string &parameter,
-                grpc::protobuf::compiler::GeneratorContext *context,
-                grpc::string *error) const {
-    grpc::string code = GenerateFile(file);
+  bool Generate(const grpc::protobuf::FileDescriptor* file,
+                const grpc::string& parameter,
+                grpc::protobuf::compiler::GeneratorContext* context,
+                grpc::string* error) const {
+    grpc_node_generator::Parameters generator_parameters;
+    generator_parameters.minimum_node_version = 4;
+
+    if (!parameter.empty()) {
+      std::vector<grpc::string> parameters_list =
+          grpc_generator::tokenize(parameter, ",");
+      for (auto parameter_string = parameters_list.begin();
+           parameter_string != parameters_list.end(); parameter_string++) {
+        std::vector<grpc::string> param =
+            grpc_generator::tokenize(*parameter_string, "=");
+        if (param[0] == "minimum_node_version") {
+          sscanf(param[1].c_str(), "%d",
+                 &generator_parameters.minimum_node_version);
+        } else {
+          *error = grpc::string("Unknown parameter: ") + *parameter_string;
+          return false;
+        }
+      }
+    }
+
+    grpc::string code = GenerateFile(file, generator_parameters);
     if (code.size() == 0) {
       return true;
     }
@@ -52,7 +72,7 @@ class NodeGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
   }
 };
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
   NodeGrpcGenerator generator;
   return grpc::protobuf::compiler::PluginMain(argc, argv, &generator);
 }

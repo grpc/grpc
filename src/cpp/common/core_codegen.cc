@@ -16,11 +16,10 @@
  *
  */
 
-#include <grpc++/impl/codegen/core_codegen.h>
+#include <grpcpp/impl/codegen/core_codegen.h>
 
 #include <stdlib.h>
 
-#include <grpc++/support/config.h>
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
@@ -30,12 +29,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
+#include <grpcpp/support/config.h>
 
 #include "src/core/lib/profiling/timers.h"
 
-extern "C" {
 struct grpc_byte_buffer;
-}
 
 namespace grpc {
 
@@ -76,6 +74,9 @@ void* CoreCodegen::gpr_malloc(size_t size) { return ::gpr_malloc(size); }
 
 void CoreCodegen::gpr_free(void* p) { return ::gpr_free(p); }
 
+void CoreCodegen::grpc_init() { ::grpc_init(); }
+void CoreCodegen::grpc_shutdown() { ::grpc_shutdown(); }
+
 void CoreCodegen::gpr_mu_init(gpr_mu* mu) { ::gpr_mu_init(mu); };
 void CoreCodegen::gpr_mu_destroy(gpr_mu* mu) { ::gpr_mu_destroy(mu); }
 void CoreCodegen::gpr_mu_lock(gpr_mu* mu) { ::gpr_mu_lock(mu); }
@@ -95,6 +96,10 @@ grpc_byte_buffer* CoreCodegen::grpc_byte_buffer_copy(grpc_byte_buffer* bb) {
 
 void CoreCodegen::grpc_byte_buffer_destroy(grpc_byte_buffer* bb) {
   ::grpc_byte_buffer_destroy(bb);
+}
+
+size_t CoreCodegen::grpc_byte_buffer_length(grpc_byte_buffer* bb) {
+  return ::grpc_byte_buffer_length(bb);
 }
 
 grpc_call_error CoreCodegen::grpc_call_cancel_with_status(
@@ -134,6 +139,12 @@ grpc_slice CoreCodegen::grpc_slice_new_with_user_data(void* p, size_t len,
   return ::grpc_slice_new_with_user_data(p, len, destroy, user_data);
 }
 
+grpc_slice CoreCodegen::grpc_slice_new_with_len(void* p, size_t len,
+                                                void (*destroy)(void*,
+                                                                size_t)) {
+  return ::grpc_slice_new_with_len(p, len, destroy);
+}
+
 grpc_slice CoreCodegen::grpc_empty_slice() { return ::grpc_empty_slice(); }
 
 grpc_slice CoreCodegen::grpc_slice_malloc(size_t length) {
@@ -154,6 +165,10 @@ grpc_slice CoreCodegen::grpc_slice_split_tail(grpc_slice* s, size_t split) {
 
 grpc_slice CoreCodegen::grpc_slice_split_head(grpc_slice* s, size_t split) {
   return ::grpc_slice_split_head(s, split);
+}
+
+grpc_slice CoreCodegen::grpc_slice_sub(grpc_slice s, size_t begin, size_t end) {
+  return ::grpc_slice_sub(s, begin, end);
 }
 
 grpc_slice CoreCodegen::grpc_slice_from_static_buffer(const void* buffer,

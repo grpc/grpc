@@ -16,136 +16,71 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h"
 
 #include <string.h>
 
-#include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/useful.h>
 
-#include "src/core/lib/channel/channel_args.h"
+namespace grpc_core {
 
-#define GRPC_ARG_GRPCLB_CLIENT_STATS "grpc.grpclb_client_stats"
-
-struct grpc_grpclb_client_stats {
-  gpr_refcount refs;
-  // This field must only be accessed via *_locked() methods.
-  grpc_grpclb_dropped_call_counts* drop_token_counts;
-  // These fields may be accessed from multiple threads at a time.
-  gpr_atm num_calls_started;
-  gpr_atm num_calls_finished;
-  gpr_atm num_calls_finished_with_client_failed_to_send;
-  gpr_atm num_calls_finished_known_received;
-};
-
-grpc_grpclb_client_stats* grpc_grpclb_client_stats_create() {
-  grpc_grpclb_client_stats* client_stats =
-      (grpc_grpclb_client_stats*)gpr_zalloc(sizeof(*client_stats));
-  gpr_ref_init(&client_stats->refs, 1);
-  return client_stats;
+void GrpcLbClientStats::AddCallStarted() {
+  gpr_atm_full_fetch_add(&num_calls_started_, (gpr_atm)1);
 }
 
-grpc_grpclb_client_stats* grpc_grpclb_client_stats_ref(
-    grpc_grpclb_client_stats* client_stats) {
-  gpr_ref(&client_stats->refs);
-  return client_stats;
-}
-
-void grpc_grpclb_client_stats_unref(grpc_grpclb_client_stats* client_stats) {
-  if (gpr_unref(&client_stats->refs)) {
-    grpc_grpclb_dropped_call_counts_destroy(client_stats->drop_token_counts);
-    gpr_free(client_stats);
-  }
-}
-
-void grpc_grpclb_client_stats_add_call_started(
-    grpc_grpclb_client_stats* client_stats) {
-  gpr_atm_full_fetch_add(&client_stats->num_calls_started, (gpr_atm)1);
-}
-
-void grpc_grpclb_client_stats_add_call_finished(
-    bool finished_with_client_failed_to_send, bool finished_known_received,
-    grpc_grpclb_client_stats* client_stats) {
-  gpr_atm_full_fetch_add(&client_stats->num_calls_finished, (gpr_atm)1);
+void GrpcLbClientStats::AddCallFinished(
+    bool finished_with_client_failed_to_send, bool finished_known_received) {
+  gpr_atm_full_fetch_add(&num_calls_finished_, (gpr_atm)1);
   if (finished_with_client_failed_to_send) {
-    gpr_atm_full_fetch_add(
-        &client_stats->num_calls_finished_with_client_failed_to_send,
-        (gpr_atm)1);
-  }
-  if (finished_known_received) {
-    gpr_atm_full_fetch_add(&client_stats->num_calls_finished_known_received,
+    gpr_atm_full_fetch_add(&num_calls_finished_with_client_failed_to_send_,
                            (gpr_atm)1);
   }
+  if (finished_known_received) {
+    gpr_atm_full_fetch_add(&num_calls_finished_known_received_, (gpr_atm)1);
+  }
 }
 
-void grpc_grpclb_client_stats_add_call_dropped_locked(
-    char* token, grpc_grpclb_client_stats* client_stats) {
+void GrpcLbClientStats::AddCallDroppedLocked(char* token) {
   // Increment num_calls_started and num_calls_finished.
-  gpr_atm_full_fetch_add(&client_stats->num_calls_started, (gpr_atm)1);
-  gpr_atm_full_fetch_add(&client_stats->num_calls_finished, (gpr_atm)1);
+  gpr_atm_full_fetch_add(&num_calls_started_, (gpr_atm)1);
+  gpr_atm_full_fetch_add(&num_calls_finished_, (gpr_atm)1);
   // Record the drop.
-  if (client_stats->drop_token_counts == NULL) {
-    client_stats->drop_token_counts =
-        (grpc_grpclb_dropped_call_counts*)gpr_zalloc(
-            sizeof(grpc_grpclb_dropped_call_counts));
+  if (drop_token_counts_ == nullptr) {
+    drop_token_counts_.reset(New<DroppedCallCounts>());
   }
-  grpc_grpclb_dropped_call_counts* drop_token_counts =
-      client_stats->drop_token_counts;
-  for (size_t i = 0; i < drop_token_counts->num_entries; ++i) {
-    if (strcmp(drop_token_counts->token_counts[i].token, token) == 0) {
-      ++drop_token_counts->token_counts[i].count;
+  for (size_t i = 0; i < drop_token_counts_->size(); ++i) {
+    if (strcmp((*drop_token_counts_)[i].token.get(), token) == 0) {
+      ++(*drop_token_counts_)[i].count;
       return;
     }
   }
-  // Not found, so add a new entry.  We double the size of the array each time.
-  size_t new_num_entries = 2;
-  while (new_num_entries < drop_token_counts->num_entries + 1) {
-    new_num_entries *= 2;
-  }
-  drop_token_counts->token_counts = (grpc_grpclb_drop_token_count*)gpr_realloc(
-      drop_token_counts->token_counts,
-      new_num_entries * sizeof(grpc_grpclb_drop_token_count));
-  grpc_grpclb_drop_token_count* new_entry =
-      &drop_token_counts->token_counts[drop_token_counts->num_entries++];
-  new_entry->token = gpr_strdup(token);
-  new_entry->count = 1;
+  // Not found, so add a new entry.
+  drop_token_counts_->emplace_back(UniquePtr<char>(gpr_strdup(token)), 1);
 }
 
-static void atomic_get_and_reset_counter(int64_t* value, gpr_atm* counter) {
-  *value = (int64_t)gpr_atm_acq_load(counter);
-  gpr_atm_full_fetch_add(counter, (gpr_atm)(-*value));
+namespace {
+
+void AtomicGetAndResetCounter(int64_t* value, gpr_atm* counter) {
+  *value = static_cast<int64_t>(gpr_atm_full_xchg(counter, (gpr_atm)0));
 }
 
-void grpc_grpclb_client_stats_get_locked(
-    grpc_grpclb_client_stats* client_stats, int64_t* num_calls_started,
-    int64_t* num_calls_finished,
+}  // namespace
+
+void GrpcLbClientStats::GetLocked(
+    int64_t* num_calls_started, int64_t* num_calls_finished,
     int64_t* num_calls_finished_with_client_failed_to_send,
     int64_t* num_calls_finished_known_received,
-    grpc_grpclb_dropped_call_counts** drop_token_counts) {
-  atomic_get_and_reset_counter(num_calls_started,
-                               &client_stats->num_calls_started);
-  atomic_get_and_reset_counter(num_calls_finished,
-                               &client_stats->num_calls_finished);
-  atomic_get_and_reset_counter(
-      num_calls_finished_with_client_failed_to_send,
-      &client_stats->num_calls_finished_with_client_failed_to_send);
-  atomic_get_and_reset_counter(
-      num_calls_finished_known_received,
-      &client_stats->num_calls_finished_known_received);
-  *drop_token_counts = client_stats->drop_token_counts;
-  client_stats->drop_token_counts = NULL;
+    UniquePtr<DroppedCallCounts>* drop_token_counts) {
+  AtomicGetAndResetCounter(num_calls_started, &num_calls_started_);
+  AtomicGetAndResetCounter(num_calls_finished, &num_calls_finished_);
+  AtomicGetAndResetCounter(num_calls_finished_with_client_failed_to_send,
+                           &num_calls_finished_with_client_failed_to_send_);
+  AtomicGetAndResetCounter(num_calls_finished_known_received,
+                           &num_calls_finished_known_received_);
+  *drop_token_counts = std::move(drop_token_counts_);
 }
 
-void grpc_grpclb_dropped_call_counts_destroy(
-    grpc_grpclb_dropped_call_counts* drop_entries) {
-  if (drop_entries != NULL) {
-    for (size_t i = 0; i < drop_entries->num_entries; ++i) {
-      gpr_free(drop_entries->token_counts[i].token);
-    }
-    gpr_free(drop_entries->token_counts);
-    gpr_free(drop_entries);
-  }
-}
+}  // namespace grpc_core

@@ -16,18 +16,20 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/surface/call.h"
 
 #include <inttypes.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
-#include "src/core/lib/support/string.h"
 
-static void add_metadata(gpr_strvec *b, const grpc_metadata *md, size_t count) {
+static void add_metadata(gpr_strvec* b, const grpc_metadata* md, size_t count) {
   size_t i;
-  if (md == NULL) {
+  if (md == nullptr) {
     gpr_strvec_add(b, gpr_strdup("(nil)"));
     return;
   }
@@ -41,9 +43,9 @@ static void add_metadata(gpr_strvec *b, const grpc_metadata *md, size_t count) {
   }
 }
 
-char *grpc_op_string(const grpc_op *op) {
-  char *tmp;
-  char *out;
+char* grpc_op_string(const grpc_op* op) {
+  char* tmp;
+  char* out;
 
   gpr_strvec b;
   gpr_strvec_init(&b);
@@ -66,7 +68,7 @@ char *grpc_op_string(const grpc_op *op) {
       gpr_asprintf(&tmp, "SEND_STATUS_FROM_SERVER status=%d details=",
                    op->data.send_status_from_server.status);
       gpr_strvec_add(&b, tmp);
-      if (op->data.send_status_from_server.status_details != NULL) {
+      if (op->data.send_status_from_server.status_details != nullptr) {
         gpr_strvec_add(&b, grpc_dump_slice(
                                *op->data.send_status_from_server.status_details,
                                GPR_DUMP_ASCII));
@@ -99,16 +101,16 @@ char *grpc_op_string(const grpc_op *op) {
                    op->data.recv_close_on_server.cancelled);
       gpr_strvec_add(&b, tmp);
   }
-  out = gpr_strvec_flatten(&b, NULL);
+  out = gpr_strvec_flatten(&b, nullptr);
   gpr_strvec_destroy(&b);
 
   return out;
 }
 
-void grpc_call_log_batch(const char *file, int line, gpr_log_severity severity,
-                         grpc_call *call, const grpc_op *ops, size_t nops,
-                         void *tag) {
-  char *tmp;
+void grpc_call_log_batch(const char* file, int line, gpr_log_severity severity,
+                         grpc_call* call, const grpc_op* ops, size_t nops,
+                         void* tag) {
+  char* tmp;
   size_t i;
   for (i = 0; i < nops; i++) {
     tmp = grpc_op_string(&ops[i]);

@@ -16,16 +16,15 @@
  *
  */
 
-#include <grpc++/channel.h>
-#include <grpc++/client_context.h>
-#include <grpc++/create_channel.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
-#include <grpc++/server_context.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/thd.h>
 #include <grpc/support/time.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/server_context.h>
 
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -56,7 +55,8 @@ class CrashTest : public ::testing::Test {
     addr_stream << "localhost:" << port;
     auto addr = addr_stream.str();
     server_.reset(new SubProcess({
-        g_root + "/client_crash_test_server", "--address=" + addr,
+        g_root + "/client_crash_test_server",
+        "--address=" + addr,
     }));
     GPR_ASSERT(server_);
     return grpc::testing::EchoTestService::NewStub(

@@ -22,6 +22,12 @@ BUILD FROM SOURCE
 ---------------------
 - Clone this repository
 
+- Init submodules
+
+```sh
+git submodule update --init
+```
+
 - Install Ruby 2.x. Consider doing this with [RVM](http://rvm.io), it's a nice way of controlling
   the exact ruby version that's used.
 ```sh

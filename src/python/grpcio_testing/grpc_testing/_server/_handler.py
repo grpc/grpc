@@ -105,10 +105,10 @@ class _Handler(Handler):
                 self._expiration_future.cancel()
             self._condition.notify_all()
 
-    def add_termination_callback(self, termination_callback):
+    def add_termination_callback(self, callback):
         with self._condition:
             if self._code is None:
-                self._termination_callbacks.append(termination_callback)
+                self._termination_callbacks.append(callback)
                 return True
             else:
                 return False
@@ -171,9 +171,11 @@ class _Handler(Handler):
                         if self._responses:
                             self._unary_response = self._responses.pop(0)
                     return (
-                        self._unary_response, self._trailing_metadata,
-                        self._code, self._details,)
-
+                        self._unary_response,
+                        self._trailing_metadata,
+                        self._code,
+                        self._details,
+                    )
 
     def stream_response_termination(self):
         with self._condition:

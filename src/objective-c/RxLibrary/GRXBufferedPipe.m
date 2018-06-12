@@ -67,7 +67,7 @@
 #pragma mark GRXWriter implementation
 
 - (void)setState:(GRXWriterState)newState {
-  @synchronized (self) {
+  @synchronized(self) {
     // Manual transitions are only allowed from the started or paused states.
     if (_state == GRXWriterStateNotStarted || _state == GRXWriterStateFinished) {
       return;
@@ -112,8 +112,7 @@
 
 - (void)dealloc {
   GRXWriterState state = self.state;
-  if (state == GRXWriterStateNotStarted ||
-      state == GRXWriterStatePaused) {
+  if (state == GRXWriterStateNotStarted || state == GRXWriterStatePaused) {
     dispatch_resume(_writeQueue);
   }
 }

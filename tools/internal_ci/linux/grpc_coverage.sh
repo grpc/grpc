@@ -21,10 +21,21 @@ cd $(dirname $0)/../../..
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
 python tools/run_tests/run_tests.py \
-  --use_docker				        \
+  --use_docker                      \
   -t                                \
   -l all                            \
   -c gcov                           \
-  -x report.xml                     \
-  -j 16
+  -x sponge_log.xml                 \
+  -j 16 || FAILED="true"
   
+# HTML reports can't be easily displayed in GCS, so create a zip archive
+# and put it under reports directory to get it uploaded as an artifact.
+zip -q -r coverage_report.zip reports || true
+rm -rf reports || true
+mkdir reports  || true
+mv coverage_report.zip reports || true
+
+if [ "$FAILED" != "" ]
+then
+  exit 1
+fi

@@ -21,4 +21,11 @@ cd $(dirname $0)/../../..
 source tools/internal_ci/helper_scripts/prepare_build_macos_interop_rc
 source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 
-tools/run_tests/run_interop_tests.py -l objc -s all --use_docker -t -j 1
+tools/run_tests/run_interop_tests.py -l objc -s all --use_docker -t -j 1 || FAILED="true"
+
+tools/internal_ci/helper_scripts/delete_nonartifacts.sh || true
+
+if [ "$FAILED" != "" ]
+then
+  exit 1
+fi

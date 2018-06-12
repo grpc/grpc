@@ -18,7 +18,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
@@ -32,25 +31,25 @@
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_config.h"
 
-extern "C" {
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/host_port.h"
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
-#include "src/core/lib/support/env.h"
-#include "src/core/lib/support/string.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
-}
 
-using std::vector;
 using grpc::SubProcess;
+using std::vector;
 using testing::UnorderedElementsAreArray;
 
 // Hack copied from "test/cpp/end2end/server_crash_test_client.cc"!
@@ -63,11 +62,9 @@ using namespace gflags;
 
 DEFINE_string(target_name, "", "Target name to resolve.");
 DEFINE_string(expected_addrs, "",
-              "Comma-separated list of expected "
-              "'<ip0:port0>,<is_balancer0>;<ip1:port1>,<is_balancer1>;...' "
-              "addresses of "
-              "backend and/or balancers. 'is_balancer' should be bool, i.e. "
-              "true or false.");
+              "List of expected backend or balancer addresses in the form "
+              "'<ip0:port0>,<is_balancer0>;<ip1:port1>,<is_balancer1>;...'. "
+              "'is_balancer' should be bool, i.e. true or false.");
 DEFINE_string(expected_chosen_service_config, "",
               "Expected service config json string that gets chosen (no "
               "whitespace). Empty for none.");
@@ -85,12 +82,12 @@ class GrpcLBAddress final {
   GrpcLBAddress(std::string address, bool is_balancer)
       : is_balancer(is_balancer), address(address) {}
 
-  bool operator==(const GrpcLBAddress &other) const {
+  bool operator==(const GrpcLBAddress& other) const {
     return this->is_balancer == other.is_balancer &&
            this->address == other.address;
   }
 
-  bool operator!=(const GrpcLBAddress &other) const {
+  bool operator!=(const GrpcLBAddress& other) const {
     return !(*this == other);
   }
 
@@ -104,12 +101,10 @@ vector<GrpcLBAddress> ParseExpectedAddrs(std::string expected_addrs) {
     // get the next <ip>,<port> (v4 or v6)
     size_t next_comma = expected_addrs.find(",");
     if (next_comma == std::string::npos) {
-      gpr_log(
-          GPR_ERROR,
-          "Missing ','. Expected_addrs arg should be a semi-colon-separated "
-          "list of "
-          "<ip-port>,<bool> pairs. Left-to-be-parsed arg is |%s|",
-          expected_addrs.c_str());
+      gpr_log(GPR_ERROR,
+              "Missing ','. Expected_addrs arg should be a semicolon-separated "
+              "list of <ip-port>,<bool> pairs. Left-to-be-parsed arg is |%s|",
+              expected_addrs.c_str());
       abort();
     }
     std::string next_addr = expected_addrs.substr(0, next_comma);
@@ -127,7 +122,7 @@ vector<GrpcLBAddress> ParseExpectedAddrs(std::string expected_addrs) {
   }
   if (out.size() == 0) {
     gpr_log(GPR_ERROR,
-            "expected_addrs arg should be a comma-separated list of "
+            "expected_addrs arg should be a semicolon-separated list of "
             "<ip-port>,<bool> pairs");
     abort();
   }
@@ -141,42 +136,43 @@ gpr_timespec TestDeadline(void) {
 struct ArgsStruct {
   gpr_event ev;
   gpr_atm done_atm;
-  gpr_mu *mu;
-  grpc_pollset *pollset;
-  grpc_pollset_set *pollset_set;
-  grpc_combiner *lock;
-  grpc_channel_args *channel_args;
+  gpr_mu* mu;
+  grpc_pollset* pollset;
+  grpc_pollset_set* pollset_set;
+  grpc_combiner* lock;
+  grpc_channel_args* channel_args;
   vector<GrpcLBAddress> expected_addrs;
   std::string expected_service_config_string;
   std::string expected_lb_policy;
 };
 
-void ArgsInit(grpc_exec_ctx *exec_ctx, ArgsStruct *args) {
+void ArgsInit(ArgsStruct* args) {
   gpr_event_init(&args->ev);
-  args->pollset = (grpc_pollset *)gpr_zalloc(grpc_pollset_size());
+  args->pollset = (grpc_pollset*)gpr_zalloc(grpc_pollset_size());
   grpc_pollset_init(args->pollset, &args->mu);
   args->pollset_set = grpc_pollset_set_create();
-  grpc_pollset_set_add_pollset(exec_ctx, args->pollset_set, args->pollset);
+  grpc_pollset_set_add_pollset(args->pollset_set, args->pollset);
   args->lock = grpc_combiner_create();
   gpr_atm_rel_store(&args->done_atm, 0);
-  args->channel_args = NULL;
+  args->channel_args = nullptr;
 }
 
-void DoNothing(grpc_exec_ctx *exec_ctx, void *arg, grpc_error *error) {}
+void DoNothing(void* arg, grpc_error* error) {}
 
-void ArgsFinish(grpc_exec_ctx *exec_ctx, ArgsStruct *args) {
+void ArgsFinish(ArgsStruct* args) {
   GPR_ASSERT(gpr_event_wait(&args->ev, TestDeadline()));
-  grpc_pollset_set_del_pollset(exec_ctx, args->pollset_set, args->pollset);
-  grpc_pollset_set_destroy(exec_ctx, args->pollset_set);
+  grpc_pollset_set_del_pollset(args->pollset_set, args->pollset);
+  grpc_pollset_set_destroy(args->pollset_set);
   grpc_closure DoNothing_cb;
-  GRPC_CLOSURE_INIT(&DoNothing_cb, DoNothing, NULL, grpc_schedule_on_exec_ctx);
-  grpc_pollset_shutdown(exec_ctx, args->pollset, &DoNothing_cb);
+  GRPC_CLOSURE_INIT(&DoNothing_cb, DoNothing, nullptr,
+                    grpc_schedule_on_exec_ctx);
+  grpc_pollset_shutdown(args->pollset, &DoNothing_cb);
   // exec_ctx needs to be flushed before calling grpc_pollset_destroy()
-  grpc_channel_args_destroy(exec_ctx, args->channel_args);
-  grpc_exec_ctx_flush(exec_ctx);
-  grpc_pollset_destroy(exec_ctx, args->pollset);
+  grpc_channel_args_destroy(args->channel_args);
+  grpc_core::ExecCtx::Get()->Flush();
+  grpc_pollset_destroy(args->pollset);
   gpr_free(args->pollset);
-  GRPC_COMBINER_UNREF(exec_ctx, args->lock, NULL);
+  GRPC_COMBINER_UNREF(args->lock, nullptr);
 }
 
 gpr_timespec NSecondDeadline(int seconds) {
@@ -184,7 +180,7 @@ gpr_timespec NSecondDeadline(int seconds) {
                       gpr_time_from_seconds(seconds, GPR_TIMESPAN));
 }
 
-void PollPollsetUntilRequestDone(ArgsStruct *args) {
+void PollPollsetUntilRequestDone(ArgsStruct* args) {
   gpr_timespec deadline = NSecondDeadline(10);
   while (true) {
     bool done = gpr_atm_acq_load(&args->done_atm) != 0;
@@ -196,63 +192,61 @@ void PollPollsetUntilRequestDone(ArgsStruct *args) {
     gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64 ".%09d", done,
             time_left.tv_sec, time_left.tv_nsec);
     GPR_ASSERT(gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)) >= 0);
-    grpc_pollset_worker *worker = NULL;
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_pollset_worker* worker = nullptr;
+    grpc_core::ExecCtx exec_ctx;
     gpr_mu_lock(args->mu);
     GRPC_LOG_IF_ERROR("pollset_work",
-                      grpc_pollset_work(&exec_ctx, args->pollset, &worker,
+                      grpc_pollset_work(args->pollset, &worker,
                                         grpc_timespec_to_millis_round_up(
                                             NSecondDeadline(1))));
     gpr_mu_unlock(args->mu);
-    grpc_exec_ctx_finish(&exec_ctx);
   }
-  gpr_event_set(&args->ev, (void *)1);
+  gpr_event_set(&args->ev, (void*)1);
 }
 
-void CheckServiceConfigResultLocked(grpc_channel_args *channel_args,
-                                    ArgsStruct *args) {
-  const grpc_arg *service_config_arg =
+void CheckServiceConfigResultLocked(grpc_channel_args* channel_args,
+                                    ArgsStruct* args) {
+  const grpc_arg* service_config_arg =
       grpc_channel_args_find(channel_args, GRPC_ARG_SERVICE_CONFIG);
   if (args->expected_service_config_string != "") {
-    GPR_ASSERT(service_config_arg != NULL);
+    GPR_ASSERT(service_config_arg != nullptr);
     GPR_ASSERT(service_config_arg->type == GRPC_ARG_STRING);
     EXPECT_EQ(service_config_arg->value.string,
               args->expected_service_config_string);
   } else {
-    GPR_ASSERT(service_config_arg == NULL);
+    GPR_ASSERT(service_config_arg == nullptr);
   }
 }
 
-void CheckLBPolicyResultLocked(grpc_channel_args *channel_args,
-                               ArgsStruct *args) {
-  const grpc_arg *lb_policy_arg =
+void CheckLBPolicyResultLocked(grpc_channel_args* channel_args,
+                               ArgsStruct* args) {
+  const grpc_arg* lb_policy_arg =
       grpc_channel_args_find(channel_args, GRPC_ARG_LB_POLICY_NAME);
   if (args->expected_lb_policy != "") {
-    GPR_ASSERT(lb_policy_arg != NULL);
+    GPR_ASSERT(lb_policy_arg != nullptr);
     GPR_ASSERT(lb_policy_arg->type == GRPC_ARG_STRING);
     EXPECT_EQ(lb_policy_arg->value.string, args->expected_lb_policy);
   } else {
-    GPR_ASSERT(lb_policy_arg == NULL);
+    GPR_ASSERT(lb_policy_arg == nullptr);
   }
 }
 
-void CheckResolverResultLocked(grpc_exec_ctx *exec_ctx, void *argsp,
-                               grpc_error *err) {
-  ArgsStruct *args = (ArgsStruct *)argsp;
-  grpc_channel_args *channel_args = args->channel_args;
-  const grpc_arg *channel_arg =
+void CheckResolverResultLocked(void* argsp, grpc_error* err) {
+  ArgsStruct* args = (ArgsStruct*)argsp;
+  grpc_channel_args* channel_args = args->channel_args;
+  const grpc_arg* channel_arg =
       grpc_channel_args_find(channel_args, GRPC_ARG_LB_ADDRESSES);
-  GPR_ASSERT(channel_arg != NULL);
+  GPR_ASSERT(channel_arg != nullptr);
   GPR_ASSERT(channel_arg->type == GRPC_ARG_POINTER);
-  grpc_lb_addresses *addresses =
-      (grpc_lb_addresses *)channel_arg->value.pointer.p;
+  grpc_lb_addresses* addresses =
+      (grpc_lb_addresses*)channel_arg->value.pointer.p;
   gpr_log(GPR_INFO, "num addrs found: %" PRIdPTR ". expected %" PRIdPTR,
           addresses->num_addresses, args->expected_addrs.size());
   GPR_ASSERT(addresses->num_addresses == args->expected_addrs.size());
   std::vector<GrpcLBAddress> found_lb_addrs;
   for (size_t i = 0; i < addresses->num_addresses; i++) {
     grpc_lb_address addr = addresses->addresses[i];
-    char *str;
+    char* str;
     grpc_sockaddr_to_string(&str, &addr.address, 1 /* normalize */);
     gpr_log(GPR_INFO, "%s", str);
     found_lb_addrs.emplace_back(
@@ -260,8 +254,9 @@ void CheckResolverResultLocked(grpc_exec_ctx *exec_ctx, void *argsp,
     gpr_free(str);
   }
   if (args->expected_addrs.size() != found_lb_addrs.size()) {
-    gpr_log(GPR_DEBUG, "found lb addrs size is: %" PRIdPTR
-                       ". expected addrs size is %" PRIdPTR,
+    gpr_log(GPR_DEBUG,
+            "found lb addrs size is: %" PRIdPTR
+            ". expected addrs size is %" PRIdPTR,
             found_lb_addrs.size(), args->expected_addrs.size());
     abort();
   }
@@ -272,42 +267,39 @@ void CheckResolverResultLocked(grpc_exec_ctx *exec_ctx, void *argsp,
   }
   gpr_atm_rel_store(&args->done_atm, 1);
   gpr_mu_lock(args->mu);
-  GRPC_LOG_IF_ERROR("pollset_kick",
-                    grpc_pollset_kick(exec_ctx, args->pollset, NULL));
+  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
   gpr_mu_unlock(args->mu);
 }
 
 TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   ArgsStruct args;
-  ArgsInit(&exec_ctx, &args);
+  ArgsInit(&args);
   args.expected_addrs = ParseExpectedAddrs(FLAGS_expected_addrs);
   args.expected_service_config_string = FLAGS_expected_chosen_service_config;
   args.expected_lb_policy = FLAGS_expected_lb_policy;
   // maybe build the address with an authority
-  char *whole_uri = NULL;
+  char* whole_uri = nullptr;
   GPR_ASSERT(asprintf(&whole_uri, "dns://%s/%s",
                       FLAGS_local_dns_server_address.c_str(),
                       FLAGS_target_name.c_str()));
   // create resolver and resolve
-  grpc_resolver *resolver = grpc_resolver_create(&exec_ctx, whole_uri, NULL,
-                                                 args.pollset_set, args.lock);
+  grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
+      grpc_core::ResolverRegistry::CreateResolver(whole_uri, nullptr,
+                                                  args.pollset_set, args.lock);
   gpr_free(whole_uri);
   grpc_closure on_resolver_result_changed;
   GRPC_CLOSURE_INIT(&on_resolver_result_changed, CheckResolverResultLocked,
-                    (void *)&args, grpc_combiner_scheduler(args.lock));
-  grpc_resolver_next_locked(&exec_ctx, resolver, &args.channel_args,
-                            &on_resolver_result_changed);
-  grpc_exec_ctx_flush(&exec_ctx);
+                    (void*)&args, grpc_combiner_scheduler(args.lock));
+  resolver->NextLocked(&args.channel_args, &on_resolver_result_changed);
+  grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone(&args);
-  GRPC_RESOLVER_UNREF(&exec_ctx, resolver, NULL);
-  ArgsFinish(&exec_ctx, &args);
-  grpc_exec_ctx_finish(&exec_ctx);
+  ArgsFinish(&args);
 }
 
 }  // namespace
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_init();
   grpc_test_init(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);

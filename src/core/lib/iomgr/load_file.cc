@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/load_file.h"
 
 #include <errno.h>
@@ -25,30 +27,30 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/block_annotate.h"
-#include "src/core/lib/support/string.h"
 
-grpc_error *grpc_load_file(const char *filename, int add_null_terminator,
-                           grpc_slice *output) {
-  unsigned char *contents = NULL;
+grpc_error* grpc_load_file(const char* filename, int add_null_terminator,
+                           grpc_slice* output) {
+  unsigned char* contents = nullptr;
   size_t contents_size = 0;
   grpc_slice result = grpc_empty_slice();
-  FILE *file;
+  FILE* file;
   size_t bytes_read = 0;
-  grpc_error *error = GRPC_ERROR_NONE;
+  grpc_error* error = GRPC_ERROR_NONE;
 
   GRPC_SCHEDULING_START_BLOCKING_REGION;
   file = fopen(filename, "rb");
-  if (file == NULL) {
+  if (file == nullptr) {
     error = GRPC_OS_ERROR(errno, "fopen");
     goto end;
   }
   fseek(file, 0, SEEK_END);
   /* Converting to size_t on the assumption that it will not fail */
-  contents_size = (size_t)ftell(file);
+  contents_size = static_cast<size_t>(ftell(file));
   fseek(file, 0, SEEK_SET);
-  contents = (unsigned char *)gpr_malloc(contents_size +
-                                         (add_null_terminator ? 1 : 0));
+  contents = static_cast<unsigned char*>(
+      gpr_malloc(contents_size + (add_null_terminator ? 1 : 0)));
   bytes_read = fread(contents, 1, contents_size, file);
   if (bytes_read < contents_size) {
     error = GRPC_OS_ERROR(errno, "fread");
@@ -62,9 +64,9 @@ grpc_error *grpc_load_file(const char *filename, int add_null_terminator,
 
 end:
   *output = result;
-  if (file != NULL) fclose(file);
+  if (file != nullptr) fclose(file);
   if (error != GRPC_ERROR_NONE) {
-    grpc_error *error_out =
+    grpc_error* error_out =
         grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                                "Failed to load file", &error, 1),
                            GRPC_ERROR_STR_FILENAME,

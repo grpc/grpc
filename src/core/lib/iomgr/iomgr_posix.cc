@@ -16,26 +16,52 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_IOMGR
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/ev_posix.h"
+#include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/iomgr_posix.h"
+#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
+#include "src/core/lib/iomgr/tcp_server.h"
+#include "src/core/lib/iomgr/timer.h"
 
-void grpc_iomgr_platform_init(void) {
+extern grpc_tcp_server_vtable grpc_posix_tcp_server_vtable;
+extern grpc_tcp_client_vtable grpc_posix_tcp_client_vtable;
+extern grpc_timer_vtable grpc_generic_timer_vtable;
+extern grpc_pollset_vtable grpc_posix_pollset_vtable;
+extern grpc_pollset_set_vtable grpc_posix_pollset_set_vtable;
+extern grpc_address_resolver_vtable grpc_posix_resolver_vtable;
+
+static void iomgr_platform_init(void) {
   grpc_wakeup_fd_global_init();
   grpc_event_engine_init();
-  grpc_register_tracer(&grpc_tcp_trace);
 }
 
-void grpc_iomgr_platform_flush(void) {}
+static void iomgr_platform_flush(void) {}
 
-void grpc_iomgr_platform_shutdown(void) {
+static void iomgr_platform_shutdown(void) {
   grpc_event_engine_shutdown();
   grpc_wakeup_fd_global_destroy();
 }
 
-#endif /* GRPC_POSIX_SOCKET */
+static grpc_iomgr_platform_vtable vtable = {
+    iomgr_platform_init, iomgr_platform_flush, iomgr_platform_shutdown};
+
+void grpc_set_default_iomgr_platform() {
+  grpc_set_tcp_client_impl(&grpc_posix_tcp_client_vtable);
+  grpc_set_tcp_server_impl(&grpc_posix_tcp_server_vtable);
+  grpc_set_timer_impl(&grpc_generic_timer_vtable);
+  grpc_set_pollset_vtable(&grpc_posix_pollset_vtable);
+  grpc_set_pollset_set_vtable(&grpc_posix_pollset_set_vtable);
+  grpc_set_resolver_impl(&grpc_posix_resolver_vtable);
+  grpc_set_iomgr_platform_vtable(&vtable);
+}
+
+#endif /* GRPC_POSIX_SOCKET_IOMGR */

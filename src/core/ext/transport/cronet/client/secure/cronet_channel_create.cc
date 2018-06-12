@@ -33,23 +33,22 @@
 // Cronet transport object
 typedef struct cronet_transport {
   grpc_transport base;  // must be first element in this structure
-  void *engine;
-  char *host;
+  void* engine;
+  char* host;
 } cronet_transport;
 
 extern grpc_transport_vtable grpc_cronet_vtable;
 
-GRPCAPI grpc_channel *grpc_cronet_secure_channel_create(
-    void *engine, const char *target, const grpc_channel_args *args,
-    void *reserved) {
+GRPCAPI grpc_channel* grpc_cronet_secure_channel_create(
+    void* engine, const char* target, const grpc_channel_args* args,
+    void* reserved) {
   gpr_log(GPR_DEBUG,
           "grpc_create_cronet_transport: stream_engine = %p, target=%s", engine,
           target);
 
-  grpc_transport *ct =
+  grpc_transport* ct =
       grpc_create_cronet_transport(engine, target, args, reserved);
 
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  return grpc_channel_create(&exec_ctx, target, args,
-                             GRPC_CLIENT_DIRECT_CHANNEL, ct);
+  grpc_core::ExecCtx exec_ctx;
+  return grpc_channel_create(target, args, GRPC_CLIENT_DIRECT_CHANNEL, ct);
 }

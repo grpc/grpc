@@ -211,7 +211,7 @@ class TestTarget < Grpc::Testing::TestService::Service
   end
 end
 
-# validates the the command line options, returning them as a Hash.
+# validates the command line options, returning them as a Hash.
 def parse_options
   options = {
     'port' => nil,

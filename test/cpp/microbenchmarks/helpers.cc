@@ -16,11 +16,13 @@
  *
  */
 
+#include <string.h>
+
 #include "test/cpp/microbenchmarks/helpers.h"
 
-void TrackCounters::Finish(benchmark::State &state) {
+void TrackCounters::Finish(benchmark::State& state) {
   std::ostringstream out;
-  for (const auto &l : labels_) {
+  for (const auto& l : labels_) {
     out << l << ' ';
   }
   AddToLabel(out, state);
@@ -31,18 +33,19 @@ void TrackCounters::Finish(benchmark::State &state) {
   state.SetLabel(label.c_str());
 }
 
-void TrackCounters::AddLabel(const grpc::string &label) {
+void TrackCounters::AddLabel(const grpc::string& label) {
   labels_.push_back(label);
 }
 
-void TrackCounters::AddToLabel(std::ostream &out, benchmark::State &state) {
+void TrackCounters::AddToLabel(std::ostream& out, benchmark::State& state) {
   grpc_stats_data stats_end;
   grpc_stats_collect(&stats_end);
   grpc_stats_data stats;
   grpc_stats_diff(&stats_end, &stats_begin_, &stats);
   for (int i = 0; i < GRPC_STATS_COUNTER_COUNT; i++) {
-    out << " " << grpc_stats_counter_name[i]
-        << "/iter:" << ((double)stats.counters[i] / (double)state.iterations());
+    out << " " << grpc_stats_counter_name[i] << "/iter:"
+        << (static_cast<double>(stats.counters[i]) /
+            static_cast<double>(state.iterations()));
   }
   for (int i = 0; i < GRPC_STATS_HISTOGRAM_COUNT; i++) {
     out << " " << grpc_stats_histogram_name[i] << "-median:"
@@ -52,9 +55,10 @@ void TrackCounters::AddToLabel(std::ostream &out, benchmark::State &state) {
   }
 #ifdef GPR_LOW_LEVEL_COUNTERS
   grpc_memory_counters counters_at_end = grpc_memory_counters_snapshot();
-  out << " locks/iter:" << ((double)(gpr_atm_no_barrier_load(&gpr_mu_locks) -
-                                     mu_locks_at_start_) /
-                            (double)state.iterations())
+  out << " locks/iter:"
+      << ((double)(gpr_atm_no_barrier_load(&gpr_mu_locks) -
+                   mu_locks_at_start_) /
+          (double)state.iterations())
       << " atm_cas/iter:"
       << ((double)(gpr_atm_no_barrier_load(&gpr_counter_atm_cas) -
                    atm_cas_at_start_) /

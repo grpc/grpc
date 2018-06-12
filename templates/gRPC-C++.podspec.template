@@ -1,0 +1,204 @@
+%YAML 1.2
+--- |
+  # This file has been automatically generated from a template file.
+  # Please make modifications to `templates/gRPC-C++.podspec.template`
+  # instead. This file can be regenerated from the template by running
+  # `tools/buildgen/generate_projects.sh`.
+
+  # gRPC C++ CocoaPods podspec
+  #
+  # Copyright 2017 gRPC authors.
+  #
+  # Licensed under the Apache License, Version 2.0 (the "License");
+  # you may not use this file except in compliance with the License.
+  # You may obtain a copy of the License at
+  #
+  #     http://www.apache.org/licenses/LICENSE-2.0
+  #
+  # Unless required by applicable law or agreed to in writing, software
+  # distributed under the License is distributed on an "AS IS" BASIS,
+  # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  # See the License for the specific language governing permissions and
+  # limitations under the License.
+
+  <%!
+  def grpc_lib_files(libs, expect_libs, groups):
+    out = []
+    for lib in libs:
+      if lib.name in expect_libs:
+        for group in groups:
+          out += lib.get(group, [])
+    return out
+
+  def filter_grpcpp(files):
+    return [file for file in files if not file.startswith("include/grpc++")]
+
+  def grpc_private_files(libs):
+    out = grpc_lib_files(libs, ("grpc", "gpr"), ("headers", "src"))
+    return out
+
+  def grpc_private_headers(libs):
+    out = grpc_lib_files(libs, ("grpc", "gpr"), ("headers",))
+    return out
+
+  def grpc_public_headers(libs):
+    out = grpc_lib_files(libs, ("grpc", "gpr"), ("public_headers",))
+    return out
+
+  def grpcpp_proto_files(filegroups):
+    out = grpc_lib_files(filegroups, ("grpc++_codegen_proto", "grpc++_config_proto"), ("headers", "src", "public_headers"))
+    excl_files = grpc_lib_files(filegroups, ("grpc++_codegen_base",), ("headers", "src", "public_headers"))
+    out = [file for file in out if file not in excl_files]
+    return out
+
+  def grpcpp_private_files(libs, filegroups):
+    out = grpc_lib_files(libs, ("grpc++",), ("headers", "src"))
+    excl_files = grpc_private_files(libs)
+
+    # We exclude proto related files in this particular podspec so that we can provide a protobuf-independent lib
+    excl_files += grpcpp_proto_files(filegroups)
+    out = [file for file in out if file not in excl_files]
+
+    # Since some C++ source files directly included private headers in C core, we include all the
+    # C core headers in C++ Implementation subspec as well.
+    out += [file for file in grpc_private_headers(libs) if not file.startswith("third_party/nanopb/")]
+
+    out = filter_grpcpp(out)
+
+    return out
+
+  def grpcpp_private_headers(libs, filegroups):
+    out = grpc_lib_files(libs, ("grpc++",), ("headers",))
+
+    # We exclude proto related files in this particular podspec so that we can provide a protobuf-independent lib
+    excl_files = grpcpp_proto_files(filegroups)
+    out = [file for file in out if file not in excl_files]
+
+    # Since some C++ source files directly included private headers in C core, we intentionally
+    # keep the C core headers in \a out. But we should exclude nanopb headers.
+    out = [file for file in out if not file.startswith("third_party/nanopb/")]
+
+    out = filter_grpcpp(out)
+    return out
+
+  def grpcpp_public_headers(libs, filegroups):
+    out = grpc_lib_files(libs, ("grpc++",), ("public_headers",))
+    excl_files = grpc_public_headers(libs)
+
+    # We exclude proto related files in this particular podspec so that we can provide a protobuf-independent lib
+    excl_files += grpcpp_proto_files(filegroups)
+
+    out = [file for file in out if file not in excl_files]
+
+    out = filter_grpcpp(out)
+
+    return out
+
+  def grpc_test_util_files(libs):
+    out = grpc_lib_files(libs, ("grpc_test_util", "gpr_test_util"), ("src", "headers"))
+    return out
+
+  def grpc_test_util_headers(libs):
+    out = grpc_lib_files(libs, ("grpc_test_util", "gpr_test_util"), ("headers",))
+    return out
+
+  # Tests subspec is currently disabled since the tests currently use `grpc++` include style instead of `grpcpp`.
+  # TODO (mxyan): enable Tests subspec after the inclusion style is updated in `test/` directory.
+  def grpcpp_test_util_files(libs, filegroups):
+    out = grpc_lib_files(libs, ("grpc++_test_util",), ("src", "headers"))
+    excl_files = grpc_test_util_files(libs) + grpcpp_private_files(libs, filegroups)
+
+    # We exclude proto related files in this particular podspec so that we can provide a protobuf-independent lib
+    excl_files += grpc_lib_files(filegroups, ("grpc++_codegen_proto", "grpc++_config_proto"), ("headers", "src"))
+    excl_files += ["test/cpp/util/byte_buffer_proto_helper.cc",
+                   "test/cpp/util/byte_buffer_proto_helper.h",
+                   "test/cpp/end2end/test_service_impl.cc",
+                   "test/cpp/end2end/test_service_impl.h"]
+    excl_files += [file for file in out if file.endswith(".proto")]
+
+    out = [file for file in out if not file in excl_files]
+
+    # Since some C++ test files directly included private headers in C core, we intentionally add these header
+    # files to this subspec
+    out += grpc_test_util_headers(libs)
+
+    return out
+
+  def ruby_multiline_list(files, indent):
+    return (',\n' + indent*' ').join('\'%s\'' % f for f in files)
+  %>
+  Pod::Spec.new do |s|
+    s.name     = 'gRPC-C++'
+    # TODO (mxyan): use version that match gRPC version when pod is stabilized
+    # version = '${settings.version}'
+    version = '0.0.2'
+    s.version  = version
+    s.summary  = 'gRPC C++ library'
+    s.homepage = 'https://grpc.io'
+    s.license  = 'Apache License, Version 2.0'
+    s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
+
+    grpc_version = '${settings.version}'
+
+    s.source = {
+      :git => 'https://github.com/grpc/grpc.git',
+      :tag => "v#{grpc_version}",
+    }
+
+    s.ios.deployment_target = '7.0'
+    s.osx.deployment_target = '10.9'
+    s.requires_arc = false
+
+    name = 'grpcpp'
+    # Use `grpcpp` as framework name so that `#include <grpcpp/xxx.h>` works when built as
+    # framework.
+    s.module_name = name
+
+    # Add include prefix `grpcpp` so that `#include <grpcpp/xxx.h>` works when built as static
+    # library.
+    s.header_dir = name
+
+    s.pod_target_xcconfig = {
+      'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(PODS_TARGET_SRCROOT)/include"',
+      'USER_HEADER_SEARCH_PATHS' => '"$(PODS_TARGET_SRCROOT)"',
+      'GCC_PREPROCESSOR_DEFINITIONS' => '"$(inherited)" "COCOAPODS=1" "PB_NO_PACKED_STRUCTS=1"',
+      'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
+      'CLANG_WARN_DOCUMENTATION_COMMENTS' => 'NO',
+
+      # If we don't set these two settings, `include/grpc/support/time.h` and
+      # `src/core/lib/support/string.h` shadow the system `<time.h>` and `<string.h>`, breaking the
+      # build.
+      'USE_HEADERMAP' => 'NO',
+      'ALWAYS_SEARCH_USER_PATHS' => 'NO',
+    }
+
+    s.libraries = 'c++'
+
+    s.default_subspecs = 'Interface', 'Implementation'
+
+    s.header_mappings_dir = 'include/grpcpp'
+
+    s.subspec 'Interface' do |ss|
+      ss.header_mappings_dir = 'include/grpcpp'
+
+      ss.source_files = ${ruby_multiline_list(grpcpp_public_headers(libs, filegroups), 22)}
+    end
+
+    s.subspec 'Implementation' do |ss|
+      ss.header_mappings_dir = '.'
+      ss.dependency "#{s.name}/Interface", version
+      ss.dependency 'gRPC-Core', grpc_version
+      ss.dependency 'nanopb', '~> 0.3'
+
+      ss.source_files = ${ruby_multiline_list(grpcpp_private_files(libs, filegroups), 22)}
+
+      ss.private_header_files = ${ruby_multiline_list(grpcpp_private_headers(libs, filegroups), 30)}
+    end
+
+    s.prepare_command = <<-END_OF_COMMAND
+      find src/cpp/ -type f -exec sed -E -i'.back' 's;#include "third_party/nanopb/(.*)";#include <nanopb/\\1>;g' {} \\\;
+      find src/cpp/ -name "*.back" -type f -delete
+      find src/core/ -regex ".*\.h" -type f -exec sed -E -i'.back' 's;#include "third_party/nanopb/(.*)";#include <nanopb/\\1>;g' {} \\\;
+      find src/core/ -name "*.back" -type f -delete
+    END_OF_COMMAND
+  end

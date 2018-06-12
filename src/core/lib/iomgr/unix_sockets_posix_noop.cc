@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 
 #ifndef GRPC_HAVE_UNIX_SOCKET
@@ -29,18 +31,18 @@ void grpc_create_socketpair_if_unix(int sv[2]) {
   GPR_ASSERT(0);
 }
 
-grpc_error *grpc_resolve_unix_domain_address(
-    const char *name, grpc_resolved_addresses **addresses) {
+grpc_error* grpc_resolve_unix_domain_address(
+    const char* name, grpc_resolved_addresses** addresses) {
   *addresses = NULL;
   return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
       "Unix domain sockets are not supported on Windows");
 }
 
-int grpc_is_unix_socket(const grpc_resolved_address *addr) { return false; }
+int grpc_is_unix_socket(const grpc_resolved_address* addr) { return false; }
 
-void grpc_unlink_if_unix_domain_socket(const grpc_resolved_address *addr) {}
+void grpc_unlink_if_unix_domain_socket(const grpc_resolved_address* addr) {}
 
-char *grpc_sockaddr_to_uri_unix_if_possible(const grpc_resolved_address *addr) {
+char* grpc_sockaddr_to_uri_unix_if_possible(const grpc_resolved_address* addr) {
   return NULL;
 }
 

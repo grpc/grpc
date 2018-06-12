@@ -19,6 +19,7 @@
   <%include file="../../apt_get_basic.include"/>
   <%include file="../../gcp_api_libraries.include"/>
   <%include file="../../python_deps.include"/>
+  <%include file="../../cxx_deps.include"/>
   #========================
   # Sanity test dependencies
   RUN apt-get update && apt-get install -y ${"\\"}
@@ -28,30 +29,11 @@
         libtool ${"\\"}
         curl ${"\\"}
         python-virtualenv ${"\\"}
-        python-lxml
+        python-lxml ${"\\"}
+        shellcheck
   RUN pip install simplejson mako
   
-  #======================================
-  # More sanity test dependencies (bazel)
-  RUN echo "deb http://http.debian.net/debian jessie-backports main" >> /etc/apt/sources.list
-  RUN apt-get update
-  RUN apt-get install -y -t jessie-backports openjdk-8-jdk
-
-  #========================
-  # Bazel installation
-  RUN echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8" > /etc/apt/sources.list.d/bazel.list
-  RUN curl https://bazel.build/bazel-release.pub.gpg | apt-key add -
-  RUN apt-get -y update
-  RUN apt-get -y install bazel
-
-  # Pin Bazel to 0.4.4
-  # Installing Bazel via apt-get first is required before installing 0.4.4 to
-  # allow gRPC to build without errors. See https://github.com/grpc/grpc/issues/10553
-  RUN curl -fSsL -O https://github.com/bazelbuild/bazel/releases/download/0.4.4/bazel-0.4.4-installer-linux-x86_64.sh
-  RUN chmod +x ./bazel-0.4.4-installer-linux-x86_64.sh
-  RUN ./bazel-0.4.4-installer-linux-x86_64.sh
-  
-  <%include file="../../clang_format.include"/>
+  <%include file="../../clang5.include"/>
   <%include file="../../run_tests_addons.include"/>
   
   # Define the default command.

@@ -23,17 +23,17 @@
 #include <unordered_map>
 #include <vector>
 
-#include <grpc++/channel.h>
-#include <grpc++/client_context.h>
-#include <grpc++/create_channel.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/create_channel.h>
 
+#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/profiling/timers.h"
-#include "src/core/lib/support/env.h"
-#include "src/proto/grpc/testing/services.grpc.pb.h"
+#include "src/proto/grpc/testing/worker_service.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/qps/client.h"
@@ -43,10 +43,10 @@
 #include "test/cpp/qps/stats.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
+using std::deque;
 using std::list;
 using std::thread;
 using std::unique_ptr;
-using std::deque;
 using std::vector;
 
 namespace grpc {
@@ -147,9 +147,8 @@ static void postprocess_scenario_result(ScenarioResult* result) {
     result->mutable_summary()->set_server_cpu_usage(0);
   } else {
     auto server_cpu_usage =
-        100 -
-        100 * average(result->server_stats(), ServerIdleCpuTime) /
-            average(result->server_stats(), ServerTotalCpuTime);
+        100 - 100 * average(result->server_stats(), ServerIdleCpuTime) /
+                  average(result->server_stats(), ServerTotalCpuTime);
     result->mutable_summary()->set_server_cpu_usage(server_cpu_usage);
   }
 

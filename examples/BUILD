@@ -42,12 +42,12 @@ cc_binary(
     name = "greeter_client",
     srcs = ["cpp/helloworld/greeter_client.cc"],
     defines = ["BAZEL_BUILD"],
-    deps = [":helloworld"],
+    deps = [":helloworld", "//:grpc++"],
 )
 
 cc_binary(
     name = "greeter_server",
     srcs = ["cpp/helloworld/greeter_server.cc"],
     defines = ["BAZEL_BUILD"],
-    deps = [":helloworld"],
+    deps = [":helloworld", "//:grpc++"],
 )

@@ -117,6 +117,12 @@ class AugmentedCase(collections.namedtuple('AugmentedCase', ['case', 'id'])):
 
 class Runner(object):
 
+    def __init__(self):
+        self._skipped_tests = []
+
+    def skip_tests(self, tests):
+        self._skipped_tests = tests
+
     def run(self, suite):
         """See setuptools' test_runner setup argument for information."""
         # only run test cases with id starting with given prefix
@@ -181,27 +187,31 @@ class Runner(object):
         # Run the tests
         result.startTestRun()
         for augmented_case in augmented_cases:
-            sys.stdout.write(
-                'Running       {}\n'.format(augmented_case.case.id()))
-            sys.stdout.flush()
-            case_thread = threading.Thread(
-                target=augmented_case.case.run, args=(result,))
-            try:
-                with stdout_pipe, stderr_pipe:
-                    case_thread.start()
-                    while case_thread.is_alive():
-                        check_kill_self()
-                        time.sleep(0)
-                    case_thread.join()
-            except:
-                # re-raise the exception after forcing the with-block to end
-                raise
-            result.set_output(augmented_case.case,
-                              stdout_pipe.output(), stderr_pipe.output())
-            sys.stdout.write(result_out.getvalue())
-            sys.stdout.flush()
-            result_out.truncate(0)
-            check_kill_self()
+            for skipped_test in self._skipped_tests:
+                if skipped_test in augmented_case.case.id():
+                    break
+            else:
+                sys.stdout.write('Running       {}\n'.format(
+                    augmented_case.case.id()))
+                sys.stdout.flush()
+                case_thread = threading.Thread(
+                    target=augmented_case.case.run, args=(result,))
+                try:
+                    with stdout_pipe, stderr_pipe:
+                        case_thread.start()
+                        while case_thread.is_alive():
+                            check_kill_self()
+                            time.sleep(0)
+                        case_thread.join()
+                except:
+                    # re-raise the exception after forcing the with-block to end
+                    raise
+                result.set_output(augmented_case.case, stdout_pipe.output(),
+                                  stderr_pipe.output())
+                sys.stdout.write(result_out.getvalue())
+                sys.stdout.flush()
+                result_out.truncate(0)
+                check_kill_self()
         result.stopTestRun()
         stdout_pipe.close()
         stderr_pipe.close()

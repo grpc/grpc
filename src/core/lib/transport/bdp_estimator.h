@@ -31,13 +31,13 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-extern grpc_tracer_flag grpc_bdp_estimator_trace;
+extern grpc_core::TraceFlag grpc_bdp_estimator_trace;
 
 namespace grpc_core {
 
 class BdpEstimator {
  public:
-  explicit BdpEstimator(const char *name);
+  explicit BdpEstimator(const char* name);
   ~BdpEstimator() {}
 
   int64_t EstimateBdp() const { return estimate_; }
@@ -49,8 +49,8 @@ class BdpEstimator {
   // grpc_bdp_estimator_add_incoming_bytes once a ping has been scheduled by a
   // transport (but not necessarily started)
   void SchedulePing() {
-    if (GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
-      gpr_log(GPR_DEBUG, "bdp[%s]:sched acc=%" PRId64 " est=%" PRId64, name_,
+    if (grpc_bdp_estimator_trace.enabled()) {
+      gpr_log(GPR_INFO, "bdp[%s]:sched acc=%" PRId64 " est=%" PRId64, name_,
               accumulator_, estimate_);
     }
     GPR_ASSERT(ping_state_ == PingState::UNSCHEDULED);
@@ -62,8 +62,8 @@ class BdpEstimator {
   // once
   // the ping is on the wire
   void StartPing() {
-    if (GRPC_TRACER_ON(grpc_bdp_estimator_trace)) {
-      gpr_log(GPR_DEBUG, "bdp[%s]:start acc=%" PRId64 " est=%" PRId64, name_,
+    if (grpc_bdp_estimator_trace.enabled()) {
+      gpr_log(GPR_INFO, "bdp[%s]:start acc=%" PRId64 " est=%" PRId64, name_,
               accumulator_, estimate_);
     }
     GPR_ASSERT(ping_state_ == PingState::SCHEDULED);
@@ -73,7 +73,7 @@ class BdpEstimator {
   }
 
   // Completes a previously started ping, returns when to schedule the next one
-  grpc_millis CompletePing(grpc_exec_ctx *exec_ctx);
+  grpc_millis CompletePing();
 
  private:
   enum class PingState { UNSCHEDULED, SCHEDULED, STARTED };
@@ -86,7 +86,7 @@ class BdpEstimator {
   int inter_ping_delay_;
   int stable_estimate_count_;
   double bw_est_;
-  const char *name_;
+  const char* name_;
 };
 
 }  // namespace grpc_core

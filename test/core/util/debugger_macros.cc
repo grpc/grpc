@@ -29,28 +29,31 @@
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/surface/call.h"
 
-extern "C" void grpc_summon_debugger_macros() {}
+void grpc_summon_debugger_macros() {}
 
-grpc_stream *grpc_transport_stream_from_call(grpc_call *call) {
-  grpc_call_stack *cs = grpc_call_get_call_stack(call);
+grpc_stream* grpc_transport_stream_from_call(grpc_call* call) {
+  grpc_call_stack* cs = grpc_call_get_call_stack(call);
   for (;;) {
-    grpc_call_element *el = grpc_call_stack_element(cs, cs->count - 1);
+    grpc_call_element* el = grpc_call_stack_element(cs, cs->count - 1);
     if (el->filter == &grpc_client_channel_filter) {
-      grpc_subchannel_call *scc = grpc_client_channel_get_subchannel_call(el);
-      if (scc == NULL) {
+      grpc_subchannel_call* scc = grpc_client_channel_get_subchannel_call(el);
+      if (scc == nullptr) {
         fprintf(stderr, "No subchannel-call");
-        return NULL;
+        fflush(stderr);
+        return nullptr;
       }
       cs = grpc_subchannel_call_get_call_stack(scc);
     } else if (el->filter == &grpc_connected_filter) {
       return grpc_connected_channel_get_stream(el);
     } else {
       fprintf(stderr, "Unrecognized filter: %s", el->filter->name);
-      return NULL;
+      fflush(stderr);
+      return nullptr;
     }
   }
 }
 
-grpc_chttp2_stream *grpc_chttp2_stream_from_call(grpc_call *call) {
-  return (grpc_chttp2_stream *)grpc_transport_stream_from_call(call);
+grpc_chttp2_stream* grpc_chttp2_stream_from_call(grpc_call* call) {
+  return reinterpret_cast<grpc_chttp2_stream*>(
+      grpc_transport_stream_from_call(call));
 }

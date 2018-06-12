@@ -21,12 +21,11 @@
 #include <benchmark/benchmark.h>
 #include <memory>
 
-extern "C" {
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/error_utils.h"
-}
 
 #include "test/cpp/microbenchmarks/helpers.h"
+#include "test/cpp/util/test_config.h"
 
 auto& force_library_initialization = Library::get();
 
@@ -248,14 +247,14 @@ template <class Fixture>
 static void BM_ErrorGetStatus(benchmark::State& state) {
   TrackCounters track_counters;
   Fixture fixture;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   while (state.KeepRunning()) {
     grpc_status_code status;
     grpc_slice slice;
-    grpc_error_get_status(&exec_ctx, fixture.error(), fixture.deadline(),
-                          &status, &slice, NULL);
+    grpc_error_get_status(fixture.error(), fixture.deadline(), &status, &slice,
+                          nullptr, nullptr);
   }
-  grpc_exec_ctx_finish(&exec_ctx);
+
   track_counters.Finish(state);
 }
 
@@ -263,13 +262,13 @@ template <class Fixture>
 static void BM_ErrorGetStatusCode(benchmark::State& state) {
   TrackCounters track_counters;
   Fixture fixture;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   while (state.KeepRunning()) {
     grpc_status_code status;
-    grpc_error_get_status(&exec_ctx, fixture.error(), fixture.deadline(),
-                          &status, NULL, NULL);
+    grpc_error_get_status(fixture.error(), fixture.deadline(), &status, nullptr,
+                          nullptr, nullptr);
   }
-  grpc_exec_ctx_finish(&exec_ctx);
+
   track_counters.Finish(state);
 }
 
@@ -277,13 +276,13 @@ template <class Fixture>
 static void BM_ErrorHttpError(benchmark::State& state) {
   TrackCounters track_counters;
   Fixture fixture;
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   while (state.KeepRunning()) {
     grpc_http2_error_code error;
-    grpc_error_get_status(&exec_ctx, fixture.error(), fixture.deadline(), NULL,
-                          NULL, &error);
+    grpc_error_get_status(fixture.error(), fixture.deadline(), nullptr, nullptr,
+                          &error, nullptr);
   }
-  grpc_exec_ctx_finish(&exec_ctx);
+
   track_counters.Finish(state);
 }
 
@@ -312,4 +311,15 @@ BENCHMARK_SUITE(ErrorWithGrpcStatus);
 BENCHMARK_SUITE(ErrorWithHttpError);
 BENCHMARK_SUITE(ErrorWithNestedGrpcStatus);
 
-BENCHMARK_MAIN();
+// Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
+// and others do not. This allows us to support both modes.
+namespace benchmark {
+void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
+}  // namespace benchmark
+
+int main(int argc, char** argv) {
+  ::benchmark::Initialize(&argc, argv);
+  ::grpc::testing::InitTest(&argc, &argv, false);
+  benchmark::RunTheBenchmarksNamespaced();
+  return 0;
+}

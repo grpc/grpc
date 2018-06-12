@@ -36,10 +36,28 @@ _RELATIVE_PROTO_PATH = 'relative_proto_path'
 _RELATIVE_PYTHON_OUT = 'relative_python_out'
 
 _PROTO_FILES_PATH_COMPONENTS = (
-    ('beta_grpc_plugin_test', 'payload', 'test_payload.proto',),
-    ('beta_grpc_plugin_test', 'requests', 'r', 'test_requests.proto',),
-    ('beta_grpc_plugin_test', 'responses', 'test_responses.proto',),
-    ('beta_grpc_plugin_test', 'service', 'test_service.proto',),)
+    (
+        'beta_grpc_plugin_test',
+        'payload',
+        'test_payload.proto',
+    ),
+    (
+        'beta_grpc_plugin_test',
+        'requests',
+        'r',
+        'test_requests.proto',
+    ),
+    (
+        'beta_grpc_plugin_test',
+        'responses',
+        'test_responses.proto',
+    ),
+    (
+        'beta_grpc_plugin_test',
+        'service',
+        'test_service.proto',
+    ),
+)
 
 _PAYLOAD_PB2 = 'beta_grpc_plugin_test.payload.test_payload_pb2'
 _REQUESTS_PB2 = 'beta_grpc_plugin_test.requests.r.test_requests_pb2'
@@ -311,9 +329,7 @@ class PythonPluginTest(unittest.TestCase):
 
         _packagify(self._python_out)
 
-        with _system_path([
-                self._python_out,
-        ]):
+        with _system_path([self._python_out]):
             self._payload_pb2 = importlib.import_module(_PAYLOAD_PB2)
             self._requests_pb2 = importlib.import_module(_REQUESTS_PB2)
             self._responses_pb2 = importlib.import_module(_RESPONSES_PB2)

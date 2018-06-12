@@ -16,14 +16,17 @@
  *
  */
 
-#include "src/core/ext/transport/chttp2/alpn/alpn.h"
+#include <grpc/support/port_platform.h>
+
 #include <grpc/support/log.h>
-#include <grpc/support/useful.h>
+#include "src/core/ext/transport/chttp2/alpn/alpn.h"
+
+#include "src/core/lib/gpr/useful.h"
 
 /* in order of preference */
-static const char *const supported_versions[] = {"grpc-exp", "h2"};
+static const char* const supported_versions[] = {"grpc-exp", "h2"};
 
-int grpc_chttp2_is_alpn_version_supported(const char *version, size_t size) {
+int grpc_chttp2_is_alpn_version_supported(const char* version, size_t size) {
   size_t i;
   for (i = 0; i < GPR_ARRAY_SIZE(supported_versions); i++) {
     if (!strncmp(version, supported_versions[i], size)) return 1;
@@ -35,7 +38,7 @@ size_t grpc_chttp2_num_alpn_versions(void) {
   return GPR_ARRAY_SIZE(supported_versions);
 }
 
-const char *grpc_chttp2_get_alpn_version_index(size_t i) {
+const char* grpc_chttp2_get_alpn_version_index(size_t i) {
   GPR_ASSERT(i < GPR_ARRAY_SIZE(supported_versions));
   return supported_versions[i];
 }

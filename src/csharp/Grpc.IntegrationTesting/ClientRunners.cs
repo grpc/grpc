@@ -72,7 +72,7 @@ namespace Grpc.IntegrationTesting
                 Logger.Warning("ClientConfig.CoreList is not supported for C#. Ignoring the value");
             }
 
-            var channels = CreateChannels(config.ClientChannels, config.ServerTargets, config.SecurityParams);
+            var channels = CreateChannels(config.ClientChannels, config.ServerTargets, config.SecurityParams, config.ChannelArgs);
 
             return new ClientRunnerImpl(channels,
                 config.ClientType,
@@ -84,19 +84,20 @@ namespace Grpc.IntegrationTesting
                 () => GetNextProfiler());
         }
 
-        private static List<Channel> CreateChannels(int clientChannels, IEnumerable<string> serverTargets, SecurityParams securityParams)
+        private static List<Channel> CreateChannels(int clientChannels, IEnumerable<string> serverTargets, SecurityParams securityParams, IEnumerable<ChannelArg> channelArguments)
         {
             GrpcPreconditions.CheckArgument(clientChannels > 0, "clientChannels needs to be at least 1.");
             GrpcPreconditions.CheckArgument(serverTargets.Count() > 0, "at least one serverTarget needs to be specified.");
 
             var credentials = securityParams != null ? TestCredentials.CreateSslCredentials() : ChannelCredentials.Insecure;
-            List<ChannelOption> channelOptions = null;
+            var channelOptions = new List<ChannelOption>();
             if (securityParams != null && securityParams.ServerHostOverride != "")
             {
-                channelOptions = new List<ChannelOption>
-                {
-                    new ChannelOption(ChannelOptions.SslTargetNameOverride, securityParams.ServerHostOverride)
-                };
+                channelOptions.Add(new ChannelOption(ChannelOptions.SslTargetNameOverride, securityParams.ServerHostOverride));
+            }
+            foreach (var channelArgument in channelArguments)
+            {
+                channelOptions.Add(channelArgument.ToChannelOption());
             }
 
             var result = new List<Channel>();
@@ -130,7 +131,7 @@ namespace Grpc.IntegrationTesting
 
         readonly List<Task> runnerTasks;
         readonly CancellationTokenSource stoppedCts = new CancellationTokenSource();
-        readonly WallClockStopwatch wallClockStopwatch = new WallClockStopwatch();
+        readonly TimeStats timeStats = new TimeStats();
         readonly AtomicCounter statsResetCount = new AtomicCounter();
         
         public ClientRunnerImpl(List<Channel> channels, ClientType clientType, RpcType rpcType, int outstandingRpcsPerChannel, LoadParams loadParams, PayloadConfig payloadConfig, HistogramParams histogramParams, Func<BasicProfiler> profilerFactory)
@@ -164,7 +165,7 @@ namespace Grpc.IntegrationTesting
                 hist.GetSnapshot(histogramData, reset);
             }
 
-            var secondsElapsed = wallClockStopwatch.GetElapsedSnapshot(reset).TotalSeconds;
+            var timeSnapshot = timeStats.GetSnapshot(reset);
 
             if (reset)
             {
@@ -172,15 +173,14 @@ namespace Grpc.IntegrationTesting
             }
 
             GrpcEnvironment.Logger.Info("[ClientRunnerImpl.GetStats] GC collection counts: gen0 {0}, gen1 {1}, gen2 {2}, (histogram reset count:{3}, seconds since reset: {4})",
-                GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2), statsResetCount.Count, secondsElapsed);
+                GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2), statsResetCount.Count, timeSnapshot.WallClockTime.TotalSeconds);
 
-            // TODO: populate user time and system time
             return new ClientStats
             {
                 Latencies = histogramData,
-                TimeElapsed = secondsElapsed,
-                TimeUser = 0,
-                TimeSystem = 0
+                TimeElapsed = timeSnapshot.WallClockTime.TotalSeconds,
+                TimeUser = timeSnapshot.UserProcessorTime.TotalSeconds,
+                TimeSystem = timeSnapshot.PrivilegedProcessorTime.TotalSeconds
             };
         }
 

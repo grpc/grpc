@@ -20,11 +20,11 @@
 #include <sstream>
 
 #include <gflags/gflags.h>
-#include <grpc++/channel.h>
-#include <grpc++/client_context.h>
-#include <grpc++/support/channel_arguments.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/support/channel_arguments.h>
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
@@ -44,9 +44,11 @@ using grpc::ClientContext;
 using grpc::CreateTestChannel;
 using grpc::Status;
 using grpc::testing::Empty;
+using grpc::testing::INSECURE;
 using grpc::testing::ReconnectInfo;
 using grpc::testing::ReconnectParams;
 using grpc::testing::ReconnectService;
+using grpc::testing::TLS;
 
 int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
@@ -57,7 +59,7 @@ int main(int argc, char** argv) {
   server_address << FLAGS_server_host << ':' << FLAGS_server_control_port;
   std::unique_ptr<ReconnectService::Stub> control_stub(
       ReconnectService::NewStub(
-          CreateTestChannel(server_address.str(), false)));
+          CreateTestChannel(server_address.str(), INSECURE)));
   ClientContext start_context;
   ReconnectParams reconnect_params;
   reconnect_params.set_max_reconnect_backoff_ms(FLAGS_max_reconnect_backoff_ms);
@@ -75,7 +77,7 @@ int main(int argc, char** argv) {
                         FLAGS_max_reconnect_backoff_ms);
   }
   std::shared_ptr<Channel> retry_channel =
-      CreateTestChannel(server_address.str(), "foo.test.google.fr", true, false,
+      CreateTestChannel(server_address.str(), "foo.test.google.fr", TLS, false,
                         std::shared_ptr<CallCredentials>(), channel_args);
 
   // About 13 retries.

@@ -16,9 +16,11 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/security/transport/tsi_error.h"
 
-grpc_error *grpc_set_tsi_error_result(grpc_error *error, tsi_result result) {
+grpc_error* grpc_set_tsi_error_result(grpc_error* error, tsi_result result) {
   return grpc_error_set_int(
       grpc_error_set_str(
           error, GRPC_ERROR_STR_TSI_ERROR,

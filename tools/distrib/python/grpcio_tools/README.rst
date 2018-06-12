@@ -61,7 +61,7 @@ GCC-like stuff, but you may end up having a bad time.
   $ python ../make_grpcio_tools.py
 
   # For the next command do `sudo pip install` if you get permission-denied errors
-  $ pip install .
+  $ GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip install .
 
 You cannot currently install Python from source on Windows. Things might work
 out for you in MSYS2 (follow the Linux instructions), but it isn't officially

@@ -22,14 +22,12 @@
 #include <sstream>
 #include <vector>
 
-extern "C" {
 #include <grpc/support/port_platform.h>
 #include "src/core/lib/debug/stats.h"
 #include "test/core/util/memory_counters.h"
-}
 
 #include <benchmark/benchmark.h>
-#include <grpc++/impl/grpc_library.h>
+#include <grpcpp/impl/grpc_library.h>
 
 class Library {
  public:
@@ -56,10 +54,10 @@ class Library {
 };
 
 #ifdef GPR_LOW_LEVEL_COUNTERS
-extern "C" gpr_atm gpr_mu_locks;
-extern "C" gpr_atm gpr_counter_atm_cas;
-extern "C" gpr_atm gpr_counter_atm_add;
-extern "C" gpr_atm gpr_now_call_count;
+extern gpr_atm gpr_mu_locks;
+extern gpr_atm gpr_counter_atm_cas;
+extern gpr_atm gpr_counter_atm_add;
+extern gpr_atm gpr_now_call_count;
 #endif
 
 class TrackCounters {

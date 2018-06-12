@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016 gRPC authors.
+ * Copyright 2018 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,27 +16,13 @@
  *
  */
 
+// DEPRECATED: The headers in include/grpc++ are deprecated. Please include the
+// headers in include/grpcpp instead. This header exists only for backwards
+// compatibility.
+
 #ifndef GRPCXX_SERVER_POSIX_H
 #define GRPCXX_SERVER_POSIX_H
 
-#include <memory>
-
-#include <grpc++/server.h>
-#include <grpc/support/port_platform.h>
-
-namespace grpc {
-
-#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
-
-/// Add a new client to a \a Server communicating over the given
-/// file descriptor.
-///
-/// \param server The server to add the client to.
-/// \param fd The file descriptor representing a socket.
-void AddInsecureChannelFromFd(Server* server, int fd);
-
-#endif  // GPR_SUPPORT_CHANNELS_FROM_FD
-
-}  // namespace grpc
+#include <grpcpp/server_posix.h>
 
 #endif  // GRPCXX_SERVER_POSIX_H

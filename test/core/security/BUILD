@@ -21,10 +21,22 @@ grpc_package(name = "test/core/security")
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_fuzzer(
+    name = "alts_credentials_fuzzer",
+    srcs = ["alts_credentials_fuzzer.cc"],
+    language = "C++",
+    corpus = "corpus/alts_credentials_corpus",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_fuzzer(
     name = "ssl_server_fuzzer",
-    srcs = ["ssl_server_fuzzer.c"],
-    language = "C",
-    corpus = "corpus",
+    srcs = ["ssl_server_fuzzer.cc"],
+    language = "C++",
+    corpus = "corpus/ssl_server_corpus",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -35,17 +47,17 @@ grpc_fuzzer(
 
 grpc_cc_library(
     name = "oauth2_utils",
-    srcs = ["oauth2_utils.c"],
+    srcs = ["oauth2_utils.cc"],
     hdrs = ["oauth2_utils.h"],
-    language = "C",
+    language = "C++",
     deps = ["//:grpc"],
     visibility = ["//test/cpp:__subpackages__"],
 )
 
 grpc_cc_test(
     name = "auth_context_test",
-    srcs = ["auth_context_test.c"],
-    language = "C",
+    srcs = ["auth_context_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -56,8 +68,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "credentials_test",
-    srcs = ["credentials_test.c"],
-    language = "C",
+    srcs = ["credentials_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -67,9 +79,34 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "json_token_test",
+    srcs = ["json_token_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "jwt_verifier_test",
+    srcs = ["jwt_verifier_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+
+grpc_cc_test(
     name = "secure_endpoint_test",
-    srcs = ["secure_endpoint_test.c"],
-    language = "C",
+    srcs = ["secure_endpoint_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -81,8 +118,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "security_connector_test",
-    srcs = ["security_connector_test.c"],
-    language = "C",
+    srcs = ["security_connector_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -93,8 +130,8 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "ssl_credentials_test",
-    srcs = ["ssl_credentials_test.c"],
-    language = "C",
+    srcs = ["ssl_credentials_test.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -105,31 +142,83 @@ grpc_cc_test(
 
 grpc_cc_binary(
     name = "create_jwt",
-    srcs = ["create_jwt.c"],
-    language = "C",
+    srcs = ["create_jwt.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
 grpc_cc_binary(
     name = "fetch_oauth2",
-    srcs = ["fetch_oauth2.c"],
-    language = "C",
+    srcs = ["fetch_oauth2.cc"],
+    language = "C++",
     deps = [
         ":oauth2_utils",
         "//:gpr",
         "//:grpc",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
 grpc_cc_binary(
     name = "verify_jwt",
-    srcs = ["verify_jwt.c"],
-    language = "C",
+    srcs = ["verify_jwt.cc"],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "check_gcp_environment_linux_test",
+    srcs = ["check_gcp_environment_linux_test.cc"],
+    language = "C++",
+    deps = [
+        "//:alts_util",
+        "//:gpr",
+        "//:gpr_base",
+        "//:grpc",
+    ],
+)
+
+grpc_cc_test(
+    name = "check_gcp_environment_windows_test",
+    srcs = ["check_gcp_environment_windows_test.cc"],
+    language = "C++",
+    deps = [
+        "//:alts_util",
+        "//:gpr",
+        "//:gpr_base",
+        "//:grpc",
+    ],
+)
+
+grpc_cc_test(
+    name = "grpc_alts_credentials_options_test",
+    srcs = ["grpc_alts_credentials_options_test.cc"],
+    language = "C++",
+    deps = [
+        "//:alts_util",
+        "//:gpr",
+        "//:grpc",
+    ],
+)
+
+grpc_cc_test(
+    name = "alts_security_connector_test",
+    srcs = ["alts_security_connector_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_base_c", 
+        "//:grpc_secure",
+        "//:tsi", 
+        "//:tsi_interface",
     ],
 )

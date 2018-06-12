@@ -18,7 +18,7 @@ set -ex
 if [ "$CONFIG" != "gcov" ] ; then exit ; fi
 
 # change to gRPC repo root
-cd $(dirname $0)/../../..
+cd "$(dirname "$0")/../../.."
 
 # Generate the csharp extension coverage report
 gcov objs/gcov/src/csharp/ext/*.o

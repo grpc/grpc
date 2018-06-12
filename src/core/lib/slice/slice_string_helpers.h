@@ -19,30 +19,29 @@
 #ifndef GRPC_CORE_LIB_SLICE_SLICE_STRING_HELPERS_H
 #define GRPC_CORE_LIB_SLICE_SLICE_STRING_HELPERS_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stdbool.h>
 #include <stddef.h>
 
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
-#include <grpc/support/port_platform.h>
 
-#include "src/core/lib/support/string.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "src/core/lib/gpr/string.h"
 
 /* Calls gpr_dump on a slice. */
-char *grpc_dump_slice(grpc_slice slice, uint32_t flags);
+char* grpc_dump_slice(grpc_slice slice, uint32_t flags);
 
 /** Split \a str by the separator \a sep. Results are stored in \a dst, which
  * should be a properly initialized instance. */
-void grpc_slice_split(grpc_slice str, const char *sep, grpc_slice_buffer *dst);
+void grpc_slice_split(grpc_slice str, const char* sep, grpc_slice_buffer* dst);
 
-bool grpc_parse_slice_to_uint32(grpc_slice str, uint32_t *result);
+/** Split \a str by the separator \a sep and remove the leading and trailing
+ * spaces of each resulting token. Results are stored in \a dst, which should be
+ * a properly initialized instance. */
+void grpc_slice_split_without_space(grpc_slice str, const char* sep,
+                                    grpc_slice_buffer* dst);
 
-#ifdef __cplusplus
-}
-#endif
+bool grpc_parse_slice_to_uint32(grpc_slice str, uint32_t* result);
 
 #endif /* GRPC_CORE_LIB_SLICE_SLICE_STRING_HELPERS_H */

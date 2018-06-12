@@ -92,9 +92,13 @@ module GRPC
     # Stops the jobs in the pool
     def stop
       GRPC.logger.info('stopping, will wait for all the workers to exit')
-      schedule { throw :exit } while ready_for_work?
-      @stop_mutex.synchronize do  # wait @keep_alive for works to stop
+      @stop_mutex.synchronize do  # wait @keep_alive seconds for workers to stop
         @stopped = true
+        loop do
+          break unless ready_for_work?
+          worker_queue = @ready_workers.pop
+          worker_queue << [proc { throw :exit }, []]
+        end
         @stop_cond.wait(@stop_mutex, @keep_alive) if @workers.size > 0
       end
       forcibly_stop_workers
@@ -138,7 +142,10 @@ module GRPC
         end
         # there shouldn't be any work given to this thread while its busy
         fail('received a task while busy') unless worker_queue.empty?
-        @ready_workers << worker_queue
+        @stop_mutex.synchronize do
+          return if @stopped
+          @ready_workers << worker_queue
+        end
       end
     end
   end
@@ -186,13 +193,18 @@ module GRPC
     # * max_waiting_requests: Deprecated due to internal changes to the thread
     # pool. This is still an argument for compatibility but is ignored.
     #
-    # * poll_period: when present, the server polls for new events with this
-    # period
+    # * poll_period: The amount of time in seconds to wait for
+    # currently-serviced RPC's to finish before cancelling them when shutting
+    # down the server.
+    #
+    # * pool_keep_alive: The amount of time in seconds to wait
+    # for currently busy thread-pool threads to finish before
+    # forcing an abrupt exit to each thread.
     #
     # * connect_md_proc:
     # when non-nil is a proc for determining metadata to to send back the client
     # on receiving an invocation req.  The proc signature is:
-    # {key: val, ..} func(method_name, {key: val, ...})
+    #   {key: val, ..} func(method_name, {key: val, ...})
     #
     # * server_args:
     # A server arguments hash to be passed down to the underlying core server
@@ -202,17 +214,18 @@ module GRPC
     # intercepting server handlers to provide extra functionality.
     # Interceptors are an EXPERIMENTAL API.
     #
-    def initialize(pool_size:DEFAULT_POOL_SIZE,
-                   max_waiting_requests:DEFAULT_MAX_WAITING_REQUESTS,
-                   poll_period:DEFAULT_POLL_PERIOD,
-                   connect_md_proc:nil,
-                   server_args:{},
-                   interceptors:[])
+    def initialize(pool_size: DEFAULT_POOL_SIZE,
+                   max_waiting_requests: DEFAULT_MAX_WAITING_REQUESTS,
+                   poll_period: DEFAULT_POLL_PERIOD,
+                   pool_keep_alive: GRPC::RpcServer::DEFAULT_POOL_SIZE,
+                   connect_md_proc: nil,
+                   server_args: {},
+                   interceptors: [])
       @connect_md_proc = RpcServer.setup_connect_md_proc(connect_md_proc)
       @max_waiting_requests = max_waiting_requests
       @poll_period = poll_period
       @pool_size = pool_size
-      @pool = Pool.new(@pool_size)
+      @pool = Pool.new(@pool_size, keep_alive: pool_keep_alive)
       @run_cond = ConditionVariable.new
       @run_mutex = Mutex.new
       # running_state can take 4 values: :not_started, :running, :stopping, and
@@ -231,9 +244,9 @@ module GRPC
         fail 'Cannot stop before starting' if @running_state == :not_started
         return if @running_state != :running
         transition_running_state(:stopping)
+        deadline = from_relative_time(@poll_period)
+        @server.shutdown_and_notify(deadline)
       end
-      deadline = from_relative_time(@poll_period)
-      @server.close(deadline)
       @pool.stop
     end
 
@@ -270,7 +283,7 @@ module GRPC
     # If run has not been called, this returns immediately.
     #
     # @param timeout [Numeric] number of seconds to wait
-    # @result [true, false] true if the server is running, false otherwise
+    # @return [true, false] true if the server is running, false otherwise
     def wait_till_running(timeout = nil)
       @run_mutex.synchronize do
         @run_cond.wait(@run_mutex, timeout) if @running_state == :not_started
@@ -351,7 +364,8 @@ module GRPC
       # sent yet
       c = ActiveCall.new(an_rpc.call, noop, noop, an_rpc.deadline,
                          metadata_received: true, started: false)
-      c.send_status(GRPC::Core::StatusCodes::RESOURCE_EXHAUSTED, '')
+      c.send_status(GRPC::Core::StatusCodes::RESOURCE_EXHAUSTED,
+                    'No free threads in thread pool')
       nil
     end
 
@@ -403,8 +417,11 @@ module GRPC
         end
       end
       # @running_state should be :stopping here
-      @run_mutex.synchronize { transition_running_state(:stopped) }
-      GRPC.logger.info("stopped: #{self}")
+      @run_mutex.synchronize do
+        transition_running_state(:stopped)
+        GRPC.logger.info("stopped: #{self}")
+        @server.close
+      end
     end
 
     def new_active_server_call(an_rpc)

@@ -707,7 +707,7 @@ Args = Struct.new(:default_service_account, :host, :host_override,
                   :oauth_scope, :port, :secure, :test_case,
                   :use_test_ca)
 
-# validates the the command line options, returning them as a Hash.
+# validates the command line options, returning them as a Hash.
 def parse_args
   args = Args.new
   args.host_override = 'foo.test.google.fr'
@@ -734,7 +734,7 @@ def parse_args
     opts.on('--use_tls USE_TLS', ['false', 'true'],
             'require a secure connection?') do |v|
       args['secure'] = v == 'true'
-p    end
+    end
     opts.on('--use_test_ca USE_TEST_CA', ['false', 'true'],
             'if secure, use the test certificate?') do |v|
       args['use_test_ca'] = v == 'true'

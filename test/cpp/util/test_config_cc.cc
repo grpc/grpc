@@ -16,8 +16,8 @@
  *
  */
 
-#include "test/cpp/util/test_config.h"
 #include <gflags/gflags.h>
+#include "test/cpp/util/test_config.h"
 
 // In some distros, gflags is in the namespace google, and in some others,
 // in gflags. This hack is enabling us to find both.

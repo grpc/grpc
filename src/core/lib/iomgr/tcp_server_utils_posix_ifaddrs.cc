@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_HAVE_IFADDRS
@@ -36,11 +38,11 @@
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 
 /* Return the listener in s with address addr or NULL. */
-static grpc_tcp_listener *find_listener_with_addr(grpc_tcp_server *s,
-                                                  grpc_resolved_address *addr) {
-  grpc_tcp_listener *l;
+static grpc_tcp_listener* find_listener_with_addr(grpc_tcp_server* s,
+                                                  grpc_resolved_address* addr) {
+  grpc_tcp_listener* l;
   gpr_mu_lock(&s->mu);
-  for (l = s->head; l != NULL; l = l->next) {
+  for (l = s->head; l != nullptr; l = l->next) {
     if (l->addr.len != addr->len) {
       continue;
     }
@@ -53,12 +55,12 @@ static grpc_tcp_listener *find_listener_with_addr(grpc_tcp_server *s,
 }
 
 /* Bind to "::" to get a port number not used by any address. */
-static grpc_error *get_unused_port(int *port) {
+static grpc_error* get_unused_port(int* port) {
   grpc_resolved_address wild;
   grpc_sockaddr_make_wildcard6(0, &wild);
   grpc_dualstack_mode dsmode;
   int fd;
-  grpc_error *err =
+  grpc_error* err =
       grpc_create_dualstack_socket(&wild, SOCK_STREAM, 0, &dsmode, &fd);
   if (err != GRPC_ERROR_NONE) {
     return err;
@@ -66,12 +68,13 @@ static grpc_error *get_unused_port(int *port) {
   if (dsmode == GRPC_DSMODE_IPV4) {
     grpc_sockaddr_make_wildcard4(0, &wild);
   }
-  if (bind(fd, (const struct sockaddr *)wild.addr, (socklen_t)wild.len) != 0) {
+  if (bind(fd, reinterpret_cast<const grpc_sockaddr*>(wild.addr), wild.len) !=
+      0) {
     err = GRPC_OS_ERROR(errno, "bind");
     close(fd);
     return err;
   }
-  if (getsockname(fd, (struct sockaddr *)wild.addr, (socklen_t *)&wild.len) !=
+  if (getsockname(fd, reinterpret_cast<grpc_sockaddr*>(wild.addr), &wild.len) !=
       0) {
     err = GRPC_OS_ERROR(errno, "getsockname");
     close(fd);
@@ -83,15 +86,15 @@ static grpc_error *get_unused_port(int *port) {
                     : GRPC_ERROR_NONE;
 }
 
-grpc_error *grpc_tcp_server_add_all_local_addrs(grpc_tcp_server *s,
+grpc_error* grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
                                                 unsigned port_index,
                                                 int requested_port,
-                                                int *out_port) {
-  struct ifaddrs *ifa = NULL;
-  struct ifaddrs *ifa_it;
+                                                int* out_port) {
+  struct ifaddrs* ifa = nullptr;
+  struct ifaddrs* ifa_it;
   unsigned fd_index = 0;
-  grpc_tcp_listener *sp = NULL;
-  grpc_error *err = GRPC_ERROR_NONE;
+  grpc_tcp_listener* sp = nullptr;
+  grpc_error* err = GRPC_ERROR_NONE;
   if (requested_port == 0) {
     /* Note: There could be a race where some local addrs can listen on the
        selected port and some can't. The sane way to handle this would be to
@@ -104,21 +107,21 @@ grpc_error *grpc_tcp_server_add_all_local_addrs(grpc_tcp_server *s,
     }
     gpr_log(GPR_DEBUG, "Picked unused port %d", requested_port);
   }
-  if (getifaddrs(&ifa) != 0 || ifa == NULL) {
+  if (getifaddrs(&ifa) != 0 || ifa == nullptr) {
     return GRPC_OS_ERROR(errno, "getifaddrs");
   }
-  for (ifa_it = ifa; ifa_it != NULL; ifa_it = ifa_it->ifa_next) {
+  for (ifa_it = ifa; ifa_it != nullptr; ifa_it = ifa_it->ifa_next) {
     grpc_resolved_address addr;
-    char *addr_str = NULL;
+    char* addr_str = nullptr;
     grpc_dualstack_mode dsmode;
-    grpc_tcp_listener *new_sp = NULL;
-    const char *ifa_name = (ifa_it->ifa_name ? ifa_it->ifa_name : "<unknown>");
-    if (ifa_it->ifa_addr == NULL) {
+    grpc_tcp_listener* new_sp = nullptr;
+    const char* ifa_name = (ifa_it->ifa_name ? ifa_it->ifa_name : "<unknown>");
+    if (ifa_it->ifa_addr == nullptr) {
       continue;
     } else if (ifa_it->ifa_addr->sa_family == AF_INET) {
-      addr.len = sizeof(struct sockaddr_in);
+      addr.len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
     } else if (ifa_it->ifa_addr->sa_family == AF_INET6) {
-      addr.len = sizeof(struct sockaddr_in6);
+      addr.len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in6));
     } else {
       continue;
     }
@@ -136,7 +139,7 @@ grpc_error *grpc_tcp_server_add_all_local_addrs(grpc_tcp_server *s,
             ifa_name, ifa_it->ifa_flags, addr_str);
     /* We could have multiple interfaces with the same address (e.g., bonding),
        so look for duplicates. */
-    if (find_listener_with_addr(s, &addr) != NULL) {
+    if (find_listener_with_addr(s, &addr) != nullptr) {
       gpr_log(GPR_DEBUG, "Skipping duplicate addr %s on interface %s", addr_str,
               ifa_name);
       gpr_free(addr_str);
@@ -144,8 +147,8 @@ grpc_error *grpc_tcp_server_add_all_local_addrs(grpc_tcp_server *s,
     }
     if ((err = grpc_tcp_server_add_addr(s, &addr, port_index, fd_index, &dsmode,
                                         &new_sp)) != GRPC_ERROR_NONE) {
-      char *err_str = NULL;
-      grpc_error *root_err;
+      char* err_str = nullptr;
+      grpc_error* root_err;
       if (gpr_asprintf(&err_str, "Failed to add listener: %s", addr_str) < 0) {
         err_str = gpr_strdup("Failed to add listener");
       }
@@ -157,7 +160,7 @@ grpc_error *grpc_tcp_server_add_all_local_addrs(grpc_tcp_server *s,
     } else {
       GPR_ASSERT(requested_port == new_sp->port);
       ++fd_index;
-      if (sp != NULL) {
+      if (sp != nullptr) {
         new_sp->is_sibling = 1;
         sp->sibling = new_sp;
       }
@@ -168,7 +171,7 @@ grpc_error *grpc_tcp_server_add_all_local_addrs(grpc_tcp_server *s,
   freeifaddrs(ifa);
   if (err != GRPC_ERROR_NONE) {
     return err;
-  } else if (sp == NULL) {
+  } else if (sp == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No local addresses");
   } else {
     *out_port = sp->port;

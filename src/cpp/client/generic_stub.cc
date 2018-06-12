@@ -16,9 +16,9 @@
  *
  */
 
-#include <grpc++/generic/generic_stub.h>
+#include <grpcpp/generic/generic_stub.h>
 
-#include <grpc++/impl/rpc_method.h>
+#include <grpcpp/impl/rpc_method.h>
 
 namespace grpc {
 
@@ -27,8 +27,10 @@ std::unique_ptr<GenericClientAsyncReaderWriter> CallInternal(
     ChannelInterface* channel, ClientContext* context,
     const grpc::string& method, CompletionQueue* cq, bool start, void* tag) {
   return std::unique_ptr<GenericClientAsyncReaderWriter>(
-      GenericClientAsyncReaderWriter::Create(
-          channel, cq, RpcMethod(method.c_str(), RpcMethod::BIDI_STREAMING),
+      internal::ClientAsyncReaderWriterFactory<ByteBuffer, ByteBuffer>::Create(
+          channel, cq,
+          internal::RpcMethod(method.c_str(),
+                              internal::RpcMethod::BIDI_STREAMING),
           context, start, tag));
 }
 
@@ -52,8 +54,9 @@ std::unique_ptr<GenericClientAsyncResponseReader> GenericStub::PrepareUnaryCall(
     ClientContext* context, const grpc::string& method,
     const ByteBuffer& request, CompletionQueue* cq) {
   return std::unique_ptr<GenericClientAsyncResponseReader>(
-      GenericClientAsyncResponseReader::Create(
-          channel_.get(), cq, RpcMethod(method.c_str(), RpcMethod::NORMAL_RPC),
+      internal::ClientAsyncResponseReaderFactory<ByteBuffer>::Create(
+          channel_.get(), cq,
+          internal::RpcMethod(method.c_str(), internal::RpcMethod::NORMAL_RPC),
           context, request, false));
 }
 

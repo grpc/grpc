@@ -8,8 +8,8 @@ from specific releases/tag, are used to test version compatiblity between gRPC r
 ## Step-by-step instructions for adding a GCR image for a new release for compatibility test
 We have continuous nightly test setup to test gRPC backward compatibility between old clients and latest server.  When a gRPC developer creates a new gRPC release, s/he is also responsible to add the just-released gRPC client to the nightly test.  The steps are:
 - Add (or update) an entry in `./client_matrix.py` file to reference the github tag for the release.
-- Build new client docker image(s).  For example, for java release `v1.9.9`, do
-  - `tools/interop_matrix/create_matrix_images.py --git_checkout --release=v1.9.9 --language=java`
+- Build new client docker image(s).  For example, for C and wrapper languages release `v1.9.9`, do
+  - `tools/interop_matrix/create_matrix_images.py --git_checkout --release=v1.9.9 --language cxx csharp python ruby php`
 - Verify that the new docker image was built successfully and uploaded to GCR.  For example,
   - `gcloud beta container images list --repository gcr.io/grpc-testing` shows image repos.
   - `gcloud beta container images list-tags gcr.io/grpc-testing/grpc_interop_java_oracle8` should show an image entry with tag `v1.9.9`.
@@ -24,7 +24,7 @@ For more details on each step, refer to sections below.
 - Create new `Dockerfile.template`, `build_interop.sh.template` for the language/runtime under `template/tools/dockerfile/`.
 - Run `tools/buildgen/generate_projects.sh` to create corresponding files under `tools/dockerfile/`.
 - Add language/runtimes to `client_matrix.py` following existing language/runtimes examples.
-- Run `tools/interop_matrix/create_matrix_images.py` which will build and upload images to GCR.  Unless you are also building images for a gRPC release, make sure not to set `--gcr_tag` (the default tag 'master' is used for testing).
+- Run `tools/interop_matrix/create_matrix_images.py` which will build and upload images to GCR.  Unless you are also building images for a gRPC release, make sure not to set `--release` (the default release 'master' is used for testing).
 
 *: Please delete your docker images at https://pantheon.corp.google.com/gcr/images/grpc-testing?project=grpc-testing afterwards.  Permissions to access GrpcTesting project is required for this step.
 

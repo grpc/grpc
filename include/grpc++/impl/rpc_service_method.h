@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016 gRPC authors.
+ * Copyright 2018 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,13 @@
  *
  */
 
+// DEPRECATED: The headers in include/grpc++ are deprecated. Please include the
+// headers in include/grpcpp instead. This header exists only for backwards
+// compatibility.
+
 #ifndef GRPCXX_IMPL_RPC_SERVICE_METHOD_H
 #define GRPCXX_IMPL_RPC_SERVICE_METHOD_H
 
-#include <grpc++/impl/codegen/rpc_service_method.h>
+#include <grpcpp/impl/rpc_service_method.h>
 
 #endif  // GRPCXX_IMPL_RPC_SERVICE_METHOD_H

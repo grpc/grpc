@@ -19,15 +19,15 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Grpc.Core.Logging;
 using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
 {
-    internal delegate void OpCompletionDelegate(bool success);
-
-    internal delegate void BatchCompletionDelegate(bool success, BatchContextSafeHandle ctx);
+    internal delegate void BatchCompletionDelegate(bool success, BatchContextSafeHandle ctx, object state);
 
     internal delegate void RequestCallCompletionDelegate(bool success, RequestCallContextSafeHandle ctx);
 
@@ -36,85 +36,78 @@ namespace Grpc.Core.Internal
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<CompletionRegistry>();
 
         readonly GrpcEnvironment environment;
-        readonly ConcurrentDictionary<IntPtr, OpCompletionDelegate> dict = new ConcurrentDictionary<IntPtr, OpCompletionDelegate>(new IntPtrComparer());
+        readonly Func<BatchContextSafeHandle> batchContextFactory;
+        readonly Func<RequestCallContextSafeHandle> requestCallContextFactory;
+        readonly Dictionary<IntPtr, IOpCompletionCallback> dict = new Dictionary<IntPtr, IOpCompletionCallback>(new IntPtrComparer());
+        SpinLock spinLock = new SpinLock(Debugger.IsAttached);
         IntPtr lastRegisteredKey;  // only for testing
 
-        public CompletionRegistry(GrpcEnvironment environment)
+        public CompletionRegistry(GrpcEnvironment environment, Func<BatchContextSafeHandle> batchContextFactory, Func<RequestCallContextSafeHandle> requestCallContextFactory)
         {
-            this.environment = environment;
+            this.environment = GrpcPreconditions.CheckNotNull(environment);
+            this.batchContextFactory = GrpcPreconditions.CheckNotNull(batchContextFactory);
+            this.requestCallContextFactory = GrpcPreconditions.CheckNotNull(requestCallContextFactory);
         }
 
-        public void Register(IntPtr key, OpCompletionDelegate callback)
+        public void Register(IntPtr key, IOpCompletionCallback callback)
         {
             environment.DebugStats.PendingBatchCompletions.Increment();
-            GrpcPreconditions.CheckState(dict.TryAdd(key, callback));
-            this.lastRegisteredKey = key;
+
+            bool lockTaken = false;
+            try
+            {
+                spinLock.Enter(ref lockTaken);
+
+                dict.Add(key, callback);
+                this.lastRegisteredKey = key;
+            }
+            finally
+            {
+                if (lockTaken) spinLock.Exit();
+            }
         }
 
-        public void RegisterBatchCompletion(BatchContextSafeHandle ctx, BatchCompletionDelegate callback)
+        public BatchContextSafeHandle RegisterBatchCompletion(BatchCompletionDelegate callback, object state)
         {
-            OpCompletionDelegate opCallback = ((success) => HandleBatchCompletion(success, ctx, callback));
-            Register(ctx.Handle, opCallback);
+            var ctx = batchContextFactory();
+            ctx.SetCompletionCallback(callback, state);
+            Register(ctx.Handle, ctx);
+            return ctx;
         }
 
-        public void RegisterRequestCallCompletion(RequestCallContextSafeHandle ctx, RequestCallCompletionDelegate callback)
+        public RequestCallContextSafeHandle RegisterRequestCallCompletion(RequestCallCompletionDelegate callback)
         {
-            OpCompletionDelegate opCallback = ((success) => HandleRequestCallCompletion(success, ctx, callback));
-            Register(ctx.Handle, opCallback);
+            var ctx = requestCallContextFactory();
+            ctx.CompletionCallback = callback;
+            Register(ctx.Handle, ctx);
+            return ctx;
         }
 
-        public OpCompletionDelegate Extract(IntPtr key)
+        public IOpCompletionCallback Extract(IntPtr key)
         {
-            OpCompletionDelegate value;
-            GrpcPreconditions.CheckState(dict.TryRemove(key, out value));
+            IOpCompletionCallback value = null;
+            bool lockTaken = false;
+            try
+            {
+                spinLock.Enter(ref lockTaken);
+
+                value = dict[key];
+                dict.Remove(key);
+            }
+            finally
+            {
+                if (lockTaken) spinLock.Exit();
+            }
             environment.DebugStats.PendingBatchCompletions.Decrement();
             return value;
         }
 
         /// <summary>
-        /// For testing purposes only.
+        /// For testing purposes only. NOT threadsafe.
         /// </summary>
         public IntPtr LastRegisteredKey
         {
             get { return this.lastRegisteredKey; }
-        }
-
-        private static void HandleBatchCompletion(bool success, BatchContextSafeHandle ctx, BatchCompletionDelegate callback)
-        {
-            try
-            {
-                callback(success, ctx);
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e, "Exception occured while invoking batch completion delegate.");
-            }
-            finally
-            {
-                if (ctx != null)
-                {
-                    ctx.Dispose();
-                }
-            }
-        }
-
-        private static void HandleRequestCallCompletion(bool success, RequestCallContextSafeHandle ctx, RequestCallCompletionDelegate callback)
-        {
-            try
-            {
-                callback(success, ctx);
-            }
-            catch (Exception e)
-            {
-                Logger.Error(e, "Exception occured while invoking request call completion delegate.");
-            }
-            finally
-            {
-                if (ctx != null)
-                {
-                    ctx.Dispose();
-                }
-            }
         }
 
         /// <summary>

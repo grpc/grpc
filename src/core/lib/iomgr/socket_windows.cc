@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_WINSOCK_SOCKET
@@ -36,9 +38,9 @@
 #include "src/core/lib/iomgr/pollset_windows.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 
-grpc_winsocket *grpc_winsocket_create(SOCKET socket, const char *name) {
-  char *final_name;
-  grpc_winsocket *r = (grpc_winsocket *)gpr_malloc(sizeof(grpc_winsocket));
+grpc_winsocket* grpc_winsocket_create(SOCKET socket, const char* name) {
+  char* final_name;
+  grpc_winsocket* r = (grpc_winsocket*)gpr_malloc(sizeof(grpc_winsocket));
   memset(r, 0, sizeof(grpc_winsocket));
   r->socket = socket;
   gpr_mu_init(&r->state_mu);
@@ -53,7 +55,7 @@ grpc_winsocket *grpc_winsocket_create(SOCKET socket, const char *name) {
    operations to abort them. We need to do that this way because of the
    various callsites of that function, which happens to be in various
    mutex hold states, and that'd be unsafe to call them directly. */
-void grpc_winsocket_shutdown(grpc_winsocket *winsocket) {
+void grpc_winsocket_shutdown(grpc_winsocket* winsocket) {
   /* Grab the function pointer for DisconnectEx for that specific socket.
      It may change depending on the interface. */
   int status;
@@ -76,7 +78,7 @@ void grpc_winsocket_shutdown(grpc_winsocket *winsocket) {
   if (status == 0) {
     DisconnectEx(winsocket->socket, NULL, 0, 0);
   } else {
-    char *utf8_message = gpr_format_message(WSAGetLastError());
+    char* utf8_message = gpr_format_message(WSAGetLastError());
     gpr_log(GPR_INFO, "Unable to retrieve DisconnectEx pointer : %s",
             utf8_message);
     gpr_free(utf8_message);
@@ -84,19 +86,19 @@ void grpc_winsocket_shutdown(grpc_winsocket *winsocket) {
   closesocket(winsocket->socket);
 }
 
-static void destroy(grpc_winsocket *winsocket) {
+static void destroy(grpc_winsocket* winsocket) {
   grpc_iomgr_unregister_object(&winsocket->iomgr_object);
   gpr_mu_destroy(&winsocket->state_mu);
   gpr_free(winsocket);
 }
 
-static bool check_destroyable(grpc_winsocket *winsocket) {
+static bool check_destroyable(grpc_winsocket* winsocket) {
   return winsocket->destroy_called == true &&
          winsocket->write_info.closure == NULL &&
          winsocket->read_info.closure == NULL;
 }
 
-void grpc_winsocket_destroy(grpc_winsocket *winsocket) {
+void grpc_winsocket_destroy(grpc_winsocket* winsocket) {
   gpr_mu_lock(&winsocket->state_mu);
   GPR_ASSERT(!winsocket->destroy_called);
   winsocket->destroy_called = true;
@@ -109,37 +111,34 @@ void grpc_winsocket_destroy(grpc_winsocket *winsocket) {
 -) The IOCP already completed in the background, and we need to call
 the callback now.
 -) The IOCP hasn't completed yet, and we're queuing it for later. */
-static void socket_notify_on_iocp(grpc_exec_ctx *exec_ctx,
-                                  grpc_winsocket *socket, grpc_closure *closure,
-                                  grpc_winsocket_callback_info *info) {
+static void socket_notify_on_iocp(grpc_winsocket* socket, grpc_closure* closure,
+                                  grpc_winsocket_callback_info* info) {
   GPR_ASSERT(info->closure == NULL);
   gpr_mu_lock(&socket->state_mu);
   if (info->has_pending_iocp) {
     info->has_pending_iocp = 0;
-    GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(closure, GRPC_ERROR_NONE);
   } else {
     info->closure = closure;
   }
   gpr_mu_unlock(&socket->state_mu);
 }
 
-void grpc_socket_notify_on_write(grpc_exec_ctx *exec_ctx,
-                                 grpc_winsocket *socket,
-                                 grpc_closure *closure) {
-  socket_notify_on_iocp(exec_ctx, socket, closure, &socket->write_info);
+void grpc_socket_notify_on_write(grpc_winsocket* socket,
+                                 grpc_closure* closure) {
+  socket_notify_on_iocp(socket, closure, &socket->write_info);
 }
 
-void grpc_socket_notify_on_read(grpc_exec_ctx *exec_ctx, grpc_winsocket *socket,
-                                grpc_closure *closure) {
-  socket_notify_on_iocp(exec_ctx, socket, closure, &socket->read_info);
+void grpc_socket_notify_on_read(grpc_winsocket* socket, grpc_closure* closure) {
+  socket_notify_on_iocp(socket, closure, &socket->read_info);
 }
 
-void grpc_socket_become_ready(grpc_exec_ctx *exec_ctx, grpc_winsocket *socket,
-                              grpc_winsocket_callback_info *info) {
+void grpc_socket_become_ready(grpc_winsocket* socket,
+                              grpc_winsocket_callback_info* info) {
   GPR_ASSERT(!info->has_pending_iocp);
   gpr_mu_lock(&socket->state_mu);
   if (info->closure) {
-    GRPC_CLOSURE_SCHED(exec_ctx, info->closure, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(info->closure, GRPC_ERROR_NONE);
     info->closure = NULL;
   } else {
     info->has_pending_iocp = 1;

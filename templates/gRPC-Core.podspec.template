@@ -22,27 +22,59 @@
   # limitations under the License.
 
   <%!
-  def grpc_private_files(libs):
+  def grpc_lib_files(libs, expect_libs, groups):
     out = []
     for lib in libs:
-      if lib.name in ("grpc", "gpr"):
-        out += lib.get('headers', [])
-        out += lib.get('src', [])
-    return [f for f in out if not f.startswith("third_party/nanopb/")]
+      if lib.name in expect_libs:
+        for group in groups:
+          out += lib.get(group, [])
+    return out
+
+  def grpc_private_files(libs):
+    out = grpc_lib_files(libs, ("grpc", "gpr"), ("headers", "src"))
+    return [file for file in out if not file.startswith("third_party/nanopb/")]
 
   def grpc_public_headers(libs):
-    out = []
-    for lib in libs:
-      if lib.name in ("grpc", "gpr"):
-        out += lib.get('public_headers', [])
+    out = grpc_lib_files(libs, ("grpc", "gpr"), ("public_headers",))
     return out
 
   def grpc_private_headers(libs):
-    out = []
-    for lib in libs:
-      if lib.name in ("grpc", "gpr"):
-        out += lib.get('headers', [])
-    return [f for f in out if not f.startswith("third_party/nanopb/")]
+    out = grpc_lib_files(libs, ("grpc", "gpr"), ("headers",))
+    return [file for file in out if not file.startswith("third_party/nanopb/")]
+
+  def grpc_cronet_files(libs):
+    out = grpc_lib_files(libs, ("grpc_cronet",), ("src", "headers"))
+    excl = grpc_private_files(libs)
+    excl += [
+        # We do not need cronet dedicated plugin registry
+        "src/core/plugin_registry/grpc_cronet_plugin_registry.cc",
+        # We do not need dummy cronet API for ObjC
+        "src/core/ext/transport/cronet/transport/cronet_api_dummy.cc",
+    ]
+    return [file for file in out if not file in excl]
+
+  def grpc_cronet_public_headers(libs):
+    out = grpc_lib_files(libs, ("grpc_cronet",), ("public_headers",))
+    excl = grpc_public_headers(libs)
+    return [file for file in out if not file in excl]
+
+  def grpc_test_util_files(libs):
+    out = grpc_lib_files(libs, ("grpc_test_util", "gpr_test_util"), ("src", "headers"))
+    excl = grpc_private_files(libs)
+    return [file for file in out if not file in excl]
+
+  def end2end_tests_files(libs):
+    out = grpc_lib_files(libs, ("end2end_tests",), ("src", "headers"))
+    excl = grpc_private_files(libs)
+    return [file for file in out if not file in excl]
+
+  def cfstream_private_headers(libs):
+    out = grpc_lib_files(libs, ("grpc_cfstream",), ("own_headers",))
+    return out
+
+  def cfstream_private_files(libs):
+    out = grpc_lib_files(libs, ("grpc_cfstream",), ("own_src", "own_headers"))
+    return out
 
   def ruby_multiline_list(files, indent):
     return (',\n' + indent*' ').join('\'%s\'' % f for f in files)
@@ -60,6 +92,10 @@
       :git => 'https://github.com/grpc/grpc.git',
       :tag => "v#{version}",
     }
+
+    # gRPC podspecs depend on fix for https://github.com/CocoaPods/CocoaPods/issues/6024,
+    # which was released in Cocoapods v1.2.0.
+    s.cocoapods_version = '>= 1.2.0'
 
     s.ios.deployment_target = '7.0'
     s.osx.deployment_target = '10.9'
@@ -107,15 +143,16 @@
       'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(GRPC_SRC_ROOT)/include"',
       'USER_HEADER_SEARCH_PATHS' => '"$(GRPC_SRC_ROOT)"',
       # If we don't set these two settings, `include/grpc/support/time.h` and
-      # `src/core/lib/support/string.h` shadow the system `<time.h>` and `<string.h>`, breaking the
+      # `src/core/lib/gpr/string.h` shadow the system `<time.h>` and `<string.h>`, breaking the
       # build.
       'USE_HEADERMAP' => 'NO',
       'ALWAYS_SEARCH_USER_PATHS' => 'NO',
       'GCC_PREPROCESSOR_DEFINITIONS' => '"$(inherited)" "COCOAPODS=1" "PB_NO_PACKED_STRUCTS=1"',
+      'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
     }
 
     s.default_subspecs = 'Interface', 'Implementation'
-    s.compiler_flags = '-DGRPC_ARES=0'
+    s.compiler_flags = '-DGRPC_ARES=0', '-DPB_FIELD_16BIT'
     s.libraries = 'c++'
 
     # Like many other C libraries, gRPC-Core has its public headers under `include/<libname>/` and its
@@ -137,7 +174,7 @@
       ss.header_mappings_dir = '.'
       ss.libraries = 'z'
       ss.dependency "#{s.name}/Interface", version
-      ss.dependency 'BoringSSL', '~> 9.0'
+      ss.dependency 'BoringSSL', '~> 10.0'
       ss.dependency 'nanopb', '~> 0.3'
 
       # To save you from scrolling, this is the last part of the podspec.
@@ -146,9 +183,19 @@
       ss.private_header_files = ${ruby_multiline_list(grpc_private_headers(libs), 30)}
     end
 
+    s.subspec 'CFStream-Implementation' do |ss|
+      ss.header_mappings_dir = '.'
+      ss.dependency "#{s.name}/Implementation", version
+      ss.pod_target_xcconfig = {
+        'GCC_PREPROCESSOR_DEFINITIONS' => 'GRPC_CFSTREAM=1'
+      }
+      ss.source_files = ${ruby_multiline_list(cfstream_private_files(filegroups), 22)}
+      ss.private_header_files = ${ruby_multiline_list(cfstream_private_headers(filegroups), 30)}
+    end
+
     s.subspec 'Cronet-Interface' do |ss|
       ss.header_mappings_dir = 'include/grpc'
-      ss.source_files = 'include/grpc/grpc_cronet.h'
+      ss.source_files = ${ruby_multiline_list(grpc_cronet_public_headers(libs), 22)}
     end
 
     s.subspec 'Cronet-Implementation' do |ss|
@@ -158,9 +205,7 @@
       ss.dependency "#{s.name}/Implementation", version
       ss.dependency "#{s.name}/Cronet-Interface", version
 
-      ss.source_files = 'src/core/ext/transport/cronet/client/secure/cronet_channel_create.cc',
-                        'src/core/ext/transport/cronet/transport/cronet_transport.{cc,h}',
-                        'third_party/objective_c/Cronet/bidirectional_stream_c.h'
+      ss.source_files = ${ruby_multiline_list(grpc_cronet_files(libs), 22)}
     end
 
     s.subspec 'Tests' do |ss|
@@ -169,21 +214,12 @@
       ss.dependency "#{s.name}/Interface", version
       ss.dependency "#{s.name}/Implementation", version
 
-      ss.source_files = 'test/core/end2end/cq_verifier.{c,h}',
-                        'test/core/end2end/end2end_tests.{c,h}',
-                        'test/core/end2end/end2end_test_utils.c',
-                        'test/core/end2end/tests/*.{c,h}',
-                        'test/core/end2end/fixtures/*.h',
-                        'test/core/end2end/data/*.{c,h}',
-                        'test/core/util/debugger_macros.{cc,h}',
-                        'test/core/util/test_config.{c,h}',
-                        'test/core/util/port.h',
-                        'test/core/util/port.c',
-                        'test/core/util/port_server_client.{c,h}'
+      ss.source_files = ${ruby_multiline_list(grpc_test_util_files(libs), 22)},
+                        ${ruby_multiline_list(end2end_tests_files(libs), 22)}
     end
 
     # TODO (mxyan): Instead of this hack, add include path "third_party" to C core's include path?
     s.prepare_command = <<-END_OF_COMMAND
-      find src/core/ -type f -exec sed -E -i '.back' 's;#include "third_party/nanopb/(.*)";#include <nanopb/\\1>;g' {} \\\;
+      find src/core/ -type f ! -path '*.back*' -exec sed -E -i'.back' 's;#include "third_party/nanopb/(.*)";#include <nanopb/\\1>;g' {} \\\;
     END_OF_COMMAND
   end

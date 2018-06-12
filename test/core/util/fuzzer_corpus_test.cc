@@ -20,17 +20,26 @@
 
 #include <dirent.h>
 #include <gflags/gflags.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <gtest/gtest.h>
 #include <stdio.h>
 #include <sys/types.h>
 
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/test_config.h"
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size);
-extern "C" bool squelch;
-extern "C" bool leak_check;
+extern bool squelch;
+extern bool leak_check;
+
+// In some distros, gflags is in the namespace google, and in some others,
+// in gflags. This hack is enabling us to find both.
+namespace google {}
+namespace gflags {}
+using namespace google;
+using namespace gflags;
 
 DEFINE_string(file, "", "Use this file as test data");
 DEFINE_string(directory, "", "Use this directory as test data");
@@ -61,11 +70,17 @@ class ExampleGenerator
     if (examples_.empty()) {
       if (!FLAGS_file.empty()) examples_.push_back(FLAGS_file);
       if (!FLAGS_directory.empty()) {
+        char* test_srcdir = gpr_getenv("TEST_SRCDIR");
+        if (test_srcdir != nullptr) {
+          FLAGS_directory = test_srcdir +
+                            std::string("/com_github_grpc_grpc/") +
+                            FLAGS_directory;
+        }
         DIR* dp;
         struct dirent* ep;
         dp = opendir(FLAGS_directory.c_str());
 
-        if (dp != NULL) {
+        if (dp != nullptr) {
           while ((ep = readdir(dp)) != nullptr) {
             if (ep->d_type == DT_REG) {
               examples_.push_back(FLAGS_directory + "/" + ep->d_name);
@@ -77,6 +92,7 @@ class ExampleGenerator
           perror("Couldn't open the directory");
           abort();
         }
+        gpr_free(test_srcdir);
       }
     }
   }
@@ -129,7 +145,7 @@ INSTANTIATE_TEST_CASE_P(
 
 int main(int argc, char** argv) {
   grpc_test_init(argc, argv);
-  ::gflags::ParseCommandLineFlags(&argc, &argv, true);
+  ParseCommandLineFlags(&argc, &argv, true);
   ::testing::InitGoogleTest(&argc, argv);
 
   return RUN_ALL_TESTS();

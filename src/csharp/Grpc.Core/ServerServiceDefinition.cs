@@ -19,7 +19,10 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
+using Grpc.Core.Interceptors;
 using Grpc.Core.Internal;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core
 {
@@ -32,7 +35,7 @@ namespace Grpc.Core
     {
         readonly ReadOnlyDictionary<string, IServerCallHandler> callHandlers;
 
-        private ServerServiceDefinition(Dictionary<string, IServerCallHandler> callHandlers)
+        internal ServerServiceDefinition(Dictionary<string, IServerCallHandler> callHandlers)
         {
             this.callHandlers = new ReadOnlyDictionary<string, IServerCallHandler>(callHandlers);
         }

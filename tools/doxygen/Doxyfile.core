@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 5.0.0-dev
+PROJECT_NUMBER         = 6.0.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -774,10 +774,12 @@ doc/connectivity-semantics-and-api.md \
 doc/core/grpc-error.md \
 doc/core/moving-to-c++.md \
 doc/core/pending_api_cleanups.md \
+doc/core/transport_explainer.md \
 doc/cpp-style-guide.md \
 doc/environment_variables.md \
 doc/epoll-polling-engine.md \
 doc/fail_fast.md \
+doc/fork_support.md \
 doc/g_stands_for.md \
 doc/health-checking.md \
 doc/http-grpc-status-mapping.md \
@@ -792,7 +794,6 @@ doc/server_side_auth.md \
 doc/service_config.md \
 doc/status_ordering.md \
 doc/statuscodes.md \
-doc/stress_test_framework.md \
 doc/unit_testing.md \
 doc/wait-for-ready.md \
 doc/workarounds.md \
@@ -800,6 +801,7 @@ include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/census.h \
 include/grpc/compression.h \
+include/grpc/fork.h \
 include/grpc/grpc.h \
 include/grpc/grpc_posix.h \
 include/grpc/grpc_security.h \
@@ -816,7 +818,8 @@ include/grpc/impl/codegen/byte_buffer.h \
 include/grpc/impl/codegen/byte_buffer_reader.h \
 include/grpc/impl/codegen/compression_types.h \
 include/grpc/impl/codegen/connectivity_state.h \
-include/grpc/impl/codegen/exec_ctx_fwd.h \
+include/grpc/impl/codegen/fork.h \
+include/grpc/impl/codegen/fork.h \
 include/grpc/impl/codegen/gpr_slice.h \
 include/grpc/impl/codegen/gpr_slice.h \
 include/grpc/impl/codegen/gpr_types.h \
@@ -846,28 +849,18 @@ include/grpc/support/atm.h \
 include/grpc/support/atm_gcc_atomic.h \
 include/grpc/support/atm_gcc_sync.h \
 include/grpc/support/atm_windows.h \
-include/grpc/support/avl.h \
-include/grpc/support/cmdline.h \
 include/grpc/support/cpu.h \
-include/grpc/support/histogram.h \
-include/grpc/support/host_port.h \
 include/grpc/support/log.h \
 include/grpc/support/log_windows.h \
 include/grpc/support/port_platform.h \
 include/grpc/support/string_util.h \
-include/grpc/support/subprocess.h \
 include/grpc/support/sync.h \
 include/grpc/support/sync_custom.h \
 include/grpc/support/sync_generic.h \
 include/grpc/support/sync_posix.h \
 include/grpc/support/sync_windows.h \
-include/grpc/support/thd.h \
+include/grpc/support/thd_id.h \
 include/grpc/support/time.h \
-include/grpc/support/tls.h \
-include/grpc/support/tls_gcc.h \
-include/grpc/support/tls_msvc.h \
-include/grpc/support/tls_pthread.h \
-include/grpc/support/useful.h \
 include/grpc/support/workaround_list.h
 
 # This tag can be used to specify the character encoding of the source files

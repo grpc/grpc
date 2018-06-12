@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_WAKEUP_FD
@@ -25,7 +27,7 @@
 #include "src/core/lib/iomgr/wakeup_fd_pipe.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
-static const grpc_wakeup_fd_vtable *wakeup_fd_vtable = NULL;
+static const grpc_wakeup_fd_vtable* wakeup_fd_vtable = nullptr;
 
 int grpc_allow_specialized_wakeup_fd = 1;
 int grpc_allow_pipe_wakeup_fd = 1;
@@ -45,7 +47,7 @@ void grpc_wakeup_fd_global_init(void) {
   }
 }
 
-void grpc_wakeup_fd_global_destroy(void) { wakeup_fd_vtable = NULL; }
+void grpc_wakeup_fd_global_destroy(void) { wakeup_fd_vtable = nullptr; }
 
 int grpc_has_wakeup_fd(void) { return has_real_wakeup_fd; }
 
@@ -53,28 +55,28 @@ int grpc_cv_wakeup_fds_enabled(void) { return cv_wakeup_fds_enabled; }
 
 void grpc_enable_cv_wakeup_fds(int enable) { cv_wakeup_fds_enabled = enable; }
 
-grpc_error *grpc_wakeup_fd_init(grpc_wakeup_fd *fd_info) {
+grpc_error* grpc_wakeup_fd_init(grpc_wakeup_fd* fd_info) {
   if (cv_wakeup_fds_enabled) {
     return grpc_cv_wakeup_fd_vtable.init(fd_info);
   }
   return wakeup_fd_vtable->init(fd_info);
 }
 
-grpc_error *grpc_wakeup_fd_consume_wakeup(grpc_wakeup_fd *fd_info) {
+grpc_error* grpc_wakeup_fd_consume_wakeup(grpc_wakeup_fd* fd_info) {
   if (cv_wakeup_fds_enabled) {
     return grpc_cv_wakeup_fd_vtable.consume(fd_info);
   }
   return wakeup_fd_vtable->consume(fd_info);
 }
 
-grpc_error *grpc_wakeup_fd_wakeup(grpc_wakeup_fd *fd_info) {
+grpc_error* grpc_wakeup_fd_wakeup(grpc_wakeup_fd* fd_info) {
   if (cv_wakeup_fds_enabled) {
     return grpc_cv_wakeup_fd_vtable.wakeup(fd_info);
   }
   return wakeup_fd_vtable->wakeup(fd_info);
 }
 
-void grpc_wakeup_fd_destroy(grpc_wakeup_fd *fd_info) {
+void grpc_wakeup_fd_destroy(grpc_wakeup_fd* fd_info) {
   if (cv_wakeup_fds_enabled) {
     grpc_cv_wakeup_fd_vtable.destroy(fd_info);
   } else {

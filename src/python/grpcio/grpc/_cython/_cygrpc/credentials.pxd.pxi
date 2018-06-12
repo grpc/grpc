@@ -12,19 +12,79 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cimport cpython
+
+cdef class CallCredentials:
+
+  cdef grpc_call_credentials *c(self)
+
+  # TODO(https://github.com/grpc/grpc/issues/12531): remove.
+  cdef grpc_call_credentials *c_credentials
+
+
+cdef int _get_metadata(
+    void *state, grpc_auth_metadata_context context,
+    grpc_credentials_plugin_metadata_cb cb, void *user_data,
+    grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
+    size_t *num_creds_md, grpc_status_code *status,
+    const char **error_details) with gil
+
+cdef void _destroy(void *state) with gil
+
+
+cdef class MetadataPluginCallCredentials(CallCredentials):
+
+  cdef readonly object _metadata_plugin
+  cdef readonly bytes _name
+
+  cdef grpc_call_credentials *c(self)
+
+
+cdef grpc_call_credentials *_composition(call_credentialses)
+
+
+cdef class CompositeCallCredentials(CallCredentials):
+
+  cdef readonly tuple _call_credentialses
+
+  cdef grpc_call_credentials *c(self)
 
 
 cdef class ChannelCredentials:
 
+  cdef grpc_channel_credentials *c(self)
+
+  # TODO(https://github.com/grpc/grpc/issues/12531): remove.
   cdef grpc_channel_credentials *c_credentials
-  cdef grpc_ssl_pem_key_cert_pair c_ssl_pem_key_cert_pair
-  cdef list references
 
 
-cdef class CallCredentials:
+cdef class SSLSessionCacheLRU:
 
-  cdef grpc_call_credentials *c_credentials
+  cdef grpc_ssl_session_cache *_cache
+
+
+cdef class SSLChannelCredentials(ChannelCredentials):
+
+  cdef readonly object _pem_root_certificates
+  cdef readonly object _private_key
+  cdef readonly object _certificate_chain
+
+  cdef grpc_channel_credentials *c(self)
+
+
+cdef class CompositeChannelCredentials(ChannelCredentials):
+
+  cdef readonly tuple _call_credentialses
+  cdef readonly ChannelCredentials _channel_credentials
+
+  cdef grpc_channel_credentials *c(self)
+
+
+cdef class ServerCertificateConfig:
+
+  cdef grpc_ssl_server_certificate_config *c_cert_config
+  cdef const char *c_pem_root_certs
+  cdef grpc_ssl_pem_key_cert_pair *c_ssl_pem_key_cert_pairs
+  cdef size_t c_ssl_pem_key_cert_pairs_count
   cdef list references
 
 
@@ -34,27 +94,9 @@ cdef class ServerCredentials:
   cdef grpc_ssl_pem_key_cert_pair *c_ssl_pem_key_cert_pairs
   cdef size_t c_ssl_pem_key_cert_pairs_count
   cdef list references
-
-
-cdef class CredentialsMetadataPlugin:
-
-  cdef object plugin_callback
-  cdef bytes plugin_name
-
-
-cdef grpc_metadata_credentials_plugin _c_plugin(CredentialsMetadataPlugin plugin)
-
-
-cdef class AuthMetadataContext:
-
-  cdef grpc_auth_metadata_context context
-
-
-cdef int plugin_get_metadata(
-    void *state, grpc_auth_metadata_context context,
-    grpc_credentials_plugin_metadata_cb cb, void *user_data,
-    grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
-    size_t *num_creds_md, grpc_status_code *status,
-    const char **error_details) with gil
-
-cdef void plugin_destroy_c_plugin_state(void *state) with gil
+  # the cert config related state is used only if this credentials is
+  # created with cert config/fetcher
+  cdef object initial_cert_config
+  cdef object cert_config_fetcher
+  # whether C-core has asked for the initial_cert_config
+  cdef bint initial_cert_config_fetched

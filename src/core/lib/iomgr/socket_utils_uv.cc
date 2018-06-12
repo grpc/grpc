@@ -16,17 +16,28 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_UV
 
-#include <uv.h>
-
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 
 #include <grpc/support/log.h>
 
-const char *grpc_inet_ntop(int af, const void *src, char *dst, size_t size) {
+#include <uv.h>
+
+uint16_t grpc_htons(uint16_t hostshort) { return htons(hostshort); }
+
+uint16_t grpc_ntohs(uint16_t netshort) { return ntohs(netshort); }
+
+int grpc_inet_pton(int af, const char* src, void* dst) {
+  return inet_pton(af, src, dst);
+}
+
+const char* grpc_inet_ntop(int af, const void* src, char* dst, size_t size) {
   uv_inet_ntop(af, src, dst, size);
   return dst;
 }

@@ -24,7 +24,7 @@
 #include <random>
 #include <vector>
 
-#include <grpc++/support/config.h>
+#include <grpcpp/support/config.h>
 
 namespace grpc {
 namespace testing {
@@ -102,7 +102,7 @@ class InterarrivalTimer {
   std::vector<time_table::const_iterator> thread_posns_;
   time_table random_table_;
 };
-}
-}
+}  // namespace testing
+}  // namespace grpc
 
 #endif

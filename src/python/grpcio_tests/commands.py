@@ -108,6 +108,57 @@ class TestLite(setuptools.Command):
         self.distribution.fetch_build_eggs(self.distribution.tests_require)
 
 
+class TestGevent(setuptools.Command):
+    """Command to run tests w/gevent."""
+
+    BANNED_TESTS = (
+        # These tests send a lot of RPCs and are really slow on gevent.  They will
+        # eventually succeed, but need to dig into performance issues.
+        'unit._cython._no_messages_server_completion_queue_per_call_test.Test.test_rpcs',
+        'unit._cython._no_messages_single_server_completion_queue_test.Test.test_rpcs',
+        # I have no idea why this doesn't work in gevent, but it shouldn't even be
+        # using the c-core
+        'testing._client_test.ClientTest.test_infinite_request_stream_real_time',
+        # TODO(https://github.com/grpc/grpc/issues/14789) enable this test
+        'unit._server_ssl_cert_config_test',
+        # TODO(https://github.com/grpc/grpc/issues/14901) enable this test
+        'protoc_plugin._python_plugin_test.PythonPluginTest',
+        # Beta API is unsupported for gevent
+        'protoc_plugin.beta_python_plugin_test',
+        'unit.beta._beta_features_test',
+    )
+    description = 'run tests with gevent.  Assumes grpc/gevent are installed'
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        # distutils requires this override.
+        pass
+
+    def run(self):
+        from gevent import monkey
+        monkey.patch_all()
+
+        import tests
+
+        import grpc.experimental.gevent
+        grpc.experimental.gevent.init_gevent()
+
+        import gevent
+
+        import tests
+        loader = tests.Loader()
+        loader.loadTestsFromNames(['tests'])
+        runner = tests.Runner()
+        runner.skip_tests(self.BANNED_TESTS)
+        result = gevent.spawn(runner.run, loader.suite)
+        result.join()
+        if not result.value.wasSuccessful():
+            sys.exit('Test failure')
+
+
 class RunInterop(test.test):
 
     description = 'run interop test client/server'

@@ -20,29 +20,48 @@ Thread.abort_on_exception = true
 
 include GRPC::Core::ConnectivityStates
 
-def watch_state(ch)
+def watch_state(ch, sleep_time)
   thd = Thread.new do
     state = ch.connectivity_state(false)
     fail "non-idle state: #{state}" unless state == IDLE
     ch.watch_connectivity_state(IDLE, Time.now + 360)
   end
-  sleep 0.1
+  # sleep to get the thread into the middle of a
+  # "watch connectivity state" call
+  sleep sleep_time
   thd.kill
 end
 
-def main
+def run_multiple_killed_watches(num_threads, sleep_time)
   channels = []
-  10.times do
+  num_threads.times do
     ch = GRPC::Core::Channel.new('dummy_host',
                                  nil, :this_channel_is_insecure)
-    watch_state(ch)
+    watch_state(ch, sleep_time)
     channels << ch
   end
 
   # checking state should still be safe to call
   channels.each do |c|
-    fail unless c.connectivity_state(false) == FATAL_FAILURE
+    connectivity_state = c.connectivity_state(false)
+    # The state should be FATAL_FAILURE in the case that it was interrupted
+    # while watching connectivity state, and IDLE if it we never started
+    # watching the channel's connectivity state
+    unless [FATAL_FAILURE, IDLE].include?(connectivity_state)
+      fail "unexpected connectivity state: #{connectivity_state}"
+    end
   end
+end
+
+def main
+  STDERR.puts '10 iterations, sleep 0.1 before killing thread'
+  run_multiple_killed_watches(10, 0.1)
+  STDERR.puts '1000 iterations, sleep 0.001 before killing thread'
+  run_multiple_killed_watches(1000, 0.001)
+  STDERR.puts '10000 iterations, sleep 0.00001 before killing thread'
+  run_multiple_killed_watches(10_000, 0.00001)
+  STDERR.puts '20000 iterations, sleep 0.00001 before killing thread'
+  run_multiple_killed_watches(20_000, 0.00001)
 end
 
 main

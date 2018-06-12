@@ -19,48 +19,71 @@
 #ifndef GRPC_CORE_LIB_BACKOFF_BACKOFF_H
 #define GRPC_CORE_LIB_BACKOFF_BACKOFF_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/exec_ctx.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+namespace grpc_core {
 
-typedef struct {
-  /// const:  how long to wait after the first failure before retrying
-  grpc_millis initial_connect_timeout;
-  /// const: factor with which to multiply backoff after a failed retry
-  double multiplier;
-  /// const: amount to randomize backoffs
-  double jitter;
-  /// const: minimum time between retries in milliseconds
-  grpc_millis min_timeout_millis;
-  /// const: maximum time between retries in milliseconds
-  grpc_millis max_timeout_millis;
+/// Implementation of the backoff mechanism described in
+/// doc/connection-backoff.md
+class BackOff {
+ public:
+  class Options;
 
-  /// random number generator
-  uint32_t rng_state;
+  /// Initialize backoff machinery - does not need to be destroyed
+  explicit BackOff(const Options& options);
 
-  /// current retry timeout in milliseconds
-  grpc_millis current_timeout_millis;
-} grpc_backoff;
+  /// Returns the time at which the next attempt should start.
+  grpc_millis NextAttemptTime();
 
-/// Initialize backoff machinery - does not need to be destroyed
-void grpc_backoff_init(grpc_backoff *backoff,
-                       grpc_millis initial_connect_timeout, double multiplier,
-                       double jitter, grpc_millis min_timeout_millis,
-                       grpc_millis max_timeout_millis);
+  /// Reset the backoff, so the next value returned by NextAttemptTime()
+  /// will be the time of the second attempt (rather than the Nth).
+  void Reset();
 
-/// Begin retry loop: returns a timespec for the NEXT retry
-grpc_millis grpc_backoff_begin(grpc_exec_ctx *exec_ctx, grpc_backoff *backoff);
-/// Step a retry loop: returns a timespec for the NEXT retry
-grpc_millis grpc_backoff_step(grpc_exec_ctx *exec_ctx, grpc_backoff *backoff);
-/// Reset the backoff, so the next grpc_backoff_step will be a
-/// grpc_backoff_begin
-/// instead
-void grpc_backoff_reset(grpc_backoff *backoff);
+  void SetRandomSeed(unsigned int seed);
 
-#ifdef __cplusplus
-}
-#endif
+  class Options {
+   public:
+    Options& set_initial_backoff(grpc_millis initial_backoff) {
+      initial_backoff_ = initial_backoff;
+      return *this;
+    }
+    Options& set_multiplier(double multiplier) {
+      multiplier_ = multiplier;
+      return *this;
+    }
+    Options& set_jitter(double jitter) {
+      jitter_ = jitter;
+      return *this;
+    }
+    Options& set_max_backoff(grpc_millis max_backoff) {
+      max_backoff_ = max_backoff;
+      return *this;
+    }
+    /// how long to wait after the first failure before retrying
+    grpc_millis initial_backoff() const { return initial_backoff_; }
+    /// factor with which to multiply backoff after a failed retry
+    double multiplier() const { return multiplier_; }
+    /// amount to randomize backoffs
+    double jitter() const { return jitter_; }
+    /// maximum time between retries
+    grpc_millis max_backoff() const { return max_backoff_; }
 
+   private:
+    grpc_millis initial_backoff_;
+    double multiplier_;
+    double jitter_;
+    grpc_millis max_backoff_;
+  };  // class Options
+
+ private:
+  const Options options_;
+  uint32_t rng_state_;
+  bool initial_;
+  /// current delay before retries
+  grpc_millis current_backoff_;
+};
+
+}  // namespace grpc_core
 #endif /* GRPC_CORE_LIB_BACKOFF_BACKOFF_H */

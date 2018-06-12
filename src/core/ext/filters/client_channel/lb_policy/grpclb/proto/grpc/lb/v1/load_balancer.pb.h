@@ -14,6 +14,11 @@ extern "C" {
 #endif
 
 /* Struct definitions */
+typedef struct _grpc_lb_v1_ServerList {
+    pb_callback_t servers;
+/* @@protoc_insertion_point(struct:grpc_lb_v1_ServerList) */
+} grpc_lb_v1_ServerList;
+
 typedef struct _grpc_lb_v1_ClientStatsPerToken {
     pb_callback_t load_balance_token;
     bool has_num_calls;
@@ -79,13 +84,6 @@ typedef struct _grpc_lb_v1_InitialLoadBalanceResponse {
 /* @@protoc_insertion_point(struct:grpc_lb_v1_InitialLoadBalanceResponse) */
 } grpc_lb_v1_InitialLoadBalanceResponse;
 
-typedef struct _grpc_lb_v1_ServerList {
-    pb_callback_t servers;
-    bool has_expiration_interval;
-    grpc_lb_v1_Duration expiration_interval;
-/* @@protoc_insertion_point(struct:grpc_lb_v1_ServerList) */
-} grpc_lb_v1_ServerList;
-
 typedef struct _grpc_lb_v1_LoadBalanceRequest {
     bool has_initial_request;
     grpc_lb_v1_InitialLoadBalanceRequest initial_request;
@@ -113,7 +111,7 @@ typedef struct _grpc_lb_v1_LoadBalanceResponse {
 #define grpc_lb_v1_ClientStats_init_default      {false, grpc_lb_v1_Timestamp_init_default, false, 0, false, 0, false, 0, false, 0, {{NULL}, NULL}}
 #define grpc_lb_v1_LoadBalanceResponse_init_default {false, grpc_lb_v1_InitialLoadBalanceResponse_init_default, false, grpc_lb_v1_ServerList_init_default}
 #define grpc_lb_v1_InitialLoadBalanceResponse_init_default {false, "", false, grpc_lb_v1_Duration_init_default}
-#define grpc_lb_v1_ServerList_init_default       {{{NULL}, NULL}, false, grpc_lb_v1_Duration_init_default}
+#define grpc_lb_v1_ServerList_init_default       {{{NULL}, NULL}}
 #define grpc_lb_v1_Server_init_default           {false, {0, {0}}, false, 0, false, "", false, 0}
 #define grpc_lb_v1_Duration_init_zero            {false, 0, false, 0}
 #define grpc_lb_v1_Timestamp_init_zero           {false, 0, false, 0}
@@ -123,10 +121,11 @@ typedef struct _grpc_lb_v1_LoadBalanceResponse {
 #define grpc_lb_v1_ClientStats_init_zero         {false, grpc_lb_v1_Timestamp_init_zero, false, 0, false, 0, false, 0, false, 0, {{NULL}, NULL}}
 #define grpc_lb_v1_LoadBalanceResponse_init_zero {false, grpc_lb_v1_InitialLoadBalanceResponse_init_zero, false, grpc_lb_v1_ServerList_init_zero}
 #define grpc_lb_v1_InitialLoadBalanceResponse_init_zero {false, "", false, grpc_lb_v1_Duration_init_zero}
-#define grpc_lb_v1_ServerList_init_zero          {{{NULL}, NULL}, false, grpc_lb_v1_Duration_init_zero}
+#define grpc_lb_v1_ServerList_init_zero          {{{NULL}, NULL}}
 #define grpc_lb_v1_Server_init_zero              {false, {0, {0}}, false, 0, false, "", false, 0}
 
 /* Field tags (for use in manual encoding/decoding) */
+#define grpc_lb_v1_ServerList_servers_tag        1
 #define grpc_lb_v1_ClientStatsPerToken_load_balance_token_tag 1
 #define grpc_lb_v1_ClientStatsPerToken_num_calls_tag 2
 #define grpc_lb_v1_Duration_seconds_tag          1
@@ -146,8 +145,6 @@ typedef struct _grpc_lb_v1_LoadBalanceResponse {
 #define grpc_lb_v1_ClientStats_calls_finished_with_drop_tag 8
 #define grpc_lb_v1_InitialLoadBalanceResponse_load_balancer_delegate_tag 1
 #define grpc_lb_v1_InitialLoadBalanceResponse_client_stats_report_interval_tag 2
-#define grpc_lb_v1_ServerList_servers_tag        1
-#define grpc_lb_v1_ServerList_expiration_interval_tag 3
 #define grpc_lb_v1_LoadBalanceRequest_initial_request_tag 1
 #define grpc_lb_v1_LoadBalanceRequest_client_stats_tag 2
 #define grpc_lb_v1_LoadBalanceResponse_initial_response_tag 1
@@ -162,7 +159,7 @@ extern const pb_field_t grpc_lb_v1_ClientStatsPerToken_fields[3];
 extern const pb_field_t grpc_lb_v1_ClientStats_fields[7];
 extern const pb_field_t grpc_lb_v1_LoadBalanceResponse_fields[3];
 extern const pb_field_t grpc_lb_v1_InitialLoadBalanceResponse_fields[3];
-extern const pb_field_t grpc_lb_v1_ServerList_fields[3];
+extern const pb_field_t grpc_lb_v1_ServerList_fields[2];
 extern const pb_field_t grpc_lb_v1_Server_fields[5];
 
 /* Maximum encoded size of messages (where known) */

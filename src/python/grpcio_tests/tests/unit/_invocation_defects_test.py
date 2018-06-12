@@ -15,11 +15,10 @@
 import itertools
 import threading
 import unittest
-from concurrent import futures
 
 import grpc
-from grpc.framework.foundation import logging_pool
 
+from tests.unit import test_common
 from tests.unit.framework.common import test_constants
 from tests.unit.framework.common import test_control
 
@@ -32,6 +31,7 @@ _UNARY_UNARY = '/test/UnaryUnary'
 _UNARY_STREAM = '/test/UnaryStream'
 _STREAM_UNARY = '/test/StreamUnary'
 _STREAM_STREAM = '/test/StreamStream'
+_DEFECTIVE_GENERIC_RPC_HANDLER = '/test/DefectiveGenericRpcHandler'
 
 
 class _Callback(object):
@@ -62,7 +62,10 @@ class _Handler(object):
     def handle_unary_unary(self, request, servicer_context):
         self._control.control()
         if servicer_context is not None:
-            servicer_context.set_trailing_metadata((('testkey', 'testvalue',),))
+            servicer_context.set_trailing_metadata(((
+                'testkey',
+                'testvalue',
+            ),))
         return request
 
     def handle_unary_stream(self, request, servicer_context):
@@ -71,7 +74,10 @@ class _Handler(object):
             yield request
         self._control.control()
         if servicer_context is not None:
-            servicer_context.set_trailing_metadata((('testkey', 'testvalue',),))
+            servicer_context.set_trailing_metadata(((
+                'testkey',
+                'testvalue',
+            ),))
 
     def handle_stream_unary(self, request_iterator, servicer_context):
         if servicer_context is not None:
@@ -83,17 +89,26 @@ class _Handler(object):
             response_elements.append(request)
         self._control.control()
         if servicer_context is not None:
-            servicer_context.set_trailing_metadata((('testkey', 'testvalue',),))
+            servicer_context.set_trailing_metadata(((
+                'testkey',
+                'testvalue',
+            ),))
         return b''.join(response_elements)
 
     def handle_stream_stream(self, request_iterator, servicer_context):
         self._control.control()
         if servicer_context is not None:
-            servicer_context.set_trailing_metadata((('testkey', 'testvalue',),))
+            servicer_context.set_trailing_metadata(((
+                'testkey',
+                'testvalue',
+            ),))
         for request in request_iterator:
             self._control.control()
             yield request
         self._control.control()
+
+    def defective_generic_rpc_handler(self):
+        raise test_control.Defect()
 
 
 class _MethodHandler(grpc.RpcMethodHandler):
@@ -132,6 +147,8 @@ class _GenericHandler(grpc.GenericRpcHandler):
         elif handler_call_details.method == _STREAM_STREAM:
             return _MethodHandler(True, True, None, None, None, None, None,
                                   self._handler.handle_stream_stream)
+        elif handler_call_details.method == _DEFECTIVE_GENERIC_RPC_HANDLER:
+            return self._handler.defective_generic_rpc_handler()
         else:
             return None
 
@@ -148,10 +165,12 @@ class FailAfterFewIterationsCounter(object):
 
     def __next__(self):
         if self._current >= self._high:
-            raise Exception("This is a deliberate failure in a unit test.")
+            raise test_control.Defect()
         else:
             self._current += 1
             return self._bytestring
+
+    next = __next__
 
 
 def _unary_unary_multi_callable(channel):
@@ -176,14 +195,17 @@ def _stream_stream_multi_callable(channel):
     return channel.stream_stream(_STREAM_STREAM)
 
 
+def _defective_handler_multi_callable(channel):
+    return channel.unary_unary(_DEFECTIVE_GENERIC_RPC_HANDLER)
+
+
 class InvocationDefectsTest(unittest.TestCase):
 
     def setUp(self):
         self._control = test_control.PauseFailControl()
         self._handler = _Handler(self._control)
-        self._server_pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
 
-        self._server = grpc.server(self._server_pool)
+        self._server = test_common.test_server()
         port = self._server.add_insecure_port('[::]:0')
         self._server.add_generic_rpc_handlers((_GenericHandler(self._handler),))
         self._server.start()
@@ -200,8 +222,8 @@ class InvocationDefectsTest(unittest.TestCase):
         with self.assertRaises(grpc.RpcError):
             response = multi_callable(
                 requests,
-                metadata=(
-                    ('test', 'IterableStreamRequestBlockingUnaryResponse'),))
+                metadata=(('test',
+                           'IterableStreamRequestBlockingUnaryResponse'),))
 
     def testIterableStreamRequestFutureUnaryResponse(self):
         requests = [b'\x07\x08' for _ in range(test_constants.STREAM_LENGTH)]
@@ -234,6 +256,18 @@ class InvocationDefectsTest(unittest.TestCase):
         with self.assertRaises(grpc.RpcError):
             for _ in range(test_constants.STREAM_LENGTH // 2 + 1):
                 next(response_iterator)
+
+    def testDefectiveGenericRpcHandlerUnaryResponse(self):
+        request = b'\x07\x08'
+        multi_callable = _defective_handler_multi_callable(self._channel)
+
+        with self.assertRaises(grpc.RpcError) as exception_context:
+            response = multi_callable(
+                request,
+                metadata=(('test', 'DefectiveGenericRpcHandlerUnary'),))
+
+        self.assertIs(grpc.StatusCode.UNKNOWN,
+                      exception_context.exception.code())
 
 
 if __name__ == '__main__':

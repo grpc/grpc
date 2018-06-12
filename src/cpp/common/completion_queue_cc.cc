@@ -15,14 +15,14 @@
  *
  */
 
-#include <grpc++/completion_queue.h>
+#include <grpcpp/completion_queue.h>
 
 #include <memory>
 
-#include <grpc++/impl/grpc_library.h>
-#include <grpc++/support/time.h>
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
+#include <grpcpp/impl/grpc_library.h>
+#include <grpcpp/support/time.h>
 
 namespace grpc {
 
@@ -60,7 +60,7 @@ CompletionQueue::NextStatus CompletionQueue::AsyncNextInternal(
       case GRPC_QUEUE_SHUTDOWN:
         return SHUTDOWN;
       case GRPC_OP_COMPLETE:
-        auto cq_tag = static_cast<CompletionQueueTag*>(ev.tag);
+        auto cq_tag = static_cast<internal::CompletionQueueTag*>(ev.tag);
         *ok = ev.success != 0;
         *tag = cq_tag;
         if (cq_tag->FinalizeResult(tag, ok)) {
@@ -87,7 +87,7 @@ bool CompletionQueue::CompletionQueueTLSCache::Flush(void** tag, bool* ok) {
   flushed_ = true;
   if (grpc_completion_queue_thread_local_cache_flush(cq_->cq_, &res_tag,
                                                      &res)) {
-    auto cq_tag = static_cast<CompletionQueueTag*>(res_tag);
+    auto cq_tag = static_cast<internal::CompletionQueueTag*>(res_tag);
     *ok = res == 1;
     if (cq_tag->FinalizeResult(tag, ok)) {
       return true;

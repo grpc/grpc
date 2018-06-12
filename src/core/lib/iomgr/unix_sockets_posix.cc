@@ -15,6 +15,8 @@
  * limitations under the License.
  *
  */
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
@@ -30,18 +32,20 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/useful.h>
+
+#include "src/core/lib/gpr/useful.h"
 
 void grpc_create_socketpair_if_unix(int sv[2]) {
   GPR_ASSERT(socketpair(AF_UNIX, SOCK_STREAM, 0, sv) == 0);
 }
 
-grpc_error *grpc_resolve_unix_domain_address(const char *name,
-                                             grpc_resolved_addresses **addrs) {
-  struct sockaddr_un *un;
-  if (strlen(name) > GPR_ARRAY_SIZE(((struct sockaddr_un *)0)->sun_path) - 1) {
-    char *err_msg;
-    grpc_error *err;
+grpc_error* grpc_resolve_unix_domain_address(const char* name,
+                                             grpc_resolved_addresses** addrs) {
+  struct sockaddr_un* un;
+  if (strlen(name) >
+      GPR_ARRAY_SIZE(((struct sockaddr_un*)nullptr)->sun_path) - 1) {
+    char* err_msg;
+    grpc_error* err;
     gpr_asprintf(&err_msg,
                  "Path name should not have more than %" PRIuPTR " characters.",
                  GPR_ARRAY_SIZE(un->sun_path) - 1);
@@ -49,30 +53,34 @@ grpc_error *grpc_resolve_unix_domain_address(const char *name,
     gpr_free(err_msg);
     return err;
   }
-  *addrs =
-      (grpc_resolved_addresses *)gpr_malloc(sizeof(grpc_resolved_addresses));
+  *addrs = static_cast<grpc_resolved_addresses*>(
+      gpr_malloc(sizeof(grpc_resolved_addresses)));
   (*addrs)->naddrs = 1;
-  (*addrs)->addrs =
-      (grpc_resolved_address *)gpr_malloc(sizeof(grpc_resolved_address));
-  un = (struct sockaddr_un *)(*addrs)->addrs->addr;
+  (*addrs)->addrs = static_cast<grpc_resolved_address*>(
+      gpr_malloc(sizeof(grpc_resolved_address)));
+  un = reinterpret_cast<struct sockaddr_un*>((*addrs)->addrs->addr);
   un->sun_family = AF_UNIX;
-  strcpy(un->sun_path, name);
-  (*addrs)->addrs->len = strlen(un->sun_path) + sizeof(un->sun_family) + 1;
+  strncpy(un->sun_path, name, sizeof(un->sun_path));
+  (*addrs)->addrs->len =
+      static_cast<socklen_t>(strlen(un->sun_path) + sizeof(un->sun_family) + 1);
   return GRPC_ERROR_NONE;
 }
 
-int grpc_is_unix_socket(const grpc_resolved_address *resolved_addr) {
-  const struct sockaddr *addr = (const struct sockaddr *)resolved_addr->addr;
+int grpc_is_unix_socket(const grpc_resolved_address* resolved_addr) {
+  const grpc_sockaddr* addr =
+      reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
   return addr->sa_family == AF_UNIX;
 }
 
 void grpc_unlink_if_unix_domain_socket(
-    const grpc_resolved_address *resolved_addr) {
-  const struct sockaddr *addr = (const struct sockaddr *)resolved_addr->addr;
+    const grpc_resolved_address* resolved_addr) {
+  const grpc_sockaddr* addr =
+      reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
   if (addr->sa_family != AF_UNIX) {
     return;
   }
-  struct sockaddr_un *un = (struct sockaddr_un *)resolved_addr->addr;
+  struct sockaddr_un* un = reinterpret_cast<struct sockaddr_un*>(
+      const_cast<char*>(resolved_addr->addr));
   struct stat st;
 
   if (stat(un->sun_path, &st) == 0 && (st.st_mode & S_IFMT) == S_IFSOCK) {
@@ -80,15 +88,16 @@ void grpc_unlink_if_unix_domain_socket(
   }
 }
 
-char *grpc_sockaddr_to_uri_unix_if_possible(
-    const grpc_resolved_address *resolved_addr) {
-  const struct sockaddr *addr = (const struct sockaddr *)resolved_addr->addr;
+char* grpc_sockaddr_to_uri_unix_if_possible(
+    const grpc_resolved_address* resolved_addr) {
+  const grpc_sockaddr* addr =
+      reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
   if (addr->sa_family != AF_UNIX) {
-    return NULL;
+    return nullptr;
   }
 
-  char *result;
-  gpr_asprintf(&result, "unix:%s", ((struct sockaddr_un *)addr)->sun_path);
+  char* result;
+  gpr_asprintf(&result, "unix:%s", ((struct sockaddr_un*)addr)->sun_path);
   return result;
 }
 

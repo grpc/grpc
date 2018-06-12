@@ -47,9 +47,10 @@ grpc_cc_library(
         "//:grpc",
         "//:grpc++",
         "//:grpc++_core_stats",
+        "//src/proto/grpc/testing:benchmark_service_proto",
         "//src/proto/grpc/testing:control_proto",
         "//src/proto/grpc/testing:payloads_proto",
-        "//src/proto/grpc/testing:services_proto",
+        "//src/proto/grpc/testing:worker_service_proto",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
@@ -74,7 +75,8 @@ grpc_cc_library(
         "//:grpc++",
         "//src/proto/grpc/testing:control_proto",
         "//src/proto/grpc/testing:messages_proto",
-        "//src/proto/grpc/testing:services_proto",
+        "//src/proto/grpc/testing:report_qps_scenario_service_proto",
+        "//src/proto/grpc/testing:worker_service_proto",
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
@@ -106,7 +108,7 @@ grpc_cc_library(
         "histogram.h",
         "stats.h",
     ],
-    deps = ["//:gpr"],
+    deps = ["//test/core/util:grpc_test_util"],
 )
 
 grpc_cc_test(

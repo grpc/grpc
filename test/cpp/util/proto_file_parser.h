@@ -21,7 +21,7 @@
 
 #include <memory>
 
-#include <grpc++/channel.h>
+#include <grpcpp/channel.h>
 
 #include "test/cpp/util/config_grpc_cli.h"
 #include "test/cpp/util/proto_reflection_descriptor_database.h"

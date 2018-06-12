@@ -16,15 +16,13 @@
  *
  */
 
-#include <grpc++/security/auth_context.h>
 #include <grpc/grpc_security.h>
+#include <grpcpp/security/auth_context.h>
 #include <gtest/gtest.h>
 #include "src/cpp/common/secure_auth_context.h"
 #include "test/cpp/util/string_ref_helper.h"
 
-extern "C" {
 #include "src/core/lib/security/context/security_context.h"
-}
 
 using ::grpc::testing::ToString;
 
@@ -42,7 +40,7 @@ class TestAuthPropertyIterator : public AuthPropertyIterator {
 class AuthPropertyIteratorTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    ctx_ = grpc_auth_context_create(NULL);
+    ctx_ = grpc_auth_context_create(nullptr);
     grpc_auth_context_add_cstring_property(ctx_, "name", "chapi");
     grpc_auth_context_add_cstring_property(ctx_, "name", "chapo");
     grpc_auth_context_add_cstring_property(ctx_, "foo", "bar");

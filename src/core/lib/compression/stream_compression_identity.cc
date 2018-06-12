@@ -16,11 +16,12 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/compression/stream_compression_identity.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 #define OUTPUT_BLOCK_SIZE (1024)
@@ -29,9 +30,9 @@
 static grpc_stream_compression_context identity_ctx = {
     &grpc_stream_compression_identity_vtable};
 
-static void grpc_stream_compression_pass_through(grpc_slice_buffer *in,
-                                                 grpc_slice_buffer *out,
-                                                 size_t *output_size,
+static void grpc_stream_compression_pass_through(grpc_slice_buffer* in,
+                                                 grpc_slice_buffer* out,
+                                                 size_t* output_size,
                                                  size_t max_output_size) {
   if (max_output_size >= in->length) {
     if (output_size) {
@@ -46,13 +47,13 @@ static void grpc_stream_compression_pass_through(grpc_slice_buffer *in,
   }
 }
 
-static bool grpc_stream_compress_identity(grpc_stream_compression_context *ctx,
-                                          grpc_slice_buffer *in,
-                                          grpc_slice_buffer *out,
-                                          size_t *output_size,
+static bool grpc_stream_compress_identity(grpc_stream_compression_context* ctx,
+                                          grpc_slice_buffer* in,
+                                          grpc_slice_buffer* out,
+                                          size_t* output_size,
                                           size_t max_output_size,
                                           grpc_stream_compression_flush flush) {
-  if (ctx == NULL) {
+  if (ctx == nullptr) {
     return false;
   }
   grpc_stream_compression_pass_through(in, out, output_size, max_output_size);
@@ -60,10 +61,10 @@ static bool grpc_stream_compress_identity(grpc_stream_compression_context *ctx,
 }
 
 static bool grpc_stream_decompress_identity(
-    grpc_stream_compression_context *ctx, grpc_slice_buffer *in,
-    grpc_slice_buffer *out, size_t *output_size, size_t max_output_size,
-    bool *end_of_context) {
-  if (ctx == NULL) {
+    grpc_stream_compression_context* ctx, grpc_slice_buffer* in,
+    grpc_slice_buffer* out, size_t* output_size, size_t max_output_size,
+    bool* end_of_context) {
+  if (ctx == nullptr) {
     return false;
   }
   grpc_stream_compression_pass_through(in, out, output_size, max_output_size);
@@ -73,17 +74,17 @@ static bool grpc_stream_decompress_identity(
   return true;
 }
 
-static grpc_stream_compression_context *
+static grpc_stream_compression_context*
 grpc_stream_compression_context_create_identity(
     grpc_stream_compression_method method) {
   GPR_ASSERT(method == GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS ||
              method == GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS);
   /* No context needed in this case. Use fake context instead. */
-  return (grpc_stream_compression_context *)&identity_ctx;
+  return &identity_ctx;
 }
 
 static void grpc_stream_compression_context_destroy_identity(
-    grpc_stream_compression_context *ctx) {
+    grpc_stream_compression_context* ctx) {
   return;
 }
 

@@ -22,9 +22,9 @@ import sys
 import tempfile
 import time
 
-
 # must be synchronized with test/core/utils/port_server_client.h
 _PORT_SERVER_PORT = 32766
+
 
 def start_port_server():
     # check if a compatible port server is running
@@ -33,9 +33,8 @@ def start_port_server():
     # otherwise, leave it up
     try:
         version = int(
-            urllib.urlopen(
-                'http://localhost:%d/version_number' %
-                _PORT_SERVER_PORT).read())
+            urllib.urlopen('http://localhost:%d/version_number' %
+                           _PORT_SERVER_PORT).read())
         logging.info('detected port server running version %d', version)
         running = True
     except Exception as e:
@@ -44,16 +43,16 @@ def start_port_server():
     if running:
         current_version = int(
             subprocess.check_output([
-                sys.executable, os.path.abspath(
-                    'tools/run_tests/python_utils/port_server.py'),
+                sys.executable,
+                os.path.abspath('tools/run_tests/python_utils/port_server.py'),
                 'dump_version'
             ]))
         logging.info('my port server is version %d', current_version)
         running = (version >= current_version)
         if not running:
             logging.info('port_server version mismatch: killing the old one')
-            urllib.urlopen('http://localhost:%d/quitquitquit' %
-                           _PORT_SERVER_PORT).read()
+            urllib.urlopen(
+                'http://localhost:%d/quitquitquit' % _PORT_SERVER_PORT).read()
             time.sleep(1)
     if not running:
         fd, logfile = tempfile.mkstemp()
@@ -62,7 +61,8 @@ def start_port_server():
         args = [
             sys.executable,
             os.path.abspath('tools/run_tests/python_utils/port_server.py'),
-            '-p', '%d' % _PORT_SERVER_PORT, '-l', logfile
+            '-p',
+            '%d' % _PORT_SERVER_PORT, '-l', logfile
         ]
         env = dict(os.environ)
         env['BUILD_ID'] = 'pleaseDontKillMeJenkins'
