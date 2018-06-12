@@ -328,6 +328,6 @@ grpc_arg grpc_auth_context_to_arg(grpc_auth_context* p) {
 
 grpc_auth_context* grpc_find_auth_context_in_args(
     const grpc_channel_args* channel_args) {
-  return grpc_channel_arg_find_and_get_pointer<grpc_auth_context>(
-      channel_args, GRPC_AUTH_CONTEXT_ARG);
+  return grpc_channel_arg_get_pointer<grpc_auth_context>(channel_args,
+                                                         GRPC_AUTH_CONTEXT_ARG);
 }

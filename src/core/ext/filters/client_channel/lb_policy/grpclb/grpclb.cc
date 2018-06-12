@@ -1046,7 +1046,7 @@ GrpcLb::GrpcLb(const grpc_lb_addresses* addresses,
   grpc_connectivity_state_init(&state_tracker_, GRPC_CHANNEL_IDLE, "grpclb");
   // Record server name.
   const char* server_uri =
-      grpc_channel_arg_find_and_get_string(args.args, GRPC_ARG_SERVER_URI);
+      grpc_channel_arg_get_string(args.args, GRPC_ARG_SERVER_URI);
   GPR_ASSERT(server_uri != nullptr);
   grpc_uri* uri = grpc_uri_parse(server_uri, true);
   GPR_ASSERT(uri->path[0] != '\0');
@@ -1058,10 +1058,10 @@ GrpcLb::GrpcLb(const grpc_lb_addresses* addresses,
   }
   grpc_uri_destroy(uri);
   // Record LB call timeout.
-  lb_call_timeout_ms_ = grpc_channel_arg_find_and_get_integer(
+  lb_call_timeout_ms_ = grpc_channel_arg_get_integer(
       args.args, GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS, {0, 0, INT_MAX});
   // Record fallback timeout.
-  lb_fallback_timeout_ms_ = grpc_channel_arg_find_and_get_integer(
+  lb_fallback_timeout_ms_ = grpc_channel_arg_get_integer(
       args.args, GRPC_ARG_GRPCLB_FALLBACK_TIMEOUT_MS,
       {GRPC_GRPCLB_DEFAULT_FALLBACK_TIMEOUT_MS, 0, INT_MAX});
   // Process channel args.
@@ -1285,8 +1285,8 @@ void GrpcLb::NotifyOnStateChangeLocked(grpc_connectivity_state* current,
 
 void GrpcLb::ProcessChannelArgsLocked(const grpc_channel_args& args) {
   const grpc_lb_addresses* addresses =
-      grpc_channel_arg_find_and_get_pointer<grpc_lb_addresses>(
-          &args, GRPC_ARG_LB_ADDRESSES);
+      grpc_channel_arg_get_pointer<grpc_lb_addresses>(&args,
+                                                      GRPC_ARG_LB_ADDRESSES);
   if (GPR_UNLIKELY(addresses == nullptr)) {
     // Ignore this update.
     gpr_log(
@@ -1861,8 +1861,8 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
       const LoadBalancingPolicy::Args& args) const override {
     /* Count the number of gRPC-LB addresses. There must be at least one. */
     grpc_lb_addresses* addresses =
-        grpc_channel_arg_find_and_get_pointer<grpc_lb_addresses>(
-            args.args, GRPC_ARG_LB_ADDRESSES);
+        grpc_channel_arg_get_pointer<grpc_lb_addresses>(args.args,
+                                                        GRPC_ARG_LB_ADDRESSES);
     if (addresses) {
       return nullptr;
     }
@@ -1893,7 +1893,7 @@ bool maybe_add_client_load_reporting_filter(grpc_channel_stack_builder* builder,
   const grpc_channel_args* args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
   const char* lb_policy =
-      grpc_channel_arg_find_and_get_string(args, GRPC_ARG_LB_POLICY_NAME);
+      grpc_channel_arg_get_string(args, GRPC_ARG_LB_POLICY_NAME);
   if (lb_policy != nullptr && strcmp(lb_policy, "grpclb") == 0) {
     return grpc_channel_stack_builder_append_filter(
         builder, (const grpc_channel_filter*)arg, nullptr, nullptr);

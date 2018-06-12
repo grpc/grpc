@@ -1450,7 +1450,7 @@ grpc_transport* grpc_create_cronet_transport(void* engine, const char* target,
   }
   strcpy(ct->host, target);
 
-  ct->use_packet_coalescing = grpc_channel_arg_find_and_get_bool(
+  ct->use_packet_coalescing = grpc_channel_arg_get_bool(
       args, GRPC_ARG_USE_CRONET_PACKET_COALESCING, true);
 
   return &ct->base;

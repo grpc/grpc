@@ -259,7 +259,7 @@ grpc_arg FakeResolverResponseGenerator::MakeChannelArg(
 
 FakeResolverResponseGenerator* FakeResolverResponseGenerator::GetFromArgs(
     const grpc_channel_args* args) {
-  return grpc_channel_arg_find_and_get_pointer<FakeResolverResponseGenerator>(
+  return grpc_channel_arg_get_pointer<FakeResolverResponseGenerator>(
       args, GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR);
 }
 

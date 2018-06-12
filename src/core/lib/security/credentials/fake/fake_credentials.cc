@@ -84,8 +84,8 @@ grpc_arg grpc_fake_transport_expected_targets_arg(char* expected_targets) {
 
 const char* grpc_fake_transport_get_expected_targets(
     const grpc_channel_args* args) {
-  return grpc_channel_arg_find_and_get_string(
-      args, GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS);
+  return grpc_channel_arg_get_string(args,
+                                     GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS);
 }
 
 /* -- Metadata-only test credentials. -- */

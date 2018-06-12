@@ -147,6 +147,6 @@ grpc_arg grpc_lb_addresses_create_channel_arg(
 
 grpc_lb_addresses* grpc_lb_addresses_find_channel_arg(
     const grpc_channel_args* channel_args) {
-  return grpc_channel_arg_find_and_get_pointer<grpc_lb_addresses>(
-      channel_args, GRPC_ARG_LB_ADDRESSES);
+  return grpc_channel_arg_get_pointer<grpc_lb_addresses>(channel_args,
+                                                         GRPC_ARG_LB_ADDRESSES);
 }

@@ -140,9 +140,9 @@ AresDnsResolver::AresDnsResolver(const ResolverArgs& args)
     dns_server_ = gpr_strdup(args.uri->authority);
   }
   channel_args_ = grpc_channel_args_copy(args.args);
-  request_service_config_ = !grpc_channel_arg_find_and_get_bool(
+  request_service_config_ = !grpc_channel_arg_get_bool(
       channel_args_, GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION, false);
-  min_time_between_resolutions_ = grpc_channel_arg_find_and_get_integer(
+  min_time_between_resolutions_ = grpc_channel_arg_get_integer(
       channel_args_, GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS,
       {1000, 0, INT_MAX});
   interested_parties_ = grpc_pollset_set_create();
