@@ -95,7 +95,7 @@ void grpc_resource_user_shutdown(grpc_resource_user* resource_user);
 
 /* Attempts to get quota (from the resource_user) to create 'thd_count' number
  * of threads. Returns true if successful (i.e the caller is now free to create
- * 'thd_count' number of threads or false if quota is not available */
+ * 'thd_count' number of threads) or false if quota is not available */
 bool grpc_resource_user_alloc_threads(grpc_resource_user* resource_user,
                                       int thd_count);
 /* Releases 'thd_count' worth of quota back to the resource user. The quota

@@ -26,10 +26,10 @@ struct grpc_resource_quota;
 
 namespace grpc {
 
-/// ResourceQuota represents a bound on memory usage by the gRPC library.
-/// A ResourceQuota can be attached to a server (via \a ServerBuilder),
+/// ResourceQuota represents a bound on memory and thread usage by the gRPC
+/// library. A ResourceQuota can be attached to a server (via \a ServerBuilder),
 /// or a client channel (via \a ChannelArguments).
-/// gRPC will attempt to keep memory used by all attached entities
+/// gRPC will attempt to keep memory and threads used by all attached entities
 /// below the ResourceQuota bound.
 class ResourceQuota final : private GrpcLibraryCodegen {
  public:
