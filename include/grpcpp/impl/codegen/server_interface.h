@@ -50,11 +50,15 @@ class ServerInterface : public internal::CallHook {
   virtual ~ServerInterface() {}
 
   /// \a Shutdown does the following things:
+  ///
   /// 1. Shutdown the server: deactivate all listening ports, mark it in
   ///    "shutdown mode" so that further call Request's or incoming RPC matches
   ///    are no longer allowed. Also return all Request'ed-but-not-yet-active
-  ///    calls as failed (!ok): note that this would even include default calls
-  ///    added automatically by the C++ API without the user's input.
+  ///    calls as failed (!ok). This refers to calls that have been requested
+  ///    at the server by the server-side library or application code but that
+  ///    have not yet been matched to incoming RPCs from the client. Note that
+  ///    this would even include default calls added automatically by the gRPC
+  ///    C++ API without the user's input (e.g., "Unimplemented RPC method")
   ///
   /// 2. Block until all rpc method handlers invoked automatically by the sync
   ///    API finish.
@@ -63,9 +67,12 @@ class ServerInterface : public internal::CallHook {
   ///    retrieved by Next) before \a deadline expires, this finishes
   ///    gracefully. Otherwise, forcefully cancel all pending calls associated
   ///    with the server after \a deadline expires. In the case of the sync API,
-  ///    if the RPC function for a streaming call has already been started an
+  ///    if the RPC function for a streaming call has already been started and
   ///    takes a week to complete, the RPC function won't be forcefully
-  ///    terminated (since that would leave state corrupt and incomplete).
+  ///    terminated (since that would leave state corrupt and incomplete) and
+  ///    the method handler will just keep running (which will prevent the
+  ///    server from completing the "join" operation that it needs to do at
+  ///    shutdown time).
   ///
   /// All completion queue associated with the server (for example, for async
   /// serving) must be shutdown *after* this method has returned:
