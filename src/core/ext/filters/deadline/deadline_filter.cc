@@ -289,11 +289,10 @@ static void client_start_transport_stream_op_batch(
 static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   server_call_data* calld = static_cast<server_call_data*>(elem->call_data);
-  // Get deadline from metadata and start the timer if needed.
   start_timer_if_needed(elem, calld->recv_initial_metadata->deadline);
   // Invoke the next callback.
-  calld->next_recv_initial_metadata_ready->cb(
-      calld->next_recv_initial_metadata_ready->cb_arg, error);
+  GRPC_CLOSURE_RUN(calld->next_recv_initial_metadata_ready,
+                   GRPC_ERROR_REF(error));
 }
 
 // Method for starting a call op for server filter.
