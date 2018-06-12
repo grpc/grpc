@@ -52,7 +52,7 @@ typedef struct CFStreamConnect {
 
   CFReadStreamRef read_stream;
   CFWriteStreamRef write_stream;
-  CFStreamHandle* stream_sync;
+  CFStreamHandle* stream_handle;
 
   grpc_timer alarm;
   grpc_closure on_alarm;
@@ -71,7 +71,7 @@ typedef struct CFStreamConnect {
 
 static void CFStreamConnectCleanup(CFStreamConnect* connect) {
   grpc_resource_quota_unref_internal(connect->resource_quota);
-  CFSTREAM_HANDLE_UNREF(connect->stream_sync, "async connect clean up");
+  CFSTREAM_HANDLE_UNREF(connect->stream_handle, "async connect clean up");
   CFRelease(connect->read_stream);
   CFRelease(connect->write_stream);
   gpr_mu_destroy(&connect->mu);
@@ -131,7 +131,7 @@ static void OnOpen(void* arg, grpc_error* error) {
       if (error == GRPC_ERROR_NONE) {
         *endpoint = grpc_cfstream_endpoint_create(
             connect->read_stream, connect->write_stream, connect->addr_name,
-            connect->resource_quota, connect->stream_sync);
+            connect->resource_quota, connect->stream_handle);
       }
     } else {
       GRPC_ERROR_REF(error);
@@ -170,8 +170,8 @@ static void CFStreamClientConnect(grpc_closure* closure, grpc_endpoint** ep,
   gpr_mu_init(&connect->mu);
 
   if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: asynchronously connecting",
-            connect->addr_name);
+    gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %p, %s: asynchronously connecting",
+            connect, connect->addr_name);
   }
 
   grpc_resource_quota* resource_quota = grpc_resource_quota_create(NULL);
@@ -197,11 +197,11 @@ static void CFStreamClientConnect(grpc_closure* closure, grpc_endpoint** ep,
   CFRelease(host);
   connect->read_stream = read_stream;
   connect->write_stream = write_stream;
-  connect->stream_sync =
+  connect->stream_handle =
       CFStreamHandle::CreateStreamHandle(read_stream, write_stream);
   GRPC_CLOSURE_INIT(&connect->on_open, OnOpen, static_cast<void*>(connect),
                     grpc_schedule_on_exec_ctx);
-  connect->stream_sync->NotifyOnOpen(&connect->on_open);
+  connect->stream_handle->NotifyOnOpen(&connect->on_open);
   GRPC_CLOSURE_INIT(&connect->on_alarm, OnAlarm, connect,
                     grpc_schedule_on_exec_ctx);
   gpr_mu_lock(&connect->mu);
