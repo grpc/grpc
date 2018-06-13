@@ -142,7 +142,7 @@ struct pollable {
   // The following implements LRU-eviction cache of fds in this pollable
   cached_fd fd_cache[MAX_FDS_IN_CACHE];
   int fd_cache_size;
-  uint64_t fd_cache_counter; // Recency timer tick counter
+  uint64_t fd_cache_counter;  // Recency timer tick counter
 };
 
 static const char* pollable_type_string(pollable_type t) {
