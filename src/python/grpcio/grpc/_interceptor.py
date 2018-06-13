@@ -215,6 +215,8 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
                     metadata=new_metadata,
                     credentials=new_credentials)
                 return _UnaryOutcome(response, call)
+            except grpc.RpcError:
+                raise
             except Exception as exception:  # pylint:disable=broad-except
                 return _FailureOutcome(exception, sys.exc_info()[2])
 
@@ -306,6 +308,8 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
                     metadata=new_metadata,
                     credentials=new_credentials)
                 return _UnaryOutcome(response, call)
+            except grpc.RpcError:
+                raise
             except Exception as exception:  # pylint:disable=broad-except
                 return _FailureOutcome(exception, sys.exc_info()[2])
 
