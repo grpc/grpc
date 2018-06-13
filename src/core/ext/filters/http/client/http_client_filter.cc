@@ -437,13 +437,12 @@ static void destroy_call_elem(grpc_call_element* elem,
                               grpc_closure* ignored) {}
 
 static grpc_mdelem scheme_from_args(const grpc_channel_args* channel_args) {
-  size_t i;
   grpc_mdelem valid_schemes[] = {GRPC_MDELEM_SCHEME_HTTP,
                                  GRPC_MDELEM_SCHEME_HTTPS};
   char* scheme =
       grpc_channel_args_get_string(channel_args, GRPC_ARG_HTTP2_SCHEME);
   if (scheme != nullptr) {
-    for (i = 0; i < GPR_ARRAY_SIZE(valid_schemes); i++) {
+    for (size_t i = 0; i < GPR_ARRAY_SIZE(valid_schemes); i++) {
       if (0 == grpc_slice_str_cmp(GRPC_MDVALUE(valid_schemes[i]), scheme)) {
         return valid_schemes[i];
       }
