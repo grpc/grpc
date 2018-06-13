@@ -343,29 +343,50 @@ static void BM_CallStackInit(benchmark::State& state) {
 typedef FilterFixture<nullptr, 0> NoFilter;
 typedef FilterBM<NoFilter> NoFilterBM;
 BENCHMARK_TEMPLATE(BM_CallStackInit, NoFilterBM);
-// typedef FilterFixture<&dummy_filter::dummy_filter, 0> DummyFilter;
-// BENCHMARK_TEMPLATE(BM_CallStackInit, DummyFilter);
-// typedef FilterFixture<&grpc_client_channel_filter, 0> ClientChannelFilter;
-// BENCHMARK_TEMPLATE(BM_CallStackInit, ClientChannelFilter);
-// typedef FilterFixture<&grpc_message_compress_filter, CHECKS_NOT_LAST>
-// CompressFilter; BENCHMARK_TEMPLATE(BM_CallStackInit, CompressFilter); typedef
-// FilterFixture<&grpc_client_deadline_filter, CHECKS_NOT_LAST>
-//     ClientDeadlineFilter;
-// BENCHMARK_TEMPLATE(BM_CallStackInit, ClientDeadlineFilter);
-// typedef FilterFixture<&grpc_server_deadline_filter, CHECKS_NOT_LAST>
-//     ServerDeadlineFilter;
-// BENCHMARK_TEMPLATE(BM_CallStackInit, ServerDeadlineFilter);
-// typedef FilterFixture<&grpc_http_client_filter, CHECKS_NOT_LAST |
-// REQUIRES_TRANSPORT>
-//     HttpClientFilter;
-// BENCHMARK_TEMPLATE(BM_CallStackInit, HttpClientFilter);
-// typedef FilterFixture<&grpc_http_server_filter, CHECKS_NOT_LAST>
-// HttpServerFilter; BENCHMARK_TEMPLATE(BM_CallStackInit, HttpServerFilter);
-// typedef FilterFixture<&grpc_message_size_filter, CHECKS_NOT_LAST>
-// MessageSizeFilter; BENCHMARK_TEMPLATE(BM_CallStackInit, MessageSizeFilter);
-// typedef FilterFixture<&grpc_server_load_reporting_filter, CHECKS_NOT_LAST>
-//     LoadReportingFilter;
-// BENCHMARK_TEMPLATE(BM_CallStackInit, LoadReportingFilter);
+
+typedef FilterFixture<&dummy_filter::dummy_filter, 0> DummyFilter;
+typedef FilterBM<DummyFilter> DummyFilterBM;
+BENCHMARK_TEMPLATE(BM_CallStackInit, DummyFilterBM);
+
+typedef FilterFixture<&grpc_client_channel_filter, 0> ClientChannelFilter;
+typedef FilterBM<ClientChannelFilter> ClientChannelFilterBM;
+BENCHMARK_TEMPLATE(BM_CallStackInit, ClientChannelFilterBM);
+
+typedef FilterFixture<&grpc_message_compress_filter, CHECKS_NOT_LAST> 
+CompressFilter;
+typedef FilterBM<CompressFilter> CompressFilterBM; 
+BENCHMARK_TEMPLATE(BM_CallStackInit, CompressFilterBM); 
+
+typedef
+FilterFixture<&grpc_client_deadline_filter, CHECKS_NOT_LAST>
+    ClientDeadlineFilter;
+typedef FilterBM<ClientDeadlineFilter> ClientDeadlineFilterBM;
+BENCHMARK_TEMPLATE(BM_CallStackInit, ClientDeadlineFilterBM);
+
+typedef FilterFixture<&grpc_server_deadline_filter, CHECKS_NOT_LAST>
+    ServerDeadlineFilter;
+typedef FilterBM<ServerDeadlineFilter> ServerDeadlineFilterBM;
+BENCHMARK_TEMPLATE(BM_CallStackInit, ServerDeadlineFilterBM);
+
+typedef FilterFixture<&grpc_http_client_filter, CHECKS_NOT_LAST |
+REQUIRES_TRANSPORT>
+    HttpClientFilter;
+typedef FilterBM<HttpClientFilter> HttpClientFilterBM;
+BENCHMARK_TEMPLATE(BM_CallStackInit, HttpClientFilterBM);
+
+typedef FilterFixture<&grpc_http_server_filter, CHECKS_NOT_LAST> HttpServerFilter;
+typedef FilterBM<HttpServerFilter> HttpServerFilterBM;
+BENCHMARK_TEMPLATE(BM_CallStackInit, HttpServerFilterBM);
+
+typedef FilterFixture<&grpc_message_size_filter, CHECKS_NOT_LAST>
+MessageSizeFilter; 
+typedef FilterBM<MessageSizeFilter> MessageSizeFilterBM;
+BENCHMARK_TEMPLATE(BM_CallStackInit, MessageSizeFilterBM);
+
+typedef FilterFixture<&grpc_server_load_reporting_filter, CHECKS_NOT_LAST>
+    ServerLoadReportingFilter;
+typedef FilterBM<ServerLoadReportingFilter> ServerLoadReportingFilterBM;
+BENCHMARK_TEMPLATE(BM_CallStackInit, ServerLoadReportingFilterBM);
 
 // Test a filter's start_transport_stream_op_batch in isolation. FilterFixture
 // specifies the filter under test (use the FilterFixture<> template to specify
