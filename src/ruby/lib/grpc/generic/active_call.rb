@@ -205,14 +205,13 @@ module GRPC
     def send_status(code = OK, details = '', assert_finished = false,
                     metadata: {})
       send_initial_metadata
-      ops = {
-        SEND_STATUS_FROM_SERVER => Struct::Status.new(code, details, metadata)
-      }
+      status = Struct::Status.new(code, details, metadata)
+      ops = { SEND_STATUS_FROM_SERVER => status }
       ops[RECV_CLOSE_ON_SERVER] = nil if assert_finished
       @call.run_batch(ops)
       set_output_stream_done
 
-      nil
+      status
     end
 
     # Intended for use on server-side calls when a single request from
@@ -233,12 +232,13 @@ module GRPC
 
       payload = @marshal.call(req)
       ops[SEND_MESSAGE] = payload
-      ops[SEND_STATUS_FROM_SERVER] = Struct::Status.new(
-        code, details, trailing_metadata)
+      status = Struct::Status.new(code, details, trailing_metadata)
+      ops[SEND_STATUS_FROM_SERVER] = status
       ops[RECV_CLOSE_ON_SERVER] = nil
 
       @call.run_batch(ops)
       set_output_stream_done
+      status
     end
 
     # remote_read reads a response from the remote endpoint.
