@@ -1372,7 +1372,7 @@ plugins: $(PROTOC_PLUGINS)
 
 privatelibs: privatelibs_c privatelibs_cxx
 
-privatelibs_c:  $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libz.a $(LIBDIR)/$(CONFIG)/libares.a $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a
+privatelibs_c:  $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libcxxabi.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libz.a $(LIBDIR)/$(CONFIG)/libares.a $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a
 pc_c: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc
 
 pc_c_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc
@@ -2847,6 +2847,11 @@ $(OBJDIR)/$(CONFIG)/%.o : %.cc
 	$(Q) mkdir -p `dirname $@`
 	$(Q) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
+$(OBJDIR)/$(CONFIG)/%.o : %.cpp
+	$(E) "[CXX]     Compiling $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
+
 install: install_c install_cxx install-plugins install-certs
 
 install_c: install-headers_c install-static_c install-shared_c
@@ -3158,6 +3163,49 @@ ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(LIBALTS_TEST_UTIL_OBJS:.o=.dep)
 endif
+endif
+
+
+LIBCXXABI_SRC = \
+    third_party/libcxxabi/src/abort_message.cpp \
+    third_party/libcxxabi/src/cxa_aux_runtime.cpp \
+    third_party/libcxxabi/src/cxa_default_handlers.cpp \
+    third_party/libcxxabi/src/cxa_demangle.cpp \
+    third_party/libcxxabi/src/cxa_exception_storage.cpp \
+    third_party/libcxxabi/src/cxa_guard.cpp \
+    third_party/libcxxabi/src/cxa_handlers.cpp \
+    third_party/libcxxabi/src/cxa_noexception.cpp \
+    third_party/libcxxabi/src/cxa_thread_atexit.cpp \
+    third_party/libcxxabi/src/cxa_unexpected.cpp \
+    third_party/libcxxabi/src/cxa_vector.cpp \
+    third_party/libcxxabi/src/cxa_virtual.cpp \
+    third_party/libcxxabi/src/fallback_malloc.cpp \
+    third_party/libcxxabi/src/private_typeinfo.cpp \
+    third_party/libcxxabi/src/stdlib_exception.cpp \
+    third_party/libcxxabi/src/stdlib_new_delete.cpp \
+    third_party/libcxxabi/src/stdlib_stdexcept.cpp \
+    third_party/libcxxabi/src/stdlib_typeinfo.cpp \
+
+PUBLIC_HEADERS_C += \
+
+LIBCXXABI_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBCXXABI_SRC))))
+
+$(LIBCXXABI_OBJS): CPPFLAGS += -D_LIBCPP_DISABLE_EXTERN_TEMPLATE -D_LIBCXXABI_BUILDING_LIBRARY -D_LIBCXXABI_NO_EXCEPTIONS -Ithird_party/libcxxabi/include -nostdinc++ -Ithird_party/libcxx/include -Wno-unused-but-set-variable -Wno-c++14-compat -fvisibility=hidden
+
+$(LIBDIR)/$(CONFIG)/libcxxabi.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP)  $(LIBCXXABI_OBJS) 
+	$(E) "[AR]      Creating $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libcxxabi.a
+	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libcxxabi.a $(LIBCXXABI_OBJS) 
+ifeq ($(SYSTEM),Darwin)
+	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libcxxabi.a
+endif
+
+
+
+
+ifneq ($(NO_DEPS),true)
+-include $(LIBCXXABI_OBJS:.o=.dep)
 endif
 
 
