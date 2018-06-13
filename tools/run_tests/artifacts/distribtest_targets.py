@@ -303,7 +303,6 @@ def targets():
         CppDistribTest('linux', 'x64', 'jessie', 'cmake_as_submodule'),
         CppDistribTest('windows', 'x86', testcase='cmake'),
         CppDistribTest('windows', 'x86', testcase='cmake_as_externalproject'),
-        CSharpDistribTest('linux', 'x64', 'wheezy'),
         CSharpDistribTest('linux', 'x64', 'jessie'),
         CSharpDistribTest('linux', 'x86', 'jessie'),
         CSharpDistribTest('linux', 'x64', 'centos7'),

@@ -35,7 +35,9 @@ NSString *host = @"grpc-test.sandbox.googleapis.com";
 - (void)viewDidLoad {
   [super viewDidLoad];
 
+#ifndef GRPC_CFSTREAM
   [GRPCConnectivityMonitor registerObserver:self selector:@selector(reachabilityChanged:)];
+#endif
 }
 
 - (void)reachabilityChanged:(NSNotification *)note {

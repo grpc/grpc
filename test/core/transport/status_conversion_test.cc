@@ -33,12 +33,7 @@
 #define HTTP2_STATUS_TO_GRPC_STATUS(a, b) \
   GPR_ASSERT(grpc_http2_status_to_grpc_status(a) == (b))
 
-int main(int argc, char** argv) {
-  int i;
-
-  grpc_test_init(argc, argv);
-  grpc_init();
-
+static void test_grpc_status_to_http2_error() {
   GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_OK, GRPC_HTTP2_NO_ERROR);
   GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_CANCELLED, GRPC_HTTP2_CANCEL);
   GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_UNKNOWN, GRPC_HTTP2_INTERNAL_ERROR);
@@ -65,7 +60,9 @@ int main(int argc, char** argv) {
   GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_UNAVAILABLE,
                              GRPC_HTTP2_REFUSED_STREAM);
   GRPC_STATUS_TO_HTTP2_ERROR(GRPC_STATUS_DATA_LOSS, GRPC_HTTP2_INTERNAL_ERROR);
+}
 
+static void test_grpc_status_to_http2_status() {
   GRPC_STATUS_TO_HTTP2_STATUS(GRPC_STATUS_OK, 200);
   GRPC_STATUS_TO_HTTP2_STATUS(GRPC_STATUS_CANCELLED, 200);
   GRPC_STATUS_TO_HTTP2_STATUS(GRPC_STATUS_UNKNOWN, 200);
@@ -83,7 +80,9 @@ int main(int argc, char** argv) {
   GRPC_STATUS_TO_HTTP2_STATUS(GRPC_STATUS_INTERNAL, 200);
   GRPC_STATUS_TO_HTTP2_STATUS(GRPC_STATUS_UNAVAILABLE, 200);
   GRPC_STATUS_TO_HTTP2_STATUS(GRPC_STATUS_DATA_LOSS, 200);
+}
 
+static void test_http2_error_to_grpc_status() {
   const grpc_millis before_deadline = GRPC_MILLIS_INF_FUTURE;
   HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_NO_ERROR, before_deadline,
                              GRPC_STATUS_INTERNAL);
@@ -144,7 +143,9 @@ int main(int argc, char** argv) {
                              GRPC_STATUS_RESOURCE_EXHAUSTED);
   HTTP2_ERROR_TO_GRPC_STATUS(GRPC_HTTP2_INADEQUATE_SECURITY, after_deadline,
                              GRPC_STATUS_PERMISSION_DENIED);
+}
 
+static void test_http2_status_to_grpc_status() {
   HTTP2_STATUS_TO_GRPC_STATUS(200, GRPC_STATUS_OK);
   HTTP2_STATUS_TO_GRPC_STATUS(400, GRPC_STATUS_INVALID_ARGUMENT);
   HTTP2_STATUS_TO_GRPC_STATUS(401, GRPC_STATUS_UNAUTHENTICATED);
@@ -157,6 +158,18 @@ int main(int argc, char** argv) {
   HTTP2_STATUS_TO_GRPC_STATUS(500, GRPC_STATUS_UNKNOWN);
   HTTP2_STATUS_TO_GRPC_STATUS(503, GRPC_STATUS_UNAVAILABLE);
   HTTP2_STATUS_TO_GRPC_STATUS(504, GRPC_STATUS_DEADLINE_EXCEEDED);
+}
+
+int main(int argc, char** argv) {
+  int i;
+
+  grpc_test_init(argc, argv);
+  grpc_init();
+
+  test_grpc_status_to_http2_error();
+  test_grpc_status_to_http2_status();
+  test_http2_error_to_grpc_status();
+  test_http2_status_to_grpc_status();
 
   /* check all status values can be converted */
   for (i = 0; i <= 999; i++) {

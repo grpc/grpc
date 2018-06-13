@@ -227,8 +227,17 @@ struct grpc_call {
 grpc_core::TraceFlag grpc_call_error_trace(false, "call_error");
 grpc_core::TraceFlag grpc_compression_trace(false, "compression");
 
-#define CALL_STACK_FROM_CALL(call) ((grpc_call_stack*)((call) + 1))
-#define CALL_FROM_CALL_STACK(call_stack) (((grpc_call*)(call_stack)) - 1)
+/* Given a size, round up to the next multiple of sizeof(void*) */
+#define ROUND_UP_TO_ALIGNMENT_SIZE(x) \
+  (((x) + GPR_MAX_ALIGNMENT - 1u) & ~(GPR_MAX_ALIGNMENT - 1u))
+
+#define CALL_STACK_FROM_CALL(call)   \
+  (grpc_call_stack*)((char*)(call) + \
+                     ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)))
+#define CALL_FROM_CALL_STACK(call_stack) \
+  (grpc_call*)(((char*)(call_stack)) -   \
+               ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)))
+
 #define CALL_ELEM_FROM_CALL(call, idx) \
   grpc_call_stack_element(CALL_STACK_FROM_CALL(call), idx)
 #define CALL_FROM_TOP_ELEM(top_elem) \
@@ -291,8 +300,9 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
   size_t initial_size = grpc_channel_get_call_size_estimate(args->channel);
   GRPC_STATS_INC_CALL_INITIAL_SIZE(initial_size);
   gpr_arena* arena = gpr_arena_create(initial_size);
-  call = static_cast<grpc_call*>(gpr_arena_alloc(
-      arena, sizeof(grpc_call) + channel_stack->call_stack_size));
+  call = static_cast<grpc_call*>(
+      gpr_arena_alloc(arena, ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)) +
+                                 channel_stack->call_stack_size));
   gpr_ref_init(&call->ext_ref, 1);
   call->arena = arena;
   grpc_call_combiner_init(&call->call_combiner);
