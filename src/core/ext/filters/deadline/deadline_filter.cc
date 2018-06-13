@@ -128,25 +128,21 @@ static void cancel_timer_if_needed(grpc_deadline_state* deadline_state) {
   }
 }
 
-// Callback run when we receive trailing metadata.
-static void recv_trailing_metadata_ready(void* arg, grpc_error* error) {
+// Callback run when the call is complete.
+static void on_complete(void* arg, grpc_error* error) {
   grpc_deadline_state* deadline_state = static_cast<grpc_deadline_state*>(arg);
   cancel_timer_if_needed(deadline_state);
-  // Invoke the original callback.
-  GRPC_CLOSURE_RUN(deadline_state->original_recv_trailing_metadata_ready,
-                   GRPC_ERROR_REF(error));
+  // Invoke the next callback.
+  GRPC_CLOSURE_RUN(deadline_state->next_on_complete, GRPC_ERROR_REF(error));
 }
 
-// Inject our own recv_trailing_metadata_ready callback into op.
-static void inject_recv_trailing_metadata_ready(
-    grpc_deadline_state* deadline_state, grpc_transport_stream_op_batch* op) {
-  deadline_state->original_recv_trailing_metadata_ready =
-      op->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
-  GRPC_CLOSURE_INIT(&deadline_state->recv_trailing_metadata_ready,
-                    recv_trailing_metadata_ready, deadline_state,
+// Inject our own on_complete callback into op.
+static void inject_on_complete_cb(grpc_deadline_state* deadline_state,
+                                  grpc_transport_stream_op_batch* op) {
+  deadline_state->next_on_complete = op->on_complete;
+  GRPC_CLOSURE_INIT(&deadline_state->on_complete, on_complete, deadline_state,
                     grpc_schedule_on_exec_ctx);
-  op->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
-      &deadline_state->recv_trailing_metadata_ready;
+  op->on_complete = &deadline_state->on_complete;
 }
 
 // Callback and associated state for starting the timer after call stack
@@ -230,7 +226,7 @@ void grpc_deadline_state_client_start_transport_stream_op_batch(
     // Make sure we know when the call is complete, so that we can cancel
     // the timer.
     if (op->recv_trailing_metadata) {
-      inject_recv_trailing_metadata_ready(deadline_state, op);
+      inject_on_complete_cb(deadline_state, op);
     }
   }
 }
@@ -326,7 +322,7 @@ static void server_start_transport_stream_op_batch(
     // the client never sends trailing metadata, because this is the
     // hook that tells us when the call is complete on the server side.
     if (op->recv_trailing_metadata) {
-      inject_recv_trailing_metadata_ready(&calld->base.deadline_state, op);
+      inject_on_complete_cb(&calld->base.deadline_state, op);
     }
   }
   // Chain to next filter.

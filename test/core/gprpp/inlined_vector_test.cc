@@ -27,12 +27,10 @@ namespace testing {
 TEST(InlinedVectorTest, CreateAndIterate) {
   const int kNumElements = 9;
   InlinedVector<int, 2> v;
-  EXPECT_TRUE(v.empty());
   for (int i = 0; i < kNumElements; ++i) {
     v.push_back(i);
   }
   EXPECT_EQ(static_cast<size_t>(kNumElements), v.size());
-  EXPECT_FALSE(v.empty());
   for (int i = 0; i < kNumElements; ++i) {
     EXPECT_EQ(i, v[i]);
     EXPECT_EQ(i, &v[i] - &v[0]);  // Ensure contiguous allocation.

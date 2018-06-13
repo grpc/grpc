@@ -925,10 +925,6 @@ static bool op_can_be_run(grpc_transport_stream_op_batch* curr_op,
       result = false;
     }
     /* Check if every op that was asked for is done. */
-    /* TODO(muxi): We should not consider the recv ops here, since they
-     * have their own callbacks.  We should invoke a batch's on_complete
-     * as soon as all of the batch's send ops are complete, even if
-     * there are still recv ops pending. */
     else if (curr_op->send_initial_metadata &&
              !stream_state->state_callback_received[OP_SEND_INITIAL_METADATA]) {
       CRONET_LOG(GPR_DEBUG, "Because");
@@ -1284,20 +1280,12 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
              op_can_be_run(stream_op, s, &oas->state,
                            OP_RECV_TRAILING_METADATA)) {
     CRONET_LOG(GPR_DEBUG, "running: %p  OP_RECV_TRAILING_METADATA", oas);
-    grpc_error* error = GRPC_ERROR_NONE;
-    if (stream_state->state_op_done[OP_CANCEL_ERROR]) {
-      error = GRPC_ERROR_REF(stream_state->cancel_error);
-    } else if (stream_state->state_op_done[OP_FAILED]) {
-      error = make_error_with_desc(GRPC_STATUS_UNAVAILABLE, "Unavailable.");
-    } else if (oas->s->state.rs.trailing_metadata_valid) {
+    if (oas->s->state.rs.trailing_metadata_valid) {
       grpc_chttp2_incoming_metadata_buffer_publish(
           &oas->s->state.rs.trailing_metadata,
           stream_op->payload->recv_trailing_metadata.recv_trailing_metadata);
       stream_state->rs.trailing_metadata_valid = false;
     }
-    GRPC_CLOSURE_SCHED(
-        stream_op->payload->recv_trailing_metadata.recv_trailing_metadata_ready,
-        error);
     stream_state->state_op_done[OP_RECV_TRAILING_METADATA] = true;
     result = ACTION_TAKEN_NO_CALLBACK;
   } else if (stream_op->cancel_stream &&
@@ -1409,11 +1397,6 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
     if (op->recv_message) {
       GRPC_CLOSURE_SCHED(op->payload->recv_message.recv_message_ready,
                          GRPC_ERROR_CANCELLED);
-    }
-    if (op->recv_trailing_metadata) {
-      GRPC_CLOSURE_SCHED(
-          op->payload->recv_trailing_metadata.recv_trailing_metadata_ready,
-          GRPC_ERROR_CANCELLED);
     }
     GRPC_CLOSURE_SCHED(op->on_complete, GRPC_ERROR_CANCELLED);
     return;
