@@ -5,9 +5,9 @@ platform :ios, '8.0'
 GRPC_LOCAL_SRC = '../../../..'
 
 target 'ConnectivityTestingApp' do
-  pod 'gRPC', :path => GRPC_LOCAL_SRC
-  pod 'gRPC-Core', :path => GRPC_LOCAL_SRC
-  pod 'gRPC-ProtoRPC', :path => GRPC_LOCAL_SRC
+  pod 'gRPC/CFStream', :path => GRPC_LOCAL_SRC
+  pod 'gRPC-Core/CFStream-Implementation', :path => GRPC_LOCAL_SRC
+  pod 'gRPC-ProtoRPC/CFStream', :path => GRPC_LOCAL_SRC
   pod 'gRPC-RxLibrary', :path => GRPC_LOCAL_SRC
   pod 'Protobuf', :path => "#{GRPC_LOCAL_SRC}/third_party/protobuf"
   pod 'BoringSSL', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"

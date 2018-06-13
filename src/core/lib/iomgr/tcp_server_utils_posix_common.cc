@@ -105,7 +105,7 @@ static grpc_error* add_socket_to_server(grpc_tcp_server* s, int fd,
     s->tail = sp;
     sp->server = s;
     sp->fd = fd;
-    sp->emfd = grpc_fd_create(fd, name);
+    sp->emfd = grpc_fd_create(fd, name, false);
     memcpy(&sp->addr, addr, sizeof(grpc_resolved_address));
     sp->port = port;
     sp->port_index = port_index;
