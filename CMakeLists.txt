@@ -425,7 +425,6 @@ endif()
 add_dependencies(buildtests_c h2_full+trace_test)
 add_dependencies(buildtests_c h2_full+workarounds_test)
 add_dependencies(buildtests_c h2_http_proxy_test)
-add_dependencies(buildtests_c h2_https_proxy_test)
 add_dependencies(buildtests_c h2_load_reporting_test)
 add_dependencies(buildtests_c h2_oauth2_test)
 add_dependencies(buildtests_c h2_proxy_test)
@@ -14854,35 +14853,6 @@ target_include_directories(h2_http_proxy_test
 )
 
 target_link_libraries(h2_http_proxy_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  end2end_tests
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(h2_https_proxy_test
-  test/core/end2end/fixtures/h2_https_proxy.cc
-)
-
-
-target_include_directories(h2_https_proxy_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-)
-
-target_link_libraries(h2_https_proxy_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_tests
   grpc_test_util

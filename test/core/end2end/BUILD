@@ -50,10 +50,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "http_proxy",
     srcs = ["fixtures/http_proxy_fixture.cc"],
-    hdrs = [
-        "end2end_tests.h",
-        "fixtures/http_proxy_fixture.h"
-    ],
+    hdrs = ["fixtures/http_proxy_fixture.h"],
     language = "C++",
     deps = [
         "//:gpr",
