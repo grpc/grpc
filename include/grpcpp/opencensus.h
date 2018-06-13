@@ -20,12 +20,12 @@
 #define GRPCPP_OPENCENSUS_H
 
 namespace grpc {
+// These symbols in this file will not be included in the binary unless
+// grpc_opencensus_plugin build target was added as a dependency. At the moment
+// it is only setup to be built with Bazel.
 
 // Registers the OpenCensus plugin with gRPC, so that it will be used for future
-// RPCs. This must be called before any views are created on the measures
-// defined below. This will only be enabled if the binary includes the
-// grpc_opencensus_plugin build target as a dependency. At the moment it is only
-// setup to be built with Bazel.
+// RPCs. This must be called before any views are created.
 void RegisterOpenCensusPlugin();
 
 // RPC stats definitions, defined by
