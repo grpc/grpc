@@ -34,69 +34,69 @@ namespace Grpc.Testing {
   {
     static readonly string __ServiceName = "grpc.testing.TestService";
 
-    static readonly grpc::Marshaller<global::Grpc.Testing.Empty> __Marshaller_Empty = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.Empty.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Grpc.Testing.SimpleRequest> __Marshaller_SimpleRequest = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.SimpleRequest.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Grpc.Testing.SimpleResponse> __Marshaller_SimpleResponse = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.SimpleResponse.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Grpc.Testing.StreamingOutputCallRequest> __Marshaller_StreamingOutputCallRequest = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.StreamingOutputCallRequest.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Grpc.Testing.StreamingOutputCallResponse> __Marshaller_StreamingOutputCallResponse = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.StreamingOutputCallResponse.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Grpc.Testing.StreamingInputCallRequest> __Marshaller_StreamingInputCallRequest = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.StreamingInputCallRequest.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Grpc.Testing.StreamingInputCallResponse> __Marshaller_StreamingInputCallResponse = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.StreamingInputCallResponse.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Grpc.Testing.Empty> __Marshaller_grpc_testing_Empty = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.Empty.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Grpc.Testing.SimpleRequest> __Marshaller_grpc_testing_SimpleRequest = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.SimpleRequest.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Grpc.Testing.SimpleResponse> __Marshaller_grpc_testing_SimpleResponse = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.SimpleResponse.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Grpc.Testing.StreamingOutputCallRequest> __Marshaller_grpc_testing_StreamingOutputCallRequest = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.StreamingOutputCallRequest.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Grpc.Testing.StreamingOutputCallResponse> __Marshaller_grpc_testing_StreamingOutputCallResponse = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.StreamingOutputCallResponse.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Grpc.Testing.StreamingInputCallRequest> __Marshaller_grpc_testing_StreamingInputCallRequest = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.StreamingInputCallRequest.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Grpc.Testing.StreamingInputCallResponse> __Marshaller_grpc_testing_StreamingInputCallResponse = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.StreamingInputCallResponse.Parser.ParseFrom);
 
     static readonly grpc::Method<global::Grpc.Testing.Empty, global::Grpc.Testing.Empty> __Method_EmptyCall = new grpc::Method<global::Grpc.Testing.Empty, global::Grpc.Testing.Empty>(
         grpc::MethodType.Unary,
         __ServiceName,
         "EmptyCall",
-        __Marshaller_Empty,
-        __Marshaller_Empty);
+        __Marshaller_grpc_testing_Empty,
+        __Marshaller_grpc_testing_Empty);
 
     static readonly grpc::Method<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse> __Method_UnaryCall = new grpc::Method<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse>(
         grpc::MethodType.Unary,
         __ServiceName,
         "UnaryCall",
-        __Marshaller_SimpleRequest,
-        __Marshaller_SimpleResponse);
+        __Marshaller_grpc_testing_SimpleRequest,
+        __Marshaller_grpc_testing_SimpleResponse);
 
     static readonly grpc::Method<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse> __Method_CacheableUnaryCall = new grpc::Method<global::Grpc.Testing.SimpleRequest, global::Grpc.Testing.SimpleResponse>(
         grpc::MethodType.Unary,
         __ServiceName,
         "CacheableUnaryCall",
-        __Marshaller_SimpleRequest,
-        __Marshaller_SimpleResponse);
+        __Marshaller_grpc_testing_SimpleRequest,
+        __Marshaller_grpc_testing_SimpleResponse);
 
     static readonly grpc::Method<global::Grpc.Testing.StreamingOutputCallRequest, global::Grpc.Testing.StreamingOutputCallResponse> __Method_StreamingOutputCall = new grpc::Method<global::Grpc.Testing.StreamingOutputCallRequest, global::Grpc.Testing.StreamingOutputCallResponse>(
         grpc::MethodType.ServerStreaming,
         __ServiceName,
         "StreamingOutputCall",
-        __Marshaller_StreamingOutputCallRequest,
-        __Marshaller_StreamingOutputCallResponse);
+        __Marshaller_grpc_testing_StreamingOutputCallRequest,
+        __Marshaller_grpc_testing_StreamingOutputCallResponse);
 
     static readonly grpc::Method<global::Grpc.Testing.StreamingInputCallRequest, global::Grpc.Testing.StreamingInputCallResponse> __Method_StreamingInputCall = new grpc::Method<global::Grpc.Testing.StreamingInputCallRequest, global::Grpc.Testing.StreamingInputCallResponse>(
         grpc::MethodType.ClientStreaming,
         __ServiceName,
         "StreamingInputCall",
-        __Marshaller_StreamingInputCallRequest,
-        __Marshaller_StreamingInputCallResponse);
+        __Marshaller_grpc_testing_StreamingInputCallRequest,
+        __Marshaller_grpc_testing_StreamingInputCallResponse);
 
     static readonly grpc::Method<global::Grpc.Testing.StreamingOutputCallRequest, global::Grpc.Testing.StreamingOutputCallResponse> __Method_FullDuplexCall = new grpc::Method<global::Grpc.Testing.StreamingOutputCallRequest, global::Grpc.Testing.StreamingOutputCallResponse>(
         grpc::MethodType.DuplexStreaming,
         __ServiceName,
         "FullDuplexCall",
-        __Marshaller_StreamingOutputCallRequest,
-        __Marshaller_StreamingOutputCallResponse);
+        __Marshaller_grpc_testing_StreamingOutputCallRequest,
+        __Marshaller_grpc_testing_StreamingOutputCallResponse);
 
     static readonly grpc::Method<global::Grpc.Testing.StreamingOutputCallRequest, global::Grpc.Testing.StreamingOutputCallResponse> __Method_HalfDuplexCall = new grpc::Method<global::Grpc.Testing.StreamingOutputCallRequest, global::Grpc.Testing.StreamingOutputCallResponse>(
         grpc::MethodType.DuplexStreaming,
         __ServiceName,
         "HalfDuplexCall",
-        __Marshaller_StreamingOutputCallRequest,
-        __Marshaller_StreamingOutputCallResponse);
+        __Marshaller_grpc_testing_StreamingOutputCallRequest,
+        __Marshaller_grpc_testing_StreamingOutputCallResponse);
 
     static readonly grpc::Method<global::Grpc.Testing.Empty, global::Grpc.Testing.Empty> __Method_UnimplementedCall = new grpc::Method<global::Grpc.Testing.Empty, global::Grpc.Testing.Empty>(
         grpc::MethodType.Unary,
         __ServiceName,
         "UnimplementedCall",
-        __Marshaller_Empty,
-        __Marshaller_Empty);
+        __Marshaller_grpc_testing_Empty,
+        __Marshaller_grpc_testing_Empty);
 
     /// <summary>Service descriptor</summary>
     public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
@@ -548,14 +548,14 @@ namespace Grpc.Testing {
   {
     static readonly string __ServiceName = "grpc.testing.UnimplementedService";
 
-    static readonly grpc::Marshaller<global::Grpc.Testing.Empty> __Marshaller_Empty = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.Empty.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Grpc.Testing.Empty> __Marshaller_grpc_testing_Empty = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.Empty.Parser.ParseFrom);
 
     static readonly grpc::Method<global::Grpc.Testing.Empty, global::Grpc.Testing.Empty> __Method_UnimplementedCall = new grpc::Method<global::Grpc.Testing.Empty, global::Grpc.Testing.Empty>(
         grpc::MethodType.Unary,
         __ServiceName,
         "UnimplementedCall",
-        __Marshaller_Empty,
-        __Marshaller_Empty);
+        __Marshaller_grpc_testing_Empty,
+        __Marshaller_grpc_testing_Empty);
 
     /// <summary>Service descriptor</summary>
     public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
@@ -669,23 +669,23 @@ namespace Grpc.Testing {
   {
     static readonly string __ServiceName = "grpc.testing.ReconnectService";
 
-    static readonly grpc::Marshaller<global::Grpc.Testing.ReconnectParams> __Marshaller_ReconnectParams = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.ReconnectParams.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Grpc.Testing.Empty> __Marshaller_Empty = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.Empty.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Grpc.Testing.ReconnectInfo> __Marshaller_ReconnectInfo = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.ReconnectInfo.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Grpc.Testing.ReconnectParams> __Marshaller_grpc_testing_ReconnectParams = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.ReconnectParams.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Grpc.Testing.Empty> __Marshaller_grpc_testing_Empty = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.Empty.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Grpc.Testing.ReconnectInfo> __Marshaller_grpc_testing_ReconnectInfo = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.ReconnectInfo.Parser.ParseFrom);
 
     static readonly grpc::Method<global::Grpc.Testing.ReconnectParams, global::Grpc.Testing.Empty> __Method_Start = new grpc::Method<global::Grpc.Testing.ReconnectParams, global::Grpc.Testing.Empty>(
         grpc::MethodType.Unary,
         __ServiceName,
         "Start",
-        __Marshaller_ReconnectParams,
-        __Marshaller_Empty);
+        __Marshaller_grpc_testing_ReconnectParams,
+        __Marshaller_grpc_testing_Empty);
 
     static readonly grpc::Method<global::Grpc.Testing.Empty, global::Grpc.Testing.ReconnectInfo> __Method_Stop = new grpc::Method<global::Grpc.Testing.Empty, global::Grpc.Testing.ReconnectInfo>(
         grpc::MethodType.Unary,
         __ServiceName,
         "Stop",
-        __Marshaller_Empty,
-        __Marshaller_ReconnectInfo);
+        __Marshaller_grpc_testing_Empty,
+        __Marshaller_grpc_testing_ReconnectInfo);
 
     /// <summary>Service descriptor</summary>
     public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor

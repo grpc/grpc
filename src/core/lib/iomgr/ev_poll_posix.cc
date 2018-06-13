@@ -330,7 +330,8 @@ static void unref_by(grpc_fd* fd, int n) {
   }
 }
 
-static grpc_fd* fd_create(int fd, const char* name) {
+static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
+  GPR_DEBUG_ASSERT(track_err == false);
   grpc_fd* r = static_cast<grpc_fd*>(gpr_malloc(sizeof(*r)));
   gpr_mu_init(&r->mu);
   gpr_atm_rel_store(&r->refst, 1);
@@ -424,13 +425,11 @@ static int fd_wrapped_fd(grpc_fd* fd) {
 }
 
 static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
-                      bool already_closed, const char* reason) {
+                      const char* reason) {
   fd->on_done_closure = on_done;
   fd->released = release_fd != nullptr;
   if (release_fd != nullptr) {
     *release_fd = fd->fd;
-    fd->released = true;
-  } else if (already_closed) {
     fd->released = true;
   }
   gpr_mu_lock(&fd->mu);
@@ -551,6 +550,11 @@ static void fd_notify_on_write(grpc_fd* fd, grpc_closure* closure) {
   gpr_mu_lock(&fd->mu);
   notify_on_locked(fd, &fd->write_closure, closure);
   gpr_mu_unlock(&fd->mu);
+}
+
+static void fd_notify_on_error(grpc_fd* fd, grpc_closure* closure) {
+  gpr_log(GPR_ERROR, "Polling engine does not support tracking errors.");
+  abort();
 }
 
 static uint32_t fd_begin_poll(grpc_fd* fd, grpc_pollset* pollset,
@@ -1710,6 +1714,7 @@ static void shutdown_engine(void) {
 
 static const grpc_event_engine_vtable vtable = {
     sizeof(grpc_pollset),
+    false,
 
     fd_create,
     fd_wrapped_fd,
@@ -1717,6 +1722,7 @@ static const grpc_event_engine_vtable vtable = {
     fd_shutdown,
     fd_notify_on_read,
     fd_notify_on_write,
+    fd_notify_on_error,
     fd_is_shutdown,
     fd_get_read_notifier_pollset,
 

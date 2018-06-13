@@ -24,12 +24,6 @@ sys.path.append(
         os.path.dirname(sys.argv[0]), '..', 'run_tests', 'python_utils'))
 import jobset
 
-GRPC_CHECKS = [
-    'modernize-use-nullptr',
-    'google-build-namespaces',
-    'google-build-explicit-make-pair',
-]
-
 extra_args = [
     '-x',
     'c++',
@@ -57,8 +51,6 @@ args = argp.parse_args()
 
 cmdline = [
     clang_tidy,
-    '--checks=-*,%s' % ','.join(GRPC_CHECKS),
-    '--warnings-as-errors=%s' % ','.join(GRPC_CHECKS)
 ] + ['--extra-arg-before=%s' % arg for arg in extra_args]
 
 if args.fix:
