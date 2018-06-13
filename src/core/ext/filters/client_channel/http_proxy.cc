@@ -43,8 +43,7 @@
  * credentials if present in the 'http_proxy' env var, otherwise leaves it
  * unchanged. It is caller's responsibility to gpr_free user_cred.
  */
-static char* get_http_proxy_server(char** user_cred,
-                                   const grpc_channel_args* args) {
+static char* get_http_proxy_server(char** user_cred) {
   GPR_ASSERT(user_cred != nullptr);
   char* proxy_name = nullptr;
   char** authority_strs = nullptr;
@@ -108,7 +107,7 @@ static bool proxy_mapper_map_name(grpc_proxy_mapper* mapper,
     return false;
   }
   char* user_cred = nullptr;
-  *name_to_resolve = get_http_proxy_server(&user_cred, args);
+  *name_to_resolve = get_http_proxy_server(&user_cred);
   if (*name_to_resolve == nullptr) return false;
   char* no_proxy_str = nullptr;
   grpc_uri* uri = grpc_uri_parse(server_uri, false /* suppress_errors */);
