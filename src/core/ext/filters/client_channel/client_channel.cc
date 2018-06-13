@@ -2066,8 +2066,8 @@ static void on_complete(void* arg, grpc_error* error) {
     // Add closure for the completed pending batch, if any.
     add_closure_for_completed_pending_batch(elem, batch_data, retry_state,
                                             GRPC_ERROR_REF(error), &closures);
-    // If needed, add a callback to start_retriable_subchannel_batches() to
-    // start any replay or pending send ops on the subchannel call.
+    // If needed, add a callback to start any replay or pending send ops on
+    // the subchannel call.
     if (!retry_state->completed_recv_trailing_metadata) {
       add_closures_for_replay_or_pending_send_ops(elem, batch_data, retry_state,
                                                   &closures);
