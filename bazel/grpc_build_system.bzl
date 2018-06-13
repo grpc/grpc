@@ -62,7 +62,7 @@ def _maybe_update_cc_library_hdrs(hdrs):
 def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
                     external_deps = [], deps = [], standalone = False,
                     language = "C++", testonly = False, visibility = None,
-                    alwayslink = 0):
+                    alwayslink = 0, data = []):
   copts = []
   if language.upper() == "C":
     copts = if_not_windows(["-std=c99"])
@@ -87,6 +87,7 @@ def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
         "include"
     ],
     alwayslink = alwayslink,
+    data = data,
   )
 
 def grpc_proto_plugin(name, srcs = [], deps = []):
