@@ -29,15 +29,15 @@ namespace Grpc.Testing {
   {
     static readonly string __ServiceName = "grpc.testing.ReportQpsScenarioService";
 
-    static readonly grpc::Marshaller<global::Grpc.Testing.ScenarioResult> __Marshaller_ScenarioResult = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.ScenarioResult.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Grpc.Testing.Void> __Marshaller_Void = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.Void.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Grpc.Testing.ScenarioResult> __Marshaller_grpc_testing_ScenarioResult = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.ScenarioResult.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Grpc.Testing.Void> __Marshaller_grpc_testing_Void = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Grpc.Testing.Void.Parser.ParseFrom);
 
     static readonly grpc::Method<global::Grpc.Testing.ScenarioResult, global::Grpc.Testing.Void> __Method_ReportScenario = new grpc::Method<global::Grpc.Testing.ScenarioResult, global::Grpc.Testing.Void>(
         grpc::MethodType.Unary,
         __ServiceName,
         "ReportScenario",
-        __Marshaller_ScenarioResult,
-        __Marshaller_Void);
+        __Marshaller_grpc_testing_ScenarioResult,
+        __Marshaller_grpc_testing_Void);
 
     /// <summary>Service descriptor</summary>
     public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor

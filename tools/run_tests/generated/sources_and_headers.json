@@ -2755,6 +2755,28 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
+    "name": "bm_channel", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_channel.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc++_test_config", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
+      "grpc_benchmark", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
     "name": "bm_chttp2_hpack", 
     "src": [
       "test/cpp/microbenchmarks/bm_chttp2_hpack.cc"
@@ -6567,6 +6589,26 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
+      "grpc++", 
+      "grpc++_test_config", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "cancel_ares_query_test", 
+    "src": [
+      "test/cpp/naming/cancel_ares_query_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -8768,6 +8810,7 @@
       "test/core/end2end/tests/max_message_length.cc", 
       "test/core/end2end/tests/negative_deadline.cc", 
       "test/core/end2end/tests/network_status_change.cc", 
+      "test/core/end2end/tests/no_error_on_hotpath.cc", 
       "test/core/end2end/tests/no_logging.cc", 
       "test/core/end2end/tests/no_op.cc", 
       "test/core/end2end/tests/payload.cc", 
@@ -8868,6 +8911,7 @@
       "test/core/end2end/tests/max_message_length.cc", 
       "test/core/end2end/tests/negative_deadline.cc", 
       "test/core/end2end/tests/network_status_change.cc", 
+      "test/core/end2end/tests/no_error_on_hotpath.cc", 
       "test/core/end2end/tests/no_logging.cc", 
       "test/core/end2end/tests/no_op.cc", 
       "test/core/end2end/tests/payload.cc", 
@@ -9766,6 +9810,32 @@
       "src/core/lib/transport/timeout_encoding.h", 
       "src/core/lib/transport/transport.h", 
       "src/core/lib/transport/transport_impl.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_base_headers", 
+      "grpc_base_headers"
+    ], 
+    "headers": [
+      "src/core/lib/iomgr/cfstream_handle.h", 
+      "src/core/lib/iomgr/endpoint_cfstream.h", 
+      "src/core/lib/iomgr/error_cfstream.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_cfstream", 
+    "src": [
+      "src/core/lib/iomgr/cfstream_handle.cc", 
+      "src/core/lib/iomgr/cfstream_handle.h", 
+      "src/core/lib/iomgr/endpoint_cfstream.cc", 
+      "src/core/lib/iomgr/endpoint_cfstream.h", 
+      "src/core/lib/iomgr/error_cfstream.cc", 
+      "src/core/lib/iomgr/error_cfstream.h", 
+      "src/core/lib/iomgr/tcp_client_cfstream.cc"
     ], 
     "third_party": false, 
     "type": "filegroup"

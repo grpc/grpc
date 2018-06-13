@@ -390,6 +390,7 @@ cdef class Channel:
   def __cinit__(
       self, bytes target, object arguments,
       ChannelCredentials channel_credentials):
+    arguments = () if arguments is None else tuple(arguments)
     grpc_init()
     self._state = _ChannelState()
     self._vtable.copy = &_copy_pointer
@@ -410,6 +411,7 @@ cdef class Channel:
         grpc_completion_queue_create_for_next(NULL))
     self._state.c_connectivity_completion_queue = (
         grpc_completion_queue_create_for_next(NULL))
+    self._arguments = arguments
 
   def target(self):
     cdef char *c_target

@@ -1106,6 +1106,7 @@ backoff_test: $(BINDIR)/$(CONFIG)/backoff_test
 bdp_estimator_test: $(BINDIR)/$(CONFIG)/bdp_estimator_test
 bm_arena: $(BINDIR)/$(CONFIG)/bm_arena
 bm_call_create: $(BINDIR)/$(CONFIG)/bm_call_create
+bm_channel: $(BINDIR)/$(CONFIG)/bm_channel
 bm_chttp2_hpack: $(BINDIR)/$(CONFIG)/bm_chttp2_hpack
 bm_chttp2_transport: $(BINDIR)/$(CONFIG)/bm_chttp2_transport
 bm_closure: $(BINDIR)/$(CONFIG)/bm_closure
@@ -1317,6 +1318,7 @@ resolver_component_tests_runner_invoker_unsecure: $(BINDIR)/$(CONFIG)/resolver_c
 resolver_component_tests_runner_invoker: $(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker
 address_sorting_test_unsecure: $(BINDIR)/$(CONFIG)/address_sorting_test_unsecure
 address_sorting_test: $(BINDIR)/$(CONFIG)/address_sorting_test
+cancel_ares_query_test: $(BINDIR)/$(CONFIG)/cancel_ares_query_test
 alts_credentials_fuzzer_one_entry: $(BINDIR)/$(CONFIG)/alts_credentials_fuzzer_one_entry
 api_fuzzer_one_entry: $(BINDIR)/$(CONFIG)/api_fuzzer_one_entry
 client_fuzzer_one_entry: $(BINDIR)/$(CONFIG)/client_fuzzer_one_entry
@@ -1602,6 +1604,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/bdp_estimator_test \
   $(BINDIR)/$(CONFIG)/bm_arena \
   $(BINDIR)/$(CONFIG)/bm_call_create \
+  $(BINDIR)/$(CONFIG)/bm_channel \
   $(BINDIR)/$(CONFIG)/bm_chttp2_hpack \
   $(BINDIR)/$(CONFIG)/bm_chttp2_transport \
   $(BINDIR)/$(CONFIG)/bm_closure \
@@ -1755,6 +1758,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker \
   $(BINDIR)/$(CONFIG)/address_sorting_test_unsecure \
   $(BINDIR)/$(CONFIG)/address_sorting_test \
+  $(BINDIR)/$(CONFIG)/cancel_ares_query_test \
 
 else
 buildtests_cxx: privatelibs_cxx \
@@ -1778,6 +1782,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/bdp_estimator_test \
   $(BINDIR)/$(CONFIG)/bm_arena \
   $(BINDIR)/$(CONFIG)/bm_call_create \
+  $(BINDIR)/$(CONFIG)/bm_channel \
   $(BINDIR)/$(CONFIG)/bm_chttp2_hpack \
   $(BINDIR)/$(CONFIG)/bm_chttp2_transport \
   $(BINDIR)/$(CONFIG)/bm_closure \
@@ -1880,6 +1885,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker \
   $(BINDIR)/$(CONFIG)/address_sorting_test_unsecure \
   $(BINDIR)/$(CONFIG)/address_sorting_test \
+  $(BINDIR)/$(CONFIG)/cancel_ares_query_test \
 
 endif
 
@@ -2197,6 +2203,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/bm_arena || ( echo test bm_arena failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_call_create"
 	$(Q) $(BINDIR)/$(CONFIG)/bm_call_create || ( echo test bm_call_create failed ; exit 1 )
+	$(E) "[RUN]     Testing bm_channel"
+	$(Q) $(BINDIR)/$(CONFIG)/bm_channel || ( echo test bm_channel failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_chttp2_hpack"
 	$(Q) $(BINDIR)/$(CONFIG)/bm_chttp2_hpack || ( echo test bm_chttp2_hpack failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_chttp2_transport"
@@ -2367,6 +2375,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/address_sorting_test_unsecure || ( echo test address_sorting_test_unsecure failed ; exit 1 )
 	$(E) "[RUN]     Testing address_sorting_test"
 	$(Q) $(BINDIR)/$(CONFIG)/address_sorting_test || ( echo test address_sorting_test failed ; exit 1 )
+	$(E) "[RUN]     Testing cancel_ares_query_test"
+	$(Q) $(BINDIR)/$(CONFIG)/cancel_ares_query_test || ( echo test cancel_ares_query_test failed ; exit 1 )
 
 
 flaky_test_cxx: buildtests_cxx
@@ -10003,6 +10013,7 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/max_message_length.cc \
     test/core/end2end/tests/negative_deadline.cc \
     test/core/end2end/tests/network_status_change.cc \
+    test/core/end2end/tests/no_error_on_hotpath.cc \
     test/core/end2end/tests/no_logging.cc \
     test/core/end2end/tests/no_op.cc \
     test/core/end2end/tests/payload.cc \
@@ -10120,6 +10131,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/max_message_length.cc \
     test/core/end2end/tests/negative_deadline.cc \
     test/core/end2end/tests/network_status_change.cc \
+    test/core/end2end/tests/no_error_on_hotpath.cc \
     test/core/end2end/tests/no_logging.cc \
     test/core/end2end/tests/no_op.cc \
     test/core/end2end/tests/payload.cc \
@@ -15646,6 +15658,50 @@ deps_bm_call_create: $(BM_CALL_CREATE_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(BM_CALL_CREATE_OBJS:.o=.dep)
+endif
+endif
+
+
+BM_CHANNEL_SRC = \
+    test/cpp/microbenchmarks/bm_channel.cc \
+
+BM_CHANNEL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BM_CHANNEL_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/bm_channel: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/bm_channel: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/bm_channel: $(PROTOBUF_DEP) $(BM_CHANNEL_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BM_CHANNEL_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/bm_channel
+
+endif
+
+endif
+
+$(BM_CHANNEL_OBJS): CPPFLAGS += -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
+$(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/bm_channel.o:  $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+
+deps_bm_channel: $(BM_CHANNEL_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BM_CHANNEL_OBJS:.o=.dep)
 endif
 endif
 
@@ -23743,6 +23799,49 @@ deps_address_sorting_test: $(ADDRESS_SORTING_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(ADDRESS_SORTING_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CANCEL_ARES_QUERY_TEST_SRC = \
+    test/cpp/naming/cancel_ares_query_test.cc \
+
+CANCEL_ARES_QUERY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CANCEL_ARES_QUERY_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/cancel_ares_query_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/cancel_ares_query_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/cancel_ares_query_test: $(PROTOBUF_DEP) $(CANCEL_ARES_QUERY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(CANCEL_ARES_QUERY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/cancel_ares_query_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/naming/cancel_ares_query_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+
+deps_cancel_ares_query_test: $(CANCEL_ARES_QUERY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CANCEL_ARES_QUERY_TEST_OBJS:.o=.dep)
 endif
 endif
 

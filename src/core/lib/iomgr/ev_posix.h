@@ -41,14 +41,16 @@ typedef struct grpc_fd grpc_fd;
 
 typedef struct grpc_event_engine_vtable {
   size_t pollset_size;
+  bool can_track_err;
 
-  grpc_fd* (*fd_create)(int fd, const char* name);
+  grpc_fd* (*fd_create)(int fd, const char* name, bool track_err);
   int (*fd_wrapped_fd)(grpc_fd* fd);
   void (*fd_orphan)(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
-                    bool already_closed, const char* reason);
+                    const char* reason);
   void (*fd_shutdown)(grpc_fd* fd, grpc_error* why);
   void (*fd_notify_on_read)(grpc_fd* fd, grpc_closure* closure);
   void (*fd_notify_on_write)(grpc_fd* fd, grpc_closure* closure);
+  void (*fd_notify_on_error)(grpc_fd* fd, grpc_closure* closure);
   bool (*fd_is_shutdown)(grpc_fd* fd);
   grpc_pollset* (*fd_get_read_notifier_pollset)(grpc_fd* fd);
 
@@ -84,10 +86,20 @@ void grpc_event_engine_shutdown(void);
 /* Return the name of the poll strategy */
 const char* grpc_get_poll_strategy_name();
 
+/* Returns true if polling engine can track errors separately, false otherwise.
+ * If this is true, fd can be created with track_err set. After this, error
+ * events will be reported using fd_notify_on_error. If it is not set, errors
+ * will continue to be reported through fd_notify_on_read and
+ * fd_notify_on_write.
+ */
+bool grpc_event_engine_can_track_errors();
+
 /* Create a wrapped file descriptor.
    Requires fd is a non-blocking file descriptor.
+   \a track_err if true means that error events would be tracked separately
+   using grpc_fd_notify_on_error. Currently, valid only for linux systems.
    This takes ownership of closing fd. */
-grpc_fd* grpc_fd_create(int fd, const char* name);
+grpc_fd* grpc_fd_create(int fd, const char* name, bool track_err);
 
 /* Return the wrapped fd, or -1 if it has been released or closed. */
 int grpc_fd_wrapped_fd(grpc_fd* fd);
@@ -100,7 +112,7 @@ int grpc_fd_wrapped_fd(grpc_fd* fd);
    notify_on_write.
    MUST NOT be called with a pollset lock taken */
 void grpc_fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
-                    bool already_closed, const char* reason);
+                    const char* reason);
 
 /* Has grpc_fd_shutdown been called on an fd? */
 bool grpc_fd_is_shutdown(grpc_fd* fd);
@@ -125,6 +137,10 @@ void grpc_fd_notify_on_read(grpc_fd* fd, grpc_closure* closure);
 
 /* Exactly the same semantics as above, except based on writable events.  */
 void grpc_fd_notify_on_write(grpc_fd* fd, grpc_closure* closure);
+
+/* Exactly the same semantics as above, except based on error events. track_err
+ * needs to have been set on grpc_fd_create */
+void grpc_fd_notify_on_error(grpc_fd* fd, grpc_closure* closure);
 
 /* Return the read notifier pollset from the fd */
 grpc_pollset* grpc_fd_get_read_notifier_pollset(grpc_fd* fd);

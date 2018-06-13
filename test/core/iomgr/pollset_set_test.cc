@@ -118,7 +118,7 @@ static void init_test_fds(test_fd* tfds, const int num_fds) {
   for (int i = 0; i < num_fds; i++) {
     GPR_ASSERT(GRPC_ERROR_NONE == grpc_wakeup_fd_init(&tfds[i].wakeup_fd));
     tfds[i].fd = grpc_fd_create(GRPC_WAKEUP_FD_GET_READ_FD(&tfds[i].wakeup_fd),
-                                "test_fd");
+                                "test_fd", false);
     reset_test_fd(&tfds[i]);
   }
 }
@@ -136,8 +136,7 @@ static void cleanup_test_fds(test_fd* tfds, const int num_fds) {
      * grpc_wakeup_fd and we would like to destroy it ourselves (by calling
      * grpc_wakeup_fd_destroy). To prevent grpc_fd from calling close() on the
      * underlying fd, call it with a non-NULL 'release_fd' parameter */
-    grpc_fd_orphan(tfds[i].fd, nullptr, &release_fd, false /* already_closed */,
-                   "test_fd_cleanup");
+    grpc_fd_orphan(tfds[i].fd, nullptr, &release_fd, "test_fd_cleanup");
     grpc_core::ExecCtx::Get()->Flush();
 
     grpc_wakeup_fd_destroy(&tfds[i].wakeup_fd);

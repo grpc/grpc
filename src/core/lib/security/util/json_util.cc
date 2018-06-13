@@ -29,6 +29,10 @@ const char* grpc_json_get_string_property(const grpc_json* json,
                                           const char* prop_name) {
   grpc_json* child;
   for (child = json->child; child != nullptr; child = child->next) {
+    if (child->key == nullptr) {
+      gpr_log(GPR_ERROR, "Invalid (null) JSON key encountered");
+      return nullptr;
+    }
     if (strcmp(child->key, prop_name) == 0) break;
   }
   if (child == nullptr || child->type != GRPC_JSON_STRING) {
