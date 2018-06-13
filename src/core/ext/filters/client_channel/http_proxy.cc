@@ -38,30 +38,22 @@
 #include "src/core/lib/slice/b64.h"
 
 /**
- * Parses the 'http_proxy' env var (or 'https_proxy', if it is a secure channel)
- * and returns the proxy hostname to resolve or nullptr on error. Also sets
- * 'user_cred' to user credentials if present in the 'http_proxy' env var,
- * otherwise leaves it unchanged. It is caller's responsibility to gpr_free
- * user_cred.
+ * Parses the 'https_proxy' env var (fallback on 'http_proxy') and returns the
+ * proxy hostname to resolve or nullptr on error. Also sets 'user_cred' to user
+ * credentials if present in the 'http_proxy' env var, otherwise leaves it
+ * unchanged. It is caller's responsibility to gpr_free user_cred.
  */
 static char* get_http_proxy_server(char** user_cred,
                                    const grpc_channel_args* args) {
   GPR_ASSERT(user_cred != nullptr);
-  char* uri_str = nullptr;
-  /* Prefer using 'https_proxy' for secure channels and 'http_proxy' for
-   * insecure channels. Fallback on the other one if it is not set. The fallback
-   * behavior can be removed if there's a demand for it.
-   */
-  if (grpc_channel_args_find(args, (char*)GRPC_ARG_CHANNEL_CREDENTIALS) !=
-      nullptr) {
-    uri_str = gpr_getenv("https_proxy");
-    if (uri_str == nullptr) gpr_getenv("http_proxy");
-  } else {
-    uri_str = gpr_getenv("http_proxy");
-  }
   char* proxy_name = nullptr;
   char** authority_strs = nullptr;
   size_t authority_nstrs;
+  /* Prefer using 'https_proxy'. Fallback on 'http_proxy' if it is not set. The
+   * fallback behavior can be removed if there's a demand for it.
+   */
+  char* uri_str = gpr_getenv("https_proxy");
+  if (uri_str == nullptr) gpr_getenv("http_proxy");
   if (uri_str == nullptr) return nullptr;
   grpc_uri* uri = grpc_uri_parse(uri_str, false /* suppress_errors */);
   if (uri == nullptr || uri->authority == nullptr) {

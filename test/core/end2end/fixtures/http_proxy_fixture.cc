@@ -31,7 +31,6 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -580,52 +579,4 @@ void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy) {
 const char* grpc_end2end_http_proxy_get_proxy_name(
     grpc_end2end_http_proxy* proxy) {
   return proxy->proxy_name;
-}
-
-grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
-    grpc_channel_args* client_args, grpc_channel_args* server_args) {
-  grpc_end2end_test_fixture f;
-  memset(&f, 0, sizeof(f));
-  fullstack_fixture_data* ffd = static_cast<fullstack_fixture_data*>(
-      gpr_malloc(sizeof(fullstack_fixture_data)));
-  const int server_port = grpc_pick_unused_port_or_die();
-  gpr_join_host_port(&ffd->server_addr, "localhost", server_port);
-
-  /* Passing client_args to proxy_create for the case of checking for proxy auth
-   */
-  ffd->proxy = grpc_end2end_http_proxy_create(client_args);
-
-  f.fixture_data = ffd;
-  f.cq = grpc_completion_queue_create_for_next(nullptr);
-  f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
-
-  return f;
-}
-
-void set_http_proxy(const char* proxy_name,
-                    const grpc_channel_args* client_args, bool secure) {
-  char* proxy_uri;
-  /* If testing for proxy auth, add credentials to proxy uri */
-  const grpc_arg* proxy_auth_arg =
-      grpc_channel_args_find(client_args, GRPC_ARG_HTTP_PROXY_AUTH_CREDS);
-  const char* proxy_auth_str = grpc_channel_arg_get_string(proxy_auth_arg);
-  if (proxy_auth_str == nullptr) {
-    gpr_asprintf(&proxy_uri, "http://%s", proxy_name);
-  } else {
-    gpr_asprintf(&proxy_uri, "http://%s@%s", proxy_auth_str, proxy_name);
-  }
-  if (secure) {
-    gpr_setenv("https_proxy", proxy_uri);
-  } else {
-    gpr_setenv("http_proxy", proxy_uri);
-  }
-  gpr_free(proxy_uri);
-}
-
-void chttp2_tear_down_fullstack(grpc_end2end_test_fixture* f) {
-  fullstack_fixture_data* ffd =
-      static_cast<fullstack_fixture_data*>(f->fixture_data);
-  gpr_free(ffd->server_addr);
-  grpc_end2end_http_proxy_destroy(ffd->proxy);
-  gpr_free(ffd);
 }
