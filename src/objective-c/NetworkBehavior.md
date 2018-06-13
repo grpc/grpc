@@ -5,10 +5,11 @@ multiple interfaces to connect to network, and these interfaces may become
 broken or alive at any time. This document describes how these network changes
 should be handled by gRPC and current issues related.
 
-## Model
-We classify network connectivity in three categories: WiFi, cellular, and none.
-Currently, the network connectivity information is obtained from
-`SCNetworkReachability` API and the category is determined by
+## gRPC iOS with TCP Sockets
+### Model
+We classify network connectivity of the device at a given time in three
+categories: WiFi, cellular, and none.  The network connectivity information is
+obtained from `SCNetworkReachability` API and the category is determined by
 `SCNetworkReachabilityFlags` as follows:
 
 | Reachable | ConnectionRequired | IsWAAN | **Category** |
@@ -18,28 +19,35 @@ Currently, the network connectivity information is obtained from
 |     1     |          0         |   0    |     WiFi     |
 |     1     |          0         |   1    |   Cellular   |
 
-Whenever there is a switch of network connectivity between these three
-categories, the previous channels is assumed to be broken. If there is an
-unfinished call, the call should return with status code `UNAVAILABLE`. All
-active gRPC channels will be destroyed so that any new call will trigger
-creation of new channel over new interface. In addition to that, when a TCP
-connection breaks, the corresponding channel should also be destroyed and calls
-be canceled with status code `UNAVAILABLE`.
+Whenever there is a transition of network between these three categories, the
+previous channels is assumed to be broken. If there is an unfinished call, the
+call should return with status code `UNAVAILABLE`. All active gRPC channels
+will be destroyed so that any new call will trigger creation of new channel
+over new interface. In addition to that, when a TCP connection breaks, the
+corresponding channel should also be destroyed and calls be canceled with
+status code `UNAVAILABLE`.
 
-## Known issues
-gRPC currently uses BSD sockets for TCP connections. There are several issues
-related to BSD sockets known to us that causes problems. gRPC has a plan to
-switch to CFStream API for TCP connections which resolves some of these
-problems.
+### Known issues
+There are several issues related to BSD sockets known to us that causes
+problems. 
 
-* TCP socket stalls but does not return error when network status switches from
+* TCP socket stalls but does not return error when network status transits from
   Cellular to WiFi. This problem is workarounded by
   [ConnectivityMonitor](https://github.com/grpc/grpc/blob/master/src/objective-c/GRPCClient/private/GRPCConnectivityMonitor.m).
-  The workaround can be discarded with CFStream implementation.
 * TCP socket stalls but does not return error when WiFi reconnects to another
-  hotspot while the app is in background. This issue is to be resolved by
-  CFStream implementation.
+  hotspot while the app is in background.
 
-Other known issue(s):
-* A call does not fail immediately when name resolution fails. The issue is
-  being tracked by [#13627](https://github.com/grpc/grpc/issues/13627).
+If you encounter these problems, the best solution is to switch to CFStream
+implementation which eliminates all of them.
+
+## gRPC iOS with CFStream
+gRPC iOS with CFStream implementation uses Apple's networking API to make
+connections. It resolves the issues above that is known to TCP sockets on iOS.
+Users are recommended to use this implementation rather than TCP socket
+implementation. With CFStream implementation, a channel is broken when the
+underlying stream detects an error or becomes closed. The behavior of streams
+in CFStream are not documented by Apple, but our experiments show that it is
+very similar to the model above, i.e. the streams error out when there is a
+network connetivity change. So users should expect channels to break when the
+network transits to another state and pending calls on those channels return
+with status code `UNAVAILABLE`.
