@@ -55,6 +55,20 @@ grpc_cc_binary(
 )
 
 grpc_cc_binary(
+    name = "bm_arena",
+    testonly = 1,
+    srcs = ["bm_arena.cc"],
+    deps = [":helpers"],
+)
+
+grpc_cc_binary(
+    name = "bm_channel",
+    testonly = 1,
+    srcs = ["bm_channel.cc"],
+    deps = [":helpers"],
+)
+
+grpc_cc_binary(
     name = "bm_cq",
     testonly = 1,
     srcs = ["bm_cq.cc"],
