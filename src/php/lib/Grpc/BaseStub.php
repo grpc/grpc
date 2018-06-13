@@ -60,7 +60,8 @@ class BaseStub
         }
         if ($channel) {
             if (!is_a($channel, 'Grpc\Channel') &&
-                !is_a($channel, 'Grpc\Internal\InterceptorChannel')) {
+                !is_a($channel, 'Grpc\Internal\InterceptorChannel') &&
+                !is_a($channel, 'Grpc\GrpcExtensionChannel')) {
                 throw new \Exception('The channel argument is not a Channel object '.
                     'or an InterceptorChannel object created by '.
                     'Interceptor::intercept($channel, Interceptor|Interceptor[] $interceptors)');

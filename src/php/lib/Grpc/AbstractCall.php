@@ -43,11 +43,28 @@ abstract class AbstractCall
      *                              the response
      * @param array    $options     Call options (optional)
      */
-    public function __construct(Channel $channel,
+    public function __construct($channel,
                                 $method,
                                 $deserialize,
                                 array $options = [])
     {
+        // Move the verification of Grpc\Channel from the parameter to here.
+        // It doesn't influence the performance when $channel is Grpc\Channel because
+        // it only checks once before and after the change.
+        // If $channel is not Grpc\Channel, not creating the Call object. Instead
+        // let EmptyCall saves all information needed for creating the Call object.
+        // By doing so, we can delay the creation of Call to other places like when
+        // RPC is sent.
+        if(!is_a($channel, 'Grpc\Channel')) {
+            if (is_a($channel, 'Grpc\GrpcExtensionChannel')) {
+              $this->call = new Internal\EmptyCall($channel, $method, $deserialize, $options);
+              return;
+            } else {
+              // To keep the original behavior, throw invalid argument exception.
+              throw new \InvalidArgumentException('Argument for creating the Call object '.
+               'should be Grpc\Channel object');
+            }
+        }
         if (array_key_exists('timeout', $options) &&
             is_numeric($timeout = $options['timeout'])
         ) {
@@ -70,6 +87,15 @@ abstract class AbstractCall
             );
             $this->call->setCredentials($call_credentials);
         }
+    }
+
+    /**
+     * @return Call|EmptyCall This is only used to access the channel/arguments
+     * inside interceptor.
+     */
+    public function _getCall()
+    {
+        return $this->call;
     }
 
     /**
