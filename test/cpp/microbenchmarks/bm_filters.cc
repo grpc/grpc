@@ -200,174 +200,27 @@ static grpc_transport dummy_transport = {&dummy_transport_vtable};
 
 }  // namespace dummy_transport
 
-class NoOp {
- public:
-  class Op {
-   public:
-    Op(NoOp* p, grpc_call_stack* s) {}
-    void Finish() {}
-  };
-};
-
-class SendEmptyMetadata {
- public:
-  SendEmptyMetadata() {
-    memset(&op_, 0, sizeof(op_));
-    op_.on_complete = GRPC_CLOSURE_INIT(&closure_, DoNothing, nullptr,
-                                        grpc_schedule_on_exec_ctx);
-    op_.send_initial_metadata = true;
-    op_.payload = &op_payload_;
-  }
-
-  class Op {
-   public:
-    Op(SendEmptyMetadata* p, grpc_call_stack* s) {
-      grpc_metadata_batch_init(&batch_);
-      p->op_payload_.send_initial_metadata.send_initial_metadata = &batch_;
-    }
-    void Finish() { grpc_metadata_batch_destroy(&batch_); }
-
-   private:
-    grpc_metadata_batch batch_;
-  };
-
- private:
-  const gpr_timespec deadline_ = gpr_inf_future(GPR_CLOCK_MONOTONIC);
-  const gpr_timespec start_time_ = gpr_now(GPR_CLOCK_MONOTONIC);
-  const grpc_slice method_ = grpc_slice_from_static_string("/foo/bar");
-  grpc_transport_stream_op_batch op_;
-  grpc_transport_stream_op_batch_payload op_payload_;
-  grpc_closure closure_;
-};
-
-// Test a filter in isolation. Fixture specifies the filter 
-// under test (use the Fixture<> template to specify this), and TestOp defines 
-// some unit of work to perform on said filter.
-template <class Fixture, class TestOp>
-static void BM_IsolatedFilter(benchmark::State& state) {
-  TrackCounters track_counters;
-  Fixture fixture;
-  std::ostringstream label;
-
-  std::vector<grpc_arg> args;
-  FakeClientChannelFactory fake_client_channel_factory;
-  args.push_back(grpc_client_channel_factory_create_channel_arg(
-      &fake_client_channel_factory));
-  args.push_back(StringArg(GRPC_ARG_SERVER_URI, "localhost"));
-
-  grpc_channel_args channel_args = {args.size(), &args[0]};
-
-  std::vector<const grpc_channel_filter*> filters;
-  if (fixture.filter != nullptr) {
-    filters.push_back(fixture.filter);
-  }
-  if (fixture.flags & CHECKS_NOT_LAST) {
-    filters.push_back(&dummy_filter::dummy_filter);
-    label << " #has_dummy_filter";
-  }
-
-  grpc_core::ExecCtx exec_ctx;
-  size_t channel_size = grpc_channel_stack_size(
-      filters.data(), filters.size());
-  grpc_channel_stack* channel_stack =
-      static_cast<grpc_channel_stack*>(gpr_zalloc(channel_size));
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "channel_stack_init",
-      grpc_channel_stack_init(1, FilterDestroy, channel_stack, &filters[0],
-                              filters.size(), &channel_args,
-                              fixture.flags & REQUIRES_TRANSPORT
-                                  ? &dummy_transport::dummy_transport
-                                  : nullptr,
-                              "CHANNEL", channel_stack)));
-  grpc_core::ExecCtx::Get()->Flush();
-  grpc_call_stack* call_stack =
-      static_cast<grpc_call_stack*>(gpr_zalloc(channel_stack->call_stack_size));
-  grpc_millis deadline = GRPC_MILLIS_INF_FUTURE;
-  gpr_timespec start_time = gpr_now(GPR_CLOCK_MONOTONIC);
-  grpc_slice method = grpc_slice_from_static_string("/foo/bar");
-  grpc_call_final_info final_info;
-  TestOp test_op_data;
-  grpc_call_element_args call_args;
-  call_args.call_stack = call_stack;
-  call_args.server_transport_data = nullptr;
-  call_args.context = nullptr;
-  call_args.path = method;
-  call_args.start_time = start_time;
-  call_args.deadline = deadline;
-  const int kArenaSize = 4096;
-  call_args.arena = gpr_arena_create(kArenaSize);
-  while (state.KeepRunning()) {
-    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
-    GRPC_ERROR_UNREF(
-        grpc_call_stack_init(channel_stack, 1, DoNothing, nullptr, &call_args));
-    typename TestOp::Op op(&test_op_data, call_stack);
-    grpc_call_stack_destroy(call_stack, &final_info, nullptr);
-    op.Finish();
-    grpc_core::ExecCtx::Get()->Flush();
-    // recreate arena every 64k iterations to avoid oom
-    if (0 == (state.iterations() & 0xffff)) {
-      gpr_arena_destroy(call_args.arena);
-      call_args.arena = gpr_arena_create(kArenaSize);
-    }
-  }
-  gpr_arena_destroy(call_args.arena);
-  grpc_channel_stack_destroy(channel_stack);
-
-  gpr_free(channel_stack);
-  gpr_free(call_stack);
-
-  state.SetLabel(label.str());
-  track_counters.Finish(state);
+grpc_channel_args CreateFakeChannelArgs(std::vector<grpc_arg>* args, 
+  FakeClientChannelFactory* factory) {
+  args->push_back(grpc_client_channel_factory_create_channel_arg(factory));
+  args->push_back(StringArg(GRPC_ARG_SERVER_URI, "localhost"));
+  return {args->size(), args->data()};
 }
 
-typedef Fixture<nullptr, 0> NoFilter;
-BENCHMARK_TEMPLATE(BM_IsolatedFilter, NoFilter, NoOp);
-typedef Fixture<&dummy_filter::dummy_filter, 0> DummyFilter;
-BENCHMARK_TEMPLATE(BM_IsolatedFilter, DummyFilter, NoOp);
-BENCHMARK_TEMPLATE(BM_IsolatedFilter, DummyFilter, SendEmptyMetadata);
-typedef Fixture<&grpc_client_channel_filter, 0> ClientChannelFilter;
-BENCHMARK_TEMPLATE(BM_IsolatedFilter, ClientChannelFilter, NoOp);
-typedef Fixture<&grpc_message_compress_filter, CHECKS_NOT_LAST> CompressFilter;
-BENCHMARK_TEMPLATE(BM_IsolatedFilter, CompressFilter, NoOp);
-BENCHMARK_TEMPLATE(BM_IsolatedFilter, CompressFilter, SendEmptyMetadata);
-typedef Fixture<&grpc_client_deadline_filter, CHECKS_NOT_LAST>
-    ClientDeadlineFilter;
-BENCHMARK_TEMPLATE(BM_IsolatedFilter, ClientDeadlineFilter, NoOp);
-BENCHMARK_TEMPLATE(BM_IsolatedFilter, ClientDeadlineFilter, SendEmptyMetadata);
-typedef Fixture<&grpc_server_deadline_filter, CHECKS_NOT_LAST>
-    ServerDeadlineFilter;
-BENCHMARK_TEMPLATE(BM_IsolatedFilter, ServerDeadlineFilter, NoOp);
-BENCHMARK_TEMPLATE(BM_IsolatedFilter, ServerDeadlineFilter, SendEmptyMetadata);
-typedef Fixture<&grpc_http_client_filter, CHECKS_NOT_LAST | REQUIRES_TRANSPORT>
-    HttpClientFilter;
-BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpClientFilter, NoOp);
-BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpClientFilter, SendEmptyMetadata);
-typedef Fixture<&grpc_http_server_filter, CHECKS_NOT_LAST> HttpServerFilter;
-BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpServerFilter, NoOp);
-BENCHMARK_TEMPLATE(BM_IsolatedFilter, HttpServerFilter, SendEmptyMetadata);
-typedef Fixture<&grpc_message_size_filter, CHECKS_NOT_LAST> MessageSizeFilter;
-BENCHMARK_TEMPLATE(BM_IsolatedFilter, MessageSizeFilter, NoOp);
-BENCHMARK_TEMPLATE(BM_IsolatedFilter, MessageSizeFilter, SendEmptyMetadata);
-typedef Fixture<&grpc_server_load_reporting_filter, CHECKS_NOT_LAST>
-    LoadReportingFilter;
-BENCHMARK_TEMPLATE(BM_IsolatedFilter, LoadReportingFilter, NoOp);
-BENCHMARK_TEMPLATE(BM_IsolatedFilter, LoadReportingFilter, SendEmptyMetadata);
-
 // Test a filter's call stack init in isolation. Fixture specifies the filter 
-// under test (use the Fixture<> template to specify this)
+// under test (use the Fixture<> template to specify this).
+// Note that there is some other work being done within the benchmarking loop,
+// so the result of this microbenchmark is a little bloated.
 template <class Fixture>
 static void BM_CallStackInit(benchmark::State& state) {
   TrackCounters track_counters;
   Fixture fixture;
   std::ostringstream label;
-
+  
   std::vector<grpc_arg> args;
   FakeClientChannelFactory fake_client_channel_factory;
-  args.push_back(grpc_client_channel_factory_create_channel_arg(
-      &fake_client_channel_factory));
-  args.push_back(StringArg(GRPC_ARG_SERVER_URI, "localhost"));
-
-  grpc_channel_args channel_args = {args.size(), &args[0]};
+  grpc_channel_args channel_args = CreateFakeChannelArgs(&args, 
+    &fake_client_channel_factory);
 
   std::vector<const grpc_channel_filter*> filters;
   if (fixture.filter != nullptr) {
@@ -430,15 +283,29 @@ static void BM_CallStackInit(benchmark::State& state) {
   track_counters.Finish(state);
 }
 
+typedef Fixture<nullptr, 0> NoFilter;
 BENCHMARK_TEMPLATE(BM_CallStackInit, NoFilter);
+typedef Fixture<&dummy_filter::dummy_filter, 0> DummyFilter;
 BENCHMARK_TEMPLATE(BM_CallStackInit, DummyFilter);
+typedef Fixture<&grpc_client_channel_filter, 0> ClientChannelFilter;
 BENCHMARK_TEMPLATE(BM_CallStackInit, ClientChannelFilter);
+typedef Fixture<&grpc_message_compress_filter, CHECKS_NOT_LAST> CompressFilter;
 BENCHMARK_TEMPLATE(BM_CallStackInit, CompressFilter);
+typedef Fixture<&grpc_client_deadline_filter, CHECKS_NOT_LAST>
+    ClientDeadlineFilter;
 BENCHMARK_TEMPLATE(BM_CallStackInit, ClientDeadlineFilter);
+typedef Fixture<&grpc_server_deadline_filter, CHECKS_NOT_LAST>
+    ServerDeadlineFilter;
 BENCHMARK_TEMPLATE(BM_CallStackInit, ServerDeadlineFilter);
+typedef Fixture<&grpc_http_client_filter, CHECKS_NOT_LAST | REQUIRES_TRANSPORT>
+    HttpClientFilter;
 BENCHMARK_TEMPLATE(BM_CallStackInit, HttpClientFilter);
+typedef Fixture<&grpc_http_server_filter, CHECKS_NOT_LAST> HttpServerFilter;
 BENCHMARK_TEMPLATE(BM_CallStackInit, HttpServerFilter);
+typedef Fixture<&grpc_message_size_filter, CHECKS_NOT_LAST> MessageSizeFilter;
 BENCHMARK_TEMPLATE(BM_CallStackInit, MessageSizeFilter);
+typedef Fixture<&grpc_server_load_reporting_filter, CHECKS_NOT_LAST>
+    LoadReportingFilter;
 BENCHMARK_TEMPLATE(BM_CallStackInit, LoadReportingFilter);
 
 // Test a filter's start_transport_stream_op_batch in isolation. Fixture 
