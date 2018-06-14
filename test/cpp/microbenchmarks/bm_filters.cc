@@ -136,6 +136,8 @@ static void BM_FullFilterFunctionality(benchmark::State& state) {
   // Run the benchmark
   while (state.KeepRunning()) {
     GPR_TIMER_SCOPE("BenchmarkCycle", 0);
+    // Because filters can modify the call stack when processing a batch, we
+    // need to clear and re-initialize it on each benchmark iteration
     memset(data.call_stack, 0, data.channel_stack->call_stack_size);
     GRPC_ERROR_UNREF(
         grpc_call_stack_init(data.channel_stack, 1, DoNothing, nullptr,
@@ -144,22 +146,11 @@ static void BM_FullFilterFunctionality(benchmark::State& state) {
     struct PayloadData payload;
     CreatePayloadForAllOps(&payload);
 
-    
-    /* Create new batch with all 6 ops */
     grpc_transport_stream_op_batch batch;
-    memset(&batch, 0, sizeof(grpc_transport_stream_op_batch));
-    batch.payload = &payload.payload;
-    batch.send_initial_metadata = true;
-    batch.send_trailing_metadata = true;
-    batch.send_message = true;
-    batch.recv_initial_metadata = true;
-    batch.recv_message = true;
-    batch.recv_trailing_metadata = true;
-    batch.collect_stats = true;
+    CreateBatchWithAllOps(&batch, &payload.payload);
 
     grpc_call_element* call_elem =
     CALL_ELEMS_FROM_STACK(data.call_args.call_stack);
-
     if (!data.filters.empty()) {
       bm_setup.fixture.filter->start_transport_stream_op_batch(call_elem, &batch);
     }
@@ -178,14 +169,12 @@ static void BM_FullFilterFunctionality(benchmark::State& state) {
   bm_setup.Destroy(&data, state);
 }
 
-BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, NoFilterBM);
-BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, DummyFilterBM);
-
 // We skip Client_Channel for this benchmark because it requires a lot more work
 // than what has been done in order to microbenchmark it. Moreover, it may be 
 // the case that once we do this work, we may be measuring much more than just
 // client_channel filter overhead. 
-
+BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, NoFilterBM);
+BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, DummyFilterBM);
 BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, CompressFilterBM); 
 BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, ClientDeadlineFilterBM);
 BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, ServerDeadlineFilterBM);

@@ -316,6 +316,8 @@ struct PayloadData {
   grpc_transport_stream_op_batch_payload payload;
 };
 
+// Initializes the payload such that filters won't complain when we send 
+// all 6 ops down the filter stack
 void CreatePayloadForAllOps(struct PayloadData* data) {
   grpc_transport_stream_op_batch_payload* payload = &data->payload;
 
@@ -351,4 +353,17 @@ void CreatePayloadForAllOps(struct PayloadData* data) {
   grpc_core::SliceBufferByteStream* sbs =
       grpc_core::New<grpc_core::SliceBufferByteStream>(&data->slice_buffer_recv, 0);
   payload->recv_message.recv_message->reset(sbs);
+}
+
+// Creates a new batch with all 6 ops
+void CreateBatchWithAllOps(grpc_transport_stream_op_batch* batch, grpc_transport_stream_op_batch_payload* payload) {
+  memset(batch, 0, sizeof(grpc_transport_stream_op_batch));
+  batch->payload = payload;
+  batch->send_initial_metadata = true;
+  batch->send_trailing_metadata = true;
+  batch->send_message = true;
+  batch->recv_initial_metadata = true;
+  batch->recv_message = true;
+  batch->recv_trailing_metadata = true;
+  batch->collect_stats = true;
 }
