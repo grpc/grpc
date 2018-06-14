@@ -7,7 +7,7 @@
     <!-- Configuration is passing the smoke test. -->
     <Protobuf_ProjectSupported Condition=" '$(Protobuf_Generator)' != '' ">true</Protobuf_ProjectSupported>
     <_Protobuf_MsBuildAssembly Condition=" '$(MSBuildRuntimeType)' == 'Core' ">netstandard1.3\Protobuf.MSBuild.dll</_Protobuf_MsBuildAssembly>
-    <_Protobuf_MsBuildAssembly Condition=" '$(MSBuildRuntimeType)' != 'Core' ">net40\Protobuf.MSBuild.dll</_Protobuf_MsBuildAssembly>
+    <_Protobuf_MsBuildAssembly Condition=" '$(MSBuildRuntimeType)' != 'Core' ">net45\Protobuf.MSBuild.dll</_Protobuf_MsBuildAssembly>
   </PropertyGroup>
 
   <UsingTask AssemblyFile="$(_Protobuf_MsBuildAssembly)" TaskName="Grpc.Tools.ProtoToolsPlatform" />
@@ -370,7 +370,7 @@
                                   Design-time support
    =================================================================================-->
 
-  <!-- Add all .proto files to the SourceFilesProjectOutputGroupOutput, so that
+  <!-- Add all .proto files to the SourceFilesProjectOutputGroupOutput, so that:
        * Visual Studio triggers a build when any of them changed;
        * The Pack target includes .proto files into the source package.  -->
   <Target Name="_Protobuf_SourceFilesProjectOutputGroup"

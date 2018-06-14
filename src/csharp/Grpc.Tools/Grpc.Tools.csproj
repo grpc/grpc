@@ -6,7 +6,19 @@
     <AssemblyName>Protobuf.MSBuild</AssemblyName>
     <Version>$(GrpcCsharpVersion)</Version>
     <!-- If changing targets, change also paths in Google.Protobuf.Tools.targets. -->
-    <TargetFrameworks>netstandard1.3;net40</TargetFrameworks>
+    <TargetFrameworks>net45;netstandard1.3</TargetFrameworks>
+  </PropertyGroup>
+
+  <!-- This is copied verbatim from Grpc.Core/Common.csproj.include. Other settings
+       in that file conflict with the intent of this build, as it cannot be signed,
+       and may not compile Grpc.Core/Version.cs, as that file references constants
+       in Grpc.Core.dll.
+       TODO(kkm): Refactor imports. -->
+  <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
+    <!-- Workaround for https://github.com/dotnet/sdk/issues/335 -->
+    <FrameworkPathOverride Condition="Exists('/usr/lib/mono/4.5-api')">/usr/lib/mono/4.5-api</FrameworkPathOverride>
+    <FrameworkPathOverride Condition="Exists('/usr/local/lib/mono/4.5-api')">/usr/local/lib/mono/4.5-api</FrameworkPathOverride>
+    <FrameworkPathOverride Condition="Exists('/Library/Frameworks/Mono.framework/Versions/Current/lib/mono/4.5-api')">/Library/Frameworks/Mono.framework/Versions/Current/lib/mono/4.5-api</FrameworkPathOverride>
   </PropertyGroup>
 
   <PropertyGroup Label="Asset root folders. TODO(kkm): Change with package separation.">
@@ -32,9 +44,6 @@
   </PropertyGroup>
 
   <PropertyGroup Label="NuGet package definition" Condition=" '$(Configuration)' == 'Release' ">
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageOutputPath>../../../artifacts</PackageOutputPath>
-
     <!-- TODO(kkm): Change to "build\" after splitting. -->
     <BuildOutputTargetFolder>build\_protobuf\</BuildOutputTargetFolder>
     <DevelopmentDependency>true</DevelopmentDependency>
@@ -57,10 +66,9 @@ Linux and MacOS. Managed runtime is supplied separately in the Grpc.Core package
     <None Pack="true" PackagePath="build\" Include="build\**\*.xml; build\**\*.props; build\**\*.targets;" />
 
     <!-- Protobuf assets (for Google.Protobuf.Tools) -->
-    <_ProtoTemp Include="any.proto;api.proto;descriptor.proto;duration.proto;" />
-    <_ProtoTemp Include="empty.proto;field_mask.proto;source_context.proto;" />
-    <_ProtoTemp Include="struct.proto;timestamp.proto;type.proto;wrappers.proto" />
-    <_Asset PackagePath="build/native/include/google/protobuf/" Include="@(_ProtoTemp->'$(Assets_ProtoInclude)%(Identity)')" />
+    <_ProtoAssetName Include="any;api;descriptor;duration;empty;field_mask;
+                              source_context;struct;timestamp;type;wrappers" />
+    <_Asset PackagePath="build/native/include/google/protobuf/" Include="@(_ProtoAssetName->'$(Assets_ProtoInclude)%(Identity).proto')" />
 
     <!-- TODO(kkm): GPB builds assets into "macosx", GRPC into "macos". -->
     <_Asset PackagePath="build/native/bin/windows/protoc.exe" Include="$(Assets_ProtoCompiler)windows_x86/protoc.exe" />
@@ -85,10 +93,9 @@ Linux and MacOS. Managed runtime is supplied separately in the Grpc.Core package
   </ItemGroup>
 
   <ItemGroup Condition="$(_NetStandard)">
-    <PackageReference Include="Microsoft.Build.Framework" Version="15.5.180" />
-    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.5.180" />
-    <!--  Set PrivateAssets="All" on all items, so that even implicit package
-          dependencies do not become dependencies of this package. -->
+    <PackageReference Include="Microsoft.Build.Framework; Microsoft.Build.Utilities.Core" Version="15.6.85" />
+    <!--  Set PrivateAssets="All" on all items, even those implicitly added,
+          so that they do not become dependencies of this package. -->
     <PackageReference Update="@(PackageReference)" PrivateAssets="All" />
   </ItemGroup>
 

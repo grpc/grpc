@@ -25,15 +25,15 @@ using System.Security;
 [assembly: InternalsVisibleTo("Grpc.Tools.Tests")]
 
 namespace Grpc.Tools {
-  // Metadata names that we refer to often.
+  // Metadata names (MSBuild item attributes) that we refer to often.
   static class Metadata {
     // On output dependency lists.
-    public static string kSource = "Source";
+    public static string Source = "Source";
     // On ProtoBuf items.
-    public static string kProtoRoot = "ProtoRoot";
-    public static string kOutputDir = "OutputDir";
-    public static string kGrpcServices = "GrpcServices";
-    public static string kGrpcOutputDir = "GrpcOutputDir";
+    public static string ProtoRoot = "ProtoRoot";
+    public static string OutputDir = "OutputDir";
+    public static string GrpcServices = "GrpcServices";
+    public static string GrpcOutputDir = "GrpcOutputDir";
   };
 
   // A few flags used to control the behavior under various platforms.

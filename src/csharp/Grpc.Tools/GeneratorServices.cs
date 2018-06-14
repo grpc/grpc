@@ -49,7 +49,7 @@ namespace Grpc.Tools {
     // we do not try to validate the value; scripts take care of that.
     // It is safe to assume that gRPC is requested for any other value.
     protected bool GrpcOutputPossible(ITaskItem proto) {
-      string gsm = proto.GetMetadata(Metadata.kGrpcServices);
+      string gsm = proto.GetMetadata(Metadata.GrpcServices);
       return !gsm.EqualNoCase("") && !gsm.EqualNoCase("none")
           && !gsm.EqualNoCase("false");
     }
@@ -67,12 +67,12 @@ namespace Grpc.Tools {
         Path.GetFileNameWithoutExtension(protoItem.ItemSpec));
 
       var outputs = new string[doGrpc ? 2 : 1];
-      string outdir = protoItem.GetMetadata(Metadata.kOutputDir);
+      string outdir = protoItem.GetMetadata(Metadata.OutputDir);
       string fileStem = Path.Combine(outdir, filename);
       outputs[0] = fileStem + ".cs";
       if (doGrpc) {
         // Override outdir if kGrpcOutputDir present, default to proto output.
-        outdir = protoItem.GetMetadata(Metadata.kGrpcOutputDir);
+        outdir = protoItem.GetMetadata(Metadata.GrpcOutputDir);
         if (outdir != "") {
           fileStem = Path.Combine(outdir, filename);
         }
@@ -105,20 +105,20 @@ namespace Grpc.Tools {
 
     public override string[] GetPossibleOutputs(ITaskItem protoItem) {
       bool doGrpc = GrpcOutputPossible(protoItem);
-      string root = protoItem.GetMetadata(Metadata.kProtoRoot);
+      string root = protoItem.GetMetadata(Metadata.ProtoRoot);
       string proto = protoItem.ItemSpec;
       string filename = Path.GetFileNameWithoutExtension(proto);
       // E. g., ("foo/", "foo/bar/x.proto") => "bar"
       string relative = GetRelativeDir(root, proto);
 
       var outputs = new string[doGrpc ? 4 : 2];
-      string outdir = protoItem.GetMetadata(Metadata.kOutputDir);
+      string outdir = protoItem.GetMetadata(Metadata.OutputDir);
       string fileStem = Path.Combine(outdir, relative, filename);
       outputs[0] = fileStem + ".pb.cc";
       outputs[1] = fileStem + ".pb.h";
       if (doGrpc) {
         // Override outdir if kGrpcOutputDir present, default to proto output.
-        outdir = protoItem.GetMetadata(Metadata.kGrpcOutputDir);
+        outdir = protoItem.GetMetadata(Metadata.GrpcOutputDir);
         if (outdir != "") {
           fileStem = Path.Combine(outdir, relative, filename);
         }

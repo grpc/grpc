@@ -25,29 +25,38 @@ using Microsoft.Build.Utilities;
 
 namespace Grpc.Tools {
   internal static class DepFileUtil {
-/*
-   Sample dependency files. Notable features we have to deal with:
-    * Slash doubling, must normalize them.
-    * Spaces in file names. Cannot just "unwrap" the line on backslash at eof;
-      rather, treat every line as containing one file name except for one with
-      the ':' separator, as containing exactly two.
-    * Deal with ':' also being drive letter separator (second example).
+  /*
+     Sample dependency files. Notable features we have to deal with:
+      * Slash doubling, must normalize them.
+      * Spaces in file names. Cannot just "unwrap" the line on backslash at eof;
+        rather, treat every line as containing one file name except for one with
+        the ':' separator, as containing exactly two.
+      * Deal with ':' also being drive letter separator (second example).
 
-obj\Release\net45\/Foo.cs \
-obj\Release\net45\/FooGrpc.cs: C:/foo/include/google/protobuf/wrappers.proto\
- C:/projects/foo/src//foo.proto
+  obj\Release\net45\/Foo.cs \
+  obj\Release\net45\/FooGrpc.cs: C:/foo/include/google/protobuf/wrappers.proto\
+   C:/projects/foo/src//foo.proto
 
-C:\projects\foo\src\./foo.grpc.pb.cc \
-C:\projects\foo\src\./foo.grpc.pb.h \
-C:\projects\foo\src\./foo.pb.cc \
-C:\projects\foo\src\./foo.pb.h: C:/foo/include/google/protobuf/wrappers.proto\
- C:/foo/include/google/protobuf/any.proto\
- C:/foo/include/google/protobuf/source_context.proto\
- C:/foo/include/google/protobuf/type.proto\
- foo.proto
-*/
+  C:\projects\foo\src\./foo.grpc.pb.cc \
+  C:\projects\foo\src\./foo.grpc.pb.h \
+  C:\projects\foo\src\./foo.pb.cc \
+  C:\projects\foo\src\./foo.pb.h: C:/foo/include/google/protobuf/wrappers.proto\
+   C:/foo/include/google/protobuf/any.proto\
+   C:/foo/include/google/protobuf/source_context.proto\
+   C:/foo/include/google/protobuf/type.proto\
+   foo.proto
+  */
 
-    // Read file names from the dependency file to the right of ':'.
+    /// <summary>
+    /// Read file names from the dependency file to the right of ':'
+    /// </summary>
+    /// <param name="protoDepDir">Relative path to the dependency cache, e. g. "out"</param>
+    /// <param name="proto">Relative path to the proto item, e. g. "foo/file.proto"</param>
+    /// <param name="log">A <see cref="TaskLoggingHelper"/> for logging</param>
+    /// <returns>
+    /// Array of the proto file <b>input</b> dependencies as written by protoc, or empty
+    /// array if the dependency file does not exist or cannot be parsed.
+    /// </returns>
     public static string[] ReadDependencyInputs(string protoDepDir, string proto,
                                                 TaskLoggingHelper log) {
       string depFilename = GetDepFilenameForProto(protoDepDir, proto);
@@ -80,7 +89,20 @@ C:\projects\foo\src\./foo.pb.h: C:/foo/include/google/protobuf/wrappers.proto\
       return result.ToArray();
     }
 
-    // Read file names from the dependency file to the left of ':'.
+    /// <summary>
+    /// Read file names from the dependency file to the left of ':'
+    /// </summary>
+    /// <param name="depFilename">Path to dependency file written by protoc</param>
+    /// <param name="log">A <see cref="TaskLoggingHelper"/> for logging</param>
+    /// <returns>
+    /// Array of the protoc-generated outputs from the given dependency file
+    /// written by protoc, or empty array if the file does not exist or cannot
+    /// be parsed.
+    /// </returns>
+    /// <remarks>
+    /// Since this is called after a protoc invocation, an unparsable or missing
+    /// file causes an error-level message to be logged.
+    /// </remarks>
     public static string[] ReadDependencyOutputs(string depFilename,
                                                 TaskLoggingHelper log) {
       string[] lines = ReadDepFileLines(depFilename, true, log);
@@ -106,10 +128,31 @@ C:\projects\foo\src\./foo.pb.h: C:/foo/include/google/protobuf/wrappers.proto\
       return result.ToArray();
     }
 
-    // Get complete dependency file name from directory hash and file name,
-    // tucked onto protoDepDir, e. g.
-    // ("out", "foo/file.proto") => "out/deadbeef12345678_file.protodep".
-    // This way, the filenames are unique but still possible to make sense of.
+    /// <summary>
+    /// Construct relative dependency file name from directory hash and file name
+    /// </summary>
+    /// <param name="protoDepDir">Relative path to the dependency cache, e. g. "out"</param>
+    /// <param name="proto">Relative path to the proto item, e. g. "foo/file.proto"</param>
+    /// <returns>
+    /// Full relative path to the dependency file, e. g.
+    /// "out/deadbeef12345678_file.protodep"
+    /// </returns>
+    /// <remarks>
+    /// Since a project may contain proto files with the same filename but in different
+    /// directories, a unique filename for the dependency file is constructed based on the
+    /// proto file name both name and directory. The directory path can be arbitrary,
+    /// for example, it can be outside of the project, or an absolute path including
+    /// a drive letter, or a UNC network path. A name constructed from such a path by,
+    /// for example, replacing disallowed name characters with an underscore, may well
+    /// be over filesystem's allowed path length, since it will be located under the
+    /// project and solution directories, which are also some level deep from the root.
+    /// Instead of creating long and unwieldy names for these proto sources, we cache
+    /// the full path of the name without the filename, and append the filename to it,
+    /// as in e. g. "foo/file.proto" will yield the name "deadbeef12345678_file", where
+    /// "deadbeef12345678" is a presumed hash value of the string "foo/". This allows
+    /// the file names be short, unique (up to a hash collision), and still allowing
+    /// the user to guess their provenance.
+    /// </remarks>
     public static string GetDepFilenameForProto(string protoDepDir, string proto) {
       string dirname = Path.GetDirectoryName(proto);
       if (Platform.IsFsCaseInsensitive) {
@@ -177,7 +220,7 @@ C:\projects\foo\src\./foo.pb.h: C:/foo/include/google/protobuf/wrappers.proto\
 
     // Read entire dependency file. The 'required' parameter controls error
     // logging behavior in case the file not found. We require this file when
-    // compiling, but reading it is optional when computing depnedencies.
+    // compiling, but reading it is optional when computing dependencies.
     static string[] ReadDepFileLines(string filename, bool required,
                                      TaskLoggingHelper log) {
       try {
@@ -189,7 +232,7 @@ C:\projects\foo\src\./foo.pb.h: C:/foo/include/google/protobuf/wrappers.proto\
         if (required) {
           log.LogError($"Unable to load {filename}: {ex.GetType().Name}: {ex.Message}");
         } else {
-          log.LogMessage(MessageImportance.Low, $"Skippping {filename}: {ex.Message}");
+          log.LogMessage(MessageImportance.Low, $"Skipping {filename}: {ex.Message}");
         }
         return new string[0];
       }

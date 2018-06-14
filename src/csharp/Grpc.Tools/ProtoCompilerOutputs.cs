@@ -68,7 +68,7 @@ namespace Grpc.Tools {
         var outputs = generator.GetPossibleOutputs(proto);
         foreach (string output in outputs) {
           var ti = new TaskItem(output);
-          ti.SetMetadata(Metadata.kSource, proto.ItemSpec);
+          ti.SetMetadata(Metadata.Source, proto.ItemSpec);
           possible.Add(ti);
         }
       }

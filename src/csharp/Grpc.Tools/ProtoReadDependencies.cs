@@ -55,7 +55,7 @@ namespace Grpc.Tools {
           string[] deps = DepFileUtil.ReadDependencyInputs(ProtoDepDir, proto.ItemSpec, Log);
           foreach (string dep in deps) {
             var ti = new TaskItem(dep);
-            ti.SetMetadata(Metadata.kSource, proto.ItemSpec);
+            ti.SetMetadata(Metadata.Source, proto.ItemSpec);
             dependencies.Add(ti);
           }
         }
