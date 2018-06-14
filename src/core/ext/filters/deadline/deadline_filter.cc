@@ -358,8 +358,8 @@ const grpc_channel_filter grpc_server_deadline_filter = {
 };
 
 bool grpc_deadline_checking_enabled(const grpc_channel_args* channel_args) {
-  return grpc_channel_arg_get_bool(
-      grpc_channel_args_find(channel_args, GRPC_ARG_ENABLE_DEADLINE_CHECKS),
+  return grpc_channel_args_get_bool(
+      channel_args, GRPC_ARG_ENABLE_DEADLINE_CHECKS,
       !grpc_channel_args_want_minimal_stack(channel_args));
 }
 
