@@ -103,8 +103,10 @@ struct pollable {
   int epfd;
   grpc_wakeup_fd wakeup;
 
-  // only for type fd... one ref to the owner fd
-  grpc_fd* owner_fd;
+  // The following are relevant only for type PO_FD
+  grpc_fd* owner_fd;       // Set to the owner_fd if the type is PO_FD
+  gpr_mu owner_orphan_mu;  // Synchronizes access to owner_orphaned field
+  bool owner_orphaned;     // Is the owner fd orphaned
 
   grpc_pollset_set* pollset_set;
   pollable* next;
@@ -445,6 +447,17 @@ static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
 
   gpr_mu_lock(&fd->orphan_mu);
 
+  // Get the fd->pollable_obj and set the owner_orphaned on that pollable to
+  // true so that the pollable will no longer access its owner_fd field.
+  gpr_mu_lock(&fd->pollable_mu);
+  pollable* pollable_obj = fd->pollable_obj;
+  gpr_mu_unlock(&fd->pollable_mu);
+
+  if (pollable_obj) {
+    gpr_mu_lock(&pollable_obj->owner_orphan_mu);
+    pollable_obj->owner_orphaned = true;
+  }
+
   fd->on_done_closure = on_done;
 
   /* If release_fd is not NULL, we should be relinquishing control of the file
@@ -465,6 +478,10 @@ static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
   REF_BY(fd, 1, reason);
 
   GRPC_CLOSURE_SCHED(fd->on_done_closure, GRPC_ERROR_NONE);
+
+  if (pollable_obj) {
+    gpr_mu_unlock(&pollable_obj->owner_orphan_mu);
+  }
 
   gpr_mu_unlock(&fd->orphan_mu);
 
@@ -550,6 +567,8 @@ static grpc_error* pollable_create(pollable_type type, pollable** p) {
   gpr_mu_init(&(*p)->mu);
   (*p)->epfd = epfd;
   (*p)->owner_fd = nullptr;
+  gpr_mu_init(&(*p)->owner_orphan_mu);
+  (*p)->owner_orphaned = false;
   (*p)->pollset_set = nullptr;
   (*p)->next = (*p)->prev = *p;
   (*p)->root_worker = nullptr;
@@ -845,10 +864,15 @@ static void fd_become_writable(grpc_fd* fd) { fd->write_closure->SetReady(); }
 
 static void fd_has_errors(grpc_fd* fd) { fd->error_closure->SetReady(); }
 
-static grpc_error* fd_get_or_become_pollable(grpc_fd* fd, pollable** p) {
+/* Get the pollable_obj attached to this fd. If none is attached, create a new
+ * pollable object (of type PO_FD), attach it to the fd and return it
+ *
+ * Note that if a pollable object is already attached to the fd, it may be of
+ * either PO_FD or PO_MULTI type */
+static grpc_error* get_fd_pollable(grpc_fd* fd, pollable** p) {
   gpr_mu_lock(&fd->pollable_mu);
   grpc_error* error = GRPC_ERROR_NONE;
-  static const char* err_desc = "fd_get_or_become_pollable";
+  static const char* err_desc = "get_fd_pollable";
   if (fd->pollable_obj == nullptr) {
     if (append_error(&error, pollable_create(PO_FD, &fd->pollable_obj),
                      err_desc)) {
@@ -1185,7 +1209,7 @@ static grpc_error* pollset_transition_pollable_from_empty_to_fd_locked(
   }
   append_error(&error, pollset_kick_all(pollset), err_desc);
   POLLABLE_UNREF(pollset->active_pollable, "pollset");
-  append_error(&error, fd_get_or_become_pollable(fd, &pollset->active_pollable),
+  append_error(&error, get_fd_pollable(fd, &pollset->active_pollable),
                err_desc);
   return error;
 }
@@ -1229,17 +1253,15 @@ static grpc_error* pollset_add_fd_locked(grpc_pollset* pollset, grpc_fd* fd) {
       error = pollset_transition_pollable_from_empty_to_fd_locked(pollset, fd);
       break;
     case PO_FD:
-      gpr_mu_lock(&po_at_start->owner_fd->orphan_mu);
-      if ((gpr_atm_no_barrier_load(&pollset->active_pollable->owner_fd->refst) &
-           1) == 0) {
-        error =
-            pollset_transition_pollable_from_empty_to_fd_locked(pollset, fd);
+      gpr_mu_lock(&po_at_start->owner_orphan_mu);
+      if (po_at_start->owner_orphaned) {
+        pollset_transition_pollable_from_empty_to_fd_locked(pollset, fd);
       } else {
         /* fd --> multipoller */
         error =
             pollset_transition_pollable_from_fd_to_multi_locked(pollset, fd);
       }
-      gpr_mu_unlock(&po_at_start->owner_fd->orphan_mu);
+      gpr_mu_unlock(&po_at_start->owner_orphan_mu);
       break;
     case PO_MULTI:
       error = pollable_add_fd(pollset->active_pollable, fd);
@@ -1275,16 +1297,17 @@ static grpc_error* pollset_as_multipollable_locked(grpc_pollset* pollset,
       append_error(&error, pollset_kick_all(pollset), err_desc);
       break;
     case PO_FD:
-      gpr_mu_lock(&po_at_start->owner_fd->orphan_mu);
-      if ((gpr_atm_no_barrier_load(&pollset->active_pollable->owner_fd->refst) &
-           1) == 0) {
+      gpr_mu_lock(&po_at_start->owner_orphan_mu);
+      if (po_at_start->owner_orphaned) {
+        // Unlock before Unref'ing the pollable
+        gpr_mu_unlock(&po_at_start->owner_orphan_mu);
         POLLABLE_UNREF(pollset->active_pollable, "pollset");
         error = pollable_create(PO_MULTI, &pollset->active_pollable);
       } else {
         error = pollset_transition_pollable_from_fd_to_multi_locked(pollset,
                                                                     nullptr);
+        gpr_mu_unlock(&po_at_start->owner_orphan_mu);
       }
-      gpr_mu_unlock(&po_at_start->owner_fd->orphan_mu);
       break;
     case PO_MULTI:
       break;
