@@ -51,6 +51,7 @@ typedef struct connected_channel_call_data {
   callback_state on_complete[6];  // Max number of pending batches.
   callback_state recv_initial_metadata_ready;
   callback_state recv_message_ready;
+  callback_state recv_trailing_metadata_ready;
 } call_data;
 
 static void run_in_call_combiner(void* arg, grpc_error* error) {
@@ -111,6 +112,12 @@ static void con_start_transport_stream_op_batch(
     intercept_callback(calld, state, false, "recv_message_ready",
                        &batch->payload->recv_message.recv_message_ready);
   }
+  if (batch->recv_trailing_metadata) {
+    callback_state* state = &calld->recv_trailing_metadata_ready;
+    intercept_callback(
+        calld, state, false, "recv_trailing_metadata_ready",
+        &batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready);
+  }
   if (batch->cancel_stream) {
     // There can be more than one cancellation batch in flight at any
     // given time, so we can't just pick out a fixed index into
@@ -121,7 +128,7 @@ static void con_start_transport_stream_op_batch(
         static_cast<callback_state*>(gpr_malloc(sizeof(*state)));
     intercept_callback(calld, state, true, "on_complete (cancel_stream)",
                        &batch->on_complete);
-  } else {
+  } else if (batch->on_complete != nullptr) {
     callback_state* state = get_state_for_batch(calld, batch);
     intercept_callback(calld, state, false, "on_complete", &batch->on_complete);
   }

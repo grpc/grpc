@@ -122,9 +122,15 @@ typedef struct grpc_transport_stream_op_batch_payload
 /* Transport stream op: a set of operations to perform on a transport
    against a single stream */
 typedef struct grpc_transport_stream_op_batch {
-  /** Should be enqueued when all requested operations (excluding recv_message
-      and recv_initial_metadata which have their own closures) in a given batch
-      have been completed. */
+  /** Should be scheduled when all of the non-recv operations in the batch
+      are complete.
+
+      The recv ops (recv_initial_metadata, recv_message, and
+      recv_trailing_metadata) each have their own callbacks.  If a batch
+      contains both recv ops and non-recv ops, on_complete should be
+      scheduled as soon as the non-recv ops are complete, regardless of
+      whether or not the recv ops are complete.  If a batch contains
+      only recv ops, on_complete can be null. */
   grpc_closure* on_complete;
 
   /** Values for the stream op (fields set are determined by flags above) */
@@ -148,9 +154,6 @@ typedef struct grpc_transport_stream_op_batch {
   /** Receive trailing metadata from the stream, into provided metadata batch.
    */
   bool recv_trailing_metadata : 1;
-
-  /** Collect any stats into provided buffer, zero internal stat counters */
-  bool collect_stats : 1;
 
   /** Cancel this stream with the provided error */
   bool cancel_stream : 1;
@@ -219,11 +222,10 @@ struct grpc_transport_stream_op_batch_payload {
 
   struct {
     grpc_metadata_batch* recv_trailing_metadata;
-  } recv_trailing_metadata;
-
-  struct {
     grpc_transport_stream_stats* collect_stats;
-  } collect_stats;
+    /** Should be enqueued when initial metadata is ready to be processed. */
+    grpc_closure* recv_trailing_metadata_ready;
+  } recv_trailing_metadata;
 
   /** Forcefully close this stream.
       The HTTP2 semantics should be:
