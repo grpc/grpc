@@ -252,15 +252,20 @@ static const grpc_arg_pointer_vtable response_generator_arg_vtable = {
 
 grpc_arg FakeResolverResponseGenerator::MakeChannelArg(
     FakeResolverResponseGenerator* generator) {
-  return grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR), generator,
-      &response_generator_arg_vtable);
+  grpc_arg arg;
+  arg.type = GRPC_ARG_POINTER;
+  arg.key = (char*)GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR;
+  arg.value.pointer.p = generator;
+  arg.value.pointer.vtable = &response_generator_arg_vtable;
+  return arg;
 }
 
 FakeResolverResponseGenerator* FakeResolverResponseGenerator::GetFromArgs(
     const grpc_channel_args* args) {
-  return grpc_channel_args_get_pointer<FakeResolverResponseGenerator>(
-      args, GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR);
+  const grpc_arg* arg =
+      grpc_channel_args_find(args, GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR);
+  if (arg == nullptr || arg->type != GRPC_ARG_POINTER) return nullptr;
+  return static_cast<FakeResolverResponseGenerator*>(arg->value.pointer.p);
 }
 
 //
