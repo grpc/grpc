@@ -75,6 +75,10 @@ _BM_SPECS = {
         'tpl': ['fixture', 'client_mutator'],
         'dyn': [],
     },
+    'BM_StartTransportStreamOpBatch': {
+        'tpl': ['fixture'],
+        'dyn': [],
+    },
     'BM_HpackEncoderEncodeHeader': {
         'tpl': ['fixture'],
         'dyn': ['end_of_stream', 'request_size'],
