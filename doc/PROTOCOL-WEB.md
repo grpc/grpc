@@ -138,4 +138,4 @@ Versioning
 
 Browser-specific features
 
-* For features that are unique to browser or HTML clients, check the [spec doc](https://github.com/grpc/grpc-web/blob/master/PROTOCOL-WEB.md) published in the grpc/grpc-web repo.
+* For features that are unique to browser or HTML clients, check the [spec doc](https://github.com/grpc/grpc-web/blob/master/BROWSER-FEATURES.md) published in the grpc/grpc-web repo.

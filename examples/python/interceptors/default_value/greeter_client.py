@@ -27,10 +27,14 @@ def run():
         message='Hello from your local interceptor!')
     default_value_interceptor = default_value_client_interceptor.DefaultValueClientInterceptor(
         default_value)
-    channel = grpc.insecure_channel('localhost:50051')
-    channel = grpc.intercept_channel(channel, default_value_interceptor)
-    stub = helloworld_pb2_grpc.GreeterStub(channel)
-    response = stub.SayHello(helloworld_pb2.HelloRequest(name='you'))
+    # NOTE(gRPC Python Team): .close() is possible on a channel and should be
+    # used in circumstances in which the with statement does not fit the needs
+    # of the code.
+    with grpc.insecure_channel('localhost:50051') as channel:
+        intercept_channel = grpc.intercept_channel(channel,
+                                                   default_value_interceptor)
+        stub = helloworld_pb2_grpc.GreeterStub(intercept_channel)
+        response = stub.SayHello(helloworld_pb2.HelloRequest(name='you'))
     print("Greeter client received: " + response.message)
 
 

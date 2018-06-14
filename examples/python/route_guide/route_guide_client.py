@@ -100,16 +100,19 @@ def guide_route_chat(stub):
 
 
 def run():
-    channel = grpc.insecure_channel('localhost:50051')
-    stub = route_guide_pb2_grpc.RouteGuideStub(channel)
-    print("-------------- GetFeature --------------")
-    guide_get_feature(stub)
-    print("-------------- ListFeatures --------------")
-    guide_list_features(stub)
-    print("-------------- RecordRoute --------------")
-    guide_record_route(stub)
-    print("-------------- RouteChat --------------")
-    guide_route_chat(stub)
+    # NOTE(gRPC Python Team): .close() is possible on a channel and should be
+    # used in circumstances in which the with statement does not fit the needs
+    # of the code.
+    with grpc.insecure_channel('localhost:50051') as channel:
+        stub = route_guide_pb2_grpc.RouteGuideStub(channel)
+        print("-------------- GetFeature --------------")
+        guide_get_feature(stub)
+        print("-------------- ListFeatures --------------")
+        guide_list_features(stub)
+        print("-------------- RecordRoute --------------")
+        guide_record_route(stub)
+        print("-------------- RouteChat --------------")
+        guide_route_chat(stub)
 
 
 if __name__ == '__main__':

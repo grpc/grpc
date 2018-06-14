@@ -2032,6 +2032,7 @@ targets:
   dict: test/core/end2end/fuzzers/api_fuzzer.dictionary
   maxlen: 2048
 - name: arena_test
+  cpu_cost: 10
   build: test
   language: c
   src:
