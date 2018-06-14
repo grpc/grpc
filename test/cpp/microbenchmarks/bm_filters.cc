@@ -58,8 +58,8 @@ static void BM_CallStackInit(benchmark::State& state) {
   grpc_call_final_info final_info;
   while (state.KeepRunning()) {
     GPR_TIMER_SCOPE("BenchmarkCycle", 0);
-    GRPC_ERROR_UNREF(
-        grpc_call_stack_init(data.channel_stack, 1, DoNothing, nullptr, &data.call_args));
+    GRPC_ERROR_UNREF(grpc_call_stack_init(data.channel_stack, 1, DoNothing,
+                                          nullptr, &data.call_args));
     grpc_call_stack_destroy(data.call_stack, &final_info, nullptr);
     // Recreate arena every 64k iterations to avoid oom
     if (0 == (state.iterations() & 0xffff)) {
@@ -83,13 +83,12 @@ typedef FilterFixture<&grpc_client_channel_filter, 0> ClientChannelFilter;
 typedef FilterBM<ClientChannelFilter> ClientChannelFilterBM;
 BENCHMARK_TEMPLATE(BM_CallStackInit, ClientChannelFilterBM);
 
-typedef FilterFixture<&grpc_message_compress_filter, CHECKS_NOT_LAST> 
-CompressFilter;
-typedef FilterBM<CompressFilter> CompressFilterBM; 
-BENCHMARK_TEMPLATE(BM_CallStackInit, CompressFilterBM); 
+typedef FilterFixture<&grpc_message_compress_filter, CHECKS_NOT_LAST>
+    CompressFilter;
+typedef FilterBM<CompressFilter> CompressFilterBM;
+BENCHMARK_TEMPLATE(BM_CallStackInit, CompressFilterBM);
 
-typedef
-FilterFixture<&grpc_client_deadline_filter, CHECKS_NOT_LAST>
+typedef FilterFixture<&grpc_client_deadline_filter, CHECKS_NOT_LAST>
     ClientDeadlineFilter;
 typedef FilterBM<ClientDeadlineFilter> ClientDeadlineFilterBM;
 BENCHMARK_TEMPLATE(BM_CallStackInit, ClientDeadlineFilterBM);
@@ -99,18 +98,19 @@ typedef FilterFixture<&grpc_server_deadline_filter, CHECKS_NOT_LAST>
 typedef FilterBM<ServerDeadlineFilter> ServerDeadlineFilterBM;
 BENCHMARK_TEMPLATE(BM_CallStackInit, ServerDeadlineFilterBM);
 
-typedef FilterFixture<&grpc_http_client_filter, CHECKS_NOT_LAST |
-REQUIRES_TRANSPORT>
+typedef FilterFixture<&grpc_http_client_filter,
+                      CHECKS_NOT_LAST | REQUIRES_TRANSPORT>
     HttpClientFilter;
 typedef FilterBM<HttpClientFilter> HttpClientFilterBM;
 BENCHMARK_TEMPLATE(BM_CallStackInit, HttpClientFilterBM);
 
-typedef FilterFixture<&grpc_http_server_filter, CHECKS_NOT_LAST> HttpServerFilter;
+typedef FilterFixture<&grpc_http_server_filter, CHECKS_NOT_LAST>
+    HttpServerFilter;
 typedef FilterBM<HttpServerFilter> HttpServerFilterBM;
 BENCHMARK_TEMPLATE(BM_CallStackInit, HttpServerFilterBM);
 
 typedef FilterFixture<&grpc_message_size_filter, CHECKS_NOT_LAST>
-MessageSizeFilter; 
+    MessageSizeFilter;
 typedef FilterBM<MessageSizeFilter> MessageSizeFilterBM;
 BENCHMARK_TEMPLATE(BM_CallStackInit, MessageSizeFilterBM);
 
@@ -119,11 +119,11 @@ typedef FilterFixture<&grpc_server_load_reporting_filter, CHECKS_NOT_LAST>
 typedef FilterBM<ServerLoadReportingFilter> ServerLoadReportingFilterBM;
 BENCHMARK_TEMPLATE(BM_CallStackInit, ServerLoadReportingFilterBM);
 
-// Measure full filter functionality overhead, from initializing the call stack 
-// through running all filter callbacks. 
-// Note that all we do is send down all 6 ops through the filter stack; we do 
-// not test different combinations or subsets of ops. Thus, this test does not 
-// comprehensively test all the code paths of each individual filter because 
+// Measure full filter functionality overhead, from initializing the call stack
+// through running all filter callbacks.
+// Note that all we do is send down all 6 ops through the filter stack; we do
+// not test different combinations or subsets of ops. Thus, this test does not
+// comprehensively test all the code paths of each individual filter because
 // filters may take different code paths based on the combination and/or
 // ordering of the ops.
 template <class FilterBM>
@@ -139,9 +139,8 @@ static void BM_FullFilterFunctionality(benchmark::State& state) {
     // Because filters can modify the call stack when processing a batch, we
     // need to clear and re-initialize it on each benchmark iteration
     memset(data.call_stack, 0, data.channel_stack->call_stack_size);
-    GRPC_ERROR_UNREF(
-        grpc_call_stack_init(data.channel_stack, 1, DoNothing, nullptr,
-        &data.call_args));
+    GRPC_ERROR_UNREF(grpc_call_stack_init(data.channel_stack, 1, DoNothing,
+                                          nullptr, &data.call_args));
 
     struct PayloadData payload;
     CreatePayloadForAllOps(&payload);
@@ -150,9 +149,10 @@ static void BM_FullFilterFunctionality(benchmark::State& state) {
     CreateBatchWithAllOps(&batch, &payload.payload);
 
     grpc_call_element* call_elem =
-    CALL_ELEMS_FROM_STACK(data.call_args.call_stack);
+        CALL_ELEMS_FROM_STACK(data.call_args.call_stack);
     if (!data.filters.empty()) {
-      bm_setup.fixture.filter->start_transport_stream_op_batch(call_elem, &batch);
+      bm_setup.fixture.filter->start_transport_stream_op_batch(call_elem,
+                                                               &batch);
     }
 
     GRPC_CLOSURE_RUN(batch.on_complete, GRPC_ERROR_NONE);
@@ -170,12 +170,12 @@ static void BM_FullFilterFunctionality(benchmark::State& state) {
 }
 
 // We skip Client_Channel for this benchmark because it requires a lot more work
-// than what has been done in order to microbenchmark it. Moreover, it may be 
+// than what has been done in order to microbenchmark it. Moreover, it may be
 // the case that once we do this work, we may be measuring much more than just
-// client_channel filter overhead. 
+// client_channel filter overhead.
 BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, NoFilterBM);
 BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, DummyFilterBM);
-BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, CompressFilterBM); 
+BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, CompressFilterBM);
 BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, ClientDeadlineFilterBM);
 BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, ServerDeadlineFilterBM);
 BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, HttpClientFilterBM);
