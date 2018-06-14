@@ -201,13 +201,6 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             credentials=credentials)
         return response
 
-    def with_call(self, request, timeout=None, metadata=None, credentials=None):
-        return self._with_call(
-            request,
-            timeout=timeout,
-            metadata=metadata,
-            credentials=credentials)
-
     def _with_call(self, request, timeout=None, metadata=None,
                    credentials=None):
         client_call_details = _ClientCallDetails(self._method, timeout,
@@ -231,6 +224,13 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         call = self._interceptor.intercept_unary_unary(
             continuation, client_call_details, request)
         return call.result(), call
+
+    def with_call(self, request, timeout=None, metadata=None, credentials=None):
+        return self._with_call(
+            request,
+            timeout=timeout,
+            metadata=metadata,
+            credentials=credentials)
 
     def future(self, request, timeout=None, metadata=None, credentials=None):
         client_call_details = _ClientCallDetails(self._method, timeout,
@@ -298,17 +298,6 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
             credentials=credentials)
         return response
 
-    def with_call(self,
-                  request_iterator,
-                  timeout=None,
-                  metadata=None,
-                  credentials=None):
-        return self._with_call(
-            request_iterator,
-            timeout=timeout,
-            metadata=metadata,
-            credentials=credentials)
-
     def _with_call(self,
                    request_iterator,
                    timeout=None,
@@ -335,6 +324,17 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
         call = self._interceptor.intercept_stream_unary(
             continuation, client_call_details, request_iterator)
         return call.result(), call
+
+    def with_call(self,
+                  request_iterator,
+                  timeout=None,
+                  metadata=None,
+                  credentials=None):
+        return self._with_call(
+            request_iterator,
+            timeout=timeout,
+            metadata=metadata,
+            credentials=credentials)
 
     def future(self,
                request_iterator,
