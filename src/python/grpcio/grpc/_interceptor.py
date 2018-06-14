@@ -194,7 +194,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         self._interceptor = interceptor
 
     def __call__(self, request, timeout=None, metadata=None, credentials=None):
-        response, ignored_call = self.with_call(
+        response, ignored_call = self._with_call(
             request,
             timeout=timeout,
             metadata=metadata,
@@ -202,6 +202,14 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         return response
 
     def with_call(self, request, timeout=None, metadata=None, credentials=None):
+        return self._with_call(
+            request,
+            timeout=timeout,
+            metadata=metadata,
+            credentials=credentials)
+
+    def _with_call(self, request, timeout=None, metadata=None,
+                   credentials=None):
         client_call_details = _ClientCallDetails(self._method, timeout,
                                                  metadata, credentials)
 
@@ -283,7 +291,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
                  timeout=None,
                  metadata=None,
                  credentials=None):
-        response, ignored_call = self.with_call(
+        response, ignored_call = self._with_call(
             request_iterator,
             timeout=timeout,
             metadata=metadata,
@@ -295,6 +303,17 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
                   timeout=None,
                   metadata=None,
                   credentials=None):
+        return self._with_call(
+            request_iterator,
+            timeout=timeout,
+            metadata=metadata,
+            credentials=credentials)
+
+    def _with_call(self,
+                   request_iterator,
+                   timeout=None,
+                   metadata=None,
+                   credentials=None):
         client_call_details = _ClientCallDetails(self._method, timeout,
                                                  metadata, credentials)
 
