@@ -33,18 +33,11 @@
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/filters/load_reporting/server_load_reporting_filter.h"
 #include "src/core/ext/filters/message_size/message_size_filter.h"
-#include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/connected_channel.h"
-#include "src/core/lib/iomgr/call_combiner.h"
-#include "src/core/lib/profiling/timers.h"
-#include "src/core/lib/surface/channel.h"
-#include "src/core/lib/transport/transport_impl.h"
 
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/filter_helpers.h"
 #include "test/cpp/util/test_config.h"
-
 
 auto& force_library_initialization = Library::get();
 
@@ -57,15 +50,8 @@ template <class FilterBM>
 static void BM_CallStackInit(benchmark::State& state) {
   // Setup for benchmark
   FilterBM bm_setup;
-  std::vector<const grpc_channel_filter*> filters;
-  grpc_channel_args channel_args = bm_setup.CreateFakeChannelArgs();
-  bm_setup.MaybeAddFilterToStack(&filters);
-  grpc_channel_stack* channel_stack =
-      bm_setup.ConstructChannelStack(&filters, &channel_args);
-  grpc_call_stack* call_stack =
-      static_cast<grpc_call_stack*>(gpr_zalloc(channel_stack->call_stack_size));
-  grpc_call_element_args call_args;
-  bm_setup.SetCallArgs(&call_args, call_stack);
+  struct DataForFilterBM data;
+  bm_setup.Setup(&data);
 
   // Run the benchmark
   grpc_call_final_info final_info;
@@ -74,14 +60,14 @@ static void BM_CallStackInit(benchmark::State& state) {
     GRPC_ERROR_UNREF(
         grpc_call_stack_init(channel_stack, 1, DoNothing, nullptr, &call_args));
     grpc_call_stack_destroy(call_stack, &final_info, nullptr);
-    // recreate arena every 64k iterations to avoid oom
+    // Recreate arena every 64k iterations to avoid oom
     if (0 == (state.iterations() & 0xffff)) {
       gpr_arena_destroy(call_args.arena);
       call_args.arena = gpr_arena_create(bm_setup.kArenaSize);
     }
   }
 
-  bm_setup.Destroy(&call_args, channel_stack, call_stack, state);
+  bm_setup.Destroy(&data, state);
 }
 
 typedef FilterFixture<nullptr, 0> NoFilter;
