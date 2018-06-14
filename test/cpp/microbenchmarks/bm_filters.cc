@@ -136,8 +136,11 @@ static void BM_FullFilterFunctionality(benchmark::State& state) {
   // Run the benchmark
   while (state.KeepRunning()) {
     GPR_TIMER_SCOPE("BenchmarkCycle", 0);
-    // Because filters can modify the call stack when processing a batch, we
-    // need to clear and re-initialize it on each benchmark iteration
+    // Because it's not valid to send more than one of any of the {send, recv}_
+    // {initial, trailing}_metadata ops on a single call, we need to construct
+    // a new call stack each time through the loop. It's also not valid to have
+    // more than one of send_message or recv_message in flight on a single call
+    // at the same time.
     memset(data.call_stack, 0, data.channel_stack->call_stack_size);
     GRPC_ERROR_UNREF(grpc_call_stack_init(data.channel_stack, 1, DoNothing,
                                           nullptr, &data.call_args));
