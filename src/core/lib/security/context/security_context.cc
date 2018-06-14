@@ -326,23 +326,8 @@ grpc_arg grpc_auth_context_to_arg(grpc_auth_context* p) {
                                          &auth_context_pointer_vtable);
 }
 
-grpc_auth_context* grpc_auth_context_from_arg(const grpc_arg* arg) {
-  if (strcmp(arg->key, GRPC_AUTH_CONTEXT_ARG) != 0) return nullptr;
-  if (arg->type != GRPC_ARG_POINTER) {
-    gpr_log(GPR_ERROR, "Invalid type %d for arg %s", arg->type,
-            GRPC_AUTH_CONTEXT_ARG);
-    return nullptr;
-  }
-  return static_cast<grpc_auth_context*>(arg->value.pointer.p);
-}
-
 grpc_auth_context* grpc_find_auth_context_in_args(
-    const grpc_channel_args* args) {
-  size_t i;
-  if (args == nullptr) return nullptr;
-  for (i = 0; i < args->num_args; i++) {
-    grpc_auth_context* p = grpc_auth_context_from_arg(&args->args[i]);
-    if (p != nullptr) return p;
-  }
-  return nullptr;
+    const grpc_channel_args* channel_args) {
+  return grpc_channel_args_get_pointer<grpc_auth_context>(
+      channel_args, GRPC_AUTH_CONTEXT_ARG);
 }

@@ -86,8 +86,8 @@ class ServerBuilder {
   /// \param creds The credentials associated with the server.
   /// \param selected_port[out] If not `nullptr`, gets populated with the port
   /// number bound to the \a grpc::Server for the corresponding endpoint after
-  /// it is successfully bound, 0 otherwise.
-  ///
+  /// it is successfully bound by BuildAndStart(), 0 otherwise. AddListeningPort
+  /// does not modify this pointer.
   ServerBuilder& AddListeningPort(const grpc::string& addr_uri,
                                   std::shared_ptr<ServerCredentials> creds,
                                   int* selected_port = nullptr);
@@ -144,12 +144,14 @@ class ServerBuilder {
   // Fine control knobs
 
   /// Set max receive message size in bytes.
+  /// The default is GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH.
   ServerBuilder& SetMaxReceiveMessageSize(int max_receive_message_size) {
     max_receive_message_size_ = max_receive_message_size;
     return *this;
   }
 
   /// Set max send message size in bytes.
+  /// The default is GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH.
   ServerBuilder& SetMaxSendMessageSize(int max_send_message_size) {
     max_send_message_size_ = max_send_message_size;
     return *this;

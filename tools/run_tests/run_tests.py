@@ -1114,6 +1114,12 @@ class ObjCLanguage(object):
                     'SCHEME': 'SwiftSample',
                     'EXAMPLE_PATH': 'src/objective-c/examples/SwiftSample'
                 }),
+            self.config.job_spec(
+                ['test/core/iomgr/ios/CFStreamTests/run_tests.sh'],
+                timeout_seconds=10 * 60,
+                shortname='cfstream-tests',
+                cpu_cost=1e6,
+                environ=_FORCE_ENVIRON_FOR_WRAPPERS),
         ]
 
     def pre_build_steps(self):
@@ -1126,7 +1132,10 @@ class ObjCLanguage(object):
         return []
 
     def build_steps(self):
-        return [['src/objective-c/tests/build_tests.sh']]
+        return [
+            ['src/objective-c/tests/build_tests.sh'],
+            ['test/core/iomgr/ios/CFStreamTests/build_tests.sh'],
+        ]
 
     def post_tests_steps(self):
         return []

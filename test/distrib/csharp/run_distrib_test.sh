@@ -26,3 +26,6 @@ nuget restore
 xbuild DistribTest.sln
 
 mono DistribTest/bin/Debug/DistribTest.exe
+
+# test that codegen work
+test_codegen/test_codegen.sh

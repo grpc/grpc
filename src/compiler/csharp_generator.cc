@@ -202,7 +202,8 @@ std::string GetCSharpMethodType(MethodType method_type) {
 std::string GetServiceNameFieldName() { return "__ServiceName"; }
 
 std::string GetMarshallerFieldName(const Descriptor* message) {
-  return "__Marshaller_" + message->name();
+  return "__Marshaller_" +
+         grpc_generator::StringReplace(message->full_name(), ".", "_", true);
 }
 
 std::string GetMethodFieldName(const MethodDescriptor* method) {
@@ -680,14 +681,19 @@ grpc::string GetServices(const FileDescriptor* file, bool generate_client,
     out.Print("using grpc = global::Grpc.Core;\n");
     out.Print("\n");
 
-    out.Print("namespace $namespace$ {\n", "namespace", GetFileNamespace(file));
-    out.Indent();
+    grpc::string file_namespace = GetFileNamespace(file);
+    if (file_namespace != "") {
+      out.Print("namespace $namespace$ {\n", "namespace", file_namespace);
+      out.Indent();
+    }
     for (int i = 0; i < file->service_count(); i++) {
       GenerateService(&out, file->service(i), generate_client, generate_server,
                       internal_access);
     }
-    out.Outdent();
-    out.Print("}\n");
+    if (file_namespace != "") {
+      out.Outdent();
+      out.Print("}\n");
+    }
     out.Print("#endregion\n");
   }
   return output;

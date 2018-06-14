@@ -51,6 +51,7 @@ class ChannelArgKey:
   default_authority = GRPC_ARG_DEFAULT_AUTHORITY
   primary_user_agent_string = GRPC_ARG_PRIMARY_USER_AGENT_STRING
   secondary_user_agent_string = GRPC_ARG_SECONDARY_USER_AGENT_STRING
+  ssl_session_cache = GRPC_SSL_SESSION_CACHE_ARG
   ssl_target_name_override = GRPC_SSL_TARGET_NAME_OVERRIDE_ARG
 
 

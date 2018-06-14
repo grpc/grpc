@@ -23,6 +23,7 @@ cdef class Server:
   cdef bint is_shutdown  # notification of complete shutdown received
   # used at dealloc when user forgets to shutdown
   cdef CompletionQueue backup_shutdown_queue
+  # TODO(https://github.com/grpc/grpc/issues/15662): Elide this.
   cdef list references
   cdef list registered_completion_queues
 

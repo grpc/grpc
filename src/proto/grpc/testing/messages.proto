@@ -27,7 +27,6 @@ message BoolValue {
   bool value = 1;
 }
 
-// DEPRECATED, don't use. To be removed shortly.
 // The type of payload that should be returned.
 enum PayloadType {
   // Compressable text format.
@@ -36,7 +35,6 @@ enum PayloadType {
 
 // A block of data, to simply increase gRPC message size.
 message Payload {
-  // DEPRECATED, don't use. To be removed shortly.
   // The type of data in body.
   PayloadType type = 1;
   // Primary contents of payload.
@@ -52,7 +50,6 @@ message EchoStatus {
 
 // Unary request.
 message SimpleRequest {
-  // DEPRECATED, don't use. To be removed shortly.
   // Desired payload type in the response from the server.
   // If response_type is RANDOM, server randomly chooses one from other formats.
   PayloadType response_type = 1;
@@ -131,7 +128,6 @@ message ResponseParameters {
 
 // Server-streaming request.
 message StreamingOutputCallRequest {
-  // DEPRECATED, don't use. To be removed shortly.
   // Desired payload type in the response from the server.
   // If response_type is RANDOM, the payload from each response in the stream
   // might be of different types. This is to simulate a mixed type of payload

@@ -25,7 +25,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_TCP_SERVER
 
 #include "src/core/lib/iomgr/tcp_server.h"
 
@@ -64,22 +64,11 @@ static grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
   s->expand_wildcard_addrs = false;
   for (size_t i = 0; i < (args == nullptr ? 0 : args->num_args); i++) {
     if (0 == strcmp(GRPC_ARG_ALLOW_REUSEPORT, args->args[i].key)) {
-      if (args->args[i].type == GRPC_ARG_INTEGER) {
-        s->so_reuseport = grpc_is_socket_reuse_port_supported() &&
-                          (args->args[i].value.integer != 0);
-      } else {
-        gpr_free(s);
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(GRPC_ARG_ALLOW_REUSEPORT
-                                                    " must be an integer");
-      }
+      s->so_reuseport = grpc_channel_arg_get_bool(
+          &args->args[i], grpc_is_socket_reuse_port_supported());
     } else if (0 == strcmp(GRPC_ARG_EXPAND_WILDCARD_ADDRS, args->args[i].key)) {
-      if (args->args[i].type == GRPC_ARG_INTEGER) {
-        s->expand_wildcard_addrs = (args->args[i].value.integer != 0);
-      } else {
-        gpr_free(s);
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            GRPC_ARG_EXPAND_WILDCARD_ADDRS " must be an integer");
-      }
+      s->expand_wildcard_addrs =
+          grpc_channel_arg_get_bool(&args->args[i], false);
     }
   }
   gpr_ref_init(&s->refs, 1);
@@ -150,7 +139,7 @@ static void deactivated_all_ports(grpc_tcp_server* s) {
       GRPC_CLOSURE_INIT(&sp->destroyed_closure, destroyed_port, s,
                         grpc_schedule_on_exec_ctx);
       grpc_fd_orphan(sp->emfd, &sp->destroyed_closure, nullptr,
-                     false /* already_closed */, "tcp_listener_shutdown");
+                     "tcp_listener_shutdown");
     }
     gpr_mu_unlock(&s->mu);
   } else {
@@ -226,7 +215,7 @@ static void on_read(void* arg, grpc_error* err) {
       gpr_log(GPR_INFO, "SERVER_CONNECT: incoming connection: %s", addr_str);
     }
 
-    grpc_fd* fdobj = grpc_fd_create(fd, name);
+    grpc_fd* fdobj = grpc_fd_create(fd, name, false);
 
     read_notifier_pollset =
         sp->server->pollsets[static_cast<size_t>(gpr_atm_no_barrier_fetch_add(
@@ -362,7 +351,7 @@ static grpc_error* clone_port(grpc_tcp_listener* listener, unsigned count) {
     listener->sibling = sp;
     sp->server = listener->server;
     sp->fd = fd;
-    sp->emfd = grpc_fd_create(fd, name);
+    sp->emfd = grpc_fd_create(fd, name, false);
     memcpy(&sp->addr, &listener->addr, sizeof(grpc_resolved_address));
     sp->port = port;
     sp->port_index = listener->port_index;
@@ -559,4 +548,4 @@ grpc_tcp_server_vtable grpc_posix_tcp_server_vtable = {
     tcp_server_shutdown_starting_add,
     tcp_server_unref,
     tcp_server_shutdown_listeners};
-#endif
+#endif /* GRPC_POSIX_SOCKET_TCP_SERVER */

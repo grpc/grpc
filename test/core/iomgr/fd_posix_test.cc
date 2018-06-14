@@ -115,7 +115,7 @@ static void session_shutdown_cb(void* arg, /*session */
                                 bool success) {
   session* se = static_cast<session*>(arg);
   server* sv = se->sv;
-  grpc_fd_orphan(se->em_fd, nullptr, nullptr, false /* already_closed */, "a");
+  grpc_fd_orphan(se->em_fd, nullptr, nullptr, "a");
   gpr_free(se);
   /* Start to shutdown listen fd. */
   grpc_fd_shutdown(sv->em_fd,
@@ -171,7 +171,7 @@ static void session_read_cb(void* arg, /*session */
 static void listen_shutdown_cb(void* arg /*server */, int success) {
   server* sv = static_cast<server*>(arg);
 
-  grpc_fd_orphan(sv->em_fd, nullptr, nullptr, false /* already_closed */, "b");
+  grpc_fd_orphan(sv->em_fd, nullptr, nullptr, "b");
 
   gpr_mu_lock(g_mu);
   sv->done = 1;
@@ -204,7 +204,7 @@ static void listen_cb(void* arg, /*=sv_arg*/
   fcntl(fd, F_SETFL, flags | O_NONBLOCK);
   se = static_cast<session*>(gpr_malloc(sizeof(*se)));
   se->sv = sv;
-  se->em_fd = grpc_fd_create(fd, "listener");
+  se->em_fd = grpc_fd_create(fd, "listener", false);
   grpc_pollset_add_fd(g_pollset, se->em_fd);
   GRPC_CLOSURE_INIT(&se->session_read_closure, session_read_cb, se,
                     grpc_schedule_on_exec_ctx);
@@ -233,7 +233,7 @@ static int server_start(server* sv) {
   port = ntohs(sin.sin_port);
   GPR_ASSERT(listen(fd, MAX_NUM_FD) == 0);
 
-  sv->em_fd = grpc_fd_create(fd, "server");
+  sv->em_fd = grpc_fd_create(fd, "server", false);
   grpc_pollset_add_fd(g_pollset, sv->em_fd);
   /* Register to be interested in reading from listen_fd. */
   GRPC_CLOSURE_INIT(&sv->listen_closure, listen_cb, sv,
@@ -289,7 +289,7 @@ static void client_init(client* cl) {
 /* Called when a client upload session is ready to shutdown. */
 static void client_session_shutdown_cb(void* arg /*client */, int success) {
   client* cl = static_cast<client*>(arg);
-  grpc_fd_orphan(cl->em_fd, nullptr, nullptr, false /* already_closed */, "c");
+  grpc_fd_orphan(cl->em_fd, nullptr, nullptr, "c");
   cl->done = 1;
   GPR_ASSERT(
       GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr)));
@@ -353,7 +353,7 @@ static void client_start(client* cl, int port) {
     }
   }
 
-  cl->em_fd = grpc_fd_create(fd, "client");
+  cl->em_fd = grpc_fd_create(fd, "client", false);
   grpc_pollset_add_fd(g_pollset, cl->em_fd);
 
   client_session_write(cl, GRPC_ERROR_NONE);
@@ -454,7 +454,7 @@ static void test_grpc_fd_change(void) {
   flags = fcntl(sv[1], F_GETFL, 0);
   GPR_ASSERT(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK) == 0);
 
-  em_fd = grpc_fd_create(sv[0], "test_grpc_fd_change");
+  em_fd = grpc_fd_create(sv[0], "test_grpc_fd_change", false);
   grpc_pollset_add_fd(g_pollset, em_fd);
 
   /* Register the first callback, then make its FD readable */
@@ -502,7 +502,7 @@ static void test_grpc_fd_change(void) {
   GPR_ASSERT(b.cb_that_ran == second_read_callback);
   gpr_mu_unlock(g_mu);
 
-  grpc_fd_orphan(em_fd, nullptr, nullptr, false /* already_closed */, "d");
+  grpc_fd_orphan(em_fd, nullptr, nullptr, "d");
 
   destroy_change_data(&a);
   destroy_change_data(&b);

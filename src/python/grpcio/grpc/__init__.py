@@ -1482,7 +1482,7 @@ def ssl_server_credentials(private_key_certificate_chain_pairs,
       A ServerCredentials for use with an SSL-enabled Server. Typically, this
       object is an argument to add_secure_port() method during server setup.
     """
-    if len(private_key_certificate_chain_pairs) == 0:
+    if not private_key_certificate_chain_pairs:
         raise ValueError(
             'At least one private key-certificate chain pair is required!')
     elif require_client_auth and root_certificates is None:
@@ -1512,15 +1512,15 @@ def ssl_server_certificate_configuration(private_key_certificate_chain_pairs,
       A ServerCertificateConfiguration that can be returned in the certificate
         configuration fetching callback.
     """
-    if len(private_key_certificate_chain_pairs) == 0:
-        raise ValueError(
-            'At least one private key-certificate chain pair is required!')
-    else:
+    if private_key_certificate_chain_pairs:
         return ServerCertificateConfiguration(
             _cygrpc.server_certificate_config_ssl(root_certificates, [
                 _cygrpc.SslPemKeyCertPair(key, pem)
                 for key, pem in private_key_certificate_chain_pairs
             ]))
+    else:
+        raise ValueError(
+            'At least one private key-certificate chain pair is required!')
 
 
 def dynamic_ssl_server_credentials(initial_certificate_configuration,
@@ -1656,9 +1656,11 @@ def server(thread_pool,
       A Server object.
     """
     from grpc import _server  # pylint: disable=cyclic-import
-    return _server.Server(thread_pool, () if handlers is None else handlers, ()
-                          if interceptors is None else interceptors, () if
-                          options is None else options, maximum_concurrent_rpcs)
+    return _server.create_server(thread_pool, ()
+                                 if handlers is None else handlers, ()
+                                 if interceptors is None else interceptors, ()
+                                 if options is None else options,
+                                 maximum_concurrent_rpcs)
 
 
 ###################################  __all__  #################################

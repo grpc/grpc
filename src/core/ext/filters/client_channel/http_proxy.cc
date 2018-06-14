@@ -83,11 +83,22 @@ done:
   return proxy_name;
 }
 
+/**
+ * Checks the value of GRPC_ARG_ENABLE_HTTP_PROXY to determine if http_proxy
+ * should be used.
+ */
+bool http_proxy_enabled(const grpc_channel_args* args) {
+  return grpc_channel_args_get_bool(args, GRPC_ARG_ENABLE_HTTP_PROXY, true);
+}
+
 static bool proxy_mapper_map_name(grpc_proxy_mapper* mapper,
                                   const char* server_uri,
                                   const grpc_channel_args* args,
                                   char** name_to_resolve,
                                   grpc_channel_args** new_args) {
+  if (!http_proxy_enabled(args)) {
+    return false;
+  }
   char* user_cred = nullptr;
   *name_to_resolve = get_http_proxy_server(&user_cred);
   if (*name_to_resolve == nullptr) return false;

@@ -99,9 +99,6 @@ int grpc_security_connector_cmp(grpc_security_connector* sc,
 /* Util to encapsulate the connector in a channel arg. */
 grpc_arg grpc_security_connector_to_arg(grpc_security_connector* sc);
 
-/* Util to get the connector from a channel arg. */
-grpc_security_connector* grpc_security_connector_from_arg(const grpc_arg* arg);
-
 /* Util to find the connector from channel args. */
 grpc_security_connector* grpc_security_connector_find_in_args(
     const grpc_channel_args* args);

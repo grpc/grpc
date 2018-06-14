@@ -254,9 +254,8 @@ static void http_connect_handshaker_do_handshake(
       reinterpret_cast<http_connect_handshaker*>(handshaker_in);
   // Check for HTTP CONNECT channel arg.
   // If not found, invoke on_handshake_done without doing anything.
-  const grpc_arg* arg =
-      grpc_channel_args_find(args->args, GRPC_ARG_HTTP_CONNECT_SERVER);
-  char* server_name = grpc_channel_arg_get_string(arg);
+  char* server_name =
+      grpc_channel_args_get_string(args->args, GRPC_ARG_HTTP_CONNECT_SERVER);
   if (server_name == nullptr) {
     // Set shutdown to true so that subsequent calls to
     // http_connect_handshaker_shutdown() do nothing.
@@ -267,8 +266,8 @@ static void http_connect_handshaker_do_handshake(
     return;
   }
   // Get headers from channel args.
-  arg = grpc_channel_args_find(args->args, GRPC_ARG_HTTP_CONNECT_HEADERS);
-  char* arg_header_string = grpc_channel_arg_get_string(arg);
+  char* arg_header_string =
+      grpc_channel_args_get_string(args->args, GRPC_ARG_HTTP_CONNECT_HEADERS);
   grpc_http_header* headers = nullptr;
   size_t num_headers = 0;
   char** header_strings = nullptr;
