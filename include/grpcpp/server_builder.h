@@ -86,8 +86,8 @@ class ServerBuilder {
   /// \param creds The credentials associated with the server.
   /// \param selected_port[out] If not `nullptr`, gets populated with the port
   /// number bound to the \a grpc::Server for the corresponding endpoint after
-  /// it is successfully bound, 0 otherwise.
-  ///
+  /// it is successfully bound by BuildAndStart(), 0 otherwise. AddListeningPort
+  /// does not modify this pointer.
   ServerBuilder& AddListeningPort(const grpc::string& addr_uri,
                                   std::shared_ptr<ServerCredentials> creds,
                                   int* selected_port = nullptr);
