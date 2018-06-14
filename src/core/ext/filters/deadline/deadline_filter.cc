@@ -290,6 +290,7 @@ static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   server_call_data* calld = static_cast<server_call_data*>(elem->call_data);
   start_timer_if_needed(elem, calld->recv_initial_metadata->deadline);
+  // Invoke the next callback.
   GRPC_CLOSURE_RUN(calld->next_recv_initial_metadata_ready,
                    GRPC_ERROR_REF(error));
 }

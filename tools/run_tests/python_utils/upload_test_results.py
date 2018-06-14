@@ -86,6 +86,26 @@ def _get_build_metadata(test_results):
         test_results['job_name'] = job_name
 
 
+def _insert_rows_with_retries(bq, bq_table, bq_rows):
+    """Insert rows to bq table. Retry on error."""
+    # BigQuery sometimes fails with large uploads, so batch 1,000 rows at a time.
+    for i in range((len(bq_rows) / 1000) + 1):
+        max_retries = 3
+        for attempt in range(max_retries):
+            if big_query_utils.insert_rows(bq, _PROJECT_ID, _DATASET_ID,
+                                           bq_table,
+                                           bq_rows[i * 1000:(i + 1) * 1000]):
+                break
+            else:
+                if attempt < max_retries - 1:
+                    print('Error uploading result to bigquery, will retry.')
+                else:
+                    print(
+                        'Error uploading result to bigquery, all attempts failed.'
+                    )
+                    sys.exit(1)
+
+
 def upload_results_to_bq(resultset, bq_table, args, platform):
     """Upload test results to a BQ table.
 
@@ -106,6 +126,7 @@ def upload_results_to_bq(resultset, bq_table, args, platform):
         partition_type=_PARTITION_TYPE,
         expiration_ms=_EXPIRATION_MS)
 
+    bq_rows = []
     for shortname, results in six.iteritems(resultset):
         for result in results:
             test_results = {}
@@ -124,23 +145,9 @@ def upload_results_to_bq(resultset, bq_table, args, platform):
             test_results['return_code'] = result.returncode
             test_results['test_name'] = shortname
             test_results['timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
-
             row = big_query_utils.make_row(str(uuid.uuid4()), test_results)
-
-            # TODO(jtattermusch): rows are inserted one by one, very inefficient
-            max_retries = 3
-            for attempt in range(max_retries):
-                if big_query_utils.insert_rows(bq, _PROJECT_ID, _DATASET_ID,
-                                               bq_table, [row]):
-                    break
-                else:
-                    if attempt < max_retries - 1:
-                        print('Error uploading result to bigquery, will retry.')
-                    else:
-                        print(
-                            'Error uploading result to bigquery, all attempts failed.'
-                        )
-                        sys.exit(1)
+            bq_rows.append(row)
+    _insert_rows_with_retries(bq, bq_table, bq_rows)
 
 
 def upload_interop_results_to_bq(resultset, bq_table, args):
@@ -162,6 +169,7 @@ def upload_interop_results_to_bq(resultset, bq_table, args):
         partition_type=_PARTITION_TYPE,
         expiration_ms=_EXPIRATION_MS)
 
+    bq_rows = []
     for shortname, results in six.iteritems(resultset):
         for result in results:
             test_results = {}
@@ -175,17 +183,5 @@ def upload_interop_results_to_bq(resultset, bq_table, args):
             test_results['test_case'] = shortname.split(':')[3]
             test_results['timestamp'] = time.strftime('%Y-%m-%d %H:%M:%S')
             row = big_query_utils.make_row(str(uuid.uuid4()), test_results)
-            # TODO(jtattermusch): rows are inserted one by one, very inefficient
-            max_retries = 3
-            for attempt in range(max_retries):
-                if big_query_utils.insert_rows(bq, _PROJECT_ID, _DATASET_ID,
-                                               bq_table, [row]):
-                    break
-                else:
-                    if attempt < max_retries - 1:
-                        print('Error uploading result to bigquery, will retry.')
-                    else:
-                        print(
-                            'Error uploading result to bigquery, all attempts failed.'
-                        )
-                        sys.exit(1)
+            bq_rows.append(row)
+    _insert_rows_with_retries(bq, bq_table, bq_rows)

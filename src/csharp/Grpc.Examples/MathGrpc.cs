@@ -17,7 +17,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-#pragma warning disable 1591
+#pragma warning disable 0414, 1591
 #region Designer generated code
 
 using grpc = global::Grpc.Core;
@@ -27,38 +27,38 @@ namespace Math {
   {
     static readonly string __ServiceName = "math.Math";
 
-    static readonly grpc::Marshaller<global::Math.DivArgs> __Marshaller_DivArgs = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Math.DivArgs.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Math.DivReply> __Marshaller_DivReply = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Math.DivReply.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Math.FibArgs> __Marshaller_FibArgs = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Math.FibArgs.Parser.ParseFrom);
-    static readonly grpc::Marshaller<global::Math.Num> __Marshaller_Num = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Math.Num.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Math.DivArgs> __Marshaller_math_DivArgs = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Math.DivArgs.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Math.DivReply> __Marshaller_math_DivReply = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Math.DivReply.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Math.FibArgs> __Marshaller_math_FibArgs = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Math.FibArgs.Parser.ParseFrom);
+    static readonly grpc::Marshaller<global::Math.Num> __Marshaller_math_Num = grpc::Marshallers.Create((arg) => global::Google.Protobuf.MessageExtensions.ToByteArray(arg), global::Math.Num.Parser.ParseFrom);
 
     static readonly grpc::Method<global::Math.DivArgs, global::Math.DivReply> __Method_Div = new grpc::Method<global::Math.DivArgs, global::Math.DivReply>(
         grpc::MethodType.Unary,
         __ServiceName,
         "Div",
-        __Marshaller_DivArgs,
-        __Marshaller_DivReply);
+        __Marshaller_math_DivArgs,
+        __Marshaller_math_DivReply);
 
     static readonly grpc::Method<global::Math.DivArgs, global::Math.DivReply> __Method_DivMany = new grpc::Method<global::Math.DivArgs, global::Math.DivReply>(
         grpc::MethodType.DuplexStreaming,
         __ServiceName,
         "DivMany",
-        __Marshaller_DivArgs,
-        __Marshaller_DivReply);
+        __Marshaller_math_DivArgs,
+        __Marshaller_math_DivReply);
 
     static readonly grpc::Method<global::Math.FibArgs, global::Math.Num> __Method_Fib = new grpc::Method<global::Math.FibArgs, global::Math.Num>(
         grpc::MethodType.ServerStreaming,
         __ServiceName,
         "Fib",
-        __Marshaller_FibArgs,
-        __Marshaller_Num);
+        __Marshaller_math_FibArgs,
+        __Marshaller_math_Num);
 
     static readonly grpc::Method<global::Math.Num, global::Math.Num> __Method_Sum = new grpc::Method<global::Math.Num, global::Math.Num>(
         grpc::MethodType.ClientStreaming,
         __ServiceName,
         "Sum",
-        __Marshaller_Num,
-        __Marshaller_Num);
+        __Marshaller_math_Num,
+        __Marshaller_math_Num);
 
     /// <summary>Service descriptor</summary>
     public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor

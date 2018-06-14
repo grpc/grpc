@@ -18,6 +18,7 @@ import unittest
 
 import grpc
 from grpc import _channel
+from grpc.experimental import session_cache
 import six
 
 from tests.unit import test_common
@@ -139,6 +140,50 @@ class AuthContextTest(unittest.TestCase):
         self.assertSequenceEqual([b'ssl'], auth_ctx['transport_security_type'])
         self.assertSequenceEqual([b'*.test.google.com'],
                                  auth_ctx['x509_common_name'])
+
+    def _do_one_shot_client_rpc(self, channel_creds, channel_options, port,
+                                expect_ssl_session_reused):
+        channel = grpc.secure_channel(
+            'localhost:{}'.format(port), channel_creds, options=channel_options)
+        response = channel.unary_unary(_UNARY_UNARY)(_REQUEST)
+        auth_data = pickle.loads(response)
+        self.assertEqual(expect_ssl_session_reused,
+                         auth_data[_AUTH_CTX]['ssl_session_reused'])
+        channel.close()
+
+    def testSessionResumption(self):
+        # Set up a secure server
+        handler = grpc.method_handlers_generic_handler('test', {
+            'UnaryUnary':
+            grpc.unary_unary_rpc_method_handler(handle_unary_unary)
+        })
+        server = test_common.test_server()
+        server.add_generic_rpc_handlers((handler,))
+        server_cred = grpc.ssl_server_credentials(_SERVER_CERTS)
+        port = server.add_secure_port('[::]:0', server_cred)
+        server.start()
+
+        # Create a cache for TLS session tickets
+        cache = session_cache.ssl_session_cache_lru(1)
+        channel_creds = grpc.ssl_channel_credentials(
+            root_certificates=_TEST_ROOT_CERTIFICATES)
+        channel_options = _PROPERTY_OPTIONS + (
+            ('grpc.ssl_session_cache', cache),)
+
+        # Initial connection has no session to resume
+        self._do_one_shot_client_rpc(
+            channel_creds,
+            channel_options,
+            port,
+            expect_ssl_session_reused=[b'false'])
+
+        # Subsequent connections resume sessions
+        self._do_one_shot_client_rpc(
+            channel_creds,
+            channel_options,
+            port,
+            expect_ssl_session_reused=[b'true'])
+        server.stop(None)
 
 
 if __name__ == '__main__':

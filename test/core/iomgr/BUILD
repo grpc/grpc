@@ -227,6 +227,7 @@ grpc_cc_test(
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
+    tags = ["manual"],    # TODO(adelez): Remove once this works on Foundry.
 )
 
 grpc_cc_test(

@@ -28,4 +28,5 @@ cp -r /var/local/jenkins/service_account $HOME || true
 
 cd /var/local/git/grpc
 
-tools/run_tests/run_tests.py -l python -c opt --build_only
+# interop tests only run using python2.7 currently (and python build is slow)
+tools/run_tests/run_tests.py -l python --compiler python2.7 -c opt --build_only

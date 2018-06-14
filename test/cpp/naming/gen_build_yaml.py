@@ -121,6 +121,25 @@ def main():
                   'grpc++_test_config',
               ],
           } for unsecure_build_config_suffix in ['_unsecure', '']
+      ] + [
+          {
+          'name': 'cancel_ares_query_test',
+          'build': 'test',
+          'language': 'c++',
+          'gtest': True,
+          'run': True,
+          'src': ['test/cpp/naming/cancel_ares_query_test.cc'],
+          'platforms': ['linux', 'posix', 'mac'],
+          'deps': [
+              'grpc++_test_util',
+              'grpc_test_util',
+              'gpr_test_util',
+              'grpc++',
+              'grpc',
+              'gpr',
+              'grpc++_test_config',
+          ],
+          },
       ]
   }
 

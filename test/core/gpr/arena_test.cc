@@ -71,7 +71,7 @@ static void test(const char* name, size_t init_size, const size_t* allocs,
   static const size_t allocs_##name[] = {__VA_ARGS__}; \
   test(#name, init_size, allocs_##name, GPR_ARRAY_SIZE(allocs_##name))
 
-#define CONCURRENT_TEST_THREADS 100
+#define CONCURRENT_TEST_THREADS 10
 
 size_t concurrent_test_iterations() {
   if (sizeof(void*) < 8) return 1000;

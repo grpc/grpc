@@ -14,6 +14,7 @@
 
 import logging
 
+_LOGGER = logging.getLogger(__name__)
 
 # This function will ascii encode unicode string inputs if neccesary.
 # In Python3, unicode strings are the default str type.
@@ -49,5 +50,5 @@ cdef str _decode(bytes bytestring):
         try:
             return bytestring.decode('utf8')
         except UnicodeDecodeError:
-            logging.exception('Invalid encoding on %s', bytestring)
+            _LOGGER.exception('Invalid encoding on %s', bytestring)
             return bytestring.decode('latin1')

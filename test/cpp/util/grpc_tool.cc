@@ -471,17 +471,26 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
   std::shared_ptr<grpc::Channel> channel =
       grpc::CreateChannel(server_address, cred.GetCredentials());
 
-  parser.reset(new grpc::testing::ProtoFileParser(
-      FLAGS_remotedb ? channel : nullptr, FLAGS_proto_path, FLAGS_protofiles));
+  if (!FLAGS_binary_input || !FLAGS_binary_output) {
+    parser.reset(
+        new grpc::testing::ProtoFileParser(FLAGS_remotedb ? channel : nullptr,
+                                           FLAGS_proto_path, FLAGS_protofiles));
+    if (parser->HasError()) {
+      fprintf(
+          stderr,
+          "Failed to find remote reflection service and local proto files.\n");
+      return false;
+    }
+  }
 
   if (FLAGS_binary_input) {
     formatted_method_name = method_name;
   } else {
     formatted_method_name = parser->GetFormattedMethodName(method_name);
-  }
-
-  if (parser->HasError()) {
-    return false;
+    if (parser->HasError()) {
+      fprintf(stderr, "Failed to find method %s in proto files.\n",
+              method_name.c_str());
+    }
   }
 
   if (argc == 3) {
@@ -711,6 +720,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
       serialized_request_proto = parser->GetSerializedProtoFromMethod(
           method_name, request_text, true /* is_request */);
       if (parser->HasError()) {
+        fprintf(stderr, "Failed to parse request.\n");
         return false;
       }
     }
@@ -735,6 +745,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
         serialized_response_proto = parser->GetTextFormatFromMethod(
             method_name, serialized_response_proto, false /* is_request */);
         if (parser->HasError()) {
+          fprintf(stderr, "Failed to parse response.\n");
           return false;
         }
       }
@@ -814,6 +825,9 @@ bool GrpcTool::ParseMessage(int argc, const char** argv,
         new grpc::testing::ProtoFileParser(FLAGS_remotedb ? channel : nullptr,
                                            FLAGS_proto_path, FLAGS_protofiles));
     if (parser->HasError()) {
+      fprintf(
+          stderr,
+          "Failed to find remote reflection service and local proto files.\n");
       return false;
     }
   }
@@ -824,6 +838,7 @@ bool GrpcTool::ParseMessage(int argc, const char** argv,
     serialized_request_proto =
         parser->GetSerializedProtoFromMessageType(type_name, message_text);
     if (parser->HasError()) {
+      fprintf(stderr, "Failed to serialize the message.\n");
       return false;
     }
   }
@@ -834,6 +849,7 @@ bool GrpcTool::ParseMessage(int argc, const char** argv,
     grpc::string output_text = parser->GetTextFormatFromMessageType(
         type_name, serialized_request_proto);
     if (parser->HasError()) {
+      fprintf(stderr, "Failed to deserialize the message.\n");
       return false;
     }
     output_ss << output_text << std::endl;
