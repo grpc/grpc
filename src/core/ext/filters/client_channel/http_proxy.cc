@@ -37,17 +37,21 @@
 #include "src/core/lib/slice/b64.h"
 
 /**
- * Parses the 'http_proxy' env var and returns the proxy hostname to resolve or
- * nullptr on error. Also sets 'user_cred' to user credentials if present in the
- * 'http_proxy' env var, otherwise leaves it unchanged. It is caller's
- * responsibility to gpr_free user_cred.
+ * Parses the 'https_proxy' env var (fallback on 'http_proxy') and returns the
+ * proxy hostname to resolve or nullptr on error. Also sets 'user_cred' to user
+ * credentials if present in the 'http_proxy' env var, otherwise leaves it
+ * unchanged. It is caller's responsibility to gpr_free user_cred.
  */
 static char* get_http_proxy_server(char** user_cred) {
   GPR_ASSERT(user_cred != nullptr);
   char* proxy_name = nullptr;
-  char* uri_str = gpr_getenv("http_proxy");
   char** authority_strs = nullptr;
   size_t authority_nstrs;
+  /* Prefer using 'https_proxy'. Fallback on 'http_proxy' if it is not set. The
+   * fallback behavior can be removed if there's a demand for it.
+   */
+  char* uri_str = gpr_getenv("https_proxy");
+  if (uri_str == nullptr) uri_str = gpr_getenv("http_proxy");
   if (uri_str == nullptr) return nullptr;
   grpc_uri* uri = grpc_uri_parse(uri_str, false /* suppress_errors */);
   if (uri == nullptr || uri->authority == nullptr) {
@@ -83,11 +87,24 @@ done:
   return proxy_name;
 }
 
+/**
+ * Checks the value of GRPC_ARG_ENABLE_HTTP_PROXY to determine if http_proxy
+ * should be used.
+ */
+bool http_proxy_enabled(const grpc_channel_args* args) {
+  const grpc_arg* arg =
+      grpc_channel_args_find(args, GRPC_ARG_ENABLE_HTTP_PROXY);
+  return grpc_channel_arg_get_bool(arg, true);
+}
+
 static bool proxy_mapper_map_name(grpc_proxy_mapper* mapper,
                                   const char* server_uri,
                                   const grpc_channel_args* args,
                                   char** name_to_resolve,
                                   grpc_channel_args** new_args) {
+  if (!http_proxy_enabled(args)) {
+    return false;
+  }
   char* user_cred = nullptr;
   *name_to_resolve = get_http_proxy_server(&user_cred);
   if (*name_to_resolve == nullptr) return false;

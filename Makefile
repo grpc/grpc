@@ -501,7 +501,6 @@ endif
 
 ifeq ($(HAS_PKG_CONFIG),true)
 OPENSSL_ALPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.2 openssl
-OPENSSL_NPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.1 openssl
 ZLIB_CHECK_CMD = $(PKG_CONFIG) --exists zlib
 PROTOBUF_CHECK_CMD = $(PKG_CONFIG) --atleast-version=3.5.0 protobuf
 CARES_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.11.0 libcares
@@ -514,7 +513,6 @@ OPENSSL_LIBS = ssl crypto
 endif
 
 OPENSSL_ALPN_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/openssl-alpn.c $(addprefix -l, $(OPENSSL_LIBS)) $(LDFLAGS)
-OPENSSL_NPN_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/openssl-npn.c $(addprefix -l, $(OPENSSL_LIBS)) $(LDFLAGS)
 BORINGSSL_COMPILE_CHECK_CMD = $(CC) $(CPPFLAGS) -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX $(CFLAGS) -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough $(NO_W_EXTRA_SEMI) -o $(TMPOUT) test/build/boringssl.c $(LDFLAGS)
 ZLIB_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/zlib.c -lz $(LDFLAGS)
 PROTOBUF_CHECK_CMD = $(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $(TMPOUT) test/build/protobuf.cc -lprotobuf $(LDFLAGS)
@@ -542,13 +540,7 @@ HAS_SYSTEM_PROTOBUF_VERIFY = $(shell $(PROTOBUF_CHECK_CMD) 2> /dev/null && echo 
 ifndef REQUIRE_CUSTOM_LIBRARIES_$(CONFIG)
 HAS_SYSTEM_OPENSSL_ALPN ?= $(shell $(OPENSSL_ALPN_CHECK_CMD) 2> /dev/null && echo true || echo false)
 ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),true)
-HAS_SYSTEM_OPENSSL_NPN = true
 CACHE_MK += HAS_SYSTEM_OPENSSL_ALPN = true,
-else
-HAS_SYSTEM_OPENSSL_NPN ?= $(shell $(OPENSSL_NPN_CHECK_CMD) 2> /dev/null && echo true || echo false)
-endif
-ifeq ($(HAS_SYSTEM_OPENSSL_NPN),true)
-CACHE_MK += HAS_SYSTEM_OPENSSL_NPN = true,
 endif
 HAS_SYSTEM_ZLIB ?= $(shell $(ZLIB_CHECK_CMD) 2> /dev/null && echo true || echo false)
 ifeq ($(HAS_SYSTEM_ZLIB),true)
@@ -565,7 +557,6 @@ endif
 else
 # override system libraries if the config requires a custom compiled library
 HAS_SYSTEM_OPENSSL_ALPN = false
-HAS_SYSTEM_OPENSSL_NPN = false
 HAS_SYSTEM_ZLIB = false
 HAS_SYSTEM_PROTOBUF = false
 HAS_SYSTEM_CARES = false
@@ -712,12 +703,7 @@ ifneq ($(HAS_EMBEDDED_OPENSSL_ALPN),false)
 EMBED_OPENSSL ?= $(HAS_EMBEDDED_OPENSSL_ALPN)
 NO_SECURE ?= false
 else # HAS_EMBEDDED_OPENSSL_ALPN=false
-ifeq ($(HAS_SYSTEM_OPENSSL_NPN),true)
-EMBED_OPENSSL ?= false
-NO_SECURE ?= false
-else
 NO_SECURE ?= true
-endif # HAS_SYSTEM_OPENSSL_NPN=true
 endif # HAS_EMBEDDED_OPENSSL_ALPN
 endif # HAS_SYSTEM_OPENSSL_ALPN
 
@@ -751,10 +737,10 @@ LDFLAGS := $(LDFLAGS_OPENSSL_PKG_CONFIG) $(LDFLAGS)
 else # HAS_PKG_CONFIG=false
 LIBS_SECURE = $(OPENSSL_LIBS)
 endif # HAS_PKG_CONFIG
-ifeq ($(HAS_SYSTEM_OPENSSL_NPN),true)
+ifeq ($(DISABLE_ALPN),true)
 CPPFLAGS += -DTSI_OPENSSL_ALPN_SUPPORT=0
 LIBS_SECURE = $(OPENSSL_LIBS)
-endif # HAS_SYSTEM_OPENSSL_NPN
+endif # DISABLE_ALPN
 PC_LIBS_SECURE = $(addprefix -l, $(LIBS_SECURE))
 endif # EMBED_OPENSSL
 endif # NO_SECURE
@@ -1331,6 +1317,7 @@ resolver_component_tests_runner_invoker_unsecure: $(BINDIR)/$(CONFIG)/resolver_c
 resolver_component_tests_runner_invoker: $(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker
 address_sorting_test_unsecure: $(BINDIR)/$(CONFIG)/address_sorting_test_unsecure
 address_sorting_test: $(BINDIR)/$(CONFIG)/address_sorting_test
+cancel_ares_query_test: $(BINDIR)/$(CONFIG)/cancel_ares_query_test
 alts_credentials_fuzzer_one_entry: $(BINDIR)/$(CONFIG)/alts_credentials_fuzzer_one_entry
 api_fuzzer_one_entry: $(BINDIR)/$(CONFIG)/api_fuzzer_one_entry
 client_fuzzer_one_entry: $(BINDIR)/$(CONFIG)/client_fuzzer_one_entry
@@ -1348,7 +1335,6 @@ uri_fuzzer_test_one_entry: $(BINDIR)/$(CONFIG)/uri_fuzzer_test_one_entry
 
 run_dep_checks:
 	$(OPENSSL_ALPN_CHECK_CMD) || true
-	$(OPENSSL_NPN_CHECK_CMD) || true
 	$(ZLIB_CHECK_CMD) || true
 	$(PERFTOOLS_CHECK_CMD) || true
 	$(PROTOBUF_CHECK_CMD) || true
@@ -1770,6 +1756,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker \
   $(BINDIR)/$(CONFIG)/address_sorting_test_unsecure \
   $(BINDIR)/$(CONFIG)/address_sorting_test \
+  $(BINDIR)/$(CONFIG)/cancel_ares_query_test \
 
 else
 buildtests_cxx: privatelibs_cxx \
@@ -1895,6 +1882,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker \
   $(BINDIR)/$(CONFIG)/address_sorting_test_unsecure \
   $(BINDIR)/$(CONFIG)/address_sorting_test \
+  $(BINDIR)/$(CONFIG)/cancel_ares_query_test \
 
 endif
 
@@ -2382,6 +2370,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/address_sorting_test_unsecure || ( echo test address_sorting_test_unsecure failed ; exit 1 )
 	$(E) "[RUN]     Testing address_sorting_test"
 	$(Q) $(BINDIR)/$(CONFIG)/address_sorting_test || ( echo test address_sorting_test failed ; exit 1 )
+	$(E) "[RUN]     Testing cancel_ares_query_test"
+	$(Q) $(BINDIR)/$(CONFIG)/cancel_ares_query_test || ( echo test cancel_ares_query_test failed ; exit 1 )
 
 
 flaky_test_cxx: buildtests_cxx
@@ -10011,6 +10001,7 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/max_message_length.cc \
     test/core/end2end/tests/negative_deadline.cc \
     test/core/end2end/tests/network_status_change.cc \
+    test/core/end2end/tests/no_error_on_hotpath.cc \
     test/core/end2end/tests/no_logging.cc \
     test/core/end2end/tests/no_op.cc \
     test/core/end2end/tests/payload.cc \
@@ -10127,6 +10118,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/max_message_length.cc \
     test/core/end2end/tests/negative_deadline.cc \
     test/core/end2end/tests/network_status_change.cc \
+    test/core/end2end/tests/no_error_on_hotpath.cc \
     test/core/end2end/tests/no_logging.cc \
     test/core/end2end/tests/no_op.cc \
     test/core/end2end/tests/payload.cc \
@@ -23747,6 +23739,49 @@ deps_address_sorting_test: $(ADDRESS_SORTING_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(ADDRESS_SORTING_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CANCEL_ARES_QUERY_TEST_SRC = \
+    test/cpp/naming/cancel_ares_query_test.cc \
+
+CANCEL_ARES_QUERY_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CANCEL_ARES_QUERY_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/cancel_ares_query_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/cancel_ares_query_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/cancel_ares_query_test: $(PROTOBUF_DEP) $(CANCEL_ARES_QUERY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(CANCEL_ARES_QUERY_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/cancel_ares_query_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/naming/cancel_ares_query_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+
+deps_cancel_ares_query_test: $(CANCEL_ARES_QUERY_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CANCEL_ARES_QUERY_TEST_OBJS:.o=.dep)
 endif
 endif
 

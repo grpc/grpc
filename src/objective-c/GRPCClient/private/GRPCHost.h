@@ -37,6 +37,7 @@ struct grpc_channel_credentials;
 @property(nonatomic) grpc_compression_algorithm compressAlgorithm;
 @property(nonatomic) int keepaliveInterval;
 @property(nonatomic) int keepaliveTimeout;
+@property(nonatomic) id logContext;
 
 /** The following properties should only be modified for testing: */
 

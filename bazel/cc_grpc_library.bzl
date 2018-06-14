@@ -43,12 +43,7 @@ def cc_grpc_library(name, srcs, deps, proto_only, well_known_protos, generate_mo
   )
 
   if not proto_only:
-    if use_external:
-      # when this file is used by non-grpc projects
-      plugin = "//external:grpc_cpp_plugin"
-    else:
-      plugin = "//:grpc_cpp_plugin"
-
+    plugin = "@com_github_grpc_grpc//:grpc_cpp_plugin"
     generate_cc(
         name = codegen_grpc_target,
         srcs = [proto_target],
@@ -57,14 +52,8 @@ def cc_grpc_library(name, srcs, deps, proto_only, well_known_protos, generate_mo
         generate_mocks = generate_mocks,
         **kwargs
     )
-
-    if use_external:
-      # when this file is used by non-grpc projects
-      grpc_deps = ["//external:grpc++_codegen_proto",
-                   "//external:protobuf"]
-    else:
-      grpc_deps = ["//:grpc++_codegen_proto", "//external:protobuf"]
-
+    grpc_deps  = ["@com_github_grpc_grpc//:grpc++_codegen_proto",
+                  "//external:protobuf"]
     native.cc_library(
         name = name,
         srcs = [":" + codegen_grpc_target, ":" + codegen_target],

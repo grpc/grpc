@@ -2,7 +2,6 @@
 - script: tools/run_tests/sanity/check_bazel_workspace.py
 - script: tools/run_tests/sanity/check_cache_mk.sh
 - script: tools/run_tests/sanity/check_owners.sh
-- script: tools/run_tests/sanity/check_sources_and_headers.py
 - script: tools/run_tests/sanity/check_shellcheck.sh
 - script: tools/run_tests/sanity/check_submodules.sh
 - script: tools/run_tests/sanity/check_test_filtering.py

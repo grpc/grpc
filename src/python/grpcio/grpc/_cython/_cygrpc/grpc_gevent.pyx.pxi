@@ -418,6 +418,11 @@ def init_grpc_gevent():
 
   g_event = gevent.event.Event()
   g_pool = gevent.pool.Group()
+
+  def cb_func(cb, args):
+    _spawn_greenlet(cb, *args)
+  set_async_callback_func(cb_func)
+
   gevent_resolver_vtable.resolve = socket_resolve
   gevent_resolver_vtable.resolve_async = socket_resolve_async
 
