@@ -1,3 +1,21 @@
+/*
+ *
+ * Copyright 2018 gRPC authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/iomgr/call_combiner.h"
@@ -179,7 +197,7 @@ template <class FilterFixture>
 class FilterBM {
  public:
   FilterBM()
-      : track_counters(), label(), args(), exec_ctx(), factory(), fixture() {}
+      : fixture(), track_counters(), label(), args(), exec_ctx(), factory() {}
 
   // Creates all necessary data and structures for the filter microbenchmark
   void Setup(struct DataForFilterBM* data) {
@@ -204,6 +222,7 @@ class FilterBM {
     track_counters.Finish(state);
   }
 
+  FilterFixture fixture;
   const int kArenaSize = 4096;
   TrackCounters track_counters;
   std::ostringstream label;
@@ -272,5 +291,64 @@ class FilterBM {
     std::vector<grpc_arg> args;
     grpc_core::ExecCtx exec_ctx;
     FakeClientChannelFactory factory;
-    FilterFixture fixture;
 };
+
+// Generic data needed for batch payloads in these microbenchmarks
+struct PayloadData {
+  grpc_metadata_batch metadata_batch_send_init;
+  grpc_metadata_batch metadata_batch_recv_init;
+  grpc_metadata_batch metadata_batch_send_trailing;
+  grpc_metadata_batch metadata_batch_recv_trailing;
+
+  gpr_atm peer_address_atm;
+
+  uint32_t recv_flags;
+
+  grpc_core::OrphanablePtr<grpc_core::ByteStream> op;
+
+  grpc_transport_stream_stats stats;
+
+  grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream>
+      byte_stream_send;
+  grpc_slice_buffer slice_buffer_send;
+  grpc_slice_buffer slice_buffer_recv;
+
+  grpc_transport_stream_op_batch_payload payload;
+};
+
+void CreatePayloadForAllOps(struct PayloadData* data) {
+  grpc_transport_stream_op_batch_payload* payload = &data->payload;
+
+  memset(data, 0, sizeof(struct PayloadData));
+
+  grpc_metadata_batch_init(&data->metadata_batch_send_init);
+  grpc_metadata_batch_init(&data->metadata_batch_recv_init);
+  grpc_metadata_batch_init(&data->metadata_batch_send_trailing);
+  grpc_metadata_batch_init(&data->metadata_batch_recv_trailing);
+  payload->send_initial_metadata.send_initial_metadata =
+      &data->metadata_batch_send_init;
+  payload->send_trailing_metadata.send_trailing_metadata =
+      &data->metadata_batch_send_trailing;
+  payload->recv_initial_metadata.recv_initial_metadata =
+      &data->metadata_batch_recv_init;
+  payload->recv_trailing_metadata.recv_trailing_metadata =
+    &data->metadata_batch_recv_trailing;
+
+  payload->recv_initial_metadata.recv_flags = &data->recv_flags;
+  payload->recv_initial_metadata.peer_string = &data->peer_address_atm;
+  std::string peer_address_string = "Unknown.";
+  gpr_atm_rel_store(payload->recv_initial_metadata.peer_string,
+                    (gpr_atm)gpr_strdup(peer_address_string.data()));
+  payload->recv_message.recv_message = &data->op;
+
+  payload->collect_stats.collect_stats = &data->stats;
+
+  grpc_slice_buffer_init(&data->slice_buffer_send);
+  data->byte_stream_send.Init(&data->slice_buffer_send, 0);
+  payload->send_message.send_message.reset(data->byte_stream_send.get());
+
+  grpc_slice_buffer_init(&data->slice_buffer_recv);
+  grpc_core::SliceBufferByteStream* sbs =
+      grpc_core::New<grpc_core::SliceBufferByteStream>(&data->slice_buffer_recv, 0);
+  payload->recv_message.recv_message->reset(sbs);
+}

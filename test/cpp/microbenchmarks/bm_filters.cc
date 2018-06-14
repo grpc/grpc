@@ -33,6 +33,7 @@
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/filters/load_reporting/server_load_reporting_filter.h"
 #include "src/core/ext/filters/message_size/message_size_filter.h"
+#include "src/core/lib/gprpp/manual_constructor.h"
 
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -118,170 +119,80 @@ typedef FilterFixture<&grpc_server_load_reporting_filter, CHECKS_NOT_LAST>
 typedef FilterBM<ServerLoadReportingFilter> ServerLoadReportingFilterBM;
 BENCHMARK_TEMPLATE(BM_CallStackInit, ServerLoadReportingFilterBM);
 
-// Test a filter's start_transport_stream_op_batch in isolation. FilterFixture
-// specifies the filter under test (use the FilterFixture<> template to specify
-// this).
+// Measure full filter functionality overhead, from initializing the call stack 
+// through running all filter callbacks. 
+// Note that all we do is send down all 6 ops through the filter stack; we do 
+// not test different combinations or subsets of ops. Thus, this test does not 
+// comprehensively test all the code paths of each individual filter because 
+// filters may take different code paths based on the combination and/or
+// ordering of the ops.
+template <class FilterBM>
+static void BM_FullFilterFunctionality(benchmark::State& state) {
+  // Setup for benchmark
+  FilterBM bm_setup;
+  struct DataForFilterBM data;
+  bm_setup.Setup(&data);
 
-// template <class FilterFixture>
-// static void BM_StartTransportStreamOpBatch(benchmark::State& state) {
-//   TrackCounters track_counters;
-//   FilterFixture fixture;
-//   std::ostringstream label;
+  // Run the benchmark
+  while (state.KeepRunning()) {
+    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
+    memset(data.call_stack, 0, data.channel_stack->call_stack_size);
+    GRPC_ERROR_UNREF(
+        grpc_call_stack_init(data.channel_stack, 1, DoNothing, nullptr,
+        &data.call_args));
 
-//   std::vector<grpc_arg> args;
-//   FakeClientChannelFactory fake_client_channel_factory;
-//   args.push_back(grpc_client_channel_factory_create_channel_arg(
-//       &fake_client_channel_factory));
-//   args.push_back(StringArg(GRPC_ARG_SERVER_URI, "localhost"));
+    struct PayloadData payload;
+    CreatePayloadForAllOps(&payload);
 
-//   grpc_channel_args channel_args = {args.size(), &args[0]};
+    
+    /* Create new batch with all 6 ops */
+    grpc_transport_stream_op_batch batch;
+    memset(&batch, 0, sizeof(grpc_transport_stream_op_batch));
+    batch.payload = &payload.payload;
+    batch.send_initial_metadata = true;
+    batch.send_trailing_metadata = true;
+    batch.send_message = true;
+    batch.recv_initial_metadata = true;
+    batch.recv_message = true;
+    batch.recv_trailing_metadata = true;
+    batch.collect_stats = true;
 
-//   std::vector<const grpc_channel_filter*> filters;
-//   if (fixture.filter != nullptr) {
-//     filters.push_back(fixture.filter);
-//     if (fixture.flags & CHECKS_NOT_LAST) {
-//       filters.push_back(&dummy_filter::dummy_filter);
-//     } else {
-//       // Add another dummy filter so that all the benchmarked filters
-//       // have a dummy filter on the stack. For consistency.
-//       filters.insert(filters.begin(), &dummy_filter::dummy_filter);
-//     }
-//   }
+    grpc_call_element* call_elem =
+    CALL_ELEMS_FROM_STACK(data.call_args.call_stack);
 
-//   size_t channel_size = grpc_channel_stack_size(filters.data(),
-//   filters.size()); grpc_channel_stack* channel_stack =
-//       static_cast<grpc_channel_stack*>(gpr_zalloc(channel_size));
-//   GPR_ASSERT(GRPC_LOG_IF_ERROR(
-//       "channel_stack_init",
-//       grpc_channel_stack_init(1, FilterDestroy, channel_stack,
-//       filters.data(),
-//                               filters.size(), &channel_args,
-//                               fixture.flags & REQUIRES_TRANSPORT
-//                                   ? &dummy_transport::dummy_transport
-//                                   : nullptr,
-//                               "CHANNEL", channel_stack)));
-//   grpc_core::ExecCtx::Get()->Flush();
-//   grpc_call_stack* call_stack =
-//       static_cast<grpc_call_stack*>(gpr_zalloc(channel_stack->call_stack_size));
-//   grpc_millis deadline = GRPC_MILLIS_INF_FUTURE;
-//   gpr_timespec start_time = gpr_now(GPR_CLOCK_MONOTONIC);
-//   grpc_slice method = grpc_slice_from_static_string("/foo/bar");
-//   grpc_call_final_info final_info;
-//   grpc_call_element_args call_args;
-//   call_args.call_stack = call_stack;
-//   call_args.server_transport_data = nullptr;
-//   call_args.context = nullptr;
-//   call_args.path = method;
-//   call_args.start_time = start_time;
-//   call_args.deadline = deadline;
-//   const int kArenaSize = 4096;
-//   call_args.arena = gpr_arena_create(kArenaSize);
+    if (!data.filters.empty()) {
+      bm_setup.fixture.filter->start_transport_stream_op_batch(call_elem, &batch);
+    }
 
-//   while (state.KeepRunning()) {
-//     GPR_TIMER_SCOPE("BenchmarkCycle", 0);
-//     memset(call_stack, 0, channel_stack->call_stack_size);
-//     GRPC_ERROR_UNREF(
-//         grpc_call_stack_init(channel_stack, 1, DoNothing, nullptr,
-//         &call_args));
+    GRPC_CLOSURE_RUN(batch.on_complete, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_RUN(
+        batch.payload->recv_initial_metadata.recv_initial_metadata_ready,
+        GRPC_ERROR_NONE);
+    GRPC_CLOSURE_RUN(batch.payload->recv_message.recv_message_ready,
+                     GRPC_ERROR_NONE);
+  }
 
-//     /* Create new payload */
-//     grpc_transport_stream_op_batch_payload payload;
-//     memset(&payload, 0, sizeof(grpc_transport_stream_op_batch_payload));
-//     grpc_metadata_batch metadata_batch_send_init;
-//     grpc_metadata_batch metadata_batch_recv_init;
-//     grpc_metadata_batch metadata_batch_send_trailing;
-//     grpc_metadata_batch metadata_batch_recv_trailing;
-//     grpc_metadata_batch_init(&metadata_batch_send_init);
-//     grpc_metadata_batch_init(&metadata_batch_recv_init);
-//     grpc_metadata_batch_init(&metadata_batch_send_trailing);
-//     grpc_metadata_batch_init(&metadata_batch_recv_trailing);
-//     payload.send_initial_metadata.send_initial_metadata =
-//         &metadata_batch_send_init;
+  grpc_call_final_info final_info;
+  grpc_call_stack_destroy(data.call_stack, &final_info, nullptr);
 
-//     payload.send_trailing_metadata.send_trailing_metadata =
-//         &metadata_batch_send_trailing;
-//     payload.recv_initial_metadata.recv_initial_metadata =
-//         &metadata_batch_recv_init;
-//     uint32_t recv_flags = 0;
-//     payload.recv_initial_metadata.recv_flags = &recv_flags;
+  bm_setup.Destroy(&data, state);
+}
 
-//     gpr_atm peer_address_atm;
-//     payload.recv_initial_metadata.peer_string = &peer_address_atm;
-//     std::string peer_address_string = "Unknown.";
-//     gpr_atm_rel_store(payload.recv_initial_metadata.peer_string,
-//                       (gpr_atm)gpr_strdup(peer_address_string.data()));
+BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, NoFilterBM);
+BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, DummyFilterBM);
 
-//     payload.recv_trailing_metadata.recv_trailing_metadata =
-//         &metadata_batch_recv_trailing;
+// We skip Client_Channel for this benchmark because it requires a lot more work
+// than what has been done in order to microbenchmark it. Moreover, it may be 
+// the case that once we do this work, we may be measuring much more than just
+// client_channel filter overhead. 
 
-//     grpc_core::OrphanablePtr<grpc_core::ByteStream> op;
-//     payload.recv_message.recv_message = &op;
-
-//     grpc_transport_stream_stats stats;
-//     memset(&stats, 0, sizeof(grpc_transport_stream_stats));
-//     payload.collect_stats.collect_stats = &stats;
-
-//     grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream>
-//         byte_stream_send;
-//     grpc_slice_buffer sb2;
-//     grpc_slice_buffer_init(&sb2);
-//     byte_stream_send.Init(&sb2, 0);
-//     payload.send_message.send_message.reset(byte_stream_send.get());
-
-//     grpc_slice_buffer sb;
-//     grpc_slice_buffer_init(&sb);
-//     grpc_core::SliceBufferByteStream* sbs =
-//         grpc_core::New<grpc_core::SliceBufferByteStream>(&sb, 0);
-//     payload.recv_message.recv_message->reset(sbs);
-
-//     /* Create new batch with all 6 ops */
-//     grpc_transport_stream_op_batch batch;
-//     memset(&batch, 0, sizeof(grpc_transport_stream_op_batch));
-//     batch.payload = &payload;
-//     batch.send_initial_metadata = true;
-//     batch.send_trailing_metadata = true;
-//     batch.send_message = true;
-//     batch.recv_initial_metadata = true;
-//     batch.recv_message = true;
-//     batch.recv_trailing_metadata = true;
-//     batch.collect_stats = true;
-
-//     grpc_call_element* call_elem =
-//     CALL_ELEMS_FROM_STACK(call_args.call_stack);
-
-//     if (fixture.filter != nullptr) {
-//       fixture.filter->start_transport_stream_op_batch(call_elem, &batch);
-//     }
-
-//     GRPC_CLOSURE_RUN(batch.on_complete, GRPC_ERROR_NONE);
-//     GRPC_CLOSURE_RUN(
-//         batch.payload->recv_initial_metadata.recv_initial_metadata_ready,
-//         GRPC_ERROR_NONE);
-//     GRPC_CLOSURE_RUN(batch.payload->recv_message.recv_message_ready,
-//                      GRPC_ERROR_NONE);
-//   }
-
-//   grpc_call_stack_destroy(call_stack, &final_info, nullptr);
-//   grpc_core::ExecCtx::Get()->Flush();
-
-//   grpc_channel_stack_destroy(channel_stack);
-//   gpr_arena_destroy(call_args.arena);
-
-//   gpr_free(channel_stack);
-//   gpr_free(call_stack);
-
-//   state.SetLabel(label.str());
-//   track_counters.Finish(state);
-// }
-// BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, NoFilter);
-// BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, DummyFilter);
-// BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, CompressFilter);
-// BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, ClientDeadlineFilter);
-// BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, ServerDeadlineFilter);
-// BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, HttpClientFilter);
-// BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, HttpServerFilter);
-// BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, MessageSizeFilter);
-// BENCHMARK_TEMPLATE(BM_StartTransportStreamOpBatch, LoadReportingFilter);
+BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, CompressFilterBM); 
+BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, ClientDeadlineFilterBM);
+BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, ServerDeadlineFilterBM);
+BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, HttpClientFilterBM);
+BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, HttpServerFilterBM);
+BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, MessageSizeFilterBM);
+BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, ServerLoadReportingFilterBM);
 
 // Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
 // and others do not. This allows us to support both modes.
