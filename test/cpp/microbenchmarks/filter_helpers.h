@@ -185,15 +185,15 @@ class FilterBM {
   void Setup(struct DataForFilterBM* data) {
     data->channel_args = CreateFakeChannelArgs();
     MaybeAddFilterToStack(&data->filters);
-    grpc_channel_stack* channel_stack =
+    data->channel_stack = 
         ConstructChannelStack(&data->filters, &data->channel_args);
     data->call_stack =
-        static_cast<grpc_call_stack*>(gpr_zalloc(channel_stack->call_stack_size));
+        static_cast<grpc_call_stack*>(gpr_zalloc(data->channel_stack->call_stack_size));
     SetCallArgs(&data->call_args, data->call_stack);
   }
 
   // Call this at the end of the benchmark for cleanup
-  void Destroy(struct DataForFilterBM data, benchmark::State& state) {
+  void Destroy(struct DataForFilterBM* data, benchmark::State& state) {
     gpr_arena_destroy(data->call_args.arena);
     grpc_channel_stack_destroy(data->channel_stack);
 

@@ -58,12 +58,12 @@ static void BM_CallStackInit(benchmark::State& state) {
   while (state.KeepRunning()) {
     GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     GRPC_ERROR_UNREF(
-        grpc_call_stack_init(channel_stack, 1, DoNothing, nullptr, &call_args));
-    grpc_call_stack_destroy(call_stack, &final_info, nullptr);
+        grpc_call_stack_init(data.channel_stack, 1, DoNothing, nullptr, &data.call_args));
+    grpc_call_stack_destroy(data.call_stack, &final_info, nullptr);
     // Recreate arena every 64k iterations to avoid oom
     if (0 == (state.iterations() & 0xffff)) {
-      gpr_arena_destroy(call_args.arena);
-      call_args.arena = gpr_arena_create(bm_setup.kArenaSize);
+      gpr_arena_destroy(data.call_args.arena);
+      data.call_args.arena = gpr_arena_create(bm_setup.kArenaSize);
     }
   }
 
