@@ -59,8 +59,17 @@ grpc_arg CreateTargetAuthorityTableChannelArg(TargetAuthorityTable* table) {
 
 TargetAuthorityTable* FindTargetAuthorityTableInArgs(
     const grpc_channel_args* args) {
-  return grpc_channel_args_get_pointer<TargetAuthorityTable>(
-      args, GRPC_ARG_TARGET_AUTHORITY_TABLE);
+  const grpc_arg* arg =
+      grpc_channel_args_find(args, GRPC_ARG_TARGET_AUTHORITY_TABLE);
+  if (arg != nullptr) {
+    if (arg->type == GRPC_ARG_POINTER) {
+      return static_cast<TargetAuthorityTable*>(arg->value.pointer.p);
+    } else {
+      gpr_log(GPR_ERROR, "value of " GRPC_ARG_TARGET_AUTHORITY_TABLE
+                         " channel arg was not pointer type; ignoring");
+    }
+  }
+  return nullptr;
 }
 
 }  // namespace grpc_core

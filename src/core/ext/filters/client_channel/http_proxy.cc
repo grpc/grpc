@@ -88,7 +88,9 @@ done:
  * should be used.
  */
 bool http_proxy_enabled(const grpc_channel_args* args) {
-  return grpc_channel_args_get_bool(args, GRPC_ARG_ENABLE_HTTP_PROXY, true);
+  const grpc_arg* arg =
+      grpc_channel_args_find(args, GRPC_ARG_ENABLE_HTTP_PROXY);
+  return grpc_channel_arg_get_bool(arg, true);
 }
 
 static bool proxy_mapper_map_name(grpc_proxy_mapper* mapper,
