@@ -28,4 +28,4 @@ then
 fi
 
 # Replaces version placeholder with value provided as first argument.
-sed -ibak "s/__GRPC_NUGET_VERSION__/${CSHARP_VERSION}/g" DistribTest/packages.config DistribTest/DistribTest.csproj DistribTest/DistribTestDotNet.csproj
+sed -ibak "s/__GRPC_NUGET_VERSION__/${CSHARP_VERSION}/g" DistribTest/packages.config DistribTest/DistribTest.csproj DistribTest/DistribTestDotNet.csproj test_codegen/test_codegen.sh

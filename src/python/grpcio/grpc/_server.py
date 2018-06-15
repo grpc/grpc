@@ -789,7 +789,16 @@ def _start(state):
         thread.start()
 
 
-class Server(grpc.Server):
+def _validate_generic_rpc_handlers(generic_rpc_handlers):
+    for generic_rpc_handler in generic_rpc_handlers:
+        service_attribute = getattr(generic_rpc_handler, 'service', None)
+        if service_attribute is None:
+            raise AttributeError(
+                '"{}" must conform to grpc.GenericRpcHandler type but does '
+                'not have "service" method!'.format(generic_rpc_handler))
+
+
+class _Server(grpc.Server):
 
     # pylint: disable=too-many-arguments
     def __init__(self, thread_pool, generic_handlers, interceptors, options,
@@ -802,6 +811,7 @@ class Server(grpc.Server):
                                    thread_pool, maximum_concurrent_rpcs)
 
     def add_generic_rpc_handlers(self, generic_rpc_handlers):
+        _validate_generic_rpc_handlers(generic_rpc_handlers)
         _add_generic_handlers(self._state, generic_rpc_handlers)
 
     def add_insecure_port(self, address):
@@ -819,3 +829,10 @@ class Server(grpc.Server):
 
     def __del__(self):
         _stop(self._state, None)
+
+
+def create_server(thread_pool, generic_rpc_handlers, interceptors, options,
+                  maximum_concurrent_rpcs):
+    _validate_generic_rpc_handlers(generic_rpc_handlers)
+    return _Server(thread_pool, generic_rpc_handlers, interceptors, options,
+                   maximum_concurrent_rpcs)

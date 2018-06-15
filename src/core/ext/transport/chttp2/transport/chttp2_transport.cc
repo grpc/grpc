@@ -447,20 +447,19 @@ static void init_transport(grpc_chttp2_transport* t,
             grpc_channel_arg_get_integer(&channel_args->args[i], {0, 0, 1}));
       } else if (0 == strcmp(channel_args->args[i].key,
                              GRPC_ARG_OPTIMIZATION_TARGET)) {
-        if (channel_args->args[i].type != GRPC_ARG_STRING) {
-          gpr_log(GPR_ERROR, "%s should be a string",
-                  GRPC_ARG_OPTIMIZATION_TARGET);
-        } else if (0 == strcmp(channel_args->args[i].value.string, "blend")) {
+        char* opt_target_str =
+            grpc_channel_arg_get_string(&channel_args->args[i]);
+        if (opt_target_str == nullptr) {
+          gpr_log(GPR_ERROR, "null/missing value opt target, assuming 'blend'");
+        } else if (0 == strcmp(opt_target_str, "blend")) {
           t->opt_target = GRPC_CHTTP2_OPTIMIZE_FOR_LATENCY;
-        } else if (0 == strcmp(channel_args->args[i].value.string, "latency")) {
+        } else if (0 == strcmp(opt_target_str, "latency")) {
           t->opt_target = GRPC_CHTTP2_OPTIMIZE_FOR_LATENCY;
-        } else if (0 ==
-                   strcmp(channel_args->args[i].value.string, "throughput")) {
+        } else if (0 == strcmp(opt_target_str, "throughput")) {
           t->opt_target = GRPC_CHTTP2_OPTIMIZE_FOR_THROUGHPUT;
         } else {
           gpr_log(GPR_ERROR, "%s value '%s' unknown, assuming 'blend'",
-                  GRPC_ARG_OPTIMIZATION_TARGET,
-                  channel_args->args[i].value.string);
+                  GRPC_ARG_OPTIMIZATION_TARGET, opt_target_str);
         }
       } else {
         static const struct {

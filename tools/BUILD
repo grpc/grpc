@@ -12,19 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
-
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_interop_matrix.sh"
-timeout_mins: 300
-action {
-  define_artifacts {
-    regex: "**/sponge_log.xml"
-    regex: "github/grpc/reports/**"
-  }
-}
-
-env_vars {
-  key: "RUN_TESTS_FLAGS"
-  value: "--language=all --release=all --allow_flakes --report_file=sponge_log.xml"
-}
+exports_files([
+    "lsan_suppressions.txt",
+    "tsan_suppressions.txt",
+    "ubsan_suppressions.txt",
+])

@@ -136,6 +136,7 @@ struct grpc_fd {
 
   grpc_core::ManualConstructor<grpc_core::LockfreeEvent> read_closure;
   grpc_core::ManualConstructor<grpc_core::LockfreeEvent> write_closure;
+  grpc_core::ManualConstructor<grpc_core::LockfreeEvent> error_closure;
 
   struct grpc_fd* freelist_next;
 
@@ -272,7 +273,7 @@ static void fd_global_shutdown(void) {
   gpr_mu_destroy(&fd_freelist_mu);
 }
 
-static grpc_fd* fd_create(int fd, const char* name) {
+static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
   grpc_fd* new_fd = nullptr;
 
   gpr_mu_lock(&fd_freelist_mu);
@@ -286,11 +287,12 @@ static grpc_fd* fd_create(int fd, const char* name) {
     new_fd = static_cast<grpc_fd*>(gpr_malloc(sizeof(grpc_fd)));
     new_fd->read_closure.Init();
     new_fd->write_closure.Init();
+    new_fd->error_closure.Init();
   }
-
   new_fd->fd = fd;
   new_fd->read_closure->InitEvent();
   new_fd->write_closure->InitEvent();
+  new_fd->error_closure->InitEvent();
   gpr_atm_no_barrier_store(&new_fd->read_notifier_pollset, (gpr_atm)NULL);
 
   new_fd->freelist_next = nullptr;
@@ -307,7 +309,13 @@ static grpc_fd* fd_create(int fd, const char* name) {
 
   struct epoll_event ev;
   ev.events = static_cast<uint32_t>(EPOLLIN | EPOLLOUT | EPOLLET);
-  ev.data.ptr = new_fd;
+  /* Use the least significant bit of ev.data.ptr to store track_err. We expect
+   * the addresses to be word aligned. We need to store track_err to avoid
+   * synchronization issues when accessing it after receiving an event.
+   * Accessing fd would be a data race there because the fd might have been
+   * returned to the free list at that point. */
+  ev.data.ptr = reinterpret_cast<void*>(reinterpret_cast<intptr_t>(new_fd) |
+                                        (track_err ? 1 : 0));
   if (epoll_ctl(g_epoll_set.epfd, EPOLL_CTL_ADD, fd, &ev) != 0) {
     gpr_log(GPR_ERROR, "epoll_ctl failed: %s", strerror(errno));
   }
@@ -327,6 +335,7 @@ static void fd_shutdown_internal(grpc_fd* fd, grpc_error* why,
       shutdown(fd->fd, SHUT_RDWR);
     }
     fd->write_closure->SetShutdown(GRPC_ERROR_REF(why));
+    fd->error_closure->SetShutdown(GRPC_ERROR_REF(why));
   }
   GRPC_ERROR_UNREF(why);
 }
@@ -337,7 +346,7 @@ static void fd_shutdown(grpc_fd* fd, grpc_error* why) {
 }
 
 static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
-                      bool already_closed, const char* reason) {
+                      const char* reason) {
   grpc_error* error = GRPC_ERROR_NONE;
   bool is_release_fd = (release_fd != nullptr);
 
@@ -350,7 +359,7 @@ static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
      descriptor fd->fd (but we still own the grpc_fd structure). */
   if (is_release_fd) {
     *release_fd = fd->fd;
-  } else if (!already_closed) {
+  } else {
     close(fd->fd);
   }
 
@@ -359,6 +368,7 @@ static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
   grpc_iomgr_unregister_object(&fd->iomgr_object);
   fd->read_closure->DestroyEvent();
   fd->write_closure->DestroyEvent();
+  fd->error_closure->DestroyEvent();
 
   gpr_mu_lock(&fd_freelist_mu);
   fd->freelist_next = fd_freelist;
@@ -383,6 +393,10 @@ static void fd_notify_on_write(grpc_fd* fd, grpc_closure* closure) {
   fd->write_closure->NotifyOn(closure);
 }
 
+static void fd_notify_on_error(grpc_fd* fd, grpc_closure* closure) {
+  fd->error_closure->NotifyOn(closure);
+}
+
 static void fd_become_readable(grpc_fd* fd, grpc_pollset* notifier) {
   fd->read_closure->SetReady();
   /* Use release store to match with acquire load in fd_get_read_notifier */
@@ -390,6 +404,8 @@ static void fd_become_readable(grpc_fd* fd, grpc_pollset* notifier) {
 }
 
 static void fd_become_writable(grpc_fd* fd) { fd->write_closure->SetReady(); }
+
+static void fd_has_errors(grpc_fd* fd) { fd->error_closure->SetReady(); }
 
 /*******************************************************************************
  * Pollset Definitions
@@ -611,16 +627,25 @@ static grpc_error* process_epoll_events(grpc_pollset* pollset) {
       append_error(&error, grpc_wakeup_fd_consume_wakeup(&global_wakeup_fd),
                    err_desc);
     } else {
-      grpc_fd* fd = static_cast<grpc_fd*>(data_ptr);
-      bool cancel = (ev->events & (EPOLLERR | EPOLLHUP)) != 0;
+      grpc_fd* fd = reinterpret_cast<grpc_fd*>(
+          reinterpret_cast<intptr_t>(data_ptr) & ~static_cast<intptr_t>(1));
+      bool track_err =
+          reinterpret_cast<intptr_t>(data_ptr) & static_cast<intptr_t>(1);
+      bool cancel = (ev->events & EPOLLHUP) != 0;
+      bool error = (ev->events & EPOLLERR) != 0;
       bool read_ev = (ev->events & (EPOLLIN | EPOLLPRI)) != 0;
       bool write_ev = (ev->events & EPOLLOUT) != 0;
+      bool err_fallback = error && !track_err;
 
-      if (read_ev || cancel) {
+      if (error && !err_fallback) {
+        fd_has_errors(fd);
+      }
+
+      if (read_ev || cancel || err_fallback) {
         fd_become_readable(fd, pollset);
       }
 
-      if (write_ev || cancel) {
+      if (write_ev || cancel || err_fallback) {
         fd_become_writable(fd);
       }
     }
@@ -1183,6 +1208,7 @@ static void shutdown_engine(void) {
 
 static const grpc_event_engine_vtable vtable = {
     sizeof(grpc_pollset),
+    true,
 
     fd_create,
     fd_wrapped_fd,
@@ -1190,6 +1216,7 @@ static const grpc_event_engine_vtable vtable = {
     fd_shutdown,
     fd_notify_on_read,
     fd_notify_on_write,
+    fd_notify_on_error,
     fd_is_shutdown,
     fd_get_read_notifier_pollset,
 

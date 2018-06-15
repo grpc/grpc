@@ -116,7 +116,9 @@ CFStreamHandle::CFStreamHandle(CFReadStreamRef read_stream,
   open_event_.InitEvent();
   read_event_.InitEvent();
   write_event_.InitEvent();
-  CFStreamClientContext ctx = {0, static_cast<void*>(this), nil, nil, nil};
+  CFStreamClientContext ctx = {0, static_cast<void*>(this),
+                               CFStreamHandle::Retain, CFStreamHandle::Release,
+                               nil};
   CFReadStreamSetClient(
       read_stream,
       kCFStreamEventOpenCompleted | kCFStreamEventHasBytesAvailable |

@@ -62,7 +62,7 @@ def _maybe_update_cc_library_hdrs(hdrs):
 def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
                     external_deps = [], deps = [], standalone = False,
                     language = "C++", testonly = False, visibility = None,
-                    alwayslink = 0):
+                    alwayslink = 0, data = []):
   copts = []
   if language.upper() == "C":
     copts = if_not_windows(["-std=c99"])
@@ -87,6 +87,7 @@ def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
         "include"
     ],
     alwayslink = alwayslink,
+    data = data,
   )
 
 def grpc_proto_plugin(name, srcs = [], deps = []):
@@ -110,7 +111,7 @@ def grpc_proto_library(name, srcs = [], deps = [], well_known_protos = False,
     generate_mocks = generate_mocks,
   )
 
-def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = "moderate"):
+def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = "moderate", tags = []):
   copts = []
   if language.upper() == "C":
     copts = if_not_windows(["-std=c99"])
@@ -140,6 +141,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
           poller,
           '$(location %s)' % name,
         ] + args['args'],
+        tags = tags,
       )
   else:
     native.cc_test(**args)

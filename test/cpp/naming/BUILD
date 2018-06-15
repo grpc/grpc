@@ -22,7 +22,7 @@ package(
 
 licenses(["notice"])  # Apache v2
 
-load("//bazel:grpc_build_system.bzl", "grpc_py_binary")
+load("//bazel:grpc_build_system.bzl", "grpc_py_binary", "grpc_cc_test")
 
 load(":generate_resolver_component_tests.bzl", "generate_resolver_component_tests")
 
@@ -33,6 +33,22 @@ grpc_py_binary(
         "resolver_component_tests_runner.py",
     ],
     testonly = True,
+)
+
+grpc_cc_test(
+    name = "cancel_ares_query_test",
+    srcs = ["cancel_ares_query_test.cc"],
+    external_deps = ["gmock"],
+    deps = [
+        "//test/cpp/util:test_util",
+        "//test/core/util:grpc_test_util",
+        "//test/core/util:gpr_test_util",
+        "//:grpc++",
+        "//:grpc",
+        "//:gpr",
+        "//test/cpp/util:test_config",
+        "//test/core/end2end:cq_verifier",
+    ],
 )
 
 generate_resolver_component_tests()

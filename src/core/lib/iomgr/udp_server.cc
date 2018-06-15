@@ -152,7 +152,7 @@ GrpcUdpListener::GrpcUdpListener(grpc_udp_server* server, int fd,
   grpc_sockaddr_to_string(&addr_str, addr, 1);
   gpr_asprintf(&name, "udp-server-listener:%s", addr_str);
   gpr_free(addr_str);
-  emfd_ = grpc_fd_create(fd, name);
+  emfd_ = grpc_fd_create(fd, name, false);
   memcpy(&addr_, addr, sizeof(grpc_resolved_address));
   GPR_ASSERT(emfd_);
   gpr_free(name);
@@ -197,14 +197,8 @@ struct grpc_udp_server {
 };
 
 static grpc_socket_factory* get_socket_factory(const grpc_channel_args* args) {
-  if (args) {
-    const grpc_arg* arg = grpc_channel_args_find(args, GRPC_ARG_SOCKET_FACTORY);
-    if (arg) {
-      GPR_ASSERT(arg->type == GRPC_ARG_POINTER);
-      return static_cast<grpc_socket_factory*>(arg->value.pointer.p);
-    }
-  }
-  return nullptr;
+  return grpc_channel_args_get_pointer<grpc_socket_factory>(
+      args, GRPC_ARG_SOCKET_FACTORY);
 }
 
 grpc_udp_server* grpc_udp_server_create(const grpc_channel_args* args) {
@@ -300,8 +294,7 @@ void GrpcUdpListener::OrphanFd() {
                     grpc_schedule_on_exec_ctx);
   /* Because at this point, all listening sockets have been shutdown already, no
    * need to call OnFdAboutToOrphan() to notify the handler again. */
-  grpc_fd_orphan(emfd_, &destroyed_closure_, nullptr,
-                 false /* already_closed */, "udp_listener_shutdown");
+  grpc_fd_orphan(emfd_, &destroyed_closure_, nullptr, "udp_listener_shutdown");
 }
 
 void grpc_udp_server_destroy(grpc_udp_server* s, grpc_closure* on_done) {

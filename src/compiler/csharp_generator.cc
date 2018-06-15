@@ -202,7 +202,8 @@ std::string GetCSharpMethodType(MethodType method_type) {
 std::string GetServiceNameFieldName() { return "__ServiceName"; }
 
 std::string GetMarshallerFieldName(const Descriptor* message) {
-  return "__Marshaller_" + message->name();
+  return "__Marshaller_" +
+         grpc_generator::StringReplace(message->full_name(), ".", "_", true);
 }
 
 std::string GetMethodFieldName(const MethodDescriptor* method) {

@@ -33,8 +33,7 @@
 #include "src/core/lib/surface/channel_init.h"
 
 static bool is_load_reporting_enabled(const grpc_channel_args* a) {
-  return grpc_channel_arg_get_bool(
-      grpc_channel_args_find(a, GRPC_ARG_ENABLE_LOAD_REPORTING), false);
+  return grpc_channel_args_get_bool(a, GRPC_ARG_ENABLE_LOAD_REPORTING, false);
 }
 
 static bool maybe_add_server_load_reporting_filter(
