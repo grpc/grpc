@@ -40,14 +40,17 @@ class ChannelNodePeer;
 
 class ChannelNode : public RefCounted<ChannelNode> {
  public:
-  ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes);
+  ChannelNode(bool enabled, grpc_channel* channel,
+              size_t channel_tracer_max_nodes);
   ~ChannelNode();
 
   void RecordCallStarted();
   void RecordCallFailed() {
+    if (!enabled_) return;
     gpr_atm_no_barrier_fetch_add(&calls_failed_, (gpr_atm(1)));
   }
   void RecordCallSucceeded() {
+    if (!enabled_) return;
     gpr_atm_no_barrier_fetch_add(&calls_succeeded_, (gpr_atm(1)));
   }
 
@@ -56,6 +59,7 @@ class ChannelNode : public RefCounted<ChannelNode> {
   ChannelTrace* trace() { return trace_.get(); }
 
   void set_channel_destroyed() {
+    if (!enabled_) return;
     GPR_ASSERT(channel_ != nullptr);
     channel_ = nullptr;
   }
@@ -70,13 +74,14 @@ class ChannelNode : public RefCounted<ChannelNode> {
   grpc_connectivity_state GetConnectivityState();
 
   // Not owned. Will be set to nullptr when the channel is destroyed.
-  grpc_channel* channel_;
+  const bool enabled_;
+  grpc_channel* channel_ = nullptr;
   UniquePtr<char> target_;
   gpr_atm calls_started_ = 0;
   gpr_atm calls_succeeded_ = 0;
   gpr_atm calls_failed_ = 0;
-  gpr_atm last_call_started_millis_;
-  const intptr_t channel_uuid_;
+  gpr_atm last_call_started_millis_ = 0;
+  intptr_t channel_uuid_;
   ManualConstructor<ChannelTrace> trace_;
 };
 

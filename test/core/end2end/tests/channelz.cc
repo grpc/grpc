@@ -198,11 +198,18 @@ static void run_one_request(grpc_end2end_test_config config,
 static void test_channelz(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f;
 
-  f = begin_test(config, "test_channelz", nullptr, nullptr);
+  grpc_arg client_a;
+  client_a.type = GRPC_ARG_INTEGER;
+  client_a.key = const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ);
+  client_a.value.integer = true;
+  grpc_channel_args client_args = {1, &client_a};
+
+  f = begin_test(config, "test_channelz", &client_args, nullptr);
   grpc_core::channelz::ChannelNode* channelz_channel =
       grpc_channel_get_channelz_node(f.client);
 
   char* json = channelz_channel->RenderJSON();
+  GPR_ASSERT(json != nullptr);
   GPR_ASSERT(nullptr != strstr(json, "\"callsStarted\":\"0\""));
   GPR_ASSERT(nullptr != strstr(json, "\"callsFailed\":\"0\""));
   GPR_ASSERT(nullptr != strstr(json, "\"callsSucceeded\":\"0\""));
@@ -212,6 +219,7 @@ static void test_channelz(grpc_end2end_test_config config) {
   run_one_request(config, f, true);
 
   json = channelz_channel->RenderJSON();
+  GPR_ASSERT(json != nullptr);
   GPR_ASSERT(nullptr != strstr(json, "\"callsStarted\":\"1\""));
   GPR_ASSERT(nullptr != strstr(json, "\"callsFailed\":\"0\""));
   GPR_ASSERT(nullptr != strstr(json, "\"callsSucceeded\":\"1\""));
@@ -221,10 +229,15 @@ static void test_channelz(grpc_end2end_test_config config) {
   run_one_request(config, f, false);
 
   json = channelz_channel->RenderJSON();
+  GPR_ASSERT(json != nullptr);
   gpr_log(GPR_INFO, "%s", json);
   GPR_ASSERT(nullptr != strstr(json, "\"callsStarted\":\"2\""));
   GPR_ASSERT(nullptr != strstr(json, "\"callsFailed\":\"1\""));
   GPR_ASSERT(nullptr != strstr(json, "\"callsSucceeded\":\"1\""));
+  // channel tracing is not enables, so these should not be preset.
+  GPR_ASSERT(nullptr == strstr(json, "\"trace\""));
+  GPR_ASSERT(nullptr == strstr(json, "\"description\":\"Channel created\""));
+  GPR_ASSERT(nullptr == strstr(json, "\"severity\":\"CT_INFO\""));
   gpr_free(json);
 
   end_test(&f);
@@ -234,11 +247,15 @@ static void test_channelz(grpc_end2end_test_config config) {
 static void test_channelz_with_channel_trace(grpc_end2end_test_config config) {
   grpc_end2end_test_fixture f;
 
-  grpc_arg client_a;
-  client_a.type = GRPC_ARG_INTEGER;
-  client_a.key = const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE);
-  client_a.value.integer = 5;
-  grpc_channel_args client_args = {1, &client_a};
+  grpc_arg client_a[2];
+  client_a[0].type = GRPC_ARG_INTEGER;
+  client_a[0].key =
+      const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE);
+  client_a[0].value.integer = 5;
+  client_a[1].type = GRPC_ARG_INTEGER;
+  client_a[1].key = const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ);
+  client_a[1].value.integer = true;
+  grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
 
   f = begin_test(config, "test_channelz_with_channel_trace", &client_args,
                  nullptr);
@@ -246,6 +263,7 @@ static void test_channelz_with_channel_trace(grpc_end2end_test_config config) {
       grpc_channel_get_channelz_node(f.client);
 
   char* json = channelz_channel->RenderJSON();
+  GPR_ASSERT(json != nullptr);
   gpr_log(GPR_INFO, "%s", json);
   GPR_ASSERT(nullptr != strstr(json, "\"trace\""));
   GPR_ASSERT(nullptr != strstr(json, "\"description\":\"Channel created\""));
@@ -255,9 +273,65 @@ static void test_channelz_with_channel_trace(grpc_end2end_test_config config) {
   end_test(&f);
   config.tear_down_data(&f);
 }
+
+static void test_channelz_disabled(grpc_end2end_test_config config) {
+  grpc_end2end_test_fixture f;
+
+  f = begin_test(config, "test_channelz_disabled", nullptr, nullptr);
+  grpc_core::channelz::ChannelNode* channelz_channel =
+      grpc_channel_get_channelz_node(f.client);
+  char* json_str = channelz_channel->RenderJSON();
+  GPR_ASSERT(json_str == nullptr);
+  grpc_json* json = channelz_channel->trace()->RenderJSON();
+  GPR_ASSERT(json == nullptr);
+  // one successful request
+  run_one_request(config, f, true);
+  json_str = channelz_channel->RenderJSON();
+  GPR_ASSERT(json_str == nullptr);
+  GPR_ASSERT(json == nullptr);
+  end_test(&f);
+  config.tear_down_data(&f);
+}
+
+static void test_channelz_disabled_with_channel_trace(
+    grpc_end2end_test_config config) {
+  grpc_end2end_test_fixture f;
+
+  grpc_arg client_a;
+  client_a.type = GRPC_ARG_INTEGER;
+  client_a.key = const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE);
+  client_a.value.integer = 5;
+  grpc_channel_args client_args = {1, &client_a};
+
+  f = begin_test(config, "test_channelz_disabled_with_channel_trace",
+                 &client_args, nullptr);
+  grpc_core::channelz::ChannelNode* channelz_channel =
+      grpc_channel_get_channelz_node(f.client);
+  // channelz is disabled so rendering return null.
+  char* json_str = channelz_channel->RenderJSON();
+  GPR_ASSERT(json_str == nullptr);
+  // channel trace is explicitly requested, so this works as it should
+  grpc_json* json = channelz_channel->trace()->RenderJSON();
+  GPR_ASSERT(json != nullptr);
+  json_str = grpc_json_dump_to_string(json, 0);
+  GPR_ASSERT(json_str != nullptr);
+  gpr_log(GPR_INFO, "%s", json_str);
+  GPR_ASSERT(nullptr !=
+             strstr(json_str, "\"description\":\"Channel created\""));
+  GPR_ASSERT(nullptr != strstr(json_str, "\"severity\":\"CT_INFO\""));
+  GPR_ASSERT(nullptr != strstr(json_str, "\"numEventsLogged\":"));
+  grpc_json_destroy(json);
+  gpr_free(json_str);
+
+  end_test(&f);
+  config.tear_down_data(&f);
+}
+
 void channelz(grpc_end2end_test_config config) {
   test_channelz(config);
   test_channelz_with_channel_trace(config);
+  test_channelz_disabled(config);
+  test_channelz_disabled_with_channel_trace(config);
 }
 
 void channelz_pre_init(void) {}

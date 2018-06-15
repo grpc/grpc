@@ -104,6 +104,7 @@ grpc_channel* grpc_channel_create_with_builder(
   channel->target = target;
   channel->is_client = grpc_channel_stack_type_is_client(channel_stack_type);
   size_t channel_tracer_max_nodes = 0;  // default to off
+  bool channelz_enabled = false;
   gpr_mu_init(&channel->registered_call_mu);
   channel->registered_calls = nullptr;
 
@@ -142,13 +143,15 @@ grpc_channel* grpc_channel_create_with_builder(
       const grpc_integer_options options = {0, 0, INT_MAX};
       channel_tracer_max_nodes =
           (size_t)grpc_channel_arg_get_integer(&args->args[i], options);
+    } else if (0 == strcmp(args->args[i].key, GRPC_ARG_ENABLE_CHANNELZ)) {
+      channelz_enabled = grpc_channel_arg_get_bool(&args->args[i], false);
     }
   }
 
   grpc_channel_args_destroy(args);
   channel->channelz_channel =
       grpc_core::MakeRefCounted<grpc_core::channelz::ChannelNode>(
-          channel, channel_tracer_max_nodes);
+          channelz_enabled, channel, channel_tracer_max_nodes);
   channel->channelz_channel->trace()->AddTraceEvent(
       grpc_core::channelz::ChannelTrace::Severity::Info,
       grpc_slice_from_static_string("Channel created"));

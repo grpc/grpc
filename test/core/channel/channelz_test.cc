@@ -70,12 +70,15 @@ grpc_json* GetJsonChild(grpc_json* parent, const char* key) {
 class ChannelFixture {
  public:
   ChannelFixture(int max_trace_nodes) {
-    grpc_arg client_a;
-    client_a.type = GRPC_ARG_INTEGER;
-    client_a.key =
+    grpc_arg client_a[2];
+    client_a[0].type = GRPC_ARG_INTEGER;
+    client_a[0].key =
         const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE);
-    client_a.value.integer = max_trace_nodes;
-    grpc_channel_args client_args = {1, &client_a};
+    client_a[0].value.integer = max_trace_nodes;
+    client_a[1].type = GRPC_ARG_INTEGER;
+    client_a[1].key = const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ);
+    client_a[1].value.integer = true;
+    grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
     channel_ =
         grpc_insecure_channel_create("fake_target", &client_args, nullptr);
   }
@@ -96,14 +99,14 @@ struct validate_channel_data_args {
 
 void ValidateChildInteger(grpc_json* json, int64_t expect, const char* key) {
   grpc_json* gotten_json = GetJsonChild(json, key);
-  EXPECT_NE(gotten_json, nullptr);
+  ASSERT_NE(gotten_json, nullptr);
   int64_t gotten_number = (int64_t)strtol(gotten_json->value, nullptr, 0);
   EXPECT_EQ(gotten_number, expect);
 }
 
 void ValidateCounters(char* json_str, validate_channel_data_args args) {
   grpc_json* json = grpc_json_parse_string(json_str);
-  EXPECT_NE(json, nullptr);
+  ASSERT_NE(json, nullptr);
   grpc_json* data = GetJsonChild(json, "data");
   ValidateChildInteger(data, args.calls_started, "callsStarted");
   ValidateChildInteger(data, args.calls_failed, "callsFailed");
@@ -141,6 +144,15 @@ TEST_P(ChannelzChannelTest, BasicChannel) {
   char* json_str = channelz_channel->RenderJSON();
   ValidateCounters(json_str, {0, 0, 0});
   gpr_free(json_str);
+}
+
+TEST(ChannelzChannelTest, ChannelzDisabled) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_channel* channel =
+      grpc_insecure_channel_create("fake_target", nullptr, nullptr);
+  ChannelNode* channelz_channel = grpc_channel_get_channelz_node(channel);
+  char* json_str = channelz_channel->RenderJSON();
+  ASSERT_EQ(json_str, nullptr);
 }
 
 TEST_P(ChannelzChannelTest, BasicChannelAPIFunctionality) {
