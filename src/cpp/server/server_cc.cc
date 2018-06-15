@@ -219,7 +219,7 @@ class Server::SyncRequest final : public internal::CompletionQueueTag {
       }
     }
 
-    void Run(std::shared_ptr<GlobalCallbacks> global_callbacks) {
+    void Run(const std::shared_ptr<GlobalCallbacks>& global_callbacks) {
       ctx_.BeginCompletionOp(&call_);
       global_callbacks->PreSynchronousRequest(&ctx_);
       method_->handler()->RunHandler(internal::MethodHandler::HandlerParameter(
@@ -272,7 +272,7 @@ class Server::SyncRequestThreadManager : public ThreadManager {
         server_(server),
         server_cq_(server_cq),
         cq_timeout_msec_(cq_timeout_msec),
-        global_callbacks_(global_callbacks) {}
+        global_callbacks_(std::move(global_callbacks)) {}
 
   WorkStatus PollForWork(void** tag, bool* ok) override {
     *tag = nullptr;
@@ -378,7 +378,7 @@ Server::Server(
         sync_server_cqs,
     int min_pollers, int max_pollers, int sync_cq_timeout_msec)
     : max_receive_message_size_(max_receive_message_size),
-      sync_server_cqs_(sync_server_cqs),
+      sync_server_cqs_(std::move(sync_server_cqs)),
       started_(false),
       shutdown_(false),
       shutdown_notified_(false),

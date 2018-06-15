@@ -90,7 +90,7 @@ namespace {
 class GrpcLBAddress final {
  public:
   GrpcLBAddress(std::string address, bool is_balancer)
-      : is_balancer(is_balancer), address(address) {}
+      : is_balancer(is_balancer), address(std::move(address)) {}
 
   bool operator==(const GrpcLBAddress& other) const {
     return this->is_balancer == other.is_balancer &&
@@ -109,7 +109,7 @@ vector<GrpcLBAddress> ParseExpectedAddrs(std::string expected_addrs) {
   std::vector<GrpcLBAddress> out;
   while (expected_addrs.size() != 0) {
     // get the next <ip>,<port> (v4 or v6)
-    size_t next_comma = expected_addrs.find(",");
+    size_t next_comma = expected_addrs.find(',');
     if (next_comma == std::string::npos) {
       gpr_log(GPR_ERROR,
               "Missing ','. Expected_addrs arg should be a semicolon-separated "
@@ -120,7 +120,7 @@ vector<GrpcLBAddress> ParseExpectedAddrs(std::string expected_addrs) {
     std::string next_addr = expected_addrs.substr(0, next_comma);
     expected_addrs = expected_addrs.substr(next_comma + 1, std::string::npos);
     // get the next is_balancer 'bool' associated with this address
-    size_t next_semicolon = expected_addrs.find(";");
+    size_t next_semicolon = expected_addrs.find(';');
     bool is_balancer =
         gpr_is_true(expected_addrs.substr(0, next_semicolon).c_str());
     out.emplace_back(GrpcLBAddress(next_addr, is_balancer));

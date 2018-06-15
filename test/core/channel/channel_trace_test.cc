@@ -77,13 +77,13 @@ void ValidateChannelTraceData(grpc_json* json,
   ValidateJsonArraySize(json, "events", actual_num_events_expected);
 }
 
-void AddSimpleTrace(RefCountedPtr<ChannelTrace> tracer) {
+void AddSimpleTrace(const RefCountedPtr<ChannelTrace>& tracer) {
   tracer->AddTraceEvent(ChannelTrace::Severity::Info,
                         grpc_slice_from_static_string("simple trace"));
 }
 
 // checks for the existence of all the required members of the tracer.
-void ValidateChannelTrace(RefCountedPtr<ChannelTrace> tracer,
+void ValidateChannelTrace(const RefCountedPtr<ChannelTrace>& tracer,
                           size_t expected_num_event_logged, size_t max_nodes) {
   if (!max_nodes) return;
   char* json_str = tracer->RenderTrace();
@@ -95,7 +95,8 @@ void ValidateChannelTrace(RefCountedPtr<ChannelTrace> tracer,
   gpr_free(json_str);
 }
 
-void ValidateTraceDataMatchedUuidLookup(RefCountedPtr<ChannelTrace> tracer) {
+void ValidateTraceDataMatchedUuidLookup(
+    const RefCountedPtr<ChannelTrace>& tracer) {
   intptr_t uuid = tracer->GetUuid();
   if (uuid == -1) return;  // Doesn't make sense to lookup if tracing disabled
   char* tracer_json_str = tracer->RenderTrace();
