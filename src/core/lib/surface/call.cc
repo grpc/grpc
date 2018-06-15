@@ -1546,11 +1546,9 @@ static void receiving_trailing_metadata_ready(void* bctlp, grpc_error* error) {
   grpc_call* call = bctl->call;
   GRPC_CALL_COMBINER_STOP(&call->call_combiner, "recv_trailing_metadata_ready");
   add_batch_error(bctl, GRPC_ERROR_REF(error), false);
-  if (error == GRPC_ERROR_NONE) {
-    grpc_metadata_batch* md =
-        &call->metadata_batch[1 /* is_receiving */][1 /* is_trailing */];
-    recv_trailing_filter(call, md);
-  }
+  grpc_metadata_batch* md =
+      &call->metadata_batch[1 /* is_receiving */][1 /* is_trailing */];
+  recv_trailing_filter(call, md);
   finish_batch_step(bctl);
 }
 
