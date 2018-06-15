@@ -12,4 +12,5 @@
 - 1.10 'g' stands for ['glamorous'](https://github.com/grpc/grpc/tree/v1.10.x)
 - 1.11 'g' stands for ['gorgeous'](https://github.com/grpc/grpc/tree/v1.11.x)
 - 1.12 'g' stands for ['glorious'](https://github.com/grpc/grpc/tree/v1.12.x)
-- 1.13 'g' stands for ['gloriosa'](https://github.com/grpc/grpc/tree/master)
+- 1.13 'g' stands for ['gloriosa'](https://github.com/grpc/grpc/tree/v1.13.x)
+- 1.14 'g' stands for ['gladiolus'](https://github.com/grpc/grpc/tree/master)
