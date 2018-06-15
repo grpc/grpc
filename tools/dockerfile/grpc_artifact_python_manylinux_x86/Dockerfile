@@ -14,7 +14,9 @@
 
 # Docker file for building gRPC manylinux Python artifacts.
 
-FROM quay.io/pypa/manylinux1_i686
+# TODO(mmx): revert to the official manylinux1 docker image
+# after it ships with Python 3.7
+FROM grpctesting/manylinux1_temp_py37rc1_i686:79891dc2ec764b62a2dd2ffd083d381efde11a5f
 
 # Update the package manager
 RUN yum update -y
@@ -27,6 +29,7 @@ RUN /opt/python/cp27-cp27mu/bin/pip install cython
 RUN /opt/python/cp34-cp34m/bin/pip install cython
 RUN /opt/python/cp35-cp35m/bin/pip install cython
 RUN /opt/python/cp36-cp36m/bin/pip install cython
+RUN /opt/python/cp37-cp37m/bin/pip install cython
 
 ####################################################
 # Install auditwheel with fix for namespace packages
