@@ -24,7 +24,6 @@ grpc_cc_test(
     external_deps = [
         "benchmark",
     ],
-    deps = ["//test/core/util:gpr_test_util",]
 )
 
 grpc_cc_library(

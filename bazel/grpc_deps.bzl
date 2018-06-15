@@ -2,6 +2,12 @@
 
 def grpc_deps():
     """Loads dependencies need to compile and test the grpc library."""
+
+    native.bind(
+        name = "nanopb",
+        actual = "@com_github_nanopb_nanopb//:nanopb",
+    )
+
     native.bind(
         name = "libssl",
         actual = "@boringssl//:ssl",
@@ -59,12 +65,12 @@ def grpc_deps():
 
     native.bind(
         name = "grpc_cpp_plugin",
-        actual = "@com_github_grpc_grpc//:grpc_cpp_plugin"
+        actual = "@com_github_grpc_grpc//:grpc_cpp_plugin",
     )
 
     native.bind(
         name = "grpc++_codegen_proto",
-        actual = "@com_github_grpc_grpc//:grpc++_codegen_proto"
+        actual = "@com_github_grpc_grpc//:grpc++_codegen_proto",
     )
 
     if "boringssl" not in native.existing_rules():
@@ -87,6 +93,14 @@ def grpc_deps():
             name = "com_google_protobuf",
             strip_prefix = "protobuf-b5fbb742af122b565925987e65c08957739976a7",
             url = "https://github.com/google/protobuf/archive/b5fbb742af122b565925987e65c08957739976a7.tar.gz",
+            )
+
+    if "com_github_nanopb_nanopb" not in native.existing_rules():
+        native.new_http_archive(
+            name = "com_github_nanopb_nanopb",
+            build_file = "@com_github_grpc_grpc//third_party:nanopb.BUILD",
+            strip_prefix = "nanopb-f8ac463766281625ad710900479130c7fcb4d63b",
+            url = "https://github.com/nanopb/nanopb/archive/f8ac463766281625ad710900479130c7fcb4d63b.tar.gz",
         )
 
     if "com_github_google_googletest" not in native.existing_rules():

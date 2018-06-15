@@ -91,14 +91,14 @@ class WeightedRandomTestSelector {
 class StressTestInteropClient {
  public:
   StressTestInteropClient(int test_id, const grpc::string& server_address,
-                          std::shared_ptr<Channel> channel,
+                          const std::shared_ptr<Channel>& channel,
                           const WeightedRandomTestSelector& test_selector,
                           long test_duration_secs, long sleep_duration_ms,
                           bool do_not_abort_on_transient_failures);
 
   // The main function. Use this as the thread entry point.
   // qps_gauge is the QpsGauge to record the requests per second metric
-  void MainLoop(std::shared_ptr<QpsGauge> qps_gauge);
+  void MainLoop(const std::shared_ptr<QpsGauge>& qps_gauge);
 
  private:
   bool RunTest(TestCaseType test_case);

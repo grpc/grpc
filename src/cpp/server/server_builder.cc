@@ -24,6 +24,8 @@
 #include <grpcpp/resource_quota.h>
 #include <grpcpp/server.h>
 
+#include <utility>
+
 #include "src/core/lib/gpr/useful.h"
 #include "src/cpp/server/thread_pool_interface.h"
 
@@ -166,7 +168,7 @@ ServerBuilder& ServerBuilder::AddListeningPort(
     while (addr_uri[pos] == '/') ++pos;  // Skip slashes.
     addr = addr_uri.substr(pos);
   }
-  Port port = {addr, creds, selected_port};
+  Port port = {addr, std::move(creds), selected_port};
   ports_.push_back(port);
   return *this;
 }

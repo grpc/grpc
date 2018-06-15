@@ -1,4 +1,4 @@
-# Copyright 2017 gRPC authors.
+# Copyright 2018 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,8 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-exports_files([
-    "lsan_suppressions.txt",
-    "tsan_suppressions.txt",
-    "ubsan_suppressions.txt",
-])
+set(_gRPC_NANOPB_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/nanopb")

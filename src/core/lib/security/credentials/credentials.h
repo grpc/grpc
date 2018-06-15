@@ -131,6 +131,10 @@ grpc_channel_credentials_duplicate_without_call_credentials(
 /* Util to encapsulate the channel credentials in a channel arg. */
 grpc_arg grpc_channel_credentials_to_arg(grpc_channel_credentials* credentials);
 
+/* Util to get the channel credentials from a channel arg. */
+grpc_channel_credentials* grpc_channel_credentials_from_arg(
+    const grpc_arg* arg);
+
 /* Util to find the channel credentials from channel args. */
 grpc_channel_credentials* grpc_channel_credentials_find_in_args(
     const grpc_channel_args* args);
@@ -223,6 +227,7 @@ void grpc_server_credentials_unref(grpc_server_credentials* creds);
 #define GRPC_SERVER_CREDENTIALS_ARG "grpc.server_credentials"
 
 grpc_arg grpc_server_credentials_to_arg(grpc_server_credentials* c);
+grpc_server_credentials* grpc_server_credentials_from_arg(const grpc_arg* arg);
 grpc_server_credentials* grpc_find_server_credentials_in_args(
     const grpc_channel_args* args);
 

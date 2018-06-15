@@ -32,11 +32,6 @@ grpc_cc_library(
         "test_config.h",
     ],
     deps = ["//:gpr"],
-    data = [
-        "//tools:lsan_suppressions.txt",
-        "//tools:tsan_suppressions.txt",
-        "//tools:ubsan_suppressions.txt",
-    ],
 )
 
 grpc_cc_library(

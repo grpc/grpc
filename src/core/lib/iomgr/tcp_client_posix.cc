@@ -66,7 +66,6 @@ typedef struct {
 static grpc_error* prepare_socket(const grpc_resolved_address* addr, int fd,
                                   const grpc_channel_args* channel_args) {
   grpc_error* err = GRPC_ERROR_NONE;
-  grpc_socket_mutator* mutator = nullptr;
 
   GPR_ASSERT(fd >= 0);
 
@@ -80,11 +79,16 @@ static grpc_error* prepare_socket(const grpc_resolved_address* addr, int fd,
   }
   err = grpc_set_socket_no_sigpipe_if_possible(fd);
   if (err != GRPC_ERROR_NONE) goto error;
-  mutator = grpc_channel_args_get_pointer<grpc_socket_mutator>(
-      channel_args, GRPC_ARG_SOCKET_MUTATOR);
-  if (mutator != nullptr) {
-    err = grpc_set_socket_with_mutator(fd, mutator);
-    if (err != GRPC_ERROR_NONE) goto error;
+  if (channel_args) {
+    for (size_t i = 0; i < channel_args->num_args; i++) {
+      if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_SOCKET_MUTATOR)) {
+        GPR_ASSERT(channel_args->args[i].type == GRPC_ARG_POINTER);
+        grpc_socket_mutator* mutator = static_cast<grpc_socket_mutator*>(
+            channel_args->args[i].value.pointer.p);
+        err = grpc_set_socket_with_mutator(fd, mutator);
+        if (err != GRPC_ERROR_NONE) goto error;
+      }
+    }
   }
   goto done;
 

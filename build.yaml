@@ -13,8 +13,8 @@ settings:
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
   core_version: 6.0.0-dev
-  g_stands_for: gloriosa
-  version: 1.13.0-dev
+  g_stands_for: gladiolus
+  version: 1.14.0-dev
 filegroups:
 - name: alts_proto
   headers:
@@ -5644,7 +5644,7 @@ defaults:
   global:
     COREFLAGS: -fno-rtti -fno-exceptions
     CPPFLAGS: -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1
-      -Wno-deprecated-declarations
+      -Wno-deprecated-declarations -Ithird_party/nanopb -DPB_FIELD_32BIT
     LDFLAGS: -g
   zlib:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration

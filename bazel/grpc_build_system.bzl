@@ -36,9 +36,7 @@ def if_not_windows(a):
 def _get_external_deps(external_deps):
   ret = []
   for dep in external_deps:
-    if dep == "nanopb":
-      ret += ["grpc_nanopb"]
-    elif dep == "address_sorting":
+    if dep == "address_sorting":
       ret += ["//third_party/address_sorting"]
     elif dep == "cares":
       ret += select({"//:grpc_no_ares": [],
@@ -62,7 +60,7 @@ def _maybe_update_cc_library_hdrs(hdrs):
 def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
                     external_deps = [], deps = [], standalone = False,
                     language = "C++", testonly = False, visibility = None,
-                    alwayslink = 0, data = []):
+                    alwayslink = 0):
   copts = []
   if language.upper() == "C":
     copts = if_not_windows(["-std=c99"])
@@ -87,7 +85,6 @@ def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
         "include"
     ],
     alwayslink = alwayslink,
-    data = data,
   )
 
 def grpc_proto_plugin(name, srcs = [], deps = []):
@@ -162,24 +159,7 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
     linkopts = if_not_windows(["-pthread"]) + linkopts,
   )
 
-def grpc_generate_one_off_targets():
-  native.cc_library(
-    name = "grpc_nanopb",
-    hdrs = [
-      "//third_party/nanopb:pb.h",
-      "//third_party/nanopb:pb_common.h",
-      "//third_party/nanopb:pb_decode.h",
-      "//third_party/nanopb:pb_encode.h",
-    ],
-    srcs = [
-      "//third_party/nanopb:pb_common.c",
-      "//third_party/nanopb:pb_decode.c",
-      "//third_party/nanopb:pb_encode.c",
-    ],
-    defines = [
-      "PB_FIELD_16BIT=1",
-    ],
-  )
+def grpc_generate_one_off_targets(): pass
 
 def grpc_sh_test(name, srcs, args = [], data = []):
   native.sh_test(

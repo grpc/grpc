@@ -108,6 +108,7 @@ void grpc_server_security_context_destroy(void* ctx);
 #define GRPC_AUTH_CONTEXT_ARG "grpc.auth_context"
 
 grpc_arg grpc_auth_context_to_arg(grpc_auth_context* c);
+grpc_auth_context* grpc_auth_context_from_arg(const grpc_arg* arg);
 grpc_auth_context* grpc_find_auth_context_in_args(
     const grpc_channel_args* args);
 
