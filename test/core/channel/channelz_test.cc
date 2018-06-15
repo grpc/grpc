@@ -153,6 +153,7 @@ TEST(ChannelzChannelTest, ChannelzDisabled) {
   ChannelNode* channelz_channel = grpc_channel_get_channelz_node(channel);
   char* json_str = channelz_channel->RenderJSON();
   ASSERT_EQ(json_str, nullptr);
+  grpc_channel_destroy(channel);
 }
 
 TEST_P(ChannelzChannelTest, BasicChannelAPIFunctionality) {
