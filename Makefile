@@ -420,9 +420,9 @@ E = @echo
 Q = @
 endif
 
-CORE_VERSION = 6.0.0-pre1
-CPP_VERSION = 1.13.0-pre1
-CSHARP_VERSION = 1.13.0-pre1
+CORE_VERSION = 6.0.0-pre2
+CPP_VERSION = 1.13.0-pre2
+CSHARP_VERSION = 1.13.0-pre2
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
