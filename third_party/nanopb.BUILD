@@ -1,9 +1,3 @@
-licenses(["notice"])
-
-exports_files(["LICENSE.txt"])
-
-package(default_visibility = ["//visibility:public"])
-
 cc_library(
     name = "nanopb",
     srcs = [
@@ -22,3 +16,4 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
 )
+
