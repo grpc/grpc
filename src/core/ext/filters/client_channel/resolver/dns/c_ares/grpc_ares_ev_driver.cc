@@ -122,8 +122,7 @@ grpc_error* grpc_ares_ev_driver_create_locked(grpc_ares_ev_driver** ev_driver,
   memset(&opts, 0, sizeof(opts));
   opts.flags |= ARES_FLAG_STAYOPEN;
   int status = ares_init_options(&(*ev_driver)->channel, &opts, ARES_OPT_FLAGS);
-  grpc_core::ConfigureAresChannelForCurrentPlatformLocked(
-      &(*ev_driver)->channel);
+  grpc_core::ConfigureAresChannelLocked(&(*ev_driver)->channel);
   gpr_log(GPR_DEBUG, "grpc_ares_ev_driver_create_locked");
   if (status != ARES_SUCCESS) {
     char* err_msg;
@@ -242,10 +241,8 @@ static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver) {
         // Create a new fd_node if sock[i] is not in the fd_node list.
         if (fdn == nullptr) {
           fdn = static_cast<fd_node*>(gpr_malloc(sizeof(fd_node)));
-          fdn->grpc_polled_fd =
-              grpc_core::NewGrpcPolledFdForCurrentPlatformLocked(
-                  socks[i], &fdn->read_closure, &fdn->write_closure,
-                  ev_driver->pollset_set);
+          fdn->grpc_polled_fd = grpc_core::NewGrpcPolledFdLocked(
+              socks[i], ev_driver->pollset_set);
           gpr_log(GPR_DEBUG, "new fd: %s", fdn->grpc_polled_fd->GetName());
           fdn->ev_driver = ev_driver;
           fdn->readable_registered = false;
@@ -265,7 +262,7 @@ static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver) {
           grpc_ares_ev_driver_ref(ev_driver);
           gpr_log(GPR_DEBUG, "notify read on: %s",
                   fdn->grpc_polled_fd->GetName());
-          fdn->grpc_polled_fd->RegisterForOnReadableLocked();
+          fdn->grpc_polled_fd->RegisterForOnReadableLocked(&fdn->read_closure);
           fdn->readable_registered = true;
         }
         // Register write_closure if the socket is writable and write_closure
@@ -275,7 +272,8 @@ static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver) {
           gpr_log(GPR_DEBUG, "notify write on: %s",
                   fdn->grpc_polled_fd->GetName());
           grpc_ares_ev_driver_ref(ev_driver);
-          fdn->grpc_polled_fd->RegisterForOnWriteableLocked();
+          fdn->grpc_polled_fd->RegisterForOnWriteableLocked(
+              &fdn->write_closure);
           fdn->writable_registered = true;
         }
       }

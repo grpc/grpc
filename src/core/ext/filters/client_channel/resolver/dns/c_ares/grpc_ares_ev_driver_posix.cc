@@ -40,15 +40,11 @@ namespace grpc_core {
 
 class GrpcPolledFdPosix : public GrpcPolledFd {
  public:
-  GrpcPolledFdPosix(ares_socket_t as, grpc_closure* read_closure,
-                    grpc_closure* write_closure,
-                    grpc_pollset_set* driver_pollset_set) {
-    as_ = as;
+  GrpcPolledFdPosix(ares_socket_t as, grpc_pollset_set* driver_pollset_set)
+      : as_(as) {
     gpr_asprintf(&name_, "c-ares fd: %d", (int)as);
     fd_ = grpc_fd_create((int)as, name_, false);
     grpc_pollset_set_add_fd(driver_pollset_set, fd_);
-    read_closure_ = read_closure;
-    write_closure_ = write_closure;
   }
 
   ~GrpcPolledFdPosix() {
@@ -60,12 +56,12 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
     grpc_fd_orphan(fd_, nullptr, &dummy_release_fd, "c-ares query finished");
   }
 
-  void RegisterForOnReadableLocked() override {
-    grpc_fd_notify_on_read(fd_, read_closure_);
+  void RegisterForOnReadableLocked(grpc_closure* read_closure) override {
+    grpc_fd_notify_on_read(fd_, read_closure);
   }
 
-  void RegisterForOnWriteableLocked() override {
-    grpc_fd_notify_on_write(fd_, write_closure_);
+  void RegisterForOnWriteableLocked(grpc_closure* write_closure) override {
+    grpc_fd_notify_on_write(fd_, write_closure);
   }
 
   bool IsFdStillReadableLocked() override {
@@ -85,18 +81,14 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
   char* name_;
   ares_socket_t as_;
   grpc_fd* fd_;
-  grpc_closure* read_closure_;
-  grpc_closure* write_closure_;
 };
 
-GrpcPolledFd* NewGrpcPolledFdForCurrentPlatformLocked(
-    ares_socket_t as, grpc_closure* read_closure, grpc_closure* write_closure,
-    grpc_pollset_set* driver_pollset_set) {
-  return grpc_core::New<GrpcPolledFdPosix>(as, read_closure, write_closure,
-                                           driver_pollset_set);
+GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as,
+                                    grpc_pollset_set* driver_pollset_set) {
+  return grpc_core::New<GrpcPolledFdPosix>(as, driver_pollset_set);
 }
 
-void ConfigureAresChannelForCurrentPlatformLocked(ares_channel* channel) {}
+void ConfigureAresChannelLocked(ares_channel* channel) {}
 
 }  // namespace grpc_core
 

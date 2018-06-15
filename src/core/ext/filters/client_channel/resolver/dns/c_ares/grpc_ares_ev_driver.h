@@ -23,9 +23,6 @@
 
 #include <ares.h>
 #include "src/core/lib/gprpp/abstract.h"
-#include "src/core/lib/gprpp/inlined_vector.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 
 typedef struct grpc_ares_ev_driver grpc_ares_ev_driver;
@@ -65,9 +62,11 @@ class GrpcPolledFd {
  public:
   virtual ~GrpcPolledFd() {}
   /* Called when c-ares library is interested and there's no pending callback */
-  virtual void RegisterForOnReadableLocked() GRPC_ABSTRACT;
+  virtual void RegisterForOnReadableLocked(grpc_closure* read_closure)
+      GRPC_ABSTRACT;
   /* Called when c-ares library is interested and there's no pending callback */
-  virtual void RegisterForOnWriteableLocked() GRPC_ABSTRACT;
+  virtual void RegisterForOnWriteableLocked(grpc_closure* write_closure)
+      GRPC_ABSTRACT;
   /* Indicates if there is data left even after just being read from */
   virtual bool IsFdStillReadableLocked() GRPC_ABSTRACT;
   /* Called once and only once. Must cause cancellation of any pending
@@ -77,13 +76,14 @@ class GrpcPolledFd {
   virtual ares_socket_t GetWrappedAresSocketLocked() GRPC_ABSTRACT;
   /* A unique name, for logging */
   virtual const char* GetName() GRPC_ABSTRACT;
+
+  GRPC_ABSTRACT_BASE_CLASS
 };
 
 /* Creates a new wrapped fd for the current platform */
-GrpcPolledFd* NewGrpcPolledFdForCurrentPlatformLocked(
-    ares_socket_t as, grpc_closure* read_closure, grpc_closure* write_closure,
-    grpc_pollset_set* driver_pollset_set);
-void ConfigureAresChannelForCurrentPlatformLocked(ares_channel* channel);
+GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as,
+                                    grpc_pollset_set* driver_pollset_set);
+void ConfigureAresChannelLocked(ares_channel* channel);
 
 }  // namespace grpc_core
 
