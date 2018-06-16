@@ -339,21 +339,29 @@ static void ref_by(grpc_fd* fd, int n) {
   GPR_ASSERT(gpr_atm_no_barrier_fetch_add(&fd->refst, n) > 0);
 }
 
+/* Uninitialize and add to the freelist */
 static void fd_destroy(void* arg, grpc_error* error) {
   grpc_fd* fd = static_cast<grpc_fd*>(arg);
-  /* Add the fd to the freelist */
   grpc_iomgr_unregister_object(&fd->iomgr_object);
   POLLABLE_UNREF(fd->pollable_obj, "fd_pollable");
   gpr_mu_destroy(&fd->pollable_mu);
   gpr_mu_destroy(&fd->orphan_mu);
-  gpr_mu_lock(&fd_freelist_mu);
-  fd->freelist_next = fd_freelist;
-  fd_freelist = fd;
 
   fd->read_closure->DestroyEvent();
   fd->write_closure->DestroyEvent();
   fd->error_closure->DestroyEvent();
 
+#ifndef NDEBUG
+  // Since we do not call gpr_free on the fd (and put it in a freelist instead),
+  // the following will help us catch any 'use-after-fd_destroy()' errors in the
+  // code
+  memset(fd, 0xFF, sizeof(grpc_fd));
+#endif
+
+  /* Add the fd to the freelist */
+  gpr_mu_lock(&fd_freelist_mu);
+  fd->freelist_next = fd_freelist;
+  fd_freelist = fd;
   gpr_mu_unlock(&fd_freelist_mu);
 }
 
@@ -409,20 +417,18 @@ static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
     new_fd->error_closure.Init();
   }
 
-  gpr_mu_init(&new_fd->pollable_mu);
-  gpr_mu_init(&new_fd->orphan_mu);
-  new_fd->pollable_obj = nullptr;
-  gpr_atm_rel_store(&new_fd->refst, (gpr_atm)1);
   new_fd->fd = fd;
-  new_fd->track_err = track_err;
   new_fd->salt = gpr_atm_no_barrier_fetch_add(&g_fd_salt, 1);
+  gpr_atm_rel_store(&new_fd->refst, (gpr_atm)1);
+  gpr_mu_init(&new_fd->orphan_mu);
+  gpr_mu_init(&new_fd->pollable_mu);
+  new_fd->pollable_obj = nullptr;
   new_fd->read_closure->InitEvent();
   new_fd->write_closure->InitEvent();
   new_fd->error_closure->InitEvent();
-  gpr_atm_no_barrier_store(&new_fd->read_notifier_pollset, (gpr_atm)NULL);
-
   new_fd->freelist_next = nullptr;
   new_fd->on_done_closure = nullptr;
+  gpr_atm_no_barrier_store(&new_fd->read_notifier_pollset, (gpr_atm)NULL);
 
   char* fd_name;
   gpr_asprintf(&fd_name, "%s fd=%d", name, fd);
@@ -433,6 +439,8 @@ static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
   }
 #endif
   gpr_free(fd_name);
+
+  new_fd->track_err = track_err;
   return new_fd;
 }
 

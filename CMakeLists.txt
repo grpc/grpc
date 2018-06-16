@@ -244,6 +244,9 @@ endif()
 add_dependencies(buildtests_c endpoint_pair_test)
 add_dependencies(buildtests_c error_test)
 if(_gRPC_PLATFORM_LINUX)
+add_dependencies(buildtests_c ev_epollex_linux_test)
+endif()
+if(_gRPC_PLATFORM_LINUX)
 add_dependencies(buildtests_c ev_epollsig_linux_test)
 endif()
 add_dependencies(buildtests_c fake_resolver_test)
@@ -6159,6 +6162,36 @@ target_link_libraries(error_test
   gpr
 )
 
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX)
+
+add_executable(ev_epollex_linux_test
+  test/core/iomgr/ev_epollex_linux_test.cc
+)
+
+
+target_include_directories(ev_epollex_linux_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+)
+
+target_link_libraries(ev_epollex_linux_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX)

@@ -575,6 +575,26 @@
     "flaky": false, 
     "gtest": false, 
     "language": "c", 
+    "name": "ev_epollex_linux_test", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": true
+  }, 
+  {
+    "args": [], 
+    "benchmark": false, 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 3, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c", 
     "name": "ev_epollsig_linux_test", 
     "platforms": [
       "linux"
