@@ -108,6 +108,10 @@ void grpc_socket_notify_on_read(grpc_winsocket* winsocket,
 void grpc_socket_become_ready(grpc_winsocket* winsocket,
                               grpc_winsocket_callback_info* ci);
 
+/* Returns true if this system can create AF_INET6 sockets bound to ::1.
+   The value is probed once, and cached for the life of the process. */
+int grpc_ipv6_loopback_available(void);
+
 #endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKET_WINDOWS_H */
