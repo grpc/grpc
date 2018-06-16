@@ -86,12 +86,24 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
   grpc_pollset_set* driver_pollset_set_;
 };
 
-GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as,
-                                    grpc_pollset_set* driver_pollset_set) {
-  return grpc_core::New<GrpcPolledFdPosix>(as, driver_pollset_set);
-}
+class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
+ public:
+  GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as,
+                                      grpc_pollset_set* driver_pollset_set,
+                                      grpc_combiner* combiner) override {
+    return grpc_core::New<GrpcPolledFdPosix>(as, driver_pollset_set);
+  }
 
-void ConfigureAresChannelLocked(ares_channel* channel) {}
+  void ConfigureAresChannelLocked(ares_channel channel) override {}
+
+  void DestroyGrpcPolledFdLocked(GrpcPolledFd* polled_fd) override {
+    grpc_core::Delete(polled_fd);
+  }
+};
+
+GrpcPolledFdFactory* NewGrpcPolledFdFactory(grpc_combiner* combiner) {
+  return grpc_core::New<GrpcPolledFdFactoryPosix>();
+}
 
 }  // namespace grpc_core
 

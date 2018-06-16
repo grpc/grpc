@@ -45,11 +45,14 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-// TODO: pull in different headers when enabling this
-// test on windows. Also set BAD_SOCKET_RETURN_VAL
-// to INVALID_SOCKET on windows.
+#ifdef GPR_WINDOWS
+#include "src/core/lib/iomgr/sockaddr_windows.h"
+#include "src/core/lib/iomgr/socket_windows.h"
+#define BAD_SOCKET_RETURN_VAL INVALID_SOCKET
+#else
 #include "src/core/lib/iomgr/sockaddr_posix.h"
 #define BAD_SOCKET_RETURN_VAL -1
+#endif
 
 namespace {
 
@@ -91,7 +94,13 @@ class FakeNonResponsiveDNSServer {
       abort();
     }
   }
-  ~FakeNonResponsiveDNSServer() { close(socket_); }
+  ~FakeNonResponsiveDNSServer() {
+#ifdef GPR_WINDOWS
+    closesocket(socket_);
+#else
+    close(socket_);
+#endif
+  }
 
  private:
   int socket_;
@@ -209,7 +218,14 @@ TEST(CancelDuringAresQuery, TestFdsAreDeletedFromPollsetSet) {
   // this test. This test only cares about what happens to fd's that c-ares
   // opens.
   TestCancelActiveDNSQuery(&args);
+  // TODO(apolcyn): This test relies on the assumption
+  // that cancelling a c-ares query will flush out all callbacks on the
+  // current exec ctx, which is true on posix platforms but not on Windows
+  // ,because fd shutdown on Windows requires a trip through the
+  // polling loop to schedule the callback.
+#ifndef GPR_WINDOWS
   EXPECT_EQ(grpc_iomgr_count_objects_for_testing(), 0u);
+#endif
   grpc_pollset_set_destroy(fake_other_pollset_set);
 }
 
