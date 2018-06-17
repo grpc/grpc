@@ -37,7 +37,6 @@ PYTHON_STEM = os.path.join('src', 'python', 'grpcio')
 CORE_INCLUDE = ('include', '.',)
 SSL_INCLUDE = (os.path.join('third_party', 'boringssl', 'include'),)
 ZLIB_INCLUDE = (os.path.join('third_party', 'zlib'),)
-NANOPB_INCLUDE = (os.path.join('third_party', 'nanopb'),)
 CARES_INCLUDE = (
     os.path.join('third_party', 'cares'),
     os.path.join('third_party', 'cares', 'cares'),)
@@ -182,7 +181,7 @@ if BUILD_WITH_SYSTEM_CARES:
 
 EXTENSION_INCLUDE_DIRECTORIES = (
     (PYTHON_STEM,) + CORE_INCLUDE + SSL_INCLUDE + ZLIB_INCLUDE +
-    NANOPB_INCLUDE + CARES_INCLUDE + ADDRESS_SORTING_INCLUDE)
+    CARES_INCLUDE + ADDRESS_SORTING_INCLUDE)
 
 EXTENSION_LIBRARIES = ()
 if "linux" in sys.platform:
