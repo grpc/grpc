@@ -59,8 +59,6 @@
       '-Wno-unused-parameter',
       '-DOSATOMIC_USE_INLINED=1',
       '-Wno-deprecated-declarations',
-      '-Ithird_party/nanopb',
-      '-DPB_FIELD_32BIT',
     ],
     'ldflags': [
       '-g',
@@ -139,8 +137,6 @@
             '-Wno-unused-parameter',
             '-DOSATOMIC_USE_INLINED=1',
             '-Wno-deprecated-declarations',
-            '-Ithird_party/nanopb',
-            '-DPB_FIELD_32BIT',
           ],
           'OTHER_CPLUSPLUSFLAGS': [
             '-g',
@@ -151,8 +147,6 @@
             '-Wno-unused-parameter',
             '-DOSATOMIC_USE_INLINED=1',
             '-Wno-deprecated-declarations',
-            '-Ithird_party/nanopb',
-            '-DPB_FIELD_32BIT',
             '-stdlib=libc++',
             '-std=c++11',
             '-Wno-error=deprecated-declarations',

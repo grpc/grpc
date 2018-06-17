@@ -221,6 +221,8 @@
   %  endif
   % endfor
 
+  DEFINES += PB_FIELD_16BIT
+
   CPPFLAGS += $(CPPFLAGS_$(CONFIG))
   CFLAGS += $(CFLAGS_$(CONFIG))
   CXXFLAGS += $(CXXFLAGS_$(CONFIG))
