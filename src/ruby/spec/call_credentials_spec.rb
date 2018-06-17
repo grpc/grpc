@@ -15,27 +15,25 @@
 require 'grpc'
 
 describe GRPC::Core::CallCredentials do
-  CallCredentials = GRPC::Core::CallCredentials
-
   let(:auth_proc) { proc { { 'plugin_key' => 'plugin_value' } } }
 
   describe '#new' do
     it 'can successfully create a CallCredentials from a proc' do
-      expect { CallCredentials.new(auth_proc) }.not_to raise_error
+      expect { described_class.new(auth_proc) }.not_to raise_error
     end
   end
 
   describe '#compose' do
-    it 'can compose with another CallCredentials' do
-      creds1 = CallCredentials.new(auth_proc)
-      creds2 = CallCredentials.new(auth_proc)
+    it 'can compose with another described_class' do
+      creds1 = described_class.new(auth_proc)
+      creds2 = described_class.new(auth_proc)
       expect { creds1.compose creds2 }.not_to raise_error
     end
 
-    it 'can compose with multiple CallCredentials' do
-      creds1 = CallCredentials.new(auth_proc)
-      creds2 = CallCredentials.new(auth_proc)
-      creds3 = CallCredentials.new(auth_proc)
+    it 'can compose with multiple described_class' do
+      creds1 = described_class.new(auth_proc)
+      creds2 = described_class.new(auth_proc)
+      creds3 = described_class.new(auth_proc)
       expect { creds1.compose(creds2, creds3) }.not_to raise_error
     end
   end

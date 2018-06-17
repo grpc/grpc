@@ -65,7 +65,6 @@ describe 'Health protobuf code generation' do
 end
 
 describe Grpc::Health::Checker do
-  StatusCodes = GRPC::Core::StatusCodes
   ServingStatus = Grpc::Health::V1::HealthCheckResponse::ServingStatus
   HCResp = Grpc::Health::V1::HealthCheckResponse
   HCReq = Grpc::Health::V1::HealthCheckRequest
@@ -82,7 +81,7 @@ describe Grpc::Health::Checker do
 
   context 'initialization' do
     it 'can be constructed with no args' do
-      checker = Grpc::Health::Checker.new
+      checker = described_class.new
       expect(checker).to_not be(nil)
     end
   end
@@ -90,7 +89,7 @@ describe Grpc::Health::Checker do
   context 'method `add_status` and `check`' do
     success_tests.each do |t|
       it "should succeed when #{t[:desc]}" do
-        checker = Grpc::Health::Checker.new
+        checker = described_class.new
         checker.add_status(t[:service], ServingStatus::NOT_SERVING)
         got = checker.check(HCReq.new(service: t[:service]), nil)
         want = HCResp.new(status: ServingStatus::NOT_SERVING)
@@ -101,7 +100,7 @@ describe Grpc::Health::Checker do
 
   context 'method `add_statuses`' do
     it 'should add status to each service' do
-      checker = Grpc::Health::Checker.new
+      checker = described_class.new
       checker.add_statuses(
         'service1' => ServingStatus::SERVING,
         'service2' => ServingStatus::NOT_SERVING
@@ -115,7 +114,7 @@ describe Grpc::Health::Checker do
 
   context 'method `set_status_for_services`' do
     it 'should add given status to all given services' do
-      checker = Grpc::Health::Checker.new
+      checker = described_class.new
       checker.set_status_for_services(
         ServingStatus::SERVING,
         'service1',
@@ -131,11 +130,11 @@ describe Grpc::Health::Checker do
   context 'method `check`' do
     success_tests.each do |t|
       it "should fail with NOT_FOUND when #{t[:desc]}" do
-        checker = Grpc::Health::Checker.new
+        checker = described_class.new
         blk = proc do
           checker.check(HCReq.new(service: t[:service]), nil)
         end
-        expected_msg = /#{StatusCodes::NOT_FOUND}/
+        expected_msg = /#{GRPC::Core::StatusCodes::NOT_FOUND}/
         expect(&blk).to raise_error GRPC::NotFound, expected_msg
       end
     end
@@ -144,7 +143,7 @@ describe Grpc::Health::Checker do
   context 'method `clear_status`' do
     success_tests.each do |t|
       it "should fail after clearing status when #{t[:desc]}" do
-        checker = Grpc::Health::Checker.new
+        checker = described_class.new
         checker.add_status(t[:service], ServingStatus::NOT_SERVING)
         got = checker.check(HCReq.new(service: t[:service]), nil)
         want = HCResp.new(status: ServingStatus::NOT_SERVING)
@@ -154,7 +153,7 @@ describe Grpc::Health::Checker do
         blk = proc do
           checker.check(HCReq.new(service: t[:service]), nil)
         end
-        expected_msg = /#{StatusCodes::NOT_FOUND}/
+        expected_msg = /#{GRPC::Core::StatusCodes::NOT_FOUND}/
         expect(&blk).to raise_error GRPC::NotFound, expected_msg
       end
     end
@@ -162,7 +161,7 @@ describe Grpc::Health::Checker do
 
   context 'method `clear_all`' do
     it 'should return NOT_FOUND after being invoked' do
-      checker = Grpc::Health::Checker.new
+      checker = described_class.new
       success_tests.each do |t|
         checker.add_status(t[:service], ServingStatus::NOT_SERVING)
         got = checker.check(HCReq.new(service: t[:service]), nil)
@@ -176,15 +175,14 @@ describe Grpc::Health::Checker do
         blk = proc do
           checker.check(HCReq.new(service: t[:service]), nil)
         end
-        expected_msg = /#{StatusCodes::NOT_FOUND}/
+        expected_msg = /#{GRPC::Core::StatusCodes::NOT_FOUND}/
         expect(&blk).to raise_error GRPC::NotFound, expected_msg
       end
     end
   end
 
   describe 'running on RpcServer' do
-    RpcServer = GRPC::RpcServer
-    CheckerStub = Grpc::Health::Checker.rpc_stub_class
+    let(:stub_class) { described_class.rpc_stub_class }
 
     before(:each) do
       server_host = '0.0.0.0:0'
@@ -204,13 +202,13 @@ describe Grpc::Health::Checker do
 
     it 'should receive the correct status', server: true do
       Thread.abort_on_exception = true
-      checker = Grpc::Health::Checker.new
+      checker = described_class.new
       @srv.handle(checker)
       checker.add_status('', ServingStatus::NOT_SERVING)
       t = Thread.new { @srv.run }
       @srv.wait_till_running
 
-      stub = CheckerStub.new(@host, :this_channel_is_insecure, **@client_opts)
+      stub = stub_class.new(@host, :this_channel_is_insecure, **@client_opts)
       got = stub.check(HCReq.new)
       want = HCResp.new(status: ServingStatus::NOT_SERVING)
       expect(got).to eq(want)
@@ -219,15 +217,15 @@ describe Grpc::Health::Checker do
     end
 
     it 'should fail on unknown services', server: true do
-      checker = Grpc::Health::Checker.new
+      checker = described_class.new
       @srv.handle(checker)
       t = Thread.new { @srv.run }
       @srv.wait_till_running
       blk = proc do
-        stub = CheckerStub.new(@host, :this_channel_is_insecure, **@client_opts)
+        stub = stub_class.new(@host, :this_channel_is_insecure, **@client_opts)
         stub.check(HCReq.new(service: 'unknown'))
       end
-      expected_msg = /#{StatusCodes::NOT_FOUND}/
+      expected_msg = /#{GRPC::Core::StatusCodes::NOT_FOUND}/
       expect(&blk).to raise_error GRPC::NotFound, expected_msg
       @srv.stop
       t.join

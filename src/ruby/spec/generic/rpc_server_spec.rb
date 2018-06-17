@@ -158,9 +158,6 @@ end
 BidiStub = BidiService.rpc_stub_class
 
 describe GRPC::RpcServer do
-  RpcServer = GRPC::RpcServer
-  StatusCodes = GRPC::Core::StatusCodes
-
   before(:each) do
     @method = 'an_rpc_method'
     @pass = 0

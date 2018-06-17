@@ -14,7 +14,6 @@
 require 'spec_helper'
 require 'timeout'
 
-include Timeout
 include GRPC::Core
 include GRPC::Spec::Helpers
 
@@ -97,7 +96,7 @@ describe 'channel connection behavior' do
   end
 
   it 'concurrent watches on the same channel' do
-    timeout(180) do
+    Timeout.timeout(180) do
       port = start_server
       ch = GRPC::Core::Channel.new("localhost:#{port}", {},
                                    :this_channel_is_insecure)
