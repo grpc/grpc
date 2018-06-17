@@ -215,7 +215,7 @@ describe GRPC::RpcDesc do
         blk = proc do
           @request_response.assert_arity_matches(method(mth))
         end
-        expect(&blk).to raise_error
+        expect(&blk).to raise_error(RuntimeError, /bad arg count/)
       end
     end
 
@@ -231,7 +231,7 @@ describe GRPC::RpcDesc do
         blk = proc do
           @server_streamer.assert_arity_matches(method(mth))
         end
-        expect(&blk).to raise_error
+        expect(&blk).to raise_error(RuntimeError, /bad arg count/)
       end
     end
 
@@ -247,7 +247,7 @@ describe GRPC::RpcDesc do
         blk = proc do
           @client_streamer.assert_arity_matches(method(mth))
         end
-        expect(&blk).to raise_error
+        expect(&blk).to raise_error(RuntimeError, /bad arg count/)
       end
     end
 
@@ -263,7 +263,7 @@ describe GRPC::RpcDesc do
         blk = proc do
           @bidi_streamer.assert_arity_matches(method(mth))
         end
-        expect(&blk).to raise_error
+        expect(&blk).to raise_error(RuntimeError, /bad arg count/)
       end
     end
 

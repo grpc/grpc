@@ -34,7 +34,9 @@ describe GRPC::Core::TimeConsts do
 
   describe '#from_relative_time' do
     it 'cannot handle arbitrary objects' do
-      expect { described_class.from_relative_time(Object.new) }.to raise_error
+      expect do
+        described_class.from_relative_time(Object.new)
+      end.to raise_error(TypeError)
     end
 
     it 'preserves TimeConsts' do

@@ -103,12 +103,12 @@ describe GRPC::Core::CompressionOptions do
   describe '#new with bad parameters' do
     it 'should fail with more than one parameter' do
       blk = proc { GRPC::Core::CompressionOptions.new(:gzip, :none) }
-      expect { blk.call }.to raise_error
+      expect { blk.call }.to raise_error(ArgumentError)
     end
 
     it 'should fail with a non-hash parameter' do
       blk = proc { GRPC::Core::CompressionOptions.new(:gzip) }
-      expect { blk.call }.to raise_error
+      expect { blk.call }.to raise_error(ArgumentError)
     end
   end
 
@@ -134,7 +134,7 @@ describe GRPC::Core::CompressionOptions do
   end
 
   describe '#algorithm_enabled?' do
-    [:none, :any, 'gzip', Object.new, 1].each do |name|
+    [:none, :any].each do |name|
       it "should fail for parameter ${name} of class #{name.class}" do
         options = GRPC::Core::CompressionOptions.new(
           disabled_algorithms: [:gzip])
@@ -142,7 +142,19 @@ describe GRPC::Core::CompressionOptions do
         blk = proc do
           options.algorithm_enabled?(name)
         end
-        expect { blk.call }.to raise_error
+        expect { blk.call }.to raise_error(NameError)
+      end
+    end
+
+    ['gzip', Object.new, 1].each do |name|
+      it "should fail for parameter ${name} of class #{name.class}" do
+        options = GRPC::Core::CompressionOptions.new(
+          disabled_algorithms: [:gzip])
+
+        blk = proc do
+          options.algorithm_enabled?(name)
+        end
+        expect { blk.call }.to raise_error(TypeError)
       end
     end
   end

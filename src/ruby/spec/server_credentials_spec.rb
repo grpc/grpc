@@ -40,7 +40,7 @@ describe GRPC::Core::ServerCredentials do
       blk = proc do
         Creds.new(root_cert, nil, false)
       end
-      expect(&blk).to raise_error
+      expect(&blk).to raise_error(TypeError)
     end
 
     it 'cannot be constructed without any key_cert pairs' do
@@ -48,7 +48,7 @@ describe GRPC::Core::ServerCredentials do
       blk = proc do
         Creds.new(root_cert, [], false)
       end
-      expect(&blk).to raise_error
+      expect(&blk).to raise_error(TypeError)
     end
 
     it 'cannot be constructed without a server cert chain' do
@@ -58,7 +58,7 @@ describe GRPC::Core::ServerCredentials do
                   [{ server_key: server_key, cert_chain: nil }],
                   false)
       end
-      expect(&blk).to raise_error
+      expect(&blk).to raise_error(TypeError)
     end
 
     it 'cannot be constructed without a server key' do
@@ -67,7 +67,7 @@ describe GRPC::Core::ServerCredentials do
         Creds.new(root_cert,
                   [{ server_key: nil, cert_chain: cert_chain }])
       end
-      expect(&blk).to raise_error
+      expect(&blk).to raise_error(NameError)
     end
 
     it 'can be constructed without a root_cret' do
