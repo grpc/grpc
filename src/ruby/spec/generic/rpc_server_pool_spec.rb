@@ -21,9 +21,9 @@ describe GRPC::Pool do
 
   describe '#new' do
     it 'raises if a non-positive size is used' do
-      expect { Pool.new(Object.new) }.to raise_error
       expect { Pool.new(0) }.to raise_error(StandardError, /pool size must be positive/)
       expect { Pool.new(-1) }.to raise_error(StandardError, /pool size must be positive/)
+      expect { Pool.new(Object.new) }.to raise_error(TypeError)
     end
 
     it 'is constructed OK with a positive size' do

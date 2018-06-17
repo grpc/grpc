@@ -25,7 +25,7 @@ module GRPC
     DEFAULT_KEEP_ALIVE = 1
 
     def initialize(size, keep_alive: DEFAULT_KEEP_ALIVE)
-      fail 'pool size must be positive' unless size > 0
+      fail 'pool size must be positive' unless Integer(size) > 0
       @jobs = Queue.new
       @size = size
       @stopped = false
