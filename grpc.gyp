@@ -77,6 +77,7 @@
       '.',
       '../..',
       'include',
+      '../../third_party/nanopb',
     ],
     'defines': [
       'GRPC_ARES=0',
