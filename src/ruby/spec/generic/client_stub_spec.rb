@@ -293,7 +293,7 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
 
     describe 'without a call operation' do
       def get_response(stub, credentials: nil)
-        puts credentials.inspect
+        GRPC.logger.info(credentials.inspect)
         stub.request_response(@method, @sent_msg, noop, noop,
                               metadata: @metadata,
                               credentials: credentials)
@@ -342,13 +342,15 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
       it 'sends metadata to the server ok when running start_call first' do
         run_op_view_metadata_test(true)
         check_op_view_of_finished_client_call(
-          @op, @server_initial_md, @server_trailing_md) { |r| p r }
+          @op, @server_initial_md, @server_trailing_md
+        ) { |r| GRPC.logger.info(r) }
       end
 
       it 'does not crash when used after the call has been finished' do
         run_op_view_metadata_test(false)
         check_op_view_of_finished_client_call(
-          @op, @server_initial_md, @server_trailing_md) { |r| p r }
+          @op, @server_initial_md, @server_trailing_md
+        ) { |r| GRPC.logger.info(r) }
       end
     end
   end
@@ -435,13 +437,15 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
       it 'sends metadata to the server ok when running start_call first' do
         run_op_view_metadata_test(true)
         check_op_view_of_finished_client_call(
-          @op, @server_initial_md, @server_trailing_md) { |r| p r }
+          @op, @server_initial_md, @server_trailing_md
+        ) { |r| GRPC.logger.info(r) }
       end
 
       it 'does not crash when used after the call has been finished' do
         run_op_view_metadata_test(false)
         check_op_view_of_finished_client_call(
-          @op, @server_initial_md, @server_trailing_md) { |r| p r }
+          @op, @server_initial_md, @server_trailing_md
+        ) { |r| GRPC.logger.info(r) }
       end
     end
   end
@@ -578,7 +582,7 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
         run_op_view_metadata_test(true)
         check_op_view_of_finished_client_call(
           @op, @server_initial_md, @server_trailing_md) do |responses|
-          responses.each { |r| p r }
+          responses.each { |r| GRPC.logger.info(r) }
         end
       end
 
@@ -586,7 +590,7 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
         run_op_view_metadata_test(false)
         check_op_view_of_finished_client_call(
           @op, @server_initial_md, @server_trailing_md) do |responses|
-          responses.each { |r| p r }
+          responses.each { |r| GRPC.logger.info(r) }
         end
       end
     end
@@ -883,7 +887,7 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
         run_op_view_metadata_test(true)
         check_op_view_of_finished_client_call(
           @op, @server_initial_md, @server_trailing_md) do |responses|
-          responses.each { |r| p r }
+          responses.each { |r| GRPC.logger.info(r) }
         end
       end
 
@@ -891,7 +895,7 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
         run_op_view_metadata_test(false)
         check_op_view_of_finished_client_call(
           @op, @server_initial_md, @server_trailing_md) do |responses|
-          responses.each { |r| p r }
+          responses.each { |r| GRPC.logger.info(r) }
         end
       end
 
