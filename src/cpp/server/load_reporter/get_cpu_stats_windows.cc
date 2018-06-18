@@ -31,13 +31,13 @@ namespace load_reporter {
 namespace {
 
 uint64_t FiletimeToInt(const FILETIME& ft) {
-    ULARGE_INTEGER i;
-    i.LowPart = ft.dwLowDateTime;
-    i.HighPart = ft.dwHighDateTime;
-    return i.QuadPart;
+  ULARGE_INTEGER i;
+  i.LowPart = ft.dwLowDateTime;
+  i.HighPart = ft.dwHighDateTime;
+  return i.QuadPart;
 }
 
-}
+}  // namespace
 
 std::pair<uint64_t, uint64_t> GetCpuStatsImpl() {
   uint64_t busy = 0, total = 0;

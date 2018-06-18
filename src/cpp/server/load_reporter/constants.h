@@ -26,6 +26,8 @@ constexpr size_t kLbIdLength = 8;
 constexpr size_t kIpv4AddressLength = 8;
 constexpr size_t kIpv6AddressLength = 32;
 
+constexpr char kInvalidLbId[] = "<INVALID_LBID_238dsb234890rb>";
+
 // Call statuses.
 
 constexpr char kCallStatusOk[] = "OK";

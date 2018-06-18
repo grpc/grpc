@@ -16,6 +16,7 @@
  *
  */
 
+#include <arpa/inet.h>
 #include <stdio.h>
 #include <cstdlib>
 #include <set>
@@ -101,15 +102,28 @@ grpc::string LoadRecordKey::GetClientIpBytes() const {
     return "";
   } else if (client_ip_hex_.size() == kIpv4AddressLength) {
     uint32_t ip_bytes;
-    GPR_ASSERT(sscanf(client_ip_hex_.c_str(), "%x", &ip_bytes) == 1);
+    if (sscanf(client_ip_hex_.c_str(), "%x", &ip_bytes) != 1) {
+      gpr_log(GPR_ERROR,
+              "Can't parse client IP (%s) from a hex string to an integer.",
+              client_ip_hex_.c_str());
+      return "";
+    }
+    ip_bytes = htonl(ip_bytes);
     return grpc::string(reinterpret_cast<const char*>(&ip_bytes),
                         sizeof(ip_bytes));
   } else if (client_ip_hex_.size() == kIpv6AddressLength) {
-    uint64_t ip_bytes[2];
-    GPR_ASSERT(sscanf(client_ip_hex_.substr(0, 16).c_str(), "%llx", ip_bytes) ==
-               1);
-    GPR_ASSERT(
-        sscanf(client_ip_hex_.substr(16).c_str(), "%llx", ip_bytes + 1) == 1);
+    uint32_t ip_bytes[4];
+    for (size_t i = 0; i < 4; ++i) {
+      if (sscanf(client_ip_hex_.substr(i * 8, (i + 1) * 8).c_str(), "%x",
+                 ip_bytes + i) != 1) {
+        gpr_log(
+            GPR_ERROR,
+            "Can't parse client IP part (%s) from a hex string to an integer.",
+            client_ip_hex_.substr(i * 8, (i + 1) * 8).c_str());
+        return "";
+      }
+      ip_bytes[i] = htonl(ip_bytes[i]);
+    }
     return grpc::string(reinterpret_cast<const char*>(ip_bytes),
                         sizeof(ip_bytes));
   } else {

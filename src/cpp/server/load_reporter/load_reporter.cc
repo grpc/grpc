@@ -353,9 +353,8 @@ void LoadReporter::AppendNewFeedbackRecord(uint64_t rpcs, uint64_t errors) {
     cpu_stats = {0, 0};
   }
   std::unique_lock<std::mutex> lock(feedback_mu_);
-  feedback_records_.push_back(
-      LoadBalancingFeedbackRecord{std::chrono::system_clock::now(), rpcs,
-                                  errors, cpu_stats.first, cpu_stats.second});
+  feedback_records_.emplace_back(std::chrono::system_clock::now(), rpcs, errors,
+                                 cpu_stats.first, cpu_stats.second);
 }
 
 void LoadReporter::ReportStreamCreated(const grpc::string& hostname,
@@ -376,14 +375,8 @@ void LoadReporter::ReportStreamClosed(const grpc::string& hostname,
           hostname.c_str(), lb_id.c_str());
 }
 
-void LoadReporter::FetchAndSample() {
-  gpr_log(GPR_DEBUG,
-          "[LR %p] Starts fetching Census view data and sampling LB feedback "
-          "record.",
-          this);
-  CensusViewProvider::ViewDataMap view_data_map =
-      census_view_provider_->FetchViewData();
-  // Process view data about starting call.
+void LoadReporter::ProcessViewDataCallStart(
+    const CensusViewProvider::ViewDataMap& view_data_map) {
   auto it = view_data_map.find(kViewStartCount);
   if (it != view_data_map.end()) {
     // Note that the data type for any Sum view is double, whatever the data
@@ -402,10 +395,13 @@ void LoadReporter::FetchAndSample() {
       }
     }
   }
-  // Process view data about ending call.
+}
+
+void LoadReporter::ProcessViewDataCallEnd(
+    const CensusViewProvider::ViewDataMap& view_data_map) {
   uint64_t total_end_count = 0;
   uint64_t total_error_count = 0;
-  it = view_data_map.find(kViewEndCount);
+  auto it = view_data_map.find(kViewEndCount);
   if (it != view_data_map.end()) {
     // Note that the data type for any Sum view is double, whatever the data
     // type of the original measure.
@@ -426,16 +422,18 @@ void LoadReporter::FetchAndSample() {
         continue;
       }
       LoadRecordKey key(client_ip_and_token, user_id);
-      const double bytes_sent = CensusViewProvider::GetRelatedViewDataRowDouble(
-          view_data_map, kViewEndBytesSent, sizeof(kViewEndBytesSent) - 1,
-          tag_values);
-      const double bytes_received =
+      const uint64_t bytes_sent =
+          CensusViewProvider::GetRelatedViewDataRowDouble(
+              view_data_map, kViewEndBytesSent, sizeof(kViewEndBytesSent) - 1,
+              tag_values);
+      const uint64_t bytes_received =
           CensusViewProvider::GetRelatedViewDataRowDouble(
               view_data_map, kViewEndBytesReceived,
               sizeof(kViewEndBytesReceived) - 1, tag_values);
-      const double latency_ms = CensusViewProvider::GetRelatedViewDataRowDouble(
-          view_data_map, kViewEndLatencyMs, sizeof(kViewEndLatencyMs) - 1,
-          tag_values);
+      const uint64_t latency_ms =
+          CensusViewProvider::GetRelatedViewDataRowDouble(
+              view_data_map, kViewEndLatencyMs, sizeof(kViewEndLatencyMs) - 1,
+              tag_values);
       uint64_t ok_count = 0;
       uint64_t error_count = 0;
       total_end_count += end_count;
@@ -453,10 +451,12 @@ void LoadReporter::FetchAndSample() {
       }
     }
   }
-  // Append a load balancing feedback record.
   AppendNewFeedbackRecord(total_end_count, total_error_count);
-  // Process view data about other metrics.
-  it = view_data_map.find(kViewOtherCallMetricCount);
+}
+
+void LoadReporter::ProcessViewDataOtherCallMetrics(
+    const CensusViewProvider::ViewDataMap& view_data_map) {
+  auto it = view_data_map.find(kViewOtherCallMetricCount);
   if (it != view_data_map.end()) {
     for (const auto& p : it->second.int_data()) {
       const std::vector<grpc::string>& tag_values = p.first;
@@ -478,6 +478,18 @@ void LoadReporter::FetchAndSample() {
       }
     }
   }
+}
+
+void LoadReporter::FetchAndSample() {
+  gpr_log(GPR_DEBUG,
+          "[LR %p] Starts fetching Census view data and sampling LB feedback "
+          "record.",
+          this);
+  CensusViewProvider::ViewDataMap view_data_map =
+      census_view_provider_->FetchViewData();
+  ProcessViewDataCallStart(view_data_map);
+  ProcessViewDataCallEnd(view_data_map);
+  ProcessViewDataOtherCallMetrics(view_data_map);
 }
 
 }  // namespace load_reporter
