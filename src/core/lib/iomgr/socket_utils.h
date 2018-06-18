@@ -23,6 +23,9 @@
 
 #include <stddef.h>
 
+// TODO(juanlishen): The following functions might be simple enough to implement
+// ourselves, so that they don't cause any portability hassle.
+
 /* A wrapper for htons on POSIX and Windows */
 uint16_t grpc_htons(uint16_t hostshort);
 
