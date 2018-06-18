@@ -129,7 +129,7 @@ class BenchmarkServiceImpl final : public BenchmarkService::Service {
   template <class W>
   static Status ServerPush(ServerContext* context, W* stream,
                            const SimpleResponse& response,
-                           std::function<bool()> done) {
+                           const std::function<bool()>& done) {
     while ((done == nullptr) || !done()) {
       // TODO(vjpai): Add potential for rate-pacing on this
       if (!stream->Write(response)) {

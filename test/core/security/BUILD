@@ -183,7 +183,6 @@ grpc_cc_test(
         "//:gpr",
         "//:gpr_base",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
     ],
 )
 
@@ -196,7 +195,6 @@ grpc_cc_test(
         "//:gpr",
         "//:gpr_base",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
     ],
 )
 
@@ -208,7 +206,6 @@ grpc_cc_test(
         "//:alts_util",
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
     ],
 )
 
@@ -223,6 +220,5 @@ grpc_cc_test(
         "//:grpc_secure",
         "//:tsi", 
         "//:tsi_interface",
-        "//test/core/util:gpr_test_util",
     ],
 )

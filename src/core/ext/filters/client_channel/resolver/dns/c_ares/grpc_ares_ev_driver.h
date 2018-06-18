@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <ares.h>
+#include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 
 typedef struct grpc_ares_ev_driver grpc_ares_ev_driver;
@@ -50,6 +51,41 @@ void grpc_ares_ev_driver_destroy_locked(grpc_ares_ev_driver* ev_driver);
 
 /* Shutdown all the grpc_fds used by \a ev_driver */
 void grpc_ares_ev_driver_shutdown_locked(grpc_ares_ev_driver* ev_driver);
+
+namespace grpc_core {
+
+/* A wrapped fd that integrates with the grpc iomgr of the current platform.
+ * A GrpcPolledFd knows how to create grpc platform-specific iomgr endpoints
+ * from "ares_socket_t" sockets, and then sign up for readability/writeability
+ * with that poller, and do shutdown and destruction. */
+class GrpcPolledFd {
+ public:
+  virtual ~GrpcPolledFd() {}
+  /* Called when c-ares library is interested and there's no pending callback */
+  virtual void RegisterForOnReadableLocked(grpc_closure* read_closure)
+      GRPC_ABSTRACT;
+  /* Called when c-ares library is interested and there's no pending callback */
+  virtual void RegisterForOnWriteableLocked(grpc_closure* write_closure)
+      GRPC_ABSTRACT;
+  /* Indicates if there is data left even after just being read from */
+  virtual bool IsFdStillReadableLocked() GRPC_ABSTRACT;
+  /* Called once and only once. Must cause cancellation of any pending
+   * read/write callbacks. */
+  virtual void ShutdownLocked(grpc_error* error) GRPC_ABSTRACT;
+  /* Get the underlying ares_socket_t that this was created from */
+  virtual ares_socket_t GetWrappedAresSocketLocked() GRPC_ABSTRACT;
+  /* A unique name, for logging */
+  virtual const char* GetName() GRPC_ABSTRACT;
+
+  GRPC_ABSTRACT_BASE_CLASS
+};
+
+/* Creates a new wrapped fd for the current platform */
+GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as,
+                                    grpc_pollset_set* driver_pollset_set);
+void ConfigureAresChannelLocked(ares_channel* channel);
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_DNS_C_ARES_GRPC_ARES_EV_DRIVER_H \
         */

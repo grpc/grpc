@@ -19,6 +19,7 @@
 #include "test/cpp/util/cli_call.h"
 
 #include <iostream>
+#include <utility>
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
@@ -39,7 +40,7 @@ Status CliCall::Call(std::shared_ptr<grpc::Channel> channel,
                      const OutgoingMetadataContainer& metadata,
                      IncomingMetadataContainer* server_initial_metadata,
                      IncomingMetadataContainer* server_trailing_metadata) {
-  CliCall call(channel, method, metadata);
+  CliCall call(std::move(channel), method, metadata);
   call.Write(request);
   call.WritesDone();
   if (!call.Read(response, server_initial_metadata)) {
@@ -48,7 +49,7 @@ Status CliCall::Call(std::shared_ptr<grpc::Channel> channel,
   return call.Finish(server_trailing_metadata);
 }
 
-CliCall::CliCall(std::shared_ptr<grpc::Channel> channel,
+CliCall::CliCall(const std::shared_ptr<grpc::Channel>& channel,
                  const grpc::string& method,
                  const OutgoingMetadataContainer& metadata)
     : stub_(new grpc::GenericStub(channel)) {

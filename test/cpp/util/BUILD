@@ -217,7 +217,6 @@ grpc_cc_test(
     ],
     deps = [
         "//:grpc++",
-        "//test/core/util:gpr_test_util",
     ],
 )
 
@@ -261,7 +260,6 @@ grpc_cc_test(
     deps = [
         "//:grpc++_error_details",
         "//src/proto/grpc/testing:echo_messages_proto",
-        "//test/core/util:gpr_test_util",
     ],
 )
 

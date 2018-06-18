@@ -79,10 +79,13 @@ static grpc_security_status google_default_create_security_connector(
     grpc_channel_security_connector** sc, grpc_channel_args** new_args) {
   grpc_google_default_channel_credentials* c =
       reinterpret_cast<grpc_google_default_channel_credentials*>(creds);
-  bool is_grpclb_load_balancer = grpc_channel_args_get_bool(
-      args, GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER, false);
-  bool is_backend_from_grpclb_load_balancer = grpc_channel_args_get_bool(
-      args, GRPC_ARG_ADDRESS_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER, false);
+  bool is_grpclb_load_balancer = grpc_channel_arg_get_bool(
+      grpc_channel_args_find(args, GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER),
+      false);
+  bool is_backend_from_grpclb_load_balancer = grpc_channel_arg_get_bool(
+      grpc_channel_args_find(
+          args, GRPC_ARG_ADDRESS_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER),
+      false);
   bool use_alts =
       is_grpclb_load_balancer || is_backend_from_grpclb_load_balancer;
   grpc_security_status status = GRPC_SECURITY_ERROR;

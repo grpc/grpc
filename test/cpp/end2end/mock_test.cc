@@ -186,7 +186,7 @@ class TestServiceImpl : public EchoTestService::Service {
                         ServerWriter<EchoResponse>* writer) override {
     EchoResponse response;
     vector<grpc::string> tokens = split(request->message());
-    for (grpc::string token : tokens) {
+    for (const grpc::string& token : tokens) {
       response.set_message(token);
       writer->Write(response);
     }

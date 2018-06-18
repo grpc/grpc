@@ -27,7 +27,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/tsi/alts/crypt:alts_crypt_test_util",
-        "//test/core/util:gpr_test_util",
     ],
 )
 
@@ -40,7 +39,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/tsi/alts/crypt:alts_crypt_test_util",
-        "//test/core/util:gpr_test_util",
     ],
 )
 
@@ -56,7 +54,6 @@ grpc_cc_test(
         "//:tsi_interface",
         "//test/core/tsi/alts/crypt:alts_crypt_test_util",
         "//test/core/tsi:transport_security_test_lib",
-        "//test/core/util:gpr_test_util",
     ],
 )
 
@@ -70,6 +67,5 @@ grpc_cc_test(
         "//:gpr_base",
         "//:grpc",
         "//test/core/tsi/alts/crypt:alts_crypt_test_util",
-        "//test/core/util:gpr_test_util",
     ],
 )

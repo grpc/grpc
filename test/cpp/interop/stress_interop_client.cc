@@ -68,7 +68,7 @@ TestCaseType WeightedRandomTestSelector::GetNextTest() const {
 
 StressTestInteropClient::StressTestInteropClient(
     int test_id, const grpc::string& server_address,
-    std::shared_ptr<Channel> channel,
+    const std::shared_ptr<Channel>& channel,
     const WeightedRandomTestSelector& test_selector, long test_duration_secs,
     long sleep_duration_ms, bool do_not_abort_on_transient_failures)
     : test_id_(test_id),
@@ -80,7 +80,8 @@ StressTestInteropClient::StressTestInteropClient(
       test_duration_secs_(test_duration_secs),
       sleep_duration_ms_(sleep_duration_ms) {}
 
-void StressTestInteropClient::MainLoop(std::shared_ptr<QpsGauge> qps_gauge) {
+void StressTestInteropClient::MainLoop(
+    const std::shared_ptr<QpsGauge>& qps_gauge) {
   gpr_log(GPR_INFO, "Running test %d. ServerAddr: %s", test_id_,
           server_address_.c_str());
 
