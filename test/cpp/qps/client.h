@@ -450,7 +450,7 @@ class ClientImpl : public Client {
 
    private:
     void set_channel_args(const ClientConfig& config, ChannelArguments* args) {
-      for (auto channel_arg : config.channel_args()) {
+      for (const auto& channel_arg : config.channel_args()) {
         if (channel_arg.value_case() == ChannelArg::kStrValue) {
           args->SetString(channel_arg.name(), channel_arg.str_value());
         } else if (channel_arg.value_case() == ChannelArg::kIntValue) {

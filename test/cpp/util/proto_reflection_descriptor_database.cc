@@ -35,7 +35,7 @@ ProtoReflectionDescriptorDatabase::ProtoReflectionDescriptorDatabase(
     : stub_(std::move(stub)) {}
 
 ProtoReflectionDescriptorDatabase::ProtoReflectionDescriptorDatabase(
-    std::shared_ptr<grpc::Channel> channel)
+    const std::shared_ptr<grpc::Channel>& channel)
     : stub_(ServerReflection::NewStub(channel)) {}
 
 ProtoReflectionDescriptorDatabase::~ProtoReflectionDescriptorDatabase() {
@@ -79,7 +79,7 @@ bool ProtoReflectionDescriptorDatabase::FindFileByName(
     AddFileFromResponse(response.file_descriptor_response());
   } else if (response.message_response_case() ==
              ServerReflectionResponse::MessageResponseCase::kErrorResponse) {
-    const ErrorResponse error = response.error_response();
+    const ErrorResponse& error = response.error_response();
     if (error.error_code() == StatusCode::NOT_FOUND) {
       gpr_log(GPR_INFO, "NOT_FOUND from server for FindFileByName(%s)",
               filename.c_str());
@@ -126,7 +126,7 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingSymbol(
     AddFileFromResponse(response.file_descriptor_response());
   } else if (response.message_response_case() ==
              ServerReflectionResponse::MessageResponseCase::kErrorResponse) {
-    const ErrorResponse error = response.error_response();
+    const ErrorResponse& error = response.error_response();
     if (error.error_code() == StatusCode::NOT_FOUND) {
       missing_symbols_.insert(symbol_name);
       gpr_log(GPR_INFO,
@@ -182,7 +182,7 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingExtension(
     AddFileFromResponse(response.file_descriptor_response());
   } else if (response.message_response_case() ==
              ServerReflectionResponse::MessageResponseCase::kErrorResponse) {
-    const ErrorResponse error = response.error_response();
+    const ErrorResponse& error = response.error_response();
     if (error.error_code() == StatusCode::NOT_FOUND) {
       if (missing_extensions_.find(containing_type) ==
           missing_extensions_.end()) {
@@ -238,7 +238,7 @@ bool ProtoReflectionDescriptorDatabase::FindAllExtensionNumbers(
     return true;
   } else if (response.message_response_case() ==
              ServerReflectionResponse::MessageResponseCase::kErrorResponse) {
-    const ErrorResponse error = response.error_response();
+    const ErrorResponse& error = response.error_response();
     if (error.error_code() == StatusCode::NOT_FOUND) {
       gpr_log(GPR_INFO, "NOT_FOUND from server for FindAllExtensionNumbers(%s)",
               extendee_type.c_str());
@@ -265,14 +265,14 @@ bool ProtoReflectionDescriptorDatabase::GetServices(
 
   if (response.message_response_case() ==
       ServerReflectionResponse::MessageResponseCase::kListServicesResponse) {
-    const ListServiceResponse ls_response = response.list_services_response();
+    const ListServiceResponse& ls_response = response.list_services_response();
     for (int i = 0; i < ls_response.service_size(); ++i) {
       (*output).push_back(ls_response.service(i).name());
     }
     return true;
   } else if (response.message_response_case() ==
              ServerReflectionResponse::MessageResponseCase::kErrorResponse) {
-    const ErrorResponse error = response.error_response();
+    const ErrorResponse& error = response.error_response();
     gpr_log(GPR_INFO,
             "Error on GetServices()\n\tError code: %d\n"
             "\tError Message: %s",

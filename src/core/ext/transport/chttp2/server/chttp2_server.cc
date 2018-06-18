@@ -179,8 +179,8 @@ static void on_accept(void* arg, grpc_endpoint* tcp,
   grpc_handshake_manager* handshake_mgr = grpc_handshake_manager_create();
   grpc_handshake_manager_pending_list_add(&state->pending_handshake_mgrs,
                                           handshake_mgr);
-  gpr_mu_unlock(&state->mu);
   grpc_tcp_server_ref(state->tcp_server);
+  gpr_mu_unlock(&state->mu);
   server_connection_state* connection_state =
       static_cast<server_connection_state*>(
           gpr_zalloc(sizeof(*connection_state)));

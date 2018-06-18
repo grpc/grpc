@@ -96,16 +96,20 @@ static deque<string> get_workers(const string& env_name) {
 }
 
 // helpers for postprocess_scenario_result
-static double WallTime(ClientStats s) { return s.time_elapsed(); }
-static double SystemTime(ClientStats s) { return s.time_system(); }
-static double UserTime(ClientStats s) { return s.time_user(); }
-static double CliPollCount(ClientStats s) { return s.cq_poll_count(); }
-static double SvrPollCount(ServerStats s) { return s.cq_poll_count(); }
-static double ServerWallTime(ServerStats s) { return s.time_elapsed(); }
-static double ServerSystemTime(ServerStats s) { return s.time_system(); }
-static double ServerUserTime(ServerStats s) { return s.time_user(); }
-static double ServerTotalCpuTime(ServerStats s) { return s.total_cpu_time(); }
-static double ServerIdleCpuTime(ServerStats s) { return s.idle_cpu_time(); }
+static double WallTime(const ClientStats& s) { return s.time_elapsed(); }
+static double SystemTime(const ClientStats& s) { return s.time_system(); }
+static double UserTime(const ClientStats& s) { return s.time_user(); }
+static double CliPollCount(const ClientStats& s) { return s.cq_poll_count(); }
+static double SvrPollCount(const ServerStats& s) { return s.cq_poll_count(); }
+static double ServerWallTime(const ServerStats& s) { return s.time_elapsed(); }
+static double ServerSystemTime(const ServerStats& s) { return s.time_system(); }
+static double ServerUserTime(const ServerStats& s) { return s.time_user(); }
+static double ServerTotalCpuTime(const ServerStats& s) {
+  return s.total_cpu_time();
+}
+static double ServerIdleCpuTime(const ServerStats& s) {
+  return s.idle_cpu_time();
+}
 static int Cores(int n) { return n; }
 
 // Postprocess ScenarioResult and populate result summary.
@@ -156,7 +160,7 @@ static void postprocess_scenario_result(ScenarioResult* result) {
     int64_t successes = 0;
     int64_t failures = 0;
     for (int i = 0; i < result->request_results_size(); i++) {
-      RequestResultCount rrc = result->request_results(i);
+      const RequestResultCount& rrc = result->request_results(i);
       if (rrc.status_code() == 0) {
         successes += rrc.count();
       } else {
@@ -213,7 +217,6 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // To be added to the result, containing the final configuration used for
   // client and config (including host, etc.)
   ClientConfig result_client_config;
-  const ServerConfig result_server_config = initial_server_config;
 
   // Get client, server lists; ignore if inproc test
   auto workers = (!run_inproc) ? get_workers("QPS_WORKERS") : deque<string>();
@@ -280,7 +283,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
           local_workers[i]->InProcessChannel(channel_args));
     }
 
-    ServerConfig server_config = initial_server_config;
+    const ServerConfig& server_config = initial_server_config;
     if (server_config.core_limit() != 0) {
       gpr_log(GPR_ERROR,
               "server config core limit is set but ignored by driver");

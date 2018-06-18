@@ -65,7 +65,7 @@ namespace Grpc.Core.Testing
         /// Creates a test double for <c>AsyncDuplexStreamingCall</c>. Only for testing.
         /// Note: experimental API that can change or be removed without any prior notice.
         /// </summary>
-        public static AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<TResponse, TRequest>(
+        public static AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<TRequest, TResponse>(
             IClientStreamWriter<TRequest> requestStream, IAsyncStreamReader<TResponse> responseStream,
             Task<Metadata> responseHeadersAsync, Func<Status> getStatusFunc,
             Func<Metadata> getTrailersFunc, Action disposeAction)

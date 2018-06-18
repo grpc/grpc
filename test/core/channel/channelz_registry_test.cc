@@ -54,6 +54,7 @@ TEST(ChannelzRegistryTest, UuidStartsAboveZeroTest) {
 TEST(ChannelzRegistryTest, UuidsAreIncreasing) {
   int object_to_register;
   std::vector<intptr_t> uuids;
+  uuids.reserve(10);
   for (int i = 0; i < 10; ++i) {
     // reregister the same object. It's ok since we are just testing uuids
     uuids.push_back(ChannelzRegistry::Register(&object_to_register));

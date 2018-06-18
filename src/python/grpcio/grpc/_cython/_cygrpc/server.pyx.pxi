@@ -18,6 +18,8 @@ import logging
 import time
 import grpc
 
+_LOGGER = logging.getLogger(__name__)
+
 cdef grpc_ssl_certificate_config_reload_status _server_cert_config_fetcher_wrapper(
         void* user_data, grpc_ssl_server_certificate_config **config) with gil:
   # This is a credentials.ServerCertificateConfig
@@ -34,13 +36,13 @@ cdef grpc_ssl_certificate_config_reload_status _server_cert_config_fetcher_wrapp
     try:
       cert_config_wrapper = user_cb()
     except Exception:
-      logging.exception('Error fetching certificate config')
+      _LOGGER.exception('Error fetching certificate config')
       return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL
     if cert_config_wrapper is None:
       return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED
     elif not isinstance(
         cert_config_wrapper, grpc.ServerCertificateConfiguration):
-      logging.error(
+      _LOGGER.error(
           'Error fetching certificate configuration: certificate '
           'configuration must be of type grpc.ServerCertificateConfiguration, '
           'not %s' % type(cert_config_wrapper).__name__)

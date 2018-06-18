@@ -22,7 +22,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.13.0-dev'
+  version = '1.14.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -785,6 +785,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc',
                       'src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc',
+                      'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc',
@@ -1080,6 +1081,24 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/workarounds/workaround_utils.h'
   end
 
+  s.subspec 'CFStream-Implementation' do |ss|
+    ss.header_mappings_dir = '.'
+    ss.dependency "#{s.name}/Implementation", version
+    ss.pod_target_xcconfig = {
+      'GCC_PREPROCESSOR_DEFINITIONS' => 'GRPC_CFSTREAM=1'
+    }
+    ss.source_files = 'src/core/lib/iomgr/cfstream_handle.cc',
+                      'src/core/lib/iomgr/endpoint_cfstream.cc',
+                      'src/core/lib/iomgr/error_cfstream.cc',
+                      'src/core/lib/iomgr/tcp_client_cfstream.cc',
+                      'src/core/lib/iomgr/cfstream_handle.h',
+                      'src/core/lib/iomgr/endpoint_cfstream.h',
+                      'src/core/lib/iomgr/error_cfstream.h'
+    ss.private_header_files = 'src/core/lib/iomgr/cfstream_handle.h',
+                              'src/core/lib/iomgr/endpoint_cfstream.h',
+                              'src/core/lib/iomgr/error_cfstream.h'
+  end
+
   s.subspec 'Cronet-Interface' do |ss|
     ss.header_mappings_dir = 'include/grpc'
     ss.source_files = 'include/grpc/grpc_cronet.h'
@@ -1198,6 +1217,7 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/max_message_length.cc',
                       'test/core/end2end/tests/negative_deadline.cc',
                       'test/core/end2end/tests/network_status_change.cc',
+                      'test/core/end2end/tests/no_error_on_hotpath.cc',
                       'test/core/end2end/tests/no_logging.cc',
                       'test/core/end2end/tests/no_op.cc',
                       'test/core/end2end/tests/payload.cc',
@@ -1245,6 +1265,7 @@ Pod::Spec.new do |s|
 
   # TODO (mxyan): Instead of this hack, add include path "third_party" to C core's include path?
   s.prepare_command = <<-END_OF_COMMAND
-    find src/core/ -type f ! -path '*.back*' -exec sed -E -i'.back' 's;#include "third_party/nanopb/(.*)";#include <nanopb/\\1>;g' {} \\\;
+    find src/core/ -type f ! -path '*.grpc_back' -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(pb(_.*)?\\.h)";#include <nanopb/\\1>;g'
+    find src/core/ -type f -path '*.grpc_back' -print0 | xargs -0 rm
   END_OF_COMMAND
 end

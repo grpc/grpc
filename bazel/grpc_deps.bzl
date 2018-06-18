@@ -2,6 +2,12 @@
 
 def grpc_deps():
     """Loads dependencies need to compile and test the grpc library."""
+
+    native.bind(
+        name = "nanopb",
+        actual = "@com_github_nanopb_nanopb//:nanopb",
+    )
+
     native.bind(
         name = "libssl",
         actual = "@boringssl//:ssl",
@@ -59,12 +65,12 @@ def grpc_deps():
 
     native.bind(
         name = "grpc_cpp_plugin",
-        actual = "@com_github_grpc_grpc//:grpc_cpp_plugin"
+        actual = "@com_github_grpc_grpc//:grpc_cpp_plugin",
     )
 
     native.bind(
         name = "grpc++_codegen_proto",
-        actual = "@com_github_grpc_grpc//:grpc++_codegen_proto"
+        actual = "@com_github_grpc_grpc//:grpc++_codegen_proto",
     )
 
     if "boringssl" not in native.existing_rules():
@@ -87,6 +93,14 @@ def grpc_deps():
             name = "com_google_protobuf",
             strip_prefix = "protobuf-b5fbb742af122b565925987e65c08957739976a7",
             url = "https://github.com/google/protobuf/archive/b5fbb742af122b565925987e65c08957739976a7.tar.gz",
+            )
+
+    if "com_github_nanopb_nanopb" not in native.existing_rules():
+        native.new_http_archive(
+            name = "com_github_nanopb_nanopb",
+            build_file = "@com_github_grpc_grpc//third_party:nanopb.BUILD",
+            strip_prefix = "nanopb-f8ac463766281625ad710900479130c7fcb4d63b",
+            url = "https://github.com/nanopb/nanopb/archive/f8ac463766281625ad710900479130c7fcb4d63b.tar.gz",
         )
 
     if "com_github_google_googletest" not in native.existing_rules():
@@ -130,12 +144,12 @@ def grpc_deps():
     if "com_github_bazelbuild_bazeltoolchains" not in native.existing_rules():
         native.http_archive(
             name = "com_github_bazelbuild_bazeltoolchains",
-            strip_prefix = "bazel-toolchains-09c850dbb8e785ded3d23a7003e9a0168fe1fb2f",
+            strip_prefix = "bazel-toolchains-4653c01284d8a4a536f8f9bb47b7d10f94c549e7",
             urls = [
-                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/09c850dbb8e785ded3d23a7003e9a0168fe1fb2f.tar.gz",
-                "https://github.com/bazelbuild/bazel-toolchains/archive/09c850dbb8e785ded3d23a7003e9a0168fe1fb2f.tar.gz",
+                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/4653c01284d8a4a536f8f9bb47b7d10f94c549e7.tar.gz",
+                "https://github.com/bazelbuild/bazel-toolchains/archive/4653c01284d8a4a536f8f9bb47b7d10f94c549e7.tar.gz",
             ],
-            sha256 = "08e521cf2d0998e3d27a16c2e2542ebf4d3857b3ddadcfd145d128140754d7bd",
+            sha256 = "1c4a532b396c698e6467a1548554571cb85fa091e472b05e398ebc836c315d77",
         )
 
 # TODO: move some dependencies from "grpc_deps" here?

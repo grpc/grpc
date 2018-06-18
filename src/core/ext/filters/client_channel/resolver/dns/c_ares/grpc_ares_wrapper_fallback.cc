@@ -26,18 +26,19 @@ struct grpc_ares_request {
   char val;
 };
 
-static grpc_ares_request* grpc_dns_lookup_ares_impl(
+static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    grpc_lb_addresses** addrs, bool check_grpclb, char** service_config_json) {
+    grpc_lb_addresses** addrs, bool check_grpclb, char** service_config_json,
+    grpc_combiner* combiner) {
   return NULL;
 }
 
-grpc_ares_request* (*grpc_dns_lookup_ares)(
+grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    grpc_lb_addresses** addrs, bool check_grpclb,
-    char** service_config_json) = grpc_dns_lookup_ares_impl;
+    grpc_lb_addresses** addrs, bool check_grpclb, char** service_config_json,
+    grpc_combiner* combiner) = grpc_dns_lookup_ares_locked_impl;
 
 void grpc_cancel_ares_request(grpc_ares_request* r) {}
 

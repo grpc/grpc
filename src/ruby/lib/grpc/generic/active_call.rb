@@ -116,9 +116,10 @@ module GRPC
 
     # Sends the initial metadata that has yet to be sent.
     # Does nothing if metadata has already been sent for this call.
-    def send_initial_metadata
+    def send_initial_metadata(new_metadata = {})
       @send_initial_md_mutex.synchronize do
         return if @metadata_sent
+        @metadata_to_send.merge!(new_metadata)
         @metadata_tag = ActiveCall.client_invoke(@call, @metadata_to_send)
         @metadata_sent = true
       end
@@ -388,7 +389,7 @@ module GRPC
     def client_streamer(requests, metadata: {})
       raise_error_if_already_executed
       begin
-        merge_metadata_and_send_if_not_already_sent(metadata)
+        send_initial_metadata(metadata)
         requests.each { |r| @call.run_batch(SEND_MESSAGE => @marshal.call(r)) }
       rescue GRPC::Core::CallError => e
         receive_and_check_status # check for Cancelled
@@ -490,7 +491,7 @@ module GRPC
       raise_error_if_already_executed
       # Metadata might have already been sent if this is an operation view
       begin
-        merge_metadata_and_send_if_not_already_sent(metadata)
+        send_initial_metadata(metadata)
       rescue GRPC::Core::CallError => e
         batch_result = @call.run_batch(RECV_STATUS_ON_CLIENT => nil)
         set_input_stream_done
@@ -568,15 +569,6 @@ module GRPC
       @send_initial_md_mutex.synchronize do
         fail('cant change metadata after already sent') if @metadata_sent
         @metadata_to_send.merge!(new_metadata)
-      end
-    end
-
-    def merge_metadata_and_send_if_not_already_sent(new_metadata = {})
-      @send_initial_md_mutex.synchronize do
-        return if @metadata_sent
-        @metadata_to_send.merge!(new_metadata)
-        @call.run_batch(SEND_INITIAL_METADATA => @metadata_to_send)
-        @metadata_sent = true
       end
     end
 

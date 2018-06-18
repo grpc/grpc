@@ -64,11 +64,11 @@ config_setting(
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "gloriosa"
+g_stands_for = "gladiolus"
 
 core_version = "6.0.0-dev"
 
-version = "1.13.0-dev"
+version = "1.14.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -1004,6 +1004,25 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_cfstream",
+    srcs = [
+        "src/core/lib/iomgr/cfstream_handle.cc",
+        "src/core/lib/iomgr/endpoint_cfstream.cc",
+        "src/core/lib/iomgr/error_cfstream.cc",
+        "src/core/lib/iomgr/tcp_client_cfstream.cc",
+    ],
+    hdrs = [
+        "src/core/lib/iomgr/cfstream_handle.h",
+        "src/core/lib/iomgr/endpoint_cfstream.h",
+        "src/core/lib/iomgr/error_cfstream.h",
+    ],
+    deps = [
+        ":gpr_base",
+        ":grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_client_channel",
     srcs = [
         "src/core/ext/filters/client_channel/backup_poller.cc",
@@ -1350,6 +1369,7 @@ grpc_cc_library(
     name = "grpc_resolver_dns_ares",
     srcs = [
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc",
+        "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc",

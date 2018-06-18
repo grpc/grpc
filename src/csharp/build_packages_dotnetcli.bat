@@ -13,7 +13,7 @@
 @rem limitations under the License.
 
 @rem Current package versions
-set VERSION=1.13.0-dev
+set VERSION=1.14.0-dev
 
 @rem Adjust the location of nuget.exe
 set NUGET=C:\nuget\nuget.exe
@@ -47,6 +47,7 @@ xcopy /Y /I nativelibs\csharp_ext_windows_x64\grpc_csharp_ext.dll ..\..\cmake\bu
 %DOTNET% pack --configuration Release Grpc.Reflection --output ..\..\..\artifacts || goto :error
 
 %NUGET% pack Grpc.nuspec -Version %VERSION% -OutputDirectory ..\..\artifacts || goto :error
+%NUGET% pack Grpc.Core.NativeDebug.nuspec -Version %VERSION% -OutputDirectory ..\..\artifacts
 %NUGET% pack Grpc.Tools.nuspec -Version %VERSION% -OutputDirectory ..\..\artifacts
 
 @rem copy resulting nuget packages to artifacts directory

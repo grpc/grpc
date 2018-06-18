@@ -50,8 +50,8 @@ class LoadDataStoreTest : public ::testing::Test {
   bool PerBalancerStoresContains(
       const LoadDataStore& load_data_store,
       const std::set<PerBalancerStore*>* per_balancer_stores,
-      const grpc::string hostname, const grpc::string lb_id,
-      const grpc::string load_key) {
+      const grpc::string& hostname, const grpc::string& lb_id,
+      const grpc::string& load_key) {
     auto original_per_balancer_store =
         load_data_store.FindPerBalancerStore(hostname, lb_id);
     EXPECT_NE(original_per_balancer_store, nullptr);
@@ -155,7 +155,7 @@ TEST_F(LoadDataStoreTest, OrphanAssignmentIsSticky) {
   active_lb_ids.erase(orphaned_lb_id);
   // Find which LB is assigned the orphaned store.
   grpc::string assigned_lb_id = "";
-  for (auto lb_id : active_lb_ids) {
+  for (const auto& lb_id : active_lb_ids) {
     if (PerBalancerStoresContains(
             load_data_store,
             load_data_store.GetAssignedStores(kHostname1, lb_id), kHostname1,
@@ -169,7 +169,7 @@ TEST_F(LoadDataStoreTest, OrphanAssignmentIsSticky) {
   // orphaned_lb_id shouldn't change.
   for (size_t _ = 0; _ < 10; ++_) {
     grpc::string lb_id_to_close = "";
-    for (auto lb_id : active_lb_ids) {
+    for (const auto& lb_id : active_lb_ids) {
       if (lb_id != assigned_lb_id) {
         lb_id_to_close = lb_id;
         break;
@@ -187,7 +187,7 @@ TEST_F(LoadDataStoreTest, OrphanAssignmentIsSticky) {
   load_data_store.ReportStreamClosed(kHostname1, assigned_lb_id);
   active_lb_ids.erase(assigned_lb_id);
   size_t orphaned_lb_id_occurences = 0;
-  for (auto lb_id : active_lb_ids) {
+  for (const auto& lb_id : active_lb_ids) {
     if (PerBalancerStoresContains(
             load_data_store,
             load_data_store.GetAssignedStores(kHostname1, lb_id), kHostname1,

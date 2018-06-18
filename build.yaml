@@ -13,8 +13,8 @@ settings:
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
   core_version: 6.0.0-dev
-  g_stands_for: gloriosa
-  version: 1.13.0-dev
+  g_stands_for: gladiolus
+  version: 1.14.0-dev
 filegroups:
 - name: alts_proto
   headers:
@@ -536,6 +536,19 @@ filegroups:
   uses:
   - grpc_codegen
   - grpc_trace_headers
+- name: grpc_cfstream
+  headers:
+  - src/core/lib/iomgr/cfstream_handle.h
+  - src/core/lib/iomgr/endpoint_cfstream.h
+  - src/core/lib/iomgr/error_cfstream.h
+  src:
+  - src/core/lib/iomgr/cfstream_handle.cc
+  - src/core/lib/iomgr/endpoint_cfstream.cc
+  - src/core/lib/iomgr/error_cfstream.cc
+  - src/core/lib/iomgr/tcp_client_cfstream.cc
+  uses:
+  - grpc_base_headers
+  - gpr_base_headers
 - name: grpc_client_authority_filter
   headers:
   - src/core/ext/filters/http/client_authority_filter.h
@@ -712,6 +725,7 @@ filegroups:
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h
   src:
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
+  - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc
@@ -2032,6 +2046,7 @@ targets:
   dict: test/core/end2end/fuzzers/api_fuzzer.dictionary
   maxlen: 2048
 - name: arena_test
+  cpu_cost: 10
   build: test
   language: c
   src:
@@ -5638,7 +5653,7 @@ defaults:
   global:
     COREFLAGS: -fno-rtti -fno-exceptions
     CPPFLAGS: -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1
-      -Wno-deprecated-declarations
+      -Wno-deprecated-declarations -Ithird_party/nanopb -DPB_FIELD_32BIT
     LDFLAGS: -g
   zlib:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration
