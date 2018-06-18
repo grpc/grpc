@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require 'grpc'
+require 'spec_helper'
 require_relative '../lib/grpc/google_rpc_status_utils'
 require_relative '../pb/src/proto/grpc/testing/messages_pb'
 require_relative '../pb/src/proto/grpc/testing/messages_pb'
