@@ -120,7 +120,7 @@ module GRPC
       @send_initial_md_mutex.synchronize do
         return if @metadata_sent
         @metadata_to_send.merge!(new_metadata)
-        @metadata_tag = ActiveCall.client_invoke(@call, @metadata_to_send)
+        ActiveCall.client_invoke(@call, @metadata_to_send)
         @metadata_sent = true
       end
     end
