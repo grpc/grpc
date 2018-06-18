@@ -60,6 +60,12 @@ installed by `brew` is being used:
  $ LIBTOOL=glibtool LIBTOOLIZE=glibtoolize make
 ```
 
+For people who use MacPorts, you can specify `prefix=/opt/local` to setup the installation prefix:
+
+```sh
+ $ LIBTOOL=glibtool LIBTOOLIZE=glibtoolize prefix=/opt/local make
+```
+
 ## Protoc
 
 By default gRPC uses [protocol buffers](https://github.com/google/protobuf),
