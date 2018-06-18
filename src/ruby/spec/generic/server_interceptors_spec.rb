@@ -15,10 +15,12 @@ require 'spec_helper'
 
 describe 'Server Interceptors' do
   let(:interceptor) { TestServerInterceptor.new }
-  let(:request) { EchoMsg.new }
+  let(:request) { EchoMsg.new(value1) }
   let(:trailing_metadata) { {} }
   let(:service) { EchoService.new(trailing_metadata) }
   let(:interceptors) { [] }
+  let(:value1) { 'hello1' }
+  let(:value2) { 'hello2' }
 
   before(:each) do
     build_rpc_server(server_opts: { interceptors: interceptors })
@@ -38,7 +40,7 @@ describe 'Server Interceptors' do
 
         run_services_on_server(@server, services: [service]) do
           stub = build_insecure_stub(EchoStub)
-          expect(stub.an_rpc(request)).to be_a(EchoMsg)
+          expect(stub.an_rpc(request).value).to eq(value1)
         end
       end
 
@@ -58,14 +60,15 @@ describe 'Server Interceptors' do
             'interc' => 'from_request_response',
             'server_om' => 'from_request_response'
           )
-          expect(msg).to be_a(EchoMsg)
+          expect(msg.value).to eq(value1)
         end
       end
     end
 
     context 'with a client streaming call' do
       let(:trailing_metadata) { { server_om: 'from_client_streamer' } }
-      let(:requests) { [EchoMsg.new, EchoMsg.new] }
+      let(:msgs) { [value1, value2] }
+      let(:requests) { msgs.map { |m|  EchoMsg.new(m) } }
 
       it 'should be called', server: true do
         expect(interceptor).to receive(:client_streamer)
@@ -73,7 +76,7 @@ describe 'Server Interceptors' do
 
         run_services_on_server(@server, services: [service]) do
           stub = build_insecure_stub(EchoStub)
-          expect(stub.a_client_streaming_rpc(requests)).to be_a(EchoMsg)
+          expect(stub.a_client_streaming_rpc(requests).value).to eq(msgs.join('/'))
         end
       end
 
@@ -93,14 +96,14 @@ describe 'Server Interceptors' do
             'interc' => 'from_client_streamer',
             'server_om' => 'from_client_streamer'
           )
-          expect(msg).to be_a(EchoMsg)
+          expect(msg.value).to eq(msgs.join('/'))
         end
       end
     end
 
     context 'with a server streaming call' do
       let(:trailing_metadata) { { server_om: 'from_server_streamer' } }
-      let(:request) { EchoMsg.new }
+      let(:request) { EchoMsg.new(value1) }
 
       it 'should be called', server: true do
         expect(interceptor).to receive(:server_streamer)
@@ -109,9 +112,7 @@ describe 'Server Interceptors' do
         run_services_on_server(@server, services: [service]) do
           stub = build_insecure_stub(EchoStub)
           responses = stub.a_server_streaming_rpc(request)
-          responses.each do |r|
-            expect(r).to be_a(EchoMsg)
-          end
+          expect(responses.map(&:value)).to eq(%w[hey1 hey2])
         end
       end
 
@@ -127,9 +128,7 @@ describe 'Server Interceptors' do
           )
           op = stub.a_server_streaming_rpc(request, client_call_opts)
           responses = op.execute
-          responses.each do |r|
-            expect(r).to be_a(EchoMsg)
-          end
+          expect(responses.map(&:value)).to eq(%w[hey1 hey2])
           expect(op.trailing_metadata).to eq(
             'interc' => 'from_server_streamer',
             'server_om' => 'from_server_streamer'
@@ -140,7 +139,8 @@ describe 'Server Interceptors' do
 
     context 'with a bidi call' do
       let(:trailing_metadata) { { server_om: 'from_bidi_streamer' } }
-      let(:requests) { [EchoMsg.new, EchoMsg.new] }
+      let(:requests) { [EchoMsg.new(value1), EchoMsg.new(value2)] }
+      let(:expected) { [value1, value2].map { |v| "#{v}-hey" } }
 
       it 'should be called', server: true do
         expect(interceptor).to receive(:bidi_streamer)
@@ -149,9 +149,7 @@ describe 'Server Interceptors' do
         run_services_on_server(@server, services: [service]) do
           stub = build_insecure_stub(EchoStub)
           responses = stub.a_bidi_rpc(requests)
-          responses.each do |r|
-            expect(r).to be_a(EchoMsg)
-          end
+          expect(responses.map(&:value)).to eq(expected)
         end
       end
 
@@ -167,9 +165,7 @@ describe 'Server Interceptors' do
           )
           op = stub.a_bidi_rpc(requests, client_call_opts)
           responses = op.execute
-          responses.each do |r|
-            expect(r).to be_a(EchoMsg)
-          end
+          expect(responses.map(&:value)).to eq(expected)
           expect(op.trailing_metadata).to eq(
             'interc' => 'from_bidi_streamer',
             'server_om' => 'from_bidi_streamer'
@@ -200,7 +196,7 @@ describe 'Server Interceptors' do
 
       run_services_on_server(@server, services: [service]) do
         stub = build_insecure_stub(EchoStub)
-        expect(stub.an_rpc(request)).to be_a(EchoMsg)
+        expect(stub.an_rpc(request).value).to eq(value1)
       end
     end
   end
@@ -211,7 +207,7 @@ describe 'Server Interceptors' do
 
       run_services_on_server(@server, services: [service]) do
         stub = build_insecure_stub(EchoStub)
-        expect(stub.an_rpc(request)).to be_a(EchoMsg)
+        expect(stub.an_rpc(request).value).to eq(value1)
       end
     end
   end
