@@ -45,6 +45,7 @@ using ::opencensus::stats::View;
 using ::opencensus::stats::ViewData;
 using ::opencensus::stats::ViewDataImpl;
 using ::opencensus::stats::ViewDescriptor;
+using ::testing::DoubleNear;
 using ::testing::Return;
 
 constexpr uint64_t kFeedbackSampleWindowSeconds = 5;
@@ -150,8 +151,8 @@ class LbFeedbackTest : public LoadReporterTest {
                             base->first) /
         static_cast<double>(kCpuStatsSamples[start + count - 1].second -
                             base->second);
-    ASSERT_TRUE(std::abs(lb_feedback.server_utilization() - expected_cpu_util) <
-                0.00001);
+    ASSERT_THAT(static_cast<double>(lb_feedback.server_utilization()),
+                DoubleNear(expected_cpu_util, 0.00001));
     double qps_sum = 0, eps_sum = 0;
     for (size_t i = 0; i < count; ++i) {
       qps_sum += kQpsEpsSamples[start + i].first;
@@ -159,8 +160,12 @@ class LbFeedbackTest : public LoadReporterTest {
     }
     double expected_qps = qps_sum / count;
     double expected_eps = eps_sum / count;
-    ASSERT_TRUE(std::abs(lb_feedback.calls_per_second() - expected_qps) < 1.5);
-    ASSERT_TRUE(std::abs(lb_feedback.errors_per_second() - expected_eps) < 1.5);
+    // TODO(juanlishen): The error is big because we use sleep(). It should be
+    // much smaller when we use fake clock.
+    ASSERT_THAT(static_cast<double>(lb_feedback.calls_per_second()),
+                DoubleNear(expected_qps, expected_qps / 50));
+    ASSERT_THAT(static_cast<double>(lb_feedback.errors_per_second()),
+                DoubleNear(expected_eps, expected_eps / 50));
     gpr_log(GPR_INFO,
             "Verified LB feedback matches the samples of index [%lu, %lu).",
             start, start + count);

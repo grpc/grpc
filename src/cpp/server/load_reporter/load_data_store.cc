@@ -18,13 +18,13 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
-#include <arpa/inet.h>
 #include <stdio.h>
 #include <cstdlib>
 #include <set>
 #include <unordered_map>
 #include <vector>
 
+#include "src/core/lib/iomgr/socket_utils.h"
 #include "src/cpp/server/load_reporter/load_data_store.h"
 
 namespace grpc {
@@ -109,7 +109,7 @@ grpc::string LoadRecordKey::GetClientIpBytes() const {
               client_ip_hex_.c_str());
       return "";
     }
-    ip_bytes = htonl(ip_bytes);
+    ip_bytes = grpc_htonl(ip_bytes);
     return grpc::string(reinterpret_cast<const char*>(&ip_bytes),
                         sizeof(ip_bytes));
   } else if (client_ip_hex_.size() == kIpv6AddressLength) {
@@ -123,7 +123,7 @@ grpc::string LoadRecordKey::GetClientIpBytes() const {
             client_ip_hex_.substr(i * 8, (i + 1) * 8).c_str());
         return "";
       }
-      ip_bytes[i] = htonl(ip_bytes[i]);
+      ip_bytes[i] = grpc_htonl(ip_bytes[i]);
     }
     return grpc::string(reinterpret_cast<const char*>(ip_bytes),
                         sizeof(ip_bytes));

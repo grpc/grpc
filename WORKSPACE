@@ -1,9 +1,5 @@
 workspace(name = "com_github_grpc_grpc")
 
-load("//bazel:grpc_deps.bzl", "grpc_deps", "grpc_test_only_deps")
-grpc_deps()
-grpc_test_only_deps()
-
 http_archive(
     name = "io_opencensus_cpp",
     strip_prefix = "opencensus-cpp-master",
@@ -16,3 +12,7 @@ http_archive(
     urls = ["https://github.com/google/cctz/archive/master.zip"],
     strip_prefix = "cctz-master",
 )
+
+load("//bazel:grpc_deps.bzl", "grpc_deps", "grpc_test_only_deps")
+grpc_deps()
+grpc_test_only_deps()
