@@ -39,6 +39,7 @@ RUN apt-get update && apt-get install -y \
   strace \
   python-dev \
   python-setuptools \
+  python-yaml \
   telnet \
   unzip \
   wget \
