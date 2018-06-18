@@ -19,6 +19,8 @@
 #ifndef GRPC_SRC_CPP_SERVER_LOAD_REPORTER_GET_CPU_STATS_H
 #define GRPC_SRC_CPP_SERVER_LOAD_REPORTER_GET_CPU_STATS_H
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <utility>
 
 namespace grpc {

@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <cstdlib>

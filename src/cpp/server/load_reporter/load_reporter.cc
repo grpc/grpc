@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/impl/codegen/port_platform.h>
+
 #include <stdint.h>
 #include <stdio.h>
 #include <chrono>
