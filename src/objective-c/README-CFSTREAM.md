@@ -11,7 +11,7 @@ the benefits of resolving the issues above. We expect to make CFStream the defau
 interface that gRPC uses when it is ready for production.
 
 ## Usage
-If you use gRPC following the instruction of
+If you use gRPC following the instructions in
 [README.md](https://github.com/grpc/grpc/blob/master/src/objective-c/README.md):
 - Simply replace the
 dependency on `gRPC-ProtoRPC` with `gRPC-ProtoRPC/CFStream`. The build system will take care of
@@ -22,11 +22,11 @@ If your project directly depends on podspecs other than `gRPC-ProtoRPC` (e.g. `g
 
 - Make your projects depend on subspecs corresponding to CFStream in each gRPC podspec. For
   `gRPC-Core`, you will need to make sure that the completion queue you create is of type
-  `GRPC_CQ_NON_POLLING`. This behavior is expected to be changed soon during the experimantal so
-  that you do not have to modify the completion queue type.
+  `GRPC_CQ_NON_POLLING`. This is expected to be fixed soon so that you do not have to modify the
+  completion queue type.
 
 ## Notes
 
-- Currently we do not support on platforms other than iOS, although it is likely that this
-  integration can run on MacOS targets with Apple's compiler.
+- Currently we do not support platforms other than iOS, although it is likely that this integration
+  can run on MacOS targets with Apple's compiler.
 - Let us know if you meet any issue by filing issue and ping @muxi.
