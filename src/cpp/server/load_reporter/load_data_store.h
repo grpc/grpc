@@ -31,8 +31,6 @@
 namespace grpc {
 namespace load_reporter {
 
-constexpr char kInvalidLbId[] = "<INVALID_LBID_238dsb234890rb>";
-
 // The load data storage is organized in hierarchy. The LoadDataStore is the
 // top-level data store. In LoadDataStore, for each host we keep a
 // PerHostStore, in which for each balancer we keep a PerBalancerStore. Each
@@ -124,8 +122,8 @@ class LoadRecordKey {
 class LoadRecordValue {
  public:
   explicit LoadRecordValue(uint64_t start_count = 0, uint64_t ok_count = 0,
-                           uint64_t error_count = 0, double bytes_sent = 0,
-                           double bytes_recv = 0, double latency_ms = 0)
+                           uint64_t error_count = 0, uint64_t bytes_sent = 0,
+                           uint64_t bytes_recv = 0, uint64_t latency_ms = 0)
       : start_count_(start_count),
         ok_count_(ok_count),
         error_count_(error_count),
@@ -172,9 +170,9 @@ class LoadRecordValue {
   uint64_t start_count() const { return start_count_; }
   uint64_t ok_count() const { return ok_count_; }
   uint64_t error_count() const { return error_count_; }
-  double bytes_sent() const { return bytes_sent_; }
-  double bytes_recv() const { return bytes_recv_; }
-  double latency_ms() const { return latency_ms_; }
+  uint64_t bytes_sent() const { return bytes_sent_; }
+  uint64_t bytes_recv() const { return bytes_recv_; }
+  uint64_t latency_ms() const { return latency_ms_; }
   const std::unordered_map<grpc::string, CallMetricValue>& call_metrics()
       const {
     return call_metrics_;
@@ -184,9 +182,9 @@ class LoadRecordValue {
   uint64_t start_count_ = 0;
   uint64_t ok_count_ = 0;
   uint64_t error_count_ = 0;
-  double bytes_sent_ = 0;
-  double bytes_recv_ = 0;
-  double latency_ms_ = 0;
+  uint64_t bytes_sent_ = 0;
+  uint64_t bytes_recv_ = 0;
+  uint64_t latency_ms_ = 0;
   std::unordered_map<grpc::string, CallMetricValue> call_metrics_;
 };
 

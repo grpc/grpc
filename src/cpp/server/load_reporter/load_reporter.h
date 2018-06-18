@@ -171,7 +171,29 @@ class LoadReporter {
     uint64_t errors;
     uint64_t cpu_usage;
     uint64_t cpu_limit;
+
+    LoadBalancingFeedbackRecord(
+        const std::chrono::system_clock::time_point& end_time, uint64_t rpcs,
+        uint64_t errors, uint64_t cpu_usage, uint64_t cpu_limit)
+        : end_time(end_time),
+          rpcs(rpcs),
+          errors(errors),
+          cpu_usage(cpu_usage),
+          cpu_limit(cpu_limit) {}
   };
+
+  // Finds the view data about starting call from the view_data_map and merges
+  // the data to the load data store.
+  void ProcessViewDataCallStart(
+      const CensusViewProvider::ViewDataMap& view_data_map);
+  // Finds the view data about ending call from the view_data_map and merges the
+  // data to the load data store.
+  void ProcessViewDataCallEnd(
+      const CensusViewProvider::ViewDataMap& view_data_map);
+  // Finds the view data about the customized call metrics from the
+  // view_data_map and merges the data to the load data store.
+  void ProcessViewDataOtherCallMetrics(
+      const CensusViewProvider::ViewDataMap& view_data_map);
 
   bool IsRecordInWindow(const LoadBalancingFeedbackRecord& record,
                         std::chrono::system_clock::time_point now) {
