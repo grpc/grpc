@@ -28,6 +28,8 @@
 #include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/config.h>
 
+#include "src/cpp/server/load_reporter/constants.h"
+
 namespace grpc {
 namespace load_reporter {
 

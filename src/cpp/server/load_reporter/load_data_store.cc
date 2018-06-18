@@ -25,7 +25,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "src/cpp/server/load_reporter/constants.h"
 #include "src/cpp/server/load_reporter/load_data_store.h"
 
 namespace grpc {

@@ -393,9 +393,9 @@ TEST_F(PerBalancerStoreTest, Suspend) {
 TEST_F(PerBalancerStoreTest, DataAggregation) {
   PerBalancerStore per_balancer_store(kLbId1, kLoadKey1);
   // Construct some Values.
-  LoadRecordValue v1(992, 34, 13, 234.0, 164.0, 173467.38);
+  LoadRecordValue v1(992, 34, 13, 234, 164, 173467);
   v1.InsertCallMetric(kMetric1, CallMetricValue(3, 2773.2));
-  LoadRecordValue v2(4842, 213, 9, 393.0, 974.0, 1345.2398);
+  LoadRecordValue v2(4842, 213, 9, 393, 974, 1345);
   v2.InsertCallMetric(kMetric1, CallMetricValue(7, 25.234));
   v2.InsertCallMetric(kMetric2, CallMetricValue(2, 387.08));
   // v3 doesn't change the number of in-progress RPCs.
