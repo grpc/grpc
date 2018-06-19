@@ -24,14 +24,12 @@ namespace Grpc.Core.Interceptors
 {
     /// <summary>
     /// Extends the ServerServiceDefinition class to add methods used to register interceptors on the server side.
-    /// This is an EXPERIMENTAL API.
     /// </summary>
     public static class ServerServiceDefinitionExtensions
     {
         /// <summary>
         /// Returns a <see cref="Grpc.Core.ServerServiceDefinition" /> instance that
         /// intercepts incoming calls to the underlying service handler through the given interceptor.
-        /// This is an EXPERIMENTAL API.
         /// </summary>
         /// <param name="serverServiceDefinition">The <see cref="Grpc.Core.ServerServiceDefinition" /> instance to register interceptors on.</param>
         /// <param name="interceptor">The interceptor to intercept the incoming invocations with.</param>
@@ -52,7 +50,6 @@ namespace Grpc.Core.Interceptors
         /// <summary>
         /// Returns a <see cref="Grpc.Core.ServerServiceDefinition" /> instance that
         /// intercepts incoming calls to the underlying service handler through the given interceptors.
-        /// This is an EXPERIMENTAL API.
         /// </summary>
         /// <param name="serverServiceDefinition">The <see cref="Grpc.Core.ServerServiceDefinition" /> instance to register interceptors on.</param>
         /// <param name="interceptors">

@@ -183,14 +183,14 @@ static NSMutableDictionary *kHostCache;
 
   grpc_channel_credentials *creds;
   if (pemPrivateKey == nil && pemCertChain == nil) {
-    creds = grpc_ssl_credentials_create(rootsASCII.bytes, NULL, NULL);
+    creds = grpc_ssl_credentials_create(rootsASCII.bytes, NULL, NULL, NULL);
   } else {
     grpc_ssl_pem_key_cert_pair key_cert_pair;
     NSData *privateKeyASCII = [self nullTerminatedDataWithString:pemPrivateKey];
     NSData *certChainASCII = [self nullTerminatedDataWithString:pemCertChain];
     key_cert_pair.private_key = privateKeyASCII.bytes;
     key_cert_pair.cert_chain = certChainASCII.bytes;
-    creds = grpc_ssl_credentials_create(rootsASCII.bytes, &key_cert_pair, NULL);
+    creds = grpc_ssl_credentials_create(rootsASCII.bytes, &key_cert_pair, NULL, NULL);
   }
 
   @synchronized(self) {
