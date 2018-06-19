@@ -311,9 +311,10 @@ TEST_F(CodegenGenericEnd2EndTest, CodegenGenericServerUnary) {
 
 // Client uses proto, server uses generic codegen, client streaming
 TEST_F(CodegenGenericEnd2EndTest, CodegenGenericServerClientStreaming) {
-  typedef grpc::testing::EchoTestService::WithCodegenGenericMethod_RequestStream<
-      grpc::testing::EchoTestService::Service>
-      SType;
+  typedef grpc::testing::EchoTestService::
+      WithCodegenGenericMethod_RequestStream<
+          grpc::testing::EchoTestService::Service>
+          SType;
   ResetStub();
   auto service = BuildAndStartServer<SType>();
 
@@ -324,7 +325,7 @@ TEST_F(CodegenGenericEnd2EndTest, CodegenGenericServerClientStreaming) {
       stub_->AsyncRequestStream(&cli_ctx_, &recv_response_, cq_.get(), tag(1)));
 
   service->RequestRequestStream(&srv_ctx_, &srv_stream, cq_.get(), cq_.get(),
-                                 tag(2));
+                                tag(2));
 
   Verifier().Expect(2, true).Expect(1, true).Verify(cq_.get());
 
@@ -357,9 +358,10 @@ TEST_F(CodegenGenericEnd2EndTest, CodegenGenericServerClientStreaming) {
 
 // Client uses proto, server uses generic codegen, server streaming
 TEST_F(CodegenGenericEnd2EndTest, CodegenGenericServerServerStreaming) {
-  typedef grpc::testing::EchoTestService::WithCodegenGenericMethod_ResponseStream<
-      grpc::testing::EchoTestService::Service>
-      SType;
+  typedef grpc::testing::EchoTestService::
+      WithCodegenGenericMethod_ResponseStream<
+          grpc::testing::EchoTestService::Service>
+          SType;
   ResetStub();
   auto service = BuildAndStartServer<SType>();
   grpc::GenericServerAsyncWriter srv_stream(&srv_ctx_);
@@ -369,7 +371,7 @@ TEST_F(CodegenGenericEnd2EndTest, CodegenGenericServerServerStreaming) {
       stub_->AsyncResponseStream(&cli_ctx_, send_request_, cq_.get(), tag(1)));
 
   service->RequestResponseStream(&srv_ctx_, &recv_request_buffer_, &srv_stream,
-                                  cq_.get(), cq_.get(), tag(2));
+                                 cq_.get(), cq_.get(), tag(2));
 
   Verifier().Expect(1, true).Expect(2, true).Verify(cq_.get());
   ParseFromByteBuffer(&recv_request_buffer_, &recv_request_);
@@ -412,7 +414,7 @@ TEST_F(CodegenGenericEnd2EndTest, CodegenGenericServerBidiStreaming) {
       cli_stream(stub_->AsyncBidiStream(&cli_ctx_, cq_.get(), tag(1)));
 
   service->RequestBidiStream(&srv_ctx_, &srv_stream, cq_.get(), cq_.get(),
-                              tag(2));
+                             tag(2));
 
   Verifier().Expect(1, true).Expect(2, true).Verify(cq_.get());
 
@@ -438,6 +440,15 @@ TEST_F(CodegenGenericEnd2EndTest, CodegenGenericServerBidiStreaming) {
   Verifier().Expect(9, true).Expect(10, true).Verify(cq_.get());
 
   EXPECT_TRUE(recv_status_.ok());
+}
+
+// Testing that this pattern compiles
+TEST_F(CodegenGenericEnd2EndTest, CompileTest) {
+  typedef grpc::testing::EchoTestService::WithCodegenGenericMethod_Echo<
+      grpc::testing::EchoTestService::AsyncService>
+      SType;
+  ResetStub();
+  auto service = BuildAndStartServer<SType>();
 }
 
 }  // namespace
