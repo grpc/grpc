@@ -236,6 +236,7 @@ static void timer_main_loop() {
         }
         next = GRPC_MILLIS_INF_FUTURE;
       /* fall through */
+      GOOGLE_FALLTHROUGH_INTENDED;
       case GRPC_TIMERS_CHECKED_AND_EMPTY:
         if (!wait_until(next)) {
           return;

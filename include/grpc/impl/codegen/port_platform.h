@@ -518,4 +518,18 @@ typedef unsigned __int64 uint64_t;
 #define __STDC_FORMAT_MACROS
 #endif
 
+#if defined(__clang__) && defined(__has_cpp_attribute) \
+    && !defined(GOOGLE_PROTOBUF_OS_APPLE)
+# if defined(GOOGLE_PROTOBUF_OS_NACL) || defined(EMSCRIPTEN) || \
+     __has_cpp_attribute(clang::fallthrough)
+#  define GOOGLE_FALLTHROUGH_INTENDED [[clang::fallthrough]]
+# endif
+#elif defined(__GNUC__) && __GNUC__ > 6
+# define GOOGLE_FALLTHROUGH_INTENDED [[gnu::fallthrough]]
+#endif
+
+#ifndef GOOGLE_FALLTHROUGH_INTENDED
+# define GOOGLE_FALLTHROUGH_INTENDED
+#endif
+
 #endif /* GRPC_IMPL_CODEGEN_PORT_PLATFORM_H */
