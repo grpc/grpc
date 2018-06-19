@@ -188,20 +188,17 @@ module GRPC
           GRPC.logger.debug("bidi-read-loop: #{count}")
           count += 1
           result = read_using_run_batch
-
-          if result.nil?
-            if is_client
-              batch_result = @call.run_batch(RECV_STATUS_ON_CLIENT => nil)
-              @call.status = batch_result.status
-              @call.trailing_metadata = @call.status.metadata if @call.status
-              GRPC.logger.debug("bidi-read-loop: done status #{@call.status}")
-              batch_result.check_status
-            end
-
-            break
-          end
+          break if result.nil?
 
           yield result
+        end
+
+        if is_client
+          batch_result = @call.run_batch(RECV_STATUS_ON_CLIENT => nil)
+          @call.status = batch_result.status
+          @call.trailing_metadata = @call.status.metadata if @call.status
+          GRPC.logger.debug("bidi-read-loop: done status #{@call.status}")
+          batch_result.check_status
         end
       rescue StandardError => e
         GRPC.logger.warn('bidi: read-loop failed')
