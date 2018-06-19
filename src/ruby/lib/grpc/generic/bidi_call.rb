@@ -123,20 +123,11 @@ module GRPC
 
     # performs a read using @call.run_batch, ensures metadata is set up
     def read_using_run_batch
-      ops = { RECV_MESSAGE => nil }
-      ops[RECV_INITIAL_METADATA] = nil unless @metadata_received
-      begin
-        batch_result = @call.run_batch(ops)
-        unless @metadata_received
-          @call.metadata = batch_result.metadata
-          @metadata_received = true
-        end
-        batch_result
-      rescue GRPC::Core::CallError => e
-        GRPC.logger.warn('bidi call: read_using_run_batch failed')
-        GRPC.logger.warn(e)
-        nil
-      end
+      @acall.remote_read
+    rescue GRPC::Core::CallError => e
+      GRPC.logger.warn('bidi call: read_using_run_batch failed')
+      GRPC.logger.warn(e)
+      nil
     end
 
     # set_output_stream_done is relevant on client-side
@@ -196,12 +187,9 @@ module GRPC
         loop do
           GRPC.logger.debug("bidi-read-loop: #{count}")
           count += 1
-          batch_result = read_using_run_batch
+          result = read_using_run_batch
 
-          # handle the next message
-          if batch_result.nil? || batch_result.message.nil?
-            GRPC.logger.debug("bidi-read-loop: null batch #{batch_result}")
-
+          if result.nil?
             if is_client
               batch_result = @call.run_batch(RECV_STATUS_ON_CLIENT => nil)
               @call.status = batch_result.status
@@ -210,12 +198,10 @@ module GRPC
               batch_result.check_status
             end
 
-            GRPC.logger.debug('bidi-read-loop: done reading!')
             break
           end
 
-          res = @unmarshal.call(batch_result.message)
-          yield res
+          yield result
         end
       rescue StandardError => e
         GRPC.logger.warn('bidi: read-loop failed')
