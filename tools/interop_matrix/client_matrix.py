@@ -140,6 +140,9 @@ LANG_RELEASE_MATRIX = {
         {
             'v1.12.2': None
         },
+        {
+            'v1.13.0': None
+        },
     ],
     'java': [
         {
