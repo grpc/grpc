@@ -70,7 +70,19 @@ module GRPC
     # @return an Enumerator of requests to yield
     def run_on_client(requests, set_output_stream_done)
       t = Thread.new do
-        write_loop(requests, set_output_stream_done: set_output_stream_done)
+        begin
+          write_loop(requests)
+          begin
+            @call.run_batch(SEND_CLOSE_FROM_CLIENT => nil)
+          rescue GRPC::Core::CallError => e
+            GRPC.logger.warn("bidi-write-loop: send close failed #{e}")
+          end
+        rescue StandardError => e
+          GRPC.logger.warn("bidi-write-loop: failed #{e}")
+          @call.cancel_with_status(GRPC::Core::StatusCodes::UNKNOWN, "GRPC bidi call error: #{e.inspect}")
+        ensure
+          set_output_stream_done.call
+        end
       end
 
       if block_given?
@@ -109,7 +121,7 @@ module GRPC
         fail 'Illegal arity of reply generator'
       end
 
-      write_loop(replies, is_client: false)
+      write_loop(replies)
     end
 
     private
@@ -118,7 +130,7 @@ module GRPC
     END_OF_WRITES = :end_of_writes
 
     # set_output_stream_done is relevant on client-side
-    def write_loop(requests, is_client: true, set_output_stream_done: nil)
+    def write_loop(requests)
       GRPC.logger.debug('bidi-write-loop: starting')
       count = 0
       requests.each do |req|
@@ -130,34 +142,14 @@ module GRPC
         rescue GRPC::Core::CallError => e
           # This is almost definitely caused by a status arriving while still
           # writing. Don't re-throw the error
-          GRPC.logger.warn('bidi-write-loop: ended with error')
-          GRPC.logger.warn(e)
+          GRPC.logger.warn("bidi-write-loop: ended with error #{e}")
           break
         end
       end
-      GRPC.logger.debug("bidi-write-loop: #{count} writes done")
-      if is_client
-        GRPC.logger.debug("bidi-write-loop: client sent #{count}, waiting")
-        begin
-          @call.run_batch(SEND_CLOSE_FROM_CLIENT => nil)
-        rescue GRPC::Core::CallError => e
-          GRPC.logger.warn('bidi-write-loop: send close failed')
-          GRPC.logger.warn(e)
-        end
-        GRPC.logger.debug('bidi-write-loop: done')
-      end
-      GRPC.logger.debug('bidi-write-loop: finished')
     rescue StandardError => e
       GRPC.logger.warn('bidi-write-loop: failed')
       GRPC.logger.warn(e)
-      if is_client
-        @call.cancel_with_status(GRPC::Core::StatusCodes::UNKNOWN,
-                                 "GRPC bidi call error: #{e.inspect}")
-      else
-        raise e
-      end
-    ensure
-      set_output_stream_done.call if is_client
+      raise e
     end
   end
 end
