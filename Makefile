@@ -1130,6 +1130,7 @@ client_channel_stress_test: $(BINDIR)/$(CONFIG)/client_channel_stress_test
 client_crash_test: $(BINDIR)/$(CONFIG)/client_crash_test
 client_crash_test_server: $(BINDIR)/$(CONFIG)/client_crash_test_server
 client_lb_end2end_test: $(BINDIR)/$(CONFIG)/client_lb_end2end_test
+codegen_generic_end2end_test: $(BINDIR)/$(CONFIG)/codegen_generic_end2end_test
 codegen_test_full: $(BINDIR)/$(CONFIG)/codegen_test_full
 codegen_test_minimal: $(BINDIR)/$(CONFIG)/codegen_test_minimal
 credentials_test: $(BINDIR)/$(CONFIG)/credentials_test
@@ -1627,6 +1628,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/client_crash_test \
   $(BINDIR)/$(CONFIG)/client_crash_test_server \
   $(BINDIR)/$(CONFIG)/client_lb_end2end_test \
+  $(BINDIR)/$(CONFIG)/codegen_generic_end2end_test \
   $(BINDIR)/$(CONFIG)/codegen_test_full \
   $(BINDIR)/$(CONFIG)/codegen_test_minimal \
   $(BINDIR)/$(CONFIG)/credentials_test \
@@ -1803,6 +1805,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/client_crash_test \
   $(BINDIR)/$(CONFIG)/client_crash_test_server \
   $(BINDIR)/$(CONFIG)/client_lb_end2end_test \
+  $(BINDIR)/$(CONFIG)/codegen_generic_end2end_test \
   $(BINDIR)/$(CONFIG)/codegen_test_full \
   $(BINDIR)/$(CONFIG)/codegen_test_minimal \
   $(BINDIR)/$(CONFIG)/credentials_test \
@@ -2247,6 +2250,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/client_crash_test || ( echo test client_crash_test failed ; exit 1 )
 	$(E) "[RUN]     Testing client_lb_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/client_lb_end2end_test || ( echo test client_lb_end2end_test failed ; exit 1 )
+	$(E) "[RUN]     Testing codegen_generic_end2end_test"
+	$(Q) $(BINDIR)/$(CONFIG)/codegen_generic_end2end_test || ( echo test codegen_generic_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing codegen_test_full"
 	$(Q) $(BINDIR)/$(CONFIG)/codegen_test_full || ( echo test codegen_test_full failed ; exit 1 )
 	$(E) "[RUN]     Testing codegen_test_minimal"
@@ -16784,6 +16789,49 @@ deps_client_lb_end2end_test: $(CLIENT_LB_END2END_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(CLIENT_LB_END2END_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+CODEGEN_GENERIC_END2END_TEST_SRC = \
+    test/cpp/end2end/codegen_generic_end2end_test.cc \
+
+CODEGEN_GENERIC_END2END_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CODEGEN_GENERIC_END2END_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/codegen_generic_end2end_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/codegen_generic_end2end_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/codegen_generic_end2end_test: $(PROTOBUF_DEP) $(CODEGEN_GENERIC_END2END_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(CODEGEN_GENERIC_END2END_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/codegen_generic_end2end_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/codegen_generic_end2end_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_codegen_generic_end2end_test: $(CODEGEN_GENERIC_END2END_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CODEGEN_GENERIC_END2END_TEST_OBJS:.o=.dep)
 endif
 endif
 
