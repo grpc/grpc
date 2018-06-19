@@ -49,6 +49,8 @@ static gpr_mu g_init_mu;
 grpc_core::TraceFlag grpc_trace_cares_address_sorting(false,
                                                       "cares_address_sorting");
 
+grpc_core::TraceFlag grpc_trace_cares_resolver(false, "cares_resolver");
+
 struct grpc_ares_request {
   /** indicates the DNS server to use, if specified */
   struct ares_addr_port_node dns_server_addr;

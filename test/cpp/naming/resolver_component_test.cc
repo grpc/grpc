@@ -55,8 +55,14 @@
 // TODO: pull in different headers when enabling this
 // test on windows. Also set BAD_SOCKET_RETURN_VAL
 // to INVALID_SOCKET on windows.
+#ifdef GPR_WINDOWS
+#include "src/core/lib/iomgr/sockaddr_windows.h"
+#include "src/core/lib/iomgr/socket_windows.h"
+#define BAD_SOCKET_RETURN_VAL INVALID_SOCKET
+#else
 #include "src/core/lib/iomgr/sockaddr_posix.h"
 #define BAD_SOCKET_RETURN_VAL -1
+#endif
 
 using grpc::SubProcess;
 using std::vector;
@@ -241,6 +247,11 @@ void CheckLBPolicyResultLocked(grpc_channel_args* channel_args,
   }
 }
 
+#ifdef GPR_WINDOWS
+void OpenAndCloseSocketsStressLoop(int dummy_port, gpr_event* done_ev) {
+  return;
+}
+#else
 void OpenAndCloseSocketsStressLoop(int dummy_port, gpr_event* done_ev) {
   // The goal of this loop is to catch socket
   // "use after close" bugs within the c-ares resolver by acting
@@ -311,6 +322,7 @@ void OpenAndCloseSocketsStressLoop(int dummy_port, gpr_event* done_ev) {
     }
   }
 }
+#endif
 
 void CheckResolverResultLocked(void* argsp, grpc_error* err) {
   EXPECT_EQ(err, GRPC_ERROR_NONE);
@@ -372,9 +384,9 @@ void RunResolvesRelevantRecordsTest(void (*OnDoneLocked)(void* arg,
   args.expected_lb_policy = FLAGS_expected_lb_policy;
   // maybe build the address with an authority
   char* whole_uri = nullptr;
-  GPR_ASSERT(asprintf(&whole_uri, "dns://%s/%s",
-                      FLAGS_local_dns_server_address.c_str(),
-                      FLAGS_target_name.c_str()));
+  GPR_ASSERT(gpr_asprintf(&whole_uri, "dns://%s/%s",
+                          FLAGS_local_dns_server_address.c_str(),
+                          FLAGS_target_name.c_str()));
   // create resolver and resolve
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       grpc_core::ResolverRegistry::CreateResolver(whole_uri, nullptr,

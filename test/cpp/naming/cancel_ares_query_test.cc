@@ -45,11 +45,14 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-// TODO: pull in different headers when enabling this
-// test on windows. Also set BAD_SOCKET_RETURN_VAL
-// to INVALID_SOCKET on windows.
+#ifdef GPR_WINDOWS
+#include "src/core/lib/iomgr/sockaddr_windows.h"
+#include "src/core/lib/iomgr/socket_windows.h"
+#define BAD_SOCKET_RETURN_VAL INVALID_SOCKET
+#else
 #include "src/core/lib/iomgr/sockaddr_posix.h"
 #define BAD_SOCKET_RETURN_VAL -1
+#endif
 
 namespace {
 
@@ -91,7 +94,13 @@ class FakeNonResponsiveDNSServer {
       abort();
     }
   }
-  ~FakeNonResponsiveDNSServer() { close(socket_); }
+  ~FakeNonResponsiveDNSServer() {
+#ifdef GPR_WINDOWS
+    closesocket(socket_);
+#else
+    close(socket_);
+#endif
+  }
 
  private:
   int socket_;

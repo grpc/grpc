@@ -53,7 +53,7 @@
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 
-static grpc_error* set_non_block(SOCKET sock) {
+grpc_error* set_non_block(SOCKET sock) {
   int status;
   uint32_t param = 1;
   DWORD ret;

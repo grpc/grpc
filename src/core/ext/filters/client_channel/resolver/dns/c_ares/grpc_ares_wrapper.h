@@ -28,6 +28,13 @@
 
 extern grpc_core::TraceFlag grpc_trace_cares_address_sorting;
 
+extern grpc_core::TraceFlag grpc_trace_cares_resolver;
+
+#define GRPC_CARES_TRACE_LOG(format, ...)                         \
+  if (grpc_trace_cares_resolver.enabled()) {                      \
+    gpr_log(GPR_DEBUG, "(c-ares resolver) " format, __VA_ARGS__); \
+  }
+
 typedef struct grpc_ares_request grpc_ares_request;
 
 /* Asynchronously resolve \a name. Use \a default_port if a port isn't
