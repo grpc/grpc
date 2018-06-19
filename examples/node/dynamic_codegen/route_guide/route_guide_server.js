@@ -122,7 +122,7 @@ function getDistance(start, end) {
   var deltalon = lon2-lon1;
   var a = Math.sin(deltalat/2) * Math.sin(deltalat/2) +
       Math.cos(lat1) * Math.cos(lat2) *
-      Math.sin(dlon/2) * Math.sin(dlon/2);
+      Math.sin(deltalon/2) * Math.sin(deltalon/2);
   var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   return R * c;
 }

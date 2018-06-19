@@ -25,7 +25,7 @@ cd $(dirname $0)/../../..
 source tools/internal_ci/helper_scripts/prepare_build_linux_perf_rc
 
 tools/run_tests/start_port_server.py
-tools/jenkins/run_c_cpp_test.sh tools/profiling/microbenchmarks/bm_diff/bm_main.py \
+tools/internal_ci/linux/run_if_c_cpp_modified.sh tools/profiling/microbenchmarks/bm_diff/bm_main.py \
   -d origin/$ghprbTargetBranch \
   -b bm_fullstack_trickle \
   -l 4 \

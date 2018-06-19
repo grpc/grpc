@@ -106,20 +106,23 @@ def guide_route_chat(route_guide_stub):
 
 
 def run():
-    channel = grpc.insecure_channel('localhost:50051')
-    greeter_stub = helloworld_pb2_grpc.GreeterStub(channel)
-    route_guide_stub = route_guide_pb2_grpc.RouteGuideStub(channel)
-    greeter_response = greeter_stub.SayHello(
-        helloworld_pb2.HelloRequest(name='you'))
-    print("Greeter client received: " + greeter_response.message)
-    print("-------------- GetFeature --------------")
-    guide_get_feature(route_guide_stub)
-    print("-------------- ListFeatures --------------")
-    guide_list_features(route_guide_stub)
-    print("-------------- RecordRoute --------------")
-    guide_record_route(route_guide_stub)
-    print("-------------- RouteChat --------------")
-    guide_route_chat(route_guide_stub)
+    # NOTE(gRPC Python Team): .close() is possible on a channel and should be
+    # used in circumstances in which the with statement does not fit the needs
+    # of the code.
+    with grpc.insecure_channel('localhost:50051') as channel:
+        greeter_stub = helloworld_pb2_grpc.GreeterStub(channel)
+        route_guide_stub = route_guide_pb2_grpc.RouteGuideStub(channel)
+        greeter_response = greeter_stub.SayHello(
+            helloworld_pb2.HelloRequest(name='you'))
+        print("Greeter client received: " + greeter_response.message)
+        print("-------------- GetFeature --------------")
+        guide_get_feature(route_guide_stub)
+        print("-------------- ListFeatures --------------")
+        guide_list_features(route_guide_stub)
+        print("-------------- RecordRoute --------------")
+        guide_record_route(route_guide_stub)
+        print("-------------- RouteChat --------------")
+        guide_route_chat(route_guide_stub)
 
 
 if __name__ == '__main__':

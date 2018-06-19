@@ -813,7 +813,11 @@ class StreamStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
 
 
 class Channel(six.with_metaclass(abc.ABCMeta)):
-    """Affords RPC invocation via generic methods on client-side."""
+    """Affords RPC invocation via generic methods on client-side.
+
+    Channel objects implement the Context Manager type, although they need not
+    support being entered and exited multiple times.
+    """
 
     @abc.abstractmethod
     def subscribe(self, callback, try_to_connect=False):
@@ -923,6 +927,17 @@ class Channel(six.with_metaclass(abc.ABCMeta)):
 
         Returns:
           A StreamStreamMultiCallable value for the named stream-stream method.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def close(self):
+        """Closes this Channel and releases all resources held by it.
+
+        Closing the Channel will immediately terminate all RPCs active with the
+        Channel and it is not valid to invoke new RPCs with the Channel.
+
+        This method is idempotent.
         """
         raise NotImplementedError()
 
@@ -1235,19 +1250,20 @@ class Server(six.with_metaclass(abc.ABCMeta)):
         """Stops this Server.
 
         This method immediately stop service of new RPCs in all cases.
+
         If a grace period is specified, this method returns immediately
         and all RPCs active at the end of the grace period are aborted.
-
-        If a grace period is not specified, then all existing RPCs are
-        teriminated immediately and the this method blocks until the last
-        RPC handler terminates.
+        If a grace period is not specified (by passing None for `grace`),
+        all existing RPCs are aborted immediately and this method
+        blocks until the last RPC handler terminates.
 
         This method is idempotent and may be called at any time.
-        Passing a smaller grace value in subsequent call will have
-        the effect of stopping the Server sooner. Passing a larger
-        grace value in subsequent call *will not* have the effect of
-        stopping the server later (i.e. the most restrictive grace
-        value is used).
+        Passing a smaller grace value in a subsequent call will have
+        the effect of stopping the Server sooner (passing None will
+        have the effect of stopping the server immediately). Passing
+        a larger grace value in a subsequent call *will not* have the
+        effect of stopping the server later (i.e. the most restrictive
+        grace value is used).
 
         Args:
           grace: A duration of time in seconds or None.
@@ -1466,7 +1482,7 @@ def ssl_server_credentials(private_key_certificate_chain_pairs,
       A ServerCredentials for use with an SSL-enabled Server. Typically, this
       object is an argument to add_secure_port() method during server setup.
     """
-    if len(private_key_certificate_chain_pairs) == 0:
+    if not private_key_certificate_chain_pairs:
         raise ValueError(
             'At least one private key-certificate chain pair is required!')
     elif require_client_auth and root_certificates is None:
@@ -1496,15 +1512,15 @@ def ssl_server_certificate_configuration(private_key_certificate_chain_pairs,
       A ServerCertificateConfiguration that can be returned in the certificate
         configuration fetching callback.
     """
-    if len(private_key_certificate_chain_pairs) == 0:
-        raise ValueError(
-            'At least one private key-certificate chain pair is required!')
-    else:
+    if private_key_certificate_chain_pairs:
         return ServerCertificateConfiguration(
             _cygrpc.server_certificate_config_ssl(root_certificates, [
                 _cygrpc.SslPemKeyCertPair(key, pem)
                 for key, pem in private_key_certificate_chain_pairs
             ]))
+    else:
+        raise ValueError(
+            'At least one private key-certificate chain pair is required!')
 
 
 def dynamic_ssl_server_credentials(initial_certificate_configuration,
@@ -1556,13 +1572,15 @@ def channel_ready_future(channel):
 def insecure_channel(target, options=None):
     """Creates an insecure Channel to a server.
 
+    The returned Channel is thread-safe.
+
     Args:
       target: The server address
       options: An optional list of key-value pairs (channel args
         in gRPC Core runtime) to configure the channel.
 
     Returns:
-      A Channel object.
+      A Channel.
     """
     from grpc import _channel  # pylint: disable=cyclic-import
     return _channel.Channel(target, () if options is None else options, None)
@@ -1571,6 +1589,8 @@ def insecure_channel(target, options=None):
 def secure_channel(target, credentials, options=None):
     """Creates a secure Channel to a server.
 
+    The returned Channel is thread-safe.
+
     Args:
       target: The server address.
       credentials: A ChannelCredentials instance.
@@ -1578,7 +1598,7 @@ def secure_channel(target, credentials, options=None):
         in gRPC Core runtime) to configure the channel.
 
     Returns:
-      A Channel object.
+      A Channel.
     """
     from grpc import _channel  # pylint: disable=cyclic-import
     return _channel.Channel(target, () if options is None else options,
@@ -1640,9 +1660,11 @@ def server(thread_pool,
       A Server object.
     """
     from grpc import _server  # pylint: disable=cyclic-import
-    return _server.Server(thread_pool, () if handlers is None else handlers, ()
-                          if interceptors is None else interceptors, () if
-                          options is None else options, maximum_concurrent_rpcs)
+    return _server.create_server(thread_pool, ()
+                                 if handlers is None else handlers, ()
+                                 if interceptors is None else interceptors, ()
+                                 if options is None else options,
+                                 maximum_concurrent_rpcs)
 
 
 ###################################  __all__  #################################

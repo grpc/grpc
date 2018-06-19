@@ -738,6 +738,7 @@ static const tsi_handshaker_vtable handshaker_vtable = {
     nullptr, /* create_frame_protector    -- deprecated */
     fake_handshaker_destroy,
     fake_handshaker_next,
+    nullptr, /* shutdown */
 };
 
 tsi_handshaker* tsi_create_fake_handshaker(int is_client) {

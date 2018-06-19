@@ -57,6 +57,11 @@ cdef class ChannelCredentials:
   cdef grpc_channel_credentials *c_credentials
 
 
+cdef class SSLSessionCacheLRU:
+
+  cdef grpc_ssl_session_cache *_cache
+
+
 cdef class SSLChannelCredentials(ChannelCredentials):
 
   cdef readonly object _pem_root_certificates

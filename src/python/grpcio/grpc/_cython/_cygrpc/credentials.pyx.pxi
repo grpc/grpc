@@ -17,6 +17,21 @@ cimport cpython
 import grpc
 import threading
 
+from libc.stdint cimport uintptr_t
+
+
+def _spawn_callback_in_thread(cb_func, args):
+  threading.Thread(target=cb_func, args=args).start()
+
+async_callback_func = _spawn_callback_in_thread
+
+def set_async_callback_func(callback_func):
+  global async_callback_func
+  async_callback_func = callback_func
+
+def _spawn_callback_async(callback, args):
+  async_callback_func(callback, args)
+
 
 cdef class CallCredentials:
 
@@ -40,7 +55,7 @@ cdef int _get_metadata(
     else:
       cb(user_data, NULL, 0, status, error_details)
   args = context.service_url, context.method_name, callback,
-  threading.Thread(target=<object>state, args=args).start()
+  _spawn_callback_async(<object>state, args)
   return 0  # Asynchronous return
 
 
@@ -96,6 +111,21 @@ cdef class ChannelCredentials:
     raise NotImplementedError()
 
 
+cdef class SSLSessionCacheLRU:
+
+  def __cinit__(self, capacity):
+    grpc_init()
+    self._cache = grpc_ssl_session_cache_create_lru(capacity)
+
+  def __int__(self):
+    return <uintptr_t>self._cache
+
+  def __dealloc__(self):
+    if self._cache != NULL:
+        grpc_ssl_session_cache_destroy(self._cache)
+    grpc_shutdown()
+
+
 cdef class SSLChannelCredentials(ChannelCredentials):
 
   def __cinit__(self, pem_root_certificates, private_key, certificate_chain):
@@ -112,12 +142,12 @@ cdef class SSLChannelCredentials(ChannelCredentials):
       c_pem_root_certificates = self._pem_root_certificates
     if self._private_key is None and self._certificate_chain is None:
       return grpc_ssl_credentials_create(
-          c_pem_root_certificates, NULL, NULL)
+          c_pem_root_certificates, NULL, NULL, NULL)
     else:
       c_pem_key_certificate_pair.private_key = self._private_key
       c_pem_key_certificate_pair.certificate_chain = self._certificate_chain
       return grpc_ssl_credentials_create(
-          c_pem_root_certificates, &c_pem_key_certificate_pair, NULL)
+          c_pem_root_certificates, &c_pem_key_certificate_pair, NULL, NULL)
 
 
 cdef class CompositeChannelCredentials(ChannelCredentials):

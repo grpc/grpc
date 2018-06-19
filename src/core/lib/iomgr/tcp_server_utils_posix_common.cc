@@ -20,7 +20,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_TCP_SERVER_UTILS_COMMON
 
 #include "src/core/lib/iomgr/tcp_server_utils_posix.h"
 
@@ -87,7 +87,7 @@ static grpc_error* add_socket_to_server(grpc_tcp_server* s, int fd,
   char* name;
 
   grpc_error* err =
-      grpc_tcp_server_prepare_socket(fd, addr, s->so_reuseport, &port);
+      grpc_tcp_server_prepare_socket(s, fd, addr, s->so_reuseport, &port);
   if (err == GRPC_ERROR_NONE) {
     GPR_ASSERT(port > 0);
     grpc_sockaddr_to_string(&addr_str, addr, 1);
@@ -105,7 +105,7 @@ static grpc_error* add_socket_to_server(grpc_tcp_server* s, int fd,
     s->tail = sp;
     sp->server = s;
     sp->fd = fd;
-    sp->emfd = grpc_fd_create(fd, name);
+    sp->emfd = grpc_fd_create(fd, name, false);
     memcpy(&sp->addr, addr, sizeof(grpc_resolved_address));
     sp->port = port;
     sp->port_index = port_index;
@@ -144,7 +144,7 @@ grpc_error* grpc_tcp_server_add_addr(grpc_tcp_server* s,
 }
 
 /* Prepare a recently-created socket for listening. */
-grpc_error* grpc_tcp_server_prepare_socket(int fd,
+grpc_error* grpc_tcp_server_prepare_socket(grpc_tcp_server* s, int fd,
                                            const grpc_resolved_address* addr,
                                            bool so_reuseport, int* port) {
   grpc_resolved_address sockname_temp;
@@ -169,6 +169,18 @@ grpc_error* grpc_tcp_server_prepare_socket(int fd,
   }
   err = grpc_set_socket_no_sigpipe_if_possible(fd);
   if (err != GRPC_ERROR_NONE) goto error;
+
+  if (s->channel_args) {
+    for (size_t i = 0; i < s->channel_args->num_args; i++) {
+      if (0 == strcmp(s->channel_args->args[i].key, GRPC_ARG_SOCKET_MUTATOR)) {
+        GPR_ASSERT(s->channel_args->args[i].type == GRPC_ARG_POINTER);
+        grpc_socket_mutator* mutator = static_cast<grpc_socket_mutator*>(
+            s->channel_args->args[i].value.pointer.p);
+        err = grpc_set_socket_with_mutator(fd, mutator);
+        if (err != GRPC_ERROR_NONE) goto error;
+      }
+    }
+  }
 
   if (bind(fd, reinterpret_cast<grpc_sockaddr*>(const_cast<char*>(addr->addr)),
            addr->len) < 0) {
@@ -205,4 +217,4 @@ error:
   return ret;
 }
 
-#endif /* GRPC_POSIX_SOCKET */
+#endif /* GRPC_POSIX_SOCKET_TCP_SERVER_UTILS_COMMON */

@@ -20,7 +20,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC'
-  version = '1.12.0-dev'
+  version = '1.14.0-dev'
   s.version  = version
   s.summary  = 'gRPC client library for iOS/OSX'
   s.homepage = 'https://grpc.io'
@@ -61,6 +61,16 @@ Pod::Spec.new do |s|
     ss.private_header_files = "#{src_dir}/private/*.h"
 
     ss.dependency 'gRPC-Core', version
+  end
+
+  # This subspec is mutually exclusive with the `Main` subspec
+  s.subspec 'CFStream' do |ss|
+    ss.dependency 'gRPC-Core/CFStream-Implementation', version
+    ss.dependency "#{s.name}/Main", version
+
+    ss.pod_target_xcconfig = {
+      'GCC_PREPROCESSOR_DEFINITIONS' => 'GRPC_CFSTREAM=1'
+    }
   end
 
   s.subspec 'GID' do |ss|

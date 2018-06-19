@@ -18,6 +18,8 @@ import threading
 import grpc
 from grpc_testing import _common
 
+_LOGGER = logging.getLogger(__name__)
+
 
 class Rpc(object):
 
@@ -47,7 +49,7 @@ class Rpc(object):
                 try:
                     callback()
                 except Exception:  # pylint: disable=broad-except
-                    logging.exception('Exception calling server-side callback!')
+                    _LOGGER.exception('Exception calling server-side callback!')
 
         callback_calling_thread = threading.Thread(target=call_back)
         callback_calling_thread.start()
@@ -86,7 +88,7 @@ class Rpc(object):
     def application_exception_abort(self, exception):
         with self._condition:
             if exception not in self._rpc_errors:
-                logging.exception('Exception calling application!')
+                _LOGGER.exception('Exception calling application!')
                 self._abort(
                     grpc.StatusCode.UNKNOWN,
                     'Exception calling application: {}'.format(exception))

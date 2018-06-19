@@ -32,4 +32,11 @@ time bash tools/distrib/build_ruby_environment_macos.sh
 gem install rubygems-update
 update_rubygems
 
-tools/run_tests/task_runner.py -f artifact macos
+tools/run_tests/task_runner.py -f artifact macos || FAILED="true"
+
+tools/internal_ci/helper_scripts/delete_nonartifacts.sh || true
+
+if [ "$FAILED" != "" ]
+then
+  exit 1
+fi

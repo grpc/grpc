@@ -27,6 +27,7 @@
 #include <grpc/support/log.h>
 
 #include <errno.h>
+#include <sys/epoll.h>
 #include <sys/eventfd.h>
 #include <unistd.h>
 

@@ -24,6 +24,7 @@ grpc_cc_test(
     external_deps = [
         "benchmark",
     ],
+    deps = ["//test/core/util:gpr_test_util",]
 )
 
 grpc_cc_library(
@@ -42,6 +43,7 @@ grpc_cc_library(
         "//:grpc++_unsecure",
         "//src/proto/grpc/testing:echo_proto",
         "//test/core/util:grpc_test_util_unsecure",
+        "//test/cpp/util:test_config",
     ],
 )
 
@@ -113,10 +115,7 @@ grpc_cc_binary(
     name = "bm_fullstack_trickle",
     testonly = 1,
     srcs = ["bm_fullstack_trickle.cc"],
-    deps = [
-        ":helpers",
-        "//test/cpp/util:test_config",
-    ],
+    deps = [":helpers"],
 )
 
 grpc_cc_library(
@@ -149,4 +148,16 @@ grpc_cc_binary(
     testonly = 1,
     srcs = ["bm_chttp2_hpack.cc"],
     deps = [":helpers"],
+)
+
+grpc_cc_binary(
+    name = "bm_opencensus_plugin",
+    testonly = 1,
+    srcs = ["bm_opencensus_plugin.cc"],
+    language = "C++",
+    deps = [
+        ":helpers",
+        "//:grpc_opencensus_plugin",
+        "//src/proto/grpc/testing:echo_proto",
+    ],
 )

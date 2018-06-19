@@ -41,7 +41,9 @@
     "Grpc.Core.Tests.UserAgentStringTest"
   ],
   "Grpc.Examples.Tests": [
-    "Math.Tests.MathClientServerTest"
+    "Math.Tests.MathClientMockableTest",
+    "Math.Tests.MathClientServerTest",
+    "Math.Tests.MathServiceImplTestabilityTest"
   ],
   "Grpc.HealthCheck.Tests": [
     "Grpc.HealthCheck.Tests.HealthClientServerTest",

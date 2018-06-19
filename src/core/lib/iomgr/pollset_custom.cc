@@ -69,7 +69,7 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   gpr_mu_unlock(&pollset->mu);
   grpc_millis now = grpc_core::ExecCtx::Get()->Now();
-  size_t timeout = 0;
+  grpc_millis timeout = 0;
   if (deadline > now) {
     timeout = deadline - now;
   }
@@ -77,7 +77,7 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
   // control back to the application
   grpc_core::ExecCtx* curr = grpc_core::ExecCtx::Get();
   grpc_core::ExecCtx::Set(nullptr);
-  poller_vtable->poll(timeout);
+  poller_vtable->poll(static_cast<size_t>(timeout));
   grpc_core::ExecCtx::Set(curr);
   grpc_core::ExecCtx::Get()->InvalidateNow();
   if (grpc_core::ExecCtx::Get()->HasWork()) {

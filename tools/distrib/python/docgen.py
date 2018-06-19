@@ -70,7 +70,7 @@ subprocess_arguments_list = [
         'env': environment
     },
     {
-        'args': [VIRTUALENV_PIP_PATH, 'install', '--upgrade', 'pip==9.0.1'],
+        'args': [VIRTUALENV_PIP_PATH, 'install', '--upgrade', 'pip==10.0.1'],
         'env': environment
     },
     {

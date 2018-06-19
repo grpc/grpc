@@ -28,7 +28,7 @@
 #include "src/core/lib/iomgr/iomgr.h"
 
 typedef struct grpc_timer {
-  gpr_atm deadline;
+  grpc_millis deadline;
   uint32_t heap_index; /* INVALID_HEAP_INDEX if not in heap */
   bool pending;
   struct grpc_timer* next;

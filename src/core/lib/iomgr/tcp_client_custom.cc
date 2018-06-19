@@ -66,7 +66,7 @@ static void on_alarm(void* acp, grpc_error* error) {
   grpc_custom_tcp_connect* connect = socket->connector;
   if (grpc_tcp_trace.enabled()) {
     const char* str = grpc_error_string(error);
-    gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %s: on_alarm: error=%s",
+    gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_alarm: error=%s",
             connect->addr_name, str);
   }
   if (error == GRPC_ERROR_NONE) {
@@ -136,16 +136,16 @@ static void tcp_connect(grpc_closure* closure, grpc_endpoint** ep,
   connect->refs = 2;
 
   if (grpc_tcp_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "CLIENT_CONNECT: %p %s: asynchronously connecting",
+    gpr_log(GPR_INFO, "CLIENT_CONNECT: %p %s: asynchronously connecting",
             socket, connect->addr_name);
   }
 
-  grpc_custom_socket_vtable->connect(
-      socket, (const grpc_sockaddr*)resolved_addr->addr, resolved_addr->len,
-      custom_connect_callback);
   GRPC_CLOSURE_INIT(&connect->on_alarm, on_alarm, socket,
                     grpc_schedule_on_exec_ctx);
   grpc_timer_init(&connect->alarm, deadline, &connect->on_alarm);
+  grpc_custom_socket_vtable->connect(
+      socket, (const grpc_sockaddr*)resolved_addr->addr, resolved_addr->len,
+      custom_connect_callback);
 }
 
 grpc_tcp_client_vtable custom_tcp_client_vtable = {tcp_connect};

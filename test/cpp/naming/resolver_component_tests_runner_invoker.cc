@@ -99,21 +99,21 @@ namespace grpc {
 
 namespace testing {
 
-void InvokeResolverComponentTestsRunner(std::string test_runner_bin_path,
-                                        std::string test_bin_path,
-                                        std::string dns_server_bin_path,
-                                        std::string records_config_path,
-                                        std::string dns_resolver_bin_path,
-                                        std::string tcp_connect_bin_path) {
+void InvokeResolverComponentTestsRunner(
+    std::string test_runner_bin_path, const std::string& test_bin_path,
+    const std::string& dns_server_bin_path,
+    const std::string& records_config_path,
+    const std::string& dns_resolver_bin_path,
+    const std::string& tcp_connect_bin_path) {
   int dns_server_port = grpc_pick_unused_port_or_die();
 
-  SubProcess* test_driver =
-      new SubProcess({test_runner_bin_path, "--test_bin_path=" + test_bin_path,
-                      "--dns_server_bin_path=" + dns_server_bin_path,
-                      "--records_config_path=" + records_config_path,
-                      "--dns_server_port=" + std::to_string(dns_server_port),
-                      "--dns_resolver_bin_path=" + dns_resolver_bin_path,
-                      "--tcp_connect_bin_path=" + tcp_connect_bin_path});
+  SubProcess* test_driver = new SubProcess(
+      {std::move(test_runner_bin_path), "--test_bin_path=" + test_bin_path,
+       "--dns_server_bin_path=" + dns_server_bin_path,
+       "--records_config_path=" + records_config_path,
+       "--dns_server_port=" + std::to_string(dns_server_port),
+       "--dns_resolver_bin_path=" + dns_resolver_bin_path,
+       "--tcp_connect_bin_path=" + tcp_connect_bin_path});
   gpr_mu test_driver_mu;
   gpr_mu_init(&test_driver_mu);
   gpr_cv test_driver_cv;
@@ -184,7 +184,7 @@ int main(int argc, char** argv) {
     std::string const bin_dir = my_bin.substr(0, my_bin.rfind('/'));
     // Invoke the .sh and .py scripts directly where they are in source code.
     grpc::testing::InvokeResolverComponentTestsRunner(
-        "test/cpp/naming/resolver_component_tests_runner.sh",
+        "test/cpp/naming/resolver_component_tests_runner.py",
         bin_dir + "/" + FLAGS_test_bin_name,
         "test/cpp/naming/utils/dns_server.py",
         "test/cpp/naming/resolver_test_record_groups.yaml",

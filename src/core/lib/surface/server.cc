@@ -1161,6 +1161,22 @@ static void listener_destroy_done(void* s, grpc_error* error) {
   gpr_mu_unlock(&server->mu_global);
 }
 
+/*
+  - Kills all pending requests-for-incoming-RPC-calls (i.e the requests made via
+    grpc_server_request_call and grpc_server_request_registered call will now be
+    cancelled). See 'kill_pending_work_locked()'
+
+  - Shuts down the listeners (i.e the server will no longer listen on the port
+    for new incoming channels).
+
+  - Iterates through all channels on the server and sends shutdown msg (see
+    'channel_broadcaster_shutdown()' for details) to the clients via the
+    transport layer. The transport layer then guarantees the following:
+     -- Sends shutdown to the client (for eg: HTTP2 transport sends GOAWAY)
+     -- If the server has outstanding calls that are in the process, the
+        connection is NOT closed until the server is done with all those calls
+     -- Once, there are no more calls in progress, the channel is closed
+ */
 void grpc_server_shutdown_and_notify(grpc_server* server,
                                      grpc_completion_queue* cq, void* tag) {
   listener* l;

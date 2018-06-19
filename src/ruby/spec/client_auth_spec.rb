@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require 'grpc'
+require 'spec_helper'
 
 def create_channel_creds
   test_root = File.join(File.dirname(__FILE__), 'testdata')

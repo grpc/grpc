@@ -20,7 +20,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_EV
 
 #include "src/core/lib/iomgr/ev_posix.h"
 
@@ -40,15 +40,18 @@
 
 grpc_core::TraceFlag grpc_polling_trace(false,
                                         "polling"); /* Disabled by default */
+
+/* Traces fd create/close operations */
+grpc_core::TraceFlag grpc_fd_trace(false, "fd_trace");
 grpc_core::DebugOnlyTraceFlag grpc_trace_fd_refcount(false, "fd_refcount");
 grpc_core::DebugOnlyTraceFlag grpc_polling_api_trace(false, "polling_api");
 
 #ifndef NDEBUG
 
 // Polling API trace only enabled in debug builds
-#define GRPC_POLLING_API_TRACE(format, ...)                   \
-  if (grpc_polling_api_trace.enabled()) {                     \
-    gpr_log(GPR_DEBUG, "(polling-api) " format, __VA_ARGS__); \
+#define GRPC_POLLING_API_TRACE(format, ...)                  \
+  if (grpc_polling_api_trace.enabled()) {                    \
+    gpr_log(GPR_INFO, "(polling-api) " format, __VA_ARGS__); \
   }
 #else
 #define GRPC_POLLING_API_TRACE(...)
@@ -190,9 +193,15 @@ void grpc_event_engine_shutdown(void) {
   g_event_engine = nullptr;
 }
 
-grpc_fd* grpc_fd_create(int fd, const char* name) {
-  GRPC_POLLING_API_TRACE("fd_create(%d, %s)", fd, name);
-  return g_event_engine->fd_create(fd, name);
+bool grpc_event_engine_can_track_errors(void) {
+  return g_event_engine->can_track_err;
+}
+
+grpc_fd* grpc_fd_create(int fd, const char* name, bool track_err) {
+  GRPC_POLLING_API_TRACE("fd_create(%d, %s, %d)", fd, name, track_err);
+  GRPC_FD_TRACE("fd_create(%d, %s, %d)", fd, name, track_err);
+  GPR_DEBUG_ASSERT(!track_err || g_event_engine->can_track_err);
+  return g_event_engine->fd_create(fd, name, track_err);
 }
 
 int grpc_fd_wrapped_fd(grpc_fd* fd) {
@@ -200,15 +209,17 @@ int grpc_fd_wrapped_fd(grpc_fd* fd) {
 }
 
 void grpc_fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
-                    bool already_closed, const char* reason) {
-  GRPC_POLLING_API_TRACE("fd_orphan(%d, %p, %p, %d, %s)",
-                         grpc_fd_wrapped_fd(fd), on_done, release_fd,
-                         already_closed, reason);
-  g_event_engine->fd_orphan(fd, on_done, release_fd, already_closed, reason);
+                    const char* reason) {
+  GRPC_POLLING_API_TRACE("fd_orphan(%d, %p, %p, %s)", grpc_fd_wrapped_fd(fd),
+                         on_done, release_fd, reason);
+  GRPC_FD_TRACE("grpc_fd_orphan, fd:%d closed", grpc_fd_wrapped_fd(fd));
+
+  g_event_engine->fd_orphan(fd, on_done, release_fd, reason);
 }
 
 void grpc_fd_shutdown(grpc_fd* fd, grpc_error* why) {
   GRPC_POLLING_API_TRACE("fd_shutdown(%d)", grpc_fd_wrapped_fd(fd));
+  GRPC_FD_TRACE("fd_shutdown(%d)", grpc_fd_wrapped_fd(fd));
   g_event_engine->fd_shutdown(fd, why);
 }
 
@@ -222,6 +233,10 @@ void grpc_fd_notify_on_read(grpc_fd* fd, grpc_closure* closure) {
 
 void grpc_fd_notify_on_write(grpc_fd* fd, grpc_closure* closure) {
   g_event_engine->fd_notify_on_write(fd, closure);
+}
+
+void grpc_fd_notify_on_error(grpc_fd* fd, grpc_closure* closure) {
+  g_event_engine->fd_notify_on_error(fd, closure);
 }
 
 static size_t pollset_size(void) { return g_event_engine->pollset_size; }
@@ -244,10 +259,10 @@ static void pollset_destroy(grpc_pollset* pollset) {
 static grpc_error* pollset_work(grpc_pollset* pollset,
                                 grpc_pollset_worker** worker,
                                 grpc_millis deadline) {
-  GRPC_POLLING_API_TRACE("pollset_work(%p, %" PRIdPTR ") begin", pollset,
+  GRPC_POLLING_API_TRACE("pollset_work(%p, %" PRId64 ") begin", pollset,
                          deadline);
   grpc_error* err = g_event_engine->pollset_work(pollset, worker, deadline);
-  GRPC_POLLING_API_TRACE("pollset_work(%p, %" PRIdPTR ") end", pollset,
+  GRPC_POLLING_API_TRACE("pollset_work(%p, %" PRId64 ") end", pollset,
                          deadline);
   return err;
 }
@@ -327,4 +342,4 @@ void grpc_pollset_set_del_fd(grpc_pollset_set* pollset_set, grpc_fd* fd) {
   g_event_engine->pollset_set_del_fd(pollset_set, fd);
 }
 
-#endif  // GRPC_POSIX_SOCKET
+#endif  // GRPC_POSIX_SOCKET_EV

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2017 gRPC authors.
+# Copyright 2017 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -30,18 +30,20 @@ TEST_DIRS=(
 )
 
 VIRTUALENV=python_pylint_venv
+python -m virtualenv $VIRTUALENV
 
-virtualenv $VIRTUALENV
-PYTHON=$(realpath $VIRTUALENV/bin/python)
-$PYTHON -m pip install --upgrade pip==9.0.2
-$PYTHON -m pip install pylint==1.6.5
+PYTHON=$VIRTUALENV/bin/python
 
+$PYTHON -m pip install --upgrade pip==10.0.1
+$PYTHON -m pip install pylint==1.9.2
+
+EXIT=0
 for dir in "${DIRS[@]}"; do
-  $PYTHON -m pylint --rcfile=.pylintrc -rn "$dir" || exit $?
+  $PYTHON -m pylint --rcfile=.pylintrc -rn "$dir" || EXIT=1
 done
 
 for dir in "${TEST_DIRS[@]}"; do
-  $PYTHON -m pylint --rcfile=.pylintrc-tests -rn "$dir" || exit $?
+  $PYTHON -m pylint --rcfile=.pylintrc-tests -rn "$dir" || EXIT=1
 done
 
-exit 0
+exit $EXIT

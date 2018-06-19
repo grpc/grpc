@@ -34,6 +34,7 @@ class SecureEndToEndTest extends PHPUnit_Framework_TestCase
         $this->channel = new Grpc\Channel(
             'localhost:'.$this->port,
             [
+            'force_new' => true,
             'grpc.ssl_target_name_override' => $this->host_override,
             'grpc.default_authority' => $this->host_override,
             'credentials' => $credentials,
@@ -44,9 +45,7 @@ class SecureEndToEndTest extends PHPUnit_Framework_TestCase
     public function tearDown()
     {
         $this->channel->close();
-        $channel_clean_persistent =
-          new Grpc\Channel('localhost:50010', []);
-        $channel_clean_persistent->cleanPersistentList();
+        unset($this->server);
     }
 
     public function testSimpleRequestBody()

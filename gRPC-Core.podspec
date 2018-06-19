@@ -22,7 +22,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.12.0-dev'
+  version = '1.14.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -185,7 +185,6 @@ Pod::Spec.new do |s|
     # To save you from scrolling, this is the last part of the podspec.
     ss.source_files = 'src/core/lib/gpr/arena.h',
                       'src/core/lib/gpr/env.h',
-                      'src/core/lib/gpr/fork.h',
                       'src/core/lib/gpr/host_port.h',
                       'src/core/lib/gpr/mpscq.h',
                       'src/core/lib/gpr/murmur_hash.h',
@@ -203,6 +202,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/atomic.h',
                       'src/core/lib/gprpp/atomic_with_atm.h',
                       'src/core/lib/gprpp/atomic_with_std.h',
+                      'src/core/lib/gprpp/fork.h',
                       'src/core/lib/gprpp/manual_constructor.h',
                       'src/core/lib/gprpp/memory.h',
                       'src/core/lib/gprpp/thd.h',
@@ -217,7 +217,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/gpr/env_linux.cc',
                       'src/core/lib/gpr/env_posix.cc',
                       'src/core/lib/gpr/env_windows.cc',
-                      'src/core/lib/gpr/fork.cc',
                       'src/core/lib/gpr/host_port.cc',
                       'src/core/lib/gpr/log.cc',
                       'src/core/lib/gpr/log_android.cc',
@@ -242,6 +241,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gpr/tmpfile_posix.cc',
                       'src/core/lib/gpr/tmpfile_windows.cc',
                       'src/core/lib/gpr/wrap_memcpy.cc',
+                      'src/core/lib/gprpp/fork.cc',
                       'src/core/lib/gprpp/thd_posix.cc',
                       'src/core/lib/gprpp/thd_windows.cc',
                       'src/core/lib/profiling/basic_timers.cc',
@@ -270,6 +270,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/http/client/http_client_filter.h',
                       'src/core/ext/filters/http/message_compress/message_compress_filter.h',
                       'src/core/ext/filters/http/server/http_server_filter.h',
+                      'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h',
                       'src/core/lib/security/context/security_context.h',
                       'src/core/lib/security/credentials/alts/alts_credentials.h',
                       'src/core/lib/security/credentials/composite/composite_credentials.h',
@@ -317,7 +318,6 @@ Pod::Spec.new do |s|
                       'src/core/tsi/alts/handshaker/handshaker.pb.h',
                       'src/core/tsi/alts/handshaker/transport_security_common.pb.h',
                       'src/core/tsi/transport_security.h',
-                      'src/core/tsi/transport_security_adapter.h',
                       'src/core/tsi/transport_security_interface.h',
                       'src/core/ext/transport/chttp2/client/authority.h',
                       'src/core/ext/transport/chttp2/client/chttp2_connector.h',
@@ -357,7 +357,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/channel_stack.h',
                       'src/core/lib/channel/channel_stack_builder.h',
                       'src/core/lib/channel/channel_trace.h',
-                      'src/core/lib/channel/channel_trace_registry.h',
+                      'src/core/lib/channel/channelz_registry.h',
                       'src/core/lib/channel/connected_channel.h',
                       'src/core/lib/channel/context.h',
                       'src/core/lib/channel/handshaker.h',
@@ -507,7 +507,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/channel_stack.cc',
                       'src/core/lib/channel/channel_stack_builder.cc',
                       'src/core/lib/channel/channel_trace.cc',
-                      'src/core/lib/channel/channel_trace_registry.cc',
+                      'src/core/lib/channel/channelz_registry.cc',
                       'src/core/lib/channel/connected_channel.cc',
                       'src/core/lib/channel/handshaker.cc',
                       'src/core/lib/channel/handshaker_factory.cc',
@@ -736,7 +736,6 @@ Pod::Spec.new do |s|
                       'src/core/tsi/alts/handshaker/handshaker.pb.c',
                       'src/core/tsi/alts/handshaker/transport_security_common.pb.c',
                       'src/core/tsi/transport_security.cc',
-                      'src/core/tsi/transport_security_adapter.cc',
                       'src/core/ext/transport/chttp2/client/insecure/channel_create.cc',
                       'src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc',
                       'src/core/ext/transport/chttp2/client/authority.cc',
@@ -784,9 +783,9 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c',
                       'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc',
                       'src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc',
-                      'src/core/ext/filters/client_channel/lb_policy/subchannel_list.cc',
                       'src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc',
+                      'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc',
@@ -794,7 +793,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc',
                       'src/core/ext/filters/load_reporting/server_load_reporting_filter.cc',
                       'src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc',
-                      'src/core/ext/census/grpc_context.cc',
+                      'src/cpp/ext/filters/census/grpc_context.cc',
                       'src/core/ext/filters/max_age/max_age_filter.cc',
                       'src/core/ext/filters/message_size/message_size_filter.cc',
                       'src/core/ext/filters/http/client_authority_filter.cc',
@@ -804,7 +803,6 @@ Pod::Spec.new do |s|
 
     ss.private_header_files = 'src/core/lib/gpr/arena.h',
                               'src/core/lib/gpr/env.h',
-                              'src/core/lib/gpr/fork.h',
                               'src/core/lib/gpr/host_port.h',
                               'src/core/lib/gpr/mpscq.h',
                               'src/core/lib/gpr/murmur_hash.h',
@@ -822,6 +820,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/atomic.h',
                               'src/core/lib/gprpp/atomic_with_atm.h',
                               'src/core/lib/gprpp/atomic_with_std.h',
+                              'src/core/lib/gprpp/fork.h',
                               'src/core/lib/gprpp/manual_constructor.h',
                               'src/core/lib/gprpp/memory.h',
                               'src/core/lib/gprpp/thd.h',
@@ -850,6 +849,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/http/client/http_client_filter.h',
                               'src/core/ext/filters/http/message_compress/message_compress_filter.h',
                               'src/core/ext/filters/http/server/http_server_filter.h',
+                              'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h',
                               'src/core/lib/security/context/security_context.h',
                               'src/core/lib/security/credentials/alts/alts_credentials.h',
                               'src/core/lib/security/credentials/composite/composite_credentials.h',
@@ -897,7 +897,6 @@ Pod::Spec.new do |s|
                               'src/core/tsi/alts/handshaker/handshaker.pb.h',
                               'src/core/tsi/alts/handshaker/transport_security_common.pb.h',
                               'src/core/tsi/transport_security.h',
-                              'src/core/tsi/transport_security_adapter.h',
                               'src/core/tsi/transport_security_interface.h',
                               'src/core/ext/transport/chttp2/client/authority.h',
                               'src/core/ext/transport/chttp2/client/chttp2_connector.h',
@@ -937,7 +936,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/channel/channel_stack.h',
                               'src/core/lib/channel/channel_stack_builder.h',
                               'src/core/lib/channel/channel_trace.h',
-                              'src/core/lib/channel/channel_trace_registry.h',
+                              'src/core/lib/channel/channelz_registry.h',
                               'src/core/lib/channel/connected_channel.h',
                               'src/core/lib/channel/context.h',
                               'src/core/lib/channel/handshaker.h',
@@ -1082,6 +1081,24 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/workarounds/workaround_utils.h'
   end
 
+  s.subspec 'CFStream-Implementation' do |ss|
+    ss.header_mappings_dir = '.'
+    ss.dependency "#{s.name}/Implementation", version
+    ss.pod_target_xcconfig = {
+      'GCC_PREPROCESSOR_DEFINITIONS' => 'GRPC_CFSTREAM=1'
+    }
+    ss.source_files = 'src/core/lib/iomgr/cfstream_handle.cc',
+                      'src/core/lib/iomgr/endpoint_cfstream.cc',
+                      'src/core/lib/iomgr/error_cfstream.cc',
+                      'src/core/lib/iomgr/tcp_client_cfstream.cc',
+                      'src/core/lib/iomgr/cfstream_handle.h',
+                      'src/core/lib/iomgr/endpoint_cfstream.h',
+                      'src/core/lib/iomgr/error_cfstream.h'
+    ss.private_header_files = 'src/core/lib/iomgr/cfstream_handle.h',
+                              'src/core/lib/iomgr/endpoint_cfstream.h',
+                              'src/core/lib/iomgr/error_cfstream.h'
+  end
+
   s.subspec 'Cronet-Interface' do |ss|
     ss.header_mappings_dir = 'include/grpc'
     ss.source_files = 'include/grpc/grpc_cronet.h'
@@ -1125,6 +1142,7 @@ Pod::Spec.new do |s|
                       'test/core/end2end/fixtures/proxy.cc',
                       'test/core/iomgr/endpoint_tests.cc',
                       'test/core/util/debugger_macros.cc',
+                      'test/core/util/fuzzer_util.cc',
                       'test/core/util/grpc_profiler.cc',
                       'test/core/util/histogram.cc',
                       'test/core/util/memory_counters.cc',
@@ -1147,6 +1165,7 @@ Pod::Spec.new do |s|
                       'test/core/end2end/fixtures/proxy.h',
                       'test/core/iomgr/endpoint_tests.h',
                       'test/core/util/debugger_macros.h',
+                      'test/core/util/fuzzer_util.h',
                       'test/core/util/grpc_profiler.h',
                       'test/core/util/histogram.h',
                       'test/core/util/memory_counters.h',
@@ -1198,6 +1217,7 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/max_message_length.cc',
                       'test/core/end2end/tests/negative_deadline.cc',
                       'test/core/end2end/tests/network_status_change.cc',
+                      'test/core/end2end/tests/no_error_on_hotpath.cc',
                       'test/core/end2end/tests/no_logging.cc',
                       'test/core/end2end/tests/no_op.cc',
                       'test/core/end2end/tests/payload.cc',
@@ -1214,6 +1234,7 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc',
                       'test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc',
                       'test/core/end2end/tests/retry_non_retriable_status.cc',
+                      'test/core/end2end/tests/retry_non_retriable_status_before_recv_trailing_metadata_started.cc',
                       'test/core/end2end/tests/retry_recv_initial_metadata.cc',
                       'test/core/end2end/tests/retry_recv_message.cc',
                       'test/core/end2end/tests/retry_server_pushback_delay.cc',
@@ -1244,6 +1265,7 @@ Pod::Spec.new do |s|
 
   # TODO (mxyan): Instead of this hack, add include path "third_party" to C core's include path?
   s.prepare_command = <<-END_OF_COMMAND
-    find src/core/ -type f ! -path '*.back*' -exec sed -E -i'.back' 's;#include "third_party/nanopb/(.*)";#include <nanopb/\\1>;g' {} \\\;
+    find src/core/ -type f ! -path '*.grpc_back' -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(pb(_.*)?\\.h)";#include <nanopb/\\1>;g'
+    find src/core/ -type f -path '*.grpc_back' -print0 | xargs -0 rm
   END_OF_COMMAND
 end

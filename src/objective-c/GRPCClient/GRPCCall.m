@@ -206,8 +206,9 @@ static NSString *const kBearerPrefix = @"Bearer ";
   } else {
     [_responseWriteable enqueueSuccessfulCompletion];
   }
-
+#ifndef GRPC_CFSTREAM
   [GRPCConnectivityMonitor unregisterObserver:self];
+#endif
 
   // If the call isn't retained anywhere else, it can be deallocated now.
   _retainSelf = nil;
@@ -268,8 +269,10 @@ static NSString *const kBearerPrefix = @"Bearer ";
 // method.
 // TODO(jcanizales): Rename to readResponseIfNotPaused.
 - (void)startNextRead {
-  if (self.state == GRXWriterStatePaused) {
-    return;
+  @synchronized(self) {
+    if (self.state == GRXWriterStatePaused) {
+      return;
+    }
   }
 
   dispatch_async(_callQueue, ^{
@@ -460,7 +463,9 @@ static NSString *const kBearerPrefix = @"Bearer ";
   [self sendHeaders:_requestHeaders];
   [self invokeCall];
 
+#ifndef GRPC_CFSTREAM
   [GRPCConnectivityMonitor registerObserver:self selector:@selector(connectivityChanged:)];
+#endif
 }
 
 - (void)startWithWriteable:(id<GRXWriteable>)writeable {

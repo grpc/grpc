@@ -24,12 +24,14 @@ class CallTest extends PHPUnit_Framework_TestCase
     public static function setUpBeforeClass()
     {
         self::$server = new Grpc\Server([]);
-        self::$port = self::$server->addHttp2Port('0.0.0.0:0');
+        self::$port = self::$server->addHttp2Port('0.0.0.0:53000');
     }
 
     public function setUp()
     {
-        $this->channel = new Grpc\Channel('localhost:'.self::$port, []);
+        $this->channel = new Grpc\Channel('localhost:'.self::$port, [
+            'force_new' => true,
+        ]);
         $this->call = new Grpc\Call($this->channel,
                                     '/foo',
                                     Grpc\Timeval::infFuture());
@@ -38,9 +40,6 @@ class CallTest extends PHPUnit_Framework_TestCase
     public function tearDown()
     {
         $this->channel->close();
-        $channel_clean_persistent =
-            new Grpc\Channel('localhost:50010', []);
-        $channel_clean_persistent->cleanPersistentList();
     }
 
     public function testConstructor()

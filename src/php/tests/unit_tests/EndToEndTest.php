@@ -22,16 +22,16 @@ class EndToEndTest extends PHPUnit_Framework_TestCase
     {
         $this->server = new Grpc\Server([]);
         $this->port = $this->server->addHttp2Port('0.0.0.0:0');
-        $this->channel = new Grpc\Channel('localhost:'.$this->port, []);
+        $this->channel = new Grpc\Channel('localhost:'.$this->port, [
+            "force_new" => true,
+        ]);
         $this->server->start();
     }
 
     public function tearDown()
     {
         $this->channel->close();
-        $channel_clean_persistent =
-            new Grpc\Channel('localhost:50010', []);
-        $channel_clean_persistent->cleanPersistentList();
+        unset($this->server);
     }
 
     public function testSimpleRequestBody()

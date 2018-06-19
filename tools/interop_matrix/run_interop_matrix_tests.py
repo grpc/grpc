@@ -45,7 +45,7 @@ _RELEASES = sorted(
             client_matrix.get_release_tag_name(info)
             for lang in client_matrix.LANG_RELEASE_MATRIX.values()
             for info in lang)))
-_TEST_TIMEOUT = 30
+_TEST_TIMEOUT = 60
 
 argp = argparse.ArgumentParser(description='Run interop tests.')
 argp.add_argument('-j', '--jobs', default=multiprocessing.cpu_count(), type=int)
@@ -116,6 +116,10 @@ def find_all_images_for_lang(lang):
             return {}
         releases = [args.release]
 
+    # TODO(jtattermusch): why do we need to query the existing images/tags?
+    # From LANG_RUNTIME_MATRIX and LANG_RELEASE_MATRIX it should be obvious
+    # which tags we want to test - and it should be an error if they are
+    # missing.
     # Images tuples keyed by runtime.
     images = {}
     for runtime in client_matrix.LANG_RUNTIME_MATRIX[lang]:

@@ -56,6 +56,7 @@ static void FreeChannelArgs(grpc_channel_args *channel_args) {
       gpr_free(arg->value.string);
     }
   }
+  gpr_free(channel_args->args);
   gpr_free(channel_args);
 }
 

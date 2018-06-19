@@ -38,7 +38,13 @@
 #include "src/core/lib/surface/server.h"
 #include "src/core/lib/transport/metadata.h"
 #include "test/core/end2end/data/ssl_test_data.h"
+#include "test/core/util/fuzzer_util.h"
 #include "test/core/util/passthru_endpoint.h"
+
+using grpc_core::testing::grpc_fuzzer_get_next_byte;
+using grpc_core::testing::grpc_fuzzer_get_next_string;
+using grpc_core::testing::grpc_fuzzer_get_next_uint32;
+using grpc_core::testing::input_stream;
 
 ////////////////////////////////////////////////////////////////////////////////
 // logging
@@ -65,58 +71,20 @@ static gpr_timespec now_impl(gpr_clock_type clock_type) {
   return ts;
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// input_stream: allows easy access to input bytes, and allows reading a little
-//               past the end (avoiding needing to check everywhere)
-
-typedef struct {
-  const uint8_t* cur;
-  const uint8_t* end;
-} input_stream;
-
-static uint8_t next_byte(input_stream* inp) {
-  if (inp->cur == inp->end) {
-    return 0;
-  }
-  return *inp->cur++;
-}
-
 static void end(input_stream* inp) { inp->cur = inp->end; }
-
-static char* read_string(input_stream* inp, bool* special) {
-  char* str = nullptr;
-  size_t cap = 0;
-  size_t sz = 0;
-  char c;
-  do {
-    if (cap == sz) {
-      cap = GPR_MAX(3 * cap / 2, cap + 8);
-      str = static_cast<char*>(gpr_realloc(str, cap));
-    }
-    c = static_cast<char>(next_byte(inp));
-    str[sz++] = c;
-  } while (c != 0 && c != 1);
-  if (special != nullptr) {
-    *special = (c == 1);
-  }
-  if (c == 1) {
-    str[sz - 1] = 0;
-  }
-  return str;
-}
 
 static void read_buffer(input_stream* inp, char** buffer, size_t* length,
                         bool* special) {
-  *length = next_byte(inp);
+  *length = grpc_fuzzer_get_next_byte(inp);
   if (*length == 255) {
     if (special != nullptr) *special = true;
-    *length = next_byte(inp);
+    *length = grpc_fuzzer_get_next_byte(inp);
   } else {
     if (special != nullptr) *special = false;
   }
   *buffer = static_cast<char*>(gpr_malloc(*length));
   for (size_t i = 0; i < *length; i++) {
-    (*buffer)[i] = static_cast<char>(next_byte(inp));
+    (*buffer)[i] = static_cast<char>(grpc_fuzzer_get_next_byte(inp));
   }
 }
 
@@ -128,7 +96,7 @@ static grpc_slice maybe_intern(grpc_slice s, bool intern) {
 
 static grpc_slice read_string_like_slice(input_stream* inp) {
   bool special;
-  char* s = read_string(inp, &special);
+  char* s = grpc_fuzzer_get_next_string(inp, &special);
   grpc_slice r = maybe_intern(grpc_slice_from_copied_string(s), special);
   gpr_free(s);
   return r;
@@ -146,39 +114,15 @@ static grpc_slice read_buffer_like_slice(input_stream* inp) {
 }
 
 static uint32_t read_uint22(input_stream* inp) {
-  uint8_t b = next_byte(inp);
+  uint8_t b = grpc_fuzzer_get_next_byte(inp);
   uint32_t x = b & 0x7f;
   if (b & 0x80) {
     x <<= 7;
-    b = next_byte(inp);
+    b = grpc_fuzzer_get_next_byte(inp);
     x |= b & 0x7f;
     if (b & 0x80) {
       x <<= 8;
-      x |= next_byte(inp);
-    }
-  }
-  return x;
-}
-
-static uint32_t read_uint32(input_stream* inp) {
-  uint8_t b = next_byte(inp);
-  uint32_t x = b & 0x7f;
-  if (b & 0x80) {
-    x <<= 7;
-    b = next_byte(inp);
-    x |= b & 0x7f;
-    if (b & 0x80) {
-      x <<= 7;
-      b = next_byte(inp);
-      x |= b & 0x7f;
-      if (b & 0x80) {
-        x <<= 7;
-        b = next_byte(inp);
-        x |= b & 0x7f;
-        if (b & 0x80) {
-          x = (x << 4) | (next_byte(inp) & 0x0f);
-        }
-      }
+      x |= grpc_fuzzer_get_next_byte(inp);
     }
   }
   return x;
@@ -193,22 +137,22 @@ static grpc_byte_buffer* read_message(input_stream* inp) {
 }
 
 static int read_int(input_stream* inp) {
-  return static_cast<int>(read_uint32(inp));
+  return static_cast<int>(grpc_fuzzer_get_next_uint32(inp));
 }
 
 static grpc_channel_args* read_args(input_stream* inp) {
-  size_t n = next_byte(inp);
+  size_t n = grpc_fuzzer_get_next_byte(inp);
   grpc_arg* args = static_cast<grpc_arg*>(gpr_malloc(sizeof(*args) * n));
   for (size_t i = 0; i < n; i++) {
-    switch (next_byte(inp)) {
+    switch (grpc_fuzzer_get_next_byte(inp)) {
       case 1:
         args[i].type = GRPC_ARG_STRING;
-        args[i].key = read_string(inp, nullptr);
-        args[i].value.string = read_string(inp, nullptr);
+        args[i].key = grpc_fuzzer_get_next_string(inp, nullptr);
+        args[i].value.string = grpc_fuzzer_get_next_string(inp, nullptr);
         break;
       case 2:
         args[i].type = GRPC_ARG_INTEGER;
-        args[i].key = read_string(inp, nullptr);
+        args[i].key = grpc_fuzzer_get_next_string(inp, nullptr);
         args[i].value.integer = read_int(inp);
         break;
       case 3:
@@ -249,10 +193,11 @@ static void cred_artifact_ctx_finish(cred_artifact_ctx* ctx) {
 static const char* read_cred_artifact(cred_artifact_ctx* ctx, input_stream* inp,
                                       const char** builtins,
                                       size_t num_builtins) {
-  uint8_t b = next_byte(inp);
+  uint8_t b = grpc_fuzzer_get_next_byte(inp);
   if (b == 0) return nullptr;
   if (b == 1)
-    return ctx->release[ctx->num_release++] = read_string(inp, nullptr);
+    return ctx->release[ctx->num_release++] =
+               grpc_fuzzer_get_next_string(inp, nullptr);
   if (b >= num_builtins + 1) {
     end(inp);
     return nullptr;
@@ -277,7 +222,7 @@ static grpc_channel_credentials* read_ssl_channel_creds(input_stream* inp) {
   grpc_channel_credentials* creds = grpc_ssl_credentials_create(
       root_certs,
       private_key != nullptr && certs != nullptr ? &key_cert_pair : nullptr,
-      nullptr);
+      nullptr, nullptr);
   cred_artifact_ctx_finish(&ctx);
   return creds;
 }
@@ -288,7 +233,7 @@ static grpc_call_credentials* read_call_creds(input_stream* inp, int depth) {
     end(inp);
     return nullptr;
   }
-  switch (next_byte(inp)) {
+  switch (grpc_fuzzer_get_next_byte(inp)) {
     default:
       end(inp);
       return nullptr;
@@ -339,7 +284,7 @@ static grpc_call_credentials* read_call_creds(input_stream* inp, int depth) {
 }
 
 static grpc_channel_credentials* read_channel_creds(input_stream* inp) {
-  switch (next_byte(inp)) {
+  switch (grpc_fuzzer_get_next_byte(inp)) {
     case 0:
       return read_ssl_channel_creds(inp);
       break;
@@ -429,13 +374,11 @@ void my_resolve_address(const char* addr, const char* default_port,
 static grpc_address_resolver_vtable fuzzer_resolver = {my_resolve_address,
                                                        nullptr};
 
-grpc_ares_request* my_dns_lookup_ares(const char* dns_server, const char* addr,
-                                      const char* default_port,
-                                      grpc_pollset_set* interested_parties,
-                                      grpc_closure* on_done,
-                                      grpc_lb_addresses** lb_addrs,
-                                      bool check_grpclb,
-                                      char** service_config_json) {
+grpc_ares_request* my_dns_lookup_ares_locked(
+    const char* dns_server, const char* addr, const char* default_port,
+    grpc_pollset_set* interested_parties, grpc_closure* on_done,
+    grpc_lb_addresses** lb_addrs, bool check_grpclb, char** service_config_json,
+    grpc_combiner* combiner) {
   addr_req* r = static_cast<addr_req*>(gpr_malloc(sizeof(*r)));
   r->addr = gpr_strdup(addr);
   r->on_done = on_done;
@@ -673,7 +616,7 @@ static grpc_slice* add_slice_to_unref(call_state* call, grpc_slice s) {
 
 static void read_metadata(input_stream* inp, size_t* count,
                           grpc_metadata** metadata, call_state* cs) {
-  *count = next_byte(inp);
+  *count = grpc_fuzzer_get_next_byte(inp);
   if (*count) {
     *metadata =
         static_cast<grpc_metadata*>(gpr_malloc(*count * sizeof(**metadata)));
@@ -681,7 +624,7 @@ static void read_metadata(input_stream* inp, size_t* count,
     for (size_t i = 0; i < *count; i++) {
       (*metadata)[i].key = read_string_like_slice(inp);
       (*metadata)[i].value = read_buffer_like_slice(inp);
-      (*metadata)[i].flags = read_uint32(inp);
+      (*metadata)[i].flags = grpc_fuzzer_get_next_uint32(inp);
       add_slice_to_unref(cs, (*metadata)[i].key);
       add_slice_to_unref(cs, (*metadata)[i].value);
     }
@@ -761,7 +704,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_executor_set_threading(false);
   }
   grpc_set_resolver_impl(&fuzzer_resolver);
-  grpc_dns_lookup_ares = my_dns_lookup_ares;
+  grpc_dns_lookup_ares_locked = my_dns_lookup_ares_locked;
 
   GPR_ASSERT(g_channel == nullptr);
   GPR_ASSERT(g_server == nullptr);
@@ -811,7 +754,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
     grpc_timer_manager_tick();
 
-    switch (next_byte(&inp)) {
+    switch (grpc_fuzzer_get_next_byte(&inp)) {
       // terminate on bad bytes
       default:
         end(&inp);
@@ -838,13 +781,14 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
       // increment global time
       case 1: {
         g_now = gpr_time_add(
-            g_now, gpr_time_from_micros(read_uint32(&inp), GPR_TIMESPAN));
+            g_now, gpr_time_from_micros(grpc_fuzzer_get_next_uint32(&inp),
+                                        GPR_TIMESPAN));
         break;
       }
       // create an insecure channel
       case 2: {
         if (g_channel == nullptr) {
-          char* target = read_string(&inp, nullptr);
+          char* target = grpc_fuzzer_get_next_string(&inp, nullptr);
           char* target_uri;
           gpr_asprintf(&target_uri, "dns:%s", target);
           grpc_channel_args* args = read_args(&inp);
@@ -927,7 +871,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
       // check connectivity
       case 8: {
         if (g_channel != nullptr) {
-          uint8_t try_to_connect = next_byte(&inp);
+          uint8_t try_to_connect = grpc_fuzzer_get_next_byte(&inp);
           if (try_to_connect == 0 || try_to_connect == 1) {
             grpc_channel_check_connectivity_state(g_channel, try_to_connect);
           } else {
@@ -946,7 +890,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
           if (st != GRPC_CHANNEL_SHUTDOWN) {
             gpr_timespec deadline = gpr_time_add(
                 gpr_now(GPR_CLOCK_REALTIME),
-                gpr_time_from_micros(read_uint32(&inp), GPR_TIMESPAN));
+                gpr_time_from_micros(grpc_fuzzer_get_next_uint32(&inp),
+                                     GPR_TIMESPAN));
             grpc_channel_watch_connectivity_state(
                 g_channel, st, deadline, cq,
                 create_validator(validate_connectivity_watch,
@@ -971,7 +916,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
           }
           parent_call = g_active_call->call;
         }
-        uint32_t propagation_mask = read_uint32(&inp);
+        uint32_t propagation_mask = grpc_fuzzer_get_next_uint32(&inp);
         grpc_slice method = read_string_like_slice(&inp);
         if (GRPC_SLICE_LENGTH(method) == 0) {
           ok = false;
@@ -979,7 +924,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
         grpc_slice host = read_string_like_slice(&inp);
         gpr_timespec deadline =
             gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                         gpr_time_from_micros(read_uint32(&inp), GPR_TIMESPAN));
+                         gpr_time_from_micros(grpc_fuzzer_get_next_uint32(&inp),
+                                              GPR_TIMESPAN));
 
         if (ok) {
           call_state* cs = new_call(g_active_call, CLIENT);
@@ -1005,7 +951,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
           end(&inp);
           break;
         }
-        size_t num_ops = next_byte(&inp);
+        size_t num_ops = grpc_fuzzer_get_next_byte(&inp);
         if (num_ops > 6) {
           end(&inp);
           break;
@@ -1019,7 +965,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
         uint8_t has_ops = 0;
         for (i = 0; i < num_ops; i++) {
           op = &ops[i];
-          switch (next_byte(&inp)) {
+          switch (grpc_fuzzer_get_next_byte(&inp)) {
             default:
               /* invalid value */
               op->op = (grpc_op_type)-1;
@@ -1060,7 +1006,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
                   &op->data.send_status_from_server.trailing_metadata,
                   g_active_call);
               op->data.send_status_from_server.status =
-                  static_cast<grpc_status_code>(next_byte(&inp));
+                  static_cast<grpc_status_code>(
+                      grpc_fuzzer_get_next_byte(&inp));
               op->data.send_status_from_server.status_details =
                   add_slice_to_unref(g_active_call,
                                      read_buffer_like_slice(&inp));
@@ -1097,7 +1044,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
               break;
           }
           op->reserved = nullptr;
-          op->flags = read_uint32(&inp);
+          op->flags = grpc_fuzzer_get_next_uint32(&inp);
         }
         if (ok) {
           validator* v = make_finished_batch_validator(g_active_call, has_ops);
@@ -1160,14 +1107,14 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
       }
       // enable a tracer
       case 17: {
-        char* tracer = read_string(&inp, nullptr);
+        char* tracer = grpc_fuzzer_get_next_string(&inp, nullptr);
         grpc_tracer_set_enabled(tracer, 1);
         gpr_free(tracer);
         break;
       }
       // disable a tracer
       case 18: {
-        char* tracer = read_string(&inp, nullptr);
+        char* tracer = grpc_fuzzer_get_next_string(&inp, nullptr);
         grpc_tracer_set_enabled(tracer, 0);
         gpr_free(tracer);
         break;
@@ -1209,7 +1156,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
       // create a secure channel
       case 22: {
         if (g_channel == nullptr) {
-          char* target = read_string(&inp, nullptr);
+          char* target = grpc_fuzzer_get_next_string(&inp, nullptr);
           char* target_uri;
           gpr_asprintf(&target_uri, "dns:%s", target);
           grpc_channel_args* args = read_args(&inp);

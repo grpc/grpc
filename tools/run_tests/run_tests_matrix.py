@@ -245,6 +245,8 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         languages=['c'],
         configs=['msan', 'asan', 'tsan', 'ubsan'],
         platforms=['linux'],
+        arch='x64',
+        compiler='clang7.0',
         labels=['sanitizers', 'corelang'],
         extra_args=extra_args,
         inner_jobs=inner_jobs,
@@ -253,6 +255,8 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         languages=['c++'],
         configs=['asan'],
         platforms=['linux'],
+        arch='x64',
+        compiler='clang7.0',
         labels=['sanitizers', 'corelang'],
         extra_args=extra_args,
         inner_jobs=inner_jobs,
@@ -261,6 +265,8 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         languages=['c++'],
         configs=['tsan'],
         platforms=['linux'],
+        arch='x64',
+        compiler='clang7.0',
         labels=['sanitizers', 'corelang'],
         extra_args=extra_args,
         inner_jobs=inner_jobs,
@@ -286,7 +292,7 @@ def _create_portability_test_jobs(extra_args=[],
     # portability C and C++ on x64
     for compiler in [
             'gcc4.8', 'gcc5.3', 'gcc7.2', 'gcc_musl', 'clang3.5', 'clang3.6',
-            'clang3.7'
+            'clang3.7', 'clang7.0'
     ]:
         test_jobs += _generate_jobs(
             languages=['c', 'c++'],
@@ -529,7 +535,6 @@ if __name__ == "__main__":
         extra_args.append('--bq_result_table')
         extra_args.append('%s' % args.bq_result_table)
         extra_args.append('--measure_cpu_costs')
-        extra_args.append('--disable_auto_set_flakes')
 
     all_jobs = _create_test_jobs(extra_args=extra_args, inner_jobs=args.inner_jobs) + \
                _create_portability_test_jobs(extra_args=extra_args, inner_jobs=args.inner_jobs)

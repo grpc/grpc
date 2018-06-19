@@ -100,6 +100,8 @@ extern void negative_deadline(grpc_end2end_test_config config);
 extern void negative_deadline_pre_init(void);
 extern void network_status_change(grpc_end2end_test_config config);
 extern void network_status_change_pre_init(void);
+extern void no_error_on_hotpath(grpc_end2end_test_config config);
+extern void no_error_on_hotpath_pre_init(void);
 extern void no_logging(grpc_end2end_test_config config);
 extern void no_logging_pre_init(void);
 extern void no_op(grpc_end2end_test_config config);
@@ -132,6 +134,8 @@ extern void retry_exceeds_buffer_size_in_subsequent_batch(grpc_end2end_test_conf
 extern void retry_exceeds_buffer_size_in_subsequent_batch_pre_init(void);
 extern void retry_non_retriable_status(grpc_end2end_test_config config);
 extern void retry_non_retriable_status_pre_init(void);
+extern void retry_non_retriable_status_before_recv_trailing_metadata_started(grpc_end2end_test_config config);
+extern void retry_non_retriable_status_before_recv_trailing_metadata_started_pre_init(void);
 extern void retry_recv_initial_metadata(grpc_end2end_test_config config);
 extern void retry_recv_initial_metadata_pre_init(void);
 extern void retry_recv_message(grpc_end2end_test_config config);
@@ -220,6 +224,7 @@ void grpc_end2end_tests_pre_init(void) {
   max_message_length_pre_init();
   negative_deadline_pre_init();
   network_status_change_pre_init();
+  no_error_on_hotpath_pre_init();
   no_logging_pre_init();
   no_op_pre_init();
   payload_pre_init();
@@ -236,6 +241,7 @@ void grpc_end2end_tests_pre_init(void) {
   retry_exceeds_buffer_size_in_initial_batch_pre_init();
   retry_exceeds_buffer_size_in_subsequent_batch_pre_init();
   retry_non_retriable_status_pre_init();
+  retry_non_retriable_status_before_recv_trailing_metadata_started_pre_init();
   retry_recv_initial_metadata_pre_init();
   retry_recv_message_pre_init();
   retry_server_pushback_delay_pre_init();
@@ -304,6 +310,7 @@ void grpc_end2end_tests(int argc, char **argv,
     max_message_length(config);
     negative_deadline(config);
     network_status_change(config);
+    no_error_on_hotpath(config);
     no_logging(config);
     no_op(config);
     payload(config);
@@ -320,6 +327,7 @@ void grpc_end2end_tests(int argc, char **argv,
     retry_exceeds_buffer_size_in_initial_batch(config);
     retry_exceeds_buffer_size_in_subsequent_batch(config);
     retry_non_retriable_status(config);
+    retry_non_retriable_status_before_recv_trailing_metadata_started(config);
     retry_recv_initial_metadata(config);
     retry_recv_message(config);
     retry_server_pushback_delay(config);
@@ -488,6 +496,10 @@ void grpc_end2end_tests(int argc, char **argv,
       network_status_change(config);
       continue;
     }
+    if (0 == strcmp("no_error_on_hotpath", argv[i])) {
+      no_error_on_hotpath(config);
+      continue;
+    }
     if (0 == strcmp("no_logging", argv[i])) {
       no_logging(config);
       continue;
@@ -550,6 +562,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("retry_non_retriable_status", argv[i])) {
       retry_non_retriable_status(config);
+      continue;
+    }
+    if (0 == strcmp("retry_non_retriable_status_before_recv_trailing_metadata_started", argv[i])) {
+      retry_non_retriable_status_before_recv_trailing_metadata_started(config);
       continue;
     }
     if (0 == strcmp("retry_recv_initial_metadata", argv[i])) {

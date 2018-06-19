@@ -25,7 +25,6 @@ namespace Grpc.Core.Interceptors
 {
     /// <summary>
     /// Serves as the base class for gRPC interceptors.
-    /// This is an EXPERIMENTAL API.
     /// </summary>
     public abstract class Interceptor
     {

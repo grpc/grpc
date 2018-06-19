@@ -22,9 +22,24 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-# Update submodule and commit it so changes are passed to Docker
+# Update submodule to be tested at HEAD
 (cd third_party/$RUN_TESTS_FLAGS && git fetch --all && git checkout origin/master)
 tools/buildgen/generate_projects.sh
+
+if [ "$RUN_TESTS_FLAGS" == "protobuf" ]
+then
+  # Upgrade bazel.
+  # make_grpcio_tools.py requires bazel >=0.13.1 to run (Kokoro workers only have bazel 0.9)
+  curl -fSsL -O https://github.com/bazelbuild/bazel/releases/download/0.13.1/bazel-0.13.1-installer-linux-x86_64.sh
+  chmod +x ./bazel-0.13.1-installer-linux-x86_64.sh
+  ./bazel-0.13.1-installer-linux-x86_64.sh --user
+  rm -f ./bazel-0.13.1-installer-linux-x86_64.sh
+  export PATH="$PATH:$HOME/bin"
+
+  tools/distrib/python/make_grpcio_tools.py
+fi
+
+# commit so that changes are passed to Docker
 git -c user.name='foo' -c user.email='foo@google.com' commit -a -m 'Update submodule'
 
 tools/run_tests/run_tests_matrix.py -f linux --inner_jobs 4 -j 4 --internal_ci --build_only

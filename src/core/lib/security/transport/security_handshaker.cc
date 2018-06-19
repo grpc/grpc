@@ -232,6 +232,10 @@ static grpc_error* on_handshake_next_done_locked(
     const unsigned char* bytes_to_send, size_t bytes_to_send_size,
     tsi_handshaker_result* handshaker_result) {
   grpc_error* error = GRPC_ERROR_NONE;
+  // Handshaker was shutdown.
+  if (h->shutdown) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Handshaker shutdown");
+  }
   // Read more if we need to.
   if (result == TSI_INCOMPLETE_DATA) {
     GPR_ASSERT(bytes_to_send_size == 0);
@@ -376,6 +380,7 @@ static void security_handshaker_shutdown(grpc_handshaker* handshaker,
   gpr_mu_lock(&h->mu);
   if (!h->shutdown) {
     h->shutdown = true;
+    tsi_handshaker_shutdown(h->handshaker);
     grpc_endpoint_shutdown(h->args->endpoint, GRPC_ERROR_REF(why));
     cleanup_args_for_failure_locked(h);
   }

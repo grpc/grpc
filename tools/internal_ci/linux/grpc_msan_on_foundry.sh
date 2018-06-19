@@ -23,8 +23,8 @@ mkdir -p ${KOKORO_KEYSTORE_DIR}
 cp ${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json ${KOKORO_KEYSTORE_DIR}/4321_grpc-testing-service
 
 temp_dir=$(mktemp -d)
-ln -f "${KOKORO_GFILE_DIR}/bazel-canary" ${temp_dir}/bazel
-chmod 755 "${KOKORO_GFILE_DIR}/bazel-canary"
+ln -f "${KOKORO_GFILE_DIR}/bazel-rc-0.14.0rc5" ${temp_dir}/bazel
+chmod 755 "${KOKORO_GFILE_DIR}/bazel-rc-0.14.0rc5"
 export PATH="${temp_dir}:${PATH}"
 # This should show ${temp_dir}/bazel
 which bazel
@@ -37,7 +37,7 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
 "${KOKORO_GFILE_DIR}/bazel_wrapper.py" \
   --host_jvm_args=-Dbazel.DigestFunction=SHA256 \
-  test --jobs="100" \
+  test --jobs="200" \
   --test_timeout="3600,3600,3600,3600" \
   --test_output=errors  \
   --verbose_failures=true  \
@@ -50,7 +50,7 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
   --strategy=Closure=remote  \
   --genrule_strategy=remote  \
   --experimental_strict_action_env=true \
-  --experimental_remote_platform_override='properties:{name:"container-image" value:"docker://gcr.io/asci-toolchain/nosla-debian8-clang-msan@sha256:8f381d55c0456fb65821c90ada902c2584977e03a1eaca8fba8ce77e644c775b" }' \
+  --experimental_remote_platform_override='properties:{name:"container-image" value:"docker://gcr.io/cloud-marketplace/google/rbe-ubuntu16-04@sha256:59bf0e191a6b5cc1ab62c2224c810681d1326bad5a27b1d36c9f40113e79da7f" }' \
   --define GRPC_PORT_ISOLATED_RUNTIME=1 \
   --copt=-gmlt \
   --strip=never \
@@ -59,6 +59,18 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
   --linkopt=-fsanitize=memory \
   --copt=-fsanitize-memory-track-origins \
   --action_env=LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH \
-  --host_crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/debian8_clang/0.3.0/bazel_0.10.0:toolchain \
-  --crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/experimental/debian8_clang/0.3.0/bazel_0.10.0/msan:msan_experimental_toolchain \
-  -- //test/...
+  --host_crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0/bazel_0.13.0/default:toolchain \
+  --crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0/bazel_0.13.0/msan:toolchain \
+  --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1 \
+  --extra_toolchains=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0/bazel_0.13.0/cpp:cc-toolchain-clang-x86_64-default \
+  --extra_execution_platforms=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0:rbe_ubuntu1604 \
+  -- //test/... || FAILED="true"
+
+# Sleep to let ResultStore finish writing results before querying
+sleep 60
+python ./tools/run_tests/python_utils/upload_rbe_results.py
+
+if [ "$FAILED" != "" ]
+then
+  exit 1
+fi
