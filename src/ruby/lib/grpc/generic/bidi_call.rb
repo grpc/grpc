@@ -132,20 +132,13 @@ module GRPC
     # set_output_stream_done is relevant on client-side
     def write_loop(requests)
       GRPC.logger.debug('bidi-write-loop: starting')
-      count = 0
       requests.each do |req|
-        GRPC.logger.debug("bidi-write-loop: #{count}")
-        count += 1
-        # Fails if status already received
-        begin
-          @acall.remote_send(req, false)
-        rescue GRPC::Core::CallError => e
-          # This is almost definitely caused by a status arriving while still
-          # writing. Don't re-throw the error
-          GRPC.logger.warn("bidi-write-loop: ended with error #{e}")
-          break
-        end
+        @acall.remote_send(req, false)
       end
+    rescue GRPC::Core::CallError => e
+      # This is almost definitely caused by a status arriving while still
+      # writing. Don't re-throw the error
+      GRPC.logger.warn("bidi-write-loop: ended with error #{e}")
     rescue StandardError => e
       GRPC.logger.warn('bidi-write-loop: failed')
       GRPC.logger.warn(e)
