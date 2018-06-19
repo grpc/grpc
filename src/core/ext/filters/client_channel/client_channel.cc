@@ -2159,20 +2159,17 @@ static void add_subchannel_batches_for_pending_batches(
     }
     if (batch->recv_trailing_metadata &&
         retry_state->started_recv_trailing_metadata) {
-gpr_log(GPR_INFO, "HERE 0");
       // If we previously completed a recv_trailing_metadata op
       // initiated by start_internal_recv_trailing_metadata(), use the
       // result of that instead of trying to re-start this op.
       if (GPR_UNLIKELY((retry_state->recv_trailing_metadata_internal_batch !=
                         nullptr))) {
-gpr_log(GPR_INFO, "HERE 1");
         // If the batch completed, then trigger the completion callback
         // directly, so that we return the previously returned results to
         // the application.  Otherwise, just unref the internally
         // started subchannel batch, since we'll propagate the
         // completion when it completes.
         if (retry_state->completed_recv_trailing_metadata) {
-gpr_log(GPR_INFO, "HERE 2");
           // Batches containing recv_trailing_metadata always succeed.
           GRPC_CLOSURE_INIT(
               &retry_state->recv_trailing_metadata_recv_batch.handler_private
@@ -2184,23 +2181,21 @@ gpr_log(GPR_INFO, "HERE 2");
           closures->Add(
               &retry_state->recv_trailing_metadata_recv_batch.handler_private
                   .closure,
+// FIXME: probably need to reuse error from internal batch here...
               GRPC_ERROR_NONE,
 // FIXME: update reason text
               "re-executing recv_trailing_metadata completion to propagate "
               "internally triggered result");
         } else {
-gpr_log(GPR_INFO, "HERE 3");
           batch_data_unref(retry_state->recv_trailing_metadata_internal_batch);
         }
         retry_state->recv_trailing_metadata_internal_batch = nullptr;
       }
-gpr_log(GPR_INFO, "HERE 4");
 // FIXME: what if there are other ops in this batch?
 // Note: should be okay to split recv ops off, as long as we don't split
 // up send ops
       continue;
     }
-gpr_log(GPR_INFO, "HERE 5");
     // If we're not retrying, just send the batch as-is.
     if (calld->method_params == nullptr ||
         calld->method_params->retry_policy() == nullptr ||
@@ -2333,7 +2328,6 @@ static void create_subchannel_call(grpc_call_element* elem, grpc_error* error) {
     retry_state->recv_payload.recv_trailing_metadata.collect_stats =
         &retry_state->collect_stats;
     recv_payload = &retry_state->recv_payload;
-gpr_log(GPR_INFO, "calld->recv_payload->recv_trailing_metadata.recv_trailing_metadata=%p &retry_state->recv_trailing_metadata=%p", calld->recv_payload->recv_trailing_metadata.recv_trailing_metadata, &retry_state->recv_trailing_metadata);
   }
   const grpc_core::ConnectedSubchannel::CallArgs call_args = {
       calld->pollent,
@@ -2887,7 +2881,6 @@ static void cc_start_transport_stream_recv_op_batch(
 
 // FIXME: formatting
     if (!calld->enable_retries) {
-gpr_log(GPR_INFO, "enable_retries=false");
       if (batch->recv_initial_metadata) {
         complete_recv_initial_metadata(elem, retry_state);
       }
@@ -3093,9 +3086,7 @@ gpr_log(GPR_INFO, "enable_retries=false");
       } else {
 
         // Return metadata.
-gpr_log(GPR_INFO, "BEFORE: calld->recv_payload->recv_trailing_metadata.recv_trailing_metadata=%p &retry_state->recv_trailing_metadata=%p", calld->recv_payload->recv_trailing_metadata.recv_trailing_metadata, &retry_state->recv_trailing_metadata);
         propagate_recv_trailing_metadata_result(calld, retry_state);
-gpr_log(GPR_INFO, "AFTER: calld->recv_payload->recv_trailing_metadata.recv_trailing_metadata=%p &retry_state->recv_trailing_metadata=%p", calld->recv_payload->recv_trailing_metadata.recv_trailing_metadata, &retry_state->recv_trailing_metadata);
       }
       batch_data_unref(batch_data);
       // Construct list of closures to execute.

@@ -1964,7 +1964,6 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
         s->seen_recv_trailing_metadata) {
       grpc_transport_move_stats(
           &s->stats, s->recv_payload->recv_trailing_metadata.collect_stats);
-//      s->collecting_stats = nullptr;
       grpc_chttp2_incoming_metadata_buffer_publish(
           &s->metadata_buffer[1],
           s->recv_payload->recv_trailing_metadata.recv_trailing_metadata);
