@@ -576,6 +576,13 @@ module GRPC
       @peer_cert = peer_cert
     end
 
+    # Starts the call if not already started
+    # @param metadata [Hash] metadata to be sent to the server. If a value is
+    # a list, multiple metadata for its key are sent
+    def start_call(metadata = {})
+      merge_metadata_to_send(metadata) && send_initial_metadata
+    end
+
     private
 
     # To be called once the "input stream" has been completelly
@@ -604,13 +611,6 @@ module GRPC
       @call_finished = true
       op_is_done
       @call.close
-    end
-
-    # Starts the call if not already started
-    # @param metadata [Hash] metadata to be sent to the server. If a value is
-    # a list, multiple metadata for its key are sent
-    def start_call(metadata = {})
-      merge_metadata_to_send(metadata) && send_initial_metadata
     end
 
     def raise_error_if_already_executed
