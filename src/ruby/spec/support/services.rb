@@ -94,10 +94,10 @@ class TestServerInterceptor < GRPC::ServerInterceptor
     yield
   end
 
-  def bidi_streamer(requests:, call:, method:)
-    requests.each do |r|
-      p "Bidi request: #{r}"
-    end
+  def bidi_streamer(requests: nil, call:, method:)
+    # requests.each do |r|
+    #   p "Bidi request: #{r}"
+    # end
     p "Received bidi streamer call at method #{method} with requests" \
       " #{requests} for call #{call}"
     call.output_metadata[:interc] = 'from_bidi_streamer'

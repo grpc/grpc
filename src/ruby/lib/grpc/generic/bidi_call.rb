@@ -90,7 +90,8 @@ module GRPC
     #
     # @param [Proc] gen_each_reply generates the BiDi stream replies.
     # @param [Enumerable] requests The enumerable of requests to run
-    def run_on_server(gen_each_reply, requests)
+    def run_on_server(gen_each_reply)
+      requests = read_next_loop(proc { @acall.send(:set_input_stream_done) }, false)
       replies = nil
 
       # Pass in the optional call object parameter if possible

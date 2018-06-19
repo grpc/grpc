@@ -544,14 +544,12 @@ module GRPC
         req_view: view,
         acall: self
       )
-      requests = bidi_call.read_next_loop(proc { set_input_stream_done }, false)
       interception_ctx.intercept!(
         :bidi_streamer,
         call: view,
-        method: mth,
-        requests: requests
+        method: mth
       ) do
-        bidi_call.run_on_server(mth, requests)
+        bidi_call.run_on_server(mth)
       end
     end
 
