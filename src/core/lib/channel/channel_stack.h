@@ -310,4 +310,33 @@ extern grpc_core::TraceFlag grpc_trace_channel;
     grpc_call_log_recv_op_batch(sev, elem, batch, error); \
   }
 
+namespace grpc_core {
+
+// FIXME: document (especially requirement that this stay in scope until
+// filter call data is destroyed)
+class FilterCallCanceller {
+ public:
+  explicit FilterCallCanceller(const grpc_call_element_args& args)
+      : call_combiner_(args.call_combiner),
+        recv_payload_(args.recv_payload) {}
+
+  void CancelBatch(grpc_call_element* elem,
+                   grpc_transport_stream_op_batch* batch, grpc_error* error);
+
+  void PopulateCancelCallbackList(
+      grpc_call_element* elem, grpc_transport_stream_op_batch* batch,
+      grpc_error* error, CallCombinerClosureList* closures);
+
+  grpc_call_combiner* call_combiner() const { return call_combiner_; }
+
+ private:
+  static void StartRecvBatchInCallCombiner(void* arg, grpc_error* error);
+
+  grpc_call_combiner* call_combiner_;
+  grpc_transport_stream_recv_op_batch_payload* recv_payload_;
+  grpc_transport_stream_recv_op_batch recv_batch_;
+};
+
+}  // namespace grpc_core
+
 #endif /* GRPC_CORE_LIB_CHANNEL_CHANNEL_STACK_H */

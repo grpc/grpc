@@ -241,9 +241,6 @@ struct grpc_call {
   grpc_byte_buffer** receiving_buffer;
   grpc_slice receiving_slice;
   grpc_closure receiving_slice_ready;
-  grpc_closure receiving_stream_ready;
-  grpc_closure receiving_initial_metadata_ready;
-  grpc_closure receiving_trailing_metadata_ready;
   uint32_t test_only_last_message_flags;
 
   grpc_closure release_call;
@@ -1418,8 +1415,7 @@ static void process_data_after_md(batch_control* bctl) {
   }
 }
 
-static void receiving_stream_ready(void* bctlp, grpc_error* error) {
-  batch_control* bctl = static_cast<batch_control*>(bctlp);
+static void receiving_stream_ready(batch_control* bctl, grpc_error* error) {
   grpc_call* call = bctl->call;
   if (error != GRPC_ERROR_NONE) {
     call->receiving_stream.reset();
@@ -1430,20 +1426,10 @@ static void receiving_stream_ready(void* bctlp, grpc_error* error) {
    * object with rel_cas, and will not use it after the cas. Its corresponding
    * acq_load is in receiving_initial_metadata_ready() */
   if (error != GRPC_ERROR_NONE || call->receiving_stream == nullptr ||
-      !gpr_atm_rel_cas(&call->recv_state, RECV_NONE, (gpr_atm)bctlp)) {
+      !gpr_atm_rel_cas(&call->recv_state, RECV_NONE, (gpr_atm)bctl)) {
     process_data_after_md(bctl);
   }
-}
-
-// The recv_message_ready callback used when sending a batch containing
-// a recv_message op down the filter stack.  Yields the call combiner
-// before processing the received message.
-static void receiving_stream_ready_in_call_combiner(void* bctlp,
-                                                    grpc_error* error) {
-  batch_control* bctl = static_cast<batch_control*>(bctlp);
-  grpc_call* call = bctl->call;
-  GRPC_CALL_COMBINER_STOP(&call->call_combiner, "recv_message_ready");
-  receiving_stream_ready(bctlp, error);
+  GRPC_ERROR_UNREF(error);
 }
 
 static void validate_filtered_metadata(batch_control* bctl) {
@@ -1523,8 +1509,8 @@ static void add_batch_error(batch_control* bctl, grpc_error* error,
   bctl->errors[idx] = error;
 }
 
-static void receiving_initial_metadata_ready_internal(batch_control* bctl,
-                                                      grpc_error* error) {
+static void receiving_initial_metadata_ready(batch_control* bctl,
+                                             grpc_error* error) {
   grpc_call* call = bctl->call;
 
   add_batch_error(bctl, GRPC_ERROR_REF(error), false);
@@ -1542,7 +1528,7 @@ static void receiving_initial_metadata_ready_internal(batch_control* bctl,
     }
   }
 
-  grpc_closure* saved_rsr_closure = nullptr;
+  batch_control* rsr_bctl = nullptr;
   while (true) {
     gpr_atm rsr_bctlp = gpr_atm_acq_load(&call->recv_state);
     /* Should only receive initial metadata once */
@@ -1559,29 +1545,22 @@ static void receiving_initial_metadata_ready_internal(batch_control* bctl,
       }
     } else {
       /* Already received messages */
-      saved_rsr_closure =
-          GRPC_CLOSURE_CREATE(receiving_stream_ready, (batch_control*)rsr_bctlp,
-                              grpc_schedule_on_exec_ctx);
+      rsr_bctl = (batch_control*)rsr_bctlp;
       /* No need to modify recv_state */
       break;
     }
   }
-  if (saved_rsr_closure != nullptr) {
-    GRPC_CLOSURE_RUN(saved_rsr_closure, GRPC_ERROR_REF(error));
+  if (rsr_bctl != nullptr) {
+// FIXME: shouldn't we save the error we got when recv_message came back
+// and use that here?
+    receiving_stream_ready(rsr_bctl, GRPC_ERROR_REF(error));
   }
 
   finish_batch_step(bctl);
 }
 
-static void receiving_initial_metadata_ready(void* bctlp, grpc_error* error) {
-  batch_control* bctl = static_cast<batch_control*>(bctlp);
-  grpc_call* call = bctl->call;
-  GRPC_CALL_COMBINER_STOP(&call->call_combiner, "recv_initial_metadata_ready");
-  receiving_initial_metadata_ready_internal(bctl, error);
-}
-
-static void receiving_trailing_metadata_ready_internal(batch_control* bctl,
-                                                       grpc_error* error) {
+static void receiving_trailing_metadata_ready(batch_control* bctl,
+                                              grpc_error* error) {
   grpc_call* call = bctl->call;
   add_batch_error(bctl, GRPC_ERROR_REF(error), false);
   grpc_metadata_batch* md =
@@ -1590,27 +1569,18 @@ static void receiving_trailing_metadata_ready_internal(batch_control* bctl,
   finish_batch_step(bctl);
 }
 
-static void receiving_trailing_metadata_ready(void* bctlp, grpc_error* error) {
-  batch_control* bctl = static_cast<batch_control*>(bctlp);
-  grpc_call* call = bctl->call;
-  GRPC_CALL_COMBINER_STOP(&call->call_combiner, "recv_trailing_metadata_ready");
-  receiving_trailing_metadata_ready_internal(bctl, error);
-}
-
 static void finish_recv_batch(grpc_transport_stream_recv_op_batch* recv_batch,
                               void* arg, grpc_error* error) {
   grpc_call* call = static_cast<grpc_call*>(arg);
   GRPC_CALL_COMBINER_STOP(&call->call_combiner, "recv_batch");
   if (recv_batch->recv_initial_metadata) {
-    receiving_initial_metadata_ready_internal(call->recv_initial_metadata_bctl,
-                                              error);
+    receiving_initial_metadata_ready(call->recv_initial_metadata_bctl, error);
   }
   if (recv_batch->recv_message) {
     receiving_stream_ready(call->recv_message_bctl, error);
   }
   if (recv_batch->recv_trailing_metadata) {
-    receiving_trailing_metadata_ready_internal(
-        call->recv_trailing_metadata_bctl, error);
+    receiving_trailing_metadata_ready(call->recv_trailing_metadata_bctl, error);
   }
 }
 
@@ -1874,18 +1844,7 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         call->received_initial_metadata = true;
         call->buffered_metadata[0] =
             op->data.recv_initial_metadata.recv_initial_metadata;
-        GRPC_CLOSURE_INIT(&call->receiving_initial_metadata_ready,
-                          receiving_initial_metadata_ready, bctl,
-                          grpc_schedule_on_exec_ctx);
         stream_op->recv_initial_metadata = true;
-//        stream_op_payload->recv_initial_metadata.recv_initial_metadata =
-//            &call->metadata_batch[1 /* is_receiving */][0 /* is_trailing */];
-        stream_op_payload->recv_initial_metadata.recv_initial_metadata_ready =
-            &call->receiving_initial_metadata_ready;
-//        if (!call->is_client) {
-//          stream_op_payload->recv_initial_metadata.peer_string =
-//              &call->peer_string;
-//        }
         ++num_recv_ops;
         break;
       }
@@ -1903,12 +1862,6 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         call->receiving_message = true;
         stream_op->recv_message = true;
         call->receiving_buffer = op->data.recv_message.recv_message;
-//        stream_op_payload->recv_message.recv_message = &call->receiving_stream;
-        GRPC_CLOSURE_INIT(&call->receiving_stream_ready,
-                          receiving_stream_ready_in_call_combiner, bctl,
-                          grpc_schedule_on_exec_ctx);
-        stream_op_payload->recv_message.recv_message_ready =
-            &call->receiving_stream_ready;
         ++num_recv_ops;
         break;
       }
@@ -1936,15 +1889,6 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         call->final_op.client.error_string =
             op->data.recv_status_on_client.error_string;
         stream_op->recv_trailing_metadata = true;
-//        stream_op_payload->recv_trailing_metadata.recv_trailing_metadata =
-//            &call->metadata_batch[1 /* is_receiving */][1 /* is_trailing */];
-//        stream_op_payload->recv_trailing_metadata.collect_stats =
-//            &call->final_info.stats.transport_stream_stats;
-        GRPC_CLOSURE_INIT(&call->receiving_trailing_metadata_ready,
-                          receiving_trailing_metadata_ready, bctl,
-                          grpc_schedule_on_exec_ctx);
-        stream_op_payload->recv_trailing_metadata.recv_trailing_metadata_ready =
-            &call->receiving_trailing_metadata_ready;
         ++num_recv_ops;
         break;
       }
@@ -1967,15 +1911,6 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         call->final_op.server.cancelled =
             op->data.recv_close_on_server.cancelled;
         stream_op->recv_trailing_metadata = true;
-//        stream_op_payload->recv_trailing_metadata.recv_trailing_metadata =
-//            &call->metadata_batch[1 /* is_receiving */][1 /* is_trailing */];
-//        stream_op_payload->recv_trailing_metadata.collect_stats =
-//            &call->final_info.stats.transport_stream_stats;
-        GRPC_CLOSURE_INIT(&call->receiving_trailing_metadata_ready,
-                          receiving_trailing_metadata_ready, bctl,
-                          grpc_schedule_on_exec_ctx);
-        stream_op_payload->recv_trailing_metadata.recv_trailing_metadata_ready =
-            &call->receiving_trailing_metadata_ready;
         ++num_recv_ops;
         break;
       }

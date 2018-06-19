@@ -195,29 +195,6 @@ typedef struct {
   uint8_t unused;
 } channel_data;
 
-static void recv_im_ready(void* arg, grpc_error* error) {
-  grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  GRPC_CLOSURE_RUN(
-      calld->recv_im_ready,
-      grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                             "Failure that's not preventable.", &error, 1),
-                         GRPC_ERROR_INT_GRPC_STATUS,
-                         GRPC_STATUS_PERMISSION_DENIED));
-}
-
-static void start_transport_stream_op_batch(
-    grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  if (op->recv_initial_metadata) {
-    calld->recv_im_ready =
-        op->payload->recv_initial_metadata.recv_initial_metadata_ready;
-    op->payload->recv_initial_metadata.recv_initial_metadata_ready =
-        GRPC_CLOSURE_CREATE(recv_im_ready, elem, grpc_schedule_on_exec_ctx);
-  }
-  grpc_call_next_op(elem, op);
-}
-
 static void start_transport_stream_op_recv_batch(
     grpc_call_element* elem, grpc_transport_stream_recv_op_batch* batch,
     grpc_error* error) {
@@ -247,7 +224,7 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
 static void destroy_channel_elem(grpc_channel_element* elem) {}
 
 static const grpc_channel_filter test_filter = {
-    start_transport_stream_op_batch,
+    grpc_call_next_op,
     start_transport_stream_op_recv_batch,
     grpc_channel_next_op,
     sizeof(call_data),

@@ -29,6 +29,7 @@
 #include "src/core/ext/filters/http/client_authority_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/call.h"
@@ -40,7 +41,7 @@ namespace {
 
 struct call_data {
   grpc_linked_mdelem authority_storage;
-  grpc_call_combiner* call_combiner;
+  grpc_core::ManualConstructor<grpc_core::FilterCallCanceller> canceller;
 };
 
 struct channel_data {
@@ -63,8 +64,7 @@ void authority_start_transport_stream_op_batch(
             GRPC_MDSTR_AUTHORITY,
             grpc_slice_ref_internal(chand->default_authority)));
     if (error != GRPC_ERROR_NONE) {
-      grpc_transport_stream_op_batch_finish_with_failure(batch, error,
-                                                         calld->call_combiner);
+      calld->canceller->CancelBatch(elem, batch, error);
       return;
     }
   }
@@ -76,7 +76,7 @@ void authority_start_transport_stream_op_batch(
 grpc_error* init_call_elem(grpc_call_element* elem,
                            const grpc_call_element_args* args) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
-  calld->call_combiner = args->call_combiner;
+  calld->canceller.Init(*args);
   return GRPC_ERROR_NONE;
 }
 

@@ -47,37 +47,6 @@ void FilterTrailingMetadata(grpc_metadata_batch* b, uint64_t* elapsed_time) {
 
 }  // namespace
 
-void CensusClientCallData::OnDoneRecvTrailingMetadataCb(void* user_data,
-                                                        grpc_error* error) {
-  grpc_call_element* elem = reinterpret_cast<grpc_call_element*>(user_data);
-  CensusClientCallData* calld =
-      reinterpret_cast<CensusClientCallData*>(elem->call_data);
-  GPR_ASSERT(calld != nullptr);
-  if (error == GRPC_ERROR_NONE) {
-    GPR_ASSERT(calld->recv_trailing_metadata_ != nullptr);
-    FilterTrailingMetadata(calld->recv_trailing_metadata_,
-                           &calld->elapsed_time_);
-  }
-  GRPC_CLOSURE_RUN(calld->initial_on_done_recv_trailing_metadata_,
-                   GRPC_ERROR_REF(error));
-}
-
-void CensusClientCallData::OnDoneRecvMessageCb(void* user_data,
-                                               grpc_error* error) {
-  grpc_call_element* elem = reinterpret_cast<grpc_call_element*>(user_data);
-  CensusClientCallData* calld =
-      reinterpret_cast<CensusClientCallData*>(elem->call_data);
-  CensusChannelData* channeld =
-      reinterpret_cast<CensusChannelData*>(elem->channel_data);
-  GPR_ASSERT(calld != nullptr);
-  GPR_ASSERT(channeld != nullptr);
-  // Stream messages are no longer valid after receiving trailing metadata.
-  if ((*calld->recv_message_) != nullptr) {
-    calld->recv_message_count_++;
-  }
-  GRPC_CLOSURE_RUN(calld->initial_on_done_recv_message_, GRPC_ERROR_REF(error));
-}
-
 void CensusClientCallData::StartTransportStreamOpBatch(
     grpc_call_element* elem, TransportStreamOpBatch* op) {
   if (op->send_initial_metadata() != nullptr) {
@@ -107,23 +76,25 @@ void CensusClientCallData::StartTransportStreamOpBatch(
               grpc_mdelem_from_slices(GRPC_MDSTR_GRPC_TAGS_BIN, tags)));
     }
   }
-
   if (op->send_message() != nullptr) {
     ++sent_message_count_;
   }
-  if (op->recv_message() != nullptr) {
-    recv_message_ = op->op()->payload->recv_message.recv_message;
-    initial_on_done_recv_message_ =
-        op->op()->payload->recv_message.recv_message_ready;
-    op->op()->payload->recv_message.recv_message_ready = &on_done_recv_message_;
-  }
-  if (op->recv_trailing_metadata() != nullptr) {
-    recv_trailing_metadata_ = op->recv_trailing_metadata()->batch();
-    initial_on_done_recv_trailing_metadata_ = op->on_complete();
-    op->set_on_complete(&on_done_recv_trailing_metadata_);
-  }
   // Call next op.
   grpc_call_next_op(elem, op->op());
+}
+
+void CensusClientCallData::StartTransportStreamRecvOpBatch(
+    grpc_call_element* elem, grpc_transport_stream_recv_op_batch* batch,
+    grpc_error* error) {
+  if (batch->recv_message) {
+    if (*batch->payload->recv_message.recv_message != nullptr) {
+      recv_message_count_++;
+    }
+  }
+  if (batch->recv_trailing_metadata) {
+    FilterTrailingMetadata(recv_trailing_metadata_, &elapsed_time_);
+  }
+  grpc_call_prev_filter_recv_op_batch(elem, batch, error);
 }
 
 grpc_error* CensusClientCallData::Init(grpc_call_element* elem,
@@ -132,11 +103,6 @@ grpc_error* CensusClientCallData::Init(grpc_call_element* elem,
   start_time_ = absl::Now();
   method_ = GetMethod(&path_);
   qualified_method_ = absl::StrCat("Sent.", method_);
-  GRPC_CLOSURE_INIT(&on_done_recv_message_, OnDoneRecvMessageCb, elem,
-                    grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&on_done_recv_trailing_metadata_,
-                    OnDoneRecvTrailingMetadataCb, elem,
-                    grpc_schedule_on_exec_ctx);
   return GRPC_ERROR_NONE;
 }
 

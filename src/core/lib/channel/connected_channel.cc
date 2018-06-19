@@ -48,10 +48,7 @@ typedef struct {
 typedef struct connected_channel_call_data {
   grpc_call_combiner* call_combiner;
   // Closures used for returning results on the call combiner.
-  callback_state on_complete[6];  // Max number of pending batches.
-  callback_state recv_initial_metadata_ready;
-  callback_state recv_message_ready;
-  callback_state recv_trailing_metadata_ready;
+  callback_state on_complete[3];  // Only for send ops, so max is 3.
 } call_data;
 
 static void run_in_call_combiner(void* arg, grpc_error* error) {
@@ -82,9 +79,6 @@ static callback_state* get_state_for_batch(
   if (batch->send_initial_metadata) return &calld->on_complete[0];
   if (batch->send_message) return &calld->on_complete[1];
   if (batch->send_trailing_metadata) return &calld->on_complete[2];
-  if (batch->recv_initial_metadata) return &calld->on_complete[3];
-  if (batch->recv_message) return &calld->on_complete[4];
-  if (batch->recv_trailing_metadata) return &calld->on_complete[5];
   GPR_UNREACHABLE_CODE(return nullptr);
 }
 
@@ -101,23 +95,6 @@ static void con_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  if (batch->recv_initial_metadata) {
-    callback_state* state = &calld->recv_initial_metadata_ready;
-    intercept_callback(
-        calld, state, false, "recv_initial_metadata_ready",
-        &batch->payload->recv_initial_metadata.recv_initial_metadata_ready);
-  }
-  if (batch->recv_message) {
-    callback_state* state = &calld->recv_message_ready;
-    intercept_callback(calld, state, false, "recv_message_ready",
-                       &batch->payload->recv_message.recv_message_ready);
-  }
-  if (batch->recv_trailing_metadata) {
-    callback_state* state = &calld->recv_trailing_metadata_ready;
-    intercept_callback(
-        calld, state, false, "recv_trailing_metadata_ready",
-        &batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready);
-  }
   if (batch->cancel_stream) {
     // There can be more than one cancellation batch in flight at any
     // given time, so we can't just pick out a fixed index into

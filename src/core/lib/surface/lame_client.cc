@@ -29,6 +29,7 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
@@ -40,7 +41,7 @@ namespace grpc_core {
 namespace {
 
 struct CallData {
-  grpc_call_combiner* call_combiner;
+  ManualConstructor<FilterCallCanceller> canceller;
   grpc_linked_mdelem status;
   grpc_linked_mdelem details;
   grpc_core::atomic<bool> filled_metadata;
@@ -77,20 +78,10 @@ static void fill_metadata(grpc_call_element* elem, grpc_metadata_batch* mdb) {
 }
 
 static void lame_start_transport_stream_op_batch(
-    grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
+    grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   CallData* calld = static_cast<CallData*>(elem->call_data);
-//  if (op->recv_initial_metadata) {
-//    fill_metadata(elem,
-//                  op->payload->recv_initial_metadata.recv_initial_metadata);
-//  } else if (op->recv_trailing_metadata) {
-//    fill_metadata(elem,
-//                  op->payload->recv_trailing_metadata.recv_trailing_metadata);
-//  }
-// FIXME: initiate recv_{initial,trailing}_metadata completions when we
-// see the first batch
-  grpc_transport_stream_op_batch_finish_with_failure(
-      op, GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"),
-      calld->call_combiner);
+  calld->canceller->CancelBatch(
+      elem, batch, GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"));
 }
 
 static void lame_start_transport_stream_recv_op_batch(
@@ -136,7 +127,7 @@ static void lame_start_transport_op(grpc_channel_element* elem,
 static grpc_error* init_call_elem(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
   CallData* calld = static_cast<CallData*>(elem->call_data);
-  calld->call_combiner = args->call_combiner;
+  calld->canceller.Init(*args);
   return GRPC_ERROR_NONE;
 }
 

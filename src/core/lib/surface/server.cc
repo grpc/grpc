@@ -733,33 +733,6 @@ static void server_on_recv_initial_metadata(void* ptr, grpc_error* error) {
   GRPC_CLOSURE_RUN(calld->on_done_recv_initial_metadata, error);
 }
 
-// FIXME: remove
-#if 0
-static void server_mutate_op(grpc_call_element* elem,
-                             grpc_transport_stream_op_batch* op) {
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-
-  if (op->recv_initial_metadata) {
-    GPR_ASSERT(op->payload->recv_initial_metadata.recv_flags == nullptr);
-    calld->recv_initial_metadata =
-        op->payload->recv_initial_metadata.recv_initial_metadata;
-    calld->on_done_recv_initial_metadata =
-        op->payload->recv_initial_metadata.recv_initial_metadata_ready;
-    op->payload->recv_initial_metadata.recv_initial_metadata_ready =
-        &calld->server_on_recv_initial_metadata;
-    op->payload->recv_initial_metadata.recv_flags =
-        &calld->recv_initial_metadata_flags;
-  }
-}
-#endif
-
-// FIXME: remove -- not needed in this filter
-static void server_start_transport_stream_op_batch(
-    grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
-//  server_mutate_op(elem, op);
-  grpc_call_next_op(elem, op);
-}
-
 static void server_start_transport_stream_recv_op_batch(
     grpc_call_element* elem, grpc_transport_stream_recv_op_batch* batch,
     grpc_error* error) {
@@ -942,7 +915,7 @@ static void destroy_channel_elem(grpc_channel_element* elem) {
 }
 
 const grpc_channel_filter grpc_server_top_filter = {
-    server_start_transport_stream_op_batch,
+    grpc_call_next_op,
     server_start_transport_stream_recv_op_batch,
     grpc_channel_next_op,
     sizeof(call_data),

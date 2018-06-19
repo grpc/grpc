@@ -735,9 +735,9 @@ static void destroy_stream_locked(void* sp, grpc_error* error) {
   GPR_ASSERT(s->send_initial_metadata_finished == nullptr);
   GPR_ASSERT(s->fetching_send_message == nullptr);
   GPR_ASSERT(s->send_trailing_metadata_finished == nullptr);
-  GPR_ASSERT(s->recv_initial_metadata_ready == nullptr);
-  GPR_ASSERT(s->recv_message_ready == nullptr);
-  GPR_ASSERT(s->recv_trailing_metadata_finished == nullptr);
+  GPR_ASSERT(!s->seen_recv_initial_metadata);
+  GPR_ASSERT(!s->seen_recv_message);
+  GPR_ASSERT(!s->seen_recv_trailing_metadata);
   grpc_chttp2_data_parser_destroy(&s->data_parser);
   grpc_chttp2_incoming_metadata_buffer_destroy(&s->metadata_buffer[0]);
   grpc_chttp2_incoming_metadata_buffer_destroy(&s->metadata_buffer[1]);
@@ -1169,13 +1169,6 @@ static grpc_closure* add_closure_barrier(grpc_closure* closure) {
   return closure;
 }
 
-// FIXME: remove
-static void null_then_run_closure(grpc_closure** closure, grpc_error* error) {
-//  grpc_closure* c = *closure;
-  *closure = nullptr;
-//  GRPC_CLOSURE_RUN(c, error);
-}
-
 void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
                                        grpc_chttp2_stream* s,
                                        grpc_closure** pclosure,
@@ -1560,19 +1553,8 @@ static void perform_stream_op_locked(void* stream_op,
 
   if (op->recv_initial_metadata) {
     GRPC_STATS_INC_HTTP2_OP_RECV_INITIAL_METADATA();
-    GPR_ASSERT(s->recv_initial_metadata_ready == nullptr);
-    s->recv_initial_metadata_ready =
-        op_payload->recv_initial_metadata.recv_initial_metadata_ready;
-#if 0
-    s->recv_initial_metadata =
-        op_payload->recv_initial_metadata.recv_initial_metadata;
-    s->trailing_metadata_available =
-        op_payload->recv_initial_metadata.trailing_metadata_available;
-    if (op_payload->recv_initial_metadata.peer_string != nullptr) {
-      gpr_atm_rel_store(op_payload->recv_initial_metadata.peer_string,
-                        (gpr_atm)t->peer_string);
-    }
-#endif
+    GPR_ASSERT(!s->seen_recv_initial_metadata);
+    s->seen_recv_initial_metadata = true;
     if (s->recv_payload->recv_initial_metadata.peer_string != nullptr) {
       gpr_atm_rel_store(s->recv_payload->recv_initial_metadata.peer_string,
                         (gpr_atm)t->peer_string);
@@ -1583,10 +1565,9 @@ static void perform_stream_op_locked(void* stream_op,
   if (op->recv_message) {
     GRPC_STATS_INC_HTTP2_OP_RECV_MESSAGE();
     size_t before = 0;
-    GPR_ASSERT(s->recv_message_ready == nullptr);
+    GPR_ASSERT(!s->seen_recv_message);
     GPR_ASSERT(!s->pending_byte_stream);
-    s->recv_message_ready = op_payload->recv_message.recv_message_ready;
-//    s->recv_message = op_payload->recv_message.recv_message;
+    s->seen_recv_message = true;
     if (s->id != 0) {
       if (!s->read_closed) {
         before = s->frame_storage.length +
@@ -1607,13 +1588,8 @@ static void perform_stream_op_locked(void* stream_op,
 
   if (op->recv_trailing_metadata) {
     GRPC_STATS_INC_HTTP2_OP_RECV_TRAILING_METADATA();
-//    GPR_ASSERT(s->collecting_stats == nullptr);
-//    s->collecting_stats = op_payload->recv_trailing_metadata.collect_stats;
-    GPR_ASSERT(s->recv_trailing_metadata_finished == nullptr);
-    s->recv_trailing_metadata_finished =
-        op_payload->recv_trailing_metadata.recv_trailing_metadata_ready;
-//    s->recv_trailing_metadata =
-//        op_payload->recv_trailing_metadata.recv_trailing_metadata;
+    GPR_ASSERT(!s->seen_recv_trailing_metadata);
+    s->seen_recv_trailing_metadata = true;
     s->final_metadata_requested = true;
     grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
   }
@@ -1826,7 +1802,7 @@ static void perform_transport_op(grpc_transport* gt, grpc_transport_op* op) {
 
 void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_chttp2_transport* t,
                                                       grpc_chttp2_stream* s) {
-  if (s->recv_initial_metadata_ready != nullptr &&
+  if (s->seen_recv_initial_metadata &&
       s->published_metadata[0] != GRPC_METADATA_NOT_PUBLISHED) {
     if (s->seen_error) {
       grpc_slice_buffer_reset_and_unref_internal(&s->frame_storage);
@@ -1838,7 +1814,7 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_chttp2_transport* t,
     grpc_chttp2_incoming_metadata_buffer_publish(
         &s->metadata_buffer[0],
         s->recv_payload->recv_initial_metadata.recv_initial_metadata);
-    null_then_run_closure(&s->recv_initial_metadata_ready, GRPC_ERROR_NONE);
+    s->seen_recv_initial_metadata = false;
     grpc_transport_stream_recv_op_batch* batch =
         &s->recv_batches[GRPC_RECV_INITIAL_METADATA];
     batch->payload = s->recv_payload;
@@ -1850,7 +1826,7 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_chttp2_transport* t,
 void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
                                              grpc_chttp2_stream* s) {
   grpc_error* error = GRPC_ERROR_NONE;
-  if (s->recv_message_ready != nullptr) {
+  if (s->seen_recv_message) {
     *s->recv_payload->recv_message.recv_message = nullptr;
     if (s->final_metadata_requested && s->seen_error) {
       grpc_slice_buffer_reset_and_unref_internal(&s->frame_storage);
@@ -1924,7 +1900,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
         s->unprocessed_incoming_frames_buffer.length;
     if (error == GRPC_ERROR_NONE &&
         *s->recv_payload->recv_message.recv_message != nullptr) {
-      null_then_run_closure(&s->recv_message_ready, GRPC_ERROR_NONE);
+      s->seen_recv_message = false;
       grpc_transport_stream_recv_op_batch* batch =
           &s->recv_batches[GRPC_RECV_MESSAGE];
       batch->payload = s->recv_payload;
@@ -1932,7 +1908,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
       s->recv_batch_func(batch, s->recv_batch_arg, GRPC_ERROR_NONE);
     } else if (s->published_metadata[1] != GRPC_METADATA_NOT_PUBLISHED) {
       *s->recv_payload->recv_message.recv_message = nullptr;
-      null_then_run_closure(&s->recv_message_ready, GRPC_ERROR_NONE);
+      s->seen_recv_message = false;
       grpc_transport_stream_recv_op_batch* batch =
           &s->recv_batches[GRPC_RECV_MESSAGE];
       batch->payload = s->recv_payload;
@@ -1946,8 +1922,7 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
 void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
                                                        grpc_chttp2_stream* s) {
   grpc_chttp2_maybe_complete_recv_message(t, s);
-  if (s->recv_trailing_metadata_finished != nullptr && s->read_closed &&
-      s->write_closed) {
+  if (s->seen_recv_trailing_metadata && s->read_closed && s->write_closed) {
     if (s->seen_error || !t->is_client) {
       grpc_slice_buffer_reset_and_unref_internal(&s->frame_storage);
       if (!s->pending_byte_stream) {
@@ -1958,7 +1933,7 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
     bool pending_data = s->pending_byte_stream ||
                         s->unprocessed_incoming_frames_buffer.length > 0;
     if (s->read_closed && s->frame_storage.length > 0 && !pending_data &&
-        !s->seen_error && s->recv_trailing_metadata_finished != nullptr) {
+        !s->seen_error && s->seen_recv_trailing_metadata) {
       /* Maybe some SYNC_FLUSH data is left in frame_storage. Consume them and
        * maybe decompress the next 5 bytes in the stream. */
       bool end_of_context;
@@ -1986,15 +1961,14 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
       }
     }
     if (s->read_closed && s->frame_storage.length == 0 && !pending_data &&
-        s->recv_trailing_metadata_finished != nullptr) {
+        s->seen_recv_trailing_metadata) {
       grpc_transport_move_stats(
           &s->stats, s->recv_payload->recv_trailing_metadata.collect_stats);
 //      s->collecting_stats = nullptr;
       grpc_chttp2_incoming_metadata_buffer_publish(
           &s->metadata_buffer[1],
           s->recv_payload->recv_trailing_metadata.recv_trailing_metadata);
-      null_then_run_closure(&s->recv_trailing_metadata_finished,
-                            GRPC_ERROR_NONE);
+      s->seen_recv_trailing_metadata = false;
       grpc_transport_stream_recv_op_batch* batch =
           &s->recv_batches[GRPC_RECV_TRAILING_METADATA];
       batch->payload = s->recv_payload;
@@ -2079,14 +2053,14 @@ void grpc_chttp2_fake_status(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   if (status != GRPC_STATUS_OK) {
     s->seen_error = true;
   }
-  /* stream_global->recv_trailing_metadata_finished gives us a
+  /* stream_global->seen_recv_trailing_metadata gives us a
      last chance replacement: we've received trailing metadata,
      but something more important has become available to signal
      to the upper layers - drop what we've got, and then publish
      what we want - which is safe because we haven't told anyone
      about the metadata yet */
   if (s->published_metadata[1] == GRPC_METADATA_NOT_PUBLISHED ||
-      s->recv_trailing_metadata_finished != nullptr) {
+      s->seen_recv_trailing_metadata) {
     char status_string[GPR_LTOA_MIN_BUFSIZE];
     gpr_ltoa(status, status_string);
     GRPC_LOG_IF_ERROR("add_status",

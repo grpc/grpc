@@ -28,6 +28,7 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -42,8 +43,8 @@
 namespace {
 /* We can have a per-call credentials. */
 struct call_data {
+  grpc_core::ManualConstructor<grpc_core::FilterCallCanceller> canceller;
   grpc_call_stack* owning_call;
-  grpc_call_combiner* call_combiner;
   grpc_call_credentials* creds;
   grpc_slice host;
   grpc_slice method;
@@ -116,8 +117,7 @@ static void on_credentials_metadata(void* arg, grpc_error* input_error) {
   } else {
     error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
                                GRPC_STATUS_UNAVAILABLE);
-    grpc_transport_stream_op_batch_finish_with_failure(batch, error,
-                                                       calld->call_combiner);
+    calld->canceller->CancelBatch(elem, batch, error);
   }
   GRPC_CALL_STACK_UNREF(calld->owning_call, "get_request_metadata");
 }
@@ -190,13 +190,12 @@ static void send_security_metadata(grpc_call_element* elem,
     calld->creds = grpc_composite_call_credentials_create(channel_call_creds,
                                                           ctx->creds, nullptr);
     if (calld->creds == nullptr) {
-      grpc_transport_stream_op_batch_finish_with_failure(
-          batch,
+      calld->canceller->CancelBatch(
+          elem, batch,
           grpc_error_set_int(
               GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                   "Incompatible credentials set on channel and call."),
-              GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAUTHENTICATED),
-          calld->call_combiner);
+              GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAUTHENTICATED));
       return;
     }
   } else {
@@ -223,7 +222,7 @@ static void send_security_metadata(grpc_call_element* elem,
     // Async return; register cancellation closure with call combiner.
     GRPC_CALL_STACK_REF(calld->owning_call, "cancel_get_request_metadata");
     grpc_call_combiner_set_notify_on_cancel(
-        calld->call_combiner,
+        calld->canceller->call_combiner(),
         GRPC_CLOSURE_INIT(&calld->get_request_metadata_cancel_closure,
                           cancel_get_request_metadata, elem,
                           grpc_schedule_on_exec_ctx));
@@ -244,12 +243,11 @@ static void on_host_checked(void* arg, grpc_error* error) {
     gpr_asprintf(&error_msg, "Invalid host %s set in :authority metadata.",
                  host);
     gpr_free(host);
-    grpc_transport_stream_op_batch_finish_with_failure(
-        batch,
+    calld->canceller->CancelBatch(
+        elem, batch,
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg),
                            GRPC_ERROR_INT_GRPC_STATUS,
-                           GRPC_STATUS_UNAUTHENTICATED),
-        calld->call_combiner);
+                           GRPC_STATUS_UNAUTHENTICATED));
     gpr_free(error_msg);
   }
   GRPC_CALL_STACK_UNREF(calld->owning_call, "check_call_host");
@@ -317,7 +315,7 @@ static void auth_start_transport_stream_op_batch(
         // Async return; register cancellation closure with call combiner.
         GRPC_CALL_STACK_REF(calld->owning_call, "cancel_check_call_host");
         grpc_call_combiner_set_notify_on_cancel(
-            calld->call_combiner,
+            calld->canceller->call_combiner(),
             GRPC_CLOSURE_INIT(&calld->check_call_host_cancel_closure,
                               cancel_check_call_host, elem,
                               grpc_schedule_on_exec_ctx));
@@ -335,8 +333,8 @@ static void auth_start_transport_stream_op_batch(
 static grpc_error* init_call_elem(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
+  calld->canceller.Init(*args);
   calld->owning_call = args->call_stack;
-  calld->call_combiner = args->call_combiner;
   calld->host = grpc_empty_slice();
   calld->method = grpc_empty_slice();
   return GRPC_ERROR_NONE;

@@ -41,8 +41,6 @@ class CensusClientCallData : public CallData {
 
   CensusClientCallData()
       : recv_trailing_metadata_(nullptr),
-        initial_on_done_recv_trailing_metadata_(nullptr),
-        initial_on_done_recv_message_(nullptr),
         elapsed_time_(0),
         recv_message_(nullptr),
         recv_message_count_(0),
@@ -50,8 +48,6 @@ class CensusClientCallData : public CallData {
     memset(&stats_bin_, 0, sizeof(grpc_linked_mdelem));
     memset(&tracing_bin_, 0, sizeof(grpc_linked_mdelem));
     memset(&path_, 0, sizeof(grpc_slice));
-    memset(&on_done_recv_trailing_metadata_, 0, sizeof(grpc_closure));
-    memset(&on_done_recv_message_, 0, sizeof(grpc_closure));
   }
 
   grpc_error* Init(grpc_call_element* elem,
@@ -63,11 +59,11 @@ class CensusClientCallData : public CallData {
   void StartTransportStreamOpBatch(grpc_call_element* elem,
                                    TransportStreamOpBatch* op) override;
 
-  static void OnDoneRecvTrailingMetadataCb(void* user_data, grpc_error* error);
+  void StartTransportStreamRecvOpBatch(
+      grpc_call_element* elem, grpc_transport_stream_recv_op_batch* batch,
+      grpc_error* error) override;
 
   static void OnDoneSendInitialMetadataCb(void* user_data, grpc_error* error);
-
-  static void OnDoneRecvMessageCb(void* user_data, grpc_error* error);
 
  private:
   CensusContext context_;
@@ -78,19 +74,10 @@ class CensusClientCallData : public CallData {
   absl::string_view method_;
   std::string qualified_method_;
   grpc_slice path_;
-  // The recv trailing metadata callbacks.
-  grpc_metadata_batch* recv_trailing_metadata_;
-  grpc_closure* initial_on_done_recv_trailing_metadata_;
-  grpc_closure on_done_recv_trailing_metadata_;
-  // recv message
-  grpc_closure* initial_on_done_recv_message_;
-  grpc_closure on_done_recv_message_;
   // Start time (for measuring latency).
   absl::Time start_time_;
   // Server elapsed time in nanoseconds.
   uint64_t elapsed_time_;
-  // The received message--may be null.
-  grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message_;
   // Number of messages in this RPC.
   uint64_t recv_message_count_;
   uint64_t sent_message_count_;

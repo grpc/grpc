@@ -629,19 +629,6 @@ static void StartTransportStreamOp(grpc_call_element* elem,
 // FIXME: initiate recv batch completion as soon as we see the first batch
   // Construct list of closures to return.
   grpc_core::CallCombinerClosureList closures;
-  if (op->recv_initial_metadata) {
-    closures.Add(op->payload->recv_initial_metadata.recv_initial_metadata_ready,
-                 GRPC_ERROR_NONE, "recv_initial_metadata");
-  }
-  if (op->recv_message) {
-    closures.Add(op->payload->recv_message.recv_message_ready, GRPC_ERROR_NONE,
-                 "recv_message");
-  }
-  if (op->recv_trailing_metadata) {
-    closures.Add(
-        op->payload->recv_trailing_metadata.recv_trailing_metadata_ready,
-        GRPC_ERROR_NONE, "recv_trailing_metadata");
-  }
   if (op->on_complete != nullptr) {
     closures.Add(op->on_complete, GRPC_ERROR_NONE, "on_complete");
   }

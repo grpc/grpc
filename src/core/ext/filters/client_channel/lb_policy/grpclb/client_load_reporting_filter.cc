@@ -44,8 +44,6 @@ struct call_data {
   grpc_closure* original_on_complete_for_send;
   bool send_initial_metadata_succeeded;
   // State for intercepting recv_initial_metadata.
-  grpc_closure recv_initial_metadata_ready;
-  grpc_closure* original_recv_initial_metadata_ready;
   bool recv_initial_metadata_succeeded;
 };
 
@@ -57,15 +55,6 @@ static void on_complete_for_send(void* arg, grpc_error* error) {
     calld->send_initial_metadata_succeeded = true;
   }
   GRPC_CLOSURE_RUN(calld->original_on_complete_for_send, GRPC_ERROR_REF(error));
-}
-
-static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
-  call_data* calld = static_cast<call_data*>(arg);
-  if (error == GRPC_ERROR_NONE) {
-    calld->recv_initial_metadata_succeeded = true;
-  }
-  GRPC_CLOSURE_RUN(calld->original_recv_initial_metadata_ready,
-                   GRPC_ERROR_REF(error));
 }
 
 static grpc_error* init_call_elem(grpc_call_element* elem,
@@ -111,16 +100,6 @@ static void start_transport_stream_op_batch(
                         calld, grpc_schedule_on_exec_ctx);
       batch->on_complete = &calld->on_complete_for_send;
     }
-    // Intercept recv_initial_metadata.
-    if (batch->recv_initial_metadata) {
-      calld->original_recv_initial_metadata_ready =
-          batch->payload->recv_initial_metadata.recv_initial_metadata_ready;
-      GRPC_CLOSURE_INIT(&calld->recv_initial_metadata_ready,
-                        recv_initial_metadata_ready, calld,
-                        grpc_schedule_on_exec_ctx);
-      batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
-          &calld->recv_initial_metadata_ready;
-    }
   }
   // Chain to next filter.
   grpc_call_next_op(elem, batch);
@@ -130,6 +109,7 @@ static void start_transport_stream_recv_op_batch(
     grpc_call_element* elem, grpc_transport_stream_recv_op_batch* batch,
     grpc_error* error) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
+  // Intercept recv_initial_metadata.
   if (batch->recv_initial_metadata) {
     if (error == GRPC_ERROR_NONE) {
       calld->recv_initial_metadata_succeeded = true;

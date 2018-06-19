@@ -50,8 +50,6 @@ class CensusServerCallData : public CallData {
         sent_message_count_(0) {
     memset(&census_bin_, 0, sizeof(grpc_linked_mdelem));
     memset(&path_, 0, sizeof(grpc_slice));
-    memset(&on_done_recv_initial_metadata_, 0, sizeof(grpc_closure));
-    memset(&on_done_recv_message_, 0, sizeof(grpc_closure));
   }
 
   grpc_error* Init(grpc_call_element* elem,
@@ -63,9 +61,11 @@ class CensusServerCallData : public CallData {
   void StartTransportStreamOpBatch(grpc_call_element* elem,
                                    TransportStreamOpBatch* op) override;
 
-  static void OnDoneRecvInitialMetadataCb(void* user_data, grpc_error* error);
+  void StartTransportStreamRecvOpBatch(
+      grpc_call_element* elem, grpc_transport_stream_recv_op_batch* batch,
+      grpc_error* error) override;
 
-  static void OnDoneRecvMessageCb(void* user_data, grpc_error* error);
+  void OnDoneRecvInitialMetadata(grpc_transport_stream_recv_op_batch* batch);
 
  private:
   CensusContext context_;
@@ -79,16 +79,8 @@ class CensusServerCallData : public CallData {
   grpc_auth_context* auth_context_;
   // Metadata element for census stats.
   grpc_linked_mdelem census_bin_;
-  // recv callback
-  grpc_metadata_batch* recv_initial_metadata_;
-  grpc_closure* initial_on_done_recv_initial_metadata_;
-  grpc_closure on_done_recv_initial_metadata_;
-  // recv message
-  grpc_closure* initial_on_done_recv_message_;
-  grpc_closure on_done_recv_message_;
   absl::Time start_time_;
   absl::Duration elapsed_time_;
-  grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message_;
   uint64_t recv_message_count_;
   uint64_t sent_message_count_;
   // Buffer needed for grpc_slice to reference it when adding metatdata to

@@ -128,27 +128,6 @@ static void cancel_timer_if_needed(grpc_deadline_state* deadline_state) {
   }
 }
 
-// Callback run when we receive trailing metadata.
-static void recv_trailing_metadata_ready(void* arg, grpc_error* error) {
-  grpc_deadline_state* deadline_state = static_cast<grpc_deadline_state*>(arg);
-  cancel_timer_if_needed(deadline_state);
-  // Invoke the original callback.
-  GRPC_CLOSURE_RUN(deadline_state->original_recv_trailing_metadata_ready,
-                   GRPC_ERROR_REF(error));
-}
-
-// Inject our own recv_trailing_metadata_ready callback into op.
-static void inject_recv_trailing_metadata_ready(
-    grpc_deadline_state* deadline_state, grpc_transport_stream_op_batch* op) {
-  deadline_state->original_recv_trailing_metadata_ready =
-      op->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
-  GRPC_CLOSURE_INIT(&deadline_state->recv_trailing_metadata_ready,
-                    recv_trailing_metadata_ready, deadline_state,
-                    grpc_schedule_on_exec_ctx);
-  op->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
-      &deadline_state->recv_trailing_metadata_ready;
-}
-
 // Callback and associated state for starting the timer after call stack
 // initialization has been completed.
 struct start_timer_after_init_state {
@@ -226,12 +205,6 @@ void grpc_deadline_state_client_start_transport_stream_op_batch(
       static_cast<grpc_deadline_state*>(elem->call_data);
   if (op->cancel_stream) {
     cancel_timer_if_needed(deadline_state);
-  } else {
-    // Make sure we know when the call is complete, so that we can cancel
-    // the timer.
-    if (op->recv_trailing_metadata) {
-      inject_recv_trailing_metadata_ready(deadline_state, op);
-    }
   }
 }
 
@@ -267,13 +240,8 @@ typedef struct base_call_data {
 // Additional call data used only for the server filter.
 typedef struct server_call_data {
   base_call_data base;  // Must be first.
-  // The closure for receiving initial metadata.
-  grpc_closure recv_initial_metadata_ready;
   // Received initial metadata batch.
   grpc_metadata_batch* recv_initial_metadata;
-  // The original recv_initial_metadata_ready closure, which we chain to
-  // after our own closure is invoked.
-  grpc_closure* next_recv_initial_metadata_ready;
 } server_call_data;
 
 // Constructor for call_data.  Used for both client and server filters.
@@ -309,49 +277,12 @@ static void client_start_transport_stream_recv_op_batch(
   grpc_call_prev_filter_recv_op_batch(elem, batch, error);
 }
 
-#if 0
-// Callback for receiving initial metadata on the server.
-static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
-  grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
-  server_call_data* calld = static_cast<server_call_data*>(elem->call_data);
-  start_timer_if_needed(elem, calld->recv_initial_metadata->deadline);
-  // Invoke the next callback.
-  GRPC_CLOSURE_RUN(calld->next_recv_initial_metadata_ready,
-                   GRPC_ERROR_REF(error));
-}
-#endif
-
 // Method for starting a call op for server filter.
 static void server_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
   server_call_data* calld = static_cast<server_call_data*>(elem->call_data);
   if (op->cancel_stream) {
     cancel_timer_if_needed(&calld->base.deadline_state);
-#if 0
-  } else {
-    // If we're receiving initial metadata, we need to get the deadline
-    // from the recv_initial_metadata_ready callback.  So we inject our
-    // own callback into that hook.
-    if (op->recv_initial_metadata) {
-      calld->next_recv_initial_metadata_ready =
-          op->payload->recv_initial_metadata.recv_initial_metadata_ready;
-      calld->recv_initial_metadata =
-          op->payload->recv_initial_metadata.recv_initial_metadata;
-      GRPC_CLOSURE_INIT(&calld->recv_initial_metadata_ready,
-                        recv_initial_metadata_ready, elem,
-                        grpc_schedule_on_exec_ctx);
-      op->payload->recv_initial_metadata.recv_initial_metadata_ready =
-          &calld->recv_initial_metadata_ready;
-    }
-    // Make sure we know when the call is complete, so that we can cancel
-    // the timer.
-    // Note that we trigger this on recv_trailing_metadata, even though
-    // the client never sends trailing metadata, because this is the
-    // hook that tells us when the call is complete on the server side.
-    if (op->recv_trailing_metadata) {
-      inject_recv_trailing_metadata_ready(&calld->base.deadline_state, op);
-    }
-#endif
   }
   // Chain to next filter.
   grpc_call_next_op(elem, op);

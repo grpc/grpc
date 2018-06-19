@@ -819,15 +819,12 @@ typedef struct {
   grpc_metadata_batch send_trailing_metadata;
   // For intercepting recv_initial_metadata.
   grpc_metadata_batch recv_initial_metadata;
-  grpc_closure recv_initial_metadata_ready;
   bool trailing_metadata_available;
   // For intercepting recv_message.
-  grpc_closure recv_message_ready;
   grpc_core::OrphanablePtr<grpc_core::ByteStream> recv_message;
   // For intercepting recv_trailing_metadata.
   grpc_metadata_batch recv_trailing_metadata;
   grpc_transport_stream_stats collect_stats;
-  grpc_closure recv_trailing_metadata_ready;
   // These fields indicate which ops have been started and completed on
   // this subchannel call.
   size_t started_send_message_count;
@@ -844,9 +841,9 @@ typedef struct {
   bool completed_recv_trailing_metadata : 1;
   // State for callback processing.
   bool retry_dispatched : 1;
-  subchannel_batch_data* recv_initial_metadata_ready_deferred_batch;
+  subchannel_batch_data* recv_initial_metadata_deferred_batch;
   grpc_error* recv_initial_metadata_error;
-  subchannel_batch_data* recv_message_ready_deferred_batch;
+  subchannel_batch_data* recv_message_deferred_batch;
   grpc_error* recv_message_error;
   subchannel_batch_data* recv_trailing_metadata_internal_batch;
 // FIXME: maybe use this instead of completed_recv_trailing_metadata?
@@ -871,7 +868,10 @@ typedef struct {
   // The pending batch.  If nullptr, this slot is empty.
   grpc_transport_stream_op_batch* batch;
   // Indicates whether payload for send ops has been cached in call data.
-  bool send_ops_cached;
+  bool send_ops_cached : 1;
+  bool recv_initial_metadata_complete : 1;
+  bool recv_message_complete : 1;
+  bool recv_trailing_metadata_complete : 1;
 } pending_batch;
 
 /** Call data.  Holds a pointer to grpc_subchannel_call and the
@@ -887,6 +887,8 @@ typedef struct client_channel_call_data {
   // and call combiner.  If/when we have time, find a way to avoid this
   // without breaking the grpc_deadline_state abstraction.
   grpc_deadline_state deadline_state;
+
+  grpc_core::ManualConstructor<grpc_core::FilterCallCanceller> canceller;
 
   grpc_slice path;  // Request path.
   gpr_timespec call_start_time;
@@ -1197,16 +1199,6 @@ static void pending_batch_clear(call_data* calld, pending_batch* pending) {
 }
 
 // This is called via the call combiner, so access to calld is synchronized.
-static void fail_pending_batch_in_call_combiner(void* arg, grpc_error* error) {
-  grpc_transport_stream_op_batch* batch =
-      static_cast<grpc_transport_stream_op_batch*>(arg);
-  call_data* calld = static_cast<call_data*>(batch->handler_private.extra_arg);
-  // Note: This will release the call combiner.
-  grpc_transport_stream_op_batch_finish_with_failure(
-      batch, GRPC_ERROR_REF(error), calld->call_combiner);
-}
-
-// This is called via the call combiner, so access to calld is synchronized.
 // If yield_call_combiner is true, assumes responsibility for yielding
 // the call combiner.
 static void pending_batches_fail(grpc_call_element* elem, grpc_error* error,
@@ -1227,12 +1219,8 @@ static void pending_batches_fail(grpc_call_element* elem, grpc_error* error,
     pending_batch* pending = &calld->pending_batches[i];
     grpc_transport_stream_op_batch* batch = pending->batch;
     if (batch != nullptr) {
-      batch->handler_private.extra_arg = calld;
-      GRPC_CLOSURE_INIT(&batch->handler_private.closure,
-                        fail_pending_batch_in_call_combiner, batch,
-                        grpc_schedule_on_exec_ctx);
-      closures.Add(&batch->handler_private.closure, GRPC_ERROR_REF(error),
-                   "pending_batches_fail");
+      calld->canceller->PopulateCancelCallbackList(
+          elem, batch, GRPC_ERROR_REF(error), &closures);
       pending_batch_clear(calld, pending);
     }
   }
@@ -1308,13 +1296,10 @@ static void maybe_clear_pending_batch(grpc_call_element* elem,
   // scheduled and reset to nullptr.
   if (batch->on_complete == nullptr &&
       (!batch->recv_initial_metadata ||
-       batch->payload->recv_initial_metadata.recv_initial_metadata_ready ==
-           nullptr) &&
-      (!batch->recv_message ||
-       batch->payload->recv_message.recv_message_ready == nullptr) &&
+       pending->recv_initial_metadata_complete) &&
+      (!batch->recv_message || pending->recv_message_complete) &&
       (!batch->recv_trailing_metadata ||
-       batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready ==
-           nullptr)) {
+       pending->recv_trailing_metadata_complete)) {
     if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_INFO, "chand=%p calld=%p: clearing pending batch", chand,
               calld);
@@ -1333,8 +1318,7 @@ static pending_batch* pending_batch_find(grpc_call_element* elem,
   call_data* calld = static_cast<call_data*>(elem->call_data);
   for (size_t i = 0; i < GPR_ARRAY_SIZE(calld->pending_batches); ++i) {
     pending_batch* pending = &calld->pending_batches[i];
-    grpc_transport_stream_op_batch* batch = pending->batch;
-    if (batch != nullptr && predicate(batch)) {
+    if (pending->batch != nullptr && predicate(pending)) {
       if (grpc_client_channel_trace.enabled()) {
         gpr_log(GPR_INFO,
                 "chand=%p calld=%p: %s pending batch at index %" PRIuPTR, chand,
@@ -1590,20 +1574,19 @@ static void complete_recv_initial_metadata(
       calld->recv_payload->recv_initial_metadata.recv_initial_metadata);
   // Clear pending batch if needed.
   pending_batch* pending = pending_batch_find(
-      elem, "invoking recv_initial_metadata_ready for",
-      [](grpc_transport_stream_op_batch* batch) {
-        return batch->recv_initial_metadata &&
-               batch->payload->recv_initial_metadata
-                       .recv_initial_metadata_ready != nullptr;
+      elem, "completing recv_initial_metadata for",
+      [](pending_batch* pending) {
+        return pending->batch->recv_initial_metadata &&
+               !pending->recv_initial_metadata_complete;
       });
   if (pending != nullptr) {
-    pending->batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
-        nullptr;
+    pending->recv_initial_metadata_complete = true;
     maybe_clear_pending_batch(elem, pending);
   }
 }
 
 // Invokes recv_initial_metadata_ready for a subchannel batch.
+// FIXME: rename
 static void invoke_recv_initial_metadata_callback(void* arg,
                                                   grpc_error* error) {
   subchannel_batch_data* batch_data = static_cast<subchannel_batch_data*>(arg);
@@ -1613,64 +1596,6 @@ static void invoke_recv_initial_metadata_callback(void* arg,
   complete_recv_initial_metadata(elem, retry_state);
   batch_data_unref(batch_data);
 }
-
-#if 0
-// Intercepts recv_initial_metadata_ready callback for retries.
-// Commits the call and returns the initial metadata up the stack.
-static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
-  subchannel_batch_data* batch_data = static_cast<subchannel_batch_data*>(arg);
-  grpc_call_element* elem = batch_data->elem;
-  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  if (grpc_client_channel_trace.enabled()) {
-    gpr_log(GPR_INFO,
-            "chand=%p calld=%p: got recv_initial_metadata_ready, error=%s",
-            chand, calld, grpc_error_string(error));
-  }
-  subchannel_call_retry_state* retry_state =
-      get_subchannel_call_retry_state(batch_data->subchannel_call);
-  retry_state->completed_recv_initial_metadata = true;
-  // If a retry was already dispatched, then we're not going to use the
-  // result of this recv_initial_metadata op, so do nothing.
-  if (retry_state->retry_dispatched) {
-    GRPC_CALL_COMBINER_STOP(
-        calld->call_combiner,
-        "recv_initial_metadata_ready after retry dispatched");
-    return;
-  }
-  // If we got an error or a Trailers-Only response and have not yet gotten
-  // the recv_trailing_metadata_ready callback, then defer propagating this
-  // callback back to the surface.  We can evaluate whether to retry when
-  // recv_trailing_metadata comes back.
-  if (GPR_UNLIKELY((retry_state->trailing_metadata_available ||
-                    error != GRPC_ERROR_NONE) &&
-                   !retry_state->completed_recv_trailing_metadata)) {
-    if (grpc_client_channel_trace.enabled()) {
-      gpr_log(GPR_INFO,
-              "chand=%p calld=%p: deferring recv_initial_metadata_ready "
-              "(Trailers-Only)",
-              chand, calld);
-    }
-    retry_state->recv_initial_metadata_ready_deferred_batch = batch_data;
-    retry_state->recv_initial_metadata_error = GRPC_ERROR_REF(error);
-    if (!retry_state->started_recv_trailing_metadata) {
-      // recv_trailing_metadata not yet started by application; start it
-      // ourselves to get status.
-      start_internal_recv_trailing_metadata(elem);
-    } else {
-      GRPC_CALL_COMBINER_STOP(
-          calld->call_combiner,
-          "recv_initial_metadata_ready trailers-only or error");
-    }
-    return;
-  }
-  // Received valid initial metadata, so commit the call.
-  retry_commit(elem, retry_state);
-  // Invoke the callback to return the result to the surface.
-  // Manually invoking a callback function; it does not take ownership of error.
-  invoke_recv_initial_metadata_callback(batch_data, error);
-}
-#endif
 
 //
 // recv_message callback handling
@@ -1684,18 +1609,19 @@ static void complete_recv_message(grpc_call_element* elem,
       std::move(retry_state->recv_message);
   // Clear pending batch if needed.
   pending_batch* pending = pending_batch_find(
-      elem, "invoking recv_message_ready for",
-      [](grpc_transport_stream_op_batch* batch) {
-        return batch->recv_message &&
-               batch->payload->recv_message.recv_message_ready != nullptr;
+      elem, "completing recv_message for",
+      [](pending_batch* pending) {
+        return pending->batch->recv_message &&
+               !pending->recv_message_complete;
       });
   if (pending != nullptr) {
-    pending->batch->payload->recv_message.recv_message_ready = nullptr;
+    pending->recv_message_complete = true;
     maybe_clear_pending_batch(elem, pending);
   }
 }
 
 // Invokes recv_message_ready for a subchannel batch.
+// FIXME: rename
 static void invoke_recv_message_callback(void* arg, grpc_error* error) {
   subchannel_batch_data* batch_data = static_cast<subchannel_batch_data*>(arg);
   grpc_call_element* elem = batch_data->elem;
@@ -1704,60 +1630,6 @@ static void invoke_recv_message_callback(void* arg, grpc_error* error) {
   complete_recv_message(elem, retry_state);
   batch_data_unref(batch_data);
 }
-
-#if 0
-// Intercepts recv_message_ready callback for retries.
-// Commits the call and returns the message up the stack.
-static void recv_message_ready(void* arg, grpc_error* error) {
-  subchannel_batch_data* batch_data = static_cast<subchannel_batch_data*>(arg);
-  grpc_call_element* elem = batch_data->elem;
-  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  if (grpc_client_channel_trace.enabled()) {
-    gpr_log(GPR_INFO, "chand=%p calld=%p: got recv_message_ready, error=%s",
-            chand, calld, grpc_error_string(error));
-  }
-  subchannel_call_retry_state* retry_state =
-      get_subchannel_call_retry_state(batch_data->subchannel_call);
-  ++retry_state->completed_recv_message_count;
-  // If a retry was already dispatched, then we're not going to use the
-  // result of this recv_message op, so do nothing.
-  if (retry_state->retry_dispatched) {
-    GRPC_CALL_COMBINER_STOP(calld->call_combiner,
-                            "recv_message_ready after retry dispatched");
-    return;
-  }
-  // If we got an error or the payload was nullptr and we have not yet gotten
-  // the recv_trailing_metadata_ready callback, then defer propagating this
-  // callback back to the surface.  We can evaluate whether to retry when
-  // recv_trailing_metadata comes back.
-  if (GPR_UNLIKELY(
-          (retry_state->recv_message == nullptr || error != GRPC_ERROR_NONE) &&
-          !retry_state->completed_recv_trailing_metadata)) {
-    if (grpc_client_channel_trace.enabled()) {
-      gpr_log(GPR_INFO,
-              "chand=%p calld=%p: deferring recv_message_ready (nullptr "
-              "message and recv_trailing_metadata pending)",
-              chand, calld);
-    }
-    retry_state->recv_message_ready_deferred_batch = batch_data;
-    retry_state->recv_message_error = GRPC_ERROR_REF(error);
-    if (!retry_state->started_recv_trailing_metadata) {
-      // recv_trailing_metadata not yet started by application; start it
-      // ourselves to get status.
-      start_internal_recv_trailing_metadata(elem);
-    } else {
-      GRPC_CALL_COMBINER_STOP(calld->call_combiner, "recv_message_ready null");
-    }
-    return;
-  }
-  // Received a valid message, so commit the call.
-  retry_commit(elem, retry_state);
-  // Invoke the callback to return the result to the surface.
-  // Manually invoking a callback function; it does not take ownership of error.
-  invoke_recv_message_callback(batch_data, error);
-}
-#endif
 
 //
 // recv_trailing_metadata handling
@@ -1801,90 +1673,18 @@ static bool complete_recv_trailing_metadata(
   // Find pending batch.
   pending_batch* pending = pending_batch_find(
       elem, "invoking recv_trailing_metadata for",
-      [](grpc_transport_stream_op_batch* batch) {
-        return batch->recv_trailing_metadata &&
-               batch->payload->recv_trailing_metadata
-                       .recv_trailing_metadata_ready != nullptr;
+      [](pending_batch* pending) {
+        return pending->batch->recv_trailing_metadata &&
+               !pending->recv_trailing_metadata_complete;
       });
   // Clear pending batch if needed.
   if (pending != nullptr) {
-    pending->batch->payload->recv_trailing_metadata
-        .recv_trailing_metadata_ready = nullptr;
+    pending->recv_trailing_metadata_complete = true;
     maybe_clear_pending_batch(elem, pending);
     return true;
   }
   return false;
 }
-
-#if 0
-// Adds recv_trailing_metadata_ready closure to closures.
-static void add_closure_for_recv_trailing_metadata_ready(
-    grpc_call_element* elem, subchannel_batch_data* batch_data,
-    grpc_error* error, grpc_core::CallCombinerClosureList* closures) {
-  // Find pending batch.
-  pending_batch* pending = pending_batch_find(
-      elem, "invoking recv_trailing_metadata for",
-      [](grpc_transport_stream_op_batch* batch) {
-        return batch->recv_trailing_metadata &&
-               batch->payload->recv_trailing_metadata
-                       .recv_trailing_metadata_ready != nullptr;
-      });
-  // If we generated the recv_trailing_metadata op internally via
-  // start_internal_recv_trailing_metadata(), then there will be no
-  // pending batch.
-  if (pending == nullptr) {
-    GRPC_ERROR_UNREF(error);
-    return;
-  }
-  // Return metadata.
-  subchannel_call_retry_state* retry_state =
-      get_subchannel_call_retry_state(batch_data->subchannel_call);
-  grpc_metadata_batch_move(
-      &retry_state->recv_trailing_metadata,
-      retry_state->recv_payload.recv_trailing_metadata.recv_trailing_metadata);
-  // Add closure.
-  closures->Add(pending->batch->payload->recv_trailing_metadata
-                    .recv_trailing_metadata_ready,
-                error, "recv_trailing_metadata_ready for pending batch");
-  // Update bookkeeping.
-  pending->batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
-      nullptr;
-  maybe_clear_pending_batch(elem, pending);
-}
-
-// Adds any necessary closures for deferred recv_initial_metadata and
-// recv_message callbacks to closures.
-static void add_closures_for_deferred_recv_callbacks(
-    subchannel_batch_data* batch_data, subchannel_call_retry_state* retry_state,
-    grpc_core::CallCombinerClosureList* closures) {
-  if (batch_data->batch.recv_trailing_metadata) {
-    // Add closure for deferred recv_initial_metadata_ready.
-    if (GPR_UNLIKELY(retry_state->recv_initial_metadata_ready_deferred_batch !=
-                     nullptr)) {
-      GRPC_CLOSURE_INIT(&retry_state->recv_initial_metadata_ready,
-                        invoke_recv_initial_metadata_callback,
-                        retry_state->recv_initial_metadata_ready_deferred_batch,
-                        grpc_schedule_on_exec_ctx);
-      closures->Add(&retry_state->recv_initial_metadata_ready,
-                    retry_state->recv_initial_metadata_error,
-                    "resuming recv_initial_metadata_ready");
-      retry_state->recv_initial_metadata_ready_deferred_batch = nullptr;
-    }
-    // Add closure for deferred recv_message_ready.
-    if (GPR_UNLIKELY(retry_state->recv_message_ready_deferred_batch !=
-                     nullptr)) {
-      GRPC_CLOSURE_INIT(&retry_state->recv_message_ready,
-                        invoke_recv_message_callback,
-                        retry_state->recv_message_ready_deferred_batch,
-                        grpc_schedule_on_exec_ctx);
-      closures->Add(&retry_state->recv_message_ready,
-                    retry_state->recv_message_error,
-                    "resuming recv_message_ready");
-      retry_state->recv_message_ready_deferred_batch = nullptr;
-    }
-  }
-}
-#endif
 
 // Returns true if any op in the batch was not yet started.
 // Only looks at send ops, since recv ops are always started immediately.
@@ -1934,79 +1734,6 @@ static void add_closures_to_fail_unstarted_pending_batches(
   GRPC_ERROR_UNREF(error);
 }
 
-#if 0
-// Runs necessary closures upon completion of a call attempt.
-static void run_closures_for_completed_call(subchannel_batch_data* batch_data,
-                                            grpc_error* error) {
-  grpc_call_element* elem = batch_data->elem;
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  subchannel_call_retry_state* retry_state =
-      get_subchannel_call_retry_state(batch_data->subchannel_call);
-  // Construct list of closures to execute.
-  grpc_core::CallCombinerClosureList closures;
-  // First, add closure for recv_trailing_metadata_ready.
-  add_closure_for_recv_trailing_metadata_ready(
-      elem, batch_data, GRPC_ERROR_REF(error), &closures);
-  // If there are deferred recv_initial_metadata_ready or recv_message_ready
-  // callbacks, add them to closures.
-  add_closures_for_deferred_recv_callbacks(batch_data, retry_state, &closures);
-  // Add closures to fail any pending batches that have not yet been started.
-  add_closures_to_fail_unstarted_pending_batches(
-      elem, retry_state, GRPC_ERROR_REF(error), &closures);
-  // Don't need batch_data anymore.
-  batch_data_unref(batch_data);
-  // Schedule all of the closures identified above.
-  // Note: This will release the call combiner.
-  closures.RunClosures(calld->call_combiner);
-  GRPC_ERROR_UNREF(error);
-}
-
-// Intercepts recv_trailing_metadata_ready callback for retries.
-// Commits the call and returns the trailing metadata up the stack.
-static void recv_trailing_metadata_ready(void* arg, grpc_error* error) {
-  subchannel_batch_data* batch_data = static_cast<subchannel_batch_data*>(arg);
-  grpc_call_element* elem = batch_data->elem;
-  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  if (grpc_client_channel_trace.enabled()) {
-    gpr_log(GPR_INFO,
-            "chand=%p calld=%p: got recv_trailing_metadata_ready, error=%s",
-            chand, calld, grpc_error_string(error));
-  }
-  subchannel_call_retry_state* retry_state =
-      get_subchannel_call_retry_state(batch_data->subchannel_call);
-  retry_state->completed_recv_trailing_metadata = true;
-  // Get the call's status and check for server pushback metadata.
-  grpc_status_code status = GRPC_STATUS_OK;
-  grpc_mdelem* server_pushback_md = nullptr;
-  get_call_status(elem, retry_state, GRPC_ERROR_REF(error), &status,
-                  &server_pushback_md);
-  if (grpc_client_channel_trace.enabled()) {
-    gpr_log(GPR_INFO, "chand=%p calld=%p: call finished, status=%s", chand,
-            calld, grpc_status_code_to_string(status));
-  }
-  // Check if we should retry.
-  if (maybe_retry(elem, batch_data, status, server_pushback_md)) {
-    // Unref batch_data for deferred recv_initial_metadata_ready or
-    // recv_message_ready callbacks, if any.
-    if (retry_state->recv_initial_metadata_ready_deferred_batch != nullptr) {
-      batch_data_unref(batch_data);
-      GRPC_ERROR_UNREF(retry_state->recv_initial_metadata_error);
-    }
-    if (retry_state->recv_message_ready_deferred_batch != nullptr) {
-      batch_data_unref(batch_data);
-      GRPC_ERROR_UNREF(retry_state->recv_message_error);
-    }
-    batch_data_unref(batch_data);
-    return;
-  }
-  // Not retrying, so commit the call.
-  retry_commit(elem, retry_state);
-  // Run any necessary closures.
-  run_closures_for_completed_call(batch_data, GRPC_ERROR_REF(error));
-}
-#endif
-
 //
 // on_complete callback handling
 //
@@ -2018,7 +1745,8 @@ static void add_closure_for_completed_pending_batch(
     subchannel_call_retry_state* retry_state, grpc_error* error,
     grpc_core::CallCombinerClosureList* closures) {
   pending_batch* pending = pending_batch_find(
-      elem, "completed", [batch_data](grpc_transport_stream_op_batch* batch) {
+      elem, "completed", [batch_data](pending_batch* pending) {
+        grpc_transport_stream_op_batch* batch = pending->batch;
         // Match the pending batch with the same set of send ops as the
         // subchannel batch we've just completed.
         return batch->on_complete != nullptr &&
@@ -2264,12 +1992,6 @@ static void add_retriable_recv_initial_metadata_op(
   retry_state->started_recv_initial_metadata = true;
   retry_state->recv_initial_metadata_batch = batch_data;
   batch_data->batch.recv_initial_metadata = true;
-// FIXME
-//  GRPC_CLOSURE_INIT(&retry_state->recv_initial_metadata_ready,
-//                    recv_initial_metadata_ready, batch_data,
-//                    grpc_schedule_on_exec_ctx);
-  batch_data->batch.payload->recv_initial_metadata.recv_initial_metadata_ready =
-      &retry_state->recv_initial_metadata_ready;
 }
 
 // Adds retriable recv_message op to batch_data.
@@ -2279,11 +2001,6 @@ static void add_retriable_recv_message_op(
   ++retry_state->started_recv_message_count;
   retry_state->recv_message_batch = batch_data;
   batch_data->batch.recv_message = true;
-// FIXME
-//  GRPC_CLOSURE_INIT(&retry_state->recv_message_ready, recv_message_ready,
-//                    batch_data, grpc_schedule_on_exec_ctx);
-  batch_data->batch.payload->recv_message.recv_message_ready =
-      &retry_state->recv_message_ready;
 }
 
 // Adds retriable recv_trailing_metadata op to batch_data.
@@ -2293,13 +2010,6 @@ static void add_retriable_recv_trailing_metadata_op(
   retry_state->started_recv_trailing_metadata = true;
   retry_state->recv_trailing_metadata_batch = batch_data;
   batch_data->batch.recv_trailing_metadata = true;
-// FIXME
-//  GRPC_CLOSURE_INIT(&retry_state->recv_trailing_metadata_ready,
-//                    recv_trailing_metadata_ready, batch_data,
-//                    grpc_schedule_on_exec_ctx);
-  batch_data->batch.payload->recv_trailing_metadata
-      .recv_trailing_metadata_ready =
-          &retry_state->recv_trailing_metadata_ready;
 }
 
 // FIXME: rename and document
@@ -2315,7 +2025,7 @@ static void start_internal_recv_trailing_metadata_aux(grpc_call_element* elem) {
   subchannel_call_retry_state* retry_state =
       get_subchannel_call_retry_state(calld->subchannel_call);
   // Create batch_data with 2 refs, since this batch will be unreffed twice:
-  // once for the recv_trailing_metadata_ready callback when the subchannel
+  // once for the recv_trailing_metadata completion when the subchannel
   // batch returns, and again when we actually get a recv_trailing_metadata
   // op from the surface.
   subchannel_batch_data* batch_data =
@@ -2323,21 +2033,6 @@ static void start_internal_recv_trailing_metadata_aux(grpc_call_element* elem) {
   add_retriable_recv_trailing_metadata_op(calld, retry_state, batch_data);
   retry_state->recv_trailing_metadata_internal_batch = batch_data;
 }
-
-#if 0
-// Helper function used to start a recv_trailing_metadata batch.  This
-// is used in the case where a recv_initial_metadata or recv_message
-// op fails in a way that we know the call is over but when the application
-// has not yet started its own recv_trailing_metadata op.
-static void start_internal_recv_trailing_metadata(grpc_call_element* elem) {
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  subchannel_call_retry_state* retry_state =
-      get_subchannel_call_retry_state(calld->subchannel_call);
-  grpc_subchannel_call_process_op(
-      calld->subchannel_call,
-      &retry_state->recv_trailing_metadata_internal_batch->batch);
-}
-#endif
 
 // If there are any cached send ops that need to be replayed on the
 // current subchannel call, creates and returns a new subchannel batch
@@ -2491,7 +2186,7 @@ gpr_log(GPR_INFO, "HERE 2");
                   .closure,
               GRPC_ERROR_NONE,
 // FIXME: update reason text
-              "re-executing recv_trailing_metadata_ready to propagate "
+              "re-executing recv_trailing_metadata completion to propagate "
               "internally triggered result");
         } else {
 gpr_log(GPR_INFO, "HERE 3");
@@ -3095,8 +2790,8 @@ static void cc_start_transport_stream_op_batch(
               chand, calld, grpc_error_string(calld->cancel_error));
     }
     // Note: This will release the call combiner.
-    grpc_transport_stream_op_batch_finish_with_failure(
-        batch, GRPC_ERROR_REF(calld->cancel_error), calld->call_combiner);
+    calld->canceller->CancelBatch(elem, batch,
+                                  GRPC_ERROR_REF(calld->cancel_error));
     return;
   }
   // Handle cancellation.
@@ -3120,8 +2815,8 @@ static void cc_start_transport_stream_op_batch(
       pending_batches_fail(elem, GRPC_ERROR_REF(calld->cancel_error),
                            false /* yield_call_combiner */);
       // Note: This will release the call combiner.
-      grpc_transport_stream_op_batch_finish_with_failure(
-          batch, GRPC_ERROR_REF(calld->cancel_error), calld->call_combiner);
+      calld->canceller->CancelBatch(elem, batch,
+                                    GRPC_ERROR_REF(calld->cancel_error));
     } else {
       // Note: This will release the call combiner.
       grpc_subchannel_call_process_op(calld->subchannel_call, batch);
@@ -3236,11 +2931,11 @@ gpr_log(GPR_INFO, "enable_retries=false");
                          !batch->recv_trailing_metadata)) {
           if (grpc_client_channel_trace.enabled()) {
             gpr_log(GPR_INFO,
-                    "chand=%p calld=%p: deferring recv_initial_metadata_ready "
-                    "(Trailers-Only)",
+                    "chand=%p calld=%p: deferring recv_initial_metadata "
+                    "completion (Trailers-Only)",
                     chand, calld);
           }
-          retry_state->recv_initial_metadata_ready_deferred_batch = batch_data;
+          retry_state->recv_initial_metadata_deferred_batch = batch_data;
           retry_state->recv_initial_metadata_error = GRPC_ERROR_REF(error);
           batch->recv_initial_metadata = false;
           if (!retry_state->started_recv_trailing_metadata) {
@@ -3296,11 +2991,11 @@ gpr_log(GPR_INFO, "enable_retries=false");
                          !batch->recv_trailing_metadata)) {
           if (grpc_client_channel_trace.enabled()) {
             gpr_log(GPR_INFO,
-                    "chand=%p calld=%p: deferring recv_message_ready (nullptr "
-                    "message and recv_trailing_metadata pending)",
+                    "chand=%p calld=%p: deferring recv_message completion "
+                    "(nullptr message and recv_trailing_metadata pending)",
                     chand, calld);
           }
-          retry_state->recv_message_ready_deferred_batch = batch_data;
+          retry_state->recv_message_deferred_batch = batch_data;
           retry_state->recv_message_error = GRPC_ERROR_REF(error);
           batch->recv_message = false;
           if (!retry_state->started_recv_trailing_metadata) {
@@ -3358,16 +3053,16 @@ gpr_log(GPR_INFO, "enable_retries=false");
       // Check if we should retry.
       if (batch_data != nullptr &&
           maybe_retry(elem, batch_data, status, server_pushback_md)) {
-        // Unref batch_data for deferred recv_initial_metadata_ready or
-        // recv_message_ready callbacks, if any.
-        if (retry_state->recv_initial_metadata_ready_deferred_batch !=
+        // Unref batch_data for deferred recv_initial_metadata or
+        // recv_message completions, if any.
+        if (retry_state->recv_initial_metadata_deferred_batch !=
             nullptr) {
           batch_data_unref(
-              retry_state->recv_initial_metadata_ready_deferred_batch);
+              retry_state->recv_initial_metadata_deferred_batch);
           GRPC_ERROR_UNREF(retry_state->recv_initial_metadata_error);
         }
-        if (retry_state->recv_message_ready_deferred_batch != nullptr) {
-          batch_data_unref(retry_state->recv_message_ready_deferred_batch);
+        if (retry_state->recv_message_deferred_batch != nullptr) {
+          batch_data_unref(retry_state->recv_message_deferred_batch);
           GRPC_ERROR_UNREF(retry_state->recv_message_error);
         }
         batch_data_unref(batch_data);
@@ -3377,20 +3072,20 @@ gpr_log(GPR_INFO, "enable_retries=false");
       retry_commit(elem, retry_state);
       // If we previously deferred recv_initial_metadata or recv_message
       // results, add them to this batch.
-      if (retry_state->recv_initial_metadata_ready_deferred_batch != nullptr) {
+      if (retry_state->recv_initial_metadata_deferred_batch != nullptr) {
 // FIXME: attach retry_state->recv_initial_metadata_error
         batch->recv_initial_metadata = true;
         invoke_recv_initial_metadata_callback(
-            retry_state->recv_initial_metadata_ready_deferred_batch,
+            retry_state->recv_initial_metadata_deferred_batch,
             GRPC_ERROR_NONE);
-        retry_state->recv_initial_metadata_ready_deferred_batch = nullptr;
+        retry_state->recv_initial_metadata_deferred_batch = nullptr;
       }
-      if (retry_state->recv_message_ready_deferred_batch != nullptr) {
+      if (retry_state->recv_message_deferred_batch != nullptr) {
 // FIXME: attach retry_state->recv_message_error
         batch->recv_message = true;
         invoke_recv_message_callback(
-            retry_state->recv_message_ready_deferred_batch, GRPC_ERROR_NONE);
-        retry_state->recv_message_ready_deferred_batch = nullptr;
+            retry_state->recv_message_deferred_batch, GRPC_ERROR_NONE);
+        retry_state->recv_message_deferred_batch = nullptr;
       }
       // Return trailing metadata.
       if (!complete_recv_trailing_metadata(elem, retry_state)) {
@@ -3447,6 +3142,7 @@ static grpc_error* cc_init_call_elem(grpc_call_element* elem,
     grpc_deadline_state_init(elem, args->call_stack, args->call_combiner,
                              calld->deadline);
   }
+  calld->canceller.Init(*args);
   calld->enable_retries = chand->enable_retries;
   calld->send_messages.Init();
   return GRPC_ERROR_NONE;

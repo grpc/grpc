@@ -41,7 +41,7 @@ static const size_t kMaxPayloadSizeForGet = 2048;
 
 namespace {
 struct call_data {
-  grpc_call_combiner* call_combiner;
+  grpc_core::ManualConstructor<grpc_core::FilterCallCanceller> canceller;
   // State for handling send_initial_metadata ops.
   grpc_linked_mdelem method;
   grpc_linked_mdelem scheme;
@@ -51,12 +51,8 @@ struct call_data {
   grpc_linked_mdelem user_agent;
   // State for handling recv_initial_metadata ops.
   grpc_metadata_batch* recv_initial_metadata;
-  grpc_closure* original_recv_initial_metadata_ready;
-  grpc_closure recv_initial_metadata_ready;
   // State for handling recv_trailing_metadata ops.
   grpc_metadata_batch* recv_trailing_metadata;
-  grpc_closure* original_recv_trailing_metadata_ready;
-  grpc_closure recv_trailing_metadata_ready;
   // State for handling send_message ops.
   grpc_transport_stream_op_batch* send_message_batch;
   size_t send_message_bytes_read;
@@ -142,29 +138,6 @@ static grpc_error* client_filter_incoming_metadata(grpc_call_element* elem,
   return GRPC_ERROR_NONE;
 }
 
-static void recv_initial_metadata_ready(void* user_data, grpc_error* error) {
-  grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  if (error == GRPC_ERROR_NONE) {
-    error = client_filter_incoming_metadata(elem, calld->recv_initial_metadata);
-  } else {
-    GRPC_ERROR_REF(error);
-  }
-  GRPC_CLOSURE_RUN(calld->original_recv_initial_metadata_ready, error);
-}
-
-static void recv_trailing_metadata_ready(void* user_data, grpc_error* error) {
-  grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  if (error == GRPC_ERROR_NONE) {
-    error =
-        client_filter_incoming_metadata(elem, calld->recv_trailing_metadata);
-  } else {
-    GRPC_ERROR_REF(error);
-  }
-  GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready, error);
-}
-
 static void send_message_on_complete(void* arg, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   call_data* calld = static_cast<call_data*>(elem->call_data);
@@ -208,14 +181,12 @@ static void on_send_message_next_done(void* arg, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   if (error != GRPC_ERROR_NONE) {
-    grpc_transport_stream_op_batch_finish_with_failure(
-        calld->send_message_batch, error, calld->call_combiner);
+    calld->canceller->CancelBatch(elem, calld->send_message_batch, error);
     return;
   }
   error = pull_slice_from_send_message(calld);
   if (error != GRPC_ERROR_NONE) {
-    grpc_transport_stream_op_batch_finish_with_failure(
-        calld->send_message_batch, error, calld->call_combiner);
+    calld->canceller->CancelBatch(elem, calld->send_message_batch, error);
     return;
   }
   // There may or may not be more to read, but we don't care.  If we got
@@ -296,28 +267,6 @@ static void hc_start_transport_stream_op_batch(
   call_data* calld = static_cast<call_data*>(elem->call_data);
   channel_data* channeld = static_cast<channel_data*>(elem->channel_data);
   GPR_TIMER_SCOPE("hc_start_transport_stream_op_batch", 0);
-
-#if 0
-  if (batch->recv_initial_metadata) {
-    /* substitute our callback for the higher callback */
-    calld->recv_initial_metadata =
-        batch->payload->recv_initial_metadata.recv_initial_metadata;
-    calld->original_recv_initial_metadata_ready =
-        batch->payload->recv_initial_metadata.recv_initial_metadata_ready;
-    batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
-        &calld->recv_initial_metadata_ready;
-  }
-
-  if (batch->recv_trailing_metadata) {
-    /* substitute our callback for the higher callback */
-    calld->recv_trailing_metadata =
-        batch->payload->recv_trailing_metadata.recv_trailing_metadata;
-    calld->original_recv_trailing_metadata_ready =
-        batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
-    batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
-        &calld->recv_trailing_metadata_ready;
-  }
-#endif
 
   grpc_error* error = GRPC_ERROR_NONE;
   bool batch_will_be_handled_asynchronously = false;
@@ -408,8 +357,7 @@ static void hc_start_transport_stream_op_batch(
 
 done:
   if (error != GRPC_ERROR_NONE) {
-    grpc_transport_stream_op_batch_finish_with_failure(
-        calld->send_message_batch, error, calld->call_combiner);
+    calld->canceller->CancelBatch(elem, calld->send_message_batch, error);
   } else if (!batch_will_be_handled_asynchronously) {
     grpc_call_next_op(elem, batch);
   }
@@ -437,13 +385,7 @@ static void hc_start_transport_stream_recv_op_batch(
 static grpc_error* init_call_elem(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
-  calld->call_combiner = args->call_combiner;
-  GRPC_CLOSURE_INIT(&calld->recv_initial_metadata_ready,
-                    recv_initial_metadata_ready, elem,
-                    grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&calld->recv_trailing_metadata_ready,
-                    recv_trailing_metadata_ready, elem,
-                    grpc_schedule_on_exec_ctx);
+  calld->canceller.Init(*args);
   GRPC_CLOSURE_INIT(&calld->send_message_on_complete, send_message_on_complete,
                     elem, grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&calld->on_send_message_next_done,

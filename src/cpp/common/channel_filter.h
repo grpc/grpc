@@ -139,14 +139,6 @@ class TransportStreamOpBatch {
         send_trailing_metadata_(
             op->send_trailing_metadata
                 ? op->payload->send_trailing_metadata.send_trailing_metadata
-                : nullptr),
-        recv_initial_metadata_(
-            op->recv_initial_metadata
-                ? op->payload->recv_initial_metadata.recv_initial_metadata
-                : nullptr),
-        recv_trailing_metadata_(
-            op->recv_trailing_metadata
-                ? op->payload->recv_trailing_metadata.recv_trailing_metadata
                 : nullptr) {}
 
   grpc_transport_stream_op_batch* op() const { return op_; }
@@ -160,26 +152,11 @@ class TransportStreamOpBatch {
   MetadataBatch* send_trailing_metadata() {
     return op_->send_trailing_metadata ? &send_trailing_metadata_ : nullptr;
   }
-  MetadataBatch* recv_initial_metadata() {
-    return op_->recv_initial_metadata ? &recv_initial_metadata_ : nullptr;
-  }
-  MetadataBatch* recv_trailing_metadata() {
-    return op_->recv_trailing_metadata ? &recv_trailing_metadata_ : nullptr;
-  }
 
   uint32_t* send_initial_metadata_flags() const {
     return op_->send_initial_metadata ? &op_->payload->send_initial_metadata
                                              .send_initial_metadata_flags
                                       : nullptr;
-  }
-
-  grpc_closure* recv_initial_metadata_ready() const {
-    return op_->recv_initial_metadata
-               ? op_->payload->recv_initial_metadata.recv_initial_metadata_ready
-               : nullptr;
-  }
-  void set_recv_initial_metadata_ready(grpc_closure* closure) {
-    op_->payload->recv_initial_metadata.recv_initial_metadata_ready = closure;
   }
 
   grpc_core::OrphanablePtr<grpc_core::ByteStream>* send_message() const {
@@ -211,8 +188,6 @@ class TransportStreamOpBatch {
   grpc_transport_stream_op_batch* op_;  // Not owned.
   MetadataBatch send_initial_metadata_;
   MetadataBatch send_trailing_metadata_;
-  MetadataBatch recv_initial_metadata_;
-  MetadataBatch recv_trailing_metadata_;
 };
 
 /// Represents channel data.
@@ -260,6 +235,11 @@ class CallData {
   /// Starts a new stream operation.
   virtual void StartTransportStreamOpBatch(grpc_call_element* elem,
                                            TransportStreamOpBatch* op);
+
+  // Starts a new stream receive operation.
+  virtual void StartTransportStreamRecvOpBatch(
+      grpc_call_element* elem, grpc_transport_stream_recv_op_batch* batch,
+      grpc_error* error);
 
   /// Sets a pollset or pollset set.
   virtual void SetPollsetOrPollsetSet(grpc_call_element* elem,
@@ -327,6 +307,13 @@ class ChannelFilter final {
     CallDataType* call_data = static_cast<CallDataType*>(elem->call_data);
     TransportStreamOpBatch op_wrapper(op);
     call_data->StartTransportStreamOpBatch(elem, &op_wrapper);
+  }
+
+  static void StartTransportStreamRecvOpBatch(
+      grpc_call_element* elem, grpc_transport_stream_recv_op_batch* batch,
+      grpc_error* error) {
+    CallDataType* call_data = static_cast<CallDataType*>(elem->call_data);
+    call_data->StartTransportStreamRecvOpBatch(elem, batch, error);
   }
 
   static void SetPollsetOrPollsetSet(grpc_call_element* elem,

@@ -29,14 +29,8 @@
 
 namespace {
 struct call_data {
-  // Receive closures are chained: we inject this closure as the
-  // recv_initial_metadata_ready up-call on transport_stream_op, and remember to
-  // call our next_recv_initial_metadata_ready member after handling it.
-  grpc_closure recv_initial_metadata_ready;
-  // Used by recv_initial_metadata_ready.
+  // Used to intercept recv_initial_metadata.
   grpc_metadata_batch* recv_initial_metadata;
-  // Original recv_initial_metadata_ready callback, invoked after our own.
-  grpc_closure* next_recv_initial_metadata_ready;
 
   // Marks whether the workaround is active
   bool workaround_active;
@@ -53,44 +47,10 @@ static bool get_user_agent_mdelem(const grpc_metadata_batch* batch,
   return false;
 }
 
-// Callback invoked when we receive an initial metadata.
-static void recv_initial_metadata_ready(void* user_data, grpc_error* error) {
-  grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-
-  if (GRPC_ERROR_NONE == error) {
-    grpc_mdelem md;
-    if (get_user_agent_mdelem(calld->recv_initial_metadata, &md)) {
-      grpc_workaround_user_agent_md* user_agent_md = grpc_parse_user_agent(md);
-      if (user_agent_md
-              ->workaround_active[GRPC_WORKAROUND_ID_CRONET_COMPRESSION]) {
-        calld->workaround_active = true;
-      }
-    }
-  }
-
-  // Invoke the next callback.
-  GRPC_CLOSURE_RUN(calld->next_recv_initial_metadata_ready,
-                   GRPC_ERROR_REF(error));
-}
-
 // Start transport stream op.
 static void start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
-
-#if 0
-  // Inject callback for receiving initial metadata
-  if (op->recv_initial_metadata) {
-    calld->next_recv_initial_metadata_ready =
-        op->payload->recv_initial_metadata.recv_initial_metadata_ready;
-    op->payload->recv_initial_metadata.recv_initial_metadata_ready =
-        &calld->recv_initial_metadata_ready;
-    calld->recv_initial_metadata =
-        op->payload->recv_initial_metadata.recv_initial_metadata;
-  }
-#endif
-
   if (op->send_message) {
     /* Send message happens after client's user-agent (initial metadata) is
      * received, so workaround_active must be set already */
@@ -100,7 +60,6 @@ static void start_transport_stream_op_batch(
           GRPC_WRITE_NO_COMPRESS);
     }
   }
-
   // Chain to the next filter.
   grpc_call_next_op(elem, op);
 }
@@ -131,11 +90,7 @@ static void start_transport_stream_recv_op_batch(
 static grpc_error* init_call_elem(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
-  calld->next_recv_initial_metadata_ready = nullptr;
   calld->workaround_active = false;
-  GRPC_CLOSURE_INIT(&calld->recv_initial_metadata_ready,
-                    recv_initial_metadata_ready, elem,
-                    grpc_schedule_on_exec_ctx);
   return GRPC_ERROR_NONE;
 }
 

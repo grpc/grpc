@@ -521,12 +521,12 @@ struct grpc_chttp2_stream {
   grpc_closure* fetching_send_message_finished;
 
   grpc_metadata_batch* recv_initial_metadata;
-  grpc_closure* recv_initial_metadata_ready;
+  bool seen_recv_initial_metadata;
   bool* trailing_metadata_available;
   grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message;
-  grpc_closure* recv_message_ready;
+  bool seen_recv_message;
   grpc_metadata_batch* recv_trailing_metadata;
-  grpc_closure* recv_trailing_metadata_finished;
+  bool seen_recv_trailing_metadata;
 
   grpc_transport_stream_stats* collecting_stats;
   grpc_transport_stream_stats stats;

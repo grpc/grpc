@@ -27,10 +27,12 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/service_config.h"
 
@@ -95,14 +97,7 @@ namespace {
 struct call_data {
   grpc_call_combiner* call_combiner;
   message_size_limits limits;
-  // Receive closures are chained: we inject this closure as the
-  // recv_message_ready up-call on transport_stream_op, and remember to
-  // call our next_recv_message_ready member after handling it.
-  grpc_closure recv_message_ready;
-  // Used by recv_message_ready.
-  grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message;
-  // Original recv_message_ready callback, invoked after our own.
-  grpc_closure* next_recv_message_ready;
+  grpc_core::ManualConstructor<grpc_core::FilterCallCanceller> canceller;
 };
 
 struct channel_data {
@@ -115,67 +110,28 @@ struct channel_data {
 
 }  // namespace
 
-// Callback invoked when we receive a message.  Here we check the max
-// receive message size.
-static void recv_message_ready(void* user_data, grpc_error* error) {
-  grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  if (*calld->recv_message != nullptr && calld->limits.max_recv_size >= 0 &&
-      (*calld->recv_message)->length() >
-          static_cast<size_t>(calld->limits.max_recv_size)) {
-    char* message_string;
-    gpr_asprintf(&message_string,
-                 "Received message larger than max (%u vs. %d)",
-                 (*calld->recv_message)->length(), calld->limits.max_recv_size);
-    grpc_error* new_error = grpc_error_set_int(
-        GRPC_ERROR_CREATE_FROM_COPIED_STRING(message_string),
-        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED);
-    if (error == GRPC_ERROR_NONE) {
-      error = new_error;
-    } else {
-      error = grpc_error_add_child(error, new_error);
-      GRPC_ERROR_UNREF(new_error);
-    }
-    gpr_free(message_string);
-  } else {
-    GRPC_ERROR_REF(error);
-  }
-  // Invoke the next callback.
-  GRPC_CLOSURE_RUN(calld->next_recv_message_ready, error);
-}
-
 // Start transport stream op.
 static void start_transport_stream_op_batch(
-    grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
+    grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   // Check max send message size.
-  if (op->send_message && calld->limits.max_send_size >= 0 &&
-      op->payload->send_message.send_message->length() >
+  if (batch->send_message && calld->limits.max_send_size >= 0 &&
+      batch->payload->send_message.send_message->length() >
           static_cast<size_t>(calld->limits.max_send_size)) {
     char* message_string;
     gpr_asprintf(&message_string, "Sent message larger than max (%u vs. %d)",
-                 op->payload->send_message.send_message->length(),
+                 batch->payload->send_message.send_message->length(),
                  calld->limits.max_send_size);
-    grpc_transport_stream_op_batch_finish_with_failure(
-        op,
+    calld->canceller->CancelBatch(
+        elem, batch,
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(message_string),
                            GRPC_ERROR_INT_GRPC_STATUS,
-                           GRPC_STATUS_RESOURCE_EXHAUSTED),
-        calld->call_combiner);
+                           GRPC_STATUS_RESOURCE_EXHAUSTED));
     gpr_free(message_string);
     return;
   }
-#if 0
-  // Inject callback for receiving a message.
-  if (op->recv_message) {
-    calld->next_recv_message_ready =
-        op->payload->recv_message.recv_message_ready;
-    calld->recv_message = op->payload->recv_message.recv_message;
-    op->payload->recv_message.recv_message_ready = &calld->recv_message_ready;
-  }
-#endif
   // Chain to the next filter.
-  grpc_call_next_op(elem, op);
+  grpc_call_next_op(elem, batch);
 }
 
 static void start_transport_stream_recv_op_batch(
@@ -212,10 +168,7 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
-  calld->call_combiner = args->call_combiner;
-  calld->next_recv_message_ready = nullptr;
-  GRPC_CLOSURE_INIT(&calld->recv_message_ready, recv_message_ready, elem,
-                    grpc_schedule_on_exec_ctx);
+  calld->canceller.Init(*args);
   // Get max sizes from channel data, then merge in per-method config values.
   // Note: Per-method config is only available on the client, so we
   // apply the max request size to the send limit and the max response

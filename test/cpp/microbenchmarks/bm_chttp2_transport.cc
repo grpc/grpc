@@ -607,6 +607,7 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
   op.send_initial_metadata = true;
   op.payload->send_initial_metadata.send_initial_metadata = &b;
   op.recv_initial_metadata = true;
+// FIXME: this needs to be updated to use new recv op API
   op.payload->recv_initial_metadata.recv_initial_metadata = &b_recv;
   op.payload->recv_initial_metadata.recv_initial_metadata_ready =
       do_nothing.get();

@@ -289,3 +289,60 @@ void grpc_call_log_recv_op_batch(const char* file, int line,
           elem, grpc_error_string(error), str);
   gpr_free(str);
 }
+
+namespace grpc_core {
+
+//
+// FilterCallCanceller
+//
+
+void FilterCallCanceller::PopulateCancelCallbackList(
+    grpc_call_element* elem, grpc_transport_stream_op_batch* batch,
+    grpc_error* error, CallCombinerClosureList* closures) {
+  if (batch->send_message) {
+    batch->payload->send_message.send_message.reset();
+  }
+  if (batch->cancel_stream) {
+    GRPC_ERROR_UNREF(batch->payload->cancel_stream.cancel_error);
+  }
+  // For recv ops, start a recv batch to return the failure.
+  if (batch->recv_initial_metadata || batch->recv_message ||
+      batch->recv_trailing_metadata) {
+    recv_batch_.payload = recv_payload_;
+    recv_batch_.handler_private.extra_arg = elem;
+    recv_batch_.recv_initial_metadata = batch->recv_initial_metadata;
+    recv_batch_.recv_message = batch->recv_message;
+    recv_batch_.recv_trailing_metadata = batch->recv_trailing_metadata;
+    GRPC_CLOSURE_INIT(&recv_batch_.handler_private.closure,
+                      StartRecvBatchInCallCombiner, &recv_batch_,
+                      grpc_schedule_on_exec_ctx);
+    closures->Add(&recv_batch_.handler_private.closure, GRPC_ERROR_REF(error),
+                 "failing recv ops");
+  }
+  // For send ops, invoke the on_complete callback.
+  if (batch->on_complete != nullptr) {
+    closures->Add(batch->on_complete, GRPC_ERROR_REF(error),
+                 "failing on_complete");
+  }
+  GRPC_ERROR_UNREF(error);
+}
+
+void FilterCallCanceller::CancelBatch(grpc_call_element* elem,
+                                      grpc_transport_stream_op_batch* batch,
+                                      grpc_error* error) {
+  CallCombinerClosureList closures;
+  PopulateCancelCallbackList(elem, batch, error, &closures);
+  closures.RunClosures(call_combiner_);
+}
+
+void FilterCallCanceller::StartRecvBatchInCallCombiner(void* arg,
+                                                       grpc_error* error) {
+  grpc_transport_stream_recv_op_batch* batch =
+      static_cast<grpc_transport_stream_recv_op_batch*>(arg);
+  grpc_call_element* elem =
+      static_cast<grpc_call_element*>(batch->handler_private.extra_arg);
+  grpc_call_filter_start_transport_stream_recv_op_batch(elem, batch,
+                                                        GRPC_ERROR_REF(error));
+}
+
+}  // namespace grpc_core

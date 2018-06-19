@@ -37,7 +37,7 @@
 namespace {
 
 struct call_data {
-  grpc_call_combiner* call_combiner;
+  grpc_core::ManualConstructor<grpc_core::FilterCallCanceller> canceller;
 
   // Outgoing headers to add to send_initial_metadata.
   grpc_linked_mdelem status;
@@ -49,17 +49,12 @@ struct call_data {
   bool have_read_stream;
 
   // State for intercepting recv_initial_metadata.
-  grpc_closure recv_initial_metadata_ready;
-  grpc_closure* original_recv_initial_metadata_ready;
   grpc_metadata_batch* recv_initial_metadata;
   uint32_t* recv_initial_metadata_flags;
-  bool seen_recv_initial_metadata_ready;
+  bool seen_recv_initial_metadata_complete;
 
   // State for intercepting recv_message.
-  grpc_closure* original_recv_message_ready;
-  grpc_closure recv_message_ready;
   grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message;
-  bool seen_recv_message_ready;
   grpc_transport_stream_recv_op_batch* recv_message_batch;
 };
 
@@ -263,60 +258,6 @@ static grpc_error* hs_filter_incoming_metadata(
   return error;
 }
 
-#if 0
-static void hs_recv_initial_metadata_ready(void* user_data, grpc_error* err) {
-  grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  calld->seen_recv_initial_metadata_ready = true;
-  if (err == GRPC_ERROR_NONE) {
-    err = hs_filter_incoming_metadata(elem, calld->recv_initial_metadata);
-    if (calld->seen_recv_message_ready) {
-      // We've already seen the recv_message callback, but we previously
-      // deferred it, so we need to return it here.
-      // Replace the recv_message byte stream if needed.
-      if (calld->have_read_stream) {
-        calld->recv_message->reset(calld->read_stream.get());
-        calld->have_read_stream = false;
-      }
-      // Re-enter call combiner for original_recv_message_ready, since the
-      // surface code will release the call combiner for each callback it
-      // receives.
-      GRPC_CALL_COMBINER_START(
-          calld->call_combiner, calld->original_recv_message_ready,
-          GRPC_ERROR_REF(err),
-          "resuming recv_message_ready from recv_initial_metadata_ready");
-    }
-  } else {
-    GRPC_ERROR_REF(err);
-  }
-  GRPC_CLOSURE_RUN(calld->original_recv_initial_metadata_ready, err);
-}
-
-static void hs_recv_message_ready(void* user_data, grpc_error* err) {
-  grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  calld->seen_recv_message_ready = true;
-  if (calld->seen_recv_initial_metadata_ready) {
-    // We've already seen the recv_initial_metadata callback, so
-    // replace the recv_message byte stream if needed and invoke the
-    // original recv_message callback immediately.
-    if (calld->have_read_stream) {
-      calld->recv_message->reset(calld->read_stream.get());
-      calld->have_read_stream = false;
-    }
-    GRPC_CLOSURE_RUN(calld->original_recv_message_ready, GRPC_ERROR_REF(err));
-  } else {
-    // We have not yet seen the recv_initial_metadata callback, so we
-    // need to wait to see if this is a GET request.
-    // Note that we release the call combiner here, so that other
-    // callbacks can run.
-    GRPC_CALL_COMBINER_STOP(
-        calld->call_combiner,
-        "pausing recv_message_ready until recv_initial_metadata_ready");
-  }
-}
-#endif
-
 static grpc_error* hs_mutate_op(grpc_call_element* elem,
                                 grpc_transport_stream_op_batch* op) {
   /* grab pointers to our data from the call element */
@@ -341,28 +282,6 @@ static grpc_error* hs_mutate_op(grpc_call_element* elem,
     if (error != GRPC_ERROR_NONE) return error;
   }
 
-#if 0
-  if (op->recv_initial_metadata) {
-    /* substitute our callback for the higher callback */
-    GPR_ASSERT(op->payload->recv_initial_metadata.recv_flags != nullptr);
-    calld->recv_initial_metadata =
-        op->payload->recv_initial_metadata.recv_initial_metadata;
-    calld->recv_initial_metadata_flags =
-        op->payload->recv_initial_metadata.recv_flags;
-    calld->original_recv_initial_metadata_ready =
-        op->payload->recv_initial_metadata.recv_initial_metadata_ready;
-    op->payload->recv_initial_metadata.recv_initial_metadata_ready =
-        &calld->recv_initial_metadata_ready;
-  }
-
-  if (op->recv_message) {
-    calld->recv_message = op->payload->recv_message.recv_message;
-    calld->original_recv_message_ready =
-        op->payload->recv_message.recv_message_ready;
-    op->payload->recv_message.recv_message_ready = &calld->recv_message_ready;
-  }
-#endif
-
   if (op->send_trailing_metadata) {
     grpc_error* error = hs_filter_outgoing_metadata(
         elem, op->payload->send_trailing_metadata.send_trailing_metadata);
@@ -373,15 +292,14 @@ static grpc_error* hs_mutate_op(grpc_call_element* elem,
 }
 
 static void hs_start_transport_stream_op_batch(
-    grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
+    grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   GPR_TIMER_SCOPE("hs_start_transport_stream_op_batch", 0);
   call_data* calld = static_cast<call_data*>(elem->call_data);
-  grpc_error* error = hs_mutate_op(elem, op);
+  grpc_error* error = hs_mutate_op(elem, batch);
   if (error != GRPC_ERROR_NONE) {
-    grpc_transport_stream_op_batch_finish_with_failure(op, error,
-                                                       calld->call_combiner);
+    calld->canceller->CancelBatch(elem, batch, error);
   } else {
-    grpc_call_next_op(elem, op);
+    grpc_call_next_op(elem, batch);
   }
 }
 
@@ -390,7 +308,7 @@ static void hs_start_transport_stream_recv_op_batch(
     grpc_error* error) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   if (batch->recv_initial_metadata) {
-    calld->seen_recv_initial_metadata_ready = true;
+    calld->seen_recv_initial_metadata_complete = true;
     if (error == GRPC_ERROR_NONE) {
       error = hs_filter_incoming_metadata(
           elem, batch->payload->recv_initial_metadata.recv_initial_metadata,
@@ -411,7 +329,7 @@ static void hs_start_transport_stream_recv_op_batch(
   }
   if (calld->recv_message_batch == nullptr && batch->recv_message) {
     calld->recv_message_batch = batch;
-    if (calld->seen_recv_initial_metadata_ready) {
+    if (calld->seen_recv_initial_metadata_complete) {
       // We've already seen the recv_initial_metadata op, so replace the
       // recv_message byte stream if needed.
       if (calld->have_read_stream) {
@@ -431,8 +349,9 @@ static void hs_start_transport_stream_recv_op_batch(
         // Note that we release the call combiner here, so that other
         // callbacks can run.
         GRPC_CALL_COMBINER_STOP(
-            calld->call_combiner,
-            "pausing recv_message_ready until recv_initial_metadata_ready");
+            calld->canceller->call_combiner(),
+            "pausing recv_message completion until recv_initial_metadata "
+            "completion");
         return;
       }
     }
@@ -444,14 +363,7 @@ static void hs_start_transport_stream_recv_op_batch(
 static grpc_error* hs_init_call_elem(grpc_call_element* elem,
                                      const grpc_call_element_args* args) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
-  calld->call_combiner = args->call_combiner;
-#if 0
-  GRPC_CLOSURE_INIT(&calld->recv_initial_metadata_ready,
-                    hs_recv_initial_metadata_ready, elem,
-                    grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&calld->recv_message_ready, hs_recv_message_ready, elem,
-                    grpc_schedule_on_exec_ctx);
-#endif
+  calld->canceller.Init(*args);
   return GRPC_ERROR_NONE;
 }
 
