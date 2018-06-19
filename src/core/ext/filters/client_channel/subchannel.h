@@ -84,7 +84,7 @@ class ConnectedSubchannel : public RefCountedWithTracing<ConnectedSubchannel> {
     grpc_transport_stream_recv_op_batch_payload* recv_payload;
     grpc_transport_stream_recv_op_batch_func recv_func;
     void* recv_func_arg;
-    size_t parent_data_size;
+    void* parent_data;
   };
 
   explicit ConnectedSubchannel(grpc_channel_stack* channel_stack);
@@ -118,12 +118,6 @@ grpc_subchannel_call* grpc_subchannel_call_ref(
 void grpc_subchannel_call_unref(
     grpc_subchannel_call* call GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 
-/** Returns a pointer to the parent data associated with \a subchannel_call.
-    The data will be of the size specified in \a parent_data_size
-    field of the args passed to \a grpc_connected_subchannel_create_call(). */
-void* grpc_connected_subchannel_call_get_parent_data(
-    grpc_subchannel_call* subchannel_call);
-
 /** poll the current connectivity state of a channel */
 grpc_connectivity_state grpc_subchannel_check_connectivity(
     grpc_subchannel* channel, grpc_error** error);
@@ -152,6 +146,10 @@ void grpc_subchannel_call_process_op(grpc_subchannel_call* subchannel_call,
     call stack destruction. */
 void grpc_subchannel_call_set_cleanup_closure(
     grpc_subchannel_call* subchannel_call, grpc_closure* closure);
+
+/** Returns a pointer to the parent data associated with \a subchannel_call. */
+void* grpc_subchannel_call_get_parent_data(
+    grpc_subchannel_call* subchannel_call);
 
 grpc_call_stack* grpc_subchannel_call_get_call_stack(
     grpc_subchannel_call* subchannel_call);

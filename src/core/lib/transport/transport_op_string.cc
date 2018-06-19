@@ -126,6 +126,42 @@ char* grpc_transport_stream_op_batch_string(
   return out;
 }
 
+char* grpc_transport_stream_recv_op_batch_string(
+    grpc_transport_stream_recv_op_batch* batch) {
+  char* out;
+  gpr_strvec b;
+  gpr_strvec_init(&b);
+  if (batch->recv_initial_metadata) {
+    gpr_strvec_add(&b, gpr_strdup(" "));
+    gpr_strvec_add(&b, gpr_strdup("RECV_INITIAL_METADATA{"));
+    put_metadata_list(
+        &b, *batch->payload->recv_initial_metadata.recv_initial_metadata);
+    gpr_strvec_add(&b, gpr_strdup("}"));
+  }
+  if (batch->recv_message) {
+    gpr_strvec_add(&b, gpr_strdup(" "));
+    if (*batch->payload->recv_message.recv_message == nullptr) {
+      gpr_strvec_add(&b, gpr_strdup("RECV_MESSAGE:null"));
+    } else {
+      char* tmp;
+      gpr_asprintf(&tmp, "RECV_MESSAGE:flags=0x%08x:len=%d",
+                   (*batch->payload->recv_message.recv_message)->flags(),
+                   (*batch->payload->recv_message.recv_message)->length());
+      gpr_strvec_add(&b, tmp);
+    }
+  }
+  if (batch->recv_trailing_metadata) {
+    gpr_strvec_add(&b, gpr_strdup(" "));
+    gpr_strvec_add(&b, gpr_strdup("RECV_TRAILING_METADATA{"));
+    put_metadata_list(
+        &b, *batch->payload->recv_trailing_metadata.recv_trailing_metadata);
+    gpr_strvec_add(&b, gpr_strdup("}"));
+  }
+  out = gpr_strvec_flatten(&b, nullptr);
+  gpr_strvec_destroy(&b);
+  return out;
+}
+
 char* grpc_transport_op_string(grpc_transport_op* op) {
   char* tmp;
   char* out;
@@ -196,12 +232,4 @@ char* grpc_transport_op_string(grpc_transport_op* op) {
   gpr_strvec_destroy(&b);
 
   return out;
-}
-
-void grpc_call_log_op(const char* file, int line, gpr_log_severity severity,
-                      grpc_call_element* elem,
-                      grpc_transport_stream_op_batch* op) {
-  char* str = grpc_transport_stream_op_batch_string(op);
-  gpr_log(file, line, severity, "OP[%s:%p]: %s", elem->filter->name, elem, str);
-  gpr_free(str);
 }

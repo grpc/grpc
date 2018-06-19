@@ -395,6 +395,8 @@ void grpc_transport_stream_op_batch_finish_with_failure(
     grpc_call_combiner* call_combiner);
 
 char* grpc_transport_stream_op_batch_string(grpc_transport_stream_op_batch* op);
+char* grpc_transport_stream_recv_op_batch_string(
+    grpc_transport_stream_recv_op_batch* batch);
 char* grpc_transport_op_string(grpc_transport_op* op);
 
 /* Send a batch of operations on a transport

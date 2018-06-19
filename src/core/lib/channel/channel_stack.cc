@@ -221,21 +221,28 @@ void grpc_call_stack_destroy(grpc_call_stack* stack,
   }
 }
 
+void grpc_call_filter_start_transport_stream_op_batch(
+    grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
+  GRPC_CALL_LOG_OP(GPR_INFO, elem, batch);
+  elem->filter->start_transport_stream_op_batch(elem, batch);
+}
+
 void grpc_call_next_op(grpc_call_element* elem,
                        grpc_transport_stream_op_batch* op) {
-  grpc_call_element* next_elem = elem + 1;
-  GRPC_CALL_LOG_OP(GPR_INFO, next_elem, op);
-  next_elem->filter->start_transport_stream_op_batch(next_elem, op);
+  grpc_call_filter_start_transport_stream_op_batch(elem + 1, op);
+}
+
+void grpc_call_filter_start_transport_stream_recv_op_batch(
+    grpc_call_element* elem, grpc_transport_stream_recv_op_batch* batch,
+    grpc_error* error) {
+  GRPC_CALL_LOG_RECV_OP_BATCH(GPR_INFO, elem, batch, error);
+  elem->filter->start_transport_stream_recv_op_batch(elem, batch, error);
 }
 
 void grpc_call_prev_filter_recv_op_batch(
     grpc_call_element* elem, grpc_transport_stream_recv_op_batch* batch,
     grpc_error* error) {
-  grpc_call_element* prev_elem = elem - 1;
-// FIXME
-//  GRPC_CALL_LOG_OP(GPR_INFO, prev_elem, batch);
-  prev_elem->filter->start_transport_stream_recv_op_batch(prev_elem, batch,
-                                                          error);
+  grpc_call_filter_start_transport_stream_recv_op_batch(elem - 1, batch, error);
 }
 
 void grpc_channel_next_get_info(grpc_channel_element* elem,
@@ -260,4 +267,25 @@ grpc_call_stack* grpc_call_stack_from_top_element(grpc_call_element* elem) {
   return reinterpret_cast<grpc_call_stack*>(
       reinterpret_cast<char*>(elem) -
       ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call_stack)));
+}
+
+void grpc_call_log_op(const char* file, int line, gpr_log_severity severity,
+                      grpc_call_element* elem,
+                      grpc_transport_stream_op_batch* op) {
+  char* str = grpc_transport_stream_op_batch_string(op);
+  gpr_log(file, line, severity, "BATCH[%s:%p]: %s", elem->filter->name, elem,
+          str);
+  gpr_free(str);
+}
+
+void grpc_call_log_recv_op_batch(const char* file, int line,
+                                 gpr_log_severity severity,
+                                 grpc_call_element* elem,
+                                 grpc_transport_stream_recv_op_batch* batch,
+                                 grpc_error* error) {
+  char* str = grpc_transport_stream_recv_op_batch_string(batch);
+  gpr_log(file, line, severity, "RECV_BATCH[%s:%p]: error=%s %s",
+          elem->filter->name,
+          elem, grpc_error_string(error), str);
+  gpr_free(str);
 }

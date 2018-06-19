@@ -150,6 +150,7 @@ static void con_start_transport_stream_recv_op_batch(
     grpc_transport_stream_recv_op_batch* batch, void* arg, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   call_data* calld = static_cast<call_data*>(elem->call_data);
+  GRPC_CALL_LOG_RECV_OP_BATCH(GPR_INFO, elem, batch, error);
   batch->handler_private.extra_arg = elem;
   GRPC_CLOSURE_INIT(&batch->handler_private.closure,
                     start_transport_stream_recv_op_batch_in_call_combiner,

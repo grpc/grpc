@@ -55,7 +55,7 @@ static void send_cancel_op_in_call_combiner(void* arg, grpc_error* error) {
                         deadline_state, grpc_schedule_on_exec_ctx));
   batch->cancel_stream = true;
   batch->payload->cancel_stream.cancel_error = GRPC_ERROR_REF(error);
-  elem->filter->start_transport_stream_op_batch(elem, batch);
+  grpc_call_filter_start_transport_stream_op_batch(elem, batch);
 }
 
 // Timer callback.

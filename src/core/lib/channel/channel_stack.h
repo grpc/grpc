@@ -283,13 +283,31 @@ grpc_channel_stack* grpc_channel_stack_from_top_element(
 /* Given the top element of a call stack, get the call stack itself */
 grpc_call_stack* grpc_call_stack_from_top_element(grpc_call_element* elem);
 
+void grpc_call_filter_start_transport_stream_op_batch(
+    grpc_call_element* elem, grpc_transport_stream_op_batch* batch);
+
+void grpc_call_filter_start_transport_stream_recv_op_batch(
+    grpc_call_element* elem, grpc_transport_stream_recv_op_batch* batch,
+    grpc_error* error);
+
 void grpc_call_log_op(const char* file, int line, gpr_log_severity severity,
                       grpc_call_element* elem,
                       grpc_transport_stream_op_batch* op);
+
+void grpc_call_log_recv_op_batch(const char* file, int line,
+                                 gpr_log_severity severity,
+                                 grpc_call_element* elem,
+                                 grpc_transport_stream_recv_op_batch* batch,
+                                 grpc_error* error);
 
 extern grpc_core::TraceFlag grpc_trace_channel;
 
 #define GRPC_CALL_LOG_OP(sev, elem, op) \
   if (grpc_trace_channel.enabled()) grpc_call_log_op(sev, elem, op)
+
+#define GRPC_CALL_LOG_RECV_OP_BATCH(sev, elem, batch, error) \
+  if (grpc_trace_channel.enabled()) { \
+    grpc_call_log_recv_op_batch(sev, elem, batch, error); \
+  }
 
 #endif /* GRPC_CORE_LIB_CHANNEL_CHANNEL_STACK_H */

@@ -668,8 +668,7 @@ static void execute_batch_in_call_combiner(void* arg, grpc_error* ignored) {
       static_cast<grpc_transport_stream_op_batch*>(arg);
   grpc_call* call = static_cast<grpc_call*>(batch->handler_private.extra_arg);
   grpc_call_element* elem = CALL_ELEM_FROM_CALL(call, 0);
-  GRPC_CALL_LOG_OP(GPR_INFO, elem, batch);
-  elem->filter->start_transport_stream_op_batch(elem, batch);
+  grpc_call_filter_start_transport_stream_op_batch(elem, batch);
 }
 
 // start_batch_closure points to a caller-allocated closure to be used

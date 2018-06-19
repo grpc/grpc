@@ -138,6 +138,7 @@ struct grpc_subchannel {
 struct grpc_subchannel_call {
   grpc_core::ConnectedSubchannel* connection;
   grpc_closure* schedule_closure_after_destroy;
+  void* parent_data;
 };
 
 #define SUBCHANNEL_CALL_TO_CALL_STACK(call) ((grpc_call_stack*)((call) + 1))
@@ -689,8 +690,7 @@ void grpc_subchannel_call_process_op(grpc_subchannel_call* call,
   GPR_TIMER_SCOPE("grpc_subchannel_call_process_op", 0);
   grpc_call_stack* call_stack = SUBCHANNEL_CALL_TO_CALL_STACK(call);
   grpc_call_element* top_elem = grpc_call_stack_element(call_stack, 0);
-  GRPC_CALL_LOG_OP(GPR_INFO, top_elem, batch);
-  top_elem->filter->start_transport_stream_op_batch(top_elem, batch);
+  grpc_call_filter_start_transport_stream_op_batch(top_elem, batch);
 }
 
 grpc_core::RefCountedPtr<grpc_core::ConnectedSubchannel>
@@ -706,11 +706,9 @@ const grpc_subchannel_key* grpc_subchannel_get_key(
   return subchannel->key;
 }
 
-void* grpc_connected_subchannel_call_get_parent_data(
+void* grpc_subchannel_call_get_parent_data(
     grpc_subchannel_call* subchannel_call) {
-  grpc_channel_stack* chanstk = subchannel_call->connection->channel_stack();
-  return (char*)subchannel_call + sizeof(grpc_subchannel_call) +
-         chanstk->call_stack_size;
+  return subchannel_call->parent_data;
 }
 
 grpc_call_stack* grpc_subchannel_call_get_call_stack(
@@ -784,12 +782,13 @@ grpc_error* ConnectedSubchannel::CreateCall(const CallArgs& args,
                                             grpc_subchannel_call** call) {
   *call = static_cast<grpc_subchannel_call*>(gpr_arena_alloc(
       args.arena, sizeof(grpc_subchannel_call) +
-                      channel_stack_->call_stack_size + args.parent_data_size));
+                      channel_stack_->call_stack_size));
   grpc_call_stack* callstk = SUBCHANNEL_CALL_TO_CALL_STACK(*call);
   RefCountedPtr<ConnectedSubchannel> connection =
       Ref(DEBUG_LOCATION, "subchannel_call");
   connection.release();  // Ref is passed to the grpc_subchannel_call object.
   (*call)->connection = this;
+  (*call)->parent_data = args.parent_data;
   const grpc_call_element_args call_args = {
       callstk,
       nullptr,
