@@ -99,6 +99,8 @@ class InlinedVector {
   void push_back(T&& value) { emplace_back(std::move(value)); }
 
   size_t size() const { return size_; }
+  bool empty() const { return size_ == 0; }
+
   size_t capacity() const { return capacity_; }
 
   void clear() {

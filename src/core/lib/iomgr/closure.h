@@ -283,9 +283,10 @@ inline void grpc_closure_sched(grpc_closure* c, grpc_error* error) {
     if (c->scheduled) {
       gpr_log(GPR_ERROR,
               "Closure already scheduled. (closure: %p, created: [%s:%d], "
-              "previously scheduled at: [%s: %d] run?: %s",
+              "previously scheduled at: [%s: %d], newly scheduled at [%s: %d], "
+              "run?: %s",
               c, c->file_created, c->line_created, c->file_initiated,
-              c->line_initiated, c->run ? "true" : "false");
+              c->line_initiated, file, line, c->run ? "true" : "false");
       abort();
     }
     c->scheduled = true;
