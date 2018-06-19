@@ -25,6 +25,7 @@
 #include <memory>
 #include <vector>
 
+#include <grpc/impl/codegen/log.h>
 #include <grpcpp/impl/codegen/byte_buffer.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/rpc_method.h>

@@ -80,6 +80,7 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/fork.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/gpr_slice.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/gpr_types.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/log.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/port_platform.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_custom.h" role="src" />
@@ -164,6 +165,7 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/fork.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/gpr_slice.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/gpr_types.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/impl/codegen/log.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/port_platform.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_custom.h" role="src" />

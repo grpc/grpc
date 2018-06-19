@@ -866,6 +866,7 @@ foreach(_hdr
   include/grpc/impl/codegen/fork.h
   include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
+  include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_custom.h
@@ -1285,6 +1286,7 @@ foreach(_hdr
   include/grpc/impl/codegen/fork.h
   include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
+  include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_custom.h
@@ -1655,6 +1657,7 @@ foreach(_hdr
   include/grpc/impl/codegen/fork.h
   include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
+  include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_custom.h
@@ -1968,6 +1971,7 @@ foreach(_hdr
   include/grpc/impl/codegen/fork.h
   include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
+  include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_custom.h
@@ -2273,6 +2277,7 @@ foreach(_hdr
   include/grpc/impl/codegen/fork.h
   include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
+  include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_custom.h
@@ -2587,6 +2592,7 @@ foreach(_hdr
   include/grpc/impl/codegen/fork.h
   include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
+  include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_custom.h
@@ -2904,6 +2910,7 @@ foreach(_hdr
   include/grpc/impl/codegen/fork.h
   include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
+  include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_custom.h
@@ -2960,6 +2967,7 @@ foreach(_hdr
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
   include/grpc++/impl/codegen/time.h
+  include/grpcpp/impl/codegen/async_generic_service.h
   include/grpcpp/impl/codegen/async_stream.h
   include/grpcpp/impl/codegen/async_unary_call.h
   include/grpcpp/impl/codegen/byte_buffer.h
@@ -3467,6 +3475,7 @@ foreach(_hdr
   include/grpc/impl/codegen/fork.h
   include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
+  include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_custom.h
@@ -3523,6 +3532,7 @@ foreach(_hdr
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
   include/grpc++/impl/codegen/time.h
+  include/grpcpp/impl/codegen/async_generic_service.h
   include/grpcpp/impl/codegen/async_stream.h
   include/grpcpp/impl/codegen/async_unary_call.h
   include/grpcpp/impl/codegen/byte_buffer.h
@@ -3932,6 +3942,7 @@ foreach(_hdr
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
   include/grpc++/impl/codegen/time.h
+  include/grpcpp/impl/codegen/async_generic_service.h
   include/grpcpp/impl/codegen/async_stream.h
   include/grpcpp/impl/codegen/async_unary_call.h
   include/grpcpp/impl/codegen/byte_buffer.h
@@ -3977,6 +3988,7 @@ foreach(_hdr
   include/grpc/impl/codegen/fork.h
   include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
+  include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_custom.h
@@ -4108,6 +4120,7 @@ foreach(_hdr
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
   include/grpc++/impl/codegen/time.h
+  include/grpcpp/impl/codegen/async_generic_service.h
   include/grpcpp/impl/codegen/async_stream.h
   include/grpcpp/impl/codegen/async_unary_call.h
   include/grpcpp/impl/codegen/byte_buffer.h
@@ -4153,6 +4166,7 @@ foreach(_hdr
   include/grpc/impl/codegen/fork.h
   include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
+  include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_custom.h
@@ -4367,6 +4381,7 @@ foreach(_hdr
   include/grpc/impl/codegen/fork.h
   include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
+  include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_custom.h
@@ -4423,6 +4438,7 @@ foreach(_hdr
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
   include/grpc++/impl/codegen/time.h
+  include/grpcpp/impl/codegen/async_generic_service.h
   include/grpcpp/impl/codegen/async_stream.h
   include/grpcpp/impl/codegen/async_unary_call.h
   include/grpcpp/impl/codegen/byte_buffer.h
