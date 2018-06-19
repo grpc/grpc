@@ -71,7 +71,12 @@ module GRPC
     def run_on_client(requests, set_output_stream_done)
       t = Thread.new do
         begin
-          write_loop(requests)
+          begin
+            requests.each { |req| @acall.remote_send(req, false) }
+          rescue GRPC::Core::CallError => e
+            GRPC.logger.warn("bidi-write-loop: send close failed #{e}")
+          end
+
           begin
             @call.run_batch(SEND_CLOSE_FROM_CLIENT => nil)
           rescue GRPC::Core::CallError => e
@@ -110,31 +115,18 @@ module GRPC
     # @param [Enumerable] requests The enumerable of requests to run
     def run_on_server(gen_each_reply)
       requests = @acall.each_remote_read
-      replies = nil
 
       # Pass in the optional call object parameter if possible
-      if gen_each_reply.arity == 1
-        replies = gen_each_reply.call(requests)
-      elsif gen_each_reply.arity == 2
-        replies = gen_each_reply.call(requests, @req_view)
-      else
-        fail 'Illegal arity of reply generator'
-      end
+      responses =
+        if gen_each_reply.arity == 1
+          gen_each_reply.call(requests)
+        elsif gen_each_reply.arity == 2
+          gen_each_reply.call(requests, @req_view)
+        else
+          fail 'Illegal arity of reply generator'
+        end
 
-      write_loop(replies)
-    end
-
-    private
-
-    END_OF_READS = :end_of_reads
-    END_OF_WRITES = :end_of_writes
-
-    # set_output_stream_done is relevant on client-side
-    def write_loop(requests)
-      GRPC.logger.debug('bidi-write-loop: starting')
-      requests.each do |req|
-        @acall.remote_send(req, false)
-      end
+      responses.each { |resp| @acall.remote_send(resp, false) }
     rescue GRPC::Core::CallError => e
       # This is almost definitely caused by a status arriving while still
       # writing. Don't re-throw the error
@@ -144,5 +136,10 @@ module GRPC
       GRPC.logger.warn(e)
       raise e
     end
+
+    private
+
+    END_OF_READS = :end_of_reads
+    END_OF_WRITES = :end_of_writes
   end
 end
