@@ -14,7 +14,6 @@
 
 require 'forwardable'
 require 'weakref'
-require_relative 'bidi_call'
 
 class Struct
   # BatchResult is the struct returned by calls to call#start_batch.
@@ -491,7 +490,7 @@ module GRPC
     # @param metadata [Hash] metadata to be sent to the server. If a value is
     # a list, multiple metadata for its key are sent
     # @return [Enumerator, nil] a response Enumerator
-    def bidi_streamer(requests, metadata: {}, &blk)
+    def bidi_streamer(requests, metadata: {})
       raise_error_if_already_executed
       # Metadata might have already been sent if this is an operation view
       begin
@@ -508,14 +507,36 @@ module GRPC
         raise e
       end
 
-      bd = BidiCall.new(@call,
-                        @marshal,
-                        @unmarshal,
-                        metadata_received: @metadata_received,
-                        acall: self
-                       )
+      t = Thread.new do
+        begin
+          begin
+            requests.each { |req| remote_send(req, false) }
+          rescue GRPC::Core::CallError => e
+            GRPC.logger.warn("bidi-write-loop: send close failed #{e}")
+          end
 
-      bd.run_on_client(requests, proc { set_output_stream_done }, &blk)
+          begin
+            @call.run_batch(SEND_CLOSE_FROM_CLIENT => nil)
+          rescue GRPC::Core::CallError => e
+            GRPC.logger.warn("bidi-write-loop: send close failed #{e}")
+          end
+        rescue StandardError => e
+          GRPC.logger.warn("bidi-write-loop: failed #{e}")
+          @call.cancel_with_status(GRPC::Core::StatusCodes::UNKNOWN, "GRPC bidi call error: #{e.inspect}")
+        ensure
+          set_output_stream_done
+        end
+      end
+
+      if block_given?
+        each_remote_read_then_finish { |v| yield v }
+        t.join
+      else
+        Enumerator.new do |out|
+          each_remote_read_then_finish { |v| out << v }
+          t.join
+        end
+      end
     end
 
     # run_server_bidi orchestrates a BiDi stream processing on a server.
@@ -533,20 +554,34 @@ module GRPC
     #
     def run_server_bidi(mth, interception_ctx)
       view = multi_req_view
-      bidi_call = BidiCall.new(
-        @call,
-        @marshal,
-        @unmarshal,
-        metadata_received: @metadata_received,
-        req_view: view,
-        acall: self
-      )
       interception_ctx.intercept!(
         :bidi_streamer,
         call: view,
         method: mth
       ) do
-        bidi_call.run_on_server(mth)
+        begin
+          requests = each_remote_read
+
+          # Pass in the optional call object parameter if possible
+          responses =
+            if mth.arity == 1
+              mth.call(requests)
+            elsif mth.arity == 2
+              mth.call(requests, view)
+            else
+              fail 'Illegal arity of reply generator'
+            end
+
+          responses.each { |resp| remote_send(resp, false) }
+        rescue GRPC::Core::CallError => e
+          # This is almost definitely caused by a status arriving while still
+          # writing. Don't re-throw the error
+          GRPC.logger.warn("bidi-write-loop: ended with error #{e}")
+        rescue StandardError => e
+          GRPC.logger.warn('bidi-write-loop: failed')
+          GRPC.logger.warn(e)
+          raise e
+        end
       end
     end
 
