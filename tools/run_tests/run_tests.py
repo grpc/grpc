@@ -1590,9 +1590,15 @@ def make_jobspec(cfg, targets, makefile='Makefile'):
         return [
             jobset.JobSpec(
                 [
-                    'cmake', '--build', '.', '--target',
-                    '%s' % target, '--config', _MSBUILD_CONFIG[cfg],
-                    '--', '/maxcpucount:%d' % args.jobs,
+                    'cmake',
+                    '--build',
+                    '.',
+                    '--target',
+                    '%s' % target,
+                    '--config',
+                    _MSBUILD_CONFIG[cfg],
+                    '--',
+                    '/maxcpucount:%d' % args.jobs,
                 ],
                 cwd=os.path.dirname(makefile),
                 timeout_seconds=None) for target in targets
