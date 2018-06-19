@@ -54,11 +54,6 @@ class ServerLoadReportingCallData : public CallData {
                                    TransportStreamOpBatch* op) override;
 
  private:
-  typedef struct cost_entry {
-    double cost;
-    const char cost_name_start[];
-  } cost_entry;
-
   // From the peer_string_ in calld, extracts the client IP string (owned by
   // caller), e.g., "01020a0b". Upon failure, set the output pointer to null and
   // size to zero.

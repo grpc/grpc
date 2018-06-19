@@ -283,13 +283,13 @@ grpc_filtered_mdelem ServerLoadReportingCallData::SendTrailingMetadataFilter(
               cost_entry_size);
       return GRPC_FILTERED_REMOVE();
     }
-    const cost_entry* cost_entry_data =
-        reinterpret_cast<const cost_entry*>(GRPC_SLICE_START_PTR(value));
-    const char* cost_name = cost_entry_data->cost_name_start;
+    const double* cost_entry_ptr =
+        reinterpret_cast<const double*>(GRPC_SLICE_START_PTR(value));
+    double cost_value = *cost_entry_ptr++;
+    const char* cost_name = reinterpret_cast<const char*>(cost_entry_ptr);
     const size_t cost_name_len = cost_entry_size - sizeof(double);
     opencensus::stats::Record(
-        {{::grpc::load_reporter::MeasureOtherCallMetric(),
-          cost_entry_data->cost}},
+        {{::grpc::load_reporter::MeasureOtherCallMetric(), cost_value}},
         {{::grpc::load_reporter::TagKeyToken(),
           {calld->client_ip_and_lr_token_, calld->client_ip_and_lr_token_len_}},
          {::grpc::load_reporter::TagKeyHost(),
