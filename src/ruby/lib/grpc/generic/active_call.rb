@@ -511,7 +511,9 @@ module GRPC
       bd = BidiCall.new(@call,
                         @marshal,
                         @unmarshal,
-                        metadata_received: @metadata_received)
+                        metadata_received: @metadata_received,
+                        acall: self
+                       )
 
       bd.run_on_client(requests,
                        proc { set_input_stream_done },
@@ -539,7 +541,8 @@ module GRPC
         @marshal,
         @unmarshal,
         metadata_received: @metadata_received,
-        req_view: view
+        req_view: view,
+        acall: self
       )
       requests = bidi_call.read_next_loop(proc { set_input_stream_done }, false)
       interception_ctx.intercept!(

@@ -42,8 +42,9 @@ module GRPC
     # @param metadata_received [true|false] indicates if metadata has already
     #     been received. Should always be true for server calls
     def initialize(call, marshal, unmarshal, metadata_received: false,
-                   req_view: nil)
+                   req_view: nil, acall:)
       fail(ArgumentError, 'not a call') unless call.is_a? Core::Call
+      @acall = acall
       @call = call
       @marshal = marshal
       @op_notifier = nil  # signals completion on clients
