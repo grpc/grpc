@@ -340,6 +340,27 @@ static void ref_by(grpc_fd* fd, int n) {
   GPR_ASSERT(gpr_atm_no_barrier_fetch_add(&fd->refst, n) > 0);
 }
 
+#ifndef NDEBUG
+#define INVALIDATE_FD(fd) invalidate_fd(fd)
+/* Since an fd is never really destroyed (i.e gpr_free() is not called), it is
+ * hard to cases where fd fields are accessed even after calling fd_destroy().
+ * The following invalidates fd fields to make catching such errors easier */
+static void invalidate_fd(grpc_fd* fd) {
+  fd->fd = -1;
+  fd->salt = -1;
+  gpr_atm_no_barrier_store(&fd->refst, -1);
+  memset(&fd->orphan_mu, -1, sizeof(fd->orphan_mu));
+  memset(&fd->pollable_mu, -1, sizeof(fd->pollable_mu));
+  fd->pollable_obj = nullptr;
+  fd->on_done_closure = nullptr;
+  gpr_atm_no_barrier_store(&fd->read_notifier_pollset, 0);
+  memset(&fd->iomgr_object, -1, sizeof(fd->iomgr_object));
+  fd->track_err = false;
+}
+#else
+#define INVALIDATE_FD(fd)
+#endif
+
 /* Uninitialize and add to the freelist */
 static void fd_destroy(void* arg, grpc_error* error) {
   grpc_fd* fd = static_cast<grpc_fd*>(arg);
@@ -352,12 +373,7 @@ static void fd_destroy(void* arg, grpc_error* error) {
   fd->write_closure->DestroyEvent();
   fd->error_closure->DestroyEvent();
 
-#ifndef NDEBUG
-  // Since we do not call gpr_free on the fd (and put it in a freelist instead),
-  // the following will help us catch any 'use-after-fd_destroy()' errors in the
-  // code
-  memset(fd, 0xFF, sizeof(grpc_fd));
-#endif
+  INVALIDATE_FD(fd);
 
   /* Add the fd to the freelist */
   gpr_mu_lock(&fd_freelist_mu);
@@ -1265,7 +1281,8 @@ static grpc_error* pollset_add_fd_locked(grpc_pollset* pollset, grpc_fd* fd) {
     case PO_FD:
       gpr_mu_lock(&po_at_start->owner_orphan_mu);
       if (po_at_start->owner_orphaned) {
-        pollset_transition_pollable_from_empty_to_fd_locked(pollset, fd);
+        error =
+            pollset_transition_pollable_from_empty_to_fd_locked(pollset, fd);
       } else {
         /* fd --> multipoller */
         error =
