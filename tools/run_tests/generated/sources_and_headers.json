@@ -3260,9 +3260,9 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
-    "name": "codegen_generic_end2end_test", 
+    "name": "client_lb_end2end_test", 
     "src": [
-      "test/cpp/end2end/codegen_generic_end2end_test.cc"
+      "test/cpp/end2end/client_lb_end2end_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -3279,9 +3279,9 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
-    "name": "client_lb_end2end_test", 
+    "name": "codegen_generic_end2end_test", 
     "src": [
-      "test/cpp/end2end/client_lb_end2end_test.cc"
+      "test/cpp/end2end/codegen_generic_end2end_test.cc"
     ], 
     "third_party": false, 
     "type": "target"

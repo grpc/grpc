@@ -3870,7 +3870,7 @@
     "flaky": false, 
     "gtest": true, 
     "language": "c++", 
-    "name": "codegen_generic_end2end_test", 
+    "name": "client_lb_end2end_test", 
     "platforms": [
       "linux", 
       "mac", 
@@ -3894,7 +3894,7 @@
     "flaky": false, 
     "gtest": true, 
     "language": "c++", 
-    "name": "client_lb_end2end_test", 
+    "name": "codegen_generic_end2end_test", 
     "platforms": [
       "linux", 
       "mac", 

@@ -19,6 +19,8 @@
 #ifndef GRPC_SUPPORT_LOG_H
 #define GRPC_SUPPORT_LOG_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/impl/codegen/log.h>
 
 #endif /* GRPC_SUPPORT_LOG_H */

@@ -11155,6 +11155,7 @@ target_include_directories(codegen_generic_end2end_test
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE third_party/googletest/googletest/include
   PRIVATE third_party/googletest/googletest
   PRIVATE third_party/googletest/googlemock/include
