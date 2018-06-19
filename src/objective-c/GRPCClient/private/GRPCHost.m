@@ -245,6 +245,16 @@ static NSMutableDictionary *kHostCache;
     args[@GRPC_ARG_ENABLE_RETRIES] = [NSNumber numberWithInt:0];
   }
 
+  if (_minConnectTimeout > 0) {
+    args[@GRPC_ARG_MIN_RECONNECT_BACKOFF_MS] = [NSNumber numberWithInt:_minConnectTimeout];
+  }
+  if (_initialConnectBackoff > 0) {
+    args[@GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS] = [NSNumber numberWithInt:_initialConnectBackoff];
+  }
+  if (_maxConnectBackoff > 0) {
+    args[@GRPC_ARG_MAX_RECONNECT_BACKOFF_MS] = [NSNumber numberWithInt:_maxConnectBackoff];
+  }
+
   return args;
 }
 
