@@ -55,4 +55,9 @@ typedef NS_ENUM(NSInteger, GRPCCompressAlgorithm) {
                          timeout:(int)timeout
                          forHost:(nonnull NSString *)host;
 
+/** Enable/Disable automatic retry of gRPC calls on the channel. If automatic retry is enabled, the
+ * retry is controlled by server's service config. If automatic retry is disabled, failed calls are
+ * immediately returned to the application layer. */
++ (void)enableRetry:(BOOL)enabled forHost:(nonnull NSString *)host;
+
 @end

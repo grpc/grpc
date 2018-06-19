@@ -64,4 +64,9 @@
   hostConfig.keepaliveTimeout = timeout;
 }
 
++ (void)enableRetry:(BOOL)enabled forHost:(nonnull NSString *)host {
+  GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
+  hostConfig.retryEnabled = enabled;
+}
+
 @end

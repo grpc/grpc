@@ -38,6 +38,7 @@ struct grpc_channel_credentials;
 @property(nonatomic) int keepaliveInterval;
 @property(nonatomic) int keepaliveTimeout;
 @property(nonatomic) id logContext;
+@property(nonatomic) BOOL retryEnabled;
 
 /** The following properties should only be modified for testing: */
 

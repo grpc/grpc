@@ -85,6 +85,7 @@ static NSMutableDictionary *kHostCache;
       _secure = YES;
       kHostCache[address] = self;
       _compressAlgorithm = GRPC_COMPRESS_NONE;
+      _retryEnabled = YES;
     }
 #ifndef GRPC_CFSTREAM
     [GRPCConnectivityMonitor registerObserver:self selector:@selector(connectivityChange:)];
@@ -238,6 +239,10 @@ static NSMutableDictionary *kHostCache;
 
   if (useCronet) {
     args[@GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER] = [NSNumber numberWithInt:1];
+  }
+
+  if (_retryEnabled == NO) {
+    args[@GRPC_ARG_ENABLE_RETRIES] = [NSNumber numberWithInt:0];
   }
 
   return args;
