@@ -309,6 +309,9 @@ endif()
 if(_gRPC_PLATFORM_LINUX)
 add_dependencies(buildtests_c handshake_server_with_readahead_handshaker)
 endif()
+if(_gRPC_PLATFORM_LINUX)
+add_dependencies(buildtests_c handshake_verify_peer_options)
+endif()
 add_dependencies(buildtests_c histogram_test)
 add_dependencies(buildtests_c hpack_parser_test)
 add_dependencies(buildtests_c hpack_table_test)
@@ -1215,6 +1218,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
+  src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc
@@ -1222,7 +1226,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
   src/core/ext/filters/load_reporting/server_load_reporting_filter.cc
   src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc
-  src/core/ext/census/grpc_context.cc
+  src/cpp/ext/filters/census/grpc_context.cc
   src/core/ext/filters/max_age/max_age_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/filters/http/client_authority_filter.cc
@@ -2509,6 +2513,7 @@ add_library(grpc_unsecure
   src/core/ext/transport/inproc/inproc_plugin.cc
   src/core/ext/transport/inproc/inproc_transport.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
+  src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc
@@ -2528,7 +2533,7 @@ add_library(grpc_unsecure
   third_party/nanopb/pb_encode.c
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
-  src/core/ext/census/grpc_context.cc
+  src/cpp/ext/filters/census/grpc_context.cc
   src/core/ext/filters/max_age/max_age_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/filters/http/client_authority_filter.cc
@@ -3312,10 +3317,7 @@ add_library(grpc++_cronet
   src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc
   src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc
   src/core/ext/transport/chttp2/server/chttp2_server.cc
-  src/core/ext/census/grpc_context.cc
-  third_party/nanopb/pb_common.c
-  third_party/nanopb/pb_decode.c
-  third_party/nanopb/pb_encode.c
+  src/cpp/ext/filters/census/grpc_context.cc
 )
 
 if(WIN32 AND MSVC)
@@ -7490,6 +7492,37 @@ target_include_directories(handshake_server_with_readahead_handshaker
 )
 
 target_link_libraries(handshake_server_with_readahead_handshaker
+  ${_gRPC_SSL_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif()
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX)
+
+add_executable(handshake_verify_peer_options
+  test/core/handshake/verify_peer_options.cc
+)
+
+
+target_include_directories(handshake_verify_peer_options
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+)
+
+target_link_libraries(handshake_verify_peer_options
   ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util

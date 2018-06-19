@@ -1177,6 +1177,23 @@
   {
     "deps": [
       "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "handshake_verify_peer_options", 
+    "src": [
+      "test/core/handshake/verify_peer_options.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -9072,8 +9089,7 @@
   {
     "deps": [
       "gpr", 
-      "grpc_base", 
-      "nanopb"
+      "grpc_base"
     ], 
     "headers": [
       "include/grpc/census.h"
@@ -9083,7 +9099,7 @@
     "name": "census", 
     "src": [
       "include/grpc/census.h", 
-      "src/core/ext/census/grpc_context.cc"
+      "src/cpp/ext/filters/census/grpc_context.cc"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -10162,6 +10178,7 @@
     "name": "grpc_resolver_dns_ares", 
     "src": [
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc", 
+      "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc", 
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h", 
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc", 
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc", 

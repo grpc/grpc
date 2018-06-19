@@ -222,7 +222,7 @@ static grpc_channel_credentials* read_ssl_channel_creds(input_stream* inp) {
   grpc_channel_credentials* creds = grpc_ssl_credentials_create(
       root_certs,
       private_key != nullptr && certs != nullptr ? &key_cert_pair : nullptr,
-      nullptr);
+      nullptr, nullptr);
   cred_artifact_ctx_finish(&ctx);
   return creds;
 }

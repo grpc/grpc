@@ -28,6 +28,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_base_c",
         "//test/core/tsi/alts/crypt:alts_crypt_test_util",
+        "//test/core/util:gpr_test_util",
     ],
 )
 
@@ -40,6 +41,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/tsi/alts/crypt:alts_crypt_test_util",
+        "//test/core/util:gpr_test_util",
     ],
 )
 
@@ -53,5 +55,6 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_base_c",
         "//test/core/tsi/alts/crypt:alts_crypt_test_util",
+        "//test/core/util:gpr_test_util",
     ],
 )
