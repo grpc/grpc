@@ -9049,8 +9049,7 @@
   {
     "deps": [
       "gpr", 
-      "grpc_base", 
-      "nanopb"
+      "grpc_base"
     ], 
     "headers": [
       "include/grpc/census.h"
@@ -9060,7 +9059,7 @@
     "name": "census", 
     "src": [
       "include/grpc/census.h", 
-      "src/core/ext/census/grpc_context.cc"
+      "src/cpp/ext/filters/census/grpc_context.cc"
     ], 
     "third_party": false, 
     "type": "filegroup"

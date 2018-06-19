@@ -9,6 +9,16 @@ def grpc_deps():
     )
 
     native.bind(
+        name = "absl-base",
+        actual = "@com_google_absl//absl/base",
+    )
+
+    native.bind(
+        name = "absl-time",
+        actual = "@com_google_absl//absl/time:time",
+    )
+
+    native.bind(
         name = "libssl",
         actual = "@boringssl//:ssl",
     )
@@ -73,6 +83,21 @@ def grpc_deps():
         actual = "@com_github_grpc_grpc//:grpc++_codegen_proto",
     )
 
+    native.bind(
+        name = "opencensus-trace",
+        actual = "@io_opencensus_cpp//opencensus/trace:trace"
+    )
+
+    native.bind(
+        name = "opencensus-stats",
+        actual = "@io_opencensus_cpp//opencensus/stats:stats"
+    )
+
+    native.bind(
+        name = "opencensus-stats-test",
+        actual = "@io_opencensus_cpp//opencensus/stats:test_utils"
+    )
+
     if "boringssl" not in native.existing_rules():
         native.http_archive(
             name = "boringssl",
@@ -122,8 +147,8 @@ def grpc_deps():
         native.new_http_archive(
             name = "com_github_google_benchmark",
             build_file = "@com_github_grpc_grpc//third_party:benchmark.BUILD",
-            strip_prefix = "benchmark-5b7683f49e1e9223cf9927b24f6fd3d6bd82e3f8",
-            url = "https://github.com/google/benchmark/archive/5b7683f49e1e9223cf9927b24f6fd3d6bd82e3f8.tar.gz",
+            strip_prefix = "benchmark-9913418d323e64a0111ca0da81388260c2bbe1e9",
+            url = "https://github.com/google/benchmark/archive/9913418d323e64a0111ca0da81388260c2bbe1e9.tar.gz",
         )
 
     if "com_github_cares_cares" not in native.existing_rules():
@@ -137,8 +162,8 @@ def grpc_deps():
     if "com_google_absl" not in native.existing_rules():
         native.http_archive(
             name = "com_google_absl",
-            strip_prefix = "abseil-cpp-cc4bed2d74f7c8717e31f9579214ab52a9c9c610",
-            url = "https://github.com/abseil/abseil-cpp/archive/cc4bed2d74f7c8717e31f9579214ab52a9c9c610.tar.gz",
+            strip_prefix = "abseil-cpp-cd95e71df6eaf8f2a282b1da556c2cf1c9b09207",
+            url = "https://github.com/abseil/abseil-cpp/archive/cd95e71df6eaf8f2a282b1da556c2cf1c9b09207.tar.gz",
         )
 
     if "com_github_bazelbuild_bazeltoolchains" not in native.existing_rules():
@@ -151,6 +176,14 @@ def grpc_deps():
             ],
             sha256 = "1c4a532b396c698e6467a1548554571cb85fa091e472b05e398ebc836c315d77",
         )
+
+    if "io_opencensus_cpp" not in native.existing_rules():
+      native.http_archive(
+            name = "io_opencensus_cpp",
+            strip_prefix = "opencensus-cpp-fdf0f308b1631bb4a942e32ba5d22536a6170274",
+            url = "https://github.com/census-instrumentation/opencensus-cpp/archive/fdf0f308b1631bb4a942e32ba5d22536a6170274.tar.gz",
+        )
+
 
 # TODO: move some dependencies from "grpc_deps" here?
 def grpc_test_only_deps():
