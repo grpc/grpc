@@ -36,7 +36,7 @@ class ProtoFileParser {
   // The parser will search proto files using the server reflection service
   // provided on the given channel. The given protofiles in a source tree rooted
   // from proto_path will also be searched.
-  ProtoFileParser(std::shared_ptr<grpc::Channel> channel,
+  ProtoFileParser(const std::shared_ptr<grpc::Channel>& channel,
                   const grpc::string& proto_path,
                   const grpc::string& protofiles);
 

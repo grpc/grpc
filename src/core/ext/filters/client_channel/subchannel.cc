@@ -734,8 +734,9 @@ void grpc_get_subchannel_address_arg(const grpc_channel_args* args,
 }
 
 const char* grpc_get_subchannel_address_uri_arg(const grpc_channel_args* args) {
-  const char* addr_str =
-      grpc_channel_args_get_string(args, GRPC_ARG_SUBCHANNEL_ADDRESS);
+  const grpc_arg* addr_arg =
+      grpc_channel_args_find(args, GRPC_ARG_SUBCHANNEL_ADDRESS);
+  const char* addr_str = grpc_channel_arg_get_string(addr_arg);
   GPR_ASSERT(addr_str != nullptr);  // Should have been set by LB policy.
   return addr_str;
 }

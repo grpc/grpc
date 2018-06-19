@@ -22,7 +22,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.13.0-dev'
+  version = '1.14.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -787,6 +787,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc',
                       'src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc',
+                      'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc',
@@ -794,7 +795,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc',
                       'src/core/ext/filters/load_reporting/server_load_reporting_filter.cc',
                       'src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc',
-                      'src/core/ext/census/grpc_context.cc',
+                      'src/cpp/ext/filters/census/grpc_context.cc',
                       'src/core/ext/filters/max_age/max_age_filter.cc',
                       'src/core/ext/filters/message_size/message_size_filter.cc',
                       'src/core/ext/filters/http/client_authority_filter.cc',
@@ -1267,6 +1268,7 @@ Pod::Spec.new do |s|
 
   # TODO (mxyan): Instead of this hack, add include path "third_party" to C core's include path?
   s.prepare_command = <<-END_OF_COMMAND
-    find src/core/ -type f ! -path '*.back*' -exec sed -E -i'.back' 's;#include "third_party/nanopb/(.*)";#include <nanopb/\\1>;g' {} \\\;
+    find src/core/ -type f ! -path '*.grpc_back' -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(pb(_.*)?\\.h)";#include <nanopb/\\1>;g'
+    find src/core/ -type f -path '*.grpc_back' -print0 | xargs -0 rm
   END_OF_COMMAND
 end

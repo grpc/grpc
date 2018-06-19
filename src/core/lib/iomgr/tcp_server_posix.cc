@@ -64,11 +64,22 @@ static grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
   s->expand_wildcard_addrs = false;
   for (size_t i = 0; i < (args == nullptr ? 0 : args->num_args); i++) {
     if (0 == strcmp(GRPC_ARG_ALLOW_REUSEPORT, args->args[i].key)) {
-      s->so_reuseport = grpc_channel_arg_get_bool(
-          &args->args[i], grpc_is_socket_reuse_port_supported());
+      if (args->args[i].type == GRPC_ARG_INTEGER) {
+        s->so_reuseport = grpc_is_socket_reuse_port_supported() &&
+                          (args->args[i].value.integer != 0);
+      } else {
+        gpr_free(s);
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(GRPC_ARG_ALLOW_REUSEPORT
+                                                    " must be an integer");
+      }
     } else if (0 == strcmp(GRPC_ARG_EXPAND_WILDCARD_ADDRS, args->args[i].key)) {
-      s->expand_wildcard_addrs =
-          grpc_channel_arg_get_bool(&args->args[i], false);
+      if (args->args[i].type == GRPC_ARG_INTEGER) {
+        s->expand_wildcard_addrs = (args->args[i].value.integer != 0);
+      } else {
+        gpr_free(s);
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            GRPC_ARG_EXPAND_WILDCARD_ADDRS " must be an integer");
+      }
     }
   }
   gpr_ref_init(&s->refs, 1);

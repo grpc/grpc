@@ -64,11 +64,11 @@ config_setting(
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "gloriosa"
+g_stands_for = "gladiolus"
 
 core_version = "6.0.0-dev"
 
-version = "1.13.0-dev"
+version = "1.14.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -485,10 +485,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "census",
     srcs = [
-        "src/core/ext/census/grpc_context.cc",
-    ],
-    external_deps = [
-        "nanopb",
+        "src/cpp/ext/filters/census/grpc_context.cc",
     ],
     language = "c++",
     public_hdrs = [
@@ -1335,6 +1332,7 @@ grpc_cc_library(
     name = "grpc_resolver_dns_ares",
     srcs = [
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc",
+        "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc",
         "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc",
@@ -1988,6 +1986,42 @@ grpc_cc_library(
     deps = [
         ":grpc++",
         "//src/proto/grpc/core:stats_proto",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_opencensus_plugin",
+    srcs = [
+        "src/cpp/ext/filters/census/client_filter.cc",
+        "src/cpp/ext/filters/census/server_filter.cc",
+        "src/cpp/ext/filters/census/channel_filter.cc",
+        "src/cpp/ext/filters/census/context.cc",
+        "src/cpp/ext/filters/census/grpc_context.cc",
+        "src/cpp/ext/filters/census/grpc_plugin.cc",
+        "src/cpp/ext/filters/census/measures.cc",
+        "src/cpp/ext/filters/census/rpc_encoding.cc",
+        "src/cpp/ext/filters/census/views.cc",
+    ],
+    hdrs = [
+        "include/grpcpp/opencensus.h",
+        "src/cpp/ext/filters/census/client_filter.h",
+        "src/cpp/ext/filters/census/server_filter.h",
+        "src/cpp/ext/filters/census/channel_filter.h",
+        "src/cpp/ext/filters/census/context.h",
+        "src/cpp/ext/filters/census/grpc_plugin.h",
+        "src/cpp/ext/filters/census/measures.h",
+        "src/cpp/ext/filters/census/rpc_encoding.h",
+    ],
+    language = "c++",
+    external_deps = [
+        "absl-base",
+        "absl-time",
+        "opencensus-trace",
+        "opencensus-stats",
+    ],
+    deps = [
+        ":census",
+        ":grpc++",
     ],
 )
 

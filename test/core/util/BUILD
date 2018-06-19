@@ -33,9 +33,9 @@ grpc_cc_library(
     ],
     deps = ["//:gpr"],
     data = [
-        "//tools:lsan_suppressions.txt",
-        "//tools:tsan_suppressions.txt",
-        "//tools:ubsan_suppressions.txt",
+        "lsan_suppressions.txt",
+        "tsan_suppressions.txt",
+        "ubsan_suppressions.txt",
     ],
 )
 

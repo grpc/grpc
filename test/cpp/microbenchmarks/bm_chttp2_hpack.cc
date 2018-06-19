@@ -208,6 +208,7 @@ class SingleInternedBinaryElem {
  private:
   static grpc_slice MakeBytes() {
     std::vector<char> v;
+    v.reserve(kLength);
     for (int i = 0; i < kLength; i++) {
       v.push_back(static_cast<char>(rand()));
     }
@@ -246,6 +247,7 @@ class SingleNonInternedBinaryElem {
  private:
   static grpc_slice MakeBytes() {
     std::vector<char> v;
+    v.reserve(kLength);
     for (int i = 0; i < kLength; i++) {
       v.push_back(static_cast<char>(rand()));
     }

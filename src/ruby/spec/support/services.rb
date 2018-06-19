@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Test stubs for various scenarios
-require 'grpc'
+require 'spec_helper'
 
 # A test message
 class EchoMsg
