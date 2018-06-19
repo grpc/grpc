@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2018 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,21 @@
  *
  */
 
-#include "test/core/statistics/census_log_tests.h"
+#ifndef GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_CHANNEL_FILTER_H
+#define GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_CHANNEL_FILTER_H
 
-#include <stdlib.h>
+#include <grpc/support/port_platform.h>
 
-#include <grpc/support/time.h>
-#include "test/core/util/test_config.h"
+#include "src/cpp/ext/filters/census/context.h"
 
-int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
-  srand(gpr_now(GPR_CLOCK_REALTIME).tv_nsec);
-  test_multiple_writers();
-  return 0;
-}
+namespace grpc {
+
+class CensusChannelData : public ChannelData {
+ public:
+  grpc_error* Init(grpc_channel_element* elem,
+                   grpc_channel_element_args* args) override;
+};
+
+}  // namespace grpc
+
+#endif /* GRPC_INTERNAL_CPP_EXT_FILTERS_CENSUS_CHANNEL_FILTER_H */

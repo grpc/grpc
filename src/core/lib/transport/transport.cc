@@ -212,21 +212,32 @@ void grpc_transport_stream_op_batch_finish_with_failure(
   if (batch->send_message) {
     batch->payload->send_message.send_message.reset();
   }
-  if (batch->recv_message) {
-    GRPC_CALL_COMBINER_START(
-        call_combiner, batch->payload->recv_message.recv_message_ready,
-        GRPC_ERROR_REF(error), "failing recv_message_ready");
-  }
-  if (batch->recv_initial_metadata) {
-    GRPC_CALL_COMBINER_START(
-        call_combiner,
-        batch->payload->recv_initial_metadata.recv_initial_metadata_ready,
-        GRPC_ERROR_REF(error), "failing recv_initial_metadata_ready");
-  }
-  GRPC_CLOSURE_SCHED(batch->on_complete, error);
   if (batch->cancel_stream) {
     GRPC_ERROR_UNREF(batch->payload->cancel_stream.cancel_error);
   }
+  // Construct a list of closures to execute.
+  grpc_core::CallCombinerClosureList closures;
+  if (batch->recv_initial_metadata) {
+    closures.Add(
+        batch->payload->recv_initial_metadata.recv_initial_metadata_ready,
+        GRPC_ERROR_REF(error), "failing recv_initial_metadata_ready");
+  }
+  if (batch->recv_message) {
+    closures.Add(batch->payload->recv_message.recv_message_ready,
+                 GRPC_ERROR_REF(error), "failing recv_message_ready");
+  }
+  if (batch->recv_trailing_metadata) {
+    closures.Add(
+        batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready,
+        GRPC_ERROR_REF(error), "failing recv_trailing_metadata_ready");
+  }
+  if (batch->on_complete != nullptr) {
+    closures.Add(batch->on_complete, GRPC_ERROR_REF(error),
+                 "failing on_complete");
+  }
+  // Execute closures.
+  closures.RunClosures(call_combiner);
+  GRPC_ERROR_UNREF(error);
 }
 
 typedef struct {

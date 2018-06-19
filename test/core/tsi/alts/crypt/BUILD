@@ -27,6 +27,7 @@ grpc_cc_test(
         "//:alts_frame_protector",
         "//:gpr",
         "//:grpc",
+        "//test/core/util:gpr_test_util",
     ],
 )
 

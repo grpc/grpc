@@ -1194,6 +1194,23 @@
   {
     "deps": [
       "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "handshake_verify_peer_options", 
+    "src": [
+      "test/core/handshake/verify_peer_options.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -9066,8 +9083,7 @@
   {
     "deps": [
       "gpr", 
-      "grpc_base", 
-      "nanopb"
+      "grpc_base"
     ], 
     "headers": [
       "include/grpc/census.h"
@@ -9077,7 +9093,7 @@
     "name": "census", 
     "src": [
       "include/grpc/census.h", 
-      "src/core/ext/census/grpc_context.cc"
+      "src/cpp/ext/filters/census/grpc_context.cc"
     ], 
     "third_party": false, 
     "type": "filegroup"

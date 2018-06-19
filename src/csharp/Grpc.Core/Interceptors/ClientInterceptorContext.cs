@@ -25,7 +25,6 @@ namespace Grpc.Core.Interceptors
 {
     /// <summary>
     /// Carries along the context associated with intercepted invocations on the client side.
-    /// This is an EXPERIMENTAL API.
     /// </summary>
     public struct ClientInterceptorContext<TRequest, TResponse>
         where TRequest : class
