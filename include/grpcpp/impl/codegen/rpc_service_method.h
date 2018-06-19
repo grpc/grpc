@@ -31,8 +31,6 @@
 #include <grpcpp/impl/codegen/rpc_method.h>
 #include <grpcpp/impl/codegen/status.h>
 
-#include <grpc/support/log.h>
-
 namespace grpc {
 class ServerContext;
 
