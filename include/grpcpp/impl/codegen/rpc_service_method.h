@@ -68,6 +68,8 @@ class RpcServiceMethod : public RpcMethod {
     UNSET,
     ASYNC,
     CODEGEN_GENERIC,
+    CODEGEN_GENERIC_REQUEST,
+    CODEGEN_GENERIC_RESPONSE,
   };
 
   void set_server_tag(void* tag) { server_tag_ = tag; }
@@ -106,6 +108,10 @@ class RpcServiceMethod : public RpcMethod {
         return "async";
       case AsyncType::CODEGEN_GENERIC:
         return "codegen generic";
+      case AsyncType::CODEGEN_GENERIC_REQUEST:
+        return "codegen generic request";
+      case AsyncType::CODEGEN_GENERIC_RESPONSE:
+        return "codegen generic response";
       default:
         GPR_UNREACHABLE_CODE(return "unknown");
     }

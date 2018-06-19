@@ -145,6 +145,28 @@ class Service {
         internal::RpcServiceMethod::AsyncType::CODEGEN_GENERIC);
   }
 
+  void MarkMethodCodegenGenericRequest(int index) {
+    // This does not have to be a hard error, however no one has approached us
+    // with a use case yet. Please file an issue if you believe you have one.
+    GPR_CODEGEN_ASSERT(
+        methods_[index].get() != nullptr &&
+        "Cannot mark the method as 'codegen generic request' because it has "
+        "already been marked as 'generic'.");
+    methods_[index]->SetServerAsyncType(
+        internal::RpcServiceMethod::AsyncType::CODEGEN_GENERIC_REQUEST);
+  }
+
+  void MarkMethodCodegenGenericResponse(int index) {
+    // This does not have to be a hard error, however no one has approached us
+    // with a use case yet. Please file an issue if you believe you have one.
+    GPR_CODEGEN_ASSERT(
+        methods_[index].get() != nullptr &&
+        "Cannot mark the method as 'codegen generic response' because it has "
+        "already been marked as 'generic'.");
+    methods_[index]->SetServerAsyncType(
+        internal::RpcServiceMethod::AsyncType::CODEGEN_GENERIC_RESPONSE);
+  }
+
   void MarkMethodGeneric(int index) {
     // This does not have to be a hard error, however no one has approached us
     // with a use case yet. Please file an issue if you believe you have one.
