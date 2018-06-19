@@ -124,11 +124,9 @@ module GRPC
       requests.each do |req|
         GRPC.logger.debug("bidi-write-loop: #{count}")
         count += 1
-        payload = @marshal.call(req)
         # Fails if status already received
         begin
-          @req_view.send_initial_metadata unless @req_view.nil?
-          @call.run_batch(SEND_MESSAGE => payload)
+          @acall.remote_send(req, false)
         rescue GRPC::Core::CallError => e
           # This is almost definitely caused by a status arriving while still
           # writing. Don't re-throw the error
