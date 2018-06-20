@@ -141,6 +141,69 @@ class AuthContextTest(unittest.TestCase):
         self.assertSequenceEqual([b'*.test.google.com'],
                                  auth_ctx['x509_common_name'])
 
+    def testVerifyCallback(self):
+        handler = grpc.method_handlers_generic_handler('test', {
+            'UnaryUnary':
+            grpc.unary_unary_rpc_method_handler(handle_unary_unary)
+        })
+        server = test_common.test_server()
+        server.add_generic_rpc_handlers((handler,))
+        server_cred = grpc.ssl_server_credentials(
+            _SERVER_CERTS,
+            root_certificates=_TEST_ROOT_CERTIFICATES,
+            require_client_auth=True)
+        port = server.add_secure_port('[::]:0', server_cred)
+        server.start()
+
+        callbackResult = True
+        callbackHost = None
+        callbackCert = None
+        def checkServerIdentity(host, cert):
+            nonlocal callbackHost
+            nonlocal callbackCert
+            callbackHost = host
+            callbackCert = cert
+            return callbackResult
+
+        channel_creds = grpc.ssl_channel_credentials(
+            root_certificates=_TEST_ROOT_CERTIFICATES,
+            private_key=_PRIVATE_KEY,
+            certificate_chain=_CERTIFICATE_CHAIN,
+            verify_options={
+                "checkServerIdentity": checkServerIdentity
+            }
+        )
+        channel = grpc.secure_channel(
+            'localhost:{}'.format(port),
+            channel_creds,
+            options=_PROPERTY_OPTIONS)
+
+        try:
+            # Run a successful connect and verify we got expected values in the callback
+            channel = grpc.secure_channel(
+                'localhost:{}'.format(port),
+                channel_creds,
+                options=_PROPERTY_OPTIONS)
+            response = channel.unary_unary(_UNARY_UNARY)(_REQUEST)
+            self.assertEqual(_SERVER_HOST_OVERRIDE, callbackHost.decode('utf-8'))
+            self.assertEqual(_CERTIFICATE_CHAIN, callbackCert)
+
+            # Run a failure connect and verify we got an exception and saw expected values
+            callbackResult = False
+            callbackHost = None
+            callbackCert = None
+            channel = grpc.secure_channel(
+                'localhost:{}'.format(port),
+                channel_creds,
+                options=_PROPERTY_OPTIONS)
+            with self.assertRaises(Exception):
+                response = channel.unary_unary(_UNARY_UNARY)(_REQUEST)
+            self.assertEqual(_SERVER_HOST_OVERRIDE, callbackHost.decode('utf-8'))
+            self.assertEqual(_CERTIFICATE_CHAIN, callbackCert)
+        finally:
+            server.stop(None)
+
+
     def _do_one_shot_client_rpc(self, channel_creds, channel_options, port,
                                 expect_ssl_session_reused):
         channel = grpc.secure_channel(

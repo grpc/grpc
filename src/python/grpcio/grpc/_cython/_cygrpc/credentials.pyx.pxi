@@ -126,10 +126,10 @@ cdef class SSLSessionCacheLRU:
     grpc_shutdown()
 
 
-cdef int verify_peer_callback_wrapper(const char* servername, const char* cert, void* userdata) with gil:
+cdef int _verify_peer_callback_wrapper(
+    const char* servername, const char* cert, void* userdata) with gil:
   if userdata == NULL:
-    print("Error! Callback function wasn't set!")
-    return 1
+    raise ValueError("Callback function wasn't set on userdata")
   fn = <object>userdata
   py_servername = None
   if servername != NULL:
@@ -146,14 +146,14 @@ cdef int verify_peer_callback_wrapper(const char* servername, const char* cert, 
     return 1
 
 
-cdef void verify_peer_callback_destruct(void *userdata) with gil:
-  fn = <object>userdata
-  cpython.Py_DECREF(fn)
+cdef void _verify_peer_callback_destruct(void *userdata) with gil:
+  cpython.Py_DECREF(<object>userdata)
 
 
 cdef class SSLChannelCredentials(ChannelCredentials):
 
-  def __cinit__(self, pem_root_certificates, private_key, certificate_chain, verify_options):
+  def __cinit__(
+      self, pem_root_certificates, private_key, certificate_chain, verify_options):
     self._pem_root_certificates = pem_root_certificates
     self._private_key = private_key
     self._certificate_chain = certificate_chain
@@ -173,9 +173,9 @@ cdef class SSLChannelCredentials(ChannelCredentials):
         if not callable(fn):
           raise TypeError("checkServerIdentity parameter must be callable.")
         cpython.Py_INCREF(fn)
-        vp_options.verify_peer_callback = verify_peer_callback_wrapper
+        vp_options.verify_peer_callback = _verify_peer_callback_wrapper
         vp_options.verify_peer_callback_userdata = <void*>fn
-        vp_options.verify_peer_destruct = verify_peer_callback_destruct
+        vp_options.verify_peer_destruct = _verify_peer_callback_destruct
 
     if self._pem_root_certificates is None:
       c_pem_root_certificates = NULL
