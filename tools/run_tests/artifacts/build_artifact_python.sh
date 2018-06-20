@@ -99,12 +99,16 @@ then
   "${PIP}" install grpcio --no-index --find-links "file://$ARTIFACT_DIR/"
   "${PIP}" install grpcio-tools --no-index --find-links "file://$ARTIFACT_DIR/"
 
-  # Build gRPC health-checking source distribution
+  # Build grpcio_testing source distribution
+  ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_testing/setup.py sdist
+  cp -r src/python/grpcio_testing/dist/* "$ARTIFACT_DIR"
+
+  # Build grpcio_health_checking source distribution
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_health_checking/setup.py \
       preprocess build_package_protos sdist
   cp -r src/python/grpcio_health_checking/dist/* "$ARTIFACT_DIR"
 
-  # Build gRPC reflection source distribution
+  # Build grpcio_reflection source distribution
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_reflection/setup.py \
       preprocess build_package_protos sdist
   cp -r src/python/grpcio_reflection/dist/* "$ARTIFACT_DIR"
