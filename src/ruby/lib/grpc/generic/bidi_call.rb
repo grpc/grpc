@@ -68,12 +68,20 @@ module GRPC
     # @param set_output_stream_done [Proc] called back when we're done
     #   sending data on the output stream
     # @return an Enumerator of requests to yield
-    def run_on_client(requests, set_output_stream_done, &blk)
-      @enq_th = Thread.new do
+    def run_on_client(requests, set_output_stream_done)
+      t = Thread.new do
         write_loop(requests, set_output_stream_done: set_output_stream_done)
       end
 
-      read_loop(&blk)
+      if block_given?
+        @acall.each_remote_read_then_finish { |v| yield v }
+        t.join
+      else
+        Enumerator.new do |out|
+          @acall.each_remote_read_then_finish { |v| out << v }
+          t.join
+        end
+      end
     end
 
     # Begins orchestration of the Bidi stream for a server generating replies.
@@ -89,7 +97,7 @@ module GRPC
     # @param [Proc] gen_each_reply generates the BiDi stream replies.
     # @param [Enumerable] requests The enumerable of requests to run
     def run_on_server(gen_each_reply)
-      requests = read_next_loop(false)
+      requests = @acall.each_remote_read
       replies = nil
 
       # Pass in the optional call object parameter if possible
@@ -102,17 +110,6 @@ module GRPC
       end
 
       write_loop(replies, is_client: false)
-    end
-
-    ##
-    # Read the next stream iteration
-    #
-    # @param [Proc] finalize_stream callback to call when the reads have been
-    #   completely read through.
-    # @param [Boolean] is_client If this is a client or server request
-    #
-    def read_next_loop(is_client = false)
-      read_loop(is_client: is_client)
     end
 
     private
@@ -163,28 +160,6 @@ module GRPC
       end
     ensure
       set_output_stream_done.call if is_client
-    end
-
-    # Provides an enumerator that yields results of remote reads
-    def read_loop(is_client: true)
-      return enum_for(:read_loop, is_client: is_client) unless block_given?
-
-      begin
-        if is_client
-          @acall.each_remote_read_then_finish { |v| yield v }
-        else
-          @acall.each_remote_read { |v| yield v }
-        end
-      rescue StandardError => e
-        GRPC.logger.warn('bidi: read-loop failed')
-        GRPC.logger.warn(e)
-        raise e
-      end
-      GRPC.logger.debug('bidi-read-loop: finished')
-      # Make sure that the write loop is done done before finishing the call.
-      # Note that blocking is ok at this point because we've already received
-      # a status
-      @enq_th.join if is_client
     end
   end
 end
