@@ -1906,15 +1906,6 @@ libs:
   - test/cpp/interop/interop_server_bootstrap.cc
   deps:
   - interop_server_lib
-- name: lb_load_data_store
-  build: private
-  language: c++
-  headers:
-  - src/cpp/server/load_reporter/load_data_store.h
-  src:
-  - src/cpp/server/load_reporter/load_data_store.cc
-  deps:
-  - grpc++
 - name: qps
   build: private
   language: c++
@@ -4864,20 +4855,6 @@ targets:
   - mac
   - linux
   - posix
-- name: lb_load_data_store_test
-  gtest: true
-  build: test
-  language: c++
-  src:
-  - test/cpp/server/load_reporter/load_data_store_test.cc
-  deps:
-  - lb_load_data_store
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr_test_util
-  - gpr
 - name: memory_test
   gtest: true
   build: test
