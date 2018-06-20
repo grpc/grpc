@@ -169,16 +169,6 @@ class TransportStreamOpBatch {
     op_->payload->send_message.send_message = std::move(send_message);
   }
 
-  grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message() const {
-    return op_->recv_message ? op_->payload->recv_message.recv_message
-                             : nullptr;
-  }
-  void set_recv_message(
-      grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message) {
-    op_->recv_message = true;
-    op_->payload->recv_message.recv_message = recv_message;
-  }
-
   census_context* get_census_context() const {
     return static_cast<census_context*>(
         op_->payload->context[GRPC_CONTEXT_TRACING].value);
@@ -359,11 +349,13 @@ void RegisterChannelFilter(
       stack_type,
       priority,
       include_filter,
-      {FilterType::StartTransportStreamOpBatch, FilterType::StartTransportOp,
-       FilterType::call_data_size, FilterType::InitCallElement,
-       FilterType::SetPollsetOrPollsetSet, FilterType::DestroyCallElement,
-       FilterType::channel_data_size, FilterType::InitChannelElement,
-       FilterType::DestroyChannelElement, FilterType::GetChannelInfo, name}};
+      {FilterType::StartTransportStreamOpBatch,
+       FilterType::StartTransportStreamRecvOpBatch,
+       FilterType::StartTransportOp, FilterType::call_data_size,
+       FilterType::InitCallElement, FilterType::SetPollsetOrPollsetSet,
+       FilterType::DestroyCallElement, FilterType::channel_data_size,
+       FilterType::InitChannelElement, FilterType::DestroyChannelElement,
+       FilterType::GetChannelInfo, name}};
   internal::channel_filters->push_back(filter_record);
 }
 

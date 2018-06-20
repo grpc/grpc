@@ -40,9 +40,7 @@ class CensusClientCallData : public CallData {
   static constexpr uint32_t kMaxTagsLen = 2048;
 
   CensusClientCallData()
-      : recv_trailing_metadata_(nullptr),
-        elapsed_time_(0),
-        recv_message_(nullptr),
+      : elapsed_time_(0),
         recv_message_count_(0),
         sent_message_count_(0) {
     memset(&stats_bin_, 0, sizeof(grpc_linked_mdelem));

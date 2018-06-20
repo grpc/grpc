@@ -42,10 +42,6 @@ class CensusServerCallData : public CallData {
   CensusServerCallData()
       : gc_(nullptr),
         auth_context_(nullptr),
-        recv_initial_metadata_(nullptr),
-        initial_on_done_recv_initial_metadata_(nullptr),
-        initial_on_done_recv_message_(nullptr),
-        recv_message_(nullptr),
         recv_message_count_(0),
         sent_message_count_(0) {
     memset(&census_bin_, 0, sizeof(grpc_linked_mdelem));

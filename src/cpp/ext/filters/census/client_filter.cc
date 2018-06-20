@@ -92,7 +92,9 @@ void CensusClientCallData::StartTransportStreamRecvOpBatch(
     }
   }
   if (batch->recv_trailing_metadata) {
-    FilterTrailingMetadata(recv_trailing_metadata_, &elapsed_time_);
+    FilterTrailingMetadata(
+        batch->payload->recv_trailing_metadata.recv_trailing_metadata,
+        &elapsed_time_);
   }
   grpc_call_prev_filter_recv_op_batch(elem, batch, error);
 }

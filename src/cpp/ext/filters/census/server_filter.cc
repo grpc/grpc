@@ -129,7 +129,7 @@ void CensusServerCallData::StartTransportStreamRecvOpBatch(
     grpc_call_element* elem, grpc_transport_stream_recv_op_batch* batch,
     grpc_error* error) {
   if (batch->recv_initial_metadata && error == GRPC_ERROR_NONE) {
-    OnDoneRecvInitialMetadata(elem, batch);
+    OnDoneRecvInitialMetadata(batch);
   }
   if (batch->recv_message) {
     if (*batch->payload->recv_message.recv_message != nullptr) {
