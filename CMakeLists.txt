@@ -39,6 +39,7 @@ set(gRPC_INSTALL_SHAREDIR "share/grpc" CACHE STRING "Installation directory for 
 # Options
 option(gRPC_BUILD_TESTS "Build tests" OFF)
 option(gRPC_BUILD_CODEGEN "Build codegen" ON)
+option(gRPC_BUILD_CSHARP_EXT "Build C# extensions" ON)
 
 set(gRPC_INSTALL_default ON)
 if (NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
@@ -5177,6 +5178,7 @@ target_link_libraries(qps
 endif (gRPC_BUILD_CODEGEN)
 
 endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_CSHARP_EXT)
 
 add_library(grpc_csharp_ext SHARED
   src/csharp/ext/grpc_csharp_ext.c
@@ -5223,6 +5225,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
+endif (gRPC_BUILD_CSHARP_EXT)
 if (gRPC_BUILD_TESTS)
 
 add_library(bad_client_test
