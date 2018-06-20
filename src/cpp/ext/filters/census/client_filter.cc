@@ -119,8 +119,10 @@ void CensusClientCallData::StartTransportStreamOpBatch(
   }
   if (op->recv_trailing_metadata() != nullptr) {
     recv_trailing_metadata_ = op->recv_trailing_metadata()->batch();
-    initial_on_done_recv_trailing_metadata_ = op->on_complete();
-    op->set_on_complete(&on_done_recv_trailing_metadata_);
+    initial_on_done_recv_trailing_metadata_ =
+        op->op()->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
+    op->op()->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
+        &on_done_recv_trailing_metadata_;
   }
   // Call next op.
   grpc_call_next_op(elem, op->op());
