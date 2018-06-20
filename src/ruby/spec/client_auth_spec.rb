@@ -14,16 +14,23 @@
 
 require 'spec_helper'
 
-def create_channel_creds
+def create_channel_creds(verify_options = nil)
   test_root = File.join(File.dirname(__FILE__), 'testdata')
   files = ['ca.pem', 'client.key', 'client.pem']
   creds = files.map { |f| File.open(File.join(test_root, f)).read }
-  GRPC::Core::ChannelCredentials.new(creds[0], creds[1], creds[2])
+  GRPC::Core::ChannelCredentials.new(creds[0], creds[1], creds[2], verify_options)
 end
 
 def client_cert
   test_root = File.join(File.dirname(__FILE__), 'testdata')
   cert = File.open(File.join(test_root, 'client.pem')).read
+  fail unless cert.is_a?(String)
+  cert
+end
+
+def server_cert
+  test_root = File.join(File.dirname(__FILE__), 'testdata')
+  cert = File.open(File.join(test_root, 'server1.pem')).read
   fail unless cert.is_a?(String)
   cert
 end
@@ -133,5 +140,70 @@ describe 'client-server auth' do
   it 'client-server auth with bidi RPCs' do
     responses = @stub.a_bidi_rpc([EchoMsg.new, EchoMsg.new])
     responses.each { |r| p r }
+  end
+end
+
+describe 'client verify callback' do
+  RpcServer = GRPC::RpcServer
+
+  before(:all) do
+    server_opts = {
+      poll_period: 1
+    }
+    @srv = new_rpc_server_for_testing(**server_opts)
+    @port = @srv.add_http2_port('0.0.0.0:0', create_server_creds)
+    @srv.handle(SslTestService)
+    @srv_thd = Thread.new { @srv.run }
+    @srv.wait_till_running
+
+    @client_opts = {
+      channel_args: {
+        GRPC::Core::Channel::SSL_TARGET => 'foo.test.google.fr'
+      }
+    }
+
+    @callback_values = { 'result' => true }
+    # Bind the instance variable to a local variable so it can be accessed
+    # from the callback
+    callback_values = @callback_values
+    check_server_identity = proc do |servername, cert|
+      callback_values['servername'] = servername
+      callback_values['cert'] = cert
+      raise 'Callback failure' unless callback_values['result']
+    end
+    @channel_creds = create_channel_creds(
+      'checkServerIdentity' => check_server_identity)
+  end
+
+  after(:all) do
+    expect(@srv.stopped?).to be(false)
+    @srv.stop
+    @srv_thd.join
+  end
+
+  it 'client verify callback with no exception' do
+    stub = SslTestServiceStub.new("localhost:#{@port}",
+                                  @channel_creds,
+                                  **@client_opts)
+
+    @callback_values['servername'] = nil
+    @callback_values['cert'] = nil
+    @callback_values['result'] = true
+    stub.an_rpc(EchoMsg.new)
+    expect(@callback_values['servername']).to eq('foo.test.google.fr')
+    expect(@callback_values['cert']).to eq(server_cert)
+  end
+
+  it 'client verify callback with exception' do
+    stub = SslTestServiceStub.new("localhost:#{@port}",
+                                  @channel_creds,
+                                  **@client_opts)
+
+    @callback_values['servername'] = nil
+    @callback_values['cert'] = nil
+    @callback_values['result'] = false
+    expect { stub.an_rpc(EchoMsg.new) }.to raise_error
+    expect(@callback_values['servername']).to eq('foo.test.google.fr')
+    expect(@callback_values['cert']).to eq(server_cert)
   end
 end
