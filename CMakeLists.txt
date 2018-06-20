@@ -7511,6 +7511,7 @@ target_include_directories(handshake_verify_peer_options
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
   PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
 )
 
 target_link_libraries(handshake_verify_peer_options
