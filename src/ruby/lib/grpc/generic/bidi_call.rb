@@ -122,15 +122,6 @@ module GRPC
     END_OF_READS = :end_of_reads
     END_OF_WRITES = :end_of_writes
 
-    # performs a read using @call.run_batch, ensures metadata is set up
-    def read_using_run_batch
-      @acall.remote_read
-    rescue GRPC::Core::CallError => e
-      GRPC.logger.warn('bidi call: read_using_run_batch failed')
-      GRPC.logger.warn(e)
-      nil
-    end
-
     # set_output_stream_done is relevant on client-side
     def write_loop(requests, is_client: true, set_output_stream_done: nil)
       GRPC.logger.debug('bidi-write-loop: starting')
@@ -181,32 +172,17 @@ module GRPC
       return enum_for(:read_loop,
                       set_input_stream_done,
                       is_client: is_client) unless block_given?
-      GRPC.logger.debug('bidi-read-loop: starting')
+
       begin
-        count = 0
-        # queue the initial read before beginning the loop
-        loop do
-          GRPC.logger.debug("bidi-read-loop: #{count}")
-          count += 1
-          result = read_using_run_batch
-          break if result.nil?
-
-          yield result
-        end
-
         if is_client
-          batch_result = @call.run_batch(RECV_STATUS_ON_CLIENT => nil)
-          @call.status = batch_result.status
-          @call.trailing_metadata = @call.status.metadata if @call.status
-          GRPC.logger.debug("bidi-read-loop: done status #{@call.status}")
-          batch_result.check_status
+          @acall.each_remote_read_then_finish { |v| yield v }
+        else
+          @acall.each_remote_read { |v| yield v }
         end
       rescue StandardError => e
         GRPC.logger.warn('bidi: read-loop failed')
         GRPC.logger.warn(e)
         raise e
-      ensure
-        set_input_stream_done.call
       end
       GRPC.logger.debug('bidi-read-loop: finished')
       # Make sure that the write loop is done done before finishing the call.
