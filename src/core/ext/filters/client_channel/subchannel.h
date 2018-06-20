@@ -43,14 +43,8 @@ typedef struct grpc_subchannel_key grpc_subchannel_key;
 #ifndef NDEBUG
 #define GRPC_SUBCHANNEL_REF(p, r) \
   grpc_subchannel_ref((p), __FILE__, __LINE__, (r))
-#define GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(p, r) \
-  grpc_subchannel_ref_from_weak_ref((p), __FILE__, __LINE__, (r))
 #define GRPC_SUBCHANNEL_UNREF(p, r) \
   grpc_subchannel_unref((p), __FILE__, __LINE__, (r))
-#define GRPC_SUBCHANNEL_WEAK_REF(p, r) \
-  grpc_subchannel_weak_ref((p), __FILE__, __LINE__, (r))
-#define GRPC_SUBCHANNEL_WEAK_UNREF(p, r) \
-  grpc_subchannel_weak_unref((p), __FILE__, __LINE__, (r))
 #define GRPC_SUBCHANNEL_CALL_REF(p, r) \
   grpc_subchannel_call_ref((p), __FILE__, __LINE__, (r))
 #define GRPC_SUBCHANNEL_CALL_UNREF(p, r) \
@@ -152,6 +146,12 @@ void grpc_subchannel_call_set_cleanup_closure(
 
 grpc_call_stack* grpc_subchannel_call_get_call_stack(
     grpc_subchannel_call* subchannel_call);
+
+/** Gets the subchannel_key of the subchannel. */
+grpc_subchannel_key* grpc_subchannel_get_key(grpc_subchannel* c);
+
+/** Returns whether the subchannel only has one ref left. */
+bool grpc_subchannel_last_ref(grpc_subchannel* c);
 
 struct grpc_subchannel_args {
   /* When updating this struct, also update subchannel_index.c */

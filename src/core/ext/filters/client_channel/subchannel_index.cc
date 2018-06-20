@@ -26,13 +26,23 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/avl/avl.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/tls.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/timer.h"
+
+// Sweeps unused subchannels every 10 seconds.
+constexpr grpc_millis kSweepIntervalMs = 10000;
 
 // a map of subchannel_key --> subchannel, used for detecting connections
 // to the same destination in order to share them
 static grpc_avl g_subchannel_index;
+
+static grpc_timer g_sweeper_timer;
+
+static grpc_closure g_sweep_unused_subchannels;
 
 static gpr_mu g_mu;
 
@@ -41,6 +51,11 @@ static gpr_refcount g_refcount;
 struct grpc_subchannel_key {
   grpc_subchannel_args args;
 };
+
+struct invalid_subchannel {
+  grpc_subchannel* c;
+  invalid_subchannel* next;
+} * g_invalid_subchannels = nullptr;
 
 static bool g_force_creation = false;
 
@@ -104,11 +119,11 @@ static long sck_avl_compare(void* a, void* b, void* unused) {
 }
 
 static void scv_avl_destroy(void* p, void* user_data) {
-  GRPC_SUBCHANNEL_WEAK_UNREF((grpc_subchannel*)p, "subchannel_index");
+  GRPC_SUBCHANNEL_UNREF((grpc_subchannel*)p, "subchannel_index");
 }
 
 static void* scv_avl_copy(void* p, void* unused) {
-  GRPC_SUBCHANNEL_WEAK_REF((grpc_subchannel*)p, "subchannel_index");
+  GRPC_SUBCHANNEL_REF((grpc_subchannel*)p, "subchannel_index");
   return p;
 }
 
@@ -119,19 +134,6 @@ static const grpc_avl_vtable subchannel_avl_vtable = {
     scv_avl_destroy,  // destroy_value
     scv_avl_copy      // copy_value
 };
-
-void grpc_subchannel_index_init(void) {
-  g_subchannel_index = grpc_avl_create(&subchannel_avl_vtable);
-  gpr_mu_init(&g_mu);
-  gpr_ref_init(&g_refcount, 1);
-}
-
-void grpc_subchannel_index_shutdown(void) {
-  // TODO(juanlishen): This refcounting mechanism may lead to memory leackage.
-  // To solve that, we should force polling to flush any pending callbacks, then
-  // shutdown safely.
-  grpc_subchannel_index_unref();
-}
 
 void grpc_subchannel_index_unref(void) {
   if (gpr_unref(&g_refcount)) {
@@ -149,9 +151,11 @@ grpc_subchannel* grpc_subchannel_index_find(grpc_subchannel_key* key) {
   grpc_avl index = grpc_avl_ref(g_subchannel_index, grpc_core::ExecCtx::Get());
   gpr_mu_unlock(&g_mu);
 
-  grpc_subchannel* c = GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(
-      (grpc_subchannel*)grpc_avl_get(index, key, grpc_core::ExecCtx::Get()),
-      "index_find");
+  grpc_subchannel* c =
+      (grpc_subchannel*)grpc_avl_get(index, key, grpc_core::ExecCtx::Get());
+  if (c != nullptr) {
+    GRPC_SUBCHANNEL_REF(c, "index_find");
+  }
   grpc_avl_unref(index, grpc_core::ExecCtx::Get());
 
   return c;
@@ -176,7 +180,7 @@ grpc_subchannel* grpc_subchannel_index_register(grpc_subchannel_key* key,
     c = static_cast<grpc_subchannel*>(
         grpc_avl_get(index, key, grpc_core::ExecCtx::Get()));
     if (c != nullptr) {
-      c = GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(c, "index_register");
+      c = GRPC_SUBCHANNEL_REF(c, "index_register");
     }
     if (c != nullptr) {
       // yes -> we're done
@@ -186,7 +190,7 @@ grpc_subchannel* grpc_subchannel_index_register(grpc_subchannel_key* key,
       grpc_avl updated =
           grpc_avl_add(grpc_avl_ref(index, grpc_core::ExecCtx::Get()),
                        subchannel_key_copy(key),
-                       GRPC_SUBCHANNEL_WEAK_REF(constructed, "index_register"),
+                       GRPC_SUBCHANNEL_REF(constructed, "index_register"),
                        grpc_core::ExecCtx::Get());
 
       // it may happen (but it's expected to be unlikely)
@@ -221,7 +225,6 @@ void grpc_subchannel_index_unregister(grpc_subchannel_key* key,
     grpc_avl index =
         grpc_avl_ref(g_subchannel_index, grpc_core::ExecCtx::Get());
     gpr_mu_unlock(&g_mu);
-
     // Check to see if this key still refers to the previously
     // registered subchannel
     grpc_subchannel* c = static_cast<grpc_subchannel*>(
@@ -230,23 +233,80 @@ void grpc_subchannel_index_unregister(grpc_subchannel_key* key,
       grpc_avl_unref(index, grpc_core::ExecCtx::Get());
       break;
     }
-
     // compare and swap the update (some other thread may have
     // mutated the index behind us)
     grpc_avl updated =
         grpc_avl_remove(grpc_avl_ref(index, grpc_core::ExecCtx::Get()), key,
                         grpc_core::ExecCtx::Get());
-
     gpr_mu_lock(&g_mu);
     if (index.root == g_subchannel_index.root) {
       GPR_SWAP(grpc_avl, updated, g_subchannel_index);
       done = true;
     }
     gpr_mu_unlock(&g_mu);
-
     grpc_avl_unref(updated, grpc_core::ExecCtx::Get());
     grpc_avl_unref(index, grpc_core::ExecCtx::Get());
   }
+}
+
+static void find_invalid_subchannels(grpc_avl_node* avl_node) {
+  if (avl_node == nullptr) return;
+  grpc_subchannel* c = (grpc_subchannel*)avl_node->value;
+  if (grpc_subchannel_last_ref(c)) {
+    invalid_subchannel* node =
+        (invalid_subchannel*)gpr_malloc(sizeof(invalid_subchannel));
+    node->c = c;
+    node->next = g_invalid_subchannels;
+    g_invalid_subchannels = node;
+  }
+  find_invalid_subchannels(avl_node->left);
+  find_invalid_subchannels(avl_node->right);
+}
+
+static void remove_invalid_subchannels() {
+  while (g_invalid_subchannels != nullptr) {
+    grpc_subchannel* c = g_invalid_subchannels->c;
+    grpc_subchannel_index_unregister(grpc_subchannel_get_key(c), c);
+    invalid_subchannel* next = g_invalid_subchannels->next;
+    gpr_free(g_invalid_subchannels);
+    g_invalid_subchannels = next;
+  }
+}
+
+static void sweep_unused_subchannels(void* /* arg */, grpc_error* error) {
+  if (error != GRPC_ERROR_NONE) return;
+  grpc_core::ExecCtx exec_ctx;
+  gpr_mu_lock(&g_mu);
+  // We use two-phase cleanup because modification during traversal is unsafe
+  // for an AVL tree.
+  find_invalid_subchannels(g_subchannel_index.root);
+  gpr_mu_unlock(&g_mu);
+  remove_invalid_subchannels();
+  const grpc_millis next_sweep_time =
+      ::grpc_core::ExecCtx::Get()->Now() + kSweepIntervalMs;
+  grpc_timer_init(&g_sweeper_timer, next_sweep_time,
+                  &g_sweep_unused_subchannels);
+}
+
+void grpc_subchannel_index_init(void) {
+  grpc_core::ExecCtx exec_ctx;
+  g_subchannel_index = grpc_avl_create(&subchannel_avl_vtable);
+  gpr_mu_init(&g_mu);
+  gpr_ref_init(&g_refcount, 1);
+  GRPC_CLOSURE_INIT(&g_sweep_unused_subchannels, sweep_unused_subchannels,
+                    nullptr, grpc_schedule_on_exec_ctx);
+  const grpc_millis next_sweep_time =
+      ::grpc_core::ExecCtx::Get()->Now() + kSweepIntervalMs;
+  grpc_timer_init(&g_sweeper_timer, next_sweep_time,
+                  &g_sweep_unused_subchannels);
+}
+
+void grpc_subchannel_index_shutdown(void) {
+  // TODO(juanlishen): This refcounting mechanism may lead to memory leackage.
+  // To solve that, we should force polling to flush any pending callbacks, then
+  // shutdown safely.
+  grpc_timer_cancel(&g_sweeper_timer);
+  grpc_subchannel_index_unref();
 }
 
 void grpc_subchannel_index_test_only_set_force_creation(bool force_creation) {
