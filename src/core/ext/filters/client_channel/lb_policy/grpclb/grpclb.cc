@@ -1549,6 +1549,8 @@ void GrpcLb::PendingPickSetMetadataAndContext(PendingPick* pp) {
 void GrpcLb::OnPendingPickComplete(void* arg, grpc_error* error) {
   PendingPick* pp = static_cast<PendingPick*>(arg);
   PendingPickSetMetadataAndContext(pp);
+  // We can run the original closure safely here because it is run in the same
+  // combiner as the wrapper closure.
   GRPC_CLOSURE_RUN(pp->original_on_complete, GRPC_ERROR_REF(error));
   Delete(pp);
 }
@@ -1558,7 +1560,7 @@ GrpcLb::PendingPick* GrpcLb::PendingPickCreate(PickState* pick) {
   pp->grpclb_policy = this;
   pp->pick = pick;
   GRPC_CLOSURE_INIT(&pp->on_complete, &GrpcLb::OnPendingPickComplete, pp,
-                    grpc_schedule_on_exec_ctx);
+                    grpc_combiner_scheduler(combiner()));
   pp->original_on_complete = pick->on_complete;
   pick->on_complete = &pp->on_complete;
   return pp;
