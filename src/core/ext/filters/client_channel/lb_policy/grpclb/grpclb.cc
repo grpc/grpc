@@ -1549,7 +1549,7 @@ void GrpcLb::PendingPickSetMetadataAndContext(PendingPick* pp) {
 void GrpcLb::OnPendingPickComplete(void* arg, grpc_error* error) {
   PendingPick* pp = static_cast<PendingPick*>(arg);
   PendingPickSetMetadataAndContext(pp);
-  GRPC_CLOSURE_SCHED(pp->original_on_complete, GRPC_ERROR_REF(error));
+  GRPC_CLOSURE_RUN(pp->original_on_complete, GRPC_ERROR_REF(error));
   Delete(pp);
 }
 
