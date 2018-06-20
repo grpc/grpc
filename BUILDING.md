@@ -110,7 +110,11 @@ From the grpc repository root
  $ make
 ```
 
+TODO: mention the potential problems with running make install (already meantioned in src/cpp)
+
 ## bazel
+
+TODO: add Link to our doc or a bazel doc on how to get this dependency
 
 From the grpc repository root
 ```
