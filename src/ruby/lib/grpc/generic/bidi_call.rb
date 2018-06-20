@@ -68,14 +68,12 @@ module GRPC
     # @param set_output_stream_done [Proc] called back when we're done
     #   sending data on the output stream
     # @return an Enumerator of requests to yield
-    def run_on_client(requests,
-                      set_input_stream_done,
-                      set_output_stream_done,
-                      &blk)
+    def run_on_client(requests, set_output_stream_done, &blk)
       @enq_th = Thread.new do
         write_loop(requests, set_output_stream_done: set_output_stream_done)
       end
-      read_loop(set_input_stream_done, &blk)
+
+      read_loop(&blk)
     end
 
     # Begins orchestration of the Bidi stream for a server generating replies.
@@ -91,7 +89,7 @@ module GRPC
     # @param [Proc] gen_each_reply generates the BiDi stream replies.
     # @param [Enumerable] requests The enumerable of requests to run
     def run_on_server(gen_each_reply)
-      requests = read_next_loop(proc { @acall.send(:set_input_stream_done) }, false)
+      requests = read_next_loop(false)
       replies = nil
 
       # Pass in the optional call object parameter if possible
@@ -113,8 +111,8 @@ module GRPC
     #   completely read through.
     # @param [Boolean] is_client If this is a client or server request
     #
-    def read_next_loop(finalize_stream, is_client = false)
-      read_loop(finalize_stream, is_client: is_client)
+    def read_next_loop(is_client = false)
+      read_loop(is_client: is_client)
     end
 
     private
@@ -168,10 +166,8 @@ module GRPC
     end
 
     # Provides an enumerator that yields results of remote reads
-    def read_loop(set_input_stream_done, is_client: true)
-      return enum_for(:read_loop,
-                      set_input_stream_done,
-                      is_client: is_client) unless block_given?
+    def read_loop(is_client: true)
+      return enum_for(:read_loop, is_client: is_client) unless block_given?
 
       begin
         if is_client

@@ -515,10 +515,7 @@ module GRPC
                         acall: self
                        )
 
-      bd.run_on_client(requests,
-                       proc { set_input_stream_done },
-                       proc { set_output_stream_done },
-                       &blk)
+      bd.run_on_client(requests, proc { set_output_stream_done }, &blk)
     end
 
     # run_server_bidi orchestrates a BiDi stream processing on a server.
