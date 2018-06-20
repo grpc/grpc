@@ -30,26 +30,47 @@
 namespace grpc {
 namespace testing {
 
-void ValidateChannelTraceProtoJsonTranslation(char* tracer_json_c_str) {
-  std::string tracer_json_str(tracer_json_c_str);
-  grpc::channelz::ChannelTrace channel_trace;
+namespace {
+
+// Generic helper that takes in a json string, converts it to a proto, and
+// then back to json. This ensures that the json string was correctly formatted
+// according to https://developers.google.com/protocol-buffers/docs/proto3#json
+template <typename Message>
+void VaidateProtoJsonTranslation(char* json_c_str) {
+  std::string json_str(json_c_str);
+  Message msg;
   google::protobuf::util::JsonParseOptions parse_options;
   // If the following line is failing, then uncomment the last line of the
   // comment, and uncomment the lines that print the two strings. You can
   // then compare the output, and determine what fields are missing.
   //
-  // options.ignore_unknown_fields = true;
-  ASSERT_EQ(google::protobuf::util::JsonStringToMessage(
-                tracer_json_str, &channel_trace, parse_options),
+  // parse_options.ignore_unknown_fields = true;
+  EXPECT_EQ(google::protobuf::util::JsonStringToMessage(json_str, &msg,
+                                                        parse_options),
             google::protobuf::util::Status::OK);
   std::string proto_json_str;
-  ASSERT_EQ(google::protobuf::util::MessageToJsonString(channel_trace,
-                                                        &proto_json_str),
+  google::protobuf::util::JsonPrintOptions print_options;
+  // We usually do not want this to be true, however it can be helpful to
+  // uncomment and see the output produced then all fields are printed.
+  // print_options.always_print_primitive_fields = true;
+  EXPECT_EQ(google::protobuf::util::MessageToJsonString(msg, &proto_json_str,
+                                                        print_options),
             google::protobuf::util::Status::OK);
   // uncomment these to compare the the json strings.
-  // gpr_log(GPR_ERROR, "tracer json: %s", tracer_json_str.c_str());
+  // gpr_log(GPR_ERROR, "tracer json: %s", json_str.c_str());
   // gpr_log(GPR_ERROR, "proto  json: %s", proto_json_str.c_str());
-  ASSERT_EQ(tracer_json_str, proto_json_str);
+  EXPECT_EQ(json_str, proto_json_str);
+}
+
+}  // namespace
+
+void ValidateChannelTraceProtoJsonTranslation(char* tracer_json_c_str) {
+  VaidateProtoJsonTranslation<grpc::channelz::v1::ChannelTrace>(
+      tracer_json_c_str);
+}
+
+void ValidateChannelProtoJsonTranslation(char* channel_json_c_str) {
+  VaidateProtoJsonTranslation<grpc::channelz::v1::Channel>(channel_json_c_str);
 }
 
 }  // namespace testing

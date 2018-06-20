@@ -32,6 +32,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_trace.h"
+#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
@@ -66,7 +67,7 @@ struct grpc_channel {
   gpr_mu registered_call_mu;
   registered_call* registered_calls;
 
-  grpc_core::RefCountedPtr<grpc_core::ChannelTrace> tracer;
+  grpc_core::RefCountedPtr<grpc_core::channelz::ChannelNode> channelz_channel;
 
   char* target;
 };
@@ -103,6 +104,7 @@ grpc_channel* grpc_channel_create_with_builder(
   channel->target = target;
   channel->is_client = grpc_channel_stack_type_is_client(channel_stack_type);
   size_t channel_tracer_max_nodes = 0;  // default to off
+  bool channelz_enabled = false;
   gpr_mu_init(&channel->registered_call_mu);
   channel->registered_calls = nullptr;
 
@@ -141,15 +143,20 @@ grpc_channel* grpc_channel_create_with_builder(
       const grpc_integer_options options = {0, 0, INT_MAX};
       channel_tracer_max_nodes =
           (size_t)grpc_channel_arg_get_integer(&args->args[i], options);
+    } else if (0 == strcmp(args->args[i].key, GRPC_ARG_ENABLE_CHANNELZ)) {
+      channelz_enabled = grpc_channel_arg_get_bool(&args->args[i], false);
     }
   }
 
   grpc_channel_args_destroy(args);
-  channel->tracer = grpc_core::MakeRefCounted<grpc_core::ChannelTrace>(
-      channel_tracer_max_nodes);
-  channel->tracer->AddTraceEvent(
-      grpc_core::ChannelTrace::Severity::Info,
-      grpc_slice_from_static_string("Channel created"));
+  if (channelz_enabled) {
+    channel->channelz_channel =
+        grpc_core::MakeRefCounted<grpc_core::channelz::ChannelNode>(
+            channel, channel_tracer_max_nodes);
+    channel->channelz_channel->trace()->AddTraceEvent(
+        grpc_core::channelz::ChannelTrace::Severity::Info,
+        grpc_slice_from_static_string("Channel created"));
+  }
   return channel;
 }
 
@@ -184,12 +191,9 @@ static grpc_channel_args* build_channel_args(
   return grpc_channel_args_copy_and_add(input_args, new_args, num_new_args);
 }
 
-char* grpc_channel_get_trace(grpc_channel* channel) {
-  return channel->tracer->RenderTrace();
-}
-
-intptr_t grpc_channel_get_uuid(grpc_channel* channel) {
-  return channel->tracer->GetUuid();
+grpc_core::channelz::ChannelNode* grpc_channel_get_channelz_node(
+    grpc_channel* channel) {
+  return channel->channelz_channel.get();
 }
 
 grpc_channel* grpc_channel_create(const char* target,
@@ -395,6 +399,10 @@ void grpc_channel_internal_unref(grpc_channel* c REF_ARG) {
 
 static void destroy_channel(void* arg, grpc_error* error) {
   grpc_channel* channel = static_cast<grpc_channel*>(arg);
+  if (channel->channelz_channel != nullptr) {
+    channel->channelz_channel->set_channel_destroyed();
+    channel->channelz_channel.reset();
+  }
   grpc_channel_stack_destroy(CHANNEL_STACK_FROM_CHANNEL(channel));
   while (channel->registered_calls) {
     registered_call* rc = channel->registered_calls;
@@ -403,7 +411,6 @@ static void destroy_channel(void* arg, grpc_error* error) {
     GRPC_MDELEM_UNREF(rc->authority);
     gpr_free(rc);
   }
-  channel->tracer.reset();
   gpr_mu_destroy(&channel->registered_call_mu);
   gpr_free(channel->target);
   gpr_free(channel);
