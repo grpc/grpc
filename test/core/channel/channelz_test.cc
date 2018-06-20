@@ -151,8 +151,7 @@ TEST(ChannelzChannelTest, ChannelzDisabled) {
   grpc_channel* channel =
       grpc_insecure_channel_create("fake_target", nullptr, nullptr);
   ChannelNode* channelz_channel = grpc_channel_get_channelz_node(channel);
-  char* json_str = channelz_channel->RenderJSON();
-  ASSERT_EQ(json_str, nullptr);
+  ASSERT_EQ(channelz_channel, nullptr);
   grpc_channel_destroy(channel);
 }
 

@@ -149,12 +149,14 @@ grpc_channel* grpc_channel_create_with_builder(
   }
 
   grpc_channel_args_destroy(args);
-  channel->channelz_channel =
-      grpc_core::MakeRefCounted<grpc_core::channelz::ChannelNode>(
-          channelz_enabled, channel, channel_tracer_max_nodes);
-  channel->channelz_channel->trace()->AddTraceEvent(
-      grpc_core::channelz::ChannelTrace::Severity::Info,
-      grpc_slice_from_static_string("Channel created"));
+  if (channelz_enabled) {
+    channel->channelz_channel =
+        grpc_core::MakeRefCounted<grpc_core::channelz::ChannelNode>(
+            channel, channel_tracer_max_nodes);
+    channel->channelz_channel->trace()->AddTraceEvent(
+        grpc_core::channelz::ChannelTrace::Severity::Info,
+        grpc_slice_from_static_string("Channel created"));
+  }
   return channel;
 }
 
@@ -187,10 +189,6 @@ static grpc_channel_args* build_channel_args(
         const_cast<char*>(GRPC_ARG_DEFAULT_AUTHORITY), default_authority);
   }
   return grpc_channel_args_copy_and_add(input_args, new_args, num_new_args);
-}
-
-char* grpc_channel_render_channelz(grpc_channel* channel) {
-  return channel->channelz_channel->RenderJSON();
 }
 
 grpc_core::channelz::ChannelNode* grpc_channel_get_channelz_node(
@@ -401,8 +399,10 @@ void grpc_channel_internal_unref(grpc_channel* c REF_ARG) {
 
 static void destroy_channel(void* arg, grpc_error* error) {
   grpc_channel* channel = static_cast<grpc_channel*>(arg);
-  channel->channelz_channel->set_channel_destroyed();
-  channel->channelz_channel.reset();
+  if (channel->channelz_channel != nullptr) {
+    channel->channelz_channel->set_channel_destroyed();
+    channel->channelz_channel.reset();
+  }
   grpc_channel_stack_destroy(CHANNEL_STACK_FROM_CHANNEL(channel));
   while (channel->registered_calls) {
     registered_call* rc = channel->registered_calls;
