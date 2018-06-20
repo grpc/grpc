@@ -208,7 +208,7 @@ static void test_channelz(grpc_end2end_test_config config) {
   grpc_core::channelz::ChannelNode* channelz_channel =
       grpc_channel_get_channelz_node(f.client);
 
-  GPR_ASSERT(channelz_channel);
+  GPR_ASSERT(channelz_channel != nullptr);
   char* json = channelz_channel->RenderJSON();
   GPR_ASSERT(json != nullptr);
   GPR_ASSERT(nullptr != strstr(json, "\"callsStarted\":\"0\""));
@@ -263,7 +263,7 @@ static void test_channelz_with_channel_trace(grpc_end2end_test_config config) {
   grpc_core::channelz::ChannelNode* channelz_channel =
       grpc_channel_get_channelz_node(f.client);
 
-  GPR_ASSERT(channelz_channel);
+  GPR_ASSERT(channelz_channel != nullptr);
   char* json = channelz_channel->RenderJSON();
   GPR_ASSERT(json != nullptr);
   gpr_log(GPR_INFO, "%s", json);
