@@ -1111,7 +1111,7 @@ void GrpcLb::ShutdownLocked() {
     pending_picks_ = pp->next;
     pp->pick->connected_subchannel.reset();
     // Note: pp is deleted in this callback.
-    GRPC_CLOSURE_SCHED(&pp->on_complete, GRPC_ERROR_REF(error));
+    GRPC_CLOSURE_RUN(&pp->on_complete, GRPC_ERROR_REF(error));
   }
   // Clear pending pings.
   PendingPing* pping;
@@ -1136,7 +1136,7 @@ void GrpcLb::HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) {
     pp->pick->user_data = nullptr;
     if (new_policy->PickLocked(pp->pick)) {
       // Synchronous return; schedule closure.
-      GRPC_CLOSURE_SCHED(pp->pick->on_complete, GRPC_ERROR_NONE);
+      GRPC_CLOSURE_RUN(pp->pick->on_complete, GRPC_ERROR_NONE);
     }
     Delete(pp);
   }
@@ -1161,9 +1161,9 @@ void GrpcLb::CancelPickLocked(PickState* pick, grpc_error* error) {
     if (pp->pick == pick) {
       pick->connected_subchannel.reset();
       // Note: pp is deleted in this callback.
-      GRPC_CLOSURE_SCHED(&pp->on_complete,
-                         GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                             "Pick Cancelled", &error, 1));
+      GRPC_CLOSURE_RUN(&pp->on_complete,
+                       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                           "Pick Cancelled", &error, 1));
     } else {
       pp->next = pending_picks_;
       pending_picks_ = pp;
@@ -1197,9 +1197,9 @@ void GrpcLb::CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
     if ((pp->pick->initial_metadata_flags & initial_metadata_flags_mask) ==
         initial_metadata_flags_eq) {
       // Note: pp is deleted in this callback.
-      GRPC_CLOSURE_SCHED(&pp->on_complete,
-                         GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                             "Pick Cancelled", &error, 1));
+      GRPC_CLOSURE_RUN(&pp->on_complete,
+                       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                           "Pick Cancelled", &error, 1));
     } else {
       pp->next = pending_picks_;
       pending_picks_ = pp;
@@ -1612,7 +1612,7 @@ bool GrpcLb::PickFromRoundRobinPolicyLocked(bool force_async, PendingPick* pp) {
             server->load_balance_token);
       }
       if (force_async) {
-        GRPC_CLOSURE_SCHED(pp->original_on_complete, GRPC_ERROR_NONE);
+        GRPC_CLOSURE_RUN(pp->original_on_complete, GRPC_ERROR_NONE);
         Delete(pp);
         return false;
       }
@@ -1631,7 +1631,7 @@ bool GrpcLb::PickFromRoundRobinPolicyLocked(bool force_async, PendingPick* pp) {
   if (pick_done) {
     PendingPickSetMetadataAndContext(pp);
     if (force_async) {
-      GRPC_CLOSURE_SCHED(pp->original_on_complete, GRPC_ERROR_NONE);
+      GRPC_CLOSURE_RUN(pp->original_on_complete, GRPC_ERROR_NONE);
       pick_done = false;
     }
     Delete(pp);

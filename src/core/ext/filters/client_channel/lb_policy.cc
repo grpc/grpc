@@ -41,7 +41,7 @@ LoadBalancingPolicy::~LoadBalancingPolicy() {
 void LoadBalancingPolicy::TryReresolutionLocked(
     grpc_core::TraceFlag* grpc_lb_trace, grpc_error* error) {
   if (request_reresolution_ != nullptr) {
-    GRPC_CLOSURE_SCHED(request_reresolution_, error);
+    GRPC_CLOSURE_RUN(request_reresolution_, error);
     request_reresolution_ = nullptr;
     if (grpc_lb_trace->enabled()) {
       gpr_log(GPR_INFO,

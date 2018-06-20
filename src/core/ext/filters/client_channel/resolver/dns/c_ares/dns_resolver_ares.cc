@@ -197,8 +197,8 @@ void AresDnsResolver::ShutdownLocked() {
   }
   if (next_completion_ != nullptr) {
     *target_result_ = nullptr;
-    GRPC_CLOSURE_SCHED(next_completion_, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                             "Resolver Shutdown"));
+    GRPC_CLOSURE_RUN(next_completion_,
+                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resolver Shutdown"));
     next_completion_ = nullptr;
   }
 }
@@ -427,7 +427,7 @@ void AresDnsResolver::MaybeFinishNextLocked() {
                           ? nullptr
                           : grpc_channel_args_copy(resolved_result_);
     gpr_log(GPR_DEBUG, "AresDnsResolver::MaybeFinishNextLocked()");
-    GRPC_CLOSURE_SCHED(next_completion_, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_RUN(next_completion_, GRPC_ERROR_NONE);
     next_completion_ = nullptr;
     published_version_ = resolved_version_;
   }

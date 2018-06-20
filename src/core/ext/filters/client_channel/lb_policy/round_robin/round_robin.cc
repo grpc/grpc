@@ -232,8 +232,7 @@ void RoundRobin::HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) {
   while ((pick = pending_picks_) != nullptr) {
     pending_picks_ = pick->next;
     if (new_policy->PickLocked(pick)) {
-      // Synchronous return, schedule closure.
-      GRPC_CLOSURE_SCHED(pick->on_complete, GRPC_ERROR_NONE);
+      GRPC_CLOSURE_RUN(pick->on_complete, GRPC_ERROR_NONE);
     }
   }
 }
@@ -248,7 +247,7 @@ void RoundRobin::ShutdownLocked() {
   while ((pick = pending_picks_) != nullptr) {
     pending_picks_ = pick->next;
     pick->connected_subchannel.reset();
-    GRPC_CLOSURE_SCHED(pick->on_complete, GRPC_ERROR_REF(error));
+    GRPC_CLOSURE_RUN(pick->on_complete, GRPC_ERROR_REF(error));
   }
   grpc_connectivity_state_set(&state_tracker_, GRPC_CHANNEL_SHUTDOWN,
                               GRPC_ERROR_REF(error), "rr_shutdown");
@@ -265,9 +264,9 @@ void RoundRobin::CancelPickLocked(PickState* pick, grpc_error* error) {
     PickState* next = pp->next;
     if (pp == pick) {
       pick->connected_subchannel.reset();
-      GRPC_CLOSURE_SCHED(pick->on_complete,
-                         GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                             "Pick Cancelled", &error, 1));
+      GRPC_CLOSURE_RUN(pick->on_complete,
+                       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                           "Pick Cancelled", &error, 1));
     } else {
       pp->next = pending_picks_;
       pending_picks_ = pp;
@@ -287,9 +286,9 @@ void RoundRobin::CancelMatchingPicksLocked(uint32_t initial_metadata_flags_mask,
     if ((pick->initial_metadata_flags & initial_metadata_flags_mask) ==
         initial_metadata_flags_eq) {
       pick->connected_subchannel.reset();
-      GRPC_CLOSURE_SCHED(pick->on_complete,
-                         GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                             "Pick Cancelled", &error, 1));
+      GRPC_CLOSURE_RUN(pick->on_complete,
+                       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                           "Pick Cancelled", &error, 1));
     } else {
       pick->next = pending_picks_;
       pending_picks_ = pick;
@@ -341,7 +340,7 @@ void RoundRobin::DrainPendingPicksLocked() {
   while ((pick = pending_picks_)) {
     pending_picks_ = pick->next;
     GPR_ASSERT(DoPickLocked(pick));
-    GRPC_CLOSURE_SCHED(pick->on_complete, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_RUN(pick->on_complete, GRPC_ERROR_NONE);
   }
 }
 

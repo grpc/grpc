@@ -130,7 +130,7 @@ void FakeResolver::MaybeFinishNextLocked() {
                         : grpc_channel_args_union(next_results_, channel_args_);
     grpc_channel_args_destroy(next_results_);
     next_results_ = nullptr;
-    GRPC_CLOSURE_SCHED(next_completion_, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_RUN(next_completion_, GRPC_ERROR_NONE);
     next_completion_ = nullptr;
     return_failure_ = false;
   }
@@ -139,8 +139,8 @@ void FakeResolver::MaybeFinishNextLocked() {
 void FakeResolver::ShutdownLocked() {
   if (next_completion_ != nullptr) {
     *target_result_ = nullptr;
-    GRPC_CLOSURE_SCHED(next_completion_, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                             "Resolver Shutdown"));
+    GRPC_CLOSURE_RUN(next_completion_,
+                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resolver Shutdown"));
     next_completion_ = nullptr;
   }
 }

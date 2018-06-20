@@ -116,7 +116,7 @@ static void handshake_failed_locked(http_connect_handshaker* handshaker,
     handshaker->shutdown = true;
   }
   // Invoke callback.
-  GRPC_CLOSURE_SCHED(handshaker->on_handshake_done, error);
+  GRPC_CLOSURE_RUN(handshaker->on_handshake_done, error);
 }
 
 // Callback invoked when finished writing HTTP CONNECT request.
@@ -214,7 +214,7 @@ static void on_read_done(void* arg, grpc_error* error) {
     goto done;
   }
   // Success.  Invoke handshake-done callback.
-  GRPC_CLOSURE_SCHED(handshaker->on_handshake_done, error);
+  GRPC_CLOSURE_RUN(handshaker->on_handshake_done, error);
 done:
   // Set shutdown to true so that subsequent calls to
   // http_connect_handshaker_shutdown() do nothing.

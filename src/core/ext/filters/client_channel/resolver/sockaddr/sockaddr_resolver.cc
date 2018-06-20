@@ -98,8 +98,8 @@ void SockaddrResolver::RequestReresolutionLocked() {
 void SockaddrResolver::ShutdownLocked() {
   if (next_completion_ != nullptr) {
     *target_result_ = nullptr;
-    GRPC_CLOSURE_SCHED(next_completion_, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                             "Resolver Shutdown"));
+    GRPC_CLOSURE_RUN(next_completion_,
+                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resolver Shutdown"));
     next_completion_ = nullptr;
   }
 }
@@ -109,7 +109,7 @@ void SockaddrResolver::MaybeFinishNextLocked() {
     published_ = true;
     grpc_arg arg = grpc_lb_addresses_create_channel_arg(addresses_);
     *target_result_ = grpc_channel_args_copy_and_add(channel_args_, &arg, 1);
-    GRPC_CLOSURE_SCHED(next_completion_, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_RUN(next_completion_, GRPC_ERROR_NONE);
     next_completion_ = nullptr;
   }
 }
