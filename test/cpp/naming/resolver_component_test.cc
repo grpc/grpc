@@ -385,6 +385,8 @@ void RunResolvesRelevantRecordsTest(void (*OnDoneLocked)(void* arg,
                     grpc_combiner_scheduler(args.lock));
   resolver->NextLocked(&args.channel_args, &on_resolver_result_changed);
   grpc_core::ExecCtx::Get()->Flush();
+  // Add fake_other_pollset_set into the mix to test
+  // that we're explicitly deleting fd's from their pollset.
   grpc_pollset_set* fake_other_pollset_set = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset_set(fake_other_pollset_set, args.pollset_set);
   PollPollsetUntilRequestDone(&args);
