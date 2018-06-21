@@ -214,7 +214,7 @@ static grpc_error* init_call_elem(grpc_call_element* elem,
   // Create server security context.  Set its auth context from channel
   // data and save it in the call context.
   grpc_server_security_context* server_ctx =
-      grpc_server_security_context_create();
+      grpc_server_security_context_create(args->arena);
   server_ctx->auth_context = grpc_auth_context_create(chand->auth_context);
   calld->auth_context = server_ctx->auth_context;
   if (args->context[GRPC_CONTEXT_SECURITY].value != nullptr) {

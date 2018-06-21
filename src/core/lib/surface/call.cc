@@ -1113,6 +1113,8 @@ static void recv_trailing_filter(void* args, grpc_metadata_batch* b) {
   publish_app_metadata(call, b, true);
 }
 
+gpr_arena* grpc_call_get_arena(grpc_call* call) { return call->arena; }
+
 grpc_call_stack* grpc_call_get_call_stack(grpc_call* call) {
   return CALL_STACK_FROM_CALL(call);
 }
