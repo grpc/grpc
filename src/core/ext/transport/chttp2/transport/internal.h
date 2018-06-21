@@ -479,11 +479,11 @@ typedef enum {
 } grpc_published_metadata_method;
 
 typedef enum {
-  GRPC_RECV_INITIAL_METADATA,
-  GRPC_RECV_MESSAGE,
-  GRPC_RECV_TRAILING_METADATA,
-  GRPC_RECV_OP_COUNT
-} grpc_recv_op_index;
+  CHTTP2_RECV_INITIAL_METADATA,
+  CHTTP2_RECV_MESSAGE,
+  CHTTP2_RECV_TRAILING_METADATA,
+  CHTTP2_RECV_OP_COUNT
+} chttp2_recv_op_index;
 
 struct grpc_chttp2_stream {
   grpc_chttp2_transport* t;
@@ -494,7 +494,7 @@ struct grpc_chttp2_stream {
   void* recv_batch_arg;
 
   // Batches used for sending receive ops up the stack.
-  grpc_transport_stream_recv_op_batch recv_batches[GRPC_RECV_OP_COUNT];
+  grpc_transport_stream_recv_op_batch recv_batches[CHTTP2_RECV_OP_COUNT];
 
   grpc_closure destroy_stream;
   grpc_closure* destroy_stream_arg;

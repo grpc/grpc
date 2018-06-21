@@ -1800,6 +1800,29 @@ static void perform_transport_op(grpc_transport* gt, grpc_transport_op* op) {
  * INPUT PROCESSING - GENERAL
  */
 
+static void start_recv_batch(grpc_chttp2_stream* s, bool recv_initial_metadata,
+                             bool recv_message, bool recv_trailing_metadata,
+                             grpc_error* error) {
+  GPR_ASSERT(recv_initial_metadata || recv_message || recv_trailing_metadata);
+  grpc_transport_stream_recv_op_batch* batch =
+      recv_initial_metadata
+          ? &s->recv_batches[CHTTP2_RECV_INITIAL_METADATA]
+          : recv_trailing_metadata
+              ? &s->recv_batches[CHTTP2_RECV_TRAILING_METADATA]
+              : &s->recv_batches[CHTTP2_RECV_MESSAGE];
+  batch->payload = s->recv_payload;
+  if (recv_initial_metadata) batch->recv_initial_metadata = true;
+  if (recv_message) batch->recv_message = true;
+  if (recv_trailing_metadata) batch->recv_trailing_metadata = true;
+  if (grpc_http_trace.enabled()) {
+    char* batch_str = grpc_transport_stream_recv_op_batch_string(batch);
+    gpr_log(GPR_INFO, "s=%p: start_recv_batch: error=%s batch=%s", s,
+            grpc_error_string(error), batch_str);
+    gpr_free(batch_str);
+  }
+  s->recv_batch_func(batch, s->recv_batch_arg, error);
+}
+
 void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_chttp2_transport* t,
                                                       grpc_chttp2_stream* s) {
   if (s->seen_recv_initial_metadata &&
@@ -1815,11 +1838,9 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_chttp2_transport* t,
         &s->metadata_buffer[0],
         s->recv_payload->recv_initial_metadata.recv_initial_metadata);
     s->seen_recv_initial_metadata = false;
-    grpc_transport_stream_recv_op_batch* batch =
-        &s->recv_batches[GRPC_RECV_INITIAL_METADATA];
-    batch->payload = s->recv_payload;
-    batch->recv_initial_metadata = true;
-    s->recv_batch_func(batch, s->recv_batch_arg, GRPC_ERROR_NONE);
+    start_recv_batch(s, true /* recv_initial_metadata */,
+                     false /* recv_message */,
+                     false /* recv_trailing_metadata */, GRPC_ERROR_NONE);
   }
 }
 
@@ -1901,19 +1922,15 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
     if (error == GRPC_ERROR_NONE &&
         *s->recv_payload->recv_message.recv_message != nullptr) {
       s->seen_recv_message = false;
-      grpc_transport_stream_recv_op_batch* batch =
-          &s->recv_batches[GRPC_RECV_MESSAGE];
-      batch->payload = s->recv_payload;
-      batch->recv_message = true;
-      s->recv_batch_func(batch, s->recv_batch_arg, GRPC_ERROR_NONE);
+      start_recv_batch(s, false /* recv_initial_metadata */,
+                       true /* recv_message */,
+                       false /* recv_trailing_metadata */, GRPC_ERROR_NONE);
     } else if (s->published_metadata[1] != GRPC_METADATA_NOT_PUBLISHED) {
       *s->recv_payload->recv_message.recv_message = nullptr;
       s->seen_recv_message = false;
-      grpc_transport_stream_recv_op_batch* batch =
-          &s->recv_batches[GRPC_RECV_MESSAGE];
-      batch->payload = s->recv_payload;
-      batch->recv_message = true;
-      s->recv_batch_func(batch, s->recv_batch_arg, GRPC_ERROR_NONE);
+      start_recv_batch(s, false /* recv_initial_metadata */,
+                       true /* recv_message */,
+                       false /* recv_trailing_metadata */, GRPC_ERROR_NONE);
     }
     GRPC_ERROR_UNREF(error);
   }
@@ -1968,11 +1985,9 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
           &s->metadata_buffer[1],
           s->recv_payload->recv_trailing_metadata.recv_trailing_metadata);
       s->seen_recv_trailing_metadata = false;
-      grpc_transport_stream_recv_op_batch* batch =
-          &s->recv_batches[GRPC_RECV_TRAILING_METADATA];
-      batch->payload = s->recv_payload;
-      batch->recv_trailing_metadata = true;
-      s->recv_batch_func(batch, s->recv_batch_arg, GRPC_ERROR_NONE);
+      start_recv_batch(s, false /* recv_initial_metadata */,
+                       false /* recv_message */,
+                       true /* recv_trailing_metadata */, GRPC_ERROR_NONE);
     }
   }
 }
