@@ -16,9 +16,15 @@ licenses(["notice"])  # Apache v2
 
 load("//bazel:grpc_build_system.bzl", "grpc_proto_library", "grpc_package")
 
-grpc_package(name = "lb", visibility = "public")
+grpc_package(
+    name = "lb",
+    visibility = "public",
+)
 
 grpc_proto_library(
     name = "load_balancer_proto",
-    srcs = ["load_balancer.proto"],
+    srcs = [
+        "load_balancer.proto",
+    ],
+    well_known_protos = True,
 )
