@@ -312,8 +312,29 @@ extern grpc_core::TraceFlag grpc_trace_channel;
 
 namespace grpc_core {
 
-// FIXME: document (especially requirement that this stay in scope until
-// filter call data is destroyed)
+// A convenience helper for filters that need to cancel batches.
+//
+// Owns the recv batch for returning the recv ops, so must remain in
+// scope until the recv ops' completion has reached the surface.  This
+// is typically done by making this object a member of the filter's call
+// data.
+//
+// Typical usage:
+//
+//   In call_data:
+//     ManualConstructor<FilterCallCanceller> canceller;
+//
+//   In init_call_elem():
+//     calld->canceller.Init(*args);
+//
+//   When cancelling a batch:
+//     calld->canceller->CancelBatch(elem, batch, error);
+//
+// Filters that want more control over which tasks get executed in the
+// call combiner can use PopulateCancelCallbackList() instead of
+// CancelBatch().  Then they can add other closures to the closure list
+// and execute them directly.
+// FIXME: rename to FilterBatchCanceller
 class FilterCallCanceller {
  public:
   explicit FilterCallCanceller(const grpc_call_element_args& args)
