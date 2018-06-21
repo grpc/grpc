@@ -49,6 +49,7 @@
     out = grpc_lib_files(filegroups, ("grpc++_codegen_proto", "grpc++_config_proto"), ("headers", "src", "public_headers"))
     excl_files = grpc_lib_files(filegroups, ("grpc++_codegen_base",), ("headers", "src", "public_headers"))
     out = [file for file in out if file not in excl_files]
+    out = filter_grpcpp(out)
     return out
 
   def grpcpp_private_files(libs, filegroups):
@@ -131,7 +132,7 @@
     s.name     = 'gRPC-C++'
     # TODO (mxyan): use version that match gRPC version when pod is stabilized
     # version = '${settings.version}'
-    version = '0.0.2'
+    version = '0.0.3'
     s.version  = version
     s.summary  = 'gRPC C++ library'
     s.homepage = 'https://grpc.io'
@@ -193,6 +194,13 @@
       ss.source_files = ${ruby_multiline_list(grpcpp_private_files(libs, filegroups), 22)}
 
       ss.private_header_files = ${ruby_multiline_list(grpcpp_private_headers(libs, filegroups), 30)}
+    end
+
+    s.subspec 'Protobuf' do |ss|
+      ss.header_mappings_dir = 'include/grpcpp'
+      ss.dependency "#{s.name}/Interface", version
+
+      ss.source_files = ${ruby_multiline_list(grpcpp_proto_files(filegroups), 22)}
     end
 
     s.prepare_command = <<-END_OF_COMMAND
