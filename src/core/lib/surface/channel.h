@@ -23,6 +23,7 @@
 
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
+#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 
 grpc_channel* grpc_channel_create(const char* target,
@@ -49,6 +50,9 @@ grpc_call* grpc_channel_create_pollset_set_call(
 
 /** Get a (borrowed) pointer to this channels underlying channel stack */
 grpc_channel_stack* grpc_channel_get_channel_stack(grpc_channel* channel);
+
+grpc_core::channelz::ChannelNode* grpc_channel_get_channelz_node(
+    grpc_channel* channel);
 
 /** Get a grpc_mdelem of grpc-status: X where X is the numeric value of
     status_code.

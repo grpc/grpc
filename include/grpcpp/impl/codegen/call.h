@@ -171,8 +171,8 @@ class WriteOptions {
     return *this;
   }
 
-  /// Guarantee that all bytes have been written to the wire before completing
-  /// this write (usually writes are completed when they pass flow control)
+  /// Guarantee that all bytes have been written to the socket before completing
+  /// this write (usually writes are completed when they pass flow control).
   inline WriteOptions& set_write_through() {
     SetBit(GRPC_WRITE_THROUGH);
     return *this;
