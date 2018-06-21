@@ -3166,7 +3166,7 @@ static void cc_destroy_call_elem(grpc_call_element* elem,
     calld->pick.connected_subchannel.reset();
   }
   for (size_t i = 0; i < GRPC_CONTEXT_COUNT; ++i) {
-    if (calld->pick.subchannel_call_context[i].value != nullptr) {
+    if (calld->pick.subchannel_call_context[i].destroy != nullptr) {
       calld->pick.subchannel_call_context[i].destroy(
           calld->pick.subchannel_call_context[i].value);
     }
