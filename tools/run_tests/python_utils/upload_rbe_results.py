@@ -161,7 +161,7 @@ if __name__ == "__main__":
             test_cases = action['testAction']['testSuite']['tests'][0][
                 'testSuite']['tests']
         for test_case in test_cases:
-            if 'errors' in test_case['testCase']:
+            if any(s in test_case['testCase'] for s in ['errors', 'failures']):
                 result = 'FAILED'
             elif 'timedOut' in test_case['testCase']:
                 result = 'TIMEOUT'

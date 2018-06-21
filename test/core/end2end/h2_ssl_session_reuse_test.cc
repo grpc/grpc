@@ -66,7 +66,7 @@ grpc_channel* client_create(char* server_addr, grpc_ssl_session_cache* cache) {
   grpc_ssl_pem_key_cert_pair signed_client_key_cert_pair = {
       test_signed_client_key, test_signed_client_cert};
   grpc_channel_credentials* client_creds = grpc_ssl_credentials_create(
-      test_root_cert, &signed_client_key_cert_pair, nullptr);
+      test_root_cert, &signed_client_key_cert_pair, nullptr, nullptr);
 
   grpc_arg args[] = {
       grpc_channel_arg_string_create(

@@ -28,17 +28,17 @@
 #include "src/core/lib/json/json.h"
 
 namespace grpc_core {
+namespace channelz {
+
+class ChannelNode;
 
 // Object used to hold live data for a channel. This data is exposed via the
 // channelz service:
 // https://github.com/grpc/proposal/blob/master/A14-channelz.md
-class ChannelTrace : public RefCounted<ChannelTrace> {
+class ChannelTrace {
  public:
   ChannelTrace(size_t max_events);
   ~ChannelTrace();
-
-  // returns the tracer's uuid
-  intptr_t GetUuid() const;
 
   enum Severity {
     Unset = 0,  // never to be used
@@ -59,34 +59,30 @@ class ChannelTrace : public RefCounted<ChannelTrace> {
   // created a new subchannel, then it would record that with a TraceEvent
   // referencing the new subchannel.
   //
-  // TODO(ncteisen): Once channelz is implemented, the events should reference
-  // the overall channelz object, not just the ChannelTrace object.
   // TODO(ncteisen): as this call is used more and more throughout the gRPC
   // stack, determine if it makes more sense to accept a char* instead of a
   // slice.
   void AddTraceEventReferencingChannel(
       Severity severity, grpc_slice data,
-      RefCountedPtr<ChannelTrace> referenced_tracer);
+      RefCountedPtr<ChannelNode> referenced_channel);
   void AddTraceEventReferencingSubchannel(
       Severity severity, grpc_slice data,
-      RefCountedPtr<ChannelTrace> referenced_tracer);
+      RefCountedPtr<ChannelNode> referenced_subchannel);
 
-  // Returns the tracing data rendered as a grpc json string.
-  // The string is owned by the caller and must be freed.
-  char* RenderTrace() const;
+  // Creates and returns the raw grpc_json object, so a parent channelz
+  // object may incorporate the json before rendering.
+  grpc_json* RenderJSON() const;
 
  private:
   // Types of objects that can be references by trace events.
-  enum ReferencedType { Channel, Subchannel };
+  enum class ReferencedType { Channel, Subchannel };
   // Private class to encapsulate all the data and bookkeeping needed for a
   // a trace event.
   class TraceEvent {
    public:
     // Constructor for a TraceEvent that references a different channel.
-    // TODO(ncteisen): once channelz is implemented, this should reference the
-    // overall channelz object, not just the ChannelTrace object
     TraceEvent(Severity severity, grpc_slice data,
-               RefCountedPtr<ChannelTrace> referenced_tracer,
+               RefCountedPtr<ChannelNode> referenced_channel,
                ReferencedType type);
 
     // Constructor for a TraceEvent that does not reverence a different
@@ -109,7 +105,7 @@ class ChannelTrace : public RefCounted<ChannelTrace> {
     gpr_timespec timestamp_;
     TraceEvent* next_;
     // the tracer object for the (sub)channel that this trace event refers to.
-    RefCountedPtr<ChannelTrace> referenced_tracer_;
+    RefCountedPtr<ChannelNode> referenced_channel_;
     // the type that the referenced tracer points to. Unused if this trace
     // does not point to any channel or subchannel
     ReferencedType referenced_type_;
@@ -119,7 +115,6 @@ class ChannelTrace : public RefCounted<ChannelTrace> {
   void AddTraceEventHelper(TraceEvent* new_trace_event);
 
   gpr_mu tracer_mu_;
-  intptr_t channel_uuid_;
   uint64_t num_events_logged_;
   size_t list_size_;
   size_t max_list_size_;
@@ -128,6 +123,7 @@ class ChannelTrace : public RefCounted<ChannelTrace> {
   gpr_timespec time_created_;
 };
 
+}  // namespace channelz
 }  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_CHANNEL_CHANNEL_TRACE_H */
