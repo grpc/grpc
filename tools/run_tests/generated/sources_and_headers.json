@@ -1177,6 +1177,23 @@
   {
     "deps": [
       "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "handshake_verify_peer_options", 
+    "src": [
+      "test/core/handshake/verify_peer_options.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -3106,6 +3123,27 @@
   {
     "deps": [
       "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_channelz_proto", 
+      "grpc++_test", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "channelz_test", 
+    "src": [
+      "test/core/channel/channelz_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc"
     ], 
     "headers": [], 
@@ -3951,26 +3989,6 @@
     "name": "json_run_localhost", 
     "src": [
       "test/cpp/qps/json_run_localhost.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
-      "grpc_test_util", 
-      "lb_load_data_store"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "lb_load_data_store_test", 
-    "src": [
-      "test/cpp/server/load_reporter/load_data_store_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -7619,23 +7637,6 @@
   }, 
   {
     "deps": [
-      "grpc++"
-    ], 
-    "headers": [
-      "src/cpp/server/load_reporter/load_data_store.h"
-    ], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "lb_load_data_store", 
-    "src": [
-      "src/cpp/server/load_reporter/load_data_store.cc", 
-      "src/cpp/server/load_reporter/load_data_store.h"
-    ], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
       "grpc", 
       "grpc++", 
       "grpc++_core_stats", 
@@ -8743,6 +8744,7 @@
       "test/core/end2end/tests/cancel_in_a_vacuum.cc", 
       "test/core/end2end/tests/cancel_test_helpers.h", 
       "test/core/end2end/tests/cancel_with_status.cc", 
+      "test/core/end2end/tests/channelz.cc", 
       "test/core/end2end/tests/compressed_payload.cc", 
       "test/core/end2end/tests/connectivity.cc", 
       "test/core/end2end/tests/default_host.cc", 
@@ -8843,6 +8845,7 @@
       "test/core/end2end/tests/cancel_in_a_vacuum.cc", 
       "test/core/end2end/tests/cancel_test_helpers.h", 
       "test/core/end2end/tests/cancel_with_status.cc", 
+      "test/core/end2end/tests/channelz.cc", 
       "test/core/end2end/tests/compressed_payload.cc", 
       "test/core/end2end/tests/connectivity.cc", 
       "test/core/end2end/tests/default_host.cc", 
@@ -9049,8 +9052,7 @@
   {
     "deps": [
       "gpr", 
-      "grpc_base", 
-      "nanopb"
+      "grpc_base"
     ], 
     "headers": [
       "include/grpc/census.h"
@@ -9060,7 +9062,7 @@
     "name": "census", 
     "src": [
       "include/grpc/census.h", 
-      "src/core/ext/census/grpc_context.cc"
+      "src/cpp/ext/filters/census/grpc_context.cc"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -9316,6 +9318,7 @@
       "src/core/lib/channel/channel_stack.cc", 
       "src/core/lib/channel/channel_stack_builder.cc", 
       "src/core/lib/channel/channel_trace.cc", 
+      "src/core/lib/channel/channelz.cc", 
       "src/core/lib/channel/channelz_registry.cc", 
       "src/core/lib/channel/connected_channel.cc", 
       "src/core/lib/channel/handshaker.cc", 
@@ -9487,6 +9490,7 @@
       "src/core/lib/channel/channel_stack.h", 
       "src/core/lib/channel/channel_stack_builder.h", 
       "src/core/lib/channel/channel_trace.h", 
+      "src/core/lib/channel/channelz.h", 
       "src/core/lib/channel/channelz_registry.h", 
       "src/core/lib/channel/connected_channel.h", 
       "src/core/lib/channel/context.h", 
@@ -9636,6 +9640,7 @@
       "src/core/lib/channel/channel_stack.h", 
       "src/core/lib/channel/channel_stack_builder.h", 
       "src/core/lib/channel/channel_trace.h", 
+      "src/core/lib/channel/channelz.h", 
       "src/core/lib/channel/channelz_registry.h", 
       "src/core/lib/channel/connected_channel.h", 
       "src/core/lib/channel/context.h", 
@@ -10136,6 +10141,7 @@
     "name": "grpc_resolver_dns_ares", 
     "src": [
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc", 
+      "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc", 
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h", 
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc", 
       "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc", 

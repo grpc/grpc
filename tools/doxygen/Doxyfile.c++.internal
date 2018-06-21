@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.13.0-dev
+PROJECT_NUMBER         = 1.14.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1012,6 +1012,7 @@ src/core/lib/channel/channel_args.h \
 src/core/lib/channel/channel_stack.h \
 src/core/lib/channel/channel_stack_builder.h \
 src/core/lib/channel/channel_trace.h \
+src/core/lib/channel/channelz.h \
 src/core/lib/channel/channelz_registry.h \
 src/core/lib/channel/connected_channel.h \
 src/core/lib/channel/context.h \

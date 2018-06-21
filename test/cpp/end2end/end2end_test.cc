@@ -71,8 +71,8 @@ class TestMetadataCredentialsPlugin : public MetadataCredentialsPlugin {
   static const char kGoodMetadataKey[];
   static const char kBadMetadataKey[];
 
-  TestMetadataCredentialsPlugin(grpc::string_ref metadata_key,
-                                grpc::string_ref metadata_value,
+  TestMetadataCredentialsPlugin(const grpc::string_ref& metadata_key,
+                                const grpc::string_ref& metadata_value,
                                 bool is_blocking, bool is_successful)
       : metadata_key_(metadata_key.data(), metadata_key.length()),
         metadata_value_(metadata_value.data(), metadata_value.length()),
@@ -168,7 +168,7 @@ const char TestAuthMetadataProcessor::kIdentityPropName[] = "novel identity";
 
 class Proxy : public ::grpc::testing::EchoTestService::Service {
  public:
-  Proxy(std::shared_ptr<Channel> channel)
+  Proxy(const std::shared_ptr<Channel>& channel)
       : stub_(grpc::testing::EchoTestService::NewStub(channel)) {}
 
   Status Echo(ServerContext* server_context, const EchoRequest* request,
@@ -683,6 +683,7 @@ TEST_P(End2endTest, SimpleRpcWithCustomUserAgentPrefix) {
 TEST_P(End2endTest, MultipleRpcsWithVariedBinaryMetadataValue) {
   ResetStub();
   std::vector<std::thread> threads;
+  threads.reserve(10);
   for (int i = 0; i < 10; ++i) {
     threads.emplace_back(SendRpc, stub_.get(), 10, true);
   }
@@ -694,6 +695,7 @@ TEST_P(End2endTest, MultipleRpcsWithVariedBinaryMetadataValue) {
 TEST_P(End2endTest, MultipleRpcs) {
   ResetStub();
   std::vector<std::thread> threads;
+  threads.reserve(10);
   for (int i = 0; i < 10; ++i) {
     threads.emplace_back(SendRpc, stub_.get(), 10, false);
   }
@@ -1272,6 +1274,7 @@ TEST_P(ProxyEnd2endTest, SimpleRpcWithEmptyMessages) {
 TEST_P(ProxyEnd2endTest, MultipleRpcs) {
   ResetStub();
   std::vector<std::thread> threads;
+  threads.reserve(10);
   for (int i = 0; i < 10; ++i) {
     threads.emplace_back(SendRpc, stub_.get(), 10, false);
   }

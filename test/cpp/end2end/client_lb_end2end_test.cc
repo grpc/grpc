@@ -686,9 +686,11 @@ TEST_F(ClientLbEnd2endTest, RoundRobinReresolve) {
   const int kNumServers = 3;
   std::vector<int> first_ports;
   std::vector<int> second_ports;
+  first_ports.reserve(kNumServers);
   for (int i = 0; i < kNumServers; ++i) {
     first_ports.push_back(grpc_pick_unused_port_or_die());
   }
+  second_ports.reserve(kNumServers);
   for (int i = 0; i < kNumServers; ++i) {
     second_ports.push_back(grpc_pick_unused_port_or_die());
   }

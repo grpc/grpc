@@ -437,6 +437,12 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
                                                &call->pollent);
   }
 
+  grpc_core::channelz::ChannelNode* channelz_channel =
+      grpc_channel_get_channelz_node(call->channel);
+  if (channelz_channel != nullptr) {
+    channelz_channel->RecordCallStarted();
+  }
+
   grpc_slice_unref_internal(path);
 
   return error;
@@ -975,13 +981,12 @@ static void recv_trailing_filter(void* args, grpc_metadata_batch* b,
   } else if (b->idx.named.grpc_status != nullptr) {
     grpc_status_code status_code =
         grpc_get_status_code_from_metadata(b->idx.named.grpc_status->md);
-    grpc_error* error =
-        status_code == GRPC_STATUS_OK
-            ? GRPC_ERROR_NONE
-            : grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                     "Error received from peer"),
-                                 GRPC_ERROR_INT_GRPC_STATUS,
-                                 static_cast<intptr_t>(status_code));
+    grpc_error* error = GRPC_ERROR_NONE;
+    if (status_code != GRPC_STATUS_OK) {
+      error = grpc_error_set_int(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error received from peer"),
+          GRPC_ERROR_INT_GRPC_STATUS, static_cast<intptr_t>(status_code));
+    }
     if (b->idx.named.grpc_message != nullptr) {
       error = grpc_error_set_str(
           error, GRPC_ERROR_STR_GRPC_MESSAGE,

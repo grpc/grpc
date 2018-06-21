@@ -23,7 +23,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  # version = '1.13.0-dev'
+  # version = '1.14.0-dev'
   version = '0.0.2'
   s.version  = version
   s.summary  = 'gRPC C++ library'
@@ -31,7 +31,7 @@ Pod::Spec.new do |s|
   s.license  = 'Apache License, Version 2.0'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
-  grpc_version = '1.13.0-dev'
+  grpc_version = '1.14.0-dev'
 
   s.source = {
     :git => 'https://github.com/grpc/grpc.git',
@@ -347,6 +347,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/channel_stack.h',
                       'src/core/lib/channel/channel_stack_builder.h',
                       'src/core/lib/channel/channel_trace.h',
+                      'src/core/lib/channel/channelz.h',
                       'src/core/lib/channel/channelz_registry.h',
                       'src/core/lib/channel/connected_channel.h',
                       'src/core/lib/channel/context.h',
@@ -532,6 +533,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/channel/channel_stack.h',
                               'src/core/lib/channel/channel_stack_builder.h',
                               'src/core/lib/channel/channel_trace.h',
+                              'src/core/lib/channel/channelz.h',
                               'src/core/lib/channel/channelz_registry.h',
                               'src/core/lib/channel/connected_channel.h',
                               'src/core/lib/channel/context.h',
@@ -663,9 +665,9 @@ Pod::Spec.new do |s|
   end
 
   s.prepare_command = <<-END_OF_COMMAND
-    find src/cpp/ -type f -exec sed -E -i'.back' 's;#include "third_party/nanopb/(.*)";#include <nanopb/\\1>;g' {} \\\;
-    find src/cpp/ -name "*.back" -type f -delete
-    find src/core/ -regex ".*\.h" -type f -exec sed -E -i'.back' 's;#include "third_party/nanopb/(.*)";#include <nanopb/\\1>;g' {} \\\;
-    find src/core/ -name "*.back" -type f -delete
+    find src/cpp/ -type f ! -path '*.grpc_back' -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(pb(_.*)?\\.h)";#include <nanopb/\\1>;g'
+    find src/cpp/ -type f -path '*.grpc_back' -print0 | xargs -0 rm
+    find src/core/ -type f ! -path '*.grpc_back' -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(pb(_.*)?\\.h)";#include <nanopb/\\1>;g'
+    find src/core/ -type f -path '*.grpc_back' -print0 | xargs -0 rm
   END_OF_COMMAND
 end

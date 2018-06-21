@@ -334,11 +334,9 @@ CXXFLAGS += -std=c++11
 ifeq ($(SYSTEM),Darwin)
 CXXFLAGS += -stdlib=libc++
 endif
-CPPFLAGS += -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1 -Wno-deprecated-declarations
+CPPFLAGS += -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1 -Wno-deprecated-declarations -Ithird_party/nanopb -DPB_FIELD_32BIT
 COREFLAGS += -fno-rtti -fno-exceptions
 LDFLAGS += -g
-
-DEFINES += PB_FIELD_16BIT
 
 CPPFLAGS += $(CPPFLAGS_$(CONFIG))
 CFLAGS += $(CFLAGS_$(CONFIG))
@@ -421,8 +419,8 @@ Q = @
 endif
 
 CORE_VERSION = 6.0.0-dev
-CPP_VERSION = 1.13.0-dev
-CSHARP_VERSION = 1.13.0-dev
+CPP_VERSION = 1.14.0-dev
+CSHARP_VERSION = 1.14.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -1014,6 +1012,7 @@ grpc_verify_jwt: $(BINDIR)/$(CONFIG)/grpc_verify_jwt
 handshake_client: $(BINDIR)/$(CONFIG)/handshake_client
 handshake_server: $(BINDIR)/$(CONFIG)/handshake_server
 handshake_server_with_readahead_handshaker: $(BINDIR)/$(CONFIG)/handshake_server_with_readahead_handshaker
+handshake_verify_peer_options: $(BINDIR)/$(CONFIG)/handshake_verify_peer_options
 histogram_test: $(BINDIR)/$(CONFIG)/histogram_test
 hpack_parser_fuzzer_test: $(BINDIR)/$(CONFIG)/hpack_parser_fuzzer_test
 hpack_parser_test: $(BINDIR)/$(CONFIG)/hpack_parser_test
@@ -1123,6 +1122,7 @@ channel_arguments_test: $(BINDIR)/$(CONFIG)/channel_arguments_test
 channel_filter_test: $(BINDIR)/$(CONFIG)/channel_filter_test
 channel_trace_test: $(BINDIR)/$(CONFIG)/channel_trace_test
 channelz_registry_test: $(BINDIR)/$(CONFIG)/channelz_registry_test
+channelz_test: $(BINDIR)/$(CONFIG)/channelz_test
 check_gcp_environment_linux_test: $(BINDIR)/$(CONFIG)/check_gcp_environment_linux_test
 check_gcp_environment_windows_test: $(BINDIR)/$(CONFIG)/check_gcp_environment_windows_test
 chttp2_settings_timeout_test: $(BINDIR)/$(CONFIG)/chttp2_settings_timeout_test
@@ -1167,7 +1167,6 @@ interop_client: $(BINDIR)/$(CONFIG)/interop_client
 interop_server: $(BINDIR)/$(CONFIG)/interop_server
 interop_test: $(BINDIR)/$(CONFIG)/interop_test
 json_run_localhost: $(BINDIR)/$(CONFIG)/json_run_localhost
-lb_load_data_store_test: $(BINDIR)/$(CONFIG)/lb_load_data_store_test
 memory_test: $(BINDIR)/$(CONFIG)/memory_test
 metrics_client: $(BINDIR)/$(CONFIG)/metrics_client
 mock_test: $(BINDIR)/$(CONFIG)/mock_test
@@ -1383,9 +1382,9 @@ pc_cxx: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc
 pc_cxx_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc
 
 ifeq ($(EMBED_OPENSSL),true)
-privatelibs_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_proto_reflection_desc_db.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a $(LIBDIR)/$(CONFIG)/libhttp2_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a $(LIBDIR)/$(CONFIG)/libinterop_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a $(LIBDIR)/$(CONFIG)/libinterop_server_lib.a $(LIBDIR)/$(CONFIG)/libinterop_server_main.a $(LIBDIR)/$(CONFIG)/liblb_load_data_store.a $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl_crypto_test_data_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_buf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_chacha_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_compiler_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_constant_time_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_spake25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_dsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ecdh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_scrypt_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_p256-x86_64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ctrdrbg_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_hkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_lhash_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_obj_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pool_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_refcount_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_self_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_file_test_gtest_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_gtest_main_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_thread_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_tab_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_v3name_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_span_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a $(LIBDIR)/$(CONFIG)/libbenchmark.a
+privatelibs_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_proto_reflection_desc_db.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a $(LIBDIR)/$(CONFIG)/libhttp2_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a $(LIBDIR)/$(CONFIG)/libinterop_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a $(LIBDIR)/$(CONFIG)/libinterop_server_lib.a $(LIBDIR)/$(CONFIG)/libinterop_server_main.a $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl_crypto_test_data_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_asn1_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_base64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bio_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_buf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bytestring_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_chacha_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_aead_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_cipher_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_cmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_compiler_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_constant_time_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ed25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_spake25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_x25519_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_dh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_digest_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_dsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ecdh_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_err_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_evp_extra_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_evp_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pbkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_scrypt_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_aes_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_bn_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ec_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_p256-x86_64_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ecdsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_gcm_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ctrdrbg_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_hkdf_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_hmac_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_lhash_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_obj_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pkcs7_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pkcs12_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pkcs8_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_poly1305_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_pool_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_refcount_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_rsa_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_self_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_file_test_gtest_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_gtest_main_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_thread_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_x509_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_tab_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_v3name_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_span_test_lib.a $(LIBDIR)/$(CONFIG)/libboringssl_ssl_test_lib.a $(LIBDIR)/$(CONFIG)/libbenchmark.a
 else
-privatelibs_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_proto_reflection_desc_db.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a $(LIBDIR)/$(CONFIG)/libhttp2_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a $(LIBDIR)/$(CONFIG)/libinterop_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a $(LIBDIR)/$(CONFIG)/libinterop_server_lib.a $(LIBDIR)/$(CONFIG)/libinterop_server_main.a $(LIBDIR)/$(CONFIG)/liblb_load_data_store.a $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libbenchmark.a
+privatelibs_cxx:  $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_proto_reflection_desc_db.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a $(LIBDIR)/$(CONFIG)/libhttp2_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a $(LIBDIR)/$(CONFIG)/libinterop_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a $(LIBDIR)/$(CONFIG)/libinterop_server_lib.a $(LIBDIR)/$(CONFIG)/libinterop_server_main.a $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libbenchmark.a
 endif
 
 
@@ -1456,6 +1455,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/handshake_client \
   $(BINDIR)/$(CONFIG)/handshake_server \
   $(BINDIR)/$(CONFIG)/handshake_server_with_readahead_handshaker \
+  $(BINDIR)/$(CONFIG)/handshake_verify_peer_options \
   $(BINDIR)/$(CONFIG)/histogram_test \
   $(BINDIR)/$(CONFIG)/hpack_parser_test \
   $(BINDIR)/$(CONFIG)/hpack_table_test \
@@ -1619,6 +1619,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/channel_filter_test \
   $(BINDIR)/$(CONFIG)/channel_trace_test \
   $(BINDIR)/$(CONFIG)/channelz_registry_test \
+  $(BINDIR)/$(CONFIG)/channelz_test \
   $(BINDIR)/$(CONFIG)/check_gcp_environment_linux_test \
   $(BINDIR)/$(CONFIG)/check_gcp_environment_windows_test \
   $(BINDIR)/$(CONFIG)/chttp2_settings_timeout_test \
@@ -1656,7 +1657,6 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/interop_server \
   $(BINDIR)/$(CONFIG)/interop_test \
   $(BINDIR)/$(CONFIG)/json_run_localhost \
-  $(BINDIR)/$(CONFIG)/lb_load_data_store_test \
   $(BINDIR)/$(CONFIG)/memory_test \
   $(BINDIR)/$(CONFIG)/metrics_client \
   $(BINDIR)/$(CONFIG)/mock_test \
@@ -1795,6 +1795,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/channel_filter_test \
   $(BINDIR)/$(CONFIG)/channel_trace_test \
   $(BINDIR)/$(CONFIG)/channelz_registry_test \
+  $(BINDIR)/$(CONFIG)/channelz_test \
   $(BINDIR)/$(CONFIG)/check_gcp_environment_linux_test \
   $(BINDIR)/$(CONFIG)/check_gcp_environment_windows_test \
   $(BINDIR)/$(CONFIG)/chttp2_settings_timeout_test \
@@ -1832,7 +1833,6 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/interop_server \
   $(BINDIR)/$(CONFIG)/interop_test \
   $(BINDIR)/$(CONFIG)/json_run_localhost \
-  $(BINDIR)/$(CONFIG)/lb_load_data_store_test \
   $(BINDIR)/$(CONFIG)/memory_test \
   $(BINDIR)/$(CONFIG)/metrics_client \
   $(BINDIR)/$(CONFIG)/mock_test \
@@ -2011,6 +2011,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/handshake_server || ( echo test handshake_server failed ; exit 1 )
 	$(E) "[RUN]     Testing handshake_server_with_readahead_handshaker"
 	$(Q) $(BINDIR)/$(CONFIG)/handshake_server_with_readahead_handshaker || ( echo test handshake_server_with_readahead_handshaker failed ; exit 1 )
+	$(E) "[RUN]     Testing handshake_verify_peer_options"
+	$(Q) $(BINDIR)/$(CONFIG)/handshake_verify_peer_options || ( echo test handshake_verify_peer_options failed ; exit 1 )
 	$(E) "[RUN]     Testing histogram_test"
 	$(Q) $(BINDIR)/$(CONFIG)/histogram_test || ( echo test histogram_test failed ; exit 1 )
 	$(E) "[RUN]     Testing hpack_parser_test"
@@ -2231,6 +2233,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/channel_trace_test || ( echo test channel_trace_test failed ; exit 1 )
 	$(E) "[RUN]     Testing channelz_registry_test"
 	$(Q) $(BINDIR)/$(CONFIG)/channelz_registry_test || ( echo test channelz_registry_test failed ; exit 1 )
+	$(E) "[RUN]     Testing channelz_test"
+	$(Q) $(BINDIR)/$(CONFIG)/channelz_test || ( echo test channelz_test failed ; exit 1 )
 	$(E) "[RUN]     Testing check_gcp_environment_linux_test"
 	$(Q) $(BINDIR)/$(CONFIG)/check_gcp_environment_linux_test || ( echo test check_gcp_environment_linux_test failed ; exit 1 )
 	$(E) "[RUN]     Testing check_gcp_environment_windows_test"
@@ -2291,8 +2295,6 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/inproc_sync_unary_ping_pong_test || ( echo test inproc_sync_unary_ping_pong_test failed ; exit 1 )
 	$(E) "[RUN]     Testing interop_test"
 	$(Q) $(BINDIR)/$(CONFIG)/interop_test || ( echo test interop_test failed ; exit 1 )
-	$(E) "[RUN]     Testing lb_load_data_store_test"
-	$(Q) $(BINDIR)/$(CONFIG)/lb_load_data_store_test || ( echo test lb_load_data_store_test failed ; exit 1 )
 	$(E) "[RUN]     Testing memory_test"
 	$(Q) $(BINDIR)/$(CONFIG)/memory_test || ( echo test memory_test failed ; exit 1 )
 	$(E) "[RUN]     Testing mock_test"
@@ -3309,6 +3311,7 @@ LIBGRPC_SRC = \
     src/core/lib/channel/channel_stack.cc \
     src/core/lib/channel/channel_stack_builder.cc \
     src/core/lib/channel/channel_trace.cc \
+    src/core/lib/channel/channelz.cc \
     src/core/lib/channel/channelz_registry.cc \
     src/core/lib/channel/connected_channel.cc \
     src/core/lib/channel/handshaker.cc \
@@ -3590,6 +3593,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
     src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc \
@@ -3597,7 +3601,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
     src/core/ext/filters/load_reporting/server_load_reporting_filter.cc \
     src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc \
-    src/core/ext/census/grpc_context.cc \
+    src/cpp/ext/filters/census/grpc_context.cc \
     src/core/ext/filters/max_age/max_age_filter.cc \
     src/core/ext/filters/message_size/message_size_filter.cc \
     src/core/ext/filters/http/client_authority_filter.cc \
@@ -3702,6 +3706,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/channel/channel_stack.cc \
     src/core/lib/channel/channel_stack_builder.cc \
     src/core/lib/channel/channel_trace.cc \
+    src/core/lib/channel/channelz.cc \
     src/core/lib/channel/channelz_registry.cc \
     src/core/lib/channel/connected_channel.cc \
     src/core/lib/channel/handshaker.cc \
@@ -4086,6 +4091,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/channel/channel_stack.cc \
     src/core/lib/channel/channel_stack_builder.cc \
     src/core/lib/channel/channel_trace.cc \
+    src/core/lib/channel/channelz.cc \
     src/core/lib/channel/channelz_registry.cc \
     src/core/lib/channel/connected_channel.cc \
     src/core/lib/channel/handshaker.cc \
@@ -4382,6 +4388,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/channel/channel_stack.cc \
     src/core/lib/channel/channel_stack_builder.cc \
     src/core/lib/channel/channel_trace.cc \
+    src/core/lib/channel/channelz.cc \
     src/core/lib/channel/channelz_registry.cc \
     src/core/lib/channel/connected_channel.cc \
     src/core/lib/channel/handshaker.cc \
@@ -4644,6 +4651,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/channel/channel_stack.cc \
     src/core/lib/channel/channel_stack_builder.cc \
     src/core/lib/channel/channel_trace.cc \
+    src/core/lib/channel/channelz.cc \
     src/core/lib/channel/channelz_registry.cc \
     src/core/lib/channel/connected_channel.cc \
     src/core/lib/channel/handshaker.cc \
@@ -4846,6 +4854,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/transport/inproc/inproc_plugin.cc \
     src/core/ext/transport/inproc/inproc_transport.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc \
@@ -4865,7 +4874,7 @@ LIBGRPC_UNSECURE_SRC = \
     third_party/nanopb/pb_encode.c \
     src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
     src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
-    src/core/ext/census/grpc_context.cc \
+    src/cpp/ext/filters/census/grpc_context.cc \
     src/core/ext/filters/max_age/max_age_filter.cc \
     src/core/ext/filters/message_size/message_size_filter.cc \
     src/core/ext/filters/http/client_authority_filter.cc \
@@ -5463,6 +5472,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/channel/channel_stack.cc \
     src/core/lib/channel/channel_stack_builder.cc \
     src/core/lib/channel/channel_trace.cc \
+    src/core/lib/channel/channelz.cc \
     src/core/lib/channel/channelz_registry.cc \
     src/core/lib/channel/connected_channel.cc \
     src/core/lib/channel/handshaker.cc \
@@ -5636,10 +5646,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc \
     src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc \
     src/core/ext/transport/chttp2/server/chttp2_server.cc \
-    src/core/ext/census/grpc_context.cc \
-    third_party/nanopb/pb_common.c \
-    third_party/nanopb/pb_decode.c \
-    third_party/nanopb/pb_encode.c \
+    src/cpp/ext/filters/census/grpc_context.cc \
 
 PUBLIC_HEADERS_CXX += \
     include/grpc++/alarm.h \
@@ -7215,55 +7222,6 @@ endif
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(LIBINTEROP_SERVER_MAIN_OBJS:.o=.dep)
-endif
-endif
-
-
-LIBLB_LOAD_DATA_STORE_SRC = \
-    src/cpp/server/load_reporter/load_data_store.cc \
-
-PUBLIC_HEADERS_CXX += \
-
-LIBLB_LOAD_DATA_STORE_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBLB_LOAD_DATA_STORE_SRC))))
-
-
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure libraries if you don't have OpenSSL.
-
-$(LIBDIR)/$(CONFIG)/liblb_load_data_store.a: openssl_dep_error
-
-
-else
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
-
-$(LIBDIR)/$(CONFIG)/liblb_load_data_store.a: protobuf_dep_error
-
-
-else
-
-$(LIBDIR)/$(CONFIG)/liblb_load_data_store.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(PROTOBUF_DEP) $(LIBLB_LOAD_DATA_STORE_OBJS) 
-	$(E) "[AR]      Creating $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) rm -f $(LIBDIR)/$(CONFIG)/liblb_load_data_store.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/liblb_load_data_store.a $(LIBLB_LOAD_DATA_STORE_OBJS) 
-ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/liblb_load_data_store.a
-endif
-
-
-
-
-endif
-
-endif
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(LIBLB_LOAD_DATA_STORE_OBJS:.o=.dep)
 endif
 endif
 
@@ -9973,6 +9931,7 @@ LIBEND2END_TESTS_SRC = \
     test/core/end2end/tests/cancel_before_invoke.cc \
     test/core/end2end/tests/cancel_in_a_vacuum.cc \
     test/core/end2end/tests/cancel_with_status.cc \
+    test/core/end2end/tests/channelz.cc \
     test/core/end2end/tests/compressed_payload.cc \
     test/core/end2end/tests/connectivity.cc \
     test/core/end2end/tests/default_host.cc \
@@ -10090,6 +10049,7 @@ LIBEND2END_NOSEC_TESTS_SRC = \
     test/core/end2end/tests/cancel_before_invoke.cc \
     test/core/end2end/tests/cancel_in_a_vacuum.cc \
     test/core/end2end/tests/cancel_with_status.cc \
+    test/core/end2end/tests/channelz.cc \
     test/core/end2end/tests/compressed_payload.cc \
     test/core/end2end/tests/connectivity.cc \
     test/core/end2end/tests/default_host.cc \
@@ -12468,6 +12428,38 @@ deps_handshake_server_with_readahead_handshaker: $(HANDSHAKE_SERVER_WITH_READAHE
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(HANDSHAKE_SERVER_WITH_READAHEAD_HANDSHAKER_OBJS:.o=.dep)
+endif
+endif
+
+
+HANDSHAKE_VERIFY_PEER_OPTIONS_SRC = \
+    test/core/handshake/verify_peer_options.cc \
+
+HANDSHAKE_VERIFY_PEER_OPTIONS_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HANDSHAKE_VERIFY_PEER_OPTIONS_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/handshake_verify_peer_options: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/handshake_verify_peer_options: $(HANDSHAKE_VERIFY_PEER_OPTIONS_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(HANDSHAKE_VERIFY_PEER_OPTIONS_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/handshake_verify_peer_options
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/handshake/verify_peer_options.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_handshake_verify_peer_options: $(HANDSHAKE_VERIFY_PEER_OPTIONS_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(HANDSHAKE_VERIFY_PEER_OPTIONS_OBJS:.o=.dep)
 endif
 endif
 
@@ -16391,6 +16383,53 @@ endif
 endif
 
 
+CHANNELZ_TEST_SRC = \
+    test/core/channel/channelz_test.cc \
+    $(GENDIR)/src/proto/grpc/channelz/channelz.pb.cc $(GENDIR)/src/proto/grpc/channelz/channelz.grpc.pb.cc \
+
+CHANNELZ_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CHANNELZ_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/channelz_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/channelz_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/channelz_test: $(PROTOBUF_DEP) $(CHANNELZ_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(CHANNELZ_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/channelz_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/channel/channelz_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/channelz/channelz.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_channelz_test: $(CHANNELZ_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(CHANNELZ_TEST_OBJS:.o=.dep)
+endif
+endif
+$(OBJDIR)/$(CONFIG)/test/core/channel/channelz_test.o: $(GENDIR)/src/proto/grpc/channelz/channelz.pb.cc $(GENDIR)/src/proto/grpc/channelz/channelz.grpc.pb.cc
+
+
 CHECK_GCP_ENVIRONMENT_LINUX_TEST_SRC = \
     test/core/security/check_gcp_environment_linux_test.cc \
 
@@ -18234,49 +18273,6 @@ deps_json_run_localhost: $(JSON_RUN_LOCALHOST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(JSON_RUN_LOCALHOST_OBJS:.o=.dep)
-endif
-endif
-
-
-LB_LOAD_DATA_STORE_TEST_SRC = \
-    test/cpp/server/load_reporter/load_data_store_test.cc \
-
-LB_LOAD_DATA_STORE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LB_LOAD_DATA_STORE_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/lb_load_data_store_test: openssl_dep_error
-
-else
-
-
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
-
-$(BINDIR)/$(CONFIG)/lb_load_data_store_test: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/lb_load_data_store_test: $(PROTOBUF_DEP) $(LB_LOAD_DATA_STORE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/liblb_load_data_store.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(LB_LOAD_DATA_STORE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/liblb_load_data_store.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/lb_load_data_store_test
-
-endif
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/cpp/server/load_reporter/load_data_store_test.o:  $(LIBDIR)/$(CONFIG)/liblb_load_data_store.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
-
-deps_lb_load_data_store_test: $(LB_LOAD_DATA_STORE_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(LB_LOAD_DATA_STORE_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -24316,7 +24312,6 @@ src/cpp/common/secure_channel_arguments.cc: $(OPENSSL_DEP)
 src/cpp/common/secure_create_auth_context.cc: $(OPENSSL_DEP)
 src/cpp/ext/proto_server_reflection.cc: $(OPENSSL_DEP)
 src/cpp/ext/proto_server_reflection_plugin.cc: $(OPENSSL_DEP)
-src/cpp/server/load_reporter/load_data_store.cc: $(OPENSSL_DEP)
 src/cpp/server/secure_server_credentials.cc: $(OPENSSL_DEP)
 src/cpp/util/core_stats.cc: $(OPENSSL_DEP)
 src/cpp/util/error_details.cc: $(OPENSSL_DEP)

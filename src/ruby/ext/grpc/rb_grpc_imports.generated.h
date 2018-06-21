@@ -179,12 +179,6 @@ extern grpc_lame_client_channel_create_type grpc_lame_client_channel_create_impo
 typedef void(*grpc_channel_destroy_type)(grpc_channel* channel);
 extern grpc_channel_destroy_type grpc_channel_destroy_import;
 #define grpc_channel_destroy grpc_channel_destroy_import
-typedef char*(*grpc_channel_get_trace_type)(grpc_channel* channel);
-extern grpc_channel_get_trace_type grpc_channel_get_trace_import;
-#define grpc_channel_get_trace grpc_channel_get_trace_import
-typedef intptr_t(*grpc_channel_get_uuid_type)(grpc_channel* channel);
-extern grpc_channel_get_uuid_type grpc_channel_get_uuid_import;
-#define grpc_channel_get_uuid grpc_channel_get_uuid_import
 typedef grpc_call_error(*grpc_call_cancel_type)(grpc_call* call, void* reserved);
 extern grpc_call_cancel_type grpc_call_cancel_import;
 #define grpc_call_cancel grpc_call_cancel_import
@@ -317,7 +311,7 @@ extern grpc_google_default_credentials_create_type grpc_google_default_credentia
 typedef void(*grpc_set_ssl_roots_override_callback_type)(grpc_ssl_roots_override_callback cb);
 extern grpc_set_ssl_roots_override_callback_type grpc_set_ssl_roots_override_callback_import;
 #define grpc_set_ssl_roots_override_callback grpc_set_ssl_roots_override_callback_import
-typedef grpc_channel_credentials*(*grpc_ssl_credentials_create_type)(const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair, void* reserved);
+typedef grpc_channel_credentials*(*grpc_ssl_credentials_create_type)(const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair, const verify_peer_options* verify_options, void* reserved);
 extern grpc_ssl_credentials_create_type grpc_ssl_credentials_create_import;
 #define grpc_ssl_credentials_create grpc_ssl_credentials_create_import
 typedef void(*grpc_call_credentials_release_type)(grpc_call_credentials* creds);

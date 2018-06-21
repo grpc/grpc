@@ -87,6 +87,7 @@
   # Options
   option(gRPC_BUILD_TESTS "Build tests" OFF)
   option(gRPC_BUILD_CODEGEN "Build codegen" ON)
+  option(gRPC_BUILD_CSHARP_EXT "Build C# extensions" ON)
 
   set(gRPC_INSTALL_default ON)
   if (NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
@@ -168,6 +169,7 @@
   include(cmake/gflags.cmake)
   include(cmake/benchmark.cmake)
   include(cmake/address_sorting.cmake)
+  include(cmake/nanopb.cmake)
 
   if(NOT MSVC)
     set(CMAKE_C_FLAGS   "<%text>${CMAKE_C_FLAGS}</%text> -std=c99")
@@ -297,6 +299,11 @@
   if (gRPC_BUILD_TESTS)
   ${cc_library(lib)}
   endif (gRPC_BUILD_TESTS)
+  % elif lib.name in ['grpc_csharp_ext']:
+  if (gRPC_BUILD_CSHARP_EXT)
+  ${cc_library(lib)}
+  ${cc_install(lib)}
+  endif (gRPC_BUILD_CSHARP_EXT)
   % else:
   ${cc_library(lib)}
   % if not lib.build in ["tool"]:
@@ -383,6 +390,7 @@
     PRIVATE <%text>${_gRPC_CARES_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_GFLAGS_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${_gRPC_NANOPB_INCLUDE_DIR}</%text>
   % if lib.build in ['test', 'private'] and lib.language == 'c++':
     PRIVATE third_party/googletest/googletest/include
     PRIVATE third_party/googletest/googletest
@@ -464,6 +472,7 @@
     PRIVATE <%text>${_gRPC_CARES_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_GFLAGS_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}</%text>
+    PRIVATE <%text>${_gRPC_NANOPB_INCLUDE_DIR}</%text>
   % if tgt.build in ['test', 'private'] and tgt.language == 'c++':
     PRIVATE third_party/googletest/googletest/include
     PRIVATE third_party/googletest/googletest

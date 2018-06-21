@@ -22,7 +22,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.13.0-dev'
+  version = '1.14.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -357,6 +357,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/channel_stack.h',
                       'src/core/lib/channel/channel_stack_builder.h',
                       'src/core/lib/channel/channel_trace.h',
+                      'src/core/lib/channel/channelz.h',
                       'src/core/lib/channel/channelz_registry.h',
                       'src/core/lib/channel/connected_channel.h',
                       'src/core/lib/channel/context.h',
@@ -507,6 +508,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/channel_stack.cc',
                       'src/core/lib/channel/channel_stack_builder.cc',
                       'src/core/lib/channel/channel_trace.cc',
+                      'src/core/lib/channel/channelz.cc',
                       'src/core/lib/channel/channelz_registry.cc',
                       'src/core/lib/channel/connected_channel.cc',
                       'src/core/lib/channel/handshaker.cc',
@@ -785,6 +787,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc',
                       'src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc',
+                      'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc',
@@ -792,7 +795,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc',
                       'src/core/ext/filters/load_reporting/server_load_reporting_filter.cc',
                       'src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc',
-                      'src/core/ext/census/grpc_context.cc',
+                      'src/cpp/ext/filters/census/grpc_context.cc',
                       'src/core/ext/filters/max_age/max_age_filter.cc',
                       'src/core/ext/filters/message_size/message_size_filter.cc',
                       'src/core/ext/filters/http/client_authority_filter.cc',
@@ -935,6 +938,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/channel/channel_stack.h',
                               'src/core/lib/channel/channel_stack_builder.h',
                               'src/core/lib/channel/channel_trace.h',
+                              'src/core/lib/channel/channelz.h',
                               'src/core/lib/channel/channelz_registry.h',
                               'src/core/lib/channel/connected_channel.h',
                               'src/core/lib/channel/context.h',
@@ -1193,6 +1197,7 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/cancel_before_invoke.cc',
                       'test/core/end2end/tests/cancel_in_a_vacuum.cc',
                       'test/core/end2end/tests/cancel_with_status.cc',
+                      'test/core/end2end/tests/channelz.cc',
                       'test/core/end2end/tests/compressed_payload.cc',
                       'test/core/end2end/tests/connectivity.cc',
                       'test/core/end2end/tests/default_host.cc',
@@ -1264,6 +1269,7 @@ Pod::Spec.new do |s|
 
   # TODO (mxyan): Instead of this hack, add include path "third_party" to C core's include path?
   s.prepare_command = <<-END_OF_COMMAND
-    find src/core/ -type f ! -path '*.back*' -exec sed -E -i'.back' 's;#include "third_party/nanopb/(.*)";#include <nanopb/\\1>;g' {} \\\;
+    find src/core/ -type f ! -path '*.grpc_back' -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(pb(_.*)?\\.h)";#include <nanopb/\\1>;g'
+    find src/core/ -type f -path '*.grpc_back' -print0 | xargs -0 rm
   END_OF_COMMAND
 end

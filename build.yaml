@@ -13,8 +13,8 @@ settings:
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
   core_version: 6.0.0-dev
-  g_stands_for: gloriosa
-  version: 1.13.0-dev
+  g_stands_for: gladiolus
+  version: 1.14.0-dev
 filegroups:
 - name: alts_proto
   headers:
@@ -100,10 +100,9 @@ filegroups:
   public_headers:
   - include/grpc/census.h
   src:
-  - src/core/ext/census/grpc_context.cc
+  - src/cpp/ext/filters/census/grpc_context.cc
   uses:
   - grpc_base
-  - nanopb
 - name: cmdline
   headers:
   - test/core/util/cmdline.h
@@ -235,6 +234,7 @@ filegroups:
   - src/core/lib/channel/channel_stack.cc
   - src/core/lib/channel/channel_stack_builder.cc
   - src/core/lib/channel/channel_trace.cc
+  - src/core/lib/channel/channelz.cc
   - src/core/lib/channel/channelz_registry.cc
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/handshaker.cc
@@ -405,6 +405,7 @@ filegroups:
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
   - src/core/lib/channel/channel_trace.h
+  - src/core/lib/channel/channelz.h
   - src/core/lib/channel/channelz_registry.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
@@ -725,6 +726,7 @@ filegroups:
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h
   src:
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
+  - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc
   - src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc
@@ -1904,15 +1906,6 @@ libs:
   - test/cpp/interop/interop_server_bootstrap.cc
   deps:
   - interop_server_lib
-- name: lb_load_data_store
-  build: private
-  language: c++
-  headers:
-  - src/cpp/server/load_reporter/load_data_store.h
-  src:
-  - src/cpp/server/load_reporter/load_data_store.cc
-  deps:
-  - grpc++
 - name: qps
   build: private
   language: c++
@@ -2782,6 +2775,21 @@ targets:
   src:
   - test/core/handshake/readahead_handshaker_server_ssl.cc
   - test/core/handshake/server_ssl_common.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
+  platforms:
+  - linux
+  secure: true
+- name: handshake_verify_peer_options
+  build: test
+  language: c
+  src:
+  - test/core/handshake/verify_peer_options.cc
   deps:
   - grpc_test_util
   - grpc
@@ -4237,6 +4245,23 @@ targets:
   uses:
   - grpc++_test
   uses_polling: false
+- name: channelz_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/channel/channelz_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  filegroups:
+  - grpc++_channelz_proto
+  uses:
+  - grpc++_test
 - name: check_gcp_environment_linux_test
   build: test
   language: c++
@@ -4830,20 +4855,6 @@ targets:
   - mac
   - linux
   - posix
-- name: lb_load_data_store_test
-  gtest: true
-  build: test
-  language: c++
-  src:
-  - test/cpp/server/load_reporter/load_data_store_test.cc
-  deps:
-  - lb_load_data_store
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr_test_util
-  - gpr
 - name: memory_test
   gtest: true
   build: test
@@ -5493,7 +5504,7 @@ configs:
     compile_the_world: true
     test_environ:
       ASAN_OPTIONS: detect_leaks=1:color=always
-      LSAN_OPTIONS: suppressions=tools/lsan_suppressions.txt:report_objects=1
+      LSAN_OPTIONS: suppressions=test/core/util/lsan_suppressions.txt:report_objects=1
   asan-noleaks:
     CC: clang
     CPPFLAGS: -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer
@@ -5517,7 +5528,7 @@ configs:
     compile_the_world: true
     test_environ:
       ASAN_OPTIONS: detect_leaks=1:color=always
-      LSAN_OPTIONS: suppressions=tools/lsan_suppressions.txt:report_objects=1
+      LSAN_OPTIONS: suppressions=test/core/util/lsan_suppressions.txt:report_objects=1
   basicprof:
     CPPFLAGS: -O2 -DGRPC_BASIC_PROFILER -DGRPC_TIMERS_RDTSC
     DEFINES: NDEBUG
@@ -5591,7 +5602,7 @@ configs:
     LDXX: clang++
     compile_the_world: true
     test_environ:
-      TSAN_OPTIONS: suppressions=tools/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
+      TSAN_OPTIONS: suppressions=test/core/util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
   ubsan:
     CC: clang
     CPPFLAGS: -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=undefined -fno-omit-frame-pointer
@@ -5603,7 +5614,7 @@ configs:
     LDXX: clang++
     compile_the_world: true
     test_environ:
-      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1:suppressions=tools/ubsan_suppressions.txt
+      UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1:suppressions=test/core/util/ubsan_suppressions.txt
 defaults:
   ares:
     CFLAGS: -Wno-sign-conversion $(if $(subst Darwin,,$(SYSTEM)),,-Wno-shorten-64-to-32)
@@ -5625,7 +5636,7 @@ defaults:
   global:
     COREFLAGS: -fno-rtti -fno-exceptions
     CPPFLAGS: -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1
-      -Wno-deprecated-declarations
+      -Wno-deprecated-declarations -Ithird_party/nanopb -DPB_FIELD_32BIT
     LDFLAGS: -g
   zlib:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration

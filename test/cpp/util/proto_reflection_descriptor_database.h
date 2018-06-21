@@ -38,7 +38,7 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
       std::unique_ptr<reflection::v1alpha::ServerReflection::Stub> stub);
 
   explicit ProtoReflectionDescriptorDatabase(
-      std::shared_ptr<grpc::Channel> channel);
+      const std::shared_ptr<grpc::Channel>& channel);
 
   virtual ~ProtoReflectionDescriptorDatabase();
 

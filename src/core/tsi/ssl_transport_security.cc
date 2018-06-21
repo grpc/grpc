@@ -260,14 +260,13 @@ static tsi_result ssl_get_x509_common_name(X509* cert, unsigned char** utf8,
   X509_NAME* subject_name = X509_get_subject_name(cert);
   int utf8_returned_size = 0;
   if (subject_name == nullptr) {
-    gpr_log(GPR_ERROR, "Could not get subject name from certificate.");
+    gpr_log(GPR_INFO, "Could not get subject name from certificate.");
     return TSI_NOT_FOUND;
   }
   common_name_index =
       X509_NAME_get_index_by_NID(subject_name, NID_commonName, -1);
   if (common_name_index == -1) {
-    gpr_log(GPR_ERROR,
-            "Could not get common name of subject from certificate.");
+    gpr_log(GPR_INFO, "Could not get common name of subject from certificate.");
     return TSI_NOT_FOUND;
   }
   common_name_entry = X509_NAME_get_entry(subject_name, common_name_index);

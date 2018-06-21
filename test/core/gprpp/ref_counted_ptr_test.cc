@@ -66,14 +66,14 @@ TEST(RefCountedPtr, MoveAssignment) {
 
 TEST(RefCountedPtr, CopyConstructor) {
   RefCountedPtr<Foo> foo(New<Foo>());
-  RefCountedPtr<Foo> foo2(foo);
+  const RefCountedPtr<Foo>& foo2(foo);
   EXPECT_NE(nullptr, foo.get());
   EXPECT_EQ(foo.get(), foo2.get());
 }
 
 TEST(RefCountedPtr, CopyAssignment) {
   RefCountedPtr<Foo> foo(New<Foo>());
-  RefCountedPtr<Foo> foo2 = foo;
+  const RefCountedPtr<Foo>& foo2 = foo;
   EXPECT_NE(nullptr, foo.get());
   EXPECT_EQ(foo.get(), foo2.get());
 }

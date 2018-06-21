@@ -222,7 +222,7 @@ static grpc_channel_credentials* read_ssl_channel_creds(input_stream* inp) {
   grpc_channel_credentials* creds = grpc_ssl_credentials_create(
       root_certs,
       private_key != nullptr && certs != nullptr ? &key_cert_pair : nullptr,
-      nullptr);
+      nullptr, nullptr);
   cred_artifact_ctx_finish(&ctx);
   return creds;
 }
@@ -374,13 +374,11 @@ void my_resolve_address(const char* addr, const char* default_port,
 static grpc_address_resolver_vtable fuzzer_resolver = {my_resolve_address,
                                                        nullptr};
 
-grpc_ares_request* my_dns_lookup_ares(const char* dns_server, const char* addr,
-                                      const char* default_port,
-                                      grpc_pollset_set* interested_parties,
-                                      grpc_closure* on_done,
-                                      grpc_lb_addresses** lb_addrs,
-                                      bool check_grpclb,
-                                      char** service_config_json) {
+grpc_ares_request* my_dns_lookup_ares_locked(
+    const char* dns_server, const char* addr, const char* default_port,
+    grpc_pollset_set* interested_parties, grpc_closure* on_done,
+    grpc_lb_addresses** lb_addrs, bool check_grpclb, char** service_config_json,
+    grpc_combiner* combiner) {
   addr_req* r = static_cast<addr_req*>(gpr_malloc(sizeof(*r)));
   r->addr = gpr_strdup(addr);
   r->on_done = on_done;
@@ -706,7 +704,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_executor_set_threading(false);
   }
   grpc_set_resolver_impl(&fuzzer_resolver);
-  grpc_dns_lookup_ares = my_dns_lookup_ares;
+  grpc_dns_lookup_ares_locked = my_dns_lookup_ares_locked;
 
   GPR_ASSERT(g_channel == nullptr);
   GPR_ASSERT(g_server == nullptr);
@@ -1048,6 +1046,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
           op->reserved = nullptr;
           op->flags = grpc_fuzzer_get_next_uint32(&inp);
         }
+        if (g_channel == nullptr) ok = false;
         if (ok) {
           validator* v = make_finished_batch_validator(g_active_call, has_ops);
           g_active_call->pending_ops++;

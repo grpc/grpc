@@ -96,7 +96,7 @@ _WHITELIST_DICT = {
     'gRPC\-Core\.podspec$': [_OBJC_TEST_SUITE],
     'gRPC\-ProtoRPC\.podspec$': [_OBJC_TEST_SUITE],
     'gRPC\-RxLibrary\.podspec$': [_OBJC_TEST_SUITE],
-    'INSTALL\.md$': [],
+    'BUILDING\.md$': [],
     'LICENSE$': [],
     'MANIFEST\.md$': [],
     'package\.json$': [_PHP_TEST_SUITE],

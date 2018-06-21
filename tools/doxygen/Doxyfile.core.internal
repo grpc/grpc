@@ -864,7 +864,6 @@ include/grpc/support/time.h \
 include/grpc/support/workaround_list.h \
 src/core/README.md \
 src/core/ext/README.md \
-src/core/ext/census/grpc_context.cc \
 src/core/ext/filters/client_channel/README.md \
 src/core/ext/filters/client_channel/backup_poller.cc \
 src/core/ext/filters/client_channel/backup_poller.h \
@@ -913,6 +912,7 @@ src/core/ext/filters/client_channel/resolver.cc \
 src/core/ext/filters/client_channel/resolver.h \
 src/core/ext/filters/client_channel/resolver/README.md \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
+src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc \
@@ -1038,6 +1038,8 @@ src/core/lib/channel/channel_stack_builder.cc \
 src/core/lib/channel/channel_stack_builder.h \
 src/core/lib/channel/channel_trace.cc \
 src/core/lib/channel/channel_trace.h \
+src/core/lib/channel/channelz.cc \
+src/core/lib/channel/channelz.h \
 src/core/lib/channel/channelz_registry.cc \
 src/core/lib/channel/channelz_registry.h \
 src/core/lib/channel/connected_channel.cc \
@@ -1499,6 +1501,7 @@ src/core/tsi/transport_security.h \
 src/core/tsi/transport_security_grpc.cc \
 src/core/tsi/transport_security_grpc.h \
 src/core/tsi/transport_security_interface.h \
+src/cpp/ext/filters/census/grpc_context.cc \
 third_party/nanopb/pb.h \
 third_party/nanopb/pb_common.c \
 third_party/nanopb/pb_common.h \

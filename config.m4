@@ -9,11 +9,12 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/src/php/ext/grpc)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/boringssl/include)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/address_sorting/include)
+  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/nanopb)
 
   LIBS="-lpthread $LIBS"
 
-  CFLAGS="-Wall -Werror -Wno-parentheses-equality -Wno-unused-value -std=c11 -g -O2 -D PB_FIELD_16BIT=1"
-  CXXFLAGS="-std=c++11 -fno-exceptions -fno-rtti -g -O2 -D PB_FIELD_16BIT=1"
+  CFLAGS="-Wall -Werror -Wno-parentheses-equality -Wno-unused-value -std=c11 -g -O2 -D PB_FIELD_32BIT=1"
+  CXXFLAGS="-std=c++11 -fno-exceptions -fno-rtti -g -O2 -D PB_FIELD_32BIT=1"
   GRPC_SHARED_LIBADD="-lpthread $GRPC_SHARED_LIBADD"
   PHP_REQUIRE_CXX()
   PHP_ADD_LIBRARY(pthread)
@@ -89,6 +90,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/channel/channel_stack.cc \
     src/core/lib/channel/channel_stack_builder.cc \
     src/core/lib/channel/channel_trace.cc \
+    src/core/lib/channel/channelz.cc \
     src/core/lib/channel/channelz_registry.cc \
     src/core/lib/channel/connected_channel.cc \
     src/core/lib/channel/handshaker.cc \
@@ -370,6 +372,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
     src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
+    src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc \
@@ -377,7 +380,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
     src/core/ext/filters/load_reporting/server_load_reporting_filter.cc \
     src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc \
-    src/core/ext/census/grpc_context.cc \
+    src/cpp/ext/filters/census/grpc_context.cc \
     src/core/ext/filters/max_age/max_age_filter.cc \
     src/core/ext/filters/message_size/message_size_filter.cc \
     src/core/ext/filters/http/client_authority_filter.cc \
@@ -648,7 +651,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/php/ext/grpc)
 
   PHP_ADD_BUILD_DIR($ext_builddir/src/boringssl)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/census)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/lb_policy/grpclb)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1)
@@ -711,6 +713,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/alts/handshaker)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/alts/zero_copy_frame_protector)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/ssl/session_cache)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/cpp/ext/filters/census)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/address_sorting)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/asn1)
