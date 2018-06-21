@@ -190,18 +190,6 @@ gpr_timespec NSecondDeadline(int seconds) {
                       gpr_time_from_seconds(seconds, GPR_TIMESPAN));
 }
 
-void PollPollset(ArgsStruct* args, int seconds_to_deadline) {
-  grpc_pollset_worker* worker = nullptr;
-  grpc_core::ExecCtx exec_ctx;
-  gpr_mu_lock(args->mu);
-  GRPC_LOG_IF_ERROR(
-      "pollset_work",
-      grpc_pollset_work(args->pollset, &worker,
-                        grpc_timespec_to_millis_round_up(
-                            NSecondDeadline(seconds_to_deadline))));
-  gpr_mu_unlock(args->mu);
-}
-
 void PollPollsetUntilRequestDone(ArgsStruct* args) {
   gpr_timespec deadline = NSecondDeadline(10);
   while (true) {
@@ -214,7 +202,14 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
     gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64 ".%09d", done,
             time_left.tv_sec, time_left.tv_nsec);
     GPR_ASSERT(gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)) >= 0);
-    PollPollset(args, 1);
+    grpc_pollset_worker* worker = nullptr;
+    grpc_core::ExecCtx exec_ctx;
+    gpr_mu_lock(args->mu);
+    GRPC_LOG_IF_ERROR("pollset_work",
+                      grpc_pollset_work(args->pollset, &worker,
+                                        grpc_timespec_to_millis_round_up(
+                                            NSecondDeadline(1))));
+    gpr_mu_unlock(args->mu);
   }
   gpr_event_set(&args->ev, (void*)1);
 }
@@ -390,10 +385,12 @@ void RunResolvesRelevantRecordsTest(void (*OnDoneLocked)(void* arg,
                     grpc_combiner_scheduler(args.lock));
   resolver->NextLocked(&args.channel_args, &on_resolver_result_changed);
   grpc_core::ExecCtx::Get()->Flush();
+  grpc_pollset_set* fake_other_pollset_set = grpc_pollset_set_create();
+  grpc_pollset_set_add_pollset_set(fake_other_pollset_set, args.pollset_set);
   PollPollsetUntilRequestDone(&args);
-  PollPollset(&args, 0);
-  EXPECT_EQ(grpc_iomgr_count_objects_for_testing(), 0u);
   ArgsFinish(&args);
+  EXPECT_EQ(grpc_iomgr_count_objects_for_testing(), 0u);
+  grpc_pollset_set_destroy(fake_other_pollset_set);
 }
 
 TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
