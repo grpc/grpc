@@ -386,6 +386,7 @@ void RunResolvesRelevantRecordsTest(void (*OnDoneLocked)(void* arg,
   resolver->NextLocked(&args.channel_args, &on_resolver_result_changed);
   grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone(&args);
+  EXPECT_EQ(grpc_iomgr_count_objects_for_testing(), 0u);
   ArgsFinish(&args);
 }
 
