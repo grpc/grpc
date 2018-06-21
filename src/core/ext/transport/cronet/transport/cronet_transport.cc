@@ -173,8 +173,22 @@ struct op_storage {
   struct op_and_state* head;
 };
 
+typedef enum {
+  CRONET_RECV_INITIAL_METADATA,
+  CRONET_RECV_MESSAGE,
+  CRONET_RECV_TRAILING_METADATA,
+  CRONET_RECV_OP_COUNT
+} cronet_recv_op_index;
+
 struct stream_obj {
   gpr_arena* arena;
+  grpc_transport_stream_recv_op_batch_payload* recv_payload;
+  grpc_transport_stream_recv_op_batch_func recv_batch_func;
+  void* recv_batch_arg;
+
+  /* Batches used for sending receive ops up the stack. */
+  grpc_transport_stream_recv_op_batch recv_batches[CRONET_RECV_OP_COUNT];
+
   struct op_and_state* oas;
   grpc_transport_stream_op_batch* curr_op;
   grpc_cronet_transport* curr_ct;
@@ -1117,24 +1131,24 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
                            OP_RECV_INITIAL_METADATA)) {
     CRONET_LOG(GPR_DEBUG, "running: %p  OP_RECV_INITIAL_METADATA", oas);
     if (stream_state->state_op_done[OP_CANCEL_ERROR]) {
-      GRPC_CLOSURE_SCHED(
-          stream_op->payload->recv_initial_metadata.recv_initial_metadata_ready,
-          GRPC_ERROR_NONE);
+      start_recv_batch(s, true /* recv_initial_metadata */,
+                       false /* recv_message */,
+                       false /* recv_trailing_metadata */, GRPC_ERROR_NONE);
     } else if (stream_state->state_callback_received[OP_FAILED]) {
-      GRPC_CLOSURE_SCHED(
-          stream_op->payload->recv_initial_metadata.recv_initial_metadata_ready,
-          GRPC_ERROR_NONE);
+      start_recv_batch(s, true /* recv_initial_metadata */,
+                       false /* recv_message */,
+                       false /* recv_trailing_metadata */, GRPC_ERROR_NONE);
     } else if (stream_state->state_op_done[OP_RECV_TRAILING_METADATA]) {
-      GRPC_CLOSURE_SCHED(
-          stream_op->payload->recv_initial_metadata.recv_initial_metadata_ready,
-          GRPC_ERROR_NONE);
+      start_recv_batch(s, true /* recv_initial_metadata */,
+                       false /* recv_message */,
+                       false /* recv_trailing_metadata */, GRPC_ERROR_NONE);
     } else {
       grpc_chttp2_incoming_metadata_buffer_publish(
           &oas->s->state.rs.initial_metadata,
-          stream_op->payload->recv_initial_metadata.recv_initial_metadata);
-      GRPC_CLOSURE_SCHED(
-          stream_op->payload->recv_initial_metadata.recv_initial_metadata_ready,
-          GRPC_ERROR_NONE);
+          s->recv_payload->recv_initial_metadata.recv_initial_metadata);
+      start_recv_batch(s, true /* recv_initial_metadata */,
+                       false /* recv_message */,
+                       false /* recv_trailing_metadata */, GRPC_ERROR_NONE);
     }
     stream_state->state_op_done[OP_RECV_INITIAL_METADATA] = true;
     result = ACTION_TAKEN_NO_CALLBACK;
@@ -1143,30 +1157,34 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
     CRONET_LOG(GPR_DEBUG, "running: %p  OP_RECV_MESSAGE", oas);
     if (stream_state->state_op_done[OP_CANCEL_ERROR]) {
       CRONET_LOG(GPR_DEBUG, "Stream is cancelled.");
-      GRPC_CLOSURE_SCHED(stream_op->payload->recv_message.recv_message_ready,
-                         GRPC_ERROR_NONE);
+      start_recv_batch(s, false /* recv_initial_metadata */,
+                       true /* recv_message */,
+                       false /* recv_trailing_metadata */, GRPC_ERROR_NONE);
       stream_state->state_op_done[OP_RECV_MESSAGE] = true;
       oas->state.state_op_done[OP_RECV_MESSAGE] = true;
       result = ACTION_TAKEN_NO_CALLBACK;
     } else if (stream_state->state_callback_received[OP_FAILED]) {
       CRONET_LOG(GPR_DEBUG, "Stream failed.");
-      GRPC_CLOSURE_SCHED(stream_op->payload->recv_message.recv_message_ready,
-                         GRPC_ERROR_NONE);
+      start_recv_batch(s, false /* recv_initial_metadata */,
+                       true /* recv_message */,
+                       false /* recv_trailing_metadata */, GRPC_ERROR_NONE);
       stream_state->state_op_done[OP_RECV_MESSAGE] = true;
       oas->state.state_op_done[OP_RECV_MESSAGE] = true;
       result = ACTION_TAKEN_NO_CALLBACK;
     } else if (stream_state->rs.read_stream_closed == true) {
       /* No more data will be received */
       CRONET_LOG(GPR_DEBUG, "read stream closed");
-      GRPC_CLOSURE_SCHED(stream_op->payload->recv_message.recv_message_ready,
-                         GRPC_ERROR_NONE);
+      start_recv_batch(s, false /* recv_initial_metadata */,
+                       true /* recv_message */,
+                       false /* recv_trailing_metadata */, GRPC_ERROR_NONE);
       stream_state->state_op_done[OP_RECV_MESSAGE] = true;
       oas->state.state_op_done[OP_RECV_MESSAGE] = true;
       result = ACTION_TAKEN_NO_CALLBACK;
     } else if (stream_state->flush_read) {
       CRONET_LOG(GPR_DEBUG, "flush read");
-      GRPC_CLOSURE_SCHED(stream_op->payload->recv_message.recv_message_ready,
-                         GRPC_ERROR_NONE);
+      start_recv_batch(s, false /* recv_initial_metadata */,
+                       true /* recv_message */,
+                       false /* recv_trailing_metadata */, GRPC_ERROR_NONE);
       stream_state->state_op_done[OP_RECV_MESSAGE] = true;
       oas->state.state_op_done[OP_RECV_MESSAGE] = true;
       result = ACTION_TAKEN_NO_CALLBACK;
@@ -1205,11 +1223,11 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
             flags |= GRPC_WRITE_INTERNAL_COMPRESS;
           }
           stream_state->rs.sbs.Init(&stream_state->rs.read_slice_buffer, flags);
-          stream_op->payload->recv_message.recv_message->reset(
+          s->recv_payload->recv_message.recv_message->reset(
               stream_state->rs.sbs.get());
-          GRPC_CLOSURE_SCHED(
-              stream_op->payload->recv_message.recv_message_ready,
-              GRPC_ERROR_NONE);
+          start_recv_batch(s, false /* recv_initial_metadata */,
+                           true /* recv_message */,
+                           false /* recv_trailing_metadata */, GRPC_ERROR_NONE);
           stream_state->state_op_done[OP_RECV_MESSAGE] = true;
           oas->state.state_op_done[OP_RECV_MESSAGE] = true;
 
@@ -1261,10 +1279,11 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
         flags = GRPC_WRITE_INTERNAL_COMPRESS;
       }
       stream_state->rs.sbs.Init(&stream_state->rs.read_slice_buffer, flags);
-      stream_op->payload->recv_message.recv_message->reset(
+      s->recv_payload->recv_message.recv_message->reset(
           stream_state->rs.sbs.get());
-      GRPC_CLOSURE_SCHED(stream_op->payload->recv_message.recv_message_ready,
-                         GRPC_ERROR_NONE);
+      start_recv_batch(s, false /* recv_initial_metadata */,
+                       true /* recv_message */,
+                       false /* recv_trailing_metadata */, GRPC_ERROR_NONE);
       stream_state->state_op_done[OP_RECV_MESSAGE] = true;
       oas->state.state_op_done[OP_RECV_MESSAGE] = true;
       /* Do an extra read to trigger on_succeeded() callback in case connection
@@ -1292,12 +1311,12 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
     } else if (oas->s->state.rs.trailing_metadata_valid) {
       grpc_chttp2_incoming_metadata_buffer_publish(
           &oas->s->state.rs.trailing_metadata,
-          stream_op->payload->recv_trailing_metadata.recv_trailing_metadata);
+          s->recv_payload->recv_trailing_metadata.recv_trailing_metadata);
       stream_state->rs.trailing_metadata_valid = false;
     }
-    GRPC_CLOSURE_SCHED(
-        stream_op->payload->recv_trailing_metadata.recv_trailing_metadata_ready,
-        error);
+    start_recv_batch(s, false /* recv_initial_metadata */,
+                     false /* recv_message */,
+                     true /* recv_trailing_metadata */, error);
     stream_state->state_op_done[OP_RECV_TRAILING_METADATA] = true;
     result = ACTION_TAKEN_NO_CALLBACK;
   } else if (stream_op->cancel_stream &&
@@ -1350,14 +1369,44 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
   return result;
 }
 
+static void start_recv_batch(stream_obj* s, bool recv_initial_metadata,
+                             bool recv_message, bool recv_trailing_metadata,
+                             grpc_error* error) {
+  GPR_ASSERT(recv_initial_metadata || recv_message || recv_trailing_metadata);
+  grpc_transport_stream_recv_op_batch* batch =
+      recv_initial_metadata
+          ? &s->recv_batches[CRONET_RECV_INITIAL_METADATA]
+          : recv_trailing_metadata
+              ? &s->recv_batches[CRONET_RECV_TRAILING_METADATA]
+              : &s->recv_batches[CRONET_RECV_MESSAGE];
+  batch->payload = s->recv_payload;
+  if (recv_initial_metadata) batch->recv_initial_metadata = true;
+  if (recv_message) batch->recv_message = true;
+  if (recv_trailing_metadata) batch->recv_trailing_metadata = true;
+  if (grpc_cronet_trace) {
+    char* batch_str = grpc_transport_stream_recv_op_batch_string(batch);
+    gpr_log(GPR_DEBUG, "start_recv_batch %p error=%s batch=%s", s,
+            grpc_error_string(error), batch_str);
+    gpr_free(batch_str);
+  }
+  s->recv_batch_func(batch, s->recv_batch_arg, error);
+}
+
 /*
   Functions used by upper layers to access transport functionality.
 */
 
-static int init_stream(grpc_transport* gt, grpc_stream* gs,
-                       grpc_stream_refcount* refcount, const void* server_data,
-                       gpr_arena* arena) {
+static int init_stream(
+    grpc_transport* gt, grpc_stream* gs, grpc_stream_refcount* refcount,
+    const void* server_data, gpr_arena* arena,
+    grpc_transport_stream_recv_op_batch_payload* recv_payload,
+    grpc_transport_stream_recv_op_batch_func recv_batch_func,
+    void* recv_batch_arg) {
   stream_obj* s = reinterpret_cast<stream_obj*>(gs);
+
+  s->recv_payload = recv_payload;
+  s->recv_batch_func = recv_batch_func;
+  s->recv_batch_arg = recv_batch_arg;
 
   s->refcount = refcount;
   GRPC_CRONET_STREAM_REF(s, "cronet transport");
@@ -1401,20 +1450,8 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
                                .send_initial_metadata->list.head)) {
     /* Cronet does not support :authority header field. We cancel the call when
      this field is present in metadata */
-    if (op->recv_initial_metadata) {
-      GRPC_CLOSURE_SCHED(
-          op->payload->recv_initial_metadata.recv_initial_metadata_ready,
-          GRPC_ERROR_CANCELLED);
-    }
-    if (op->recv_message) {
-      GRPC_CLOSURE_SCHED(op->payload->recv_message.recv_message_ready,
-                         GRPC_ERROR_CANCELLED);
-    }
-    if (op->recv_trailing_metadata) {
-      GRPC_CLOSURE_SCHED(
-          op->payload->recv_trailing_metadata.recv_trailing_metadata_ready,
-          GRPC_ERROR_CANCELLED);
-    }
+    start_recv_batch(s, op->recv_initial_metadata, op->recv_message,
+                     op->recv_trailing_metadata, GRPC_ERROR_CANCELLED);
     GRPC_CLOSURE_SCHED(op->on_complete, GRPC_ERROR_CANCELLED);
     return;
   }
