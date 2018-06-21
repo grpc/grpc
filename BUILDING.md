@@ -110,15 +110,13 @@ From the grpc repository root
  $ make
 ```
 
-TODO: mention the potential problems with running make install (already meantioned in src/cpp)
-
 ## bazel
 
-TODO: add Link to our doc or a bazel doc on how to get this dependency
+See [Installing Bazel](https://docs.bazel.build/versions/master/install.html) for instructions how to install bazel on your system.
 
 From the grpc repository root
 ```
-bazel build :all
+$ bazel build :all
 ```
 
 ## cmake: Windows, Using Visual Studio 2015 or 2017 (can only build with OPENSSL_NO_ASM).
