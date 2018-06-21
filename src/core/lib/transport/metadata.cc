@@ -168,6 +168,7 @@ static void ref_md_locked(mdtab_shard* shard,
 }
 
 static void gc_mdtab(mdtab_shard* shard) {
+  gpr_log(GPR_ERROR, "gc_mdtab");
   GPR_TIMER_SCOPE("gc_mdtab", 0);
 
   size_t i;
@@ -178,9 +179,11 @@ static void gc_mdtab(mdtab_shard* shard) {
   for (i = 0; i < shard->capacity; i++) {
     prev_next = &shard->elems[i];
     for (md = shard->elems[i]; md; md = next) {
+      gpr_log(GPR_ERROR, "Looking at md in shard: %p", md);
       void* user_data = (void*)gpr_atm_no_barrier_load(&md->user_data);
       next = md->bucket_next;
       if (gpr_atm_acq_load(&md->refcnt) == 0) {
+        gpr_log(GPR_ERROR, "Freeing md in shard");
         grpc_slice_unref_internal(md->key);
         grpc_slice_unref_internal(md->value);
         if (md->user_data) {
@@ -296,6 +299,7 @@ grpc_mdelem grpc_mdelem_create(
   /* not found: create a new pair */
   md = static_cast<interned_metadata*>(gpr_malloc(sizeof(interned_metadata)));
   gpr_atm_rel_store(&md->refcnt, 1);
+  gpr_log(GPR_ERROR, "Creating new interned metadata pair: %p", md);
   md->key = grpc_slice_ref_internal(key);
   md->value = grpc_slice_ref_internal(value);
   md->user_data = 0;
@@ -415,11 +419,13 @@ grpc_mdelem grpc_mdelem_ref(grpc_mdelem gmd DEBUG_ARGS) {
 }
 
 void grpc_mdelem_unref(grpc_mdelem gmd DEBUG_ARGS) {
+  gpr_log(GPR_ERROR, "In mdelem unref");
   switch (GRPC_MDELEM_STORAGE(gmd)) {
     case GRPC_MDELEM_STORAGE_EXTERNAL:
     case GRPC_MDELEM_STORAGE_STATIC:
       break;
     case GRPC_MDELEM_STORAGE_INTERNED: {
+      gpr_log(GPR_ERROR, "In storage interned case");
       interned_metadata* md =
           reinterpret_cast<interned_metadata*> GRPC_MDELEM_DATA(gmd);
 #ifndef NDEBUG
@@ -438,6 +444,7 @@ void grpc_mdelem_unref(grpc_mdelem gmd DEBUG_ARGS) {
                                          grpc_slice_hash(md->value));
       const gpr_atm prev_refcount = gpr_atm_full_fetch_add(&md->refcnt, -1);
       GPR_ASSERT(prev_refcount >= 1);
+      gpr_log(GPR_ERROR, "refcount %ld", prev_refcount);
       if (1 == prev_refcount) {
         /* once the refcount hits zero, some other thread can come along and
            free md at any time: it's unsafe from this point on to access it */
@@ -447,6 +454,7 @@ void grpc_mdelem_unref(grpc_mdelem gmd DEBUG_ARGS) {
       break;
     }
     case GRPC_MDELEM_STORAGE_ALLOCATED: {
+      gpr_log(GPR_ERROR, "In storage allocated case");
       allocated_metadata* md =
           reinterpret_cast<allocated_metadata*> GRPC_MDELEM_DATA(gmd);
 #ifndef NDEBUG
@@ -463,6 +471,7 @@ void grpc_mdelem_unref(grpc_mdelem gmd DEBUG_ARGS) {
 #endif
       const gpr_atm prev_refcount = gpr_atm_full_fetch_add(&md->refcnt, -1);
       GPR_ASSERT(prev_refcount >= 1);
+      gpr_log(GPR_ERROR, "refcount %ld", prev_refcount);
       if (1 == prev_refcount) {
         grpc_slice_unref_internal(md->key);
         grpc_slice_unref_internal(md->value);

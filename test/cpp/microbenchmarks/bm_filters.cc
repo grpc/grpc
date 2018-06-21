@@ -57,7 +57,6 @@ static void BM_CallStackInit(benchmark::State& state) {
   // Run the benchmark
   grpc_call_final_info final_info;
   while (state.KeepRunning()) {
-    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     GRPC_ERROR_UNREF(grpc_call_stack_init(data.channel_stack, 1, DoNothing,
                                           nullptr, &data.call_args));
     grpc_call_stack_destroy(data.call_stack, &final_info, nullptr);
@@ -135,7 +134,6 @@ static void BM_FullFilterFunctionality(benchmark::State& state) {
 
   // Run the benchmark
   while (state.KeepRunning()) {
-    GPR_TIMER_SCOPE("BenchmarkCycle", 0);
     // Because it's not valid to send more than one of any of the {send, recv}_
     // {initial, trailing}_metadata ops on a single call, we need to construct
     // a new call stack each time through the loop. It's also not valid to have
@@ -158,12 +156,16 @@ static void BM_FullFilterFunctionality(benchmark::State& state) {
                                                                &batch);
     }
 
-    GRPC_CLOSURE_RUN(batch.on_complete, GRPC_ERROR_NONE);
-    GRPC_CLOSURE_RUN(
-        batch.payload->recv_initial_metadata.recv_initial_metadata_ready,
-        GRPC_ERROR_NONE);
-    GRPC_CLOSURE_RUN(batch.payload->recv_message.recv_message_ready,
-                     GRPC_ERROR_NONE);
+    // TODO(hcaseyal): Populate the recv ops before invoking the recv callbacks.
+    // This will involve auditing each individual filter for things like
+    // determining which metadata fields the filter was expecting to see 
+    // returned from below.
+    //GRPC_CLOSURE_RUN(batch.on_complete, GRPC_ERROR_NONE);
+    //GRPC_CLOSURE_RUN(
+    //    batch.payload->recv_initial_metadata.recv_initial_metadata_ready,
+    //    GRPC_ERROR_NONE);
+    //GRPC_CLOSURE_RUN(batch.payload->recv_message.recv_message_ready,
+    //                 GRPC_ERROR_NONE);
   }
 
   grpc_call_final_info final_info;
@@ -176,15 +178,15 @@ static void BM_FullFilterFunctionality(benchmark::State& state) {
 // than what has been done in order to microbenchmark it. Moreover, it may be
 // the case that once we do this work, we may be measuring much more than just
 // client_channel filter overhead.
-BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, NoFilterBM);
-BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, DummyFilterBM);
-BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, CompressFilterBM);
-BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, ClientDeadlineFilterBM);
-BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, ServerDeadlineFilterBM);
+// BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, NoFilterBM);
+// BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, DummyFilterBM);
+// BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, CompressFilterBM);
+// BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, ClientDeadlineFilterBM);
+// BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, ServerDeadlineFilterBM);
 BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, HttpClientFilterBM);
-BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, HttpServerFilterBM);
-BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, MessageSizeFilterBM);
-BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, ServerLoadReportingFilterBM);
+// BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, HttpServerFilterBM);
+// BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, MessageSizeFilterBM);
+// BENCHMARK_TEMPLATE(BM_FullFilterFunctionality, ServerLoadReportingFilterBM);
 
 // Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
 // and others do not. This allows us to support both modes.

@@ -338,9 +338,6 @@ void CreatePayloadForAllOps(struct PayloadData* data) {
 
   payload->recv_initial_metadata.recv_flags = &data->recv_flags;
   payload->recv_initial_metadata.peer_string = &data->peer_address_atm;
-  std::string peer_address_string = "Unknown.";
-  gpr_atm_rel_store(payload->recv_initial_metadata.peer_string,
-                    (gpr_atm)gpr_strdup(peer_address_string.data()));
   payload->recv_message.recv_message = &data->op;
 
   payload->collect_stats.collect_stats = &data->stats;
@@ -350,10 +347,6 @@ void CreatePayloadForAllOps(struct PayloadData* data) {
   payload->send_message.send_message.reset(data->byte_stream_send.get());
 
   grpc_slice_buffer_init(&data->slice_buffer_recv);
-  grpc_core::SliceBufferByteStream* sbs =
-      grpc_core::New<grpc_core::SliceBufferByteStream>(&data->slice_buffer_recv,
-                                                       0);
-  payload->recv_message.recv_message->reset(sbs);
 }
 
 // Creates a new batch with all 6 ops

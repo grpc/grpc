@@ -75,6 +75,22 @@ grpc_cc_binary(
 )
 
 grpc_cc_library(
+    name = "filter_helpers_h",
+    testonly = 1,
+    hdrs = [
+        "filter_helpers.h",
+    ],
+    deps = [":helpers"],
+)
+
+grpc_cc_binary(
+    name = "bm_filters",
+    testonly = 1,
+    srcs = ["bm_filters.cc"],
+    deps = [":filter_helpers_h"],
+)
+
+grpc_cc_library(
     name = "fullstack_streaming_ping_pong_h",
     testonly = 1,
     hdrs = [

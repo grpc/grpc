@@ -525,6 +525,7 @@ static grpc_slice user_agent_from_args(const grpc_channel_args* args,
 /* Constructor for channel_data */
 static grpc_error* init_channel_elem(grpc_channel_element* elem,
                                      grpc_channel_element_args* args) {
+    gpr_log(GPR_ERROR, "Init channel elem");
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   GPR_ASSERT(!args->is_last);
   GPR_ASSERT(args->optional_transport != nullptr);
@@ -535,11 +536,13 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
       GRPC_MDSTR_USER_AGENT,
       user_agent_from_args(args->channel_args,
                            args->optional_transport->vtable->name));
+  gpr_log(GPR_ERROR, "user_agent ptr: %p", GRPC_MDELEM_DATA(chand->user_agent));
   return GRPC_ERROR_NONE;
 }
 
 /* Destructor for channel data */
 static void destroy_channel_elem(grpc_channel_element* elem) {
+  gpr_log(GPR_ERROR, "Destroy channel elem");
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   GRPC_MDELEM_UNREF(chand->user_agent);
 }

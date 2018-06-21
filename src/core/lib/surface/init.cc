@@ -154,6 +154,7 @@ void grpc_init(void) {
 }
 
 void grpc_shutdown(void) {
+  gpr_log(GPR_ERROR, "grpc_shutdown");
   int i;
   GRPC_API_TRACE("grpc_shutdown(void)", 0, ());
   gpr_mu_lock(&g_init_mu);
