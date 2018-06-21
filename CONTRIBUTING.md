@@ -11,13 +11,34 @@ In order to protect both you and ourselves, you will need to sign the
 [Contributor License
 Agreement](https://identity.linuxfoundation.org/projects/cncf).
 
-## Running tests
+## Cloning the repository
 
-Use `tools/run_tests/run_tests.py` script to run the unit tests.  See
-[tools/run_tests](tools/run_tests) for how to run tests for a given language.
+Before starting any development work you will need a local copy of the gRPC repository.
+Please follow the instructions in [Building gRPC C++: Clone the repository](BUILDING.md#clone-the-repository-including-submodules).
 
-Prerequisites for building and running tests are listed in
-[INSTALL.md](INSTALL.md) and in `src/YOUR-LANGUAGE` (e.g. `src/csharp`)
+## Building & Running tests
+
+Different languages use different build systems. To hide the complexity
+of needing to build with many different build systems, a portable python
+script that unifies the experience of building and testing gRPC in different
+languages and on different platforms is provided.
+
+To build gRPC in the language of choice (e.g. `c++`, `csharp`, `php`, `python`, `ruby`, ...)
+- Prepare you development environment based on language-specific instructions in `src/YOUR-LANGUAGE` directory.
+- The language-specific instructions might involve installing C/C++ prerequisites listed in
+  [Building gRPC C++: Prerequisites](BUILDING.md#pre-requisites) as gRPC implementations
+  in this repository are using the native gRPC "core" library internally.
+- Run
+  ```
+  python tools/run_tests/run_tests.py -l YOUR_LANGUAGE --build_only
+  ```
+- To also run all the unit tests after building
+  ```
+  python tools/run_tests/run_tests.py -l YOUR_LANGUAGE
+  ```
+
+You can also run `python tools/run_tests/run_tests.py --help` to discover useful command line flags supported. For more details,
+see [tools/run_tests](tools/run_tests) where you will also find guidance on how to run various other test suites (e.g. interop tests, benchmarks)
 
 ## Generated project files
 
