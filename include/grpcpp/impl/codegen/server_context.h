@@ -201,9 +201,6 @@ class ServerContext {
   /// \param algorithm The compression algorithm used for the server call.
   void set_compression_algorithm(grpc_compression_algorithm algorithm);
 
-  /// Set the load reporting costs in \a cost_data for the call.
-  void SetLoadReportingCosts(const std::vector<grpc::string>& cost_data);
-
   /// Return the authentication context for this server call.
   ///
   /// \see grpc::AuthContext.

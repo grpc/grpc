@@ -14,7 +14,7 @@
 
 licenses(["notice"])  # Apache v2
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package", "grpc_cc_binary")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
 grpc_package(
     name = "test/cpp/end2end",
@@ -405,6 +405,20 @@ grpc_cc_binary(
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
         "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "server_load_reporting_end2end_test",
+    srcs = ["server_load_reporting_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+        "gmock",
+    ],
+    deps = [
+        "//:grpcpp_server_load_reporting",
+        "//src/proto/grpc/testing:echo_proto",
         "//test/cpp/util:test_util",
     ],
 )

@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <chrono>
 #include <ctime>
+#include <iterator>
 
 #include "src/cpp/server/load_reporter/constants.h"
 #include "src/cpp/server/load_reporter/get_cpu_stats.h"
@@ -65,8 +66,8 @@ CensusViewProvider::CensusViewProvider()
   // measurements instead of setting the data values directly.
   auto vd_end_count =
       ::opencensus::stats::ViewDescriptor()
-          .set_name((kViewEndCount))
-          .set_measure((kMeasureEndCount))
+          .set_name(kViewEndCount)
+          .set_measure(kMeasureEndCount)
           .set_aggregation(::opencensus::stats::Aggregation::Sum())
           .add_column(tag_key_token_)
           .add_column(tag_key_host_)
@@ -80,8 +81,8 @@ CensusViewProvider::CensusViewProvider()
   view_descriptor_map_.emplace(kViewEndCount, vd_end_count);
   auto vd_end_bytes_sent =
       ::opencensus::stats::ViewDescriptor()
-          .set_name((kViewEndBytesSent))
-          .set_measure((kMeasureEndBytesSent))
+          .set_name(kViewEndBytesSent)
+          .set_measure(kMeasureEndBytesSent)
           .set_aggregation(::opencensus::stats::Aggregation::Sum())
           .add_column(tag_key_token_)
           .add_column(tag_key_host_)
@@ -95,8 +96,8 @@ CensusViewProvider::CensusViewProvider()
   view_descriptor_map_.emplace(kViewEndBytesSent, vd_end_bytes_sent);
   auto vd_end_bytes_received =
       ::opencensus::stats::ViewDescriptor()
-          .set_name((kViewEndBytesReceived))
-          .set_measure((kMeasureEndBytesReceived))
+          .set_name(kViewEndBytesReceived)
+          .set_measure(kMeasureEndBytesReceived)
           .set_aggregation(::opencensus::stats::Aggregation::Sum())
           .add_column(tag_key_token_)
           .add_column(tag_key_host_)
@@ -110,8 +111,8 @@ CensusViewProvider::CensusViewProvider()
   view_descriptor_map_.emplace(kViewEndBytesReceived, vd_end_bytes_received);
   auto vd_end_latency_ms =
       ::opencensus::stats::ViewDescriptor()
-          .set_name((kViewEndLatencyMs))
-          .set_measure((kMeasureEndLatencyMs))
+          .set_name(kViewEndLatencyMs)
+          .set_measure(kMeasureEndLatencyMs)
           .set_aggregation(::opencensus::stats::Aggregation::Sum())
           .add_column(tag_key_token_)
           .add_column(tag_key_host_)
@@ -126,8 +127,8 @@ CensusViewProvider::CensusViewProvider()
   // Two views related to other call metrics.
   auto vd_metric_call_count =
       ::opencensus::stats::ViewDescriptor()
-          .set_name((kViewOtherCallMetricCount))
-          .set_measure((kMeasureOtherCallMetric))
+          .set_name(kViewOtherCallMetricCount)
+          .set_measure(kMeasureOtherCallMetric)
           .set_aggregation(::opencensus::stats::Aggregation::Count())
           .add_column(tag_key_token_)
           .add_column(tag_key_host_)
@@ -141,8 +142,8 @@ CensusViewProvider::CensusViewProvider()
   view_descriptor_map_.emplace(kViewOtherCallMetricCount, vd_metric_call_count);
   auto vd_metric_value =
       ::opencensus::stats::ViewDescriptor()
-          .set_name((kViewOtherCallMetricValue))
-          .set_measure((kMeasureOtherCallMetric))
+          .set_name(kViewOtherCallMetricValue)
+          .set_measure(kMeasureOtherCallMetric)
           .set_aggregation(::opencensus::stats::Aggregation::Sum())
           .add_column(tag_key_token_)
           .add_column(tag_key_host_)
@@ -156,14 +157,21 @@ CensusViewProvider::CensusViewProvider()
   view_descriptor_map_.emplace(kViewOtherCallMetricValue, vd_metric_value);
 }
 
-double CensusViewProvider::GetRelatedViewDataRowDouble(
+double CensusViewProvider::GetRelatedViewDataRow(
     const ViewDataMap& view_data_map, const char* view_name,
-    size_t view_name_len, const std::vector<grpc::string>& tag_values) {
+    size_t view_name_len, const std::vector<grpc::string>& tag_values,
+    bool is_double = false) {
   auto it_vd = view_data_map.find(grpc::string(view_name, view_name_len));
   GPR_ASSERT(it_vd != view_data_map.end());
-  auto it_row = it_vd->second.double_data().find(tag_values);
-  GPR_ASSERT(it_row != it_vd->second.double_data().end());
-  return it_row->second;
+  if (is_double) {
+    auto it_row = it_vd->second.double_data().find(tag_values);
+    GPR_ASSERT(it_row != it_vd->second.double_data().end());
+    return it_row->second;
+  } else {
+    auto it_row = it_vd->second.int_data().find(tag_values);
+    GPR_ASSERT(it_row != it_vd->second.int_data().end());
+    return it_row->second;
+  }
 }
 
 CensusViewProviderDefaultImpl::CensusViewProviderDefaultImpl() {
@@ -235,23 +243,23 @@ LoadReporter::GenerateLoadBalancingFeedback() {
     return ::grpc::lb::v1::LoadBalancingFeedback::default_instance();
   }
   // Find the longest range with valid ends.
-  LoadBalancingFeedbackRecord* oldest = &feedback_records_[0];
-  LoadBalancingFeedbackRecord* newest =
-      &feedback_records_[feedback_records_.size() - 1];
-  while (newest > oldest &&
+  auto oldest = feedback_records_.begin();
+  auto newest = feedback_records_.end() - 1;
+  while (std::distance(oldest, newest) > 0 &&
          (newest->cpu_limit == 0 || oldest->cpu_limit == 0)) {
     // A zero limit means that the system info reading was failed, so these
     // records can't be used to calculate CPU utilization.
     if (newest->cpu_limit == 0) --newest;
     if (oldest->cpu_limit == 0) ++oldest;
   }
-  if (newest - oldest < 1 || oldest->end_time == newest->end_time ||
+  if (std::distance(oldest, newest) < 1 ||
+      oldest->end_time == newest->end_time ||
       newest->cpu_limit == oldest->cpu_limit) {
     return ::grpc::lb::v1::LoadBalancingFeedback::default_instance();
   }
   uint64_t rpcs = 0;
   uint64_t errors = 0;
-  for (LoadBalancingFeedbackRecord* p = newest; p != oldest; --p) {
+  for (auto p = newest; p != oldest; --p) {
     // Because these two numbers are counters, the oldest record shouldn't be
     // included.
     rpcs += p->rpcs;
@@ -338,7 +346,8 @@ void LoadReporter::AttachOrphanLoadId(
   if (per_balancer_store.lb_id() == kInvalidLbId) {
     load->set_load_key_unknown(true);
   } else {
-    load->set_load_key_unknown(false);
+    // We shouldn't set load_key_unknown to any value in this case because
+    // load_key_unknown and orphaned_load_identifier are under an oneof struct.
     load->mutable_orphaned_load_identifier()->set_load_key(
         per_balancer_store.load_key());
     load->mutable_orphaned_load_identifier()->set_load_balancer_id(
@@ -381,9 +390,7 @@ void LoadReporter::ProcessViewDataCallStart(
     const CensusViewProvider::ViewDataMap& view_data_map) {
   auto it = view_data_map.find(kViewStartCount);
   if (it != view_data_map.end()) {
-    // Note that the data type for any Sum view is double, whatever the data
-    // type of the original measure.
-    for (const auto& p : it->second.double_data()) {
+    for (const auto& p : it->second.int_data()) {
       const std::vector<grpc::string>& tag_values = p.first;
       const uint64_t start_count = static_cast<uint64_t>(p.second);
       const grpc::string& client_ip_and_token = tag_values[0];
@@ -405,9 +412,7 @@ void LoadReporter::ProcessViewDataCallEnd(
   uint64_t total_error_count = 0;
   auto it = view_data_map.find(kViewEndCount);
   if (it != view_data_map.end()) {
-    // Note that the data type for any Sum view is double, whatever the data
-    // type of the original measure.
-    for (const auto& p : it->second.double_data()) {
+    for (const auto& p : it->second.int_data()) {
       const std::vector<grpc::string>& tag_values = p.first;
       const uint64_t end_count = static_cast<uint64_t>(p.second);
       const grpc::string& client_ip_and_token = tag_values[0];
@@ -424,18 +429,15 @@ void LoadReporter::ProcessViewDataCallEnd(
         continue;
       }
       LoadRecordKey key(client_ip_and_token, user_id);
-      const uint64_t bytes_sent =
-          CensusViewProvider::GetRelatedViewDataRowDouble(
-              view_data_map, kViewEndBytesSent, sizeof(kViewEndBytesSent) - 1,
-              tag_values);
-      const uint64_t bytes_received =
-          CensusViewProvider::GetRelatedViewDataRowDouble(
-              view_data_map, kViewEndBytesReceived,
-              sizeof(kViewEndBytesReceived) - 1, tag_values);
-      const uint64_t latency_ms =
-          CensusViewProvider::GetRelatedViewDataRowDouble(
-              view_data_map, kViewEndLatencyMs, sizeof(kViewEndLatencyMs) - 1,
-              tag_values);
+      const uint64_t bytes_sent = CensusViewProvider::GetRelatedViewDataRow(
+          view_data_map, kViewEndBytesSent, sizeof(kViewEndBytesSent) - 1,
+          tag_values);
+      const uint64_t bytes_received = CensusViewProvider::GetRelatedViewDataRow(
+          view_data_map, kViewEndBytesReceived,
+          sizeof(kViewEndBytesReceived) - 1, tag_values);
+      const uint64_t latency_ms = CensusViewProvider::GetRelatedViewDataRow(
+          view_data_map, kViewEndLatencyMs, sizeof(kViewEndLatencyMs) - 1,
+          tag_values);
       uint64_t ok_count = 0;
       uint64_t error_count = 0;
       total_end_count += end_count;
@@ -469,9 +471,10 @@ void LoadReporter::ProcessViewDataOtherCallMetrics(
       const grpc::string& metric_name = tag_values[3];
       LoadRecordKey key(client_ip_and_token, user_id);
       const double total_metric_value =
-          CensusViewProvider::GetRelatedViewDataRowDouble(
+          CensusViewProvider::GetRelatedViewDataRow(
               view_data_map, kViewOtherCallMetricValue,
-              sizeof(kViewOtherCallMetricValue) - 1, tag_values);
+              sizeof(kViewOtherCallMetricValue) - 1, tag_values,
+              true /* is_double */);
       LoadRecordValue value = LoadRecordValue(
           metric_name, static_cast<uint64_t>(num_calls), total_metric_value);
       {

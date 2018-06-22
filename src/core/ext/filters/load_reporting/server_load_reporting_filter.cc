@@ -19,7 +19,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <grpc/grpc_security.h>
-#include <grpc/load_reporting.h>
+#include <grpc/server_load_reporting.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -31,17 +31,19 @@
 #include "src/core/ext/filters/load_reporting/server_load_reporting_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/context.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr_posix.h"
 #include "src/core/lib/iomgr/socket_utils.h"
-#include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call.h"
-#include "src/core/lib/transport/static_metadata.h"
 
 namespace grpc {
+
+constexpr char kEncodedIpv4AddressLengthString[] = "08";
+constexpr char kEncodedIpv6AddressLengthString[] = "32";
+constexpr char kEmptyAddressLengthString[] = "00";
+constexpr size_t kLengthPrefixSize = 2;
 
 grpc_error* ServerLoadReportingChannelData::Init(
     grpc_channel_element* /* elem */, grpc_channel_element_args* args) {
@@ -100,7 +102,8 @@ void ServerLoadReportingCallData::StartTransportStreamOpBatch(
   if (op->recv_initial_metadata() != nullptr) {
     // Save some fields to use when initial metadata is ready.
     peer_string_ = op->get_peer_string();
-    recv_initial_metadata_ = op->recv_initial_metadata();
+    recv_initial_metadata_ =
+        op->op()->payload->recv_initial_metadata.recv_initial_metadata;
     original_recv_initial_metadata_ready_ = op->recv_initial_metadata_ready();
     // Substitute the original closure for the wrapper closure.
     op->set_recv_initial_metadata_ready(&recv_initial_metadata_ready_);
@@ -241,7 +244,7 @@ void ServerLoadReportingCallData::RecvInitialMetadataReady(void* arg,
   if (err == GRPC_ERROR_NONE) {
     GRPC_LOG_IF_ERROR(
         "server_load_reporting_filter",
-        grpc_metadata_batch_filter(calld->recv_initial_metadata_->batch(),
+        grpc_metadata_batch_filter(calld->recv_initial_metadata_,
                                    RecvInitialMetadataFilter, elem,
                                    "recv_initial_metadata filtering error"));
     // If the LB token was not found in the recv_initial_metadata, only the
@@ -277,7 +280,6 @@ grpc_filtered_mdelem ServerLoadReportingCallData::SendTrailingMetadataFilter(
       reinterpret_cast<ServerLoadReportingCallData*>(elem->call_data);
   ServerLoadReportingChannelData* chand =
       reinterpret_cast<ServerLoadReportingChannelData*>(elem->channel_data);
-  // TODO(juanlishen): GRPC_MDSTR_LB_COST_BIN meaning?
   if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_LB_COST_BIN)) {
     const grpc_slice value = GRPC_MDVALUE(md);
     const size_t cost_entry_size = GRPC_SLICE_LENGTH(value);

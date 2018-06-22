@@ -24,7 +24,6 @@
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
-#include <grpc/load_reporting.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/completion_queue.h>
@@ -213,14 +212,6 @@ grpc::string ServerContext::peer() const {
 
 const struct census_context* ServerContext::census_context() const {
   return grpc_census_call_get_context(call_);
-}
-
-void ServerContext::SetLoadReportingCosts(
-    const std::vector<grpc::string>& cost_data) {
-  if (call_ == nullptr) return;
-  for (const auto& cost_datum : cost_data) {
-    AddTrailingMetadata(GRPC_LB_COST_MD_KEY, cost_datum);
-  }
 }
 
 }  // namespace grpc
