@@ -41,31 +41,31 @@ make -j 8
 # back to the root directory
 popd
 
-##
-## Checks for load_balancer.proto
-##
-#readonly LOAD_BALANCER_GRPC_OUTPUT_PATH='src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1'
-## nanopb-compile the proto to a temp location
-#./tools/codegen/core/gen_nano_proto.sh \
-#  src/proto/grpc/lb/v1/load_balancer.proto \
-#  "$NANOPB_TMP_OUTPUT" \
-#  "$LOAD_BALANCER_GRPC_OUTPUT_PATH"
 #
-#./tools/codegen/core/gen_nano_proto.sh \
-#  third_party/protobuf/src/google/protobuf/duration.proto \
-#  "$NANOPB_TMP_OUTPUT/google/protobuf" \
-#  "$LOAD_BALANCER_GRPC_OUTPUT_PATH/google/protobuf"
+# Checks for load_balancer.proto
 #
-#./tools/codegen/core/gen_nano_proto.sh \
-#  third_party/protobuf/src/google/protobuf/timestamp.proto \
-#  "$NANOPB_TMP_OUTPUT/google/protobuf" \
-#  "$LOAD_BALANCER_GRPC_OUTPUT_PATH/google/protobuf"
-#
-## compare outputs to checked compiled code
-#if ! diff -r "$NANOPB_TMP_OUTPUT" src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1; then
-#  echo "Outputs differ: $NANOPB_TMP_OUTPUT vs $LOAD_BALANCER_GRPC_OUTPUT_PATH"
-#  exit 2
-#fi
+readonly LOAD_BALANCER_GRPC_OUTPUT_PATH='src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1'
+# nanopb-compile the proto to a temp location
+./tools/codegen/core/gen_nano_proto.sh \
+  src/proto/grpc/lb/v1/load_balancer.proto \
+  "$NANOPB_TMP_OUTPUT" \
+  "$LOAD_BALANCER_GRPC_OUTPUT_PATH"
+
+./tools/codegen/core/gen_nano_proto.sh \
+  third_party/protobuf/src/google/protobuf/duration.proto \
+  "$NANOPB_TMP_OUTPUT/google/protobuf" \
+  "$LOAD_BALANCER_GRPC_OUTPUT_PATH/google/protobuf"
+
+./tools/codegen/core/gen_nano_proto.sh \
+  third_party/protobuf/src/google/protobuf/timestamp.proto \
+  "$NANOPB_TMP_OUTPUT/google/protobuf" \
+  "$LOAD_BALANCER_GRPC_OUTPUT_PATH/google/protobuf"
+
+# compare outputs to checked compiled code
+if ! diff -r "$NANOPB_TMP_OUTPUT" src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1; then
+  echo "Outputs differ: $NANOPB_TMP_OUTPUT vs $LOAD_BALANCER_GRPC_OUTPUT_PATH"
+  exit 2
+fi
 
 #
 # Checks for handshaker.proto and transport_security_common.proto
