@@ -413,11 +413,9 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
   r->success = false;
   r->error = GRPC_ERROR_NONE;
   r->pending_queries = 0;
-  grpc_ares_ev_driver* ev_driver;
-  error = grpc_ares_ev_driver_create_locked(&ev_driver, interested_parties,
+  error = grpc_ares_ev_driver_create_locked(&r->ev_driver, interested_parties,
                                             combiner, r);
   if (error != GRPC_ERROR_NONE) goto error_cleanup;
-  r->ev_driver = ev_driver;
   channel = grpc_ares_ev_driver_get_channel_locked(r->ev_driver);
   // If dns_server is specified, use it.
   if (dns_server != nullptr) {
