@@ -111,6 +111,10 @@ class _RPCState(object):
         # prior to termination of the RPC.
         self.cancelled = False
         self.callbacks = []
+        self.fork_epoch = cygrpc.get_fork_epoch()
+
+    def reset_postfork_child(self):
+        self.condition = threading.Condition()
 
 
 def _abort(state, code, details):
@@ -166,7 +170,7 @@ def _event_handler(state, response_deserializer):
             done = not state.due
         for callback in callbacks:
             callback()
-        return done
+        return done and state.fork_epoch >= cygrpc.get_fork_epoch()
 
     return handle_event
 
@@ -175,8 +179,14 @@ def _consume_request_iterator(request_iterator, state, call, request_serializer,
                               event_handler):
 
     def consume_request_iterator():  # pylint: disable=too-many-branches
+        if cygrpc.is_fork_support_enabled():
+            condition_wait_timeout = 1.0
+        else:
+            condition_wait_timeout = None
         while True:
             try:
+                # The thread may die in user-code. Do not block fork for this.
+                cygrpc.enter_user_request_generator()
                 request = next(request_iterator)
             except StopIteration:
                 break
@@ -188,6 +198,9 @@ def _consume_request_iterator(request_iterator, state, call, request_serializer,
                             details)
                 _abort(state, code, details)
                 return
+            finally:
+                cygrpc.return_from_user_request_generator()                
+                cygrpc.block_if_fork_in_progress()
             serialized_request = _common.serialize(request, request_serializer)
             with state.condition:
                 if state.code is None and not state.cancelled:
@@ -208,7 +221,8 @@ def _consume_request_iterator(request_iterator, state, call, request_serializer,
                         else:
                             return
                         while True:
-                            state.condition.wait()
+                            state.condition.wait(condition_wait_timeout)
+                            cygrpc.block_if_fork_in_progress(state)
                             if state.code is None:
                                 if cygrpc.OperationType.send_message not in state.due:
                                     break
@@ -224,7 +238,8 @@ def _consume_request_iterator(request_iterator, state, call, request_serializer,
                 if operating:
                     state.due.add(cygrpc.OperationType.send_close_from_client)
 
-    consumption_thread = threading.Thread(target=consume_request_iterator)
+    consumption_thread = cygrpc.fork_managed_thread(
+        target=consume_request_iterator)
     consumption_thread.daemon = True
     consumption_thread.start()
 
@@ -671,13 +686,20 @@ class _ChannelCallState(object):
         self.lock = threading.Lock()
         self.channel = channel
         self.managed_calls = 0
+        self.threading = False
+
+    def reset_postfork_child(self):
+        self.managed_calls = 0
 
 
 def _run_channel_spin_thread(state):
 
     def channel_spin():
         while True:
+            cygrpc.block_if_fork_in_progress(state)
             event = state.channel.next_call_event()
+            if event.completion_type == cygrpc.CompletionType.queue_timeout:
+                continue
             call_completed = event.tag(event)
             if call_completed:
                 with state.lock:
@@ -685,7 +707,7 @@ def _run_channel_spin_thread(state):
                     if state.managed_calls == 0:
                         return
 
-    channel_spin_thread = threading.Thread(target=channel_spin)
+    channel_spin_thread = cygrpc.fork_managed_thread(target=channel_spin)
     channel_spin_thread.daemon = True
     channel_spin_thread.start()
 
@@ -742,6 +764,13 @@ class _ChannelConnectivityState(object):
         self.callbacks_and_connectivities = []
         self.delivering = False
 
+    def reset_postfork_child(self):
+        self.polling = False
+        self.connectivity = None
+        self.try_to_connect = False
+        self.callbacks_and_connectivities = []
+        self.delivering = False
+
 
 def _deliveries(state):
     callbacks_needing_update = []
@@ -758,6 +787,7 @@ def _deliver(state, initial_connectivity, initial_callbacks):
     callbacks = initial_callbacks
     while True:
         for callback in callbacks:
+            cygrpc.block_if_fork_in_progress(state)
             callable_util.call_logging_exceptions(
                 callback, _CHANNEL_SUBSCRIPTION_CALLBACK_ERROR_LOG_MESSAGE,
                 connectivity)
@@ -771,7 +801,7 @@ def _deliver(state, initial_connectivity, initial_callbacks):
 
 
 def _spawn_delivery(state, callbacks):
-    delivering_thread = threading.Thread(
+    delivering_thread = cygrpc.fork_managed_thread(
         target=_deliver, args=(
             state,
             state.connectivity,
@@ -799,6 +829,7 @@ def _poll_connectivity(state, channel, initial_try_to_connect):
     while True:
         event = channel.watch_connectivity_state(connectivity,
                                                  time.time() + 0.2)
+        cygrpc.block_if_fork_in_progress(state)
         with state.lock:
             if not state.callbacks_and_connectivities and not state.try_to_connect:
                 state.polling = False
@@ -826,7 +857,7 @@ def _moot(state):
 def _subscribe(state, callback, try_to_connect):
     with state.lock:
         if not state.callbacks_and_connectivities and not state.polling:
-            polling_thread = threading.Thread(
+            polling_thread = cygrpc.fork_managed_thread(
                 target=_poll_connectivity,
                 args=(state, state.channel, bool(try_to_connect)))
             polling_thread.daemon = True

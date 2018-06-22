@@ -15,6 +15,7 @@
 cimport cpython
 
 import threading
+import time
 
 _INTERNAL_CALL_ERROR_MESSAGE_FORMAT = (
     'Internal gRPC call error %d. ' +
@@ -142,10 +143,10 @@ cdef _cancel(
       _check_and_raise_call_error_no_metadata(c_call_error)
 
 
-cdef BatchOperationEvent _next_call_event(
+cdef _next_call_event(
     _ChannelState channel_state, grpc_completion_queue *c_completion_queue,
-    on_success):
-  tag, event = _latent_event(c_completion_queue, None)
+    on_success, deadline):
+  tag, event = _latent_event(c_completion_queue, deadline)
   with channel_state.condition:
     on_success(tag)
     channel_state.condition.notify_all()
@@ -302,7 +303,7 @@ cdef class SegregatedCall:
       _process_segregated_call_tag(
           self._channel_state, self._call_state, self._c_completion_queue, tag)
     return _next_call_event(
-        self._channel_state, self._c_completion_queue, on_success)
+        self._channel_state, self._c_completion_queue, on_success, None)
 
 
 cdef SegregatedCall _segregated_call(
@@ -391,7 +392,7 @@ cdef class Channel:
       self, bytes target, object arguments,
       ChannelCredentials channel_credentials):
     arguments = () if arguments is None else tuple(arguments)
-    grpc_init()
+    fork_handlers_and_grpc_init()
     self._state = _ChannelState()
     self._vtable.copy = &_copy_pointer
     self._vtable.destroy = &_destroy_pointer
@@ -430,9 +431,14 @@ cdef class Channel:
 
   def next_call_event(self):
     def on_success(tag):
-      _process_integrated_call_tag(self._state, tag)
+      if tag is not None:
+        _process_integrated_call_tag(self._state, tag)
+    if is_fork_support_enabled():
+      queue_deadline = time.time() + 1.0
+    else:
+      queue_deadline = None
     return _next_call_event(
-        self._state, self._state.c_call_completion_queue, on_success)
+        self._state, self._state.c_call_completion_queue, on_success, queue_deadline)
 
   def segregated_call(
       self, int flags, method, host, object deadline, object metadata,

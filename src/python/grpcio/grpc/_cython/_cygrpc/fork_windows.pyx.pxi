@@ -1,0 +1,41 @@
+# Copyright 2018 gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+import threading
+
+# No-op implementations for Windows.
+
+def fork_handlers_and_grpc_init():
+    grpc_init()
+
+
+def fork_managed_thread(target, args=()):
+    return threading.Thread(target=target, args=args)
+
+
+def block_if_fork_in_progress():
+    pass
+
+
+def enter_user_request_generator():
+	pass
+
+
+def return_from_user_request_generator():
+	pass
+
+
+def get_fork_epoch():
+	return 0
