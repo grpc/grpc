@@ -224,7 +224,8 @@ def _consume_request_iterator(request_iterator, state, call, request_serializer,
                 if operating:
                     state.due.add(cygrpc.OperationType.send_close_from_client)
 
-    consumption_thread = threading.Thread(target=consume_request_iterator)
+    consumption_thread = cygrpc.fork_managed_thread(
+        target=consume_request_iterator)
     consumption_thread.daemon = True
     consumption_thread.start()
 
@@ -685,7 +686,7 @@ def _run_channel_spin_thread(state):
                     if state.managed_calls == 0:
                         return
 
-    channel_spin_thread = threading.Thread(target=channel_spin)
+    channel_spin_thread = cygrpc.fork_managed_thread(target=channel_spin)
     channel_spin_thread.daemon = True
     channel_spin_thread.start()
 
@@ -771,7 +772,7 @@ def _deliver(state, initial_connectivity, initial_callbacks):
 
 
 def _spawn_delivery(state, callbacks):
-    delivering_thread = threading.Thread(
+    delivering_thread = cygrpc.fork_managed_thread(
         target=_deliver, args=(
             state,
             state.connectivity,
@@ -789,9 +790,9 @@ def _poll_connectivity(state, channel, initial_try_to_connect):
         state.connectivity = (
             _common.CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY[
                 connectivity])
-        callbacks = tuple(callback
-                          for callback, unused_but_known_to_be_none_connectivity
-                          in state.callbacks_and_connectivities)
+        callbacks = tuple(
+            callback for callback, unused_but_known_to_be_none_connectivity in
+            state.callbacks_and_connectivities)
         for callback_and_connectivity in state.callbacks_and_connectivities:
             callback_and_connectivity[1] = state.connectivity
         if callbacks:
@@ -799,7 +800,12 @@ def _poll_connectivity(state, channel, initial_try_to_connect):
     while True:
         event = channel.watch_connectivity_state(connectivity,
                                                  time.time() + 0.2)
+        unsubscribe_due_to_fork = cygrpc.is_fork_in_progress()
         with state.lock:
+            # TODO(ericgribkoff) Pause and resume in parent instead of unsubbing
+            if unsubscribe_due_to_fork:
+                state.callbacks_and_connectivities = []
+                state.try_to_connect = False
             if not state.callbacks_and_connectivities and not state.try_to_connect:
                 state.polling = False
                 state.connectivity = None
@@ -826,7 +832,7 @@ def _moot(state):
 def _subscribe(state, callback, try_to_connect):
     with state.lock:
         if not state.callbacks_and_connectivities and not state.polling:
-            polling_thread = threading.Thread(
+            polling_thread = cygrpc.fork_managed_thread(
                 target=_poll_connectivity,
                 args=(state, state.channel, bool(try_to_connect)))
             polling_thread.daemon = True
