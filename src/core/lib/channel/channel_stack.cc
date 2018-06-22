@@ -305,24 +305,23 @@ void FilterCallCanceller::PopulateCancelCallbackList(
   if (batch->cancel_stream) {
     GRPC_ERROR_UNREF(batch->payload->cancel_stream.cancel_error);
   }
-  // For recv ops, start a recv batch to return the failure.
-  if (batch->recv_initial_metadata || batch->recv_message ||
-      batch->recv_trailing_metadata) {
+  // For recv_message ops, start a recv batch to return the failure.
+  if (batch->recv_message) {
     recv_batch_.payload = recv_payload_;
     recv_batch_.handler_private.extra_arg = elem;
-    recv_batch_.recv_initial_metadata = batch->recv_initial_metadata;
-    recv_batch_.recv_message = batch->recv_message;
-    recv_batch_.recv_trailing_metadata = batch->recv_trailing_metadata;
+    recv_batch_.recv_initial_metadata = false;
+    recv_batch_.recv_message = true;
+    recv_batch_.recv_trailing_metadata = false;
     GRPC_CLOSURE_INIT(&recv_batch_.handler_private.closure,
                       StartRecvBatchInCallCombiner, &recv_batch_,
                       grpc_schedule_on_exec_ctx);
     closures->Add(&recv_batch_.handler_private.closure, GRPC_ERROR_REF(error),
-                 "failing recv ops");
+                  "failing recv_message ops");
   }
   // For send ops, invoke the on_complete callback.
   if (batch->on_complete != nullptr) {
     closures->Add(batch->on_complete, GRPC_ERROR_REF(error),
-                 "failing on_complete");
+                  "failing on_complete");
   }
   GRPC_ERROR_UNREF(error);
 }

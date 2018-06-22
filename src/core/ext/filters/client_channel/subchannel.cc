@@ -803,8 +803,10 @@ grpc_error* ConnectedSubchannel::CreateCall(const CallArgs& args,
       args.recv_func,
       args.recv_func_arg,
   };
+  // We take 3 initial refs: One to return to the caller, and one for the
+  // callbacks for each of recv_initial_metadata and recv_trailing_metadata.
   grpc_error* error = grpc_call_stack_init(
-      channel_stack_, 1, subchannel_call_destroy, *call, &call_args);
+      channel_stack_, 3, subchannel_call_destroy, *call, &call_args);
   if (GPR_UNLIKELY(error != GRPC_ERROR_NONE)) {
     const char* error_string = grpc_error_string(error);
     gpr_log(GPR_ERROR, "error: %s", error_string);

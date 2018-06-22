@@ -139,6 +139,9 @@ typedef struct batch_control {
   gpr_atm num_errors;
 
   grpc_transport_stream_op_batch op;
+
+  bool recv_initial_metadata;
+  bool recv_trailing_metadata;
 } batch_control;
 
 typedef struct {
@@ -193,7 +196,13 @@ struct grpc_call {
 // reduce memory usage and needless indirection)
   grpc_transport_stream_recv_op_batch_payload stream_op_recv_payload;
 
-// FIXME: remove?
+  // Set when we receive metadata before the application has
+  // requested it.  Guarded by the call combiner.
+  bool finished_recv_initial_metadata;
+  grpc_error* recv_initial_metadata_error;
+  bool finished_recv_trailing_metadata;
+  grpc_error* recv_trailing_metadata_error;
+
   batch_control* recv_initial_metadata_bctl;
   batch_control* recv_message_bctl;
   batch_control* recv_trailing_metadata_bctl;
@@ -256,6 +265,7 @@ struct grpc_call {
     } server;
   } final_op;
 
+// FIXME: try using this only inside of the call combiner
   /* recv_state can contain one of the following values:
      RECV_NONE :                 :  no initial metadata and messages received
      RECV_INITIAL_METADATA_FIRST :  received initial metadata first
@@ -294,8 +304,7 @@ grpc_core::TraceFlag grpc_compression_trace(false, "compression");
 #define CALL_FROM_TOP_ELEM(top_elem) \
   CALL_FROM_CALL_STACK(grpc_call_stack_from_top_element(top_elem))
 
-static void execute_batch(grpc_call* call, grpc_transport_stream_op_batch* op,
-                          grpc_closure* start_batch_closure);
+static void execute_batch(grpc_call* call, batch_control* bctl);
 static void cancel_with_status(grpc_call* c, status_source source,
                                grpc_status_code status,
                                const char* description);
@@ -313,6 +322,9 @@ static void process_data_after_md(batch_control* bctl);
 static void post_batch_completion(batch_control* bctl);
 static void add_batch_error(batch_control* bctl, grpc_error* error,
                             bool has_cancelled);
+static void finish_recv_batch_helper(
+    grpc_transport_stream_recv_op_batch* recv_batch,
+    grpc_call* call, grpc_error* error);
 static void finish_recv_batch(grpc_transport_stream_recv_op_batch* recv_batch,
                               void* arg, grpc_error* error);
 
@@ -480,7 +492,9 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
                                       &call->stream_op_recv_payload,
                                       finish_recv_batch,
                                       call};
-  add_init_error(&error, grpc_call_stack_init(channel_stack, 1, destroy_call,
+  // 3 initial refs: one for the call object, and one for the callbacks
+  // for each of recv_initial_metadata and recv_trailing_metadata.
+  add_init_error(&error, grpc_call_stack_init(channel_stack, 3, destroy_call,
                                               call, &call_args));
   // Publish this call to parent only after the call stack has been initialized.
   if (args->parent != nullptr) {
@@ -673,15 +687,56 @@ static void execute_batch_in_call_combiner(void* arg, grpc_error* ignored) {
   grpc_call_filter_start_transport_stream_op_batch(elem, batch);
 }
 
+// FIXME: rename and document
+static void execute_batch_helper(void* arg, grpc_error* error) {
+  batch_control* bctl = static_cast<batch_control*>(arg);
+  grpc_call* call = bctl->call;
+  // While holding the call combiner, check whether recv_initial_metadata or
+  // recv_trailing_metadata have already finished.
+  bool recv_initial_metadata_ready =
+      bctl->recv_initial_metadata && call->finished_recv_initial_metadata;
+  grpc_error* recv_initial_metadata_error =
+      recv_initial_metadata_ready
+          ? call->recv_initial_metadata_error : GRPC_ERROR_NONE;
+  bool recv_trailing_metadata_ready =
+      bctl->recv_trailing_metadata && call->finished_recv_trailing_metadata;
+  grpc_error* recv_trailing_metadata_error =
+      recv_trailing_metadata_ready
+          ? call->recv_trailing_metadata_error : GRPC_ERROR_NONE;
+  // Now start the batch if needed.  Either way, yield the call combiner.
+  if (bctl->op.send_initial_metadata || bctl->op.send_message ||
+      bctl->op.send_trailing_metadata || bctl->op.recv_message) {
+    execute_batch_in_call_combiner(&bctl->op, GRPC_ERROR_NONE);
+  } else {
+    GRPC_CALL_COMBINER_STOP(&call->call_combiner, "no ops in batch to execute");
+  }
+  // Now we're out of the call combiner.  Invoke the finish for
+  // recv_initial_metadata or recv_trailing_metadata if needed.
+  if (recv_initial_metadata_ready) {
+    grpc_transport_stream_recv_op_batch recv_batch;
+    recv_batch.payload = &call->stream_op_recv_payload;
+    recv_batch.recv_initial_metadata = true;
+    recv_batch.recv_message = false;
+    recv_batch.recv_trailing_metadata = false;
+    finish_recv_batch_helper(&recv_batch, call, recv_initial_metadata_error);
+  }
+  if (recv_trailing_metadata_ready) {
+    grpc_transport_stream_recv_op_batch recv_batch;
+    recv_batch.payload = &call->stream_op_recv_payload;
+    recv_batch.recv_initial_metadata = false;
+    recv_batch.recv_message = false;
+    recv_batch.recv_trailing_metadata = true;
+    finish_recv_batch_helper(&recv_batch, call, recv_trailing_metadata_error);
+  }
+}
+
 // start_batch_closure points to a caller-allocated closure to be used
 // for entering the call combiner.
-static void execute_batch(grpc_call* call,
-                          grpc_transport_stream_op_batch* batch,
-                          grpc_closure* start_batch_closure) {
-  batch->handler_private.extra_arg = call;
-  GRPC_CLOSURE_INIT(start_batch_closure, execute_batch_in_call_combiner, batch,
+static void execute_batch(grpc_call* call, batch_control* bctl) {
+  bctl->op.handler_private.extra_arg = call;
+  GRPC_CLOSURE_INIT(&bctl->start_batch, execute_batch_helper, bctl,
                     grpc_schedule_on_exec_ctx);
-  GRPC_CALL_COMBINER_START(&call->call_combiner, start_batch_closure,
+  GRPC_CALL_COMBINER_START(&call->call_combiner, &bctl->start_batch,
                            GRPC_ERROR_NONE, "executing batch");
 }
 
@@ -745,11 +800,15 @@ static void cancel_with_error(grpc_call* c, status_source source,
   state->call = c;
   GRPC_CLOSURE_INIT(&state->finish_batch, done_termination, state,
                     grpc_schedule_on_exec_ctx);
-  grpc_transport_stream_op_batch* op =
+  grpc_transport_stream_op_batch* batch =
       grpc_make_transport_stream_op(&state->finish_batch);
-  op->cancel_stream = true;
-  op->payload->cancel_stream.cancel_error = error;
-  execute_batch(c, op, &state->start_batch);
+  batch->cancel_stream = true;
+  batch->payload->cancel_stream.cancel_error = error;
+  batch->handler_private.extra_arg = c;
+  GRPC_CLOSURE_INIT(&state->start_batch, execute_batch_in_call_combiner, batch,
+                    grpc_schedule_on_exec_ctx);
+  GRPC_CALL_COMBINER_START(&c->call_combiner, &state->start_batch,
+                           GRPC_ERROR_NONE, "starting cancel_stream batch");
 }
 
 static grpc_error* error_from_status(grpc_status_code status,
@@ -1264,7 +1323,7 @@ static void post_batch_completion(batch_control* bctl) {
     grpc_metadata_batch_destroy(
         &call->metadata_batch[0 /* is_receiving */][1 /* is_trailing */]);
   }
-  if (bctl->op.recv_trailing_metadata) {
+  if (bctl->recv_trailing_metadata) {
     /* propagate cancellation to any interested children */
     gpr_atm_rel_store(&call->received_final_op_atm, 1);
     parent_call* pc = get_parent_call(call);
@@ -1570,6 +1629,7 @@ static void receiving_initial_metadata_ready(batch_control* bctl,
   }
 
   finish_batch_step(bctl);
+  GRPC_ERROR_UNREF(error);
 }
 
 static void receiving_trailing_metadata_ready(batch_control* bctl,
@@ -1580,21 +1640,48 @@ static void receiving_trailing_metadata_ready(batch_control* bctl,
       &call->metadata_batch[1 /* is_receiving */][1 /* is_trailing */];
   recv_trailing_filter(call, md);
   finish_batch_step(bctl);
+  GRPC_ERROR_UNREF(error);
 }
 
-static void finish_recv_batch(grpc_transport_stream_recv_op_batch* recv_batch,
-                              void* arg, grpc_error* error) {
-  grpc_call* call = static_cast<grpc_call*>(arg);
-  GRPC_CALL_COMBINER_STOP(&call->call_combiner, "recv_batch");
+// FIXME: rename and document
+static void finish_recv_batch_helper(
+    grpc_transport_stream_recv_op_batch* recv_batch,
+    grpc_call* call, grpc_error* error) {
   if (recv_batch->recv_initial_metadata) {
     receiving_initial_metadata_ready(call->recv_initial_metadata_bctl, error);
+gpr_log(GPR_INFO, "CALL UNREF: recv_initial_md");
+    GRPC_CALL_INTERNAL_UNREF(call, "completion");
   }
   if (recv_batch->recv_message) {
     receiving_stream_ready(call->recv_message_bctl, error);
   }
   if (recv_batch->recv_trailing_metadata) {
     receiving_trailing_metadata_ready(call->recv_trailing_metadata_bctl, error);
+gpr_log(GPR_INFO, "CALL UNREF: recv_trailing_md");
+    GRPC_CALL_INTERNAL_UNREF(call, "completion");
   }
+  GRPC_ERROR_UNREF(error);
+}
+
+static void finish_recv_batch(grpc_transport_stream_recv_op_batch* recv_batch,
+                              void* arg, grpc_error* error) {
+  grpc_call* call = static_cast<grpc_call*>(arg);
+  // For recv_{initial,trailing}_metadata ops, if we get the result
+  // before the application asks for it, just hold on to it until later.
+  // Note that we do this before yielding the call combiner, so that we
+  // don't need to do separate synchronization.
+  if (recv_batch->recv_initial_metadata &&
+      call->recv_initial_metadata_bctl == nullptr) {
+    call->finished_recv_initial_metadata = true;
+    recv_batch->recv_initial_metadata = false;
+  }
+  if (recv_batch->recv_trailing_metadata &&
+      call->recv_trailing_metadata_bctl == nullptr) {
+    call->finished_recv_trailing_metadata = true;
+    recv_batch->recv_trailing_metadata = false;
+  }
+  GRPC_CALL_COMBINER_STOP(&call->call_combiner, "recv_batch");
+  finish_recv_batch_helper(recv_batch, call, error);
 }
 
 static void finish_batch(void* bctlp, grpc_error* error) {
@@ -1853,11 +1940,11 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }
+        bctl->recv_initial_metadata = true;
         call->recv_initial_metadata_bctl = bctl;
         call->received_initial_metadata = true;
         call->buffered_metadata[0] =
             op->data.recv_initial_metadata.recv_initial_metadata;
-        stream_op->recv_initial_metadata = true;
         ++num_recv_ops;
         break;
       }
@@ -1892,6 +1979,7 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }
+        bctl->recv_trailing_metadata = true;
         call->recv_trailing_metadata_bctl = bctl;
         call->requested_final_op = true;
         call->buffered_metadata[1] =
@@ -1901,7 +1989,6 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
             op->data.recv_status_on_client.status_details;
         call->final_op.client.error_string =
             op->data.recv_status_on_client.error_string;
-        stream_op->recv_trailing_metadata = true;
         ++num_recv_ops;
         break;
       }
@@ -1919,11 +2006,11 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }
+        bctl->recv_trailing_metadata = true;
         call->recv_trailing_metadata_bctl = bctl;
         call->requested_final_op = true;
         call->final_op.server.cancelled =
             op->data.recv_close_on_server.cancelled;
-        stream_op->recv_trailing_metadata = true;
         ++num_recv_ops;
         break;
       }
@@ -1943,7 +2030,7 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
   }
 
   gpr_atm_rel_store(&call->any_ops_sent_atm, 1);
-  execute_batch(call, stream_op, &bctl->start_batch);
+  execute_batch(call, bctl);
 
 done:
   return error;
@@ -1962,13 +2049,13 @@ done_with_error:
     call->sent_final_op = false;
     grpc_metadata_batch_clear(&call->metadata_batch[0][1]);
   }
-  if (stream_op->recv_initial_metadata) {
+  if (bctl->recv_initial_metadata) {
     call->received_initial_metadata = false;
   }
   if (stream_op->recv_message) {
     call->receiving_message = false;
   }
-  if (stream_op->recv_trailing_metadata) {
+  if (bctl->recv_trailing_metadata) {
     call->requested_final_op = false;
   }
   goto done;

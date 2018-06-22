@@ -96,19 +96,9 @@ char* grpc_transport_stream_op_batch_string(
     gpr_strvec_add(&b, gpr_strdup("}"));
   }
 
-  if (op->recv_initial_metadata) {
-    gpr_strvec_add(&b, gpr_strdup(" "));
-    gpr_strvec_add(&b, gpr_strdup("RECV_INITIAL_METADATA"));
-  }
-
   if (op->recv_message) {
     gpr_strvec_add(&b, gpr_strdup(" "));
     gpr_strvec_add(&b, gpr_strdup("RECV_MESSAGE"));
-  }
-
-  if (op->recv_trailing_metadata) {
-    gpr_strvec_add(&b, gpr_strdup(" "));
-    gpr_strvec_add(&b, gpr_strdup("RECV_TRAILING_METADATA"));
   }
 
   if (op->cancel_stream) {

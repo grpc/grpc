@@ -668,6 +668,16 @@ static int init_stream(
   s->recv_batch_func = recv_batch_func;
   s->recv_batch_arg = recv_batch_arg;
 
+  s->seen_recv_initial_metadata = true;
+  if (s->recv_payload->recv_initial_metadata.peer_string != nullptr) {
+    gpr_atm_rel_store(s->recv_payload->recv_initial_metadata.peer_string,
+                      (gpr_atm)t->peer_string);
+  }
+
+  s->seen_recv_trailing_metadata = true;
+// FIXME: needed?
+//  s->final_metadata_requested = true;
+
   grpc_chttp2_incoming_metadata_buffer_init(&s->metadata_buffer[0], arena);
   grpc_chttp2_incoming_metadata_buffer_init(&s->metadata_buffer[1], arena);
   grpc_chttp2_data_parser_init(&s->data_parser);
@@ -1551,17 +1561,6 @@ static void perform_stream_op_locked(void* stream_op,
     }
   }
 
-  if (op->recv_initial_metadata) {
-    GRPC_STATS_INC_HTTP2_OP_RECV_INITIAL_METADATA();
-    GPR_ASSERT(!s->seen_recv_initial_metadata);
-    s->seen_recv_initial_metadata = true;
-    if (s->recv_payload->recv_initial_metadata.peer_string != nullptr) {
-      gpr_atm_rel_store(s->recv_payload->recv_initial_metadata.peer_string,
-                        (gpr_atm)t->peer_string);
-    }
-    grpc_chttp2_maybe_complete_recv_initial_metadata(t, s);
-  }
-
   if (op->recv_message) {
     GRPC_STATS_INC_HTTP2_OP_RECV_MESSAGE();
     size_t before = 0;
@@ -1584,14 +1583,6 @@ static void perform_stream_op_locked(void* stream_op,
         grpc_chttp2_act_on_flowctl_action(s->flow_control->MakeAction(), t, s);
       }
     }
-  }
-
-  if (op->recv_trailing_metadata) {
-    GRPC_STATS_INC_HTTP2_OP_RECV_TRAILING_METADATA();
-    GPR_ASSERT(!s->seen_recv_trailing_metadata);
-    s->seen_recv_trailing_metadata = true;
-    s->final_metadata_requested = true;
-    grpc_chttp2_maybe_complete_recv_trailing_metadata(t, s);
   }
 
   grpc_chttp2_complete_closure_step(t, s, &on_complete, GRPC_ERROR_NONE,
@@ -1849,7 +1840,10 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
   grpc_error* error = GRPC_ERROR_NONE;
   if (s->seen_recv_message) {
     *s->recv_payload->recv_message.recv_message = nullptr;
-    if (s->final_metadata_requested && s->seen_error) {
+    // FIXME: is final_metadata_requested important here?
+    // maybe use the receipt of trailing metadata instead?
+    //if (s->final_metadata_requested && s->seen_error) {
+    if (s->seen_error) {
       grpc_slice_buffer_reset_and_unref_internal(&s->frame_storage);
       if (!s->pending_byte_stream) {
         grpc_slice_buffer_reset_and_unref_internal(

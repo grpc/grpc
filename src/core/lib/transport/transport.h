@@ -145,15 +145,8 @@ typedef struct grpc_transport_stream_op_batch {
   /** Send message data to the peer, from the provided byte stream. */
   bool send_message : 1;
 
-  /** Receive initial metadata from the stream, into provided metadata batch. */
-  bool recv_initial_metadata : 1;
-
   /** Receive message data from the stream, into provided byte stream. */
   bool recv_message : 1;
-
-  /** Receive trailing metadata from the stream, into provided metadata batch.
-   */
-  bool recv_trailing_metadata : 1;
 
   /** Cancel this stream with the provided error */
   bool cancel_stream : 1;
