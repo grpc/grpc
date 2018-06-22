@@ -719,6 +719,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc )
+  s.files += %w( src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c )
+  s.files += %w( src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c )
   s.files += %w( src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc )
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc )

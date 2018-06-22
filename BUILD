@@ -1197,6 +1197,8 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c",
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h",
@@ -1205,6 +1207,8 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h",
     ],
     external_deps = [
         "nanopb",
@@ -1226,6 +1230,8 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c",
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h",
@@ -1234,6 +1240,8 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h",
     ],
     external_deps = [
         "nanopb",

@@ -23,7 +23,10 @@ grpc_package(
 
 grpc_proto_library(
     name = "load_balancer_proto",
-    srcs = ["load_balancer.proto"],
+    srcs = [
+        "load_balancer.proto",
+    ],
+    well_known_protos = True,
 )
 
 grpc_proto_library(

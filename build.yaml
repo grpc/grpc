@@ -652,6 +652,8 @@ filegroups:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c
   - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
   plugin: grpc_lb_policy_grpclb
   uses:
@@ -673,6 +675,8 @@ filegroups:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c
   - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
   plugin: grpc_lb_policy_grpclb
   uses:
