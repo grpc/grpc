@@ -6022,24 +6022,6 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
-    "src": [
-      "test/core/end2end/fixtures/h2_load_reporting.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "end2end_tests", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
     "name": "h2_oauth2_test", 
     "src": [
       "test/core/end2end/fixtures/h2_oauth2.cc"
@@ -6331,24 +6313,6 @@
     "name": "h2_http_proxy_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_http_proxy.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "end2end_nosec_tests", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "src": [
-      "test/core/end2end/fixtures/h2_load_reporting.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -6933,7 +6897,6 @@
       "grpc_resolver_sockaddr", 
       "grpc_secure", 
       "grpc_server_backward_compatibility", 
-      "grpc_server_load_reporting", 
       "grpc_transport_chttp2_client_insecure", 
       "grpc_transport_chttp2_client_secure", 
       "grpc_transport_chttp2_server_insecure", 
@@ -6955,7 +6918,6 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_server_load_reporting", 
       "grpc_transport_chttp2_client_secure", 
       "grpc_transport_cronet_client_secure"
     ], 
@@ -7040,7 +7002,6 @@
       "grpc_resolver_fake", 
       "grpc_resolver_sockaddr", 
       "grpc_server_backward_compatibility", 
-      "grpc_server_load_reporting", 
       "grpc_transport_chttp2_client_insecure", 
       "grpc_transport_chttp2_server_insecure", 
       "grpc_transport_inproc", 
@@ -8783,7 +8744,6 @@
       "test/core/end2end/tests/invoke_large_request.cc", 
       "test/core/end2end/tests/keepalive_timeout.cc", 
       "test/core/end2end/tests/large_metadata.cc", 
-      "test/core/end2end/tests/load_reporting_hook.cc", 
       "test/core/end2end/tests/max_concurrent_streams.cc", 
       "test/core/end2end/tests/max_connection_age.cc", 
       "test/core/end2end/tests/max_connection_idle.cc", 
@@ -8884,7 +8844,6 @@
       "test/core/end2end/tests/invoke_large_request.cc", 
       "test/core/end2end/tests/keepalive_timeout.cc", 
       "test/core/end2end/tests/large_metadata.cc", 
-      "test/core/end2end/tests/load_reporting_hook.cc", 
       "test/core/end2end/tests/max_concurrent_streams.cc", 
       "test/core/end2end/tests/max_connection_age.cc", 
       "test/core/end2end/tests/max_connection_idle.cc", 
@@ -9501,7 +9460,6 @@
       "include/grpc/grpc.h", 
       "include/grpc/grpc_posix.h", 
       "include/grpc/grpc_security_constants.h", 
-      "include/grpc/load_reporting.h", 
       "include/grpc/slice.h", 
       "include/grpc/slice_buffer.h", 
       "include/grpc/status.h", 
@@ -9651,7 +9609,6 @@
       "include/grpc/grpc.h", 
       "include/grpc/grpc_posix.h", 
       "include/grpc/grpc_security_constants.h", 
-      "include/grpc/load_reporting.h", 
       "include/grpc/slice.h", 
       "include/grpc/slice_buffer.h", 
       "include/grpc/status.h", 
@@ -10328,27 +10285,6 @@
     "src": [
       "src/core/ext/filters/workarounds/workaround_utils.cc", 
       "src/core/ext/filters/workarounds/workaround_utils.h"
-    ], 
-    "third_party": false, 
-    "type": "filegroup"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "grpc_base"
-    ], 
-    "headers": [
-      "src/core/ext/filters/load_reporting/server_load_reporting_filter.h", 
-      "src/core/ext/filters/load_reporting/server_load_reporting_plugin.h"
-    ], 
-    "is_filegroup": true, 
-    "language": "c", 
-    "name": "grpc_server_load_reporting", 
-    "src": [
-      "src/core/ext/filters/load_reporting/server_load_reporting_filter.cc", 
-      "src/core/ext/filters/load_reporting/server_load_reporting_filter.h", 
-      "src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc", 
-      "src/core/ext/filters/load_reporting/server_load_reporting_plugin.h"
     ], 
     "third_party": false, 
     "type": "filegroup"

@@ -38,8 +38,6 @@ void grpc_resolver_sockaddr_init(void);
 void grpc_resolver_sockaddr_shutdown(void);
 void grpc_resolver_fake_init(void);
 void grpc_resolver_fake_shutdown(void);
-void grpc_server_load_reporting_plugin_init(void);
-void grpc_server_load_reporting_plugin_shutdown(void);
 void grpc_lb_policy_grpclb_init(void);
 void grpc_lb_policy_grpclb_shutdown(void);
 void grpc_lb_policy_pick_first_init(void);
@@ -74,8 +72,6 @@ void grpc_register_built_in_plugins(void) {
                        grpc_resolver_sockaddr_shutdown);
   grpc_register_plugin(grpc_resolver_fake_init,
                        grpc_resolver_fake_shutdown);
-  grpc_register_plugin(grpc_server_load_reporting_plugin_init,
-                       grpc_server_load_reporting_plugin_shutdown);
   grpc_register_plugin(grpc_lb_policy_grpclb_init,
                        grpc_lb_policy_grpclb_shutdown);
   grpc_register_plugin(grpc_lb_policy_pick_first_init,

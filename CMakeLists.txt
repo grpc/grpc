@@ -430,7 +430,6 @@ endif()
 add_dependencies(buildtests_c h2_full+trace_test)
 add_dependencies(buildtests_c h2_full+workarounds_test)
 add_dependencies(buildtests_c h2_http_proxy_test)
-add_dependencies(buildtests_c h2_load_reporting_test)
 add_dependencies(buildtests_c h2_oauth2_test)
 add_dependencies(buildtests_c h2_proxy_test)
 add_dependencies(buildtests_c h2_sockpair_test)
@@ -454,7 +453,6 @@ endif()
 add_dependencies(buildtests_c h2_full+trace_nosec_test)
 add_dependencies(buildtests_c h2_full+workarounds_nosec_test)
 add_dependencies(buildtests_c h2_http_proxy_nosec_test)
-add_dependencies(buildtests_c h2_load_reporting_nosec_test)
 add_dependencies(buildtests_c h2_proxy_nosec_test)
 add_dependencies(buildtests_c h2_sockpair_nosec_test)
 add_dependencies(buildtests_c h2_sockpair+trace_nosec_test)
@@ -1227,8 +1225,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc
   src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
   src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
-  src/core/ext/filters/load_reporting/server_load_reporting_filter.cc
-  src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc
   src/cpp/ext/filters/census/grpc_context.cc
   src/core/ext/filters/max_age/max_age_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
@@ -1303,7 +1299,6 @@ foreach(_hdr
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
   include/grpc/grpc_security_constants.h
-  include/grpc/load_reporting.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
@@ -1604,8 +1599,6 @@ add_library(grpc_cronet
   src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
   src/core/tsi/ssl_transport_security.cc
   src/core/tsi/transport_security_grpc.cc
-  src/core/ext/filters/load_reporting/server_load_reporting_filter.cc
-  src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc
   src/core/plugin_registry/grpc_cronet_plugin_registry.cc
 )
 
@@ -2523,8 +2516,6 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
   src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
-  src/core/ext/filters/load_reporting/server_load_reporting_filter.cc
-  src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc
@@ -2608,7 +2599,6 @@ foreach(_hdr
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
   include/grpc/grpc_security_constants.h
-  include/grpc/load_reporting.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
@@ -2925,7 +2915,6 @@ foreach(_hdr
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
   include/grpc/grpc_security_constants.h
-  include/grpc/load_reporting.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
@@ -3489,7 +3478,6 @@ foreach(_hdr
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
   include/grpc/grpc_security_constants.h
-  include/grpc/load_reporting.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
@@ -4389,7 +4377,6 @@ foreach(_hdr
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
   include/grpc/grpc_security_constants.h
-  include/grpc/load_reporting.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
@@ -5301,7 +5288,6 @@ add_library(end2end_tests
   test/core/end2end/tests/invoke_large_request.cc
   test/core/end2end/tests/keepalive_timeout.cc
   test/core/end2end/tests/large_metadata.cc
-  test/core/end2end/tests/load_reporting_hook.cc
   test/core/end2end/tests/max_concurrent_streams.cc
   test/core/end2end/tests/max_connection_age.cc
   test/core/end2end/tests/max_connection_idle.cc
@@ -5422,7 +5408,6 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/invoke_large_request.cc
   test/core/end2end/tests/keepalive_timeout.cc
   test/core/end2end/tests/large_metadata.cc
-  test/core/end2end/tests/load_reporting_hook.cc
   test/core/end2end/tests/max_concurrent_streams.cc
   test/core/end2end/tests/max_connection_age.cc
   test/core/end2end/tests/max_connection_idle.cc
@@ -15233,36 +15218,6 @@ target_link_libraries(h2_http_proxy_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(h2_load_reporting_test
-  test/core/end2end/fixtures/h2_load_reporting.cc
-)
-
-
-target_include_directories(h2_load_reporting_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-)
-
-target_link_libraries(h2_load_reporting_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  end2end_tests
-  grpc_test_util
-  grpc
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
 add_executable(h2_oauth2_test
   test/core/end2end/fixtures/h2_oauth2.cc
 )
@@ -15768,36 +15723,6 @@ target_include_directories(h2_http_proxy_nosec_test
 )
 
 target_link_libraries(h2_http_proxy_nosec_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  end2end_nosec_tests
-  grpc_test_util_unsecure
-  grpc_unsecure
-  gpr_test_util
-  gpr
-)
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(h2_load_reporting_nosec_test
-  test/core/end2end/fixtures/h2_load_reporting.cc
-)
-
-
-target_include_directories(h2_load_reporting_nosec_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-)
-
-target_link_libraries(h2_load_reporting_nosec_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_nosec_tests
   grpc_test_util_unsecure
