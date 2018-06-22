@@ -55,7 +55,7 @@ struct grpc_subchannel_key {
 struct invalid_subchannel {
   grpc_subchannel* c;
   invalid_subchannel* next;
-} * g_invalid_subchannels = nullptr;
+}* g_invalid_subchannels = nullptr;
 
 static bool g_force_creation = false;
 
