@@ -5636,8 +5636,8 @@ defaults:
     CXXFLAGS: -fno-rtti -fno-exceptions
   cxxabi:
     CPPFLAGS: -D_LIBCPP_DISABLE_EXTERN_TEMPLATE -D_LIBCXXABI_BUILDING_LIBRARY -D_LIBCXXABI_NO_EXCEPTIONS
-      -Ithird_party/libcxxabi/include -nostdinc++ -Ithird_party/libcxx/include -Wno-unused-but-set-variable
-      -Wno-c++14-compat -fvisibility=hidden
+      -Ithird_party/libcxxabi/include -nostdinc++ -Ithird_party/libcxx/include $(W_NO_UNUSED_BUT_SET_VARIABLE)
+      $(W_NO_C++14_COMPAT) -fvisibility=hidden
   global:
     COREFLAGS: -fno-rtti -fno-exceptions
     CPPFLAGS: -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1

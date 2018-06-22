@@ -318,6 +318,18 @@ ifeq ($(HAS_WORKING_NO_SHIFT_NEGATIVE_VALUE),true)
 W_NO_SHIFT_NEGATIVE_VALUE=-Wno-shift-negative-value
 NO_W_NO_SHIFT_NEGATIVE_VALUE=-Wshift-negative-value
 endif
+CHECK_NO_C++14_COMPAT_WORKS_CMD = $(CC) -std=c99 -Werror -Wno-c++14-compat -o $(TMPOUT) -c test/build/no-c++14-compat.c
+HAS_WORKING_NO_C++14_COMPAT = $(shell $(CHECK_NO_C++14_COMPAT_WORKS_CMD) 2> /dev/null && echo true || echo false)
+ifeq ($(HAS_WORKING_NO_C++14_COMPAT),true)
+W_NO_C++14_COMPAT=-Wno-c++14-compat
+NO_W_NO_C++14_COMPAT=-Wc++14-compat
+endif
+CHECK_NO_UNUSED_BUT_SET_VARIABLE_WORKS_CMD = $(CC) -std=c99 -Werror -Wno-unused-but-set-variable -o $(TMPOUT) -c test/build/no-unused-but-set-variable.c
+HAS_WORKING_NO_UNUSED_BUT_SET_VARIABLE = $(shell $(CHECK_NO_UNUSED_BUT_SET_VARIABLE_WORKS_CMD) 2> /dev/null && echo true || echo false)
+ifeq ($(HAS_WORKING_NO_UNUSED_BUT_SET_VARIABLE),true)
+W_NO_UNUSED_BUT_SET_VARIABLE=-Wno-unused-but-set-variable
+NO_W_NO_UNUSED_BUT_SET_VARIABLE=-Wunused-but-set-variable
+endif
 
 # The HOST compiler settings are used to compile the protoc plugins.
 # In most cases, you won't have to change anything, but if you are
@@ -3190,7 +3202,7 @@ PUBLIC_HEADERS_C += \
 
 LIBCXXABI_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBCXXABI_SRC))))
 
-$(LIBCXXABI_OBJS): CPPFLAGS += -D_LIBCPP_DISABLE_EXTERN_TEMPLATE -D_LIBCXXABI_BUILDING_LIBRARY -D_LIBCXXABI_NO_EXCEPTIONS -Ithird_party/libcxxabi/include -nostdinc++ -Ithird_party/libcxx/include -Wno-unused-but-set-variable -Wno-c++14-compat -fvisibility=hidden
+$(LIBCXXABI_OBJS): CPPFLAGS += -D_LIBCPP_DISABLE_EXTERN_TEMPLATE -D_LIBCXXABI_BUILDING_LIBRARY -D_LIBCXXABI_NO_EXCEPTIONS -Ithird_party/libcxxabi/include -nostdinc++ -Ithird_party/libcxx/include $(W_NO_UNUSED_BUT_SET_VARIABLE) $(W_NO_C++14_COMPAT) -fvisibility=hidden
 
 $(LIBDIR)/$(CONFIG)/libcxxabi.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP)  $(LIBCXXABI_OBJS) 
 	$(E) "[AR]      Creating $@"
