@@ -1650,16 +1650,6 @@
       ],
     },
     {
-      'target_name': 'lb_load_data_store',
-      'type': 'static_library',
-      'dependencies': [
-        'grpc++',
-      ],
-      'sources': [
-        'src/cpp/server/load_reporter/load_data_store.cc',
-      ],
-    },
-    {
       'target_name': 'qps',
       'type': 'static_library',
       'dependencies': [
