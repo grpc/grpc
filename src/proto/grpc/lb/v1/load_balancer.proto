@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// This file defines an the GRPCLB LoadBalancing protocol.
+// This file defines the GRPCLB LoadBalancing protocol.
 //
 // The canonical version of this proto can be found at
 // https://github.com/grpc/grpc-proto/blob/master/grpc/lb/v1/load_balancer.proto
@@ -45,8 +45,10 @@ message LoadBalanceRequest {
 }
 
 message InitialLoadBalanceRequest {
-  // Name of load balanced service (IE, service.googleapis.com). Its
+  // The name of the load balanced service (e.g., service.googleapis.com). Its
   // length should be less than 256 bytes.
+  // The name might include a port number. How to handle the port number is up
+  // to the balancer.
   string name = 1;
 }
 
