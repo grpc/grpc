@@ -59,7 +59,14 @@ grpc_core::DebugOnlyTraceFlag grpc_polling_api_trace(false, "polling_api");
 
 /** Default poll() function - a pointer so that it can be overridden by some
  *  tests */
+#ifndef GPR_AIX
 grpc_poll_function_type grpc_poll_function = poll;
+#else
+int aix_poll(struct pollfd fds[], nfds_t nfds, int timeout) {
+  return poll(fds, nfds, timeout);
+}
+grpc_poll_function_type grpc_poll_function = aix_poll;
+#endif
 
 grpc_wakeup_fd grpc_global_wakeup_fd;
 
