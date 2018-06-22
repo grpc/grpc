@@ -63,7 +63,7 @@ struct grpc_ares_request {
   /** the evernt driver used by this request */
   grpc_ares_ev_driver* ev_driver;
   /** number of ongoing queries */
-  gpr_refcount pending_queries;
+  size_t pending_queries;
 
   /** is there at least one successful query, set in on_done_cb */
   bool success;
@@ -144,22 +144,28 @@ void grpc_cares_wrapper_test_only_address_sorting_sort(
   grpc_cares_wrapper_address_sorting_sort(lb_addrs);
 }
 
-static void grpc_ares_request_ref_locked(grpc_ares_request* r) {
-  gpr_ref(&r->pending_queries);
+static void grpc_ares_request_increment_pending_queries_locked(
+    grpc_ares_request* r) {
+  r->pending_queries++;
 }
 
-static void grpc_ares_request_unref_locked(grpc_ares_request* r) {
-  /* If there are no pending queries, invoke on_done callback and destroy the
-     request */
-  if (gpr_unref(&r->pending_queries)) {
-    grpc_lb_addresses* lb_addrs = *(r->lb_addrs_out);
-    if (lb_addrs != nullptr) {
-      grpc_cares_wrapper_address_sorting_sort(lb_addrs);
-    }
-    GRPC_CLOSURE_SCHED(r->on_done, r->error);
-    grpc_ares_ev_driver_destroy_locked(r->ev_driver);
-    gpr_free(r);
+static void grpc_ares_request_decrement_pending_queries_locked(
+    grpc_ares_request* r) {
+  r->pending_queries--;
+  if (r->pending_queries == 0u) {
+    grpc_ares_ev_driver_on_queries_complete_locked(r->ev_driver);
   }
+}
+
+void grpc_ares_complete_request_locked(grpc_ares_request* r) {
+  /* Invoke on_done callback and destroy the
+     request */
+  grpc_lb_addresses* lb_addrs = *(r->lb_addrs_out);
+  if (lb_addrs != nullptr) {
+    grpc_cares_wrapper_address_sorting_sort(lb_addrs);
+  }
+  GRPC_CLOSURE_SCHED(r->on_done, r->error);
+  gpr_free(r);
 }
 
 static grpc_ares_hostbyname_request* create_hostbyname_request_locked(
@@ -171,13 +177,13 @@ static grpc_ares_hostbyname_request* create_hostbyname_request_locked(
   hr->host = gpr_strdup(host);
   hr->port = port;
   hr->is_balancer = is_balancer;
-  grpc_ares_request_ref_locked(parent_request);
+  grpc_ares_request_increment_pending_queries_locked(parent_request);
   return hr;
 }
 
 static void destroy_hostbyname_request_locked(
     grpc_ares_hostbyname_request* hr) {
-  grpc_ares_request_unref_locked(hr->parent_request);
+  grpc_ares_request_decrement_pending_queries_locked(hr->parent_request);
   gpr_free(hr->host);
   gpr_free(hr);
 }
@@ -305,7 +311,7 @@ static void on_srv_query_done_locked(void* arg, int status, int timeouts,
       r->error = grpc_error_add_child(error, r->error);
     }
   }
-  grpc_ares_request_unref_locked(r);
+  grpc_ares_request_decrement_pending_queries_locked(r);
 }
 
 static const char g_service_config_attribute_prefix[] = "grpc_config=";
@@ -363,7 +369,7 @@ fail:
     r->error = grpc_error_add_child(error, r->error);
   }
 done:
-  grpc_ares_request_unref_locked(r);
+  grpc_ares_request_decrement_pending_queries_locked(r);
 }
 
 static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
@@ -399,20 +405,20 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
     }
     port = gpr_strdup(default_port);
   }
-  grpc_ares_ev_driver* ev_driver;
-  error = grpc_ares_ev_driver_create_locked(&ev_driver, interested_parties,
-                                            combiner);
-  if (error != GRPC_ERROR_NONE) goto error_cleanup;
-
   r = static_cast<grpc_ares_request*>(gpr_zalloc(sizeof(grpc_ares_request)));
-  r->ev_driver = ev_driver;
+  r->ev_driver = nullptr;
   r->on_done = on_done;
   r->lb_addrs_out = addrs;
   r->service_config_json_out = service_config_json;
   r->success = false;
   r->error = GRPC_ERROR_NONE;
+  r->pending_queries = 0;
+  grpc_ares_ev_driver* ev_driver;
+  error = grpc_ares_ev_driver_create_locked(&ev_driver, interested_parties,
+                                            combiner, r);
+  if (error != GRPC_ERROR_NONE) goto error_cleanup;
+  r->ev_driver = ev_driver;
   channel = grpc_ares_ev_driver_get_channel_locked(r->ev_driver);
-
   // If dns_server is specified, use it.
   if (dns_server != nullptr) {
     gpr_log(GPR_INFO, "Using DNS server %s", dns_server);
@@ -451,7 +457,7 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
       goto error_cleanup;
     }
   }
-  gpr_ref_init(&r->pending_queries, 1);
+  r->pending_queries = 1;
   if (grpc_ipv6_loopback_available()) {
     hr = create_hostbyname_request_locked(r, host, strhtons(port),
                                           false /* is_balancer */);
@@ -464,7 +470,7 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
                      hr);
   if (check_grpclb) {
     /* Query the SRV record */
-    grpc_ares_request_ref_locked(r);
+    grpc_ares_request_increment_pending_queries_locked(r);
     char* service_name;
     gpr_asprintf(&service_name, "_grpclb._tcp.%s", host);
     ares_query(*channel, service_name, ns_c_in, ns_t_srv,
@@ -472,7 +478,7 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
     gpr_free(service_name);
   }
   if (service_config_json != nullptr) {
-    grpc_ares_request_ref_locked(r);
+    grpc_ares_request_increment_pending_queries_locked(r);
     char* config_name;
     gpr_asprintf(&config_name, "_grpc_config.%s", host);
     ares_search(*channel, config_name, ns_c_in, ns_t_txt, on_txt_done_locked,
@@ -480,7 +486,7 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
     gpr_free(config_name);
   }
   grpc_ares_ev_driver_start_locked(r->ev_driver);
-  grpc_ares_request_unref_locked(r);
+  grpc_ares_request_decrement_pending_queries_locked(r);
   gpr_free(host);
   gpr_free(port);
   return r;

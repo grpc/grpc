@@ -74,6 +74,8 @@ struct grpc_ares_ev_driver {
   bool working;
   /** is this event driver being shut down */
   bool shutting_down;
+  /** request object that's using this ev driver */
+  grpc_ares_request* request;
 };
 
 static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver);
@@ -91,8 +93,8 @@ static void grpc_ares_ev_driver_unref(grpc_ares_ev_driver* ev_driver) {
     gpr_log(GPR_DEBUG, "destroy ev_driver %" PRIuPTR, (uintptr_t)ev_driver);
     GPR_ASSERT(ev_driver->fds == nullptr);
     GRPC_COMBINER_UNREF(ev_driver->combiner, "free ares event driver");
-    grpc_pollset_set_destroy(ev_driver->pollset_set);
     ares_destroy(ev_driver->channel);
+    grpc_ares_complete_request_locked(ev_driver->request);
     gpr_free(ev_driver);
   }
 }
@@ -114,9 +116,10 @@ static void fd_node_shutdown_locked(fd_node* fdn, const char* reason) {
   }
 }
 
-grpc_error* grpc_ares_ev_driver_create_locked(
-    grpc_ares_ev_driver** ev_driver, grpc_pollset_set* interested_parties,
-    grpc_combiner* combiner) {
+grpc_error* grpc_ares_ev_driver_create_locked(grpc_ares_ev_driver** ev_driver,
+                                              grpc_pollset_set* pollset_set,
+                                              grpc_combiner* combiner,
+                                              grpc_ares_request* request) {
   *ev_driver = static_cast<grpc_ares_ev_driver*>(
       gpr_malloc(sizeof(grpc_ares_ev_driver)));
   ares_options opts;
@@ -136,16 +139,16 @@ grpc_error* grpc_ares_ev_driver_create_locked(
   }
   (*ev_driver)->combiner = GRPC_COMBINER_REF(combiner, "ares event driver");
   gpr_ref_init(&(*ev_driver)->refs, 1);
-  (*ev_driver)->pollset_set = grpc_pollset_set_create();
-  grpc_pollset_set_add_pollset_set((*ev_driver)->pollset_set,
-                                   interested_parties);
+  (*ev_driver)->pollset_set = pollset_set;
   (*ev_driver)->fds = nullptr;
   (*ev_driver)->working = false;
   (*ev_driver)->shutting_down = false;
+  (*ev_driver)->request = request;
   return GRPC_ERROR_NONE;
 }
 
-void grpc_ares_ev_driver_destroy_locked(grpc_ares_ev_driver* ev_driver) {
+void grpc_ares_ev_driver_on_queries_complete_locked(
+    grpc_ares_ev_driver* ev_driver) {
   // We mark the event driver as being shut down. If the event driver
   // is working, grpc_ares_notify_on_event_locked will shut down the
   // fds; if it's not working, there are no fds to shut down.
