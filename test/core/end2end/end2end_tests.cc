@@ -90,8 +90,6 @@ extern void keepalive_timeout(grpc_end2end_test_config config);
 extern void keepalive_timeout_pre_init(void);
 extern void large_metadata(grpc_end2end_test_config config);
 extern void large_metadata_pre_init(void);
-extern void load_reporting_hook(grpc_end2end_test_config config);
-extern void load_reporting_hook_pre_init(void);
 extern void max_concurrent_streams(grpc_end2end_test_config config);
 extern void max_concurrent_streams_pre_init(void);
 extern void max_connection_age(grpc_end2end_test_config config);
@@ -223,7 +221,6 @@ void grpc_end2end_tests_pre_init(void) {
   invoke_large_request_pre_init();
   keepalive_timeout_pre_init();
   large_metadata_pre_init();
-  load_reporting_hook_pre_init();
   max_concurrent_streams_pre_init();
   max_connection_age_pre_init();
   max_connection_idle_pre_init();
@@ -311,7 +308,6 @@ void grpc_end2end_tests(int argc, char **argv,
     invoke_large_request(config);
     keepalive_timeout(config);
     large_metadata(config);
-    load_reporting_hook(config);
     max_concurrent_streams(config);
     max_connection_age(config);
     max_connection_idle(config);
@@ -482,10 +478,6 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("large_metadata", argv[i])) {
       large_metadata(config);
-      continue;
-    }
-    if (0 == strcmp("load_reporting_hook", argv[i])) {
-      load_reporting_hook(config);
       continue;
     }
     if (0 == strcmp("max_concurrent_streams", argv[i])) {
