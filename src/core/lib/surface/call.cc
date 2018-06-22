@@ -1015,10 +1015,15 @@ static void recv_trailing_filter(void* args, grpc_metadata_batch* b,
     set_final_status(call, GRPC_ERROR_REF(error));
     grpc_metadata_batch_remove(b, b->idx.named.grpc_status);
     GRPC_ERROR_UNREF(error);
-  } else {
-    // TODO(kpayson) batch completed successfully w/no error + no status, should
-    // we assert instead?
+  } else if (!call->is_client) {
     set_final_status(call, GRPC_ERROR_NONE);
+  } else {
+    gpr_log(GPR_DEBUG,
+            "Received trailing metadata with no error and no status");
+    set_final_status(
+        call, grpc_error_set_int(
+                  GRPC_ERROR_CREATE_FROM_STATIC_STRING("No status received"),
+                  GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNKNOWN));
   }
   publish_app_metadata(call, b, true);
   GRPC_ERROR_UNREF(batch_error);
