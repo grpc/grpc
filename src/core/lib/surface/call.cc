@@ -689,6 +689,8 @@ static void set_final_status(grpc_call* call, grpc_error* error) {
     gpr_log(GPR_DEBUG, "set_final_status %s", call->is_client ? "CLI" : "SVR");
     gpr_log(GPR_DEBUG, "%s", grpc_error_string(error));
   }
+  grpc_core::channelz::ChannelNode* channelz_channel =
+      grpc_channel_get_channelz_node(call->channel);
   if (call->is_client) {
     const char** error_string = call->final_op.client.error_string;
     grpc_status_code code;
@@ -698,9 +700,23 @@ static void set_final_status(grpc_call* call, grpc_error* error) {
     *call->final_op.client.status = code;
     *call->final_op.client.status_details = grpc_slice_ref_internal(slice);
     call->status_error = error;
+    if (channelz_channel != nullptr) {
+      if (*call->final_op.client.status != GRPC_STATUS_OK) {
+        channelz_channel->RecordCallFailed();
+      } else {
+        channelz_channel->RecordCallSucceeded();
+      }
+    }
   } else {
     *call->final_op.server.cancelled =
         error != GRPC_ERROR_NONE || call->status_error != GRPC_ERROR_NONE;
+    if (channelz_channel != nullptr) {
+      if (*call->final_op.server.cancelled) {
+        channelz_channel->RecordCallFailed();
+      } else {
+        channelz_channel->RecordCallSucceeded();
+      }
+    }
     GRPC_ERROR_UNREF(error);
   }
 }

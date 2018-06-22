@@ -50,6 +50,7 @@ struct call_data {
 
   // State for intercepting recv_initial_metadata.
   grpc_closure recv_initial_metadata_ready;
+  grpc_error* recv_initial_metadata_ready_error;
   grpc_closure* original_recv_initial_metadata_ready;
   grpc_metadata_batch* recv_initial_metadata;
   uint32_t* recv_initial_metadata_flags;
@@ -60,6 +61,9 @@ struct call_data {
   grpc_closure recv_message_ready;
   grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message;
   bool seen_recv_message_ready;
+
+  grpc_closure recv_trailing_metadata_ready;
+  grpc_closure* original_recv_trailing_metadata_ready;
 };
 
 }  // namespace
@@ -267,6 +271,7 @@ static void hs_recv_initial_metadata_ready(void* user_data, grpc_error* err) {
   calld->seen_recv_initial_metadata_ready = true;
   if (err == GRPC_ERROR_NONE) {
     err = hs_filter_incoming_metadata(elem, calld->recv_initial_metadata);
+    calld->recv_initial_metadata_ready_error = GRPC_ERROR_REF(err);
     if (calld->seen_recv_message_ready) {
       // We've already seen the recv_message callback, but we previously
       // deferred it, so we need to return it here.
@@ -310,6 +315,22 @@ static void hs_recv_message_ready(void* user_data, grpc_error* err) {
     GRPC_CALL_COMBINER_STOP(
         calld->call_combiner,
         "pausing recv_message_ready until recv_initial_metadata_ready");
+  }
+}
+
+static void hs_recv_trailing_metadata_ready(void* user_data, grpc_error* err) {
+  grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
+  call_data* calld = static_cast<call_data*>(elem->call_data);
+  if (calld->recv_initial_metadata_ready_error != GRPC_ERROR_NONE) {
+    if (err == GRPC_ERROR_NONE) {
+      err = GRPC_ERROR_REF(calld->recv_initial_metadata_ready_error);
+    } else {
+      err = grpc_error_add_child(err, calld->recv_initial_metadata_ready_error);
+    }
+    GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready, err);
+  } else {
+    GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready,
+                     GRPC_ERROR_REF(err));
   }
 }
 
@@ -357,6 +378,11 @@ static grpc_error* hs_mutate_op(grpc_call_element* elem,
     op->payload->recv_message.recv_message_ready = &calld->recv_message_ready;
   }
 
+  if (op->recv_trailing_metadata) {
+    calld->original_recv_trailing_metadata_ready =
+        op->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
+  }
+
   if (op->send_trailing_metadata) {
     grpc_error* error = hs_filter_outgoing_metadata(
         elem, op->payload->send_trailing_metadata.send_trailing_metadata);
@@ -389,6 +415,9 @@ static grpc_error* hs_init_call_elem(grpc_call_element* elem,
                     grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&calld->recv_message_ready, hs_recv_message_ready, elem,
                     grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&calld->recv_trailing_metadata_ready,
+                    hs_recv_trailing_metadata_ready, elem,
+                    grpc_schedule_on_exec_ctx);
   return GRPC_ERROR_NONE;
 }
 
@@ -397,6 +426,7 @@ static void hs_destroy_call_elem(grpc_call_element* elem,
                                  const grpc_call_final_info* final_info,
                                  grpc_closure* ignored) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
+  GRPC_ERROR_UNREF(calld->recv_initial_metadata_ready_error);
   if (calld->have_read_stream) {
     calld->read_stream->Orphan();
   }
