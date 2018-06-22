@@ -105,7 +105,7 @@ class ThreadInternalsPosix
 
     GPR_ASSERT(pthread_attr_destroy(&attr) == 0);
 
-    if (!success) {
+    if (!(*success)) {
       /* don't use gpr_free, as this was allocated using malloc (see above) */
       free(info);
       grpc_core::Fork::DecThreadCount();
