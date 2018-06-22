@@ -2772,6 +2772,28 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
+    "name": "bm_channel", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_channel.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc++_test_config", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
+      "grpc_benchmark", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
     "name": "bm_chttp2_hpack", 
     "src": [
       "test/cpp/microbenchmarks/bm_chttp2_hpack.cc"
@@ -3116,6 +3138,27 @@
     "name": "channelz_registry_test", 
     "src": [
       "test/core/channel/channelz_registry_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_channelz_proto", 
+      "grpc++_test", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "channelz_test", 
+    "src": [
+      "test/core/channel/channelz_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -3968,26 +4011,6 @@
     "name": "json_run_localhost", 
     "src": [
       "test/cpp/qps/json_run_localhost.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
-      "grpc_test_util", 
-      "lb_load_data_store"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "lb_load_data_store_test", 
-    "src": [
-      "test/cpp/server/load_reporter/load_data_store_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -7636,23 +7659,6 @@
   }, 
   {
     "deps": [
-      "grpc++"
-    ], 
-    "headers": [
-      "src/cpp/server/load_reporter/load_data_store.h"
-    ], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "lb_load_data_store", 
-    "src": [
-      "src/cpp/server/load_reporter/load_data_store.cc", 
-      "src/cpp/server/load_reporter/load_data_store.h"
-    ], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
       "grpc", 
       "grpc++", 
       "grpc++_core_stats", 
@@ -8760,6 +8766,7 @@
       "test/core/end2end/tests/cancel_in_a_vacuum.cc", 
       "test/core/end2end/tests/cancel_test_helpers.h", 
       "test/core/end2end/tests/cancel_with_status.cc", 
+      "test/core/end2end/tests/channelz.cc", 
       "test/core/end2end/tests/compressed_payload.cc", 
       "test/core/end2end/tests/connectivity.cc", 
       "test/core/end2end/tests/default_host.cc", 
@@ -8860,6 +8867,7 @@
       "test/core/end2end/tests/cancel_in_a_vacuum.cc", 
       "test/core/end2end/tests/cancel_test_helpers.h", 
       "test/core/end2end/tests/cancel_with_status.cc", 
+      "test/core/end2end/tests/channelz.cc", 
       "test/core/end2end/tests/compressed_payload.cc", 
       "test/core/end2end/tests/connectivity.cc", 
       "test/core/end2end/tests/default_host.cc", 
@@ -9332,6 +9340,7 @@
       "src/core/lib/channel/channel_stack.cc", 
       "src/core/lib/channel/channel_stack_builder.cc", 
       "src/core/lib/channel/channel_trace.cc", 
+      "src/core/lib/channel/channelz.cc", 
       "src/core/lib/channel/channelz_registry.cc", 
       "src/core/lib/channel/connected_channel.cc", 
       "src/core/lib/channel/handshaker.cc", 
@@ -9503,6 +9512,7 @@
       "src/core/lib/channel/channel_stack.h", 
       "src/core/lib/channel/channel_stack_builder.h", 
       "src/core/lib/channel/channel_trace.h", 
+      "src/core/lib/channel/channelz.h", 
       "src/core/lib/channel/channelz_registry.h", 
       "src/core/lib/channel/connected_channel.h", 
       "src/core/lib/channel/context.h", 
@@ -9652,6 +9662,7 @@
       "src/core/lib/channel/channel_stack.h", 
       "src/core/lib/channel/channel_stack_builder.h", 
       "src/core/lib/channel/channel_trace.h", 
+      "src/core/lib/channel/channelz.h", 
       "src/core/lib/channel/channelz_registry.h", 
       "src/core/lib/channel/connected_channel.h", 
       "src/core/lib/channel/context.h", 

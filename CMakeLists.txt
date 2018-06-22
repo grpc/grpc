@@ -39,6 +39,7 @@ set(gRPC_INSTALL_SHAREDIR "share/grpc" CACHE STRING "Installation directory for 
 # Options
 option(gRPC_BUILD_TESTS "Build tests" OFF)
 option(gRPC_BUILD_CODEGEN "Build codegen" ON)
+option(gRPC_BUILD_CSHARP_EXT "Build C# extensions" ON)
 
 set(gRPC_INSTALL_default ON)
 if (NOT CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
@@ -503,6 +504,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx bm_call_create)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_cxx bm_channel)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx bm_chttp2_hpack)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -543,6 +547,7 @@ add_dependencies(buildtests_cxx channel_arguments_test)
 add_dependencies(buildtests_cxx channel_filter_test)
 add_dependencies(buildtests_cxx channel_trace_test)
 add_dependencies(buildtests_cxx channelz_registry_test)
+add_dependencies(buildtests_cxx channelz_test)
 add_dependencies(buildtests_cxx check_gcp_environment_linux_test)
 add_dependencies(buildtests_cxx check_gcp_environment_windows_test)
 add_dependencies(buildtests_cxx chttp2_settings_timeout_test)
@@ -594,7 +599,6 @@ endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx json_run_localhost)
 endif()
-add_dependencies(buildtests_cxx lb_load_data_store_test)
 add_dependencies(buildtests_cxx memory_test)
 add_dependencies(buildtests_cxx metrics_client)
 add_dependencies(buildtests_cxx mock_test)
@@ -935,6 +939,7 @@ add_library(grpc
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
   src/core/lib/channel/channel_trace.cc
+  src/core/lib/channel/channelz.cc
   src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/handshaker.cc
@@ -1330,6 +1335,7 @@ add_library(grpc_cronet
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
   src/core/lib/channel/channel_trace.cc
+  src/core/lib/channel/channelz.cc
   src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/handshaker.cc
@@ -1716,6 +1722,7 @@ add_library(grpc_test_util
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
   src/core/lib/channel/channel_trace.cc
+  src/core/lib/channel/channelz.cc
   src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/handshaker.cc
@@ -2021,6 +2028,7 @@ add_library(grpc_test_util_unsecure
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
   src/core/lib/channel/channel_trace.cc
+  src/core/lib/channel/channelz.cc
   src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/handshaker.cc
@@ -2305,6 +2313,7 @@ add_library(grpc_unsecure
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
   src/core/lib/channel/channel_trace.cc
+  src/core/lib/channel/channelz.cc
   src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/handshaker.cc
@@ -3137,6 +3146,7 @@ add_library(grpc++_cronet
   src/core/lib/channel/channel_stack.cc
   src/core/lib/channel/channel_stack_builder.cc
   src/core/lib/channel/channel_trace.cc
+  src/core/lib/channel/channelz.cc
   src/core/lib/channel/channelz_registry.cc
   src/core/lib/channel/connected_channel.cc
   src/core/lib/channel/handshaker.cc
@@ -5020,50 +5030,6 @@ target_link_libraries(interop_server_main
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_library(lb_load_data_store
-  src/cpp/server/load_reporter/load_data_store.cc
-)
-
-if(WIN32 AND MSVC)
-  set_target_properties(lb_load_data_store PROPERTIES COMPILE_PDB_NAME "lb_load_data_store"
-    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
-  )
-  if (gRPC_INSTALL)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/lb_load_data_store.pdb
-      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
-    )
-  endif()
-endif()
-
-
-target_include_directories(lb_load_data_store
-  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE third_party/googletest/googletest/include
-  PRIVATE third_party/googletest/googletest
-  PRIVATE third_party/googletest/googlemock/include
-  PRIVATE third_party/googletest/googlemock
-  PRIVATE ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(lb_load_data_store
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
 if (gRPC_BUILD_CODEGEN)
 add_library(qps
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.cc
@@ -5170,6 +5136,7 @@ target_link_libraries(qps
 endif (gRPC_BUILD_CODEGEN)
 
 endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_CSHARP_EXT)
 
 add_library(grpc_csharp_ext SHARED
   src/csharp/ext/grpc_csharp_ext.c
@@ -5216,6 +5183,7 @@ if (gRPC_INSTALL)
   )
 endif()
 
+endif (gRPC_BUILD_CSHARP_EXT)
 if (gRPC_BUILD_TESTS)
 
 add_library(bad_client_test
@@ -5316,6 +5284,7 @@ add_library(end2end_tests
   test/core/end2end/tests/cancel_before_invoke.cc
   test/core/end2end/tests/cancel_in_a_vacuum.cc
   test/core/end2end/tests/cancel_with_status.cc
+  test/core/end2end/tests/channelz.cc
   test/core/end2end/tests/compressed_payload.cc
   test/core/end2end/tests/connectivity.cc
   test/core/end2end/tests/default_host.cc
@@ -5436,6 +5405,7 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/cancel_before_invoke.cc
   test/core/end2end/tests/cancel_in_a_vacuum.cc
   test/core/end2end/tests/cancel_with_status.cc
+  test/core/end2end/tests/channelz.cc
   test/core/end2end/tests/compressed_payload.cc
   test/core/end2end/tests/connectivity.cc
   test/core/end2end/tests/default_host.cc
@@ -10060,6 +10030,51 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
+add_executable(bm_channel
+  test/cpp/microbenchmarks/bm_channel.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(bm_channel
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(bm_channel
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_benchmark
+  ${_gRPC_BENCHMARK_LIBRARIES}
+  grpc++_test_util_unsecure
+  grpc_test_util_unsecure
+  grpc++_unsecure
+  grpc_unsecure
+  gpr_test_util
+  gpr
+  grpc++_test_config
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif()
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
 add_executable(bm_chttp2_hpack
   test/cpp/microbenchmarks/bm_chttp2_hpack.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -10784,6 +10799,53 @@ target_include_directories(channelz_registry_test
 )
 
 target_link_libraries(channelz_registry_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc++_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(channelz_test
+  test/core/channel/channelz_test.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.h
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/channelz/channelz.proto
+)
+
+target_include_directories(channelz_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(channelz_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -12673,47 +12735,6 @@ target_link_libraries(json_run_localhost
 )
 
 endif()
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(lb_load_data_store_test
-  test/cpp/server/load_reporter/load_data_store_test.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-
-target_include_directories(lb_load_data_store_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE third_party/googletest/googletest/include
-  PRIVATE third_party/googletest/googletest
-  PRIVATE third_party/googletest/googlemock/include
-  PRIVATE third_party/googletest/googlemock
-  PRIVATE ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(lb_load_data_store_test
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  lb_load_data_store
-  grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr_test_util
-  gpr
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 

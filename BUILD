@@ -29,8 +29,8 @@ package(
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
-    "grpc_proto_plugin",
     "grpc_generate_one_off_targets",
+    "grpc_proto_plugin",
 )
 
 config_setting(
@@ -675,6 +675,7 @@ grpc_cc_library(
         "src/core/lib/channel/channel_stack.cc",
         "src/core/lib/channel/channel_stack_builder.cc",
         "src/core/lib/channel/channel_trace.cc",
+        "src/core/lib/channel/channelz.cc",
         "src/core/lib/channel/channelz_registry.cc",
         "src/core/lib/channel/connected_channel.cc",
         "src/core/lib/channel/handshaker.cc",
@@ -822,6 +823,7 @@ grpc_cc_library(
         "src/core/lib/channel/channel_stack.h",
         "src/core/lib/channel/channel_stack_builder.h",
         "src/core/lib/channel/channel_trace.h",
+        "src/core/lib/channel/channelz.h",
         "src/core/lib/channel/channelz_registry.h",
         "src/core/lib/channel/connected_channel.h",
         "src/core/lib/channel/context.h",
@@ -1306,11 +1308,49 @@ grpc_cc_library(
         "src/cpp/server/load_reporter/load_data_store.cc",
     ],
     hdrs = [
+        "src/cpp/server/load_reporter/constants.h",
         "src/cpp/server/load_reporter/load_data_store.h",
     ],
     language = "c++",
     deps = [
         "grpc++",
+    ],
+)
+
+grpc_cc_library(
+    name = "lb_get_cpu_stats",
+    srcs = [
+        "src/cpp/server/load_reporter/get_cpu_stats_linux.cc",
+        "src/cpp/server/load_reporter/get_cpu_stats_macos.cc",
+        "src/cpp/server/load_reporter/get_cpu_stats_unsupported.cc",
+        "src/cpp/server/load_reporter/get_cpu_stats_windows.cc",
+    ],
+    hdrs = [
+        "src/cpp/server/load_reporter/get_cpu_stats.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc++",
+    ],
+)
+
+grpc_cc_library(
+    name = "lb_load_reporter",
+    srcs = [
+        "src/cpp/server/load_reporter/load_reporter.cc",
+    ],
+    hdrs = [
+        "src/cpp/server/load_reporter/constants.h",
+        "src/cpp/server/load_reporter/load_reporter.h",
+    ],
+    external_deps = [
+        "opencensus-stats",
+    ],
+    language = "c++",
+    deps = [
+        "lb_get_cpu_stats",
+        "lb_load_data_store",
+        "//src/proto/grpc/lb/v1:load_reporter_proto",
     ],
 )
 
@@ -1737,11 +1777,11 @@ grpc_cc_library(
         "src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.h",
         "src/core/tsi/alts/handshaker/transport_security_common_api.h",
     ],
-    public_hdrs = GRPC_SECURE_PUBLIC_HDRS, 
     external_deps = [
         "nanopb",
     ],
     language = "c++",
+    public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
     deps = [
         "alts_proto",
         "gpr",
@@ -1990,33 +2030,33 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_opencensus_plugin",
     srcs = [
-        "src/cpp/ext/filters/census/client_filter.cc",
-        "src/cpp/ext/filters/census/server_filter.cc",
         "src/cpp/ext/filters/census/channel_filter.cc",
+        "src/cpp/ext/filters/census/client_filter.cc",
         "src/cpp/ext/filters/census/context.cc",
         "src/cpp/ext/filters/census/grpc_context.cc",
         "src/cpp/ext/filters/census/grpc_plugin.cc",
         "src/cpp/ext/filters/census/measures.cc",
         "src/cpp/ext/filters/census/rpc_encoding.cc",
+        "src/cpp/ext/filters/census/server_filter.cc",
         "src/cpp/ext/filters/census/views.cc",
     ],
     hdrs = [
         "include/grpcpp/opencensus.h",
-        "src/cpp/ext/filters/census/client_filter.h",
-        "src/cpp/ext/filters/census/server_filter.h",
         "src/cpp/ext/filters/census/channel_filter.h",
+        "src/cpp/ext/filters/census/client_filter.h",
         "src/cpp/ext/filters/census/context.h",
         "src/cpp/ext/filters/census/grpc_plugin.h",
         "src/cpp/ext/filters/census/measures.h",
         "src/cpp/ext/filters/census/rpc_encoding.h",
+        "src/cpp/ext/filters/census/server_filter.h",
     ],
-    language = "c++",
     external_deps = [
         "absl-base",
         "absl-time",
         "opencensus-trace",
         "opencensus-stats",
     ],
+    language = "c++",
     deps = [
         ":census",
         ":grpc++",
