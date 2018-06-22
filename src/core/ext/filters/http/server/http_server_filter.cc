@@ -324,14 +324,15 @@ static void hs_recv_trailing_metadata_ready(void* user_data, grpc_error* err) {
   if (calld->recv_initial_metadata_ready_error != GRPC_ERROR_NONE) {
     if (err == GRPC_ERROR_NONE) {
       err = GRPC_ERROR_REF(calld->recv_initial_metadata_ready_error);
-    } else {
+    } else if (err != calld->recv_initial_metadata_ready_error) {
       err = grpc_error_add_child(err, calld->recv_initial_metadata_ready_error);
+    } else {
+      err = GRPC_ERROR_REF(err);
     }
-    GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready, err);
   } else {
-    GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready,
-                     GRPC_ERROR_REF(err));
+    err = GRPC_ERROR_REF(err);
   }
+  GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready, err);
 }
 
 static grpc_error* hs_mutate_op(grpc_call_element* elem,

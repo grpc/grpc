@@ -140,7 +140,6 @@ static void recv_message_ready(void* user_data, grpc_error* error) {
       error = new_error;
     } else {
       error = grpc_error_add_child(error, new_error);
-      GRPC_ERROR_UNREF(new_error);
     }
     calld->error = GRPC_ERROR_REF(error);
     gpr_free(message_string);
@@ -159,8 +158,10 @@ static void recv_trailing_metadata_ready(void* user_data, grpc_error* error) {
   if (calld->error != GRPC_ERROR_NONE) {
     if (error == GRPC_ERROR_NONE) {
       error = GRPC_ERROR_REF(calld->error);
+    } else if (error != calld->error) {
+      error = grpc_error_add_child(error, GRPC_ERROR_REF(calld->error));
     } else {
-      error = grpc_error_add_child(error, calld->error);
+      error = GRPC_ERROR_REF(error);
     }
   } else {
     error = GRPC_ERROR_REF(error);

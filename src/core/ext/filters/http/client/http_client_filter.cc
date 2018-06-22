@@ -167,7 +167,7 @@ static void recv_trailing_metadata_ready(void* user_data, grpc_error* error) {
   if (calld->recv_initial_metadata_error != GRPC_ERROR_NONE) {
     if (error == GRPC_ERROR_NONE) {
       error = GRPC_ERROR_REF(calld->recv_initial_metadata_error);
-    } else {
+    } else if (error != calld->recv_initial_metadata_error) {
       error = grpc_error_add_child(error, calld->recv_initial_metadata_error);
     }
   }
