@@ -840,7 +840,6 @@ include/grpc/impl/codegen/sync_posix.h \
 include/grpc/impl/codegen/sync_posix.h \
 include/grpc/impl/codegen/sync_windows.h \
 include/grpc/impl/codegen/sync_windows.h \
-include/grpc/load_reporting.h \
 include/grpc/slice.h \
 include/grpc/slice_buffer.h \
 include/grpc/status.h \
@@ -891,6 +890,8 @@ src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc \
 src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h \
 src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc \
 src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h \
+src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c \
+src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c \
 src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
 src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h \
 src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
@@ -946,10 +947,6 @@ src/core/ext/filters/http/message_compress/message_compress_filter.cc \
 src/core/ext/filters/http/message_compress/message_compress_filter.h \
 src/core/ext/filters/http/server/http_server_filter.cc \
 src/core/ext/filters/http/server/http_server_filter.h \
-src/core/ext/filters/load_reporting/server_load_reporting_filter.cc \
-src/core/ext/filters/load_reporting/server_load_reporting_filter.h \
-src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc \
-src/core/ext/filters/load_reporting/server_load_reporting_plugin.h \
 src/core/ext/filters/max_age/max_age_filter.cc \
 src/core/ext/filters/max_age/max_age_filter.h \
 src/core/ext/filters/message_size/message_size_filter.cc \

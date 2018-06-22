@@ -342,6 +342,8 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\grpclb_channel_secure.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\grpclb_client_stats.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\load_balancer_api.cc " +
+    "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\proto\\grpc\\lb\\v1\\google\\protobuf\\duration.pb.c " +
+    "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\proto\\grpc\\lb\\v1\\google\\protobuf\\timestamp.pb.c " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\proto\\grpc\\lb\\v1\\load_balancer.pb.c " +
     "src\\core\\ext\\filters\\client_channel\\resolver\\fake\\fake_resolver.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\pick_first\\pick_first.cc " +
@@ -353,8 +355,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\c_ares\\grpc_ares_wrapper_fallback.cc " +
     "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\native\\dns_resolver.cc " +
     "src\\core\\ext\\filters\\client_channel\\resolver\\sockaddr\\sockaddr_resolver.cc " +
-    "src\\core\\ext\\filters\\load_reporting\\server_load_reporting_filter.cc " +
-    "src\\core\\ext\\filters\\load_reporting\\server_load_reporting_plugin.cc " +
     "src\\cpp\\ext\\filters\\census\\grpc_context.cc " +
     "src\\core\\ext\\filters\\max_age\\max_age_filter.cc " +
     "src\\core\\ext\\filters\\message_size\\message_size_filter.cc " +
@@ -663,6 +663,8 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\proto\\grpc");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\proto\\grpc\\lb");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\proto\\grpc\\lb\\v1");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\proto\\grpc\\lb\\v1\\google");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\proto\\grpc\\lb\\v1\\google\\protobuf");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\pick_first");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\round_robin");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\resolver");
@@ -676,7 +678,6 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\http\\client");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\http\\message_compress");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\http\\server");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\load_reporting");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\max_age");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\message_size");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\workarounds");

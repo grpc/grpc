@@ -987,7 +987,6 @@ grpc_cc_library(
         "grpc_client_authority_filter",
         "grpc_lb_policy_pick_first",
         "grpc_lb_policy_round_robin",
-        "grpc_server_load_reporting",
         "grpc_max_age_filter",
         "grpc_message_size_filter",
         "grpc_resolver_dns_ares",
@@ -1198,6 +1197,8 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c",
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h",
@@ -1206,6 +1207,8 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h",
     ],
     external_deps = [
         "nanopb",
@@ -1227,6 +1230,8 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c",
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h",
@@ -1235,6 +1240,8 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h",
     ],
     external_deps = [
         "nanopb",
@@ -1287,18 +1294,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_server_load_reporting",
+    name = "lb_server_load_reporting_filter",
     srcs = [
         "src/core/ext/filters/load_reporting/server_load_reporting_filter.cc",
-        "src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc",
     ],
     hdrs = [
+        "src/core/ext/filters/load_reporting/registered_opencensus_objects.h",
         "src/core/ext/filters/load_reporting/server_load_reporting_filter.h",
-        "src/core/ext/filters/load_reporting/server_load_reporting_plugin.h",
+        "src/cpp/server/load_reporter/constants.h",
+    ],
+    external_deps = [
+        "opencensus-stats",
     ],
     language = "c++",
     deps = [
-        "grpc_base",
+        "grpc++_base",
+        "grpc_secure",
     ],
 )
 

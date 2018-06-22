@@ -178,7 +178,6 @@
     <file baseinstalldir="/" name="include/grpc/grpc.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc_posix.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc_security_constants.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/load_reporting.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/slice.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/slice_buffer.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/status.h" role="src" />
@@ -436,8 +435,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/subchannel_list.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/load_reporting/server_load_reporting_filter.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/load_reporting/server_load_reporting_plugin.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/max_age/max_age_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/message_size/message_size_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/client_authority_filter.h" role="src" />
@@ -727,6 +724,8 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc" role="src" />
@@ -738,8 +737,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/load_reporting/server_load_reporting_filter.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc" role="src" />
     <file baseinstalldir="/" name="src/cpp/ext/filters/census/grpc_context.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/max_age/max_age_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/message_size/message_size_filter.cc" role="src" />
