@@ -172,7 +172,7 @@ The channel and stub creation code is the same as the sync client.
 
     ```cpp
     CompletionQueue cq;
-    auto rpc = stub->AsyncSayHello(&context, request, &cq);
+    auto rpc = stub->PrepareAsyncSayHello(&context, request, &cq);
     ```
 
 - Ask for reply and final status, with a unique tag
