@@ -70,7 +70,6 @@ class EchoTestServiceImpl : public EchoTestService::Service {
 class ServerLoadReportingEnd2endTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    grpc::load_reporter::EnableServerLoadReporting();
     server_address_ =
         "localhost:" + std::to_string(grpc_pick_unused_port_or_die());
     server_ =
@@ -185,6 +184,7 @@ TEST_F(ServerLoadReportingEnd2endTest, BasicReport) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  grpc::load_reporter::EnableServerLoadReporting();
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

@@ -162,7 +162,7 @@ void ServerLoadReportingCallData::GetCensusSafeClientIpString(
     grpc_sockaddr_in6* addr6 = reinterpret_cast<grpc_sockaddr_in6*>(addr);
     *client_ip_string = static_cast<char*>(gpr_malloc(32));
     for (size_t i = 0; i < 16; ++i) {
-      sprintf(*client_ip_string + i, "%02x",
+      sprintf(*client_ip_string + i * 2, "%02x",
               addr6->sin6_addr.__in6_u.__u6_addr8[i]);
     }
     *size = 32;
