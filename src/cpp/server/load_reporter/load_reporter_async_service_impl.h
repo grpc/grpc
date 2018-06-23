@@ -29,12 +29,6 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "src/cpp/server/load_reporter/load_reporter.h"
 
-constexpr uint32_t kFeedbackSampleWindowSeconds = 10;
-constexpr uint32_t kFetchAndSampleIntervalSeconds = 1;
-// TODO(juanlishen): Update the version number with the PR number every time
-// there is any change to the server load reporter.
-constexpr uint32_t kVersion = 14793;
-
 namespace grpc {
 namespace load_reporter {
 

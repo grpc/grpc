@@ -24,6 +24,13 @@
 namespace grpc {
 namespace load_reporter {
 
+// TODO(juanlishen): Update the version number with the PR number every time
+// there is any change to the server load reporter.
+constexpr uint32_t kVersion = 15853;
+
+constexpr uint32_t kFeedbackSampleWindowSeconds = 10;
+constexpr uint32_t kFetchAndSampleIntervalSeconds = 1;
+
 constexpr size_t kLbIdLength = 8;
 constexpr size_t kIpv4AddressLength = 8;
 constexpr size_t kIpv6AddressLength = 32;
