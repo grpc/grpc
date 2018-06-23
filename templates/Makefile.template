@@ -40,7 +40,7 @@
     CHECK_WARNINGS=PREFERRED_WARNINGS + ['no-shift-negative-value', 'no-c++14-compat', 'no-unused-but-set-variable']
 
     def warning_var(fmt, warning):
-      return fmt % warning.replace('-', '_').upper()
+      return fmt % warning.replace('-', '_').replace('+', 'X').upper()
 
     def neg_warning(warning):
       if warning[0:3] == 'no-':
