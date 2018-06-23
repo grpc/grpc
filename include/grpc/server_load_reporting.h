@@ -41,4 +41,4 @@ namespace load_reporter {
 }
 }  // namespace grpc
 
-#endif  // GRPC_SERVER_LOAD_REPORTING_H
+#endif /* GRPC_SERVER_LOAD_REPORTING_H */

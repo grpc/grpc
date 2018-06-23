@@ -24,7 +24,8 @@
 namespace grpc {
 namespace load_reporter {
 
-::grpc_core::DebugOnlyTraceFlag lr_tracer(false, "server_load_reporting");
+::grpc_core::DebugOnlyTraceFlag grpc_trace_server_load_reporting_refcount(
+    false, "server_load_reporting_refcount");
 
 LoadReporterAsyncServiceImpl::LoadReporterAsyncServiceImpl(
     std::unique_ptr<ServerCompletionQueue> cq)
@@ -339,23 +340,27 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnDoneNotified(bool ok) {
 
 void LoadReporterAsyncServiceImpl::ReportLoadHandler::Ref(
     const grpc_core::DebugLocation& location, const char* reason) {
-  if (location.Log() && lr_tracer.enabled()) {
+#ifndef NDEBUG
+  if (location.Log() && grpc_trace_server_load_reporting_refcount.enabled()) {
     gpr_atm old_refs = gpr_atm_no_barrier_load(&refs_.count);
     gpr_log(GPR_INFO, "%s:%p %s:%d ref %" PRIdPTR " -> %" PRIdPTR " %s",
-            lr_tracer.name(), this, location.file(), location.line(), old_refs,
-            old_refs + 1, reason);
+            grpc_trace_server_load_reporting_refcount.name(), this,
+            location.file(), location.line(), old_refs, old_refs + 1, reason);
   }
+#endif
   gpr_ref(&refs_);
 }
 
 void LoadReporterAsyncServiceImpl::ReportLoadHandler::Unref(
     const grpc_core::DebugLocation& location, const char* reason) {
-  if (location.Log() && lr_tracer.enabled()) {
+#ifndef NDEBUG
+  if (location.Log() && grpc_trace_server_load_reporting_refcount.enabled()) {
     gpr_atm old_refs = gpr_atm_no_barrier_load(&refs_.count);
     gpr_log(GPR_INFO, "%s:%p %s:%d unref %" PRIdPTR " -> %" PRIdPTR " %s",
-            lr_tracer.name(), this, location.file(), location.line(), old_refs,
-            old_refs - 1, reason);
+            grpc_trace_server_load_reporting_refcount.name(), this,
+            location.file(), location.line(), old_refs, old_refs - 1, reason);
   }
+#endif
   if (gpr_unref(&refs_)) {
     delete this;
   }
