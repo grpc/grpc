@@ -37,7 +37,7 @@
 
     # warnings we'd like, but that dont exist in all compilers
     PREFERRED_WARNINGS=['shadow', 'extra-semi']
-    CHECK_WARNINGS=PREFERRED_WARNINGS + ['no-shift-negative-value', 'no-c++14-compat', 'no-unused-but-set-variable']
+    CHECK_WARNINGS=PREFERRED_WARNINGS + ['no-shift-negative-value', 'no-unused-but-set-variable']
 
     def warning_var(fmt, warning):
       return fmt % warning.replace('-', '_').replace('+', 'X').upper()
@@ -189,6 +189,12 @@
   TMPOUT = /dev/null
   else
   TMPOUT = `mktemp /tmp/test-out-XXXXXX`
+  endif
+
+  CHECK_NO_CXX14_COMPAT_WORKS_CMD = $(CC) -std=c++11 -Werror -Wno-c++14-compat -o $(TMPOUT) -c test/build/no-c++14-compat.cc
+  HAS_WORKING_NO_CXX14_COMPAT = $(shell $(CHECK_NO_CXX14_COMPAT_WORKS_CMD) 2> /dev/null && echo true || echo false)
+  ifeq ($(HAS_WORKING_NO_CXX14_COMPAT),true)
+  W_NO_CXX14_COMPAT=-Wno-c++14-compat
   endif
 
   %for warning in CHECK_WARNINGS:
