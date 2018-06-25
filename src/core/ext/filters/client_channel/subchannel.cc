@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <cstring>
 
+#include <grpc/impl/codegen/sync.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
@@ -76,7 +77,7 @@ struct grpc_subchannel {
   grpc_connector* connector;
 
   /** refcount */
-  gpr_atm refs;
+  gpr_refcount refs;
 
   /** non-transport related channel filters */
   const grpc_channel_filter** filters;
@@ -163,8 +164,8 @@ grpc_subchannel_key* grpc_subchannel_get_key(grpc_subchannel* c) {
   return c->key;
 }
 
-bool grpc_subchannel_last_ref(grpc_subchannel* c) {
-  return gpr_atm_acq_load(&c->refs) == 1;
+bool grpc_subchannel_is_unused(grpc_subchannel* c) {
+  return gpr_ref_is_unique(&c->refs);
 }
 
 static void subchannel_destroy(void* arg, grpc_error* error) {
@@ -181,28 +182,28 @@ static void subchannel_destroy(void* arg, grpc_error* error) {
 
 grpc_subchannel* grpc_subchannel_ref(
     grpc_subchannel* c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
-  gpr_atm old_refs = gpr_atm_no_barrier_fetch_add(&c->refs, 1);
 #ifndef NDEBUG
+  gpr_atm old_refs = gpr_atm_no_barrier_load(&c->refs.count);
   if (grpc_trace_stream_refcount.enabled()) {
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "SUBCHANNEL: %p %" PRIdPTR " -> %" PRIdPTR " [%s]", c, old_refs,
             old_refs + 1, reason);
   }
 #endif
-  GPR_ASSERT(old_refs != 0);
+  gpr_ref_non_zero(&c->refs);
   return c;
 }
 
 void grpc_subchannel_unref(grpc_subchannel* c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
-  gpr_atm old_refs = gpr_atm_full_fetch_add(&c->refs, -1);
 #ifndef NDEBUG
+  gpr_atm old_refs = gpr_atm_no_barrier_load(&c->refs.count);
   if (grpc_trace_stream_refcount.enabled()) {
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "SUBCHANNEL: %p %" PRIdPTR " -> %" PRIdPTR " [%s]", c, old_refs,
             old_refs - 1, reason);
   }
 #endif
-  if (old_refs == 1) {
+  if (gpr_unref(&c->refs)) {
     gpr_mu_lock(&c->mu);
     GPR_ASSERT(!c->disconnected);
     c->disconnected = true;
@@ -276,7 +277,7 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
   GRPC_STATS_INC_CLIENT_SUBCHANNELS_CREATED();
   c = static_cast<grpc_subchannel*>(gpr_zalloc(sizeof(*c)));
   c->key = key;
-  gpr_atm_no_barrier_store(&c->refs, 1);
+  gpr_ref_init(&c->refs, 1);
   c->connector = connector;
   grpc_connector_ref(c->connector);
   c->num_filters = args->filter_count;

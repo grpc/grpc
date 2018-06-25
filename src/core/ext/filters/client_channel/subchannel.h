@@ -151,7 +151,7 @@ grpc_call_stack* grpc_subchannel_call_get_call_stack(
 grpc_subchannel_key* grpc_subchannel_get_key(grpc_subchannel* c);
 
 /** Returns whether the subchannel only has one ref left. */
-bool grpc_subchannel_last_ref(grpc_subchannel* c);
+bool grpc_subchannel_is_unused(grpc_subchannel* c);
 
 struct grpc_subchannel_args {
   /* When updating this struct, also update subchannel_index.c */

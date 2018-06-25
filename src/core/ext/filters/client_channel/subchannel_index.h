@@ -45,10 +45,6 @@ grpc_subchannel* grpc_subchannel_index_find(grpc_subchannel_key* key);
 grpc_subchannel* grpc_subchannel_index_register(grpc_subchannel_key* key,
                                                 grpc_subchannel* constructed);
 
-/** Remove \a constructed as the registered subchannel for \a key. */
-void grpc_subchannel_index_unregister(grpc_subchannel_key* key,
-                                      grpc_subchannel* constructed);
-
 int grpc_subchannel_key_compare(const grpc_subchannel_key* a,
                                 const grpc_subchannel_key* b);
 
