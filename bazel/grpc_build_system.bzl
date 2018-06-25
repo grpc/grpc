@@ -60,10 +60,9 @@ def _maybe_update_cc_library_hdrs(hdrs):
 def grpc_cc_library(name, srcs = [], public_hdrs = [], hdrs = [],
                     external_deps = [], deps = [], standalone = False,
                     language = "C++", testonly = False, visibility = None,
-                    alwayslink = 0, data = []):
-  copts = []
+                    alwayslink = 0, data = [], copts = []):
   if language.upper() == "C":
-    copts = if_not_windows(["-std=c99"])
+    copts += if_not_windows(["-std=c99"])
   native.cc_library(
     name = name,
     srcs = srcs,
@@ -109,10 +108,9 @@ def grpc_proto_library(name, srcs = [], deps = [], well_known_protos = False,
     generate_mocks = generate_mocks,
   )
 
-def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = "moderate", tags = []):
-  copts = []
+def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = "moderate", tags = [], copts = []):
   if language.upper() == "C":
-    copts = if_not_windows(["-std=c99"])
+    copts += if_not_windows(["-std=c99"])
   args = {
     'name': name,
     'srcs': srcs,
@@ -144,10 +142,9 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
   else:
     native.cc_test(**args)
 
-def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = []):
-  copts = []
+def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = [], copts = []):
   if language.upper() == "C":
-    copts = ["-std=c99"]
+    copts += ["-std=c99"]
   native.cc_binary(
     name = name,
     srcs = srcs,
