@@ -71,6 +71,8 @@ void grpc_call_internal_unref(grpc_call* call);
 #define GRPC_CALL_INTERNAL_UNREF(call, reason) grpc_call_internal_unref(call)
 #endif
 
+gpr_arena* grpc_call_get_arena(grpc_call* call);
+
 grpc_call_stack* grpc_call_get_call_stack(grpc_call* call);
 
 grpc_call_error grpc_call_start_batch_and_execute(grpc_call* call,

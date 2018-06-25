@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/arena.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/surface/api_trace.h"
@@ -99,10 +100,10 @@ void grpc_client_security_context_destroy(void* ctx) {
 }
 
 /* --- grpc_server_security_context --- */
-
-grpc_server_security_context* grpc_server_security_context_create(void) {
+grpc_server_security_context* grpc_server_security_context_create(
+    gpr_arena* arena) {
   return static_cast<grpc_server_security_context*>(
-      gpr_zalloc(sizeof(grpc_server_security_context)));
+      gpr_arena_alloc(arena, sizeof(grpc_server_security_context)));
 }
 
 void grpc_server_security_context_destroy(void* ctx) {
@@ -112,7 +113,6 @@ void grpc_server_security_context_destroy(void* ctx) {
   if (c->extension.instance != nullptr && c->extension.destroy != nullptr) {
     c->extension.destroy(c->extension.instance);
   }
-  gpr_free(ctx);
 }
 
 /* --- grpc_auth_context --- */
