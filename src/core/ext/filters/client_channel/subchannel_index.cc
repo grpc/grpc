@@ -203,15 +203,6 @@ grpc_subchannel* grpc_subchannel_index_register(grpc_subchannel_key* key,
   return c;
 }
 
-// Thread-unsafe. Only called when lock is hold.
-static void unregister_subchannel(grpc_subchannel_key* key) {
-  grpc_avl updated = grpc_avl_remove(
-      grpc_avl_ref(g_subchannel_index, grpc_core::ExecCtx::Get()), key,
-      grpc_core::ExecCtx::Get());
-  GPR_SWAP(grpc_avl, updated, g_subchannel_index);
-  grpc_avl_unref(updated, grpc_core::ExecCtx::Get());
-}
-
 static void find_unused_subchannels(
     grpc_avl_node* avl_node,
     grpc_core::InlinedVector<grpc_subchannel*, kUnusedSubchannelsInlinedSize>*
@@ -241,8 +232,12 @@ static void sweep_unused_subchannels(void* /* arg */, grpc_error* error) {
   // for an AVL tree.
   find_unused_subchannels(g_subchannel_index.root, &unused_subchannels);
   for (size_t i = 0; i < unused_subchannels.size(); ++i) {
-    grpc_subchannel* c = unused_subchannels[i];
-    unregister_subchannel(grpc_subchannel_get_key(c));
+    grpc_subchannel_key* key = grpc_subchannel_get_key(unused_subchannels[i]);
+    grpc_avl updated = grpc_avl_remove(
+        grpc_avl_ref(g_subchannel_index, grpc_core::ExecCtx::Get()), key,
+        grpc_core::ExecCtx::Get());
+    GPR_SWAP(grpc_avl, updated, g_subchannel_index);
+    grpc_avl_unref(updated, grpc_core::ExecCtx::Get());
   }
   gpr_mu_unlock(&g_mu);
   schedule_next_sweep();
