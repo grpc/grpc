@@ -44,6 +44,7 @@
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/create_auth_context.h>
+#include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/impl/codegen/metadata_map.h>
 #include <grpcpp/impl/codegen/security/auth_context.h>
 #include <grpcpp/impl/codegen/slice.h>
@@ -159,7 +160,7 @@ class InteropClientContextInspector;
 /// (see \a grpc::CreateCustomChannel).
 ///
 /// \warning ClientContext instances should \em not be reused across rpcs.
-class ClientContext {
+class ClientContext : private GrpcLibraryCodegen {
  public:
   ClientContext();
   ~ClientContext();
