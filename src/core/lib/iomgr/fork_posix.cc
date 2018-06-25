@@ -84,6 +84,11 @@ void grpc_postfork_child() {
   if (!skipped_handler) {
     grpc_core::Fork::AllowExecCtx();
     grpc_core::ExecCtx exec_ctx;
+    grpc_core::Fork::child_postfork_func reset_polling_engine =
+        grpc_core::Fork::GetResetChildPollingEngineFunc();
+    if (reset_polling_engine != nullptr) {
+      reset_polling_engine();
+    }
     grpc_timer_manager_set_threading(true);
     grpc_executor_set_threading(true);
   }
