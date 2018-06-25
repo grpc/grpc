@@ -1367,6 +1367,32 @@ libs:
   deps:
   - grpc
   secure: true
+- name: cxxabi
+  build: private
+  language: c
+  src:
+  - third_party/libcxxabi/src/abort_message.cpp
+  - third_party/libcxxabi/src/cxa_aux_runtime.cpp
+  - third_party/libcxxabi/src/cxa_default_handlers.cpp
+  - third_party/libcxxabi/src/cxa_demangle.cpp
+  - third_party/libcxxabi/src/cxa_exception_storage.cpp
+  - third_party/libcxxabi/src/cxa_guard.cpp
+  - third_party/libcxxabi/src/cxa_handlers.cpp
+  - third_party/libcxxabi/src/cxa_noexception.cpp
+  - third_party/libcxxabi/src/cxa_thread_atexit.cpp
+  - third_party/libcxxabi/src/cxa_unexpected.cpp
+  - third_party/libcxxabi/src/cxa_vector.cpp
+  - third_party/libcxxabi/src/cxa_virtual.cpp
+  - third_party/libcxxabi/src/fallback_malloc.cpp
+  - third_party/libcxxabi/src/private_typeinfo.cpp
+  - third_party/libcxxabi/src/stdlib_exception.cpp
+  - third_party/libcxxabi/src/stdlib_new_delete.cpp
+  - third_party/libcxxabi/src/stdlib_stdexcept.cpp
+  - third_party/libcxxabi/src/stdlib_typeinfo.cpp
+  build_system:
+  - Makefile
+  defaults: cxxabi
+  secure: false
 - name: gpr
   build: all
   language: c
@@ -5660,6 +5686,11 @@ defaults:
     CPPFLAGS: -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM
       -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
     CXXFLAGS: -fno-rtti -fno-exceptions
+  cxxabi:
+    CPPFLAGS: -D_LIBCPP_DISABLE_EXTERN_TEMPLATE -D_LIBCXXABI_BUILDING_LIBRARY -D_LIBCXXABI_NO_EXCEPTIONS
+      -Ithird_party/libcxxabi/include -nostdinc++ -Ithird_party/libcxx/include $(W_NO_UNUSED_BUT_SET_VARIABLE)
+      -fvisibility=hidden
+    CXXFLAGS: $(W_NO_CXX14_COMPAT)
   global:
     COREFLAGS: -fno-rtti -fno-exceptions
     CPPFLAGS: -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1

@@ -26,16 +26,18 @@ want_submodules=$(mktemp /tmp/submXXXXXX)
 
 git submodule | awk '{ print $1 }' | sort > "$submodules"
 cat << EOF | awk '{ print $1 }' | sort > "$want_submodules"
+ cc4bed2d74f7c8717e31f9579214ab52a9c9c610 third_party/abseil-cpp (cc4bed2)
  5b7683f49e1e9223cf9927b24f6fd3d6bd82e3f8 third_party/benchmark (v1.2.0)
- 70ef9596bbcc11353b9bb8d4e91478694dd21439 third_party/boringssl (fips-20170615-704-g70ef9596)
- dcd3e6e6ecddf059adb48fca45bc7346a108bdd9 third_party/boringssl-with-bazel (version_for_cocoapods_10.0-369-gdcd3e6e6)
- 30dbc81fb5ffdc98ea9b14b1918bfe4e8779b26e third_party/gflags (v2.2.0)
- ec44c6c1675c25b9827aacd08c02433cccde7780 third_party/googletest (release-1.8.0)
- b5fbb742af122b565925987e65c08957739976a7 third_party/protobuf (v3.5.2)
- cacf7f1d4e3d44d871b605da3b647f07d718623f third_party/zlib (v1.2.11)
+ 73594cde8c9a52a102c4341c244c833aa61b9c06 third_party/bloaty (remotes/origin/wide-14-g73594cd)
+ 70ef9596bbcc11353b9bb8d4e91478694dd21439 third_party/boringssl (fips-20170615-704-g70ef959)
+ dcd3e6e6ecddf059adb48fca45bc7346a108bdd9 third_party/boringssl-with-bazel (version_for_cocoapods_10.0-369-gdcd3e6e)
  3be1924221e1326df520f8498d704a5c4c8d0cce third_party/cares/cares (cares-1_13_0)
- 73594cde8c9a52a102c4341c244c833aa61b9c06 third_party/bloaty
- cc4bed2d74f7c8717e31f9579214ab52a9c9c610 third_party/abseil-cpp
+ 30dbc81fb5ffdc98ea9b14b1918bfe4e8779b26e third_party/gflags (v2.2.0-5-g30dbc81)
+ ec44c6c1675c25b9827aacd08c02433cccde7780 third_party/googletest (release-1.8.0)
+ 6599cac0965be8e5a835ab7a5684bbef033d5ad0 third_party/libcxx (heads/release_60)
+ 9245d481eb3e890f708ff2d7dadf2a10c04748ba third_party/libcxxabi (heads/release_60)
+ b5fbb742af122b565925987e65c08957739976a7 third_party/protobuf (v3.3.1-641-gb5fbb74)
+ cacf7f1d4e3d44d871b605da3b647f07d718623f third_party/zlib (v1.2.11)
 EOF
 
 diff -u "$submodules" "$want_submodules"

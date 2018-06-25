@@ -6868,6 +6868,16 @@
     "type": "lib"
   }, 
   {
+    "deps": [], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "cxxabi", 
+    "src": [], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
     "deps": [
       "gpr_base"
     ], 
