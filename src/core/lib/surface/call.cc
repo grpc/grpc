@@ -189,7 +189,7 @@ struct grpc_call {
   grpc_closure receiving_initial_metadata_ready;
   grpc_closure receiving_trailing_metadata_ready;
   uint32_t test_only_last_message_flags;
-  bool cancelled;
+  gpr_atm cancelled;
 
   grpc_closure release_call;
 
@@ -304,6 +304,7 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
       gpr_arena_alloc(arena, ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)) +
                                  channel_stack->call_stack_size));
   gpr_ref_init(&call->ext_ref, 1);
+  gpr_atm_no_barrier_store(&call->cancelled, 0);
   call->arena = arena;
   grpc_call_combiner_init(&call->call_combiner);
   *out_call = call;
@@ -646,11 +647,10 @@ static void done_termination(void* arg, grpc_error* error) {
 }
 
 static void cancel_with_error(grpc_call* c, grpc_error* error) {
-  if (c->cancelled) {
+  if (!gpr_atm_rel_cas(&c->cancelled, 0, 1)) {
     GRPC_ERROR_UNREF(error);
     return;
   }
-  c->cancelled = true;
   GRPC_CALL_INTERNAL_REF(c, "termination");
   // Inform the call combiner of the cancellation, so that it can cancel
   // any in-flight asynchronous actions that may be holding the call
