@@ -43,7 +43,7 @@ namespace grpc_core {
 // The alignment of memory returned by gpr_malloc().
 constexpr size_t kAlignmentForDefaultAllocationInBytes = 8;
 
-// Alternative to new, since we cannot use it (for fear of libstdc++)
+// Alternative to new, in order to make use of gpr_malloc / gpr_free.
 template <typename T, typename... Args>
 inline T* New(Args&&... args) {
   void* p = alignof(T) > kAlignmentForDefaultAllocationInBytes
@@ -52,7 +52,7 @@ inline T* New(Args&&... args) {
   return new (p) T(std::forward<Args>(args)...);
 }
 
-// Alternative to delete, since we cannot use it (for fear of libstdc++)
+// Alternative to delete, in order to make use of gpr_malloc / gpr_free.
 template <typename T>
 inline void Delete(T* p) {
   if (p == nullptr) return;
