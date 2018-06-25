@@ -379,6 +379,17 @@ static void tcp_do_read(grpc_tcp* tcp) {
   ssize_t read_bytes;
   size_t i;
 
+  #ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+  if (tcp->base.fork_epoch < grpc_core::Fork::GetForkEpoch()) {
+    grpc_slice_buffer_reset_and_unref_internal(tcp->incoming_buffer);
+    call_read_cb(
+        tcp, tcp_annotate_error(
+                 GRPC_ERROR_CREATE_FROM_STATIC_STRING("Socket closed due to fork"), tcp));
+    TCP_UNREF(tcp, "read");
+    return;
+  }
+  #endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+
   GPR_ASSERT(tcp->incoming_buffer->count <= MAX_READ_IOVEC);
 
   for (i = 0; i < tcp->incoming_buffer->count; i++) {
@@ -658,6 +669,18 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
     }
   }
 
+  #ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+  if (ep->fork_epoch < grpc_core::Fork::GetForkEpoch()) {
+    GRPC_CLOSURE_SCHED(
+        cb, grpc_fd_is_shutdown(tcp->em_fd)
+                ? GRPC_ERROR_NONE
+                : tcp_annotate_error(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                         "Fork triggered socket close"),
+                                     tcp));
+    return;
+  }
+  #endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+
   GPR_ASSERT(tcp->write_cb == nullptr);
 
   if (buf->length == 0) {
@@ -774,6 +797,11 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
 
   grpc_tcp* tcp = static_cast<grpc_tcp*>(gpr_malloc(sizeof(grpc_tcp)));
   tcp->base.vtable = &vtable;
+
+  #ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+  tcp->base.fork_epoch = grpc_core::Fork::GetForkEpoch();
+  #endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+
   tcp->peer_string = gpr_strdup(peer_string);
   tcp->fd = grpc_fd_wrapped_fd(em_fd);
   tcp->read_cb = nullptr;

@@ -142,6 +142,24 @@ void grpc_subchannel_index_unref(void) {
 
 void grpc_subchannel_index_ref(void) { gpr_ref_non_zero(&g_refcount); }
 
+void grpc_subchannel_index_disconnect_helper(grpc_avl_node* node) {
+  if (node == nullptr) {
+    return;
+  }
+
+  grpc_subchannel* c = static_cast<grpc_subchannel*>(node->value);
+  if (c != nullptr) {
+    grpc_subchannel_disconnect_due_to_fork(c);
+  }
+
+  grpc_subchannel_index_disconnect_helper(node->left);
+  grpc_subchannel_index_disconnect_helper(node->right);
+}
+
+void grpc_subchannel_index_disconnect_on_fork(void) {
+  grpc_subchannel_index_disconnect_helper(g_subchannel_index.root);
+}
+
 grpc_subchannel* grpc_subchannel_index_find(grpc_subchannel_key* key) {
   // Lock, and take a reference to the subchannel index.
   // We don't need to do the search under a lock as avl's are immutable.

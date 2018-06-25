@@ -92,6 +92,7 @@ class ConnectedSubchannel : public RefCountedWithTracing<ConnectedSubchannel> {
                            grpc_connectivity_state* state,
                            grpc_closure* closure);
   void Ping(grpc_closure* on_initiate, grpc_closure* on_ack);
+  void DisconnectDueToFork();
   grpc_error* CreateCall(const CallArgs& args, grpc_subchannel_call** call);
 
  private:
@@ -136,6 +137,8 @@ void grpc_subchannel_notify_on_state_change(
  * */
 grpc_core::RefCountedPtr<grpc_core::ConnectedSubchannel>
 grpc_subchannel_get_connected_subchannel(grpc_subchannel* c);
+
+void grpc_subchannel_disconnect_due_to_fork(grpc_subchannel* c);
 
 /** return the subchannel index key for \a subchannel */
 const grpc_subchannel_key* grpc_subchannel_get_key(

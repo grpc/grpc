@@ -93,6 +93,10 @@ grpc_resource_user* grpc_endpoint_get_resource_user(grpc_endpoint* endpoint);
 
 struct grpc_endpoint {
   const grpc_endpoint_vtable* vtable;
+
+  #ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+  int fork_epoch;
+  #endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
 };
 
 #endif /* GRPC_CORE_LIB_IOMGR_ENDPOINT_H */

@@ -64,6 +64,8 @@ void grpc_subchannel_index_ref(void);
     to zero, unref the subchannel index and destroy its mutex. */
 void grpc_subchannel_index_unref(void);
 
+void grpc_subchannel_index_disconnect_on_fork(void);
+
 /** \em TEST ONLY.
  * If \a force_creation is true, all key comparisons will be false, resulting in
  * new subchannels always being created. Otherwise, the keys will be compared as
