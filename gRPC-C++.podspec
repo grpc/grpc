@@ -24,7 +24,7 @@ Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
   # version = '1.14.0-dev'
-  version = '0.0.2'
+  version = '0.0.3'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -662,6 +662,17 @@ Pod::Spec.new do |s|
                               'src/core/lib/transport/transport_impl.h',
                               'src/core/lib/debug/trace.h',
                               'src/core/ext/transport/inproc/inproc_transport.h'
+  end
+
+  s.subspec 'Protobuf' do |ss|
+    ss.header_mappings_dir = 'include/grpcpp'
+    ss.dependency "#{s.name}/Interface", version
+
+    ss.source_files = 'include/grpcpp/impl/codegen/proto_buffer_reader.h',
+                      'include/grpcpp/impl/codegen/proto_buffer_writer.h',
+                      'include/grpcpp/impl/codegen/proto_utils.h',
+                      'include/grpcpp/impl/codegen/config_protobuf.h',
+                      'include/grpcpp/impl/codegen/config_protobuf.h'
   end
 
   s.prepare_command = <<-END_OF_COMMAND
