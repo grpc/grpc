@@ -439,7 +439,6 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
       error = grpc_error_set_str(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("cannot parse authority"),
           GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
-      gpr_free(r);
       goto error_cleanup;
     }
     int status = ares_set_servers_ports(*channel, &r->dns_server_addr);
@@ -449,7 +448,6 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
                    ares_strerror(status));
       error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg);
       gpr_free(error_msg);
-      gpr_free(r);
       goto error_cleanup;
     }
   }
