@@ -85,7 +85,7 @@ void grpc_auth_context_release(grpc_auth_context* context) {
 grpc_client_security_context* grpc_client_security_context_create(
     gpr_arena* arena) {
   return static_cast<grpc_client_security_context*>(
-      gpr_arena_alloc(sizeof(grpc_client_security_context)));
+      gpr_arena_alloc(arena, sizeof(grpc_client_security_context)));
 }
 
 void grpc_client_security_context_destroy(void* ctx) {
