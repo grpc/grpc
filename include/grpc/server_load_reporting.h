@@ -21,6 +21,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 namespace grpc {
 namespace load_reporter {
 
@@ -40,5 +44,9 @@ namespace load_reporter {
 #define GRPC_LB_COST_MD_KEY "lb-cost-bin"
 }
 }  // namespace grpc
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GRPC_SERVER_LOAD_REPORTING_H */
