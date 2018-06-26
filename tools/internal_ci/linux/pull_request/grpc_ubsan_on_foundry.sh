@@ -62,10 +62,6 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
   --extra_execution_platforms=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0:rbe_ubuntu1604 \
   -- //test/... || FAILED="true"
 
-# Sleep to let ResultStore finish writing results before querying
-sleep 60
-python ./tools/run_tests/python_utils/upload_rbe_results.py
-
 if [ "$FAILED" != "" ]
 then
   exit 1
