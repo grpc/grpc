@@ -25,19 +25,20 @@
 extern "C" {
 #endif
 
-// Metadata key for the gRPC LB load balancing token.
-// The value corresponding to this key is an opaque token associated with each
-// server in the serverlist, which is sent to the client from the balancer. The
-// client must include the token of the picked server into the initial metadata
-// when it starts a call to that server. The token is used by the server to
-// verify the request and to allow the server to report load to the gRPC LB
-// system. The token is also used in client stats for reporting dropped calls.
+/** Metadata key for the gRPC LB load balancing token.
+    The value corresponding to this key is an opaque token associated with each
+    server in the serverlist, which is sent to the client from the balancer. The
+    client must include the token of the picked server into the initial metadata
+    when it starts a call to that server. The token is used by the server to
+    verify the request and to allow the server to report load to the gRPC LB
+    system. The token is also used in client stats for reporting dropped calls.
+ */
 #define GRPC_LB_TOKEN_MD_KEY "lb-token"
 
-// Metadata key for the gRPC LB cost reporting.
-// The value corresponding to this key is an opaque binary blob reported by the
-// server as part of its trailing metadata containing cost information for the
-// call.
+/** Metadata key for the gRPC LB cost reporting.
+    The value corresponding to this key is an opaque binary blob reported by the
+    server as part of its trailing metadata containing cost information for the
+    call. */
 #define GRPC_LB_COST_MD_KEY "lb-cost-bin"
 
 #ifdef __cplusplus
