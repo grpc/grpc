@@ -25,9 +25,6 @@
 extern "C" {
 #endif
 
-namespace grpc {
-namespace load_reporter {
-
 // Metadata key for the gRPC LB load balancing token.
 // The value corresponding to this key is an opaque token associated with each
 // server in the serverlist, which is sent to the client from the balancer. The
@@ -42,8 +39,6 @@ namespace load_reporter {
 // server as part of its trailing metadata containing cost information for the
 // call.
 #define GRPC_LB_COST_MD_KEY "lb-cost-bin"
-}
-}  // namespace grpc
 
 #ifdef __cplusplus
 }
