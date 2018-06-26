@@ -42,6 +42,7 @@
 namespace {
 /* We can have a per-call credentials. */
 struct call_data {
+  gpr_arena* arena;
   grpc_call_stack* owning_call;
   grpc_call_combiner* call_combiner;
   grpc_call_credentials* creds;
@@ -279,7 +280,7 @@ static void auth_start_transport_stream_op_batch(
     GPR_ASSERT(batch->payload->context != nullptr);
     if (batch->payload->context[GRPC_CONTEXT_SECURITY].value == nullptr) {
       batch->payload->context[GRPC_CONTEXT_SECURITY].value =
-          grpc_client_security_context_create();
+          grpc_client_security_context_create(calld->arena);
       batch->payload->context[GRPC_CONTEXT_SECURITY].destroy =
           grpc_client_security_context_destroy;
     }
@@ -335,6 +336,7 @@ static void auth_start_transport_stream_op_batch(
 static grpc_error* init_call_elem(grpc_call_element* elem,
                                   const grpc_call_element_args* args) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
+  calld->arena = args->arena;
   calld->owning_call = args->call_stack;
   calld->call_combiner = args->call_combiner;
   calld->host = grpc_empty_slice();
