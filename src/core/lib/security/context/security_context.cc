@@ -50,7 +50,7 @@ grpc_call_error grpc_call_set_credentials(grpc_call* call,
   ctx = static_cast<grpc_client_security_context*>(
       grpc_call_context_get(call, GRPC_CONTEXT_SECURITY));
   if (ctx == nullptr) {
-    ctx = grpc_client_security_context_create();
+    ctx = grpc_client_security_context_create(grpc_call_get_arena(call));
     ctx->creds = grpc_call_credentials_ref(creds);
     grpc_call_context_set(call, GRPC_CONTEXT_SECURITY, ctx,
                           grpc_client_security_context_destroy);
@@ -82,9 +82,10 @@ void grpc_auth_context_release(grpc_auth_context* context) {
 
 /* --- grpc_client_security_context --- */
 
-grpc_client_security_context* grpc_client_security_context_create(void) {
+grpc_client_security_context* grpc_client_security_context_create(
+    gpr_arena* arena) {
   return static_cast<grpc_client_security_context*>(
-      gpr_zalloc(sizeof(grpc_client_security_context)));
+      gpr_arena_alloc(sizeof(grpc_client_security_context)));
 }
 
 void grpc_client_security_context_destroy(void* ctx) {
@@ -96,7 +97,6 @@ void grpc_client_security_context_destroy(void* ctx) {
   if (c->extension.instance != nullptr && c->extension.destroy != nullptr) {
     c->extension.destroy(c->extension.instance);
   }
-  gpr_free(ctx);
 }
 
 /* --- grpc_server_security_context --- */

@@ -279,7 +279,7 @@ static void auth_start_transport_stream_op_batch(
     GPR_ASSERT(batch->payload->context != nullptr);
     if (batch->payload->context[GRPC_CONTEXT_SECURITY].value == nullptr) {
       batch->payload->context[GRPC_CONTEXT_SECURITY].value =
-          grpc_client_security_context_create();
+          grpc_client_security_context_create(args->arena);
       batch->payload->context[GRPC_CONTEXT_SECURITY].destroy =
           grpc_client_security_context_destroy;
     }
