@@ -46,11 +46,11 @@ using TCP sockets:
 * When a TCP socket connection is established on cellular data and WiFi
   becomes available, the TCP socket neither return an error event nor continue
   sending/receiving data on it, but still accepts write on it.
-* A TCP sockets does not report certain events that happen in the
+* A TCP socket does not report certain events that happen in the
   background. When a TCP connection breaks in the background for the reason
   like WiFi connects to another hotspot, the socket neither return an error nor
   continue sending/receiving data on it, but still accepts write on it.
-In both situations, the user will see the call hangs for an extended period of
+In both situations, the user will see the call hang for an extended period of
 time before the TCP socket times out.
 
 #### gRPC iOS library's resolution to TCP socket issues
