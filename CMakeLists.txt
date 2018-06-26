@@ -1304,6 +1304,7 @@ foreach(_hdr
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
   include/grpc/grpc_security_constants.h
+  include/grpc/load_reporting.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
@@ -2606,6 +2607,7 @@ foreach(_hdr
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
   include/grpc/grpc_security_constants.h
+  include/grpc/load_reporting.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
@@ -2922,6 +2924,7 @@ foreach(_hdr
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
   include/grpc/grpc_security_constants.h
+  include/grpc/load_reporting.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
@@ -3485,6 +3488,7 @@ foreach(_hdr
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
   include/grpc/grpc_security_constants.h
+  include/grpc/load_reporting.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
@@ -4384,6 +4388,7 @@ foreach(_hdr
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
   include/grpc/grpc_security_constants.h
+  include/grpc/load_reporting.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
