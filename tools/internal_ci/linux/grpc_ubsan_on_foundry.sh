@@ -60,6 +60,8 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
   --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1 \
   --extra_toolchains=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0/bazel_0.13.0/cpp:cc-toolchain-clang-x86_64-default \
   --extra_execution_platforms=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0:rbe_ubuntu1604 \
+  --runs_per_test_detects_flakes 
+  --runs_per_test=2
   -- //test/... || FAILED="true"
 
 # Sleep to let ResultStore finish writing results before querying
