@@ -144,13 +144,11 @@ void grpc_cares_wrapper_test_only_address_sorting_sort(
   grpc_cares_wrapper_address_sorting_sort(lb_addrs);
 }
 
-static void grpc_ares_request_increment_pending_queries_locked(
-    grpc_ares_request* r) {
+static void grpc_ares_request_ref_locked(grpc_ares_request* r) {
   r->pending_queries++;
 }
 
-static void grpc_ares_request_decrement_pending_queries_locked(
-    grpc_ares_request* r) {
+static void grpc_ares_request_unref_locked(grpc_ares_request* r) {
   r->pending_queries--;
   if (r->pending_queries == 0u) {
     grpc_ares_ev_driver_on_queries_complete_locked(r->ev_driver);
@@ -177,13 +175,13 @@ static grpc_ares_hostbyname_request* create_hostbyname_request_locked(
   hr->host = gpr_strdup(host);
   hr->port = port;
   hr->is_balancer = is_balancer;
-  grpc_ares_request_increment_pending_queries_locked(parent_request);
+  grpc_ares_request_ref_locked(parent_request);
   return hr;
 }
 
 static void destroy_hostbyname_request_locked(
     grpc_ares_hostbyname_request* hr) {
-  grpc_ares_request_decrement_pending_queries_locked(hr->parent_request);
+  grpc_ares_request_unref_locked(hr->parent_request);
   gpr_free(hr->host);
   gpr_free(hr);
 }
@@ -311,7 +309,7 @@ static void on_srv_query_done_locked(void* arg, int status, int timeouts,
       r->error = grpc_error_add_child(error, r->error);
     }
   }
-  grpc_ares_request_decrement_pending_queries_locked(r);
+  grpc_ares_request_unref_locked(r);
 }
 
 static const char g_service_config_attribute_prefix[] = "grpc_config=";
@@ -369,7 +367,7 @@ fail:
     r->error = grpc_error_add_child(error, r->error);
   }
 done:
-  grpc_ares_request_decrement_pending_queries_locked(r);
+  grpc_ares_request_unref_locked(r);
 }
 
 static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
@@ -468,7 +466,7 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
                      hr);
   if (check_grpclb) {
     /* Query the SRV record */
-    grpc_ares_request_increment_pending_queries_locked(r);
+    grpc_ares_request_ref_locked(r);
     char* service_name;
     gpr_asprintf(&service_name, "_grpclb._tcp.%s", host);
     ares_query(*channel, service_name, ns_c_in, ns_t_srv,
@@ -476,7 +474,7 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
     gpr_free(service_name);
   }
   if (service_config_json != nullptr) {
-    grpc_ares_request_increment_pending_queries_locked(r);
+    grpc_ares_request_ref_locked(r);
     char* config_name;
     gpr_asprintf(&config_name, "_grpc_config.%s", host);
     ares_search(*channel, config_name, ns_c_in, ns_t_txt, on_txt_done_locked,
@@ -484,13 +482,14 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
     gpr_free(config_name);
   }
   grpc_ares_ev_driver_start_locked(r->ev_driver);
-  grpc_ares_request_decrement_pending_queries_locked(r);
+  grpc_ares_request_unref_locked(r);
   gpr_free(host);
   gpr_free(port);
   return r;
 
 error_cleanup:
   GRPC_CLOSURE_SCHED(on_done, error);
+  gpr_free(r);
   gpr_free(host);
   gpr_free(port);
   return nullptr;
