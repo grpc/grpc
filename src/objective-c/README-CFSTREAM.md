@@ -3,8 +3,8 @@
 
 gRPC Objective-C library now provides the option to use Apple's CFStream API (rather than TCP
 sockets) for networking. Using CFStream resolves a bunch of network connectivity transition issues
-(see the [doc](https://github.com/grpc/grpc/blob/master/src/objective-c/NetworkBehavior.md) for more
-information).
+(see the [doc](https://github.com/grpc/grpc/blob/master/src/objective-c/NetworkTransitionBehavior.md)
+for more information).
 
 CFStream integration is now in experimental state. You will need explicit opt-in to use it to get
 the benefits of resolving the issues above. We expect to make CFStream the default networking
