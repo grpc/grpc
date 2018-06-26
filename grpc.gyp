@@ -186,6 +186,32 @@
       ],
     },
     {
+      'target_name': 'cxxabi',
+      'type': 'static_library',
+      'dependencies': [
+      ],
+      'sources': [
+        'third_party/libcxxabi/src/abort_message.cpp',
+        'third_party/libcxxabi/src/cxa_aux_runtime.cpp',
+        'third_party/libcxxabi/src/cxa_default_handlers.cpp',
+        'third_party/libcxxabi/src/cxa_demangle.cpp',
+        'third_party/libcxxabi/src/cxa_exception_storage.cpp',
+        'third_party/libcxxabi/src/cxa_guard.cpp',
+        'third_party/libcxxabi/src/cxa_handlers.cpp',
+        'third_party/libcxxabi/src/cxa_noexception.cpp',
+        'third_party/libcxxabi/src/cxa_thread_atexit.cpp',
+        'third_party/libcxxabi/src/cxa_unexpected.cpp',
+        'third_party/libcxxabi/src/cxa_vector.cpp',
+        'third_party/libcxxabi/src/cxa_virtual.cpp',
+        'third_party/libcxxabi/src/fallback_malloc.cpp',
+        'third_party/libcxxabi/src/private_typeinfo.cpp',
+        'third_party/libcxxabi/src/stdlib_exception.cpp',
+        'third_party/libcxxabi/src/stdlib_new_delete.cpp',
+        'third_party/libcxxabi/src/stdlib_stdexcept.cpp',
+        'third_party/libcxxabi/src/stdlib_typeinfo.cpp',
+      ],
+    },
+    {
       'target_name': 'gpr',
       'type': 'static_library',
       'dependencies': [
