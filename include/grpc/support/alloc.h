@@ -65,4 +65,7 @@ GPRAPI gpr_allocation_functions gpr_get_allocation_functions(void);
 }
 #endif
 
+/** Equals the minimum memory alignment required by ABI from allocators. */
+#define GRPC_MINIMUM_ALIGNMENT (sizeof(uintptr_t) * 2)
+
 #endif /* GRPC_SUPPORT_ALLOC_H */

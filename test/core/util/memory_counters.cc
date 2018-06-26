@@ -42,19 +42,20 @@ static void guard_free(void* vptr);
 #endif
 
 static void* guard_malloc(size_t size) {
-  size_t* ptr;
+  uintptr_t* ptr;
   if (!size) return nullptr;
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_absolute, (gpr_atm)size);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative, (gpr_atm)size);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_absolute, (gpr_atm)1);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_relative, (gpr_atm)1);
-  ptr = static_cast<size_t*>(g_old_allocs.malloc_fn(size + sizeof(size)));
-  *ptr++ = size;
-  return ptr;
+  ptr = static_cast<uintptr_t*>(
+      g_old_allocs.malloc_fn(size + GRPC_MINIMUM_ALIGNMENT));
+  *ptr = static_cast<uintptr_t>(size);
+  return ptr + 2;
 }
 
 static void* guard_realloc(void* vptr, size_t size) {
-  size_t* ptr = static_cast<size_t*>(vptr);
+  uintptr_t* ptr = static_cast<uintptr_t*>(vptr);
   if (vptr == nullptr) {
     return guard_malloc(size);
   }
@@ -62,20 +63,21 @@ static void* guard_realloc(void* vptr, size_t size) {
     guard_free(vptr);
     return nullptr;
   }
-  --ptr;
+  ptr -= 2;
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_absolute, (gpr_atm)size);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative, -(gpr_atm)*ptr);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative, (gpr_atm)size);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_absolute, (gpr_atm)1);
-  ptr = static_cast<size_t*>(g_old_allocs.realloc_fn(ptr, size + sizeof(size)));
-  *ptr++ = size;
-  return ptr;
+  ptr = static_cast<uintptr_t*>(
+      g_old_allocs.realloc_fn(ptr, size + GRPC_MINIMUM_ALIGNMENT));
+  *ptr = static_cast<uintptr_t>(size);
+  return ptr + 2;
 }
 
 static void guard_free(void* vptr) {
-  size_t* ptr = static_cast<size_t*>(vptr);
+  uintptr_t* ptr = static_cast<uintptr_t*>(vptr);
   if (!vptr) return;
-  --ptr;
+  ptr -= 2;
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative, -(gpr_atm)*ptr);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_relative, -(gpr_atm)1);
   g_old_allocs.free_fn(ptr);
