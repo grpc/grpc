@@ -31,7 +31,7 @@ which bazel
 chmod +x "${KOKORO_GFILE_DIR}/bazel_wrapper.py"
 
 # change to grpc repo root
-cd $(dirname $0)/../../..
+cd $(dirname $0)/../../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
