@@ -157,20 +157,25 @@ CensusViewProvider::CensusViewProvider()
   view_descriptor_map_.emplace(kViewOtherCallMetricValue, vd_metric_value);
 }
 
-double CensusViewProvider::GetRelatedViewDataRow(
+void CensusViewProvider::GetRelatedViewDataRow(
     const ViewDataMap& view_data_map, const char* view_name,
     size_t view_name_len, const std::vector<grpc::string>& tag_values,
-    bool is_double = false) {
+    const double** double_data, const uint64_t** int_data) {
   auto it_vd = view_data_map.find(grpc::string(view_name, view_name_len));
   GPR_ASSERT(it_vd != view_data_map.end());
-  if (is_double) {
+  if (it_vd->second.type() == ::opencensus::stats::ViewData::Type::kDouble) {
     auto it_row = it_vd->second.double_data().find(tag_values);
     GPR_ASSERT(it_row != it_vd->second.double_data().end());
-    return it_row->second;
+    *double_data = &it_row->second;
+    *int_data = nullptr;
   } else {
+    GPR_ASSERT(it_vd->second.type() ==
+               ::opencensus::stats::ViewData::Type::kInt64);
     auto it_row = it_vd->second.int_data().find(tag_values);
     GPR_ASSERT(it_row != it_vd->second.int_data().end());
-    return it_row->second;
+    GPR_ASSERT(it_row->second >= 0);
+    *int_data = reinterpret_cast<const uint64_t*>(&it_row->second);
+    *double_data = nullptr;
   }
 }
 
@@ -243,6 +248,10 @@ LoadReporter::GenerateLoadBalancingFeedback() {
     return ::grpc::lb::v1::LoadBalancingFeedback::default_instance();
   }
   // Find the longest range with valid ends.
+  // Note that we should use iterators here because "deques are not guaranteed
+  // to store all its elements in contiguous storage locations: accessing
+  // elements in a deque by offsetting a pointer to another element causes
+  // undefined behavior".
   auto oldest = feedback_records_.begin();
   auto newest = feedback_records_.end() - 1;
   while (std::distance(oldest, newest) > 0 &&
@@ -429,15 +438,24 @@ void LoadReporter::ProcessViewDataCallEnd(
         continue;
       }
       LoadRecordKey key(client_ip_and_token, user_id);
-      const uint64_t bytes_sent = CensusViewProvider::GetRelatedViewDataRow(
+      const double* double_data;
+      const uint64_t* int_data;
+      CensusViewProvider::GetRelatedViewDataRow(
           view_data_map, kViewEndBytesSent, sizeof(kViewEndBytesSent) - 1,
-          tag_values);
-      const uint64_t bytes_received = CensusViewProvider::GetRelatedViewDataRow(
+          tag_values, &double_data, &int_data);
+      GPR_ASSERT(int_data != nullptr);
+      const uint64_t bytes_sent = *int_data;
+      CensusViewProvider::GetRelatedViewDataRow(
           view_data_map, kViewEndBytesReceived,
-          sizeof(kViewEndBytesReceived) - 1, tag_values);
-      const uint64_t latency_ms = CensusViewProvider::GetRelatedViewDataRow(
+          sizeof(kViewEndBytesReceived) - 1, tag_values, &double_data,
+          &int_data);
+      GPR_ASSERT(int_data != nullptr);
+      const uint64_t bytes_received = *int_data;
+      CensusViewProvider::GetRelatedViewDataRow(
           view_data_map, kViewEndLatencyMs, sizeof(kViewEndLatencyMs) - 1,
-          tag_values);
+          tag_values, &double_data, &int_data);
+      GPR_ASSERT(int_data != nullptr);
+      const uint64_t latency_ms = *int_data;
       uint64_t ok_count = 0;
       uint64_t error_count = 0;
       total_end_count += end_count;
@@ -470,11 +488,14 @@ void LoadReporter::ProcessViewDataOtherCallMetrics(
       const grpc::string& user_id = tag_values[2];
       const grpc::string& metric_name = tag_values[3];
       LoadRecordKey key(client_ip_and_token, user_id);
-      const double total_metric_value =
-          CensusViewProvider::GetRelatedViewDataRow(
-              view_data_map, kViewOtherCallMetricValue,
-              sizeof(kViewOtherCallMetricValue) - 1, tag_values,
-              true /* is_double */);
+      const double* double_data;
+      const uint64_t* int_data;
+      CensusViewProvider::GetRelatedViewDataRow(
+          view_data_map, kViewOtherCallMetricValue,
+          sizeof(kViewOtherCallMetricValue) - 1, tag_values, &double_data,
+          &int_data);
+      GPR_ASSERT(double_data != nullptr);
+      const double total_metric_value = *double_data;
       LoadRecordValue value = LoadRecordValue(
           metric_name, static_cast<uint64_t>(num_calls), total_metric_value);
       {

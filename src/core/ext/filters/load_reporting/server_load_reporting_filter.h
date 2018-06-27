@@ -87,9 +87,6 @@ class ServerLoadReportingCallData : public CallData {
   // When it is ready, we will extract some data from it via
   // recv_initial_metadata_ready_ closure, before the original
   // recv_initial_metadata_ready closure.
-  // TODO(juanlishen): We should be able to use MetadataBatch here, but its
-  // batch_ changes somehow. It's strange because I don't find any modification
-  // to that member in the code base.
   grpc_metadata_batch* recv_initial_metadata_;
 
   // The original recv_initial_metadata closure, which is wrapped by our own

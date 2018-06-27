@@ -28,6 +28,9 @@ namespace load_reporter {
 // there is any change to the server load reporter.
 constexpr uint32_t kVersion = 15853;
 
+// TODO(juanlishen): This window size is from the internal spec for the load
+// reporter. Need to ask the gRPC LB team whether we should make this and the
+// fetching interval configurable.
 constexpr uint32_t kFeedbackSampleWindowSeconds = 10;
 constexpr uint32_t kFetchAndSampleIntervalSeconds = 1;
 

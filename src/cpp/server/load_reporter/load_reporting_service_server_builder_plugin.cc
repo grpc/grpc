@@ -42,8 +42,7 @@ bool LoadReportingServiceServerBuilderPlugin::has_async_methods() const {
 void LoadReportingServiceServerBuilderPlugin::UpdateServerBuilder(
     grpc::ServerBuilder* builder) {
   auto cq = builder->AddCompletionQueue();
-  service_ = std::shared_ptr<LoadReporterAsyncServiceImpl>(
-      new LoadReporterAsyncServiceImpl(std::move(cq)));
+  service_ = std::make_shared<LoadReporterAsyncServiceImpl>(std::move(cq));
 }
 
 void LoadReportingServiceServerBuilderPlugin::InitServer(

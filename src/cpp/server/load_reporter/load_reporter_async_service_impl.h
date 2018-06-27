@@ -123,6 +123,10 @@ class LoadReporterAsyncServiceImpl
     bool shutdown_{false};
     bool done_notified_{false};
     bool is_cancelled_{false};
+    std::function<void(bool)> on_done_notified_;
+    std::function<void(bool)> on_finish_done_;
+    std::function<void(bool)> next_inbound_;
+    std::function<void(bool)> next_outbound_;
     Alarm next_report_alarm_;
   };
 
@@ -142,6 +146,7 @@ class LoadReporterAsyncServiceImpl
   std::atomic_bool shutdown_{false};
   std::unique_ptr<::grpc_core::Thread> thread_;
   std::unique_ptr<LoadReporter> load_reporter_;
+  std::function<void(bool)> next_fetch_and_sample_;
   Alarm next_fetch_and_sample_alarm_;
 };
 

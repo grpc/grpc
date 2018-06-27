@@ -29,7 +29,10 @@ namespace load_reporter {
 
 LoadReporterAsyncServiceImpl::LoadReporterAsyncServiceImpl(
     std::unique_ptr<ServerCompletionQueue> cq)
-    : cq_(std::move(cq)) {
+    : cq_(std::move(cq)),
+      next_fetch_and_sample_(
+          std::bind(&LoadReporterAsyncServiceImpl::FetchAndSample, this,
+                    std::placeholders::_1)) {
   thread_ = std::unique_ptr<::grpc_core::Thread>(
       new ::grpc_core::Thread("server_load_reporting", Work, this));
   std::unique_ptr<CpuStatsProvider> cpu_stats_provider = nullptr;
@@ -54,9 +57,6 @@ LoadReporterAsyncServiceImpl::~LoadReporterAsyncServiceImpl() {
 }
 
 void LoadReporterAsyncServiceImpl::ScheduleNextFetchAndSample() {
-  auto next_step = new std::function<void(bool)>(
-      std::bind(&LoadReporterAsyncServiceImpl::FetchAndSample, this,
-                std::placeholders::_1));
   auto next_fetch_and_sample_time =
       gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                    gpr_time_from_millis(kFetchAndSampleIntervalSeconds * 1000,
@@ -65,7 +65,7 @@ void LoadReporterAsyncServiceImpl::ScheduleNextFetchAndSample() {
     std::unique_lock<std::mutex> lock(cq_shutdown_mu_);
     if (shutdown_) return;
     next_fetch_and_sample_alarm_.Set(cq_.get(), next_fetch_and_sample_time,
-                                     next_step);
+                                     &next_fetch_and_sample_);
   }
   gpr_log(GPR_DEBUG, "[LRS %p] Next fetch-and-sample scheduled.", this);
 }
@@ -100,7 +100,6 @@ void LoadReporterAsyncServiceImpl::Work(void* arg) {
     }
     auto next_step = static_cast<std::function<void(bool)>*>(tag);
     (*next_step)(ok);
-    delete next_step;
   }
 }
 
@@ -113,12 +112,14 @@ LoadReporterAsyncServiceImpl::ReportLoadHandler::ReportLoadHandler(
       service_(service),
       load_reporter_(load_reporter),
       stream_(&ctx_),
-      call_status_(WAITING_FOR_DELIVERY) {
+      call_status_(WAITING_FOR_DELIVERY),
+      on_done_notified_(std::bind(&ReportLoadHandler::OnDoneNotified, this,
+                                  std::placeholders::_1)),
+      on_finish_done_(std::bind(&ReportLoadHandler::OnFinishDone, this,
+                                std::placeholders::_1)),
+      next_inbound_(std::bind(&ReportLoadHandler::OnRequestDelivered, this,
+                              std::placeholders::_1)) {
   gpr_ref_init(&refs_, 1);
-  auto on_done = new std::function<void(bool)>(std::bind(
-      &ReportLoadHandler::OnDoneNotified, this, std::placeholders::_1));
-  auto next_step = new std::function<void(bool)>(std::bind(
-      &ReportLoadHandler::OnRequestDelivered, this, std::placeholders::_1));
   {
     std::unique_lock<std::mutex> lock(service_->cq_shutdown_mu_);
     if (service_->shutdown_) {
@@ -127,9 +128,9 @@ LoadReporterAsyncServiceImpl::ReportLoadHandler::ReportLoadHandler(
       return;
     }
     // Re-use the initial ref for on_done.
-    ctx_.AsyncNotifyWhenDone(on_done);
+    ctx_.AsyncNotifyWhenDone(&on_done_notified_);
     Ref(DEBUG_LOCATION, "OnRequestDelivered");
-    service->RequestReportLoad(&ctx_, &stream_, cq_, cq_, next_step);
+    service->RequestReportLoad(&ctx_, &stream_, cq_, cq_, &next_inbound_);
   }
 }
 
@@ -144,7 +145,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnRequestDelivered(
   // Spawn a new handler instance to serve the next new client. Every handler
   // instance will deallocate itself when it's done.
   new ReportLoadHandler(cq_, service_, load_reporter_);
-  auto next_step = new std::function<void(bool)>(
+  next_inbound_ = std::function<void(bool)>(
       std::bind(&ReportLoadHandler::OnReadDone, this, std::placeholders::_1));
   {
     std::unique_lock<std::mutex> lock(service_->cq_shutdown_mu_);
@@ -154,7 +155,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnRequestDelivered(
       return;
     }
     // Re-use the OnRequestDelivered ref.
-    stream_.Read(&request_, next_step);
+    stream_.Read(&request_, &next_inbound_);
   }
   // LB ID is unique for each load reporting stream.
   lb_id_ = load_reporter_->GenerateLbId();
@@ -200,8 +201,6 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnReadDone(bool ok) {
           lb_id_.c_str(), this);
       Ref(DEBUG_LOCATION, "SendReport");
       SendReport(true /* ok */);
-      auto next_step = new std::function<void(bool)>(std::bind(
-          &ReportLoadHandler::OnReadDone, this, std::placeholders::_1));
       // Expect this read to fail.
       {
         std::unique_lock<std::mutex> lock(service_->cq_shutdown_mu_);
@@ -211,7 +210,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnReadDone(bool ok) {
           return;
         }
         // Re-use ref.
-        stream_.Read(&request_, next_step);
+        stream_.Read(&request_, &next_inbound_);
       }
     }
   } else {
@@ -229,7 +228,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::ScheduleNextReport(
     ShutdownAndUnref("ScheduleNextReport");
     return;
   }
-  auto next_step = new std::function<void(bool)>(
+  next_outbound_ = std::function<void(bool)>(
       std::bind(&ReportLoadHandler::SendReport, this, std::placeholders::_1));
   auto next_report_time = gpr_time_add(
       gpr_now(GPR_CLOCK_MONOTONIC),
@@ -242,7 +241,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::ScheduleNextReport(
       return;
     }
     // Re-use ref.
-    next_report_alarm_.Set(cq_, next_report_time, next_step);
+    next_report_alarm_.Set(cq_, next_report_time, &next_outbound_);
   }
   gpr_log(GPR_DEBUG,
           "[LRS %p] Next load report scheduled (lb_id_: %s, handler: %p).",
@@ -267,7 +266,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::SendReport(bool ok) {
     initial_response->set_server_version(kVersion);
     call_status_ = INITIAL_RESPONSE_SENT;
   }
-  auto next_step = new std::function<void(bool)>(std::bind(
+  next_outbound_ = std::function<void(bool)>(std::bind(
       &ReportLoadHandler::ScheduleNextReport, this, std::placeholders::_1));
   {
     std::unique_lock<std::mutex> lock(service_->cq_shutdown_mu_);
@@ -277,7 +276,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::SendReport(bool ok) {
       return;
     }
     // Re-use ref.
-    stream_.Write(response, next_step);
+    stream_.Write(response, &next_outbound_);
     gpr_log(GPR_INFO,
             "[LRS %p] Sending load report (lb_id_: %s, handler: %p, loads "
             "count: %d)...",
@@ -298,18 +297,16 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::ShutdownAndUnref(
       next_report_alarm_.Cancel();
     }
   }
-  // OnRequestDelivered() may be called after OnDoneNotified(), so we need try
-  // to Finish() every time we are in ShutdownAndUnref().
+  // OnRequestDelivered() may be called after OnDoneNotified(), so we need to
+  // try to Finish() every time we are in ShutdownAndUnref().
   if (call_status_ >= DELIVERED && call_status_ < FINISH_CALLED) {
     std::unique_lock<std::mutex> lock(service_->cq_shutdown_mu_);
     if (!service_->shutdown_) {
-      auto next_step = new std::function<void(bool)>(std::bind(
-          &ReportLoadHandler::OnFinishDone, this, std::placeholders::_1));
       Ref(DEBUG_LOCATION, "OnFinishDone");
       // TODO(juanlishen): Maybe add a message proto for the client to
       // explicitly cancel the stream so that we can return OK status in such
       // cases.
-      stream_.Finish(Status::CANCELLED, next_step);
+      stream_.Finish(Status::CANCELLED, &on_finish_done_);
       call_status_ = FINISH_CALLED;
     }
   }
