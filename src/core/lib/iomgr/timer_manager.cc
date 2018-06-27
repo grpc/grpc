@@ -277,7 +277,6 @@ static void start_threads(void) {
     g_threaded = true;
     start_timer_thread_and_unlock();
   } else {
-    g_threaded = false;
     gpr_mu_unlock(&g_mu);
   }
 }
