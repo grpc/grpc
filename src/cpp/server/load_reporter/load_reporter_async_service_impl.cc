@@ -18,14 +18,10 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/debug/trace.h"
 #include "src/cpp/server/load_reporter/load_reporter_async_service_impl.h"
 
 namespace grpc {
 namespace load_reporter {
-
-::grpc_core::DebugOnlyTraceFlag grpc_trace_server_load_reporting_refcount(
-    false, "server_load_reporting_refcount");
 
 LoadReporterAsyncServiceImpl::LoadReporterAsyncServiceImpl(
     std::unique_ptr<ServerCompletionQueue> cq)
@@ -88,8 +84,12 @@ void LoadReporterAsyncServiceImpl::Work(void* arg) {
   // to figure out why cq is not ready after service starts.
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                gpr_time_from_seconds(1, GPR_TIMESPAN)));
-  new ReportLoadHandler(service->cq_.get(), service,
-                        service->load_reporter_.get());
+  std::shared_ptr<ReportLoadHandler> handler =
+      std::make_shared<ReportLoadHandler>(service->cq_.get(), service,
+                                          service->load_reporter_.get());
+  handler->Start();
+  // Orphan the handler.
+  handler.reset();
   void* tag;
   bool ok;
   while (true) {
@@ -112,50 +112,50 @@ LoadReporterAsyncServiceImpl::ReportLoadHandler::ReportLoadHandler(
       service_(service),
       load_reporter_(load_reporter),
       stream_(&ctx_),
-      call_status_(WAITING_FOR_DELIVERY),
-      on_done_notified_(std::bind(&ReportLoadHandler::OnDoneNotified, this,
-                                  std::placeholders::_1)),
-      on_finish_done_(std::bind(&ReportLoadHandler::OnFinishDone, this,
-                                std::placeholders::_1)),
-      next_inbound_(std::bind(&ReportLoadHandler::OnRequestDelivered, this,
-                              std::placeholders::_1)) {
-  gpr_ref_init(&refs_, 1);
-  {
-    std::unique_lock<std::mutex> lock(service_->cq_shutdown_mu_);
-    if (service_->shutdown_) {
-      lock.release()->unlock();
-      ShutdownAndUnref("ctor_unfinished");
-      return;
-    }
-    // Re-use the initial ref for on_done.
-    ctx_.AsyncNotifyWhenDone(&on_done_notified_);
-    Ref(DEBUG_LOCATION, "OnRequestDelivered");
-    service->RequestReportLoad(&ctx_, &stream_, cq_, cq_, &next_inbound_);
-  }
+      call_status_(WAITING_FOR_DELIVERY) {}
+
+void LoadReporterAsyncServiceImpl::ReportLoadHandler::Start() {
+  std::unique_lock<std::mutex> lock(service_->cq_shutdown_mu_);
+  if (service_->shutdown_) return;
+  // AsyncNotifyWhenDone() needs to be called before the call starts, but the
+  // tag may not pop out if the call never starts. Please refer to
+  // https://github.com/grpc/grpc/issues/10136.
+  on_done_notified_ = std::function<void(bool)>(
+      std::bind(&ReportLoadHandler::OnDoneNotified, shared_from_this(),
+                &on_done_notified_, std::placeholders::_1));
+  next_inbound_ = std::function<void(bool)>(
+      std::bind(&ReportLoadHandler::OnRequestDelivered, shared_from_this(),
+                &next_inbound_, std::placeholders::_1));
+  ctx_.AsyncNotifyWhenDone(&on_done_notified_);
+  service_->RequestReportLoad(&ctx_, &stream_, cq_, cq_, &next_inbound_);
 }
 
 void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnRequestDelivered(
-    bool ok) {
+    std::function<void(bool)>* func, bool ok) {
   if (ok) call_status_ = DELIVERED;
   if (!ok || shutdown_) {
     // The value of ok being false means that the server is shutting down.
-    ShutdownAndUnref("OnRequestDelivered");
+    Shutdown(func, "OnRequestDelivered");
     return;
   }
   // Spawn a new handler instance to serve the next new client. Every handler
   // instance will deallocate itself when it's done.
-  new ReportLoadHandler(cq_, service_, load_reporter_);
-  next_inbound_ = std::function<void(bool)>(
-      std::bind(&ReportLoadHandler::OnReadDone, this, std::placeholders::_1));
+  std::shared_ptr<ReportLoadHandler> handler =
+      std::make_shared<ReportLoadHandler>(cq_, service_, load_reporter_);
+  handler->Start();
+  // Orphan the handler.
+  handler.reset();
+  *func = std::function<void(bool)>(std::bind(&ReportLoadHandler::OnReadDone,
+                                              shared_from_this(), func,
+                                              std::placeholders::_1));
   {
     std::unique_lock<std::mutex> lock(service_->cq_shutdown_mu_);
     if (service_->shutdown_) {
       lock.release()->unlock();
-      ShutdownAndUnref("OnRequestDelivered");
+      Shutdown(func, "OnRequestDelivered");
       return;
     }
-    // Re-use the OnRequestDelivered ref.
-    stream_.Read(&request_, &next_inbound_);
+    stream_.Read(&request_, func);
   }
   // LB ID is unique for each load reporting stream.
   lb_id_ = load_reporter_->GenerateLbId();
@@ -165,7 +165,8 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnRequestDelivered(
           service_, lb_id_.c_str(), this);
 }
 
-void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnReadDone(bool ok) {
+void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnReadDone(
+    std::function<void(bool)>* func, bool ok) {
   if (!ok || shutdown_) {
     if (!ok && call_status_ < INITIAL_REQUEST_RECEIVED) {
       // The client may have half-closed the stream or the stream is broken.
@@ -175,13 +176,13 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnReadDone(bool ok) {
               service_, lb_id_.c_str(), this, static_cast<int>(done_notified_),
               static_cast<int>(is_cancelled_));
     }
-    ShutdownAndUnref("OnReadDone");
+    Shutdown(func, "OnReadDone");
     return;
   }
   // We only receive one request, which is the initial request.
   if (call_status_ < INITIAL_REQUEST_RECEIVED) {
     if (!request_.has_initial_request()) {
-      ShutdownAndUnref("OnReadDone+initial_request_not_found");
+      Shutdown(func, "OnReadDone+initial_request_not_found");
     } else {
       call_status_ = INITIAL_REQUEST_RECEIVED;
       const auto& initial_request = request_.initial_request();
@@ -199,18 +200,16 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnReadDone(bool ok) {
           "balanced host: %s, interval: %lu ms, lb_id_: %s, handler: %p)...",
           service_, load_balanced_hostname_.c_str(), load_report_interval_ms_,
           lb_id_.c_str(), this);
-      Ref(DEBUG_LOCATION, "SendReport");
-      SendReport(true /* ok */);
+      SendReport(&next_outbound_, true /* ok */);
       // Expect this read to fail.
       {
         std::unique_lock<std::mutex> lock(service_->cq_shutdown_mu_);
         if (service_->shutdown_) {
           lock.release()->unlock();
-          ShutdownAndUnref("OnReadDone");
+          Shutdown(func, "OnReadDone");
           return;
         }
-        // Re-use ref.
-        stream_.Read(&request_, &next_inbound_);
+        stream_.Read(&request_, func);
       }
     }
   } else {
@@ -218,18 +217,19 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnReadDone(bool ok) {
     gpr_log(GPR_ERROR,
             "[LRS %p] Another request received (lb_id_: %s, handler: %p).",
             service_, lb_id_.c_str(), this);
-    ShutdownAndUnref("OnReadDone+second_request");
+    Shutdown(func, "OnReadDone+second_request");
   }
 }
 
 void LoadReporterAsyncServiceImpl::ReportLoadHandler::ScheduleNextReport(
-    bool ok) {
+    std::function<void(bool)>* func, bool ok) {
   if (!ok || shutdown_) {
-    ShutdownAndUnref("ScheduleNextReport");
+    Shutdown(func, "ScheduleNextReport");
     return;
   }
-  next_outbound_ = std::function<void(bool)>(
-      std::bind(&ReportLoadHandler::SendReport, this, std::placeholders::_1));
+  *func = std::function<void(bool)>(std::bind(&ReportLoadHandler::SendReport,
+                                              shared_from_this(), func,
+                                              std::placeholders::_1));
   auto next_report_time = gpr_time_add(
       gpr_now(GPR_CLOCK_MONOTONIC),
       gpr_time_from_millis(load_report_interval_ms_, GPR_TIMESPAN));
@@ -237,20 +237,20 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::ScheduleNextReport(
     std::unique_lock<std::mutex> lock(service_->cq_shutdown_mu_);
     if (service_->shutdown_) {
       lock.release()->unlock();
-      ShutdownAndUnref("ScheduleNextReport");
+      Shutdown(func, "ScheduleNextReport");
       return;
     }
-    // Re-use ref.
-    next_report_alarm_.Set(cq_, next_report_time, &next_outbound_);
+    next_report_alarm_.Set(cq_, next_report_time, func);
   }
   gpr_log(GPR_DEBUG,
           "[LRS %p] Next load report scheduled (lb_id_: %s, handler: %p).",
           service_, lb_id_.c_str(), this);
 }
 
-void LoadReporterAsyncServiceImpl::ReportLoadHandler::SendReport(bool ok) {
+void LoadReporterAsyncServiceImpl::ReportLoadHandler::SendReport(
+    std::function<void(bool)>* func, bool ok) {
   if (!ok || shutdown_) {
-    ShutdownAndUnref("SendReport");
+    Shutdown(func, "SendReport");
     return;
   }
   ::grpc::lb::v1::LoadReportResponse response;
@@ -266,17 +266,17 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::SendReport(bool ok) {
     initial_response->set_server_version(kVersion);
     call_status_ = INITIAL_RESPONSE_SENT;
   }
-  next_outbound_ = std::function<void(bool)>(std::bind(
-      &ReportLoadHandler::ScheduleNextReport, this, std::placeholders::_1));
+  *func = std::function<void(bool)>(
+      std::bind(&ReportLoadHandler::ScheduleNextReport, shared_from_this(),
+                func, std::placeholders::_1));
   {
     std::unique_lock<std::mutex> lock(service_->cq_shutdown_mu_);
     if (service_->shutdown_) {
       lock.release()->unlock();
-      ShutdownAndUnref("SendReport");
+      Shutdown(func, "SendReport");
       return;
     }
-    // Re-use ref.
-    stream_.Write(response, &next_outbound_);
+    stream_.Write(response, func);
     gpr_log(GPR_INFO,
             "[LRS %p] Sending load report (lb_id_: %s, handler: %p, loads "
             "count: %d)...",
@@ -284,8 +284,22 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::SendReport(bool ok) {
   }
 }
 
-void LoadReporterAsyncServiceImpl::ReportLoadHandler::ShutdownAndUnref(
-    const char* reason) {
+void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnDoneNotified(
+    std::function<void(bool)>* func, bool ok) {
+  GPR_ASSERT(ok);
+  done_notified_ = true;
+  if (ctx_.IsCancelled()) {
+    is_cancelled_ = true;
+  }
+  gpr_log(GPR_INFO,
+          "[LRS %p] Load reporting call is notified done (handler: %p, "
+          "is_cancelled: %d).",
+          service_, this, static_cast<int>(is_cancelled_));
+  Shutdown(func, "OnDoneNotified");
+}
+
+void LoadReporterAsyncServiceImpl::ReportLoadHandler::Shutdown(
+    std::function<void(bool)>* from_func, const char* reason) {
   if (!shutdown_) {
     gpr_log(GPR_INFO,
             "[LRS %p] Shutting down the handler (lb_id_: %s, handler: %p, "
@@ -298,11 +312,13 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::ShutdownAndUnref(
     }
   }
   // OnRequestDelivered() may be called after OnDoneNotified(), so we need to
-  // try to Finish() every time we are in ShutdownAndUnref().
+  // try to Finish() every time we are in Shutdown().
   if (call_status_ >= DELIVERED && call_status_ < FINISH_CALLED) {
     std::unique_lock<std::mutex> lock(service_->cq_shutdown_mu_);
     if (!service_->shutdown_) {
-      Ref(DEBUG_LOCATION, "OnFinishDone");
+      on_finish_done_ = std::function<void(bool)>(
+          std::bind(&ReportLoadHandler::OnFinishDone, shared_from_this(),
+                    &on_finish_done_, std::placeholders::_1));
       // TODO(juanlishen): Maybe add a message proto for the client to
       // explicitly cancel the stream so that we can return OK status in such
       // cases.
@@ -310,57 +326,25 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::ShutdownAndUnref(
       call_status_ = FINISH_CALLED;
     }
   }
-  Unref(DEBUG_LOCATION, reason);
+  // TODO(juanlishen): This dummy shared_ptr is to keep a use count of the
+  // handler until the method returns so that the function object can release
+  // its ownership safely.
+  auto dummy = shared_from_this();
+  *from_func = nullptr;
 }
 
-void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnFinishDone(bool ok) {
+void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnFinishDone(
+    std::function<void(bool)>* func, bool ok) {
   if (ok) {
     gpr_log(GPR_INFO,
             "[LRS %p] Load reporting finished (lb_id_: %s, handler: %p).",
             service_, lb_id_.c_str(), this);
   }
-  Unref(DEBUG_LOCATION, "OnFinishDone");
-}
-
-void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnDoneNotified(bool ok) {
-  GPR_ASSERT(ok);
-  done_notified_ = true;
-  if (ctx_.IsCancelled()) {
-    is_cancelled_ = true;
-  }
-  gpr_log(GPR_INFO,
-          "[LRS %p] Load reporting call is notified done (handler: %p, "
-          "is_cancelled: %d).",
-          service_, this, static_cast<int>(is_cancelled_));
-  ShutdownAndUnref("OnDoneNotified");
-}
-
-void LoadReporterAsyncServiceImpl::ReportLoadHandler::Ref(
-    const grpc_core::DebugLocation& location, const char* reason) {
-#ifndef NDEBUG
-  if (location.Log() && grpc_trace_server_load_reporting_refcount.enabled()) {
-    gpr_atm old_refs = gpr_atm_no_barrier_load(&refs_.count);
-    gpr_log(GPR_INFO, "%s:%p %s:%d ref %" PRIdPTR " -> %" PRIdPTR " %s",
-            grpc_trace_server_load_reporting_refcount.name(), this,
-            location.file(), location.line(), old_refs, old_refs + 1, reason);
-  }
-#endif
-  gpr_ref(&refs_);
-}
-
-void LoadReporterAsyncServiceImpl::ReportLoadHandler::Unref(
-    const grpc_core::DebugLocation& location, const char* reason) {
-#ifndef NDEBUG
-  if (location.Log() && grpc_trace_server_load_reporting_refcount.enabled()) {
-    gpr_atm old_refs = gpr_atm_no_barrier_load(&refs_.count);
-    gpr_log(GPR_INFO, "%s:%p %s:%d unref %" PRIdPTR " -> %" PRIdPTR " %s",
-            grpc_trace_server_load_reporting_refcount.name(), this,
-            location.file(), location.line(), old_refs, old_refs - 1, reason);
-  }
-#endif
-  if (gpr_unref(&refs_)) {
-    delete this;
-  }
+  // TODO(juanlishen): This dummy shared_ptr is to keep a use count of the
+  // handler until the method returns so that the function object can release
+  // its ownership safely.
+  auto dummy = shared_from_this();
+  *func = nullptr;
 }
 
 }  // namespace load_reporter

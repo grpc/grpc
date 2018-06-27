@@ -55,44 +55,56 @@ class LoadReporterAsyncServiceImpl
   // Each handler takes care of one load reporting stream. It contains
   // per-stream data and it will access the members of the parent class (i.e.,
   // LoadReporterAsyncServiceImpl) for service-wide data (e.g., the load data).
-  class ReportLoadHandler {
+  class ReportLoadHandler
+      : public std::enable_shared_from_this<ReportLoadHandler> {
    public:
-    // When a new handler is constructed, it requests for the next load
-    // reporting call.
     ReportLoadHandler(ServerCompletionQueue* cq,
                       LoadReporterAsyncServiceImpl* service,
                       LoadReporter* load_reporter);
 
+    // Starts working by requesting for the next load reporting call. Note that
+    // this can't be called from the constructor because shared_from_this() can
+    // only be called from a previously shared object.
+    void Start();
+
     // After the handler has a call request delivered, it starts reading the
     // initial request. Also, a new handler is spawned so that we can keep
     // servicing future calls.
-    void OnRequestDelivered(bool ok);
+    // Parameter func is the function object that holds a shared pointer to the
+    // handler because of binding this method.
+    void OnRequestDelivered(std::function<void(bool)>* func, bool ok);
 
     // The first Read() is expected to succeed, after which the handler starts
     // sending load reports back to the balancer. The second Read() is
     // expected to fail, which happens when the balancer half-closes the
     // stream to signal that it's no longer interested in the load reports. For
     // the latter case, the handler will then close the stream.
-    void OnReadDone(bool ok);
+    // Parameter func is the function object that holds a shared pointer to the
+    // handler because of binding this method.
+    void OnReadDone(std::function<void(bool)>* func, bool ok);
 
     // The report sending operations are sequential as: send report -> send
     // done, schedule the next send -> waiting for the alarm to fire -> alarm
     // fires, send report -> ...
-    void SendReport(bool ok);
-    void ScheduleNextReport(bool ok);
+    // Parameter func is the function object that holds a shared pointer to the
+    // handler because of binding this method.
+    void SendReport(std::function<void(bool)>* func, bool ok);
+    void ScheduleNextReport(std::function<void(bool)>* func, bool ok);
 
     // Called when Finish() is done.
-    void OnFinishDone(bool ok);
+    // Parameter func is the function object that holds a shared pointer to the
+    // handler because of binding this method.
+    void OnFinishDone(std::function<void(bool)>* func, bool ok);
 
     // Called when AsyncNotifyWhenDone() notifies us.
-    void OnDoneNotified(bool ok);
+    // Parameter func is the function object that holds a shared pointer to the
+    // handler because of binding this method.
+    void OnDoneNotified(std::function<void(bool)>* func, bool ok);
 
    private:
-    // The members related to refcounting.
-    void Ref(const grpc_core::DebugLocation& location, const char* reason);
-    void Unref(const grpc_core::DebugLocation& location, const char* reason);
-    void ShutdownAndUnref(const char*);
-    gpr_refcount refs_;
+    // Shuts down the handler, and resets the from_func function object to drop
+    // a ref to the handler.
+    void Shutdown(std::function<void(bool)>* from_func, const char* reason);
 
     // The key fields of the stream.
     grpc::string lb_id_;
