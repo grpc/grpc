@@ -60,14 +60,16 @@ extern void grpc_register_built_in_plugins(void);
 
 static gpr_once g_basic_init = GPR_ONCE_INIT;
 static gpr_mu g_init_mu;
-static int g_initializations;
+static bool g_initialized;
+static gpr_atm g_initializations;
 
 static void do_basic_init(void) {
   gpr_log_verbosity_init();
   gpr_mu_init(&g_init_mu);
+  g_initialized = false;
+  gpr_atm_no_barrier_store(&g_initializations, 0);
   grpc_register_built_in_plugins();
   grpc_cq_global_init();
-  g_initializations = 0;
 }
 
 static bool append_filter(grpc_channel_stack_builder* builder, void* arg) {
@@ -118,71 +120,85 @@ void grpc_init(void) {
   int i;
   gpr_once_init(&g_basic_init, do_basic_init);
 
-  gpr_mu_lock(&g_init_mu);
-  if (++g_initializations == 1) {
-    grpc_core::Fork::GlobalInit();
-    grpc_fork_handlers_auto_register();
-    gpr_time_init();
-    grpc_stats_init();
-    grpc_slice_intern_init();
-    grpc_mdctx_global_init();
-    grpc_channel_init_init();
-    grpc_core::ChannelzRegistry::Init();
-    grpc_security_pre_init();
-    grpc_core::ExecCtx::GlobalInit();
-    grpc_iomgr_init();
-    gpr_timers_global_init();
-    grpc_handshaker_factory_registry_init();
-    grpc_security_init();
-    for (i = 0; i < g_number_of_plugins; i++) {
-      if (g_all_of_the_plugins[i].init != nullptr) {
-        g_all_of_the_plugins[i].init();
+  int count;
+  do {
+    count = gpr_atm_no_barrier_load(&g_initializations);
+    if (count == 0) {
+      gpr_mu_lock(&g_init_mu);
+      if (!g_initialized) {
+        grpc_core::Fork::GlobalInit();
+        grpc_fork_handlers_auto_register();
+        gpr_time_init();
+        grpc_stats_init();
+        grpc_slice_intern_init();
+        grpc_mdctx_global_init();
+        grpc_channel_init_init();
+        grpc_core::ChannelzRegistry::Init();
+        grpc_security_pre_init();
+        grpc_core::ExecCtx::GlobalInit();
+        grpc_iomgr_init();
+        gpr_timers_global_init();
+        grpc_handshaker_factory_registry_init();
+        grpc_security_init();
+        for (i = 0; i < g_number_of_plugins; i++) {
+          if (g_all_of_the_plugins[i].init != nullptr) {
+            g_all_of_the_plugins[i].init();
+          }
+        }
+        /* register channel finalization AFTER all plugins, to ensure that it's
+         * run at the appropriate time */
+        grpc_register_security_filters();
+        register_builtin_channel_init();
+        grpc_tracer_init("GRPC_TRACE");
+        /* no more changes to channel init pipelines */
+        grpc_channel_init_finalize();
+        grpc_iomgr_start();
+        g_initialized = true;
       }
+      gpr_atm_no_barrier_fetch_add(&g_initializations, 1);
+      gpr_mu_unlock(&g_init_mu);
     }
-    /* register channel finalization AFTER all plugins, to ensure that it's run
-     * at the appropriate time */
-    grpc_register_security_filters();
-    register_builtin_channel_init();
-    grpc_tracer_init("GRPC_TRACE");
-    /* no more changes to channel init pipelines */
-    grpc_channel_init_finalize();
-    grpc_iomgr_start();
-  }
-  gpr_mu_unlock(&g_init_mu);
-
+  } while (!gpr_atm_no_barrier_cas(&g_initializations, count, count + 1));
   GRPC_API_TRACE("grpc_init(void)", 0, ());
 }
 
 void grpc_shutdown(void) {
   int i;
   GRPC_API_TRACE("grpc_shutdown(void)", 0, ());
-  gpr_mu_lock(&g_init_mu);
-  if (--g_initializations == 0) {
-    {
-      grpc_core::ExecCtx exec_ctx(0);
-      {
-        grpc_timer_manager_set_threading(
-            false);  // shutdown timer_manager thread
-        grpc_executor_shutdown();
-        for (i = g_number_of_plugins; i >= 0; i--) {
-          if (g_all_of_the_plugins[i].destroy != nullptr) {
-            g_all_of_the_plugins[i].destroy();
+  int count;
+  do {
+    count = gpr_atm_no_barrier_load(&g_initializations);
+    if (count == 1) {
+      gpr_mu_lock(&g_init_mu);
+      if (gpr_atm_no_barrier_fetch_add(&g_initializations, -1) == 1) {
+        {
+          grpc_core::ExecCtx exec_ctx(0);
+          {
+            grpc_timer_manager_set_threading(
+                false);  // shutdown timer_manager thread
+            grpc_executor_shutdown();
+            for (i = g_number_of_plugins; i >= 0; i--) {
+              if (g_all_of_the_plugins[i].destroy != nullptr) {
+                g_all_of_the_plugins[i].destroy();
+              }
+            }
           }
+          grpc_iomgr_shutdown();
+          gpr_timers_global_destroy();
+          grpc_tracer_shutdown();
+          grpc_mdctx_global_shutdown();
+          grpc_handshaker_factory_registry_shutdown();
+          grpc_slice_intern_shutdown();
+          grpc_core::ChannelzRegistry::Shutdown();
+          grpc_stats_shutdown();
+          grpc_core::Fork::GlobalShutdown();
         }
+        grpc_core::ExecCtx::GlobalShutdown();
+        g_initialized = false;
       }
-      grpc_iomgr_shutdown();
-      gpr_timers_global_destroy();
-      grpc_tracer_shutdown();
-      grpc_mdctx_global_shutdown();
-      grpc_handshaker_factory_registry_shutdown();
-      grpc_slice_intern_shutdown();
-      grpc_core::ChannelzRegistry::Shutdown();
-      grpc_stats_shutdown();
-      grpc_core::Fork::GlobalShutdown();
+      gpr_mu_unlock(&g_init_mu);
     }
-    grpc_core::ExecCtx::GlobalShutdown();
-  }
-  gpr_mu_unlock(&g_init_mu);
+  } while (!gpr_atm_no_barrier_cas(&g_initializations, count, count - 1));
 }
 
 int grpc_is_initialized(void) {
