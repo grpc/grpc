@@ -1073,6 +1073,7 @@ src/core/lib/debug/trace.cc \
 src/core/lib/debug/trace.h \
 src/core/lib/gpr/README.md \
 src/core/lib/gpr/alloc.cc \
+src/core/lib/gpr/alloc.h \
 src/core/lib/gpr/arena.cc \
 src/core/lib/gpr/arena.h \
 src/core/lib/gpr/atm.cc \

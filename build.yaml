@@ -173,6 +173,7 @@ filegroups:
   - include/grpc/support/thd_id.h
   - include/grpc/support/time.h
   headers:
+  - src/core/lib/gpr/alloc.h
   - src/core/lib/gpr/arena.h
   - src/core/lib/gpr/env.h
   - src/core/lib/gpr/host_port.h

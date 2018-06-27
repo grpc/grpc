@@ -34,6 +34,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/compression/algorithm_metadata.h"
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gpr/arena.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
@@ -271,16 +272,12 @@ struct grpc_call {
 grpc_core::TraceFlag grpc_call_error_trace(false, "call_error");
 grpc_core::TraceFlag grpc_compression_trace(false, "compression");
 
-/* Given a size, round up to the next multiple of sizeof(void*) */
-#define ROUND_UP_TO_ALIGNMENT_SIZE(x) \
-  (((x) + GPR_MAX_ALIGNMENT - 1u) & ~(GPR_MAX_ALIGNMENT - 1u))
-
 #define CALL_STACK_FROM_CALL(call)   \
   (grpc_call_stack*)((char*)(call) + \
-                     ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)))
+                     GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)))
 #define CALL_FROM_CALL_STACK(call_stack) \
   (grpc_call*)(((char*)(call_stack)) -   \
-               ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)))
+               GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)))
 
 #define CALL_ELEM_FROM_CALL(call, idx) \
   grpc_call_stack_element(CALL_STACK_FROM_CALL(call), idx)
@@ -353,7 +350,7 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
   GRPC_STATS_INC_CALL_INITIAL_SIZE(initial_size);
   gpr_arena* arena = gpr_arena_create(initial_size);
   call = static_cast<grpc_call*>(
-      gpr_arena_alloc(arena, ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)) +
+      gpr_arena_alloc(arena, GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call)) +
                                  channel_stack->call_stack_size));
   gpr_ref_init(&call->ext_ref, 1);
   call->arena = arena;
