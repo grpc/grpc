@@ -93,7 +93,7 @@ void ServerLoadReportingCallData::Destroy(
           GetStatusTagForStatus(final_info->final_status)}});
     gpr_free(client_ip_and_lr_token_);
   }
-  if (target_host_ != nullptr) gpr_free(target_host_);
+  gpr_free(target_host_);
   grpc_slice_unref_internal(service_method_);
 }
 

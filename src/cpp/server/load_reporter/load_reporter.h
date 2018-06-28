@@ -58,14 +58,13 @@ class CensusViewProvider {
   // data. Only used when we know that row must exist because we have seen a row
   // with the same tag values in a related view data. Several ViewData's are
   // considered related if their views are based on the measures that are always
-  // recorded at the same time. One of the output pointers (i.e., double_data
-  // and int_data) will be set to non-null according to the type of the view
-  // data; the other one will be set to null.
-  void static GetRelatedViewDataRow(const ViewDataMap& view_data_map,
-                                    const char* view_name, size_t view_name_len,
-                                    const std::vector<grpc::string>& tag_values,
-                                    const double** double_data,
-                                    const uint64_t** int_data);
+  // recorded at the same time.
+  static double GetRelatedViewDataRowDouble(
+      const ViewDataMap& view_data_map, const char* view_name,
+      size_t view_name_len, const std::vector<grpc::string>& tag_values);
+  static uint64_t GetRelatedViewDataRowInt(
+      const ViewDataMap& view_data_map, const char* view_name,
+      size_t view_name_len, const std::vector<grpc::string>& tag_values);
 
  protected:
   const ViewDescriptorMap& view_descriptor_map() const {
