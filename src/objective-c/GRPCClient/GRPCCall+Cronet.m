@@ -17,25 +17,15 @@
  */
 
 #import "GRPCCall+Cronet.h"
-
-#ifdef GRPC_COMPILE_WITH_CRONET
-static BOOL useCronet = NO;
-static stream_engine *globalCronetEngine;
+#import "private/GRPCHost.h"
+#import "private/GRPCCronetChannelFactory.h"
 
 @implementation GRPCCall (Cronet)
 
-+ (void)useCronetWithEngine:(stream_engine *)engine {
-  useCronet = YES;
-  globalCronetEngine = engine;
-}
++ (void)useCronetWithEngine:(struct stream_engine *)engine forHost:(NSString *)host {
+  GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
 
-+ (stream_engine *)cronetEngine {
-  return globalCronetEngine;
-}
-
-+ (BOOL)isUsingCronet {
-  return useCronet;
+  hostConfig.channelFactory = [GRPCCronetChannelFactory factoryWithEngine:engine];
 }
 
 @end
-#endif

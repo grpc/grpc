@@ -15,10 +15,9 @@
  * limitations under the License.
  *
  */
-#ifdef GRPC_COMPILE_WITH_CRONET
-#import <Cronet/Cronet.h>
-
 #import "GRPCCall.h"
+
+struct stream_engine;
 
 /**
  * Methods for using cronet transport.
@@ -32,11 +31,6 @@
  * all subsequent RPCs will use Cronet transport. The method is not thread
  * safe.
  */
-+ (void)useCronetWithEngine:(stream_engine*)engine;
-
-+ (stream_engine*)cronetEngine;
-
-+ (BOOL)isUsingCronet;
++ (void)useCronetWithEngine:(struct stream_engine*)engine forHost:(NSString *)host;
 
 @end
-#endif

@@ -20,6 +20,8 @@
 
 #import <grpc/impl/codegen/compression_types.h>
 
+#import "GRPCChannelFactory.h"
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class GRPCCompletionQueue;
@@ -44,9 +46,9 @@ struct grpc_channel_credentials;
 @property(nonatomic) unsigned int initialConnectBackoff;
 @property(nonatomic) unsigned int maxConnectBackoff;
 
-/** The following properties should only be modified for testing: */
+@property(nonatomic) id<GRPCChannelFactory> channelFactory;
 
-@property(nonatomic, getter=isSecure) BOOL secure;
+/** The following properties should only be modified for testing: */
 
 @property(nonatomic, copy, nullable) NSString *hostNameOverride;
 

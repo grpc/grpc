@@ -21,16 +21,14 @@
 #import <GRPCClient/GRPCCall.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
-#ifdef GRPC_COMPILE_WITH_CRONET
-#import <GRPCClient/GRPCCall+ChannelArg.h>
-#import <GRPCClient/GRPCCall+Cronet.h>
-#endif
 
 #import "GRPCChannel.h"
 #import "GRPCCompletionQueue.h"
 #import "GRPCConnectivityMonitor.h"
 #import "NSDictionary+GRPC.h"
 #import "version.h"
+#import "GRPCChannelFactory.h"
+#import "GRPCSecureChannelFactory.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -82,7 +80,7 @@ static NSMutableDictionary *kHostCache;
 
     if ((self = [super init])) {
       _address = address;
-      _secure = YES;
+      _channelFactory = [GRPCSecureChannelFactory factoryWithPEMRootCerts:nil privateKey:nil certChain:nil error:nil];
       kHostCache[address] = self;
       _compressAlgorithm = GRPC_COMPRESS_NONE;
       _retryEnabled = YES;
@@ -130,81 +128,18 @@ static NSMutableDictionary *kHostCache;
                         completionQueue:queue];
 }
 
-- (NSData *)nullTerminatedDataWithString:(NSString *)string {
-  // dataUsingEncoding: does not return a null-terminated string.
-  NSData *data = [string dataUsingEncoding:NSASCIIStringEncoding allowLossyConversion:YES];
-  NSMutableData *nullTerminated = [NSMutableData dataWithData:data];
-  [nullTerminated appendBytes:"\0" length:1];
-  return nullTerminated;
-}
-
 - (BOOL)setTLSPEMRootCerts:(nullable NSString *)pemRootCerts
             withPrivateKey:(nullable NSString *)pemPrivateKey
              withCertChain:(nullable NSString *)pemCertChain
                      error:(NSError **)errorPtr {
-  static NSData *kDefaultRootsASCII;
-  static NSError *kDefaultRootsError;
-  static dispatch_once_t loading;
-  dispatch_once(&loading, ^{
-    NSString *defaultPath = @"gRPCCertificates.bundle/roots";  // .pem
-    // Do not use NSBundle.mainBundle, as it's nil for tests of library projects.
-    NSBundle *bundle = [NSBundle bundleForClass:self.class];
-    NSString *path = [bundle pathForResource:defaultPath ofType:@"pem"];
-    NSError *error;
-    // Files in PEM format can have non-ASCII characters in their comments (e.g. for the name of the
-    // issuer). Load them as UTF8 and produce an ASCII equivalent.
-    NSString *contentInUTF8 =
-        [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:&error];
-    if (contentInUTF8 == nil) {
-      kDefaultRootsError = error;
-      return;
-    }
-    kDefaultRootsASCII = [self nullTerminatedDataWithString:contentInUTF8];
-  });
-
-  NSData *rootsASCII;
-  if (pemRootCerts != nil) {
-    rootsASCII = [self nullTerminatedDataWithString:pemRootCerts];
-  } else {
-    if (kDefaultRootsASCII == nil) {
-      if (errorPtr) {
-        *errorPtr = kDefaultRootsError;
-      }
-      NSAssert(
-          kDefaultRootsASCII,
-          @"Could not read gRPCCertificates.bundle/roots.pem. This file, "
-           "with the root certificates, is needed to establish secure (TLS) connections. "
-           "Because the file is distributed with the gRPC library, this error is usually a sign "
-           "that the library wasn't configured correctly for your project. Error: %@",
-          kDefaultRootsError);
-      return NO;
-    }
-    rootsASCII = kDefaultRootsASCII;
-  }
-
-  grpc_channel_credentials *creds;
-  if (pemPrivateKey == nil && pemCertChain == nil) {
-    creds = grpc_ssl_credentials_create(rootsASCII.bytes, NULL, NULL, NULL);
-  } else {
-    grpc_ssl_pem_key_cert_pair key_cert_pair;
-    NSData *privateKeyASCII = [self nullTerminatedDataWithString:pemPrivateKey];
-    NSData *certChainASCII = [self nullTerminatedDataWithString:pemCertChain];
-    key_cert_pair.private_key = privateKeyASCII.bytes;
-    key_cert_pair.cert_chain = certChainASCII.bytes;
-    creds = grpc_ssl_credentials_create(rootsASCII.bytes, &key_cert_pair, NULL, NULL);
-  }
-
-  @synchronized(self) {
-    if (_channelCreds != nil) {
-      grpc_channel_credentials_release(_channelCreds);
-    }
-    _channelCreds = creds;
-  }
-
-  return YES;
+  _channelFactory = [GRPCSecureChannelFactory factoryWithPEMRootCerts:pemRootCerts
+                                                           privateKey:pemPrivateKey
+                                                            certChain:pemCertChain
+                                                                error:errorPtr];
+  return (*errorPtr == nil);
 }
 
-- (NSDictionary *)channelArgsUsingCronet:(BOOL)useCronet {
+- (NSMutableDictionary *)channelArgs {
   NSMutableDictionary *args = [NSMutableDictionary dictionary];
 
   // TODO(jcanizales): Add OS and device information (see
@@ -215,7 +150,7 @@ static NSMutableDictionary *kHostCache;
   }
   args[@GRPC_ARG_PRIMARY_USER_AGENT_STRING] = userAgent;
 
-  if (_secure && _hostNameOverride) {
+  if (/*****_secure && *****/_hostNameOverride) {
     args[@GRPC_SSL_TARGET_NAME_OVERRIDE_ARG] = _hostNameOverride;
   }
 
@@ -237,10 +172,6 @@ static NSMutableDictionary *kHostCache;
     args[@GRPC_ARG_MOBILE_LOG_CONTEXT] = logContext;
   }
 
-  if (useCronet) {
-    args[@GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER] = [NSNumber numberWithInt:1];
-  }
-
   if (_retryEnabled == NO) {
     args[@GRPC_ARG_ENABLE_RETRIES] = [NSNumber numberWithInt:0];
   }
@@ -259,31 +190,7 @@ static NSMutableDictionary *kHostCache;
 }
 
 - (GRPCChannel *)newChannel {
-  BOOL useCronet = NO;
-#ifdef GRPC_COMPILE_WITH_CRONET
-  useCronet = [GRPCCall isUsingCronet];
-#endif
-  NSDictionary *args = [self channelArgsUsingCronet:useCronet];
-  if (_secure) {
-    GRPCChannel *channel;
-    @synchronized(self) {
-      if (_channelCreds == nil) {
-        [self setTLSPEMRootCerts:nil withPrivateKey:nil withCertChain:nil error:nil];
-      }
-#ifdef GRPC_COMPILE_WITH_CRONET
-      if (useCronet) {
-        channel = [GRPCChannel secureCronetChannelWithHost:_address channelArgs:args];
-      } else
-#endif
-      {
-        channel =
-            [GRPCChannel secureChannelWithHost:_address credentials:_channelCreds channelArgs:args];
-      }
-    }
-    return channel;
-  } else {
-    return [GRPCChannel insecureChannelWithHost:_address channelArgs:args];
-  }
+  return [_channelFactory createChannelWithHost:_address channelArgs:[self channelArgs]];
 }
 
 - (NSString *)hostName {

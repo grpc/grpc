@@ -21,48 +21,21 @@
 #include <grpc/grpc.h>
 
 @class GRPCCompletionQueue;
-struct grpc_channel_credentials;
 
 /**
  * Each separate instance of this class represents at least one TCP connection to the provided host.
  */
 @interface GRPCChannel : NSObject
 
-@property(nonatomic, readonly, nonnull) struct grpc_channel *unmanagedChannel;
-
 - (nullable instancetype)init NS_UNAVAILABLE;
 
-/**
- * Creates a secure channel to the specified @c host using default credentials and channel
- * arguments. If certificates could not be found to create a secure channel, then @c nil is
- * returned.
- */
-+ (nullable GRPCChannel *)secureChannelWithHost:(nonnull NSString *)host;
-
-/**
- * Creates a secure channel to the specified @c host using Cronet as a transport mechanism.
- */
-#ifdef GRPC_COMPILE_WITH_CRONET
-+ (nullable GRPCChannel *)secureCronetChannelWithHost:(nonnull NSString *)host
-                                          channelArgs:(nonnull NSDictionary *)channelArgs;
-#endif
-/**
- * Creates a secure channel to the specified @c host using the specified @c credentials and
- * @c channelArgs. Only in tests should @c GRPC_SSL_TARGET_NAME_OVERRIDE_ARG channel arg be set.
- */
-+ (nonnull GRPCChannel *)secureChannelWithHost:(nonnull NSString *)host
-                                   credentials:
-                                       (nonnull struct grpc_channel_credentials *)credentials
-                                   channelArgs:(nullable NSDictionary *)channelArgs;
-
-/**
- * Creates an insecure channel to the specified @c host using the specified @c channelArgs.
- */
-+ (nonnull GRPCChannel *)insecureChannelWithHost:(nonnull NSString *)host
-                                     channelArgs:(nullable NSDictionary *)channelArgs;
+- (nullable instancetype)initWithUnmanagedChannel:(nullable grpc_channel *)unmanagedChannel
+                                      channelArgs:(nullable grpc_channel_args *)channelArgs;
 
 - (nullable grpc_call *)unmanagedCallWithPath:(nonnull NSString *)path
                                    serverName:(nonnull NSString *)serverName
                                       timeout:(NSTimeInterval)timeout
                               completionQueue:(nonnull GRPCCompletionQueue *)queue;
 @end
+
+grpc_channel_args* _Nullable BuildChannelArgs(NSDictionary * _Nullable dictionary);
