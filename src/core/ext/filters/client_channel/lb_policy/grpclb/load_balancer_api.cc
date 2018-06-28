@@ -73,7 +73,7 @@ grpc_grpclb_request* grpc_grpclb_request_create(const char* lb_service_name) {
 }
 
 static void populate_timestamp(gpr_timespec timestamp,
-                               struct _grpc_lb_v1_Timestamp* timestamp_pb) {
+                               grpc_grpclb_timestamp* timestamp_pb) {
   timestamp_pb->has_seconds = true;
   timestamp_pb->seconds = timestamp.tv_sec;
   timestamp_pb->has_nanos = true;

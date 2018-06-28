@@ -24,7 +24,7 @@ Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
   # version = '1.14.0-dev'
-  version = '0.0.2'
+  version = '0.0.3'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -348,6 +348,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/channel/channel_stack.h',
                       'src/core/lib/channel/channel_stack_builder.h',
                       'src/core/lib/channel/channel_trace.h',
+                      'src/core/lib/channel/channelz.h',
                       'src/core/lib/channel/channelz_registry.h',
                       'src/core/lib/channel/connected_channel.h',
                       'src/core/lib/channel/context.h',
@@ -479,13 +480,13 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h',
+                      'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h',
+                      'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h',
                       'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h',
                       'src/core/ext/filters/client_channel/lb_policy/subchannel_list.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h',
-                      'src/core/ext/filters/load_reporting/server_load_reporting_filter.h',
-                      'src/core/ext/filters/load_reporting/server_load_reporting_plugin.h',
                       'src/core/ext/filters/max_age/max_age_filter.h',
                       'src/core/ext/filters/message_size/message_size_filter.h',
                       'src/core/ext/filters/http/client_authority_filter.h',
@@ -533,6 +534,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/channel/channel_stack.h',
                               'src/core/lib/channel/channel_stack_builder.h',
                               'src/core/lib/channel/channel_trace.h',
+                              'src/core/lib/channel/channelz.h',
                               'src/core/lib/channel/channelz_registry.h',
                               'src/core/lib/channel/connected_channel.h',
                               'src/core/lib/channel/context.h',
@@ -661,6 +663,17 @@ Pod::Spec.new do |s|
                               'src/core/lib/transport/transport_impl.h',
                               'src/core/lib/debug/trace.h',
                               'src/core/ext/transport/inproc/inproc_transport.h'
+  end
+
+  s.subspec 'Protobuf' do |ss|
+    ss.header_mappings_dir = 'include/grpcpp'
+    ss.dependency "#{s.name}/Interface", version
+
+    ss.source_files = 'include/grpcpp/impl/codegen/proto_buffer_reader.h',
+                      'include/grpcpp/impl/codegen/proto_buffer_writer.h',
+                      'include/grpcpp/impl/codegen/proto_utils.h',
+                      'include/grpcpp/impl/codegen/config_protobuf.h',
+                      'include/grpcpp/impl/codegen/config_protobuf.h'
   end
 
   s.prepare_command = <<-END_OF_COMMAND

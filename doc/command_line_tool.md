@@ -32,7 +32,7 @@ The command line tool should support the following things:
 
 To use the tool, you need to get the grpc repository and make sure your system
 has the prerequisites for building grpc from source, given in the [installation
-instructions](https://github.com/grpc/grpc/blob/master/INSTALL.md).
+instructions](../BUILDING.md).
 
 In order to build the grpc command line tool from a fresh clone of the grpc
 repository, you need to run the following command to update submodules:

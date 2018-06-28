@@ -459,6 +459,23 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "ev_epollex_linux_test", 
+    "src": [
+      "test/core/iomgr/ev_epollex_linux_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "ev_epollsig_linux_test", 
     "src": [
       "test/core/iomgr/ev_epollsig_linux_test.cc"
@@ -2772,6 +2789,28 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
+    "name": "bm_channel", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_channel.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc++_test_config", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
+      "grpc_benchmark", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
     "name": "bm_chttp2_hpack", 
     "src": [
       "test/cpp/microbenchmarks/bm_chttp2_hpack.cc"
@@ -3116,6 +3155,27 @@
     "name": "channelz_registry_test", 
     "src": [
       "test/core/channel/channelz_registry_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_channelz_proto", 
+      "grpc++_test", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "channelz_test", 
+    "src": [
+      "test/core/channel/channelz_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -3987,26 +4047,6 @@
     "name": "json_run_localhost", 
     "src": [
       "test/cpp/qps/json_run_localhost.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc++", 
-      "grpc++_test_util", 
-      "grpc_test_util", 
-      "lb_load_data_store"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "lb_load_data_store_test", 
-    "src": [
-      "test/cpp/server/load_reporter/load_data_store_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -6018,24 +6058,6 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
-    "src": [
-      "test/core/end2end/fixtures/h2_load_reporting.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "end2end_tests", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
     "name": "h2_oauth2_test", 
     "src": [
       "test/core/end2end/fixtures/h2_oauth2.cc"
@@ -6327,24 +6349,6 @@
     "name": "h2_http_proxy_nosec_test", 
     "src": [
       "test/core/end2end/fixtures/h2_http_proxy.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "end2end_nosec_tests", 
-      "gpr", 
-      "gpr_test_util", 
-      "grpc_test_util_unsecure", 
-      "grpc_unsecure"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "src": [
-      "test/core/end2end/fixtures/h2_load_reporting.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -6883,6 +6887,16 @@
     "type": "lib"
   }, 
   {
+    "deps": [], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "cxxabi", 
+    "src": [], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
     "deps": [
       "gpr_base"
     ], 
@@ -6929,7 +6943,6 @@
       "grpc_resolver_sockaddr", 
       "grpc_secure", 
       "grpc_server_backward_compatibility", 
-      "grpc_server_load_reporting", 
       "grpc_transport_chttp2_client_insecure", 
       "grpc_transport_chttp2_client_secure", 
       "grpc_transport_chttp2_server_insecure", 
@@ -6951,7 +6964,6 @@
     "deps": [
       "gpr", 
       "grpc_base", 
-      "grpc_server_load_reporting", 
       "grpc_transport_chttp2_client_secure", 
       "grpc_transport_cronet_client_secure"
     ], 
@@ -7036,7 +7048,6 @@
       "grpc_resolver_fake", 
       "grpc_resolver_sockaddr", 
       "grpc_server_backward_compatibility", 
-      "grpc_server_load_reporting", 
       "grpc_transport_chttp2_client_insecure", 
       "grpc_transport_chttp2_server_insecure", 
       "grpc_transport_inproc", 
@@ -7649,23 +7660,6 @@
     "name": "interop_server_main", 
     "src": [
       "test/cpp/interop/interop_server_bootstrap.cc"
-    ], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "grpc++"
-    ], 
-    "headers": [
-      "src/cpp/server/load_reporter/load_data_store.h"
-    ], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "lb_load_data_store", 
-    "src": [
-      "src/cpp/server/load_reporter/load_data_store.cc", 
-      "src/cpp/server/load_reporter/load_data_store.h"
     ], 
     "third_party": false, 
     "type": "lib"
@@ -8779,6 +8773,7 @@
       "test/core/end2end/tests/cancel_in_a_vacuum.cc", 
       "test/core/end2end/tests/cancel_test_helpers.h", 
       "test/core/end2end/tests/cancel_with_status.cc", 
+      "test/core/end2end/tests/channelz.cc", 
       "test/core/end2end/tests/compressed_payload.cc", 
       "test/core/end2end/tests/connectivity.cc", 
       "test/core/end2end/tests/default_host.cc", 
@@ -8795,7 +8790,6 @@
       "test/core/end2end/tests/invoke_large_request.cc", 
       "test/core/end2end/tests/keepalive_timeout.cc", 
       "test/core/end2end/tests/large_metadata.cc", 
-      "test/core/end2end/tests/load_reporting_hook.cc", 
       "test/core/end2end/tests/max_concurrent_streams.cc", 
       "test/core/end2end/tests/max_connection_age.cc", 
       "test/core/end2end/tests/max_connection_idle.cc", 
@@ -8879,6 +8873,7 @@
       "test/core/end2end/tests/cancel_in_a_vacuum.cc", 
       "test/core/end2end/tests/cancel_test_helpers.h", 
       "test/core/end2end/tests/cancel_with_status.cc", 
+      "test/core/end2end/tests/channelz.cc", 
       "test/core/end2end/tests/compressed_payload.cc", 
       "test/core/end2end/tests/connectivity.cc", 
       "test/core/end2end/tests/default_host.cc", 
@@ -8895,7 +8890,6 @@
       "test/core/end2end/tests/invoke_large_request.cc", 
       "test/core/end2end/tests/keepalive_timeout.cc", 
       "test/core/end2end/tests/large_metadata.cc", 
-      "test/core/end2end/tests/load_reporting_hook.cc", 
       "test/core/end2end/tests/max_concurrent_streams.cc", 
       "test/core/end2end/tests/max_connection_age.cc", 
       "test/core/end2end/tests/max_connection_idle.cc", 
@@ -9353,6 +9347,7 @@
       "src/core/lib/channel/channel_stack.cc", 
       "src/core/lib/channel/channel_stack_builder.cc", 
       "src/core/lib/channel/channel_trace.cc", 
+      "src/core/lib/channel/channelz.cc", 
       "src/core/lib/channel/channelz_registry.cc", 
       "src/core/lib/channel/connected_channel.cc", 
       "src/core/lib/channel/handshaker.cc", 
@@ -9524,6 +9519,7 @@
       "src/core/lib/channel/channel_stack.h", 
       "src/core/lib/channel/channel_stack_builder.h", 
       "src/core/lib/channel/channel_trace.h", 
+      "src/core/lib/channel/channelz.h", 
       "src/core/lib/channel/channelz_registry.h", 
       "src/core/lib/channel/connected_channel.h", 
       "src/core/lib/channel/context.h", 
@@ -9673,6 +9669,7 @@
       "src/core/lib/channel/channel_stack.h", 
       "src/core/lib/channel/channel_stack_builder.h", 
       "src/core/lib/channel/channel_trace.h", 
+      "src/core/lib/channel/channelz.h", 
       "src/core/lib/channel/channelz_registry.h", 
       "src/core/lib/channel/connected_channel.h", 
       "src/core/lib/channel/context.h", 
@@ -10011,6 +10008,8 @@
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
     ], 
     "is_filegroup": true, 
@@ -10027,6 +10026,10 @@
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
     ], 
@@ -10048,6 +10051,8 @@
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
     ], 
     "is_filegroup": true, 
@@ -10064,6 +10069,10 @@
       "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c", 
+      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c", 
       "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
     ], 
@@ -10338,27 +10347,6 @@
     "src": [
       "src/core/ext/filters/workarounds/workaround_utils.cc", 
       "src/core/ext/filters/workarounds/workaround_utils.h"
-    ], 
-    "third_party": false, 
-    "type": "filegroup"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "grpc_base"
-    ], 
-    "headers": [
-      "src/core/ext/filters/load_reporting/server_load_reporting_filter.h", 
-      "src/core/ext/filters/load_reporting/server_load_reporting_plugin.h"
-    ], 
-    "is_filegroup": true, 
-    "language": "c", 
-    "name": "grpc_server_load_reporting", 
-    "src": [
-      "src/core/ext/filters/load_reporting/server_load_reporting_filter.cc", 
-      "src/core/ext/filters/load_reporting/server_load_reporting_filter.h", 
-      "src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc", 
-      "src/core/ext/filters/load_reporting/server_load_reporting_plugin.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
