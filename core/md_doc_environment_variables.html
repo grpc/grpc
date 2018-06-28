@@ -83,10 +83,8 @@ $(function() {
 <li>call_error - traces the possible errors contributing to final call status</li>
 <li>channel - traces operations on the C core channel stack</li>
 <li>client_channel - traces client channel activity, including resolver and load balancing policy interaction</li>
-<li>combiner - traces combiner lock state</li>
 <li>compression - traces compression operations</li>
 <li>connectivity_state - traces connectivity state changes to channels</li>
-<li>channel_stack_builder - traces information about channel stacks being built</li>
 <li>executor - traces grpc's internal thread pool ('the executor')</li>
 <li>fd_trace - traces fd create(), shutdown() and close() calls for channel fds. Also traces epoll fd create()/close() calls in epollex polling engine traces epoll-fd creation/close calls for epollex polling engine</li>
 <li>glb - traces the grpclb load balancer</li>
@@ -103,7 +101,6 @@ $(function() {
 <li>resource_quota - trace resource quota objects internals</li>
 <li>round_robin - traces the round_robin load balancing policy</li>
 <li>queue_pluck</li>
-<li>queue_timeout</li>
 <li>server_channel - lightweight trace of significant server channel events</li>
 <li>secure_endpoint - traces bytes flowing through encrypted channels</li>
 <li>timer - timers (alarms) in the grpc internals</li>
@@ -115,6 +112,7 @@ $(function() {
 <p class="startli">The following tracers will only run in binaries built in DEBUG mode. This is accomplished by invoking <code>CONFIG=dbg make &lt;target&gt;</code></p><ul>
 <li>alarm_refcount - refcounting traces for grpc_alarm structure</li>
 <li>metadata - tracks creation and mutation of metadata</li>
+<li>combiner - traces combiner lock state</li>
 <li>closure - tracks closure creation, scheduling, and completion</li>
 <li>pending_tags - traces still-in-progress tags on completion queues</li>
 <li>polling - traces the selected polling engine</li>
@@ -154,7 +152,7 @@ $(function() {
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue May 15 2018 17:01:00 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Jun 28 2018 16:41:45 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

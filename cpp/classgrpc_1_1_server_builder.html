@@ -13,7 +13,7 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<script type="text/javascript"> (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){ (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o), m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m) })(window,document,'script','//www.google-analytics.com/analytics.js','ga'); ga('create', 'UA-60127042-1', 'auto'); ga('send', 'pageview'); </script></head>
+</head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
 <div id="titlearea">
@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.13.0-dev</span>
+   &#160;<span id="projectnumber">1.14.0-dev</span>
    </div>
   </td>
  </tr>
@@ -391,7 +391,7 @@ template&lt;class T &gt; </div>
   <table class="params">
     <tr><td class="paramname">addr_uri</td><td>The address to try to bind to the server in URI form. If the scheme name is omitted, "dns:///" is assumed. To bind to any address, please use IPv6 any, i.e., [::]:&lt;port&gt;, which also accepts IPv4 connections. Valid values include dns:///localhost:1234, / 192.168.1.1:31416, dns:///[::1]:27182, etc.). </td></tr>
     <tr><td class="paramname">creds</td><td>The credentials associated with the server. </td></tr>
-    <tr><td class="paramname">selected_port[out]</td><td>If not <code>nullptr</code>, gets populated with the port number bound to the <em><a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">grpc::Server</a></em> for the corresponding endpoint after it is successfully bound, 0 otherwise. </td></tr>
+    <tr><td class="paramname">selected_port[out]</td><td>If not <code>nullptr</code>, gets populated with the port number bound to the <em><a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server. ">grpc::Server</a></em> for the corresponding endpoint after it is successfully bound by <a class="el" href="classgrpc_1_1_server_builder.html#aa3966340091070dd68fa831a03e1e6ef" title="Return a running server which is ready for processing calls. ">BuildAndStart()</a>, 0 otherwise. AddListeningPort does not modify this pointer. </td></tr>
   </table>
   </dd>
 </dl>
@@ -758,6 +758,7 @@ template&lt;class T &gt; </div>
 </div><div class="memdoc">
 
 <p>Set max receive message size in bytes. </p>
+<p>The default is GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH. </p>
 
 </div>
 </div>
@@ -786,6 +787,7 @@ template&lt;class T &gt; </div>
 </div><div class="memdoc">
 
 <p>Set max send message size in bytes. </p>
+<p>The default is GRPC_DEFAULT_MAX_SEND_MESSAGE_LENGTH. </p>
 
 </div>
 </div>
@@ -929,7 +931,7 @@ template&lt;class T &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue May 15 2018 17:01:01 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Jun 28 2018 16:41:46 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>
