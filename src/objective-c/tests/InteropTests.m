@@ -95,7 +95,6 @@ BOOL isRemoteInteropTest(NSString *host) {
   // Cronet setup
   [Cronet setHttp2Enabled:YES];
   [Cronet start];
-  [GRPCCall useCronetWithEngine:[Cronet getGlobalEngine]];
 #endif
 }
 
@@ -103,6 +102,10 @@ BOOL isRemoteInteropTest(NSString *host) {
   self.continueAfterFailure = NO;
 
   [GRPCCall resetHostSettings];
+
+#ifdef GRPC_COMPILE_WITH_CRONET
+  [GRPCCall useCronetWithEngine:[Cronet getGlobalEngine] forHost:self.class.host];
+#endif
 
   _service = self.class.host ? [RMTTestService serviceWithHost:self.class.host] : nil;
 }
