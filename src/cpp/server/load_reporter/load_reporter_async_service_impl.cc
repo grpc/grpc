@@ -48,7 +48,7 @@ LoadReporterAsyncServiceImpl::~LoadReporterAsyncServiceImpl() {
     std::unique_lock<std::mutex> lock(cq_shutdown_mu_);
     cq_->Shutdown();
   }
-  next_fetch_and_sample_alarm_.Cancel();
+  next_fetch_and_sample_alarm_->Cancel();
   thread_->Join();
 }
 
@@ -60,8 +60,11 @@ void LoadReporterAsyncServiceImpl::ScheduleNextFetchAndSample() {
   {
     std::unique_lock<std::mutex> lock(cq_shutdown_mu_);
     if (shutdown_) return;
-    next_fetch_and_sample_alarm_.Set(cq_.get(), next_fetch_and_sample_time,
-                                     &next_fetch_and_sample_);
+    // TODO(juanlishen): Improve the Alarm implementation to reuse a single
+    // instance for multiple events.
+    next_fetch_and_sample_alarm_.reset(new Alarm);
+    next_fetch_and_sample_alarm_->Set(cq_.get(), next_fetch_and_sample_time,
+                                      &next_fetch_and_sample_);
   }
   gpr_log(GPR_DEBUG, "[LRS %p] Next fetch-and-sample scheduled.", this);
 }
@@ -240,7 +243,10 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::ScheduleNextReport(
       Shutdown(func, "ScheduleNextReport");
       return;
     }
-    next_report_alarm_.Set(cq_, next_report_time, func);
+    // TODO(juanlishen): Improve the Alarm implementation to reuse a single
+    // instance for multiple events.
+    next_report_alarm_.reset(new Alarm);
+    next_report_alarm_->Set(cq_, next_report_time, func);
   }
   gpr_log(GPR_DEBUG,
           "[LRS %p] Next load report scheduled (lb_id_: %s, handler: %p).",
@@ -308,7 +314,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::Shutdown(
     shutdown_ = true;
     if (call_status_ >= INITIAL_REQUEST_RECEIVED) {
       load_reporter_->ReportStreamClosed(load_balanced_hostname_, lb_id_);
-      next_report_alarm_.Cancel();
+      next_report_alarm_->Cancel();
     }
   }
   // OnRequestDelivered() may be called after OnDoneNotified(), so we need to

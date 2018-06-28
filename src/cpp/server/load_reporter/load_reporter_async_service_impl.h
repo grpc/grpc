@@ -139,7 +139,7 @@ class LoadReporterAsyncServiceImpl
     std::function<void(bool)> on_finish_done_;
     std::function<void(bool)> next_inbound_;
     std::function<void(bool)> next_outbound_;
-    Alarm next_report_alarm_;
+    std::unique_ptr<Alarm> next_report_alarm_;
   };
 
   // Handles the incoming requests and drives the completion queue in a loop.
@@ -159,7 +159,7 @@ class LoadReporterAsyncServiceImpl
   std::unique_ptr<::grpc_core::Thread> thread_;
   std::unique_ptr<LoadReporter> load_reporter_;
   std::function<void(bool)> next_fetch_and_sample_;
-  Alarm next_fetch_and_sample_alarm_;
+  std::unique_ptr<Alarm> next_fetch_and_sample_alarm_;
 };
 
 }  // namespace load_reporter
