@@ -30,6 +30,7 @@
 /* Main struct for alts_grpc_integrity_only_record_protocol.  */
 typedef struct alts_grpc_integrity_only_record_protocol {
   alts_grpc_record_protocol base;
+  bool enable_extra_copy;
   grpc_slice_buffer data_sb;
   unsigned char* tag_buf;
 } alts_grpc_integrity_only_record_protocol;
@@ -46,6 +47,8 @@ static tsi_result alts_grpc_integrity_only_protect(
             "Invalid nullptr arguments to alts_grpc_record_protocol protect.");
     return TSI_INVALID_ARGUMENT;
   }
+  alts_grpc_integrity_only_record_protocol* integrity_only_record_protocol =
+      reinterpret_cast<alts_grpc_integrity_only_record_protocol*>(rp);
   /* Allocates memory for header and tag slices.  */
   grpc_slice header_slice = GRPC_SLICE_MALLOC(rp->header_length);
   grpc_slice tag_slice = GRPC_SLICE_MALLOC(rp->tag_length);
@@ -67,7 +70,16 @@ static tsi_result alts_grpc_integrity_only_protect(
   }
   /* Appends result to protected_slices.  */
   grpc_slice_buffer_add(protected_slices, header_slice);
-  grpc_slice_buffer_move_into(unprotected_slices, protected_slices);
+  if (integrity_only_record_protocol->enable_extra_copy) {
+    /* If extra copy mode is enabled, makes a copy of unprotected_slices.  */
+    for (size_t i = 0; i < unprotected_slices->count; i++) {
+      grpc_slice_buffer_add(protected_slices,
+                            grpc_slice_dup(unprotected_slices->slices[i]));
+    }
+    grpc_slice_buffer_reset_and_unref_internal(unprotected_slices);
+  } else {
+    grpc_slice_buffer_move_into(unprotected_slices, protected_slices);
+  }
   grpc_slice_buffer_add(protected_slices, tag_slice);
   return TSI_OK;
 }
@@ -152,7 +164,7 @@ static const alts_grpc_record_protocol_vtable
 
 tsi_result alts_grpc_integrity_only_record_protocol_create(
     gsec_aead_crypter* crypter, size_t overflow_size, bool is_client,
-    bool is_protect, alts_grpc_record_protocol** rp) {
+    bool is_protect, bool enable_extra_copy, alts_grpc_record_protocol** rp) {
   if (crypter == nullptr || rp == nullptr) {
     gpr_log(GPR_ERROR,
             "Invalid nullptr arguments to alts_grpc_record_protocol create.");
@@ -169,6 +181,7 @@ tsi_result alts_grpc_integrity_only_record_protocol_create(
     gpr_free(impl);
     return result;
   }
+  impl->enable_extra_copy = enable_extra_copy;
   /* Initializes slice buffer for data_sb.  */
   grpc_slice_buffer_init(&impl->data_sb);
   /* Allocates tag buffer.  */
