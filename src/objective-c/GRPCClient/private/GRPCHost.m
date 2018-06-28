@@ -19,6 +19,8 @@
 #import "GRPCHost.h"
 
 #import <GRPCClient/GRPCCall.h>
+#import <GRPCClient/GRPCCall+Cronet.h>
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 
@@ -29,6 +31,7 @@
 #import "version.h"
 #import "GRPCChannelFactory.h"
 #import "GRPCSecureChannelFactory.h"
+#import "GRPCCronetChannelFactory.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -190,6 +193,10 @@ static NSMutableDictionary *kHostCache;
 }
 
 - (GRPCChannel *)newChannel {
+  // TODO (mxyan): Remove this when GRPCCall:useCronetWithEngine is removed
+  if ([GRPCCall isUsingCronet]) {
+    _channelFactory = [GRPCCronetChannelFactory factoryWithEngine:[GRPCCall cronetEngine]];
+  }
   return [_channelFactory createChannelWithHost:_address channelArgs:[self channelArgs]];
 }
 
