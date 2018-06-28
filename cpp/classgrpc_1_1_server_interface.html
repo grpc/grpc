@@ -13,7 +13,7 @@
 <script type="text/javascript" src="search/searchdata.js"></script>
 <script type="text/javascript" src="search/search.js"></script>
 <link href="doxygen.css" rel="stylesheet" type="text/css" />
-<script type="text/javascript"> (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){ (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o), m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m) })(window,document,'script','//www.google-analytics.com/analytics.js','ga'); ga('create', 'UA-60127042-1', 'auto'); ga('send', 'pageview'); </script></head>
+</head>
 <body>
 <div id="top"><!-- do not remove this div, it is closed by doxygen! -->
 <div id="titlearea">
@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.13.0-dev</span>
+   &#160;<span id="projectnumber">1.14.0-dev</span>
    </div>
   </td>
  </tr>
@@ -94,10 +94,10 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a9908106bf62f6146eedbfa0dcce21b1a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a644772d11101318f1424e595dee73ccf"><td class="memTemplParams" colspan="2">template&lt;class T &gt; </td></tr>
 <tr class="memitem:a644772d11101318f1424e595dee73ccf"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html#a644772d11101318f1424e595dee73ccf">Shutdown</a> (const T &amp;deadline)</td></tr>
-<tr class="memdesc:a644772d11101318f1424e595dee73ccf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shutdown the server, blocking until all rpc processing finishes.  <a href="#a644772d11101318f1424e595dee73ccf">More...</a><br /></td></tr>
+<tr class="memdesc:a644772d11101318f1424e595dee73ccf"><td class="mdescLeft">&#160;</td><td class="mdescRight"><em>Shutdown</em> does the following things:  <a href="#a644772d11101318f1424e595dee73ccf">More...</a><br /></td></tr>
 <tr class="separator:a644772d11101318f1424e595dee73ccf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6a1d337270116c95f387e0abf01f6c6c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html#a6a1d337270116c95f387e0abf01f6c6c">Shutdown</a> ()</td></tr>
-<tr class="memdesc:a6a1d337270116c95f387e0abf01f6c6c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shutdown the server, waiting for all rpc processing to finish.  <a href="#a6a1d337270116c95f387e0abf01f6c6c">More...</a><br /></td></tr>
+<tr class="memdesc:a6a1d337270116c95f387e0abf01f6c6c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shutdown the server without a deadline and forced cancellation.  <a href="#a6a1d337270116c95f387e0abf01f6c6c">More...</a><br /></td></tr>
 <tr class="separator:a6a1d337270116c95f387e0abf01f6c6c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac36477b6a7593a4e4608c7eb712b0d70"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_interface.html#ac36477b6a7593a4e4608c7eb712b0d70">Wait</a> ()=0</td></tr>
 <tr class="memdesc:ac36477b6a7593a4e4608c7eb712b0d70"><td class="mdescLeft">&#160;</td><td class="mdescRight">Block waiting for all work to complete.  <a href="#ac36477b6a7593a4e4608c7eb712b0d70">More...</a><br /></td></tr>
@@ -585,9 +585,13 @@ template&lt;class T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Shutdown the server, blocking until all rpc processing finishes. </p>
-<p>Forcefully terminate pending calls after <em>deadline</em> expires.</p>
-<p>All completion queue associated with the server (for example, for async serving) must be shutdown <em>after</em> this method has returned: See <em><a class="el" href="classgrpc_1_1_server_builder.html#a960d55977e1aef56fd7b582037a01bbd" title="Add a completion queue for handling asynchronous services. ">ServerBuilder::AddCompletionQueue</a></em> for details.</p>
+<p><em>Shutdown</em> does the following things: </p>
+<ol type="1">
+<li>Shutdown the server: deactivate all listening ports, mark it in "shutdown mode" so that further call Request's or incoming RPC matches are no longer allowed. Also return all Request'ed-but-not-yet-active calls as failed (!ok). This refers to calls that have been requested at the server by the server-side library or application code but that have not yet been matched to incoming RPCs from the client. Note that this would even include default calls added automatically by the gRPC C++ API without the user's input (e.g., "Unimplemented RPC method")</li>
+<li>Block until all rpc method handlers invoked automatically by the sync API finish.</li>
+<li>If all pending calls complete (and all their operations are retrieved by Next) before <em>deadline</em> expires, this finishes gracefully. Otherwise, forcefully cancel all pending calls associated with the server after <em>deadline</em> expires. In the case of the sync API, if the RPC function for a streaming call has already been started and takes a week to complete, the RPC function won't be forcefully terminated (since that would leave state corrupt and incomplete) and the method handler will just keep running (which will prevent the server from completing the "join" operation that it needs to do at shutdown time).</li>
+</ol>
+<p>All completion queue associated with the server (for example, for async serving) must be shutdown <em>after</em> this method has returned: See <em><a class="el" href="classgrpc_1_1_server_builder.html#a960d55977e1aef56fd7b582037a01bbd" title="Add a completion queue for handling asynchronous services. ">ServerBuilder::AddCompletionQueue</a></em> for details. They must also be drained (by repeated Next) after being shutdown.</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">deadline</td><td>How long to wait until pending rpcs are forcefully terminated. </td></tr>
@@ -620,7 +624,7 @@ template&lt;class T &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Shutdown the server, waiting for all rpc processing to finish. </p>
+<p>Shutdown the server without a deadline and forced cancellation. </p>
 <p>All completion queue associated with the server (for example, for async serving) must be shutdown <em>after</em> this method has returned: See <em><a class="el" href="classgrpc_1_1_server_builder.html#a960d55977e1aef56fd7b582037a01bbd" title="Add a completion queue for handling asynchronous services. ">ServerBuilder::AddCompletionQueue</a></em> for details. </p>
 
 </div>
@@ -757,7 +761,7 @@ template&lt;class T &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue May 15 2018 17:01:01 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Jun 28 2018 16:41:46 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

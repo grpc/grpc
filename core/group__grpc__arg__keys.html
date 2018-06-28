@@ -223,6 +223,9 @@ Macros</h2></td></tr>
 <tr class="memitem:gae4baf9476091b1f1cda04fbfd19da456"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gae4baf9476091b1f1cda04fbfd19da456">GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE</a>&#160;&#160;&#160;&quot;grpc.max_channel_trace_events_per_node&quot;</td></tr>
 <tr class="memdesc:gae4baf9476091b1f1cda04fbfd19da456"><td class="mdescLeft">&#160;</td><td class="mdescRight">The maximum number of trace events to keep in the tracer for each channel or subchannel.  <a href="#gae4baf9476091b1f1cda04fbfd19da456">More...</a><br /></td></tr>
 <tr class="separator:gae4baf9476091b1f1cda04fbfd19da456"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga169f04dc1fa795c27b0daeda33c16999"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga169f04dc1fa795c27b0daeda33c16999">GRPC_ARG_ENABLE_CHANNELZ</a>&#160;&#160;&#160;&quot;grpc.enable_channelz&quot;</td></tr>
+<tr class="memdesc:ga169f04dc1fa795c27b0daeda33c16999"><td class="mdescLeft">&#160;</td><td class="mdescRight">If non-zero, gRPC library will track stats and information at at per channel level.  <a href="#ga169f04dc1fa795c27b0daeda33c16999">More...</a><br /></td></tr>
+<tr class="separator:ga169f04dc1fa795c27b0daeda33c16999"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga3da556ec531495ace9f93b97c8c4f24b"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga3da556ec531495ace9f93b97c8c4f24b">GRPC_ARG_USE_CRONET_PACKET_COALESCING</a>&#160;&#160;&#160;&quot;grpc.use_cronet_packet_coalescing&quot;</td></tr>
 <tr class="memdesc:ga3da556ec531495ace9f93b97c8c4f24b"><td class="mdescLeft">&#160;</td><td class="mdescRight">If non-zero, Cronet transport will coalesce packets to fewer frames when possible.  <a href="#ga3da556ec531495ace9f93b97c8c4f24b">More...</a><br /></td></tr>
 <tr class="separator:ga3da556ec531495ace9f93b97c8c4f24b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -252,12 +255,15 @@ Macros</h2></td></tr>
 <tr class="memitem:gaa40f8424599668676462a76ec54eb712"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gaa40f8424599668676462a76ec54eb712">GRPC_ARG_PER_RPC_RETRY_BUFFER_SIZE</a>&#160;&#160;&#160;&quot;grpc.per_rpc_retry_buffer_size&quot;</td></tr>
 <tr class="memdesc:gaa40f8424599668676462a76ec54eb712"><td class="mdescLeft">&#160;</td><td class="mdescRight">Per-RPC retry buffer size, in bytes.  <a href="#gaa40f8424599668676462a76ec54eb712">More...</a><br /></td></tr>
 <tr class="separator:gaa40f8424599668676462a76ec54eb712"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga8280aa3fac6ead233c14ad2c5b1b9fc2"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga8280aa3fac6ead233c14ad2c5b1b9fc2">GRPC_ARG_MOBILE_LOG_CONFIG</a>&#160;&#160;&#160;&quot;grpc.mobile_log_config&quot;</td></tr>
-<tr class="memdesc:ga8280aa3fac6ead233c14ad2c5b1b9fc2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Channel arg that carries the bridged objective c object for custom metrics logging filter.  <a href="#ga8280aa3fac6ead233c14ad2c5b1b9fc2">More...</a><br /></td></tr>
-<tr class="separator:ga8280aa3fac6ead233c14ad2c5b1b9fc2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga21c78c70325acceccf0e93291c981fe5"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga21c78c70325acceccf0e93291c981fe5">GRPC_ARG_MOBILE_LOG_CONTEXT</a>&#160;&#160;&#160;&quot;grpc.mobile_log_context&quot;</td></tr>
+<tr class="memdesc:ga21c78c70325acceccf0e93291c981fe5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Channel arg that carries the bridged objective c object for custom metrics logging filter.  <a href="#ga21c78c70325acceccf0e93291c981fe5">More...</a><br /></td></tr>
+<tr class="separator:ga21c78c70325acceccf0e93291c981fe5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gad5cfeb3dfc4f99cbc4e1436f7b72f873"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gad5cfeb3dfc4f99cbc4e1436f7b72f873">GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER</a>&#160;&#160;&#160;&quot;grpc.disable_client_authority_filter&quot;</td></tr>
 <tr class="memdesc:gad5cfeb3dfc4f99cbc4e1436f7b72f873"><td class="mdescLeft">&#160;</td><td class="mdescRight">If non-zero, client authority filter is disabled for the channel.  <a href="#gad5cfeb3dfc4f99cbc4e1436f7b72f873">More...</a><br /></td></tr>
 <tr class="separator:gad5cfeb3dfc4f99cbc4e1436f7b72f873"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaa3f69f6e1e789e36d2d9c6083fec0257"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gaa3f69f6e1e789e36d2d9c6083fec0257">GRPC_ARG_ENABLE_HTTP_PROXY</a>&#160;&#160;&#160;&quot;grpc.enable_http_proxy&quot;</td></tr>
+<tr class="memdesc:gaa3f69f6e1e789e36d2d9c6083fec0257"><td class="mdescLeft">&#160;</td><td class="mdescRight">If set to zero, disables use of http proxies.  <a href="#gaa3f69f6e1e789e36d2d9c6083fec0257">More...</a><br /></td></tr>
+<tr class="separator:gaa3f69f6e1e789e36d2d9c6083fec0257"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <p>Channel argument keys. </p>
@@ -344,6 +350,23 @@ Macros</h2></td></tr>
 
 </div>
 </div>
+<a id="ga169f04dc1fa795c27b0daeda33c16999"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga169f04dc1fa795c27b0daeda33c16999">&#9670;&nbsp;</a></span>GRPC_ARG_ENABLE_CHANNELZ</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_ENABLE_CHANNELZ&#160;&#160;&#160;&quot;grpc.enable_channelz&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>If non-zero, gRPC library will track stats and information at at per channel level. </p>
+<p>Disabling channelz naturally disables channel tracing. The default is for channelz to be disabled. </p>
+
+</div>
+</div>
 <a id="ga405daab19c0dceb2a64d0b1a77f8fe97"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ga405daab19c0dceb2a64d0b1a77f8fe97">&#9670;&nbsp;</a></span>GRPC_ARG_ENABLE_DEADLINE_CHECKS</h2>
 
@@ -358,6 +381,23 @@ Macros</h2></td></tr>
 
 <p>Enable/disable support for deadline checking. </p>
 <p>Defaults to 1, unless GRPC_ARG_MINIMAL_STACK is enabled, in which case it defaults to 0 </p>
+
+</div>
+</div>
+<a id="gaa3f69f6e1e789e36d2d9c6083fec0257"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#gaa3f69f6e1e789e36d2d9c6083fec0257">&#9670;&nbsp;</a></span>GRPC_ARG_ENABLE_HTTP_PROXY</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define GRPC_ARG_ENABLE_HTTP_PROXY&#160;&#160;&#160;&quot;grpc.enable_http_proxy&quot;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>If set to zero, disables use of http proxies. </p>
+<p>Enabled by default. </p>
 
 </div>
 </div>
@@ -952,14 +992,14 @@ Macros</h2></td></tr>
 
 </div>
 </div>
-<a id="ga8280aa3fac6ead233c14ad2c5b1b9fc2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ga8280aa3fac6ead233c14ad2c5b1b9fc2">&#9670;&nbsp;</a></span>GRPC_ARG_MOBILE_LOG_CONFIG</h2>
+<a id="ga21c78c70325acceccf0e93291c981fe5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ga21c78c70325acceccf0e93291c981fe5">&#9670;&nbsp;</a></span>GRPC_ARG_MOBILE_LOG_CONTEXT</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define GRPC_ARG_MOBILE_LOG_CONFIG&#160;&#160;&#160;&quot;grpc.mobile_log_config&quot;</td>
+          <td class="memname">#define GRPC_ARG_MOBILE_LOG_CONTEXT&#160;&#160;&#160;&quot;grpc.mobile_log_context&quot;</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -1318,7 +1358,7 @@ Macros</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue May 15 2018 17:01:00 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Jun 28 2018 16:41:45 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

@@ -89,6 +89,9 @@ Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__ssl__pem__key__cert__pair.html">grpc_ssl_pem_key_cert_pair</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Object that holds a private key / certificate chain pair in PEM format.  <a href="structgrpc__ssl__pem__key__cert__pair.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structverify__peer__options.html">verify_peer_options</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Object that holds additional peer-verification options on a secure channel.  <a href="structverify__peer__options.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__auth__metadata__context.html">grpc_auth_metadata_context</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Context that can be used by metadata credentials plugin in order to create auth related metadata.  <a href="structgrpc__auth__metadata__context.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -201,9 +204,9 @@ Functions</h2></td></tr>
 <tr class="memitem:a44c23e47832d9cc27bb56822d66bf436"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a44c23e47832d9cc27bb56822d66bf436">grpc_set_ssl_roots_override_callback</a> (<a class="el" href="grpc__security_8h.html#a81799db566912702502c280b163b12bc">grpc_ssl_roots_override_callback</a> cb)</td></tr>
 <tr class="memdesc:a44c23e47832d9cc27bb56822d66bf436"><td class="mdescLeft">&#160;</td><td class="mdescRight">Setup a callback to override the default TLS/SSL roots.  <a href="#a44c23e47832d9cc27bb56822d66bf436">More...</a><br /></td></tr>
 <tr class="separator:a44c23e47832d9cc27bb56822d66bf436"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2dfd4a555352ff0e449ce9c38abd2f21"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a2dfd4a555352ff0e449ce9c38abd2f21">grpc_ssl_credentials_create</a> (const char *pem_root_certs, <a class="el" href="structgrpc__ssl__pem__key__cert__pair.html">grpc_ssl_pem_key_cert_pair</a> *pem_key_cert_pair, void *reserved)</td></tr>
-<tr class="memdesc:a2dfd4a555352ff0e449ce9c38abd2f21"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates an SSL credentials object.  <a href="#a2dfd4a555352ff0e449ce9c38abd2f21">More...</a><br /></td></tr>
-<tr class="separator:a2dfd4a555352ff0e449ce9c38abd2f21"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7440216a2192f7c5ecadf5704e7c7bda"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a7440216a2192f7c5ecadf5704e7c7bda">grpc_ssl_credentials_create</a> (const char *pem_root_certs, <a class="el" href="structgrpc__ssl__pem__key__cert__pair.html">grpc_ssl_pem_key_cert_pair</a> *pem_key_cert_pair, const <a class="el" href="structverify__peer__options.html">verify_peer_options</a> *verify_options, void *reserved)</td></tr>
+<tr class="memdesc:a7440216a2192f7c5ecadf5704e7c7bda"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates an SSL credentials object.  <a href="#a7440216a2192f7c5ecadf5704e7c7bda">More...</a><br /></td></tr>
+<tr class="separator:a7440216a2192f7c5ecadf5704e7c7bda"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aeb21611154f3defe05e4eac4cc25af5a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#aeb21611154f3defe05e4eac4cc25af5a">grpc_call_credentials_release</a> (<a class="el" href="grpc__security_8h.html#a2350ef1b38c4f69d0ff8510dcbe40072">grpc_call_credentials</a> *creds)</td></tr>
 <tr class="memdesc:aeb21611154f3defe05e4eac4cc25af5a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Releases a call credentials object.  <a href="#aeb21611154f3defe05e4eac4cc25af5a">More...</a><br /></td></tr>
 <tr class="separator:aeb21611154f3defe05e4eac4cc25af5a"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -1518,8 +1521,8 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a2dfd4a555352ff0e449ce9c38abd2f21"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2dfd4a555352ff0e449ce9c38abd2f21">&#9670;&nbsp;</a></span>grpc_ssl_credentials_create()</h2>
+<a id="a7440216a2192f7c5ecadf5704e7c7bda"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7440216a2192f7c5ecadf5704e7c7bda">&#9670;&nbsp;</a></span>grpc_ssl_credentials_create()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1539,6 +1542,12 @@ Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">const <a class="el" href="structverify__peer__options.html">verify_peer_options</a> *&#160;</td>
+          <td class="paramname"><em>verify_options</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
           <td class="paramtype">void *&#160;</td>
           <td class="paramname"><em>reserved</em>&#160;</td>
         </tr>
@@ -1553,7 +1562,8 @@ Functions</h2></td></tr>
 <p>Creates an SSL credentials object. </p>
 <ul>
 <li>pem_root_certs is the NULL-terminated string containing the PEM encoding of the server root certificates. If this parameter is NULL, the implementation will first try to dereference the file pointed by the GRPC_DEFAULT_SSL_ROOTS_FILE_PATH environment variable, and if that fails, try to get the roots set by grpc_override_ssl_default_roots. Eventually, if all these fail, it will try to get the roots from a well-known place on disk (in the grpc install directory).</li>
-<li>pem_key_cert_pair is a pointer on the object containing client's private key and certificate chain. This parameter can be NULL if the client does not have such a key/cert pair. </li>
+<li>pem_key_cert_pair is a pointer on the object containing client's private key and certificate chain. This parameter can be NULL if the client does not have such a key/cert pair.</li>
+<li>verify_options is an optional <a class="el" href="structverify__peer__options.html" title="Object that holds additional peer-verification options on a secure channel. ">verify_peer_options</a> object which holds additional options controlling how peer certificates are verified. For example, you can supply a callback which receives the peer's certificate with which you can do additional verification. Can be NULL, in which case verification will retain default behavior. Any settings in verify_options are copied during this call, so the verify_options object can be released afterwards. </li>
 </ul>
 
 </div>
@@ -1902,7 +1912,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue May 15 2018 17:01:00 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Jun 28 2018 16:41:45 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>
