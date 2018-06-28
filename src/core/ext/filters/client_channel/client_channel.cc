@@ -318,6 +318,7 @@ static void on_resolver_shutdown_locked(channel_data* chand,
   GRPC_CHANNEL_STACK_UNREF(chand->owning_stack, "resolver");
   grpc_channel_args_destroy(chand->resolver_result);
   chand->resolver_result = nullptr;
+  GRPC_ERROR_UNREF(error);
 }
 
 // Returns the LB policy name from the resolver result.
@@ -418,6 +419,7 @@ static void create_new_lb_policy_locked(
     chand->lb_policy->SetReresolutionClosureLocked(&args->closure);
     // Get the new LB policy's initial connectivity state and start a
     // connectivity watch.
+    GRPC_ERROR_UNREF(*connectivity_error);
     *connectivity_state =
         chand->lb_policy->CheckConnectivityLocked(connectivity_error);
     if (chand->exit_idle_when_lb_policy_arrives) {
@@ -534,6 +536,8 @@ static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
   if (set_connectivity_state) {
     set_channel_connectivity_state_locked(
         chand, connectivity_state, connectivity_error, "resolver_result");
+  } else {
+    GRPC_ERROR_UNREF(connectivity_error);
   }
   // Invoke closures that were waiting for results and renew the watch.
   GRPC_CLOSURE_LIST_SCHED(&chand->waiting_for_resolver_result_closures);
