@@ -39,17 +39,6 @@ def create_server_creds
     true) # force client auth
 end
 
-# A test message
-class EchoMsg
-  def self.marshal(_o)
-    ''
-  end
-
-  def self.unmarshal(_o)
-    EchoMsg.new
-  end
-end
-
 # a test service that checks the cert of its peer
 class SslTestService
   include GRPC::GenericService

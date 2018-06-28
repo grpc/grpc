@@ -1046,6 +1046,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
           op->reserved = nullptr;
           op->flags = grpc_fuzzer_get_next_uint32(&inp);
         }
+        if (g_channel == nullptr) ok = false;
         if (ok) {
           validator* v = make_finished_batch_validator(g_active_call, has_ops);
           g_active_call->pending_ops++;

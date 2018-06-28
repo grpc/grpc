@@ -55,4 +55,19 @@ typedef NS_ENUM(NSInteger, GRPCCompressAlgorithm) {
                          timeout:(int)timeout
                          forHost:(nonnull NSString *)host;
 
+/** Enable/Disable automatic retry of gRPC calls on the channel. If automatic retry is enabled, the
+ * retry is controlled by server's service config. If automatic retry is disabled, failed calls are
+ * immediately returned to the application layer. */
++ (void)enableRetry:(BOOL)enabled forHost:(nonnull NSString *)host;
+
+/** Set channel connection timeout and backoff parameters. All parameters are positive integers in
+ * milliseconds. Set a parameter to 0 to make gRPC use default value for that parameter.
+ *
+ * Refer to gRPC's doc at https://github.com/grpc/grpc/blob/master/doc/connection-backoff.md for the
+ * details of each parameter. */
++ (void)setMinConnectTimeout:(unsigned int)timeout
+              initialBackoff:(unsigned int)initialBackoff
+                  maxBackoff:(unsigned int)maxBackoff
+                     forHost:(nonnull NSString *)host;
+
 @end

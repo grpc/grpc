@@ -235,6 +235,7 @@ filegroups:
   - src/core/lib/channel/channel_stack.cc
   - src/core/lib/channel/channel_stack_builder.cc
   - src/core/lib/channel/channel_trace.cc
+  - src/core/lib/channel/channelz.cc
   - src/core/lib/channel/channelz_registry.cc
   - src/core/lib/channel/connected_channel.cc
   - src/core/lib/channel/handshaker.cc
@@ -405,6 +406,7 @@ filegroups:
   - src/core/lib/channel/channel_stack.h
   - src/core/lib/channel/channel_stack_builder.h
   - src/core/lib/channel/channel_trace.h
+  - src/core/lib/channel/channelz.h
   - src/core/lib/channel/channelz_registry.h
   - src/core/lib/channel/connected_channel.h
   - src/core/lib/channel/context.h
@@ -645,6 +647,8 @@ filegroups:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h
   src:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
@@ -652,6 +656,8 @@ filegroups:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c
   - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
   plugin: grpc_lb_policy_grpclb
   uses:
@@ -666,6 +672,8 @@ filegroups:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h
   src:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
@@ -673,6 +681,8 @@ filegroups:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c
+  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c
   - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
   plugin: grpc_lb_policy_grpclb
   uses:
@@ -820,16 +830,6 @@ filegroups:
   - src/core/ext/filters/workarounds/workaround_utils.h
   src:
   - src/core/ext/filters/workarounds/workaround_utils.cc
-  uses:
-  - grpc_base
-- name: grpc_server_load_reporting
-  headers:
-  - src/core/ext/filters/load_reporting/server_load_reporting_filter.h
-  - src/core/ext/filters/load_reporting/server_load_reporting_plugin.h
-  src:
-  - src/core/ext/filters/load_reporting/server_load_reporting_filter.cc
-  - src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc
-  plugin: grpc_server_load_reporting_plugin
   uses:
   - grpc_base
 - name: grpc_test_util_base
@@ -1374,6 +1374,32 @@ libs:
   deps:
   - grpc
   secure: true
+- name: cxxabi
+  build: private
+  language: c
+  src:
+  - third_party/libcxxabi/src/abort_message.cpp
+  - third_party/libcxxabi/src/cxa_aux_runtime.cpp
+  - third_party/libcxxabi/src/cxa_default_handlers.cpp
+  - third_party/libcxxabi/src/cxa_demangle.cpp
+  - third_party/libcxxabi/src/cxa_exception_storage.cpp
+  - third_party/libcxxabi/src/cxa_guard.cpp
+  - third_party/libcxxabi/src/cxa_handlers.cpp
+  - third_party/libcxxabi/src/cxa_noexception.cpp
+  - third_party/libcxxabi/src/cxa_thread_atexit.cpp
+  - third_party/libcxxabi/src/cxa_unexpected.cpp
+  - third_party/libcxxabi/src/cxa_vector.cpp
+  - third_party/libcxxabi/src/cxa_virtual.cpp
+  - third_party/libcxxabi/src/fallback_malloc.cpp
+  - third_party/libcxxabi/src/private_typeinfo.cpp
+  - third_party/libcxxabi/src/stdlib_exception.cpp
+  - third_party/libcxxabi/src/stdlib_new_delete.cpp
+  - third_party/libcxxabi/src/stdlib_stdexcept.cpp
+  - third_party/libcxxabi/src/stdlib_typeinfo.cpp
+  build_system:
+  - Makefile
+  defaults: cxxabi
+  secure: false
 - name: gpr
   build: all
   language: c
@@ -1414,7 +1440,6 @@ libs:
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
   - grpc_resolver_fake
-  - grpc_server_load_reporting
   - grpc_secure
   - census
   - grpc_max_age_filter
@@ -1441,7 +1466,6 @@ libs:
   - grpc_base
   - grpc_transport_cronet_client_secure
   - grpc_transport_chttp2_client_secure
-  - grpc_server_load_reporting
   generate_plugin_registry: true
   platforms:
   - linux
@@ -1515,7 +1539,6 @@ libs:
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
   - grpc_resolver_fake
-  - grpc_server_load_reporting
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
@@ -1906,15 +1929,6 @@ libs:
   - test/cpp/interop/interop_server_bootstrap.cc
   deps:
   - interop_server_lib
-- name: lb_load_data_store
-  build: private
-  language: c++
-  headers:
-  - src/cpp/server/load_reporter/load_data_store.h
-  src:
-  - src/cpp/server/load_reporter/load_data_store.cc
-  deps:
-  - grpc++
 - name: qps
   build: private
   language: c++
@@ -2279,6 +2293,21 @@ targets:
   - gpr_test_util
   - gpr
   uses_polling: false
+- name: ev_epollex_linux_test
+  cpu_cost: 3
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/ev_epollex_linux_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr_test_util
+  - gpr
+  exclude_iomgrs:
+  - uv
+  platforms:
+  - linux
 - name: ev_epollsig_linux_test
   cpu_cost: 3
   build: test
@@ -3908,6 +3937,28 @@ targets:
   - linux
   - posix
   uses_polling: false
+- name: bm_channel
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/bm_channel.cc
+  deps:
+  - grpc_benchmark
+  - benchmark
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - grpc++_unsecure
+  - grpc_unsecure
+  - gpr_test_util
+  - gpr
+  - grpc++_test_config
+  benchmark: true
+  defaults: benchmark
+  platforms:
+  - mac
+  - linux
+  - posix
+  uses_polling: false
 - name: bm_chttp2_hpack
   build: test
   language: c++
@@ -4254,6 +4305,23 @@ targets:
   uses:
   - grpc++_test
   uses_polling: false
+- name: channelz_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/channel/channelz_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  filegroups:
+  - grpc++_channelz_proto
+  uses:
+  - grpc++_test
 - name: check_gcp_environment_linux_test
   build: test
   language: c++
@@ -4860,20 +4928,6 @@ targets:
   - mac
   - linux
   - posix
-- name: lb_load_data_store_test
-  gtest: true
-  build: test
-  language: c++
-  src:
-  - test/cpp/server/load_reporter/load_data_store_test.cc
-  deps:
-  - lb_load_data_store
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr_test_util
-  - gpr
 - name: memory_test
   gtest: true
   build: test
@@ -5652,6 +5706,11 @@ defaults:
     CPPFLAGS: -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM
       -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
     CXXFLAGS: -fno-rtti -fno-exceptions
+  cxxabi:
+    CPPFLAGS: -D_LIBCPP_DISABLE_EXTERN_TEMPLATE -D_LIBCXXABI_BUILDING_LIBRARY -D_LIBCXXABI_NO_EXCEPTIONS
+      -Ithird_party/libcxxabi/include -nostdinc++ -Ithird_party/libcxx/include $(W_NO_UNUSED_BUT_SET_VARIABLE)
+      $(W_NO_MAYBE_UNINITIALIZED) -fvisibility=hidden
+    CXXFLAGS: $(W_NO_CXX14_COMPAT)
   global:
     COREFLAGS: -fno-rtti -fno-exceptions
     CPPFLAGS: -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1
