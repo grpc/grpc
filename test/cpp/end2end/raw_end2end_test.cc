@@ -55,26 +55,11 @@ int detag(void* p) { return static_cast<int>(reinterpret_cast<intptr_t>(p)); }
 
 class Verifier {
  public:
-  Verifier() : lambda_run_(false) {}
+  Verifier() {}
+
   // Expect sets the expected ok value for a specific tag
   Verifier& Expect(int i, bool expect_ok) {
-    return ExpectUnless(i, expect_ok, false);
-  }
-  // ExpectUnless sets the expected ok value for a specific tag
-  // unless the tag was already marked seen (as a result of ExpectMaybe)
-  Verifier& ExpectUnless(int i, bool expect_ok, bool seen) {
-    if (!seen) {
-      expectations_[tag(i)] = expect_ok;
-    }
-    return *this;
-  }
-  // ExpectMaybe sets the expected ok value for a specific tag, but does not
-  // require it to appear
-  // If it does, sets *seen to true
-  Verifier& ExpectMaybe(int i, bool expect_ok, bool* seen) {
-    if (!*seen) {
-      maybe_expectations_[tag(i)] = MaybeExpect{expect_ok, seen};
-    }
+    expectations_[tag(i)] = expect_ok;
     return *this;
   }
 
@@ -88,69 +73,12 @@ class Verifier {
     return detag(got_tag);
   }
 
-  template <typename T>
-  CompletionQueue::NextStatus DoOnceThenAsyncNext(
-      CompletionQueue* cq, void** got_tag, bool* ok, T deadline,
-      std::function<void(void)> lambda) {
-    if (lambda_run_) {
-      return cq->AsyncNext(got_tag, ok, deadline);
-    } else {
-      lambda_run_ = true;
-      return cq->DoThenAsyncNext(lambda, got_tag, ok, deadline);
-    }
-  }
-
   // Verify keeps calling Next until all currently set
   // expected tags are complete
-  void Verify(CompletionQueue* cq) { Verify(cq, false); }
-
-  // This version of Verify allows optionally ignoring the
-  // outcome of the expectation
-  void Verify(CompletionQueue* cq, bool ignore_ok) {
-    GPR_ASSERT(!expectations_.empty() || !maybe_expectations_.empty());
+  void Verify(CompletionQueue* cq) {
+    GPR_ASSERT(!expectations_.empty());
     while (!expectations_.empty()) {
-      Next(cq, ignore_ok);
-    }
-  }
-
-  // This version of Verify stops after a certain deadline
-  void Verify(CompletionQueue* cq,
-              std::chrono::system_clock::time_point deadline) {
-    if (expectations_.empty()) {
-      bool ok;
-      void* got_tag;
-      EXPECT_EQ(cq->AsyncNext(&got_tag, &ok, deadline),
-                CompletionQueue::TIMEOUT);
-    } else {
-      while (!expectations_.empty()) {
-        bool ok;
-        void* got_tag;
-        EXPECT_EQ(cq->AsyncNext(&got_tag, &ok, deadline),
-                  CompletionQueue::GOT_EVENT);
-        GotTag(got_tag, ok, false);
-      }
-    }
-  }
-
-  // This version of Verify stops after a certain deadline, and uses the
-  // DoThenAsyncNext API
-  // to call the lambda
-  void Verify(CompletionQueue* cq,
-              std::chrono::system_clock::time_point deadline,
-              std::function<void(void)> lambda) {
-    if (expectations_.empty()) {
-      bool ok;
-      void* got_tag;
-      EXPECT_EQ(DoOnceThenAsyncNext(cq, &got_tag, &ok, deadline, lambda),
-                CompletionQueue::TIMEOUT);
-    } else {
-      while (!expectations_.empty()) {
-        bool ok;
-        void* got_tag;
-        EXPECT_EQ(DoOnceThenAsyncNext(cq, &got_tag, &ok, deadline, lambda),
-                  CompletionQueue::GOT_EVENT);
-        GotTag(got_tag, ok, false);
-      }
+      Next(cq, false);
     }
   }
 
@@ -162,31 +90,10 @@ class Verifier {
         EXPECT_EQ(it->second, ok);
       }
       expectations_.erase(it);
-    } else {
-      auto it2 = maybe_expectations_.find(got_tag);
-      if (it2 != maybe_expectations_.end()) {
-        if (it2->second.seen != nullptr) {
-          EXPECT_FALSE(*it2->second.seen);
-          *it2->second.seen = true;
-        }
-        if (!ignore_ok) {
-          EXPECT_EQ(it2->second.ok, ok);
-        }
-      } else {
-        gpr_log(GPR_ERROR, "Unexpected tag: %p", tag);
-        abort();
-      }
     }
   }
 
-  struct MaybeExpect {
-    bool ok;
-    bool* seen;
-  };
-
   std::map<void*, bool> expectations_;
-  std::map<void*, MaybeExpect> maybe_expectations_;
-  bool lambda_run_;
 };
 
 class RawEnd2EndTest : public ::testing::Test {

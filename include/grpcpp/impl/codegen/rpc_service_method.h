@@ -95,7 +95,7 @@ class RpcServiceMethod : public RpcMethod {
 
  private:
   void* server_tag_;
-  RpcServiceMethod::AsyncType async_type_;
+  AsyncType async_type_;
   std::unique_ptr<MethodHandler> handler_;
 
   const char* TypeToString(RpcServiceMethod::AsyncType type) {
