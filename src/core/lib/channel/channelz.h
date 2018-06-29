@@ -31,6 +31,10 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
 
+// Channel arg key for client channel factory.
+#define GRPC_ARG_CHANNELZ_CHANNEL_NODE_CREATION_FUNC \
+  "grpc.channelz_channel_node_creation_func"
+
 namespace grpc_core {
 namespace channelz {
 
@@ -41,7 +45,7 @@ class ChannelNodePeer;
 class ChannelNode : public RefCounted<ChannelNode> {
  public:
   ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes);
-  ~ChannelNode();
+  virtual ~ChannelNode();
 
   void RecordCallStarted();
   void RecordCallFailed() {
@@ -53,6 +57,13 @@ class ChannelNode : public RefCounted<ChannelNode> {
 
   char* RenderJSON();
 
+  // helper for getting connectivity state. It is virtual because it allows
+  // the client_channel code to live in ext/ instead of lib/
+  //
+  // returns true if the channel has a notion of a connectivity state. In that
+  // case it also sets state to the correct connectivity state.
+  virtual bool GetConnectivityState(grpc_connectivity_state* state);
+
   ChannelTrace* trace() { return trace_.get(); }
 
   void set_channel_destroyed() {
@@ -62,12 +73,12 @@ class ChannelNode : public RefCounted<ChannelNode> {
 
   intptr_t channel_uuid() { return channel_uuid_; }
 
+ protected:
+  grpc_channel* channel() { return channel_; }
+
  private:
   // testing peer friend.
   friend class testing::ChannelNodePeer;
-
-  // helper for getting connectivity state.
-  grpc_connectivity_state GetConnectivityState();
 
   grpc_channel* channel_ = nullptr;
   UniquePtr<char> target_;
@@ -78,6 +89,14 @@ class ChannelNode : public RefCounted<ChannelNode> {
   intptr_t channel_uuid_;
   ManualConstructor<ChannelTrace> trace_;
 };
+
+// Creation functions
+
+typedef RefCountedPtr<ChannelNode> (*ChannelNodeCreationFunc)(grpc_channel*,
+                                                              size_t);
+
+RefCountedPtr<ChannelNode> MakeChannelNode(grpc_channel* channel,
+                                           size_t channel_tracer_max_nodes);
 
 }  // namespace channelz
 }  // namespace grpc_core

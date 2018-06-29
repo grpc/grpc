@@ -26,6 +26,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/transport/chttp2/client/authority.h"
 #include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
@@ -92,10 +93,11 @@ grpc_channel* grpc_insecure_channel_create(const char* target,
       "grpc_insecure_channel_create(target=%s, args=%p, reserved=%p)", 3,
       (target, args, reserved));
   GPR_ASSERT(reserved == nullptr);
-  // Add channel arg containing the client channel factory.
-  grpc_arg arg =
-      grpc_client_channel_factory_create_channel_arg(&client_channel_factory);
-  grpc_channel_args* new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
+  grpc_arg args_to_add[] = {
+      grpc_client_channel_factory_create_channel_arg(&client_channel_factory),
+      grpc_core::channelz::ClientChannelNode::CreateArg()};
+  grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
+      args, args_to_add, GPR_ARRAY_SIZE(args_to_add));
   // Create channel.
   grpc_channel* channel = client_channel_factory_create_channel(
       &client_channel_factory, target, GRPC_CLIENT_CHANNEL_TYPE_REGULAR,

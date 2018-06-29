@@ -26,6 +26,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/uri_parser.h"
 #include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
@@ -213,7 +214,8 @@ grpc_channel* grpc_secure_channel_create(grpc_channel_credentials* creds,
     // credentials.
     grpc_arg args_to_add[] = {
         grpc_client_channel_factory_create_channel_arg(&client_channel_factory),
-        grpc_channel_credentials_to_arg(creds)};
+        grpc_channel_credentials_to_arg(creds),
+        grpc_core::channelz::ClientChannelNode::CreateArg()};
     grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
         args, args_to_add, GPR_ARRAY_SIZE(args_to_add));
     // Create channel.
