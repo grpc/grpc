@@ -33,6 +33,7 @@
 #include <grpc/support/log_windows.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -50,6 +51,122 @@
 #else
 #define GRPC_FIONBIO FIONBIO
 #endif
+
+/** fixed_slice_pool */
+
+typedef struct fixed_slice_pool_node fixed_slice_pool_node;
+
+typedef struct {
+  gpr_mu mu;
+  gpr_refcount refs;
+  size_t size;
+  gpr_atm count;
+  size_t max_count;
+  fixed_slice_pool_node* front;
+} fixed_slice_pool;
+
+struct fixed_slice_pool_node {
+  grpc_slice_refcount base;
+  gpr_refcount refs;
+  fixed_slice_pool* pool;
+  fixed_slice_pool_node* next;
+};
+
+static void fixed_slice_pool_ref(fixed_slice_pool* pool) {
+  gpr_ref(&pool->refs);
+}
+
+static void fixed_slice_pool_unref(fixed_slice_pool* pool) {
+  if (gpr_unref(&pool->refs)) {
+    fixed_slice_pool_node* front = pool->front;
+    while (front) {
+      fixed_slice_pool_node* n = front;
+      front = n->next;
+      gpr_free(n);
+    }
+    gpr_mu_destroy(&pool->mu);
+    gpr_free(pool);
+  }
+}
+
+static void fixed_slice_pool_slice_ref(void* p) {
+  fixed_slice_pool_node* n = static_cast<fixed_slice_pool_node*>(p);
+  gpr_ref(&n->refs);
+}
+
+static void fixed_slice_pool_slice_unref(void* p) {
+  fixed_slice_pool_node* n = static_cast<fixed_slice_pool_node*>(p);
+  fixed_slice_pool* pool = n->pool;
+  if (gpr_unref(&n->refs)) {
+    gpr_mu_lock(&pool->mu);
+    n->next = pool->front;
+    pool->front = n;
+    gpr_mu_unlock(&pool->mu);
+    fixed_slice_pool_unref(pool);
+  }
+}
+
+static const grpc_slice_refcount_vtable fixed_slice_pool_vtable = {
+    fixed_slice_pool_slice_ref, fixed_slice_pool_slice_unref,
+    grpc_slice_default_eq_impl, grpc_slice_default_hash_impl};
+
+static fixed_slice_pool* fixed_slice_pool_create(size_t size,
+                                                 size_t max_count) {
+  fixed_slice_pool* pool =
+      (fixed_slice_pool*)gpr_malloc(sizeof(fixed_slice_pool));
+  gpr_mu_init(&pool->mu);
+  gpr_ref_init(&pool->refs, 1);
+  pool->size = size;
+  pool->front = nullptr;
+  pool->count = 0;
+  pool->max_count = max_count;
+  return pool;
+}
+
+static void fixed_slice_pool_destroy(fixed_slice_pool* pool) {
+  fixed_slice_pool_unref(pool);
+}
+
+static fixed_slice_pool_node* fixed_slice_pool_take_node(
+    fixed_slice_pool* pool) {
+  fixed_slice_pool_node* n = nullptr;
+  if (pool->front) {
+    gpr_mu_lock(&pool->mu);
+    if (pool->front) {
+      n = pool->front;
+      pool->front = n->next;
+    }
+    gpr_mu_unlock(&pool->mu);
+  }
+  if (!n) {
+    if (gpr_atm_full_fetch_add(&pool->count, 1) >= pool->max_count) {
+      gpr_atm_full_fetch_add(&pool->count, -1);
+      return nullptr;
+    }
+    n = static_cast<fixed_slice_pool_node*>(
+        gpr_malloc(sizeof(fixed_slice_pool_node) + pool->size));
+    n->base.vtable = &fixed_slice_pool_vtable;
+    n->base.sub_refcount = &n->base;
+    n->pool = pool;
+  }
+  fixed_slice_pool_ref(pool);
+  gpr_ref_init(&n->refs, 1);
+  n->next = nullptr;
+  return n;
+}
+
+static grpc_slice fixed_slice_pool_node_to_slice(fixed_slice_pool_node* n) {
+  grpc_slice slice;
+  slice.refcount = &n->base;
+  slice.data.refcounted.bytes = reinterpret_cast<uint8_t*>(n + 1);
+  slice.data.refcounted.length = n->pool->size;
+  return slice;
+}
+
+static grpc_slice fixed_slice_pool_take(fixed_slice_pool* pool) {
+  fixed_slice_pool_node* n = fixed_slice_pool_take_node(pool);
+  return n ? fixed_slice_pool_node_to_slice(n) : GRPC_SLICE_MALLOC(pool->size);
+}
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 
@@ -117,6 +234,7 @@ typedef struct grpc_tcp {
   grpc_slice_buffer* read_slices;
 
   grpc_resource_user* resource_user;
+  fixed_slice_pool* slice_pool;
 
   /* The IO Completion Port runs from another thread. We need some mechanism
      to protect ourselves when requesting a shutdown. */
@@ -128,6 +246,7 @@ typedef struct grpc_tcp {
 } grpc_tcp;
 
 static void tcp_free(grpc_tcp* tcp) {
+  fixed_slice_pool_destroy(tcp->slice_pool);
   grpc_winsocket_destroy(tcp->socket);
   gpr_mu_destroy(&tcp->mu);
   gpr_free(tcp->peer_string);
@@ -230,7 +349,7 @@ static void win_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
   tcp->read_slices = read_slices;
   grpc_slice_buffer_reset_and_unref_internal(read_slices);
 
-  tcp->read_slice = GRPC_SLICE_MALLOC(8192);
+  tcp->read_slice = fixed_slice_pool_take(tcp->slice_pool);
 
   buffer.len = (ULONG)GRPC_SLICE_LENGTH(
       tcp->read_slice);  // we know slice size fits in 32bit.
@@ -438,16 +557,25 @@ static grpc_endpoint_vtable vtable = {win_read,
                                       win_get_peer,
                                       win_get_fd};
 
+#define MAX_CHUNK_SIZE 32 * 1024 * 1024
+#define MAX_SLICE_COUNT 512
+
 grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
                                grpc_channel_args* channel_args,
                                const char* peer_string) {
-  grpc_resource_quota* resource_quota = grpc_resource_quota_create(NULL);
-  if (channel_args != NULL) {
+  int tcp_read_chunk_size = GRPC_TCP_DEFAULT_READ_SLICE_SIZE;
+  grpc_resource_quota* resource_quota = grpc_resource_quota_create(nullptr);
+  if (channel_args != nullptr) {
     for (size_t i = 0; i < channel_args->num_args; i++) {
       if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
         grpc_resource_quota_unref_internal(resource_quota);
         resource_quota = grpc_resource_quota_ref_internal(
             (grpc_resource_quota*)channel_args->args[i].value.pointer.p);
+      } else if (0 == strcmp(channel_args->args[i].key,
+                             GRPC_ARG_TCP_READ_CHUNK_SIZE)) {
+        grpc_integer_options options = {tcp_read_chunk_size, 1, MAX_CHUNK_SIZE};
+        tcp_read_chunk_size =
+            grpc_channel_arg_get_integer(&channel_args->args[i], options);
       }
     }
   }
@@ -461,6 +589,8 @@ grpc_endpoint* grpc_tcp_create(grpc_winsocket* socket,
   GRPC_CLOSURE_INIT(&tcp->on_write, on_write, tcp, grpc_schedule_on_exec_ctx);
   tcp->peer_string = gpr_strdup(peer_string);
   tcp->resource_user = grpc_resource_user_create(resource_quota, peer_string);
+  tcp->slice_pool =
+      fixed_slice_pool_create(tcp_read_chunk_size, MAX_SLICE_COUNT);
   /* Tell network status tracking code about the new endpoint */
   grpc_network_status_register_endpoint(&tcp->base);
   grpc_resource_quota_unref_internal(resource_quota);
