@@ -64,15 +64,14 @@ class ChannelNode : public RefCounted<ChannelNode> {
 
   ChannelTrace* trace() { return trace_.get(); }
 
-  void set_channel_destroyed() {
+  void MarkChannelDestroyed() {
     GPR_ASSERT(channel_ != nullptr);
     channel_ = nullptr;
   }
 
-  intptr_t channel_uuid() { return channel_uuid_; }
+  bool ChannelIsDestroyed() { return channel_ == nullptr; }
 
- protected:
-  grpc_channel* channel() { return channel_; }
+  intptr_t channel_uuid() { return channel_uuid_; }
 
  private:
   // testing peer friend.

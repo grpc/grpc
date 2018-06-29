@@ -31,8 +31,7 @@ namespace channelz {
 // functionality like querying for connectivity_state and subchannel data.
 class ClientChannelNode : public ChannelNode {
  public:
-  ClientChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes)
-      : ChannelNode(channel, channel_tracer_max_nodes) {}
+  ClientChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes);
   virtual ~ClientChannelNode() {}
 
   // Override this functionality since client_channels have a notion of
@@ -42,6 +41,9 @@ class ClientChannelNode : public ChannelNode {
   // Helper to create a channel arg to ensure this type of ChannelNode is
   // created.
   static grpc_arg CreateArg();
+
+ private:
+  grpc_channel_element* client_channel_;
 };
 
 RefCountedPtr<ChannelNode> MakeClientChannelNode(

@@ -18,8 +18,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 namespace grpc_core {
@@ -37,12 +39,21 @@ static const grpc_arg_pointer_vtable client_channel_channelz_vtable = {
     client_channel_channelz_copy, client_channel_channelz_destroy,
     client_channel_channelz_cmp};
 
+ClientChannelNode::ClientChannelNode(grpc_channel* channel,
+                                     size_t channel_tracer_max_nodes)
+    : ChannelNode(channel, channel_tracer_max_nodes) {
+  client_channel_ =
+      grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
+  GPR_ASSERT(client_channel_->filter == &grpc_client_channel_filter);
+}
+
 void ClientChannelNode::PopulateConnectivityState(grpc_json* json) {
   grpc_connectivity_state state;
-  if (channel() != nullptr) {
-    state = grpc_channel_check_connectivity_state(channel(), false);
-  } else {
+  if (ChannelIsDestroyed()) {
     state = GRPC_CHANNEL_SHUTDOWN;
+  } else {
+    state =
+        grpc_client_channel_check_connectivity_state(client_channel_, false);
   }
   json = grpc_json_create_child(nullptr, json, "state", nullptr,
                                 GRPC_JSON_OBJECT, false);

@@ -410,7 +410,7 @@ void grpc_channel_internal_unref(grpc_channel* c REF_ARG) {
 static void destroy_channel(void* arg, grpc_error* error) {
   grpc_channel* channel = static_cast<grpc_channel*>(arg);
   if (channel->channelz_channel != nullptr) {
-    channel->channelz_channel->set_channel_destroyed();
+    channel->channelz_channel->MarkChannelDestroyed();
     channel->channelz_channel.reset();
   }
   grpc_channel_stack_destroy(CHANNEL_STACK_FROM_CHANNEL(channel));
