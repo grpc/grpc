@@ -23,6 +23,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include <string.h>
+
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h"
@@ -37,6 +39,42 @@ typedef struct alts_grpc_integrity_only_record_protocol {
 
 /* --- alts_grpc_record_protocol methods implementation. --- */
 
+static tsi_result alts_grpc_integrity_only_extra_copy_protect(
+    alts_grpc_record_protocol* rp, grpc_slice_buffer* unprotected_slices,
+    grpc_slice_buffer* protected_slices) {
+  /* Allocates memory for protected frame.  */
+  size_t protected_frame_size =
+      unprotected_slices->length + rp->header_length + rp->tag_length;
+  grpc_slice protected_slice = GRPC_SLICE_MALLOC(protected_frame_size);
+  /* Calls alts_iovec_record_protocol protect.  */
+  char* error_details = nullptr;
+  iovec_t header_iovec = {GRPC_SLICE_START_PTR(protected_slice),
+                          rp->header_length};
+  iovec_t tag_iovec = {GRPC_SLICE_START_PTR(protected_slice) +
+                           rp->header_length + unprotected_slices->length,
+                       rp->tag_length};
+  alts_grpc_record_protocol_convert_slice_buffer_to_iovec(rp,
+                                                          unprotected_slices);
+  grpc_status_code status = alts_iovec_record_protocol_integrity_only_protect(
+      rp->iovec_rp, rp->iovec_buf, unprotected_slices->count, header_iovec,
+      tag_iovec, &error_details);
+  if (status != GRPC_STATUS_OK) {
+    gpr_log(GPR_ERROR, "Failed to protect, %s", error_details);
+    gpr_free(error_details);
+    return TSI_INTERNAL_ERROR;
+  }
+  /* Copies data from unprotected_slices to protected_slice.  */
+  uint8_t* data = GRPC_SLICE_START_PTR(protected_slice) + rp->header_length;
+  for (size_t i = 0; i < unprotected_slices->count; i++) {
+    memcpy(data, GRPC_SLICE_START_PTR(unprotected_slices->slices[i]),
+           GRPC_SLICE_LENGTH(unprotected_slices->slices[i]));
+    data += GRPC_SLICE_LENGTH(unprotected_slices->slices[i]);
+  }
+  grpc_slice_buffer_add(protected_slices, protected_slice);
+  grpc_slice_buffer_reset_and_unref_internal(unprotected_slices);
+  return TSI_OK;
+}
+
 static tsi_result alts_grpc_integrity_only_protect(
     alts_grpc_record_protocol* rp, grpc_slice_buffer* unprotected_slices,
     grpc_slice_buffer* protected_slices) {
@@ -49,6 +87,10 @@ static tsi_result alts_grpc_integrity_only_protect(
   }
   alts_grpc_integrity_only_record_protocol* integrity_only_record_protocol =
       reinterpret_cast<alts_grpc_integrity_only_record_protocol*>(rp);
+  if (integrity_only_record_protocol->enable_extra_copy) {
+    return alts_grpc_integrity_only_extra_copy_protect(rp, unprotected_slices,
+                                                       protected_slices);
+  }
   /* Allocates memory for header and tag slices.  */
   grpc_slice header_slice = GRPC_SLICE_MALLOC(rp->header_length);
   grpc_slice tag_slice = GRPC_SLICE_MALLOC(rp->tag_length);
@@ -70,16 +112,7 @@ static tsi_result alts_grpc_integrity_only_protect(
   }
   /* Appends result to protected_slices.  */
   grpc_slice_buffer_add(protected_slices, header_slice);
-  if (integrity_only_record_protocol->enable_extra_copy) {
-    /* If extra copy mode is enabled, makes a copy of unprotected_slices.  */
-    for (size_t i = 0; i < unprotected_slices->count; i++) {
-      grpc_slice_buffer_add(protected_slices,
-                            grpc_slice_dup(unprotected_slices->slices[i]));
-    }
-    grpc_slice_buffer_reset_and_unref_internal(unprotected_slices);
-  } else {
-    grpc_slice_buffer_move_into(unprotected_slices, protected_slices);
-  }
+  grpc_slice_buffer_move_into(unprotected_slices, protected_slices);
   grpc_slice_buffer_add(protected_slices, tag_slice);
   return TSI_OK;
 }
