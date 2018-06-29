@@ -67,7 +67,7 @@ class RpcServiceMethod : public RpcMethod {
   enum class AsyncType {
     UNSET,
     ASYNC,
-    CODEGEN_GENERIC,
+    RAW,
   };
 
   void set_server_tag(void* tag) { server_tag_ = tag; }
@@ -81,7 +81,7 @@ class RpcServiceMethod : public RpcMethod {
       handler_.reset();
     } else {
       // this is not an error condition, as it allows users to declare a server
-      // like WithCodegenGenericMethod_foo<AsyncService>. However since it
+      // like WithRawMethod_foo<AsyncService>. However since it
       // overwrites behavior, it should be logged.
       gpr_log(
           GPR_INFO,
@@ -104,8 +104,8 @@ class RpcServiceMethod : public RpcMethod {
         return "unset";
       case AsyncType::ASYNC:
         return "async";
-      case AsyncType::CODEGEN_GENERIC:
-        return "codegen generic";
+      case AsyncType::RAW:
+        return "raw";
       default:
         GPR_UNREACHABLE_CODE(return "unknown");
     }

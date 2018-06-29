@@ -134,15 +134,14 @@ class Service {
         internal::RpcServiceMethod::AsyncType::ASYNC);
   }
 
-  void MarkMethodCodegenGeneric(int index) {
+  void MarkMethodRaw(int index) {
     // This does not have to be a hard error, however no one has approached us
     // with a use case yet. Please file an issue if you believe you have one.
-    GPR_CODEGEN_ASSERT(
-        methods_[index].get() != nullptr &&
-        "Cannot mark the method as 'codegen generic' because it has already "
-        "been marked as 'generic'.");
+    GPR_CODEGEN_ASSERT(methods_[index].get() != nullptr &&
+                       "Cannot mark the method as 'raw' because it has already "
+                       "been marked as 'generic'.");
     methods_[index]->SetServerAsyncType(
-        internal::RpcServiceMethod::AsyncType::CODEGEN_GENERIC);
+        internal::RpcServiceMethod::AsyncType::RAW);
   }
 
   void MarkMethodGeneric(int index) {
@@ -151,7 +150,7 @@ class Service {
     GPR_CODEGEN_ASSERT(
         methods_[index]->handler() != nullptr &&
         "Cannot mark the method as 'generic' because it has already been "
-        "marked as 'async' or 'codegen generic'.");
+        "marked as 'async' or 'raw'.");
     methods_[index].reset();
   }
 

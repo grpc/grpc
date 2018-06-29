@@ -74,12 +74,12 @@ void HandleEcho(Service* service, ServerCompletionQueue* cq, bool dup_service) {
   Verify(cq, 2, true);
 }
 
-// Handlers to handle codegen generic request at a server. To be run in a
+// Handlers to handle raw request at a server. To be run in a
 // separate thread. Note that this is the same as the async version, except
 // that the req/resp are ByteBuffers
 template <class Service>
-void HandleCodegenGenericEcho(Service* service, ServerCompletionQueue* cq,
-                              bool dup_service) {
+void HandleRawEcho(Service* service, ServerCompletionQueue* cq,
+                   bool dup_service) {
   ServerContext srv_ctx;
   GenericServerAsyncResponseWriter response_writer(&srv_ctx);
   ByteBuffer recv_buffer;
@@ -114,8 +114,7 @@ void HandleClientStreaming(Service* service, ServerCompletionQueue* cq) {
 }
 
 template <class Service>
-void HandleCodegenGenericClientStreaming(Service* service,
-                                         ServerCompletionQueue* cq) {
+void HandleRawClientStreaming(Service* service, ServerCompletionQueue* cq) {
   ServerContext srv_ctx;
   ByteBuffer recv_buffer;
   EchoRequest recv_request;
@@ -425,32 +424,30 @@ TEST_F(HybridEnd2endTest, AsyncEcho) {
   echo_handler_thread.join();
 }
 
-TEST_F(HybridEnd2endTest, CodegenGenericEcho) {
-  typedef EchoTestService::WithCodegenGenericMethod_Echo<TestServiceImpl> SType;
+TEST_F(HybridEnd2endTest, RawEcho) {
+  typedef EchoTestService::WithRawMethod_Echo<TestServiceImpl> SType;
   SType service;
   SetUpServer(&service, nullptr, nullptr);
   ResetStub();
-  std::thread echo_handler_thread(HandleCodegenGenericEcho<SType>, &service,
-                                  cqs_[0].get(), false);
+  std::thread echo_handler_thread(HandleRawEcho<SType>, &service, cqs_[0].get(),
+                                  false);
   TestAllMethods();
   echo_handler_thread.join();
 }
 
-TEST_F(HybridEnd2endTest, CodegenGenericRequestStream) {
-  typedef EchoTestService::WithCodegenGenericMethod_RequestStream<
-      TestServiceImpl>
-      SType;
+TEST_F(HybridEnd2endTest, RawRequestStream) {
+  typedef EchoTestService::WithRawMethod_RequestStream<TestServiceImpl> SType;
   SType service;
   SetUpServer(&service, nullptr, nullptr);
   ResetStub();
-  std::thread request_stream_handler_thread(
-      HandleCodegenGenericClientStreaming<SType>, &service, cqs_[0].get());
+  std::thread request_stream_handler_thread(HandleRawClientStreaming<SType>,
+                                            &service, cqs_[0].get());
   TestAllMethods();
   request_stream_handler_thread.join();
 }
 
-TEST_F(HybridEnd2endTest, AsyncEchoCodegenGenericRequestStream) {
-  typedef EchoTestService::WithCodegenGenericMethod_RequestStream<
+TEST_F(HybridEnd2endTest, AsyncEchoRawRequestStream) {
+  typedef EchoTestService::WithRawMethod_RequestStream<
       EchoTestService::WithAsyncMethod_Echo<TestServiceImpl>>
       SType;
   SType service;
@@ -458,15 +455,15 @@ TEST_F(HybridEnd2endTest, AsyncEchoCodegenGenericRequestStream) {
   ResetStub();
   std::thread echo_handler_thread(HandleEcho<SType>, &service, cqs_[0].get(),
                                   false);
-  std::thread request_stream_handler_thread(
-      HandleCodegenGenericClientStreaming<SType>, &service, cqs_[1].get());
+  std::thread request_stream_handler_thread(HandleRawClientStreaming<SType>,
+                                            &service, cqs_[1].get());
   TestAllMethods();
   request_stream_handler_thread.join();
   echo_handler_thread.join();
 }
 
-TEST_F(HybridEnd2endTest, GenericEchoCodegenGenericRequestStream) {
-  typedef EchoTestService::WithCodegenGenericMethod_RequestStream<
+TEST_F(HybridEnd2endTest, GenericEchoRawRequestStream) {
+  typedef EchoTestService::WithRawMethod_RequestStream<
       EchoTestService::WithGenericMethod_Echo<TestServiceImpl>>
       SType;
   SType service;
@@ -475,8 +472,8 @@ TEST_F(HybridEnd2endTest, GenericEchoCodegenGenericRequestStream) {
   ResetStub();
   std::thread generic_handler_thread(HandleGenericCall, &generic_service,
                                      cqs_[0].get());
-  std::thread request_stream_handler_thread(
-      HandleCodegenGenericClientStreaming<SType>, &service, cqs_[1].get());
+  std::thread request_stream_handler_thread(HandleRawClientStreaming<SType>,
+                                            &service, cqs_[1].get());
   TestAllMethods();
   generic_handler_thread.join();
   request_stream_handler_thread.join();

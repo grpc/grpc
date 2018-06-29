@@ -4422,19 +4422,6 @@ targets:
   - grpc
   - gpr_test_util
   - gpr
-- name: codegen_generic_end2end_test
-  gtest: true
-  build: test
-  language: c++
-  src:
-  - test/cpp/end2end/codegen_generic_end2end_test.cc
-  deps:
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr_test_util
-  - gpr
 - name: codegen_test_full
   gtest: true
   build: test
@@ -5111,6 +5098,19 @@ targets:
   - gpr_test_util
   - gpr
   - grpc++_test_config
+- name: raw_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/end2end/raw_end2end_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: reconnect_interop_client
   build: test
   run: false

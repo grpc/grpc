@@ -189,9 +189,9 @@ class Verifier {
   bool lambda_run_;
 };
 
-class CodegenGenericEnd2EndTest : public ::testing::Test {
+class RawEnd2EndTest : public ::testing::Test {
  protected:
-  CodegenGenericEnd2EndTest() {}
+  RawEnd2EndTest() {}
 
   void SetUp() override {
     port_ = grpc_pick_unused_port_or_die();
@@ -259,7 +259,7 @@ class CodegenGenericEnd2EndTest : public ::testing::Test {
 };
 
 // Regular Async, both peers use proto
-TEST_F(CodegenGenericEnd2EndTest, PureAsyncService) {
+TEST_F(RawEnd2EndTest, PureAsyncService) {
   typedef grpc::testing::EchoTestService::AsyncService SType;
   ResetStub();
   auto service = BuildAndStartServer<SType>();
@@ -282,8 +282,8 @@ TEST_F(CodegenGenericEnd2EndTest, PureAsyncService) {
 }
 
 // Client uses proto, server uses generic codegen, unary
-TEST_F(CodegenGenericEnd2EndTest, CodegenGenericServerUnary) {
-  typedef grpc::testing::EchoTestService::WithCodegenGenericMethod_Echo<
+TEST_F(RawEnd2EndTest, RawServerUnary) {
+  typedef grpc::testing::EchoTestService::WithRawMethod_Echo<
       grpc::testing::EchoTestService::Service>
       SType;
   ResetStub();
@@ -310,11 +310,10 @@ TEST_F(CodegenGenericEnd2EndTest, CodegenGenericServerUnary) {
 }
 
 // Client uses proto, server uses generic codegen, client streaming
-TEST_F(CodegenGenericEnd2EndTest, CodegenGenericServerClientStreaming) {
-  typedef grpc::testing::EchoTestService::
-      WithCodegenGenericMethod_RequestStream<
-          grpc::testing::EchoTestService::Service>
-          SType;
+TEST_F(RawEnd2EndTest, RawServerClientStreaming) {
+  typedef grpc::testing::EchoTestService::WithRawMethod_RequestStream<
+      grpc::testing::EchoTestService::Service>
+      SType;
   ResetStub();
   auto service = BuildAndStartServer<SType>();
 
@@ -357,11 +356,10 @@ TEST_F(CodegenGenericEnd2EndTest, CodegenGenericServerClientStreaming) {
 }
 
 // Client uses proto, server uses generic codegen, server streaming
-TEST_F(CodegenGenericEnd2EndTest, CodegenGenericServerServerStreaming) {
-  typedef grpc::testing::EchoTestService::
-      WithCodegenGenericMethod_ResponseStream<
-          grpc::testing::EchoTestService::Service>
-          SType;
+TEST_F(RawEnd2EndTest, RawServerServerStreaming) {
+  typedef grpc::testing::EchoTestService::WithRawMethod_ResponseStream<
+      grpc::testing::EchoTestService::Service>
+      SType;
   ResetStub();
   auto service = BuildAndStartServer<SType>();
   grpc::GenericServerAsyncWriter srv_stream(&srv_ctx_);
@@ -400,8 +398,8 @@ TEST_F(CodegenGenericEnd2EndTest, CodegenGenericServerServerStreaming) {
 }
 
 // Client uses proto, server uses generic codegen, bidi streaming
-TEST_F(CodegenGenericEnd2EndTest, CodegenGenericServerBidiStreaming) {
-  typedef grpc::testing::EchoTestService::WithCodegenGenericMethod_BidiStream<
+TEST_F(RawEnd2EndTest, RawServerBidiStreaming) {
+  typedef grpc::testing::EchoTestService::WithRawMethod_BidiStream<
       grpc::testing::EchoTestService::Service>
       SType;
   ResetStub();
@@ -443,8 +441,8 @@ TEST_F(CodegenGenericEnd2EndTest, CodegenGenericServerBidiStreaming) {
 }
 
 // Testing that this pattern compiles
-TEST_F(CodegenGenericEnd2EndTest, CompileTest) {
-  typedef grpc::testing::EchoTestService::WithCodegenGenericMethod_Echo<
+TEST_F(RawEnd2EndTest, CompileTest) {
+  typedef grpc::testing::EchoTestService::WithRawMethod_Echo<
       grpc::testing::EchoTestService::AsyncService>
       SType;
   ResetStub();

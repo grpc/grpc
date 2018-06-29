@@ -346,14 +346,14 @@ class ServiceA final {
     }
   };
   template <class BaseClass>
-  class WithCodegenGenericMethod_MethodA1 : public BaseClass {
+  class WithRawMethod_MethodA1 : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
-    WithCodegenGenericMethod_MethodA1() {
-      ::grpc::Service::MarkMethodCodegenGeneric(0);
+    WithRawMethod_MethodA1() {
+      ::grpc::Service::MarkMethodRaw(0);
     }
-    ~WithCodegenGenericMethod_MethodA1() override {
+    ~WithRawMethod_MethodA1() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
@@ -366,14 +366,14 @@ class ServiceA final {
     }
   };
   template <class BaseClass>
-  class WithCodegenGenericMethod_MethodA2 : public BaseClass {
+  class WithRawMethod_MethodA2 : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
-    WithCodegenGenericMethod_MethodA2() {
-      ::grpc::Service::MarkMethodCodegenGeneric(1);
+    WithRawMethod_MethodA2() {
+      ::grpc::Service::MarkMethodRaw(1);
     }
-    ~WithCodegenGenericMethod_MethodA2() override {
+    ~WithRawMethod_MethodA2() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
@@ -386,14 +386,14 @@ class ServiceA final {
     }
   };
   template <class BaseClass>
-  class WithCodegenGenericMethod_MethodA3 : public BaseClass {
+  class WithRawMethod_MethodA3 : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
-    WithCodegenGenericMethod_MethodA3() {
-      ::grpc::Service::MarkMethodCodegenGeneric(2);
+    WithRawMethod_MethodA3() {
+      ::grpc::Service::MarkMethodRaw(2);
     }
-    ~WithCodegenGenericMethod_MethodA3() override {
+    ~WithRawMethod_MethodA3() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
@@ -406,14 +406,14 @@ class ServiceA final {
     }
   };
   template <class BaseClass>
-  class WithCodegenGenericMethod_MethodA4 : public BaseClass {
+  class WithRawMethod_MethodA4 : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
-    WithCodegenGenericMethod_MethodA4() {
-      ::grpc::Service::MarkMethodCodegenGeneric(3);
+    WithRawMethod_MethodA4() {
+      ::grpc::Service::MarkMethodRaw(3);
     }
-    ~WithCodegenGenericMethod_MethodA4() override {
+    ~WithRawMethod_MethodA4() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
@@ -558,14 +558,14 @@ class ServiceB final {
     }
   };
   template <class BaseClass>
-  class WithCodegenGenericMethod_MethodB1 : public BaseClass {
+  class WithRawMethod_MethodB1 : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service *service) {}
    public:
-    WithCodegenGenericMethod_MethodB1() {
-      ::grpc::Service::MarkMethodCodegenGeneric(0);
+    WithRawMethod_MethodB1() {
+      ::grpc::Service::MarkMethodRaw(0);
     }
-    ~WithCodegenGenericMethod_MethodB1() override {
+    ~WithRawMethod_MethodB1() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method

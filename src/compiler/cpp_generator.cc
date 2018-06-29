@@ -591,7 +591,7 @@ void PrintHeaderServerMethodSync(grpc_generator::Printer* printer,
 
 // Helper generator. Disabled the sync API for Request and Response, then adds
 // in an async API for RealRequest and RealResponse types. This is to be used
-// to generate async and codegen generic APIs.
+// to generate async and raw APIs.
 void PrintHeaderServerAsyncMethodsHelper(
     grpc_generator::Printer* printer, const grpc_generator::Method* method,
     std::map<grpc::string, grpc::string>* vars) {
@@ -892,30 +892,29 @@ void PrintHeaderServerMethodGeneric(
   printer->Print(*vars, "};\n");
 }
 
-void PrintHeaderServerMethodCodegenGeneric(
-    grpc_generator::Printer* printer, const grpc_generator::Method* method,
-    std::map<grpc::string, grpc::string>* vars) {
+void PrintHeaderServerMethodRaw(grpc_generator::Printer* printer,
+                                const grpc_generator::Method* method,
+                                std::map<grpc::string, grpc::string>* vars) {
   (*vars)["Method"] = method->name();
   // These will be disabled
   (*vars)["Request"] = method->input_type_name();
   (*vars)["Response"] = method->output_type_name();
-  // These will be used for codegen generic API
+  // These will be used for raw API
   (*vars)["RealRequest"] = "::grpc::ByteBuffer";
   (*vars)["RealResponse"] = "::grpc::ByteBuffer";
   printer->Print(*vars, "template <class BaseClass>\n");
-  printer->Print(
-      *vars, "class WithCodegenGenericMethod_$Method$ : public BaseClass {\n");
+  printer->Print(*vars, "class WithRawMethod_$Method$ : public BaseClass {\n");
   printer->Print(
       " private:\n"
       "  void BaseClassMustBeDerivedFromService(const Service *service) {}\n");
   printer->Print(" public:\n");
   printer->Indent();
   printer->Print(*vars,
-                 "WithCodegenGenericMethod_$Method$() {\n"
-                 "  ::grpc::Service::MarkMethodCodegenGeneric($Idx$);\n"
+                 "WithRawMethod_$Method$() {\n"
+                 "  ::grpc::Service::MarkMethodRaw($Idx$);\n"
                  "}\n");
   printer->Print(*vars,
-                 "~WithCodegenGenericMethod_$Method$() override {\n"
+                 "~WithRawMethod_$Method$() override {\n"
                  "  BaseClassMustBeDerivedFromService(this);\n"
                  "}\n");
   PrintHeaderServerAsyncMethodsHelper(printer, method, vars);
@@ -1027,11 +1026,10 @@ void PrintHeaderService(grpc_generator::Printer* printer,
     PrintHeaderServerMethodGeneric(printer, service->method(i).get(), vars);
   }
 
-  // Server side - CodegenGeneric
+  // Server side - Raw
   for (int i = 0; i < service->method_count(); ++i) {
     (*vars)["Idx"] = as_string(i);
-    PrintHeaderServerMethodCodegenGeneric(printer, service->method(i).get(),
-                                          vars);
+    PrintHeaderServerMethodRaw(printer, service->method(i).get(), vars);
   }
 
   // Server side - Streamed Unary
