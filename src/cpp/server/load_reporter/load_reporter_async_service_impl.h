@@ -94,10 +94,16 @@ class LoadReporterAsyncServiceImpl
   class ReportLoadHandler
       : public std::enable_shared_from_this<ReportLoadHandler> {
    public:
+    // Instantiates a ReportLoadHandler, starts it, and orphans it.
+    static void CreateAndStart(ServerCompletionQueue* cq,
+                               LoadReporterAsyncServiceImpl* service,
+                               LoadReporter* load_reporter);
+
     ReportLoadHandler(ServerCompletionQueue* cq,
                       LoadReporterAsyncServiceImpl* service,
                       LoadReporter* load_reporter);
 
+   private:
     // Starts working by requesting for the next load reporting call. Note that
     // this can't be called from the constructor because shared_from_this() can
     // only be called from a previously shared object.
@@ -127,7 +133,6 @@ class LoadReporterAsyncServiceImpl
     // Called when AsyncNotifyWhenDone() notifies us.
     void OnDoneNotified(std::shared_ptr<ReportLoadHandler> me, bool ok);
 
-   private:
     void Shutdown(std::shared_ptr<ReportLoadHandler> me, const char* reason);
 
     // The key fields of the stream.

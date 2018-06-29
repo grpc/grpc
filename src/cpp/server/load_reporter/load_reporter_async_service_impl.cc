@@ -102,12 +102,8 @@ void LoadReporterAsyncServiceImpl::Work(void* arg) {
   // to figure out why cq is not ready after service starts.
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                gpr_time_from_seconds(1, GPR_TIMESPAN)));
-  std::shared_ptr<ReportLoadHandler> handler =
-      std::make_shared<ReportLoadHandler>(service->cq_.get(), service,
-                                          service->load_reporter_.get());
-  handler->Start();
-  // Orphan the handler.
-  handler.reset();
+  ReportLoadHandler::CreateAndStart(service->cq_.get(), service,
+                                    service->load_reporter_.get());
   void* tag;
   bool ok;
   while (true) {
@@ -122,6 +118,16 @@ void LoadReporterAsyncServiceImpl::Work(void* arg) {
 }
 
 void LoadReporterAsyncServiceImpl::StartThread() { thread_->Start(); }
+
+void LoadReporterAsyncServiceImpl::ReportLoadHandler::CreateAndStart(
+    ServerCompletionQueue* cq, LoadReporterAsyncServiceImpl* service,
+    LoadReporter* load_reporter) {
+  std::shared_ptr<ReportLoadHandler> handler =
+      std::make_shared<ReportLoadHandler>(cq, service, load_reporter);
+  handler->Start();
+  // Orphan the handler.
+  handler.reset();
+}
 
 LoadReporterAsyncServiceImpl::ReportLoadHandler::ReportLoadHandler(
     ServerCompletionQueue* cq, LoadReporterAsyncServiceImpl* service,
@@ -165,11 +171,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnRequestDelivered(
   }
   // Spawn a new handler instance to serve the next new client. Every handler
   // instance will deallocate itself when it's done.
-  std::shared_ptr<ReportLoadHandler> handler =
-      std::make_shared<ReportLoadHandler>(cq_, service_, load_reporter_);
-  handler->Start();
-  // Orphan the handler.
-  handler.reset();
+  CreateAndStart(cq_, service_, load_reporter_);
   next_inbound_ =
       CallableTag(std::bind(&ReportLoadHandler::OnReadDone, this,
                             std::placeholders::_1, std::placeholders::_2),
