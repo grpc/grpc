@@ -67,6 +67,10 @@ pip install virtualenv --user python
 pip install -U Mako six tox setuptools twisted pyyaml --user python
 export PYTHONPATH=/Library/Python/3.4/site-packages
 
+# Install Python 3.7
+curl -O https://www.python.org/ftp/python/3.7.0/python-3.7.0-macosx10.9.pkg
+sudo installer -pkg ./python-3.7.0-macosx10.9.pkg -target /
+
 # set xcode version for Obj-C tests
 sudo xcode-select -switch /Applications/Xcode_9.2.app/Contents/Developer/
 
