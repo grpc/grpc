@@ -112,7 +112,7 @@ void LoadReporterAsyncServiceImpl::Work(void* arg) {
       GPR_ASSERT(service->shutdown_);
       break;
     }
-    auto next_step = static_cast<CallableTag*>(tag);
+    auto* next_step = static_cast<CallableTag*>(tag);
     next_step->Run(ok);
   }
 }
