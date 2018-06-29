@@ -25,7 +25,6 @@
 #include <grpcpp/alarm.h>
 #include <grpcpp/grpcpp.h>
 
-#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/cpp/server/load_reporter/load_reporter.h"
 
@@ -52,6 +51,43 @@ class LoadReporterAsyncServiceImpl
       delete;
 
  private:
+  class ReportLoadHandler;
+
+  // A tag that can be called with a bool argument. If constructed with a
+  // method of ReportLoadHandler and a shared pointer to the handler, the
+  // shared pointer will be moved to the invoked function and the function can
+  // only be invoked once. That makes ref counting of the handler easier,
+  // because the shared pointer is not bound to the function and can be gone
+  // once the invoked function returns (if not used any more).
+  class CallableTag {
+   public:
+    using HandlerFunction =
+        std::function<void(std::shared_ptr<ReportLoadHandler>, bool)>;
+    using ServiceFunction = std::function<void(bool)>;
+
+    CallableTag() {}
+
+    // Ctor for service's use.
+    CallableTag(ServiceFunction func) : service_function_(std::move(func)) {}
+
+    // Ctor for handler's use.
+    CallableTag(HandlerFunction func,
+                std::shared_ptr<ReportLoadHandler> handler)
+        : handler_function_(std::move(func)), handler_(std::move(handler)) {}
+
+    // Runs the tag according to the function type.
+    void Run(bool ok);
+
+    // Releases and returns the shared pointer to the handler. Only called when
+    // the shared pointer is non-null.
+    std::shared_ptr<ReportLoadHandler> ReleaseHandler();
+
+   private:
+    ServiceFunction service_function_ = nullptr;
+    HandlerFunction handler_function_ = nullptr;
+    std::shared_ptr<ReportLoadHandler> handler_ = nullptr;
+  };
+
   // Each handler takes care of one load reporting stream. It contains
   // per-stream data and it will access the members of the parent class (i.e.,
   // LoadReporterAsyncServiceImpl) for service-wide data (e.g., the load data).
@@ -70,41 +106,29 @@ class LoadReporterAsyncServiceImpl
     // After the handler has a call request delivered, it starts reading the
     // initial request. Also, a new handler is spawned so that we can keep
     // servicing future calls.
-    // Parameter func is the function object that holds a shared pointer to the
-    // handler because of binding this method.
-    void OnRequestDelivered(std::function<void(bool)>* func, bool ok);
+    void OnRequestDelivered(std::shared_ptr<ReportLoadHandler> me, bool ok);
 
     // The first Read() is expected to succeed, after which the handler starts
     // sending load reports back to the balancer. The second Read() is
     // expected to fail, which happens when the balancer half-closes the
     // stream to signal that it's no longer interested in the load reports. For
     // the latter case, the handler will then close the stream.
-    // Parameter func is the function object that holds a shared pointer to the
-    // handler because of binding this method.
-    void OnReadDone(std::function<void(bool)>* func, bool ok);
+    void OnReadDone(std::shared_ptr<ReportLoadHandler> me, bool ok);
 
     // The report sending operations are sequential as: send report -> send
     // done, schedule the next send -> waiting for the alarm to fire -> alarm
     // fires, send report -> ...
-    // Parameter func is the function object that holds a shared pointer to the
-    // handler because of binding this method.
-    void SendReport(std::function<void(bool)>* func, bool ok);
-    void ScheduleNextReport(std::function<void(bool)>* func, bool ok);
+    void SendReport(std::shared_ptr<ReportLoadHandler> me, bool ok);
+    void ScheduleNextReport(std::shared_ptr<ReportLoadHandler> me, bool ok);
 
     // Called when Finish() is done.
-    // Parameter func is the function object that holds a shared pointer to the
-    // handler because of binding this method.
-    void OnFinishDone(std::function<void(bool)>* func, bool ok);
+    void OnFinishDone(std::shared_ptr<ReportLoadHandler> me, bool ok);
 
     // Called when AsyncNotifyWhenDone() notifies us.
-    // Parameter func is the function object that holds a shared pointer to the
-    // handler because of binding this method.
-    void OnDoneNotified(std::function<void(bool)>* func, bool ok);
+    void OnDoneNotified(std::shared_ptr<ReportLoadHandler> me, bool ok);
 
    private:
-    // Shuts down the handler, and resets the from_func function object to drop
-    // a ref to the handler.
-    void Shutdown(std::function<void(bool)>* from_func, const char* reason);
+    void Shutdown(std::shared_ptr<ReportLoadHandler> me, const char* reason);
 
     // The key fields of the stream.
     grpc::string lb_id_;
@@ -135,10 +159,10 @@ class LoadReporterAsyncServiceImpl
     bool shutdown_{false};
     bool done_notified_{false};
     bool is_cancelled_{false};
-    std::function<void(bool)> on_done_notified_;
-    std::function<void(bool)> on_finish_done_;
-    std::function<void(bool)> next_inbound_;
-    std::function<void(bool)> next_outbound_;
+    CallableTag on_done_notified_;
+    CallableTag on_finish_done_;
+    CallableTag next_inbound_;
+    CallableTag next_outbound_;
     std::unique_ptr<Alarm> next_report_alarm_;
   };
 
@@ -158,7 +182,7 @@ class LoadReporterAsyncServiceImpl
   std::atomic_bool shutdown_{false};
   std::unique_ptr<::grpc_core::Thread> thread_;
   std::unique_ptr<LoadReporter> load_reporter_;
-  std::function<void(bool)> next_fetch_and_sample_;
+  CallableTag next_fetch_and_sample_;
   std::unique_ptr<Alarm> next_fetch_and_sample_alarm_;
 };
 
