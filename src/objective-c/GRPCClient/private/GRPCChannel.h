@@ -38,4 +38,4 @@
                               completionQueue:(nonnull GRPCCompletionQueue *)queue;
 @end
 
-grpc_channel_args* _Nullable BuildChannelArgs(NSDictionary * _Nullable dictionary);
+grpc_channel_args *_Nullable BuildChannelArgs(NSDictionary *_Nullable dictionary);

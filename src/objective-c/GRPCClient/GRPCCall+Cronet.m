@@ -17,8 +17,8 @@
  */
 
 #import "GRPCCall+Cronet.h"
-#import "private/GRPCHost.h"
 #import "private/GRPCCronetChannelFactory.h"
+#import "private/GRPCHost.h"
 
 static BOOL useCronet = NO;
 static stream_engine *globalCronetEngine;

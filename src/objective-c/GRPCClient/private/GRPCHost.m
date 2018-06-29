@@ -18,20 +18,20 @@
 
 #import "GRPCHost.h"
 
-#import <GRPCClient/GRPCCall.h>
 #import <GRPCClient/GRPCCall+Cronet.h>
+#import <GRPCClient/GRPCCall.h>
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 
 #import "GRPCChannel.h"
+#import "GRPCChannelFactory.h"
 #import "GRPCCompletionQueue.h"
 #import "GRPCConnectivityMonitor.h"
+#import "GRPCCronetChannelFactory.h"
+#import "GRPCSecureChannelFactory.h"
 #import "NSDictionary+GRPC.h"
 #import "version.h"
-#import "GRPCChannelFactory.h"
-#import "GRPCSecureChannelFactory.h"
-#import "GRPCCronetChannelFactory.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -83,7 +83,10 @@ static NSMutableDictionary *kHostCache;
 
     if ((self = [super init])) {
       _address = address;
-      _channelFactory = [GRPCSecureChannelFactory factoryWithPEMRootCerts:nil privateKey:nil certChain:nil error:nil];
+      _channelFactory = [GRPCSecureChannelFactory factoryWithPEMRootCerts:nil
+                                                               privateKey:nil
+                                                                certChain:nil
+                                                                    error:nil];
       kHostCache[address] = self;
       _compressAlgorithm = GRPC_COMPRESS_NONE;
       _retryEnabled = YES;
@@ -153,7 +156,7 @@ static NSMutableDictionary *kHostCache;
   }
   args[@GRPC_ARG_PRIMARY_USER_AGENT_STRING] = userAgent;
 
-  if (/*****_secure && *****/_hostNameOverride) {
+  if (/*****_secure && *****/ _hostNameOverride) {
     args[@GRPC_SSL_TARGET_NAME_OVERRIDE_ARG] = _hostNameOverride;
   }
 

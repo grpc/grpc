@@ -23,8 +23,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @protocol GRPCChannelFactory
 
-- (nullable GRPCChannel*)createChannelWithHost:(NSString *)host
-                                   channelArgs:(nullable NSMutableDictionary *)args;
+- (nullable GRPCChannel *)createChannelWithHost:(NSString *)host
+                                    channelArgs:(nullable NSMutableDictionary *)args;
 
 @end
 

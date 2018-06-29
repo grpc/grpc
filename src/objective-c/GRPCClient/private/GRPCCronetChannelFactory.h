@@ -26,8 +26,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (nullable instancetype)factoryWithEngine:(stream_engine *)engine;
 
-- (nullable GRPCChannel*)createChannelWithHost:(NSString *)host
-                                   channelArgs:(nullable NSMutableDictionary *)args;
+- (nullable GRPCChannel *)createChannelWithHost:(NSString *)host
+                                    channelArgs:(nullable NSMutableDictionary *)args;
 
 - (nullable instancetype)init NS_UNAVAILABLE;
 

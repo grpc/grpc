@@ -28,11 +28,14 @@ NS_ASSUME_NONNULL_BEGIN
   grpc_channel_credentials *_channelCreds;
 }
 
-+ (nullable instancetype)factoryWithPEMRootCerts:(nullable NSString*)rootCerts
-                                      privateKey:(nullable NSString*)privateKey
-                                       certChain:(nullable NSString*)certChain
++ (nullable instancetype)factoryWithPEMRootCerts:(nullable NSString *)rootCerts
+                                      privateKey:(nullable NSString *)privateKey
+                                       certChain:(nullable NSString *)certChain
                                            error:(NSError **)errorPtr {
-  return [[self alloc] initWithPEMRootCerts:rootCerts privateKey:privateKey certChain:certChain error:errorPtr];
+  return [[self alloc] initWithPEMRootCerts:rootCerts
+                                 privateKey:privateKey
+                                  certChain:certChain
+                                      error:errorPtr];
 }
 
 - (NSData *)nullTerminatedDataWithString:(NSString *)string {
@@ -43,9 +46,9 @@ NS_ASSUME_NONNULL_BEGIN
   return nullTerminated;
 }
 
-- (nullable instancetype)initWithPEMRootCerts:(nullable NSString*)rootCerts
-                                   privateKey:(nullable NSString*)privateKey
-                                    certChain:(nullable NSString*)certChain
+- (nullable instancetype)initWithPEMRootCerts:(nullable NSString *)rootCerts
+                                   privateKey:(nullable NSString *)privateKey
+                                    certChain:(nullable NSString *)certChain
                                         error:(NSError **)errorPtr {
   static NSData *kDefaultRootsASCII;
   static NSError *kDefaultRootsError;
@@ -59,7 +62,7 @@ NS_ASSUME_NONNULL_BEGIN
     // Files in PEM format can have non-ASCII characters in their comments (e.g. for the name of the
     // issuer). Load them as UTF8 and produce an ASCII equivalent.
     NSString *contentInUTF8 =
-    [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:&error];
+        [NSString stringWithContentsOfFile:path encoding:NSUTF8StringEncoding error:&error];
     if (contentInUTF8 == nil) {
       kDefaultRootsError = error;
       return;
@@ -76,12 +79,12 @@ NS_ASSUME_NONNULL_BEGIN
         *errorPtr = kDefaultRootsError;
       }
       NSAssert(
-               kDefaultRootsASCII,
-               @"Could not read gRPCCertificates.bundle/roots.pem. This file, "
-               "with the root certificates, is needed to establish secure (TLS) connections. "
-               "Because the file is distributed with the gRPC library, this error is usually a sign "
-               "that the library wasn't configured correctly for your project. Error: %@",
-               kDefaultRootsError);
+          kDefaultRootsASCII,
+          @"Could not read gRPCCertificates.bundle/roots.pem. This file, "
+           "with the root certificates, is needed to establish secure (TLS) connections. "
+           "Because the file is distributed with the gRPC library, this error is usually a sign "
+           "that the library wasn't configured correctly for your project. Error: %@",
+          kDefaultRootsError);
       return nil;
     }
     rootsASCII = kDefaultRootsASCII;
@@ -105,11 +108,11 @@ NS_ASSUME_NONNULL_BEGIN
   return self;
 }
 
-
-- (nullable GRPCChannel*)createChannelWithHost:(NSString *)host
-                                   channelArgs:(nullable NSMutableDictionary *)args {
+- (nullable GRPCChannel *)createChannelWithHost:(NSString *)host
+                                    channelArgs:(nullable NSMutableDictionary *)args {
   grpc_channel_args *channelArgs = BuildChannelArgs(args);
-  grpc_channel *unmanagedChannel = grpc_secure_channel_create(_channelCreds, host.UTF8String, channelArgs, NULL);
+  grpc_channel *unmanagedChannel =
+      grpc_secure_channel_create(_channelCreds, host.UTF8String, channelArgs, NULL);
   return [[GRPCChannel alloc] initWithUnmanagedChannel:unmanagedChannel channelArgs:channelArgs];
 }
 

@@ -23,13 +23,13 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface GRPCSecureChannelFactory : NSObject<GRPCChannelFactory>
 
-+ (nullable instancetype)factoryWithPEMRootCerts:(nullable NSString*)rootCerts
-                                      privateKey:(nullable NSString*)privateKey
-                                       certChain:(nullable NSString*)certChain
++ (nullable instancetype)factoryWithPEMRootCerts:(nullable NSString *)rootCerts
+                                      privateKey:(nullable NSString *)privateKey
+                                       certChain:(nullable NSString *)certChain
                                            error:(NSError **)errorPtr;
 
-- (nullable GRPCChannel*)createChannelWithHost:(NSString *)host
-                                   channelArgs:(nullable NSMutableDictionary *)args;
+- (nullable GRPCChannel *)createChannelWithHost:(NSString *)host
+                                    channelArgs:(nullable NSMutableDictionary *)args;
 
 - (nullable instancetype)init NS_UNAVAILABLE;
 

@@ -31,13 +31,13 @@ struct stream_engine;
  * all subsequent RPCs will use Cronet transport. The method is not thread
  * safe.
  */
-+ (void)useCronetWithEngine:(struct stream_engine*)engine forHost:(NSString *)host;
++ (void)useCronetWithEngine:(struct stream_engine *)engine forHost:(NSString *)host;
 
 /**
  * This following methods are deprecated and will be removed shortly. Users
  * should move to the alternative method above as soon aspossible.
  */
-+ (void)useCronetWithEngine:(struct stream_engine*)engine;
++ (void)useCronetWithEngine:(struct stream_engine *)engine;
 + (struct stream_engine *)cronetEngine;
 + (BOOL)isUsingCronet;
 

@@ -45,13 +45,14 @@ NS_ASSUME_NONNULL_BEGIN
   return self;
 }
 
-- (nullable GRPCChannel*)createChannelWithHost:(NSString *)host
-                                   channelArgs:(nullable NSMutableDictionary *)args {
+- (nullable GRPCChannel *)createChannelWithHost:(NSString *)host
+                                    channelArgs:(nullable NSMutableDictionary *)args {
   // Remove client authority filter since that is not supported
   args[@GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER] = [NSNumber numberWithInt:1];
 
   grpc_channel_args *channelArgs = BuildChannelArgs(args);
-  grpc_channel *unmanagedChannel = grpc_cronet_secure_channel_create(_cronetEngine, host.UTF8String, channelArgs, NULL);
+  grpc_channel *unmanagedChannel =
+      grpc_cronet_secure_channel_create(_cronetEngine, host.UTF8String, channelArgs, NULL);
   return [[GRPCChannel alloc] initWithUnmanagedChannel:unmanagedChannel channelArgs:channelArgs];
 }
 
@@ -62,13 +63,15 @@ NS_ASSUME_NONNULL_BEGIN
 @implementation GRPCCronetChannelFactory
 
 + (nullable instancetype)factoryWithEngine:(stream_engine *)engine {
-  [NSException raise:NSInvalidArgumentException format:@"Must enable macro GRPC_COMPILE_WITH_CRONET to build Cronet channel."];
+  [NSException raise:NSInvalidArgumentException
+              format:@"Must enable macro GRPC_COMPILE_WITH_CRONET to build Cronet channel."];
   return nil;
 }
 
-- (nullable GRPCChannel*)createChannelWithHost:(NSString *)host
-                                   channelArgs:(nullable NSDictionary *)args {
-  [NSException raise:NSInvalidArgumentException format:@"Must enable macro GRPC_COMPILE_WITH_CRONET to build Cronet channel."];
+- (nullable GRPCChannel *)createChannelWithHost:(NSString *)host
+                                    channelArgs:(nullable NSDictionary *)args {
+  [NSException raise:NSInvalidArgumentException
+              format:@"Must enable macro GRPC_COMPILE_WITH_CRONET to build Cronet channel."];
   return nil;
 }
 
