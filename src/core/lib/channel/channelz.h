@@ -57,12 +57,10 @@ class ChannelNode : public RefCounted<ChannelNode> {
 
   char* RenderJSON();
 
-  // helper for getting connectivity state. It is virtual because it allows
-  // the client_channel code to live in ext/ instead of lib/
-  //
-  // returns true if the channel has a notion of a connectivity state. In that
-  // case it also sets state to the correct connectivity state.
-  virtual bool GetConnectivityState(grpc_connectivity_state* state);
+  // helper for getting and populating connectivity state. It is virtual
+  // because it allows the client_channel specific code to live in ext/
+  // instead of lib/
+  virtual void PopulateConnectivityState(grpc_json* json);
 
   ChannelTrace* trace() { return trace_.get(); }
 

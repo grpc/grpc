@@ -37,7 +37,7 @@ class ClientChannelNode : public ChannelNode {
 
   // Override this functionality since client_channels have a notion of
   // channel connectivity.
-  bool GetConnectivityState(grpc_connectivity_state* state) override;
+  void PopulateConnectivityState(grpc_json* json) override;
 
   // Helper to create a channel arg to ensure this type of ChannelNode is
   // created.
