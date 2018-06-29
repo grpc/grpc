@@ -3159,6 +3159,16 @@ static void try_to_connect_locked(void* arg, grpc_error* error_ignored) {
   GRPC_CHANNEL_STACK_UNREF(chand->owning_stack, "try_to_connect");
 }
 
+void grpc_client_channel_populate_child_refs(
+    grpc_channel_element* elem, grpc_core::ChildRefsList* child_subchannels,
+    grpc_core::ChildRefsList* child_channels) {
+  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
+  if (chand->lb_policy) {
+    chand->lb_policy->FillChildRefsForChannelz(child_subchannels,
+                                               child_channels);
+  }
+}
+
 grpc_connectivity_state grpc_client_channel_check_connectivity_state(
     grpc_channel_element* elem, int try_to_connect) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);

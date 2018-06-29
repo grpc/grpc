@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/impl/codegen/gpr_types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -41,6 +43,8 @@ GPRAPI char* gpr_strdup(const char* src);
    the result is undefined. */
 GPRAPI int gpr_asprintf(char** strp, const char* format, ...)
     GPR_PRINT_FORMAT_CHECK(2, 3);
+
+GPRAPI char* gpr_format_timespec(gpr_timespec);
 
 #ifdef __cplusplus
 }

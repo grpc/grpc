@@ -222,6 +222,7 @@ gpr_cpu_current_cpu_type gpr_cpu_current_cpu_import;
 gpr_format_message_type gpr_format_message_import;
 gpr_strdup_type gpr_strdup_import;
 gpr_asprintf_type gpr_asprintf_import;
+gpr_format_timespec_type gpr_format_timespec_import;
 gpr_mu_init_type gpr_mu_init_import;
 gpr_mu_destroy_type gpr_mu_destroy_import;
 gpr_mu_lock_type gpr_mu_lock_import;
@@ -470,6 +471,7 @@ void grpc_rb_load_imports(HMODULE library) {
   gpr_format_message_import = (gpr_format_message_type) GetProcAddress(library, "gpr_format_message");
   gpr_strdup_import = (gpr_strdup_type) GetProcAddress(library, "gpr_strdup");
   gpr_asprintf_import = (gpr_asprintf_type) GetProcAddress(library, "gpr_asprintf");
+  gpr_format_timespec_import = (gpr_format_timespec_type) GetProcAddress(library, "gpr_format_timespec");
   gpr_mu_init_import = (gpr_mu_init_type) GetProcAddress(library, "gpr_mu_init");
   gpr_mu_destroy_import = (gpr_mu_destroy_type) GetProcAddress(library, "gpr_mu_destroy");
   gpr_mu_lock_import = (gpr_mu_lock_type) GetProcAddress(library, "gpr_mu_lock");

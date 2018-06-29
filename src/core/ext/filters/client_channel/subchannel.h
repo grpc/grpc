@@ -115,6 +115,8 @@ grpc_subchannel_call* grpc_subchannel_call_ref(
 void grpc_subchannel_call_unref(
     grpc_subchannel_call* call GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 
+intptr_t grpc_subchannel_get_uuid(grpc_subchannel* subchannel);
+
 /** Returns a pointer to the parent data associated with \a subchannel_call.
     The data will be of the size specified in \a parent_data_size
     field of the args passed to \a grpc_connected_subchannel_create_call(). */

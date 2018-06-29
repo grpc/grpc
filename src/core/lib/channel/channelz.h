@@ -62,6 +62,8 @@ class ChannelNode : public RefCounted<ChannelNode> {
   // instead of lib/
   virtual void PopulateConnectivityState(grpc_json* json);
 
+  virtual void PopulateChildRefs(grpc_json* json);
+
   ChannelTrace* trace() { return trace_.get(); }
 
   void MarkChannelDestroyed() {

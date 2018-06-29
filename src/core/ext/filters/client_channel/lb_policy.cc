@@ -31,11 +31,26 @@ LoadBalancingPolicy::LoadBalancingPolicy(const Args& args)
       combiner_(GRPC_COMBINER_REF(args.combiner, "lb_policy")),
       client_channel_factory_(args.client_channel_factory),
       interested_parties_(grpc_pollset_set_create()),
-      request_reresolution_(nullptr) {}
+      request_reresolution_(nullptr) {
+  gpr_mu_init(&child_refs_mu_);
+}
 
 LoadBalancingPolicy::~LoadBalancingPolicy() {
   grpc_pollset_set_destroy(interested_parties_);
+  gpr_mu_destroy(&child_refs_mu_);
   GRPC_COMBINER_UNREF(combiner_, "lb_policy");
+}
+
+void LoadBalancingPolicy::FillChildRefsForChannelz(
+    ChildRefsList* child_subchannels, ChildRefsList* child_channels) {
+  mu_guard guard(&child_refs_mu_);
+  // TODO, de dup these.
+  for (size_t i = 0; i < child_subchannels_.size(); ++i) {
+    child_subchannels->push_back(child_subchannels_[i]);
+  }
+  for (size_t i = 0; i < child_channels_.size(); ++i) {
+    child_channels->push_back(child_channels_[i]);
+  }
 }
 
 void LoadBalancingPolicy::TryReresolutionLocked(

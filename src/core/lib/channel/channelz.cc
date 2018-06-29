@@ -41,53 +41,6 @@
 namespace grpc_core {
 namespace channelz {
 
-namespace {
-
-// TODO(ncteisen): move this function to a common helper location.
-//
-// returns an allocated string that represents tm according to RFC-3339, and,
-// more specifically, follows:
-// https://developers.google.com/protocol-buffers/docs/proto3#json
-//
-// "Uses RFC 3339, where generated output will always be Z-normalized and uses
-// 0, 3, 6 or 9 fractional digits."
-char* fmt_time(gpr_timespec tm) {
-  char time_buffer[35];
-  char ns_buffer[11];  // '.' + 9 digits of precision
-  struct tm* tm_info = localtime((const time_t*)&tm.tv_sec);
-  strftime(time_buffer, sizeof(time_buffer), "%Y-%m-%dT%H:%M:%S", tm_info);
-  snprintf(ns_buffer, 11, ".%09d", tm.tv_nsec);
-  // This loop trims off trailing zeros by inserting a null character that the
-  // right point. We iterate in chunks of three because we want 0, 3, 6, or 9
-  // fractional digits.
-  for (int i = 7; i >= 1; i -= 3) {
-    if (ns_buffer[i] == '0' && ns_buffer[i + 1] == '0' &&
-        ns_buffer[i + 2] == '0') {
-      ns_buffer[i] = '\0';
-      // Edge case in which all fractional digits were 0.
-      if (i == 1) {
-        ns_buffer[0] = '\0';
-      }
-    } else {
-      break;
-    }
-  }
-  char* full_time_str;
-  gpr_asprintf(&full_time_str, "%s%sZ", time_buffer, ns_buffer);
-  return full_time_str;
-}
-
-// TODO(ncteisen); move this to json library
-grpc_json* add_num_str(grpc_json* parent, grpc_json* it, const char* name,
-                       int64_t num) {
-  char* num_str;
-  gpr_asprintf(&num_str, "%" PRId64, num);
-  return grpc_json_create_child(it, parent, name, num_str, GRPC_JSON_STRING,
-                                true);
-}
-
-}  // namespace
-
 ChannelNode::ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes)
     : channel_(channel), target_(nullptr), channel_uuid_(-1) {
   trace_.Init(channel_tracer_max_nodes);
@@ -110,6 +63,8 @@ void ChannelNode::RecordCallStarted() {
 
 void ChannelNode::PopulateConnectivityState(grpc_json* json) {}
 
+void ChannelNode::PopulateChildRefs(grpc_json* json) {}
+
 char* ChannelNode::RenderJSON() {
   // We need to track these three json objects to build our object
   grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
@@ -120,7 +75,8 @@ char* ChannelNode::RenderJSON() {
                                          GRPC_JSON_OBJECT, false);
   json = json_iterator;
   json_iterator = nullptr;
-  json_iterator = add_num_str(json, json_iterator, "channelId", channel_uuid_);
+  json_iterator = grpc_json_add_number_string_child(json, json_iterator,
+                                                    "channelId", channel_uuid_);
   // reset json iterators to top level object
   json = top_level_json;
   json_iterator = nullptr;
@@ -148,17 +104,22 @@ char* ChannelNode::RenderJSON() {
   json_iterator = nullptr;
   // We use -1 as sentinel values since proto default value for integers is
   // zero, and the confuses the parser into thinking the value weren't present
-  json_iterator =
-      add_num_str(json, json_iterator, "callsStarted", calls_started_);
-  json_iterator =
-      add_num_str(json, json_iterator, "callsSucceeded", calls_succeeded_);
-  json_iterator =
-      add_num_str(json, json_iterator, "callsFailed", calls_failed_);
+  json_iterator = grpc_json_add_number_string_child(
+      json, json_iterator, "callsStarted", calls_started_);
+  json_iterator = grpc_json_add_number_string_child(
+      json, json_iterator, "callsSucceeded", calls_succeeded_);
+  json_iterator = grpc_json_add_number_string_child(
+      json, json_iterator, "callsFailed", calls_failed_);
   gpr_timespec ts =
       grpc_millis_to_timespec(last_call_started_millis_, GPR_CLOCK_REALTIME);
   json_iterator =
       grpc_json_create_child(json_iterator, json, "lastCallStartedTimestamp",
-                             fmt_time(ts), GRPC_JSON_STRING, true);
+                             gpr_format_timespec(ts), GRPC_JSON_STRING, true);
+
+  json = top_level_json;
+  json_iterator = nullptr;
+  PopulateChildRefs(json);
+
   // render and return the over json object
   char* json_str = grpc_json_dump_to_string(top_level_json, 0);
   grpc_json_destroy(top_level_json);

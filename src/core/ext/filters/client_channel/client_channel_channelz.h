@@ -22,9 +22,14 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/gprpp/inlined_vector.h"
 
 namespace grpc_core {
+
+typedef InlinedVector<intptr_t, 10> ChildRefsList;
+
 namespace channelz {
 
 // Subtype of ChannelNode that overrides and provides client_channel specific
@@ -37,6 +42,9 @@ class ClientChannelNode : public ChannelNode {
   // Override this functionality since client_channels have a notion of
   // channel connectivity.
   void PopulateConnectivityState(grpc_json* json) override;
+
+  // Override this functionality since client_channels have subchannels
+  void PopulateChildRefs(grpc_json* json) override;
 
   // Helper to create a channel arg to ensure this type of ChannelNode is
   // created.

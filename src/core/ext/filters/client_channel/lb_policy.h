@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/lib/gprpp/abstract.h"
@@ -28,6 +29,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/polling_entity.h"
+#include "src/core/lib/json/json.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_lb_policy_refcount;
@@ -157,6 +159,13 @@ class LoadBalancingPolicy
     request_reresolution_ = request_reresolution;
   }
 
+  /// populates child_subchannels and child_channels with the uuids of this
+  /// LB policies referenced children. This is not invoked from the
+  /// client_channel's combiner. It has its own synchronization. This is
+  /// not abstract, since the behavior is the same for all LB policies.
+  void FillChildRefsForChannelz(ChildRefsList* child_subchannels,
+                                ChildRefsList* child_channels);
+
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
   GRPC_ABSTRACT_BASE_CLASS
@@ -171,6 +180,9 @@ class LoadBalancingPolicy
   grpc_client_channel_factory* client_channel_factory() const {
     return client_channel_factory_;
   }
+  gpr_mu* child_refs_mu() { return &child_refs_mu_; }
+  ChildRefsList* child_subchannels() { return &child_subchannels_; }
+  ChildRefsList* child_channels() { return &child_channels_; }
 
   /// Shuts down the policy.  Any pending picks that have not been
   /// handed off to a new policy via HandOffPendingPicksLocked() will be
@@ -190,6 +202,11 @@ class LoadBalancingPolicy
 
   /// Combiner under which LB policy actions take place.
   grpc_combiner* combiner_;
+  /// Lock and data used to capture snapshots of this channels child
+  /// channels and subchannels. This data is consumed by channelz.
+  gpr_mu child_refs_mu_;
+  ChildRefsList child_subchannels_;
+  ChildRefsList child_channels_;
   /// Client channel factory, used to create channels and subchannels.
   grpc_client_channel_factory* client_channel_factory_;
   /// Owned pointer to interested parties in load balancing decisions.

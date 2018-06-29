@@ -37,6 +37,15 @@ TraceFlag grpc_lb_pick_first_trace(false, "pick_first");
 
 namespace {
 
+class LockGuard {
+ public:
+  LockGuard(gpr_mu* mu) : mu_(mu) { gpr_mu_lock(mu_); }
+  ~LockGuard() { gpr_mu_unlock(mu_); }
+
+ private:
+  gpr_mu* mu_;
+};
+
 //
 // pick_first LB policy
 //
@@ -103,10 +112,20 @@ class PickFirst : public LoadBalancingPolicy {
     }
   };
 
+  class UpdateGuard {
+   public:
+    UpdateGuard(PickFirst* pf) : pf_(pf) {}
+    ~UpdateGuard() { pf_->UpdateChildRefsLocked(); }
+
+   private:
+    PickFirst* pf_;
+  };
+
   void ShutdownLocked() override;
 
   void StartPickingLocked();
   void DestroyUnselectedSubchannelsLocked();
+  void UpdateChildRefsLocked();
 
   // All our subchannels.
   OrphanablePtr<PickFirstSubchannelList> subchannel_list_;
@@ -158,6 +177,7 @@ void PickFirst::HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) {
 }
 
 void PickFirst::ShutdownLocked() {
+  UpdateGuard(this);
   grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel shutdown");
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_INFO, "Pick First %p Shutting down", this);
@@ -280,7 +300,37 @@ void PickFirst::PingOneLocked(grpc_closure* on_initiate, grpc_closure* on_ack) {
   }
 }
 
+void PickFirst::UpdateChildRefsLocked() {
+  mu_guard guard(child_refs_mu());
+  // reset both lists
+  child_subchannels()->clear();
+  // this will stay empty, because pick_first channels have no children
+  // channels.
+  child_channels()->clear();
+  // populate the subchannels with boths subchannels lists, they will be
+  // deduped when the actual channelz query comes in.
+  if (subchannel_list_ != nullptr) {
+    for (size_t i = 0; i < subchannel_list_->num_subchannels(); ++i) {
+      if (subchannel_list_->subchannel(i)->subchannel() != nullptr) {
+        child_subchannels()->push_back(grpc_subchannel_get_uuid(
+            subchannel_list_->subchannel(i)->subchannel()));
+      }
+    }
+  }
+  if (latest_pending_subchannel_list_ != nullptr) {
+    for (size_t i = 0; i < latest_pending_subchannel_list_->num_subchannels();
+         ++i) {
+      if (latest_pending_subchannel_list_->subchannel(i)->subchannel() !=
+          nullptr) {
+        child_subchannels()->push_back(grpc_subchannel_get_uuid(
+            latest_pending_subchannel_list_->subchannel(i)->subchannel()));
+      }
+    }
+  }
+}
+
 void PickFirst::UpdateLocked(const grpc_channel_args& args) {
+  UpdateGuard guard(this);
   const grpc_arg* arg = grpc_channel_args_find(&args, GRPC_ARG_LB_ADDRESSES);
   if (arg == nullptr || arg->type != GRPC_ARG_POINTER) {
     if (subchannel_list_ == nullptr) {
@@ -388,6 +438,7 @@ void PickFirst::UpdateLocked(const grpc_channel_args& args) {
 void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
     grpc_connectivity_state connectivity_state, grpc_error* error) {
   PickFirst* p = static_cast<PickFirst*>(subchannel_list()->policy());
+  UpdateGuard guard(p);
   // The notification must be for a subchannel in either the current or
   // latest pending subchannel lists.
   GPR_ASSERT(subchannel_list() == p->subchannel_list_.get() ||

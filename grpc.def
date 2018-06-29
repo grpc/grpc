@@ -199,6 +199,7 @@ EXPORTS
     gpr_format_message
     gpr_strdup
     gpr_asprintf
+    gpr_format_timespec
     gpr_mu_init
     gpr_mu_destroy
     gpr_mu_lock

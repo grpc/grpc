@@ -91,4 +91,8 @@ grpc_json* grpc_json_create_child(grpc_json* sibling, grpc_json* parent,
                                   const char* key, const char* value,
                                   grpc_json_type type, bool owns_value);
 
+/* TODO */
+grpc_json* grpc_json_add_number_string_child(grpc_json* parent, grpc_json* it,
+                                             const char* name, int64_t num);
+
 #endif /* GRPC_CORE_LIB_JSON_JSON_H */

@@ -256,24 +256,24 @@ static void test_invoke_simple_request(grpc_end2end_test_config config) {
   config.tear_down_data(&f);
 }
 
-static void test_invoke_10_simple_requests(grpc_end2end_test_config config) {
-  int i;
-  grpc_end2end_test_fixture f =
-      begin_test(config, "test_invoke_10_simple_requests", nullptr, nullptr);
-  for (i = 0; i < 10; i++) {
-    simple_request_body(config, f);
-    gpr_log(GPR_INFO, "Running test: Passed simple request %d", i);
-  }
-  end_test(&f);
-  config.tear_down_data(&f);
-}
+// static void test_invoke_10_simple_requests(grpc_end2end_test_config config) {
+//   int i;
+//   grpc_end2end_test_fixture f =
+//       begin_test(config, "test_invoke_10_simple_requests", nullptr, nullptr);
+//   for (i = 0; i < 10; i++) {
+//     simple_request_body(config, f);
+//     gpr_log(GPR_INFO, "Running test: Passed simple request %d", i);
+//   }
+//   end_test(&f);
+//   config.tear_down_data(&f);
+// }
 
 void simple_request(grpc_end2end_test_config config) {
-  int i;
-  for (i = 0; i < 10; i++) {
-    test_invoke_simple_request(config);
-  }
-  test_invoke_10_simple_requests(config);
+  // int i;
+  // for (i = 0; i < 10; i++) {
+  test_invoke_simple_request(config);
+  // }
+  // test_invoke_10_simple_requests(config);
 }
 
 void simple_request_pre_init(void) {}

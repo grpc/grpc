@@ -134,6 +134,11 @@ struct grpc_subchannel {
   bool backoff_begun;
   /** our alarm */
   grpc_timer alarm;
+
+  /* the global uuid for this subchannel */
+  // TODO(ncteisen): move this into SubchannelNode while implementing
+  //  GetSubchannel.
+  intptr_t subchannel_uuid;
 };
 
 struct grpc_subchannel_call {
@@ -374,7 +379,14 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
   c->backoff.Init(backoff_options);
   gpr_mu_init(&c->mu);
 
+  // This is just a placeholder for now
+  c->subchannel_uuid = 42;
+
   return grpc_subchannel_index_register(key, c);
+}
+
+intptr_t grpc_subchannel_get_uuid(grpc_subchannel* s) {
+  return s->subchannel_uuid;
 }
 
 static void continue_connect_locked(grpc_subchannel* c) {
