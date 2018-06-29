@@ -139,7 +139,7 @@ static NSMutableDictionary *kHostCache;
                                                            privateKey:pemPrivateKey
                                                             certChain:pemCertChain
                                                                 error:errorPtr];
-  return (*errorPtr == nil);
+  return (_channelFactory != nil);
 }
 
 - (NSMutableDictionary *)channelArgs {

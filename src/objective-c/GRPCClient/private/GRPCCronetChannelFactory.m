@@ -18,13 +18,13 @@
 
 #import "GRPCCronetChannelFactory.h"
 
-#include <grpc/grpc_cronet.h>
-
 #import "GRPCChannel.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 #ifdef GRPC_COMPILE_WITH_CRONET
+
+#include <grpc/grpc_cronet.h>
 
 @implementation GRPCCronetChannelFactory {
   stream_engine *_cronetEngine;
