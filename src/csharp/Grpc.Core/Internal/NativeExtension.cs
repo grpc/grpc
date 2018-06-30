@@ -106,7 +106,9 @@ namespace Grpc.Core.Internal
         /// </summary>
         private static NativeMethods LoadNativeMethods()
         {
-            return PlatformApis.IsUnity ? LoadNativeMethodsUnity() : new NativeMethods(LoadUnmanagedLibrary());
+            return PlatformApis.IsUnity ? LoadNativeMethodsUnity() :
+                PlatformApis.IsXamarin ? LoadNativeMethodsXamarin() :
+                    new NativeMethods(LoadUnmanagedLibrary());
         }
 
         /// <summary>
@@ -126,6 +128,20 @@ namespace Grpc.Core.Internal
                     // most other platforms load unity plugins as a shared library
                     return new NativeMethods(new NativeMethods.DllImportsFromSharedLib());
             }
+        }
+
+        /// <summary>
+        /// Return native method delegates when running on the Xamarin platform.
+        /// WARNING: Xamarin support is experimental and work-in-progress. Don't expect it to work.
+        /// </summary>
+        private static NativeMethods LoadNativeMethodsXamarin()
+        {
+            if (PlatformApis.IsXamarinAndroid)
+            {
+                return new NativeMethods(new NativeMethods.DllImportsFromSharedLib());
+            }
+            // not tested yet
+            return new NativeMethods(new NativeMethods.DllImportsFromStaticLib());
         }
 
         private static string GetAssemblyPath()
