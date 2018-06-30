@@ -136,7 +136,7 @@ if __name__ == "__main__":
     resultstore_actions = _get_resultstore_data(api_key, invocation_id)
 
     bq_rows = []
-    for action in resultstore_actions:
+    for index, action in enumerate(resultstore_actions):
         # Filter out non-test related data, such as build results.
         if 'testAction' not in action:
             continue
@@ -157,6 +157,23 @@ if __name__ == "__main__":
                     'timedOut': True
                 }
             }]
+        # When RBE believes its infrastructure is failing, it will abort and
+        # mark running tests as UNKNOWN. These infrastructure failures may be
+        # related to our tests, so we should investigate if specific tests are
+        # repeatedly being marked as UNKNOWN.
+        elif action['statusAttributes']['status'] == 'UNKNOWN':
+            test_cases = [{
+                'testCase': {
+                    'caseName': str(action['id']['actionId']),
+                    'unknown': True
+                }
+            }]
+            # Take the timestamp from the previous action, which should be
+            # a close approximation.
+            action['timing'] = {
+                'startTime':
+                resultstore_actions[index - 1]['timing']['startTime']
+            }
         else:
             test_cases = action['testAction']['testSuite']['tests'][0][
                 'testSuite']['tests']
@@ -165,6 +182,8 @@ if __name__ == "__main__":
                 result = 'FAILED'
             elif 'timedOut' in test_case['testCase']:
                 result = 'TIMEOUT'
+            elif 'unknown' in test_case['testCase']:
+                result = 'UNKNOWN'
             else:
                 result = 'PASSED'
             bq_rows.append({
