@@ -177,6 +177,8 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_alts_credentials_options_destroy);
   printf("%lx", (unsigned long) grpc_alts_credentials_create);
   printf("%lx", (unsigned long) grpc_alts_server_credentials_create);
+  printf("%lx", (unsigned long) grpc_local_credentials_create);
+  printf("%lx", (unsigned long) grpc_local_server_credentials_create);
   printf("%lx", (unsigned long) grpc_raw_byte_buffer_create);
   printf("%lx", (unsigned long) grpc_raw_compressed_byte_buffer_create);
   printf("%lx", (unsigned long) grpc_byte_buffer_copy);

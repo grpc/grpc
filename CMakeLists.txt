@@ -433,6 +433,9 @@ endif()
 add_dependencies(buildtests_c h2_full+trace_test)
 add_dependencies(buildtests_c h2_full+workarounds_test)
 add_dependencies(buildtests_c h2_http_proxy_test)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_c h2_local_test)
+endif()
 add_dependencies(buildtests_c h2_oauth2_test)
 add_dependencies(buildtests_c h2_proxy_test)
 add_dependencies(buildtests_c h2_sockpair_test)
@@ -1125,10 +1128,12 @@ add_library(grpc
   src/core/lib/security/credentials/jwt/json_token.cc
   src/core/lib/security/credentials/jwt/jwt_credentials.cc
   src/core/lib/security/credentials/jwt/jwt_verifier.cc
+  src/core/lib/security/credentials/local/local_credentials.cc
   src/core/lib/security/credentials/oauth2/oauth2_credentials.cc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/ssl/ssl_credentials.cc
   src/core/lib/security/security_connector/alts_security_connector.cc
+  src/core/lib/security/security_connector/local_security_connector.cc
   src/core/lib/security/security_connector/security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/secure_endpoint.cc
@@ -1201,6 +1206,7 @@ add_library(grpc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/tsi/alts_transport_security.cc
   src/core/tsi/fake_transport_security.cc
+  src/core/tsi/local_transport_security.cc
   src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
   src/core/tsi/ssl/session_cache/ssl_session_cache.cc
   src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
@@ -1546,10 +1552,12 @@ add_library(grpc_cronet
   src/core/lib/security/credentials/jwt/json_token.cc
   src/core/lib/security/credentials/jwt/jwt_credentials.cc
   src/core/lib/security/credentials/jwt/jwt_verifier.cc
+  src/core/lib/security/credentials/local/local_credentials.cc
   src/core/lib/security/credentials/oauth2/oauth2_credentials.cc
   src/core/lib/security/credentials/plugin/plugin_credentials.cc
   src/core/lib/security/credentials/ssl/ssl_credentials.cc
   src/core/lib/security/security_connector/alts_security_connector.cc
+  src/core/lib/security/security_connector/local_security_connector.cc
   src/core/lib/security/security_connector/security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/secure_endpoint.cc
@@ -1600,6 +1608,7 @@ add_library(grpc_cronet
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
   src/core/tsi/alts_transport_security.cc
   src/core/tsi/fake_transport_security.cc
+  src/core/tsi/local_transport_security.cc
   src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
   src/core/tsi/ssl/session_cache/ssl_session_cache.cc
   src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
@@ -15258,6 +15267,38 @@ target_link_libraries(h2_http_proxy_test
   gpr
 )
 
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+add_executable(h2_local_test
+  test/core/end2end/fixtures/h2_local.cc
+)
+
+
+target_include_directories(h2_local_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+)
+
+target_link_libraries(h2_local_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  end2end_tests
+  grpc_test_util
+  grpc
+  gpr_test_util
+  gpr
+)
+
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 

@@ -119,6 +119,8 @@ EXPORTS
     grpc_alts_credentials_options_destroy
     grpc_alts_credentials_create
     grpc_alts_server_credentials_create
+    grpc_local_credentials_create
+    grpc_local_server_credentials_create
     grpc_raw_byte_buffer_create
     grpc_raw_compressed_byte_buffer_create
     grpc_byte_buffer_copy
