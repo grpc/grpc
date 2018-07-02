@@ -435,10 +435,10 @@ namespace Grpc.Testing {
       expectedClientIdentity_ = other.expectedClientIdentity_;
       skipCancelledCheck_ = other.skipCancelledCheck_;
       expectedTransportSecurityType_ = other.expectedTransportSecurityType_;
-      DebugInfo = other.debugInfo_ != null ? other.DebugInfo.Clone() : null;
+      debugInfo_ = other.debugInfo_ != null ? other.debugInfo_.Clone() : null;
       serverDie_ = other.serverDie_;
       binaryErrorDetails_ = other.binaryErrorDetails_;
-      ExpectedError = other.expectedError_ != null ? other.ExpectedError.Clone() : null;
+      expectedError_ = other.expectedError_ != null ? other.expectedError_.Clone() : null;
       serverSleepUs_ = other.serverSleepUs_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
@@ -968,7 +968,7 @@ namespace Grpc.Testing {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public EchoRequest(EchoRequest other) : this() {
       message_ = other.message_;
-      Param = other.param_ != null ? other.Param.Clone() : null;
+      param_ = other.param_ != null ? other.param_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1316,7 +1316,7 @@ namespace Grpc.Testing {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public EchoResponse(EchoResponse other) : this() {
       message_ = other.message_;
-      Param = other.param_ != null ? other.Param.Clone() : null;
+      param_ = other.param_ != null ? other.param_.Clone() : null;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
