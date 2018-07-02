@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/client_channel/subchannel_index.h"
+
 #include <stdbool.h>
 #include <string.h>
 
@@ -25,7 +27,6 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/subchannel.h"
-#include "src/core/ext/filters/client_channel/subchannel_index.h"
 #include "src/core/lib/avl/avl.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
@@ -37,7 +38,7 @@
 // TODO(dgq): When we C++-ify the relevant code, we need to make sure that any
 // static variable in this file is trivially-destructible.
 
-// If a subchannel only has one ref left, which is hold by the subchannel index,
+// If a subchannel only has one ref left, which is held by the subchannel index,
 // it is not used by any LB policy, callback, etc. Instead of unregistering a
 // subchannel once it's unused, the subchannel index will periodically sweep
 // these unused subchannels, like a garbage collector. This mechanism can
@@ -45,6 +46,8 @@
 // keep unchanged if it's re-used shortly after it's unused, which is desirable
 // in the gRPC LB use case.
 constexpr grpc_millis kDefaultSweepIntervalMs = 10000;
+// This number was picked pseudo-randomly and could probably be tuned for
+// performance reasons.
 constexpr size_t kUnusedSubchannelsInlinedSize = 4;
 static grpc_millis g_sweep_interval_ms = kDefaultSweepIntervalMs;
 static grpc_timer g_sweeper_timer;
@@ -216,6 +219,36 @@ static void find_unused_subchannels(
   find_unused_subchannels(avl_node->right, unused_subchannels);
 }
 
+static void unregister_unused_subchannels(
+    const grpc_core::InlinedVector<
+        grpc_subchannel*, kUnusedSubchannelsInlinedSize>& unused_subchannels) {
+  for (size_t i = 0; i < unused_subchannels.size(); ++i) {
+    grpc_subchannel_key* key = grpc_subchannel_get_key(unused_subchannels[i]);
+    bool done = false;
+    // Compare and swap loop:
+    while (!done) {
+      // Take a reference to the current index.
+      gpr_mu_lock(&g_mu);
+      grpc_avl index =
+          grpc_avl_ref(g_subchannel_index, grpc_core::ExecCtx::Get());
+      gpr_mu_unlock(&g_mu);
+      grpc_avl updated =
+          grpc_avl_remove(grpc_avl_ref(index, grpc_core::ExecCtx::Get()), key,
+                          grpc_core::ExecCtx::Get());
+      // It may happen (but it's expected to be unlikely) that some other thread
+      // has changed the index. We need to retry in such cases.
+      gpr_mu_lock(&g_mu);
+      if (index.root == g_subchannel_index.root) {
+        GPR_SWAP(grpc_avl, updated, g_subchannel_index);
+        done = true;
+      }
+      gpr_mu_unlock(&g_mu);
+      grpc_avl_unref(updated, grpc_core::ExecCtx::Get());
+      grpc_avl_unref(index, grpc_core::ExecCtx::Get());
+    }
+  }
+}
+
 static void schedule_next_sweep() {
   const grpc_millis next_sweep_time =
       ::grpc_core::ExecCtx::Get()->Now() + g_sweep_interval_ms;
@@ -231,15 +264,8 @@ static void sweep_unused_subchannels(void* /* arg */, grpc_error* error) {
   // We use two-phase cleanup because modification during traversal is unsafe
   // for an AVL tree.
   find_unused_subchannels(g_subchannel_index.root, &unused_subchannels);
-  for (size_t i = 0; i < unused_subchannels.size(); ++i) {
-    grpc_subchannel_key* key = grpc_subchannel_get_key(unused_subchannels[i]);
-    grpc_avl updated = grpc_avl_remove(
-        grpc_avl_ref(g_subchannel_index, grpc_core::ExecCtx::Get()), key,
-        grpc_core::ExecCtx::Get());
-    GPR_SWAP(grpc_avl, updated, g_subchannel_index);
-    grpc_avl_unref(updated, grpc_core::ExecCtx::Get());
-  }
   gpr_mu_unlock(&g_mu);
+  unregister_unused_subchannels(unused_subchannels);
   schedule_next_sweep();
 }
 
@@ -269,9 +295,9 @@ void grpc_subchannel_index_init(void) {
 }
 
 void grpc_subchannel_index_shutdown(void) {
-  // TODO(juanlishen): This refcounting mechanism may lead to memory leackage.
-  // To solve that, we should force polling to flush any pending callbacks, then
-  // shutdown safely.
+  // TODO(juanlishen): This refcounting mechanism may lead to memory leak. To
+  // solve that, we should force polling to flush any pending callbacks, then
+  // shut down safely.
   grpc_timer_cancel(&g_sweeper_timer);
   grpc_subchannel_index_unref();
 }
