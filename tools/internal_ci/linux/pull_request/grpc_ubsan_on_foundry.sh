@@ -31,7 +31,7 @@ which bazel
 chmod +x "${KOKORO_GFILE_DIR}/bazel_wrapper.py"
 
 # change to grpc repo root
-cd $(dirname $0)/../../..
+cd $(dirname $0)/../../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
@@ -61,10 +61,6 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
   --extra_toolchains=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0/bazel_0.13.0/cpp:cc-toolchain-clang-x86_64-default \
   --extra_execution_platforms=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0:rbe_ubuntu1604 \
   -- //test/... || FAILED="true"
-
-# Sleep to let ResultStore finish writing results before querying
-sleep 60
-python ./tools/run_tests/python_utils/upload_rbe_results.py
 
 if [ "$FAILED" != "" ]
 then

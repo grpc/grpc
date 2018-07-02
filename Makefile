@@ -330,6 +330,12 @@ ifeq ($(HAS_WORKING_NO_UNUSED_BUT_SET_VARIABLE),true)
 W_NO_UNUSED_BUT_SET_VARIABLE=-Wno-unused-but-set-variable
 NO_W_NO_UNUSED_BUT_SET_VARIABLE=-Wunused-but-set-variable
 endif
+CHECK_NO_MAYBE_UNINITIALIZED_WORKS_CMD = $(CC) -std=c99 -Werror -Wno-maybe-uninitialized -o $(TMPOUT) -c test/build/no-maybe-uninitialized.c
+HAS_WORKING_NO_MAYBE_UNINITIALIZED = $(shell $(CHECK_NO_MAYBE_UNINITIALIZED_WORKS_CMD) 2> /dev/null && echo true || echo false)
+ifeq ($(HAS_WORKING_NO_MAYBE_UNINITIALIZED),true)
+W_NO_MAYBE_UNINITIALIZED=-Wno-maybe-uninitialized
+NO_W_NO_MAYBE_UNINITIALIZED=-Wmaybe-uninitialized
+endif
 
 # The HOST compiler settings are used to compile the protoc plugins.
 # In most cases, you won't have to change anything, but if you are
@@ -3214,7 +3220,7 @@ PUBLIC_HEADERS_C += \
 
 LIBCXXABI_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBCXXABI_SRC))))
 
-$(LIBCXXABI_OBJS): CPPFLAGS += -D_LIBCPP_DISABLE_EXTERN_TEMPLATE -D_LIBCXXABI_BUILDING_LIBRARY -D_LIBCXXABI_NO_EXCEPTIONS -Ithird_party/libcxxabi/include -nostdinc++ -Ithird_party/libcxx/include $(W_NO_UNUSED_BUT_SET_VARIABLE) -fvisibility=hidden
+$(LIBCXXABI_OBJS): CPPFLAGS += -D_LIBCPP_DISABLE_EXTERN_TEMPLATE -D_LIBCXXABI_BUILDING_LIBRARY -D_LIBCXXABI_NO_EXCEPTIONS -Ithird_party/libcxxabi/include -nostdinc++ -Ithird_party/libcxx/include $(W_NO_UNUSED_BUT_SET_VARIABLE) $(W_NO_MAYBE_UNINITIALIZED) -fvisibility=hidden
 $(LIBCXXABI_OBJS): CXXFLAGS += $(W_NO_CXX14_COMPAT)
 
 $(LIBDIR)/$(CONFIG)/libcxxabi.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP)  $(LIBCXXABI_OBJS) 

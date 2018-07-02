@@ -540,6 +540,7 @@ grpc_cc_library(
         "src/core/lib/profiling/stap_timers.cc",
     ],
     hdrs = [
+        "src/core/lib/gpr/alloc.h",
         "src/core/lib/gpr/arena.h",
         "src/core/lib/gpr/env.h",
         "src/core/lib/gpr/host_port.h",

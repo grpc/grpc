@@ -174,10 +174,6 @@ ServerBuilder& ServerBuilder::AddListeningPort(
 }
 
 std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
-  for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
-    (*plugin)->UpdateServerBuilder(this);
-  }
-
   ChannelArguments args;
   for (auto option = options_.begin(); option != options_.end(); ++option) {
     (*option)->UpdateArguments(&args);
@@ -185,6 +181,7 @@ std::unique_ptr<Server> ServerBuilder::BuildAndStart() {
   }
 
   for (auto plugin = plugins_.begin(); plugin != plugins_.end(); plugin++) {
+    (*plugin)->UpdateServerBuilder(this);
     (*plugin)->UpdateChannelArguments(&args);
   }
 

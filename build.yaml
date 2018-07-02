@@ -173,6 +173,7 @@ filegroups:
   - include/grpc/support/thd_id.h
   - include/grpc/support/time.h
   headers:
+  - src/core/lib/gpr/alloc.h
   - src/core/lib/gpr/arena.h
   - src/core/lib/gpr/env.h
   - src/core/lib/gpr/host_port.h
@@ -5694,7 +5695,7 @@ defaults:
   cxxabi:
     CPPFLAGS: -D_LIBCPP_DISABLE_EXTERN_TEMPLATE -D_LIBCXXABI_BUILDING_LIBRARY -D_LIBCXXABI_NO_EXCEPTIONS
       -Ithird_party/libcxxabi/include -nostdinc++ -Ithird_party/libcxx/include $(W_NO_UNUSED_BUT_SET_VARIABLE)
-      -fvisibility=hidden
+      $(W_NO_MAYBE_UNINITIALIZED) -fvisibility=hidden
     CXXFLAGS: $(W_NO_CXX14_COMPAT)
   global:
     COREFLAGS: -fno-rtti -fno-exceptions

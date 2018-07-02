@@ -183,7 +183,8 @@ Pod::Spec.new do |s|
     ss.dependency 'nanopb', '~> 0.3'
 
     # To save you from scrolling, this is the last part of the podspec.
-    ss.source_files = 'src/core/lib/gpr/arena.h',
+    ss.source_files = 'src/core/lib/gpr/alloc.h',
+                      'src/core/lib/gpr/arena.h',
                       'src/core/lib/gpr/env.h',
                       'src/core/lib/gpr/host_port.h',
                       'src/core/lib/gpr/mpscq.h',
@@ -803,7 +804,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/workarounds/workaround_utils.cc',
                       'src/core/plugin_registry/grpc_plugin_registry.cc'
 
-    ss.private_header_files = 'src/core/lib/gpr/arena.h',
+    ss.private_header_files = 'src/core/lib/gpr/alloc.h',
+                              'src/core/lib/gpr/arena.h',
                               'src/core/lib/gpr/env.h',
                               'src/core/lib/gpr/host_port.h',
                               'src/core/lib/gpr/mpscq.h',

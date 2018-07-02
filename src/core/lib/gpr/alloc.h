@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2018 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,13 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_IOMGR_H
-#define GRPC_CORE_LIB_IOMGR_IOMGR_H
+#ifndef GRPC_CORE_LIB_GPR_ALLOC_H
+#define GRPC_CORE_LIB_GPR_ALLOC_H
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"
+/// Given a size, round up to the next multiple of sizeof(void*).
+#define GPR_ROUND_UP_TO_ALIGNMENT_SIZE(x) \
+  (((x) + GPR_MAX_ALIGNMENT - 1u) & ~(GPR_MAX_ALIGNMENT - 1u))
 
-#include <stdlib.h>
-
-/** Initializes the iomgr. */
-void grpc_iomgr_init();
-
-/** Starts any background threads for iomgr. */
-void grpc_iomgr_start();
-
-/** Signals the intention to shutdown the iomgr. Expects to be able to flush
- * exec_ctx. */
-void grpc_iomgr_shutdown();
-
-/* Exposed only for testing */
-size_t grpc_iomgr_count_objects_for_testing();
-
-#endif /* GRPC_CORE_LIB_IOMGR_IOMGR_H */
+#endif /* GRPC_CORE_LIB_GPR_ALLOC_H */
