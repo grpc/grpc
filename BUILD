@@ -1344,18 +1344,43 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpcpp_server_load_reporting",
+    name = "lb_server_load_reporting_service_server_builder_option",
+    srcs = [
+        "src/cpp/server/load_reporter/load_reporting_service_server_builder_option.cc",
+    ],
+    hdrs = [
+        "src/cpp/server/load_reporter/load_reporting_service_server_builder_option.h",
+    ],
+    language = "c++",
+    deps = [
+        "lb_server_load_reporting_service_server_builder_plugin",
+    ],
+)
+
+grpc_cc_library(
+    name = "lb_server_load_reporting_call_metrics_builder",
     srcs = [
         "src/cpp/server/load_reporter/call_metrics_builder.cc",
-        "src/cpp/server/load_reporter/enable_server_load_reporting.cc",
     ],
+    hdrs = [
+        "src/cpp/server/load_reporter/call_metrics_builder.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc++",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpcpp_server_load_reporting",
     language = "c++",
     public_hdrs = [
         "include/grpcpp/ext/server_load_reporting.h",
     ],
     deps = [
+        "lb_server_load_reporting_call_metrics_builder",
         "lb_server_load_reporting_filter",
-        "lb_server_load_reporting_service_server_builder_plugin",
+        "lb_server_load_reporting_service_server_builder_option",
     ],
     alwayslink = 1,
 )

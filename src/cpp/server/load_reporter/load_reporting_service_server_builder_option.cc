@@ -16,14 +16,24 @@
  *
  */
 
-#ifndef GRPCPP_EXT_SERVER_LOAD_REPORTING_H
-#define GRPCPP_EXT_SERVER_LOAD_REPORTING_H
-
 #include <grpc/support/port_platform.h>
 
-#include <grpc/server_load_reporting.h>
-
-#include "src/cpp/server/load_reporter/call_metrics_builder.h"
 #include "src/cpp/server/load_reporter/load_reporting_service_server_builder_option.h"
 
-#endif  // GRPCPP_EXT_SERVER_LOAD_REPORTING_H
+#include "src/cpp/server/load_reporter/load_reporting_service_server_builder_plugin.h"
+
+namespace grpc {
+namespace load_reporter {
+
+void LoadReportingServiceServerBuilderOption::UpdateArguments(
+    ::grpc::ChannelArguments* args) {
+  args->SetInt(GRPC_ARG_ENABLE_LOAD_REPORTING, true);
+}
+
+void LoadReportingServiceServerBuilderOption::UpdatePlugins(
+    std::vector<std::unique_ptr<::grpc::ServerBuilderPlugin>>* plugins) {
+  plugins->emplace_back(new LoadReportingServiceServerBuilderPlugin());
+}
+
+}  // namespace load_reporter
+}  // namespace grpc

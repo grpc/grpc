@@ -328,4 +328,33 @@ const char* ServerLoadReportingCallData::GetStatusTagForStatus(
   }
 }
 
+static bool MaybeAddServerLoadReportingFilter(const grpc_channel_args& args) {
+  return grpc_channel_arg_get_bool(
+      grpc_channel_args_find(&args, GRPC_ARG_ENABLE_LOAD_REPORTING), false);
+}
+
+// TODO(juanlishen): We should register the filter during grpc initialization
+// time once OpenCensus is compatible with our build system. For now, we force
+// registration of the server load reporting filter at static initialization
+// time if we build with the filter target.
+struct ServerLoadReportingFilterStaticRegistrar {
+  ServerLoadReportingFilterStaticRegistrar() {
+    static std::atomic_bool registered{false};
+    if (registered) return;
+    RegisterChannelFilter<ServerLoadReportingChannelData,
+                          ServerLoadReportingCallData>(
+        "server_load_reporting", GRPC_SERVER_CHANNEL, INT_MAX,
+        MaybeAddServerLoadReportingFilter);
+    // Access measures to ensure they are initialized. Otherwise, we can't
+    // create any valid view before the first RPC.
+    ::grpc::load_reporter::MeasureStartCount();
+    ::grpc::load_reporter::MeasureEndCount();
+    ::grpc::load_reporter::MeasureEndBytesSent();
+    ::grpc::load_reporter::MeasureEndBytesReceived();
+    ::grpc::load_reporter::MeasureEndLatencyMs();
+    ::grpc::load_reporter::MeasureOtherCallMetric();
+    registered = true;
+  }
+} server_load_reporting_filter_static_registrar;
+
 }  // namespace grpc

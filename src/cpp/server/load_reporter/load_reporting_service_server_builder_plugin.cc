@@ -18,9 +18,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpcpp/impl/server_initializer.h>
-
 #include "src/cpp/server/load_reporter/load_reporting_service_server_builder_plugin.h"
+
+#include <grpcpp/impl/server_initializer.h>
 
 namespace grpc {
 namespace load_reporter {
@@ -54,12 +54,6 @@ void LoadReportingServiceServerBuilderPlugin::Finish(
     grpc::ServerInitializer* si) {
   service_->StartThread();
   service_.reset();
-}
-
-std::unique_ptr<grpc::ServerBuilderPlugin>
-CreateLoadReportingServiceServerBuilderPlugin() {
-  return std::unique_ptr<LoadReportingServiceServerBuilderPlugin>(
-      new LoadReportingServiceServerBuilderPlugin());
 }
 
 }  // namespace load_reporter

@@ -76,6 +76,9 @@ class ServerLoadReportingEnd2endTest : public ::testing::Test {
         ServerBuilder()
             .AddListeningPort(server_address_, InsecureServerCredentials())
             .RegisterService(&echo_service_)
+            .SetOption(std::unique_ptr<::grpc::ServerBuilderOption>(
+                new ::grpc::load_reporter::
+                    LoadReportingServiceServerBuilderOption()))
             .BuildAndStart();
     server_thread_ =
         std::thread(&ServerLoadReportingEnd2endTest::RunServerLoop, this);
@@ -184,7 +187,6 @@ TEST_F(ServerLoadReportingEnd2endTest, BasicReport) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc::load_reporter::EnableServerLoadReporting();
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

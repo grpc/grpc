@@ -18,10 +18,12 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/cpp/server/load_reporter/call_metrics_builder.h"
+
 #include <math.h>
 
+#include <grpc/server_load_reporting.h>
 #include <grpc/support/log.h>
-#include <grpcpp/ext/server_load_reporting.h>
 
 namespace grpc {
 namespace load_reporter {
