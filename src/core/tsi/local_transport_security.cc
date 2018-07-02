@@ -31,8 +31,6 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/tsi/transport_security_grpc.h"
 
-#define TSI_LOCAL_PEER_IDENTITY "local"
-
 /* Main struct for local TSI zero-copy frame protector. */
 typedef struct local_zero_copy_grpc_protector {
   tsi_zero_copy_grpc_protector base;
@@ -41,7 +39,6 @@ typedef struct local_zero_copy_grpc_protector {
 /* Main struct for local TSI handshaker result. */
 typedef struct local_tsi_handshaker_result {
   tsi_handshaker_result base;
-  char* peer_identity;
   bool is_client;
 } local_tsi_handshaker_result;
 
@@ -133,7 +130,6 @@ static void handshaker_result_destroy(tsi_handshaker_result* self) {
   local_tsi_handshaker_result* result =
       reinterpret_cast<local_tsi_handshaker_result*>(
           const_cast<tsi_handshaker_result*>(self));
-  gpr_free(result->peer_identity);
   gpr_free(result);
 }
 
@@ -154,15 +150,6 @@ static tsi_result create_handshaker_result(bool is_client,
       static_cast<local_tsi_handshaker_result*>(gpr_zalloc(sizeof(*result)));
   result->is_client = is_client;
   result->base.vtable = &result_vtable;
-  /* Create a peer identity with random information that will be later converted
-   * to auth context. Without this peer identity, the santiy check in {client,
-   * server}_auth_filter that verifies if the peer's auth context is obtained
-   * during handshakes will fail. Since the peer identity information in auth
-   * context is only checked for its existence (not actually used), we only
-   * populate some random data and later will provision more meaningful peer if
-   * needed (e.g., peer's pid/uid/gid from credentials).
-   */
-  result->peer_identity = gpr_strdup(TSI_LOCAL_PEER_IDENTITY);
   *self = &result->base;
   return TSI_OK;
 }

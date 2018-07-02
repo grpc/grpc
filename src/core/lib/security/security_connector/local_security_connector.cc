@@ -125,6 +125,11 @@ static void local_check_peer(grpc_security_connector* sc, tsi_peer peer,
                              grpc_auth_context** auth_context,
                              grpc_closure* on_peer_checked) {
   grpc_security_status status;
+  /* Create an auth context which is necessary to pass the santiy check in
+   * {client, server}_auth_filter that verifies if the peer's auth context is
+   * obtained during handshakes. The auth context is only checked for its
+   * existence and not actually used.
+   */
   status = local_auth_context_create(auth_context);
   grpc_error* error = status == GRPC_SECURITY_OK
                           ? GRPC_ERROR_NONE
