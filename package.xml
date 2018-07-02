@@ -86,6 +86,7 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_generic.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_posix.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_windows.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gpr/alloc.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/arena.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/env.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/host_port.h" role="src" />
@@ -178,6 +179,7 @@
     <file baseinstalldir="/" name="include/grpc/grpc.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc_posix.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/grpc_security_constants.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/load_reporting.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/slice.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/slice_buffer.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/status.h" role="src" />
@@ -430,6 +432,8 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/subchannel_list.h" role="src" />

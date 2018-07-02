@@ -16,26 +16,4 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_IOMGR_H
-#define GRPC_CORE_LIB_IOMGR_IOMGR_H
-
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/iomgr/port.h"
-
-#include <stdlib.h>
-
-/** Initializes the iomgr. */
-void grpc_iomgr_init();
-
-/** Starts any background threads for iomgr. */
-void grpc_iomgr_start();
-
-/** Signals the intention to shutdown the iomgr. Expects to be able to flush
- * exec_ctx. */
-void grpc_iomgr_shutdown();
-
-/* Exposed only for testing */
-size_t grpc_iomgr_count_objects_for_testing();
-
-#endif /* GRPC_CORE_LIB_IOMGR_IOMGR_H */
+int main(void) {}

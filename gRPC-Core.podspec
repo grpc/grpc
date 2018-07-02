@@ -168,6 +168,7 @@ Pod::Spec.new do |s|
                       'include/grpc/grpc.h',
                       'include/grpc/grpc_posix.h',
                       'include/grpc/grpc_security_constants.h',
+                      'include/grpc/load_reporting.h',
                       'include/grpc/slice.h',
                       'include/grpc/slice_buffer.h',
                       'include/grpc/status.h',
@@ -182,7 +183,8 @@ Pod::Spec.new do |s|
     ss.dependency 'nanopb', '~> 0.3'
 
     # To save you from scrolling, this is the last part of the podspec.
-    ss.source_files = 'src/core/lib/gpr/arena.h',
+    ss.source_files = 'src/core/lib/gpr/alloc.h',
+                      'src/core/lib/gpr/arena.h',
                       'src/core/lib/gpr/env.h',
                       'src/core/lib/gpr/host_port.h',
                       'src/core/lib/gpr/mpscq.h',
@@ -488,6 +490,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h',
+                      'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h',
+                      'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h',
                       'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h',
                       'src/core/ext/filters/client_channel/lb_policy/subchannel_list.h',
@@ -800,7 +804,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/workarounds/workaround_utils.cc',
                       'src/core/plugin_registry/grpc_plugin_registry.cc'
 
-    ss.private_header_files = 'src/core/lib/gpr/arena.h',
+    ss.private_header_files = 'src/core/lib/gpr/alloc.h',
+                              'src/core/lib/gpr/arena.h',
                               'src/core/lib/gpr/env.h',
                               'src/core/lib/gpr/host_port.h',
                               'src/core/lib/gpr/mpscq.h',
@@ -1067,6 +1072,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h',
+                              'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h',
+                              'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h',
                               'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h',
                               'src/core/ext/filters/client_channel/lb_policy/subchannel_list.h',

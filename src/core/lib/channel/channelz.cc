@@ -113,7 +113,10 @@ grpc_connectivity_state ChannelNode::GetConnectivityState() {
   if (channel_ == nullptr) {
     return GRPC_CHANNEL_SHUTDOWN;
   } else {
-    return grpc_channel_check_connectivity_state(channel_, false);
+    // TODO(ncteisen): re-enable this once we have cleaned up all of the
+    // internal dependency issues.
+    // return grpc_channel_check_connectivity_state(channel_, false);
+    return GRPC_CHANNEL_IDLE;
   }
 }
 
