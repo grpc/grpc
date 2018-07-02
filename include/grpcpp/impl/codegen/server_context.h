@@ -29,6 +29,7 @@
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/create_auth_context.h>
+#include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/impl/codegen/metadata_map.h>
 #include <grpcpp/impl/codegen/security/auth_context.h>
 #include <grpcpp/impl/codegen/string_ref.h>
@@ -93,7 +94,7 @@ class ServerContextTestSpouse;
 /// to a \a grpc::ServerBuilder, via \a ServerBuilder::AddChannelArgument.
 ///
 /// \warning ServerContext instances should \em not be reused across rpcs.
-class ServerContext {
+class ServerContext : private GrpcLibraryCodegen {
  public:
   ServerContext();  // for async calls
   ~ServerContext();
