@@ -20,11 +20,11 @@
 
 #import "GRPCChannel.h"
 
-NS_ASSUME_NONNULL_BEGIN
-
 #ifdef GRPC_COMPILE_WITH_CRONET
 
 #include <grpc/grpc_cronet.h>
+
+NS_ASSUME_NONNULL_BEGIN
 
 @implementation GRPCCronetChannelFactory {
   stream_engine *_cronetEngine;
@@ -58,7 +58,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+NS_ASSUME_NONNULL_END
+
 #else
+
+NS_ASSUME_NONNULL_BEGIN
 
 @implementation GRPCCronetChannelFactory
 
@@ -77,6 +81,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+NS_ASSUME_NONNULL_END
+
 #endif
 
-NS_ASSUME_NONNULL_END
