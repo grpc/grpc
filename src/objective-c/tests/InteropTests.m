@@ -565,29 +565,31 @@ BOOL isRemoteInteropTest(NSString *host) {
 
   GPBEmpty *request = [GPBEmpty message];
 
-  [_service emptyCallWithRequest:request
-                         handler:^(GPBEmpty *response, NSError *error) {
-                           XCTAssertNil(error, @"Cronet call finished with unexpected error: %@", error);
+  [_service
+      emptyCallWithRequest:request
+                   handler:^(GPBEmpty *response, NSError *error) {
+                     XCTAssertNil(error, @"Cronet call finished with unexpected error: %@", error);
 
-                           id expectedResponse = [GPBEmpty message];
-                           XCTAssertEqualObjects(response, expectedResponse);
+                     id expectedResponse = [GPBEmpty message];
+                     XCTAssertEqualObjects(response, expectedResponse);
 
-                           [expectation fulfill];
-                         }];
+                     [expectation fulfill];
+                   }];
 
   // Service to alternative host whose channel type is default (i.e. secure channel w/ chttp2).
   NSString *kAlternativeHostAddress = @"grpc-test2.sandbox.googleapis.com";
   RMTTestService *serviceChttp2 = [RMTTestService serviceWithHost:kAlternativeHostAddress];
 
-  [serviceChttp2 emptyCallWithRequest:request
-                              handler:^(GPBEmpty *response, NSError *error) {
-                                XCTAssertNil(error, @"Chttp2 call finished with unexpected error: %@", error);
+  [serviceChttp2
+      emptyCallWithRequest:request
+                   handler:^(GPBEmpty *response, NSError *error) {
+                     XCTAssertNil(error, @"Chttp2 call finished with unexpected error: %@", error);
 
-                                id expectedResponse = [GPBEmpty message];
-                                XCTAssertEqualObjects(response, expectedResponse);
+                     id expectedResponse = [GPBEmpty message];
+                     XCTAssertEqualObjects(response, expectedResponse);
 
-                                [expectation2 fulfill];
-                              }];
+                     [expectation2 fulfill];
+                   }];
 
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
