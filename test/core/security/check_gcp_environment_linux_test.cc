@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
 
 #if GPR_LINUX
