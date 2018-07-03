@@ -44,8 +44,8 @@ class ChannelNodePeer;
 
 class ChannelNode : public RefCounted<ChannelNode> {
  public:
-  ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes);
-  virtual ~ChannelNode();
+  static RefCountedPtr<ChannelNode> MakeChannelNode(
+      grpc_channel* channel, size_t channel_tracer_max_nodes);
 
   void RecordCallStarted();
   void RecordCallFailed() {
@@ -73,6 +73,12 @@ class ChannelNode : public RefCounted<ChannelNode> {
 
   intptr_t channel_uuid() { return channel_uuid_; }
 
+ protected:
+  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
+  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
+  ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes);
+  virtual ~ChannelNode();
+
  private:
   // testing peer friend.
   friend class testing::ChannelNodePeer;
@@ -91,9 +97,6 @@ class ChannelNode : public RefCounted<ChannelNode> {
 
 typedef RefCountedPtr<ChannelNode> (*ChannelNodeCreationFunc)(grpc_channel*,
                                                               size_t);
-
-RefCountedPtr<ChannelNode> MakeChannelNode(grpc_channel* channel,
-                                           size_t channel_tracer_max_nodes);
 
 }  // namespace channelz
 }  // namespace grpc_core

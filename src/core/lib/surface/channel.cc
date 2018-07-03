@@ -108,7 +108,7 @@ grpc_channel* grpc_channel_create_with_builder(
   // this creates the default ChannelNode. Different types of channels may
   // override this to ensure a correct ChannelNode is created.
   grpc_core::channelz::ChannelNodeCreationFunc channel_node_create_func =
-      grpc_core::channelz::MakeChannelNode;
+      grpc_core::channelz::ChannelNode::MakeChannelNode;
   gpr_mu_init(&channel->registered_call_mu);
   channel->registered_calls = nullptr;
 

@@ -26,14 +26,15 @@
 
 namespace grpc_core {
 namespace channelz {
+namespace {
 
-static void* client_channel_channelz_copy(void* p) { return p; }
+void* client_channel_channelz_copy(void* p) { return p; }
 
-static void client_channel_channelz_destroy(void* p) {}
+void client_channel_channelz_destroy(void* p) {}
 
-static int client_channel_channelz_cmp(void* a, void* b) {
-  return GPR_ICMP(a, b);
-}
+int client_channel_channelz_cmp(void* a, void* b) { return GPR_ICMP(a, b); }
+
+}  // namespace
 
 static const grpc_arg_pointer_vtable client_channel_channelz_vtable = {
     client_channel_channelz_copy, client_channel_channelz_destroy,
@@ -62,17 +63,17 @@ void ClientChannelNode::PopulateConnectivityState(grpc_json* json) {
                          false);
 }
 
-grpc_arg ClientChannelNode::CreateArg() {
+grpc_arg ClientChannelNode::CreateChannelArg() {
   return grpc_channel_arg_pointer_create(
       const_cast<char*>(GRPC_ARG_CHANNELZ_CHANNEL_NODE_CREATION_FUNC),
       reinterpret_cast<void*>(MakeClientChannelNode),
       &client_channel_channelz_vtable);
 }
 
-RefCountedPtr<ChannelNode> MakeClientChannelNode(
+RefCountedPtr<ChannelNode> ClientChannelNode::MakeClientChannelNode(
     grpc_channel* channel, size_t channel_tracer_max_nodes) {
-  return RefCountedPtr<ChannelNode>(
-      New<ClientChannelNode>(channel, channel_tracer_max_nodes));
+  return MakePolymorphicRefCounted<ChannelNode, ClientChannelNode>(
+      channel, channel_tracer_max_nodes);
 }
 
 }  // namespace channelz

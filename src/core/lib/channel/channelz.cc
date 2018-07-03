@@ -129,7 +129,6 @@ char* ChannelNode::RenderJSON() {
                                            GRPC_JSON_OBJECT, false);
   json = data;
   json_iterator = nullptr;
-
   PopulateConnectivityState(json);
   json_iterator = grpc_json_create_child(
       json_iterator, json, "target", target_.get(), GRPC_JSON_STRING, false);
@@ -166,8 +165,8 @@ char* ChannelNode::RenderJSON() {
   return json_str;
 }
 
-RefCountedPtr<ChannelNode> MakeChannelNode(grpc_channel* channel,
-                                           size_t channel_tracer_max_nodes) {
+RefCountedPtr<ChannelNode> ChannelNode::MakeChannelNode(
+    grpc_channel* channel, size_t channel_tracer_max_nodes) {
   return MakeRefCounted<grpc_core::channelz::ChannelNode>(
       channel, channel_tracer_max_nodes);
 }
