@@ -73,16 +73,21 @@ void chttp2_init_client_fullstack(grpc_end2end_test_fixture* f,
   grpc_channel_credentials_release(creds);
 }
 
-static int fail_server_auth_check(grpc_channel_args* server_args) {
+/*
+ * Check if server should fail auth check. If it is true, a different metadata
+ * processor will be installed that always fails in processing client's
+ * metadata.
+ */
+static bool fail_server_auth_check(grpc_channel_args* server_args) {
   size_t i;
   if (server_args == nullptr) return 0;
   for (i = 0; i < server_args->num_args; i++) {
     if (strcmp(server_args->args[i].key, FAIL_AUTH_CHECK_SERVER_ARG_NAME) ==
         0) {
-      return 1;
+      return true;
     }
   }
-  return 0;
+  return false;
 }
 
 static void process_auth_failure(void* state, grpc_auth_context* ctx,

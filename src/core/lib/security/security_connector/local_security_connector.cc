@@ -34,6 +34,7 @@
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/tsi/local_transport_security.h"
 
+#define GRPC_UDS_URL_PATTERN "unix:"
 #define GRPC_UDS_URL_SCHEME "unix"
 #define GRPC_LOCAL_TRANSPORT_SECURITY_TYPE "local"
 
@@ -189,8 +190,8 @@ grpc_security_status grpc_local_channel_security_connector_create(
   const grpc_arg* server_uri_arg =
       grpc_channel_args_find(args, GRPC_ARG_SERVER_URI);
   const char* server_uri_str = grpc_channel_arg_get_string(server_uri_arg);
-  if (strncmp(GRPC_UDS_URL_SCHEME, server_uri_str,
-              strlen(GRPC_UDS_URL_SCHEME)) != 0) {
+  if (strncmp(GRPC_UDS_URL_PATTERN, server_uri_str,
+              strlen(GRPC_UDS_URL_PATTERN)) != 0) {
     gpr_log(GPR_ERROR,
             "Invalid target_name to "
             "grpc_local_channel_security_connector_create()");
