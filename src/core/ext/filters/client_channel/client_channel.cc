@@ -301,16 +301,20 @@ static void on_resolver_shutdown_locked(channel_data* chand,
     chand->lb_policy.reset();
   }
   if (chand->resolver != nullptr) {
+    // This should never happen; it can only be triggered by a resolver
+    // implementation spotaneously deciding to report shutdown without
+    // being orphaned.  This code is included just to be defensive.
     if (grpc_client_channel_trace.enabled()) {
-      gpr_log(GPR_INFO, "chand=%p: shutting down resolver", chand);
+      gpr_log(GPR_INFO, "chand=%p: spontaneous shutdown from resolver %p",
+              chand, chand->resolver.get());
     }
     chand->resolver.reset();
+    set_channel_connectivity_state_locked(
+        chand, GRPC_CHANNEL_SHUTDOWN,
+        GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+            "Resolver spontaneous shutdown", &error, 1),
+        "resolver_spontaneous_shutdown");
   }
-  set_channel_connectivity_state_locked(
-      chand, GRPC_CHANNEL_SHUTDOWN,
-      GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-          "Got resolver result after disconnection", &error, 1),
-      "resolver_gone");
   grpc_closure_list_fail_all(&chand->waiting_for_resolver_result_closures,
                              GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                                  "Channel disconnected", &error, 1));
@@ -375,7 +379,7 @@ static void request_reresolution_locked(void* arg, grpc_error* error) {
 // Creates a new LB policy, replacing any previous one.
 // If the new policy is created successfully, sets *connectivity_state and
 // *connectivity_error to its initial connectivity state; otherwise,
-// leaves them unset.
+// leaves them unchanged.
 static void create_new_lb_policy_locked(
     channel_data* chand, char* lb_policy_name,
     grpc_connectivity_state* connectivity_state,
@@ -436,7 +440,7 @@ static grpc_core::UniquePtr<char>
 get_service_config_from_resolver_result_locked(channel_data* chand) {
   const grpc_arg* channel_arg =
       grpc_channel_args_find(chand->resolver_result, GRPC_ARG_SERVICE_CONFIG);
-  char* service_config_json = grpc_channel_arg_get_string(channel_arg);
+  const char* service_config_json = grpc_channel_arg_get_string(channel_arg);
   if (service_config_json != nullptr) {
     if (grpc_client_channel_trace.enabled()) {
       gpr_log(GPR_INFO, "chand=%p: resolver returned service config: \"%s\"",
@@ -473,9 +477,15 @@ get_service_config_from_resolver_result_locked(channel_data* chand) {
 static void on_resolver_result_changed_locked(void* arg, grpc_error* error) {
   channel_data* chand = static_cast<channel_data*>(arg);
   if (grpc_client_channel_trace.enabled()) {
+    const char* disposition =
+        chand->resolver_result != nullptr
+            ? ""
+            : (error == GRPC_ERROR_NONE ? " (transient error)"
+                                        : " (resolver shutdown)");
     gpr_log(GPR_INFO,
-            "chand=%p: got resolver result: resolver_result=%p error=%s", chand,
-            chand->resolver_result, grpc_error_string(error));
+            "chand=%p: got resolver result: resolver_result=%p error=%s%s",
+            chand, chand->resolver_result, grpc_error_string(error),
+            disposition);
   }
   // Handle shutdown.
   if (error != GRPC_ERROR_NONE || chand->resolver == nullptr) {
@@ -715,6 +725,13 @@ static void shutdown_resolver_locked(void* arg, grpc_error* error) {
 static void cc_destroy_channel_elem(grpc_channel_element* elem) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   if (chand->resolver != nullptr) {
+    // The only way we can get here is if we never started resolving,
+    // because we take a ref to the channel stack when we start
+    // resolving and do not release it until the resolver callback is
+    // invoked after the resolver shuts down.  In this case, shutting
+    // down the resolver will not cause subsequent callbacks to be
+    // invoked, bit it still needs to be done from within the combiner,
+    // so we need to do it in a callback.
     GRPC_CLOSURE_SCHED(
         GRPC_CLOSURE_CREATE(shutdown_resolver_locked, chand->resolver.release(),
                             grpc_combiner_scheduler(chand->combiner)),
