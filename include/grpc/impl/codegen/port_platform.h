@@ -282,7 +282,7 @@
 #else /* _LP64 */
 #define GPR_ARCH_32 1
 #endif /* _LP64 */
-#elif defined(__sun)
+#elif defined(__sun) && defined(__SVR4)
 #define GPR_PLATFORM_STRING "solaris"
 #define GPR_SOLARIS 1
 #define GPR_CPU_POSIX 1
