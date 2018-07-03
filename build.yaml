@@ -209,6 +209,7 @@ filegroups:
   - include/grpc/impl/codegen/fork.h
   - include/grpc/impl/codegen/gpr_slice.h
   - include/grpc/impl/codegen/gpr_types.h
+  - include/grpc/impl/codegen/log.h
   - include/grpc/impl/codegen/port_platform.h
   - include/grpc/impl/codegen/sync.h
   - include/grpc/impl/codegen/sync_custom.h
@@ -1139,6 +1140,7 @@ filegroups:
   - include/grpc++/impl/codegen/stub_options.h
   - include/grpc++/impl/codegen/sync_stream.h
   - include/grpc++/impl/codegen/time.h
+  - include/grpcpp/impl/codegen/async_generic_service.h
   - include/grpcpp/impl/codegen/async_stream.h
   - include/grpcpp/impl/codegen/async_unary_call.h
   - include/grpcpp/impl/codegen/byte_buffer.h
@@ -5097,6 +5099,19 @@ targets:
   - gpr_test_util
   - gpr
   - grpc++_test_config
+- name: raw_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/end2end/raw_end2end_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: reconnect_interop_client
   build: test
   run: false

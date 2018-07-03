@@ -124,22 +124,39 @@ class Service {
   }
 
   void MarkMethodAsync(int index) {
+    // This does not have to be a hard error, however no one has approached us
+    // with a use case yet. Please file an issue if you believe you have one.
     GPR_CODEGEN_ASSERT(
         methods_[index].get() != nullptr &&
         "Cannot mark the method as 'async' because it has already been "
         "marked as 'generic'.");
-    methods_[index]->ResetHandler();
+    methods_[index]->SetServerAsyncType(
+        internal::RpcServiceMethod::AsyncType::ASYNC);
+  }
+
+  void MarkMethodRaw(int index) {
+    // This does not have to be a hard error, however no one has approached us
+    // with a use case yet. Please file an issue if you believe you have one.
+    GPR_CODEGEN_ASSERT(methods_[index].get() != nullptr &&
+                       "Cannot mark the method as 'raw' because it has already "
+                       "been marked as 'generic'.");
+    methods_[index]->SetServerAsyncType(
+        internal::RpcServiceMethod::AsyncType::RAW);
   }
 
   void MarkMethodGeneric(int index) {
+    // This does not have to be a hard error, however no one has approached us
+    // with a use case yet. Please file an issue if you believe you have one.
     GPR_CODEGEN_ASSERT(
         methods_[index]->handler() != nullptr &&
         "Cannot mark the method as 'generic' because it has already been "
-        "marked as 'async'.");
+        "marked as 'async' or 'raw'.");
     methods_[index].reset();
   }
 
   void MarkMethodStreamed(int index, internal::MethodHandler* streamed_method) {
+    // This does not have to be a hard error, however no one has approached us
+    // with a use case yet. Please file an issue if you believe you have one.
     GPR_CODEGEN_ASSERT(methods_[index] && methods_[index]->handler() &&
                        "Cannot mark an async or generic method Streamed");
     methods_[index]->SetHandler(streamed_method);

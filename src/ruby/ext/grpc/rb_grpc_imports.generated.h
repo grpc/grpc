@@ -30,11 +30,11 @@
 #include <grpc/grpc_posix.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/codegen/byte_buffer.h>
+#include <grpc/impl/codegen/log.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
-#include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
@@ -431,6 +431,27 @@ extern grpc_byte_buffer_reader_readall_type grpc_byte_buffer_reader_readall_impo
 typedef grpc_byte_buffer*(*grpc_raw_byte_buffer_from_reader_type)(grpc_byte_buffer_reader* reader);
 extern grpc_raw_byte_buffer_from_reader_type grpc_raw_byte_buffer_from_reader_import;
 #define grpc_raw_byte_buffer_from_reader grpc_raw_byte_buffer_from_reader_import
+typedef const char*(*gpr_log_severity_string_type)(gpr_log_severity severity);
+extern gpr_log_severity_string_type gpr_log_severity_string_import;
+#define gpr_log_severity_string gpr_log_severity_string_import
+typedef void(*gpr_log_type)(const char* file, int line, gpr_log_severity severity, const char* format, ...) GPR_PRINT_FORMAT_CHECK(4, 5);
+extern gpr_log_type gpr_log_import;
+#define gpr_log gpr_log_import
+typedef int(*gpr_should_log_type)(gpr_log_severity severity);
+extern gpr_should_log_type gpr_should_log_import;
+#define gpr_should_log gpr_should_log_import
+typedef void(*gpr_log_message_type)(const char* file, int line, gpr_log_severity severity, const char* message);
+extern gpr_log_message_type gpr_log_message_import;
+#define gpr_log_message gpr_log_message_import
+typedef void(*gpr_set_log_verbosity_type)(gpr_log_severity min_severity_to_print);
+extern gpr_set_log_verbosity_type gpr_set_log_verbosity_import;
+#define gpr_set_log_verbosity gpr_set_log_verbosity_import
+typedef void(*gpr_log_verbosity_init_type)(void);
+extern gpr_log_verbosity_init_type gpr_log_verbosity_init_import;
+#define gpr_log_verbosity_init gpr_log_verbosity_init_import
+typedef void(*gpr_set_log_function_type)(gpr_log_func func);
+extern gpr_set_log_function_type gpr_set_log_function_import;
+#define gpr_set_log_function gpr_set_log_function_import
 typedef grpc_slice(*grpc_slice_ref_type)(grpc_slice s);
 extern grpc_slice_ref_type grpc_slice_ref_import;
 #define grpc_slice_ref grpc_slice_ref_import
@@ -605,27 +626,6 @@ extern gpr_cpu_num_cores_type gpr_cpu_num_cores_import;
 typedef unsigned(*gpr_cpu_current_cpu_type)(void);
 extern gpr_cpu_current_cpu_type gpr_cpu_current_cpu_import;
 #define gpr_cpu_current_cpu gpr_cpu_current_cpu_import
-typedef const char*(*gpr_log_severity_string_type)(gpr_log_severity severity);
-extern gpr_log_severity_string_type gpr_log_severity_string_import;
-#define gpr_log_severity_string gpr_log_severity_string_import
-typedef void(*gpr_log_type)(const char* file, int line, gpr_log_severity severity, const char* format, ...) GPR_PRINT_FORMAT_CHECK(4, 5);
-extern gpr_log_type gpr_log_import;
-#define gpr_log gpr_log_import
-typedef int(*gpr_should_log_type)(gpr_log_severity severity);
-extern gpr_should_log_type gpr_should_log_import;
-#define gpr_should_log gpr_should_log_import
-typedef void(*gpr_log_message_type)(const char* file, int line, gpr_log_severity severity, const char* message);
-extern gpr_log_message_type gpr_log_message_import;
-#define gpr_log_message gpr_log_message_import
-typedef void(*gpr_set_log_verbosity_type)(gpr_log_severity min_severity_to_print);
-extern gpr_set_log_verbosity_type gpr_set_log_verbosity_import;
-#define gpr_set_log_verbosity gpr_set_log_verbosity_import
-typedef void(*gpr_log_verbosity_init_type)(void);
-extern gpr_log_verbosity_init_type gpr_log_verbosity_init_import;
-#define gpr_log_verbosity_init gpr_log_verbosity_init_import
-typedef void(*gpr_set_log_function_type)(gpr_log_func func);
-extern gpr_set_log_function_type gpr_set_log_function_import;
-#define gpr_set_log_function gpr_set_log_function_import
 typedef char*(*gpr_format_message_type)(int messageid);
 extern gpr_format_message_type gpr_format_message_import;
 #define gpr_format_message gpr_format_message_import

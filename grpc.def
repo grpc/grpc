@@ -129,6 +129,13 @@ EXPORTS
     grpc_byte_buffer_reader_next
     grpc_byte_buffer_reader_readall
     grpc_raw_byte_buffer_from_reader
+    gpr_log_severity_string
+    gpr_log
+    gpr_should_log
+    gpr_log_message
+    gpr_set_log_verbosity
+    gpr_log_verbosity_init
+    gpr_set_log_function
     grpc_slice_ref
     grpc_slice_unref
     grpc_slice_copy
@@ -187,13 +194,6 @@ EXPORTS
     gpr_get_allocation_functions
     gpr_cpu_num_cores
     gpr_cpu_current_cpu
-    gpr_log_severity_string
-    gpr_log
-    gpr_should_log
-    gpr_log_message
-    gpr_set_log_verbosity
-    gpr_log_verbosity_init
-    gpr_set_log_function
     gpr_format_message
     gpr_strdup
     gpr_asprintf

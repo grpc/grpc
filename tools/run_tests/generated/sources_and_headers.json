@@ -4286,6 +4286,25 @@
       "gpr_test_util", 
       "grpc", 
       "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "raw_end2end_test", 
+    "src": [
+      "test/cpp/end2end/raw_end2end_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc++", 
       "grpc++_test_config", 
       "grpc++_test_util", 
       "grpc_test_util"
@@ -9252,6 +9271,7 @@
       "include/grpc/impl/codegen/fork.h", 
       "include/grpc/impl/codegen/gpr_slice.h", 
       "include/grpc/impl/codegen/gpr_types.h", 
+      "include/grpc/impl/codegen/log.h", 
       "include/grpc/impl/codegen/port_platform.h", 
       "include/grpc/impl/codegen/sync.h", 
       "include/grpc/impl/codegen/sync_custom.h", 
@@ -9270,6 +9290,7 @@
       "include/grpc/impl/codegen/fork.h", 
       "include/grpc/impl/codegen/gpr_slice.h", 
       "include/grpc/impl/codegen/gpr_types.h", 
+      "include/grpc/impl/codegen/log.h", 
       "include/grpc/impl/codegen/port_platform.h", 
       "include/grpc/impl/codegen/sync.h", 
       "include/grpc/impl/codegen/sync_custom.h", 
@@ -10886,6 +10907,7 @@
       "include/grpc++/impl/codegen/stub_options.h", 
       "include/grpc++/impl/codegen/sync_stream.h", 
       "include/grpc++/impl/codegen/time.h", 
+      "include/grpcpp/impl/codegen/async_generic_service.h", 
       "include/grpcpp/impl/codegen/async_stream.h", 
       "include/grpcpp/impl/codegen/async_unary_call.h", 
       "include/grpcpp/impl/codegen/byte_buffer.h", 
@@ -10951,6 +10973,7 @@
       "include/grpc++/impl/codegen/stub_options.h", 
       "include/grpc++/impl/codegen/sync_stream.h", 
       "include/grpc++/impl/codegen/time.h", 
+      "include/grpcpp/impl/codegen/async_generic_service.h", 
       "include/grpcpp/impl/codegen/async_stream.h", 
       "include/grpcpp/impl/codegen/async_unary_call.h", 
       "include/grpcpp/impl/codegen/byte_buffer.h", 

@@ -33,6 +33,7 @@
 #include <grpc/impl/codegen/gpr_slice.h>
 #include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/codegen/log.h>
 #include <grpc/impl/codegen/port_platform.h>
 #include <grpc/impl/codegen/propagation_bits.h>
 #include <grpc/impl/codegen/slice.h>
@@ -187,6 +188,13 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_byte_buffer_reader_next);
   printf("%lx", (unsigned long) grpc_byte_buffer_reader_readall);
   printf("%lx", (unsigned long) grpc_raw_byte_buffer_from_reader);
+  printf("%lx", (unsigned long) gpr_log_severity_string);
+  printf("%lx", (unsigned long) gpr_log);
+  printf("%lx", (unsigned long) gpr_should_log);
+  printf("%lx", (unsigned long) gpr_log_message);
+  printf("%lx", (unsigned long) gpr_set_log_verbosity);
+  printf("%lx", (unsigned long) gpr_log_verbosity_init);
+  printf("%lx", (unsigned long) gpr_set_log_function);
   printf("%lx", (unsigned long) grpc_slice_ref);
   printf("%lx", (unsigned long) grpc_slice_unref);
   printf("%lx", (unsigned long) grpc_slice_copy);
@@ -245,13 +253,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) gpr_get_allocation_functions);
   printf("%lx", (unsigned long) gpr_cpu_num_cores);
   printf("%lx", (unsigned long) gpr_cpu_current_cpu);
-  printf("%lx", (unsigned long) gpr_log_severity_string);
-  printf("%lx", (unsigned long) gpr_log);
-  printf("%lx", (unsigned long) gpr_should_log);
-  printf("%lx", (unsigned long) gpr_log_message);
-  printf("%lx", (unsigned long) gpr_set_log_verbosity);
-  printf("%lx", (unsigned long) gpr_log_verbosity_init);
-  printf("%lx", (unsigned long) gpr_set_log_function);
   printf("%lx", (unsigned long) gpr_strdup);
   printf("%lx", (unsigned long) gpr_asprintf);
   printf("%lx", (unsigned long) gpr_mu_init);

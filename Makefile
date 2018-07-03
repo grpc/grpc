@@ -1199,6 +1199,7 @@ qps_interarrival_test: $(BINDIR)/$(CONFIG)/qps_interarrival_test
 qps_json_driver: $(BINDIR)/$(CONFIG)/qps_json_driver
 qps_openloop_test: $(BINDIR)/$(CONFIG)/qps_openloop_test
 qps_worker: $(BINDIR)/$(CONFIG)/qps_worker
+raw_end2end_test: $(BINDIR)/$(CONFIG)/raw_end2end_test
 reconnect_interop_client: $(BINDIR)/$(CONFIG)/reconnect_interop_client
 reconnect_interop_server: $(BINDIR)/$(CONFIG)/reconnect_interop_server
 ref_counted_ptr_test: $(BINDIR)/$(CONFIG)/ref_counted_ptr_test
@@ -1687,6 +1688,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/qps_json_driver \
   $(BINDIR)/$(CONFIG)/qps_openloop_test \
   $(BINDIR)/$(CONFIG)/qps_worker \
+  $(BINDIR)/$(CONFIG)/raw_end2end_test \
   $(BINDIR)/$(CONFIG)/reconnect_interop_client \
   $(BINDIR)/$(CONFIG)/reconnect_interop_server \
   $(BINDIR)/$(CONFIG)/ref_counted_ptr_test \
@@ -1864,6 +1866,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/qps_json_driver \
   $(BINDIR)/$(CONFIG)/qps_openloop_test \
   $(BINDIR)/$(CONFIG)/qps_worker \
+  $(BINDIR)/$(CONFIG)/raw_end2end_test \
   $(BINDIR)/$(CONFIG)/reconnect_interop_client \
   $(BINDIR)/$(CONFIG)/reconnect_interop_server \
   $(BINDIR)/$(CONFIG)/ref_counted_ptr_test \
@@ -2334,6 +2337,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/proto_utils_test || ( echo test proto_utils_test failed ; exit 1 )
 	$(E) "[RUN]     Testing qps_openloop_test"
 	$(Q) $(BINDIR)/$(CONFIG)/qps_openloop_test || ( echo test qps_openloop_test failed ; exit 1 )
+	$(E) "[RUN]     Testing raw_end2end_test"
+	$(Q) $(BINDIR)/$(CONFIG)/raw_end2end_test || ( echo test raw_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing ref_counted_ptr_test"
 	$(Q) $(BINDIR)/$(CONFIG)/ref_counted_ptr_test || ( echo test ref_counted_ptr_test failed ; exit 1 )
 	$(E) "[RUN]     Testing ref_counted_test"
@@ -3306,6 +3311,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
+    include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
     include/grpc/impl/codegen/sync_custom.h \
@@ -3697,6 +3703,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
+    include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
     include/grpc/impl/codegen/sync_custom.h \
@@ -4065,6 +4072,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
+    include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
     include/grpc/impl/codegen/sync_custom.h \
@@ -4380,6 +4388,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
+    include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
     include/grpc/impl/codegen/sync_custom.h \
@@ -4677,6 +4686,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
+    include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
     include/grpc/impl/codegen/sync_custom.h \
@@ -4968,6 +4978,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
+    include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
     include/grpc/impl/codegen/sync_custom.h \
@@ -5264,6 +5275,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
+    include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
     include/grpc/impl/codegen/sync_custom.h \
@@ -5320,6 +5332,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/stub_options.h \
     include/grpc++/impl/codegen/sync_stream.h \
     include/grpc++/impl/codegen/time.h \
+    include/grpcpp/impl/codegen/async_generic_service.h \
     include/grpcpp/impl/codegen/async_stream.h \
     include/grpcpp/impl/codegen/async_unary_call.h \
     include/grpcpp/impl/codegen/byte_buffer.h \
@@ -5835,6 +5848,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
+    include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
     include/grpc/impl/codegen/sync_custom.h \
@@ -5891,6 +5905,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/stub_options.h \
     include/grpc++/impl/codegen/sync_stream.h \
     include/grpc++/impl/codegen/time.h \
+    include/grpcpp/impl/codegen/async_generic_service.h \
     include/grpcpp/impl/codegen/async_stream.h \
     include/grpcpp/impl/codegen/async_unary_call.h \
     include/grpcpp/impl/codegen/byte_buffer.h \
@@ -6280,6 +6295,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/stub_options.h \
     include/grpc++/impl/codegen/sync_stream.h \
     include/grpc++/impl/codegen/time.h \
+    include/grpcpp/impl/codegen/async_generic_service.h \
     include/grpcpp/impl/codegen/async_stream.h \
     include/grpcpp/impl/codegen/async_unary_call.h \
     include/grpcpp/impl/codegen/byte_buffer.h \
@@ -6325,6 +6341,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
+    include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
     include/grpc/impl/codegen/sync_custom.h \
@@ -6432,6 +6449,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/stub_options.h \
     include/grpc++/impl/codegen/sync_stream.h \
     include/grpc++/impl/codegen/time.h \
+    include/grpcpp/impl/codegen/async_generic_service.h \
     include/grpcpp/impl/codegen/async_stream.h \
     include/grpcpp/impl/codegen/async_unary_call.h \
     include/grpcpp/impl/codegen/byte_buffer.h \
@@ -6477,6 +6495,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
+    include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
     include/grpc/impl/codegen/sync_custom.h \
@@ -6695,6 +6714,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc/impl/codegen/fork.h \
     include/grpc/impl/codegen/gpr_slice.h \
     include/grpc/impl/codegen/gpr_types.h \
+    include/grpc/impl/codegen/log.h \
     include/grpc/impl/codegen/port_platform.h \
     include/grpc/impl/codegen/sync.h \
     include/grpc/impl/codegen/sync_custom.h \
@@ -6751,6 +6771,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/stub_options.h \
     include/grpc++/impl/codegen/sync_stream.h \
     include/grpc++/impl/codegen/time.h \
+    include/grpcpp/impl/codegen/async_generic_service.h \
     include/grpcpp/impl/codegen/async_stream.h \
     include/grpcpp/impl/codegen/async_unary_call.h \
     include/grpcpp/impl/codegen/byte_buffer.h \
@@ -18938,6 +18959,49 @@ deps_qps_worker: $(QPS_WORKER_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(QPS_WORKER_OBJS:.o=.dep)
+endif
+endif
+
+
+RAW_END2END_TEST_SRC = \
+    test/cpp/end2end/raw_end2end_test.cc \
+
+RAW_END2END_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(RAW_END2END_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/raw_end2end_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/raw_end2end_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/raw_end2end_test: $(PROTOBUF_DEP) $(RAW_END2END_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(RAW_END2END_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/raw_end2end_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/raw_end2end_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_raw_end2end_test: $(RAW_END2END_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(RAW_END2END_TEST_OBJS:.o=.dep)
 endif
 endif
 

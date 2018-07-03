@@ -892,6 +892,7 @@ include/grpc/impl/codegen/fork.h \
 include/grpc/impl/codegen/gpr_slice.h \
 include/grpc/impl/codegen/gpr_types.h \
 include/grpc/impl/codegen/grpc_types.h \
+include/grpc/impl/codegen/log.h \
 include/grpc/impl/codegen/port_platform.h \
 include/grpc/impl/codegen/propagation_bits.h \
 include/grpc/impl/codegen/slice.h \
@@ -937,6 +938,7 @@ include/grpcpp/health_check_service_interface.h \
 include/grpcpp/impl/call.h \
 include/grpcpp/impl/channel_argument_option.h \
 include/grpcpp/impl/client_unary_call.h \
+include/grpcpp/impl/codegen/async_generic_service.h \
 include/grpcpp/impl/codegen/async_stream.h \
 include/grpcpp/impl/codegen/async_unary_call.h \
 include/grpcpp/impl/codegen/byte_buffer.h \

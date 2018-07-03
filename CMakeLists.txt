@@ -616,6 +616,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx qps_openloop_test)
 endif()
 add_dependencies(buildtests_cxx qps_worker)
+add_dependencies(buildtests_cxx raw_end2end_test)
 add_dependencies(buildtests_cxx reconnect_interop_client)
 add_dependencies(buildtests_cxx reconnect_interop_server)
 add_dependencies(buildtests_cxx ref_counted_ptr_test)
@@ -870,6 +871,7 @@ foreach(_hdr
   include/grpc/impl/codegen/fork.h
   include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
+  include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_custom.h
@@ -1290,6 +1292,7 @@ foreach(_hdr
   include/grpc/impl/codegen/fork.h
   include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
+  include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_custom.h
@@ -1659,6 +1662,7 @@ foreach(_hdr
   include/grpc/impl/codegen/fork.h
   include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
+  include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_custom.h
@@ -1973,6 +1977,7 @@ foreach(_hdr
   include/grpc/impl/codegen/fork.h
   include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
+  include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_custom.h
@@ -2279,6 +2284,7 @@ foreach(_hdr
   include/grpc/impl/codegen/fork.h
   include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
+  include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_custom.h
@@ -2594,6 +2600,7 @@ foreach(_hdr
   include/grpc/impl/codegen/fork.h
   include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
+  include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_custom.h
@@ -2911,6 +2918,7 @@ foreach(_hdr
   include/grpc/impl/codegen/fork.h
   include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
+  include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_custom.h
@@ -2967,6 +2975,7 @@ foreach(_hdr
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
   include/grpc++/impl/codegen/time.h
+  include/grpcpp/impl/codegen/async_generic_service.h
   include/grpcpp/impl/codegen/async_stream.h
   include/grpcpp/impl/codegen/async_unary_call.h
   include/grpcpp/impl/codegen/byte_buffer.h
@@ -3475,6 +3484,7 @@ foreach(_hdr
   include/grpc/impl/codegen/fork.h
   include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
+  include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_custom.h
@@ -3531,6 +3541,7 @@ foreach(_hdr
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
   include/grpc++/impl/codegen/time.h
+  include/grpcpp/impl/codegen/async_generic_service.h
   include/grpcpp/impl/codegen/async_stream.h
   include/grpcpp/impl/codegen/async_unary_call.h
   include/grpcpp/impl/codegen/byte_buffer.h
@@ -3940,6 +3951,7 @@ foreach(_hdr
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
   include/grpc++/impl/codegen/time.h
+  include/grpcpp/impl/codegen/async_generic_service.h
   include/grpcpp/impl/codegen/async_stream.h
   include/grpcpp/impl/codegen/async_unary_call.h
   include/grpcpp/impl/codegen/byte_buffer.h
@@ -3985,6 +3997,7 @@ foreach(_hdr
   include/grpc/impl/codegen/fork.h
   include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
+  include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_custom.h
@@ -4116,6 +4129,7 @@ foreach(_hdr
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
   include/grpc++/impl/codegen/time.h
+  include/grpcpp/impl/codegen/async_generic_service.h
   include/grpcpp/impl/codegen/async_stream.h
   include/grpcpp/impl/codegen/async_unary_call.h
   include/grpcpp/impl/codegen/byte_buffer.h
@@ -4161,6 +4175,7 @@ foreach(_hdr
   include/grpc/impl/codegen/fork.h
   include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
+  include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_custom.h
@@ -4375,6 +4390,7 @@ foreach(_hdr
   include/grpc/impl/codegen/fork.h
   include/grpc/impl/codegen/gpr_slice.h
   include/grpc/impl/codegen/gpr_types.h
+  include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
   include/grpc/impl/codegen/sync_custom.h
@@ -4431,6 +4447,7 @@ foreach(_hdr
   include/grpc++/impl/codegen/stub_options.h
   include/grpc++/impl/codegen/sync_stream.h
   include/grpc++/impl/codegen/time.h
+  include/grpcpp/impl/codegen/async_generic_service.h
   include/grpcpp/impl/codegen/async_stream.h
   include/grpcpp/impl/codegen/async_unary_call.h
   include/grpcpp/impl/codegen/byte_buffer.h
@@ -13251,6 +13268,46 @@ target_link_libraries(qps_worker
   gpr_test_util
   gpr
   grpc++_test_config
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(raw_end2end_test
+  test/cpp/end2end/raw_end2end_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(raw_end2end_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(raw_end2end_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr_test_util
+  gpr
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
