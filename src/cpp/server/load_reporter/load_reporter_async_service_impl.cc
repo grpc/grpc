@@ -25,17 +25,11 @@ namespace load_reporter {
 
 void LoadReporterAsyncServiceImpl::CallableTag::Run(bool ok) {
   if (handler_function_ != nullptr) {
-    handler_function_(move(handler_), ok);
+    handler_function_(std::move(handler_), ok);
   } else {
     GPR_ASSERT(service_function_ != nullptr);
     service_function_(ok);
   }
-}
-
-std::shared_ptr<LoadReporterAsyncServiceImpl::ReportLoadHandler>
-LoadReporterAsyncServiceImpl::CallableTag::ReleaseHandler() {
-  GPR_ASSERT(handler_ != nullptr);
-  return std::move(handler_);
 }
 
 LoadReporterAsyncServiceImpl::LoadReporterAsyncServiceImpl(
@@ -122,8 +116,9 @@ void LoadReporterAsyncServiceImpl::StartThread() { thread_->Start(); }
 void LoadReporterAsyncServiceImpl::ReportLoadHandler::CreateAndStart(
     ServerCompletionQueue* cq, LoadReporterAsyncServiceImpl* service,
     LoadReporter* load_reporter) {
-  std::shared_ptr<ReportLoadHandler> handler =
-      std::make_shared<ReportLoadHandler>(cq, service, load_reporter);
+  // Can't use std::make_shared<> here because the constructor is private.
+  std::shared_ptr<ReportLoadHandler> handler(
+      new ReportLoadHandler(cq, service, load_reporter));
   handler->Start();
   // Orphan the handler.
   handler.reset();
@@ -154,35 +149,35 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::Start() {
 }
 
 void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnRequestDelivered(
-    std::shared_ptr<ReportLoadHandler> me, bool ok) {
-  // AsyncNotifyWhenDone() needs to be called before the call starts, but the
-  // tag will not pop out if the call never starts (
-  // https://github.com/grpc/grpc/issues/10136). So we need to manually release
-  // the ownership of the handler in this case.
+    std::shared_ptr<ReportLoadHandler> self, bool ok) {
   if (ok) {
     call_status_ = DELIVERED;
   } else {
-    on_done_notified_.ReleaseHandler();
+    // AsyncNotifyWhenDone() needs to be called before the call starts, but the
+    // tag will not pop out if the call never starts (
+    // https://github.com/grpc/grpc/issues/10136). So we need to manually
+    // release the ownership of the handler in this case.
+    GPR_ASSERT(on_done_notified_.ReleaseHandler() != nullptr);
   }
   if (!ok || shutdown_) {
     // The value of ok being false means that the server is shutting down.
-    Shutdown(std::move(me), "OnRequestDelivered");
+    Shutdown(std::move(self), "OnRequestDelivered");
     return;
   }
   // Spawn a new handler instance to serve the next new client. Every handler
   // instance will deallocate itself when it's done.
   CreateAndStart(cq_, service_, load_reporter_);
-  next_inbound_ =
-      CallableTag(std::bind(&ReportLoadHandler::OnReadDone, this,
-                            std::placeholders::_1, std::placeholders::_2),
-                  std::move(me));
   {
     std::unique_lock<std::mutex> lock(service_->cq_shutdown_mu_);
     if (service_->shutdown_) {
       lock.release()->unlock();
-      Shutdown(next_inbound_.ReleaseHandler(), "OnRequestDelivered");
+      Shutdown(std::move(self), "OnRequestDelivered");
       return;
     }
+    next_inbound_ =
+        CallableTag(std::bind(&ReportLoadHandler::OnReadDone, this,
+                              std::placeholders::_1, std::placeholders::_2),
+                    std::move(self));
     stream_.Read(&request_, &next_inbound_);
   }
   // LB ID is unique for each load reporting stream.
@@ -194,7 +189,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnRequestDelivered(
 }
 
 void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnReadDone(
-    std::shared_ptr<ReportLoadHandler> me, bool ok) {
+    std::shared_ptr<ReportLoadHandler> self, bool ok) {
   if (!ok || shutdown_) {
     if (!ok && call_status_ < INITIAL_REQUEST_RECEIVED) {
       // The client may have half-closed the stream or the stream is broken.
@@ -204,13 +199,13 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnReadDone(
               service_, lb_id_.c_str(), this, static_cast<int>(done_notified_),
               static_cast<int>(is_cancelled_));
     }
-    Shutdown(std::move(me), "OnReadDone");
+    Shutdown(std::move(self), "OnReadDone");
     return;
   }
   // We only receive one request, which is the initial request.
   if (call_status_ < INITIAL_REQUEST_RECEIVED) {
     if (!request_.has_initial_request()) {
-      Shutdown(std::move(me), "OnReadDone+initial_request_not_found");
+      Shutdown(std::move(self), "OnReadDone+initial_request_not_found");
     } else {
       call_status_ = INITIAL_REQUEST_RECEIVED;
       const auto& initial_request = request_.initial_request();
@@ -229,18 +224,18 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnReadDone(
           service_, load_balanced_hostname_.c_str(), load_report_interval_ms_,
           lb_id_.c_str(), this);
       SendReport(shared_from_this(), true /* ok */);
-      next_inbound_ =
-          CallableTag(std::bind(&ReportLoadHandler::OnReadDone, this,
-                                std::placeholders::_1, std::placeholders::_2),
-                      std::move(me));
       // Expect this read to fail.
       {
         std::unique_lock<std::mutex> lock(service_->cq_shutdown_mu_);
         if (service_->shutdown_) {
           lock.release()->unlock();
-          Shutdown(next_inbound_.ReleaseHandler(), "OnReadDone");
+          Shutdown(std::move(self), "OnReadDone");
           return;
         }
+        next_inbound_ =
+            CallableTag(std::bind(&ReportLoadHandler::OnReadDone, this,
+                                  std::placeholders::_1, std::placeholders::_2),
+                        std::move(self));
         stream_.Read(&request_, &next_inbound_);
       }
     }
@@ -249,20 +244,16 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnReadDone(
     gpr_log(GPR_ERROR,
             "[LRS %p] Another request received (lb_id_: %s, handler: %p).",
             service_, lb_id_.c_str(), this);
-    Shutdown(std::move(me), "OnReadDone+second_request");
+    Shutdown(std::move(self), "OnReadDone+second_request");
   }
 }
 
 void LoadReporterAsyncServiceImpl::ReportLoadHandler::ScheduleNextReport(
-    std::shared_ptr<ReportLoadHandler> me, bool ok) {
+    std::shared_ptr<ReportLoadHandler> self, bool ok) {
   if (!ok || shutdown_) {
-    Shutdown(std::move(me), "ScheduleNextReport");
+    Shutdown(std::move(self), "ScheduleNextReport");
     return;
   }
-  next_outbound_ =
-      CallableTag(std::bind(&ReportLoadHandler::SendReport, this,
-                            std::placeholders::_1, std::placeholders::_2),
-                  std::move(me));
   auto next_report_time = gpr_time_add(
       gpr_now(GPR_CLOCK_MONOTONIC),
       gpr_time_from_millis(load_report_interval_ms_, GPR_TIMESPAN));
@@ -270,9 +261,13 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::ScheduleNextReport(
     std::unique_lock<std::mutex> lock(service_->cq_shutdown_mu_);
     if (service_->shutdown_) {
       lock.release()->unlock();
-      Shutdown(next_outbound_.ReleaseHandler(), "ScheduleNextReport");
+      Shutdown(std::move(self), "ScheduleNextReport");
       return;
     }
+    next_outbound_ =
+        CallableTag(std::bind(&ReportLoadHandler::SendReport, this,
+                              std::placeholders::_1, std::placeholders::_2),
+                    std::move(self));
     // TODO(juanlishen): Improve the Alarm implementation to reuse a single
     // instance for multiple events.
     next_report_alarm_.reset(new Alarm);
@@ -284,9 +279,9 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::ScheduleNextReport(
 }
 
 void LoadReporterAsyncServiceImpl::ReportLoadHandler::SendReport(
-    std::shared_ptr<ReportLoadHandler> me, bool ok) {
+    std::shared_ptr<ReportLoadHandler> self, bool ok) {
   if (!ok || shutdown_) {
-    Shutdown(std::move(me), "SendReport");
+    Shutdown(std::move(self), "SendReport");
     return;
   }
   ::grpc::lb::v1::LoadReportResponse response;
@@ -302,17 +297,17 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::SendReport(
     initial_response->set_server_version(kVersion);
     call_status_ = INITIAL_RESPONSE_SENT;
   }
-  next_outbound_ =
-      CallableTag(std::bind(&ReportLoadHandler::ScheduleNextReport, this,
-                            std::placeholders::_1, std::placeholders::_2),
-                  std::move(me));
   {
     std::unique_lock<std::mutex> lock(service_->cq_shutdown_mu_);
     if (service_->shutdown_) {
       lock.release()->unlock();
-      Shutdown(next_outbound_.ReleaseHandler(), "SendReport");
+      Shutdown(std::move(self), "SendReport");
       return;
     }
+    next_outbound_ =
+        CallableTag(std::bind(&ReportLoadHandler::ScheduleNextReport, this,
+                              std::placeholders::_1, std::placeholders::_2),
+                    std::move(self));
     stream_.Write(response, &next_outbound_);
     gpr_log(GPR_INFO,
             "[LRS %p] Sending load report (lb_id_: %s, handler: %p, loads "
@@ -322,7 +317,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::SendReport(
 }
 
 void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnDoneNotified(
-    std::shared_ptr<ReportLoadHandler> me, bool ok) {
+    std::shared_ptr<ReportLoadHandler> self, bool ok) {
   GPR_ASSERT(ok);
   done_notified_ = true;
   if (ctx_.IsCancelled()) {
@@ -332,11 +327,11 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnDoneNotified(
           "[LRS %p] Load reporting call is notified done (handler: %p, "
           "is_cancelled: %d).",
           service_, this, static_cast<int>(is_cancelled_));
-  Shutdown(std::move(me), "OnDoneNotified");
+  Shutdown(std::move(self), "OnDoneNotified");
 }
 
 void LoadReporterAsyncServiceImpl::ReportLoadHandler::Shutdown(
-    std::shared_ptr<ReportLoadHandler> me, const char* reason) {
+    std::shared_ptr<ReportLoadHandler> self, const char* reason) {
   if (!shutdown_) {
     gpr_log(GPR_INFO,
             "[LRS %p] Shutting down the handler (lb_id_: %s, handler: %p, "
@@ -356,7 +351,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::Shutdown(
       on_finish_done_ =
           CallableTag(std::bind(&ReportLoadHandler::OnFinishDone, this,
                                 std::placeholders::_1, std::placeholders::_2),
-                      std::move(me));
+                      std::move(self));
       // TODO(juanlishen): Maybe add a message proto for the client to
       // explicitly cancel the stream so that we can return OK status in such
       // cases.
@@ -367,7 +362,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::Shutdown(
 }
 
 void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnFinishDone(
-    std::shared_ptr<ReportLoadHandler> me, bool ok) {
+    std::shared_ptr<ReportLoadHandler> self, bool ok) {
   if (ok) {
     gpr_log(GPR_INFO,
             "[LRS %p] Load reporting finished (lb_id_: %s, handler: %p).",

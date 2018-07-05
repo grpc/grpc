@@ -78,14 +78,16 @@ class LoadReporterAsyncServiceImpl
     // Runs the tag according to the function type.
     void Run(bool ok);
 
-    // Releases and returns the shared pointer to the handler. Only called when
-    // the shared pointer is non-null.
-    std::shared_ptr<ReportLoadHandler> ReleaseHandler();
+    // Releases and returns the shared pointer to the handler if it's non-null;
+    // otherwise returns null.
+    std::shared_ptr<ReportLoadHandler> ReleaseHandler() {
+      return std::move(handler_);
+    }
 
    private:
     ServiceFunction service_function_ = nullptr;
     HandlerFunction handler_function_ = nullptr;
-    std::shared_ptr<ReportLoadHandler> handler_ = nullptr;
+    std::shared_ptr<ReportLoadHandler> handler_;
   };
 
   // Each handler takes care of one load reporting stream. It contains
@@ -94,16 +96,18 @@ class LoadReporterAsyncServiceImpl
   class ReportLoadHandler
       : public std::enable_shared_from_this<ReportLoadHandler> {
    public:
-    // Instantiates a ReportLoadHandler, starts it, and orphans it.
+    // Instantiates a ReportLoadHandler and starts it. The handler object will
+    // manage its own lifetime, so no action is needed from the caller any more
+    // regarding that object.
     static void CreateAndStart(ServerCompletionQueue* cq,
                                LoadReporterAsyncServiceImpl* service,
                                LoadReporter* load_reporter);
 
+   private:
     ReportLoadHandler(ServerCompletionQueue* cq,
                       LoadReporterAsyncServiceImpl* service,
                       LoadReporter* load_reporter);
 
-   private:
     // Starts working by requesting for the next load reporting call. Note that
     // this can't be called from the constructor because shared_from_this() can
     // only be called from a previously shared object.
@@ -112,28 +116,28 @@ class LoadReporterAsyncServiceImpl
     // After the handler has a call request delivered, it starts reading the
     // initial request. Also, a new handler is spawned so that we can keep
     // servicing future calls.
-    void OnRequestDelivered(std::shared_ptr<ReportLoadHandler> me, bool ok);
+    void OnRequestDelivered(std::shared_ptr<ReportLoadHandler> self, bool ok);
 
     // The first Read() is expected to succeed, after which the handler starts
     // sending load reports back to the balancer. The second Read() is
     // expected to fail, which happens when the balancer half-closes the
     // stream to signal that it's no longer interested in the load reports. For
     // the latter case, the handler will then close the stream.
-    void OnReadDone(std::shared_ptr<ReportLoadHandler> me, bool ok);
+    void OnReadDone(std::shared_ptr<ReportLoadHandler> self, bool ok);
 
     // The report sending operations are sequential as: send report -> send
     // done, schedule the next send -> waiting for the alarm to fire -> alarm
     // fires, send report -> ...
-    void SendReport(std::shared_ptr<ReportLoadHandler> me, bool ok);
-    void ScheduleNextReport(std::shared_ptr<ReportLoadHandler> me, bool ok);
+    void SendReport(std::shared_ptr<ReportLoadHandler> self, bool ok);
+    void ScheduleNextReport(std::shared_ptr<ReportLoadHandler> self, bool ok);
 
     // Called when Finish() is done.
-    void OnFinishDone(std::shared_ptr<ReportLoadHandler> me, bool ok);
+    void OnFinishDone(std::shared_ptr<ReportLoadHandler> self, bool ok);
 
     // Called when AsyncNotifyWhenDone() notifies us.
-    void OnDoneNotified(std::shared_ptr<ReportLoadHandler> me, bool ok);
+    void OnDoneNotified(std::shared_ptr<ReportLoadHandler> self, bool ok);
 
-    void Shutdown(std::shared_ptr<ReportLoadHandler> me, const char* reason);
+    void Shutdown(std::shared_ptr<ReportLoadHandler> self, const char* reason);
 
     // The key fields of the stream.
     grpc::string lb_id_;

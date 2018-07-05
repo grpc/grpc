@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/cpp/server/load_reporter/load_reporting_service_server_builder_option.h"
+#include <grpcpp/ext/server_load_reporting.h>
 
 #include "src/cpp/server/load_reporter/load_reporting_service_server_builder_plugin.h"
 

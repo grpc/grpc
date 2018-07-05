@@ -328,10 +328,12 @@ const char* ServerLoadReportingCallData::GetStatusTagForStatus(
   }
 }
 
-static bool MaybeAddServerLoadReportingFilter(const grpc_channel_args& args) {
+namespace {
+bool MaybeAddServerLoadReportingFilter(const grpc_channel_args& args) {
   return grpc_channel_arg_get_bool(
       grpc_channel_args_find(&args, GRPC_ARG_ENABLE_LOAD_REPORTING), false);
 }
+}  // namespace
 
 // TODO(juanlishen): We should register the filter during grpc initialization
 // time once OpenCensus is compatible with our build system. For now, we force
