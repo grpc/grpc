@@ -37,6 +37,16 @@ For instructions on how to use the language-specific gRPC runtime in your projec
 
 You can find per-language quickstart guides and tutorials in [Documentation section on grpc.io website](https://grpc.io/docs/). The code examples are available in the [examples](examples) directory.
 
+
+## Windows Visual C++ Quickstart Install
+
+You can install the gRPC plugins, includes, and libraries using vcpkg on Windows.  First, [install vcpkg](https://github.com/Microsoft/vcpkg).  Second, run the command:
+
+> vcpkg install grpc:x64-windows
+
+assuming you want 64-bit libraries.  You will still need to build from source for specific branches or the latest master.  Also note that the plugin EXE files will end up in your vspkg tree, you'll need to locate the appropriate one and add its path to the protoc --plugin option as needed.
+
+
 # To start developing gRPC
 
 Contributions are welcome!
@@ -76,4 +86,3 @@ Libraries in different languages may be in different states of development. We a
 | NodeJS                  | [grpc-node](https://github.com/grpc/grpc-node)       |
 | WebJS                   | [grpc-web](https://github.com/grpc/grpc-web)         |
 | Dart                    | [grpc-dart](https://github.com/grpc/grpc-dart)       |
-
