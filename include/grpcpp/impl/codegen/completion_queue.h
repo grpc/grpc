@@ -106,7 +106,9 @@ class CompletionQueue : private GrpcLibraryCodegen {
 
   /// Destructor. Destroys the owned wrapped completion queue / instance.
   ~CompletionQueue() {
-    g_core_codegen_interface->grpc_completion_queue_destroy(cq_);
+	if (typeid(*g_core_codegen_interface).hash_code() != typeid(CoreCodegenInterface).hash_code()) {
+      g_core_codegen_interface->grpc_completion_queue_destroy(cq_);
+	}
   }
 
   /// Tri-state return for AsyncNext: SHUTDOWN, GOT_EVENT, TIMEOUT.

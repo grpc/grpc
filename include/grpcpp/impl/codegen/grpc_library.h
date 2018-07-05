@@ -47,7 +47,8 @@ class GrpcLibraryCodegen {
     }
   }
   virtual ~GrpcLibraryCodegen() {
-    if (grpc_init_called_) {
+    if (grpc_init_called_ &&
+		typeid(*g_glip).hash_code() != typeid(GrpcLibraryInterface).hash_code()) {
       GPR_CODEGEN_ASSERT(g_glip &&
                          "gRPC library not initialized. See "
                          "grpc::internal::GrpcLibraryInitializer.");
