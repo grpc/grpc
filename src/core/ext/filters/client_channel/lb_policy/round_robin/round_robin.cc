@@ -354,11 +354,11 @@ bool RoundRobin::PickLocked(PickState* pick) {
     if (DoPickLocked(pick)) return true;
   }
   /* no pick currently available. Save for later in list of pending picks */
+  pick->next = pending_picks_;
+  pending_picks_ = pick;
   if (!started_picking_) {
     StartPickingLocked();
   }
-  pick->next = pending_picks_;
-  pending_picks_ = pick;
   return false;
 }
 
