@@ -45,6 +45,10 @@ Please read [How to contribute](CONTRIBUTING.md) which will guide you through th
 the gRPC codebase.
 The document also contains info on how the contributing process works and contains best practices for creating contributions.
 
+# Troubleshooting
+
+Sometimes things go wrong. Please check out the [Troubleshooting guide](TROUBLESHOOTING.md) if you are experiencing issues with gRPC.
+
 # Performance 
 
 See [Performance dashboard](http://performance-dot-grpc-testing.appspot.com/explore?dashboard=5636470266134528) for the performance numbers for the latest released version.
