@@ -2,7 +2,7 @@
 
 This guide is for troubleshooting gRPC implementations based on C core library (sources for most of them are living in the `grpc/grpc` repository).
 
-## Enabling extra logging and traces
+## Enabling extra logging and tracing
 
 Extra logging can be very useful for diagnosing problems. All gRPC implementations based on C core library support
 the `GRPC_VERBOSITY` and `GRPC_TRACE` environment variables that can be used to increase the amount of information
