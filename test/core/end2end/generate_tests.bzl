@@ -66,6 +66,7 @@ END2END_FIXTURES = {
     'h2_sockpair+trace': fixture_options(fullstack=False, dns_resolver=False,
                                          tracing=True, client_channel=False),
     'h2_ssl': fixture_options(secure=True),
+    'h2_local': fixture_options(secure=True, dns_resolver=False, platforms=['linux', 'mac', 'posix']),
     'h2_ssl_proxy': fixture_options(includes_proxy=True, secure=True),
     'h2_uds': fixture_options(dns_resolver=False,
                               platforms=['linux', 'mac', 'posix']),

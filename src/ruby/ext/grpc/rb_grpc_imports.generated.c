@@ -142,6 +142,8 @@ grpc_alts_credentials_client_options_add_target_service_account_type grpc_alts_c
 grpc_alts_credentials_options_destroy_type grpc_alts_credentials_options_destroy_import;
 grpc_alts_credentials_create_type grpc_alts_credentials_create_import;
 grpc_alts_server_credentials_create_type grpc_alts_server_credentials_create_import;
+grpc_local_credentials_create_type grpc_local_credentials_create_import;
+grpc_local_server_credentials_create_type grpc_local_server_credentials_create_import;
 grpc_raw_byte_buffer_create_type grpc_raw_byte_buffer_create_import;
 grpc_raw_compressed_byte_buffer_create_type grpc_raw_compressed_byte_buffer_create_import;
 grpc_byte_buffer_copy_type grpc_byte_buffer_copy_import;
@@ -388,6 +390,8 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_alts_credentials_options_destroy_import = (grpc_alts_credentials_options_destroy_type) GetProcAddress(library, "grpc_alts_credentials_options_destroy");
   grpc_alts_credentials_create_import = (grpc_alts_credentials_create_type) GetProcAddress(library, "grpc_alts_credentials_create");
   grpc_alts_server_credentials_create_import = (grpc_alts_server_credentials_create_type) GetProcAddress(library, "grpc_alts_server_credentials_create");
+  grpc_local_credentials_create_import = (grpc_local_credentials_create_type) GetProcAddress(library, "grpc_local_credentials_create");
+  grpc_local_server_credentials_create_import = (grpc_local_server_credentials_create_type) GetProcAddress(library, "grpc_local_server_credentials_create");
   grpc_raw_byte_buffer_create_import = (grpc_raw_byte_buffer_create_type) GetProcAddress(library, "grpc_raw_byte_buffer_create");
   grpc_raw_compressed_byte_buffer_create_import = (grpc_raw_compressed_byte_buffer_create_type) GetProcAddress(library, "grpc_raw_compressed_byte_buffer_create");
   grpc_byte_buffer_copy_import = (grpc_byte_buffer_copy_type) GetProcAddress(library, "grpc_byte_buffer_copy");

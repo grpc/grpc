@@ -6058,6 +6058,24 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "h2_local_test", 
+    "src": [
+      "test/core/end2end/fixtures/h2_local.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "end2end_tests", 
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "h2_oauth2_test", 
     "src": [
       "test/core/end2end/fixtures/h2_oauth2.cc"
@@ -10266,10 +10284,12 @@
       "src/core/lib/security/credentials/jwt/json_token.h", 
       "src/core/lib/security/credentials/jwt/jwt_credentials.h", 
       "src/core/lib/security/credentials/jwt/jwt_verifier.h", 
+      "src/core/lib/security/credentials/local/local_credentials.h", 
       "src/core/lib/security/credentials/oauth2/oauth2_credentials.h", 
       "src/core/lib/security/credentials/plugin/plugin_credentials.h", 
       "src/core/lib/security/credentials/ssl/ssl_credentials.h", 
       "src/core/lib/security/security_connector/alts_security_connector.h", 
+      "src/core/lib/security/security_connector/local_security_connector.h", 
       "src/core/lib/security/security_connector/security_connector.h", 
       "src/core/lib/security/transport/auth_filters.h", 
       "src/core/lib/security/transport/secure_endpoint.h", 
@@ -10307,6 +10327,8 @@
       "src/core/lib/security/credentials/jwt/jwt_credentials.h", 
       "src/core/lib/security/credentials/jwt/jwt_verifier.cc", 
       "src/core/lib/security/credentials/jwt/jwt_verifier.h", 
+      "src/core/lib/security/credentials/local/local_credentials.cc", 
+      "src/core/lib/security/credentials/local/local_credentials.h", 
       "src/core/lib/security/credentials/oauth2/oauth2_credentials.cc", 
       "src/core/lib/security/credentials/oauth2/oauth2_credentials.h", 
       "src/core/lib/security/credentials/plugin/plugin_credentials.cc", 
@@ -10315,6 +10337,8 @@
       "src/core/lib/security/credentials/ssl/ssl_credentials.h", 
       "src/core/lib/security/security_connector/alts_security_connector.cc", 
       "src/core/lib/security/security_connector/alts_security_connector.h", 
+      "src/core/lib/security/security_connector/local_security_connector.cc", 
+      "src/core/lib/security/security_connector/local_security_connector.h", 
       "src/core/lib/security/security_connector/security_connector.cc", 
       "src/core/lib/security/security_connector/security_connector.h", 
       "src/core/lib/security/transport/auth_filters.h", 
@@ -10810,6 +10834,7 @@
     "headers": [
       "src/core/tsi/alts_transport_security.h", 
       "src/core/tsi/fake_transport_security.h", 
+      "src/core/tsi/local_transport_security.h", 
       "src/core/tsi/ssl/session_cache/ssl_session.h", 
       "src/core/tsi/ssl/session_cache/ssl_session_cache.h", 
       "src/core/tsi/ssl_transport_security.h", 
@@ -10824,6 +10849,8 @@
       "src/core/tsi/alts_transport_security.h", 
       "src/core/tsi/fake_transport_security.cc", 
       "src/core/tsi/fake_transport_security.h", 
+      "src/core/tsi/local_transport_security.cc", 
+      "src/core/tsi/local_transport_security.h", 
       "src/core/tsi/ssl/session_cache/ssl_session.h", 
       "src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc", 
       "src/core/tsi/ssl/session_cache/ssl_session_cache.cc", 
