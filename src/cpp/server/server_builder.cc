@@ -135,6 +135,7 @@ ServerBuilder& ServerBuilder::SetCompressionAlgorithmSupportStatus(
 
 ServerBuilder& ServerBuilder::SetDefaultCompressionLevel(
     grpc_compression_level level) {
+  maybe_default_compression_level_.is_set = true;
   maybe_default_compression_level_.level = level;
   return *this;
 }
