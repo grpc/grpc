@@ -19,6 +19,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_GRPC_LIBRARY_H
 #define GRPCPP_IMPL_CODEGEN_GRPC_LIBRARY_H
 
+#include <typeinfo>
+
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 
 namespace grpc {

@@ -32,6 +32,8 @@
 #ifndef GRPCPP_IMPL_CODEGEN_COMPLETION_QUEUE_H
 #define GRPCPP_IMPL_CODEGEN_COMPLETION_QUEUE_H
 
+#include <typeinfo>
+
 #include <grpc/impl/codegen/atm.h>
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
