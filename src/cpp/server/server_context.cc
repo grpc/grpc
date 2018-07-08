@@ -16,10 +16,12 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include <grpcpp/server_context.h>
 
-#include <math.h>
 #include <algorithm>
+#include <cmath>
 #include <mutex>
 #include <utility>
 
