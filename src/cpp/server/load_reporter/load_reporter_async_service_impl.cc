@@ -25,6 +25,7 @@ namespace load_reporter {
 
 void LoadReporterAsyncServiceImpl::CallableTag::Run(bool ok) {
   if (handler_function_ != nullptr) {
+    GPR_ASSERT(handler_ != nullptr);
     handler_function_(std::move(handler_), ok);
   } else {
     GPR_ASSERT(service_function_ != nullptr);
@@ -116,12 +117,24 @@ void LoadReporterAsyncServiceImpl::StartThread() { thread_->Start(); }
 void LoadReporterAsyncServiceImpl::ReportLoadHandler::CreateAndStart(
     ServerCompletionQueue* cq, LoadReporterAsyncServiceImpl* service,
     LoadReporter* load_reporter) {
-  // Can't use std::make_shared<> here because the constructor is private.
-  std::shared_ptr<ReportLoadHandler> handler(
-      new ReportLoadHandler(cq, service, load_reporter));
-  handler->Start();
-  // Orphan the handler.
-  handler.reset();
+  std::shared_ptr<ReportLoadHandler> handler =
+      std::make_shared<ReportLoadHandler>(cq, service, load_reporter);
+  ReportLoadHandler* p = handler.get();
+  {
+    std::unique_lock<std::mutex> lock(service->cq_shutdown_mu_);
+    if (service->shutdown_) return;
+    p->on_done_notified_ =
+        CallableTag(std::bind(&ReportLoadHandler::OnDoneNotified, p,
+                              std::placeholders::_1, std::placeholders::_2),
+                    handler);
+    p->next_inbound_ =
+        CallableTag(std::bind(&ReportLoadHandler::OnRequestDelivered, p,
+                              std::placeholders::_1, std::placeholders::_2),
+                    std::move(handler));
+    p->ctx_.AsyncNotifyWhenDone(&p->on_done_notified_);
+    service->RequestReportLoad(&p->ctx_, &p->stream_, cq, cq,
+                               &p->next_inbound_);
+  }
 }
 
 LoadReporterAsyncServiceImpl::ReportLoadHandler::ReportLoadHandler(
@@ -132,21 +145,6 @@ LoadReporterAsyncServiceImpl::ReportLoadHandler::ReportLoadHandler(
       load_reporter_(load_reporter),
       stream_(&ctx_),
       call_status_(WAITING_FOR_DELIVERY) {}
-
-void LoadReporterAsyncServiceImpl::ReportLoadHandler::Start() {
-  std::unique_lock<std::mutex> lock(service_->cq_shutdown_mu_);
-  if (service_->shutdown_) return;
-  on_done_notified_ =
-      CallableTag(std::bind(&ReportLoadHandler::OnDoneNotified, this,
-                            std::placeholders::_1, std::placeholders::_2),
-                  shared_from_this());
-  next_inbound_ =
-      CallableTag(std::bind(&ReportLoadHandler::OnRequestDelivered, this,
-                            std::placeholders::_1, std::placeholders::_2),
-                  shared_from_this());
-  ctx_.AsyncNotifyWhenDone(&on_done_notified_);
-  service_->RequestReportLoad(&ctx_, &stream_, cq_, cq_, &next_inbound_);
-}
 
 void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnRequestDelivered(
     std::shared_ptr<ReportLoadHandler> self, bool ok) {

@@ -60,9 +60,7 @@ class EchoTestServiceImpl : public EchoTestService::Service {
       return Status(StatusCode::FAILED_PRECONDITION, "Client error requested");
     }
     response->set_message(request->message());
-    ::grpc::load_reporter::CallMetricsBuilder()
-        .AddMetric(kMetricName, kMetricValue)
-        .ApplyTo(context);
+    context->SetLoadReportingCost(kMetricName, kMetricValue);
     return Status::OK;
   }
 };

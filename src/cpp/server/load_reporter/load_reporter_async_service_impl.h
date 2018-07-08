@@ -96,23 +96,20 @@ class LoadReporterAsyncServiceImpl
   class ReportLoadHandler
       : public std::enable_shared_from_this<ReportLoadHandler> {
    public:
-    // Instantiates a ReportLoadHandler and starts it. The handler object will
-    // manage its own lifetime, so no action is needed from the caller any more
-    // regarding that object.
+    // Instantiates a ReportLoadHandler and requests for next load reporting
+    // call. The handler object will manage its own lifetime, so no action is
+    // needed from the caller any more regarding that object.
     static void CreateAndStart(ServerCompletionQueue* cq,
                                LoadReporterAsyncServiceImpl* service,
                                LoadReporter* load_reporter);
 
-   private:
+    // This ctor is public because we want to use std::make_shared<> in
+    // CreateAndStart(). This ctor shouldn't be used elsewhere.
     ReportLoadHandler(ServerCompletionQueue* cq,
                       LoadReporterAsyncServiceImpl* service,
                       LoadReporter* load_reporter);
 
-    // Starts working by requesting for the next load reporting call. Note that
-    // this can't be called from the constructor because shared_from_this() can
-    // only be called from a previously shared object.
-    void Start();
-
+   private:
     // After the handler has a call request delivered, it starts reading the
     // initial request. Also, a new handler is spawned so that we can keep
     // servicing future calls.

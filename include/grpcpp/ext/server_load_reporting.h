@@ -33,7 +33,7 @@ namespace load_reporter {
 
 // The ServerBuilderOption to enable server-side load reporting feature. To
 // enable the feature, please make sure the binary builds with the
-// grpcpp_server_load_reporting library and set this option to the
+// grpcpp_server_load_reporting library and set this option in the
 // ServerBuilder.
 class LoadReportingServiceServerBuilderOption : public ServerBuilderOption {
  public:
