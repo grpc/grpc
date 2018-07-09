@@ -186,26 +186,51 @@ if __name__ == "__main__":
                 result = 'UNKNOWN'
             else:
                 result = 'PASSED'
-            bq_rows.append({
-                'insertId': str(uuid.uuid4()),
-                'json': {
-                    'job_name':
-                    os.getenv('KOKORO_JOB_NAME'),
-                    'build_id':
-                    os.getenv('KOKORO_BUILD_NUMBER'),
-                    'build_url':
-                    'https://source.cloud.google.com/results/invocations/%s' %
-                    invocation_id,
-                    'test_target':
-                    action['id']['targetId'],
-                    'test_case':
-                    test_case['testCase']['caseName'],
-                    'result':
-                    result,
-                    'timestamp':
-                    action['timing']['startTime'],
-                }
-            })
+            try:
+                bq_rows.append({
+                    'insertId': str(uuid.uuid4()),
+                    'json': {
+                        'job_name':
+                        os.getenv('KOKORO_JOB_NAME'),
+                        'build_id':
+                        os.getenv('KOKORO_BUILD_NUMBER'),
+                        'build_url':
+                        'https://source.cloud.google.com/results/invocations/%s'
+                        % invocation_id,
+                        'test_target':
+                        action['id']['targetId'],
+                        'test_case':
+                        test_case['testCase']['caseName'],
+                        'result':
+                        result,
+                        'timestamp':
+                        action['timing']['startTime'],
+                    }
+                })
+            except Exception as e:
+                print('Failed to parse test result. Error: %s' % str(e))
+                print(json.dumps(test_case, indent=4))
+                bq_rows.append({
+                    'insertId': str(uuid.uuid4()),
+                    'json': {
+                        'job_name':
+                        os.getenv('KOKORO_JOB_NAME'),
+                        'build_id':
+                        os.getenv('KOKORO_BUILD_NUMBER'),
+                        'build_url':
+                        'https://source.cloud.google.com/results/invocations/%s'
+                        % invocation_id,
+                        'test_target':
+                        action['id']['targetId'],
+                        'test_case':
+                        'N/A',
+                        'result':
+                        'UNPARSEABLE',
+                        'timestamp':
+                        'N/A',
+                    }
+                })
+
     # BigQuery sometimes fails with large uploads, so batch 1,000 rows at a time.
     for i in range((len(bq_rows) / 1000) + 1):
         _upload_results_to_bq(bq_rows[i * 1000:(i + 1) * 1000])
