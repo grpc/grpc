@@ -423,7 +423,7 @@ namespace Grpc.Core
                     if (!hooksRegistered)
                     {
 #if NETSTANDARD1_5
-                        System.Runtime.Loader.AssemblyLoadContext.Default.Unloading += (assemblyLoadContext) => { HandleShutdown(); };
+                        // No action required at shutdown on .NET Core
 #else
                         AppDomain.CurrentDomain.ProcessExit += (sender, eventArgs) => { HandleShutdown(); };
                         AppDomain.CurrentDomain.DomainUnload += (sender, eventArgs) => { HandleShutdown(); };
