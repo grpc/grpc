@@ -54,7 +54,7 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
   --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1 \
   --extra_toolchains=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0/bazel_0.13.0/cpp:cc-toolchain-clang-x86_64-default \
   --extra_execution_platforms=//third_party/toolchains:rbe_ubuntu1604 \
-  --host_platforms=//third_party/toolchains:rbe_ubuntu1604 \
+  --host_platform=//third_party/toolchains:rbe_ubuntu1604 \
   --platforms=//third_party/toolchains:rbe_ubuntu1604 \
   $1 \
   -- //test/... || FAILED="true"
