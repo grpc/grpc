@@ -56,7 +56,6 @@ if cur_resolver and cur_resolver != 'ares':
   test_runner_log('Exit 1 without running tests.')
   sys.exit(1)
 os.environ.update({'GRPC_DNS_RESOLVER': 'ares'})
-os.environ.update({'GRPC_VERBOSITY': 'DEBUG'})
 os.environ.update({'GRPC_TRACE': 'cares_resolver'})
 
 def wait_until_dns_server_is_up(args,
@@ -127,8 +126,7 @@ current_test_subprocess = subprocess.Popen([
   '--expected_addrs', '5.5.5.5:443,False',
   '--expected_chosen_service_config', '',
   '--expected_lb_policy', '',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port,
-  '--gtest_filter=ResolverComponentTest.TestResolvesRelevantRecords'])
+  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
