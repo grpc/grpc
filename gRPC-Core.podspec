@@ -795,6 +795,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallback.cc',
+                      'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc',
+                      'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc',
                       'src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc',
                       'src/cpp/ext/filters/census/grpc_context.cc',

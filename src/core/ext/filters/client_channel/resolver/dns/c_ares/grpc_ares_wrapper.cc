@@ -280,13 +280,13 @@ static void on_srv_query_done_locked(void* arg, int status, int timeouts,
           grpc_ares_ev_driver_get_channel_locked(r->ev_driver);
       for (struct ares_srv_reply* srv_it = reply; srv_it != nullptr;
            srv_it = srv_it->next) {
-        // TODO: selectively query based on ipv4/ipv6 support
-        // in a portable way?
+        if (grpc_ares_query_ipv6()) {
+          grpc_ares_hostbyname_request* hr = create_hostbyname_request_locked(
+              r, srv_it->host, htons(srv_it->port), true /* is_balancer */);
+          ares_gethostbyname(*channel, hr->host, AF_INET6,
+                             on_hostbyname_done_locked, hr);
+        }
         grpc_ares_hostbyname_request* hr = create_hostbyname_request_locked(
-            r, srv_it->host, htons(srv_it->port), true /* is_balancer */);
-        ares_gethostbyname(*channel, hr->host, AF_INET6,
-                           on_hostbyname_done_locked, hr);
-        hr = create_hostbyname_request_locked(
             r, srv_it->host, htons(srv_it->port), true /* is_balancer */);
         ares_gethostbyname(*channel, hr->host, AF_INET,
                            on_hostbyname_done_locked, hr);
@@ -451,12 +451,12 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
     }
   }
   r->pending_queries = 1;
-  // TODO: selectively query based on ipv4/ipv6 support
-  // in a portable way?
-  hr = create_hostbyname_request_locked(r, host, strhtons(port),
-                                        false /* is_balancer */);
-  ares_gethostbyname(*channel, hr->host, AF_INET6, on_hostbyname_done_locked,
-                     hr);
+  if (grpc_ares_query_ipv6()) {
+    hr = create_hostbyname_request_locked(r, host, strhtons(port),
+                                          false /* is_balancer */);
+    ares_gethostbyname(*channel, hr->host, AF_INET6, on_hostbyname_done_locked,
+                       hr);
+  }
   hr = create_hostbyname_request_locked(r, host, strhtons(port),
                                         false /* is_balancer */);
   ares_gethostbyname(*channel, hr->host, AF_INET, on_hostbyname_done_locked,
