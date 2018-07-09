@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+licenses(["notice"])  # Apache v2
+
 package(default_visibility = ["//visibility:public"])
 
 # Latest RBE Ubuntu16_04 container
@@ -32,9 +34,13 @@ platform(
         "@com_github_bazelbuild_bazeltoolchains//constraints/sanitizers:support_msan",
     ],
     remote_execution_properties = """
-          properties: {
-            name: "container-image"
-            value:"docker://gcr.io/cloud-marketplace/google/rbe-ubuntu16-04@sha256:59bf0e191a6b5cc1ab62c2224c810681d1326bad5a27b1d36c9f40113e79da7f"
-         }
-         """,
+        properties: {
+          name: "container-image"
+          value:"docker://gcr.io/cloud-marketplace/google/rbe-ubuntu16-04@sha256:59bf0e191a6b5cc1ab62c2224c810681d1326bad5a27b1d36c9f40113e79da7f"
+        }
+        properties: {
+          name: "gceMachineType"
+          value: "n1-highmem-2"
+        }
+        """,
 )
