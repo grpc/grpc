@@ -28,6 +28,7 @@ class BaseStub
     private $hostname;
     private $hostname_override;
     private $channel;
+    private $call_invoker;
 
     // a callback function
     private $update_metadata;
@@ -58,6 +59,15 @@ class BaseStub
         if (!empty($opts['grpc.ssl_target_name_override'])) {
             $this->hostname_override = $opts['grpc.ssl_target_name_override'];
         }
+        if (isset($opts['grpc_call_invoker'])) {
+            $this->call_invoker = $opts['grpc_call_invoker'];
+            unset($opts['grpc_call_invoker']);
+            $channel_opts = $this->updateOpts($opts);
+            // If the grpc_call_invoker is defined, use the channel created by the call invoker.
+            $this->channel = $this->call_invoker->createChannelFactory($hostname, $channel_opts);
+            return;
+        }
+        $this->call_invoker = new DefaultCallInvoker();
         if ($channel) {
             if (!is_a($channel, 'Grpc\Channel') &&
                 !is_a($channel, 'Grpc\Internal\InterceptorChannel')) {
@@ -72,15 +82,7 @@ class BaseStub
         $this->channel = static::getDefaultChannel($hostname, $opts);
     }
 
-    /**
-     * Creates and returns the default Channel
-     *
-     * @param array $opts Channel constructor options
-     *
-     * @return Channel The channel
-     */
-    public static function getDefaultChannel($hostname, array $opts)
-    {
+    private static function updateOpts($opts) {
         $package_config = json_decode(
             file_get_contents(dirname(__FILE__).'/../../composer.json'),
             true
@@ -97,6 +99,19 @@ class BaseStub
                 'required. Please see one of the '.
                 'ChannelCredentials::create methods');
         }
+        return $opts;
+    }
+
+    /**
+     * Creates and returns the default Channel
+     *
+     * @param array $opts Channel constructor options
+     *
+     * @return Channel The channel
+     */
+    public static function getDefaultChannel($hostname, array $opts)
+    {
+        $channel_opts = self::updateOpts($opts);
         return new Channel($hostname, $opts);
     }
 
@@ -239,7 +254,7 @@ class BaseStub
                          $deserialize,
                          array $metadata = [],
                          array $options = []) use ($channel) {
-            $call = new UnaryCall(
+            $call = $this->call_invoker->UnaryCall(
                 $channel,
                 $method,
                 $deserialize,
@@ -275,7 +290,7 @@ class BaseStub
                          $deserialize,
                          array $metadata = [],
                          array $options = []) use ($channel) {
-            $call = new ClientStreamingCall(
+            $call = $this->call_invoker->ClientStreamingCall(
                 $channel,
                 $method,
                 $deserialize,
@@ -312,7 +327,7 @@ class BaseStub
                          $deserialize,
                          array $metadata = [],
                          array $options = []) use ($channel) {
-            $call = new ServerStreamingCall(
+            $call = $this->call_invoker->ServerStreamingCall(
                 $channel,
                 $method,
                 $deserialize,
@@ -348,7 +363,7 @@ class BaseStub
                          $deserialize,
                          array $metadata = [],
                          array $options = []) use ($channel) {
-            $call = new BidiStreamingCall(
+            $call = $this->call_invoker->BidiStreamingCall(
                 $channel,
                 $method,
                 $deserialize,
