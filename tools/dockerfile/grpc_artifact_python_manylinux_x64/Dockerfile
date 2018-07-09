@@ -14,9 +14,7 @@
 
 # Docker file for building gRPC manylinux Python artifacts.
 
-# TODO(mmx): revert to the official manylinux1 docker image
-# after it ships with Python 3.7
-FROM grpctesting/manylinux1_temp_py37rc1_x86_64:79891dc2ec764b62a2dd2ffd083d381efde11a5f
+FROM quay.io/pypa/manylinux1_x86_64
 
 # Update the package manager
 RUN yum update -y
