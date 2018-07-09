@@ -575,6 +575,26 @@
     "flaky": false, 
     "gtest": false, 
     "language": "c", 
+    "name": "ev_epollex_linux_test", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": true
+  }, 
+  {
+    "args": [], 
+    "benchmark": false, 
+    "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 3, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c", 
     "name": "ev_epollsig_linux_test", 
     "platforms": [
       "linux"
@@ -3321,6 +3341,28 @@
     "flaky": false, 
     "gtest": false, 
     "language": "c++", 
+    "name": "bm_channel", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [], 
+    "benchmark": true, 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c++", 
     "name": "bm_chttp2_hpack", 
     "platforms": [
       "linux", 
@@ -4664,6 +4706,30 @@
       "linux", 
       "mac", 
       "posix"
+    ], 
+    "uses_polling": true
+  }, 
+  {
+    "args": [], 
+    "benchmark": false, 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": true, 
+    "language": "c++", 
+    "name": "raw_end2end_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
     ], 
     "uses_polling": true
   }, 
@@ -7700,29 +7766,6 @@
   }, 
   {
     "args": [
-      "load_reporting_hook"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_census_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "max_concurrent_streams"
     ], 
     "ci_platforms": [
@@ -9498,29 +9541,6 @@
   }, 
   {
     "args": [
-      "load_reporting_hook"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_compress_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "max_concurrent_streams"
     ], 
     "ci_platforms": [
@@ -11243,28 +11263,6 @@
   }, 
   {
     "args": [
-      "load_reporting_hook"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_fakesec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "max_concurrent_streams"
     ], 
     "ci_platforms": [
@@ -12876,29 +12874,6 @@
   }, 
   {
     "args": [
-      "load_reporting_hook"
-    ], 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [
-      "uv"
-    ], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_fd_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "max_concurrent_streams"
     ], 
     "ci_platforms": [
@@ -14213,29 +14188,6 @@
   {
     "args": [
       "large_metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_full_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "load_reporting_hook"
     ], 
     "ci_platforms": [
       "windows", 
@@ -15911,25 +15863,6 @@
   }, 
   {
     "args": [
-      "load_reporting_hook"
-    ], 
-    "ci_platforms": [
-      "linux"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [
-      "uv"
-    ], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_full+pipe_test", 
-    "platforms": [
-      "linux"
-    ]
-  }, 
-  {
-    "args": [
       "max_concurrent_streams"
     ], 
     "ci_platforms": [
@@ -17470,29 +17403,6 @@
   {
     "args": [
       "large_metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_full+trace_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "load_reporting_hook"
     ], 
     "ci_platforms": [
       "windows", 
@@ -19245,29 +19155,6 @@
   {
     "args": [
       "large_metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_full+workarounds_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "load_reporting_hook"
     ], 
     "ci_platforms": [
       "windows", 
@@ -21070,30 +20957,6 @@
   {
     "args": [
       "large_metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [
-      "uv"
-    ], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_http_proxy_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "load_reporting_hook"
     ], 
     "ci_platforms": [
       "windows", 
@@ -22272,19 +22135,19 @@
       "authority_not_supported"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -22295,19 +22158,19 @@
       "bad_hostname"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -22318,19 +22181,19 @@
       "bad_ping"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -22341,19 +22204,19 @@
       "binary_metadata"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -22364,42 +22227,19 @@
       "call_creds"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "call_host_override"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_test", 
-    "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -22410,19 +22250,19 @@
       "cancel_after_accept"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -22433,19 +22273,19 @@
       "cancel_after_client_done"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -22456,19 +22296,19 @@
       "cancel_after_invoke"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -22479,19 +22319,19 @@
       "cancel_after_round_trip"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -22502,19 +22342,19 @@
       "cancel_before_invoke"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -22525,19 +22365,19 @@
       "cancel_in_a_vacuum"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -22548,19 +22388,19 @@
       "cancel_with_status"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -22571,19 +22411,19 @@
       "channelz"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -22594,19 +22434,19 @@
       "compressed_payload"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -22617,7 +22457,6 @@
       "connectivity"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -22629,32 +22468,8 @@
     ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "default_host"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_test", 
-    "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -22665,19 +22480,19 @@
       "disappearing_server"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": true, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -22688,352 +22503,6 @@
       "empty_batch"
     ], 
     "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "filter_call_init_fails"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "filter_causes_close"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "filter_latency"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "filter_status_code"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "graceful_server_shutdown"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "high_initial_seqno"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "hpack_size"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "idempotent_request"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "invoke_large_request"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "keepalive_timeout"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "large_metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "load_reporting_hook"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "max_concurrent_streams"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "max_connection_age"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "max_connection_idle"
-    ], 
-    "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23045,9 +22514,330 @@
     ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "filter_call_init_fails"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_local_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "filter_causes_close"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_local_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "filter_latency"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_local_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "filter_status_code"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_local_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "graceful_server_shutdown"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_local_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "high_initial_seqno"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_local_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "hpack_size"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_local_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "idempotent_request"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_local_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "invoke_large_request"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_local_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "keepalive_timeout"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_local_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "large_metadata"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_local_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "max_concurrent_streams"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_local_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "max_connection_age"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_local_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ]
+  }, 
+  {
+    "args": [
+      "max_connection_idle"
+    ], 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 0.1, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
+    "flaky": false, 
+    "language": "c", 
+    "name": "h2_local_test", 
+    "platforms": [
       "linux", 
       "mac", 
       "posix"
@@ -23058,19 +22848,19 @@
       "max_message_length"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23081,19 +22871,19 @@
       "negative_deadline"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23104,19 +22894,19 @@
       "network_status_change"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23127,19 +22917,19 @@
       "no_error_on_hotpath"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23150,19 +22940,19 @@
       "no_logging"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23173,19 +22963,19 @@
       "no_op"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23196,19 +22986,19 @@
       "payload"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23219,19 +23009,19 @@
       "ping"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23242,19 +23032,19 @@
       "ping_pong_streaming"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23265,19 +23055,19 @@
       "registered_call"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23288,19 +23078,19 @@
       "request_with_flags"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23311,19 +23101,19 @@
       "request_with_payload"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23334,19 +23124,19 @@
       "resource_quota_server"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23357,19 +23147,19 @@
       "retry"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23380,19 +23170,19 @@
       "retry_cancellation"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23403,19 +23193,19 @@
       "retry_disabled"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23426,19 +23216,19 @@
       "retry_exceeds_buffer_size_in_initial_batch"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23449,19 +23239,19 @@
       "retry_exceeds_buffer_size_in_subsequent_batch"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23472,19 +23262,19 @@
       "retry_non_retriable_status"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23495,19 +23285,19 @@
       "retry_non_retriable_status_before_recv_trailing_metadata_started"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23518,19 +23308,19 @@
       "retry_recv_initial_metadata"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23541,19 +23331,19 @@
       "retry_recv_message"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23564,19 +23354,19 @@
       "retry_server_pushback_delay"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23587,19 +23377,19 @@
       "retry_server_pushback_disabled"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23610,19 +23400,19 @@
       "retry_streaming"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23633,19 +23423,19 @@
       "retry_streaming_after_commit"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23656,19 +23446,19 @@
       "retry_streaming_succeeds_before_replay_finished"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23679,19 +23469,19 @@
       "retry_throttled"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23702,19 +23492,19 @@
       "retry_too_many_attempts"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23725,19 +23515,19 @@
       "server_finishes_request"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23748,19 +23538,19 @@
       "shutdown_finishes_calls"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23771,19 +23561,19 @@
       "shutdown_finishes_tags"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23794,19 +23584,19 @@
       "simple_cacheable_request"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23817,19 +23607,19 @@
       "simple_delayed_request"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23840,19 +23630,19 @@
       "simple_metadata"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23863,19 +23653,19 @@
       "simple_request"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23886,19 +23676,19 @@
       "stream_compression_compressed_payload"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23909,19 +23699,19 @@
       "stream_compression_payload"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23932,19 +23722,19 @@
       "stream_compression_ping_pong_streaming"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23955,19 +23745,19 @@
       "streaming_error_response"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -23978,19 +23768,19 @@
       "trailing_metadata"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -24001,19 +23791,19 @@
       "workaround_cronet_compression"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -24024,19 +23814,19 @@
       "write_buffering"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -24047,19 +23837,19 @@
       "write_buffering_at_end"
     ], 
     "ci_platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
     ], 
     "cpu_cost": 0.1, 
     "exclude_configs": [], 
-    "exclude_iomgrs": [], 
+    "exclude_iomgrs": [
+      "uv"
+    ], 
     "flaky": false, 
     "language": "c", 
-    "name": "h2_load_reporting_test", 
+    "name": "h2_local_test", 
     "platforms": [
-      "windows", 
       "linux", 
       "mac", 
       "posix"
@@ -24764,30 +24554,6 @@
   {
     "args": [
       "large_metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [
-      "uv"
-    ], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_oauth2_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "load_reporting_hook"
     ], 
     "ci_platforms": [
       "windows", 
@@ -26539,30 +26305,6 @@
   }, 
   {
     "args": [
-      "load_reporting_hook"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [
-      "uv"
-    ], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_proxy_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "max_connection_age"
     ], 
     "ci_platforms": [
@@ -27716,30 +27458,6 @@
   {
     "args": [
       "large_metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [
-      "uv"
-    ], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_sockpair_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "load_reporting_hook"
     ], 
     "ci_platforms": [
       "windows", 
@@ -29011,30 +28729,6 @@
   }, 
   {
     "args": [
-      "load_reporting_hook"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [
-      "uv"
-    ], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_sockpair+trace_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "max_concurrent_streams"
     ], 
     "ci_platforms": [
@@ -30284,32 +29978,6 @@
   {
     "args": [
       "large_metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [
-      "msan"
-    ], 
-    "exclude_iomgrs": [
-      "uv"
-    ], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_sockpair_1byte_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "load_reporting_hook"
     ], 
     "ci_platforms": [
       "windows", 
@@ -31707,29 +31375,6 @@
   {
     "args": [
       "large_metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_ssl_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "load_reporting_hook"
     ], 
     "ci_platforms": [
       "windows", 
@@ -33435,30 +33080,6 @@
   }, 
   {
     "args": [
-      "load_reporting_hook"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [
-      "uv"
-    ], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_ssl_proxy_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "max_connection_age"
     ], 
     "ci_platforms": [
@@ -34657,29 +34278,6 @@
   {
     "args": [
       "large_metadata"
-    ], 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [
-      "uv"
-    ], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_uds_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "load_reporting_hook"
     ], 
     "ci_platforms": [
       "linux", 
@@ -36266,29 +35864,6 @@
   }, 
   {
     "args": [
-      "load_reporting_hook"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "inproc_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "max_message_length"
     ], 
     "ci_platforms": [
@@ -37419,29 +36994,6 @@
   {
     "args": [
       "large_metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_census_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "load_reporting_hook"
     ], 
     "ci_platforms": [
       "windows", 
@@ -39216,29 +38768,6 @@
   }, 
   {
     "args": [
-      "load_reporting_hook"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_compress_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "max_concurrent_streams"
     ], 
     "ci_platforms": [
@@ -40851,29 +40380,6 @@
   }, 
   {
     "args": [
-      "load_reporting_hook"
-    ], 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [
-      "uv"
-    ], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_fd_nosec_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "max_concurrent_streams"
     ], 
     "ci_platforms": [
@@ -42165,29 +41671,6 @@
   {
     "args": [
       "large_metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_full_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "load_reporting_hook"
     ], 
     "ci_platforms": [
       "windows", 
@@ -43844,25 +43327,6 @@
   }, 
   {
     "args": [
-      "load_reporting_hook"
-    ], 
-    "ci_platforms": [
-      "linux"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [
-      "uv"
-    ], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_full+pipe_nosec_test", 
-    "platforms": [
-      "linux"
-    ]
-  }, 
-  {
-    "args": [
       "max_concurrent_streams"
     ], 
     "ci_platforms": [
@@ -45380,29 +44844,6 @@
   {
     "args": [
       "large_metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_full+trace_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "load_reporting_hook"
     ], 
     "ci_platforms": [
       "windows", 
@@ -47132,29 +46573,6 @@
   {
     "args": [
       "large_metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_full+workarounds_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "load_reporting_hook"
     ], 
     "ci_platforms": [
       "windows", 
@@ -48933,30 +48351,6 @@
   {
     "args": [
       "large_metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [
-      "uv"
-    ], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_http_proxy_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "load_reporting_hook"
     ], 
     "ci_platforms": [
       "windows", 
@@ -50137,1781 +49531,6 @@
     "ci_platforms": [
       "windows", 
       "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "bad_hostname"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "bad_ping"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "binary_metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "call_host_override"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "cancel_after_accept"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "cancel_after_client_done"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "cancel_after_invoke"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "cancel_after_round_trip"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "cancel_before_invoke"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "cancel_in_a_vacuum"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "cancel_with_status"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "channelz"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "compressed_payload"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "connectivity"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [
-      "uv"
-    ], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "default_host"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "disappearing_server"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": true, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "empty_batch"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "filter_call_init_fails"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "filter_causes_close"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "filter_latency"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "filter_status_code"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "graceful_server_shutdown"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "high_initial_seqno"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "hpack_size"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "idempotent_request"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "invoke_large_request"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "keepalive_timeout"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "large_metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "load_reporting_hook"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "max_concurrent_streams"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "max_connection_age"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "max_connection_idle"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [
-      "uv"
-    ], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "max_message_length"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "negative_deadline"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "network_status_change"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "no_error_on_hotpath"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "no_logging"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "no_op"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "payload"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "ping"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "ping_pong_streaming"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "registered_call"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "request_with_flags"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "request_with_payload"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "resource_quota_server"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "retry"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "retry_cancellation"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "retry_disabled"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "retry_exceeds_buffer_size_in_initial_batch"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "retry_exceeds_buffer_size_in_subsequent_batch"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "retry_non_retriable_status"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "retry_non_retriable_status_before_recv_trailing_metadata_started"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "retry_recv_initial_metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "retry_recv_message"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "retry_server_pushback_delay"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "retry_server_pushback_disabled"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "retry_streaming"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "retry_streaming_after_commit"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "retry_streaming_succeeds_before_replay_finished"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "retry_throttled"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "retry_too_many_attempts"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "server_finishes_request"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "shutdown_finishes_calls"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "shutdown_finishes_tags"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "simple_cacheable_request"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "simple_delayed_request"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "simple_metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "simple_request"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "stream_compression_compressed_payload"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "stream_compression_payload"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "stream_compression_ping_pong_streaming"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "streaming_error_response"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "trailing_metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "workaround_cronet_compression"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "write_buffering"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "write_buffering_at_end"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 0.1, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_load_reporting_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "authority_not_supported"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
       "posix"
     ], 
     "cpu_cost": 1.0, 
@@ -52460,30 +50079,6 @@
   {
     "args": [
       "large_metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [
-      "uv"
-    ], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_proxy_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "load_reporting_hook"
     ], 
     "ci_platforms": [
       "windows", 
@@ -53636,30 +51231,6 @@
   {
     "args": [
       "large_metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [
-      "uv"
-    ], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_sockpair_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "load_reporting_hook"
     ], 
     "ci_platforms": [
       "windows", 
@@ -54907,30 +52478,6 @@
   }, 
   {
     "args": [
-      "load_reporting_hook"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [
-      "uv"
-    ], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_sockpair+trace_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
       "max_concurrent_streams"
     ], 
     "ci_platforms": [
@@ -56154,32 +53701,6 @@
   {
     "args": [
       "large_metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [
-      "msan"
-    ], 
-    "exclude_iomgrs": [
-      "uv"
-    ], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_sockpair_1byte_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "load_reporting_hook"
     ], 
     "ci_platforms": [
       "windows", 
@@ -57506,29 +55027,6 @@
   {
     "args": [
       "large_metadata"
-    ], 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [
-      "uv"
-    ], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "h2_uds_nosec_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "load_reporting_hook"
     ], 
     "ci_platforms": [
       "linux", 
@@ -59070,29 +56568,6 @@
   {
     "args": [
       "large_metadata"
-    ], 
-    "ci_platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "language": "c", 
-    "name": "inproc_nosec_test", 
-    "platforms": [
-      "windows", 
-      "linux", 
-      "mac", 
-      "posix"
-    ]
-  }, 
-  {
-    "args": [
-      "load_reporting_hook"
     ], 
     "ci_platforms": [
       "windows", 

@@ -26,6 +26,8 @@
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_auth_context_refcount;
 
+struct gpr_arena;
+
 /* --- grpc_auth_context ---
 
    High level authentication context object. Can optionally be chained. */
@@ -89,7 +91,8 @@ typedef struct {
   grpc_security_context_extension extension;
 } grpc_client_security_context;
 
-grpc_client_security_context* grpc_client_security_context_create(void);
+grpc_client_security_context* grpc_client_security_context_create(
+    gpr_arena* arena);
 void grpc_client_security_context_destroy(void* ctx);
 
 /* --- grpc_server_security_context ---
@@ -101,7 +104,8 @@ typedef struct {
   grpc_security_context_extension extension;
 } grpc_server_security_context;
 
-grpc_server_security_context* grpc_server_security_context_create(void);
+grpc_server_security_context* grpc_server_security_context_create(
+    gpr_arena* arena);
 void grpc_server_security_context_destroy(void* ctx);
 
 /* --- Channel args for auth context --- */

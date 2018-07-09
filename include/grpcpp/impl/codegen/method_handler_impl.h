@@ -113,14 +113,15 @@ class ClientStreamingHandler : public MethodHandler {
       return func_(service_, param.server_context, &reader, &rsp);
     });
 
-    GPR_CODEGEN_ASSERT(!param.server_context->sent_initial_metadata_);
     CallOpSet<CallOpSendInitialMetadata, CallOpSendMessage,
               CallOpServerSendStatus>
         ops;
-    ops.SendInitialMetadata(param.server_context->initial_metadata_,
-                            param.server_context->initial_metadata_flags());
-    if (param.server_context->compression_level_set()) {
-      ops.set_compression_level(param.server_context->compression_level());
+    if (!param.server_context->sent_initial_metadata_) {
+      ops.SendInitialMetadata(param.server_context->initial_metadata_,
+                              param.server_context->initial_metadata_flags());
+      if (param.server_context->compression_level_set()) {
+        ops.set_compression_level(param.server_context->compression_level());
+      }
     }
     if (status.ok()) {
       status = ops.SendMessage(rsp);

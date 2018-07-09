@@ -825,6 +825,8 @@ include/grpc/impl/codegen/gpr_slice.h \
 include/grpc/impl/codegen/gpr_types.h \
 include/grpc/impl/codegen/gpr_types.h \
 include/grpc/impl/codegen/grpc_types.h \
+include/grpc/impl/codegen/log.h \
+include/grpc/impl/codegen/log.h \
 include/grpc/impl/codegen/port_platform.h \
 include/grpc/impl/codegen/port_platform.h \
 include/grpc/impl/codegen/propagation_bits.h \
@@ -870,6 +872,8 @@ src/core/ext/filters/client_channel/backup_poller.h \
 src/core/ext/filters/client_channel/channel_connectivity.cc \
 src/core/ext/filters/client_channel/client_channel.cc \
 src/core/ext/filters/client_channel/client_channel.h \
+src/core/ext/filters/client_channel/client_channel_channelz.cc \
+src/core/ext/filters/client_channel/client_channel_channelz.h \
 src/core/ext/filters/client_channel/client_channel_factory.cc \
 src/core/ext/filters/client_channel/client_channel_factory.h \
 src/core/ext/filters/client_channel/client_channel_plugin.cc \
@@ -891,6 +895,10 @@ src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc \
 src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h \
 src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc \
 src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h \
+src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c \
+src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h \
+src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c \
+src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h \
 src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
 src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h \
 src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
@@ -946,10 +954,6 @@ src/core/ext/filters/http/message_compress/message_compress_filter.cc \
 src/core/ext/filters/http/message_compress/message_compress_filter.h \
 src/core/ext/filters/http/server/http_server_filter.cc \
 src/core/ext/filters/http/server/http_server_filter.h \
-src/core/ext/filters/load_reporting/server_load_reporting_filter.cc \
-src/core/ext/filters/load_reporting/server_load_reporting_filter.h \
-src/core/ext/filters/load_reporting/server_load_reporting_plugin.cc \
-src/core/ext/filters/load_reporting/server_load_reporting_plugin.h \
 src/core/ext/filters/max_age/max_age_filter.cc \
 src/core/ext/filters/max_age/max_age_filter.h \
 src/core/ext/filters/message_size/message_size_filter.cc \
@@ -1073,6 +1077,7 @@ src/core/lib/debug/trace.cc \
 src/core/lib/debug/trace.h \
 src/core/lib/gpr/README.md \
 src/core/lib/gpr/alloc.cc \
+src/core/lib/gpr/alloc.h \
 src/core/lib/gpr/arena.cc \
 src/core/lib/gpr/arena.h \
 src/core/lib/gpr/atm.cc \
@@ -1336,6 +1341,8 @@ src/core/lib/security/credentials/jwt/jwt_credentials.cc \
 src/core/lib/security/credentials/jwt/jwt_credentials.h \
 src/core/lib/security/credentials/jwt/jwt_verifier.cc \
 src/core/lib/security/credentials/jwt/jwt_verifier.h \
+src/core/lib/security/credentials/local/local_credentials.cc \
+src/core/lib/security/credentials/local/local_credentials.h \
 src/core/lib/security/credentials/oauth2/oauth2_credentials.cc \
 src/core/lib/security/credentials/oauth2/oauth2_credentials.h \
 src/core/lib/security/credentials/plugin/plugin_credentials.cc \
@@ -1344,6 +1351,8 @@ src/core/lib/security/credentials/ssl/ssl_credentials.cc \
 src/core/lib/security/credentials/ssl/ssl_credentials.h \
 src/core/lib/security/security_connector/alts_security_connector.cc \
 src/core/lib/security/security_connector/alts_security_connector.h \
+src/core/lib/security/security_connector/local_security_connector.cc \
+src/core/lib/security/security_connector/local_security_connector.h \
 src/core/lib/security/security_connector/security_connector.cc \
 src/core/lib/security/security_connector/security_connector.h \
 src/core/lib/security/transport/auth_filters.h \
@@ -1488,6 +1497,8 @@ src/core/tsi/alts_transport_security.cc \
 src/core/tsi/alts_transport_security.h \
 src/core/tsi/fake_transport_security.cc \
 src/core/tsi/fake_transport_security.h \
+src/core/tsi/local_transport_security.cc \
+src/core/tsi/local_transport_security.h \
 src/core/tsi/ssl/session_cache/ssl_session.h \
 src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc \
 src/core/tsi/ssl/session_cache/ssl_session_cache.cc \

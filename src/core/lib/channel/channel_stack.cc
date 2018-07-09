@@ -21,6 +21,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/gpr/alloc.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -43,16 +44,12 @@ grpc_core::TraceFlag grpc_trace_channel(false, "channel");
      per-filter memory, aligned to GPR_MAX_ALIGNMENT
    } */
 
-/* Given a size, round up to the next multiple of sizeof(void*) */
-#define ROUND_UP_TO_ALIGNMENT_SIZE(x) \
-  (((x) + GPR_MAX_ALIGNMENT - 1u) & ~(GPR_MAX_ALIGNMENT - 1u))
-
 size_t grpc_channel_stack_size(const grpc_channel_filter** filters,
                                size_t filter_count) {
   /* always need the header, and size for the channel elements */
-  size_t size =
-      ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_channel_stack)) +
-      ROUND_UP_TO_ALIGNMENT_SIZE(filter_count * sizeof(grpc_channel_element));
+  size_t size = GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_channel_stack)) +
+                GPR_ROUND_UP_TO_ALIGNMENT_SIZE(filter_count *
+                                               sizeof(grpc_channel_element));
   size_t i;
 
   GPR_ASSERT((GPR_MAX_ALIGNMENT & (GPR_MAX_ALIGNMENT - 1)) == 0 &&
@@ -60,19 +57,19 @@ size_t grpc_channel_stack_size(const grpc_channel_filter** filters,
 
   /* add the size for each filter */
   for (i = 0; i < filter_count; i++) {
-    size += ROUND_UP_TO_ALIGNMENT_SIZE(filters[i]->sizeof_channel_data);
+    size += GPR_ROUND_UP_TO_ALIGNMENT_SIZE(filters[i]->sizeof_channel_data);
   }
 
   return size;
 }
 
-#define CHANNEL_ELEMS_FROM_STACK(stk)                                 \
-  ((grpc_channel_element*)((char*)(stk) + ROUND_UP_TO_ALIGNMENT_SIZE( \
+#define CHANNEL_ELEMS_FROM_STACK(stk)                                     \
+  ((grpc_channel_element*)((char*)(stk) + GPR_ROUND_UP_TO_ALIGNMENT_SIZE( \
                                               sizeof(grpc_channel_stack))))
 
-#define CALL_ELEMS_FROM_STACK(stk)     \
-  ((grpc_call_element*)((char*)(stk) + \
-                        ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call_stack))))
+#define CALL_ELEMS_FROM_STACK(stk)                                     \
+  ((grpc_call_element*)((char*)(stk) + GPR_ROUND_UP_TO_ALIGNMENT_SIZE( \
+                                           sizeof(grpc_call_stack))))
 
 grpc_channel_element* grpc_channel_stack_element(
     grpc_channel_stack* channel_stack, size_t index) {
@@ -95,8 +92,8 @@ grpc_error* grpc_channel_stack_init(
     const grpc_channel_args* channel_args, grpc_transport* optional_transport,
     const char* name, grpc_channel_stack* stack) {
   size_t call_size =
-      ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call_stack)) +
-      ROUND_UP_TO_ALIGNMENT_SIZE(filter_count * sizeof(grpc_call_element));
+      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call_stack)) +
+      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(filter_count * sizeof(grpc_call_element));
   grpc_channel_element* elems;
   grpc_channel_element_args args;
   char* user_data;
@@ -106,9 +103,9 @@ grpc_error* grpc_channel_stack_init(
   GRPC_STREAM_REF_INIT(&stack->refcount, initial_refs, destroy, destroy_arg,
                        name);
   elems = CHANNEL_ELEMS_FROM_STACK(stack);
-  user_data =
-      (reinterpret_cast<char*>(elems)) +
-      ROUND_UP_TO_ALIGNMENT_SIZE(filter_count * sizeof(grpc_channel_element));
+  user_data = (reinterpret_cast<char*>(elems)) +
+              GPR_ROUND_UP_TO_ALIGNMENT_SIZE(filter_count *
+                                             sizeof(grpc_channel_element));
 
   /* init per-filter data */
   grpc_error* first_error = GRPC_ERROR_NONE;
@@ -128,8 +125,9 @@ grpc_error* grpc_channel_stack_init(
         GRPC_ERROR_UNREF(error);
       }
     }
-    user_data += ROUND_UP_TO_ALIGNMENT_SIZE(filters[i]->sizeof_channel_data);
-    call_size += ROUND_UP_TO_ALIGNMENT_SIZE(filters[i]->sizeof_call_data);
+    user_data +=
+        GPR_ROUND_UP_TO_ALIGNMENT_SIZE(filters[i]->sizeof_channel_data);
+    call_size += GPR_ROUND_UP_TO_ALIGNMENT_SIZE(filters[i]->sizeof_call_data);
   }
 
   GPR_ASSERT(user_data > (char*)stack);
@@ -166,7 +164,7 @@ grpc_error* grpc_call_stack_init(grpc_channel_stack* channel_stack,
                        destroy_arg, "CALL_STACK");
   call_elems = CALL_ELEMS_FROM_STACK(elem_args->call_stack);
   user_data = (reinterpret_cast<char*>(call_elems)) +
-              ROUND_UP_TO_ALIGNMENT_SIZE(count * sizeof(grpc_call_element));
+              GPR_ROUND_UP_TO_ALIGNMENT_SIZE(count * sizeof(grpc_call_element));
 
   /* init per-filter data */
   grpc_error* first_error = GRPC_ERROR_NONE;
@@ -184,7 +182,7 @@ grpc_error* grpc_call_stack_init(grpc_channel_stack* channel_stack,
       }
     }
     user_data +=
-        ROUND_UP_TO_ALIGNMENT_SIZE(call_elems[i].filter->sizeof_call_data);
+        GPR_ROUND_UP_TO_ALIGNMENT_SIZE(call_elems[i].filter->sizeof_call_data);
   }
   return first_error;
 }
@@ -243,11 +241,11 @@ grpc_channel_stack* grpc_channel_stack_from_top_element(
     grpc_channel_element* elem) {
   return reinterpret_cast<grpc_channel_stack*>(
       reinterpret_cast<char*>(elem) -
-      ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_channel_stack)));
+      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_channel_stack)));
 }
 
 grpc_call_stack* grpc_call_stack_from_top_element(grpc_call_element* elem) {
   return reinterpret_cast<grpc_call_stack*>(
       reinterpret_cast<char*>(elem) -
-      ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call_stack)));
+      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call_stack)));
 }

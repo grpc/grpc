@@ -107,6 +107,11 @@ inline RefCountedPtr<T> MakeRefCounted(Args&&... args) {
   return RefCountedPtr<T>(New<T>(std::forward<Args>(args)...));
 }
 
+template <typename Parent, typename Child, typename... Args>
+inline RefCountedPtr<Parent> MakePolymorphicRefCounted(Args&&... args) {
+  return RefCountedPtr<Parent>(New<Child>(std::forward<Args>(args)...));
+}
+
 }  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_GPRPP_REF_COUNTED_PTR_H */

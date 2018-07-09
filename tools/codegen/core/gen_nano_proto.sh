@@ -68,29 +68,14 @@ popd
 
 # this should be the same version as the submodule we compile against
 # ideally we'd update this as a template to ensure that
-pip install protobuf==3.5.0.post1
+pip install protobuf==3.5.2
 
 pushd "$(dirname $INPUT_PROTO)" > /dev/null
 
 protoc \
 --plugin=protoc-gen-nanopb="$GRPC_ROOT/third_party/nanopb/generator/protoc-gen-nanopb" \
---nanopb_out='-T -L#include\ \"pb.h\"'":$OUTPUT_DIR" "$(basename $INPUT_PROTO)"
-
-readonly PROTO_BASENAME=$(basename $INPUT_PROTO .proto)
-sed -i "s:$PROTO_BASENAME.pb.h:${GRPC_OUTPUT_DIR}/$PROTO_BASENAME.pb.h:g" \
-  "$OUTPUT_DIR/$PROTO_BASENAME.pb.c"
-
-if [ $PROTO_BASENAME == "handshaker" ] || [ $PROTO_BASENAME == "altscontext" ]; then
-  sed -i "s:transport_security_common.pb.h:${GRPC_OUTPUT_DIR}/transport_security_common.pb.h:g" \
-    "$OUTPUT_DIR/$PROTO_BASENAME.pb.h"
-fi
-
-# Fix up the include guards such that they pass the check_include_guards.py
-# test. Assumes that the generated files are being placed in gRPC src dir.
-readonly INCLUDE_GUARD_BASE=`echo $GRPC_OUTPUT_DIR | tr [a-z/] [A-Z_] | sed s:^.*SRC_::`
-readonly UC_PROTO_BASENAME=`echo $PROTO_BASENAME | tr [a-z] [A-Z]`
-sed -i "s:PB_${UC_PROTO_BASENAME}_PB_H_INCLUDED:GRPC_${INCLUDE_GUARD_BASE}_${UC_PROTO_BASENAME}_PB_H:g" \
-  "$OUTPUT_DIR/$PROTO_BASENAME.pb.h"
+--nanopb_out='-T -Q#include\ \"'"${GRPC_OUTPUT_DIR}"'/%s\" -L#include\ \"pb.h\"'":$OUTPUT_DIR" \
+"$(basename $INPUT_PROTO)"
 
 deactivate
 rm -rf $VENV_DIR

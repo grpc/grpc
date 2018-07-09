@@ -34,3 +34,11 @@
 [submodule "third_party/abseil-cpp"]
 	path = third_party/abseil-cpp
 	url = https://github.com/abseil/abseil-cpp
+[submodule "third_party/libcxxabi"]
+	path = third_party/libcxxabi
+	url = https://github.com/llvm-mirror/libcxxabi.git
+	branch = release_60
+[submodule "third_party/libcxx"]
+	path = third_party/libcxx
+	url = https://github.com/llvm-mirror/libcxx.git
+	branch = release_60
