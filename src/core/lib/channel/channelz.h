@@ -31,6 +31,10 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
 
+// Channel arg key for client channel factory.
+#define GRPC_ARG_CHANNELZ_CHANNEL_NODE_CREATION_FUNC \
+  "grpc.channelz_channel_node_creation_func"
+
 namespace grpc_core {
 namespace channelz {
 
@@ -40,8 +44,8 @@ class ChannelNodePeer;
 
 class ChannelNode : public RefCounted<ChannelNode> {
  public:
-  ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes);
-  ~ChannelNode();
+  static RefCountedPtr<ChannelNode> MakeChannelNode(
+      grpc_channel* channel, size_t channel_tracer_max_nodes);
 
   void RecordCallStarted();
   void RecordCallFailed() {
@@ -53,21 +57,31 @@ class ChannelNode : public RefCounted<ChannelNode> {
 
   char* RenderJSON();
 
+  // helper for getting and populating connectivity state. It is virtual
+  // because it allows the client_channel specific code to live in ext/
+  // instead of lib/
+  virtual void PopulateConnectivityState(grpc_json* json);
+
   ChannelTrace* trace() { return trace_.get(); }
 
-  void set_channel_destroyed() {
+  void MarkChannelDestroyed() {
     GPR_ASSERT(channel_ != nullptr);
     channel_ = nullptr;
   }
 
+  bool ChannelIsDestroyed() { return channel_ == nullptr; }
+
   intptr_t channel_uuid() { return channel_uuid_; }
+
+ protected:
+  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
+  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
+  ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes);
+  virtual ~ChannelNode();
 
  private:
   // testing peer friend.
   friend class testing::ChannelNodePeer;
-
-  // helper for getting connectivity state.
-  grpc_connectivity_state GetConnectivityState();
 
   grpc_channel* channel_ = nullptr;
   UniquePtr<char> target_;
@@ -78,6 +92,11 @@ class ChannelNode : public RefCounted<ChannelNode> {
   intptr_t channel_uuid_;
   ManualConstructor<ChannelTrace> trace_;
 };
+
+// Creation functions
+
+typedef RefCountedPtr<ChannelNode> (*ChannelNodeCreationFunc)(grpc_channel*,
+                                                              size_t);
 
 }  // namespace channelz
 }  // namespace grpc_core
