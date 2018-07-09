@@ -18,10 +18,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/iomgr/port.h"
 #if GRPC_ARES == 1 && defined(GPR_WINDOWS)
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
-#include "src/core/lib/iomgr/socket_utils_posix.h"
 
 bool grpc_ares_query_ipv6() {
   /* TODO: do an "ipv6 available" check here?
