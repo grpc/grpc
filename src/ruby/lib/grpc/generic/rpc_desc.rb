@@ -62,6 +62,7 @@ module GRPC
           resp,
           trailing_metadata: active_call.output_metadata
         )
+        resp
       end
     end
 
