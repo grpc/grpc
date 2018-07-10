@@ -34,12 +34,9 @@ typedef struct {
   bool shutdown;
   bool queued_long_job;
   grpc_core::Thread thd;
-} thread_state;
+} ThreadState;
 
-typedef enum {
-  GRPC_EXECUTOR_SHORT,
-  GRPC_EXECUTOR_LONG
-} grpc_executor_job_length;
+typedef enum { GRPC_EXECUTOR_SHORT, GRPC_EXECUTOR_LONG } grpc_executor_job_type;
 
 class GrpcExecutor {
  public:
@@ -47,7 +44,7 @@ class GrpcExecutor {
   void Init();
 
   /** Is the executor multi-threaded? */
-  bool IsThreaded();
+  bool IsThreaded() const;
 
   /* Enable/disable threading - must be called after Init and Shutdown() */
   void SetThreading(bool threading);
@@ -63,11 +60,11 @@ class GrpcExecutor {
   static size_t RunClosures(grpc_closure_list list);
   static void ThreadMain(void* arg);
 
-  const char* name;
-  thread_state* thd_state;
-  size_t max_threads;
-  gpr_atm num_threads;
-  gpr_spinlock adding_thread_lock;
+  const char* name_;
+  ThreadState* thd_state_;
+  size_t max_threads_;
+  gpr_atm num_threads_;
+  gpr_spinlock adding_thread_lock_;
 };
 
 // == Global executor functions ==
@@ -75,7 +72,7 @@ class GrpcExecutor {
 void grpc_executor_init();
 
 grpc_closure_scheduler* grpc_executor_scheduler(
-    grpc_executor_job_length length);
+    grpc_executor_job_type job_type);
 
 void grpc_executor_shutdown();
 
