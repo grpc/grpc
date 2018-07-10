@@ -539,33 +539,23 @@ TEST_F(ClientLbEnd2endTest, RoundRobin) {
   EXPECT_EQ("round_robin", channel->GetLoadBalancingPolicyName());
 }
 
-// TODO(juanlishen): Investigate getting rid of threads once
-// https://github.com/grpc/grpc/pull/15841 is in.
 TEST_F(ClientLbEnd2endTest, RoundRobinProcessPending) {
   StartServers(1);  // Single server
   auto channel = BuildChannel("round_robin");
   auto stub = BuildStub(channel);
   SetNextResolution({servers_[0]->port_});
   WaitForServer(stub, 0, DEBUG_LOCATION);
-  constexpr int kIterations = 4;
-  constexpr int kNumThreads = 4;
-  std::vector<std::thread> threads;
-  // Create and destroy several channels concurrently, executing an RPC each
-  // time. The creation of new channels and their corresponding RR LB policies
-  // is the important part: new channels/RR policies will pick the subchannels
-  // in READY state (from a previous RPC against the same target). Progress
-  // should happen without any transition from this READY state.
-  threads.push_back(std::thread([=]() {
-    for (int i = 0; i < kNumThreads; ++i) {
-      auto channel = BuildChannel("round_robin");
-      auto stub = BuildStub(channel);
-      SetNextResolution({servers_[0]->port_});
-      for (int i = 0; i < kIterations; ++i) {
-        CheckRpcSendOk(stub, DEBUG_LOCATION);
-      }
-    }
-  }));
-  for (auto& thread : threads) thread.join();
+  // Create a new channel and its corresponding RR LB policy, which will pick
+  // the subchannels in READY state from a the previous RPC against the same
+  // target (even if it happened over a different channel, because subchannels
+  // are globally reused). Progress should happen without any transition from
+  // this READY state.
+  {
+    auto second_channel = BuildChannel("round_robin");
+    auto second_stub = BuildStub(second_channel);
+    SetNextResolution({servers_[0]->port_});
+    CheckRpcSendOk(second_stub, DEBUG_LOCATION);
+  }
 }
 
 TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
