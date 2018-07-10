@@ -551,10 +551,10 @@ TEST_F(ClientLbEnd2endTest, RoundRobinProcessPending) {
   constexpr int kNumThreads = 4;
   std::vector<std::thread> threads;
   // Create and destroy several channels concurrently, executing an RPC each
-  // time. This will force the recycling of the underlying (READY) subchannels.
-  // The RR LB policy of a newly created channel will pick these subchannels in
-  // READY state. Progress should happen without any transition from this READY
-  // state.
+  // time. The creation of new channels and their corresponding RR LB policies
+  // is the important part: new channels/RR policies will pick the subchannels
+  // in READY state (from a previous RPC against the same target). Progress
+  // should happen without any transition from this READY state.
   threads.push_back(std::thread([=]() {
     for (int i = 0; i < kNumThreads; ++i) {
       auto channel = BuildChannel("round_robin");
