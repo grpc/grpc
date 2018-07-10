@@ -422,9 +422,30 @@ namespace Grpc.Core
                 {
                     if (!hooksRegistered)
                     {
+                        // Under normal circumstances, the user is expected to shutdown all
+                        // the gRPC channels and servers before the application exits. The following
+                        // hooks provide some extra handling for cases when this is not the case,
+                        // in the effort to achieve a reasonable behavior on shutdown.
 #if NETSTANDARD1_5
                         // No action required at shutdown on .NET Core
+                        // - In-progress P/Invoke calls (such as grpc_completion_queue_next) don't seem
+                        //   to prevent a .NET core application from terminating, so no special handling
+                        //   is needed.
+                        // - .NET core doesn't run finalizers on shutdown, so there's no risk of getting
+                        //   a crash because grpc_*_destroy methods for native objects being invoked
+                        //   in wrong order.
 #else
+                        // On desktop .NET framework and Mono, we need to register for a shutdown
+                        // event to explicitly shutdown the GrpcEnvironment.
+                        // - On Desktop .NET framework, we need to do a proper shutdown to prevent a crash
+                        //   when the framework attempts to run the finalizers for SafeHandle object representing the native
+                        //   grpc objects. The finalizers calls the native grpc_*_destroy methods (e.g. grpc_server_destroy)
+                        //   in a random order, which is not supported by gRPC.
+                        // - On Mono, the process would hang as the GrpcThreadPool threads are sleeping
+                        //   in grpc_completion_queue_next P/Invoke invocation and mono won't let the
+                        //   process shutdown until the P/Invoke calls return. We achieve that by shutting down
+                        //   the completion queue(s) which associated with the GrpcThreadPool, which will
+                        //   cause the grpc_completion_queue_next calls to return immediately.
                         AppDomain.CurrentDomain.ProcessExit += (sender, eventArgs) => { HandleShutdown(); };
                         AppDomain.CurrentDomain.DomainUnload += (sender, eventArgs) => { HandleShutdown(); };
 #endif
