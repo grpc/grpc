@@ -88,7 +88,7 @@ void GrpcExecutor::SetThreading(bool threading) {
 
     GPR_ASSERT(num_threads_ == 0);
     gpr_atm_no_barrier_store(&num_threads_, 1);
-    gpr_tls_init(&g_this_thread_state_);
+    gpr_tls_init(&g_this_thread_state);
     thd_state_ = static_cast<ThreadState*>(
         gpr_zalloc(sizeof(ThreadState) * max_threads_));
 
