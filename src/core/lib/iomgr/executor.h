@@ -36,7 +36,11 @@ typedef struct {
   grpc_core::Thread thd;
 } ThreadState;
 
-typedef enum { GRPC_EXECUTOR_SHORT, GRPC_EXECUTOR_LONG } GrpcExecutorJobType;
+typedef enum {
+  GRPC_EXECUTOR_SHORT = 0,
+  GRPC_EXECUTOR_LONG,
+  GRPC_NUM_EXECUTOR_JOB_TYPES  // Add new values above this
+} GrpcExecutorJobType;
 
 class GrpcExecutor {
  public:
@@ -67,16 +71,35 @@ class GrpcExecutor {
   gpr_spinlock adding_thread_lock_;
 };
 
+typedef enum {
+  GRPC_DEFAULT_EXECUTOR = 0,
+  GRPC_RESOLVER_EXECUTOR,
+
+  GRPC_NUM_EXECUTORS  // Add new values above this
+} GrpcExecutorType;
+
 // == Global executor functions ==
 
+// Initialize all the executors
 void grpc_executor_init();
 
-grpc_closure_scheduler* grpc_executor_scheduler(GrpcExecutorJobType job_type);
-
+// Shutdown all the executors
 void grpc_executor_shutdown();
 
-bool grpc_executor_is_threaded();
-
+// Set the threading mode for all the executors
 void grpc_executor_set_threading(bool enable);
+
+// Get the executor scheduler
+grpc_closure_scheduler* grpc_executor_scheduler(GrpcExecutorJobType job_type);
+
+// Get the executor scheduler
+grpc_closure_scheduler* grpc_executor_scheduler(GrpcExecutorType executor_type,
+                                                GrpcExecutorJobType job_type);
+
+// Return if a given executor is running in threaded mode (i.e if
+// grpc_executor_set_threading(true) was called previously on that executor)
+bool grpc_executor_is_threaded(GrpcExecutorType executor_type);
+
+bool grpc_executor_is_threaded();
 
 #endif /* GRPC_CORE_LIB_IOMGR_EXECUTOR_H */

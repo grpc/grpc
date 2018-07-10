@@ -298,39 +298,75 @@ void GrpcExecutor::Enqueue(grpc_closure* closure, grpc_error* error,
   } while (retry_push);
 }
 
-static GrpcExecutor g_global_executor("grpc-executor");
+static GrpcExecutor default_executor_("default-executor");
+static GrpcExecutor resolver_executor_("resolver-executor");
 
-void enqueue_long(grpc_closure* closure, grpc_error* error) {
-  g_global_executor.Enqueue(closure, error, false /* is_short */);
+void default_enqueue_short(grpc_closure* closure, grpc_error* error) {
+  default_executor_.Enqueue(closure, error, true /* is_short */);
 }
 
-void enqueue_short(grpc_closure* closure, grpc_error* error) {
-  g_global_executor.Enqueue(closure, error, true /* is_short */);
+void default_enqueue_long(grpc_closure* closure, grpc_error* error) {
+  default_executor_.Enqueue(closure, error, false /* is_short */);
 }
 
-// Short-Job executor scheduler
-static const grpc_closure_scheduler_vtable global_executor_vtable_short = {
-    enqueue_short, enqueue_short, "executor-short"};
-static grpc_closure_scheduler global_scheduler_short = {
-    &global_executor_vtable_short};
+void resolver_enqueue_short(grpc_closure* closure, grpc_error* error) {
+  resolver_executor_.Enqueue(closure, error, true /* is_short */);
+}
 
-// Long-job executor scheduler
-static const grpc_closure_scheduler_vtable global_executor_vtable_long = {
-    enqueue_long, enqueue_long, "executor-long"};
-static grpc_closure_scheduler global_scheduler_long = {
-    &global_executor_vtable_long};
+void resolver_enqueue_long(grpc_closure* closure, grpc_error* error) {
+  resolver_executor_.Enqueue(closure, error, false /* is_short */);
+}
 
-void grpc_executor_init() { g_global_executor.Init(); }
+static const grpc_closure_scheduler_vtable vtables_[] = {
+    {&default_enqueue_short, &default_enqueue_short, "def-ex-short"},
+    {&default_enqueue_long, &default_enqueue_long, "def-ex-long"},
+    {&resolver_enqueue_short, &resolver_enqueue_short, "res-ex-short"},
+    {&resolver_enqueue_long, &resolver_enqueue_long, "res-ex-long"}};
 
-void grpc_executor_shutdown() { g_global_executor.Shutdown(); }
+static grpc_closure_scheduler schedulers_[] = {
+    {&vtables_[0]},  // Default short
+    {&vtables_[1]},  // Default long
+    {&vtables_[2]},  // Resolver short
+    {&vtables_[3]}   // Resolver long
+};
 
-bool grpc_executor_is_threaded() { return g_global_executor.IsThreaded(); }
+void grpc_executor_init() {
+  default_executor_.Init();
+  resolver_executor_.Init();
+}
 
-void grpc_executor_set_threading(bool enable) {
-  g_global_executor.SetThreading(enable);
+grpc_closure_scheduler* grpc_executor_scheduler(GrpcExecutorType executor_type,
+                                                GrpcExecutorJobType job_type) {
+  return &schedulers_[(executor_type * GRPC_NUM_EXECUTORS) + job_type];
 }
 
 grpc_closure_scheduler* grpc_executor_scheduler(GrpcExecutorJobType job_type) {
-  return job_type == GRPC_EXECUTOR_SHORT ? &global_scheduler_short
-                                         : &global_scheduler_long;
+  return grpc_executor_scheduler(GRPC_DEFAULT_EXECUTOR, job_type);
+}
+
+void grpc_executor_shutdown() {
+  default_executor_.Shutdown();
+  resolver_executor_.Shutdown();
+}
+
+bool grpc_executor_is_threaded(GrpcExecutorType executor_type) {
+  switch (executor_type) {
+    case GRPC_DEFAULT_EXECUTOR:
+      return default_executor_.IsThreaded();
+    case GRPC_RESOLVER_EXECUTOR:
+      return resolver_executor_.IsThreaded();
+    case GRPC_NUM_EXECUTORS:
+      GPR_UNREACHABLE_CODE(return false);
+  }
+
+  GPR_UNREACHABLE_CODE(return false);
+}
+
+bool grpc_executor_is_threaded() {
+  return grpc_executor_is_threaded(GRPC_DEFAULT_EXECUTOR);
+}
+
+void grpc_executor_set_threading(bool enable) {
+  default_executor_.SetThreading(enable);
+  resolver_executor_.SetThreading(enable);
 }
