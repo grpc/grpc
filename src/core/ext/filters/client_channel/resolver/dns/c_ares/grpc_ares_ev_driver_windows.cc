@@ -79,8 +79,8 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
 
   ~GrpcPolledFdWindows() {
     GRPC_COMBINER_UNREF(combiner_, name_);
-    grpc_slice_unref(read_buf_);
-    grpc_slice_unref(write_buf_);
+    grpc_slice_unref_internal(read_buf_);
+    grpc_slice_unref_internal(write_buf_);
     GPR_ASSERT(read_closure_ == nullptr);
     GPR_ASSERT(write_closure_ == nullptr);
     grpc_winsocket_destroy(winsocket_);
@@ -101,7 +101,7 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
     GPR_ASSERT(read_closure_ == nullptr);
     read_closure_ = read_closure;
     GPR_ASSERT(GRPC_SLICE_LENGTH(read_buf_) == 0);
-    grpc_slice_unref(read_buf_);
+    grpc_slice_unref_internal(read_buf_);
     read_buf_ = GRPC_SLICE_MALLOC(4192);
     WSABUF buffer;
     buffer.buf = (char*)GRPC_SLICE_START_PTR(read_buf_);
@@ -238,7 +238,7 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
     switch (write_state_) {
       case WRITE_IDLE:
         GPR_ASSERT(GRPC_SLICE_LENGTH(write_buf_) == 0);
-        grpc_slice_unref(write_buf_);
+        grpc_slice_unref_internal(write_buf_);
         write_buf_ = FlattenIovec(iov, iov_count);
         return TrySendWriteBufSyncNonBlocking();
       case WRITE_REQUESTED:
@@ -255,7 +255,7 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
                      GRPC_SLICE_START_PTR(write_buf_)[i]);
           total_sent++;
         }
-        grpc_slice_unref(write_buf_);
+        grpc_slice_unref_internal(write_buf_);
         write_buf_ =
             grpc_slice_sub_no_ref(currently_attempted, total_sent,
                                   GRPC_SLICE_LENGTH(currently_attempted));
@@ -309,7 +309,7 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
       read_buf_ = grpc_slice_sub_no_ref(read_buf_, 0,
                                         winsocket_->read_info.bytes_transfered);
     } else {
-      grpc_slice_unref(read_buf_);
+      grpc_slice_unref_internal(read_buf_);
       read_buf_ = grpc_empty_slice();
     }
     GRPC_CARES_TRACE_LOG(
@@ -342,7 +342,7 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
       write_buf_ = grpc_slice_sub_no_ref(
           write_buf_, 0, winsocket_->write_info.bytes_transfered);
     } else {
-      grpc_slice_unref(write_buf_);
+      grpc_slice_unref_internal(write_buf_);
       write_buf_ = grpc_empty_slice();
     }
     ScheduleAndNullWriteClosure(error);
