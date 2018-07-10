@@ -716,11 +716,6 @@ static grpc_error* cc_init_channel_elem(grpc_channel_element* elem,
   return GRPC_ERROR_NONE;
 }
 
-static void shutdown_resolver_locked(void* arg, grpc_error* error) {
-  grpc_core::Resolver* resolver = static_cast<grpc_core::Resolver*>(arg);
-  resolver->Orphan();
-}
-
 /* Destructor for channel_data */
 static void cc_destroy_channel_elem(grpc_channel_element* elem) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
@@ -728,14 +723,8 @@ static void cc_destroy_channel_elem(grpc_channel_element* elem) {
     // The only way we can get here is if we never started resolving,
     // because we take a ref to the channel stack when we start
     // resolving and do not release it until the resolver callback is
-    // invoked after the resolver shuts down.  In this case, shutting
-    // down the resolver will not cause subsequent callbacks to be
-    // invoked, bit it still needs to be done from within the combiner,
-    // so we need to do it in a callback.
-    GRPC_CLOSURE_SCHED(
-        GRPC_CLOSURE_CREATE(shutdown_resolver_locked, chand->resolver.release(),
-                            grpc_combiner_scheduler(chand->combiner)),
-        GRPC_ERROR_NONE);
+    // invoked after the resolver shuts down.
+    chand->resolver.reset();
   }
   if (chand->client_channel_factory != nullptr) {
     grpc_client_channel_factory_unref(chand->client_channel_factory);
