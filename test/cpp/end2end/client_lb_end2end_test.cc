@@ -539,6 +539,8 @@ TEST_F(ClientLbEnd2endTest, RoundRobin) {
   EXPECT_EQ("round_robin", channel->GetLoadBalancingPolicyName());
 }
 
+// TODO(juanlishen): Investigate getting rid of threads once
+// https://github.com/grpc/grpc/pull/15841 is in.
 TEST_F(ClientLbEnd2endTest, RoundRobinProcessPending) {
   StartServers(1);  // Single server
   auto channel = BuildChannel("round_robin");
