@@ -28,6 +28,7 @@
 
 namespace grpc {
 namespace load_reporter {
+namespace experimental {
 
 // The ServerBuilderOption to enable server-side load reporting feature. To
 // enable the feature, please make sure the binary builds with the
@@ -40,13 +41,12 @@ class LoadReportingServiceServerBuilderOption : public ServerBuilderOption {
                          plugins) override;
 };
 
-namespace experimental {
 // Adds the load reporting cost with \a cost_name and \a cost_value in the
 // trailing metadata of the server context.
 void AddLoadReportingCost(grpc::ServerContext* ctx,
                           const grpc::string& cost_name, double cost_value);
-}  // namespace experimental
 
+}  // namespace experimental
 }  // namespace load_reporter
 }  // namespace grpc
 

@@ -55,7 +55,7 @@ class LoadReporterAsyncServiceImpl
 
   // A tag that can be called with a bool argument. It's tailored for
   // ReportLoadHandler's use. Before being used, it should be constructed with a
-  // method of ReportLoadHandler and a shared pointer to the handler, the
+  // method of ReportLoadHandler and a shared pointer to the handler. The
   // shared pointer will be moved to the invoked function and the function can
   // only be invoked once. That makes ref counting of the handler easier,
   // because the shared pointer is not bound to the function and can be gone
@@ -69,7 +69,10 @@ class LoadReporterAsyncServiceImpl
 
     CallableTag(HandlerFunction func,
                 std::shared_ptr<ReportLoadHandler> handler)
-        : handler_function_(std::move(func)), handler_(std::move(handler)) {}
+        : handler_function_(std::move(func)), handler_(std::move(handler)) {
+      GPR_ASSERT(handler_function_ != nullptr);
+      GPR_ASSERT(handler_ != nullptr);
+    }
 
     // Runs the tag. This should be called only once. The handler is no longer
     // owned by this tag after this method is invoked.

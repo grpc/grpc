@@ -24,6 +24,7 @@
 
 namespace grpc {
 namespace load_reporter {
+namespace experimental {
 
 void LoadReportingServiceServerBuilderOption::UpdateArguments(
     ::grpc::ChannelArguments* args) {
@@ -35,5 +36,6 @@ void LoadReportingServiceServerBuilderOption::UpdatePlugins(
   plugins->emplace_back(new LoadReportingServiceServerBuilderPlugin());
 }
 
+}  // namespace experimental
 }  // namespace load_reporter
 }  // namespace grpc

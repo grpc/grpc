@@ -76,7 +76,7 @@ class ServerLoadReportingEnd2endTest : public ::testing::Test {
             .AddListeningPort(server_address_, InsecureServerCredentials())
             .RegisterService(&echo_service_)
             .SetOption(std::unique_ptr<::grpc::ServerBuilderOption>(
-                new ::grpc::load_reporter::
+                new ::grpc::load_reporter::experimental::
                     LoadReportingServiceServerBuilderOption()))
             .BuildAndStart();
     server_thread_ =
