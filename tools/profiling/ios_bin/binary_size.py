@@ -113,8 +113,9 @@ for frameworks in [False, True]:
     text += row_format.format('New size', '', 'Old size')
     if old_size == None:
         for i in range(0, len(size_labels)):
-            text += ('\n' if i == len(size_labels) - 1 else '') + row_format.format(
-                '{:,}'.format(new_size[i]), size_labels[i], '')
+            text += ('\n'
+                     if i == len(size_labels) - 1 else '') + row_format.format(
+                         '{:,}'.format(new_size[i]), size_labels[i], '')
     else:
         has_diff = False
         for i in range(0, len(size_labels) - 1):
@@ -125,9 +126,9 @@ for frameworks in [False, True]:
             else:
                 diff_sign = ' (<)'
             has_diff = True
-            text += row_format.format(
-                '{:,}'.format(new_size[i]), size_labels[i] + diff_sign,
-                '{:,}'.format(old_size[i]))
+            text += row_format.format('{:,}'.format(new_size[i]),
+                                      size_labels[i] + diff_sign, '{:,}'.format(
+                                          old_size[i]))
         i = len(size_labels) - 1
         if new_size[i] > old_size[i]:
             diff_sign = ' (>)'
