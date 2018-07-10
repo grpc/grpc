@@ -434,6 +434,8 @@ namespace Grpc.Core
                         // - .NET core doesn't run finalizers on shutdown, so there's no risk of getting
                         //   a crash because grpc_*_destroy methods for native objects being invoked
                         //   in wrong order.
+                        // TODO(jtattermusch): Verify that the shutdown hooks are still not needed
+                        // once we add support for new platforms using netstandard (e.g. Xamarin).
 #else
                         // On desktop .NET framework and Mono, we need to register for a shutdown
                         // event to explicitly shutdown the GrpcEnvironment.
