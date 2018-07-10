@@ -21,7 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/server_load_reporting.h>
+#include <grpc/load_reporting.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/server_context.h>
 #include <grpcpp/impl/server_builder_option.h>

@@ -101,7 +101,7 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/slice.h",
     "include/grpc/slice_buffer.h",
     "include/grpc/status.h",
-    "include/grpc/server_load_reporting.h",
+    "include/grpc/load_reporting.h",
     "include/grpc/support/workaround_list.h",
 ]
 
@@ -1345,13 +1345,13 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpcpp_server_load_reporting",
-    language = "c++",
-    public_hdrs = [
-        "include/grpcpp/ext/server_load_reporting.h",
-    ],
     srcs = [
         "src/cpp/server/load_reporter/load_reporting_service_server_builder_option.cc",
         "src/cpp/server/load_reporter/util.cc",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "include/grpcpp/ext/server_load_reporting.h",
     ],
     deps = [
         "lb_server_load_reporting_filter",

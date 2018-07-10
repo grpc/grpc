@@ -900,7 +900,7 @@ include/grpc/impl/codegen/sync_custom.h \
 include/grpc/impl/codegen/sync_generic.h \
 include/grpc/impl/codegen/sync_posix.h \
 include/grpc/impl/codegen/sync_windows.h \
-include/grpc/server_load_reporting.h \
+include/grpc/load_reporting.h \
 include/grpc/slice.h \
 include/grpc/slice_buffer.h \
 include/grpc/status.h \

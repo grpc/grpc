@@ -174,7 +174,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/grpc.h )
   s.files += %w( include/grpc/grpc_posix.h )
   s.files += %w( include/grpc/grpc_security_constants.h )
-  s.files += %w( include/grpc/server_load_reporting.h )
+  s.files += %w( include/grpc/load_reporting.h )
   s.files += %w( include/grpc/slice.h )
   s.files += %w( include/grpc/slice_buffer.h )
   s.files += %w( include/grpc/status.h )

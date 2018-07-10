@@ -24,7 +24,7 @@
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
-#include <grpc/server_load_reporting.h>
+#include <grpc/load_reporting.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/completion_queue.h>

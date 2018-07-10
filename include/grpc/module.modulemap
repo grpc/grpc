@@ -43,7 +43,7 @@ framework module grpc {
   header "grpc.h"
   header "grpc_posix.h"
   header "grpc_security_constants.h"
-  header "server_load_reporting.h"
+  header "load_reporting.h"
   header "slice.h"
   header "slice_buffer.h"
   header "status.h"
