@@ -21,8 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <vector>
-
 #include <grpc/server_load_reporting.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/server_context.h>
@@ -42,19 +40,12 @@ class LoadReportingServiceServerBuilderOption : public ServerBuilderOption {
                          plugins) override;
 };
 
-// A helper class to build call metrics to apply to the server context.
-class CallMetricsBuilder {
- public:
-  // Adds a call metric entry to the builder in its serialized format.
-  CallMetricsBuilder& AddMetric(const grpc::string& name, double value);
-
-  // Applies the saved call metrics to the server context, then clears them in
-  // the class.
-  void ApplyTo(::grpc::ServerContext* ctx);
-
- private:
-  std::vector<grpc::string> serialized_metrics_;
-};
+namespace experimental {
+// Adds the load reporting cost with \a cost_name and \a cost_value in the
+// trailing metadata of the server context.
+void AddLoadReportingCost(grpc::ServerContext* ctx,
+                          const grpc::string& cost_name, double cost_value);
+}  // namespace experimental
 
 }  // namespace load_reporter
 }  // namespace grpc

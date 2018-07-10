@@ -204,10 +204,6 @@ class ServerContext {
   /// Set the serialized load reporting costs in \a cost_data for the call.
   void SetLoadReportingCosts(const std::vector<grpc::string>& cost_data);
 
-  /// Set the load reporting cost with \a cost_name and \a cost_value for the
-  /// call.
-  void SetLoadReportingCost(const grpc::string& cost_name, double cost_value);
-
   /// Return the authentication context for this server call.
   ///
   /// \see grpc::AuthContext.

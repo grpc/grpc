@@ -53,7 +53,8 @@ class LoadReporterAsyncServiceImpl
  private:
   class ReportLoadHandler;
 
-  // A tag that can be called with a bool argument. If constructed with a
+  // A tag that can be called with a bool argument. It's tailored for
+  // ReportLoadHandler's use. Before being used, it should be constructed with a
   // method of ReportLoadHandler and a shared pointer to the handler, the
   // shared pointer will be moved to the invoked function and the function can
   // only be invoked once. That makes ref counting of the handler easier,
@@ -63,29 +64,23 @@ class LoadReporterAsyncServiceImpl
    public:
     using HandlerFunction =
         std::function<void(std::shared_ptr<ReportLoadHandler>, bool)>;
-    using ServiceFunction = std::function<void(bool)>;
 
     CallableTag() {}
 
-    // Ctor for service's use.
-    CallableTag(ServiceFunction func) : service_function_(std::move(func)) {}
-
-    // Ctor for handler's use.
     CallableTag(HandlerFunction func,
                 std::shared_ptr<ReportLoadHandler> handler)
         : handler_function_(std::move(func)), handler_(std::move(handler)) {}
 
-    // Runs the tag according to the function type.
+    // Runs the tag. This should be called only once. The handler is no longer
+    // owned by this tag after this method is invoked.
     void Run(bool ok);
 
-    // Releases and returns the shared pointer to the handler if it's non-null;
-    // otherwise returns null.
+    // Releases and returns the shared pointer to the handler.
     std::shared_ptr<ReportLoadHandler> ReleaseHandler() {
       return std::move(handler_);
     }
 
    private:
-    ServiceFunction service_function_ = nullptr;
     HandlerFunction handler_function_ = nullptr;
     std::shared_ptr<ReportLoadHandler> handler_;
   };
@@ -96,7 +91,7 @@ class LoadReporterAsyncServiceImpl
   class ReportLoadHandler
       : public std::enable_shared_from_this<ReportLoadHandler> {
    public:
-    // Instantiates a ReportLoadHandler and requests for next load reporting
+    // Instantiates a ReportLoadHandler and requests the next load reporting
     // call. The handler object will manage its own lifetime, so no action is
     // needed from the caller any more regarding that object.
     static void CreateAndStart(ServerCompletionQueue* cq,
@@ -188,7 +183,6 @@ class LoadReporterAsyncServiceImpl
   std::atomic_bool shutdown_{false};
   std::unique_ptr<::grpc_core::Thread> thread_;
   std::unique_ptr<LoadReporter> load_reporter_;
-  CallableTag next_fetch_and_sample_;
   std::unique_ptr<Alarm> next_fetch_and_sample_alarm_;
 };
 

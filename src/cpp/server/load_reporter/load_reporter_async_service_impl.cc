@@ -24,21 +24,14 @@ namespace grpc {
 namespace load_reporter {
 
 void LoadReporterAsyncServiceImpl::CallableTag::Run(bool ok) {
-  if (handler_function_ != nullptr) {
-    GPR_ASSERT(handler_ != nullptr);
-    handler_function_(std::move(handler_), ok);
-  } else {
-    GPR_ASSERT(service_function_ != nullptr);
-    service_function_(ok);
-  }
+  GPR_ASSERT(handler_function_ != nullptr);
+  GPR_ASSERT(handler_ != nullptr);
+  handler_function_(std::move(handler_), ok);
 }
 
 LoadReporterAsyncServiceImpl::LoadReporterAsyncServiceImpl(
     std::unique_ptr<ServerCompletionQueue> cq)
-    : cq_(std::move(cq)),
-      next_fetch_and_sample_(
-          std::bind(&LoadReporterAsyncServiceImpl::FetchAndSample, this,
-                    std::placeholders::_1)) {
+    : cq_(std::move(cq)) {
   thread_ = std::unique_ptr<::grpc_core::Thread>(
       new ::grpc_core::Thread("server_load_reporting", Work, this));
   std::unique_ptr<CpuStatsProvider> cpu_stats_provider = nullptr;
@@ -74,7 +67,7 @@ void LoadReporterAsyncServiceImpl::ScheduleNextFetchAndSample() {
     // instance for multiple events.
     next_fetch_and_sample_alarm_.reset(new Alarm);
     next_fetch_and_sample_alarm_->Set(cq_.get(), next_fetch_and_sample_time,
-                                      &next_fetch_and_sample_);
+                                      this);
   }
   gpr_log(GPR_DEBUG, "[LRS %p] Next fetch-and-sample scheduled.", this);
 }
@@ -107,8 +100,12 @@ void LoadReporterAsyncServiceImpl::Work(void* arg) {
       GPR_ASSERT(service->shutdown_);
       break;
     }
-    auto* next_step = static_cast<CallableTag*>(tag);
-    next_step->Run(ok);
+    if (tag == service) {
+      service->FetchAndSample(ok);
+    } else {
+      auto* next_step = static_cast<CallableTag*>(tag);
+      next_step->Run(ok);
+    }
   }
 }
 

@@ -1351,6 +1351,7 @@ grpc_cc_library(
     ],
     srcs = [
         "src/cpp/server/load_reporter/load_reporting_service_server_builder_option.cc",
+        "src/cpp/server/load_reporter/util.cc",
     ],
     deps = [
         "lb_server_load_reporting_filter",

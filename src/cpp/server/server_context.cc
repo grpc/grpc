@@ -16,12 +16,9 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
-
 #include <grpcpp/server_context.h>
 
 #include <algorithm>
-#include <cmath>
 #include <mutex>
 #include <utility>
 
@@ -223,20 +220,6 @@ void ServerContext::SetLoadReportingCosts(
   if (call_ == nullptr) return;
   for (const auto& cost_datum : cost_data) {
     AddTrailingMetadata(GRPC_LB_COST_MD_KEY, cost_datum);
-  }
-}
-
-void ServerContext::SetLoadReportingCost(const grpc::string& cost_name,
-                                         double cost_value) {
-  if (std::isnormal(cost_value)) {
-    grpc::string buf;
-    buf.resize(sizeof(cost_value) + cost_name.size());
-    memcpy(&(*buf.begin()), &cost_value, sizeof(cost_value));
-    memcpy(&(*buf.begin()) + sizeof(cost_value), cost_name.data(),
-           cost_name.size());
-    AddTrailingMetadata(GRPC_LB_COST_MD_KEY, buf);
-  } else {
-    gpr_log(GPR_ERROR, "Call metric value is not normal.");
   }
 }
 
