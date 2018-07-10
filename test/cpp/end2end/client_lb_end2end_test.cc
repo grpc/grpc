@@ -539,6 +539,33 @@ TEST_F(ClientLbEnd2endTest, RoundRobin) {
   EXPECT_EQ("round_robin", channel->GetLoadBalancingPolicyName());
 }
 
+TEST_F(ClientLbEnd2endTest, RoundRobinProcessPending) {
+  StartServers(1);  // Single server
+  auto channel = BuildChannel("round_robin");
+  auto stub = BuildStub(channel);
+  SetNextResolution({servers_[0]->port_});
+  WaitForServer(stub, 0, DEBUG_LOCATION);
+  constexpr int kIterations = 4;
+  constexpr int kNumThreads = 4;
+  std::vector<std::thread> threads;
+  // Create and destroy several channels concurrently, executing an RPC each
+  // time. This will force the recycling of the underlying (READY) subchannels.
+  // The RR LB policy of a newly created channel will pick these subchannels in
+  // READY state. Progress should happen without any transition from this READY
+  // state.
+  threads.push_back(std::thread([=]() {
+    for (int i = 0; i < kNumThreads; ++i) {
+      auto channel = BuildChannel("round_robin");
+      auto stub = BuildStub(channel);
+      SetNextResolution({servers_[0]->port_});
+      for (int i = 0; i < kIterations; ++i) {
+        CheckRpcSendOk(stub, DEBUG_LOCATION);
+      }
+    }
+  }));
+  for (auto& thread : threads) thread.join();
+}
+
 TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   // Start servers and send one RPC per server.
   const int kNumServers = 3;
