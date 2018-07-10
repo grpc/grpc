@@ -103,7 +103,7 @@ void GrpcExecutor::SetThreading(bool threading) {
     thd_state_[0].thd =
         grpc_core::Thread(name_, &GrpcExecutor::ThreadMain, &thd_state_[0]);
     thd_state_[0].thd.Start();
-  } else {
+  } else {  // !threading
     if (curr_num_threads == 0) return;
 
     for (size_t i = 0; i < max_threads_; i++) {
@@ -120,6 +120,7 @@ void GrpcExecutor::SetThreading(bool threading) {
 
     for (gpr_atm i = 0; i < num_threads_; i++) {
       thd_state_[i].thd.Join();
+      EXECUTOR_TRACE(" Thread %" PRIdPTR " joined", i);
     }
 
     gpr_atm_no_barrier_store(&num_threads_, 0);
@@ -138,7 +139,7 @@ void GrpcExecutor::Shutdown() { SetThreading(false); }
 
 void GrpcExecutor::ThreadMain(void* arg) {
   ThreadState* ts = static_cast<ThreadState*>(arg);
-  gpr_tls_set(&g_this_thread_state, (intptr_t)ts);
+  gpr_tls_set(&g_this_thread_state, reinterpret_cast<intptr_t>(ts));
 
   grpc_core::ExecCtx exec_ctx(GRPC_EXEC_CTX_FLAG_IS_INTERNAL_THREAD);
 
