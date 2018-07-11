@@ -7,6 +7,7 @@ native_method_signatures = [
     'IntPtr grpcsharp_batch_context_recv_initial_metadata(BatchContextSafeHandle ctx)',
     'IntPtr grpcsharp_batch_context_recv_message_length(BatchContextSafeHandle ctx)',
     'void grpcsharp_batch_context_recv_message_to_buffer(BatchContextSafeHandle ctx, byte[] buffer, UIntPtr bufferLen)',
+    'int grpcsharp_batch_context_recv_message_next_slice(BatchContextSafeHandle ctx, out UIntPtr sliceLen, out IntPtr sliceDataPtr, out Slice.InlineData inlineBuffer, UIntPtr inlineBufferLen)',
     'StatusCode grpcsharp_batch_context_recv_status_on_client_status(BatchContextSafeHandle ctx)',
     'IntPtr grpcsharp_batch_context_recv_status_on_client_details(BatchContextSafeHandle ctx, out UIntPtr detailsLength)',
     'IntPtr grpcsharp_batch_context_recv_status_on_client_trailing_metadata(BatchContextSafeHandle ctx)',
@@ -95,6 +96,7 @@ native_method_signatures = [
     'int gprsharp_sizeof_timespec()',
     'CallError grpcsharp_test_callback([MarshalAs(UnmanagedType.FunctionPtr)] NativeCallbackTestDelegate callback)',
     'IntPtr grpcsharp_test_nop(IntPtr ptr)',
+    'int grpcsharp_test_slice_inlined_size()',
     'void grpcsharp_test_override_method(string methodName, string variant)',
 ]
 
