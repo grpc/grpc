@@ -45,23 +45,14 @@ ChannelzRegistry* ChannelzRegistry::Default() {
   return g_channelz_registry;
 }
 
-ChannelzRegistry::ChannelzRegistry() {
-  gpr_mu_init(&mu_);
-  // init elements to nullptr
-  memset(entities_.data(), 0, sizeof(void*) * entities_.capacity());
-}
+ChannelzRegistry::ChannelzRegistry() { gpr_mu_init(&mu_); }
 
-ChannelzRegistry::~ChannelzRegistry() {
-  // null out all elements so that the destructors don't try to run.
-  // this is a "view only" object.
-  memset(entities_.data(), 0, sizeof(void*) * entities_.capacity());
-  gpr_mu_destroy(&mu_);
-}
+ChannelzRegistry::~ChannelzRegistry() { gpr_mu_destroy(&mu_); }
 
 void ChannelzRegistry::InternalUnregister(intptr_t uuid) {
   GPR_ASSERT(uuid >= 1);
   gpr_mu_lock(&mu_);
-  GPR_ASSERT((size_t)uuid <= entities_.size());
+  GPR_ASSERT(static_cast<size_t>(uuid) <= entities_.size());
   entities_[uuid - 1] = nullptr;
   gpr_mu_unlock(&mu_);
 }
