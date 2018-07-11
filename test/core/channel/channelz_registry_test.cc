@@ -82,6 +82,15 @@ TEST(ChannelzRegistryTest, MultipleTypeTest) {
   EXPECT_EQ(&str_to_register, retrieved_str);
 }
 
+TEST(ChannelzRegistryTest, RegisterManyItems) {
+  int object_to_register = 42;
+  for (int i = 0; i < 100; i++) {
+    intptr_t uuid = ChannelzRegistry::Register(&object_to_register);
+    int* retrieved = ChannelzRegistry::Get<int>(uuid);
+    EXPECT_EQ(&object_to_register, retrieved);
+  }
+}
+
 namespace {
 class Foo {
  public:
