@@ -1,0 +1,10 @@
+package(default_visibility = ["//visibility:public"])
+
+py_library(
+    name = "common",
+    srcs = [
+        "test_constants.py",
+        "test_control.py",
+        "test_coverage.py",
+    ],
+)
