@@ -546,16 +546,14 @@ TEST_F(ClientLbEnd2endTest, RoundRobinProcessPending) {
   SetNextResolution({servers_[0]->port_});
   WaitForServer(stub, 0, DEBUG_LOCATION);
   // Create a new channel and its corresponding RR LB policy, which will pick
-  // the subchannels in READY state from a the previous RPC against the same
+  // the subchannels in READY state from the previous RPC against the same
   // target (even if it happened over a different channel, because subchannels
   // are globally reused). Progress should happen without any transition from
   // this READY state.
-  {
-    auto second_channel = BuildChannel("round_robin");
-    auto second_stub = BuildStub(second_channel);
-    SetNextResolution({servers_[0]->port_});
-    CheckRpcSendOk(second_stub, DEBUG_LOCATION);
-  }
+  auto second_channel = BuildChannel("round_robin");
+  auto second_stub = BuildStub(second_channel);
+  SetNextResolution({servers_[0]->port_});
+  CheckRpcSendOk(second_stub, DEBUG_LOCATION);
 }
 
 TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
