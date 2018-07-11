@@ -24,6 +24,7 @@ require_once(dirname(__FILE__).'/../../lib/Grpc/AbstractCall.php');
 require_once(dirname(__FILE__).'/../../lib/Grpc/UnaryCall.php');
 require_once(dirname(__FILE__).'/../../lib/Grpc/ClientStreamingCall.php');
 require_once(dirname(__FILE__).'/../../lib/Grpc/Interceptor.php');
+require_once(dirname(__FILE__).'/../../lib/Grpc/CallInvoker.php');
 require_once(dirname(__FILE__).'/../../lib/Grpc/Internal/InterceptorChannel.php');
 
 class SimpleRequest

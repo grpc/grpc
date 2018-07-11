@@ -105,6 +105,10 @@ grpc_channel* grpc_channel_create_with_builder(
   channel->is_client = grpc_channel_stack_type_is_client(channel_stack_type);
   size_t channel_tracer_max_nodes = 0;  // default to off
   bool channelz_enabled = false;
+  // this creates the default ChannelNode. Different types of channels may
+  // override this to ensure a correct ChannelNode is created.
+  grpc_core::channelz::ChannelNodeCreationFunc channel_node_create_func =
+      grpc_core::channelz::ChannelNode::MakeChannelNode;
   gpr_mu_init(&channel->registered_call_mu);
   channel->registered_calls = nullptr;
 
@@ -144,15 +148,23 @@ grpc_channel* grpc_channel_create_with_builder(
       channel_tracer_max_nodes =
           (size_t)grpc_channel_arg_get_integer(&args->args[i], options);
     } else if (0 == strcmp(args->args[i].key, GRPC_ARG_ENABLE_CHANNELZ)) {
+      // channelz will not be enabled by default until all concerns in
+      // https://github.com/grpc/grpc/issues/15986 are addressed.
       channelz_enabled = grpc_channel_arg_get_bool(&args->args[i], false);
+    } else if (0 == strcmp(args->args[i].key,
+                           GRPC_ARG_CHANNELZ_CHANNEL_NODE_CREATION_FUNC)) {
+      GPR_ASSERT(args->args[i].type == GRPC_ARG_POINTER);
+      GPR_ASSERT(args->args[i].value.pointer.p != nullptr);
+      channel_node_create_func =
+          reinterpret_cast<grpc_core::channelz::ChannelNodeCreationFunc>(
+              args->args[i].value.pointer.p);
     }
   }
 
   grpc_channel_args_destroy(args);
   if (channelz_enabled) {
     channel->channelz_channel =
-        grpc_core::MakeRefCounted<grpc_core::channelz::ChannelNode>(
-            channel, channel_tracer_max_nodes);
+        channel_node_create_func(channel, channel_tracer_max_nodes);
     channel->channelz_channel->trace()->AddTraceEvent(
         grpc_core::channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("Channel created"));
@@ -400,7 +412,7 @@ void grpc_channel_internal_unref(grpc_channel* c REF_ARG) {
 static void destroy_channel(void* arg, grpc_error* error) {
   grpc_channel* channel = static_cast<grpc_channel*>(arg);
   if (channel->channelz_channel != nullptr) {
-    channel->channelz_channel->set_channel_destroyed();
+    channel->channelz_channel->MarkChannelDestroyed();
     channel->channelz_channel.reset();
   }
   grpc_channel_stack_destroy(CHANNEL_STACK_FROM_CHANNEL(channel));

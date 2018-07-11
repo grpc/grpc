@@ -91,7 +91,8 @@ typedef struct {
   grpc_security_context_extension extension;
 } grpc_client_security_context;
 
-grpc_client_security_context* grpc_client_security_context_create(void);
+grpc_client_security_context* grpc_client_security_context_create(
+    gpr_arena* arena);
 void grpc_client_security_context_destroy(void* ctx);
 
 /* --- grpc_server_security_context ---

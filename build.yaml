@@ -173,6 +173,7 @@ filegroups:
   - include/grpc/support/thd_id.h
   - include/grpc/support/time.h
   headers:
+  - src/core/lib/gpr/alloc.h
   - src/core/lib/gpr/arena.h
   - src/core/lib/gpr/env.h
   - src/core/lib/gpr/host_port.h
@@ -208,6 +209,7 @@ filegroups:
   - include/grpc/impl/codegen/fork.h
   - include/grpc/impl/codegen/gpr_slice.h
   - include/grpc/impl/codegen/gpr_types.h
+  - include/grpc/impl/codegen/log.h
   - include/grpc/impl/codegen/port_platform.h
   - include/grpc/impl/codegen/sync.h
   - include/grpc/impl/codegen/sync_custom.h
@@ -562,6 +564,7 @@ filegroups:
   headers:
   - src/core/ext/filters/client_channel/backup_poller.h
   - src/core/ext/filters/client_channel/client_channel.h
+  - src/core/ext/filters/client_channel/client_channel_channelz.h
   - src/core/ext/filters/client_channel/client_channel_factory.h
   - src/core/ext/filters/client_channel/connector.h
   - src/core/ext/filters/client_channel/http_connect_handshaker.h
@@ -584,6 +587,7 @@ filegroups:
   - src/core/ext/filters/client_channel/backup_poller.cc
   - src/core/ext/filters/client_channel/channel_connectivity.cc
   - src/core/ext/filters/client_channel/client_channel.cc
+  - src/core/ext/filters/client_channel/client_channel_channelz.cc
   - src/core/ext/filters/client_channel/client_channel_factory.cc
   - src/core/ext/filters/client_channel/client_channel_plugin.cc
   - src/core/ext/filters/client_channel/connector.cc
@@ -780,10 +784,12 @@ filegroups:
   - src/core/lib/security/credentials/jwt/json_token.h
   - src/core/lib/security/credentials/jwt/jwt_credentials.h
   - src/core/lib/security/credentials/jwt/jwt_verifier.h
+  - src/core/lib/security/credentials/local/local_credentials.h
   - src/core/lib/security/credentials/oauth2/oauth2_credentials.h
   - src/core/lib/security/credentials/plugin/plugin_credentials.h
   - src/core/lib/security/credentials/ssl/ssl_credentials.h
   - src/core/lib/security/security_connector/alts_security_connector.h
+  - src/core/lib/security/security_connector/local_security_connector.h
   - src/core/lib/security/security_connector/security_connector.h
   - src/core/lib/security/transport/auth_filters.h
   - src/core/lib/security/transport/secure_endpoint.h
@@ -805,10 +811,12 @@ filegroups:
   - src/core/lib/security/credentials/jwt/json_token.cc
   - src/core/lib/security/credentials/jwt/jwt_credentials.cc
   - src/core/lib/security/credentials/jwt/jwt_verifier.cc
+  - src/core/lib/security/credentials/local/local_credentials.cc
   - src/core/lib/security/credentials/oauth2/oauth2_credentials.cc
   - src/core/lib/security/credentials/plugin/plugin_credentials.cc
   - src/core/lib/security/credentials/ssl/ssl_credentials.cc
   - src/core/lib/security/security_connector/alts_security_connector.cc
+  - src/core/lib/security/security_connector/local_security_connector.cc
   - src/core/lib/security/security_connector/security_connector.cc
   - src/core/lib/security/transport/client_auth_filter.cc
   - src/core/lib/security/transport/secure_endpoint.cc
@@ -1069,6 +1077,7 @@ filegroups:
   headers:
   - src/core/tsi/alts_transport_security.h
   - src/core/tsi/fake_transport_security.h
+  - src/core/tsi/local_transport_security.h
   - src/core/tsi/ssl/session_cache/ssl_session.h
   - src/core/tsi/ssl/session_cache/ssl_session_cache.h
   - src/core/tsi/ssl_transport_security.h
@@ -1077,6 +1086,7 @@ filegroups:
   src:
   - src/core/tsi/alts_transport_security.cc
   - src/core/tsi/fake_transport_security.cc
+  - src/core/tsi/local_transport_security.cc
   - src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
   - src/core/tsi/ssl/session_cache/ssl_session_cache.cc
   - src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
@@ -1138,6 +1148,7 @@ filegroups:
   - include/grpc++/impl/codegen/stub_options.h
   - include/grpc++/impl/codegen/sync_stream.h
   - include/grpc++/impl/codegen/time.h
+  - include/grpcpp/impl/codegen/async_generic_service.h
   - include/grpcpp/impl/codegen/async_stream.h
   - include/grpcpp/impl/codegen/async_unary_call.h
   - include/grpcpp/impl/codegen/byte_buffer.h
@@ -5096,6 +5107,19 @@ targets:
   - gpr_test_util
   - gpr
   - grpc++_test_config
+- name: raw_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/end2end/raw_end2end_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
 - name: reconnect_interop_client
   build: test
   run: false
@@ -5694,7 +5718,7 @@ defaults:
   cxxabi:
     CPPFLAGS: -D_LIBCPP_DISABLE_EXTERN_TEMPLATE -D_LIBCXXABI_BUILDING_LIBRARY -D_LIBCXXABI_NO_EXCEPTIONS
       -Ithird_party/libcxxabi/include -nostdinc++ -Ithird_party/libcxx/include $(W_NO_UNUSED_BUT_SET_VARIABLE)
-      -fvisibility=hidden
+      $(W_NO_MAYBE_UNINITIALIZED) -fvisibility=hidden
     CXXFLAGS: $(W_NO_CXX14_COMPAT)
   global:
     COREFLAGS: -fno-rtti -fno-exceptions

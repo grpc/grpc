@@ -35,6 +35,9 @@ default_secure_fixture_options = default_unsecure_fixture_options._replace(
 uds_fixture_options = default_unsecure_fixture_options._replace(
     dns_resolver=False, platforms=['linux', 'mac', 'posix'],
     exclude_iomgrs=['uv'])
+local_fixture_options = default_secure_fixture_options._replace(
+    dns_resolver=False, platforms=['linux', 'mac', 'posix'],
+    exclude_iomgrs=['uv'])
 fd_unsecure_fixture_options = default_unsecure_fixture_options._replace(
     dns_resolver=False, fullstack=False, platforms=['linux', 'mac', 'posix'],
     exclude_iomgrs=['uv'], client_channel=False)
@@ -71,6 +74,7 @@ END2END_FIXTURES = {
     'h2_sockpair+trace': socketpair_unsecure_fixture_options._replace(
         ci_mac=False, tracing=True, large_writes=False, exclude_iomgrs=['uv']),
     'h2_ssl': default_secure_fixture_options,
+    'h2_local': local_fixture_options,
     'h2_ssl_proxy': default_secure_fixture_options._replace(
         includes_proxy=True, ci_mac=False, exclude_iomgrs=['uv']),
     'h2_uds': uds_fixture_options,

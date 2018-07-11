@@ -36,7 +36,6 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_core {
@@ -109,16 +108,7 @@ void ChannelNode::RecordCallStarted() {
                            (gpr_atm)ExecCtx::Get()->Now());
 }
 
-grpc_connectivity_state ChannelNode::GetConnectivityState() {
-  if (channel_ == nullptr) {
-    return GRPC_CHANNEL_SHUTDOWN;
-  } else {
-    // TODO(ncteisen): re-enable this once we have cleaned up all of the
-    // internal dependency issues.
-    // return grpc_channel_check_connectivity_state(channel_, false);
-    return GRPC_CHANNEL_IDLE;
-  }
-}
+void ChannelNode::PopulateConnectivityState(grpc_json* json) {}
 
 char* ChannelNode::RenderJSON() {
   // We need to track these three json objects to build our object
@@ -139,16 +129,7 @@ char* ChannelNode::RenderJSON() {
                                            GRPC_JSON_OBJECT, false);
   json = data;
   json_iterator = nullptr;
-  // create and fill the connectivity state child.
-  grpc_connectivity_state connectivity_state = GetConnectivityState();
-  json_iterator = grpc_json_create_child(json_iterator, json, "state", nullptr,
-                                         GRPC_JSON_OBJECT, false);
-  json = json_iterator;
-  grpc_json_create_child(nullptr, json, "state",
-                         grpc_connectivity_state_name(connectivity_state),
-                         GRPC_JSON_STRING, false);
-  // reset the parent to be the data object.
-  json = data;
+  PopulateConnectivityState(json);
   json_iterator = grpc_json_create_child(
       json_iterator, json, "target", target_.get(), GRPC_JSON_STRING, false);
   // fill in the channel trace if applicable
@@ -182,6 +163,12 @@ char* ChannelNode::RenderJSON() {
   char* json_str = grpc_json_dump_to_string(top_level_json, 0);
   grpc_json_destroy(top_level_json);
   return json_str;
+}
+
+RefCountedPtr<ChannelNode> ChannelNode::MakeChannelNode(
+    grpc_channel* channel, size_t channel_tracer_max_nodes) {
+  return MakeRefCounted<grpc_core::channelz::ChannelNode>(
+      channel, channel_tracer_max_nodes);
 }
 
 }  // namespace channelz

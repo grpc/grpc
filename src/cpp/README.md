@@ -18,12 +18,16 @@ To add gRPC as a dependency in bazel:
 2. Use the [http_archive](https://docs.bazel.build/versions/master/be/workspace.html#http_archive) bazel rule to include gRPC source
   ```
   http_archive(
-      name = "grpc",
+      name = "com_github_grpc_grpc",
       urls = [
           "https://github.com/grpc/grpc/archive/YOUR_GRPC_COMMIT_SHA.tar.gz",
       ],
       strip_prefix = "grpc-YOUR_GRPC_COMMIT_SHA",
   )
+
+  load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
+
+  grpc_deps()
   ```
 
 NOTE: currently bazel is only supported for building gRPC on Linux.

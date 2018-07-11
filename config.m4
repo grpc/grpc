@@ -275,10 +275,12 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/credentials/jwt/json_token.cc \
     src/core/lib/security/credentials/jwt/jwt_credentials.cc \
     src/core/lib/security/credentials/jwt/jwt_verifier.cc \
+    src/core/lib/security/credentials/local/local_credentials.cc \
     src/core/lib/security/credentials/oauth2/oauth2_credentials.cc \
     src/core/lib/security/credentials/plugin/plugin_credentials.cc \
     src/core/lib/security/credentials/ssl/ssl_credentials.cc \
     src/core/lib/security/security_connector/alts_security_connector.cc \
+    src/core/lib/security/security_connector/local_security_connector.cc \
     src/core/lib/security/security_connector/security_connector.cc \
     src/core/lib/security/transport/client_auth_filter.cc \
     src/core/lib/security/transport/secure_endpoint.cc \
@@ -330,6 +332,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/backup_poller.cc \
     src/core/ext/filters/client_channel/channel_connectivity.cc \
     src/core/ext/filters/client_channel/client_channel.cc \
+    src/core/ext/filters/client_channel/client_channel_channelz.cc \
     src/core/ext/filters/client_channel/client_channel_factory.cc \
     src/core/ext/filters/client_channel/client_channel_plugin.cc \
     src/core/ext/filters/client_channel/connector.cc \
@@ -351,6 +354,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/tsi/alts_transport_security.cc \
     src/core/tsi/fake_transport_security.cc \
+    src/core/tsi/local_transport_security.cc \
     src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc \
     src/core/tsi/ssl/session_cache/ssl_session_cache.cc \
     src/core/tsi/ssl/session_cache/ssl_session_openssl.cc \
@@ -697,6 +701,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/google_default)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/iam)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/jwt)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/local)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/oauth2)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/plugin)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/credentials/ssl)

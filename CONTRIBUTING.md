@@ -24,9 +24,9 @@ script that unifies the experience of building and testing gRPC in different
 languages and on different platforms is provided.
 
 To build gRPC in the language of choice (e.g. `c++`, `csharp`, `php`, `python`, `ruby`, ...)
-- Prepare you development environment based on language-specific instructions in `src/YOUR-LANGUAGE` directory.
+- Prepare your development environment based on language-specific instructions in `src/YOUR-LANGUAGE` directory.
 - The language-specific instructions might involve installing C/C++ prerequisites listed in
-  [Building gRPC C++: Prerequisites](BUILDING.md#pre-requisites) as gRPC implementations
+  [Building gRPC C++: Prerequisites](BUILDING.md#pre-requisites). This is because gRPC implementations
   in this repository are using the native gRPC "core" library internally.
 - Run
   ```
@@ -38,7 +38,7 @@ To build gRPC in the language of choice (e.g. `c++`, `csharp`, `php`, `python`, 
   ```
 
 You can also run `python tools/run_tests/run_tests.py --help` to discover useful command line flags supported. For more details,
-see [tools/run_tests](tools/run_tests) where you will also find guidance on how to run various other test suites (e.g. interop tests, benchmarks)
+see [tools/run_tests](tools/run_tests) where you will also find guidance on how to run various other test suites (e.g. interop tests, benchmarks).
 
 ## Generated project files
 

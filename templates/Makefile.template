@@ -37,7 +37,7 @@
 
     # warnings we'd like, but that dont exist in all compilers
     PREFERRED_WARNINGS=['shadow', 'extra-semi']
-    CHECK_WARNINGS=PREFERRED_WARNINGS + ['no-shift-negative-value', 'no-unused-but-set-variable']
+    CHECK_WARNINGS=PREFERRED_WARNINGS + ['no-shift-negative-value', 'no-unused-but-set-variable', 'no-maybe-uninitialized']
 
     def warning_var(fmt, warning):
       return fmt % warning.replace('-', '_').replace('+', 'X').upper()
