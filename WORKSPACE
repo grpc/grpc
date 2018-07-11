@@ -28,7 +28,7 @@ load("@io_bazel_rules_python//python:pip.bzl", "pip_repositories", "pip_import")
 pip_repositories()
 pip_import(
     name = "grpc_python_dependencies",
-    requirements = "//:requirements.txt",
+    requirements = "//:requirements.bazel.txt",
 )
 
 load("@grpc_python_dependencies//:requirements.bzl", "pip_install")
