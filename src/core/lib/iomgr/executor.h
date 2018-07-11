@@ -36,7 +36,7 @@ typedef struct {
   grpc_core::Thread thd;
 } ThreadState;
 
-typedef enum { GRPC_EXECUTOR_SHORT, GRPC_EXECUTOR_LONG } grpc_executor_job_type;
+typedef enum { GRPC_EXECUTOR_SHORT, GRPC_EXECUTOR_LONG } GrpcExecutorJobType;
 
 class GrpcExecutor {
  public:
@@ -71,8 +71,7 @@ class GrpcExecutor {
 
 void grpc_executor_init();
 
-grpc_closure_scheduler* grpc_executor_scheduler(
-    grpc_executor_job_type job_type);
+grpc_closure_scheduler* grpc_executor_scheduler(GrpcExecutorJobType job_type);
 
 void grpc_executor_shutdown();
 

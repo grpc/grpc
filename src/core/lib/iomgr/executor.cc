@@ -328,8 +328,7 @@ void grpc_executor_set_threading(bool enable) {
   g_global_executor.SetThreading(enable);
 }
 
-grpc_closure_scheduler* grpc_executor_scheduler(
-    grpc_executor_job_type job_type) {
+grpc_closure_scheduler* grpc_executor_scheduler(GrpcExecutorJobType job_type) {
   return job_type == GRPC_EXECUTOR_SHORT ? &global_scheduler_short
                                          : &global_scheduler_long;
 }
