@@ -119,6 +119,9 @@ void* grpc_connected_subchannel_call_get_parent_data(
 grpc_connectivity_state grpc_subchannel_check_connectivity(
     grpc_subchannel* channel, grpc_error** error);
 
+/** Disconnects the subchannel. */
+void grpc_subchannel_disconnect(grpc_subchannel* c);
+
 /** Calls notify when the connectivity state of a channel becomes different
     from *state.  Updates *state with the new state of the channel. */
 void grpc_subchannel_notify_on_state_change(

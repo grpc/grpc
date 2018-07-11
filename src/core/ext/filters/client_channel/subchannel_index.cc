@@ -125,6 +125,7 @@ static long sck_avl_compare(void* a, void* b, void* unused) {
 }
 
 static void scv_avl_destroy(void* p, void* user_data) {
+  grpc_subchannel_disconnect((grpc_subchannel*)p);
   GRPC_SUBCHANNEL_UNREF((grpc_subchannel*)p, "subchannel_index");
 }
 
@@ -206,7 +207,7 @@ grpc_subchannel* grpc_subchannel_index_register(grpc_subchannel_key* key,
   return c;
 }
 
-static void find_unused_subchannels(
+static void find_unused_subchannels_locked(
     grpc_avl_node* avl_node,
     grpc_core::InlinedVector<grpc_subchannel*, kUnusedSubchannelsInlinedSize>*
         unused_subchannels) {
@@ -215,15 +216,16 @@ static void find_unused_subchannels(
   if (grpc_subchannel_is_unused(c)) {
     unused_subchannels->emplace_back(c);
   }
-  find_unused_subchannels(avl_node->left, unused_subchannels);
-  find_unused_subchannels(avl_node->right, unused_subchannels);
+  find_unused_subchannels_locked(avl_node->left, unused_subchannels);
+  find_unused_subchannels_locked(avl_node->right, unused_subchannels);
 }
 
 static void unregister_unused_subchannels(
     const grpc_core::InlinedVector<
         grpc_subchannel*, kUnusedSubchannelsInlinedSize>& unused_subchannels) {
   for (size_t i = 0; i < unused_subchannels.size(); ++i) {
-    grpc_subchannel_key* key = grpc_subchannel_get_key(unused_subchannels[i]);
+    grpc_subchannel* c = unused_subchannels[i];
+    grpc_subchannel_key* key = grpc_subchannel_get_key(c);
     bool done = false;
     // Compare and swap loop:
     while (!done) {
@@ -232,18 +234,22 @@ static void unregister_unused_subchannels(
       grpc_avl index =
           grpc_avl_ref(g_subchannel_index, grpc_core::ExecCtx::Get());
       gpr_mu_unlock(&g_mu);
-      grpc_avl updated =
-          grpc_avl_remove(grpc_avl_ref(index, grpc_core::ExecCtx::Get()), key,
-                          grpc_core::ExecCtx::Get());
-      // It may happen (but it's expected to be unlikely) that some other thread
-      // has changed the index. We need to retry in such cases.
-      gpr_mu_lock(&g_mu);
-      if (index.root == g_subchannel_index.root) {
-        GPR_SWAP(grpc_avl, updated, g_subchannel_index);
+      if (grpc_subchannel_is_unused(c)) {
+        grpc_avl updated =
+            grpc_avl_remove(grpc_avl_ref(index, grpc_core::ExecCtx::Get()), key,
+                            grpc_core::ExecCtx::Get());
+        // It may happen (but it's expected to be unlikely) that some other
+        // thread has changed the index. We need to retry in such cases.
+        gpr_mu_lock(&g_mu);
+        if (index.root == g_subchannel_index.root) {
+          GPR_SWAP(grpc_avl, updated, g_subchannel_index);
+          done = true;
+        }
+        gpr_mu_unlock(&g_mu);
+        grpc_avl_unref(updated, grpc_core::ExecCtx::Get());
+      } else {
         done = true;
       }
-      gpr_mu_unlock(&g_mu);
-      grpc_avl_unref(updated, grpc_core::ExecCtx::Get());
       grpc_avl_unref(index, grpc_core::ExecCtx::Get());
     }
   }
@@ -263,7 +269,7 @@ static void sweep_unused_subchannels(void* /* arg */, grpc_error* error) {
   gpr_mu_lock(&g_mu);
   // We use two-phase cleanup because modification during traversal is unsafe
   // for an AVL tree.
-  find_unused_subchannels(g_subchannel_index.root, &unused_subchannels);
+  find_unused_subchannels_locked(g_subchannel_index.root, &unused_subchannels);
   gpr_mu_unlock(&g_mu);
   unregister_unused_subchannels(unused_subchannels);
   schedule_next_sweep();

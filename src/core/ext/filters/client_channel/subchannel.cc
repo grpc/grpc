@@ -165,7 +165,8 @@ grpc_subchannel_key* grpc_subchannel_get_key(grpc_subchannel* c) {
 }
 
 bool grpc_subchannel_is_unused(grpc_subchannel* c) {
-  return gpr_ref_is_unique(&c->refs);
+  gpr_atm ref = gpr_atm_acq_load(&c->refs.count);
+  return ref == 1 || (ref == 2 && c->connected_subchannel != nullptr);
 }
 
 static void subchannel_destroy(void* arg, grpc_error* error) {
@@ -194,6 +195,16 @@ grpc_subchannel* grpc_subchannel_ref(
   return c;
 }
 
+void grpc_subchannel_disconnect(grpc_subchannel* c) {
+  gpr_mu_lock(&c->mu);
+  GPR_ASSERT(!c->disconnected);
+  c->disconnected = true;
+  grpc_connector_shutdown(c->connector, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                            "Subchannel disconnected"));
+  c->connected_subchannel.reset();
+  gpr_mu_unlock(&c->mu);
+}
+
 void grpc_subchannel_unref(grpc_subchannel* c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
 #ifndef NDEBUG
   gpr_atm old_refs = gpr_atm_no_barrier_load(&c->refs.count);
@@ -204,13 +215,6 @@ void grpc_subchannel_unref(grpc_subchannel* c GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   }
 #endif
   if (gpr_unref(&c->refs)) {
-    gpr_mu_lock(&c->mu);
-    GPR_ASSERT(!c->disconnected);
-    c->disconnected = true;
-    grpc_connector_shutdown(c->connector, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                              "Subchannel disconnected"));
-    c->connected_subchannel.reset();
-    gpr_mu_unlock(&c->mu);
     GRPC_CLOSURE_SCHED(
         GRPC_CLOSURE_CREATE(subchannel_destroy, c, grpc_schedule_on_exec_ctx),
         GRPC_ERROR_NONE);
