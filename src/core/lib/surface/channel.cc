@@ -148,6 +148,8 @@ grpc_channel* grpc_channel_create_with_builder(
       channel_tracer_max_nodes =
           (size_t)grpc_channel_arg_get_integer(&args->args[i], options);
     } else if (0 == strcmp(args->args[i].key, GRPC_ARG_ENABLE_CHANNELZ)) {
+      // channelz will not be enabled by default until all concerns in
+      // https://github.com/grpc/grpc/issues/15986 are addressed.
       channelz_enabled = grpc_channel_arg_get_bool(&args->args[i], false);
     } else if (0 == strcmp(args->args[i].key,
                            GRPC_ARG_CHANNELZ_CHANNEL_NODE_CREATION_FUNC)) {

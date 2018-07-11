@@ -21,8 +21,8 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
-#include "src/core/lib/avl/avl.h"
 #include "src/core/lib/channel/channel_trace.h"
+#include "src/core/lib/gprpp/inlined_vector.h"
 
 #include <stdint.h>
 
@@ -67,11 +67,11 @@ class ChannelzRegistry {
   // globally registers a channelz Object. Returns its unique uuid
   template <typename Object>
   intptr_t InternalRegister(Object* object) {
-    intptr_t prior = gpr_atm_no_barrier_fetch_add(&uuid_, 1);
     gpr_mu_lock(&mu_);
-    avl_ = grpc_avl_add(avl_, (void*)prior, object, nullptr);
+    entities_.push_back(static_cast<void*>(object));
+    intptr_t uuid = entities_.size();
     gpr_mu_unlock(&mu_);
-    return prior;
+    return uuid;
   }
 
   // globally unregisters the object that is associated to uuid.
@@ -82,16 +82,20 @@ class ChannelzRegistry {
   template <typename Object>
   Object* InternalGet(intptr_t uuid) {
     gpr_mu_lock(&mu_);
-    Object* ret =
-        static_cast<Object*>(grpc_avl_get(avl_, (void*)uuid, nullptr));
+    if (uuid < 1 || uuid > static_cast<intptr_t>(entities_.size())) {
+      gpr_mu_unlock(&mu_);
+      return nullptr;
+    }
+    Object* ret = static_cast<Object*>(entities_[uuid - 1]);
     gpr_mu_unlock(&mu_);
     return ret;
   }
 
   // private members
+
+  // protects entities_ and uuid_
   gpr_mu mu_;
-  grpc_avl avl_;
-  gpr_atm uuid_;
+  InlinedVector<void*, 20> entities_;
 };
 
 }  // namespace grpc_core
