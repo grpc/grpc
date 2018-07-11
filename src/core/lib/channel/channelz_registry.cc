@@ -26,26 +26,13 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include <cstring>
+
 namespace grpc_core {
 namespace {
 
 // singleton instance of the registry.
 ChannelzRegistry* g_channelz_registry = nullptr;
-
-// avl vtable for uuid (intptr_t) -> channelz_obj (void*)
-// this table is only looking, it does not own anything.
-void destroy_intptr(void* not_used, void* user_data) {}
-void* copy_intptr(void* key, void* user_data) { return key; }
-long compare_intptr(void* key1, void* key2, void* user_data) {
-  return GPR_ICMP(key1, key2);
-}
-
-void destroy_channelz_obj(void* channelz_obj, void* user_data) {}
-void* copy_channelz_obj(void* channelz_obj, void* user_data) {
-  return channelz_obj;
-}
-const grpc_avl_vtable avl_vtable = {destroy_intptr, copy_intptr, compare_intptr,
-                                    destroy_channelz_obj, copy_channelz_obj};
 
 }  // anonymous namespace
 
@@ -58,19 +45,15 @@ ChannelzRegistry* ChannelzRegistry::Default() {
   return g_channelz_registry;
 }
 
-ChannelzRegistry::ChannelzRegistry() : uuid_(1) {
-  gpr_mu_init(&mu_);
-  avl_ = grpc_avl_create(&avl_vtable);
-}
+ChannelzRegistry::ChannelzRegistry() { gpr_mu_init(&mu_); }
 
-ChannelzRegistry::~ChannelzRegistry() {
-  grpc_avl_unref(avl_, nullptr);
-  gpr_mu_destroy(&mu_);
-}
+ChannelzRegistry::~ChannelzRegistry() { gpr_mu_destroy(&mu_); }
 
 void ChannelzRegistry::InternalUnregister(intptr_t uuid) {
+  GPR_ASSERT(uuid >= 1);
   gpr_mu_lock(&mu_);
-  avl_ = grpc_avl_remove(avl_, (void*)uuid, nullptr);
+  GPR_ASSERT(static_cast<size_t>(uuid) <= entities_.size());
+  entities_[uuid - 1] = nullptr;
   gpr_mu_unlock(&mu_);
 }
 
