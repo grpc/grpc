@@ -24,14 +24,10 @@
 #include "absl/strings/string_view.h"
 #include "include/grpcpp/opencensus.h"
 #include "opencensus/stats/stats.h"
-#include "opencensus/trace/span.h"
 
 namespace grpc {
 
 class ServerContext;
-
-// Returns the tracing Span for the current RPC.
-::opencensus::trace::Span GetSpanFromServerContext(ServerContext* context);
 
 // The tag keys set when recording RPC stats.
 ::opencensus::stats::TagKey ClientMethodTagKey();
