@@ -21,7 +21,6 @@
 #include "src/core/lib/iomgr/executor.h"
 
 #include <string.h>
-#include <functional>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
