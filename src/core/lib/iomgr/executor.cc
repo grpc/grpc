@@ -81,7 +81,7 @@ bool GrpcExecutor::IsThreaded() const {
 }
 
 void GrpcExecutor::SetThreading(bool threading) {
-  const gpr_atm curr_num_threads = gpr_atm_no_barrier_load(&num_threads_);
+  gpr_atm curr_num_threads = gpr_atm_no_barrier_load(&num_threads_);
 
   if (threading) {
     if (curr_num_threads > 0) return;
@@ -118,9 +118,11 @@ void GrpcExecutor::SetThreading(bool threading) {
     gpr_spinlock_lock(&adding_thread_lock_);
     gpr_spinlock_unlock(&adding_thread_lock_);
 
-    for (gpr_atm i = 0; i < num_threads_; i++) {
+    curr_num_threads = gpr_atm_no_barrier_load(&num_threads_);
+    for (gpr_atm i = 0; i < curr_num_threads; i++) {
       thd_state_[i].thd.Join();
-      EXECUTOR_TRACE(" Thread %" PRIdPTR " joined", i);
+      EXECUTOR_TRACE(" Thread %" PRIdPTR " of %" PRIdPTR " joined", i,
+                     curr_num_threads);
     }
 
     gpr_atm_no_barrier_store(&num_threads_, 0);
