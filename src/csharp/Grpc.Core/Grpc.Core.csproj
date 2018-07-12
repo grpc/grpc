@@ -91,10 +91,12 @@
 
   <ItemGroup>
     <PackageReference Include="System.Interactive.Async" Version="3.2.0" />
+    <PackageReference Include="System.Memory" Version="4.5.2" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">
     <Reference Include="System" />
+    <Reference Include="System.Runtime" />
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
 

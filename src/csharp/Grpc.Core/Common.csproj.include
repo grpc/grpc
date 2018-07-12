@@ -24,5 +24,6 @@
     <FrameworkPathOverride Condition="Exists('/usr/lib/mono/4.5-api')">/usr/lib/mono/4.5-api</FrameworkPathOverride>
     <FrameworkPathOverride Condition="Exists('/usr/local/lib/mono/4.5-api')">/usr/local/lib/mono/4.5-api</FrameworkPathOverride>
     <FrameworkPathOverride Condition="Exists('/Library/Frameworks/Mono.framework/Versions/Current/lib/mono/4.5-api')">/Library/Frameworks/Mono.framework/Versions/Current/lib/mono/4.5-api</FrameworkPathOverride>
+    <AssemblySearchPaths Condition="'$(FrameworkPathOverride)' != ''">$(FrameworkPathOverride)/Facades;$(AssemblySearchPaths)</AssemblySearchPaths>
   </PropertyGroup>
 </Project>
