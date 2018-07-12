@@ -125,7 +125,6 @@ static long sck_avl_compare(void* a, void* b, void* unused) {
 }
 
 static void scv_avl_destroy(void* p, void* user_data) {
-  grpc_subchannel_disconnect((grpc_subchannel*)p);
   GRPC_SUBCHANNEL_UNREF((grpc_subchannel*)p, "subchannel_index");
 }
 
