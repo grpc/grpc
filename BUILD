@@ -68,7 +68,7 @@ g_stands_for = "gloriosa"
 
 core_version = "6.0.0"
 
-version = "1.13.0"
+version = "1.13.1"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
