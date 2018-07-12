@@ -297,27 +297,14 @@ void GrpcExecutor::Enqueue(grpc_closure* closure, grpc_error* error,
   } while (retry_push);
 }
 
-/* Using Create-on-first-use pattern here because:
- *   global_executor has to be initialized by the time grpc_executor_init() is
- *   called.
- *
- *   Since grpc_executor_init() may sometimes be called as a part of other
- *   static variables being initialized (for example, see the microbenchmarks
- *   helper code that calls grpc::internal::GrpcLibrary::Init(), which
- *   eventually ends up calling grpc_executor_init()), we need to use a
- *   create-on-first-use pattern here.
- * */
-static GrpcExecutor* get_global_executor() {
-  static GrpcExecutor* global_executor = new GrpcExecutor("global-executor");
-  return global_executor;
-}
+static GrpcExecutor* global_executor;
 
 void enqueue_long(grpc_closure* closure, grpc_error* error) {
-  get_global_executor()->Enqueue(closure, error, false /* is_short */);
+  global_executor->Enqueue(closure, error, false /* is_short */);
 }
 
 void enqueue_short(grpc_closure* closure, grpc_error* error) {
-  get_global_executor()->Enqueue(closure, error, true /* is_short */);
+  global_executor->Enqueue(closure, error, true /* is_short */);
 }
 
 // Short-Job executor scheduler
@@ -332,14 +319,22 @@ static const grpc_closure_scheduler_vtable global_executor_vtable_long = {
 static grpc_closure_scheduler global_scheduler_long = {
     &global_executor_vtable_long};
 
-void grpc_executor_init() { get_global_executor()->Init(); }
+void grpc_executor_init() {
+  GPR_ASSERT(global_executor == nullptr);
+  global_executor = new GrpcExecutor("global-executor");
+  global_executor->Init();
+}
 
-void grpc_executor_shutdown() { get_global_executor()->Shutdown(); }
+void grpc_executor_shutdown() {
+  global_executor->Shutdown();
+  delete global_executor;
+  global_executor = nullptr;
+}
 
-bool grpc_executor_is_threaded() { return get_global_executor()->IsThreaded(); }
+bool grpc_executor_is_threaded() { return global_executor->IsThreaded(); }
 
 void grpc_executor_set_threading(bool enable) {
-  get_global_executor()->SetThreading(enable);
+  global_executor->SetThreading(enable);
 }
 
 grpc_closure_scheduler* grpc_executor_scheduler(GrpcExecutorJobType job_type) {
