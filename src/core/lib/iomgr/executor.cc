@@ -320,13 +320,26 @@ static const grpc_closure_scheduler_vtable global_executor_vtable_long = {
 static grpc_closure_scheduler global_scheduler_long = {
     &global_executor_vtable_long};
 
+// grpc_executor_init() and grpc_executor_shutdown() functions are called in the
+// the grpc_init() and grpc_shutdown() code paths which are protected by a
+// global mutex. So it is okay to assume that these functions are thread-safe
 void grpc_executor_init() {
-  GPR_ASSERT(global_executor == nullptr);
+  if (global_executor != nullptr) {
+    // grpc_executor_init() already called once (and grpc_executor_shutdown()
+    // wasn't called)
+    return;
+  }
+
   global_executor = grpc_core::New<GrpcExecutor>("global-executor");
   global_executor->Init();
 }
 
 void grpc_executor_shutdown() {
+  // Shutdown already called
+  if (global_executor == nullptr) {
+    return;
+  }
+
   global_executor->Shutdown();
   grpc_core::Delete<GrpcExecutor>(global_executor);
   global_executor = nullptr;
