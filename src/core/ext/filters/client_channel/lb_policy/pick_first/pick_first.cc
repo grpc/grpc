@@ -41,9 +41,13 @@ namespace {
 // pick_first LB policy
 //
 
+constexpr char kPickFirst[] = "pick_first";
+
 class PickFirst : public LoadBalancingPolicy {
  public:
   explicit PickFirst(const Args& args);
+
+  const char* name() const override { return kPickFirst; }
 
   void UpdateLocked(const grpc_channel_args& args) override;
   bool PickLocked(PickState* pick) override;
@@ -545,7 +549,7 @@ class PickFirstFactory : public LoadBalancingPolicyFactory {
     return OrphanablePtr<LoadBalancingPolicy>(New<PickFirst>(args));
   }
 
-  const char* name() const override { return "pick_first"; }
+  const char* name() const override { return kPickFirst; }
 };
 
 }  // namespace

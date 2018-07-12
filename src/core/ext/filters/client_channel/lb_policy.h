@@ -66,7 +66,11 @@ class LoadBalancingPolicy
     /// Bitmask used for selective cancelling. See
     /// \a CancelMatchingPicksLocked() and \a GRPC_INITIAL_METADATA_* in
     /// grpc_types.h.
-    uint32_t initial_metadata_flags;
+// FIXME: changed this to a pointer so that we can reset the data it
+// points to when the service config arrives and have the change be
+// visible to both the LB policy and the subchannel stack.
+// Need to update implementations accordingly.
+    uint32_t* initial_metadata_flags;
     /// Storage for LB token in \a initial_metadata, or nullptr if not used.
     grpc_linked_mdelem lb_token_mdelem_storage;
     /// Closure to run when pick is complete, if not completed synchronously.
@@ -89,6 +93,9 @@ class LoadBalancingPolicy
   // Not copyable nor movable.
   LoadBalancingPolicy(const LoadBalancingPolicy&) = delete;
   LoadBalancingPolicy& operator=(const LoadBalancingPolicy&) = delete;
+
+  /// Returns the name of the LB policy.
+  virtual const char* name() const GRPC_ABSTRACT;
 
   /// Updates the policy with a new set of \a args from the resolver.
   /// Note that the LB policy gets the set of addresses from the

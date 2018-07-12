@@ -52,9 +52,13 @@ namespace {
 // round_robin LB policy
 //
 
+constexpr char kRoundRobin[] = "round_robin";
+
 class RoundRobin : public LoadBalancingPolicy {
  public:
   explicit RoundRobin(const Args& args);
+
+  const char* name() const override { return kRoundRobin; }
 
   void UpdateLocked(const grpc_channel_args& args) override;
   bool PickLocked(PickState* pick) override;
@@ -665,7 +669,7 @@ class RoundRobinFactory : public LoadBalancingPolicyFactory {
     return OrphanablePtr<LoadBalancingPolicy>(New<RoundRobin>(args));
   }
 
-  const char* name() const override { return "round_robin"; }
+  const char* name() const override { return kRoundRobin; }
 };
 
 }  // namespace

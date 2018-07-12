@@ -118,9 +118,13 @@ TraceFlag grpc_lb_glb_trace(false, "glb");
 
 namespace {
 
+constexpr char kGrpclb[] = "grpclb";
+
 class GrpcLb : public LoadBalancingPolicy {
  public:
   GrpcLb(const grpc_lb_addresses* addresses, const Args& args);
+
+  const char* name() const override { return kGrpclb; }
 
   void UpdateLocked(const grpc_channel_args& args) override;
   bool PickLocked(PickState* pick) override;
@@ -1875,7 +1879,7 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
     return OrphanablePtr<LoadBalancingPolicy>(New<GrpcLb>(addresses, args));
   }
 
-  const char* name() const override { return "grpclb"; }
+  const char* name() const override { return kGrpclb; }
 };
 
 }  // namespace
