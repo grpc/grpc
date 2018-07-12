@@ -41,6 +41,7 @@ typedef enum { GRPC_EXECUTOR_SHORT, GRPC_EXECUTOR_LONG } GrpcExecutorJobType;
 class GrpcExecutor {
  public:
   GrpcExecutor(const char* executor_name);
+
   void Init();
 
   /** Is the executor multi-threaded? */
