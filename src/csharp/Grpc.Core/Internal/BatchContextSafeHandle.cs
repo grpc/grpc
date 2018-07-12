@@ -30,10 +30,17 @@ namespace Grpc.Core.Internal
         void OnComplete(bool success);
     }
 
+    internal interface IBufferReader
+    {
+        int? TotalLength { get; }
+
+        bool TryGetNextSlice(out Slice slice);
+    }
+
     /// <summary>
     /// grpcsharp_batch_context
     /// </summary>
-    internal class BatchContextSafeHandle : SafeHandleZeroIsInvalid, IOpCompletionCallback, IPooledObject<BatchContextSafeHandle>
+    internal class BatchContextSafeHandle : SafeHandleZeroIsInvalid, IOpCompletionCallback, IPooledObject<BatchContextSafeHandle>, IBufferReader
     {
         static readonly NativeMethods Native = NativeMethods.Get();
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<BatchContextSafeHandle>();
@@ -106,6 +113,25 @@ namespace Grpc.Core.Internal
             return data;
         }
 
+        public bool GetReceivedMessageNextSlicePeek(out Slice slice)
+        {
+            UIntPtr sliceLen;
+            IntPtr sliceDataPtr;
+            
+            if (0 == Native.grpcsharp_batch_context_recv_message_next_slice_peek(this, out sliceLen, out sliceDataPtr))
+            {
+                slice = default(Slice);
+                return false;
+            }
+            slice = new Slice(sliceDataPtr, (int) sliceLen);
+            return true;
+        }
+
+        public IBufferReader GetReceivedMessageReader()
+        {
+            return this;
+        }
+
         // Gets data of receive_close_on_server completion.
         public bool GetReceivedCloseOnServerCancelled()
         {
@@ -151,6 +177,20 @@ namespace Grpc.Core.Internal
                 completionCallbackData = default(CompletionCallbackData);
                 Recycle();
             }
+        }
+
+        int? IBufferReader.TotalLength
+        {
+            get
+            {
+                var len = Native.grpcsharp_batch_context_recv_message_length(this);
+                return len != new IntPtr(-1) ? (int?) len : null;
+            }
+        }
+
+        bool IBufferReader.TryGetNextSlice(out Slice slice)
+        {
+            return GetReceivedMessageNextSlicePeek(out slice);
         }
 
         struct CompletionCallbackData

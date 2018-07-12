@@ -50,6 +50,10 @@ void grpcsharp_batch_context_recv_message_to_buffer() {
   fprintf(stderr, "Should never reach here");
   abort();
 }
+void grpcsharp_batch_context_recv_message_next_slice_peek() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
 void grpcsharp_batch_context_recv_status_on_client_status() {
   fprintf(stderr, "Should never reach here");
   abort();
