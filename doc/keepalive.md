@@ -14,7 +14,7 @@ The above two channel arguments should be sufficient for most users, but the fol
 * **GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS**
   * This channel argument if set to 1 (0 : false; 1 : true), allows keepalive pings to be sent even if there are no calls in flight. 
 * **GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA**
-  * This channel argument controls the maximum number of pings that can be sent when there is no other data (data frame or header frame) to be sent. GRPC Core will not continue sending pings if we run over the limit
+  * This channel argument controls the maximum number of pings that can be sent when there is no other data (data frame or header frame) to be sent. GRPC Core will not continue sending pings if we run over the limit. Setting it to 0 allows sending pings without sending data.
 * **GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS**
   * If there is no data being sent on the transport, this channel argument controls the minimum time (in milliseconds) gRPC Core will wait between successive pings.
 * **GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS**
