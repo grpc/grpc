@@ -305,6 +305,7 @@ void grpc_subchannel_index_shutdown(void) {
   // shut down safely.
   grpc_timer_cancel(&g_sweeper_timer);
   grpc_subchannel_index_unref();
+  grpc_core::ExecCtx::Get()->Flush();
 }
 
 void grpc_subchannel_index_test_only_set_force_creation(bool force_creation) {

@@ -86,7 +86,6 @@ void grpc_iomgr_shutdown() {
     grpc_timer_manager_shutdown();
     grpc_iomgr_platform_flush();
     grpc_executor_shutdown();
-    grpc_core::ExecCtx::Get()->Flush();
 
     gpr_mu_lock(&g_mu);
     g_shutdown = 1;
