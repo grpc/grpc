@@ -50,7 +50,6 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
   --strategy=Closure=remote  \
   --genrule_strategy=remote  \
   --experimental_strict_action_env=true \
-  --experimental_remote_platform_override='properties:{name:"container-image" value:"docker://gcr.io/cloud-marketplace/google/rbe-ubuntu16-04@sha256:59bf0e191a6b5cc1ab62c2224c810681d1326bad5a27b1d36c9f40113e79da7f" }' \
   --define GRPC_PORT_ISOLATED_RUNTIME=1 \
   --copt=-gmlt \
   --strip=never \
@@ -59,7 +58,9 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
   --crosstool_top=@com_github_bazelbuild_bazeltoolchains//configs/experimental/ubuntu16_04_clang/1.0/bazel_0.13.0/ubsan:toolchain \
   --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1 \
   --extra_toolchains=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0/bazel_0.13.0/cpp:cc-toolchain-clang-x86_64-default \
-  --extra_execution_platforms=@com_github_bazelbuild_bazeltoolchains//configs/ubuntu16_04_clang/1.0:rbe_ubuntu1604 \
+  --extra_execution_platforms=//third_party/toolchains:rbe_ubuntu1604 \
+  --host_platform=//third_party/toolchains:rbe_ubuntu1604 \
+  --platforms=//third_party/toolchains:rbe_ubuntu1604 \
   -- //test/... || FAILED="true"
 
 if [ "$FAILED" != "" ]
