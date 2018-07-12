@@ -125,3 +125,27 @@ char* ChannelzRegistry::InternalGetTopChannels(intptr_t start_channel_id) {
 
 }  // namespace channelz
 }  // namespace grpc_core
+
+char* grpc_channelz_get_top_channels(intptr_t start_channel_id) {
+  return grpc_core::channelz::ChannelzRegistry::GetTopChannels(
+      start_channel_id);
+}
+
+char* grpc_channelz_get_channel(intptr_t channel_id) {
+  grpc_core::channelz::ChannelNode* channel_node =
+      grpc_core::channelz::ChannelzRegistry::GetChannelNode(channel_id);
+  if (channel_node == nullptr) {
+    return nullptr;
+  }
+  grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
+  grpc_json* json = top_level_json;
+  grpc_json* channel_json = channel_node->RenderJson();
+  grpc_json_link_child(json, channel_json, nullptr);
+  channel_json->parent = json;
+  channel_json->value = nullptr;
+  channel_json->key = "channel";
+  channel_json->owns_value = false;
+  char* json_str = grpc_json_dump_to_string(top_level_json, 0);
+  grpc_json_destroy(top_level_json);
+  return json_str;
+}

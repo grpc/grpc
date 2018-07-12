@@ -95,6 +95,11 @@ void ValidateGetTopChannels(size_t expected_channels) {
   EXPECT_EQ(end->type, GRPC_JSON_TRUE);
   grpc_json_destroy(parsed_json);
   gpr_free(json_str);
+  // also check that the core API formats this correctly
+  char* core_api_json_str = grpc_channelz_get_top_channels(0);
+  grpc::testing::ValidateGetTopChannelsResponseProtoJsonTranslation(
+      core_api_json_str);
+  gpr_free(core_api_json_str);
 }
 
 class ChannelFixture {
@@ -153,6 +158,11 @@ void ValidateChannel(ChannelNode* channel, validate_channel_data_args args) {
   grpc::testing::ValidateChannelProtoJsonTranslation(json_str);
   ValidateCounters(json_str, args);
   gpr_free(json_str);
+  // also check that the core API formats this the correct way
+  char* core_api_json_str = grpc_channelz_get_channel(channel->channel_uuid());
+  grpc::testing::ValidateGetChannelResponseProtoJsonTranslation(
+      core_api_json_str);
+  gpr_free(core_api_json_str);
 }
 
 grpc_millis GetLastCallStartedMillis(ChannelNode* channel) {

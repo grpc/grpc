@@ -89,6 +89,8 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_completion_queue_destroy);
   printf("%lx", (unsigned long) grpc_completion_queue_thread_local_cache_init);
   printf("%lx", (unsigned long) grpc_completion_queue_thread_local_cache_flush);
+  printf("%lx", (unsigned long) grpc_channelz_get_top_channels);
+  printf("%lx", (unsigned long) grpc_channelz_get_channel);
   printf("%lx", (unsigned long) grpc_channel_check_connectivity_state);
   printf("%lx", (unsigned long) grpc_channel_num_external_connectivity_watchers);
   printf("%lx", (unsigned long) grpc_channel_watch_connectivity_state);

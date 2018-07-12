@@ -27,6 +27,8 @@ EXPORTS
     grpc_completion_queue_destroy
     grpc_completion_queue_thread_local_cache_init
     grpc_completion_queue_thread_local_cache_flush
+    grpc_channelz_get_top_channels
+    grpc_channelz_get_channel
     grpc_channel_check_connectivity_state
     grpc_channel_num_external_connectivity_watchers
     grpc_channel_watch_connectivity_state

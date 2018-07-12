@@ -162,6 +162,22 @@ GRPCAPI void grpc_completion_queue_thread_local_cache_init(
 GRPCAPI int grpc_completion_queue_thread_local_cache_flush(
     grpc_completion_queue* cq, void** tag, int* ok);
 
+/************* CHANNELZ API *************/
+/** Channelz is under active development. The following APIs will see some
+    churn as the feature is implemented. This comment will be removed once
+    channelz is officially supported, and these APIs become stable. For now
+    you may track the progress by following this github issue:
+    https://github.com/grpc/grpc/issues/15340
+
+    the following APIs return allocated JSON strings that match the response
+    objects from the channelz proto, found here:
+    https://github.com/grpc/grpc/blob/master/src/proto/grpc/channelz/channelz.proto.
+
+    For easy conversion to protobuf, The JSON is formatted according to:
+    https://developers.google.com/protocol-buffers/docs/proto3#json. */
+GRPCAPI char* grpc_channelz_get_top_channels(intptr_t start_channel_id);
+GRPCAPI char* grpc_channelz_get_channel(intptr_t channel_id);
+
 /** Check the connectivity state of a channel. */
 GRPCAPI grpc_connectivity_state grpc_channel_check_connectivity_state(
     grpc_channel* channel, int try_to_connect);
