@@ -30,6 +30,7 @@
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 #define MAX_DEPTH 2
@@ -321,13 +322,13 @@ static grpc_closure_scheduler global_scheduler_long = {
 
 void grpc_executor_init() {
   GPR_ASSERT(global_executor == nullptr);
-  global_executor = new GrpcExecutor("global-executor");
+  global_executor = grpc_core::New<GrpcExecutor>("global-executor");
   global_executor->Init();
 }
 
 void grpc_executor_shutdown() {
   global_executor->Shutdown();
-  delete global_executor;
+  grpc_core::Delete<GrpcExecutor>(global_executor);
   global_executor = nullptr;
 }
 
