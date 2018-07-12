@@ -30,7 +30,7 @@ RUN apt-get update && apt-get -y install \
 # Bazel installation
 RUN echo "deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8" > /etc/apt/sources.list.d/bazel.list
 RUN curl https://bazel.build/bazel-release.pub.gpg | apt-key add -
-RUN apt-get -y update && apt-get -y install bazel=0.13.1 && apt-get clean
+RUN apt-get -y update && apt-get -y install bazel=0.15.0 && apt-get clean
 
 
 RUN mkdir -p /var/local/jenkins
