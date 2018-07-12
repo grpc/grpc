@@ -218,7 +218,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnReadDone(
           "balanced host: %s, interval: %lu ms, lb_id_: %s, handler: %p)...",
           service_, load_balanced_hostname_.c_str(), load_report_interval_ms_,
           lb_id_.c_str(), this);
-      SendReport(shared_from_this(), true /* ok */);
+      SendReport(self, true /* ok */);
       // Expect this read to fail.
       {
         std::unique_lock<std::mutex> lock(service_->cq_shutdown_mu_);

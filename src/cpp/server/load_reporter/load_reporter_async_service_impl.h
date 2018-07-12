@@ -91,8 +91,7 @@ class LoadReporterAsyncServiceImpl
   // Each handler takes care of one load reporting stream. It contains
   // per-stream data and it will access the members of the parent class (i.e.,
   // LoadReporterAsyncServiceImpl) for service-wide data (e.g., the load data).
-  class ReportLoadHandler
-      : public std::enable_shared_from_this<ReportLoadHandler> {
+  class ReportLoadHandler {
    public:
     // Instantiates a ReportLoadHandler and requests the next load reporting
     // call. The handler object will manage its own lifetime, so no action is
