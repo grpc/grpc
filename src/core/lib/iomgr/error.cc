@@ -399,14 +399,14 @@ static grpc_error* copy_error_and_unref(grpc_error* in) {
     out = GRPC_ERROR_CREATE_FROM_STATIC_STRING("unknown");
     if (in == GRPC_ERROR_NONE) {
       internal_set_str(&out, GRPC_ERROR_STR_DESCRIPTION,
-                       grpc_slice_from_static_string("no error"));
+                       grpc_slice_from_static_string("No Error"));
       internal_set_int(&out, GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_OK);
     } else if (in == GRPC_ERROR_OOM) {
       internal_set_str(&out, GRPC_ERROR_STR_DESCRIPTION,
-                       grpc_slice_from_static_string("oom"));
+                       grpc_slice_from_static_string("Out of memory"));
     } else if (in == GRPC_ERROR_CANCELLED) {
       internal_set_str(&out, GRPC_ERROR_STR_DESCRIPTION,
-                       grpc_slice_from_static_string("cancelled"));
+                       grpc_slice_from_static_string("Cancelled"));
       internal_set_int(&out, GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_CANCELLED);
     }
   } else if (gpr_ref_is_unique(&in->atomics.refs)) {
