@@ -56,12 +56,6 @@ typedef struct {
   char* data;
 } dump_out;
 
-// Returns an allocated string that represents tm according to RFC-3339, and,
-// more specifically, follows:
-// https://developers.google.com/protocol-buffers/docs/proto3#json
-//
-// "Uses RFC 3339, where generated output will always be Z-normalized and uses
-// 0, 3, 6 or 9 fractional digits."
 char* gpr_format_timespec(gpr_timespec tm) {
   char time_buffer[35];
   char ns_buffer[11];  // '.' + 9 digits of precision

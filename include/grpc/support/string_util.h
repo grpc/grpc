@@ -44,8 +44,6 @@ GPRAPI char* gpr_strdup(const char* src);
 GPRAPI int gpr_asprintf(char** strp, const char* format, ...)
     GPR_PRINT_FORMAT_CHECK(2, 3);
 
-GPRAPI char* gpr_format_timespec(gpr_timespec);
-
 #ifdef __cplusplus
 }
 #endif

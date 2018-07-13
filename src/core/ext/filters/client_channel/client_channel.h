@@ -25,7 +25,6 @@
 #include "src/core/ext/filters/client_channel/client_channel_factory.h"
 #include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/json/json.h"
 
 extern grpc_core::TraceFlag grpc_client_channel_trace;
 

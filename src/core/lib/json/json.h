@@ -91,7 +91,8 @@ grpc_json* grpc_json_create_child(grpc_json* sibling, grpc_json* parent,
                                   const char* key, const char* value,
                                   grpc_json_type type, bool owns_value);
 
-/* TODO */
+/* Creates a child json string object from the integer num, then links the
+   json object into the parent's json tree */
 grpc_json* grpc_json_add_number_string_child(grpc_json* parent, grpc_json* it,
                                              const char* name, int64_t num);
 

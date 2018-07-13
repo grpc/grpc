@@ -29,7 +29,6 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/polling_entity.h"
-#include "src/core/lib/json/json.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_lb_policy_refcount;
@@ -145,6 +144,14 @@ class LoadBalancingPolicy
   /// consider whether this method is still needed.
   virtual void ExitIdleLocked() GRPC_ABSTRACT;
 
+  /// populates child_subchannels and child_channels with the uuids of this
+  /// LB policy's referenced children. This is not invoked from the
+  /// client_channel's combiner. The implementation is responsible for
+  /// providing its own synchronization.
+  virtual void FillChildRefsForChannelz(ChildRefsList* child_subchannels,
+                                        ChildRefsList* child_channels)
+      GRPC_ABSTRACT;
+
   void Orphan() override {
     // Invoke ShutdownAndUnrefLocked() inside of the combiner.
     GRPC_CLOSURE_SCHED(
@@ -158,13 +165,6 @@ class LoadBalancingPolicy
     GPR_ASSERT(request_reresolution_ == nullptr);
     request_reresolution_ = request_reresolution;
   }
-
-  /// populates child_subchannels and child_channels with the uuids of this
-  /// LB policies referenced children. This is not invoked from the
-  /// client_channel's combiner. It has its own synchronization. This is
-  /// not abstract, since the behavior is the same for all LB policies.
-  void FillChildRefsForChannelz(ChildRefsList* child_subchannels,
-                                ChildRefsList* child_channels);
 
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 

@@ -41,18 +41,6 @@ LoadBalancingPolicy::~LoadBalancingPolicy() {
   GRPC_COMBINER_UNREF(combiner_, "lb_policy");
 }
 
-void LoadBalancingPolicy::FillChildRefsForChannelz(
-    ChildRefsList* child_subchannels, ChildRefsList* child_channels) {
-  mu_guard guard(&child_refs_mu_);
-  // TODO, de dup these.
-  for (size_t i = 0; i < child_subchannels_.size(); ++i) {
-    child_subchannels->push_back(child_subchannels_[i]);
-  }
-  for (size_t i = 0; i < child_channels_.size(); ++i) {
-    child_channels->push_back(child_channels_[i]);
-  }
-}
-
 void LoadBalancingPolicy::TryReresolutionLocked(
     grpc_core::TraceFlag* grpc_lb_trace, grpc_error* error) {
   if (request_reresolution_ != nullptr) {

@@ -115,7 +115,6 @@ char* ChannelNode::RenderJSON() {
   json_iterator =
       grpc_json_create_child(json_iterator, json, "lastCallStartedTimestamp",
                              gpr_format_timespec(ts), GRPC_JSON_STRING, true);
-
   json = top_level_json;
   json_iterator = nullptr;
   PopulateChildRefs(json);

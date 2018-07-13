@@ -37,15 +37,6 @@ TraceFlag grpc_lb_pick_first_trace(false, "pick_first");
 
 namespace {
 
-class LockGuard {
- public:
-  LockGuard(gpr_mu* mu) : mu_(mu) { gpr_mu_lock(mu_); }
-  ~LockGuard() { gpr_mu_unlock(mu_); }
-
- private:
-  gpr_mu* mu_;
-};
-
 //
 // pick_first LB policy
 //
@@ -112,10 +103,13 @@ class PickFirst : public LoadBalancingPolicy {
     }
   };
 
-  class UpdateGuard {
+  // Helper class to ensure that any function that modifies the child refs
+  // data structures will update the channelz snapshot data structures before
+  // returning.
+  class AutoChildRefsUpdater {
    public:
-    UpdateGuard(PickFirst* pf) : pf_(pf) {}
-    ~UpdateGuard() { pf_->UpdateChildRefsLocked(); }
+    explicit AutoChildRefsUpdater(PickFirst* pf) : pf_(pf) {}
+    ~AutoChildRefsUpdater() { pf_->UpdateChildRefsLocked(); }
 
    private:
     PickFirst* pf_;
@@ -177,7 +171,7 @@ void PickFirst::HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) {
 }
 
 void PickFirst::ShutdownLocked() {
-  UpdateGuard(this);
+  AutoChildRefsUpdater(this);
   grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel shutdown");
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_INFO, "Pick First %p Shutting down", this);
@@ -330,7 +324,7 @@ void PickFirst::UpdateChildRefsLocked() {
 }
 
 void PickFirst::UpdateLocked(const grpc_channel_args& args) {
-  UpdateGuard guard(this);
+  AutoChildRefsUpdater guard(this);
   const grpc_arg* arg = grpc_channel_args_find(&args, GRPC_ARG_LB_ADDRESSES);
   if (arg == nullptr || arg->type != GRPC_ARG_POINTER) {
     if (subchannel_list_ == nullptr) {
@@ -438,7 +432,7 @@ void PickFirst::UpdateLocked(const grpc_channel_args& args) {
 void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
     grpc_connectivity_state connectivity_state, grpc_error* error) {
   PickFirst* p = static_cast<PickFirst*>(subchannel_list()->policy());
-  UpdateGuard guard(p);
+  AutoChildRefsUpdater guard(p);
   // The notification must be for a subchannel in either the current or
   // latest pending subchannel lists.
   GPR_ASSERT(subchannel_list() == p->subchannel_list_.get() ||

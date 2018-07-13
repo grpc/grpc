@@ -3163,7 +3163,7 @@ void grpc_client_channel_populate_child_refs(
     grpc_channel_element* elem, grpc_core::ChildRefsList* child_subchannels,
     grpc_core::ChildRefsList* child_channels) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  if (chand->lb_policy) {
+  if (chand->lb_policy != nullptr) {
     chand->lb_policy->FillChildRefsForChannelz(child_subchannels,
                                                child_channels);
   }

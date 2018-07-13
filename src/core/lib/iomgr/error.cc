@@ -670,8 +670,7 @@ static void collect_times_kvs(grpc_error* err, kv_pairs* kvs) {
     uint8_t slot = err->times[which];
     if (slot != UINT8_MAX) {
       append_kv(kvs, key_time(static_cast<grpc_error_times>(which)),
-                gpr_format_timespec(
-                    *reinterpret_cast<gpr_timespec*>(err->arena + slot)));
+                fmt_time(*reinterpret_cast<gpr_timespec*>(err->arena + slot)));
     }
   }
 }
