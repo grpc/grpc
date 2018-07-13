@@ -92,14 +92,14 @@ ChannelNode::ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes)
     : channel_(channel), target_(nullptr), channel_uuid_(-1) {
   trace_.Init(channel_tracer_max_nodes);
   target_ = UniquePtr<char>(grpc_channel_get_target(channel_));
-  channel_uuid_ = ChannelzRegistry::Register(this);
+  channel_uuid_ = ChannelzRegistry::RegisterChannelNode(this);
   gpr_atm_no_barrier_store(&last_call_started_millis_,
                            (gpr_atm)ExecCtx::Get()->Now());
 }
 
 ChannelNode::~ChannelNode() {
   trace_.Destroy();
-  ChannelzRegistry::Unregister(channel_uuid_);
+  ChannelzRegistry::UnregisterChannelNode(channel_uuid_);
 }
 
 void ChannelNode::RecordCallStarted() {

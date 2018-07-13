@@ -27,6 +27,7 @@
 #include <stdint.h>
 
 namespace grpc_core {
+namespace channelz {
 
 // singleton registry object to track all objects that are needed to support
 // channelz bookkeeping. All objects share globally distributed uuids.
@@ -38,23 +39,31 @@ class ChannelzRegistry {
   // To be callen in grpc_shutdown();
   static void Shutdown();
 
-  // globally registers a channelz Object. Returns its unique uuid
-  template <typename Object>
-  static intptr_t Register(Object* object) {
-    return Default()->InternalRegister(object);
+  static intptr_t RegisterChannelNode(ChannelNode* channel_node) {
+    RegistryEntry entry(channel_node, EntityType::kChannelNode);
+    return Default()->InternalRegisterEntry(entry);
   }
-
-  // globally unregisters the object that is associated to uuid.
-  static void Unregister(intptr_t uuid) { Default()->InternalUnregister(uuid); }
-
-  // if object with uuid has previously been registered, returns the
-  // Object associated with that uuid. Else returns nullptr.
-  template <typename Object>
-  static Object* Get(intptr_t uuid) {
-    return Default()->InternalGet<Object>(uuid);
+  static void UnregisterChannelNode(intptr_t uuid) {
+    Default()->InternalUnregisterEntry(uuid, EntityType::kChannelNode);
+  }
+  static ChannelNode* GetChannelNode(intptr_t uuid) {
+    void* gotten = Default()->InternalGetEntry(uuid, EntityType::kChannelNode);
+    return gotten == nullptr ? nullptr : static_cast<ChannelNode*>(gotten);
   }
 
  private:
+  enum class EntityType {
+    kChannelNode,
+    kUnset,
+  };
+
+  struct RegistryEntry {
+    RegistryEntry(void* object_in, EntityType type_in)
+        : object(object_in), type(type_in) {}
+    void* object;
+    EntityType type;
+  };
+
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
 
@@ -64,40 +73,23 @@ class ChannelzRegistry {
   // Returned the singleton instance of ChannelzRegistry;
   static ChannelzRegistry* Default();
 
-  // globally registers a channelz Object. Returns its unique uuid
-  template <typename Object>
-  intptr_t InternalRegister(Object* object) {
-    gpr_mu_lock(&mu_);
-    entities_.push_back(static_cast<void*>(object));
-    intptr_t uuid = entities_.size();
-    gpr_mu_unlock(&mu_);
-    return uuid;
-  }
+  // globally registers an Entry. Returns its unique uuid
+  intptr_t InternalRegisterEntry(const RegistryEntry& entry);
 
-  // globally unregisters the object that is associated to uuid.
-  void InternalUnregister(intptr_t uuid);
+  // globally unregisters the object that is associated to uuid. Also does
+  // sanity check that an object doesn't try to unregister the wrong type.
+  void InternalUnregisterEntry(intptr_t uuid, EntityType type);
 
-  // if object with uuid has previously been registered, returns the
-  // Object associated with that uuid. Else returns nullptr.
-  template <typename Object>
-  Object* InternalGet(intptr_t uuid) {
-    gpr_mu_lock(&mu_);
-    if (uuid < 1 || uuid > static_cast<intptr_t>(entities_.size())) {
-      gpr_mu_unlock(&mu_);
-      return nullptr;
-    }
-    Object* ret = static_cast<Object*>(entities_[uuid - 1]);
-    gpr_mu_unlock(&mu_);
-    return ret;
-  }
-
-  // private members
+  // if object with uuid has previously been registered as the correct type,
+  // returns the void* associated with that uuid. Else returns nullptr.
+  void* InternalGetEntry(intptr_t uuid, EntityType type);
 
   // protects entities_ and uuid_
   gpr_mu mu_;
-  InlinedVector<void*, 20> entities_;
+  InlinedVector<RegistryEntry, 20> entities_;
 };
 
+}  // namespace channelz
 }  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_CHANNEL_CHANNELZ_REGISTRY_H */

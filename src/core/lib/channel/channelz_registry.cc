@@ -25,10 +25,12 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/sync.h>
 
 #include <cstring>
 
 namespace grpc_core {
+namespace channelz {
 namespace {
 
 // singleton instance of the registry.
@@ -49,12 +51,32 @@ ChannelzRegistry::ChannelzRegistry() { gpr_mu_init(&mu_); }
 
 ChannelzRegistry::~ChannelzRegistry() { gpr_mu_destroy(&mu_); }
 
-void ChannelzRegistry::InternalUnregister(intptr_t uuid) {
-  GPR_ASSERT(uuid >= 1);
-  gpr_mu_lock(&mu_);
-  GPR_ASSERT(static_cast<size_t>(uuid) <= entities_.size());
-  entities_[uuid - 1] = nullptr;
-  gpr_mu_unlock(&mu_);
+intptr_t ChannelzRegistry::InternalRegisterEntry(const RegistryEntry& entry) {
+  mu_guard guard(&mu_);
+  entities_.push_back(entry);
+  intptr_t uuid = entities_.size();
+  return uuid;
 }
 
+void ChannelzRegistry::InternalUnregisterEntry(intptr_t uuid, EntityType type) {
+  GPR_ASSERT(uuid >= 1);
+  mu_guard guard(&mu_);
+  GPR_ASSERT(static_cast<size_t>(uuid) <= entities_.size());
+  GPR_ASSERT(entities_[uuid - 1].type == type);
+  entities_[uuid - 1].object = nullptr;
+}
+
+void* ChannelzRegistry::InternalGetEntry(intptr_t uuid, EntityType type) {
+  mu_guard guard(&mu_);
+  if (uuid < 1 || uuid > static_cast<intptr_t>(entities_.size())) {
+    return nullptr;
+  }
+  if (entities_[uuid - 1].type == type) {
+    return entities_[uuid - 1].object;
+  } else {
+    return nullptr;
+  }
+}
+
+}  // namespace channelz
 }  // namespace grpc_core
