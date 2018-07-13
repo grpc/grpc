@@ -50,9 +50,76 @@ class InlinedVector {
   InlinedVector() { init_data(); }
   ~InlinedVector() { destroy_elements(); }
 
-  // For now, we do not support copying.
-  InlinedVector(const InlinedVector&) = delete;
-  InlinedVector& operator=(const InlinedVector&) = delete;
+  // copy constructors
+  InlinedVector(const InlinedVector& v) {
+    init_data();
+    // if v is allocated, then we copy it's buffer
+    if (v.dynamic_ != nullptr) {
+      reserve(v.capacity_);
+      memcpy(dynamic_, v.dynamic_, v.capacity_ * sizeof(T));
+    } else {
+      memcpy(inline_, v.inline_, v.capacity_ * sizeof(T));
+      dynamic_ = nullptr;
+    }
+    // copy over metadata
+    size_ = v.size_;
+    capacity_ = v.capacity_;
+  }
+  InlinedVector& operator=(const InlinedVector& v) {
+    if (this != &v) {
+      clear();
+      // if v is allocated, then we copy it's buffer
+      if (v.dynamic_ != nullptr) {
+        reserve(v.capacity_);
+        memcpy(dynamic_, v.dynamic_, v.capacity_ * sizeof(T));
+      } else {
+        memcpy(inline_, v.inline_, v.capacity_ * sizeof(T));
+        dynamic_ = nullptr;
+      }
+      // copy over metadata
+      size_ = v.size_;
+      capacity_ = v.capacity_;
+    }
+    return *this;
+  }
+
+  // move constructors
+  InlinedVector(InlinedVector&& v) {
+    // if v is allocated, then we steal it's buffer
+    if (v.dynamic_ != nullptr) {
+      dynamic_ = v.dynamic_;
+    } else {
+      memcpy(inline_, v.inline_, v.capacity_ * sizeof(T));
+      dynamic_ = nullptr;
+    }
+    // copy over metadata
+    size_ = v.size_;
+    capacity_ = v.capacity_;
+    // null out the original
+    v.dynamic_ = nullptr;
+    v.size_ = 0;
+    v.capacity_ = 0;
+  }
+  InlinedVector& operator=(InlinedVector&& v) {
+    if (this != &v) {
+      clear();
+      // if v is allocated, then we steal it's buffer
+      if (v.dynamic_ != nullptr) {
+        dynamic_ = v.dynamic_;
+      } else {
+        memcpy(inline_, v.inline_, v.capacity_ * sizeof(T));
+        dynamic_ = nullptr;
+      }
+      // copy over metadata
+      size_ = v.size_;
+      capacity_ = v.capacity_;
+      // null out the original
+      v.dynamic_ = nullptr;
+      v.size_ = 0;
+      v.capacity_ = 0;
+    }
+    return *this;
+  }
 
   T* data() {
     return dynamic_ != nullptr ? dynamic_ : reinterpret_cast<T*>(inline_);
