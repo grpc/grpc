@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <cassert>
+#include <cstring>
 
 #include "src/core/lib/gprpp/memory.h"
 

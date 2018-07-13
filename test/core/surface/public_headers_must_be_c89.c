@@ -257,7 +257,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) gpr_cpu_current_cpu);
   printf("%lx", (unsigned long) gpr_strdup);
   printf("%lx", (unsigned long) gpr_asprintf);
-  printf("%lx", (unsigned long) gpr_format_timespec);
   printf("%lx", (unsigned long) gpr_mu_init);
   printf("%lx", (unsigned long) gpr_mu_destroy);
   printf("%lx", (unsigned long) gpr_mu_lock);

@@ -641,9 +641,6 @@ extern gpr_strdup_type gpr_strdup_import;
 typedef int(*gpr_asprintf_type)(char** strp, const char* format, ...) GPR_PRINT_FORMAT_CHECK(2, 3);
 extern gpr_asprintf_type gpr_asprintf_import;
 #define gpr_asprintf gpr_asprintf_import
-typedef char*(*gpr_format_timespec_type)(gpr_timespec);
-extern gpr_format_timespec_type gpr_format_timespec_import;
-#define gpr_format_timespec gpr_format_timespec_import
 typedef void(*gpr_mu_init_type)(gpr_mu* mu);
 extern gpr_mu_init_type gpr_mu_init_import;
 #define gpr_mu_init gpr_mu_init_import
