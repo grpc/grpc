@@ -58,6 +58,8 @@ class PickFirst : public LoadBalancingPolicy {
   void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) override;
   void PingOneLocked(grpc_closure* on_initiate, grpc_closure* on_ack) override;
   void ExitIdleLocked() override;
+  void FillChildRefsForChannelz(ChildRefsList* child_subchannels,
+                                ChildRefsList* child_channels) override;
 
  private:
   ~PickFirst();
@@ -135,10 +137,17 @@ class PickFirst : public LoadBalancingPolicy {
   PickState* pending_picks_ = nullptr;
   // Our connectivity state tracker.
   grpc_connectivity_state_tracker state_tracker_;
+
+  /// Lock and data used to capture snapshots of this channels child
+  /// channels and subchannels. This data is consumed by channelz.
+  gpr_mu child_refs_mu_;
+  ChildRefsList child_subchannels_;
+  ChildRefsList child_channels_;
 };
 
 PickFirst::PickFirst(const Args& args) : LoadBalancingPolicy(args) {
   GPR_ASSERT(args.client_channel_factory != nullptr);
+  gpr_mu_init(&child_refs_mu_);
   grpc_connectivity_state_init(&state_tracker_, GRPC_CHANNEL_IDLE,
                                "pick_first");
   if (grpc_lb_pick_first_trace.enabled()) {
@@ -152,6 +161,7 @@ PickFirst::~PickFirst() {
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_INFO, "Destroying Pick First %p", this);
   }
+  gpr_mu_destroy(&child_refs_mu_);
   GPR_ASSERT(subchannel_list_ == nullptr);
   GPR_ASSERT(latest_pending_subchannel_list_ == nullptr);
   GPR_ASSERT(pending_picks_ == nullptr);
@@ -294,19 +304,31 @@ void PickFirst::PingOneLocked(grpc_closure* on_initiate, grpc_closure* on_ack) {
   }
 }
 
+void PickFirst::FillChildRefsForChannelz(ChildRefsList* child_subchannels,
+                                         ChildRefsList* child_channels) {
+  mu_guard guard(&child_refs_mu_);
+  // TODO, de dup these.
+  for (size_t i = 0; i < child_subchannels_.size(); ++i) {
+    child_subchannels->push_back(child_subchannels_[i]);
+  }
+  for (size_t i = 0; i < child_channels_.size(); ++i) {
+    child_channels->push_back(child_channels_[i]);
+  }
+}
+
 void PickFirst::UpdateChildRefsLocked() {
-  mu_guard guard(child_refs_mu());
+  mu_guard guard(&child_refs_mu_);
   // reset both lists
-  child_subchannels()->clear();
+  child_subchannels_.clear();
   // this will stay empty, because pick_first channels have no children
   // channels.
-  child_channels()->clear();
+  child_channels_.clear();
   // populate the subchannels with boths subchannels lists, they will be
   // deduped when the actual channelz query comes in.
   if (subchannel_list_ != nullptr) {
     for (size_t i = 0; i < subchannel_list_->num_subchannels(); ++i) {
       if (subchannel_list_->subchannel(i)->subchannel() != nullptr) {
-        child_subchannels()->push_back(grpc_subchannel_get_uuid(
+        child_subchannels_.push_back(grpc_subchannel_get_uuid(
             subchannel_list_->subchannel(i)->subchannel()));
       }
     }
@@ -316,7 +338,7 @@ void PickFirst::UpdateChildRefsLocked() {
          ++i) {
       if (latest_pending_subchannel_list_->subchannel(i)->subchannel() !=
           nullptr) {
-        child_subchannels()->push_back(grpc_subchannel_get_uuid(
+        child_subchannels_.push_back(grpc_subchannel_get_uuid(
             latest_pending_subchannel_list_->subchannel(i)->subchannel()));
       }
     }

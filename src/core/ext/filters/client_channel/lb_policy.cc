@@ -31,13 +31,10 @@ LoadBalancingPolicy::LoadBalancingPolicy(const Args& args)
       combiner_(GRPC_COMBINER_REF(args.combiner, "lb_policy")),
       client_channel_factory_(args.client_channel_factory),
       interested_parties_(grpc_pollset_set_create()),
-      request_reresolution_(nullptr) {
-  gpr_mu_init(&child_refs_mu_);
-}
+      request_reresolution_(nullptr) {}
 
 LoadBalancingPolicy::~LoadBalancingPolicy() {
   grpc_pollset_set_destroy(interested_parties_);
-  gpr_mu_destroy(&child_refs_mu_);
   GRPC_COMBINER_UNREF(combiner_, "lb_policy");
 }
 

@@ -180,9 +180,6 @@ class LoadBalancingPolicy
   grpc_client_channel_factory* client_channel_factory() const {
     return client_channel_factory_;
   }
-  gpr_mu* child_refs_mu() { return &child_refs_mu_; }
-  ChildRefsList* child_subchannels() { return &child_subchannels_; }
-  ChildRefsList* child_channels() { return &child_channels_; }
 
   /// Shuts down the policy.  Any pending picks that have not been
   /// handed off to a new policy via HandOffPendingPicksLocked() will be
@@ -202,11 +199,6 @@ class LoadBalancingPolicy
 
   /// Combiner under which LB policy actions take place.
   grpc_combiner* combiner_;
-  /// Lock and data used to capture snapshots of this channels child
-  /// channels and subchannels. This data is consumed by channelz.
-  gpr_mu child_refs_mu_;
-  ChildRefsList child_subchannels_;
-  ChildRefsList child_channels_;
   /// Client channel factory, used to create channels and subchannels.
   grpc_client_channel_factory* client_channel_factory_;
   /// Owned pointer to interested parties in load balancing decisions.

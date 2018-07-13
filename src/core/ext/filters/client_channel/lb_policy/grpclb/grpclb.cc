@@ -135,6 +135,8 @@ class GrpcLb : public LoadBalancingPolicy {
   void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) override;
   void PingOneLocked(grpc_closure* on_initiate, grpc_closure* on_ack) override;
   void ExitIdleLocked() override;
+  void FillChildRefsForChannelz(ChildRefsList* child_subchannels,
+                                ChildRefsList* child_channels) override {}
 
  private:
   /// Linked list of pending pick requests. It stores all information needed to
