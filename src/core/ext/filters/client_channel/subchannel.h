@@ -71,6 +71,10 @@ typedef struct grpc_subchannel_key grpc_subchannel_key;
 
 namespace grpc_core {
 
+namespace channelz {
+class SubchannelNode;
+}
+
 class ConnectedSubchannel : public RefCountedWithTracing<ConnectedSubchannel> {
  public:
   struct CallArgs {
@@ -115,7 +119,8 @@ grpc_subchannel_call* grpc_subchannel_call_ref(
 void grpc_subchannel_call_unref(
     grpc_subchannel_call* call GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 
-intptr_t grpc_subchannel_get_uuid(grpc_subchannel* subchannel);
+grpc_core::channelz::SubchannelNode* grpc_subchannel_get_channelz_node(
+    grpc_subchannel* subchannel);
 
 /** Returns a pointer to the parent data associated with \a subchannel_call.
     The data will be of the size specified in \a parent_data_size

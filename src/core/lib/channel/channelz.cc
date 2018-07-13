@@ -131,5 +131,13 @@ RefCountedPtr<ChannelNode> ChannelNode::MakeChannelNode(
       channel, channel_tracer_max_nodes);
 }
 
+SubchannelNode::SubchannelNode() : subchannel_uuid_(-1) {
+  subchannel_uuid_ = ChannelzRegistry::Register(this);
+}
+
+SubchannelNode::~SubchannelNode() {
+  ChannelzRegistry::Unregister(subchannel_uuid_);
+}
+
 }  // namespace channelz
 }  // namespace grpc_core

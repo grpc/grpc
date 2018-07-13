@@ -328,8 +328,12 @@ void PickFirst::UpdateChildRefsLocked() {
   if (subchannel_list_ != nullptr) {
     for (size_t i = 0; i < subchannel_list_->num_subchannels(); ++i) {
       if (subchannel_list_->subchannel(i)->subchannel() != nullptr) {
-        cs.push_back(grpc_subchannel_get_uuid(
-            subchannel_list_->subchannel(i)->subchannel()));
+        grpc_core::channelz::SubchannelNode* subchannel_node =
+            grpc_subchannel_get_channelz_node(
+                subchannel_list_->subchannel(i)->subchannel());
+        if (subchannel_node != nullptr) {
+          cs.push_back(subchannel_node->subchannel_uuid());
+        }
       }
     }
   }
@@ -338,8 +342,12 @@ void PickFirst::UpdateChildRefsLocked() {
          ++i) {
       if (latest_pending_subchannel_list_->subchannel(i)->subchannel() !=
           nullptr) {
-        cs.push_back(grpc_subchannel_get_uuid(
-            latest_pending_subchannel_list_->subchannel(i)->subchannel()));
+        grpc_core::channelz::SubchannelNode* subchannel_node =
+            grpc_subchannel_get_channelz_node(
+                latest_pending_subchannel_list_->subchannel(i)->subchannel());
+        if (subchannel_node != nullptr) {
+          cs.push_back(subchannel_node->subchannel_uuid());
+        }
       }
     }
   }
