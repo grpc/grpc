@@ -24,11 +24,11 @@
 #ifdef GRPC_UV
 #ifndef GRPC_CUSTOM_SOCKET
 #define GRPC_CUSTOM_SOCKET
-#endif
-#endif
+#endif /* GRPC_CUSTOM_SOCKET */
+#endif /* GRPC_UV */
 #if defined(GRPC_CUSTOM_SOCKET)
 // Do Nothing
-#elif defined(GPR_MANYLINUX1)
+#elif defined(GPR_MANYLINUX1) /* defined(GRPC_CUSTOM_SOCKET) */
 #define GRPC_HAVE_ARPA_NAMESER 1
 #define GRPC_HAVE_IFADDRS 1
 #define GRPC_HAVE_IPV6_RECVPKTINFO 1
@@ -41,10 +41,10 @@
 #define GRPC_POSIX_SOCKETUTILS 1
 #define GRPC_POSIX_WAKEUP_FD 1
 #define GRPC_LINUX_EPOLL 1
-#elif defined(GPR_WINDOWS)
+#elif defined(GPR_WINDOWS) /* defined(GRPC_CUSTOM_SOCKET) */
 #define GRPC_WINSOCK_SOCKET 1
 #define GRPC_WINDOWS_SOCKETUTILS 1
-#elif defined(GPR_ANDROID)
+#elif defined(GPR_ANDROID) /* defined(GRPC_CUSTOM_SOCKET) */
 #define GRPC_HAVE_IPV6_RECVPKTINFO 1
 #define GRPC_HAVE_IP_PKTINFO 1
 #define GRPC_HAVE_MSG_NOSIGNAL 1
@@ -53,7 +53,7 @@
 #define GRPC_POSIX_SOCKET 1
 #define GRPC_POSIX_SOCKETUTILS 1
 #define GRPC_POSIX_WAKEUP_FD 1
-#elif defined(GPR_LINUX)
+#elif defined(GPR_LINUX) /* defined(GRPC_CUSTOM_SOCKET) */
 #define GRPC_HAVE_ARPA_NAMESER 1
 #define GRPC_HAVE_IFADDRS 1
 #define GRPC_HAVE_IPV6_RECVPKTINFO 1
@@ -68,28 +68,28 @@
 #ifdef __GLIBC_PREREQ
 #if __GLIBC_PREREQ(2, 4)
 #define GRPC_LINUX_EPOLL 1
-#endif
+#endif /* __GLIBC_PREREQ(2, 4) */
 #if __GLIBC_PREREQ(2, 9)
 #define GRPC_LINUX_EPOLL_CREATE1 1
 #define GRPC_LINUX_EVENTFD 1
-#endif
+#endif /* __GLIBC_PREREQ(2, 9) */
 #if __GLIBC_PREREQ(2, 10)
 #define GRPC_LINUX_SOCKETUTILS 1
-#endif
-#endif
+#endif /* __GLIBC_PREREQ(2, 10) */
+#endif /* __GLIBC_PREREQ */
 #ifndef __GLIBC__
 #define GRPC_LINUX_EPOLL 1
 #define GRPC_LINUX_EPOLL_CREATE1 1
 #define GRPC_LINUX_EVENTFD 1
 #define GRPC_MSG_IOVLEN_TYPE int
-#endif
+#endif /* __GLIBC__ */
 #ifndef GRPC_LINUX_EVENTFD
 #define GRPC_POSIX_NO_SPECIAL_WAKEUP_FD 1
-#endif
+#endif /* GRPC_LINUX_EVENTFD */
 #ifndef GRPC_LINUX_SOCKETUTILS
 #define GRPC_POSIX_SOCKETUTILS
-#endif
-#elif defined(GPR_APPLE)
+#endif                   /* GRPC_LINUX_SOCKETUTILS */
+#elif defined(GPR_APPLE) /* defined(GRPC_CUSTOM_SOCKET) */
 #define GRPC_HAVE_ARPA_NAMESER 1
 #define GRPC_HAVE_IFADDRS 1
 #define GRPC_HAVE_SO_NOSIGPIPE 1
@@ -114,13 +114,13 @@
 #define GRPC_POSIX_SOCKET_TCP_SERVER 1
 #define GRPC_POSIX_SOCKET_TCP_SERVER_UTILS_COMMON 1
 #define GRPC_POSIX_SOCKET_UTILS_COMMON 1
-#else
+#else /* GRPC_CFSTREAM */
 #define GRPC_POSIX_SOCKET 1
-#endif
+#endif /* GRPC_CFSTREAM */
 #define GRPC_POSIX_SOCKETUTILS 1
 #define GRPC_POSIX_SYSCONF 1
 #define GRPC_POSIX_WAKEUP_FD 1
-#elif defined(GPR_FREEBSD)
+#elif defined(GPR_FREEBSD) /* defined(GRPC_CUSTOM_SOCKET) */
 #define GRPC_HAVE_ARPA_NAMESER 1
 #define GRPC_HAVE_IFADDRS 1
 #define GRPC_HAVE_IPV6_RECVPKTINFO 1
@@ -131,7 +131,7 @@
 #define GRPC_POSIX_SOCKET 1
 #define GRPC_POSIX_SOCKETUTILS 1
 #define GRPC_POSIX_WAKEUP_FD 1
-#elif defined(GPR_OPENBSD)
+#elif defined(GPR_OPENBSD) /* defined(GRPC_CUSTOM_SOCKET) */
 #define GRPC_HAVE_IFADDRS 1
 #define GRPC_HAVE_IPV6_RECVPKTINFO 1
 #define GRPC_HAVE_UNIX_SOCKET 1
@@ -139,15 +139,15 @@
 #define GRPC_POSIX_SOCKET 1
 #define GRPC_POSIX_SOCKETUTILS 1
 #define GRPC_POSIX_WAKEUP_FD 1
-#elif defined(GPR_NACL)
+#elif defined(GPR_NACL) /* defined(GRPC_CUSTOM_SOCKET) */
 #define GRPC_HAVE_ARPA_NAMESER 1
 #define GRPC_POSIX_NO_SPECIAL_WAKEUP_FD 1
 #define GRPC_POSIX_SOCKET 1
 #define GRPC_POSIX_SOCKETUTILS 1
 #define GRPC_POSIX_WAKEUP_FD 1
-#elif !defined(GPR_NO_AUTODETECT_PLATFORM)
+#elif !defined(GPR_NO_AUTODETECT_PLATFORM) /* defined(GRPC_CUSTOM_SOCKET) */
 #error "Platform not recognized"
-#endif
+#endif /* defined(GRPC_CUSTOM_SOCKET) */
 
 #if defined(GRPC_POSIX_SOCKET) + defined(GRPC_WINSOCK_SOCKET) + \
         defined(GRPC_CUSTOM_SOCKET) + defined(GRPC_CFSTREAM) != \
@@ -172,13 +172,14 @@
 #define GRPC_POSIX_SOCKET_TCP_SERVER 1
 #define GRPC_POSIX_SOCKET_TCP_SERVER_UTILS_COMMON 1
 #define GRPC_POSIX_SOCKET_UTILS_COMMON 1
-#endif
+#endif /* GRPC_POSIX_SOCKET */
 
 #if defined(GRPC_POSIX_HOST_NAME_MAX) && defined(GRPC_POSIX_SYSCONF)
 #error "Cannot define both GRPC_POSIX_HOST_NAME_MAX and GRPC_POSIX_SYSCONF"
-#endif
+#endif /* defined(GRPC_POSIX_HOST_NAME_MAX) && defined(GRPC_POSIX_SYSCONF) */
 #if !defined(GRPC_POSIX_HOST_NAME_MAX) && !defined(GRPC_POSIX_SYSCONF)
 #define GRPC_GETHOSTNAME_FALLBACK 1
-#endif
+#endif /* !defined(GRPC_POSIX_HOST_NAME_MAX) && !defined(GRPC_POSIX_SYSCONF) \
+        */
 
 #endif /* GRPC_CORE_LIB_IOMGR_PORT_H */
