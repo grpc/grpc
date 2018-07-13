@@ -22,8 +22,9 @@
 namespace grpc {
 namespace testing {
 
-void ValidateChannelTraceProtoJsonTranslation(char* tracer_json_c_str);
-void ValidateChannelProtoJsonTranslation(char* channel_json_c_str);
+void ValidateChannelTraceProtoJsonTranslation(char* json_c_str);
+void ValidateChannelProtoJsonTranslation(char* json_c_str);
+void ValidateGetTopChannelsResponseProtoJsonTranslation(char* json_c_str);
 
 }  // namespace testing
 }  // namespace grpc

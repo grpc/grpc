@@ -88,7 +88,7 @@ void AddSimpleTrace(ChannelTrace* tracer) {
 void ValidateChannelTrace(ChannelTrace* tracer,
                           size_t expected_num_event_logged, size_t max_nodes) {
   if (!max_nodes) return;
-  grpc_json* json = tracer->RenderJSON();
+  grpc_json* json = tracer->RenderJson();
   EXPECT_NE(json, nullptr);
   char* json_str = grpc_json_dump_to_string(json, 0);
   grpc_json_destroy(json);

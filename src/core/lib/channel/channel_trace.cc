@@ -206,7 +206,7 @@ void ChannelTrace::TraceEvent::RenderTraceEvent(grpc_json* json) const {
   }
 }
 
-grpc_json* ChannelTrace::RenderJSON() const {
+grpc_json* ChannelTrace::RenderJson() const {
   if (!max_list_size_)
     return nullptr;  // tracing is disabled if max_events == 0
   grpc_json* json = grpc_json_create(GRPC_JSON_OBJECT);

@@ -35,6 +35,10 @@
 #define GRPC_ARG_CHANNELZ_CHANNEL_NODE_CREATION_FUNC \
   "grpc.channelz_channel_node_creation_func"
 
+// Channel arg key to signal that the channel is an internal channel.
+#define GRPC_ARG_CHANNELZ_CHANNEL_IS_INTERNAL_CHANNEL \
+  "grpc.channelz_channel_is_internal_channel"
+
 namespace grpc_core {
 namespace channelz {
 
@@ -55,7 +59,8 @@ class ChannelNode : public RefCounted<ChannelNode> {
     gpr_atm_no_barrier_fetch_add(&calls_succeeded_, (gpr_atm(1)));
   }
 
-  char* RenderJSON();
+  grpc_json* RenderJson();
+  char* RenderJsonString();
 
   // helper for getting and populating connectivity state. It is virtual
   // because it allows the client_channel specific code to live in ext/
@@ -72,6 +77,10 @@ class ChannelNode : public RefCounted<ChannelNode> {
   bool ChannelIsDestroyed() { return channel_ == nullptr; }
 
   intptr_t channel_uuid() { return channel_uuid_; }
+  bool is_top_level_channel() { return is_top_level_channel_; }
+  void set_is_top_level_channel(bool is_top_level_channel) {
+    is_top_level_channel_ = is_top_level_channel;
+  }
 
  protected:
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
@@ -90,6 +99,7 @@ class ChannelNode : public RefCounted<ChannelNode> {
   gpr_atm calls_failed_ = 0;
   gpr_atm last_call_started_millis_ = 0;
   intptr_t channel_uuid_;
+  bool is_top_level_channel_ = true;
   ManualConstructor<ChannelTrace> trace_;
 };
 

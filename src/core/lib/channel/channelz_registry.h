@@ -51,6 +51,11 @@ class ChannelzRegistry {
     return gotten == nullptr ? nullptr : static_cast<ChannelNode*>(gotten);
   }
 
+  // todo, protect me
+  static char* GetTopChannels(intptr_t start_channel_id) {
+    return Default()->InternalGetTopChannels(start_channel_id);
+  }
+
  private:
   enum class EntityType {
     kChannelNode,
@@ -83,6 +88,8 @@ class ChannelzRegistry {
   // if object with uuid has previously been registered as the correct type,
   // returns the void* associated with that uuid. Else returns nullptr.
   void* InternalGetEntry(intptr_t uuid, EntityType type);
+
+  char* InternalGetTopChannels(intptr_t start_channel_id);
 
   // protects entities_ and uuid_
   gpr_mu mu_;

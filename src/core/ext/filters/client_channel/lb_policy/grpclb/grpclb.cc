@@ -1004,6 +1004,9 @@ grpc_channel_args* BuildBalancerChannelArgs(
       // A channel arg indicating the target is a grpclb load balancer.
       grpc_channel_arg_integer_create(
           const_cast<char*>(GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER), 1),
+      // A channel arg indicating the target is a grpclb load balancer.
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_CHANNELZ_CHANNEL_IS_INTERNAL_CHANNEL), 1),
   };
   // Construct channel args.
   grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(

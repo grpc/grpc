@@ -110,7 +110,7 @@ void ChannelNode::RecordCallStarted() {
 
 void ChannelNode::PopulateConnectivityState(grpc_json* json) {}
 
-char* ChannelNode::RenderJSON() {
+grpc_json* ChannelNode::RenderJson() {
   // We need to track these three json objects to build our object
   grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
   grpc_json* json = top_level_json;
@@ -130,13 +130,14 @@ char* ChannelNode::RenderJSON() {
   json = data;
   json_iterator = nullptr;
   PopulateConnectivityState(json);
+  GPR_ASSERT(target_.get() != nullptr);
   json_iterator = grpc_json_create_child(
       json_iterator, json, "target", target_.get(), GRPC_JSON_STRING, false);
   // fill in the channel trace if applicable
-  grpc_json* trace = trace_->RenderJSON();
+  grpc_json* trace = trace_->RenderJson();
   if (trace != nullptr) {
     // we manuall link up and fill the child since it was created for us in
-    // ChannelTrace::RenderJSON
+    // ChannelTrace::RenderJson
     json_iterator = grpc_json_link_child(json, trace, json_iterator);
     trace->parent = json;
     trace->value = nullptr;
@@ -146,22 +147,30 @@ char* ChannelNode::RenderJSON() {
   // reset the parent to be the data object.
   json = data;
   json_iterator = nullptr;
-  // We use -1 as sentinel values since proto default value for integers is
-  // zero, and the confuses the parser into thinking the value weren't present
-  json_iterator =
-      add_num_str(json, json_iterator, "callsStarted", calls_started_);
-  json_iterator =
-      add_num_str(json, json_iterator, "callsSucceeded", calls_succeeded_);
-  json_iterator =
-      add_num_str(json, json_iterator, "callsFailed", calls_failed_);
+  if (calls_started_ != 0) {
+    json_iterator =
+        add_num_str(json, json_iterator, "callsStarted", calls_started_);
+  }
+  if (calls_succeeded_ != 0) {
+    json_iterator =
+        add_num_str(json, json_iterator, "callsSucceeded", calls_succeeded_);
+  }
+  if (calls_failed_) {
+    json_iterator =
+        add_num_str(json, json_iterator, "callsFailed", calls_failed_);
+  }
   gpr_timespec ts =
       grpc_millis_to_timespec(last_call_started_millis_, GPR_CLOCK_REALTIME);
   json_iterator =
       grpc_json_create_child(json_iterator, json, "lastCallStartedTimestamp",
                              fmt_time(ts), GRPC_JSON_STRING, true);
-  // render and return the over json object
-  char* json_str = grpc_json_dump_to_string(top_level_json, 0);
-  grpc_json_destroy(top_level_json);
+  return top_level_json;
+}
+
+char* ChannelNode::RenderJsonString() {
+  grpc_json* json = RenderJson();
+  char* json_str = grpc_json_dump_to_string(json, 0);
+  grpc_json_destroy(json);
   return json_str;
 }
 
