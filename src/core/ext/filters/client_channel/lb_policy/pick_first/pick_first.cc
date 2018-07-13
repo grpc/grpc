@@ -304,31 +304,31 @@ void PickFirst::PingOneLocked(grpc_closure* on_initiate, grpc_closure* on_ack) {
   }
 }
 
-void PickFirst::FillChildRefsForChannelz(ChildRefsList* child_subchannels,
-                                         ChildRefsList* child_channels) {
+void PickFirst::FillChildRefsForChannelz(
+    ChildRefsList* child_subchannels_to_fill, ChildRefsList* ignored) {
   mu_guard guard(&child_refs_mu_);
-  // TODO, de dup these.
   for (size_t i = 0; i < child_subchannels_.size(); ++i) {
-    child_subchannels->push_back(child_subchannels_[i]);
-  }
-  for (size_t i = 0; i < child_channels_.size(); ++i) {
-    child_channels->push_back(child_channels_[i]);
+    // TODO(ncteisen): implement a de dup loop that is not O(n^2). Might
+    // have to implement lightweight set. For now, we don't care about
+    // performance when channelz requests are made.
+    bool add_elt = true;
+    for (size_t j = 0; j < child_subchannels_to_fill->size(); ++j) {
+      if ((*child_subchannels_to_fill)[j] == child_subchannels_[i]) {
+        add_elt = false;
+      }
+    }
+    if (add_elt) {
+      child_subchannels_to_fill->push_back(child_subchannels_[i]);
+    }
   }
 }
 
 void PickFirst::UpdateChildRefsLocked() {
-  mu_guard guard(&child_refs_mu_);
-  // reset both lists
-  child_subchannels_.clear();
-  // this will stay empty, because pick_first channels have no children
-  // channels.
-  child_channels_.clear();
-  // populate the subchannels with boths subchannels lists, they will be
-  // deduped when the actual channelz query comes in.
+  ChildRefsList cs;
   if (subchannel_list_ != nullptr) {
     for (size_t i = 0; i < subchannel_list_->num_subchannels(); ++i) {
       if (subchannel_list_->subchannel(i)->subchannel() != nullptr) {
-        child_subchannels_.push_back(grpc_subchannel_get_uuid(
+        cs.push_back(grpc_subchannel_get_uuid(
             subchannel_list_->subchannel(i)->subchannel()));
       }
     }
@@ -338,11 +338,15 @@ void PickFirst::UpdateChildRefsLocked() {
          ++i) {
       if (latest_pending_subchannel_list_->subchannel(i)->subchannel() !=
           nullptr) {
-        child_subchannels_.push_back(grpc_subchannel_get_uuid(
+        cs.push_back(grpc_subchannel_get_uuid(
             latest_pending_subchannel_list_->subchannel(i)->subchannel()));
       }
     }
   }
+
+  // atomically update the data that channelz will actually be looking at.
+  mu_guard guard(&child_refs_mu_);
+  child_subchannels_ = std::move(cs);
 }
 
 void PickFirst::UpdateLocked(const grpc_channel_args& args) {
