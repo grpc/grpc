@@ -1,4 +1,4 @@
-# Keepalive Ping User Guide for gRPC Core (and dependants)
+# Keepalive User Guide for gRPC Core (and dependants)
 
 The keepalive ping is a way to check if a channel is currently working by sending HTTP2 pings over the transport. It is sent periodically, and if the ping is not acknowledged by the peer within a certain timeout period, the transport is disconnected.
 
