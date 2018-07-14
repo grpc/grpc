@@ -34,3 +34,17 @@ GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA|2|2
 GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS|300000 (5 minutes)|300000 (5 minutes)
 GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS|N/A|300000 (5 minutes)
 GRPC_ARG_HTTP2_MAX_PING_STRIKES|N/A|2
+
+### FAQ
+* When is the keepalive timer started?
+  * The keepalive timer is started when a transport is done connecting (after handshake).
+* What happens when the keepalive timer fires?
+  * When the keepalive timer fires, gRPC Core would try to send a keepalive ping on the transport. This ping can be blocked if -
+    * there is no active call on that transport and GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS is false.
+    * the number of pings already sent on the transport without any data has already exceeded GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA.
+    * the time expired since the previous ping is less than GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS.
+  * If a keepalive ping is not blocked and is sent on the transport, then the keepalive watchdog timer is started which would close the transport if the ping is not acknowledged before it fires.
+* Why am I receiving a GOAWAY with error code ENHANCE_YOUR_CALM?
+  * A server sends a GOAWAY with ENHANCE_YOUR_CALM if the client sends too many misbehaving pings. For example -
+    * if a server has GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS set to false, and the client sends pings without there being any call in flight.
+    * if the client's GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS setting is lower than the server's GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS.
