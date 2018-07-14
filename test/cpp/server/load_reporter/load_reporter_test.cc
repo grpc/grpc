@@ -25,6 +25,7 @@
 #include <grpc/grpc.h>
 #include <gtest/gtest.h>
 
+#include "src/core/ext/filters/load_reporting/registered_opencensus_objects.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/cpp/server/load_reporter/constants.h"
 #include "src/cpp/server/load_reporter/load_reporter.h"
@@ -123,6 +124,14 @@ class LoadReporterTest : public ::testing::Test {
 
  private:
   void SetUp() override {
+    // Access the measures to make them valid.
+    ::grpc::load_reporter::MeasureStartCount();
+    ::grpc::load_reporter::MeasureEndCount();
+    ::grpc::load_reporter::MeasureEndBytesSent();
+    ::grpc::load_reporter::MeasureEndBytesReceived();
+    ::grpc::load_reporter::MeasureEndLatencyMs();
+    ::grpc::load_reporter::MeasureOtherCallMetric();
+    // Set up the load reporter.
     auto mock_cpu = new MockCpuStatsProvider();
     auto mock_census = new MockCensusViewProvider();
     // Prepare the initial CPU stats data. Note that the expectation should be
