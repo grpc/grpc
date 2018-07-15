@@ -15,6 +15,7 @@
 
 import os
 import subprocess
+import sys
 
 # The c-ares test suite doesn't get ran regularly on Windows, but
 # this script provides a way to run a lot of the tests manually.
@@ -24,7 +25,7 @@ os.chdir(os.path.join('..', '..', os.getcwd()))
 _DNS_SERVER_PORT = 15353
 
 subprocess.call([
-    'C:\\Python27\\python.exe',
+    sys.executable,
     'test\\cpp\\naming\\resolver_component_tests_runner.py',
     '--test_bin_path', 'cmake\\build\\%s\\resolver_component_test.exe' % _MSBUILD_CONFIG,
     '--dns_server_bin_path', 'test\\cpp\\naming\\utils\\dns_server.py',
