@@ -21,6 +21,8 @@
 #if GRPC_ARES == 1 && defined(GPR_WINDOWS)
 
 #include <ares.h>
+#include <ares_writev.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/log_windows.h>
@@ -36,10 +38,6 @@
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
-
-// TODO: include ares_writev.h using the include path when
-// https://github.com/c-ares/c-ares/issues/206 is resolved.
-#include "third_party/cares/cares/ares_writev.h"
 
 namespace grpc_core {
 
