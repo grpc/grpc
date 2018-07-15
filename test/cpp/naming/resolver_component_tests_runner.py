@@ -46,7 +46,7 @@ def test_runner_log(msg):
 
 def python_args(arg_list):
   if platform.system() == 'Windows':
-    return sys.executable + arg_list
+    return [sys.executable] + arg_list
   return arg_list
 
 cur_resolver = os.environ.get('GRPC_DNS_RESOLVER')
