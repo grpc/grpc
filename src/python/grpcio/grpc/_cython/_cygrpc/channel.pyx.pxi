@@ -391,7 +391,7 @@ cdef class Channel:
       self, bytes target, object arguments,
       ChannelCredentials channel_credentials):
     arguments = () if arguments is None else tuple(arguments)
-    grpc_init()
+    fork_handlers_and_grpc_init()
     self._state = _ChannelState()
     self._vtable.copy = &_copy_pointer
     self._vtable.destroy = &_destroy_pointer

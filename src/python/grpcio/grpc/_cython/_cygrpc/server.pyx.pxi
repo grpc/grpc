@@ -60,7 +60,7 @@ cdef grpc_ssl_certificate_config_reload_status _server_cert_config_fetcher_wrapp
 cdef class Server:
 
   def __cinit__(self, object arguments):
-    grpc_init()
+    fork_handlers_and_grpc_init()
     self.references = []
     self.registered_completion_queues = []
     self._vtable.copy = &_copy_pointer
