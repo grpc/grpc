@@ -222,13 +222,9 @@ void Fork::DecExecCtxCount() {
   }
 }
 
-void Fork::IncrementForkEpoch() {
-  forkEpoch_++;
-}
+void Fork::IncrementForkEpoch() { forkEpoch_++; }
 
-int Fork::GetForkEpoch() {
-  return forkEpoch_;
-}
+int Fork::GetForkEpoch() { return forkEpoch_; }
 
 bool Fork::BlockExecCtx() {
   if (supportEnabled_) {
