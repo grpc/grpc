@@ -199,7 +199,7 @@ def _consume_request_iterator(request_iterator, state, call, request_serializer,
                 _abort(state, code, details)
                 return
             finally:
-                cygrpc.return_from_user_request_generator()                
+                cygrpc.return_from_user_request_generator()
                 cygrpc.block_if_fork_in_progress()
             serialized_request = _common.serialize(request, request_serializer)
             with state.condition:
@@ -819,9 +819,9 @@ def _poll_connectivity(state, channel, initial_try_to_connect):
         state.connectivity = (
             _common.CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY[
                 connectivity])
-        callbacks = tuple(callback
-                          for callback, unused_but_known_to_be_none_connectivity
-                          in state.callbacks_and_connectivities)
+        callbacks = tuple(
+            callback for callback, unused_but_known_to_be_none_connectivity in
+            state.callbacks_and_connectivities)
         for callback_and_connectivity in state.callbacks_and_connectivities:
             callback_and_connectivity[1] = state.connectivity
         if callbacks:
