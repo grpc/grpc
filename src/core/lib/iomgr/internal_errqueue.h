@@ -16,6 +16,12 @@
  *
  */
 
+/* This file contains constants defined in <linux/errqueue.h> and
+ * <linux/net_tstamp.h> so as to allow collecting network timestamps in the
+ * kernel. This file allows tcp_posix.cc to compile on platforms that do not
+ * have <linux/errqueue.h> and <linux/net_tstamp.h>.
+ */
+
 #ifndef GRPC_CORE_LIB_IOMGR_INTERNAL_ERRQUEUE_H
 #define GRPC_CORE_LIB_IOMGR_INTERNAL_ERRQUEUE_H
 

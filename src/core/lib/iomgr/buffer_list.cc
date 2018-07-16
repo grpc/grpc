@@ -31,14 +31,12 @@
 namespace grpc_core {
 void TracedBuffer::AddNewEntry(TracedBuffer** head, uint32_t seq_no,
                                void* arg) {
-  gpr_log(GPR_INFO, "Adding new entry %u", seq_no);
   GPR_DEBUG_ASSERT(head != nullptr);
   TracedBuffer* new_elem = New<TracedBuffer>(seq_no, arg);
   /* Store the current time as the sendmsg time. */
   new_elem->ts_.sendmsg_time = gpr_now(GPR_CLOCK_REALTIME);
   if (*head == nullptr) {
     *head = new_elem;
-    gpr_log(GPR_INFO, "returning");
     return;
   }
   /* Append at the end. */
@@ -47,16 +45,18 @@ void TracedBuffer::AddNewEntry(TracedBuffer** head, uint32_t seq_no,
     ptr = ptr->next_;
   }
   ptr->next_ = new_elem;
-  gpr_log(GPR_INFO, "returning");
 }
 
 namespace {
+/** Fills gpr_timespec gts based on values from timespec ts */
 void fill_gpr_from_timestamp(gpr_timespec* gts, const struct timespec* ts) {
   gts->tv_sec = ts->tv_sec;
   gts->tv_nsec = static_cast<int32_t>(ts->tv_nsec);
   gts->clock_type = GPR_CLOCK_REALTIME;
 }
 
+/** The saved callback function that will be invoked when we get all the
+ * timestamps that we are going to get for a TracedBuffer. */
 void (*timestamps_callback)(void*, grpc_core::Timestamps*,
                             grpc_error* shutdown_err);
 } /* namespace */
@@ -64,12 +64,10 @@ void (*timestamps_callback)(void*, grpc_core::Timestamps*,
 void TracedBuffer::ProcessTimestamp(TracedBuffer** head,
                                     struct sock_extended_err* serr,
                                     struct scm_timestamping* tss) {
-  gpr_log(GPR_INFO, "Got timestamp %d", serr->ee_data);
   GPR_DEBUG_ASSERT(head != nullptr);
   TracedBuffer* elem = *head;
   TracedBuffer* next = nullptr;
   while (elem != nullptr) {
-    gpr_log(GPR_INFO, "looping");
     /* The byte number refers to the sequence number of the last byte which this
      * timestamp relates to. For scheduled and send, we are interested in the
      * timestamp for the first byte, whereas for ack, we are interested in the
@@ -77,17 +75,14 @@ void TracedBuffer::ProcessTimestamp(TracedBuffer** head,
     if (serr->ee_data >= elem->seq_no_) {
       switch (serr->ee_info) {
         case SCM_TSTAMP_SCHED:
-          gpr_log(GPR_INFO, "type sched\n");
           fill_gpr_from_timestamp(&(elem->ts_.scheduled_time), &(tss->ts[0]));
           elem = elem->next_;
           break;
         case SCM_TSTAMP_SND:
-          gpr_log(GPR_INFO, "type send\n");
           fill_gpr_from_timestamp(&(elem->ts_.sent_time), &(tss->ts[0]));
           elem = elem->next_;
           break;
         case SCM_TSTAMP_ACK:
-          gpr_log(GPR_INFO, "type ack\n");
           if (serr->ee_data >= elem->seq_no_) {
             fill_gpr_from_timestamp(&(elem->ts_.acked_time), &(tss->ts[0]));
             /* Got all timestamps. Do the callback and free this TracedBuffer.

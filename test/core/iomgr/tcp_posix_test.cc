@@ -72,7 +72,6 @@ static void create_sockets(int sv[2]) {
 }
 
 static void create_inet_sockets(int sv[2]) {
-  gpr_log(GPR_INFO, "create sockets");
   /* Prepare listening socket */
   struct sockaddr_in addr;
   memset(&addr, 0, sizeof(struct sockaddr_in));
@@ -85,10 +84,6 @@ static void create_inet_sockets(int sv[2]) {
   /* Prepare client socket and connect to server */
   socklen_t len = sizeof(sockaddr_in);
   GPR_ASSERT(getsockname(sock, (sockaddr*)&addr, &len) == 0);
-
-  gpr_log(GPR_INFO, "%d\n", addr.sin_port);
-  char* addra = inet_ntoa(addr.sin_addr);
-  gpr_log(GPR_INFO, "%s\n", addra);
 
   int client = socket(AF_INET, SOCK_STREAM, 0);
   GPR_ASSERT(client);
@@ -337,9 +332,7 @@ static void write_done(void* user_data /* write_socket_state */,
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   struct write_socket_state* state =
       static_cast<struct write_socket_state*>(user_data);
-  gpr_log(GPR_INFO, "Write done callback called");
   gpr_mu_lock(g_mu);
-  gpr_log(GPR_INFO, "Signalling write done");
   state->write_done = 1;
   GPR_ASSERT(
       GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(g_pollset, nullptr)));
@@ -360,22 +353,17 @@ void drain_socket_blocking(int fd, size_t num_bytes, size_t read_size) {
 
   for (;;) {
     grpc_pollset_worker* worker = nullptr;
-    gpr_log(GPR_INFO, "in loop");
     gpr_mu_lock(g_mu);
-    gpr_log(GPR_INFO, "in locked polling");
     GPR_ASSERT(GRPC_LOG_IF_ERROR(
         "pollset_work",
         grpc_pollset_work(g_pollset, &worker,
                           grpc_timespec_to_millis_round_up(
                               grpc_timeout_milliseconds_to_deadline(10)))));
-    gpr_log(GPR_INFO, "done locked polling");
     gpr_mu_unlock(g_mu);
 
     do {
-      gpr_log(GPR_INFO, "doing a read");
       bytes_read =
           read(fd, buf, bytes_left > read_size ? read_size : bytes_left);
-      gpr_log(GPR_INFO, "done with read");
     } while (bytes_read < 0 && errno == EINTR);
     GPR_ASSERT(bytes_read >= 0);
     for (i = 0; i < bytes_read; ++i) {
@@ -460,9 +448,7 @@ static void write_test(size_t num_bytes, size_t slice_size,
                       grpc_event_engine_can_track_errors() && collect_timestamps
                           ? (void*)&done_timestamps
                           : nullptr);
-  gpr_log(GPR_INFO, "about to drain");
   drain_socket_blocking(sv[0], num_bytes, num_bytes);
-  gpr_log(GPR_INFO, "done drain");
   exec_ctx.Flush();
   gpr_mu_lock(g_mu);
   for (;;) {
@@ -571,7 +557,6 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
 }
 
 void run_tests(void) {
-  gpr_log(GPR_INFO, "run tests");
   size_t i = 0;
 
   read_test(100, 8192);
@@ -580,21 +565,18 @@ void run_tests(void) {
   read_test(10000, 1);
   large_read_test(8192);
   large_read_test(1);
-  gpr_log(GPR_INFO, "done read tests");
 
   write_test(100, 8192, false);
   write_test(100, 1, false);
   write_test(100000, 8192, false);
   write_test(100000, 1, false);
   write_test(100000, 137, false);
-  gpr_log(GPR_INFO, "done normal write tests");
 
   write_test(100, 8192, true);
   write_test(100, 1, true);
   write_test(100000, 8192, true);
   write_test(100000, 1, true);
   write_test(100, 137, true);
-  gpr_log(GPR_INFO, "done super write tests");
 
   for (i = 1; i < 1000; i = GPR_MAX(i + 1, i * 5 / 4)) {
     write_test(40320, i, false);
@@ -643,7 +625,6 @@ int main(int argc, char** argv) {
   grpc_closure destroyed;
   grpc_test_init(argc, argv);
   grpc_init();
-  gpr_log(GPR_INFO, "here");
   grpc_core::grpc_tcp_set_write_timestamps_callback(timestamps_verifier);
   {
     grpc_core::ExecCtx exec_ctx;

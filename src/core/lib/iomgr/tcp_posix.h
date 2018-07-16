@@ -57,9 +57,4 @@ int grpc_tcp_fd(grpc_endpoint* ep);
 void grpc_tcp_destroy_and_release_fd(grpc_endpoint* ep, int* fd,
                                      grpc_closure* done);
 
-/** Sets the callback function to call when timestamps for a write are
- *  collected. */
-void grpc_tcp_set_write_timestamps_callback(void (*fn)(void*,
-                                                       grpc_core::Timestamps*));
-
 #endif /* GRPC_CORE_LIB_IOMGR_TCP_POSIX_H */

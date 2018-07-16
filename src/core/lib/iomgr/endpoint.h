@@ -72,6 +72,8 @@ int grpc_endpoint_get_fd(grpc_endpoint* ep);
    \a slices may be mutated at will by the endpoint until cb is called.
    No guarantee is made to the content of slices after a write EXCEPT that
    it is a valid slice buffer.
+   \a arg is platform specific. It is currently only used by TCP on linux
+   platforms as an argument that would be forwarded to the timestamps callback.
    */
 void grpc_endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
                          grpc_closure* cb, void* arg);
