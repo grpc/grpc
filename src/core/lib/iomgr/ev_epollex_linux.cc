@@ -494,8 +494,9 @@ static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
     is_fd_closed = true;
   }
 
+  // TODO(sreek): handle fd removal (where is_fd_closed=false)
   if (!is_fd_closed) {
-    gpr_log(GPR_DEBUG, "TODO: handle fd removal?");
+    GRPC_FD_TRACE("epoll_fd %p (%d) was orphaned but not closed.", fd, fd->fd);
   }
 
   /* Remove the active status but keep referenced. We want this grpc_fd struct
@@ -1564,7 +1565,7 @@ static void pollset_set_add_pollset_set(grpc_pollset_set* a,
     gpr_mu_unlock(b_mu);
   }
   // try to do the least copying possible
-  // TODO(ctiller): there's probably a better heuristic here
+  // TODO(sreek): there's probably a better heuristic here
   const size_t a_size = a->fd_count + a->pollset_count;
   const size_t b_size = b->fd_count + b->pollset_count;
   if (b_size > a_size) {
