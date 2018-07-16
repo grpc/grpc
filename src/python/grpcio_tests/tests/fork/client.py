@@ -17,17 +17,18 @@ import argparse
 import logging
 import sys
 
-
 from tests.fork import methods
 
 
 def _args():
+
     def parse_bool(value):
         if value == 'true':
             return True
         if value == 'false':
             return False
         raise argparse.ArgumentTypeError('Only true/false allowed')
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '--server_host',
@@ -61,7 +62,7 @@ def _test_case_from_arg(test_case_arg):
 
 
 def test_fork():
-    logging.getLogger('grpc').addHandler(logging.StreamHandler(sys.stdout))
+    logging.basicConfig(level=logging.INFO)
     args = _args()
     if args.test_case == "all":
         for test_case in methods.TestCase:

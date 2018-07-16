@@ -15,6 +15,7 @@
 
 import enum
 import json
+import logging
 import multiprocessing
 import os
 import threading
@@ -27,6 +28,8 @@ from six.moves import queue
 from src.proto.grpc.testing import empty_pb2
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def _channel(args):
@@ -64,7 +67,7 @@ def _blocking_unary(stub):
     request = messages_pb2.SimpleRequest(
         response_type=messages_pb2.COMPRESSABLE,
         response_size=size,
-        payload=messages_pb2.Payload(body=b'\x00' * 271828))    
+        payload=messages_pb2.Payload(body=b'\x00' * 271828))
     response = stub.UnaryCall(request)
     _validate_payload_type_and_length(response, messages_pb2.COMPRESSABLE, size)
 
@@ -114,11 +117,13 @@ class _ChildProcess(object):
         if args is None:
             args = ()
         self._exceptions = multiprocessing.Queue()
+
         def record_exceptions():
             try:
                 task(*args)
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-except
                 self._exceptions.put(e)
+
         self._process = multiprocessing.Process(target=record_exceptions)
 
     def start(self):
@@ -134,6 +139,7 @@ class _ChildProcess(object):
 
 
 def _async_unary_same_channel(channel):
+
     def child_target():
         _async_unary(stub)
 
@@ -146,6 +152,7 @@ def _async_unary_same_channel(channel):
 
 
 def _async_unary_new_channel(channel, args):
+
     def child_target():
         child_channel = _channel(args)
         child_stub = test_pb2_grpc.TestServiceStub(channel)
@@ -161,6 +168,7 @@ def _async_unary_new_channel(channel, args):
 
 
 def _blocking_unary_same_channel(channel):
+
     def child_target():
         _blocking_unary(stub)
 
@@ -173,6 +181,7 @@ def _blocking_unary_same_channel(channel):
 
 
 def _blocking_unary_new_channel(channel, args):
+
     def child_target():
         child_channel = _channel(args)
         child_stub = test_pb2_grpc.TestServiceStub(channel)
@@ -191,15 +200,19 @@ def _blocking_unary_new_channel(channel, args):
 #   Child process does not receive updates for the parent's subscribed callback
 #   Child may subscribe a new connectivity watcher to the channel
 def _connectivity_watch(channel):
+
     def child_target():
+
         def child_connectivity_callback(state):
-                child_states.append(state)
+            child_states.append(state)
+
         child_states = []
         channel.subscribe(child_connectivity_callback)
         _async_unary(stub)
         channel.unsubscribe(child_connectivity_callback)
         channel.close()
-        if len(child_states) < 2 or child_states[-1] != grpc.ChannelConnectivity.READY:
+        if len(child_states
+              ) < 2 or child_states[-1] != grpc.ChannelConnectivity.READY:
             raise ValueError('Channel did not move to READY')
         if len(parent_states) > 1:
             raise ValueError('Received connectivity updates on parent callback')
@@ -213,16 +226,19 @@ def _connectivity_watch(channel):
     child_process = _ChildProcess(child_target)
     child_process.start()
     _async_unary(stub)
-    if len(parent_states) < 2 or parent_states[-1] != grpc.ChannelConnectivity.READY:
+    if len(parent_states
+          ) < 2 or parent_states[-1] != grpc.ChannelConnectivity.READY:
         raise ValueError('Channel did not move to READY')
     child_process.finish()
 
-    # Need to unsubscribe or _channel.py in _poll_connectivity triggers a 
+    # Need to unsubscribe or _channel.py in _poll_connectivity triggers a
     # "Cannot invoke RPC on closed channel!" error.
     # TODO(ericgribkoff) Fix issue with channel.close() and connectivity polling
     channel.unsubscribe(parent_connectivity_callback)
 
-def _ping_pong_with_child_processes_after_first_response(channel, args, child_target, run_after_close=True):
+
+def _ping_pong_with_child_processes_after_first_response(
+        channel, args, child_target, run_after_close=True):
     request_response_sizes = (
         31415,
         9,
@@ -249,25 +265,30 @@ def _ping_pong_with_child_processes_after_first_response(channel, args, child_ta
             payload=messages_pb2.Payload(body=b'\x00' * payload_size))
         pipe.add(request)
         if first_message_received:
-            child_process = _ChildProcess(child_target, (parent_bidi_call, channel, args))
+            child_process = _ChildProcess(child_target,
+                                          (parent_bidi_call, channel, args))
             child_process.start()
-            child_processes.append(child_process)           
+            child_processes.append(child_process)
         response = next(parent_bidi_call)
         first_message_received = True
-        child_process = _ChildProcess(child_target, (parent_bidi_call, channel, args))
+        child_process = _ChildProcess(child_target,
+                                      (parent_bidi_call, channel, args))
         child_process.start()
         child_processes.append(child_process)
-        _validate_payload_type_and_length(
-            response, messages_pb2.COMPRESSABLE, response_size)
+        _validate_payload_type_and_length(response, messages_pb2.COMPRESSABLE,
+                                          response_size)
     pipe.close()
     if run_after_close:
-        child_process = _ChildProcess(child_target, (parent_bidi_call, channel, args))
+        child_process = _ChildProcess(child_target,
+                                      (parent_bidi_call, channel, args))
         child_process.start()
         child_processes.append(child_process)
     for child_process in child_processes:
         child_process.finish()
 
+
 def _in_progress_bidi_continue_call(channel):
+
     def child_target(parent_bidi_call, parent_channel, args):
         stub = test_pb2_grpc.TestServiceStub(parent_channel)
         # The parent call may have finished before forking
@@ -283,47 +304,59 @@ def _in_progress_bidi_continue_call(channel):
             inherited_code = parent_bidi_call.code()
             inherited_details = parent_bidi_call.details()
             if inherited_code != grpc.StatusCode.UNKNOWN:
-                raise ValueError('Expected inherited code UNKNOWN, got %s' % inherited_code)
+                raise ValueError(
+                    'Expected inherited code UNKNOWN, got %s' % inherited_code)
             if inherited_details != 'Stream removed':
-                raise ValueError('Expected inherited details Stream removed, got %s' % inherited_details)
+                raise ValueError(
+                    'Expected inherited details Stream removed, got %s' %
+                    inherited_details)
 
     # Don't run child_target after closing the parent call, as the call may have received a status from the
     # server before fork occurs.
-    _ping_pong_with_child_processes_after_first_response(channel, None, child_target, run_after_close=False)
+    _ping_pong_with_child_processes_after_first_response(
+        channel, None, child_target, run_after_close=False)
 
 
 def _in_progress_bidi_same_channel_async_call(channel):
+
     def child_target(parent_bidi_call, parent_channel, args):
         stub = test_pb2_grpc.TestServiceStub(parent_channel)
         _async_unary(stub)
 
-    _ping_pong_with_child_processes_after_first_response(channel, None, child_target)
+    _ping_pong_with_child_processes_after_first_response(
+        channel, None, child_target)
 
 
 def _in_progress_bidi_same_channel_blocking_call(channel):
+
     def child_target(parent_bidi_call, parent_channel, args):
         stub = test_pb2_grpc.TestServiceStub(parent_channel)
         _blocking_unary(stub)
 
-    _ping_pong_with_child_processes_after_first_response(channel, None, child_target)
+    _ping_pong_with_child_processes_after_first_response(
+        channel, None, child_target)
 
 
 def _in_progress_bidi_new_channel_async_call(channel, args):
+
     def child_target(parent_bidi_call, parent_channel, args):
         channel = _channel(args)
         stub = test_pb2_grpc.TestServiceStub(channel)
         _async_unary(stub)
 
-    _ping_pong_with_child_processes_after_first_response(channel, args, child_target)
+    _ping_pong_with_child_processes_after_first_response(
+        channel, args, child_target)
 
 
 def _in_progress_bidi_new_channel_blocking_call(channel, args):
+
     def child_target(parent_bidi_call, parent_channel, args):
         channel = _channel(args)
         stub = test_pb2_grpc.TestServiceStub(channel)
         _blocking_unary(stub)
 
-    _ping_pong_with_child_processes_after_first_response(channel, args, child_target)
+    _ping_pong_with_child_processes_after_first_response(
+        channel, args, child_target)
 
 
 @enum.unique
@@ -340,9 +373,8 @@ class TestCase(enum.Enum):
     IN_PROGRESS_BIDI_NEW_CHANNEL_ASYNC_CALL = 'in_progress_bidi_new_channel_async_call'
     IN_PROGRESS_BIDI_NEW_CHANNEL_BLOCKING_CALL = 'in_progress_bidi_new_channel_blocking_call'
 
-
     def run_test(self, args):
-        print("Running %s" % self)
+        _LOGGER.info("Running %s", self)
         channel = _channel(args)
         if self is TestCase.ASYNC_UNARY_SAME_CHANNEL:
             _async_unary_same_channel(channel)

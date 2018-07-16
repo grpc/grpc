@@ -177,12 +177,12 @@ def _event_handler(state, response_deserializer):
 
 def _consume_request_iterator(request_iterator, state, call, request_serializer,
                               event_handler):
+    if cygrpc.is_fork_support_enabled():
+        condition_wait_timeout = 1.0
+    else:
+        condition_wait_timeout = None
 
     def consume_request_iterator():  # pylint: disable=too-many-branches
-        if cygrpc.is_fork_support_enabled():
-            condition_wait_timeout = 1.0
-        else:
-            condition_wait_timeout = None
         while True:
             try:
                 # The thread may die in user-code. Do not block fork for this.
@@ -819,9 +819,9 @@ def _poll_connectivity(state, channel, initial_try_to_connect):
         state.connectivity = (
             _common.CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY[
                 connectivity])
-        callbacks = tuple(
-            callback for callback, unused_but_known_to_be_none_connectivity in
-            state.callbacks_and_connectivities)
+        callbacks = tuple(callback
+                          for callback, unused_but_known_to_be_none_connectivity
+                          in state.callbacks_and_connectivities)
         for callback_and_connectivity in state.callbacks_and_connectivities:
             callback_and_connectivity[1] = state.connectivity
         if callbacks:
