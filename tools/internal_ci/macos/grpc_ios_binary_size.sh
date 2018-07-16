@@ -24,9 +24,4 @@ cd $(dirname $0)/../../..
 source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 
 tools/profiling/ios_bin/binary_size.py \
-  -d origin/$ghprbTargetBranch || FAILED="true"
-
-if [ "$FAILED" != "" ]
-then
-  exit 1
-fi
+  -d origin/$ghprbTargetBranch
