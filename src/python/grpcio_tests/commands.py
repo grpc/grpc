@@ -202,3 +202,27 @@ class RunInterop(test.test):
         from tests.interop import client
         sys.argv[1:] = self.args.split()
         client.test_interoperability()
+
+class RunFork(test.test):
+
+    description = 'run fork test client'
+    user_options = [('args=', 'a', 'pass-thru arguments for the client')]
+
+    def initialize_options(self):
+        self.args = ''
+
+    def finalize_options(self):
+        # distutils requires this override.
+        pass
+
+    def run(self):
+        if self.distribution.install_requires:
+            self.distribution.fetch_build_eggs(
+                self.distribution.install_requires)
+        if self.distribution.tests_require:
+            self.distribution.fetch_build_eggs(self.distribution.tests_require)
+        # We import here to ensure that our setuptools parent has had a chance to
+        # edit the Python system path.
+        from tests.fork import client
+        sys.argv[1:] = self.args.split()
+        client.test_fork()
