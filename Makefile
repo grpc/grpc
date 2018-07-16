@@ -1052,6 +1052,7 @@ json_test: $(BINDIR)/$(CONFIG)/json_test
 lame_client_test: $(BINDIR)/$(CONFIG)/lame_client_test
 load_file_test: $(BINDIR)/$(CONFIG)/load_file_test
 low_level_ping_pong_benchmark: $(BINDIR)/$(CONFIG)/low_level_ping_pong_benchmark
+mac_poll: $(BINDIR)/$(CONFIG)/mac_poll
 memory_profile_client: $(BINDIR)/$(CONFIG)/memory_profile_client
 memory_profile_server: $(BINDIR)/$(CONFIG)/memory_profile_server
 memory_profile_test: $(BINDIR)/$(CONFIG)/memory_profile_test
@@ -1492,6 +1493,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/json_test \
   $(BINDIR)/$(CONFIG)/lame_client_test \
   $(BINDIR)/$(CONFIG)/load_file_test \
+  $(BINDIR)/$(CONFIG)/mac_poll \
   $(BINDIR)/$(CONFIG)/memory_profile_client \
   $(BINDIR)/$(CONFIG)/memory_profile_server \
   $(BINDIR)/$(CONFIG)/memory_profile_test \
@@ -2067,6 +2069,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/lame_client_test || ( echo test lame_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing load_file_test"
 	$(Q) $(BINDIR)/$(CONFIG)/load_file_test || ( echo test load_file_test failed ; exit 1 )
+	$(E) "[RUN]     Testing mac_poll"
+	$(Q) $(BINDIR)/$(CONFIG)/mac_poll || ( echo test mac_poll failed ; exit 1 )
 	$(E) "[RUN]     Testing memory_profile_test"
 	$(Q) $(BINDIR)/$(CONFIG)/memory_profile_test || ( echo test memory_profile_test failed ; exit 1 )
 	$(E) "[RUN]     Testing message_compress_test"
@@ -13235,6 +13239,38 @@ deps_low_level_ping_pong_benchmark: $(LOW_LEVEL_PING_PONG_BENCHMARK_OBJS:.o=.dep
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(LOW_LEVEL_PING_PONG_BENCHMARK_OBJS:.o=.dep)
+endif
+endif
+
+
+MAC_POLL_SRC = \
+    test/core/iomgr/mac_poll.cc \
+
+MAC_POLL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(MAC_POLL_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/mac_poll: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/mac_poll: $(MAC_POLL_OBJS)
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(MAC_POLL_OBJS) $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/mac_poll
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/iomgr/mac_poll.o: 
+
+deps_mac_poll: $(MAC_POLL_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(MAC_POLL_OBJS:.o=.dep)
 endif
 endif
 
