@@ -37,7 +37,7 @@ _GRPC_ENABLE_FORK_SUPPORT = (
     os.environ.get('GRPC_ENABLE_FORK_SUPPORT', '0')
         .lower() in _TRUE_VALUES)
 
-_GRPC_POLL_STRATEGY = os.environ.get('GRPC_POLL_STRATEGY').lower()
+_GRPC_POLL_STRATEGY = os.environ.get('GRPC_POLL_STRATEGY')
 
 cdef void __prefork() nogil:
     with gil:

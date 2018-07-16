@@ -30,12 +30,16 @@ def block_if_fork_in_progress():
 
 
 def enter_user_request_generator():
-	pass
+    pass
 
 
 def return_from_user_request_generator():
-	pass
+    pass
 
 
 def get_fork_epoch():
-	return 0
+    return 0
+
+
+def is_fork_support_enabled():
+    return False
