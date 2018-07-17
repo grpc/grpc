@@ -484,7 +484,6 @@ class SockToPolledFdMap {
           "driver's list"));
       return 0;
     }
-    grpc_core::Delete(polled_fd);
     return 0;
   }
 
@@ -522,8 +521,9 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
                               sock_to_polled_fd_map_.get());
   }
 
-  // On windows, GrpcPolledFd's are destroyed when "closed" by c-ares
-  void DestroyGrpcPolledFdLocked(GrpcPolledFd* polled_fd) override {}
+  void DestroyGrpcPolledFdLocked(GrpcPolledFd* polled_fd) override {
+    grpc_core::Delete(polled_fd);
+  }
 
  private:
   grpc_core::UniquePtr<SockToPolledFdMap> sock_to_polled_fd_map_;
