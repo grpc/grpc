@@ -131,7 +131,7 @@ RefCountedPtr<ChannelNode> ChannelNode::MakeChannelNode(
       channel, channel_tracer_max_nodes);
 }
 
-SubchannelNode::SubchannelNode() : subchannel_uuid_(-1) {
+SubchannelNode::SubchannelNode() {
   subchannel_uuid_ = ChannelzRegistry::Register(this);
 }
 

@@ -208,6 +208,7 @@ class LoadBalancingPolicy
 
   // Dummy classes needed for alignment issues.
   // See https://github.com/grpc/grpc/issues/16032 for context.
+  // TODO(ncteisen): remove this as soon as the issue is resolved.
   ChildRefsList dummy_list_foo;
   ChildRefsList dummy_list_bar;
 };

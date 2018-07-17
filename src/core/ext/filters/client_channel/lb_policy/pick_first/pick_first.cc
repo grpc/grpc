@@ -311,13 +311,14 @@ void PickFirst::FillChildRefsForChannelz(
     // TODO(ncteisen): implement a de dup loop that is not O(n^2). Might
     // have to implement lightweight set. For now, we don't care about
     // performance when channelz requests are made.
-    bool add_elt = true;
+    bool found = false;
     for (size_t j = 0; j < child_subchannels_to_fill->size(); ++j) {
       if ((*child_subchannels_to_fill)[j] == child_subchannels_[i]) {
-        add_elt = false;
+        found = true;
+        break;
       }
     }
-    if (add_elt) {
+    if (!found) {
       child_subchannels_to_fill->push_back(child_subchannels_[i]);
     }
   }
@@ -351,7 +352,6 @@ void PickFirst::UpdateChildRefsLocked() {
       }
     }
   }
-
   // atomically update the data that channelz will actually be looking at.
   mu_guard guard(&child_refs_mu_);
   child_subchannels_ = std::move(cs);

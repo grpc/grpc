@@ -181,9 +181,7 @@ static void connection_destroy(void* arg, grpc_error* error) {
 
 static void subchannel_destroy(void* arg, grpc_error* error) {
   grpc_subchannel* c = static_cast<grpc_subchannel*>(arg);
-  if (c->channelz_subchannel != nullptr) {
-    c->channelz_subchannel.reset();
-  }
+  c->channelz_subchannel.reset();
   gpr_free((void*)c->filters);
   grpc_channel_args_destroy(c->args);
   grpc_connectivity_state_destroy(&c->state_tracker);
@@ -380,7 +378,6 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
   c->backoff.Init(backoff_options);
   gpr_mu_init(&c->mu);
 
-  // This is just a placeholder channelz class for for now.
   const grpc_arg* arg =
       grpc_channel_args_find(c->args, GRPC_ARG_ENABLE_CHANNELZ);
   bool channelz_enabled = grpc_channel_arg_get_bool(arg, false);

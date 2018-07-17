@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/connector.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/arena.h"
@@ -70,10 +71,6 @@ typedef struct grpc_subchannel_key grpc_subchannel_key;
 #endif
 
 namespace grpc_core {
-
-namespace channelz {
-class SubchannelNode;
-}
 
 class ConnectedSubchannel : public RefCountedWithTracing<ConnectedSubchannel> {
  public:

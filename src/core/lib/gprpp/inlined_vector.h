@@ -51,73 +51,30 @@ class InlinedVector {
   InlinedVector() { init_data(); }
   ~InlinedVector() { destroy_elements(); }
 
-  // copy constructors
+  // copy constructor
   InlinedVector(const InlinedVector& v) {
     init_data();
-    // if v is allocated, then we copy it's buffer
-    if (v.dynamic_ != nullptr) {
-      reserve(v.capacity_);
-      memcpy(dynamic_, v.dynamic_, v.capacity_ * sizeof(T));
-    } else {
-      memcpy(inline_, v.inline_, v.capacity_ * sizeof(T));
-      dynamic_ = nullptr;
-    }
-    // copy over metadata
-    size_ = v.size_;
-    capacity_ = v.capacity_;
+    copy_from(v);
   }
+
   InlinedVector& operator=(const InlinedVector& v) {
     if (this != &v) {
       clear();
-      // if v is allocated, then we copy it's buffer
-      if (v.dynamic_ != nullptr) {
-        reserve(v.capacity_);
-        memcpy(dynamic_, v.dynamic_, v.capacity_ * sizeof(T));
-      } else {
-        memcpy(inline_, v.inline_, v.capacity_ * sizeof(T));
-        dynamic_ = nullptr;
-      }
-      // copy over metadata
-      size_ = v.size_;
-      capacity_ = v.capacity_;
+      copy_from(v);
     }
     return *this;
   }
 
-  // move constructors
+  // move constructor
   InlinedVector(InlinedVector&& v) {
-    // if v is allocated, then we steal it's buffer
-    if (v.dynamic_ != nullptr) {
-      dynamic_ = v.dynamic_;
-    } else {
-      memcpy(inline_, v.inline_, v.capacity_ * sizeof(T));
-      dynamic_ = nullptr;
-    }
-    // copy over metadata
-    size_ = v.size_;
-    capacity_ = v.capacity_;
-    // null out the original
-    v.dynamic_ = nullptr;
-    v.size_ = 0;
-    v.capacity_ = 0;
+    init_data();
+    move_from(v);
   }
+
   InlinedVector& operator=(InlinedVector&& v) {
     if (this != &v) {
       clear();
-      // if v is allocated, then we steal it's buffer
-      if (v.dynamic_ != nullptr) {
-        dynamic_ = v.dynamic_;
-      } else {
-        memcpy(inline_, v.inline_, v.capacity_ * sizeof(T));
-        dynamic_ = nullptr;
-      }
-      // copy over metadata
-      size_ = v.size_;
-      capacity_ = v.capacity_;
-      // null out the original
-      v.dynamic_ = nullptr;
-      v.size_ = 0;
-      v.capacity_ = 0;
+      move_from(v);
     }
     return *this;
   }
@@ -165,6 +122,33 @@ class InlinedVector {
   void push_back(const T& value) { emplace_back(value); }
 
   void push_back(T&& value) { emplace_back(std::move(value)); }
+
+  void copy_from(const InlinedVector& v) {
+    // if copy over the buffer from v.
+    if (v.dynamic_ != nullptr) {
+      reserve(v.capacity_);
+      memcpy(dynamic_, v.dynamic_, v.size_ * sizeof(T));
+    } else {
+      memcpy(inline_, v.inline_, v.size_ * sizeof(T));
+    }
+    // copy over metadata
+    size_ = v.size_;
+    capacity_ = v.capacity_;
+  }
+
+  void move_from(InlinedVector& v) {
+    // if v is allocated, then we steal its buffer, else we copy it.
+    if (v.dynamic_ != nullptr) {
+      dynamic_ = v.dynamic_;
+    } else {
+      memcpy(inline_, v.inline_, v.size_ * sizeof(T));
+    }
+    // copy over metadata
+    size_ = v.size_;
+    capacity_ = v.capacity_;
+    // null out the original
+    v.init_data();
+  }
 
   size_t size() const { return size_; }
   bool empty() const { return size_ == 0; }

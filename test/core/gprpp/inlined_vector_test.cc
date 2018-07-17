@@ -27,9 +27,9 @@ namespace testing {
 namespace {
 
 template <typename Vector>
-static void FillVector(Vector* v, int len, int offset = 0) {
+static void FillVector(Vector* v, int len, int start = 0) {
   for (int i = 0; i < len; i++) {
-    v->push_back(i + offset);
+    v->push_back(i + start);
     EXPECT_EQ(i + 1UL, v->size());
   }
 }
@@ -107,69 +107,195 @@ TEST(InlinedVectorTest, ConstIndexOperator) {
   const_func(v);
 }
 
-TEST(InlinedVectorTest, CopyConstructorAndAssignment) {
-  typedef InlinedVector<int, 8> IntVec8;
-  for (size_t len = 0; len < 20; len++) {
-    IntVec8 original;
-    FillVector(&original, len);
-    EXPECT_EQ(len, original.size());
-    EXPECT_LE(len, original.capacity());
+TEST(InlinedVectorTest, CopyConstructerInlined) {
+  const size_t kInlinedLength = 8;
+  const size_t kFillSize = kInlinedLength - 1;
+  typedef InlinedVector<int, kInlinedLength> IntVec8;
+  IntVec8 original;
+  FillVector(&original, kFillSize);
+  EXPECT_EQ(kFillSize, original.size());
+  EXPECT_LE(kFillSize, original.capacity());
+  IntVec8 copy_constructed(original);
+  for (size_t i = 0; i < original.size(); ++i) {
+    EXPECT_EQ(original[i], copy_constructed[i]);
+  }
+}
 
-    IntVec8 copy_constructed(original);
+TEST(InlinedVectorTest, CopyConstructerAllocated) {
+  const size_t kInlinedLength = 8;
+  const size_t kFillSize = kInlinedLength + 1;
+  typedef InlinedVector<int, kInlinedLength> IntVec8;
+  IntVec8 original;
+  FillVector(&original, kFillSize);
+  EXPECT_EQ(kFillSize, original.size());
+  EXPECT_LE(kFillSize, original.capacity());
+  IntVec8 copy_constructed(original);
+  for (size_t i = 0; i < original.size(); ++i) {
+    EXPECT_EQ(original[i], copy_constructed[i]);
+  }
+}
+
+TEST(InlinedVectorTest, CopyAssignementInlined) {
+  const size_t kInlinedLength = 8;
+  const size_t kFillSize = kInlinedLength - 1;
+  typedef InlinedVector<int, kInlinedLength> IntVec8;
+  IntVec8 original;
+  FillVector(&original, kFillSize);
+  EXPECT_EQ(kFillSize, original.size());
+  EXPECT_LE(kFillSize, original.capacity());
+  // copy assigned vector is inlined
+  {
+    IntVec8 copy_assigned;
+    FillVector(&copy_assigned, kInlinedLength - 1, 99);
+    copy_assigned = original;
     for (size_t i = 0; i < original.size(); ++i) {
-      EXPECT_TRUE(original[i] == copy_constructed[i]);
+      EXPECT_EQ(original[i], copy_assigned[i]);
     }
-
-    for (size_t start_len = 0; start_len < 20; start_len++) {
-      IntVec8 copy_assigned;
-      FillVector(&copy_assigned, start_len, 99);  // Add dummy elements
-      copy_assigned = original;
-      for (size_t i = 0; i < original.size(); ++i) {
-        EXPECT_TRUE(original[i] == copy_assigned[i]);
-      }
+  }
+  // copy assigned vector is allocated
+  {
+    IntVec8 copy_assigned;
+    FillVector(&copy_assigned, kInlinedLength + 1, 99);
+    copy_assigned = original;
+    for (size_t i = 0; i < original.size(); ++i) {
+      EXPECT_EQ(original[i], copy_assigned[i]);
     }
   }
 }
 
-TEST(InlinedVectorTest, MoveConstructorAndAssignment) {
-  typedef InlinedVector<int, 8> IntVec8;
-  for (size_t len = 0; len < 20; len++) {
-    IntVec8 original;
-    const size_t inlined_capacity = original.capacity();
-    FillVector(&original, len);
-    EXPECT_EQ(len, original.size());
-    EXPECT_LE(len, original.capacity());
+TEST(InlinedVectorTest, CopyAssignementAllocated) {
+  const size_t kInlinedLength = 8;
+  const size_t kFillSize = kInlinedLength + 1;
+  typedef InlinedVector<int, kInlinedLength> IntVec8;
+  IntVec8 original;
+  FillVector(&original, kFillSize);
+  EXPECT_EQ(kFillSize, original.size());
+  EXPECT_LE(kFillSize, original.capacity());
+  // copy assigned vector is inlined
+  {
+    IntVec8 copy_assigned;
+    FillVector(&copy_assigned, kInlinedLength - 1, 99);
+    copy_assigned = original;
+    for (size_t i = 0; i < original.size(); ++i) {
+      EXPECT_EQ(original[i], copy_assigned[i]);
+    }
+  }
+  // copy assigned vector is allocated
+  {
+    IntVec8 copy_assigned;
+    FillVector(&copy_assigned, kInlinedLength + 1, 99);
+    copy_assigned = original;
+    for (size_t i = 0; i < original.size(); ++i) {
+      EXPECT_EQ(original[i], copy_assigned[i]);
+    }
+  }
+}
 
-    {
-      IntVec8 tmp(original);
-      auto* old_data = tmp.data();
-      IntVec8 move_constructed(std::move(tmp));
-      for (size_t i = 0; i < original.size(); ++i) {
-        EXPECT_TRUE(original[i] == move_constructed[i]);
-      }
-      if (original.size() > inlined_capacity) {
-        // Allocation is moved as a whole, data stays in place.
-        EXPECT_TRUE(move_constructed.data() == old_data);
-      } else {
-        EXPECT_FALSE(move_constructed.data() == old_data);
-      }
+TEST(InlinedVectorTest, MoveConstructorInlined) {
+  const size_t kInlinedLength = 8;
+  const size_t kFillSize = kInlinedLength - 1;
+  typedef InlinedVector<int, kInlinedLength> IntVec8;
+  IntVec8 original;
+  FillVector(&original, kFillSize);
+  EXPECT_EQ(kFillSize, original.size());
+  EXPECT_LE(kFillSize, original.capacity());
+  IntVec8 tmp(original);
+  auto* old_data = tmp.data();
+  IntVec8 move_constructed(std::move(tmp));
+  for (size_t i = 0; i < original.size(); ++i) {
+    EXPECT_EQ(original[i], move_constructed[i]);
+  }
+  // original data was inlined so it should have been copied, not moved.
+  EXPECT_NE(move_constructed.data(), old_data);
+}
+
+TEST(InlinedVectorTest, MoveConstructorAllocated) {
+  const size_t kInlinedLength = 8;
+  const size_t kFillSize = kInlinedLength + 1;
+  typedef InlinedVector<int, kInlinedLength> IntVec8;
+  IntVec8 original;
+  FillVector(&original, kFillSize);
+  EXPECT_EQ(kFillSize, original.size());
+  EXPECT_LE(kFillSize, original.capacity());
+  IntVec8 tmp(original);
+  auto* old_data = tmp.data();
+  IntVec8 move_constructed(std::move(tmp));
+  for (size_t i = 0; i < original.size(); ++i) {
+    EXPECT_EQ(original[i], move_constructed[i]);
+  }
+  // original data was allocated, so it should been moved, not copied
+  EXPECT_EQ(move_constructed.data(), old_data);
+}
+
+TEST(InlinedVectorTest, MoveAssignmentInlined) {
+  const size_t kInlinedLength = 8;
+  const size_t kFillSize = kInlinedLength - 1;
+  typedef InlinedVector<int, kInlinedLength> IntVec8;
+  IntVec8 original;
+  FillVector(&original, kFillSize);
+  EXPECT_EQ(kFillSize, original.size());
+  EXPECT_LE(kFillSize, original.capacity());
+  // move assigned vector is inlined
+  {
+    IntVec8 move_assigned;
+    FillVector(&move_assigned, kInlinedLength - 1, 99);  // Add dummy elements
+    IntVec8 tmp(original);
+    auto* old_data = tmp.data();
+    move_assigned = std::move(tmp);
+    for (size_t i = 0; i < original.size(); ++i) {
+      EXPECT_EQ(original[i], move_assigned[i]);
     }
-    for (size_t start_len = 0; start_len < 20; start_len++) {
-      IntVec8 move_assigned;
-      FillVector(&move_assigned, start_len, 99);  // Add dummy elements
-      IntVec8 tmp(original);
-      auto* old_data = tmp.data();
-      move_assigned = std::move(tmp);
-      for (size_t i = 0; i < original.size(); ++i) {
-        EXPECT_TRUE(original[i] == move_assigned[i]);
-      }
-      if (original.size() > inlined_capacity) {
-        // Allocation is moved as a whole, data stays in place.
-        EXPECT_TRUE(move_assigned.data() == old_data);
-      } else {
-        EXPECT_FALSE(move_assigned.data() == old_data);
-      }
+    // original data was inlined so it should have been copied, not moved.
+    EXPECT_NE(move_assigned.data(), old_data);
+  }
+  // move assigned vector is allocated
+  {
+    IntVec8 move_assigned;
+    FillVector(&move_assigned, kInlinedLength + 1, 99);  // Add dummy elements
+    IntVec8 tmp(original);
+    auto* old_data = tmp.data();
+    move_assigned = std::move(tmp);
+    for (size_t i = 0; i < original.size(); ++i) {
+      EXPECT_EQ(original[i], move_assigned[i]);
     }
+    // original data was inlined so it should have been copied, not moved.
+    EXPECT_NE(move_assigned.data(), old_data);
+  }
+}
+
+TEST(InlinedVectorTest, MoveAssignmentAllocated) {
+  const size_t kInlinedLength = 8;
+  const size_t kFillSize = kInlinedLength + 1;
+  typedef InlinedVector<int, kInlinedLength> IntVec8;
+  IntVec8 original;
+  FillVector(&original, kFillSize);
+  EXPECT_EQ(kFillSize, original.size());
+  EXPECT_LE(kFillSize, original.capacity());
+  // move assigned vector is inlined
+  {
+    IntVec8 move_assigned;
+    FillVector(&move_assigned, kInlinedLength - 1, 99);  // Add dummy elements
+    IntVec8 tmp(original);
+    auto* old_data = tmp.data();
+    move_assigned = std::move(tmp);
+    for (size_t i = 0; i < original.size(); ++i) {
+      EXPECT_EQ(original[i], move_assigned[i]);
+    }
+    // original data was allocated so it should have been moved, not copied.
+    EXPECT_EQ(move_assigned.data(), old_data);
+  }
+  // move assigned vector is allocated
+  {
+    IntVec8 move_assigned;
+    FillVector(&move_assigned, kInlinedLength + 1, 99);  // Add dummy elements
+    IntVec8 tmp(original);
+    auto* old_data = tmp.data();
+    move_assigned = std::move(tmp);
+    for (size_t i = 0; i < original.size(); ++i) {
+      EXPECT_EQ(original[i], move_assigned[i]);
+    }
+    // original data was allocated so it should have been moved, not copied.
+    EXPECT_EQ(move_assigned.data(), old_data);
   }
 }
 

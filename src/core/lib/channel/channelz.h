@@ -96,8 +96,8 @@ class ChannelNode : public RefCounted<ChannelNode> {
 };
 
 // Placeholds channelz class for subchannels. All this can do now is track its
-// uuid (this information is needed by the parent channelz class). In the next
-// PR I will build this out to support the GetSubchannel channelz request.
+// uuid (this information is needed by the parent channelz class).
+// TODO(ncteisen): build this out to support the GetSubchannel channelz request.
 class SubchannelNode : public RefCounted<SubchannelNode> {
  public:
   SubchannelNode();
