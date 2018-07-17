@@ -86,7 +86,7 @@ char* ChannelzRegistry::InternalGetTopChannels(intptr_t start_channel_id) {
   grpc_json* json_iterator = nullptr;
   InlinedVector<ChannelNode*, 10> top_level_channels;
   // uuids index into entities one-off (idx 0 is really uuid 1, since 0 is
-  // reserver). However, we want to support requests coming in which
+  // reserved). However, we want to support requests coming in this
   // start_channel_id=0, which signifies "give me everything." Hence this
   // funky looking line below.
   size_t start_idx = start_channel_id == 0 ? 0 : start_channel_id - 1;
@@ -108,9 +108,6 @@ char* ChannelzRegistry::InternalGetTopChannels(intptr_t start_channel_id) {
       json_iterator =
           grpc_json_link_child(array_parent, channel_json, json_iterator);
       channel_json->parent = array_parent;
-      channel_json->value = nullptr;
-      channel_json->key = nullptr;
-      channel_json->owns_value = false;
     }
   }
   // For now we do not have any pagination rules. In the future we could

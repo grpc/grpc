@@ -88,8 +88,12 @@ grpc_json* add_num_str(grpc_json* parent, grpc_json* it, const char* name,
 
 }  // namespace
 
-ChannelNode::ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes)
-    : channel_(channel), target_(nullptr), channel_uuid_(-1) {
+ChannelNode::ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes,
+                         bool is_top_level_channel)
+    : channel_(channel),
+      target_(nullptr),
+      channel_uuid_(-1),
+      is_top_level_channel_(is_top_level_channel) {
   trace_.Init(channel_tracer_max_nodes);
   target_ = UniquePtr<char>(grpc_channel_get_target(channel_));
   channel_uuid_ = ChannelzRegistry::RegisterChannelNode(this);
@@ -136,7 +140,7 @@ grpc_json* ChannelNode::RenderJson() {
   // fill in the channel trace if applicable
   grpc_json* trace = trace_->RenderJson();
   if (trace != nullptr) {
-    // we manuall link up and fill the child since it was created for us in
+    // we manually link up and fill the child since it was created for us in
     // ChannelTrace::RenderJson
     json_iterator = grpc_json_link_child(json, trace, json_iterator);
     trace->parent = json;
@@ -175,9 +179,10 @@ char* ChannelNode::RenderJsonString() {
 }
 
 RefCountedPtr<ChannelNode> ChannelNode::MakeChannelNode(
-    grpc_channel* channel, size_t channel_tracer_max_nodes) {
+    grpc_channel* channel, size_t channel_tracer_max_nodes,
+    bool is_top_level_channel) {
   return MakeRefCounted<grpc_core::channelz::ChannelNode>(
-      channel, channel_tracer_max_nodes);
+      channel, channel_tracer_max_nodes, is_top_level_channel);
 }
 
 }  // namespace channelz

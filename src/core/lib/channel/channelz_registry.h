@@ -36,7 +36,7 @@ class ChannelzRegistry {
   // To be called in grpc_init()
   static void Init();
 
-  // To be callen in grpc_shutdown();
+  // To be called in grpc_shutdown();
   static void Shutdown();
 
   static intptr_t RegisterChannelNode(ChannelNode* channel_node) {
@@ -51,7 +51,8 @@ class ChannelzRegistry {
     return gotten == nullptr ? nullptr : static_cast<ChannelNode*>(gotten);
   }
 
-  // todo, protect me
+  // Returns the allocated JSON string that represents the proto
+  // GetTopChannelsResponse as per channelz.proto.
   static char* GetTopChannels(intptr_t start_channel_id) {
     return Default()->InternalGetTopChannels(start_channel_id);
   }

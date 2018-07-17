@@ -167,11 +167,9 @@ grpc_channel* grpc_channel_create_with_builder(
 
   grpc_channel_args_destroy(args);
   if (channelz_enabled) {
-    channel->channelz_channel =
-        channel_node_create_func(channel, channel_tracer_max_nodes);
-    if (internal_channel || !channel->is_client) {
-      channel->channelz_channel->set_is_top_level_channel(false);
-    }
+    bool is_top_level_channel = channel->is_client && !internal_channel;
+    channel->channelz_channel = channel_node_create_func(
+        channel, channel_tracer_max_nodes, is_top_level_channel);
     channel->channelz_channel->trace()->AddTraceEvent(
         grpc_core::channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("Channel created"));

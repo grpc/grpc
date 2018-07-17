@@ -41,8 +41,9 @@ static const grpc_arg_pointer_vtable client_channel_channelz_vtable = {
     client_channel_channelz_cmp};
 
 ClientChannelNode::ClientChannelNode(grpc_channel* channel,
-                                     size_t channel_tracer_max_nodes)
-    : ChannelNode(channel, channel_tracer_max_nodes) {
+                                     size_t channel_tracer_max_nodes,
+                                     bool is_top_level_channel)
+    : ChannelNode(channel, channel_tracer_max_nodes, is_top_level_channel) {
   client_channel_ =
       grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
   GPR_ASSERT(client_channel_->filter == &grpc_client_channel_filter);
@@ -71,9 +72,10 @@ grpc_arg ClientChannelNode::CreateChannelArg() {
 }
 
 RefCountedPtr<ChannelNode> ClientChannelNode::MakeClientChannelNode(
-    grpc_channel* channel, size_t channel_tracer_max_nodes) {
+    grpc_channel* channel, size_t channel_tracer_max_nodes,
+    bool is_top_level_channel) {
   return MakePolymorphicRefCounted<ChannelNode, ClientChannelNode>(
-      channel, channel_tracer_max_nodes);
+      channel, channel_tracer_max_nodes, is_top_level_channel);
 }
 
 }  // namespace channelz

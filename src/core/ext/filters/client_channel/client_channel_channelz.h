@@ -32,7 +32,8 @@ namespace channelz {
 class ClientChannelNode : public ChannelNode {
  public:
   static RefCountedPtr<ChannelNode> MakeClientChannelNode(
-      grpc_channel* channel, size_t channel_tracer_max_nodes);
+      grpc_channel* channel, size_t channel_tracer_max_nodes,
+      bool is_top_level_channel);
 
   // Override this functionality since client_channels have a notion of
   // channel connectivity.
@@ -45,7 +46,8 @@ class ClientChannelNode : public ChannelNode {
  protected:
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
-  ClientChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes);
+  ClientChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes,
+                    bool is_top_level_channel);
   virtual ~ClientChannelNode() {}
 
  private:

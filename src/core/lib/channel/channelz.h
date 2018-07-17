@@ -49,7 +49,8 @@ class ChannelNodePeer;
 class ChannelNode : public RefCounted<ChannelNode> {
  public:
   static RefCountedPtr<ChannelNode> MakeChannelNode(
-      grpc_channel* channel, size_t channel_tracer_max_nodes);
+      grpc_channel* channel, size_t channel_tracer_max_nodes,
+      bool is_top_level_channel);
 
   void RecordCallStarted();
   void RecordCallFailed() {
@@ -78,14 +79,12 @@ class ChannelNode : public RefCounted<ChannelNode> {
 
   intptr_t channel_uuid() { return channel_uuid_; }
   bool is_top_level_channel() { return is_top_level_channel_; }
-  void set_is_top_level_channel(bool is_top_level_channel) {
-    is_top_level_channel_ = is_top_level_channel;
-  }
 
  protected:
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
-  ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes);
+  ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes,
+              bool is_top_level_channel);
   virtual ~ChannelNode();
 
  private:
@@ -106,7 +105,7 @@ class ChannelNode : public RefCounted<ChannelNode> {
 // Creation functions
 
 typedef RefCountedPtr<ChannelNode> (*ChannelNodeCreationFunc)(grpc_channel*,
-                                                              size_t);
+                                                              size_t, bool);
 
 }  // namespace channelz
 }  // namespace grpc_core

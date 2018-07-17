@@ -42,36 +42,9 @@
 namespace grpc_core {
 namespace channelz {
 namespace testing {
-namespace {
 
-class ChannelFixture {
- public:
-  ChannelFixture() {
-    grpc_arg client_a[1];
-    client_a[0].type = GRPC_ARG_INTEGER;
-    client_a[0].key = const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ);
-    client_a[0].value.integer = true;
-    grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
-    channel_ =
-        grpc_insecure_channel_create("fake_target", &client_args, nullptr);
-  }
-
-  ~ChannelFixture() { grpc_channel_destroy(channel_); }
-
-  grpc_channel* channel() { return channel_; }
-
- private:
-  grpc_channel* channel_;
-};
-
-}  // namespace
-
-// Tests basic ChannelTrace functionality like construction, adding trace, and
-// lookups by uuid.
 TEST(ChannelzRegistryTest, UuidStartsAboveZeroTest) {
-  ChannelFixture channel;
-  ChannelNode* channelz_channel =
-      grpc_channel_get_channelz_node(channel.channel());
+  ChannelNode* channelz_channel = nullptr;
   intptr_t uuid = ChannelzRegistry::RegisterChannelNode(channelz_channel);
   EXPECT_GT(uuid, 0) << "First uuid chose must be greater than zero. Zero if "
                         "reserved according to "
@@ -81,9 +54,7 @@ TEST(ChannelzRegistryTest, UuidStartsAboveZeroTest) {
 }
 
 TEST(ChannelzRegistryTest, UuidsAreIncreasing) {
-  ChannelFixture channel;
-  ChannelNode* channelz_channel =
-      grpc_channel_get_channelz_node(channel.channel());
+  ChannelNode* channelz_channel = nullptr;
   std::vector<intptr_t> uuids;
   uuids.reserve(10);
   for (int i = 0; i < 10; ++i) {
@@ -96,18 +67,14 @@ TEST(ChannelzRegistryTest, UuidsAreIncreasing) {
 }
 
 TEST(ChannelzRegistryTest, RegisterGetTest) {
-  ChannelFixture channel;
-  ChannelNode* channelz_channel =
-      grpc_channel_get_channelz_node(channel.channel());
+  ChannelNode* channelz_channel = nullptr;
   intptr_t uuid = ChannelzRegistry::RegisterChannelNode(channelz_channel);
   ChannelNode* retrieved = ChannelzRegistry::GetChannelNode(uuid);
   EXPECT_EQ(channelz_channel, retrieved);
 }
 
 TEST(ChannelzRegistryTest, RegisterManyItems) {
-  ChannelFixture channel;
-  ChannelNode* channelz_channel =
-      grpc_channel_get_channelz_node(channel.channel());
+  ChannelNode* channelz_channel = nullptr;
   for (int i = 0; i < 100; i++) {
     intptr_t uuid = ChannelzRegistry::RegisterChannelNode(channelz_channel);
     ChannelNode* retrieved = ChannelzRegistry::GetChannelNode(uuid);
@@ -116,9 +83,7 @@ TEST(ChannelzRegistryTest, RegisterManyItems) {
 }
 
 TEST(ChannelzRegistryTest, NullIfNotPresentTest) {
-  ChannelFixture channel;
-  ChannelNode* channelz_channel =
-      grpc_channel_get_channelz_node(channel.channel());
+  ChannelNode* channelz_channel = nullptr;
   intptr_t uuid = ChannelzRegistry::RegisterChannelNode(channelz_channel);
   // try to pull out a uuid that does not exist.
   ChannelNode* nonexistant = ChannelzRegistry::GetChannelNode(uuid + 1);

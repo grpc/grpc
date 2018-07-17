@@ -80,7 +80,7 @@ void ValidateJsonArraySize(grpc_json* json, const char* key,
   for (grpc_json* child = arr->child; child != nullptr; child = child->next) {
     ++count;
   }
-  ASSERT_EQ(count, expected_size);
+  EXPECT_EQ(count, expected_size);
 }
 
 void ValidateGetTopChannels(size_t expected_channels) {
@@ -91,7 +91,7 @@ void ValidateGetTopChannels(size_t expected_channels) {
   // tracked: https://github.com/grpc/grpc/issues/16019.
   ValidateJsonArraySize(parsed_json, "channel", expected_channels);
   grpc_json* end = GetJsonChild(parsed_json, "end");
-  EXPECT_NE(end, nullptr);
+  ASSERT_NE(end, nullptr);
   EXPECT_EQ(end->type, GRPC_JSON_TRUE);
   grpc_json_destroy(parsed_json);
   gpr_free(json_str);
@@ -101,13 +101,11 @@ class ChannelFixture {
  public:
   ChannelFixture(int max_trace_nodes = 0) {
     grpc_arg client_a[2];
-    client_a[0].type = GRPC_ARG_INTEGER;
-    client_a[0].key =
-        const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE);
-    client_a[0].value.integer = max_trace_nodes;
-    client_a[1].type = GRPC_ARG_INTEGER;
-    client_a[1].key = const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ);
-    client_a[1].value.integer = true;
+    client_a[0] = grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE),
+        max_trace_nodes);
+    client_a[1] = grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true);
     grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
     channel_ =
         grpc_insecure_channel_create("fake_target", &client_args, nullptr);
@@ -255,13 +253,10 @@ TEST(ChannelzGetTopChannelsTest, InternalChannelTest) {
   (void)channels;  // suppress unused variable error
   // create an internal channel
   grpc_arg client_a[2];
-  client_a[0].type = GRPC_ARG_INTEGER;
-  client_a[0].key =
-      const_cast<char*>(GRPC_ARG_CHANNELZ_CHANNEL_IS_INTERNAL_CHANNEL);
-  client_a[0].value.integer = 1;
-  client_a[1].type = GRPC_ARG_INTEGER;
-  client_a[1].key = const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ);
-  client_a[1].value.integer = true;
+  client_a[0] = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_CHANNELZ_CHANNEL_IS_INTERNAL_CHANNEL), true);
+  client_a[1] = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true);
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
   grpc_channel* internal_channel =
       grpc_insecure_channel_create("fake_target", &client_args, nullptr);
