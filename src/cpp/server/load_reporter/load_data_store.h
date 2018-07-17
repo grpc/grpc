@@ -160,7 +160,8 @@ class LoadRecordValue {
            ", error_count_=" + grpc::to_string(error_count_) +
            ", bytes_sent_=" + grpc::to_string(bytes_sent_) +
            ", bytes_recv_=" + grpc::to_string(bytes_recv_) +
-           ", latency_ms_=" + grpc::to_string(latency_ms_) + "]";
+           ", latency_ms_=" + grpc::to_string(latency_ms_) + ", " +
+           grpc::to_string(call_metrics_.size()) + " other call metric(s)]";
   }
 
   bool InsertCallMetric(const grpc::string& metric_name,

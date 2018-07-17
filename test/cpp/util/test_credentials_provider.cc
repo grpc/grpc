@@ -63,6 +63,8 @@ class DefaultCredentialsProvider : public CredentialsProvider {
       SslCredentialsOptions ssl_opts = {test_root_cert, "", ""};
       args->SetSslTargetNameOverride("foo.test.google.fr");
       return SslCredentials(ssl_opts);
+    } else if (type == grpc::testing::kGoogleDefaultCredentialsType) {
+      return grpc::GoogleDefaultCredentials();
     } else {
       std::unique_lock<std::mutex> lock(mu_);
       auto it(std::find(added_secure_type_names_.begin(),
