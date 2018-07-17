@@ -46,6 +46,7 @@ DEFINE_string(
     "all : all test cases;\n"
     "cancel_after_begin : cancel stream after starting it;\n"
     "cancel_after_first_response: cancel on first response;\n"
+    "channel_soak: sends 1000 rpcs, tearing down the channel each time;\n"
     "client_compressed_streaming : compressed request streaming with "
     "client_compressed_unary : single compressed request;\n"
     "client_streaming : request streaming with single response;\n"
@@ -60,6 +61,7 @@ DEFINE_string(
     "per_rpc_creds: raw oauth2 access token on a single rpc;\n"
     "ping_pong : full-duplex streaming;\n"
     "response streaming;\n"
+    "rpc_soak: sends 1000 large_unary rpcs;\n"
     "server_compressed_streaming : single request with compressed "
     "server_compressed_unary : single compressed response;\n"
     "server_streaming : single request with response streaming;\n"
@@ -91,8 +93,9 @@ int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
   gpr_log(GPR_INFO, "Testing these cases: %s", FLAGS_test_case.c_str());
   int ret = 0;
-  grpc::testing::InteropClient client(CreateChannelForTestCase(FLAGS_test_case),
-                                      true,
+  grpc::testing::ChannelCreationFunc channel_creation_func =
+      std::bind(&CreateChannelForTestCase, FLAGS_test_case);
+  grpc::testing::InteropClient client(channel_creation_func, true,
                                       FLAGS_do_not_abort_on_transient_failures);
 
   std::unordered_map<grpc::string, std::function<bool()>> actions;
@@ -151,6 +154,10 @@ int main(int argc, char** argv) {
       std::bind(&grpc::testing::InteropClient::DoUnimplementedService, &client);
   actions["cacheable_unary"] =
       std::bind(&grpc::testing::InteropClient::DoCacheableUnary, &client);
+  actions["channel_soak"] =
+      std::bind(&grpc::testing::InteropClient::DoChannelSoakTest, &client);
+  actions["rpc_soak"] =
+      std::bind(&grpc::testing::InteropClient::DoRpcSoakTest, &client);
 
   UpdateActions(&actions);
 
