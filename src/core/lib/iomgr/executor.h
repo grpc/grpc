@@ -27,7 +27,8 @@
 
 typedef struct {
   gpr_mu mu;
-  size_t id;  // For debugging purposes
+  size_t id;         // For debugging purposes
+  const char* name;  // Thread state name
   gpr_cv cv;
   grpc_closure_list elems;
   size_t depth;  // Number of closures in the closure list
@@ -62,7 +63,7 @@ class GrpcExecutor {
   void Enqueue(grpc_closure* closure, grpc_error* error, bool is_short);
 
  private:
-  static size_t RunClosures(grpc_closure_list list);
+  static size_t RunClosures(const char* executor_name, grpc_closure_list list);
   static void ThreadMain(void* arg);
 
   const char* name_;
