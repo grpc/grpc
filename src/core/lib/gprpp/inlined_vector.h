@@ -124,7 +124,7 @@ class InlinedVector {
   void push_back(T&& value) { emplace_back(std::move(value)); }
 
   void copy_from(const InlinedVector& v) {
-    // if copy over the buffer from v.
+    // if v is allocated, copy over the buffer.
     if (v.dynamic_ != nullptr) {
       reserve(v.capacity_);
       memcpy(dynamic_, v.dynamic_, v.size_ * sizeof(T));
