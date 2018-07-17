@@ -21,7 +21,6 @@
 #if GRPC_ARES == 1 && defined(GPR_WINDOWS)
 
 #include <ares.h>
-#include <ares_writev.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -38,6 +37,16 @@
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
+
+/* TODO(apolcyn): remove this hack after fixing upstream.
+ * Our grpc/c-ares code on Windows uses the ares_set_socket_functions API,
+ * which uses "struct iovec" type, which on Windows is defined inside of
+ * a c-ares header that is not public.
+ * See https://github.com/c-ares/c-ares/issues/206. */
+struct iovec {
+  void *iov_base;
+  size_t iov_len;
+};
 
 namespace grpc_core {
 

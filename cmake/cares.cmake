@@ -35,13 +35,6 @@ elseif("${gRPC_CARES_PROVIDER}" STREQUAL "package")
   if(TARGET c-ares::cares)
     set(_gRPC_CARES_LIBRARIES c-ares::cares)
     set(_gRPC_CARES_INCLUDE_DIR ${c-ares_INCLUDE_DIR})
-    if (MSVC)
-      # TODO(apolcyn): remove this hack. Our grpc/c-ares code on
-      # Windows needs to use ares_writev.h, which is not
-      # present in c-ares_INCLUDE_DIR.
-      # See https://github.com/c-ares/c-ares/issues/206.
-      set(_gRPC_CARES_INCLUDE_DIR ${_gRPC_CARES_INCLUDE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cares/cares)
-    endif()
   endif()
   set(_gRPC_FIND_CARES "if(NOT c-ares_FOUND)\n  find_package(c-ares CONFIG)\nendif()")
 endif()
