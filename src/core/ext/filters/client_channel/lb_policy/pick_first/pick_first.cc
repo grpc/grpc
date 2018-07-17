@@ -122,6 +122,8 @@ class PickFirst : public LoadBalancingPolicy {
   PickState* pending_picks_ = nullptr;
   // Our connectivity state tracker.
   grpc_connectivity_state_tracker state_tracker_;
+
+  InlinedVector<int, 10> why_does_this_cause_asan_failures;
 };
 
 PickFirst::PickFirst(const Args& args) : LoadBalancingPolicy(args) {
