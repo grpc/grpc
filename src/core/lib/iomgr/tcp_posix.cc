@@ -26,6 +26,7 @@
 #include "src/core/lib/iomgr/tcp_posix.h"
 
 #include <errno.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -513,7 +514,11 @@ static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
 }
 
 /* returns true if done, false if pending; if returning true, *error is set */
+#if defined(IOV_MAX) && IOV_MAX < 1000
+#define MAX_WRITE_IOVEC IOV_MAX
+#else
 #define MAX_WRITE_IOVEC 1000
+#endif
 static bool tcp_flush(grpc_tcp* tcp, grpc_error** error) {
   struct msghdr msg;
   struct iovec iov[MAX_WRITE_IOVEC];
