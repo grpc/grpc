@@ -41,7 +41,7 @@
 namespace grpc_core {
 
 // The alignment of memory returned by gpr_malloc().
-constexpr size_t kAlignmentForDefaultAllocationInBytes = 16;
+constexpr size_t kAlignmentForDefaultAllocationInBytes = 8;
 
 // Alternative to new, since we cannot use it (for fear of libstdc++)
 template <typename T, typename... Args>
