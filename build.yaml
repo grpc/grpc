@@ -1615,6 +1615,21 @@ libs:
   - grpc++_codegen_base_src
   secure: check
   vs_project_guid: '{C187A093-A0FE-489D-A40A-6E33DE0F9FEB}'
+- name: grpc++_channelz
+  build: all
+  language: c++
+  public_headers:
+  - include/grpcpp/ext/channelz_server_plugin.h
+  headers:
+  - src/cpp/server/channelz/channelz_server.h
+  src:
+  - src/cpp/server/channelz/channelz_server.cc
+  - src/cpp/server/channelz/channelz_server_plugin.cc
+  deps:
+  - grpc++
+  - grpc
+  filegroups:
+  - grpc++_channelz_proto
 - name: grpc++_core_stats
   build: private
   language: c++
@@ -4314,6 +4329,22 @@ targets:
   uses:
   - grpc++_test
   uses_polling: false
+- name: channelz_server_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/end2end/channelz_server_test.cc
+  deps:
+  - grpc++_channelz
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  filegroups:
+  - grpc++_channelz_proto
 - name: channelz_test
   gtest: true
   build: test

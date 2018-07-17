@@ -119,6 +119,28 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "channelz_server_test",
+    testonly = True,
+    srcs = ["channelz_server_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc++_channelz",
+        "//src/proto/grpc/channelz:channelz_proto",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
 grpc_cc_test(
     name = "server_early_return_test",
     srcs = ["server_early_return_test.cc"],

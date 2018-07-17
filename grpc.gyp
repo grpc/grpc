@@ -1394,6 +1394,19 @@
       ],
     },
     {
+      'target_name': 'grpc++_channelz',
+      'type': 'static_library',
+      'dependencies': [
+        'grpc++',
+        'grpc',
+      ],
+      'sources': [
+        'src/cpp/server/channelz/channelz_server.cc',
+        'src/cpp/server/channelz/channelz_server_plugin.cc',
+        'src/proto/grpc/channelz/channelz.proto',
+      ],
+    },
+    {
       'target_name': 'grpc++_core_stats',
       'type': 'static_library',
       'dependencies': [
