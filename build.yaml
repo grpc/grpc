@@ -1111,10 +1111,6 @@ filegroups:
   secure: true
   uses:
   - grpc_trace
-- name: grpc++_channelz_proto
-  language: c++
-  src:
-  - src/proto/grpc/channelz/channelz.proto
 - name: grpc++_codegen_base
   language: c++
   public_headers:
@@ -1359,6 +1355,10 @@ filegroups:
   deps:
   - grpc++
   - grpc
+- name: grpcpp_channelz_proto
+  language: c++
+  src:
+  - src/proto/grpc/channelz/channelz.proto
 libs:
 - name: address_sorting
   build: all
@@ -1851,6 +1851,20 @@ libs:
   vs_project_guid: '{B6E81D84-2ACB-41B8-8781-493A944C7817}'
   vs_props:
   - protoc
+- name: grpcpp_channelz
+  build: all
+  language: c++
+  headers:
+  - src/cpp/server/channelz/channelz_service.h
+  - src/cpp/server/channelz/channelz_service_plugin.h
+  src:
+  - src/cpp/server/channelz/channelz_service.cc
+  - src/cpp/server/channelz/channelz_service_plugin.cc
+  deps:
+  - grpc++
+  - grpc
+  filegroups:
+  - grpcpp_channelz_proto
 - name: http2_client_main
   build: private
   language: c++
@@ -4295,7 +4309,7 @@ targets:
   - gpr_test_util
   - gpr
   filegroups:
-  - grpc++_channelz_proto
+  - grpcpp_channelz_proto
   uses:
   - grpc++_test
 - name: channelz_registry_test
@@ -4314,6 +4328,22 @@ targets:
   uses:
   - grpc++_test
   uses_polling: false
+- name: channelz_service_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/end2end/channelz_service_test.cc
+  deps:
+  - grpcpp_channelz
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr_test_util
+  - gpr
+  filegroups:
+  - grpcpp_channelz_proto
 - name: channelz_test
   gtest: true
   build: test
@@ -4328,7 +4358,7 @@ targets:
   - gpr_test_util
   - gpr
   filegroups:
-  - grpc++_channelz_proto
+  - grpcpp_channelz_proto
   uses:
   - grpc++_test
 - name: check_gcp_environment_linux_test

@@ -1586,6 +1586,19 @@
       ],
     },
     {
+      'target_name': 'grpcpp_channelz',
+      'type': 'static_library',
+      'dependencies': [
+        'grpc++',
+        'grpc',
+      ],
+      'sources': [
+        'src/cpp/server/channelz/channelz_service.cc',
+        'src/cpp/server/channelz/channelz_service_plugin.cc',
+        'src/proto/grpc/channelz/channelz.proto',
+      ],
+    },
+    {
       'target_name': 'http2_client_main',
       'type': 'static_library',
       'dependencies': [
