@@ -186,7 +186,7 @@ grpc::string GetServices(const FileDescriptor* file) {
         "dep.name",
         MessagesRequireName(file),
     });
-    out.Print(dep_vars, "require '$dep.name$'\n");
+    out.Print(dep_vars, "require_relative '$dep.name$'\n");
 
     // Write out services within the modules
     out.Print("\n");
