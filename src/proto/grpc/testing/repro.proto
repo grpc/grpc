@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package test;
+
+message TestRequest
+{
+    int64 value = 1;
+    string payload = 2;
+}
+
+message TestResponse
+{
+    int64 value = 1;
+}
+
+service BasicTestService
+{
+    rpc Accumulate(stream TestRequest) returns (TestResponse);
+}

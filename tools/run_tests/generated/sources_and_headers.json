@@ -4404,6 +4404,25 @@
       "gpr", 
       "gpr_test_util", 
       "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "repro", 
+    "src": [
+      "test/cpp/end2end/repro.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "gpr_test_util", 
+      "grpc", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -7312,6 +7331,9 @@
       "src/proto/grpc/testing/echo_messages.pb.h", 
       "src/proto/grpc/testing/echo_messages_mock.grpc.pb.h", 
       "src/proto/grpc/testing/echo_mock.grpc.pb.h", 
+      "src/proto/grpc/testing/repro.grpc.pb.h", 
+      "src/proto/grpc/testing/repro.pb.h", 
+      "src/proto/grpc/testing/repro_mock.grpc.pb.h", 
       "test/cpp/end2end/test_service_impl.h", 
       "test/cpp/util/byte_buffer_proto_helper.h", 
       "test/cpp/util/channel_trace_proto_helper.h", 
@@ -7365,6 +7387,9 @@
       "src/proto/grpc/testing/echo_messages.pb.h", 
       "src/proto/grpc/testing/echo_messages_mock.grpc.pb.h", 
       "src/proto/grpc/testing/echo_mock.grpc.pb.h", 
+      "src/proto/grpc/testing/repro.grpc.pb.h", 
+      "src/proto/grpc/testing/repro.pb.h", 
+      "src/proto/grpc/testing/repro_mock.grpc.pb.h", 
       "test/cpp/end2end/test_service_impl.h", 
       "test/cpp/util/byte_buffer_proto_helper.h", 
       "test/cpp/util/string_ref_helper.h", 
