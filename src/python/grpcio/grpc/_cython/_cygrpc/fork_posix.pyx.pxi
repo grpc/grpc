@@ -84,17 +84,28 @@ def fork_handlers_and_grpc_init():
                 _fork_state.fork_handler_registered = True
 
 
-def fork_managed_thread(target, args=()):
-    if _GRPC_ENABLE_FORK_SUPPORT:
-        def managed_target(*args):
-            try:
-                _fork_state.active_thread_count.increment()
-                target(*args)
-            finally:
-                _fork_state.active_thread_count.decrement()
-        return threading.Thread(target=managed_target, args=args)
-    else:
-        return threading.Thread(target=target, args=args)
+class ForkManagedThread(object):
+    def __init__(self, target, args=()):
+        if _GRPC_ENABLE_FORK_SUPPORT:
+            def managed_target(*args):
+                try:
+                    target(*args)
+                finally:
+                    _fork_state.active_thread_count.decrement()
+            self._thread = threading.Thread(target=managed_target, args=args)
+        else:
+            self._thread = threading.Thread(target=target, args=args)
+
+    def setDaemon(self, daemonic):
+        self._thread.daemon = daemonic
+
+    def start(self):
+        if _GRPC_ENABLE_FORK_SUPPORT:
+            _fork_state.active_thread_count.increment()
+        self._thread.start()
+
+    def join(self):
+        self._thread.join()
 
 
 def block_if_fork_in_progress(postfork_state_to_reset=None):

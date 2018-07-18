@@ -21,8 +21,18 @@ def fork_handlers_and_grpc_init():
     grpc_init()
 
 
-def fork_managed_thread(target, args=()):
-    return threading.Thread(target=target, args=args)
+class ForkManagedThread(object):
+    def __init__(self, target, args=()):
+        self._thread = threading.Thread(target=target, args=args)
+
+    def setDaemon(self, daemonic):
+        self._thread.daemon = daemonic
+
+    def start(self):
+        self._thread.start()
+
+    def join(self):
+        self._thread.join()
 
 
 def block_if_fork_in_progress():

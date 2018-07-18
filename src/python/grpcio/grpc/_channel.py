@@ -238,9 +238,9 @@ def _consume_request_iterator(request_iterator, state, call, request_serializer,
                 if operating:
                     state.due.add(cygrpc.OperationType.send_close_from_client)
 
-    consumption_thread = cygrpc.fork_managed_thread(
+    consumption_thread = cygrpc.ForkManagedThread(
         target=consume_request_iterator)
-    consumption_thread.daemon = True
+    consumption_thread.setDaemon(True)
     consumption_thread.start()
 
 
@@ -707,8 +707,8 @@ def _run_channel_spin_thread(state):
                     if state.managed_calls == 0:
                         return
 
-    channel_spin_thread = cygrpc.fork_managed_thread(target=channel_spin)
-    channel_spin_thread.daemon = True
+    channel_spin_thread = cygrpc.ForkManagedThread(target=channel_spin)
+    channel_spin_thread.setDaemon(True)
     channel_spin_thread.start()
 
 
@@ -801,7 +801,7 @@ def _deliver(state, initial_connectivity, initial_callbacks):
 
 
 def _spawn_delivery(state, callbacks):
-    delivering_thread = cygrpc.fork_managed_thread(
+    delivering_thread = cygrpc.ForkManagedThread(
         target=_deliver, args=(
             state,
             state.connectivity,
@@ -857,10 +857,10 @@ def _moot(state):
 def _subscribe(state, callback, try_to_connect):
     with state.lock:
         if not state.callbacks_and_connectivities and not state.polling:
-            polling_thread = cygrpc.fork_managed_thread(
+            polling_thread = cygrpc.ForkManagedThread(
                 target=_poll_connectivity,
                 args=(state, state.channel, bool(try_to_connect)))
-            polling_thread.daemon = True
+            polling_thread.setDaemon(True)
             polling_thread.start()
             state.polling = True
             state.callbacks_and_connectivities.append([callback, None])

@@ -34,7 +34,7 @@ class ForkPosixTester(unittest.TestCase):
         def cb():
             self.assertEqual(1, _get_number_active_threads())
 
-        thread = cygrpc.fork_managed_thread(cb)
+        thread = cygrpc.ForkManagedThread(cb)
         thread.start()
         thread.join()
         self.assertEqual(0, _get_number_active_threads())
@@ -45,7 +45,7 @@ class ForkPosixTester(unittest.TestCase):
             self.assertEqual(1, _get_number_active_threads())
             raise Exception("expected exception")
 
-        thread = cygrpc.fork_managed_thread(cb)
+        thread = cygrpc.ForkManagedThread(cb)
         thread.start()
         thread.join()
         self.assertEqual(0, _get_number_active_threads())
@@ -59,7 +59,7 @@ class ForkWindowsTester(unittest.TestCase):
         def cb():
             self.assertEqual(0, _get_number_active_threads())
 
-        thread = cygrpc.fork_managed_thread(cb)
+        thread = cygrpc.ForkManagedThread(cb)
         thread.start()
         thread.join()
         self.assertEqual(0, _get_number_active_threads())
