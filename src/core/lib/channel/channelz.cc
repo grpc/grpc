@@ -98,11 +98,8 @@ grpc_json* ChannelNode::RenderJson() {
   if (trace != nullptr) {
     // we manually link up and fill the child since it was created for us in
     // ChannelTrace::RenderJson
+    trace->key = "trace";  // this object is named trace in channelz.proto
     json_iterator = grpc_json_link_child(json, trace, json_iterator);
-    trace->parent = json;
-    trace->value = nullptr;
-    trace->key = "trace";
-    trace->owns_value = false;
   }
   // reset the parent to be the data object.
   json = data;

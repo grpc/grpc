@@ -107,7 +107,6 @@ char* ChannelzRegistry::InternalGetTopChannels(intptr_t start_channel_id) {
       grpc_json* channel_json = top_level_channels[i]->RenderJson();
       json_iterator =
           grpc_json_link_child(array_parent, channel_json, json_iterator);
-      channel_json->parent = array_parent;
     }
   }
   // For now we do not have any pagination rules. In the future we could
