@@ -77,5 +77,10 @@ void ValidateGetTopChannelsResponseProtoJsonTranslation(char* json_c_str) {
       json_c_str);
 }
 
+void ValidateGetChannelResponseProtoJsonTranslation(char* json_c_str) {
+  VaidateProtoJsonTranslation<grpc::channelz::v1::GetChannelResponse>(
+      json_c_str);
+}
+
 }  // namespace testing
 }  // namespace grpc
