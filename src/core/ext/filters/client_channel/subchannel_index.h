@@ -64,6 +64,9 @@ void grpc_subchannel_index_ref(void);
     to zero, unref the subchannel index and destroy its mutex. */
 void grpc_subchannel_index_unref(void);
 
+/** Disconnect all subchannels found in the index. This must *only* be used in
+    the post-fork handler in the child process after a fork has occurred, as it
+    has no guarantees of thread-safety and assumes that no locks are held. */
 void grpc_subchannel_index_disconnect_on_fork(void);
 
 /** \em TEST ONLY.

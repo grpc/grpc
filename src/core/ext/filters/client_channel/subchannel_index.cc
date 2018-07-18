@@ -146,12 +146,10 @@ void grpc_subchannel_index_disconnect_helper(grpc_avl_node* node) {
   if (node == nullptr) {
     return;
   }
-
   grpc_subchannel* c = static_cast<grpc_subchannel*>(node->value);
   if (c != nullptr) {
     grpc_subchannel_disconnect_due_to_fork(c);
   }
-
   grpc_subchannel_index_disconnect_helper(node->left);
   grpc_subchannel_index_disconnect_helper(node->right);
 }

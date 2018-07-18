@@ -797,11 +797,9 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
 
   grpc_tcp* tcp = static_cast<grpc_tcp*>(gpr_malloc(sizeof(grpc_tcp)));
   tcp->base.vtable = &vtable;
-
 #ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
   tcp->base.fork_epoch = grpc_core::Fork::GetForkEpoch();
 #endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
-
   tcp->peer_string = gpr_strdup(peer_string);
   tcp->fd = grpc_fd_wrapped_fd(em_fd);
   tcp->read_cb = nullptr;

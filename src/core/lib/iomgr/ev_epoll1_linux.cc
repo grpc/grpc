@@ -294,11 +294,9 @@ static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
     new_fd->error_closure.Init();
   }
   new_fd->fd = fd;
-
 #ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
   new_fd->fork_epoch = grpc_core::Fork::GetForkEpoch();
 #endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
-
   new_fd->read_closure->InitEvent();
   new_fd->write_closure->InitEvent();
   new_fd->error_closure->InitEvent();

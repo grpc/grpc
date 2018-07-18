@@ -47,7 +47,6 @@ class Fork {
   static void DecExecCtxCount();
 
   static void IncrementForkEpoch();
-
   static int GetForkEpoch();
 
   // Check if there is a single active ExecCtx
@@ -76,7 +75,7 @@ class Fork {
   static internal::ThreadState* threadState_;
   static bool supportEnabled_;
   static bool overrideEnabled_;
-  static int forkEpoch_;
+  static int fork_epoch;
 };
 
 }  // namespace grpc_core

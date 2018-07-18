@@ -222,9 +222,8 @@ void Fork::DecExecCtxCount() {
   }
 }
 
-void Fork::IncrementForkEpoch() { forkEpoch_++; }
-
-int Fork::GetForkEpoch() { return forkEpoch_; }
+void Fork::IncrementForkEpoch() { fork_epoch++; }
+int Fork::GetForkEpoch() { return fork_epoch; }
 
 bool Fork::BlockExecCtx() {
   if (supportEnabled_) {
@@ -260,6 +259,5 @@ internal::ExecCtxState* Fork::execCtxState_ = nullptr;
 internal::ThreadState* Fork::threadState_ = nullptr;
 bool Fork::supportEnabled_ = false;
 bool Fork::overrideEnabled_ = false;
-int Fork::forkEpoch_ = 0;
-
+int Fork::fork_epoch = 0;
 }  // namespace grpc_core
