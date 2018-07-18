@@ -44,7 +44,7 @@
  * a c-ares header that is not public.
  * See https://github.com/c-ares/c-ares/issues/206. */
 struct iovec {
-  void *iov_base;
+  void* iov_base;
   size_t iov_len;
 };
 
