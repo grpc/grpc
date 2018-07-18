@@ -390,8 +390,8 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
 }
 
 grpc_core::channelz::SubchannelNode* grpc_subchannel_get_channelz_node(
-    grpc_subchannel* s) {
-  return s->channelz_subchannel.get();
+    grpc_subchannel* subchannel) {
+  return subchannel->channelz_subchannel.get();
 }
 
 static void continue_connect_locked(grpc_subchannel* c) {

@@ -69,7 +69,7 @@ void ClientChannelNode::PopulateChildRefs(grpc_json* json) {
   grpc_json* json_iterator = nullptr;
   grpc_client_channel_populate_child_refs(client_channel_, &child_subchannels,
                                           &child_channels);
-  if (child_subchannels.size() > 0) {
+  if (!child_subchannels.empty()) {
     grpc_json* array_parent = grpc_json_create_child(
         nullptr, json, "subchannelRef", nullptr, GRPC_JSON_ARRAY, false);
     for (size_t i = 0; i < child_subchannels.size(); ++i) {
@@ -80,7 +80,7 @@ void ClientChannelNode::PopulateChildRefs(grpc_json* json) {
                                         child_subchannels[i]);
     }
   }
-  if (child_channels.size() > 0) {
+  if (!child_channels.empty()) {
     grpc_json* array_parent = grpc_json_create_child(
         nullptr, json, "channelRef", nullptr, GRPC_JSON_ARRAY, false);
     json_iterator = nullptr;
