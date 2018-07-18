@@ -338,55 +338,46 @@ void resolver_enqueue_long(grpc_closure* closure, grpc_error* error) {
                                              false /* is_short */);
 }
 
-static const grpc_closure_scheduler_vtable vtables_[] = {
-    {&default_enqueue_short, &default_enqueue_short, "def-ex-short"},
-    {&default_enqueue_long, &default_enqueue_long, "def-ex-long"},
-    {&resolver_enqueue_short, &resolver_enqueue_short, "res-ex-short"},
-    {&resolver_enqueue_long, &resolver_enqueue_long, "res-ex-long"}};
+static const grpc_closure_scheduler_vtable
+    vtables_[GRPC_NUM_EXECUTORS][GRPC_NUM_EXECUTOR_JOB_TYPES] = {
+        {{&default_enqueue_short, &default_enqueue_short, "def-ex-short"},
+         {&default_enqueue_long, &default_enqueue_long, "def-ex-long"}},
+        {{&resolver_enqueue_short, &resolver_enqueue_short, "res-ex-short"},
+         {&resolver_enqueue_long, &resolver_enqueue_long, "res-ex-long"}}};
 
-static grpc_closure_scheduler schedulers_[] = {
-    {&vtables_[0]},  // Default short
-    {&vtables_[1]},  // Default long
-    {&vtables_[2]},  // Resolver short
-    {&vtables_[3]}   // Resolver long
-};
-
-const char* executor_name(GrpcExecutorType executor_type) {
-  switch (executor_type) {
-    case GRPC_DEFAULT_EXECUTOR:
-      return "default-executor";
-    case GRPC_RESOLVER_EXECUTOR:
-      return "resolver-executor";
-    default:
-      GPR_UNREACHABLE_CODE(return "unknown");
-  }
-  GPR_UNREACHABLE_CODE(return "unknown");
-}
+static grpc_closure_scheduler
+    schedulers_[GRPC_NUM_EXECUTORS][GRPC_NUM_EXECUTOR_JOB_TYPES] = {
+        {{&vtables_[GRPC_DEFAULT_EXECUTOR][GRPC_EXECUTOR_SHORT]},
+         {&vtables_[GRPC_DEFAULT_EXECUTOR][GRPC_EXECUTOR_LONG]}},
+        {{&vtables_[GRPC_RESOLVER_EXECUTOR][GRPC_EXECUTOR_SHORT]},
+         {&vtables_[GRPC_RESOLVER_EXECUTOR][GRPC_EXECUTOR_LONG]}}};
 
 // grpc_executor_init() and grpc_executor_shutdown() functions are called in the
 // the grpc_init() and grpc_shutdown() code paths which are protected by a
 // global mutex. So it is okay to assume that these functions are thread-safe
 void grpc_executor_init() {
   EXECUTOR_TRACE0("grpc_executor_init() enter");
-  for (int i = 0; i < GRPC_NUM_EXECUTORS; i++) {
-    // Return if grpc_executor_init() already called earlier
-    if (executors[i] != nullptr) {
-      // Ideally we should also assert that all executors i.e executor[0] to
-      // executor[GRPC_NUM_EXECUTORS-1] are != nullptr too.
-      GPR_ASSERT(i == 0);
-      break;
-    }
 
-    executors[i] = grpc_core::New<GrpcExecutor>(
-        executor_name(static_cast<GrpcExecutorType>(i)));
-    executors[i]->Init();
+  // Return if grpc_executor_init() is already called earlier
+  if (executors[GRPC_DEFAULT_EXECUTOR] != nullptr) {
+    GPR_ASSERT(executors[GRPC_RESOLVER_EXECUTOR] != nullptr);
+    return;
   }
+
+  executors[GRPC_DEFAULT_EXECUTOR] =
+      grpc_core::New<GrpcExecutor>("default-executor");
+  executors[GRPC_RESOLVER_EXECUTOR] =
+      grpc_core::New<GrpcExecutor>("resolver-executor");
+
+  executors[GRPC_DEFAULT_EXECUTOR]->Init();
+  executors[GRPC_RESOLVER_EXECUTOR]->Init();
+
   EXECUTOR_TRACE0("grpc_executor_init() done");
 }
 
 grpc_closure_scheduler* grpc_executor_scheduler(GrpcExecutorType executor_type,
                                                 GrpcExecutorJobType job_type) {
-  return &schedulers_[(executor_type * GRPC_NUM_EXECUTORS) + job_type];
+  return &schedulers_[executor_type][job_type];
 }
 
 grpc_closure_scheduler* grpc_executor_scheduler(GrpcExecutorJobType job_type) {
@@ -395,32 +386,33 @@ grpc_closure_scheduler* grpc_executor_scheduler(GrpcExecutorJobType job_type) {
 
 void grpc_executor_shutdown() {
   EXECUTOR_TRACE0("grpc_executor_shutdown() enter");
-  for (int i = 0; i < GRPC_NUM_EXECUTORS; i++) {
-    // Return if grpc_executor_shutdown() is already called earlier
-    if (executors[i] == nullptr) {
-      // Ideally we should also assert that all executors i.e executor[0] to
-      // executor[GRPC_NUM_EXECUTORS-1] are nullptr too.
-      GPR_ASSERT(i == 0);
-      break;
-    }
-    executors[i]->Shutdown();
+
+  // Return if grpc_executor_shutdown() is already called earlier
+  if (executors[GRPC_DEFAULT_EXECUTOR] == nullptr) {
+    GPR_ASSERT(executors[GRPC_RESOLVER_EXECUTOR] == nullptr);
+    return;
   }
+
+  executors[GRPC_DEFAULT_EXECUTOR]->Shutdown();
+  executors[GRPC_RESOLVER_EXECUTOR]->Shutdown();
 
   // Delete the executor objects.
   //
-  // NOTE: It is important to do this in a separate loop (i.e ONLY after all the
-  // executors are 'Shutdown' first) because it is possible for one executor
-  // (that is not shutdown yet) to call Enqueue() on a different executor which
-  // is already shutdown. This is legal and in such cases, the Enqueue()
-  // operation effectively "fails" and enqueues that closure on the calling
-  // thread's exec_ctx.
+  // NOTE: It is important to call Shutdown() on all executors first before
+  // calling Delete() because it is possible for one executor (that is not
+  // shutdown yet) to call Enqueue() on a different executor which is already
+  // shutdown. This is legal and in such cases, the Enqueue() operation
+  // effectively "fails" and enqueues that closure on the calling thread's
+  // exec_ctx.
   //
   // By ensuring that all executors are shutdown first, we are also ensuring
   // that no thread is active across all executors.
-  for (int i = 0; i < GRPC_NUM_EXECUTORS; i++) {
-    grpc_core::Delete<GrpcExecutor>(executors[i]);
-    executors[i] = nullptr;
-  }
+
+  grpc_core::Delete<GrpcExecutor>(executors[GRPC_DEFAULT_EXECUTOR]);
+  grpc_core::Delete<GrpcExecutor>(executors[GRPC_RESOLVER_EXECUTOR]);
+  executors[GRPC_DEFAULT_EXECUTOR] = nullptr;
+  executors[GRPC_RESOLVER_EXECUTOR] = nullptr;
+
   EXECUTOR_TRACE0("grpc_executor_shutdown() done");
 }
 
