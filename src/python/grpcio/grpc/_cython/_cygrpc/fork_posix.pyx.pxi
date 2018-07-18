@@ -87,9 +87,11 @@ def fork_handlers_and_grpc_init():
 def fork_managed_thread(target, args=()):
     if _GRPC_ENABLE_FORK_SUPPORT:
         def managed_target(*args):
-            _fork_state.active_thread_count.increment()
-            target(*args)
-            _fork_state.active_thread_count.decrement()
+            try:
+                _fork_state.active_thread_count.increment()
+                target(*args)
+            finally:
+                _fork_state.active_thread_count.decrement()
         return threading.Thread(target=managed_target, args=args)
     else:
         return threading.Thread(target=target, args=args)
