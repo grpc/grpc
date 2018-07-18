@@ -74,8 +74,8 @@ class InteropClient {
   // not implemented cross-language. They are considered experimental for now,
   // but at some point in the future, might be codified and implemented in all
   // languages
-  bool DoChannelSoakTest();
-  bool DoRpcSoakTest();
+  bool DoChannelSoakTest(int32_t soak_iterations);
+  bool DoRpcSoakTest(int32_t soak_iterations);
 
   // Auth tests.
   // username is a string containing the user email

@@ -106,8 +106,6 @@ void InteropClient::ServiceStub::ResetChannel() {
   channel_ = channel_creation_func_();
   if (!new_stub_every_call_) {
     stub_ = TestService::NewStub(channel_);
-  } else {
-    stub_.reset();
   }
 }
 
@@ -1022,12 +1020,14 @@ bool InteropClient::DoCustomMetadata() {
   return true;
 }
 
-bool InteropClient::DoRpcSoakTest() {
-  gpr_log(GPR_DEBUG, "Sending 1000 RPCs...");
+bool InteropClient::DoRpcSoakTest(int32_t soak_iterations) {
+  gpr_log(GPR_DEBUG, "Sending %d RPCs...", soak_iterations);
+  GPR_ASSERT(soak_iterations > 0);
   SimpleRequest request;
   SimpleResponse response;
-  for (int i = 0; i < 1000; ++i) {
+  for (int i = 0; i < soak_iterations; ++i) {
     if (!PerformLargeUnary(&request, &response)) {
+      gpr_log(GPR_ERROR, "rpc_soak test failed on iteration %d", i);
       return false;
     }
   }
@@ -1035,14 +1035,16 @@ bool InteropClient::DoRpcSoakTest() {
   return true;
 }
 
-bool InteropClient::DoChannelSoakTest() {
-  gpr_log(GPR_DEBUG,
-          "Sending 1000 RPCs, tearing down the channel each time...");
+bool InteropClient::DoChannelSoakTest(int32_t soak_iterations) {
+  gpr_log(GPR_DEBUG, "Sending %d RPCs, tearing down the channel each time...",
+          soak_iterations);
+  GPR_ASSERT(soak_iterations > 0);
   SimpleRequest request;
   SimpleResponse response;
-  for (int i = 0; i < 1000; ++i) {
+  for (int i = 0; i < soak_iterations; ++i) {
     serviceStub_.ResetChannel();
     if (!PerformLargeUnary(&request, &response)) {
+      gpr_log(GPR_ERROR, "channel_soak test failed on iteration %d", i);
       return false;
     }
   }
