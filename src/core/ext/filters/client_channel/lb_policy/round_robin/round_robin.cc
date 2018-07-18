@@ -408,30 +408,10 @@ void RoundRobin::FillChildRefsForChannelz(
 void RoundRobin::UpdateChildRefsLocked() {
   ChildRefsList cs;
   if (subchannel_list_ != nullptr) {
-    for (size_t i = 0; i < subchannel_list_->num_subchannels(); ++i) {
-      if (subchannel_list_->subchannel(i)->subchannel() != nullptr) {
-        grpc_core::channelz::SubchannelNode* subchannel_node =
-            grpc_subchannel_get_channelz_node(
-                subchannel_list_->subchannel(i)->subchannel());
-        if (subchannel_node != nullptr) {
-          cs.push_back(subchannel_node->subchannel_uuid());
-        }
-      }
-    }
+    subchannel_list_->PopulateChildRefsList(&cs);
   }
   if (latest_pending_subchannel_list_ != nullptr) {
-    for (size_t i = 0; i < latest_pending_subchannel_list_->num_subchannels();
-         ++i) {
-      if (latest_pending_subchannel_list_->subchannel(i)->subchannel() !=
-          nullptr) {
-        grpc_core::channelz::SubchannelNode* subchannel_node =
-            grpc_subchannel_get_channelz_node(
-                latest_pending_subchannel_list_->subchannel(i)->subchannel());
-        if (subchannel_node != nullptr) {
-          cs.push_back(subchannel_node->subchannel_uuid());
-        }
-      }
-    }
+    latest_pending_subchannel_list_->PopulateChildRefsList(&cs);
   }
   // atomically update the data that channelz will actually be looking at.
   mu_guard guard(&child_refs_mu_);
