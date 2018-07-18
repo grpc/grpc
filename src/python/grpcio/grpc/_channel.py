@@ -184,6 +184,7 @@ def _consume_request_iterator(request_iterator, state, call, request_serializer,
 
     def consume_request_iterator():  # pylint: disable=too-many-branches
         while True:
+            return_from_user_request_generator_invoked = False
             try:
                 # The thread may die in user-code. Do not block fork for this.
                 cygrpc.enter_user_request_generator()
@@ -191,6 +192,8 @@ def _consume_request_iterator(request_iterator, state, call, request_serializer,
             except StopIteration:
                 break
             except Exception:  # pylint: disable=broad-except
+                cygrpc.return_from_user_request_generator()
+                return_from_user_request_generator_invoked = True
                 code = grpc.StatusCode.UNKNOWN
                 details = 'Exception iterating requests!'
                 _LOGGER.exception(details)
@@ -199,8 +202,9 @@ def _consume_request_iterator(request_iterator, state, call, request_serializer,
                 _abort(state, code, details)
                 return
             finally:
-                cygrpc.return_from_user_request_generator()
-                cygrpc.block_if_fork_in_progress()
+                if not return_from_user_request_generator_invoked:
+                    cygrpc.return_from_user_request_generator()
+                    cygrpc.block_if_fork_in_progress()
             serialized_request = _common.serialize(request, request_serializer)
             with state.condition:
                 if state.code is None and not state.cancelled:
