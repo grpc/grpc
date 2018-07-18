@@ -91,7 +91,7 @@ void LockfreeEvent::NotifyOn(grpc_closure* closure) {
   while (true) {
     /* This load needs to be an acquire load because this can be a shutdown
      * error that we might need to reference. Adding acquire semantics makes
-     * sure that the shutdown error has been inited properly before us
+     * sure that the shutdown error has been initialized properly before us
      * referencing it. */
     gpr_atm curr = gpr_atm_acq_load(&state_);
     if (grpc_polling_trace.enabled()) {
