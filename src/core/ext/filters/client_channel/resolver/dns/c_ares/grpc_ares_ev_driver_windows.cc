@@ -179,7 +179,7 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
         "RecvFrom called on fd:|%s|. Current read buf length:|%d|", GetName(),
         GRPC_SLICE_LENGTH(read_buf_));
     if (GRPC_SLICE_LENGTH(read_buf_) == 0) {
-      SetLastError(EWOULDBLOCK);
+      WSASetLastError(WSAEWOULDBLOCK);
       return -1;
     }
     ares_ssize_t bytes_read = 0;
@@ -234,7 +234,7 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
           msg, GetName());
       gpr_free(msg);
       if (WSAGetLastError() == WSA_IO_PENDING) {
-        SetLastError(EWOULDBLOCK);
+        WSASetLastError(WSAEWOULDBLOCK);
         write_state_ = WRITE_REQUESTED;
       }
     }
@@ -254,7 +254,7 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
         return TrySendWriteBufSyncNonBlocking();
       case WRITE_REQUESTED:
       case WRITE_PENDING:
-        SetLastError(EWOULDBLOCK);
+        WSASetLastError(WSAEWOULDBLOCK);
         return -1;
       case WRITE_WAITING_FOR_VERIFICATION_UPON_RETRY:
         grpc_slice currently_attempted = FlattenIovec(iov, iov_count);
@@ -284,11 +284,14 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
         WSAConnect(s, target, target_len, nullptr, nullptr, nullptr, nullptr);
     if (out != 0) {
       char* msg = gpr_format_message(WSAGetLastError());
-      GRPC_CARES_TRACE_LOG("Connect error:|%s|. fd:|%s|", msg, GetName());
+      GRPC_CARES_TRACE_LOG("Connect error code:|%d|, msg:|%s|. fd:|%s|",
+                           WSAGetLastError(), msg, GetName());
       gpr_free(msg);
       if (WSAGetLastError() == WSAEWOULDBLOCK) {
-        SetLastError(EWOULDBLOCK);
+        WSASetLastError(WSAEWOULDBLOCK);
       }
+      // c-ares expects a posix-style connect API
+      out = -1;
     }
     return out;
   }
