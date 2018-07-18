@@ -49,6 +49,14 @@ class Channel final : public ChannelInterface,
   /// not available.
   grpc::string GetServiceConfigJSON() const;
 
+  /// Return the host name for this channel.
+  ///
+  /// \return Based on the channel type this function will return:
+  /// - the actual host name if the channel represents a physical network
+  ///   connection.
+  /// - "inproc" if the channel is an in-process channel.
+  grpc::string GetHost() const override;
+
  private:
   template <class InputMessage, class OutputMessage>
   friend class internal::BlockingUnaryCallImpl;

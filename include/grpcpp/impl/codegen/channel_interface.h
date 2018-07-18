@@ -59,6 +59,14 @@ class ChannelInterface {
   /// \a try_to_connect is set to true, try to connect.
   virtual grpc_connectivity_state GetState(bool try_to_connect) = 0;
 
+  /// Return the host name for this channel.
+  ///
+  /// \return Based on the channel type this function will return:
+  /// - the actual host name if the channel represents a physical network
+  ///   connection.
+  /// - "inproc" if the channel is an in-process channel.
+  virtual grpc::string GetHost() const = 0;
+
   /// Return the \a tag on \a cq when the channel state is changed or \a
   /// deadline expires. \a GetState needs to called to get the current state.
   template <typename T>

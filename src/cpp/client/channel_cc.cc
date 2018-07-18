@@ -140,6 +140,10 @@ grpc_connectivity_state Channel::GetState(bool try_to_connect) {
   return grpc_channel_check_connectivity_state(c_channel_, try_to_connect);
 }
 
+grpc::string Channel::GetHost() const {
+  return host_;
+}
+
 namespace {
 
 class TagSaver final : public internal::CompletionQueueTag {
