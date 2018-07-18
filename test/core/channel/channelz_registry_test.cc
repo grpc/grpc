@@ -67,14 +67,16 @@ TEST(ChannelzRegistryTest, UuidsAreIncreasing) {
 }
 
 TEST(ChannelzRegistryTest, RegisterGetTest) {
-  ChannelNode* channelz_channel = nullptr;
+  // we hackily jam an intptr_t into this pointer to check for equality later
+  ChannelNode* channelz_channel = (ChannelNode*)42;
   intptr_t uuid = ChannelzRegistry::RegisterChannelNode(channelz_channel);
   ChannelNode* retrieved = ChannelzRegistry::GetChannelNode(uuid);
   EXPECT_EQ(channelz_channel, retrieved);
 }
 
 TEST(ChannelzRegistryTest, RegisterManyItems) {
-  ChannelNode* channelz_channel = nullptr;
+  // we hackily jam an intptr_t into this pointer to check for equality later
+  ChannelNode* channelz_channel = (ChannelNode*)42;
   for (int i = 0; i < 100; i++) {
     intptr_t uuid = ChannelzRegistry::RegisterChannelNode(channelz_channel);
     ChannelNode* retrieved = ChannelzRegistry::GetChannelNode(uuid);
@@ -83,7 +85,8 @@ TEST(ChannelzRegistryTest, RegisterManyItems) {
 }
 
 TEST(ChannelzRegistryTest, NullIfNotPresentTest) {
-  ChannelNode* channelz_channel = nullptr;
+  // we hackily jam an intptr_t into this pointer to check for equality later
+  ChannelNode* channelz_channel = (ChannelNode*)42;
   intptr_t uuid = ChannelzRegistry::RegisterChannelNode(channelz_channel);
   // try to pull out a uuid that does not exist.
   ChannelNode* nonexistant = ChannelzRegistry::GetChannelNode(uuid + 1);
