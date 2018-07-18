@@ -62,6 +62,8 @@ class ChannelNode : public RefCounted<ChannelNode> {
   // instead of lib/
   virtual void PopulateConnectivityState(grpc_json* json);
 
+  virtual void PopulateChildRefs(grpc_json* json);
+
   ChannelTrace* trace() { return trace_.get(); }
 
   void MarkChannelDestroyed() {
@@ -91,6 +93,24 @@ class ChannelNode : public RefCounted<ChannelNode> {
   gpr_atm last_call_started_millis_ = 0;
   intptr_t channel_uuid_;
   ManualConstructor<ChannelTrace> trace_;
+};
+
+// Placeholds channelz class for subchannels. All this can do now is track its
+// uuid (this information is needed by the parent channelz class).
+// TODO(ncteisen): build this out to support the GetSubchannel channelz request.
+class SubchannelNode : public RefCounted<SubchannelNode> {
+ public:
+  SubchannelNode();
+  virtual ~SubchannelNode();
+
+  intptr_t subchannel_uuid() { return subchannel_uuid_; }
+
+ protected:
+  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
+  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
+
+ private:
+  intptr_t subchannel_uuid_;
 };
 
 // Creation functions

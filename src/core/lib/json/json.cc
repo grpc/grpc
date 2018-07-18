@@ -18,10 +18,12 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <inttypes.h>
 #include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 #include "src/core/lib/json/json.h"
 
@@ -83,4 +85,12 @@ grpc_json* grpc_json_create_child(grpc_json* sibling, grpc_json* parent,
   child->value = value;
   child->key = key;
   return child;
+}
+
+grpc_json* grpc_json_add_number_string_child(grpc_json* parent, grpc_json* it,
+                                             const char* name, int64_t num) {
+  char* num_str;
+  gpr_asprintf(&num_str, "%" PRId64, num);
+  return grpc_json_create_child(it, parent, name, num_str, GRPC_JSON_STRING,
+                                true);
 }
