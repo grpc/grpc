@@ -784,6 +784,7 @@ doc/http-grpc-status-mapping.md \
 doc/http2-interop-test-descriptions.md \
 doc/internationalization.md \
 doc/interop-test-descriptions.md \
+doc/keepalive.md \
 doc/load-balancing.md \
 doc/naming.md \
 doc/server-reflection.md \

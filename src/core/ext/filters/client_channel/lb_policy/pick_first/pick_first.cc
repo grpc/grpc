@@ -58,6 +58,8 @@ class PickFirst : public LoadBalancingPolicy {
   void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) override;
   void PingOneLocked(grpc_closure* on_initiate, grpc_closure* on_ack) override;
   void ExitIdleLocked() override;
+  void FillChildRefsForChannelz(ChildRefsList* child_subchannels,
+                                ChildRefsList* child_channels) override;
 
  private:
   ~PickFirst();
@@ -103,10 +105,23 @@ class PickFirst : public LoadBalancingPolicy {
     }
   };
 
+  // Helper class to ensure that any function that modifies the child refs
+  // data structures will update the channelz snapshot data structures before
+  // returning.
+  class AutoChildRefsUpdater {
+   public:
+    explicit AutoChildRefsUpdater(PickFirst* pf) : pf_(pf) {}
+    ~AutoChildRefsUpdater() { pf_->UpdateChildRefsLocked(); }
+
+   private:
+    PickFirst* pf_;
+  };
+
   void ShutdownLocked() override;
 
   void StartPickingLocked();
   void DestroyUnselectedSubchannelsLocked();
+  void UpdateChildRefsLocked();
 
   // All our subchannels.
   OrphanablePtr<PickFirstSubchannelList> subchannel_list_;
@@ -122,10 +137,17 @@ class PickFirst : public LoadBalancingPolicy {
   PickState* pending_picks_ = nullptr;
   // Our connectivity state tracker.
   grpc_connectivity_state_tracker state_tracker_;
+
+  /// Lock and data used to capture snapshots of this channels child
+  /// channels and subchannels. This data is consumed by channelz.
+  gpr_mu child_refs_mu_;
+  ChildRefsList child_subchannels_;
+  ChildRefsList child_channels_;
 };
 
 PickFirst::PickFirst(const Args& args) : LoadBalancingPolicy(args) {
   GPR_ASSERT(args.client_channel_factory != nullptr);
+  gpr_mu_init(&child_refs_mu_);
   grpc_connectivity_state_init(&state_tracker_, GRPC_CHANNEL_IDLE,
                                "pick_first");
   if (grpc_lb_pick_first_trace.enabled()) {
@@ -139,6 +161,7 @@ PickFirst::~PickFirst() {
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_INFO, "Destroying Pick First %p", this);
   }
+  gpr_mu_destroy(&child_refs_mu_);
   GPR_ASSERT(subchannel_list_ == nullptr);
   GPR_ASSERT(latest_pending_subchannel_list_ == nullptr);
   GPR_ASSERT(pending_picks_ == nullptr);
@@ -158,6 +181,7 @@ void PickFirst::HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) {
 }
 
 void PickFirst::ShutdownLocked() {
+  AutoChildRefsUpdater(this);
   grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel shutdown");
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_INFO, "Pick First %p Shutting down", this);
@@ -280,7 +304,61 @@ void PickFirst::PingOneLocked(grpc_closure* on_initiate, grpc_closure* on_ack) {
   }
 }
 
+void PickFirst::FillChildRefsForChannelz(
+    ChildRefsList* child_subchannels_to_fill, ChildRefsList* ignored) {
+  mu_guard guard(&child_refs_mu_);
+  for (size_t i = 0; i < child_subchannels_.size(); ++i) {
+    // TODO(ncteisen): implement a de dup loop that is not O(n^2). Might
+    // have to implement lightweight set. For now, we don't care about
+    // performance when channelz requests are made.
+    bool found = false;
+    for (size_t j = 0; j < child_subchannels_to_fill->size(); ++j) {
+      if ((*child_subchannels_to_fill)[j] == child_subchannels_[i]) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      child_subchannels_to_fill->push_back(child_subchannels_[i]);
+    }
+  }
+}
+
+void PickFirst::UpdateChildRefsLocked() {
+  ChildRefsList cs;
+  if (subchannel_list_ != nullptr) {
+    for (size_t i = 0; i < subchannel_list_->num_subchannels(); ++i) {
+      if (subchannel_list_->subchannel(i)->subchannel() != nullptr) {
+        grpc_core::channelz::SubchannelNode* subchannel_node =
+            grpc_subchannel_get_channelz_node(
+                subchannel_list_->subchannel(i)->subchannel());
+        if (subchannel_node != nullptr) {
+          cs.push_back(subchannel_node->subchannel_uuid());
+        }
+      }
+    }
+  }
+  if (latest_pending_subchannel_list_ != nullptr) {
+    for (size_t i = 0; i < latest_pending_subchannel_list_->num_subchannels();
+         ++i) {
+      if (latest_pending_subchannel_list_->subchannel(i)->subchannel() !=
+          nullptr) {
+        grpc_core::channelz::SubchannelNode* subchannel_node =
+            grpc_subchannel_get_channelz_node(
+                latest_pending_subchannel_list_->subchannel(i)->subchannel());
+        if (subchannel_node != nullptr) {
+          cs.push_back(subchannel_node->subchannel_uuid());
+        }
+      }
+    }
+  }
+  // atomically update the data that channelz will actually be looking at.
+  mu_guard guard(&child_refs_mu_);
+  child_subchannels_ = std::move(cs);
+}
+
 void PickFirst::UpdateLocked(const grpc_channel_args& args) {
+  AutoChildRefsUpdater guard(this);
   const grpc_arg* arg = grpc_channel_args_find(&args, GRPC_ARG_LB_ADDRESSES);
   if (arg == nullptr || arg->type != GRPC_ARG_POINTER) {
     if (subchannel_list_ == nullptr) {
@@ -388,6 +466,7 @@ void PickFirst::UpdateLocked(const grpc_channel_args& args) {
 void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
     grpc_connectivity_state connectivity_state, grpc_error* error) {
   PickFirst* p = static_cast<PickFirst*>(subchannel_list()->policy());
+  AutoChildRefsUpdater guard(p);
   // The notification must be for a subchannel in either the current or
   // latest pending subchannel lists.
   GPR_ASSERT(subchannel_list() == p->subchannel_list_.get() ||

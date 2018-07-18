@@ -64,6 +64,37 @@ void ClientChannelNode::PopulateConnectivityState(grpc_json* json) {
                          false);
 }
 
+void ClientChannelNode::PopulateChildRefs(grpc_json* json) {
+  ChildRefsList child_subchannels;
+  ChildRefsList child_channels;
+  grpc_json* json_iterator = nullptr;
+  grpc_client_channel_populate_child_refs(client_channel_, &child_subchannels,
+                                          &child_channels);
+  if (child_subchannels.size() > 0) {
+    grpc_json* array_parent = grpc_json_create_child(
+        nullptr, json, "subchannelRef", nullptr, GRPC_JSON_ARRAY, false);
+    for (size_t i = 0; i < child_subchannels.size(); ++i) {
+      json_iterator =
+          grpc_json_create_child(json_iterator, array_parent, nullptr, nullptr,
+                                 GRPC_JSON_OBJECT, false);
+      grpc_json_add_number_string_child(json_iterator, nullptr, "subchannelId",
+                                        child_subchannels[i]);
+    }
+  }
+  if (child_channels.size() > 0) {
+    grpc_json* array_parent = grpc_json_create_child(
+        nullptr, json, "channelRef", nullptr, GRPC_JSON_ARRAY, false);
+    json_iterator = nullptr;
+    for (size_t i = 0; i < child_subchannels.size(); ++i) {
+      json_iterator =
+          grpc_json_create_child(json_iterator, array_parent, nullptr, nullptr,
+                                 GRPC_JSON_OBJECT, false);
+      grpc_json_add_number_string_child(json_iterator, nullptr, "channelId",
+                                        child_subchannels[i]);
+    }
+  }
+}
+
 grpc_arg ClientChannelNode::CreateChannelArg() {
   return grpc_channel_arg_pointer_create(
       const_cast<char*>(GRPC_ARG_CHANNELZ_CHANNEL_NODE_CREATION_FUNC),

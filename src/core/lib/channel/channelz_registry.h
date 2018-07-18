@@ -22,6 +22,7 @@
 #include <grpc/impl/codegen/port_platform.h>
 
 #include "src/core/lib/channel/channel_trace.h"
+#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/gprpp/inlined_vector.h"
 
 #include <stdint.h>
@@ -39,6 +40,7 @@ class ChannelzRegistry {
   // To be called in grpc_shutdown();
   static void Shutdown();
 
+  // Register/Unregister/Get for ChannelNode
   static intptr_t RegisterChannelNode(ChannelNode* channel_node) {
     RegistryEntry entry(channel_node, EntityType::kChannelNode);
     return Default()->InternalRegisterEntry(entry);
@@ -51,6 +53,20 @@ class ChannelzRegistry {
     return gotten == nullptr ? nullptr : static_cast<ChannelNode*>(gotten);
   }
 
+  // Register/Unregister/Get for SubchannelNode
+  static intptr_t RegisterSubchannelNode(SubchannelNode* channel_node) {
+    RegistryEntry entry(channel_node, EntityType::kSubchannelNode);
+    return Default()->InternalRegisterEntry(entry);
+  }
+  static void UnregisterSubchannelNode(intptr_t uuid) {
+    Default()->InternalUnregisterEntry(uuid, EntityType::kSubchannelNode);
+  }
+  static SubchannelNode* GetSubchannelNode(intptr_t uuid) {
+    void* gotten =
+        Default()->InternalGetEntry(uuid, EntityType::kSubchannelNode);
+    return gotten == nullptr ? nullptr : static_cast<SubchannelNode*>(gotten);
+  }
+
   // Returns the allocated JSON string that represents the proto
   // GetTopChannelsResponse as per channelz.proto.
   static char* GetTopChannels(intptr_t start_channel_id) {
@@ -60,6 +76,7 @@ class ChannelzRegistry {
  private:
   enum class EntityType {
     kChannelNode,
+    kSubchannelNode,
     kUnset,
   };
 
