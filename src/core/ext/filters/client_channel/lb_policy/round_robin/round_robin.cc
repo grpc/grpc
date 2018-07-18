@@ -69,6 +69,9 @@ class RoundRobin : public LoadBalancingPolicy {
   void HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) override;
   void PingOneLocked(grpc_closure* on_initiate, grpc_closure* on_ack) override;
   void ExitIdleLocked() override;
+  // TODO(ncteisen): implement this in a follow up PR
+  void FillChildRefsForChannelz(ChildRefsList* child_subchannels,
+                                ChildRefsList* child_channels) override {}
 
  private:
   ~RoundRobin();
@@ -354,11 +357,11 @@ bool RoundRobin::PickLocked(PickState* pick) {
     if (DoPickLocked(pick)) return true;
   }
   /* no pick currently available. Save for later in list of pending picks */
+  pick->next = pending_picks_;
+  pending_picks_ = pick;
   if (!started_picking_) {
     StartPickingLocked();
   }
-  pick->next = pending_picks_;
-  pending_picks_ = pick;
   return false;
 }
 

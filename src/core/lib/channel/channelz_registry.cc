@@ -19,16 +19,19 @@
 #include <grpc/impl/codegen/port_platform.h>
 
 #include "src/core/lib/channel/channel_trace.h"
+#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/memory.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/sync.h>
 
 #include <cstring>
 
 namespace grpc_core {
+namespace channelz {
 namespace {
 
 // singleton instance of the registry.
@@ -49,12 +52,72 @@ ChannelzRegistry::ChannelzRegistry() { gpr_mu_init(&mu_); }
 
 ChannelzRegistry::~ChannelzRegistry() { gpr_mu_destroy(&mu_); }
 
-void ChannelzRegistry::InternalUnregister(intptr_t uuid) {
-  GPR_ASSERT(uuid >= 1);
-  gpr_mu_lock(&mu_);
-  GPR_ASSERT(static_cast<size_t>(uuid) <= entities_.size());
-  entities_[uuid - 1] = nullptr;
-  gpr_mu_unlock(&mu_);
+intptr_t ChannelzRegistry::InternalRegisterEntry(const RegistryEntry& entry) {
+  mu_guard guard(&mu_);
+  entities_.push_back(entry);
+  intptr_t uuid = entities_.size();
+  return uuid;
 }
 
+void ChannelzRegistry::InternalUnregisterEntry(intptr_t uuid, EntityType type) {
+  GPR_ASSERT(uuid >= 1);
+  mu_guard guard(&mu_);
+  GPR_ASSERT(static_cast<size_t>(uuid) <= entities_.size());
+  GPR_ASSERT(entities_[uuid - 1].type == type);
+  entities_[uuid - 1].object = nullptr;
+  entities_[uuid - 1].type = EntityType::kUnset;
+}
+
+void* ChannelzRegistry::InternalGetEntry(intptr_t uuid, EntityType type) {
+  mu_guard guard(&mu_);
+  if (uuid < 1 || uuid > static_cast<intptr_t>(entities_.size())) {
+    return nullptr;
+  }
+  if (entities_[uuid - 1].type == type) {
+    return entities_[uuid - 1].object;
+  } else {
+    return nullptr;
+  }
+}
+
+char* ChannelzRegistry::InternalGetTopChannels(intptr_t start_channel_id) {
+  grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
+  grpc_json* json = top_level_json;
+  grpc_json* json_iterator = nullptr;
+  InlinedVector<ChannelNode*, 10> top_level_channels;
+  // uuids index into entities one-off (idx 0 is really uuid 1, since 0 is
+  // reserved). However, we want to support requests coming in with
+  // start_channel_id=0, which signifies "give me everything." Hence this
+  // funky looking line below.
+  size_t start_idx = start_channel_id == 0 ? 0 : start_channel_id - 1;
+  for (size_t i = start_idx; i < entities_.size(); ++i) {
+    if (entities_[i].type == EntityType::kChannelNode) {
+      ChannelNode* channel_node =
+          static_cast<ChannelNode*>(entities_[i].object);
+      if (channel_node->is_top_level_channel()) {
+        top_level_channels.push_back(channel_node);
+      }
+    }
+  }
+  if (top_level_channels.size() > 0) {
+    // create list of channels
+    grpc_json* array_parent = grpc_json_create_child(
+        nullptr, json, "channel", nullptr, GRPC_JSON_ARRAY, false);
+    for (size_t i = 0; i < top_level_channels.size(); ++i) {
+      grpc_json* channel_json = top_level_channels[i]->RenderJson();
+      json_iterator =
+          grpc_json_link_child(array_parent, channel_json, json_iterator);
+    }
+  }
+  // For now we do not have any pagination rules. In the future we could
+  // pick a constant for max_channels_sent for a GetTopChannels request.
+  // Tracking: https://github.com/grpc/grpc/issues/16019.
+  json_iterator = grpc_json_create_child(nullptr, json, "end", nullptr,
+                                         GRPC_JSON_TRUE, false);
+  char* json_str = grpc_json_dump_to_string(top_level_json, 0);
+  grpc_json_destroy(top_level_json);
+  return json_str;
+}
+
+}  // namespace channelz
 }  // namespace grpc_core
