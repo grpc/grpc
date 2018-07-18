@@ -71,7 +71,7 @@ class ChannelTrace {
 
   // Creates and returns the raw grpc_json object, so a parent channelz
   // object may incorporate the json before rendering.
-  grpc_json* RenderJSON() const;
+  grpc_json* RenderJson() const;
 
  private:
   // Types of objects that can be references by trace events.

@@ -134,6 +134,9 @@ struct grpc_subchannel {
   bool backoff_begun;
   /** our alarm */
   grpc_timer alarm;
+
+  grpc_core::RefCountedPtr<grpc_core::channelz::SubchannelNode>
+      channelz_subchannel;
 };
 
 struct grpc_subchannel_call {
@@ -178,6 +181,7 @@ static void connection_destroy(void* arg, grpc_error* error) {
 
 static void subchannel_destroy(void* arg, grpc_error* error) {
   grpc_subchannel* c = static_cast<grpc_subchannel*>(arg);
+  c->channelz_subchannel.reset();
   gpr_free((void*)c->filters);
   grpc_channel_args_destroy(c->args);
   grpc_connectivity_state_destroy(&c->state_tracker);
@@ -374,7 +378,20 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
   c->backoff.Init(backoff_options);
   gpr_mu_init(&c->mu);
 
+  const grpc_arg* arg =
+      grpc_channel_args_find(c->args, GRPC_ARG_ENABLE_CHANNELZ);
+  bool channelz_enabled = grpc_channel_arg_get_bool(arg, false);
+  if (channelz_enabled) {
+    c->channelz_subchannel =
+        grpc_core::MakeRefCounted<grpc_core::channelz::SubchannelNode>();
+  }
+
   return grpc_subchannel_index_register(key, c);
+}
+
+grpc_core::channelz::SubchannelNode* grpc_subchannel_get_channelz_node(
+    grpc_subchannel* subchannel) {
+  return subchannel->channelz_subchannel.get();
 }
 
 static void continue_connect_locked(grpc_subchannel* c) {

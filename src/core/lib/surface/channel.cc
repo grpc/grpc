@@ -105,6 +105,7 @@ grpc_channel* grpc_channel_create_with_builder(
   channel->is_client = grpc_channel_stack_type_is_client(channel_stack_type);
   size_t channel_tracer_max_nodes = 0;  // default to off
   bool channelz_enabled = false;
+  bool internal_channel = false;
   // this creates the default ChannelNode. Different types of channels may
   // override this to ensure a correct ChannelNode is created.
   grpc_core::channelz::ChannelNodeCreationFunc channel_node_create_func =
@@ -158,13 +159,17 @@ grpc_channel* grpc_channel_create_with_builder(
       channel_node_create_func =
           reinterpret_cast<grpc_core::channelz::ChannelNodeCreationFunc>(
               args->args[i].value.pointer.p);
+    } else if (0 == strcmp(args->args[i].key,
+                           GRPC_ARG_CHANNELZ_CHANNEL_IS_INTERNAL_CHANNEL)) {
+      internal_channel = grpc_channel_arg_get_bool(&args->args[i], false);
     }
   }
 
   grpc_channel_args_destroy(args);
   if (channelz_enabled) {
-    channel->channelz_channel =
-        channel_node_create_func(channel, channel_tracer_max_nodes);
+    bool is_top_level_channel = channel->is_client && !internal_channel;
+    channel->channelz_channel = channel_node_create_func(
+        channel, channel_tracer_max_nodes, is_top_level_channel);
     channel->channelz_channel->trace()->AddTraceEvent(
         grpc_core::channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("Channel created"));
