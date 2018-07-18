@@ -59,7 +59,7 @@ class PickFirst : public LoadBalancingPolicy {
   void PingOneLocked(grpc_closure* on_initiate, grpc_closure* on_ack) override;
   void ExitIdleLocked() override;
   void FillChildRefsForChannelz(ChildRefsList* child_subchannels,
-                                ChildRefsList* child_channels) override;
+                                ChildRefsList* ignored) override;
 
  private:
   ~PickFirst();
@@ -181,7 +181,7 @@ void PickFirst::HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) {
 }
 
 void PickFirst::ShutdownLocked() {
-  AutoChildRefsUpdater(this);
+  AutoChildRefsUpdater gaurd(this);
   grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel shutdown");
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_INFO, "Pick First %p Shutting down", this);
