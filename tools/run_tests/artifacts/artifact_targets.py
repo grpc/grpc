@@ -219,8 +219,8 @@ class CSharpExtArtifact:
         self.arch_abi = arch_abi
         self.labels = ['artifact', 'csharp', platform, arch]
         if arch_abi:
-          self.name += '_%s' % arch_abi
-          self.labels.append(arch_abi)
+            self.name += '_%s' % arch_abi
+            self.labels.append(arch_abi)
 
     def pre_build_jobspecs(self):
         return []
@@ -231,7 +231,9 @@ class CSharpExtArtifact:
                 self.name,
                 'tools/dockerfile/grpc_artifact_android_ndk',
                 'tools/run_tests/artifacts/build_artifact_csharp_android.sh',
-                environ={'ANDROID_ABI': self.arch_abi})
+                environ={
+                    'ANDROID_ABI': self.arch_abi
+                })
         elif self.platform == 'windows':
             cmake_arch_option = 'Win32' if self.arch == 'x86' else self.arch
             return create_jobspec(
