@@ -17,6 +17,7 @@ set -ex
 
 cd "$(dirname "$0")/../../.."
 
+export ANDROID_ABI=armeabi-v7a
 src/csharp/experimental/build_native_ext_for_android.sh
 
 mkdir -p "${ARTIFACTS_OUT}"
