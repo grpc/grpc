@@ -207,7 +207,7 @@ void ReadResponse(CliCall* call, const grpc::string& method_name,
 }
 
 std::shared_ptr<grpc::Channel> CreateCliChannel(
-    grpc::string server_address, const CliCredentials& cred) {
+    const grpc::string& server_address, const CliCredentials& cred) {
   grpc::ChannelArguments args;
   if (!cred.GetSslTargetNameOverride().empty()) {
     args.SetSslTargetNameOverride(cred.GetSslTargetNameOverride());
