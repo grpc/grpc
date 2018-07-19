@@ -98,10 +98,10 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/grpc.h",
     "include/grpc/grpc_posix.h",
     "include/grpc/grpc_security_constants.h",
-    "include/grpc/load_reporting.h",
     "include/grpc/slice.h",
     "include/grpc/slice_buffer.h",
     "include/grpc/status.h",
+    "include/grpc/load_reporting.h",
     "include/grpc/support/workaround_list.h",
 ]
 
@@ -860,6 +860,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/exec_ctx.h",
         "src/core/lib/iomgr/executor.h",
         "src/core/lib/iomgr/gethostname.h",
+        "src/core/lib/iomgr/gevent_util.h",
         "src/core/lib/iomgr/iocp_windows.h",
         "src/core/lib/iomgr/iomgr.h",
         "src/core/lib/iomgr/iomgr_custom.h",
@@ -1028,6 +1029,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/backup_poller.cc",
         "src/core/ext/filters/client_channel/channel_connectivity.cc",
         "src/core/ext/filters/client_channel/client_channel.cc",
+        "src/core/ext/filters/client_channel/client_channel_channelz.cc",
         "src/core/ext/filters/client_channel/client_channel_factory.cc",
         "src/core/ext/filters/client_channel/client_channel_plugin.cc",
         "src/core/ext/filters/client_channel/connector.cc",
@@ -1050,6 +1052,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/client_channel/backup_poller.h",
         "src/core/ext/filters/client_channel/client_channel.h",
+        "src/core/ext/filters/client_channel/client_channel_channelz.h",
         "src/core/ext/filters/client_channel/client_channel_factory.h",
         "src/core/ext/filters/client_channel/connector.h",
         "src/core/ext/filters/client_channel/http_connect_handshaker.h",
@@ -1198,9 +1201,9 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c",
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h",
@@ -1208,9 +1211,9 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h",
     ],
     external_deps = [
         "nanopb",
@@ -1231,9 +1234,9 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c",
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h",
@@ -1241,9 +1244,9 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h",
     ],
     external_deps = [
         "nanopb",
@@ -1327,6 +1330,51 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "grpc++",
+    ],
+)
+
+grpc_cc_library(
+    name = "lb_server_load_reporting_service_server_builder_plugin",
+    srcs = [
+        "src/cpp/server/load_reporter/load_reporting_service_server_builder_plugin.cc",
+    ],
+    hdrs = [
+        "src/cpp/server/load_reporter/load_reporting_service_server_builder_plugin.h",
+    ],
+    language = "c++",
+    deps = [
+        "lb_load_reporter_service",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpcpp_server_load_reporting",
+    srcs = [
+        "src/cpp/server/load_reporter/load_reporting_service_server_builder_option.cc",
+        "src/cpp/server/load_reporter/util.cc",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "include/grpcpp/ext/server_load_reporting.h",
+    ],
+    deps = [
+        "lb_server_load_reporting_filter",
+        "lb_server_load_reporting_service_server_builder_plugin",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_library(
+    name = "lb_load_reporter_service",
+    srcs = [
+        "src/cpp/server/load_reporter/load_reporter_async_service_impl.cc",
+    ],
+    hdrs = [
+        "src/cpp/server/load_reporter/load_reporter_async_service_impl.h",
+    ],
+    language = "c++",
+    deps = [
+        "lb_load_reporter",
     ],
 )
 

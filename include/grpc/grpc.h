@@ -454,6 +454,29 @@ GRPCAPI void grpc_resource_quota_resize(grpc_resource_quota* resource_quota,
  */
 GRPCAPI const grpc_arg_pointer_vtable* grpc_resource_quota_arg_vtable(void);
 
+/************* CHANNELZ API *************/
+/** Channelz is under active development. The following APIs will see some
+    churn as the feature is implemented. This comment will be removed once
+    channelz is officially supported, and these APIs become stable. For now
+    you may track the progress by following this github issue:
+    https://github.com/grpc/grpc/issues/15340
+
+    the following APIs return allocated JSON strings that match the response
+    objects from the channelz proto, found here:
+    https://github.com/grpc/grpc/blob/master/src/proto/grpc/channelz/channelz.proto.
+
+    For easy conversion to protobuf, The JSON is formatted according to:
+    https://developers.google.com/protocol-buffers/docs/proto3#json. */
+
+/* Gets all root channels (i.e. channels the application has directly
+   created). This does not include subchannels nor non-top level channels.
+   The returned string is allocated and must be freed by the application. */
+GRPCAPI char* grpc_channelz_get_top_channels(intptr_t start_channel_id);
+
+/* Returns a single Channel, or else a NOT_FOUND code. The returned string
+   is allocated and must be freed by the application. */
+GRPCAPI char* grpc_channelz_get_channel(intptr_t channel_id);
+
 #ifdef __cplusplus
 }
 #endif

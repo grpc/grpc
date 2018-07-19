@@ -31,6 +31,14 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/json/json.h"
 
+// Channel arg key for client channel factory.
+#define GRPC_ARG_CHANNELZ_CHANNEL_NODE_CREATION_FUNC \
+  "grpc.channelz_channel_node_creation_func"
+
+// Channel arg key to signal that the channel is an internal channel.
+#define GRPC_ARG_CHANNELZ_CHANNEL_IS_INTERNAL_CHANNEL \
+  "grpc.channelz_channel_is_internal_channel"
+
 namespace grpc_core {
 namespace channelz {
 
@@ -40,8 +48,9 @@ class ChannelNodePeer;
 
 class ChannelNode : public RefCounted<ChannelNode> {
  public:
-  ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes);
-  ~ChannelNode();
+  static RefCountedPtr<ChannelNode> MakeChannelNode(
+      grpc_channel* channel, size_t channel_tracer_max_nodes,
+      bool is_top_level_channel);
 
   void RecordCallStarted();
   void RecordCallFailed() {
@@ -51,23 +60,38 @@ class ChannelNode : public RefCounted<ChannelNode> {
     gpr_atm_no_barrier_fetch_add(&calls_succeeded_, (gpr_atm(1)));
   }
 
-  char* RenderJSON();
+  grpc_json* RenderJson();
+  char* RenderJsonString();
+
+  // helper for getting and populating connectivity state. It is virtual
+  // because it allows the client_channel specific code to live in ext/
+  // instead of lib/
+  virtual void PopulateConnectivityState(grpc_json* json);
+
+  virtual void PopulateChildRefs(grpc_json* json);
 
   ChannelTrace* trace() { return trace_.get(); }
 
-  void set_channel_destroyed() {
+  void MarkChannelDestroyed() {
     GPR_ASSERT(channel_ != nullptr);
     channel_ = nullptr;
   }
 
+  bool ChannelIsDestroyed() { return channel_ == nullptr; }
+
   intptr_t channel_uuid() { return channel_uuid_; }
+  bool is_top_level_channel() { return is_top_level_channel_; }
+
+ protected:
+  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
+  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
+  ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes,
+              bool is_top_level_channel);
+  virtual ~ChannelNode();
 
  private:
   // testing peer friend.
   friend class testing::ChannelNodePeer;
-
-  // helper for getting connectivity state.
-  grpc_connectivity_state GetConnectivityState();
 
   grpc_channel* channel_ = nullptr;
   UniquePtr<char> target_;
@@ -76,8 +100,32 @@ class ChannelNode : public RefCounted<ChannelNode> {
   gpr_atm calls_failed_ = 0;
   gpr_atm last_call_started_millis_ = 0;
   intptr_t channel_uuid_;
+  bool is_top_level_channel_ = true;
   ManualConstructor<ChannelTrace> trace_;
 };
+
+// Placeholds channelz class for subchannels. All this can do now is track its
+// uuid (this information is needed by the parent channelz class).
+// TODO(ncteisen): build this out to support the GetSubchannel channelz request.
+class SubchannelNode : public RefCounted<SubchannelNode> {
+ public:
+  SubchannelNode();
+  virtual ~SubchannelNode();
+
+  intptr_t subchannel_uuid() { return subchannel_uuid_; }
+
+ protected:
+  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
+  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
+
+ private:
+  intptr_t subchannel_uuid_;
+};
+
+// Creation functions
+
+typedef RefCountedPtr<ChannelNode> (*ChannelNodeCreationFunc)(grpc_channel*,
+                                                              size_t, bool);
 
 }  // namespace channelz
 }  // namespace grpc_core

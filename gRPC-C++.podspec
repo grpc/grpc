@@ -317,6 +317,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/client/chttp2_connector.h',
                       'src/core/ext/filters/client_channel/backup_poller.h',
                       'src/core/ext/filters/client_channel/client_channel.h',
+                      'src/core/ext/filters/client_channel/client_channel_channelz.h',
                       'src/core/ext/filters/client_channel/client_channel_factory.h',
                       'src/core/ext/filters/client_channel/connector.h',
                       'src/core/ext/filters/client_channel/http_connect_handshaker.h',

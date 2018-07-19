@@ -86,8 +86,8 @@ class ServerLoadReportingCallData : public CallData {
   // The received initial metadata (a member of the recv_initial_metadata op).
   // When it is ready, we will extract some data from it via
   // recv_initial_metadata_ready_ closure, before the original
-  // recv_initial_metadata_ready closure,
-  MetadataBatch* recv_initial_metadata_;
+  // recv_initial_metadata_ready closure.
+  grpc_metadata_batch* recv_initial_metadata_;
 
   // The original recv_initial_metadata closure, which is wrapped by our own
   // closure (recv_initial_metadata_ready_) to capture the incoming initial
@@ -112,11 +112,6 @@ class ServerLoadReportingCallData : public CallData {
   // token.
   char* client_ip_and_lr_token_;
   size_t client_ip_and_lr_token_len_;
-
-  static constexpr char kEncodedIpv4AddressLengthString[] = "08";
-  static constexpr char kEncodedIpv6AddressLengthString[] = "32";
-  static constexpr char kEmptyAddressLengthString[] = "00";
-  static constexpr size_t kLengthPrefixSize = 2;
 };
 
 }  // namespace grpc

@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/connector.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/arena.h"
@@ -114,6 +115,9 @@ grpc_subchannel_call* grpc_subchannel_call_ref(
     grpc_subchannel_call* call GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
 void grpc_subchannel_call_unref(
     grpc_subchannel_call* call GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+
+grpc_core::channelz::SubchannelNode* grpc_subchannel_get_channelz_node(
+    grpc_subchannel* subchannel);
 
 /** Returns a pointer to the parent data associated with \a subchannel_call.
     The data will be of the size specified in \a parent_data_size

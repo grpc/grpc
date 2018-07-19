@@ -209,27 +209,27 @@ static void test_channelz(grpc_end2end_test_config config) {
       grpc_channel_get_channelz_node(f.client);
 
   GPR_ASSERT(channelz_channel != nullptr);
-  char* json = channelz_channel->RenderJSON();
+  char* json = channelz_channel->RenderJsonString();
   GPR_ASSERT(json != nullptr);
-  GPR_ASSERT(nullptr != strstr(json, "\"callsStarted\":\"0\""));
-  GPR_ASSERT(nullptr != strstr(json, "\"callsFailed\":\"0\""));
-  GPR_ASSERT(nullptr != strstr(json, "\"callsSucceeded\":\"0\""));
+  // nothing is present yet
+  GPR_ASSERT(nullptr == strstr(json, "\"callsStarted\""));
+  GPR_ASSERT(nullptr == strstr(json, "\"callsFailed\""));
+  GPR_ASSERT(nullptr == strstr(json, "\"callsSucceeded\""));
   gpr_free(json);
 
   // one successful request
   run_one_request(config, f, true);
 
-  json = channelz_channel->RenderJSON();
+  json = channelz_channel->RenderJsonString();
   GPR_ASSERT(json != nullptr);
   GPR_ASSERT(nullptr != strstr(json, "\"callsStarted\":\"1\""));
-  GPR_ASSERT(nullptr != strstr(json, "\"callsFailed\":\"0\""));
   GPR_ASSERT(nullptr != strstr(json, "\"callsSucceeded\":\"1\""));
   gpr_free(json);
 
   // one failed request
   run_one_request(config, f, false);
 
-  json = channelz_channel->RenderJSON();
+  json = channelz_channel->RenderJsonString();
   GPR_ASSERT(json != nullptr);
   gpr_log(GPR_INFO, "%s", json);
   GPR_ASSERT(nullptr != strstr(json, "\"callsStarted\":\"2\""));
@@ -264,7 +264,7 @@ static void test_channelz_with_channel_trace(grpc_end2end_test_config config) {
       grpc_channel_get_channelz_node(f.client);
 
   GPR_ASSERT(channelz_channel != nullptr);
-  char* json = channelz_channel->RenderJSON();
+  char* json = channelz_channel->RenderJsonString();
   GPR_ASSERT(json != nullptr);
   gpr_log(GPR_INFO, "%s", json);
   GPR_ASSERT(nullptr != strstr(json, "\"trace\""));
