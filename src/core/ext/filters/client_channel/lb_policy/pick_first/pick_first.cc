@@ -181,7 +181,7 @@ void PickFirst::HandOffPendingPicksLocked(LoadBalancingPolicy* new_policy) {
 }
 
 void PickFirst::ShutdownLocked() {
-  AutoChildRefsUpdater guard(this);
+  AutoChildRefsUpdater gaurd(this);
   grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Channel shutdown");
   if (grpc_lb_pick_first_trace.enabled()) {
     gpr_log(GPR_INFO, "Pick First %p Shutting down", this);
@@ -327,10 +327,30 @@ void PickFirst::FillChildRefsForChannelz(
 void PickFirst::UpdateChildRefsLocked() {
   ChildRefsList cs;
   if (subchannel_list_ != nullptr) {
-    subchannel_list_->PopulateChildRefsList(&cs);
+    for (size_t i = 0; i < subchannel_list_->num_subchannels(); ++i) {
+      if (subchannel_list_->subchannel(i)->subchannel() != nullptr) {
+        grpc_core::channelz::SubchannelNode* subchannel_node =
+            grpc_subchannel_get_channelz_node(
+                subchannel_list_->subchannel(i)->subchannel());
+        if (subchannel_node != nullptr) {
+          cs.push_back(subchannel_node->subchannel_uuid());
+        }
+      }
+    }
   }
   if (latest_pending_subchannel_list_ != nullptr) {
-    latest_pending_subchannel_list_->PopulateChildRefsList(&cs);
+    for (size_t i = 0; i < latest_pending_subchannel_list_->num_subchannels();
+         ++i) {
+      if (latest_pending_subchannel_list_->subchannel(i)->subchannel() !=
+          nullptr) {
+        grpc_core::channelz::SubchannelNode* subchannel_node =
+            grpc_subchannel_get_channelz_node(
+                latest_pending_subchannel_list_->subchannel(i)->subchannel());
+        if (subchannel_node != nullptr) {
+          cs.push_back(subchannel_node->subchannel_uuid());
+        }
+      }
+    }
   }
   // atomically update the data that channelz will actually be looking at.
   mu_guard guard(&child_refs_mu_);
