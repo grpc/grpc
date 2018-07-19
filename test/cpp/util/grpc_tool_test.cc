@@ -110,6 +110,7 @@ class TestCliCredentials final : public grpc::testing::CliCredentials {
     return SslCredentials(grpc::SslCredentialsOptions(ssl_opts));
   }
   const grpc::string GetCredentialUsage() const override { return ""; }
+
  private:
   const bool secure_;
 };
@@ -775,10 +776,10 @@ TEST_F(GrpcToolTest, ListCommand_OverrideSslHostName) {
   FLAGS_l = false;
   FLAGS_enable_ssl = true;
   FLAGS_ssl_target = "z.test.google.fr";
-  EXPECT_TRUE(0 == GrpcToolMainLib(ArraySize(argv), argv,
-                                   TestCliCredentials(true),
-                                   std::bind(PrintStream, &output_stream,
-                                             std::placeholders::_1)));
+  EXPECT_TRUE(
+      0 == GrpcToolMainLib(
+               ArraySize(argv), argv, TestCliCredentials(true),
+               std::bind(PrintStream, &output_stream, std::placeholders::_1)));
   EXPECT_TRUE(0 == strcmp(output_stream.str().c_str(),
                           "grpc.testing.EchoTestService\n"
                           "grpc.reflection.v1alpha.ServerReflection\n"));
