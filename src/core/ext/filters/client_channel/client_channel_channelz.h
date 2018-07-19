@@ -26,6 +26,8 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/gprpp/inlined_vector.h"
 
+typedef struct grpc_subchannel grpc_subchannel;
+
 namespace grpc_core {
 
 // TODO(ncteisen), this only contains the uuids of the children for now,
@@ -55,14 +57,43 @@ class ClientChannelNode : public ChannelNode {
   static grpc_arg CreateChannelArg();
 
  protected:
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
   ClientChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes,
                     bool is_top_level_channel);
   virtual ~ClientChannelNode() {}
 
  private:
+  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
+  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
   grpc_channel_element* client_channel_;
+};
+
+// Subtype of SubchannelNode that overrides and provides client_channel
+// specific functionality like querying for connectivity_state and
+// subchannel target.
+class ClientChannelSubchannelNode : public SubchannelNode {
+ public:
+  ClientChannelSubchannelNode(size_t channel_tracer_max_nodes,
+                              grpc_subchannel* subchannel);
+  ~ClientChannelSubchannelNode() override {}
+
+  // Override this functionality since subchannels have a notion of
+  // channel connectivity.
+  void PopulateConnectivityState(grpc_json* json) override;
+
+  // Override this functionality since client_channels subchannels hold
+  // their own target.
+  void PopulateTarget(grpc_json* json) override;
+
+  void MarkSubchannelDestroyed() {
+    GPR_ASSERT(subchannel_ != nullptr);
+    subchannel_ = nullptr;
+  }
+
+ private:
+  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
+  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
+  grpc_subchannel* subchannel_;
+  UniquePtr<char> target_;
 };
 
 }  // namespace channelz

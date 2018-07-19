@@ -142,3 +142,19 @@ char* grpc_channelz_get_channel(intptr_t channel_id) {
   grpc_json_destroy(top_level_json);
   return json_str;
 }
+
+char* grpc_channelz_get_subchannel(intptr_t subchannel_id) {
+  grpc_core::channelz::SubchannelNode* subchannel_node =
+      grpc_core::channelz::ChannelzRegistry::GetSubchannelNode(subchannel_id);
+  if (subchannel_node == nullptr) {
+    return nullptr;
+  }
+  grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
+  grpc_json* json = top_level_json;
+  grpc_json* subchannel_json = subchannel_node->RenderJson();
+  subchannel_json->key = "subchannel";
+  grpc_json_link_child(json, subchannel_json, nullptr);
+  char* json_str = grpc_json_dump_to_string(top_level_json, 0);
+  grpc_json_destroy(top_level_json);
+  return json_str;
+}

@@ -135,7 +135,7 @@ struct grpc_subchannel {
   /** our alarm */
   grpc_timer alarm;
 
-  grpc_core::RefCountedPtr<grpc_core::channelz::SubchannelNode>
+  grpc_core::RefCountedPtr<grpc_core::channelz::ClientChannelSubchannelNode>
       channelz_subchannel;
 };
 
@@ -181,7 +181,13 @@ static void connection_destroy(void* arg, grpc_error* error) {
 
 static void subchannel_destroy(void* arg, grpc_error* error) {
   grpc_subchannel* c = static_cast<grpc_subchannel*>(arg);
-  c->channelz_subchannel.reset();
+  if (c->channelz_subchannel != nullptr) {
+    c->channelz_subchannel->trace()->AddTraceEvent(
+        grpc_core::channelz::ChannelTrace::Severity::Info,
+        grpc_slice_from_static_string("Subchannel destroyed"));
+    c->channelz_subchannel->MarkSubchannelDestroyed();
+    c->channelz_subchannel.reset();
+  }
   gpr_free((void*)c->filters);
   grpc_channel_args_destroy(c->args);
   grpc_connectivity_state_destroy(&c->state_tracker);
@@ -381,9 +387,18 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
   const grpc_arg* arg =
       grpc_channel_args_find(c->args, GRPC_ARG_ENABLE_CHANNELZ);
   bool channelz_enabled = grpc_channel_arg_get_bool(arg, false);
+  arg = grpc_channel_args_find(c->args,
+                               GRPC_ARG_MAX_CHANNEL_TRACE_EVENTS_PER_NODE);
+  const grpc_integer_options options = {0, 0, INT_MAX};
+  size_t channel_tracer_max_nodes =
+      (size_t)grpc_channel_arg_get_integer(arg, options);
   if (channelz_enabled) {
-    c->channelz_subchannel =
-        grpc_core::MakeRefCounted<grpc_core::channelz::SubchannelNode>();
+    c->channelz_subchannel = grpc_core::MakeRefCounted<
+        grpc_core::channelz::ClientChannelSubchannelNode>(
+        channel_tracer_max_nodes, c);
+    c->channelz_subchannel->trace()->AddTraceEvent(
+        grpc_core::channelz::ChannelTrace::Severity::Info,
+        grpc_slice_from_static_string("Subchannel created"));
   }
 
   return grpc_subchannel_index_register(key, c);
@@ -755,6 +770,14 @@ void grpc_get_subchannel_address_arg(const grpc_channel_args* args,
   if (*addr_uri_str != '\0') {
     grpc_uri_to_sockaddr(addr_uri_str, addr);
   }
+}
+
+const char* grpc_subchannel_get_target(grpc_subchannel* subchannel) {
+  const grpc_arg* addr_arg =
+      grpc_channel_args_find(subchannel->args, GRPC_ARG_SUBCHANNEL_ADDRESS);
+  const char* addr_str = grpc_channel_arg_get_string(addr_arg);
+  GPR_ASSERT(addr_str != nullptr);  // Should have been set by LB policy.
+  return addr_str;
 }
 
 const char* grpc_get_subchannel_address_uri_arg(const grpc_channel_args* args) {

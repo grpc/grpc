@@ -163,6 +163,14 @@ void ValidateChannel(ChannelNode* channel, validate_channel_data_args args) {
   gpr_free(core_api_json_str);
 }
 
+void ValidateSubchannel(SubchannelNode* subchannel,
+                        validate_channel_data_args args) {
+  char* json_str = subchannel->RenderJsonString();
+  grpc::testing::ValidateSubchannelProtoJsonTranslation(json_str);
+  ValidateCounters(json_str, args);
+  gpr_free(json_str);
+}
+
 grpc_millis GetLastCallStartedMillis(ChannelNode* channel) {
   ChannelNodePeer peer(channel);
   return peer.last_call_started_millis();
@@ -275,8 +283,29 @@ TEST(ChannelzGetTopChannelsTest, InternalChannelTest) {
   grpc_channel_destroy(internal_channel);
 }
 
+class ChannelzSubchannelTest : public ::testing::TestWithParam<size_t> {};
+
+TEST_P(ChannelzSubchannelTest, BasicTest) {
+  grpc_core::ExecCtx exec_ctx;
+  RefCountedPtr<SubchannelNode> channelz_subchannel =
+      MakeRefCounted<SubchannelNode>(GetParam());
+  channelz_subchannel->RecordCallStarted();
+  channelz_subchannel->RecordCallFailed();
+  channelz_subchannel->RecordCallSucceeded();
+  ValidateSubchannel(channelz_subchannel.get(), {1, 1, 1});
+  channelz_subchannel->RecordCallStarted();
+  channelz_subchannel->RecordCallFailed();
+  channelz_subchannel->RecordCallSucceeded();
+  channelz_subchannel->RecordCallStarted();
+  channelz_subchannel->RecordCallFailed();
+  channelz_subchannel->RecordCallSucceeded();
+  ValidateSubchannel(channelz_subchannel.get(), {3, 3, 3});
+}
+
 INSTANTIATE_TEST_CASE_P(ChannelzChannelTestSweep, ChannelzChannelTest,
                         ::testing::Values(0, 1, 2, 6, 10, 15));
+INSTANTIATE_TEST_CASE_P(ChannelzSubchannelTestSweep, ChannelzSubchannelTest,
+                        ::testing::Values(0, 1, 10, 15));
 
 }  // namespace testing
 }  // namespace channelz

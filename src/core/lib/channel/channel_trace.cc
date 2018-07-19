@@ -178,24 +178,26 @@ grpc_json* ChannelTrace::RenderJson() const {
   if (!max_list_size_)
     return nullptr;  // tracing is disabled if max_events == 0
   grpc_json* json = grpc_json_create(GRPC_JSON_OBJECT);
-  char* num_events_logged_str;
-  gpr_asprintf(&num_events_logged_str, "%" PRId64, num_events_logged_);
   grpc_json* json_iterator = nullptr;
-  json_iterator =
-      grpc_json_create_child(json_iterator, json, "numEventsLogged",
-                             num_events_logged_str, GRPC_JSON_STRING, true);
+  if (num_events_logged_ > 0) {
+    json_iterator = grpc_json_add_number_string_child(
+        json, json_iterator, "numEventsLogged", num_events_logged_);
+  }
   json_iterator = grpc_json_create_child(
       json_iterator, json, "creationTimestamp",
       gpr_format_timespec(time_created_), GRPC_JSON_STRING, true);
-  grpc_json* events = grpc_json_create_child(json_iterator, json, "events",
-                                             nullptr, GRPC_JSON_ARRAY, false);
-  json_iterator = nullptr;
-  TraceEvent* it = head_trace_;
-  while (it != nullptr) {
-    json_iterator = grpc_json_create_child(json_iterator, events, nullptr,
-                                           nullptr, GRPC_JSON_OBJECT, false);
-    it->RenderTraceEvent(json_iterator);
-    it = it->next();
+  // only add in the event list if it is non-empty.
+  if (num_events_logged_ > 0) {
+    grpc_json* events = grpc_json_create_child(json_iterator, json, "events",
+                                               nullptr, GRPC_JSON_ARRAY, false);
+    json_iterator = nullptr;
+    TraceEvent* it = head_trace_;
+    while (it != nullptr) {
+      json_iterator = grpc_json_create_child(json_iterator, events, nullptr,
+                                             nullptr, GRPC_JSON_OBJECT, false);
+      it->RenderTraceEvent(json_iterator);
+      it = it->next();
+    }
   }
   return json;
 }

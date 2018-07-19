@@ -417,6 +417,9 @@ void grpc_channel_internal_unref(grpc_channel* c REF_ARG) {
 static void destroy_channel(void* arg, grpc_error* error) {
   grpc_channel* channel = static_cast<grpc_channel*>(arg);
   if (channel->channelz_channel != nullptr) {
+    channel->channelz_channel->trace()->AddTraceEvent(
+        grpc_core::channelz::ChannelTrace::Severity::Info,
+        grpc_slice_from_static_string("Channel destroyed"));
     channel->channelz_channel->MarkChannelDestroyed();
     channel->channelz_channel.reset();
   }

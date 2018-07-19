@@ -41,33 +41,77 @@
 namespace grpc_core {
 namespace channelz {
 
-ChannelNode::ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes,
-                         bool is_top_level_channel)
-    : channel_(channel),
-      target_(nullptr),
-      channel_uuid_(-1),
-      is_top_level_channel_(is_top_level_channel) {
+CallCountingBase::CallCountingBase(size_t channel_tracer_max_nodes) {
   trace_.Init(channel_tracer_max_nodes);
-  target_ = UniquePtr<char>(grpc_channel_get_target(channel_));
-  channel_uuid_ = ChannelzRegistry::RegisterChannelNode(this);
   gpr_atm_no_barrier_store(&last_call_started_millis_,
                            (gpr_atm)ExecCtx::Get()->Now());
 }
 
-ChannelNode::~ChannelNode() {
-  trace_.Destroy();
-  ChannelzRegistry::UnregisterChannelNode(channel_uuid_);
-}
+CallCountingBase::~CallCountingBase() { trace_.Destroy(); }
 
-void ChannelNode::RecordCallStarted() {
+void CallCountingBase::RecordCallStarted() {
   gpr_atm_no_barrier_fetch_add(&calls_started_, (gpr_atm)1);
   gpr_atm_no_barrier_store(&last_call_started_millis_,
                            (gpr_atm)ExecCtx::Get()->Now());
 }
 
-void ChannelNode::PopulateConnectivityState(grpc_json* json) {}
+void CallCountingBase::PopulateTrace(grpc_json* json) {
+  // fill in the channel trace if applicable
+  grpc_json* trace_json = trace_->RenderJson();
+  if (trace_json != nullptr) {
+    // we manually link up and fill the child since it was created for us in
+    // ChannelTrace::RenderJson
+    trace_json->key = "trace";  // this object is named trace in channelz.proto
+    grpc_json_link_child(json, trace_json, nullptr);
+  }
+}
 
-void ChannelNode::PopulateChildRefs(grpc_json* json) {}
+void CallCountingBase::PopulateCallData(grpc_json* json) {
+  grpc_json* json_iterator = nullptr;
+  if (calls_started_ != 0) {
+    json_iterator = grpc_json_add_number_string_child(
+        json, json_iterator, "callsStarted", calls_started_);
+  }
+  if (calls_succeeded_ != 0) {
+    json_iterator = grpc_json_add_number_string_child(
+        json, json_iterator, "callsSucceeded", calls_succeeded_);
+  }
+  if (calls_failed_) {
+    json_iterator = grpc_json_add_number_string_child(
+        json, json_iterator, "callsFailed", calls_failed_);
+  }
+  gpr_timespec ts =
+      grpc_millis_to_timespec(last_call_started_millis_, GPR_CLOCK_REALTIME);
+  json_iterator =
+      grpc_json_create_child(json_iterator, json, "lastCallStartedTimestamp",
+                             gpr_format_timespec(ts), GRPC_JSON_STRING, true);
+}
+
+char* CallCountingBase::RenderJsonString() {
+  grpc_json* json = RenderJson();
+  char* json_str = grpc_json_dump_to_string(json, 0);
+  grpc_json_destroy(json);
+  return json_str;
+}
+
+ChannelNode::ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes,
+                         bool is_top_level_channel)
+    : CallCountingBase(channel_tracer_max_nodes),
+      channel_(channel),
+      is_top_level_channel_(is_top_level_channel) {
+  target_ = UniquePtr<char>(grpc_channel_get_target(channel_));
+  channel_uuid_ = ChannelzRegistry::RegisterChannelNode(this);
+}
+
+ChannelNode::~ChannelNode() {
+  ChannelzRegistry::UnregisterChannelNode(channel_uuid_);
+}
+
+void ChannelNode::PopulateTarget(grpc_json* json) {
+  GPR_ASSERT(target_.get() != nullptr);
+  grpc_json_create_child(nullptr, json, "target", target_.get(),
+                         GRPC_JSON_STRING, false);
+}
 
 grpc_json* ChannelNode::RenderJson() {
   // We need to track these three json objects to build our object
@@ -90,48 +134,11 @@ grpc_json* ChannelNode::RenderJson() {
   json = data;
   json_iterator = nullptr;
   PopulateConnectivityState(json);
-  GPR_ASSERT(target_.get() != nullptr);
-  json_iterator = grpc_json_create_child(
-      json_iterator, json, "target", target_.get(), GRPC_JSON_STRING, false);
-  // fill in the channel trace if applicable
-  grpc_json* trace = trace_->RenderJson();
-  if (trace != nullptr) {
-    // we manually link up and fill the child since it was created for us in
-    // ChannelTrace::RenderJson
-    trace->key = "trace";  // this object is named trace in channelz.proto
-    json_iterator = grpc_json_link_child(json, trace, json_iterator);
-  }
-  // reset the parent to be the data object.
-  json = data;
-  json_iterator = nullptr;
-  if (calls_started_ != 0) {
-    json_iterator = grpc_json_add_number_string_child(
-        json, json_iterator, "callsStarted", calls_started_);
-  }
-  if (calls_succeeded_ != 0) {
-    json_iterator = grpc_json_add_number_string_child(
-        json, json_iterator, "callsSucceeded", calls_succeeded_);
-  }
-  if (calls_failed_) {
-    json_iterator = grpc_json_add_number_string_child(
-        json, json_iterator, "callsFailed", calls_failed_);
-  }
-  gpr_timespec ts =
-      grpc_millis_to_timespec(last_call_started_millis_, GPR_CLOCK_REALTIME);
-  json_iterator =
-      grpc_json_create_child(json_iterator, json, "lastCallStartedTimestamp",
-                             gpr_format_timespec(ts), GRPC_JSON_STRING, true);
-  json = top_level_json;
-  json_iterator = nullptr;
+  PopulateTarget(json);
+  PopulateTrace(json);
+  PopulateCallData(json);
   PopulateChildRefs(json);
   return top_level_json;
-}
-
-char* ChannelNode::RenderJsonString() {
-  grpc_json* json = RenderJson();
-  char* json_str = grpc_json_dump_to_string(json, 0);
-  grpc_json_destroy(json);
-  return json_str;
 }
 
 RefCountedPtr<ChannelNode> ChannelNode::MakeChannelNode(
@@ -141,12 +148,39 @@ RefCountedPtr<ChannelNode> ChannelNode::MakeChannelNode(
       channel, channel_tracer_max_nodes, is_top_level_channel);
 }
 
-SubchannelNode::SubchannelNode() {
+SubchannelNode::SubchannelNode(size_t channel_tracer_max_nodes)
+    : CallCountingBase(channel_tracer_max_nodes) {
   subchannel_uuid_ = ChannelzRegistry::RegisterSubchannelNode(this);
 }
 
 SubchannelNode::~SubchannelNode() {
   ChannelzRegistry::UnregisterSubchannelNode(subchannel_uuid_);
+}
+
+grpc_json* SubchannelNode::RenderJson() {
+  grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
+  grpc_json* json = top_level_json;
+  grpc_json* json_iterator = nullptr;
+  json_iterator = grpc_json_create_child(json_iterator, json, "ref", nullptr,
+                                         GRPC_JSON_OBJECT, false);
+  json = json_iterator;
+  json_iterator = nullptr;
+  json_iterator = grpc_json_add_number_string_child(
+      json, json_iterator, "subchannelId", subchannel_uuid_);
+  // reset json iterators to top level object
+  json = top_level_json;
+  json_iterator = nullptr;
+  // create and fill the data child.
+  grpc_json* data = grpc_json_create_child(json_iterator, json, "data", nullptr,
+                                           GRPC_JSON_OBJECT, false);
+  json = data;
+  json_iterator = nullptr;
+  PopulateConnectivityState(json);
+  PopulateTarget(json);
+  PopulateTrace(json);
+  PopulateCallData(json);
+  PopulateChildRefs(json);
+  return top_level_json;
 }
 
 }  // namespace channelz

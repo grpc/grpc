@@ -24,6 +24,8 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 
+#include <grpc/support/string_util.h>
+
 namespace grpc_core {
 namespace channelz {
 namespace {
@@ -107,6 +109,33 @@ RefCountedPtr<ChannelNode> ClientChannelNode::MakeClientChannelNode(
     bool is_top_level_channel) {
   return MakePolymorphicRefCounted<ChannelNode, ClientChannelNode>(
       channel, channel_tracer_max_nodes, is_top_level_channel);
+}
+
+ClientChannelSubchannelNode::ClientChannelSubchannelNode(
+    size_t channel_tracer_max_nodes, grpc_subchannel* subchannel)
+    : SubchannelNode(channel_tracer_max_nodes), subchannel_(subchannel) {
+  target_ =
+      UniquePtr<char>(gpr_strdup(grpc_subchannel_get_target(subchannel_)));
+}
+
+void ClientChannelSubchannelNode::PopulateTarget(grpc_json* json) {
+  GPR_ASSERT(target_.get() != nullptr);
+  grpc_json_create_child(nullptr, json, "target", target_.get(),
+                         GRPC_JSON_STRING, false);
+}
+
+void ClientChannelSubchannelNode::PopulateConnectivityState(grpc_json* json) {
+  grpc_connectivity_state state;
+  if (subchannel_ == nullptr) {
+    state = GRPC_CHANNEL_SHUTDOWN;
+  } else {
+    state = grpc_subchannel_check_connectivity(subchannel_, nullptr);
+  }
+  json = grpc_json_create_child(nullptr, json, "state", nullptr,
+                                GRPC_JSON_OBJECT, false);
+  grpc_json_create_child(nullptr, json, "state",
+                         grpc_connectivity_state_name(state), GRPC_JSON_STRING,
+                         false);
 }
 
 }  // namespace channelz
