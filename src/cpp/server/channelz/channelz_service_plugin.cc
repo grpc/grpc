@@ -18,8 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/cpp/server/channelz/channelz_service_plugin.h"
-
+#include <grpcpp/ext/channelz_service_plugin.h>
 #include <grpcpp/impl/server_builder_plugin.h>
 #include <grpcpp/impl/server_initializer.h>
 #include <grpcpp/server.h>
@@ -28,6 +27,7 @@
 
 namespace grpc {
 namespace channelz {
+namespace experimental {
 
 ChannelzServicePlugin::ChannelzServicePlugin()
     : channelz_service_(new grpc::ChannelzService()) {}
@@ -78,5 +78,6 @@ struct StaticChannelServicePluginInitializer {
   }
 } static_channelz_service_plugin_initializer;
 
+}  // namespace experimental
 }  // namespace channelz
 }  // namespace grpc

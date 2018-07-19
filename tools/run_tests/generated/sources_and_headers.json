@@ -7556,17 +7556,17 @@
       "grpcpp_channelz_proto"
     ], 
     "headers": [
-      "src/cpp/server/channelz/channelz_service.h", 
-      "src/cpp/server/channelz/channelz_service_plugin.h"
+      "include/grpcpp/ext/channelz_service_plugin.h", 
+      "src/cpp/server/channelz/channelz_service.h"
     ], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "grpcpp_channelz", 
     "src": [
+      "include/grpcpp/ext/channelz_service_plugin.h", 
       "src/cpp/server/channelz/channelz_service.cc", 
       "src/cpp/server/channelz/channelz_service.h", 
-      "src/cpp/server/channelz/channelz_service_plugin.cc", 
-      "src/cpp/server/channelz/channelz_service_plugin.h"
+      "src/cpp/server/channelz/channelz_service_plugin.cc"
     ], 
     "third_party": false, 
     "type": "lib"

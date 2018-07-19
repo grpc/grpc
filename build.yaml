@@ -1854,9 +1854,10 @@ libs:
 - name: grpcpp_channelz
   build: all
   language: c++
+  public_headers:
+  - include/grpcpp/ext/channelz_service_plugin.h
   headers:
   - src/cpp/server/channelz/channelz_service.h
-  - src/cpp/server/channelz/channelz_service_plugin.h
   src:
   - src/cpp/server/channelz/channelz_service.cc
   - src/cpp/server/channelz/channelz_service_plugin.cc

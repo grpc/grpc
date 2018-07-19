@@ -4738,6 +4738,15 @@ target_link_libraries(grpcpp_channelz
   grpc
 )
 
+foreach(_hdr
+  include/grpcpp/ext/channelz_service_plugin.h
+)
+  string(REPLACE "include/" "" _path ${_hdr})
+  get_filename_component(_path ${_path} PATH)
+  install(FILES ${_hdr}
+    DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
+  )
+endforeach()
 endif (gRPC_BUILD_CODEGEN)
 
 

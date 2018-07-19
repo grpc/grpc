@@ -28,7 +28,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "src/cpp/server/channelz/channelz_service_plugin.h"
+#include <grpcpp/ext/channelz_service_plugin.h>
 #include "src/proto/grpc/channelz/channelz.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -179,7 +179,7 @@ class ChannelzServerTest : public ::testing::Test {
   std::vector<BackendData> backends_;
 
   // ensure channel server is linked in.
-  channelz::ChannelzServicePlugin plugin_;
+  channelz::experimental::ChannelzServicePlugin plugin_;
 };
 
 TEST_F(ChannelzServerTest, BasicTest) {

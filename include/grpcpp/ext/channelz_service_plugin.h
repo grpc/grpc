@@ -29,7 +29,10 @@
 
 namespace grpc {
 namespace channelz {
+namespace experimental {
 
+// This plugin is experimental for now. Track progress in
+// https://github.com/grpc/grpc/issues/15988.
 class ChannelzServicePlugin : public ::grpc::ServerBuilderPlugin {
  public:
   ChannelzServicePlugin();
@@ -48,6 +51,7 @@ class ChannelzServicePlugin : public ::grpc::ServerBuilderPlugin {
 /// be called at static initialization time.
 void InitChannelzServerBuilderPlugin();
 
+}  // namespace experimental
 }  // namespace channelz
 }  // namespace grpc
 
