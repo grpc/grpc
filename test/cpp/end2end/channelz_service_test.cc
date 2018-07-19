@@ -106,7 +106,6 @@ class ChannelzServerTest : public ::testing::Test {
       backend_builder.AddChannelArgument(GRPC_ARG_ENABLE_CHANNELZ, 0);
       backend_builder.RegisterService(backends_[i].service.get());
       backends_[i].server = backend_builder.BuildAndStart();
-
       // set up a channel to the backend. We ensure that this channel has
       // channelz enabled since these channels (proxy outbound to backends)
       // are the ones that our test will actually be validating.
