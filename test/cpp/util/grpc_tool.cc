@@ -206,6 +206,15 @@ void ReadResponse(CliCall* call, const grpc::string& method_name,
   }
 }
 
+std::shared_ptr<grpc::Channel> CreateCliChannel(
+    grpc::string server_address, const CliCredentials& cred) {
+  grpc::ChannelArguments args;
+  if (!cred.GetSslTargetNameOverride().empty()) {
+    args.SetSslTargetNameOverride(cred.GetSslTargetNameOverride());
+  }
+  return grpc::CreateCustomChannel(server_address, cred.GetCredentials(), args);
+}
+
 struct Command {
   const char* command;
   std::function<bool(GrpcTool*, int, const char**, const CliCredentials&,
@@ -324,7 +333,7 @@ bool GrpcTool::ListServices(int argc, const char** argv,
 
   grpc::string server_address(argv[0]);
   std::shared_ptr<grpc::Channel> channel =
-      grpc::CreateChannel(server_address, cred.GetCredentials());
+      CreateCliChannel(server_address, cred);
   grpc::ProtoReflectionDescriptorDatabase desc_db(channel);
   grpc::protobuf::DescriptorPool desc_pool(&desc_db);
 
@@ -422,7 +431,7 @@ bool GrpcTool::PrintType(int argc, const char** argv,
 
   grpc::string server_address(argv[0]);
   std::shared_ptr<grpc::Channel> channel =
-      grpc::CreateChannel(server_address, cred.GetCredentials());
+      CreateCliChannel(server_address, cred);
   grpc::ProtoReflectionDescriptorDatabase desc_db(channel);
   grpc::protobuf::DescriptorPool desc_pool(&desc_db);
 
@@ -469,7 +478,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
   bool print_mode = false;
 
   std::shared_ptr<grpc::Channel> channel =
-      grpc::CreateChannel(server_address, cred.GetCredentials());
+      CreateCliChannel(server_address, cred);
 
   if (!FLAGS_binary_input || !FLAGS_binary_output) {
     parser.reset(
@@ -820,7 +829,7 @@ bool GrpcTool::ParseMessage(int argc, const char** argv,
 
   if (!FLAGS_binary_input || !FLAGS_binary_output) {
     std::shared_ptr<grpc::Channel> channel =
-        grpc::CreateChannel(server_address, cred.GetCredentials());
+        CreateCliChannel(server_address, cred);
     parser.reset(
         new grpc::testing::ProtoFileParser(FLAGS_remotedb ? channel : nullptr,
                                            FLAGS_proto_path, FLAGS_protofiles));

@@ -30,6 +30,7 @@ class CliCredentials {
   virtual ~CliCredentials() {}
   virtual std::shared_ptr<grpc::ChannelCredentials> GetCredentials() const;
   virtual const grpc::string GetCredentialUsage() const;
+  virtual const grpc::string GetSslTargetNameOverride() const;
 };
 
 }  // namespace testing
