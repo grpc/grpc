@@ -217,7 +217,7 @@ class RoundRobin : public LoadBalancingPolicy {
   PickState* pending_picks_ = nullptr;
   /** our connectivity state tracker */
   grpc_connectivity_state_tracker state_tracker_;
-  /// Lock and data used to capture snapshots of this channels child
+  /// Lock and data used to capture snapshots of this channel's child
   /// channels and subchannels. This data is consumed by channelz.
   gpr_mu child_refs_mu_;
   ChildRefsList child_subchannels_;
