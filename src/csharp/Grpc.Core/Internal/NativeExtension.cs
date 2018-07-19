@@ -106,9 +106,15 @@ namespace Grpc.Core.Internal
         /// </summary>
         private static NativeMethods LoadNativeMethods()
         {
-            return PlatformApis.IsUnity ? LoadNativeMethodsUnity() :
-                PlatformApis.IsXamarin ? LoadNativeMethodsXamarin() :
-                    new NativeMethods(LoadUnmanagedLibrary());
+            if (PlatformApis.IsUnity)
+            {
+                return LoadNativeMethodsUnity();
+            }
+            if (PlatformApis.IsXamarin)
+            {
+                return LoadNativeMethodsXamarin();
+            }
+            return new NativeMethods(LoadUnmanagedLibrary());
         }
 
         /// <summary>
