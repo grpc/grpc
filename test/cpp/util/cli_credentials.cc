@@ -67,7 +67,7 @@ const grpc::string CliCredentials::GetCredentialUsage() const {
 }
 
 const grpc::string CliCredentials::GetSslTargetNameOverride() const {
-  return FLAGS_enable_ssl ? FLAGS_ssl_target : "";
+  return (FLAGS_enable_ssl || FLAGS_use_auth) ? FLAGS_ssl_target : "";
 }
 
 }  // namespace testing
