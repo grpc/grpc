@@ -76,6 +76,9 @@ class ChannelzServerTest : public ::testing::Test {
   ChannelzServerTest() {}
 
   void SetUp() override {
+    // ensure channel server is brought up on all severs we build.
+    ::grpc::channelz::experimental::InitChannelzServiceBuilderPlugin();
+
     // We set up a proxy server with channelz enabled.
     proxy_port_ = grpc_pick_unused_port_or_die();
     ServerBuilder proxy_builder;
@@ -177,9 +180,6 @@ class ChannelzServerTest : public ::testing::Test {
 
   // backends. All implement the echo service.
   std::vector<BackendData> backends_;
-
-  // ensure channel server is linked in.
-  channelz::experimental::ChannelzServicePlugin plugin_;
 };
 
 TEST_F(ChannelzServerTest, BasicTest) {

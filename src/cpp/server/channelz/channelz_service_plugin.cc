@@ -29,6 +29,22 @@ namespace grpc {
 namespace channelz {
 namespace experimental {
 
+// This plugin is experimental for now. Track progress in
+// https://github.com/grpc/grpc/issues/15988.
+class ChannelzServicePlugin : public ::grpc::ServerBuilderPlugin {
+ public:
+  ChannelzServicePlugin();
+  ::grpc::string name() override;
+  void InitServer(::grpc::ServerInitializer* si) override;
+  void Finish(::grpc::ServerInitializer* si) override;
+  void ChangeArguments(const ::grpc::string& name, void* value) override;
+  bool has_async_methods() const override;
+  bool has_sync_methods() const override;
+
+ private:
+  std::shared_ptr<grpc::ChannelzService> channelz_service_;
+};
+
 ChannelzServicePlugin::ChannelzServicePlugin()
     : channelz_service_(new grpc::ChannelzService()) {}
 
@@ -69,14 +85,6 @@ void InitChannelzServiceBuilderPlugin() {
   already_here = true;
   ::grpc::ServerBuilder::InternalAddPluginFactory(&CreateChannelzServicePlugin);
 }
-
-// Force InitChannelzServiceBuilderPlugin() to be called at static
-// initialization time.
-struct StaticChannelServicePluginInitializer {
-  StaticChannelServicePluginInitializer() {
-    InitChannelzServiceBuilderPlugin();
-  }
-} static_channelz_service_plugin_initializer;
 
 }  // namespace experimental
 }  // namespace channelz
