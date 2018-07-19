@@ -113,10 +113,10 @@ RefCountedPtr<ChannelNode> ClientChannelNode::MakeClientChannelNode(
 
 ClientChannelSubchannelNode::ClientChannelSubchannelNode(
     size_t channel_tracer_max_nodes, grpc_subchannel* subchannel)
-    : SubchannelNode(channel_tracer_max_nodes), subchannel_(subchannel) {
-  target_ =
-      UniquePtr<char>(gpr_strdup(grpc_subchannel_get_target(subchannel_)));
-}
+    : SubchannelNode(channel_tracer_max_nodes),
+      subchannel_(subchannel),
+      target_(UniquePtr<char>(
+          gpr_strdup(grpc_subchannel_get_target(subchannel_)))) {}
 
 void ClientChannelSubchannelNode::PopulateTarget(grpc_json* json) {
   GPR_ASSERT(target_.get() != nullptr);

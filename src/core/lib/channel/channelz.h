@@ -47,10 +47,11 @@ class ChannelNodePeer;
 }
 
 // base class for all channelz entities
-class ChannelzBaseNode : public RefCounted<ChannelzBaseNode> {
+class BaseNode : public RefCounted<BaseNode> {
  public:
-  ChannelzBaseNode() {}
-  virtual ~ChannelzBaseNode() {}
+  BaseNode() {}
+  virtual ~BaseNode() {}
+
  private:
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
@@ -58,10 +59,11 @@ class ChannelzBaseNode : public RefCounted<ChannelzBaseNode> {
 
 // Handles channelz bookkeeping for sockets
 // TODO(ncteisen): implement in subsequent PR.
-class SocketNode : public ChannelzBaseNode {
+class SocketNode : public BaseNode {
  public:
-  SocketNode() : ChannelzBaseNode() {}
+  SocketNode() : BaseNode() {}
   ~SocketNode() override {}
+
  private:
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
@@ -76,11 +78,11 @@ class SocketNode : public ChannelzBaseNode {
 //   - perform common rendering.
 //
 // This class also defines some fat interfaces so that its children can
-// implement the functionality different. For example, querying the
-// connectivity state looks different for channels and subchannels, and does
-// not make sense for servers. So servers will not override, and channels and
-// subchannels will override with their own way to query connectivity state.
-class CallCountingBase : public ChannelzBaseNode {
+// implement the functionality differently. For example, querying the
+// connectivity state looks different for channels than for subchannels, and
+// does not make sense for servers. So servers will not override, and channels
+// and subchannels will override with their own way to query connectivity state.
+class CallCountingBase : public BaseNode {
  public:
   CallCountingBase(size_t channel_tracer_max_nodes);
   ~CallCountingBase() override;
@@ -136,6 +138,7 @@ class ServerNode : public CallCountingBase {
   ServerNode(size_t channel_tracer_max_nodes)
       : CallCountingBase(channel_tracer_max_nodes) {}
   ~ServerNode() override {}
+
  private:
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
@@ -191,7 +194,7 @@ class SubchannelNode : public CallCountingBase {
  private:
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
-  
+
   intptr_t subchannel_uuid_;
 };
 
