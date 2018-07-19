@@ -88,11 +88,11 @@ std::shared_ptr<Channel> CreateChannelForTestCase(
 
   std::shared_ptr<CallCredentials> creds;
   if (test_case == "compute_engine_creds") {
-    GPR_ASSERT(FLAGS_use_tls);
+    GPR_ASSERT(FLAGS_use_tls || FLAGS_use_alts);
     creds = GoogleComputeEngineCredentials();
     GPR_ASSERT(creds);
   } else if (test_case == "jwt_token_creds") {
-    GPR_ASSERT(FLAGS_use_tls);
+    GPR_ASSERT(FLAGS_use_tls || FLAGS_use_alts);
     grpc::string json_key = GetServiceAccountJsonKey();
     std::chrono::seconds token_lifetime = std::chrono::hours(1);
     creds =
