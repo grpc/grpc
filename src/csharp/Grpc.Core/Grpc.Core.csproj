@@ -54,6 +54,14 @@
       <PackagePath>runtimes/monoandroid/arm64-v8a/libgrpc_csharp_ext.so</PackagePath>
       <Pack>true</Pack>
     </Content>
+    <Content Include="build\net45\Grpc.Core.targets">
+      <PackagePath>build/net45/</PackagePath>
+      <Pack>true</Pack>
+    </Content>
+    <Content Include="build\MonoAndroid\Grpc.Core.targets">
+      <PackagePath>build/MonoAndroid/</PackagePath>
+      <Pack>true</Pack>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
@@ -72,12 +80,5 @@
   </ItemGroup>
 
   <Import Project="NativeDeps.csproj.include" />
-
-  <ItemGroup>
-    <Content Include="build\**\*.*">
-      <Pack>true</Pack>
-      <PackagePath>build</PackagePath>
-    </Content>
-  </ItemGroup>
 
 </Project>
