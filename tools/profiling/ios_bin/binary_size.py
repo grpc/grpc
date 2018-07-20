@@ -86,7 +86,7 @@ def build(where, frameworks):
               'src/objective-c/examples/Sample/Build-%s' % where)
 
 
-text = ''
+text = 'Objective-C binary sizes\n'
 for frameworks in [False, True]:
     build('new', frameworks)
     new_size = get_size('new', frameworks)

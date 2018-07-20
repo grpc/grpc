@@ -88,12 +88,12 @@ void ClientChannelNode::PopulateChildRefs(grpc_json* json) {
     grpc_json* array_parent = grpc_json_create_child(
         nullptr, json, "channelRef", nullptr, GRPC_JSON_ARRAY, false);
     json_iterator = nullptr;
-    for (size_t i = 0; i < child_subchannels.size(); ++i) {
+    for (size_t i = 0; i < child_channels.size(); ++i) {
       json_iterator =
           grpc_json_create_child(json_iterator, array_parent, nullptr, nullptr,
                                  GRPC_JSON_OBJECT, false);
       grpc_json_add_number_string_child(json_iterator, nullptr, "channelId",
-                                        child_subchannels[i]);
+                                        child_channels[i]);
     }
   }
 }
