@@ -2054,6 +2054,26 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpcpp_channelz",
+    srcs = [
+        "src/cpp/server/channelz/channelz_service.cc",
+        "src/cpp/server/channelz/channelz_service_plugin.cc",
+    ],
+    hdrs = [
+        "src/cpp/server/channelz/channelz_service.h",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "include/grpcpp/ext/channelz_service_plugin.h",
+    ],
+    deps = [
+        ":grpc++",
+        "//src/proto/grpc/channelz:channelz_proto",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_library(
     name = "grpc++_test",
     public_hdrs = [
         "include/grpc++/test/mock_stream.h",
