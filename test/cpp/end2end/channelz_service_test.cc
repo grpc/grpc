@@ -77,7 +77,7 @@ class ChannelzServerTest : public ::testing::Test {
 
   void SetUp() override {
     // ensure channel server is brought up on all severs we build.
-    ::grpc::channelz::experimental::InitChannelzServiceBuilderPlugin();
+    ::grpc::channelz::experimental::InitChannelzService();
 
     // We set up a proxy server with channelz enabled.
     proxy_port_ = grpc_pick_unused_port_or_die();

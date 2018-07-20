@@ -30,8 +30,9 @@ namespace channelz {
 namespace experimental {
 
 /// Add channelz server plugin to \a ServerBuilder. This function should
-/// be called at static initialization time.
-void InitChannelzServiceBuilderPlugin();
+/// be called at static initialization time. This service is experimental
+/// for now. Track progress in https://github.com/grpc/grpc/issues/15988.
+void InitChannelzService();
 
 }  // namespace experimental
 }  // namespace channelz

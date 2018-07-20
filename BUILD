@@ -2061,9 +2061,11 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/cpp/server/channelz/channelz_service.h",
-        "src/cpp/server/channelz/channelz_service_plugin.h",
     ],
     language = "c++",
+    public_hdrs = [
+        "include/grpcpp/ext/channelz_service_plugin.h",
+    ],
     deps = [
         ":grpc++",
         "//src/proto/grpc/channelz:channelz_proto",
