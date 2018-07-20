@@ -20,7 +20,7 @@ shopt -s nullglob
 GCS_ROOT=gs://packages.grpc.io
 MANIFEST_FILE=index.xml
 ARCHIVE_UUID=${KOKORO_BUILD_ID:-$(uuidgen)}
-GIT_BRANCH_NAME=master #${KOKORO_GITHUB_COMMIT:-master}
+GIT_BRANCH_NAME=master
 GIT_COMMIT=${KOKORO_GIT_COMMIT:-unknown}
 ARCHIVE_TIMESTAMP=$(date -Iseconds)
 TARGET_DIR=$(mktemp -d grpc_publish_packages.sh.XXXX)
