@@ -74,13 +74,15 @@ void UnaryCompressionChecks(const InteropClientContextInspector& inspector,
 }
 }  // namespace
 
-InteropClient::ServiceStub::ServiceStub(const std::shared_ptr<Channel>& channel,
-                                        bool new_stub_every_call)
-    : channel_(channel), new_stub_every_call_(new_stub_every_call) {
+InteropClient::ServiceStub::ServiceStub(
+    ChannelCreationFunc channel_creation_func, bool new_stub_every_call)
+    : channel_creation_func_(channel_creation_func),
+      channel_(channel_creation_func_()),
+      new_stub_every_call_(new_stub_every_call) {
   // If new_stub_every_call is false, then this is our chance to initialize
   // stub_. (see Get())
   if (!new_stub_every_call) {
-    stub_ = TestService::NewStub(channel);
+    stub_ = TestService::NewStub(channel_);
   }
 }
 
@@ -100,27 +102,17 @@ InteropClient::ServiceStub::GetUnimplementedServiceStub() {
   return unimplemented_service_stub_.get();
 }
 
-void InteropClient::ServiceStub::Reset(
-    const std::shared_ptr<Channel>& channel) {
-  channel_ = channel;
-
-  // Update stub_ as well. Note: If new_stub_every_call_ is true, we can reset
-  // the stub_ since the next call to Get() will create a new stub
-  if (new_stub_every_call_) {
-    stub_.reset();
-  } else {
-    stub_ = TestService::NewStub(channel);
+void InteropClient::ServiceStub::ResetChannel() {
+  channel_ = channel_creation_func_();
+  if (!new_stub_every_call_) {
+    stub_ = TestService::NewStub(channel_);
   }
 }
 
-void InteropClient::Reset(const std::shared_ptr<Channel>& channel) {
-  serviceStub_.Reset(std::move(channel));
-}
-
-InteropClient::InteropClient(const std::shared_ptr<Channel>& channel,
+InteropClient::InteropClient(ChannelCreationFunc channel_creation_func,
                              bool new_stub_every_test_case,
                              bool do_not_abort_on_transient_failures)
-    : serviceStub_(std::move(channel), new_stub_every_test_case),
+    : serviceStub_(channel_creation_func, new_stub_every_test_case),
       do_not_abort_on_transient_failures_(do_not_abort_on_transient_failures) {}
 
 bool InteropClient::AssertStatusOk(const Status& s,
@@ -1025,6 +1017,38 @@ bool InteropClient::DoCustomMetadata() {
     gpr_log(GPR_DEBUG, "Done testing stream with custom metadata");
   }
 
+  return true;
+}
+
+bool InteropClient::DoRpcSoakTest(int32_t soak_iterations) {
+  gpr_log(GPR_DEBUG, "Sending %d RPCs...", soak_iterations);
+  GPR_ASSERT(soak_iterations > 0);
+  SimpleRequest request;
+  SimpleResponse response;
+  for (int i = 0; i < soak_iterations; ++i) {
+    if (!PerformLargeUnary(&request, &response)) {
+      gpr_log(GPR_ERROR, "rpc_soak test failed on iteration %d", i);
+      return false;
+    }
+  }
+  gpr_log(GPR_DEBUG, "rpc_soak test done.");
+  return true;
+}
+
+bool InteropClient::DoChannelSoakTest(int32_t soak_iterations) {
+  gpr_log(GPR_DEBUG, "Sending %d RPCs, tearing down the channel each time...",
+          soak_iterations);
+  GPR_ASSERT(soak_iterations > 0);
+  SimpleRequest request;
+  SimpleResponse response;
+  for (int i = 0; i < soak_iterations; ++i) {
+    serviceStub_.ResetChannel();
+    if (!PerformLargeUnary(&request, &response)) {
+      gpr_log(GPR_ERROR, "channel_soak test failed on iteration %d", i);
+      return false;
+    }
+  }
+  gpr_log(GPR_DEBUG, "channel_soak test done.");
   return true;
 }
 
