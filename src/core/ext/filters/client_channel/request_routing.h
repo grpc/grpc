@@ -30,6 +30,7 @@ namespace grpc_core {
 class RequestRouter {
  public:
 
+// FIXME: combine this with LoadBalancingPolicy::PickState somehow?
   class Request {
    public:
     Request(grpc_call_stack* owning_call, grpc_call_combiner* call_combiner,
@@ -52,14 +53,20 @@ class RequestRouter {
 
     class ResolverResultWaiter;
 
-    void ProcessServiceConfigAndStartLbPickLocked(
-        RequestRouter* request_router);
+    // Internal state, one per (request, request_router) pair.
+    struct State {
+      grpc_closure on_pick_done;
+      grpc_closure on_cancel;
+      Request* request;
+      RequestRouter* request_router;
+    };
 
-    void StartLbPickLocked(RequestRouter* request_router);
+    State* AddState(RequestRouter* request_router);
 
-// FIXME: how do we pass request_router to these callbacks?
-// can't just save it as a member of this object, because it will change
-// as we move down the routing tree...
+    void ProcessServiceConfigAndStartLbPickLocked(State* state);
+
+    void StartLbPickLocked(State* state);
+
     static void LbPickDoneLocked(void* arg, grpc_error* error);
     static void LbPickCancelLocked(void* arg, grpc_error* error);
 
@@ -71,13 +78,8 @@ class RequestRouter {
     LoadBalancingPolicy::PickState pick_;
 
     // Internal state.
-// FIXME: this internal state is actually needed once per
-// (request, request_router) pair -- we can't allocate these fields the
-// right number of times up front, since we don't know how many layers
-// of request routing will be done.  need to figure out some way around
-// this.
-    grpc_closure on_pick_done_;
-    grpc_closure on_cancel_;
+// FIXME: should we allocate these on the arena instead?
+    InlinedVector<State, 1> state_;
   };
 
   RequestRouter(grpc_channel_stack* owning_stack, grpc_combiner* combiner,
