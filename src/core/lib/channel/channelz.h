@@ -43,30 +43,40 @@ namespace grpc_core {
 namespace channelz {
 
 namespace testing {
-class ChannelNodePeer;
+class CallCountingAndTracingNodePeer;
 }
 
 // base class for all channelz entities
 class BaseNode : public RefCounted<BaseNode> {
  public:
-  BaseNode() {}
+  // There are only four high level channelz entities. However, to support
+  // GetTopChannelsRequest, we split the Channel entity into two different
+  // types. All children of BaseNode must be one of these types.
+  enum class EntityType {
+    kTopLevelChannel,
+    kInternalChannel,
+    kSubchannel,
+    kServer,
+    kSocket,
+  };
+
+  // we track is_top_level_channel to support GetTopChannels
+  BaseNode(EntityType type) : type_(type) {}
   virtual ~BaseNode() {}
 
- private:
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
-};
+  // All children must implement this function.
+  virtual grpc_json* RenderJson() GRPC_ABSTRACT;
 
-// Handles channelz bookkeeping for sockets
-// TODO(ncteisen): implement in subsequent PR.
-class SocketNode : public BaseNode {
- public:
-  SocketNode() : BaseNode() {}
-  ~SocketNode() override {}
+  // Renders the json and returns allocated string that must be freed by the
+  // caller.
+  char* RenderJsonString();
+
+  EntityType type() const { return type_; }
 
  private:
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
+  EntityType type_;
 };
 
 // This class is the parent for the channelz entities that deal with Channels
@@ -76,16 +86,10 @@ class SocketNode : public BaseNode {
 //   - track last_call_started_timestamp
 //   - hold the channel trace.
 //   - perform common rendering.
-//
-// This class also defines some fat interfaces so that its children can
-// implement the functionality differently. For example, querying the
-// connectivity state looks different for channels than for subchannels, and
-// does not make sense for servers. So servers will not override, and channels
-// and subchannels will override with their own way to query connectivity state.
-class CallCountingBase : public BaseNode {
+class CallCountingAndTracingNode : public BaseNode {
  public:
-  CallCountingBase(size_t channel_tracer_max_nodes);
-  ~CallCountingBase() override;
+  CallCountingAndTracingNode(EntityType type, size_t channel_tracer_max_nodes);
+  ~CallCountingAndTracingNode() override;
 
   void RecordCallStarted();
   void RecordCallFailed() {
@@ -96,33 +100,18 @@ class CallCountingBase : public BaseNode {
   }
   ChannelTrace* trace() { return trace_.get(); }
 
-  // Fat interface for ConnectivityState. Default is to leave it out, however,
-  // things like Channel and Subchannel will override with their mechanism
-  // for querying connectivity state.
-  virtual void PopulateConnectivityState(grpc_json* json) {}
-
-  // Fat interface for Targets.
-  virtual void PopulateTarget(grpc_json* json) {}
-
-  // Fat interface for ChildRefs. Allows children to populate with whatever
-  // combination of child_refs, subchannel_refs, and socket_refs is correct.
-  virtual void PopulateChildRefs(grpc_json* json) {}
-
-  // All children must implement their custom JSON rendering.
-  virtual grpc_json* RenderJson() GRPC_ABSTRACT;
-
   // Common rendering of the channel trace.
   void PopulateTrace(grpc_json* json);
 
   // Common rendering of the call count data and last_call_started_timestamp.
   void PopulateCallData(grpc_json* json);
 
-  // Common rendering of grpc_json from RenderJson() to allocated string.
-  char* RenderJsonString();
-
  private:
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
+
+  // testing peer friend.
+  friend class testing::CallCountingAndTracingNodePeer;
 
   gpr_atm calls_started_ = 0;
   gpr_atm calls_succeeded_ = 0;
@@ -131,12 +120,47 @@ class CallCountingBase : public BaseNode {
   ManualConstructor<ChannelTrace> trace_;
 };
 
+// Handles channelz bookkeeping for channels
+class ChannelNode : public CallCountingAndTracingNode {
+ public:
+  static RefCountedPtr<ChannelNode> MakeChannelNode(
+      grpc_channel* channel, size_t channel_tracer_max_nodes,
+      bool is_top_level_channel);
+
+  grpc_json* RenderJson() override;
+
+  void MarkChannelDestroyed() {
+    GPR_ASSERT(channel_ != nullptr);
+    channel_ = nullptr;
+  }
+
+  bool ChannelIsDestroyed() { return channel_ == nullptr; }
+
+  intptr_t channel_uuid() { return channel_uuid_; }
+
+ protected:
+  ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes,
+              bool is_top_level_channel);
+  ~ChannelNode() override;
+  // provides view of target for child.
+  char* target_view() { return target_.get(); }
+
+ private:
+  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
+  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
+
+  grpc_channel* channel_ = nullptr;
+  UniquePtr<char> target_;
+  intptr_t channel_uuid_;
+};
+
 // Handles channelz bookkeeping for servers
 // TODO(ncteisen): implement in subsequent PR.
-class ServerNode : public CallCountingBase {
+class ServerNode : public CallCountingAndTracingNode {
  public:
   ServerNode(size_t channel_tracer_max_nodes)
-      : CallCountingBase(channel_tracer_max_nodes) {}
+      : CallCountingAndTracingNode(EntityType::kServer,
+                                   channel_tracer_max_nodes) {}
   ~ServerNode() override {}
 
  private:
@@ -144,58 +168,16 @@ class ServerNode : public CallCountingBase {
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
 };
 
-// Overrides Channel specific functionality.
-class ChannelNode : public CallCountingBase {
+// Handles channelz bookkeeping for sockets
+// TODO(ncteisen): implement in subsequent PR.
+class SocketNode : public BaseNode {
  public:
-  static RefCountedPtr<ChannelNode> MakeChannelNode(
-      grpc_channel* channel, size_t channel_tracer_max_nodes,
-      bool is_top_level_channel);
-
-  void MarkChannelDestroyed() {
-    GPR_ASSERT(channel_ != nullptr);
-    channel_ = nullptr;
-  }
-
-  grpc_json* RenderJson() override;
-
-  void PopulateTarget(grpc_json* json) override;
-
-  bool ChannelIsDestroyed() { return channel_ == nullptr; }
-
-  intptr_t channel_uuid() { return channel_uuid_; }
-  bool is_top_level_channel() { return is_top_level_channel_; }
-
- protected:
-  ChannelNode(grpc_channel* channel, size_t channel_tracer_max_nodes,
-              bool is_top_level_channel);
-  ~ChannelNode() override;
+  SocketNode() : BaseNode(EntityType::kSocket) {}
+  ~SocketNode() override {}
 
  private:
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
-
-  // testing peer friend.
-  friend class testing::ChannelNodePeer;
-
-  grpc_channel* channel_ = nullptr;
-  UniquePtr<char> target_;
-  intptr_t channel_uuid_;
-  bool is_top_level_channel_ = true;
-};
-
-// Overrides Subchannel specific functionality.
-class SubchannelNode : public CallCountingBase {
- public:
-  SubchannelNode(size_t channel_tracer_max_nodes);
-  ~SubchannelNode() override;
-  grpc_json* RenderJson() override;
-  intptr_t subchannel_uuid() { return subchannel_uuid_; }
-
- private:
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
-
-  intptr_t subchannel_uuid_;
 };
 
 // Creation functions

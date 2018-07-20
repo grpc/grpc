@@ -52,54 +52,46 @@ ChannelzRegistry::ChannelzRegistry() { gpr_mu_init(&mu_); }
 
 ChannelzRegistry::~ChannelzRegistry() { gpr_mu_destroy(&mu_); }
 
-intptr_t ChannelzRegistry::InternalRegisterEntry(const RegistryEntry& entry) {
+intptr_t ChannelzRegistry::InternalRegister(BaseNode* node) {
   mu_guard guard(&mu_);
-  entities_.push_back(entry);
+  entities_.push_back(node);
   intptr_t uuid = entities_.size();
   return uuid;
 }
 
-void ChannelzRegistry::InternalUnregisterEntry(intptr_t uuid, EntityType type) {
+void ChannelzRegistry::InternalUnregister(intptr_t uuid) {
   GPR_ASSERT(uuid >= 1);
   mu_guard guard(&mu_);
   GPR_ASSERT(static_cast<size_t>(uuid) <= entities_.size());
-  GPR_ASSERT(entities_[uuid - 1].type == type);
-  entities_[uuid - 1].object = nullptr;
-  entities_[uuid - 1].type = EntityType::kUnset;
+  entities_[uuid - 1] = nullptr;
 }
 
-void* ChannelzRegistry::InternalGetEntry(intptr_t uuid, EntityType type) {
+BaseNode* ChannelzRegistry::InternalGet(intptr_t uuid) {
   mu_guard guard(&mu_);
   if (uuid < 1 || uuid > static_cast<intptr_t>(entities_.size())) {
     return nullptr;
   }
-  if (entities_[uuid - 1].type == type) {
-    return entities_[uuid - 1].object;
-  } else {
-    return nullptr;
-  }
+  return entities_[uuid - 1];
 }
 
 char* ChannelzRegistry::InternalGetTopChannels(intptr_t start_channel_id) {
   grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
   grpc_json* json = top_level_json;
   grpc_json* json_iterator = nullptr;
-  InlinedVector<ChannelNode*, 10> top_level_channels;
+  InlinedVector<BaseNode*, 10> top_level_channels;
   // uuids index into entities one-off (idx 0 is really uuid 1, since 0 is
   // reserved). However, we want to support requests coming in with
   // start_channel_id=0, which signifies "give me everything." Hence this
   // funky looking line below.
   size_t start_idx = start_channel_id == 0 ? 0 : start_channel_id - 1;
   for (size_t i = start_idx; i < entities_.size(); ++i) {
-    if (entities_[i].type == EntityType::kChannelNode) {
-      ChannelNode* channel_node =
-          static_cast<ChannelNode*>(entities_[i].object);
-      if (channel_node->is_top_level_channel()) {
-        top_level_channels.push_back(channel_node);
-      }
+    if (entities_[i] != nullptr &&
+        entities_[i]->type() ==
+            grpc_core::channelz::BaseNode::EntityType::kTopLevelChannel) {
+      top_level_channels.push_back(entities_[i]);
     }
   }
-  if (top_level_channels.size() > 0) {
+  if (!top_level_channels.empty()) {
     // create list of channels
     grpc_json* array_parent = grpc_json_create_child(
         nullptr, json, "channel", nullptr, GRPC_JSON_ARRAY, false);
@@ -128,9 +120,14 @@ char* grpc_channelz_get_top_channels(intptr_t start_channel_id) {
 }
 
 char* grpc_channelz_get_channel(intptr_t channel_id) {
-  grpc_core::channelz::ChannelNode* channel_node =
-      grpc_core::channelz::ChannelzRegistry::GetChannelNode(channel_id);
-  if (channel_node == nullptr) {
+  grpc_core::channelz::BaseNode* channel_node =
+      grpc_core::channelz::ChannelzRegistry::Get(channel_id);
+  if (channel_node == nullptr ||
+
+      (channel_node->type() !=
+           grpc_core::channelz::BaseNode::EntityType::kTopLevelChannel &&
+       channel_node->type() !=
+           grpc_core::channelz::BaseNode::EntityType::kInternalChannel)) {
     return nullptr;
   }
   grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
@@ -144,9 +141,11 @@ char* grpc_channelz_get_channel(intptr_t channel_id) {
 }
 
 char* grpc_channelz_get_subchannel(intptr_t subchannel_id) {
-  grpc_core::channelz::SubchannelNode* subchannel_node =
-      grpc_core::channelz::ChannelzRegistry::GetSubchannelNode(subchannel_id);
-  if (subchannel_node == nullptr) {
+  grpc_core::channelz::BaseNode* subchannel_node =
+      grpc_core::channelz::ChannelzRegistry::Get(subchannel_id);
+  if (subchannel_node == nullptr ||
+      subchannel_node->type() !=
+          grpc_core::channelz::BaseNode::EntityType::kSubchannel) {
     return nullptr;
   }
   grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);

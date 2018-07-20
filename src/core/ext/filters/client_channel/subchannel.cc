@@ -135,7 +135,7 @@ struct grpc_subchannel {
   /** our alarm */
   grpc_timer alarm;
 
-  grpc_core::RefCountedPtr<grpc_core::channelz::ClientChannelSubchannelNode>
+  grpc_core::RefCountedPtr<grpc_core::channelz::SubchannelNode>
       channelz_subchannel;
 };
 
@@ -393,9 +393,9 @@ grpc_subchannel* grpc_subchannel_create(grpc_connector* connector,
   size_t channel_tracer_max_nodes =
       (size_t)grpc_channel_arg_get_integer(arg, options);
   if (channelz_enabled) {
-    c->channelz_subchannel = grpc_core::MakeRefCounted<
-        grpc_core::channelz::ClientChannelSubchannelNode>(
-        channel_tracer_max_nodes, c);
+    c->channelz_subchannel =
+        grpc_core::MakeRefCounted<grpc_core::channelz::SubchannelNode>(
+            c, channel_tracer_max_nodes);
     c->channelz_subchannel->trace()->AddTraceEvent(
         grpc_core::channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("Subchannel created"));

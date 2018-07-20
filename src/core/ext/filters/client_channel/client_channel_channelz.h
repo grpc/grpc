@@ -45,12 +45,7 @@ class ClientChannelNode : public ChannelNode {
       grpc_channel* channel, size_t channel_tracer_max_nodes,
       bool is_top_level_channel);
 
-  // Override this functionality since client_channels have a notion of
-  // channel connectivity.
-  void PopulateConnectivityState(grpc_json* json) override;
-
-  // Override this functionality since client_channels have subchannels
-  void PopulateChildRefs(grpc_json* json) override;
+  grpc_json* RenderJson() override;
 
   // Helper to create a channel arg to ensure this type of ChannelNode is
   // created.
@@ -65,35 +60,35 @@ class ClientChannelNode : public ChannelNode {
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
   grpc_channel_element* client_channel_;
+
+  // helpers
+  void PopulateConnectivityState(grpc_json* json);
+  void PopulateChildRefs(grpc_json* json);
 };
 
-// Subtype of SubchannelNode that overrides and provides client_channel
-// specific functionality like querying for connectivity_state and
-// subchannel target.
-class ClientChannelSubchannelNode : public SubchannelNode {
+// Handles channelz bookkeeping for sockets
+class SubchannelNode : public CallCountingAndTracingNode {
  public:
-  ClientChannelSubchannelNode(size_t channel_tracer_max_nodes,
-                              grpc_subchannel* subchannel);
-  ~ClientChannelSubchannelNode() override {}
-
-  // Override this functionality since subchannels have a notion of
-  // channel connectivity.
-  void PopulateConnectivityState(grpc_json* json) override;
-
-  // Override this functionality since client_channels subchannels hold
-  // their own target.
-  void PopulateTarget(grpc_json* json) override;
+  SubchannelNode(grpc_subchannel* subchannel, size_t channel_tracer_max_nodes);
+  ~SubchannelNode() override;
 
   void MarkSubchannelDestroyed() {
     GPR_ASSERT(subchannel_ != nullptr);
     subchannel_ = nullptr;
   }
 
+  grpc_json* RenderJson() override;
+
+  intptr_t subchannel_uuid() { return subchannel_uuid_; }
+
  private:
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
   GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
+  intptr_t subchannel_uuid_;
   grpc_subchannel* subchannel_;
   UniquePtr<char> target_;
+
+  void PopulateConnectivityState(grpc_json* json);
 };
 
 }  // namespace channelz
