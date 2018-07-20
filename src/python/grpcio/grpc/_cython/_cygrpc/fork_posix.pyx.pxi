@@ -63,6 +63,9 @@ cdef void __postfork_child() nogil:
         # Thread could be holding the fork_in_progress_condition inside of
         # block_if_fork_in_progress() when fork occurs. Reset the lock here.
         _fork_state.fork_in_progress_condition = threading.Condition()
+        # A thread in return_from_user_request_generator() may hold this lock
+        # when fork occurs.
+        _fork_state.active_thread_count = _ActiveThreadCount()
         with _fork_state.fork_in_progress_condition:
             for state_to_reset in _fork_state.postfork_states_to_reset:
                 state_to_reset.reset_postfork_child()
@@ -131,6 +134,7 @@ def enter_user_request_generator():
 def return_from_user_request_generator():
     if _GRPC_ENABLE_FORK_SUPPORT:
         _fork_state.active_thread_count.increment()
+        block_if_fork_in_progress()
 
 
 def get_fork_epoch():

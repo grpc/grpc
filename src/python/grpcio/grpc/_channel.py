@@ -204,7 +204,6 @@ def _consume_request_iterator(request_iterator, state, call, request_serializer,
             finally:
                 if not return_from_user_request_generator_invoked:
                     cygrpc.return_from_user_request_generator()
-                    cygrpc.block_if_fork_in_progress()
             serialized_request = _common.serialize(request, request_serializer)
             with state.condition:
                 if state.code is None and not state.cancelled:
