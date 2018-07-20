@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <stdbool.h>
+#include <string.h>
 
 #include <grpc/grpc_security.h>
 
@@ -36,6 +37,12 @@ extern grpc_core::DebugOnlyTraceFlag grpc_trace_security_connector_refcount;
 /* --- status enum. --- */
 
 typedef enum { GRPC_SECURITY_OK = 0, GRPC_SECURITY_ERROR } grpc_security_status;
+typedef enum {
+  PLATFORM_LINUX,
+  PLATFORM_APPLE,
+  PLATFORM_WINDOWS,
+  PLATFORM_TEST
+} grpc_platform;
 
 /* --- URL schemes. --- */
 
@@ -263,6 +270,42 @@ class DefaultSslRootStore {
   // This function is protected instead of private, so that it can be tested.
   static grpc_slice ComputePemRootCerts();
 
+  // Returns a grpc_slice containing OS-specific root certificates.
+  // Protected for testing.
+  static grpc_slice GetSystemRootCerts();
+
+  // Detect the OS platform and set the platform variable to it.
+  // Protected for testing.
+  static void DetectPlatform();
+
+  // Creates a bundle slice containing the contents of all certificate files in
+  // a directory.
+  // Returns such slice.
+  // Protected for testing.
+  static grpc_slice CreateRootCertsBundle();
+
+  // Looks for a valid directory to load multiple certificates from.
+  // Returns such path or nullptr otherwise.
+  // Protected for testing.
+  static const char* GetValidCertsDirectory();
+
+  // Gets the absolute file path needed to load a certificate file.
+  // Returns such path as a slice in order to avoid memory leaks caused by
+  // mallocating a char*.
+  // Protected for testing.
+  static grpc_slice GetAbsoluteFilePath(const char* valid_file_dir,
+                                        const char* file_entry_name);
+
+  // Computes the total size of a directory given a path to it.
+  // Returns such size.
+  // Protected for testing.
+  static size_t GetDirectoryTotalSize(const char* directory_path);
+
+  // Set and get the platform variable.
+  // Required for GetSystemRootCerts() tests.
+  static void SetPlatform(grpc_platform pform) { platform_ = pform; }
+  static grpc_platform GetPlatform() { return platform_; }
+
  private:
   // Construct me not!
   DefaultSslRootStore();
@@ -278,6 +321,13 @@ class DefaultSslRootStore {
 
   // Default PEM root certificates.
   static grpc_slice default_pem_root_certs_;
+
+  // List of possible Linux certificate files and directories.
+  static const char* linux_cert_files_[];
+  static const char* linux_cert_directories_[];
+
+  // Variable to hold the name of the OS.
+  static grpc_platform platform_;
 };
 
 }  // namespace grpc_core
