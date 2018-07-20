@@ -17,8 +17,6 @@ set -ex
 
 shopt -s nullglob
 
-export GOOGLE_APPLICATION_CREDENTIALS=${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json
-
 GCS_ROOT=gs://packages.grpc.io
 MANIFEST_FILE=index.xml
 ARCHIVE_UUID=${KOKORO_BUILD_ID:-$(uuidgen)}
