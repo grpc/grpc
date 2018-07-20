@@ -35,10 +35,14 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
+#include <google/protobuf/text_format.h>
+
 #include <gtest/gtest.h>
 
 using grpc::channelz::v1::GetChannelRequest;
 using grpc::channelz::v1::GetChannelResponse;
+using grpc::channelz::v1::GetSubchannelRequest;
+using grpc::channelz::v1::GetSubchannelResponse;
 using grpc::channelz::v1::GetTopChannelsRequest;
 using grpc::channelz::v1::GetTopChannelsResponse;
 
@@ -140,7 +144,7 @@ class ChannelzServerTest : public ::testing::Test {
     ClientContext context;
     Status s = echo_stub_->Echo(&context, request, &response);
     EXPECT_EQ(response.message(), request.message());
-    EXPECT_TRUE(s.ok());
+    EXPECT_TRUE(s.ok()) << s.error_message();
   }
 
   void SendFailedEcho(int channel_idx) {
@@ -190,7 +194,7 @@ TEST_F(ChannelzServerTest, BasicTest) {
   request.set_start_channel_id(0);
   ClientContext context;
   Status s = channelz_stub_->GetTopChannels(&context, request, &response);
-  EXPECT_TRUE(s.ok());
+  EXPECT_TRUE(s.ok()) << s.error_message();
   EXPECT_EQ(response.channel_size(), 1);
 }
 
@@ -202,7 +206,7 @@ TEST_F(ChannelzServerTest, HighStartId) {
   request.set_start_channel_id(10000);
   ClientContext context;
   Status s = channelz_stub_->GetTopChannels(&context, request, &response);
-  EXPECT_TRUE(s.ok());
+  EXPECT_TRUE(s.ok()) << s.error_message();
   EXPECT_EQ(response.channel_size(), 0);
 }
 
@@ -215,7 +219,7 @@ TEST_F(ChannelzServerTest, SuccessfulRequestTest) {
   request.set_channel_id(1);
   ClientContext context;
   Status s = channelz_stub_->GetChannel(&context, request, &response);
-  EXPECT_TRUE(s.ok());
+  EXPECT_TRUE(s.ok()) << s.error_message();
   EXPECT_EQ(response.channel().data().calls_started(), 1);
   EXPECT_EQ(response.channel().data().calls_succeeded(), 1);
   EXPECT_EQ(response.channel().data().calls_failed(), 0);
@@ -230,7 +234,7 @@ TEST_F(ChannelzServerTest, FailedRequestTest) {
   request.set_channel_id(1);
   ClientContext context;
   Status s = channelz_stub_->GetChannel(&context, request, &response);
-  EXPECT_TRUE(s.ok());
+  EXPECT_TRUE(s.ok()) << s.error_message();
   EXPECT_EQ(response.channel().data().calls_started(), 1);
   EXPECT_EQ(response.channel().data().calls_succeeded(), 0);
   EXPECT_EQ(response.channel().data().calls_failed(), 1);
@@ -253,7 +257,7 @@ TEST_F(ChannelzServerTest, ManyRequestsTest) {
   request.set_channel_id(1);
   ClientContext context;
   Status s = channelz_stub_->GetChannel(&context, request, &response);
-  EXPECT_TRUE(s.ok());
+  EXPECT_TRUE(s.ok()) << s.error_message();
   EXPECT_EQ(response.channel().data().calls_started(),
             kNumSuccess + kNumFailed);
   EXPECT_EQ(response.channel().data().calls_succeeded(), kNumSuccess);
@@ -269,7 +273,7 @@ TEST_F(ChannelzServerTest, ManyChannels) {
   request.set_start_channel_id(0);
   ClientContext context;
   Status s = channelz_stub_->GetTopChannels(&context, request, &response);
-  EXPECT_TRUE(s.ok());
+  EXPECT_TRUE(s.ok()) << s.error_message();
   EXPECT_EQ(response.channel_size(), kNumChannels);
 }
 
@@ -295,7 +299,7 @@ TEST_F(ChannelzServerTest, ManyRequestsManyChannels) {
     request.set_channel_id(1);
     ClientContext context;
     Status s = channelz_stub_->GetChannel(&context, request, &response);
-    EXPECT_TRUE(s.ok());
+    EXPECT_TRUE(s.ok()) << s.error_message();
     EXPECT_EQ(response.channel().data().calls_started(), kNumSuccess);
     EXPECT_EQ(response.channel().data().calls_succeeded(), kNumSuccess);
     EXPECT_EQ(response.channel().data().calls_failed(), 0);
@@ -308,7 +312,7 @@ TEST_F(ChannelzServerTest, ManyRequestsManyChannels) {
     request.set_channel_id(2);
     ClientContext context;
     Status s = channelz_stub_->GetChannel(&context, request, &response);
-    EXPECT_TRUE(s.ok());
+    EXPECT_TRUE(s.ok()) << s.error_message();
     EXPECT_EQ(response.channel().data().calls_started(), kNumFailed);
     EXPECT_EQ(response.channel().data().calls_succeeded(), 0);
     EXPECT_EQ(response.channel().data().calls_failed(), kNumFailed);
@@ -321,7 +325,7 @@ TEST_F(ChannelzServerTest, ManyRequestsManyChannels) {
     request.set_channel_id(3);
     ClientContext context;
     Status s = channelz_stub_->GetChannel(&context, request, &response);
-    EXPECT_TRUE(s.ok());
+    EXPECT_TRUE(s.ok()) << s.error_message();
     EXPECT_EQ(response.channel().data().calls_started(),
               kNumSuccess + kNumFailed);
     EXPECT_EQ(response.channel().data().calls_succeeded(), kNumSuccess);
@@ -335,10 +339,66 @@ TEST_F(ChannelzServerTest, ManyRequestsManyChannels) {
     request.set_channel_id(4);
     ClientContext context;
     Status s = channelz_stub_->GetChannel(&context, request, &response);
-    EXPECT_TRUE(s.ok());
+    EXPECT_TRUE(s.ok()) << s.error_message();
     EXPECT_EQ(response.channel().data().calls_started(), 0);
     EXPECT_EQ(response.channel().data().calls_succeeded(), 0);
     EXPECT_EQ(response.channel().data().calls_failed(), 0);
+  }
+}
+
+TEST_F(ChannelzServerTest, ManySubchannels) {
+  ResetStubs();
+  const int kNumChannels = 4;
+  ConfigureProxy(kNumChannels);
+  const int kNumSuccess = 10;
+  const int kNumFailed = 11;
+  for (int i = 0; i < kNumSuccess; ++i) {
+    SendSuccessfulEcho(0);
+    SendSuccessfulEcho(2);
+  }
+  for (int i = 0; i < kNumFailed; ++i) {
+    SendFailedEcho(1);
+    SendFailedEcho(2);
+  }
+
+  GetTopChannelsRequest gtc_request;
+  GetTopChannelsResponse gtc_response;
+  gtc_request.set_start_channel_id(0);
+  ClientContext context;
+  Status s =
+      channelz_stub_->GetTopChannels(&context, gtc_request, &gtc_response);
+  EXPECT_TRUE(s.ok()) << s.error_message();
+  EXPECT_EQ(gtc_response.channel_size(), kNumChannels);
+
+  // std::string gtc_str;
+  // google::protobuf::TextFormat::PrintToString(gtc_response, &gtc_str);
+  // std::cout << "GetTopChannels:\n" << gtc_str << "\n";
+
+  for (int i = 0; i < gtc_response.channel_size(); ++i) {
+    // if the channel sent no RPCs, then expect no subchannels to have been
+    // created.
+    if (gtc_response.channel(i).data().calls_started() == 0) {
+      EXPECT_EQ(gtc_response.channel(i).subchannel_ref_size(), 0);
+      continue;
+    }
+    // Since this is pick first, we know that there was only one subchannel
+    // used. We request it here.
+    ASSERT_GT(gtc_response.channel(i).subchannel_ref_size(), 0);
+    EXPECT_EQ(gtc_response.channel(i).subchannel_ref_size(), 1);
+    GetSubchannelRequest gsc_request;
+    GetSubchannelResponse gsc_response;
+    gsc_request.set_subchannel_id(
+        gtc_response.channel(i).subchannel_ref(0).subchannel_id());
+    ClientContext context;
+    Status s =
+        channelz_stub_->GetSubchannel(&context, gsc_request, &gsc_response);
+    EXPECT_TRUE(s.ok()) << s.error_message();
+    EXPECT_EQ(gtc_response.channel(i).data().calls_started(),
+              gsc_response.subchannel().data().calls_started());
+    EXPECT_EQ(gtc_response.channel(i).data().calls_succeeded(),
+              gsc_response.subchannel().data().calls_succeeded());
+    EXPECT_EQ(gtc_response.channel(i).data().calls_failed(),
+              gsc_response.subchannel().data().calls_failed());
   }
 }
 
