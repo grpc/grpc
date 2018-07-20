@@ -46,6 +46,7 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -640,8 +641,8 @@ static bool publish_transport_locked(grpc_subchannel* c) {
   }
 
   /* publish */
-  c->connected_subchannel.reset(
-      grpc_core::New<grpc_core::ConnectedSubchannel>(stk));
+  c->connected_subchannel.reset(grpc_core::New<grpc_core::ConnectedSubchannel>(
+      stk, c->channelz_subchannel.get()));
   gpr_log(GPR_INFO, "New connected subchannel at %p for subchannel %p",
           c->connected_subchannel.get(), c);
 
@@ -796,9 +797,12 @@ grpc_arg grpc_create_subchannel_address_arg(const grpc_resolved_address* addr) {
 
 namespace grpc_core {
 
-ConnectedSubchannel::ConnectedSubchannel(grpc_channel_stack* channel_stack)
+ConnectedSubchannel::ConnectedSubchannel(
+    grpc_channel_stack* channel_stack,
+    channelz::SubchannelNode* channelz_subchannel)
     : RefCountedWithTracing<ConnectedSubchannel>(&grpc_trace_stream_refcount),
-      channel_stack_(channel_stack) {}
+      channel_stack_(channel_stack),
+      channelz_subchannel_(channelz_subchannel) {}
 
 ConnectedSubchannel::~ConnectedSubchannel() {
   GRPC_CHANNEL_STACK_UNREF(channel_stack_, "connected_subchannel_dtor");
@@ -845,14 +849,15 @@ grpc_error* ConnectedSubchannel::CreateCall(const CallArgs& args,
   connection.release();  // Ref is passed to the grpc_subchannel_call object.
   (*call)->connection = this;
   const grpc_call_element_args call_args = {
-      callstk,           /* call_stack */
-      nullptr,           /* server_transport_data */
-      args.context,      /* context */
-      args.path,         /* path */
-      args.start_time,   /* start_time */
-      args.deadline,     /* deadline */
-      args.arena,        /* arena */
-      args.call_combiner /* call_combiner */
+      callstk,            /* call_stack */
+      nullptr,            /* server_transport_data */
+      args.context,       /* context */
+      args.path,          /* path */
+      args.start_time,    /* start_time */
+      args.deadline,      /* deadline */
+      args.arena,         /* arena */
+      args.call_combiner, /* call_combiner */
+      args.call           /* call */
   };
   grpc_error* error = grpc_call_stack_init(
       channel_stack_, 1, subchannel_call_destroy, *call, &call_args);
@@ -860,6 +865,10 @@ grpc_error* ConnectedSubchannel::CreateCall(const CallArgs& args,
     const char* error_string = grpc_error_string(error);
     gpr_log(GPR_ERROR, "error: %s", error_string);
     return error;
+  }
+  if (channelz_subchannel_ != nullptr) {
+    channelz_subchannel_->RecordCallStarted();
+    grpc_call_set_channelz_subchannel(args.call, channelz_subchannel_);
   }
   grpc_call_stack_set_pollset_or_pollset_set(callstk, args.pollent);
   return GRPC_ERROR_NONE;

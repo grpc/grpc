@@ -110,6 +110,19 @@ size_t grpc_call_get_initial_size_estimate();
 grpc_compression_algorithm grpc_call_compression_for_level(
     grpc_call* call, grpc_compression_level level);
 
+namespace grpc_core {
+namespace channelz {
+class CallCountingAndTracingNode;
+}  // namespace channelz
+}  // namespace grpc_core
+
+// We need this so that a subchannel selected for a call can add itself to
+// the call's data structure. This allows the call to trigger the correct
+// channelz bookkeeping on the subchannel once the call knows if the RPC was
+// successful or not.
+void grpc_call_set_channelz_subchannel(
+    grpc_call* call, grpc_core::channelz::CallCountingAndTracingNode* node);
+
 extern grpc_core::TraceFlag grpc_call_error_trace;
 extern grpc_core::TraceFlag grpc_compression_trace;
 

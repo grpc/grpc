@@ -83,9 +83,11 @@ class ConnectedSubchannel : public RefCountedWithTracing<ConnectedSubchannel> {
     grpc_call_context_element* context;
     grpc_call_combiner* call_combiner;
     size_t parent_data_size;
+    grpc_call* call;
   };
 
-  explicit ConnectedSubchannel(grpc_channel_stack* channel_stack);
+  explicit ConnectedSubchannel(grpc_channel_stack* channel_stack,
+                               channelz::SubchannelNode* channelz_subchannel);
   ~ConnectedSubchannel();
 
   grpc_channel_stack* channel_stack() { return channel_stack_; }
@@ -94,9 +96,15 @@ class ConnectedSubchannel : public RefCountedWithTracing<ConnectedSubchannel> {
                            grpc_closure* closure);
   void Ping(grpc_closure* on_initiate, grpc_closure* on_ack);
   grpc_error* CreateCall(const CallArgs& args, grpc_subchannel_call** call);
+  channelz::SubchannelNode* channelz_subchannel() {
+    return channelz_subchannel_;
+  }
 
  private:
   grpc_channel_stack* channel_stack_;
+  // backpointer to the channelz node in this connected subchannel's
+  // owning subchannel.
+  channelz::SubchannelNode* channelz_subchannel_;
 };
 
 }  // namespace grpc_core

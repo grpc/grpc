@@ -126,6 +126,8 @@ grpc_json* ClientChannelNode::RenderJson() {
   // as CallCountingAndTracingNode to populate trace and call count data.
   PopulateTrace(json);
   PopulateCallData(json);
+  // reset to the top level
+  json = top_level_json;
   PopulateChildRefs(json);
   return top_level_json;
 }
