@@ -145,10 +145,7 @@ struct grpc_fd {
   gpr_atm read_notifier_pollset;
 
   grpc_iomgr_object iomgr_object;
-
-#ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
   int fork_epoch;
-#endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
 };
 
 static void fd_global_init(void);
@@ -294,9 +291,7 @@ static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
     new_fd->error_closure.Init();
   }
   new_fd->fd = fd;
-#ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
   new_fd->fork_epoch = grpc_core::Fork::GetForkEpoch();
-#endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
   new_fd->read_closure->InitEvent();
   new_fd->write_closure->InitEvent();
   new_fd->error_closure->InitEvent();
@@ -339,15 +334,12 @@ static void fd_shutdown_internal(grpc_fd* fd, grpc_error* why,
                                  bool releasing_fd) {
   if (fd->read_closure->SetShutdown(GRPC_ERROR_REF(why))) {
     if (!releasing_fd) {
-#ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
-      if (fd->fork_epoch < grpc_core::Fork::GetForkEpoch()) {
+      if (grpc_core::Fork::Enabled() &&
+          fd->fork_epoch < grpc_core::Fork::GetForkEpoch()) {
         close(fd->fd);
       } else {
-#endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
         shutdown(fd->fd, SHUT_RDWR);
-#ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
       }
-#endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
     }
     fd->write_closure->SetShutdown(GRPC_ERROR_REF(why));
     fd->error_closure->SetShutdown(GRPC_ERROR_REF(why));
