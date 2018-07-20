@@ -83,13 +83,13 @@ class Fork {
   static void Enable(bool enable);
 
  private:
-  static internal::ExecCtxState* execCtxState_;
-  static internal::ThreadState* threadState_;
-  static bool supportEnabled_;
-  static bool overrideEnabled_;
-  static int fork_epoch;
-  static child_postfork_func shutdown_child_connections;
-  static child_postfork_func reset_child_polling_engine;
+  static internal::ExecCtxState* exec_ctx_state_;
+  static internal::ThreadState* thread_state_;
+  static bool support_enabled_;
+  static bool override_enabled_;
+  static int fork_epoch_;
+  static child_postfork_func shutdown_child_connections_;
+  static child_postfork_func reset_child_polling_engine_;
 };
 
 }  // namespace grpc_core
