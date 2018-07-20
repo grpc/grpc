@@ -27,12 +27,14 @@
 #include <grpcpp/support/config.h>
 
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/iomgr/resource_quota.h"
 
 namespace grpc {
 
 class ThreadManager {
  public:
-  explicit ThreadManager(int min_pollers, int max_pollers);
+  explicit ThreadManager(const char* name, grpc_resource_quota* resource_quota,
+                         int min_pollers, int max_pollers);
   virtual ~ThreadManager();
 
   // Initializes and Starts the Rpc Manager threads
@@ -111,12 +113,27 @@ class ThreadManager {
   void MarkAsCompleted(WorkerThread* thd);
   void CleanupCompletedThreads();
 
+  // Checks the resource quota and if available, creates a thread and returns
+  // true. If quota is not available, returns false (and thread is not created)
+  static bool CreateNewThread(ThreadManager* thd_mgr);
+
+  // Give back a thread to the resource quota
+  static void ReleaseThread(ThreadManager* thd_mgr);
+
   // Protects shutdown_, num_pollers_ and num_threads_
   // TODO: sreek - Change num_pollers and num_threads_ to atomics
   std::mutex mu_;
 
   bool shutdown_;
   std::condition_variable shutdown_cv_;
+
+  // The resource user object to use when requesting quota to create threads
+  //
+  // Note: The user of this ThreadManager object must create grpc_resource_quota
+  // object (that contains the actual max thread quota) and a grpc_resource_user
+  // object through which quota is requested whenver new threads need to be
+  // created
+  grpc_resource_user* resource_user_;
 
   // Number of threads doing polling
   int num_pollers_;

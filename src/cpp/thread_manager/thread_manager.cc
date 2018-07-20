@@ -48,12 +48,16 @@ ThreadManager::WorkerThread::~WorkerThread() {
   thd_.Join();
 }
 
-ThreadManager::ThreadManager(int min_pollers, int max_pollers)
+ThreadManager::ThreadManager(const char* name,
+                             grpc_resource_quota* resource_quota,
+                             int min_pollers, int max_pollers)
     : shutdown_(false),
       num_pollers_(0),
       min_pollers_(min_pollers),
       max_pollers_(max_pollers == -1 ? INT_MAX : max_pollers),
-      num_threads_(0) {}
+      num_threads_(0) {
+  resource_user_ = grpc_resource_user_create(resource_quota, name);
+}
 
 ThreadManager::~ThreadManager() {
   {
@@ -61,6 +65,7 @@ ThreadManager::~ThreadManager() {
     GPR_ASSERT(num_threads_ == 0);
   }
 
+  grpc_resource_user_unref(resource_user_);
   CleanupCompletedThreads();
 }
 
@@ -113,9 +118,27 @@ void ThreadManager::Initialize() {
   }
 
   for (int i = 0; i < min_pollers_; i++) {
-    // Create a new thread (which ends up calling the MainWorkLoop() function
-    new WorkerThread(this);
+    if (!CreateNewThread(this)) {
+      gpr_log(GPR_ERROR,
+              "No quota available to create additional threads. Created %d (of "
+              "%d) threads",
+              i, min_pollers_);
+      break;
+    }
   }
+}
+
+bool ThreadManager::CreateNewThread(ThreadManager* thd_mgr) {
+  if (!grpc_resource_user_alloc_threads(thd_mgr->resource_user_, 1)) {
+    return false;
+  }
+  // Create a new thread (which ends up calling the MainWorkLoop() function
+  new WorkerThread(thd_mgr);
+  return true;
+}
+
+void ThreadManager::ReleaseThread(ThreadManager* thd_mgr) {
+  grpc_resource_user_free_threads(thd_mgr->resource_user_, 1);
 }
 
 void ThreadManager::MainWorkLoop() {
@@ -146,7 +169,7 @@ void ThreadManager::MainWorkLoop() {
           num_threads_++;
           // Drop lock before spawning thread to avoid contention
           lock.unlock();
-          new WorkerThread(this);
+          CreateNewThread(this);
         } else {
           // Drop lock for consistency with above branch
           lock.unlock();
@@ -196,7 +219,10 @@ void ThreadManager::MainWorkLoop() {
     }
   };
 
+  // This thread is exiting. Do some cleanup work (i.e delete already completed
+  // worker threads and also release 1 thread back to the resource quota)
   CleanupCompletedThreads();
+  ReleaseThread(this);
 
   // If we are here, either ThreadManager is shutting down or it already has
   // enough threads.

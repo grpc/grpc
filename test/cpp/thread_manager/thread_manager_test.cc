@@ -32,8 +32,8 @@
 namespace grpc {
 class ThreadManagerTest final : public grpc::ThreadManager {
  public:
-  ThreadManagerTest()
-      : ThreadManager(kMinPollers, kMaxPollers),
+  ThreadManagerTest(const char* name, grpc_resource_quota* rq)
+      : ThreadManager(name, rq, kMinPollers, kMaxPollers),
         num_do_work_(0),
         num_poll_for_work_(0),
         num_work_found_(0) {}
@@ -115,7 +115,11 @@ int main(int argc, char** argv) {
   std::srand(std::time(nullptr));
 
   grpc::testing::InitTest(&argc, &argv, true);
-  grpc::ThreadManagerTest test_rpc_manager;
+
+  grpc_resource_quota* rq = grpc_resource_quota_create("Test");
+  grpc::ThreadManagerTest test_rpc_manager("TestThreadManager", rq);
+  grpc_resource_quota_unref(rq);
+
   test_rpc_manager.PerformTest();
 
   return 0;
