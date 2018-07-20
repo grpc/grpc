@@ -1211,6 +1211,9 @@ static void shutdown_engine(void) {
   fd_global_shutdown();
   pollset_global_shutdown();
   epoll_set_shutdown();
+  if (grpc_core::Fork::Enabled()) {
+    grpc_core::Fork::SetResetChildPollingEngineFunc(nullptr);
+  }
 }
 
 static const grpc_event_engine_vtable vtable = {
@@ -1246,6 +1249,11 @@ static const grpc_event_engine_vtable vtable = {
     shutdown_engine,
 };
 
+static void reset_event_manager_on_fork() {
+  shutdown_engine();
+  grpc_init_epoll1_linux(true);
+}
+
 /* It is possible that GLIBC has epoll but the underlying kernel doesn't.
  * Create epoll_fd (epoll_set_init() takes care of that) to make sure epoll
  * support is available */
@@ -1267,6 +1275,10 @@ const grpc_event_engine_vtable* grpc_init_epoll1_linux(bool explicit_request) {
     return nullptr;
   }
 
+  if (grpc_core::Fork::Enabled()) {
+    grpc_core::Fork::SetResetChildPollingEngineFunc(
+        reset_event_manager_on_fork);
+  }
   return &vtable;
 }
 

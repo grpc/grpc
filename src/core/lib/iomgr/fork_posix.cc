@@ -27,7 +27,6 @@
 #include <grpc/fork.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/subchannel_index.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -86,12 +85,15 @@ void grpc_postfork_child() {
     grpc_core::Fork::IncrementForkEpoch();
     grpc_core::Fork::AllowExecCtx();
     grpc_core::ExecCtx exec_ctx;
-    grpc_subchannel_index_disconnect_on_fork();
-    const char* poll_strategy = nullptr;
-    poll_strategy = grpc_get_poll_strategy_name();
-    if (poll_strategy != nullptr && strcmp(poll_strategy, "epoll1") == 0) {
-      grpc_event_engine_shutdown();
-      grpc_event_engine_init();
+    grpc_core::Fork::child_postfork_func shutdown_connections =
+        grpc_core::Fork::GetShutdownChildConnectionsFunc();
+    if (shutdown_connections != nullptr) {
+      shutdown_connections();
+    }
+    grpc_core::Fork::child_postfork_func reset_polling_engine =
+        grpc_core::Fork::GetResetChildPollingEngineFunc();
+    if (reset_polling_engine != nullptr) {
+      reset_polling_engine();
     }
     grpc_timer_manager_set_threading(true);
     grpc_executor_set_threading(true);

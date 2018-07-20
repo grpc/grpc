@@ -224,6 +224,18 @@ void Fork::DecExecCtxCount() {
 
 void Fork::IncrementForkEpoch() { fork_epoch++; }
 int Fork::GetForkEpoch() { return fork_epoch; }
+void Fork::SetShutdownChildConnectionsFunc(Fork::child_postfork_func func) {
+  shutdown_child_connections = func;
+}
+Fork::child_postfork_func Fork::GetShutdownChildConnectionsFunc() {
+  return shutdown_child_connections;
+}
+void Fork::SetResetChildPollingEngineFunc(Fork::child_postfork_func func) {
+  reset_child_polling_engine = func;
+}
+Fork::child_postfork_func Fork::GetResetChildPollingEngineFunc() {
+  return reset_child_polling_engine;
+}
 
 bool Fork::BlockExecCtx() {
   if (supportEnabled_) {
@@ -260,4 +272,6 @@ internal::ThreadState* Fork::threadState_ = nullptr;
 bool Fork::supportEnabled_ = false;
 bool Fork::overrideEnabled_ = false;
 int Fork::fork_epoch = 0;
+Fork::child_postfork_func Fork::shutdown_child_connections = nullptr;
+Fork::child_postfork_func Fork::reset_child_polling_engine = nullptr;
 }  // namespace grpc_core
