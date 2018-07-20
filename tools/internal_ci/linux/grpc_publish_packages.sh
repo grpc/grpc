@@ -17,92 +17,128 @@ set -ex
 
 shopt -s nullglob
 
-GCS_ROOT=gs://packages.grpc.io
-MANIFEST_FILE=index.xml
-ARCHIVE_UUID=${KOKORO_BUILD_ID:-$(uuidgen)}
-GIT_BRANCH_NAME=master
-GIT_COMMIT=${KOKORO_GIT_COMMIT:-unknown}
-ARCHIVE_TIMESTAMP=$(date -Iseconds)
-TARGET_DIR=$(mktemp -d grpc_publish_packages.sh.XXXX)
-YEAR_MONTH_PREFIX=$(date "+%Y/%m")
-YEAR_PREFIX=${YEAR_MONTH_PREFIX%%/*}
-UPLOAD_ROOT=$TARGET_DIR/$YEAR_PREFIX
-RELATIVE_PATH=$YEAR_MONTH_PREFIX/$ARCHIVE_UUID
-BUILD_ROOT=$TARGET_DIR/$RELATIVE_PATH
+INPUT_ARTIFACTS=$KOKORO_GFILE_DIR/github/grpc/artifacts
+INDEX_FILENAME=index.xml
 
-LINUX_PACKAGES=$KOKORO_GFILE_DIR/github/grpc/artifacts
-WINDOWS_PACKAGES=$KOKORO_GFILE_DIR/github/grpc/artifacts
-# TODO(mmx): enable linux_extra
-# LINUX_EXTRA_PACKAGES=$KOKORO_GFILE_DIR/github/grpc/artifacts
+BUILD_ID=${KOKORO_BUILD_ID:-$(uuidgen)}
+BUILD_BRANCH_NAME=master
+BUILD_GIT_COMMIT=${KOKORO_GIT_COMMIT:-unknown}
+BUILD_TIMESTAMP=$(date -Iseconds)
+BUILD_RELPATH=$(date "+%Y/%m")/$BUILD_ID/
+
+GCS_ROOT=gs://packages.grpc.io/
+GCS_ARCHIVE_PREFIX=archive/
+GCS_ARCHIVE_ROOT=$GCS_ROOT$GCS_ARCHIVE_PREFIX
+GCS_INDEX=$GCS_ROOT$INDEX_FILENAME
+
+LOCAL_STAGING_TEMPDIR=$(mktemp -d)
+LOCAL_BUILD_ROOT=$LOCAL_STAGING_TEMPDIR/$BUILD_RELPATH
+LOCAL_BUILD_INDEX=$LOCAL_BUILD_ROOT$INDEX_FILENAME
+
+mkdir -p "$LOCAL_BUILD_ROOT"
+
+find "$INPUT_ARTIFACTS" -type f
+
+UNZIPPED_CSHARP_PACKAGES=$(mktemp -d)
+unzip "$INPUT_ARTIFACTS/csharp_nugets_windows_dotnetcli.zip" -d "$UNZIPPED_CSHARP_PACKAGES"
+CSHARP_PACKAGES=(
+  "$UNZIPPED_CSHARP_PACKAGES"/*
+)
 
 PYTHON_PACKAGES=(
-  "$LINUX_PACKAGES"/grpcio-[0-9]*.whl
-  "$LINUX_PACKAGES"/grpcio-[0-9]*.tar.gz
-  "$LINUX_PACKAGES"/grpcio_tools-[0-9]*.whl
-  "$LINUX_PACKAGES"/grpcio-tools-[0-9]*.tar.gz
-  "$LINUX_PACKAGES"/grpcio-health-checking-[0-9]*.tar.gz
-  "$LINUX_PACKAGES"/grpcio-reflection-[0-9]*.tar.gz
-  "$LINUX_PACKAGES"/grpcio-testing-[0-9]*.tar.gz
-  #"$LINUX_EXTRA_PACKAGES"/grpcio-[0-9]*.whl
-  #"$LINUX_EXTRA_PACKAGES"/grpcio_tools-[0-9]*.whl
+  "$INPUT_ARTIFACTS"/grpcio-[0-9]*.tar.gz
+  "$INPUT_ARTIFACTS"/grpcio-[0-9]*.whl
+  "$INPUT_ARTIFACTS"/python_linux_extra_arm*/grpcio-[0-9]*.whl
+
+  "$INPUT_ARTIFACTS"/grpcio-tools-[0-9]*.tar.gz
+  "$INPUT_ARTIFACTS"/grpcio_tools-[0-9]*.whl
+  "$INPUT_ARTIFACTS"/python_linux_extra_arm*/grpcio_tools-[0-9]*.whl
+
+  "$INPUT_ARTIFACTS"/grpcio-health-checking-[0-9]*.tar.gz
+  "$INPUT_ARTIFACTS"/grpcio-reflection-[0-9]*.tar.gz
+  "$INPUT_ARTIFACTS"/grpcio-testing-[0-9]*.tar.gz
 )
 
 PHP_PACKAGES=(
-  "$LINUX_PACKAGES"/grpc-[0-9]*.tgz
+  "$INPUT_ARTIFACTS"/grpc-[0-9]*.tgz
 )
 
 RUBY_PACKAGES=(
-  "$LINUX_PACKAGES"/grpc-[0-9]*.gem
-  "$LINUX_PACKAGES"/grpc-tools-[0-9]*.gem
-)
-
-CSHARP_PACKAGES=(
-  "$WINDOWS_PACKAGES"/csharp_nugets_windows_dotnetcli.zip
+  "$INPUT_ARTIFACTS"/grpc-[0-9]*.gem
+  "$INPUT_ARTIFACTS"/grpc-tools-[0-9]*.gem
 )
 
 function add_to_manifest() {
-  local xml_type=$1
-  local xml_name
-  xml_name=$(basename "$2")
-  local xml_sha256
-  xml_sha256=$(openssl sha256 -r "$2" | cut -d " " -f 1)
-  cp "$2" "$BUILD_ROOT"
-  echo "<artifact type='$xml_type' name='$xml_name' sha256='$xml_sha256' />"
+  local artifact_type=$1
+  local artifact_file=$2
+  local artifact_name
+  artifact_name=$(basename "$artifact_file")
+  local artifact_sha256
+  artifact_sha256=$(openssl sha256 -r "$artifact_file" | cut -d " " -f 1)
+  local artifact_target=$LOCAL_BUILD_ROOT/$artifact_type
+  mkdir -p "$artifact_target"
+  cp "$artifact_file" "$artifact_target"
+  cat <<EOF
+    <artifact name='$artifact_name'
+              type='$artifact_type'
+              path='$artifact_type/$artifact_name'
+              sha256='$artifact_sha256' />
+EOF
 }
-
-mkdir -p "$BUILD_ROOT"
 
 {
   cat <<EOF
 <?xml version="1.0"?>
-<?xml-stylesheet href="/web-assets/build.xsl" type="text/xsl"?>
+<?xml-stylesheet href="/web-assets/build-201807.xsl" type="text/xsl"?>
+<build id='$BUILD_ID' timestamp='$BUILD_TIMESTAMP'>
+  <metadata>
+    <project>gRPC</project>
+    <repository>https://github.com/grpc/grpc</repository>
+    <branch>$BUILD_BRANCH_NAME</branch>
+    <commit>$BUILD_GIT_COMMIT</commit>
+  </metadata>
+  <artifacts>
 EOF
-  echo "<build id='$ARCHIVE_UUID' timestamp='$ARCHIVE_TIMESTAMP'>"
-  echo "<metadata>"
-  echo "<branch>$GIT_BRANCH_NAME</branch>"
-  echo "<commit>$GIT_COMMIT</commit>"
-  echo "</metadata><artifacts>"
 
-  for pkg in "${PYTHON_PACKAGES[@]}"; do add_to_manifest python "$pkg"; done
   for pkg in "${CSHARP_PACKAGES[@]}"; do add_to_manifest csharp "$pkg"; done
   for pkg in "${PHP_PACKAGES[@]}"; do add_to_manifest php "$pkg"; done
+  for pkg in "${PYTHON_PACKAGES[@]}"; do add_to_manifest python "$pkg"; done
   for pkg in "${RUBY_PACKAGES[@]}"; do add_to_manifest ruby "$pkg"; done
 
-  echo "</artifacts></build>"
-}> "$BUILD_ROOT/$MANIFEST_FILE"
+  cat <<EOF
+  </artifacts>
+</build>
+EOF
+}> "$LOCAL_BUILD_INDEX"
 
-BUILD_XML_SHA=$(openssl sha256 -r "$BUILD_ROOT/$MANIFEST_FILE" | cut -d " " -f 1)
+LOCAL_BUILD_INDEX_SHA256=$(openssl sha256 -r "$LOCAL_BUILD_INDEX" | cut -d " " -f 1)
 
-PREV_HOME=$(mktemp old-XXXXX-$MANIFEST_FILE)
-NEW_HOME=$(mktemp new-XXXXX-$MANIFEST_FILE)
-gsutil cp "$GCS_ROOT/$MANIFEST_FILE" "$PREV_HOME"
+OLD_INDEX=$(mktemp)
+NEW_INDEX=$(mktemp)
+
+# Download the current /index.xml into $OLD_INDEX
+gsutil cp "$GCS_INDEX" "$OLD_INDEX"
 
 {
-  head --lines=4 "$PREV_HOME"
-  echo "<build id='$ARCHIVE_UUID' timestamp='$ARCHIVE_TIMESTAMP' branch='$GIT_BRANCH_NAME' commit='$GIT_COMMIT' manifest='archive/$RELATIVE_PATH/$MANIFEST_FILE' manifest-sha256='$BUILD_XML_SHA' />"
-  tail --lines=+5 "$PREV_HOME"
-}> "$NEW_HOME"
+  # we want to add an entry as the first child under <builds> tag
+  # we can get by without a real XML parser by rewriting the header,
+  # injecting our new tag, and then dumping the rest of the file as is.
+  cat <<EOF
+<?xml version="1.0"?>
+<?xml-stylesheet href="/web-assets/home.xsl" type="text/xsl"?>
+<packages>
+  <builds>
+    <build id='$BUILD_ID'
+           timestamp='$BUILD_TIMESTAMP'
+           branch='$BUILD_BRANCH_NAME'
+           commit='$BUILD_GIT_COMMIT'
+           path='$GCS_ARCHIVE_PREFIX$BUILD_RELPATH$INDEX_FILENAME'
+           sha256='$LOCAL_BUILD_INDEX_SHA256' />
+EOF
+  tail --lines=+5 "$OLD_INDEX"
+}> "$NEW_INDEX"
 
-gsutil -m cp -r "$UPLOAD_ROOT" "$GCS_ROOT/archive"
-gsutil -h "Content-Type:application/xml" cp "$NEW_HOME" "$GCS_ROOT/$MANIFEST_FILE"
-
+# Upload the current build artifacts
+gsutil -m cp -r "$LOCAL_STAGING_TEMPDIR/${BUILD_RELPATH%%/*}" "$GCS_ARCHIVE_ROOT"
+# Upload the new /index.xml
+gsutil -h "Content-Type:application/xml" cp "$NEW_INDEX" "$GCS_INDEX"
