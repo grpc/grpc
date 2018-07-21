@@ -175,6 +175,27 @@ TEST(RefCountedPtr, RefCountedWithTracing) {
   foo->Unref(DEBUG_LOCATION, "foo");
 }
 
+class Parent : public RefCounted<Parent> {
+ public:
+  Parent() {}
+  ~Parent() {}
+};
+
+class Child : public Parent {
+ public:
+  Child() {}
+  ~Child() {}
+};
+
+void FunctionThatTakesParent(RefCountedPtr<Parent> parent) {
+  (void)parent;
+}
+
+TEST(RefCountedPtr, TestInheritance) {
+  RefCountedPtr<Child> child = MakeRefCounted<Child>();
+  FunctionThatTakesParent(child);
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core
