@@ -5164,6 +5164,7 @@ add_library(qps
   test/cpp/qps/client_sync.cc
   test/cpp/qps/driver.cc
   test/cpp/qps/parse_json.cc
+  test/cpp/qps/qps_server_builder.cc
   test/cpp/qps/qps_worker.cc
   test/cpp/qps/report.cc
   test/cpp/qps/server_async.cc
