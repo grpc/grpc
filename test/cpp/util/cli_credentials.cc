@@ -67,8 +67,8 @@ const grpc::string CliCredentials::GetCredentialUsage() const {
 }
 
 const grpc::string CliCredentials::GetSslTargetNameOverride() const {
-  bool use_tls = FLAGS_enable_ssl ||
-      (FLAGS_access_token.empty() && FLAGS_use_auth);
+  bool use_tls =
+      FLAGS_enable_ssl || (FLAGS_access_token.empty() && FLAGS_use_auth);
   return use_tls ? FLAGS_ssl_target : "";
 }
 
