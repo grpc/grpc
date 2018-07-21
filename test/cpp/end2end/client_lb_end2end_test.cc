@@ -53,6 +53,7 @@ using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
 using std::chrono::system_clock;
 
+extern double diff;
 // defined in tcp_client.cc
 extern grpc_tcp_client_vtable* grpc_tcp_client_impl;
 
@@ -246,18 +247,23 @@ class ClientLbEnd2endTest : public ::testing::Test {
       std::mutex mu;
       std::unique_lock<std::mutex> lock(mu);
       std::condition_variable cond;
-      thread_.reset(new std::thread(
-          std::bind(&ServerData::Start, this, server_host, &mu, &cond)));
+      const double d = rand() / (double)RAND_MAX;
+      int max_age_ms = d > 1 ? (rand() / (double)RAND_MAX) * 1500 + 1000 : 0;
+      thread_.reset(new std::thread(std::bind(
+          &ServerData::Start, this, server_host, &mu, &cond, max_age_ms)));
       cond.wait(lock, [this] { return server_ready_; });
       server_ready_ = false;
       gpr_log(GPR_INFO, "server startup complete");
     }
 
     void Start(const grpc::string& server_host, std::mutex* mu,
-               std::condition_variable* cond) {
+               std::condition_variable* cond, int max_age_ms) {
       std::ostringstream server_address;
       server_address << server_host << ":" << port_;
       ServerBuilder builder;
+      if (max_age_ms > 0) {
+        builder.AddChannelArgument(GRPC_ARG_MAX_CONNECTION_AGE_MS, max_age_ms);
+      }
       builder.AddListeningPort(server_address.str(),
                                InsecureServerCredentials());
       builder.RegisterService(&service_);
@@ -537,6 +543,31 @@ TEST_F(ClientLbEnd2endTest, RoundRobin) {
   EXPECT_EQ(expected, connection_order);
   // Check LB policy name for the channel.
   EXPECT_EQ("round_robin", channel->GetLoadBalancingPolicyName());
+}
+
+TEST_F(ClientLbEnd2endTest, RoundRobinHordes) {
+  // Start servers and send one RPC per server.
+  const int kNumServers = 1000;
+  StartServers(kNumServers);
+  std::vector<int> ports;
+  for (const auto& server : servers_) {
+    ports.emplace_back(server->port_);
+  }
+  // Wait until all backends are ready.
+  auto start = std::chrono::high_resolution_clock::now();
+  double avg = 0;
+  for (int i = 0; i < 200; i++) {
+    auto channel = BuildChannel("round_robin");
+    auto stub = BuildStub(channel);
+    SetNextResolution(ports);
+    SendRpc(stub);
+    avg = avg + (diff - avg)/(i+1);
+    //gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(10));
+  }
+  auto finish = std::chrono::high_resolution_clock::now();
+  std::chrono::duration<double> elapsed = finish - start;
+  std::cout << elapsed.count() << std::endl;
+  printf("XXX %f\n", avg);
 }
 
 TEST_F(ClientLbEnd2endTest, RoundRobinProcessPending) {

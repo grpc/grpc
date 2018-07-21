@@ -67,6 +67,9 @@ using grpc_core::internal::ServerRetryThrottleData;
 
 /* Client channel implementation */
 
+gpr_timespec start, end;
+double diff;
+
 // By default, we buffer 256 KiB per RPC for retries.
 // TODO(roth): Do we have any data to suggest a better value?
 #define DEFAULT_PER_RPC_RETRY_BUFFER_SIZE (256 << 10)
@@ -2963,6 +2966,8 @@ class ResolverResultWaiter {
 }  // namespace grpc_core
 
 static void start_pick_locked(void* arg, grpc_error* ignored) {
+    end = gpr_now(GPR_CLOCK_PRECISE);
+  diff = gpr_timespec_to_micros(gpr_time_sub(end, start));
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
@@ -3064,6 +3069,7 @@ static void cc_start_transport_stream_op_batch(
       gpr_log(GPR_INFO, "chand=%p calld=%p: entering client_channel combiner",
               chand, calld);
     }
+    start = gpr_now(GPR_CLOCK_PRECISE);
     GRPC_CLOSURE_SCHED(
         GRPC_CLOSURE_INIT(&batch->handler_private.closure, start_pick_locked,
                           elem, grpc_combiner_scheduler(chand->combiner)),
